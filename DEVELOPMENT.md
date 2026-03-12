@@ -359,6 +359,10 @@ pipeline で .json.gz を生成
 | Android Chrome   | 不安定                    | バージョンにより未対応。manifest `theme_color` (固定値) が優先される場合あり |
 | macOS / Windows  | —                         | タイトルバーに `theme_color` が適用される                                    |
 
+#### viewport zoom 制限
+
+`index.html` で `maximum-scale=1.0, user-scalable=no` を設定している。Leaflet がピンチジェスチャーで地図ズームを直接制御するため、ブラウザレベルのピンチズームが有効だと二重ズームや操作の競合が発生する。地図アプリでは一般的な設定。
+
 #### viewport-fit / status-bar-style 組み合わせ検証 (iOS standalone)
 
 | パターン | viewport-fit | status-bar-style  | iOS top                   | iOS bottom        | Android |

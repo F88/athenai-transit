@@ -31,11 +31,16 @@ export class DataSourceManager {
   /** Creates a new manager, restoring enabled state from localStorage. */
   constructor() {
     this.groups = settings as SourceGroup[];
+    const allIds = new Set(this.groups.map((g) => g.id));
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      this.enabledIds = new Set(JSON.parse(stored) as string[]);
+      try {
+        this.enabledIds = new Set(JSON.parse(stored) as string[]);
+      } catch {
+        this.enabledIds = allIds;
+      }
     } else {
-      this.enabledIds = new Set(this.groups.map((g) => g.id));
+      this.enabledIds = allIds;
     }
   }
 

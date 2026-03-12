@@ -2,6 +2,12 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Pinch-zoom is disabled intentionally: Leaflet handles map zoom gestures
+      directly, and browser-level zoom conflicts with pinch-to-zoom on the map,
+      causing double-zoom and erratic panning. viewport-fit=cover is required
+      for safe-area inset support on notched devices.
+    -->
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"

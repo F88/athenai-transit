@@ -64,6 +64,7 @@ export default defineConfig({
         background_color: '#ffffff',
         lang: 'ja',
         display: 'standalone',
+        orientation: 'portrait',
         scope: '/',
         start_url: '/',
         icons: [
