@@ -32,7 +32,7 @@ function main(): void {
   console.log(`  To:   ${DEST_DIR}`);
 
   if (existsSync(DEST_DIR)) {
-    rmSync(DEST_DIR, { recursive: true });
+    rmSync(DEST_DIR, { recursive: true, force: true });
     console.log('  Cleaned existing public/data/');
   }
 

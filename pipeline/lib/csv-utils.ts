@@ -1,8 +1,9 @@
 /**
  * Split a CSV line into fields per RFC 4180.
  *
- * Handles double-quoted fields containing commas, newlines, and escaped
- * quotes (`""`). Unquoted fields are returned as-is.
+ * Handles double-quoted fields containing commas and escaped quotes (`""`).
+ * Unquoted fields are returned as-is. This helper operates on a single
+ * physical CSV line and does not assemble multi-line records.
  *
  * @param line - A single CSV line (without trailing newline)
  * @returns Array of field values

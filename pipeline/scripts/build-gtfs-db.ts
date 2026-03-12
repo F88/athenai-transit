@@ -357,6 +357,10 @@ async function openCsvStream(filePath: string): Promise<CsvStream | null> {
             if (line.length === 0) {
               continue;
             }
+            // NOTE: readline is line-based, so CSV records with embedded
+            // newlines inside quoted fields would be split across iterations.
+            // GTFS feeds rarely contain such values; if needed, switch to a
+            // streaming CSV parser that buffers until quotes are balanced.
             return { value: splitCsvLine(line), done: false as const };
           }
         },

@@ -123,8 +123,18 @@ async function downloadWithRetry(url: string, dest: string): Promise<DownloadRes
 
 function extractZip(zipPath: string, destDir: string): string[] {
   const zip = new AdmZip(zipPath);
+  const entries = zip.getEntries();
+
+  // Guard against Zip Slip: reject entries with path traversal components
+  for (const entry of entries) {
+    const name = entry.entryName;
+    if (name.startsWith('/') || name.startsWith('\\') || name.includes('..')) {
+      throw new Error(`Zip Slip detected: refusing to extract entry "${name}"`);
+    }
+  }
+
   zip.extractAllTo(destDir, true);
-  return zip.getEntries().map((e) => e.entryName);
+  return entries.map((e) => e.entryName);
 }
 
 // ---------------------------------------------------------------------------
