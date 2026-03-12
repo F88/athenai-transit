@@ -43,6 +43,17 @@ export interface GtfsResource extends BaseResource {
    * Key: route_id (without prefix), Value: hex color (without #).
    */
   routeColorFallbacks?: Record<string, string>;
+  /**
+   * Mapping from MLIT GeoJSON line names to GTFS route IDs for shape generation.
+   * Used by `build-train-shapes.ts` to extract line geometries from
+   * National Land Numerical Information railway section data.
+   */
+  mlitShapeMapping?: {
+    /** Operator name used to filter GeoJSON features (e.g. "東京都"). */
+    operator: string;
+    /** Map from GeoJSON line name (N02_003) to prefixed GTFS route_id. */
+    lineToRouteId: Record<string, string>;
+  };
 }
 
 // ---------------------------------------------------------------------------

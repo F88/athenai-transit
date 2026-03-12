@@ -16,6 +16,17 @@ const toeiTrain: GtfsSourceDefinition = {
       '5': 'C93896', // Nippori-Toneri Liner
       '6': '6CA782', // Tokyo Sakura Tram (Arakawa Line)
     },
+    mlitShapeMapping: {
+      operator: '東京都',
+      lineToRouteId: {
+        '1号線浅草線': 'toaran:1',
+        '6号線三田線': 'toaran:2',
+        '10号線新宿線': 'toaran:3',
+        '12号線大江戸線': 'toaran:4',
+        '日暮里・舎人ライナー': 'toaran:5',
+        荒川線: 'toaran:6',
+      },
+    },
     downloadUrl: 'https://api-public.odpt.org/api/v4/files/Toei/data/Toei-Train-GTFS.zip',
     catalog: {
       type: 'odpt',

@@ -16,24 +16,14 @@
  */
 
 import AdmZip from 'adm-zip';
-import {
-  copyFileSync,
-  createWriteStream,
-  existsSync,
-  readdirSync,
-  rmSync,
-  statSync,
-} from 'node:fs';
+import { copyFileSync, existsSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { Readable, Transform } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
 
 import {
   archiveFilename,
+  downloadWithRetry,
   ensureDir,
-  FETCH_TIMEOUT_MS,
-  formatBytes,
   loadTargetFile,
   parseDownloadArg,
   determineBatchExitCode,
@@ -41,81 +31,10 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-  withRetry,
-  wrapTimeoutError,
 } from '../lib/download-utils';
 import { listGtfsSourceNames, loadGtfsSource } from './load-gtfs-sources';
 
 const ROOT = resolve(import.meta.dirname, '..');
-
-// ---------------------------------------------------------------------------
-// Download with retry and progress
-// ---------------------------------------------------------------------------
-
-/** Result of a successful download. */
-interface DownloadResult {
-  /** Total bytes written to disk. */
-  bytes: number;
-  /** Download duration in milliseconds. */
-  durationMs: number;
-  /** HTTP Content-Type header value, if present. */
-  contentType: string;
-}
-
-async function downloadWithRetry(url: string, dest: string): Promise<DownloadResult> {
-  return withRetry(async () => {
-    let res: Response;
-    const startTime = performance.now();
-    try {
-      res = await fetch(url, {
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      });
-    } catch (err) {
-      throw wrapTimeoutError(err, url);
-    }
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    }
-
-    const contentLength = Number(res.headers.get('content-length') || 0);
-    const contentType = res.headers.get('content-type') ?? '';
-    if (contentLength > 0) {
-      console.log(`  Content-Length: ${contentLength.toLocaleString()} bytes`);
-    }
-
-    if (!res.body) {
-      throw new Error(`Response body is empty for ${url}`);
-    }
-
-    const out = createWriteStream(dest);
-    let downloaded = 0;
-
-    const progress = new Transform({
-      transform(chunk: Uint8Array, _encoding, callback) {
-        downloaded += chunk.byteLength;
-        if (contentLength > 0) {
-          const pct = ((downloaded / contentLength) * 100).toFixed(0);
-          process.stdout.write(
-            `\r  Progress: ${formatBytes(downloaded)} / ${formatBytes(contentLength)} (${pct}%)`,
-          );
-        } else {
-          process.stdout.write(`\r  Downloaded: ${formatBytes(downloaded)}`);
-        }
-        callback(null, chunk);
-      },
-      flush(callback) {
-        process.stdout.write('\n');
-        callback();
-      },
-    });
-
-    const readable = Readable.from(res.body);
-    await pipeline(readable, progress, out);
-
-    const durationMs = Math.round(performance.now() - startTime);
-    return { bytes: downloaded, durationMs, contentType };
-  }, url);
-}
 
 // ---------------------------------------------------------------------------
 // ZIP extraction (adm-zip)

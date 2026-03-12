@@ -17,21 +17,19 @@
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
+import toeiTrain from '../resources/gtfs/toei-train';
+
 const ROOT = resolve(import.meta.dirname, '..');
 const GEOJSON_PATH = join(ROOT, 'data/mlit/N02-24_RailroadSection.geojson');
-const OUTPUT_DIR = join(ROOT, 'build/data/toaran');
+const OUTPUT_DIR = join(ROOT, 'build/data', toeiTrain.pipeline.outDir);
 const OUTPUT_PATH = join(OUTPUT_DIR, 'shapes.json');
 
-const OPERATOR = '東京都';
-// GeoJSON line name (N02_003) -> prefixed GTFS route_id
-const LINE_TO_ROUTE_ID: Record<string, string> = {
-  '1号線浅草線': 'toaran:1',
-  '6号線三田線': 'toaran:2',
-  '10号線新宿線': 'toaran:3',
-  '12号線大江戸線': 'toaran:4',
-  '日暮里・舎人ライナー': 'toaran:5',
-  荒川線: 'toaran:6',
-};
+const { mlitShapeMapping } = toeiTrain.resource;
+if (!mlitShapeMapping) {
+  throw new Error('toei-train resource is missing mlitShapeMapping');
+}
+const OPERATOR = mlitShapeMapping.operator;
+const LINE_TO_ROUTE_ID = mlitShapeMapping.lineToRouteId;
 
 // ---------------------------------------------------------------------------
 // Types
