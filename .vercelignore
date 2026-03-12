@@ -1,0 +1,5 @@
+# Pipeline (scripts, source data, build artifacts)
+pipeline/
+
+# Node modules
+node_modules

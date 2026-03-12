@@ -1,0 +1,11 @@
+# Ignore Prettier config files
+.agents
+
+# Ignore build and distribution directories
+dist
+node_modules
+public/data
+pipeline/build
+pipeline/data
+package-lock.json
+

@@ -1,0 +1,148 @@
+name: Update Transit Data
+
+on:
+  schedule:
+    # JST 13:00 (UTC 04:00)
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      skip_download:
+        description: 'Skip GTFS download (JSON rebuild only)'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: gtfs-pipeline
+  cancel-in-progress: false
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      # ── Setup ──────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── Download ───────────────────────────────────────────
+      # Exit codes: 0=OK, 1=partial failure, 2=all failed.
+      # Continue on partial failure (exit 1), stop on all failed (exit 2).
+      - name: Download GTFS data
+        id: download-gtfs
+        if: ${{ !inputs.skip_download }}
+        run: |
+          set +e
+          npx tsx pipeline/scripts/download-gtfs.ts --targets pipeline/targets/download-gtfs.ts
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on GTFS partial failure
+        if: ${{ !inputs.skip_download && steps.download-gtfs.outputs.exit_code == '1' }}
+        run: echo "::warning::Some GTFS downloads failed (partial failure)."
+
+      - name: Fail on GTFS download failure
+        if: ${{ !inputs.skip_download && steps.download-gtfs.outputs.exit_code == '2' }}
+        run: |
+          echo "::error::All GTFS downloads failed."
+          exit 1
+
+      - name: Download ODPT JSON data
+        id: download-odpt-json
+        if: ${{ !inputs.skip_download }}
+        env:
+          ODPT_ACCESS_TOKEN: ${{ secrets.ODPT_ACCESS_TOKEN }}
+        run: |
+          set +e
+          npx tsx pipeline/scripts/download-odpt-json.ts --targets pipeline/targets/download-odpt-json.ts
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on ODPT JSON partial failure
+        if: ${{ !inputs.skip_download && steps.download-odpt-json.outputs.exit_code == '1' }}
+        run: echo "::warning::Some ODPT JSON downloads failed (partial failure)."
+
+      - name: Fail on ODPT JSON download failure
+        if: ${{ !inputs.skip_download && steps.download-odpt-json.outputs.exit_code == '2' }}
+        run: |
+          echo "::error::All ODPT JSON downloads failed."
+          exit 1
+
+      # ── Transform (GTFS CSV → SQLite → JSON) ──────────────
+      - name: Build SQLite DB
+        run: npm run pipeline:build:db
+
+      - name: Build JSON
+        run: npm run pipeline:build:json
+
+      - name: Build train shapes
+        run: npm run pipeline:build:train-shapes
+
+      - name: Sync to public/
+        run: npm run data:sync
+
+      # ── Validate ───────────────────────────────────────────
+      - name: Validate generated data
+        id: validate
+        # Exit codes: 0=OK, 1=warnings, 2=errors.
+        # Capture exit code so the step doesn't fail on warnings (exit 1).
+        run: |
+          set +e
+          npm run pipeline:validate 2>&1 | tee validate-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          cat validate-output.txt >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail on validation errors
+        if: steps.validate.outputs.exit_code == '2'
+        run: |
+          echo "::error::Generated data validation failed. See Job Summary for details."
+          exit 1
+
+      # ── Report & Deploy ────────────────────────────────────
+      - name: Detect changes
+        id: changes
+        run: |
+          if git diff --quiet public/data/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No data changes detected."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Data changes detected. Will commit and push."
+          fi
+
+      - name: Job Summary
+        if: always()
+        run: |
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "---" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.changes.outputs.changed }}" = "true" ]; then
+            echo "## Updated files" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            git diff --stat public/data/ >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## No data changes" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "GTFS data is already up to date. No commit created." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Commit & Push
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/
+          git commit -m "chore(data): update transit data"
+          git push
