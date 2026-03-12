@@ -7,6 +7,7 @@
 
 import { readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import type { OdptJsonSourceDefinition } from '../types/odpt-json-resource';
 
@@ -33,7 +34,7 @@ export function listOdptJsonSourceNames(): string[] {
  */
 export async function loadOdptJsonSource(name: string): Promise<OdptJsonSourceDefinition> {
   const filePath = join(RESOURCES_DIR, `${name}.ts`);
-  const mod = (await import(filePath)) as { default: OdptJsonSourceDefinition };
+  const mod = (await import(pathToFileURL(filePath).href)) as { default: OdptJsonSourceDefinition };
   return mod.default;
 }
 

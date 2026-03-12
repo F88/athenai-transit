@@ -8,6 +8,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -224,7 +225,7 @@ export function runMain(fn: () => Promise<void>): void {
  */
 export async function loadTargetFile(filePath: string): Promise<string[]> {
   const absolutePath = resolve(filePath);
-  const mod = (await import(absolutePath)) as { default: string[] };
+  const mod = (await import(pathToFileURL(absolutePath).href)) as { default: string[] };
   return mod.default;
 }
 

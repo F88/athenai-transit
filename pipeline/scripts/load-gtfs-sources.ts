@@ -7,6 +7,7 @@
 
 import { readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import type { GtfsSourceDefinition } from '../types/gtfs-resource';
 
@@ -33,7 +34,7 @@ export function listGtfsSourceNames(): string[] {
  */
 export async function loadGtfsSource(name: string): Promise<GtfsSourceDefinition> {
   const filePath = join(RESOURCES_DIR, `${name}.ts`);
-  const mod = (await import(filePath)) as { default: GtfsSourceDefinition };
+  const mod = (await import(pathToFileURL(filePath).href)) as { default: GtfsSourceDefinition };
   return mod.default;
 }
 
