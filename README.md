@@ -1,5 +1,7 @@
 # あてのない乗換案内 Athenai Transit
 
+Transit explorer without destination — discover where you can go from here
+
 目的地を入力しない、お散歩支援型の乗換案内Webアプリ。「今、ここからどこへ行けるか」という偶然の発見と街歩きの楽しさを提供します。
 
 ## 主な機能
