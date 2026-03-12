@@ -1,4 +1,4 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env -S npx tsx
 
 /**
  * Convert per-source GTFS SQLite databases into optimized JSON files.
@@ -21,7 +21,7 @@
 
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 
 import { loadAllGtfsSources } from './load-gtfs-sources';
 
@@ -69,7 +69,7 @@ function timeToMinutes(time: string): number {
 function writeJson(filePath: string, data: unknown): void {
   writeFileSync(filePath, JSON.stringify(data));
   const size = statSync(filePath).size;
-  const name = filePath.split('/').pop()!;
+  const name = basename(filePath);
   console.log(`  ${name.padEnd(20)} ${formatBytes(size).padStart(10)}`);
 }
 

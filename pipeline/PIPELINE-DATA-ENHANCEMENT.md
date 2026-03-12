@@ -64,7 +64,7 @@ pipeline/
 
 | 型               | 説明                                                                      |
 | ---------------- | ------------------------------------------------------------------------- |
-| `PipelineConfig` | `directory`, `prefix`, `filename?` — 全リソース共通のパイプライン設定     |
+| `PipelineConfig` | `outDir`, `prefix`, `outFileName?` — 全リソース共通のパイプライン設定     |
 | `Provider`       | `nameJa`, `nameEn`, `url?` — データ提供者                                 |
 | `License`        | `name`, `url` — ライセンス情報                                            |
 | `Catalog`        | Discriminated Union: `CatalogOdpt` / `CatalogMunicipal` / `CatalogDirect` |

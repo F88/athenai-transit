@@ -1,4 +1,4 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env -S npx tsx
 
 /**
  * Download GTFS static data from ODPT public API.
@@ -143,9 +143,9 @@ function archiveZip(zipPath: string, archiveDir: string, zipFileName: string): s
 // ---------------------------------------------------------------------------
 
 function printUsage(): void {
-  console.log('Usage: npx tsx scripts/download-gtfs.ts <source-name>');
-  console.log('       npx tsx scripts/download-gtfs.ts --targets <file>');
-  console.log('       npx tsx scripts/download-gtfs.ts --list\n');
+  console.log('Usage: npx tsx pipeline/scripts/download-gtfs.ts <source-name>');
+  console.log('       npx tsx pipeline/scripts/download-gtfs.ts --targets <file>');
+  console.log('       npx tsx pipeline/scripts/download-gtfs.ts --list\n');
   console.log('Options:');
   console.log('  --targets <file>  Batch download from a target list file (.ts)');
   console.log('  --list            List available source names');

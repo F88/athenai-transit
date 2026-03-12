@@ -1,4 +1,4 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env -S npx tsx
 
 /**
  * Download ODPT JSON API data.
@@ -72,7 +72,7 @@ function buildUrl(source: OdptJsonSourceDefinition, accessToken: string | undefi
     );
   }
   const sep = endpointUrl.includes('?') ? '&' : '?';
-  return `${endpointUrl}${sep}acl:consumerKey=${accessToken}`;
+  return `${endpointUrl}${sep}acl:consumerKey=${encodeURIComponent(accessToken)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -122,9 +122,9 @@ function archiveJson(body: string, archiveDir: string, filename: string): string
 // ---------------------------------------------------------------------------
 
 function printUsage(): void {
-  console.log('Usage: npx tsx scripts/download-odpt-json.ts <source-name>');
-  console.log('       npx tsx scripts/download-odpt-json.ts --targets <file>');
-  console.log('       npx tsx scripts/download-odpt-json.ts --list\n');
+  console.log('Usage: npx tsx pipeline/scripts/download-odpt-json.ts <source-name>');
+  console.log('       npx tsx pipeline/scripts/download-odpt-json.ts --targets <file>');
+  console.log('       npx tsx pipeline/scripts/download-odpt-json.ts --list\n');
   console.log('Options:');
   console.log('  --targets <file>  Batch download from a target list file (.ts)');
   console.log('  --list            List available source names');
