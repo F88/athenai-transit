@@ -84,7 +84,7 @@ async function fetchAllDeploymentLines(project) {
 
     const match = output.match(NEXT_PAGE_REGEX);
     if (match?.[1]) {
-      nextTimestamp = match[1];
+      nextTimestamp = Number(match[1]);
       console.log(`  📄 Fetching next page (timestamp: ${nextTimestamp})...`);
     } else {
       break;

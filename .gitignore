@@ -16,7 +16,7 @@
 .claude/settings.local.json
 .claude/skills/shadcn/
 
-# Agent skills (installed externally)
+# Agent skills (installed externally; shadcn creates both .agents/ and .agent/)
 .agents/skills/shadcn/
 .agent/skills/shadcn/
 
