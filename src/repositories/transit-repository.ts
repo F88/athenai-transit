@@ -7,7 +7,13 @@
  */
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
-import type { DepartureGroup, RouteType, Stop, StopWithMeta } from '../types/app/transit';
+import type {
+  DepartureGroup,
+  FullDayStopDeparture,
+  RouteType,
+  Stop,
+  StopWithMeta,
+} from '../types/app/transit';
 import type { CollectionResult, Result } from '../types/app/repository';
 
 /**
@@ -188,6 +194,35 @@ export interface TransitRepository {
     headsign: string,
     dateTime: Date,
   ): Promise<CollectionResult<number>>;
+
+  /**
+   * Returns all departures for all route/headsign combinations at a stop
+   * on the service day derived from `dateTime`.
+   *
+   * Unlike {@link getFullDayDepartures}, this method does not require a
+   * specific route/headsign — it returns every departure at the stop,
+   * each tagged with its route and headsign.
+   *
+   * ### Sorting
+   * Results are sorted by departure time (earliest first). When two
+   * departures share the same minute, the order among them is unspecified.
+   *
+   * ### Calendar filtering
+   * Only service IDs active on the GTFS service day are included.
+   *
+   * ### Error conditions
+   * - No departure data for `stopId`:
+   *   `{ success: true, data: [], truncated: false }` (not an error).
+   *
+   * @param stopId   - GTFS stop_id.
+   * @param dateTime - Reference real-world time. The repository converts
+   *                   this to the GTFS service day internally (03:00 boundary).
+   * @returns All departures at the stop for the service day.
+   */
+  getFullDayDeparturesForStop(
+    stopId: string,
+    dateTime: Date,
+  ): Promise<CollectionResult<FullDayStopDeparture>>;
 
   /**
    * Returns all stops in the dataset.

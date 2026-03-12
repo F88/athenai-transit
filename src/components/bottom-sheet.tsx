@@ -27,7 +27,7 @@ interface BottomSheetProps {
   infoLevel: InfoLevel;
   onStopSelected: (stopId: string) => void;
   onShowTimetable?: (stopId: string, group: DepartureGroup) => void;
-  onShowStopTimetable?: (stopId: string, groups: DepartureGroup[]) => void;
+  onShowStopTimetable?: (stopId: string) => void;
 }
 
 export function BottomSheet({

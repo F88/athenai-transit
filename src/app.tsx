@@ -218,36 +218,21 @@ export default function App() {
   );
 
   const handleShowStopTimetable = useCallback(
-    async (stopId: string, groups: DepartureGroup[]) => {
+    async (stopId: string) => {
       const stop = radiusStops.find((s) => s.stop.stop_id === stopId)?.stop;
       if (!stop) {
         return;
       }
 
-      // Fetch all route/headsign combinations and merge into a single list
-      const results = await Promise.all(
-        groups.map((g) =>
-          repo.getFullDayDepartures(stopId, g.route.route_id, g.headsign, dateTime),
-        ),
-      );
-      const allDepartures = results
-        .flatMap((result, i) =>
-          result.success
-            ? result.data.map((m) => ({
-                minutes: m,
-                route: groups[i].route,
-                headsign: groups[i].headsign,
-              }))
-            : [],
-        )
-        .sort((a, b) => a.minutes - b.minutes);
+      const result = await repo.getFullDayDeparturesForStop(stopId, dateTime);
+      const departures = result.success ? result.data : [];
 
       setTimetableModal({
         type: 'stop',
         stop,
         routeTypes: routeTypeMap.get(stopId) ?? [3],
         serviceDate: getServiceDay(dateTime),
-        departures: allDepartures,
+        departures,
       });
     },
     [repo, dateTime, radiusStops, routeTypeMap],

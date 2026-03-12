@@ -22,7 +22,7 @@ interface NearbyStopProps {
   viewId: string;
   onStopSelected: (stopId: string) => void;
   onShowTimetable?: (stopId: string, group: DepartureGroup) => void;
-  onShowStopTimetable?: (stopId: string, groups: DepartureGroup[]) => void;
+  onShowStopTimetable?: (stopId: string) => void;
 }
 
 export function NearbyStop({
@@ -79,7 +79,7 @@ export function NearbyStop({
             className="ml-auto shrink-0 cursor-pointer rounded border border-[#1976d2] bg-transparent px-2 py-0.5 text-xs whitespace-nowrap text-[#1976d2] active:bg-[rgba(25,118,210,0.1)] dark:border-blue-400 dark:text-blue-400"
             onClick={(e) => {
               e.stopPropagation();
-              onShowStopTimetable(stop.stop_id, groups);
+              onShowStopTimetable(stop.stop_id);
             }}
           >
             時刻表

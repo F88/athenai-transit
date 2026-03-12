@@ -5,7 +5,14 @@ import type {
   TimetableJson,
 } from '../types/data/transit-json';
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
-import type { DepartureGroup, Route, RouteType, Stop, StopWithMeta } from '../types/app/transit';
+import type {
+  DepartureGroup,
+  FullDayStopDeparture,
+  Route,
+  RouteType,
+  Stop,
+  StopWithMeta,
+} from '../types/app/transit';
 import type { CollectionResult, Result } from '../types/app/repository';
 import { MAX_STOPS_RESULT } from '../types/app/repository';
 import type { TransitDataSource } from '../datasources/transit-data-source';
@@ -386,6 +393,40 @@ export class GtfsRepository implements TransitRepository {
 
     allMinutes.sort((a, b) => a - b);
     return Promise.resolve({ success: true, data: allMinutes, truncated: false });
+  }
+
+  /** {@inheritDoc TransitRepository.getFullDayDeparturesForStop} */
+  getFullDayDeparturesForStop(
+    stopId: string,
+    dateTime: Date,
+  ): Promise<CollectionResult<FullDayStopDeparture>> {
+    const groups = this.timetable[stopId];
+    if (!groups) {
+      return Promise.resolve({ success: true, data: [], truncated: false });
+    }
+
+    const serviceDate = getServiceDay(dateTime);
+    const activeServiceIds = this.getActiveServiceIds(serviceDate);
+    const departures: FullDayStopDeparture[] = [];
+
+    for (const group of groups) {
+      const route = this.routeMap.get(group.r);
+      if (!route) {
+        continue;
+      }
+
+      for (const [serviceId, times] of Object.entries(group.d)) {
+        if (!activeServiceIds.has(serviceId)) {
+          continue;
+        }
+        for (const t of times) {
+          departures.push({ minutes: t, route, headsign: group.h });
+        }
+      }
+    }
+
+    departures.sort((a, b) => a.minutes - b.minutes);
+    return Promise.resolve({ success: true, data: departures, truncated: false });
   }
 
   /** {@inheritDoc TransitRepository.getRouteTypesForStop} */

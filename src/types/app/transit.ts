@@ -166,6 +166,19 @@ export interface DepartureViewMeta {
 }
 
 /**
+ * A single departure in a full-day stop timetable.
+ *
+ * Returned by {@link TransitRepository.getFullDayDeparturesForStop}
+ * and used directly by the timetable modal.
+ */
+export interface FullDayStopDeparture {
+  /** Minutes from midnight of the service day. */
+  minutes: number;
+  route: Route;
+  headsign: string;
+}
+
+/**
  * A single departure flattened from {@link DepartureGroup}.
  *
  * Used by the T1 (Stop) view to display all departures in

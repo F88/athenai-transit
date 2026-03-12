@@ -15,7 +15,14 @@
  */
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
-import type { DepartureGroup, Route, RouteType, Stop, StopWithMeta } from '../types/app/transit';
+import type {
+  DepartureGroup,
+  FullDayStopDeparture,
+  Route,
+  RouteType,
+  Stop,
+  StopWithMeta,
+} from '../types/app/transit';
 import type { CollectionResult, Result } from '../types/app/repository';
 import { MAX_STOPS_RESULT } from '../types/app/repository';
 import type { TransitRepository } from './transit-repository';
@@ -576,6 +583,30 @@ export class MockRepository implements TransitRepository {
       minutes.push(h * 60, h * 60 + 15, h * 60 + 30, h * 60 + 45);
     }
     return Promise.resolve({ success: true, data: minutes, truncated: false });
+  }
+
+  /** {@inheritDoc TransitRepository.getFullDayDeparturesForStop} */
+  getFullDayDeparturesForStop(
+    stopId: string,
+    ...[ /* dateTime */]: [Date]
+  ): Promise<CollectionResult<FullDayStopDeparture>> {
+    const stopRoutes = STOP_ROUTES[stopId] ?? [];
+    const departures: FullDayStopDeparture[] = [];
+
+    for (const { routeId, headsign } of stopRoutes) {
+      const route = ROUTES.find((r) => r.route_id === routeId);
+      if (!route) {
+        continue;
+      }
+      for (let h = 5; h <= 23; h++) {
+        for (const offset of [0, 15, 30, 45]) {
+          departures.push({ minutes: h * 60 + offset, route, headsign });
+        }
+      }
+    }
+
+    departures.sort((a, b) => a.minutes - b.minutes);
+    return Promise.resolve({ success: true, data: departures, truncated: false });
   }
 
   /** {@inheritDoc TransitRepository.getAllStops} */
