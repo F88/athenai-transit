@@ -1,0 +1,63 @@
+# OS
+.DS_Store
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/mcp.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Claude
+.claude/settings.local.json
+
+# Logs
+logs
+*.log
+
+# npm, yarn, pnpm, lerna logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+
+
+#### Pipeline files and directories
+
+# Pipeline local env (contains API tokens)
+pipeline/.env.pipeline.*
+
+# Pipeline archives (downloaded ZIP/JSON originals)
+pipeline/archives/
+
+# Large GTFS sources (re-downloadable)
+pipeline/data/gtfs/toei-bus/
+
+# Legacy archive locations (to be removed after migration)
+pipeline/data/gtfs/*/archives/
+pipeline/data/gtfs-rt/*/archives/
+
+# Pipeline build artifacts (SQLite databases)
+pipeline/build/
+
+
+### Web app
+
+# Node modules and build artifacts
+node_modules
+dist
+dist-ssr
+*.local
+
+### Vercel
+.vercel
+
+### Storybook
+*storybook.log
+storybook-static

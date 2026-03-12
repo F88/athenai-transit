@@ -1,0 +1,13 @@
+MD007:
+  indent: 4
+
+MD013:
+  line_length: 500
+
+MD025:
+  front_matter_title: ''
+  level: 1
+
+MD033:
+  allowed_elements:
+    - br
