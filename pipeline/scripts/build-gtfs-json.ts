@@ -356,8 +356,11 @@ function extractTimetable(
 
   console.log(`  [${prefix}] ${trips.length} trips, ${stopTimes.length} stop_times`);
 
-  // timetable: prefixed stop_id -> Map<"prefixed_route_id|headsign", Map<prefixed_service_id, minutes[]>>
-  const timetable = new Map<string, Map<string, Map<string, number[]>>>();
+  // timetable: stopId -> routeId -> headsign -> serviceId -> minutes[]
+  type ServiceMap = Map<string, number[]>;
+  type HeadsignMap = Map<string, ServiceMap>;
+  type RouteMap = Map<string, HeadsignMap>;
+  const timetable = new Map<string, RouteMap>();
 
   let skipped = 0;
   for (const st of stopTimes) {
@@ -370,19 +373,24 @@ function extractTimetable(
     const prefixedStopId = `${prefix}:${st.stop_id}`;
     const prefixedRouteId = `${prefix}:${trip.route_id}`;
     const prefixedServiceId = `${prefix}:${trip.service_id}`;
-    const groupKey = `${prefixedRouteId}|${trip.headsign}`;
     const minutes = timeToMinutes(st.departure_time);
 
-    let stopGroups = timetable.get(prefixedStopId);
-    if (!stopGroups) {
-      stopGroups = new Map();
-      timetable.set(prefixedStopId, stopGroups);
+    let routeMap = timetable.get(prefixedStopId);
+    if (!routeMap) {
+      routeMap = new Map();
+      timetable.set(prefixedStopId, routeMap);
     }
 
-    let serviceMap = stopGroups.get(groupKey);
+    let headsignMap = routeMap.get(prefixedRouteId);
+    if (!headsignMap) {
+      headsignMap = new Map();
+      routeMap.set(prefixedRouteId, headsignMap);
+    }
+
+    let serviceMap = headsignMap.get(trip.headsign);
     if (!serviceMap) {
       serviceMap = new Map();
-      stopGroups.set(groupKey, serviceMap);
+      headsignMap.set(trip.headsign, serviceMap);
     }
 
     let times = serviceMap.get(prefixedServiceId);
@@ -414,25 +422,26 @@ function extractTimetable(
  * Convert a per-source timetable Map to a JSON-serializable Record.
  */
 function timetableToJson(
-  timetable: Map<string, Map<string, Map<string, number[]>>>,
+  timetable: Map<string, Map<string, Map<string, Map<string, number[]>>>>,
 ): Record<string, { r: string; h: string; d: Record<string, number[]> }[]> {
   const json: Record<string, { r: string; h: string; d: Record<string, number[]> }[]> = {};
 
   let groupCount = 0;
-  for (const [stopId, groups] of timetable) {
+  for (const [stopId, routeMap] of timetable) {
     const stopGroups: { r: string; h: string; d: Record<string, number[]> }[] = [];
 
-    for (const [groupKey, serviceMap] of groups) {
-      const [routeId, headsign] = groupKey.split('|');
-      const services: Record<string, number[]> = {};
+    for (const [routeId, headsignMap] of routeMap) {
+      for (const [headsign, serviceMap] of headsignMap) {
+        const services: Record<string, number[]> = {};
 
-      for (const [serviceId, times] of serviceMap) {
-        times.sort((a, b) => a - b);
-        services[serviceId] = times;
+        for (const [serviceId, times] of serviceMap) {
+          times.sort((a, b) => a - b);
+          services[serviceId] = times;
+        }
+
+        stopGroups.push({ r: routeId, h: headsign, d: services });
+        groupCount++;
       }
-
-      stopGroups.push({ r: routeId, h: headsign, d: services });
-      groupCount++;
     }
 
     json[stopId] = stopGroups;
