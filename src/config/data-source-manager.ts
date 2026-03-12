@@ -32,14 +32,14 @@ export class DataSourceManager {
   constructor() {
     this.groups = settings as SourceGroup[];
     const allIds = new Set(this.groups.map((g) => g.id));
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
         this.enabledIds = new Set(JSON.parse(stored) as string[]);
-      } catch {
+      } else {
         this.enabledIds = allIds;
       }
-    } else {
+    } catch {
       this.enabledIds = allIds;
     }
   }

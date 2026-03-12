@@ -6,12 +6,12 @@ const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
  * Format a Date as a compact Japanese datetime string.
  *
  * @param date - The date to format.
- * @returns Formatted string like `"3 月 4 日 (火) 09:15"`.
+ * @returns Formatted string like `"3 月 4 日 (水) 09:15"`.
  *
  * @example
  * ```ts
- * formatDateTime(new Date("2026-03-04T09:15:00"))
- * // => "3 月 4 日 (火) 09:15"
+ * formatDateTimeJaJp(new Date("2026-03-04T09:15:00"))
+ * // => "3 月 4 日 (水) 09:15"
  * ```
  */
 export function formatDateTimeJaJp(date: Date): string {
