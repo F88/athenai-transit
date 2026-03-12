@@ -1,0 +1,14 @@
+[
+  {
+    "id": "toei-bus",
+    "name_ja": "都営バス",
+    "category": "bus",
+    "prefixes": ["tobus"]
+  },
+  {
+    "id": "toei-train",
+    "name_ja": "都営電車",
+    "category": "train",
+    "prefixes": ["toaran"]
+  }
+]
