@@ -14,11 +14,11 @@
 
 # Claude
 .claude/settings.local.json
-.claude/skills/shadcn/
+.claude/skills/shadcn
 
 # Agent skills (installed externally; shadcn creates both .agents/ and .agent/)
-.agents/skills/shadcn/
-.agent/skills/shadcn/
+.agents/skills/shadcn
+.agent/skills/shadcn
 
 # Logs
 logs
@@ -35,18 +35,17 @@ lerna-debug.log*
 
 #### Pipeline files and directories
 
+## Reference documents for development and testing (not needed in production)
+pipeline/references/
+
 # Pipeline local env (contains API tokens)
 pipeline/.env.pipeline.*
 
 # Pipeline archives (downloaded ZIP/JSON originals)
 pipeline/archives/
 
-# Large GTFS sources (re-downloadable)
-pipeline/data/gtfs/toei-bus/
-
-# Legacy archive locations (to be removed after migration)
-pipeline/data/gtfs/*/archives/
-pipeline/data/gtfs-rt/*/archives/
+# Large sources (re-downloadable)
+pipeline/data/
 
 # Pipeline build artifacts (SQLite databases)
 pipeline/build/
