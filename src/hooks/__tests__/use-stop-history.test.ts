@@ -118,6 +118,27 @@ describe('useStopHistory', () => {
       expect(stored[0]).not.toHaveProperty('routeType');
     });
 
+    it('drops entries with corrupted stopWithMeta', () => {
+      const validEntry = {
+        stopWithMeta: makeStopMeta('valid'),
+        routeTypes: [3],
+        selectedAt: 100,
+      };
+      const corruptedEntries = [
+        { routeTypes: [3], selectedAt: 50 }, // missing stopWithMeta
+        { stopWithMeta: null, routeTypes: [3], selectedAt: 60 }, // null stopWithMeta
+        { stopWithMeta: { stop: null }, routeTypes: [3], selectedAt: 70 }, // null stop
+        { stopWithMeta: { stop: {} }, routeTypes: [3], selectedAt: 80 }, // missing stop_id
+        { stopWithMeta: 'invalid', routeTypes: [3], selectedAt: 90 }, // non-object
+      ];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...corruptedEntries, validEntry]));
+
+      const { result } = renderHook(() => useStopHistory());
+
+      expect(result.current.history).toHaveLength(1);
+      expect(result.current.history[0].stopWithMeta.stop.stop_id).toBe('valid');
+    });
+
     it('preserves data shape when no migration is needed', () => {
       const newEntry = {
         stopWithMeta: makeStopMeta('new'),

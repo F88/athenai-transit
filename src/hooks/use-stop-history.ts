@@ -11,7 +11,19 @@ const STORAGE_KEY = 'stop-history';
  * @param entry - A raw parsed entry that may have the old or new schema.
  * @returns A properly shaped {@link StopHistoryEntry}.
  */
-function migrateEntry(entry: Record<string, unknown>): StopHistoryEntry {
+function migrateEntry(entry: Record<string, unknown>): StopHistoryEntry | null {
+  // Validate required nested structure
+  const swm = entry.stopWithMeta;
+  if (
+    typeof swm !== 'object' ||
+    swm === null ||
+    typeof (swm as Record<string, unknown>).stop !== 'object' ||
+    (swm as Record<string, unknown>).stop === null ||
+    typeof ((swm as Record<string, unknown>).stop as Record<string, unknown>).stop_id !== 'string'
+  ) {
+    return null;
+  }
+
   if ('routeTypes' in entry && Array.isArray(entry.routeTypes)) {
     return entry as unknown as StopHistoryEntry;
   }
@@ -21,7 +33,7 @@ function migrateEntry(entry: Record<string, unknown>): StopHistoryEntry {
       ? (entry.routeType as RouteType)
       : (3 as const);
   return {
-    stopWithMeta: entry.stopWithMeta as StopHistoryEntry['stopWithMeta'],
+    stopWithMeta: swm as StopHistoryEntry['stopWithMeta'],
     routeTypes: [legacyType],
     selectedAt: (entry.selectedAt as number) ?? 0,
   };
@@ -57,7 +69,7 @@ function loadHistory(): StopHistoryEntry[] {
       return [];
     }
     const parsed = JSON.parse(raw) as Record<string, unknown>[];
-    const migrated = parsed.map(migrateEntry);
+    const migrated = parsed.map(migrateEntry).filter((e): e is StopHistoryEntry => e !== null);
     // Re-save immediately so legacy entries are persisted in the new format
     saveHistory(migrated);
     return migrated;
