@@ -26,18 +26,18 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 
 ### ファイル構成
 
-| ディレクトリ          | 配置基準                                                |
-| --------------------- | ------------------------------------------------------- |
-| `src/domain/`         | ドメイン固有の純粋関数 (例: transit ロジック、i18n)     |
-| `src/utils/`          | 汎用の純粋関数 (外部ライブラリ依存なし)                |
-| `src/lib/`            | 外部ライブラリ依存ヘルパー (例: Leaflet)                |
-| `src/hooks/`          | カスタム React Hooks (状態 + 副作用のオーケストレーション) |
-| `src/components/`     | React コンポーネント (ロジックは import して使用)       |
-| `src/components/ui/`  | shadcn/ui コンポーネント (CLI 管理)                     |
-| `src/repositories/`   | データアクセス層 (`TransitRepository` インターフェース) |
-| `src/types/`          | 型定義                                                  |
-| `src/config/`         | 設定値                                                  |
-| `pipeline/`           | データパイプライン ([pipeline/README.md](./pipeline/README.md) 参照) |
+| ディレクトリ         | 配置基準                                                             |
+| -------------------- | -------------------------------------------------------------------- |
+| `src/domain/`        | ドメイン固有の純粋関数 (例: transit ロジック、i18n)                  |
+| `src/utils/`         | 汎用の純粋関数 (外部ライブラリ依存なし)                              |
+| `src/lib/`           | 外部ライブラリ依存ヘルパー (例: Leaflet)                             |
+| `src/hooks/`         | カスタム React Hooks (状態 + 副作用のオーケストレーション)           |
+| `src/components/`    | React コンポーネント (ロジックは import して使用)                    |
+| `src/components/ui/` | shadcn/ui コンポーネント (CLI 管理)                                  |
+| `src/repositories/`  | データアクセス層 (`TransitRepository` インターフェース)              |
+| `src/types/`         | 型定義                                                               |
+| `src/config/`        | 設定値                                                               |
+| `pipeline/`          | データパイプライン ([pipeline/README.md](./pipeline/README.md) 参照) |
 
 ## Logger
 

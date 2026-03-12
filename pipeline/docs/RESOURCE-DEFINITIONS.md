@@ -51,9 +51,9 @@ BaseResource
 
 GTFS/GTFS-JP ソース固有のフィールド。
 
-| フィールド    | 型            | 説明                                     |
-| ------------- | ------------- | ---------------------------------------- |
-| `downloadUrl` | `string`      | GTFS ZIP のダウンロード URL              |
+| フィールド    | 型                | 説明                                                |
+| ------------- | ----------------- | --------------------------------------------------- |
+| `downloadUrl` | `string`          | GTFS ZIP のダウンロード URL                         |
 | `routeTypes`  | `GtfsRouteType[]` | 含まれる路線種別 (`'bus'`, `'rail'`, `'subway'` 等) |
 
 ### OdptJsonResource (extends BaseResource)

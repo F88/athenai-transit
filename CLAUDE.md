@@ -99,11 +99,11 @@ When refactoring or moving files, always verify path resolution and imports stil
 
 ## Documentation
 
-| File             | Purpose                                                                                                      |
-| ---------------- | ------------------------------------------------------------------------------------------------------------ |
-| `PRD.md`         | Product requirements (concept, UX requirements, architecture overview). **What** to build and **why**.       |
+| File             | Purpose                                                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| `PRD.md`         | Product requirements (concept, UX requirements, architecture overview). **What** to build and **why**.          |
 | `DEVELOPMENT.md` | Developer guide (code quality, z-index layers, mode definitions, API specs, styling, logger). **How** to build. |
-| `CLAUDE.md`      | This file. High-level architecture and rules for Claude Code.                                                |
+| `CLAUDE.md`      | This file. High-level architecture and rules for Claude Code.                                                   |
 
 ## MCP Setup
 
