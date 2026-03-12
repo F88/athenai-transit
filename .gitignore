@@ -31,9 +31,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+### Local documentation (not needed in production)
+__LOCAL_DOCS__/
 
-
-#### Pipeline files and directories
+### Pipeline files and directories
 
 ## Reference documents for development and testing (not needed in production)
 pipeline/references/

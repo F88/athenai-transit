@@ -307,7 +307,7 @@ function extractTimetable(
   db: Database.Database,
   prefix: string,
 ): {
-  timetable: Map<string, Map<string, Map<string, number[]>>>;
+  timetable: Map<string, Map<string, Map<string, Map<string, number[]>>>>;
   tripCount: number;
   stopTimeCount: number;
   skipped: number;
