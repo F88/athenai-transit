@@ -12,6 +12,10 @@ const toeiTrain: GtfsSourceDefinition = {
     },
     dataFormat: { type: 'GTFS/GTFS-JP', jpVersion: '3.0' },
     routeTypes: ['tram', 'subway', 'monorail'],
+    routeColorFallbacks: {
+      '5': 'C93896', // Nippori-Toneri Liner
+      '6': '6CA782', // Tokyo Sakura Tram (Arakawa Line)
+    },
     downloadUrl: 'https://api-public.odpt.org/api/v4/files/Toei/data/Toei-Train-GTFS.zip',
     catalog: {
       type: 'odpt',

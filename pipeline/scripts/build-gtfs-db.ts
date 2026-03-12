@@ -265,7 +265,14 @@ interface ImportSummary {
 // Schema introspection helpers
 // ---------------------------------------------------------------------------
 
-/** Extract column definitions from a CREATE TABLE DDL. */
+/**
+ * Extract column definitions from a CREATE TABLE DDL.
+ *
+ * NOTE: The regex assumes single-word types (TEXT, INTEGER, REAL) which is
+ * sufficient for the current GTFS schema. If compound types like DECIMAL(10,2)
+ * are needed in the future, consider replacing DDL parsing with a structured
+ * schema definition.
+ */
 function extractSchemaColumns(ddl: string): { name: string; nullable: boolean }[] {
   const columns: { name: string; nullable: boolean }[] = [];
   // Match column definitions: column_name TYPE [NOT NULL] [...]

@@ -38,6 +38,11 @@ export interface GtfsResource extends BaseResource {
   routeTypes: GtfsRouteType[];
   /** Download URL for the GTFS ZIP file. */
   downloadUrl: string;
+  /**
+   * Fallback route colors for routes missing route_color in GTFS data.
+   * Key: route_id (without prefix), Value: hex color (without #).
+   */
+  routeColorFallbacks?: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------

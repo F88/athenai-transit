@@ -41,6 +41,7 @@ const OUTPUT_DIR = join(ROOT, 'build/data');
 interface BuildSource {
   prefix: string;
   nameEn: string;
+  routeColorFallbacks: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------
@@ -136,17 +137,10 @@ function extractStops(
   return json;
 }
 
-// Fallback route colors for GTFS sources missing route_color.
-// Applied only when the GTFS route_color field is empty.
-// Key: "prefix:route_id"
-const ROUTE_COLOR_FALLBACK: Record<string, string> = {
-  'toaran:5': 'C93896', // Nippori-Toneri Liner
-  'toaran:6': '6CA782', // Tokyo Sakura Tram (Arakawa Line)
-};
-
 function extractRoutes(
   db: Database.Database,
   prefix: string,
+  routeColorFallbacks: Record<string, string>,
 ): { i: string; s: string; l: string; t: number; c: string; tc: string }[] {
   const routes = db
     .prepare(
@@ -171,7 +165,7 @@ function extractRoutes(
       s: r.route_short_name ?? '',
       l: r.route_long_name ?? '',
       t: r.route_type,
-      c: r.route_color || ROUTE_COLOR_FALLBACK[prefixedId] || '',
+      c: r.route_color || routeColorFallbacks[r.route_id] || '',
       tc: r.route_text_color ?? '',
     };
   });
@@ -459,6 +453,7 @@ async function main(): Promise<void> {
   const sources: BuildSource[] = allDefs.map((d) => ({
     prefix: d.pipeline.prefix,
     nameEn: d.resource.nameEn,
+    routeColorFallbacks: d.resource.routeColorFallbacks ?? {},
   }));
 
   if (sources.length === 0) {
@@ -477,7 +472,7 @@ async function main(): Promise<void> {
 
     // Extract data
     const stops = extractStops(db, source.prefix);
-    const routes = extractRoutes(db, source.prefix);
+    const routes = extractRoutes(db, source.prefix, source.routeColorFallbacks);
     const calendar = extractCalendar(db, source.prefix);
     const shapes = extractShapes(db, source.prefix);
     const { timetable } = extractTimetable(db, source.prefix);

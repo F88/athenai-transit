@@ -121,21 +121,19 @@ const REQUIRED_FILES = [
 // ---------------------------------------------------------------------------
 
 /**
- * Sanitize untrusted external data (e.g. GTFS service IDs, source names)
- * for safe use in workflow commands, Markdown output, and HTML contexts.
+ * Sanitize untrusted external data for safe use in GitHub Actions workflow
+ * commands. Escapes characters that have special meaning in GHA annotations
+ * (`%`, `\r`, `\n`) to prevent workflow command injection.
  *
- * Uses an allowlist approach: only characters expected in GTFS identifiers
- * are permitted. All other characters are stripped. This prevents:
- * - Workflow command injection via newlines + `::` delimiters
- * - URL-encoded newline injection (`%0A`, `%0D`) — `%` is not in the allowlist
- * - Markdown injection via `[]()`, `<>`, `` ` `` etc.
- * - HTML injection via `<script>`, event handlers, etc.
+ * Preserves the original content (including Japanese characters) for
+ * readable log output.
  *
+ * @see https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
  * @param value - Untrusted string to sanitize
- * @returns Sanitized string containing only safe characters
+ * @returns Escaped string safe for GHA workflow commands
  */
 function sanitize(value: string): string {
-  return value.replace(/[^a-zA-Z0-9 \-_:.,()/]/g, '');
+  return value.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
 }
 
 /**
