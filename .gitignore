@@ -17,6 +17,7 @@
 .claude/skills/shadcn/
 
 # Agent skills (installed externally)
+.agents/skills/shadcn/
 .agent/skills/shadcn/
 
 # Logs
