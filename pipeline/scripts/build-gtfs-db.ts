@@ -22,6 +22,7 @@ import { createReadStream, existsSync, mkdirSync, readdirSync, rmSync, statSync 
 import { createInterface } from 'node:readline';
 import { join, resolve } from 'node:path';
 
+import { splitCsvLine } from '../lib/csv-utils';
 import { loadAllGtfsSources } from './load-gtfs-sources';
 
 // ---------------------------------------------------------------------------
@@ -332,10 +333,7 @@ async function openCsvStream(filePath: string): Promise<CsvStream | null> {
     if (line.length === 0) {
       continue;
     }
-    headers = line
-      .replace(/^\uFEFF/, '')
-      .split(',')
-      .map((h) => h.trim());
+    headers = splitCsvLine(line.replace(/^\uFEFF/, '')).map((h) => h.trim());
   }
 
   // Return headers and an async iterable over remaining data rows
@@ -352,7 +350,7 @@ async function openCsvStream(filePath: string): Promise<CsvStream | null> {
             if (line.length === 0) {
               continue;
             }
-            return { value: line.split(','), done: false as const };
+            return { value: splitCsvLine(line), done: false as const };
           }
         },
       };
