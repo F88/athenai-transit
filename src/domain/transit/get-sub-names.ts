@@ -10,5 +10,6 @@ import type { Stop } from '../../types/app/transit';
 export function getSubNames(stop: Stop): { key: string; value: string }[] {
   return Object.entries(stop.stop_names)
     .filter(([, value]) => value !== stop.stop_name)
+    .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => ({ key, value }));
 }

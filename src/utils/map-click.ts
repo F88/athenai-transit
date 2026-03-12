@@ -1,4 +1,15 @@
 /**
+ * Threshold (ms) for suppressing click events after a zoomend.
+ * Set to 0 to disable suppression entirely.
+ *
+ * This value accounts for the double-tap click deferral
+ * ({@link DOUBLE_TAP_WINDOW_MS}): a pinch-zoom artifact click
+ * may arrive up to ~600ms after zoomend (300ms browser delay +
+ * 300ms deferral), so the window must cover both.
+ */
+export const CLICK_SUPPRESSION_MS = 600;
+
+/**
  * Determines whether a map click event should be suppressed
  * because it was likely triggered by a pinch-zoom gesture.
  *
@@ -12,17 +23,6 @@
  * @param suppressionMs - Maximum elapsed time (ms) to consider the click zoom-related. Defaults to {@link CLICK_SUPPRESSION_MS} (600ms).
  * @returns `true` if the click should be suppressed (likely pinch-zoom artifact).
  */
-/**
- * Threshold (ms) for suppressing click events after a zoomend.
- * Set to 0 to disable suppression entirely.
- *
- * This value accounts for the double-tap click deferral
- * ({@link DOUBLE_TAP_WINDOW_MS}): a pinch-zoom artifact click
- * may arrive up to ~600ms after zoomend (300ms browser delay +
- * 300ms deferral), so the window must cover both.
- */
-export const CLICK_SUPPRESSION_MS = 600;
-
 export function shouldSuppressMapClick(
   lastZoomTime: number,
   clickTime: number,

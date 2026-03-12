@@ -28,7 +28,11 @@ describe('getSubNames', () => {
     };
     const result = getSubNames(stop);
 
-    expect(result).toHaveLength(3);
+    expect(result).toEqual([
+      { key: 'en', value: 'Test Sta.' },
+      { key: 'ja', value: 'テスト駅' },
+      { key: 'ja-Hrkt', value: 'てすとえき' },
+    ]);
   });
 
   it('returns empty array when all entries match stop_name', () => {
@@ -48,11 +52,9 @@ describe('getSubNames', () => {
     };
     const result = getSubNames(stop);
 
-    expect(result).toEqual(
-      expect.arrayContaining([
-        { key: 'ja-Hrkt', value: 'てすと' },
-        { key: 'en', value: 'Test' },
-      ]),
-    );
+    expect(result).toEqual([
+      { key: 'en', value: 'Test' },
+      { key: 'ja-Hrkt', value: 'てすと' },
+    ]);
   });
 });
