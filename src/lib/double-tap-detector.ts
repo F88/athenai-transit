@@ -87,7 +87,20 @@ export function createDoubleTapDetector(options: DoubleTapDetectorOptions): () =
       pendingClickTimer = null;
       allowNextClick = true;
       // Re-dispatch the click so Leaflet / React handles it normally
-      target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      target.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          view: e.view,
+          detail: e.detail,
+          ctrlKey: e.ctrlKey,
+          shiftKey: e.shiftKey,
+          altKey: e.altKey,
+          metaKey: e.metaKey,
+          button: e.button,
+          buttons: e.buttons,
+        }),
+      );
       logger.verbose('deferred click dispatched');
     }, DOUBLE_TAP_WINDOW_MS);
 
