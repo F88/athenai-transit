@@ -3,7 +3,7 @@
  *
  * Fetches all deployments via `vercel ls` (with pagination), then removes
  * the oldest ones that exceed the per-environment retention limit.
- * Removals run serially to avoid rate-limiting issues.
+ * Removals run with limited concurrency (see `CONCURRENCY`) to reduce the risk of rate-limiting issues.
  *
  * Requires the Vercel CLI (`vercel`) to be installed and authenticated.
  *
