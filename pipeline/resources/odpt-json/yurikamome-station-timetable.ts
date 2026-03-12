@@ -26,7 +26,7 @@ const yurikamomeStationTimetable: OdptJsonSourceDefinition = {
     },
     authentication: {
       required: true,
-      method: 'access_token query parameter',
+      method: 'acl:consumerKey query parameter',
       registrationUrl: 'https://developer.odpt.org/',
     },
   },

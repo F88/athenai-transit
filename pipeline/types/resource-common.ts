@@ -38,7 +38,7 @@ export type Catalog = CatalogOdpt | CatalogMunicipal | CatalogDirect;
 /** Authentication is required to access this resource. */
 export interface AuthenticationRequired {
   required: true;
-  /** Authentication method (e.g. "access_token query parameter"). */
+  /** Authentication method (e.g. "acl:consumerKey query parameter"). */
   method: string;
   /** URL where developers can register for API access. */
   registrationUrl: string;
