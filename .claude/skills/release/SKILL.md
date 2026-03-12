@@ -19,10 +19,10 @@ CalVer: `YYYY.MM.DD` (e.g. `2026.03.12`). The user provides the version.
 1. **Update `package.json`** — set `"version"` to the new CalVer version
 2. **Run `npm install`** — to update `package-lock.json`
 3. **Update `CHANGELOG.md`**
-   - Move contents under `[Unreleased]` into a new `[version]` section
-   - If `[Unreleased]` is empty, draft changelog from `git log` since the last tag
-   - Keep `[Unreleased]` header (empty) above the new version section
-   - Follow [Keep a Changelog](https://keepachangelog.com/) format: `### Added`, `### Fixed`, `### Changed`, `### Removed`
+    - Move contents under `[Unreleased]` into a new `[version]` section
+    - If `[Unreleased]` is empty, draft changelog from `git log` since the last tag
+    - Keep `[Unreleased]` header (empty) above the new version section
+    - Follow [Keep a Changelog](https://keepachangelog.com/) format: `### Added`, `### Fixed`, `### Changed`, `### Removed`
 4. **Run all checks** — `npm run typecheck && npm run format && npm run lint:fix && npm run test && npm run build`
 5. **Commit** — `chore(release): {version}`
 6. **Tag** — `v{version}` (e.g. `v2026.03.12`)

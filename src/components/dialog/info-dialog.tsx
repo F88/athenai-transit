@@ -55,7 +55,7 @@ export function InfoDialog({ open, onOpenChange }: InfoDialogProps) {
       <DialogContent className="flex max-h-[80dvh] max-w-120 flex-col gap-0 overflow-hidden">
         <DialogHeader className="border-border shrink-0 border-b pb-3 sm:text-center">
           <DialogTitle className="text-base">Where to Next?</DialogTitle>
-          {`v${__APP_VERSION__}`}
+          {`${__APP_VERSION__}`}
           <DialogDescription className="text-center sm:text-center">
             まだまだ荒削り 鋭意開発中
           </DialogDescription>
