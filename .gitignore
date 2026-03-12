@@ -14,6 +14,10 @@
 
 # Claude
 .claude/settings.local.json
+.claude/skills/shadcn/
+
+# Agent skills (installed externally)
+.agent/skills/shadcn/
 
 # Logs
 logs
