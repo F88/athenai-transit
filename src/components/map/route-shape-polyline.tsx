@@ -49,9 +49,10 @@ export const RouteShapePolylines = memo(function RouteShapePolylines({
 }: RouteShapePolylinesProps) {
   // Precompute styles and sort so dimmed routes render before highlighted.
   const styledShapes = useMemo(() => {
-    const items = shapes.map((shape) => ({
+    const items = shapes.map((shape, idx) => ({
       shape,
       style: getRouteShapeStyle(selectedRouteIds, shape.routeId),
+      stableIndex: idx,
     }));
     if (selectedRouteIds === null) {
       return items;
@@ -68,10 +69,10 @@ export const RouteShapePolylines = memo(function RouteShapePolylines({
       {/* Outlines — rendered into a separate pane with lower z-index */}
       {outline &&
         styledShapes.map(
-          ({ shape, style }, i) =>
+          ({ shape, style, stableIndex }) =>
             style.outline && (
               <Polyline
-                key={`${shape.routeId}-${i}-outline`}
+                key={`${shape.routeId}-${stableIndex}-outline`}
                 positions={shape.points}
                 interactive={false}
                 pane={outlinePane}
@@ -81,9 +82,9 @@ export const RouteShapePolylines = memo(function RouteShapePolylines({
         )}
 
       {/* Fills */}
-      {styledShapes.map(({ shape, style }, i) => (
+      {styledShapes.map(({ shape, style, stableIndex }) => (
         <Polyline
-          key={`${shape.routeId}-${i}`}
+          key={`${shape.routeId}-${stableIndex}`}
           positions={shape.points}
           interactive={true}
           bubblingMouseEvents={false}

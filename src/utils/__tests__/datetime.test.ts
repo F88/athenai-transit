@@ -5,7 +5,7 @@ import { formatDateTimeJaJp, formatDateTimeJaJpParts, toDatetimeLocalValue } fro
 // new Date(year, monthIndex, day, hours, minutes) uses local time.
 
 describe('formatDateTimeJaJp', () => {
-  it('formats a Tuesday morning', () => {
+  it('formats a Wednesday morning', () => {
     // 2026-03-04 is a Wednesday
     const date = new Date(2026, 2, 4, 9, 15);
     expect(formatDateTimeJaJp(date)).toBe('3 月 4 日 (水) 09:15');
