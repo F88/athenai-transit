@@ -588,7 +588,9 @@ export class MockRepository implements TransitRepository {
   /** {@inheritDoc TransitRepository.getFullDayDeparturesForStop} */
   getFullDayDeparturesForStop(
     stopId: string,
-    ...[ /* dateTime */]: [Date]
+    ...[
+      /* dateTime */
+    ]: [Date]
   ): Promise<CollectionResult<FullDayStopDeparture>> {
     const stopRoutes = STOP_ROUTES[stopId] ?? [];
     const departures: FullDayStopDeparture[] = [];
