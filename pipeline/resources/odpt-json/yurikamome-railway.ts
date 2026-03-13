@@ -13,6 +13,10 @@ const yurikamomeRailway: OdptJsonSourceDefinition = {
     },
     odptType: 'odpt:Railway',
     endpointUrl: 'https://api.odpt.org/api/v4/odpt:Railway?odpt:operator=odpt.Operator:Yurikamome',
+    mlitShapeMapping: {
+      operator: 'ゆりかもめ',
+      lineToRouteId: { 東京臨海新交通臨海線: 'yrkm:U' },
+    },
     catalog: {
       type: 'odpt',
       resourceId: 'b3ab2e69-0e60-48e7-9e05-69c7c1e57e1e',
