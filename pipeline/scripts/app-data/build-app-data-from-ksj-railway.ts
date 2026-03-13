@@ -19,7 +19,7 @@ import { join, resolve } from 'node:path';
 import { formatBytes, runMain } from '../../lib/pipeline-utils';
 import toeiTrain from '../../resources/gtfs/toei-train';
 
-const ROOT = resolve(import.meta.dirname, '..');
+const ROOT = resolve(import.meta.dirname, '..', '..');
 const GEOJSON_PATH = join(ROOT, 'data/mlit/N02-24_RailroadSection.geojson');
 const OUTPUT_DIR = join(ROOT, 'build/data', toeiTrain.pipeline.prefix);
 const OUTPUT_PATH = join(OUTPUT_DIR, 'shapes.json');
