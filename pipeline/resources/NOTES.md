@@ -27,3 +27,23 @@ Data source ごとの注意事項をまとめる。
 - downloadUrl に `?date=YYYYMMDD` が必須 (なしだと 404)
 - CKAN に複数バージョンが公開されており、date でバージョンを指定する
 - 使用中: 20260301版
+
+## keio-bus (京王バス)
+
+- Resource definition: `pipeline/resources/gtfs/keio-bus.ts`
+- CKAN: <https://ckan.odpt.org/dataset/keio_bus_all_lines>
+- Resource ID (使用中): `7e191a71-db33-40b6-b304-72ac7405eee9` (20260126版)
+
+### route_color
+
+- 全路線で `route_color` と `route_text_color` が空
+- `routeColorFallbacks: { '*': '00377E' }` でフォールバック適用
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt が含まれていない
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260126版
