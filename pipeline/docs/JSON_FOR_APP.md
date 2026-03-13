@@ -13,11 +13,48 @@
 ## CLI インターフェース
 
 ```
-Usage: npx tsx pipeline/scripts/build-gtfs-json.ts
+Usage: npx tsx pipeline/scripts/build-gtfs-json.ts <source-name>
+       npx tsx pipeline/scripts/build-gtfs-json.ts --targets <file>
+       npx tsx pipeline/scripts/build-gtfs-json.ts --list
        npm run pipeline:build:json
 ```
 
-引数なし。全ソースを処理する。DB ファイルが存在しないソースはスキップされる。
+| 引数/オプション    | 説明                                                            |
+| ------------------ | --------------------------------------------------------------- |
+| `<source-name>`    | 単一ソースを処理 (後述の「ソース名の解決」を参照)               |
+| `--targets <file>` | ターゲットリストファイルで一括処理 (ソースごとに子プロセス実行) |
+| `--list`           | 利用可能なソース名を一覧表示                                    |
+| `--help`           | ヘルプメッセージを表示                                          |
+
+`npm run pipeline:build:json` は `--targets pipeline/targets/build-json.ts` で一括処理する。
+
+### ソース名の解決
+
+`<source-name>` は `pipeline/resources/gtfs/` 内のリソース定義ファイル名 (拡張子なし) を指定する。
+
+```
+npx tsx pipeline/scripts/build-gtfs-json.ts toei-bus
+                                             ^^^^^^^^
+                                             pipeline/resources/gtfs/toei-bus.ts を読み込む
+```
+
+リソース定義ファイルには `pipeline.outDir` と `pipeline.prefix` が含まれており、入出力パスはこれらから決定される。
+
+```
+toei-bus.ts → { pipeline: { outDir: "toei-bus", prefix: "tobus", ... } }
+              │
+              ├─ Input:  pipeline/build/toei-bus.db
+              └─ Output: pipeline/build/data/tobus/*.json
+```
+
+`--list` で利用可能なソース名を確認できる。
+
+## 入出力パス
+
+- **入力**: `pipeline/build/{outDir}.db` (SQLite、ソースごと)
+- **出力**: `pipeline/build/data/{prefix}/` (JSON、ソースごと8ファイル)
+
+入力 DB ファイルが存在しない場合はエラー終了する (exit code 1)。事前に `build-gtfs-db.ts` で DB を構築しておく必要がある。
 
 ## 出力ファイル一覧
 
@@ -33,6 +70,61 @@ Usage: npx tsx pipeline/scripts/build-gtfs-json.ts
 | `agency.json`       | agency + translations             | `AgencyJson[]`           | 事業者情報 + 多言語名              |
 | `feed-info.json`    | feed_info                         | `FeedInfoJson \| null`   | フィード情報 (有効期間/バージョン) |
 | `translations.json` | translations + trips + stop_times | `TranslationsJson`       | 行先翻訳ルックアップテーブル       |
+
+## 出力の書き込み戦略
+
+### 原則
+
+1ソースの出力 (8ファイル) は**全て同一ビルドからの完全なセット**でなければならない。新旧ファイルの混在は許容しない。
+
+### 既存データの置き換え方式: ステージング + アトミックスワップ
+
+既存の出力ディレクトリを直接上書きしない。ステージングディレクトリに全ファイルを書き出し、全て成功した場合のみ既存データと差し替える。
+
+```
+1. ステージング準備
+   - {prefix}.tmp/ が残存していれば削除 (前回失敗の残骸)
+   - {prefix}.tmp/ を新規作成
+
+2. ファイル書き出し (順次)
+   - 8ファイルを {prefix}.tmp/ に writeFileSync で順次書き出し
+
+3-A. 全ファイル書き出し成功
+   - {prefix}/ を削除 (既存データ)
+   - {prefix}.tmp/ を {prefix}/ にリネーム
+   → 出力は最新の完全なセット
+
+3-B. 途中でエラー発生 (例: 4ファイル書き出し後に例外)
+   - {prefix}.tmp/ を削除 (不完全なステージング)
+   - {prefix}/ はそのまま残る (前回の正常データを保持)
+   → 出力は前回の完全なセット、不整合なし
+```
+
+```
+pipeline/build/data/
+├── tobus/           ← 最終出力 (常に完全な8ファイルセット)
+├── tobus.tmp/       ← 書き込み中のみ一時的に存在
+```
+
+### エラー発生時の状態
+
+| フェーズ                | エラー例                 | ステージング            | 既存出力             | スクリプト終了状態 |
+| ----------------------- | ------------------------ | ----------------------- | -------------------- | ------------------ |
+| DB 読み込み (Phase 1)   | SQL エラー、DB 破損      | 未作成                  | そのまま保持         | exit 1             |
+| JSON 書き出し (Phase 2) | ディスクフル、I/O エラー | 削除される              | そのまま保持         | exit 1             |
+| ディレクトリ swap       | rename 失敗              | 残存 (次回実行時に削除) | 削除済みの可能性あり | exit 1             |
+
+**初回実行時** (既存の `{prefix}/` が存在しない場合): 失敗すると出力ディレクトリは存在しない状態になる。これは正常であり、WebApp 側は fetch エラーとして当該ソースをスキップする。
+
+### バッチ実行時のソース間独立性
+
+バッチ実行 (`--targets`) では各ソースが独立した子プロセスで実行される。あるソースの成功/失敗は他のソースに影響しない。
+
+| 状態                                   | 結果                                                |
+| -------------------------------------- | --------------------------------------------------- |
+| tobus: 成功、toaran: 失敗、sggsm: 成功 | tobus/sggsm は最新データ、toaran は前回データを保持 |
+| 全ソース成功                           | 全て最新データ                                      |
+| 全ソース失敗                           | 全て前回データを保持                                |
 
 ## DB → JSON の変換フロー
 
@@ -158,6 +250,23 @@ JSON ファイルは `FetchDataSource` が `/data/{prefix}/{file}.json` から f
 - **オプショナルファイル** (3): agency, feed-info, translations — 404 は graceful に処理 (`fetchOptional`)
 
 `GtfsRepository.create()` が複数ソースの JSON をマージし、略語フィールドを App 型 (`Stop`, `Route` 等) に変換する。
+
+## Exit Code
+
+### 単体実行
+
+| code | label | 意味                                                 |
+| ---- | ----- | ---------------------------------------------------- |
+| 0    | ok    | 成功                                                 |
+| 1    | error | 失敗 (DB なし / 抽出エラー / 書き込みエラー / fatal) |
+
+### バッチ実行
+
+| code | label           | 意味     |
+| ---- | --------------- | -------- |
+| 0    | ok              | 全て成功 |
+| 1    | partial failure | 一部失敗 |
+| 2    | all failed      | 全て失敗 |
 
 ## バリデーション
 

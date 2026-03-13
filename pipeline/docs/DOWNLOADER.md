@@ -206,19 +206,34 @@ pipeline/archives/
 
 ## 共有ユーティリティ
 
-`pipeline/lib/download-utils.ts` に両スクリプト共通のユーティリティを集約している。
+ダウンローダーが使用するユーティリティは2つのモジュールに分かれている。
 
-| export                   | 説明                                   |
-| ------------------------ | -------------------------------------- |
-| `withRetry`              | exponential backoff リトライ           |
-| `wrapTimeoutError`       | タイムアウトエラーへのコンテキスト付与 |
-| `parseDownloadArg`       | CLI 引数パース (discriminated union)   |
-| `runMain`                | トップレベルエラーハンドラ             |
-| `runBatch`               | バッチ実行 (子プロセス分離)            |
-| `printBatchSummary`      | バッチ結果サマリ表示                   |
-| `determineBatchExitCode` | バッチ結果から exit code を決定        |
-| `formatExitCode`         | exit code のラベル付き文字列           |
-| `ensureDir`              | ディレクトリ作成                       |
-| `archiveFilename`        | タイムスタンプ付きファイル名生成       |
-| `formatBytes`            | バイト数の人間可読フォーマット         |
-| `loadTargetFile`         | targets ファイルの読み込み             |
+### `pipeline/lib/download-utils.ts`
+
+ダウンロード固有のユーティリティ。
+
+| export              | 説明                                    |
+| ------------------- | --------------------------------------- |
+| `downloadWithRetry` | HTTP ダウンロード + リトライ + 進捗表示 |
+| `withRetry`         | exponential backoff リトライ            |
+| `wrapTimeoutError`  | タイムアウトエラーへのコンテキスト付与  |
+| `archiveFilename`   | タイムスタンプ付きファイル名生成        |
+| `timestamp`         | `YYYYMMDD-HHmmss` タイムスタンプ        |
+| `FETCH_TIMEOUT_MS`  | タイムアウト定数 (60秒)                 |
+| `MAX_RETRIES`       | リトライ回数定数 (3回)                  |
+
+### `pipeline/lib/pipeline-utils.ts`
+
+全パイプラインスクリプト共通のユーティリティ。
+
+| export                   | 説明                                 |
+| ------------------------ | ------------------------------------ |
+| `runMain`                | トップレベルエラーハンドラ           |
+| `parseCliArg`            | CLI 引数パース (discriminated union) |
+| `runBatch`               | バッチ実行 (子プロセス分離)          |
+| `printBatchSummary`      | バッチ結果サマリ表示                 |
+| `determineBatchExitCode` | バッチ結果から exit code を決定      |
+| `formatExitCode`         | exit code のラベル付き文字列         |
+| `formatBytes`            | バイト数の人間可読フォーマット       |
+| `ensureDir`              | ディレクトリ作成                     |
+| `loadTargetFile`         | targets ファイルの読み込み           |
