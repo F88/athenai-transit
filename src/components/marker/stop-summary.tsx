@@ -2,6 +2,7 @@ import type { InfoLevel } from '../../types/app/settings';
 import type { RouteType, Stop, StopWithContext } from '../../types/app/transit';
 import { createInfoLevel } from '../../utils/create-info-level';
 import { getStopDisplayNames } from '../../domain/transit/get-stop-display-names';
+import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
 import { RouteBadge } from '../badge/route-badge';
 import { routeTypesEmoji } from '../../domain/transit/route-type-emoji';
 
@@ -56,13 +57,16 @@ export function StopSummary({ stop, routeTypes, groups, now, infoLevel }: StopSu
         // now is guaranteed defined here because items is empty when now is undefined
         const diffMin = Math.floor((first.getTime() - now!.getTime()) / 60000);
         const relative = diffMin <= 0 ? 'まもなく' : `${diffMin}分`;
+        const headsignName = getHeadsignDisplayNames(group.headsign, group.route, infoLevel).name;
         return (
           <div
             key={i}
             className="mt-0.5 flex items-center gap-1 text-[11px] text-[#555] dark:text-gray-400"
           >
-            <RouteBadge route={group.route} infoLevel={infoLevel} size="sm" /> {group.headsign}{' '}
-            {relative}
+            <RouteBadge route={group.route} infoLevel={infoLevel} size="sm" />
+            {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
+            <span>{headsignName}</span>
+            <span>{relative}</span>
           </div>
         );
       })}

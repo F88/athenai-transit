@@ -10,6 +10,7 @@ import type { InfoLevel } from '@/types/app/settings';
 import type { Route, RouteType, Stop } from '@/types/app/transit';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
+import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { PillButton } from '@/components/button/pill-button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
@@ -426,7 +427,11 @@ function StopTimetableFilter({
             onClick={() => onToggleFilter(key)}
           >
             {infoLevel === 'verbose' && <IdBadge>{r.route.route_id}</IdBadge>}
-            {r.headsign}
+            {/* Filter button has no RouteBadge — fall back to route name so it is never blank. */}
+            {getHeadsignDisplayNames(r.headsign, r.route, infoLevel).name ||
+              r.route.route_short_name ||
+              r.route.route_long_name ||
+              r.route.route_id}
           </PillButton>
         );
       })}

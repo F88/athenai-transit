@@ -3,6 +3,7 @@ import type { DepartureGroup } from '../types/app/transit';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
+import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
 import { IdBadge } from './badge/id-badge';
 import { RouteBadge } from './badge/route-badge';
 
@@ -23,6 +24,7 @@ export function DepartureItem({
   onShowTimetable,
 }: DepartureItemProps) {
   const info = useInfoLevel(infoLevel);
+  const headsignName = getHeadsignDisplayNames(group.headsign, group.route, infoLevel).name;
   // Display at most 3 departures: 1st as relative time, rest as absolute.
   const MAX_DISPLAY = 3;
   const displayDepartures = group.departures.slice(0, MAX_DISPLAY);
@@ -41,7 +43,8 @@ export function DepartureItem({
           <span className="shrink-0 text-base">{routeTypeEmoji(group.route.route_type)}</span>
         )}
         <RouteBadge route={group.route} infoLevel={infoLevel} />
-        <span className="text-sm font-medium text-[#333] dark:text-gray-200">{group.headsign}</span>
+        {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
+        <span className="text-sm font-medium text-[#333] dark:text-gray-200">{headsignName}</span>
         {onShowTimetable && (
           <button
             type="button"

@@ -2,6 +2,7 @@ import type { InfoLevel } from '../types/app/settings';
 import type { FlatDeparture } from '../types/app/transit';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
+import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
 import { RouteBadge } from './badge/route-badge';
 
 interface FlatDepartureItemProps {
@@ -35,6 +36,7 @@ export function FlatDepartureItem({
   showRouteTypeIcon,
   infoLevel,
 }: FlatDepartureItemProps) {
+  const headsignName = getHeadsignDisplayNames(item.headsign, item.route, infoLevel).name;
   const bgColor = item.route.route_color ? `#${item.route.route_color}` : undefined;
 
   return (
@@ -49,7 +51,8 @@ export function FlatDepartureItem({
         <span className="shrink-0 text-base">{routeTypeEmoji(item.route.route_type)}</span>
       )}
       <RouteBadge route={item.route} infoLevel={infoLevel} className="shrink-0" />
-      <span className="truncate text-sm text-[#333] dark:text-gray-200">{item.headsign}</span>
+      {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
+      <span className="truncate text-sm text-[#333] dark:text-gray-200">{headsignName}</span>
     </div>
   );
 }
