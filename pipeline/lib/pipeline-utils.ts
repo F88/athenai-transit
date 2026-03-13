@@ -94,10 +94,12 @@ export function parseCliArg(): ParsedArg {
  * `process.exitCode = 1` instead of crashing with an unhandled
  * promise rejection.
  *
- * @param fn - The async main function to execute.
+ * @param fn - The main function to execute (sync or async).
  */
-export function runMain(fn: () => Promise<void>): void {
-  fn().catch((err: unknown) => {
+export function runMain(fn: () => void | Promise<void>): void {
+  Promise.resolve()
+    .then(() => fn())
+    .catch((err: unknown) => {
     console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
     if (err instanceof Error && err.cause instanceof Error) {
       console.error(`  Cause: ${err.cause.message}`);

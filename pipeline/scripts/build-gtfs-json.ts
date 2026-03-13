@@ -32,7 +32,7 @@ import type {
   RouteJson,
   TranslationsJson,
 } from '../../src/types/data/transit-json';
-import { loadAllGtfsSources } from './load-gtfs-sources';
+import { loadAllGtfsSources } from '../lib/load-gtfs-sources';
 
 // ---------------------------------------------------------------------------
 // Paths

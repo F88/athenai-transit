@@ -1,3 +1,5 @@
+#!/usr/bin/env -S npx tsx
+
 /**
  * Validate generated web app data files.
  *
@@ -26,7 +28,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { loadAllGtfsSources } from './load-gtfs-sources';
+import { loadAllGtfsSources } from '../lib/load-gtfs-sources';
+import { runMain } from '../lib/pipeline-utils';
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -445,10 +448,30 @@ function determineExitCode(
 }
 
 // ---------------------------------------------------------------------------
+// CLI
+// ---------------------------------------------------------------------------
+
+function printUsage(): void {
+  console.log('Usage: npx tsx pipeline/scripts/validate-generated-data.ts');
+  console.log('       npm run pipeline:validate');
+  console.log('');
+  console.log('Validate generated web app data files.');
+  console.log('');
+  console.log('Options:');
+  console.log('  --help, -h   Show this help message');
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
+  const arg = process.argv[2];
+  if (arg === '--help' || arg === '-h') {
+    printUsage();
+    return;
+  }
+
   const startTime = performance.now();
   const now = new Date();
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -461,7 +484,8 @@ async function main(): Promise<void> {
     warn('No GTFS source definitions found.');
     console.log('## Generated Data Validation\n');
     console.log('> **Warning**: No GTFS source definitions found.\n');
-    process.exit(EXIT_WARN);
+    process.exitCode = EXIT_WARN;
+    return;
   }
 
   // Step 1: File existence check
@@ -480,10 +504,7 @@ async function main(): Promise<void> {
   const exitCode = determineExitCode(fileResult, calendarResult);
   const elapsed = Math.round(performance.now() - startTime);
   console.log(`Done in ${elapsed}ms. (exit code: ${exitCode})`);
-  process.exit(exitCode);
+  process.exitCode = exitCode;
 }
 
-main().catch((err) => {
-  console.error('\nFATAL:', err instanceof Error ? err.message : err);
-  process.exit(EXIT_ERROR);
-});
+runMain(main);

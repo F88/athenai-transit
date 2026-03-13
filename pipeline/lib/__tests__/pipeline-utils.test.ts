@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   type BatchResult,
@@ -9,6 +9,7 @@ import {
   formatBytes,
   formatExitCode,
   parseCliArg,
+  runMain,
 } from '../pipeline-utils';
 
 // ---------------------------------------------------------------------------
@@ -143,5 +144,72 @@ describe('parseCliArg', () => {
   it('returns source-name for a plain argument', () => {
     process.argv = ['node', 'script.ts', 'toei-bus'];
     expect(parseCliArg()).toEqual({ kind: 'source-name', name: 'toei-bus' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// runMain
+// ---------------------------------------------------------------------------
+
+describe('runMain', () => {
+  let originalExitCode: typeof process.exitCode;
+
+  beforeEach(() => {
+    originalExitCode = process.exitCode;
+    process.exitCode = undefined;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    process.exitCode = originalExitCode;
+    vi.restoreAllMocks();
+  });
+
+  it('runs a sync function to completion', async () => {
+    const fn = vi.fn();
+    runMain(fn);
+    // fn is called asynchronously via .then()
+    await vi.waitFor(() => expect(fn).toHaveBeenCalledOnce());
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it('runs an async function to completion', async () => {
+    const fn = vi.fn(async () => {});
+    runMain(fn);
+    await vi.waitFor(() => expect(fn).toHaveBeenCalledOnce());
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  it('catches a sync throw and sets exitCode to 1', async () => {
+    runMain(() => {
+      throw new Error('sync boom');
+    });
+    await vi.waitFor(() => expect(process.exitCode).toBe(1));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('sync boom'));
+  });
+
+  it('catches an async rejection and sets exitCode to 1', async () => {
+    runMain(async () => {
+      throw new Error('async boom');
+    });
+    await vi.waitFor(() => expect(process.exitCode).toBe(1));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('async boom'));
+  });
+
+  it('logs the cause when error has a cause', async () => {
+    runMain(() => {
+      throw new Error('outer', { cause: new Error('inner cause') });
+    });
+    await vi.waitFor(() => expect(process.exitCode).toBe(1));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('inner cause'));
+  });
+
+  it('handles non-Error throws gracefully', async () => {
+    runMain(() => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      throw 'string error';
+    });
+    await vi.waitFor(() => expect(process.exitCode).toBe(1));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('string error'));
   });
 });

@@ -17,6 +17,7 @@
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
+import { formatBytes, runMain } from '../lib/pipeline-utils';
 import toeiTrain from '../resources/gtfs/toei-train';
 
 const ROOT = resolve(import.meta.dirname, '..');
@@ -55,17 +56,17 @@ interface GeoJsonCollection {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// CLI
 // ---------------------------------------------------------------------------
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+function printUsage(): void {
+  console.log('Usage: npx tsx pipeline/scripts/build-train-shapes.ts');
+  console.log('       npm run pipeline:build:train-shapes');
+  console.log('');
+  console.log('Generate train route shapes from MLIT GeoJSON data.');
+  console.log('');
+  console.log('Options:');
+  console.log('  --help, -h   Show this help message');
 }
 
 // ---------------------------------------------------------------------------
@@ -73,6 +74,13 @@ function formatBytes(bytes: number): string {
 // ---------------------------------------------------------------------------
 
 function main(): void {
+  const arg = process.argv[2];
+  if (arg === '--help' || arg === '-h') {
+    printUsage();
+    return;
+  }
+
+  const startTime = performance.now();
   console.log('=== Build Train Shapes from MLIT GeoJSON ===\n');
 
   if (!existsSync(GEOJSON_PATH)) {
@@ -145,7 +153,8 @@ function main(): void {
   const size = statSync(OUTPUT_PATH).size;
   console.log(`\nWrote ${OUTPUT_PATH} (${formatBytes(size)})`);
 
-  console.log('\nDone!');
+  const elapsed = Math.round(performance.now() - startTime);
+  console.log(`\nDone in ${elapsed}ms. (exit code: 0)`);
 }
 
-main();
+runMain(main);
