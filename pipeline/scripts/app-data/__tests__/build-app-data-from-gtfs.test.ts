@@ -1,5 +1,5 @@
 /**
- * Tests for build-gtfs-json.ts extract functions.
+ * Tests for build-app-data-from-gtfs.ts extract functions.
  *
  * Uses an in-memory SQLite database populated with minimal GTFS test data
  * to verify each extract function produces correct JSON output.
@@ -15,7 +15,7 @@ import {
   extractFeedInfo,
   extractRoutes,
   extractTranslations,
-} from '../build-gtfs-json';
+} from '../build-app-data-from-gtfs';
 
 // ---------------------------------------------------------------------------
 // Test DB setup

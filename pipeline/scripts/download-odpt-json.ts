@@ -39,7 +39,7 @@ import {
   runBatch,
   runMain,
 } from '../lib/pipeline-utils';
-import { listOdptJsonSourceNames, loadOdptJsonSource } from './load-odpt-json-sources';
+import { listOdptJsonSourceNames, loadOdptJsonSource } from '../lib/load-odpt-json-sources';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const DATA_DIR = join(ROOT, 'data/odpt-json');

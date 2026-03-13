@@ -10,8 +10,8 @@
  *   npx tsx pipeline/scripts/describe-resources.ts --format tsv  # tab-separated values
  */
 
-import { loadAllGtfsSources } from './load-gtfs-sources';
-import { loadAllOdptJsonSources } from './load-odpt-json-sources';
+import { loadAllGtfsSources } from '../lib/load-gtfs-sources';
+import { loadAllOdptJsonSources } from '../lib/load-odpt-json-sources';
 
 import type { GtfsSourceDefinition } from '../types/gtfs-resource';
 import type { OdptJsonSourceDefinition } from '../types/odpt-json-resource';

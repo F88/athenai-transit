@@ -1,12 +1,12 @@
 # GTFS to RDB (Build DB)
 
-パイプラインの Step 2。GTFS CSV ファイルを per-source の SQLite データベースに変換する。
+パイプラインの Stage 2。GTFS CSV ファイルを per-source の SQLite データベースに変換する。
 
 ## 概要
 
-GTFS 仕様で定義される CSV ファイル群をストリーミング読み込みし、ソースごとに1つの SQLite DB を生成する。CSV の値はそのまま保存し、ID プレフィックスの付与は後続の build-gtfs-json.ts が行う。
+GTFS 仕様で定義される CSV ファイル群をストリーミング読み込みし、ソースごとに1つの SQLite DB を生成する。CSV の値はそのまま保存し、ID プレフィックスの付与は後続の build-app-data-from-gtfs.ts が行う。
 
-**1ソース = 1 DB ファイル**: 各 GTFS ソース (ZIP) は独立した DB ファイル (`{outDir}.db`) に格納される。複数ソースの CSV を同一 DB に混在させない。GTFS の ID 体系はソース内で閉じており (例: `route_id` が異なるソース間で衝突しうる)、CSV の値をそのまま格納する本スクリプトでは出自の区別ができなくなるためである。ソース間の統合は後続の build-gtfs-json.ts がプレフィックス付きで行う。
+**1ソース = 1 DB ファイル**: 各 GTFS ソース (ZIP) は独立した DB ファイル (`{outDir}.db`) に格納される。複数ソースの CSV を同一 DB に混在させない。GTFS の ID 体系はソース内で閉じており (例: `route_id` が異なるソース間で衝突しうる)、CSV の値をそのまま格納する本スクリプトでは出自の区別ができなくなるためである。ソース間の統合は後続の build-app-data-from-gtfs.ts がプレフィックス付きで行う。
 
 スキーマは GTFS 公式仕様 + GTFS-JP v3 の全テーブルを網羅しており、どんな GTFS フィードが来ても CSV ファイルが SKIP されない (テーブル定義なしで無視されることがない) ことを保証する。
 
@@ -166,6 +166,23 @@ FK は INSERT 中は無効化されている (`PRAGMA foreign_keys = OFF`)。バ
 | NOT NULL カラムが CSV に欠損     | ERROR (中断)                    |
 | nullable カラムが CSV に欠損     | NULL で補完 (WARN)              |
 | テーブルに対応する \*.txt がない | 空テーブルとして残る (ログなし) |
+
+## Exit Code
+
+### 単体実行
+
+| code | label | 意味                                 |
+| ---- | ----- | ------------------------------------ |
+| 0    | ok    | 成功                                 |
+| 1    | error | 失敗 (入力なし / CSV エラー / fatal) |
+
+### バッチ実行
+
+| code | label           | 意味     |
+| ---- | --------------- | -------- |
+| 0    | ok              | 全て成功 |
+| 1    | partial failure | 一部失敗 |
+| 2    | all failed      | 全て失敗 |
 
 ## テーブル作成順序
 

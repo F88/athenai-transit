@@ -45,7 +45,7 @@ export interface GtfsResource extends BaseResource {
   routeColorFallbacks?: Record<string, string>;
   /**
    * Mapping from MLIT GeoJSON line names to GTFS route IDs for shape generation.
-   * Used by `build-train-shapes.ts` to extract line geometries from
+   * Used by `build-app-data-from-ksj-railway.ts` to extract line geometries from
    * National Land Numerical Information railway section data.
    */
   mlitShapeMapping?: {

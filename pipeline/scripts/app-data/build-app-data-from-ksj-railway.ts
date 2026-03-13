@@ -10,18 +10,18 @@
  * Output: pipeline/build/data/toaran/shapes.json
  *
  * Usage:
- *   npx tsx pipeline/scripts/build-train-shapes.ts
- *   npm run pipeline:build:train-shapes
+ *   npx tsx pipeline/scripts/app-data/build-app-data-from-ksj-railway.ts
  */
 
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import toeiTrain from '../resources/gtfs/toei-train';
+import { formatBytes, runMain } from '../../lib/pipeline-utils';
+import toeiTrain from '../../resources/gtfs/toei-train';
 
-const ROOT = resolve(import.meta.dirname, '..');
+const ROOT = resolve(import.meta.dirname, '../..');
 const GEOJSON_PATH = join(ROOT, 'data/mlit/N02-24_RailroadSection.geojson');
-const OUTPUT_DIR = join(ROOT, 'build/data', toeiTrain.pipeline.outDir);
+const OUTPUT_DIR = join(ROOT, 'build/data', toeiTrain.pipeline.prefix);
 const OUTPUT_PATH = join(OUTPUT_DIR, 'shapes.json');
 
 const { mlitShapeMapping } = toeiTrain.resource;
@@ -55,17 +55,16 @@ interface GeoJsonCollection {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// CLI
 // ---------------------------------------------------------------------------
 
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+function printUsage(): void {
+  console.log('Usage: npx tsx pipeline/scripts/app-data/build-app-data-from-ksj-railway.ts');
+  console.log('');
+  console.log('Generate train route shapes from MLIT GeoJSON data.');
+  console.log('');
+  console.log('Options:');
+  console.log('  --help, -h   Show this help message');
 }
 
 // ---------------------------------------------------------------------------
@@ -73,6 +72,19 @@ function formatBytes(bytes: number): string {
 // ---------------------------------------------------------------------------
 
 function main(): void {
+  const arg = process.argv[2];
+  if (arg) {
+    if (arg === '--help' || arg === '-h') {
+      printUsage();
+      return;
+    }
+    console.error(`Error: Unknown argument: ${arg}\n`);
+    printUsage();
+    process.exitCode = 1;
+    return;
+  }
+
+  const startTime = performance.now();
   console.log('=== Build Train Shapes from MLIT GeoJSON ===\n');
 
   if (!existsSync(GEOJSON_PATH)) {
@@ -145,7 +157,8 @@ function main(): void {
   const size = statSync(OUTPUT_PATH).size;
   console.log(`\nWrote ${OUTPUT_PATH} (${formatBytes(size)})`);
 
-  console.log('\nDone!');
+  const elapsed = Math.round(performance.now() - startTime);
+  console.log(`\nDone in ${elapsed}ms. (exit code: 0)`);
 }
 
-main();
+runMain(main);

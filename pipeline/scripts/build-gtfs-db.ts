@@ -42,7 +42,7 @@ import {
   runBatch,
   runMain,
 } from '../lib/pipeline-utils';
-import { listGtfsSourceNames, loadGtfsSource } from './load-gtfs-sources';
+import { listGtfsSourceNames, loadGtfsSource } from '../lib/load-gtfs-sources';
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -622,6 +622,13 @@ async function main(): Promise<void> {
   const buildSource: BuildSource = { directory: outDir, nameEn };
   const t0 = performance.now();
 
+  // Intentionally NOT delegating error handling to runMain here.
+  // This try/catch/finally ensures that Duration, Exit code, and the
+  // "=== [END] ===" marker are always printed — even on failure.
+  // These markers are important for readable log output when this script
+  // runs as a batch child process (--targets).
+  // The catch sets process.exitCode and returns (does not re-throw),
+  // so runMain's catch is not triggered — no duplicate FATAL output.
   try {
     await buildSourceDb(buildSource, schemaMap);
   } catch (err) {
