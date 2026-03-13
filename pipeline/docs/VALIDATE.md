@@ -1,6 +1,6 @@
 # Validate Generated Data
 
-生成されたウェブアプリ用データファイルを検証する。
+パイプラインの Stage 3。生成されたアプリ用 JSON ファイルを検証する。
 
 ## 概要
 
@@ -18,8 +18,8 @@
 ## CLI インターフェース
 
 ```
-Usage: npx tsx pipeline/scripts/validate-generated-data.ts
-       npx tsx pipeline/scripts/validate-generated-data.ts --help
+Usage: npx tsx pipeline/scripts/app-data/validate-app-data.ts
+       npx tsx pipeline/scripts/app-data/validate-app-data.ts --help
        npm run pipeline:validate
 ```
 

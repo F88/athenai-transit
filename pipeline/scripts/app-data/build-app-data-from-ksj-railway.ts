@@ -10,15 +10,14 @@
  * Output: pipeline/build/data/toaran/shapes.json
  *
  * Usage:
- *   npx tsx pipeline/scripts/build-train-shapes.ts
- *   npm run pipeline:build:train-shapes
+ *   npx tsx pipeline/scripts/app-data/build-app-data-from-ksj-railway.ts
  */
 
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { formatBytes, runMain } from '../lib/pipeline-utils';
-import toeiTrain from '../resources/gtfs/toei-train';
+import { formatBytes, runMain } from '../../lib/pipeline-utils';
+import toeiTrain from '../../resources/gtfs/toei-train';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const GEOJSON_PATH = join(ROOT, 'data/mlit/N02-24_RailroadSection.geojson');
@@ -60,8 +59,7 @@ interface GeoJsonCollection {
 // ---------------------------------------------------------------------------
 
 function printUsage(): void {
-  console.log('Usage: npx tsx pipeline/scripts/build-train-shapes.ts');
-  console.log('       npm run pipeline:build:train-shapes');
+  console.log('Usage: npx tsx pipeline/scripts/app-data/build-app-data-from-ksj-railway.ts');
   console.log('');
   console.log('Generate train route shapes from MLIT GeoJSON data.');
   console.log('');

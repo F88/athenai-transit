@@ -1,6 +1,6 @@
 # JSON for App (Build JSON)
 
-パイプラインの Step 3。per-source SQLite DB から WebApp が利用する JSON ファイルを生成する。
+パイプラインの Stage 3。per-source SQLite DB から WebApp が利用する JSON ファイルを生成する。
 
 ## 概要
 
@@ -13,9 +13,9 @@
 ## CLI インターフェース
 
 ```
-Usage: npx tsx pipeline/scripts/build-app-data-from-gtfs.ts <source-name>
-       npx tsx pipeline/scripts/build-app-data-from-gtfs.ts --targets <file>
-       npx tsx pipeline/scripts/build-app-data-from-gtfs.ts --list
+Usage: npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts <source-name>
+       npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts --targets <file>
+       npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts --list
        npm run pipeline:build:json
 ```
 
@@ -33,7 +33,7 @@ Usage: npx tsx pipeline/scripts/build-app-data-from-gtfs.ts <source-name>
 `<source-name>` は `pipeline/resources/gtfs/` 内のリソース定義ファイル名 (拡張子なし) を指定する。
 
 ```
-npx tsx pipeline/scripts/build-app-data-from-gtfs.ts toei-bus
+npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts toei-bus
                                              ^^^^^^^^
                                              pipeline/resources/gtfs/toei-bus.ts を読み込む
 ```
@@ -270,7 +270,7 @@ JSON ファイルは `FetchDataSource` が `/data/{prefix}/{file}.json` から f
 
 ## バリデーション
 
-`validate-generated-data.ts` が全8ファイルの存在チェックと calendar の鮮度チェックを行う。
+`validate-app-data.ts` が全8ファイルの存在チェックと calendar の鮮度チェックを行う。
 
 ```bash
 npm run pipeline:validate

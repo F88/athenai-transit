@@ -1,6 +1,6 @@
 # Build Train Shapes
 
-国土数値情報 (MLIT) の鉄道路線 GeoJSON データから、都営電車の路線形状データを生成する。
+パイプラインの Stage 3。国土数値情報 (MLIT) の鉄道路線 GeoJSON データから、都営電車の路線形状データを生成する。
 
 ## 概要
 
@@ -15,8 +15,8 @@ GTFS ソースの `shapes.txt` が提供されていない路線 (都営電車) 
 ## CLI インターフェース
 
 ```
-Usage: npx tsx pipeline/scripts/build-train-shapes.ts
-       npx tsx pipeline/scripts/build-train-shapes.ts --help
+Usage: npx tsx pipeline/scripts/app-data/build-app-data-from-ksj-railway.ts
+       npx tsx pipeline/scripts/app-data/build-app-data-from-ksj-railway.ts --help
        npm run pipeline:build:train-shapes
 ```
 

@@ -1,6 +1,6 @@
 # GTFS to RDB (Build DB)
 
-パイプラインの Step 2。GTFS CSV ファイルを per-source の SQLite データベースに変換する。
+パイプラインの Stage 2。GTFS CSV ファイルを per-source の SQLite データベースに変換する。
 
 ## 概要
 

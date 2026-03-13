@@ -25,9 +25,9 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 | 1     | GTFS ZIP をバッチダウンロード      | `scripts/download-gtfs.ts`                   | `npm run pipeline:download:gtfs`      |
 | 1     | ODPT JSON をバッチダウンロード     | `scripts/download-odpt-json.ts`              | `npm run pipeline:download:odpt-json` |
 | 2     | GTFS CSV を SQLite に変換          | `scripts/build-gtfs-db.ts`                   | `npm run pipeline:build:db`           |
-| 3     | SQLite からアプリ用 JSON を生成    | `scripts/build-app-data-from-gtfs.ts`        | `npm run pipeline:build:json`         |
-| 3     | 国土数値情報から鉄道路線形状を生成 | `scripts/build-app-data-from-ksj-railway.ts` | `npm run pipeline:build:train-shapes` |
-| 3     | アプリ用 JSON の検証               | `scripts/validate-app-data.ts`               | `npm run pipeline:validate`           |
+| 3     | SQLite からアプリ用 JSON を生成    | `scripts/app-data/build-app-data-from-gtfs.ts`        | `npm run pipeline:build:json`         |
+| 3     | 国土数値情報から鉄道路線形状を生成 | `scripts/app-data/build-app-data-from-ksj-railway.ts` | `npm run pipeline:build:train-shapes` |
+| 3     | アプリ用 JSON の検証               | `scripts/app-data/validate-app-data.ts`               | `npm run pipeline:validate`           |
 | -     | 全リソース定義の一覧表示           | `scripts/describe-resources.ts`              | `npm run pipeline:describe`           |
 
 ## 実行順序

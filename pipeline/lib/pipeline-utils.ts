@@ -218,7 +218,7 @@ export function printBatchSummary(results: BatchResult[]): void {
 /**
  * Determine the exit code based on batch results.
  *
- * Follows the same convention as validate-generated-data.ts:
+ * Follows the same convention as validate-app-data.ts:
  * - 0 (EXIT_OK): all succeeded
  * - 1 (EXIT_WARN): partial failure (some succeeded, some failed)
  * - 2 (EXIT_ERROR): all failed

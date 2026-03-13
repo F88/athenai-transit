@@ -21,15 +21,14 @@
  *   2 — errors found (missing files or expired services)
  *
  * Usage:
- *   npx tsx pipeline/scripts/validate-generated-data.ts
- *   npm run pipeline:validate
+ *   npx tsx pipeline/scripts/app-data/validate-app-data.ts
  */
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { loadAllGtfsSources } from '../lib/load-gtfs-sources';
-import { runMain } from '../lib/pipeline-utils';
+import { loadAllGtfsSources } from '../../lib/load-gtfs-sources';
+import { runMain } from '../../lib/pipeline-utils';
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -452,8 +451,7 @@ function determineExitCode(
 // ---------------------------------------------------------------------------
 
 function printUsage(): void {
-  console.log('Usage: npx tsx pipeline/scripts/validate-generated-data.ts');
-  console.log('       npm run pipeline:validate');
+  console.log('Usage: npx tsx pipeline/scripts/app-data/validate-app-data.ts');
   console.log('');
   console.log('Validate generated web app data files.');
   console.log('');

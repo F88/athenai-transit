@@ -11,10 +11,9 @@
  * Output: pipeline/build/data/{prefix}/*.json (8 files per source)
  *
  * Usage:
- *   npx tsx pipeline/scripts/build-app-data-from-gtfs.ts <source-name>
- *   npx tsx pipeline/scripts/build-app-data-from-gtfs.ts --targets <file>
- *   npx tsx pipeline/scripts/build-app-data-from-gtfs.ts --list
- *   npm run pipeline:build:json
+ *   npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts <source-name>
+ *   npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts --targets <file>
+ *   npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts --list
  */
 
 import Database from 'better-sqlite3';
@@ -26,8 +25,8 @@ import type {
   FeedInfoJson,
   RouteJson,
   TranslationsJson,
-} from '../../src/types/data/transit-json';
-import { listGtfsSourceNames, loadGtfsSource } from '../lib/load-gtfs-sources';
+} from '../../../src/types/data/transit-json';
+import { listGtfsSourceNames, loadGtfsSource } from '../../lib/load-gtfs-sources';
 import {
   determineBatchExitCode,
   formatBytes,
@@ -37,7 +36,7 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../lib/pipeline-utils';
+} from '../../lib/pipeline-utils';
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -712,9 +711,9 @@ function buildSourceJson(source: BuildSource): void {
 // ---------------------------------------------------------------------------
 
 function printUsage(): void {
-  console.log('Usage: npx tsx pipeline/scripts/build-app-data-from-gtfs.ts <source-name>');
-  console.log('       npx tsx pipeline/scripts/build-app-data-from-gtfs.ts --targets <file>');
-  console.log('       npx tsx pipeline/scripts/build-app-data-from-gtfs.ts --list\n');
+  console.log('Usage: npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts <source-name>');
+  console.log('       npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts --targets <file>');
+  console.log('       npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts --list\n');
   console.log('Options:');
   console.log('  --targets <file>  Batch build from a target list file (.ts)');
   console.log('  --list            List available source names');
