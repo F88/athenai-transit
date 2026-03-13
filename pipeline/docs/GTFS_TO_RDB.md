@@ -64,7 +64,44 @@ toei-bus.ts → { pipeline: { outDir: "toei-bus", ... } }
 
 GTFS 公式仕様 (gtfs.org) + GTFS-JP v3 の全テーブルを網羅する。合計34テーブル。
 
-**nullable/NOT NULL の方針**: GTFS 公式仕様 (gtfs.org) に準拠する。GTFS-JP v3 で独自に必須化されているカラム (例: `routes.agency_id` が JP では推奨必須) であっても、スキーマ上は GTFS 仕様通り nullable とする。JP 固有のバリデーションはスキーマ層ではなくバリデーション層の責務とし、GTFS-JP 以外のフィードも同じスキーマで受け入れられるようにする。
+### GTFS 仕様との意図的な差異
+
+スキーマは GTFS 仕様に準拠しつつ、以下の4点で意図的に仕様から逸脱している。スキーマ定義は `pipeline/lib/gtfs-schema.ts` に集約されており、各テーブルの差異理由はインラインコメントにも記載。
+
+#### 1. 一部テーブルの PRIMARY KEY 省略
+
+GTFS 仕様が複合 PK を定義するテーブルのうち、以下は PK を設定していない。
+
+| テーブル            | 仕様上の PK                                                                                          | 省略理由                                                                                        |
+| ------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| frequencies         | (trip_id, start_time)                                                                                | 重複行の可能性                                                                                  |
+| fare_products       | (fare_product_id, rider_category_id, fare_media_id)                                                  | nullable カラムを含む複合 PK は SQLite で意図通り動作しない (NULL は UNIQUE チェックをスキップ) |
+| fare_leg_rules      | (leg_group_id, network_id, from_area_id, to_area_id, from_timeframe_group_id, to_timeframe_group_id) | 同上                                                                                            |
+| fare_leg_join_rules | (from_leg_group_id, to_leg_group_id)                                                                 | 重複行の可能性                                                                                  |
+| fare_transfer_rules | (from_leg_group_id, to_leg_group_id, fare_transfer_type)                                             | 同上                                                                                            |
+
+**理由**: PK は SQLite で NOT NULL + UNIQUE を暗黙的に課す。実データに重複や NULL がある場合、INSERT が失敗しインポート全体が中断する。このスクリプトの目的は GTFS データの忠実な格納であり、データ品質の強制ではない。
+
+#### 2. nullable 優先 (GTFS-JP v3 互換性)
+
+GTFS 最新仕様で Required (NOT NULL) でも、GTFS-JP v3 に存在しないカラムは nullable とする。NOT NULL カラムが CSV に欠損するとインポートが中断するため、GTFS-JP v3 フィードの受け入れを保証するにはこの方針が必要。
+
+JP 固有のバリデーションはスキーマ層ではなくバリデーション層の責務とし、GTFS-JP 以外のフィードも同じスキーマで受け入れられるようにする。
+
+#### 3. FK 省略 (テーブル作成順序の制約)
+
+テーブルは FK 依存順に作成するが、一部の FK 関係では参照先テーブルが参照元より後に作成される。SQLite は `PRAGMA foreign_keys = OFF` 時に FK 宣言を構文として受理するが、参照先が存在しなくても CREATE TABLE は成功する。整合性はインポート完了後の `PRAGMA foreign_key_check` で検証する。
+
+| 参照元     | カラム                   | 本来の参照先                       |
+| ---------- | ------------------------ | ---------------------------------- |
+| routes     | network_id               | networks(network_id)               |
+| stop_times | location_group_id        | location_groups(location_group_id) |
+| stop_times | pickup_booking_rule_id   | booking_rules(booking_rule_id)     |
+| stop_times | drop_off_booking_rule_id | booking_rules(booking_rule_id)     |
+
+#### 4. FK 省略 (複合/非一意キーの制約)
+
+SQLite の FK は参照先カラムが PRIMARY KEY または UNIQUE でなければならない。`fare_products.fare_product_id` は単独では一意でないため、`fare_leg_rules.fare_product_id` の FK は宣言できない。
 
 ### GTFS 標準テーブル (31)
 
