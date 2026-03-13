@@ -6,31 +6,59 @@
 
 GTFS 仕様で定義される CSV ファイル群をストリーミング読み込みし、ソースごとに1つの SQLite DB を生成する。CSV の値はそのまま保存し、ID プレフィックスの付与は後続の build-gtfs-json.ts が行う。
 
-**1ソース = 1 DB ファイル**: 各 GTFS ソース (ZIP) は独立した DB ファイル (`{prefix}.db`) に格納される。複数ソースの CSV を同一 DB に混在させない。GTFS の ID 体系はソース内で閉じており (例: `route_id` が異なるソース間で衝突しうる)、CSV の値をそのまま格納する本スクリプトでは出自の区別ができなくなるためである。ソース間の統合は後続の build-gtfs-json.ts がプレフィックス付きで行う。
+**1ソース = 1 DB ファイル**: 各 GTFS ソース (ZIP) は独立した DB ファイル (`{outDir}.db`) に格納される。複数ソースの CSV を同一 DB に混在させない。GTFS の ID 体系はソース内で閉じており (例: `route_id` が異なるソース間で衝突しうる)、CSV の値をそのまま格納する本スクリプトでは出自の区別ができなくなるためである。ソース間の統合は後続の build-gtfs-json.ts がプレフィックス付きで行う。
 
 スキーマは GTFS 公式仕様 + GTFS-JP v3 の全テーブルを網羅しており、どんな GTFS フィードが来ても CSV ファイルが SKIP されない (テーブル定義なしで無視されることがない) ことを保証する。
 
 | スクリプト         | 入力                             | 出力                         |
 | ------------------ | -------------------------------- | ---------------------------- |
-| `build-gtfs-db.ts` | `pipeline/data/gtfs/{dir}/*.txt` | `pipeline/build/{prefix}.db` |
+| `build-gtfs-db.ts` | `pipeline/data/gtfs/{dir}/*.txt` | `pipeline/build/{outDir}.db` |
 
 ## CLI インターフェース
 
 ```
-Usage: npx tsx pipeline/scripts/build-gtfs-db.ts [source]
+Usage: npx tsx pipeline/scripts/build-gtfs-db.ts <source-name>
+       npx tsx pipeline/scripts/build-gtfs-db.ts --targets <file>
+       npx tsx pipeline/scripts/build-gtfs-db.ts --list
        npm run pipeline:build:db
 ```
 
-| 引数       | 説明                                                          |
-| ---------- | ------------------------------------------------------------- |
-| `[source]` | 省略時は全ソース処理。指定時はそのソースのみ (ディレクトリ名) |
+| 引数/オプション    | 説明                                                            |
+| ------------------ | --------------------------------------------------------------- |
+| `<source-name>`    | 単一ソースを処理 (後述の「ソース名の解決」を参照)               |
+| `--targets <file>` | ターゲットリストファイルで一括処理 (ソースごとに子プロセス実行) |
+| `--list`           | 利用可能なソース名を一覧表示                                    |
+| `--help`           | ヘルプメッセージを表示                                          |
+
+`npm run pipeline:build:db` は `--targets pipeline/targets/build-db.ts` で一括処理する。ダウンロード対象リスト (`pipeline/targets/download-gtfs.ts`) とは独立したファイルであり、DB 格納対象のみを管理する。
+
+### ソース名の解決
+
+`<source-name>` は `pipeline/resources/gtfs/` 内のリソース定義ファイル名 (拡張子なし) を指定する。
+
+```
+npx tsx pipeline/scripts/build-gtfs-db.ts toei-bus
+                                          ^^^^^^^^
+                                          pipeline/resources/gtfs/toei-bus.ts を読み込む
+```
+
+リソース定義ファイルには `pipeline.outDir` (ディレクトリ名) が含まれており、入出力パスはいずれも `outDir` から決定される。
+
+```
+toei-bus.ts → { pipeline: { outDir: "toei-bus", ... } }
+               │
+               ├─ Input:  pipeline/data/gtfs/toei-bus/*.txt
+               └─ Output: pipeline/build/toei-bus.db
+```
+
+`--list` で利用可能なソース名を確認できる。
 
 ## 入出力パス
 
-- **入力**: `pipeline/data/gtfs/{directory}/*.txt` (GTFS CSV ファイル)
-- **出力**: `pipeline/build/{prefix}.db` (SQLite、ソースごと)
+- **入力**: `pipeline/data/gtfs/{outDir}/*.txt` (GTFS CSV ファイル)
+- **出力**: `pipeline/build/{outDir}.db` (SQLite、ソースごと)
 
-入力ディレクトリが存在しないソースはスキップされる (WARN ログ)。
+入力ディレクトリが存在しない場合はエラー終了する (exit code 1)。事前に `download-gtfs.ts` で GTFS データを取得しておく必要がある。
 
 ## スキーマ定義
 

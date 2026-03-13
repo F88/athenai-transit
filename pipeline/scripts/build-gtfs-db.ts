@@ -1,29 +1,47 @@
 #!/usr/bin/env -S npx tsx
 
 /**
- * Convert GTFS CSV files into per-source SQLite databases.
+ * Convert GTFS CSV files into a per-source SQLite database.
  *
- * Loads source definitions from pipeline/resources/gtfs/ and imports all CSV
- * files found in each source directory into a separate database. CSV values
- * are stored as-is without any ID prefixing — prefix logic is handled later
- * by build-gtfs-json.ts at JSON output time.
+ * Each invocation processes a single GTFS source. For batch processing,
+ * use `--targets <file>` which runs this script once per source in a
+ * child process (same pattern as download-gtfs.ts).
  *
  * Usage:
- *   npx tsx pipeline/scripts/build-gtfs-db.ts            # all sources
- *   npx tsx pipeline/scripts/build-gtfs-db.ts toei-bus    # specific source only
- *   npm run pipeline:build:db
+ *   npx tsx pipeline/scripts/build-gtfs-db.ts <source-name>
+ *   npx tsx pipeline/scripts/build-gtfs-db.ts toei-bus
+ *   npx tsx pipeline/scripts/build-gtfs-db.ts --targets pipeline/targets/download-gtfs.ts
+ *   npx tsx pipeline/scripts/build-gtfs-db.ts --list
  *
  * Input:  pipeline/data/gtfs/{directory}/*.txt (GTFS CSV files)
- * Output: pipeline/build/{prefix}.db per source (e.g. tobus.db, toaran.db)
+ * Output: pipeline/build/{outDir}.db (e.g. toei-bus.db, toei-train.db)
  */
 
 import Database from 'better-sqlite3';
-import { createReadStream, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import {
+  createReadStream,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
 import { createInterface } from 'node:readline';
 import { join, resolve } from 'node:path';
 
 import { splitCsvLine } from '../lib/csv-utils';
-import { loadAllGtfsSources } from './load-gtfs-sources';
+import {
+  determineBatchExitCode,
+  formatBytes,
+  formatExitCode,
+  loadTargetFile,
+  parseCliArg,
+  printBatchSummary,
+  runBatch,
+  runMain,
+} from '../lib/pipeline-utils';
+import { listGtfsSourceNames, loadGtfsSource } from './load-gtfs-sources';
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -488,14 +506,7 @@ const INDEXES: string[] = [
 /** Resolved source info for build processing. */
 interface BuildSource {
   directory: string;
-  prefix: string;
   nameEn: string;
-}
-
-interface ImportSummary {
-  source: string;
-  table: string;
-  rows: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -655,16 +666,6 @@ function validateHeaders(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 function tableNameFromFile(filename: string): string {
   return filename.replace(/\.txt$/, '');
@@ -876,25 +877,20 @@ function printStatistics(db: Database.Database, dbPath: string): void {
 async function buildSourceDb(
   source: BuildSource,
   schemaMap: Map<string, { name: string; nullable: boolean }[]>,
-): Promise<{ dbPath: string; summary: ImportSummary[] }> {
+): Promise<void> {
   const sourceDir = join(GTFS_BASE_DIR, source.directory);
-  const prefix = source.prefix;
-  const dbPath = join(OUTPUT_DIR, `${prefix}.db`);
+  const dbPath = join(OUTPUT_DIR, `${source.directory}.db`);
+  const tmpDbPath = `${dbPath}.tmp`;
 
-  console.log(`\n========================================`);
-  console.log(`Source: ${source.directory} (${source.nameEn})`);
-  console.log(`  prefix: ${prefix}`);
-  console.log(`  output: ${dbPath}`);
-  console.log(`========================================`);
-
-  // Remove existing DB for this source
-  if (existsSync(dbPath)) {
-    rmSync(dbPath);
-    console.log(`Removed existing DB: ${dbPath}`);
+  // Build into a temporary file so the existing DB remains intact on failure.
+  // On success, the temp file is renamed to the final path.
+  if (existsSync(tmpDbPath)) {
+    rmSync(tmpDbPath);
+    console.log(`Removed stale temp file: ${tmpDbPath}`);
   }
 
-  // Create database and tables
-  const db = new Database(dbPath);
+  console.log(`Creating temp DB: ${tmpDbPath}`);
+  const db = new Database(tmpDbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = OFF'); // Disable during bulk import for performance
 
@@ -904,7 +900,6 @@ async function buildSourceDb(
   console.log(`${SCHEMA.length} tables created.`);
 
   const knownTables = new Set(schemaMap.keys());
-  const summary: ImportSummary[] = [];
 
   // Import CSV data
   const csvFiles = readdirSync(sourceDir)
@@ -913,8 +908,6 @@ async function buildSourceDb(
 
   if (csvFiles.length === 0) {
     console.warn(`  WARN: No .txt files found in ${sourceDir}`);
-    db.close();
-    return { dbPath, summary };
   }
 
   console.log(`Found ${csvFiles.length} GTFS files`);
@@ -938,7 +931,6 @@ async function buildSourceDb(
         continue;
       }
 
-      summary.push({ source: prefix, table: tableName, rows: rowCount });
       console.log(`  ${tableName.padEnd(20)} ${String(rowCount).padStart(10)} rows`);
     } catch (err) {
       console.error(
@@ -966,10 +958,32 @@ async function buildSourceDb(
   console.log('VACUUM + ANALYZE complete.');
 
   // Statistics
-  printStatistics(db, dbPath);
+  printStatistics(db, tmpDbPath);
 
   db.close();
-  return { dbPath, summary };
+
+  // Replace existing DB with the successfully built one
+  const hadExisting = existsSync(dbPath);
+  renameSync(tmpDbPath, dbPath);
+  if (hadExisting) {
+    console.log(`\nReplaced existing DB: ${dbPath} (${formatBytes(statSync(dbPath).size)})`);
+  } else {
+    console.log(`\nCreated DB: ${dbPath} (${formatBytes(statSync(dbPath).size)})`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CLI
+// ---------------------------------------------------------------------------
+
+function printUsage(): void {
+  console.log('Usage: npx tsx pipeline/scripts/build-gtfs-db.ts <source-name>');
+  console.log('       npx tsx pipeline/scripts/build-gtfs-db.ts --targets <file>');
+  console.log('       npx tsx pipeline/scripts/build-gtfs-db.ts --list\n');
+  console.log('Options:');
+  console.log('  --targets <file>  Batch build from a target list file (.ts)');
+  console.log('  --list            List available source names');
+  console.log('  --help            Show this help message');
 }
 
 // ---------------------------------------------------------------------------
@@ -977,79 +991,87 @@ async function buildSourceDb(
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  console.log('=== GTFS CSV -> SQLite DB (per-source) ===\n');
+  const arg = parseCliArg();
 
-  // 1. Load resource definitions
-  const allDefs = await loadAllGtfsSources();
-  let sources: BuildSource[] = allDefs.map((d) => ({
-    directory: d.pipeline.outDir,
-    prefix: d.pipeline.prefix,
-    nameEn: d.resource.nameEn,
-  }));
+  if (arg.kind === 'help') {
+    printUsage();
+    return;
+  }
 
-  const cliFilter = process.argv[2];
-
-  if (cliFilter) {
-    sources = sources.filter((r) => r.directory === cliFilter);
-    if (sources.length === 0) {
-      throw new Error(
-        `No resource found with directory "${cliFilter}". Available: ${allDefs
-          .map((d) => d.pipeline.outDir)
-          .join(', ')}`,
-      );
+  if (arg.kind === 'list') {
+    const names = listGtfsSourceNames();
+    console.log('Available GTFS sources:\n');
+    for (const name of names) {
+      console.log(`  ${name}`);
     }
+    return;
   }
 
-  // Filter to sources whose directories actually exist
-  sources = sources.filter((r) => {
-    const dir = join(GTFS_BASE_DIR, r.directory);
-    if (!existsSync(dir)) {
-      console.warn(`  WARN: Skipping "${r.directory}" (directory not found: ${dir})`);
-      return false;
+  if (arg.kind === 'targets') {
+    const sourceNames = await loadTargetFile(arg.path);
+    console.log(`=== Batch build-db (${sourceNames.length} targets) ===\n`);
+    const scriptPath = resolve(import.meta.dirname, 'build-gtfs-db.ts');
+    const results = runBatch(scriptPath, sourceNames);
+    printBatchSummary(results);
+    const exitCode = determineBatchExitCode(results);
+    console.log(`\n${formatExitCode(exitCode)}`);
+    process.exitCode = exitCode;
+    return;
+  }
+
+  // Single source mode
+  let source;
+  try {
+    source = await loadGtfsSource(arg.name);
+  } catch (err) {
+    console.error(`Error: Failed to load source definition for "${arg.name}".`);
+    if (err instanceof Error) {
+      console.error(`  Cause: ${err.message}`);
     }
-    return true;
-  });
-
-  if (sources.length === 0) {
-    throw new Error('No GTFS data sources found with existing directories.');
+    console.log('');
+    printUsage();
+    process.exitCode = 1;
+    return;
   }
 
-  console.log(`Data sources (${sources.length}):`);
-  for (const s of sources) {
-    console.log(`  ${s.directory} (prefix: ${s.prefix}) — ${s.nameEn}`);
+  const { outDir } = source.pipeline;
+  const { nameEn } = source.resource;
+  const sourceDir = join(GTFS_BASE_DIR, outDir);
+
+  if (!existsSync(sourceDir)) {
+    console.error(`Error: GTFS data directory not found: ${sourceDir}`);
+    console.error('  Run download-gtfs.ts first to fetch the GTFS data.');
+    process.exitCode = 1;
+    return;
   }
 
-  // 2. Ensure output directory exists
+  console.log(`=== ${arg.name} [START] ===\n`);
+  console.log(`  Name:   ${nameEn}`);
+  console.log(`  Input:  ${sourceDir}`);
+  console.log(`  Output: ${join(OUTPUT_DIR, `${outDir}.db`)}`);
+  console.log('');
+
+  // Ensure output directory exists
   if (!existsSync(OUTPUT_DIR)) {
     mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
-  // Build schema map for validation
   const schemaMap = buildSchemaMap();
+  const buildSource: BuildSource = { directory: outDir, nameEn };
+  const t0 = performance.now();
 
-  // 3. Build per-source databases
-  const allSummary: ImportSummary[] = [];
-  const dbPaths: string[] = [];
-
-  for (const source of sources) {
-    const { dbPath, summary } = await buildSourceDb(source, schemaMap);
-    dbPaths.push(dbPath);
-    allSummary.push(...summary);
+  try {
+    await buildSourceDb(buildSource, schemaMap);
+  } catch (err) {
+    console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
+    process.exitCode = 1;
+  } finally {
+    const durationMs = performance.now() - t0;
+    const code = process.exitCode ?? 0;
+    const label = code === 0 ? 'ok' : 'error';
+    console.log(`\nDuration: ${(durationMs / 1000).toFixed(1)}s`);
+    console.log(`Exit code: ${code} (${label})\n=== ${arg.name} [END] ===`);
   }
-
-  // 4. Final summary
-  console.log('\n=== Import Summary ===');
-  const totalRows = allSummary.reduce((acc, s) => acc + s.rows, 0);
-  console.log(`  Sources:    ${sources.map((s) => `${s.directory} (${s.prefix})`).join(', ')}`);
-  console.log(`  Tables:     ${new Set(allSummary.map((s) => s.table)).size}`);
-  console.log(`  Total rows: ${totalRows.toLocaleString()}`);
-  for (const dbPath of dbPaths) {
-    console.log(`  DB: ${dbPath} (${formatBytes(statSync(dbPath).size)})`);
-  }
-  console.log('\nDone!');
 }
 
-main().catch((err) => {
-  console.error('\nFATAL:', err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+runMain(main);
