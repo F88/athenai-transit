@@ -116,7 +116,10 @@ export function runMain(fn: () => void | Promise<void>, options?: RunMainOptions
         console.error(`  Cause: ${err.cause.message}`);
       }
       process.exitCode = fatalExitCode;
-      console.error(`\n${formatExitCode(fatalExitCode)}`);
+      // Don't use formatExitCode() here — its labels ("partial failure",
+      // "all failed") are for batch results. runMain's catch is a fatal
+      // error safety net, so "error" is always the correct label.
+      console.error(`\nExit code: ${fatalExitCode} (error)`);
     });
 }
 
