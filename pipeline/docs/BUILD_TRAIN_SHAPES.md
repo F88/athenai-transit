@@ -7,7 +7,7 @@
 | 項目   | 内容                                                        |
 | ------ | ----------------------------------------------------------- |
 | 入力   | `pipeline/data/mlit/N02-24_RailroadSection.geojson`         |
-| 出力   | `pipeline/build/data/toei-train/shapes.json`                |
+| 出力   | `pipeline/build/data/toaran/shapes.json`                    |
 | ソース | `pipeline/resources/gtfs/toei-train.ts` の mlitShapeMapping |
 
 GTFS ソースの `shapes.txt` が提供されていない路線 (都営電車) に対して、MLIT GeoJSON データから路線形状を生成する。
@@ -62,7 +62,7 @@ Route summary:
   ...
   TOTAL         318 segments    2179 points
 
-Wrote pipeline/build/data/toei-train/shapes.json (44.9 KB)
+Wrote pipeline/build/data/toaran/shapes.json (44.9 KB)
 
 Done in 105ms. (exit code: 0)
 ```

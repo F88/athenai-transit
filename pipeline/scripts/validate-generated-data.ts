@@ -467,8 +467,14 @@ function printUsage(): void {
 
 async function main(): Promise<void> {
   const arg = process.argv[2];
-  if (arg === '--help' || arg === '-h') {
+  if (arg) {
+    if (arg === '--help' || arg === '-h') {
+      printUsage();
+      return;
+    }
+    console.error(`Error: Unknown argument: ${arg}\n`);
     printUsage();
+    process.exitCode = 1;
     return;
   }
 

@@ -22,7 +22,7 @@ import toeiTrain from '../resources/gtfs/toei-train';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const GEOJSON_PATH = join(ROOT, 'data/mlit/N02-24_RailroadSection.geojson');
-const OUTPUT_DIR = join(ROOT, 'build/data', toeiTrain.pipeline.outDir);
+const OUTPUT_DIR = join(ROOT, 'build/data', toeiTrain.pipeline.prefix);
 const OUTPUT_PATH = join(OUTPUT_DIR, 'shapes.json');
 
 const { mlitShapeMapping } = toeiTrain.resource;
@@ -75,8 +75,14 @@ function printUsage(): void {
 
 function main(): void {
   const arg = process.argv[2];
-  if (arg === '--help' || arg === '-h') {
+  if (arg) {
+    if (arg === '--help' || arg === '-h') {
+      printUsage();
+      return;
+    }
+    console.error(`Error: Unknown argument: ${arg}\n`);
     printUsage();
+    process.exitCode = 1;
     return;
   }
 
