@@ -205,15 +205,23 @@ export function extractRoutes(
     );
   }
 
+  const defaultColor = routeColorFallbacks['*'] ?? '';
+
   const json: RouteJson[] = routes.map((r) => {
     const prefixedId = `${prefix}:${r.route_id}`;
+    const rawColor = r.route_color || '';
+    const rawTextColor = r.route_text_color || '';
+    // Treat identical color/textColor (e.g. 000000/000000) as unset
+    const colorUnset = !rawColor || (rawColor === rawTextColor && rawColor !== 'FFFFFF');
+    const color = colorUnset ? routeColorFallbacks[r.route_id] || defaultColor : rawColor;
+    const textColor = colorUnset && color !== rawColor ? 'FFFFFF' : rawTextColor;
     return {
       i: prefixedId,
       s: r.route_short_name ?? '',
       l: r.route_long_name ?? '',
       t: r.route_type,
-      c: r.route_color || routeColorFallbacks[r.route_id] || '',
-      tc: r.route_text_color ?? '',
+      c: color,
+      tc: textColor,
       m: namesMap.get(r.route_id) ?? {},
       ai: r.agency_id ? `${prefix}:${r.agency_id}` : '',
     };
