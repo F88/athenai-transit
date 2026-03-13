@@ -189,9 +189,7 @@ describe('runMain', () => {
   });
 
   it('catches an async rejection and sets exitCode to 1', async () => {
-    runMain(async () => {
-      throw new Error('async boom');
-    });
+    runMain(() => Promise.reject(new Error('async boom')));
     await vi.waitFor(() => expect(process.exitCode).toBe(1));
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('async boom'));
   });
@@ -211,5 +209,24 @@ describe('runMain', () => {
     });
     await vi.waitFor(() => expect(process.exitCode).toBe(1));
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('string error'));
+  });
+
+  it('uses fatalExitCode option when provided', async () => {
+    runMain(
+      () => {
+        throw new Error('fatal with custom code');
+      },
+      { fatalExitCode: 2 },
+    );
+    await vi.waitFor(() => expect(process.exitCode).toBe(2));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Exit code: 2'));
+  });
+
+  it('defaults fatalExitCode to 1 when not provided', async () => {
+    runMain(() => {
+      throw new Error('default code');
+    });
+    await vi.waitFor(() => expect(process.exitCode).toBe(1));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Exit code: 1'));
   });
 });

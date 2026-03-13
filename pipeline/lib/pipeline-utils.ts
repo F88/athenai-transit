@@ -87,26 +87,37 @@ export function parseCliArg(): ParsedArg {
 // Top-level error handler
 // ---------------------------------------------------------------------------
 
+/** Options for {@link runMain}. */
+export interface RunMainOptions {
+  /**
+   * Exit code to set when an unhandled error occurs.
+   * @default 1
+   */
+  fatalExitCode?: number;
+}
+
 /**
  * Run a main function with proper error handling for CLI scripts.
  *
  * Catches unhandled errors, logs them to stderr, and sets
- * `process.exitCode = 1` instead of crashing with an unhandled
+ * `process.exitCode` instead of crashing with an unhandled
  * promise rejection.
  *
  * @param fn - The main function to execute (sync or async).
+ * @param options - Optional configuration.
  */
-export function runMain(fn: () => void | Promise<void>): void {
+export function runMain(fn: () => void | Promise<void>, options?: RunMainOptions): void {
+  const fatalExitCode = options?.fatalExitCode ?? 1;
   Promise.resolve()
     .then(() => fn())
     .catch((err: unknown) => {
-    console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
-    if (err instanceof Error && err.cause instanceof Error) {
-      console.error(`  Cause: ${err.cause.message}`);
-    }
-    process.exitCode = 1;
-    console.error('\nExit code: 1 (error)');
-  });
+      console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
+      if (err instanceof Error && err.cause instanceof Error) {
+        console.error(`  Cause: ${err.cause.message}`);
+      }
+      process.exitCode = fatalExitCode;
+      console.error(`\n${formatExitCode(fatalExitCode)}`);
+    });
 }
 
 // ---------------------------------------------------------------------------

@@ -507,4 +507,4 @@ async function main(): Promise<void> {
   process.exitCode = exitCode;
 }
 
-runMain(main);
+runMain(main, { fatalExitCode: EXIT_ERROR });
