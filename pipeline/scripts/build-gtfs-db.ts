@@ -47,8 +47,11 @@ const BATCH_SIZE = 5000;
 // ---------------------------------------------------------------------------
 
 const SCHEMA: string[] = [
-  // --- Independent tables (no FK dependencies) ---
+  // =========================================================================
+  // Independent tables (no FK dependencies)
+  // =========================================================================
 
+  // agency.txt
   `CREATE TABLE IF NOT EXISTS agency (
     agency_id    TEXT PRIMARY KEY,
     agency_name  TEXT NOT NULL,
@@ -60,6 +63,7 @@ const SCHEMA: string[] = [
     agency_email TEXT
   )`,
 
+  // agency_jp.txt (GTFS-JP)
   `CREATE TABLE IF NOT EXISTS agency_jp (
     agency_id              TEXT PRIMARY KEY,
     agency_official_name   TEXT,
@@ -70,6 +74,7 @@ const SCHEMA: string[] = [
     FOREIGN KEY (agency_id) REFERENCES agency(agency_id)
   )`,
 
+  // calendar.txt
   `CREATE TABLE IF NOT EXISTS calendar (
     service_id TEXT PRIMARY KEY,
     monday     INTEGER NOT NULL,
@@ -83,6 +88,7 @@ const SCHEMA: string[] = [
     end_date   TEXT NOT NULL
   )`,
 
+  // calendar_dates.txt
   `CREATE TABLE IF NOT EXISTS calendar_dates (
     service_id     TEXT NOT NULL,
     date           TEXT NOT NULL,
@@ -91,6 +97,14 @@ const SCHEMA: string[] = [
     FOREIGN KEY (service_id) REFERENCES calendar(service_id)
   )`,
 
+  // levels.txt
+  `CREATE TABLE IF NOT EXISTS levels (
+    level_id    TEXT PRIMARY KEY,
+    level_index REAL NOT NULL,
+    level_name  TEXT
+  )`,
+
+  // stops.txt
   `CREATE TABLE IF NOT EXISTS stops (
     stop_id            TEXT PRIMARY KEY,
     stop_code          TEXT,
@@ -105,10 +119,14 @@ const SCHEMA: string[] = [
     stop_timezone      TEXT,
     wheelchair_boarding INTEGER,
     platform_code      TEXT,
+    tts_stop_name      TEXT,
+    level_id           TEXT,
     stop_access        TEXT,
-    FOREIGN KEY (parent_station) REFERENCES stops(stop_id)
+    FOREIGN KEY (parent_station) REFERENCES stops(stop_id),
+    FOREIGN KEY (level_id) REFERENCES levels(level_id)
   )`,
 
+  // routes.txt
   `CREATE TABLE IF NOT EXISTS routes (
     route_id           TEXT PRIMARY KEY,
     agency_id          TEXT,
@@ -119,12 +137,19 @@ const SCHEMA: string[] = [
     route_url          TEXT,
     route_color        TEXT,
     route_text_color   TEXT,
+    route_sort_order   INTEGER,
+    continuous_pickup  INTEGER,
+    continuous_drop_off INTEGER,
+    network_id         TEXT,
     jp_parent_route_id TEXT,
     FOREIGN KEY (agency_id) REFERENCES agency(agency_id)
   )`,
 
-  // --- Dependent tables ---
+  // =========================================================================
+  // Dependent tables
+  // =========================================================================
 
+  // trips.txt
   `CREATE TABLE IF NOT EXISTS trips (
     route_id              TEXT NOT NULL,
     service_id            TEXT NOT NULL,
@@ -136,29 +161,41 @@ const SCHEMA: string[] = [
     shape_id              TEXT,
     wheelchair_accessible INTEGER,
     bikes_allowed         INTEGER,
+    cars_allowed          INTEGER,
     jp_trip_desc          TEXT,
     jp_trip_desc_symbol   TEXT,
     jp_office_id          TEXT,
+    jp_pattern_id         TEXT,
     FOREIGN KEY (route_id) REFERENCES routes(route_id),
     FOREIGN KEY (service_id) REFERENCES calendar(service_id)
   )`,
 
+  // stop_times.txt
   `CREATE TABLE IF NOT EXISTS stop_times (
-    trip_id             TEXT NOT NULL,
-    arrival_time        TEXT,
-    departure_time      TEXT,
-    stop_id             TEXT NOT NULL,
-    stop_sequence       INTEGER NOT NULL,
-    stop_headsign       TEXT,
-    pickup_type         INTEGER,
-    drop_off_type       INTEGER,
-    shape_dist_traveled REAL,
-    timepoint           INTEGER,
+    trip_id                          TEXT NOT NULL,
+    arrival_time                     TEXT,
+    departure_time                   TEXT,
+    stop_id                          TEXT NOT NULL,
+    stop_sequence                    INTEGER NOT NULL,
+    stop_headsign                    TEXT,
+    pickup_type                      INTEGER,
+    drop_off_type                    INTEGER,
+    shape_dist_traveled              REAL,
+    timepoint                        INTEGER,
+    location_group_id                TEXT,
+    location_id                      TEXT,
+    start_pickup_drop_off_window     TEXT,
+    end_pickup_drop_off_window       TEXT,
+    continuous_pickup                INTEGER,
+    continuous_drop_off              INTEGER,
+    pickup_booking_rule_id           TEXT,
+    drop_off_booking_rule_id         TEXT,
     PRIMARY KEY (trip_id, stop_sequence),
     FOREIGN KEY (trip_id) REFERENCES trips(trip_id),
     FOREIGN KEY (stop_id) REFERENCES stops(stop_id)
   )`,
 
+  // shapes.txt
   `CREATE TABLE IF NOT EXISTS shapes (
     shape_id            TEXT NOT NULL,
     shape_pt_lat        REAL NOT NULL,
@@ -168,6 +205,7 @@ const SCHEMA: string[] = [
     PRIMARY KEY (shape_id, shape_pt_sequence)
   )`,
 
+  // fare_attributes.txt
   `CREATE TABLE IF NOT EXISTS fare_attributes (
     fare_id           TEXT PRIMARY KEY,
     price             REAL NOT NULL,
@@ -175,9 +213,12 @@ const SCHEMA: string[] = [
     currency_type     TEXT NOT NULL,
     payment_method    INTEGER NOT NULL,
     transfers         INTEGER,
-    transfer_duration INTEGER
+    agency_id         TEXT,
+    transfer_duration INTEGER,
+    FOREIGN KEY (agency_id) REFERENCES agency(agency_id)
   )`,
 
+  // fare_rules.txt
   `CREATE TABLE IF NOT EXISTS fare_rules (
     fare_id        TEXT NOT NULL,
     route_id       TEXT,
@@ -188,47 +229,242 @@ const SCHEMA: string[] = [
     FOREIGN KEY (route_id) REFERENCES routes(route_id)
   )`,
 
+  // feed_info.txt
   `CREATE TABLE IF NOT EXISTS feed_info (
     feed_publisher_name TEXT NOT NULL,
     feed_publisher_url  TEXT NOT NULL,
     feed_lang           TEXT NOT NULL,
     feed_start_date     TEXT,
     feed_end_date       TEXT,
-    feed_version        TEXT
+    feed_version        TEXT,
+    default_lang        TEXT,
+    feed_contact_email  TEXT,
+    feed_contact_url    TEXT
   )`,
 
+  // translations.txt
   `CREATE TABLE IF NOT EXISTS translations (
-    table_name    TEXT NOT NULL,
-    field_name    TEXT NOT NULL,
-    language      TEXT NOT NULL,
-    translation   TEXT NOT NULL,
-    record_id     TEXT,
-    record_sub_id TEXT,
-    field_value   TEXT
+    table_name      TEXT NOT NULL,
+    field_name      TEXT NOT NULL,
+    language        TEXT NOT NULL,
+    translation     TEXT NOT NULL,
+    record_id       TEXT,
+    record_sub_id   TEXT,
+    record_sequence TEXT,
+    field_value     TEXT
   )`,
 
+  // attributions.txt
   `CREATE TABLE IF NOT EXISTS attributions (
-    attribution_id   TEXT,
-    agency_id        TEXT,
-    route_id         TEXT,
-    trip_id          TEXT,
+    attribution_id    TEXT,
+    agency_id         TEXT,
+    route_id          TEXT,
+    trip_id           TEXT,
     organization_name TEXT NOT NULL,
-    is_producer      INTEGER,
-    is_operator      INTEGER,
-    is_authority     INTEGER,
-    is_data_source   INTEGER,
-    attribution_url  TEXT,
+    is_producer       INTEGER,
+    is_operator       INTEGER,
+    is_authority      INTEGER,
+    is_data_source    INTEGER,
+    attribution_url   TEXT,
     attribution_email TEXT,
+    attribution_phone TEXT,
     FOREIGN KEY (agency_id) REFERENCES agency(agency_id),
     FOREIGN KEY (route_id) REFERENCES routes(route_id),
     FOREIGN KEY (trip_id) REFERENCES trips(trip_id)
   )`,
 
+  // office_jp.txt (GTFS-JP)
   `CREATE TABLE IF NOT EXISTS office_jp (
     office_id    TEXT PRIMARY KEY,
     office_name  TEXT,
     office_url   TEXT,
     office_phone TEXT
+  )`,
+
+  // pathways.txt
+  `CREATE TABLE IF NOT EXISTS pathways (
+    pathway_id         TEXT PRIMARY KEY,
+    from_stop_id       TEXT NOT NULL,
+    to_stop_id         TEXT NOT NULL,
+    pathway_mode       INTEGER NOT NULL,
+    is_bidirectional   INTEGER NOT NULL,
+    length             REAL,
+    traversal_time     INTEGER,
+    stair_count        INTEGER,
+    max_slope          REAL,
+    min_width          REAL,
+    signposted_as      TEXT,
+    reverse_signposted_as TEXT,
+    FOREIGN KEY (from_stop_id) REFERENCES stops(stop_id),
+    FOREIGN KEY (to_stop_id) REFERENCES stops(stop_id)
+  )`,
+
+  // frequencies.txt
+  `CREATE TABLE IF NOT EXISTS frequencies (
+    trip_id      TEXT NOT NULL,
+    start_time   TEXT NOT NULL,
+    end_time     TEXT NOT NULL,
+    headway_secs INTEGER NOT NULL,
+    exact_times  INTEGER,
+    FOREIGN KEY (trip_id) REFERENCES trips(trip_id)
+  )`,
+
+  // transfers.txt
+  `CREATE TABLE IF NOT EXISTS transfers (
+    from_stop_id      TEXT,
+    to_stop_id        TEXT,
+    from_route_id     TEXT,
+    to_route_id       TEXT,
+    from_trip_id      TEXT,
+    to_trip_id        TEXT,
+    transfer_type     INTEGER NOT NULL,
+    min_transfer_time INTEGER,
+    FOREIGN KEY (from_stop_id) REFERENCES stops(stop_id),
+    FOREIGN KEY (to_stop_id) REFERENCES stops(stop_id),
+    FOREIGN KEY (from_route_id) REFERENCES routes(route_id),
+    FOREIGN KEY (to_route_id) REFERENCES routes(route_id),
+    FOREIGN KEY (from_trip_id) REFERENCES trips(trip_id),
+    FOREIGN KEY (to_trip_id) REFERENCES trips(trip_id)
+  )`,
+
+  // pattern_jp.txt (GTFS-JP)
+  `CREATE TABLE IF NOT EXISTS pattern_jp (
+    pattern_id   TEXT PRIMARY KEY,
+    route_id     TEXT NOT NULL,
+    pattern_name TEXT,
+    pattern_url  TEXT,
+    FOREIGN KEY (route_id) REFERENCES routes(route_id)
+  )`,
+
+  // areas.txt
+  `CREATE TABLE IF NOT EXISTS areas (
+    area_id   TEXT PRIMARY KEY,
+    area_name TEXT
+  )`,
+
+  // stop_areas.txt
+  `CREATE TABLE IF NOT EXISTS stop_areas (
+    area_id TEXT NOT NULL,
+    stop_id TEXT NOT NULL,
+    FOREIGN KEY (area_id) REFERENCES areas(area_id),
+    FOREIGN KEY (stop_id) REFERENCES stops(stop_id)
+  )`,
+
+  // networks.txt
+  `CREATE TABLE IF NOT EXISTS networks (
+    network_id   TEXT PRIMARY KEY,
+    network_name TEXT
+  )`,
+
+  // route_networks.txt
+  `CREATE TABLE IF NOT EXISTS route_networks (
+    network_id TEXT NOT NULL,
+    route_id   TEXT NOT NULL,
+    FOREIGN KEY (network_id) REFERENCES networks(network_id),
+    FOREIGN KEY (route_id) REFERENCES routes(route_id)
+  )`,
+
+  // location_groups.txt
+  `CREATE TABLE IF NOT EXISTS location_groups (
+    location_group_id   TEXT PRIMARY KEY,
+    location_group_name TEXT
+  )`,
+
+  // location_group_stops.txt
+  `CREATE TABLE IF NOT EXISTS location_group_stops (
+    location_group_id TEXT NOT NULL,
+    stop_id           TEXT NOT NULL,
+    FOREIGN KEY (location_group_id) REFERENCES location_groups(location_group_id),
+    FOREIGN KEY (stop_id) REFERENCES stops(stop_id)
+  )`,
+
+  // booking_rules.txt
+  `CREATE TABLE IF NOT EXISTS booking_rules (
+    booking_rule_id            TEXT PRIMARY KEY,
+    booking_type               INTEGER NOT NULL,
+    prior_notice_duration_min  INTEGER,
+    prior_notice_duration_max  INTEGER,
+    prior_notice_last_day      INTEGER,
+    prior_notice_last_time     TEXT,
+    prior_notice_start_day     INTEGER,
+    message                    TEXT,
+    pickup_message             TEXT,
+    drop_off_message           TEXT
+  )`,
+
+  // =========================================================================
+  // GTFS Fares v2
+  // =========================================================================
+
+  // timeframes.txt
+  `CREATE TABLE IF NOT EXISTS timeframes (
+    timeframe_group_id TEXT NOT NULL,
+    start_time         TEXT,
+    end_time           TEXT,
+    service_id         TEXT,
+    FOREIGN KEY (service_id) REFERENCES calendar(service_id)
+  )`,
+
+  // rider_categories.txt
+  `CREATE TABLE IF NOT EXISTS rider_categories (
+    rider_category_id          TEXT PRIMARY KEY,
+    rider_category_name        TEXT NOT NULL,
+    is_default_fare_category   INTEGER,
+    eligibility_url            TEXT
+  )`,
+
+  // fare_media.txt
+  `CREATE TABLE IF NOT EXISTS fare_media (
+    fare_media_id   TEXT PRIMARY KEY,
+    fare_media_name TEXT NOT NULL,
+    fare_media_type INTEGER NOT NULL
+  )`,
+
+  // fare_products.txt
+  `CREATE TABLE IF NOT EXISTS fare_products (
+    fare_product_id   TEXT NOT NULL,
+    fare_product_name TEXT NOT NULL,
+    rider_category_id TEXT,
+    fare_media_id     TEXT,
+    amount            REAL NOT NULL,
+    currency          TEXT NOT NULL,
+    FOREIGN KEY (rider_category_id) REFERENCES rider_categories(rider_category_id),
+    FOREIGN KEY (fare_media_id) REFERENCES fare_media(fare_media_id)
+  )`,
+
+  // fare_leg_rules.txt
+  `CREATE TABLE IF NOT EXISTS fare_leg_rules (
+    leg_group_id             TEXT,
+    network_id               TEXT,
+    from_area_id             TEXT,
+    to_area_id               TEXT,
+    from_timeframe_group_id  TEXT,
+    to_timeframe_group_id    TEXT,
+    fare_product_id          TEXT NOT NULL,
+    rule_priority            INTEGER,
+    FOREIGN KEY (from_area_id) REFERENCES areas(area_id),
+    FOREIGN KEY (to_area_id) REFERENCES areas(area_id),
+    FOREIGN KEY (fare_product_id) REFERENCES fare_products(fare_product_id)
+  )`,
+
+  // fare_leg_join_rules.txt
+  `CREATE TABLE IF NOT EXISTS fare_leg_join_rules (
+    from_leg_group_id       TEXT,
+    to_leg_group_id         TEXT,
+    transfer_fare_product_id TEXT,
+    duration_limit           INTEGER,
+    duration_limit_type      INTEGER,
+    fare_transfer_type       INTEGER
+  )`,
+
+  // fare_transfer_rules.txt
+  `CREATE TABLE IF NOT EXISTS fare_transfer_rules (
+    from_leg_group_id        TEXT,
+    to_leg_group_id          TEXT,
+    transfer_fare_product_id TEXT,
+    duration_limit           INTEGER,
+    duration_limit_type      INTEGER,
+    fare_transfer_type       INTEGER
   )`,
 ];
 
@@ -242,6 +478,7 @@ const INDEXES: string[] = [
   'CREATE INDEX idx_stop_times_stop_dep ON stop_times (stop_id, departure_time)',
   'CREATE INDEX idx_trips_route         ON trips (route_id)',
   'CREATE INDEX idx_cal_dates_date      ON calendar_dates (date)',
+  'CREATE INDEX idx_translations_table  ON translations (table_name, field_name)',
 ];
 
 // ---------------------------------------------------------------------------
