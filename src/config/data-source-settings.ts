@@ -26,6 +26,12 @@ const settings: SourceGroup[] = [
     prefixes: ['ktbus'],
   },
   {
+    id: 'keio-bus',
+    name_ja: '京王バス',
+    category: 'bus',
+    prefixes: ['kobus'],
+  },
+  {
     id: 'suginami-gsm',
     name_ja: '杉並区グリーンスローモビリティ',
     category: 'bus',
