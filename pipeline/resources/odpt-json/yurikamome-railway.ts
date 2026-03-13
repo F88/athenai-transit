@@ -8,8 +8,8 @@ const yurikamomeRailway: OdptJsonSourceDefinition = {
       'Railway data for Yurikamome line: station order, line code, color, and multilingual route names',
     dataFormat: { type: 'ODPT-JSON' },
     license: {
-      name: 'CC BY 4.0',
-      url: 'https://creativecommons.org/licenses/by/4.0/',
+      name: '公共交通オープンデータ基本ライセンス',
+      url: 'https://developer.odpt.org/terms/data_basic_license.html',
     },
     odptType: 'odpt:Railway',
     endpointUrl: 'https://api.odpt.org/api/v4/odpt:Railway?odpt:operator=odpt.Operator:Yurikamome',
@@ -19,8 +19,8 @@ const yurikamomeRailway: OdptJsonSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
-      resourceId: 'b3ab2e69-0e60-48e7-9e05-69c7c1e57e1e',
-      url: 'https://ckan.odpt.org/dataset/r_info_yurikamome/resource/b3ab2e69-0e60-48e7-9e05-69c7c1e57e1e',
+      resourceId: '0806342a-8baa-4a8b-8566-af97a0e02821',
+      url: 'https://ckan.odpt.org/dataset/r_route-yurikamome/resource/0806342a-8baa-4a8b-8566-af97a0e02821',
     },
     provider: {
       nameJa: 'ゆりかもめ',
