@@ -12,18 +12,6 @@
  *   c = route_color, tc = route_text_color
  */
 
-/** data-source-settings.json */
-export interface SourceGroupJson {
-  /** Unique group identifier (used as localStorage key). */
-  id: string;
-  /** Japanese display name for settings UI. */
-  name_ja: string;
-  /** UI grouping label (e.g. "bus", "train"). */
-  category: string;
-  /** `public/data/{prefix}/` folder names to load. */
-  prefixes: string[];
-}
-
 /** stops.json */
 export interface StopJson {
   i: string; // stop_id

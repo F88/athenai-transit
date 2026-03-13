@@ -1,4 +1,4 @@
-import settings from '../config/data-source-settings.json';
+import settings from './data-source-settings';
 
 /**
  * A group of related GTFS data sources managed as a single toggle unit.
@@ -30,7 +30,7 @@ export class DataSourceManager {
 
   /** Creates a new manager, restoring enabled state from localStorage. */
   constructor() {
-    this.groups = settings as SourceGroup[];
+    this.groups = settings;
     const allIds = new Set(this.groups.map((g) => g.id));
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
