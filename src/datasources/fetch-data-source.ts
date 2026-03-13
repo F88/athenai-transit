@@ -8,11 +8,14 @@
 
 import { createLogger } from '../utils/logger';
 import type {
+  AgencyJson,
   CalendarJson,
+  FeedInfoJson,
   RouteJson,
   ShapesJson,
   StopJson,
   TimetableJson,
+  TranslationsJson,
 } from '../types/data/transit-json';
 import type { SourceData, TransitDataSource } from './transit-data-source';
 
@@ -21,8 +24,9 @@ const logger = createLogger('FetchDataSource');
 /**
  * Loads GTFS JSON files via `fetch` from `/data/{prefix}/{file}.json`.
  *
- * All 5 files (stops, routes, calendar, timetable, shapes) are
- * fetched in parallel. If any file fails, the entire load throws.
+ * Required files (stops, routes, calendar, timetable, shapes) are
+ * fetched in parallel. Optional files (agency, feed-info, translations)
+ * are fetched with graceful 404 handling.
  */
 export class FetchDataSource implements TransitDataSource {
   /**
@@ -37,7 +41,7 @@ export class FetchDataSource implements TransitDataSource {
       throw new Error(`Invalid prefix: "${prefix}"`);
     }
 
-    logger.debug(`Fetching ${prefix}/ (stops, routes, calendar, timetable, shapes).json`);
+    logger.debug(`Fetching ${prefix}/ JSON files`);
 
     const fetchAndParse = (file: string) =>
       fetch(`/data/${prefix}/${file}.json`).then((r) => {
@@ -47,16 +51,47 @@ export class FetchDataSource implements TransitDataSource {
         return r.json() as Promise<unknown>;
       });
 
-    const [stops, routes, calendar, timetable, shapes] = await Promise.all([
-      fetchAndParse('stops'),
-      fetchAndParse('routes'),
-      fetchAndParse('calendar'),
-      fetchAndParse('timetable'),
-      fetchAndParse('shapes'),
-    ]);
+    const fetchOptional = (file: string) => {
+      const path = `${prefix}/${file}.json`;
+      return fetch(`/data/${path}`).then((r) => {
+        if (r.status === 404) {
+          logger.error(`Optional file not found: ${path}`);
+          return null;
+        }
+        if (!r.ok) {
+          throw new Error(`HTTP ${r.status} for ${path}`);
+        }
+        // SPA fallback rewrites (e.g. Vercel) return 200 + HTML for missing
+        // files instead of 404. Detect this by checking content-type.
+        const ct = r.headers.get('content-type') ?? '';
+        if (!ct.includes('application/json')) {
+          logger.error(`Optional file not available: ${path} (content-type: ${ct})`);
+          return null;
+        }
+        return r.json() as Promise<unknown>;
+      });
+    };
 
-    logger.debug(
-      `Loaded ${prefix}/: ${(stops as StopJson[]).length} stops, ${(routes as RouteJson[]).length} routes`,
+    const [stops, routes, calendar, timetable, shapes, agencies, feedInfo, translations] =
+      await Promise.all([
+        fetchAndParse('stops'),
+        fetchAndParse('routes'),
+        fetchAndParse('calendar'),
+        fetchAndParse('timetable'),
+        fetchAndParse('shapes'),
+        fetchOptional('agency'),
+        fetchOptional('feed-info'),
+        fetchOptional('translations'),
+      ]);
+
+    const optionalLoaded = [
+      agencies ? 'agency' : null,
+      feedInfo !== null ? 'feed-info' : null,
+      translations ? 'translations' : null,
+    ].filter(Boolean);
+    logger.info(
+      `Loaded ${prefix}/: ${(stops as StopJson[]).length} stops, ${(routes as RouteJson[]).length} routes` +
+        (optionalLoaded.length > 0 ? ` (+${optionalLoaded.join(', ')})` : ''),
     );
 
     return {
@@ -66,6 +101,9 @@ export class FetchDataSource implements TransitDataSource {
       calendar: calendar as CalendarJson,
       timetable: timetable as TimetableJson,
       shapes: shapes as ShapesJson,
+      agencies: (agencies as AgencyJson[] | null) ?? undefined,
+      feedInfo: feedInfo as FeedInfoJson | null | undefined,
+      translations: (translations as TranslationsJson | null) ?? undefined,
     };
   }
 }

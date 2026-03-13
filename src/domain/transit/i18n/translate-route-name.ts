@@ -14,11 +14,9 @@ export interface TranslatedRouteNames {
  * Translate the names of a route for a given language.
  *
  * GTFS translations.txt provides translations for `route_long_name`
- * (e.g. "大江戸線" → "Oedo Line"). Currently returns GTFS raw names
- * as-is — `lang` is accepted but not yet used. When `route_names`
- * is added to {@link Route}, this function will look up the `lang`
- * key. Falls back to `route_long_name` when the requested language
- * is not available or `lang` is omitted.
+ * (e.g. "大江戸線" → "Oedo Line"). Looks up the `lang` key in
+ * `route.route_names` and falls back to `route_long_name` when the
+ * requested language is not available or `lang` is omitted.
  *
  * `route_short_name` has no translations in the current GTFS spec,
  * so it is returned as-is. Both fields may be empty strings
@@ -33,10 +31,9 @@ export interface TranslatedRouteNames {
  * @returns The translated route names.
  */
 export function translateRouteName(route: Route, lang?: string): TranslatedRouteNames {
-  // Future: if (lang && route.route_names?.[lang]) look up translated longName
-  void lang;
+  const translatedLongName = lang ? route.route_names[lang] : undefined;
   return {
     shortName: route.route_short_name,
-    longName: route.route_long_name,
+    longName: translatedLongName ?? route.route_long_name,
   };
 }

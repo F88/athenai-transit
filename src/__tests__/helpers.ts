@@ -45,9 +45,11 @@ export function makeRoute(id: string, routeType: RouteType = 3): Route {
     route_id: id,
     route_short_name: `R${id}`,
     route_long_name: `Route ${id}`,
+    route_names: {},
     route_type: routeType,
     route_color: '000000',
     route_text_color: 'FFFFFF',
+    agency_id: '',
   };
 }
 

@@ -20,18 +20,17 @@ import { copyFileSync, existsSync, readdirSync, rmSync, statSync } from 'node:fs
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
+import { archiveFilename, downloadWithRetry } from '../lib/download-utils';
 import {
-  archiveFilename,
-  downloadWithRetry,
-  ensureDir,
-  loadTargetFile,
-  parseDownloadArg,
   determineBatchExitCode,
+  ensureDir,
   formatExitCode,
+  loadTargetFile,
+  parseCliArg,
   printBatchSummary,
   runBatch,
   runMain,
-} from '../lib/download-utils';
+} from '../lib/pipeline-utils';
 import { listGtfsSourceNames, loadGtfsSource } from './load-gtfs-sources';
 
 const ROOT = resolve(import.meta.dirname, '..');
@@ -86,7 +85,7 @@ function printUsage(): void {
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  const arg = parseDownloadArg();
+  const arg = parseCliArg();
 
   if (arg.kind === 'help') {
     printUsage();

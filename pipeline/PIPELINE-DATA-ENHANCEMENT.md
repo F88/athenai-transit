@@ -483,6 +483,10 @@ In-memory domain objects (Stop, Route, Agency, FeedInfo, ...)
 - [ ] DepartureGroup への headsign_names 追加: Repository が translations.json のルックアップテーブルを保持し、headsign → translations を解決する。DepartureGroup 自体に持たせるか、UI が直接ルックアップするか?
 - [ ] StopWithMeta の `source_id` / `source_name` 追加 (TODO.md 記載): Agency 情報が入れば対応可能だが、今回のスコープに含めるか?
 - [ ] feed_info によるデータ鮮度警告 UI: 設計のみか、表示まで実装するか?
+- [ ] MLIT 鉄道データ (`pipeline/data/mlit/N02-24_RailroadSection.geojson`) の DL 自動化:
+    - 利用規約: https://nlftp.mlit.go.jp/ksj/other/agreement_01.html
+    - データ: https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2024.html
+    - 年1回更新。DL スクリプトは低優先度。
 
 ---
 

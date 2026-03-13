@@ -46,9 +46,39 @@ export interface Route {
   route_id: string;
   route_short_name: string;
   route_long_name: string;
+  /** Merged from translations.txt. Not a GTFS-JP standard field. */
+  route_names: Record<string, string>;
   route_type: RouteType;
   route_color: string; // hex without #, e.g. "F1B34E"
   route_text_color: string; // hex without #
+  agency_id: string;
+}
+
+/**
+ * A transit agency/operator, derived from GTFS agency.txt + translations.txt.
+ */
+export interface Agency {
+  agency_id: string;
+  agency_name: string;
+  /** Merged from translations.txt. Not a GTFS standard field. */
+  agency_names: Record<string, string>;
+  agency_url: string;
+  agency_lang: string;
+}
+
+/**
+ * GTFS feed metadata, derived from feed_info.txt.
+ *
+ * Provides data validity period and version information
+ * for freshness checking and display in the UI.
+ */
+export interface FeedInfo {
+  feed_publisher_name: string;
+  feed_publisher_url: string;
+  feed_lang: string;
+  feed_start_date: string; // YYYYMMDD
+  feed_end_date: string; // YYYYMMDD
+  feed_version: string;
 }
 
 /**

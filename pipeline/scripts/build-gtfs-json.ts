@@ -3,7 +3,7 @@
 /**
  * Convert per-source GTFS SQLite databases into optimized JSON files.
  *
- * Reads pipeline/build/{prefix}.db for each source (built by build-gtfs-db.ts)
+ * Reads pipeline/build/{outDir}.db for each source (built by build-gtfs-db.ts)
  * and outputs per-source JSON files to pipeline/build/data/{prefix}/. ID fields
  * are prefixed with the source prefix at JSON output time (e.g. "tobus:0001-01").
  *
@@ -13,6 +13,9 @@
  *   - calendar.json
  *   - timetable.json
  *   - shapes.json
+ *   - agency.json
+ *   - feed-info.json
+ *   - translations.json
  *
  * Usage:
  *   npx tsx pipeline/scripts/build-gtfs-json.ts
@@ -23,6 +26,12 @@ import Database from 'better-sqlite3';
 import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
+import type {
+  AgencyJson,
+  FeedInfoJson,
+  RouteJson,
+  TranslationsJson,
+} from '../../src/types/data/transit-json';
 import { loadAllGtfsSources } from './load-gtfs-sources';
 
 // ---------------------------------------------------------------------------
@@ -39,6 +48,7 @@ const OUTPUT_DIR = join(ROOT, 'build/data');
 
 /** Resolved source info for JSON generation. */
 interface BuildSource {
+  outDir: string;
   prefix: string;
   nameEn: string;
   routeColorFallbacks: Record<string, string>;
@@ -62,7 +72,7 @@ function formatBytes(bytes: number): string {
  * Convert a GTFS time string (HH:MM:SS) to minutes from midnight.
  * Supports hours >= 24 for overnight trips (e.g. "25:01:00" -> 1501).
  */
-function timeToMinutes(time: string): number {
+export function timeToMinutes(time: string): number {
   const parts = time.split(':');
   return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
 }
@@ -75,10 +85,34 @@ function writeJson(filePath: string, data: unknown): void {
 }
 
 // ---------------------------------------------------------------------------
+// Translation helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a map of record_key -> { language -> translation } from translations table.
+ *
+ * Supports both GTFS-JP (record_id-based) and standard GTFS (field_value-based) linking.
+ */
+function buildNamesMap(
+  rows: Array<{ key: string; language: string; translation: string }>,
+): Map<string, Record<string, string>> {
+  const map = new Map<string, Record<string, string>>();
+  for (const row of rows) {
+    let names = map.get(row.key);
+    if (!names) {
+      names = {};
+      map.set(row.key, names);
+    }
+    names[row.language] = row.translation;
+  }
+  return map;
+}
+
+// ---------------------------------------------------------------------------
 // Per-source data extraction
 // ---------------------------------------------------------------------------
 
-function extractStops(
+export function extractStops(
   db: Database.Database,
   prefix: string,
 ): { i: string; n: string; m: Record<string, string>; a: number; o: number; l: number }[] {
@@ -114,15 +148,9 @@ function extractStops(
     )
     .all() as Array<{ stop_id: string; language: string; translation: string }>;
 
-  const namesMap = new Map<string, Record<string, string>>();
-  for (const t of translations) {
-    let names = namesMap.get(t.stop_id);
-    if (!names) {
-      names = {};
-      namesMap.set(t.stop_id, names);
-    }
-    names[t.language] = t.translation;
-  }
+  const namesMap = buildNamesMap(
+    translations.map((t) => ({ key: t.stop_id, language: t.language, translation: t.translation })),
+  );
   console.log(`  [${prefix}] ${translations.length} translations for ${namesMap.size} stops`);
 
   const json = stops.map((s) => ({
@@ -137,15 +165,15 @@ function extractStops(
   return json;
 }
 
-function extractRoutes(
+export function extractRoutes(
   db: Database.Database,
   prefix: string,
   routeColorFallbacks: Record<string, string>,
-): { i: string; s: string; l: string; t: number; c: string; tc: string }[] {
+): RouteJson[] {
   const routes = db
     .prepare(
       `SELECT route_id, route_short_name, route_long_name, route_type,
-              route_color, route_text_color
+              route_color, route_text_color, agency_id
        FROM routes
        ORDER BY route_id`,
     )
@@ -156,9 +184,34 @@ function extractRoutes(
     route_type: number;
     route_color: string | null;
     route_text_color: string | null;
+    agency_id: string | null;
   }>;
 
-  const json = routes.map((r) => {
+  // Build route_id -> { language -> translation } map for route_long_name
+  const translations = db
+    .prepare(
+      `SELECT r.route_id, t.language, t.translation
+       FROM translations t
+       JOIN routes r ON (r.route_id = t.record_id
+         OR (t.record_id IS NULL AND r.route_long_name = t.field_value))
+       WHERE t.table_name = 'routes' AND t.field_name = 'route_long_name'`,
+    )
+    .all() as Array<{ route_id: string; language: string; translation: string }>;
+
+  const namesMap = buildNamesMap(
+    translations.map((t) => ({
+      key: t.route_id,
+      language: t.language,
+      translation: t.translation,
+    })),
+  );
+  if (namesMap.size > 0) {
+    console.log(
+      `  [${prefix}] ${translations.length} route name translations for ${namesMap.size} routes`,
+    );
+  }
+
+  const json: RouteJson[] = routes.map((r) => {
     const prefixedId = `${prefix}:${r.route_id}`;
     return {
       i: prefixedId,
@@ -167,13 +220,15 @@ function extractRoutes(
       t: r.route_type,
       c: r.route_color || routeColorFallbacks[r.route_id] || '',
       tc: r.route_text_color ?? '',
+      m: namesMap.get(r.route_id) ?? {},
+      ai: r.agency_id ? `${prefix}:${r.agency_id}` : '',
     };
   });
   console.log(`  [${prefix}] ${routes.length} routes`);
   return json;
 }
 
-function extractCalendar(
+export function extractCalendar(
   db: Database.Database,
   prefix: string,
 ): {
@@ -229,7 +284,7 @@ function extractCalendar(
   };
 }
 
-function extractShapes(
+export function extractShapes(
   db: Database.Database,
   prefix: string,
 ): Record<string, [number, number][][]> {
@@ -303,7 +358,7 @@ function extractShapes(
   return json;
 }
 
-function extractTimetable(
+export function extractTimetable(
   db: Database.Database,
   prefix: string,
 ): {
@@ -408,6 +463,152 @@ function extractTimetable(
   };
 }
 
+export function extractAgencies(db: Database.Database, prefix: string): AgencyJson[] {
+  const agencies = db
+    .prepare(
+      `SELECT agency_id, agency_name, agency_url, agency_lang
+       FROM agency
+       ORDER BY agency_id`,
+    )
+    .all() as Array<{
+    agency_id: string;
+    agency_name: string;
+    agency_url: string | null;
+    agency_lang: string | null;
+  }>;
+
+  // Build agency_id -> { language -> translation } map for agency_name
+  const translations = db
+    .prepare(
+      `SELECT a.agency_id, t.language, t.translation
+       FROM translations t
+       JOIN agency a ON (a.agency_id = t.record_id
+         OR (t.record_id IS NULL AND a.agency_name = t.field_value))
+       WHERE t.table_name = 'agency' AND t.field_name = 'agency_name'`,
+    )
+    .all() as Array<{ agency_id: string; language: string; translation: string }>;
+
+  const namesMap = buildNamesMap(
+    translations.map((t) => ({
+      key: t.agency_id,
+      language: t.language,
+      translation: t.translation,
+    })),
+  );
+  if (namesMap.size > 0) {
+    console.log(
+      `  [${prefix}] ${translations.length} agency name translations for ${namesMap.size} agencies`,
+    );
+  }
+
+  const json: AgencyJson[] = agencies.map((a) => ({
+    i: `${prefix}:${a.agency_id}`,
+    n: a.agency_name,
+    m: namesMap.get(a.agency_id) ?? {},
+    u: a.agency_url ?? '',
+    l: a.agency_lang ?? '',
+  }));
+  console.log(`  [${prefix}] ${agencies.length} agencies`);
+  return json;
+}
+
+export function extractFeedInfo(db: Database.Database, prefix: string): FeedInfoJson | null {
+  const row = db
+    .prepare(
+      `SELECT feed_publisher_name, feed_publisher_url, feed_lang,
+              feed_start_date, feed_end_date, feed_version
+       FROM feed_info
+       LIMIT 1`,
+    )
+    .get() as
+    | {
+        feed_publisher_name: string;
+        feed_publisher_url: string;
+        feed_lang: string;
+        feed_start_date: string | null;
+        feed_end_date: string | null;
+        feed_version: string | null;
+      }
+    | undefined;
+
+  if (!row) {
+    console.log(`  [${prefix}] no feed_info`);
+    return null;
+  }
+
+  console.log(
+    `  [${prefix}] feed_info: ${row.feed_publisher_name} (${row.feed_version ?? 'no version'})`,
+  );
+  return {
+    pn: row.feed_publisher_name,
+    pu: row.feed_publisher_url,
+    l: row.feed_lang,
+    s: row.feed_start_date ?? '',
+    e: row.feed_end_date ?? '',
+    v: row.feed_version ?? '',
+  };
+}
+
+/**
+ * Build a lookup map from translation rows: { headsignText: { lang: translation } }
+ */
+function buildTranslationMap(
+  rows: Array<{ headsign_text: string; language: string; translation: string }>,
+): Record<string, Record<string, string>> {
+  const map: Record<string, Record<string, string>> = {};
+  for (const row of rows) {
+    if (!map[row.headsign_text]) {
+      map[row.headsign_text] = {};
+    }
+    map[row.headsign_text][row.language] = row.translation;
+  }
+  return map;
+}
+
+export function extractTranslations(db: Database.Database, prefix: string): TranslationsJson {
+  // trip_headsign translations
+  // GTFS-JP uses record_id (trip_id), standard GTFS uses field_value
+  const headsignRows = db
+    .prepare(
+      `SELECT DISTINCT COALESCE(tr.trip_headsign, t.field_value) as headsign_text,
+        t.language, t.translation
+       FROM translations t
+       LEFT JOIN trips tr ON t.record_id IS NOT NULL AND tr.trip_id = t.record_id
+       WHERE t.table_name = 'trips' AND t.field_name = 'trip_headsign'
+         AND COALESCE(tr.trip_headsign, t.field_value) IS NOT NULL`,
+    )
+    .all() as Array<{ headsign_text: string; language: string; translation: string }>;
+
+  const headsigns = buildTranslationMap(headsignRows);
+
+  // stop_headsign translations
+  // stop_times has composite PK (trip_id, stop_sequence), so record_sub_id is used
+  const stopHeadsignRows = db
+    .prepare(
+      `SELECT DISTINCT COALESCE(st.stop_headsign, t.field_value) as headsign_text,
+        t.language, t.translation
+       FROM translations t
+       LEFT JOIN stop_times st ON t.record_id IS NOT NULL
+         AND st.trip_id = t.record_id
+         AND CAST(st.stop_sequence AS TEXT) = t.record_sub_id
+       WHERE t.table_name = 'stop_times' AND t.field_name = 'stop_headsign'
+         AND COALESCE(st.stop_headsign, t.field_value) IS NOT NULL`,
+    )
+    .all() as Array<{ headsign_text: string; language: string; translation: string }>;
+
+  const stopHeadsigns = buildTranslationMap(stopHeadsignRows);
+
+  const headsignCount = Object.keys(headsigns).length;
+  const stopHeadsignCount = Object.keys(stopHeadsigns).length;
+  if (headsignCount > 0 || stopHeadsignCount > 0) {
+    console.log(
+      `  [${prefix}] ${headsignCount} headsign translations, ${stopHeadsignCount} stop_headsign translations`,
+    );
+  }
+
+  return { headsigns, stop_headsigns: stopHeadsigns };
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -451,6 +652,7 @@ async function main(): Promise<void> {
   // Load resource definitions
   const allDefs = await loadAllGtfsSources();
   const sources: BuildSource[] = allDefs.map((d) => ({
+    outDir: d.pipeline.outDir,
     prefix: d.pipeline.prefix,
     nameEn: d.resource.nameEn,
     routeColorFallbacks: d.resource.routeColorFallbacks ?? {},
@@ -461,13 +663,13 @@ async function main(): Promise<void> {
   }
 
   for (const source of sources) {
-    const dbPath = join(DB_DIR, `${source.prefix}.db`);
+    const dbPath = join(DB_DIR, `${source.outDir}.db`);
     if (!existsSync(dbPath)) {
-      console.warn(`  WARN: Skipping "${source.prefix}" (DB not found: ${dbPath})`);
+      console.warn(`  WARN: Skipping "${source.outDir}" (DB not found: ${dbPath})`);
       continue;
     }
 
-    console.log(`\nReading ${source.prefix}.db (${source.nameEn})...`);
+    console.log(`\nReading ${source.outDir}.db (${source.nameEn})...`);
     const db = new Database(dbPath, { readonly: true });
 
     // Extract data
@@ -476,6 +678,9 @@ async function main(): Promise<void> {
     const calendar = extractCalendar(db, source.prefix);
     const shapes = extractShapes(db, source.prefix);
     const { timetable } = extractTimetable(db, source.prefix);
+    const agencies = extractAgencies(db, source.prefix);
+    const feedInfo = extractFeedInfo(db, source.prefix);
+    const translations = extractTranslations(db, source.prefix);
 
     db.close();
 
@@ -495,6 +700,9 @@ async function main(): Promise<void> {
     writeJson(join(sourceOutputDir, 'calendar.json'), calendar);
     writeJson(join(sourceOutputDir, 'timetable.json'), timetableJson);
     writeJson(join(sourceOutputDir, 'shapes.json'), shapes);
+    writeJson(join(sourceOutputDir, 'agency.json'), agencies);
+    writeJson(join(sourceOutputDir, 'feed-info.json'), feedInfo);
+    writeJson(join(sourceOutputDir, 'translations.json'), translations);
   }
 
   console.log('\nDone!');

@@ -25,18 +25,20 @@ import { join, resolve } from 'node:path';
 import type { OdptJsonSourceDefinition } from '../types/odpt-json-resource';
 import {
   archiveFilename,
-  ensureDir,
   FETCH_TIMEOUT_MS,
-  determineBatchExitCode,
-  formatExitCode,
-  loadTargetFile,
-  parseDownloadArg,
-  printBatchSummary,
-  runBatch,
-  runMain,
   withRetry,
   wrapTimeoutError,
 } from '../lib/download-utils';
+import {
+  determineBatchExitCode,
+  ensureDir,
+  formatExitCode,
+  loadTargetFile,
+  parseCliArg,
+  printBatchSummary,
+  runBatch,
+  runMain,
+} from '../lib/pipeline-utils';
 import { listOdptJsonSourceNames, loadOdptJsonSource } from './load-odpt-json-sources';
 
 const ROOT = resolve(import.meta.dirname, '..');
@@ -136,7 +138,7 @@ function printUsage(): void {
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  const arg = parseDownloadArg();
+  const arg = parseCliArg();
 
   if (arg.kind === 'help') {
     printUsage();

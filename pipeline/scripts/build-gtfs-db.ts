@@ -1,29 +1,48 @@
 #!/usr/bin/env -S npx tsx
 
 /**
- * Convert GTFS CSV files into per-source SQLite databases.
+ * Convert GTFS CSV files into a per-source SQLite database.
  *
- * Loads source definitions from pipeline/resources/gtfs/ and imports all CSV
- * files found in each source directory into a separate database. CSV values
- * are stored as-is without any ID prefixing — prefix logic is handled later
- * by build-gtfs-json.ts at JSON output time.
+ * Each invocation processes a single GTFS source. For batch processing,
+ * use `--targets <file>` which runs this script once per source in a
+ * child process (same pattern as download-gtfs.ts).
  *
  * Usage:
- *   npx tsx pipeline/scripts/build-gtfs-db.ts            # all sources
- *   npx tsx pipeline/scripts/build-gtfs-db.ts toei-bus    # specific source only
- *   npm run pipeline:build:db
+ *   npx tsx pipeline/scripts/build-gtfs-db.ts <source-name>
+ *   npx tsx pipeline/scripts/build-gtfs-db.ts toei-bus
+ *   npx tsx pipeline/scripts/build-gtfs-db.ts --targets pipeline/targets/download-gtfs.ts
+ *   npx tsx pipeline/scripts/build-gtfs-db.ts --list
  *
  * Input:  pipeline/data/gtfs/{directory}/*.txt (GTFS CSV files)
- * Output: pipeline/build/{prefix}.db per source (e.g. tobus.db, toaran.db)
+ * Output: pipeline/build/{outDir}.db (e.g. toei-bus.db, toei-train.db)
  */
 
 import Database from 'better-sqlite3';
-import { createReadStream, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import {
+  createReadStream,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
 import { createInterface } from 'node:readline';
 import { join, resolve } from 'node:path';
 
 import { splitCsvLine } from '../lib/csv-utils';
-import { loadAllGtfsSources } from './load-gtfs-sources';
+import { INDEXES, SCHEMA } from '../lib/gtfs-schema';
+import {
+  determineBatchExitCode,
+  formatBytes,
+  formatExitCode,
+  loadTargetFile,
+  parseCliArg,
+  printBatchSummary,
+  runBatch,
+  runMain,
+} from '../lib/pipeline-utils';
+import { listGtfsSourceNames, loadGtfsSource } from './load-gtfs-sources';
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -40,225 +59,13 @@ const OUTPUT_DIR = join(ROOT, 'build');
 const BATCH_SIZE = 5000;
 
 // ---------------------------------------------------------------------------
-// GTFS Schema Definitions (per GTFS Static spec)
-//
-// Tables are created in dependency order so that FOREIGN KEY constraints
-// reference only tables that already exist.
-// ---------------------------------------------------------------------------
-
-const SCHEMA: string[] = [
-  // --- Independent tables (no FK dependencies) ---
-
-  `CREATE TABLE IF NOT EXISTS agency (
-    agency_id    TEXT PRIMARY KEY,
-    agency_name  TEXT NOT NULL,
-    agency_url   TEXT NOT NULL,
-    agency_timezone TEXT NOT NULL,
-    agency_lang  TEXT,
-    agency_phone TEXT,
-    agency_fare_url TEXT,
-    agency_email TEXT
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS agency_jp (
-    agency_id              TEXT PRIMARY KEY,
-    agency_official_name   TEXT,
-    agency_zip_number      TEXT,
-    agency_address         TEXT,
-    agency_president_pos   TEXT,
-    agency_president_name  TEXT,
-    FOREIGN KEY (agency_id) REFERENCES agency(agency_id)
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS calendar (
-    service_id TEXT PRIMARY KEY,
-    monday     INTEGER NOT NULL,
-    tuesday    INTEGER NOT NULL,
-    wednesday  INTEGER NOT NULL,
-    thursday   INTEGER NOT NULL,
-    friday     INTEGER NOT NULL,
-    saturday   INTEGER NOT NULL,
-    sunday     INTEGER NOT NULL,
-    start_date TEXT NOT NULL,
-    end_date   TEXT NOT NULL
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS calendar_dates (
-    service_id     TEXT NOT NULL,
-    date           TEXT NOT NULL,
-    exception_type INTEGER NOT NULL,
-    PRIMARY KEY (service_id, date),
-    FOREIGN KEY (service_id) REFERENCES calendar(service_id)
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS stops (
-    stop_id            TEXT PRIMARY KEY,
-    stop_code          TEXT,
-    stop_name          TEXT NOT NULL,
-    stop_desc          TEXT,
-    stop_lat           REAL NOT NULL,
-    stop_lon           REAL NOT NULL,
-    zone_id            TEXT,
-    stop_url           TEXT,
-    location_type      INTEGER,
-    parent_station     TEXT,
-    stop_timezone      TEXT,
-    wheelchair_boarding INTEGER,
-    platform_code      TEXT,
-    stop_access        TEXT,
-    FOREIGN KEY (parent_station) REFERENCES stops(stop_id)
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS routes (
-    route_id           TEXT PRIMARY KEY,
-    agency_id          TEXT,
-    route_short_name   TEXT,
-    route_long_name    TEXT,
-    route_desc         TEXT,
-    route_type         INTEGER NOT NULL,
-    route_url          TEXT,
-    route_color        TEXT,
-    route_text_color   TEXT,
-    jp_parent_route_id TEXT,
-    FOREIGN KEY (agency_id) REFERENCES agency(agency_id)
-  )`,
-
-  // --- Dependent tables ---
-
-  `CREATE TABLE IF NOT EXISTS trips (
-    route_id              TEXT NOT NULL,
-    service_id            TEXT NOT NULL,
-    trip_id               TEXT PRIMARY KEY,
-    trip_headsign         TEXT,
-    trip_short_name       TEXT,
-    direction_id          INTEGER,
-    block_id              TEXT,
-    shape_id              TEXT,
-    wheelchair_accessible INTEGER,
-    bikes_allowed         INTEGER,
-    jp_trip_desc          TEXT,
-    jp_trip_desc_symbol   TEXT,
-    jp_office_id          TEXT,
-    FOREIGN KEY (route_id) REFERENCES routes(route_id),
-    FOREIGN KEY (service_id) REFERENCES calendar(service_id)
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS stop_times (
-    trip_id             TEXT NOT NULL,
-    arrival_time        TEXT,
-    departure_time      TEXT,
-    stop_id             TEXT NOT NULL,
-    stop_sequence       INTEGER NOT NULL,
-    stop_headsign       TEXT,
-    pickup_type         INTEGER,
-    drop_off_type       INTEGER,
-    shape_dist_traveled REAL,
-    timepoint           INTEGER,
-    PRIMARY KEY (trip_id, stop_sequence),
-    FOREIGN KEY (trip_id) REFERENCES trips(trip_id),
-    FOREIGN KEY (stop_id) REFERENCES stops(stop_id)
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS shapes (
-    shape_id            TEXT NOT NULL,
-    shape_pt_lat        REAL NOT NULL,
-    shape_pt_lon        REAL NOT NULL,
-    shape_pt_sequence   INTEGER NOT NULL,
-    shape_dist_traveled REAL,
-    PRIMARY KEY (shape_id, shape_pt_sequence)
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS fare_attributes (
-    fare_id           TEXT PRIMARY KEY,
-    price             REAL NOT NULL,
-    ic_price          REAL,
-    currency_type     TEXT NOT NULL,
-    payment_method    INTEGER NOT NULL,
-    transfers         INTEGER,
-    transfer_duration INTEGER
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS fare_rules (
-    fare_id        TEXT NOT NULL,
-    route_id       TEXT,
-    origin_id      TEXT,
-    destination_id TEXT,
-    contains_id    TEXT,
-    FOREIGN KEY (fare_id) REFERENCES fare_attributes(fare_id),
-    FOREIGN KEY (route_id) REFERENCES routes(route_id)
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS feed_info (
-    feed_publisher_name TEXT NOT NULL,
-    feed_publisher_url  TEXT NOT NULL,
-    feed_lang           TEXT NOT NULL,
-    feed_start_date     TEXT,
-    feed_end_date       TEXT,
-    feed_version        TEXT
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS translations (
-    table_name    TEXT NOT NULL,
-    field_name    TEXT NOT NULL,
-    language      TEXT NOT NULL,
-    translation   TEXT NOT NULL,
-    record_id     TEXT,
-    record_sub_id TEXT,
-    field_value   TEXT
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS attributions (
-    attribution_id   TEXT,
-    agency_id        TEXT,
-    route_id         TEXT,
-    trip_id          TEXT,
-    organization_name TEXT NOT NULL,
-    is_producer      INTEGER,
-    is_operator      INTEGER,
-    is_authority     INTEGER,
-    is_data_source   INTEGER,
-    attribution_url  TEXT,
-    attribution_email TEXT,
-    FOREIGN KEY (agency_id) REFERENCES agency(agency_id),
-    FOREIGN KEY (route_id) REFERENCES routes(route_id),
-    FOREIGN KEY (trip_id) REFERENCES trips(trip_id)
-  )`,
-
-  `CREATE TABLE IF NOT EXISTS office_jp (
-    office_id    TEXT PRIMARY KEY,
-    office_name  TEXT,
-    office_url   TEXT,
-    office_phone TEXT
-  )`,
-];
-
-// ---------------------------------------------------------------------------
-// Indexes for query performance
-// ---------------------------------------------------------------------------
-
-const INDEXES: string[] = [
-  'CREATE INDEX idx_stops_lat           ON stops (stop_lat)',
-  'CREATE INDEX idx_stops_lon           ON stops (stop_lon)',
-  'CREATE INDEX idx_stop_times_stop_dep ON stop_times (stop_id, departure_time)',
-  'CREATE INDEX idx_trips_route         ON trips (route_id)',
-  'CREATE INDEX idx_cal_dates_date      ON calendar_dates (date)',
-];
-
-// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 /** Resolved source info for build processing. */
 interface BuildSource {
   directory: string;
-  prefix: string;
   nameEn: string;
-}
-
-interface ImportSummary {
-  source: string;
-  table: string;
-  rows: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -418,16 +225,6 @@ function validateHeaders(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 function tableNameFromFile(filename: string): string {
   return filename.replace(/\.txt$/, '');
@@ -639,25 +436,20 @@ function printStatistics(db: Database.Database, dbPath: string): void {
 async function buildSourceDb(
   source: BuildSource,
   schemaMap: Map<string, { name: string; nullable: boolean }[]>,
-): Promise<{ dbPath: string; summary: ImportSummary[] }> {
+): Promise<void> {
   const sourceDir = join(GTFS_BASE_DIR, source.directory);
-  const prefix = source.prefix;
-  const dbPath = join(OUTPUT_DIR, `${prefix}.db`);
+  const dbPath = join(OUTPUT_DIR, `${source.directory}.db`);
+  const tmpDbPath = `${dbPath}.tmp`;
 
-  console.log(`\n========================================`);
-  console.log(`Source: ${source.directory} (${source.nameEn})`);
-  console.log(`  prefix: ${prefix}`);
-  console.log(`  output: ${dbPath}`);
-  console.log(`========================================`);
-
-  // Remove existing DB for this source
-  if (existsSync(dbPath)) {
-    rmSync(dbPath);
-    console.log(`Removed existing DB: ${dbPath}`);
+  // Build into a temporary file so the existing DB remains intact on failure.
+  // On success, the temp file is renamed to the final path.
+  if (existsSync(tmpDbPath)) {
+    rmSync(tmpDbPath);
+    console.log(`Removed stale temp file: ${tmpDbPath}`);
   }
 
-  // Create database and tables
-  const db = new Database(dbPath);
+  console.log(`Creating temp DB: ${tmpDbPath}`);
+  const db = new Database(tmpDbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = OFF'); // Disable during bulk import for performance
 
@@ -667,7 +459,6 @@ async function buildSourceDb(
   console.log(`${SCHEMA.length} tables created.`);
 
   const knownTables = new Set(schemaMap.keys());
-  const summary: ImportSummary[] = [];
 
   // Import CSV data
   const csvFiles = readdirSync(sourceDir)
@@ -677,7 +468,8 @@ async function buildSourceDb(
   if (csvFiles.length === 0) {
     console.warn(`  WARN: No .txt files found in ${sourceDir}`);
     db.close();
-    return { dbPath, summary };
+    rmSync(tmpDbPath, { force: true });
+    return;
   }
 
   console.log(`Found ${csvFiles.length} GTFS files`);
@@ -701,7 +493,6 @@ async function buildSourceDb(
         continue;
       }
 
-      summary.push({ source: prefix, table: tableName, rows: rowCount });
       console.log(`  ${tableName.padEnd(20)} ${String(rowCount).padStart(10)} rows`);
     } catch (err) {
       console.error(
@@ -729,10 +520,32 @@ async function buildSourceDb(
   console.log('VACUUM + ANALYZE complete.');
 
   // Statistics
-  printStatistics(db, dbPath);
+  printStatistics(db, tmpDbPath);
 
   db.close();
-  return { dbPath, summary };
+
+  // Replace existing DB with the successfully built one
+  const hadExisting = existsSync(dbPath);
+  renameSync(tmpDbPath, dbPath);
+  if (hadExisting) {
+    console.log(`\nReplaced existing DB: ${dbPath} (${formatBytes(statSync(dbPath).size)})`);
+  } else {
+    console.log(`\nCreated DB: ${dbPath} (${formatBytes(statSync(dbPath).size)})`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CLI
+// ---------------------------------------------------------------------------
+
+function printUsage(): void {
+  console.log('Usage: npx tsx pipeline/scripts/build-gtfs-db.ts <source-name>');
+  console.log('       npx tsx pipeline/scripts/build-gtfs-db.ts --targets <file>');
+  console.log('       npx tsx pipeline/scripts/build-gtfs-db.ts --list\n');
+  console.log('Options:');
+  console.log('  --targets <file>  Batch build from a target list file (.ts)');
+  console.log('  --list            List available source names');
+  console.log('  --help            Show this help message');
 }
 
 // ---------------------------------------------------------------------------
@@ -740,79 +553,87 @@ async function buildSourceDb(
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  console.log('=== GTFS CSV -> SQLite DB (per-source) ===\n');
+  const arg = parseCliArg();
 
-  // 1. Load resource definitions
-  const allDefs = await loadAllGtfsSources();
-  let sources: BuildSource[] = allDefs.map((d) => ({
-    directory: d.pipeline.outDir,
-    prefix: d.pipeline.prefix,
-    nameEn: d.resource.nameEn,
-  }));
+  if (arg.kind === 'help') {
+    printUsage();
+    return;
+  }
 
-  const cliFilter = process.argv[2];
-
-  if (cliFilter) {
-    sources = sources.filter((r) => r.directory === cliFilter);
-    if (sources.length === 0) {
-      throw new Error(
-        `No resource found with directory "${cliFilter}". Available: ${allDefs
-          .map((d) => d.pipeline.outDir)
-          .join(', ')}`,
-      );
+  if (arg.kind === 'list') {
+    const names = listGtfsSourceNames();
+    console.log('Available GTFS sources:\n');
+    for (const name of names) {
+      console.log(`  ${name}`);
     }
+    return;
   }
 
-  // Filter to sources whose directories actually exist
-  sources = sources.filter((r) => {
-    const dir = join(GTFS_BASE_DIR, r.directory);
-    if (!existsSync(dir)) {
-      console.warn(`  WARN: Skipping "${r.directory}" (directory not found: ${dir})`);
-      return false;
+  if (arg.kind === 'targets') {
+    const sourceNames = await loadTargetFile(arg.path);
+    console.log(`=== Batch build-db (${sourceNames.length} targets) ===\n`);
+    const scriptPath = resolve(import.meta.dirname, 'build-gtfs-db.ts');
+    const results = runBatch(scriptPath, sourceNames);
+    printBatchSummary(results);
+    const exitCode = determineBatchExitCode(results);
+    console.log(`\n${formatExitCode(exitCode)}`);
+    process.exitCode = exitCode;
+    return;
+  }
+
+  // Single source mode
+  let source;
+  try {
+    source = await loadGtfsSource(arg.name);
+  } catch (err) {
+    console.error(`Error: Failed to load source definition for "${arg.name}".`);
+    if (err instanceof Error) {
+      console.error(`  Cause: ${err.message}`);
     }
-    return true;
-  });
-
-  if (sources.length === 0) {
-    throw new Error('No GTFS data sources found with existing directories.');
+    console.log('');
+    printUsage();
+    process.exitCode = 1;
+    return;
   }
 
-  console.log(`Data sources (${sources.length}):`);
-  for (const s of sources) {
-    console.log(`  ${s.directory} (prefix: ${s.prefix}) — ${s.nameEn}`);
+  const { outDir } = source.pipeline;
+  const { nameEn } = source.resource;
+  const sourceDir = join(GTFS_BASE_DIR, outDir);
+
+  if (!existsSync(sourceDir)) {
+    console.error(`Error: GTFS data directory not found: ${sourceDir}`);
+    console.error('  Run download-gtfs.ts first to fetch the GTFS data.');
+    process.exitCode = 1;
+    return;
   }
 
-  // 2. Ensure output directory exists
+  console.log(`=== ${arg.name} [START] ===\n`);
+  console.log(`  Name:   ${nameEn}`);
+  console.log(`  Input:  ${sourceDir}`);
+  console.log(`  Output: ${join(OUTPUT_DIR, `${outDir}.db`)}`);
+  console.log('');
+
+  // Ensure output directory exists
   if (!existsSync(OUTPUT_DIR)) {
     mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
-  // Build schema map for validation
   const schemaMap = buildSchemaMap();
+  const buildSource: BuildSource = { directory: outDir, nameEn };
+  const t0 = performance.now();
 
-  // 3. Build per-source databases
-  const allSummary: ImportSummary[] = [];
-  const dbPaths: string[] = [];
-
-  for (const source of sources) {
-    const { dbPath, summary } = await buildSourceDb(source, schemaMap);
-    dbPaths.push(dbPath);
-    allSummary.push(...summary);
+  try {
+    await buildSourceDb(buildSource, schemaMap);
+  } catch (err) {
+    console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
+    process.exitCode = 1;
+  } finally {
+    const durationMs = performance.now() - t0;
+    const code = process.exitCode ?? 0;
+    const label = code === 0 ? 'ok' : 'error';
+    console.log(`\nDuration: ${(durationMs / 1000).toFixed(1)}s`);
+    console.log(`Exit code: ${code} (${label})\n=== ${arg.name} [END] ===`);
   }
-
-  // 4. Final summary
-  console.log('\n=== Import Summary ===');
-  const totalRows = allSummary.reduce((acc, s) => acc + s.rows, 0);
-  console.log(`  Sources:    ${sources.map((s) => `${s.directory} (${s.prefix})`).join(', ')}`);
-  console.log(`  Tables:     ${new Set(allSummary.map((s) => s.table)).size}`);
-  console.log(`  Total rows: ${totalRows.toLocaleString()}`);
-  for (const dbPath of dbPaths) {
-    console.log(`  DB: ${dbPath} (${formatBytes(statSync(dbPath).size)})`);
-  }
-  console.log('\nDone!');
 }
 
-main().catch((err) => {
-  console.error('\nFATAL:', err instanceof Error ? err.message : err);
-  process.exit(1);
-});
+runMain(main);
