@@ -11,6 +11,11 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- ゆりかもめ (新交通ゆりかもめ) の時刻表・駅情報・路線形状に対応。
+  ODPT Train API からアプリ用データを生成するパイプライン (`pipeline:build:odpt-train`) を新設。
+- 杉並区グリーンスローモビリティの表示を有効化 (`data-source-settings.json` に登録)。
+- 国土数値情報 (MLIT) からの鉄道路線形状生成を複数ソース対応に拡張。
+  `mlitShapeMapping` を持つ全リソース (GTFS + ODPT JSON) を自動検出して処理。
 - GTFS データパイプラインの大幅拡張 (Step 2+3)。
     - Build DB スキーマを GTFS 公式仕様 + GTFS-JP v3 の全34テーブルに拡張。
     - JSON 出力を5 → 8ファイル/ソースに拡張 (agency, feed-info, translations を追加)。
