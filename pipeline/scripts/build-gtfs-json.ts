@@ -3,27 +3,22 @@
 /**
  * Convert per-source GTFS SQLite databases into optimized JSON files.
  *
- * Reads pipeline/build/{outDir}.db for each source (built by build-gtfs-db.ts)
- * and outputs per-source JSON files to pipeline/build/data/{prefix}/. ID fields
- * are prefixed with the source prefix at JSON output time (e.g. "tobus:0001-01").
+ * Each invocation processes a single GTFS source. For batch processing,
+ * use `--targets <file>` which runs this script once per source in a
+ * child process (same pattern as build-gtfs-db.ts).
  *
- * Output files per source (e.g. pipeline/build/data/tobus/):
- *   - stops.json
- *   - routes.json
- *   - calendar.json
- *   - timetable.json
- *   - shapes.json
- *   - agency.json
- *   - feed-info.json
- *   - translations.json
+ * Input:  pipeline/build/{outDir}.db (built by build-gtfs-db.ts)
+ * Output: pipeline/build/data/{prefix}/*.json (8 files per source)
  *
  * Usage:
- *   npx tsx pipeline/scripts/build-gtfs-json.ts
+ *   npx tsx pipeline/scripts/build-gtfs-json.ts <source-name>
+ *   npx tsx pipeline/scripts/build-gtfs-json.ts --targets <file>
+ *   npx tsx pipeline/scripts/build-gtfs-json.ts --list
  *   npm run pipeline:build:json
  */
 
 import Database from 'better-sqlite3';
-import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
 import type {
@@ -32,7 +27,17 @@ import type {
   RouteJson,
   TranslationsJson,
 } from '../../src/types/data/transit-json';
-import { loadAllGtfsSources } from '../lib/load-gtfs-sources';
+import { listGtfsSourceNames, loadGtfsSource } from '../lib/load-gtfs-sources';
+import {
+  determineBatchExitCode,
+  formatBytes,
+  formatExitCode,
+  loadTargetFile,
+  parseCliArg,
+  printBatchSummary,
+  runBatch,
+  runMain,
+} from '../lib/pipeline-utils';
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -57,16 +62,6 @@ interface BuildSource {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 /**
  * Convert a GTFS time string (HH:MM:SS) to minutes from midnight.
@@ -646,69 +641,161 @@ function timetableToJson(
   return json;
 }
 
-async function main(): Promise<void> {
-  console.log('=== GTFS DB -> JSON (per-source) ===\n');
+// ---------------------------------------------------------------------------
+// Per-source processing
+// ---------------------------------------------------------------------------
 
-  // Load resource definitions
-  const allDefs = await loadAllGtfsSources();
-  const sources: BuildSource[] = allDefs.map((d) => ({
-    outDir: d.pipeline.outDir,
-    prefix: d.pipeline.prefix,
-    nameEn: d.resource.nameEn,
-    routeColorFallbacks: d.resource.routeColorFallbacks ?? {},
-  }));
-
-  if (sources.length === 0) {
-    throw new Error('No GTFS source definitions found.');
+function buildSourceJson(source: BuildSource): void {
+  const dbPath = join(DB_DIR, `${source.outDir}.db`);
+  if (!existsSync(dbPath)) {
+    throw new Error(`DB not found: ${dbPath}\n  Run build-gtfs-db.ts first to build the database.`);
   }
 
-  for (const source of sources) {
-    const dbPath = join(DB_DIR, `${source.outDir}.db`);
-    if (!existsSync(dbPath)) {
-      console.warn(`  WARN: Skipping "${source.outDir}" (DB not found: ${dbPath})`);
-      continue;
-    }
+  console.log(`Reading ${source.outDir}.db (${source.nameEn})...`);
+  const db = new Database(dbPath, { readonly: true });
 
-    console.log(`\nReading ${source.outDir}.db (${source.nameEn})...`);
-    const db = new Database(dbPath, { readonly: true });
+  // Extract data
+  const stops = extractStops(db, source.prefix);
+  const routes = extractRoutes(db, source.prefix, source.routeColorFallbacks);
+  const calendar = extractCalendar(db, source.prefix);
+  const shapes = extractShapes(db, source.prefix);
+  const { timetable } = extractTimetable(db, source.prefix);
+  const agencies = extractAgencies(db, source.prefix);
+  const feedInfo = extractFeedInfo(db, source.prefix);
+  const translations = extractTranslations(db, source.prefix);
 
-    // Extract data
-    const stops = extractStops(db, source.prefix);
-    const routes = extractRoutes(db, source.prefix, source.routeColorFallbacks);
-    const calendar = extractCalendar(db, source.prefix);
-    const shapes = extractShapes(db, source.prefix);
-    const { timetable } = extractTimetable(db, source.prefix);
-    const agencies = extractAgencies(db, source.prefix);
-    const feedInfo = extractFeedInfo(db, source.prefix);
-    const translations = extractTranslations(db, source.prefix);
+  db.close();
 
-    db.close();
+  // Convert timetable
+  console.log(`  Building timetable for ${source.prefix}...`);
+  const timetableJson = timetableToJson(timetable);
 
-    // Convert timetable
-    console.log(`  Building timetable for ${source.prefix}...`);
-    const timetableJson = timetableToJson(timetable);
+  // Write to staging directory, then atomically swap with the final directory.
+  // This ensures the output is always a complete, consistent set of 8 files.
+  // On failure the staging directory is cleaned up and existing data is preserved.
+  const finalDir = join(OUTPUT_DIR, source.prefix);
+  const stagingDir = join(OUTPUT_DIR, `${source.prefix}.tmp`);
 
-    // Write per-source JSON files
-    const sourceOutputDir = join(OUTPUT_DIR, source.prefix);
-    if (!existsSync(sourceOutputDir)) {
-      mkdirSync(sourceOutputDir, { recursive: true });
-    }
+  // Clean up any leftover staging directory from a previous failed run
+  if (existsSync(stagingDir)) {
+    rmSync(stagingDir, { recursive: true });
+  }
+  mkdirSync(stagingDir, { recursive: true });
 
-    console.log(`\n  Writing JSON files to ${source.prefix}/:`);
-    writeJson(join(sourceOutputDir, 'stops.json'), stops);
-    writeJson(join(sourceOutputDir, 'routes.json'), routes);
-    writeJson(join(sourceOutputDir, 'calendar.json'), calendar);
-    writeJson(join(sourceOutputDir, 'timetable.json'), timetableJson);
-    writeJson(join(sourceOutputDir, 'shapes.json'), shapes);
-    writeJson(join(sourceOutputDir, 'agency.json'), agencies);
-    writeJson(join(sourceOutputDir, 'feed-info.json'), feedInfo);
-    writeJson(join(sourceOutputDir, 'translations.json'), translations);
+  try {
+    console.log(`\n  Writing JSON files to ${source.prefix}/ (staging):`);
+    writeJson(join(stagingDir, 'stops.json'), stops);
+    writeJson(join(stagingDir, 'routes.json'), routes);
+    writeJson(join(stagingDir, 'calendar.json'), calendar);
+    writeJson(join(stagingDir, 'timetable.json'), timetableJson);
+    writeJson(join(stagingDir, 'shapes.json'), shapes);
+    writeJson(join(stagingDir, 'agency.json'), agencies);
+    writeJson(join(stagingDir, 'feed-info.json'), feedInfo);
+    writeJson(join(stagingDir, 'translations.json'), translations);
+  } catch (err) {
+    // Write failed — clean up staging, preserve existing data
+    console.error(`\n  Error writing JSON files. Cleaning up staging directory.`);
+    rmSync(stagingDir, { recursive: true, force: true });
+    throw err;
   }
 
-  console.log('\nDone!');
+  // Atomic swap: remove old directory, rename staging to final
+  if (existsSync(finalDir)) {
+    rmSync(finalDir, { recursive: true });
+  }
+  renameSync(stagingDir, finalDir);
+  console.log(`  Committed ${source.prefix}/`);
 }
 
-main().catch((err) => {
-  console.error('\nFATAL:', err instanceof Error ? err.message : err);
-  process.exitCode = 1;
-});
+// ---------------------------------------------------------------------------
+// CLI
+// ---------------------------------------------------------------------------
+
+function printUsage(): void {
+  console.log('Usage: npx tsx pipeline/scripts/build-gtfs-json.ts <source-name>');
+  console.log('       npx tsx pipeline/scripts/build-gtfs-json.ts --targets <file>');
+  console.log('       npx tsx pipeline/scripts/build-gtfs-json.ts --list\n');
+  console.log('Options:');
+  console.log('  --targets <file>  Batch build from a target list file (.ts)');
+  console.log('  --list            List available source names');
+  console.log('  --help            Show this help message');
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
+
+async function main(): Promise<void> {
+  const arg = parseCliArg();
+
+  if (arg.kind === 'help') {
+    printUsage();
+    return;
+  }
+
+  if (arg.kind === 'list') {
+    const names = listGtfsSourceNames();
+    console.log('Available GTFS sources:\n');
+    for (const name of names) {
+      console.log(`  ${name}`);
+    }
+    return;
+  }
+
+  if (arg.kind === 'targets') {
+    const sourceNames = await loadTargetFile(arg.path);
+    console.log(`=== Batch build-json (${sourceNames.length} targets) ===\n`);
+    const scriptPath = resolve(import.meta.dirname, 'build-gtfs-json.ts');
+    const results = runBatch(scriptPath, sourceNames);
+    printBatchSummary(results);
+    const exitCode = determineBatchExitCode(results);
+    console.log(`\n${formatExitCode(exitCode)}`);
+    process.exitCode = exitCode;
+    return;
+  }
+
+  // Single source mode
+  let sourceDef;
+  try {
+    sourceDef = await loadGtfsSource(arg.name);
+  } catch (err) {
+    console.error(`Error: Failed to load source definition for "${arg.name}".`);
+    if (err instanceof Error) {
+      console.error(`  Cause: ${err.message}`);
+    }
+    console.log('');
+    printUsage();
+    process.exitCode = 1;
+    return;
+  }
+
+  const source: BuildSource = {
+    outDir: sourceDef.pipeline.outDir,
+    prefix: sourceDef.pipeline.prefix,
+    nameEn: sourceDef.resource.nameEn,
+    routeColorFallbacks: sourceDef.resource.routeColorFallbacks ?? {},
+  };
+
+  console.log(`=== ${arg.name} [START] ===\n`);
+  console.log(`  Name:   ${source.nameEn}`);
+  console.log(`  Input:  ${join(DB_DIR, `${source.outDir}.db`)}`);
+  console.log(`  Output: ${join(OUTPUT_DIR, source.prefix)}/`);
+  console.log('');
+
+  const t0 = performance.now();
+
+  try {
+    buildSourceJson(source);
+  } catch (err) {
+    console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
+    process.exitCode = 1;
+  } finally {
+    const durationMs = performance.now() - t0;
+    const code = process.exitCode ?? 0;
+    const label = code === 0 ? 'ok' : 'error';
+    console.log(`\nDuration: ${(durationMs / 1000).toFixed(1)}s`);
+    console.log(`Exit code: ${code} (${label})\n=== ${arg.name} [END] ===`);
+  }
+}
+
+runMain(main);

@@ -39,7 +39,7 @@
     "pipeline:download:gtfs": "npx tsx --env-file-if-exists=pipeline/.env.pipeline.local pipeline/scripts/download-gtfs.ts --targets pipeline/targets/download-gtfs.ts",
     "pipeline:download:odpt-json": "npx tsx --env-file-if-exists=pipeline/.env.pipeline.local pipeline/scripts/download-odpt-json.ts --targets pipeline/targets/download-odpt-json.ts",
     "pipeline:build:db": "npx tsx pipeline/scripts/build-gtfs-db.ts --targets pipeline/targets/build-db.ts",
-    "pipeline:build:json": "npx tsx pipeline/scripts/build-gtfs-json.ts",
+    "pipeline:build:json": "npx tsx pipeline/scripts/build-gtfs-json.ts --targets pipeline/targets/build-json.ts",
     "pipeline:build:train-shapes": "npx tsx pipeline/scripts/build-train-shapes.ts",
     "pipeline:validate": "npx tsx pipeline/scripts/validate-generated-data.ts",
     "pipeline:describe": "npx tsx pipeline/scripts/describe-resources.ts",
