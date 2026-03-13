@@ -4,10 +4,10 @@
 
 ## 概要
 
-| 項目   | 内容                                                 |
-| ------ | ---------------------------------------------------- |
-| 入力   | `pipeline/build/data/{prefix}/` (各ソースの JSON)    |
-| 出力   | 検証結果のログ + Markdown サマリ (GitHub Actions 用) |
+| 項目   | 内容                                                         |
+| ------ | ------------------------------------------------------------ |
+| 入力   | `pipeline/build/data/{prefix}/` (各ソースの JSON)            |
+| 出力   | 検証結果のログ + Markdown サマリ (GitHub Actions 用)         |
 | ソース | `pipeline/resources/gtfs/*.ts` + `odpt-json/*.ts` (全ソース) |
 
 2つの検証ステップを実行する:
