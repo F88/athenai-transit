@@ -181,13 +181,49 @@ export function createFixture(): SourceData {
     ],
     routes: [
       // Toden Arakawa Line (tram, route_type 0)
-      { i: 'route_toden', s: 'SA', l: 'Toden Arakawa', t: 0, c: 'E60012', tc: 'FFFFFF' },
+      {
+        i: 'route_toden',
+        s: 'SA',
+        l: 'Toden Arakawa',
+        t: 0,
+        c: 'E60012',
+        tc: 'FFFFFF',
+        m: {},
+        ai: 'test:agency',
+      },
       // Toei Mita Line (subway, route_type 1)
-      { i: 'route_subway', s: 'I', l: 'Toei Mita Line', t: 1, c: '0079C2', tc: 'FFFFFF' },
+      {
+        i: 'route_subway',
+        s: 'I',
+        l: 'Toei Mita Line',
+        t: 1,
+        c: '0079C2',
+        tc: 'FFFFFF',
+        m: {},
+        ai: 'test:agency',
+      },
       // Nippori-Toneri Liner (rail, route_type 2)
-      { i: 'route_liner', s: 'NT', l: 'Nippori-Toneri', t: 2, c: 'FF6319', tc: 'FFFFFF' },
+      {
+        i: 'route_liner',
+        s: 'NT',
+        l: 'Nippori-Toneri',
+        t: 2,
+        c: 'FF6319',
+        tc: 'FFFFFF',
+        m: {},
+        ai: 'test:agency',
+      },
       // Toei Bus (bus, route_type 3)
-      { i: 'route_bus', s: '王40', l: 'Toei Bus Ou-40', t: 3, c: '2E7D32', tc: 'FFFFFF' },
+      {
+        i: 'route_bus',
+        s: '王40',
+        l: 'Toei Bus Ou-40',
+        t: 3,
+        c: '2E7D32',
+        tc: 'FFFFFF',
+        m: {},
+        ai: 'test:agency',
+      },
     ],
     calendar: {
       services: [

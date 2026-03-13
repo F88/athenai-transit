@@ -9,9 +9,11 @@ function makeBusRoute(overrides?: Partial<Route>): Route {
     route_id: 'R_BUS',
     route_short_name: '都01',
     route_long_name: '',
+    route_names: {},
     route_type: 3,
     route_color: 'F1B34E',
     route_text_color: 'FFFFFF',
+    agency_id: '',
     ...overrides,
   };
 }
@@ -22,9 +24,11 @@ function makeTrainRoute(overrides?: Partial<Route>): Route {
     route_id: 'R_TRAIN',
     route_short_name: '',
     route_long_name: '大江戸線',
+    route_names: {},
     route_type: 1,
     route_color: 'B6007A',
     route_text_color: 'FFFFFF',
+    agency_id: '',
     ...overrides,
   };
 }
@@ -35,9 +39,11 @@ function makeBothRoute(overrides?: Partial<Route>): Route {
     route_id: 'R_BOTH',
     route_short_name: 'E',
     route_long_name: '大江戸線',
+    route_names: {},
     route_type: 1,
     route_color: 'B6007A',
     route_text_color: 'FFFFFF',
+    agency_id: '',
     ...overrides,
   };
 }
@@ -48,9 +54,11 @@ function makeEmptyRoute(overrides?: Partial<Route>): Route {
     route_id: 'R_EMPTY',
     route_short_name: '',
     route_long_name: '',
+    route_names: {},
     route_type: 3,
     route_color: '',
     route_text_color: '',
+    agency_id: '',
     ...overrides,
   };
 }

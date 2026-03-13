@@ -142,9 +142,11 @@ export class GtfsRepository implements TransitRepository {
           route_id: r.i,
           route_short_name: r.s,
           route_long_name: r.l,
+          route_names: r.m ?? {},
           route_type: r.t as RouteType,
           route_color: r.c,
           route_text_color: r.tc,
+          agency_id: r.ai ?? '',
         });
       }
     }

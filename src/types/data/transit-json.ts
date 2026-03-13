@@ -38,6 +38,35 @@ export interface RouteJson {
   t: number; // route_type
   c: string; // route_color (hex without #, e.g. "F1B34E")
   tc: string; // route_text_color (hex without #)
+  m: Record<string, string>; // route_names: language -> translation
+  ai: string; // agency_id (prefixed)
+}
+
+/** agency.json */
+export interface AgencyJson {
+  i: string; // agency_id (prefixed)
+  n: string; // agency_name
+  m: Record<string, string>; // agency_names: language -> translation
+  u: string; // agency_url
+  l: string; // agency_lang
+}
+
+/** feed-info.json */
+export interface FeedInfoJson {
+  pn: string; // feed_publisher_name
+  pu: string; // feed_publisher_url
+  l: string; // feed_lang
+  s: string; // feed_start_date "YYYYMMDD"
+  e: string; // feed_end_date "YYYYMMDD"
+  v: string; // feed_version
+}
+
+/** translations.json */
+export interface TranslationsJson {
+  /** trip_headsign -> { language -> translation } */
+  headsigns: Record<string, Record<string, string>>;
+  /** stop_headsign -> { language -> translation } */
+  stop_headsigns: Record<string, Record<string, string>>;
 }
 
 /** calendar.json */
