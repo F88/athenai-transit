@@ -8,7 +8,7 @@
 | ------ | ---------------------------------------------------- |
 | 入力   | `pipeline/build/data/{prefix}/` (各ソースの JSON)    |
 | 出力   | 検証結果のログ + Markdown サマリ (GitHub Actions 用) |
-| ソース | `pipeline/resources/gtfs/*.ts` (全ソース)            |
+| ソース | `pipeline/resources/gtfs/*.ts` + `odpt-json/*.ts` (全ソース) |
 
 2つの検証ステップを実行する:
 
@@ -58,8 +58,8 @@ Usage: npx tsx pipeline/scripts/app-data/validate-app-data.ts
 ```
 === Validate generated data (pipeline/build/data) ===
 
-Loading source definitions from pipeline/resources/gtfs/...
-  Found 3 sources: sggsm, tobus, toaran
+Loading source definitions...
+  Found 4 sources: sggsm, tobus, toaran, yrkm
 
 --- [1/2] File existence check ---
 

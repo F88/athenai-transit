@@ -53,8 +53,9 @@ GTFS/GTFS-JP ソース固有のフィールド。
 
 | フィールド    | 型                | 説明                                                |
 | ------------- | ----------------- | --------------------------------------------------- |
-| `downloadUrl` | `string`          | GTFS ZIP のダウンロード URL                         |
-| `routeTypes`  | `GtfsRouteType[]` | 含まれる路線種別 (`'bus'`, `'rail'`, `'subway'` 等) |
+| `downloadUrl`       | `string`            | GTFS ZIP のダウンロード URL                                  |
+| `routeTypes`        | `GtfsRouteType[]`   | 含まれる路線種別 (`'bus'`, `'rail'`, `'subway'` 等)          |
+| `mlitShapeMapping?` | `MlitShapeMapping`  | MLIT GeoJSON からの路線形状マッピング (shapes 生成に使用) |
 
 ### OdptJsonResource (extends BaseResource)
 
@@ -62,8 +63,9 @@ ODPT JSON API ソース固有のフィールド。
 
 | フィールド    | 型       | 説明                                        |
 | ------------- | -------- | ------------------------------------------- |
-| `endpointUrl` | `string` | API エンドポイント URL (認証パラメータなし) |
-| `odptType`    | `string` | ODPT データ型 (例: `'odpt:Station'`)        |
+| `endpointUrl`      | `string`            | API エンドポイント URL (認証パラメータなし)                  |
+| `odptType`         | `string`            | ODPT データ型 (例: `'odpt:Station'`)                         |
+| `mlitShapeMapping?` | `MlitShapeMapping` | MLIT GeoJSON からの路線形状マッピング (shapes 生成に使用) |
 
 ### PipelineConfig
 

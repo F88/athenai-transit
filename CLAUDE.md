@@ -71,8 +71,9 @@ npm run pipeline:download:gtfs            # 1. download GTFS data (batch)
 npm run pipeline:download:odpt-json      # 2. download ODPT JSON data (batch, requires .env.pipeline.local)
 npm run pipeline:build:db                # 3. convert GTFS CSV -> pipeline/build/*.db
 npm run pipeline:build:json              # 4. generate JSON -> pipeline/build/data/
-npm run pipeline:build:train-shapes      # 5. generate train route shapes
-npm run data:sync                        # 6. copy pipeline/build/data/ -> public/data/
+npm run pipeline:build:odpt-train        # 5. generate ODPT Train JSON -> pipeline/build/data/
+npm run pipeline:build:train-shapes      # 6. generate train route shapes
+npm run data:sync                        # 7. copy pipeline/build/data/ -> public/data/
 ```
 
 ## Key UX Requirements
