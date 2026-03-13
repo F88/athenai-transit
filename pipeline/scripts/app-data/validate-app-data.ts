@@ -28,6 +28,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { loadAllGtfsSources } from '../../lib/load-gtfs-sources';
+import { loadAllOdptJsonSources } from '../../lib/load-odpt-json-sources';
 import { runMain } from '../../lib/pipeline-utils';
 
 // ---------------------------------------------------------------------------
@@ -204,18 +205,36 @@ function padWithDots(name: string, width: number): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Load GTFS source definitions from resource files.
+ * Load source definitions from GTFS and ODPT JSON resource files.
+ * Deduplicates by prefix (multiple ODPT JSON resources may share the same prefix).
  * @returns Array of resolved sources with prefix and nameEn.
  */
 async function loadSources(): Promise<ValidateSource[]> {
-  console.log('Loading source definitions from pipeline/resources/gtfs/...');
+  console.log('Loading source definitions...');
 
-  const allDefs = await loadAllGtfsSources();
-  const sources: ValidateSource[] = allDefs.map((d) => ({
-    prefix: d.pipeline.prefix,
-    nameEn: d.resource.nameEn,
-  }));
+  const sourceMap = new Map<string, ValidateSource>();
 
+  // GTFS sources
+  const gtfsDefs = await loadAllGtfsSources();
+  for (const d of gtfsDefs) {
+    sourceMap.set(d.pipeline.prefix, {
+      prefix: d.pipeline.prefix,
+      nameEn: d.resource.nameEn,
+    });
+  }
+
+  // ODPT JSON sources (deduplicate by prefix)
+  const odptDefs = await loadAllOdptJsonSources();
+  for (const d of odptDefs) {
+    if (!sourceMap.has(d.pipeline.prefix)) {
+      sourceMap.set(d.pipeline.prefix, {
+        prefix: d.pipeline.prefix,
+        nameEn: d.resource.nameEn,
+      });
+    }
+  }
+
+  const sources = [...sourceMap.values()];
   const prefixes = sources.map((s) => sanitize(s.prefix)).join(', ');
   console.log(`  Found ${sources.length} sources: ${prefixes}\n`);
   return sources;

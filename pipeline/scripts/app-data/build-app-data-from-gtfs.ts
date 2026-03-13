@@ -712,7 +712,9 @@ function buildSourceJson(source: BuildSource): void {
 
 function printUsage(): void {
   console.log('Usage: npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts <source-name>');
-  console.log('       npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts --targets <file>');
+  console.log(
+    '       npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts --targets <file>',
+  );
   console.log('       npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts --list\n');
   console.log('Options:');
   console.log('  --targets <file>  Batch build from a target list file (.ts)');
