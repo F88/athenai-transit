@@ -794,6 +794,9 @@ async function main(): Promise<void> {
     buildSourceJson(source);
   } catch (err) {
     console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
+    if (err instanceof Error && err.cause instanceof Error) {
+      console.error(`  Cause: ${err.cause.message}`);
+    }
     process.exitCode = 1;
   } finally {
     const durationMs = performance.now() - t0;
