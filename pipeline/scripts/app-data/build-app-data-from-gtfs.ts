@@ -42,7 +42,7 @@ import {
 // Paths
 // ---------------------------------------------------------------------------
 
-const ROOT = resolve(import.meta.dirname, '..', '..');
+const ROOT = resolve(import.meta.dirname, '../..');
 const DB_DIR = join(ROOT, 'build');
 const OUTPUT_DIR = join(ROOT, 'build/data');
 

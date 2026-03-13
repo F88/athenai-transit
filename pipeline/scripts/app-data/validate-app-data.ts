@@ -34,7 +34,7 @@ import { runMain } from '../../lib/pipeline-utils';
 // Paths
 // ---------------------------------------------------------------------------
 
-const ROOT = resolve(import.meta.dirname, '..', '..');
+const ROOT = resolve(import.meta.dirname, '../..');
 const DATA_DIR = join(ROOT, 'build/data');
 
 // ---------------------------------------------------------------------------
