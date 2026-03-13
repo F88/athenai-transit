@@ -51,16 +51,26 @@ export class FetchDataSource implements TransitDataSource {
         return r.json() as Promise<unknown>;
       });
 
-    const fetchOptional = (file: string) =>
-      fetch(`/data/${prefix}/${file}.json`).then((r) => {
+    const fetchOptional = (file: string) => {
+      const path = `${prefix}/${file}.json`;
+      return fetch(`/data/${path}`).then((r) => {
         if (r.status === 404) {
+          logger.error(`Optional file not found: ${path}`);
           return null;
         }
         if (!r.ok) {
-          throw new Error(`HTTP ${r.status} for ${prefix}/${file}.json`);
+          throw new Error(`HTTP ${r.status} for ${path}`);
+        }
+        // SPA fallback rewrites (e.g. Vercel) return 200 + HTML for missing
+        // files instead of 404. Detect this by checking content-type.
+        const ct = r.headers.get('content-type') ?? '';
+        if (!ct.includes('application/json')) {
+          logger.error(`Optional file not available: ${path} (content-type: ${ct})`);
+          return null;
         }
         return r.json() as Promise<unknown>;
       });
+    };
 
     const [stops, routes, calendar, timetable, shapes, agencies, feedInfo, translations] =
       await Promise.all([
@@ -74,8 +84,14 @@ export class FetchDataSource implements TransitDataSource {
         fetchOptional('translations'),
       ]);
 
-    logger.debug(
-      `Loaded ${prefix}/: ${(stops as StopJson[]).length} stops, ${(routes as RouteJson[]).length} routes`,
+    const optionalLoaded = [
+      agencies ? 'agency' : null,
+      feedInfo !== null ? 'feed-info' : null,
+      translations ? 'translations' : null,
+    ].filter(Boolean);
+    logger.info(
+      `Loaded ${prefix}/: ${(stops as StopJson[]).length} stops, ${(routes as RouteJson[]).length} routes` +
+        (optionalLoaded.length > 0 ? ` (+${optionalLoaded.join(', ')})` : ''),
     );
 
     return {
