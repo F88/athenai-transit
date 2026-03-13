@@ -7,11 +7,14 @@
  */
 
 import type {
+  AgencyJson,
   CalendarJson,
+  FeedInfoJson,
   RouteJson,
   ShapesJson,
   StopJson,
   TimetableJson,
+  TranslationsJson,
 } from '../types/data/transit-json';
 
 /**
@@ -31,6 +34,9 @@ export interface SourceData {
   calendar: CalendarJson;
   timetable: TimetableJson;
   shapes: ShapesJson;
+  agencies?: AgencyJson[];
+  feedInfo?: FeedInfoJson | null;
+  translations?: TranslationsJson;
 }
 
 /**
