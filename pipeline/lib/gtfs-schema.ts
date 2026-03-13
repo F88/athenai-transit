@@ -332,13 +332,13 @@ export const SCHEMA: string[] = [
     FOREIGN KEY (to_trip_id) REFERENCES trips(trip_id)
   )`,
 
-  // pattern_jp.txt (GTFS-JP)
+  // pattern_jp.txt (GTFS-JP v3)
   `CREATE TABLE IF NOT EXISTS pattern_jp (
-    pattern_id   TEXT PRIMARY KEY,
-    route_id     TEXT NOT NULL,
-    pattern_name TEXT,
-    pattern_url  TEXT,
-    FOREIGN KEY (route_id) REFERENCES routes(route_id)
+    jp_pattern_id     TEXT PRIMARY KEY,
+    route_update_date TEXT,
+    origin_stop       TEXT,
+    via_stop          TEXT,
+    destination_stop  TEXT
   )`,
 
   // areas.txt
