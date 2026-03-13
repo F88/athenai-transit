@@ -507,4 +507,7 @@ async function main(): Promise<void> {
   process.exitCode = exitCode;
 }
 
+// This script uses exit codes 0 (ok), 1 (warnings), and 2 (errors).
+// runMain defaults to exitCode=1 on unhandled errors, but this script's
+// contract requires EXIT_ERROR (2) for fatal failures, so we override it.
 runMain(main, { fatalExitCode: EXIT_ERROR });
