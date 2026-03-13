@@ -20,6 +20,12 @@ const settings: SourceGroup[] = [
     prefixes: ['yrkm'],
   },
   {
+    id: 'kanto-bus',
+    name_ja: '関東バス',
+    category: 'bus',
+    prefixes: ['ktbus'],
+  },
+  {
     id: 'suginami-gsm',
     name_ja: '杉並区グリーンスローモビリティ',
     category: 'bus',
