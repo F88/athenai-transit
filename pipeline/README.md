@@ -8,7 +8,7 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 
 - [DOWNLOADER.md](./docs/DOWNLOADER.md) -- ダウンローダーの仕様 (CLI、バッチ、認証、リトライ、exit code)
 - [GTFS_TO_RDB.md](./docs/GTFS_TO_RDB.md) -- GTFS CSV → SQLite 変換の仕様
-- [JSON_FOR_APP.md](./docs/JSON_FOR_APP.md) -- SQLite → アプリ用 JSON 変換の仕様
+- [APP_DATA_FROM_GTFS.md](./docs/APP_DATA_FROM_GTFS.md) -- SQLite → アプリ用 JSON 変換の仕様
 - [BUILD_TRAIN_SHAPES.md](./docs/BUILD_TRAIN_SHAPES.md) -- 鉄道路線形状生成の仕様
 - [VALIDATE.md](./docs/VALIDATE.md) -- 生成データ検証の仕様 (ファイル存在チェック、カレンダー鮮度、exit code)
 - [DESCRIBE_RESOURCES.md](./docs/DESCRIBE_RESOURCES.md) -- リソース定義一覧表示の仕様
@@ -17,15 +17,15 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 
 ## スクリプト
 
-| スクリプト                           | npm script                            | 概要                               |
-| ------------------------------------ | ------------------------------------- | ---------------------------------- |
-| `scripts/download-gtfs.ts`           | `npm run pipeline:download:gtfs`      | GTFS ZIP をバッチダウンロード      |
-| `scripts/download-odpt-json.ts`      | `npm run pipeline:download:odpt-json` | ODPT JSON をバッチダウンロード     |
-| `scripts/build-gtfs-db.ts`           | `npm run pipeline:build:db`           | GTFS CSV を SQLite に変換          |
-| `scripts/build-gtfs-json.ts`         | `npm run pipeline:build:json`         | SQLite からアプリ用 JSON を生成    |
-| `scripts/build-train-shapes.ts`      | `npm run pipeline:build:train-shapes` | 国土数値情報から鉄道路線形状を生成 |
-| `scripts/validate-generated-data.ts` | `npm run pipeline:validate`           | 生成データの検証                   |
-| `scripts/describe-resources.ts`      | `npm run pipeline:describe`           | 全リソース定義の一覧表示           |
+| スクリプト                            | npm script                            | 概要                               |
+| ------------------------------------- | ------------------------------------- | ---------------------------------- |
+| `scripts/download-gtfs.ts`            | `npm run pipeline:download:gtfs`      | GTFS ZIP をバッチダウンロード      |
+| `scripts/download-odpt-json.ts`       | `npm run pipeline:download:odpt-json` | ODPT JSON をバッチダウンロード     |
+| `scripts/build-gtfs-db.ts`            | `npm run pipeline:build:db`           | GTFS CSV を SQLite に変換          |
+| `scripts/build-app-data-from-gtfs.ts` | `npm run pipeline:build:json`         | SQLite からアプリ用 JSON を生成    |
+| `scripts/build-train-shapes.ts`       | `npm run pipeline:build:train-shapes` | 国土数値情報から鉄道路線形状を生成 |
+| `scripts/validate-generated-data.ts`  | `npm run pipeline:validate`           | 生成データの検証                   |
+| `scripts/describe-resources.ts`       | `npm run pipeline:describe`           | 全リソース定義の一覧表示           |
 
 ## 処理の流れ
 
@@ -48,7 +48,7 @@ flowchart TD
 
     subgraph build["Build"]
         CSV --> DB["build-gtfs-db.ts<br/>CSV → SQLite"]
-        DB --> BJ["build-gtfs-json.ts<br/>SQLite → JSON"]
+        DB --> BJ["build-app-data-from-gtfs.ts<br/>SQLite → JSON"]
         DB --> BS["build-train-shapes.ts"]
         OJSON -.-> BO["build-odpt-json.ts (future)"]
     end

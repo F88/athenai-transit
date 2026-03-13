@@ -19,7 +19,7 @@ and this project adheres to [CalVer](https://calver.org/).
     - Route 型に `route_names` (多言語名)、`agency_id` を追加。Agency, FeedInfo 型を新規追加。
     - DataSource に optional な agencies, feedInfo, translations を追加。
     - `translateRouteName` で翻訳ルックアップを有効化。
-- パイプラインドキュメント (`GTFS_TO_RDB.md`, `JSON_FOR_APP.md`) を追加。
+- パイプラインドキュメント (`GTFS_TO_RDB.md`, `APP_DATA_FROM_GTFS.md`) を追加。
 
 ### Changed
 

@@ -65,7 +65,7 @@ SQLite DBからアプリが利用するJSONファイルを生成する。
 npm run pipeline:build:json
 ```
 
-- スクリプト: `pipeline/scripts/build-gtfs-json.ts`
+- スクリプト: `pipeline/scripts/build-app-data-from-gtfs.ts`
 - 出力: ソースごとに `pipeline/build/data/{prefix}/` へ5ファイル
     - `stops.json` - 停留所/駅の位置情報
     - `routes.json` - 路線情報 (名称、色。GTFSに色がない路線はフォールバック色を補完)

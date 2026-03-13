@@ -11,9 +11,9 @@
  * Output: pipeline/build/data/{prefix}/*.json (8 files per source)
  *
  * Usage:
- *   npx tsx pipeline/scripts/build-gtfs-json.ts <source-name>
- *   npx tsx pipeline/scripts/build-gtfs-json.ts --targets <file>
- *   npx tsx pipeline/scripts/build-gtfs-json.ts --list
+ *   npx tsx pipeline/scripts/build-app-data-from-gtfs.ts <source-name>
+ *   npx tsx pipeline/scripts/build-app-data-from-gtfs.ts --targets <file>
+ *   npx tsx pipeline/scripts/build-app-data-from-gtfs.ts --list
  *   npm run pipeline:build:json
  */
 
@@ -712,9 +712,9 @@ function buildSourceJson(source: BuildSource): void {
 // ---------------------------------------------------------------------------
 
 function printUsage(): void {
-  console.log('Usage: npx tsx pipeline/scripts/build-gtfs-json.ts <source-name>');
-  console.log('       npx tsx pipeline/scripts/build-gtfs-json.ts --targets <file>');
-  console.log('       npx tsx pipeline/scripts/build-gtfs-json.ts --list\n');
+  console.log('Usage: npx tsx pipeline/scripts/build-app-data-from-gtfs.ts <source-name>');
+  console.log('       npx tsx pipeline/scripts/build-app-data-from-gtfs.ts --targets <file>');
+  console.log('       npx tsx pipeline/scripts/build-app-data-from-gtfs.ts --list\n');
   console.log('Options:');
   console.log('  --targets <file>  Batch build from a target list file (.ts)');
   console.log('  --list            List available source names');
@@ -745,7 +745,7 @@ async function main(): Promise<void> {
   if (arg.kind === 'targets') {
     const sourceNames = await loadTargetFile(arg.path);
     console.log(`=== Batch build-json (${sourceNames.length} targets) ===\n`);
-    const scriptPath = resolve(import.meta.dirname, 'build-gtfs-json.ts');
+    const scriptPath = resolve(import.meta.dirname, 'build-app-data-from-gtfs.ts');
     const results = runBatch(scriptPath, sourceNames);
     printBatchSummary(results);
     const exitCode = determineBatchExitCode(results);

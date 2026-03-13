@@ -2,7 +2,7 @@
 
 ## 1. 背景と目的
 
-現在のパイプライン (`build-gtfs-json.ts`) は以下の5つの JSON を生成している:
+現在のパイプライン (`build-app-data-from-gtfs.ts`) は以下の5つの JSON を生成している:
 
 | ファイル         | 内容                                               | サイズ (tobus / toaran) |
 | ---------------- | -------------------------------------------------- | ----------------------- |
@@ -421,7 +421,7 @@ interface Route {
 GTFS CSV (15 files)
   ↓ build-gtfs-db.ts
 SQLite DB (全テーブル格納済み)
-  ↓ build-gtfs-json.ts
+  ↓ build-app-data-from-gtfs.ts
 JSON (8 files per source):
   stops.json          ← stops + translations(stop_name)
   routes.json         ← routes + translations(route_long_name) + agency_id
@@ -447,7 +447,7 @@ In-memory domain objects (Stop, Route, Agency, FeedInfo, ...)
 
 **目的**: 新しい JSON ファイルを生成できるようにする
 
-- `build-gtfs-json.ts` に `extractAgencies`, `extractFeedInfo`, `extractTranslations` を追加
+- `build-app-data-from-gtfs.ts` に `extractAgencies`, `extractFeedInfo`, `extractTranslations` を追加
 - `extractRoutes` に translations と agency_id の取得を追加
 - `transit-json.ts` に Wire 型を追加/拡張
 - `transit.ts` に App 型を追加/拡張
@@ -502,7 +502,7 @@ In-memory domain objects (Stop, Route, Agency, FeedInfo, ...)
 
 ### パイプラインスクリプト
 
-- `pipeline/scripts/build-gtfs-json.ts` — メイン変更対象
+- `pipeline/scripts/build-app-data-from-gtfs.ts` — メイン変更対象
 - `pipeline/scripts/build-gtfs-db.ts` — DB スキーマ (変更なし)
 - `pipeline/scripts/validate-generated-data.ts` — バリデーション拡張
 

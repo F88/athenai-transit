@@ -4,18 +4,18 @@
 
 ## 概要
 
-`build-gtfs-json.ts` は `build-gtfs-db.ts` が生成した SQLite DB (`pipeline/build/{outDir}.db`) を読み込み、ソースごとに8つの JSON ファイルを出力する。ID フィールドにはソースプレフィックスが付与される (例: `tobus:0001-01`)。
+`build-app-data-from-gtfs.ts` は `build-gtfs-db.ts` が生成した SQLite DB (`pipeline/build/{outDir}.db`) を読み込み、ソースごとに8つの JSON ファイルを出力する。ID フィールドにはソースプレフィックスが付与される (例: `tobus:0001-01`)。
 
-| スクリプト           | 入力                         | 出力                                  |
-| -------------------- | ---------------------------- | ------------------------------------- |
-| `build-gtfs-json.ts` | `pipeline/build/{outDir}.db` | `pipeline/build/data/{prefix}/*.json` |
+| スクリプト                    | 入力                         | 出力                                  |
+| ----------------------------- | ---------------------------- | ------------------------------------- |
+| `build-app-data-from-gtfs.ts` | `pipeline/build/{outDir}.db` | `pipeline/build/data/{prefix}/*.json` |
 
 ## CLI インターフェース
 
 ```
-Usage: npx tsx pipeline/scripts/build-gtfs-json.ts <source-name>
-       npx tsx pipeline/scripts/build-gtfs-json.ts --targets <file>
-       npx tsx pipeline/scripts/build-gtfs-json.ts --list
+Usage: npx tsx pipeline/scripts/build-app-data-from-gtfs.ts <source-name>
+       npx tsx pipeline/scripts/build-app-data-from-gtfs.ts --targets <file>
+       npx tsx pipeline/scripts/build-app-data-from-gtfs.ts --list
        npm run pipeline:build:json
 ```
 
@@ -33,7 +33,7 @@ Usage: npx tsx pipeline/scripts/build-gtfs-json.ts <source-name>
 `<source-name>` は `pipeline/resources/gtfs/` 内のリソース定義ファイル名 (拡張子なし) を指定する。
 
 ```
-npx tsx pipeline/scripts/build-gtfs-json.ts toei-bus
+npx tsx pipeline/scripts/build-app-data-from-gtfs.ts toei-bus
                                              ^^^^^^^^
                                              pipeline/resources/gtfs/toei-bus.ts を読み込む
 ```
