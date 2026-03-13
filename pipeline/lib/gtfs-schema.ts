@@ -25,12 +25,12 @@
  * new GTFS columns nullable ensures older GTFS-JP feeds import
  * without error.
  *
- * ### 3. FK omissions due to table creation order
+ * ### 3. Forward-reference FKs (table creation order)
  *
- * Some FK relationships cannot be declared because the referenced
- * table is created later in the dependency chain. These are noted
- * inline. Integrity is still verified at runtime via
- * PRAGMA foreign_key_check.
+ * Some FK relationships reference tables created later in the
+ * dependency chain. SQLite accepts these declarations when
+ * foreign_keys is OFF (our import mode), so we declare them to
+ * benefit from PRAGMA foreign_key_check after import completes.
  *
  * ### 4. FK omissions due to composite/missing unique keys
  *
@@ -124,7 +124,7 @@ export const SCHEMA: string[] = [
   )`,
 
   // routes.txt
-  // network_id → networks(network_id): FK omitted (see design decision 3)
+  // network_id → networks(network_id): forward-reference FK (see design decision 3)
   `CREATE TABLE IF NOT EXISTS routes (
     route_id           TEXT PRIMARY KEY,
     agency_id          TEXT,
@@ -140,7 +140,8 @@ export const SCHEMA: string[] = [
     continuous_drop_off INTEGER,
     network_id         TEXT,
     jp_parent_route_id TEXT,
-    FOREIGN KEY (agency_id) REFERENCES agency(agency_id)
+    FOREIGN KEY (agency_id) REFERENCES agency(agency_id),
+    FOREIGN KEY (network_id) REFERENCES networks(network_id)
   )`,
 
   // =========================================================================
@@ -170,7 +171,7 @@ export const SCHEMA: string[] = [
 
   // stop_times.txt
   // location_group_id, pickup_booking_rule_id, drop_off_booking_rule_id:
-  // FK references tables created later (see design decision 3)
+  // forward-reference FKs (see design decision 3)
   `CREATE TABLE IF NOT EXISTS stop_times (
     trip_id                          TEXT NOT NULL,
     arrival_time                     TEXT,

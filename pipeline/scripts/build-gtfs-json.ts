@@ -549,6 +549,22 @@ export function extractFeedInfo(db: Database.Database, prefix: string): FeedInfo
   };
 }
 
+/**
+ * Build a lookup map from translation rows: { headsignText: { lang: translation } }
+ */
+function buildTranslationMap(
+  rows: Array<{ headsign_text: string; language: string; translation: string }>,
+): Record<string, Record<string, string>> {
+  const map: Record<string, Record<string, string>> = {};
+  for (const row of rows) {
+    if (!map[row.headsign_text]) {
+      map[row.headsign_text] = {};
+    }
+    map[row.headsign_text][row.language] = row.translation;
+  }
+  return map;
+}
+
 export function extractTranslations(db: Database.Database, prefix: string): TranslationsJson {
   // trip_headsign translations
   // GTFS-JP uses record_id (trip_id), standard GTFS uses field_value
@@ -563,13 +579,7 @@ export function extractTranslations(db: Database.Database, prefix: string): Tran
     )
     .all() as Array<{ headsign_text: string; language: string; translation: string }>;
 
-  const headsigns: Record<string, Record<string, string>> = {};
-  for (const row of headsignRows) {
-    if (!headsigns[row.headsign_text]) {
-      headsigns[row.headsign_text] = {};
-    }
-    headsigns[row.headsign_text][row.language] = row.translation;
-  }
+  const headsigns = buildTranslationMap(headsignRows);
 
   // stop_headsign translations
   // stop_times has composite PK (trip_id, stop_sequence), so record_sub_id is used
@@ -586,13 +596,7 @@ export function extractTranslations(db: Database.Database, prefix: string): Tran
     )
     .all() as Array<{ headsign_text: string; language: string; translation: string }>;
 
-  const stopHeadsigns: Record<string, Record<string, string>> = {};
-  for (const row of stopHeadsignRows) {
-    if (!stopHeadsigns[row.headsign_text]) {
-      stopHeadsigns[row.headsign_text] = {};
-    }
-    stopHeadsigns[row.headsign_text][row.language] = row.translation;
-  }
+  const stopHeadsigns = buildTranslationMap(stopHeadsignRows);
 
   const headsignCount = Object.keys(headsigns).length;
   const stopHeadsignCount = Object.keys(stopHeadsigns).length;

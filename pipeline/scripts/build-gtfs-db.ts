@@ -467,6 +467,9 @@ async function buildSourceDb(
 
   if (csvFiles.length === 0) {
     console.warn(`  WARN: No .txt files found in ${sourceDir}`);
+    db.close();
+    rmSync(tmpDbPath, { force: true });
+    return;
   }
 
   console.log(`Found ${csvFiles.length} GTFS files`);
