@@ -114,6 +114,9 @@ const REQUIRED_FILES = [
   'calendar.json',
   'timetable.json',
   'shapes.json',
+  'agency.json',
+  'feed-info.json',
+  'translations.json',
 ] as const;
 
 // ---------------------------------------------------------------------------

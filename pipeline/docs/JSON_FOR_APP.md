@@ -4,11 +4,11 @@
 
 ## 概要
 
-`build-gtfs-json.ts` は `build-gtfs-db.ts` が生成した SQLite DB (`pipeline/build/{prefix}.db`) を読み込み、ソースごとに8つの JSON ファイルを出力する。ID フィールドにはソースプレフィックスが付与される (例: `tobus:0001-01`)。
+`build-gtfs-json.ts` は `build-gtfs-db.ts` が生成した SQLite DB (`pipeline/build/{outDir}.db`) を読み込み、ソースごとに8つの JSON ファイルを出力する。ID フィールドにはソースプレフィックスが付与される (例: `tobus:0001-01`)。
 
-| スクリプト           | 入力                       | 出力                              |
-| -------------------- | -------------------------- | --------------------------------- |
-| `build-gtfs-json.ts` | `pipeline/build/{prefix}.db` | `pipeline/build/data/{prefix}/*.json` |
+| スクリプト           | 入力                         | 出力                                  |
+| -------------------- | ---------------------------- | ------------------------------------- |
+| `build-gtfs-json.ts` | `pipeline/build/{outDir}.db` | `pipeline/build/data/{prefix}/*.json` |
 
 ## CLI インターフェース
 
@@ -23,16 +23,16 @@ Usage: npx tsx pipeline/scripts/build-gtfs-json.ts
 
 ソースごとに `pipeline/build/data/{prefix}/` に8ファイルを出力する。`data:sync` で `public/data/` にコピーされ、WebApp から fetch される。
 
-| ファイル             | DB テーブル                        | 型定義 (transit-json.ts)  | 内容                                |
-| -------------------- | ---------------------------------- | ------------------------- | ----------------------------------- |
-| `stops.json`         | stops + translations               | `StopJson[]`              | 停留所 + 多言語名                   |
-| `routes.json`        | routes + translations              | `RouteJson[]`             | 路線 + 多言語名 + 事業者ID         |
-| `calendar.json`      | calendar + calendar_dates          | `CalendarJson`            | 運行カレンダー + 例外日            |
-| `timetable.json`     | trips + stop_times                 | `TimetableJson`           | 時刻表 (stop -> route/headsign)    |
-| `shapes.json`        | trips + shapes                     | `ShapesJson`              | 路線形状ポリライン                  |
-| `agency.json`        | agency + translations              | `AgencyJson[]`            | 事業者情報 + 多言語名              |
-| `feed-info.json`     | feed_info                          | `FeedInfoJson \| null`    | フィード情報 (有効期間/バージョン) |
-| `translations.json`  | translations + trips + stop_times  | `TranslationsJson`        | 行先翻訳ルックアップテーブル        |
+| ファイル            | DB テーブル                       | 型定義 (transit-json.ts) | 内容                               |
+| ------------------- | --------------------------------- | ------------------------ | ---------------------------------- |
+| `stops.json`        | stops + translations              | `StopJson[]`             | 停留所 + 多言語名                  |
+| `routes.json`       | routes + translations             | `RouteJson[]`            | 路線 + 多言語名 + 事業者ID         |
+| `calendar.json`     | calendar + calendar_dates         | `CalendarJson`           | 運行カレンダー + 例外日            |
+| `timetable.json`    | trips + stop_times                | `TimetableJson`          | 時刻表 (stop -> route/headsign)    |
+| `shapes.json`       | trips + shapes                    | `ShapesJson`             | 路線形状ポリライン                 |
+| `agency.json`       | agency + translations             | `AgencyJson[]`           | 事業者情報 + 多言語名              |
+| `feed-info.json`    | feed_info                         | `FeedInfoJson \| null`   | フィード情報 (有効期間/バージョン) |
+| `translations.json` | translations + trips + stop_times | `TranslationsJson`       | 行先翻訳ルックアップテーブル       |
 
 ## DB → JSON の変換フロー
 
@@ -147,7 +147,7 @@ JSON ファイルサイズ削減のため、フィールド名は略語を使用
 | `ai` | agency_id                                     |
 | `u`  | url                                           |
 | `pn` | feed_publisher_name                           |
-| `pu` | feed_publisher_url                             |
+| `pu` | feed_publisher_url                            |
 | `v`  | feed_version                                  |
 
 ## WebApp での利用
