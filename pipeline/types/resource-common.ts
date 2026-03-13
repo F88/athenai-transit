@@ -141,6 +141,22 @@ export interface License {
 }
 
 // ---------------------------------------------------------------------------
+// MlitShapeMapping
+// ---------------------------------------------------------------------------
+
+/**
+ * Mapping from MLIT GeoJSON line names to app-data route IDs for shape generation.
+ * Used by `build-app-data-from-ksj-railway.ts` to extract line geometries from
+ * National Land Numerical Information railway section data.
+ */
+export interface MlitShapeMapping {
+  /** Operator name used to filter GeoJSON features (e.g. "東京都"). */
+  operator: string;
+  /** Map from GeoJSON line name (N02_003) to prefixed route_id. */
+  lineToRouteId: Record<string, string>;
+}
+
+// ---------------------------------------------------------------------------
 // PipelineConfig
 // ---------------------------------------------------------------------------
 

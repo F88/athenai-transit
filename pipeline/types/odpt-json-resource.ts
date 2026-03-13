@@ -8,7 +8,7 @@
  * This is a type definition only — not yet consumed by the pipeline.
  */
 
-import type { BaseResource, PipelineConfig } from './resource-common';
+import type { BaseResource, MlitShapeMapping, PipelineConfig } from './resource-common';
 
 export type {
   Authentication,
@@ -16,6 +16,7 @@ export type {
   Catalog,
   DataFormat,
   License,
+  MlitShapeMapping,
   PipelineConfig,
   Provider,
 } from './resource-common';
@@ -37,6 +38,12 @@ export interface OdptJsonResource extends BaseResource {
   odptType: OdptDataType;
   /** API endpoint URL (without authentication parameters). */
   endpointUrl: string;
+  /**
+   * Mapping from MLIT GeoJSON line names to route IDs for shape generation.
+   * Used by `build-app-data-from-ksj-railway.ts` to extract line geometries from
+   * National Land Numerical Information railway section data.
+   */
+  mlitShapeMapping?: MlitShapeMapping;
 }
 
 // ---------------------------------------------------------------------------

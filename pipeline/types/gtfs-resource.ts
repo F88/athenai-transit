@@ -8,7 +8,7 @@
  * Scoped to GTFS / GTFS-JP static data only.
  */
 
-import type { BaseResource, PipelineConfig } from './resource-common';
+import type { BaseResource, MlitShapeMapping, PipelineConfig } from './resource-common';
 
 // Re-export common types for convenience
 export type {
@@ -17,6 +17,7 @@ export type {
   Catalog,
   DataFormat,
   License,
+  MlitShapeMapping,
   PipelineConfig,
   Provider,
 } from './resource-common';
@@ -48,12 +49,7 @@ export interface GtfsResource extends BaseResource {
    * Used by `build-app-data-from-ksj-railway.ts` to extract line geometries from
    * National Land Numerical Information railway section data.
    */
-  mlitShapeMapping?: {
-    /** Operator name used to filter GeoJSON features (e.g. "東京都"). */
-    operator: string;
-    /** Map from GeoJSON line name (N02_003) to prefixed GTFS route_id. */
-    lineToRouteId: Record<string, string>;
-  };
+  mlitShapeMapping?: MlitShapeMapping;
 }
 
 // ---------------------------------------------------------------------------
