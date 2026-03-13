@@ -14,9 +14,13 @@
 
 /** data-source-settings.json */
 export interface SourceGroupJson {
+  /** Unique group identifier (used as localStorage key). */
   id: string;
+  /** Japanese display name for settings UI. */
   name_ja: string;
+  /** UI grouping label (e.g. "bus", "train"). */
   category: string;
+  /** `public/data/{prefix}/` folder names to load. */
   prefixes: string[];
 }
 
