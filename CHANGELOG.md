@@ -9,6 +9,27 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Build DB スキーマを GTFS 公式仕様 + GTFS-JP v3 の全34テーブルに拡張。
+  どんな GTFS フィードが来ても CSV ファイルが SKIP されなくなる。
+- パイプラインに agency.json, feed-info.json, translations.json の出力を追加 (5 → 8ファイル/ソース)。
+- Route 型に `route_names` (多言語名) と `agency_id` を追加。
+- Agency, FeedInfo 型を新規追加。
+- DataSource にオプショナルな agencies, feedInfo, translations を追加。
+  `fetchOptional` ヘルパーで 404 を graceful に処理。
+- `translateRouteName` で `route_names` による翻訳ルックアップを有効化。
+
+### Changed
+
+- `build-gtfs-db.ts` を単一ソース CLI に再設計。
+  一括処理は `--targets` で子プロセス実行。
+  安全なビルド (一時ファイル → リネーム) を実装。
+- `pipeline-utils.ts` を `download-utils.ts` から分離。
+  汎用 CLI ユーティリティ (formatBytes, parseCliArg, runBatch 等) を独立モジュール化。
+- DB ファイル名を `{prefix}.db` から `{outDir}.db` に変更 (入出力パスの対応を明確化)。
+- `build-db` 用の独立したターゲットファイル (`pipeline/targets/build-db.ts`) を追加。
+
 ## [2026.03.12]
 
 初回リリース。atenai-v0 リポジトリからのポーティングと改善。
