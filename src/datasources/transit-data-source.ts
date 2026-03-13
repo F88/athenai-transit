@@ -26,6 +26,9 @@ import type {
  * @param calendar - Calendar services and exceptions.
  * @param timetable - Departure timetables keyed by stop_id.
  * @param shapes - Route polyline shapes keyed by route_id.
+ * @param agencies - Agency info (optional).
+ * @param feedInfo - Feed metadata (optional, null if absent in source).
+ * @param translations - Headsign translation lookup (optional).
  */
 export interface SourceData {
   prefix: string;
@@ -42,9 +45,10 @@ export interface SourceData {
 /**
  * Data source abstraction for loading raw GTFS JSON data.
  *
- * Implementations must load all 5 JSON files (stops, routes, calendar,
- * timetable, shapes) for a given source prefix and return them as a
- * single {@link SourceData} object.
+ * Implementations must load 5 required JSON files (stops, routes, calendar,
+ * timetable, shapes) and 3 optional files (agency, feed-info, translations)
+ * for a given source prefix, returning them as a single {@link SourceData}
+ * object.
  *
  * Errors should be thrown; the caller (GtfsRepository.create) handles
  * them via existing try/catch logic.
