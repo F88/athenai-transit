@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { FETCH_TIMEOUT_MS, archiveFilename, withRetry, wrapTimeoutError } from '../download-utils';
+import {
+  FETCH_TIMEOUT_MS,
+  archiveFilename,
+  buildAuthenticatedUrl,
+  withRetry,
+  wrapTimeoutError,
+} from '../download-utils';
+import type { Authentication } from '../../types/resource-common';
 
 // ---------------------------------------------------------------------------
 // archiveFilename
@@ -42,6 +49,67 @@ describe('archiveFilename', () => {
   it('handles JSON files', () => {
     const result = archiveFilename('odpt_Station.json');
     expect(result).toBe('odpt_Station_20260312-143045.json');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildAuthenticatedUrl
+// ---------------------------------------------------------------------------
+
+describe('buildAuthenticatedUrl', () => {
+  const authRequired: Authentication = {
+    required: true,
+    method: 'acl:consumerKey query parameter',
+    registrationUrl: 'https://developer.odpt.org/',
+  };
+
+  const authNone: Authentication = { required: false };
+
+  it('returns original URL when authentication is not required', () => {
+    const url = 'https://example.com/data.zip';
+    expect(buildAuthenticatedUrl(url, authNone, undefined)).toBe(url);
+  });
+
+  it('returns original URL when auth not required even with token present', () => {
+    const url = 'https://example.com/data.zip';
+    expect(buildAuthenticatedUrl(url, authNone, 'some-token')).toBe(url);
+  });
+
+  it('appends token with ? when URL has no query params', () => {
+    const url = 'https://api.odpt.org/api/v4/files/data.zip';
+    const result = buildAuthenticatedUrl(url, authRequired, 'my-token');
+    expect(result).toBe('https://api.odpt.org/api/v4/files/data.zip?acl:consumerKey=my-token');
+  });
+
+  it('appends token with & when URL already has query params', () => {
+    const url = 'https://api.odpt.org/api/v4/files/data.zip?date=20260301';
+    const result = buildAuthenticatedUrl(url, authRequired, 'my-token');
+    expect(result).toBe(
+      'https://api.odpt.org/api/v4/files/data.zip?date=20260301&acl:consumerKey=my-token',
+    );
+  });
+
+  it('encodes special characters in token', () => {
+    const url = 'https://api.odpt.org/data';
+    const result = buildAuthenticatedUrl(url, authRequired, 'token with spaces&special=chars');
+    expect(result).toContain('acl:consumerKey=token%20with%20spaces%26special%3Dchars');
+  });
+
+  it('throws when auth is required but token is undefined', () => {
+    const url = 'https://api.odpt.org/data';
+    expect(() => buildAuthenticatedUrl(url, authRequired, undefined)).toThrow(
+      'ODPT_ACCESS_TOKEN environment variable is required',
+    );
+    expect(() => buildAuthenticatedUrl(url, authRequired, undefined)).toThrow(
+      'https://developer.odpt.org/',
+    );
+  });
+
+  it('throws when auth is required but token is empty string', () => {
+    const url = 'https://api.odpt.org/data';
+    expect(() => buildAuthenticatedUrl(url, authRequired, '')).toThrow(
+      'ODPT_ACCESS_TOKEN environment variable is required',
+    );
   });
 });
 

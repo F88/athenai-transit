@@ -20,7 +20,7 @@ import { copyFileSync, existsSync, readdirSync, rmSync, statSync } from 'node:fs
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-import { archiveFilename, downloadWithRetry } from '../lib/download-utils';
+import { archiveFilename, buildAuthenticatedUrl, downloadWithRetry } from '../lib/download-utils';
 import {
   determineBatchExitCode,
   ensureDir,
@@ -127,8 +127,9 @@ async function main(): Promise<void> {
     return;
   }
 
+  const accessToken = process.env['ODPT_ACCESS_TOKEN'];
   const { outDir, prefix } = source.pipeline;
-  const { downloadUrl, nameJa, nameEn, provider, license } = source.resource;
+  const { downloadUrl, nameJa, nameEn, provider, license, authentication } = source.resource;
 
   const gtfsDir = join(ROOT, 'data/gtfs', outDir);
   const archiveDir = join(ROOT, 'archives/gtfs', outDir);
@@ -149,8 +150,9 @@ async function main(): Promise<void> {
     ensureDir(tmpDir);
 
     // 1. Download ZIP with retry
+    const url = buildAuthenticatedUrl(downloadUrl, authentication, accessToken);
     console.log(`Downloading ${downloadUrl}`);
-    const result = await downloadWithRetry(downloadUrl, zipPath);
+    const result = await downloadWithRetry(url, zipPath);
     console.log(`  Filename: ${zipFileName}`);
     console.log(`  Size: ${result.bytes.toLocaleString()} bytes`);
     console.log(`  Content-Type: ${result.contentType || '(not provided)'}`);
