@@ -74,7 +74,7 @@ ODPT JSON API ソース固有のフィールド。
 | フィールド     | 型       | 説明                                                   |
 | -------------- | -------- | ------------------------------------------------------ |
 | `outDir`       | `string` | 出力ディレクトリ名 (例: `"toei-bus"`, `"yurikamome"`)  |
-| `prefix`       | `string` | ID 名前空間の短縮接頭辞 (例: `"tobus"`, `"yrkm"`)      |
+| `prefix`       | `string` | ID 名前空間の短縮接頭辞 (例: `"minkuru"`, `"yurimo"`)      |
 | `outFileName?` | `string` | 出力ファイル名 (省略時は URL やメタデータから自動導出) |
 
 ## DataFormat
@@ -145,7 +145,7 @@ const toeiBus: GtfsSourceDefinition = {
     },
     pipeline: {
         outDir: 'toei-bus',
-        prefix: 'tobus',
+        prefix: 'minkuru',
     },
 };
 
@@ -186,7 +186,7 @@ const yurikamomeStation: OdptJsonSourceDefinition = {
     },
     pipeline: {
         outDir: 'yurikamome',
-        prefix: 'yrkm',
+        prefix: 'yurimo',
     },
 };
 
@@ -210,7 +210,7 @@ prefix はパイプライン出力における ID の名前空間として使用
 
 | directory      | prefix   | 由来                                             |
 | -------------- | -------- | ------------------------------------------------ |
-| `toei-bus`     | `tobus`  | **to**ei **bus**                                 |
-| `toei-train`   | `toaran` | **to**ei **ara**kawa + **n**ippori-toneri        |
-| `suginami-gsm` | `sggsm`  | **s**u**g**inami **g**reen **s**low **m**obility |
-| `yurikamome`   | `yrkm`   | **y**u**r**i**k**a**m**ome                       |
+| `toei-bus`     | `minkuru` | 都営バスマスコットキャラクター「みんくる」       |
+| `toei-train`   | `toaran`  | **to**ei **ara**kawa + **n**ippori-toneri         |
+| `suginami-gsm` | `sggsm`   | **s**u**g**inami **g**reen **s**low **m**obility  |
+| `yurikamome`   | `yurimo`  | **yuri**ka**mo**me                                |

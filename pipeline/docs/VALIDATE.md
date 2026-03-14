@@ -59,7 +59,7 @@ Usage: npx tsx pipeline/scripts/app-data/validate-app-data.ts
 === Validate generated data (pipeline/build/data) ===
 
 Loading source definitions...
-  Found 4 sources: sggsm, tobus, toaran, yrkm
+  Found 4 sources: sggsm, minkuru, toaran, yurimo
 
 --- [1/2] File existence check ---
 

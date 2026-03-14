@@ -55,7 +55,7 @@ Usage: npx tsx pipeline/scripts/app-data/build-app-data-from-ksj-railway.ts
 === Build Train Shapes from MLIT GeoJSON ===
 
 Collecting mlitShapeMapping targets...
-  Found 2 targets: toaran, yrkm
+  Found 2 targets: toaran, yurimo
 
 Reading pipeline/data/mlit/N02-24_RailroadSection.geojson...
   21932 total features
@@ -71,14 +71,14 @@ Reading pipeline/data/mlit/N02-24_RailroadSection.geojson...
 
   Wrote pipeline/build/data/toaran/shapes.json (44.9 KB)
 
---- yrkm (Yurikamome Railway) ---
+--- yurimo (Yurikamome Railway) ---
   32 features for operator "ゆりかもめ"
 
   Route summary:
-    yrkm:U         32 segments     293 points
+    yurimo:U       32 segments     293 points
     TOTAL          32 segments     293 points
 
-  Wrote pipeline/build/data/yrkm/shapes.json (6.0 KB)
+  Wrote pipeline/build/data/yurimo/shapes.json (6.0 KB)
 
 Done in 133ms. (exit code: 0)
 ```

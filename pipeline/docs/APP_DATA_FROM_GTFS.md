@@ -4,7 +4,7 @@
 
 ## 概要
 
-`build-app-data-from-gtfs.ts` は `build-gtfs-db.ts` が生成した SQLite DB (`pipeline/build/{outDir}.db`) を読み込み、ソースごとに8つの JSON ファイルを出力する。ID フィールドにはソースプレフィックスが付与される (例: `tobus:0001-01`)。
+`build-app-data-from-gtfs.ts` は `build-gtfs-db.ts` が生成した SQLite DB (`pipeline/build/{outDir}.db`) を読み込み、ソースごとに8つの JSON ファイルを出力する。ID フィールドにはソースプレフィックスが付与される (例: `minkuru:0001-01`)。
 
 | スクリプト                    | 入力                         | 出力                                  |
 | ----------------------------- | ---------------------------- | ------------------------------------- |
@@ -41,10 +41,10 @@ npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts toei-bus
 リソース定義ファイルには `pipeline.outDir` と `pipeline.prefix` が含まれており、入出力パスはこれらから決定される。
 
 ```plain
-toei-bus.ts → { pipeline: { outDir: "toei-bus", prefix: "tobus", ... } }
+toei-bus.ts → { pipeline: { outDir: "toei-bus", prefix: "minkuru", ... } }
               │
               ├─ Input:  pipeline/build/toei-bus.db
-              └─ Output: pipeline/build/data/tobus/*.json
+              └─ Output: pipeline/build/data/minkuru/*.json
 ```
 
 `--list` で利用可能なソース名を確認できる。
@@ -102,8 +102,8 @@ toei-bus.ts → { pipeline: { outDir: "toei-bus", prefix: "tobus", ... } }
 
 ```plain
 pipeline/build/data/
-├── tobus/           ← 最終出力 (常に完全な8ファイルセット)
-├── tobus.tmp/       ← 書き込み中のみ一時的に存在
+├── minkuru/           ← 最終出力 (常に完全な8ファイルセット)
+├── minkuru.tmp/       ← 書き込み中のみ一時的に存在
 ```
 
 ### エラー発生時の状態
@@ -122,7 +122,7 @@ pipeline/build/data/
 
 | 状態                                   | 結果                                                |
 | -------------------------------------- | --------------------------------------------------- |
-| tobus: 成功、toaran: 失敗、sggsm: 成功 | tobus/sggsm は最新データ、toaran は前回データを保持 |
+| minkuru: 成功、toaran: 失敗、sggsm: 成功 | minkuru/sggsm は最新データ、toaran は前回データを保持 |
 | 全ソース成功                           | 全て最新データ                                      |
 | 全ソース失敗                           | 全て前回データを保持                                |
 

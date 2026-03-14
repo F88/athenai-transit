@@ -42,7 +42,7 @@ export class DataSourceManager {
     this.groups = settings;
     const params = new URLSearchParams(window.location.search);
 
-    // 1. ?sources=tobus,yrkm or ?sources=all
+    // 1. ?sources=minkuru,yurimo or ?sources=all
     const sourcesParam = params.get('sources');
     if (sourcesParam) {
       if (sourcesParam === 'all') {
