@@ -317,3 +317,75 @@ describe('extractRoutes (extended fields)', () => {
     expect(result[0].m).toEqual({ en: 'Oedo Line' });
   });
 });
+
+// ---------------------------------------------------------------------------
+// extractRoutes (color fallback)
+// ---------------------------------------------------------------------------
+
+describe('extractRoutes (color fallback)', () => {
+  it('uses route_color from DB when present', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type, route_color, route_text_color)
+      VALUES ('R001', 'R1', 'Route 1', 3, 'F1B34E', 'FFFFFF');
+    `);
+
+    const result = extractRoutes(db, 'test', {});
+    expect(result[0].c).toBe('F1B34E');
+    expect(result[0].tc).toBe('FFFFFF');
+  });
+
+  it('applies wildcard fallback when route_color is empty', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type)
+      VALUES ('R001', 'R1', 'Route 1', 3);
+    `);
+
+    const result = extractRoutes(db, 'test', { '*': '2E7D32' });
+    expect(result[0].c).toBe('2E7D32');
+    expect(result[0].tc).toBe('FFFFFF');
+  });
+
+  it('applies route-specific fallback over wildcard', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type)
+      VALUES ('R001', 'R1', 'Route 1', 3);
+    `);
+
+    const result = extractRoutes(db, 'test', { R001: 'FF0000', '*': '2E7D32' });
+    expect(result[0].c).toBe('FF0000');
+    expect(result[0].tc).toBe('FFFFFF');
+  });
+
+  it('treats identical color/textColor as unset (e.g. 000000/000000)', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type, route_color, route_text_color)
+      VALUES ('R001', 'R1', 'Route 1', 3, '000000', '000000');
+    `);
+
+    const result = extractRoutes(db, 'test', { '*': '1565C0' });
+    expect(result[0].c).toBe('1565C0');
+    expect(result[0].tc).toBe('FFFFFF');
+  });
+
+  it('does NOT treat FFFFFF/FFFFFF as unset', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type, route_color, route_text_color)
+      VALUES ('R001', 'R1', 'Route 1', 3, 'FFFFFF', 'FFFFFF');
+    `);
+
+    const result = extractRoutes(db, 'test', { '*': '1565C0' });
+    expect(result[0].c).toBe('FFFFFF');
+    expect(result[0].tc).toBe('FFFFFF');
+  });
+
+  it('returns empty color when no fallback is configured', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type)
+      VALUES ('R001', 'R1', 'Route 1', 3);
+    `);
+
+    const result = extractRoutes(db, 'test', {});
+    expect(result[0].c).toBe('');
+    expect(result[0].tc).toBe('');
+  });
+});
