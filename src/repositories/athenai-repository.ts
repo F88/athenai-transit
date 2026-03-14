@@ -524,10 +524,10 @@ export class AthenaiRepository implements TransitRepository {
   getRouteTypesForStop(stopId: string): Promise<Result<RouteType[]>> {
     const routeTypes = this.stopRouteTypeMap.get(stopId);
     if (routeTypes === undefined) {
-      logger.debug(`getRouteTypesForStop: ${stopId} → not found`);
+      logger.verbose(`getRouteTypesForStop: ${stopId} → not found`);
       return Promise.resolve({ success: false, error: `No route types for stop: ${stopId}` });
     }
-    logger.debug(`getRouteTypesForStop: ${stopId} → [${routeTypes.join(', ')}]`);
+    logger.verbose(`getRouteTypesForStop: ${stopId} → [${routeTypes.join(', ')}]`);
     return Promise.resolve({ success: true, data: routeTypes });
   }
 

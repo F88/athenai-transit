@@ -51,7 +51,7 @@ export function StopMarkers({
   renderer,
   incremental = false,
 }: StopMarkersProps) {
-  logger.debug(
+  logger.verbose(
     `stops=${stops.length}, renderMode=${renderMode}, incremental=${incremental}, selectedStopId=${selectedStopId}`,
   );
   return renderMode === 'lightweight' ? (

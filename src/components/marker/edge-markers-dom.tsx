@@ -140,7 +140,10 @@ function EdgeMarkerItem({
     <div
       className={`pointer-events-auto absolute flex cursor-pointer items-center gap-0.5 rounded-lg border-2 border-white py-1 shadow-[0_1px_4px_rgba(0,0,0,0.35)] ${hasLabel || showDistance ? 'px-1.5' : 'px-1'} ${alignClass}`}
       style={{ left: markerX, top: markerY, backgroundColor: hexToRgba(bgColor, dStyle.opacity) }}
-      onClick={() => onStopSelected(marker.stop)}
+      onClick={() => {
+        logger.debug('click', marker.stop.stop_id, marker.stop.stop_name);
+        onStopSelected(marker.stop);
+      }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
