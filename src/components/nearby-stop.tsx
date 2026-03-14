@@ -89,7 +89,7 @@ export function NearbyStop({
       </div>
       {hasUnknownDestination(groups) && (
         <p className="m-0 mb-1 text-[11px] text-amber-600 dark:text-amber-400">
-          目的地が不明の路線が含まれています
+          行先が表示されない路線があります
         </p>
       )}
       {groups.length > 0 ? (

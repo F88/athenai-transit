@@ -152,7 +152,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
           {((data.type === 'route-headsign' && data.headsign === '') ||
             (data.type === 'stop' && hasUnknownDestination(data.departures))) && (
             <p className="m-0 text-center text-[11px] text-amber-600 dark:text-amber-400">
-              目的地が不明の路線が含まれています
+              行先が表示されない路線があります
             </p>
           )}
         </DialogHeader>

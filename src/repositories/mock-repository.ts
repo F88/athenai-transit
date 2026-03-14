@@ -202,7 +202,7 @@ const ROUTES: Route[] = [
   /**
    * Route with empty headsign (GTFS trip_headsign is optional).
    * Assigned to `bus_park` alongside normal routes (bus_aoba01) to test
-   * that the stop card displays a "目的地が不明の路線が含まれています"
+   * that the stop card displays a "行先が表示されない路線があります"
    * annotation when headsign-present and headsign-absent routes coexist.
    */
   {
