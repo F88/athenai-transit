@@ -15,7 +15,7 @@
  *   npx tsx pipeline/scripts/app-data/build-app-data-from-ksj-railway.ts
  */
 
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { loadAllGtfsSources } from '../../lib/load-gtfs-sources';
@@ -211,7 +211,11 @@ async function main(): Promise<void> {
       `    ${'TOTAL'.padEnd(12)} ${String(totalSegments).padStart(4)} segments  ${String(totalPoints).padStart(6)} points`,
     );
 
-    // Write output
+    // Write output — only touch files in MANAGED_FILES.
+    // Other pipeline scripts (GTFS, ODPT) manage their own files
+    // in the same output directory.
+    const MANAGED_FILES = ['shapes.json'];
+
     const outputDir = join(BUILD_DATA_DIR, target.prefix);
     if (!existsSync(outputDir)) {
       mkdirSync(outputDir, { recursive: true });
@@ -220,7 +224,16 @@ async function main(): Promise<void> {
     const outputPath = join(outputDir, 'shapes.json');
     writeFileSync(outputPath, JSON.stringify(shapes));
     const size = statSync(outputPath).size;
-    console.log(`\n  Wrote ${outputPath} (${formatBytes(size)})\n`);
+    console.log(`\n  Wrote ${outputPath} (${formatBytes(size)})`);
+
+    // Remove stale managed files not produced in this run
+    for (const file of readdirSync(outputDir)) {
+      if (MANAGED_FILES.includes(file) && file !== 'shapes.json') {
+        rmSync(join(outputDir, file));
+        console.log(`  (removed stale ${file})`);
+      }
+    }
+    console.log('');
   }
 
   const elapsed = Math.round(performance.now() - startTime);
