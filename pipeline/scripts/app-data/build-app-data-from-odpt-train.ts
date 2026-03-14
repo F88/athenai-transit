@@ -548,7 +548,7 @@ export function buildTranslations(
 /**
  * Files managed by this script. Used to clean up stale outputs when
  * merging staging into the final directory. Files not in this list
- * (e.g. shapes.json written by build-app-data-from-ksj-railway.ts)
+ * (e.g. shapes.json written by build-route-shapes-from-ksj-railway.ts)
  * are left untouched.
  */
 const MANAGED_FILES = [
@@ -629,7 +629,7 @@ function buildSourceJson(source: OdptTrainSource): void {
 
   // 4. Write to staging directory, then merge into final.
   // Merging preserves files written by other pipeline scripts
-  // (e.g. shapes.json from build-app-data-from-ksj-railway.ts).
+  // (e.g. shapes.json from build-route-shapes-from-ksj-railway.ts).
   const finalDir = join(OUTPUT_DIR, prefix);
   const stagingDir = join(OUTPUT_DIR, `${prefix}.tmp`);
 

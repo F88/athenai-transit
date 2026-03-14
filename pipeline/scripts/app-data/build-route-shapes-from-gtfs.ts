@@ -5,7 +5,7 @@
  *
  * This is a dedicated shapes script, separate from build-app-data-from-gtfs.ts,
  * so that shapes generation does not conflict with other scripts that also
- * produce shapes.json (e.g. build-app-data-from-ksj-railway.ts).
+ * produce shapes.json (e.g. build-route-shapes-from-ksj-railway.ts).
  *
  * Input:  pipeline/build/{outDir}.db (built by build-gtfs-db.ts)
  * Output: pipeline/build/data/{prefix}/shapes.json
@@ -185,8 +185,12 @@ function buildSourceShapes(outDir: string, prefix: string, nameEn: string): void
 // ---------------------------------------------------------------------------
 
 function printUsage(): void {
-  console.log('Usage: npx tsx pipeline/scripts/app-data/build-route-shapes-from-gtfs.ts <source-name>');
-  console.log('       npx tsx pipeline/scripts/app-data/build-route-shapes-from-gtfs.ts --targets <file>');
+  console.log(
+    'Usage: npx tsx pipeline/scripts/app-data/build-route-shapes-from-gtfs.ts <source-name>',
+  );
+  console.log(
+    '       npx tsx pipeline/scripts/app-data/build-route-shapes-from-gtfs.ts --targets <file>',
+  );
   console.log('       npx tsx pipeline/scripts/app-data/build-route-shapes-from-gtfs.ts --list\n');
   console.log('Options:');
   console.log('  --targets <file>  Batch build from a target list file (.ts)');

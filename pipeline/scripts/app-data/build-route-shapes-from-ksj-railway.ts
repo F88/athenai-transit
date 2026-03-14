@@ -12,10 +12,18 @@
  * Output: pipeline/build/data/{prefix}/shapes.json (per target)
  *
  * Usage:
- *   npx tsx pipeline/scripts/app-data/build-app-data-from-ksj-railway.ts
+ *   npx tsx pipeline/scripts/app-data/build-route-shapes-from-ksj-railway.ts
  */
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { loadAllGtfsSources } from '../../lib/load-gtfs-sources';
@@ -62,7 +70,7 @@ interface ShapeTarget {
 // ---------------------------------------------------------------------------
 
 function printUsage(): void {
-  console.log('Usage: npx tsx pipeline/scripts/app-data/build-app-data-from-ksj-railway.ts');
+  console.log('Usage: npx tsx pipeline/scripts/app-data/build-route-shapes-from-ksj-railway.ts');
   console.log('');
   console.log('Generate train route shapes from MLIT GeoJSON data.');
   console.log('Processes all GTFS and ODPT JSON sources with mlitShapeMapping.');
