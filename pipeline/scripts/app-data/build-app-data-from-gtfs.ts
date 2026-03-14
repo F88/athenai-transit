@@ -145,7 +145,7 @@ export function extractStops(
        FROM stop_times stm
        JOIN trips t ON t.trip_id = stm.trip_id
        JOIN routes r ON r.route_id = t.route_id
-       WHERE r.agency_id IS NOT NULL
+       WHERE r.agency_id IS NOT NULL AND r.agency_id <> ''
        GROUP BY stm.stop_id`,
     )
     .all() as Array<{ stop_id: string; agency_id: string }>;

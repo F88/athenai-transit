@@ -3,6 +3,7 @@ import type {
   CalendarServiceJson,
   ShapesJson,
   TimetableJson,
+  TranslationsJson,
 } from '../types/data/transit-json';
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type {
@@ -14,7 +15,6 @@ import type {
   Stop,
   StopWithMeta,
 } from '../types/app/transit';
-import type { TranslationsJson } from '../types/data/transit-json';
 import type { CollectionResult, Result } from '../types/app/repository';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitDataSource } from '../datasources/transit-data-source';
