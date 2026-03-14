@@ -24,7 +24,7 @@ import type { CollectionResult, Result } from '../types/app/repository';
  * this number. When results are truncated to this limit, the
  * {@link CollectionResult.truncated} flag MUST be set to `true`.
  */
-export const MAX_STOPS_RESULT = 125_000;
+export const MAX_STOPS_RESULT = 50_000; // FOR TESTING WITH LARGE DATASETS
 
 /**
  * Repository interface for querying transit stops and departures.
