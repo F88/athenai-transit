@@ -11,9 +11,14 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
-- ゆりかもめ (新交通ゆりかもめ) の時刻表・駅情報・路線形状に対応。
-  ODPT Train API からアプリ用データを生成するパイプライン (`pipeline:build:odpt-train`) を新設。
-- 杉並区グリーンスローモビリティの表示を有効化 (`data-source-settings.json` に登録)。
+- データソースの追加:
+    - ゆりかもめ (新交通ゆりかもめ) の時刻表・駅情報・路線形状に対応。
+      ODPT Train API からアプリ用データを生成するパイプライン (`pipeline:build:odpt-train`) を新設。
+    - 関東バス (kobus) のデータソースを追加。
+    - 京王バス (ktbus) のデータソースを追加。
+    - 杉並区グリーンスローモビリティの表示を有効化。
+- 行先表示名リゾルバー (`getHeadsignDisplayNames`) を追加。
+  行先の表示名を解決し、出発情報の UI コンポーネントに適用。
 - 国土数値情報 (MLIT) からの鉄道路線形状生成を複数ソース対応に拡張。
   `mlitShapeMapping` を持つ全リソース (GTFS + ODPT JSON) を自動検出して処理。
 - GTFS データパイプラインの大幅拡張 (Step 2+3)。
@@ -25,17 +30,21 @@ and this project adheres to [CalVer](https://calver.org/).
     - DataSource に optional な agencies, feedInfo, translations を追加。
     - `translateRouteName` で翻訳ルックアップを有効化。
 - パイプラインドキュメント (`GTFS_TO_RDB.md`, `APP_DATA_FROM_GTFS.md`) を追加。
+- route color の wildcard fallback 対応をパイプラインに追加。
+- `buildAuthenticatedUrl` ユーティリティを抽出。
 
 ### Changed
 
 - `build-gtfs-db.ts` を単一ソース CLI に再設計。
   一括処理は `--targets` で子プロセス実行。安全なビルド (一時ファイル → リネーム) を実装。
 - `pipeline-utils.ts` を `download-utils.ts` から分離し、汎用 CLI ユーティリティを独立モジュール化。
+- `data-source-settings.json` を TypeScript (`data-source-settings.ts`) に変換。
 
 ### Fixed
 
 - Vercel SPA fallback (200+HTML) により optional JSON の取得失敗がアプリ全体のデータ読み込みを阻害していた問題を修正。
 - CSV ファイルが0件のソースディレクトリで既存 DB を空 DB で上書きする問題を修正。
+- GTFS-JP v3 の `pattern_jp` スキーマ定義を修正。
 
 ## [2026.03.12]
 
