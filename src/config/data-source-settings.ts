@@ -37,6 +37,13 @@ const settings: SourceGroup[] = [
     enabled: true,
   },
   {
+    id: 'chiyoda-bus',
+    name_ja: '風ぐるま (千代田区)',
+    category: 'bus',
+    prefixes: ['kazag'],
+    enabled: true,
+  },
+  {
     id: 'suginami-gsm',
     name_ja: '杉並区グリーンスローモビリティ',
     category: 'bus',
