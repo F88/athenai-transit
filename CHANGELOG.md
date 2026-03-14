@@ -17,6 +17,7 @@ and this project adheres to [CalVer](https://calver.org/).
     - 関東バス (ktbus) のデータソースを追加。
     - 京王バス (kobus) のデータソースを追加。
     - 杉並区グリーンスローモビリティの表示を有効化。
+    - 風ぐるま (kazag) — 千代田区コミュニティバスを追加。6路線、shapes あり。
 - 行先表示名リゾルバー (`getHeadsignDisplayNames`) を追加。
   行先の表示名を解決し、出発情報の UI コンポーネントに適用。
 - 国土数値情報 (MLIT) からの鉄道路線形状生成を複数ソース対応に拡張。
