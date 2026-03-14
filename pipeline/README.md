@@ -27,7 +27,8 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 | 2     | GTFS CSV を SQLite に変換           | `scripts/build-gtfs-db.ts`                                | `npm run pipeline:build:db`           |
 | 3     | SQLite からアプリ用 JSON を生成     | `scripts/app-data/build-app-data-from-gtfs.ts`            | `npm run pipeline:build:json`         |
 | 3     | ODPT Train からアプリ用 JSON を生成 | `scripts/app-data/build-app-data-from-odpt-train.ts`      | `npm run pipeline:build:odpt-train`   |
-| 3     | 国土数値情報から鉄道路線形状を生成  | `scripts/app-data/build-route-shapes-from-ksj-railway.ts` | `npm run pipeline:build:train-shapes` |
+| 3     | GTFS shapes.txt から路線形状を生成  | `scripts/app-data/build-route-shapes-from-gtfs.ts`        | `npm run pipeline:build:shapes:gtfs`  |
+| 3     | 国土数値情報から鉄道路線形状を生成  | `scripts/app-data/build-route-shapes-from-ksj-railway.ts` | `npm run pipeline:build:shapes:ksj`   |
 | 3     | アプリ用 JSON の検証                | `scripts/app-data/validate-app-data.ts`                   | `npm run pipeline:validate`           |
 | -     | 全リソース定義の一覧表示            | `scripts/describe-resources.ts`                           | `npm run pipeline:describe`           |
 
@@ -46,7 +47,8 @@ npm run pipeline:build:db
 # Stage 3: Build App Data
 npm run pipeline:build:json
 npm run pipeline:build:odpt-train
-npm run pipeline:build:train-shapes      # pipeline:build:json, :odpt-train の後
+npm run pipeline:build:shapes:gtfs       # pipeline:build:json の後
+npm run pipeline:build:shapes:ksj        # pipeline:build:json, :odpt-train の後
 npm run pipeline:validate
 
 # public/ へコピー (pipeline スコープ外)
@@ -76,14 +78,16 @@ flowchart TD
         CSV --> DB["build-gtfs-db.ts<br/>CSV → SQLite"]
         DB --> BJ["build-app-data-from-gtfs.ts<br/>SQLite → JSON"]
         OJSON --> BO["build-app-data-from-odpt-train.ts<br/>ODPT JSON → JSON"]
-        DB --> BS["build-route-shapes-from-ksj-railway.ts<br/>MLIT GeoJSON → shapes"]
-        OJSON --> BS
+        DB --> BGS["build-route-shapes-from-gtfs.ts<br/>GTFS shapes.txt → shapes"]
+        DB --> BKS["build-route-shapes-from-ksj-railway.ts<br/>MLIT GeoJSON → shapes"]
+        OJSON --> BKS
     end
 
     subgraph out["Output (pipeline/build/data/)"]
         BJ --> JSON["stops / routes / calendar<br/>timetable / shapes .json"]
         BO --> JSON
-        BS --> JSON
+        BGS --> JSON
+        BKS --> JSON
     end
 
     JSON --> SYNC["data:sync → public/data/"]

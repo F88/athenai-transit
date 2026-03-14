@@ -50,7 +50,7 @@ const BUILD_DATA_DIR = join(ROOT, 'build/data');
 // Types
 // ---------------------------------------------------------------------------
 
-interface GeoJsonFeature {
+export interface GeoJsonFeature {
   type: 'Feature';
   properties: {
     N02_001: string; // rail type code
@@ -64,13 +64,13 @@ interface GeoJsonFeature {
   };
 }
 
-interface GeoJsonCollection {
+export interface GeoJsonCollection {
   type: 'FeatureCollection';
   features: GeoJsonFeature[];
 }
 
 /** A target to generate shapes for. */
-interface ShapeTarget {
+export interface ShapeTarget {
   /** Source name (outDir), used as CLI argument. */
   name: string;
   prefix: string;
@@ -133,7 +133,7 @@ async function collectAllTargets(): Promise<ShapeTarget[]> {
 /**
  * Generate shapes.json for a single target from GeoJSON features.
  */
-function buildShapesForTarget(
+export function buildShapesForTarget(
   target: ShapeTarget,
   geojson: GeoJsonCollection,
 ): Record<string, [number, number][][]> {

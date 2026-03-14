@@ -24,8 +24,8 @@ const logger = createLogger('FetchDataSource');
 /**
  * Loads GTFS JSON files via `fetch` from `/data/{prefix}/{file}.json`.
  *
- * Required files (stops, routes, calendar, timetable, shapes) are
- * fetched in parallel. Optional files (agency, feed-info, translations)
+ * Required files (stops, routes, calendar, timetable) are fetched in
+ * parallel. Optional files (shapes, agency, feed-info, translations)
  * are fetched with graceful 404 handling.
  */
 export class FetchDataSource implements TransitDataSource {
