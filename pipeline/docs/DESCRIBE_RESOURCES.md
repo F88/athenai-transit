@@ -36,7 +36,7 @@ Usage: npx tsx pipeline/scripts/describe-resources.ts [options]
 GTFS Sources (3):
 
   suginami-gsm  sggsm   杉並区グリーンスローモビリティ (...)  GTFS-JP      auth:no  [bus]
-  toei-bus      tobus   都営バス (Toei Bus)                   GTFS-JP 3.0  auth:no  [bus]
+  toei-bus      minkuru 都営バス (Toei Bus)                   GTFS-JP 3.0  auth:no  [bus]
   toei-train    toaran  都営電車 (Toei Train)                 GTFS-JP 3.0  auth:no  [tram, subway, ...]
 
 ODPT JSON Sources (3):

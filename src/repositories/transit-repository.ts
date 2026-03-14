@@ -17,6 +17,16 @@ import type {
 import type { CollectionResult, Result } from '../types/app/repository';
 
 /**
+ * Maximum number of stops that any single query can return.
+ *
+ * This is an API-level cap. Even if the underlying dataset contains
+ * more matching stops, implementations MUST NOT return more than
+ * this number. When results are truncated to this limit, the
+ * {@link CollectionResult.truncated} flag MUST be set to `true`.
+ */
+export const MAX_STOPS_RESULT = 50_000; // FOR TESTING WITH LARGE DATASETS
+
+/**
  * Repository interface for querying transit stops and departures.
  *
  * All methods return `Promise` so that implementations can be

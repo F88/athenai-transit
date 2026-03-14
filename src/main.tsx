@@ -5,18 +5,24 @@ import './index.css';
 import App from './app';
 import { TransitRepositoryProvider } from './contexts/transit-repository-provider';
 import { DataSourceManager } from './config/data-source-manager';
-import { GtfsRepository } from './repositories/gtfs-repository';
+import { AthenaiRepository } from './repositories/athenai-repository';
 import type { TransitRepository } from './repositories/transit-repository';
+import { createLogger } from './utils/logger';
+
+const logger = createLogger('App');
 
 async function createRepository(): Promise<TransitRepository> {
   // Use MockRepository when ?mock-data is in the URL.
   // Intentionally available in production builds for UI testing and demos.
   if (new URLSearchParams(window.location.search).has('mock-data')) {
+    logger.info('Using MockRepository (?mock-data)');
     const { MockRepository } = await import('./repositories/mock-repository');
     return new MockRepository();
   }
   const dsm = new DataSourceManager();
-  return GtfsRepository.create(dsm.getEnabledPrefixes());
+  const prefixes = dsm.getEnabledPrefixes();
+  logger.info(`Using AthenaiRepository: [${prefixes.join(', ')}]`);
+  return AthenaiRepository.create(prefixes);
 }
 
 async function init() {

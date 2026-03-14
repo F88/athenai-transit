@@ -25,6 +25,7 @@ import { join, resolve } from 'node:path';
 import type { OdptJsonSourceDefinition } from '../types/odpt-json-resource';
 import {
   archiveFilename,
+  buildAuthenticatedUrl,
   FETCH_TIMEOUT_MS,
   withRetry,
   wrapTimeoutError,
@@ -63,18 +64,12 @@ function deriveFilename(source: OdptJsonSourceDefinition): string {
  * Build the full endpoint URL with authentication if required.
  */
 function buildUrl(source: OdptJsonSourceDefinition, accessToken: string | undefined): string {
-  const { endpointUrl, authentication } = source.resource;
-  if (!authentication.required) {
-    return endpointUrl;
-  }
-  if (!accessToken) {
-    throw new Error(
-      `ODPT_ACCESS_TOKEN environment variable is required for ${source.resource.nameEn}. ` +
-        `Register at ${authentication.registrationUrl}`,
-    );
-  }
-  const sep = endpointUrl.includes('?') ? '&' : '?';
-  return `${endpointUrl}${sep}acl:consumerKey=${encodeURIComponent(accessToken)}`;
+  return buildAuthenticatedUrl(
+    source.resource.endpointUrl,
+    source.resource.authentication,
+    accessToken,
+    source.resource.nameEn,
+  );
 }
 
 // ---------------------------------------------------------------------------

@@ -12,14 +12,6 @@
  *   c = route_color, tc = route_text_color
  */
 
-/** data-source-settings.json */
-export interface SourceGroupJson {
-  id: string;
-  name_ja: string;
-  category: string;
-  prefixes: string[];
-}
-
 /** stops.json */
 export interface StopJson {
   i: string; // stop_id

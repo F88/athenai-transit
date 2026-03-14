@@ -7,7 +7,13 @@ import { katakanaToHiragana } from '@/utils/kana-normalize';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { routeTypesEmoji } from '@/domain/transit/route-type-emoji';
 import { createLogger } from '@/utils/logger';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 const logger = createLogger('StopSearch');
 
@@ -230,6 +236,9 @@ export function StopSearchModal({
       <DialogContent className="top-12 flex max-h-[80dvh] max-w-120 translate-y-0 flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="border-border shrink-0 border-b p-4">
           <DialogTitle className="text-[15px]">のりばを検索</DialogTitle>
+          <DialogDescription className="sr-only">
+            のりば名で停留所や駅を検索します
+          </DialogDescription>
         </DialogHeader>
         <div className="border-border shrink-0 border-b px-4 py-3">
           <input

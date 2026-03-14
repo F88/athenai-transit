@@ -133,11 +133,11 @@ export const StopMarkersDom = memo(function StopMarkersDom({
   showTooltip = true,
 }: StopMarkersDomProps) {
   if (stops.length === 0) {
-    logger.debug('stops=0, skipping render');
+    logger.verbose('stops=0, skipping render');
     return null;
   }
 
-  logger.debug(`stops=${stops.length}, selectedStopId=${selectedStopId}`);
+  logger.verbose(`stops=${stops.length}, selectedStopId=${selectedStopId}`);
 
   return (
     <>

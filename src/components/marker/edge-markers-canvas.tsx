@@ -7,6 +7,9 @@ import { primaryRouteType } from '../../domain/transit/route-type-color';
 import { formatDistance } from '../../domain/transit/distance';
 import { distanceStyle } from '../../utils/distance-style';
 import { StopSummary } from './stop-summary';
+import { createLogger } from '../../utils/logger';
+
+const logger = createLogger('EdgeMarkersCanvas');
 
 /** Arrow size in CSS pixels. */
 const ARROW_SIZE = 16;
@@ -197,6 +200,7 @@ export function EdgeMarkersCanvas({
       const hit = hitTest(e.clientX, e.clientY);
       if (hit) {
         e.stopPropagation();
+        logger.debug('click', hit.stop.stop_id, hit.stop.stop_name);
         onStopSelectedRef.current(hit.stop);
       }
     }

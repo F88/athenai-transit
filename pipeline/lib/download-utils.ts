@@ -13,6 +13,7 @@ import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
 import { formatBytes } from './pipeline-utils';
+import type { Authentication } from '../types/resource-common';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -82,6 +83,39 @@ export function wrapTimeoutError(err: unknown, url: string): Error {
     return err;
   }
   return new Error(String(err));
+}
+
+// ---------------------------------------------------------------------------
+// Authentication
+// ---------------------------------------------------------------------------
+
+/**
+ * Append `acl:consumerKey` to a URL when authentication is required.
+ *
+ * @param url - Base URL (may already contain query parameters).
+ * @param authentication - Authentication requirement from the resource definition.
+ * @param accessToken - ODPT access token from environment variable.
+ * @param context - Optional resource name for error messages.
+ * @returns URL with token appended, or the original URL if no auth is needed.
+ */
+export function buildAuthenticatedUrl(
+  url: string,
+  authentication: Authentication,
+  accessToken: string | undefined,
+  context?: string,
+): string {
+  if (!authentication.required) {
+    return url;
+  }
+  if (!accessToken) {
+    const prefix = context ? `[${context}] ` : '';
+    throw new Error(
+      `${prefix}ODPT_ACCESS_TOKEN environment variable is required. ` +
+        `Register at ${authentication.registrationUrl}`,
+    );
+  }
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}acl:consumerKey=${encodeURIComponent(accessToken)}`;
 }
 
 // ---------------------------------------------------------------------------

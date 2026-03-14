@@ -8,16 +8,16 @@ const yurikamomeStationTimetable: OdptJsonSourceDefinition = {
       'Station timetable data for Yurikamome line: departure times by direction and calendar type',
     dataFormat: { type: 'ODPT-JSON' },
     license: {
-      name: 'CC BY 4.0',
-      url: 'https://creativecommons.org/licenses/by/4.0/',
+      name: '公共交通オープンデータ基本ライセンス',
+      url: 'https://developer.odpt.org/terms/data_basic_license.html',
     },
     odptType: 'odpt:StationTimetable',
     endpointUrl:
       'https://api.odpt.org/api/v4/odpt:StationTimetable?odpt:operator=odpt.Operator:Yurikamome',
     catalog: {
       type: 'odpt',
-      resourceId: '2a58c027-f00d-4075-89c4-27e4f6f5a097',
-      url: 'https://ckan.odpt.org/dataset/st_timetable_yurikamome/resource/2a58c027-f00d-4075-89c4-27e4f6f5a097',
+      resourceId: 'd83a1b77-6d9f-494e-b63c-be082fea6c56',
+      url: 'https://ckan.odpt.org/dataset/r_station_timetable-yurikamome/resource/d83a1b77-6d9f-494e-b63c-be082fea6c56',
     },
     provider: {
       nameJa: 'ゆりかもめ',
@@ -32,7 +32,7 @@ const yurikamomeStationTimetable: OdptJsonSourceDefinition = {
   },
   pipeline: {
     outDir: 'yurikamome',
-    prefix: 'yrkm',
+    prefix: 'yurimo',
   },
 };
 

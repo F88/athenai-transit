@@ -50,7 +50,7 @@ npx tsx --env-file=pipeline/.env.pipeline.local pipeline/scripts/download-odpt-j
   Name: ゆりかもめ 駅情報 (Yurikamome Station)
   Provider: ゆりかもめ
   License: CC BY 4.0
-  Output: yurikamome/ (prefix: yrkm)
+  Output: yurikamome/ (prefix: yurimo)
 
 Downloading https://api.odpt.org/api/v4/odpt:Station?odpt:operator=odpt.Operator:Yurikamome
   Filename: odpt_Station.json

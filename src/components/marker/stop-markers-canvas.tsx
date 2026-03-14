@@ -123,11 +123,11 @@ export function StopMarkersCanvas({
         popupRef.current = null;
       }
       if (markersRef.current.size > 0) {
-        logger.debug(`stops=0, clearing ${markersRef.current.size} markers`);
+        logger.verbose(`stops=0, clearing ${markersRef.current.size} markers`);
         group.clearLayers();
         markersRef.current.clear();
       } else {
-        logger.debug('stops=0, no markers to clear');
+        logger.verbose('stops=0, no markers to clear');
       }
       return;
     }
@@ -137,6 +137,8 @@ export function StopMarkersCanvas({
       map.closePopup(popupRef.current);
       popupRef.current = null;
     }
+
+    const t0 = performance.now();
 
     if (incremental) {
       // Incremental: add new, remove gone, update existing styles
@@ -160,7 +162,8 @@ export function StopMarkersCanvas({
         }
       }
 
-      logger.debug(`incremental stops=${stops.length}, selectedStopId=${selectedStopId}`);
+      const elapsed = Math.round(performance.now() - t0);
+      logger.debug(`incremental: ${stops.length} stops in ${elapsed}ms`);
     } else {
       // Full rebuild: clear all and recreate
       group.clearLayers();
@@ -172,7 +175,8 @@ export function StopMarkersCanvas({
         markersRef.current.set(stop.stop_id, marker);
       }
 
-      logger.debug(`rebuild stops=${stops.length}, selectedStopId=${selectedStopId}`);
+      const elapsed = Math.round(performance.now() - t0);
+      logger.debug(`rebuild: ${stops.length} stops in ${elapsed}ms`);
     }
 
     // Open popup for selected stop (only when tooltip and departure data are available)

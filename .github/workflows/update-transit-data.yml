@@ -119,6 +119,23 @@ jobs:
           echo "::error::All JSON builds failed."
           exit 1
 
+      - name: Build ODPT Train JSON
+        id: build-odpt-train
+        run: |
+          set +e
+          npm run pipeline:build:odpt-train
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on ODPT Train build partial failure
+        if: steps.build-odpt-train.outputs.exit_code == '1'
+        run: echo "::warning::Some ODPT Train builds failed (partial failure)."
+
+      - name: Fail on ODPT Train build failure
+        if: steps.build-odpt-train.outputs.exit_code == '2'
+        run: |
+          echo "::error::All ODPT Train builds failed."
+          exit 1
+
       - name: Build train shapes
         run: npm run pipeline:build:train-shapes
 

@@ -10,8 +10,16 @@ import type { InfoLevel } from '@/types/app/settings';
 import type { Route, RouteType, Stop } from '@/types/app/transit';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
+import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
+import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { PillButton } from '@/components/button/pill-button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 /** Timetable for a specific route + headsign at a stop. */
 export interface RouteHeadsignTimetable {
@@ -124,6 +132,11 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
           <DialogTitle className="flex flex-col gap-1">
             <TimetableHeader data={data} infoLevel={infoLevel} />
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {data.type === 'route-headsign'
+              ? `${data.stop.stop_name} ${data.route.route_short_name || data.route.route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${data.departures.length}本`
+              : `${data.stop.stop_name}の全路線時刻表 ${data.departures.length}本`}
+          </DialogDescription>
 
           {info.isDetailedEnabled && <TimetableMetadata data={data} infoLevel={infoLevel} />}
 
@@ -135,6 +148,12 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
               onToggleFilter={toggleFilter}
               infoLevel={infoLevel}
             />
+          )}
+          {((data.type === 'route-headsign' && data.headsign === '') ||
+            (data.type === 'stop' && hasUnknownDestination(data.departures))) && (
+            <p className="m-0 text-center text-[11px] text-amber-600 dark:text-amber-400">
+              行先が表示されない路線があります
+            </p>
           )}
         </DialogHeader>
         <div className="overflow-y-auto px-4 pt-3 pb-4">
@@ -314,9 +333,9 @@ function TimetableGrid({
             {hour}時
           </span>
           <span className="flex flex-wrap gap-1.5">
-            {deps.map((dep) => (
+            {deps.map((dep, i) => (
               <span
-                key={`${dep.route.route_id}__${dep.headsign}__${dep.minutes}`}
+                key={`${dep.route.route_id}__${dep.headsign}__${dep.minutes}__${i}`}
                 className="inline-flex items-baseline gap-0.5"
               >
                 <span className="text-muted-foreground text-sm tabular-nums">
@@ -426,7 +445,11 @@ function StopTimetableFilter({
             onClick={() => onToggleFilter(key)}
           >
             {infoLevel === 'verbose' && <IdBadge>{r.route.route_id}</IdBadge>}
-            {r.headsign}
+            {/* Filter button has no RouteBadge — fall back to route name so it is never blank. */}
+            {getHeadsignDisplayNames(r.headsign, r.route, infoLevel).name ||
+              r.route.route_short_name ||
+              r.route.route_long_name ||
+              r.route.route_id}
           </PillButton>
         );
       })}

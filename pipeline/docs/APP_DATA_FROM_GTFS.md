@@ -4,7 +4,7 @@
 
 ## 概要
 
-`build-app-data-from-gtfs.ts` は `build-gtfs-db.ts` が生成した SQLite DB (`pipeline/build/{outDir}.db`) を読み込み、ソースごとに8つの JSON ファイルを出力する。ID フィールドにはソースプレフィックスが付与される (例: `tobus:0001-01`)。
+`build-app-data-from-gtfs.ts` は `build-gtfs-db.ts` が生成した SQLite DB (`pipeline/build/{outDir}.db`) を読み込み、ソースごとに8つの JSON ファイルを出力する。ID フィールドにはソースプレフィックスが付与される (例: `minkuru:0001-01`)。
 
 | スクリプト                    | 入力                         | 出力                                  |
 | ----------------------------- | ---------------------------- | ------------------------------------- |
@@ -12,7 +12,7 @@
 
 ## CLI インターフェース
 
-```
+```plain
 Usage: npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts <source-name>
        npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts --targets <file>
        npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts --list
@@ -32,7 +32,7 @@ Usage: npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts <source-nam
 
 `<source-name>` は `pipeline/resources/gtfs/` 内のリソース定義ファイル名 (拡張子なし) を指定する。
 
-```
+```plain
 npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts toei-bus
                                              ^^^^^^^^
                                              pipeline/resources/gtfs/toei-bus.ts を読み込む
@@ -40,11 +40,11 @@ npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts toei-bus
 
 リソース定義ファイルには `pipeline.outDir` と `pipeline.prefix` が含まれており、入出力パスはこれらから決定される。
 
-```
-toei-bus.ts → { pipeline: { outDir: "toei-bus", prefix: "tobus", ... } }
+```plain
+toei-bus.ts → { pipeline: { outDir: "toei-bus", prefix: "minkuru", ... } }
               │
               ├─ Input:  pipeline/build/toei-bus.db
-              └─ Output: pipeline/build/data/tobus/*.json
+              └─ Output: pipeline/build/data/minkuru/*.json
 ```
 
 `--list` で利用可能なソース名を確認できる。
@@ -81,7 +81,7 @@ toei-bus.ts → { pipeline: { outDir: "toei-bus", prefix: "tobus", ... } }
 
 既存の出力ディレクトリを直接上書きしない。ステージングディレクトリに全ファイルを書き出し、全て成功した場合のみ既存データと差し替える。
 
-```
+```plain
 1. ステージング準備
    - {prefix}.tmp/ が残存していれば削除 (前回失敗の残骸)
    - {prefix}.tmp/ を新規作成
@@ -100,10 +100,10 @@ toei-bus.ts → { pipeline: { outDir: "toei-bus", prefix: "tobus", ... } }
    → 出力は前回の完全なセット、不整合なし
 ```
 
-```
+```plain
 pipeline/build/data/
-├── tobus/           ← 最終出力 (常に完全な8ファイルセット)
-├── tobus.tmp/       ← 書き込み中のみ一時的に存在
+├── minkuru/           ← 最終出力 (常に完全な8ファイルセット)
+├── minkuru.tmp/       ← 書き込み中のみ一時的に存在
 ```
 
 ### エラー発生時の状態
@@ -122,7 +122,7 @@ pipeline/build/data/
 
 | 状態                                   | 結果                                                |
 | -------------------------------------- | --------------------------------------------------- |
-| tobus: 成功、toaran: 失敗、sggsm: 成功 | tobus/sggsm は最新データ、toaran は前回データを保持 |
+| minkuru: 成功、toaran: 失敗、sggsm: 成功 | minkuru/sggsm は最新データ、toaran は前回データを保持 |
 | 全ソース成功                           | 全て最新データ                                      |
 | 全ソース失敗                           | 全て前回データを保持                                |
 
@@ -130,7 +130,7 @@ pipeline/build/data/
 
 ### stops.json
 
-```
+```plain
 stops テーブル (location_type = 0)
   + translations テーブル (table_name='stops', field_name='stop_name')
   → StopJson[]
@@ -141,7 +141,7 @@ stops テーブル (location_type = 0)
 
 ### routes.json
 
-```
+```plain
 routes テーブル
   + translations テーブル (table_name='routes', field_name='route_long_name')
   → RouteJson[]
@@ -154,7 +154,7 @@ routes テーブル
 
 ### calendar.json
 
-```
+```plain
 calendar テーブル + calendar_dates テーブル → CalendarJson
 ```
 
@@ -162,7 +162,7 @@ calendar テーブル + calendar_dates テーブル → CalendarJson
 
 ### timetable.json
 
-```
+```plain
 trips テーブル + stop_times テーブル → TimetableJson
 ```
 
@@ -172,7 +172,7 @@ trips テーブル + stop_times テーブル → TimetableJson
 
 ### shapes.json
 
-```
+```plain
 trips テーブル (route_id → shape_id 対応) + shapes テーブル → ShapesJson
 ```
 
@@ -181,7 +181,7 @@ trips テーブル (route_id → shape_id 対応) + shapes テーブル → Shap
 
 ### agency.json
 
-```
+```plain
 agency テーブル
   + translations テーブル (table_name='agency', field_name='agency_name')
   → AgencyJson[]
@@ -193,7 +193,7 @@ agency テーブル
 
 ### feed-info.json
 
-```
+```plain
 feed_info テーブル (LIMIT 1) → FeedInfoJson | null
 ```
 
@@ -202,7 +202,7 @@ feed_info テーブル (LIMIT 1) → FeedInfoJson | null
 
 ### translations.json
 
-```
+```plain
 translations テーブル
   + trips テーブル (trip_headsign の解決)
   + stop_times テーブル (stop_headsign の解決)

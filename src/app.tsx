@@ -7,7 +7,6 @@ import type {
   StopWithContext,
   StopWithMeta,
 } from './types/app/transit';
-import { MAX_STOPS_RESULT } from './types/app/repository';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
 import { useDateTime } from './hooks/use-date-time';
@@ -149,10 +148,10 @@ export default function App() {
     (bounds: Bounds, center: LatLng) => {
       clearTimeout(debounceTimer.current);
       debounceTimer.current = setTimeout(() => {
-        const { nearbyRadius } = perfProfile.data.stops;
+        const { nearbyRadius, maxResults } = perfProfile.data.stops;
         void Promise.all([
-          repo.getStopsInBounds(bounds, MAX_STOPS_RESULT),
-          repo.getStopsNearby(center, nearbyRadius, MAX_STOPS_RESULT),
+          repo.getStopsInBounds(bounds, maxResults),
+          repo.getStopsNearby(center, nearbyRadius, maxResults),
         ]).then(([inBoundsResult, nearbyResult]) => {
           const inBounds = inBoundsResult.success ? inBoundsResult.data : [];
           const nearby = nearbyResult.success ? nearbyResult.data : [];
@@ -285,14 +284,16 @@ export default function App() {
 
   const handleToggleRenderMode = useCallback(() => {
     const next = nextRenderMode(settings.renderMode);
-    logger.verbose(`renderMode: ${settings.renderMode} -> ${next}`);
+    logger.info(`renderMode: ${settings.renderMode} -> ${next}`);
     updateSetting('renderMode', next);
   }, [settings.renderMode, updateSetting]);
 
   const handleTogglePerfMode = useCallback(() => {
     const next = nextPerfMode(settings.perfMode);
     const profile = PERF_PROFILES[next];
-    logger.verbose(`perfMode: ${settings.perfMode} -> ${next}`, profile);
+    logger.info(
+      `perfMode: ${settings.perfMode} -> ${next} (maxResults=${profile.data.stops.maxResults}, radius=${profile.data.stops.nearbyRadius}m)`,
+    );
     updateSettings({ perfMode: next, renderMode: profile.render.defaultMode });
   }, [settings.perfMode, updateSettings]);
 
@@ -310,7 +311,9 @@ export default function App() {
   }, [settings.visibleRouteShapes, updateSetting]);
 
   const handleCycleInfoLevel = useCallback(() => {
-    updateSetting('infoLevel', nextInfoLevel(settings.infoLevel));
+    const next = nextInfoLevel(settings.infoLevel);
+    logger.info(`infoLevel: ${settings.infoLevel} -> ${next}`);
+    updateSetting('infoLevel', next);
   }, [settings.infoLevel, updateSetting]);
 
   const handleCycleTile = useCallback(() => {
@@ -318,7 +321,9 @@ export default function App() {
   }, [settings.tileIndex, updateSetting]);
 
   const handleToggleDarkMode = useCallback(() => {
-    updateSetting('theme', settings.theme === 'dark' ? 'light' : 'dark');
+    const next = settings.theme === 'dark' ? 'light' : 'dark';
+    logger.info(`theme: ${settings.theme} -> ${next}`);
+    updateSetting('theme', next);
   }, [settings.theme, updateSetting]);
 
   // Sync dark class on <html> element

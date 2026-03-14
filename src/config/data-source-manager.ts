@@ -1,4 +1,4 @@
-import settings from '../config/data-source-settings.json';
+import settings from './data-source-settings';
 
 /**
  * A group of related GTFS data sources managed as a single toggle unit.
@@ -14,9 +14,11 @@ export interface SourceGroup {
   category: string;
   /** GTFS JSON prefixes belonging to this group. */
   prefixes: string[];
+  /** Whether this source is enabled by default. */
+  enabled: boolean;
 }
 
-const STORAGE_KEY = 'gtfs-enabled-sources';
+const STORAGE_KEY = 'enabled-sources';
 
 /**
  * Manages which GTFS data sources are enabled/disabled.
@@ -28,20 +30,47 @@ export class DataSourceManager {
   private groups: SourceGroup[];
   private enabledIds: Set<string>;
 
-  /** Creates a new manager, restoring enabled state from localStorage. */
+  /**
+   * Creates a new manager.
+   *
+   * Source selection priority:
+   * 1. URL `?sources=prefix1,prefix2` or `?sources=all` — transient override (localStorage not updated)
+   * 2. localStorage — persisted user preferences
+   * 3. Default — only groups with `enabled: true`
+   */
   constructor() {
-    this.groups = settings as SourceGroup[];
-    const allIds = new Set(this.groups.map((g) => g.id));
+    this.groups = settings;
+    const params = new URLSearchParams(window.location.search);
+
+    // 1. ?sources=minkuru,yurimo or ?sources=all
+    const sourcesParam = params.get('sources');
+    if (sourcesParam) {
+      if (sourcesParam === 'all') {
+        this.enabledIds = new Set(this.groups.map((g) => g.id));
+      } else {
+        const requestedPrefixes = new Set(sourcesParam.split(',').map((s) => s.trim()));
+        this.enabledIds = new Set(
+          this.groups
+            .filter((g) => g.prefixes.some((p) => requestedPrefixes.has(p)))
+            .map((g) => g.id),
+        );
+      }
+      return;
+    }
+
+    // 3. localStorage
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         this.enabledIds = new Set(JSON.parse(stored) as string[]);
-      } else {
-        this.enabledIds = allIds;
+        return;
       }
     } catch {
-      this.enabledIds = allIds;
+      // fall through to default
     }
+
+    // 4. Default: only groups with enabled: true
+    this.enabledIds = new Set(this.groups.filter((g) => g.enabled).map((g) => g.id));
   }
 
   /**

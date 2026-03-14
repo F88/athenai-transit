@@ -7,6 +7,7 @@ import { flattenDepartures } from '../domain/transit/flatten-departures';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
+import { hasUnknownDestination } from '../domain/transit/has-unknown-destination';
 import { DepartureItem } from './departure-item';
 import { DistanceBadge } from './badge/distance-badge';
 import { IdBadge } from './badge/id-badge';
@@ -86,13 +87,18 @@ export function NearbyStop({
           </button>
         )}
       </div>
+      {hasUnknownDestination(groups) && (
+        <p className="m-0 mb-1 text-[11px] text-amber-600 dark:text-amber-400">
+          行先が表示されない路線があります
+        </p>
+      )}
       {groups.length > 0 ? (
         viewId === 'stop' ? (
           flatDepartures
             .slice(0, 5)
             .map((item, i) => (
               <FlatDepartureItem
-                key={`${item.route.route_id}__${item.headsign}__${item.departure.getTime()}`}
+                key={`${item.route.route_id}__${item.headsign}__${item.departure.getTime()}__${i}`}
                 item={item}
                 now={now}
                 isFirst={i === 0}
