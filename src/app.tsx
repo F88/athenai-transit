@@ -7,7 +7,7 @@ import type {
   StopWithContext,
   StopWithMeta,
 } from './types/app/transit';
-import { MAX_STOPS_RESULT } from './types/app/repository';
+import { MAX_STOPS_RESULT } from './repositories/transit-repository';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
 import { useDateTime } from './hooks/use-date-time';

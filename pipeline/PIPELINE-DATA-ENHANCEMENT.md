@@ -394,7 +394,7 @@ interface Route {
 
 | ファイル                                 | 変更内容                                                                                                               |
 | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `src/repositories/gtfs-repository.ts`    | Agency マージ、FeedInfo マージ、Route 変換に `route_names`/`agency_id` 追加、headsign 翻訳マップの保持、新メソッド追加 |
+| `src/repositories/athenai-repository.ts` | Agency マージ、FeedInfo マージ、Route 変換に `route_names`/`agency_id` 追加、headsign 翻訳マップの保持、新メソッド追加 |
 | `src/repositories/transit-repository.ts` | インターフェースに `getAgencies()`, `getFeedInfo()` 追加                                                               |
 | `src/repositories/mock-repository.ts`    | 新フィールド対応                                                                                                       |
 
@@ -514,7 +514,7 @@ In-memory domain objects (Stop, Route, Agency, FeedInfo, ...)
 
 - `src/datasources/transit-data-source.ts` — SourceData
 - `src/datasources/fetch-data-source.ts` — HTTP fetch
-- `src/repositories/gtfs-repository.ts` — データマージ/クエリ
+- `src/repositories/athenai-repository.ts` — データマージ/クエリ
 - `src/repositories/transit-repository.ts` — インターフェース
 - `src/repositories/mock-repository.ts` — テスト用
 

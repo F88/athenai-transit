@@ -6,16 +6,6 @@
  */
 
 /**
- * Maximum number of stops that any single query can return.
- *
- * This is an API-level cap. Even if the underlying dataset contains
- * more matching stops, implementations MUST NOT return more than
- * this number. When results are truncated to this limit, the
- * {@link CollectionResult.truncated} flag MUST be set to `true`.
- */
-export const MAX_STOPS_RESULT = 5000;
-
-/**
  * Result for single-value queries.
  *
  * - `success: true` — the operation completed and `data` contains the value.

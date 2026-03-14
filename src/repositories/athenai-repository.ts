@@ -14,14 +14,14 @@ import type {
   StopWithMeta,
 } from '../types/app/transit';
 import type { CollectionResult, Result } from '../types/app/repository';
-import { MAX_STOPS_RESULT } from '../types/app/repository';
+import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitDataSource } from '../datasources/transit-data-source';
 import { FetchDataSource } from '../datasources/fetch-data-source';
 import { createLogger } from '../utils/logger';
 import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
 import type { TransitRepository } from './transit-repository';
 
-const logger = createLogger('GtfsRepository');
+const logger = createLogger('AthenaiRepository');
 
 /**
  * Find the index of the first element >= target in a sorted array.
@@ -62,9 +62,9 @@ function getDayIndex(serviceDate: Date): number {
  * Loads pre-built JSON files (stops, routes, calendar, timetable, shapes)
  * and provides in-memory querying for transit information.
  * Multiple GTFS sources can be merged into a single instance via
- * {@link GtfsRepository.create}.
+ * {@link AthenaiRepository.create}.
  */
-export class GtfsRepository implements TransitRepository {
+export class AthenaiRepository implements TransitRepository {
   private activeServiceCache: { key: string; ids: Set<string> } | null = null;
   private stops: Stop[];
   private routeMap: Map<string, Route>;
@@ -93,7 +93,7 @@ export class GtfsRepository implements TransitRepository {
   }
 
   /**
-   * Create a GtfsRepository by loading and merging multiple GTFS sources.
+   * Create a AthenaiRepository by loading and merging multiple GTFS sources.
    *
    * Each prefix corresponds to a set of JSON files under `/data/{prefix}/`.
    * Sources that fail to load are skipped with a warning.
@@ -106,7 +106,7 @@ export class GtfsRepository implements TransitRepository {
   static async create(
     prefixes: string[],
     dataSource: TransitDataSource = new FetchDataSource(),
-  ): Promise<GtfsRepository> {
+  ): Promise<AthenaiRepository> {
     logger.debug(`Loading sources: [${prefixes.join(', ')}]`);
 
     const perSource = await Promise.all(
@@ -201,7 +201,7 @@ export class GtfsRepository implements TransitRepository {
       }
     }
 
-    return new GtfsRepository(
+    return new AthenaiRepository(
       stops,
       routeMap,
       stopRouteTypeMap,

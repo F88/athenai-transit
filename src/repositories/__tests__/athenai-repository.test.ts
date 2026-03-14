@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { TransitDataSource } from '../../datasources/transit-data-source';
-import { GtfsRepository } from '../gtfs-repository';
+import { AthenaiRepository } from '../athenai-repository';
 import {
   TestDataSource,
   createFixture,
@@ -13,10 +13,10 @@ import {
   EXCEPTION_HOLIDAY,
 } from './fixtures/test-data-source';
 
-describe('GtfsRepository', () => {
+describe('AthenaiRepository', () => {
   /** Helper to create a repo from the standard test fixture. */
   function createRepo() {
-    return GtfsRepository.create(['test'], new TestDataSource({ test: createFixture() }));
+    return AthenaiRepository.create(['test'], new TestDataSource({ test: createFixture() }));
   }
 
   describe('create', () => {
@@ -26,7 +26,7 @@ describe('GtfsRepository', () => {
           return Promise.reject(new Error('fail'));
         },
       };
-      const repo = await GtfsRepository.create(['bad'], failSource);
+      const repo = await AthenaiRepository.create(['bad'], failSource);
       const result = await repo.getAllStops();
       expect(result).toEqual({ success: true, data: [], truncated: false });
     });

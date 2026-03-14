@@ -5,7 +5,7 @@ import './index.css';
 import App from './app';
 import { TransitRepositoryProvider } from './contexts/transit-repository-provider';
 import { DataSourceManager } from './config/data-source-manager';
-import { GtfsRepository } from './repositories/gtfs-repository';
+import { AthenaiRepository } from './repositories/athenai-repository';
 import type { TransitRepository } from './repositories/transit-repository';
 
 async function createRepository(): Promise<TransitRepository> {
@@ -16,7 +16,7 @@ async function createRepository(): Promise<TransitRepository> {
     return new MockRepository();
   }
   const dsm = new DataSourceManager();
-  return GtfsRepository.create(dsm.getEnabledPrefixes());
+  return AthenaiRepository.create(dsm.getEnabledPrefixes());
 }
 
 async function init() {

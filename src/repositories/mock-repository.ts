@@ -24,7 +24,7 @@ import type {
   StopWithMeta,
 } from '../types/app/transit';
 import type { CollectionResult, Result } from '../types/app/repository';
-import { MAX_STOPS_RESULT } from '../types/app/repository';
+import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
 
 // --- Fictional stops clustered around Kumano-mae (~2 km spread) ---
