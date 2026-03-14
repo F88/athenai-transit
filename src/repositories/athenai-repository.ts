@@ -48,6 +48,12 @@ function binarySearchFirstGte(sorted: number[], target: number): number {
   return lo;
 }
 
+/** Extract the source prefix from a prefixed ID (e.g. "kobus:123" → "kobus"). */
+function extractPrefix(prefixedId: string): string {
+  const colonIdx = prefixedId.indexOf(':');
+  return colonIdx >= 0 ? prefixedId.substring(0, colonIdx) : prefixedId;
+}
+
 /** Format a date as "YYYYMMDD" string for calendar comparison. */
 function formatDateKey(serviceDate: Date): string {
   const y = serviceDate.getFullYear();
@@ -95,28 +101,14 @@ async function fetchSources(
   return perSource.filter((s): s is NonNullable<typeof s> => s !== null);
 }
 
-/**
- * Deep-merge a source translation map into a target.
- * For each key, per-language entries are merged (not overwritten).
- * Earlier sources' values are preserved; later sources fill in missing languages.
- */
-function deepMergeTranslations(
-  target: Record<string, Record<string, string>>,
-  source: Record<string, Record<string, string>>,
-): void {
-  for (const [key, langs] of Object.entries(source)) {
-    if (target[key]) {
-      // Merge languages: existing values take precedence
-      for (const [lang, value] of Object.entries(langs)) {
-        if (!target[key][lang]) {
-          target[key][lang] = value;
-        }
-      }
-    } else {
-      target[key] = { ...langs };
-    }
+/** Per-source headsign translations, keyed by source prefix. */
+type HeadsignTranslationsByPrefix = Map<
+  string,
+  {
+    headsigns: Record<string, Record<string, string>>;
+    stop_headsigns: Record<string, Record<string, string>>;
   }
-}
+>;
 
 /** Merged data ready to construct an AthenaiRepository. */
 export interface MergedData {
@@ -128,16 +120,19 @@ export interface MergedData {
   calendarExceptions: Map<string, CalendarExceptionJson[]>;
   timetable: TimetableJson;
   shapes: ShapesJson;
+  /** Global translations for prefixed-ID-keyed maps (no collision risk). */
   translationsMap: TranslationsJson;
+  /** Per-source headsign translations to avoid cross-source overwrites. */
+  headsignTranslations: HeadsignTranslationsByPrefix;
 }
 
 /** Merge multiple SourceData into a single unified dataset. */
 export function mergeSources(sources: SourceData[]): MergedData {
-  // Merge translations first (needed for resolving names).
-  // Uses deep merge: when the same key (e.g. headsign text) appears in
-  // multiple sources, per-language entries are merged rather than overwritten.
-  // This preserves language variants from different sources (e.g. ko/zh-Hans
-  // from ODPT alongside ja-Hrkt from GTFS-JP).
+  // Merge translations (needed for resolving names).
+  // headsigns/stop_headsigns are kept per-source to preserve agency-specific
+  // translations (e.g. "練馬駅" → "Nerima Sta." for kobus vs "Nerima Station"
+  // for ktbus). Other translation maps use prefixed IDs as keys and don't
+  // collide across sources, so they are merged globally.
   const translationsMap: TranslationsJson = {
     headsigns: {},
     stop_headsigns: {},
@@ -146,21 +141,26 @@ export function mergeSources(sources: SourceData[]): MergedData {
     agency_names: {},
     agency_short_names: {},
   };
+  const headsignTranslations: HeadsignTranslationsByPrefix = new Map();
   for (const source of sources) {
     if (source.translations) {
-      deepMergeTranslations(translationsMap.headsigns, source.translations.headsigns);
-      deepMergeTranslations(translationsMap.stop_headsigns, source.translations.stop_headsigns);
+      // Per-source headsign translations (agency-scoped)
+      headsignTranslations.set(source.prefix, {
+        headsigns: source.translations.headsigns,
+        stop_headsigns: source.translations.stop_headsigns,
+      });
+      // Global translations (prefixed-ID keys, no collision)
       if (source.translations.stop_names) {
-        deepMergeTranslations(translationsMap.stop_names, source.translations.stop_names);
+        Object.assign(translationsMap.stop_names, source.translations.stop_names);
       }
       if (source.translations.route_names) {
-        deepMergeTranslations(translationsMap.route_names, source.translations.route_names);
+        Object.assign(translationsMap.route_names, source.translations.route_names);
       }
       if (source.translations.agency_names) {
-        deepMergeTranslations(translationsMap.agency_names, source.translations.agency_names);
+        Object.assign(translationsMap.agency_names, source.translations.agency_names);
       }
       if (source.translations.agency_short_names) {
-        deepMergeTranslations(translationsMap.agency_short_names, source.translations.agency_short_names);
+        Object.assign(translationsMap.agency_short_names, source.translations.agency_short_names);
       }
     }
   }
@@ -276,6 +276,7 @@ export function mergeSources(sources: SourceData[]): MergedData {
     timetable,
     shapes,
     translationsMap,
+    headsignTranslations,
   };
 }
 
@@ -301,7 +302,7 @@ export class AthenaiRepository implements TransitRepository {
   private calendarExceptions: Map<string, CalendarExceptionJson[]>;
   private timetable: TimetableJson;
   private shapesRaw: ShapesJson;
-  private translationsMap: TranslationsJson;
+  private headsignTranslations: HeadsignTranslationsByPrefix;
 
   private constructor(
     stops: Stop[],
@@ -312,7 +313,7 @@ export class AthenaiRepository implements TransitRepository {
     calendarExceptions: Map<string, CalendarExceptionJson[]>,
     timetable: TimetableJson,
     shapesRaw: ShapesJson,
-    translationsMap: TranslationsJson,
+    headsignTranslations: HeadsignTranslationsByPrefix,
   ) {
     this.stops = stops;
     this.routeMap = routeMap;
@@ -322,7 +323,7 @@ export class AthenaiRepository implements TransitRepository {
     this.calendarExceptions = calendarExceptions;
     this.timetable = timetable;
     this.shapesRaw = shapesRaw;
-    this.translationsMap = translationsMap;
+    this.headsignTranslations = headsignTranslations;
   }
 
   /**
@@ -370,7 +371,7 @@ export class AthenaiRepository implements TransitRepository {
       merged.calendarExceptions,
       merged.timetable,
       merged.shapes,
-      merged.translationsMap,
+      merged.headsignTranslations,
     );
   }
 
@@ -528,7 +529,9 @@ export class AthenaiRepository implements TransitRepository {
 
       if (departureTimes.length > 0) {
         departureTimes.sort((a, b) => a.getTime() - b.getTime());
-        const headsignNames = this.translationsMap.headsigns[group.h] ?? {};
+        const prefix = extractPrefix(group.ai);
+        const sourceTranslations = this.headsignTranslations.get(prefix);
+        const headsignNames = sourceTranslations?.headsigns[group.h] ?? {};
         result.push({
           route,
           headsign: group.h,
@@ -606,7 +609,9 @@ export class AthenaiRepository implements TransitRepository {
         if (!activeServiceIds.has(serviceId)) {
           continue;
         }
-        const headsignNames = this.translationsMap.headsigns[group.h] ?? {};
+        const prefix = extractPrefix(group.ai);
+        const sourceTranslations = this.headsignTranslations.get(prefix);
+        const headsignNames = sourceTranslations?.headsigns[group.h] ?? {};
         for (const t of times) {
           departures.push({ minutes: t, route, headsign: group.h, headsign_names: headsignNames });
         }

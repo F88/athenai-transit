@@ -52,7 +52,7 @@ describe('mergeSources', () => {
     expect(sub01!.agency_id).toBe('test:agency');
   });
 
-  it('deep-merges headsign translations across sources', () => {
+  it('keeps headsign translations per source (no cross-source merge)', () => {
     const source1: SourceData = {
       ...createFixture(),
       prefix: 's1',
@@ -78,14 +78,13 @@ describe('mergeSources', () => {
       },
     };
     const merged = mergeSources([source1, source2]);
-    // All languages from both sources should be present
-    expect(merged.translationsMap.headsigns['新橋']).toEqual({
-      ja: '新橋',
-      'ja-Hrkt': 'しんばし',
-      en: 'Shimbashi',
-      ko: '신바시',
-      'zh-Hans': '新桥',
-    });
+    // Each source preserves its own translations
+    const s1 = merged.headsignTranslations.get('s1');
+    const s2 = merged.headsignTranslations.get('s2');
+    expect(s1?.headsigns['新橋']).toEqual({ ja: '新橋', 'ja-Hrkt': 'しんばし', en: 'Shimbashi' });
+    expect(s2?.headsigns['新橋']).toEqual({ ja: '新橋', en: 'Shimbashi', ko: '신바시', 'zh-Hans': '新桥' });
+    // Global translationsMap should NOT contain headsigns
+    expect(merged.translationsMap.headsigns).toEqual({});
   });
 
   it('merges translationsMap with agency_short_names', () => {
