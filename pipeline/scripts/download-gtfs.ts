@@ -150,7 +150,7 @@ async function main(): Promise<void> {
     ensureDir(tmpDir);
 
     // 1. Download ZIP with retry
-    const url = buildAuthenticatedUrl(downloadUrl, authentication, accessToken);
+    const url = buildAuthenticatedUrl(downloadUrl, authentication, accessToken, nameEn);
     console.log(`Downloading ${downloadUrl}`);
     const result = await downloadWithRetry(url, zipPath);
     console.log(`  Filename: ${zipFileName}`);

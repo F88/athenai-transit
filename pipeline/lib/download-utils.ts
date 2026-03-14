@@ -95,19 +95,22 @@ export function wrapTimeoutError(err: unknown, url: string): Error {
  * @param url - Base URL (may already contain query parameters).
  * @param authentication - Authentication requirement from the resource definition.
  * @param accessToken - ODPT access token from environment variable.
+ * @param context - Optional resource name for error messages.
  * @returns URL with token appended, or the original URL if no auth is needed.
  */
 export function buildAuthenticatedUrl(
   url: string,
   authentication: Authentication,
   accessToken: string | undefined,
+  context?: string,
 ): string {
   if (!authentication.required) {
     return url;
   }
   if (!accessToken) {
+    const prefix = context ? `[${context}] ` : '';
     throw new Error(
-      'ODPT_ACCESS_TOKEN environment variable is required. ' +
+      `${prefix}ODPT_ACCESS_TOKEN environment variable is required. ` +
         `Register at ${authentication.registrationUrl}`,
     );
   }

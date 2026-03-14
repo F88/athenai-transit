@@ -68,6 +68,7 @@ function buildUrl(source: OdptJsonSourceDefinition, accessToken: string | undefi
     source.resource.endpointUrl,
     source.resource.authentication,
     accessToken,
+    source.resource.nameEn,
   );
 }
 
