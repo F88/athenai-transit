@@ -116,11 +116,13 @@ const REQUIRED_FILES = [
   'routes.json',
   'calendar.json',
   'timetable.json',
-  'shapes.json',
   'agency.json',
   'feed-info.json',
   'translations.json',
 ] as const;
+
+/** JSON files that may or may not exist depending on the source. */
+const OPTIONAL_FILES = ['shapes.json'] as const;
 
 // ---------------------------------------------------------------------------
 // Logging
@@ -264,6 +266,12 @@ function checkFileExistence(sources: ValidateSource[]): FileCheckResult {
       } else {
         missing.push({ source: source.prefix, file });
       }
+      console.log(`    ${padWithDots(file, DOT_WIDTH)}${status}`);
+    }
+    for (const file of OPTIONAL_FILES) {
+      const filePath = join(DATA_DIR, source.prefix, file);
+      const exists = existsSync(filePath);
+      const status = exists ? 'OK' : '(not provided)';
       console.log(`    ${padWithDots(file, DOT_WIDTH)}${status}`);
     }
   }
