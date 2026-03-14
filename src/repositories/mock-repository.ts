@@ -199,6 +199,22 @@ const ROUTES: Route[] = [
     route_text_color: 'FFFFFF',
     agency_id: 'mock:agency',
   },
+  /**
+   * Route with empty headsign (GTFS trip_headsign is optional).
+   * Assigned to `bus_park` alongside normal routes (bus_aoba01) to test
+   * that the stop card displays a "目的地が不明の路線が含まれています"
+   * annotation when headsign-present and headsign-absent routes coexist.
+   */
+  {
+    route_id: 'bus_nohd01',
+    route_short_name: '無01',
+    route_long_name: '',
+    route_names: {},
+    route_type: 3,
+    route_color: '757575',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:agency',
+  },
   // Rail routes (route_type: 2)
   {
     route_id: 'rail_aoba',
@@ -324,6 +340,7 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
   bus_park: [
     { routeId: 'bus_aoba01', headsign: 'にじ橋' },
     { routeId: 'bus_aoba01', headsign: 'あおば中央駅' },
+    { routeId: 'bus_nohd01', headsign: '' }, // empty headsign — tests missing destination annotation
   ],
   bus_library: [
     { routeId: 'bus_aoba01', headsign: 'にじ橋' },

@@ -11,6 +11,7 @@ import type { Route, RouteType, Stop } from '@/types/app/transit';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
+import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { PillButton } from '@/components/button/pill-button';
 import {
   Dialog,
@@ -147,6 +148,12 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
               onToggleFilter={toggleFilter}
               infoLevel={infoLevel}
             />
+          )}
+          {((data.type === 'route-headsign' && data.headsign === '') ||
+            (data.type === 'stop' && hasUnknownDestination(data.departures))) && (
+            <p className="m-0 text-center text-[11px] text-amber-600 dark:text-amber-400">
+              目的地が不明の路線が含まれています
+            </p>
           )}
         </DialogHeader>
         <div className="overflow-y-auto px-4 pt-3 pb-4">
