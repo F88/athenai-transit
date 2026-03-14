@@ -360,10 +360,10 @@ export function buildTimetable(
     stationSet: new Set(rw['odpt:stationOrder'].map((so) => so['odpt:station'])),
   }));
 
-  // Group: stopId -> headsign -> { routeId, services: serviceId -> minutes[] }
+  // Group: stopId -> "routeId\0headsign" -> { routeId, headsign, services }
   const stopMap = new Map<
     string,
-    Map<string, { routeId: string; services: Map<string, number[]> }>
+    Map<string, { routeId: string; headsign: string; services: Map<string, number[]> }>
   >();
 
   for (const tt of timetables) {
@@ -379,16 +379,19 @@ export function buildTimetable(
     const routeId = rw.routeId;
     const headsign = getHeadsignFromDirection(tt['odpt:railDirection'], rw.stationOrder);
 
-    let headsignMap = stopMap.get(stopId);
-    if (!headsignMap) {
-      headsignMap = new Map();
-      stopMap.set(stopId, headsignMap);
+    let groupMap = stopMap.get(stopId);
+    if (!groupMap) {
+      groupMap = new Map();
+      stopMap.set(stopId, groupMap);
     }
 
-    let entry = headsignMap.get(headsign);
+    // Key by routeId + headsign to avoid merging departures from
+    // different railways that share the same terminal station name.
+    const groupKey = `${routeId}\0${headsign}`;
+    let entry = groupMap.get(groupKey);
     if (!entry) {
-      entry = { routeId, services: new Map() };
-      headsignMap.set(headsign, entry);
+      entry = { routeId, headsign, services: new Map() };
+      groupMap.set(groupKey, entry);
     }
 
     const minutes: number[] = tt['odpt:stationTimetableObject'].map((obj) =>
@@ -406,10 +409,10 @@ export function buildTimetable(
   // Convert to output format
   const result: Record<string, { r: string; h: string; d: Record<string, number[]> }[]> = {};
 
-  for (const [stopId, headsignMap] of stopMap) {
+  for (const [stopId, groupMap] of stopMap) {
     const groups: { r: string; h: string; d: Record<string, number[]> }[] = [];
 
-    for (const [headsign, { routeId, services }] of headsignMap) {
+    for (const [, { routeId, headsign, services }] of groupMap) {
       const serviceEntries: Record<string, number[]> = {};
       for (const [serviceId, times] of services) {
         times.sort((a, b) => a - b);
@@ -456,6 +459,7 @@ export function buildTranslations(
 
   // Build station set per railway for matching
   const railwayStationSets = railways.map((rw) => ({
+    lineCode: rw['odpt:lineCode'],
     stationOrder: rw['odpt:stationOrder'],
     stationSet: new Set(rw['odpt:stationOrder'].map((so) => so['odpt:station'])),
   }));
@@ -468,7 +472,7 @@ export function buildTranslations(
       continue;
     }
 
-    const dirKey = `${tt['odpt:railDirection']}@${rw.stationOrder[0]['odpt:station']}`;
+    const dirKey = `${rw.lineCode}:${tt['odpt:railDirection']}`;
     if (seenKeys.has(dirKey)) {
       continue;
     }
