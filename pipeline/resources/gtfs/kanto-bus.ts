@@ -2,21 +2,15 @@ import type { GtfsSourceDefinition } from '../../types/gtfs-resource';
 
 const kantoBus: GtfsSourceDefinition = {
   resource: {
+    /** BaseResource */
     nameEn: 'Kanto Bus',
     nameJa: '関東バス',
     description: 'GTFS static data for all routes operated by Kanto Bus Corporation',
+    dataFormat: { type: 'GTFS/GTFS-JP' },
     license: {
       name: '公共交通オープンデータ基本ライセンス',
       url: 'https://developer.odpt.org/terms/data_basic_license.html',
     },
-    dataFormat: { type: 'GTFS/GTFS-JP' },
-    routeTypes: ['bus'],
-    routeColorFallbacks: {
-      '*': 'D7251D', // Kanto Bus corporate red
-    },
-    // The date parameter is required and must match a published version on CKAN.
-    // Update this value when a new version is published.
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260301',
     catalog: {
       type: 'odpt',
       resourceId: '05a8cd54-0412-4921-9747-dba755d27538',
@@ -35,6 +29,15 @@ const kantoBus: GtfsSourceDefinition = {
       method: 'acl:consumerKey query parameter',
       registrationUrl: 'https://developer.odpt.org/',
     },
+
+    /** GtfsResource */
+    routeTypes: ['bus'],
+    routeColorFallbacks: {
+      '*': 'D7251D', // Kanto Bus corporate red
+    },
+    // The date parameter is required and must match a published version on CKAN.
+    // Update this value when a new version is published.
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260301',
   },
   pipeline: {
     outDir: 'kanto-bus',
