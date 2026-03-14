@@ -138,6 +138,8 @@ export function StopMarkersCanvas({
       popupRef.current = null;
     }
 
+    const t0 = performance.now();
+
     if (incremental) {
       // Incremental: add new, remove gone, update existing styles
       const currentIds = new Set(stops.map((s) => s.stop_id));
@@ -160,7 +162,8 @@ export function StopMarkersCanvas({
         }
       }
 
-      logger.verbose(`incremental stops=${stops.length}, selectedStopId=${selectedStopId}`);
+      const elapsed = Math.round(performance.now() - t0);
+      logger.debug(`incremental: ${stops.length} stops in ${elapsed}ms`);
     } else {
       // Full rebuild: clear all and recreate
       group.clearLayers();
@@ -172,7 +175,8 @@ export function StopMarkersCanvas({
         markersRef.current.set(stop.stop_id, marker);
       }
 
-      logger.verbose(`rebuild stops=${stops.length}, selectedStopId=${selectedStopId}`);
+      const elapsed = Math.round(performance.now() - t0);
+      logger.debug(`rebuild: ${stops.length} stops in ${elapsed}ms`);
     }
 
     // Open popup for selected stop (only when tooltip and departure data are available)
