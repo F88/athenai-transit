@@ -74,7 +74,7 @@ ODPT JSON API ソース固有のフィールド。
 | フィールド     | 型       | 説明                                                   |
 | -------------- | -------- | ------------------------------------------------------ |
 | `outDir`       | `string` | 出力ディレクトリ名 (例: `"toei-bus"`, `"yurikamome"`)  |
-| `prefix`       | `string` | ID 名前空間の短縮接頭辞 (例: `"minkuru"`, `"yurimo"`)      |
+| `prefix`       | `string` | ID 名前空間の短縮接頭辞 (例: `"minkuru"`, `"yurimo"`)  |
 | `outFileName?` | `string` | 出力ファイル名 (省略時は URL やメタデータから自動導出) |
 
 ## DataFormat
@@ -208,9 +208,9 @@ export default yurikamomeStation;
 
 prefix はパイプライン出力における ID の名前空間として使用する。ソースを一意に識別できる短い文字列を割り当てる。
 
-| directory      | prefix   | 由来                                             |
-| -------------- | -------- | ------------------------------------------------ |
+| directory      | prefix    | 由来                                             |
+| -------------- | --------- | ------------------------------------------------ |
 | `toei-bus`     | `minkuru` | 都営バスマスコットキャラクター「みんくる」       |
-| `toei-train`   | `toaran`  | **to**ei **ara**kawa + **n**ippori-toneri         |
-| `suginami-gsm` | `sggsm`   | **s**u**g**inami **g**reen **s**low **m**obility  |
-| `yurikamome`   | `yurimo`  | **yuri**ka**mo**me                                |
+| `toei-train`   | `toaran`  | **to**ei **ara**kawa + **n**ippori-toneri        |
+| `suginami-gsm` | `sggsm`   | **s**u**g**inami **g**reen **s**low **m**obility |
+| `yurikamome`   | `yurimo`  | **yuri**ka**mo**me                               |
