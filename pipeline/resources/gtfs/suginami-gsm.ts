@@ -22,7 +22,7 @@ const suginamiGsm: GtfsSourceDefinition = {
         en: { long: 'Suginami City', short: 'Sugimaru' },
       },
       url: 'https://www.city.suginami.tokyo.jp/',
-      colors: [],
+      colors: [{ bg: '009B63', text: 'FFFFFF' }],
     },
     authentication: {
       required: false,

@@ -22,7 +22,10 @@ const kantoBus: GtfsSourceDefinition = {
         en: { long: 'Kanto Bus Corporation', short: 'Kanto Bus' },
       },
       url: 'https://www.kanto-bus.co.jp/',
-      colors: [{ bg: 'D7251D', text: 'FFFFFF' }],
+      colors: [
+        { bg: 'E60013', text: 'FFFFFF' } /* Primary */,
+        { bg: '035F8C', text: 'FFFFFF' } /* Secondary */,
+      ],
     },
     authentication: {
       required: true,
@@ -33,7 +36,7 @@ const kantoBus: GtfsSourceDefinition = {
     /** GtfsResource */
     routeTypes: ['bus'],
     routeColorFallbacks: {
-      '*': 'D7251D', // Kanto Bus corporate red
+      '*': 'E60013', // Kanto Bus corporate red
     },
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.

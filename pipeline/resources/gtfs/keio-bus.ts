@@ -22,7 +22,10 @@ const keioBus: GtfsSourceDefinition = {
         en: { long: 'Keio Dentetsu Bus Co., Ltd.', short: 'Keio Bus' },
       },
       url: 'https://www.keio-bus.com/',
-      colors: [{ bg: '00377E', text: 'FFFFFF' }],
+      colors: [
+        { bg: '00377E', text: 'FFFFFF' } /* Primary */,
+        { bg: 'C8006B', text: 'FFFFFF' } /* Secondary */,
+      ],
     },
     authentication: {
       required: true,

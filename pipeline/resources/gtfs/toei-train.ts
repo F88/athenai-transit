@@ -23,7 +23,7 @@ const toeiTrain: GtfsSourceDefinition = {
         en: { long: 'Bureau of Transportation, Tokyo Metropolitan Government', short: 'Toei' },
       },
       url: 'https://www.kotsu.metro.tokyo.jp/',
-      colors: [{ bg: '006633', text: 'FFFFFF' }],
+      colors: [{ bg: '009f40', text: 'FFFFFF' }],
     },
     // GTFS ZIP files on api-public.odpt.org are publicly accessible without a token.
     // Only the JSON API (download-odpt-json) requires authentication.

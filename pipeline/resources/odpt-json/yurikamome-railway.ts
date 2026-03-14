@@ -23,7 +23,7 @@ const yurikamomeRailway: OdptJsonSourceDefinition = {
         en: { long: 'Yurikamome', short: 'Yurikamome' },
       },
       url: 'https://www.yurikamome.co.jp/',
-      colors: [{ bg: '00B2E5', text: 'FFFFFF' }],
+      colors: [{ bg: '1662B8', text: 'FFFFFF' } /* Primary */],
     },
     authentication: {
       required: true,
