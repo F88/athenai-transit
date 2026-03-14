@@ -6,36 +6,42 @@ const settings: SourceGroup[] = [
     name_ja: '都営バス',
     category: 'bus',
     prefixes: ['tobus'],
+    enabled: true,
   },
   {
     id: 'toei-train',
     name_ja: '都営電車',
     category: 'train',
     prefixes: ['toaran'],
+    enabled: true,
   },
   {
     id: 'yurikamome',
     name_ja: 'ゆりかもめ',
     category: 'train',
     prefixes: ['yrkm'],
+    enabled: true,
   },
   {
     id: 'kanto-bus',
     name_ja: '関東バス',
     category: 'bus',
     prefixes: ['ktbus'],
+    enabled: false, // Data quality evaluation — enable via ?all-sources
   },
   {
     id: 'keio-bus',
     name_ja: '京王バス',
     category: 'bus',
     prefixes: ['kobus'],
+    enabled: false, // Data quality evaluation — enable via ?all-sources
   },
   {
     id: 'suginami-gsm',
     name_ja: '杉並区グリーンスローモビリティ',
     category: 'bus',
     prefixes: ['sggsm'],
+    enabled: true,
   },
 ];
 
