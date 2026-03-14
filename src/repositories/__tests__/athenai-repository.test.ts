@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { TransitDataSource } from '../../datasources/transit-data-source';
-import { AthenaiRepository } from '../athenai-repository';
+import { AthenaiRepository, mergeSources } from '../athenai-repository';
 import {
   TestDataSource,
   createFixture,
@@ -12,6 +12,54 @@ import {
   BOUNDARY_JUST_AFTER,
   EXCEPTION_HOLIDAY,
 } from './fixtures/test-data-source';
+
+describe('mergeSources', () => {
+  it('builds agencyMap from source agencies and translations', () => {
+    const fixture = createFixture();
+    const merged = mergeSources([fixture]);
+    expect(merged.agencyMap.size).toBe(1);
+    const agency = merged.agencyMap.get('test:agency');
+    expect(agency).toBeDefined();
+    expect(agency!.agency_name).toBe('Test Agency');
+    expect(agency!.agency_short_name).toBe('Test');
+    expect(agency!.agency_names).toEqual({ ja: 'テスト事業者', en: 'Test Agency' });
+    expect(agency!.agency_short_names).toEqual({ ja: 'テスト', en: 'Test' });
+    expect(agency!.agency_colors).toEqual([{ bg: '0079C2', text: 'FFFFFF' }]);
+  });
+
+  it('resolves stop_names from translationsMap', () => {
+    const fixture = createFixture();
+    const merged = mergeSources([fixture]);
+    const sub01 = merged.stops.find((s) => s.stop_id === 'sub_01');
+    expect(sub01).toBeDefined();
+    expect(sub01!.stop_names).toEqual({ ja: '西巣鴨', en: 'Nishi-sugamo' });
+  });
+
+  it('resolves route_names from translationsMap', () => {
+    const fixture = createFixture();
+    const merged = mergeSources([fixture]);
+    // route_names is empty in fixture, so routes get empty names
+    const route = merged.routeMap.get('route_subway');
+    expect(route).toBeDefined();
+    expect(route!.route_names).toEqual({});
+  });
+
+  it('sets agency_id on stops from ai field', () => {
+    const fixture = createFixture();
+    const merged = mergeSources([fixture]);
+    const sub01 = merged.stops.find((s) => s.stop_id === 'sub_01');
+    expect(sub01).toBeDefined();
+    expect(sub01!.agency_id).toBe('test:agency');
+  });
+
+  it('merges translationsMap with agency_short_names', () => {
+    const fixture = createFixture();
+    const merged = mergeSources([fixture]);
+    expect(merged.translationsMap.agency_short_names).toEqual({
+      'test:agency': { ja: 'テスト', en: 'Test' },
+    });
+  });
+});
 
 describe('AthenaiRepository', () => {
   /** Helper to create a repo from the standard test fixture. */
@@ -606,6 +654,103 @@ describe('AthenaiRepository', () => {
         return;
       }
       expect(result.data.length).toBe(13);
+    });
+
+    it('resolves stop_names from translations', async () => {
+      const repo = await createRepo();
+      const result = await repo.getAllStops();
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      const sub01 = result.data.find((s) => s.stop_id === 'sub_01');
+      expect(sub01).toBeDefined();
+      expect(sub01!.stop_names).toEqual({ ja: '西巣鴨', en: 'Nishi-sugamo' });
+    });
+
+    it('includes agency_id on stops', async () => {
+      const repo = await createRepo();
+      const result = await repo.getAllStops();
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      const sub01 = result.data.find((s) => s.stop_id === 'sub_01');
+      expect(sub01).toBeDefined();
+      expect(sub01!.agency_id).toBe('test:agency');
+    });
+  });
+
+  describe('getAgency', () => {
+    it('returns agency by ID', async () => {
+      const repo = await createRepo();
+      const result = await repo.getAgency('test:agency');
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      expect(result.data.agency_id).toBe('test:agency');
+      expect(result.data.agency_name).toBe('Test Agency');
+      expect(result.data.agency_short_name).toBe('Test');
+      expect(result.data.agency_timezone).toBe('Asia/Tokyo');
+      expect(result.data.agency_colors).toEqual([{ bg: '0079C2', text: 'FFFFFF' }]);
+    });
+
+    it('resolves agency_names from translations', async () => {
+      const repo = await createRepo();
+      const result = await repo.getAgency('test:agency');
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      expect(result.data.agency_names).toEqual({ ja: 'テスト事業者', en: 'Test Agency' });
+    });
+
+    it('resolves agency_short_names from translations', async () => {
+      const repo = await createRepo();
+      const result = await repo.getAgency('test:agency');
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      expect(result.data.agency_short_names).toEqual({ ja: 'テスト', en: 'Test' });
+    });
+
+    it('returns failure for unknown agency', async () => {
+      const repo = await createRepo();
+      const result = await repo.getAgency('unknown');
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('getUpcomingDepartures (headsign_names)', () => {
+    it('includes headsign_names in departure groups', async () => {
+      const repo = await createRepo();
+      const result = await repo.getUpcomingDepartures('sub_01', WEEKDAY);
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      for (const group of result.data) {
+        expect(group).toHaveProperty('headsign_names');
+        expect(typeof group.headsign_names).toBe('object');
+      }
+    });
+  });
+
+  describe('getFullDayDeparturesForStop (headsign_names)', () => {
+    it('includes headsign_names in departures', async () => {
+      const repo = await createRepo();
+      const result = await repo.getFullDayDeparturesForStop('sub_01', WEEKDAY);
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      expect(result.data.length).toBeGreaterThan(0);
+      for (const dep of result.data) {
+        expect(dep).toHaveProperty('headsign_names');
+        expect(typeof dep.headsign_names).toBe('object');
+      }
     });
   });
 });
