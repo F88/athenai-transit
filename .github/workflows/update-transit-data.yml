@@ -136,7 +136,24 @@ jobs:
           echo "::error::All ODPT Train builds failed."
           exit 1
 
-      - name: Build train shapes
+      - name: Build route shapes from GTFS
+        id: build-gtfs-shapes
+        run: |
+          set +e
+          npm run pipeline:build:gtfs-shapes
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on GTFS shapes build partial failure
+        if: steps.build-gtfs-shapes.outputs.exit_code == '1'
+        run: echo "::warning::Some GTFS shapes builds failed (partial failure)."
+
+      - name: Fail on GTFS shapes build failure
+        if: steps.build-gtfs-shapes.outputs.exit_code == '2'
+        run: |
+          echo "::error::All GTFS shapes builds failed."
+          exit 1
+
+      - name: Build route shapes from KSJ railway
         run: npm run pipeline:build:train-shapes
 
       - name: Sync to public/
