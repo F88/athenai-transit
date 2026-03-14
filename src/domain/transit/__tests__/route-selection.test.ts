@@ -24,6 +24,7 @@ function makeGroups(routeIds: string[]): DepartureGroup[] {
       agency_id: '',
     },
     headsign: '',
+    headsign_names: {},
     departures: [new Date()],
   }));
 }

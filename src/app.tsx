@@ -186,7 +186,7 @@ export default function App() {
       ]);
       const groups = depsResult.success ? depsResult.data : [];
       const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-      return { stop, routeTypes, groups };
+      return { stop, routeTypes, groups, agencies: [] };
     },
     [repo, dateTime, inBoundStops, radiusStops],
   );

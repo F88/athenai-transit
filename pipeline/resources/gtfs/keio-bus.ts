@@ -23,9 +23,12 @@ const keioBus: GtfsSourceDefinition = {
       url: 'https://ckan.odpt.org/dataset/keio_bus_all_lines/resource/7e191a71-db33-40b6-b304-72ac7405eee9',
     },
     provider: {
-      nameJa: '京王電鉄バス株式会社',
-      nameEn: 'Keio Dentetsu Bus Co., Ltd.',
+      name: {
+        ja: { long: '京王電鉄バス株式会社', short: '京王バス' },
+        en: { long: 'Keio Dentetsu Bus Co., Ltd.', short: 'Keio Bus' },
+      },
       url: 'https://www.keio-bus.com/',
+      colors: [{ bg: '00377E', text: 'FFFFFF' }],
     },
     authentication: {
       required: true,

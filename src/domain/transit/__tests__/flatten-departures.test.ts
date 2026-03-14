@@ -12,6 +12,7 @@ function makeGroup(
   return {
     route: makeRoute(routeId, routeType),
     headsign,
+    headsign_names: {},
     departures: times,
   };
 }

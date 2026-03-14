@@ -11,6 +11,7 @@ function makeStop(overrides?: Partial<Stop>): Stop {
     stop_lat: 35.69,
     stop_lon: 139.72,
     location_type: 0,
+    agency_id: '',
     ...overrides,
   };
 }

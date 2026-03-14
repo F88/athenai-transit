@@ -259,7 +259,8 @@ export function buildStops(
   prefix: string,
   stations: OdptStation[],
   stationOrder: OdptStationOrder[],
-): { i: string; n: string; m: Record<string, string>; a: number; o: number; l: number }[] {
+  provider: Provider,
+): { i: string; n: string; a: number; o: number; l: number; ai: string }[] {
   // Build order map for consistent sorting
   const orderMap = new Map<string, number>();
   for (const entry of stationOrder) {
@@ -273,23 +274,17 @@ export function buildStops(
     return aIdx - bIdx;
   });
 
+  const agencyId = `${prefix}:${provider.name.en.long}`;
   return sorted.map((s) => {
     const shortId = extractStationShortId(s['owl:sameAs']);
     const title = s['odpt:stationTitle'];
-    const names: Record<string, string> = { ja: title.ja, en: title.en };
-    if (title.ko) {
-      names.ko = title.ko;
-    }
-    if (title['zh-Hans']) {
-      names['zh-Hans'] = title['zh-Hans'];
-    }
     return {
       i: `${prefix}:${shortId}`,
       n: title.ja,
-      m: names,
       a: s['geo:lat'],
       o: s['geo:long'],
       l: 0,
+      ai: agencyId,
     };
   });
 }
@@ -307,8 +302,7 @@ export function buildRoutes(prefix: string, railway: OdptRailway, provider: Prov
       t: 2, // Rail
       c: color,
       tc: '',
-      m: { ja: title.ja, en: title.en },
-      ai: `${prefix}:${provider.nameEn}`,
+      ai: `${prefix}:${provider.name.en.long}`,
     },
   ];
 }
@@ -351,7 +345,8 @@ export function buildTimetable(
   prefix: string,
   timetables: OdptStationTimetable[],
   railways: OdptRailway[],
-): Record<string, { r: string; h: string; d: Record<string, number[]> }[]> {
+  provider: Provider,
+): Record<string, { r: string; h: string; d: Record<string, number[]>; ai: string }[]> {
   // Build railway lookup: for each timetable, find which railway it belongs to
   // by matching the station against each railway's stationOrder.
   const railwayStationSets = railways.map((rw) => ({
@@ -407,10 +402,14 @@ export function buildTimetable(
   }
 
   // Convert to output format
-  const result: Record<string, { r: string; h: string; d: Record<string, number[]> }[]> = {};
+  const agencyId = `${prefix}:${provider.name.en.long}`;
+  const result: Record<
+    string,
+    { r: string; h: string; d: Record<string, number[]>; ai: string }[]
+  > = {};
 
   for (const [stopId, groupMap] of stopMap) {
-    const groups: { r: string; h: string; d: Record<string, number[]> }[] = [];
+    const groups: { r: string; h: string; d: Record<string, number[]>; ai: string }[] = [];
 
     for (const [, { routeId, headsign, services }] of groupMap) {
       const serviceEntries: Record<string, number[]> = {};
@@ -418,7 +417,7 @@ export function buildTimetable(
         times.sort((a, b) => a - b);
         serviceEntries[serviceId] = times;
       }
-      groups.push({ r: routeId, h: headsign, d: serviceEntries });
+      groups.push({ r: routeId, h: headsign, d: serviceEntries, ai: agencyId });
     }
 
     result[stopId] = groups;
@@ -428,13 +427,17 @@ export function buildTimetable(
 }
 
 export function buildAgency(prefix: string, provider: Provider): AgencyJson[] {
+  const colors = (provider.colors ?? []).map((c) => ({ b: c.bg, t: c.text }));
   return [
     {
-      i: `${prefix}:${provider.nameEn}`,
-      n: provider.nameJa,
-      m: { ja: provider.nameJa, en: provider.nameEn },
+      i: `${prefix}:${provider.name.en.long}`,
+      n: provider.name.ja.long,
+      sn: provider.name.ja.short,
       u: provider.url ?? '',
       l: 'ja',
+      tz: 'Asia/Tokyo',
+      fu: '',
+      cs: colors,
     },
   ];
 }
@@ -442,7 +445,7 @@ export function buildAgency(prefix: string, provider: Provider): AgencyJson[] {
 export function buildFeedInfo(issuedDate: string, provider: Provider): FeedInfoJson {
   const { startDate, endDate } = computeDateRange(issuedDate);
   return {
-    pn: provider.nameJa,
+    pn: provider.name.ja.long,
     pu: provider.url ?? '',
     l: 'ja',
     s: startDate,
@@ -452,8 +455,11 @@ export function buildFeedInfo(issuedDate: string, provider: Provider): FeedInfoJ
 }
 
 export function buildTranslations(
+  prefix: string,
   timetables: OdptStationTimetable[],
   railways: OdptRailway[],
+  stations: OdptStation[],
+  provider: Provider,
 ): TranslationsJson {
   const headsigns: Record<string, Record<string, string>> = {};
 
@@ -494,7 +500,44 @@ export function buildTranslations(
     }
   }
 
-  return { headsigns, stop_headsigns: {} };
+  // stop_names: station translations keyed by prefixed stop_id
+  const stopNames: Record<string, Record<string, string>> = {};
+  for (const s of stations) {
+    const shortId = extractStationShortId(s['owl:sameAs']);
+    const title = s['odpt:stationTitle'];
+    const names: Record<string, string> = { ja: title.ja, en: title.en };
+    if (title.ko) {
+      names.ko = title.ko;
+    }
+    if (title['zh-Hans']) {
+      names['zh-Hans'] = title['zh-Hans'];
+    }
+    stopNames[`${prefix}:${shortId}`] = names;
+  }
+
+  // route_names: railway translations keyed by prefixed route_id
+  const routeNames: Record<string, Record<string, string>> = {};
+  for (const rw of railways) {
+    const title = rw['odpt:railwayTitle'];
+    routeNames[`${prefix}:${rw['odpt:lineCode']}`] = { ja: title.ja, en: title.en };
+  }
+
+  // agency_names: provider translations
+  const agencyId = `${prefix}:${provider.name.en.long}`;
+  const agencyNames: Record<string, Record<string, string>> = {};
+  agencyNames[agencyId] = { ja: provider.name.ja.long, en: provider.name.en.long };
+
+  const agencyShortNames: Record<string, Record<string, string>> = {};
+  agencyShortNames[agencyId] = { ja: provider.name.ja.short, en: provider.name.en.short };
+
+  return {
+    headsigns,
+    stop_headsigns: {},
+    stop_names: stopNames,
+    route_names: routeNames,
+    agency_names: agencyNames,
+    agency_short_names: agencyShortNames,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -543,7 +586,7 @@ function buildSourceJson(source: OdptTrainSource): void {
 
   // Merge stationOrder from all railways for stop sorting
   const allStationOrders = railways.flatMap((rw) => rw['odpt:stationOrder']);
-  const stops = buildStops(prefix, stations, allStationOrders);
+  const stops = buildStops(prefix, stations, allStationOrders, provider);
   console.log(`  ${stops.length} stops`);
 
   const routes = railways.flatMap((rw) => buildRoutes(prefix, rw, provider));
@@ -552,7 +595,7 @@ function buildSourceJson(source: OdptTrainSource): void {
   const calendar = buildCalendar(prefix, timetables, issuedDate);
   console.log(`  ${calendar.services.length} services, ${calendar.exceptions.length} exceptions`);
 
-  const timetableJson = buildTimetable(prefix, timetables, railways);
+  const timetableJson = buildTimetable(prefix, timetables, railways, provider);
   const stopCount = Object.keys(timetableJson).length;
   const groupCount = Object.values(timetableJson).reduce((sum, groups) => sum + groups.length, 0);
   console.log(`  ${stopCount} stops, ${groupCount} route/headsign groups in timetable`);
@@ -563,7 +606,7 @@ function buildSourceJson(source: OdptTrainSource): void {
   const feedInfo = buildFeedInfo(issuedDate, provider);
   console.log(`  feed-info: ${feedInfo.pn} (v${feedInfo.v})`);
 
-  const translations = buildTranslations(timetables, railways);
+  const translations = buildTranslations(prefix, timetables, railways, stations, provider);
   const headsignCount = Object.keys(translations.headsigns).length;
   console.log(`  ${headsignCount} headsign translations`);
 

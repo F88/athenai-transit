@@ -9,6 +9,23 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- 事業者識別 (Agency) + i18n FK 化:
+    - `StopJson` / `RouteJson` / `AgencyJson` から翻訳 (`m`) を削除し、`TranslationsJson` に一元化 (FK 化)。
+    - `TranslationsJson` に `stop_names`, `route_names`, `agency_names`, `agency_short_names` を追加。
+    - `StopJson` / `TimetableGroupJson` に `ai` (agency_id FK) を追加。
+    - `AgencyJson` を拡張: `sn` (short_name), `tz` (timezone), `fu` (fare_url), `cs` (brand colors 配列)。
+    - `Provider` 型を拡張: `name` (ja/en long/short), `colors` (brand colors)。
+    - 全ソース定義にブランドカラーと short name を設定。
+    - `Stop` ドメイン型に `agency_id` を追加。
+    - `Agency` ドメイン型に `agency_short_name`, `agency_short_names`, `agency_timezone`, `agency_fare_url`, `agency_colors` を追加。
+    - `DepartureGroup` / `FullDayStopDeparture` に `headsign_names` を追加。
+    - `StopWithContext` に `agencies` を追加。
+    - `RouteWithMeta` / `RouteWithContext` 型を新設。
+    - `TransitRepository` に `getAgency()` メソッドを追加。
+    - `AthenaiRepository.mergeSources` で翻訳 FK 解決、agencyMap 構築を実装。
+
 ## [2026.03.14]
 
 ### Added

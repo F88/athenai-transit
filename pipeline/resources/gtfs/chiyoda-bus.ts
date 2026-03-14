@@ -20,8 +20,11 @@ const chiyodaBus: GtfsSourceDefinition = {
       url: 'https://ckan.odpt.org/dataset/hitachi_automobile_transportation_chiyoda_alllines/resource/ab65587e-18cb-49ae-9b1b-fa319cdc149a',
     },
     provider: {
-      nameJa: '日立自動車交通株式会社',
-      nameEn: 'Hitachi Automobile Transportation Co., Ltd.',
+      name: {
+        ja: { long: '日立自動車交通株式会社', short: '風ぐるま' },
+        en: { long: 'Hitachi Automobile Transportation Co., Ltd.', short: 'Kazaguruma' },
+      },
+      colors: [],
     },
     authentication: {
       required: false,

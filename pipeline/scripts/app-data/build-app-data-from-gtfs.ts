@@ -27,6 +27,7 @@ import type {
   TranslationsJson,
 } from '../../../src/types/data/transit-json';
 import { listGtfsSourceNames, loadGtfsSource } from '../../lib/load-gtfs-sources';
+import type { Provider } from '../../types/resource-common';
 import {
   determineBatchExitCode,
   formatBytes,
@@ -56,6 +57,7 @@ interface BuildSource {
   prefix: string;
   nameEn: string;
   routeColorFallbacks: Record<string, string>;
+  provider: Provider;
 }
 
 // ---------------------------------------------------------------------------
@@ -109,13 +111,20 @@ function buildNamesMap(
 export function extractStops(
   db: Database.Database,
   prefix: string,
-): { i: string; n: string; m: Record<string, string>; a: number; o: number; l: number }[] {
+): { i: string; n: string; a: number; o: number; l: number; ai: string }[] {
   const stops = db
     .prepare(
-      `SELECT stop_id, stop_name, stop_lat, stop_lon, location_type
-       FROM stops
-       WHERE location_type = 0
-       ORDER BY stop_id`,
+      `SELECT s.stop_id, s.stop_name, s.stop_lat, s.stop_lon, s.location_type,
+              COALESCE(
+                (SELECT DISTINCT t.route_id FROM stop_times stm
+                 JOIN trips t ON t.trip_id = stm.trip_id
+                 WHERE stm.stop_id = s.stop_id
+                 LIMIT 1),
+                NULL
+              ) as sample_route_id
+       FROM stops s
+       WHERE s.location_type = 0
+       ORDER BY s.stop_id`,
     )
     .all() as Array<{
     stop_id: string;
@@ -123,37 +132,32 @@ export function extractStops(
     stop_lat: number;
     stop_lon: number;
     location_type: number;
+    sample_route_id: string | null;
   }>;
 
-  // Build stop_id -> { language -> translation } map from translations table.
-  // GTFS-JP (bus) uses record_id to link to stop_id.
-  // Standard GTFS (train) uses field_value to match stop_name.
-  const translations = db
+  // Build stop_id -> agency_id mapping via routes table
+  // A stop's agency is determined by the routes that serve it.
+  // For simplicity, use the first route's agency_id.
+  const stopAgencyRows = db
     .prepare(
-      `SELECT s.stop_id, t.language, t.translation
-       FROM translations t
-       JOIN stops s ON (
-         s.stop_id = t.record_id
-         OR (t.record_id IS NULL AND s.stop_name = t.field_value)
-       )
-       WHERE t.table_name = 'stops'
-         AND t.field_name = 'stop_name'
-         AND s.location_type = 0`,
+      `SELECT DISTINCT stm.stop_id, r.agency_id
+       FROM stop_times stm
+       JOIN trips t ON t.trip_id = stm.trip_id
+       JOIN routes r ON r.route_id = t.route_id
+       WHERE r.agency_id IS NOT NULL
+       GROUP BY stm.stop_id`,
     )
-    .all() as Array<{ stop_id: string; language: string; translation: string }>;
+    .all() as Array<{ stop_id: string; agency_id: string }>;
 
-  const namesMap = buildNamesMap(
-    translations.map((t) => ({ key: t.stop_id, language: t.language, translation: t.translation })),
-  );
-  console.log(`  [${prefix}] ${translations.length} translations for ${namesMap.size} stops`);
+  const stopAgencyMap = new Map(stopAgencyRows.map((r) => [r.stop_id, r.agency_id]));
 
   const json = stops.map((s) => ({
     i: `${prefix}:${s.stop_id}`,
     n: s.stop_name,
-    m: namesMap.get(s.stop_id) ?? {},
     a: s.stop_lat,
     o: s.stop_lon,
     l: s.location_type ?? 0,
+    ai: stopAgencyMap.has(s.stop_id) ? `${prefix}:${stopAgencyMap.get(s.stop_id)!}` : '',
   }));
   console.log(`  [${prefix}] ${stops.length} stops`);
   return json;
@@ -181,30 +185,6 @@ export function extractRoutes(
     agency_id: string | null;
   }>;
 
-  // Build route_id -> { language -> translation } map for route_long_name
-  const translations = db
-    .prepare(
-      `SELECT r.route_id, t.language, t.translation
-       FROM translations t
-       JOIN routes r ON (r.route_id = t.record_id
-         OR (t.record_id IS NULL AND r.route_long_name = t.field_value))
-       WHERE t.table_name = 'routes' AND t.field_name = 'route_long_name'`,
-    )
-    .all() as Array<{ route_id: string; language: string; translation: string }>;
-
-  const namesMap = buildNamesMap(
-    translations.map((t) => ({
-      key: t.route_id,
-      language: t.language,
-      translation: t.translation,
-    })),
-  );
-  if (namesMap.size > 0) {
-    console.log(
-      `  [${prefix}] ${translations.length} route name translations for ${namesMap.size} routes`,
-    );
-  }
-
   const defaultColor = routeColorFallbacks['*'] ?? '';
 
   const json: RouteJson[] = routes.map((r) => {
@@ -222,7 +202,6 @@ export function extractRoutes(
       t: r.route_type,
       c: color,
       tc: textColor,
-      m: namesMap.get(r.route_id) ?? {},
       ai: r.agency_id ? `${prefix}:${r.agency_id}` : '',
     };
   });
@@ -365,6 +344,8 @@ export function extractTimetable(
   prefix: string,
 ): {
   timetable: Map<string, Map<string, Map<string, Map<string, number[]>>>>;
+  /** route_id -> agency_id mapping for timetable group ai field */
+  routeAgencyMap: Map<string, string>;
   tripCount: number;
   stopTimeCount: number;
   skipped: number;
@@ -389,6 +370,15 @@ export function extractTimetable(
       headsign: t.trip_headsign ?? '',
       service_id: t.service_id,
     });
+  }
+
+  // Build route_id -> agency_id mapping
+  const routeAgencyRows = db
+    .prepare(`SELECT route_id, agency_id FROM routes WHERE agency_id IS NOT NULL`)
+    .all() as Array<{ route_id: string; agency_id: string }>;
+  const routeAgencyMap = new Map<string, string>();
+  for (const r of routeAgencyRows) {
+    routeAgencyMap.set(`${prefix}:${r.route_id}`, r.agency_id ? `${prefix}:${r.agency_id}` : '');
   }
 
   // Scan stop_times and aggregate into timetable structure
@@ -459,16 +449,22 @@ export function extractTimetable(
 
   return {
     timetable,
+    routeAgencyMap,
     tripCount: trips.length,
     stopTimeCount: stopTimes.length,
     skipped,
   };
 }
 
-export function extractAgencies(db: Database.Database, prefix: string): AgencyJson[] {
+export function extractAgencies(
+  db: Database.Database,
+  prefix: string,
+  provider: Provider,
+): AgencyJson[] {
   const agencies = db
     .prepare(
-      `SELECT agency_id, agency_name, agency_url, agency_lang
+      `SELECT agency_id, agency_name, agency_url, agency_lang,
+              agency_timezone, agency_fare_url
        FROM agency
        ORDER BY agency_id`,
     )
@@ -477,38 +473,21 @@ export function extractAgencies(db: Database.Database, prefix: string): AgencyJs
     agency_name: string;
     agency_url: string | null;
     agency_lang: string | null;
+    agency_timezone: string | null;
+    agency_fare_url: string | null;
   }>;
 
-  // Build agency_id -> { language -> translation } map for agency_name
-  const translations = db
-    .prepare(
-      `SELECT a.agency_id, t.language, t.translation
-       FROM translations t
-       JOIN agency a ON (a.agency_id = t.record_id
-         OR (t.record_id IS NULL AND a.agency_name = t.field_value))
-       WHERE t.table_name = 'agency' AND t.field_name = 'agency_name'`,
-    )
-    .all() as Array<{ agency_id: string; language: string; translation: string }>;
-
-  const namesMap = buildNamesMap(
-    translations.map((t) => ({
-      key: t.agency_id,
-      language: t.language,
-      translation: t.translation,
-    })),
-  );
-  if (namesMap.size > 0) {
-    console.log(
-      `  [${prefix}] ${translations.length} agency name translations for ${namesMap.size} agencies`,
-    );
-  }
+  const colors = (provider.colors ?? []).map((c) => ({ b: c.bg, t: c.text }));
 
   const json: AgencyJson[] = agencies.map((a) => ({
     i: `${prefix}:${a.agency_id}`,
     n: a.agency_name,
-    m: namesMap.get(a.agency_id) ?? {},
+    sn: provider.name.ja.short,
     u: a.agency_url ?? '',
     l: a.agency_lang ?? '',
+    tz: a.agency_timezone ?? '',
+    fu: a.agency_fare_url ?? '',
+    cs: colors,
   }));
   console.log(`  [${prefix}] ${agencies.length} agencies`);
   return json;
@@ -567,7 +546,11 @@ function buildTranslationMap(
   return map;
 }
 
-export function extractTranslations(db: Database.Database, prefix: string): TranslationsJson {
+export function extractTranslations(
+  db: Database.Database,
+  prefix: string,
+  provider: Provider,
+): TranslationsJson {
   // trip_headsign translations
   // GTFS-JP uses record_id (trip_id), standard GTFS uses field_value
   const headsignRows = db
@@ -600,15 +583,116 @@ export function extractTranslations(db: Database.Database, prefix: string): Tran
 
   const stopHeadsigns = buildTranslationMap(stopHeadsignRows);
 
-  const headsignCount = Object.keys(headsigns).length;
-  const stopHeadsignCount = Object.keys(stopHeadsigns).length;
-  if (headsignCount > 0 || stopHeadsignCount > 0) {
-    console.log(
-      `  [${prefix}] ${headsignCount} headsign translations, ${stopHeadsignCount} stop_headsign translations`,
-    );
+  // stop_name translations (keyed by prefixed stop_id)
+  const stopNameRows = db
+    .prepare(
+      `SELECT s.stop_id, t.language, t.translation
+       FROM translations t
+       JOIN stops s ON (
+         s.stop_id = t.record_id
+         OR (t.record_id IS NULL AND s.stop_name = t.field_value)
+       )
+       WHERE t.table_name = 'stops'
+         AND t.field_name = 'stop_name'
+         AND s.location_type = 0`,
+    )
+    .all() as Array<{ stop_id: string; language: string; translation: string }>;
+
+  const stopNamesMap = buildNamesMap(
+    stopNameRows.map((r) => ({ key: r.stop_id, language: r.language, translation: r.translation })),
+  );
+  const stopNames: Record<string, Record<string, string>> = {};
+  for (const [stopId, names] of stopNamesMap) {
+    stopNames[`${prefix}:${stopId}`] = names;
   }
 
-  return { headsigns, stop_headsigns: stopHeadsigns };
+  // route_long_name translations (keyed by prefixed route_id)
+  const routeNameRows = db
+    .prepare(
+      `SELECT r.route_id, t.language, t.translation
+       FROM translations t
+       JOIN routes r ON (r.route_id = t.record_id
+         OR (t.record_id IS NULL AND r.route_long_name = t.field_value))
+       WHERE t.table_name = 'routes' AND t.field_name = 'route_long_name'`,
+    )
+    .all() as Array<{ route_id: string; language: string; translation: string }>;
+
+  const routeNamesMap = buildNamesMap(
+    routeNameRows.map((r) => ({
+      key: r.route_id,
+      language: r.language,
+      translation: r.translation,
+    })),
+  );
+  const routeNames: Record<string, Record<string, string>> = {};
+  for (const [routeId, names] of routeNamesMap) {
+    routeNames[`${prefix}:${routeId}`] = names;
+  }
+
+  // agency_name translations (keyed by prefixed agency_id)
+  const agencyNameRows = db
+    .prepare(
+      `SELECT a.agency_id, t.language, t.translation
+       FROM translations t
+       JOIN agency a ON (a.agency_id = t.record_id
+         OR (t.record_id IS NULL AND a.agency_name = t.field_value))
+       WHERE t.table_name = 'agency' AND t.field_name = 'agency_name'`,
+    )
+    .all() as Array<{ agency_id: string; language: string; translation: string }>;
+
+  const agencyNamesMap = buildNamesMap(
+    agencyNameRows.map((r) => ({
+      key: r.agency_id,
+      language: r.language,
+      translation: r.translation,
+    })),
+  );
+  const agencyNames: Record<string, Record<string, string>> = {};
+  for (const [agencyId, names] of agencyNamesMap) {
+    agencyNames[`${prefix}:${agencyId}`] = {
+      ja: provider.name.ja.long,
+      en: provider.name.en.long,
+      ...names,
+    };
+  }
+
+  // agency_short_names from Provider (GTFS has no short name)
+  const agencyShortNames: Record<string, Record<string, string>> = {};
+  // Ensure all agencies have names and short names (even without translations)
+  const allAgencyIds = db.prepare(`SELECT agency_id FROM agency`).all() as Array<{
+    agency_id: string;
+  }>;
+  for (const { agency_id } of allAgencyIds) {
+    const prefixedId = `${prefix}:${agency_id}`;
+    if (!agencyNames[prefixedId]) {
+      agencyNames[prefixedId] = {
+        ja: provider.name.ja.long,
+        en: provider.name.en.long,
+      };
+    }
+    agencyShortNames[prefixedId] = {
+      ja: provider.name.ja.short,
+      en: provider.name.en.short,
+    };
+  }
+
+  const headsignCount = Object.keys(headsigns).length;
+  const stopHeadsignCount = Object.keys(stopHeadsigns).length;
+  const stopNameCount = Object.keys(stopNames).length;
+  const routeNameCount = Object.keys(routeNames).length;
+  const agencyNameCount = Object.keys(agencyNames).length;
+  console.log(
+    `  [${prefix}] translations: ${headsignCount} headsigns, ${stopHeadsignCount} stop_headsigns, ${stopNameCount} stop_names, ${routeNameCount} route_names, ${agencyNameCount} agency_names`,
+  );
+
+  return {
+    headsigns,
+    stop_headsigns: stopHeadsigns,
+    stop_names: stopNames,
+    route_names: routeNames,
+    agency_names: agencyNames,
+    agency_short_names: agencyShortNames,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -620,12 +704,14 @@ export function extractTranslations(db: Database.Database, prefix: string): Tran
  */
 function timetableToJson(
   timetable: Map<string, Map<string, Map<string, Map<string, number[]>>>>,
-): Record<string, { r: string; h: string; d: Record<string, number[]> }[]> {
-  const json: Record<string, { r: string; h: string; d: Record<string, number[]> }[]> = {};
+  routeAgencyMap: Map<string, string>,
+): Record<string, { r: string; h: string; d: Record<string, number[]>; ai: string }[]> {
+  const json: Record<string, { r: string; h: string; d: Record<string, number[]>; ai: string }[]> =
+    {};
 
   let groupCount = 0;
   for (const [stopId, routeMap] of timetable) {
-    const stopGroups: { r: string; h: string; d: Record<string, number[]> }[] = [];
+    const stopGroups: { r: string; h: string; d: Record<string, number[]>; ai: string }[] = [];
 
     for (const [routeId, headsignMap] of routeMap) {
       for (const [headsign, serviceMap] of headsignMap) {
@@ -636,7 +722,12 @@ function timetableToJson(
           services[serviceId] = times;
         }
 
-        stopGroups.push({ r: routeId, h: headsign, d: services });
+        stopGroups.push({
+          r: routeId,
+          h: headsign,
+          d: services,
+          ai: routeAgencyMap.get(routeId) ?? '',
+        });
         groupCount++;
       }
     }
@@ -666,16 +757,16 @@ function buildSourceJson(source: BuildSource): void {
   const routes = extractRoutes(db, source.prefix, source.routeColorFallbacks);
   const calendar = extractCalendar(db, source.prefix);
   const shapes = extractShapes(db, source.prefix);
-  const { timetable } = extractTimetable(db, source.prefix);
-  const agencies = extractAgencies(db, source.prefix);
+  const { timetable, routeAgencyMap } = extractTimetable(db, source.prefix);
+  const agencies = extractAgencies(db, source.prefix, source.provider);
   const feedInfo = extractFeedInfo(db, source.prefix);
-  const translations = extractTranslations(db, source.prefix);
+  const translations = extractTranslations(db, source.prefix, source.provider);
 
   db.close();
 
   // Convert timetable
   console.log(`  Building timetable for ${source.prefix}...`);
-  const timetableJson = timetableToJson(timetable);
+  const timetableJson = timetableToJson(timetable, routeAgencyMap);
 
   // Write to staging directory, then atomically swap with the final directory.
   // This ensures the output is always a complete, consistent set of 8 files.
@@ -783,6 +874,7 @@ async function main(): Promise<void> {
     prefix: sourceDef.pipeline.prefix,
     nameEn: sourceDef.resource.nameEn,
     routeColorFallbacks: sourceDef.resource.routeColorFallbacks ?? {},
+    provider: sourceDef.resource.provider,
   };
 
   console.log(`=== ${arg.name} [START] ===\n`);

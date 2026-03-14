@@ -19,9 +19,12 @@ const suginamiGsm: GtfsSourceDefinition = {
       url: 'https://ckan.odpt.org/dataset/tokyo_suginami_city_green_slow_mobility/resource/bdf054b4-8fe9-4673-a69f-6ac7e56e73aa',
     },
     provider: {
-      nameJa: '杉並区',
-      nameEn: 'Suginami City',
+      name: {
+        ja: { long: '杉並区', short: 'すぎ丸' },
+        en: { long: 'Suginami City', short: 'Sugimaru' },
+      },
       url: 'https://www.city.suginami.tokyo.jp/',
+      colors: [],
     },
     authentication: {
       required: false,

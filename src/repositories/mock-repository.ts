@@ -16,6 +16,7 @@
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type {
+  Agency,
   DepartureGroup,
   FullDayStopDeparture,
   Route,
@@ -26,6 +27,20 @@ import type {
 import type { CollectionResult, Result } from '../types/app/repository';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
+
+// --- Mock agency ---
+const AGENCY: Agency = {
+  agency_id: 'mock:agency',
+  agency_name: 'あおば交通株式会社',
+  agency_short_name: 'あおば交通',
+  agency_names: { ja: 'あおば交通株式会社', en: 'Aoba Transit Co.' },
+  agency_short_names: { ja: 'あおば交通', en: 'Aoba Transit' },
+  agency_url: 'https://example.com',
+  agency_lang: 'ja',
+  agency_timezone: 'Asia/Tokyo',
+  agency_fare_url: '',
+  agency_colors: [{ bg: '2E7D32', text: 'FFFFFF' }],
+};
 
 // --- Fictional stops clustered around Kumano-mae (~2 km spread) ---
 // Center: 35.7485, 139.7699
@@ -39,6 +54,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7485,
     stop_lon: 139.7699,
     location_type: 1,
+    agency_id: 'mock:agency',
   },
   {
     stop_id: 'sta_central_s',
@@ -51,6 +67,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7471,
     stop_lon: 139.7703,
     location_type: 1,
+    agency_id: 'mock:agency',
   },
   {
     stop_id: 'sta_hill',
@@ -59,6 +76,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7534,
     stop_lon: 139.7579,
     location_type: 1,
+    agency_id: 'mock:agency',
   },
   {
     stop_id: 'sta_east',
@@ -67,6 +85,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7509,
     stop_lon: 139.7809,
     location_type: 1,
+    agency_id: 'mock:agency',
   },
   // Single-type rail stations
   {
@@ -76,6 +95,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7577,
     stop_lon: 139.7659,
     location_type: 1,
+    agency_id: 'mock:agency',
   },
   {
     stop_id: 'sta_west',
@@ -84,6 +104,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7521,
     stop_lon: 139.7529,
     location_type: 1,
+    agency_id: 'mock:agency',
   },
   {
     stop_id: 'sta_south',
@@ -92,6 +113,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7427,
     stop_lon: 139.7646,
     location_type: 1,
+    agency_id: 'mock:agency',
   },
   {
     stop_id: 'sta_northwest',
@@ -100,6 +122,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7564,
     stop_lon: 139.7556,
     location_type: 1,
+    agency_id: 'mock:agency',
   },
   // Bus stops (location_type: 0)
   {
@@ -109,6 +132,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7497,
     stop_lon: 139.7669,
     location_type: 0,
+    agency_id: 'mock:agency',
   },
   {
     stop_id: 'bus_library',
@@ -117,6 +141,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7514,
     stop_lon: 139.7636,
     location_type: 0,
+    agency_id: 'mock:agency',
   },
   {
     stop_id: 'bus_tower',
@@ -125,6 +150,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7457,
     stop_lon: 139.7626,
     location_type: 0,
+    agency_id: 'mock:agency',
   },
   {
     stop_id: 'bus_bridge',
@@ -133,6 +159,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7587,
     stop_lon: 139.7599,
     location_type: 0,
+    agency_id: 'mock:agency',
   },
   // Tram-only stop
   {
@@ -142,6 +169,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7518,
     stop_lon: 139.7858,
     location_type: 0,
+    agency_id: 'mock:agency',
   },
   // Subway-only stop
   {
@@ -151,6 +179,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7438,
     stop_lon: 139.7576,
     location_type: 1,
+    agency_id: 'mock:agency',
   },
   // Distant station (~15 km south, near Haneda) for testing pan+zoom behavior
   {
@@ -164,6 +193,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.5494,
     stop_lon: 139.7798,
     location_type: 1,
+    agency_id: 'mock:agency',
   },
 ];
 
@@ -560,7 +590,7 @@ export class MockRepository implements TransitRepository {
       if (departures.length === 0) {
         continue;
       }
-      groups.push({ route, headsign, departures });
+      groups.push({ route, headsign, headsign_names: {}, departures });
     }
 
     groups.sort((a, b) => a.departures[0].getTime() - b.departures[0].getTime());
@@ -637,7 +667,7 @@ export class MockRepository implements TransitRepository {
       }
       for (let h = 5; h <= 23; h++) {
         for (const offset of [0, 15, 30, 45]) {
-          departures.push({ minutes: h * 60 + offset, route, headsign });
+          departures.push({ minutes: h * 60 + offset, route, headsign, headsign_names: {} });
         }
       }
     }
@@ -649,5 +679,13 @@ export class MockRepository implements TransitRepository {
   /** {@inheritDoc TransitRepository.getAllStops} */
   getAllStops(): Promise<CollectionResult<Stop>> {
     return Promise.resolve({ success: true, data: STOPS, truncated: false });
+  }
+
+  /** {@inheritDoc TransitRepository.getAgency} */
+  getAgency(agencyId: string): Promise<Result<Agency>> {
+    if (agencyId === AGENCY.agency_id) {
+      return Promise.resolve({ success: true, data: AGENCY });
+    }
+    return Promise.resolve({ success: false, error: `Agency not found: ${agencyId}` });
   }
 }

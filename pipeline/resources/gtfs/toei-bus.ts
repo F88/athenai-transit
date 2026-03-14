@@ -19,9 +19,12 @@ const toeiBus: GtfsSourceDefinition = {
       url: 'https://ckan.odpt.org/dataset/b_bus_gtfs_jp-toei/resource/171a583d-4bf3-4f71-ae57-16f2140babda',
     },
     provider: {
-      nameJa: '東京都交通局',
-      nameEn: 'Bureau of Transportation, Tokyo Metropolitan Government',
+      name: {
+        ja: { long: '東京都交通局', short: '都バス' },
+        en: { long: 'Bureau of Transportation, Tokyo Metropolitan Government', short: 'Toei Bus' },
+      },
       url: 'https://www.kotsu.metro.tokyo.jp/bus/',
+      colors: [{ bg: '006633', text: 'FFFFFF' }],
     },
     // GTFS ZIP files on api-public.odpt.org are publicly accessible without a token.
     // Only the JSON API (download-odpt-json) requires authentication.

@@ -23,9 +23,12 @@ const yurikamomeRailway: OdptJsonSourceDefinition = {
       url: 'https://ckan.odpt.org/dataset/r_route-yurikamome/resource/0806342a-8baa-4a8b-8566-af97a0e02821',
     },
     provider: {
-      nameJa: 'ゆりかもめ',
-      nameEn: 'Yurikamome',
+      name: {
+        ja: { long: 'ゆりかもめ', short: 'ゆりかもめ' },
+        en: { long: 'Yurikamome', short: 'Yurikamome' },
+      },
       url: 'https://www.yurikamome.co.jp/',
+      colors: [{ bg: '00B2E5', text: 'FFFFFF' }],
     },
     authentication: {
       required: true,

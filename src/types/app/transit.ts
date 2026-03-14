@@ -35,6 +35,7 @@ export interface Stop {
   stop_lat: number;
   stop_lon: number;
   location_type: number; // 0: stop/platform, 1: station
+  agency_id: string;
 }
 
 /**
@@ -60,10 +61,17 @@ export interface Route {
 export interface Agency {
   agency_id: string;
   agency_name: string;
-  /** Merged from translations.txt. Not a GTFS standard field. */
+  agency_short_name: string;
+  /** Merged from translations. Not a GTFS standard field. */
   agency_names: Record<string, string>;
+  /** Merged from translations. Not a GTFS standard field. */
+  agency_short_names: Record<string, string>;
   agency_url: string;
   agency_lang: string;
+  agency_timezone: string;
+  agency_fare_url: string;
+  /** Brand colors. [0]=primary, [1]=secondary, etc. Not a GTFS standard field. */
+  agency_colors: { bg: string; text: string }[];
 }
 
 /**
@@ -133,6 +141,20 @@ export interface Calendar {
 }
 
 /**
+ * A route enriched with its agency metadata.
+ */
+export interface RouteWithMeta {
+  route: Route;
+  agency: Agency;
+}
+
+/**
+ * A route paired with its agency and additional context.
+ * Reserved for future expansion (e.g. route-level departures, statistics).
+ */
+export type RouteWithContext = RouteWithMeta;
+
+/**
  * A stop enriched with metadata computed during spatial queries.
  *
  * Returned by `getStopsNearby` to carry computed values (e.g. distance)
@@ -153,6 +175,8 @@ export interface StopWithMeta {
 export interface DepartureGroup {
   route: Route;
   headsign: string;
+  /** Headsign translations resolved from TranslationsJson. */
+  headsign_names: Record<string, string>;
   departures: Date[];
 }
 
@@ -170,6 +194,7 @@ export interface StopWithContext {
   stop: Stop;
   routeTypes: RouteType[];
   groups: DepartureGroup[];
+  agencies: Agency[];
 }
 
 /**
@@ -206,6 +231,8 @@ export interface FullDayStopDeparture {
   minutes: number;
   route: Route;
   headsign: string;
+  /** Headsign translations resolved from TranslationsJson. */
+  headsign_names: Record<string, string>;
 }
 
 /**

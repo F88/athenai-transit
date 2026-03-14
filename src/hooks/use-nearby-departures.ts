@@ -54,7 +54,22 @@ export function useNearbyDepartures(
               ]);
               const groups = depsResult.success ? depsResult.data : [];
               const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-              return { stop, routeTypes, groups };
+              // Collect unique agencies from departure groups
+              const agencyIds = new Set<string>();
+              for (const g of groups) {
+                if (g.route.agency_id) {
+                  agencyIds.add(g.route.agency_id);
+                }
+              }
+              const agencyResults = await Promise.all(
+                [...agencyIds].map((id) => repo.getAgency(id)),
+              );
+              const agencies = agencyResults
+                .filter((r) => r.success)
+                .map(
+                  (r) => (r as { success: true; data: import('../types/app/transit').Agency }).data,
+                );
+              return { stop, routeTypes, groups, agencies };
             }),
           );
 

@@ -17,6 +17,7 @@ import type {
 } from '../../../types/odpt-train';
 import type { Provider } from '../../../types/resource-common';
 import {
+  buildAgency,
   buildRoutes,
   buildStops,
   buildTimetable,
@@ -99,8 +100,10 @@ function makeTimetable(
 
 /** Default provider for tests. */
 const TEST_PROVIDER: Provider = {
-  nameJa: 'テスト交通',
-  nameEn: 'Test Transit',
+  name: {
+    ja: { long: 'テスト交通', short: 'テスト' },
+    en: { long: 'Test Transit', short: 'Test' },
+  },
   url: 'https://example.com',
 };
 
@@ -218,7 +221,7 @@ describe('buildStops', () => {
       makeStationOrder(2, 'odpt.Station:Test.Toyosu', '豊洲', 'Toyosu'),
     ];
 
-    const result = buildStops('test', stations, stationOrders);
+    const result = buildStops('test', stations, stationOrders, TEST_PROVIDER);
 
     expect(result).toHaveLength(2);
     // Shimbashi (index 1) should come first despite being second in input
@@ -226,7 +229,7 @@ describe('buildStops', () => {
     expect(result[1].i).toBe('test:Toyosu');
   });
 
-  it('produces correct output format with prefix', () => {
+  it('produces correct output format with prefix and ai field', () => {
     const stations: OdptStation[] = [
       makeStation('odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi', 35.6658, 139.7584),
     ];
@@ -234,16 +237,16 @@ describe('buildStops', () => {
       makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
     ];
 
-    const result = buildStops('yrkm', stations, stationOrders);
+    const result = buildStops('yrkm', stations, stationOrders, TEST_PROVIDER);
 
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({
       i: 'yrkm:Shimbashi',
       n: '新橋',
-      m: { ja: '新橋', en: 'Shimbashi' },
       a: 35.6658,
       o: 139.7584,
       l: 0,
+      ai: 'yrkm:Test Transit',
     });
   });
 
@@ -261,7 +264,7 @@ describe('buildStops', () => {
       makeStationOrder(1, 'odpt.Station:LineB.StationC', '駅C', 'Station C'),
     ];
 
-    const result = buildStops('test', stations, mergedOrders);
+    const result = buildStops('test', stations, mergedOrders, TEST_PROVIDER);
 
     expect(result).toHaveLength(3);
     // index 1 stations come first, then index 2
@@ -295,7 +298,6 @@ describe('buildRoutes', () => {
       t: 2,
       c: '00B2E5',
       tc: '',
-      m: { ja: 'ゆりかもめ', en: 'Yurikamome' },
       ai: 'yrkm:Test Transit',
     });
   });
@@ -347,7 +349,7 @@ describe('buildTimetable', () => {
       ),
     ];
 
-    const result = buildTimetable('yrkm', timetables, [railway]);
+    const result = buildTimetable('yrkm', timetables, [railway], TEST_PROVIDER);
 
     // Should have one stop
     expect(Object.keys(result)).toEqual(['yrkm:Shimbashi']);
@@ -376,6 +378,10 @@ describe('buildTranslations', () => {
       'odpt:lineCode': 'U',
       'odpt:stationOrder': stationOrders,
     });
+    const stations: OdptStation[] = [
+      makeStation('odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi', 35.6658, 139.7584),
+      makeStation('odpt.Station:Test.Toyosu', '豊洲', 'Toyosu', 35.6461, 139.7914),
+    ];
 
     const timetables: OdptStationTimetable[] = [
       makeTimetable(
@@ -392,7 +398,7 @@ describe('buildTranslations', () => {
       ),
     ];
 
-    const result = buildTranslations(timetables, [railway]);
+    const result = buildTranslations('test', timetables, [railway], stations, TEST_PROVIDER);
 
     // Outbound headsign: 豊洲
     expect(result.headsigns['豊洲']).toEqual({ ja: '豊洲', en: 'Toyosu' });
@@ -400,5 +406,93 @@ describe('buildTranslations', () => {
     expect(result.headsigns['新橋']).toEqual({ ja: '新橋', en: 'Shimbashi' });
     // stop_headsigns should be empty
     expect(result.stop_headsigns).toEqual({});
+  });
+
+  it('generates stop_names keyed by prefixed stop_id', () => {
+    const stations: OdptStation[] = [
+      makeStation('odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi', 35.6658, 139.7584),
+    ];
+    const railway = makeRailway({
+      'odpt:lineCode': 'U',
+      'odpt:stationOrder': [
+        makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
+      ],
+    });
+
+    const result = buildTranslations('yrkm', [], [railway], stations, TEST_PROVIDER);
+
+    expect(result.stop_names['yrkm:Shimbashi']).toEqual({ ja: '新橋', en: 'Shimbashi' });
+  });
+
+  it('generates route_names keyed by prefixed route_id', () => {
+    const railway = makeRailway({
+      'odpt:lineCode': 'U',
+      'odpt:railwayTitle': { ja: 'ゆりかもめ', en: 'Yurikamome' },
+      'odpt:stationOrder': [],
+    });
+
+    const result = buildTranslations('yrkm', [], [railway], [], TEST_PROVIDER);
+
+    expect(result.route_names['yrkm:U']).toEqual({ ja: 'ゆりかもめ', en: 'Yurikamome' });
+  });
+
+  it('generates agency_names keyed by prefixed agency_id', () => {
+    const railway = makeRailway({
+      'odpt:lineCode': 'U',
+      'odpt:stationOrder': [],
+    });
+
+    const result = buildTranslations('yrkm', [], [railway], [], TEST_PROVIDER);
+
+    expect(result.agency_names['yrkm:Test Transit']).toEqual({
+      ja: 'テスト交通',
+      en: 'Test Transit',
+    });
+  });
+
+  it('generates agency_short_names keyed by prefixed agency_id', () => {
+    const railway = makeRailway({
+      'odpt:lineCode': 'U',
+      'odpt:stationOrder': [],
+    });
+
+    const result = buildTranslations('yrkm', [], [railway], [], TEST_PROVIDER);
+
+    expect(result.agency_short_names['yrkm:Test Transit']).toEqual({
+      ja: 'テスト',
+      en: 'Test',
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildAgency
+// ---------------------------------------------------------------------------
+
+describe('buildAgency', () => {
+  it('builds agency with provider info', () => {
+    const result = buildAgency('yrkm', TEST_PROVIDER);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      i: 'yrkm:Test Transit',
+      n: 'テスト交通',
+      sn: 'テスト',
+      u: 'https://example.com',
+      l: 'ja',
+      tz: 'Asia/Tokyo',
+      fu: '',
+      cs: [],
+    });
+  });
+
+  it('includes provider colors in cs field', () => {
+    const providerWithColors: Provider = {
+      ...TEST_PROVIDER,
+      colors: [{ bg: '00B2E5', text: 'FFFFFF' }],
+    };
+    const result = buildAgency('yrkm', providerWithColors);
+
+    expect(result[0].cs).toEqual([{ b: '00B2E5', t: 'FFFFFF' }]);
   });
 });

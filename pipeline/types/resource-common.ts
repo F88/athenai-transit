@@ -124,12 +124,15 @@ export type DataFormat = DataFormatGtfsJp | DataFormatGtfs | DataFormatOdptJson;
 
 /** Data provider information. */
 export interface Provider {
-  /** Japanese name of the provider. */
-  nameJa: string;
-  /** English name of the provider. */
-  nameEn: string;
+  /** Multilingual display names with long/short variants. */
+  name: {
+    ja: { long: string; short: string };
+    en: { long: string; short: string };
+  };
   /** Provider's website URL, if known. */
   url?: string;
+  /** Brand colors. [0]=primary, [1]=secondary, etc. */
+  colors?: { bg: string; text: string }[];
 }
 
 /** License information. */

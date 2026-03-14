@@ -20,9 +20,12 @@ const yurikamomeStationTimetable: OdptJsonSourceDefinition = {
       url: 'https://ckan.odpt.org/dataset/r_station_timetable-yurikamome/resource/d83a1b77-6d9f-494e-b63c-be082fea6c56',
     },
     provider: {
-      nameJa: 'ゆりかもめ',
-      nameEn: 'Yurikamome',
+      name: {
+        ja: { long: 'ゆりかもめ', short: 'ゆりかもめ' },
+        en: { long: 'Yurikamome', short: 'Yurikamome' },
+      },
       url: 'https://www.yurikamome.co.jp/',
+      colors: [{ bg: '00B2E5', text: 'FFFFFF' }],
     },
     authentication: {
       required: true,

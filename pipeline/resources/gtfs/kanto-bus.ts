@@ -23,9 +23,12 @@ const kantoBus: GtfsSourceDefinition = {
       url: 'https://ckan.odpt.org/dataset/kanto_bus_all_lines/resource/05a8cd54-0412-4921-9747-dba755d27538',
     },
     provider: {
-      nameJa: '関東バス株式会社',
-      nameEn: 'Kanto Bus Corporation',
+      name: {
+        ja: { long: '関東バス株式会社', short: '関東バス' },
+        en: { long: 'Kanto Bus Corporation', short: 'Kanto Bus' },
+      },
       url: 'https://www.kanto-bus.co.jp/',
+      colors: [{ bg: 'D7251D', text: 'FFFFFF' }],
     },
     authentication: {
       required: true,
