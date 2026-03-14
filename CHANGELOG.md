@@ -14,8 +14,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - データソースの追加:
     - ゆりかもめ (新交通ゆりかもめ) の時刻表・駅情報・路線形状に対応。
       ODPT Train API からアプリ用データを生成するパイプライン (`pipeline:build:odpt-train`) を新設。
-    - 関東バス (kobus) のデータソースを追加。
-    - 京王バス (ktbus) のデータソースを追加。
+    - 関東バス (ktbus) のデータソースを追加。
+    - 京王バス (kobus) のデータソースを追加。
     - 杉並区グリーンスローモビリティの表示を有効化。
 - 行先表示名リゾルバー (`getHeadsignDisplayNames`) を追加。
   行先の表示名を解決し、出発情報の UI コンポーネントに適用。
@@ -32,9 +32,15 @@ and this project adheres to [CalVer](https://calver.org/).
 - パイプラインドキュメント (`GTFS_TO_RDB.md`, `APP_DATA_FROM_GTFS.md`) を追加。
 - route color の wildcard fallback 対応をパイプラインに追加。
 - `buildAuthenticatedUrl` ユーティリティを抽出。
+- AthenaiRepository に初期化統計ログ (info) とクエリ結果ログ (debug) を追加。
+  fetch/merge の処理時間内訳、ソース別統計、truncation 件数を出力。
+- FetchDataSource にファイル別 fetch タイミング/サイズの debug ログを追加。
 
 ### Changed
 
+- `GtfsRepository` を `AthenaiRepository` にリネーム。
+  `MAX_STOPS_RESULT` を `types/app/repository` から `transit-repository` に移動。
+- `AthenaiRepository.create()` から `fetchSources()` / `mergeSources()` を分離。
 - `build-gtfs-db.ts` を単一ソース CLI に再設計。
   一括処理は `--targets` で子プロセス実行。安全なビルド (一時ファイル → リネーム) を実装。
 - `pipeline-utils.ts` を `download-utils.ts` から分離し、汎用 CLI ユーティリティを独立モジュール化。
@@ -45,6 +51,9 @@ and this project adheres to [CalVer](https://calver.org/).
 - Vercel SPA fallback (200+HTML) により optional JSON の取得失敗がアプリ全体のデータ読み込みを阻害していた問題を修正。
 - CSV ファイルが0件のソースディレクトリで既存 DB を空 DB で上書きする問題を修正。
 - GTFS-JP v3 の `pattern_jp` スキーマ定義を修正。
+- `getUpcomingDepartures` の debug ログで未定義変数 `truncated` を参照していた ReferenceError を修正。
+- headsign が空文字の場合に React key が重複する問題を修正。
+- 全ダイアログに `DialogDescription` を追加 (Radix アクセシビリティ警告の解消)。
 
 ## [2026.03.12]
 
