@@ -36,16 +36,28 @@ and this project adheres to [CalVer](https://calver.org/).
 - AthenaiRepository に初期化統計ログ (info) とクエリ結果ログ (debug) を追加。
   fetch/merge の処理時間内訳、ソース別統計、truncation 件数を出力。
 - FetchDataSource にファイル別 fetch タイミング/サイズの debug ログを追加。
+- 行先が空の route に「行先が表示されない路線があります」注釈を表示。
+  停留所カード、全路線時刻表、路線別時刻表の3箇所に対応。
+- `?sources=` URL パラメータによるデータソース選択。
+  `?sources=minkuru,yurimo` で指定ソースのみ、`?sources=all` で全ソース有効。
+- perf profile に `maxResults` を追加 (lite=300, normal=3000, full=10000)。
+  マーカー描画数をモードに応じて制限。
+- モード切替 (perfMode, renderMode, infoLevel, theme) に info レベルログを追加。
+- マーカー描画時間の計測ログ (debug) を StopMarkersCanvas に追加。
+- 全4種のマーカーコンポーネントにクリック debug ログを追加。
 
 ### Changed
 
 - `GtfsRepository` を `AthenaiRepository` にリネーム。
   `MAX_STOPS_RESULT` を `types/app/repository` から `transit-repository` に移動。
 - `AthenaiRepository.create()` から `fetchSources()` / `mergeSources()` を分離。
+- データ prefix のリネーム: tobus→minkuru (都営バス)、yrkm→yurimo (ゆりかもめ)。
+- `SourceGroup` に `enabled` フィールドを追加 (必須)。デフォルトは enabled のみロード。
 - `build-gtfs-db.ts` を単一ソース CLI に再設計。
   一括処理は `--targets` で子プロセス実行。安全なビルド (一時ファイル → リネーム) を実装。
 - `pipeline-utils.ts` を `download-utils.ts` から分離し、汎用 CLI ユーティリティを独立モジュール化。
 - `data-source-settings.json` を TypeScript (`data-source-settings.ts`) に変換。
+- 高頻度マーカー描画ログを verbose レベルに降格。
 
 ### Fixed
 
@@ -55,6 +67,10 @@ and this project adheres to [CalVer](https://calver.org/).
 - `getUpcomingDepartures` の debug ログで未定義変数 `truncated` を参照していた ReferenceError を修正。
 - headsign が空文字の場合に React key が重複する問題を修正。
 - 全ダイアログに `DialogDescription` を追加 (Radix アクセシビリティ警告の解消)。
+- Canvas marker のクリックが動作しない問題を修正 (re-dispatch に座標情報が欠落)。
+- ODPT train: 複数 railway のデータが正しく処理されない問題を修正。
+- ODPT train: `computeDateRange` のうるう年処理を修正。
+- ODPT train: `buildTimetable` / `buildTranslations` のキー衝突を修正。
 
 ## [2026.03.12]
 
