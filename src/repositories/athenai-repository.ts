@@ -285,6 +285,7 @@ export class AthenaiRepository implements TransitRepository {
 
   /** {@inheritDoc TransitRepository.getStopsInBounds} */
   getStopsInBounds(bounds: Bounds, limit: number): Promise<CollectionResult<StopWithMeta>> {
+    const t0 = performance.now();
     const effectiveLimit = Math.min(limit, MAX_STOPS_RESULT);
     const centerLat = (bounds.north + bounds.south) / 2;
     const centerLng = (bounds.east + bounds.west) / 2;
@@ -309,7 +310,10 @@ export class AthenaiRepository implements TransitRepository {
     const truncated = matching.length > effectiveLimit;
     const data = matching.slice(0, effectiveLimit).map((m) => ({ stop: m.stop }));
 
-    logger.debug(`getStopsInBounds: ${data.length} stops (${truncated ? 'truncated' : 'all'})`);
+    const elapsed = Math.round(performance.now() - t0);
+    logger.debug(
+      `getStopsInBounds: ${data.length}/${matching.length} stops in ${elapsed}ms (${truncated ? 'truncated' : 'all'})`,
+    );
     return Promise.resolve({ success: true, data, truncated });
   }
 
@@ -323,6 +327,7 @@ export class AthenaiRepository implements TransitRepository {
       return Promise.resolve({ success: true, data: [], truncated: false });
     }
 
+    const t0 = performance.now();
     const effectiveLimit = Math.min(limit, MAX_STOPS_RESULT);
     const radiusKm = radiusM / 1000;
     const sorted = this.stops
@@ -341,8 +346,9 @@ export class AthenaiRepository implements TransitRepository {
       .slice(0, effectiveLimit)
       .map(({ stop, distKm }) => ({ stop, distance: distKm * 1000 }));
 
+    const elapsed = Math.round(performance.now() - t0);
     logger.debug(
-      `getStopsNearby: ${data.length} stops within ${radiusM}m (${truncated ? 'truncated' : 'all'})`,
+      `getStopsNearby: ${data.length}/${sorted.length} stops within ${radiusM}m in ${elapsed}ms (${truncated ? 'truncated' : 'all'})`,
     );
     return Promise.resolve({ success: true, data, truncated });
   }
@@ -374,6 +380,8 @@ export class AthenaiRepository implements TransitRepository {
 
     const result: DepartureGroup[] = [];
     let anyTruncated = false;
+    let totalReturned = 0;
+    let totalAvailableAll = 0;
 
     for (const group of timetableGroups) {
       const route = this.routeMap.get(group.r);
@@ -420,6 +428,9 @@ export class AthenaiRepository implements TransitRepository {
         }
       }
 
+      totalAvailableAll += totalAvailable;
+      totalReturned += departureTimes.length;
+
       if (limit !== undefined && totalAvailable > limit) {
         anyTruncated = true;
       }
@@ -433,7 +444,7 @@ export class AthenaiRepository implements TransitRepository {
     result.sort((a, b) => a.departures[0].getTime() - b.departures[0].getTime());
 
     logger.debug(
-      `getUpcomingDepartures: ${stopId} → ${result.length} groups (${anyTruncated ? 'truncated' : 'all'})`,
+      `getUpcomingDepartures: ${stopId} → ${result.length} groups, ${totalReturned}/${totalAvailableAll} departures (${anyTruncated ? 'truncated' : 'all'})`,
     );
     return Promise.resolve({ success: true, data: result, truncated: anyTruncated });
   }
@@ -522,9 +533,13 @@ export class AthenaiRepository implements TransitRepository {
 
   /** {@inheritDoc TransitRepository.getAllStops} */
   getAllStops(): Promise<CollectionResult<Stop>> {
+    const t0 = performance.now();
     const truncated = this.stops.length > MAX_STOPS_RESULT;
     const data = truncated ? this.stops.slice(0, MAX_STOPS_RESULT) : this.stops;
-    logger.debug(`getAllStops: ${data.length} stops (${truncated ? 'truncated' : 'all'})`);
+    const elapsed = Math.round(performance.now() - t0);
+    logger.debug(
+      `getAllStops: ${data.length}/${this.stops.length} stops in ${elapsed}ms (${truncated ? 'truncated' : 'all'})`,
+    );
     return Promise.resolve({ success: true, data, truncated });
   }
 
