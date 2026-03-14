@@ -1,5 +1,5 @@
 /**
- * Repository result types and constants.
+ * Repository result types.
  *
  * Provides a unified error-handling contract for all
  * {@link TransitRepository} methods.
@@ -19,7 +19,7 @@ export type Result<T> = { success: true; data: T } | { success: false; error: st
  *
  * - `success: true` — `data` contains the matching items.
  *   `truncated` indicates whether additional matches existed
- *   but were omitted due to `limit` or {@link MAX_STOPS_RESULT}.
+ *   but were omitted due to `limit` or the API-level cap.
  * - `success: false` — a domain-level error occurred.
  */
 export type CollectionResult<T> =
