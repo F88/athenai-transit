@@ -29,7 +29,7 @@ const toeiBus: GtfsSourceDefinition = {
   },
   pipeline: {
     outDir: 'toei-bus',
-    prefix: 'tobus',
+    prefix: 'minkuru',
   },
 };
 

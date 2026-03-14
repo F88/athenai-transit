@@ -5,7 +5,7 @@ const settings: SourceGroup[] = [
     id: 'toei-bus',
     name_ja: '都営バス',
     category: 'bus',
-    prefixes: ['tobus'],
+    prefixes: ['minkuru'],
     enabled: true,
   },
   {
@@ -19,7 +19,7 @@ const settings: SourceGroup[] = [
     id: 'yurikamome',
     name_ja: 'ゆりかもめ',
     category: 'train',
-    prefixes: ['yrkm'],
+    prefixes: ['yurimo'],
     enabled: true,
   },
   {

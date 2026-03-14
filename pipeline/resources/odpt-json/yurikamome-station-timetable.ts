@@ -32,7 +32,7 @@ const yurikamomeStationTimetable: OdptJsonSourceDefinition = {
   },
   pipeline: {
     outDir: 'yurikamome',
-    prefix: 'yrkm',
+    prefix: 'yurimo',
   },
 };
 
