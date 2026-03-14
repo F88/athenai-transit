@@ -27,14 +27,14 @@ const settings: SourceGroup[] = [
     name_ja: '関東バス',
     category: 'bus',
     prefixes: ['ktbus'],
-    enabled: false, // Data quality evaluation — enable via ?all-sources
+    enabled: true,
   },
   {
     id: 'keio-bus',
     name_ja: '京王バス',
     category: 'bus',
     prefixes: ['kobus'],
-    enabled: false, // Data quality evaluation — enable via ?all-sources
+    enabled: true,
   },
   {
     id: 'suginami-gsm',
