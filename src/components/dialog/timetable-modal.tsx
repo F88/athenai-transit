@@ -315,9 +315,9 @@ function TimetableGrid({
             {hour}時
           </span>
           <span className="flex flex-wrap gap-1.5">
-            {deps.map((dep) => (
+            {deps.map((dep, i) => (
               <span
-                key={`${dep.route.route_id}__${dep.headsign}__${dep.minutes}`}
+                key={`${dep.route.route_id}__${dep.headsign}__${dep.minutes}__${i}`}
                 className="inline-flex items-baseline gap-0.5"
               >
                 <span className="text-muted-foreground text-sm tabular-nums">

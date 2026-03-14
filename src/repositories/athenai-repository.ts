@@ -16,12 +16,17 @@ import type {
 import type { CollectionResult, Result } from '../types/app/repository';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitDataSource } from '../datasources/transit-data-source';
+import type { SourceData } from '../datasources/transit-data-source';
 import { FetchDataSource } from '../datasources/fetch-data-source';
 import { createLogger } from '../utils/logger';
 import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
 import type { TransitRepository } from './transit-repository';
 
 const logger = createLogger('AthenaiRepository');
+
+// ---------------------------------------------------------------------------
+// Pure helper functions
+// ---------------------------------------------------------------------------
 
 /**
  * Find the index of the first element >= target in a sorted array.
@@ -57,11 +62,150 @@ function getDayIndex(serviceDate: Date): number {
 }
 
 /**
- * GTFS-based implementation of {@link TransitRepository}.
+ * Convert minutes-from-midnight to a Date on the same day as `baseDate`.
+ * Negative minutes or minutes >= 1440 adjust the day accordingly.
+ */
+function minutesToDate(baseDate: Date, minutes: number): Date {
+  const result = new Date(baseDate);
+  result.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Fetch and merge (used by create)
+// ---------------------------------------------------------------------------
+
+/** Fetch all sources in parallel, skipping failures. */
+async function fetchSources(
+  prefixes: string[],
+  dataSource: TransitDataSource,
+): Promise<SourceData[]> {
+  const perSource = await Promise.all(
+    prefixes.map(async (prefix) => {
+      try {
+        return await dataSource.load(prefix);
+      } catch (e) {
+        logger.warn(`Skipping source "${prefix}": ${String(e)}`);
+        return null;
+      }
+    }),
+  );
+  return perSource.filter((s): s is NonNullable<typeof s> => s !== null);
+}
+
+/** Merged data ready to construct an AthenaiRepository. */
+export interface MergedData {
+  stops: Stop[];
+  routeMap: Map<string, Route>;
+  stopRouteTypeMap: Map<string, RouteType[]>;
+  calendarServices: CalendarServiceJson[];
+  calendarExceptions: Map<string, CalendarExceptionJson[]>;
+  timetable: TimetableJson;
+  shapes: ShapesJson;
+}
+
+/** Merge multiple SourceData into a single unified dataset. */
+export function mergeSources(sources: SourceData[]): MergedData {
+  // Merge stops
+  const stops: Stop[] = sources
+    .flatMap((s) => s.stops)
+    .map((s) => ({
+      stop_id: s.i,
+      stop_name: s.n,
+      stop_names: s.m,
+      stop_lat: s.a,
+      stop_lon: s.o,
+      location_type: s.l,
+    }));
+
+  // Merge routes
+  const routeMap = new Map<string, Route>();
+  for (const source of sources) {
+    for (const r of source.routes) {
+      routeMap.set(r.i, {
+        route_id: r.i,
+        route_short_name: r.s,
+        route_long_name: r.l,
+        route_names: r.m ?? {},
+        route_type: r.t as RouteType,
+        route_color: r.c,
+        route_text_color: r.tc,
+        agency_id: r.ai ?? '',
+      });
+    }
+  }
+
+  // Merge calendar
+  const calendarServices = sources.flatMap((s) => s.calendar.services);
+  const calendarExceptions = new Map<string, CalendarExceptionJson[]>();
+  for (const source of sources) {
+    for (const ex of source.calendar.exceptions) {
+      let list = calendarExceptions.get(ex.i);
+      if (!list) {
+        list = [];
+        calendarExceptions.set(ex.i, list);
+      }
+      list.push(ex);
+    }
+  }
+
+  // Merge timetable
+  const timetable: TimetableJson = {};
+  for (const source of sources) {
+    for (const [stopId, groups] of Object.entries(source.timetable)) {
+      if (timetable[stopId]) {
+        timetable[stopId].push(...groups);
+      } else {
+        timetable[stopId] = [...groups];
+      }
+    }
+  }
+
+  // Merge shapes
+  const shapes: ShapesJson = {};
+  for (const source of sources) {
+    Object.assign(shapes, source.shapes);
+  }
+
+  // Build stop -> routeTypes map (all route_type values, deduplicated and sorted)
+  const stopRouteTypeMap = new Map<string, RouteType[]>();
+  for (const [stopId, groups] of Object.entries(timetable)) {
+    const types = new Set<RouteType>();
+    for (const group of groups) {
+      const route = routeMap.get(group.r);
+      if (route) {
+        types.add(route.route_type);
+      }
+    }
+    if (types.size > 0) {
+      stopRouteTypeMap.set(
+        stopId,
+        [...types].sort((a, b) => a - b),
+      );
+    }
+  }
+
+  return {
+    stops,
+    routeMap,
+    stopRouteTypeMap,
+    calendarServices,
+    calendarExceptions,
+    timetable,
+    shapes,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// AthenaiRepository
+// ---------------------------------------------------------------------------
+
+/**
+ * Production implementation of {@link TransitRepository}.
  *
  * Loads pre-built JSON files (stops, routes, calendar, timetable, shapes)
  * and provides in-memory querying for transit information.
- * Multiple GTFS sources can be merged into a single instance via
+ * Multiple data sources can be merged into a single instance via
  * {@link AthenaiRepository.create}.
  */
 export class AthenaiRepository implements TransitRepository {
@@ -93,13 +237,13 @@ export class AthenaiRepository implements TransitRepository {
   }
 
   /**
-   * Create a AthenaiRepository by loading and merging multiple GTFS sources.
+   * Create an AthenaiRepository by loading and merging multiple data sources.
    *
    * Each prefix corresponds to a set of JSON files under `/data/{prefix}/`.
    * Sources that fail to load are skipped with a warning.
    *
-   * @param prefixes - Array of GTFS source prefixes (e.g. `["tobus", "toaran"]`).
-   * @param dataSource - Data source to load GTFS files from.
+   * @param prefixes - Array of source prefixes (e.g. `["tobus", "toaran"]`).
+   * @param dataSource - Data source to load files from.
    *                     Defaults to {@link FetchDataSource}.
    * @returns A fully initialized repository with merged data from all sources.
    */
@@ -107,115 +251,40 @@ export class AthenaiRepository implements TransitRepository {
     prefixes: string[],
     dataSource: TransitDataSource = new FetchDataSource(),
   ): Promise<AthenaiRepository> {
+    const t0 = performance.now();
     logger.debug(`Loading sources: [${prefixes.join(', ')}]`);
 
-    const perSource = await Promise.all(
-      prefixes.map(async (prefix) => {
-        try {
-          return await dataSource.load(prefix);
-        } catch (e) {
-          logger.warn(`Skipping source "${prefix}": ${String(e)}`);
-          return null;
-        }
-      }),
+    const loaded = await fetchSources(prefixes, dataSource);
+    const tFetch = performance.now();
+
+    for (const source of loaded) {
+      logger.info(
+        `[${source.prefix}] stops=${source.stops.length} routes=${source.routes.length} shapes=${Object.keys(source.shapes).length}`,
+      );
+    }
+
+    const merged = mergeSources(loaded);
+
+    const tEnd = performance.now();
+    const fetchMs = Math.round(tFetch - t0);
+    const mergeMs = Math.round(tEnd - tFetch);
+    logger.info(
+      `Initialized in ${Math.round(tEnd - t0)}ms (fetch=${fetchMs}ms, merge=${mergeMs}ms): stops=${merged.stops.length} routes=${merged.routeMap.size} shapes=${Object.keys(merged.shapes).length} timetable_stops=${Object.keys(merged.timetable).length}`,
     );
 
-    const loaded = perSource.filter((s): s is NonNullable<typeof s> => s !== null);
-    logger.debug(`${loaded.length}/${prefixes.length} sources loaded`);
-
-    // Merge stops
-    const stopsRaw = loaded.flatMap((s) => s.stops);
-    const stops: Stop[] = stopsRaw.map((s) => ({
-      stop_id: s.i,
-      stop_name: s.n,
-      stop_names: s.m,
-      stop_lat: s.a,
-      stop_lon: s.o,
-      location_type: s.l,
-    }));
-
-    // Merge routes
-    const routeMap = new Map<string, Route>();
-    for (const source of loaded) {
-      for (const r of source.routes) {
-        routeMap.set(r.i, {
-          route_id: r.i,
-          route_short_name: r.s,
-          route_long_name: r.l,
-          route_names: r.m ?? {},
-          route_type: r.t as RouteType,
-          route_color: r.c,
-          route_text_color: r.tc,
-          agency_id: r.ai ?? '',
-        });
-      }
-    }
-
-    // Merge calendar
-    const calendarServices = loaded.flatMap((s) => s.calendar.services);
-    const exceptionMap = new Map<string, CalendarExceptionJson[]>();
-    for (const source of loaded) {
-      for (const ex of source.calendar.exceptions) {
-        let list = exceptionMap.get(ex.i);
-        if (!list) {
-          list = [];
-          exceptionMap.set(ex.i, list);
-        }
-        list.push(ex);
-      }
-    }
-
-    // Merge timetable
-    const timetable: TimetableJson = {};
-    for (const source of loaded) {
-      for (const [stopId, groups] of Object.entries(source.timetable)) {
-        if (timetable[stopId]) {
-          timetable[stopId].push(...groups);
-        } else {
-          timetable[stopId] = [...groups];
-        }
-      }
-    }
-
-    // Merge shapes
-    const shapesRaw: ShapesJson = {};
-    for (const source of loaded) {
-      Object.assign(shapesRaw, source.shapes);
-    }
-
-    // Build stop -> routeTypes map (all route_type values, deduplicated and sorted)
-    const stopRouteTypeMap = new Map<string, RouteType[]>();
-    for (const [stopId, groups] of Object.entries(timetable)) {
-      const types = new Set<RouteType>();
-      for (const group of groups) {
-        const route = routeMap.get(group.r);
-        if (route) {
-          types.add(route.route_type);
-        }
-      }
-      if (types.size > 0) {
-        stopRouteTypeMap.set(
-          stopId,
-          [...types].sort((a, b) => a - b),
-        );
-      }
-    }
-
     return new AthenaiRepository(
-      stops,
-      routeMap,
-      stopRouteTypeMap,
-      calendarServices,
-      exceptionMap,
-      timetable,
-      shapesRaw,
+      merged.stops,
+      merged.routeMap,
+      merged.stopRouteTypeMap,
+      merged.calendarServices,
+      merged.calendarExceptions,
+      merged.timetable,
+      merged.shapes,
     );
   }
 
   /** {@inheritDoc TransitRepository.getStopsInBounds} */
   getStopsInBounds(bounds: Bounds, limit: number): Promise<CollectionResult<StopWithMeta>> {
-    logger.debug('bounds query:', bounds);
-
     const effectiveLimit = Math.min(limit, MAX_STOPS_RESULT);
     const centerLat = (bounds.north + bounds.south) / 2;
     const centerLng = (bounds.east + bounds.west) / 2;
@@ -240,6 +309,7 @@ export class AthenaiRepository implements TransitRepository {
     const truncated = matching.length > effectiveLimit;
     const data = matching.slice(0, effectiveLimit).map((m) => ({ stop: m.stop }));
 
+    logger.debug(`getStopsInBounds: ${data.length} stops (${truncated ? 'truncated' : 'all'})`);
     return Promise.resolve({ success: true, data, truncated });
   }
 
@@ -271,6 +341,9 @@ export class AthenaiRepository implements TransitRepository {
       .slice(0, effectiveLimit)
       .map(({ stop, distKm }) => ({ stop, distance: distKm * 1000 }));
 
+    logger.debug(
+      `getStopsNearby: ${data.length} stops within ${radiusM}m (${truncated ? 'truncated' : 'all'})`,
+    );
     return Promise.resolve({ success: true, data, truncated });
   }
 
@@ -359,6 +432,9 @@ export class AthenaiRepository implements TransitRepository {
 
     result.sort((a, b) => a.departures[0].getTime() - b.departures[0].getTime());
 
+    logger.debug(
+      `getUpcomingDepartures: ${stopId} → ${result.length} groups (${anyTruncated ? 'truncated' : 'all'})`,
+    );
     return Promise.resolve({ success: true, data: result, truncated: anyTruncated });
   }
 
@@ -394,6 +470,7 @@ export class AthenaiRepository implements TransitRepository {
     }
 
     allMinutes.sort((a, b) => a - b);
+    logger.debug(`getFullDayDepartures: ${stopId}/${routeId} → ${allMinutes.length} departures`);
     return Promise.resolve({ success: true, data: allMinutes, truncated: false });
   }
 
@@ -428,6 +505,7 @@ export class AthenaiRepository implements TransitRepository {
     }
 
     departures.sort((a, b) => a.minutes - b.minutes);
+    logger.debug(`getFullDayDeparturesForStop: ${stopId} → ${departures.length} departures`);
     return Promise.resolve({ success: true, data: departures, truncated: false });
   }
 
@@ -435,8 +513,10 @@ export class AthenaiRepository implements TransitRepository {
   getRouteTypesForStop(stopId: string): Promise<Result<RouteType[]>> {
     const routeTypes = this.stopRouteTypeMap.get(stopId);
     if (routeTypes === undefined) {
+      logger.debug(`getRouteTypesForStop: ${stopId} → not found`);
       return Promise.resolve({ success: false, error: `No route types for stop: ${stopId}` });
     }
+    logger.debug(`getRouteTypesForStop: ${stopId} → [${routeTypes.join(', ')}]`);
     return Promise.resolve({ success: true, data: routeTypes });
   }
 
@@ -444,6 +524,7 @@ export class AthenaiRepository implements TransitRepository {
   getAllStops(): Promise<CollectionResult<Stop>> {
     const truncated = this.stops.length > MAX_STOPS_RESULT;
     const data = truncated ? this.stops.slice(0, MAX_STOPS_RESULT) : this.stops;
+    logger.debug(`getAllStops: ${data.length} stops (${truncated ? 'truncated' : 'all'})`);
     return Promise.resolve({ success: true, data, truncated });
   }
 
@@ -458,6 +539,7 @@ export class AthenaiRepository implements TransitRepository {
         shapes.push({ routeId, routeType, color, route: route ?? null, points });
       }
     }
+    logger.debug(`getRouteShapes: ${shapes.length} shapes`);
     return Promise.resolve({ success: true, data: shapes, truncated: false });
   }
 
@@ -496,14 +578,4 @@ export class AthenaiRepository implements TransitRepository {
     this.activeServiceCache = { key, ids: active };
     return active;
   }
-}
-
-/**
- * Convert minutes-from-midnight to a Date on the same day as `baseDate`.
- * Negative minutes or minutes >= 1440 adjust the day accordingly.
- */
-function minutesToDate(baseDate: Date, minutes: number): Date {
-  const result = new Date(baseDate);
-  result.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
-  return result;
 }

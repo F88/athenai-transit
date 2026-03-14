@@ -41,57 +41,53 @@ export class FetchDataSource implements TransitDataSource {
       throw new Error(`Invalid prefix: "${prefix}"`);
     }
 
-    logger.debug(`Fetching ${prefix}/ JSON files`);
+    const t0 = performance.now();
 
-    const fetchAndParse = (file: string) =>
-      fetch(`/data/${prefix}/${file}.json`).then((r) => {
-        if (!r.ok) {
-          throw new Error(`HTTP ${r.status} for ${prefix}/${file}.json`);
-        }
-        return r.json() as Promise<unknown>;
-      });
-
-    const fetchOptional = (file: string) => {
+    const fetchWithLog = async (file: string, optional: boolean): Promise<unknown> => {
       const path = `${prefix}/${file}.json`;
-      return fetch(`/data/${path}`).then((r) => {
-        if (r.status === 404) {
-          logger.error(`Optional file not found: ${path}`);
+      const ft0 = performance.now();
+      const r = await fetch(`/data/${path}`);
+
+      if (optional && r.status === 404) {
+        return null;
+      }
+      if (!r.ok) {
+        if (optional) {
           return null;
         }
-        if (!r.ok) {
-          throw new Error(`HTTP ${r.status} for ${path}`);
-        }
+        throw new Error(`HTTP ${r.status} for ${path}`);
+      }
+      if (optional) {
         // SPA fallback rewrites (e.g. Vercel) return 200 + HTML for missing
         // files instead of 404. Detect this by checking content-type.
         const ct = r.headers.get('content-type') ?? '';
         if (!ct.includes('application/json')) {
-          logger.error(`Optional file not available: ${path} (content-type: ${ct})`);
           return null;
         }
-        return r.json() as Promise<unknown>;
-      });
+      }
+
+      const text = await r.text();
+      const elapsed = Math.round(performance.now() - ft0);
+      const sizeKB = (text.length / 1024).toFixed(1);
+      logger.debug(`${path}: ${sizeKB}KB in ${elapsed}ms`);
+      return JSON.parse(text) as unknown;
     };
 
     const [stops, routes, calendar, timetable, shapes, agencies, feedInfo, translations] =
       await Promise.all([
-        fetchAndParse('stops'),
-        fetchAndParse('routes'),
-        fetchAndParse('calendar'),
-        fetchAndParse('timetable'),
-        fetchAndParse('shapes'),
-        fetchOptional('agency'),
-        fetchOptional('feed-info'),
-        fetchOptional('translations'),
+        fetchWithLog('stops', false),
+        fetchWithLog('routes', false),
+        fetchWithLog('calendar', false),
+        fetchWithLog('timetable', false),
+        fetchWithLog('shapes', false),
+        fetchWithLog('agency', true),
+        fetchWithLog('feed-info', true),
+        fetchWithLog('translations', true),
       ]);
 
-    const optionalLoaded = [
-      agencies ? 'agency' : null,
-      feedInfo !== null ? 'feed-info' : null,
-      translations ? 'translations' : null,
-    ].filter(Boolean);
+    const elapsed = Math.round(performance.now() - t0);
     logger.info(
-      `Loaded ${prefix}/: ${(stops as StopJson[]).length} stops, ${(routes as RouteJson[]).length} routes` +
-        (optionalLoaded.length > 0 ? ` (+${optionalLoaded.join(', ')})` : ''),
+      `Loaded ${prefix}/ in ${elapsed}ms: ${(stops as StopJson[]).length} stops, ${(routes as RouteJson[]).length} routes`,
     );
 
     return {

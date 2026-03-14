@@ -92,7 +92,7 @@ export function NearbyStop({
             .slice(0, 5)
             .map((item, i) => (
               <FlatDepartureItem
-                key={`${item.route.route_id}__${item.headsign}__${item.departure.getTime()}`}
+                key={`${item.route.route_id}__${item.headsign}__${item.departure.getTime()}__${i}`}
                 item={item}
                 now={now}
                 isFirst={i === 0}
