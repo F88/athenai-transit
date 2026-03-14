@@ -6,10 +6,12 @@
  * these into application-level domain types (see types/app/transit.ts).
  *
  * Field names are abbreviated to reduce file size:
- *   i = id, n = name, a = lat, o = lon, l = location_type / long_name,
+ *   i = id, n = name, sn = short_name, a = lat, o = lon,
+ *   l = location_type / long_name / agency_lang,
  *   s = short_name / start_date, e = end_date, t = route_type / exception_type,
  *   r = route_id, h = headsign, d = days / departures / date,
- *   c = route_color, tc = route_text_color, ai = agency_id
+ *   c = route_color, tc = route_text_color, ai = agency_id,
+ *   tz = timezone, fu = fare_url, cs = colors (brand)
  */
 
 /** stops.json */

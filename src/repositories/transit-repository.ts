@@ -259,8 +259,12 @@ export interface TransitRepository {
   /**
    * Returns an agency by its ID.
    *
+   * ### Error conditions
+   * - Unknown agency_id:
+   *   `{ success: false, error: "Agency not found: {agencyId}" }`
+   *
    * @param agencyId - The agency_id to look up.
-   * @returns The Agency if found, or null if not found.
+   * @returns The Agency if found, or a failure Result if not found.
    */
   getAgency(agencyId: string): Promise<Result<Agency>>;
 }

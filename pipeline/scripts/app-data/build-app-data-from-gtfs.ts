@@ -114,17 +114,10 @@ export function extractStops(
 ): { i: string; n: string; a: number; o: number; l: number; ai: string }[] {
   const stops = db
     .prepare(
-      `SELECT s.stop_id, s.stop_name, s.stop_lat, s.stop_lon, s.location_type,
-              COALESCE(
-                (SELECT DISTINCT t.route_id FROM stop_times stm
-                 JOIN trips t ON t.trip_id = stm.trip_id
-                 WHERE stm.stop_id = s.stop_id
-                 LIMIT 1),
-                NULL
-              ) as sample_route_id
-       FROM stops s
-       WHERE s.location_type = 0
-       ORDER BY s.stop_id`,
+      `SELECT stop_id, stop_name, stop_lat, stop_lon, location_type
+       FROM stops
+       WHERE location_type = 0
+       ORDER BY stop_id`,
     )
     .all() as Array<{
     stop_id: string;
@@ -132,15 +125,15 @@ export function extractStops(
     stop_lat: number;
     stop_lon: number;
     location_type: number;
-    sample_route_id: string | null;
   }>;
 
-  // Build stop_id -> agency_id mapping via routes table
+  // Build stop_id -> agency_id mapping via routes table.
   // A stop's agency is determined by the routes that serve it.
-  // For simplicity, use the first route's agency_id.
+  // Uses MIN() for deterministic results when multiple agencies serve a stop.
+  // (Current sources are all single-agency, but this handles future multi-agency sources.)
   const stopAgencyRows = db
     .prepare(
-      `SELECT DISTINCT stm.stop_id, r.agency_id
+      `SELECT stm.stop_id, MIN(r.agency_id) as agency_id
        FROM stop_times stm
        JOIN trips t ON t.trip_id = stm.trip_id
        JOIN routes r ON r.route_id = t.route_id

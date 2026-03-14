@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { StopWithContext, StopWithMeta } from '../types/app/transit';
+import type { Agency, StopWithContext, StopWithMeta } from '../types/app/transit';
+import type { Result } from '../types/app/repository';
 import type { TransitRepository } from '../repositories/transit-repository';
 import { createLogger } from '../utils/logger';
 
@@ -65,10 +66,8 @@ export function useNearbyDepartures(
                 [...agencyIds].map((id) => repo.getAgency(id)),
               );
               const agencies = agencyResults
-                .filter((r) => r.success)
-                .map(
-                  (r) => (r as { success: true; data: import('../types/app/transit').Agency }).data,
-                );
+                .filter((r): r is Result<Agency> & { success: true } => r.success)
+                .map((r) => r.data);
               return { stop, routeTypes, groups, agencies };
             }),
           );
