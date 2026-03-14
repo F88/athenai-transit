@@ -11,7 +11,7 @@
  * no knowledge of info levels or display formatting.
  *
  * @param headsign - Raw headsign string from timetable data.
- * @param _lang - BCP 47-ish language key (future use).
+ * @param lang - BCP 47-ish language key (future use).
  * @returns The translated headsign string.
  */
 export function translateHeadsign(headsign: string, lang?: string): string {

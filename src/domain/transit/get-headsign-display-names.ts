@@ -22,8 +22,6 @@ export interface HeadsignDisplayNames {
 /**
  * Compute display names for a headsign based on info level and language.
  *
- * Compute display names for a headsign based on info level and language.
- *
  * GTFS `trip_headsign` is a single string field with no short/long variants.
  * Some GTFS sources (e.g. Keio Bus) omit it entirely.
  *
@@ -42,7 +40,8 @@ export interface HeadsignDisplayNames {
  * ```
  *
  * @param headsign - Raw headsign string from timetable data.
- * @param route - Route used for fallback name resolution.
+ * @param route - Route context. Currently unused; reserved for future
+ *                headsign translation lookup when translations are available.
  * @param infoLevel - Current info verbosity level.
  * @param lang - Optional language key for i18n translation (future).
  * @returns Primary name and sub-names.

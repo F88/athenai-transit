@@ -48,6 +48,12 @@ import type {
   RouteJson,
   TranslationsJson,
 } from '../../../src/types/data/transit-json';
+import type {
+  OdptRailway,
+  OdptStation,
+  OdptStationOrder,
+  OdptStationTimetable,
+} from '../../types/odpt-train';
 import { loadAllOdptJsonSources } from '../../lib/load-odpt-json-sources';
 import {
   determineBatchExitCode,
@@ -160,54 +166,7 @@ async function loadSource(name: string): Promise<OdptTrainSource> {
   return source;
 }
 
-// ---------------------------------------------------------------------------
-// ODPT JSON types
-// ---------------------------------------------------------------------------
-
-interface OdptStationTitle {
-  ja: string;
-  en: string;
-  ko?: string;
-  'zh-Hans'?: string;
-}
-
-interface OdptStation {
-  'owl:sameAs': string;
-  'dc:date': string;
-  'geo:lat': number;
-  'geo:long': number;
-  'odpt:stationCode': string;
-  'odpt:stationTitle': OdptStationTitle;
-}
-
-interface OdptStationOrder {
-  'odpt:index': number;
-  'odpt:station': string;
-  'odpt:stationTitle': OdptStationTitle;
-}
-
-interface OdptRailway {
-  'dc:date': string;
-  'dc:title': string;
-  'odpt:color': string;
-  'odpt:lineCode': string;
-  'odpt:railwayTitle': OdptStationTitle;
-  'odpt:stationOrder': OdptStationOrder[];
-}
-
-interface OdptTimetableObject {
-  'odpt:departureTime': string;
-  'odpt:destinationStation': string[];
-}
-
-interface OdptStationTimetable {
-  'owl:sameAs': string;
-  'dct:issued': string;
-  'odpt:station': string;
-  'odpt:calendar': string;
-  'odpt:railDirection': string;
-  'odpt:stationTimetableObject': OdptTimetableObject[];
-}
+// ODPT JSON types — see pipeline/types/odpt-train.ts
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -224,7 +183,7 @@ function writeJson(filePath: string, data: unknown): void {
  * Extract short station name from ODPT station ID.
  * e.g. "odpt.Station:Yurikamome.Yurikamome.Shimbashi" -> "Shimbashi"
  */
-function extractStationShortId(odptId: string): string {
+export function extractStationShortId(odptId: string): string {
   const parts = odptId.split('.');
   return parts[parts.length - 1];
 }
@@ -234,7 +193,7 @@ function extractStationShortId(odptId: string): string {
  * "odpt.Calendar:Weekday" -> "weekday"
  * "odpt.Calendar:SaturdayHoliday" -> "saturday-holiday"
  */
-function calendarToServiceId(calendar: string): string {
+export function calendarToServiceId(calendar: string): string {
   const calendarName = calendar.split(':')[1];
   if (calendarName === 'SaturdayHoliday') {
     return 'saturday-holiday';
@@ -245,7 +204,7 @@ function calendarToServiceId(calendar: string): string {
 /**
  * Convert "HH:MM" departure time to minutes from midnight.
  */
-function timeToMinutes(time: string): number {
+export function timeToMinutes(time: string): number {
   const [h, m] = time.split(':');
   return parseInt(h, 10) * 60 + parseInt(m, 10);
 }
@@ -259,7 +218,10 @@ function timeToMinutes(time: string): number {
  *
  * The convention maps Outbound = ascending, Inbound = descending.
  */
-function getHeadsignFromDirection(direction: string, stationOrder: OdptStationOrder[]): string {
+export function getHeadsignFromDirection(
+  direction: string,
+  stationOrder: OdptStationOrder[],
+): string {
   if (direction === 'odpt.RailDirection:Outbound') {
     return stationOrder[stationOrder.length - 1]['odpt:stationTitle'].ja;
   }
@@ -271,20 +233,29 @@ function getHeadsignFromDirection(direction: string, stationOrder: OdptStationOr
  * Compute start/end dates from an issued date string.
  * end = issued + 1 year.
  */
-function computeDateRange(issuedDate: string): { startDate: string; endDate: string } {
+export function computeDateRange(issuedDate: string): { startDate: string; endDate: string } {
   const startDate = issuedDate.replace(/-/g, '');
-  const issued = new Date(issuedDate);
-  const endYear = issued.getFullYear() + 1;
-  const endMonth = String(issued.getMonth() + 1).padStart(2, '0');
-  const endDay = String(issued.getDate()).padStart(2, '0');
-  return { startDate, endDate: `${endYear}${endMonth}${endDay}` };
+  const [y, m, d] = issuedDate.split('-').map(Number);
+  // Add 1 year. If the resulting date doesn't exist (e.g. Feb 29 in
+  // a non-leap year), Date rolls forward to Mar 1. Detect this by
+  // checking if the month changed, and clamp to the last day of the
+  // intended month.
+  const end = new Date(y + 1, m - 1, d);
+  if (end.getMonth() !== m - 1) {
+    // Rolled over — set to last day of the intended month
+    end.setDate(0); // day 0 = last day of previous month
+  }
+  const endY = end.getFullYear();
+  const endM = String(end.getMonth() + 1).padStart(2, '0');
+  const endD = String(end.getDate()).padStart(2, '0');
+  return { startDate, endDate: `${endY}${endM}${endD}` };
 }
 
 // ---------------------------------------------------------------------------
 // Extraction functions
 // ---------------------------------------------------------------------------
 
-function buildStops(
+export function buildStops(
   prefix: string,
   stations: OdptStation[],
   stationOrder: OdptStationOrder[],
@@ -323,7 +294,7 @@ function buildStops(
   });
 }
 
-function buildRoutes(prefix: string, railway: OdptRailway, provider: Provider): RouteJson[] {
+export function buildRoutes(prefix: string, railway: OdptRailway, provider: Provider): RouteJson[] {
   const title = railway['odpt:railwayTitle'];
   const color = railway['odpt:color'].replace('#', '');
   const routeId = `${prefix}:${railway['odpt:lineCode']}`;
@@ -342,7 +313,7 @@ function buildRoutes(prefix: string, railway: OdptRailway, provider: Provider): 
   ];
 }
 
-function buildCalendar(
+export function buildCalendar(
   prefix: string,
   timetables: OdptStationTimetable[],
   issuedDate: string,
@@ -376,7 +347,7 @@ function buildCalendar(
   return { services, exceptions: [] };
 }
 
-function buildTimetable(
+export function buildTimetable(
   prefix: string,
   timetables: OdptStationTimetable[],
   railways: OdptRailway[],
@@ -453,7 +424,7 @@ function buildTimetable(
   return result;
 }
 
-function buildAgency(prefix: string, provider: Provider): AgencyJson[] {
+export function buildAgency(prefix: string, provider: Provider): AgencyJson[] {
   return [
     {
       i: `${prefix}:${provider.nameEn}`,
@@ -465,7 +436,7 @@ function buildAgency(prefix: string, provider: Provider): AgencyJson[] {
   ];
 }
 
-function buildFeedInfo(issuedDate: string, provider: Provider): FeedInfoJson {
+export function buildFeedInfo(issuedDate: string, provider: Provider): FeedInfoJson {
   const { startDate, endDate } = computeDateRange(issuedDate);
   return {
     pn: provider.nameJa,
@@ -477,7 +448,7 @@ function buildFeedInfo(issuedDate: string, provider: Provider): FeedInfoJson {
   };
 }
 
-function buildTranslations(
+export function buildTranslations(
   timetables: OdptStationTimetable[],
   railways: OdptRailway[],
 ): TranslationsJson {
@@ -555,10 +526,9 @@ function buildSourceJson(source: OdptTrainSource): void {
   if (railways.length === 0) {
     throw new Error('No railway data found.');
   }
-
-  // Use the first railway's stationOrder for stop sorting
-  const railway = railways[0];
-  const stationOrder = railway['odpt:stationOrder'];
+  if (timetables.length === 0) {
+    throw new Error('No station timetable data found.');
+  }
 
   // 2. Extract issued date from timetable for calendar validity
   const issuedDate = timetables[0]['dct:issued'];
@@ -566,10 +536,13 @@ function buildSourceJson(source: OdptTrainSource): void {
 
   // 3. Build all data
   console.log('Building app data...');
-  const stops = buildStops(prefix, stations, stationOrder);
+
+  // Merge stationOrder from all railways for stop sorting
+  const allStationOrders = railways.flatMap((rw) => rw['odpt:stationOrder']);
+  const stops = buildStops(prefix, stations, allStationOrders);
   console.log(`  ${stops.length} stops`);
 
-  const routes = buildRoutes(prefix, railway, provider);
+  const routes = railways.flatMap((rw) => buildRoutes(prefix, rw, provider));
   console.log(`  ${routes.length} routes`);
 
   const calendar = buildCalendar(prefix, timetables, issuedDate);

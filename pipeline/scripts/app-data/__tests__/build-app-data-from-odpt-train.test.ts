@@ -1,0 +1,404 @@
+/**
+ * Tests for build-app-data-from-odpt-train.ts pure functions.
+ *
+ * Uses inline fixture objects to verify each exported function produces
+ * correct output without requiring file system access or network calls.
+ *
+ * @vitest-environment node
+ */
+
+import { describe, expect, it } from 'vitest';
+
+import type {
+  OdptRailway,
+  OdptStation,
+  OdptStationOrder,
+  OdptStationTimetable,
+} from '../../../types/odpt-train';
+import type { Provider } from '../../../types/resource-common';
+import {
+  buildRoutes,
+  buildStops,
+  buildTimetable,
+  buildTranslations,
+  calendarToServiceId,
+  computeDateRange,
+  extractStationShortId,
+  getHeadsignFromDirection,
+  timeToMinutes,
+} from '../build-app-data-from-odpt-train';
+
+// ---------------------------------------------------------------------------
+// Fixture helpers
+// ---------------------------------------------------------------------------
+
+/** Create a minimal OdptStation with required fields only. */
+function makeStation(
+  sameAs: string,
+  nameJa: string,
+  nameEn: string,
+  lat: number,
+  lon: number,
+): OdptStation {
+  return {
+    'owl:sameAs': sameAs,
+    'dc:date': '2025-01-01',
+    'geo:lat': lat,
+    'geo:long': lon,
+    'odpt:stationCode': '',
+    'odpt:stationTitle': { ja: nameJa, en: nameEn },
+  };
+}
+
+/** Create a minimal OdptStationOrder entry. */
+function makeStationOrder(
+  index: number,
+  station: string,
+  nameJa: string,
+  nameEn: string,
+): OdptStationOrder {
+  return {
+    'odpt:index': index,
+    'odpt:station': station,
+    'odpt:stationTitle': { ja: nameJa, en: nameEn },
+  };
+}
+
+/** Create a minimal OdptRailway. */
+function makeRailway(
+  overrides: Partial<OdptRailway> & Pick<OdptRailway, 'odpt:lineCode' | 'odpt:stationOrder'>,
+): OdptRailway {
+  return {
+    'dc:date': '2025-01-01',
+    'dc:title': 'Test Railway',
+    'odpt:color': '#00B2E5',
+    'odpt:railwayTitle': { ja: 'テスト線', en: 'Test Line' },
+    ...overrides,
+  };
+}
+
+/** Create a minimal OdptStationTimetable entry. */
+function makeTimetable(
+  station: string,
+  calendar: string,
+  direction: string,
+  departures: string[],
+): OdptStationTimetable {
+  return {
+    'owl:sameAs': `odpt.StationTimetable:Test.${extractStationShortId(station)}.${calendar.split(':')[1]}`,
+    'dct:issued': '2025-04-01',
+    'odpt:station': station,
+    'odpt:calendar': calendar,
+    'odpt:railDirection': direction,
+    'odpt:stationTimetableObject': departures.map((t) => ({
+      'odpt:departureTime': t,
+      'odpt:destinationStation': [],
+    })),
+  };
+}
+
+/** Default provider for tests. */
+const TEST_PROVIDER: Provider = {
+  nameJa: 'テスト交通',
+  nameEn: 'Test Transit',
+  url: 'https://example.com',
+};
+
+// ---------------------------------------------------------------------------
+// extractStationShortId
+// ---------------------------------------------------------------------------
+
+describe('extractStationShortId', () => {
+  it('extracts the last segment from a Yurikamome station ID', () => {
+    expect(extractStationShortId('odpt.Station:Yurikamome.Shimbashi')).toBe('Shimbashi');
+  });
+
+  it('extracts the last segment from a Tokyo Metro station ID', () => {
+    expect(extractStationShortId('odpt.Station:TokyoMetro.Ginza')).toBe('Ginza');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// calendarToServiceId
+// ---------------------------------------------------------------------------
+
+describe('calendarToServiceId', () => {
+  it('converts Weekday to lowercase', () => {
+    expect(calendarToServiceId('odpt.Calendar:Weekday')).toBe('weekday');
+  });
+
+  it('converts SaturdayHoliday to kebab-case', () => {
+    expect(calendarToServiceId('odpt.Calendar:SaturdayHoliday')).toBe('saturday-holiday');
+  });
+
+  it('converts Saturday to lowercase', () => {
+    expect(calendarToServiceId('odpt.Calendar:Saturday')).toBe('saturday');
+  });
+
+  it('converts Holiday to lowercase', () => {
+    expect(calendarToServiceId('odpt.Calendar:Holiday')).toBe('holiday');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// timeToMinutes
+// ---------------------------------------------------------------------------
+
+describe('timeToMinutes', () => {
+  it('converts 06:30 to 390 minutes', () => {
+    expect(timeToMinutes('06:30')).toBe(390);
+  });
+
+  it('converts 00:00 to 0 minutes', () => {
+    expect(timeToMinutes('00:00')).toBe(0);
+  });
+
+  it('converts 23:59 to 1439 minutes', () => {
+    expect(timeToMinutes('23:59')).toBe(1439);
+  });
+
+  it('converts overnight time 25:30 to 1530 minutes', () => {
+    expect(timeToMinutes('25:30')).toBe(1530);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getHeadsignFromDirection
+// ---------------------------------------------------------------------------
+
+describe('getHeadsignFromDirection', () => {
+  const stationOrder: OdptStationOrder[] = [
+    makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
+    makeStationOrder(2, 'odpt.Station:Test.Odaiba', 'お台場海浜公園', 'Odaiba-kaihinkoen'),
+    makeStationOrder(3, 'odpt.Station:Test.Toyosu', '豊洲', 'Toyosu'),
+  ];
+
+  it('returns last station name for Outbound direction', () => {
+    expect(getHeadsignFromDirection('odpt.RailDirection:Outbound', stationOrder)).toBe('豊洲');
+  });
+
+  it('returns first station name for Inbound direction', () => {
+    expect(getHeadsignFromDirection('odpt.RailDirection:Inbound', stationOrder)).toBe('新橋');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// computeDateRange
+// ---------------------------------------------------------------------------
+
+describe('computeDateRange', () => {
+  it('computes a 1-year range from a normal date', () => {
+    const result = computeDateRange('2025-04-01');
+    expect(result).toEqual({ startDate: '20250401', endDate: '20260401' });
+  });
+
+  it('handles leap year: Feb 29 + 1 year clamps to Feb 28', () => {
+    const result = computeDateRange('2000-02-29');
+    expect(result).toEqual({ startDate: '20000229', endDate: '20010228' });
+  });
+
+  it('handles year-end date', () => {
+    const result = computeDateRange('2025-12-31');
+    expect(result).toEqual({ startDate: '20251231', endDate: '20261231' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildStops
+// ---------------------------------------------------------------------------
+
+describe('buildStops', () => {
+  it('sorts stations by stationOrder index', () => {
+    const stations: OdptStation[] = [
+      makeStation('odpt.Station:Test.Toyosu', '豊洲', 'Toyosu', 35.6461, 139.7914),
+      makeStation('odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi', 35.6658, 139.7584),
+    ];
+    const stationOrders: OdptStationOrder[] = [
+      makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
+      makeStationOrder(2, 'odpt.Station:Test.Toyosu', '豊洲', 'Toyosu'),
+    ];
+
+    const result = buildStops('test', stations, stationOrders);
+
+    expect(result).toHaveLength(2);
+    // Shimbashi (index 1) should come first despite being second in input
+    expect(result[0].i).toBe('test:Shimbashi');
+    expect(result[1].i).toBe('test:Toyosu');
+  });
+
+  it('produces correct output format with prefix', () => {
+    const stations: OdptStation[] = [
+      makeStation('odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi', 35.6658, 139.7584),
+    ];
+    const stationOrders: OdptStationOrder[] = [
+      makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
+    ];
+
+    const result = buildStops('yrkm', stations, stationOrders);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      i: 'yrkm:Shimbashi',
+      n: '新橋',
+      m: { ja: '新橋', en: 'Shimbashi' },
+      a: 35.6658,
+      o: 139.7584,
+      l: 0,
+    });
+  });
+
+  it('merges stationOrders from 2 railways and sorts all stations', () => {
+    const stations: OdptStation[] = [
+      makeStation('odpt.Station:LineB.StationC', '駅C', 'Station C', 35.68, 139.78),
+      makeStation('odpt.Station:LineA.StationA', '駅A', 'Station A', 35.66, 139.76),
+      makeStation('odpt.Station:LineA.StationB', '駅B', 'Station B', 35.67, 139.77),
+    ];
+    // Railway A: StationA (index 1), StationB (index 2)
+    // Railway B: StationC (index 1)
+    const mergedOrders: OdptStationOrder[] = [
+      makeStationOrder(1, 'odpt.Station:LineA.StationA', '駅A', 'Station A'),
+      makeStationOrder(2, 'odpt.Station:LineA.StationB', '駅B', 'Station B'),
+      makeStationOrder(1, 'odpt.Station:LineB.StationC', '駅C', 'Station C'),
+    ];
+
+    const result = buildStops('test', stations, mergedOrders);
+
+    expect(result).toHaveLength(3);
+    // index 1 stations come first, then index 2
+    // Within the same index, original array order is preserved (StationC before StationA)
+    expect(result[0].i).toBe('test:StationC');
+    expect(result[1].i).toBe('test:StationA');
+    expect(result[2].i).toBe('test:StationB');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildRoutes
+// ---------------------------------------------------------------------------
+
+describe('buildRoutes', () => {
+  it('builds a single route from a railway', () => {
+    const railway = makeRailway({
+      'odpt:lineCode': 'U',
+      'odpt:railwayTitle': { ja: 'ゆりかもめ', en: 'Yurikamome' },
+      'odpt:color': '#00B2E5',
+      'odpt:stationOrder': [],
+    });
+
+    const result = buildRoutes('yrkm', railway, TEST_PROVIDER);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      i: 'yrkm:U',
+      s: '',
+      l: 'ゆりかもめ',
+      t: 2,
+      c: '00B2E5',
+      tc: '',
+      m: { ja: 'ゆりかもめ', en: 'Yurikamome' },
+      ai: 'yrkm:Test Transit',
+    });
+  });
+
+  it('builds routes from two railways', () => {
+    const railwayA = makeRailway({
+      'odpt:lineCode': 'A',
+      'odpt:railwayTitle': { ja: 'A線', en: 'Line A' },
+      'odpt:stationOrder': [],
+    });
+    const railwayB = makeRailway({
+      'odpt:lineCode': 'B',
+      'odpt:railwayTitle': { ja: 'B線', en: 'Line B' },
+      'odpt:stationOrder': [],
+    });
+
+    const resultA = buildRoutes('test', railwayA, TEST_PROVIDER);
+    const resultB = buildRoutes('test', railwayB, TEST_PROVIDER);
+    const combined = [...resultA, ...resultB];
+
+    expect(combined).toHaveLength(2);
+    expect(combined[0].i).toBe('test:A');
+    expect(combined[1].i).toBe('test:B');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildTimetable
+// ---------------------------------------------------------------------------
+
+describe('buildTimetable', () => {
+  it('builds timetable with correct structure', () => {
+    const stationOrders: OdptStationOrder[] = [
+      makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
+      makeStationOrder(2, 'odpt.Station:Test.Odaiba', 'お台場海浜公園', 'Odaiba-kaihinkoen'),
+      makeStationOrder(3, 'odpt.Station:Test.Toyosu', '豊洲', 'Toyosu'),
+    ];
+    const railway = makeRailway({
+      'odpt:lineCode': 'U',
+      'odpt:stationOrder': stationOrders,
+    });
+
+    const timetables: OdptStationTimetable[] = [
+      makeTimetable(
+        'odpt.Station:Test.Shimbashi',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00', '06:15', '06:30'],
+      ),
+    ];
+
+    const result = buildTimetable('yrkm', timetables, [railway]);
+
+    // Should have one stop
+    expect(Object.keys(result)).toEqual(['yrkm:Shimbashi']);
+
+    const groups = result['yrkm:Shimbashi'];
+    expect(groups).toHaveLength(1);
+    expect(groups[0].r).toBe('yrkm:U');
+    expect(groups[0].h).toBe('豊洲'); // Outbound -> last station
+    expect(groups[0].d).toEqual({
+      'yrkm:weekday': [360, 375, 390],
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildTranslations
+// ---------------------------------------------------------------------------
+
+describe('buildTranslations', () => {
+  it('generates headsign translations with ja/en keys', () => {
+    const stationOrders: OdptStationOrder[] = [
+      makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
+      makeStationOrder(2, 'odpt.Station:Test.Toyosu', '豊洲', 'Toyosu'),
+    ];
+    const railway = makeRailway({
+      'odpt:lineCode': 'U',
+      'odpt:stationOrder': stationOrders,
+    });
+
+    const timetables: OdptStationTimetable[] = [
+      makeTimetable(
+        'odpt.Station:Test.Shimbashi',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00'],
+      ),
+      makeTimetable(
+        'odpt.Station:Test.Toyosu',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Inbound',
+        ['06:30'],
+      ),
+    ];
+
+    const result = buildTranslations(timetables, [railway]);
+
+    // Outbound headsign: 豊洲
+    expect(result.headsigns['豊洲']).toEqual({ ja: '豊洲', en: 'Toyosu' });
+    // Inbound headsign: 新橋
+    expect(result.headsigns['新橋']).toEqual({ ja: '新橋', en: 'Shimbashi' });
+    // stop_headsigns should be empty
+    expect(result.stop_headsigns).toEqual({});
+  });
+});
