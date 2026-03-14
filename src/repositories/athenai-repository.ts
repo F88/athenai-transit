@@ -95,6 +95,29 @@ async function fetchSources(
   return perSource.filter((s): s is NonNullable<typeof s> => s !== null);
 }
 
+/**
+ * Deep-merge a source translation map into a target.
+ * For each key, per-language entries are merged (not overwritten).
+ * Earlier sources' values are preserved; later sources fill in missing languages.
+ */
+function deepMergeTranslations(
+  target: Record<string, Record<string, string>>,
+  source: Record<string, Record<string, string>>,
+): void {
+  for (const [key, langs] of Object.entries(source)) {
+    if (target[key]) {
+      // Merge languages: existing values take precedence
+      for (const [lang, value] of Object.entries(langs)) {
+        if (!target[key][lang]) {
+          target[key][lang] = value;
+        }
+      }
+    } else {
+      target[key] = { ...langs };
+    }
+  }
+}
+
 /** Merged data ready to construct an AthenaiRepository. */
 export interface MergedData {
   stops: Stop[];
@@ -110,7 +133,11 @@ export interface MergedData {
 
 /** Merge multiple SourceData into a single unified dataset. */
 export function mergeSources(sources: SourceData[]): MergedData {
-  // Merge translations first (needed for resolving names)
+  // Merge translations first (needed for resolving names).
+  // Uses deep merge: when the same key (e.g. headsign text) appears in
+  // multiple sources, per-language entries are merged rather than overwritten.
+  // This preserves language variants from different sources (e.g. ko/zh-Hans
+  // from ODPT alongside ja-Hrkt from GTFS-JP).
   const translationsMap: TranslationsJson = {
     headsigns: {},
     stop_headsigns: {},
@@ -121,19 +148,19 @@ export function mergeSources(sources: SourceData[]): MergedData {
   };
   for (const source of sources) {
     if (source.translations) {
-      Object.assign(translationsMap.headsigns, source.translations.headsigns);
-      Object.assign(translationsMap.stop_headsigns, source.translations.stop_headsigns);
+      deepMergeTranslations(translationsMap.headsigns, source.translations.headsigns);
+      deepMergeTranslations(translationsMap.stop_headsigns, source.translations.stop_headsigns);
       if (source.translations.stop_names) {
-        Object.assign(translationsMap.stop_names, source.translations.stop_names);
+        deepMergeTranslations(translationsMap.stop_names, source.translations.stop_names);
       }
       if (source.translations.route_names) {
-        Object.assign(translationsMap.route_names, source.translations.route_names);
+        deepMergeTranslations(translationsMap.route_names, source.translations.route_names);
       }
       if (source.translations.agency_names) {
-        Object.assign(translationsMap.agency_names, source.translations.agency_names);
+        deepMergeTranslations(translationsMap.agency_names, source.translations.agency_names);
       }
       if (source.translations.agency_short_names) {
-        Object.assign(translationsMap.agency_short_names, source.translations.agency_short_names);
+        deepMergeTranslations(translationsMap.agency_short_names, source.translations.agency_short_names);
       }
     }
   }

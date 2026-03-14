@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { TransitDataSource } from '../../datasources/transit-data-source';
+import type { SourceData, TransitDataSource } from '../../datasources/transit-data-source';
 import { AthenaiRepository, mergeSources } from '../athenai-repository';
 import {
   TestDataSource,
@@ -50,6 +50,42 @@ describe('mergeSources', () => {
     const sub01 = merged.stops.find((s) => s.stop_id === 'sub_01');
     expect(sub01).toBeDefined();
     expect(sub01!.agency_id).toBe('test:agency');
+  });
+
+  it('deep-merges headsign translations across sources', () => {
+    const source1: SourceData = {
+      ...createFixture(),
+      prefix: 's1',
+      translations: {
+        headsigns: { '新橋': { ja: '新橋', 'ja-Hrkt': 'しんばし', en: 'Shimbashi' } },
+        stop_headsigns: {},
+        stop_names: {},
+        route_names: {},
+        agency_names: {},
+        agency_short_names: {},
+      },
+    };
+    const source2: SourceData = {
+      ...createFixture(),
+      prefix: 's2',
+      translations: {
+        headsigns: { '新橋': { ja: '新橋', en: 'Shimbashi', ko: '신바시', 'zh-Hans': '新桥' } },
+        stop_headsigns: {},
+        stop_names: {},
+        route_names: {},
+        agency_names: {},
+        agency_short_names: {},
+      },
+    };
+    const merged = mergeSources([source1, source2]);
+    // All languages from both sources should be present
+    expect(merged.translationsMap.headsigns['新橋']).toEqual({
+      ja: '新橋',
+      'ja-Hrkt': 'しんばし',
+      en: 'Shimbashi',
+      ko: '신바시',
+      'zh-Hans': '新桥',
+    });
   });
 
   it('merges translationsMap with agency_short_names', () => {
