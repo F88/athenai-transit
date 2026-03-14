@@ -12,7 +12,13 @@ import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { PillButton } from '@/components/button/pill-button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 /** Timetable for a specific route + headsign at a stop. */
 export interface RouteHeadsignTimetable {
@@ -125,6 +131,11 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
           <DialogTitle className="flex flex-col gap-1">
             <TimetableHeader data={data} infoLevel={infoLevel} />
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            {data.type === 'route-headsign'
+              ? `${data.stop.stop_name} ${data.route.route_short_name || data.route.route_long_name} ${data.headsign}方面の時刻表 ${data.departures.length}本`
+              : `${data.stop.stop_name}の全路線時刻表 ${data.departures.length}本`}
+          </DialogDescription>
 
           {info.isDetailedEnabled && <TimetableMetadata data={data} infoLevel={infoLevel} />}
 

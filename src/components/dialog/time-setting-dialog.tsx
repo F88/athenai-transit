@@ -1,6 +1,12 @@
 import { useCallback, useRef } from 'react';
 import { toDatetimeLocalValue } from '@/utils/datetime';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 
@@ -65,6 +71,7 @@ export function TimeSettingDialog({
       >
         <DialogHeader>
           <DialogTitle>日時を指定</DialogTitle>
+          <DialogDescription className="sr-only">時刻表の表示日時を変更します</DialogDescription>
         </DialogHeader>
         {isCustomTime && (
           <Alert className="border-amber-200 bg-amber-50 py-2 dark:border-amber-800 dark:bg-amber-950/50">
