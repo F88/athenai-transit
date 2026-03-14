@@ -41,6 +41,7 @@
     "pipeline:build:db": "npx tsx pipeline/scripts/build-gtfs-db.ts --targets pipeline/targets/build-db.ts",
     "pipeline:build:json": "npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts --targets pipeline/targets/build-json.ts",
     "pipeline:build:odpt-train": "npx tsx pipeline/scripts/app-data/build-app-data-from-odpt-train.ts --targets pipeline/targets/build-odpt-train.ts",
+    "pipeline:build:gtfs-shapes": "npx tsx pipeline/scripts/app-data/build-route-shapes-from-gtfs.ts --targets pipeline/targets/build-json.ts",
     "pipeline:build:train-shapes": "npx tsx pipeline/scripts/app-data/build-app-data-from-ksj-railway.ts",
     "pipeline:validate": "npx tsx pipeline/scripts/app-data/validate-app-data.ts",
     "pipeline:describe": "npx tsx pipeline/scripts/describe-resources.ts",
