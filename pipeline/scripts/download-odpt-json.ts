@@ -187,7 +187,7 @@ async function main(): Promise<void> {
   console.log(`=== ${arg.name} [START] ===\n`);
   console.log(`  Format: ${source.resource.dataFormat.type}`);
   console.log(`  Name: ${nameJa} (${nameEn})`);
-  console.log(`  Provider: ${provider.nameJa}`);
+  console.log(`  Provider: ${provider.name.ja.long}`);
   console.log(`  License: ${license.name}`);
   console.log(`  Output: ${outDir}/ (prefix: ${prefix})`);
   console.log('');

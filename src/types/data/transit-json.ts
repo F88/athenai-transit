@@ -6,20 +6,22 @@
  * these into application-level domain types (see types/app/transit.ts).
  *
  * Field names are abbreviated to reduce file size:
- *   i = id, n = name, m = names map, a = lat, o = lon, l = location_type / long_name,
+ *   i = id, n = name, sn = short_name, a = lat, o = lon,
+ *   l = location_type / long_name / agency_lang,
  *   s = short_name / start_date, e = end_date, t = route_type / exception_type,
  *   r = route_id, h = headsign, d = days / departures / date,
- *   c = route_color, tc = route_text_color
+ *   c = route_color, tc = route_text_color, ai = agency_id,
+ *   tz = timezone, fu = fare_url, cs = colors (brand)
  */
 
 /** stops.json */
 export interface StopJson {
   i: string; // stop_id
   n: string; // stop_name
-  m: Record<string, string>; // stop_names: language -> translation (all languages)
   a: number; // stop_lat
   o: number; // stop_lon
   l: number; // location_type
+  ai: string; // agency_id (prefixed)
 }
 
 /** routes.json */
@@ -30,17 +32,19 @@ export interface RouteJson {
   t: number; // route_type
   c: string; // route_color (hex without #, e.g. "F1B34E")
   tc: string; // route_text_color (hex without #)
-  m: Record<string, string>; // route_names: language -> translation
   ai: string; // agency_id (prefixed)
 }
 
 /** agency.json */
 export interface AgencyJson {
   i: string; // agency_id (prefixed)
-  n: string; // agency_name
-  m: Record<string, string>; // agency_names: language -> translation
+  n: string; // agency_name (long, default lang)
+  sn: string; // agency_short_name (default lang)
   u: string; // agency_url
   l: string; // agency_lang
+  tz: string; // agency_timezone (IANA, e.g. "Asia/Tokyo")
+  fu: string; // agency_fare_url
+  cs: { b: string; t: string }[]; // brand colors: b=background, t=text
 }
 
 /** feed-info.json */
@@ -59,6 +63,14 @@ export interface TranslationsJson {
   headsigns: Record<string, Record<string, string>>;
   /** stop_headsign -> { language -> translation } */
   stop_headsigns: Record<string, Record<string, string>>;
+  /** stop_id -> { language -> translation } */
+  stop_names: Record<string, Record<string, string>>;
+  /** route_id -> { language -> translation } */
+  route_names: Record<string, Record<string, string>>;
+  /** agency_id -> { language -> translation } */
+  agency_names: Record<string, Record<string, string>>;
+  /** agency_id -> { language -> short name translation } */
+  agency_short_names: Record<string, Record<string, string>>;
 }
 
 /** calendar.json */
@@ -93,4 +105,5 @@ export interface TimetableGroupJson {
   r: string; // route_id
   h: string; // trip_headsign
   d: Record<string, number[]>; // service_id -> sorted departure minutes from midnight
+  ai: string; // agency_id (prefixed)
 }

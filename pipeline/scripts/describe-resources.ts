@@ -140,7 +140,9 @@ function printCommonFields(resource: BaseResource, pipeline: PipelineConfig): vo
   console.log(`  Prefix:         ${pipeline.prefix}`);
   console.log(`  Out dir:        ${pipeline.outDir}`);
   console.log(`  Format:         ${formatDataFormat(resource)}`);
-  console.log(`  Provider:       ${resource.provider.nameJa} (${resource.provider.nameEn})`);
+  console.log(
+    `  Provider:       ${resource.provider.name.ja.long} (${resource.provider.name.en.long})`,
+  );
   if (resource.provider.url) {
     console.log(`  Provider URL:   ${resource.provider.url}`);
   }
@@ -186,7 +188,7 @@ function printTsv(
       s.resource.routeTypes.join(', '),
       '',
       s.resource.authentication.required ? 'yes' : 'no',
-      s.resource.provider.nameJa,
+      s.resource.provider.name.ja.long,
     ];
     console.log(row.join('\t'));
   }
@@ -202,7 +204,7 @@ function printTsv(
       '',
       s.resource.odptType,
       s.resource.authentication.required ? 'yes' : 'no',
-      s.resource.provider.nameJa,
+      s.resource.provider.name.ja.long,
     ];
     console.log(row.join('\t'));
   }

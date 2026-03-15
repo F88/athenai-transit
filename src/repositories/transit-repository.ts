@@ -8,6 +8,7 @@
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type {
+  Agency,
   DepartureGroup,
   FullDayStopDeparture,
   RouteType,
@@ -254,4 +255,16 @@ export interface TransitRepository {
    * @returns All stops (up to {@link MAX_STOPS_RESULT}).
    */
   getAllStops(): Promise<CollectionResult<Stop>>;
+
+  /**
+   * Returns an agency by its ID.
+   *
+   * ### Error conditions
+   * - Unknown agency_id:
+   *   `{ success: false, error: "Agency not found: {agencyId}" }`
+   *
+   * @param agencyId - The agency_id to look up.
+   * @returns The Agency if found, or a failure Result if not found.
+   */
+  getAgency(agencyId: string): Promise<Result<Agency>>;
 }

@@ -18,6 +18,7 @@ export function makeStop(id: string, lat = 35.0, lon = 139.0): Stop {
     stop_lat: lat,
     stop_lon: lon,
     location_type: 0,
+    agency_id: '',
   };
 }
 
@@ -72,8 +73,10 @@ export function makeStopWithContext(
     groups: routeIds.map((rid) => ({
       route: makeRoute(rid),
       headsign: 'Test',
+      headsign_names: {},
       departures: [new Date()],
     })),
+    agencies: [],
   };
 }
 
@@ -101,7 +104,16 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
     getStopsNearby: vi.fn(),
     getRouteShapes: vi.fn(),
     getFullDayDepartures: vi.fn(),
+    getFullDayDeparturesForStop: vi.fn().mockResolvedValue({
+      success: true,
+      data: [],
+      truncated: false,
+    }),
     getAllStops: vi.fn(),
+    getAgency: vi.fn().mockResolvedValue({
+      success: false,
+      error: 'Not found',
+    }),
     ...overrides,
   } as TransitRepository;
 }

@@ -3,9 +3,11 @@ import type {
   CalendarServiceJson,
   ShapesJson,
   TimetableJson,
+  TranslationsJson,
 } from '../types/data/transit-json';
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type {
+  Agency,
   DepartureGroup,
   FullDayStopDeparture,
   Route,
@@ -44,6 +46,12 @@ function binarySearchFirstGte(sorted: number[], target: number): number {
     }
   }
   return lo;
+}
+
+/** Extract the source prefix from a prefixed ID (e.g. "kobus:123" → "kobus"). */
+function extractPrefix(prefixedId: string): string {
+  const colonIdx = prefixedId.indexOf(':');
+  return colonIdx >= 0 ? prefixedId.substring(0, colonIdx) : prefixedId;
 }
 
 /** Format a date as "YYYYMMDD" string for calendar comparison. */
@@ -93,32 +101,105 @@ async function fetchSources(
   return perSource.filter((s): s is NonNullable<typeof s> => s !== null);
 }
 
+/** Per-source headsign translations, keyed by source prefix. */
+type HeadsignTranslationsByPrefix = Map<
+  string,
+  {
+    headsigns: Record<string, Record<string, string>>;
+    stop_headsigns: Record<string, Record<string, string>>;
+  }
+>;
+
 /** Merged data ready to construct an AthenaiRepository. */
 export interface MergedData {
   stops: Stop[];
   routeMap: Map<string, Route>;
+  agencyMap: Map<string, Agency>;
   stopRouteTypeMap: Map<string, RouteType[]>;
   calendarServices: CalendarServiceJson[];
   calendarExceptions: Map<string, CalendarExceptionJson[]>;
   timetable: TimetableJson;
   shapes: ShapesJson;
+  /** Global translations for prefixed-ID-keyed maps (no collision risk). */
+  translationsMap: TranslationsJson;
+  /** Per-source headsign translations to avoid cross-source overwrites. */
+  headsignTranslations: HeadsignTranslationsByPrefix;
 }
 
 /** Merge multiple SourceData into a single unified dataset. */
 export function mergeSources(sources: SourceData[]): MergedData {
-  // Merge stops
+  // Merge translations (needed for resolving names).
+  // headsigns/stop_headsigns are kept per-source to preserve agency-specific
+  // translations (e.g. "練馬駅" → "Nerima Sta." for kobus vs "Nerima Station"
+  // for ktbus). Other translation maps use prefixed IDs as keys and don't
+  // collide across sources, so they are merged globally.
+  const translationsMap: TranslationsJson = {
+    headsigns: {},
+    stop_headsigns: {},
+    stop_names: {},
+    route_names: {},
+    agency_names: {},
+    agency_short_names: {},
+  };
+  const headsignTranslations: HeadsignTranslationsByPrefix = new Map();
+  for (const source of sources) {
+    if (source.translations) {
+      // Per-source headsign translations (agency-scoped)
+      headsignTranslations.set(source.prefix, {
+        headsigns: source.translations.headsigns,
+        stop_headsigns: source.translations.stop_headsigns,
+      });
+      // Global translations (prefixed-ID keys, no collision)
+      if (source.translations.stop_names) {
+        Object.assign(translationsMap.stop_names, source.translations.stop_names);
+      }
+      if (source.translations.route_names) {
+        Object.assign(translationsMap.route_names, source.translations.route_names);
+      }
+      if (source.translations.agency_names) {
+        Object.assign(translationsMap.agency_names, source.translations.agency_names);
+      }
+      if (source.translations.agency_short_names) {
+        Object.assign(translationsMap.agency_short_names, source.translations.agency_short_names);
+      }
+    }
+  }
+
+  // Merge agencies
+  const agencyMap = new Map<string, Agency>();
+  for (const source of sources) {
+    if (source.agencies) {
+      for (const a of source.agencies) {
+        agencyMap.set(a.i, {
+          agency_id: a.i,
+          agency_name: a.n,
+          agency_short_name: a.sn ?? '',
+          agency_names: translationsMap.agency_names[a.i] ?? {},
+          agency_short_names: translationsMap.agency_short_names[a.i] ?? {},
+          agency_url: a.u,
+          agency_lang: a.l,
+          agency_timezone: a.tz ?? '',
+          agency_fare_url: a.fu ?? '',
+          agency_colors: (a.cs ?? []).map((c) => ({ bg: c.b, text: c.t })),
+        });
+      }
+    }
+  }
+
+  // Merge stops (resolve stop_names from translations)
   const stops: Stop[] = sources
     .flatMap((s) => s.stops)
     .map((s) => ({
       stop_id: s.i,
       stop_name: s.n,
-      stop_names: s.m,
+      stop_names: translationsMap.stop_names[s.i] ?? {},
       stop_lat: s.a,
       stop_lon: s.o,
       location_type: s.l,
+      agency_id: s.ai ?? '',
     }));
 
-  // Merge routes
+  // Merge routes (resolve route_names from translations)
   const routeMap = new Map<string, Route>();
   for (const source of sources) {
     for (const r of source.routes) {
@@ -126,7 +207,7 @@ export function mergeSources(sources: SourceData[]): MergedData {
         route_id: r.i,
         route_short_name: r.s,
         route_long_name: r.l,
-        route_names: r.m ?? {},
+        route_names: translationsMap.route_names[r.i] ?? {},
         route_type: r.t as RouteType,
         route_color: r.c,
         route_text_color: r.tc,
@@ -188,11 +269,14 @@ export function mergeSources(sources: SourceData[]): MergedData {
   return {
     stops,
     routeMap,
+    agencyMap,
     stopRouteTypeMap,
     calendarServices,
     calendarExceptions,
     timetable,
     shapes,
+    translationsMap,
+    headsignTranslations,
   };
 }
 
@@ -212,28 +296,34 @@ export class AthenaiRepository implements TransitRepository {
   private activeServiceCache: { key: string; ids: Set<string> } | null = null;
   private stops: Stop[];
   private routeMap: Map<string, Route>;
+  private agencyMap: Map<string, Agency>;
   private stopRouteTypeMap: Map<string, RouteType[]>;
   private calendarServices: CalendarServiceJson[];
   private calendarExceptions: Map<string, CalendarExceptionJson[]>;
   private timetable: TimetableJson;
   private shapesRaw: ShapesJson;
+  private headsignTranslations: HeadsignTranslationsByPrefix;
 
   private constructor(
     stops: Stop[],
     routeMap: Map<string, Route>,
+    agencyMap: Map<string, Agency>,
     stopRouteTypeMap: Map<string, RouteType[]>,
     calendarServices: CalendarServiceJson[],
     calendarExceptions: Map<string, CalendarExceptionJson[]>,
     timetable: TimetableJson,
     shapesRaw: ShapesJson,
+    headsignTranslations: HeadsignTranslationsByPrefix,
   ) {
     this.stops = stops;
     this.routeMap = routeMap;
+    this.agencyMap = agencyMap;
     this.stopRouteTypeMap = stopRouteTypeMap;
     this.calendarServices = calendarServices;
     this.calendarExceptions = calendarExceptions;
     this.timetable = timetable;
     this.shapesRaw = shapesRaw;
+    this.headsignTranslations = headsignTranslations;
   }
 
   /**
@@ -275,11 +365,13 @@ export class AthenaiRepository implements TransitRepository {
     return new AthenaiRepository(
       merged.stops,
       merged.routeMap,
+      merged.agencyMap,
       merged.stopRouteTypeMap,
       merged.calendarServices,
       merged.calendarExceptions,
       merged.timetable,
       merged.shapes,
+      merged.headsignTranslations,
     );
   }
 
@@ -437,7 +529,15 @@ export class AthenaiRepository implements TransitRepository {
 
       if (departureTimes.length > 0) {
         departureTimes.sort((a, b) => a.getTime() - b.getTime());
-        result.push({ route, headsign: group.h, departures: departureTimes });
+        const prefix = extractPrefix(group.ai);
+        const sourceTranslations = this.headsignTranslations.get(prefix);
+        const headsignNames = sourceTranslations?.headsigns[group.h] ?? {};
+        result.push({
+          route,
+          headsign: group.h,
+          headsign_names: headsignNames,
+          departures: departureTimes,
+        });
       }
     }
 
@@ -509,8 +609,11 @@ export class AthenaiRepository implements TransitRepository {
         if (!activeServiceIds.has(serviceId)) {
           continue;
         }
+        const prefix = extractPrefix(group.ai);
+        const sourceTranslations = this.headsignTranslations.get(prefix);
+        const headsignNames = sourceTranslations?.headsigns[group.h] ?? {};
         for (const t of times) {
-          departures.push({ minutes: t, route, headsign: group.h });
+          departures.push({ minutes: t, route, headsign: group.h, headsign_names: headsignNames });
         }
       }
     }
@@ -556,6 +659,15 @@ export class AthenaiRepository implements TransitRepository {
     }
     logger.debug(`getRouteShapes: ${shapes.length} shapes`);
     return Promise.resolve({ success: true, data: shapes, truncated: false });
+  }
+
+  /** {@inheritDoc TransitRepository.getAgency} */
+  getAgency(agencyId: string): Promise<Result<Agency>> {
+    const agency = this.agencyMap.get(agencyId);
+    if (!agency) {
+      return Promise.resolve({ success: false, error: `Agency not found: ${agencyId}` });
+    }
+    return Promise.resolve({ success: true, data: agency });
   }
 
   private getActiveServiceIds(serviceDate: Date): Set<string> {
