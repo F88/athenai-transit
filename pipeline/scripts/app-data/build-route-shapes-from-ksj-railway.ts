@@ -21,8 +21,6 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
-  readdirSync,
-  rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
@@ -82,11 +80,6 @@ export interface ShapeTarget {
 // Managed files
 // ---------------------------------------------------------------------------
 
-/**
- * Files managed by this script. Used to clean up stale outputs.
- * Other files in the output directory are left untouched.
- */
-const MANAGED_FILES = ['shapes.json'];
 
 // ---------------------------------------------------------------------------
 // Target discovery
@@ -233,14 +226,6 @@ function buildSourceShapes(target: ShapeTarget): void {
   writeFileSync(outputPath, JSON.stringify(shapes));
   const size = statSync(outputPath).size;
   console.log(`\n  Wrote shapes.json (${formatBytes(size)})`);
-
-  // Remove stale managed files not produced in this run
-  for (const file of readdirSync(outputDir)) {
-    if (MANAGED_FILES.includes(file) && file !== 'shapes.json') {
-      rmSync(join(outputDir, file));
-      console.log(`  (removed stale ${file})`);
-    }
-  }
 }
 
 // ---------------------------------------------------------------------------

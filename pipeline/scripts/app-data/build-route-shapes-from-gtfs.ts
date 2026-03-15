@@ -17,7 +17,7 @@
  */
 
 import Database from 'better-sqlite3';
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
 import { listGtfsSourceNames, loadGtfsSource } from '../../lib/load-gtfs-sources';
@@ -39,16 +39,6 @@ import {
 const ROOT = resolve(import.meta.dirname, '../..');
 const DB_DIR = join(ROOT, 'build');
 const OUTPUT_DIR = join(ROOT, 'build/data');
-
-// ---------------------------------------------------------------------------
-// Managed files
-// ---------------------------------------------------------------------------
-
-/**
- * Files managed by this script. Used to clean up stale outputs.
- * Other files in the output directory are left untouched.
- */
-const MANAGED_FILES = ['shapes.json'];
 
 // ---------------------------------------------------------------------------
 // Extraction
@@ -170,14 +160,6 @@ function buildSourceShapes(outDir: string, prefix: string, nameEn: string): void
 
   console.log(`\n  Writing:`);
   writeJson(join(outputDir, 'shapes.json'), shapes);
-
-  // Remove stale managed files not produced in this run
-  for (const file of readdirSync(outputDir)) {
-    if (MANAGED_FILES.includes(file) && file !== 'shapes.json') {
-      rmSync(join(outputDir, file));
-      console.log(`  (removed stale ${file})`);
-    }
-  }
 }
 
 // ---------------------------------------------------------------------------
