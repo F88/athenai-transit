@@ -741,6 +741,8 @@ function buildSourceJson(source: BuildSource): void {
   // Merge staging into final: copy each staged file individually,
   // preserving files written by other pipeline scripts.
   // Remove stale managed files that were not produced in this run.
+  // Note: renameSync overwrites existing files on POSIX (macOS/Linux).
+  // Windows is not supported as a pipeline execution environment.
   const stagedFiles = new Set(readdirSync(stagingDir));
   mkdirSync(finalDir, { recursive: true });
   for (const file of stagedFiles) {

@@ -55,7 +55,10 @@ export function useNearbyDepartures(
               ]);
               const groups = depsResult.success ? depsResult.data : [];
               const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-              // Collect unique agencies from departure groups
+              // Collect unique agencies from departure groups.
+              // Agency IDs are deduplicated per stop. Cross-stop deduplication
+              // is intentionally omitted: getAgency() is an O(1) Map lookup in
+              // AthenaiRepository, so the overhead is negligible.
               const agencyIds = new Set<string>();
               for (const g of groups) {
                 if (g.route.agency_id) {

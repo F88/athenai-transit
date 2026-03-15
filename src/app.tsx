@@ -186,6 +186,8 @@ export default function App() {
       ]);
       const groups = depsResult.success ? depsResult.data : [];
       const routeTypes = rtResult.success ? rtResult.data : [3 as const];
+      // agencies is empty until agency UI (badges, filtering) is implemented.
+      // Agency resolution will be added when the UI consumes it.
       return { stop, routeTypes, groups, agencies: [] };
     },
     [repo, dateTime, inBoundStops, radiusStops],

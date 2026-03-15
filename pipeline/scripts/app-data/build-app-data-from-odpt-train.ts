@@ -275,6 +275,9 @@ export function buildStops(
     return aIdx - bIdx;
   });
 
+  // ODPT agency ID uses provider.name.en.long as identifier.
+  // This mirrors how GTFS uses agency_id from agency.txt.
+  // A dedicated stable ID field may be added to Provider in the future.
   const agencyId = `${prefix}:${provider.name.en.long}`;
   return sorted.map((s) => {
     const shortId = extractStationShortId(s['owl:sameAs']);
@@ -655,6 +658,8 @@ function buildSourceJson(source: OdptTrainSource): void {
 
   // Merge staging into final, preserving files from other scripts.
   // Remove stale managed files not produced in this run.
+  // Note: renameSync overwrites existing files on POSIX (macOS/Linux).
+  // Windows is not supported as a pipeline execution environment.
   const stagedFiles = new Set(readdirSync(stagingDir));
   mkdirSync(finalDir, { recursive: true });
   for (const file of stagedFiles) {
