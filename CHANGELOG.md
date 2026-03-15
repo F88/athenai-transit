@@ -25,6 +25,21 @@ and this project adheres to [CalVer](https://calver.org/).
     - `RouteWithMeta` / `RouteWithContext` 型を新設。
     - `TransitRepository` に `getAgency()` メソッドを追加。
     - `AthenaiRepository.mergeSources` で翻訳 FK 解決、agencyMap 構築を実装。
+    - headsign/stop_headsign 翻訳を事業者 (ソース) スコープで管理。異なる事業者の同一行先名 (例: 「練馬駅」) が独立した翻訳を保持。
+- 路線形状 (shapes) パイプラインの分離:
+    - GTFS shapes 抽出を `build-route-shapes-from-gtfs.ts` に分離。
+    - KSJ 鉄道スクリプトを `build-route-shapes-from-ksj-railway.ts` にリネーム。
+    - 全 shapes スクリプトを統一 CLI インターフェース (`<name>`, `--targets`, `--list`) に対応。
+    - `shapes.json` をアプリ側で optional 化 (ファイルがないソースは `{}` にフォールバック)。
+    - npm scripts: `pipeline:build:shapes:gtfs`, `pipeline:build:shapes:ksj`。
+
+### Changed
+
+- パイプラインの出力方式をディレクトリ swap からファイルマージに変更。
+  複数スクリプトが同一 outdir に出力しても互いのファイルを上書きしない。
+  各スクリプトが MANAGED_FILES リストで管理責務を明示。
+- リソース定義ファイルのフィールド順を BaseResource 定義順に統一。
+- 重複テストファイル `pipeline/scripts/__tests__/build-app-data-from-gtfs.test.ts` を削除。
 
 ## [2026.03.14]
 
