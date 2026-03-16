@@ -56,7 +56,8 @@ function promptSelection(): Promise<number> {
       if (answer.trim().toLowerCase() === 'q') {
         resolve(-1);
       } else {
-        resolve(parseInt(answer.trim(), 10));
+        const num = parseInt(answer.trim(), 10);
+        resolve(Number.isNaN(num) ? -1 : num);
       }
     });
   });

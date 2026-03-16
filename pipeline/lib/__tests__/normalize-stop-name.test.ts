@@ -8,8 +8,11 @@ describe('normalizeStopName', () => {
     expect(normalizeStopName('セシオン杉並前')).toBe('セシオン杉並');
   });
 
-  it('does not remove 前 in the middle of a name', () => {
+  it('does not remove 前 at the beginning of a name', () => {
     expect(normalizeStopName('前橋駅')).toBe('前橋駅');
+  });
+
+  it('removes trailing 前 even after long names', () => {
     expect(normalizeStopName('杏林大学杉並病院前')).toBe('杏林大学杉並病院');
   });
 
