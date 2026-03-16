@@ -35,10 +35,15 @@ export type SelectionInfo = StopSelectionInfo | RouteSelectionInfo;
  */
 export function extractRouteIdsForStop(departures: StopWithContext[], stopId: string): Set<string> {
   const ctx = departures.find((d) => d.stop.stop_id === stopId);
-  if (!ctx || ctx.groups.length === 0) {
+  if (!ctx) {
     return new Set();
   }
-  return new Set(ctx.groups.map((g) => g.route.route_id));
+  // Prefer active departure groups; fall back to StopWithMeta.routes
+  // when all services have ended for the day (groups is empty).
+  if (ctx.groups.length > 0) {
+    return new Set(ctx.groups.map((g) => g.route.route_id));
+  }
+  return new Set(ctx.routes.map((r) => r.route_id));
 }
 
 /**

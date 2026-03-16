@@ -155,11 +155,11 @@ export interface RouteWithMeta {
 export type RouteWithContext = RouteWithMeta;
 
 /**
- * A stop enriched with metadata for map marker display.
+ * A stop enriched with metadata from spatial queries and timetable data.
  *
- * Holds the data needed to render a stop marker on the map,
- * including computed values from spatial queries.
- * Agencies are resolved from routes serving this stop via timetable data.
+ * Agencies and routes are resolved from timetable data regardless of
+ * active departures, enabling features like route shape highlighting
+ * even when all services have ended for the day.
  */
 export interface StopWithMeta {
   stop: Stop;
@@ -167,6 +167,8 @@ export interface StopWithMeta {
   distance?: number;
   /** Agencies operating routes at this stop, resolved from timetable data. */
   agencies: Agency[];
+  /** Routes serving this stop, resolved from timetable data (shared references, not copies). */
+  routes: Route[];
 }
 
 /**

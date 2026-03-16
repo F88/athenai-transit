@@ -31,7 +31,7 @@ export function makeStop(id: string, lat = 35.0, lon = 139.0): Stop {
  */
 export function makeStopMeta(stop: Stop | string, distance = 100): StopWithMeta {
   const s = typeof stop === 'string' ? makeStop(stop) : stop;
-  return { stop: s, distance, agencies: [] };
+  return { stop: s, distance, agencies: [], routes: [] };
 }
 
 /**
@@ -77,6 +77,7 @@ export function makeStopWithContext(
       departures: [new Date()],
     })),
     agencies: [],
+    routes: routeIds.map((rid) => makeRoute(rid)),
   };
 }
 

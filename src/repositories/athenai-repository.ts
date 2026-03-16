@@ -117,6 +117,7 @@ export interface MergedData {
   agencyMap: Map<string, Agency>;
   stopRouteTypeMap: Map<string, RouteType[]>;
   stopAgenciesMap: Map<string, Agency[]>;
+  stopRoutesMap: Map<string, Route[]>;
   calendarServices: CalendarServiceJson[];
   calendarExceptions: Map<string, CalendarExceptionJson[]>;
   timetable: TimetableJson;
@@ -253,13 +254,17 @@ export function mergeSources(sources: SourceData[]): MergedData {
   const stopRouteTypeMap = new Map<string, RouteType[]>();
   // Build stop -> agencies map (all agencies serving each stop, deduplicated)
   const stopAgenciesMap = new Map<string, Agency[]>();
+  // Build stop -> routes map (all routes serving each stop, deduplicated, shared references)
+  const stopRoutesMap = new Map<string, Route[]>();
   for (const [stopId, groups] of Object.entries(timetable)) {
     const types = new Set<RouteType>();
     const agencyIds = new Set<string>();
+    const routeIdSet = new Set<string>();
     for (const group of groups) {
       const route = routeMap.get(group.r);
       if (route) {
         types.add(route.route_type);
+        routeIdSet.add(group.r);
       }
       if (group.ai) {
         agencyIds.add(group.ai);
@@ -281,6 +286,16 @@ export function mergeSources(sources: SourceData[]): MergedData {
       }
       stopAgenciesMap.set(stopId, agencies);
     }
+    if (routeIdSet.size > 0) {
+      const routes: Route[] = [];
+      for (const id of routeIdSet) {
+        const route = routeMap.get(id);
+        if (route) {
+          routes.push(route);
+        }
+      }
+      stopRoutesMap.set(stopId, routes);
+    }
   }
 
   return {
@@ -289,6 +304,7 @@ export function mergeSources(sources: SourceData[]): MergedData {
     agencyMap,
     stopRouteTypeMap,
     stopAgenciesMap,
+    stopRoutesMap,
     calendarServices,
     calendarExceptions,
     timetable,
@@ -317,6 +333,7 @@ export class AthenaiRepository implements TransitRepository {
   private agencyMap: Map<string, Agency>;
   private stopRouteTypeMap: Map<string, RouteType[]>;
   private stopAgenciesMap: Map<string, Agency[]>;
+  private stopRoutesMap: Map<string, Route[]>;
   private calendarServices: CalendarServiceJson[];
   private calendarExceptions: Map<string, CalendarExceptionJson[]>;
   private timetable: TimetableJson;
@@ -329,6 +346,7 @@ export class AthenaiRepository implements TransitRepository {
     agencyMap: Map<string, Agency>,
     stopRouteTypeMap: Map<string, RouteType[]>,
     stopAgenciesMap: Map<string, Agency[]>,
+    stopRoutesMap: Map<string, Route[]>,
     calendarServices: CalendarServiceJson[],
     calendarExceptions: Map<string, CalendarExceptionJson[]>,
     timetable: TimetableJson,
@@ -340,6 +358,7 @@ export class AthenaiRepository implements TransitRepository {
     this.agencyMap = agencyMap;
     this.stopRouteTypeMap = stopRouteTypeMap;
     this.stopAgenciesMap = stopAgenciesMap;
+    this.stopRoutesMap = stopRoutesMap;
     this.calendarServices = calendarServices;
     this.calendarExceptions = calendarExceptions;
     this.timetable = timetable;
@@ -389,6 +408,7 @@ export class AthenaiRepository implements TransitRepository {
       merged.agencyMap,
       merged.stopRouteTypeMap,
       merged.stopAgenciesMap,
+      merged.stopRoutesMap,
       merged.calendarServices,
       merged.calendarExceptions,
       merged.timetable,
@@ -425,6 +445,7 @@ export class AthenaiRepository implements TransitRepository {
     const data = matching.slice(0, effectiveLimit).map((m) => ({
       stop: m.stop,
       agencies: this.stopAgenciesMap.get(m.stop.stop_id) ?? [],
+      routes: this.stopRoutesMap.get(m.stop.stop_id) ?? [],
     }));
 
     const elapsed = Math.round(performance.now() - t0);
@@ -463,6 +484,7 @@ export class AthenaiRepository implements TransitRepository {
       stop,
       distance: distKm * 1000,
       agencies: this.stopAgenciesMap.get(stop.stop_id) ?? [],
+      routes: this.stopRoutesMap.get(stop.stop_id) ?? [],
     }));
 
     const elapsed = Math.round(performance.now() - t0);

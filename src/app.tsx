@@ -186,7 +186,7 @@ export default function App() {
       ]);
       const groups = depsResult.success ? depsResult.data : [];
       const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-      return { stop: meta.stop, routeTypes, groups, agencies: meta.agencies };
+      return { stop: meta.stop, routeTypes, groups, agencies: meta.agencies, routes: meta.routes };
     },
     [repo, dateTime, inBoundStops, radiusStops],
   );
@@ -246,7 +246,7 @@ export default function App() {
     (stop: Stop) => {
       logger.debug(`handleHistorySelect [History]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
       focusStop(stop);
-      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [] };
+      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
       pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [3]);
     },
     [focusStop, pushStop, findStopWithMeta, routeTypeMap],
@@ -258,7 +258,7 @@ export default function App() {
       focusStop(stop);
       // Search results may not be in radiusStops/inBoundStops yet;
       // wrap as StopWithMeta without distance
-      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [] };
+      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
       pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [3]);
       setSearchModalOpen(false);
     },

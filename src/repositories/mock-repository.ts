@@ -520,6 +520,29 @@ const STOP_AGENCIES: Map<string, Agency[]> = (() => {
   return result;
 })();
 
+/** Pre-computed routes per stop (deduplicated, shared references). */
+const STOP_ROUTES_RESOLVED: Map<string, Route[]> = (() => {
+  const routeMap = new Map(ROUTES.map((r) => [r.route_id, r]));
+  const result = new Map<string, Route[]>();
+
+  for (const [stopId, entries] of Object.entries(STOP_ROUTES)) {
+    const seenIds = new Set<string>();
+    const routes: Route[] = [];
+    for (const { routeId } of entries) {
+      if (seenIds.has(routeId)) {
+        continue;
+      }
+      seenIds.add(routeId);
+      const route = routeMap.get(routeId);
+      if (route) {
+        routes.push(route);
+      }
+    }
+    result.set(stopId, routes);
+  }
+  return result;
+})();
+
 /** Stop coordinate lookup for building route shapes. */
 const STOP_COORDS = new Map(STOPS.map((s) => [s.stop_id, [s.stop_lat, s.stop_lon] as const]));
 
@@ -699,6 +722,7 @@ export class MockRepository implements TransitRepository {
       stop: m.stop,
       distance: m.distance,
       agencies: STOP_AGENCIES.get(m.stop.stop_id) ?? [],
+      routes: STOP_ROUTES_RESOLVED.get(m.stop.stop_id) ?? [],
     }));
 
     return Promise.resolve({ success: true, data, truncated });
@@ -773,6 +797,7 @@ export class MockRepository implements TransitRepository {
       stop,
       distance: distKm * 1000,
       agencies: STOP_AGENCIES.get(stop.stop_id) ?? [],
+      routes: STOP_ROUTES_RESOLVED.get(stop.stop_id) ?? [],
     }));
 
     return Promise.resolve({ success: true, data, truncated });

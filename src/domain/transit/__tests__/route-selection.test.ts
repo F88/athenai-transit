@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildDepartureGroupsMap,
+  extractRouteIdsForStop,
   filterVisibleRouteShapes,
   getRouteIdsForStop,
   getRouteShapeStyle,
@@ -8,7 +9,62 @@ import {
 } from '../route-selection';
 import type { RouteShape } from '../../../types/app/map';
 import type { DepartureGroup, RouteType } from '../../../types/app/transit';
-import { makeStop, makeStopWithContext } from '../../../__tests__/helpers';
+import { makeRoute, makeStop, makeStopWithContext } from '../../../__tests__/helpers';
+
+describe('extractRouteIdsForStop', () => {
+  it('returns empty set when stop is not in departures', () => {
+    expect(extractRouteIdsForStop([], 'unknown')).toEqual(new Set());
+  });
+
+  it('extracts route IDs from departure groups', () => {
+    const ctx = makeStopWithContext(makeStop('s1'), ['r1', 'r2']);
+    expect(extractRouteIdsForStop([ctx], 's1')).toEqual(new Set(['r1', 'r2']));
+  });
+
+  it('falls back to StopWithMeta.routes when groups are empty (services ended)', () => {
+    const stop = makeStop('s1');
+    const ctx = {
+      stop,
+      routeTypes: [3 as const],
+      groups: [],
+      agencies: [],
+      routes: [makeRoute('r1'), makeRoute('r2')],
+    };
+    expect(extractRouteIdsForStop([ctx], 's1')).toEqual(new Set(['r1', 'r2']));
+  });
+
+  it('returns empty set when both groups and routes are empty', () => {
+    const stop = makeStop('s1');
+    const ctx = {
+      stop,
+      routeTypes: [3 as const],
+      groups: [],
+      agencies: [],
+      routes: [],
+    };
+    expect(extractRouteIdsForStop([ctx], 's1')).toEqual(new Set());
+  });
+
+  it('prefers groups over routes when both are available', () => {
+    const stop = makeStop('s1');
+    const ctx = {
+      stop,
+      routeTypes: [3 as const],
+      groups: [
+        {
+          route: makeRoute('r1'),
+          headsign: 'Test',
+          headsign_names: {},
+          departures: [new Date()],
+        },
+      ],
+      agencies: [],
+      routes: [makeRoute('r1'), makeRoute('r2'), makeRoute('r3')],
+    };
+    // Only r1 from groups, not r2/r3 from routes
+    expect(extractRouteIdsForStop([ctx], 's1')).toEqual(new Set(['r1']));
+  });
+});
 
 /** Shorthand: creates DepartureGroup[] from route ID strings. */
 function makeGroups(routeIds: string[]): DepartureGroup[] {
