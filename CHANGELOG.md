@@ -7,6 +7,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [CalVer](https://calver.org/).
 
+## [Unreleased]
+
+### Added
+
+- ランダム初期表示位置:
+    - 10箇所のプリセットからランダムに初期表示位置を選択 (場所ごとの zoom level 付き)。
+    - サイコロボタン (🎲) で別のランダムな場所にジャンプ。
+    - HOME ボタンは非表示 (将来の USER HOME 機能用にコード保持)。
+- URL query params による初期位置指定:
+    - `?lat=35.68&lng=139.77&zm=15` で初期表示位置を URL で指定可能。
+    - 優先順位: query params > env variables > ランダム選択。
+    - `VITE_INITIAL_ZOOM_LEVEL` env 変数を新規追加。
+- query params の一元管理:
+    - `src/utils/query-params.ts` に safe parsers を集約 (範囲バリデーション、injection 防止)。
+    - `?mock-data`, `?sources` の既存処理もリファクタリング。
+
+### Changed
+
+- PRD.md の URL パラメータ仕様に `lat`, `lng`, `zm` を追加。
+
 ## [2026.03.16]
 
 ### Added
