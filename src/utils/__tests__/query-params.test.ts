@@ -60,13 +60,13 @@ describe('parseQueryZoom', () => {
   it('parses valid zoom levels', () => {
     expect(parseQueryZoom('16')).toBe(16);
     expect(parseQueryZoom('1')).toBe(1);
-    expect(parseQueryZoom('22')).toBe(22);
+    expect(parseQueryZoom('20')).toBe(20);
     expect(parseQueryZoom('14.5')).toBe(14.5);
   });
 
   it('rejects out-of-range values', () => {
     expect(parseQueryZoom('0')).toBeNull();
-    expect(parseQueryZoom('23')).toBeNull();
+    expect(parseQueryZoom('21')).toBeNull();
     expect(parseQueryZoom('-1')).toBeNull();
   });
 

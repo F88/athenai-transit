@@ -345,6 +345,7 @@ export function MapView({
       <MapContainer
         center={INITIAL_CENTER}
         zoom={INITIAL_ZOOM}
+        maxZoom={20}
         className="relative z-0 h-full w-full"
         zoomControl={false}
       >
@@ -355,6 +356,7 @@ export function MapView({
             attribution={TILE_SOURCES[tileIndex].attribution}
             minZoom={TILE_SOURCES[tileIndex].minZoom}
             maxNativeZoom={TILE_SOURCES[tileIndex].maxNativeZoom}
+            maxZoom={20}
           />
         )}
         <MapEventHandler

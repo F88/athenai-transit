@@ -68,7 +68,7 @@ export function parseQueryLng(value: string | null | undefined): number | null {
   return n;
 }
 
-/** Parse zoom level from query param. Valid range: 1 to 22. */
+/** Parse zoom level from query param. Valid range: 1 to 20 (app maxZoom). */
 export function parseQueryZoom(value: string | null | undefined): number | null {
   const trimmed = value?.trim();
   if (!trimmed) {
@@ -78,7 +78,7 @@ export function parseQueryZoom(value: string | null | undefined): number | null 
   if (Number.isNaN(n) || !Number.isFinite(n)) {
     return null;
   }
-  if (n < 1 || n > 22) {
+  if (n < 1 || n > 20) {
     return null;
   }
   return n;
