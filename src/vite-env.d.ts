@@ -8,8 +8,10 @@ interface ImportMetaEnv {
   readonly VITE_LOG_LEVEL: string;
   /** Comma-separated tag filter patterns (e.g. "*", "GTFS,Stop*", "-App") */
   readonly VITE_LOG_TAGS: string;
-  /** Initial map center as "lat,lng" (default: "35.6812,139.7671") */
+  /** Initial map center as "lat,lng" (e.g. "35.6812,139.7671") */
   readonly VITE_INITIAL_LAT_LNG?: string;
+  /** Initial map zoom level (e.g. "15"). Overrides the default zoom. */
+  readonly VITE_INITIAL_ZOOM_LEVEL?: string;
 }
 
 interface ImportMeta {
