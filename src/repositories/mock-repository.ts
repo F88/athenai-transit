@@ -645,16 +645,23 @@ function simpleHash(str: string): number {
   return Math.abs(hash);
 }
 
-function generateDepartureTimes(now: Date, routeId: string, isBus: boolean): Date[] {
-  const offsets = isBus ? [3, 15, 32] : [2, 7, 13];
-  const routeOffset = simpleHash(routeId) % 5;
+/** Fixed departure minutes for a route+headsign, 5:00-23:45. */
+function generateFixedMinutes(routeId: string, headsign: string): number[] {
+  const hash = simpleHash(routeId + headsign);
+  const interval = 15 + (hash % 16); // 15-30 min interval
+  const startOffset = hash % interval; // stagger start
+  const minutes: number[] = [];
+  for (let m = 5 * 60 + startOffset; m <= 23 * 60 + 45; m += interval) {
+    minutes.push(m);
+  }
+  return minutes;
+}
 
-  return offsets.map((offset) => {
-    const time = new Date(now);
-    time.setMinutes(time.getMinutes() + offset + routeOffset);
-    time.setSeconds(0, 0);
-    return time;
-  });
+/** Convert service-day minutes to a Date on the same day as `now`. */
+function minutesToDate(minutes: number, now: Date): Date {
+  const d = new Date(now);
+  d.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
+  return d;
 }
 
 /** Euclidean distance approximation in km at ~35 N latitude. */
@@ -710,16 +717,17 @@ export class MockRepository implements TransitRepository {
     const stopRoutes = STOP_ROUTES[stopId] ?? [];
     const groups: DepartureGroup[] = [];
 
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
     for (const { routeId, headsign } of stopRoutes) {
       const route = ROUTES.find((r) => r.route_id === routeId);
       if (!route) {
         continue;
       }
 
-      const isBus = route.route_type === 3;
-      const times = generateDepartureTimes(now, routeId + headsign, isBus);
-
-      const departures = times.slice(0, limit);
+      const allMinutes = generateFixedMinutes(routeId, headsign);
+      const upcoming = allMinutes.filter((m) => m >= nowMinutes);
+      const departures = upcoming.slice(0, limit).map((m) => minutesToDate(m, now));
       if (departures.length === 0) {
         continue;
       }
@@ -776,12 +784,9 @@ export class MockRepository implements TransitRepository {
 
   /** {@inheritDoc TransitRepository.getFullDayDepartures} */
   getFullDayDepartures(
-    ...[, , ,]: [string, string, string, Date]
+    ...[, routeId, headsign]: [string, string, string, Date]
   ): Promise<CollectionResult<number>> {
-    const minutes: number[] = [];
-    for (let h = 5; h <= 23; h++) {
-      minutes.push(h * 60, h * 60 + 15, h * 60 + 30, h * 60 + 45);
-    }
+    const minutes = generateFixedMinutes(routeId, headsign);
     return Promise.resolve({ success: true, data: minutes, truncated: false });
   }
 
@@ -800,10 +805,8 @@ export class MockRepository implements TransitRepository {
       if (!route) {
         continue;
       }
-      for (let h = 5; h <= 23; h++) {
-        for (const offset of [0, 15, 30, 45]) {
-          departures.push({ minutes: h * 60 + offset, route, headsign, headsign_names: {} });
-        }
+      for (const m of generateFixedMinutes(routeId, headsign)) {
+        departures.push({ minutes: m, route, headsign, headsign_names: {} });
       }
     }
 
