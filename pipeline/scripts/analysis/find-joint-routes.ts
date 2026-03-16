@@ -77,9 +77,15 @@ function loadJson<T>(source: string, file: string): T | null {
 }
 
 /** Approximate distance in meters between two lat/lon points (~35N). */
+/** 1 degree of latitude in meters. */
+const METERS_PER_DEGREE_LAT = 111_000;
+/** 1 degree of longitude in meters at ~35N latitude. */
+const METERS_PER_DEGREE_LON_35N = 91_000;
+
+/** Approximate distance in meters between two lat/lon points (~35N). */
 function distanceM(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const dlat = (lat1 - lat2) * 111_000;
-  const dlon = (lon1 - lon2) * 91_000;
+  const dlat = (lat1 - lat2) * METERS_PER_DEGREE_LAT;
+  const dlon = (lon1 - lon2) * METERS_PER_DEGREE_LON_35N;
   return Math.sqrt(dlat * dlat + dlon * dlon);
 }
 
