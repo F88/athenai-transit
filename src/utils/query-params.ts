@@ -1,7 +1,7 @@
 /**
- * Safe parsers for URL query parameters.
+ * Centralized access and safe parsers for URL query parameters.
  *
- * All parsers validate input strictly — non-numeric, out-of-range,
+ * Numeric parsers validate input strictly — non-numeric, out-of-range,
  * Infinity, NaN, and whitespace-only values are rejected (return null).
  * This prevents injection attacks since only valid numeric values
  * are accepted and passed to downstream consumers.
@@ -13,6 +13,8 @@
  * - `?zm=14` — initial map zoom level
  */
 
+import { MAX_ZOOM } from '../config/map-defaults';
+
 /** Lazily cached URLSearchParams instance. */
 let cachedParams: URLSearchParams | null = null;
 
@@ -23,7 +25,11 @@ function getParams(): URLSearchParams {
   return cachedParams;
 }
 
-/** Returns true if `?mock-data` is present in the URL. */
+/**
+ * Returns true if `?mock-data` is present in the URL.
+ *
+ * @returns Whether the mock-data query parameter is set.
+ */
 export function hasMockDataParam(): boolean {
   return getParams().has('mock-data');
 }
@@ -31,12 +37,20 @@ export function hasMockDataParam(): boolean {
 /**
  * Returns the `?sources=` param value, or null if not present.
  * The raw string is returned for the caller to split/validate.
+ *
+ * @returns The sources parameter value, or null.
  */
 export function getSourcesParam(): string | null {
   return getParams().get('sources');
 }
 
-/** Parse latitude from query param. Valid range: -90 to 90. */
+/**
+ * Parse latitude from a query param string.
+ * Valid range: -90 to 90. Rejects non-numeric, Infinity, NaN, and whitespace.
+ *
+ * @param value - Raw string value from URLSearchParams.get().
+ * @returns Parsed latitude, or null if invalid.
+ */
 export function parseQueryLat(value: string | null | undefined): number | null {
   const trimmed = value?.trim();
   if (!trimmed) {
@@ -52,7 +66,13 @@ export function parseQueryLat(value: string | null | undefined): number | null {
   return n;
 }
 
-/** Parse longitude from query param. Valid range: -180 to 180. */
+/**
+ * Parse longitude from a query param string.
+ * Valid range: -180 to 180. Rejects non-numeric, Infinity, NaN, and whitespace.
+ *
+ * @param value - Raw string value from URLSearchParams.get().
+ * @returns Parsed longitude, or null if invalid.
+ */
 export function parseQueryLng(value: string | null | undefined): number | null {
   const trimmed = value?.trim();
   if (!trimmed) {
@@ -68,7 +88,13 @@ export function parseQueryLng(value: string | null | undefined): number | null {
   return n;
 }
 
-/** Parse zoom level from query param. Valid range: 1 to 20 (app maxZoom). */
+/**
+ * Parse zoom level from a query param string.
+ * Valid range: 1 to {@link MAX_ZOOM}. Rejects non-numeric, Infinity, NaN, and whitespace.
+ *
+ * @param value - Raw string value from URLSearchParams.get().
+ * @returns Parsed zoom level, or null if invalid.
+ */
 export function parseQueryZoom(value: string | null | undefined): number | null {
   const trimmed = value?.trim();
   if (!trimmed) {
@@ -78,7 +104,7 @@ export function parseQueryZoom(value: string | null | undefined): number | null 
   if (Number.isNaN(n) || !Number.isFinite(n)) {
     return null;
   }
-  if (n < 1 || n > 20) {
+  if (n < 1 || n > MAX_ZOOM) {
     return null;
   }
   return n;

@@ -13,6 +13,9 @@
 import { parseQueryLat, parseQueryLng, parseQueryZoom } from '../utils/query-params';
 import { createLogger } from '../utils/logger';
 
+/** Maximum zoom level supported by the app. Used by MapContainer and query param validation. */
+export const MAX_ZOOM = 20;
+
 /**
  * Curated locations for random initial display.
  *
