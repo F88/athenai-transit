@@ -763,6 +763,41 @@ describe('AthenaiRepository', () => {
     });
   });
 
+  describe('StopWithMeta.agencies', () => {
+    it('includes resolved agencies in getStopsNearby results', async () => {
+      const repo = await createRepo();
+      const result = await repo.getStopsNearby({ lat: 35.75, lng: 139.74 }, 5000, 100);
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      // All stops in test data use agency_id 'test:agency' via timetable
+      for (const meta of result.data) {
+        expect(meta.agencies).toBeDefined();
+        expect(Array.isArray(meta.agencies)).toBe(true);
+      }
+      // At least one stop should have a resolved agency
+      const withAgencies = result.data.filter((m) => m.agencies.length > 0);
+      expect(withAgencies.length).toBeGreaterThan(0);
+      expect(withAgencies[0].agencies[0].agency_id).toBe('test:agency');
+    });
+
+    it('includes resolved agencies in getStopsInBounds results', async () => {
+      const repo = await createRepo();
+      const result = await repo.getStopsInBounds(
+        { north: 36, south: 34, east: 140, west: 138 },
+        100,
+      );
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      const withAgencies = result.data.filter((m) => m.agencies.length > 0);
+      expect(withAgencies.length).toBeGreaterThan(0);
+      expect(withAgencies[0].agencies[0].agency_id).toBe('test:agency');
+    });
+  });
+
   describe('getUpcomingDepartures (headsign_names)', () => {
     it('includes headsign_names in departure groups', async () => {
       const repo = await createRepo();
