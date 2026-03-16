@@ -235,7 +235,7 @@ function compareSourcePair(a: SourceStopData, b: SourceStopData): void {
 
   // --- Output ---
   console.log(
-    `    Stop comparison: ${a.source} (${aStops.length} stops) vs ${b.source} (${bStops.length} stops)`,
+    `    Stop comparison (unordered): ${a.source} (${aStops.length} stops) vs ${b.source} (${bStops.length} stops)`,
   );
   console.log(`      Raw exact match:        ${rawExact.length}/${total} (${pctRaw}%)`);
   console.log(`      Normalized match:       ${normMatched.length}/${total} (${pctNorm}%)`);
