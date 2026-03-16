@@ -10,6 +10,9 @@
  * will use random center but override zoom to 14.
  */
 
+import { parseQueryLat, parseQueryLng, parseQueryZoom } from '../utils/query-params';
+import { createLogger } from '../utils/logger';
+
 /**
  * Curated locations for random initial display.
  *
@@ -29,9 +32,6 @@ const HOME_LOCATIONS = [
   { name: 'Ikebukuro Station', lat: 35.7299, lng: 139.7108, zoom: 16 },
   { name: 'Shinjuku Station West', lat: 35.6913, lng: 139.6985, zoom: 17 },
 ] as const;
-
-import { parseQueryLat, parseQueryLng, parseQueryZoom } from '../utils/query-params';
-import { createLogger } from '../utils/logger';
 
 const logger = createLogger('MapDefaults');
 
@@ -72,10 +72,11 @@ const qCenter: [number, number] | null = qLat != null && qLng != null ? [qLat, q
 const envCenter = parseEnvLatLng(import.meta.env.VITE_INITIAL_LAT_LNG);
 const envZoom = parseEnvZoom(import.meta.env.VITE_INITIAL_ZOOM_LEVEL);
 
+const DEFAULT_ZOOM = 16;
 const randomHome = (qCenter ?? envCenter) ? null : pickRandomHome();
 
 const resolvedCenter: [number, number] = qCenter ?? envCenter ?? randomHome!.center;
-const resolvedZoom: number = qZoom ?? envZoom ?? randomHome!.zoom;
+const resolvedZoom: number = qZoom ?? envZoom ?? randomHome?.zoom ?? DEFAULT_ZOOM;
 
 // Log resolution source
 if (qCenter) {
