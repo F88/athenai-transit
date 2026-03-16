@@ -203,6 +203,7 @@ interface MapViewProps {
   selectedStopId: string | null;
   focusPosition: LatLng | null;
   routeTypeMap: Map<string, RouteType[]>;
+  agenciesMap: Map<string, Agency[]>;
   routeShapes: RouteShape[];
   selectionInfo: SelectionInfo | null;
   visibleStopTypes: Set<number>;
@@ -242,6 +243,7 @@ export function MapView({
   focusPosition,
   nearbyDepartures,
   routeTypeMap,
+  agenciesMap,
   routeShapes,
   selectionInfo,
   visibleStopTypes,
@@ -285,14 +287,6 @@ export function MapView({
     () => buildDepartureGroupsMap(nearbyDepartures),
     [nearbyDepartures],
   );
-
-  const agenciesMap = useMemo(() => {
-    const map = new Map<string, Agency[]>();
-    for (const d of nearbyDepartures) {
-      map.set(d.stop.stop_id, d.agencies);
-    }
-    return map;
-  }, [nearbyDepartures]);
 
   const selectedRouteIds = selectionInfo?.routeIds ?? null;
 

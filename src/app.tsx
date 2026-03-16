@@ -77,6 +77,34 @@ export default function App() {
     });
   }, [inBoundStops, radiusStops, repo]);
 
+  // Build stop-level agencies lookup covering all visible stops
+  const [stopAgenciesMap, setStopAgenciesMap] = useState<Map<string, Agency[]>>(() => new Map());
+
+  useEffect(() => {
+    const allStops = [...inBoundStops, ...radiusStops].map((s) => s.stop);
+    const uniqueAgencyIds = [...new Set(allStops.map((s) => s.agency_id).filter(Boolean))];
+
+    void Promise.all(
+      uniqueAgencyIds.map(async (id) => {
+        const result = await repo.getAgency(id);
+        return result.success ? result.data : null;
+      }),
+    ).then((results) => {
+      const agencyMap = new Map<string, Agency>();
+      for (const agency of results) {
+        if (agency) {
+          agencyMap.set(agency.agency_id, agency);
+        }
+      }
+      const map = new Map<string, Agency[]>();
+      for (const stop of allStops) {
+        const agency = stop.agency_id ? agencyMap.get(stop.agency_id) : undefined;
+        map.set(stop.stop_id, agency ? [agency] : []);
+      }
+      setStopAgenciesMap(map);
+    });
+  }, [inBoundStops, radiusStops, repo]);
+
   const {
     selectedStopId,
     selectionInfo,
@@ -360,6 +388,7 @@ export default function App() {
           focusPosition={focusPosition}
           nearbyDepartures={nearbyDepartures}
           routeTypeMap={routeTypeMap}
+          agenciesMap={stopAgenciesMap}
           routeShapes={routeShapes}
           selectionInfo={selectionInfo}
           visibleStopTypes={visibleStopTypes}
