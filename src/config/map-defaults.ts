@@ -88,12 +88,18 @@ const resolvedZoom: number = qZoom ?? envZoom ?? randomHome?.zoom ?? DEFAULT_ZOO
 
 // Log resolution source
 if (qCenter) {
-  logger.info(`Initial position from query params: [${resolvedCenter.join(', ')}] zoom=${String(resolvedZoom)}`);
+  logger.info(
+    `Initial position from query params: [${resolvedCenter.join(', ')}] zoom=${String(resolvedZoom)}`,
+  );
 } else if (envCenter) {
-  logger.info(`Initial position from env: [${resolvedCenter.join(', ')}] zoom=${String(resolvedZoom)}`);
+  logger.info(
+    `Initial position from env: [${resolvedCenter.join(', ')}] zoom=${String(resolvedZoom)}`,
+  );
 } else if (randomHome) {
   const name = HOME_LOCATIONS.find((l) => l.lat === randomHome.center[0])?.name ?? 'unknown';
-  logger.info(`Initial position from random: ${name} [${resolvedCenter.join(', ')}] zoom=${String(resolvedZoom)}`);
+  logger.info(
+    `Initial position from random: ${name} [${resolvedCenter.join(', ')}] zoom=${String(resolvedZoom)}`,
+  );
 }
 
 /**

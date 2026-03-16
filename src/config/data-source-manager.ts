@@ -1,5 +1,8 @@
 import settings from './data-source-settings';
 import { getSourcesParam } from '../utils/query-params';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('DataSourceManager');
 
 /**
  * A group of related GTFS data sources managed as a single toggle unit.
@@ -46,6 +49,7 @@ export class DataSourceManager {
     if (sourcesParam) {
       if (sourcesParam === 'all') {
         this.enabledIds = new Set(this.groups.map((g) => g.id));
+        logger.info('Data sources from query params: all');
       } else {
         const requestedPrefixes = new Set(sourcesParam.split(',').map((s) => s.trim()));
         this.enabledIds = new Set(
@@ -53,6 +57,7 @@ export class DataSourceManager {
             .filter((g) => g.prefixes.some((p) => requestedPrefixes.has(p)))
             .map((g) => g.id),
         );
+        logger.info(`Data sources from query params: ${sourcesParam}`);
       }
       return;
     }
