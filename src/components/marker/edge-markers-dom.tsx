@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import type { EdgeMarker } from '../../types/app/map';
 import type { InfoLevel } from '../../types/app/settings';
-import type { Stop, StopWithContext } from '../../types/app/transit';
+import type { Agency, Stop, StopWithContext } from '../../types/app/transit';
 import { truncateLabel } from '../../utils/truncate-label';
 import { formatDistance } from '../../domain/transit/distance';
 import { distanceStyle } from '../../utils/distance-style';
@@ -52,6 +52,7 @@ function EdgeMarkerItem({
   infoLevel,
   showDistance,
   containerHeight,
+  agencies,
   onStopSelected,
   onFetchDepartures,
 }: {
@@ -61,6 +62,7 @@ function EdgeMarkerItem({
   showDistance: boolean;
   /** Measured container height for top/bottom alignment decision. */
   containerHeight: number;
+  agencies: Agency[];
   onStopSelected: (stop: Stop) => void;
   onFetchDepartures: (stopId: string) => Promise<StopWithContext | null>;
 }) {
@@ -174,6 +176,7 @@ function EdgeMarkerItem({
           <StopSummary
             stop={marker.stop}
             routeTypes={marker.routeTypes}
+            agencies={departures?.agencies ?? agencies}
             groups={hasData ? departures.groups : undefined}
             now={now}
             infoLevel={infoLevel}
@@ -192,6 +195,7 @@ interface EdgeMarkersDomProps {
   showDistance: boolean;
   /** Measured container height for top/bottom alignment. */
   containerHeight: number;
+  agenciesMap?: Map<string, Agency[]>;
   onStopSelected: (stop: Stop) => void;
   onFetchDepartures: (stopId: string) => Promise<StopWithContext | null>;
 }
@@ -207,6 +211,7 @@ export function EdgeMarkersDom({
   infoLevel,
   showDistance,
   containerHeight,
+  agenciesMap,
   onStopSelected,
   onFetchDepartures,
 }: EdgeMarkersDomProps) {
@@ -220,6 +225,7 @@ export function EdgeMarkersDom({
           infoLevel={infoLevel}
           showDistance={showDistance}
           containerHeight={containerHeight}
+          agencies={agenciesMap?.get(marker.stop.stop_id) ?? []}
           onStopSelected={onStopSelected}
           onFetchDepartures={onFetchDepartures}
         />

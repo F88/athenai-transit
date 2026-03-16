@@ -1,7 +1,13 @@
 import L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { EffectiveRenderMode } from '../../utils/render-mode';
-import type { DepartureGroup, RouteType, Stop, StopWithContext } from '../../types/app/transit';
+import type {
+  Agency,
+  DepartureGroup,
+  RouteType,
+  Stop,
+  StopWithContext,
+} from '../../types/app/transit';
 import { StopMarkersDom } from './stop-markers-dom';
 import { StopMarkersCanvas } from './stop-markers-canvas';
 import { createLogger } from '../../utils/logger';
@@ -35,6 +41,8 @@ interface StopMarkersProps {
   /** When true, Canvas mode uses incremental updates instead of full rebuild.
    *  Passed through to StopMarkersCanvas. Defaults to false. */
   incremental?: boolean;
+  /** Map of stop ID to agencies operating at each stop. */
+  agenciesMap?: Map<string, Agency[]>;
 }
 
 export function StopMarkers({
@@ -50,6 +58,7 @@ export function StopMarkers({
   showTooltip = true,
   renderer,
   incremental = false,
+  agenciesMap,
 }: StopMarkersProps) {
   logger.verbose(
     `stops=${stops.length}, renderMode=${renderMode}, incremental=${incremental}, selectedStopId=${selectedStopId}`,
@@ -67,6 +76,7 @@ export function StopMarkers({
       showTooltip={showTooltip}
       renderer={renderer}
       incremental={incremental}
+      agenciesMap={agenciesMap}
     />
   ) : (
     <StopMarkersDom
@@ -79,6 +89,7 @@ export function StopMarkers({
       time={time}
       onFetchDepartures={onFetchDepartures}
       showTooltip={showTooltip}
+      agenciesMap={agenciesMap}
     />
   );
 }

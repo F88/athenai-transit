@@ -1,14 +1,16 @@
 import type { InfoLevel } from '../../types/app/settings';
-import type { RouteType, Stop, StopWithContext } from '../../types/app/transit';
+import type { Agency, RouteType, Stop, StopWithContext } from '../../types/app/transit';
 import { createInfoLevel } from '../../utils/create-info-level';
 import { getStopDisplayNames } from '../../domain/transit/get-stop-display-names';
 import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
+import { AgencyBadge } from '../badge/agency-badge';
 import { RouteBadge } from '../badge/route-badge';
 import { routeTypesEmoji } from '../../domain/transit/route-type-emoji';
 
 interface StopSummaryProps {
   stop: Stop;
   routeTypes: RouteType[];
+  agencies: Agency[];
   groups?: StopWithContext['groups'];
   now?: Date;
   /** Info level for controlling display verbosity. Uses createInfoLevel
@@ -28,7 +30,14 @@ interface StopSummaryProps {
  * @param now - Current time for relative time calculation.
  * @param infoLevel - Controls which metadata fields are shown.
  */
-export function StopSummary({ stop, routeTypes, groups, now, infoLevel }: StopSummaryProps) {
+export function StopSummary({
+  stop,
+  routeTypes,
+  agencies,
+  groups,
+  now,
+  infoLevel,
+}: StopSummaryProps) {
   const info = createInfoLevel(infoLevel);
   const stopNames = getStopDisplayNames(stop, infoLevel);
   // Departure items require `now` for relative time display
@@ -46,8 +55,14 @@ export function StopSummary({ stop, routeTypes, groups, now, infoLevel }: StopSu
           {stopNames.subNames.join(' / ')}
         </div>
       )}
-      <div className="text-xs font-bold text-[#333] dark:text-gray-200">
-        {routeTypesEmoji(routeTypes)} {stopNames.name}
+      <div className="flex flex-wrap items-center gap-1 text-xs font-bold text-[#333] dark:text-gray-200">
+        <span>
+          {routeTypesEmoji(routeTypes)} {stopNames.name}
+        </span>
+        {agencies.length > 0 &&
+          agencies.map((a) => (
+            <AgencyBadge key={a.agency_id} agency={a} infoLevel={infoLevel} size="xs" />
+          ))}
       </div>
       {items.map((group, i) => {
         const first = group.departures[0];

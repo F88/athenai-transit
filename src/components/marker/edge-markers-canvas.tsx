@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { EdgeMarker } from '../../types/app/map';
 import type { InfoLevel } from '../../types/app/settings';
-import type { Stop } from '../../types/app/transit';
+import type { Agency, Stop } from '../../types/app/transit';
 import { getRouteTypeColor } from '../../lib/leaflet-helpers';
 import { primaryRouteType } from '../../domain/transit/route-type-color';
 import { formatDistance } from '../../domain/transit/distance';
@@ -66,6 +66,7 @@ interface EdgeMarkersCanvasProps {
   infoLevel: InfoLevel;
   /** Measured container height for top/bottom tooltip alignment. */
   containerHeight: number;
+  agenciesMap?: Map<string, Agency[]>;
   onStopSelected: (stop: Stop) => void;
 }
 
@@ -81,6 +82,7 @@ export function EdgeMarkersCanvas({
   mapContainer,
   infoLevel,
   containerHeight,
+  agenciesMap,
   onStopSelected,
 }: EdgeMarkersCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -267,6 +269,7 @@ export function EdgeMarkersCanvas({
             <StopSummary
               stop={hoveredMarker.stop}
               routeTypes={hoveredMarker.routeTypes}
+              agencies={agenciesMap?.get(hoveredMarker.stop.stop_id) ?? []}
               infoLevel={infoLevel}
             />
           </div>

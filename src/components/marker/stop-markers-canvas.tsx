@@ -3,7 +3,13 @@ import { useMap } from 'react-leaflet';
 import { renderToStaticMarkup } from 'react-dom/server';
 import L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
-import type { DepartureGroup, RouteType, Stop, StopWithContext } from '../../types/app/transit';
+import type {
+  Agency,
+  DepartureGroup,
+  RouteType,
+  Stop,
+  StopWithContext,
+} from '../../types/app/transit';
 import { getRouteTypeColor } from '../../lib/leaflet-helpers';
 import { primaryRouteType } from '../../domain/transit/route-type-color';
 import { createLogger } from '../../utils/logger';
@@ -31,6 +37,8 @@ interface StopMarkersCanvasProps {
    *  Avoids flicker when `stops` changes frequently (e.g. far stops on pan).
    *  Marker z-ordering is not guaranteed in this mode. Defaults to false. */
   incremental?: boolean;
+  /** Map of stop ID to agencies operating at each stop. */
+  agenciesMap?: Map<string, Agency[]>;
 }
 
 /**
@@ -47,6 +55,7 @@ interface StopMarkersCanvasProps {
 function buildSummaryHtml(
   stop: Stop,
   routeTypes: RouteType[],
+  agencies: Agency[],
   groups: DepartureGroup[] | undefined,
   now: Date | undefined,
   infoLevel: InfoLevel,
@@ -55,6 +64,7 @@ function buildSummaryHtml(
     <StopSummary
       stop={stop}
       routeTypes={routeTypes}
+      agencies={agencies}
       groups={groups}
       now={now}
       infoLevel={infoLevel}
@@ -84,6 +94,7 @@ export function StopMarkersCanvas({
   showTooltip = true,
   renderer,
   incremental = false,
+  agenciesMap,
 }: StopMarkersCanvasProps) {
   const map = useMap();
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -110,6 +121,7 @@ export function StopMarkersCanvas({
       infoLevel,
       onStopSelectedRef,
       onFetchDeparturesRef,
+      agenciesMap,
     };
     if (!layerGroupRef.current) {
       layerGroupRef.current = L.layerGroup().addTo(map);
@@ -194,6 +206,7 @@ export function StopMarkersCanvas({
             buildSummaryHtml(
               selectedStop,
               routeTypeMap.get(selectedStopId) ?? [3],
+              agenciesMap?.get(selectedStopId) ?? [],
               groups,
               now,
               infoLevel,
@@ -217,6 +230,7 @@ export function StopMarkersCanvas({
     selectedStopId,
     routeTypeMap,
     nearbyDepartures,
+    agenciesMap,
     now,
     infoLevel,
     showTooltip,
@@ -250,6 +264,7 @@ function createMarker(
     nearbyDepartures?: Map<string, DepartureGroup[]>;
     now?: Date;
     infoLevel: InfoLevel;
+    agenciesMap?: Map<string, Agency[]>;
     onStopSelectedRef: React.RefObject<(stop: Stop) => void>;
     onFetchDeparturesRef: React.RefObject<
       ((stopId: string) => Promise<StopWithContext | null>) | undefined
@@ -278,6 +293,7 @@ function createMarker(
       buildSummaryHtml(
         stop,
         routeTypes,
+        opts.agenciesMap?.get(stop.stop_id) ?? [],
         opts.nearbyDepartures?.get(stop.stop_id),
         opts.now,
         opts.infoLevel,
@@ -308,6 +324,7 @@ function updateMarkerStyle(
     nearbyDepartures?: Map<string, DepartureGroup[]>;
     now?: Date;
     infoLevel: InfoLevel;
+    agenciesMap?: Map<string, Agency[]>;
   },
 ): void {
   const isSelected = stop.stop_id === opts.selectedStopId;
@@ -330,6 +347,7 @@ function updateMarkerStyle(
       buildSummaryHtml(
         stop,
         routeTypes,
+        opts.agenciesMap?.get(stop.stop_id) ?? [],
         opts.nearbyDepartures?.get(stop.stop_id),
         opts.now,
         opts.infoLevel,

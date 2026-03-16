@@ -3,7 +3,13 @@ import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'r
 import L from 'leaflet';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
-import type { RouteType, Stop, StopWithContext, StopWithMeta } from '../../types/app/transit';
+import type {
+  Agency,
+  RouteType,
+  Stop,
+  StopWithContext,
+  StopWithMeta,
+} from '../../types/app/transit';
 import { enableDoubleTapZoom } from '../../lib/double-tap-zoom';
 import { smoothMoveTo, toBounds, toCenter } from '../../lib/leaflet-helpers';
 import { StopMarkers } from '../marker/stop-markers';
@@ -280,6 +286,14 @@ export function MapView({
     [nearbyDepartures],
   );
 
+  const agenciesMap = useMemo(() => {
+    const map = new Map<string, Agency[]>();
+    for (const d of nearbyDepartures) {
+      map.set(d.stop.stop_id, d.agencies);
+    }
+    return map;
+  }, [nearbyDepartures]);
+
   const selectedRouteIds = selectionInfo?.routeIds ?? null;
 
   // stop selection: hide unrelated routes (only show routes passing through the stop)
@@ -389,6 +403,7 @@ export function MapView({
           selectedStopId={selectedStopId}
           routeTypeMap={routeTypeMap}
           nearbyDepartures={departureGroupsMap}
+          agenciesMap={agenciesMap}
           showTooltip={true}
           // showTooltip={false}
           time={now}
@@ -403,6 +418,7 @@ export function MapView({
           stops={filteredFarStops}
           selectedStopId={selectedStopId}
           routeTypeMap={routeTypeMap}
+          agenciesMap={agenciesMap}
           showTooltip={true}
           renderMode={farRenderMode}
           infoLevel={infoLevel}
@@ -420,6 +436,7 @@ export function MapView({
           map={mapInstance}
           stops={filteredNearbyStops}
           routeTypeMap={routeTypeMap}
+          agenciesMap={agenciesMap}
           now={now}
           infoLevel={infoLevel}
           renderMode={nearbyRenderMode}
