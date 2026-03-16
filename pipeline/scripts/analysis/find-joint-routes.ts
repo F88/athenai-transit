@@ -61,10 +61,10 @@ interface StopInfo {
 const DATA_DIR = path.resolve(import.meta.dirname, '../../../public/data');
 
 /**
- * Normalizes full-width alphanumeric/symbols to half-width for comparison.
+ * Converts full-width alphanumeric and symbols to half-width.
  * e.g. "渋６６" → "渋66", "Ａ１" → "A1"
  */
-function normalizeWidth(s: string): string {
+function fullWidthToHalfWidth(s: string): string {
   return s.replace(/[\uff01-\uff5e]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xfee0));
 }
 
@@ -304,7 +304,7 @@ function findJointCandidates(sources: string[]): [string, JointEntry[]][] {
       if (!route.s) {
         continue;
       }
-      const key = normalizeWidth(route.s);
+      const key = fullWidthToHalfWidth(route.s);
       const entries = nameMap.get(key) ?? [];
       entries.push({ source, route });
       nameMap.set(key, entries);

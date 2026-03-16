@@ -197,6 +197,26 @@ const STOPS: Stop[] = [
     location_type: 1,
     agency_id: 'mock:aoba',
   },
+  // Hotel near the spaceport
+  {
+    stop_id: 'bus_hotel_mangetsu',
+    stop_name: 'ホテル満月',
+    stop_names: { ja: 'ホテル満月', 'ja-Hrkt': 'ほてるまんげつ', en: 'Hotel Mangetsu' },
+    stop_lat: 35.57967,
+    stop_lon: 139.7857,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  // Hotel near the coast
+  {
+    stop_id: 'bus_hotel_shingetsu',
+    stop_name: 'ホテル新月',
+    stop_names: { ja: 'ホテル新月', 'ja-Hrkt': 'ほてるしんげつ', en: 'Hotel Shingetsu' },
+    stop_lat: 35.464832,
+    stop_lon: 139.873584,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
   // Distant station (~15 km south, near Haneda) for testing pan+zoom behavior
   {
     stop_id: 'sta_airport',
@@ -273,13 +293,13 @@ const ROUTES: Route[] = [
     route_text_color: 'FFFFFF',
     agency_id: 'mock:soraq',
   },
-  // Short shuttle bus to nearby hotel (あおバス)
+  // Short shuttle subway to nearby hotel (あおバス)
   {
-    route_id: 'bus_hotel_shuttle',
+    route_id: 'subway_hotel_shuttle',
     route_short_name: 'H1',
-    route_long_name: 'つき宇宙空港-ホテル満月',
+    route_long_name: 'つき宇宙空港-ホテル新月',
     route_names: {},
-    route_type: 3,
+    route_type: 1,
     route_color: '8E24AA',
     route_text_color: 'FFFFFF',
     agency_id: 'mock:aoba',
@@ -373,51 +393,52 @@ const ROUTES: Route[] = [
  */
 const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
   sta_central: [
-    { routeId: 'rail_aoba', headsign: 'はなみ方面' },
-    { routeId: 'rail_aoba', headsign: 'かぜの方面' },
-    { routeId: 'subway_sora', headsign: 'そらタワー方面' },
-    { routeId: 'subway_sora', headsign: 'にじ橋方面' },
-    { routeId: 'subway_airport', headsign: 'つき宇宙空港方面' },
-    { routeId: 'subway_airport_sora', headsign: 'つき宇宙空港方面' },
+    { routeId: 'rail_aoba', headsign: 'はなみ' },
+    { routeId: 'rail_aoba', headsign: 'かぜの' },
+    { routeId: 'subway_sora', headsign: 'そらタワー' },
+    { routeId: 'subway_sora', headsign: 'にじ橋' },
+    { routeId: 'subway_airport', headsign: 'つき宇宙空港' },
+    { routeId: 'subway_airport_sora', headsign: 'つき宇宙空港' },
+    { routeId: 'subway_airport_sora', headsign: 'ホテル満月' },
     { routeId: 'tram_hoshi', headsign: 'ほし公園' },
     { routeId: 'bus_aoba01', headsign: 'にじ橋' },
     { routeId: 'bus_aoba02', headsign: 'そらタワー' },
     { routeId: 'bus_sora_exp01', headsign: 'つきみの駅' },
   ],
   sta_central_s: [
-    { routeId: 'rail_aoba', headsign: 'はなみ方面' },
-    { routeId: 'rail_aoba', headsign: 'かぜの方面' },
-    { routeId: 'subway_sora', headsign: 'そらタワー方面' },
-    { routeId: 'subway_sora', headsign: 'にじ橋方面' },
+    { routeId: 'rail_aoba', headsign: 'はなみ' },
+    { routeId: 'rail_aoba', headsign: 'かぜの' },
+    { routeId: 'subway_sora', headsign: 'そらタワー' },
+    { routeId: 'subway_sora', headsign: 'にじ橋' },
     { routeId: 'bus_aoba02', headsign: 'そらタワー' },
   ],
   sta_hill: [
-    { routeId: 'rail_midori', headsign: 'ゆめの丘方面' },
-    { routeId: 'rail_midori', headsign: 'ひかり台方面' },
+    { routeId: 'rail_midori', headsign: 'ゆめの丘' },
+    { routeId: 'rail_midori', headsign: 'ひかり台' },
     { routeId: 'bus_midori10', headsign: 'かぜの駅' },
   ],
   sta_east: [
-    { routeId: 'rail_hikari', headsign: 'あおば中央方面' },
-    { routeId: 'rail_hikari', headsign: 'みどり丘方面' },
+    { routeId: 'rail_hikari', headsign: 'あおば中央' },
+    { routeId: 'rail_hikari', headsign: 'みどり丘' },
     { routeId: 'tram_hoshi', headsign: 'ほし公園' },
   ],
   sta_north: [
-    { routeId: 'rail_hikari', headsign: 'あおば中央方面' },
-    { routeId: 'rail_hikari', headsign: 'みどり丘方面' },
+    { routeId: 'rail_hikari', headsign: 'あおば中央' },
+    { routeId: 'rail_hikari', headsign: 'みどり丘' },
   ],
   sta_west: [
-    { routeId: 'rail_midori', headsign: 'ゆめの丘方面' },
-    { routeId: 'rail_midori', headsign: 'ひかり台方面' },
+    { routeId: 'rail_midori', headsign: 'ゆめの丘' },
+    { routeId: 'rail_midori', headsign: 'ひかり台' },
   ],
   sta_south: [
-    { routeId: 'rail_aoba', headsign: 'はなみ方面' },
-    { routeId: 'rail_aoba', headsign: 'かぜの方面' },
-    { routeId: 'subway_sora', headsign: 'そらタワー方面' },
-    { routeId: 'subway_sora', headsign: 'にじ橋方面' },
+    { routeId: 'rail_aoba', headsign: 'はなみ' },
+    { routeId: 'rail_aoba', headsign: 'かぜの' },
+    { routeId: 'subway_sora', headsign: 'そらタワー' },
+    { routeId: 'subway_sora', headsign: 'にじ橋' },
   ],
   sta_northwest: [
-    { routeId: 'rail_midori', headsign: 'ゆめの丘方面' },
-    { routeId: 'rail_midori', headsign: 'ひかり台方面' },
+    { routeId: 'rail_midori', headsign: 'ゆめの丘' },
+    { routeId: 'rail_midori', headsign: 'ひかり台' },
   ],
   bus_park: [
     { routeId: 'bus_aoba01', headsign: 'にじ橋' },
@@ -441,8 +462,13 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
   sta_airport: [
     { routeId: 'subway_airport', headsign: 'あおば中央方面' },
     { routeId: 'subway_airport_sora', headsign: 'あおば中央方面' },
-    { routeId: 'bus_hotel_shuttle', headsign: 'ホテル満月' },
+    { routeId: 'subway_hotel_shuttle', headsign: 'ホテル新月' },
   ],
+  bus_hotel_mangetsu: [
+    { routeId: 'subway_airport', headsign: 'あおば中央' },
+    { routeId: 'subway_airport', headsign: 'つき宇宙空港' },
+  ],
+  bus_hotel_shingetsu: [{ routeId: 'subway_hotel_shuttle', headsign: 'つき宇宙空港' }],
 };
 
 /** Pre-computed route types per stop (deduplicated, sorted ascending). */
@@ -534,12 +560,12 @@ const ROUTE_SHAPES: RouteShape[] = [
     routeType: 1,
     color: `#${ROUTE_MAP.get('subway_airport')!.route_color}`,
     route: ROUTE_MAP.get('subway_airport')!,
-    points: [coord('sta_central'), coord('sta_airport')],
+    points: [coord('sta_central'), coord('bus_hotel_mangetsu'), coord('sta_airport')],
   },
-  // subway_airport_sora: 中央駅 → つき宇宙空港駅 (そら急 joint operation)
+  // subway_airport_sora: 中央駅 → つき宇宙空港駅 直通 (そら急 joint operation, route_type: 6 gondola)
   {
     routeId: 'subway_airport_sora',
-    routeType: 1,
+    routeType: 6,
     color: `#${ROUTE_MAP.get('subway_airport_sora')!.route_color}`,
     route: ROUTE_MAP.get('subway_airport_sora')!,
     points: [coord('sta_central'), coord('sta_airport')],
@@ -567,6 +593,14 @@ const ROUTE_SHAPES: RouteShape[] = [
     color: `#${ROUTE_MAP.get('bus_sora_exp01')!.route_color}`,
     route: ROUTE_MAP.get('bus_sora_exp01')!,
     points: [coord('sta_central'), coord('sta_west')],
+  },
+  // subway_hotel_shuttle: つき宇宙空港駅 → ホテル新月
+  {
+    routeId: 'subway_hotel_shuttle',
+    routeType: 1,
+    color: `#${ROUTE_MAP.get('subway_hotel_shuttle')!.route_color}`,
+    route: ROUTE_MAP.get('subway_hotel_shuttle')!,
+    points: [coord('sta_airport'), coord('bus_hotel_shingetsu')],
   },
   // bus_midori10: みどり丘駅 → 図書館前 → かぜの駅
   {

@@ -70,12 +70,16 @@ export function NearbyStop({
           {stopNames.subNames.join(' / ')}
         </p>
       )}
-      <div className="m-0 mb-1.5 flex items-center">
+      <div className="m-0 mb-1.5 flex flex-wrap items-center gap-1">
         <p className="m-0 text-base font-semibold text-[#1565c0] dark:text-blue-400">
           <span className="mr-1 align-middle text-[22px]">{routeTypesEmoji(routeTypes)}</span>
           {stopNames.name}
           {distance != null && distance >= 10 && <DistanceBadge meters={distance} />}
         </p>
+        {agencies.length > 0 &&
+          agencies.map((agency) => (
+            <AgencyBadge key={agency.agency_id} agency={agency} infoLevel={infoLevel} size="xs" />
+          ))}
         {onShowStopTimetable && (
           <button
             type="button"
@@ -89,13 +93,6 @@ export function NearbyStop({
           </button>
         )}
       </div>
-      {agencies.length > 0 && (
-        <div className="mb-1 flex flex-wrap gap-1">
-          {agencies.map((agency) => (
-            <AgencyBadge key={agency.agency_id} agency={agency} infoLevel={infoLevel} size="xs" />
-          ))}
-        </div>
-      )}
       {hasUnknownDestination(groups) && (
         <p className="m-0 mb-1 text-[11px] text-amber-600 dark:text-amber-400">
           行先が表示されない路線があります

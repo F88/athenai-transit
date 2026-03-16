@@ -2,9 +2,9 @@
  * Entry point for analysis and development tools.
  *
  * Usage:
- *   npx tsx pipeline/scripts/analysis/index.ts              # interactive selection
- *   npx tsx pipeline/scripts/analysis/index.ts <script-name> # direct execution
- *   npx tsx pipeline/scripts/analysis/index.ts --list        # list available scripts
+ *   npx tsx pipeline/scripts/dev-tools.ts              # interactive selection
+ *   npx tsx pipeline/scripts/dev-tools.ts <script-name> # direct execution
+ *   npx tsx pipeline/scripts/dev-tools.ts --list        # list available scripts
  */
 
 import { execSync } from 'node:child_process';

@@ -323,7 +323,10 @@ export default function App() {
   }, [settings.visibleRouteShapes, updateSetting]);
 
   const handleToggleNonBusShapes = useCallback(() => {
-    updateSetting('visibleRouteShapes', toggleGroupInList(settings.visibleRouteShapes, [0, 1, 2]));
+    updateSetting(
+      'visibleRouteShapes',
+      toggleGroupInList(settings.visibleRouteShapes, [0, 1, 2, 4, 5, 6, 7]),
+    );
   }, [settings.visibleRouteShapes, updateSetting]);
 
   const handleCycleInfoLevel = useCallback(() => {
