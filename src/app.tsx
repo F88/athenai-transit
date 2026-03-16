@@ -193,8 +193,8 @@ export default function App() {
 
   const handleShowTimetable = useCallback(
     async (stopId: string, group: DepartureGroup) => {
-      const stop = radiusStops.find((s) => s.stop.stop_id === stopId)?.stop;
-      if (!stop) {
+      const meta = radiusStops.find((s) => s.stop.stop_id === stopId);
+      if (!meta) {
         return;
       }
       const result = await repo.getFullDayDepartures(
@@ -204,41 +204,39 @@ export default function App() {
         dateTime,
       );
       const departures = result.success ? result.data : [];
-      const agencies = nearbyDepartures.find((s) => s.stop.stop_id === stopId)?.agencies ?? [];
       setTimetableModal({
         type: 'route-headsign',
-        stop,
+        stop: meta.stop,
         route: group.route,
         headsign: group.headsign,
         serviceDate: getServiceDay(dateTime),
         departures,
-        agencies,
+        agencies: meta.agencies,
       });
     },
-    [repo, dateTime, radiusStops, nearbyDepartures],
+    [repo, dateTime, radiusStops],
   );
 
   const handleShowStopTimetable = useCallback(
     async (stopId: string) => {
-      const stop = radiusStops.find((s) => s.stop.stop_id === stopId)?.stop;
-      if (!stop) {
+      const meta = radiusStops.find((s) => s.stop.stop_id === stopId);
+      if (!meta) {
         return;
       }
 
       const result = await repo.getFullDayDeparturesForStop(stopId, dateTime);
       const departures = result.success ? result.data : [];
 
-      const agencies = nearbyDepartures.find((s) => s.stop.stop_id === stopId)?.agencies ?? [];
       setTimetableModal({
         type: 'stop',
-        stop,
+        stop: meta.stop,
         routeTypes: routeTypeMap.get(stopId) ?? [3],
         serviceDate: getServiceDay(dateTime),
         departures,
-        agencies,
+        agencies: meta.agencies,
       });
     },
-    [repo, dateTime, radiusStops, routeTypeMap, nearbyDepartures],
+    [repo, dateTime, radiusStops, routeTypeMap],
   );
 
   // Select + pan to a stop from history. Uses focusStop to set
