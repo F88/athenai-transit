@@ -1,8 +1,10 @@
 import type { InfoLevel } from '../types/app/settings';
-import type { FlatDeparture } from '../types/app/transit';
+import type { Agency, FlatDeparture } from '../types/app/transit';
+import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
 import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
+import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
 
 interface FlatDepartureItemProps {
@@ -16,6 +18,10 @@ interface FlatDepartureItemProps {
   showRouteTypeIcon: boolean;
   /** Current info verbosity level for route label formatting. */
   infoLevel: InfoLevel;
+  /** Agency short name to display at detailed+ info level. */
+  agencyName?: string;
+  /** Agency object for badge display at detailed+ info level. */
+  agency?: Agency;
 }
 
 /**
@@ -35,7 +41,10 @@ export function FlatDepartureItem({
   isFirst,
   showRouteTypeIcon,
   infoLevel,
+  agencyName,
+  agency,
 }: FlatDepartureItemProps) {
+  const info = useInfoLevel(infoLevel);
   const headsignName = getHeadsignDisplayNames(item.headsign, item.route, infoLevel).name;
   const bgColor = item.route.route_color ? `#${item.route.route_color}` : undefined;
 
@@ -53,6 +62,12 @@ export function FlatDepartureItem({
       <RouteBadge route={item.route} infoLevel={infoLevel} className="shrink-0" />
       {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
       <span className="truncate text-sm text-[#333] dark:text-gray-200">{headsignName}</span>
+      {info.isDetailedEnabled && agencyName && (
+        <span className="shrink-0 text-[10px] text-[#888] dark:text-gray-400">{agencyName}</span>
+      )}
+      {info.isDetailedEnabled && agency && (
+        <AgencyBadge agency={agency} infoLevel={infoLevel} size="xs" />
+      )}
     </div>
   );
 }

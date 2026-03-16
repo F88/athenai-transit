@@ -155,15 +155,18 @@ export interface RouteWithMeta {
 export type RouteWithContext = RouteWithMeta;
 
 /**
- * A stop enriched with metadata computed during spatial queries.
+ * A stop enriched with metadata for map marker display.
  *
- * Returned by `getStopsNearby` to carry computed values (e.g. distance)
- * alongside the base {@link Stop} without mutating the GTFS-derived type.
+ * Holds the data needed to render a stop marker on the map,
+ * including computed values from spatial queries.
+ * Agencies are resolved from routes serving this stop via timetable data.
  */
 export interface StopWithMeta {
   stop: Stop;
   /** Distance in meters from the query center point. */
   distance?: number;
+  /** Agencies operating routes at this stop, resolved from timetable data. */
+  agencies: Agency[];
 }
 
 /**
@@ -183,6 +186,7 @@ export interface DepartureGroup {
 /**
  * A stop paired with its route types and upcoming departure groups.
  *
+ * Extends {@link StopWithMeta} with departure context.
  * Used by BottomSheet and MapView tooltip to display nearby stop info.
  * When all services have ended, `groups` is an empty array and the UI
  * shows "本日の運行は終了しました".
@@ -190,11 +194,9 @@ export interface DepartureGroup {
  * `routeTypes` contains all GTFS route_type values serving this stop,
  * sorted in ascending order (e.g. `[0, 3]` for a tram+bus stop).
  */
-export interface StopWithContext {
-  stop: Stop;
+export interface StopWithContext extends StopWithMeta {
   routeTypes: RouteType[];
   groups: DepartureGroup[];
-  agencies: Agency[];
 }
 
 /**

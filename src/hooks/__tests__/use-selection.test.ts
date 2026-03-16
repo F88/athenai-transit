@@ -222,7 +222,9 @@ describe('useSelection', () => {
 
     it('resolves from inBoundStops when not in radiusStops', () => {
       const stop = makeStop('A', 35.2, 139.2);
-      const { result } = renderHook(() => useSelection(makeParams({ inBoundStops: [{ stop }] })));
+      const { result } = renderHook(() =>
+        useSelection(makeParams({ inBoundStops: [{ stop, agencies: [] }] })),
+      );
 
       act(() => {
         result.current.selectStop(stop);

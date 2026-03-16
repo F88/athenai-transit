@@ -174,10 +174,10 @@ export default function App() {
 
   const handleFetchDepartures = useCallback(
     async (stopId: string): Promise<StopWithContext | null> => {
-      const stop =
-        inBoundStops.find((s) => s.stop.stop_id === stopId)?.stop ??
-        radiusStops.find((s) => s.stop.stop_id === stopId)?.stop;
-      if (!stop) {
+      const meta =
+        inBoundStops.find((s) => s.stop.stop_id === stopId) ??
+        radiusStops.find((s) => s.stop.stop_id === stopId);
+      if (!meta) {
         return null;
       }
       const [depsResult, rtResult] = await Promise.all([
@@ -186,17 +186,15 @@ export default function App() {
       ]);
       const groups = depsResult.success ? depsResult.data : [];
       const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-      // agencies is empty until agency UI (badges, filtering) is implemented.
-      // Agency resolution will be added when the UI consumes it.
-      return { stop, routeTypes, groups, agencies: [] };
+      return { stop: meta.stop, routeTypes, groups, agencies: meta.agencies };
     },
     [repo, dateTime, inBoundStops, radiusStops],
   );
 
   const handleShowTimetable = useCallback(
     async (stopId: string, group: DepartureGroup) => {
-      const stop = radiusStops.find((s) => s.stop.stop_id === stopId)?.stop;
-      if (!stop) {
+      const meta = radiusStops.find((s) => s.stop.stop_id === stopId);
+      if (!meta) {
         return;
       }
       const result = await repo.getFullDayDepartures(
@@ -208,11 +206,12 @@ export default function App() {
       const departures = result.success ? result.data : [];
       setTimetableModal({
         type: 'route-headsign',
-        stop,
+        stop: meta.stop,
         route: group.route,
         headsign: group.headsign,
         serviceDate: getServiceDay(dateTime),
         departures,
+        agencies: meta.agencies,
       });
     },
     [repo, dateTime, radiusStops],
@@ -220,8 +219,8 @@ export default function App() {
 
   const handleShowStopTimetable = useCallback(
     async (stopId: string) => {
-      const stop = radiusStops.find((s) => s.stop.stop_id === stopId)?.stop;
-      if (!stop) {
+      const meta = radiusStops.find((s) => s.stop.stop_id === stopId);
+      if (!meta) {
         return;
       }
 
@@ -230,10 +229,11 @@ export default function App() {
 
       setTimetableModal({
         type: 'stop',
-        stop,
+        stop: meta.stop,
         routeTypes: routeTypeMap.get(stopId) ?? [3],
         serviceDate: getServiceDay(dateTime),
         departures,
+        agencies: meta.agencies,
       });
     },
     [repo, dateTime, radiusStops, routeTypeMap],
@@ -246,7 +246,7 @@ export default function App() {
     (stop: Stop) => {
       logger.debug(`handleHistorySelect [History]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
       focusStop(stop);
-      const meta = findStopWithMeta(stop.stop_id) ?? { stop };
+      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [] };
       pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [3]);
     },
     [focusStop, pushStop, findStopWithMeta, routeTypeMap],
@@ -258,7 +258,7 @@ export default function App() {
       focusStop(stop);
       // Search results may not be in radiusStops/inBoundStops yet;
       // wrap as StopWithMeta without distance
-      const meta = findStopWithMeta(stop.stop_id) ?? { stop };
+      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [] };
       pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [3]);
       setSearchModalOpen(false);
     },
@@ -309,7 +309,10 @@ export default function App() {
   }, [settings.visibleRouteShapes, updateSetting]);
 
   const handleToggleNonBusShapes = useCallback(() => {
-    updateSetting('visibleRouteShapes', toggleGroupInList(settings.visibleRouteShapes, [0, 1, 2]));
+    updateSetting(
+      'visibleRouteShapes',
+      toggleGroupInList(settings.visibleRouteShapes, [0, 1, 2, 4, 5, 6, 7]),
+    );
   }, [settings.visibleRouteShapes, updateSetting]);
 
   const handleCycleInfoLevel = useCallback(() => {

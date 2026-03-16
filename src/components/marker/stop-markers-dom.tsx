@@ -1,7 +1,13 @@
 import { memo, useCallback, useRef, useState } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
 import type { InfoLevel } from '../../types/app/settings';
-import type { DepartureGroup, RouteType, Stop, StopWithContext } from '../../types/app/transit';
+import type {
+  Agency,
+  DepartureGroup,
+  RouteType,
+  Stop,
+  StopWithContext,
+} from '../../types/app/transit';
 import { createStopIcon } from '../../lib/leaflet-helpers';
 import { primaryRouteType } from '../../domain/transit/route-type-color';
 import { createLogger } from '../../utils/logger';
@@ -13,6 +19,7 @@ const logger = createLogger('StopMarkerDom');
 function StopMarkerDomItem({
   stop,
   routeTypes,
+  agencies,
   isSelected,
   dimmed,
   zIndexOffset,
@@ -25,6 +32,7 @@ function StopMarkerDomItem({
 }: {
   stop: Stop;
   routeTypes: RouteType[];
+  agencies: Agency[];
   isSelected: boolean;
   dimmed: boolean;
   zIndexOffset: number;
@@ -36,6 +44,7 @@ function StopMarkerDomItem({
   onClick: () => void;
 }) {
   const [hoverGroups, setHoverGroups] = useState<DepartureGroup[] | null>(null);
+  const [hoverAgencies, setHoverAgencies] = useState<Agency[] | null>(null);
   const fetchedRef = useRef<string | null>(null);
 
   const groups = preloadedGroups ?? hoverGroups;
@@ -53,6 +62,9 @@ function StopMarkerDomItem({
       .then((result) => {
         if (result) {
           setHoverGroups(result.groups);
+          if (result.agencies) {
+            setHoverAgencies(result.agencies);
+          }
         }
       })
       .catch((error) => {
@@ -88,6 +100,7 @@ function StopMarkerDomItem({
           <StopSummary
             stop={stop}
             routeTypes={routeTypes}
+            agencies={hoverAgencies ?? agencies}
             groups={hasGroups ? groups : undefined}
             now={now}
             infoLevel={infoLevel}
@@ -109,6 +122,8 @@ interface StopMarkersDomProps {
   onFetchDepartures?: (stopId: string) => Promise<StopWithContext | null>;
   /** Whether to show tooltip on hover/select. Defaults to true. */
   showTooltip?: boolean;
+  /** Map of stop ID to agencies operating at each stop. */
+  agenciesMap?: Map<string, Agency[]>;
 }
 
 /**
@@ -131,6 +146,7 @@ export const StopMarkersDom = memo(function StopMarkersDom({
   onStopSelected,
   onFetchDepartures,
   showTooltip = true,
+  agenciesMap,
 }: StopMarkersDomProps) {
   if (stops.length === 0) {
     logger.verbose('stops=0, skipping render');
@@ -146,6 +162,7 @@ export const StopMarkersDom = memo(function StopMarkersDom({
           key={stop.stop_id}
           stop={stop}
           routeTypes={routeTypeMap.get(stop.stop_id) ?? [3]}
+          agencies={agenciesMap?.get(stop.stop_id) ?? []}
           isSelected={selectedStopId === stop.stop_id}
           dimmed={!!selectedStopId && selectedStopId !== stop.stop_id}
           zIndexOffset={index}

@@ -17,13 +17,7 @@
  *   npx tsx pipeline/scripts/app-data/build-route-shapes-from-ksj-railway.ts --list
  */
 
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { loadAllGtfsSources } from '../../lib/load-gtfs-sources';
@@ -79,7 +73,6 @@ export interface ShapeTarget {
 // ---------------------------------------------------------------------------
 // Managed files
 // ---------------------------------------------------------------------------
-
 
 // ---------------------------------------------------------------------------
 // Target discovery
@@ -271,7 +264,9 @@ async function main(): Promise<void> {
 
   if (arg.kind === 'targets') {
     const sourceNames = await loadTargetFile(arg.path);
-    console.log(`=== Batch build-route-shapes-from-ksj-railway (${sourceNames.length} targets) ===\n`);
+    console.log(
+      `=== Batch build-route-shapes-from-ksj-railway (${sourceNames.length} targets) ===\n`,
+    );
     const scriptPath = resolve(import.meta.dirname, 'build-route-shapes-from-ksj-railway.ts');
     const results = runBatch(scriptPath, sourceNames);
     printBatchSummary(results);

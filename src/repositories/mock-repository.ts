@@ -7,7 +7,8 @@
  *
  * Includes stops with multiple route types for testing the
  * `routeTypes: RouteType[]` feature:
- * - `sta_central`: tram(0) + subway(1) + rail(2) + bus(3) — all 4 types
+ * - `sta_central`: tram(0) + subway(1) + rail(2) + bus(3) — all 4 types,
+ *   with bus routes from two agencies (あおば交通 + そら急行バス)
  * - `sta_central_s`: subway(1) + rail(2) + bus(3) — 3 types
  * - `sta_hill`: rail(2) + bus(3)
  * - `sta_east`: tram(0) + rail(2)
@@ -28,19 +29,34 @@ import type { CollectionResult, Result } from '../types/app/repository';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
 
-// --- Mock agency ---
+// --- Mock agencies ---
 const AGENCY: Agency = {
-  agency_id: 'mock:agency',
+  agency_id: 'mock:aoba',
   agency_name: 'あおば交通株式会社',
-  agency_short_name: 'あおば交通',
+  agency_short_name: 'あおバス',
   agency_names: { ja: 'あおば交通株式会社', en: 'Aoba Transit Co.' },
-  agency_short_names: { ja: 'あおば交通', en: 'Aoba Transit' },
+  agency_short_names: { ja: 'あおバス', en: 'Aoba' },
   agency_url: 'https://example.com',
   agency_lang: 'ja',
   agency_timezone: 'Asia/Tokyo',
   agency_fare_url: '',
   agency_colors: [{ bg: '2E7D32', text: 'FFFFFF' }],
 };
+
+const AGENCY_SORA: Agency = {
+  agency_id: 'mock:soraq',
+  agency_name: 'そら急行バス株式会社',
+  agency_short_name: 'そら急',
+  agency_names: { ja: 'そら急行バス株式会社', en: 'Sora Express Bus Co.' },
+  agency_short_names: { ja: 'そら急', en: 'Sora Exp' },
+  agency_url: 'https://example.com/sora',
+  agency_lang: 'ja',
+  agency_timezone: 'Asia/Tokyo',
+  agency_fare_url: '',
+  agency_colors: [{ bg: '1565C0', text: 'FFFFFF' }],
+};
+
+const AGENCY_MAP = new Map<string, Agency>([AGENCY, AGENCY_SORA].map((a) => [a.agency_id, a]));
 
 // --- Fictional stops clustered around Kumano-mae (~2 km spread) ---
 // Center: 35.7485, 139.7699
@@ -54,7 +70,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7485,
     stop_lon: 139.7699,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'sta_central_s',
@@ -67,7 +83,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7471,
     stop_lon: 139.7703,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'sta_hill',
@@ -76,7 +92,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7534,
     stop_lon: 139.7579,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'sta_east',
@@ -85,7 +101,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7509,
     stop_lon: 139.7809,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Single-type rail stations
   {
@@ -95,7 +111,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7577,
     stop_lon: 139.7659,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'sta_west',
@@ -104,7 +120,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7521,
     stop_lon: 139.7529,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'sta_south',
@@ -113,7 +129,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7427,
     stop_lon: 139.7646,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'sta_northwest',
@@ -122,7 +138,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7564,
     stop_lon: 139.7556,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Bus stops (location_type: 0)
   {
@@ -132,7 +148,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7497,
     stop_lon: 139.7669,
     location_type: 0,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'bus_library',
@@ -141,7 +157,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7514,
     stop_lon: 139.7636,
     location_type: 0,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'bus_tower',
@@ -150,7 +166,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7457,
     stop_lon: 139.7626,
     location_type: 0,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'bus_bridge',
@@ -159,7 +175,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7587,
     stop_lon: 139.7599,
     location_type: 0,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Tram-only stop
   {
@@ -169,7 +185,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7518,
     stop_lon: 139.7858,
     location_type: 0,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Subway-only stop
   {
@@ -179,7 +195,27 @@ const STOPS: Stop[] = [
     stop_lat: 35.7438,
     stop_lon: 139.7576,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
+  },
+  // Hotel near the spaceport
+  {
+    stop_id: 'bus_hotel_mangetsu',
+    stop_name: 'ホテル満月',
+    stop_names: { ja: 'ホテル満月', 'ja-Hrkt': 'ほてるまんげつ', en: 'Hotel Mangetsu' },
+    stop_lat: 35.57967,
+    stop_lon: 139.7857,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  // Hotel near the coast
+  {
+    stop_id: 'bus_hotel_shingetsu',
+    stop_name: 'ホテル新月',
+    stop_names: { ja: 'ホテル新月', 'ja-Hrkt': 'ほてるしんげつ', en: 'Hotel Shingetsu' },
+    stop_lat: 35.464832,
+    stop_lon: 139.873584,
+    location_type: 0,
+    agency_id: 'mock:aoba',
   },
   // Distant station (~15 km south, near Haneda) for testing pan+zoom behavior
   {
@@ -193,7 +229,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.5494,
     stop_lon: 139.7798,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
 ];
 
@@ -207,7 +243,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: '2E7D32',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     route_id: 'bus_aoba02',
@@ -217,7 +253,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: '1565C0',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     route_id: 'bus_midori10',
@@ -227,7 +263,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: 'E65100',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   /**
    * Route with empty headsign (GTFS trip_headsign is optional).
@@ -243,7 +279,30 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: '757575',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
+  },
+  // Bus route operated by a different agency (そら急行バス).
+  // Serves sta_central alongside あおば交通 routes, testing multi-agency badges.
+  {
+    route_id: 'bus_sora_exp01',
+    route_short_name: 'そ01',
+    route_long_name: 'あおば中央-つきみの',
+    route_names: {},
+    route_type: 3,
+    route_color: '1565C0',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:soraq',
+  },
+  // Short shuttle subway to nearby hotel (あおバス)
+  {
+    route_id: 'subway_hotel_shuttle',
+    route_short_name: 'H1',
+    route_long_name: 'つき宇宙空港-ホテル新月',
+    route_names: {},
+    route_type: 1,
+    route_color: '8E24AA',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:aoba',
   },
   // Rail routes (route_type: 2)
   {
@@ -254,7 +313,7 @@ const ROUTES: Route[] = [
     route_type: 2,
     route_color: 'F15A22',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     route_id: 'rail_hikari',
@@ -264,7 +323,7 @@ const ROUTES: Route[] = [
     route_type: 2,
     route_color: '0068B7',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     route_id: 'rail_midori',
@@ -274,7 +333,7 @@ const ROUTES: Route[] = [
     route_type: 2,
     route_color: 'E60012',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Subway route (route_type: 1)
   {
@@ -285,18 +344,30 @@ const ROUTES: Route[] = [
     route_type: 1,
     route_color: 'CF3366',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Subway express route (route_type: 1) — distant stop for pan+zoom testing
+  // Joint operation: あおバス and そら急 both operate AL (airport liner).
   {
     route_id: 'subway_airport',
     route_short_name: 'AL',
     route_long_name: 'エアポートライナー',
     route_names: {},
     route_type: 1,
-    route_color: '00796B',
+    route_color: 'E65100',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
+  },
+  // そら急の共同運行側。route_type: 6 (gondola) は意図的 — 事業者間で route_type が異なるケースをテストするため
+  {
+    route_id: 'subway_airport_sora',
+    route_short_name: 'AL',
+    route_long_name: 'エアポートライナー',
+    route_names: {},
+    route_type: 6,
+    route_color: 'F9A825',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:soraq',
   },
   // Tram route (route_type: 0) — for multi-type testing
   {
@@ -307,7 +378,7 @@ const ROUTES: Route[] = [
     route_type: 0,
     route_color: '8B0000',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
 ];
 
@@ -323,49 +394,52 @@ const ROUTES: Route[] = [
  */
 const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
   sta_central: [
-    { routeId: 'rail_aoba', headsign: 'はなみ方面' },
-    { routeId: 'rail_aoba', headsign: 'かぜの方面' },
-    { routeId: 'subway_sora', headsign: 'そらタワー方面' },
-    { routeId: 'subway_sora', headsign: 'にじ橋方面' },
-    { routeId: 'subway_airport', headsign: 'つき宇宙空港方面' },
+    { routeId: 'rail_aoba', headsign: 'はなみ' },
+    { routeId: 'rail_aoba', headsign: 'かぜの' },
+    { routeId: 'subway_sora', headsign: 'そらタワー' },
+    { routeId: 'subway_sora', headsign: 'にじ橋' },
+    { routeId: 'subway_airport', headsign: 'つき宇宙空港' },
+    { routeId: 'subway_airport_sora', headsign: 'つき宇宙空港' },
+    { routeId: 'subway_airport_sora', headsign: 'ホテル満月' },
     { routeId: 'tram_hoshi', headsign: 'ほし公園' },
     { routeId: 'bus_aoba01', headsign: 'にじ橋' },
     { routeId: 'bus_aoba02', headsign: 'そらタワー' },
+    { routeId: 'bus_sora_exp01', headsign: 'つきみの駅' },
   ],
   sta_central_s: [
-    { routeId: 'rail_aoba', headsign: 'はなみ方面' },
-    { routeId: 'rail_aoba', headsign: 'かぜの方面' },
-    { routeId: 'subway_sora', headsign: 'そらタワー方面' },
-    { routeId: 'subway_sora', headsign: 'にじ橋方面' },
+    { routeId: 'rail_aoba', headsign: 'はなみ' },
+    { routeId: 'rail_aoba', headsign: 'かぜの' },
+    { routeId: 'subway_sora', headsign: 'そらタワー' },
+    { routeId: 'subway_sora', headsign: 'にじ橋' },
     { routeId: 'bus_aoba02', headsign: 'そらタワー' },
   ],
   sta_hill: [
-    { routeId: 'rail_midori', headsign: 'ゆめの丘方面' },
-    { routeId: 'rail_midori', headsign: 'ひかり台方面' },
+    { routeId: 'rail_midori', headsign: 'ゆめの丘' },
+    { routeId: 'rail_midori', headsign: 'ひかり台' },
     { routeId: 'bus_midori10', headsign: 'かぜの駅' },
   ],
   sta_east: [
-    { routeId: 'rail_hikari', headsign: 'あおば中央方面' },
-    { routeId: 'rail_hikari', headsign: 'みどり丘方面' },
+    { routeId: 'rail_hikari', headsign: 'あおば中央' },
+    { routeId: 'rail_hikari', headsign: 'みどり丘' },
     { routeId: 'tram_hoshi', headsign: 'ほし公園' },
   ],
   sta_north: [
-    { routeId: 'rail_hikari', headsign: 'あおば中央方面' },
-    { routeId: 'rail_hikari', headsign: 'みどり丘方面' },
+    { routeId: 'rail_hikari', headsign: 'あおば中央' },
+    { routeId: 'rail_hikari', headsign: 'みどり丘' },
   ],
   sta_west: [
-    { routeId: 'rail_midori', headsign: 'ゆめの丘方面' },
-    { routeId: 'rail_midori', headsign: 'ひかり台方面' },
+    { routeId: 'rail_midori', headsign: 'ゆめの丘' },
+    { routeId: 'rail_midori', headsign: 'ひかり台' },
   ],
   sta_south: [
-    { routeId: 'rail_aoba', headsign: 'はなみ方面' },
-    { routeId: 'rail_aoba', headsign: 'かぜの方面' },
-    { routeId: 'subway_sora', headsign: 'そらタワー方面' },
-    { routeId: 'subway_sora', headsign: 'にじ橋方面' },
+    { routeId: 'rail_aoba', headsign: 'はなみ' },
+    { routeId: 'rail_aoba', headsign: 'かぜの' },
+    { routeId: 'subway_sora', headsign: 'そらタワー' },
+    { routeId: 'subway_sora', headsign: 'にじ橋' },
   ],
   sta_northwest: [
-    { routeId: 'rail_midori', headsign: 'ゆめの丘方面' },
-    { routeId: 'rail_midori', headsign: 'ひかり台方面' },
+    { routeId: 'rail_midori', headsign: 'ゆめの丘' },
+    { routeId: 'rail_midori', headsign: 'ひかり台' },
   ],
   bus_park: [
     { routeId: 'bus_aoba01', headsign: 'にじ橋' },
@@ -386,7 +460,16 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
     { routeId: 'subway_sora', headsign: 'にじ橋方面' },
     { routeId: 'subway_sora', headsign: 'そらタワー方面' },
   ],
-  sta_airport: [{ routeId: 'subway_airport', headsign: 'あおば中央方面' }],
+  sta_airport: [
+    { routeId: 'subway_airport', headsign: 'あおば中央方面' },
+    { routeId: 'subway_airport_sora', headsign: 'あおば中央方面' },
+    { routeId: 'subway_hotel_shuttle', headsign: 'ホテル新月' },
+  ],
+  bus_hotel_mangetsu: [
+    { routeId: 'subway_airport', headsign: 'あおば中央' },
+    { routeId: 'subway_airport', headsign: 'つき宇宙空港' },
+  ],
+  bus_hotel_shingetsu: [{ routeId: 'subway_hotel_shuttle', headsign: 'つき宇宙空港' }],
 };
 
 /** Pre-computed route types per stop (deduplicated, sorted ascending). */
@@ -408,6 +491,31 @@ const STOP_ROUTE_TYPES: Map<string, RouteType[]> = (() => {
         [...types].sort((a, b) => a - b),
       );
     }
+  }
+  return result;
+})();
+
+/** Pre-computed agencies per stop (deduplicated). */
+const STOP_AGENCIES: Map<string, Agency[]> = (() => {
+  const routeMap = new Map(ROUTES.map((r) => [r.route_id, r]));
+  const result = new Map<string, Agency[]>();
+
+  for (const [stopId, entries] of Object.entries(STOP_ROUTES)) {
+    const agencyIds = new Set<string>();
+    for (const { routeId } of entries) {
+      const route = routeMap.get(routeId);
+      if (route && route.agency_id) {
+        agencyIds.add(route.agency_id);
+      }
+    }
+    const agencies: Agency[] = [];
+    for (const id of agencyIds) {
+      const agency = AGENCY_MAP.get(id);
+      if (agency) {
+        agencies.push(agency);
+      }
+    }
+    result.set(stopId, agencies);
   }
   return result;
 })();
@@ -478,6 +586,14 @@ const ROUTE_SHAPES: RouteShape[] = [
     routeType: 1,
     color: `#${ROUTE_MAP.get('subway_airport')!.route_color}`,
     route: ROUTE_MAP.get('subway_airport')!,
+    points: [coord('sta_central'), coord('bus_hotel_mangetsu'), coord('sta_airport')],
+  },
+  // subway_airport_sora: 中央駅 → つき宇宙空港駅 直通 (そら急 joint operation, route_type: 6 gondola)
+  {
+    routeId: 'subway_airport_sora',
+    routeType: 6,
+    color: `#${ROUTE_MAP.get('subway_airport_sora')!.route_color}`,
+    route: ROUTE_MAP.get('subway_airport_sora')!,
     points: [coord('sta_central'), coord('sta_airport')],
   },
   // bus_aoba01: 中央駅 → もり公園前 → 図書館前 → にじ橋
@@ -495,6 +611,22 @@ const ROUTE_SHAPES: RouteShape[] = [
     color: `#${ROUTE_MAP.get('bus_aoba02')!.route_color}`,
     route: ROUTE_MAP.get('bus_aoba02')!,
     points: [coord('sta_central'), coord('bus_tower')],
+  },
+  // bus_sora_exp01: 中央駅 → つきみの駅 (そら急行バス)
+  {
+    routeId: 'bus_sora_exp01',
+    routeType: 3,
+    color: `#${ROUTE_MAP.get('bus_sora_exp01')!.route_color}`,
+    route: ROUTE_MAP.get('bus_sora_exp01')!,
+    points: [coord('sta_central'), coord('sta_west')],
+  },
+  // subway_hotel_shuttle: つき宇宙空港駅 → ホテル新月
+  {
+    routeId: 'subway_hotel_shuttle',
+    routeType: 1,
+    color: `#${ROUTE_MAP.get('subway_hotel_shuttle')!.route_color}`,
+    route: ROUTE_MAP.get('subway_hotel_shuttle')!,
+    points: [coord('sta_airport'), coord('bus_hotel_shingetsu')],
   },
   // bus_midori10: みどり丘駅 → 図書館前 → かぜの駅
   {
@@ -514,16 +646,23 @@ function simpleHash(str: string): number {
   return Math.abs(hash);
 }
 
-function generateDepartureTimes(now: Date, routeId: string, isBus: boolean): Date[] {
-  const offsets = isBus ? [3, 15, 32] : [2, 7, 13];
-  const routeOffset = simpleHash(routeId) % 5;
+/** Fixed departure minutes for a route+headsign, 5:00-23:45. */
+function generateFixedMinutes(routeId: string, headsign: string): number[] {
+  const hash = simpleHash(routeId + headsign);
+  const interval = 15 + (hash % 16); // 15-30 min interval
+  const startOffset = hash % interval; // stagger start
+  const minutes: number[] = [];
+  for (let m = 5 * 60 + startOffset; m <= 23 * 60 + 45; m += interval) {
+    minutes.push(m);
+  }
+  return minutes;
+}
 
-  return offsets.map((offset) => {
-    const time = new Date(now);
-    time.setMinutes(time.getMinutes() + offset + routeOffset);
-    time.setSeconds(0, 0);
-    return time;
-  });
+/** Convert service-day minutes to a Date on the same day as `now`. */
+function minutesToDate(minutes: number, now: Date): Date {
+  const d = new Date(now);
+  d.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
+  return d;
 }
 
 /** Euclidean distance approximation in km at ~35 N latitude. */
@@ -556,9 +695,11 @@ export class MockRepository implements TransitRepository {
     matching.sort((a, b) => a.distance - b.distance);
 
     const truncated = matching.length > effectiveLimit;
-    const data: StopWithMeta[] = matching
-      .slice(0, effectiveLimit)
-      .map((m) => ({ stop: m.stop, distance: m.distance }));
+    const data: StopWithMeta[] = matching.slice(0, effectiveLimit).map((m) => ({
+      stop: m.stop,
+      distance: m.distance,
+      agencies: STOP_AGENCIES.get(m.stop.stop_id) ?? [],
+    }));
 
     return Promise.resolve({ success: true, data, truncated });
   }
@@ -577,16 +718,17 @@ export class MockRepository implements TransitRepository {
     const stopRoutes = STOP_ROUTES[stopId] ?? [];
     const groups: DepartureGroup[] = [];
 
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
     for (const { routeId, headsign } of stopRoutes) {
       const route = ROUTES.find((r) => r.route_id === routeId);
       if (!route) {
         continue;
       }
 
-      const isBus = route.route_type === 3;
-      const times = generateDepartureTimes(now, routeId + headsign, isBus);
-
-      const departures = times.slice(0, limit);
+      const allMinutes = generateFixedMinutes(routeId, headsign);
+      const upcoming = allMinutes.filter((m) => m >= nowMinutes);
+      const departures = upcoming.slice(0, limit).map((m) => minutesToDate(m, now));
       if (departures.length === 0) {
         continue;
       }
@@ -627,9 +769,11 @@ export class MockRepository implements TransitRepository {
       .sort((a, b) => a.distKm - b.distKm);
 
     const truncated = sorted.length > effectiveLimit;
-    const data: StopWithMeta[] = sorted
-      .slice(0, effectiveLimit)
-      .map(({ stop, distKm }) => ({ stop, distance: distKm * 1000 }));
+    const data: StopWithMeta[] = sorted.slice(0, effectiveLimit).map(({ stop, distKm }) => ({
+      stop,
+      distance: distKm * 1000,
+      agencies: STOP_AGENCIES.get(stop.stop_id) ?? [],
+    }));
 
     return Promise.resolve({ success: true, data, truncated });
   }
@@ -641,12 +785,9 @@ export class MockRepository implements TransitRepository {
 
   /** {@inheritDoc TransitRepository.getFullDayDepartures} */
   getFullDayDepartures(
-    ...[, , ,]: [string, string, string, Date]
+    ...[, routeId, headsign]: [string, string, string, Date]
   ): Promise<CollectionResult<number>> {
-    const minutes: number[] = [];
-    for (let h = 5; h <= 23; h++) {
-      minutes.push(h * 60, h * 60 + 15, h * 60 + 30, h * 60 + 45);
-    }
+    const minutes = generateFixedMinutes(routeId, headsign);
     return Promise.resolve({ success: true, data: minutes, truncated: false });
   }
 
@@ -665,10 +806,8 @@ export class MockRepository implements TransitRepository {
       if (!route) {
         continue;
       }
-      for (let h = 5; h <= 23; h++) {
-        for (const offset of [0, 15, 30, 45]) {
-          departures.push({ minutes: h * 60 + offset, route, headsign, headsign_names: {} });
-        }
+      for (const m of generateFixedMinutes(routeId, headsign)) {
+        departures.push({ minutes: m, route, headsign, headsign_names: {} });
       }
     }
 
@@ -683,8 +822,9 @@ export class MockRepository implements TransitRepository {
 
   /** {@inheritDoc TransitRepository.getAgency} */
   getAgency(agencyId: string): Promise<Result<Agency>> {
-    if (agencyId === AGENCY.agency_id) {
-      return Promise.resolve({ success: true, data: AGENCY });
+    const agency = AGENCY_MAP.get(agencyId);
+    if (agency) {
+      return Promise.resolve({ success: true, data: agency });
     }
     return Promise.resolve({ success: false, error: `Agency not found: ${agencyId}` });
   }

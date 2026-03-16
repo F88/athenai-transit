@@ -3,7 +3,7 @@ import L from 'leaflet';
 import type { EdgeMarker } from '../../types/app/map';
 import type { InfoLevel } from '../../types/app/settings';
 import type { EffectiveRenderMode } from '../../utils/render-mode';
-import type { RouteType, Stop, StopWithContext } from '../../types/app/transit';
+import type { Agency, RouteType, Stop, StopWithContext } from '../../types/app/transit';
 import { buildEdgeMarkers } from '../../lib/edge-marker';
 import { getSafeAreaInsets } from '../../lib/safe-area';
 import { EdgeMarkersDom } from './edge-markers-dom';
@@ -13,6 +13,7 @@ interface EdgeMarkersSwitchProps {
   map: L.Map;
   stops: Stop[];
   routeTypeMap: Map<string, RouteType[]>;
+  agenciesMap?: Map<string, Agency[]>;
   now: Date;
   infoLevel: InfoLevel;
   renderMode: EffectiveRenderMode;
@@ -31,6 +32,7 @@ export function EdgeMarkersSwitch({
   map,
   stops,
   routeTypeMap,
+  agenciesMap,
   now,
   infoLevel,
   renderMode,
@@ -102,6 +104,7 @@ export function EdgeMarkersSwitch({
             showDistance={showDistance}
             mapContainer={map.getContainer()}
             infoLevel={infoLevel}
+            agenciesMap={agenciesMap}
             onStopSelected={onStopSelected}
             containerHeight={containerHeight}
           />
@@ -111,6 +114,7 @@ export function EdgeMarkersSwitch({
             now={now}
             infoLevel={infoLevel}
             showDistance={showDistance}
+            agenciesMap={agenciesMap}
             onStopSelected={onStopSelected}
             onFetchDepartures={onFetchDepartures}
             containerHeight={containerHeight}

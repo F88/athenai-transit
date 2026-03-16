@@ -7,7 +7,8 @@ import { resolveMinPrefixLengths } from '@/utils/resolve-min-prefix-lengths';
 import { routeTypesEmoji } from '@/domain/transit/route-type-emoji';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import type { InfoLevel } from '@/types/app/settings';
-import type { Route, RouteType, Stop } from '@/types/app/transit';
+import type { Agency, Route, RouteType, Stop } from '@/types/app/transit';
+import { AgencyBadge } from '@/components/badge/agency-badge';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
@@ -30,6 +31,7 @@ export interface RouteHeadsignTimetable {
   /** GTFS service date for this timetable (not real-world time). */
   serviceDate: Date;
   departures: number[]; // minutes from midnight, sorted
+  agencies: Agency[];
 }
 
 /** A single departure in a stop timetable with route/headsign metadata. */
@@ -48,6 +50,7 @@ export interface StopTimetable {
   /** GTFS service date for this timetable (not real-world time). */
   serviceDate: Date;
   departures: StopTimetableDeparture[]; // sorted by minutes
+  agencies: Agency[];
 }
 
 /** Data needed to render the timetable modal. */
@@ -373,6 +376,13 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
           new Map(data.departures.map((d) => [d.route.route_id, d.route] as const)).values(),
         );
 
+  // For route-headsign, show only the agency of that route.
+  // For stop timetable, show all agencies.
+  const displayAgencies =
+    data.type === 'route-headsign'
+      ? data.agencies.filter((a) => a.agency_id === data.route.agency_id)
+      : data.agencies;
+
   return (
     <>
       {infoLevel === 'verbose' && <IdBadge>{data.stop.stop_id}</IdBadge>}
@@ -381,19 +391,20 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
           {stopNames.subNames.join(' / ')}
         </p>
       )}
-      <div className="flex items-center gap-2 text-base">
+      <div className="flex flex-wrap items-center gap-2 text-base">
         <span className="shrink-0">{routeTypesEmoji(routeTypes)}</span>
         <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
           {stopNames.name}
         </span>
+        {displayAgencies.length > 0 &&
+          displayAgencies.map((a) => (
+            <AgencyBadge key={a.agency_id} agency={a} infoLevel={infoLevel} size="xs" />
+          ))}
       </div>
       {uniqueRoutes.length > 0 && (
         <div className="flex flex-wrap items-center gap-1">
           {uniqueRoutes.map((r) => (
-            <span key={r.route_id} className="inline-flex items-center gap-1">
-              {infoLevel === 'verbose' && <IdBadge>{r.route_id}</IdBadge>}
-              <RouteBadge route={r} infoLevel={infoLevel} />
-            </span>
+            <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} />
           ))}
         </div>
       )}

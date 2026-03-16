@@ -116,6 +116,7 @@ export interface MergedData {
   routeMap: Map<string, Route>;
   agencyMap: Map<string, Agency>;
   stopRouteTypeMap: Map<string, RouteType[]>;
+  stopAgenciesMap: Map<string, Agency[]>;
   calendarServices: CalendarServiceJson[];
   calendarExceptions: Map<string, CalendarExceptionJson[]>;
   timetable: TimetableJson;
@@ -250,12 +251,18 @@ export function mergeSources(sources: SourceData[]): MergedData {
 
   // Build stop -> routeTypes map (all route_type values, deduplicated and sorted)
   const stopRouteTypeMap = new Map<string, RouteType[]>();
+  // Build stop -> agencies map (all agencies serving each stop, deduplicated)
+  const stopAgenciesMap = new Map<string, Agency[]>();
   for (const [stopId, groups] of Object.entries(timetable)) {
     const types = new Set<RouteType>();
+    const agencyIds = new Set<string>();
     for (const group of groups) {
       const route = routeMap.get(group.r);
       if (route) {
         types.add(route.route_type);
+      }
+      if (group.ai) {
+        agencyIds.add(group.ai);
       }
     }
     if (types.size > 0) {
@@ -264,6 +271,16 @@ export function mergeSources(sources: SourceData[]): MergedData {
         [...types].sort((a, b) => a - b),
       );
     }
+    if (agencyIds.size > 0) {
+      const agencies: Agency[] = [];
+      for (const id of agencyIds) {
+        const agency = agencyMap.get(id);
+        if (agency) {
+          agencies.push(agency);
+        }
+      }
+      stopAgenciesMap.set(stopId, agencies);
+    }
   }
 
   return {
@@ -271,6 +288,7 @@ export function mergeSources(sources: SourceData[]): MergedData {
     routeMap,
     agencyMap,
     stopRouteTypeMap,
+    stopAgenciesMap,
     calendarServices,
     calendarExceptions,
     timetable,
@@ -298,6 +316,7 @@ export class AthenaiRepository implements TransitRepository {
   private routeMap: Map<string, Route>;
   private agencyMap: Map<string, Agency>;
   private stopRouteTypeMap: Map<string, RouteType[]>;
+  private stopAgenciesMap: Map<string, Agency[]>;
   private calendarServices: CalendarServiceJson[];
   private calendarExceptions: Map<string, CalendarExceptionJson[]>;
   private timetable: TimetableJson;
@@ -309,6 +328,7 @@ export class AthenaiRepository implements TransitRepository {
     routeMap: Map<string, Route>,
     agencyMap: Map<string, Agency>,
     stopRouteTypeMap: Map<string, RouteType[]>,
+    stopAgenciesMap: Map<string, Agency[]>,
     calendarServices: CalendarServiceJson[],
     calendarExceptions: Map<string, CalendarExceptionJson[]>,
     timetable: TimetableJson,
@@ -319,6 +339,7 @@ export class AthenaiRepository implements TransitRepository {
     this.routeMap = routeMap;
     this.agencyMap = agencyMap;
     this.stopRouteTypeMap = stopRouteTypeMap;
+    this.stopAgenciesMap = stopAgenciesMap;
     this.calendarServices = calendarServices;
     this.calendarExceptions = calendarExceptions;
     this.timetable = timetable;
@@ -367,6 +388,7 @@ export class AthenaiRepository implements TransitRepository {
       merged.routeMap,
       merged.agencyMap,
       merged.stopRouteTypeMap,
+      merged.stopAgenciesMap,
       merged.calendarServices,
       merged.calendarExceptions,
       merged.timetable,
@@ -400,7 +422,10 @@ export class AthenaiRepository implements TransitRepository {
     matching.sort((a, b) => a.dist - b.dist);
 
     const truncated = matching.length > effectiveLimit;
-    const data = matching.slice(0, effectiveLimit).map((m) => ({ stop: m.stop }));
+    const data = matching.slice(0, effectiveLimit).map((m) => ({
+      stop: m.stop,
+      agencies: this.stopAgenciesMap.get(m.stop.stop_id) ?? [],
+    }));
 
     const elapsed = Math.round(performance.now() - t0);
     logger.debug(
@@ -434,9 +459,11 @@ export class AthenaiRepository implements TransitRepository {
       .sort((a, b) => a.distKm - b.distKm);
 
     const truncated = sorted.length > effectiveLimit;
-    const data = sorted
-      .slice(0, effectiveLimit)
-      .map(({ stop, distKm }) => ({ stop, distance: distKm * 1000 }));
+    const data = sorted.slice(0, effectiveLimit).map(({ stop, distKm }) => ({
+      stop,
+      distance: distKm * 1000,
+      agencies: this.stopAgenciesMap.get(stop.stop_id) ?? [],
+    }));
 
     const elapsed = Math.round(performance.now() - t0);
     logger.debug(

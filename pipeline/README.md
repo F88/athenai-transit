@@ -30,7 +30,7 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 | 3     | GTFS shapes.txt から路線形状を生成  | `scripts/app-data/build-route-shapes-from-gtfs.ts`        | `npm run pipeline:build:shapes:gtfs`  |
 | 3     | 国土数値情報から鉄道路線形状を生成  | `scripts/app-data/build-route-shapes-from-ksj-railway.ts` | `npm run pipeline:build:shapes:ksj`   |
 | 3     | アプリ用 JSON の検証                | `scripts/app-data/validate-app-data.ts`                   | `npm run pipeline:validate`           |
-| -     | 全リソース定義の一覧表示            | `scripts/describe-resources.ts`                           | `npm run pipeline:describe`           |
+| -     | 全リソース定義の一覧表示            | `scripts/analysis/describe-resources.ts`                  | `npm run pipeline:describe`           |
 
 ## 実行順序
 

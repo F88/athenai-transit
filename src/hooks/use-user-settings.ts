@@ -11,7 +11,7 @@ const DEFAULTS: UserSettings = {
   renderMode: 'auto',
   tileIndex: 0,
   visibleStopTypes: [0, 1, 2, 3],
-  visibleRouteShapes: [0, 1, 2, 3],
+  visibleRouteShapes: [0, 1, 2, 3, 4, 5, 6, 7],
   infoLevel: 'normal',
   theme: 'light',
   doubleTapDrag: 'zoom-out',

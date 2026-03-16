@@ -3,6 +3,7 @@ import type { Route } from '../../types/app/transit';
 import { formatRouteLabel } from '../../domain/transit/format-route-label';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { cn } from '../../lib/utils';
+import { IdBadge } from './id-badge';
 
 const sizeVariants = {
   default: 'text-xs px-2 py-0.5',
@@ -27,6 +28,7 @@ interface RouteBadgeProps {
  * Background color uses the route's designated color (`route_color`),
  * falling back to `bg-muted-foreground` when no color is set.
  * The label is formatted via {@link formatRouteLabel} based on infoLevel.
+ * In verbose mode, an {@link IdBadge} with the route_id is prepended.
  *
  * @param route - The route to display.
  * @param infoLevel - Controls label verbosity.
@@ -39,15 +41,17 @@ export function RouteBadge({ route, infoLevel, size = 'default', className }: Ro
   const fg = route.route_text_color ? `#${route.route_text_color}` : undefined;
 
   return (
-    <span
-      className={cn(
-        'bg-muted-foreground inline-flex items-center justify-center rounded font-bold whitespace-nowrap text-white',
-        sizeVariants[size],
-        className,
-      )}
-      style={bg ? { background: bg, color: fg } : undefined}
-    >
-      {formatRouteLabel(routeNames, infoLevel)}
+    <span className={cn('inline-flex items-center gap-0.5', className)}>
+      {infoLevel === 'verbose' && <IdBadge>{route.route_id}</IdBadge>}
+      <span
+        className={cn(
+          'bg-muted-foreground inline-flex items-center justify-center rounded font-bold whitespace-nowrap text-white',
+          sizeVariants[size],
+        )}
+        style={bg ? { background: bg, color: fg } : undefined}
+      >
+        {formatRouteLabel(routeNames, infoLevel)}
+      </span>
     </span>
   );
 }

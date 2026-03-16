@@ -17,7 +17,7 @@ describe('mergeSources', () => {
   it('builds agencyMap from source agencies and translations', () => {
     const fixture = createFixture();
     const merged = mergeSources([fixture]);
-    expect(merged.agencyMap.size).toBe(1);
+    expect(merged.agencyMap.size).toBe(2);
     const agency = merged.agencyMap.get('test:agency');
     expect(agency).toBeDefined();
     expect(agency!.agency_name).toBe('Test Agency');
@@ -57,7 +57,7 @@ describe('mergeSources', () => {
       ...createFixture(),
       prefix: 's1',
       translations: {
-        headsigns: { '新橋': { ja: '新橋', 'ja-Hrkt': 'しんばし', en: 'Shimbashi' } },
+        headsigns: { 新橋: { ja: '新橋', 'ja-Hrkt': 'しんばし', en: 'Shimbashi' } },
         stop_headsigns: {},
         stop_names: {},
         route_names: {},
@@ -69,7 +69,7 @@ describe('mergeSources', () => {
       ...createFixture(),
       prefix: 's2',
       translations: {
-        headsigns: { '新橋': { ja: '新橋', en: 'Shimbashi', ko: '신바시', 'zh-Hans': '新桥' } },
+        headsigns: { 新橋: { ja: '新橋', en: 'Shimbashi', ko: '신바시', 'zh-Hans': '新桥' } },
         stop_headsigns: {},
         stop_names: {},
         route_names: {},
@@ -82,7 +82,12 @@ describe('mergeSources', () => {
     const s1 = merged.headsignTranslations.get('s1');
     const s2 = merged.headsignTranslations.get('s2');
     expect(s1?.headsigns['新橋']).toEqual({ ja: '新橋', 'ja-Hrkt': 'しんばし', en: 'Shimbashi' });
-    expect(s2?.headsigns['新橋']).toEqual({ ja: '新橋', en: 'Shimbashi', ko: '신바시', 'zh-Hans': '新桥' });
+    expect(s2?.headsigns['新橋']).toEqual({
+      ja: '新橋',
+      en: 'Shimbashi',
+      ko: '신바시',
+      'zh-Hans': '新桥',
+    });
     // Global translationsMap should NOT contain headsigns
     expect(merged.translationsMap.headsigns).toEqual({});
   });
@@ -92,6 +97,7 @@ describe('mergeSources', () => {
     const merged = mergeSources([fixture]);
     expect(merged.translationsMap.agency_short_names).toEqual({
       'test:agency': { ja: 'テスト', en: 'Test' },
+      'test:partner': { ja: '共同', en: 'Partner' },
     });
   });
 });
@@ -755,6 +761,71 @@ describe('AthenaiRepository', () => {
       const repo = await createRepo();
       const result = await repo.getAgency('unknown');
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe('StopWithMeta.agencies', () => {
+    it('includes resolved agencies in getStopsNearby results', async () => {
+      const repo = await createRepo();
+      const result = await repo.getStopsNearby({ lat: 35.75, lng: 139.74 }, 5000, 100);
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      // All stops in test data use agency_id 'test:agency' via timetable
+      for (const meta of result.data) {
+        expect(meta.agencies).toBeDefined();
+        expect(Array.isArray(meta.agencies)).toBe(true);
+      }
+      // At least one stop should have a resolved agency
+      const withAgencies = result.data.filter((m) => m.agencies.length > 0);
+      expect(withAgencies.length).toBeGreaterThan(0);
+      expect(withAgencies[0].agencies[0].agency_id).toBe('test:agency');
+    });
+
+    it('resolves multiple agencies for joint-operation stops', async () => {
+      const repo = await createRepo();
+      const result = await repo.getStopsNearby({ lat: 35.75, lng: 139.74 }, 5000, 100);
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      // bus_01 is served by both test:agency (route_bus) and test:partner (route_partner)
+      const bus01 = result.data.find((m) => m.stop.stop_id.endsWith('bus_01'));
+      expect(bus01).toBeDefined();
+      expect(bus01!.agencies).toHaveLength(2);
+      const agencyIds = bus01!.agencies.map((a) => a.agency_id).sort();
+      expect(agencyIds).toEqual(['test:agency', 'test:partner']);
+    });
+
+    it('includes resolved agencies in getStopsInBounds results', async () => {
+      const repo = await createRepo();
+      const result = await repo.getStopsInBounds(
+        { north: 36, south: 34, east: 140, west: 138 },
+        100,
+      );
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      const withAgencies = result.data.filter((m) => m.agencies.length > 0);
+      expect(withAgencies.length).toBeGreaterThan(0);
+      expect(withAgencies[0].agencies[0].agency_id).toBe('test:agency');
+    });
+  });
+
+  describe('getUpcomingDepartures (empty headsign)', () => {
+    it('returns empty headsign for routes with no trip_headsign', async () => {
+      const repo = await createRepo();
+      const result = await repo.getUpcomingDepartures('bus_01', WEEKDAY);
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      // route_partner has empty headsign
+      const partnerGroup = result.data.find((g) => g.route.route_id.endsWith('route_partner'));
+      expect(partnerGroup).toBeDefined();
+      expect(partnerGroup!.headsign).toBe('');
     });
   });
 

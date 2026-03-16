@@ -1,7 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { useNearbyDepartures } from '../use-nearby-departures';
-import { makeStop, makeStopMeta, makeRoute, makeRepo } from '../../__tests__/helpers';
+import { makeStop, makeStopMeta, makeRepo } from '../../__tests__/helpers';
 
 describe('useNearbyDepartures', () => {
   it('returns empty departures for empty stops', async () => {
@@ -198,7 +198,36 @@ describe('useNearbyDepartures', () => {
     expect(result.current.nearbyDepartures[0].stop).toBe(stop);
   });
 
-  it('includes empty agencies when no departures', async () => {
+  it('passes through agencies from StopWithMeta', async () => {
+    const mockAgency = {
+      agency_id: 'a1',
+      agency_name: 'Test Agency',
+      agency_short_name: 'Test',
+      agency_names: {},
+      agency_short_names: {},
+      agency_url: '',
+      agency_lang: '',
+      agency_timezone: '',
+      agency_fare_url: '',
+      agency_colors: [],
+    };
+    const repo = makeRepo();
+    const stop = makeStop('A');
+    const stops = [{ stop, distance: 100, agencies: [mockAgency] }];
+    const now = new Date();
+
+    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
+
+    await waitFor(() => {
+      expect(result.current.isNearbyLoading).toBe(false);
+    });
+
+    // Agencies come from StopWithMeta, not from departure groups
+    expect(result.current.nearbyDepartures[0].agencies).toHaveLength(1);
+    expect(result.current.nearbyDepartures[0].agencies[0].agency_id).toBe('a1');
+  });
+
+  it('preserves empty agencies from StopWithMeta', async () => {
     const repo = makeRepo();
     const stops = [makeStopMeta('A')];
     const now = new Date();
@@ -210,102 +239,5 @@ describe('useNearbyDepartures', () => {
     });
 
     expect(result.current.nearbyDepartures[0].agencies).toEqual([]);
-  });
-
-  it('collects agencies from departure groups', async () => {
-    const mockAgency = {
-      agency_id: 'a1',
-      agency_name: 'Test Agency',
-      agency_short_name: 'Test',
-      agency_names: {},
-      agency_short_names: {},
-      agency_url: '',
-      agency_lang: '',
-      agency_timezone: '',
-      agency_fare_url: '',
-      agency_colors: [],
-    };
-    const repo = makeRepo({
-      getUpcomingDepartures: vi.fn().mockResolvedValue({
-        success: true,
-        data: [
-          {
-            route: { ...makeRoute('R1'), agency_id: 'a1' },
-            headsign: 'Test',
-            headsign_names: {},
-            departures: [new Date()],
-          },
-        ],
-        truncated: false,
-      }),
-      getAgency: vi.fn().mockResolvedValue({
-        success: true,
-        data: mockAgency,
-      }),
-    });
-    const stops = [makeStopMeta('A')];
-    const now = new Date();
-
-    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
-
-    await waitFor(() => {
-      expect(result.current.isNearbyLoading).toBe(false);
-    });
-
-    expect(result.current.nearbyDepartures[0].agencies).toHaveLength(1);
-    expect(result.current.nearbyDepartures[0].agencies[0].agency_id).toBe('a1');
-  });
-
-  it('deduplicates agencies across multiple groups', async () => {
-    const mockAgency = {
-      agency_id: 'a1',
-      agency_name: 'Test Agency',
-      agency_short_name: 'Test',
-      agency_names: {},
-      agency_short_names: {},
-      agency_url: '',
-      agency_lang: '',
-      agency_timezone: '',
-      agency_fare_url: '',
-      agency_colors: [],
-    };
-    const repo = makeRepo({
-      getUpcomingDepartures: vi.fn().mockResolvedValue({
-        success: true,
-        data: [
-          {
-            route: { ...makeRoute('R1'), agency_id: 'a1' },
-            headsign: 'Dest A',
-            headsign_names: {},
-            departures: [new Date()],
-          },
-          {
-            route: { ...makeRoute('R2'), agency_id: 'a1' },
-            headsign: 'Dest B',
-            headsign_names: {},
-            departures: [new Date()],
-          },
-        ],
-        truncated: false,
-      }),
-      getAgency: vi.fn().mockResolvedValue({
-        success: true,
-        data: mockAgency,
-      }),
-    });
-    const stops = [makeStopMeta('A')];
-    const now = new Date();
-
-    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
-
-    await waitFor(() => {
-      expect(result.current.isNearbyLoading).toBe(false);
-    });
-
-    // Same agency_id from 2 groups → deduplicated to 1
-    expect(result.current.nearbyDepartures[0].agencies).toHaveLength(1);
-    // getAgency called only once due to Set deduplication
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    expect(repo.getAgency).toHaveBeenCalledTimes(1);
   });
 });
