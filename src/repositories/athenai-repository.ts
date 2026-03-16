@@ -259,12 +259,13 @@ export function mergeSources(sources: SourceData[]): MergedData {
   for (const [stopId, groups] of Object.entries(timetable)) {
     const types = new Set<RouteType>();
     const agencyIds = new Set<string>();
-    const routeIdSet = new Set<string>();
+    // Collect Route references directly to avoid a second routeMap lookup.
+    const uniqueRoutes = new Map<string, Route>();
     for (const group of groups) {
       const route = routeMap.get(group.r);
       if (route) {
         types.add(route.route_type);
-        routeIdSet.add(group.r);
+        uniqueRoutes.set(group.r, route);
       }
       if (group.ai) {
         agencyIds.add(group.ai);
@@ -286,15 +287,8 @@ export function mergeSources(sources: SourceData[]): MergedData {
       }
       stopAgenciesMap.set(stopId, agencies);
     }
-    if (routeIdSet.size > 0) {
-      const routes: Route[] = [];
-      for (const id of routeIdSet) {
-        const route = routeMap.get(id);
-        if (route) {
-          routes.push(route);
-        }
-      }
-      stopRoutesMap.set(stopId, routes);
+    if (uniqueRoutes.size > 0) {
+      stopRoutesMap.set(stopId, [...uniqueRoutes.values()]);
     }
   }
 

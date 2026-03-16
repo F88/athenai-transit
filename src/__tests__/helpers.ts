@@ -67,17 +67,20 @@ export function makeStopWithContext(
   routeIds: string[],
   routeTypes: RouteType[] = [3],
 ): StopWithContext {
+  // Create Route objects once and share references between groups and routes,
+  // mirroring production behavior where both reference the same routeMap entries.
+  const routes = routeIds.map((rid) => makeRoute(rid));
   return {
     stop,
     routeTypes,
-    groups: routeIds.map((rid) => ({
-      route: makeRoute(rid),
+    groups: routes.map((route) => ({
+      route,
       headsign: 'Test',
       headsign_names: {},
       departures: [new Date()],
     })),
     agencies: [],
-    routes: routeIds.map((rid) => makeRoute(rid)),
+    routes,
   };
 }
 
