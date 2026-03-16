@@ -33,8 +33,24 @@ and this project adheres to [CalVer](https://calver.org/).
     - `shapes.json` をアプリ側で optional 化 (ファイルがないソースは `{}` にフォールバック)。
     - npm scripts: `pipeline:build:shapes:gtfs`, `pipeline:build:shapes:ksj`。
 
+- 事業者バッジとフィルタ:
+    - `AgencyBadge` コンポーネントを追加。NearbyStop カードに事業者名バッジを表示。
+    - BottomSheet に事業者フィルタ PillButton を追加 (2事業者以上で表示)。
+    - `filterStopsByAgency()`, `collectPresentAgencies()` domain 関数を追加。
+    - `app.tsx` の `handleFetchDepartures` で agencies を解決 (`agencies: []` → 実データ)。
+    - MockRepository に第2事業者 (そら急行バス) を追加。
+- 共同運行路線分析ツール:
+    - `pipeline/scripts/analysis/find-joint-routes.ts` を追加。ソース間で route_short_name が一致する路線を検出し、停留所名の突き合わせと座標による近接分析を行う。
+    - `pipeline/lib/normalize-stop-name.ts` を追加。ソース間の stop_name 表記揺れ (「前」有無、ヶ/ケ、ノ/の) を正規化。
+- 開発ツール入口:
+    - `pipeline/scripts/dev-tools.ts` を追加。分析/開発ツールを対話的に選択実行。
+    - npm script: `pipeline:dev-tools`。
+- データ品質ドキュメント:
+    - `pipeline/resources/NOTES.md` に共同運行路線の停留所差異パターン、コミュニティバスの運営主体乖離、route_short_name 通称問題を追加。
+
 ### Changed
 
+- `describe-resources.ts` を `pipeline/scripts/analysis/` に移動。
 - パイプラインの出力方式をディレクトリ swap からファイルマージに変更。
   複数スクリプトが同一 outdir に出力しても互いのファイルを上書きしない。
   各スクリプトが MANAGED_FILES リストで管理責務を明示。
