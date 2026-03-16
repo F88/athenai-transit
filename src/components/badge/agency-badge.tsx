@@ -36,13 +36,12 @@ export function AgencyBadge({ agency, infoLevel, size = 'xs', className }: Agenc
   const fg = primary ? `#${primary.text}` : undefined;
 
   return (
-    <span className="inline-flex items-center gap-0.5">
+    <span className={cn('inline-flex items-center gap-0.5', className)}>
       {infoLevel === 'verbose' && <IdBadge>{agency.agency_id}</IdBadge>}
       <span
         className={cn(
           'bg-muted-foreground inline-flex items-center justify-center rounded font-bold whitespace-nowrap text-white',
           sizeVariants[size],
-          className,
         )}
         style={bg ? { background: bg, color: fg } : undefined}
       >
