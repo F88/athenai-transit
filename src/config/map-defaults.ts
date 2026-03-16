@@ -33,6 +33,9 @@ const HOME_LOCATIONS = [
 const DEFAULT_ZOOM = 16;
 
 import { parseQueryLat, parseQueryLng, parseQueryZoom } from '../utils/query-params';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('MapDefaults');
 
 function parseEnvLatLng(value: string | undefined): [number, number] | null {
   if (!value) {
@@ -82,6 +85,16 @@ const resolvedCenter: [number, number] = qCenter ??
   envCenter ??
   randomHome?.center ?? [HOME_LOCATIONS[0].lat, HOME_LOCATIONS[0].lng];
 const resolvedZoom: number = qZoom ?? envZoom ?? randomHome?.zoom ?? DEFAULT_ZOOM;
+
+// Log resolution source
+if (qCenter) {
+  logger.info(`Initial position from query params: [${resolvedCenter.join(', ')}] zoom=${String(resolvedZoom)}`);
+} else if (envCenter) {
+  logger.info(`Initial position from env: [${resolvedCenter.join(', ')}] zoom=${String(resolvedZoom)}`);
+} else if (randomHome) {
+  const name = HOME_LOCATIONS.find((l) => l.lat === randomHome.center[0])?.name ?? 'unknown';
+  logger.info(`Initial position from random: ${name} [${resolvedCenter.join(', ')}] zoom=${String(resolvedZoom)}`);
+}
 
 /**
  * Initial map center, evaluated once at module load.
