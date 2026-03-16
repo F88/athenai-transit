@@ -43,6 +43,8 @@ jobs:
       - name: Download GTFS data
         id: download-gtfs
         if: ${{ !inputs.skip_download }}
+        env:
+          ODPT_ACCESS_TOKEN: ${{ secrets.ODPT_ACCESS_TOKEN }}
         # npx tsx direct: npm script contains --env-file-if-exists which
         # could load a local .env and override CI secrets.
         run: |
