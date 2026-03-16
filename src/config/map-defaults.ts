@@ -22,7 +22,7 @@ import { createLogger } from '../utils/logger';
  */
 const HOME_LOCATIONS = [
   { name: 'Tokyo Station', lat: 35.6812, lng: 139.7671, zoom: 15 },
-  { name: 'Kumano-mae', lat: 35.7485, lng: 139.7699, zoom: 14 },
+  { name: 'Kumano-mae', lat: 35.7485, lng: 139.7699, zoom: 15 },
   { name: 'Kinshicho Station', lat: 35.6967, lng: 139.8139, zoom: 17 },
   { name: 'Tokyo Big Sight', lat: 35.6302, lng: 139.793, zoom: 18 },
   { name: 'Shibuya Station', lat: 35.6591, lng: 139.7026, zoom: 16 },
