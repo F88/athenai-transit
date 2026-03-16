@@ -57,6 +57,13 @@ function deps(base: number): number[] {
  * - sub_02: subway(1) + bus(3) → returns [1, 3]
  * - tdn_04: toden(0) + liner(2) → returns [0, 2]
  *
+ * Multi-agency stops (for StopWithMeta.agencies):
+ * - bus_01: served by route_bus (test:agency) + route_partner (test:partner)
+ *   → agencies = [Test Agency, Partner Bus]
+ *
+ * Empty headsign:
+ * - route_partner at bus_01 has empty headsign (tests missing destination)
+ *
  * Special stops:
  * - stop_closed: exists in stops but has no timetable entries (for error tests)
  *
@@ -128,6 +135,17 @@ export function createFixture(): SourceData {
         c: '2E7D32',
         tc: 'FFFFFF',
         ai: 'test:agency',
+      },
+      // Partner Bus — joint operation at bus_01 (bus, route_type 3)
+      // Empty headsign to test missing destination display.
+      {
+        i: 'route_partner',
+        s: '共01',
+        l: '',
+        t: 3,
+        c: 'D32F2F',
+        tc: 'FFFFFF',
+        ai: 'test:partner',
       },
     ],
     calendar: {
@@ -236,6 +254,8 @@ export function createFixture(): SourceData {
       bus_01: [
         { r: 'route_bus', h: 'Ikebukuro-eki', d: { svc_weekday: deps(492) }, ai: 'test:agency' },
         { r: 'route_bus', h: 'Oji-eki', d: { svc_weekday: deps(502) }, ai: 'test:agency' },
+        // Joint operation: partner bus with empty headsign
+        { r: 'route_partner', h: '', d: { svc_weekday: deps(497) }, ai: 'test:partner' },
       ],
       bus_02: [
         { r: 'route_bus', h: 'Ikebukuro-eki', d: { svc_weekday: deps(498) }, ai: 'test:agency' },
@@ -258,6 +278,16 @@ export function createFixture(): SourceData {
         fu: '',
         cs: [{ b: '0079C2', t: 'FFFFFF' }],
       },
+      {
+        i: 'test:partner',
+        n: 'Partner Bus Co.',
+        sn: 'Partner',
+        u: 'https://partner.example.com',
+        l: 'ja',
+        tz: 'Asia/Tokyo',
+        fu: '',
+        cs: [{ b: 'D32F2F', t: 'FFFFFF' }],
+      },
     ],
     translations: {
       headsigns: {},
@@ -278,8 +308,14 @@ export function createFixture(): SourceData {
         stop_closed: { ja: '休止停留所', en: 'Closed Stop' },
       },
       route_names: {},
-      agency_names: { 'test:agency': { ja: 'テスト事業者', en: 'Test Agency' } },
-      agency_short_names: { 'test:agency': { ja: 'テスト', en: 'Test' } },
+      agency_names: {
+        'test:agency': { ja: 'テスト事業者', en: 'Test Agency' },
+        'test:partner': { ja: '共同バス', en: 'Partner Bus' },
+      },
+      agency_short_names: {
+        'test:agency': { ja: 'テスト', en: 'Test' },
+        'test:partner': { ja: '共同', en: 'Partner' },
+      },
     },
     shapes: {
       route_subway: [

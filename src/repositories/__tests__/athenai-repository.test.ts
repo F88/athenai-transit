@@ -17,7 +17,7 @@ describe('mergeSources', () => {
   it('builds agencyMap from source agencies and translations', () => {
     const fixture = createFixture();
     const merged = mergeSources([fixture]);
-    expect(merged.agencyMap.size).toBe(1);
+    expect(merged.agencyMap.size).toBe(2);
     const agency = merged.agencyMap.get('test:agency');
     expect(agency).toBeDefined();
     expect(agency!.agency_name).toBe('Test Agency');
@@ -97,6 +97,7 @@ describe('mergeSources', () => {
     const merged = mergeSources([fixture]);
     expect(merged.translationsMap.agency_short_names).toEqual({
       'test:agency': { ja: 'テスト', en: 'Test' },
+      'test:partner': { ja: '共同', en: 'Partner' },
     });
   });
 });
@@ -782,6 +783,21 @@ describe('AthenaiRepository', () => {
       expect(withAgencies[0].agencies[0].agency_id).toBe('test:agency');
     });
 
+    it('resolves multiple agencies for joint-operation stops', async () => {
+      const repo = await createRepo();
+      const result = await repo.getStopsNearby({ lat: 35.75, lng: 139.74 }, 5000, 100);
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      // bus_01 is served by both test:agency (route_bus) and test:partner (route_partner)
+      const bus01 = result.data.find((m) => m.stop.stop_id.endsWith('bus_01'));
+      expect(bus01).toBeDefined();
+      expect(bus01!.agencies).toHaveLength(2);
+      const agencyIds = bus01!.agencies.map((a) => a.agency_id).sort();
+      expect(agencyIds).toEqual(['test:agency', 'test:partner']);
+    });
+
     it('includes resolved agencies in getStopsInBounds results', async () => {
       const repo = await createRepo();
       const result = await repo.getStopsInBounds(
@@ -795,6 +811,21 @@ describe('AthenaiRepository', () => {
       const withAgencies = result.data.filter((m) => m.agencies.length > 0);
       expect(withAgencies.length).toBeGreaterThan(0);
       expect(withAgencies[0].agencies[0].agency_id).toBe('test:agency');
+    });
+  });
+
+  describe('getUpcomingDepartures (empty headsign)', () => {
+    it('returns empty headsign for routes with no trip_headsign', async () => {
+      const repo = await createRepo();
+      const result = await repo.getUpcomingDepartures('bus_01', WEEKDAY);
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      // route_partner has empty headsign
+      const partnerGroup = result.data.find((g) => g.route.route_id.endsWith('route_partner'));
+      expect(partnerGroup).toBeDefined();
+      expect(partnerGroup!.headsign).toBe('');
     });
   });
 
