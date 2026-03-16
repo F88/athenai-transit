@@ -103,11 +103,11 @@ export function BottomSheet({
     if (hiddenRouteTypes.size > 0) {
       result = result.filter((swc) => !swc.routeTypes.every((rt) => hiddenRouteTypes.has(rt)));
     }
-    if (hiddenAgencyIds.size > 0) {
+    if (hiddenAgencyIds.size > 0 && presentAgencies.length > 1) {
       result = filterStopsByAgency(result, hiddenAgencyIds);
     }
     return result;
-  }, [nearbyDepartures, activeOnly, hiddenRouteTypes, hiddenAgencyIds]);
+  }, [nearbyDepartures, activeOnly, hiddenRouteTypes, hiddenAgencyIds, presentAgencies]);
 
   const activeCount = useMemo(
     () => nearbyDepartures.filter((swc) => swc.groups.length > 0).length,
