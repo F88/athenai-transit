@@ -30,8 +30,6 @@ const HOME_LOCATIONS = [
   { name: 'Shinjuku Station West', lat: 35.6913, lng: 139.6985, zoom: 17 },
 ] as const;
 
-const DEFAULT_ZOOM = 16;
-
 import { parseQueryLat, parseQueryLng, parseQueryZoom } from '../utils/query-params';
 import { createLogger } from '../utils/logger';
 
@@ -41,22 +39,17 @@ function parseEnvLatLng(value: string | undefined): [number, number] | null {
   if (!value) {
     return null;
   }
-  const [lat, lng] = value.split(',').map(Number);
-  if (Number.isNaN(lat) || Number.isNaN(lng)) {
+  const parts = value.split(',');
+  const lat = parseQueryLat(parts[0]);
+  const lng = parseQueryLng(parts[1]);
+  if (lat == null || lng == null) {
     return null;
   }
   return [lat, lng];
 }
 
 function parseEnvZoom(value: string | undefined): number | null {
-  if (!value) {
-    return null;
-  }
-  const n = Number(value);
-  if (Number.isNaN(n) || !Number.isFinite(n)) {
-    return null;
-  }
-  return n;
+  return parseQueryZoom(value);
 }
 
 /**
@@ -81,10 +74,8 @@ const envZoom = parseEnvZoom(import.meta.env.VITE_INITIAL_ZOOM_LEVEL);
 
 const randomHome = (qCenter ?? envCenter) ? null : pickRandomHome();
 
-const resolvedCenter: [number, number] = qCenter ??
-  envCenter ??
-  randomHome?.center ?? [HOME_LOCATIONS[0].lat, HOME_LOCATIONS[0].lng];
-const resolvedZoom: number = qZoom ?? envZoom ?? randomHome?.zoom ?? DEFAULT_ZOOM;
+const resolvedCenter: [number, number] = qCenter ?? envCenter ?? randomHome!.center;
+const resolvedZoom: number = qZoom ?? envZoom ?? randomHome!.zoom;
 
 // Log resolution source
 if (qCenter) {

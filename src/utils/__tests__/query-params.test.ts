@@ -15,9 +15,10 @@ describe('parseQueryLat', () => {
     expect(parseQueryLat('1000')).toBeNull();
   });
 
-  it('rejects non-numeric input', () => {
+  it('rejects non-numeric and whitespace-only input', () => {
     expect(parseQueryLat('abc')).toBeNull();
     expect(parseQueryLat('')).toBeNull();
+    expect(parseQueryLat('   ')).toBeNull();
     expect(parseQueryLat(null)).toBeNull();
     expect(parseQueryLat(undefined)).toBeNull();
   });

@@ -2,7 +2,7 @@
  * Safe parsers for URL query parameters.
  *
  * All parsers validate input strictly — non-numeric, out-of-range,
- * Infinity, and NaN values are rejected (return null).
+ * Infinity, NaN, and whitespace-only values are rejected (return null).
  * This prevents injection attacks since only valid numeric values
  * are accepted and passed to downstream consumers.
  *
@@ -38,10 +38,11 @@ export function getSourcesParam(): string | null {
 
 /** Parse latitude from query param. Valid range: -90 to 90. */
 export function parseQueryLat(value: string | null | undefined): number | null {
-  if (!value) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
     return null;
   }
-  const n = Number(value);
+  const n = Number(trimmed);
   if (Number.isNaN(n) || !Number.isFinite(n)) {
     return null;
   }
@@ -53,10 +54,11 @@ export function parseQueryLat(value: string | null | undefined): number | null {
 
 /** Parse longitude from query param. Valid range: -180 to 180. */
 export function parseQueryLng(value: string | null | undefined): number | null {
-  if (!value) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
     return null;
   }
-  const n = Number(value);
+  const n = Number(trimmed);
   if (Number.isNaN(n) || !Number.isFinite(n)) {
     return null;
   }
@@ -68,10 +70,11 @@ export function parseQueryLng(value: string | null | undefined): number | null {
 
 /** Parse zoom level from query param. Valid range: 1 to 22. */
 export function parseQueryZoom(value: string | null | undefined): number | null {
-  if (!value) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
     return null;
   }
-  const n = Number(value);
+  const n = Number(trimmed);
   if (Number.isNaN(n) || !Number.isFinite(n)) {
     return null;
   }
