@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type {
-  Agency,
   DepartureGroup,
   RouteType,
   Stop,
   StopWithContext,
   StopWithMeta,
 } from './types/app/transit';
-import type { Result } from './types/app/repository';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
 import { useDateTime } from './hooks/use-date-time';
@@ -74,34 +72,6 @@ export default function App() {
       }),
     ).then((entries) => {
       setRouteTypeMap(new Map(entries));
-    });
-  }, [inBoundStops, radiusStops, repo]);
-
-  // Build stop-level agencies lookup covering all visible stops
-  const [stopAgenciesMap, setStopAgenciesMap] = useState<Map<string, Agency[]>>(() => new Map());
-
-  useEffect(() => {
-    const allStops = [...inBoundStops, ...radiusStops].map((s) => s.stop);
-    const uniqueAgencyIds = [...new Set(allStops.map((s) => s.agency_id).filter(Boolean))];
-
-    void Promise.all(
-      uniqueAgencyIds.map(async (id) => {
-        const result = await repo.getAgency(id);
-        return result.success ? result.data : null;
-      }),
-    ).then((results) => {
-      const agencyMap = new Map<string, Agency>();
-      for (const agency of results) {
-        if (agency) {
-          agencyMap.set(agency.agency_id, agency);
-        }
-      }
-      const map = new Map<string, Agency[]>();
-      for (const stop of allStops) {
-        const agency = stop.agency_id ? agencyMap.get(stop.agency_id) : undefined;
-        map.set(stop.stop_id, agency ? [agency] : []);
-      }
-      setStopAgenciesMap(map);
     });
   }, [inBoundStops, radiusStops, repo]);
 
@@ -204,10 +174,10 @@ export default function App() {
 
   const handleFetchDepartures = useCallback(
     async (stopId: string): Promise<StopWithContext | null> => {
-      const stop =
-        inBoundStops.find((s) => s.stop.stop_id === stopId)?.stop ??
-        radiusStops.find((s) => s.stop.stop_id === stopId)?.stop;
-      if (!stop) {
+      const meta =
+        inBoundStops.find((s) => s.stop.stop_id === stopId) ??
+        radiusStops.find((s) => s.stop.stop_id === stopId);
+      if (!meta) {
         return null;
       }
       const [depsResult, rtResult] = await Promise.all([
@@ -216,17 +186,7 @@ export default function App() {
       ]);
       const groups = depsResult.success ? depsResult.data : [];
       const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-      const agencyIds = new Set<string>();
-      for (const g of groups) {
-        if (g.route.agency_id) {
-          agencyIds.add(g.route.agency_id);
-        }
-      }
-      const agencyResults = await Promise.all([...agencyIds].map((id) => repo.getAgency(id)));
-      const agencies = agencyResults
-        .filter((r): r is Result<Agency> & { success: true } => r.success)
-        .map((r) => r.data);
-      return { stop, routeTypes, groups, agencies };
+      return { stop: meta.stop, routeTypes, groups, agencies: meta.agencies };
     },
     [repo, dateTime, inBoundStops, radiusStops],
   );
@@ -288,7 +248,7 @@ export default function App() {
     (stop: Stop) => {
       logger.debug(`handleHistorySelect [History]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
       focusStop(stop);
-      const meta = findStopWithMeta(stop.stop_id) ?? { stop };
+      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [] };
       pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [3]);
     },
     [focusStop, pushStop, findStopWithMeta, routeTypeMap],
@@ -300,7 +260,7 @@ export default function App() {
       focusStop(stop);
       // Search results may not be in radiusStops/inBoundStops yet;
       // wrap as StopWithMeta without distance
-      const meta = findStopWithMeta(stop.stop_id) ?? { stop };
+      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [] };
       pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [3]);
       setSearchModalOpen(false);
     },
@@ -388,7 +348,6 @@ export default function App() {
           focusPosition={focusPosition}
           nearbyDepartures={nearbyDepartures}
           routeTypeMap={routeTypeMap}
-          agenciesMap={stopAgenciesMap}
           routeShapes={routeShapes}
           selectionInfo={selectionInfo}
           visibleStopTypes={visibleStopTypes}

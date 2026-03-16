@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Agency, StopWithContext, StopWithMeta } from '../types/app/transit';
-import type { Result } from '../types/app/repository';
+import type { StopWithContext, StopWithMeta } from '../types/app/transit';
 import type { TransitRepository } from '../repositories/transit-repository';
 import { createLogger } from '../utils/logger';
 
@@ -48,29 +47,13 @@ export function useNearbyDepartures(
       radiusStops.length === 0
         ? Promise.resolve([])
         : Promise.all(
-            radiusStops.map(async ({ stop }) => {
+            radiusStops.map(async ({ stop, agencies }) => {
               const [depsResult, rtResult] = await Promise.all([
                 repo.getUpcomingDepartures(stop.stop_id, dateTime),
                 repo.getRouteTypesForStop(stop.stop_id),
               ]);
               const groups = depsResult.success ? depsResult.data : [];
               const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-              // Collect unique agencies from departure groups.
-              // Agency IDs are deduplicated per stop. Cross-stop deduplication
-              // is intentionally omitted: getAgency() is an O(1) Map lookup in
-              // AthenaiRepository, so the overhead is negligible.
-              const agencyIds = new Set<string>();
-              for (const g of groups) {
-                if (g.route.agency_id) {
-                  agencyIds.add(g.route.agency_id);
-                }
-              }
-              const agencyResults = await Promise.all(
-                [...agencyIds].map((id) => repo.getAgency(id)),
-              );
-              const agencies = agencyResults
-                .filter((r): r is Result<Agency> & { success: true } => r.success)
-                .map((r) => r.data);
               return { stop, routeTypes, groups, agencies };
             }),
           );

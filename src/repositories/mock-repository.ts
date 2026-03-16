@@ -494,6 +494,31 @@ const STOP_ROUTE_TYPES: Map<string, RouteType[]> = (() => {
   return result;
 })();
 
+/** Pre-computed agencies per stop (deduplicated). */
+const STOP_AGENCIES: Map<string, Agency[]> = (() => {
+  const routeMap = new Map(ROUTES.map((r) => [r.route_id, r]));
+  const result = new Map<string, Agency[]>();
+
+  for (const [stopId, entries] of Object.entries(STOP_ROUTES)) {
+    const agencyIds = new Set<string>();
+    for (const { routeId } of entries) {
+      const route = routeMap.get(routeId);
+      if (route && route.agency_id) {
+        agencyIds.add(route.agency_id);
+      }
+    }
+    const agencies: Agency[] = [];
+    for (const id of agencyIds) {
+      const agency = AGENCY_MAP.get(id);
+      if (agency) {
+        agencies.push(agency);
+      }
+    }
+    result.set(stopId, agencies);
+  }
+  return result;
+})();
+
 /** Stop coordinate lookup for building route shapes. */
 const STOP_COORDS = new Map(STOPS.map((s) => [s.stop_id, [s.stop_lat, s.stop_lon] as const]));
 
@@ -662,9 +687,11 @@ export class MockRepository implements TransitRepository {
     matching.sort((a, b) => a.distance - b.distance);
 
     const truncated = matching.length > effectiveLimit;
-    const data: StopWithMeta[] = matching
-      .slice(0, effectiveLimit)
-      .map((m) => ({ stop: m.stop, distance: m.distance }));
+    const data: StopWithMeta[] = matching.slice(0, effectiveLimit).map((m) => ({
+      stop: m.stop,
+      distance: m.distance,
+      agencies: STOP_AGENCIES.get(m.stop.stop_id) ?? [],
+    }));
 
     return Promise.resolve({ success: true, data, truncated });
   }
@@ -733,9 +760,11 @@ export class MockRepository implements TransitRepository {
       .sort((a, b) => a.distKm - b.distKm);
 
     const truncated = sorted.length > effectiveLimit;
-    const data: StopWithMeta[] = sorted
-      .slice(0, effectiveLimit)
-      .map(({ stop, distKm }) => ({ stop, distance: distKm * 1000 }));
+    const data: StopWithMeta[] = sorted.slice(0, effectiveLimit).map(({ stop, distKm }) => ({
+      stop,
+      distance: distKm * 1000,
+      agencies: STOP_AGENCIES.get(stop.stop_id) ?? [],
+    }));
 
     return Promise.resolve({ success: true, data, truncated });
   }

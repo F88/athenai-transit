@@ -203,7 +203,6 @@ interface MapViewProps {
   selectedStopId: string | null;
   focusPosition: LatLng | null;
   routeTypeMap: Map<string, RouteType[]>;
-  agenciesMap: Map<string, Agency[]>;
   routeShapes: RouteShape[];
   selectionInfo: SelectionInfo | null;
   visibleStopTypes: Set<number>;
@@ -243,7 +242,6 @@ export function MapView({
   focusPosition,
   nearbyDepartures,
   routeTypeMap,
-  agenciesMap,
   routeShapes,
   selectionInfo,
   visibleStopTypes,
@@ -287,6 +285,15 @@ export function MapView({
     () => buildDepartureGroupsMap(nearbyDepartures),
     [nearbyDepartures],
   );
+
+  // Build agenciesMap from StopWithMeta.agencies (resolved by repo from timetable)
+  const agenciesMap = useMemo(() => {
+    const map = new Map<string, Agency[]>();
+    for (const s of [...inBoundStops, ...radiusStops]) {
+      map.set(s.stop.stop_id, s.agencies);
+    }
+    return map;
+  }, [inBoundStops, radiusStops]);
 
   const selectedRouteIds = selectionInfo?.routeIds ?? null;
 

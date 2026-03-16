@@ -4,8 +4,8 @@ import type { LatLng } from '../../types/app/map';
 import { makeStop } from '../../__tests__/helpers';
 
 describe('resolveFocusPosition', () => {
-  const radiusStops = [{ stop: makeStop('n1', 35.68, 139.76), distance: 100 }];
-  const inBoundStops = [{ stop: makeStop('ib1', 35.69, 139.77) }];
+  const radiusStops = [{ stop: makeStop('n1', 35.68, 139.76), distance: 100, agencies: [] }];
+  const inBoundStops = [{ stop: makeStop('ib1', 35.69, 139.77), agencies: [] }];
 
   it('returns directFocusPosition when set', () => {
     const search: LatLng = { lat: 35.7, lng: 139.78 };
