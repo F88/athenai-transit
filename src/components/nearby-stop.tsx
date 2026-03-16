@@ -9,6 +9,7 @@ import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
 import { hasUnknownDestination } from '../domain/transit/has-unknown-destination';
 import { DepartureItem } from './departure-item';
+import { AgencyBadge } from './badge/agency-badge';
 import { DistanceBadge } from './badge/distance-badge';
 import { IdBadge } from './badge/id-badge';
 import { FlatDepartureItem } from './flat-departure-item';
@@ -27,7 +28,7 @@ interface NearbyStopProps {
 }
 
 export function NearbyStop({
-  data: { stop, routeTypes, groups },
+  data: { stop, routeTypes, groups, agencies },
   isSelected,
   now,
   mapCenter,
@@ -87,6 +88,13 @@ export function NearbyStop({
           </button>
         )}
       </div>
+      {agencies.length > 0 && (
+        <div className="mb-1 flex flex-wrap gap-1">
+          {agencies.map((agency) => (
+            <AgencyBadge key={agency.agency_id} agency={agency} size="xs" />
+          ))}
+        </div>
+      )}
       {hasUnknownDestination(groups) && (
         <p className="m-0 mb-1 text-[11px] text-amber-600 dark:text-amber-400">
           行先が表示されない路線があります

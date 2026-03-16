@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
-import type { DepartureGroup, StopWithContext } from '../types/app/transit';
+import type { Agency, DepartureGroup, StopWithContext } from '../types/app/transit';
+import { collectPresentAgencies, filterStopsByAgency } from '../domain/transit/agency-filter';
 import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-views';
 import { routeTypeColor } from '../domain/transit/route-type-color';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
@@ -48,6 +49,7 @@ export function BottomSheet({
   const [activeOnlyOverride, setActiveOnlyOverride] = useState<boolean | null>(null);
   const activeOnly = activeOnlyOverride ?? isLateNight;
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
+  const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
   const info = useInfoLevel(infoLevel);
   const selectedView = DEPARTURE_VIEWS.find((v) => v.id === viewId);
   const touchStartY = useRef(0);
@@ -76,6 +78,23 @@ export function BottomSheet({
     });
   }, []);
 
+  const presentAgencies = useMemo(
+    () => collectPresentAgencies(nearbyDepartures),
+    [nearbyDepartures],
+  );
+
+  const toggleAgency = useCallback((agency: Agency) => {
+    setHiddenAgencyIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(agency.agency_id)) {
+        next.delete(agency.agency_id);
+      } else {
+        next.add(agency.agency_id);
+      }
+      return next;
+    });
+  }, []);
+
   const filteredDepartures = useMemo(() => {
     let result = nearbyDepartures;
     if (activeOnly) {
@@ -84,8 +103,11 @@ export function BottomSheet({
     if (hiddenRouteTypes.size > 0) {
       result = result.filter((swc) => !swc.routeTypes.every((rt) => hiddenRouteTypes.has(rt)));
     }
+    if (hiddenAgencyIds.size > 0) {
+      result = filterStopsByAgency(result, hiddenAgencyIds);
+    }
     return result;
-  }, [nearbyDepartures, activeOnly, hiddenRouteTypes]);
+  }, [nearbyDepartures, activeOnly, hiddenRouteTypes, hiddenAgencyIds]);
 
   const activeCount = useMemo(
     () => nearbyDepartures.filter((swc) => swc.groups.length > 0).length,
@@ -179,9 +201,24 @@ export function BottomSheet({
                 {routeTypeEmoji(rt)}
               </PillButton>
             ))}
-          <PillButton active={false} disabled onClick={() => {}}>
-            事業者
-          </PillButton>
+          {/* Agency filter — shown only when 2+ agencies are present */}
+          {presentAgencies.length > 1 &&
+            presentAgencies.map((agency) => {
+              const primary = agency.agency_colors[0];
+              const color = primary ? `#${primary.bg}` : undefined;
+              return (
+                <PillButton
+                  key={agency.agency_id}
+                  active={!hiddenAgencyIds.has(agency.agency_id)}
+                  activeBg={color ? `${color}20` : undefined}
+                  activeBorder={color}
+                  onClick={() => toggleAgency(agency)}
+                  title={agency.agency_name}
+                >
+                  {agency.agency_short_name || agency.agency_name}
+                </PillButton>
+              );
+            })}
         </div>
         {selectedView && info.isNormalEnabled && (
           <div className="mt-1">

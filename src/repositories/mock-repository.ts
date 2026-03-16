@@ -7,7 +7,8 @@
  *
  * Includes stops with multiple route types for testing the
  * `routeTypes: RouteType[]` feature:
- * - `sta_central`: tram(0) + subway(1) + rail(2) + bus(3) — all 4 types
+ * - `sta_central`: tram(0) + subway(1) + rail(2) + bus(3) — all 4 types,
+ *   with bus routes from two agencies (あおば交通 + そら急行バス)
  * - `sta_central_s`: subway(1) + rail(2) + bus(3) — 3 types
  * - `sta_hill`: rail(2) + bus(3)
  * - `sta_east`: tram(0) + rail(2)
@@ -28,7 +29,7 @@ import type { CollectionResult, Result } from '../types/app/repository';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
 
-// --- Mock agency ---
+// --- Mock agencies ---
 const AGENCY: Agency = {
   agency_id: 'mock:agency',
   agency_name: 'あおば交通株式会社',
@@ -41,6 +42,21 @@ const AGENCY: Agency = {
   agency_fare_url: '',
   agency_colors: [{ bg: '2E7D32', text: 'FFFFFF' }],
 };
+
+const AGENCY_SORA: Agency = {
+  agency_id: 'mock:sora_bus',
+  agency_name: 'そら急行バス株式会社',
+  agency_short_name: 'そら急行バス',
+  agency_names: { ja: 'そら急行バス株式会社', en: 'Sora Express Bus Co.' },
+  agency_short_names: { ja: 'そら急行バス', en: 'Sora Express Bus' },
+  agency_url: 'https://example.com/sora',
+  agency_lang: 'ja',
+  agency_timezone: 'Asia/Tokyo',
+  agency_fare_url: '',
+  agency_colors: [{ bg: '1565C0', text: 'FFFFFF' }],
+};
+
+const AGENCY_MAP = new Map<string, Agency>([AGENCY, AGENCY_SORA].map((a) => [a.agency_id, a]));
 
 // --- Fictional stops clustered around Kumano-mae (~2 km spread) ---
 // Center: 35.7485, 139.7699
@@ -245,6 +261,18 @@ const ROUTES: Route[] = [
     route_text_color: 'FFFFFF',
     agency_id: 'mock:agency',
   },
+  // Bus route operated by a different agency (そら急行バス).
+  // Serves sta_central alongside あおば交通 routes, testing multi-agency badges.
+  {
+    route_id: 'bus_sora_exp01',
+    route_short_name: 'そ01',
+    route_long_name: 'あおば中央-つきみの',
+    route_names: {},
+    route_type: 3,
+    route_color: '1565C0',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:sora_bus',
+  },
   // Rail routes (route_type: 2)
   {
     route_id: 'rail_aoba',
@@ -331,6 +359,7 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
     { routeId: 'tram_hoshi', headsign: 'ほし公園' },
     { routeId: 'bus_aoba01', headsign: 'にじ橋' },
     { routeId: 'bus_aoba02', headsign: 'そらタワー' },
+    { routeId: 'bus_sora_exp01', headsign: 'つきみの駅' },
   ],
   sta_central_s: [
     { routeId: 'rail_aoba', headsign: 'はなみ方面' },
@@ -495,6 +524,14 @@ const ROUTE_SHAPES: RouteShape[] = [
     color: `#${ROUTE_MAP.get('bus_aoba02')!.route_color}`,
     route: ROUTE_MAP.get('bus_aoba02')!,
     points: [coord('sta_central'), coord('bus_tower')],
+  },
+  // bus_sora_exp01: 中央駅 → つきみの駅 (そら急行バス)
+  {
+    routeId: 'bus_sora_exp01',
+    routeType: 3,
+    color: `#${ROUTE_MAP.get('bus_sora_exp01')!.route_color}`,
+    route: ROUTE_MAP.get('bus_sora_exp01')!,
+    points: [coord('sta_central'), coord('sta_west')],
   },
   // bus_midori10: みどり丘駅 → 図書館前 → かぜの駅
   {
@@ -683,8 +720,9 @@ export class MockRepository implements TransitRepository {
 
   /** {@inheritDoc TransitRepository.getAgency} */
   getAgency(agencyId: string): Promise<Result<Agency>> {
-    if (agencyId === AGENCY.agency_id) {
-      return Promise.resolve({ success: true, data: AGENCY });
+    const agency = AGENCY_MAP.get(agencyId);
+    if (agency) {
+      return Promise.resolve({ success: true, data: agency });
     }
     return Promise.resolve({ success: false, error: `Agency not found: ${agencyId}` });
   }

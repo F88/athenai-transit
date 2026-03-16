@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type {
+  Agency,
   DepartureGroup,
   RouteType,
   Stop,
   StopWithContext,
   StopWithMeta,
 } from './types/app/transit';
+import type { Result } from './types/app/repository';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
 import { useDateTime } from './hooks/use-date-time';
@@ -186,9 +188,17 @@ export default function App() {
       ]);
       const groups = depsResult.success ? depsResult.data : [];
       const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-      // agencies is empty until agency UI (badges, filtering) is implemented.
-      // Agency resolution will be added when the UI consumes it.
-      return { stop, routeTypes, groups, agencies: [] };
+      const agencyIds = new Set<string>();
+      for (const g of groups) {
+        if (g.route.agency_id) {
+          agencyIds.add(g.route.agency_id);
+        }
+      }
+      const agencyResults = await Promise.all([...agencyIds].map((id) => repo.getAgency(id)));
+      const agencies = agencyResults
+        .filter((r): r is Result<Agency> & { success: true } => r.success)
+        .map((r) => r.data);
+      return { stop, routeTypes, groups, agencies };
     },
     [repo, dateTime, inBoundStops, radiusStops],
   );
