@@ -358,6 +358,7 @@ const ROUTES: Route[] = [
     route_text_color: 'FFFFFF',
     agency_id: 'mock:aoba',
   },
+  // そら急の共同運行側。route_type: 6 (gondola) は意図的 — 事業者間で route_type が異なるケースをテストするため
   {
     route_id: 'subway_airport_sora',
     route_short_name: 'AL',

@@ -43,7 +43,7 @@ export function MapLayerPanel({
         🧑🏼‍🎨
       </MapToggleButton>
       <MapToggleButton
-        active={[0, 1, 2].every((t) => visibleRouteShapes.has(t))}
+        active={[0, 1, 2, 4, 5, 6, 7].every((t) => visibleRouteShapes.has(t))}
         onClick={onToggleNonBusShapes}
         label="バス以外の路線図の表示切替"
       >
