@@ -14,6 +14,9 @@ Create a CalVer release with changelog, tag, and GitHub Release.
 
 CalVer: `YYYY.MM.DD` (e.g. `2026.03.12`). The user provides the version.
 
+When multiple releases occur on the same day, append a sequential suffix:
+`YYYY.MM.DD.1`, `YYYY.MM.DD.2`, etc. The first release of the day omits the suffix.
+
 ## Steps
 
 1. **Update `package.json`** — set `"version"` to the new CalVer version
