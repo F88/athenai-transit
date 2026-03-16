@@ -1,4 +1,5 @@
 import settings from './data-source-settings';
+import { getSourcesParam } from '../utils/query-params';
 
 /**
  * A group of related GTFS data sources managed as a single toggle unit.
@@ -40,10 +41,8 @@ export class DataSourceManager {
    */
   constructor() {
     this.groups = settings;
-    const params = new URLSearchParams(window.location.search);
-
     // 1. ?sources=minkuru,yurimo or ?sources=all
-    const sourcesParam = params.get('sources');
+    const sourcesParam = getSourcesParam();
     if (sourcesParam) {
       if (sourcesParam === 'all') {
         this.enabledIds = new Set(this.groups.map((g) => g.id));

@@ -8,13 +8,14 @@ import { DataSourceManager } from './config/data-source-manager';
 import { AthenaiRepository } from './repositories/athenai-repository';
 import type { TransitRepository } from './repositories/transit-repository';
 import { createLogger } from './utils/logger';
+import { hasMockDataParam } from './utils/query-params';
 
 const logger = createLogger('App');
 
 async function createRepository(): Promise<TransitRepository> {
   // Use MockRepository when ?mock-data is in the URL.
   // Intentionally available in production builds for UI testing and demos.
-  if (new URLSearchParams(window.location.search).has('mock-data')) {
+  if (hasMockDataParam()) {
     logger.info('Using MockRepository (?mock-data)');
     const { MockRepository } = await import('./repositories/mock-repository');
     return new MockRepository();
