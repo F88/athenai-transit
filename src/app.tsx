@@ -216,6 +216,7 @@ export default function App() {
         dateTime,
       );
       const departures = result.success ? result.data : [];
+      const agencies = nearbyDepartures.find((s) => s.stop.stop_id === stopId)?.agencies ?? [];
       setTimetableModal({
         type: 'route-headsign',
         stop,
@@ -223,9 +224,10 @@ export default function App() {
         headsign: group.headsign,
         serviceDate: getServiceDay(dateTime),
         departures,
+        agencies,
       });
     },
-    [repo, dateTime, radiusStops],
+    [repo, dateTime, radiusStops, nearbyDepartures],
   );
 
   const handleShowStopTimetable = useCallback(
@@ -238,15 +240,17 @@ export default function App() {
       const result = await repo.getFullDayDeparturesForStop(stopId, dateTime);
       const departures = result.success ? result.data : [];
 
+      const agencies = nearbyDepartures.find((s) => s.stop.stop_id === stopId)?.agencies ?? [];
       setTimetableModal({
         type: 'stop',
         stop,
         routeTypes: routeTypeMap.get(stopId) ?? [3],
         serviceDate: getServiceDay(dateTime),
         departures,
+        agencies,
       });
     },
-    [repo, dateTime, radiusStops, routeTypeMap],
+    [repo, dateTime, radiusStops, routeTypeMap, nearbyDepartures],
   );
 
   // Select + pan to a stop from history. Uses focusStop to set

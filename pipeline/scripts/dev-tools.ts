@@ -95,4 +95,4 @@ async function main(): Promise<void> {
   runScript(SCRIPTS[selection - 1]);
 }
 
-main();
+void main();

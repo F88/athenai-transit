@@ -65,8 +65,14 @@ function makeTarget(
 describe('buildShapesForTarget', () => {
   it('filters features by operator name', () => {
     const geojson = makeGeojson([
-      makeFeature('OperatorA', 'Line1', [[139.0, 35.0], [139.1, 35.1]]),
-      makeFeature('OperatorB', 'Line2', [[140.0, 36.0], [140.1, 36.1]]),
+      makeFeature('OperatorA', 'Line1', [
+        [139.0, 35.0],
+        [139.1, 35.1],
+      ]),
+      makeFeature('OperatorB', 'Line2', [
+        [140.0, 36.0],
+        [140.1, 36.1],
+      ]),
     ]);
 
     const target = makeTarget('OperatorA', { Line1: 'test:L1' });
@@ -78,8 +84,14 @@ describe('buildShapesForTarget', () => {
 
   it('maps line names to route IDs', () => {
     const geojson = makeGeojson([
-      makeFeature('Op', 'Alpha Line', [[139.0, 35.0], [139.1, 35.1]]),
-      makeFeature('Op', 'Beta Line', [[140.0, 36.0], [140.1, 36.1]]),
+      makeFeature('Op', 'Alpha Line', [
+        [139.0, 35.0],
+        [139.1, 35.1],
+      ]),
+      makeFeature('Op', 'Beta Line', [
+        [140.0, 36.0],
+        [140.1, 36.1],
+      ]),
     ]);
 
     const target = makeTarget('Op', {
@@ -95,9 +107,7 @@ describe('buildShapesForTarget', () => {
   });
 
   it('converts [lon, lat] to [lat, lon]', () => {
-    const geojson = makeGeojson([
-      makeFeature('Op', 'Line1', [[139.5, 35.5]]),
-    ]);
+    const geojson = makeGeojson([makeFeature('Op', 'Line1', [[139.5, 35.5]])]);
 
     const target = makeTarget('Op', { Line1: 'pfx:L1' });
     const result = buildShapesForTarget(target, geojson);
@@ -107,9 +117,7 @@ describe('buildShapesForTarget', () => {
   });
 
   it('rounds coordinates to 5 decimal places', () => {
-    const geojson = makeGeojson([
-      makeFeature('Op', 'Line1', [[139.123456789, 35.987654321]]),
-    ]);
+    const geojson = makeGeojson([makeFeature('Op', 'Line1', [[139.123456789, 35.987654321]])]);
 
     const target = makeTarget('Op', { Line1: 'pfx:L1' });
     const result = buildShapesForTarget(target, geojson);
@@ -143,9 +151,7 @@ describe('buildShapesForTarget', () => {
   it('returns empty object when no features match operator', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-    const geojson = makeGeojson([
-      makeFeature('Other', 'Line1', [[139.0, 35.0]]),
-    ]);
+    const geojson = makeGeojson([makeFeature('Other', 'Line1', [[139.0, 35.0]])]);
 
     const target = makeTarget('NonExistent', { Line1: 'pfx:L1' });
     const result = buildShapesForTarget(target, geojson);

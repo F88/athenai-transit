@@ -57,7 +57,7 @@ describe('mergeSources', () => {
       ...createFixture(),
       prefix: 's1',
       translations: {
-        headsigns: { '新橋': { ja: '新橋', 'ja-Hrkt': 'しんばし', en: 'Shimbashi' } },
+        headsigns: { 新橋: { ja: '新橋', 'ja-Hrkt': 'しんばし', en: 'Shimbashi' } },
         stop_headsigns: {},
         stop_names: {},
         route_names: {},
@@ -69,7 +69,7 @@ describe('mergeSources', () => {
       ...createFixture(),
       prefix: 's2',
       translations: {
-        headsigns: { '新橋': { ja: '新橋', en: 'Shimbashi', ko: '신바시', 'zh-Hans': '新桥' } },
+        headsigns: { 新橋: { ja: '新橋', en: 'Shimbashi', ko: '신바시', 'zh-Hans': '新桥' } },
         stop_headsigns: {},
         stop_names: {},
         route_names: {},
@@ -82,7 +82,12 @@ describe('mergeSources', () => {
     const s1 = merged.headsignTranslations.get('s1');
     const s2 = merged.headsignTranslations.get('s2');
     expect(s1?.headsigns['新橋']).toEqual({ ja: '新橋', 'ja-Hrkt': 'しんばし', en: 'Shimbashi' });
-    expect(s2?.headsigns['新橋']).toEqual({ ja: '新橋', en: 'Shimbashi', ko: '신바시', 'zh-Hans': '新桥' });
+    expect(s2?.headsigns['新橋']).toEqual({
+      ja: '新橋',
+      en: 'Shimbashi',
+      ko: '신바시',
+      'zh-Hans': '新桥',
+    });
     // Global translationsMap should NOT contain headsigns
     expect(merged.translationsMap.headsigns).toEqual({});
   });

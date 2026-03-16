@@ -8,6 +8,7 @@ import { useInfoLevel } from '../hooks/use-info-level';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
 import { hasUnknownDestination } from '../domain/transit/has-unknown-destination';
+import { resolveAgencyDisplayName } from '../domain/transit/get-agency-display-name';
 import { DepartureItem } from './departure-item';
 import { AgencyBadge } from './badge/agency-badge';
 import { DistanceBadge } from './badge/distance-badge';
@@ -91,7 +92,7 @@ export function NearbyStop({
       {agencies.length > 0 && (
         <div className="mb-1 flex flex-wrap gap-1">
           {agencies.map((agency) => (
-            <AgencyBadge key={agency.agency_id} agency={agency} size="xs" />
+            <AgencyBadge key={agency.agency_id} agency={agency} infoLevel={infoLevel} size="xs" />
           ))}
         </div>
       )}
@@ -112,16 +113,20 @@ export function NearbyStop({
                 isFirst={i === 0}
                 showRouteTypeIcon={showRouteTypeIcon}
                 infoLevel={infoLevel}
+                agencyName={resolveAgencyDisplayName(item.route.agency_id, agencies, infoLevel)}
+                agency={agencies.find((a) => a.agency_id === item.route.agency_id)}
               />
             ))
         ) : (
           groups.map((group) => (
             <DepartureItem
-              key={`${stop.stop_id}__${group.route.route_short_name}__${group.headsign}`}
+              key={`${stop.stop_id}__${group.route.route_id}__${group.headsign}`}
               group={group}
               now={now}
               infoLevel={infoLevel}
               showRouteTypeIcon={showRouteTypeIcon}
+              agencyName={resolveAgencyDisplayName(group.route.agency_id, agencies, infoLevel)}
+              agency={agencies.find((a) => a.agency_id === group.route.agency_id)}
               onShowTimetable={
                 onShowTimetable ? (g) => onShowTimetable(stop.stop_id, g) : undefined
               }

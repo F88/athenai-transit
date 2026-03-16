@@ -1,10 +1,10 @@
 import type { InfoLevel } from '../types/app/settings';
-import type { DepartureGroup } from '../types/app/transit';
+import type { Agency, DepartureGroup } from '../types/app/transit';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
 import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
-import { IdBadge } from './badge/id-badge';
+import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
 
 interface DepartureItemProps {
@@ -13,6 +13,10 @@ interface DepartureItemProps {
   infoLevel: InfoLevel;
   /** Whether to show route_type emoji (e.g. when stop serves multiple route types). */
   showRouteTypeIcon: boolean;
+  /** Agency short name to display at detailed+ info level. */
+  agencyName?: string;
+  /** Agency object for badge display at detailed+ info level. */
+  agency?: Agency;
   onShowTimetable?: (group: DepartureGroup) => void;
 }
 
@@ -21,6 +25,8 @@ export function DepartureItem({
   now,
   infoLevel,
   showRouteTypeIcon,
+  agencyName,
+  agency,
   onShowTimetable,
 }: DepartureItemProps) {
   const info = useInfoLevel(infoLevel);
@@ -33,11 +39,6 @@ export function DepartureItem({
 
   return (
     <div className="border-b border-[#e0e0e0] py-3 last:border-b-0 dark:border-gray-700">
-      {info.isVerboseEnabled && (
-        <div className="mb-1">
-          <IdBadge>{group.route.route_id}</IdBadge>
-        </div>
-      )}
       <div className="mb-1.5 flex items-center gap-2">
         {showRouteTypeIcon && (
           <span className="shrink-0 text-base">{routeTypeEmoji(group.route.route_type)}</span>
@@ -45,6 +46,12 @@ export function DepartureItem({
         <RouteBadge route={group.route} infoLevel={infoLevel} />
         {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
         <span className="text-sm font-medium text-[#333] dark:text-gray-200">{headsignName}</span>
+        {info.isDetailedEnabled && agencyName && (
+          <span className="shrink-0 text-[10px] text-[#888] dark:text-gray-400">{agencyName}</span>
+        )}
+        {info.isDetailedEnabled && agency && (
+          <AgencyBadge agency={agency} infoLevel={infoLevel} size="xs" />
+        )}
         {onShowTimetable && (
           <button
             type="button"

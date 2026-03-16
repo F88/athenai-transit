@@ -31,11 +31,11 @@ import type { TransitRepository } from './transit-repository';
 
 // --- Mock agencies ---
 const AGENCY: Agency = {
-  agency_id: 'mock:agency',
+  agency_id: 'mock:aoba',
   agency_name: 'あおば交通株式会社',
-  agency_short_name: 'あおば交通',
+  agency_short_name: 'あおバス',
   agency_names: { ja: 'あおば交通株式会社', en: 'Aoba Transit Co.' },
-  agency_short_names: { ja: 'あおば交通', en: 'Aoba Transit' },
+  agency_short_names: { ja: 'あおバス', en: 'Aoba' },
   agency_url: 'https://example.com',
   agency_lang: 'ja',
   agency_timezone: 'Asia/Tokyo',
@@ -44,11 +44,11 @@ const AGENCY: Agency = {
 };
 
 const AGENCY_SORA: Agency = {
-  agency_id: 'mock:sora_bus',
+  agency_id: 'mock:soraq',
   agency_name: 'そら急行バス株式会社',
-  agency_short_name: 'そら急行バス',
+  agency_short_name: 'そら急',
   agency_names: { ja: 'そら急行バス株式会社', en: 'Sora Express Bus Co.' },
-  agency_short_names: { ja: 'そら急行バス', en: 'Sora Express Bus' },
+  agency_short_names: { ja: 'そら急', en: 'Sora Exp' },
   agency_url: 'https://example.com/sora',
   agency_lang: 'ja',
   agency_timezone: 'Asia/Tokyo',
@@ -70,7 +70,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7485,
     stop_lon: 139.7699,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'sta_central_s',
@@ -83,7 +83,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7471,
     stop_lon: 139.7703,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'sta_hill',
@@ -92,7 +92,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7534,
     stop_lon: 139.7579,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'sta_east',
@@ -101,7 +101,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7509,
     stop_lon: 139.7809,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Single-type rail stations
   {
@@ -111,7 +111,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7577,
     stop_lon: 139.7659,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'sta_west',
@@ -120,7 +120,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7521,
     stop_lon: 139.7529,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'sta_south',
@@ -129,7 +129,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7427,
     stop_lon: 139.7646,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'sta_northwest',
@@ -138,7 +138,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7564,
     stop_lon: 139.7556,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Bus stops (location_type: 0)
   {
@@ -148,7 +148,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7497,
     stop_lon: 139.7669,
     location_type: 0,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'bus_library',
@@ -157,7 +157,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7514,
     stop_lon: 139.7636,
     location_type: 0,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'bus_tower',
@@ -166,7 +166,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7457,
     stop_lon: 139.7626,
     location_type: 0,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     stop_id: 'bus_bridge',
@@ -175,7 +175,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7587,
     stop_lon: 139.7599,
     location_type: 0,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Tram-only stop
   {
@@ -185,7 +185,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7518,
     stop_lon: 139.7858,
     location_type: 0,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Subway-only stop
   {
@@ -195,7 +195,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.7438,
     stop_lon: 139.7576,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Distant station (~15 km south, near Haneda) for testing pan+zoom behavior
   {
@@ -209,7 +209,7 @@ const STOPS: Stop[] = [
     stop_lat: 35.5494,
     stop_lon: 139.7798,
     location_type: 1,
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
 ];
 
@@ -223,7 +223,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: '2E7D32',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     route_id: 'bus_aoba02',
@@ -233,7 +233,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: '1565C0',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     route_id: 'bus_midori10',
@@ -243,7 +243,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: 'E65100',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   /**
    * Route with empty headsign (GTFS trip_headsign is optional).
@@ -259,7 +259,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: '757575',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Bus route operated by a different agency (そら急行バス).
   // Serves sta_central alongside あおば交通 routes, testing multi-agency badges.
@@ -271,7 +271,18 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: '1565C0',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:sora_bus',
+    agency_id: 'mock:soraq',
+  },
+  // Short shuttle bus to nearby hotel (あおバス)
+  {
+    route_id: 'bus_hotel_shuttle',
+    route_short_name: 'H1',
+    route_long_name: 'つき宇宙空港-ホテル満月',
+    route_names: {},
+    route_type: 3,
+    route_color: '8E24AA',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:aoba',
   },
   // Rail routes (route_type: 2)
   {
@@ -282,7 +293,7 @@ const ROUTES: Route[] = [
     route_type: 2,
     route_color: 'F15A22',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     route_id: 'rail_hikari',
@@ -292,7 +303,7 @@ const ROUTES: Route[] = [
     route_type: 2,
     route_color: '0068B7',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   {
     route_id: 'rail_midori',
@@ -302,7 +313,7 @@ const ROUTES: Route[] = [
     route_type: 2,
     route_color: 'E60012',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Subway route (route_type: 1)
   {
@@ -313,18 +324,29 @@ const ROUTES: Route[] = [
     route_type: 1,
     route_color: 'CF3366',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
   // Subway express route (route_type: 1) — distant stop for pan+zoom testing
+  // Joint operation: あおバス and そら急 both operate AL (airport liner).
   {
     route_id: 'subway_airport',
     route_short_name: 'AL',
     route_long_name: 'エアポートライナー',
     route_names: {},
     route_type: 1,
-    route_color: '00796B',
+    route_color: 'E65100',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
+  },
+  {
+    route_id: 'subway_airport_sora',
+    route_short_name: 'AL',
+    route_long_name: 'エアポートライナー',
+    route_names: {},
+    route_type: 6,
+    route_color: 'F9A825',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:soraq',
   },
   // Tram route (route_type: 0) — for multi-type testing
   {
@@ -335,7 +357,7 @@ const ROUTES: Route[] = [
     route_type: 0,
     route_color: '8B0000',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:agency',
+    agency_id: 'mock:aoba',
   },
 ];
 
@@ -356,6 +378,7 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
     { routeId: 'subway_sora', headsign: 'そらタワー方面' },
     { routeId: 'subway_sora', headsign: 'にじ橋方面' },
     { routeId: 'subway_airport', headsign: 'つき宇宙空港方面' },
+    { routeId: 'subway_airport_sora', headsign: 'つき宇宙空港方面' },
     { routeId: 'tram_hoshi', headsign: 'ほし公園' },
     { routeId: 'bus_aoba01', headsign: 'にじ橋' },
     { routeId: 'bus_aoba02', headsign: 'そらタワー' },
@@ -415,7 +438,11 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
     { routeId: 'subway_sora', headsign: 'にじ橋方面' },
     { routeId: 'subway_sora', headsign: 'そらタワー方面' },
   ],
-  sta_airport: [{ routeId: 'subway_airport', headsign: 'あおば中央方面' }],
+  sta_airport: [
+    { routeId: 'subway_airport', headsign: 'あおば中央方面' },
+    { routeId: 'subway_airport_sora', headsign: 'あおば中央方面' },
+    { routeId: 'bus_hotel_shuttle', headsign: 'ホテル満月' },
+  ],
 };
 
 /** Pre-computed route types per stop (deduplicated, sorted ascending). */
@@ -507,6 +534,14 @@ const ROUTE_SHAPES: RouteShape[] = [
     routeType: 1,
     color: `#${ROUTE_MAP.get('subway_airport')!.route_color}`,
     route: ROUTE_MAP.get('subway_airport')!,
+    points: [coord('sta_central'), coord('sta_airport')],
+  },
+  // subway_airport_sora: 中央駅 → つき宇宙空港駅 (そら急 joint operation)
+  {
+    routeId: 'subway_airport_sora',
+    routeType: 1,
+    color: `#${ROUTE_MAP.get('subway_airport_sora')!.route_color}`,
+    route: ROUTE_MAP.get('subway_airport_sora')!,
     points: [coord('sta_central'), coord('sta_airport')],
   },
   // bus_aoba01: 中央駅 → もり公園前 → 図書館前 → にじ橋
