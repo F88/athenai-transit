@@ -138,6 +138,8 @@ export interface FlatDeparture {
 export interface SourceMeta {
   /** Source identifier (e.g. "minkuru", "kobus"). */
   prefix: string;
+  /** Human-readable source name (e.g. "都バス", "京王バス"). Derived from agency_short_name. */
+  name: string;
   /** Data validity start date (YYYYMMDD). */
   startDate: string;
   /** Data validity end date (YYYYMMDD). */

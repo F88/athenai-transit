@@ -293,11 +293,15 @@ export function mergeSources(sources: SourceData[]): MergedData {
   }
 
   // Build source metadata from feed-info (validity period, version)
+  // and agency short name (human-readable source label)
   const sourceMetas: SourceMeta[] = [];
   for (const source of sources) {
     if (source.feedInfo) {
+      const firstAgencyId = source.agencies?.[0]?.i;
+      const agency = firstAgencyId ? agencyMap.get(`${source.prefix}:${firstAgencyId}`) : undefined;
       sourceMetas.push({
         prefix: source.prefix,
+        name: agency?.agency_short_name || source.prefix,
         startDate: source.feedInfo.s,
         endDate: source.feedInfo.e,
         version: source.feedInfo.v,

@@ -835,6 +835,7 @@ export class MockRepository implements TransitRepository {
   getAllSourceMeta(): Promise<CollectionResult<SourceMeta>> {
     const meta: SourceMeta = {
       prefix: 'mock',
+      name: 'あおバス',
       startDate: '20260101',
       endDate: '20261231',
       version: 'mock-1.0',
