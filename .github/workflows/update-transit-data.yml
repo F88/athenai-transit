@@ -233,4 +233,5 @@ jobs:
         with:
           result: ${{ job.status }}
           summary: "Data changed: ${{ steps.changes.outputs.changed || 'unknown' }}"
+          channel_id: ${{ vars.SLACK_CHANNEL_ID }}
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}

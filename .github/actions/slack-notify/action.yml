@@ -9,6 +9,9 @@ inputs:
     description: 'Additional context to include in the message (optional)'
     required: false
     default: ''
+  channel_id:
+    description: 'Slack channel ID'
+    required: true
   slack_bot_token:
     description: 'Slack Bot token'
     required: true
@@ -57,7 +60,7 @@ runs:
         method: chat.postMessage
         token: ${{ inputs.slack_bot_token }}
         payload: |
-          channel: ${{ vars.SLACK_CHANNEL_ID }}
+          channel: ${{ inputs.channel_id }}
           text: "${{ steps.message.outputs.text }}"
           blocks:
             - type: "section"

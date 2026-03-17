@@ -78,4 +78,5 @@ jobs:
         uses: ./.github/actions/slack-notify
         with:
           result: ${{ job.status }}
+          channel_id: ${{ vars.SLACK_CHANNEL_ID }}
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
