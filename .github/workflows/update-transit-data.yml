@@ -187,7 +187,6 @@ jobs:
       - name: Detect changes
         id: changes
         run: |
-          git pull
           git add public/data/ pipeline/state/
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
