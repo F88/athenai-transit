@@ -20,6 +20,9 @@
 .agents/skills/shadcn
 .agent/skills/shadcn
 
+# Temporary files
+tmp/
+
 # Logs
 logs
 *.log
