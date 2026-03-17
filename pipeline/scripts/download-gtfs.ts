@@ -215,7 +215,7 @@ async function main(): Promise<void> {
       extractedFiles,
       ...(feedInfo ? { feedInfo } : {}),
     });
-    console.log('\nDownload metadata recorded.');
+    console.log(`\nDownload metadata: state/download-meta/${arg.name}.json`);
 
     // GTFS content validation is handled by the build step, not the downloader.
   } catch (err) {

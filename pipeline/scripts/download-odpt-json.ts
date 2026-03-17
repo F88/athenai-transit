@@ -244,7 +244,7 @@ async function main(): Promise<void> {
       durationMs: totalDurationMs,
       archivePath: archivePath.replace(ROOT + '/', ''),
     });
-    console.log('Download metadata recorded.');
+    console.log(`\nDownload metadata: state/download-meta/${arg.name}.json`);
   } catch (err) {
     const totalDurationMs = Math.round(performance.now() - t0);
     const errorMessage = redactTokens(err instanceof Error ? err.message : String(err));
