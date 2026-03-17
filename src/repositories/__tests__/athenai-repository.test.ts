@@ -894,6 +894,9 @@ describe('AthenaiRepository', () => {
       const repo = await createRepo();
       const result = await repo.getAllSourceMeta();
       expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
       expect(result.data).toHaveLength(1);
       const meta = result.data[0];
       expect(meta.id).toBe('test');
