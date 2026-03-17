@@ -111,8 +111,8 @@ function saveSnapshot(
   warnings: Warning[],
 ): void {
   const newUrls = resources.map((r) => r.url).sort();
-  const warningTypes = warnings.filter((w) => !CRITICAL_WARNINGS.has(w.type)).map((w) => w.type);
-  const errorTypes = warnings.filter((w) => CRITICAL_WARNINGS.has(w.type)).map((w) => w.type);
+  const warningTypes = warnings.filter((w) => !CRITICAL_WARNINGS.has(w.type)).map((w) => w.type).sort();
+  const errorTypes = warnings.filter((w) => CRITICAL_WARNINGS.has(w.type)).map((w) => w.type).sort();
   const result = errorTypes.length > 0 ? 'critical' : warningTypes.length > 0 ? 'attention' : 'ok';
 
   // Skip rewrite when content is unchanged to avoid daily churn
@@ -125,8 +125,8 @@ function saveSnapshot(
       prevSorted.length === newUrls.length &&
       prevSorted.every((url, i) => url === newUrls[i]) &&
       prev.result === result &&
-      JSON.stringify(prev.warnings) === JSON.stringify(warningTypes) &&
-      JSON.stringify(prev.errors) === JSON.stringify(errorTypes)
+      JSON.stringify(prev.warnings ?? []) === JSON.stringify(warningTypes) &&
+      JSON.stringify(prev.errors ?? []) === JSON.stringify(errorTypes)
     ) {
       return;
     }
