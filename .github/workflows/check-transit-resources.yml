@@ -54,12 +54,12 @@ jobs:
       - name: Commit check snapshots
         if: always()
         run: |
-          if git diff --quiet pipeline/state/; then
+          git add pipeline/state/
+          if git diff --cached --quiet; then
             echo "::notice::No snapshot changes."
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add pipeline/state/
             git commit -m "chore(pipeline): update resource check snapshots"
             git push
           fi
