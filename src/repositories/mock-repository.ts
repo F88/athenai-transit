@@ -472,52 +472,54 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
   bus_hotel_shingetsu: [{ routeId: 'subway_hotel_shuttle', headsign: 'つき宇宙空港' }],
 };
 
-/** Pre-computed route types per stop (deduplicated, sorted ascending). */
-const STOP_ROUTE_TYPES: Map<string, RouteType[]> = (() => {
+/**
+ * Pre-computed per-stop metadata: routeTypes, agencies, and routes.
+ * Built in a single pass over STOP_ROUTES to avoid redundant iteration.
+ */
+const { STOP_ROUTE_TYPES, STOP_AGENCIES, STOP_ROUTES_RESOLVED } = (() => {
   const routeMap = new Map(ROUTES.map((r) => [r.route_id, r]));
-  const result = new Map<string, RouteType[]>();
+  const routeTypes = new Map<string, RouteType[]>();
+  const agencies = new Map<string, Agency[]>();
+  const routesResolved = new Map<string, Route[]>();
 
   for (const [stopId, entries] of Object.entries(STOP_ROUTES)) {
     const types = new Set<RouteType>();
+    const agencyIds = new Set<string>();
+    const uniqueRoutes = new Map<string, Route>();
+
     for (const { routeId } of entries) {
       const route = routeMap.get(routeId);
       if (route) {
         types.add(route.route_type);
+        uniqueRoutes.set(routeId, route);
+        if (route.agency_id) {
+          agencyIds.add(route.agency_id);
+        }
       }
     }
+
     if (types.size > 0) {
-      result.set(
+      routeTypes.set(
         stopId,
         [...types].sort((a, b) => a - b),
       );
     }
-  }
-  return result;
-})();
-
-/** Pre-computed agencies per stop (deduplicated). */
-const STOP_AGENCIES: Map<string, Agency[]> = (() => {
-  const routeMap = new Map(ROUTES.map((r) => [r.route_id, r]));
-  const result = new Map<string, Agency[]>();
-
-  for (const [stopId, entries] of Object.entries(STOP_ROUTES)) {
-    const agencyIds = new Set<string>();
-    for (const { routeId } of entries) {
-      const route = routeMap.get(routeId);
-      if (route && route.agency_id) {
-        agencyIds.add(route.agency_id);
-      }
-    }
-    const agencies: Agency[] = [];
+    const stopAgencies: Agency[] = [];
     for (const id of agencyIds) {
       const agency = AGENCY_MAP.get(id);
       if (agency) {
-        agencies.push(agency);
+        stopAgencies.push(agency);
       }
     }
-    result.set(stopId, agencies);
+    agencies.set(stopId, stopAgencies);
+    routesResolved.set(stopId, [...uniqueRoutes.values()]);
   }
-  return result;
+
+  return {
+    STOP_ROUTE_TYPES: routeTypes,
+    STOP_AGENCIES: agencies,
+    STOP_ROUTES_RESOLVED: routesResolved,
+  };
 })();
 
 /** Stop coordinate lookup for building route shapes. */
@@ -699,6 +701,7 @@ export class MockRepository implements TransitRepository {
       stop: m.stop,
       distance: m.distance,
       agencies: STOP_AGENCIES.get(m.stop.stop_id) ?? [],
+      routes: STOP_ROUTES_RESOLVED.get(m.stop.stop_id) ?? [],
     }));
 
     return Promise.resolve({ success: true, data, truncated });
@@ -773,6 +776,7 @@ export class MockRepository implements TransitRepository {
       stop,
       distance: distKm * 1000,
       agencies: STOP_AGENCIES.get(stop.stop_id) ?? [],
+      routes: STOP_ROUTES_RESOLVED.get(stop.stop_id) ?? [],
     }));
 
     return Promise.resolve({ success: true, data, truncated });

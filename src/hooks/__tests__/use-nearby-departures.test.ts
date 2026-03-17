@@ -213,7 +213,7 @@ describe('useNearbyDepartures', () => {
     };
     const repo = makeRepo();
     const stop = makeStop('A');
-    const stops = [{ stop, distance: 100, agencies: [mockAgency] }];
+    const stops = [{ stop, distance: 100, agencies: [mockAgency], routes: [] }];
     const now = new Date();
 
     const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));

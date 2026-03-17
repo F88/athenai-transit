@@ -47,14 +47,14 @@ export function useNearbyDepartures(
       radiusStops.length === 0
         ? Promise.resolve([])
         : Promise.all(
-            radiusStops.map(async ({ stop, agencies }) => {
+            radiusStops.map(async ({ stop, agencies, routes }) => {
               const [depsResult, rtResult] = await Promise.all([
                 repo.getUpcomingDepartures(stop.stop_id, dateTime),
                 repo.getRouteTypesForStop(stop.stop_id),
               ]);
               const groups = depsResult.success ? depsResult.data : [];
               const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-              return { stop, routeTypes, groups, agencies };
+              return { stop, routeTypes, groups, agencies, routes };
             }),
           );
 

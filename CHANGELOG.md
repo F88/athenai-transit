@@ -23,6 +23,12 @@ and this project adheres to [CalVer](https://calver.org/).
     - `src/utils/query-params.ts` に safe parsers を集約 (範囲バリデーション、injection 防止)。
     - `?mock-data`, `?sources` の既存処理もリファクタリング。
 
+### Fixed
+
+- バス停選択時の路線ハイライトが、本日の運行が全て終了している場合に機能しない問題を修正。
+    - `StopWithMeta` に `routes: Route[]` を追加 (timetable データから解決、共有参照)。
+    - `extractRouteIdsForStop` が departure groups 空のとき `routes` にフォールバック。
+
 ### Changed
 
 - PRD.md の URL パラメータ仕様に `lat`, `lng`, `zm` を追加。

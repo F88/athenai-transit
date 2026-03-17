@@ -27,7 +27,15 @@ export interface RouteSelectionInfo {
 export type SelectionInfo = StopSelectionInfo | RouteSelectionInfo;
 
 /**
- * Extracts route IDs from a stop's departure context.
+ * Extracts route IDs from a stop's departure context for **selection highlighting**.
+ *
+ * When active departures exist, returns only the routes with upcoming departures.
+ * When all services have ended (groups is empty), falls back to
+ * {@link StopWithMeta.routes} so that route shapes remain highlighted.
+ *
+ * Unlike {@link getRouteIdsForStop} which is departure-only and returns null
+ * when no departures exist, this function always returns a Set (possibly empty)
+ * because selection highlighting should work regardless of service hours.
  *
  * @param departures - Array of nearby stop departure contexts.
  * @param stopId - The stop ID to look up.
@@ -35,10 +43,15 @@ export type SelectionInfo = StopSelectionInfo | RouteSelectionInfo;
  */
 export function extractRouteIdsForStop(departures: StopWithContext[], stopId: string): Set<string> {
   const ctx = departures.find((d) => d.stop.stop_id === stopId);
-  if (!ctx || ctx.groups.length === 0) {
+  if (!ctx) {
     return new Set();
   }
-  return new Set(ctx.groups.map((g) => g.route.route_id));
+  // Prefer active departure groups; fall back to StopWithMeta.routes
+  // when all services have ended for the day (groups is empty).
+  if (ctx.groups.length > 0) {
+    return new Set(ctx.groups.map((g) => g.route.route_id));
+  }
+  return new Set(ctx.routes.map((r) => r.route_id));
 }
 
 /**
@@ -61,7 +74,15 @@ export function buildDepartureGroupsMap(
 }
 
 /**
- * Returns the set of route IDs associated with the selected stop.
+ * Returns the set of route IDs from a stop's **active departure groups**.
+ *
+ * Used by departure-related views (BottomSheet, timetable) where only
+ * routes with current departures are relevant. Returns null when no
+ * departures exist — callers use this to distinguish "no data" from
+ * "has data but empty".
+ *
+ * For selection highlighting that works even after services end,
+ * use {@link extractRouteIdsForStop} instead.
  *
  * @param stopId - The selected stop ID, or null if no stop is selected.
  * @param departureGroupsMap - Map of stop IDs to their departure groups.
