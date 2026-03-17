@@ -118,8 +118,14 @@ function saveSnapshot(
   warnings: Warning[],
 ): void {
   const newUrls = resources.map((r) => r.url).sort();
-  const warningTypes = warnings.filter((w) => !CRITICAL_WARNINGS.has(w.type)).map((w) => w.type).sort();
-  const errorTypes = warnings.filter((w) => CRITICAL_WARNINGS.has(w.type)).map((w) => w.type).sort();
+  const warningTypes = warnings
+    .filter((w) => !CRITICAL_WARNINGS.has(w.type))
+    .map((w) => w.type)
+    .sort();
+  const errorTypes = warnings
+    .filter((w) => CRITICAL_WARNINGS.has(w.type))
+    .map((w) => w.type)
+    .sort();
   const result = errorTypes.length > 0 ? 'critical' : warningTypes.length > 0 ? 'attention' : 'ok';
 
   ensureDir(SNAPSHOT_DIR);

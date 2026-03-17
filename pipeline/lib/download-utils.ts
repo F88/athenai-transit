@@ -168,7 +168,9 @@ export async function withRetry<T>(
     }
   }
   // TypeScript control flow: loop always returns or throws, but compiler cannot prove it.
-  throw new Error(`Failed after ${maxRetries} attempts (${redactTokens(label)})`, { cause: lastError });
+  throw new Error(`Failed after ${maxRetries} attempts (${redactTokens(label)})`, {
+    cause: lastError,
+  });
 }
 
 // ---------------------------------------------------------------------------
