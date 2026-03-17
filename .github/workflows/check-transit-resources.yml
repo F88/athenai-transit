@@ -21,6 +21,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      # Ensure HEAD is up to date with remote (rerun may start from
+      # an older commit if the previous run already pushed changes).
+      - name: Sync with remote
+        run: git pull
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
