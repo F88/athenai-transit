@@ -10,6 +10,7 @@ import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
 import type {
   DepartureGroup,
   FullDayStopDeparture,
+  SourceMeta,
   StopWithMeta,
 } from '../types/app/transit-composed';
 import type { CollectionResult, Result } from '../types/app/repository';
@@ -123,6 +124,8 @@ export interface MergedData {
   translationsMap: TranslationsJson;
   /** Per-source headsign translations to avoid cross-source overwrites. */
   headsignTranslations: HeadsignTranslationsByPrefix;
+  /** Per-source metadata (validity period, version). */
+  sourceMetas: SourceMeta[];
 }
 
 /** Merge multiple SourceData into a single unified dataset. */
@@ -289,6 +292,19 @@ export function mergeSources(sources: SourceData[]): MergedData {
     }
   }
 
+  // Build source metadata from feed-info (validity period, version)
+  const sourceMetas: SourceMeta[] = [];
+  for (const source of sources) {
+    if (source.feedInfo) {
+      sourceMetas.push({
+        prefix: source.prefix,
+        startDate: source.feedInfo.s,
+        endDate: source.feedInfo.e,
+        version: source.feedInfo.v,
+      });
+    }
+  }
+
   return {
     stops,
     routeMap,
@@ -302,6 +318,7 @@ export function mergeSources(sources: SourceData[]): MergedData {
     shapes,
     translationsMap,
     headsignTranslations,
+    sourceMetas,
   };
 }
 
@@ -330,6 +347,7 @@ export class AthenaiRepository implements TransitRepository {
   private timetable: TimetableJson;
   private shapesRaw: ShapesJson;
   private headsignTranslations: HeadsignTranslationsByPrefix;
+  private sourceMetas: SourceMeta[];
 
   private constructor(
     stops: Stop[],
@@ -343,6 +361,7 @@ export class AthenaiRepository implements TransitRepository {
     timetable: TimetableJson,
     shapesRaw: ShapesJson,
     headsignTranslations: HeadsignTranslationsByPrefix,
+    sourceMetas: SourceMeta[],
   ) {
     this.stops = stops;
     this.routeMap = routeMap;
@@ -355,6 +374,7 @@ export class AthenaiRepository implements TransitRepository {
     this.timetable = timetable;
     this.shapesRaw = shapesRaw;
     this.headsignTranslations = headsignTranslations;
+    this.sourceMetas = sourceMetas;
   }
 
   /**
@@ -405,6 +425,7 @@ export class AthenaiRepository implements TransitRepository {
       merged.timetable,
       merged.shapes,
       merged.headsignTranslations,
+      merged.sourceMetas,
     );
   }
 
@@ -708,6 +729,11 @@ export class AthenaiRepository implements TransitRepository {
       return Promise.resolve({ success: false, error: `Agency not found: ${agencyId}` });
     }
     return Promise.resolve({ success: true, data: agency });
+  }
+
+  /** {@inheritDoc TransitRepository.getAllSourceMeta} */
+  getAllSourceMeta(): Promise<CollectionResult<SourceMeta>> {
+    return Promise.resolve({ success: true, data: this.sourceMetas, truncated: false });
   }
 
   private getActiveServiceIds(serviceDate: Date): Set<string> {

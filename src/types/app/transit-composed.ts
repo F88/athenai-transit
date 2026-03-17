@@ -126,3 +126,22 @@ export interface FlatDeparture {
   /** Scheduled departure time (reference). */
   departure: Date;
 }
+
+/**
+ * Metadata about a transit data source identified by its prefix.
+ *
+ * Aggregates validity and version information from the pipeline output
+ * (e.g. feed-info.json for GTFS, dct:issued for ODPT) into a
+ * source-type-agnostic structure. The pipeline normalizes these
+ * differences so the webapp can treat all sources uniformly.
+ */
+export interface SourceMeta {
+  /** Source identifier (e.g. "minkuru", "kobus"). */
+  prefix: string;
+  /** Data validity start date (YYYYMMDD). */
+  startDate: string;
+  /** Data validity end date (YYYYMMDD). */
+  endDate: string;
+  /** Data version string. */
+  version: string;
+}

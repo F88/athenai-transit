@@ -119,6 +119,11 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
       success: false,
       error: 'Not found',
     }),
+    getAllSourceMeta: vi.fn().mockResolvedValue({
+      success: true,
+      data: [],
+      truncated: false,
+    }),
     ...overrides,
   } as TransitRepository;
 }

@@ -20,6 +20,7 @@ import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
 import type {
   DepartureGroup,
   FullDayStopDeparture,
+  SourceMeta,
   StopWithMeta,
 } from '../types/app/transit-composed';
 import type { CollectionResult, Result } from '../types/app/repository';
@@ -828,5 +829,16 @@ export class MockRepository implements TransitRepository {
       return Promise.resolve({ success: true, data: agency });
     }
     return Promise.resolve({ success: false, error: `Agency not found: ${agencyId}` });
+  }
+
+  /** {@inheritDoc TransitRepository.getAllSourceMeta} */
+  getAllSourceMeta(): Promise<CollectionResult<SourceMeta>> {
+    const meta: SourceMeta = {
+      prefix: 'mock',
+      startDate: '20260101',
+      endDate: '20261231',
+      version: 'mock-1.0',
+    };
+    return Promise.resolve({ success: true, data: [meta], truncated: false });
   }
 }
