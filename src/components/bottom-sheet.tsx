@@ -166,7 +166,7 @@ export function BottomSheet({
                 ? '運行中の乗り場はありません'
                 : '近くに乗り場がありません'}
         </p>
-        <div className="mt-1.5 flex gap-1 overflow-x-auto">
+        <div className="no-scrollbar mt-1.5 flex gap-1 overflow-x-auto">
           {DEPARTURE_VIEWS.filter((v) => v.visible).map((view) => (
             <PillButton
               key={view.id}
@@ -180,7 +180,7 @@ export function BottomSheet({
             </PillButton>
           ))}
         </div>
-        <div className="mt-1 flex gap-1">
+        <div className="no-scrollbar mt-1 flex gap-1 overflow-x-auto">
           <PillButton
             active={activeOnly}
             onClick={() => setActiveOnlyOverride((v) => !(v ?? isLateNight))}
