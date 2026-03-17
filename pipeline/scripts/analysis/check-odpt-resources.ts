@@ -115,6 +115,23 @@ function saveSnapshot(
   const errorTypes = warnings.filter((w) => CRITICAL_WARNINGS.has(w.type)).map((w) => w.type);
   const result = errorTypes.length > 0 ? 'critical' : warningTypes.length > 0 ? 'attention' : 'ok';
 
+  // Skip rewrite when content is unchanged to avoid daily churn
+  // from checkedAt timestamp updates.
+  const previous = loadSnapshot(sourceName);
+  if (previous) {
+    const prev = previous as SnapshotFile;
+    const prevSorted = [...previous.resourceUrls].sort();
+    if (
+      prevSorted.length === newUrls.length &&
+      prevSorted.every((url, i) => url === newUrls[i]) &&
+      prev.result === result &&
+      JSON.stringify(prev.warnings) === JSON.stringify(warningTypes) &&
+      JSON.stringify(prev.errors) === JSON.stringify(errorTypes)
+    ) {
+      return;
+    }
+  }
+
   ensureDir(SNAPSHOT_DIR);
   const snapshot: SnapshotFile = {
     sourceName,
@@ -518,7 +535,7 @@ async function main(): Promise<void> {
         }
         const w: Warning = {
           type: 'NO_DOWNLOAD_REPORT',
-          message: `No download report for ${src.name}`,
+          message: 'No download report — run download first',
         };
         console.log(`  *** ${w.type}: ${w.message}`);
         localWarnings.push(w);
