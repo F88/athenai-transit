@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
-import type { Agency, DepartureGroup, StopWithContext } from '../types/app/transit';
+import type { Agency } from '../types/app/transit';
+import type { DepartureGroup, StopWithContext } from '../types/app/transit-composed';
 import { collectPresentAgencies, filterStopsByAgency } from '../domain/transit/agency-filter';
 import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-views';
 import { routeTypeColor } from '../domain/transit/route-type-color';

@@ -100,6 +100,35 @@ describe('mergeSources', () => {
       'test:partner': { ja: '共同', en: 'Partner' },
     });
   });
+
+  it('builds sourceMetas from feedInfo and agency', () => {
+    const fixture = createFixture();
+    const merged = mergeSources([fixture]);
+    expect(merged.sourceMetas).toHaveLength(1);
+    const meta = merged.sourceMetas[0];
+    expect(meta.id).toBe('test');
+    expect(meta.name).toBe('Test');
+    expect(meta.version).toBe('20260101_001');
+    expect(meta.validity).toEqual({ startDate: '20260101', endDate: '20261231' });
+    expect(meta.routeTypes).toEqual([0, 1, 2, 3]);
+    expect(meta.keywords).toEqual([]);
+    expect(meta.stats.stopCount).toBe(fixture.stops.length);
+    expect(meta.stats.routeCount).toBe(fixture.routes.length);
+  });
+
+  it('omits sourceMeta when feedInfo is absent', () => {
+    const fixture = createFixture();
+    delete fixture.feedInfo;
+    const merged = mergeSources([fixture]);
+    expect(merged.sourceMetas).toHaveLength(0);
+  });
+
+  it('falls back to prefix for name when agency is absent', () => {
+    const fixture = createFixture();
+    delete fixture.agencies;
+    const merged = mergeSources([fixture]);
+    expect(merged.sourceMetas[0].name).toBe('test');
+  });
 });
 
 describe('AthenaiRepository', () => {
@@ -857,6 +886,26 @@ describe('AthenaiRepository', () => {
         expect(dep).toHaveProperty('headsign_names');
         expect(typeof dep.headsign_names).toBe('object');
       }
+    });
+  });
+
+  describe('getAllSourceMeta', () => {
+    it('returns metadata for all sources', async () => {
+      const repo = await createRepo();
+      const result = await repo.getAllSourceMeta();
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        return;
+      }
+      expect(result.data).toHaveLength(1);
+      const meta = result.data[0];
+      expect(meta.id).toBe('test');
+      expect(meta.name).toBe('Test');
+      expect(meta.validity.startDate).toBe('20260101');
+      expect(meta.validity.endDate).toBe('20261231');
+      expect(meta.routeTypes).toEqual([0, 1, 2, 3]);
+      expect(meta.stats.stopCount).toBeGreaterThan(0);
+      expect(meta.stats.routeCount).toBeGreaterThan(0);
     });
   });
 });

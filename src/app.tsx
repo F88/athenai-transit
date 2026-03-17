@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
-import type {
-  DepartureGroup,
-  RouteType,
-  Stop,
-  StopWithContext,
-  StopWithMeta,
-} from './types/app/transit';
+import type { RouteType, Stop } from './types/app/transit';
+import type { DepartureGroup, StopWithContext, StopWithMeta } from './types/app/transit-composed';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
 import { useDateTime } from './hooks/use-date-time';

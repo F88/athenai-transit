@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
-import type { Stop, StopWithMeta, Route, RouteType, StopWithContext } from '../types/app/transit';
+import type { Stop, Route, RouteType } from '../types/app/transit';
+import type { StopWithMeta, StopWithContext } from '../types/app/transit-composed';
 import type { TransitRepository } from '../repositories/transit-repository';
 
 /**
@@ -117,6 +118,11 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
     getAgency: vi.fn().mockResolvedValue({
       success: false,
       error: 'Not found',
+    }),
+    getAllSourceMeta: vi.fn().mockResolvedValue({
+      success: true,
+      data: [],
+      truncated: false,
     }),
     ...overrides,
   } as TransitRepository;

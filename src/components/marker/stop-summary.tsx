@@ -1,5 +1,6 @@
 import type { InfoLevel } from '../../types/app/settings';
-import type { Agency, RouteType, Stop, StopWithContext } from '../../types/app/transit';
+import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { StopWithContext } from '../../types/app/transit-composed';
 import { createInfoLevel } from '../../utils/create-info-level';
 import { getStopDisplayNames } from '../../domain/transit/get-stop-display-names';
 import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';

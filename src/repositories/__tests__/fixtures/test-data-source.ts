@@ -317,6 +317,14 @@ export function createFixture(): SourceData {
         'test:partner': { ja: '共同', en: 'Partner' },
       },
     },
+    feedInfo: {
+      pn: 'Test Agency',
+      pu: 'https://example.com',
+      l: 'ja',
+      s: '20260101',
+      e: '20261231',
+      v: '20260101_001',
+    },
     shapes: {
       route_subway: [
         [

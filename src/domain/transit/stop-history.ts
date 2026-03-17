@@ -1,4 +1,5 @@
-import type { RouteType, StopWithMeta } from '../../types/app/transit';
+import type { RouteType } from '../../types/app/transit';
+import type { StopWithMeta } from '../../types/app/transit-composed';
 
 /** Maximum number of stops retained in history. */
 export const MAX_HISTORY_SIZE = 20;

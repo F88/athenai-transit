@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { collectPresentAgencies, filterStopsByAgency } from '../agency-filter';
 import { makeStop, makeStopWithContext } from '../../../__tests__/helpers';
-import type { Agency, StopWithContext } from '../../../types/app/transit';
+import type { Agency } from '../../../types/app/transit';
+import type { StopWithContext } from '../../../types/app/transit-composed';
 
 function makeAgency(id: string, shortName = '', name = `Agency ${id}`): Agency {
   return {

@@ -7,14 +7,13 @@
  */
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
+import type { Agency, RouteType, Stop } from '../types/app/transit';
 import type {
-  Agency,
   DepartureGroup,
   FullDayStopDeparture,
-  RouteType,
-  Stop,
+  SourceMeta,
   StopWithMeta,
-} from '../types/app/transit';
+} from '../types/app/transit-composed';
 import type { CollectionResult, Result } from '../types/app/repository';
 
 /**
@@ -267,4 +266,19 @@ export interface TransitRepository {
    * @returns The Agency if found, or a failure Result if not found.
    */
   getAgency(agencyId: string): Promise<Result<Agency>>;
+
+  /**
+   * Returns metadata for all loaded data sources.
+   *
+   * Each {@link SourceMeta} contains the data validity period and
+   * version for a single source (identified by prefix). Sources
+   * without feed-info data are omitted from the result.
+   *
+   * ### Error conditions
+   * Always succeeds. If no sources have metadata, returns
+   * `{ success: true, data: [], truncated: false }`.
+   *
+   * @returns Metadata for all sources with validity information.
+   */
+  getAllSourceMeta(): Promise<CollectionResult<SourceMeta>>;
 }

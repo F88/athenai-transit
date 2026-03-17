@@ -1,11 +1,6 @@
 import type { RouteShape } from '../../types/app/map';
-import type {
-  DepartureGroup,
-  Route,
-  RouteType,
-  Stop,
-  StopWithContext,
-} from '../../types/app/transit';
+import type { Route, RouteType, Stop } from '../../types/app/transit';
+import type { DepartureGroup, StopWithContext } from '../../types/app/transit-composed';
 
 /** Selection info for a stop. */
 export interface StopSelectionInfo {

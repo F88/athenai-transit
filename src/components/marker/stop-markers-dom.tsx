@@ -1,13 +1,8 @@
 import { memo, useCallback, useRef, useState } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
 import type { InfoLevel } from '../../types/app/settings';
-import type {
-  Agency,
-  DepartureGroup,
-  RouteType,
-  Stop,
-  StopWithContext,
-} from '../../types/app/transit';
+import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { DepartureGroup, StopWithContext } from '../../types/app/transit-composed';
 import { createStopIcon } from '../../lib/leaflet-helpers';
 import { primaryRouteType } from '../../domain/transit/route-type-color';
 import { createLogger } from '../../utils/logger';

@@ -16,15 +16,13 @@
  */
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
+import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
 import type {
-  Agency,
   DepartureGroup,
   FullDayStopDeparture,
-  Route,
-  RouteType,
-  Stop,
+  SourceMeta,
   StopWithMeta,
-} from '../types/app/transit';
+} from '../types/app/transit-composed';
 import type { CollectionResult, Result } from '../types/app/repository';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
@@ -831,5 +829,25 @@ export class MockRepository implements TransitRepository {
       return Promise.resolve({ success: true, data: agency });
     }
     return Promise.resolve({ success: false, error: `Agency not found: ${agencyId}` });
+  }
+
+  /** {@inheritDoc TransitRepository.getAllSourceMeta} */
+  getAllSourceMeta(): Promise<CollectionResult<SourceMeta>> {
+    const meta: SourceMeta = {
+      id: 'mock',
+      name: 'あおバス',
+      version: 'mock-1.0',
+      validity: {
+        startDate: '20260101',
+        endDate: '20261231',
+      },
+      routeTypes: [0, 1, 2, 3, 6],
+      keywords: [],
+      stats: {
+        stopCount: STOPS.length,
+        routeCount: ROUTES.length,
+      },
+    };
+    return Promise.resolve({ success: true, data: [meta], truncated: false });
   }
 }

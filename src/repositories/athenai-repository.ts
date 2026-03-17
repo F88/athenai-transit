@@ -6,15 +6,13 @@ import type {
   TranslationsJson,
 } from '../types/data/transit-json';
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
+import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
 import type {
-  Agency,
   DepartureGroup,
   FullDayStopDeparture,
-  Route,
-  RouteType,
-  Stop,
+  SourceMeta,
   StopWithMeta,
-} from '../types/app/transit';
+} from '../types/app/transit-composed';
 import type { CollectionResult, Result } from '../types/app/repository';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitDataSource } from '../datasources/transit-data-source';
@@ -126,6 +124,8 @@ export interface MergedData {
   translationsMap: TranslationsJson;
   /** Per-source headsign translations to avoid cross-source overwrites. */
   headsignTranslations: HeadsignTranslationsByPrefix;
+  /** Per-source metadata (validity period, version). */
+  sourceMetas: SourceMeta[];
 }
 
 /** Merge multiple SourceData into a single unified dataset. */
@@ -292,6 +292,35 @@ export function mergeSources(sources: SourceData[]): MergedData {
     }
   }
 
+  // Build source metadata from feed-info (validity period, version)
+  // and agency short name (human-readable source label)
+  const sourceMetas: SourceMeta[] = [];
+  for (const source of sources) {
+    if (source.feedInfo) {
+      // agency.json IDs are already prefixed (e.g. "minkuru:8000020130001")
+      const firstAgencyId = source.agencies?.[0]?.i;
+      const agency = firstAgencyId ? agencyMap.get(firstAgencyId) : undefined;
+      const sourceRouteTypes = [...new Set(source.routes.map((r) => r.t as RouteType))].sort(
+        (a, b) => a - b,
+      );
+      sourceMetas.push({
+        id: source.prefix,
+        name: agency?.agency_short_name || source.prefix,
+        version: source.feedInfo.v,
+        validity: {
+          startDate: source.feedInfo.s,
+          endDate: source.feedInfo.e,
+        },
+        routeTypes: sourceRouteTypes,
+        keywords: [],
+        stats: {
+          stopCount: source.stops.length,
+          routeCount: source.routes.length,
+        },
+      });
+    }
+  }
+
   return {
     stops,
     routeMap,
@@ -305,6 +334,7 @@ export function mergeSources(sources: SourceData[]): MergedData {
     shapes,
     translationsMap,
     headsignTranslations,
+    sourceMetas,
   };
 }
 
@@ -333,6 +363,7 @@ export class AthenaiRepository implements TransitRepository {
   private timetable: TimetableJson;
   private shapesRaw: ShapesJson;
   private headsignTranslations: HeadsignTranslationsByPrefix;
+  private sourceMetas: SourceMeta[];
 
   private constructor(
     stops: Stop[],
@@ -346,6 +377,7 @@ export class AthenaiRepository implements TransitRepository {
     timetable: TimetableJson,
     shapesRaw: ShapesJson,
     headsignTranslations: HeadsignTranslationsByPrefix,
+    sourceMetas: SourceMeta[],
   ) {
     this.stops = stops;
     this.routeMap = routeMap;
@@ -358,6 +390,7 @@ export class AthenaiRepository implements TransitRepository {
     this.timetable = timetable;
     this.shapesRaw = shapesRaw;
     this.headsignTranslations = headsignTranslations;
+    this.sourceMetas = sourceMetas;
   }
 
   /**
@@ -396,6 +429,12 @@ export class AthenaiRepository implements TransitRepository {
       `Initialized in ${Math.round(tEnd - t0)}ms (fetch=${fetchMs}ms, merge=${mergeMs}ms): stops=${merged.stops.length} routes=${merged.routeMap.size} shapes=${Object.keys(merged.shapes).length} timetable_stops=${Object.keys(merged.timetable).length}`,
     );
 
+    for (const meta of merged.sourceMetas) {
+      logger.info(
+        `[${meta.id}] ${meta.name}: validity=${meta.validity.startDate}-${meta.validity.endDate} stops=${meta.stats.stopCount} routes=${meta.stats.routeCount} types=[${meta.routeTypes.join(',')}]`,
+      );
+    }
+
     return new AthenaiRepository(
       merged.stops,
       merged.routeMap,
@@ -408,6 +447,7 @@ export class AthenaiRepository implements TransitRepository {
       merged.timetable,
       merged.shapes,
       merged.headsignTranslations,
+      merged.sourceMetas,
     );
   }
 
@@ -711,6 +751,11 @@ export class AthenaiRepository implements TransitRepository {
       return Promise.resolve({ success: false, error: `Agency not found: ${agencyId}` });
     }
     return Promise.resolve({ success: true, data: agency });
+  }
+
+  /** {@inheritDoc TransitRepository.getAllSourceMeta} */
+  getAllSourceMeta(): Promise<CollectionResult<SourceMeta>> {
+    return Promise.resolve({ success: true, data: this.sourceMetas, truncated: false });
   }
 
   private getActiveServiceIds(serviceDate: Date): Set<string> {

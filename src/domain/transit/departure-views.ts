@@ -1,4 +1,4 @@
-import type { DepartureViewMeta } from '../../types/app/transit';
+import type { DepartureViewMeta } from '../../types/app/transit-composed';
 
 /**
  * All departure view pattern definitions (T1-T7).

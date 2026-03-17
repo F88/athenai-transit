@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { flattenDepartures } from '../flatten-departures';
 import { makeRoute } from '../../../__tests__/helpers';
-import type { DepartureGroup } from '../../../types/app/transit';
+import type { DepartureGroup } from '../../../types/app/transit-composed';
 
 function makeGroup(
   routeId: string,

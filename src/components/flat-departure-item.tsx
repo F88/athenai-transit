@@ -1,5 +1,6 @@
 import type { InfoLevel } from '../types/app/settings';
-import type { Agency, FlatDeparture } from '../types/app/transit';
+import type { Agency } from '../types/app/transit';
+import type { FlatDeparture } from '../types/app/transit-composed';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';

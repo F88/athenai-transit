@@ -3,13 +3,8 @@ import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'r
 import L from 'leaflet';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
-import type {
-  Agency,
-  RouteType,
-  Stop,
-  StopWithContext,
-  StopWithMeta,
-} from '../../types/app/transit';
+import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { StopWithContext, StopWithMeta } from '../../types/app/transit-composed';
 import { MAX_ZOOM } from '../../config/map-defaults';
 import { enableDoubleTapZoom } from '../../lib/double-tap-zoom';
 import { smoothMoveTo, toBounds, toCenter } from '../../lib/leaflet-helpers';

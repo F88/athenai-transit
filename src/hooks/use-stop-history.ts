@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import type { RouteType, StopWithMeta } from '../types/app/transit';
+import type { RouteType } from '../types/app/transit';
+import type { StopWithMeta } from '../types/app/transit-composed';
 import { addToHistory, type StopHistoryEntry } from '../domain/transit/stop-history';
 
 const STORAGE_KEY = 'stop-history';
