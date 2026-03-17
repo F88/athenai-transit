@@ -297,8 +297,9 @@ export function mergeSources(sources: SourceData[]): MergedData {
   const sourceMetas: SourceMeta[] = [];
   for (const source of sources) {
     if (source.feedInfo) {
+      // agency.json IDs are already prefixed (e.g. "minkuru:8000020130001")
       const firstAgencyId = source.agencies?.[0]?.i;
-      const agency = firstAgencyId ? agencyMap.get(`${source.prefix}:${firstAgencyId}`) : undefined;
+      const agency = firstAgencyId ? agencyMap.get(firstAgencyId) : undefined;
       const sourceRouteTypes = [...new Set(source.routes.map((r) => r.t as RouteType))].sort(
         (a, b) => a - b,
       );
