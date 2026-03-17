@@ -21,6 +21,9 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { archiveFilename, buildAuthenticatedUrl, downloadWithRetry } from '../lib/download-utils';
+import type { ExtractedFileInfo, FeedInfoMeta } from '../lib/download-meta';
+import { saveDownloadMeta } from '../lib/download-meta';
+import { parseFeedInfoTxt } from '../lib/gtfs-feed-info';
 import {
   determineBatchExitCode,
   ensureDir,
@@ -145,6 +148,8 @@ async function main(): Promise<void> {
   const tmpDir = join(tmpdir(), `${outDir}-gtfs-${Date.now()}`);
   const zipFileName = downloadUrl.split('/').pop()!.split('?')[0];
   const zipPath = join(tmpDir, zipFileName);
+  const downloadedAt = new Date().toISOString();
+  const t0 = performance.now();
 
   try {
     ensureDir(tmpDir);
@@ -176,17 +181,54 @@ async function main(): Promise<void> {
     console.log('\nExtracting ZIP...');
     const entries = extractZip(zipPath, gtfsDir);
     console.log(`Extracted ${entries.length} files to ${gtfsDir}`);
+    const extractedFiles: ExtractedFileInfo[] = [];
     for (const entry of entries) {
       const size = statSync(join(gtfsDir, entry)).size;
+      extractedFiles.push({ name: entry, size });
       console.log(`  ${entry.padEnd(24)} ${size.toLocaleString().padStart(10)} bytes`);
     }
 
+    // 5. Parse feed_info.txt for metadata
+    const feedInfo: FeedInfoMeta | null = parseFeedInfoTxt(gtfsDir);
+    if (feedInfo) {
+      console.log(`\nFeed info: ${feedInfo.publisherName} v${feedInfo.version}`);
+      console.log(`  Period: ${feedInfo.startDate} - ${feedInfo.endDate}`);
+    }
+
+    // 6. Record download metadata
+    const totalDurationMs = Math.round(performance.now() - t0);
+    saveDownloadMeta({
+      sourceName: arg.name,
+      type: 'gtfs',
+      status: 'ok',
+      downloadedAt,
+      url: downloadUrl,
+      size: result.bytes,
+      contentType: result.contentType || '',
+      durationMs: totalDurationMs,
+      archivePath: archivePath.replace(ROOT + '/', ''),
+      extractedFiles,
+      feedInfo: feedInfo ?? undefined,
+    });
+    console.log('\nDownload metadata recorded.');
+
     // GTFS content validation is handled by the build step, not the downloader.
   } catch (err) {
-    console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
+    const totalDurationMs = Math.round(performance.now() - t0);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error(`\nFATAL: ${errorMessage}`);
     if (err instanceof Error && err.cause instanceof Error) {
       console.error(`  Cause: ${err.cause.message}`);
     }
+    saveDownloadMeta({
+      sourceName: arg.name,
+      type: 'gtfs',
+      status: 'error',
+      downloadedAt,
+      url: downloadUrl,
+      durationMs: totalDurationMs,
+      error: errorMessage,
+    });
     process.exitCode = 1;
   } finally {
     // Clean up temp directory

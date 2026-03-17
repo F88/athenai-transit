@@ -24,6 +24,11 @@ const SCRIPTS: AnalysisScript[] = [
     description: 'リソース定義の一覧表示 (--summary, --verbose, --format tsv)',
   },
   {
+    name: 'check-odpt-resources',
+    file: 'analysis/check-odpt-resources.ts',
+    description: 'ODPT リソース更新チェック (Members Portal API)',
+  },
+  {
     name: 'joint-routes',
     file: 'analysis/find-joint-routes.ts',
     description: '共同運行路線の検出 (route_short_name 一致 + 停留所突き合わせ)',
