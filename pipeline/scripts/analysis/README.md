@@ -4,11 +4,11 @@
 
 ## スクリプト一覧
 
-| スクリプト                  | 概要                                                                                                                   |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `describe-resources.ts`     | リソース定義の一覧表示 (`npm run pipeline:describe`)                                                                   |
-| `check-odpt-resources.ts`   | ODPT Members Portal API でリソース更新チェック (`npm run pipeline:check:odpt-resources`)                               |
-| `find-joint-routes.ts`      | 共同運行路線の検出。ソース間で route_short_name が一致する路線を検出し、停留所名の突き合わせと座標による近接分析を行う |
+| スクリプト                | 概要                                                                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `describe-resources.ts`   | リソース定義の一覧表示 (`npm run pipeline:describe`)                                                                   |
+| `check-odpt-resources.ts` | ODPT Members Portal API でリソース更新チェック (`npm run pipeline:check:odpt-resources`)                               |
+| `find-joint-routes.ts`    | 共同運行路線の検出。ソース間で route_short_name が一致する路線を検出し、停留所名の突き合わせと座標による近接分析を行う |
 
 ## 実行方法
 
@@ -37,14 +37,14 @@ npx tsx pipeline/scripts/analysis/check-odpt-resources.ts --list     # 追跡ソ
 
 ### 警告の種類
 
-| 警告 | 意味 | Exit code |
-| --- | --- | --- |
-| EXPIRED | ローカルデータが期限切れ | 1 (critical) |
-| REMOVED | ローカルのリソースがリモートから削除された | 1 (critical) |
-| NO_VALID_DATA | 有効なリソースが一つもない | 1 (critical) |
-| EXPIRING_SOON | ローカルデータが 14 日以内に期限切れ | 2 (attention) |
-| NEW_RESOURCE | 前回チェック以降に新しいリソースが追加された | 2 (attention) |
-| NO_DOWNLOAD_REPORT | ダウンロード記録がない | 2 (attention) |
+| 警告               | 意味                                         | Exit code     |
+| ------------------ | -------------------------------------------- | ------------- |
+| EXPIRED            | ローカルデータが期限切れ                     | 1 (critical)  |
+| REMOVED            | ローカルのリソースがリモートから削除された   | 1 (critical)  |
+| NO_VALID_DATA      | 有効なリソースが一つもない                   | 1 (critical)  |
+| EXPIRING_SOON      | ローカルデータが 14 日以内に期限切れ         | 2 (attention) |
+| NEW_RESOURCE       | 前回チェック以降に新しいリソースが追加された | 2 (attention) |
+| NO_DOWNLOAD_REPORT | ダウンロード記録がない                       | 2 (attention) |
 
 ### 出力ファイル
 
