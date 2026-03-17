@@ -116,9 +116,11 @@ export function detectWarnings(
   if (meta.feedInfo?.endDate) {
     const endStr = meta.feedInfo.endDate;
     const endDate = new Date(
-      Number(endStr.substring(0, 4)),
-      Number(endStr.substring(4, 6)) - 1,
-      Number(endStr.substring(6, 8)),
+      Date.UTC(
+        Number(endStr.substring(0, 4)),
+        Number(endStr.substring(4, 6)) - 1,
+        Number(endStr.substring(6, 8)),
+      ),
     );
     const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     if (daysLeft >= 0 && daysLeft <= EXPIRING_SOON_DAYS) {

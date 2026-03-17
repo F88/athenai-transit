@@ -346,15 +346,17 @@ async function main(): Promise<void> {
     console.log(
       [
         'organization',
+        'org_label',
         'dataset',
         'local_name',
-        'local_date',
+        'downloaded_at',
+        'local_feed_start',
+        'local_feed_end',
         'latest_date',
-        'feed_start',
-        'feed_end',
+        'remote_feed_start',
+        'remote_feed_end',
         'available',
         'uploaded',
-        'status',
       ].join('\t'),
     );
   }
@@ -415,17 +417,45 @@ async function main(): Promise<void> {
         const localDate = extractDateParam(meta.url) ?? '(no date param)';
         console.log(`  Local:      date=${localDate} downloaded=${meta.downloadedAt}`);
         if (meta.feedInfo) {
-          console.log(`  Local feed: ${meta.feedInfo.startDate} - ${meta.feedInfo.endDate} ver=${meta.feedInfo.version}`);
+          console.log(
+            `  Local feed: ${meta.feedInfo.startDate} - ${meta.feedInfo.endDate} ver=${meta.feedInfo.version}`,
+          );
         }
-        // Check expiring soon from local metadata only
-        const localWarnings = detectWarnings([], { downloadMeta: meta }, null);
-        for (const w of localWarnings) {
-          console.log(`  *** ${w.type}: ${w.message}`);
+        // Check expiring soon from local metadata only.
+        // Do NOT call detectWarnings with empty resources — it would
+        // incorrectly emit REMOVED and NO_VALID_DATA for sources that
+        // are simply not available in the Members Portal API.
+        if (meta.feedInfo?.endDate) {
+          const endStr = meta.feedInfo.endDate;
+          const endDate = new Date(
+            Date.UTC(
+              Number(endStr.substring(0, 4)),
+              Number(endStr.substring(4, 6)) - 1,
+              Number(endStr.substring(6, 8)),
+            ),
+          );
+          const now = new Date();
+          const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysLeft < 0) {
+            const w: Warning = { type: 'EXPIRED', message: `Local data expired (${endStr})` };
+            console.log(`  *** ${w.type}: ${w.message}`);
+            allWarnings.push(w);
+          } else if (daysLeft <= 14) {
+            const w: Warning = {
+              type: 'EXPIRING_SOON',
+              message: `Local data expires in ${daysLeft} days (${endStr})`,
+              daysLeft,
+            };
+            console.log(`  *** ${w.type}: ${w.message}`);
+            allWarnings.push(w);
+          }
         }
-        allWarnings.push(...localWarnings);
       } else {
         console.log('  Local:      (no download metadata)');
-        allWarnings.push({ type: 'NO_DOWNLOAD_REPORT', message: `No download report for ${src.name}` });
+        allWarnings.push({
+          type: 'NO_DOWNLOAD_REPORT',
+          message: `No download report for ${src.name}`,
+        });
         console.log(`  *** NO_DOWNLOAD_REPORT: No download report — run download first`);
       }
 

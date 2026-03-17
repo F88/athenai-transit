@@ -2,7 +2,7 @@
  * Download metadata recording and retrieval.
  *
  * Records the result of each download job (GTFS ZIP or ODPT JSON)
- * to a per-source JSON file under `pipeline/build/download-meta/`.
+ * to a per-source JSON file under `pipeline/state/download-meta/`.
  * Both success and failure are recorded for operational visibility.
  */
 
