@@ -28,8 +28,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      # Ensure HEAD is up to date with remote (rerun may start from
-      # an older commit if the previous run already pushed changes).
+      # Required: actions/checkout checks out the commit that triggered
+      # the run. On rerun, this is the OLD commit — the previous run's
+      # push is not included. git pull fetches the latest HEAD so that
+      # the subsequent git push in the commit step won't be rejected
+      # as non-fast-forward.
       - name: Sync with remote
         run: git pull
 
