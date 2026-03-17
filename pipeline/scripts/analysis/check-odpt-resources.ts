@@ -119,14 +119,13 @@ function saveSnapshot(
   // from checkedAt timestamp updates.
   const previous = loadSnapshot(sourceName);
   if (previous) {
-    const prev = previous as SnapshotFile;
     const prevSorted = [...previous.resourceUrls].sort();
     if (
       prevSorted.length === newUrls.length &&
       prevSorted.every((url, i) => url === newUrls[i]) &&
-      prev.result === result &&
-      JSON.stringify(prev.warnings ?? []) === JSON.stringify(warningTypes) &&
-      JSON.stringify(prev.errors ?? []) === JSON.stringify(errorTypes)
+      previous.result === result &&
+      JSON.stringify(previous.warnings ?? []) === JSON.stringify(warningTypes) &&
+      JSON.stringify(previous.errors ?? []) === JSON.stringify(errorTypes)
     ) {
       return;
     }
@@ -148,7 +147,7 @@ function saveSnapshot(
   );
 }
 
-function loadSnapshot(sourceName: string): ResourceSnapshot | null {
+function loadSnapshot(sourceName: string): SnapshotFile | null {
   const filePath = join(SNAPSHOT_DIR, `${sourceName}.json`);
   if (!existsSync(filePath)) {
     return null;
