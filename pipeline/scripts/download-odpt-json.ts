@@ -27,6 +27,7 @@ import {
   archiveFilename,
   buildAuthenticatedUrl,
   FETCH_TIMEOUT_MS,
+  redactTokens,
   withRetry,
   wrapTimeoutError,
 } from '../lib/download-utils';
@@ -246,12 +247,10 @@ async function main(): Promise<void> {
     console.log('Download metadata recorded.');
   } catch (err) {
     const totalDurationMs = Math.round(performance.now() - t0);
-    const rawError = err instanceof Error ? err.message : String(err);
-    // Redact authentication tokens from error messages before persisting
-    const errorMessage = rawError.replace(/acl:consumerKey=[^\s&]+/g, 'acl:consumerKey=[REDACTED]');
+    const errorMessage = redactTokens(err instanceof Error ? err.message : String(err));
     console.error(`\nFATAL: ${errorMessage}`);
     if (err instanceof Error && err.cause instanceof Error) {
-      console.error(`  Cause: ${err.cause.message}`);
+      console.error(`  Cause: ${redactTokens(err.cause.message)}`);
     }
     saveDownloadMeta({
       sourceName: arg.name,

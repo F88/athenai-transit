@@ -20,7 +20,12 @@ import { copyFileSync, existsSync, readdirSync, rmSync, statSync } from 'node:fs
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
-import { archiveFilename, buildAuthenticatedUrl, downloadWithRetry } from '../lib/download-utils';
+import {
+  archiveFilename,
+  buildAuthenticatedUrl,
+  downloadWithRetry,
+  redactTokens,
+} from '../lib/download-utils';
 import type { ExtractedFileInfo, FeedInfoMeta } from '../lib/download-meta';
 import { saveDownloadMeta } from '../lib/download-meta';
 import { parseFeedInfoTxt } from '../lib/gtfs-feed-info';
@@ -215,12 +220,10 @@ async function main(): Promise<void> {
     // GTFS content validation is handled by the build step, not the downloader.
   } catch (err) {
     const totalDurationMs = Math.round(performance.now() - t0);
-    const rawError = err instanceof Error ? err.message : String(err);
-    // Redact authentication tokens from error messages before persisting
-    const errorMessage = rawError.replace(/acl:consumerKey=[^\s&]+/g, 'acl:consumerKey=[REDACTED]');
+    const errorMessage = redactTokens(err instanceof Error ? err.message : String(err));
     console.error(`\nFATAL: ${errorMessage}`);
     if (err instanceof Error && err.cause instanceof Error) {
-      console.error(`  Cause: ${err.cause.message}`);
+      console.error(`  Cause: ${redactTokens(err.cause.message)}`);
     }
     saveDownloadMeta({
       sourceName: arg.name,

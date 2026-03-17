@@ -118,6 +118,19 @@ export function buildAuthenticatedUrl(
   return `${url}${sep}acl:consumerKey=${encodeURIComponent(accessToken)}`;
 }
 
+/**
+ * Redact authentication tokens from a string.
+ *
+ * Replaces `acl:consumerKey=<token>` patterns with `acl:consumerKey=[REDACTED]`
+ * to prevent accidental token exposure in logs or persisted metadata.
+ *
+ * @param text - Text that may contain authentication tokens.
+ * @returns Text with tokens replaced by `[REDACTED]`.
+ */
+export function redactTokens(text: string): string {
+  return text.replace(/acl:consumerKey=[^\s&]+/g, 'acl:consumerKey=[REDACTED]');
+}
+
 // ---------------------------------------------------------------------------
 // Retry
 // ---------------------------------------------------------------------------
