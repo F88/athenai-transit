@@ -1,0 +1,77 @@
+{
+  "sourceName": "chiyoda-bus",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-03-17T09:13:26.162Z",
+  "url": "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/Chiyoda_ALLLINES.zip?date=20250601",
+  "size": 30743,
+  "contentType": "text/plain; charset=ASCII-8BIT",
+  "durationMs": 1763,
+  "archivePath": "archives/gtfs/chiyoda-bus/Chiyoda_ALLLINES_20260317-091327.zip",
+  "extractedFiles": [
+    {
+      "name": "calendar_dates.txt",
+      "size": 836
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 73
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 144
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 291
+    },
+    {
+      "name": "office_jp.txt",
+      "size": 84
+    },
+    {
+      "name": "routes.txt",
+      "size": 444
+    },
+    {
+      "name": "shapes.txt",
+      "size": 35724
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 165793
+    },
+    {
+      "name": "stops.txt",
+      "size": 5209
+    },
+    {
+      "name": "transfers.txt",
+      "size": 83
+    },
+    {
+      "name": "trips.txt",
+      "size": 4612
+    },
+    {
+      "name": "agency.txt",
+      "size": 204
+    },
+    {
+      "name": "agency_jp.txt",
+      "size": 164
+    },
+    {
+      "name": "calendar.txt",
+      "size": 215
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "株式会社 アチピレーションテクノロジー",
+    "publisherUrl": "https://acp-tech.jp/",
+    "lang": "ja",
+    "startDate": "20250601",
+    "endDate": "20260601",
+    "version": "20250601_Ka001"
+  }
+}
