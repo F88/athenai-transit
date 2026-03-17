@@ -34,7 +34,7 @@ jobs:
       # the subsequent git push in the commit step won't be rejected
       # as non-fast-forward.
       - name: Sync with remote
-        run: git pull
+        run: git pull --ff-only origin main
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
