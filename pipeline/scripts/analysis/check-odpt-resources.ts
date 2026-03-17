@@ -13,6 +13,10 @@
  *   npx tsx pipeline/scripts/analysis/check-odpt-resources.ts --list        # list tracked ODPT sources
  *   npx tsx pipeline/scripts/analysis/check-odpt-resources.ts --format tsv  # TSV output
  *
+ * Snapshots (`pipeline/state/check-result/*.json`) are rewritten on every
+ * execution to record checkedAt and the current warning state. This is
+ * intentional — the snapshot serves as an operational log, not a cache.
+ *
  * API: https://members-portal.odpt.org/api/v1/resources
  * Docs: https://developer.odpt.org/api_addendum
  */
@@ -100,26 +104,32 @@ const SNAPSHOT_DIR = resolve(import.meta.dirname, '..', '..', 'state', 'check-re
 interface SnapshotFile extends ResourceSnapshot {
   sourceName: string;
   checkedAt: string;
+  /** Overall check result based on warning severity. */
+  result: 'ok' | 'attention' | 'critical';
+  /** Attention-level warning type names (e.g. "EXPIRING_SOON"). */
+  warnings: string[];
+  /** Critical warning type names (e.g. "EXPIRED", "REMOVED"). */
+  errors: string[];
 }
 
-function saveSnapshot(sourceName: string, resources: OdptDataResource[]): void {
+function saveSnapshot(
+  sourceName: string,
+  resources: OdptDataResource[],
+  warnings: Warning[],
+): void {
   const newUrls = resources.map((r) => r.url).sort();
-
-  // Only rewrite when resourceUrls actually changed to avoid
-  // daily no-op commits from timestamp-only differences.
-  const previous = loadSnapshot(sourceName);
-  if (previous) {
-    const prevSorted = [...previous.resourceUrls].sort();
-    if (prevSorted.length === newUrls.length && prevSorted.every((url, i) => url === newUrls[i])) {
-      return;
-    }
-  }
+  const warningTypes = warnings.filter((w) => !CRITICAL_WARNINGS.has(w.type)).map((w) => w.type).sort();
+  const errorTypes = warnings.filter((w) => CRITICAL_WARNINGS.has(w.type)).map((w) => w.type).sort();
+  const result = errorTypes.length > 0 ? 'critical' : warningTypes.length > 0 ? 'attention' : 'ok';
 
   ensureDir(SNAPSHOT_DIR);
   const snapshot: SnapshotFile = {
     sourceName,
     checkedAt: new Date().toISOString(),
     resourceUrls: newUrls,
+    result,
+    warnings: warningTypes,
+    errors: errorTypes,
   };
   writeFileSync(
     join(SNAPSHOT_DIR, `${sourceName}.json`),
@@ -128,7 +138,7 @@ function saveSnapshot(sourceName: string, resources: OdptDataResource[]): void {
   );
 }
 
-function loadSnapshot(sourceName: string): ResourceSnapshot | null {
+function loadSnapshot(sourceName: string): SnapshotFile | null {
   const filePath = join(SNAPSHOT_DIR, `${sourceName}.json`);
   if (!existsSync(filePath)) {
     return null;
@@ -290,7 +300,7 @@ function printResult(
     );
 
     if (isTracked && local) {
-      saveSnapshot(local.name, ds.dataresource);
+      saveSnapshot(local.name, ds.dataresource, warnings);
     }
     return warnings;
   }
@@ -356,7 +366,7 @@ function printResult(
 
   // Save snapshot for next diff (tracked sources only)
   if (isTracked && local) {
-    saveSnapshot(local.name, ds.dataresource);
+    saveSnapshot(local.name, ds.dataresource, warnings);
   }
 
   console.log(`=== ${tracked} [END] ===\n`);
@@ -475,6 +485,7 @@ async function main(): Promise<void> {
       console.log('  Not available in Members Portal API');
 
       const meta = src.downloadMeta;
+      const localWarnings: Warning[] = [];
       if (meta) {
         const localDate = extractDateParam(meta.url) ?? '(no date param)';
         console.log(`  Local:      date=${localDate} downloaded=${meta.downloadedAt}`);
@@ -493,7 +504,7 @@ async function main(): Promise<void> {
           if (daysLeft < 0) {
             const w: Warning = { type: 'EXPIRED', message: `Local data expired (${endStr})` };
             console.log(`  *** ${w.type}: ${w.message}`);
-            allWarnings.push(w);
+            localWarnings.push(w);
           } else if (daysLeft <= EXPIRING_SOON_DAYS) {
             const w: Warning = {
               type: 'EXPIRING_SOON',
@@ -501,27 +512,31 @@ async function main(): Promise<void> {
               daysLeft,
             };
             console.log(`  *** ${w.type}: ${w.message}`);
-            allWarnings.push(w);
+            localWarnings.push(w);
           }
         }
       } else {
         const raw = src.rawMeta;
-        if (raw && raw.status === 'error') {
+        const isLastFailed = raw && raw.status === 'error';
+        if (isLastFailed) {
           console.log(`  Local:      LAST DOWNLOAD FAILED (${raw.downloadedAt})`);
           console.log(`  Error:      ${raw.error}`);
         } else {
           console.log('  Local:      (no download metadata)');
         }
-        allWarnings.push({
+        const w: Warning = {
           type: 'NO_DOWNLOAD_REPORT',
-          message: `No download report for ${src.name}`,
-        });
-        console.log(`  *** NO_DOWNLOAD_REPORT: No download report — run download first`);
+          message: isLastFailed
+            ? 'Last download failed — check error and retry'
+            : 'No download report — run download first',
+        };
+        console.log(`  *** ${w.type}: ${w.message}`);
+        localWarnings.push(w);
       }
+      allWarnings.push(...localWarnings);
 
-      // Save empty snapshot for non-API sources. Only written on first run
-      // (subsequent runs skip because resourceUrls are unchanged).
-      saveSnapshot(src.name, []);
+      // Save snapshot for non-API sources with check results.
+      saveSnapshot(src.name, [], localWarnings);
 
       console.log(`=== ${src.name} [END] ===\n`);
     }

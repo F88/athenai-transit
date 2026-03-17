@@ -48,7 +48,7 @@ npx tsx pipeline/scripts/analysis/check-odpt-resources.ts --list     # 追跡ソ
 
 ### 出力ファイル
 
-- `pipeline/state/check-result/{source-name}.json` — リモートリソース一覧のスナップショット (次回の NEW_RESOURCE 検知用)
+- `pipeline/state/check-result/{source-name}.json` — チェック実行結果 (sourceName, checkedAt, resourceUrls, result, warnings, errors)。NEW_RESOURCE 検知の差分比較にも使用
 
 ### CI
 
