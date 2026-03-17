@@ -79,15 +79,21 @@ jobs:
         shell: bash
         run: |
           EXIT="${{ steps.check.outputs.exit_code }}"
-          if [ "$EXIT" = "2" ]; then
-            echo "result=warning" >> "$GITHUB_OUTPUT"
-            echo "text=EXPIRING_SOON / NEW_RESOURCE" >> "$GITHUB_OUTPUT"
-          elif [ "$EXIT" = "0" ]; then
+          if [ "$EXIT" = "0" ]; then
             echo "result=success" >> "$GITHUB_OUTPUT"
             echo "text=No issues found" >> "$GITHUB_OUTPUT"
           else
-            echo "result=failure" >> "$GITHUB_OUTPUT"
-            echo "text=" >> "$GITHUB_OUTPUT"
+            # Extract [RESULT:WARN] / [RESULT:ERROR] lines from script output
+            {
+              echo "text<<SUMMARY_EOF"
+              grep '^\[RESULT:' check-output.txt | sed 's/^\[RESULT:[A-Z]*\] //' || true
+              echo "SUMMARY_EOF"
+            } >> "$GITHUB_OUTPUT"
+            if [ "$EXIT" = "2" ]; then
+              echo "result=warning" >> "$GITHUB_OUTPUT"
+            else
+              echo "result=failure" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
       - name: Notify Slack

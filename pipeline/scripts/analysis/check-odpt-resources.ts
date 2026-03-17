@@ -439,7 +439,7 @@ async function main(): Promise<void> {
     );
   }
 
-  const allWarnings: Warning[] = [];
+  const allWarnings: { source: string; warning: Warning }[] = [];
   const matchedSources = new Set<string>();
 
   for (const org of orgs) {
@@ -472,7 +472,10 @@ async function main(): Promise<void> {
 
       const previousSnapshot = local ? loadSnapshot(local.name) : null;
       const warnings = printResult(org, ds, local, cli.isTsv, previousSnapshot);
-      allWarnings.push(...warnings);
+      const sourceName = local?.name ?? 'unknown';
+      for (const w of warnings) {
+        allWarnings.push({ source: sourceName, warning: w });
+      }
     }
   }
 
@@ -539,7 +542,9 @@ async function main(): Promise<void> {
         console.log(`  *** ${w.type}: ${w.message}`);
         localWarnings.push(w);
       }
-      allWarnings.push(...localWarnings);
+      for (const w of localWarnings) {
+        allWarnings.push({ source: src.name, warning: w });
+      }
 
       // Save snapshot for non-API sources with check results.
       saveSnapshot(src.name, [], localWarnings);
@@ -549,10 +554,31 @@ async function main(): Promise<void> {
   }
 
   // Exit code: 0 = ok, 1 = critical warnings, 2 = attention warnings
-  const hasCritical = allWarnings.some((w) => CRITICAL_WARNINGS.has(w.type));
+  const hasCritical = allWarnings.some(({ warning: w }) => CRITICAL_WARNINGS.has(w.type));
   const hasWarnings = allWarnings.length > 0;
 
   const exitCode = hasCritical ? 1 : hasWarnings ? 2 : 0;
+
+  // Result summary (similar to printBatchSummary in pipeline-utils.ts).
+  // [RESULT:WARN] / [RESULT:ERROR] lines are consumed by CI for Slack notifications.
+  const sourcesChecked =
+    matchedSources.size + tracked.filter((s) => !matchedSources.has(s.name)).length;
+  const warnCount = allWarnings.filter(({ warning: w }) => !CRITICAL_WARNINGS.has(w.type)).length;
+  const errorCount = allWarnings.filter(({ warning: w }) => CRITICAL_WARNINGS.has(w.type)).length;
+
+  console.log('\n=== Result Summary ===\n');
+  if (allWarnings.length === 0) {
+    console.log('  No issues found.');
+  } else {
+    for (const { source, warning: w } of allWarnings) {
+      const level = CRITICAL_WARNINGS.has(w.type) ? 'ERROR' : 'WARN';
+      console.log(`[RESULT:${level}] ${source.padEnd(16)} ${w.type}: ${w.message}`);
+    }
+  }
+  console.log(
+    `\n  Total: ${sourcesChecked} sources checked, ${warnCount} warning${warnCount !== 1 ? 's' : ''}, ${errorCount} error${errorCount !== 1 ? 's' : ''}`,
+  );
+
   const label = exitCode === 0 ? 'ok' : exitCode === 1 ? 'critical' : 'attention';
   console.log(`\nExit code: ${exitCode} (${label})`);
   process.exitCode = exitCode;
