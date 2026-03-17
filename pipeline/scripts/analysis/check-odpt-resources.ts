@@ -100,8 +100,11 @@ const SNAPSHOT_DIR = resolve(import.meta.dirname, '..', '..', 'state', 'check-re
 interface SnapshotFile extends ResourceSnapshot {
   sourceName: string;
   checkedAt: string;
+  /** Overall check result based on warning severity. */
   result: 'ok' | 'attention' | 'critical';
+  /** Attention-level warning type names (e.g. "EXPIRING_SOON"). */
   warnings: string[];
+  /** Critical warning type names (e.g. "EXPIRED", "REMOVED"). */
   errors: string[];
 }
 
