@@ -28,6 +28,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      # Required: actions/checkout checks out the commit that triggered
+      # the run. On rerun, this is the OLD commit — the previous run's
+      # push is not included. git pull fetches the latest HEAD so that
+      # the subsequent git push in the commit step won't be rejected
+      # as non-fast-forward.
+      - name: Sync with remote
+        run: git pull --ff-only origin main
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -216,5 +224,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data/ pipeline/state/
           git commit -m "chore(data): update transit data"
-          git pull --rebase
           git push
