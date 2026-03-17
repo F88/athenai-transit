@@ -136,7 +136,7 @@ function loadSnapshot(sourceName: string): ResourceSnapshot | null {
   try {
     return JSON.parse(readFileSync(filePath, 'utf-8')) as SnapshotFile;
   } catch {
-    console.warn(`[loadSnapshot] Failed to parse ${sourceName}.json, treating as empty`);
+    console.warn(`[loadSnapshot] Failed to parse ${sourceName}.json, skipping diff detection`);
     return null;
   }
 }
@@ -519,7 +519,8 @@ async function main(): Promise<void> {
         console.log(`  *** NO_DOWNLOAD_REPORT: No download report — run download first`);
       }
 
-      // Save empty snapshot (no remote resources, but record that we checked)
+      // Save empty snapshot for non-API sources. Only written on first run
+      // (subsequent runs skip because resourceUrls are unchanged).
       saveSnapshot(src.name, []);
 
       console.log(`=== ${src.name} [END] ===\n`);
