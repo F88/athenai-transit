@@ -7,5 +7,6 @@ node_modules
 public/data
 pipeline/build
 pipeline/data
+pipeline/state
 package-lock.json
 
