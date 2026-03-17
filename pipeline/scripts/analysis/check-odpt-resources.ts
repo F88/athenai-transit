@@ -115,22 +115,6 @@ function saveSnapshot(
   const errorTypes = warnings.filter((w) => CRITICAL_WARNINGS.has(w.type)).map((w) => w.type).sort();
   const result = errorTypes.length > 0 ? 'critical' : warningTypes.length > 0 ? 'attention' : 'ok';
 
-  // Skip rewrite when content is unchanged to avoid daily churn
-  // from checkedAt timestamp updates.
-  const previous = loadSnapshot(sourceName);
-  if (previous) {
-    const prevSorted = [...previous.resourceUrls].sort();
-    if (
-      prevSorted.length === newUrls.length &&
-      prevSorted.every((url, i) => url === newUrls[i]) &&
-      previous.result === result &&
-      JSON.stringify(previous.warnings ?? []) === JSON.stringify(warningTypes) &&
-      JSON.stringify(previous.errors ?? []) === JSON.stringify(errorTypes)
-    ) {
-      return;
-    }
-  }
-
   ensureDir(SNAPSHOT_DIR);
   const snapshot: SnapshotFile = {
     sourceName,
