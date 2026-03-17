@@ -101,12 +101,20 @@ export function loadDownloadMeta(sourceName: string): DownloadMeta | null {
   if (!existsSync(filePath)) {
     return null;
   }
-  const text = readFileSync(filePath, 'utf-8');
-  return JSON.parse(text) as DownloadMeta;
+  try {
+    const text = readFileSync(filePath, 'utf-8');
+    return JSON.parse(text) as DownloadMeta;
+  } catch {
+    return null;
+  }
 }
 
 /**
  * Load all download metadata files.
+ *
+ * Reads files directly instead of delegating to {@link loadDownloadMeta}
+ * to avoid redundant path construction and existence checks.
+ * Corrupted files are skipped with a warning.
  *
  * @returns Map of source name to metadata.
  */
@@ -120,9 +128,13 @@ export function loadAllDownloadMeta(): Map<string, DownloadMeta> {
       continue;
     }
     const sourceName = file.replace(/\.json$/, '');
-    const meta = loadDownloadMeta(sourceName);
-    if (meta) {
+    const filePath = join(META_DIR, file);
+    try {
+      const text = readFileSync(filePath, 'utf-8');
+      const meta = JSON.parse(text) as DownloadMeta;
       result.set(sourceName, meta);
+    } catch (e) {
+      console.warn(`[loadAllDownloadMeta] Failed to load or parse ${file}:`, e);
     }
   }
   return result;
