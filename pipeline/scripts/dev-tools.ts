@@ -50,7 +50,17 @@ function listScripts(): void {
 function runScript(script: AnalysisScript): void {
   const scriptPath = path.join(SCRIPT_DIR, script.file);
   console.log(`Running: ${script.name} (${script.file})\n`);
-  execSync(`npx tsx "${scriptPath}"`, { stdio: 'inherit' });
+  try {
+    execSync(`npx tsx "${scriptPath}"`, { stdio: 'inherit' });
+  } catch (err) {
+    // Non-zero exit codes from analysis scripts (e.g. check warnings)
+    // are expected results, not errors. Propagate the exit code silently.
+    if (err && typeof err === 'object' && 'status' in err && typeof err.status === 'number') {
+      process.exitCode = err.status;
+    } else {
+      throw err;
+    }
+  }
 }
 
 function promptSelection(): Promise<number> {

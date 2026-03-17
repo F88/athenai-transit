@@ -222,6 +222,16 @@ pipeline/archives/
 | `FETCH_TIMEOUT_MS`  | タイムアウト定数 (60秒)                 |
 | `MAX_RETRIES`       | リトライ回数定数 (3回)                  |
 
+### `pipeline/lib/download-meta.ts`
+
+ダウンロードジョブの結果を `pipeline/state/download-meta/{source-name}.json` に記録する。成功時はファイルサイズ、Content-Type、展開ファイル一覧、feed_info 情報を含む。エラー時はエラーメッセージを記録する。
+
+記録されたメタデータは `check-odpt-resources.ts` がリモートリソースとの比較に使用する。
+
+### `pipeline/lib/gtfs-feed-info.ts`
+
+GTFS の展開済み `feed_info.txt` をパースして構造化データに変換する。`download-meta.ts` がダウンロード後の記録に使用する。
+
 ### `pipeline/lib/pipeline-utils.ts`
 
 全パイプラインスクリプト共通のユーティリティ。
