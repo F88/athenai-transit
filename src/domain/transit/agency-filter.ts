@@ -1,4 +1,5 @@
-import type { Agency, StopWithContext } from '../../types/app/transit';
+import type { Agency } from '../../types/app/transit';
+import type { StopWithContext } from '../../types/app/transit-composed';
 
 /**
  * Filters out stops whose agencies are ALL hidden.

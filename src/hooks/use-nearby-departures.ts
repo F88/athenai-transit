@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { StopWithContext, StopWithMeta } from '../types/app/transit';
+import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
 import type { TransitRepository } from '../repositories/transit-repository';
 import { createLogger } from '../utils/logger';
 

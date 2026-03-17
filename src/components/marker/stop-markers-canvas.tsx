@@ -3,13 +3,8 @@ import { useMap } from 'react-leaflet';
 import { renderToStaticMarkup } from 'react-dom/server';
 import L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
-import type {
-  Agency,
-  DepartureGroup,
-  RouteType,
-  Stop,
-  StopWithContext,
-} from '../../types/app/transit';
+import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { DepartureGroup, StopWithContext } from '../../types/app/transit-composed';
 import { getRouteTypeColor } from '../../lib/leaflet-helpers';
 import { primaryRouteType } from '../../domain/transit/route-type-color';
 import { createLogger } from '../../utils/logger';

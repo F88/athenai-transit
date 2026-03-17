@@ -1,4 +1,4 @@
-import type { DepartureGroup, FlatDeparture } from '../../types/app/transit';
+import type { DepartureGroup, FlatDeparture } from '../../types/app/transit-composed';
 
 /**
  * Flatten departure groups into a single chronologically sorted list.

@@ -7,14 +7,12 @@
  */
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
+import type { Agency, RouteType, Stop } from '../types/app/transit';
 import type {
-  Agency,
   DepartureGroup,
   FullDayStopDeparture,
-  RouteType,
-  Stop,
   StopWithMeta,
-} from '../types/app/transit';
+} from '../types/app/transit-composed';
 import type { CollectionResult, Result } from '../types/app/repository';
 
 /**

@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import type { EdgeMarker } from '../../types/app/map';
 import type { InfoLevel } from '../../types/app/settings';
-import type { Agency, Stop, StopWithContext } from '../../types/app/transit';
+import type { Agency, Stop } from '../../types/app/transit';
+import type { StopWithContext } from '../../types/app/transit-composed';
 import { truncateLabel } from '../../utils/truncate-label';
 import { formatDistance } from '../../domain/transit/distance';
 import { distanceStyle } from '../../utils/distance-style';

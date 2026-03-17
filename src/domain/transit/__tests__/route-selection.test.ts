@@ -8,7 +8,8 @@ import {
   resolveSelectedRouteIds,
 } from '../route-selection';
 import type { RouteShape } from '../../../types/app/map';
-import type { DepartureGroup, RouteType } from '../../../types/app/transit';
+import type { RouteType } from '../../../types/app/transit';
+import type { DepartureGroup } from '../../../types/app/transit-composed';
 import { makeRoute, makeStop, makeStopWithContext } from '../../../__tests__/helpers';
 
 describe('extractRouteIdsForStop', () => {

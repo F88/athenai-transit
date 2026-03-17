@@ -16,15 +16,12 @@
  */
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
+import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
 import type {
-  Agency,
   DepartureGroup,
   FullDayStopDeparture,
-  Route,
-  RouteType,
-  Stop,
   StopWithMeta,
-} from '../types/app/transit';
+} from '../types/app/transit-composed';
 import type { CollectionResult, Result } from '../types/app/repository';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';

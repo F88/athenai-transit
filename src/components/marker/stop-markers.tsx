@@ -1,13 +1,8 @@
 import L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { EffectiveRenderMode } from '../../utils/render-mode';
-import type {
-  Agency,
-  DepartureGroup,
-  RouteType,
-  Stop,
-  StopWithContext,
-} from '../../types/app/transit';
+import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { DepartureGroup, StopWithContext } from '../../types/app/transit-composed';
 import { StopMarkersDom } from './stop-markers-dom';
 import { StopMarkersCanvas } from './stop-markers-canvas';
 import { createLogger } from '../../utils/logger';

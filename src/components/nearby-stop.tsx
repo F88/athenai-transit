@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
-import type { DepartureGroup, StopWithContext } from '../types/app/transit';
+import type { DepartureGroup, StopWithContext } from '../types/app/transit-composed';
 import { distanceM } from '../domain/transit/distance';
 import { flattenDepartures } from '../domain/transit/flatten-departures';
 import { useInfoLevel } from '../hooks/use-info-level';

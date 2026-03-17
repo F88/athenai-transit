@@ -1,5 +1,5 @@
 import type { LatLng } from '../types/app/map';
-import type { StopWithMeta } from '../types/app/transit';
+import type { StopWithMeta } from '../types/app/transit-composed';
 
 /**
  * Resolves the map focus position based on direct focus and selected stop.

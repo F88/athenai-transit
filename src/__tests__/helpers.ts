@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
-import type { Stop, StopWithMeta, Route, RouteType, StopWithContext } from '../types/app/transit';
+import type { Stop, Route, RouteType } from '../types/app/transit';
+import type { StopWithMeta, StopWithContext } from '../types/app/transit-composed';
 import type { TransitRepository } from '../repositories/transit-repository';
 
 /**
