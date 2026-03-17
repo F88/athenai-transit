@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.03.17]
+
 ### Added
 
 - ODPT リソース更新チェックツール (`npm run pipeline:check:odpt-resources`):
@@ -17,6 +19,9 @@ and this project adheres to [CalVer](https://calver.org/).
     - チェック結果スナップショットを `pipeline/state/check-result/` に保存 (result, warnings, errors 付き)。差分で新リソースを検知。
     - 警告レベル: EXPIRED/REMOVED/NO_VALID_DATA (exit 1), EXPIRING_SOON/NEW_RESOURCE/NO_DOWNLOAD_REPORT (exit 2)。
     - GitHub Actions `check-transit-resources.yml` で daily 自動実行 (UTC 05:00)。
+- ソースメタデータ (`SourceMeta`):
+    - `TransitRepository.getAllSourceMeta()` でソースごとの有効期間、バージョン、名前、routeTypes、統計情報を取得可能に。
+    - 初期化ログにソースメタデータのサマリーを出力。
 - ランダム初期表示位置:
     - 10箇所のプリセットからランダムに初期表示位置を選択 (場所ごとの zoom level 付き)。
     - サイコロボタン (🎲) で別のランダムな場所にジャンプ。
@@ -28,12 +33,6 @@ and this project adheres to [CalVer](https://calver.org/).
 - query params の一元管理:
     - `src/utils/query-params.ts` に safe parsers を集約 (範囲バリデーション、injection 防止)。
     - `?mock-data`, `?sources` の既存処理もリファクタリング。
-
-### Added
-
-- ソースメタデータ (`SourceMeta`):
-    - `TransitRepository.getAllSourceMeta()` でソースごとの有効期間、バージョン、名前、routeTypes、統計情報を取得可能に。
-    - 初期化ログにソースメタデータのサマリーを出力。
 - 風ぐるま (千代田区コミュニティバス) のブランドカラー (`#E94185`) を設定。
 - `describe-resources --verbose` にブランドカラー、認証情報、カタログ詳細等の全フィールドを出力。
 
@@ -45,6 +44,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - BottomSheet の事業者フィルター pill のコントラスト不足を修正。ブランドカラーの bg/text をそのまま使用。
 - BottomSheet のフィルター行が横スクロール不可だった問題を修正。スクロールバー非表示の横スクロールを追加。
 - 本番環境で INFO ログが出力されない問題を修正 (`VITE_LOG_TAGS` を `*` に設定)。
+- CI workflow で untracked ファイルが検知されない問題を修正 (`git add` + `--cached`)。
+- CI workflow の rerun 時に push が失敗する問題を修正 (`git pull --ff-only` を checkout 直後に追加)。
 
 ### Changed
 
