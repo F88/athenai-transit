@@ -73,10 +73,28 @@ jobs:
           fi
 
       # ── Notify ─────────────────────────────────────────
+      - name: Build check summary
+        id: check-summary
+        if: always()
+        shell: bash
+        run: |
+          EXIT="${{ steps.check.outputs.exit_code }}"
+          if [ "$EXIT" = "2" ]; then
+            echo "result=warning" >> "$GITHUB_OUTPUT"
+            echo "text=EXPIRING_SOON / NEW_RESOURCE" >> "$GITHUB_OUTPUT"
+          elif [ "$EXIT" = "0" ]; then
+            echo "result=success" >> "$GITHUB_OUTPUT"
+            echo "text=No issues found" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=failure" >> "$GITHUB_OUTPUT"
+            echo "text=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Notify Slack
         if: always()
         uses: ./.github/actions/slack-notify
         with:
-          result: ${{ job.status }}
+          result: ${{ steps.check-summary.outputs.result || job.status }}
+          summary: ${{ steps.check-summary.outputs.text }}
           channel_id: ${{ vars.SLACK_CHANNEL_ID }}
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}

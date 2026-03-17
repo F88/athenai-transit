@@ -227,11 +227,40 @@ jobs:
           git push
 
       # ── Notify ────────────────────────────────────────────
+      - name: Build update summary
+        id: update-summary
+        if: always()
+        shell: bash
+        run: |
+          PARTS=()
+          HAS_WARN=false
+          # Data change status
+          CHANGED="${{ steps.changes.outputs.changed }}"
+          if [ "$CHANGED" = "true" ]; then
+            PARTS+=("Data updated")
+          elif [ "$CHANGED" = "false" ]; then
+            PARTS+=("No data changes")
+          fi
+          # Partial failures (exit code 1)
+          WARN=""
+          if [ "${{ steps.download-gtfs.outputs.exit_code }}" = "1" ]; then WARN="${WARN}GTFS download, "; fi
+          if [ "${{ steps.download-odpt-json.outputs.exit_code }}" = "1" ]; then WARN="${WARN}ODPT download, "; fi
+          if [ "${{ steps.build-db.outputs.exit_code }}" = "1" ]; then WARN="${WARN}DB build, "; fi
+          if [ "${{ steps.build-json.outputs.exit_code }}" = "1" ]; then WARN="${WARN}JSON build, "; fi
+          if [ "${{ steps.build-odpt-train.outputs.exit_code }}" = "1" ]; then WARN="${WARN}ODPT Train, "; fi
+          if [ "${{ steps.build-shapes-gtfs.outputs.exit_code }}" = "1" ]; then WARN="${WARN}GTFS shapes, "; fi
+          if [ -n "$WARN" ]; then
+            PARTS+=("Partial failure: ${WARN%, }")
+            HAS_WARN=true
+          fi
+          IFS=', '; echo "text=${PARTS[*]}" >> "$GITHUB_OUTPUT"
+          echo "has_warn=$HAS_WARN" >> "$GITHUB_OUTPUT"
+
       - name: Notify Slack
         if: always()
         uses: ./.github/actions/slack-notify
         with:
-          result: ${{ job.status }}
-          summary: "Data changed: ${{ steps.changes.outputs.changed || 'unknown' }}"
+          result: ${{ steps.update-summary.outputs.has_warn == 'true' && 'warning' || job.status }}
+          summary: ${{ steps.update-summary.outputs.text }}
           channel_id: ${{ vars.SLACK_CHANNEL_ID }}
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}

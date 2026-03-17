@@ -3,7 +3,7 @@ description: Send a workflow result notification to Slack
 
 inputs:
   result:
-    description: 'Job result: success, failure, or cancelled'
+    description: 'Job result: success, warning, failure, or cancelled'
     required: true
   summary:
     description: 'Additional context to include in the message (optional)'
@@ -27,6 +27,10 @@ runs:
           echo "emoji=:white_check_mark:" >> "$GITHUB_OUTPUT"
           echo "color=#36a64f" >> "$GITHUB_OUTPUT"
           echo "text=Success" >> "$GITHUB_OUTPUT"
+        elif [ "${{ inputs.result }}" = "warning" ]; then
+          echo "emoji=:warning:" >> "$GITHUB_OUTPUT"
+          echo "color=#f0ad4e" >> "$GITHUB_OUTPUT"
+          echo "text=Warning" >> "$GITHUB_OUTPUT"
         elif [ "${{ inputs.result }}" = "cancelled" ]; then
           echo "emoji=:no_entry_sign:" >> "$GITHUB_OUTPUT"
           echo "color=#808080" >> "$GITHUB_OUTPUT"
