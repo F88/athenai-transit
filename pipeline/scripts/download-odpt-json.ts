@@ -27,9 +27,11 @@ import {
   archiveFilename,
   buildAuthenticatedUrl,
   FETCH_TIMEOUT_MS,
+  redactTokens,
   withRetry,
   wrapTimeoutError,
 } from '../lib/download-utils';
+import { saveDownloadMeta } from '../lib/download-meta';
 import {
   determineBatchExitCode,
   ensureDir,
@@ -184,6 +186,9 @@ async function main(): Promise<void> {
   const outputPath = join(outputDir, filename);
   const archiveDir = join(ROOT, 'archives/odpt-json', outDir);
 
+  const downloadedAt = new Date().toISOString();
+  const t0 = performance.now();
+
   console.log(`=== ${arg.name} [START] ===\n`);
   console.log(`  Format: ${source.resource.dataFormat.type}`);
   console.log(`  Name: ${nameJa} (${nameEn})`);
@@ -225,11 +230,37 @@ async function main(): Promise<void> {
     console.log(`\nSaved to ${outputDir}/`);
     const savedSize = statSync(outputPath).size;
     console.log(`  ${filename.padEnd(24)} ${savedSize.toLocaleString().padStart(10)} bytes`);
+
+    // 4. Record download metadata
+    const totalDurationMs = Math.round(performance.now() - t0);
+    saveDownloadMeta({
+      sourceName: arg.name,
+      type: 'odpt-json',
+      status: 'ok',
+      downloadedAt,
+      url: source.resource.endpointUrl,
+      size: bodyBytes,
+      contentType: result.contentType || '',
+      durationMs: totalDurationMs,
+      archivePath: archivePath.replace(ROOT + '/', ''),
+    });
+    console.log('Download metadata recorded.');
   } catch (err) {
-    console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
+    const totalDurationMs = Math.round(performance.now() - t0);
+    const errorMessage = redactTokens(err instanceof Error ? err.message : String(err));
+    console.error(`\nFATAL: ${errorMessage}`);
     if (err instanceof Error && err.cause instanceof Error) {
-      console.error(`  Cause: ${err.cause.message}`);
+      console.error(`  Cause: ${redactTokens(err.cause.message)}`);
     }
+    saveDownloadMeta({
+      sourceName: arg.name,
+      type: 'odpt-json',
+      status: 'error',
+      downloadedAt,
+      url: source.resource.endpointUrl,
+      durationMs: totalDurationMs,
+      error: errorMessage,
+    });
     process.exitCode = 1;
   } finally {
     const code = process.exitCode ?? 0;

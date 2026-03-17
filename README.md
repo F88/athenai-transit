@@ -1,6 +1,9 @@
 # あてのない乗換案内 Athenai Transit
 
-[![Update Transit Data](https://github.com/F88/athenai-transit/actions/workflows/update-transit-data.yml/badge.svg)](https://github.com/F88/athenai-transit/actions/workflows/update-transit-data.yml)
+| Job                     | Status                                                                                                                                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Update Transit Data     | [![Update Transit Data](https://github.com/F88/athenai-transit/actions/workflows/update-transit-data.yml/badge.svg)](https://github.com/F88/athenai-transit/actions/workflows/update-transit-data.yml)             |
+| Check Transit Resources | [![Check Transit Resources](https://github.com/F88/athenai-transit/actions/workflows/check-transit-resources.yml/badge.svg)](https://github.com/F88/athenai-transit/actions/workflows/check-transit-resources.yml) |
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 

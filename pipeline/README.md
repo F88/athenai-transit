@@ -20,17 +20,18 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 
 各スクリプトの詳細な仕様は `docs/` を参照。
 
-| Stage | 概要                                | スクリプト                                                | npm script                            |
-| ----- | ----------------------------------- | --------------------------------------------------------- | ------------------------------------- |
-| 1     | GTFS ZIP をバッチダウンロード       | `scripts/download-gtfs.ts`                                | `npm run pipeline:download:gtfs`      |
-| 1     | ODPT JSON をバッチダウンロード      | `scripts/download-odpt-json.ts`                           | `npm run pipeline:download:odpt-json` |
-| 2     | GTFS CSV を SQLite に変換           | `scripts/build-gtfs-db.ts`                                | `npm run pipeline:build:db`           |
-| 3     | SQLite からアプリ用 JSON を生成     | `scripts/app-data/build-app-data-from-gtfs.ts`            | `npm run pipeline:build:json`         |
-| 3     | ODPT Train からアプリ用 JSON を生成 | `scripts/app-data/build-app-data-from-odpt-train.ts`      | `npm run pipeline:build:odpt-train`   |
-| 3     | GTFS shapes.txt から路線形状を生成  | `scripts/app-data/build-route-shapes-from-gtfs.ts`        | `npm run pipeline:build:shapes:gtfs`  |
-| 3     | 国土数値情報から鉄道路線形状を生成  | `scripts/app-data/build-route-shapes-from-ksj-railway.ts` | `npm run pipeline:build:shapes:ksj`   |
-| 3     | アプリ用 JSON の検証                | `scripts/app-data/validate-app-data.ts`                   | `npm run pipeline:validate`           |
-| -     | 全リソース定義の一覧表示            | `scripts/analysis/describe-resources.ts`                  | `npm run pipeline:describe`           |
+| Stage | 概要                                | スクリプト                                                | npm script                              |
+| ----- | ----------------------------------- | --------------------------------------------------------- | --------------------------------------- |
+| 1     | GTFS ZIP をバッチダウンロード       | `scripts/download-gtfs.ts`                                | `npm run pipeline:download:gtfs`        |
+| 1     | ODPT JSON をバッチダウンロード      | `scripts/download-odpt-json.ts`                           | `npm run pipeline:download:odpt-json`   |
+| 2     | GTFS CSV を SQLite に変換           | `scripts/build-gtfs-db.ts`                                | `npm run pipeline:build:db`             |
+| 3     | SQLite からアプリ用 JSON を生成     | `scripts/app-data/build-app-data-from-gtfs.ts`            | `npm run pipeline:build:json`           |
+| 3     | ODPT Train からアプリ用 JSON を生成 | `scripts/app-data/build-app-data-from-odpt-train.ts`      | `npm run pipeline:build:odpt-train`     |
+| 3     | GTFS shapes.txt から路線形状を生成  | `scripts/app-data/build-route-shapes-from-gtfs.ts`        | `npm run pipeline:build:shapes:gtfs`    |
+| 3     | 国土数値情報から鉄道路線形状を生成  | `scripts/app-data/build-route-shapes-from-ksj-railway.ts` | `npm run pipeline:build:shapes:ksj`     |
+| 3     | アプリ用 JSON の検証                | `scripts/app-data/validate-app-data.ts`                   | `npm run pipeline:validate`             |
+| -     | 全リソース定義の一覧表示            | `scripts/analysis/describe-resources.ts`                  | `npm run pipeline:describe`             |
+| -     | ODPT リソース更新チェック           | `scripts/analysis/check-odpt-resources.ts`                | `npm run pipeline:check:odpt-resources` |
 
 ## 実行順序
 
@@ -125,6 +126,13 @@ pipeline/resources/
 | [DESCRIBE_RESOURCES.md](./docs/DESCRIBE_RESOURCES.md)     | リソース定義一覧表示の仕様                                                 |
 | [RESOURCE-DEFINITIONS.md](./docs/RESOURCE-DEFINITIONS.md) | リソース定義の型構造と追加手順                                             |
 
+### 運用ツール
+
+| ツール                                  | 概要                                                                                                                                                                                                                                      |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run pipeline:check:odpt-resources` | ODPT Members Portal API でリソース更新をチェック。ローカルの download-meta と比較し、期限切れ (EXPIRED)、削除 (REMOVED)、期限切れ間近 (EXPIRING_SOON)、新リソース (NEW_RESOURCE) を検知。CI で daily 実行 (`check-transit-resources.yml`) |
+| `npm run pipeline:dev-tools`            | 分析スクリプトのインタラクティブ選択実行                                                                                                                                                                                                  |
+
 ## ディレクトリ構造
 
 ```plain
@@ -141,6 +149,9 @@ pipeline/
 ├── archives/       Timestamped archives of downloaded files (gitignored)
 ├── build/          Build output (generated, gitignored)
 │   └── data/       JSON files for the web app
+├── state/          Operational state (git managed)
+│   ├── download-meta/  Download job results per source
+│   └── check-result/   Resource check snapshots for diff detection
 ├── scripts/        Pipeline scripts
 └── docs/           Design documents
 ```

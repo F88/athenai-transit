@@ -182,7 +182,7 @@ jobs:
       - name: Detect changes
         id: changes
         run: |
-          if git diff --quiet public/data/; then
+          if git diff --quiet public/data/ pipeline/state/; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No data changes detected."
           else
@@ -213,6 +213,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/
+          git add public/data/ pipeline/state/
           git commit -m "chore(data): update transit data"
           git push

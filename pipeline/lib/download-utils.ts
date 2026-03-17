@@ -118,6 +118,19 @@ export function buildAuthenticatedUrl(
   return `${url}${sep}acl:consumerKey=${encodeURIComponent(accessToken)}`;
 }
 
+/**
+ * Redact authentication tokens from a string.
+ *
+ * Replaces `acl:consumerKey=<token>` patterns with `acl:consumerKey=[REDACTED]`
+ * to prevent accidental token exposure in logs or persisted metadata.
+ *
+ * @param text - Text that may contain authentication tokens.
+ * @returns Text with tokens replaced by `[REDACTED]`.
+ */
+export function redactTokens(text: string): string {
+  return text.replace(/acl:consumerKey=[^\s&]+/g, 'acl:consumerKey=[REDACTED]');
+}
+
 // ---------------------------------------------------------------------------
 // Retry
 // ---------------------------------------------------------------------------
@@ -142,19 +155,20 @@ export async function withRetry<T>(
     } catch (err) {
       lastError = err;
       if (attempt === maxRetries) {
-        throw new Error(`Failed after ${maxRetries} attempts (${label}): ${String(err)}`, {
-          cause: err,
-        });
+        throw new Error(
+          `Failed after ${maxRetries} attempts (${redactTokens(label)}): ${redactTokens(String(err))}`,
+          { cause: err },
+        );
       }
       const delay = 2 ** (attempt - 1) * 1000;
       console.warn(
-        `  Attempt ${attempt}/${maxRetries} failed: ${String(err)}. Retrying in ${delay / 1000}s...`,
+        `  Attempt ${attempt}/${maxRetries} failed: ${redactTokens(String(err))}. Retrying in ${delay / 1000}s...`,
       );
       await new Promise((r) => setTimeout(r, delay));
     }
   }
   // TypeScript control flow: loop always returns or throws, but compiler cannot prove it.
-  throw new Error(`Failed after ${maxRetries} attempts (${label})`, { cause: lastError });
+  throw new Error(`Failed after ${maxRetries} attempts (${redactTokens(label)})`, { cause: lastError });
 }
 
 // ---------------------------------------------------------------------------

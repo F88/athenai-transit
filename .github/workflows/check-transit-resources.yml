@@ -1,0 +1,65 @@
+name: Check Transit Resources
+
+on:
+  schedule:
+    # JST 14:00 (UTC 05:00) — 1 hour after update-transit-data
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: gtfs-pipeline
+  cancel-in-progress: false
+
+jobs:
+  check-resources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ── Check ─────────────────────────────────────────────
+      # Exit codes: 0=ok, 1=critical (EXPIRED/REMOVED/NO_VALID_DATA), 2=attention (EXPIRING_SOON/NEW_RESOURCE)
+      - name: Check ODPT resources
+        id: check
+        run: |
+          set +e
+          npx tsx pipeline/scripts/analysis/check-odpt-resources.ts 2>&1 | tee check-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          cat check-output.txt >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Warn on attention
+        if: steps.check.outputs.exit_code == '2'
+        run: echo "::warning::Resource check raised attention-level warnings. See Job Summary for details."
+
+      - name: Fail on critical
+        if: steps.check.outputs.exit_code == '1'
+        run: |
+          echo "::error::Resource check found critical issues (expired or removed data). See Job Summary for details."
+          exit 1
+
+      # ── Commit snapshot ───────────────────────────────────
+      - name: Commit check snapshots
+        if: always()
+        run: |
+          if git diff --quiet pipeline/state/; then
+            echo "::notice::No snapshot changes."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add pipeline/state/
+            git commit -m "chore(pipeline): update resource check snapshots"
+            git push
+          fi
