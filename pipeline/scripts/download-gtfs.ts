@@ -208,14 +208,16 @@ async function main(): Promise<void> {
       durationMs: totalDurationMs,
       archivePath: archivePath.replace(ROOT + '/', ''),
       extractedFiles,
-      ...(feedInfo && { feedInfo }),
+      ...(feedInfo ? { feedInfo } : {}),
     });
     console.log('\nDownload metadata recorded.');
 
     // GTFS content validation is handled by the build step, not the downloader.
   } catch (err) {
     const totalDurationMs = Math.round(performance.now() - t0);
-    const errorMessage = err instanceof Error ? err.message : String(err);
+    const rawError = err instanceof Error ? err.message : String(err);
+    // Redact authentication tokens from error messages before persisting
+    const errorMessage = rawError.replace(/acl:consumerKey=[^\s&]+/g, 'acl:consumerKey=[REDACTED]');
     console.error(`\nFATAL: ${errorMessage}`);
     if (err instanceof Error && err.cause instanceof Error) {
       console.error(`  Cause: ${err.cause.message}`);

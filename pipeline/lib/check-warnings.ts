@@ -88,7 +88,7 @@ export function getDaysUntilExpiry(endDateStr: string, now: Date = new Date()): 
 // ---------------------------------------------------------------------------
 
 /** Days before feed_end_date to trigger EXPIRING_SOON. */
-const EXPIRING_SOON_DAYS = 14;
+export const EXPIRING_SOON_DAYS = 14;
 
 /**
  * Detect warnings by comparing local state against remote resources.

@@ -246,7 +246,9 @@ async function main(): Promise<void> {
     console.log('Download metadata recorded.');
   } catch (err) {
     const totalDurationMs = Math.round(performance.now() - t0);
-    const errorMessage = err instanceof Error ? err.message : String(err);
+    const rawError = err instanceof Error ? err.message : String(err);
+    // Redact authentication tokens from error messages before persisting
+    const errorMessage = rawError.replace(/acl:consumerKey=[^\s&]+/g, 'acl:consumerKey=[REDACTED]');
     console.error(`\nFATAL: ${errorMessage}`);
     if (err instanceof Error && err.cause instanceof Error) {
       console.error(`  Cause: ${err.cause.message}`);

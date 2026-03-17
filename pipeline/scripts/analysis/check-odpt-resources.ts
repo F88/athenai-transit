@@ -26,6 +26,7 @@ import type { DownloadMeta, DownloadMetaSuccess } from '../../lib/download-meta'
 import { ensureDir } from '../../lib/pipeline-utils';
 import {
   detectWarnings,
+  EXPIRING_SOON_DAYS,
   extractDateParam,
   extractUrlBase,
   getDaysUntilExpiry,
@@ -488,7 +489,7 @@ async function main(): Promise<void> {
             const w: Warning = { type: 'EXPIRED', message: `Local data expired (${endStr})` };
             console.log(`  *** ${w.type}: ${w.message}`);
             allWarnings.push(w);
-          } else if (daysLeft <= 14) {
+          } else if (daysLeft <= EXPIRING_SOON_DAYS) {
             const w: Warning = {
               type: 'EXPIRING_SOON',
               message: `Local data expires in ${daysLeft} days (${endStr})`,
