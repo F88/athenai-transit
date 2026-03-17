@@ -9,6 +9,15 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Slack 通知 (composite action):
+    - `.github/actions/slack-notify/` で Slack 通知を共通化。success / warning / failure / cancelled の4状態に対応。
+    - `update-transit-data.yml`, `check-transit-resources.yml` の両ワークフローに統合。
+    - 部分失敗や attention-level 警告を warning として通知。
+- `check-odpt-resources.ts` に Result Summary セクションを追加:
+    - `[RESULT:WARN]` / `[RESULT:ERROR]` 行でソース名付きの警告を出力。CI の Slack 通知で消費。
+
 ## [2026.03.17]
 
 ### Added
