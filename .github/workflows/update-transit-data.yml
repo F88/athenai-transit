@@ -201,7 +201,7 @@ jobs:
             echo "## Updated files" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
-            git diff --stat public/data/ >> "$GITHUB_STEP_SUMMARY"
+            git diff --cached --stat >> "$GITHUB_STEP_SUMMARY"
             echo '```' >> "$GITHUB_STEP_SUMMARY"
           else
             echo "## No data changes" >> "$GITHUB_STEP_SUMMARY"
