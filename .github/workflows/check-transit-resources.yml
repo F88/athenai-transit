@@ -71,3 +71,11 @@ jobs:
             git commit -m "chore(pipeline): update resource check snapshots"
             git push
           fi
+
+      # ── Notify ─────────────────────────────────────────
+      - name: Notify Slack
+        if: always()
+        uses: ./.github/actions/slack-notify
+        with:
+          result: ${{ job.status }}
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}

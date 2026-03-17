@@ -1,0 +1,70 @@
+name: Slack Notify
+description: Send a workflow result notification to Slack
+
+inputs:
+  result:
+    description: 'Job result: success, failure, or cancelled'
+    required: true
+  summary:
+    description: 'Additional context to include in the message (optional)'
+    required: false
+    default: ''
+  slack_bot_token:
+    description: 'Slack Bot token'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set notification status
+      id: status
+      shell: bash
+      run: |
+        if [ "${{ inputs.result }}" = "success" ]; then
+          echo "emoji=:white_check_mark:" >> "$GITHUB_OUTPUT"
+          echo "color=#36a64f" >> "$GITHUB_OUTPUT"
+          echo "text=Success" >> "$GITHUB_OUTPUT"
+        elif [ "${{ inputs.result }}" = "cancelled" ]; then
+          echo "emoji=:no_entry_sign:" >> "$GITHUB_OUTPUT"
+          echo "color=#808080" >> "$GITHUB_OUTPUT"
+          echo "text=Cancelled" >> "$GITHUB_OUTPUT"
+        else
+          echo "emoji=:x:" >> "$GITHUB_OUTPUT"
+          echo "color=#dc3545" >> "$GITHUB_OUTPUT"
+          echo "text=Failed" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Build message
+      id: message
+      shell: bash
+      run: |
+        BASE="${{ steps.status.outputs.emoji }} *${{ github.workflow }}* — ${{ steps.status.outputs.text }}"
+        if [ -n "${{ inputs.summary }}" ]; then
+          DETAIL="${BASE}\n${{ inputs.summary }}"
+        else
+          DETAIL="$BASE"
+        fi
+        # Use delimiter to handle multiline safely
+        {
+          echo "text<<SLACK_EOF"
+          echo -e "$DETAIL"
+          echo "SLACK_EOF"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Notify Slack
+      uses: slackapi/slack-github-action@v3.0.1
+      with:
+        method: chat.postMessage
+        token: ${{ inputs.slack_bot_token }}
+        payload: |
+          channel: ${{ vars.SLACK_CHANNEL_ID }}
+          text: "${{ steps.message.outputs.text }}"
+          blocks:
+            - type: "section"
+              text:
+                type: "mrkdwn"
+                text: "${{ steps.message.outputs.text }}"
+            - type: "context"
+              elements:
+                - type: "mrkdwn"
+                  text: "<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run> | Branch: `${{ github.ref_name }}`"

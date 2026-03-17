@@ -225,3 +225,12 @@ jobs:
           git add public/data/ pipeline/state/
           git commit -m "chore(data): update transit data"
           git push
+
+      # ── Notify ────────────────────────────────────────────
+      - name: Notify Slack
+        if: always()
+        uses: ./.github/actions/slack-notify
+        with:
+          result: ${{ job.status }}
+          summary: "Data changed: ${{ steps.changes.outputs.changed || 'unknown' }}"
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
