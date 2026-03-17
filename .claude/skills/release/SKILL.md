@@ -30,7 +30,9 @@ When multiple releases occur on the same day, append a sequential suffix:
 5. **Commit** — `chore(release): {version}`
 6. **Tag** — `v{version}` (e.g. `v2026.03.12`)
 7. **Push** — `git push && git push --tags` (confirm with user before pushing to main)
-8. **Create GitHub Release** — `gh release create v{version}` with release notes
+8. **Create GitHub Release** — `gh release create v{version} --title "{version}"` with release notes
+    - Title: `{version}` (v prefix なし、例: `2026.03.17`)
+    - Tag: `v{version}` (v prefix あり、例: `v2026.03.17`)
 
 ## GitHub Release Notes
 
@@ -38,7 +40,10 @@ Release notes are based on CHANGELOG but may need more detail:
 
 - If CHANGELOG is a **summary** (e.g. "port webapp"), expand with specifics from `git log`
 - If CHANGELOG is **detailed**, use it as-is
-- Format: markdown with `## What's New`, `## Bug Fixes` sections
+- **Structure**: WebApp (user-facing) と Pipeline/CI (developer-facing) に分けて記載する
+    - `## WebApp` — エンドユーザーに影響する変更 (UI, UX, 表示, バグ修正)
+    - `## Pipeline / CI` — パイプライン、CI/CD、開発ツール等の変更
+    - 各セクション内は `### Added`, `### Fixed`, `### Changed` で分類
 - Include link to full diff: `**Full Changelog**: https://github.com/{owner}/{repo}/compare/{prev_tag}...v{version}`
 - If this is the first release (no previous tag), use the initial commit as base
 
