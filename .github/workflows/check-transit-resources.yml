@@ -52,6 +52,7 @@ jobs:
 
       # ── Commit snapshot ───────────────────────────────────
       - name: Commit check snapshots
+        if: always()
         run: |
           if git diff --quiet pipeline/state/; then
             echo "::notice::No snapshot changes."

@@ -104,7 +104,8 @@ export function loadDownloadMeta(sourceName: string): DownloadMeta | null {
   try {
     const text = readFileSync(filePath, 'utf-8');
     return JSON.parse(text) as DownloadMeta;
-  } catch {
+  } catch (e) {
+    console.warn(`[loadDownloadMeta] Failed to parse ${sourceName}.json:`, e);
     return null;
   }
 }

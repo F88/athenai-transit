@@ -72,7 +72,7 @@ const MEMBERS_PORTAL_API = 'https://members-portal.odpt.org/api/v1/resources';
 async function fetchOdptResources(format: string): Promise<OdptOrganization[]> {
   const url = `${MEMBERS_PORTAL_API}?format=${format}`;
   console.log(`Fetching ${url} ...\n`);
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(30_000) });
   if (!res.ok) {
     throw new Error(`HTTP ${res.status} from Members Portal API`);
   }
@@ -133,7 +133,12 @@ function loadSnapshot(sourceName: string): ResourceSnapshot | null {
   if (!existsSync(filePath)) {
     return null;
   }
-  return JSON.parse(readFileSync(filePath, 'utf-8')) as SnapshotFile;
+  try {
+    return JSON.parse(readFileSync(filePath, 'utf-8')) as SnapshotFile;
+  } catch {
+    console.warn(`[loadSnapshot] Failed to parse ${sourceName}.json, treating as empty`);
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
