@@ -14,7 +14,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - ODPT リソース更新チェックツール (`npm run pipeline:check:odpt-resources`):
     - ODPT Members Portal API でリソースの有効期限、新規追加、削除を検知。
     - ダウンロードジョブ結果を `pipeline/state/download-meta/` に記録。
-    - チェック結果スナップショットを `pipeline/state/check-result/` に保存し、差分で新リソースを検知。
+    - チェック結果スナップショットを `pipeline/state/check-result/` に保存 (result, warnings, errors 付き)。差分で新リソースを検知。
     - 警告レベル: EXPIRED/REMOVED/NO_VALID_DATA (exit 1), EXPIRING_SOON/NEW_RESOURCE/NO_DOWNLOAD_REPORT (exit 2)。
     - GitHub Actions `check-transit-resources.yml` で daily 自動実行 (UTC 05:00)。
 - ランダム初期表示位置:
