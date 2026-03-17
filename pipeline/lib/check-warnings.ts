@@ -65,6 +65,24 @@ export function extractUrlBase(url: string): string {
   return idx >= 0 ? url.substring(0, idx) : url;
 }
 
+/**
+ * Calculate the number of days until a YYYYMMDD date string expires.
+ *
+ * @param endDateStr - End date in YYYYMMDD format.
+ * @param now - Current date for comparison (defaults to new Date()).
+ * @returns Number of days remaining (negative if already expired).
+ */
+export function getDaysUntilExpiry(endDateStr: string, now: Date = new Date()): number {
+  const endDate = new Date(
+    Date.UTC(
+      Number(endDateStr.substring(0, 4)),
+      Number(endDateStr.substring(4, 6)) - 1,
+      Number(endDateStr.substring(6, 8)),
+    ),
+  );
+  return Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 // ---------------------------------------------------------------------------
 // Detection
 // ---------------------------------------------------------------------------
@@ -128,14 +146,7 @@ export function detectWarnings(
   // EXPIRING_SOON: LOCAL feed_end_date is within threshold
   if (meta.feedInfo?.endDate) {
     const endStr = meta.feedInfo.endDate;
-    const endDate = new Date(
-      Date.UTC(
-        Number(endStr.substring(0, 4)),
-        Number(endStr.substring(4, 6)) - 1,
-        Number(endStr.substring(6, 8)),
-      ),
-    );
-    const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const daysLeft = getDaysUntilExpiry(endStr, now);
     if (daysLeft >= 0 && daysLeft <= EXPIRING_SOON_DAYS) {
       warnings.push({
         type: 'EXPIRING_SOON',

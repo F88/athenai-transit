@@ -22,9 +22,14 @@ import { join, resolve } from 'node:path';
 
 import { listGtfsSourceNames, loadGtfsSource } from '../../lib/load-gtfs-sources';
 import { loadDownloadMeta } from '../../lib/download-meta';
-import type { DownloadMetaSuccess } from '../../lib/download-meta';
+import type { DownloadMeta, DownloadMetaSuccess } from '../../lib/download-meta';
 import { ensureDir } from '../../lib/pipeline-utils';
-import { detectWarnings, extractDateParam, extractUrlBase } from '../../lib/check-warnings';
+import {
+  detectWarnings,
+  extractDateParam,
+  extractUrlBase,
+  getDaysUntilExpiry,
+} from '../../lib/check-warnings';
 import type { Warning, ResourceSnapshot } from '../../lib/check-warnings';
 
 // ---------------------------------------------------------------------------
@@ -104,10 +109,7 @@ function saveSnapshot(sourceName: string, resources: OdptDataResource[]): void {
   const previous = loadSnapshot(sourceName);
   if (previous) {
     const prevSorted = [...previous.resourceUrls].sort();
-    if (
-      prevSorted.length === newUrls.length &&
-      prevSorted.every((url, i) => url === newUrls[i])
-    ) {
+    if (prevSorted.length === newUrls.length && prevSorted.every((url, i) => url === newUrls[i])) {
       return;
     }
   }
@@ -142,8 +144,10 @@ interface LocalSourceInfo {
   name: string;
   /** Download URL base path from resource definition (without query). */
   urlBase: string;
-  /** Download metadata from last download job, if available. */
+  /** Download metadata from last successful download job, if available. */
   downloadMeta: DownloadMetaSuccess | null;
+  /** Raw download metadata including errors, for displaying last download status. */
+  rawMeta: DownloadMeta | null;
 }
 
 async function loadTrackedSources(): Promise<LocalSourceInfo[]> {
@@ -155,11 +159,11 @@ async function loadTrackedSources(): Promise<LocalSourceInfo[]> {
       continue;
     }
     const meta = loadDownloadMeta(name);
-    const successMeta = meta && meta.status === 'ok' ? meta : null;
     sources.push({
       name,
       urlBase: extractUrlBase(src.resource.downloadUrl),
-      downloadMeta: successMeta,
+      downloadMeta: meta && meta.status === 'ok' ? meta : null,
+      rawMeta: meta,
     });
   }
   return sources;
@@ -292,7 +296,13 @@ function printResult(
       );
     }
   } else if (isTracked) {
-    console.log(`  Local:      (no download metadata)`);
+    const raw = local.rawMeta;
+    if (raw && raw.status === 'error') {
+      console.log(`  Local:      LAST DOWNLOAD FAILED (${raw.downloadedAt})`);
+      console.log(`  Error:      ${raw.error}`);
+    } else {
+      console.log(`  Local:      (no download metadata)`);
+    }
   }
 
   // Warnings
@@ -467,15 +477,7 @@ async function main(): Promise<void> {
         // are simply not available in the Members Portal API.
         if (meta.feedInfo?.endDate) {
           const endStr = meta.feedInfo.endDate;
-          const endDate = new Date(
-            Date.UTC(
-              Number(endStr.substring(0, 4)),
-              Number(endStr.substring(4, 6)) - 1,
-              Number(endStr.substring(6, 8)),
-            ),
-          );
-          const now = new Date();
-          const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          const daysLeft = getDaysUntilExpiry(endStr);
           if (daysLeft < 0) {
             const w: Warning = { type: 'EXPIRED', message: `Local data expired (${endStr})` };
             console.log(`  *** ${w.type}: ${w.message}`);
@@ -491,7 +493,13 @@ async function main(): Promise<void> {
           }
         }
       } else {
-        console.log('  Local:      (no download metadata)');
+        const raw = src.rawMeta;
+        if (raw && raw.status === 'error') {
+          console.log(`  Local:      LAST DOWNLOAD FAILED (${raw.downloadedAt})`);
+          console.log(`  Error:      ${raw.error}`);
+        } else {
+          console.log('  Local:      (no download metadata)');
+        }
         allWarnings.push({
           type: 'NO_DOWNLOAD_REPORT',
           message: `No download report for ${src.name}`,
