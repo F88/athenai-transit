@@ -834,11 +834,19 @@ export class MockRepository implements TransitRepository {
   /** {@inheritDoc TransitRepository.getAllSourceMeta} */
   getAllSourceMeta(): Promise<CollectionResult<SourceMeta>> {
     const meta: SourceMeta = {
-      prefix: 'mock',
+      id: 'mock',
       name: 'あおバス',
-      startDate: '20260101',
-      endDate: '20261231',
       version: 'mock-1.0',
+      validity: {
+        startDate: '20260101',
+        endDate: '20261231',
+      },
+      routeTypes: [0, 1, 2, 3, 6],
+      keywords: [],
+      stats: {
+        stopCount: STOPS.length,
+        routeCount: ROUTES.length,
+      },
     };
     return Promise.resolve({ success: true, data: [meta], truncated: false });
   }

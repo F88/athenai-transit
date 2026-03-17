@@ -299,12 +299,23 @@ export function mergeSources(sources: SourceData[]): MergedData {
     if (source.feedInfo) {
       const firstAgencyId = source.agencies?.[0]?.i;
       const agency = firstAgencyId ? agencyMap.get(`${source.prefix}:${firstAgencyId}`) : undefined;
+      const sourceRouteTypes = [...new Set(source.routes.map((r) => r.t as RouteType))].sort(
+        (a, b) => a - b,
+      );
       sourceMetas.push({
-        prefix: source.prefix,
+        id: source.prefix,
         name: agency?.agency_short_name || source.prefix,
-        startDate: source.feedInfo.s,
-        endDate: source.feedInfo.e,
         version: source.feedInfo.v,
+        validity: {
+          startDate: source.feedInfo.s,
+          endDate: source.feedInfo.e,
+        },
+        routeTypes: sourceRouteTypes,
+        keywords: [],
+        stats: {
+          stopCount: source.stops.length,
+          routeCount: source.routes.length,
+        },
       });
     }
   }

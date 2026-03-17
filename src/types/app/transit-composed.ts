@@ -14,6 +14,43 @@
 import type { Agency, Route, RouteType, Stop } from './transit';
 
 /**
+ * Metadata about a transit data source identified by its prefix.
+ *
+ * Aggregates validity and version information from the pipeline output
+ * (e.g. feed-info.json for GTFS, dct:issued for ODPT) into a
+ * source-type-agnostic structure. The pipeline normalizes these
+ * differences so the webapp can treat all sources uniformly.
+ */
+export interface SourceMeta {
+  /** Source identifier (e.g. "minkuru", "kobus"). Corresponds to the data prefix. */
+  id: string;
+  /** Human-readable source name (e.g. "都バス", "京王バス"). Derived from agency_short_name. */
+  name: string;
+  /** Data version string (format varies by source). */
+  version: string;
+  /** Data validity period from feed-info. */
+  validity: {
+    /** Start date (YYYYMMDD). */
+    startDate: string;
+    /** End date (YYYYMMDD). */
+    endDate: string;
+  };
+  /** GTFS route_type values present in this source (deduplicated, sorted ascending). */
+  routeTypes: RouteType[];
+  /** Keywords for search and categorization (e.g. ["コミュニティバス", "深夜バス"]). */
+  keywords: string[];
+  // /** Operating regions (e.g. ["東京都", "杉並区"]). Requires pipeline region support. */
+  // regions: string[];
+  /** Summary statistics for this source. */
+  stats: {
+    /** Number of stops. */
+    stopCount: number;
+    /** Number of routes. */
+    routeCount: number;
+  };
+}
+
+/**
  * A route enriched with its agency metadata.
  */
 export interface RouteWithMeta {
@@ -125,25 +162,4 @@ export interface FlatDeparture {
   headsign: string;
   /** Scheduled departure time (reference). */
   departure: Date;
-}
-
-/**
- * Metadata about a transit data source identified by its prefix.
- *
- * Aggregates validity and version information from the pipeline output
- * (e.g. feed-info.json for GTFS, dct:issued for ODPT) into a
- * source-type-agnostic structure. The pipeline normalizes these
- * differences so the webapp can treat all sources uniformly.
- */
-export interface SourceMeta {
-  /** Source identifier (e.g. "minkuru", "kobus"). */
-  prefix: string;
-  /** Human-readable source name (e.g. "都バス", "京王バス"). Derived from agency_short_name. */
-  name: string;
-  /** Data validity start date (YYYYMMDD). */
-  startDate: string;
-  /** Data validity end date (YYYYMMDD). */
-  endDate: string;
-  /** Data version string. */
-  version: string;
 }
