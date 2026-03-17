@@ -428,6 +428,12 @@ export class AthenaiRepository implements TransitRepository {
       `Initialized in ${Math.round(tEnd - t0)}ms (fetch=${fetchMs}ms, merge=${mergeMs}ms): stops=${merged.stops.length} routes=${merged.routeMap.size} shapes=${Object.keys(merged.shapes).length} timetable_stops=${Object.keys(merged.timetable).length}`,
     );
 
+    for (const meta of merged.sourceMetas) {
+      logger.info(
+        `[${meta.id}] ${meta.name}: validity=${meta.validity.startDate}-${meta.validity.endDate} stops=${meta.stats.stopCount} routes=${meta.stats.routeCount} types=[${meta.routeTypes.join(',')}]`,
+      );
+    }
+
     return new AthenaiRepository(
       merged.stops,
       merged.routeMap,
