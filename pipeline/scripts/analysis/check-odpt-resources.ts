@@ -13,6 +13,10 @@
  *   npx tsx pipeline/scripts/analysis/check-odpt-resources.ts --list        # list tracked ODPT sources
  *   npx tsx pipeline/scripts/analysis/check-odpt-resources.ts --format tsv  # TSV output
  *
+ * Snapshots (`pipeline/state/check-result/*.json`) are rewritten on every
+ * execution to record checkedAt and the current warning state. This is
+ * intentional — the snapshot serves as an operational log, not a cache.
+ *
  * API: https://members-portal.odpt.org/api/v1/resources
  * Docs: https://developer.odpt.org/api_addendum
  */
