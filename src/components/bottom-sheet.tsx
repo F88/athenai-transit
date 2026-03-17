@@ -206,13 +206,16 @@ export function BottomSheet({
           {presentAgencies.length > 1 &&
             presentAgencies.map((agency) => {
               const primary = agency.agency_colors[0];
-              const color = primary ? `#${primary.bg}` : undefined;
+              const bgColor = primary ? `#${primary.bg}` : undefined;
+              const fgColor = primary ? `#${primary.text}` : undefined;
               return (
                 <PillButton
                   key={agency.agency_id}
                   active={!hiddenAgencyIds.has(agency.agency_id)}
-                  activeBg={color ? `${color}20` : undefined}
-                  activeBorder={color}
+                  activeBg={bgColor}
+                  activeFg={fgColor}
+                  activeBorder={bgColor}
+                  inactiveBorder={bgColor}
                   onClick={() => toggleAgency(agency)}
                   title={agency.agency_name}
                 >

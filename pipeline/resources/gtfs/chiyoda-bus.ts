@@ -22,7 +22,7 @@ const chiyodaBus: GtfsSourceDefinition = {
         ja: { long: '日立自動車交通株式会社', short: '風ぐるま' },
         en: { long: 'Hitachi Automobile Transportation Co., Ltd.', short: 'Kazaguruma' },
       },
-      colors: [],
+      colors: [{ bg: 'E94185', text: 'FFFFFF' }],
     },
     authentication: {
       required: false,

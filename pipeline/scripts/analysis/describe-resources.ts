@@ -4,10 +4,10 @@
  * Describe all resource definitions in a human-readable format.
  *
  * Usage:
- *   npx tsx pipeline/scripts/describe-resources.ts              # summary (default)
- *   npx tsx pipeline/scripts/describe-resources.ts --summary     # summary table
- *   npx tsx pipeline/scripts/describe-resources.ts --verbose     # detailed view
- *   npx tsx pipeline/scripts/describe-resources.ts --format tsv  # tab-separated values
+ *   npx tsx pipeline/scripts/analysis/describe-resources.ts              # summary (default)
+ *   npx tsx pipeline/scripts/analysis/describe-resources.ts --summary     # summary table
+ *   npx tsx pipeline/scripts/analysis/describe-resources.ts --verbose     # detailed view
+ *   npx tsx pipeline/scripts/analysis/describe-resources.ts --format tsv  # tab-separated values
  */
 
 import { loadAllGtfsSources } from '../../lib/load-gtfs-sources';
@@ -119,6 +119,16 @@ function printVerboseGtfs(sources: GtfsSourceDefinition[]): void {
     printCommonFields(s.resource, s.pipeline);
     console.log(`  Route types:    ${s.resource.routeTypes.join(', ')}`);
     console.log(`  Download URL:   ${s.resource.downloadUrl}`);
+    if (s.resource.routeColorFallbacks) {
+      const count = Object.keys(s.resource.routeColorFallbacks).length;
+      console.log(`  Color fallbacks: ${count} routes`);
+    }
+    if (s.resource.mlitShapeMapping) {
+      const count = Object.keys(s.resource.mlitShapeMapping.lineToRouteId).length;
+      console.log(
+        `  MLIT shapes:    ${count} lines (operator: ${s.resource.mlitShapeMapping.operator})`,
+      );
+    }
   }
 }
 
@@ -137,21 +147,44 @@ function printVerboseOdptJson(sources: OdptJsonSourceDefinition[]): void {
 
 function printCommonFields(resource: BaseResource, pipeline: PipelineConfig): void {
   console.log(`  Name:           ${resource.nameJa} (${resource.nameEn})`);
+  console.log(`  Description:    ${resource.description}`);
   console.log(`  Prefix:         ${pipeline.prefix}`);
   console.log(`  Out dir:        ${pipeline.outDir}`);
+  if (pipeline.outFileName) {
+    console.log(`  Out file:       ${pipeline.outFileName}`);
+  }
   console.log(`  Format:         ${formatDataFormat(resource)}`);
   console.log(
     `  Provider:       ${resource.provider.name.ja.long} (${resource.provider.name.en.long})`,
   );
+  console.log(
+    `  Provider short: ${resource.provider.name.ja.short} (${resource.provider.name.en.short})`,
+  );
   if (resource.provider.url) {
     console.log(`  Provider URL:   ${resource.provider.url}`);
   }
-  console.log(`  License:        ${resource.license.name}`);
+  const colors = resource.provider.colors ?? [];
+  if (colors.length > 0) {
+    const colorStr = colors.map((c) => `bg=#${c.bg} text=#${c.text}`).join(', ');
+    console.log(`  Brand colors:   ${colorStr}`);
+  } else {
+    console.log(`  Brand colors:   (not set)`);
+  }
+  console.log(`  License:        ${resource.license.name} (${resource.license.url})`);
   console.log(`  Auth required:  ${resource.authentication.required ? 'yes' : 'no'}`);
+  if (resource.authentication.required) {
+    console.log(`  Auth method:    ${resource.authentication.method}`);
+    console.log(`  Registration:   ${resource.authentication.registrationUrl}`);
+  }
   if (resource.catalog.type === 'odpt') {
     console.log(`  Catalog:        ODPT (${resource.catalog.url})`);
-  } else if (resource.catalog.type === 'municipal' && resource.catalog.url) {
-    console.log(`  Catalog:        Municipal (${resource.catalog.url})`);
+    console.log(`  Resource ID:    ${resource.catalog.resourceId}`);
+  } else if (resource.catalog.type === 'municipal') {
+    console.log(
+      `  Catalog:        Municipal${resource.catalog.url ? ` (${resource.catalog.url})` : ''}`,
+    );
+  } else {
+    console.log(`  Catalog:        Direct`);
   }
 }
 
