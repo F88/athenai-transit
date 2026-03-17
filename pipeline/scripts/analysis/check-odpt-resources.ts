@@ -97,11 +97,26 @@ interface SnapshotFile extends ResourceSnapshot {
 }
 
 function saveSnapshot(sourceName: string, resources: OdptDataResource[]): void {
+  const newUrls = resources.map((r) => r.url).sort();
+
+  // Only rewrite when resourceUrls actually changed to avoid
+  // daily no-op commits from timestamp-only differences.
+  const previous = loadSnapshot(sourceName);
+  if (previous) {
+    const prevSorted = [...previous.resourceUrls].sort();
+    if (
+      prevSorted.length === newUrls.length &&
+      prevSorted.every((url, i) => url === newUrls[i])
+    ) {
+      return;
+    }
+  }
+
   ensureDir(SNAPSHOT_DIR);
   const snapshot: SnapshotFile = {
     sourceName,
     checkedAt: new Date().toISOString(),
-    resourceUrls: resources.map((r) => r.url),
+    resourceUrls: newUrls,
   };
   writeFileSync(
     join(SNAPSHOT_DIR, `${sourceName}.json`),
@@ -162,12 +177,25 @@ interface CliArgs {
 
 function parseArgs(): CliArgs {
   const args = process.argv.slice(2);
-  const isTsv = args.includes('--format') && args.includes('tsv');
 
   if (args.includes('--help') || args.includes('-h')) {
     printUsage();
     process.exit(0);
   }
+
+  // Parse --format flag and its value
+  let isTsv = false;
+  const formatIdx = args.indexOf('--format');
+  if (formatIdx >= 0) {
+    const formatValue = args[formatIdx + 1];
+    if (formatValue === 'tsv') {
+      isTsv = true;
+    } else {
+      console.error(`Unknown format: ${formatValue ?? '(missing)'}`);
+      process.exit(1);
+    }
+  }
+
   if (args.includes('--list')) {
     return { mode: 'list', isTsv: false };
   }
@@ -175,8 +203,20 @@ function parseArgs(): CliArgs {
     return { mode: 'all-odpt', isTsv };
   }
 
-  // Find source name (first arg that's not a flag)
-  const sourceName = args.find((a) => !a.startsWith('--'));
+  // Collect flags and their values to exclude from positional args
+  const flagsWithValues = new Set(['--format']);
+  const skipIndices = new Set<number>();
+  for (let i = 0; i < args.length; i++) {
+    if (args[i].startsWith('--')) {
+      skipIndices.add(i);
+      if (flagsWithValues.has(args[i]) && i + 1 < args.length) {
+        skipIndices.add(i + 1);
+      }
+    }
+  }
+
+  // Find source name (first positional arg)
+  const sourceName = args.find((_, i) => !skipIndices.has(i));
   if (sourceName) {
     return { mode: 'single', sourceName, isTsv };
   }

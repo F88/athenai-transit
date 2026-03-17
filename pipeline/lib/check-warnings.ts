@@ -40,13 +40,26 @@ export type Warning =
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Extract ?date=YYYYMMDD from a download URL. */
+/**
+ * Extract the `date` query parameter (YYYYMMDD) from a download URL.
+ *
+ * @param url - Download URL that may contain a `?date=YYYYMMDD` or `&date=YYYYMMDD` parameter.
+ * @returns The 8-digit date string, or null if no date parameter is present.
+ */
 export function extractDateParam(url: string): string | null {
   const match = url.match(/[?&]date=(\d{8})/);
   return match ? match[1] : null;
 }
 
-/** Extract URL base path without query string. */
+/**
+ * Extract the URL base path without query string.
+ *
+ * Used to match remote and local resources by their path,
+ * ignoring date or authentication query parameters.
+ *
+ * @param url - Full URL with optional query string.
+ * @returns URL without the query string portion.
+ */
 export function extractUrlBase(url: string): string {
   const idx = url.indexOf('?');
   return idx >= 0 ? url.substring(0, idx) : url;

@@ -208,7 +208,7 @@ async function main(): Promise<void> {
       durationMs: totalDurationMs,
       archivePath: archivePath.replace(ROOT + '/', ''),
       extractedFiles,
-      feedInfo: feedInfo ?? undefined,
+      ...(feedInfo && { feedInfo }),
     });
     console.log('\nDownload metadata recorded.');
 
