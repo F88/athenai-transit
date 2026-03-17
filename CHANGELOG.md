@@ -23,14 +23,26 @@ and this project adheres to [CalVer](https://calver.org/).
     - `src/utils/query-params.ts` に safe parsers を集約 (範囲バリデーション、injection 防止)。
     - `?mock-data`, `?sources` の既存処理もリファクタリング。
 
+### Added
+
+- ソースメタデータ (`SourceMeta`):
+    - `TransitRepository.getAllSourceMeta()` でソースごとの有効期間、バージョン、名前、routeTypes、統計情報を取得可能に。
+    - 初期化ログにソースメタデータのサマリーを出力。
+- 風ぐるま (千代田区コミュニティバス) のブランドカラー (`#E94185`) を設定。
+- `describe-resources --verbose` にブランドカラー、認証情報、カタログ詳細等の全フィールドを出力。
+
 ### Fixed
 
 - バス停選択時の路線ハイライトが、本日の運行が全て終了している場合に機能しない問題を修正。
     - `StopWithMeta` に `routes: Route[]` を追加 (timetable データから解決、共有参照)。
     - `extractRouteIdsForStop` が departure groups 空のとき `routes` にフォールバック。
+- BottomSheet の事業者フィルター pill のコントラスト不足を修正。ブランドカラーの bg/text をそのまま使用。
+- BottomSheet のフィルター行が横スクロール不可だった問題を修正。スクロールバー非表示の横スクロールを追加。
+- 本番環境で INFO ログが出力されない問題を修正 (`VITE_LOG_TAGS` を `*` に設定)。
 
 ### Changed
 
+- 型ファイル分割: `transit.ts` を GTFS ドメイン型 (安定) と `transit-composed.ts` アプリ合成型 (可変) に分離。
 - PRD.md の URL パラメータ仕様に `lat`, `lng`, `zm` を追加。
 
 ## [2026.03.16]
