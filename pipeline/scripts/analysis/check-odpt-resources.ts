@@ -517,7 +517,8 @@ async function main(): Promise<void> {
         }
       } else {
         const raw = src.rawMeta;
-        if (raw && raw.status === 'error') {
+        const isLastFailed = raw && raw.status === 'error';
+        if (isLastFailed) {
           console.log(`  Local:      LAST DOWNLOAD FAILED (${raw.downloadedAt})`);
           console.log(`  Error:      ${raw.error}`);
         } else {
@@ -525,7 +526,9 @@ async function main(): Promise<void> {
         }
         const w: Warning = {
           type: 'NO_DOWNLOAD_REPORT',
-          message: 'No download report — run download first',
+          message: isLastFailed
+            ? 'Last download failed — check error and retry'
+            : 'No download report — run download first',
         };
         console.log(`  *** ${w.type}: ${w.message}`);
         localWarnings.push(w);
