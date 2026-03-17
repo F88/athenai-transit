@@ -258,6 +258,11 @@ function printResult(
   const isTracked = !!local;
   const meta = local?.downloadMeta ?? null;
 
+  // Detect warnings regardless of output mode (needed for exit code)
+  const warnings = isTracked
+    ? detectWarnings(ds.dataresource, { downloadMeta: meta }, previousSnapshot)
+    : [];
+
   if (isTsv) {
     const latest = findLatestResource(ds.dataresource);
     const latestDate = latest ? (extractDateParam(latest.url) ?? '') : '';
@@ -277,7 +282,11 @@ function printResult(
         latest?.uploaded_at ?? '',
       ].join('\t'),
     );
-    return [];
+
+    if (isTracked && local) {
+      saveSnapshot(local.name, ds.dataresource);
+    }
+    return warnings;
   }
 
   const tracked = isTracked ? local.name : 'not-tracked';
@@ -305,10 +314,7 @@ function printResult(
     }
   }
 
-  // Warnings
-  const warnings = isTracked
-    ? detectWarnings(ds.dataresource, { downloadMeta: meta }, previousSnapshot)
-    : [];
+  // Warnings (already computed above before TSV branch)
   if (warnings.length > 0) {
     for (const w of warnings) {
       console.log(`  *** ${w.type}: ${w.message}`);
