@@ -26,6 +26,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { loadAllGtfsSources } from '../../lib/load-gtfs-sources';
 import { loadAllOdptJsonSources } from '../../lib/load-odpt-json-sources';
@@ -536,8 +537,10 @@ async function main(): Promise<void> {
 // contract requires EXIT_ERROR (2) for fatal failures, so we override it.
 //
 // Only run main() when executed directly (not when imported by tests).
+// Use import.meta.url (standard ESM) + resolve() to normalize paths,
+// avoiding tsx-specific import.meta.filename and relative vs absolute mismatches.
 const isDirectExecution =
-  process.argv[1] && import.meta.filename && process.argv[1] === import.meta.filename;
+  process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isDirectExecution) {
   runMain(main, { fatalExitCode: EXIT_ERROR });
 }
