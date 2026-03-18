@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.03.18]
+
 ### Added
 
 - 8つの新データソースを追加:
