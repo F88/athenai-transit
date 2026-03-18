@@ -6,6 +6,7 @@
  * and repository are migrated.
  *
  * Key changes from v1:
+ * - RouteV2Json: adds `u` (route_url) for external route detail links.
  * - StopV2Json: `ai` (agency_id) removed. GTFS spec does not define
  *   agency on stops. Stop-agency relationship is resolved via
  *   timetable -> pattern -> route -> agency.
@@ -16,10 +17,45 @@
  * - TripPatternsJson: new file providing route, headsign, direction,
  *   and ordered stop sequence per pattern.
  *
- * Types that are unchanged from v1 (RouteJson, AgencyJson,
- * CalendarJson, TranslationsJson, FeedInfoJson) are NOT
- * duplicated here — import them from transit-json.ts.
+ * Types that are unchanged from v1 (AgencyJson, CalendarJson,
+ * TranslationsJson, FeedInfoJson) are NOT duplicated here —
+ * import them from transit-json.ts.
  */
+
+// -----------------------------------------------------------------------
+// routes.json (v2)
+// -----------------------------------------------------------------------
+
+/**
+ * routes.json (v2): versioned wrapper with route records.
+ *
+ * Compared to v1, adds `u` (route_url) — a link to the operator's
+ * route detail page (e.g. bus location system). Optional; not all
+ * GTFS sources provide route_url.
+ */
+export interface RoutesV2Json {
+  /** Schema version. Must be `2` for this format. */
+  v: 2;
+  routes: RouteV2Json[];
+}
+
+export interface RouteV2Json {
+  /** Schema version. Must be `2` for this format. */
+  v: 2;
+  i: string;  // route_id
+  s: string;  // route_short_name
+  l: string;  // route_long_name
+  t: number;  // route_type
+  c: string;  // route_color (hex without #, e.g. "F1B34E")
+  tc: string; // route_text_color (hex without #)
+  ai: string; // agency_id (prefixed)
+  /**
+   * GTFS route_url — link to the operator's route detail page
+   * (e.g. tobus.jp bus location system).
+   * Omitted when the source does not provide route_url.
+   */
+  u?: string;
+}
 
 // -----------------------------------------------------------------------
 // stops.json (v2)
