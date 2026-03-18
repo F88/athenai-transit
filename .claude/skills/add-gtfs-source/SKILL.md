@@ -57,15 +57,18 @@ Example: `pipeline/resources/gtfs/kanto-bus.ts`
 
 ### 3. Add to pipeline target lists
 
-Add the source-name to all three target list files:
+Add the source-name to all three target list files (and `build-shapes-gtfs.ts` if shapes.txt is present):
 
-| File                                | Purpose           |
-| ----------------------------------- | ----------------- |
-| `pipeline/targets/download-gtfs.ts` | GTFS ZIP download |
-| `pipeline/targets/build-db.ts`      | CSV to SQLite     |
-| `pipeline/targets/build-json.ts`    | DB to app JSON    |
+| File                                      | Purpose              | Always |
+| ----------------------------------------- | -------------------- | ------ |
+| `pipeline/targets/download-gtfs.ts`       | GTFS ZIP download    | yes    |
+| `pipeline/targets/build-db.ts`            | CSV to SQLite        | yes    |
+| `pipeline/targets/build-json.ts`          | DB to app JSON       | yes    |
+| `pipeline/targets/build-shapes-gtfs.ts`   | Route shapes (GTFS)  | only if shapes.txt exists |
 
 Each file exports a string array. Entries can be commented out to temporarily skip a source during batch runs — this is useful for debugging or when a source is temporarily unavailable.
+
+Note: `pipeline/scripts/analysis/describe-resources.ts` auto-discovers all resource definitions in `pipeline/resources/gtfs/`, so no manual registration is needed there.
 
 ### 4. Add to web app data-source-settings
 
@@ -113,9 +116,22 @@ Ask the user for the operator's corporate/brand color if not obvious.
 
 Check if the GTFS ZIP contains `shapes.txt`. ODPT-sourced bus data often does not include it. Note this in `pipeline/resources/NOTES.md` but there is no workaround for bus routes (train routes can use MLIT GeoJSON).
 
+If shapes.txt exists, add the source to `pipeline/targets/build-shapes-gtfs.ts` and run:
+
+```bash
+npm run pipeline:build:shapes:gtfs -- {source-name}
+npm run data:sync
+```
+
 #### translations.txt
 
 Check if translations are available and note any quality issues (e.g. full-width spaces).
+
+Verify the new source appears in the resource listing:
+
+```bash
+npm run pipeline:describe
+```
 
 ### 6. Verify build
 
