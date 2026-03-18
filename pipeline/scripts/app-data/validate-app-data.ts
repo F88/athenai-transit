@@ -17,8 +17,8 @@
  *
  * Exit codes:
  *   0 — all checks passed
- *   1 — warnings only (e.g. services expiring soon)
- *   2 — errors found (missing files or expired services)
+ *   1 — warnings (expired services, services expiring soon)
+ *   2 — errors (missing files, calendar load failures)
  *
  * Usage:
  *   npx tsx pipeline/scripts/app-data/validate-app-data.ts
@@ -26,6 +26,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { loadAllGtfsSources } from '../../lib/load-gtfs-sources';
 import { loadAllOdptJsonSources } from '../../lib/load-odpt-json-sources';
@@ -75,7 +76,7 @@ interface ExpiringSoonEntry extends ExpiredEntry {
 }
 
 /** Result of file existence check for all sources. */
-interface FileCheckResult {
+export interface FileCheckResult {
   /** Total number of files checked. */
   total: number;
   /** Number of files that exist. */
@@ -85,7 +86,7 @@ interface FileCheckResult {
 }
 
 /** Result of calendar freshness check for all sources. */
-interface CalendarCheckResult {
+export interface CalendarCheckResult {
   /** Total number of services checked across all sources. */
   totalServices: number;
   expired: ExpiredEntry[];
@@ -99,11 +100,11 @@ interface CalendarCheckResult {
 // ---------------------------------------------------------------------------
 
 /** Exit code: all checks passed. */
-const EXIT_OK = 0;
-/** Exit code: warnings only (e.g. services expiring soon). */
-const EXIT_WARN = 1;
-/** Exit code: errors found (missing files or expired services). */
-const EXIT_ERROR = 2;
+export const EXIT_OK = 0;
+/** Exit code: warnings (expired services, services expiring soon). */
+export const EXIT_WARN = 1;
+/** Exit code: errors (missing files, calendar load failures). */
+export const EXIT_ERROR = 2;
 
 const WARN_THRESHOLD_DAYS = 30;
 
@@ -362,7 +363,7 @@ function checkCalendarFreshness(sources: ValidateSource[], today: Date): Calenda
           (min, entry) => (entry.endDate < min ? entry.endDate : min),
           expired[0].endDate,
         );
-        error(
+        warn(
           `${source.prefix}: ${expired.length} expired services (earliest ended ${earliestExpired})`,
         );
       }
@@ -413,7 +414,7 @@ function printSummary(
 
   // Calendar issues
   if (calendarResult.expired.length > 0) {
-    console.log('### ❌ Expired services\n');
+    console.log('### ⚠️ Expired services\n');
     console.log('| Source | Service ID | End Date |');
     console.log('|--------|-----------|----------|');
     for (const e of calendarResult.expired) {
@@ -434,11 +435,8 @@ function printSummary(
     console.log('');
   }
 
-  const hasErrors =
-    fileResult.missing.length > 0 ||
-    calendarResult.expired.length > 0 ||
-    calendarResult.loadErrors > 0;
-  const hasWarnings = calendarResult.expiringSoon.length > 0;
+  const hasErrors = fileResult.missing.length > 0 || calendarResult.loadErrors > 0;
+  const hasWarnings = calendarResult.expired.length > 0 || calendarResult.expiringSoon.length > 0;
 
   if (hasErrors) {
     console.log('❌ Validation failed.\n');
@@ -456,18 +454,14 @@ function printSummary(
  * @param calendarResult - Calendar freshness check result
  * @returns EXIT_OK (0), EXIT_WARN (1), or EXIT_ERROR (2)
  */
-function determineExitCode(
+export function determineExitCode(
   fileResult: FileCheckResult,
   calendarResult: CalendarCheckResult,
 ): number {
-  if (
-    fileResult.missing.length > 0 ||
-    calendarResult.expired.length > 0 ||
-    calendarResult.loadErrors > 0
-  ) {
+  if (fileResult.missing.length > 0 || calendarResult.loadErrors > 0) {
     return EXIT_ERROR;
   }
-  if (calendarResult.expiringSoon.length > 0) {
+  if (calendarResult.expired.length > 0 || calendarResult.expiringSoon.length > 0) {
     return EXIT_WARN;
   }
   return EXIT_OK;
@@ -541,4 +535,12 @@ async function main(): Promise<void> {
 // This script uses exit codes 0 (ok), 1 (warnings), and 2 (errors).
 // runMain defaults to exitCode=1 on unhandled errors, but this script's
 // contract requires EXIT_ERROR (2) for fatal failures, so we override it.
-runMain(main, { fatalExitCode: EXIT_ERROR });
+//
+// Only run main() when executed directly (not when imported by tests).
+// Use import.meta.url (standard ESM) + resolve() to normalize paths,
+// avoiding tsx-specific import.meta.filename and relative vs absolute mismatches.
+const isDirectExecution =
+  process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
+  runMain(main, { fatalExitCode: EXIT_ERROR });
+}
