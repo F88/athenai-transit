@@ -176,6 +176,28 @@ export interface TripPatternJson {
    * ODPT stationOrder filtered by destinationStation.
    */
   stops: string[];
+
+  /**
+   * Cumulative distance along the route shape per stop, parallel
+   * to {@link stops}: `sd[i]` is the distance from the origin to
+   * `stops[i]` along the shape.
+   *
+   * Sourced from GTFS stop_times.txt shape_dist_traveled.
+   * Units are consistent with ShapesV2Json point distances.
+   *
+   * Together with ShapesV2Json's per-point distances, this enables
+   * partial shape rendering: to highlight the segment from stop A
+   * to stop B, scan the shape point array for the distance range
+   * `[sd[a], sd[b]]`. This works correctly even on looping routes
+   * where the vehicle crosses the same coordinates twice, because
+   * the distance values are monotonically increasing.
+   *
+   * Also derivable: total pattern distance (`sd[sd.length - 1]`)
+   * and inter-stop distance (`sd[i+1] - sd[i]`).
+   *
+   * Omitted when the source does not provide shape_dist_traveled.
+   */
+  sd?: number[];
 }
 
 // -----------------------------------------------------------------------
