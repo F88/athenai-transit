@@ -57,6 +57,63 @@ const settings: SourceGroup[] = [
     prefixes: ['sggsm'],
     enabled: true,
   },
+  // リソース定義最終確認中
+  {
+    id: 'seibu-bus',
+    name_ja: '西武バス',
+    category: 'bus',
+    prefixes: ['sbbus'],
+    enabled: false,
+  },
+  {
+    id: 'iyotetsu-bus',
+    name_ja: '伊予鉄バス',
+    category: 'bus',
+    prefixes: ['iyt2'],
+    enabled: false,
+  },
+  {
+    id: 'kita-bus',
+    name_ja: 'Kバス (北区)',
+    category: 'bus',
+    prefixes: ['kbus'],
+    enabled: false,
+  },
+  {
+    id: 'kyoto-city-bus',
+    name_ja: '京都市バス',
+    category: 'bus',
+    prefixes: ['kcbus'],
+    enabled: false,
+  },
+  {
+    id: 'oshima-bus',
+    name_ja: '大島バス',
+    category: 'bus',
+    prefixes: ['osmbus'],
+    enabled: false,
+  },
+  {
+    id: 'miyake-bus',
+    name_ja: '三宅村営バス',
+    category: 'bus',
+    prefixes: ['mykbus'],
+    enabled: false,
+  },
+  {
+    id: 'keisei-transit-bus',
+    name_ja: '京成千葉ウエスト',
+    category: 'bus',
+    prefixes: ['kseiw'],
+    enabled: false,
+  },
+  {
+    id: 'mir-train',
+    name_ja: 'つくばエクスプレス',
+    category: 'train',
+    prefixes: ['mir'],
+    enabled: false,
+  },
 ];
 
 export default settings;
