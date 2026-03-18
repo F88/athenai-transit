@@ -21,7 +21,7 @@
  * | File               | Purpose                                            |
  * | ------------------ | -------------------------------------------------- |
  * | trip-patterns.json | Route + headsign + direction + ordered stop list    |
- * | urls.json          | stop_url / route_url lookup (normalized, lazy-load) |
+ * | lookup.json        | Normalized lookup tables (URLs, descriptions, etc.) |
  *
  * ### Unchanged (import from transit-json.ts)
  *
@@ -109,13 +109,7 @@ export interface StopV2Json {
   l: number; // location_type
   // ai removed — GTFS stops.txt has no agency_id
 
-  /**
-   * GTFS stop_desc — description of the stop.
-   * In toei-bus, contains nearby railway transfer info
-   * (e.g. "東京メトロ銀座線 青山一丁目").
-   * Omitted when the source does not provide stop_desc.
-   */
-  desc?: string;
+  // stop_desc moved to lookup.json (stopDescs)
 
   /**
    * GTFS wheelchair_boarding.
@@ -365,30 +359,36 @@ export interface TimetableGroupV2Json {
 }
 
 // -----------------------------------------------------------------------
-// urls.json (v2, new)
+// lookup.json (v2, new)
 // -----------------------------------------------------------------------
 
 /**
- * urls.json: lookup table for stop and route URLs.
+ * lookup.json: normalized lookup tables for supplementary data.
  *
- * Separated from stops.json/routes.json to avoid duplicating URLs
- * across child stops (e.g. toei-bus: 3,695 stops share 1,673 unique
- * stop_urls). Also keeps stop/route JSON compact for list views
- * that don't need URLs.
+ * Data that is too heavy or duplicated to embed in the main JSON
+ * files (stops.json, routes.json) is separated here as ID -> value
+ * dictionaries. Loaded on demand when detail views need it.
  *
- * Loaded on demand when detail views require external links.
+ * Examples of duplication avoided:
+ * - stop_url: toei-bus 3,695 child stops share 1,673 unique URLs
+ * - stop_desc: 847 child stops share 416 unique descriptions
  */
-export interface UrlsV2Json {
+export interface LookupV2Json {
   /** Schema version. Must be `2` for this format. */
   v: 2;
   /**
    * stop_id (prefixed) -> GTFS stop_url.
    * Links to operator's stop detail page (e.g. tobus.jp bus location).
    */
-  stops: Record<string, string>;
+  stopUrls?: Record<string, string>;
   /**
    * route_id (prefixed) -> GTFS route_url.
    * Links to operator's route detail page.
    */
-  routes: Record<string, string>;
+  routeUrls?: Record<string, string>;
+  /**
+   * stop_id (prefixed) -> GTFS stop_desc.
+   * Supplementary stop description (e.g. nearby railway transfer info).
+   */
+  stopDescs?: Record<string, string>;
 }
