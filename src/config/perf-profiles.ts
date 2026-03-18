@@ -28,21 +28,32 @@ export const PERF_PROFILES: Record<PerfMode, PerfProfile> = {
   lite: {
     render: { defaultMode: 'lightweight' },
     data: {
-      stops: { nearbyRadius: 500, maxResults: 300 },
+      stops: {
+        nearbyRadius: 500,
+        maxResults: 300,
+      },
       routes: { enabled: false },
     },
   },
   normal: {
     render: { defaultMode: 'auto' },
     data: {
-      stops: { nearbyRadius: 1_000, maxResults: 3_000 },
+      stops: {
+        nearbyRadius: 1_000,
+        // maxResults: 3_000,
+        maxResults: 1_000,
+      },
       routes: { enabled: true },
     },
   },
   full: {
     render: { defaultMode: 'standard' },
     data: {
-      stops: { nearbyRadius: 2_000, maxResults: 10_000 },
+      stops: {
+        nearbyRadius: 2_000,
+        // maxResults: 10_000,
+        maxResults: 2_000,
+      },
       routes: { enabled: true },
     },
   },

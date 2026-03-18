@@ -56,14 +56,14 @@ pipeline/build/
 
 
 # Temporary: new source data under review (remove after finalization)
-public/data/sbbus/
-public/data/iyt2/
-public/data/kbus/
-public/data/kcbus/
-public/data/osmbus/
-public/data/mykbus/
-public/data/kseiw/
-public/data/mir/
+# public/data/sbbus/
+# public/data/iyt2/
+# public/data/kbus/
+# public/data/kcbus/
+# public/data/osmbus/
+# public/data/mykbus/
+# public/data/kseiw/
+# public/data/mir/
 
 ### Web app
 
