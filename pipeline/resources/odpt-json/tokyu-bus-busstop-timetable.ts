@@ -5,7 +5,8 @@ const tokyuBusBusstopTimetable: OdptJsonSourceDefinition = {
     /** BaseResource */
     nameEn: 'Tokyu Bus Stop Timetable',
     nameJa: '東急バス バス停時刻表',
-    description: 'Bus stop timetable data for Tokyu Bus: departure times per stop/direction/calendar',
+    description:
+      'Bus stop timetable data for Tokyu Bus: departure times per stop/direction/calendar',
     dataFormat: { type: 'ODPT-JSON' },
     license: {
       name: '公共交通オープンデータ基本ライセンス',

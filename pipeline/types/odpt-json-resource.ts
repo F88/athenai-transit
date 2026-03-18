@@ -61,5 +61,8 @@ export type OdptDataType =
   | 'odpt:StationTimetable'
   | 'odpt:TrainTimetable'
   | 'odpt:BusRoute'
+  | 'odpt:BusroutePattern'
   | 'odpt:BusStop'
-  | 'odpt:BusTimetable';
+  | 'odpt:BusstopPole'
+  | 'odpt:BusTimetable'
+  | 'odpt:BusstopPoleTimetable';

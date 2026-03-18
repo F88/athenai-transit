@@ -6,9 +6,4 @@
  *
  * Comment out entries to temporarily skip them.
  */
-export default [
-  'toei-train',
-  'yurikamome',
-  // リソース定義最終確認中
-  // 'mir-train',
-];
+export default ['toei-train', 'yurikamome', 'mir-train'];

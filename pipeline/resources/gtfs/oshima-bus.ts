@@ -30,8 +30,7 @@ const oshimaBus: GtfsSourceDefinition = {
 
     /** GtfsResource */
     routeTypes: ['bus'],
-    downloadUrl:
-      'https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20260328',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20260328',
   },
   pipeline: {
     outDir: 'oshima-bus',

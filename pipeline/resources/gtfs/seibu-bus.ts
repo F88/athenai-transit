@@ -31,8 +31,7 @@ const seibuBus: GtfsSourceDefinition = {
 
     /** GtfsResource */
     routeTypes: ['bus'],
-    downloadUrl:
-      'https://api.odpt.org/api/v4/files/SeibuBus/data/SeibuBus-GTFS.zip',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/SeibuBus/data/SeibuBus-GTFS.zip',
   },
   pipeline: {
     outDir: 'seibu-bus',
