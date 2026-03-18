@@ -44,6 +44,13 @@ const settings: SourceGroup[] = [
     enabled: true,
   },
   {
+    id: 'chuo-bus',
+    name_ja: '江戸バス (中央区)',
+    category: 'bus',
+    prefixes: ['edobus'],
+    enabled: true,
+  },
+  {
     id: 'suginami-gsm',
     name_ja: '杉並区グリーンスローモビリティ',
     category: 'bus',
