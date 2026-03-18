@@ -50,6 +50,11 @@ export interface RouteV2Json {
   tc: string; // route_text_color (hex without #)
   ai: string; // agency_id (prefixed)
   /**
+   * GTFS route_desc — description of the route.
+   * Omitted when the source does not provide route_desc.
+   */
+  desc?: string;
+  /**
    * GTFS route_url — link to the operator's route detail page
    * (e.g. tobus.jp bus location system).
    * Omitted when the source does not provide route_url.
