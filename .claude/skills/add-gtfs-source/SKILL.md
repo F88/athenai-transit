@@ -59,12 +59,12 @@ Example: `pipeline/resources/gtfs/kanto-bus.ts`
 
 Add the source-name to all three target list files (and `build-shapes-gtfs.ts` if shapes.txt is present):
 
-| File                                      | Purpose              | Always |
-| ----------------------------------------- | -------------------- | ------ |
-| `pipeline/targets/download-gtfs.ts`       | GTFS ZIP download    | yes    |
-| `pipeline/targets/build-db.ts`            | CSV to SQLite        | yes    |
-| `pipeline/targets/build-json.ts`          | DB to app JSON       | yes    |
-| `pipeline/targets/build-shapes-gtfs.ts`   | Route shapes (GTFS)  | only if shapes.txt exists |
+| File                                    | Purpose             | Always                    |
+| --------------------------------------- | ------------------- | ------------------------- |
+| `pipeline/targets/download-gtfs.ts`     | GTFS ZIP download   | yes                       |
+| `pipeline/targets/build-db.ts`          | CSV to SQLite       | yes                       |
+| `pipeline/targets/build-json.ts`        | DB to app JSON      | yes                       |
+| `pipeline/targets/build-shapes-gtfs.ts` | Route shapes (GTFS) | only if shapes.txt exists |
 
 Each file exports a string array. Entries can be commented out to temporarily skip a source during batch runs — this is useful for debugging or when a source is temporarily unavailable.
 
