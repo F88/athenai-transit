@@ -769,4 +769,9 @@ async function main(): Promise<void> {
   }
 }
 
-runMain(main);
+// Only run main() when executed directly (not when imported by other scripts).
+const isDirectExecution =
+  process.argv[1] && import.meta.filename && process.argv[1] === import.meta.filename;
+if (isDirectExecution) {
+  runMain(main);
+}
