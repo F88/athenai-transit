@@ -75,7 +75,7 @@ interface ExpiringSoonEntry extends ExpiredEntry {
 }
 
 /** Result of file existence check for all sources. */
-interface FileCheckResult {
+export interface FileCheckResult {
   /** Total number of files checked. */
   total: number;
   /** Number of files that exist. */
@@ -85,7 +85,7 @@ interface FileCheckResult {
 }
 
 /** Result of calendar freshness check for all sources. */
-interface CalendarCheckResult {
+export interface CalendarCheckResult {
   /** Total number of services checked across all sources. */
   totalServices: number;
   expired: ExpiredEntry[];
@@ -99,11 +99,11 @@ interface CalendarCheckResult {
 // ---------------------------------------------------------------------------
 
 /** Exit code: all checks passed. */
-const EXIT_OK = 0;
+export const EXIT_OK = 0;
 /** Exit code: warnings (expired services, services expiring soon). */
-const EXIT_WARN = 1;
+export const EXIT_WARN = 1;
 /** Exit code: errors (missing files, calendar load failures). */
-const EXIT_ERROR = 2;
+export const EXIT_ERROR = 2;
 
 const WARN_THRESHOLD_DAYS = 30;
 
@@ -413,7 +413,7 @@ function printSummary(
 
   // Calendar issues
   if (calendarResult.expired.length > 0) {
-    console.log('### ❌ Expired services\n');
+    console.log('### ⚠️ Expired services\n');
     console.log('| Source | Service ID | End Date |');
     console.log('|--------|-----------|----------|');
     for (const e of calendarResult.expired) {
@@ -453,7 +453,7 @@ function printSummary(
  * @param calendarResult - Calendar freshness check result
  * @returns EXIT_OK (0), EXIT_WARN (1), or EXIT_ERROR (2)
  */
-function determineExitCode(
+export function determineExitCode(
   fileResult: FileCheckResult,
   calendarResult: CalendarCheckResult,
 ): number {

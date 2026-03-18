@@ -49,7 +49,7 @@ Usage: npx tsx pipeline/scripts/app-data/validate-app-data.ts
 
 | 状態                      | 判定    | exit code への影響 |
 | ------------------------- | ------- | ------------------ |
-| `end_date` < 今日         | expired | EXIT_ERROR (2)     |
+| `end_date` < 今日         | expired | EXIT_WARN (1)      |
 | `end_date` <= 今日 + 30日 | warning | EXIT_WARN (1)      |
 | `end_date` > 今日 + 30日  | ok      | なし               |
 
@@ -89,11 +89,11 @@ Done in 6ms. (exit code: 0)
 
 ## Exit Code
 
-| code | label   | 意味                                     |
-| ---- | ------- | ---------------------------------------- |
-| 0    | ok      | 全チェック通過                           |
-| 1    | warning | 警告のみ (期限間近のサービスあり)        |
-| 2    | error   | エラー (ファイル欠損 / 期限切れ / fatal) |
+| code | label   | 意味                                              |
+| ---- | ------- | ------------------------------------------------- |
+| 0    | ok      | 全チェック通過                                    |
+| 1    | warning | 警告 (期限切れ / 期限間近のサービスあり)          |
+| 2    | error   | エラー (ファイル欠損 / calendar 読込失敗 / fatal) |
 
 `runMain` の fatal error 時も exit code 2 を使用する (スクリプト固有の `EXIT_ERROR` 定数に合わせるため)。
 
