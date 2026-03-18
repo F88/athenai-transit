@@ -5,21 +5,46 @@
  * The v1 types in transit-json.ts remain in use until the pipeline
  * and repository are migrated.
  *
- * Key changes from v1:
- * - RouteV2Json: adds `u` (route_url) for external route detail links.
- * - StopV2Json: `ai` (agency_id) removed. GTFS spec does not define
- *   agency on stops. Stop-agency relationship is resolved via
- *   timetable -> pattern -> route -> agency.
- * - ShapesV2Json: shape points extended from `[lat, lon]` to
- *   `[lat, lon, dist?]` to support GTFS shape_dist_traveled.
- * - TimetableGroupV2Json: `r, h, ai` replaced with `tp` (pattern FK).
- *   Adds `a` (arrival), `p` (pickup_type), `do` (drop_off_type).
- * - TripPatternsJson: new file providing route, headsign, direction,
- *   and ordered stop sequence per pattern.
+ * ## v1 → v2 Summary
  *
- * Types that are unchanged from v1 (AgencyJson, CalendarJson,
- * TranslationsJson, FeedInfoJson) are NOT duplicated here —
- * import them from transit-json.ts.
+ * ### Changed files
+ *
+ * | File           | Changes                                                |
+ * | -------------- | ------------------------------------------------------ |
+ * | routes.json    | + `desc` (route_desc). `route_url` moved to urls.json  |
+ * | stops.json     | - `ai` removed. + `desc`, `wb`, `ps`, `pc`             |
+ * | shapes.json    | Point tuple `[lat, lon]` → `[lat, lon, dist?]`         |
+ * | timetable.json | `r,h,ai` → `tp` (pattern FK). + `a`, `p?`, `do?`       |
+ *
+ * ### New files
+ *
+ * | File               | Purpose                                            |
+ * | ------------------ | -------------------------------------------------- |
+ * | trip-patterns.json | Route + headsign + direction + ordered stop list    |
+ * | urls.json          | stop_url / route_url lookup (normalized, lazy-load) |
+ *
+ * ### Unchanged (import from transit-json.ts)
+ *
+ * agency.json, calendar.json, translations.json, feed-info.json
+ *
+ * ### Removed fields
+ *
+ * | File        | Field | Reason                                         |
+ * | ----------- | ----- | ---------------------------------------------- |
+ * | stops.json  | `ai`  | GTFS spec: stops have no agency_id              |
+ * | routes.json | `u`   | Moved to urls.json for normalization            |
+ * | timetable   | `r`   | Replaced by `tp` → TripPatternJson.r            |
+ * | timetable   | `h`   | Replaced by `tp` → TripPatternJson.h            |
+ * | timetable   | `ai`  | Replaced by `tp` → TripPatternJson.r → Route.ai |
+ *
+ * ### GTFS fields reviewed and excluded
+ *
+ * - trips.wheelchair_accessible — all sources: uniform value, per-departure
+ *   array would be wasteful. Revisit if per-trip variation appears.
+ * - trips.block_id — vehicle continuity info, outside app scope.
+ * - stops.zone_id — fare calculation only.
+ * - All jp_ extensions (agency_jp, office_jp, pattern_jp) — administrative
+ *   data, deprecated in GTFS-JP v4.
  */
 
 // -----------------------------------------------------------------------
@@ -29,9 +54,8 @@
 /**
  * routes.json (v2): versioned wrapper with route records.
  *
- * Compared to v1, adds `u` (route_url) — a link to the operator's
- * route detail page (e.g. bus location system). Optional; not all
- * GTFS sources provide route_url.
+ * Compared to v1, adds `desc` (route_desc). route_url is moved
+ * to urls.json for normalization.
  */
 export interface RoutesV2Json {
   /** Schema version. Must be `2` for this format. */
@@ -54,12 +78,7 @@ export interface RouteV2Json {
    * Omitted when the source does not provide route_desc.
    */
   desc?: string;
-  /**
-   * GTFS route_url — link to the operator's route detail page
-   * (e.g. tobus.jp bus location system).
-   * Omitted when the source does not provide route_url.
-   */
-  u?: string;
+  // route_url moved to urls.json
 }
 
 // -----------------------------------------------------------------------
@@ -89,6 +108,36 @@ export interface StopV2Json {
   o: number; // stop_lon
   l: number; // location_type
   // ai removed — GTFS stops.txt has no agency_id
+
+  /**
+   * GTFS stop_desc — description of the stop.
+   * In toei-bus, contains nearby railway transfer info
+   * (e.g. "東京メトロ銀座線 青山一丁目").
+   * Omitted when the source does not provide stop_desc.
+   */
+  desc?: string;
+
+  /**
+   * GTFS wheelchair_boarding.
+   * 0 = no info, 1 = accessible, 2 = not accessible.
+   * For child stops, 0 inherits from parent_station.
+   * Omitted when the source does not provide wheelchair_boarding.
+   */
+  wb?: number;
+
+  /**
+   * GTFS parent_station — stop_id of the parent stop/station.
+   * Links child stops (location_type=0, poles) to their parent
+   * (location_type=1, station/stop area).
+   * Omitted when the stop has no parent.
+   */
+  ps?: string;
+
+  /**
+   * GTFS platform_code — platform/pole identifier (e.g. "1", "2").
+   * Omitted when the source does not provide platform_code.
+   */
+  pc?: string;
 }
 
 // -----------------------------------------------------------------------
@@ -313,4 +362,33 @@ export interface TimetableGroupV2Json {
    * Omitted when all departures in this group have drop_off_type = 0.
    */
   do?: Record<string, number[]>;
+}
+
+// -----------------------------------------------------------------------
+// urls.json (v2, new)
+// -----------------------------------------------------------------------
+
+/**
+ * urls.json: lookup table for stop and route URLs.
+ *
+ * Separated from stops.json/routes.json to avoid duplicating URLs
+ * across child stops (e.g. toei-bus: 3,695 stops share 1,673 unique
+ * stop_urls). Also keeps stop/route JSON compact for list views
+ * that don't need URLs.
+ *
+ * Loaded on demand when detail views require external links.
+ */
+export interface UrlsV2Json {
+  /** Schema version. Must be `2` for this format. */
+  v: 2;
+  /**
+   * stop_id (prefixed) -> GTFS stop_url.
+   * Links to operator's stop detail page (e.g. tobus.jp bus location).
+   */
+  stops: Record<string, string>;
+  /**
+   * route_id (prefixed) -> GTFS route_url.
+   * Links to operator's route detail page.
+   */
+  routes: Record<string, string>;
 }
