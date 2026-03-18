@@ -11,6 +11,15 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- 8つの新データソースを追加:
+    - 🚈 つくばエクスプレス (首都圏新都市鉄道)
+    - 🚌 西武バス
+    - 🚌 京都市営バス
+    - 🚌 伊予鉄バス
+    - 🚌 京成バス千葉ウエスト
+    - 🚌 大島バス (伊豆大島)
+    - 🚌 三宅村営バス (三宅島)
+    - 🚌 Kバス (北区コミュニティバス)
 - Slack 通知 (composite action):
     - `.github/actions/slack-notify/` で Slack 通知を共通化。success / warning / failure / cancelled の4状態に対応。
     - `update-transit-data.yml`, `check-transit-resources.yml` の両ワークフローに統合。
