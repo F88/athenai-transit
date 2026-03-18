@@ -38,9 +38,21 @@ export interface OdptRailway {
   'odpt:stationOrder': OdptStationOrder[];
 }
 
-export interface OdptTimetableObject {
-  'odpt:departureTime': string;
-  'odpt:destinationStation': string[];
+/**
+ * An entry in odpt:stationTimetableObject.
+ * All fields are optional per the ODPT API Spec v4.15 Section 3.3.6.
+ */
+export interface OdptStationTimetableObject {
+  'odpt:arrivalTime'?: string;
+  'odpt:departureTime'?: string;
+  'odpt:originStation'?: string[];
+  'odpt:destinationStation'?: string[];
+  'odpt:viaStation'?: string[];
+  'odpt:trainType'?: string;
+  'odpt:trainNumber'?: string;
+  'odpt:platformNumber'?: string;
+  'odpt:platformName'?: Record<string, string>;
+  'odpt:note'?: Record<string, string>;
 }
 
 export interface OdptStationTimetable {
@@ -49,5 +61,5 @@ export interface OdptStationTimetable {
   'odpt:station': string;
   'odpt:calendar': string;
   'odpt:railDirection': string;
-  'odpt:stationTimetableObject': OdptTimetableObject[];
+  'odpt:stationTimetableObject': OdptStationTimetableObject[];
 }

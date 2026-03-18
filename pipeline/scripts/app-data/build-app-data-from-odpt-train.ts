@@ -85,7 +85,7 @@ const OUTPUT_DIR = join(ROOT, 'build/data');
 const REQUIRED_ODPT_TYPES = ['odpt:Station', 'odpt:Railway', 'odpt:StationTimetable'] as const;
 
 /** Resolved ODPT Train source with all required resources. */
-interface OdptTrainSource {
+export interface OdptTrainSource {
   /** Source identifier (outDir name, e.g. "yurikamome"). */
   name: string;
   /** Output prefix (e.g. "yrkm"). */
@@ -106,7 +106,7 @@ interface OdptTrainSource {
  * Discover available ODPT Train sources by grouping resources by outDir.
  * A valid source must have all 3 required types.
  */
-async function discoverOdptTrainSources(): Promise<OdptTrainSource[]> {
+export async function discoverOdptTrainSources(): Promise<OdptTrainSource[]> {
   const allDefs = await loadAllOdptJsonSources();
 
   // Group by outDir
@@ -149,7 +149,7 @@ async function discoverOdptTrainSources(): Promise<OdptTrainSource[]> {
 /**
  * List available ODPT Train source names.
  */
-async function listSourceNames(): Promise<string[]> {
+export async function listSourceNames(): Promise<string[]> {
   const sources = await discoverOdptTrainSources();
   return sources.map((s) => s.name);
 }
@@ -157,7 +157,7 @@ async function listSourceNames(): Promise<string[]> {
 /**
  * Load a single ODPT Train source by name.
  */
-async function loadSource(name: string): Promise<OdptTrainSource> {
+export async function loadSource(name: string): Promise<OdptTrainSource> {
   const sources = await discoverOdptTrainSources();
   const source = sources.find((s) => s.name === name);
   if (!source) {
@@ -393,9 +393,12 @@ export function buildTimetable(
       groupMap.set(groupKey, entry);
     }
 
-    const minutes: number[] = tt['odpt:stationTimetableObject'].map((obj) =>
-      timeToMinutes(obj['odpt:departureTime']),
-    );
+    const minutes: number[] = tt['odpt:stationTimetableObject']
+      .filter(
+        (obj): obj is typeof obj & { 'odpt:departureTime': string } =>
+          obj['odpt:departureTime'] != null,
+      )
+      .map((obj) => timeToMinutes(obj['odpt:departureTime']));
 
     let existing = entry.services.get(serviceId);
     if (!existing) {
