@@ -534,4 +534,10 @@ async function main(): Promise<void> {
 // This script uses exit codes 0 (ok), 1 (warnings), and 2 (errors).
 // runMain defaults to exitCode=1 on unhandled errors, but this script's
 // contract requires EXIT_ERROR (2) for fatal failures, so we override it.
-runMain(main, { fatalExitCode: EXIT_ERROR });
+//
+// Only run main() when executed directly (not when imported by tests).
+const isDirectExecution =
+  process.argv[1] && import.meta.filename && process.argv[1] === import.meta.filename;
+if (isDirectExecution) {
+  runMain(main, { fatalExitCode: EXIT_ERROR });
+}
