@@ -10,4 +10,4 @@
  *
  * Comment out entries to temporarily skip them.
  */
-export default ['toei-bus', 'suginami-gsm', 'chiyoda-bus'];
+export default ['toei-bus', 'suginami-gsm', 'chiyoda-bus', 'chuo-bus'];
