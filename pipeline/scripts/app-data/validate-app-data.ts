@@ -17,8 +17,8 @@
  *
  * Exit codes:
  *   0 — all checks passed
- *   1 — warnings only (e.g. services expiring soon)
- *   2 — errors found (missing files or expired services)
+ *   1 — warnings (expired services, services expiring soon)
+ *   2 — errors (missing files, calendar load failures)
  *
  * Usage:
  *   npx tsx pipeline/scripts/app-data/validate-app-data.ts
@@ -100,9 +100,9 @@ interface CalendarCheckResult {
 
 /** Exit code: all checks passed. */
 const EXIT_OK = 0;
-/** Exit code: warnings only (e.g. services expiring soon). */
+/** Exit code: warnings (expired services, services expiring soon). */
 const EXIT_WARN = 1;
-/** Exit code: errors found (missing files or expired services). */
+/** Exit code: errors (missing files, calendar load failures). */
 const EXIT_ERROR = 2;
 
 const WARN_THRESHOLD_DAYS = 30;
@@ -362,7 +362,7 @@ function checkCalendarFreshness(sources: ValidateSource[], today: Date): Calenda
           (min, entry) => (entry.endDate < min ? entry.endDate : min),
           expired[0].endDate,
         );
-        error(
+        warn(
           `${source.prefix}: ${expired.length} expired services (earliest ended ${earliestExpired})`,
         );
       }
@@ -434,11 +434,8 @@ function printSummary(
     console.log('');
   }
 
-  const hasErrors =
-    fileResult.missing.length > 0 ||
-    calendarResult.expired.length > 0 ||
-    calendarResult.loadErrors > 0;
-  const hasWarnings = calendarResult.expiringSoon.length > 0;
+  const hasErrors = fileResult.missing.length > 0 || calendarResult.loadErrors > 0;
+  const hasWarnings = calendarResult.expired.length > 0 || calendarResult.expiringSoon.length > 0;
 
   if (hasErrors) {
     console.log('❌ Validation failed.\n');
@@ -460,14 +457,10 @@ function determineExitCode(
   fileResult: FileCheckResult,
   calendarResult: CalendarCheckResult,
 ): number {
-  if (
-    fileResult.missing.length > 0 ||
-    calendarResult.expired.length > 0 ||
-    calendarResult.loadErrors > 0
-  ) {
+  if (fileResult.missing.length > 0 || calendarResult.loadErrors > 0) {
     return EXIT_ERROR;
   }
-  if (calendarResult.expiringSoon.length > 0) {
+  if (calendarResult.expired.length > 0 || calendarResult.expiringSoon.length > 0) {
     return EXIT_WARN;
   }
   return EXIT_OK;
