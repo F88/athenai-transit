@@ -94,3 +94,36 @@ stop_name の差異パターン (渋66 の調査結果):
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20260126版
+
+## chuo-bus (江戸バス / 中央区コミュニティバス)
+
+- Resource definition: `pipeline/resources/gtfs/chuo-bus.ts`
+- CKAN: <https://ckan.odpt.org/dataset/tokyo_chuo_city_alldata>
+- Resource ID (使用中): `6674c46b-d4aa-44a6-a427-0862df7b7189` (20250108版)
+
+### 有効期間
+
+- 有効期間: 2024/12/01 - 2025/11/30 (期限切れ)
+- CKAN に更新版が公開されていない (2026-03-18 時点)
+
+### route_color
+
+- 北循環: `EE1D23` (赤), 南循環: `0072BC` (青) — 正常に設定済み
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt が含まれている (2路線, 301点)
+
+### translations.txt
+
+- 翻訳データなし (0件)
+
+### agency
+
+- GTFS の agency_name は「日立自動車交通株式会社」(実際の運行事業者)
+- CKAN 上のデータ提供元は「中央区役所」(自治体)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20250108版
