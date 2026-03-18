@@ -11,4 +11,9 @@ export default [
   'yurikamome-station',
   'yurikamome-railway',
   'yurikamome-station-timetable',
+  // リソース定義最終確認中
+  // 'tokyu-bus-busstop',
+  // 'tokyu-bus-busroute',
+  // 'tokyu-bus-busstop-timetable',
+  // 'tokyu-bus-bus-timetable',
 ];

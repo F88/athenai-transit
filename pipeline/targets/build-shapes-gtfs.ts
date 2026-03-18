@@ -10,4 +10,14 @@
  *
  * Comment out entries to temporarily skip them.
  */
-export default ['toei-bus', 'suginami-gsm', 'chiyoda-bus', 'chuo-bus'];
+export default [
+  'toei-bus',
+  'suginami-gsm',
+  'chiyoda-bus',
+  'chuo-bus',
+  // リソース定義最終確認中
+  // 'kita-bus',
+  // 'kyoto-city-bus',
+  // 'oshima-bus',
+  // 'keisei-transit-bus',
+];

@@ -14,4 +14,13 @@ export default [
   'suginami-gsm',
   'chiyoda-bus',
   'chuo-bus',
+  // リソース定義最終確認中
+  // 'seibu-bus',
+  // 'iyotetsu-bus',
+  // 'kita-bus',
+  // 'kyoto-city-bus',
+  // 'oshima-bus',
+  // 'miyake-bus',
+  // 'keisei-transit-bus',
+  // 'mir-train',
 ];
