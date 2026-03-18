@@ -1,20 +1,96 @@
 /**
  * Wire-format types for the next-generation pipeline output (v2).
  *
- * This file defines the target schema for the timetable.json and
- * trip-patterns.json redesign. The v1 types in transit-json.ts
- * remain in use until the pipeline and repository are migrated.
+ * This file defines the target schema for the data JSON redesign.
+ * The v1 types in transit-json.ts remain in use until the pipeline
+ * and repository are migrated.
  *
  * Key changes from v1:
- * - TimetableGroupJson: `r, h, ai` replaced with `tp` (pattern FK).
+ * - StopV2Json: `ai` (agency_id) removed. GTFS spec does not define
+ *   agency on stops. Stop-agency relationship is resolved via
+ *   timetable -> pattern -> route -> agency.
+ * - ShapesV2Json: shape points extended from `[lat, lon]` to
+ *   `[lat, lon, dist?]` to support GTFS shape_dist_traveled.
+ * - TimetableGroupV2Json: `r, h, ai` replaced with `tp` (pattern FK).
  *   Adds `a` (arrival), `p` (pickup_type), `do` (drop_off_type).
  * - TripPatternsJson: new file providing route, headsign, direction,
  *   and ordered stop sequence per pattern.
  *
- * Types that are unchanged from v1 (StopJson, RouteJson, AgencyJson,
- * CalendarJson, TranslationsJson, ShapesJson, FeedInfoJson) are NOT
+ * Types that are unchanged from v1 (RouteJson, AgencyJson,
+ * CalendarJson, TranslationsJson, FeedInfoJson) are NOT
  * duplicated here — import them from transit-json.ts.
  */
+
+// -----------------------------------------------------------------------
+// stops.json (v2)
+// -----------------------------------------------------------------------
+
+/**
+ * stops.json (v2): versioned wrapper with stop records.
+ *
+ * Compared to v1, `ai` (agency_id) is removed. GTFS spec does not
+ * define agency_id on stops.txt — stops are shared infrastructure.
+ * Stop-to-agency relationships are resolved at runtime via
+ * timetable -> trip pattern -> route -> agency.
+ */
+export interface StopsV2Json {
+  /** Schema version. Must be `2` for this format. */
+  v: 2;
+  stops: StopV2Json[];
+}
+
+export interface StopV2Json {
+  /** Schema version. Must be `2` for this format. */
+  v: 2;
+  i: string; // stop_id (prefixed)
+  n: string; // stop_name
+  a: number; // stop_lat
+  o: number; // stop_lon
+  l: number; // location_type
+  // ai removed — GTFS stops.txt has no agency_id
+}
+
+// -----------------------------------------------------------------------
+// shapes.json (v2)
+// -----------------------------------------------------------------------
+
+/**
+ * shapes.json (v2): route_id -> array of polylines with optional
+ * cumulative distance.
+ *
+ * Each shape point is a tuple of `[lat, lon]` or `[lat, lon, dist]`.
+ * The optional third element is GTFS shape_dist_traveled — the actual
+ * distance traveled along the shape from the first point to this point.
+ *
+ * When present, shape_dist_traveled enables:
+ * - Partial shape rendering (highlight only the segment a trip covers)
+ * - Travel distance calculation for a trip pattern
+ * - Disambiguation of overlapping segments on looping/inlining routes
+ *
+ * Currently no GTFS sources in this project provide shape_dist_traveled,
+ * so all points use the `[lat, lon]` form. The type supports both forms
+ * so the pipeline can populate distance data when sources provide it.
+ *
+ * @see GTFS spec shapes.txt — shape_dist_traveled field
+ */
+/**
+ * A single shape point: `[lat, lon]` or `[lat, lon, dist]`.
+ * The optional third element is GTFS shape_dist_traveled.
+ */
+export type ShapePointV2 = [number, number, number?];
+
+export interface ShapesV2Json {
+  /** Schema version. Must be `2` for this format. */
+  v: 2;
+  /**
+   * Route ID (prefixed) -> array of polylines.
+   * A route may have multiple polylines when different trips on the
+   * same route follow different geographic paths (distinct shape_ids).
+   * Each polyline is an array of shape points ordered by
+   * shape_pt_sequence. Consumers MUST NOT re-sort this array.
+   */
+  shapes: Record<string, ShapePointV2[][]>;
+}
 
 // -----------------------------------------------------------------------
 // trip-patterns.json
