@@ -12,7 +12,7 @@
  * | File           | Changes                                                |
  * | -------------- | ------------------------------------------------------ |
  * | routes.json    | + `desc` (route_desc). `route_url` moved to urls.json  |
- * | stops.json     | - `ai` removed. + `desc`, `wb`, `ps`, `pc`             |
+ * | stops.json     | - `ai` removed. + `wb`, `pc`. `desc` in lookup.json    |
  * | shapes.json    | Point tuple `[lat, lon]` → `[lat, lon, dist?]`         |
  * | timetable.json | `r,h,ai` → `tp` (pattern FK). + `a`, `p?`, `do?`       |
  *
@@ -119,13 +119,9 @@ export interface StopV2Json {
    */
   wb?: number;
 
-  /**
-   * GTFS parent_station — stop_id of the parent stop/station.
-   * Links child stops (location_type=0, poles) to their parent
-   * (location_type=1, station/stop area).
-   * Omitted when the stop has no parent.
-   */
-  ps?: string;
+  // parent_station excluded — parent (location_type=1) is not output
+  // to JSON, so the FK reference would be broken. Revisit if parent
+  // stops are added to the output.
 
   /**
    * GTFS platform_code — platform/pole identifier (e.g. "1", "2").
