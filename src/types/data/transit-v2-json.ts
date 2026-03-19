@@ -12,7 +12,7 @@
  * | File           | Changes                                                |
  * | -------------- | ------------------------------------------------------ |
  * | routes.json    | + `desc` (route_desc). `route_url` moved to urls.json  |
- * | stops.json     | - `ai` removed. + `wb`, `pc`. `desc` in lookup.json    |
+ * | stops.json     | - `ai` removed. + `wb`, `pc`, `ps`. `desc` in lookup    |
  * | shapes.json    | Point tuple `[lat, lon]` → `[lat, lon, dist?]`         |
  * | timetable.json | `r,h,ai` → `tp` (pattern FK). + `a`, `p?`, `do?`       |
  *
@@ -22,6 +22,19 @@
  * | ------------------ | -------------------------------------------------- |
  * | trip-patterns.json | Route + headsign + direction + ordered stop list    |
  * | lookup.json        | Normalized lookup tables (URLs, descriptions, etc.) |
+ *
+ * ### Bundle structure
+ *
+ * In v2, individual JSON files are bundled into two files per source:
+ *
+ * | File                   | Contents                                        |
+ * | ---------------------- | ----------------------------------------------- |
+ * | `{prefix}/data.json`   | All data needed at startup (DataBundle)          |
+ * | `{prefix}/shapes.json` | Route shapes, lazy-loaded (ShapesBundle)         |
+ *
+ * Each bundle has a `bundle_version` and `kind` discriminant.
+ * Sections within a bundle carry their own `v` (schema version):
+ * v1 = unchanged from transit-json.ts, v2 = changed in this file.
  *
  * ### Unchanged (import from transit-json.ts)
  *
@@ -66,11 +79,11 @@ export interface RoutesV2Json {
 export interface RouteV2Json {
   /** Schema version. Must be `2` for this format. */
   v: 2;
-  i: string;  // route_id
-  s: string;  // route_short_name
-  l: string;  // route_long_name
-  t: number;  // route_type
-  c: string;  // route_color (hex without #, e.g. "F1B34E")
+  i: string; // route_id
+  s: string; // route_short_name
+  l: string; // route_long_name
+  t: number; // route_type
+  c: string; // route_color (hex without #, e.g. "F1B34E")
   tc: string; // route_text_color (hex without #)
   ai: string; // agency_id (prefixed)
   /**
@@ -119,9 +132,43 @@ export interface StopV2Json {
    */
   wb?: number;
 
-  // parent_station excluded — parent (location_type=1) is not output
-  // to JSON, so the FK reference would be broken. Revisit if parent
-  // stops are added to the output.
+  /**
+   * GTFS parent_station — FK to the parent stop (location_type=1).
+   *
+   * Present only on child stops (location_type=0) that belong to a
+   * station complex. The parent stop itself is also included in the
+   * same stops array with `l: 1`.
+   *
+   * ### Parent → children lookup
+   *
+   * The JSON does not store a children list on the parent. Instead,
+   * consumers build a reverse map by scanning all stops:
+   *
+   * ```ts
+   * const childrenMap = new Map<string, StopV2Json[]>();
+   * for (const stop of stops) {
+   *   if (stop.ps) {
+   *     const list = childrenMap.get(stop.ps) ?? [];
+   *     list.push(stop);
+   *     childrenMap.set(stop.ps, list);
+   *   }
+   * }
+   * ```
+   *
+   * This is O(N) over the stop array, which is acceptable because
+   * all stops reside in the same JSON file — no N+1 fetch occurs.
+   * Storing a children array on the parent would duplicate data and
+   * require the pipeline to maintain bidirectional consistency.
+   *
+   * ### location_type=1 stops
+   *
+   * Parent stops (location_type=1) are included in the JSON solely
+   * for terminal/station grouping purposes. They MUST be excluded
+   * from map marker rendering and from stop count limits. Consumers
+   * should filter on `l === 0` for display and `l === 1` for
+   * grouping lookups.
+   */
+  ps?: string;
 
   /**
    * GTFS platform_code — platform/pole identifier (e.g. "1", "2").
@@ -388,3 +435,77 @@ export interface LookupV2Json {
    */
   stopDescs?: Record<string, string>;
 }
+
+// -----------------------------------------------------------------------
+// Bundle wrappers
+// -----------------------------------------------------------------------
+
+import type { AgencyJson, CalendarJson, FeedInfoJson, TranslationsJson } from './transit-json';
+
+/**
+ * Versioned section wrapper inside a bundle.
+ *
+ * Each section declares its own schema version independently of the
+ * bundle version. v1 sections use types from transit-json.ts unchanged;
+ * v2 sections use types from this file.
+ */
+interface BundleSection<V extends number, T> {
+  /** Schema version for this section's data type. */
+  v: V;
+  data: T;
+}
+
+/**
+ * `{prefix}/data.json` — all data needed at startup for a single source.
+ *
+ * Contains every section except shapes, which are lazy-loaded separately.
+ * This replaces the 8-10 individual JSON files per source in v1.
+ *
+ * The `kind` field serves as a discriminated union tag so consumers can
+ * distinguish DataBundle from ShapesBundle at runtime:
+ *
+ * ```ts
+ * function loadBundle(json: SourceBundle) {
+ *   if (json.kind === 'data') { ... }
+ *   if (json.kind === 'shapes') { ... }
+ * }
+ * ```
+ */
+export interface DataBundle {
+  /** Bundle format version. */
+  bundle_version: 2;
+  /** Discriminated union tag. */
+  kind: 'data';
+
+  stops: BundleSection<2, StopV2Json[]>;
+  routes: BundleSection<2, RouteV2Json[]>;
+  agency: BundleSection<1, AgencyJson[]>;
+  calendar: BundleSection<1, CalendarJson>;
+  feedInfo: BundleSection<1, FeedInfoJson>;
+  timetable: BundleSection<2, Record<string, TimetableGroupV2Json[]>>;
+  tripPatterns: BundleSection<2, Record<string, TripPatternJson>>;
+  translations: BundleSection<1, TranslationsJson>;
+  lookup: BundleSection<2, LookupV2Json>;
+}
+
+/**
+ * `{prefix}/shapes.json` — route shapes for a single source.
+ *
+ * Separated from DataBundle because shapes are only needed when the
+ * shapes layer is toggled on. Lazy-loading this file avoids fetching
+ * potentially large geometry data on startup.
+ */
+export interface ShapesBundle {
+  /** Bundle format version. */
+  bundle_version: 2;
+  /** Discriminated union tag. */
+  kind: 'shapes';
+
+  shapes: BundleSection<2, Record<string, ShapePointV2[][]>>;
+}
+
+/**
+ * Union of all bundle types for a single source.
+ * Use `kind` to discriminate at runtime.
+ */
+export type SourceBundle = DataBundle | ShapesBundle;
