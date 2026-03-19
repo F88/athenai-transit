@@ -7,7 +7,7 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { extractRoutesV2 } from '../lib/gtfs/extract-routes';
+import { extractRoutesV2 } from '../extract-routes';
 
 let db: Database.Database;
 

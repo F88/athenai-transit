@@ -6,8 +6,8 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { Provider } from '../../../types/resource-common';
-import { buildFeedInfoV2 } from '../lib/odpt/build-feed-info';
+import type { Provider } from '../../../../../types/resource-common';
+import { buildFeedInfoV2 } from '../build-feed-info';
 
 const TEST_PROVIDER: Provider = {
   name: {

@@ -6,8 +6,8 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { OdptStationTimetable } from '../../../types/odpt-train';
-import { buildCalendarV2, calendarToServiceId, computeDateRange } from '../lib/odpt/build-calendar';
+import type { OdptStationTimetable } from '../../../../../types/odpt-train';
+import { buildCalendarV2, calendarToServiceId, computeDateRange } from '../build-calendar';
 
 describe('calendarToServiceId', () => {
   it('converts Weekday to lowercase', () => {

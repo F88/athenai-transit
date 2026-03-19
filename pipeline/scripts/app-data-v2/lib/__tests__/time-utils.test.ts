@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { timeToMinutes } from '../lib/time-utils';
+import { timeToMinutes } from '../time-utils';
 
 describe('timeToMinutes', () => {
   it('converts GTFS format "HH:MM:SS" to minutes', () => {

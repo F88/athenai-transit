@@ -7,7 +7,7 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { extractLookupV2 } from '../lib/gtfs/extract-lookup';
+import { extractLookupV2 } from '../extract-lookup';
 
 let db: Database.Database;
 

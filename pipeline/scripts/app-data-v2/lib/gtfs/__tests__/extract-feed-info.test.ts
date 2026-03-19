@@ -7,7 +7,7 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { extractFeedInfoV2 } from '../lib/gtfs/extract-feed-info';
+import { extractFeedInfoV2 } from '../extract-feed-info';
 
 let db: Database.Database;
 

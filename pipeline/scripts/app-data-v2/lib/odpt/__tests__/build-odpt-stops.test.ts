@@ -6,8 +6,8 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { OdptStation, OdptStationOrder } from '../../../types/odpt-train';
-import { buildStopsV2, extractStationShortId } from '../lib/odpt/build-stops';
+import type { OdptStation, OdptStationOrder } from '../../../../../types/odpt-train';
+import { buildStopsV2, extractStationShortId } from '../build-stops';
 
 function makeStation(
   sameAs: string,

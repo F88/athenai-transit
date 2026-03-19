@@ -7,7 +7,7 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { extractTripPatternsAndTimetable } from '../lib/gtfs/extract-timetable';
+import { extractTripPatternsAndTimetable } from '../extract-timetable';
 
 let db: Database.Database;
 

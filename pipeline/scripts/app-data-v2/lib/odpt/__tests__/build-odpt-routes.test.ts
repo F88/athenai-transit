@@ -6,9 +6,9 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { OdptRailway } from '../../../types/odpt-train';
-import type { Provider } from '../../../types/resource-common';
-import { buildRoutesV2 } from '../lib/odpt/build-routes';
+import type { OdptRailway } from '../../../../../types/odpt-train';
+import type { Provider } from '../../../../../types/resource-common';
+import { buildRoutesV2 } from '../build-routes';
 
 const TEST_PROVIDER: Provider = {
   name: {

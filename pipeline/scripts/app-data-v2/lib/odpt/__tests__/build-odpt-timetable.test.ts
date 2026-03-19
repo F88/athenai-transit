@@ -10,11 +10,11 @@ import type {
   OdptRailway,
   OdptStationOrder,
   OdptStationTimetable,
-} from '../../../types/odpt-train';
+} from '../../../../../types/odpt-train';
 import {
   buildTripPatternsAndTimetableFromOdpt,
   getHeadsignFromDirection,
-} from '../lib/odpt/build-timetable';
+} from '../build-timetable';
 
 function makeOrder(
   index: number,

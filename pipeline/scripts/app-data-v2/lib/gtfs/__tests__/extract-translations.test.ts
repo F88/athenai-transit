@@ -7,8 +7,8 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { Provider } from '../../../types/resource-common';
-import { extractTranslationsV2 } from '../lib/gtfs/extract-translations';
+import type { Provider } from '../../../../../types/resource-common';
+import { extractTranslationsV2 } from '../extract-translations';
 
 const TEST_PROVIDER: Provider = {
   name: {
