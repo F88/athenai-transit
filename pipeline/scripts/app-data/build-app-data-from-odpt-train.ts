@@ -42,6 +42,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type {
   AgencyJson,
@@ -105,6 +106,9 @@ export interface OdptTrainSource {
 /**
  * Discover available ODPT Train sources by grouping resources by outDir.
  * A valid source must have all 3 required types.
+ *
+ * @returns Resolved ODPT Train sources sorted by name, each containing
+ *   all required resource definitions (Station, Railway, StationTimetable).
  */
 export async function discoverOdptTrainSources(): Promise<OdptTrainSource[]> {
   const allDefs = await loadAllOdptJsonSources();
@@ -148,6 +152,8 @@ export async function discoverOdptTrainSources(): Promise<OdptTrainSource[]> {
 
 /**
  * List available ODPT Train source names.
+ *
+ * @returns Sorted array of source name strings (outDir identifiers).
  */
 export async function listSourceNames(): Promise<string[]> {
   const sources = await discoverOdptTrainSources();
@@ -156,6 +162,10 @@ export async function listSourceNames(): Promise<string[]> {
 
 /**
  * Load a single ODPT Train source by name.
+ *
+ * @param name - Source identifier (outDir name, e.g. "yurikamome").
+ * @returns The resolved ODPT Train source with all required resources.
+ * @throws {Error} If the source name is not found among available sources.
  */
 export async function loadSource(name: string): Promise<OdptTrainSource> {
   const sources = await discoverOdptTrainSources();
@@ -770,8 +780,10 @@ async function main(): Promise<void> {
 }
 
 // Only run main() when executed directly (not when imported by other scripts).
+// Use import.meta.url (standard ESM) + resolve() to normalize paths,
+// avoiding tsx-specific import.meta.filename and relative vs absolute mismatches.
 const isDirectExecution =
-  process.argv[1] && import.meta.filename && process.argv[1] === import.meta.filename;
+  process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isDirectExecution) {
   runMain(main);
 }

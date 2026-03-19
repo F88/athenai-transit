@@ -7,21 +7,27 @@
  *
  * ## v1 → v2 Summary
  *
- * ### Changed files
+ * The tables below describe **logical sections** within bundles.
+ * In v1 each section was a separate JSON file; in v2 they are
+ * combined into bundles (see "Bundle structure" below).
+ * Section names (e.g. "routes", "stops") are used as keys inside
+ * the bundle, not as standalone output filenames.
  *
- * | File           | Changes                                                |
- * | -------------- | ------------------------------------------------------ |
- * | routes.json    | + `desc` (route_desc). `route_url` moved to lookup.json |
- * | stops.json     | - `ai` removed. + `wb`, `pc`, `ps`. `desc` in lookup    |
- * | shapes.json    | Point tuple `[lat, lon]` → `[lat, lon, dist?]`         |
- * | timetable.json | `r,h,ai` → `tp` (pattern FK). + `a`, `p?`, `do?`       |
+ * ### Changed sections
  *
- * ### New files
+ * | Section    | Changes                                                    |
+ * | ---------- | ---------------------------------------------------------- |
+ * | routes     | + `desc` (route_desc). `route_url` moved to lookup section |
+ * | stops      | - `ai` removed. + `wb`, `pc`, `ps`. `desc` in lookup      |
+ * | shapes     | Point tuple `[lat, lon]` → `[lat, lon, dist?]`             |
+ * | timetable  | `r,h,ai` → `tp` (pattern FK). + `a`, `p?`, `do?`           |
  *
- * | File               | Purpose                                            |
- * | ------------------ | -------------------------------------------------- |
- * | trip-patterns.json | Route + headsign + direction + ordered stop list    |
- * | lookup.json        | Normalized lookup tables (URLs, descriptions, etc.) |
+ * ### New sections
+ *
+ * | Section        | Purpose                                            |
+ * | -------------- | -------------------------------------------------- |
+ * | tripPatterns   | Route + headsign + direction + ordered stop list    |
+ * | lookup         | Normalized lookup tables (URLs, descriptions, etc.) |
  *
  * ### Bundle structure
  *
@@ -52,19 +58,19 @@
  * sections introduced in v2 bundles begin at v1. A section's `v`
  * tracks its own schema evolution, not the bundle generation.
  *
- * ### Unchanged (import from transit-json.ts)
+ * ### Unchanged sections (import from transit-json.ts)
  *
- * agency.json, calendar.json, translations.json, feed-info.json
+ * agency, calendar, translations, feedInfo
  *
  * ### Removed fields
  *
- * | File        | Field | Reason                                         |
- * | ----------- | ----- | ---------------------------------------------- |
- * | stops.json  | `ai`  | GTFS spec: stops have no agency_id              |
- * | routes.json | `u`   | Moved to lookup.json for normalization            |
- * | timetable   | `r`   | Replaced by `tp` → TripPatternJson.r            |
- * | timetable   | `h`   | Replaced by `tp` → TripPatternJson.h            |
- * | timetable   | `ai`  | Replaced by `tp` → TripPatternJson.r → Route.ai |
+ * | Section   | Field | Reason                                             |
+ * | --------- | ----- | -------------------------------------------------- |
+ * | stops     | `ai`  | GTFS spec: stops have no agency_id                  |
+ * | routes    | `u`   | Moved to lookup section for normalization           |
+ * | timetable | `r`   | Replaced by `tp` → TripPatternJson.r                |
+ * | timetable | `h`   | Replaced by `tp` → TripPatternJson.h                |
+ * | timetable | `ai`  | Replaced by `tp` → TripPatternJson.r → RouteV2Json.ai |
  *
  * ### GTFS fields reviewed and excluded
  *
@@ -77,7 +83,7 @@
  */
 
 // -----------------------------------------------------------------------
-// routes.json (v2)
+// routes section (v2)
 // -----------------------------------------------------------------------
 
 /**
@@ -112,7 +118,7 @@ export interface RouteV2Json {
 }
 
 // -----------------------------------------------------------------------
-// stops.json (v2)
+// stops section (v2)
 // -----------------------------------------------------------------------
 
 /**
@@ -189,11 +195,11 @@ export interface StopV2Json {
 }
 
 // -----------------------------------------------------------------------
-// shapes.json (v2)
+// shapes section (v2)
 // -----------------------------------------------------------------------
 
 /**
- * shapes.json (v2): route_id -> array of polylines with optional
+ * Shapes section (v2): route_id -> array of polylines with optional
  * cumulative distance.
  *
  * Each shape point is a tuple of `[lat, lon]` or `[lat, lon, dist]`.
@@ -245,7 +251,7 @@ export type ShapePointV2 = [number, number, number?];
  * - Whether a stop is on this pattern: `stops.includes(stopId)`
  * - Stop position in pattern: `stops.indexOf(stopId)`
  *
- * Agency is not stored here — resolve via `r` -> RouteJson.ai.
+ * Agency is not stored here — resolve via `r` -> RouteV2Json.ai.
  * GTFS spec defines route:agency as 1:1 (routes.txt.agency_id).
  */
 export interface TripPatternJson {
@@ -264,7 +270,7 @@ export interface TripPatternJson {
    * May be empty when the GTFS source does not provide trip_headsign
    * (e.g. keio-bus). In that case, consumers can derive a display
    * name from the terminal stop: `stops[stops.length - 1]` ->
-   * StopJson.n or translations.
+   * StopV2Json.n or translations.
    */
   h: string;
 
@@ -319,7 +325,7 @@ export interface TripPatternJson {
 }
 
 // -----------------------------------------------------------------------
-// timetable.json (v2)
+// timetable section (v2)
 // -----------------------------------------------------------------------
 
 /**
@@ -339,7 +345,7 @@ export interface TimetableGroupV2Json {
   /**
    * Trip pattern ID. FK -> trip-patterns.json.
    * Resolves to route_id, headsign, direction, and stop sequence.
-   * Agency is further resolved via TripPatternJson.r -> RouteJson.ai.
+   * Agency is further resolved via TripPatternJson.r -> RouteV2Json.ai.
    */
   tp: string;
 
@@ -386,7 +392,7 @@ export interface TimetableGroupV2Json {
 }
 
 // -----------------------------------------------------------------------
-// lookup.json (v2, new)
+// lookup section (v2, new)
 // -----------------------------------------------------------------------
 
 /**
@@ -733,8 +739,12 @@ export interface InsightsBundle {
    * different keys depending on the source's calendar structure.
    *
    * **Constraint**: Each service_id MUST appear in exactly one group.
-   * The pipeline ensures non-overlapping groups so the app can
-   * unambiguously select a single group key for any given date.
+   * However, on dates with special schedules (e.g. calendar_dates
+   * exceptions), the active service_ids may span multiple groups.
+   * The app selects the group with the most overlap (see the
+   * sample code above). The pipeline ensures non-overlapping
+   * service_id assignment, but does NOT guarantee that a given
+   * date maps to a single group.
    */
   serviceGroups: BundleSection<1, Record<string, string[]>>;
 

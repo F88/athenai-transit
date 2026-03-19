@@ -121,7 +121,14 @@ export interface StopTimesAnalysis {
 // Analysis
 // ---------------------------------------------------------------------------
 
-/** Run full stop_times analysis on a GTFS database. */
+/**
+ * Run full stop_times analysis on a GTFS database.
+ *
+ * @param db - An open better-sqlite3 database containing GTFS tables
+ *   (stop_times, stops, trips, routes).
+ * @returns Comprehensive analysis covering stop positions, terminal-only stops,
+ *   circular routes, dwell times, pickup/drop-off patterns, and headsign coverage.
+ */
 export function analyzeStopTimes(db: Database.Database): StopTimesAnalysis {
   return {
     positionSummary: analyzePositions(db),
@@ -141,34 +148,29 @@ export function analyzeStopTimes(db: Database.Database): StopTimesAnalysis {
 // ---------------------------------------------------------------------------
 
 function analyzePositions(db: Database.Database): StopPositionSummary {
-  const totalRow = db.prepare(`SELECT COUNT(*) AS cnt FROM stop_times`).get() as { cnt: number };
-  const total = totalRow.cnt;
-
-  // Count stop_times at first position (MIN stop_sequence per trip)
-  const firstRow = db
+  const row = db
     .prepare(
-      `SELECT COUNT(*) AS cnt FROM stop_times st
-       WHERE st.stop_sequence = (
-         SELECT MIN(st2.stop_sequence) FROM stop_times st2 WHERE st2.trip_id = st.trip_id
-       )`,
+      `WITH trip_bounds AS (
+         SELECT trip_id,
+                MIN(stop_sequence) AS min_seq,
+                MAX(stop_sequence) AS max_seq
+         FROM stop_times
+         GROUP BY trip_id
+       )
+       SELECT
+         COUNT(*) AS total,
+         SUM(CASE WHEN st.stop_sequence = tb.min_seq THEN 1 ELSE 0 END) AS first_cnt,
+         SUM(CASE WHEN st.stop_sequence = tb.max_seq THEN 1 ELSE 0 END) AS last_cnt
+       FROM stop_times st
+       JOIN trip_bounds tb ON tb.trip_id = st.trip_id`,
     )
-    .get() as { cnt: number };
-
-  // Count stop_times at last position (MAX stop_sequence per trip)
-  const lastRow = db
-    .prepare(
-      `SELECT COUNT(*) AS cnt FROM stop_times st
-       WHERE st.stop_sequence = (
-         SELECT MAX(st2.stop_sequence) FROM stop_times st2 WHERE st2.trip_id = st.trip_id
-       )`,
-    )
-    .get() as { cnt: number };
+    .get() as { total: number; first_cnt: number; last_cnt: number };
 
   return {
-    totalStopTimes: total,
-    first: firstRow.cnt,
-    last: lastRow.cnt,
-    middle: total - firstRow.cnt - lastRow.cnt,
+    totalStopTimes: row.total,
+    first: row.first_cnt,
+    last: row.last_cnt,
+    middle: row.total - row.first_cnt - row.last_cnt,
   };
 }
 
@@ -176,14 +178,18 @@ function findTerminalOnlyStops(db: Database.Database): TerminalOnlyStop[] {
   // For each stop, count how many times it appears as terminal vs total
   const rows = db
     .prepare(
-      `SELECT
+      `WITH trip_bounds AS (
+         SELECT trip_id, MAX(stop_sequence) AS max_seq
+         FROM stop_times
+         GROUP BY trip_id
+       )
+       SELECT
          st.stop_id,
          s.stop_name,
          COUNT(*) AS total_count,
-         SUM(CASE WHEN st.stop_sequence = (
-           SELECT MAX(st2.stop_sequence) FROM stop_times st2 WHERE st2.trip_id = st.trip_id
-         ) THEN 1 ELSE 0 END) AS terminal_count
+         SUM(CASE WHEN st.stop_sequence = tb.max_seq THEN 1 ELSE 0 END) AS terminal_count
        FROM stop_times st
+       JOIN trip_bounds tb ON tb.trip_id = st.trip_id
        LEFT JOIN stops s ON s.stop_id = st.stop_id
        GROUP BY st.stop_id
        HAVING terminal_count = total_count
@@ -208,21 +214,25 @@ function findCircularRoutes(db: Database.Database): CircularRoute[] {
   // Find trips where first stop_id = last stop_id, grouped by route
   const rows = db
     .prepare(
-      `SELECT
+      `WITH trip_bounds AS (
+         SELECT trip_id,
+                MIN(stop_sequence) AS min_seq,
+                MAX(stop_sequence) AS max_seq
+         FROM stop_times
+         GROUP BY trip_id
+       )
+       SELECT
          t.route_id,
          r.route_short_name,
          COUNT(DISTINCT t.trip_id) AS trip_count,
          first_st.stop_id AS loop_stop_id,
          s.stop_name AS loop_stop_name
        FROM trips t
+       JOIN trip_bounds tb ON tb.trip_id = t.trip_id
        JOIN stop_times first_st ON first_st.trip_id = t.trip_id
-         AND first_st.stop_sequence = (
-           SELECT MIN(st2.stop_sequence) FROM stop_times st2 WHERE st2.trip_id = t.trip_id
-         )
+         AND first_st.stop_sequence = tb.min_seq
        JOIN stop_times last_st ON last_st.trip_id = t.trip_id
-         AND last_st.stop_sequence = (
-           SELECT MAX(st2.stop_sequence) FROM stop_times st2 WHERE st2.trip_id = t.trip_id
-         )
+         AND last_st.stop_sequence = tb.max_seq
        LEFT JOIN routes r ON r.route_id = t.route_id
        LEFT JOIN stops s ON s.stop_id = first_st.stop_id
        WHERE first_st.stop_id = last_st.stop_id
@@ -277,22 +287,26 @@ function findDwellTimeEntries(db: Database.Database): DwellTimeEntry[] {
 function analyzeTerminalTimePattern(db: Database.Database): TerminalTimePattern {
   const row = db
     .prepare(
-      `SELECT
+      `WITH trip_bounds AS (
+         SELECT trip_id, MAX(stop_sequence) AS max_seq
+         FROM stop_times
+         GROUP BY trip_id
+       )
+       SELECT
          COUNT(*) AS total,
-         SUM(CASE WHEN arrival_time IS NOT NULL AND departure_time IS NOT NULL
-                   AND arrival_time = departure_time THEN 1 ELSE 0 END) AS arr_eq_dep,
-         SUM(CASE WHEN arrival_time IS NOT NULL AND departure_time IS NOT NULL
-                   AND arrival_time != departure_time THEN 1 ELSE 0 END) AS arr_diff_dep,
-         SUM(CASE WHEN arrival_time IS NULL AND departure_time IS NOT NULL
+         SUM(CASE WHEN st.arrival_time IS NOT NULL AND st.departure_time IS NOT NULL
+                   AND st.arrival_time = st.departure_time THEN 1 ELSE 0 END) AS arr_eq_dep,
+         SUM(CASE WHEN st.arrival_time IS NOT NULL AND st.departure_time IS NOT NULL
+                   AND st.arrival_time != st.departure_time THEN 1 ELSE 0 END) AS arr_diff_dep,
+         SUM(CASE WHEN st.arrival_time IS NULL AND st.departure_time IS NOT NULL
               THEN 1 ELSE 0 END) AS arr_null,
-         SUM(CASE WHEN arrival_time IS NOT NULL AND departure_time IS NULL
+         SUM(CASE WHEN st.arrival_time IS NOT NULL AND st.departure_time IS NULL
               THEN 1 ELSE 0 END) AS dep_null,
-         SUM(CASE WHEN arrival_time IS NULL AND departure_time IS NULL
+         SUM(CASE WHEN st.arrival_time IS NULL AND st.departure_time IS NULL
               THEN 1 ELSE 0 END) AS both_null
        FROM stop_times st
-       WHERE st.stop_sequence = (
-         SELECT MAX(st2.stop_sequence) FROM stop_times st2 WHERE st2.trip_id = st.trip_id
-       )`,
+       JOIN trip_bounds tb ON tb.trip_id = st.trip_id
+       WHERE st.stop_sequence = tb.max_seq`,
     )
     .get() as {
     total: number;
@@ -316,17 +330,23 @@ function analyzeTerminalTimePattern(db: Database.Database): TerminalTimePattern 
 function analyzePickupDropOff(db: Database.Database): PickupDropOffSummary {
   const row = db
     .prepare(
-      `SELECT
+      `WITH trip_bounds AS (
+         SELECT trip_id,
+                MIN(stop_sequence) AS min_seq,
+                MAX(stop_sequence) AS max_seq
+         FROM stop_times
+         GROUP BY trip_id
+       )
+       SELECT
          COUNT(*) AS total,
-         SUM(CASE WHEN pickup_type = 1 THEN 1 ELSE 0 END) AS pickup1,
-         SUM(CASE WHEN pickup_type = 1 AND st.stop_sequence = (
-           SELECT MAX(st2.stop_sequence) FROM stop_times st2 WHERE st2.trip_id = st.trip_id
-         ) THEN 1 ELSE 0 END) AS pickup1_terminal,
-         SUM(CASE WHEN drop_off_type = 1 THEN 1 ELSE 0 END) AS dropoff1,
-         SUM(CASE WHEN drop_off_type = 1 AND st.stop_sequence = (
-           SELECT MIN(st2.stop_sequence) FROM stop_times st2 WHERE st2.trip_id = st.trip_id
-         ) THEN 1 ELSE 0 END) AS dropoff1_first
-       FROM stop_times st`,
+         SUM(CASE WHEN st.pickup_type = 1 THEN 1 ELSE 0 END) AS pickup1,
+         SUM(CASE WHEN st.pickup_type = 1 AND st.stop_sequence = tb.max_seq
+              THEN 1 ELSE 0 END) AS pickup1_terminal,
+         SUM(CASE WHEN st.drop_off_type = 1 THEN 1 ELSE 0 END) AS dropoff1,
+         SUM(CASE WHEN st.drop_off_type = 1 AND st.stop_sequence = tb.min_seq
+              THEN 1 ELSE 0 END) AS dropoff1_first
+       FROM stop_times st
+       JOIN trip_bounds tb ON tb.trip_id = st.trip_id`,
     )
     .get() as {
     total: number;

@@ -158,7 +158,14 @@ const KNOWN_TIMETABLE_KEYS = new Set([
 // Analysis
 // ---------------------------------------------------------------------------
 
-/** Run full StationTimetable analysis. */
+/**
+ * Run full StationTimetable analysis.
+ *
+ * @param timetables - ODPT StationTimetable entries for a single source.
+ * @param railway - ODPT Railway definition used for station order and direction mapping.
+ * @returns Comprehensive analysis covering time fields, coverage, destinations,
+ *   train types, flags, and unknown keys.
+ */
 export function analyzeOdptStationTimetable(
   timetables: OdptStationTimetable[],
   railway: OdptRailway,
@@ -530,8 +537,11 @@ export function formatOdptAnalysis(
   lines.push(`  Unique types:      ${trainTypes.uniqueTrainTypes}`);
   if (trainTypes.top.length > 0) {
     lines.push('  Train types:');
-    for (const t of trainTypes.top) {
+    for (const t of trainTypes.top.slice(0, 20)) {
       lines.push(`    ${t.trainType} (${t.count})`);
+    }
+    if (trainTypes.top.length > 20) {
+      lines.push(`    ... and ${trainTypes.top.length - 20} more`);
     }
   }
   lines.push('');
