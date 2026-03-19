@@ -1,5 +1,5 @@
 /**
- * Tests for v2-build-odpt-timetable.ts.
+ * Tests for build-timetable.ts (ODPT v2).
  *
  * @vitest-environment node
  */
@@ -13,7 +13,7 @@ import type {
 } from '../../../../../types/odpt-train';
 import {
   buildTripPatternsAndTimetableFromOdpt,
-  getHeadsignFromDirection,
+  getHeadsignFromDestination,
 } from '../build-timetable';
 
 function makeOrder(
@@ -41,11 +41,13 @@ function makeRailway(
   };
 }
 
+/** Create a timetable with destinationStation on each departure. */
 function makeTimetable(
   station: string,
   calendar: string,
   direction: string,
   departures: string[],
+  destination?: string,
 ): OdptStationTimetable {
   const stationShort = station.split('.').pop()!;
   return {
@@ -56,24 +58,52 @@ function makeTimetable(
     'odpt:railDirection': direction,
     'odpt:stationTimetableObject': departures.map((t) => ({
       'odpt:departureTime': t,
+      ...(destination ? { 'odpt:destinationStation': [destination] } : {}),
     })),
   };
 }
 
-describe('getHeadsignFromDirection', () => {
+// ---------------------------------------------------------------------------
+// getHeadsignFromDestination
+// ---------------------------------------------------------------------------
+
+describe('getHeadsignFromDestination', () => {
   const orders: OdptStationOrder[] = [
     makeOrder(1, 'odpt.Station:Test.A', 'A駅', 'Station A'),
     makeOrder(2, 'odpt.Station:Test.B', 'B駅', 'Station B'),
+    makeOrder(3, 'odpt.Station:Test.C', 'C駅', 'Station C'),
   ];
 
-  it('returns last station for Outbound', () => {
-    expect(getHeadsignFromDirection('odpt.RailDirection:Outbound', orders)).toBe('B駅');
+  it('returns destination station name when provided', () => {
+    expect(
+      getHeadsignFromDestination('odpt.Station:Test.B', 'odpt.RailDirection:Outbound', orders),
+    ).toBe('B駅');
   });
 
-  it('returns first station for Inbound', () => {
-    expect(getHeadsignFromDirection('odpt.RailDirection:Inbound', orders)).toBe('A駅');
+  it('falls back to last station for Outbound when destination is undefined', () => {
+    expect(getHeadsignFromDestination(undefined, 'odpt.RailDirection:Outbound', orders)).toBe(
+      'C駅',
+    );
+  });
+
+  it('falls back to first station for Inbound when destination is undefined', () => {
+    expect(getHeadsignFromDestination(undefined, 'odpt.RailDirection:Inbound', orders)).toBe('A駅');
+  });
+
+  it('falls back to direction terminal when destination not found in stationOrder', () => {
+    expect(
+      getHeadsignFromDestination(
+        'odpt.Station:Test.Unknown',
+        'odpt.RailDirection:Outbound',
+        orders,
+      ),
+    ).toBe('C駅');
   });
 });
+
+// ---------------------------------------------------------------------------
+// buildTripPatternsAndTimetableFromOdpt
+// ---------------------------------------------------------------------------
 
 describe('buildTripPatternsAndTimetableFromOdpt', () => {
   const orders: OdptStationOrder[] = [
@@ -82,12 +112,16 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     makeOrder(3, 'odpt.Station:Test.C', 'C駅', 'Station C'),
   ];
 
-  it('creates patterns from direction + station order', () => {
+  it('creates full-route pattern when destination is terminal', () => {
     const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
     const timetables: OdptStationTimetable[] = [
-      makeTimetable('odpt.Station:Test.A', 'odpt.Calendar:Weekday', 'odpt.RailDirection:Outbound', [
-        '06:00',
-      ]),
+      makeTimetable(
+        'odpt.Station:Test.A',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00'],
+        'odpt.Station:Test.C', // terminal = full route
+      ),
     ];
 
     const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
@@ -97,32 +131,119 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const p = tripPatterns[ids[0]];
     expect(p.v).toBe(2);
     expect(p.r).toBe('test:U');
-    expect(p.h).toBe('C駅'); // Outbound -> last station
+    expect(p.h).toBe('C駅');
     expect(p.stops).toEqual(['test:A', 'test:B', 'test:C']);
-    expect(p.dir).toBeUndefined(); // ODPT has no direction_id
   });
 
-  it('reverses stop order for Inbound direction', () => {
+  it('creates truncated pattern for short-turn Outbound service', () => {
     const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
     const timetables: OdptStationTimetable[] = [
-      makeTimetable('odpt.Station:Test.C', 'odpt.Calendar:Weekday', 'odpt.RailDirection:Inbound', [
-        '06:00',
-      ]),
+      makeTimetable(
+        'odpt.Station:Test.A',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00'],
+        'odpt.Station:Test.B', // short-turn: A -> B only
+      ),
     ];
 
     const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
     const p = Object.values(tripPatterns)[0];
-    expect(p.h).toBe('A駅'); // Inbound -> first station
+    expect(p.h).toBe('B駅');
+    expect(p.stops).toEqual(['test:A', 'test:B']); // truncated at B
+  });
+
+  it('creates truncated pattern for short-turn Inbound service', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const timetables: OdptStationTimetable[] = [
+      makeTimetable(
+        'odpt.Station:Test.C',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Inbound',
+        ['06:00'],
+        'odpt.Station:Test.B', // short-turn Inbound: C -> B only
+      ),
+    ];
+
+    const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
+    const p = Object.values(tripPatterns)[0];
+    expect(p.h).toBe('B駅');
+    expect(p.stops).toEqual(['test:C', 'test:B']); // C to B, reversed
+  });
+
+  it('separates full-route and short-turn into different patterns', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    // Station A: 2 departures to C (full), 1 departure to B (short-turn)
+    const timetables: OdptStationTimetable[] = [
+      {
+        'owl:sameAs': 'odpt.StationTimetable:Test.A.Weekday',
+        'dct:issued': '2025-04-01',
+        'odpt:station': 'odpt.Station:Test.A',
+        'odpt:calendar': 'odpt.Calendar:Weekday',
+        'odpt:railDirection': 'odpt.RailDirection:Outbound',
+        'odpt:stationTimetableObject': [
+          { 'odpt:departureTime': '06:00', 'odpt:destinationStation': ['odpt.Station:Test.C'] },
+          { 'odpt:departureTime': '06:30', 'odpt:destinationStation': ['odpt.Station:Test.B'] },
+          { 'odpt:departureTime': '07:00', 'odpt:destinationStation': ['odpt.Station:Test.C'] },
+        ],
+      },
+    ];
+
+    const { tripPatterns, timetable } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [
+      railway,
+    ]);
+
+    // 2 patterns: full (A->C) and short-turn (A->B)
+    expect(Object.keys(tripPatterns)).toHaveLength(2);
+    const patterns = Object.values(tripPatterns);
+    const fullPattern = patterns.find((p) => p.h === 'C駅')!;
+    const shortPattern = patterns.find((p) => p.h === 'B駅')!;
+
+    expect(fullPattern.stops).toEqual(['test:A', 'test:B', 'test:C']);
+    expect(shortPattern.stops).toEqual(['test:A', 'test:B']);
+
+    // Timetable at A: 2 groups (one per pattern)
+    const groups = timetable['test:A'];
+    expect(groups).toHaveLength(2);
+
+    const fullPatternId = Object.entries(tripPatterns).find(([, p]) => p.h === 'C駅')![0];
+    const shortPatternId = Object.entries(tripPatterns).find(([, p]) => p.h === 'B駅')![0];
+
+    const fullGroup = groups.find((g) => g.tp === fullPatternId)!;
+    const shortGroup = groups.find((g) => g.tp === shortPatternId)!;
+
+    expect(fullGroup.d['test:weekday']).toEqual([360, 420]); // 06:00, 07:00
+    expect(shortGroup.d['test:weekday']).toEqual([390]); // 06:30
+  });
+
+  it('reverses stop order for full Inbound direction', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const timetables: OdptStationTimetable[] = [
+      makeTimetable(
+        'odpt.Station:Test.C',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Inbound',
+        ['06:00'],
+        'odpt.Station:Test.A', // full Inbound to terminal
+      ),
+    ];
+
+    const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
+    const p = Object.values(tripPatterns)[0];
+    expect(p.h).toBe('A駅');
     expect(p.stops).toEqual(['test:C', 'test:B', 'test:A']);
   });
 
-  it('builds timetable with correct structure', () => {
+  it('builds timetable with correct d/a structure', () => {
     const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
     const timetables: OdptStationTimetable[] = [
-      makeTimetable('odpt.Station:Test.A', 'odpt.Calendar:Weekday', 'odpt.RailDirection:Outbound', [
-        '06:00',
-        '06:15',
-      ]),
+      makeTimetable(
+        'odpt.Station:Test.A',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00', '06:15'],
+        'odpt.Station:Test.C',
+      ),
     ];
 
     const { timetable } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
@@ -130,8 +251,7 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const g = timetable['test:A'][0];
     expect(g.v).toBe(2);
     expect(g.d['test:weekday']).toEqual([360, 375]);
-    expect(g.a['test:weekday']).toEqual([360, 375]); // departure copied to arrival
-    // ODPT: no pt/dt
+    expect(g.a['test:weekday']).toEqual([360, 375]);
     expect(g.pt).toBeUndefined();
     expect(g.dt).toBeUndefined();
   });
@@ -147,8 +267,8 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
         'odpt:railDirection': 'odpt.RailDirection:Outbound',
         'odpt:stationTimetableObject': [
           { 'odpt:departureTime': '06:00' },
-          { 'odpt:arrivalTime': '06:10' }, // arrival only
-          { 'odpt:departureTime': '06:20', 'odpt:arrivalTime': '06:19' }, // both
+          { 'odpt:arrivalTime': '06:10' },
+          { 'odpt:departureTime': '06:20', 'odpt:arrivalTime': '06:19' },
         ],
       },
     ];
@@ -156,7 +276,6 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const { timetable } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
     const g = timetable['test:A'][0];
     expect(g.d['test:weekday']).toEqual([360, 370, 380]);
-    // arrival: 360 (copied from dep), 370 (from arrivalTime), 379 (from arrivalTime)
     expect(g.a['test:weekday']).toEqual([360, 370, 379]);
   });
 
@@ -169,10 +288,7 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
         'odpt:station': 'odpt.Station:Test.A',
         'odpt:calendar': 'odpt.Calendar:Weekday',
         'odpt:railDirection': 'odpt.RailDirection:Outbound',
-        'odpt:stationTimetableObject': [
-          { 'odpt:departureTime': '06:00' },
-          {}, // no time at all
-        ],
+        'odpt:stationTimetableObject': [{ 'odpt:departureTime': '06:00' }, {}],
       },
     ];
 
@@ -183,16 +299,42 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
   it('assigns deterministic pattern IDs: {prefix}:p{1-indexed}', () => {
     const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
     const timetables: OdptStationTimetable[] = [
-      makeTimetable('odpt.Station:Test.A', 'odpt.Calendar:Weekday', 'odpt.RailDirection:Outbound', [
-        '06:00',
-      ]),
-      makeTimetable('odpt.Station:Test.C', 'odpt.Calendar:Weekday', 'odpt.RailDirection:Inbound', [
-        '06:00',
-      ]),
+      makeTimetable(
+        'odpt.Station:Test.A',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00'],
+        'odpt.Station:Test.C',
+      ),
+      makeTimetable(
+        'odpt.Station:Test.C',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Inbound',
+        ['06:00'],
+        'odpt.Station:Test.A',
+      ),
     ];
 
     const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
     const ids = Object.keys(tripPatterns).sort();
     expect(ids).toEqual(['test:p1', 'test:p2']);
+  });
+
+  it('handles departures without destinationStation (full route fallback)', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const timetables: OdptStationTimetable[] = [
+      makeTimetable(
+        'odpt.Station:Test.A',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00'],
+        // no destination = full route
+      ),
+    ];
+
+    const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
+    const p = Object.values(tripPatterns)[0];
+    expect(p.h).toBe('C駅'); // fallback to terminal
+    expect(p.stops).toEqual(['test:A', 'test:B', 'test:C']);
   });
 });

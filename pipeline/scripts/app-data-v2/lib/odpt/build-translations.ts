@@ -3,10 +3,15 @@
  */
 
 import type { TranslationsJson } from '../../../../../src/types/data/transit-json';
-import type { OdptRailway, OdptStation, OdptStationOrder, OdptStationTimetable } from '../../../../types/odpt-train';
+import type {
+  OdptRailway,
+  OdptStation,
+  OdptStationOrder,
+  OdptStationTimetable,
+} from '../../../../types/odpt-train';
 import type { Provider } from '../../../../types/resource-common';
 import { extractStationShortId } from './build-stops';
-import { getHeadsignFromDirection } from './build-timetable';
+import { getHeadsignFromDestination } from './build-timetable';
 
 /**
  * Build TranslationsJson from ODPT data.
@@ -43,25 +48,34 @@ export function buildTranslationsV2(
     }
   }
 
-  // Collect headsigns from timetable direction -> terminal station
-  const seenKeys = new Set<string>();
+  // Collect headsigns from timetable destinationStation.
+  // Each unique destination produces a headsign (e.g. 豊洲, 有明, 新橋).
   for (const tt of timetables) {
     const rw = stationToRailway.get(tt['odpt:station']);
     if (!rw) {
       continue;
     }
 
-    const dirKey = `${rw.lineCode}:${tt['odpt:railDirection']}`;
-    if (seenKeys.has(dirKey)) {
-      continue;
-    }
-    seenKeys.add(dirKey);
-
-    const headsignJa = getHeadsignFromDirection(tt['odpt:railDirection'], rw.stationOrder);
-    if (!headsigns[headsignJa]) {
-      const terminalIdx =
-        tt['odpt:railDirection'] === 'odpt.RailDirection:Outbound' ? rw.stationOrder.length - 1 : 0;
-      const title = rw.stationOrder[terminalIdx]['odpt:stationTitle'];
+    for (const obj of tt['odpt:stationTimetableObject']) {
+      const dest = obj['odpt:destinationStation']?.[0];
+      const headsignJa = getHeadsignFromDestination(
+        dest,
+        tt['odpt:railDirection'],
+        rw.stationOrder,
+      );
+      if (headsigns[headsignJa]) {
+        continue;
+      }
+      // Find title for the destination station
+      const destEntry = dest
+        ? rw.stationOrder.find((so) => so['odpt:station'] === dest)
+        : undefined;
+      // Fall back to direction terminal if destination not in stationOrder
+      const title = destEntry
+        ? destEntry['odpt:stationTitle']
+        : tt['odpt:railDirection'] === 'odpt.RailDirection:Outbound'
+          ? rw.stationOrder[rw.stationOrder.length - 1]['odpt:stationTitle']
+          : rw.stationOrder[0]['odpt:stationTitle'];
       const names: Record<string, string> = { ja: title.ja, en: title.en };
       if (title.ko) {
         names.ko = title.ko;

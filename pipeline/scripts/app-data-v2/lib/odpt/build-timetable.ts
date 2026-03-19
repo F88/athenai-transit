@@ -1,7 +1,10 @@
 /**
  * Build TripPatternJson and TimetableGroupV2Json from ODPT data.
  *
- * ODPT direction + stationOrder -> trip patterns.
+ * ODPT direction + destinationStation + stationOrder -> trip patterns.
+ * Short-turn services (e.g. Shimbashi → Ariake) produce separate
+ * patterns with truncated stop sequences.
+ *
  * departure/arrival from odpt:departureTime / odpt:arrivalTime.
  * pt/dt: ODPT has no pickup/drop-off concept, so omitted (undefined).
  */
@@ -24,17 +27,27 @@ import { extractStationShortId } from './build-stops';
 // ---------------------------------------------------------------------------
 
 /**
- * Determine headsign from rail direction.
- * Outbound -> last station, Inbound -> first station.
+ * Determine headsign from destination station.
+ * Looks up the station title from stationOrder by matching the station URI.
+ * Falls back to direction-based terminal if destination is not found.
  *
- * @param direction - ODPT rail direction URI (e.g. "odpt.RailDirection:Outbound").
+ * @param destination - ODPT destination station URI.
+ * @param direction - ODPT rail direction URI.
  * @param stationOrder - Ordered station list for the railway.
- * @returns Terminal station name in Japanese.
+ * @returns Destination station name in Japanese.
  */
-export function getHeadsignFromDirection(
+export function getHeadsignFromDestination(
+  destination: string | undefined,
   direction: string,
   stationOrder: OdptStationOrder[],
 ): string {
+  if (destination) {
+    const entry = stationOrder.find((so) => so['odpt:station'] === destination);
+    if (entry) {
+      return entry['odpt:stationTitle'].ja;
+    }
+  }
+  // Fallback: terminal station from direction
   if (direction === 'odpt.RailDirection:Outbound') {
     return stationOrder[stationOrder.length - 1]['odpt:stationTitle'].ja;
   }
@@ -42,19 +55,40 @@ export function getHeadsignFromDirection(
 }
 
 /**
- * Build ordered stop IDs for a direction.
- * Outbound -> original order, Inbound -> reversed.
+ * Build ordered stop IDs truncated at destination station.
+ *
+ * Outbound: stationOrder[0..destIdx] (origin to destination).
+ * Inbound: reversed stationOrder[destIdx..last] (end to destination).
+ * If destination is not found, uses full stationOrder.
+ *
+ * @param direction - ODPT rail direction URI.
+ * @param destination - ODPT destination station URI (may be undefined).
+ * @param stationOrder - Ordered station list for the railway.
+ * @param stationIndexMap - Station URI -> index in stationOrder.
+ * @param prefix - Source prefix for ID namespacing.
+ * @returns Ordered stop IDs from origin to destination.
  */
 function buildStopSequence(
   direction: string,
+  destination: string | undefined,
   stationOrder: OdptStationOrder[],
+  stationIndexMap: Map<string, number>,
   prefix: string,
 ): string[] {
-  const stops = stationOrder.map((so) => `${prefix}:${extractStationShortId(so['odpt:station'])}`);
-  if (direction === 'odpt.RailDirection:Inbound') {
-    return [...stops].reverse();
+  const allStops = stationOrder.map(
+    (so) => `${prefix}:${extractStationShortId(so['odpt:station'])}`,
+  );
+
+  const destIdx = destination ? stationIndexMap.get(destination) : undefined;
+
+  if (direction === 'odpt.RailDirection:Outbound') {
+    // Outbound: origin (index 0) to destination
+    const endIdx = destIdx != null ? destIdx + 1 : allStops.length;
+    return allStops.slice(0, endIdx);
   }
-  return stops;
+  // Inbound: end of line to destination (reversed)
+  const startIdx = destIdx != null ? destIdx : 0;
+  return [...allStops.slice(startIdx)].reverse();
 }
 
 /**
@@ -70,6 +104,9 @@ function patternSortKey(routeId: string, headsign: string, stops: string[]): str
 
 /**
  * Build trip patterns and timetable from ODPT data.
+ *
+ * Patterns are keyed by (direction, destinationStation) to correctly
+ * separate short-turn services from full-line services.
  *
  * @param prefix - Source prefix for ID namespacing.
  * @param timetables - ODPT station timetable data.
@@ -90,39 +127,76 @@ export function buildTripPatternsAndTimetableFromOdpt(
     stationOrder: OdptStationOrder[];
   };
   const stationToRailway = new Map<string, RailwayInfo>();
+  // Station URI -> positional index within stationOrder (0-based)
+  const stationIndexMap = new Map<string, number>();
+
   for (const rw of railways) {
     const info: RailwayInfo = {
       routeId: `${prefix}:${rw['odpt:lineCode']}`,
       stationOrder: rw['odpt:stationOrder'],
     };
-    for (const so of rw['odpt:stationOrder']) {
+    for (let idx = 0; idx < rw['odpt:stationOrder'].length; idx++) {
+      const so = rw['odpt:stationOrder'][idx];
       stationToRailway.set(so['odpt:station'], info);
+      stationIndexMap.set(so['odpt:station'], idx);
     }
   }
 
-  // 1. Discover patterns: route + direction -> pattern
-  // Key: routeId + direction string
+  // 1. Discover patterns: route + direction + destination -> pattern
   const patternMap = new Map<
     string,
     { routeId: string; headsign: string; stops: string[]; sortKey: string }
   >();
 
-  for (const tt of timetables) {
-    const rw = stationToRailway.get(tt['odpt:station']);
-    if (!rw) {
-      continue;
-    }
-    const direction = tt['odpt:railDirection'];
-    const pKey = `${rw.routeId}\0${direction}`;
+  // Helper: get or create pattern for a (railway, direction, destination) combo
+  function getOrCreatePatternKey(
+    rw: RailwayInfo,
+    direction: string,
+    destination: string | undefined,
+  ): string {
+    // Normalize: if destination is the terminal for this direction, treat as full route
+    const terminal =
+      direction === 'odpt.RailDirection:Outbound'
+        ? rw.stationOrder[rw.stationOrder.length - 1]['odpt:station']
+        : rw.stationOrder[0]['odpt:station'];
+    const effectiveDest = destination === terminal ? undefined : destination;
+    const destKey = effectiveDest ?? '__full__';
+    const pKey = `${rw.routeId}\0${direction}\0${destKey}`;
+
     if (!patternMap.has(pKey)) {
-      const headsign = getHeadsignFromDirection(direction, rw.stationOrder);
-      const stops = buildStopSequence(direction, rw.stationOrder, prefix);
+      const headsign = getHeadsignFromDestination(effectiveDest, direction, rw.stationOrder);
+      const stops = buildStopSequence(
+        direction,
+        effectiveDest,
+        rw.stationOrder,
+        stationIndexMap,
+        prefix,
+      );
       patternMap.set(pKey, {
         routeId: rw.routeId,
         headsign,
         stops,
         sortKey: patternSortKey(rw.routeId, headsign, stops),
       });
+    }
+    return pKey;
+  }
+
+  // Scan all timetable objects to discover patterns
+  for (const tt of timetables) {
+    const rw = stationToRailway.get(tt['odpt:station']);
+    if (!rw) {
+      continue;
+    }
+    const direction = tt['odpt:railDirection'];
+    // Discover unique destinations in this timetable's objects
+    const seenDests = new Set<string | undefined>();
+    for (const obj of tt['odpt:stationTimetableObject']) {
+      const dest = obj['odpt:destinationStation']?.[0];
+      if (!seenDests.has(dest)) {
+        seenDests.add(dest);
+        getOrCreatePatternKey(rw, direction, dest);
+      }
     }
   }
 
@@ -162,28 +236,8 @@ export function buildTripPatternsAndTimetableFromOdpt(
     }
 
     const direction = tt['odpt:railDirection'];
-    const pKey = `${rw.routeId}\0${direction}`;
-    const patId = patternIdByKey.get(pKey)!;
     const stopId = `${prefix}:${extractStationShortId(tt['odpt:station'])}`;
     const serviceId = `${prefix}:${calendarToServiceId(tt['odpt:calendar'])}`;
-
-    let patMap = stopTimetable.get(stopId);
-    if (!patMap) {
-      patMap = new Map();
-      stopTimetable.set(stopId, patMap);
-    }
-
-    let svcMap = patMap.get(patId);
-    if (!svcMap) {
-      svcMap = new Map();
-      patMap.set(patId, svcMap);
-    }
-
-    let entries = svcMap.get(serviceId);
-    if (!entries) {
-      entries = [];
-      svcMap.set(serviceId, entries);
-    }
 
     for (const obj of tt['odpt:stationTimetableObject']) {
       const depTime = obj['odpt:departureTime'];
@@ -192,6 +246,29 @@ export function buildTripPatternsAndTimetableFromOdpt(
       // Need at least departure or arrival
       if (!depTime && !arrTime) {
         continue;
+      }
+
+      // Assign to correct pattern by destination
+      const dest = obj['odpt:destinationStation']?.[0];
+      const pKey = getOrCreatePatternKey(rw, direction, dest);
+      const patId = patternIdByKey.get(pKey)!;
+
+      let patMap = stopTimetable.get(stopId);
+      if (!patMap) {
+        patMap = new Map();
+        stopTimetable.set(stopId, patMap);
+      }
+
+      let svcMap = patMap.get(patId);
+      if (!svcMap) {
+        svcMap = new Map();
+        patMap.set(patId, svcMap);
+      }
+
+      let entries = svcMap.get(serviceId);
+      if (!entries) {
+        entries = [];
+        svcMap.set(serviceId, entries);
       }
 
       // departure: prefer departureTime, fall back to arrivalTime

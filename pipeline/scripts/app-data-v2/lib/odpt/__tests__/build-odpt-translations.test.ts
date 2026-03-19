@@ -71,13 +71,18 @@ describe('buildTranslationsV2', () => {
         'odpt:station': 'odpt.Station:Test.A',
         'odpt:calendar': 'odpt.Calendar:Weekday',
         'odpt:railDirection': 'odpt.RailDirection:Outbound',
-        'odpt:stationTimetableObject': [],
+        'odpt:stationTimetableObject': [
+          {
+            'odpt:departureTime': '06:00',
+            'odpt:destinationStation': ['odpt.Station:Test.B'],
+          },
+        ],
       },
     ];
 
     const result = buildTranslationsV2('test', timetables, [railway], stations, TEST_PROVIDER);
 
-    // Headsign: outbound -> last station
+    // Headsign: derived from destinationStation
     expect(result.headsigns['B駅']).toEqual({ ja: 'B駅', en: 'Station B' });
     // Stop names
     expect(result.stop_names['test:A']).toEqual({ ja: 'A駅', en: 'Station A' });
