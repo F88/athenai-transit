@@ -47,8 +47,10 @@
  * | Stop         | stopStats                       | → GlobalInsightsBundle     |
  *
  * Each bundle has a `bundle_version` and `kind` discriminant.
- * Sections within a bundle carry their own `v` (schema version):
- * v1 = unchanged from transit-json.ts, v2 = changed in this file.
+ * Sections within a bundle carry their own `v` (schema version).
+ * Section versions are independent and start at 1 — even new
+ * sections introduced in v2 bundles begin at v1. A section's `v`
+ * tracks its own schema evolution, not the bundle generation.
  *
  * ### Unchanged (import from transit-json.ts)
  *
@@ -79,30 +81,19 @@
 // -----------------------------------------------------------------------
 
 /**
- * routes.json (v2): versioned wrapper with route records.
+ * Route record (v2).
  *
  * Compared to v1, adds `desc` (route_desc). route_url is moved
  * to lookup.json for normalization.
  */
-export interface RoutesV2Json {
-  /** Schema version — see {@link RouteV2Json.v} for rationale. */
-  v: 2;
-  routes: RouteV2Json[];
-}
-
 export interface RouteV2Json {
   /**
    * Schema version embedded in each record. Must be `2` for this format.
    *
-   * Every v2 record carries its own version so the data is
-   * self-describing — consumers can identify the schema version
-   * from the serialized JSON alone, without relying on external
-   * metadata. This remains useful after types are renamed
-   * (e.g. RouteV2Json → RouteJson) and when records are
-   * processed outside of a bundle context.
-   *
-   * In a bundle, BundleSection.v also declares the version at the
-   * section level and will always match this value.
+   * Self-describing version stamp so consumers can identify the
+   * schema version from serialized JSON alone. In a bundle,
+   * {@link BundleSection}.v is the authoritative source; this
+   * field will always match the section-level version.
    */
   v: 2;
   i: string; // route_id
@@ -125,19 +116,13 @@ export interface RouteV2Json {
 // -----------------------------------------------------------------------
 
 /**
- * stops.json (v2): versioned wrapper with stop records.
+ * Stop record (v2).
  *
  * Compared to v1, `ai` (agency_id) is removed. GTFS spec does not
  * define agency_id on stops.txt — stops are shared infrastructure.
  * Stop-to-agency relationships are resolved at runtime via
  * timetable -> trip pattern -> route -> agency.
  */
-export interface StopsV2Json {
-  /** Schema version — see {@link RouteV2Json.v} for rationale. */
-  v: 2;
-  stops: StopV2Json[];
-}
-
 export interface StopV2Json {
   /** Schema version — see {@link RouteV2Json.v} for rationale. */
   v: 2;
@@ -232,19 +217,6 @@ export interface StopV2Json {
  */
 export type ShapePointV2 = [number, number, number?];
 
-export interface ShapesV2Json {
-  /** Schema version — see {@link RouteV2Json.v} for rationale. */
-  v: 2;
-  /**
-   * Route ID (prefixed) -> array of polylines.
-   * A route may have multiple polylines when different trips on the
-   * same route follow different geographic paths (distinct shape_ids).
-   * Each polyline is an array of shape points ordered by
-   * shape_pt_sequence. Consumers MUST NOT re-sort this array.
-   */
-  shapes: Record<string, ShapePointV2[][]>;
-}
-
 // -----------------------------------------------------------------------
 // trip-patterns.json
 // -----------------------------------------------------------------------
@@ -276,13 +248,6 @@ export interface ShapesV2Json {
  * Agency is not stored here — resolve via `r` -> RouteJson.ai.
  * GTFS spec defines route:agency as 1:1 (routes.txt.agency_id).
  */
-export interface TripPatternsJson {
-  /** Schema version — see {@link RouteV2Json.v} for rationale. */
-  v: 2;
-  /** pattern_id -> trip pattern metadata */
-  patterns: Record<string, TripPatternJson>;
-}
-
 export interface TripPatternJson {
   /** Schema version — see {@link RouteV2Json.v} for rationale. */
   v: 2;
@@ -336,9 +301,9 @@ export interface TripPatternJson {
    * `stops[i]` along the shape.
    *
    * Sourced from GTFS stop_times.txt shape_dist_traveled.
-   * Units are consistent with ShapesV2Json point distances.
+   * Units are consistent with {@link ShapePointV2} distances.
    *
-   * Together with ShapesV2Json's per-point distances, this enables
+   * Together with the per-point distances in the shapes bundle, this enables
    * partial shape rendering: to highlight the segment from stop A
    * to stop B, scan the shape point array for the distance range
    * `[sd[a], sd[b]]`. This works correctly even on looping routes
@@ -358,7 +323,7 @@ export interface TripPatternJson {
 // -----------------------------------------------------------------------
 
 /**
- * timetable.json (v2): versioned wrapper with stop_id -> schedule groups.
+ * Timetable group record (v2).
  *
  * Each group references a trip pattern and contains departure/arrival
  * times keyed by service_id. A single stop may have multiple groups
@@ -367,13 +332,6 @@ export interface TripPatternJson {
  * origins). Consumers that need route+headsign grouping (e.g.
  * DepartureGroup) must re-aggregate across patterns.
  */
-export interface TimetableV2Json {
-  /** Schema version — see {@link RouteV2Json.v} for rationale. */
-  v: 2;
-  /** stop_id -> schedule groups */
-  stops: Record<string, TimetableGroupV2Json[]>;
-}
-
 export interface TimetableGroupV2Json {
   /** Schema version — see {@link RouteV2Json.v} for rationale. */
   v: 2;
@@ -444,8 +402,6 @@ export interface TimetableGroupV2Json {
  * - stop_desc: 847 child stops share 416 unique descriptions
  */
 export interface LookupV2Json {
-  /** Schema version — see {@link RouteV2Json.v} for rationale. */
-  v: 2;
   /**
    * stop_id (prefixed) -> GTFS stop_url.
    * Links to operator's stop detail page (e.g. tobus.jp bus location).
@@ -476,13 +432,14 @@ import type { AgencyJson, CalendarJson, FeedInfoJson, TranslationsJson } from '.
  * bundle version. v1 sections use types from transit-json.ts unchanged;
  * v2 sections use types from this file.
  *
- * Note: Individual records (e.g. StopV2Json, RouteV2Json) also carry
- * their own `v` field. This is intentional — the record-level `v` is
- * a self-describing version stamp embedded in the serialized data so
- * that consumers can identify the schema version from the data alone,
- * even after the v2 types are renamed (e.g. StopV2Json → StopJson).
- * The section-level `v` here serves as bundle metadata and will
- * always match the record-level `v` within that section.
+ * Record types that carry their own `v` field (e.g. StopV2Json,
+ * RouteV2Json) use it as a self-describing version stamp in
+ * serialized data. The section-level `v` here is the authoritative
+ * source of truth for the section's schema version; record-level
+ * `v` values within a section will always match.
+ *
+ * Types without a record-level `v` (e.g. LookupV2Json) rely
+ * solely on the section-level `v` for version identification.
  */
 interface BundleSection<V extends number, T> {
   /** Schema version for this section's data type. */
@@ -774,6 +731,10 @@ export interface InsightsBundle {
    * the type system. Typical keys: "wd" (weekday), "sa" (Saturday),
    * "su" (Sunday), "all" (every day). The pipeline may generate
    * different keys depending on the source's calendar structure.
+   *
+   * **Constraint**: Each service_id MUST appear in exactly one group.
+   * The pipeline ensures non-overlapping groups so the app can
+   * unambiguously select a single group key for any given date.
    */
   serviceGroups: BundleSection<1, Record<string, string[]>>;
 
