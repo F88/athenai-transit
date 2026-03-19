@@ -29,8 +29,16 @@
  *
  * | File                   | Contents                                        |
  * | ---------------------- | ----------------------------------------------- |
- * | `{prefix}/data.json`   | All data needed at startup (DataBundle)          |
- * | `{prefix}/shapes.json` | Route shapes, lazy-loaded (ShapesBundle)         |
+ * | `{prefix}/data.json`     | All data needed at startup (DataBundle)           |
+ * | `{prefix}/shapes.json`   | Route shapes, lazy-loaded (ShapesBundle)          |
+ * | `{prefix}/insights.json` | Precomputed analytics, optional (InsightsBundle)  |
+ *
+ * InsightsBundle sections (2×2 matrix, all optional except serviceGroups):
+ *
+ * |              | Stats (service-group segmented) | Geo (day-independent)  |
+ * | ------------ | ------------------------------- | ---------------------- |
+ * | TripPattern  | tripPatternStats                | tripPatternGeo         |
+ * | Stop         | stopStats                       | stopGeo                |
  *
  * Each bundle has a `bundle_version` and `kind` discriminant.
  * Sections within a bundle carry their own `v` (schema version):
@@ -462,12 +470,13 @@ interface BundleSection<V extends number, T> {
  * This replaces the 8-10 individual JSON files per source in v1.
  *
  * The `kind` field serves as a discriminated union tag so consumers can
- * distinguish DataBundle from ShapesBundle at runtime:
+ * distinguish bundle types at runtime:
  *
  * ```ts
  * function loadBundle(json: SourceBundle) {
  *   if (json.kind === 'data') { ... }
  *   if (json.kind === 'shapes') { ... }
+ *   if (json.kind === 'insights') { ... }
  * }
  * ```
  */
@@ -504,8 +513,245 @@ export interface ShapesBundle {
   shapes: BundleSection<2, Record<string, ShapePointV2[][]>>;
 }
 
+// -----------------------------------------------------------------------
+// Insights — precomputed analytics for pluggable views
+// -----------------------------------------------------------------------
+
+/**
+ * Per-pattern operational statistics.
+ *
+ * Precomputed by the pipeline from stop_times + trips.
+ * Segmented by service group key (see {@link InsightsBundle.serviceGroups})
+ * because service patterns differ significantly between day types —
+ * some patterns may not run at all on certain days.
+ *
+ * - `freq`: enables T5 (Frequency) view sorting and route-line
+ *   thickness visualization.
+ * - `rd`: enables T6 (Duration) view — "ride this bus for ~34 min".
+ *   Values are median duration across all trips in the pattern, so
+ *   they represent a "typical" ride time rather than an exact
+ *   per-trip value.
+ *
+ * The `rd` array is parallel to {@link TripPatternJson.stops}:
+ * `rd[i]` is the approximate remaining ride time (minutes) from
+ * `stops[i]` to the terminal `stops[stops.length - 1]`.
+ *
+ * Derivable:
+ * - Total pattern duration: `rd[0]`
+ * - Frequent-stop score: `stops.length / rd[0]`
+ * - Non-stop score: `rd[0] / stops.length`
+ */
+export interface TripPatternStatsJson {
+  /** Total departures per day on a representative service day. */
+  freq: number;
+  /** Remaining minutes from stops[i] to terminal. Parallel to stops[]. */
+  rd: number[];
+}
+
+/**
+ * Per-pattern geographic metrics.
+ *
+ * Precomputed by the pipeline from stop coordinates.
+ * Provides straight-line distance, path distance, and circular
+ * route detection. Used by views that evaluate route shape
+ * characteristics (e.g. T10 Wandering) and for general route
+ * classification.
+ *
+ * For circular routes (`cl: true`), `dist` is 0 and distance-based
+ * scores (e.g. wandering score) are not meaningful. Consumers should
+ * handle this case explicitly.
+ *
+ * Derivable (app-side, combined with {@link TripPatternStatsJson}):
+ * - Wandering score (time-based): `rd[0] / dist`
+ * - Express score: `dist / rd[0]`
+ * - Wandering score (distance-based): `pathDist / dist`
+ */
+export interface TripPatternGeoJson {
+  /**
+   * Straight-line distance (km) from the first stop to the terminal,
+   * computed via Haversine formula.
+   */
+  dist: number;
+
+  /**
+   * Total path distance (km) along the stop sequence, computed as
+   * the sum of Haversine distances between consecutive stops.
+   *
+   * This is a rough approximation of actual road distance — it
+   * connects stops with straight lines rather than following the
+   * actual route. For more accurate distances, use
+   * {@link TripPatternJson.sd} (shape_dist_traveled) when available.
+   */
+  pathDist: number;
+
+  /**
+   * Whether this pattern is circular: the first and last stop are
+   * the same (`stops[0] === stops[stops.length - 1]`).
+   *
+   * Note: "6-shaped" routes (e.g. Oedo Line) where a mid-route stop
+   * appears twice but `stops[0] !== stops[last]` are NOT flagged as
+   * circular. They have a valid `dist` and can be scored normally.
+   */
+  cl: boolean;
+}
+
+/**
+ * Per-stop operational statistics.
+ *
+ * Precomputed by the pipeline from timetable, routes, and trips.
+ * Segmented by service group key (see {@link InsightsBundle.serviceGroups})
+ * because all values depend on which services are running — a stop
+ * may have 50 departures on weekdays but only 10 on Sundays, or
+ * lose entire route types on certain days.
+ *
+ * Provides frequency, connectivity, and operator-specific metrics
+ * for each stop. Used for marker rendering, view sorting, and
+ * operator-specific filtering (e.g. free pass mode).
+ *
+ * All values are aggregated across all sources that serve this stop.
+ * For operator-specific breakdowns, use {@link src}.
+ */
+export interface StopStatsJson {
+  /** Total departures per day across all patterns serving this stop. */
+  freq: number;
+
+  /** Number of distinct routes serving this stop. */
+  rc: number;
+
+  /** Number of distinct route types (bus, subway, tram, etc.) serving this stop. */
+  rtc: number;
+
+  /**
+   * Latest departure time (minutes from midnight) across all services.
+   * Values >= 1440 represent overnight departures past midnight.
+   * Indicates late-night availability.
+   */
+  ld: number;
+
+  /**
+   * Operator-specific route metrics, keyed by source prefix
+   * (e.g. "tobus", "toaran").
+   *
+   * Enables operator-scoped filtering such as "Toei free pass mode"
+   * — showing only stops and routes reachable with a specific
+   * operator's day pass.
+   */
+  src: Record<string, { rc: number; rtc: number }>;
+}
+
+/**
+ * Per-stop geographic metrics.
+ *
+ * Precomputed by the pipeline from stop coordinates via spatial
+ * analysis. Provides isolation and connectivity metrics that
+ * require cross-stop distance calculations.
+ *
+ * These metrics improve as more data sources are added — a stop
+ * that appears isolated within one source may reveal hidden
+ * connections when other sources are included.
+ */
+export interface StopGeoJson {
+  /**
+   * Distance (km) to the nearest stop served by a different route,
+   * computed via Haversine formula.
+   *
+   * High value = isolated (陸の孤島), transit desert.
+   * Low value = dense transit area, many nearby alternatives.
+   */
+  nr: number;
+
+  /**
+   * Distance (km) to the nearest stop with a different
+   * parent_station, computed via Haversine formula.
+   *
+   * Reveals "walkable portals" — points where a short walk
+   * connects two unrelated station complexes. A value of 0.1-0.2
+   * suggests a hidden shortcut between different transit networks.
+   *
+   * Requires parent_station data in the source. Omitted when
+   * parent_station is not available for this stop.
+   */
+  wp?: number;
+}
+
+/**
+ * `{prefix}/insights.json` — precomputed analytics for a single source.
+ *
+ * Contains pipeline-derived statistics and scores that enable
+ * pluggable view patterns (T5, T6, T7, T10, etc.) without runtime
+ * computation. Organized along two axes:
+ *
+ * |              | Stats (operational) | Geo (spatial)     |
+ * | ------------ | ------------------- | ----------------- |
+ * | TripPattern  | tripPatternStats    | tripPatternGeo    |
+ * | Stop         | stopStats           | stopGeo           |
+ *
+ * Stats sections are segmented by **service group key** — a string
+ * identifier generated by the pipeline from calendar.txt day-of-week
+ * patterns (e.g. "wd", "sa", "su"). The {@link serviceGroups} section
+ * maps each key to its constituent service_ids, so the app can
+ * determine which key to use for "today" without hard-coding any
+ * locale-specific day-type logic:
+ *
+ * ```ts
+ * if (bundle.kind === 'insights') {
+ *   // 1. Get today's active service_ids (existing calendar logic)
+ *   const active = getActiveServiceIds(calendar, today);
+ *
+ *   // 2. Find matching service group key
+ *   const groups = bundle.serviceGroups.data;
+ *   const groupKey = Object.keys(groups)
+ *     .find(k => groups[k].some(id => active.includes(id)));
+ *
+ *   // 3. Access stats with that key
+ *   if (groupKey && bundle.tripPatternStats) {
+ *     const stats = bundle.tripPatternStats.data[groupKey];
+ *   }
+ * }
+ * ```
+ *
+ * Geo sections are NOT segmented — geographic metrics are
+ * independent of which services are running.
+ *
+ * Each section is optional — the app enables views based on which
+ * sections are present. Separated from DataBundle to keep
+ * GTFS-derived data and pipeline-computed analytics independent.
+ * Each section is generated by a separate pipeline step, so they
+ * can be added or updated independently.
+ */
+export interface InsightsBundle {
+  /** Bundle format version. */
+  bundle_version: 2;
+  /** Discriminated union tag. */
+  kind: 'insights';
+
+  /**
+   * Service group definitions — maps a group key (e.g. "wd", "sa", "su")
+   * to the GTFS service_ids that belong to it.
+   *
+   * Generated by the pipeline from calendar.txt day-of-week patterns.
+   * The app matches today's active service_ids against this map to
+   * select the correct group key for Stats lookups.
+   *
+   * Keys are short identifiers chosen by the pipeline — NOT fixed by
+   * the type system. Typical keys: "wd" (weekday), "sa" (Saturday),
+   * "su" (Sunday), "all" (every day). The pipeline may generate
+   * different keys depending on the source's calendar structure.
+   */
+  serviceGroups: BundleSection<1, Record<string, string[]>>;
+
+  /** Per-pattern operational statistics. Keyed by service group, then pattern ID. */
+  tripPatternStats?: BundleSection<1, Record<string, Record<string, TripPatternStatsJson>>>;
+  /** Per-pattern geographic metrics. Keyed by pattern ID. Service-group independent. */
+  tripPatternGeo?: BundleSection<1, Record<string, TripPatternGeoJson>>;
+  /** Per-stop operational statistics. Keyed by service group, then stop ID. */
+  stopStats?: BundleSection<1, Record<string, Record<string, StopStatsJson>>>;
+  /** Per-stop geographic metrics. Keyed by stop ID. Service-group independent. */
+  stopGeo?: BundleSection<1, Record<string, StopGeoJson>>;
+}
+
 /**
  * Union of all bundle types for a single source.
  * Use `kind` to discriminate at runtime.
  */
-export type SourceBundle = DataBundle | ShapesBundle;
+export type SourceBundle = DataBundle | ShapesBundle | InsightsBundle;
