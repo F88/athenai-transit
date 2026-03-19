@@ -41,8 +41,8 @@ export function buildStopsV2(
 
   // Sort by station order
   const sorted = [...stations].sort((a, b) => {
-    const aIdx = orderMap.get(a['owl:sameAs']) ?? 999;
-    const bIdx = orderMap.get(b['owl:sameAs']) ?? 999;
+    const aIdx = orderMap.get(a['owl:sameAs']) ?? Number.MAX_SAFE_INTEGER;
+    const bIdx = orderMap.get(b['owl:sameAs']) ?? Number.MAX_SAFE_INTEGER;
     return aIdx - bIdx;
   });
 
