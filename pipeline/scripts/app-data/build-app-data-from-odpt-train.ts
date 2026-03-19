@@ -42,6 +42,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type {
   AgencyJson,
@@ -85,7 +86,7 @@ const OUTPUT_DIR = join(ROOT, 'build/data');
 const REQUIRED_ODPT_TYPES = ['odpt:Station', 'odpt:Railway', 'odpt:StationTimetable'] as const;
 
 /** Resolved ODPT Train source with all required resources. */
-interface OdptTrainSource {
+export interface OdptTrainSource {
   /** Source identifier (outDir name, e.g. "yurikamome"). */
   name: string;
   /** Output prefix (e.g. "yrkm"). */
@@ -105,8 +106,11 @@ interface OdptTrainSource {
 /**
  * Discover available ODPT Train sources by grouping resources by outDir.
  * A valid source must have all 3 required types.
+ *
+ * @returns Resolved ODPT Train sources sorted by name, each containing
+ *   all required resource definitions (Station, Railway, StationTimetable).
  */
-async function discoverOdptTrainSources(): Promise<OdptTrainSource[]> {
+export async function discoverOdptTrainSources(): Promise<OdptTrainSource[]> {
   const allDefs = await loadAllOdptJsonSources();
 
   // Group by outDir
@@ -148,16 +152,22 @@ async function discoverOdptTrainSources(): Promise<OdptTrainSource[]> {
 
 /**
  * List available ODPT Train source names.
+ *
+ * @returns Sorted array of source name strings (outDir identifiers).
  */
-async function listSourceNames(): Promise<string[]> {
+export async function listSourceNames(): Promise<string[]> {
   const sources = await discoverOdptTrainSources();
   return sources.map((s) => s.name);
 }
 
 /**
  * Load a single ODPT Train source by name.
+ *
+ * @param name - Source identifier (outDir name, e.g. "yurikamome").
+ * @returns The resolved ODPT Train source with all required resources.
+ * @throws {Error} If the source name is not found among available sources.
  */
-async function loadSource(name: string): Promise<OdptTrainSource> {
+export async function loadSource(name: string): Promise<OdptTrainSource> {
   const sources = await discoverOdptTrainSources();
   const source = sources.find((s) => s.name === name);
   if (!source) {
@@ -393,9 +403,12 @@ export function buildTimetable(
       groupMap.set(groupKey, entry);
     }
 
-    const minutes: number[] = tt['odpt:stationTimetableObject'].map((obj) =>
-      timeToMinutes(obj['odpt:departureTime']),
-    );
+    const minutes: number[] = tt['odpt:stationTimetableObject']
+      .filter(
+        (obj): obj is typeof obj & { 'odpt:departureTime': string } =>
+          obj['odpt:departureTime'] != null,
+      )
+      .map((obj) => timeToMinutes(obj['odpt:departureTime']));
 
     let existing = entry.services.get(serviceId);
     if (!existing) {
@@ -766,4 +779,11 @@ async function main(): Promise<void> {
   }
 }
 
-runMain(main);
+// Only run main() when executed directly (not when imported by other scripts).
+// Use import.meta.url (standard ESM) + resolve() to normalize paths,
+// avoiding tsx-specific import.meta.filename and relative vs absolute mismatches.
+const isDirectExecution =
+  process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
+  runMain(main);
+}
