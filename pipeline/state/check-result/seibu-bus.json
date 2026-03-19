@@ -1,10 +1,8 @@
 {
   "sourceName": "seibu-bus",
-  "checkedAt": "2026-03-19T05:28:07.612Z",
+  "checkedAt": "2026-03-19T14:45:47.734Z",
   "resourceUrls": [],
-  "result": "attention",
-  "warnings": [
-    "NO_DOWNLOAD_REPORT"
-  ],
+  "result": "ok",
+  "warnings": [],
   "errors": []
 }
