@@ -136,7 +136,7 @@ export interface StopV2Json {
   n: string; // stop_name
   a: number; // stop_lat
   o: number; // stop_lon
-  l: number; // location_type
+  l: 0 | 1; // location_type (0=stop/platform, 1=station)
   // ai removed — GTFS stops.txt has no agency_id
 
   // stop_desc moved to lookup.json (stopDescs)
@@ -147,7 +147,7 @@ export interface StopV2Json {
    * For child stops, 0 inherits from parent_station.
    * Omitted when the source does not provide wheelchair_boarding.
    */
-  wb?: number;
+  wb?: 0 | 1 | 2;
 
   /**
    * GTFS parent_station — FK to the parent stop (location_type=1).
@@ -286,7 +286,7 @@ export interface TripPatternJson {
    * GTFS spec: "should not be used in routing; provides a way to
    * separate trips by direction when publishing time tables."
    */
-  dir?: number;
+  dir?: 0 | 1;
 
   /**
    * Ordered stop IDs (prefixed) from origin to destination.
@@ -302,9 +302,11 @@ export interface TripPatternJson {
   stops: string[];
 
   /**
-   * Cumulative distance along the route shape per stop, parallel
-   * to {@link stops}: `sd[i]` is the distance from the origin to
-   * `stops[i]` along the shape.
+   * Cumulative distance along the route shape per stop.
+   * `sd[i]` corresponds to `stops[i]` — the distance from the
+   * origin to that stop along the shape. Length MUST equal
+   * `stops.length`. Order MUST NOT be changed — indices are
+   * positional.
    *
    * Sourced from GTFS stop_times.txt shape_dist_traveled.
    * Units are consistent with {@link ShapePointV2} distances.
@@ -350,16 +352,24 @@ export interface TimetableGroupV2Json {
   tp: string;
 
   /**
-   * Service ID -> sorted departure minutes from midnight.
+   * Service ID -> departure minutes from midnight.
+   * Sorted in ascending order. MUST NOT be re-sorted.
    * Minutes >= 1440 represent overnight departures past midnight.
+   *
+   * The arrays for `a`, `p`, and `do` (when present) are
+   * positionally aligned: index `i` across all four fields
+   * refers to the same departure.
    */
   d: Record<string, number[]>;
 
   /**
-   * Service ID -> sorted arrival minutes from midnight.
-   * Parallel to {@link d}: `a[serviceId][i]` corresponds to
-   * `d[serviceId][i]`. When arrival equals departure (most bus
-   * stops), the same value is stored in both arrays.
+   * Service ID -> arrival minutes from midnight.
+   * Positionally aligned with {@link d}: `a[sid][i]` is the
+   * arrival for the same departure as `d[sid][i]`.
+   * Length MUST equal `d[sid].length` for each service ID.
+   *
+   * When arrival equals departure (most bus stops), the same
+   * value is stored in both arrays.
    *
    * For ODPT sources that do not provide arrival times, values
    * are copied from departure times.
@@ -368,27 +378,29 @@ export interface TimetableGroupV2Json {
 
   /**
    * Service ID -> pickup_type per departure.
-   * Parallel to {@link d}: `p[serviceId][i]` corresponds to
-   * `d[serviceId][i]`.
+   * Positionally aligned with {@link d}: `p[sid][i]` is the
+   * pickup_type for the same departure as `d[sid][i]`.
+   * Length MUST equal `d[sid].length` for each service ID.
    *
    * GTFS pickup_type: 0 = regular, 1 = no pickup (drop-off only),
    * 2 = must phone, 3 = must coordinate with driver.
    *
    * Omitted when all departures in this group have pickup_type = 0.
    */
-  p?: Record<string, number[]>;
+  p?: Record<string, (0 | 1 | 2 | 3)[]>;
 
   /**
    * Service ID -> drop_off_type per departure.
-   * Parallel to {@link d}: `do[serviceId][i]` corresponds to
-   * `d[serviceId][i]`.
+   * Positionally aligned with {@link d}: `do[sid][i]` is the
+   * drop_off_type for the same departure as `d[sid][i]`.
+   * Length MUST equal `d[sid].length` for each service ID.
    *
    * GTFS drop_off_type: 0 = regular, 1 = no drop-off (pickup only),
    * 2 = must phone, 3 = must coordinate with driver.
    *
    * Omitted when all departures in this group have drop_off_type = 0.
    */
-  do?: Record<string, number[]>;
+  do?: Record<string, (0 | 1 | 2 | 3)[]>;
 }
 
 // -----------------------------------------------------------------------
@@ -534,7 +546,13 @@ export interface ShapesBundle {
 export interface TripPatternStatsJson {
   /** Total departures per day for this service group. */
   freq: number;
-  /** Remaining minutes from stops[i] to terminal. Parallel to stops[]. */
+  /**
+   * Remaining minutes from each stop to the terminal.
+   * `rd[i]` corresponds to {@link TripPatternJson}.stops[i].
+   * Length MUST equal TripPatternJson.stops.length.
+   * Values are monotonically decreasing; `rd[last]` is always 0.
+   * Order MUST NOT be changed — indices are positional.
+   */
   rd: number[];
 }
 
@@ -738,13 +756,17 @@ export interface InsightsBundle {
    * "su" (Sunday), "all" (every day). The pipeline may generate
    * different keys depending on the source's calendar structure.
    *
-   * **Constraint**: Each service_id MUST appear in exactly one group.
-   * However, on dates with special schedules (e.g. calendar_dates
-   * exceptions), the active service_ids may span multiple groups.
-   * The app selects the group with the most overlap (see the
-   * sample code above). The pipeline ensures non-overlapping
-   * service_id assignment, but does NOT guarantee that a given
-   * date maps to a single group.
+   * **Constraints**:
+   * - Each service_id MUST appear in exactly one group.
+   * - Groups are ordered by priority (most common first, e.g.
+   *   weekday before Saturday before Sunday). On dates where the
+   *   active service_ids span multiple groups (e.g. calendar_dates
+   *   exceptions), the app selects the group with the most overlap.
+   *   On tie, the first group in iteration order wins.
+   *
+   * **Ordering**: The pipeline MUST emit groups in priority order
+   * (most common day type first, e.g. weekday → Saturday → Sunday).
+   * This order determines tie-break behavior.
    */
   serviceGroups: BundleSection<1, Record<string, string[]>>;
 
