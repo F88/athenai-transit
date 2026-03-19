@@ -59,7 +59,7 @@
  * | File        | Field | Reason                                         |
  * | ----------- | ----- | ---------------------------------------------- |
  * | stops.json  | `ai`  | GTFS spec: stops have no agency_id              |
- * | routes.json | `u`   | Moved to urls.json for normalization            |
+ * | routes.json | `u`   | Moved to lookup.json for normalization            |
  * | timetable   | `r`   | Replaced by `tp` → TripPatternJson.r            |
  * | timetable   | `h`   | Replaced by `tp` → TripPatternJson.h            |
  * | timetable   | `ai`  | Replaced by `tp` → TripPatternJson.r → Route.ai |
@@ -82,16 +82,28 @@
  * routes.json (v2): versioned wrapper with route records.
  *
  * Compared to v1, adds `desc` (route_desc). route_url is moved
- * to urls.json for normalization.
+ * to lookup.json for normalization.
  */
 export interface RoutesV2Json {
-  /** Schema version. Must be `2` for this format. */
+  /** Schema version — see {@link RouteV2Json.v} for rationale. */
   v: 2;
   routes: RouteV2Json[];
 }
 
 export interface RouteV2Json {
-  /** Schema version. Must be `2` for this format. */
+  /**
+   * Schema version embedded in each record. Must be `2` for this format.
+   *
+   * Every v2 record carries its own version so the data is
+   * self-describing — consumers can identify the schema version
+   * from the serialized JSON alone, without relying on external
+   * metadata. This remains useful after types are renamed
+   * (e.g. RouteV2Json → RouteJson) and when records are
+   * processed outside of a bundle context.
+   *
+   * In a bundle, BundleSection.v also declares the version at the
+   * section level and will always match this value.
+   */
   v: 2;
   i: string; // route_id
   s: string; // route_short_name
@@ -105,7 +117,7 @@ export interface RouteV2Json {
    * Omitted when the source does not provide route_desc.
    */
   desc?: string;
-  // route_url moved to urls.json
+  // route_url moved to lookup.json
 }
 
 // -----------------------------------------------------------------------
@@ -121,13 +133,13 @@ export interface RouteV2Json {
  * timetable -> trip pattern -> route -> agency.
  */
 export interface StopsV2Json {
-  /** Schema version. Must be `2` for this format. */
+  /** Schema version — see {@link RouteV2Json.v} for rationale. */
   v: 2;
   stops: StopV2Json[];
 }
 
 export interface StopV2Json {
-  /** Schema version. Must be `2` for this format. */
+  /** Schema version — see {@link RouteV2Json.v} for rationale. */
   v: 2;
   i: string; // stop_id (prefixed)
   n: string; // stop_name
@@ -221,7 +233,7 @@ export interface StopV2Json {
 export type ShapePointV2 = [number, number, number?];
 
 export interface ShapesV2Json {
-  /** Schema version. Must be `2` for this format. */
+  /** Schema version — see {@link RouteV2Json.v} for rationale. */
   v: 2;
   /**
    * Route ID (prefixed) -> array of polylines.
@@ -265,14 +277,14 @@ export interface ShapesV2Json {
  * GTFS spec defines route:agency as 1:1 (routes.txt.agency_id).
  */
 export interface TripPatternsJson {
-  /** Schema version. Must be `2` for this format. */
+  /** Schema version — see {@link RouteV2Json.v} for rationale. */
   v: 2;
   /** pattern_id -> trip pattern metadata */
   patterns: Record<string, TripPatternJson>;
 }
 
 export interface TripPatternJson {
-  /** Schema version. Must be `2` for this format. */
+  /** Schema version — see {@link RouteV2Json.v} for rationale. */
   v: 2;
 
   /**
@@ -356,14 +368,14 @@ export interface TripPatternJson {
  * DepartureGroup) must re-aggregate across patterns.
  */
 export interface TimetableV2Json {
-  /** Schema version. Must be `2` for this format. */
+  /** Schema version — see {@link RouteV2Json.v} for rationale. */
   v: 2;
   /** stop_id -> schedule groups */
   stops: Record<string, TimetableGroupV2Json[]>;
 }
 
 export interface TimetableGroupV2Json {
-  /** Schema version. Must be `2` for this format. */
+  /** Schema version — see {@link RouteV2Json.v} for rationale. */
   v: 2;
 
   /**
@@ -422,16 +434,17 @@ export interface TimetableGroupV2Json {
 /**
  * lookup.json: normalized lookup tables for supplementary data.
  *
- * Data that is too heavy or duplicated to embed in the main JSON
- * files (stops.json, routes.json) is separated here as ID -> value
- * dictionaries. Loaded on demand when detail views need it.
+ * Data that is too heavy or duplicated to embed in the main record
+ * arrays (stops, routes) is separated here as ID -> value
+ * dictionaries. Included in DataBundle and loaded at startup,
+ * but accessed only when detail views need it.
  *
  * Examples of duplication avoided:
  * - stop_url: toei-bus 3,695 child stops share 1,673 unique URLs
  * - stop_desc: 847 child stops share 416 unique descriptions
  */
 export interface LookupV2Json {
-  /** Schema version. Must be `2` for this format. */
+  /** Schema version — see {@link RouteV2Json.v} for rationale. */
   v: 2;
   /**
    * stop_id (prefixed) -> GTFS stop_url.
@@ -462,6 +475,14 @@ import type { AgencyJson, CalendarJson, FeedInfoJson, TranslationsJson } from '.
  * Each section declares its own schema version independently of the
  * bundle version. v1 sections use types from transit-json.ts unchanged;
  * v2 sections use types from this file.
+ *
+ * Note: Individual records (e.g. StopV2Json, RouteV2Json) also carry
+ * their own `v` field. This is intentional — the record-level `v` is
+ * a self-describing version stamp embedded in the serialized data so
+ * that consumers can identify the schema version from the data alone,
+ * even after the v2 types are renamed (e.g. StopV2Json → StopJson).
+ * The section-level `v` here serves as bundle metadata and will
+ * always match the record-level `v` within that section.
  */
 interface BundleSection<V extends number, T> {
   /** Schema version for this section's data type. */
@@ -702,10 +723,20 @@ export interface StopGeoJson {
  *   // 1. Get today's active service_ids (existing calendar logic)
  *   const active = getActiveServiceIds(calendar, today);
  *
- *   // 2. Find matching service group key
+ *   // 2. Find the service group key whose service_ids overlap
+ *   //    with today's active set. When multiple groups match
+ *   //    (e.g. calendar_dates adds services from two groups),
+ *   //    pick the one with the most overlap.
  *   const groups = bundle.serviceGroups.data;
- *   const groupKey = Object.keys(groups)
- *     .find(k => groups[k].some(id => active.includes(id)));
+ *   let groupKey: string | undefined;
+ *   let bestOverlap = 0;
+ *   for (const [key, serviceIds] of Object.entries(groups)) {
+ *     const overlap = serviceIds.filter(id => active.has(id)).length;
+ *     if (overlap > bestOverlap) {
+ *       bestOverlap = overlap;
+ *       groupKey = key;
+ *     }
+ *   }
  *
  *   // 3. Access stats with that key
  *   if (groupKey && bundle.tripPatternStats) {
