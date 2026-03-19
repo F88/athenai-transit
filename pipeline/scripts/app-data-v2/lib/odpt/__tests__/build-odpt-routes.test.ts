@@ -51,4 +51,38 @@ describe('buildRoutesV2', () => {
       ai: 'yrkm:Test Transit',
     });
   });
+
+  it('strips # prefix from color', () => {
+    const railway = makeRailway({
+      'odpt:lineCode': 'M',
+      'odpt:color': '#FF5500',
+      'odpt:stationOrder': [],
+    });
+
+    const result = buildRoutesV2('test', railway, TEST_PROVIDER);
+    expect(result[0].c).toBe('FF5500');
+  });
+
+  it('produces one route per railway call (multiple railways produce multiple routes)', () => {
+    const railwayA = makeRailway({
+      'odpt:lineCode': 'A',
+      'odpt:railwayTitle': { ja: 'A線', en: 'Line A' },
+      'odpt:stationOrder': [],
+    });
+    const railwayB = makeRailway({
+      'odpt:lineCode': 'B',
+      'odpt:railwayTitle': { ja: 'B線', en: 'Line B' },
+      'odpt:stationOrder': [],
+    });
+
+    const resultA = buildRoutesV2('test', railwayA, TEST_PROVIDER);
+    const resultB = buildRoutesV2('test', railwayB, TEST_PROVIDER);
+    const combined = [...resultA, ...resultB];
+
+    expect(combined).toHaveLength(2);
+    expect(combined[0].i).toBe('test:A');
+    expect(combined[0].l).toBe('A線');
+    expect(combined[1].i).toBe('test:B');
+    expect(combined[1].l).toBe('B線');
+  });
 });

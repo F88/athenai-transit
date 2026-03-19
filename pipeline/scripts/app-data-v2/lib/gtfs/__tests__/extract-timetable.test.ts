@@ -205,6 +205,57 @@ describe('extractTripPatternsAndTimetable', () => {
     expect(g.dt!['test:WD']).toEqual([0]);
   });
 
+  it('creates separate patterns for different headsigns on the same route', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '新宿', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    expect(Object.keys(tripPatterns)).toHaveLength(2);
+    const headsigns = Object.values(tripPatterns).map((p) => p.h).sort();
+    expect(headsigns).toEqual(['新宿', '渋谷']);
+  });
+
+  it('includes direction_id=0 in pattern (not omitted)', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    expect(tripPatterns['test:p1'].dir).toBe(0);
+  });
+
+  it('handles pickup_type/drop_off_type NULL as 0', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', NULL, NULL);
+    `);
+
+    const { timetable } = extractTripPatternsAndTimetable(db, 'test');
+    const g = timetable['test:S001'][0];
+    expect(g.pt!['test:WD']).toEqual([0]);
+    expect(g.dt!['test:WD']).toEqual([0]);
+  });
+
+  it('NULL departure stop is in pattern.stops but not in timetable', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, NULL, NULL, 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S003', 3, '08:10:00', '08:10:00', 0, 0);
+    `);
+
+    const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
+    // Pattern includes all 3 stops (including pass-through)
+    expect(tripPatterns['test:p1'].stops).toEqual(['test:S001', 'test:S002', 'test:S003']);
+    // But timetable has no entry for S002
+    expect(timetable['test:S002']).toBeUndefined();
+  });
+
   it('skips stop_times with NULL departure_time', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);

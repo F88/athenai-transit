@@ -29,4 +29,25 @@ describe('buildFeedInfoV2', () => {
       v: '2025-04-01',
     });
   });
+
+  it('handles leap year date (Feb 29 -> Feb 28 next year)', () => {
+    const result = buildFeedInfoV2('2024-02-29', TEST_PROVIDER);
+    // 2025-02-29 does not exist, so it should clamp to 2025-02-28
+    expect(result.s).toBe('20240229');
+    expect(result.e).toBe('20250228');
+  });
+
+  it('returns empty string for pu when provider has no URL', () => {
+    const providerNoUrl: Provider = {
+      name: {
+        ja: { long: 'テスト交通', short: 'テスト' },
+        en: { long: 'Test Transit', short: 'Test' },
+      },
+      // url is undefined
+    };
+
+    const result = buildFeedInfoV2('2025-06-15', providerNoUrl);
+    expect(result.pu).toBe('');
+    expect(result.pn).toBe('テスト交通');
+  });
 });

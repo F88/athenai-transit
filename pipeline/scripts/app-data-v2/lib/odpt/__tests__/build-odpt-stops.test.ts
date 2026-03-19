@@ -81,4 +81,29 @@ describe('buildStopsV2', () => {
     expect(result[0].ps).toBeUndefined();
     expect(result[0].pc).toBeUndefined();
   });
+
+  it('sorts stations not in stationOrder to the end', () => {
+    const stations: OdptStation[] = [
+      makeStation('odpt.Station:Test.C', 'C駅', 'Station C', 35.68, 139.78),
+      makeStation('odpt.Station:Test.A', 'A駅', 'Station A', 35.66, 139.76),
+      makeStation('odpt.Station:Test.B', 'B駅', 'Station B', 35.67, 139.77),
+    ];
+    // Only A and B have order entries; C is missing
+    const orders: OdptStationOrder[] = [
+      makeOrder(1, 'odpt.Station:Test.A', 'A駅', 'Station A'),
+      makeOrder(2, 'odpt.Station:Test.B', 'B駅', 'Station B'),
+    ];
+
+    const result = buildStopsV2('test', stations, orders);
+    expect(result).toHaveLength(3);
+    expect(result[0].i).toBe('test:A');
+    expect(result[1].i).toBe('test:B');
+    // C has no order entry, so it gets MAX_SAFE_INTEGER and sorts to the end
+    expect(result[2].i).toBe('test:C');
+  });
+
+  it('returns empty array when input is empty', () => {
+    const result = buildStopsV2('test', [], []);
+    expect(result).toEqual([]);
+  });
 });

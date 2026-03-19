@@ -118,4 +118,58 @@ describe('extractTranslationsV2', () => {
       en: 'Test',
     });
   });
+
+  it('extracts trip_headsign translations via field_value (standard GTFS)', () => {
+    db.exec(`
+      INSERT INTO agency (agency_id, agency_name) VALUES ('A001', 'Test Agency');
+      INSERT INTO translations (table_name, field_name, language, translation, field_value)
+      VALUES ('trips', 'trip_headsign', 'en', 'Tokyo Station', '東京駅');
+    `);
+
+    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    expect(result.headsigns['東京駅']).toEqual({ en: 'Tokyo Station' });
+  });
+
+  it('extracts stop_headsign translations', () => {
+    db.exec(`
+      INSERT INTO agency (agency_id, agency_name) VALUES ('A001', 'Test Agency');
+      INSERT INTO stop_times (trip_id, stop_id, stop_sequence, stop_headsign, departure_time)
+      VALUES ('T001', 'S001', 1, '渋谷行', '08:00');
+      INSERT INTO translations (table_name, field_name, language, translation, record_id, record_sub_id)
+      VALUES ('stop_times', 'stop_headsign', 'en', 'For Shibuya', 'T001', '1');
+    `);
+
+    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    expect(result.stop_headsigns['渋谷行']).toEqual({ en: 'For Shibuya' });
+  });
+
+  it('extracts route_long_name translations', () => {
+    db.exec(`
+      INSERT INTO agency (agency_id, agency_name) VALUES ('A001', 'Test Agency');
+      INSERT INTO routes (route_id, agency_id, route_short_name, route_long_name, route_type)
+      VALUES ('R001', 'A001', 'R1', '山手線', 2);
+      INSERT INTO translations (table_name, field_name, language, translation, record_id)
+      VALUES ('routes', 'route_long_name', 'en', 'Yamanote Line', 'R001');
+    `);
+
+    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    expect(result.route_names['test:R001']).toEqual({ en: 'Yamanote Line' });
+  });
+
+  it('deduplicates headsign translations when multiple trips share the same headsign', () => {
+    db.exec(`
+      INSERT INTO agency (agency_id, agency_name) VALUES ('A001', 'Test Agency');
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign)
+      VALUES ('T001', 'R001', 'S001', '新宿駅'),
+             ('T002', 'R001', 'S001', '新宿駅');
+      INSERT INTO translations (table_name, field_name, language, translation, record_id)
+      VALUES ('trips', 'trip_headsign', 'en', 'Shinjuku Sta.', 'T001'),
+             ('trips', 'trip_headsign', 'en', 'Shinjuku Sta.', 'T002');
+    `);
+
+    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    // Should produce only one headsign entry despite two trips
+    expect(result.headsigns['新宿駅']).toEqual({ en: 'Shinjuku Sta.' });
+    expect(Object.keys(result.headsigns)).toHaveLength(1);
+  });
 });

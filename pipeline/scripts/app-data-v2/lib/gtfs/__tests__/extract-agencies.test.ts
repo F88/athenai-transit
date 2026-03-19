@@ -80,4 +80,29 @@ describe('extractAgenciesV2', () => {
     const result = extractAgenciesV2(db, 'test', provider);
     expect(result[0].cs).toEqual([{ b: '00377E', t: 'FFFFFF' }]);
   });
+
+  it('handles NULL optional fields as empty strings', () => {
+    db.exec(`
+      INSERT INTO agency (agency_id, agency_name)
+      VALUES ('A001', 'Test Agency');
+    `);
+
+    const result = extractAgenciesV2(db, 'test', TEST_PROVIDER);
+    expect(result[0].u).toBe('');
+    expect(result[0].l).toBe('');
+    expect(result[0].tz).toBe('');
+    expect(result[0].fu).toBe('');
+  });
+
+  it('returns multiple agencies sorted by agency_id', () => {
+    db.exec(`
+      INSERT INTO agency (agency_id, agency_name) VALUES ('B001', 'Agency B');
+      INSERT INTO agency (agency_id, agency_name) VALUES ('A001', 'Agency A');
+    `);
+
+    const result = extractAgenciesV2(db, 'test', TEST_PROVIDER);
+    expect(result).toHaveLength(2);
+    expect(result[0].i).toBe('test:A001');
+    expect(result[1].i).toBe('test:B001');
+  });
 });

@@ -337,4 +337,88 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     expect(p.h).toBe('C駅'); // fallback to terminal
     expect(p.stops).toEqual(['test:A', 'test:B', 'test:C']);
   });
+
+  it('handles multiple railways with a shared station correctly', () => {
+    // Railway X: stations A -> B -> C
+    // Railway Y: stations B -> D -> E  (B is shared)
+    const ordersX: OdptStationOrder[] = [
+      makeOrder(1, 'odpt.Station:Test.A', 'A駅', 'Station A'),
+      makeOrder(2, 'odpt.Station:Test.B', 'B駅', 'Station B'),
+      makeOrder(3, 'odpt.Station:Test.C', 'C駅', 'Station C'),
+    ];
+    const ordersY: OdptStationOrder[] = [
+      makeOrder(1, 'odpt.Station:Test.B', 'B駅', 'Station B'),
+      makeOrder(2, 'odpt.Station:Test.D', 'D駅', 'Station D'),
+      makeOrder(3, 'odpt.Station:Test.E', 'E駅', 'Station E'),
+    ];
+    const railwayX = makeRailway({ 'odpt:lineCode': 'X', 'odpt:stationOrder': ordersX });
+    const railwayY = makeRailway({ 'odpt:lineCode': 'Y', 'odpt:stationOrder': ordersY });
+
+    const timetables: OdptStationTimetable[] = [
+      // Station A on railway X -> outbound to C
+      makeTimetable(
+        'odpt.Station:Test.A', 'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound', ['06:00'],
+        'odpt.Station:Test.C',
+      ),
+      // Station D on railway Y -> outbound to E
+      makeTimetable(
+        'odpt.Station:Test.D', 'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound', ['07:00'],
+        'odpt.Station:Test.E',
+      ),
+    ];
+
+    const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt(
+      'test', timetables, [railwayX, railwayY],
+    );
+
+    // Should produce 2 patterns: one for each railway
+    expect(Object.keys(tripPatterns)).toHaveLength(2);
+    const patterns = Object.values(tripPatterns);
+    const xPattern = patterns.find((p) => p.r === 'test:X')!;
+    const yPattern = patterns.find((p) => p.r === 'test:Y')!;
+
+    expect(xPattern.stops).toEqual(['test:A', 'test:B', 'test:C']);
+    expect(yPattern.stops).toEqual(['test:B', 'test:D', 'test:E']);
+  });
+
+  it('uses per-railway station index for destination truncation (no cross-railway collision)', () => {
+    // Railway X: A(0) -> B(1) -> C(2) -> D(3)
+    // Railway Y: B(0) -> E(1) -> F(2)
+    // B is at index 1 in X but index 0 in Y.
+    // A short-turn on X to B should truncate at index 1, not index 0.
+    const ordersX: OdptStationOrder[] = [
+      makeOrder(1, 'odpt.Station:Test.A', 'A駅', 'Station A'),
+      makeOrder(2, 'odpt.Station:Test.B', 'B駅', 'Station B'),
+      makeOrder(3, 'odpt.Station:Test.C', 'C駅', 'Station C'),
+      makeOrder(4, 'odpt.Station:Test.D', 'D駅', 'Station D'),
+    ];
+    const ordersY: OdptStationOrder[] = [
+      makeOrder(1, 'odpt.Station:Test.B', 'B駅', 'Station B'),
+      makeOrder(2, 'odpt.Station:Test.E', 'E駅', 'Station E'),
+      makeOrder(3, 'odpt.Station:Test.F', 'F駅', 'Station F'),
+    ];
+    const railwayX = makeRailway({ 'odpt:lineCode': 'X', 'odpt:stationOrder': ordersX });
+    const railwayY = makeRailway({ 'odpt:lineCode': 'Y', 'odpt:stationOrder': ordersY });
+
+    const timetables: OdptStationTimetable[] = [
+      // Short-turn on X: A -> B (destination B is at index 1 in X)
+      makeTimetable(
+        'odpt.Station:Test.A', 'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound', ['06:00'],
+        'odpt.Station:Test.B',
+      ),
+    ];
+
+    const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt(
+      'test', timetables, [railwayX, railwayY],
+    );
+
+    const p = Object.values(tripPatterns)[0];
+    // Must use X's index (B at 1), so stops = [A, B] (not just [A] if Y's index 0 were used)
+    expect(p.r).toBe('test:X');
+    expect(p.stops).toEqual(['test:A', 'test:B']);
+    expect(p.h).toBe('B駅');
+  });
 });
