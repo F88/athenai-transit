@@ -20,7 +20,7 @@
  * | routes     | + `desc` (route_desc). `route_url` moved to lookup section |
  * | stops      | - `ai` removed. + `wb`, `pc`, `ps`. `desc` in lookup      |
  * | shapes     | Point tuple `[lat, lon]` → `[lat, lon, dist?]`             |
- * | timetable  | `r,h,ai` → `tp` (pattern FK). + `a`, `p?`, `do?`           |
+ * | timetable  | `r,h,ai` → `tp` (pattern FK). + `a`, `pt?`, `dt?`           |
  *
  * ### New sections
  *
@@ -204,25 +204,23 @@ export interface StopV2Json {
 // shapes section (v2)
 // -----------------------------------------------------------------------
 
-/**
- * Shapes section (v2): route_id -> array of polylines with optional
- * cumulative distance.
- *
- * Each shape point is a tuple of `[lat, lon]` or `[lat, lon, dist]`.
- * The optional third element is GTFS shape_dist_traveled — the actual
- * distance traveled along the shape from the first point to this point.
- *
- * When present, shape_dist_traveled enables:
- * - Partial shape rendering (highlight only the segment a trip covers)
- * - Travel distance calculation for a trip pattern
- * - Disambiguation of overlapping segments on looping/inlining routes
- *
- * Currently no GTFS sources in this project provide shape_dist_traveled,
- * so all points use the `[lat, lon]` form. The type supports both forms
- * so the pipeline can populate distance data when sources provide it.
- *
- * @see GTFS spec shapes.txt — shape_dist_traveled field
- */
+// Shapes section (v2): route_id -> array of polylines with optional
+// cumulative distance.
+//
+// Each shape point is a tuple of [lat, lon] or [lat, lon, dist].
+// The optional third element is GTFS shape_dist_traveled — the actual
+// distance traveled along the shape from the first point to this point.
+//
+// When present, shape_dist_traveled enables:
+// - Partial shape rendering (highlight only the segment a trip covers)
+// - Travel distance calculation for a trip pattern
+// - Disambiguation of overlapping segments on looping/inlining routes
+//
+// Currently no GTFS sources in this project provide shape_dist_traveled,
+// so all points use the [lat, lon] form. The type supports both forms
+// so the pipeline can populate distance data when sources provide it.
+//
+// See: GTFS spec shapes.txt — shape_dist_traveled field
 /**
  * A single shape point: `[lat, lon]` or `[lat, lon, dist]`.
  * The optional third element is GTFS shape_dist_traveled.
@@ -362,7 +360,7 @@ export interface TimetableGroupV2Json {
    * Sorted in ascending order. MUST NOT be re-sorted.
    * Minutes >= 1440 represent overnight departures past midnight.
    *
-   * The arrays for `a`, `p`, and `do` (when present) are
+   * The arrays for `a`, `pt`, and `dt` (when present) are
    * positionally aligned: index `i` across all four fields
    * refers to the same departure.
    */
@@ -384,7 +382,7 @@ export interface TimetableGroupV2Json {
 
   /**
    * Service ID -> pickup_type per departure.
-   * Positionally aligned with {@link d}: `p[sid][i]` is the
+   * Positionally aligned with {@link d}: `pt[sid][i]` is the
    * pickup_type for the same departure as `d[sid][i]`.
    * Length MUST equal `d[sid].length` for each service ID.
    *
@@ -393,11 +391,11 @@ export interface TimetableGroupV2Json {
    *
    * Omitted when all departures in this group have pickup_type = 0.
    */
-  p?: Record<string, (0 | 1 | 2 | 3)[]>;
+  pt?: Record<string, (0 | 1 | 2 | 3)[]>;
 
   /**
    * Service ID -> drop_off_type per departure.
-   * Positionally aligned with {@link d}: `do[sid][i]` is the
+   * Positionally aligned with {@link d}: `dt[sid][i]` is the
    * drop_off_type for the same departure as `d[sid][i]`.
    * Length MUST equal `d[sid].length` for each service ID.
    *
@@ -406,7 +404,7 @@ export interface TimetableGroupV2Json {
    *
    * Omitted when all departures in this group have drop_off_type = 0.
    */
-  do?: Record<string, (0 | 1 | 2 | 3)[]>;
+  dt?: Record<string, (0 | 1 | 2 | 3)[]>;
 }
 
 // -----------------------------------------------------------------------

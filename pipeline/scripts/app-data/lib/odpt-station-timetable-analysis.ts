@@ -136,6 +136,8 @@ const KNOWN_OBJECT_KEYS = new Set([
   'odpt:platformNumber',
   'odpt:platformName',
   'odpt:note',
+  'odpt:isLast',
+  'odpt:isOrigin',
 ]);
 
 /** Known keys for OdptStationTimetable (top-level). */
@@ -435,7 +437,13 @@ function detectUnknownKeys(timetables: OdptStationTimetable[]): UnknownKeysSumma
 // Formatting
 // ---------------------------------------------------------------------------
 
-/** Format analysis result as human-readable text. */
+/**
+ * Format analysis result as human-readable text.
+ *
+ * @param sourceName - Display name of the ODPT Train source (used as the report header).
+ * @param analysis - Analysis result from {@link analyzeOdptStationTimetable}.
+ * @returns Multi-line formatted string suitable for console output or file writing.
+ */
 export function formatOdptAnalysis(
   sourceName: string,
   analysis: OdptStationTimetableAnalysis,

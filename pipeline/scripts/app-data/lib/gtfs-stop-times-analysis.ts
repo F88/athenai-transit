@@ -433,7 +433,13 @@ function analyzeHeadsignCoverage(db: Database.Database): HeadsignCoverage {
 // Formatting
 // ---------------------------------------------------------------------------
 
-/** Format analysis result as human-readable text. */
+/**
+ * Format analysis result as human-readable text.
+ *
+ * @param sourceName - Display name of the GTFS source (used as the report header).
+ * @param analysis - Analysis result from {@link analyzeStopTimes}.
+ * @returns Multi-line formatted string suitable for console output or file writing.
+ */
 export function formatAnalysis(sourceName: string, analysis: StopTimesAnalysis): string {
   const lines: string[] = [];
   const {
