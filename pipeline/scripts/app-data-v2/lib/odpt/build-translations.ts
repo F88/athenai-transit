@@ -32,26 +32,33 @@ export function buildTranslationsV2(
 ): TranslationsJson {
   const headsigns: Record<string, Record<string, string>> = {};
 
-  // Build station -> railway lookup (O(1) per timetable entry)
+  // Build station -> railway lookup.
+  // A station shared by multiple railways maps to all of them (1:N).
   type RailwayInfo = {
     lineCode: string;
     stationOrder: OdptStationOrder[];
   };
-  const stationToRailway = new Map<string, RailwayInfo>();
+  const stationToRailways = new Map<string, RailwayInfo[]>();
   for (const rw of railways) {
     const info: RailwayInfo = {
       lineCode: rw['odpt:lineCode'],
       stationOrder: rw['odpt:stationOrder'],
     };
     for (const so of rw['odpt:stationOrder']) {
-      stationToRailway.set(so['odpt:station'], info);
+      const station = so['odpt:station'];
+      let list = stationToRailways.get(station);
+      if (!list) {
+        list = [];
+        stationToRailways.set(station, list);
+      }
+      list.push(info);
     }
   }
 
   // Collect headsigns from timetable destinationStation.
   // Each unique destination produces a headsign (e.g. 豊洲, 有明, 新橋).
   for (const tt of timetables) {
-    const rw = stationToRailway.get(tt['odpt:station']);
+    const rw = stationToRailways.get(tt['odpt:station'])?.[0];
     if (!rw) {
       continue;
     }

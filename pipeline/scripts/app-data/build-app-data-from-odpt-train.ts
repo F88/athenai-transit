@@ -78,7 +78,7 @@ const ROOT = resolve(import.meta.dirname, '../..');
 const OUTPUT_DIR = join(ROOT, 'build/data');
 
 // OdptTrainSource discovery functions are in pipeline/lib/load-odpt-train-sources.ts
-// Re-export listSourceNames and loadSource for backward compatibility with tests
+// Re-export for backward compatibility with tests and other scripts (e.g. analyze-odpt-station-timetable.ts)
 export { listOdptTrainSourceNames as listSourceNames } from '../../lib/load-odpt-train-sources';
 export { loadOdptTrainSource as loadSource } from '../../lib/load-odpt-train-sources';
 export type { OdptTrainSource } from '../../lib/load-odpt-train-sources';

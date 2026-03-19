@@ -63,23 +63,21 @@ export function getHeadsignFromDestination(
  *
  * @param direction - ODPT rail direction URI.
  * @param destination - ODPT destination station URI (may be undefined).
- * @param stationOrder - Ordered station list for the railway.
- * @param stationIndexMap - Station URI -> index in stationOrder.
+ * @param rw - Railway info with stationOrder and per-railway index map.
  * @param prefix - Source prefix for ID namespacing.
  * @returns Ordered stop IDs from origin to destination.
  */
 function buildStopSequence(
   direction: string,
   destination: string | undefined,
-  stationOrder: OdptStationOrder[],
-  stationIndexMap: Map<string, number>,
+  rw: RailwayInfo,
   prefix: string,
 ): string[] {
-  const allStops = stationOrder.map(
+  const allStops = rw.stationOrder.map(
     (so) => `${prefix}:${extractStationShortId(so['odpt:station'])}`,
   );
 
-  const destIdx = destination ? stationIndexMap.get(destination) : undefined;
+  const destIdx = destination ? rw.stationIndexMap.get(destination) : undefined;
 
   if (direction === 'odpt.RailDirection:Outbound') {
     // Outbound: origin (index 0) to destination
@@ -121,25 +119,48 @@ export function buildTripPatternsAndTimetableFromOdpt(
   tripPatterns: Record<string, TripPatternJson>;
   timetable: Record<string, TimetableGroupV2Json[]>;
 } {
-  // Build station -> railway lookup (O(1) per timetable entry)
+  // Build per-railway info with station index maps.
+  // stationIndexMap is per-railway to avoid index collisions when
+  // a station appears in multiple railways (e.g. transfer stations).
   type RailwayInfo = {
     routeId: string;
     stationOrder: OdptStationOrder[];
+    /** Station URI -> 0-based positional index within THIS railway's stationOrder. */
+    stationIndexMap: Map<string, number>;
   };
-  const stationToRailway = new Map<string, RailwayInfo>();
-  // Station URI -> positional index within stationOrder (0-based)
-  const stationIndexMap = new Map<string, number>();
 
-  for (const rw of railways) {
-    const info: RailwayInfo = {
+  const railwayInfos: RailwayInfo[] = railways.map((rw) => {
+    const indexMap = new Map<string, number>();
+    for (let idx = 0; idx < rw['odpt:stationOrder'].length; idx++) {
+      indexMap.set(rw['odpt:stationOrder'][idx]['odpt:station'], idx);
+    }
+    return {
       routeId: `${prefix}:${rw['odpt:lineCode']}`,
       stationOrder: rw['odpt:stationOrder'],
+      stationIndexMap: indexMap,
     };
-    for (let idx = 0; idx < rw['odpt:stationOrder'].length; idx++) {
-      const so = rw['odpt:stationOrder'][idx];
-      stationToRailway.set(so['odpt:station'], info);
-      stationIndexMap.set(so['odpt:station'], idx);
+  });
+
+  // Station URI -> list of railways it belongs to.
+  // A station shared by multiple railways (e.g. transfer stations)
+  // maps to all of them. The first match is used for timetable lookup.
+  const stationToRailways = new Map<string, RailwayInfo[]>();
+  for (const rw of railwayInfos) {
+    for (const so of rw.stationOrder) {
+      const station = so['odpt:station'];
+      let list = stationToRailways.get(station);
+      if (!list) {
+        list = [];
+        stationToRailways.set(station, list);
+      }
+      list.push(rw);
     }
+  }
+
+  /** Find the railway for a station (first match, deterministic by input order). */
+  function findRailway(station: string): RailwayInfo | undefined {
+    const candidates = stationToRailways.get(station);
+    return candidates?.[0];
   }
 
   // 1. Discover patterns: route + direction + destination -> pattern
@@ -165,13 +186,7 @@ export function buildTripPatternsAndTimetableFromOdpt(
 
     if (!patternMap.has(pKey)) {
       const headsign = getHeadsignFromDestination(effectiveDest, direction, rw.stationOrder);
-      const stops = buildStopSequence(
-        direction,
-        effectiveDest,
-        rw.stationOrder,
-        stationIndexMap,
-        prefix,
-      );
+      const stops = buildStopSequence(direction, effectiveDest, rw, prefix);
       patternMap.set(pKey, {
         routeId: rw.routeId,
         headsign,
@@ -184,7 +199,7 @@ export function buildTripPatternsAndTimetableFromOdpt(
 
   // Scan all timetable objects to discover patterns
   for (const tt of timetables) {
-    const rw = stationToRailway.get(tt['odpt:station']);
+    const rw = findRailway(tt['odpt:station']);
     if (!rw) {
       continue;
     }
@@ -230,7 +245,7 @@ export function buildTripPatternsAndTimetableFromOdpt(
   const stopTimetable = new Map<string, Map<string, Map<string, DepartureEntry[]>>>();
 
   for (const tt of timetables) {
-    const rw = stationToRailway.get(tt['odpt:station']);
+    const rw = findRailway(tt['odpt:station']);
     if (!rw) {
       continue;
     }

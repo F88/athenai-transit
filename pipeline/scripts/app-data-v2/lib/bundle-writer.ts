@@ -3,6 +3,9 @@
  *
  * Uses a temp file + rename pattern to ensure that readers never see
  * a partially written file. Each call writes a single data.json file.
+ *
+ * Note: renameSync overwrites existing files on POSIX (macOS/Linux).
+ * Windows is not supported as a pipeline execution environment.
  */
 
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
