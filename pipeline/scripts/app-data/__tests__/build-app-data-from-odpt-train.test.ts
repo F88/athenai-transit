@@ -401,12 +401,21 @@ describe('buildTimetable', () => {
         'odpt.Calendar:Weekday',
         'odpt.RailDirection:Outbound',
         [
-          { 'odpt:departureTime': '06:00', 'odpt:destinationStation': [] },
-          // Entry without departureTime (arrival-only at terminal)
-          { 'odpt:arrivalTime': '06:10', 'odpt:destinationStation': [] },
-          { 'odpt:departureTime': '06:30', 'odpt:destinationStation': [] },
-          // Entry with undefined departureTime
-          { 'odpt:destinationStation': [] },
+          {
+            'odpt:departureTime': '06:00',
+            'odpt:destinationStation': ['odpt.Station:Test.Toyosu'],
+          },
+          // Entry without departureTime (arrival-only)
+          {
+            'odpt:arrivalTime': '06:10',
+            'odpt:destinationStation': ['odpt.Station:Test.Toyosu'],
+          },
+          {
+            'odpt:departureTime': '06:30',
+            'odpt:destinationStation': ['odpt.Station:Test.Toyosu'],
+          },
+          // Entry with neither departureTime nor arrivalTime
+          { 'odpt:destinationStation': ['odpt.Station:Test.Toyosu'] },
         ],
       ),
     ];
@@ -418,6 +427,44 @@ describe('buildTimetable', () => {
     // Only entries with departureTime should be included (06:00 and 06:30)
     expect(groups[0].d).toEqual({
       'yrkm:weekday': [360, 390],
+    });
+    // Headsign should still be derived correctly from destinationStation
+    expect(groups[0].h).toBe('豊洲');
+  });
+
+  it('produces no output for station when all entries lack departureTime', () => {
+    const stationOrders: OdptStationOrder[] = [
+      makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
+      makeStationOrder(2, 'odpt.Station:Test.Toyosu', '豊洲', 'Toyosu'),
+    ];
+    const railway = makeRailway({
+      'odpt:lineCode': 'U',
+      'odpt:stationOrder': stationOrders,
+    });
+
+    const timetables: OdptStationTimetable[] = [
+      makeTimetableWithRawObjects(
+        'odpt.Station:Test.Shimbashi',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        [
+          // All entries lack departureTime
+          {
+            'odpt:arrivalTime': '06:10',
+            'odpt:destinationStation': ['odpt.Station:Test.Toyosu'],
+          },
+          { 'odpt:destinationStation': ['odpt.Station:Test.Toyosu'] },
+        ],
+      ),
+    ];
+
+    const result = buildTimetable('yrkm', timetables, [railway], TEST_PROVIDER);
+
+    const groups = result['yrkm:Shimbashi'];
+    expect(groups).toHaveLength(1);
+    // Service entry exists but has empty departure array
+    expect(groups[0].d).toEqual({
+      'yrkm:weekday': [],
     });
   });
 });
