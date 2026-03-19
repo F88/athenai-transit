@@ -1,0 +1,69 @@
+{
+  "sourceName": "miyake-bus",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-03-19T14:41:19.735Z",
+  "url": "https://api-public.odpt.org/api/v4/files/odpt/MiyakeVill/AllLine.zip?date=20250929",
+  "size": 106023,
+  "contentType": "text/plain; charset=ASCII-8BIT",
+  "durationMs": 1495,
+  "archivePath": "archives/gtfs/miyake-bus/AllLine_20260319-144121.zip",
+  "extractedFiles": [
+    {
+      "name": "agency.txt",
+      "size": 262
+    },
+    {
+      "name": "calendar.txt",
+      "size": 673
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 4392
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 1108
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 646678
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 196
+    },
+    {
+      "name": "routes.txt",
+      "size": 1108
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 210273
+    },
+    {
+      "name": "stops.txt",
+      "size": 7996
+    },
+    {
+      "name": "transfers.txt",
+      "size": 57
+    },
+    {
+      "name": "translations.txt",
+      "size": 15743
+    },
+    {
+      "name": "trips.txt",
+      "size": 4203
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "三宅村",
+    "publisherUrl": "https://www.vill.miyake.tokyo.jp/",
+    "lang": "ja",
+    "startDate": "20250929",
+    "endDate": "20261231",
+    "version": "2019/07/01改正-見える化ver2.6e"
+  }
+}

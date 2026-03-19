@@ -1,0 +1,77 @@
+{
+  "sourceName": "oshima-bus",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-03-19T14:41:17.082Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20260328",
+  "size": 156247,
+  "contentType": "text/plain; charset=ASCII-8BIT",
+  "durationMs": 1622,
+  "archivePath": "archives/gtfs/oshima-bus/AllLines_20260319-144118.zip",
+  "extractedFiles": [
+    {
+      "name": "shapes.txt",
+      "size": 594956
+    },
+    {
+      "name": "agency.txt",
+      "size": 202
+    },
+    {
+      "name": "agency_jp.txt",
+      "size": 140
+    },
+    {
+      "name": "calendar.txt",
+      "size": 360
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 1205
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 1282
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 120301
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 227
+    },
+    {
+      "name": "routes.txt",
+      "size": 2152
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 106935
+    },
+    {
+      "name": "stops.txt",
+      "size": 7778
+    },
+    {
+      "name": "transfers.txt",
+      "size": 93
+    },
+    {
+      "name": "translations.txt",
+      "size": 14369
+    },
+    {
+      "name": "trips.txt",
+      "size": 4388
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "大島旅客自動車株式会社",
+    "publisherUrl": "http://www.oshima-bus.com/rosen-bus.html",
+    "lang": "ja",
+    "startDate": "20260328",
+    "endDate": "20260630",
+    "version": "2026/03/28改正-見える化ver2.6e"
+  }
+}
