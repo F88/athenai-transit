@@ -17,7 +17,7 @@
 
 ## CLI インターフェース
 
-```
+```plain
 Usage: npx tsx pipeline/scripts/app-data/validate-app-data.ts
        npx tsx pipeline/scripts/app-data/validate-app-data.ts --help
        npm run pipeline:validate
@@ -55,7 +55,7 @@ Usage: npx tsx pipeline/scripts/app-data/validate-app-data.ts
 
 ## 出力例
 
-```
+```plain
 === Validate generated data (pipeline/build/data) ===
 
 Loading source definitions...

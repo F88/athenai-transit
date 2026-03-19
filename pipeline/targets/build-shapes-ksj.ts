@@ -6,4 +6,9 @@
  *
  * Comment out entries to temporarily skip them.
  */
-export default ['toei-train', 'yurikamome', 'mir-train'];
+export default [
+  //
+  'toei-train',
+  'yurikamome',
+  'mir-train',
+];
