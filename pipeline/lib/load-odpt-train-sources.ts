@@ -94,7 +94,8 @@ export async function discoverOdptTrainSources(): Promise<OdptTrainSource[]> {
     });
   }
 
-  return sources.sort((a, b) => a.name.localeCompare(b.name));
+  // Use code-unit comparison for locale-independent deterministic ordering
+  return sources.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }
 
 /**
