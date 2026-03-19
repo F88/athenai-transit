@@ -11,7 +11,7 @@
  *
  * | File           | Changes                                                |
  * | -------------- | ------------------------------------------------------ |
- * | routes.json    | + `desc` (route_desc). `route_url` moved to urls.json  |
+ * | routes.json    | + `desc` (route_desc). `route_url` moved to lookup.json |
  * | stops.json     | - `ai` removed. + `wb`, `pc`, `ps`. `desc` in lookup    |
  * | shapes.json    | Point tuple `[lat, lon]` → `[lat, lon, dist?]`         |
  * | timetable.json | `r,h,ai` → `tp` (pattern FK). + `a`, `p?`, `do?`       |
