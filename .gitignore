@@ -71,6 +71,7 @@ pipeline/build/
 node_modules
 dist
 dist-ssr
+coverage
 *.local
 
 ### Vercel

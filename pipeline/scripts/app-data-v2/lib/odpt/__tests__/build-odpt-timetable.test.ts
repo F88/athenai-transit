@@ -357,21 +357,26 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const timetables: OdptStationTimetable[] = [
       // Station A on railway X -> outbound to C
       makeTimetable(
-        'odpt.Station:Test.A', 'odpt.Calendar:Weekday',
-        'odpt.RailDirection:Outbound', ['06:00'],
+        'odpt.Station:Test.A',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00'],
         'odpt.Station:Test.C',
       ),
       // Station D on railway Y -> outbound to E
       makeTimetable(
-        'odpt.Station:Test.D', 'odpt.Calendar:Weekday',
-        'odpt.RailDirection:Outbound', ['07:00'],
+        'odpt.Station:Test.D',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['07:00'],
         'odpt.Station:Test.E',
       ),
     ];
 
-    const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt(
-      'test', timetables, [railwayX, railwayY],
-    );
+    const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [
+      railwayX,
+      railwayY,
+    ]);
 
     // Should produce 2 patterns: one for each railway
     expect(Object.keys(tripPatterns)).toHaveLength(2);
@@ -405,15 +410,18 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const timetables: OdptStationTimetable[] = [
       // Short-turn on X: A -> B (destination B is at index 1 in X)
       makeTimetable(
-        'odpt.Station:Test.A', 'odpt.Calendar:Weekday',
-        'odpt.RailDirection:Outbound', ['06:00'],
+        'odpt.Station:Test.A',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00'],
         'odpt.Station:Test.B',
       ),
     ];
 
-    const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt(
-      'test', timetables, [railwayX, railwayY],
-    );
+    const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [
+      railwayX,
+      railwayY,
+    ]);
 
     const p = Object.values(tripPatterns)[0];
     // Must use X's index (B at 1), so stops = [A, B] (not just [A] if Y's index 0 were used)
@@ -476,13 +484,17 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
     const timetables: OdptStationTimetable[] = [
       makeTimetable(
-        'odpt.Station:Test.A', 'odpt.Calendar:Weekday',
-        'odpt.RailDirection:Outbound', ['06:00'],
+        'odpt.Station:Test.A',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00'],
         'odpt.Station:Test.C',
       ),
       makeTimetable(
-        'odpt.Station:Test.A', 'odpt.Calendar:SaturdayHoliday',
-        'odpt.RailDirection:Outbound', ['07:00'],
+        'odpt.Station:Test.A',
+        'odpt.Calendar:SaturdayHoliday',
+        'odpt.RailDirection:Outbound',
+        ['07:00'],
         'odpt.Station:Test.C',
       ),
     ];

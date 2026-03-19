@@ -23,6 +23,22 @@ import { calendarToServiceId } from './build-calendar';
 import { extractStationShortId } from './build-stops';
 
 // ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolved railway info with per-railway station index map.
+ * stationIndexMap is per-railway to avoid index collisions when
+ * a station appears in multiple railways (e.g. transfer stations).
+ */
+interface RailwayInfo {
+  routeId: string;
+  stationOrder: OdptStationOrder[];
+  /** Station URI -> 0-based positional index within THIS railway's stationOrder. */
+  stationIndexMap: Map<string, number>;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -119,16 +135,6 @@ export function buildTripPatternsAndTimetableFromOdpt(
   tripPatterns: Record<string, TripPatternJson>;
   timetable: Record<string, TimetableGroupV2Json[]>;
 } {
-  // Build per-railway info with station index maps.
-  // stationIndexMap is per-railway to avoid index collisions when
-  // a station appears in multiple railways (e.g. transfer stations).
-  type RailwayInfo = {
-    routeId: string;
-    stationOrder: OdptStationOrder[];
-    /** Station URI -> 0-based positional index within THIS railway's stationOrder. */
-    stationIndexMap: Map<string, number>;
-  };
-
   const railwayInfos: RailwayInfo[] = railways.map((rw) => {
     const indexMap = new Map<string, number>();
     for (let idx = 0; idx < rw['odpt:stationOrder'].length; idx++) {

@@ -34,6 +34,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "preview": "vite preview",
     "data:sync": "npx tsx scripts/copy-pipeline-data.ts",
     "pipeline:download:gtfs": "npx tsx --env-file-if-exists=pipeline/.env.pipeline.local pipeline/scripts/download-gtfs.ts --targets pipeline/targets/download-gtfs.ts",

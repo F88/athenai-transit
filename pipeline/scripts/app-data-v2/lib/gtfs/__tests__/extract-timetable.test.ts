@@ -215,7 +215,9 @@ describe('extractTripPatternsAndTimetable', () => {
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
     expect(Object.keys(tripPatterns)).toHaveLength(2);
-    const headsigns = Object.values(tripPatterns).map((p) => p.h).sort();
+    const headsigns = Object.values(tripPatterns)
+      .map((p) => p.h)
+      .sort();
     expect(headsigns).toEqual(['新宿', '渋谷']);
   });
 

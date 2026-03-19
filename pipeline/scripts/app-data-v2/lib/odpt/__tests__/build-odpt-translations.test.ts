@@ -100,9 +100,7 @@ describe('buildTranslationsV2', () => {
   });
 
   it('includes ko and zh-Hans in station translations when available', () => {
-    const orders: OdptStationOrder[] = [
-      makeOrder(1, 'odpt.Station:Test.A', 'A駅', 'Station A'),
-    ];
+    const orders: OdptStationOrder[] = [makeOrder(1, 'odpt.Station:Test.A', 'A駅', 'Station A')];
     const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
     const stations: OdptStation[] = [
       {
@@ -125,9 +123,7 @@ describe('buildTranslationsV2', () => {
   });
 
   it('returns empty headsigns when timetables are empty', () => {
-    const orders: OdptStationOrder[] = [
-      makeOrder(1, 'odpt.Station:Test.A', 'A駅', 'Station A'),
-    ];
+    const orders: OdptStationOrder[] = [makeOrder(1, 'odpt.Station:Test.A', 'A駅', 'Station A')];
     const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
     const stations: OdptStation[] = [
       {
