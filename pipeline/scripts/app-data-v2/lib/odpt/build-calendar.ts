@@ -9,6 +9,9 @@ import type { OdptStationTimetable } from '../../../../types/odpt-train';
  * Map ODPT calendar to service ID.
  * "odpt.Calendar:Weekday" -> "weekday"
  * "odpt.Calendar:SaturdayHoliday" -> "saturday-holiday"
+ *
+ * @param calendar - ODPT calendar URI (e.g. "odpt.Calendar:Weekday").
+ * @returns Lowercase service ID string.
  */
 export function calendarToServiceId(calendar: string): string {
   const calendarName = calendar.split(':')[1];
@@ -21,6 +24,9 @@ export function calendarToServiceId(calendar: string): string {
 /**
  * Compute start/end dates from an issued date string.
  * end = issued + 1 year.
+ *
+ * @param issuedDate - Issued date in "YYYY-MM-DD" format.
+ * @returns Object with `startDate` and `endDate` in "YYYYMMDD" format.
  */
 export function computeDateRange(issuedDate: string): { startDate: string; endDate: string } {
   const startDate = issuedDate.replace(/-/g, '');

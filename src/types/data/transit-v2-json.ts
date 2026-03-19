@@ -130,11 +130,16 @@ export interface RouteV2Json {
  * Stop-to-agency relationships are resolved at runtime via
  * timetable -> trip pattern -> route -> agency.
  *
- * **Migration note**: The current pipeline (v1) only outputs
- * location_type=0 stops and excludes parent stations. This v2
- * schema includes both child stops (l=0) and parent stations
- * (l=1) to support terminal grouping via `ps`. The pipeline
- * will be updated to emit parent stations when migrating to v2.
+ * **location_type coverage**: The v2 pipeline outputs all
+ * location_type values without filtering. The primary values are:
+ * - `l=0`: Stop/platform (the vast majority of records)
+ * - `l=1`: Station (parent grouping node, see `ps`)
+ * - `l=2`: Entrance/exit
+ * - `l=3`: Generic node (pathway connections)
+ * - `l=4`: Boarding area
+ *
+ * In practice, Japanese GTFS sources almost exclusively use
+ * `l=0` and `l=1`. Values 2-4 are rare but not excluded.
  */
 export interface StopV2Json {
   /** Schema version — see {@link RouteV2Json.v} for rationale. */
@@ -157,11 +162,12 @@ export interface StopV2Json {
   wb?: 0 | 1 | 2;
 
   /**
-   * GTFS parent_station — FK to the parent stop (location_type=1).
+   * GTFS parent_station — FK to a parent stop.
    *
-   * Present only on child stops (location_type=0) that belong to a
-   * station complex. The parent stop itself is also included in the
-   * same stops array with `l: 1`.
+   * Present on stops that belong to a station complex. The GTFS spec
+   * defines parent relationships as: l=0 → parent l=1, l=2 → parent
+   * l=1, l=3 → parent l=1, l=4 → parent l=0. The parent stop is
+   * also included in the same stops array.
    *
    * ### Parent → children lookup
    *
@@ -303,6 +309,11 @@ export interface TripPatternJson {
    *
    * Derived from GTFS stop_times (ORDER BY stop_sequence) or
    * ODPT stationOrder filtered by destinationStation.
+   *
+   * **Note**: Some stops in this array may have no corresponding
+   * timetable entry (e.g. GTFS stops with NULL departure_time —
+   * intermediate timepoints without scheduled departures). Consumers
+   * MUST NOT assume every stop has departures in the timetable.
    */
   stops: string[];
 

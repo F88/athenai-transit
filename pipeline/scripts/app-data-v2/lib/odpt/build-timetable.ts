@@ -26,6 +26,10 @@ import { extractStationShortId } from './build-stops';
 /**
  * Determine headsign from rail direction.
  * Outbound -> last station, Inbound -> first station.
+ *
+ * @param direction - ODPT rail direction URI (e.g. "odpt.RailDirection:Outbound").
+ * @param stationOrder - Ordered station list for the railway.
+ * @returns Terminal station name in Japanese.
  */
 export function getHeadsignFromDirection(
   direction: string,

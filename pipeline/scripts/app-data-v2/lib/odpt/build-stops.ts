@@ -8,6 +8,9 @@ import type { OdptStation, OdptStationOrder } from '../../../../types/odpt-train
 /**
  * Extract short station name from ODPT station ID.
  * e.g. "odpt.Station:Yurikamome.Shimbashi" -> "Shimbashi"
+ *
+ * @param odptId - ODPT station URI (dot-separated segments).
+ * @returns The last segment of the URI.
  */
 export function extractStationShortId(odptId: string): string {
   const parts = odptId.split('.');
