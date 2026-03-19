@@ -143,7 +143,7 @@ export interface StopV2Json {
   n: string; // stop_name
   a: number; // stop_lat
   o: number; // stop_lon
-  l: 0 | 1; // location_type (0=stop/platform, 1=station)
+  l: number; // location_type (0=stop/platform, 1=station, 2=entrance/exit, etc.)
   // ai removed — GTFS stops.txt has no agency_id
 
   // stop_desc moved to lookup.json (stopDescs)
@@ -390,7 +390,9 @@ export interface TimetableGroupV2Json {
    * GTFS pickup_type: 0 = regular, 1 = no pickup (drop-off only),
    * 2 = must phone, 3 = must coordinate with driver.
    *
-   * Omitted when all departures in this group have pickup_type = 0.
+   * Omitted when the source does not provide pickup_type/drop_off_type
+   * (e.g. ODPT sources). When present, included even if all values are 0,
+   * to distinguish "all regular" from "data not available".
    */
   pt?: Record<string, (0 | 1 | 2 | 3)[]>;
 
@@ -403,7 +405,9 @@ export interface TimetableGroupV2Json {
    * GTFS drop_off_type: 0 = regular, 1 = no drop-off (pickup only),
    * 2 = must phone, 3 = must coordinate with driver.
    *
-   * Omitted when all departures in this group have drop_off_type = 0.
+   * Omitted when the source does not provide pickup_type/drop_off_type
+   * (e.g. ODPT sources). When present, included even if all values are 0,
+   * to distinguish "all regular" from "data not available".
    */
   dt?: Record<string, (0 | 1 | 2 | 3)[]>;
 }

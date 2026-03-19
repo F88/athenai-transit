@@ -56,7 +56,8 @@ import type {
   OdptStationOrder,
   OdptStationTimetable,
 } from '../../types/odpt-train';
-import { loadAllOdptJsonSources } from '../../lib/load-odpt-json-sources';
+import { listOdptTrainSourceNames, loadOdptTrainSource } from '../../lib/load-odpt-train-sources';
+import type { OdptTrainSource } from '../../lib/load-odpt-train-sources';
 import {
   determineBatchExitCode,
   formatBytes,
@@ -67,7 +68,6 @@ import {
   runBatch,
   runMain,
 } from '../../lib/pipeline-utils';
-import type { OdptJsonSourceDefinition } from '../../types/odpt-json-resource';
 import type { Provider } from '../../types/resource-common';
 
 // ---------------------------------------------------------------------------
@@ -75,107 +75,13 @@ import type { Provider } from '../../types/resource-common';
 // ---------------------------------------------------------------------------
 
 const ROOT = resolve(import.meta.dirname, '../..');
-const DATA_BASE_DIR = join(ROOT, 'data/odpt-json');
 const OUTPUT_DIR = join(ROOT, 'build/data');
 
-// ---------------------------------------------------------------------------
-// ODPT Train source discovery
-// ---------------------------------------------------------------------------
-
-/** Required ODPT data types for a valid Train source. */
-const REQUIRED_ODPT_TYPES = ['odpt:Station', 'odpt:Railway', 'odpt:StationTimetable'] as const;
-
-/** Resolved ODPT Train source with all required resources. */
-export interface OdptTrainSource {
-  /** Source identifier (outDir name, e.g. "yurikamome"). */
-  name: string;
-  /** Output prefix (e.g. "yrkm"). */
-  prefix: string;
-  /** Data provider info. */
-  provider: Provider;
-  /** Path to the data directory. */
-  dataDir: string;
-  /** Resource definitions grouped by odptType. */
-  resources: {
-    station: OdptJsonSourceDefinition;
-    railway: OdptJsonSourceDefinition;
-    stationTimetable: OdptJsonSourceDefinition;
-  };
-}
-
-/**
- * Discover available ODPT Train sources by grouping resources by outDir.
- * A valid source must have all 3 required types.
- *
- * @returns Resolved ODPT Train sources sorted by name, each containing
- *   all required resource definitions (Station, Railway, StationTimetable).
- */
-export async function discoverOdptTrainSources(): Promise<OdptTrainSource[]> {
-  const allDefs = await loadAllOdptJsonSources();
-
-  // Group by outDir
-  const groups = new Map<string, OdptJsonSourceDefinition[]>();
-  for (const def of allDefs) {
-    const key = def.pipeline.outDir;
-    let group = groups.get(key);
-    if (!group) {
-      group = [];
-      groups.set(key, group);
-    }
-    group.push(def);
-  }
-
-  // Filter to groups that have all 3 required types
-  const sources: OdptTrainSource[] = [];
-  for (const [outDir, defs] of groups) {
-    const byType = new Map(defs.map((d) => [d.resource.odptType, d]));
-    const hasAll = REQUIRED_ODPT_TYPES.every((t) => byType.has(t));
-    if (!hasAll) {
-      continue;
-    }
-
-    const station = byType.get('odpt:Station')!;
-    const railway = byType.get('odpt:Railway')!;
-    const stationTimetable = byType.get('odpt:StationTimetable')!;
-
-    sources.push({
-      name: outDir,
-      prefix: station.pipeline.prefix,
-      provider: station.resource.provider,
-      dataDir: join(DATA_BASE_DIR, outDir),
-      resources: { station, railway, stationTimetable },
-    });
-  }
-
-  return sources.sort((a, b) => a.name.localeCompare(b.name));
-}
-
-/**
- * List available ODPT Train source names.
- *
- * @returns Sorted array of source name strings (outDir identifiers).
- */
-export async function listSourceNames(): Promise<string[]> {
-  const sources = await discoverOdptTrainSources();
-  return sources.map((s) => s.name);
-}
-
-/**
- * Load a single ODPT Train source by name.
- *
- * @param name - Source identifier (outDir name, e.g. "yurikamome").
- * @returns The resolved ODPT Train source with all required resources.
- * @throws {Error} If the source name is not found among available sources.
- */
-export async function loadSource(name: string): Promise<OdptTrainSource> {
-  const sources = await discoverOdptTrainSources();
-  const source = sources.find((s) => s.name === name);
-  if (!source) {
-    const available = sources.map((s) => s.name).join(', ');
-    throw new Error(`Unknown ODPT Train source: "${name}". Available: ${available || '(none)'}`);
-  }
-  return source;
-}
+// OdptTrainSource discovery functions are in pipeline/lib/load-odpt-train-sources.ts
+// Re-export listSourceNames and loadSource for backward compatibility with tests
+export { listOdptTrainSourceNames as listSourceNames } from '../../lib/load-odpt-train-sources';
+export { loadOdptTrainSource as loadSource } from '../../lib/load-odpt-train-sources';
+export type { OdptTrainSource } from '../../lib/load-odpt-train-sources';
 
 // ODPT JSON types — see pipeline/types/odpt-train.ts
 
@@ -721,7 +627,7 @@ async function main(): Promise<void> {
   }
 
   if (arg.kind === 'list') {
-    const names = await listSourceNames();
+    const names = await listOdptTrainSourceNames();
     console.log('Available ODPT Train sources:\n');
     for (const name of names) {
       console.log(`  ${name}`);
@@ -744,7 +650,7 @@ async function main(): Promise<void> {
   // Single source mode
   let source: OdptTrainSource;
   try {
-    source = await loadSource(arg.name);
+    source = await loadOdptTrainSource(arg.name);
   } catch (err) {
     console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
     console.log('');
