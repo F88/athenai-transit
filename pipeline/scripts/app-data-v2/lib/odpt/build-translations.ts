@@ -3,7 +3,7 @@
  */
 
 import type { TranslationsJson } from '../../../../../src/types/data/transit-json';
-import type { OdptRailway, OdptStation, OdptStationTimetable } from '../../../../types/odpt-train';
+import type { OdptRailway, OdptStation, OdptStationOrder, OdptStationTimetable } from '../../../../types/odpt-train';
 import type { Provider } from '../../../../types/resource-common';
 import { extractStationShortId } from './build-stops';
 import { getHeadsignFromDirection } from './build-timetable';
@@ -27,17 +27,26 @@ export function buildTranslationsV2(
 ): TranslationsJson {
   const headsigns: Record<string, Record<string, string>> = {};
 
-  // Build station set per railway for matching
-  const railwayStationSets = railways.map((rw) => ({
-    lineCode: rw['odpt:lineCode'],
-    stationOrder: rw['odpt:stationOrder'],
-    stationSet: new Set(rw['odpt:stationOrder'].map((so) => so['odpt:station'])),
-  }));
+  // Build station -> railway lookup (O(1) per timetable entry)
+  type RailwayInfo = {
+    lineCode: string;
+    stationOrder: OdptStationOrder[];
+  };
+  const stationToRailway = new Map<string, RailwayInfo>();
+  for (const rw of railways) {
+    const info: RailwayInfo = {
+      lineCode: rw['odpt:lineCode'],
+      stationOrder: rw['odpt:stationOrder'],
+    };
+    for (const so of rw['odpt:stationOrder']) {
+      stationToRailway.set(so['odpt:station'], info);
+    }
+  }
 
   // Collect headsigns from timetable direction -> terminal station
   const seenKeys = new Set<string>();
   for (const tt of timetables) {
-    const rw = railwayStationSets.find((r) => r.stationSet.has(tt['odpt:station']));
+    const rw = stationToRailway.get(tt['odpt:station']);
     if (!rw) {
       continue;
     }

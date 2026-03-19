@@ -84,12 +84,21 @@ export function buildTripPatternsAndTimetableFromOdpt(
   tripPatterns: Record<string, TripPatternJson>;
   timetable: Record<string, TimetableGroupV2Json[]>;
 } {
-  // Build railway lookup
-  const railwayLookup = railways.map((rw) => ({
-    routeId: `${prefix}:${rw['odpt:lineCode']}`,
-    stationOrder: rw['odpt:stationOrder'],
-    stationSet: new Set(rw['odpt:stationOrder'].map((so) => so['odpt:station'])),
-  }));
+  // Build station -> railway lookup (O(1) per timetable entry)
+  type RailwayInfo = {
+    routeId: string;
+    stationOrder: OdptStationOrder[];
+  };
+  const stationToRailway = new Map<string, RailwayInfo>();
+  for (const rw of railways) {
+    const info: RailwayInfo = {
+      routeId: `${prefix}:${rw['odpt:lineCode']}`,
+      stationOrder: rw['odpt:stationOrder'],
+    };
+    for (const so of rw['odpt:stationOrder']) {
+      stationToRailway.set(so['odpt:station'], info);
+    }
+  }
 
   // 1. Discover patterns: route + direction -> pattern
   // Key: routeId + direction string
@@ -99,7 +108,7 @@ export function buildTripPatternsAndTimetableFromOdpt(
   >();
 
   for (const tt of timetables) {
-    const rw = railwayLookup.find((r) => r.stationSet.has(tt['odpt:station']));
+    const rw = stationToRailway.get(tt['odpt:station']);
     if (!rw) {
       continue;
     }
@@ -145,7 +154,7 @@ export function buildTripPatternsAndTimetableFromOdpt(
   const stopTimetable = new Map<string, Map<string, Map<string, DepartureEntry[]>>>();
 
   for (const tt of timetables) {
-    const rw = railwayLookup.find((r) => r.stationSet.has(tt['odpt:station']));
+    const rw = stationToRailway.get(tt['odpt:station']);
     if (!rw) {
       continue;
     }
