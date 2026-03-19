@@ -23,11 +23,12 @@ export interface StopPositionSummary {
   middle: number;
 }
 
-/** A stop that only appears as terminal in all its trips. */
+/** A stop that only appears as terminal in all its stop_times entries. */
 export interface TerminalOnlyStop {
   stopId: string;
   stopName: string;
-  tripCount: number;
+  /** Number of stop_times rows referencing this stop. */
+  appearances: number;
   /** Percentage of appearances that are terminal (0–100). */
   terminalPercentage: number;
 }
@@ -205,7 +206,7 @@ function findTerminalOnlyStops(db: Database.Database): TerminalOnlyStop[] {
   return rows.map((r) => ({
     stopId: r.stop_id,
     stopName: r.stop_name ?? '',
-    tripCount: r.total_count,
+    appearances: r.total_count,
     terminalPercentage: 100,
   }));
 }
@@ -469,7 +470,7 @@ export function formatAnalysis(sourceName: string, analysis: StopTimesAnalysis):
   lines.push(`## Terminal-Only Stops (${terminalOnlyStops.length})`);
   if (terminalOnlyStops.length > 0) {
     for (const s of terminalOnlyStops.slice(0, 20)) {
-      lines.push(`  ${s.stopId} ${s.stopName} (${s.tripCount} trips)`);
+      lines.push(`  ${s.stopId} ${s.stopName} (${s.appearances} appearances)`);
     }
     if (terminalOnlyStops.length > 20) {
       lines.push(`  ... and ${terminalOnlyStops.length - 20} more`);

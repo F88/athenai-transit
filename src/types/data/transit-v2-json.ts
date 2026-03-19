@@ -54,10 +54,10 @@
  *
  * Each bundle has a `bundle_version` and `kind` discriminant.
  * Sections within a bundle carry their own `v` (schema version).
- * A section's `v` tracks its own schema evolution independently:
- * sections carried over from v1 with changes have v=2, unchanged
- * sections remain at v=1, and newly introduced sections (e.g.
- * InsightsBundle sections) start at v=1 as their first version.
+ * In DataBundle, `v` reflects the v1→v2 migration status:
+ * v=2 for sections whose schema changed or was designed for v2,
+ * v=1 for sections using unchanged v1 types. In InsightsBundle,
+ * all sections start at v=1 (no v1 predecessor exists).
  *
  * ### Unchanged sections (import from transit-json.ts)
  *
@@ -229,11 +229,11 @@ export interface StopV2Json {
 export type ShapePointV2 = [number, number, number?];
 
 // -----------------------------------------------------------------------
-// trip-patterns.json
+// tripPatterns section (v2, new)
 // -----------------------------------------------------------------------
 
 /**
- * trip-patterns.json: pattern_id -> trip pattern metadata.
+ * tripPatterns section: pattern_id -> trip pattern metadata.
  *
  * A trip pattern represents a unique combination of route, headsign,
  * direction, and ordered stop sequence. Multiple trips (departures)
@@ -264,7 +264,7 @@ export interface TripPatternJson {
   v: 2;
 
   /**
-   * Route ID (prefixed). FK -> routes.json.
+   * Route ID (prefixed). FK -> routes section in DataBundle.
    * All trips in this pattern belong to this route.
    */
   r: string;
@@ -350,7 +350,7 @@ export interface TimetableGroupV2Json {
   v: 2;
 
   /**
-   * Trip pattern ID. FK -> trip-patterns.json.
+   * Trip pattern ID. FK -> tripPatterns section in DataBundle.
    * Resolves to route_id, headsign, direction, and stop sequence.
    * Agency is further resolved via TripPatternJson.r -> RouteV2Json.ai.
    */

@@ -170,7 +170,7 @@ describe('terminalOnlyStops', () => {
     const terminalOnly = result.terminalOnlyStops;
     expect(terminalOnly).toHaveLength(1);
     expect(terminalOnly[0].stopId).toBe('C');
-    expect(terminalOnly[0].tripCount).toBe(2);
+    expect(terminalOnly[0].appearances).toBe(2);
     expect(terminalOnly[0].terminalPercentage).toBe(100);
   });
 
