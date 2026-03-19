@@ -1,14 +1,14 @@
 # Analysis Scripts
 
-`public/data/` の JSON データを分析するスクリプト群。データ品質の確認やソース間の比較に使用する。
+リソース定義の確認、リモートデータの更新チェック、生成済みデータの品質分析など、パイプライン運用に関する分析スクリプト群。
 
 ## スクリプト一覧
 
-| スクリプト                | 概要                                                                                                                   |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `describe-resources.ts`   | リソース定義の一覧表示 (`npm run pipeline:describe`)                                                                   |
-| `check-odpt-resources.ts` | ODPT Members Portal API でリソース更新チェック (`npm run pipeline:check:odpt-resources`)                               |
-| `find-joint-routes.ts`    | 共同運行路線の検出。ソース間で route_short_name が一致する路線を検出し、停留所名の突き合わせと座標による近接分析を行う |
+| スクリプト                | 対象データ                                       | 概要                                                                                                                   |
+| ------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `describe-resources.ts`   | `pipeline/resources/` (リソース定義)             | リソース定義の一覧表示 (`npm run pipeline:describe`)                                                                   |
+| `check-odpt-resources.ts` | ODPT API + `pipeline/state/` (リモート/ローカル) | ODPT Members Portal API でリソース更新チェック (`npm run pipeline:check:odpt-resources`)                               |
+| `find-joint-routes.ts`    | `public/data/` (生成済み JSON)                   | 共同運行路線の検出。ソース間で route_short_name が一致する路線を検出し、停留所名の突き合わせと座標による近接分析を行う |
 
 ## 実行方法
 
