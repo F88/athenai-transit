@@ -17,6 +17,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { DataBundle } from '../../../src/types/data/transit-v2-json';
 import { listOdptTrainSourceNames, loadOdptTrainSource } from '../../lib/load-odpt-train-sources';
@@ -226,4 +227,9 @@ async function main(): Promise<void> {
   }
 }
 
-runMain(main);
+// Only run main() when executed directly (not when imported by other scripts).
+const isDirectExecution =
+  process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
+  runMain(main);
+}

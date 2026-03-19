@@ -18,6 +18,7 @@
 import Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { DataBundle } from '../../../src/types/data/transit-v2-json';
 import { listGtfsSourceNames, loadGtfsSource } from '../../lib/load-gtfs-sources';
@@ -204,4 +205,9 @@ async function main(): Promise<void> {
   }
 }
 
-runMain(main);
+// Only run main() when executed directly (not when imported by other scripts).
+const isDirectExecution =
+  process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
+  runMain(main);
+}
