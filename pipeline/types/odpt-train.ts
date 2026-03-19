@@ -53,6 +53,8 @@ export interface OdptStationTimetableObject {
   'odpt:platformNumber'?: string;
   'odpt:platformName'?: Record<string, string>;
   'odpt:note'?: Record<string, string>;
+  'odpt:isLast'?: boolean;
+  'odpt:isOrigin'?: boolean;
 }
 
 export interface OdptStationTimetable {

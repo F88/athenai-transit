@@ -54,9 +54,10 @@
  *
  * Each bundle has a `bundle_version` and `kind` discriminant.
  * Sections within a bundle carry their own `v` (schema version).
- * Section versions are independent and start at 1 — even new
- * sections introduced in v2 bundles begin at v1. A section's `v`
- * tracks its own schema evolution, not the bundle generation.
+ * A section's `v` tracks its own schema evolution independently:
+ * sections carried over from v1 with changes have v=2, unchanged
+ * sections remain at v=1, and newly introduced sections (e.g.
+ * InsightsBundle sections) start at v=1 as their first version.
  *
  * ### Unchanged sections (import from transit-json.ts)
  *

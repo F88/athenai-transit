@@ -432,7 +432,7 @@ describe('buildTimetable', () => {
     expect(groups[0].h).toBe('豊洲');
   });
 
-  it('produces no output for station when all entries lack departureTime', () => {
+  it('produces empty departure array when all entries lack departureTime', () => {
     const stationOrders: OdptStationOrder[] = [
       makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
       makeStationOrder(2, 'odpt.Station:Test.Toyosu', '豊洲', 'Toyosu'),

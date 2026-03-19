@@ -303,11 +303,11 @@ describe('trainTypes', () => {
 describe('flags', () => {
   it('detects isLast and isOrigin flags', () => {
     const railway = makeRailway([STATION_A, STATION_B]);
-    const objWithFlags = {
+    const objWithFlags: OdptStationTimetableObject = {
       ...makeObject(),
       'odpt:isLast': true,
       'odpt:isOrigin': true,
-    } as unknown as OdptStationTimetableObject;
+    };
     const timetables = [
       makeTimetable(STATION_A, 'Outbound', 'Weekday', [makeObject(), objWithFlags]),
     ];

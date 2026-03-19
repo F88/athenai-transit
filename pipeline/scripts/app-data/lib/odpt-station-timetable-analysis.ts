@@ -389,11 +389,10 @@ function analyzeFlags(timetables: OdptStationTimetable[]): FlagSummary {
   let withIsOrigin = 0;
 
   for (const obj of objects) {
-    const raw = obj as Record<string, unknown>;
-    if (raw['odpt:isLast'] != null) {
+    if (obj['odpt:isLast'] != null) {
       withIsLast++;
     }
-    if (raw['odpt:isOrigin'] != null) {
+    if (obj['odpt:isOrigin'] != null) {
       withIsOrigin++;
     }
   }
