@@ -21,16 +21,18 @@
  *   2 — errors (missing files, calendar load failures)
  *
  * Usage:
- *   npx tsx pipeline/scripts/app-data/validate-app-data.ts
+ *   npx tsx pipeline/scripts/app-data/validate-app-data.ts <prefix>
+ *   npx tsx pipeline/scripts/app-data/validate-app-data.ts --targets <file>
+ *   npx tsx pipeline/scripts/app-data/validate-app-data.ts --list
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadAllGtfsSources } from '../../lib/load-gtfs-sources';
 import { loadAllOdptJsonSources } from '../../lib/load-odpt-json-sources';
-import { runMain } from '../../lib/pipeline-utils';
+import { loadTargetFile, parseCliArg, runMain } from '../../lib/pipeline-utils';
 
 // ---------------------------------------------------------------------------
 // Paths
@@ -83,6 +85,12 @@ export interface FileCheckResult {
   present: number;
   /** Missing files grouped by source prefix. */
   missing: { source: string; file: string }[];
+}
+
+/** Result of unvalidated directory check. */
+export interface UnvalidatedDirResult {
+  /** Directory names in DATA_DIR that are not in the targets list. */
+  unvalidated: string[];
 }
 
 /** Result of calendar freshness check for all sources. */
@@ -208,39 +216,78 @@ function padWithDots(name: string, width: number): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Load source definitions from GTFS and ODPT JSON resource files.
+ * Build a map of prefix -> nameEn from all resource definitions.
  * Deduplicates by prefix (multiple ODPT JSON resources may share the same prefix).
- * @returns Array of resolved sources with prefix and nameEn.
  */
-async function loadSources(): Promise<ValidateSource[]> {
-  console.log('Loading source definitions...');
+async function buildPrefixMap(): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
 
-  const sourceMap = new Map<string, ValidateSource>();
-
-  // GTFS sources
   const gtfsDefs = await loadAllGtfsSources();
   for (const d of gtfsDefs) {
-    sourceMap.set(d.pipeline.prefix, {
-      prefix: d.pipeline.prefix,
-      nameEn: d.resource.nameEn,
-    });
+    map.set(d.pipeline.prefix, d.resource.nameEn);
   }
 
-  // ODPT JSON sources (deduplicate by prefix)
   const odptDefs = await loadAllOdptJsonSources();
   for (const d of odptDefs) {
-    if (!sourceMap.has(d.pipeline.prefix)) {
-      sourceMap.set(d.pipeline.prefix, {
-        prefix: d.pipeline.prefix,
-        nameEn: d.resource.nameEn,
-      });
+    if (!map.has(d.pipeline.prefix)) {
+      map.set(d.pipeline.prefix, d.resource.nameEn);
     }
   }
 
-  const sources = [...sourceMap.values()];
-  const prefixes = sources.map((s) => sanitize(s.prefix)).join(', ');
-  console.log(`  Found ${sources.length} sources: ${prefixes}\n`);
-  return sources;
+  return map;
+}
+
+/**
+ * Resolve a list of prefixes into ValidateSource objects.
+ * Unknown prefixes (not in any resource definition) use the prefix itself as nameEn.
+ */
+export function resolveSources(
+  prefixes: string[],
+  prefixMap: Map<string, string>,
+): ValidateSource[] {
+  return prefixes.map((prefix) => ({
+    prefix,
+    nameEn: prefixMap.get(prefix) ?? prefix,
+  }));
+}
+
+/**
+ * Check for directories in DATA_DIR that are not in the validation targets.
+ *
+ * Detects data that would be copied to public/ by data:sync without having
+ * been validated. Only meaningful in --targets mode (batch validation).
+ *
+ * @param validatedPrefixes - Set of prefixes being validated
+ * @param dataDir - Data directory to scan (defaults to DATA_DIR, overridable for testing)
+ * @returns Unvalidated directory names
+ */
+export function checkUnvalidatedDirs(
+  validatedPrefixes: Set<string>,
+  dataDir: string = DATA_DIR,
+): UnvalidatedDirResult {
+  if (!existsSync(dataDir)) {
+    return { unvalidated: [] };
+  }
+
+  const dirs = readdirSync(dataDir).filter((entry) => {
+    const entryPath = join(dataDir, entry);
+    return statSync(entryPath).isDirectory();
+  });
+
+  const unvalidated = dirs.filter((dir) => !validatedPrefixes.has(dir)).sort();
+
+  if (unvalidated.length === 0) {
+    console.log('  Result: All directories are covered by targets.');
+  } else {
+    for (const dir of unvalidated) {
+      error(`Unvalidated directory: ${dir}/`);
+    }
+    console.log(
+      `  Result: ${unvalidated.length} unvalidated director${unvalidated.length === 1 ? 'y' : 'ies'} found.`,
+    );
+  }
+
+  return { unvalidated };
 }
 
 /**
@@ -397,9 +444,23 @@ function printSummary(
   today: Date,
   fileResult: FileCheckResult,
   calendarResult: CalendarCheckResult,
+  unvalidatedResult?: UnvalidatedDirResult,
 ): void {
   console.log('## Generated Data Validation\n');
   console.log(`Checked on: ${formatDate(today)}\n`);
+
+  // Unvalidated directories
+  if (unvalidatedResult && unvalidatedResult.unvalidated.length > 0) {
+    console.log('### ❌ Unvalidated directories\n');
+    console.log(
+      'The following directories exist in the data output but are not listed in the targets file.',
+    );
+    console.log('They will be copied to public/ without validation.\n');
+    for (const dir of unvalidatedResult.unvalidated) {
+      console.log(`- \`${sanitize(dir)}/\``);
+    }
+    console.log('');
+  }
 
   // File existence issues
   if (fileResult.missing.length > 0) {
@@ -435,7 +496,10 @@ function printSummary(
     console.log('');
   }
 
-  const hasErrors = fileResult.missing.length > 0 || calendarResult.loadErrors > 0;
+  const hasErrors =
+    fileResult.missing.length > 0 ||
+    calendarResult.loadErrors > 0 ||
+    (unvalidatedResult != null && unvalidatedResult.unvalidated.length > 0);
   const hasWarnings = calendarResult.expired.length > 0 || calendarResult.expiringSoon.length > 0;
 
   if (hasErrors) {
@@ -452,13 +516,19 @@ function printSummary(
  *
  * @param fileResult - File existence check result
  * @param calendarResult - Calendar freshness check result
+ * @param unvalidatedResult - Unvalidated directory check result (--targets mode only)
  * @returns EXIT_OK (0), EXIT_WARN (1), or EXIT_ERROR (2)
  */
 export function determineExitCode(
   fileResult: FileCheckResult,
   calendarResult: CalendarCheckResult,
+  unvalidatedResult?: UnvalidatedDirResult,
 ): number {
-  if (fileResult.missing.length > 0 || calendarResult.loadErrors > 0) {
+  if (
+    fileResult.missing.length > 0 ||
+    calendarResult.loadErrors > 0 ||
+    (unvalidatedResult != null && unvalidatedResult.unvalidated.length > 0)
+  ) {
     return EXIT_ERROR;
   }
   if (calendarResult.expired.length > 0 || calendarResult.expiringSoon.length > 0) {
@@ -472,12 +542,18 @@ export function determineExitCode(
 // ---------------------------------------------------------------------------
 
 function printUsage(): void {
-  console.log('Usage: npx tsx pipeline/scripts/app-data/validate-app-data.ts');
+  console.log('Usage: npx tsx pipeline/scripts/app-data/validate-app-data.ts <prefix>');
+  console.log('       npx tsx pipeline/scripts/app-data/validate-app-data.ts --targets <file>');
+  console.log('       npx tsx pipeline/scripts/app-data/validate-app-data.ts --list');
+  console.log('       npx tsx pipeline/scripts/app-data/validate-app-data.ts --help');
   console.log('');
   console.log('Validate generated web app data files.');
   console.log('');
-  console.log('Options:');
-  console.log('  --help, -h   Show this help message');
+  console.log('Arguments:');
+  console.log('  <prefix>         Validate a single source by its prefix (e.g. "minkuru")');
+  console.log('  --targets <file> Validate sources listed in a targets file');
+  console.log('  --list           List available prefixes');
+  console.log('  --help, -h       Show this help message');
 }
 
 // ---------------------------------------------------------------------------
@@ -485,16 +561,30 @@ function printUsage(): void {
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
-  const arg = process.argv[2];
-  if (arg) {
-    if (arg === '--help' || arg === '-h') {
-      printUsage();
-      return;
-    }
-    console.error(`Error: Unknown argument: ${arg}\n`);
+  const arg = parseCliArg();
+
+  if (arg.kind === 'help') {
     printUsage();
-    process.exitCode = 1;
     return;
+  }
+
+  if (arg.kind === 'list') {
+    const prefixMap = await buildPrefixMap();
+    const sorted = [...prefixMap].sort((a, b) => a[0].localeCompare(b[0]));
+    console.log('Available prefixes:\n');
+    for (const [prefix, nameEn] of sorted) {
+      console.log(`  ${prefix.padEnd(10)} ${nameEn}`);
+    }
+    return;
+  }
+
+  // Resolve target prefixes
+  let prefixes: string[];
+  if (arg.kind === 'targets') {
+    prefixes = await loadTargetFile(arg.path);
+  } else {
+    // arg.kind === 'source-name' — treat as a single prefix
+    prefixes = [arg.name];
   }
 
   const startTime = performance.now();
@@ -503,30 +593,44 @@ async function main(): Promise<void> {
 
   console.log(`=== Validate generated data (${DATA_DIR}) ===\n`);
 
-  const sources = await loadSources();
+  const prefixMap = await buildPrefixMap();
+  const sources = resolveSources(prefixes, prefixMap);
+  const prefixList = sources.map((s) => sanitize(s.prefix)).join(', ');
+  console.log(`  Validating ${sources.length} sources: ${prefixList}\n`);
 
   if (sources.length === 0) {
-    warn('No GTFS source definitions found.');
+    warn('No sources to validate.');
     console.log('## Generated Data Validation\n');
-    console.log('> **Warning**: No GTFS source definitions found.\n');
+    console.log('> **Warning**: No sources to validate.\n');
     process.exitCode = EXIT_WARN;
     return;
   }
 
-  // Step 1: File existence check
-  console.log('--- [1/2] File existence check ---\n');
+  // Step 1: Unvalidated directory check (--targets mode only)
+  const isBatchMode = arg.kind === 'targets';
+  let unvalidatedResult: UnvalidatedDirResult | undefined;
+  if (isBatchMode) {
+    console.log('--- [1/3] Unvalidated directory check ---\n');
+    unvalidatedResult = checkUnvalidatedDirs(new Set(prefixes));
+    console.log('');
+  }
+
+  // Step 2: File existence check
+  const step2 = isBatchMode ? '2/3' : '1/2';
+  console.log(`--- [${step2}] File existence check ---\n`);
   const fileResult = checkFileExistence(sources);
   console.log('');
 
-  // Step 2: Calendar freshness check
-  console.log('--- [2/2] Calendar freshness check ---\n');
+  // Step 3: Calendar freshness check
+  const step3 = isBatchMode ? '3/3' : '2/2';
+  console.log(`--- [${step3}] Calendar freshness check ---\n`);
   const calendarResult = checkCalendarFreshness(sources, today);
   console.log('');
 
   // Markdown summary
-  printSummary(today, fileResult, calendarResult);
+  printSummary(today, fileResult, calendarResult, unvalidatedResult);
 
-  const exitCode = determineExitCode(fileResult, calendarResult);
+  const exitCode = determineExitCode(fileResult, calendarResult, unvalidatedResult);
   const elapsed = Math.round(performance.now() - startTime);
   console.log(`Done in ${elapsed}ms. (exit code: ${exitCode})`);
   process.exitCode = exitCode;
