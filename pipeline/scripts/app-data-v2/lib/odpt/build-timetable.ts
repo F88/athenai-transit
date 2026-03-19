@@ -127,9 +127,11 @@ export function buildTripPatternsAndTimetableFromOdpt(
   }
 
   // 2. Sort patterns deterministically and assign IDs
-  const sortedPatterns = [...patternMap.entries()].sort(([, a], [, b]) =>
-    a.sortKey.localeCompare(b.sortKey),
-  );
+  // Use code-unit comparison (< / >) instead of localeCompare to avoid
+  // locale-dependent collation differences across environments.
+  const sortedPatterns = [...patternMap.entries()].sort(([, a], [, b]) => {
+    return a.sortKey < b.sortKey ? -1 : a.sortKey > b.sortKey ? 1 : 0;
+  });
 
   const tripPatterns: Record<string, TripPatternJson> = {};
   const patternIdByKey = new Map<string, string>();
