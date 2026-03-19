@@ -127,3 +127,11 @@ stop_name の差異パターン (渋66 の調査結果):
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20250108版
+
+## kyoto-city-bus
+
+### route_color に黒 (000000) が 43路線
+
+京都市バスの 139路線中 43路線が route_color=000000 (黒)。地図上で路線図が見づらい。routeColorFallbacks の設定、または黒を別の色に置き換える対応が必要。
+
+route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1), FFC0CB (1)
