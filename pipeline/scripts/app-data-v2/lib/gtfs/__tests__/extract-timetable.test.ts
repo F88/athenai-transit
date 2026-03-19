@@ -271,4 +271,69 @@ describe('extractTripPatternsAndTimetable', () => {
     expect(timetable['test:S001']).toHaveLength(1);
     expect(timetable['test:S003']).toHaveLength(1);
   });
+
+  it('d/a/pt/dt array lengths are equal for each service_id', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '07:59:00', 1, 2);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '08:59:00', 0, 0);
+    `);
+
+    const { timetable } = extractTripPatternsAndTimetable(db, 'test');
+    const g = timetable['test:S001'][0];
+    const dLen = g.d['test:WD'].length;
+    expect(g.a['test:WD']).toHaveLength(dLen);
+    expect(g.pt!['test:WD']).toHaveLength(dLen);
+    expect(g.dt!['test:WD']).toHaveLength(dLen);
+    expect(dLen).toBe(2);
+  });
+
+  it('produces multiple timetable groups when different patterns serve the same stop', () => {
+    // Two trips with different stop sequences both pass through S002
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T002', 'S003', 1, '09:00:00', '09:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T002', 'S002', 2, '09:10:00', '09:10:00', 0, 0);
+    `);
+
+    const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
+    // Two different patterns (different first stop)
+    expect(Object.keys(tripPatterns)).toHaveLength(2);
+    // S002 appears in both patterns -> 2 timetable groups
+    expect(timetable['test:S002']).toHaveLength(2);
+  });
+
+  it('handles circular route (same first and last stop)', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '都庁前', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 3, '08:20:00', '08:20:00', 0, 0);
+    `);
+
+    const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
+    const p = Object.values(tripPatterns)[0];
+    // Circular: first and last stop are the same
+    expect(p.stops[0]).toBe(p.stops[p.stops.length - 1]);
+    expect(p.stops).toEqual(['test:S001', 'test:S002', 'test:S001']);
+    // S001 appears twice in the pattern -> timetable has 2 departures (at seq 1 and seq 3)
+    const g = timetable['test:S001'][0];
+    expect(g.d['test:WD']).toEqual([480, 500]);
+  });
+
+  it('route_url is NOT included in route output (moved to lookup)', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    const p = Object.values(tripPatterns)[0];
+    // RouteV2Json should not have 'u' (route_url) field
+    expect(p).not.toHaveProperty('u');
+  });
 });

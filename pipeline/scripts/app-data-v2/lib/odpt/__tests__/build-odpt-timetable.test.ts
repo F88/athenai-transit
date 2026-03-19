@@ -421,4 +421,75 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     expect(p.stops).toEqual(['test:A', 'test:B']);
     expect(p.h).toBe('B駅');
   });
+
+  it('d and a array lengths are equal for each service_id', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const timetables: OdptStationTimetable[] = [
+      {
+        'owl:sameAs': 'odpt.StationTimetable:Test.A.Weekday',
+        'dct:issued': '2025-04-01',
+        'odpt:station': 'odpt.Station:Test.A',
+        'odpt:calendar': 'odpt.Calendar:Weekday',
+        'odpt:railDirection': 'odpt.RailDirection:Outbound',
+        'odpt:stationTimetableObject': [
+          { 'odpt:departureTime': '06:00', 'odpt:arrivalTime': '05:59' },
+          { 'odpt:departureTime': '06:15' },
+          { 'odpt:arrivalTime': '06:30' },
+        ],
+      },
+    ];
+
+    const { timetable } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
+    const g = timetable['test:A'][0];
+    const dLen = g.d['test:weekday'].length;
+    expect(g.a['test:weekday']).toHaveLength(dLen);
+    expect(dLen).toBe(3);
+  });
+
+  it('departures within a service_id are sorted ascending', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const timetables: OdptStationTimetable[] = [
+      {
+        'owl:sameAs': 'odpt.StationTimetable:Test.A.Weekday',
+        'dct:issued': '2025-04-01',
+        'odpt:station': 'odpt.Station:Test.A',
+        'odpt:calendar': 'odpt.Calendar:Weekday',
+        'odpt:railDirection': 'odpt.RailDirection:Outbound',
+        'odpt:stationTimetableObject': [
+          { 'odpt:departureTime': '09:00', 'odpt:destinationStation': ['odpt.Station:Test.C'] },
+          { 'odpt:departureTime': '06:00', 'odpt:destinationStation': ['odpt.Station:Test.C'] },
+          { 'odpt:departureTime': '07:30', 'odpt:destinationStation': ['odpt.Station:Test.C'] },
+        ],
+      },
+    ];
+
+    const { timetable } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
+    const d = timetable['test:A'][0].d['test:weekday'];
+    // Must be sorted ascending
+    for (let i = 1; i < d.length; i++) {
+      expect(d[i]).toBeGreaterThanOrEqual(d[i - 1]);
+    }
+    expect(d).toEqual([360, 450, 540]);
+  });
+
+  it('multiple calendar types produce separate service_id entries in same group', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const timetables: OdptStationTimetable[] = [
+      makeTimetable(
+        'odpt.Station:Test.A', 'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound', ['06:00'],
+        'odpt.Station:Test.C',
+      ),
+      makeTimetable(
+        'odpt.Station:Test.A', 'odpt.Calendar:SaturdayHoliday',
+        'odpt.RailDirection:Outbound', ['07:00'],
+        'odpt.Station:Test.C',
+      ),
+    ];
+
+    const { timetable } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
+    const g = timetable['test:A'][0];
+    expect(g.d['test:weekday']).toEqual([360]);
+    expect(g.d['test:saturday-holiday']).toEqual([420]);
+  });
 });

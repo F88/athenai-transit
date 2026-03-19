@@ -146,4 +146,37 @@ describe('extractRoutesV2', () => {
     const result = extractRoutesV2(db, 'test', {});
     expect(result[0].ai).toBe('');
   });
+
+  it('does not include route_url in output (moved to lookup)', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type, route_url)
+      VALUES ('R001', 'R1', 'Route 1', 3, 'https://example.com/route/R001');
+    `);
+
+    const result = extractRoutesV2(db, 'test', {});
+    expect(result[0]).not.toHaveProperty('u');
+    // route_url should be in lookup, not in route
+  });
+
+  it('handles NULL route_short_name and route_long_name as empty strings', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_type) VALUES ('R001', 3);
+    `);
+
+    const result = extractRoutesV2(db, 'test', {});
+    expect(result[0].s).toBe('');
+    expect(result[0].l).toBe('');
+  });
+
+  it('returns multiple routes sorted by route_id', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type)
+      VALUES ('R003', 'C', 'Route C', 3),
+             ('R001', 'A', 'Route A', 3),
+             ('R002', 'B', 'Route B', 3);
+    `);
+
+    const result = extractRoutesV2(db, 'test', {});
+    expect(result.map((r) => r.i)).toEqual(['test:R001', 'test:R002', 'test:R003']);
+  });
 });
