@@ -308,7 +308,8 @@ export interface TripPatternJson {
    * - Consumers MUST NOT re-sort this array.
    *
    * Derived from GTFS stop_times (ORDER BY stop_sequence) or
-   * ODPT stationOrder filtered by destinationStation.
+   * ODPT stationOrder ordered by railDirection (Outbound =
+   * ascending index, Inbound = descending index).
    *
    * **Note**: Some stops in this array may have no corresponding
    * timetable entry (e.g. GTFS stops with NULL departure_time —
