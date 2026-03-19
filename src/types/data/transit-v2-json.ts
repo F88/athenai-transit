@@ -25,20 +25,26 @@
  *
  * ### Bundle structure
  *
- * In v2, individual JSON files are bundled into two files per source:
+ * Per-source bundles (`{prefix}/` directory):
  *
- * | File                   | Contents                                        |
- * | ---------------------- | ----------------------------------------------- |
- * | `{prefix}/data.json`     | All data needed at startup (DataBundle)           |
- * | `{prefix}/shapes.json`   | Route shapes, lazy-loaded (ShapesBundle)          |
- * | `{prefix}/insights.json` | Precomputed analytics, optional (InsightsBundle)  |
+ * | File                     | Contents                                       |
+ * | ------------------------ | ---------------------------------------------- |
+ * | `{prefix}/data.json`     | All data needed at startup (DataBundle)         |
+ * | `{prefix}/shapes.json`   | Route shapes, lazy-loaded (ShapesBundle)        |
+ * | `{prefix}/insights.json` | Precomputed analytics, optional (InsightsBundle) |
  *
- * InsightsBundle sections (2×2 matrix, all optional except serviceGroups):
+ * Global bundle (cross-source):
  *
- * |              | Stats (service-group segmented) | Geo (day-independent)  |
- * | ------------ | ------------------------------- | ---------------------- |
- * | TripPattern  | tripPatternStats                | tripPatternGeo         |
- * | Stop         | stopStats                       | stopGeo                |
+ * | File                     | Contents                                       |
+ * | ------------------------ | ---------------------------------------------- |
+ * | `global/insights.json`   | Cross-source spatial analytics (GlobalInsightsBundle) |
+ *
+ * InsightsBundle sections (per-source, all optional except serviceGroups):
+ *
+ * |              | Stats (service-group segmented) | Geo (day-independent)      |
+ * | ------------ | ------------------------------- | -------------------------- |
+ * | TripPattern  | tripPatternStats                | tripPatternGeo             |
+ * | Stop         | stopStats                       | → GlobalInsightsBundle     |
  *
  * Each bundle has a `bundle_version` and `kind` discriminant.
  * Sections within a bundle carry their own `v` (schema version):
@@ -542,7 +548,7 @@ export interface ShapesBundle {
  * - Non-stop score: `rd[0] / stops.length`
  */
 export interface TripPatternStatsJson {
-  /** Total departures per day on a representative service day. */
+  /** Total departures per day for this service group. */
   freq: number;
   /** Remaining minutes from stops[i] to terminal. Parallel to stops[]. */
   rd: number[];
@@ -561,10 +567,12 @@ export interface TripPatternStatsJson {
  * scores (e.g. wandering score) are not meaningful. Consumers should
  * handle this case explicitly.
  *
+ * Derivable (app-side):
+ * - Wandering score (distance-based): `pathDist / dist`
+ *
  * Derivable (app-side, combined with {@link TripPatternStatsJson}):
  * - Wandering score (time-based): `rd[0] / dist`
  * - Express score: `dist / rd[0]`
- * - Wandering score (distance-based): `pathDist / dist`
  */
 export interface TripPatternGeoJson {
   /**
@@ -604,39 +612,31 @@ export interface TripPatternGeoJson {
  * may have 50 departures on weekdays but only 10 on Sundays, or
  * lose entire route types on certain days.
  *
- * Provides frequency, connectivity, and operator-specific metrics
- * for each stop. Used for marker rendering, view sorting, and
- * operator-specific filtering (e.g. free pass mode).
- *
- * All values are aggregated across all sources that serve this stop.
- * For operator-specific breakdowns, use {@link src}.
+ * Provides frequency and connectivity metrics for each stop.
+ * Used for marker rendering and view sorting.
  */
 export interface StopStatsJson {
-  /** Total departures per day across all patterns serving this stop. */
+  /** Total departures per day for this service group, across all patterns serving this stop. */
   freq: number;
 
-  /** Number of distinct routes serving this stop. */
+  /** Number of distinct routes serving this stop in this service group. */
   rc: number;
 
-  /** Number of distinct route types (bus, subway, tram, etc.) serving this stop. */
+  /** Number of distinct route types (bus, subway, tram, etc.) serving this stop in this service group. */
   rtc: number;
 
   /**
-   * Latest departure time (minutes from midnight) across all services.
+   * Earliest departure time (minutes from midnight) for this service group.
+   * Indicates early-morning availability.
+   */
+  ed: number;
+
+  /**
+   * Latest departure time (minutes from midnight) for this service group.
    * Values >= 1440 represent overnight departures past midnight.
    * Indicates late-night availability.
    */
   ld: number;
-
-  /**
-   * Operator-specific route metrics, keyed by source prefix
-   * (e.g. "tobus", "toaran").
-   *
-   * Enables operator-scoped filtering such as "Toei free pass mode"
-   * — showing only stops and routes reachable with a specific
-   * operator's day pass.
-   */
-  src: Record<string, { rc: number; rtc: number }>;
 }
 
 /**
@@ -646,9 +646,13 @@ export interface StopStatsJson {
  * analysis. Provides isolation and connectivity metrics that
  * require cross-stop distance calculations.
  *
- * These metrics improve as more data sources are added — a stop
- * that appears isolated within one source may reveal hidden
- * connections when other sources are included.
+ * **Multi-source prerequisite**: This section requires a pipeline
+ * step that analyzes stops across ALL sources. Per-source analysis
+ * would produce misleading results — a stop may appear isolated
+ * within one source while another source's stop is nearby.
+ * The exact definitions of each metric (what constitutes "different
+ * route" or "different parent_station") depend on the multi-source
+ * pipeline design and will be refined at implementation time.
  */
 export interface StopGeoJson {
   /**
@@ -681,10 +685,10 @@ export interface StopGeoJson {
  * pluggable view patterns (T5, T6, T7, T10, etc.) without runtime
  * computation. Organized along two axes:
  *
- * |              | Stats (operational) | Geo (spatial)     |
- * | ------------ | ------------------- | ----------------- |
- * | TripPattern  | tripPatternStats    | tripPatternGeo    |
- * | Stop         | stopStats           | stopGeo           |
+ * |              | Stats (operational) | Geo (spatial)          |
+ * | ------------ | ------------------- | ---------------------- |
+ * | TripPattern  | tripPatternStats    | tripPatternGeo         |
+ * | Stop         | stopStats           | (GlobalInsightsBundle) |
  *
  * Stats sections are segmented by **service group key** — a string
  * identifier generated by the pipeline from calendar.txt day-of-week
@@ -710,8 +714,10 @@ export interface StopGeoJson {
  * }
  * ```
  *
- * Geo sections are NOT segmented — geographic metrics are
- * independent of which services are running.
+ * Geo sections (tripPatternGeo) are NOT segmented — geographic
+ * metrics are independent of which services are running.
+ * Stop-level Geo (stopGeo) lives in {@link GlobalInsightsBundle}
+ * because it requires cross-source spatial analysis.
  *
  * Each section is optional — the app enables views based on which
  * sections are present. Separated from DataBundle to keep
@@ -746,8 +752,6 @@ export interface InsightsBundle {
   tripPatternGeo?: BundleSection<1, Record<string, TripPatternGeoJson>>;
   /** Per-stop operational statistics. Keyed by service group, then stop ID. */
   stopStats?: BundleSection<1, Record<string, Record<string, StopStatsJson>>>;
-  /** Per-stop geographic metrics. Keyed by stop ID. Service-group independent. */
-  stopGeo?: BundleSection<1, Record<string, StopGeoJson>>;
 }
 
 /**
@@ -755,3 +759,32 @@ export interface InsightsBundle {
  * Use `kind` to discriminate at runtime.
  */
 export type SourceBundle = DataBundle | ShapesBundle | InsightsBundle;
+
+// -----------------------------------------------------------------------
+// Global bundles — cross-source analytics
+// -----------------------------------------------------------------------
+
+/**
+ * `global/insights.json` — cross-source precomputed analytics.
+ *
+ * Contains metrics that require spatial analysis across ALL sources.
+ * Unlike per-source InsightsBundle, this bundle is generated by a
+ * pipeline step that has access to every source's stop data.
+ *
+ * Delivered as a single file independent of any source prefix.
+ */
+export interface GlobalInsightsBundle {
+  /** Bundle format version. */
+  bundle_version: 2;
+  /** Discriminated union tag. */
+  kind: 'global-insights';
+
+  /** Per-stop geographic metrics computed across all sources. */
+  stopGeo?: BundleSection<1, Record<string, StopGeoJson>>;
+}
+
+/**
+ * Union of all global (cross-source) bundle types.
+ * Use `kind` to discriminate at runtime.
+ */
+export type GlobalBundle = GlobalInsightsBundle;
