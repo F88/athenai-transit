@@ -172,4 +172,39 @@ describe('extractTranslationsV2', () => {
     expect(result.headsigns['新宿駅']).toEqual({ en: 'Shinjuku Sta.' });
     expect(Object.keys(result.headsigns)).toHaveLength(1);
   });
+
+  it('extracts multiple languages for the same stop', () => {
+    db.exec(`
+      INSERT INTO stops (stop_id, stop_name, stop_lat, stop_lon, location_type)
+      VALUES ('S001', '新橋', 35.6658, 139.7584, 0);
+      INSERT INTO translations (table_name, field_name, language, translation, record_id)
+      VALUES ('stops', 'stop_name', 'en', 'Shimbashi', 'S001'),
+             ('stops', 'stop_name', 'ko', '신바시', 'S001'),
+             ('stops', 'stop_name', 'zh-Hans', '新桥', 'S001');
+    `);
+
+    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    expect(result.stop_names['test:S001']).toEqual({
+      en: 'Shimbashi',
+      ko: '신바시',
+      'zh-Hans': '新桥',
+    });
+  });
+
+  it('provides agency names/short_names even without translation rows', () => {
+    db.exec(`
+      INSERT INTO agency (agency_id, agency_name) VALUES ('A001', '都バス');
+    `);
+
+    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    // Provider defaults are used
+    expect(result.agency_names['test:A001']).toEqual({
+      ja: 'テスト交通',
+      en: 'Test Transit',
+    });
+    expect(result.agency_short_names['test:A001']).toEqual({
+      ja: 'テスト',
+      en: 'Test',
+    });
+  });
 });

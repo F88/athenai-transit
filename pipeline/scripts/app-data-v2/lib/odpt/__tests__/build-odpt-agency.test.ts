@@ -41,4 +41,30 @@ describe('buildAgencyV2', () => {
     const result = buildAgencyV2('test', provider);
     expect(result[0].cs).toEqual([{ b: '00B2E5', t: 'FFFFFF' }]);
   });
+
+  it('returns empty string for url when provider has no URL', () => {
+    const provider: Provider = {
+      name: {
+        ja: { long: 'テスト', short: 'テスト' },
+        en: { long: 'Test', short: 'Test' },
+      },
+    };
+    const result = buildAgencyV2('test', provider);
+    expect(result[0].u).toBe('');
+  });
+
+  it('includes multiple brand colors in order', () => {
+    const provider: Provider = {
+      ...TEST_PROVIDER,
+      colors: [
+        { bg: 'FF0000', text: 'FFFFFF' },
+        { bg: '0000FF', text: 'FFFFFF' },
+      ],
+    };
+    const result = buildAgencyV2('test', provider);
+    expect(result[0].cs).toEqual([
+      { b: 'FF0000', t: 'FFFFFF' },
+      { b: '0000FF', t: 'FFFFFF' },
+    ]);
+  });
 });
