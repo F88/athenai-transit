@@ -68,7 +68,7 @@ Add the source-name to all three target list files (and `build-shapes-gtfs.ts` i
 
 Each file exports a string array. Entries can be commented out to temporarily skip a source during batch runs — this is useful for debugging or when a source is temporarily unavailable.
 
-Note: `pipeline/scripts/analysis/describe-resources.ts` auto-discovers all resource definitions in `pipeline/config/resources/gtfs/`, so no manual registration is needed there.
+Note: `pipeline/scripts/dev/describe-resources.ts` auto-discovers all resource definitions in `pipeline/config/resources/gtfs/`, so no manual registration is needed there.
 
 ### 4. Add to web app data-source-settings
 
