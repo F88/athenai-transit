@@ -29,7 +29,7 @@
     "pipeline/lib/**/*.ts",
     "pipeline/scripts/**/*.ts",
     "pipeline/types/**/*.ts",
-    "pipeline/resources/**/*.ts",
-    "pipeline/targets/**/*.ts"
+    "pipeline/config/resources/**/*.ts",
+    "pipeline/config/targets/**/*.ts"
   ]
 }

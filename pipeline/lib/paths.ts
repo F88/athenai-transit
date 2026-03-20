@@ -1,16 +1,35 @@
 /**
- * Shared path constants for pipeline workspace directories.
+ * Shared path constants for the pipeline.
  *
- * All pipeline scripts should import paths from here instead of
- * computing them with relative `resolve()` calls. This ensures
- * consistent directory references and makes workspace restructuring
- * a single-file change.
+ * Centralizes all directory references so that restructuring
+ * requires changes in this single file only.
  */
 
 import { join, resolve } from 'node:path';
 
+// ---------------------------------------------------------------------------
+// Root
+// ---------------------------------------------------------------------------
+
 /** Pipeline root directory (`pipeline/`). */
 export const PIPELINE_ROOT = resolve(import.meta.dirname, '..');
+
+// ---------------------------------------------------------------------------
+// Config directories (source definitions, batch targets)
+// ---------------------------------------------------------------------------
+
+/** Config root — resource definitions and batch target lists. */
+export const CONFIG_DIR = join(PIPELINE_ROOT, 'config');
+
+/** GTFS resource definitions (`config/resources/gtfs/*.ts`). */
+export const RESOURCES_DIR = join(CONFIG_DIR, 'resources');
+
+/** Batch target lists (`config/targets/*.ts`). */
+export const TARGETS_DIR = join(CONFIG_DIR, 'targets');
+
+// ---------------------------------------------------------------------------
+// Workspace directories (pipeline I/O data)
+// ---------------------------------------------------------------------------
 
 /** Workspace root — all pipeline I/O data lives here. */
 export const WORKSPACE_DIR = join(PIPELINE_ROOT, 'workspace');
@@ -28,7 +47,7 @@ export const ARCHIVES_DIR = join(WORKSPACE_DIR, '_archives');
 export const STATE_DIR = join(WORKSPACE_DIR, 'state');
 
 // ---------------------------------------------------------------------------
-// Derived paths used by build scripts
+// Derived paths — workspace
 // ---------------------------------------------------------------------------
 
 /** SQLite database directory. */
