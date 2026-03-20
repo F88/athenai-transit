@@ -17,9 +17,9 @@ import Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/load-gtfs-sources';
-import { runMain } from '../../src/lib/pipeline-utils';
-import { analyzeStopTimes, formatAnalysis } from './lib/gtfs-stop-times-analysis';
+import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
+import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import { analyzeStopTimes, formatAnalysis } from './dev-lib/gtfs-stop-times-analysis';
 
 import { DB_DIR } from '../../src/lib/paths';
 

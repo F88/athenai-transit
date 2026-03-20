@@ -24,18 +24,18 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/load-gtfs-sources';
-import { loadDownloadMeta } from '../../src/lib/download-meta';
-import type { DownloadMeta, DownloadMetaSuccess } from '../../src/lib/download-meta';
-import { ensureDir } from '../../src/lib/pipeline-utils';
+import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
+import { loadDownloadMeta } from '../../src/lib/download/download-meta';
+import type { DownloadMeta, DownloadMetaSuccess } from '../../src/lib/download/download-meta';
+import { ensureDir } from '../../src/lib/fs-utils';
 import {
   detectWarnings,
   EXPIRING_SOON_DAYS,
   extractDateParam,
   extractUrlBase,
   getDaysUntilExpiry,
-} from '../../src/lib/check-warnings';
-import type { Warning, ResourceSnapshot } from '../../src/lib/check-warnings';
+} from '../../src/lib/pipeline/odpt-resource-warnings';
+import type { Warning, ResourceSnapshot } from '../../src/lib/pipeline/odpt-resource-warnings';
 
 // ---------------------------------------------------------------------------
 // ODPT Members Portal API types

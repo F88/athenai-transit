@@ -30,19 +30,22 @@ import {
   redactTokens,
   withRetry,
   wrapTimeoutError,
-} from '../../src/lib/download-utils';
-import { saveDownloadMeta } from '../../src/lib/download-meta';
+} from '../../src/lib/download/download-utils';
+import { saveDownloadMeta } from '../../src/lib/download/download-meta';
 import {
   determineBatchExitCode,
-  ensureDir,
   formatExitCode,
   loadTargetFile,
   parseCliArg,
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../src/lib/pipeline-utils';
-import { listOdptJsonSourceNames, loadOdptJsonSource } from '../../src/lib/load-odpt-json-sources';
+} from '../../src/lib/pipeline/pipeline-utils';
+import { ensureDir } from '../../src/lib/fs-utils';
+import {
+  listOdptJsonSourceNames,
+  loadOdptJsonSource,
+} from '../../src/lib/resources/load-odpt-json-sources';
 
 import { ARCHIVES_DIR, ODPT_JSON_DATA_DIR, PIPELINE_ROOT } from '../../src/lib/paths';
 

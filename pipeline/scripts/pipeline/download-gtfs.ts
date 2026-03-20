@@ -25,21 +25,21 @@ import {
   buildAuthenticatedUrl,
   downloadWithRetry,
   redactTokens,
-} from '../../src/lib/download-utils';
-import type { ExtractedFileInfo, FeedInfoMeta } from '../../src/lib/download-meta';
-import { saveDownloadMeta } from '../../src/lib/download-meta';
-import { parseFeedInfoTxt } from '../../src/lib/gtfs-feed-info';
+} from '../../src/lib/download/download-utils';
+import type { ExtractedFileInfo, FeedInfoMeta } from '../../src/lib/download/download-meta';
+import { saveDownloadMeta } from '../../src/lib/download/download-meta';
+import { parseFeedInfoTxt } from '../../src/lib/pipeline/gtfs-feed-info';
 import {
   determineBatchExitCode,
-  ensureDir,
   formatExitCode,
   loadTargetFile,
   parseCliArg,
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../src/lib/pipeline-utils';
-import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/load-gtfs-sources';
+} from '../../src/lib/pipeline/pipeline-utils';
+import { ensureDir } from '../../src/lib/fs-utils';
+import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
 
 import { ARCHIVES_DIR, GTFS_DATA_DIR, PIPELINE_ROOT } from '../../src/lib/paths';
 

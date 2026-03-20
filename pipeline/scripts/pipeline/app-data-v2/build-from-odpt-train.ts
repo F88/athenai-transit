@@ -23,8 +23,8 @@ import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
 import {
   listOdptTrainSourceNames,
   loadOdptTrainSource,
-} from '../../../src/lib/load-odpt-train-sources';
-import type { OdptTrainSource } from '../../../src/lib/load-odpt-train-sources';
+} from '../../../src/lib/resources/load-odpt-train-sources';
+import type { OdptTrainSource } from '../../../src/lib/resources/load-odpt-train-sources';
 import {
   determineBatchExitCode,
   formatExitCode,
@@ -33,16 +33,16 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../../src/lib/pipeline-utils';
+} from '../../../src/lib/pipeline/pipeline-utils';
 import type { OdptRailway, OdptStation, OdptStationTimetable } from '../../../src/types/odpt-train';
-import { writeDataBundle } from './lib/bundle-writer';
-import { buildAgencyV2 } from './lib/odpt/build-agency';
-import { buildCalendarV2 } from './lib/odpt/build-calendar';
-import { buildFeedInfoV2 } from './lib/odpt/build-feed-info';
-import { buildRoutesV2 } from './lib/odpt/build-routes';
-import { buildStopsV2 } from './lib/odpt/build-stops';
-import { buildTripPatternsAndTimetableFromOdpt } from './lib/odpt/build-timetable';
-import { buildTranslationsV2 } from './lib/odpt/build-translations';
+import { writeDataBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
+import { buildAgencyV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-agency';
+import { buildCalendarV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-calendar';
+import { buildFeedInfoV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-feed-info';
+import { buildRoutesV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-routes';
+import { buildStopsV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-stops';
+import { buildTripPatternsAndTimetableFromOdpt } from '../../../src/lib/pipeline/app-data-v2/odpt/build-timetable';
+import { buildTranslationsV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-translations';
 
 // ---------------------------------------------------------------------------
 // Paths

@@ -13,9 +13,9 @@
 ## CLI インターフェース
 
 ```plain
-Usage: npx tsx pipeline/scripts/pipeline/app-data/build-app-data-from-gtfs.ts <source-name>
-       npx tsx pipeline/scripts/pipeline/app-data/build-app-data-from-gtfs.ts --targets <file>
-       npx tsx pipeline/scripts/pipeline/app-data/build-app-data-from-gtfs.ts --list
+Usage: npx tsx pipeline/scripts/pipeline/app-data-v1/build-app-data-from-gtfs.ts <source-name>
+       npx tsx pipeline/scripts/pipeline/app-data-v1/build-app-data-from-gtfs.ts --targets <file>
+       npx tsx pipeline/scripts/pipeline/app-data-v1/build-app-data-from-gtfs.ts --list
        npm run pipeline:build:json
 ```
 
@@ -33,7 +33,7 @@ Usage: npx tsx pipeline/scripts/pipeline/app-data/build-app-data-from-gtfs.ts <s
 `<source-name>` は `pipeline/config/resources/gtfs/` 内のリソース定義ファイル名 (拡張子なし) を指定する。
 
 ```plain
-npx tsx pipeline/scripts/pipeline/app-data/build-app-data-from-gtfs.ts toei-bus
+npx tsx pipeline/scripts/pipeline/app-data-v1/build-app-data-from-gtfs.ts toei-bus
                                              ^^^^^^^^
                                              pipeline/config/resources/gtfs/toei-bus.ts を読み込む
 ```

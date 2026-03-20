@@ -17,15 +17,15 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { OdptRailway, OdptStationTimetable } from '../../src/types/odpt-train';
-import { runMain } from '../../src/lib/pipeline-utils';
+import { runMain } from '../../src/lib/pipeline/pipeline-utils';
 import {
   listOdptTrainSourceNames as listSourceNames,
   loadOdptTrainSource as loadSource,
-} from '../../src/lib/load-odpt-train-sources';
+} from '../../src/lib/resources/load-odpt-train-sources';
 import {
   analyzeOdptStationTimetable,
   formatOdptAnalysis,
-} from './lib/odpt-station-timetable-analysis';
+} from './dev-lib/odpt-station-timetable-analysis';
 
 async function analyzeSource(name: string): Promise<void> {
   const source = await loadSource(name);

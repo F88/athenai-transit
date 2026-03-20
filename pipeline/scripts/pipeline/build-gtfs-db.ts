@@ -30,19 +30,19 @@ import {
 import { createInterface } from 'node:readline';
 import { join, resolve } from 'node:path';
 
-import { splitCsvLine } from '../../src/lib/csv-utils';
-import { INDEXES, SCHEMA } from '../../src/lib/gtfs-schema';
+import { splitCsvLine } from '../../src/lib/pipeline/gtfs-csv-parser';
+import { INDEXES, SCHEMA } from '../../src/lib/pipeline/gtfs-schema';
 import {
   determineBatchExitCode,
-  formatBytes,
   formatExitCode,
   loadTargetFile,
   parseCliArg,
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../src/lib/pipeline-utils';
-import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/load-gtfs-sources';
+} from '../../src/lib/pipeline/pipeline-utils';
+import { formatBytes } from '../../src/lib/format-utils';
+import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
 
 // ---------------------------------------------------------------------------
 // Paths

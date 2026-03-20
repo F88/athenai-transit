@@ -15,10 +15,10 @@
 ## CLI インターフェース
 
 ```plain
-Usage: npx tsx pipeline/scripts/pipeline/app-data/validate-app-data.ts <prefix>
-       npx tsx pipeline/scripts/pipeline/app-data/validate-app-data.ts --targets <file>
-       npx tsx pipeline/scripts/pipeline/app-data/validate-app-data.ts --list
-       npx tsx pipeline/scripts/pipeline/app-data/validate-app-data.ts --help
+Usage: npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts <prefix>
+       npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts --targets <file>
+       npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts --list
+       npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts --help
        npm run pipeline:validate
 ```
 

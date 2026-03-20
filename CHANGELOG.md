@@ -28,12 +28,18 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
-- pipeline/ ディレクトリ再構成 (#39, #40, #41):
+- pipeline/ ディレクトリ再構成 (#39, #40, #41, #42):
     - I/O データを `workspace/` に集約 (data/, state/, \_build/, \_archives/)
     - ソース定義とバッチ対象を `config/` に集約 (resources/, targets/)
     - 内部コード (lib/, types/) を `src/` に集約。entry point (scripts/) は直下に維持
     - `pipeline/src/lib/paths.ts` にパス定数を一元管理
     - `_` prefix で git 管理外ディレクトリを視覚的に分離
+    - `scripts/` を `pipeline/` (CI/運用) と `dev/` (開発/調査) に分離
+    - v1→v2 逆依存を解消。共有 utils を `src/lib/` に抽出
+    - `src/lib/` をサブディレクトリで整理 (`pipeline/`, `download/`, `resources/`)
+    - v2 builder lib を `src/lib/pipeline/app-data-v2/` に移動。scripts は thin entry point に
+    - `app-data/` → `app-data-v1/` にリネーム (v1/v2 対称化)
+    - ファイル名を自明に改名 (csv-utils → gtfs-csv-parser 等)
 
 ## [2026.03.18]
 

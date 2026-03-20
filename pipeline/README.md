@@ -20,18 +20,18 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 
 各スクリプトの詳細な仕様は `docs/` を参照。
 
-| Stage | 概要                                | スクリプト                                                | npm script                              |
-| ----- | ----------------------------------- | --------------------------------------------------------- | --------------------------------------- |
-| 1     | GTFS ZIP をバッチダウンロード       | `scripts/download-gtfs.ts`                                | `npm run pipeline:download:gtfs`        |
-| 1     | ODPT JSON をバッチダウンロード      | `scripts/download-odpt-json.ts`                           | `npm run pipeline:download:odpt-json`   |
-| 2     | GTFS CSV を SQLite に変換           | `scripts/build-gtfs-db.ts`                                | `npm run pipeline:build:db`             |
-| 3     | SQLite からアプリ用 JSON を生成     | `scripts/app-data/build-app-data-from-gtfs.ts`            | `npm run pipeline:build:json`           |
-| 3     | ODPT Train からアプリ用 JSON を生成 | `scripts/app-data/build-app-data-from-odpt-train.ts`      | `npm run pipeline:build:odpt-train`     |
-| 3     | GTFS shapes.txt から路線形状を生成  | `scripts/app-data/build-route-shapes-from-gtfs.ts`        | `npm run pipeline:build:shapes:gtfs`    |
-| 3     | 国土数値情報から鉄道路線形状を生成  | `scripts/app-data/build-route-shapes-from-ksj-railway.ts` | `npm run pipeline:build:shapes:ksj`     |
-| 3     | アプリ用 JSON の検証                | `scripts/app-data/validate-app-data.ts`                   | `npm run pipeline:validate`             |
-| -     | 全リソース定義の一覧表示            | `scripts/analysis/describe-resources.ts`                  | `npm run pipeline:describe`             |
-| -     | ODPT リソース更新チェック           | `scripts/analysis/check-odpt-resources.ts`                | `npm run pipeline:check:odpt-resources` |
+| Stage | 概要                                | スクリプト                                                            | npm script                              |
+| ----- | ----------------------------------- | --------------------------------------------------------------------- | --------------------------------------- |
+| 1     | GTFS ZIP をバッチダウンロード       | `scripts/pipeline/download-gtfs.ts`                                   | `npm run pipeline:download:gtfs`        |
+| 1     | ODPT JSON をバッチダウンロード      | `scripts/pipeline/download-odpt-json.ts`                              | `npm run pipeline:download:odpt-json`   |
+| 2     | GTFS CSV を SQLite に変換           | `scripts/pipeline/build-gtfs-db.ts`                                   | `npm run pipeline:build:db`             |
+| 3     | SQLite からアプリ用 JSON を生成     | `scripts/pipeline/app-data-v1/build-app-data-from-gtfs.ts`            | `npm run pipeline:build:json`           |
+| 3     | ODPT Train からアプリ用 JSON を生成 | `scripts/pipeline/app-data-v1/build-app-data-from-odpt-train.ts`      | `npm run pipeline:build:odpt-train`     |
+| 3     | GTFS shapes.txt から路線形状を生成  | `scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts`        | `npm run pipeline:build:shapes:gtfs`    |
+| 3     | 国土数値情報から鉄道路線形状を生成  | `scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts` | `npm run pipeline:build:shapes:ksj`     |
+| 3     | アプリ用 JSON の検証                | `scripts/pipeline/app-data-v1/validate-app-data.ts`                   | `npm run pipeline:validate`             |
+| -     | 全リソース定義の一覧表示            | `scripts/dev/describe-resources.ts`                                   | `npm run pipeline:describe`             |
+| -     | ODPT リソース更新チェック           | `scripts/pipeline/check-odpt-resources.ts`                            | `npm run pipeline:check:odpt-resources` |
 
 ## 実行順序
 
@@ -137,21 +137,29 @@ pipeline/config/resources/
 
 ```plain
 pipeline/
-├── types/          Type definitions (resource-common, gtfs-resource, odpt-json-resource)
-├── resources/      Resource definitions per data source (git managed)
-│   ├── gtfs/       GTFS source definitions (.ts)
-│   └── odpt-json/  ODPT JSON source definitions (.ts)
-├── targets/        Batch target lists (.ts) for --targets option
-├── lib/            Shared utilities (download-utils)
-├── data/           Downloaded raw data (re-downloadable, not git managed)
-│   ├── gtfs/       Extracted GTFS CSV files
-│   └── odpt-json/  ODPT JSON files
-├── archives/       Timestamped archives of downloaded files (gitignored)
-├── build/          Build output (generated, gitignored)
-│   └── data/       JSON files for the web app
-├── state/          Operational state (git managed)
-│   ├── download-meta/  Download job results per source
-│   └── check-result/   Resource check snapshots for diff detection
-├── scripts/        Pipeline scripts
-└── docs/           Design documents
+├── config/              Configuration (git managed)
+│   ├── resources/       Resource definitions per data source
+│   │   ├── gtfs/        GTFS source definitions (.ts)
+│   │   └── odpt-json/   ODPT JSON source definitions (.ts)
+│   └── targets/         Batch target lists (.ts) for --targets option
+├── src/                 Internal code
+│   ├── lib/             Shared libraries
+│   │   ├── download/    Download utilities (download-utils, download-meta)
+│   │   ├── resources/   Resource definition loaders (load-*-sources)
+│   │   ├── pipeline/    Pipeline-specific libs (CLI utils, GTFS schema, v2 builders)
+│   │   └── *.ts         Common utilities (paths, format, fs, time, calendar)
+│   └── types/           Type definitions (resource-common, gtfs-resource, odpt-train)
+├── scripts/             Entry points (thin scripts)
+│   ├── pipeline/        CI/production pipeline
+│   │   ├── app-data-v1/ v1 JSON builders + shapes + validate
+│   │   ├── app-data-v2/ v2 JSON builders
+│   │   └── *.ts         Download, build-db, check-resources
+│   └── dev/             Development/analysis tools (manual execution only)
+│       └── dev-lib/     Dev-only libraries (analysis, normalize)
+├── workspace/           Pipeline I/O data
+│   ├── data/            Downloaded raw data (re-downloadable, gitignored)
+│   ├── _build/          Build output (generated, gitignored)
+│   ├── _archives/       Timestamped download archives (gitignored)
+│   └── state/           Operational state (git managed)
+└── docs/                Design documents
 ```
