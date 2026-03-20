@@ -21,6 +21,9 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - ODPT v1 builder が `odpt:destinationStation` を無視し、短距離折返し便 (有明行き等) が終点行きに混入する問題を修正 (#32)
 - ODPT 深夜便の `00:xx` が `24:xx` に変換されず、時刻表で0時台に誤表示される問題を修正 (#34)
+- ODPT ソースで平日の祝日に平日ダイヤが表示される問題を修正 (#36):
+    - pipeline で日本の祝日 calendar_dates を自動生成。WebApp 変更不要。
+    - calendar 有効期間を issued + 1年 → 2年に延長。
 - `validate-app-data.ts`: 期限切れサービスを error から warning に変更。CI のデータ更新がブロックされる問題を修正 (#26)
 
 ## [2026.03.18]
