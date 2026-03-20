@@ -50,7 +50,7 @@ TransitRepository          <- interface used by UI
 
 ### Data Pipeline
 
-A Node.js pre-build pipeline (`pipeline/`) converts GTFS CSV files into per-source SQLite databases (`pipeline/build/`), then generates optimized JSON files for the app (`public/data/`). See [pipeline/README.md](./pipeline/README.md) for details.
+A Node.js pre-build pipeline (`pipeline/`) converts GTFS CSV files into per-source SQLite databases (`pipeline/workspace/_build/db/`), then generates optimized JSON files for the app (`public/data/`). See [pipeline/README.md](./pipeline/README.md) for details.
 
 ## Development Commands
 
@@ -69,12 +69,12 @@ npm run preview      # preview production build
 ```bash
 npm run pipeline:download:gtfs            # 1. download GTFS data (batch)
 npm run pipeline:download:odpt-json      # 2. download ODPT JSON data (batch, requires .env.pipeline.local)
-npm run pipeline:build:db                # 3. convert GTFS CSV -> pipeline/build/*.db
-npm run pipeline:build:json              # 4. generate JSON -> pipeline/build/data/
-npm run pipeline:build:odpt-train        # 5. generate ODPT Train JSON -> pipeline/build/data/
+npm run pipeline:build:db                # 3. convert GTFS CSV -> pipeline/workspace/_build/db/*.db
+npm run pipeline:build:json              # 4. generate JSON -> pipeline/workspace/_build/data/
+npm run pipeline:build:odpt-train        # 5. generate ODPT Train JSON -> pipeline/workspace/_build/data/
 npm run pipeline:build:shapes:gtfs       # 6. generate route shapes from GTFS
 npm run pipeline:build:shapes:ksj        # 7. generate route shapes from KSJ railway
-npm run data:sync                        # 8. copy pipeline/build/data/ -> public/data/
+npm run data:sync                        # 8. copy pipeline/workspace/_build/data/ -> public/data/
 ```
 
 ## Key UX Requirements

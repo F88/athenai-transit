@@ -7,11 +7,13 @@
  */
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 
 import { ensureDir } from './pipeline-utils';
 
-const META_DIR = resolve(import.meta.dirname, '..', 'state', 'download-meta');
+import { STATE_DIR } from './paths';
+
+const META_DIR = join(STATE_DIR, 'download-meta');
 
 // ---------------------------------------------------------------------------
 // Types

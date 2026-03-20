@@ -39,8 +39,9 @@ import { loadTargetFile, parseCliArg, runMain } from '../../lib/pipeline-utils';
 // Paths
 // ---------------------------------------------------------------------------
 
-const ROOT = resolve(import.meta.dirname, '../..');
-const DATA_DIR = join(ROOT, 'build/data');
+import { V1_OUTPUT_DIR } from '../../lib/paths';
+
+const DATA_DIR = V1_OUTPUT_DIR;
 
 // ---------------------------------------------------------------------------
 // Types

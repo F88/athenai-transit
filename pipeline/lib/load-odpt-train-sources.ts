@@ -8,18 +8,12 @@
  * v1 and v2 pipeline builders.
  */
 
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 
 import type { OdptJsonSourceDefinition } from '../types/odpt-json-resource';
 import type { Provider } from '../types/resource-common';
 import { loadAllOdptJsonSources } from './load-odpt-json-sources';
-
-// ---------------------------------------------------------------------------
-// Paths
-// ---------------------------------------------------------------------------
-
-const ROOT = resolve(import.meta.dirname, '..');
-const DATA_BASE_DIR = join(ROOT, 'data/odpt-json');
+import { ODPT_JSON_DATA_DIR } from './paths';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -89,7 +83,7 @@ export async function discoverOdptTrainSources(): Promise<OdptTrainSource[]> {
       name: outDir,
       prefix: station.pipeline.prefix,
       provider: station.resource.provider,
-      dataDir: join(DATA_BASE_DIR, outDir),
+      dataDir: join(ODPT_JSON_DATA_DIR, outDir),
       resources: { station, railway, stationTimetable },
     });
   }

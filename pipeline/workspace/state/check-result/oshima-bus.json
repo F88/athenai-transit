@@ -17,7 +17,5 @@
   ],
   "result": "critical",
   "warnings": [],
-  "errors": [
-    "EXPIRED"
-  ]
+  "errors": ["EXPIRED"]
 }

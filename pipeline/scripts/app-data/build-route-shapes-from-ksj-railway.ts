@@ -34,9 +34,10 @@ import {
 } from '../../lib/pipeline-utils';
 import type { MlitShapeMapping } from '../../types/resource-common';
 
-const ROOT = resolve(import.meta.dirname, '../..');
-const GEOJSON_PATH = join(ROOT, 'data/mlit/N02-24_RailroadSection.geojson');
-const BUILD_DATA_DIR = join(ROOT, 'build/data');
+import { DATA_DIR, V1_OUTPUT_DIR } from '../../lib/paths';
+
+const GEOJSON_PATH = join(DATA_DIR, 'mlit/N02-24_RailroadSection.geojson');
+const BUILD_DATA_DIR = V1_OUTPUT_DIR;
 
 // ---------------------------------------------------------------------------
 // Types

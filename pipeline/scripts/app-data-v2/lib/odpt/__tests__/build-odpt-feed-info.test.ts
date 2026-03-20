@@ -25,16 +25,16 @@ describe('buildFeedInfoV2', () => {
       pu: 'https://example.com',
       l: 'ja',
       s: '20250401',
-      e: '20260401',
+      e: '20270401',
       v: '2025-04-01',
     });
   });
 
-  it('handles leap year date (Feb 29 -> Feb 28 next year)', () => {
+  it('handles leap year date (Feb 29 + 2 years clamps to Feb 28)', () => {
     const result = buildFeedInfoV2('2024-02-29', TEST_PROVIDER);
-    // 2025-02-29 does not exist, so it should clamp to 2025-02-28
+    // 2026-02-29 does not exist, so it should clamp to 2026-02-28
     expect(result.s).toBe('20240229');
-    expect(result.e).toBe('20250228');
+    expect(result.e).toBe('20260228');
   });
 
   it('returns empty string for pu when provider has no URL', () => {

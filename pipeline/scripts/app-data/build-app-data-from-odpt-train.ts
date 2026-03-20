@@ -79,8 +79,9 @@ import type { Provider } from '../../types/resource-common';
 // Paths
 // ---------------------------------------------------------------------------
 
-const ROOT = resolve(import.meta.dirname, '../..');
-const OUTPUT_DIR = join(ROOT, 'build/data');
+import { V1_OUTPUT_DIR } from '../../lib/paths';
+
+const OUTPUT_DIR = V1_OUTPUT_DIR;
 
 // OdptTrainSource discovery functions are in pipeline/lib/load-odpt-train-sources.ts
 // Re-export for backward compatibility with tests and other scripts (e.g. analyze-odpt-station-timetable.ts)

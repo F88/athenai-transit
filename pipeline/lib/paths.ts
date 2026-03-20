@@ -26,3 +26,22 @@ export const ARCHIVES_DIR = join(WORKSPACE_DIR, '_archives');
 
 /** Pipeline state (download metadata, check results). */
 export const STATE_DIR = join(WORKSPACE_DIR, 'state');
+
+// ---------------------------------------------------------------------------
+// Derived paths used by build scripts
+// ---------------------------------------------------------------------------
+
+/** SQLite database directory. */
+export const DB_DIR = join(BUILD_DIR, 'db');
+
+/** v1 JSON output directory. */
+export const V1_OUTPUT_DIR = join(BUILD_DIR, 'data');
+
+/** v2 JSON output directory. */
+export const V2_OUTPUT_DIR = join(BUILD_DIR, 'data-v2');
+
+/** GTFS source data directory. */
+export const GTFS_DATA_DIR = join(DATA_DIR, 'gtfs');
+
+/** ODPT JSON source data directory. */
+export const ODPT_JSON_DATA_DIR = join(DATA_DIR, 'odpt-json');

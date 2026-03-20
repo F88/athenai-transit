@@ -45,8 +45,9 @@ import { buildTranslationsV2 } from './lib/odpt/build-translations';
 // Paths
 // ---------------------------------------------------------------------------
 
-const ROOT = resolve(import.meta.dirname, '../..');
-const OUTPUT_DIR = join(ROOT, 'build/data-v2');
+import { V2_OUTPUT_DIR } from '../../lib/paths';
+
+const OUTPUT_DIR = V2_OUTPUT_DIR;
 
 // ---------------------------------------------------------------------------
 // Per-source processing

@@ -48,9 +48,10 @@ import { listGtfsSourceNames, loadGtfsSource } from '../lib/load-gtfs-sources';
 // Paths
 // ---------------------------------------------------------------------------
 
-const ROOT = resolve(import.meta.dirname, '..');
-const GTFS_BASE_DIR = join(ROOT, 'data/gtfs');
-const OUTPUT_DIR = join(ROOT, 'build');
+import { BUILD_DIR, GTFS_DATA_DIR } from '../lib/paths';
+
+const GTFS_BASE_DIR = GTFS_DATA_DIR;
+const OUTPUT_DIR = BUILD_DIR;
 
 // ---------------------------------------------------------------------------
 // Constants

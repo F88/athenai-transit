@@ -15,13 +15,13 @@
 
 import Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 
 import { listGtfsSourceNames, loadGtfsSource } from '../../lib/load-gtfs-sources';
 import { runMain } from '../../lib/pipeline-utils';
 import { analyzeStopTimes, formatAnalysis } from './lib/gtfs-stop-times-analysis';
 
-const DB_DIR = resolve(import.meta.dirname, '../../build');
+import { DB_DIR } from '../../lib/paths';
 
 async function analyzeSource(name: string): Promise<void> {
   const source = await loadGtfsSource(name);

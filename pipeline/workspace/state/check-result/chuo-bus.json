@@ -6,8 +6,5 @@
   ],
   "result": "critical",
   "warnings": [],
-  "errors": [
-    "EXPIRED",
-    "NO_VALID_DATA"
-  ]
+  "errors": ["EXPIRED", "NO_VALID_DATA"]
 }

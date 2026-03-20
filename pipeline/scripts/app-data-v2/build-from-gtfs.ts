@@ -46,9 +46,9 @@ import { extractTranslationsV2 } from './lib/gtfs/extract-translations';
 // Paths
 // ---------------------------------------------------------------------------
 
-const ROOT = resolve(import.meta.dirname, '../..');
-const DB_DIR = join(ROOT, 'build');
-const OUTPUT_DIR = join(ROOT, 'build/data-v2');
+import { DB_DIR, V2_OUTPUT_DIR } from '../../lib/paths';
+
+const OUTPUT_DIR = V2_OUTPUT_DIR;
 
 // ---------------------------------------------------------------------------
 // Types

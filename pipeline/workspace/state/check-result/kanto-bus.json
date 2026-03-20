@@ -8,8 +8,6 @@
     "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260301&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]"
   ],
   "result": "attention",
-  "warnings": [
-    "EXPIRING_SOON"
-  ],
+  "warnings": ["EXPIRING_SOON"],
   "errors": []
 }

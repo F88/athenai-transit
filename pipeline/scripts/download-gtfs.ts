@@ -41,7 +41,7 @@ import {
 } from '../lib/pipeline-utils';
 import { listGtfsSourceNames, loadGtfsSource } from '../lib/load-gtfs-sources';
 
-const ROOT = resolve(import.meta.dirname, '..');
+import { ARCHIVES_DIR, GTFS_DATA_DIR, PIPELINE_ROOT } from '../lib/paths';
 
 // ---------------------------------------------------------------------------
 // ZIP extraction (adm-zip)
@@ -139,8 +139,8 @@ async function main(): Promise<void> {
   const { outDir, prefix } = source.pipeline;
   const { downloadUrl, nameJa, nameEn, provider, license, authentication } = source.resource;
 
-  const gtfsDir = join(ROOT, 'data/gtfs', outDir);
-  const archiveDir = join(ROOT, 'archives/gtfs', outDir);
+  const gtfsDir = join(GTFS_DATA_DIR, outDir);
+  const archiveDir = join(ARCHIVES_DIR, 'gtfs', outDir);
 
   console.log(`=== ${arg.name} [START] ===\n`);
   console.log(`  Format: ${source.resource.dataFormat.type}`);
@@ -211,7 +211,7 @@ async function main(): Promise<void> {
       size: result.bytes,
       contentType: result.contentType || '',
       durationMs: totalDurationMs,
-      archivePath: archivePath.replace(ROOT + '/', ''),
+      archivePath: archivePath.replace(PIPELINE_ROOT + '/', ''),
       extractedFiles,
       ...(feedInfo ? { feedInfo } : {}),
     });

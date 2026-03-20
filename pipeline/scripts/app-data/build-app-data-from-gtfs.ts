@@ -51,9 +51,9 @@ import {
 // Paths
 // ---------------------------------------------------------------------------
 
-const ROOT = resolve(import.meta.dirname, '../..');
-const DB_DIR = join(ROOT, 'build');
-const OUTPUT_DIR = join(ROOT, 'build/data');
+import { DB_DIR, V1_OUTPUT_DIR } from '../../lib/paths';
+
+const OUTPUT_DIR = V1_OUTPUT_DIR;
 
 // ---------------------------------------------------------------------------
 // Types

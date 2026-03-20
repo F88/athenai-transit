@@ -5,8 +5,6 @@
 dist
 node_modules
 public/data
-pipeline/build
-pipeline/data
-pipeline/state
+pipeline/workspace
 package-lock.json
 

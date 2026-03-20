@@ -44,8 +44,7 @@ import {
 } from '../lib/pipeline-utils';
 import { listOdptJsonSourceNames, loadOdptJsonSource } from '../lib/load-odpt-json-sources';
 
-const ROOT = resolve(import.meta.dirname, '..');
-const DATA_DIR = join(ROOT, 'data/odpt-json');
+import { ARCHIVES_DIR, ODPT_JSON_DATA_DIR, PIPELINE_ROOT } from '../lib/paths';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -182,9 +181,9 @@ async function main(): Promise<void> {
   const { outDir, prefix } = source.pipeline;
   const { nameJa, nameEn, provider, license } = source.resource;
   const filename = deriveFilename(source);
-  const outputDir = join(DATA_DIR, outDir);
+  const outputDir = join(ODPT_JSON_DATA_DIR, outDir);
   const outputPath = join(outputDir, filename);
-  const archiveDir = join(ROOT, 'archives/odpt-json', outDir);
+  const archiveDir = join(ARCHIVES_DIR, 'odpt-json', outDir);
 
   const downloadedAt = new Date().toISOString();
   const t0 = performance.now();
@@ -242,7 +241,7 @@ async function main(): Promise<void> {
       size: bodyBytes,
       contentType: result.contentType || '',
       durationMs: totalDurationMs,
-      archivePath: archivePath.replace(ROOT + '/', ''),
+      archivePath: archivePath.replace(PIPELINE_ROOT + '/', ''),
     });
     console.log(`\nDownload metadata: state/download-meta/${arg.name}.json`);
   } catch (err) {
