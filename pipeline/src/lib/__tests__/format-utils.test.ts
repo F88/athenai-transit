@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatBytes } from '../utils';
+import { formatBytes } from '../format-utils';
 
 // ---------------------------------------------------------------------------
 // formatBytes

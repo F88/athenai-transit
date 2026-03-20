@@ -12,7 +12,7 @@ import { createWriteStream } from 'node:fs';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
-import { formatBytes } from '../utils';
+import { formatBytes } from '../format-utils';
 import type { Authentication } from '../../types/resource-common';
 
 // ---------------------------------------------------------------------------

@@ -60,7 +60,7 @@ import {
   buildHolidayExceptions,
   computeHolidayEndDate,
 } from '../../../src/lib/odpt-calendar-utils';
-import { adjustOdptOvernightTimes } from '../../../src/lib/time-utils';
+import { adjustOdptOvernightTimes } from '../../../src/lib/transit-time-utils';
 import {
   listOdptTrainSourceNames,
   loadOdptTrainSource,
@@ -75,7 +75,7 @@ import {
   runBatch,
   runMain,
 } from '../../../src/lib/pipeline/pipeline-utils';
-import { formatBytes } from '../../../src/lib/utils';
+import { formatBytes } from '../../../src/lib/format-utils';
 import type { Provider } from '../../../src/types/resource-common';
 
 // ---------------------------------------------------------------------------

@@ -31,7 +31,7 @@ import {
   runBatch,
   runMain,
 } from '../../../src/lib/pipeline/pipeline-utils';
-import { formatBytes } from '../../../src/lib/utils';
+import { formatBytes } from '../../../src/lib/format-utils';
 import type { MlitShapeMapping } from '../../../src/types/resource-common';
 
 import { MLIT_GEOJSON_PATH, V1_OUTPUT_DIR } from '../../../src/lib/paths';

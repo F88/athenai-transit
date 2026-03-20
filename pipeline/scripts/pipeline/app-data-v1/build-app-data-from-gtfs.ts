@@ -45,7 +45,7 @@ import {
   runBatch,
   runMain,
 } from '../../../src/lib/pipeline/pipeline-utils';
-import { formatBytes } from '../../../src/lib/utils';
+import { formatBytes } from '../../../src/lib/format-utils';
 
 // ---------------------------------------------------------------------------
 // Paths

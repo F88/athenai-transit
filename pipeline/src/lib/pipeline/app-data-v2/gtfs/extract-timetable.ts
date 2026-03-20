@@ -14,7 +14,7 @@ import type {
   TimetableGroupV2Json,
   TripPatternJson,
 } from '../../../../../../src/types/data/transit-v2-json';
-import { timeToMinutes } from '../../../time-utils';
+import { timeToMinutes } from '../../../transit-time-utils';
 
 // ---------------------------------------------------------------------------
 // Types

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { splitCsvLine } from '../csv-utils';
+import { splitCsvLine } from '../gtfs-csv-parser';
 
 describe('splitCsvLine', () => {
   // --- Basic cases ---

@@ -41,7 +41,7 @@ import {
   runBatch,
   runMain,
 } from '../../src/lib/pipeline/pipeline-utils';
-import { ensureDir } from '../../src/lib/utils';
+import { ensureDir } from '../../src/lib/fs-utils';
 import {
   listOdptJsonSourceNames,
   loadOdptJsonSource,

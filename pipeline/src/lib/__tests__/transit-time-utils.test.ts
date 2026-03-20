@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { adjustOdptOvernightTimes, timeToMinutes } from '../time-utils';
+import { adjustOdptOvernightTimes, timeToMinutes } from '../transit-time-utils';
 
 describe('timeToMinutes', () => {
   it('converts GTFS format "HH:MM:SS" to minutes', () => {

@@ -30,7 +30,7 @@ import {
 import { createInterface } from 'node:readline';
 import { join, resolve } from 'node:path';
 
-import { splitCsvLine } from '../../src/lib/csv-utils';
+import { splitCsvLine } from '../../src/lib/gtfs-csv-parser';
 import { INDEXES, SCHEMA } from '../../src/lib/gtfs-schema';
 import {
   determineBatchExitCode,
@@ -41,7 +41,7 @@ import {
   runBatch,
   runMain,
 } from '../../src/lib/pipeline/pipeline-utils';
-import { formatBytes } from '../../src/lib/utils';
+import { formatBytes } from '../../src/lib/format-utils';
 import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
 
 // ---------------------------------------------------------------------------

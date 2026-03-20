@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { detectWarnings, extractDateParam, extractUrlBase } from '../check-warnings';
-import type { RemoteResource, ResourceSnapshot, LocalInfo } from '../check-warnings';
+import { detectWarnings, extractDateParam, extractUrlBase } from '../odpt-resource-warnings';
+import type { RemoteResource, ResourceSnapshot, LocalInfo } from '../odpt-resource-warnings';
 import type { DownloadMetaSuccess } from '../download/download-meta';
 
 // ---------------------------------------------------------------------------
