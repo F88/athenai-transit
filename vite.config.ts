@@ -123,9 +123,8 @@ export default defineConfig({
         'src/test/**',
         'src/vite-env.d.ts',
         'src/main.tsx',
-        'pipeline/targets/**',
-        'pipeline/resources/**',
-        'pipeline/references/**',
+        'pipeline/config/**',
+        'pipeline/_references/**',
       ],
     },
     projects: [

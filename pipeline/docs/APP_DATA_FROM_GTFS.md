@@ -26,16 +26,16 @@ Usage: npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts <source-nam
 | `--list`           | 利用可能なソース名を一覧表示                                    |
 | `--help`           | ヘルプメッセージを表示                                          |
 
-`npm run pipeline:build:json` は `--targets pipeline/targets/build-json.ts` で一括処理する。
+`npm run pipeline:build:json` は `--targets pipeline/config/targets/build-json.ts` で一括処理する。
 
 ### ソース名の解決
 
-`<source-name>` は `pipeline/resources/gtfs/` 内のリソース定義ファイル名 (拡張子なし) を指定する。
+`<source-name>` は `pipeline/config/resources/gtfs/` 内のリソース定義ファイル名 (拡張子なし) を指定する。
 
 ```plain
 npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts toei-bus
                                              ^^^^^^^^
-                                             pipeline/resources/gtfs/toei-bus.ts を読み込む
+                                             pipeline/config/resources/gtfs/toei-bus.ts を読み込む
 ```
 
 リソース定義ファイルには `pipeline.outDir` と `pipeline.prefix` が含まれており、入出力パスはこれらから決定される。

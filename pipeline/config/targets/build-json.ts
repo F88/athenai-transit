@@ -1,8 +1,8 @@
 /**
- * Target list for batch GTFS downloads.
+ * Target list for batch GTFS JSON builds.
  *
  * Each entry is a source-name (filename without .ts extension)
- * from pipeline/resources/gtfs/.
+ * from pipeline/config/resources/gtfs/.
  *
  * Comment out entries to temporarily skip them.
  */

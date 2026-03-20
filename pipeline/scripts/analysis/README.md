@@ -6,7 +6,7 @@
 
 | スクリプト                | 対象データ                                       | 概要                                                                                                                   |
 | ------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `describe-resources.ts`   | `pipeline/resources/` (リソース定義)             | リソース定義の一覧表示 (`npm run pipeline:describe`)                                                                   |
+| `describe-resources.ts`   | `pipeline/config/resources/` (リソース定義)             | リソース定義の一覧表示 (`npm run pipeline:describe`)                                                                   |
 | `check-odpt-resources.ts` | ODPT API + `pipeline/workspace/state/` (リモート/ローカル) | ODPT Members Portal API でリソース更新チェック (`npm run pipeline:check:odpt-resources`)                               |
 | `find-joint-routes.ts`    | `public/data/` (生成済み JSON)                   | 共同運行路線の検出。ソース間で route_short_name が一致する路線を検出し、停留所名の突き合わせと座標による近接分析を行う |
 

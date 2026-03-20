@@ -1,17 +1,18 @@
 /**
- * Load GTFS source definitions from pipeline/resources/gtfs/.
+ * Load GTFS source definitions from pipeline/config/resources/gtfs/.
  *
  * Each .ts file in the resources directory is a single resource definition.
  * The filename (without .ts) serves as the source identifier for CLI usage.
  */
 
 import { readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import type { GtfsSourceDefinition } from '../types/gtfs-resource';
+import { RESOURCES_DIR as BASE_RESOURCES_DIR } from './paths';
 
-const RESOURCES_DIR = resolve(import.meta.dirname, '..', 'resources', 'gtfs');
+const RESOURCES_DIR = join(BASE_RESOURCES_DIR, 'gtfs');
 
 /**
  * List available GTFS source names (filenames without .ts extension).

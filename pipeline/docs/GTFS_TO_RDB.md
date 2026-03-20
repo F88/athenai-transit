@@ -30,16 +30,16 @@ Usage: npx tsx pipeline/scripts/build-gtfs-db.ts <source-name>
 | `--list`           | 利用可能なソース名を一覧表示                                    |
 | `--help`           | ヘルプメッセージを表示                                          |
 
-`npm run pipeline:build:db` は `--targets pipeline/targets/build-db.ts` で一括処理する。ダウンロード対象リスト (`pipeline/targets/download-gtfs.ts`) とは独立したファイルであり、DB 格納対象のみを管理する。
+`npm run pipeline:build:db` は `--targets pipeline/config/targets/build-db.ts` で一括処理する。ダウンロード対象リスト (`pipeline/config/targets/download-gtfs.ts`) とは独立したファイルであり、DB 格納対象のみを管理する。
 
 ### ソース名の解決
 
-`<source-name>` は `pipeline/resources/gtfs/` 内のリソース定義ファイル名 (拡張子なし) を指定する。
+`<source-name>` は `pipeline/config/resources/gtfs/` 内のリソース定義ファイル名 (拡張子なし) を指定する。
 
 ```plain
 npx tsx pipeline/scripts/build-gtfs-db.ts toei-bus
                                           ^^^^^^^^
-                                          pipeline/resources/gtfs/toei-bus.ts を読み込む
+                                          pipeline/config/resources/gtfs/toei-bus.ts を読み込む
 ```
 
 リソース定義ファイルには `pipeline.outDir` (ディレクトリ名) が含まれており、入出力パスはいずれも `outDir` から決定される。

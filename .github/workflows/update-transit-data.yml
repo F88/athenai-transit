@@ -57,7 +57,7 @@ jobs:
         # could load a local .env and override CI secrets.
         run: |
           set +e
-          npx tsx pipeline/scripts/download-gtfs.ts --targets pipeline/targets/download-gtfs.ts
+          npx tsx pipeline/scripts/download-gtfs.ts --targets pipeline/config/targets/download-gtfs.ts
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Warn on GTFS partial failure
@@ -79,7 +79,7 @@ jobs:
         # could load a local .env and override CI secrets.
         run: |
           set +e
-          npx tsx pipeline/scripts/download-odpt-json.ts --targets pipeline/targets/download-odpt-json.ts
+          npx tsx pipeline/scripts/download-odpt-json.ts --targets pipeline/config/targets/download-odpt-json.ts
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Warn on ODPT JSON partial failure

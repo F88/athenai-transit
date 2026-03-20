@@ -6,7 +6,7 @@
 
 | 項目 | 内容                                                                |
 | ---- | ------------------------------------------------------------------- |
-| 入力 | `pipeline/resources/gtfs/*.ts`, `pipeline/resources/odpt-json/*.ts` |
+| 入力 | `pipeline/config/resources/gtfs/*.ts`, `pipeline/config/resources/odpt-json/*.ts` |
 | 出力 | stdout (テキスト / TSV)                                             |
 
 GTFS ソースと ODPT JSON ソースの全リソース定義を読み込み、一覧を出力する。データの変換や検証は行わない。
