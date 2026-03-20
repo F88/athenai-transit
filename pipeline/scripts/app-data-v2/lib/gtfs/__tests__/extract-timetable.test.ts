@@ -423,4 +423,42 @@ describe('extractTripPatternsAndTimetable', () => {
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
     expect(tripPatterns['test:p1'].h).toBe('');
   });
+
+  it('ignores orphan stop_times across multiple rows and keeps valid patterns intact', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('ORPHAN', 'SX01', 1, '07:00:00', '07:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('ORPHAN', 'SX02', 2, '07:10:00', '07:10:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0);
+    `);
+
+    const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
+
+    expect(Object.keys(tripPatterns)).toEqual(['test:p1']);
+    expect(tripPatterns['test:p1'].stops).toEqual(['test:S001', 'test:S002']);
+    expect(timetable['test:S001'][0].d['test:WD']).toEqual([480]);
+    expect(timetable['test:SX01']).toBeUndefined();
+    expect(timetable['test:SX02']).toBeUndefined();
+  });
+
+  it('sorts NULL direction_id before 0 when assigning pattern IDs', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', NULL);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
+    `);
+
+    const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
+
+    expect(Object.keys(tripPatterns)).toEqual(['test:p1', 'test:p2']);
+    expect(tripPatterns['test:p1'].dir).toBeUndefined();
+    expect(tripPatterns['test:p2'].dir).toBe(0);
+
+    const groups = timetable['test:S001'];
+    expect(groups).toHaveLength(2);
+    expect(groups.find((g) => g.tp === 'test:p1')!.d['test:WD']).toEqual([480]);
+    expect(groups.find((g) => g.tp === 'test:p2')!.d['test:WD']).toEqual([540]);
+  });
 });

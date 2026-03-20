@@ -338,6 +338,50 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     expect(p.stops).toEqual(['test:A', 'test:B', 'test:C']);
   });
 
+  it('normalizes terminal destination and missing destination into the same full-route pattern', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const timetables: OdptStationTimetable[] = [
+      {
+        'owl:sameAs': 'odpt.StationTimetable:Test.A.Weekday',
+        'dct:issued': '2025-04-01',
+        'odpt:station': 'odpt.Station:Test.A',
+        'odpt:calendar': 'odpt.Calendar:Weekday',
+        'odpt:railDirection': 'odpt.RailDirection:Outbound',
+        'odpt:stationTimetableObject': [
+          { 'odpt:departureTime': '06:00' },
+          { 'odpt:departureTime': '06:30', 'odpt:destinationStation': ['odpt.Station:Test.C'] },
+        ],
+      },
+    ];
+
+    const { tripPatterns, timetable } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [
+      railway,
+    ]);
+
+    expect(Object.keys(tripPatterns)).toHaveLength(1);
+    expect(Object.values(tripPatterns)[0].stops).toEqual(['test:A', 'test:B', 'test:C']);
+    expect(timetable['test:A']).toHaveLength(1);
+    expect(timetable['test:A'][0].d['test:weekday']).toEqual([360, 390]);
+  });
+
+  it('falls back to full-route stop sequence when destination is not in stationOrder', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const timetables: OdptStationTimetable[] = [
+      makeTimetable(
+        'odpt.Station:Test.A',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00'],
+        'odpt.Station:Test.Unknown',
+      ),
+    ];
+
+    const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
+    const p = Object.values(tripPatterns)[0];
+    expect(p.h).toBe('C駅');
+    expect(p.stops).toEqual(['test:A', 'test:B', 'test:C']);
+  });
+
   it('handles multiple railways with a shared station correctly', () => {
     // Railway X: stations A -> B -> C
     // Railway Y: stations B -> D -> E  (B is shared)
@@ -428,6 +472,41 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     expect(p.r).toBe('test:X');
     expect(p.stops).toEqual(['test:A', 'test:B']);
     expect(p.h).toBe('B駅');
+  });
+
+  it('uses the first matching railway for a shared-station timetable', () => {
+    const ordersX: OdptStationOrder[] = [
+      makeOrder(1, 'odpt.Station:Test.B', 'B駅', 'Station B'),
+      makeOrder(2, 'odpt.Station:Test.C', 'C駅', 'Station C'),
+    ];
+    const ordersY: OdptStationOrder[] = [
+      makeOrder(1, 'odpt.Station:Test.B', 'B駅', 'Station B'),
+      makeOrder(2, 'odpt.Station:Test.D', 'D駅', 'Station D'),
+    ];
+    const railwayX = makeRailway({ 'odpt:lineCode': 'X', 'odpt:stationOrder': ordersX });
+    const railwayY = makeRailway({ 'odpt:lineCode': 'Y', 'odpt:stationOrder': ordersY });
+
+    const timetables: OdptStationTimetable[] = [
+      makeTimetable(
+        'odpt.Station:Test.B',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00'],
+        'odpt.Station:Test.C',
+      ),
+    ];
+
+    const { tripPatterns, timetable } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [
+      railwayX,
+      railwayY,
+    ]);
+
+    expect(Object.keys(tripPatterns)).toHaveLength(1);
+    const [patternId, pattern] = Object.entries(tripPatterns)[0];
+    expect(pattern.r).toBe('test:X');
+    expect(pattern.stops).toEqual(['test:B', 'test:C']);
+    expect(timetable['test:B'][0].tp).toBe(patternId);
+    expect(timetable['test:B'][0].d['test:weekday']).toEqual([360]);
   });
 
   it('d and a array lengths are equal for each service_id', () => {
