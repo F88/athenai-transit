@@ -30,7 +30,7 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../../src/lib/pipeline-utils';
+} from '../../../src/lib/pipeline/pipeline-utils';
 import { formatBytes } from '../../../src/lib/utils';
 import type { MlitShapeMapping } from '../../../src/types/resource-common';
 

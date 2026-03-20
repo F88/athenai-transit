@@ -30,7 +30,7 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../../src/lib/pipeline-utils';
+} from '../../../src/lib/pipeline/pipeline-utils';
 import type { Provider } from '../../../src/types/resource-common';
 import { writeDataBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
 import { extractAgenciesV2 } from '../../../src/lib/pipeline/app-data-v2/gtfs/extract-agencies';

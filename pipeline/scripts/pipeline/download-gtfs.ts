@@ -37,7 +37,7 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../src/lib/pipeline-utils';
+} from '../../src/lib/pipeline/pipeline-utils';
 import { ensureDir } from '../../src/lib/utils';
 import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
 

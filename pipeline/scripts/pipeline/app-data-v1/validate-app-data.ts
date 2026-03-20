@@ -33,7 +33,7 @@ import { fileURLToPath } from 'node:url';
 
 import { loadAllGtfsSources } from '../../../src/lib/resources/load-gtfs-sources';
 import { loadAllOdptJsonSources } from '../../../src/lib/resources/load-odpt-json-sources';
-import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline-utils';
+import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/pipeline-utils';
 
 // ---------------------------------------------------------------------------
 // Paths

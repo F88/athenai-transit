@@ -33,7 +33,7 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../../src/lib/pipeline-utils';
+} from '../../../src/lib/pipeline/pipeline-utils';
 import type { OdptRailway, OdptStation, OdptStationTimetable } from '../../../src/types/odpt-train';
 import { writeDataBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
 import { buildAgencyV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-agency';
