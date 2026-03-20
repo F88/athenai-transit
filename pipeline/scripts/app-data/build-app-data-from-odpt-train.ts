@@ -56,6 +56,7 @@ import type {
   OdptStationOrder,
   OdptStationTimetable,
 } from '../../types/odpt-train';
+import { buildHolidayExceptions } from '../app-data-v2/lib/odpt/build-calendar';
 import { adjustOdptOvernightTimes } from '../app-data-v2/lib/time-utils';
 import { listOdptTrainSourceNames, loadOdptTrainSource } from '../../lib/load-odpt-train-sources';
 import type { OdptTrainSource } from '../../lib/load-odpt-train-sources';
@@ -284,7 +285,9 @@ export function buildCalendar(
     e: endDate,
   }));
 
-  return { services, exceptions: [] };
+  const exceptions = buildHolidayExceptions(prefix, calendarTypes, startDate, endDate);
+
+  return { services, exceptions };
 }
 
 export function buildTimetable(

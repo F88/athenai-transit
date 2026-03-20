@@ -1,8 +1,17 @@
 /**
  * Build CalendarJson from ODPT StationTimetable data.
+ *
+ * Generates calendar_dates exceptions for Japanese holidays so that
+ * the WebApp can select the correct timetable using the same date-based
+ * logic as GTFS sources (weekday + calendar_dates).
  */
 
-import type { CalendarJson } from '../../../../../src/types/data/transit-json';
+import holiday_jp from '@holiday-jp/holiday_jp';
+
+import type {
+  CalendarExceptionJson,
+  CalendarJson,
+} from '../../../../../src/types/data/transit-json';
 import type { OdptStationTimetable } from '../../../../types/odpt-train';
 
 /**
@@ -78,5 +87,100 @@ export function buildCalendarV2(
     e: endDate,
   }));
 
-  return { services, exceptions: [] };
+  const exceptions = buildHolidayExceptions(prefix, calendarTypes, startDate, endDate);
+
+  return { services, exceptions };
+}
+
+/**
+ * Generate calendar_dates exceptions for Japanese holidays.
+ *
+ * ODPT API does not provide date-based calendar exceptions.
+ * This function fills the gap by generating GTFS-style exceptions
+ * so the WebApp can use the same date-based timetable selection
+ * logic for both GTFS and ODPT sources.
+ *
+ * For each Japanese holiday that falls on a weekday within the
+ * validity period:
+ * - Remove weekday service (exception_type = 2)
+ * - Add the appropriate holiday service (exception_type = 1)
+ *
+ * The holiday service is selected by priority:
+ * 1. "holiday" — if the source provides a dedicated holiday calendar
+ * 2. "saturday-holiday" — combined Saturday/Holiday calendar
+ * 3. (none) — if neither exists, no add-exception is generated
+ *
+ * @param prefix - Source prefix for ID namespacing.
+ * @param calendarTypes - Set of service IDs discovered from timetable data.
+ * @param startDate - Validity start date in "YYYYMMDD" format.
+ * @param endDate - Validity end date in "YYYYMMDD" format.
+ * @returns Array of calendar exception entries.
+ */
+export function buildHolidayExceptions(
+  prefix: string,
+  calendarTypes: Set<string>,
+  startDate: string,
+  endDate: string,
+): CalendarExceptionJson[] {
+  if (!calendarTypes.has('weekday')) {
+    return [];
+  }
+
+  // Determine which service to add on holidays
+  const holidayServiceId = calendarTypes.has('holiday')
+    ? 'holiday'
+    : calendarTypes.has('saturday-holiday')
+      ? 'saturday-holiday'
+      : undefined;
+
+  const start = parseYYYYMMDD(startDate);
+  const end = parseYYYYMMDD(endDate);
+  const holidays = holiday_jp.between(start, end);
+
+  const exceptions: CalendarExceptionJson[] = [];
+
+  for (const holiday of holidays) {
+    const day = holiday.date.getDay();
+    // Skip weekends (Saturday=6, Sunday=0) — already on holiday schedule
+    if (day === 0 || day === 6) {
+      continue;
+    }
+
+    const dateStr = formatYYYYMMDD(holiday.date);
+
+    // Remove weekday service on this holiday
+    exceptions.push({
+      i: `${prefix}:weekday`,
+      d: dateStr,
+      t: 2,
+    });
+
+    // Add holiday service on this holiday
+    if (holidayServiceId) {
+      exceptions.push({
+        i: `${prefix}:${holidayServiceId}`,
+        d: dateStr,
+        t: 1,
+      });
+    }
+  }
+
+  return exceptions;
+}
+
+/** Parse "YYYYMMDD" to Date (local time). */
+function parseYYYYMMDD(s: string): Date {
+  return new Date(
+    parseInt(s.slice(0, 4), 10),
+    parseInt(s.slice(4, 6), 10) - 1,
+    parseInt(s.slice(6, 8), 10),
+  );
+}
+
+/** Format Date to "YYYYMMDD". */
+function formatYYYYMMDD(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
 }
