@@ -16,8 +16,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { OdptRailway, OdptStationTimetable } from '../../types/odpt-train';
-import { runMain } from '../../lib/pipeline-utils';
+import type { OdptRailway, OdptStationTimetable } from '../../src/types/odpt-train';
+import { runMain } from '../../src/lib/pipeline-utils';
 import { listSourceNames, loadSource } from './build-app-data-from-odpt-train';
 import {
   analyzeOdptStationTimetable,

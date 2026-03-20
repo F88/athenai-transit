@@ -22,7 +22,7 @@
 import { statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import type { OdptJsonSourceDefinition } from '../types/odpt-json-resource';
+import type { OdptJsonSourceDefinition } from '../src/types/odpt-json-resource';
 import {
   archiveFilename,
   buildAuthenticatedUrl,
@@ -30,8 +30,8 @@ import {
   redactTokens,
   withRetry,
   wrapTimeoutError,
-} from '../lib/download-utils';
-import { saveDownloadMeta } from '../lib/download-meta';
+} from '../src/lib/download-utils';
+import { saveDownloadMeta } from '../src/lib/download-meta';
 import {
   determineBatchExitCode,
   ensureDir,
@@ -41,10 +41,10 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../lib/pipeline-utils';
-import { listOdptJsonSourceNames, loadOdptJsonSource } from '../lib/load-odpt-json-sources';
+} from '../src/lib/pipeline-utils';
+import { listOdptJsonSourceNames, loadOdptJsonSource } from '../src/lib/load-odpt-json-sources';
 
-import { ARCHIVES_DIR, ODPT_JSON_DATA_DIR, PIPELINE_ROOT } from '../lib/paths';
+import { ARCHIVES_DIR, ODPT_JSON_DATA_DIR, PIPELINE_ROOT } from '../src/lib/paths';
 
 // ---------------------------------------------------------------------------
 // Helpers

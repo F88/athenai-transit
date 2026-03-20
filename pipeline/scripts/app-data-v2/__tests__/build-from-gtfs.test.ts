@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
-import type { Provider } from '../../../types/resource-common';
+import type { Provider } from '../../../src/types/resource-common';
 import { writeDataBundle } from '../lib/bundle-writer';
 import { extractAgenciesV2 } from '../lib/gtfs/extract-agencies';
 import { extractCalendarV2 } from '../lib/gtfs/extract-calendar';

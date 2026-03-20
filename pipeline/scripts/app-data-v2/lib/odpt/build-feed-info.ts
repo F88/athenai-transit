@@ -3,7 +3,7 @@
  */
 
 import type { FeedInfoJson } from '../../../../../src/types/data/transit-json';
-import type { Provider } from '../../../../types/resource-common';
+import type { Provider } from '../../../../src/types/resource-common';
 import { computeDateRange } from './build-calendar';
 
 /**

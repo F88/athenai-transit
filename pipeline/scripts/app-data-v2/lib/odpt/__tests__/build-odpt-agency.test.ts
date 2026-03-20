@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { Provider } from '../../../../../types/resource-common';
+import type { Provider } from '../../../../../src/types/resource-common';
 import { buildAgencyV2 } from '../build-agency';
 
 const TEST_PROVIDER: Provider = {

@@ -26,9 +26,9 @@
   "include": [
     "vite.config.ts",
     "scripts/**/*.ts",
-    "pipeline/lib/**/*.ts",
+    "pipeline/src/lib/**/*.ts",
     "pipeline/scripts/**/*.ts",
-    "pipeline/types/**/*.ts",
+    "pipeline/src/types/**/*.ts",
     "pipeline/config/resources/**/*.ts",
     "pipeline/config/targets/**/*.ts"
   ]

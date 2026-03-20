@@ -1,4 +1,4 @@
-import type { OdptJsonSourceDefinition } from '../../types/odpt-json-resource';
+import type { OdptJsonSourceDefinition } from '../../../src/types/odpt-json-resource';
 
 const tokyuBusBusTimetable: OdptJsonSourceDefinition = {
   resource: {

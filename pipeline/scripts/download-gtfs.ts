@@ -25,10 +25,10 @@ import {
   buildAuthenticatedUrl,
   downloadWithRetry,
   redactTokens,
-} from '../lib/download-utils';
-import type { ExtractedFileInfo, FeedInfoMeta } from '../lib/download-meta';
-import { saveDownloadMeta } from '../lib/download-meta';
-import { parseFeedInfoTxt } from '../lib/gtfs-feed-info';
+} from '../src/lib/download-utils';
+import type { ExtractedFileInfo, FeedInfoMeta } from '../src/lib/download-meta';
+import { saveDownloadMeta } from '../src/lib/download-meta';
+import { parseFeedInfoTxt } from '../src/lib/gtfs-feed-info';
 import {
   determineBatchExitCode,
   ensureDir,
@@ -38,10 +38,10 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../lib/pipeline-utils';
-import { listGtfsSourceNames, loadGtfsSource } from '../lib/load-gtfs-sources';
+} from '../src/lib/pipeline-utils';
+import { listGtfsSourceNames, loadGtfsSource } from '../src/lib/load-gtfs-sources';
 
-import { ARCHIVES_DIR, GTFS_DATA_DIR, PIPELINE_ROOT } from '../lib/paths';
+import { ARCHIVES_DIR, GTFS_DATA_DIR, PIPELINE_ROOT } from '../src/lib/paths';
 
 // ---------------------------------------------------------------------------
 // ZIP extraction (adm-zip)

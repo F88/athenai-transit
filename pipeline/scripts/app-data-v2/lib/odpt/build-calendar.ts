@@ -12,7 +12,7 @@ import type {
   CalendarExceptionJson,
   CalendarJson,
 } from '../../../../../src/types/data/transit-json';
-import type { OdptStationTimetable } from '../../../../types/odpt-train';
+import type { OdptStationTimetable } from '../../../../src/types/odpt-train';
 
 /**
  * Map ODPT calendar to service ID.

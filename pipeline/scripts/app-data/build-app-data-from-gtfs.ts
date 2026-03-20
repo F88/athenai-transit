@@ -34,8 +34,8 @@ import type {
   RouteJson,
   TranslationsJson,
 } from '../../../src/types/data/transit-json';
-import { listGtfsSourceNames, loadGtfsSource } from '../../lib/load-gtfs-sources';
-import type { Provider } from '../../types/resource-common';
+import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/load-gtfs-sources';
+import type { Provider } from '../../src/types/resource-common';
 import {
   determineBatchExitCode,
   formatBytes,
@@ -45,13 +45,13 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../lib/pipeline-utils';
+} from '../../src/lib/pipeline-utils';
 
 // ---------------------------------------------------------------------------
 // Paths
 // ---------------------------------------------------------------------------
 
-import { DB_DIR, V1_OUTPUT_DIR } from '../../lib/paths';
+import { DB_DIR, V1_OUTPUT_DIR } from '../../src/lib/paths';
 
 const OUTPUT_DIR = V1_OUTPUT_DIR;
 

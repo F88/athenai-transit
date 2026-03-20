@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { OdptStationTimetable } from '../../../../../types/odpt-train';
+import type { OdptStationTimetable } from '../../../../../src/types/odpt-train';
 import {
   buildCalendarV2,
   buildHolidayExceptions,

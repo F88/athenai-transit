@@ -30,8 +30,8 @@ import {
 import { createInterface } from 'node:readline';
 import { join, resolve } from 'node:path';
 
-import { splitCsvLine } from '../lib/csv-utils';
-import { INDEXES, SCHEMA } from '../lib/gtfs-schema';
+import { splitCsvLine } from '../src/lib/csv-utils';
+import { INDEXES, SCHEMA } from '../src/lib/gtfs-schema';
 import {
   determineBatchExitCode,
   formatBytes,
@@ -41,14 +41,14 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../lib/pipeline-utils';
-import { listGtfsSourceNames, loadGtfsSource } from '../lib/load-gtfs-sources';
+} from '../src/lib/pipeline-utils';
+import { listGtfsSourceNames, loadGtfsSource } from '../src/lib/load-gtfs-sources';
 
 // ---------------------------------------------------------------------------
 // Paths
 // ---------------------------------------------------------------------------
 
-import { DB_DIR, GTFS_DATA_DIR } from '../lib/paths';
+import { DB_DIR, GTFS_DATA_DIR } from '../src/lib/paths';
 
 const GTFS_BASE_DIR = GTFS_DATA_DIR;
 const OUTPUT_DIR = DB_DIR;

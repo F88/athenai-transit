@@ -22,7 +22,7 @@ pipeline/config/resources/
 
 ## 型構造
 
-全てのリソース定義は `BaseResource` (`pipeline/types/resource-common.ts`) を共通基盤とし、フォーマット固有のインターフェースで拡張する。
+全てのリソース定義は `BaseResource` (`pipeline/src/types/resource-common.ts`) を共通基盤とし、フォーマット固有のインターフェースで拡張する。
 
 ```plain
 BaseResource

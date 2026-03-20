@@ -4,11 +4,11 @@
 
 ## 概要
 
-| 項目   | 内容                                                 |
-| ------ | ---------------------------------------------------- |
-| 入力   | `pipeline/workspace/_build/data/{prefix}/` (各ソースの JSON)    |
-| 出力   | 検証結果のログ + Markdown サマリ (GitHub Actions 用) |
-| ソース | `pipeline/config/targets/validate.ts` (prefix リスト)       |
+| 項目   | 内容                                                         |
+| ------ | ------------------------------------------------------------ |
+| 入力   | `pipeline/workspace/_build/data/{prefix}/` (各ソースの JSON) |
+| 出力   | 検証結果のログ + Markdown サマリ (GitHub Actions 用)         |
+| ソース | `pipeline/config/targets/validate.ts` (prefix リスト)        |
 
 `--targets` モードでは3つ、単体実行では2つの検証ステップを実行する (詳細は後述の「検証ステップ」セクションを参照)。
 

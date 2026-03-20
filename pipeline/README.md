@@ -8,10 +8,10 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 
 パイプラインは3つの Stage で構成される。各 Stage は独立しており、前の Stage の出力を入力として受け取る。
 
-| Stage | 概要                                            | 主な入力                          | 主な出力                        |
-| ----- | ----------------------------------------------- | --------------------------------- | ------------------------------- |
-| 1     | **Download** — 外部 API からデータ取得          | 外部 API (ODPT 等)                | `pipeline/workspace/data/` (CSV, JSON)    |
-| 2     | **Build DB** — GTFS CSV → SQLite 変換           | `pipeline/workspace/data/gtfs/` (CSV)       | `pipeline/workspace/_build/db/*.db`           |
+| Stage | 概要                                            | 主な入力                                        | 主な出力                                   |
+| ----- | ----------------------------------------------- | ----------------------------------------------- | ------------------------------------------ |
+| 1     | **Download** — 外部 API からデータ取得          | 外部 API (ODPT 等)                              | `pipeline/workspace/data/` (CSV, JSON)     |
+| 2     | **Build DB** — GTFS CSV → SQLite 変換           | `pipeline/workspace/data/gtfs/` (CSV)           | `pipeline/workspace/_build/db/*.db`        |
 | 3     | **Build App Data** — アプリ用 JSON の生成と検証 | `pipeline/workspace/_build/db/*.db`, 静的データ | `pipeline/workspace/_build/data/{prefix}/` |
 
 `public/data/` へのコピー (`npm run data:sync`) は WebApp 側の責務であり、pipeline の Stage には含まない。
