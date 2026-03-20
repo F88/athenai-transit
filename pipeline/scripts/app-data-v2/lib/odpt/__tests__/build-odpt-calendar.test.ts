@@ -49,12 +49,8 @@ describe('computeDateRange', () => {
 });
 
 describe('computeHolidayEndDate', () => {
-  it('adds 1 year to calendar end date', () => {
-    expect(computeHolidayEndDate('20270401')).toBe('20280401');
-  });
-
-  it('handles leap year clamping', () => {
-    expect(computeHolidayEndDate('20240229')).toBe('20250228');
+  it('returns calendar end date as-is (same as service validity)', () => {
+    expect(computeHolidayEndDate('20270401')).toBe('20270401');
   });
 });
 

@@ -114,20 +114,24 @@ export function buildCalendarV2(
 
 /**
  * Compute the end date for holiday exception generation.
- * Returns the calendar end date + 1 year as a forward-looking buffer.
+ *
+ * Currently returns the calendar end date as-is to keep holiday
+ * exceptions within the calendar service validity period. This avoids
+ * a known issue where the WebApp's `getActiveServiceIds()` does not
+ * check service [s,e] range for `t:1` (add) exceptions, which would
+ * incorrectly re-activate expired services on holidays beyond the
+ * calendar end date.
+ *
+ * This function exists as an extension point: if the WebApp is later
+ * updated to enforce [s,e] range on add-exceptions, or if ODPT
+ * sources begin providing `dct:valid`, the holiday range can be
+ * extended independently of the calendar service period.
  *
  * @param calendarEndDate - Calendar end date in "YYYYMMDD" format.
  * @returns End date for holiday generation in "YYYYMMDD" format.
  */
 export function computeHolidayEndDate(calendarEndDate: string): string {
-  const y = parseInt(calendarEndDate.slice(0, 4), 10);
-  const m = parseInt(calendarEndDate.slice(4, 6), 10);
-  const d = parseInt(calendarEndDate.slice(6, 8), 10);
-  const end = new Date(y + 1, m - 1, d);
-  if (end.getMonth() !== m - 1) {
-    end.setDate(0);
-  }
-  return formatYYYYMMDD(end);
+  return calendarEndDate;
 }
 
 /**
