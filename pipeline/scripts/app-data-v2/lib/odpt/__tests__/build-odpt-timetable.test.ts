@@ -504,4 +504,86 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     expect(g.d['test:weekday']).toEqual([360]);
     expect(g.d['test:saturday-holiday']).toEqual([420]);
   });
+
+  it('handles overnight departures (25:xx)', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const timetables: OdptStationTimetable[] = [
+      makeTimetable(
+        'odpt.Station:Test.A',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['25:10'],
+        'odpt.Station:Test.C',
+      ),
+    ];
+
+    const { timetable } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
+    expect(timetable['test:A'][0].d['test:weekday']).toEqual([1510]);
+  });
+
+  it('pt and dt are always undefined for ODPT (no pickup/drop-off concept)', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const timetables: OdptStationTimetable[] = [
+      makeTimetable(
+        'odpt.Station:Test.A',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00', '07:00'],
+        'odpt.Station:Test.C',
+      ),
+    ];
+
+    const { timetable } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
+    const g = timetable['test:A'][0];
+    expect(g.pt).toBeUndefined();
+    expect(g.dt).toBeUndefined();
+  });
+
+  it('dir is always omitted for ODPT patterns', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const timetables: OdptStationTimetable[] = [
+      makeTimetable(
+        'odpt.Station:Test.A',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00'],
+        'odpt.Station:Test.C',
+      ),
+    ];
+
+    const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
+    const p = Object.values(tripPatterns)[0];
+    expect(p.dir).toBeUndefined();
+  });
+
+  it('skips timetable entries for stations not found in any railway', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const timetables: OdptStationTimetable[] = [
+      makeTimetable(
+        'odpt.Station:Test.Unknown',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        ['06:00'],
+        'odpt.Station:Test.C',
+      ),
+    ];
+
+    const { tripPatterns, timetable } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [
+      railway,
+    ]);
+    expect(Object.keys(tripPatterns)).toHaveLength(0);
+    expect(Object.keys(timetable)).toHaveLength(0);
+  });
+
+  it('returns empty results when timetables array is empty', () => {
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+
+    const { tripPatterns, timetable } = buildTripPatternsAndTimetableFromOdpt(
+      'test',
+      [],
+      [railway],
+    );
+    expect(tripPatterns).toEqual({});
+    expect(timetable).toEqual({});
+  });
 });

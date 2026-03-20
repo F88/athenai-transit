@@ -106,4 +106,28 @@ describe('buildStopsV2', () => {
     const result = buildStopsV2('test', [], []);
     expect(result).toEqual([]);
   });
+
+  it('all stops have location_type=0', () => {
+    const stations: OdptStation[] = [
+      makeStation('odpt.Station:Test.A', 'A駅', 'Station A', 35.66, 139.76),
+      makeStation('odpt.Station:Test.B', 'B駅', 'Station B', 35.67, 139.77),
+    ];
+    const orders: OdptStationOrder[] = [
+      makeOrder(1, 'odpt.Station:Test.A', 'A駅', 'Station A'),
+      makeOrder(2, 'odpt.Station:Test.B', 'B駅', 'Station B'),
+    ];
+
+    const result = buildStopsV2('test', stations, orders);
+    for (const stop of result) {
+      expect(stop.l).toBe(0);
+    }
+  });
+
+  it('extracts short ID from deeply nested ODPT URI', () => {
+    expect(extractStationShortId('odpt.Station:TokyoMetro.Marunouchi.Tokyo')).toBe('Tokyo');
+  });
+
+  it('handles single-segment URI', () => {
+    expect(extractStationShortId('Shimbashi')).toBe('Shimbashi');
+  });
 });

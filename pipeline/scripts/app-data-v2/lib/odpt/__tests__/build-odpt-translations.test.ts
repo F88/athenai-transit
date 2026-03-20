@@ -173,4 +173,69 @@ describe('buildTranslationsV2', () => {
     expect(result.headsigns['C駅']).toEqual({ ja: 'C駅', en: 'Station C' });
     expect(Object.keys(result.headsigns)).toHaveLength(2);
   });
+
+  it('stop_headsigns is always empty for ODPT', () => {
+    const orders: OdptStationOrder[] = [makeOrder(1, 'odpt.Station:Test.A', 'A駅', 'Station A')];
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    const stations: OdptStation[] = [
+      {
+        'owl:sameAs': 'odpt.Station:Test.A',
+        'dc:date': '2025-01-01',
+        'geo:lat': 35.66,
+        'geo:long': 139.76,
+        'odpt:stationCode': '',
+        'odpt:stationTitle': { ja: 'A駅', en: 'Station A' },
+      },
+    ];
+    const timetables: OdptStationTimetable[] = [
+      {
+        'owl:sameAs': 'odpt.StationTimetable:Test.A.Weekday',
+        'dct:issued': '2025-04-01',
+        'odpt:station': 'odpt.Station:Test.A',
+        'odpt:calendar': 'odpt.Calendar:Weekday',
+        'odpt:railDirection': 'odpt.RailDirection:Outbound',
+        'odpt:stationTimetableObject': [
+          { 'odpt:departureTime': '06:00', 'odpt:destinationStation': ['odpt.Station:Test.A'] },
+        ],
+      },
+    ];
+
+    const result = buildTranslationsV2('test', timetables, [railway], stations, TEST_PROVIDER);
+    expect(result.stop_headsigns).toEqual({});
+  });
+
+  it('deduplicates headsigns when same destination appears in multiple timetables', () => {
+    const orders: OdptStationOrder[] = [
+      makeOrder(1, 'odpt.Station:Test.A', 'A駅', 'Station A'),
+      makeOrder(2, 'odpt.Station:Test.B', 'B駅', 'Station B'),
+    ];
+    const railway = makeRailway({ 'odpt:lineCode': 'U', 'odpt:stationOrder': orders });
+    // Two timetables (Weekday + Saturday) both going to B
+    const timetables: OdptStationTimetable[] = [
+      {
+        'owl:sameAs': 'odpt.StationTimetable:Test.A.Weekday',
+        'dct:issued': '2025-04-01',
+        'odpt:station': 'odpt.Station:Test.A',
+        'odpt:calendar': 'odpt.Calendar:Weekday',
+        'odpt:railDirection': 'odpt.RailDirection:Outbound',
+        'odpt:stationTimetableObject': [
+          { 'odpt:departureTime': '06:00', 'odpt:destinationStation': ['odpt.Station:Test.B'] },
+        ],
+      },
+      {
+        'owl:sameAs': 'odpt.StationTimetable:Test.A.Saturday',
+        'dct:issued': '2025-04-01',
+        'odpt:station': 'odpt.Station:Test.A',
+        'odpt:calendar': 'odpt.Calendar:Saturday',
+        'odpt:railDirection': 'odpt.RailDirection:Outbound',
+        'odpt:stationTimetableObject': [
+          { 'odpt:departureTime': '07:00', 'odpt:destinationStation': ['odpt.Station:Test.B'] },
+        ],
+      },
+    ];
+
+    const result = buildTranslationsV2('test', timetables, [railway], [], TEST_PROVIDER);
+    expect(Object.keys(result.headsigns)).toHaveLength(1);
+    expect(result.headsigns['B駅']).toEqual({ ja: 'B駅', en: 'Station B' });
+  });
 });

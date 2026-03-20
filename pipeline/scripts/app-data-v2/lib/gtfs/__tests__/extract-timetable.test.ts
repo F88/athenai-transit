@@ -338,4 +338,89 @@ describe('extractTripPatternsAndTimetable', () => {
     // RouteV2Json should not have 'u' (route_url) field
     expect(p).not.toHaveProperty('u');
   });
+
+  it('pattern sort is deterministic: route_id -> headsign -> direction -> stops', () => {
+    // R002/新宿/0 should come after R001/渋谷/0
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R002', 'WD', '新宿', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    const patterns = Object.entries(tripPatterns);
+    // p1 should be R001 (sorts before R002)
+    expect(patterns[0][0]).toBe('test:p1');
+    expect(patterns[0][1].r).toBe('test:R001');
+    expect(patterns[1][0]).toBe('test:p2');
+    expect(patterns[1][1].r).toBe('test:R002');
+  });
+
+  it('a/d/pt/dt remain positionally aligned after sorting by departure time', () => {
+    // Two departures in reverse time order to verify sort preserves alignment
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '10:00:00', '09:58:00', 1, 2);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '08:00:00', '07:55:00', 0, 3);
+    `);
+
+    const { timetable } = extractTripPatternsAndTimetable(db, 'test');
+    const g = timetable['test:S001'][0];
+    // After sort: T002 (08:00) first, T001 (10:00) second
+    expect(g.d['test:WD']).toEqual([480, 600]);
+    expect(g.a['test:WD']).toEqual([475, 598]);
+    expect(g.pt!['test:WD']).toEqual([0, 1]);
+    expect(g.dt!['test:WD']).toEqual([3, 2]);
+  });
+
+  it('creates separate patterns for same route+headsign+stops but different direction_id', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '都庁前', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '都庁前', 1);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T002', 'S002', 2, '09:10:00', '09:10:00', 0, 0);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    expect(Object.keys(tripPatterns)).toHaveLength(2);
+    const dirs = Object.values(tripPatterns)
+      .map((p) => p.dir)
+      .sort();
+    expect(dirs).toEqual([0, 1]);
+  });
+
+  it('skips stop_times whose trip_id is not in trips table', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('ORPHAN', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
+    `);
+
+    const { timetable } = extractTripPatternsAndTimetable(db, 'test');
+    expect(timetable['test:S001'][0].d['test:WD']).toEqual([480]);
+  });
+
+  it('empty headsign is preserved (not converted to undefined)', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    expect(tripPatterns['test:p1'].h).toBe('');
+  });
+
+  it('NULL trip_headsign is converted to empty string', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', NULL, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    expect(tripPatterns['test:p1'].h).toBe('');
+  });
 });

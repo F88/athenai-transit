@@ -127,7 +127,9 @@ describe('ODPT DataBundle assembly', () => {
     const feedInfo = buildFeedInfoV2(issuedDate, TEST_PROVIDER);
     const translations = buildTranslationsV2(prefix, timetables, railways, stations, TEST_PROVIDER);
     const { tripPatterns, timetable } = buildTripPatternsAndTimetableFromOdpt(
-      prefix, timetables, railways,
+      prefix,
+      timetables,
+      railways,
     );
 
     const bundle: DataBundle = {
@@ -181,7 +183,9 @@ describe('ODPT DataBundle assembly', () => {
   it('timetable references only existing tripPattern IDs', () => {
     const { railways, timetables } = makeFixtures();
     const { tripPatterns, timetable } = buildTripPatternsAndTimetableFromOdpt(
-      'test', timetables, railways,
+      'test',
+      timetables,
+      railways,
     );
 
     const patternIds = new Set(Object.keys(tripPatterns));

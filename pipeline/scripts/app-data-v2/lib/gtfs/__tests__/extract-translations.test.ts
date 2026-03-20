@@ -207,4 +207,44 @@ describe('extractTranslationsV2', () => {
       en: 'Test',
     });
   });
+
+  it('extracts stop_name translations via field_value (standard GTFS)', () => {
+    db.exec(`
+      INSERT INTO stops (stop_id, stop_name, stop_lat, stop_lon, location_type)
+      VALUES ('S001', '新橋', 35.6658, 139.7584, 0);
+      INSERT INTO translations (table_name, field_name, language, translation, field_value)
+      VALUES ('stops', 'stop_name', 'en', 'Shimbashi', '新橋');
+    `);
+
+    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    expect(result.stop_names['test:S001']).toEqual({ en: 'Shimbashi' });
+  });
+
+  it('extracts route_long_name translations via field_value', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type)
+      VALUES ('R001', 'R1', '山手線', 2);
+      INSERT INTO translations (table_name, field_name, language, translation, field_value)
+      VALUES ('routes', 'route_long_name', 'en', 'Yamanote Line', '山手線');
+    `);
+
+    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    expect(result.route_names['test:R001']).toEqual({ en: 'Yamanote Line' });
+  });
+
+  it('handles multiple agencies with translations', () => {
+    db.exec(`
+      INSERT INTO agency (agency_id, agency_name) VALUES ('A001', '都バス');
+      INSERT INTO agency (agency_id, agency_name) VALUES ('A002', '地下鉄');
+      INSERT INTO translations (table_name, field_name, language, translation, record_id)
+      VALUES ('agency', 'agency_name', 'en', 'Tobus', 'A001'),
+             ('agency', 'agency_name', 'en', 'Metro', 'A002');
+    `);
+
+    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    expect(result.agency_names['test:A001'].en).toBe('Tobus');
+    expect(result.agency_names['test:A002'].en).toBe('Metro');
+    expect(result.agency_short_names['test:A001']).toEqual({ ja: 'テスト', en: 'Test' });
+    expect(result.agency_short_names['test:A002']).toEqual({ ja: 'テスト', en: 'Test' });
+  });
 });

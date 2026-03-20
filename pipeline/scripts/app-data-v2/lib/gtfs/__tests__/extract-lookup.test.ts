@@ -113,4 +113,62 @@ describe('extractLookupV2', () => {
       'test:S001': 'https://example.com/S001',
     });
   });
+
+  it('extracts all three lookup types simultaneously', () => {
+    db.exec(`
+      INSERT INTO stops (stop_id, stop_name, stop_lat, stop_lon, stop_url, stop_desc)
+      VALUES ('S001', '新橋', 35.66, 139.75, 'https://example.com/S001', 'JR乗り換え'),
+             ('S002', '渋谷', 35.65, 139.70, 'https://example.com/S002', NULL);
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type, route_url)
+      VALUES ('R001', 'R1', 'Route 1', 3, 'https://example.com/R001');
+    `);
+
+    const result = extractLookupV2(db, 'test');
+    expect(result.stopUrls).toEqual({
+      'test:S001': 'https://example.com/S001',
+      'test:S002': 'https://example.com/S002',
+    });
+    expect(result.routeUrls).toEqual({
+      'test:R001': 'https://example.com/R001',
+    });
+    expect(result.stopDescs).toEqual({
+      'test:S001': 'JR乗り換え',
+    });
+  });
+
+  it('skips NULL route_url', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type, route_url)
+      VALUES ('R001', 'R1', 'Route 1', 3, NULL),
+             ('R002', 'R2', 'Route 2', 3, 'https://example.com/R002');
+    `);
+
+    const result = extractLookupV2(db, 'test');
+    expect(result.routeUrls).toEqual({
+      'test:R002': 'https://example.com/R002',
+    });
+  });
+
+  it('skips empty string route_url', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type, route_url)
+      VALUES ('R001', 'R1', 'Route 1', 3, '');
+    `);
+
+    const result = extractLookupV2(db, 'test');
+    expect(result.routeUrls).toBeUndefined();
+  });
+
+  it('extracts multiple stop_desc entries', () => {
+    db.exec(`
+      INSERT INTO stops (stop_id, stop_name, stop_lat, stop_lon, stop_desc)
+      VALUES ('S001', '新橋', 35.66, 139.75, 'JR山手線乗り換え'),
+             ('S002', '渋谷', 35.65, 139.70, 'JR/京王/東急乗り換え');
+    `);
+
+    const result = extractLookupV2(db, 'test');
+    expect(Object.keys(result.stopDescs!)).toHaveLength(2);
+    expect(result.stopDescs!['test:S001']).toBe('JR山手線乗り換え');
+    expect(result.stopDescs!['test:S002']).toBe('JR/京王/東急乗り換え');
+  });
 });

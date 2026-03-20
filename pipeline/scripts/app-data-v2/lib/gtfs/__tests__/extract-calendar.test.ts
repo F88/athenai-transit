@@ -104,4 +104,34 @@ describe('extractCalendarV2', () => {
     expect(result.exceptions[0]).toEqual({ i: 'src:WD', d: '20260503', t: 2 });
     expect(result.exceptions[1]).toEqual({ i: 'src:WD', d: '20260504', t: 2 });
   });
+
+  it('handles calendar_dates-only sources (no calendar table rows)', () => {
+    db.exec(`
+      INSERT INTO calendar_dates (service_id, date, exception_type)
+      VALUES ('SP1', '20260101', 1), ('SP2', '20260102', 1);
+    `);
+
+    const result = extractCalendarV2(db, 'test');
+    expect(result.services).toEqual([]);
+    expect(result.exceptions).toHaveLength(2);
+    expect(result.exceptions[0]).toEqual({ i: 'test:SP1', d: '20260101', t: 1 });
+    expect(result.exceptions[1]).toEqual({ i: 'test:SP2', d: '20260102', t: 1 });
+  });
+
+  it('sorts exceptions by service_id then date', () => {
+    db.exec(`
+      INSERT INTO calendar_dates (service_id, date, exception_type)
+      VALUES ('WD', '20260503', 2),
+             ('HD', '20260101', 1),
+             ('WD', '20260101', 2);
+    `);
+
+    const result = extractCalendarV2(db, 'test');
+    // ORDER BY service_id, date
+    expect(result.exceptions[0].i).toBe('test:HD');
+    expect(result.exceptions[1].i).toBe('test:WD');
+    expect(result.exceptions[1].d).toBe('20260101');
+    expect(result.exceptions[2].i).toBe('test:WD');
+    expect(result.exceptions[2].d).toBe('20260503');
+  });
 });

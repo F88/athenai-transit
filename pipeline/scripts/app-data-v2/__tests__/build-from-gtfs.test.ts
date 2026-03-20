@@ -8,7 +8,7 @@
  */
 
 import Database from 'better-sqlite3';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -108,7 +108,6 @@ describe('GTFS DataBundle assembly', () => {
 
     // Create DB
     rmSync(dbDir, { recursive: true, force: true });
-    const { mkdirSync } = require('node:fs') as typeof import('node:fs');
     mkdirSync(dbDir, { recursive: true });
     createMinimalGtfsDb(dbPath);
 
@@ -176,7 +175,6 @@ describe('GTFS DataBundle assembly', () => {
   it('timetable references only existing tripPattern IDs', () => {
     const dbDir = join(TMP_DIR, 'db');
     const dbPath = join(dbDir, 'test.db');
-    const { mkdirSync } = require('node:fs') as typeof import('node:fs');
     mkdirSync(dbDir, { recursive: true });
     createMinimalGtfsDb(dbPath);
 
@@ -195,7 +193,6 @@ describe('GTFS DataBundle assembly', () => {
   it('tripPattern stops reference only existing stop IDs', () => {
     const dbDir = join(TMP_DIR, 'db');
     const dbPath = join(dbDir, 'test.db');
-    const { mkdirSync } = require('node:fs') as typeof import('node:fs');
     mkdirSync(dbDir, { recursive: true });
     createMinimalGtfsDb(dbPath);
 

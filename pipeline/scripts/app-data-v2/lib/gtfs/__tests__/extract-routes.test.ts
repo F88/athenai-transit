@@ -179,4 +179,25 @@ describe('extractRoutesV2', () => {
     const result = extractRoutesV2(db, 'test', {});
     expect(result.map((r) => r.i)).toEqual(['test:R001', 'test:R002', 'test:R003']);
   });
+
+  it('omits desc when route_desc is empty string', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type, route_desc)
+      VALUES ('R001', 'R1', 'Route 1', 3, '');
+    `);
+
+    const result = extractRoutesV2(db, 'test', {});
+    expect(result[0].desc).toBeUndefined();
+  });
+
+  it('preserves original textColor when color comes from DB (not fallback)', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type, route_color, route_text_color)
+      VALUES ('R001', 'R1', 'Route 1', 3, 'FF0000', '000000');
+    `);
+
+    const result = extractRoutesV2(db, 'test', { '*': '2E7D32' });
+    expect(result[0].c).toBe('FF0000');
+    expect(result[0].tc).toBe('000000');
+  });
 });

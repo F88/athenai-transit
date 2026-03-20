@@ -162,4 +162,50 @@ describe('extractStopsV2', () => {
     const result = extractStopsV2(db, 'test');
     expect(result.map((s) => s.i)).toEqual(['test:A', 'test:B', 'test:C']);
   });
+
+  it('includes wheelchair_boarding=2 (not accessible)', () => {
+    db.exec(`
+      INSERT INTO stops (stop_id, stop_name, stop_lat, stop_lon, wheelchair_boarding)
+      VALUES ('S001', '新橋', 35.6658, 139.7584, 2);
+    `);
+
+    const result = extractStopsV2(db, 'test');
+    expect(result[0].wb).toBe(2);
+  });
+
+  it('omits ps when parent_station is empty string', () => {
+    db.exec(`
+      INSERT INTO stops (stop_id, stop_name, stop_lat, stop_lon, parent_station)
+      VALUES ('S001', '新橋', 35.6658, 139.7584, '');
+    `);
+
+    const result = extractStopsV2(db, 'test');
+    expect(result[0].ps).toBeUndefined();
+  });
+
+  it('defaults location_type to 0 when NULL', () => {
+    db.exec(`
+      INSERT INTO stops (stop_id, stop_name, stop_lat, stop_lon, location_type)
+      VALUES ('S001', '新橋', 35.6658, 139.7584, NULL);
+    `);
+
+    const result = extractStopsV2(db, 'test');
+    expect(result[0].l).toBe(0);
+  });
+
+  it('includes location_type=3 (generic node) and location_type=4 (boarding area)', () => {
+    db.exec(`
+      INSERT INTO stops (stop_id, stop_name, stop_lat, stop_lon, location_type, parent_station)
+      VALUES ('P001', '駅', 35.66, 139.75, 1, NULL),
+             ('S001', 'ホーム', 35.66, 139.75, 0, 'P001'),
+             ('N001', '通路', 35.66, 139.75, 3, 'P001'),
+             ('B001', '乗車エリア', 35.66, 139.75, 4, 'S001');
+    `);
+
+    const result = extractStopsV2(db, 'test');
+    expect(result).toHaveLength(4);
+    expect(result.find((s) => s.i === 'test:N001')!.l).toBe(3);
+    expect(result.find((s) => s.i === 'test:B001')!.l).toBe(4);
+    expect(result.find((s) => s.i === 'test:B001')!.ps).toBe('test:S001');
+  });
 });
