@@ -26,6 +26,14 @@ and this project adheres to [CalVer](https://calver.org/).
     - calendar 有効期間を issued + 1年 → 2年に延長。
 - `validate-app-data.ts`: 期限切れサービスを error から warning に変更。CI のデータ更新がブロックされる問題を修正 (#26)
 
+### Changed
+
+- pipeline/ ディレクトリ再構成 (#39, #40):
+    - I/O データを `workspace/` に集約 (data/, state/, _build/, _archives/)
+    - ソース定義とバッチ対象を `config/` に集約 (resources/, targets/)
+    - `pipeline/lib/paths.ts` にパス定数を一元管理
+    - `_` prefix で git 管理外ディレクトリを視覚的に分離
+
 ## [2026.03.18]
 
 ### Added
