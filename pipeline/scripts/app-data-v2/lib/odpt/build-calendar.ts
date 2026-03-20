@@ -127,7 +127,7 @@ export function computeHolidayEndDate(calendarEndDate: string): string {
   if (end.getMonth() !== m - 1) {
     end.setDate(0);
   }
-  return `${end.getFullYear()}${String(end.getMonth() + 1).padStart(2, '0')}${String(end.getDate()).padStart(2, '0')}`;
+  return formatYYYYMMDD(end);
 }
 
 /**
