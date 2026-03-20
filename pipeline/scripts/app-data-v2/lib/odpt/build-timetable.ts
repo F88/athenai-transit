@@ -303,10 +303,10 @@ export function buildTripPatternsAndTimetableFromOdpt(
       }
 
       // Use overnight-adjusted time for minutes conversion.
-      // adjustedTimes detects the 23→00 reversal point. Once past it,
-      // each time's hour is checked individually before adding 24h —
-      // only hours < OVERNIGHT_THRESHOLD_HOUR (5) are adjusted, so a
-      // hypothetical 23:59 arrival would not become 47:59.
+      // adjustOdptOvernightTimes detects a 23:xx → 00:xx reversal.
+      // isOvernightSection is true from that point onward, and
+      // toOvernightMinutes adds +24h unconditionally to both
+      // departure and arrival times before converting to minutes.
       const adjusted = adjustedTimes[objIdx];
       const isOvernightSection = adjusted !== rawTimes[objIdx];
 
