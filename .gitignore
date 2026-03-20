@@ -40,7 +40,7 @@ __LOCAL_DOCS__/
 ### Pipeline files and directories
 
 ## Reference documents for development and testing (not needed in production)
-pipeline/references/
+pipeline/_references/
 
 # Pipeline local env (contains API tokens)
 pipeline/.env.pipeline.*
