@@ -118,7 +118,7 @@ if (resource.dataFormat.type === 'GTFS/GTFS-JP') {
 
 ```typescript
 // pipeline/config/resources/gtfs/toei-bus.ts
-import type { GtfsSourceDefinition } from '../../types/gtfs-resource';
+import type { GtfsSourceDefinition } from '../../src/types/gtfs-resource';
 
 const toeiBus: GtfsSourceDefinition = {
     resource: {
@@ -156,7 +156,7 @@ export default toeiBus;
 
 ```typescript
 // pipeline/config/resources/odpt-json/yurikamome-station.ts
-import type { OdptJsonSourceDefinition } from '../../types/odpt-json-resource';
+import type { OdptJsonSourceDefinition } from '../../src/types/odpt-json-resource';
 
 const yurikamomeStation: OdptJsonSourceDefinition = {
     resource: {

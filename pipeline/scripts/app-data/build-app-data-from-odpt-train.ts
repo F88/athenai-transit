@@ -87,10 +87,6 @@ import { V1_OUTPUT_DIR } from '../../src/lib/paths';
 const OUTPUT_DIR = V1_OUTPUT_DIR;
 
 // OdptTrainSource discovery functions are in pipeline/src/lib/load-odpt-train-sources.ts
-// Re-export for backward compatibility with tests and other scripts (e.g. analyze-odpt-station-timetable.ts)
-export { listOdptTrainSourceNames as listSourceNames } from '../../src/lib/load-odpt-train-sources';
-export { loadOdptTrainSource as loadSource } from '../../src/lib/load-odpt-train-sources';
-export type { OdptTrainSource } from '../../src/lib/load-odpt-train-sources';
 
 // ODPT JSON types — see pipeline/src/types/odpt-train.ts
 
