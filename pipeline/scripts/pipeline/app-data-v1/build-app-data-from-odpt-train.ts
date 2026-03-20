@@ -68,7 +68,6 @@ import {
 import type { OdptTrainSource } from '../../../src/lib/resources/load-odpt-train-sources';
 import {
   determineBatchExitCode,
-  formatBytes,
   formatExitCode,
   loadTargetFile,
   parseCliArg,
@@ -76,6 +75,7 @@ import {
   runBatch,
   runMain,
 } from '../../../src/lib/pipeline-utils';
+import { formatBytes } from '../../../src/lib/utils';
 import type { Provider } from '../../../src/types/resource-common';
 
 // ---------------------------------------------------------------------------

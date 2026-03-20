@@ -34,7 +34,6 @@ import { splitCsvLine } from '../../src/lib/csv-utils';
 import { INDEXES, SCHEMA } from '../../src/lib/gtfs-schema';
 import {
   determineBatchExitCode,
-  formatBytes,
   formatExitCode,
   loadTargetFile,
   parseCliArg,
@@ -42,6 +41,7 @@ import {
   runBatch,
   runMain,
 } from '../../src/lib/pipeline-utils';
+import { formatBytes } from '../../src/lib/utils';
 import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
 
 // ---------------------------------------------------------------------------

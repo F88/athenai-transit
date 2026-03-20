@@ -24,7 +24,6 @@ import { loadAllGtfsSources } from '../../../src/lib/resources/load-gtfs-sources
 import { loadAllOdptJsonSources } from '../../../src/lib/resources/load-odpt-json-sources';
 import {
   determineBatchExitCode,
-  formatBytes,
   formatExitCode,
   loadTargetFile,
   parseCliArg,
@@ -32,6 +31,7 @@ import {
   runBatch,
   runMain,
 } from '../../../src/lib/pipeline-utils';
+import { formatBytes } from '../../../src/lib/utils';
 import type { MlitShapeMapping } from '../../../src/types/resource-common';
 
 import { MLIT_GEOJSON_PATH, V1_OUTPUT_DIR } from '../../../src/lib/paths';

@@ -34,7 +34,6 @@ import {
 import { saveDownloadMeta } from '../../src/lib/download/download-meta';
 import {
   determineBatchExitCode,
-  ensureDir,
   formatExitCode,
   loadTargetFile,
   parseCliArg,
@@ -42,7 +41,11 @@ import {
   runBatch,
   runMain,
 } from '../../src/lib/pipeline-utils';
-import { listOdptJsonSourceNames, loadOdptJsonSource } from '../../src/lib/resources/load-odpt-json-sources';
+import { ensureDir } from '../../src/lib/utils';
+import {
+  listOdptJsonSourceNames,
+  loadOdptJsonSource,
+} from '../../src/lib/resources/load-odpt-json-sources';
 
 import { ARCHIVES_DIR, ODPT_JSON_DATA_DIR, PIPELINE_ROOT } from '../../src/lib/paths';
 

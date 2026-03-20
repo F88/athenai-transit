@@ -38,7 +38,6 @@ import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/
 import type { Provider } from '../../../src/types/resource-common';
 import {
   determineBatchExitCode,
-  formatBytes,
   formatExitCode,
   loadTargetFile,
   parseCliArg,
@@ -46,6 +45,7 @@ import {
   runBatch,
   runMain,
 } from '../../../src/lib/pipeline-utils';
+import { formatBytes } from '../../../src/lib/utils';
 
 // ---------------------------------------------------------------------------
 // Paths

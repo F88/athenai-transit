@@ -9,7 +9,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { ensureDir } from '../pipeline-utils';
+import { ensureDir } from '../utils';
 
 import { STATE_DIR } from '../paths';
 

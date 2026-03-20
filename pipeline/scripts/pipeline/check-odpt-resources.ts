@@ -27,7 +27,7 @@ import { join } from 'node:path';
 import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
 import { loadDownloadMeta } from '../../src/lib/download/download-meta';
 import type { DownloadMeta, DownloadMetaSuccess } from '../../src/lib/download/download-meta';
-import { ensureDir } from '../../src/lib/pipeline-utils';
+import { ensureDir } from '../../src/lib/utils';
 import {
   detectWarnings,
   EXPIRING_SOON_DAYS,

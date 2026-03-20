@@ -23,7 +23,6 @@ import { basename, join, resolve } from 'node:path';
 import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/load-gtfs-sources';
 import {
   determineBatchExitCode,
-  formatBytes,
   formatExitCode,
   loadTargetFile,
   parseCliArg,
@@ -31,6 +30,7 @@ import {
   runBatch,
   runMain,
 } from '../../../src/lib/pipeline-utils';
+import { formatBytes } from '../../../src/lib/utils';
 
 // ---------------------------------------------------------------------------
 // Paths
