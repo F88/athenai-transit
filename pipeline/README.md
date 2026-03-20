@@ -10,9 +10,9 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 
 | Stage | 概要                                            | 主な入力                          | 主な出力                        |
 | ----- | ----------------------------------------------- | --------------------------------- | ------------------------------- |
-| 1     | **Download** — 外部 API からデータ取得          | 外部 API (ODPT 等)                | `pipeline/data/` (CSV, JSON)    |
-| 2     | **Build DB** — GTFS CSV → SQLite 変換           | `pipeline/data/gtfs/` (CSV)       | `pipeline/build/*.db`           |
-| 3     | **Build App Data** — アプリ用 JSON の生成と検証 | `pipeline/build/*.db`, 静的データ | `pipeline/build/data/{prefix}/` |
+| 1     | **Download** — 外部 API からデータ取得          | 外部 API (ODPT 等)                | `pipeline/workspace/data/` (CSV, JSON)    |
+| 2     | **Build DB** — GTFS CSV → SQLite 変換           | `pipeline/workspace/data/gtfs/` (CSV)       | `pipeline/workspace/_build/db/*.db`           |
+| 3     | **Build App Data** — アプリ用 JSON の生成と検証 | `pipeline/workspace/_build/db/*.db`, 静的データ | `pipeline/workspace/_build/data/{prefix}/` |
 
 `public/data/` へのコピー (`npm run data:sync`) は WebApp 側の責務であり、pipeline の Stage には含まない。
 
@@ -70,7 +70,7 @@ flowchart TD
         OR --> DO["download-odpt-json.ts"]
     end
 
-    subgraph raw["Raw Data (pipeline/data/)"]
+    subgraph raw["Raw Data (pipeline/workspace/data/)"]
         DG --> CSV["GTFS CSV"]
         DO --> OJSON["ODPT JSON"]
     end
@@ -84,7 +84,7 @@ flowchart TD
         OJSON --> BKS
     end
 
-    subgraph out["Output (pipeline/build/data/)"]
+    subgraph out["Output (pipeline/workspace/_build/data/)"]
         BJ --> JSON["stops / routes / calendar<br/>timetable / shapes .json"]
         BO --> JSON
         BGS --> JSON
@@ -94,7 +94,7 @@ flowchart TD
     JSON --> SYNC["data:sync → public/data/"]
 ```
 
-`pipeline/build/data/` が pipeline の最終出力。`public/data/` へのコピーは `npm run data:sync` の責務。
+`pipeline/workspace/_build/data/` が pipeline の最終出力。`public/data/` へのコピーは `npm run data:sync` の責務。
 
 ## リソース定義
 

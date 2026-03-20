@@ -3,7 +3,7 @@
 /**
  * Copy pipeline build output to the public directory.
  *
- * Copies pipeline/build/data/ -> public/data/ so that the Vite dev server
+ * Copies pipeline/workspace/_build/data/ -> public/data/ so that the Vite dev server
  * and production builds can serve the generated JSON files.
  *
  * Usage:
@@ -15,7 +15,7 @@ import { cpSync, existsSync, rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 
 const PROJECT_ROOT = resolve(import.meta.dirname, '..');
-const SRC_DIR = join(PROJECT_ROOT, 'pipeline/build/data');
+const SRC_DIR = join(PROJECT_ROOT, 'pipeline/workspace/_build/data');
 const DEST_DIR = join(PROJECT_ROOT, 'public/data');
 
 function main(): void {

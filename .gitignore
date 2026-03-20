@@ -37,34 +37,6 @@ lerna-debug.log*
 ### Local documentation (not needed in production)
 __LOCAL_DOCS__/
 
-### Pipeline files and directories
-
-## Reference documents for development and testing (not needed in production)
-pipeline/references/
-
-# Pipeline local env (contains API tokens)
-pipeline/.env.pipeline.*
-
-# Pipeline archives (downloaded ZIP/JSON originals)
-pipeline/archives/
-
-# Large sources (re-downloadable)
-pipeline/data/
-
-# Pipeline build artifacts (SQLite databases)
-pipeline/build/
-
-
-# Temporary: new source data under review (remove after finalization)
-# public/data/sbbus/
-# public/data/iyt2/
-# public/data/kbus/
-# public/data/kcbus/
-# public/data/osmbus/
-# public/data/mykbus/
-# public/data/kseiw/
-# public/data/mir/
-
 ### Web app
 
 # Node modules and build artifacts

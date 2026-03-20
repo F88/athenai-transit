@@ -7,8 +7,8 @@
  * use `--targets <file>` which runs this script once per source in a
  * child process (same pattern as build-gtfs-db.ts).
  *
- * Input:  pipeline/build/{outDir}.db (built by build-gtfs-db.ts)
- * Output: pipeline/build/data/{prefix}/*.json (8 files per source)
+ * Input:  pipeline/workspace/_build/db/{outDir}.db (built by build-gtfs-db.ts)
+ * Output: pipeline/workspace/_build/data/{prefix}/*.json (8 files per source)
  *
  * Usage:
  *   npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts <source-name>
@@ -51,9 +51,9 @@ import {
 // Paths
 // ---------------------------------------------------------------------------
 
-const ROOT = resolve(import.meta.dirname, '../..');
-const DB_DIR = join(ROOT, 'build');
-const OUTPUT_DIR = join(ROOT, 'build/data');
+import { DB_DIR, V1_OUTPUT_DIR } from '../../lib/paths';
+
+const OUTPUT_DIR = V1_OUTPUT_DIR;
 
 // ---------------------------------------------------------------------------
 // Types

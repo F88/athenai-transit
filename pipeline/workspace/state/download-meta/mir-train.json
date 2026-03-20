@@ -1,0 +1,65 @@
+{
+  "sourceName": "mir-train",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-03-20T04:42:00.892Z",
+  "url": "https://api.odpt.org/api/v4/files/MIR/data/MIR-Train-GTFS.zip",
+  "size": 90039,
+  "contentType": "application/octet-stream",
+  "durationMs": 1520,
+  "archivePath": "archives/gtfs/mir-train/MIR-Train-GTFS_20260320-044202.zip",
+  "extractedFiles": [
+    {
+      "name": "agency.txt",
+      "size": 172
+    },
+    {
+      "name": "calendar.txt",
+      "size": 156
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 837
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 529
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 5402
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 208
+    },
+    {
+      "name": "routes.txt",
+      "size": 154
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 546221
+    },
+    {
+      "name": "stops.txt",
+      "size": 1179
+    },
+    {
+      "name": "translations.txt",
+      "size": 2490
+    },
+    {
+      "name": "trips.txt",
+      "size": 23079
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "首都圏新都市鉄道",
+    "publisherUrl": "https://www.mir.co.jp/",
+    "lang": "ja",
+    "startDate": "20250315",
+    "endDate": "20261231",
+    "version": "20260223"
+  }
+}

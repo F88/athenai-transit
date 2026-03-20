@@ -13,8 +13,8 @@
  *   npx tsx pipeline/scripts/build-gtfs-db.ts --targets pipeline/targets/download-gtfs.ts
  *   npx tsx pipeline/scripts/build-gtfs-db.ts --list
  *
- * Input:  pipeline/data/gtfs/{directory}/*.txt (GTFS CSV files)
- * Output: pipeline/build/{outDir}.db (e.g. toei-bus.db, toei-train.db)
+ * Input:  pipeline/workspace/data/gtfs/{directory}/*.txt (GTFS CSV files)
+ * Output: pipeline/workspace/_build/db/{outDir}.db (e.g. toei-bus.db, toei-train.db)
  */
 
 import Database from 'better-sqlite3';
@@ -48,9 +48,10 @@ import { listGtfsSourceNames, loadGtfsSource } from '../lib/load-gtfs-sources';
 // Paths
 // ---------------------------------------------------------------------------
 
-const ROOT = resolve(import.meta.dirname, '..');
-const GTFS_BASE_DIR = join(ROOT, 'data/gtfs');
-const OUTPUT_DIR = join(ROOT, 'build');
+import { DB_DIR, GTFS_DATA_DIR } from '../lib/paths';
+
+const GTFS_BASE_DIR = GTFS_DATA_DIR;
+const OUTPUT_DIR = DB_DIR;
 
 // ---------------------------------------------------------------------------
 // Constants

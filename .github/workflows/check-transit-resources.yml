@@ -62,7 +62,7 @@ jobs:
       - name: Commit check snapshots
         if: always()
         run: |
-          git add pipeline/state/
+          git add pipeline/workspace/state/
           if git diff --cached --quiet; then
             echo "::notice::No snapshot changes."
           else

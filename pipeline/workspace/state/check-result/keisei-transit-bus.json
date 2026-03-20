@@ -1,0 +1,11 @@
+{
+  "sourceName": "keisei-transit-bus",
+  "checkedAt": "2026-03-20T05:22:30.619Z",
+  "resourceUrls": [
+    "https://api-public.odpt.org/api/v4/files/odpt/KeiseiTransitBus/AllLines.zip?date=20250401",
+    "https://api-public.odpt.org/api/v4/files/odpt/KeiseiTransitBus/AllLines.zip?date=20260401"
+  ],
+  "result": "critical",
+  "warnings": [],
+  "errors": ["EXPIRED"]
+}

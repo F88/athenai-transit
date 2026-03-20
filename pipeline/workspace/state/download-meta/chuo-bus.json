@@ -1,0 +1,73 @@
+{
+  "sourceName": "chuo-bus",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-03-20T04:41:35.365Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/TokyoChuoCity/Alldata.zip?date=20250108",
+  "size": 43708,
+  "contentType": "text/plain; charset=ASCII-8BIT",
+  "durationMs": 1336,
+  "archivePath": "archives/gtfs/chuo-bus/Alldata_20260320-044136.zip",
+  "extractedFiles": [
+    {
+      "name": "calendar_dates.txt",
+      "size": 1098
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 73
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 285
+    },
+    {
+      "name": "office_jp.txt",
+      "size": 84
+    },
+    {
+      "name": "routes.txt",
+      "size": 199
+    },
+    {
+      "name": "shapes.txt",
+      "size": 10911
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 399392
+    },
+    {
+      "name": "stops.txt",
+      "size": 5385
+    },
+    {
+      "name": "transfers.txt",
+      "size": 295
+    },
+    {
+      "name": "trips.txt",
+      "size": 8104
+    },
+    {
+      "name": "agency.txt",
+      "size": 203
+    },
+    {
+      "name": "agency_jp.txt",
+      "size": 164
+    },
+    {
+      "name": "calendar.txt",
+      "size": 212
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "有限会社エイ・ケイ・システム",
+    "publisherUrl": "https://ak-system.co.jp/",
+    "lang": "ja",
+    "startDate": "20241201",
+    "endDate": "20251130",
+    "version": "20241201_E001"
+  }
+}

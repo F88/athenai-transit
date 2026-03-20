@@ -1,0 +1,69 @@
+{
+  "sourceName": "keisei-transit-bus",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-03-20T04:41:57.874Z",
+  "url": "https://api-public.odpt.org/api/v4/files/odpt/KeiseiTransitBus/AllLines.zip?date=20260401",
+  "size": 261086,
+  "contentType": "text/plain; charset=ASCII-8BIT",
+  "durationMs": 1955,
+  "archivePath": "archives/gtfs/keisei-transit-bus/AllLines_20260320-044159.zip",
+  "extractedFiles": [
+    {
+      "name": "translations.txt",
+      "size": 57884
+    },
+    {
+      "name": "trips.txt",
+      "size": 66871
+    },
+    {
+      "name": "agency.txt",
+      "size": 246
+    },
+    {
+      "name": "calendar.txt",
+      "size": 196
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 40049
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 1849
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 222632
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 222
+    },
+    {
+      "name": "routes.txt",
+      "size": 1048
+    },
+    {
+      "name": "shapes.txt",
+      "size": 226715
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 1378602
+    },
+    {
+      "name": "stops.txt",
+      "size": 13593
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "京成バス千葉ウエスト株式会社　塩浜営業所",
+    "publisherUrl": "https://www.transitbus.co.jp/web/",
+    "lang": "ja",
+    "startDate": "20260401",
+    "endDate": "20270401",
+    "version": "20260306"
+  }
+}

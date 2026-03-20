@@ -20,7 +20,7 @@ import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
  * Writes to a temp file first, then renames — so the target file
  * is always complete or absent.
  *
- * @param dir - Output directory (e.g. `pipeline/build/data-v2/{prefix}`).
+ * @param dir - Output directory (e.g. `pipeline/workspace/_build/data-v2/{prefix}`).
  * @param data - The DataBundle to serialize.
  */
 export function writeDataBundle(dir: string, data: DataBundle): void {

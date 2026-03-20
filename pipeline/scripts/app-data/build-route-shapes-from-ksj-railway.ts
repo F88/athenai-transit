@@ -8,8 +8,8 @@
  * ODPT JSON sources), converting them into the shapes.json format used
  * by the app.
  *
- * Input:  pipeline/data/mlit/N02-24_RailroadSection.geojson
- * Output: pipeline/build/data/{prefix}/shapes.json (per target)
+ * Input:  pipeline/workspace/data/mlit/N02-24_RailroadSection.geojson
+ * Output: pipeline/workspace/_build/data/{prefix}/shapes.json (per target)
  *
  * Usage:
  *   npx tsx pipeline/scripts/app-data/build-route-shapes-from-ksj-railway.ts <source-name>
@@ -34,9 +34,10 @@ import {
 } from '../../lib/pipeline-utils';
 import type { MlitShapeMapping } from '../../types/resource-common';
 
-const ROOT = resolve(import.meta.dirname, '../..');
-const GEOJSON_PATH = join(ROOT, 'data/mlit/N02-24_RailroadSection.geojson');
-const BUILD_DATA_DIR = join(ROOT, 'build/data');
+import { MLIT_GEOJSON_PATH, V1_OUTPUT_DIR } from '../../lib/paths';
+
+const GEOJSON_PATH = MLIT_GEOJSON_PATH;
+const BUILD_DATA_DIR = V1_OUTPUT_DIR;
 
 // ---------------------------------------------------------------------------
 // Types

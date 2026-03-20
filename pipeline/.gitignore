@@ -1,0 +1,21 @@
+### Pipeline files and directories
+
+## Reference documents for development and testing (not needed in production)
+_references/
+
+# Pipeline local env (contains API tokens)
+.env.pipeline.*
+
+## Pipeline workspace (contains intermediate files and outputs; not needed in production)
+
+# Pipeline archives (downloaded ZIP/JSON originals)
+workspace/_archives/
+
+# Pipeline build artifacts (SQLite databases)
+workspace/_build/
+
+# Large sources (re-downloadable)
+workspace/data/
+
+# Exception: mlit geojson is checked in (small, no download script yet)
+!workspace/data/mlit/

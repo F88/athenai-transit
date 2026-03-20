@@ -13,7 +13,7 @@
  *   npx tsx pipeline/scripts/analysis/check-odpt-resources.ts --list        # list tracked ODPT sources
  *   npx tsx pipeline/scripts/analysis/check-odpt-resources.ts --format tsv  # TSV output
  *
- * Snapshots (`pipeline/state/check-result/*.json`) are rewritten on every
+ * Snapshots (`pipeline/workspace/state/check-result/*.json`) are rewritten on every
  * execution to record checkedAt and the current warning state. This is
  * intentional — the snapshot serves as an operational log, not a cache.
  *
@@ -22,7 +22,7 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 
 import { listGtfsSourceNames, loadGtfsSource } from '../../lib/load-gtfs-sources';
 import { loadDownloadMeta } from '../../lib/download-meta';
@@ -99,7 +99,9 @@ function findLatestResource(resources: OdptDataResource[]): OdptDataResource | n
 // Check result snapshot (for diff detection)
 // ---------------------------------------------------------------------------
 
-const SNAPSHOT_DIR = resolve(import.meta.dirname, '..', '..', 'state', 'check-result');
+import { STATE_DIR } from '../../lib/paths';
+
+const SNAPSHOT_DIR = join(STATE_DIR, 'check-result');
 
 interface SnapshotFile extends ResourceSnapshot {
   sourceName: string;

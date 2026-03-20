@@ -1,0 +1,77 @@
+{
+  "sourceName": "kita-bus",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-03-20T04:41:45.491Z",
+  "url": "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/KitaAllLines.zip?date=20251220",
+  "size": 33202,
+  "contentType": "text/plain; charset=ASCII-8BIT",
+  "durationMs": 1340,
+  "archivePath": "archives/gtfs/kita-bus/KitaAllLines_20260320-044146.zip",
+  "extractedFiles": [
+    {
+      "name": "trips.txt",
+      "size": 11944
+    },
+    {
+      "name": "agency.txt",
+      "size": 211
+    },
+    {
+      "name": "agency_jp.txt",
+      "size": 164
+    },
+    {
+      "name": "calendar.txt",
+      "size": 212
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 811
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 75
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 290
+    },
+    {
+      "name": "office_jp.txt",
+      "size": 84
+    },
+    {
+      "name": "routes.txt",
+      "size": 291
+    },
+    {
+      "name": "shapes.txt",
+      "size": 23983
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 197899
+    },
+    {
+      "name": "stops.txt",
+      "size": 4567
+    },
+    {
+      "name": "transfers.txt",
+      "size": 159
+    },
+    {
+      "name": "translations.txt",
+      "size": 4821
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "株式会社 アチピレーションテクノロジー",
+    "publisherUrl": "https://acp-tech.jp/",
+    "lang": "ja",
+    "startDate": "20251220",
+    "endDate": "20261231",
+    "version": "20251220_K001"
+  }
+}

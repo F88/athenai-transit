@@ -22,8 +22,8 @@
  * definitions. A valid ODPT Train source must have all three required
  * resource types: odpt:Station, odpt:Railway, odpt:StationTimetable.
  *
- * Input:  pipeline/data/odpt-json/{outDir}/ (3 JSON files)
- * Output: pipeline/build/data/{prefix}/ (7 JSON files; shapes.json by KSJ script)
+ * Input:  pipeline/workspace/data/odpt-json/{outDir}/ (3 JSON files)
+ * Output: pipeline/workspace/_build/data/{prefix}/ (7 JSON files; shapes.json by KSJ script)
  *
  * Usage:
  *   npx tsx pipeline/scripts/app-data/build-app-data-from-odpt-train.ts <source-name>
@@ -79,8 +79,9 @@ import type { Provider } from '../../types/resource-common';
 // Paths
 // ---------------------------------------------------------------------------
 
-const ROOT = resolve(import.meta.dirname, '../..');
-const OUTPUT_DIR = join(ROOT, 'build/data');
+import { V1_OUTPUT_DIR } from '../../lib/paths';
+
+const OUTPUT_DIR = V1_OUTPUT_DIR;
 
 // OdptTrainSource discovery functions are in pipeline/lib/load-odpt-train-sources.ts
 // Re-export for backward compatibility with tests and other scripts (e.g. analyze-odpt-station-timetable.ts)
