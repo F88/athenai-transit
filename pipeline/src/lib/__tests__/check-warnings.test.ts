@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { detectWarnings, extractDateParam, extractUrlBase } from '../check-warnings';
 import type { RemoteResource, ResourceSnapshot, LocalInfo } from '../check-warnings';
-import type { DownloadMetaSuccess } from '../download-meta';
+import type { DownloadMetaSuccess } from '../../download/download-meta';
 
 // ---------------------------------------------------------------------------
 // Helper factories

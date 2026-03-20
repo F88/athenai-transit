@@ -5,7 +5,7 @@
  * to detect actionable conditions like expired data, new resources, etc.
  */
 
-import type { DownloadMetaSuccess } from './download-meta';
+import type { DownloadMetaSuccess } from './download/download-meta';
 
 // ---------------------------------------------------------------------------
 // Types

@@ -9,9 +9,9 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { ensureDir } from './pipeline-utils';
+import { ensureDir } from '../pipeline-utils';
 
-import { STATE_DIR } from './paths';
+import { STATE_DIR } from '../paths';
 
 const META_DIR = join(STATE_DIR, 'download-meta');
 

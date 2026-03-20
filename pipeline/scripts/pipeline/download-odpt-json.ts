@@ -30,8 +30,8 @@ import {
   redactTokens,
   withRetry,
   wrapTimeoutError,
-} from '../../src/lib/download-utils';
-import { saveDownloadMeta } from '../../src/lib/download-meta';
+} from '../../src/lib/download/download-utils';
+import { saveDownloadMeta } from '../../src/lib/download/download-meta';
 import {
   determineBatchExitCode,
   ensureDir,

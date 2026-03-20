@@ -25,8 +25,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
-import { loadDownloadMeta } from '../../src/lib/download-meta';
-import type { DownloadMeta, DownloadMetaSuccess } from '../../src/lib/download-meta';
+import { loadDownloadMeta } from '../../src/lib/download/download-meta';
+import type { DownloadMeta, DownloadMetaSuccess } from '../../src/lib/download/download-meta';
 import { ensureDir } from '../../src/lib/pipeline-utils';
 import {
   detectWarnings,

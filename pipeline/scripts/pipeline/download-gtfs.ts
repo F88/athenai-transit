@@ -25,9 +25,9 @@ import {
   buildAuthenticatedUrl,
   downloadWithRetry,
   redactTokens,
-} from '../../src/lib/download-utils';
-import type { ExtractedFileInfo, FeedInfoMeta } from '../../src/lib/download-meta';
-import { saveDownloadMeta } from '../../src/lib/download-meta';
+} from '../../src/lib/download/download-utils';
+import type { ExtractedFileInfo, FeedInfoMeta } from '../../src/lib/download/download-meta';
+import { saveDownloadMeta } from '../../src/lib/download/download-meta';
 import { parseFeedInfoTxt } from '../../src/lib/gtfs-feed-info';
 import {
   determineBatchExitCode,

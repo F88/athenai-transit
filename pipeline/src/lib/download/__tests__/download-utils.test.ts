@@ -7,7 +7,7 @@ import {
   withRetry,
   wrapTimeoutError,
 } from '../download-utils';
-import type { Authentication } from '../../types/resource-common';
+import type { Authentication } from '../../../types/resource-common';
 
 // ---------------------------------------------------------------------------
 // archiveFilename
