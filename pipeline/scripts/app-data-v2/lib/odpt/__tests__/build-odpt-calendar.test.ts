@@ -12,6 +12,7 @@ import {
   buildHolidayExceptions,
   calendarToServiceId,
   computeDateRange,
+  computeHolidayEndDate,
 } from '../build-calendar';
 
 describe('calendarToServiceId', () => {
@@ -25,18 +26,35 @@ describe('calendarToServiceId', () => {
 });
 
 describe('computeDateRange', () => {
-  it('computes a 1-year range', () => {
+  it('computes a 2-year range from issued date', () => {
     expect(computeDateRange('2025-04-01')).toEqual({
       startDate: '20250401',
-      endDate: '20260401',
+      endDate: '20270401',
     });
   });
 
-  it('handles leap year', () => {
+  it('handles leap year (Feb 29 + 2 years clamps to Feb 28)', () => {
     expect(computeDateRange('2000-02-29')).toEqual({
       startDate: '20000229',
-      endDate: '20010228',
+      endDate: '20020228',
     });
+  });
+
+  it('handles leap year landing on another leap year', () => {
+    expect(computeDateRange('2024-02-29')).toEqual({
+      startDate: '20240229',
+      endDate: '20260228',
+    });
+  });
+});
+
+describe('computeHolidayEndDate', () => {
+  it('adds 1 year to calendar end date', () => {
+    expect(computeHolidayEndDate('20270401')).toBe('20280401');
+  });
+
+  it('handles leap year clamping', () => {
+    expect(computeHolidayEndDate('20240229')).toBe('20250228');
   });
 });
 

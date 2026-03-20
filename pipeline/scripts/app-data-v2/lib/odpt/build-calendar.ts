@@ -30,9 +30,25 @@ export function calendarToServiceId(calendar: string): string {
   return calendarName.toLowerCase();
 }
 
+/** Number of years to add to `dct:issued` for calendar validity. */
+const VALIDITY_YEARS = 2;
+
 /**
- * Compute start/end dates from an issued date string.
- * end = issued + 1 year.
+ * Compute start/end dates from an ODPT issued date (dct:issued).
+ * startDate = issued, endDate = issued + {@link VALIDITY_YEARS} years.
+ *
+ * ODPT API does not provide an explicit validity period for timetable
+ * data. The spec (v4.15 §3.3.6) defines `dct:valid` (optional) as
+ * the data validity expiry date, but current sources (e.g. Yurikamome)
+ * do not provide it. We use issued + 2 years as a generous fallback:
+ *
+ * - GTFS sources typically provide calendar_dates covering up to
+ *   ~1 year (some shorter, e.g. toei-bus covers only 2 months of
+ *   a 3-year feed). Two years is more generous than most GTFS sources.
+ * - Some ODPT sources are not updated promptly after ダイヤ改正,
+ *   so a longer validity period avoids premature expiry.
+ * - When `dct:valid` is available, it should be used as `endDate`
+ *   instead of this fallback.
  *
  * @param issuedDate - Issued date in "YYYY-MM-DD" format.
  * @returns Object with `startDate` and `endDate` in "YYYYMMDD" format.
@@ -40,7 +56,7 @@ export function calendarToServiceId(calendar: string): string {
 export function computeDateRange(issuedDate: string): { startDate: string; endDate: string } {
   const startDate = issuedDate.replace(/-/g, '');
   const [y, m, d] = issuedDate.split('-').map(Number);
-  const end = new Date(y + 1, m - 1, d);
+  const end = new Date(y + VALIDITY_YEARS, m - 1, d);
   if (end.getMonth() !== m - 1) {
     end.setDate(0);
   }
@@ -87,9 +103,31 @@ export function buildCalendarV2(
     e: endDate,
   }));
 
-  const exceptions = buildHolidayExceptions(prefix, calendarTypes, startDate, endDate);
+  // Holiday exceptions cover calendar validity + 1 year extra buffer,
+  // so they remain available if the calendar validity period is later
+  // extended (e.g. when dct:valid becomes available from the source).
+  const holidayEndDate = computeHolidayEndDate(endDate);
+  const exceptions = buildHolidayExceptions(prefix, calendarTypes, startDate, holidayEndDate);
 
   return { services, exceptions };
+}
+
+/**
+ * Compute the end date for holiday exception generation.
+ * Returns the calendar end date + 1 year as a forward-looking buffer.
+ *
+ * @param calendarEndDate - Calendar end date in "YYYYMMDD" format.
+ * @returns End date for holiday generation in "YYYYMMDD" format.
+ */
+export function computeHolidayEndDate(calendarEndDate: string): string {
+  const y = parseInt(calendarEndDate.slice(0, 4), 10);
+  const m = parseInt(calendarEndDate.slice(4, 6), 10);
+  const d = parseInt(calendarEndDate.slice(6, 8), 10);
+  const end = new Date(y + 1, m - 1, d);
+  if (end.getMonth() !== m - 1) {
+    end.setDate(0);
+  }
+  return `${end.getFullYear()}${String(end.getMonth() + 1).padStart(2, '0')}${String(end.getDate()).padStart(2, '0')}`;
 }
 
 /**

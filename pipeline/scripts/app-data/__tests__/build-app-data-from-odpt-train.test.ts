@@ -212,19 +212,19 @@ describe('getHeadsignFromDirection', () => {
 // ---------------------------------------------------------------------------
 
 describe('computeDateRange', () => {
-  it('computes a 1-year range from a normal date', () => {
+  it('computes a 2-year range from issued date', () => {
     const result = computeDateRange('2025-04-01');
-    expect(result).toEqual({ startDate: '20250401', endDate: '20260401' });
+    expect(result).toEqual({ startDate: '20250401', endDate: '20270401' });
   });
 
-  it('handles leap year: Feb 29 + 1 year clamps to Feb 28', () => {
+  it('handles leap year: Feb 29 + 2 years clamps to Feb 28', () => {
     const result = computeDateRange('2000-02-29');
-    expect(result).toEqual({ startDate: '20000229', endDate: '20010228' });
+    expect(result).toEqual({ startDate: '20000229', endDate: '20020228' });
   });
 
   it('handles year-end date', () => {
     const result = computeDateRange('2025-12-31');
-    expect(result).toEqual({ startDate: '20251231', endDate: '20261231' });
+    expect(result).toEqual({ startDate: '20251231', endDate: '20271231' });
   });
 });
 
