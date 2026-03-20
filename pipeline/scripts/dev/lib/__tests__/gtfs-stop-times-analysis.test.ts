@@ -10,7 +10,7 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { analyzeStopTimes, formatAnalysis } from '../lib/gtfs-stop-times-analysis';
+import { analyzeStopTimes, formatAnalysis } from '../gtfs-stop-times-analysis';
 
 // ---------------------------------------------------------------------------
 // Test DB setup

@@ -13,11 +13,11 @@ import type {
   OdptRailway,
   OdptStationTimetable,
   OdptStationTimetableObject,
-} from '../../../src/types/odpt-train';
+} from '../../../../src/types/odpt-train';
 import {
   analyzeOdptStationTimetable,
   formatOdptAnalysis,
-} from '../lib/odpt-station-timetable-analysis';
+} from '../odpt-station-timetable-analysis';
 
 // ---------------------------------------------------------------------------
 // Fixtures
