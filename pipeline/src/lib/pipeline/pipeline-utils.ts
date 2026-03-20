@@ -143,6 +143,7 @@ export function runBatch(scriptPath: string, sourceNames: string[]): BatchResult
         env: process.env,
       });
     } catch {
+      console.error(`  [${sourceName}] FAILED`);
       success = false;
     }
 
