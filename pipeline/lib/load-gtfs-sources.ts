@@ -1,5 +1,5 @@
 /**
- * Load GTFS source definitions from pipeline/resources/gtfs/.
+ * Load GTFS source definitions from pipeline/config/resources/gtfs/.
  *
  * Each .ts file in the resources directory is a single resource definition.
  * The filename (without .ts) serves as the source identifier for CLI usage.

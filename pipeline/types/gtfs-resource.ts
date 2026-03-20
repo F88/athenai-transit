@@ -1,7 +1,7 @@
 /**
  * Definition of a single GTFS static data source (1 ZIP = 1 resource).
  *
- * Each resource file under `pipeline/resources/gtfs/{name}.ts` exports
+ * Each resource file under `pipeline/config/resources/gtfs/{name}.ts` exports
  * a {@link GtfsSourceDefinition}. All metadata needed to download,
  * process, and attribute the data is self-contained in each resource.
  *

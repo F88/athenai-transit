@@ -60,7 +60,7 @@ npm run data:sync
 
 ```mermaid
 flowchart TD
-    subgraph src["Resource Definitions (pipeline/resources/)"]
+    subgraph src["Resource Definitions (pipeline/config/resources/)"]
         GR["GTFS (.ts)"]
         OR["ODPT JSON (.ts)"]
     end
@@ -98,10 +98,10 @@ flowchart TD
 
 ## リソース定義
 
-各データソースは `pipeline/resources/` に TypeScript ファイルとして定義する。**ファイル名 (拡張子なし) がソース名**となり、CLI の引数や targets ファイルで使用する。
+各データソースは `pipeline/config/resources/` に TypeScript ファイルとして定義する。**ファイル名 (拡張子なし) がソース名**となり、CLI の引数や targets ファイルで使用する。
 
 ```plain
-pipeline/resources/
+pipeline/config/resources/
 ├── gtfs/
 │   ├── toei-bus.ts          → source-name: "toei-bus"
 │   ├── toei-train.ts        → source-name: "toei-train"

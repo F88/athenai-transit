@@ -33,7 +33,7 @@ ODPT API (GTFS ZIP)
 
 ## Sources
 
-Defined in `pipeline/resources/gtfs/`. Each `.ts` file is a single source definition. See each script's TSDoc header for detailed input/output paths.
+Defined in `pipeline/config/resources/gtfs/`. Each `.ts` file is a single source definition. See each script's TSDoc header for detailed input/output paths.
 
 ## Troubleshooting
 

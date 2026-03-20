@@ -64,7 +64,7 @@ Never guess license information. Always verify from the primary source (CKAN cat
 
 | What                  | Where                                                        |
 | --------------------- | ------------------------------------------------------------ |
-| License metadata      | `pipeline/resources/{gtfs,odpt-json}/*.ts` — `license` field |
+| License metadata      | `pipeline/config/resources/{gtfs,odpt-json}/*.ts` — `license` field |
 | Credit display        | `ABOUT.md` — "ライセンス / クレジット" section               |
 | License verification  | CKAN catalog: `https://ckan.odpt.org/dataset/`               |
 | ODPT rules/guidelines | `https://developer.odpt.org/terms`                           |

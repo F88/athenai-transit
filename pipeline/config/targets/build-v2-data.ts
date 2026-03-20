@@ -2,7 +2,7 @@
  * Target list for batch v2 GTFS DataBundle builds.
  *
  * Each entry is a source-name (filename without .ts extension)
- * from pipeline/resources/gtfs/.
+ * from pipeline/config/resources/gtfs/.
  *
  * Comment out entries to temporarily skip them.
  */

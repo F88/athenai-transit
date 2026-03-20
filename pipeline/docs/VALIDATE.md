@@ -8,7 +8,7 @@
 | ------ | ---------------------------------------------------- |
 | 入力   | `pipeline/workspace/_build/data/{prefix}/` (各ソースの JSON)    |
 | 出力   | 検証結果のログ + Markdown サマリ (GitHub Actions 用) |
-| ソース | `pipeline/targets/validate.ts` (prefix リスト)       |
+| ソース | `pipeline/config/targets/validate.ts` (prefix リスト)       |
 
 `--targets` モードでは3つ、単体実行では2つの検証ステップを実行する (詳細は後述の「検証ステップ」セクションを参照)。
 
@@ -29,7 +29,7 @@ Usage: npx tsx pipeline/scripts/app-data/validate-app-data.ts <prefix>
 | `--list`           | 利用可能な prefix 一覧表示                                 |
 | `--help, -h`       | ヘルプ表示                                                 |
 
-`npm run pipeline:validate` は `--targets pipeline/targets/validate.ts` で一括検証する。
+`npm run pipeline:validate` は `--targets pipeline/config/targets/validate.ts` で一括検証する。
 
 ### ソース識別子
 
@@ -40,7 +40,7 @@ Usage: npx tsx pipeline/scripts/app-data/validate-app-data.ts <prefix>
 `string[]` を `export default` する TypeScript ファイル。各エントリは prefix (出力ディレクトリ名)。
 
 ```typescript
-// pipeline/targets/validate.ts
+// pipeline/config/targets/validate.ts
 export default [
     'minkuru', // toei-bus
     'toaran', // toei-train

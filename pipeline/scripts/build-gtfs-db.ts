@@ -10,7 +10,7 @@
  * Usage:
  *   npx tsx pipeline/scripts/build-gtfs-db.ts <source-name>
  *   npx tsx pipeline/scripts/build-gtfs-db.ts toei-bus
- *   npx tsx pipeline/scripts/build-gtfs-db.ts --targets pipeline/targets/download-gtfs.ts
+ *   npx tsx pipeline/scripts/build-gtfs-db.ts --targets pipeline/config/targets/download-gtfs.ts
  *   npx tsx pipeline/scripts/build-gtfs-db.ts --list
  *
  * Input:  pipeline/workspace/data/gtfs/{directory}/*.txt (GTFS CSV files)

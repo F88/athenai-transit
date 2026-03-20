@@ -1,5 +1,5 @@
 /**
- * Load ODPT JSON source definitions from pipeline/resources/odpt-json/.
+ * Load ODPT JSON source definitions from pipeline/config/resources/odpt-json/.
  *
  * Each .ts file in the resources directory is a single resource definition.
  * The filename (without .ts) serves as the source identifier for CLI usage.

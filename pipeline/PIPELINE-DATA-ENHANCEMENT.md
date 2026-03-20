@@ -56,7 +56,7 @@ pipeline/
 └── scripts/
 ```
 
-**`pipeline/resources/` と `pipeline/workspace/data/` を分離した理由**: `workspace/data/` はダウンロードした生データの格納先であり、`rm -rf pipeline/workspace/data` で再取得可能にすべき。リソース定義は git 管理されるコードなので混在させない。
+**`pipeline/config/resources/` と `pipeline/workspace/data/` を分離した理由**: `workspace/data/` はダウンロードした生データの格納先であり、`rm -rf pipeline/workspace/data` で再取得可能にすべき。リソース定義は git 管理されるコードなので混在させない。
 
 ### 2.3 型設計
 
@@ -496,8 +496,8 @@ In-memory domain objects (Stop, Route, Agency, FeedInfo, ...)
 - `pipeline/types/resource-common.ts` — 共通型 (PipelineConfig, Provider, License, Catalog, Authentication)
 - `pipeline/types/gtfs-resource.ts` — GTFS Static 型 (GtfsSourceDefinition, DataFormat, GtfsRouteType)
 - `pipeline/types/odpt-json-resource.ts` — ODPT JSON API 型 (OdptJsonSourceDefinition, OdptDataType)
-- `pipeline/resources/gtfs/` — GTFS リソース定義 (toei-bus, toei-train, suginami-gsm)
-- `pipeline/resources/odpt-json/` — ODPT JSON リソース定義 (yurikamome-station, railway, station-timetable)
+- `pipeline/config/resources/gtfs/` — GTFS リソース定義 (toei-bus, toei-train, suginami-gsm)
+- `pipeline/config/resources/odpt-json/` — ODPT JSON リソース定義 (yurikamome-station, railway, station-timetable)
 
 ### パイプラインスクリプト
 

@@ -41,7 +41,7 @@ stop_name の差異パターン (渋66 の調査結果):
 
 ## kanto-bus (関東バス)
 
-- Resource definition: `pipeline/resources/gtfs/kanto-bus.ts`
+- Resource definition: `pipeline/config/resources/gtfs/kanto-bus.ts`
 - CKAN: <https://ckan.odpt.org/dataset/kanto_bus_all_lines>
 - Resource ID (使用中): `05a8cd54-0412-4921-9747-dba755d27538` (20260301版)
 
@@ -67,7 +67,7 @@ stop_name の差異パターン (渋66 の調査結果):
 
 ## keio-bus (京王バス)
 
-- Resource definition: `pipeline/resources/gtfs/keio-bus.ts`
+- Resource definition: `pipeline/config/resources/gtfs/keio-bus.ts`
 - CKAN: <https://ckan.odpt.org/dataset/keio_bus_all_lines>
 - Resource ID (使用中): `7e191a71-db33-40b6-b304-72ac7405eee9` (20260126版)
 
@@ -97,7 +97,7 @@ stop_name の差異パターン (渋66 の調査結果):
 
 ## chuo-bus (江戸バス / 中央区コミュニティバス)
 
-- Resource definition: `pipeline/resources/gtfs/chuo-bus.ts`
+- Resource definition: `pipeline/config/resources/gtfs/chuo-bus.ts`
 - CKAN: <https://ckan.odpt.org/dataset/tokyo_chuo_city_alldata>
 - Resource ID (使用中): `6674c46b-d4aa-44a6-a427-0862df7b7189` (20250108版)
 

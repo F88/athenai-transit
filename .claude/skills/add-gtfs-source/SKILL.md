@@ -34,7 +34,7 @@ CKAN base URL: `https://ckan.odpt.org/dataset/`
 
 ### 2. Create resource definition
 
-Create `pipeline/resources/gtfs/{source-name}.ts` following the `GtfsSourceDefinition` type.
+Create `pipeline/config/resources/gtfs/{source-name}.ts` following the `GtfsSourceDefinition` type.
 
 Reference file for the type: `pipeline/types/gtfs-resource.ts`
 
@@ -53,7 +53,7 @@ Key fields to set:
 
 Do NOT set `routeColorFallbacks` yet — check the data first (step 5).
 
-Example: `pipeline/resources/gtfs/kanto-bus.ts`
+Example: `pipeline/config/resources/gtfs/kanto-bus.ts`
 
 ### 3. Add to pipeline target lists
 
@@ -61,14 +61,14 @@ Add the source-name to all three target list files (and `build-shapes-gtfs.ts` i
 
 | File                                    | Purpose             | Always                    |
 | --------------------------------------- | ------------------- | ------------------------- |
-| `pipeline/targets/download-gtfs.ts`     | GTFS ZIP download   | yes                       |
-| `pipeline/targets/build-db.ts`          | CSV to SQLite       | yes                       |
-| `pipeline/targets/build-json.ts`        | DB to app JSON      | yes                       |
-| `pipeline/targets/build-shapes-gtfs.ts` | Route shapes (GTFS) | only if shapes.txt exists |
+| `pipeline/config/targets/download-gtfs.ts`     | GTFS ZIP download   | yes                       |
+| `pipeline/config/targets/build-db.ts`          | CSV to SQLite       | yes                       |
+| `pipeline/config/targets/build-json.ts`        | DB to app JSON      | yes                       |
+| `pipeline/config/targets/build-shapes-gtfs.ts` | Route shapes (GTFS) | only if shapes.txt exists |
 
 Each file exports a string array. Entries can be commented out to temporarily skip a source during batch runs — this is useful for debugging or when a source is temporarily unavailable.
 
-Note: `pipeline/scripts/analysis/describe-resources.ts` auto-discovers all resource definitions in `pipeline/resources/gtfs/`, so no manual registration is needed there.
+Note: `pipeline/scripts/analysis/describe-resources.ts` auto-discovers all resource definitions in `pipeline/config/resources/gtfs/`, so no manual registration is needed there.
 
 ### 4. Add to web app data-source-settings
 
@@ -114,9 +114,9 @@ Ask the user for the operator's corporate/brand color if not obvious.
 
 #### shapes.txt
 
-Check if the GTFS ZIP contains `shapes.txt`. ODPT-sourced bus data often does not include it. Note this in `pipeline/resources/NOTES.md` but there is no workaround for bus routes (train routes can use MLIT GeoJSON).
+Check if the GTFS ZIP contains `shapes.txt`. ODPT-sourced bus data often does not include it. Note this in `pipeline/config/resources/NOTES.md` but there is no workaround for bus routes (train routes can use MLIT GeoJSON).
 
-If shapes.txt exists, add the source to `pipeline/targets/build-shapes-gtfs.ts` and run:
+If shapes.txt exists, add the source to `pipeline/config/targets/build-shapes-gtfs.ts` and run:
 
 ```bash
 npm run pipeline:build:shapes:gtfs -- {source-name}
@@ -150,7 +150,7 @@ Use the `data-licensing` skill to add proper license credits:
 
 ### 8. Update NOTES.md
 
-Add resource-specific notes to `pipeline/resources/NOTES.md`:
+Add resource-specific notes to `pipeline/config/resources/NOTES.md`:
 
 - Resource definition path
 - CKAN URL and resource ID
