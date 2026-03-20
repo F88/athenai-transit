@@ -68,11 +68,49 @@ describe('adjustOdptOvernightTimes', () => {
     expect(result).toEqual(['23:50', '24:15', '25:00', '25:30', '28:59']);
   });
 
-  it('does not adjust 05:xx and later after reversal', () => {
-    // 05:xx is at the overnight threshold boundary — not adjusted
+  it('adjusts all times after reversal unconditionally (including 05:xx+)', () => {
     const input = ['23:50', '00:10', '05:00'];
     const result = adjustOdptOvernightTimes(input);
-    expect(result).toEqual(['23:50', '24:10', '05:00']);
+    expect(result).toEqual(['23:50', '24:10', '29:00']);
+  });
+
+  it('adds +24h unconditionally to all times after reversal', () => {
+    // ODPT uses 00:00-23:59 only. After reversal, all times get
+    // original_hour + 24, unconditionally. The last 00:00 becomes 24:00
+    // (not 48:00) because it adds 24 to the original hour (0), not to
+    // a previously adjusted value. In practice, ODPT data for a single
+    // calendar day never spans this long — this test documents the
+    // mechanical behavior of the function.
+    const input = ['23:59', '00:00', '03:00', '05:00', '12:00', '23:00', '23:59', '00:00'];
+    const result = adjustOdptOvernightTimes(input);
+    expect(result).toEqual([
+      '23:59',
+      '24:00',
+      '27:00',
+      '29:00',
+      '36:00',
+      '47:00',
+      '47:59',
+      '24:00',
+    ]);
+  });
+
+  it('adds +24h to all hours after reversal (終夜運転 scenario)', () => {
+    // Simulates all-night service: last train at 23:50, then service
+    // continues through 00:xx, 01:xx, ... all the way to next morning
+    const input = ['23:00', '23:30', '23:50', '00:10', '01:00', '03:30', '04:30', '05:15', '07:00'];
+    const result = adjustOdptOvernightTimes(input);
+    expect(result).toEqual([
+      '23:00',
+      '23:30',
+      '23:50',
+      '24:10',
+      '25:00',
+      '27:30',
+      '28:30',
+      '29:15',
+      '31:00',
+    ]);
   });
 
   it('returns empty array for empty input', () => {

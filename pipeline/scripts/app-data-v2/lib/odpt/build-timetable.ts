@@ -303,25 +303,23 @@ export function buildTripPatternsAndTimetableFromOdpt(
       }
 
       // Use overnight-adjusted time for minutes conversion.
-      // adjustedTimes uses the effective time (dep ?? arr) for reversal detection,
-      // so if the effective time was adjusted, arrival should be too.
+      // adjustedTimes detects the 23→00 reversal point. Once past it,
+      // each time's hour is checked individually before adding 24h —
+      // only hours < OVERNIGHT_THRESHOLD_HOUR (5) are adjusted, so a
+      // hypothetical 23:59 arrival would not become 47:59.
       const adjusted = adjustedTimes[objIdx];
-      const isAdjusted = adjusted !== rawTimes[objIdx];
+      const isOvernightSection = adjusted !== rawTimes[objIdx];
 
-      const dep = depTime
-        ? timeToMinutes(
-            isAdjusted
-              ? `${parseInt(depTime.split(':')[0], 10) + 24}:${depTime.split(':')[1]}`
-              : depTime,
-          )
-        : timeToMinutes(adjusted);
-      const arr = arrTime
-        ? timeToMinutes(
-            isAdjusted
-              ? `${parseInt(arrTime.split(':')[0], 10) + 24}:${arrTime.split(':')[1]}`
-              : arrTime,
-          )
-        : dep;
+      const toOvernightMinutes = (time: string): number => {
+        if (isOvernightSection) {
+          const h = parseInt(time.split(':')[0], 10);
+          return (h + 24) * 60 + parseInt(time.split(':')[1], 10);
+        }
+        return timeToMinutes(time);
+      };
+
+      const dep = depTime ? toOvernightMinutes(depTime) : timeToMinutes(adjusted);
+      const arr = arrTime ? toOvernightMinutes(arrTime) : dep;
 
       entries.push({ d: dep, a: arr });
     }

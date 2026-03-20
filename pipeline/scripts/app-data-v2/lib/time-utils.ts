@@ -17,14 +17,7 @@ export function timeToMinutes(time: string): number {
 }
 
 /**
- * Threshold hour for overnight detection.
- * Times with hour < this value that appear after a time with hour >= 23
- * are considered overnight (next-day) departures.
- */
-const OVERNIGHT_THRESHOLD_HOUR = 5;
-
-/**
- * Convert ODPT overnight times from `00:xx`–`04:xx` to `24:xx`–`28:xx`.
+ * Convert ODPT overnight times by adding 24 hours after a time reversal.
  *
  * ODPT API Spec v4.15 Section 3.3.6:
  * > 日付を超える場合、odpt:arrivalTime, odpt:departureTimeは
@@ -32,14 +25,25 @@ const OVERNIGHT_THRESHOLD_HOUR = 5;
  * > 日付超えを判断するには、前駅からの時刻（時）変化で
  * > 23 -> 00 となった場合に日付を超えたとクライアント側で判定する必要がある。
  *
- * The `stationTimetableObject` array is chronologically ordered.
- * This function detects the point where time reverses (e.g. 23:50 → 00:00)
- * and adds 24 hours to all subsequent times with hour < {@link OVERNIGHT_THRESHOLD_HOUR}.
+ * The `stationTimetableObject` array is chronologically ordered
+ * within a single calendar day. This function detects the point where
+ * time reverses (e.g. 23:50 → 00:00) and adds 24 hours to ALL
+ * subsequent times unconditionally — once the reversal is detected,
+ * every remaining entry belongs to the next calendar day.
+ *
+ * No hour threshold is applied: the adjustment is `original_hour + 24`,
+ * regardless of the hour value. This correctly handles 終夜運転
+ * (all-night service) where departures continue past 05:00.
+ * The reversal is detected at most once — subsequent reversals within
+ * the same array do not add another +24h (no +48h accumulation).
+ *
+ * Empty or invalid entries (e.g. `''` from missing departure/arrival)
+ * are returned unchanged and do not affect reversal detection.
  *
  * @param times - Array of ODPT time strings ("HH:MM") in chronological order.
  *   The input array is NOT modified.
  * @returns New array with overnight times adjusted (e.g. "00:10" → "24:10").
- *   Non-overnight times are returned unchanged.
+ *   Times before the reversal point are returned unchanged.
  */
 export function adjustOdptOvernightTimes(times: string[]): string[] {
   let isOvernight = false;
@@ -59,16 +63,16 @@ export function adjustOdptOvernightTimes(times: string[]): string[] {
     }
 
     if (!isOvernight && lastValidHour !== null) {
-      // Detect reversal: previous valid hour >= 23, current hour < threshold
-      if (lastValidHour >= 23 && hour < OVERNIGHT_THRESHOLD_HOUR) {
+      // Detect reversal: previous valid hour >= 23, current hour < 23
+      if (lastValidHour >= 23 && hour < lastValidHour) {
         isOvernight = true;
       }
     }
 
     lastValidHour = hour;
 
-    if (isOvernight && hour < OVERNIGHT_THRESHOLD_HOUR) {
-      return `${hour + 24}:${parts[1]}`;
+    if (isOvernight) {
+      return `${hour + 24}:${parts.slice(1).join(':')}`;
     }
 
     return time;
