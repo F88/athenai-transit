@@ -2,12 +2,12 @@
   "sourceName": "keisei-transit-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-03-20T04:35:50.814Z",
+  "downloadedAt": "2026-03-20T04:41:57.874Z",
   "url": "https://api-public.odpt.org/api/v4/files/odpt/KeiseiTransitBus/AllLines.zip?date=20260401",
   "size": 261086,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1660,
-  "archivePath": "archives/gtfs/keisei-transit-bus/AllLines_20260320-043552.zip",
+  "durationMs": 1955,
+  "archivePath": "archives/gtfs/keisei-transit-bus/AllLines_20260320-044159.zip",
   "extractedFiles": [
     {
       "name": "translations.txt",
