@@ -90,6 +90,24 @@ describe('adjustOdptOvernightTimes', () => {
     expect(input).toEqual(copy);
   });
 
+  it('skips empty entries between 23:xx and 00:xx without blocking reversal', () => {
+    const input = ['23:40', '23:50', '', '00:00', '00:10'];
+    const result = adjustOdptOvernightTimes(input);
+    expect(result).toEqual(['23:40', '23:50', '', '24:00', '24:10']);
+  });
+
+  it('skips multiple empty entries without blocking reversal', () => {
+    const input = ['23:50', '', '', '00:10'];
+    const result = adjustOdptOvernightTimes(input);
+    expect(result).toEqual(['23:50', '', '', '24:10']);
+  });
+
+  it('handles NaN hour gracefully', () => {
+    const input = ['23:50', 'abc:00', '00:10'];
+    const result = adjustOdptOvernightTimes(input);
+    expect(result).toEqual(['23:50', 'abc:00', '24:10']);
+  });
+
   it('handles real yurikamome data pattern', () => {
     const input = [
       '05:45',

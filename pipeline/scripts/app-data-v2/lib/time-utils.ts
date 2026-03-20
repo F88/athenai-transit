@@ -43,20 +43,32 @@ const OVERNIGHT_THRESHOLD_HOUR = 5;
  */
 export function adjustOdptOvernightTimes(times: string[]): string[] {
   let isOvernight = false;
+  let lastValidHour: number | null = null;
 
-  return times.map((time, i) => {
-    const hour = parseInt(time.split(':')[0], 10);
+  return times.map((time) => {
+    const parts = time.split(':');
+    // Skip invalid or empty entries: they should neither trigger nor block
+    // overnight detection, and are returned unchanged.
+    if (parts.length < 2 || parts[0].trim() === '') {
+      return time;
+    }
 
-    if (!isOvernight && i > 0) {
-      const prevHour = parseInt(times[i - 1].split(':')[0], 10);
-      // Detect reversal: previous hour >= 23, current hour < threshold
-      if (prevHour >= 23 && hour < OVERNIGHT_THRESHOLD_HOUR) {
+    const hour = parseInt(parts[0], 10);
+    if (Number.isNaN(hour)) {
+      return time;
+    }
+
+    if (!isOvernight && lastValidHour !== null) {
+      // Detect reversal: previous valid hour >= 23, current hour < threshold
+      if (lastValidHour >= 23 && hour < OVERNIGHT_THRESHOLD_HOUR) {
         isOvernight = true;
       }
     }
 
+    lastValidHour = hour;
+
     if (isOvernight && hour < OVERNIGHT_THRESHOLD_HOUR) {
-      return `${hour + 24}:${time.split(':')[1]}`;
+      return `${hour + 24}:${parts[1]}`;
     }
 
     return time;
