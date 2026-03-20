@@ -11,6 +11,12 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- v2 ShapesBundle builders for GTFS and KSJ railway:
+    - `pipeline/scripts/app-data-v2/` に v2 shapes パイプラインを新規実装。
+    - GTFS shapes.txt と国土数値情報 (KSJ) 鉄道路線の両データソースに対応。
+    - `ShapesBundle` (`bundle_version: 2, kind: 'shapes'`) でラッパー付き出力。
+    - `shape_dist_traveled` 対応 (v2 のみ。v1 は `stripShapeDistance` で除去)。
+    - 抽出ロジックを `src/lib/pipeline/` に共有関数として集約。v1/v2 両方から利用。
 - v2 DataBundle builders for GTFS and ODPT Train (#31):
     - `pipeline/scripts/app-data-v2/` に v2 フォーマットの JSON バンドル生成パイプラインを新規実装。
     - GTFS (SQLite) と ODPT Train (JSON) の両データソースに対応。
