@@ -4,11 +4,11 @@
 
 ## 概要
 
-`build-app-data-from-gtfs.ts` は `build-gtfs-db.ts` が生成した SQLite DB (`pipeline/build/{outDir}.db`) を読み込み、ソースごとに8つの JSON ファイルを出力する。ID フィールドにはソースプレフィックスが付与される (例: `minkuru:0001-01`)。
+`build-app-data-from-gtfs.ts` は `build-gtfs-db.ts` が生成した SQLite DB (`pipeline/workspace/_build/db/{outDir}.db`) を読み込み、ソースごとに8つの JSON ファイルを出力する。ID フィールドにはソースプレフィックスが付与される (例: `minkuru:0001-01`)。
 
 | スクリプト                    | 入力                         | 出力                                  |
 | ----------------------------- | ---------------------------- | ------------------------------------- |
-| `build-app-data-from-gtfs.ts` | `pipeline/build/{outDir}.db` | `pipeline/build/data/{prefix}/*.json` |
+| `build-app-data-from-gtfs.ts` | `pipeline/workspace/_build/db/{outDir}.db` | `pipeline/workspace/_build/data/{prefix}/*.json` |
 
 ## CLI インターフェース
 
@@ -43,22 +43,22 @@ npx tsx pipeline/scripts/app-data/build-app-data-from-gtfs.ts toei-bus
 ```plain
 toei-bus.ts → { pipeline: { outDir: "toei-bus", prefix: "minkuru", ... } }
               │
-              ├─ Input:  pipeline/build/toei-bus.db
-              └─ Output: pipeline/build/data/minkuru/*.json
+              ├─ Input:  pipeline/workspace/_build/db/toei-bus.db
+              └─ Output: pipeline/workspace/_build/data/minkuru/*.json
 ```
 
 `--list` で利用可能なソース名を確認できる。
 
 ## 入出力パス
 
-- **入力**: `pipeline/build/{outDir}.db` (SQLite、ソースごと)
-- **出力**: `pipeline/build/data/{prefix}/` (JSON、ソースごと8ファイル)
+- **入力**: `pipeline/workspace/_build/db/{outDir}.db` (SQLite、ソースごと)
+- **出力**: `pipeline/workspace/_build/data/{prefix}/` (JSON、ソースごと8ファイル)
 
 入力 DB ファイルが存在しない場合はエラー終了する (exit code 1)。事前に `build-gtfs-db.ts` で DB を構築しておく必要がある。
 
 ## 出力ファイル一覧
 
-ソースごとに `pipeline/build/data/{prefix}/` に8ファイルを出力する。`data:sync` で `public/data/` にコピーされ、WebApp から fetch される。
+ソースごとに `pipeline/workspace/_build/data/{prefix}/` に8ファイルを出力する。`data:sync` で `public/data/` にコピーされ、WebApp から fetch される。
 
 | ファイル            | DB テーブル                       | 型定義 (transit-json.ts) | 内容                               |
 | ------------------- | --------------------------------- | ------------------------ | ---------------------------------- |
@@ -101,7 +101,7 @@ toei-bus.ts → { pipeline: { outDir: "toei-bus", prefix: "minkuru", ... } }
 ```
 
 ```plain
-pipeline/build/data/
+pipeline/workspace/_build/data/
 ├── minkuru/           ← 最終出力 (常に完全な8ファイルセット)
 ├── minkuru.tmp/       ← 書き込み中のみ一時的に存在
 ```

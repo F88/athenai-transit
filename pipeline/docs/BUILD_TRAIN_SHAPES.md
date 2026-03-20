@@ -6,8 +6,8 @@
 
 | 項目   | 内容                                                                  |
 | ------ | --------------------------------------------------------------------- |
-| 入力   | `pipeline/data/mlit/N02-24_RailroadSection.geojson`                   |
-| 出力   | `pipeline/build/data/{prefix}/shapes.json` (対象ソースごと)           |
+| 入力   | `pipeline/workspace/data/mlit/N02-24_RailroadSection.geojson`                   |
+| 出力   | `pipeline/workspace/_build/data/{prefix}/shapes.json` (対象ソースごと)           |
 | ソース | GTFS / ODPT JSON リソース定義のうち `mlitShapeMapping` を持つもの全て |
 
 GTFS の `shapes.txt` が提供されていない路線や ODPT JSON ソースに対して、MLIT GeoJSON データから路線形状を生成する。
@@ -57,7 +57,7 @@ Usage: npx tsx pipeline/scripts/app-data/build-route-shapes-from-ksj-railway.ts
 Collecting mlitShapeMapping targets...
   Found 2 targets: toaran, yurimo
 
-Reading pipeline/data/mlit/N02-24_RailroadSection.geojson...
+Reading pipeline/workspace/data/mlit/N02-24_RailroadSection.geojson...
   21932 total features
 
 --- toaran (Toei Train) ---
@@ -69,7 +69,7 @@ Reading pipeline/data/mlit/N02-24_RailroadSection.geojson...
     ...
     TOTAL         318 segments    2179 points
 
-  Wrote pipeline/build/data/toaran/shapes.json (44.9 KB)
+  Wrote pipeline/workspace/_build/data/toaran/shapes.json (44.9 KB)
 
 --- yurimo (Yurikamome Railway) ---
   32 features for operator "ゆりかもめ"
@@ -78,7 +78,7 @@ Reading pipeline/data/mlit/N02-24_RailroadSection.geojson...
     yurimo:U       32 segments     293 points
     TOTAL          32 segments     293 points
 
-  Wrote pipeline/build/data/yurimo/shapes.json (6.0 KB)
+  Wrote pipeline/workspace/_build/data/yurimo/shapes.json (6.0 KB)
 
 Done in 133ms. (exit code: 0)
 ```
@@ -92,5 +92,5 @@ Done in 133ms. (exit code: 0)
 
 ## 前提条件
 
-- `pipeline/data/mlit/N02-24_RailroadSection.geojson` が存在すること
+- `pipeline/workspace/data/mlit/N02-24_RailroadSection.geojson` が存在すること
 - 1つ以上のリソース定義に `mlitShapeMapping` が設定されていること

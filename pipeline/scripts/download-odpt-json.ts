@@ -15,8 +15,8 @@
  *   npx tsx pipeline/scripts/download-odpt-json.ts <source-name>
  *   npx tsx pipeline/scripts/download-odpt-json.ts yurikamome-station
  *
- * Output: pipeline/data/odpt-json/{outDir}/{odptType}.json
- *   e.g. pipeline/data/odpt-json/yurikamome/odpt_Station.json
+ * Output: pipeline/workspace/data/odpt-json/{outDir}/{odptType}.json
+ *   e.g. pipeline/workspace/data/odpt-json/yurikamome/odpt_Station.json
  */
 
 import { statSync, writeFileSync } from 'node:fs';

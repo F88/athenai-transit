@@ -1,7 +1,7 @@
 /**
  * Target list for validation.
  *
- * Each entry is a prefix (output directory name) under pipeline/build/data/.
+ * Each entry is a prefix (output directory name) under pipeline/workspace/_build/data/.
  * Only prefixes listed here are validated by `npm run pipeline:validate`.
  *
  * Comment out entries to temporarily skip them.

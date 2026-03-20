@@ -6,7 +6,7 @@
 
 | 項目   | 内容                                                 |
 | ------ | ---------------------------------------------------- |
-| 入力   | `pipeline/build/data/{prefix}/` (各ソースの JSON)    |
+| 入力   | `pipeline/workspace/_build/data/{prefix}/` (各ソースの JSON)    |
 | 出力   | 検証結果のログ + Markdown サマリ (GitHub Actions 用) |
 | ソース | `pipeline/targets/validate.ts` (prefix リスト)       |
 
@@ -33,7 +33,7 @@ Usage: npx tsx pipeline/scripts/app-data/validate-app-data.ts <prefix>
 
 ### ソース識別子
 
-他のパイプラインスクリプトはリソース定義のファイル名 (ソース名) を識別子とするが、validate は **prefix** (出力ディレクトリ名) を識別子とする。これは validate の検証対象が `pipeline/build/data/{prefix}/` ディレクトリであり、複数のリソース定義が同一 prefix を共有する場合 (例: ODPT JSON の tokyu-bus-busstop, tokyu-bus-busroute → 共に `tkbus`) があるためである。
+他のパイプラインスクリプトはリソース定義のファイル名 (ソース名) を識別子とするが、validate は **prefix** (出力ディレクトリ名) を識別子とする。これは validate の検証対象が `pipeline/workspace/_build/data/{prefix}/` ディレクトリであり、複数のリソース定義が同一 prefix を共有する場合 (例: ODPT JSON の tokyu-bus-busstop, tokyu-bus-busroute → 共に `tkbus`) があるためである。
 
 ### Targets ファイル
 
@@ -62,7 +62,7 @@ export default [
 
 ### Unvalidated directory check
 
-`--targets` モードでのみ実行。`pipeline/build/data/` 内にターゲットリストに含まれないディレクトリが存在する場合、エラー (exit 2) とする。
+`--targets` モードでのみ実行。`pipeline/workspace/_build/data/` 内にターゲットリストに含まれないディレクトリが存在する場合、エラー (exit 2) とする。
 
 後続の `data:sync` で未検証のデータが `public/` にコピーされることを防ぐためのチェック。単体実行時は他のディレクトリが存在するのが通常であるため、このチェックは実行しない。
 
@@ -97,7 +97,7 @@ export default [
 ## 出力例
 
 ```plain
-=== Validate generated data (pipeline/build/data) ===
+=== Validate generated data (pipeline/workspace/_build/data) ===
 
   Validating 4 sources: sggsm, minkuru, toaran, yurimo
 

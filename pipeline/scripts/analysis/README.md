@@ -7,7 +7,7 @@
 | スクリプト                | 対象データ                                       | 概要                                                                                                                   |
 | ------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
 | `describe-resources.ts`   | `pipeline/resources/` (リソース定義)             | リソース定義の一覧表示 (`npm run pipeline:describe`)                                                                   |
-| `check-odpt-resources.ts` | ODPT API + `pipeline/state/` (リモート/ローカル) | ODPT Members Portal API でリソース更新チェック (`npm run pipeline:check:odpt-resources`)                               |
+| `check-odpt-resources.ts` | ODPT API + `pipeline/workspace/state/` (リモート/ローカル) | ODPT Members Portal API でリソース更新チェック (`npm run pipeline:check:odpt-resources`)                               |
 | `find-joint-routes.ts`    | `public/data/` (生成済み JSON)                   | 共同運行路線の検出。ソース間で route_short_name が一致する路線を検出し、停留所名の突き合わせと座標による近接分析を行う |
 
 ## 実行方法
@@ -24,7 +24,7 @@ npx tsx pipeline/scripts/analysis/find-joint-routes.ts
 
 ## check-odpt-resources
 
-ODPT Members Portal API からリソースのメタデータを取得し、ローカルのダウンロード記録 (`pipeline/state/download-meta/`) と比較する。
+ODPT Members Portal API からリソースのメタデータを取得し、ローカルのダウンロード記録 (`pipeline/workspace/state/download-meta/`) と比較する。
 
 ### 使い方
 
@@ -48,7 +48,7 @@ npx tsx pipeline/scripts/analysis/check-odpt-resources.ts --list     # 追跡ソ
 
 ### 出力ファイル
 
-- `pipeline/state/check-result/{source-name}.json` — チェック実行結果 (sourceName, checkedAt, resourceUrls, result, warnings, errors)。NEW_RESOURCE 検知の差分比較にも使用
+- `pipeline/workspace/state/check-result/{source-name}.json` — チェック実行結果 (sourceName, checkedAt, resourceUrls, result, warnings, errors)。NEW_RESOURCE 検知の差分比較にも使用
 
 ### CI
 

@@ -6,8 +6,8 @@
  * Each invocation processes a single GTFS source. For batch processing,
  * use `--targets <file>`.
  *
- * Input:  pipeline/build/{outDir}.db (built by build-gtfs-db.ts)
- * Output: pipeline/build/data-v2/{prefix}/data.json (DataBundle)
+ * Input:  pipeline/workspace/_build/db/{outDir}.db (built by build-gtfs-db.ts)
+ * Output: pipeline/workspace/_build/data-v2/{prefix}/data.json (DataBundle)
  *
  * Usage:
  *   npx tsx pipeline/scripts/app-data-v2/build-from-gtfs.ts <source-name>

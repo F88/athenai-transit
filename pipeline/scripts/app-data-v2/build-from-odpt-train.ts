@@ -6,8 +6,8 @@
  * Each invocation processes a single ODPT Train source. For batch processing,
  * use `--targets <file>`.
  *
- * Input:  pipeline/data/odpt-json/{outDir}/ (3 JSON files)
- * Output: pipeline/build/data-v2/{prefix}/data.json (DataBundle)
+ * Input:  pipeline/workspace/data/odpt-json/{outDir}/ (3 JSON files)
+ * Output: pipeline/workspace/_build/data-v2/{prefix}/data.json (DataBundle)
  *
  * Usage:
  *   npx tsx pipeline/scripts/app-data-v2/build-from-odpt-train.ts <source-name>
