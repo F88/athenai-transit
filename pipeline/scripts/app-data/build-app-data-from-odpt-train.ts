@@ -147,6 +147,31 @@ export function getHeadsignFromDirection(
 }
 
 /**
+ * Determine headsign from destination station.
+ * Looks up the station title from stationOrder by matching the station URI.
+ * Falls back to direction-based terminal if destination is not found.
+ *
+ * @param destination - ODPT destination station URI (may be undefined).
+ * @param direction - ODPT rail direction URI.
+ * @param stationOrder - Ordered station list for the railway.
+ * @returns Destination station name in Japanese.
+ */
+export function getHeadsignFromDestination(
+  destination: string | undefined,
+  direction: string,
+  stationOrder: OdptStationOrder[],
+): string {
+  if (destination) {
+    const entry = stationOrder.find((so) => so['odpt:station'] === destination);
+    if (entry) {
+      return entry['odpt:stationTitle'].ja;
+    }
+  }
+  // Fallback: terminal station from direction
+  return getHeadsignFromDirection(direction, stationOrder);
+}
+
+/**
  * Compute start/end dates from an issued date string.
  * end = issued + 1 year.
  */
@@ -292,7 +317,6 @@ export function buildTimetable(
       continue;
     }
     const routeId = rw.routeId;
-    const headsign = getHeadsignFromDirection(tt['odpt:railDirection'], rw.stationOrder);
 
     let groupMap = stopMap.get(stopId);
     if (!groupMap) {
@@ -300,28 +324,33 @@ export function buildTimetable(
       stopMap.set(stopId, groupMap);
     }
 
-    // Key by routeId + headsign to avoid merging departures from
-    // different railways that share the same terminal station name.
-    const groupKey = `${routeId}\0${headsign}`;
-    let entry = groupMap.get(groupKey);
-    if (!entry) {
-      entry = { routeId, headsign, services: new Map() };
-      groupMap.set(groupKey, entry);
-    }
+    // Group by destination to separate short-turn services (e.g. 有明行き)
+    // from full-line services (e.g. 豊洲行き).
+    for (const obj of tt['odpt:stationTimetableObject']) {
+      if (obj['odpt:departureTime'] == null) {
+        continue;
+      }
 
-    const minutes: number[] = tt['odpt:stationTimetableObject']
-      .filter(
-        (obj): obj is typeof obj & { 'odpt:departureTime': string } =>
-          obj['odpt:departureTime'] != null,
-      )
-      .map((obj) => timeToMinutes(obj['odpt:departureTime']));
+      const dest = obj['odpt:destinationStation']?.[0];
+      const headsign = getHeadsignFromDestination(dest, tt['odpt:railDirection'], rw.stationOrder);
 
-    let existing = entry.services.get(serviceId);
-    if (!existing) {
-      existing = [];
-      entry.services.set(serviceId, existing);
+      // Key by routeId + headsign to avoid merging departures from
+      // different railways or different destinations.
+      const groupKey = `${routeId}\0${headsign}`;
+      let entry = groupMap.get(groupKey);
+      if (!entry) {
+        entry = { routeId, headsign, services: new Map() };
+        groupMap.set(groupKey, entry);
+      }
+
+      const minutes = timeToMinutes(obj['odpt:departureTime']);
+      let existing = entry.services.get(serviceId);
+      if (!existing) {
+        existing = [];
+        entry.services.set(serviceId, existing);
+      }
+      existing.push(minutes);
     }
-    existing.push(...minutes);
   }
 
   // Convert to output format
@@ -393,25 +422,34 @@ export function buildTranslations(
     stationSet: new Set(rw['odpt:stationOrder'].map((so) => so['odpt:station'])),
   }));
 
-  // Collect headsigns from timetable direction -> terminal station
-  const seenKeys = new Set<string>();
+  // Collect headsigns from timetable destinationStation.
+  // Each unique destination produces a headsign (e.g. 豊洲, 有明, 新橋).
   for (const tt of timetables) {
     const rw = railwayStationSets.find((r) => r.stationSet.has(tt['odpt:station']));
     if (!rw) {
       continue;
     }
 
-    const dirKey = `${rw.lineCode}:${tt['odpt:railDirection']}`;
-    if (seenKeys.has(dirKey)) {
-      continue;
-    }
-    seenKeys.add(dirKey);
-
-    const headsignJa = getHeadsignFromDirection(tt['odpt:railDirection'], rw.stationOrder);
-    if (!headsigns[headsignJa]) {
-      const terminalIdx =
-        tt['odpt:railDirection'] === 'odpt.RailDirection:Outbound' ? rw.stationOrder.length - 1 : 0;
-      const title = rw.stationOrder[terminalIdx]['odpt:stationTitle'];
+    for (const obj of tt['odpt:stationTimetableObject']) {
+      const dest = obj['odpt:destinationStation']?.[0];
+      const headsignJa = getHeadsignFromDestination(
+        dest,
+        tt['odpt:railDirection'],
+        rw.stationOrder,
+      );
+      if (headsigns[headsignJa]) {
+        continue;
+      }
+      // Find title for the destination station
+      const destEntry = dest
+        ? rw.stationOrder.find((so) => so['odpt:station'] === dest)
+        : undefined;
+      // Fall back to direction terminal if destination not in stationOrder
+      const title = destEntry
+        ? destEntry['odpt:stationTitle']
+        : tt['odpt:railDirection'] === 'odpt.RailDirection:Outbound'
+          ? rw.stationOrder[rw.stationOrder.length - 1]['odpt:stationTitle']
+          : rw.stationOrder[0]['odpt:stationTitle'];
       const names: Record<string, string> = { ja: title.ja, en: title.en };
       if (title.ko) {
         names.ko = title.ko;
