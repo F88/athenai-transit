@@ -11,9 +11,9 @@
  * Output: pipeline/workspace/_build/data/{prefix}/shapes.json
  *
  * Usage:
- *   npx tsx pipeline/scripts/pipeline/app-data/build-route-shapes-from-gtfs.ts <source-name>
- *   npx tsx pipeline/scripts/pipeline/app-data/build-route-shapes-from-gtfs.ts --targets <file>
- *   npx tsx pipeline/scripts/pipeline/app-data/build-route-shapes-from-gtfs.ts --list
+ *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts <source-name>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts --targets <file>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts --list
  */
 
 import Database from 'better-sqlite3';
@@ -168,13 +168,13 @@ function buildSourceShapes(outDir: string, prefix: string, nameEn: string): void
 
 function printUsage(): void {
   console.log(
-    'Usage: npx tsx pipeline/scripts/pipeline/app-data/build-route-shapes-from-gtfs.ts <source-name>',
+    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts <source-name>',
   );
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data/build-route-shapes-from-gtfs.ts --targets <file>',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts --targets <file>',
   );
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data/build-route-shapes-from-gtfs.ts --list\n',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts --list\n',
   );
   console.log('Options:');
   console.log('  --targets <file>  Batch build from a target list file (.ts)');

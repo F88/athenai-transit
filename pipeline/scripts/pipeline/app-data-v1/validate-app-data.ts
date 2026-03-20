@@ -22,9 +22,9 @@
  *   2 — errors (missing files, unvalidated dirs, calendar load failures)
  *
  * Usage:
- *   npx tsx pipeline/scripts/pipeline/app-data/validate-app-data.ts <prefix>
- *   npx tsx pipeline/scripts/pipeline/app-data/validate-app-data.ts --targets <file>
- *   npx tsx pipeline/scripts/pipeline/app-data/validate-app-data.ts --list
+ *   npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts <prefix>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts --targets <file>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts --list
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -544,12 +544,12 @@ export function determineExitCode(
 // ---------------------------------------------------------------------------
 
 function printUsage(): void {
-  console.log('Usage: npx tsx pipeline/scripts/pipeline/app-data/validate-app-data.ts <prefix>');
+  console.log('Usage: npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts <prefix>');
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data/validate-app-data.ts --targets <file>',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts --targets <file>',
   );
-  console.log('       npx tsx pipeline/scripts/pipeline/app-data/validate-app-data.ts --list');
-  console.log('       npx tsx pipeline/scripts/pipeline/app-data/validate-app-data.ts --help');
+  console.log('       npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts --list');
+  console.log('       npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts --help');
   console.log('');
   console.log('Validate generated web app data files.');
   console.log('');

@@ -26,9 +26,9 @@
  * Output: pipeline/workspace/_build/data/{prefix}/ (7 JSON files; shapes.json by KSJ script)
  *
  * Usage:
- *   npx tsx pipeline/scripts/pipeline/app-data/build-app-data-from-odpt-train.ts <source-name>
- *   npx tsx pipeline/scripts/pipeline/app-data/build-app-data-from-odpt-train.ts --targets <file>
- *   npx tsx pipeline/scripts/pipeline/app-data/build-app-data-from-odpt-train.ts --list
+ *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-app-data-from-odpt-train.ts <source-name>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-app-data-from-odpt-train.ts --targets <file>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-app-data-from-odpt-train.ts --list
  */
 
 import {
@@ -658,13 +658,13 @@ function buildSourceJson(source: OdptTrainSource): void {
 
 function printUsage(): void {
   console.log(
-    'Usage: npx tsx pipeline/scripts/pipeline/app-data/build-app-data-from-odpt-train.ts <source-name>',
+    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v1/build-app-data-from-odpt-train.ts <source-name>',
   );
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data/build-app-data-from-odpt-train.ts --targets <file>',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v1/build-app-data-from-odpt-train.ts --targets <file>',
   );
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data/build-app-data-from-odpt-train.ts --list\n',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v1/build-app-data-from-odpt-train.ts --list\n',
   );
   console.log('Options:');
   console.log('  --targets <file>  Batch build from a target list file (.ts)');

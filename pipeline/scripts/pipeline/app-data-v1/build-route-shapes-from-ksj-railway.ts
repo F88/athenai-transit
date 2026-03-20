@@ -12,9 +12,9 @@
  * Output: pipeline/workspace/_build/data/{prefix}/shapes.json (per target)
  *
  * Usage:
- *   npx tsx pipeline/scripts/pipeline/app-data/build-route-shapes-from-ksj-railway.ts <source-name>
- *   npx tsx pipeline/scripts/pipeline/app-data/build-route-shapes-from-ksj-railway.ts --targets <file>
- *   npx tsx pipeline/scripts/pipeline/app-data/build-route-shapes-from-ksj-railway.ts --list
+ *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts <source-name>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts --targets <file>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts --list
  */
 
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -228,13 +228,13 @@ function buildSourceShapes(target: ShapeTarget): void {
 
 function printUsage(): void {
   console.log(
-    'Usage: npx tsx pipeline/scripts/pipeline/app-data/build-route-shapes-from-ksj-railway.ts <source-name>',
+    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts <source-name>',
   );
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data/build-route-shapes-from-ksj-railway.ts --targets <file>',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts --targets <file>',
   );
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data/build-route-shapes-from-ksj-railway.ts --list\n',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts --list\n',
   );
   console.log('Options:');
   console.log('  --targets <file>  Batch build from a target list file (.ts)');
