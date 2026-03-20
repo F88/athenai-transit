@@ -21,7 +21,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
-import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/load-gtfs-sources';
+import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/load-gtfs-sources';
 import {
   determineBatchExitCode,
   formatExitCode,

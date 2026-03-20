@@ -10,10 +10,10 @@
 
 import { join } from 'node:path';
 
-import type { OdptJsonSourceDefinition } from '../types/odpt-json-resource';
-import type { Provider } from '../types/resource-common';
+import type { OdptJsonSourceDefinition } from '../../types/odpt-json-resource';
+import type { Provider } from '../../types/resource-common';
 import { loadAllOdptJsonSources } from './load-odpt-json-sources';
-import { ODPT_JSON_DATA_DIR } from './paths';
+import { ODPT_JSON_DATA_DIR } from '../paths';
 
 // ---------------------------------------------------------------------------
 // Types

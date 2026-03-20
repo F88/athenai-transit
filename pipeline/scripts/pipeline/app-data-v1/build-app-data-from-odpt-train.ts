@@ -64,8 +64,8 @@ import { adjustOdptOvernightTimes } from '../../../src/lib/time-utils';
 import {
   listOdptTrainSourceNames,
   loadOdptTrainSource,
-} from '../../../src/lib/load-odpt-train-sources';
-import type { OdptTrainSource } from '../../../src/lib/load-odpt-train-sources';
+} from '../../../src/lib/resources/load-odpt-train-sources';
+import type { OdptTrainSource } from '../../../src/lib/resources/load-odpt-train-sources';
 import {
   determineBatchExitCode,
   formatBytes,
@@ -86,7 +86,7 @@ import { V1_OUTPUT_DIR } from '../../../src/lib/paths';
 
 const OUTPUT_DIR = V1_OUTPUT_DIR;
 
-// OdptTrainSource discovery functions are in pipeline/src/lib/load-odpt-train-sources.ts
+// OdptTrainSource discovery functions are in pipeline/src/lib/resources/load-odpt-train-sources.ts
 
 // ODPT JSON types — see pipeline/src/types/odpt-train.ts
 

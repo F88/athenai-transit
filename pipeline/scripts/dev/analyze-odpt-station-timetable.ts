@@ -21,7 +21,7 @@ import { runMain } from '../../src/lib/pipeline-utils';
 import {
   listOdptTrainSourceNames as listSourceNames,
   loadOdptTrainSource as loadSource,
-} from '../../src/lib/load-odpt-train-sources';
+} from '../../src/lib/resources/load-odpt-train-sources';
 import {
   analyzeOdptStationTimetable,
   formatOdptAnalysis,

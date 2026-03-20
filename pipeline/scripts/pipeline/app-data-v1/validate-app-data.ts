@@ -31,8 +31,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { loadAllGtfsSources } from '../../../src/lib/load-gtfs-sources';
-import { loadAllOdptJsonSources } from '../../../src/lib/load-odpt-json-sources';
+import { loadAllGtfsSources } from '../../../src/lib/resources/load-gtfs-sources';
+import { loadAllOdptJsonSources } from '../../../src/lib/resources/load-odpt-json-sources';
 import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline-utils';
 
 // ---------------------------------------------------------------------------

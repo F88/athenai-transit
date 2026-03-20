@@ -23,8 +23,8 @@ import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
 import {
   listOdptTrainSourceNames,
   loadOdptTrainSource,
-} from '../../../src/lib/load-odpt-train-sources';
-import type { OdptTrainSource } from '../../../src/lib/load-odpt-train-sources';
+} from '../../../src/lib/resources/load-odpt-train-sources';
+import type { OdptTrainSource } from '../../../src/lib/resources/load-odpt-train-sources';
 import {
   determineBatchExitCode,
   formatExitCode,

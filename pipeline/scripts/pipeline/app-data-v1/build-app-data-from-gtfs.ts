@@ -34,7 +34,7 @@ import type {
   RouteJson,
   TranslationsJson,
 } from '../../../../src/types/data/transit-json';
-import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/load-gtfs-sources';
+import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/load-gtfs-sources';
 import type { Provider } from '../../../src/types/resource-common';
 import {
   determineBatchExitCode,

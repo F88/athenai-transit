@@ -42,7 +42,7 @@ import {
   runBatch,
   runMain,
 } from '../../src/lib/pipeline-utils';
-import { listOdptJsonSourceNames, loadOdptJsonSource } from '../../src/lib/load-odpt-json-sources';
+import { listOdptJsonSourceNames, loadOdptJsonSource } from '../../src/lib/resources/load-odpt-json-sources';
 
 import { ARCHIVES_DIR, ODPT_JSON_DATA_DIR, PIPELINE_ROOT } from '../../src/lib/paths';
 

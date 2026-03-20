@@ -39,7 +39,7 @@ import {
   runBatch,
   runMain,
 } from '../../src/lib/pipeline-utils';
-import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/load-gtfs-sources';
+import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
 
 import { ARCHIVES_DIR, GTFS_DATA_DIR, PIPELINE_ROOT } from '../../src/lib/paths';
 

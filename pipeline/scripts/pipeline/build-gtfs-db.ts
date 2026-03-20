@@ -42,7 +42,7 @@ import {
   runBatch,
   runMain,
 } from '../../src/lib/pipeline-utils';
-import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/load-gtfs-sources';
+import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
 
 // ---------------------------------------------------------------------------
 // Paths

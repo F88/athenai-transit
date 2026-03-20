@@ -20,8 +20,8 @@
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { loadAllGtfsSources } from '../../../src/lib/load-gtfs-sources';
-import { loadAllOdptJsonSources } from '../../../src/lib/load-odpt-json-sources';
+import { loadAllGtfsSources } from '../../../src/lib/resources/load-gtfs-sources';
+import { loadAllOdptJsonSources } from '../../../src/lib/resources/load-odpt-json-sources';
 import {
   determineBatchExitCode,
   formatBytes,

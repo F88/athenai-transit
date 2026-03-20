@@ -20,7 +20,7 @@ import Database from 'better-sqlite3';
 import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
-import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/load-gtfs-sources';
+import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/load-gtfs-sources';
 import {
   determineBatchExitCode,
   formatBytes,

@@ -9,8 +9,8 @@ import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-import type { OdptJsonSourceDefinition } from '../types/odpt-json-resource';
-import { RESOURCES_DIR as BASE_RESOURCES_DIR } from './paths';
+import type { OdptJsonSourceDefinition } from '../../types/odpt-json-resource';
+import { RESOURCES_DIR as BASE_RESOURCES_DIR } from '../paths';
 
 const RESOURCES_DIR = join(BASE_RESOURCES_DIR, 'odpt-json');
 
