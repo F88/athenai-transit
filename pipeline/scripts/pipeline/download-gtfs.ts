@@ -28,7 +28,7 @@ import {
 } from '../../src/lib/download/download-utils';
 import type { ExtractedFileInfo, FeedInfoMeta } from '../../src/lib/download/download-meta';
 import { saveDownloadMeta } from '../../src/lib/download/download-meta';
-import { parseFeedInfoTxt } from '../../src/lib/gtfs-feed-info';
+import { parseFeedInfoTxt } from '../../src/lib/pipeline/gtfs-feed-info';
 import {
   determineBatchExitCode,
   formatExitCode,

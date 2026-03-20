@@ -16,7 +16,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { normalizeStopName } from './lib/normalize-stop-name';
+import { normalizeStopName } from './dev-lib/normalize-stop-name';
 
 // --- Types (matching transit-json.ts) ---
 

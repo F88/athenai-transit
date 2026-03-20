@@ -25,7 +25,7 @@ import {
 import {
   analyzeOdptStationTimetable,
   formatOdptAnalysis,
-} from './lib/odpt-station-timetable-analysis';
+} from './dev-lib/odpt-station-timetable-analysis';
 
 async function analyzeSource(name: string): Promise<void> {
   const source = await loadSource(name);

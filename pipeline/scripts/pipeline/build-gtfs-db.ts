@@ -30,8 +30,8 @@ import {
 import { createInterface } from 'node:readline';
 import { join, resolve } from 'node:path';
 
-import { splitCsvLine } from '../../src/lib/gtfs-csv-parser';
-import { INDEXES, SCHEMA } from '../../src/lib/gtfs-schema';
+import { splitCsvLine } from '../../src/lib/pipeline/gtfs-csv-parser';
+import { INDEXES, SCHEMA } from '../../src/lib/pipeline/gtfs-schema';
 import {
   determineBatchExitCode,
   formatExitCode,

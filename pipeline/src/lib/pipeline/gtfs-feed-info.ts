@@ -8,7 +8,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { FeedInfoMeta } from './download/download-meta';
+import type { FeedInfoMeta } from '../download/download-meta';
 import { splitCsvLine } from './gtfs-csv-parser';
 
 /**

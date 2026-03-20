@@ -34,8 +34,8 @@ import {
   extractDateParam,
   extractUrlBase,
   getDaysUntilExpiry,
-} from '../../src/lib/odpt-resource-warnings';
-import type { Warning, ResourceSnapshot } from '../../src/lib/odpt-resource-warnings';
+} from '../../src/lib/pipeline/odpt-resource-warnings';
+import type { Warning, ResourceSnapshot } from '../../src/lib/pipeline/odpt-resource-warnings';
 
 // ---------------------------------------------------------------------------
 // ODPT Members Portal API types
