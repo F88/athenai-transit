@@ -1,24 +1,23 @@
 #!/usr/bin/env -S npx tsx
 
 /**
- * Generate train route shapes from MLIT National Land Numerical Information.
+ * Build v2 ShapesBundle from MLIT National Land Numerical Information.
  *
  * Reads GeoJSON railway section data and extracts transit line geometries
  * for resources that have `mlitShapeMapping` defined (both GTFS and
- * ODPT JSON sources), converting them into the shapes.json format used
- * by the app.
+ * ODPT JSON sources), converting them into ShapesBundle format.
  *
  * Input:  pipeline/workspace/data/mlit/N02-24_RailroadSection.geojson
- * Output: pipeline/workspace/_build/data/{prefix}/shapes.json (per target)
+ * Output: pipeline/workspace/_build/data-v2/{prefix}/shapes.json (ShapesBundle, per target)
  *
  * Usage:
- *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts <source-name>
- *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts --targets <file>
- *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts --list
+ *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts <source-name>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts --targets <file>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts --list
  */
 
-import { mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   determineBatchExitCode,
@@ -29,17 +28,21 @@ import {
   runBatch,
   runMain,
 } from '../../../src/lib/pipeline/pipeline-utils';
-import { formatBytes } from '../../../src/lib/format-utils';
 import {
   buildShapesForTarget,
   collectAllKsjTargets,
   loadKsjGeoJson,
 } from '../../../src/lib/pipeline/extract-shapes-from-ksj';
 import type { ShapeTarget } from '../../../src/lib/pipeline/extract-shapes-from-ksj';
+import { writeShapesBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
 
-import { V1_OUTPUT_DIR } from '../../../src/lib/paths';
+// ---------------------------------------------------------------------------
+// Paths
+// ---------------------------------------------------------------------------
 
-const BUILD_DATA_DIR = V1_OUTPUT_DIR;
+import { V2_OUTPUT_DIR } from '../../../src/lib/paths';
+
+const OUTPUT_DIR = V2_OUTPUT_DIR;
 
 // ---------------------------------------------------------------------------
 // Per-source processing
@@ -70,14 +73,9 @@ function buildSourceShapes(target: ShapeTarget): void {
     return;
   }
 
-  // Write output
-  const outputDir = join(BUILD_DATA_DIR, target.prefix);
-  mkdirSync(outputDir, { recursive: true });
-
-  const outputPath = join(outputDir, 'shapes.json');
-  writeFileSync(outputPath, JSON.stringify(shapes));
-  const size = statSync(outputPath).size;
-  console.log(`\n  Wrote shapes.json (${formatBytes(size)})`);
+  const outputDir = join(OUTPUT_DIR, target.prefix);
+  writeShapesBundle(outputDir, shapes);
+  console.log(`\n  Written: ${outputDir}/shapes.json`);
 }
 
 // ---------------------------------------------------------------------------
@@ -86,13 +84,13 @@ function buildSourceShapes(target: ShapeTarget): void {
 
 function printUsage(): void {
   console.log(
-    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts <source-name>',
+    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts <source-name>',
   );
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts --targets <file>',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts --targets <file>',
   );
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts --list\n',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts --list\n',
   );
   console.log('Options:');
   console.log('  --targets <file>  Batch build from a target list file (.ts)');
@@ -123,10 +121,8 @@ async function main(): Promise<void> {
 
   if (arg.kind === 'targets') {
     const sourceNames = await loadTargetFile(arg.path);
-    console.log(
-      `=== Batch build-route-shapes-from-ksj-railway (${sourceNames.length} targets) ===\n`,
-    );
-    const scriptPath = resolve(import.meta.dirname, 'build-route-shapes-from-ksj-railway.ts');
+    console.log(`=== Batch build-v2-shapes-from-ksj (${sourceNames.length} targets) ===\n`);
+    const scriptPath = resolve(import.meta.dirname, 'build-shapes-from-ksj.ts');
     const results = runBatch(scriptPath, sourceNames);
     printBatchSummary(results);
     const exitCode = determineBatchExitCode(results);
@@ -152,7 +148,7 @@ async function main(): Promise<void> {
   console.log(`=== ${arg.name} [START] ===\n`);
   console.log(`  Name:   ${target.nameEn}`);
   console.log(`  Prefix: ${target.prefix}`);
-  console.log(`  Output: ${join(BUILD_DATA_DIR, target.prefix)}/`);
+  console.log(`  Output: ${join(OUTPUT_DIR, target.prefix)}/`);
   console.log('');
 
   const t0 = performance.now();
@@ -171,4 +167,9 @@ async function main(): Promise<void> {
   }
 }
 
-runMain(main);
+// Only run main() when executed directly (not when imported by other scripts).
+const isDirectExecution =
+  process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
+  runMain(main);
+}

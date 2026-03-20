@@ -1,8 +1,8 @@
 /**
- * Tests for build-route-shapes-from-gtfs.ts.
+ * Tests for extractShapes function.
  *
- * - extractShapes: uses an in-memory SQLite database
- * - stripShapeDistance: verifies v1 output drops shape_dist_traveled
+ * Uses an in-memory SQLite database populated with minimal GTFS test data
+ * to verify shape extraction produces correct JSON output.
  *
  * @vitest-environment node
  */
@@ -10,8 +10,7 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { extractShapes } from '../../../../src/lib/pipeline/extract-shapes-from-gtfs';
-import { stripShapeDistance } from '../build-route-shapes-from-gtfs';
+import { extractShapes } from '../extract-shapes-from-gtfs';
 
 // ---------------------------------------------------------------------------
 // Test DB setup
@@ -126,76 +125,57 @@ describe('extractShapes', () => {
     const result = extractShapes(db, 'pfx');
     expect(result).toEqual({});
   });
-});
 
-describe('stripShapeDistance', () => {
-  it('removes third element from [lat, lon, dist] tuples', () => {
-    const result = stripShapeDistance({
-      'pfx:R1': [
-        [
-          [35.68, 139.76, 0],
-          [35.69, 139.77, 150.5],
-        ],
-      ],
-    });
+  it('includes shape_dist_traveled as third element when present', () => {
+    db.exec(`
+      INSERT INTO trips (trip_id, route_id, service_id, shape_id)
+      VALUES ('t1', 'R1', 'weekday', 'S1');
 
+      INSERT INTO shapes (shape_id, shape_pt_lat, shape_pt_lon, shape_pt_sequence, shape_dist_traveled)
+      VALUES ('S1', 35.68, 139.76, 1, 0),
+             ('S1', 35.69, 139.77, 2, 150.5),
+             ('S1', 35.70, 139.78, 3, 320.8);
+    `);
+
+    const result = extractShapes(db, 'pfx');
     expect(result['pfx:R1'][0]).toEqual([
-      [35.68, 139.76],
-      [35.69, 139.77],
+      [35.68, 139.76, 0],
+      [35.69, 139.77, 150.5],
+      [35.7, 139.78, 320.8],
     ]);
-    // Verify no third element remains
+  });
+
+  it('omits third element when shape_dist_traveled is NULL', () => {
+    db.exec(`
+      INSERT INTO trips (trip_id, route_id, service_id, shape_id)
+      VALUES ('t1', 'R1', 'weekday', 'S1');
+
+      INSERT INTO shapes (shape_id, shape_pt_lat, shape_pt_lon, shape_pt_sequence, shape_dist_traveled)
+      VALUES ('S1', 35.68, 139.76, 1, NULL);
+    `);
+
+    const result = extractShapes(db, 'pfx');
+    // [lat, lon] only — no third element
+    expect(result['pfx:R1'][0][0]).toEqual([35.68, 139.76]);
     expect(result['pfx:R1'][0][0]).toHaveLength(2);
-    expect(result['pfx:R1'][0][1]).toHaveLength(2);
   });
 
-  it('passes through [lat, lon] tuples unchanged', () => {
-    const result = stripShapeDistance({
-      'pfx:R1': [
-        [
-          [35.68, 139.76],
-          [35.69, 139.77],
-        ],
-      ],
-    });
+  it('handles mix of rows with and without shape_dist_traveled', () => {
+    db.exec(`
+      INSERT INTO trips (trip_id, route_id, service_id, shape_id)
+      VALUES ('t1', 'R1', 'weekday', 'S1');
 
+      INSERT INTO shapes (shape_id, shape_pt_lat, shape_pt_lon, shape_pt_sequence, shape_dist_traveled)
+      VALUES ('S1', 35.68, 139.76, 1, 0),
+             ('S1', 35.69, 139.77, 2, NULL),
+             ('S1', 35.70, 139.78, 3, 300.0);
+    `);
+
+    const result = extractShapes(db, 'pfx');
     expect(result['pfx:R1'][0]).toEqual([
-      [35.68, 139.76],
+      [35.68, 139.76, 0],
       [35.69, 139.77],
+      [35.7, 139.78, 300.0],
     ]);
-  });
-
-  it('handles mixed tuples with and without dist', () => {
-    const result = stripShapeDistance({
-      'pfx:R1': [
-        [
-          [35.68, 139.76, 0],
-          [35.69, 139.77],
-          [35.7, 139.78, 300],
-        ],
-      ],
-    });
-
-    expect(result['pfx:R1'][0]).toEqual([
-      [35.68, 139.76],
-      [35.69, 139.77],
-      [35.7, 139.78],
-    ]);
-  });
-
-  it('returns empty object for empty input', () => {
-    expect(stripShapeDistance({})).toEqual({});
-  });
-
-  it('preserves multiple routes and polylines', () => {
-    const result = stripShapeDistance({
-      'pfx:R1': [[[35.68, 139.76, 0]], [[35.69, 139.77, 100]]],
-      'pfx:R2': [[[36.0, 140.0, 0]]],
-    });
-
-    expect(Object.keys(result)).toHaveLength(2);
-    expect(result['pfx:R1']).toHaveLength(2);
-    expect(result['pfx:R1'][0]).toEqual([[35.68, 139.76]]);
-    expect(result['pfx:R1'][1]).toEqual([[35.69, 139.77]]);
-    expect(result['pfx:R2'][0]).toEqual([[36.0, 140.0]]);
   });
 });

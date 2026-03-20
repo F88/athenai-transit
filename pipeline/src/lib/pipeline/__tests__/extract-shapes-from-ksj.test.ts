@@ -1,5 +1,5 @@
 /**
- * Tests for build-route-shapes-from-ksj-railway.ts buildShapesForTarget function.
+ * Tests for buildShapesForTarget function.
  *
  * Uses in-memory GeoJSON data to verify shape generation from MLIT
  * National Land Numerical Information railway section data.
@@ -9,12 +9,8 @@
 
 import { describe, expect, it, vi } from 'vitest';
 
-import type {
-  GeoJsonCollection,
-  GeoJsonFeature,
-  ShapeTarget,
-} from '../../../../src/lib/pipeline/extract-shapes-from-ksj';
-import { buildShapesForTarget } from '../../../../src/lib/pipeline/extract-shapes-from-ksj';
+import type { GeoJsonCollection, GeoJsonFeature, ShapeTarget } from '../extract-shapes-from-ksj';
+import { buildShapesForTarget } from '../extract-shapes-from-ksj';
 
 // ---------------------------------------------------------------------------
 // Helpers

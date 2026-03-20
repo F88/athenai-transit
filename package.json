@@ -46,6 +46,8 @@
     "pipeline:build:v2-odpt-train": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-from-odpt-train.ts --targets pipeline/config/targets/build-v2-odpt-train-data.ts",
     "pipeline:build:shapes:gtfs": "npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts --targets pipeline/config/targets/build-shapes-gtfs.ts",
     "pipeline:build:shapes:ksj": "npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts --targets pipeline/config/targets/build-shapes-ksj.ts",
+    "pipeline:build:v2-shapes:gtfs": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts --targets pipeline/config/targets/build-shapes-gtfs.ts",
+    "pipeline:build:v2-shapes:ksj": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts --targets pipeline/config/targets/build-shapes-ksj.ts",
     "pipeline:validate": "npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts --targets pipeline/config/targets/validate.ts",
     "pipeline:analyze:gtfs-stop-times": "npx tsx pipeline/scripts/dev/analyze-gtfs-stop-times.ts",
     "pipeline:analyze:odpt-station-timetable": "npx tsx pipeline/scripts/dev/analyze-odpt-station-timetable.ts",
