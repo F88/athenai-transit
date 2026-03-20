@@ -103,9 +103,8 @@ export function buildCalendarV2(
     e: endDate,
   }));
 
-  // Holiday exceptions cover calendar validity + 1 year extra buffer,
-  // so they remain available if the calendar validity period is later
-  // extended (e.g. when dct:valid becomes available from the source).
+  // Holiday exceptions are generated for the same validity period as
+  // the calendar services. See computeHolidayEndDate for details.
   const holidayEndDate = computeHolidayEndDate(endDate);
   const exceptions = buildHolidayExceptions(prefix, calendarTypes, startDate, holidayEndDate);
 

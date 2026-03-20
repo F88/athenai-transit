@@ -290,8 +290,8 @@ export function buildCalendar(
     e: endDate,
   }));
 
-  // Holiday exceptions cover calendar validity + 1 year buffer
-  // (see buildCalendarV2 / computeHolidayEndDate for rationale).
+  // Generate holiday exceptions for the calendar validity period
+  // (see v2 computeHolidayEndDate for rationale).
   const holidayEndDate = computeHolidayEndDate(endDate);
   const exceptions = buildHolidayExceptions(prefix, calendarTypes, startDate, holidayEndDate);
 
