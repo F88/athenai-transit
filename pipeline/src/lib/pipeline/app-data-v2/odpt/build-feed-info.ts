@@ -3,8 +3,8 @@
  */
 
 import type { FeedInfoJson } from '../../../../../../src/types/data/transit-json';
-import type { Provider } from '../../../../../src/types/resource-common';
-import { computeDateRange } from '../../../../../src/lib/odpt-calendar-utils';
+import type { Provider } from '../../../../types/resource-common';
+import { computeDateRange } from '../../../odpt-calendar-utils';
 
 /**
  * Build FeedInfoJson from ODPT issued date and provider.

@@ -17,13 +17,13 @@ import type {
   OdptStationTimetable,
 } from '../../../../src/types/odpt-train';
 import type { Provider } from '../../../../src/types/resource-common';
-import { buildAgencyV2 } from '../lib/odpt/build-agency';
-import { buildCalendarV2 } from '../lib/odpt/build-calendar';
-import { buildFeedInfoV2 } from '../lib/odpt/build-feed-info';
-import { buildRoutesV2 } from '../lib/odpt/build-routes';
-import { buildStopsV2 } from '../lib/odpt/build-stops';
-import { buildTripPatternsAndTimetableFromOdpt } from '../lib/odpt/build-timetable';
-import { buildTranslationsV2 } from '../lib/odpt/build-translations';
+import { buildAgencyV2 } from '../../../../src/lib/pipeline/app-data-v2/odpt/build-agency';
+import { buildCalendarV2 } from '../../../../src/lib/pipeline/app-data-v2/odpt/build-calendar';
+import { buildFeedInfoV2 } from '../../../../src/lib/pipeline/app-data-v2/odpt/build-feed-info';
+import { buildRoutesV2 } from '../../../../src/lib/pipeline/app-data-v2/odpt/build-routes';
+import { buildStopsV2 } from '../../../../src/lib/pipeline/app-data-v2/odpt/build-stops';
+import { buildTripPatternsAndTimetableFromOdpt } from '../../../../src/lib/pipeline/app-data-v2/odpt/build-timetable';
+import { buildTranslationsV2 } from '../../../../src/lib/pipeline/app-data-v2/odpt/build-translations';
 
 const TEST_PROVIDER: Provider = {
   name: {

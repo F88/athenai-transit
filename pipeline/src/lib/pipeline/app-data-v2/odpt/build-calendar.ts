@@ -7,13 +7,13 @@
  */
 
 import type { CalendarJson } from '../../../../../../src/types/data/transit-json';
-import type { OdptStationTimetable } from '../../../../../src/types/odpt-train';
+import type { OdptStationTimetable } from '../../../../types/odpt-train';
 import {
   buildHolidayExceptions,
   calendarToServiceId,
   computeDateRange,
   computeHolidayEndDate,
-} from '../../../../../src/lib/odpt-calendar-utils';
+} from '../../../odpt-calendar-utils';
 
 /**
  * Build CalendarJson from ODPT timetable data.

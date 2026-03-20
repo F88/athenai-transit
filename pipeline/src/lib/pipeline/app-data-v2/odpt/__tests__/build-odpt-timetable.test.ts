@@ -10,7 +10,7 @@ import type {
   OdptRailway,
   OdptStationOrder,
   OdptStationTimetable,
-} from '../../../../../../src/types/odpt-train';
+} from '../../../../../types/odpt-train';
 import {
   buildTripPatternsAndTimetableFromOdpt,
   getHeadsignFromDestination,

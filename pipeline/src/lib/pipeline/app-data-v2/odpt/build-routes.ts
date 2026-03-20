@@ -3,8 +3,8 @@
  */
 
 import type { RouteV2Json } from '../../../../../../src/types/data/transit-v2-json';
-import type { OdptRailway } from '../../../../../src/types/odpt-train';
-import type { Provider } from '../../../../../src/types/resource-common';
+import type { OdptRailway } from '../../../../types/odpt-train';
+import type { Provider } from '../../../../types/resource-common';
 
 /**
  * Build RouteV2Json[] from a single ODPT railway.

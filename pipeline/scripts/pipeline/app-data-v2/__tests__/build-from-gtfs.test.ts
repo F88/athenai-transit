@@ -14,15 +14,15 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
 import type { Provider } from '../../../../src/types/resource-common';
-import { writeDataBundle } from '../lib/bundle-writer';
-import { extractAgenciesV2 } from '../lib/gtfs/extract-agencies';
-import { extractCalendarV2 } from '../lib/gtfs/extract-calendar';
-import { extractFeedInfoV2 } from '../lib/gtfs/extract-feed-info';
-import { extractLookupV2 } from '../lib/gtfs/extract-lookup';
-import { extractRoutesV2 } from '../lib/gtfs/extract-routes';
-import { extractStopsV2 } from '../lib/gtfs/extract-stops';
-import { extractTripPatternsAndTimetable } from '../lib/gtfs/extract-timetable';
-import { extractTranslationsV2 } from '../lib/gtfs/extract-translations';
+import { writeDataBundle } from '../../../../src/lib/pipeline/app-data-v2/bundle-writer';
+import { extractAgenciesV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-agencies';
+import { extractCalendarV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-calendar';
+import { extractFeedInfoV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-feed-info';
+import { extractLookupV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-lookup';
+import { extractRoutesV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-routes';
+import { extractStopsV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-stops';
+import { extractTripPatternsAndTimetable } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-timetable';
+import { extractTranslationsV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-translations';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-build-gtfs-test');
 const TEST_PROVIDER: Provider = {

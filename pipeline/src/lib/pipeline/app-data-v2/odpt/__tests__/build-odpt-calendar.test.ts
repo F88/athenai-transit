@@ -6,14 +6,14 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { OdptStationTimetable } from '../../../../../../src/types/odpt-train';
+import type { OdptStationTimetable } from '../../../../../types/odpt-train';
 import { buildCalendarV2 } from '../build-calendar';
 import {
   buildHolidayExceptions,
   calendarToServiceId,
   computeDateRange,
   computeHolidayEndDate,
-} from '../../../../../../src/lib/odpt-calendar-utils';
+} from '../../../../odpt-calendar-utils';
 
 describe('calendarToServiceId', () => {
   it('converts Weekday to lowercase', () => {

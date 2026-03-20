@@ -7,7 +7,7 @@
 import type Database from 'better-sqlite3';
 
 import type { AgencyJson } from '../../../../../../src/types/data/transit-json';
-import type { Provider } from '../../../../../src/types/resource-common';
+import type { Provider } from '../../../../types/resource-common';
 
 /**
  * Extract all agencies from the GTFS database.

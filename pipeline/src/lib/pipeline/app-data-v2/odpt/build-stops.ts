@@ -3,7 +3,7 @@
  */
 
 import type { StopV2Json } from '../../../../../../src/types/data/transit-v2-json';
-import type { OdptStation, OdptStationOrder } from '../../../../../src/types/odpt-train';
+import type { OdptStation, OdptStationOrder } from '../../../../types/odpt-train';
 
 /**
  * Extract short station name from ODPT station ID.
