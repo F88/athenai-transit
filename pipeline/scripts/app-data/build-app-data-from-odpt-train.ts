@@ -56,6 +56,10 @@ import type {
   OdptStationOrder,
   OdptStationTimetable,
 } from '../../types/odpt-train';
+import {
+  buildHolidayExceptions,
+  computeHolidayEndDate,
+} from '../app-data-v2/lib/odpt/build-calendar';
 import { adjustOdptOvernightTimes } from '../app-data-v2/lib/time-utils';
 import { listOdptTrainSourceNames, loadOdptTrainSource } from '../../lib/load-odpt-train-sources';
 import type { OdptTrainSource } from '../../lib/load-odpt-train-sources';
@@ -174,16 +178,18 @@ export function getHeadsignFromDestination(
 
 /**
  * Compute start/end dates from an issued date string.
- * end = issued + 1 year.
+ * end = issued + 2 years.
+ *
+ * See v2 `computeDateRange` TSDoc for rationale on the 2-year period.
  */
 export function computeDateRange(issuedDate: string): { startDate: string; endDate: string } {
   const startDate = issuedDate.replace(/-/g, '');
   const [y, m, d] = issuedDate.split('-').map(Number);
-  // Add 1 year. If the resulting date doesn't exist (e.g. Feb 29 in
+  // Add 2 years. If the resulting date doesn't exist (e.g. Feb 29 in
   // a non-leap year), Date rolls forward to Mar 1. Detect this by
   // checking if the month changed, and clamp to the last day of the
   // intended month.
-  const end = new Date(y + 1, m - 1, d);
+  const end = new Date(y + 2, m - 1, d);
   if (end.getMonth() !== m - 1) {
     // Rolled over — set to last day of the intended month
     end.setDate(0); // day 0 = last day of previous month
@@ -284,7 +290,12 @@ export function buildCalendar(
     e: endDate,
   }));
 
-  return { services, exceptions: [] };
+  // Generate holiday exceptions for the calendar validity period
+  // (see v2 computeHolidayEndDate for rationale).
+  const holidayEndDate = computeHolidayEndDate(endDate);
+  const exceptions = buildHolidayExceptions(prefix, calendarTypes, startDate, holidayEndDate);
+
+  return { services, exceptions };
 }
 
 export function buildTimetable(
