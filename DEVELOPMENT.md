@@ -5,7 +5,7 @@
 ### テスト
 
 - 全ての `src/utils/`、`src/domain/` 関数にはテストコード必須
-- `pipeline/lib/`、`pipeline/scripts/` の関数にもテスト必須
+- `pipeline/src/lib/`、`pipeline/scripts/` の関数にもテスト必須
 - エッジケースを含め品質を保証するテストとすること
 - テストはタイムゾーンに依存しないこと (相対比較やエポックミリ秒を使用)
 

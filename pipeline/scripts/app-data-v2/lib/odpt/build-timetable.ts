@@ -17,7 +17,7 @@ import type {
   OdptRailway,
   OdptStationOrder,
   OdptStationTimetable,
-} from '../../../../types/odpt-train';
+} from '../../../../src/types/odpt-train';
 import { adjustOdptOvernightTimes, timeToMinutes } from '../time-utils';
 import { calendarToServiceId } from './build-calendar';
 import { extractStationShortId } from './build-stops';

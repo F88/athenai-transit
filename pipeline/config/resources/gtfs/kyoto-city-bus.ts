@@ -1,4 +1,4 @@
-import type { GtfsSourceDefinition } from '../../types/gtfs-resource';
+import type { GtfsSourceDefinition } from '../../../src/types/gtfs-resource';
 
 const kyotoCityBus: GtfsSourceDefinition = {
   resource: {

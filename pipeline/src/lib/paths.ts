@@ -12,7 +12,7 @@ import { join, resolve } from 'node:path';
 // ---------------------------------------------------------------------------
 
 /** Pipeline root directory (`pipeline/`). */
-export const PIPELINE_ROOT = resolve(import.meta.dirname, '..');
+export const PIPELINE_ROOT = resolve(import.meta.dirname, '../..');
 
 // ---------------------------------------------------------------------------
 // Config directories (source definitions, batch targets)

@@ -20,7 +20,7 @@ import Database from 'better-sqlite3';
 import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
-import { listGtfsSourceNames, loadGtfsSource } from '../../lib/load-gtfs-sources';
+import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/load-gtfs-sources';
 import {
   determineBatchExitCode,
   formatBytes,
@@ -30,13 +30,13 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../lib/pipeline-utils';
+} from '../../src/lib/pipeline-utils';
 
 // ---------------------------------------------------------------------------
 // Paths
 // ---------------------------------------------------------------------------
 
-import { DB_DIR, V1_OUTPUT_DIR } from '../../lib/paths';
+import { DB_DIR, V1_OUTPUT_DIR } from '../../src/lib/paths';
 
 const OUTPUT_DIR = V1_OUTPUT_DIR;
 

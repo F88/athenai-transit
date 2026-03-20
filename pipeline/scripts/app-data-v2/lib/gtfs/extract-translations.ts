@@ -8,7 +8,7 @@
 import type Database from 'better-sqlite3';
 
 import type { TranslationsJson } from '../../../../../src/types/data/transit-json';
-import type { Provider } from '../../../../types/resource-common';
+import type { Provider } from '../../../../src/types/resource-common';
 
 // ---------------------------------------------------------------------------
 // Helpers

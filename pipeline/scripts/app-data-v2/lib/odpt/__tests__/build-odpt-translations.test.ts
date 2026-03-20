@@ -11,8 +11,8 @@ import type {
   OdptStation,
   OdptStationOrder,
   OdptStationTimetable,
-} from '../../../../../types/odpt-train';
-import type { Provider } from '../../../../../types/resource-common';
+} from '../../../../../src/types/odpt-train';
+import type { Provider } from '../../../../../src/types/resource-common';
 import { buildTranslationsV2 } from '../build-translations';
 
 const TEST_PROVIDER: Provider = {

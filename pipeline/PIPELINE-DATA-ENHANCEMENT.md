@@ -493,9 +493,9 @@ In-memory domain objects (Stop, Route, Agency, FeedInfo, ...)
 
 ### リソース定義
 
-- `pipeline/types/resource-common.ts` — 共通型 (PipelineConfig, Provider, License, Catalog, Authentication)
-- `pipeline/types/gtfs-resource.ts` — GTFS Static 型 (GtfsSourceDefinition, DataFormat, GtfsRouteType)
-- `pipeline/types/odpt-json-resource.ts` — ODPT JSON API 型 (OdptJsonSourceDefinition, OdptDataType)
+- `pipeline/src/types/resource-common.ts` — 共通型 (PipelineConfig, Provider, License, Catalog, Authentication)
+- `pipeline/src/types/gtfs-resource.ts` — GTFS Static 型 (GtfsSourceDefinition, DataFormat, GtfsRouteType)
+- `pipeline/src/types/odpt-json-resource.ts` — ODPT JSON API 型 (OdptJsonSourceDefinition, OdptDataType)
 - `pipeline/config/resources/gtfs/` — GTFS リソース定義 (toei-bus, toei-train, suginami-gsm)
 - `pipeline/config/resources/odpt-json/` — ODPT JSON リソース定義 (yurikamome-station, railway, station-timetable)
 

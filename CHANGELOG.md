@@ -28,10 +28,11 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
-- pipeline/ ディレクトリ再構成 (#39, #40):
-    - I/O データを `workspace/` に集約 (data/, state/, _build/, _archives/)
+- pipeline/ ディレクトリ再構成 (#39, #40, #41):
+    - I/O データを `workspace/` に集約 (data/, state/, \_build/, \_archives/)
     - ソース定義とバッチ対象を `config/` に集約 (resources/, targets/)
-    - `pipeline/lib/paths.ts` にパス定数を一元管理
+    - 内部コード (lib/, types/) を `src/` に集約。entry point (scripts/) は直下に維持
+    - `pipeline/src/lib/paths.ts` にパス定数を一元管理
     - `_` prefix で git 管理外ディレクトリを視覚的に分離
 
 ## [2026.03.18]

@@ -15,8 +15,8 @@ import type {
   OdptStation,
   OdptStationOrder,
   OdptStationTimetable,
-} from '../../../types/odpt-train';
-import type { Provider } from '../../../types/resource-common';
+} from '../../../src/types/odpt-train';
+import type { Provider } from '../../../src/types/resource-common';
 import { buildAgencyV2 } from '../lib/odpt/build-agency';
 import { buildCalendarV2 } from '../lib/odpt/build-calendar';
 import { buildFeedInfoV2 } from '../lib/odpt/build-feed-info';

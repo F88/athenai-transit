@@ -21,7 +21,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { DataBundle } from '../../../src/types/data/transit-v2-json';
-import { listGtfsSourceNames, loadGtfsSource } from '../../lib/load-gtfs-sources';
+import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/load-gtfs-sources';
 import {
   determineBatchExitCode,
   formatExitCode,
@@ -30,8 +30,8 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../lib/pipeline-utils';
-import type { Provider } from '../../types/resource-common';
+} from '../../src/lib/pipeline-utils';
+import type { Provider } from '../../src/types/resource-common';
 import { writeDataBundle } from './lib/bundle-writer';
 import { extractAgenciesV2 } from './lib/gtfs/extract-agencies';
 import { extractCalendarV2 } from './lib/gtfs/extract-calendar';
@@ -46,7 +46,7 @@ import { extractTranslationsV2 } from './lib/gtfs/extract-translations';
 // Paths
 // ---------------------------------------------------------------------------
 
-import { DB_DIR, V2_OUTPUT_DIR } from '../../lib/paths';
+import { DB_DIR, V2_OUTPUT_DIR } from '../../src/lib/paths';
 
 const OUTPUT_DIR = V2_OUTPUT_DIR;
 

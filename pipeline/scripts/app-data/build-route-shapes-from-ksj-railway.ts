@@ -20,8 +20,8 @@
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { loadAllGtfsSources } from '../../lib/load-gtfs-sources';
-import { loadAllOdptJsonSources } from '../../lib/load-odpt-json-sources';
+import { loadAllGtfsSources } from '../../src/lib/load-gtfs-sources';
+import { loadAllOdptJsonSources } from '../../src/lib/load-odpt-json-sources';
 import {
   determineBatchExitCode,
   formatBytes,
@@ -31,10 +31,10 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../lib/pipeline-utils';
-import type { MlitShapeMapping } from '../../types/resource-common';
+} from '../../src/lib/pipeline-utils';
+import type { MlitShapeMapping } from '../../src/types/resource-common';
 
-import { MLIT_GEOJSON_PATH, V1_OUTPUT_DIR } from '../../lib/paths';
+import { MLIT_GEOJSON_PATH, V1_OUTPUT_DIR } from '../../src/lib/paths';
 
 const GEOJSON_PATH = MLIT_GEOJSON_PATH;
 const BUILD_DATA_DIR = V1_OUTPUT_DIR;

@@ -4,11 +4,11 @@
 
 ## 概要
 
-| 項目   | 内容                                                                  |
-| ------ | --------------------------------------------------------------------- |
-| 入力   | `pipeline/workspace/data/mlit/N02-24_RailroadSection.geojson`                   |
-| 出力   | `pipeline/workspace/_build/data/{prefix}/shapes.json` (対象ソースごと)           |
-| ソース | GTFS / ODPT JSON リソース定義のうち `mlitShapeMapping` を持つもの全て |
+| 項目   | 内容                                                                   |
+| ------ | ---------------------------------------------------------------------- |
+| 入力   | `pipeline/workspace/data/mlit/N02-24_RailroadSection.geojson`          |
+| 出力   | `pipeline/workspace/_build/data/{prefix}/shapes.json` (対象ソースごと) |
+| ソース | GTFS / ODPT JSON リソース定義のうち `mlitShapeMapping` を持つもの全て  |
 
 GTFS の `shapes.txt` が提供されていない路線や ODPT JSON ソースに対して、MLIT GeoJSON データから路線形状を生成する。
 

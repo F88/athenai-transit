@@ -6,8 +6,8 @@
 
 `build-app-data-from-gtfs.ts` は `build-gtfs-db.ts` が生成した SQLite DB (`pipeline/workspace/_build/db/{outDir}.db`) を読み込み、ソースごとに8つの JSON ファイルを出力する。ID フィールドにはソースプレフィックスが付与される (例: `minkuru:0001-01`)。
 
-| スクリプト                    | 入力                         | 出力                                  |
-| ----------------------------- | ---------------------------- | ------------------------------------- |
+| スクリプト                    | 入力                                       | 出力                                             |
+| ----------------------------- | ------------------------------------------ | ------------------------------------------------ |
 | `build-app-data-from-gtfs.ts` | `pipeline/workspace/_build/db/{outDir}.db` | `pipeline/workspace/_build/data/{prefix}/*.json` |
 
 ## CLI インターフェース

@@ -17,11 +17,11 @@ import Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { listGtfsSourceNames, loadGtfsSource } from '../../lib/load-gtfs-sources';
-import { runMain } from '../../lib/pipeline-utils';
+import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/load-gtfs-sources';
+import { runMain } from '../../src/lib/pipeline-utils';
 import { analyzeStopTimes, formatAnalysis } from './lib/gtfs-stop-times-analysis';
 
-import { DB_DIR } from '../../lib/paths';
+import { DB_DIR } from '../../src/lib/paths';
 
 async function analyzeSource(name: string): Promise<void> {
   const source = await loadGtfsSource(name);

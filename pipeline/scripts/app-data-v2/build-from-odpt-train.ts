@@ -20,8 +20,11 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { DataBundle } from '../../../src/types/data/transit-v2-json';
-import { listOdptTrainSourceNames, loadOdptTrainSource } from '../../lib/load-odpt-train-sources';
-import type { OdptTrainSource } from '../../lib/load-odpt-train-sources';
+import {
+  listOdptTrainSourceNames,
+  loadOdptTrainSource,
+} from '../../src/lib/load-odpt-train-sources';
+import type { OdptTrainSource } from '../../src/lib/load-odpt-train-sources';
 import {
   determineBatchExitCode,
   formatExitCode,
@@ -30,8 +33,8 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../lib/pipeline-utils';
-import type { OdptRailway, OdptStation, OdptStationTimetable } from '../../types/odpt-train';
+} from '../../src/lib/pipeline-utils';
+import type { OdptRailway, OdptStation, OdptStationTimetable } from '../../src/types/odpt-train';
 import { writeDataBundle } from './lib/bundle-writer';
 import { buildAgencyV2 } from './lib/odpt/build-agency';
 import { buildCalendarV2 } from './lib/odpt/build-calendar';
@@ -45,7 +48,7 @@ import { buildTranslationsV2 } from './lib/odpt/build-translations';
 // Paths
 // ---------------------------------------------------------------------------
 
-import { V2_OUTPUT_DIR } from '../../lib/paths';
+import { V2_OUTPUT_DIR } from '../../src/lib/paths';
 
 const OUTPUT_DIR = V2_OUTPUT_DIR;
 

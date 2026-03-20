@@ -55,14 +55,17 @@ import type {
   OdptStation,
   OdptStationOrder,
   OdptStationTimetable,
-} from '../../types/odpt-train';
+} from '../../src/types/odpt-train';
 import {
   buildHolidayExceptions,
   computeHolidayEndDate,
 } from '../app-data-v2/lib/odpt/build-calendar';
 import { adjustOdptOvernightTimes } from '../app-data-v2/lib/time-utils';
-import { listOdptTrainSourceNames, loadOdptTrainSource } from '../../lib/load-odpt-train-sources';
-import type { OdptTrainSource } from '../../lib/load-odpt-train-sources';
+import {
+  listOdptTrainSourceNames,
+  loadOdptTrainSource,
+} from '../../src/lib/load-odpt-train-sources';
+import type { OdptTrainSource } from '../../src/lib/load-odpt-train-sources';
 import {
   determineBatchExitCode,
   formatBytes,
@@ -72,24 +75,20 @@ import {
   printBatchSummary,
   runBatch,
   runMain,
-} from '../../lib/pipeline-utils';
-import type { Provider } from '../../types/resource-common';
+} from '../../src/lib/pipeline-utils';
+import type { Provider } from '../../src/types/resource-common';
 
 // ---------------------------------------------------------------------------
 // Paths
 // ---------------------------------------------------------------------------
 
-import { V1_OUTPUT_DIR } from '../../lib/paths';
+import { V1_OUTPUT_DIR } from '../../src/lib/paths';
 
 const OUTPUT_DIR = V1_OUTPUT_DIR;
 
-// OdptTrainSource discovery functions are in pipeline/lib/load-odpt-train-sources.ts
-// Re-export for backward compatibility with tests and other scripts (e.g. analyze-odpt-station-timetable.ts)
-export { listOdptTrainSourceNames as listSourceNames } from '../../lib/load-odpt-train-sources';
-export { loadOdptTrainSource as loadSource } from '../../lib/load-odpt-train-sources';
-export type { OdptTrainSource } from '../../lib/load-odpt-train-sources';
+// OdptTrainSource discovery functions are in pipeline/src/lib/load-odpt-train-sources.ts
 
-// ODPT JSON types — see pipeline/types/odpt-train.ts
+// ODPT JSON types — see pipeline/src/types/odpt-train.ts
 
 // ---------------------------------------------------------------------------
 // Helpers

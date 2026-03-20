@@ -6,8 +6,8 @@
 
 ダウンローダーはデータフォーマットごとに独立したスクリプトとして実装されている。
 
-| スクリプト              | 対象      | 入力                                | 出力                       |
-| ----------------------- | --------- | ----------------------------------- | -------------------------- |
+| スクリプト              | 対象      | 入力                                       | 出力                                 |
+| ----------------------- | --------- | ------------------------------------------ | ------------------------------------ |
 | `download-gtfs.ts`      | GTFS ZIP  | `pipeline/config/resources/gtfs/*.ts`      | `pipeline/workspace/data/gtfs/`      |
 | `download-odpt-json.ts` | ODPT JSON | `pipeline/config/resources/odpt-json/*.ts` | `pipeline/workspace/data/odpt-json/` |
 
@@ -208,7 +208,7 @@ pipeline/workspace/_archives/
 
 ダウンローダーが使用するユーティリティは2つのモジュールに分かれている。
 
-### `pipeline/lib/download-utils.ts`
+### `pipeline/src/lib/download-utils.ts`
 
 ダウンロード固有のユーティリティ。
 
@@ -222,17 +222,17 @@ pipeline/workspace/_archives/
 | `FETCH_TIMEOUT_MS`  | タイムアウト定数 (60秒)                 |
 | `MAX_RETRIES`       | リトライ回数定数 (3回)                  |
 
-### `pipeline/lib/download-meta.ts`
+### `pipeline/src/lib/download-meta.ts`
 
 ダウンロードジョブの結果を `pipeline/workspace/state/download-meta/{source-name}.json` に記録する。成功時はファイルサイズ、Content-Type、展開ファイル一覧、feed_info 情報を含む。エラー時はエラーメッセージを記録する。
 
 記録されたメタデータは `check-odpt-resources.ts` がリモートリソースとの比較に使用する。
 
-### `pipeline/lib/gtfs-feed-info.ts`
+### `pipeline/src/lib/gtfs-feed-info.ts`
 
 GTFS の展開済み `feed_info.txt` をパースして構造化データに変換する。`download-meta.ts` がダウンロード後の記録に使用する。
 
-### `pipeline/lib/pipeline-utils.ts`
+### `pipeline/src/lib/pipeline-utils.ts`
 
 全パイプラインスクリプト共通のユーティリティ。
 

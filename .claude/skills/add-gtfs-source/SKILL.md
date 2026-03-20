@@ -36,7 +36,7 @@ CKAN base URL: `https://ckan.odpt.org/dataset/`
 
 Create `pipeline/config/resources/gtfs/{source-name}.ts` following the `GtfsSourceDefinition` type.
 
-Reference file for the type: `pipeline/types/gtfs-resource.ts`
+Reference file for the type: `pipeline/src/types/gtfs-resource.ts`
 
 Key fields to set:
 
@@ -59,8 +59,8 @@ Example: `pipeline/config/resources/gtfs/kanto-bus.ts`
 
 Add the source-name to all three target list files (and `build-shapes-gtfs.ts` if shapes.txt is present):
 
-| File                                    | Purpose             | Always                    |
-| --------------------------------------- | ------------------- | ------------------------- |
+| File                                           | Purpose             | Always                    |
+| ---------------------------------------------- | ------------------- | ------------------------- |
 | `pipeline/config/targets/download-gtfs.ts`     | GTFS ZIP download   | yes                       |
 | `pipeline/config/targets/build-db.ts`          | CSV to SQLite       | yes                       |
 | `pipeline/config/targets/build-json.ts`        | DB to app JSON      | yes                       |

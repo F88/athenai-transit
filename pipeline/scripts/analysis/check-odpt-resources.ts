@@ -24,18 +24,18 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { listGtfsSourceNames, loadGtfsSource } from '../../lib/load-gtfs-sources';
-import { loadDownloadMeta } from '../../lib/download-meta';
-import type { DownloadMeta, DownloadMetaSuccess } from '../../lib/download-meta';
-import { ensureDir } from '../../lib/pipeline-utils';
+import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/load-gtfs-sources';
+import { loadDownloadMeta } from '../../src/lib/download-meta';
+import type { DownloadMeta, DownloadMetaSuccess } from '../../src/lib/download-meta';
+import { ensureDir } from '../../src/lib/pipeline-utils';
 import {
   detectWarnings,
   EXPIRING_SOON_DAYS,
   extractDateParam,
   extractUrlBase,
   getDaysUntilExpiry,
-} from '../../lib/check-warnings';
-import type { Warning, ResourceSnapshot } from '../../lib/check-warnings';
+} from '../../src/lib/check-warnings';
+import type { Warning, ResourceSnapshot } from '../../src/lib/check-warnings';
 
 // ---------------------------------------------------------------------------
 // ODPT Members Portal API types
@@ -99,7 +99,7 @@ function findLatestResource(resources: OdptDataResource[]): OdptDataResource | n
 // Check result snapshot (for diff detection)
 // ---------------------------------------------------------------------------
 
-import { STATE_DIR } from '../../lib/paths';
+import { STATE_DIR } from '../../src/lib/paths';
 
 const SNAPSHOT_DIR = join(STATE_DIR, 'check-result');
 
