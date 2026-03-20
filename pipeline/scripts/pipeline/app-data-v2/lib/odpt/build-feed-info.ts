@@ -4,7 +4,7 @@
 
 import type { FeedInfoJson } from '../../../../../../src/types/data/transit-json';
 import type { Provider } from '../../../../../src/types/resource-common';
-import { computeDateRange } from './build-calendar';
+import { computeDateRange } from '../../../../../src/lib/odpt-calendar-utils';
 
 /**
  * Build FeedInfoJson from ODPT issued date and provider.

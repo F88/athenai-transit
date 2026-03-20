@@ -59,8 +59,8 @@ import type {
 import {
   buildHolidayExceptions,
   computeHolidayEndDate,
-} from '../app-data-v2/lib/odpt/build-calendar';
-import { adjustOdptOvernightTimes } from '../app-data-v2/lib/time-utils';
+} from '../../../src/lib/odpt-calendar-utils';
+import { adjustOdptOvernightTimes } from '../../../src/lib/time-utils';
 import {
   listOdptTrainSourceNames,
   loadOdptTrainSource,

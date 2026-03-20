@@ -7,13 +7,13 @@
 import { describe, expect, it } from 'vitest';
 
 import type { OdptStationTimetable } from '../../../../../../src/types/odpt-train';
+import { buildCalendarV2 } from '../build-calendar';
 import {
-  buildCalendarV2,
   buildHolidayExceptions,
   calendarToServiceId,
   computeDateRange,
   computeHolidayEndDate,
-} from '../build-calendar';
+} from '../../../../../../src/lib/odpt-calendar-utils';
 
 describe('calendarToServiceId', () => {
   it('converts Weekday to lowercase', () => {

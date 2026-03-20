@@ -18,8 +18,8 @@ import type {
   OdptStationOrder,
   OdptStationTimetable,
 } from '../../../../../src/types/odpt-train';
-import { adjustOdptOvernightTimes, timeToMinutes } from '../time-utils';
-import { calendarToServiceId } from './build-calendar';
+import { adjustOdptOvernightTimes, timeToMinutes } from '../../../../../src/lib/time-utils';
+import { calendarToServiceId } from '../../../../../src/lib/odpt-calendar-utils';
 import { extractStationShortId } from './build-stops';
 
 // ---------------------------------------------------------------------------
