@@ -48,10 +48,10 @@ import { listGtfsSourceNames, loadGtfsSource } from '../lib/load-gtfs-sources';
 // Paths
 // ---------------------------------------------------------------------------
 
-import { BUILD_DIR, GTFS_DATA_DIR } from '../lib/paths';
+import { DB_DIR, GTFS_DATA_DIR } from '../lib/paths';
 
 const GTFS_BASE_DIR = GTFS_DATA_DIR;
-const OUTPUT_DIR = BUILD_DIR;
+const OUTPUT_DIR = DB_DIR;
 
 // ---------------------------------------------------------------------------
 // Constants
