@@ -45,3 +45,6 @@ export const GTFS_DATA_DIR = join(DATA_DIR, 'gtfs');
 
 /** ODPT JSON source data directory. */
 export const ODPT_JSON_DATA_DIR = join(DATA_DIR, 'odpt-json');
+
+/** MLIT GeoJSON file (KSJ railway section data). */
+export const MLIT_GEOJSON_PATH = join(DATA_DIR, 'mlit/N02-24_RailroadSection.geojson');
