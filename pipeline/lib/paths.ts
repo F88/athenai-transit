@@ -21,7 +21,7 @@ export const PIPELINE_ROOT = resolve(import.meta.dirname, '..');
 /** Config root — resource definitions and batch target lists. */
 export const CONFIG_DIR = join(PIPELINE_ROOT, 'config');
 
-/** GTFS resource definitions (`config/resources/gtfs/*.ts`). */
+/** Resource definitions (`config/resources/{gtfs,odpt-json}/*.ts`). */
 export const RESOURCES_DIR = join(CONFIG_DIR, 'resources');
 
 /** Batch target lists (`config/targets/*.ts`). */
