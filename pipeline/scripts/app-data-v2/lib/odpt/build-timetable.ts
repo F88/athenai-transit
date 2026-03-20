@@ -18,7 +18,7 @@ import type {
   OdptStationOrder,
   OdptStationTimetable,
 } from '../../../../types/odpt-train';
-import { timeToMinutes } from '../time-utils';
+import { adjustOdptOvernightTimes, timeToMinutes } from '../time-utils';
 import { calendarToServiceId } from './build-calendar';
 import { extractStationShortId } from './build-stops';
 
@@ -260,7 +260,17 @@ export function buildTripPatternsAndTimetableFromOdpt(
     const stopId = `${prefix}:${extractStationShortId(tt['odpt:station'])}`;
     const serviceId = `${prefix}:${calendarToServiceId(tt['odpt:calendar'])}`;
 
-    for (const obj of tt['odpt:stationTimetableObject']) {
+    // Pre-convert overnight times: ODPT uses 00:xx for post-midnight,
+    // but our data model uses 24:xx (same as GTFS convention).
+    // See ODPT API Spec v4.15 Section 3.3.6.
+    const objects = tt['odpt:stationTimetableObject'];
+    const rawTimes = objects.map(
+      (obj) => obj['odpt:departureTime'] ?? obj['odpt:arrivalTime'] ?? '',
+    );
+    const adjustedTimes = adjustOdptOvernightTimes(rawTimes);
+
+    for (let objIdx = 0; objIdx < objects.length; objIdx++) {
+      const obj = objects[objIdx];
       const depTime = obj['odpt:departureTime'];
       const arrTime = obj['odpt:arrivalTime'];
 
@@ -292,10 +302,24 @@ export function buildTripPatternsAndTimetableFromOdpt(
         svcMap.set(serviceId, entries);
       }
 
-      // departure: prefer departureTime, fall back to arrivalTime
-      const dep = depTime ? timeToMinutes(depTime) : timeToMinutes(arrTime!);
-      // arrival: prefer arrivalTime, fall back to departureTime
-      const arr = arrTime ? timeToMinutes(arrTime) : dep;
+      // Use overnight-adjusted time for minutes conversion.
+      // adjustOdptOvernightTimes detects a 23:xx → 00:xx reversal.
+      // isOvernightSection is true from that point onward, and
+      // toOvernightMinutes adds +24h unconditionally to both
+      // departure and arrival times before converting to minutes.
+      const adjusted = adjustedTimes[objIdx];
+      const isOvernightSection = adjusted !== rawTimes[objIdx];
+
+      const toOvernightMinutes = (time: string): number => {
+        if (isOvernightSection) {
+          const h = parseInt(time.split(':')[0], 10);
+          return (h + 24) * 60 + parseInt(time.split(':')[1], 10);
+        }
+        return timeToMinutes(time);
+      };
+
+      const dep = depTime ? toOvernightMinutes(depTime) : timeToMinutes(adjusted);
+      const arr = arrTime ? toOvernightMinutes(arrTime) : dep;
 
       entries.push({ d: dep, a: arr });
     }

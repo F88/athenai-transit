@@ -9,8 +9,18 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- v2 DataBundle builders for GTFS and ODPT Train (#31):
+    - `pipeline/scripts/app-data-v2/` に v2 フォーマットの JSON バンドル生成パイプラインを新規実装。
+    - GTFS (SQLite) と ODPT Train (JSON) の両データソースに対応。
+    - `DataBundle` (stops, routes, timetable, tripPatterns, lookup, calendar, agency, feedInfo, translations) を1ファイルに統合出力。
+    - 166 テストで品質担保。
+
 ### Fixed
 
+- ODPT v1 builder が `odpt:destinationStation` を無視し、短距離折返し便 (有明行き等) が終点行きに混入する問題を修正 (#32)
+- ODPT 深夜便の `00:xx` が `24:xx` に変換されず、時刻表で0時台に誤表示される問題を修正 (#34)
 - `validate-app-data.ts`: 期限切れサービスを error から warning に変更。CI のデータ更新がブロックされる問題を修正 (#26)
 
 ## [2026.03.18]

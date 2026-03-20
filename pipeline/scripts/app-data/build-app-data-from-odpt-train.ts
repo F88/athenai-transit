@@ -56,6 +56,7 @@ import type {
   OdptStationOrder,
   OdptStationTimetable,
 } from '../../types/odpt-train';
+import { adjustOdptOvernightTimes } from '../app-data-v2/lib/time-utils';
 import { listOdptTrainSourceNames, loadOdptTrainSource } from '../../lib/load-odpt-train-sources';
 import type { OdptTrainSource } from '../../lib/load-odpt-train-sources';
 import {
@@ -324,9 +325,17 @@ export function buildTimetable(
       stopMap.set(stopId, groupMap);
     }
 
+    // Pre-convert overnight times: ODPT uses 00:xx for post-midnight,
+    // but our data model uses 24:xx (same as GTFS convention).
+    // See ODPT API Spec v4.15 Section 3.3.6.
+    const objects = tt['odpt:stationTimetableObject'];
+    const rawTimes = objects.map((obj) => obj['odpt:departureTime'] ?? '');
+    const adjustedTimes = adjustOdptOvernightTimes(rawTimes);
+
     // Group by destination to separate short-turn services (e.g. 有明行き)
     // from full-line services (e.g. 豊洲行き).
-    for (const obj of tt['odpt:stationTimetableObject']) {
+    for (let objIdx = 0; objIdx < objects.length; objIdx++) {
+      const obj = objects[objIdx];
       if (obj['odpt:departureTime'] == null) {
         continue;
       }
@@ -343,7 +352,7 @@ export function buildTimetable(
         groupMap.set(groupKey, entry);
       }
 
-      const minutes = timeToMinutes(obj['odpt:departureTime']);
+      const minutes = timeToMinutes(adjustedTimes[objIdx]);
       let existing = entry.services.get(serviceId);
       if (!existing) {
         existing = [];
