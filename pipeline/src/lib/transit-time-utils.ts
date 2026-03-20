@@ -63,7 +63,7 @@ export function adjustOdptOvernightTimes(times: string[]): string[] {
     }
 
     if (!isOvernight && lastValidHour !== null) {
-      // Detect reversal: previous valid hour >= 23, current hour < 23
+      // Detect reversal: previous valid hour >= 23, current hour < previous
       if (lastValidHour >= 23 && hour < lastValidHour) {
         isOvernight = true;
       }
