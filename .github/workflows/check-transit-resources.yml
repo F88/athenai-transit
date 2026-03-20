@@ -44,7 +44,7 @@ jobs:
         id: check
         run: |
           set +e
-          npx tsx pipeline/scripts/analysis/check-odpt-resources.ts 2>&1 | tee check-output.txt
+          npx tsx pipeline/scripts/pipeline/check-odpt-resources.ts 2>&1 | tee check-output.txt
           echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
           cat check-output.txt >> "$GITHUB_STEP_SUMMARY"
 

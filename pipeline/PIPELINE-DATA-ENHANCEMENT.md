@@ -408,9 +408,9 @@ interface Route {
 
 ### 6.5 バリデーション
 
-| ファイル                                         | 変更内容                             |
-| ------------------------------------------------ | ------------------------------------ |
-| `pipeline/scripts/app-data/validate-app-data.ts` | 新規 JSON ファイルの存在チェック追加 |
+| ファイル                                                  | 変更内容                             |
+| --------------------------------------------------------- | ------------------------------------ |
+| `pipeline/scripts/pipeline/app-data/validate-app-data.ts` | 新規 JSON ファイルの存在チェック追加 |
 
 ---
 
@@ -501,9 +501,9 @@ In-memory domain objects (Stop, Route, Agency, FeedInfo, ...)
 
 ### パイプラインスクリプト
 
-- `pipeline/scripts/app-data/build-app-data-from-gtfs.ts` — メイン変更対象
-- `pipeline/scripts/build-gtfs-db.ts` — DB スキーマ (変更なし)
-- `pipeline/scripts/app-data/validate-app-data.ts` — バリデーション拡張
+- `pipeline/scripts/pipeline/app-data/build-app-data-from-gtfs.ts` — メイン変更対象
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` — DB スキーマ (変更なし)
+- `pipeline/scripts/pipeline/app-data/validate-app-data.ts` — バリデーション拡張
 
 ### WebApp 型定義
 

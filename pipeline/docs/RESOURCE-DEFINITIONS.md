@@ -201,8 +201,8 @@ export default yurikamomeStation;
 
 1. `pipeline/config/resources/gtfs/` または `pipeline/config/resources/odpt-json/` に定義ファイルを作成
 2. `pipeline/config/targets/` の該当 targets ファイルにソース名を追加
-3. 単体実行でテスト: `npx tsx pipeline/scripts/download-*.ts <source-name>`
-4. バッチ実行で確認: `npx tsx pipeline/scripts/download-*.ts --targets pipeline/config/targets/...`
+3. 単体実行でテスト: `npx tsx pipeline/scripts/pipeline/download-*.ts <source-name>`
+4. バッチ実行で確認: `npx tsx pipeline/scripts/pipeline/download-*.ts --targets pipeline/config/targets/...`
 
 ## prefix 命名規約
 
