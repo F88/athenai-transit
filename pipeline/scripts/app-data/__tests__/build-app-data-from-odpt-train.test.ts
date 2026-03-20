@@ -25,6 +25,7 @@ import {
   calendarToServiceId,
   computeDateRange,
   extractStationShortId,
+  getHeadsignFromDestination,
   getHeadsignFromDirection,
   timeToMinutes,
 } from '../build-app-data-from-odpt-train';
@@ -432,7 +433,7 @@ describe('buildTimetable', () => {
     expect(groups[0].h).toBe('豊洲');
   });
 
-  it('produces empty departure array when all entries lack departureTime', () => {
+  it('produces no timetable entry when all entries lack departureTime', () => {
     const stationOrders: OdptStationOrder[] = [
       makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
       makeStationOrder(2, 'odpt.Station:Test.Toyosu', '豊洲', 'Toyosu'),
@@ -448,7 +449,7 @@ describe('buildTimetable', () => {
         'odpt.Calendar:Weekday',
         'odpt.RailDirection:Outbound',
         [
-          // All entries lack departureTime
+          // All entries lack departureTime — skipped
           {
             'odpt:arrivalTime': '06:10',
             'odpt:destinationStation': ['odpt.Station:Test.Toyosu'],
@@ -460,12 +461,8 @@ describe('buildTimetable', () => {
 
     const result = buildTimetable('yrkm', timetables, [railway], TEST_PROVIDER);
 
-    const groups = result['yrkm:Shimbashi'];
-    expect(groups).toHaveLength(1);
-    // Service entry exists but has empty departure array
-    expect(groups[0].d).toEqual({
-      'yrkm:weekday': [],
-    });
+    // No departures -> empty groups array for this stop
+    expect(result['yrkm:Shimbashi']).toEqual([]);
   });
 });
 
@@ -599,5 +596,145 @@ describe('buildAgency', () => {
     const result = buildAgency('yrkm', providerWithColors);
 
     expect(result[0].cs).toEqual([{ b: '00B2E5', t: 'FFFFFF' }]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getHeadsignFromDestination
+// ---------------------------------------------------------------------------
+
+describe('getHeadsignFromDestination', () => {
+  const stationOrder: OdptStationOrder[] = [
+    makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
+    makeStationOrder(2, 'odpt.Station:Test.Ariake', '有明', 'Ariake'),
+    makeStationOrder(3, 'odpt.Station:Test.Toyosu', '豊洲', 'Toyosu'),
+  ];
+
+  it('returns destination station name when found in stationOrder', () => {
+    expect(
+      getHeadsignFromDestination(
+        'odpt.Station:Test.Ariake',
+        'odpt.RailDirection:Outbound',
+        stationOrder,
+      ),
+    ).toBe('有明');
+  });
+
+  it('falls back to terminal when destination is undefined', () => {
+    expect(getHeadsignFromDestination(undefined, 'odpt.RailDirection:Outbound', stationOrder)).toBe(
+      '豊洲',
+    );
+    expect(getHeadsignFromDestination(undefined, 'odpt.RailDirection:Inbound', stationOrder)).toBe(
+      '新橋',
+    );
+  });
+
+  it('falls back to terminal when destination is not found in stationOrder', () => {
+    expect(
+      getHeadsignFromDestination(
+        'odpt.Station:Test.Unknown',
+        'odpt.RailDirection:Outbound',
+        stationOrder,
+      ),
+    ).toBe('豊洲');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildTimetable (destination grouping)
+// ---------------------------------------------------------------------------
+
+describe('buildTimetable (destination grouping)', () => {
+  it('separates short-turn and full-line services into different groups', () => {
+    const stationOrders: OdptStationOrder[] = [
+      makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
+      makeStationOrder(2, 'odpt.Station:Test.Ariake', '有明', 'Ariake'),
+      makeStationOrder(3, 'odpt.Station:Test.Toyosu', '豊洲', 'Toyosu'),
+    ];
+    const railway = makeRailway({
+      'odpt:lineCode': 'U',
+      'odpt:stationOrder': stationOrders,
+    });
+
+    const timetables: OdptStationTimetable[] = [
+      makeTimetableWithRawObjects(
+        'odpt.Station:Test.Shimbashi',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        [
+          {
+            'odpt:departureTime': '06:00',
+            'odpt:destinationStation': ['odpt.Station:Test.Toyosu'],
+          },
+          {
+            'odpt:departureTime': '06:30',
+            'odpt:destinationStation': ['odpt.Station:Test.Ariake'],
+          },
+          {
+            'odpt:departureTime': '07:00',
+            'odpt:destinationStation': ['odpt.Station:Test.Toyosu'],
+          },
+        ],
+      ),
+    ];
+
+    const result = buildTimetable('yrkm', timetables, [railway], TEST_PROVIDER);
+    const groups = result['yrkm:Shimbashi'];
+
+    // Two groups: 豊洲行き and 有明行き
+    expect(groups).toHaveLength(2);
+    const toyosuGroup = groups.find((g) => g.h === '豊洲')!;
+    const ariakeGroup = groups.find((g) => g.h === '有明')!;
+
+    expect(toyosuGroup).toBeDefined();
+    expect(ariakeGroup).toBeDefined();
+    expect(toyosuGroup.d['yrkm:weekday']).toEqual([360, 420]); // 06:00, 07:00
+    expect(ariakeGroup.d['yrkm:weekday']).toEqual([390]); // 06:30
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildTranslations (destination headsigns)
+// ---------------------------------------------------------------------------
+
+describe('buildTranslations (destination headsigns)', () => {
+  it('includes headsign translations for short-turn destinations', () => {
+    const stationOrders: OdptStationOrder[] = [
+      makeStationOrder(1, 'odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi'),
+      makeStationOrder(2, 'odpt.Station:Test.Ariake', '有明', 'Ariake'),
+      makeStationOrder(3, 'odpt.Station:Test.Toyosu', '豊洲', 'Toyosu'),
+    ];
+    const railway = makeRailway({
+      'odpt:lineCode': 'U',
+      'odpt:stationOrder': stationOrders,
+    });
+    const stations: OdptStation[] = [
+      makeStation('odpt.Station:Test.Shimbashi', '新橋', 'Shimbashi', 35.6658, 139.7584),
+    ];
+
+    const timetables: OdptStationTimetable[] = [
+      makeTimetableWithRawObjects(
+        'odpt.Station:Test.Shimbashi',
+        'odpt.Calendar:Weekday',
+        'odpt.RailDirection:Outbound',
+        [
+          {
+            'odpt:departureTime': '06:00',
+            'odpt:destinationStation': ['odpt.Station:Test.Toyosu'],
+          },
+          {
+            'odpt:departureTime': '06:30',
+            'odpt:destinationStation': ['odpt.Station:Test.Ariake'],
+          },
+        ],
+      ),
+    ];
+
+    const result = buildTranslations('yrkm', timetables, [railway], stations, TEST_PROVIDER);
+
+    // Both 豊洲 and 有明 should have headsign translations
+    expect(result.headsigns['豊洲']).toEqual({ ja: '豊洲', en: 'Toyosu' });
+    expect(result.headsigns['有明']).toEqual({ ja: '有明', en: 'Ariake' });
+    expect(Object.keys(result.headsigns)).toHaveLength(2);
   });
 });
