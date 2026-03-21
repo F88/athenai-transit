@@ -1,6 +1,6 @@
 {
   "sourceName": "kyoto-city-bus",
-  "checkedAt": "2026-03-20T15:09:08.011Z",
+  "checkedAt": "2026-03-21T05:17:18.745Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20260309&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]"
   ],
