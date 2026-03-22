@@ -2,12 +2,12 @@
   "sourceName": "chuo-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-03-21T04:39:09.197Z",
+  "downloadedAt": "2026-03-22T04:44:44.171Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/TokyoChuoCity/Alldata.zip?date=20250108",
   "size": 43708,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1091,
-  "archivePath": "workspace/_archives/gtfs/chuo-bus/Alldata_20260321-043910.zip",
+  "durationMs": 1528,
+  "archivePath": "workspace/_archives/gtfs/chuo-bus/Alldata_20260322-044445.zip",
   "extractedFiles": [
     {
       "name": "calendar_dates.txt",
