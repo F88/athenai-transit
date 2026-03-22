@@ -116,7 +116,7 @@ function median(sorted: number[]): number {
  *
  * Returns an array of length `stops.length - 1` where `segments[i]`
  * is the median travel time in minutes from stop i to stop i+1.
- * A value of 0 indicates no data (missing timetable or mismatched counts).
+ * Uses -1 (NO_DATA) for missing data; 0 is a valid zero-minute segment.
  */
 function computeSegmentTimes(
   pattern: TripPatternJson,
@@ -135,6 +135,19 @@ function computeSegmentTimes(
 
   const isCircular = stops.length > 2 && stops[0] === stops[stops.length - 1];
 
+  // Cache departures per stop to avoid redundant timetable scans and sorts.
+  // Each stop appears in two consecutive segments (as end of one, start of next),
+  // so caching halves the number of getDepartures calls.
+  const depsCache = new Map<string, number[]>();
+  function getCachedDeps(stopId: string): number[] {
+    let cached = depsCache.get(stopId);
+    if (cached === undefined) {
+      cached = getDepartures(timetable[stopId], patternId, serviceIds);
+      depsCache.set(stopId, cached);
+    }
+    return cached;
+  }
+
   for (let i = 0; i < segmentCount; i++) {
     // For circular routes, skip segments involving the origin/terminal stop
     // (positions 0 and last). The origin/terminal has 2x departures
@@ -145,14 +158,14 @@ function computeSegmentTimes(
       continue;
     }
 
-    const depsA = getDepartures(timetable[stops[i]], patternId, serviceIds);
-    const depsB = getDepartures(timetable[stops[i + 1]], patternId, serviceIds);
+    const depsA = getCachedDeps(stops[i]);
+    const depsB = getCachedDeps(stops[i + 1]);
 
     if (depsA.length === 0 || depsB.length === 0) {
       continue;
     }
 
-    if (depsA.length !== depsB.length || depsA.length === 0) {
+    if (depsA.length !== depsB.length) {
       continue;
     }
 
@@ -199,6 +212,12 @@ function computeSegmentTimes(
     } else if (nextIdx >= 0) {
       segments[i] = segments[nextIdx];
     } else {
+      // No valid neighbors exist (e.g. 3-stop circular where all segments
+      // are skipped). Use 0 rather than preserving NO_DATA (-1), because
+      // the caller accumulates segments into rd via addition — a -1 would
+      // produce negative rd values. 0 is the safest fallback: it means
+      // "unknown duration treated as instant" rather than corrupting rd.
+      // In practice this only occurs in degenerate patterns (3-stop circular).
       segments[i] = 0;
     }
   }
