@@ -232,7 +232,13 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
   // ---------------------------------------------------------------------------
 
   if (bundle.calendar.data.services.length > 0) {
-    const now = new Date();
+    // Normalize "now" to UTC midnight for date-only comparison.
+    // GTFS end_date is inclusive (the service runs on that day),
+    // and parseGtfsDate returns UTC midnight. Without normalization,
+    // running on a UTC server (e.g. GitHub Actions) at 00:01 UTC
+    // would incorrectly mark end_date=today as expired.
+    const raw = new Date();
+    const now = new Date(Date.UTC(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate()));
     const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
 
     let earliestEnd: Date | null = null;
