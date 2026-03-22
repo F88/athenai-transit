@@ -21,12 +21,12 @@
  *   npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts --list
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
 import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/pipeline-utils';
+import type { CalendarServiceMeta } from '../../../src/lib/pipeline/app-data-v2/validate-data';
 import { validateDataBundle } from '../../../src/lib/pipeline/app-data-v2/validate-data';
 import { validateInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-insights';
 import { validateShapesBundle } from '../../../src/lib/pipeline/app-data-v2/validate-shapes';
@@ -200,18 +200,24 @@ function printSectionIssues(issues: ValidationIssue[]): void {
 // Step 3: Validate each bundle
 // ---------------------------------------------------------------------------
 
+interface SourceValidationResult {
+  calendarServices: CalendarServiceMeta[];
+}
+
 function validateSource(
   prefix: string,
   existingFiles: Map<string, boolean>,
   state: { hasError: boolean; hasWarn: boolean },
   allIssues: ValidationIssue[],
-): void {
+): SourceValidationResult {
+  const result: SourceValidationResult = { calendarServices: [] };
   // DataBundle
   if (existingFiles.get('data.json')) {
     console.log('    [DataBundle]');
     const r = validateDataBundle(prefix, V2_OUTPUT_DIR);
     trackIssues(r.issues, state);
     allIssues.push(...r.issues);
+    result.calendarServices = r.calendarServices;
 
     // Structure issues are fatal — skip per-section output
     const structureErrors = r.issues.filter(
@@ -314,6 +320,8 @@ function validateSource(
       }
     }
   }
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -352,12 +360,14 @@ interface CalendarServiceEntry {
 }
 
 /**
- * Collect per-service calendar freshness information from DataBundles.
+ * Collect per-service calendar freshness from already-validated metadata.
+ * Reuses CalendarServiceMeta from validateDataBundle results to avoid
+ * re-reading data.json files.
  */
-function collectCalendarFreshness(
-  prefixes: string[],
-  existenceResults: Map<string, ExistenceResult>,
-): { expired: CalendarServiceEntry[]; expiringSoon: CalendarServiceEntry[] } {
+function collectCalendarFreshness(calendarByPrefix: Map<string, CalendarServiceMeta[]>): {
+  expired: CalendarServiceEntry[];
+  expiringSoon: CalendarServiceEntry[];
+} {
   const expired: CalendarServiceEntry[] = [];
   const expiringSoon: CalendarServiceEntry[] = [];
 
@@ -365,31 +375,9 @@ function collectCalendarFreshness(
   const now = new Date(Date.UTC(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate()));
   const thresholdMs = WARN_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
 
-  for (const prefix of prefixes) {
-    const existence = existenceResults.get(prefix);
-    if (!existence?.files.get('data.json')) {
-      continue;
-    }
-
-    const dataPath = join(V2_OUTPUT_DIR, prefix, 'data.json');
-    if (!existsSync(dataPath)) {
-      continue;
-    }
-
-    let bundle: DataBundle;
-    try {
-      bundle = JSON.parse(readFileSync(dataPath, 'utf-8')) as DataBundle;
-    } catch {
-      continue;
-    }
-
-    const services = bundle.calendar?.data?.services;
-    if (!Array.isArray(services)) {
-      continue;
-    }
-
+  for (const [prefix, services] of calendarByPrefix) {
     for (const svc of services) {
-      const endDate = parseGtfsDateForSummary(svc.e);
+      const endDate = parseGtfsDateForSummary(svc.endDate);
       if (!endDate) {
         continue;
       }
@@ -399,14 +387,14 @@ function collectCalendarFreshness(
       if (diffMs < 0) {
         expired.push({
           prefix,
-          serviceId: svc.i,
+          serviceId: svc.serviceId,
           endDate: formatDateForSummary(endDate),
           daysLeft,
         });
       } else if (diffMs < thresholdMs) {
         expiringSoon.push({
           prefix,
-          serviceId: svc.i,
+          serviceId: svc.serviceId,
           endDate: formatDateForSummary(endDate),
           daysLeft,
         });
@@ -425,8 +413,7 @@ function printMarkdownSummary(
   allIssues: ValidationIssue[],
   unvalidatedDirs: string[],
   missingFiles: Array<{ prefix: string; filename: string }>,
-  prefixes: string[],
-  existenceResults: Map<string, ExistenceResult>,
+  calendarByPrefix: Map<string, CalendarServiceMeta[]>,
 ): void {
   const raw = new Date();
   const today = new Date(Date.UTC(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate()));
@@ -482,7 +469,7 @@ function printMarkdownSummary(
   }
 
   // Calendar freshness (service_id level, matching v1 format)
-  const { expired, expiringSoon } = collectCalendarFreshness(prefixes, existenceResults);
+  const { expired, expiringSoon } = collectCalendarFreshness(calendarByPrefix);
 
   if (expired.length > 0) {
     console.log('### ⚠️ Expired services\n');
@@ -573,6 +560,7 @@ async function main(): Promise<void> {
   const allIssues: ValidationIssue[] = [];
   let unvalidatedDirs: string[] = [];
   const missingFiles: Array<{ prefix: string; filename: string }> = [];
+  const calendarByPrefix = new Map<string, CalendarServiceMeta[]>();
   const isTargetsMode = arg.kind === 'targets';
   const totalSteps = isTargetsMode ? 3 : 2;
   let stepNum = 0;
@@ -650,7 +638,7 @@ async function main(): Promise<void> {
 
   if (!allExistencePassed) {
     // Print summary before early return so CI gets missing-files report
-    printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, prefixes, existenceResults);
+    printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, calendarByPrefix);
     console.log('❌ Validation failed (required files missing).\n');
     const elapsed = Math.round(performance.now() - t0);
     console.log(`Done in ${elapsed}ms. (exit code: ${EXIT_ERROR})`);
@@ -668,12 +656,15 @@ async function main(): Promise<void> {
   for (const prefix of prefixes) {
     console.log(`  ${prefix}:`);
     const existence = existenceResults.get(prefix)!;
-    validateSource(prefix, existence.files, state, allIssues);
+    const sourceResult = validateSource(prefix, existence.files, state, allIssues);
+    if (sourceResult.calendarServices.length > 0) {
+      calendarByPrefix.set(prefix, sourceResult.calendarServices);
+    }
     console.log('');
   }
 
   // Markdown summary
-  printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, prefixes, existenceResults);
+  printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, calendarByPrefix);
 
   // Final result
   let exitCode: number;

@@ -28,6 +28,12 @@ import type { ValidationIssue } from './validate-shapes';
 // Types
 // ---------------------------------------------------------------------------
 
+export interface CalendarServiceMeta {
+  serviceId: string;
+  /** GTFS end_date string "YYYYMMDD". */
+  endDate: string;
+}
+
 export interface DataValidationResult {
   issues: ValidationIssue[];
   stopCount: number;
@@ -35,6 +41,8 @@ export interface DataValidationResult {
   serviceCount: number;
   patternCount: number;
   timetableStopCount: number;
+  /** Calendar service metadata for summary reporting. */
+  calendarServices: CalendarServiceMeta[];
 }
 
 // ---------------------------------------------------------------------------
@@ -108,7 +116,15 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
   // File existence
   if (!existsSync(filePath)) {
     issues.push({ prefix, level: 'error', category: 'structure', message: 'data.json not found' });
-    return { issues, stopCount, routeCount, serviceCount, patternCount, timetableStopCount };
+    return {
+      issues,
+      stopCount,
+      routeCount,
+      serviceCount,
+      patternCount,
+      timetableStopCount,
+      calendarServices: [],
+    };
   }
 
   // JSON parse
@@ -123,7 +139,15 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
       category: 'structure',
       message: `Failed to parse data.json: ${e instanceof Error ? e.message : String(e)}`,
     });
-    return { issues, stopCount, routeCount, serviceCount, patternCount, timetableStopCount };
+    return {
+      issues,
+      stopCount,
+      routeCount,
+      serviceCount,
+      patternCount,
+      timetableStopCount,
+      calendarServices: [],
+    };
   }
 
   // Bundle structure
@@ -169,7 +193,15 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
 
   // Bail on structure errors — data checks below depend on valid structure
   if (issues.some((i) => i.level === 'error')) {
-    return { issues, stopCount, routeCount, serviceCount, patternCount, timetableStopCount };
+    return {
+      issues,
+      stopCount,
+      routeCount,
+      serviceCount,
+      patternCount,
+      timetableStopCount,
+      calendarServices: [],
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -361,5 +393,18 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
     }
   }
 
-  return { issues, stopCount, routeCount, serviceCount, patternCount, timetableStopCount };
+  const calendarServices: CalendarServiceMeta[] = bundle.calendar.data.services.map((svc) => ({
+    serviceId: svc.i,
+    endDate: svc.e,
+  }));
+
+  return {
+    issues,
+    stopCount,
+    routeCount,
+    serviceCount,
+    patternCount,
+    timetableStopCount,
+    calendarServices,
+  };
 }
