@@ -22,11 +22,18 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
+import { parseGtfsDate } from '../../gtfs-date-utils';
 import type { ValidationIssue } from './validate-shapes';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+export interface CalendarServiceMeta {
+  serviceId: string;
+  /** GTFS end_date string "YYYYMMDD". */
+  endDate: string;
+}
 
 export interface DataValidationResult {
   issues: ValidationIssue[];
@@ -35,6 +42,8 @@ export interface DataValidationResult {
   serviceCount: number;
   patternCount: number;
   timetableStopCount: number;
+  /** Calendar service metadata for summary reporting. */
+  calendarServices: CalendarServiceMeta[];
 }
 
 // ---------------------------------------------------------------------------
@@ -53,36 +62,6 @@ const SECTION_VERSIONS: Record<string, number> = {
   translations: 1,
   lookup: 2,
 };
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Parse a GTFS date string (YYYYMMDD) into a Date at UTC midnight.
- * Returns null if the string is not exactly 8 digits or not a valid calendar date.
- */
-function parseGtfsDate(dateStr: string): Date | null {
-  if (!/^\d{8}$/.test(dateStr)) {
-    return null;
-  }
-  const year = Number(dateStr.slice(0, 4));
-  const month = Number(dateStr.slice(4, 6)); // 1-based
-  const day = Number(dateStr.slice(6, 8));
-
-  if (month < 1 || month > 12) {
-    return null;
-  }
-
-  const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-  const daysInMonth = [31, isLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-
-  if (day < 1 || day > daysInMonth[month - 1]) {
-    return null;
-  }
-
-  return new Date(Date.UTC(year, month - 1, day));
-}
 
 // ---------------------------------------------------------------------------
 // Validator
@@ -108,7 +87,15 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
   // File existence
   if (!existsSync(filePath)) {
     issues.push({ prefix, level: 'error', category: 'structure', message: 'data.json not found' });
-    return { issues, stopCount, routeCount, serviceCount, patternCount, timetableStopCount };
+    return {
+      issues,
+      stopCount,
+      routeCount,
+      serviceCount,
+      patternCount,
+      timetableStopCount,
+      calendarServices: [],
+    };
   }
 
   // JSON parse
@@ -123,7 +110,15 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
       category: 'structure',
       message: `Failed to parse data.json: ${e instanceof Error ? e.message : String(e)}`,
     });
-    return { issues, stopCount, routeCount, serviceCount, patternCount, timetableStopCount };
+    return {
+      issues,
+      stopCount,
+      routeCount,
+      serviceCount,
+      patternCount,
+      timetableStopCount,
+      calendarServices: [],
+    };
   }
 
   // Bundle structure
@@ -169,7 +164,15 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
 
   // Bail on structure errors — data checks below depend on valid structure
   if (issues.some((i) => i.level === 'error')) {
-    return { issues, stopCount, routeCount, serviceCount, patternCount, timetableStopCount };
+    return {
+      issues,
+      stopCount,
+      routeCount,
+      serviceCount,
+      patternCount,
+      timetableStopCount,
+      calendarServices: [],
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -255,14 +258,14 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
         issues.push({
           prefix,
           level: 'warn',
-          category: 'quality',
+          category: 'calendar',
           message: `Calendar has expired services (earliest end_date already passed)`,
         });
       } else if (diffMs < thirtyDaysMs) {
         issues.push({
           prefix,
           level: 'warn',
-          category: 'quality',
+          category: 'calendar',
           message: `Calendar expires within 30 days (earliest end_date approaching)`,
         });
       }
@@ -361,5 +364,18 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
     }
   }
 
-  return { issues, stopCount, routeCount, serviceCount, patternCount, timetableStopCount };
+  const calendarServices: CalendarServiceMeta[] = bundle.calendar.data.services.map((svc) => ({
+    serviceId: svc.i,
+    endDate: svc.e,
+  }));
+
+  return {
+    issues,
+    stopCount,
+    routeCount,
+    serviceCount,
+    patternCount,
+    timetableStopCount,
+    calendarServices,
+  };
 }

@@ -1,8 +1,10 @@
 /**
- * Target list for validation.
+ * Target list for batch InsightsBundle builds.
  *
- * Each entry is a prefix (output directory name) under
- * pipeline/workspace/_build/. Used by both v1 and v2 validators.
+ * Each entry is a prefix (output directory name) that has a
+ * DataBundle (data.json). The insights builder reads calendar
+ * data from data.json to produce insights.json. Prefixes without
+ * data.json will cause the batch child process to exit non-zero.
  *
  * Comment out entries to temporarily skip them.
  */
@@ -23,5 +25,4 @@ export default [
   'kseiw', // keisei-transit-bus
   'mir', // mir-train
   'yurimo', // yurikamome
-  // 'tkbus', // tokyu-bus (not built)
 ];

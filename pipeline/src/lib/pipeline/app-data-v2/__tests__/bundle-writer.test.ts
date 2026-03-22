@@ -8,8 +8,12 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { DataBundle, ShapesBundle } from '../../../../../../src/types/data/transit-v2-json';
-import { writeDataBundle, writeShapesBundle } from '../bundle-writer';
+import type {
+  DataBundle,
+  InsightsBundle,
+  ShapesBundle,
+} from '../../../../../../src/types/data/transit-v2-json';
+import { writeDataBundle, writeInsightsBundle, writeShapesBundle } from '../bundle-writer';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-bundle-writer-test');
 
@@ -146,5 +150,51 @@ describe('writeShapesBundle', () => {
 
     const written = JSON.parse(readFileSync(join(dir, 'shapes.json'), 'utf-8')) as ShapesBundle;
     expect(written.shapes.data).toEqual({});
+  });
+});
+
+describe('writeInsightsBundle', () => {
+  it('creates directory and writes insights.json', () => {
+    const dir = join(TMP_DIR, 'insights-test');
+    const serviceGroups = [
+      { key: 'wd', serviceIds: ['svc-1', 'svc-2'] },
+      { key: 'sa', serviceIds: ['svc-3'] },
+    ];
+
+    writeInsightsBundle(dir, serviceGroups);
+
+    const filePath = join(dir, 'insights.json');
+    expect(existsSync(filePath)).toBe(true);
+
+    const written = JSON.parse(readFileSync(filePath, 'utf-8')) as InsightsBundle;
+    expect(written.bundle_version).toBe(2);
+    expect(written.kind).toBe('insights');
+    expect(written.serviceGroups.v).toBe(1);
+    expect(written.serviceGroups.data).toEqual(serviceGroups);
+  });
+
+  it('does not leave a temp file after successful write', () => {
+    const dir = join(TMP_DIR, 'insights-test');
+    writeInsightsBundle(dir, []);
+
+    expect(existsSync(join(dir, 'insights.json.tmp'))).toBe(false);
+  });
+
+  it('writes empty service groups', () => {
+    const dir = join(TMP_DIR, 'insights-test');
+    writeInsightsBundle(dir, []);
+
+    const written = JSON.parse(readFileSync(join(dir, 'insights.json'), 'utf-8')) as InsightsBundle;
+    expect(written.serviceGroups.data).toEqual([]);
+  });
+
+  it('does not include optional sections', () => {
+    const dir = join(TMP_DIR, 'insights-test');
+    writeInsightsBundle(dir, [{ key: 'wd', serviceIds: ['svc-1'] }]);
+
+    const written = JSON.parse(readFileSync(join(dir, 'insights.json'), 'utf-8')) as InsightsBundle;
+    expect(written).not.toHaveProperty('tripPatternStats');
+    expect(written).not.toHaveProperty('tripPatternGeo');
+    expect(written).not.toHaveProperty('stopStats');
   });
 });

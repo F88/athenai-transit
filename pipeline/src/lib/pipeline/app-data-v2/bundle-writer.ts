@@ -13,6 +13,8 @@ import { join } from 'node:path';
 
 import type {
   DataBundle,
+  InsightsBundle,
+  ServiceGroupEntry,
   ShapePointV2,
   ShapesBundle,
 } from '../../../../../src/types/data/transit-v2-json';
@@ -71,4 +73,21 @@ export function writeShapesBundle(dir: string, shapes: Record<string, ShapePoint
     shapes: { v: 2, data: shapes },
   };
   writeAtomicJson(dir, 'shapes.json', bundle);
+}
+
+/**
+ * Write an InsightsBundle to `{dir}/insights.json` atomically.
+ *
+ * Creates the output directory if it does not exist.
+ *
+ * @param dir - Output directory (e.g. `pipeline/workspace/_build/data-v2/{prefix}`).
+ * @param serviceGroups - Service group entries produced by {@link buildServiceGroups}.
+ */
+export function writeInsightsBundle(dir: string, serviceGroups: ServiceGroupEntry[]): void {
+  const bundle: InsightsBundle = {
+    bundle_version: 2,
+    kind: 'insights',
+    serviceGroups: { v: 1, data: serviceGroups },
+  };
+  writeAtomicJson(dir, 'insights.json', bundle);
 }

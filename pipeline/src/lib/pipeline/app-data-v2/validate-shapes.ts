@@ -30,7 +30,7 @@ export interface ValidationIssue {
   prefix: string;
   level: 'error' | 'warn';
   /** Machine-readable category for grouping issues in output. */
-  category: 'structure' | 'quality' | 'integrity';
+  category: 'structure' | 'quality' | 'integrity' | 'calendar';
   message: string;
 }
 

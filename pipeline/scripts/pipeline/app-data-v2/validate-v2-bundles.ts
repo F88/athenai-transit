@@ -16,7 +16,7 @@
  *   2 — errors (missing files, invalid structure, invalid data)
  *
  * Usage:
- *   npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts <source-name>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts <prefix>
  *   npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts --targets <file>
  *   npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts --list
  */
@@ -25,9 +25,9 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/load-gtfs-sources';
 import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/pipeline-utils';
-import { collectAllKsjTargets } from '../../../src/lib/pipeline/extract-shapes-from-ksj';
+import { parseGtfsDate } from '../../../src/lib/gtfs-date-utils';
+import type { CalendarServiceMeta } from '../../../src/lib/pipeline/app-data-v2/validate-data';
 import { validateDataBundle } from '../../../src/lib/pipeline/app-data-v2/validate-data';
 import { validateInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-insights';
 import { validateShapesBundle } from '../../../src/lib/pipeline/app-data-v2/validate-shapes';
@@ -66,32 +66,6 @@ const BUNDLE_FILES: BundleFile[] = [
   { filename: 'insights.json', label: 'InsightsBundle', required: true },
   { filename: 'shapes.json', label: 'ShapesBundle', required: false },
 ];
-
-// ---------------------------------------------------------------------------
-// CLI helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Build a map from source name (outDir) to prefix.
- * Loads all GTFS and KSJ source definitions once.
- */
-async function buildSourcePrefixMap(): Promise<Map<string, string>> {
-  const map = new Map<string, string>();
-
-  for (const name of listGtfsSourceNames()) {
-    const source = await loadGtfsSource(name);
-    map.set(name, source.pipeline.prefix);
-  }
-
-  const ksjTargets = await collectAllKsjTargets();
-  for (const t of ksjTargets) {
-    if (!map.has(t.name)) {
-      map.set(t.name, t.prefix);
-    }
-  }
-
-  return map;
-}
 
 // ---------------------------------------------------------------------------
 // Result tracking
@@ -171,7 +145,7 @@ function printExistenceResult(
     if (exists) {
       console.log(`    ${bf.filename} ${pad} OK`);
     } else if (bf.required) {
-      console.log(`    ${bf.filename} ${pad} MISSING (required)`);
+      console.log(`    ${bf.filename} ${pad} ❌ MISSING (required)`);
       state.hasError = true;
     } else {
       console.log(`    ${bf.filename} ${pad} not found (optional, skipped)`);
@@ -206,9 +180,9 @@ function formatSectionLine(label: string, stats: string, issues: ValidationIssue
 function printIssueDetails(issues: ValidationIssue[]): void {
   for (const issue of issues) {
     if (issue.level === 'error') {
-      console.log(`        ERROR: ${issue.message}`);
+      console.log(`        ❌ ERROR: ${issue.message}`);
     } else {
-      console.log(`        WARN:  ${issue.message}`);
+      console.log(`        ⚠️ WARN:  ${issue.message}`);
     }
   }
 }
@@ -216,9 +190,9 @@ function printIssueDetails(issues: ValidationIssue[]): void {
 function printSectionIssues(issues: ValidationIssue[]): void {
   for (const issue of issues) {
     if (issue.level === 'error') {
-      console.log(`          ERROR: ${issue.message}`);
+      console.log(`          ❌ ERROR: ${issue.message}`);
     } else {
-      console.log(`          WARN:  ${issue.message}`);
+      console.log(`          ⚠️ WARN:  ${issue.message}`);
     }
   }
 }
@@ -227,16 +201,24 @@ function printSectionIssues(issues: ValidationIssue[]): void {
 // Step 3: Validate each bundle
 // ---------------------------------------------------------------------------
 
+interface SourceValidationResult {
+  calendarServices: CalendarServiceMeta[];
+}
+
 function validateSource(
   prefix: string,
   existingFiles: Map<string, boolean>,
   state: { hasError: boolean; hasWarn: boolean },
-): void {
+  allIssues: ValidationIssue[],
+): SourceValidationResult {
+  const result: SourceValidationResult = { calendarServices: [] };
   // DataBundle
   if (existingFiles.get('data.json')) {
     console.log('    [DataBundle]');
     const r = validateDataBundle(prefix, V2_OUTPUT_DIR);
     trackIssues(r.issues, state);
+    allIssues.push(...r.issues);
+    result.calendarServices = r.calendarServices;
 
     // Structure issues are fatal — skip per-section output
     const structureErrors = r.issues.filter(
@@ -295,6 +277,7 @@ function validateSource(
     console.log('    [InsightsBundle]');
     const r = validateInsightsBundle(prefix, V2_OUTPUT_DIR);
     trackIssues(r.issues, state);
+    allIssues.push(...r.issues);
 
     if (r.issues.length === 0) {
       console.log(`      Structure:     OK (${r.serviceGroupCount} service groups)`);
@@ -309,6 +292,7 @@ function validateSource(
     console.log('    [ShapesBundle]');
     const r = validateShapesBundle(prefix, V2_OUTPUT_DIR);
     trackIssues(r.issues, state);
+    allIssues.push(...r.issues);
 
     // Structure issues are fatal
     const structureErrors = r.issues.filter(
@@ -337,6 +321,156 @@ function validateSource(
       }
     }
   }
+
+  return result;
+}
+
+// ---------------------------------------------------------------------------
+// Markdown summary (for GitHub Actions Job Summary)
+// ---------------------------------------------------------------------------
+
+/** Format Date as "YYYY-MM-DD". */
+function formatDateForSummary(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/** Threshold for "expiring soon" warning (days). */
+const WARN_THRESHOLD_DAYS = 30;
+
+interface CalendarServiceEntry {
+  prefix: string;
+  serviceId: string;
+  endDate: string;
+  daysLeft: number;
+}
+
+/**
+ * Collect per-service calendar freshness from already-validated metadata.
+ * Reuses CalendarServiceMeta from validateDataBundle results to avoid
+ * re-reading data.json files.
+ */
+function collectCalendarFreshness(
+  calendarByPrefix: Map<string, CalendarServiceMeta[]>,
+  today: Date,
+): {
+  expired: CalendarServiceEntry[];
+  expiringSoon: CalendarServiceEntry[];
+} {
+  const expired: CalendarServiceEntry[] = [];
+  const expiringSoon: CalendarServiceEntry[] = [];
+
+  const thresholdMs = WARN_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
+
+  for (const [prefix, services] of calendarByPrefix) {
+    for (const svc of services) {
+      const endDate = parseGtfsDate(svc.endDate);
+      if (!endDate) {
+        continue;
+      }
+      const diffMs = endDate.getTime() - today.getTime();
+      const daysLeft = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+
+      if (diffMs < 0) {
+        expired.push({
+          prefix,
+          serviceId: svc.serviceId,
+          endDate: formatDateForSummary(endDate),
+          daysLeft,
+        });
+      } else if (diffMs < thresholdMs) {
+        expiringSoon.push({
+          prefix,
+          serviceId: svc.serviceId,
+          endDate: formatDateForSummary(endDate),
+          daysLeft,
+        });
+      }
+    }
+  }
+
+  return { expired, expiringSoon };
+}
+
+/**
+ * Print a Markdown summary of validation results.
+ * Designed for GitHub Actions Job Summary output.
+ */
+function printMarkdownSummary(
+  allIssues: ValidationIssue[],
+  unvalidatedDirs: string[],
+  missingFiles: Array<{ prefix: string; filename: string }>,
+  calendarByPrefix: Map<string, CalendarServiceMeta[]>,
+  today: Date,
+): void {
+  console.log('## V2 Bundle Validation\n');
+  console.log(`Checked on: ${formatDateForSummary(today)}\n`);
+
+  // Unvalidated directories
+  if (unvalidatedDirs.length > 0) {
+    console.log('### ❌ Unvalidated directories\n');
+    for (const dir of unvalidatedDirs) {
+      console.log(`- \`${dir}/\``);
+    }
+    console.log('');
+  }
+
+  // Missing required files
+  if (missingFiles.length > 0) {
+    console.log('### ❌ Missing files\n');
+    console.log('| Prefix | File |');
+    console.log('|--------|------|');
+    for (const m of missingFiles) {
+      console.log(`| ${m.prefix} | ${m.filename} |`);
+    }
+    console.log('');
+  }
+
+  // Non-calendar errors
+  const errors = allIssues.filter((i) => i.level === 'error');
+  if (errors.length > 0) {
+    console.log('### ❌ Errors\n');
+    console.log('| Prefix | Message |');
+    console.log('|--------|---------|');
+    for (const e of errors) {
+      console.log(`| ${e.prefix} | ${e.message} |`);
+    }
+    console.log('');
+  }
+
+  // Non-calendar warnings (calendar warnings are shown as service-level tables below)
+  const nonCalendarWarns = allIssues.filter((i) => i.level === 'warn' && i.category !== 'calendar');
+  if (nonCalendarWarns.length > 0) {
+    console.log('### ⚠️ Warnings\n');
+    console.log('| Prefix | Message |');
+    console.log('|--------|---------|');
+    for (const w of nonCalendarWarns) {
+      console.log(`| ${w.prefix} | ${w.message} |`);
+    }
+    console.log('');
+  }
+
+  // Calendar freshness (service_id level, matching v1 format)
+  const { expired, expiringSoon } = collectCalendarFreshness(calendarByPrefix, today);
+
+  if (expired.length > 0) {
+    console.log('### ⚠️ Expired services\n');
+    console.log('| Prefix | Service ID | End Date |');
+    console.log('|--------|-----------|----------|');
+    for (const e of expired) {
+      console.log(`| ${e.prefix} | \`${e.serviceId}\` | ${e.endDate} |`);
+    }
+    console.log('');
+  }
+
+  if (expiringSoon.length > 0) {
+    console.log(`### ⚠️ Expiring within ${WARN_THRESHOLD_DAYS} days\n`);
+    console.log('| Prefix | Service ID | End Date | Days Left |');
+    console.log('|--------|-----------|----------|-----------|');
+    for (const e of expiringSoon) {
+      console.log(`| ${e.prefix} | \`${e.serviceId}\` | ${e.endDate} | ${e.daysLeft} |`);
+    }
+    console.log('');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -345,7 +479,7 @@ function validateSource(
 
 function printUsage(): void {
   console.log(
-    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts <source-name>',
+    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts <prefix>',
   );
   console.log(
     '       npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts --targets <file>',
@@ -355,8 +489,23 @@ function printUsage(): void {
   );
   console.log('Options:');
   console.log('  --targets <file>  Validate from a target list file (.ts)');
-  console.log('  --list            List available source names');
+  console.log('  --list            List available prefixes (from data-v2/ directories)');
   console.log('  --help            Show this help message');
+}
+
+/**
+ * List prefix directories that exist in the output directory.
+ */
+function listAvailablePrefixes(): string[] {
+  if (!existsSync(V2_OUTPUT_DIR)) {
+    return [];
+  }
+  return readdirSync(V2_OUTPUT_DIR)
+    .filter((name) => {
+      const dir = join(V2_OUTPUT_DIR, name);
+      return statSync(dir).isDirectory();
+    })
+    .sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -371,44 +520,39 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Build source name → prefix map once (used by --list and validation)
-  const prefixMap = await buildSourcePrefixMap();
-
   if (arg.kind === 'list') {
-    const names = [...prefixMap.keys()].sort();
-    console.log('Available v2 bundle sources:\n');
-    for (const name of names) {
-      console.log(`  ${name}`);
+    const prefixes = listAvailablePrefixes();
+    console.log('Available v2 bundle prefixes:\n');
+    for (const prefix of prefixes) {
+      console.log(`  ${prefix}`);
     }
     return;
   }
 
-  // Resolve target source names
-  let sourceNames: string[];
+  // Resolve target prefixes
+  let prefixes: string[];
   if (arg.kind === 'targets') {
-    sourceNames = await loadTargetFile(arg.path);
+    prefixes = await loadTargetFile(arg.path);
   } else {
-    sourceNames = [arg.name];
-  }
-
-  // Resolve source names to prefixes
-  const sources: Array<{ name: string; prefix: string }> = [];
-  for (const name of sourceNames) {
-    const prefix = prefixMap.get(name);
-    if (!prefix) {
-      console.error(`Error: Unknown source "${name}".`);
-      process.exitCode = EXIT_ERROR;
-      return;
-    }
-    sources.push({ name, prefix });
+    prefixes = [arg.name];
   }
 
   const state = { hasError: false, hasWarn: false };
+  const allIssues: ValidationIssue[] = [];
+  let unvalidatedDirs: string[] = [];
+  const missingFiles: Array<{ prefix: string; filename: string }> = [];
+  const calendarByPrefix = new Map<string, CalendarServiceMeta[]>();
   const isTargetsMode = arg.kind === 'targets';
   const totalSteps = isTargetsMode ? 3 : 2;
   let stepNum = 0;
+  const t0 = performance.now();
+  const rawDate = new Date();
+  const today = new Date(
+    Date.UTC(rawDate.getUTCFullYear(), rawDate.getUTCMonth(), rawDate.getUTCDate()),
+  );
 
-  console.log(`=== Validate v2 bundles (${sources.length} sources) ===\n`);
+  console.log(`=== Validate v2 bundles (${V2_OUTPUT_DIR}) ===\n`);
+  console.log(`  Validating ${prefixes.length} sources: ${prefixes.join(', ')}\n`);
 
   // -------------------------------------------------------------------------
   // Step 1: Unvalidated directory check (--targets mode only)
@@ -418,17 +562,17 @@ async function main(): Promise<void> {
     stepNum++;
     console.log(`--- [${stepNum}/${totalSteps}] Unvalidated directory check ---\n`);
 
-    const validatedPrefixes = new Set(sources.map((s) => s.prefix));
-    const unvalidated = checkUnvalidatedDirs(validatedPrefixes);
+    const validatedPrefixes = new Set(prefixes);
+    unvalidatedDirs = checkUnvalidatedDirs(validatedPrefixes);
 
-    if (unvalidated.length === 0) {
+    if (unvalidatedDirs.length === 0) {
       console.log('  Result: All directories are covered by targets.');
     } else {
-      for (const dir of unvalidated) {
-        console.log(`  ERROR: Unvalidated directory: ${dir}/`);
+      for (const dir of unvalidatedDirs) {
+        console.log(`  ❌ ERROR: Unvalidated directory: ${dir}/`);
       }
       console.log(
-        `  Result: ${unvalidated.length} unvalidated director${unvalidated.length === 1 ? 'y' : 'ies'} found.`,
+        `  Result: ${unvalidatedDirs.length} unvalidated director${unvalidatedDirs.length === 1 ? 'y' : 'ies'} found.`,
       );
       state.hasError = true;
     }
@@ -450,8 +594,8 @@ async function main(): Promise<void> {
   let presentFiles = 0;
   let optionalSkipped = 0;
 
-  for (const { name, prefix } of sources) {
-    console.log(`  ${name} (${prefix}):`);
+  for (const prefix of prefixes) {
+    console.log(`  ${prefix}:`);
     const result = checkFileExistence(prefix);
     existenceResults.set(prefix, result);
     printExistenceResult(prefix, result, state);
@@ -465,7 +609,9 @@ async function main(): Promise<void> {
       const exists = result.files.get(bf.filename)!;
       if (exists) {
         presentFiles++;
-      } else if (!bf.required) {
+      } else if (bf.required) {
+        missingFiles.push({ prefix, filename: bf.filename });
+      } else {
         optionalSkipped++;
       }
     }
@@ -476,7 +622,11 @@ async function main(): Promise<void> {
   console.log('');
 
   if (!allExistencePassed) {
-    console.log('Result: FAILED (required files missing)');
+    // Print summary before early return so CI gets missing-files report
+    printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, calendarByPrefix, today);
+    console.log('❌ Validation failed (required files missing).\n');
+    const elapsed = Math.round(performance.now() - t0);
+    console.log(`Done in ${elapsed}ms. (exit code: ${EXIT_ERROR})`);
     process.exitCode = EXIT_ERROR;
     return;
   }
@@ -488,24 +638,35 @@ async function main(): Promise<void> {
   stepNum++;
   console.log(`--- [${stepNum}/${totalSteps}] Validate each bundle ---\n`);
 
-  for (const { name, prefix } of sources) {
-    console.log(`  ${name} (${prefix}):`);
+  for (const prefix of prefixes) {
+    console.log(`  ${prefix}:`);
     const existence = existenceResults.get(prefix)!;
-    validateSource(prefix, existence.files, state);
+    const sourceResult = validateSource(prefix, existence.files, state, allIssues);
+    if (sourceResult.calendarServices.length > 0) {
+      calendarByPrefix.set(prefix, sourceResult.calendarServices);
+    }
     console.log('');
   }
 
-  // Summary
+  // Markdown summary
+  printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, calendarByPrefix, today);
+
+  // Final result
+  let exitCode: number;
   if (state.hasError) {
-    console.log('Result: FAILED (errors found)');
-    process.exitCode = EXIT_ERROR;
+    console.log('❌ Validation failed.\n');
+    exitCode = EXIT_ERROR;
   } else if (state.hasWarn) {
-    console.log('Result: PASSED with warnings');
-    process.exitCode = EXIT_WARN;
+    console.log('⚠️ Validation passed with warnings.\n');
+    exitCode = EXIT_WARN;
   } else {
-    console.log('Result: PASSED');
-    process.exitCode = EXIT_OK;
+    console.log('✅ All checks passed.\n');
+    exitCode = EXIT_OK;
   }
+
+  const elapsed = Math.round(performance.now() - t0);
+  console.log(`\nDone in ${elapsed}ms. (exit code: ${exitCode})`);
+  process.exitCode = exitCode;
 }
 
 // Only run main() when executed directly (not when imported by other scripts).
