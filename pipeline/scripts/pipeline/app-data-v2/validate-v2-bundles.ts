@@ -26,6 +26,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/pipeline-utils';
+import { parseGtfsDate } from '../../../src/lib/gtfs-date-utils';
 import type { CalendarServiceMeta } from '../../../src/lib/pipeline/app-data-v2/validate-data';
 import { validateDataBundle } from '../../../src/lib/pipeline/app-data-v2/validate-data';
 import { validateInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-insights';
@@ -328,22 +329,6 @@ function validateSource(
 // Markdown summary (for GitHub Actions Job Summary)
 // ---------------------------------------------------------------------------
 
-/** GTFS date string "YYYYMMDD" → Date (UTC midnight). */
-function parseGtfsDateForSummary(s: string): Date | null {
-  if (!/^\d{8}$/.test(s)) {
-    return null;
-  }
-  const y = Number(s.slice(0, 4));
-  const m = Number(s.slice(4, 6)) - 1;
-  const d = Number(s.slice(6, 8));
-  const date = new Date(Date.UTC(y, m, d));
-  // Validate round-trip to reject invalid month/day (e.g. month 13)
-  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m || date.getUTCDate() !== d) {
-    return null;
-  }
-  return date;
-}
-
 /** Format Date as "YYYY-MM-DD". */
 function formatDateForSummary(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -377,7 +362,7 @@ function collectCalendarFreshness(calendarByPrefix: Map<string, CalendarServiceM
 
   for (const [prefix, services] of calendarByPrefix) {
     for (const svc of services) {
-      const endDate = parseGtfsDateForSummary(svc.endDate);
+      const endDate = parseGtfsDate(svc.endDate);
       if (!endDate) {
         continue;
       }

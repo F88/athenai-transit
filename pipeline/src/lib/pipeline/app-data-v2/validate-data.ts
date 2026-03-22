@@ -22,6 +22,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
+import { parseGtfsDate } from '../../gtfs-date-utils';
 import type { ValidationIssue } from './validate-shapes';
 
 // ---------------------------------------------------------------------------
@@ -61,36 +62,6 @@ const SECTION_VERSIONS: Record<string, number> = {
   translations: 1,
   lookup: 2,
 };
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Parse a GTFS date string (YYYYMMDD) into a Date at UTC midnight.
- * Returns null if the string is not exactly 8 digits or not a valid calendar date.
- */
-function parseGtfsDate(dateStr: string): Date | null {
-  if (!/^\d{8}$/.test(dateStr)) {
-    return null;
-  }
-  const year = Number(dateStr.slice(0, 4));
-  const month = Number(dateStr.slice(4, 6)); // 1-based
-  const day = Number(dateStr.slice(6, 8));
-
-  if (month < 1 || month > 12) {
-    return null;
-  }
-
-  const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-  const daysInMonth = [31, isLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-
-  if (day < 1 || day > daysInMonth[month - 1]) {
-    return null;
-  }
-
-  return new Date(Date.UTC(year, month - 1, day));
-}
 
 // ---------------------------------------------------------------------------
 // Validator
