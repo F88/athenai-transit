@@ -649,7 +649,11 @@ async function main(): Promise<void> {
   console.log('');
 
   if (!allExistencePassed) {
+    // Print summary before early return so CI gets missing-files report
+    printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, prefixes, existenceResults);
     console.log('❌ Validation failed (required files missing).\n');
+    const elapsed = Math.round(performance.now() - t0);
+    console.log(`Done in ${elapsed}ms. (exit code: ${EXIT_ERROR})`);
     process.exitCode = EXIT_ERROR;
     return;
   }
