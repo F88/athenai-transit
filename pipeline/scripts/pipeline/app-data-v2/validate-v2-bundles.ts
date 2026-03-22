@@ -21,10 +21,11 @@
  *   npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts --list
  */
 
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
 import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/pipeline-utils';
 import { validateDataBundle } from '../../../src/lib/pipeline/app-data-v2/validate-data';
 import { validateInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-insights';
@@ -319,15 +320,114 @@ function validateSource(
 // Markdown summary (for GitHub Actions Job Summary)
 // ---------------------------------------------------------------------------
 
+/** GTFS date string "YYYYMMDD" → Date (UTC midnight). */
+function parseGtfsDateForSummary(s: string): Date | null {
+  if (s.length !== 8) {
+    return null;
+  }
+  const y = Number(s.slice(0, 4));
+  const m = Number(s.slice(4, 6)) - 1;
+  const d = Number(s.slice(6, 8));
+  return new Date(Date.UTC(y, m, d));
+}
+
+/** Format Date as "YYYY-MM-DD". */
+function formatDateForSummary(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/** Threshold for "expiring soon" warning (days). */
+const WARN_THRESHOLD_DAYS = 30;
+
+interface CalendarServiceEntry {
+  prefix: string;
+  serviceId: string;
+  endDate: string;
+  daysLeft: number;
+}
+
+/**
+ * Collect per-service calendar freshness information from DataBundles.
+ */
+function collectCalendarFreshness(
+  prefixes: string[],
+  existenceResults: Map<string, ExistenceResult>,
+): { expired: CalendarServiceEntry[]; expiringSoon: CalendarServiceEntry[] } {
+  const expired: CalendarServiceEntry[] = [];
+  const expiringSoon: CalendarServiceEntry[] = [];
+
+  const raw = new Date();
+  const now = new Date(Date.UTC(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate()));
+  const thresholdMs = WARN_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
+
+  for (const prefix of prefixes) {
+    const existence = existenceResults.get(prefix);
+    if (!existence?.files.get('data.json')) {
+      continue;
+    }
+
+    const dataPath = join(V2_OUTPUT_DIR, prefix, 'data.json');
+    if (!existsSync(dataPath)) {
+      continue;
+    }
+
+    let bundle: DataBundle;
+    try {
+      bundle = JSON.parse(readFileSync(dataPath, 'utf-8')) as DataBundle;
+    } catch {
+      continue;
+    }
+
+    const services = bundle.calendar?.data?.services;
+    if (!Array.isArray(services)) {
+      continue;
+    }
+
+    for (const svc of services) {
+      const endDate = parseGtfsDateForSummary(svc.e);
+      if (!endDate) {
+        continue;
+      }
+      const diffMs = endDate.getTime() - now.getTime();
+      const daysLeft = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+
+      if (diffMs < 0) {
+        expired.push({
+          prefix,
+          serviceId: svc.i,
+          endDate: formatDateForSummary(endDate),
+          daysLeft,
+        });
+      } else if (diffMs < thresholdMs) {
+        expiringSoon.push({
+          prefix,
+          serviceId: svc.i,
+          endDate: formatDateForSummary(endDate),
+          daysLeft,
+        });
+      }
+    }
+  }
+
+  return { expired, expiringSoon };
+}
+
 /**
  * Print a Markdown summary of validation results.
+ * Designed for GitHub Actions Job Summary output.
  */
 function printMarkdownSummary(
   allIssues: ValidationIssue[],
   unvalidatedDirs: string[],
   missingFiles: Array<{ prefix: string; filename: string }>,
+  prefixes: string[],
+  existenceResults: Map<string, ExistenceResult>,
 ): void {
+  const raw = new Date();
+  const today = new Date(Date.UTC(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate()));
+
   console.log('## V2 Bundle Validation\n');
+  console.log(`Checked on: ${formatDateForSummary(today)}\n`);
 
   // Unvalidated directories
   if (unvalidatedDirs.length > 0) {
@@ -349,7 +449,7 @@ function printMarkdownSummary(
     console.log('');
   }
 
-  // Errors
+  // Non-calendar errors
   const errors = allIssues.filter((i) => i.level === 'error');
   if (errors.length > 0) {
     console.log('### Errors\n');
@@ -361,14 +461,25 @@ function printMarkdownSummary(
     console.log('');
   }
 
-  // Warnings
-  const warns = allIssues.filter((i) => i.level === 'warn');
-  if (warns.length > 0) {
-    console.log('### Warnings\n');
-    console.log('| Prefix | Message |');
-    console.log('|--------|---------|');
-    for (const w of warns) {
-      console.log(`| ${w.prefix} | ${w.message} |`);
+  // Calendar freshness (service_id level, matching v1 format)
+  const { expired, expiringSoon } = collectCalendarFreshness(prefixes, existenceResults);
+
+  if (expired.length > 0) {
+    console.log('### Expired services\n');
+    console.log('| Prefix | Service ID | End Date |');
+    console.log('|--------|-----------|----------|');
+    for (const e of expired) {
+      console.log(`| ${e.prefix} | \`${e.serviceId}\` | ${e.endDate} |`);
+    }
+    console.log('');
+  }
+
+  if (expiringSoon.length > 0) {
+    console.log(`### Expiring within ${WARN_THRESHOLD_DAYS} days\n`);
+    console.log('| Prefix | Service ID | End Date | Days Left |');
+    console.log('|--------|-----------|----------|-----------|');
+    for (const e of expiringSoon) {
+      console.log(`| ${e.prefix} | \`${e.serviceId}\` | ${e.endDate} | ${e.daysLeft} |`);
     }
     console.log('');
   }
@@ -537,7 +648,7 @@ async function main(): Promise<void> {
   }
 
   // Markdown summary
-  printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles);
+  printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, prefixes, existenceResults);
 
   // Final result
   let exitCode: number;
