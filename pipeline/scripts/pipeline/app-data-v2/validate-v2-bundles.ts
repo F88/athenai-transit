@@ -431,7 +431,7 @@ function printMarkdownSummary(
 
   // Unvalidated directories
   if (unvalidatedDirs.length > 0) {
-    console.log('### Unvalidated directories\n');
+    console.log('### ❌ Unvalidated directories\n');
     for (const dir of unvalidatedDirs) {
       console.log(`- \`${dir}/\``);
     }
@@ -440,7 +440,7 @@ function printMarkdownSummary(
 
   // Missing required files
   if (missingFiles.length > 0) {
-    console.log('### Missing files\n');
+    console.log('### ❌ Missing files\n');
     console.log('| Prefix | File |');
     console.log('|--------|------|');
     for (const m of missingFiles) {
@@ -452,7 +452,7 @@ function printMarkdownSummary(
   // Non-calendar errors
   const errors = allIssues.filter((i) => i.level === 'error');
   if (errors.length > 0) {
-    console.log('### Errors\n');
+    console.log('### ❌ Errors\n');
     console.log('| Prefix | Message |');
     console.log('|--------|---------|');
     for (const e of errors) {
@@ -465,7 +465,7 @@ function printMarkdownSummary(
   const { expired, expiringSoon } = collectCalendarFreshness(prefixes, existenceResults);
 
   if (expired.length > 0) {
-    console.log('### Expired services\n');
+    console.log('### ⚠️ Expired services\n');
     console.log('| Prefix | Service ID | End Date |');
     console.log('|--------|-----------|----------|');
     for (const e of expired) {
@@ -475,7 +475,7 @@ function printMarkdownSummary(
   }
 
   if (expiringSoon.length > 0) {
-    console.log(`### Expiring within ${WARN_THRESHOLD_DAYS} days\n`);
+    console.log(`### ⚠️ Expiring within ${WARN_THRESHOLD_DAYS} days\n`);
     console.log('| Prefix | Service ID | End Date | Days Left |');
     console.log('|--------|-----------|----------|-----------|');
     for (const e of expiringSoon) {
@@ -628,7 +628,7 @@ async function main(): Promise<void> {
   console.log('');
 
   if (!allExistencePassed) {
-    console.log('Result: FAILED (required files missing)');
+    console.log('❌ Validation failed (required files missing).\n');
     process.exitCode = EXIT_ERROR;
     return;
   }
@@ -653,13 +653,13 @@ async function main(): Promise<void> {
   // Final result
   let exitCode: number;
   if (state.hasError) {
-    console.log('Result: FAILED (errors found)');
+    console.log('❌ Validation failed.\n');
     exitCode = EXIT_ERROR;
   } else if (state.hasWarn) {
-    console.log('Result: PASSED with warnings');
+    console.log('⚠️ Validation passed with warnings.\n');
     exitCode = EXIT_WARN;
   } else {
-    console.log('Result: PASSED');
+    console.log('✅ All checks passed.\n');
     exitCode = EXIT_OK;
   }
 
