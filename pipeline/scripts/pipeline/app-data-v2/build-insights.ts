@@ -150,7 +150,12 @@ async function main(): Promise<void> {
   const t0 = performance.now();
 
   try {
-    buildSourceInsights(prefix);
+    const ok = buildSourceInsights(prefix);
+    if (!ok) {
+      // In single-source mode, missing data.json is likely a user error (e.g. typo).
+      // Batch mode handles this via runBatch child process exit codes.
+      process.exitCode = 1;
+    }
   } catch (err) {
     console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
     process.exitCode = 1;

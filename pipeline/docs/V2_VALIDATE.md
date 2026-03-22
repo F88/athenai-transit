@@ -263,8 +263,8 @@ Done in 12ms. (exit code: 2)
         routes:          89 routes, OK
         calendar:        3 services, OK
         tripPatterns:    340 patterns, 2 error(s)
-          ❌ ERROR: tripPattern "kobus:P42": route "kobus:R_OLD" not found
-          ❌ ERROR: tripPattern "kobus:P42": stop "kobus:S999" not found
+          ❌ ERROR: tripPattern kobus:P42: route "kobus:R_OLD" not found in routes
+          ❌ ERROR: tripPattern kobus:P42: stop "kobus:S999" not found in stops
         timetable:       2100 stops, OK
 ```
 
