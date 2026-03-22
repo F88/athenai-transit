@@ -322,13 +322,18 @@ function validateSource(
 
 /** GTFS date string "YYYYMMDD" → Date (UTC midnight). */
 function parseGtfsDateForSummary(s: string): Date | null {
-  if (s.length !== 8) {
+  if (!/^\d{8}$/.test(s)) {
     return null;
   }
   const y = Number(s.slice(0, 4));
   const m = Number(s.slice(4, 6)) - 1;
   const d = Number(s.slice(6, 8));
-  return new Date(Date.UTC(y, m, d));
+  const date = new Date(Date.UTC(y, m, d));
+  // Validate round-trip to reject invalid month/day (e.g. month 13)
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== m || date.getUTCDate() !== d) {
+    return null;
+  }
+  return date;
 }
 
 /** Format Date as "YYYY-MM-DD". */
@@ -457,6 +462,21 @@ function printMarkdownSummary(
     console.log('|--------|---------|');
     for (const e of errors) {
       console.log(`| ${e.prefix} | ${e.message} |`);
+    }
+    console.log('');
+  }
+
+  // Non-calendar warnings (calendar warnings are shown as service-level tables below)
+  const calendarWarnPattern = /^Calendar (has expired|expires within)/;
+  const nonCalendarWarns = allIssues.filter(
+    (i) => i.level === 'warn' && !calendarWarnPattern.test(i.message),
+  );
+  if (nonCalendarWarns.length > 0) {
+    console.log('### ⚠️ Warnings\n');
+    console.log('| Prefix | Message |');
+    console.log('|--------|---------|');
+    for (const w of nonCalendarWarns) {
+      console.log(`| ${w.prefix} | ${w.message} |`);
     }
     console.log('');
   }
