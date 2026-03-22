@@ -287,14 +287,14 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
         issues.push({
           prefix,
           level: 'warn',
-          category: 'quality',
+          category: 'calendar',
           message: `Calendar has expired services (earliest end_date already passed)`,
         });
       } else if (diffMs < thirtyDaysMs) {
         issues.push({
           prefix,
           level: 'warn',
-          category: 'quality',
+          category: 'calendar',
           message: `Calendar expires within 30 days (earliest end_date approaching)`,
         });
       }

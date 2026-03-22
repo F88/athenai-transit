@@ -4,7 +4,7 @@
  * Each entry is a prefix (output directory name) that has a
  * DataBundle (data.json). The insights builder reads calendar
  * data from data.json to produce insights.json. Prefixes without
- * data.json are skipped at runtime.
+ * data.json will cause the batch child process to exit non-zero.
  *
  * Comment out entries to temporarily skip them.
  */

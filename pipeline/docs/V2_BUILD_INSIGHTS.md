@@ -31,7 +31,7 @@ Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts <prefix>
 
 ### data.json が存在しない場合
 
-単体実行時、指定 prefix の `data.json` が存在しない場合はスキップ (exit 0)。バッチ実行時は `runBatch` による子プロセス実行。
+単体実行時、指定 prefix の `data.json` が存在しない場合はエラー (exit 1)。バッチ実行時は `runBatch` による子プロセス実行 (各 prefix が子プロセスとして実行され、欠損は子プロセスの exit 1 として報告される)。
 
 ## InsightsBundle 構成
 

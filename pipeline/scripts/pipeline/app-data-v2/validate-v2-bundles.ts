@@ -454,10 +454,7 @@ function printMarkdownSummary(
   }
 
   // Non-calendar warnings (calendar warnings are shown as service-level tables below)
-  const calendarWarnPattern = /^Calendar (has expired|expires within)/;
-  const nonCalendarWarns = allIssues.filter(
-    (i) => i.level === 'warn' && !calendarWarnPattern.test(i.message),
-  );
+  const nonCalendarWarns = allIssues.filter((i) => i.level === 'warn' && i.category !== 'calendar');
   if (nonCalendarWarns.length > 0) {
     console.log('### ⚠️ Warnings\n');
     console.log('| Prefix | Message |');
