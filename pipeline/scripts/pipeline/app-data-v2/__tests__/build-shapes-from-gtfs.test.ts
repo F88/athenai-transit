@@ -12,7 +12,7 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { ShapePointV2, ShapesBundle } from '../../../../../src/types/data/transit-v2-json';
+import type { ShapesBundle } from '../../../../../src/types/data/transit-v2-json';
 import { extractShapes } from '../../../../src/lib/pipeline/extract-shapes-from-gtfs';
 import { extractRoutesV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-routes';
 import { writeShapesBundle } from '../../../../src/lib/pipeline/app-data-v2/bundle-writer';
