@@ -132,7 +132,7 @@ pipeline/config/resources/
 | [V2_APP_DATA.md](./docs/V2_APP_DATA.md)                     | (v2) DataBundle ビルド仕様 (TODO)                             |
 | [V2_BUILD_SHAPES.md](./docs/V2_BUILD_SHAPES.md)             | (v2) ShapesBundle ビルド仕様 (TODO)                           |
 | [V2_BUILD_INSIGHTS.md](./docs/V2_BUILD_INSIGHTS.md)         | (v2) InsightsBundle ビルド仕様 (TODO)                         |
-| [V2_VALIDATE.md](./docs/V2_VALIDATE.md)                     | (v2) バンドル検証仕様 (TODO)                                  |
+| [V2_VALIDATE.md](./docs/V2_VALIDATE.md)                     | (v2) バンドル検証仕様                                         |
 | [DESCRIBE_RESOURCES.md](./docs/DESCRIBE_RESOURCES.md)       | リソース定義一覧表示の仕様                                    |
 | [RESOURCE-DEFINITIONS.md](./docs/RESOURCE-DEFINITIONS.md)   | リソース定義の型構造と追加手順                                |
 
