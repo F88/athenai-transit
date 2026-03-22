@@ -102,6 +102,12 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
     }
     if (Array.isArray(bundle.serviceGroups.data)) {
       serviceGroupCount = bundle.serviceGroups.data.length;
+    } else {
+      issues.push({
+        prefix,
+        level: 'error',
+        message: 'Invalid serviceGroups.data: expected an array',
+      });
     }
   }
 

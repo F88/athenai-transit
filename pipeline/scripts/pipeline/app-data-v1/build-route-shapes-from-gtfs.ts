@@ -70,7 +70,7 @@ export function stripShapeDistance(
   const result: Record<string, [number, number][][]> = {};
   for (const [routeId, polylines] of Object.entries(shapes)) {
     result[routeId] = polylines.map((polyline) =>
-      polyline.map(([lat, lon]) => [lat, lon] as [number, number]),
+      polyline.map(([lat, lon]): [number, number] => [lat, lon]),
     );
   }
   return result;

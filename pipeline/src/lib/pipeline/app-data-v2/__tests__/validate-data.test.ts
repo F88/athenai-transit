@@ -310,6 +310,24 @@ describe('validateDataBundle', () => {
       expect(result.issues.some((i) => i.message.includes('expired'))).toBe(false);
     });
 
+    it('ignores invalid calendar date (e.g. 20260299)', () => {
+      const bundle = makeValidBundle({
+        calendar: {
+          v: 1,
+          data: {
+            services: [{ i: 'test:SVC1', d: [1, 1, 1, 1, 1, 0, 0], s: '20260101', e: '20260299' }],
+            exceptions: [],
+          },
+        },
+      });
+      writeBundle('bad-date', bundle);
+
+      const result = validateDataBundle('bad-date', TMP_DIR);
+      // Invalid date is unparseable, so no expiration warning is emitted
+      expect(result.issues.some((i) => i.message.includes('expire'))).toBe(false);
+      expect(result.issues.some((i) => i.message.includes('expired'))).toBe(false);
+    });
+
     it('picks earliest end_date among multiple services', () => {
       const bundle = makeValidBundle({
         calendar: {

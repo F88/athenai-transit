@@ -118,6 +118,21 @@ describe('validateInsightsBundle', () => {
       ).toBe(true);
     });
 
+    it('reports error when serviceGroups.data is not an array', () => {
+      const bundle = {
+        bundle_version: 2,
+        kind: 'insights',
+        serviceGroups: { v: 1, data: { wd: ['test:SVC1'] } },
+      };
+      writeBundle('bad-sg-data', bundle);
+
+      const result = validateInsightsBundle('bad-sg-data', TMP_DIR);
+      expect(
+        result.issues.some((i) => i.level === 'error' && i.message.includes('serviceGroups.data')),
+      ).toBe(true);
+      expect(result.serviceGroupCount).toBe(0);
+    });
+
     it('counts service groups correctly', () => {
       const bundle: InsightsBundle = {
         bundle_version: 2,
