@@ -76,7 +76,8 @@ npm run pipeline:build:shapes:gtfs       # 6. generate route shapes from GTFS
 npm run pipeline:build:shapes:ksj        # 7. generate route shapes from KSJ railway
 npm run pipeline:build:v2-shapes:gtfs    # 6v2. generate v2 route shapes from GTFS
 npm run pipeline:build:v2-shapes:ksj     # 7v2. generate v2 route shapes from KSJ railway
-npm run data:sync                        # 8. copy pipeline/workspace/_build/data/ -> public/data/
+npm run pipeline:build:v2-insights       # 8v2. generate v2 InsightsBundle from DataBundle
+npm run data:sync                        # 9. copy pipeline/workspace/_build/data/ -> public/data/
 ```
 
 ## Key UX Requirements

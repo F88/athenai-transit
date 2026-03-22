@@ -11,6 +11,11 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- v2 InsightsBundle builder (`pipeline:build:v2-insights`):
+    - DataBundle の calendar セクションから曜日パターンで service groups を導出。
+    - 既知パターン (wd/sa/su/wk/all) は短縮キー、未知パターンはビット列キーを生成。
+    - 優先度順ソート (平日 → 土曜 → 日曜 → 週末 → 毎日 → その他)。
+    - tripPatternStats, tripPatternGeo, stopStats は将来実装 (optional セクション)。
 - v2 ShapesBundle builders for GTFS and KSJ railway:
     - `pipeline/scripts/pipeline/app-data-v2/` に v2 shapes パイプラインを新規実装。
     - GTFS shapes.txt と国土数値情報 (KSJ) 鉄道路線の両データソースに対応。

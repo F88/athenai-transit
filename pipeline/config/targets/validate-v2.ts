@@ -8,18 +8,23 @@
  * Comment out entries to temporarily skip them.
  */
 export default [
-  // GTFS sources (data + optional shapes from build-shapes-from-gtfs.ts)
+  // GTFS sources (data + insights + optional shapes)
   'toei-bus',
+  'toei-train',
+  'kanto-bus',
+  'keio-bus',
   'suginami-gsm',
   'chiyoda-bus',
   'chuo-bus',
+  'seibu-bus',
+  'iyotetsu-bus',
   'kita-bus',
   'kyoto-city-bus',
   'oshima-bus',
+  'miyake-bus',
   'keisei-transit-bus',
-
-  // KSJ railway shapes (from build-shapes-from-ksj-railway.ts)
-  'toei-train',
-  'yurikamome',
   'mir-train',
+
+  // ODPT sources
+  'yurikamome',
 ];
