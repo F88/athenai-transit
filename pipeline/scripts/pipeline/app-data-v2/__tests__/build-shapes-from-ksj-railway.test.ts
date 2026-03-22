@@ -154,4 +154,27 @@ describe('KSJ ShapesBundle assembly', () => {
     warnSpy.mockRestore();
     logSpy.mockRestore();
   });
+
+  it('all output route IDs come from lineToRouteId mapping values', () => {
+    const lineToRouteId = {
+      'Line A': 'test:A',
+      'Line B': 'test:B',
+    };
+
+    const geojson = makeGeojson([
+      makeFeature('TestOp', 'Line A', [
+        [139.76, 35.68],
+        [139.77, 35.69],
+      ]),
+      makeFeature('TestOp', 'Line B', [[139.78, 35.7]]),
+    ]);
+
+    const target = makeTarget('TestOp', lineToRouteId);
+    const shapes = buildShapesForTarget(target, geojson);
+
+    const validRouteIds = new Set(Object.values(lineToRouteId));
+    for (const routeId of Object.keys(shapes)) {
+      expect(validRouteIds.has(routeId)).toBe(true);
+    }
+  });
 });

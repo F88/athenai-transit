@@ -12,15 +12,22 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { ShapesBundle } from '../../../../../src/types/data/transit-v2-json';
+import type { ShapePointV2, ShapesBundle } from '../../../../../src/types/data/transit-v2-json';
 import { extractShapes } from '../../../../src/lib/pipeline/extract-shapes-from-gtfs';
+import { extractRoutesV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-routes';
 import { writeShapesBundle } from '../../../../src/lib/pipeline/app-data-v2/bundle-writer';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-build-shapes-gtfs-test');
 
+/** Minimal schema with routes, trips, and shapes tables. */
 function createMinimalShapesDb(): Database.Database {
   const db = new Database(':memory:');
   db.exec(`
+    CREATE TABLE routes (
+      route_id TEXT PRIMARY KEY, agency_id TEXT, route_short_name TEXT,
+      route_long_name TEXT, route_type INTEGER NOT NULL,
+      route_color TEXT, route_text_color TEXT, route_desc TEXT, route_url TEXT
+    );
     CREATE TABLE trips (
       trip_id TEXT PRIMARY KEY,
       route_id TEXT NOT NULL,
@@ -34,6 +41,9 @@ function createMinimalShapesDb(): Database.Database {
       shape_pt_sequence INTEGER NOT NULL,
       shape_dist_traveled REAL
     );
+
+    INSERT INTO routes VALUES ('R1', 'A1', '01', 'Route One', 3, NULL, NULL, NULL, NULL);
+    INSERT INTO routes VALUES ('R2', 'A1', '02', 'Route Two', 3, NULL, NULL, NULL, NULL);
 
     INSERT INTO trips VALUES ('T1', 'R1', 'WD', 'S1');
     INSERT INTO trips VALUES ('T2', 'R1', 'WD', 'S2');
@@ -138,5 +148,100 @@ describe('GTFS ShapesBundle assembly', () => {
 
     const bundle = JSON.parse(readFileSync(join(outDir, 'shapes.json'), 'utf-8')) as ShapesBundle;
     expect(bundle.shapes.data).toEqual({});
+  });
+
+  it('shapes route IDs reference existing routes in the same DB', () => {
+    const db = createMinimalShapesDb();
+    const prefix = 'test';
+
+    const shapes = extractShapes(db, prefix);
+    const routes = extractRoutesV2(db, prefix, {});
+    db.close();
+
+    const routeIds = new Set(routes.map((r) => r.i));
+    for (const shapeRouteId of Object.keys(shapes)) {
+      expect(routeIds.has(shapeRouteId)).toBe(true);
+    }
+  });
+
+  it('all keys start with the given prefix', () => {
+    const db = createMinimalShapesDb();
+    const prefix = 'myprefix';
+
+    const shapes = extractShapes(db, prefix);
+    db.close();
+
+    for (const key of Object.keys(shapes)) {
+      expect(key.startsWith(`${prefix}:`)).toBe(true);
+    }
+  });
+
+  it('shape_dist_traveled values are non-negative', () => {
+    const db = new Database(':memory:');
+    db.exec(`
+      CREATE TABLE trips (
+        trip_id TEXT PRIMARY KEY, route_id TEXT NOT NULL,
+        service_id TEXT NOT NULL, shape_id TEXT
+      );
+      CREATE TABLE shapes (
+        shape_id TEXT NOT NULL, shape_pt_lat REAL NOT NULL,
+        shape_pt_lon REAL NOT NULL, shape_pt_sequence INTEGER NOT NULL,
+        shape_dist_traveled REAL
+      );
+
+      INSERT INTO trips VALUES ('T1', 'R1', 'WD', 'S1');
+      INSERT INTO shapes VALUES ('S1', 35.68, 139.76, 1, 0);
+      INSERT INTO shapes VALUES ('S1', 35.69, 139.77, 2, 100.5);
+      INSERT INTO shapes VALUES ('S1', 35.70, 139.78, 3, 250.0);
+    `);
+
+    const shapes = extractShapes(db, 'test');
+    db.close();
+
+    for (const polylines of Object.values(shapes)) {
+      for (const polyline of polylines) {
+        for (const point of polyline) {
+          if (point.length === 3) {
+            expect(point[2]).toBeGreaterThanOrEqual(0);
+          }
+        }
+      }
+    }
+  });
+
+  it('shape_dist_traveled is monotonically non-decreasing within a shape', () => {
+    const db = new Database(':memory:');
+    db.exec(`
+      CREATE TABLE trips (
+        trip_id TEXT PRIMARY KEY, route_id TEXT NOT NULL,
+        service_id TEXT NOT NULL, shape_id TEXT
+      );
+      CREATE TABLE shapes (
+        shape_id TEXT NOT NULL, shape_pt_lat REAL NOT NULL,
+        shape_pt_lon REAL NOT NULL, shape_pt_sequence INTEGER NOT NULL,
+        shape_dist_traveled REAL
+      );
+
+      INSERT INTO trips VALUES ('T1', 'R1', 'WD', 'S1');
+      INSERT INTO shapes VALUES ('S1', 35.68, 139.76, 1, 0);
+      INSERT INTO shapes VALUES ('S1', 35.69, 139.77, 2, 100.0);
+      INSERT INTO shapes VALUES ('S1', 35.70, 139.78, 3, 100.0);
+      INSERT INTO shapes VALUES ('S1', 35.71, 139.79, 4, 250.0);
+    `);
+
+    const shapes = extractShapes(db, 'test');
+    db.close();
+
+    for (const polylines of Object.values(shapes)) {
+      for (const polyline of polylines) {
+        const distances = polyline
+          .filter((p): p is [number, number, number] => p.length === 3)
+          .map((p) => p[2]);
+
+        for (let i = 1; i < distances.length; i++) {
+          expect(distances[i]).toBeGreaterThanOrEqual(distances[i - 1]);
+        }
+      }
+    }
   });
 });
