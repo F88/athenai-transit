@@ -3,12 +3,10 @@
 /**
  * Validate v2 bundle files (DataBundle, ShapesBundle, InsightsBundle).
  *
- * Runs validation in two steps:
- *   Step 1 — File existence check (required bundles must exist)
- *   Step 2 — Validate each bundle (structure, data quality, referential integrity)
- *
- * Unvalidated directory check (Step 1 in V2_VALIDATE.md) is only
- * relevant for --targets mode and is not yet implemented.
+ * Runs validation in up to three steps:
+ *   Step 1 — Unvalidated directory check (--targets mode only)
+ *   Step 2 — File existence check (required bundles must exist)
+ *   Step 3 — Validate each bundle (structure, data quality, referential integrity)
  *
  * Target: pipeline/workspace/_build/data-v2/{prefix}/
  *
@@ -23,7 +21,7 @@
  *   npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts --list
  */
 
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -120,6 +118,29 @@ function trackIssues(
       state.hasWarn = true;
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Step 1: Unvalidated directory check (--targets mode only)
+// ---------------------------------------------------------------------------
+
+/**
+ * Check for directories in data-v2/ that are not in the validated set.
+ * Prevents unvalidated data from being synced to public/.
+ *
+ * @returns Array of unvalidated directory names (empty = all covered).
+ */
+function checkUnvalidatedDirs(validatedPrefixes: Set<string>): string[] {
+  if (!existsSync(V2_OUTPUT_DIR)) {
+    return [];
+  }
+
+  const dirs = readdirSync(V2_OUTPUT_DIR).filter((entry) => {
+    const entryPath = join(V2_OUTPUT_DIR, entry);
+    return statSync(entryPath).isDirectory();
+  });
+
+  return dirs.filter((dir) => !validatedPrefixes.has(dir)).sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -391,14 +412,44 @@ async function main(): Promise<void> {
   }
 
   const state = { hasError: false, hasWarn: false };
+  const isTargetsMode = arg.kind === 'targets';
+  const totalSteps = isTargetsMode ? 3 : 2;
+  let stepNum = 0;
 
   console.log(`=== Validate v2 bundles (${sources.length} sources) ===\n`);
 
   // -------------------------------------------------------------------------
-  // Step 1: File existence check
+  // Step 1: Unvalidated directory check (--targets mode only)
   // -------------------------------------------------------------------------
 
-  console.log('--- [1/2] File existence check ---\n');
+  if (isTargetsMode) {
+    stepNum++;
+    console.log(`--- [${stepNum}/${totalSteps}] Unvalidated directory check ---\n`);
+
+    const validatedPrefixes = new Set(sources.map((s) => s.prefix));
+    const unvalidated = checkUnvalidatedDirs(validatedPrefixes);
+
+    if (unvalidated.length === 0) {
+      console.log('  Result: All directories are covered by targets.');
+    } else {
+      for (const dir of unvalidated) {
+        console.log(`  ERROR: Unvalidated directory: ${dir}/`);
+      }
+      console.log(
+        `  Result: ${unvalidated.length} unvalidated director${unvalidated.length === 1 ? 'y' : 'ies'} found.`,
+      );
+      state.hasError = true;
+    }
+
+    console.log('');
+  }
+
+  // -------------------------------------------------------------------------
+  // Step 2: File existence check
+  // -------------------------------------------------------------------------
+
+  stepNum++;
+  console.log(`--- [${stepNum}/${totalSteps}] File existence check ---\n`);
 
   const existenceResults = new Map<string, ExistenceResult>();
   let allExistencePassed = true;
@@ -423,10 +474,11 @@ async function main(): Promise<void> {
   }
 
   // -------------------------------------------------------------------------
-  // Step 2: Validate each bundle
+  // Step 3: Validate each bundle
   // -------------------------------------------------------------------------
 
-  console.log('--- [2/2] Validate each bundle ---\n');
+  stepNum++;
+  console.log(`--- [${stepNum}/${totalSteps}] Validate each bundle ---\n`);
 
   for (const { name, prefix } of sources) {
     console.log(`  ${name} (${prefix}):`);
