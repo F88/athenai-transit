@@ -113,4 +113,4 @@ optional セクション (tripPatternStats, tripPatternGeo, stopStats) は実装
 | `pipeline/src/lib/pipeline/app-data-v2/build-service-groups.ts` | serviceGroups 導出 (pure function)  |
 | `pipeline/src/lib/pipeline/app-data-v2/bundle-writer.ts`        | InsightsBundle の atomic write      |
 | `pipeline/scripts/pipeline/app-data-v2/build-insights.ts`       | CLI スクリプト (単体/バッチ/リスト) |
-| `pipeline/config/targets/build-v2-insights.ts`                  | バッチ対象ソースリスト              |
+| `pipeline/config/targets/build-insights.ts`                     | バッチ対象 prefix リスト            |

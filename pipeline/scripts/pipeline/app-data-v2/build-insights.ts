@@ -129,7 +129,7 @@ async function main(): Promise<void> {
 
   if (arg.kind === 'targets') {
     const targetPrefixes = await loadTargetFile(arg.path);
-    console.log(`=== Batch build-v2-insights (${targetPrefixes.length} targets) ===\n`);
+    console.log(`=== Batch build-insights (${targetPrefixes.length} targets) ===\n`);
     const scriptPath = resolve(import.meta.dirname, 'build-insights.ts');
     const results = runBatch(scriptPath, targetPrefixes);
     printBatchSummary(results);
