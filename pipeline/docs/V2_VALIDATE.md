@@ -199,8 +199,9 @@ Done in 42ms. (exit code: 2)
 
 各バンドルの検証ロジックは lib に配置し、スクリプトは CLI + 結果表示のみ担当する。
 
-| ファイル                                                       | 役割                              |
-| -------------------------------------------------------------- | --------------------------------- |
-| `pipeline/src/lib/pipeline/app-data-v2/validate-data.ts`       | DataBundle 検証 (pure function)   |
-| `pipeline/src/lib/pipeline/app-data-v2/validate-shapes.ts`     | ShapesBundle 検証 (pure function) |
-| `pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts` | CLI スクリプト                    |
+| ファイル                                                       | 役割                                |
+| -------------------------------------------------------------- | ----------------------------------- |
+| `pipeline/src/lib/pipeline/app-data-v2/validate-data.ts`       | DataBundle 検証 (pure function)     |
+| `pipeline/src/lib/pipeline/app-data-v2/validate-shapes.ts`     | ShapesBundle 検証 (pure function)   |
+| `pipeline/src/lib/pipeline/app-data-v2/validate-insights.ts`   | InsightsBundle 検証 (pure function) |
+| `pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts` | CLI スクリプト                      |

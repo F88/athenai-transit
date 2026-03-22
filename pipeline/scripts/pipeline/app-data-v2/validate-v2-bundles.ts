@@ -454,6 +454,10 @@ async function main(): Promise<void> {
   const existenceResults = new Map<string, ExistenceResult>();
   let allExistencePassed = true;
 
+  let totalFiles = 0;
+  let presentFiles = 0;
+  let optionalSkipped = 0;
+
   for (const { name, prefix } of sources) {
     console.log(`  ${name} (${prefix}):`);
     const result = checkFileExistence(prefix);
@@ -463,8 +467,20 @@ async function main(): Promise<void> {
     if (!result.allRequiredPresent) {
       allExistencePassed = false;
     }
+
+    for (const bf of BUNDLE_FILES) {
+      totalFiles++;
+      const exists = result.files.get(bf.filename)!;
+      if (exists) {
+        presentFiles++;
+      } else if (!bf.required) {
+        optionalSkipped++;
+      }
+    }
   }
 
+  const skippedNote = optionalSkipped > 0 ? ` (${optionalSkipped} optional skipped)` : '';
+  console.log(`  Result: ${presentFiles}/${totalFiles} files present${skippedNote}.`);
   console.log('');
 
   if (!allExistencePassed) {
