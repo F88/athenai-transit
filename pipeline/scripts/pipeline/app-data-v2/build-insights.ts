@@ -122,7 +122,7 @@ async function main(): Promise<void> {
       console.log(`  ${prefix}`);
     }
     if (prefixes.length === 0) {
-      console.log('  (none — run build-from-gtfs.ts first)');
+      console.log('  (none — run v2 data build scripts first)');
     }
     return;
   }

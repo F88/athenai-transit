@@ -87,8 +87,15 @@ export function buildServiceGroups(calendar: CalendarJson): ServiceGroupEntry[] 
     if (bi !== -1) {
       return 1;
     }
-    // Both unknown: alphabetical
-    return a.key.localeCompare(b.key);
+    // Both unknown: code-unit comparison for deterministic output
+    // (avoid localeCompare which can vary across environments)
+    if (a.key < b.key) {
+      return -1;
+    }
+    if (a.key > b.key) {
+      return 1;
+    }
+    return 0;
   });
 
   return groups;
