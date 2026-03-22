@@ -30,7 +30,7 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 | 3     | GTFS shapes.txt から路線形状を生成    | `scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts`        | `npm run pipeline:build:shapes:gtfs`    |
 | 3     | 国土数値情報から鉄道路線形状を生成    | `scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts` | `npm run pipeline:build:shapes:ksj`     |
 | 3     | v2 GTFS shapes.txt から路線形状を生成 | `scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts`              | `npm run pipeline:build:v2-shapes:gtfs` |
-| 3     | v2 国土数値情報から鉄道路線形状を生成 | `scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts`               | `npm run pipeline:build:v2-shapes:ksj`  |
+| 3     | v2 国土数値情報から鉄道路線形状を生成 | `scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts`       | `npm run pipeline:build:v2-shapes:ksj`  |
 | 3     | アプリ用 JSON の検証                  | `scripts/pipeline/app-data-v1/validate-app-data.ts`                   | `npm run pipeline:validate`             |
 | -     | 全リソース定義の一覧表示              | `scripts/dev/describe-resources.ts`                                   | `npm run pipeline:describe`             |
 | -     | ODPT リソース更新チェック             | `scripts/pipeline/check-odpt-resources.ts`                            | `npm run pipeline:check:odpt-resources` |

@@ -11,9 +11,9 @@
  * Output: pipeline/workspace/_build/data-v2/{prefix}/shapes.json (ShapesBundle, per target)
  *
  * Usage:
- *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts <source-name>
- *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts --targets <file>
- *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts --list
+ *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts <source-name>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts --targets <file>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts --list
  */
 
 import { join, resolve } from 'node:path';
@@ -84,13 +84,13 @@ function buildSourceShapes(target: ShapeTarget): void {
 
 function printUsage(): void {
   console.log(
-    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts <source-name>',
+    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts <source-name>',
   );
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts --targets <file>',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts --targets <file>',
   );
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj.ts --list\n',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts --list\n',
   );
   console.log('Options:');
   console.log('  --targets <file>  Batch build from a target list file (.ts)');
@@ -122,7 +122,7 @@ async function main(): Promise<void> {
   if (arg.kind === 'targets') {
     const sourceNames = await loadTargetFile(arg.path);
     console.log(`=== Batch build-v2-shapes-from-ksj (${sourceNames.length} targets) ===\n`);
-    const scriptPath = resolve(import.meta.dirname, 'build-shapes-from-ksj.ts');
+    const scriptPath = resolve(import.meta.dirname, 'build-shapes-from-ksj-railway.ts');
     const results = runBatch(scriptPath, sourceNames);
     printBatchSummary(results);
     const exitCode = determineBatchExitCode(results);
