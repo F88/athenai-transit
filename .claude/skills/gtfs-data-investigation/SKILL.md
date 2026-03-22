@@ -101,8 +101,8 @@ When verifying GTFS data accuracy:
 ```python
 for pid, p in patterns.items():
     r = routes.get(p['r'], {})
-    if 'search_term' in r.get('s', ''):
-        print(f'{pid}: {r["s"]}, stops={len(p["stops"])}')
+    if 'search_term' in r.get('s', '') or 'search_term' in r.get('l', ''):
+        print(f'{pid}: {r.get("s", "")}, stops={len(p["stops"])}')
 ```
 
 Search both route_short_name (`r["s"]`) and route_long_name (`r["l"]`).
