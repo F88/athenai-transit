@@ -88,21 +88,24 @@ function buildSourceShapes(outDir: string, prefix: string, nameEn: string): void
 
   console.log(`Reading ${outDir}.db (${nameEn})...`);
   const db = new Database(dbPath, { readonly: true });
-  const v2Shapes = extractShapes(db, prefix);
-  db.close();
+  try {
+    const v2Shapes = extractShapes(db, prefix);
 
-  if (Object.keys(v2Shapes).length === 0) {
-    console.log(`  No shapes found, skipping.`);
-    return;
+    if (Object.keys(v2Shapes).length === 0) {
+      console.log(`  No shapes found, skipping.`);
+      return;
+    }
+
+    const shapes = stripShapeDistance(v2Shapes);
+
+    const outputDir = join(OUTPUT_DIR, prefix);
+    mkdirSync(outputDir, { recursive: true });
+
+    console.log(`\n  Writing:`);
+    writeJson(join(outputDir, 'shapes.json'), shapes);
+  } finally {
+    db.close();
   }
-
-  const shapes = stripShapeDistance(v2Shapes);
-
-  const outputDir = join(OUTPUT_DIR, prefix);
-  mkdirSync(outputDir, { recursive: true });
-
-  console.log(`\n  Writing:`);
-  writeJson(join(outputDir, 'shapes.json'), shapes);
 }
 
 // ---------------------------------------------------------------------------
