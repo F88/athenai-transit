@@ -20,18 +20,21 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 
 各スクリプトの詳細な仕様は `docs/` を参照。
 
-| Stage | 概要                                | スクリプト                                                            | npm script                              |
-| ----- | ----------------------------------- | --------------------------------------------------------------------- | --------------------------------------- |
-| 1     | GTFS ZIP をバッチダウンロード       | `scripts/pipeline/download-gtfs.ts`                                   | `npm run pipeline:download:gtfs`        |
-| 1     | ODPT JSON をバッチダウンロード      | `scripts/pipeline/download-odpt-json.ts`                              | `npm run pipeline:download:odpt-json`   |
-| 2     | GTFS CSV を SQLite に変換           | `scripts/pipeline/build-gtfs-db.ts`                                   | `npm run pipeline:build:db`             |
-| 3     | SQLite からアプリ用 JSON を生成     | `scripts/pipeline/app-data-v1/build-app-data-from-gtfs.ts`            | `npm run pipeline:build:json`           |
-| 3     | ODPT Train からアプリ用 JSON を生成 | `scripts/pipeline/app-data-v1/build-app-data-from-odpt-train.ts`      | `npm run pipeline:build:odpt-train`     |
-| 3     | GTFS shapes.txt から路線形状を生成  | `scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts`        | `npm run pipeline:build:shapes:gtfs`    |
-| 3     | 国土数値情報から鉄道路線形状を生成  | `scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts` | `npm run pipeline:build:shapes:ksj`     |
-| 3     | アプリ用 JSON の検証                | `scripts/pipeline/app-data-v1/validate-app-data.ts`                   | `npm run pipeline:validate`             |
-| -     | 全リソース定義の一覧表示            | `scripts/dev/describe-resources.ts`                                   | `npm run pipeline:describe`             |
-| -     | ODPT リソース更新チェック           | `scripts/pipeline/check-odpt-resources.ts`                            | `npm run pipeline:check:odpt-resources` |
+| Stage | 概要                                  | スクリプト                                                            | npm script                              |
+| ----- | ------------------------------------- | --------------------------------------------------------------------- | --------------------------------------- |
+| 1     | GTFS ZIP をバッチダウンロード         | `scripts/pipeline/download-gtfs.ts`                                   | `npm run pipeline:download:gtfs`        |
+| 1     | ODPT JSON をバッチダウンロード        | `scripts/pipeline/download-odpt-json.ts`                              | `npm run pipeline:download:odpt-json`   |
+| 2     | GTFS CSV を SQLite に変換             | `scripts/pipeline/build-gtfs-db.ts`                                   | `npm run pipeline:build:db`             |
+| 3     | SQLite からアプリ用 JSON を生成       | `scripts/pipeline/app-data-v1/build-app-data-from-gtfs.ts`            | `npm run pipeline:build:json`           |
+| 3     | ODPT Train からアプリ用 JSON を生成   | `scripts/pipeline/app-data-v1/build-app-data-from-odpt-train.ts`      | `npm run pipeline:build:odpt-train`     |
+| 3     | GTFS shapes.txt から路線形状を生成    | `scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts`        | `npm run pipeline:build:shapes:gtfs`    |
+| 3     | 国土数値情報から鉄道路線形状を生成    | `scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts` | `npm run pipeline:build:shapes:ksj`     |
+| 3     | v2 GTFS shapes.txt から路線形状を生成 | `scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts`              | `npm run pipeline:build:v2-shapes:gtfs` |
+| 3     | v2 国土数値情報から鉄道路線形状を生成 | `scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts`       | `npm run pipeline:build:v2-shapes:ksj`  |
+| 3     | アプリ用 JSON の検証                  | `scripts/pipeline/app-data-v1/validate-app-data.ts`                   | `npm run pipeline:validate`             |
+| 3     | v2 バンドルの検証                     | `scripts/pipeline/app-data-v2/validate-v2-bundles.ts`                 | `npm run pipeline:validate:v2`          |
+| -     | 全リソース定義の一覧表示              | `scripts/dev/describe-resources.ts`                                   | `npm run pipeline:describe`             |
+| -     | ODPT リソース更新チェック             | `scripts/pipeline/check-odpt-resources.ts`                            | `npm run pipeline:check:odpt-resources` |
 
 ## 実行順序
 
@@ -50,7 +53,10 @@ npm run pipeline:build:json
 npm run pipeline:build:odpt-train
 npm run pipeline:build:shapes:gtfs       # pipeline:build:json の後
 npm run pipeline:build:shapes:ksj        # pipeline:build:json, :odpt-train の後
+npm run pipeline:build:v2-shapes:gtfs    # pipeline:build:db の後
+npm run pipeline:build:v2-shapes:ksj     # MLIT GeoJSON 取得後
 npm run pipeline:validate
+npm run pipeline:validate:v2             # v2 バンドルビルドの後
 
 # public/ へコピー (pipeline スコープ外)
 npm run data:sync
@@ -116,15 +122,19 @@ pipeline/config/resources/
 
 ## ドキュメント
 
-| ドキュメント                                              | 概要                                                                                         |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| [DOWNLOADER.md](./docs/DOWNLOADER.md)                     | ダウンローダーの仕様 (CLI、バッチ、認証、リトライ、exit code)                                |
-| [GTFS_TO_RDB.md](./docs/GTFS_TO_RDB.md)                   | GTFS CSV → SQLite 変換の仕様                                                                 |
-| [APP_DATA_FROM_GTFS.md](./docs/APP_DATA_FROM_GTFS.md)     | SQLite → アプリ用 JSON 変換の仕様                                                            |
-| [BUILD_TRAIN_SHAPES.md](./docs/BUILD_TRAIN_SHAPES.md)     | 鉄道路線形状生成の仕様                                                                       |
-| [VALIDATE.md](./docs/VALIDATE.md)                         | アプリ用 JSON 検証の仕様 (ディレクトリ検査、ファイル存在チェック、カレンダー鮮度、exit code) |
-| [DESCRIBE_RESOURCES.md](./docs/DESCRIBE_RESOURCES.md)     | リソース定義一覧表示の仕様                                                                   |
-| [RESOURCE-DEFINITIONS.md](./docs/RESOURCE-DEFINITIONS.md) | リソース定義の型構造と追加手順                                                               |
+| ドキュメント                                                | 概要                                                          |
+| ----------------------------------------------------------- | ------------------------------------------------------------- |
+| [DOWNLOADER.md](./docs/DOWNLOADER.md)                       | ダウンローダーの仕様 (CLI、バッチ、認証、リトライ、exit code) |
+| [GTFS_TO_RDB.md](./docs/GTFS_TO_RDB.md)                     | GTFS CSV → SQLite 変換の仕様                                  |
+| [V1_APP_DATA_FROM_GTFS.md](./docs/V1_APP_DATA_FROM_GTFS.md) | (v1) SQLite → アプリ用 JSON 変換の仕様                        |
+| [V1_BUILD_TRAIN_SHAPES.md](./docs/V1_BUILD_TRAIN_SHAPES.md) | (v1) 鉄道路線形状生成の仕様                                   |
+| [V1_VALIDATE.md](./docs/V1_VALIDATE.md)                     | (v1) アプリ用 JSON 検証の仕様                                 |
+| [V2_APP_DATA.md](./docs/V2_APP_DATA.md)                     | (v2) DataBundle ビルド仕様 (TODO)                             |
+| [V2_BUILD_SHAPES.md](./docs/V2_BUILD_SHAPES.md)             | (v2) ShapesBundle ビルド仕様 (TODO)                           |
+| [V2_BUILD_INSIGHTS.md](./docs/V2_BUILD_INSIGHTS.md)         | (v2) InsightsBundle ビルド仕様 (TODO)                         |
+| [V2_VALIDATE.md](./docs/V2_VALIDATE.md)                     | (v2) バンドル検証仕様                                         |
+| [DESCRIBE_RESOURCES.md](./docs/DESCRIBE_RESOURCES.md)       | リソース定義一覧表示の仕様                                    |
+| [RESOURCE-DEFINITIONS.md](./docs/RESOURCE-DEFINITIONS.md)   | リソース定義の型構造と追加手順                                |
 
 ### 運用ツール
 
@@ -146,13 +156,13 @@ pipeline/
 │   ├── lib/             Shared libraries
 │   │   ├── download/    Download utilities (download-utils, download-meta)
 │   │   ├── resources/   Resource definition loaders (load-*-sources)
-│   │   ├── pipeline/    Pipeline-specific libs (CLI utils, GTFS schema, v2 builders)
+│   │   ├── pipeline/    Pipeline-specific libs (CLI utils, GTFS schema, v2 builders, shape extractors)
 │   │   └── *.ts         Common utilities (paths, format, fs, time, calendar)
 │   └── types/           Type definitions (resource-common, gtfs-resource, odpt-train)
 ├── scripts/             Entry points (thin scripts)
 │   ├── pipeline/        CI/production pipeline
 │   │   ├── app-data-v1/ v1 JSON builders + shapes + validate
-│   │   ├── app-data-v2/ v2 JSON builders
+│   │   ├── app-data-v2/ v2 JSON builders + shapes
 │   │   └── *.ts         Download, build-db, check-resources
 │   └── dev/             Development/analysis tools (manual execution only)
 │       └── dev-lib/     Dev-only libraries (analysis, normalize)

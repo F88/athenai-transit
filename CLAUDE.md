@@ -74,6 +74,8 @@ npm run pipeline:build:json              # 4. generate JSON -> pipeline/workspac
 npm run pipeline:build:odpt-train        # 5. generate ODPT Train JSON -> pipeline/workspace/_build/data/
 npm run pipeline:build:shapes:gtfs       # 6. generate route shapes from GTFS
 npm run pipeline:build:shapes:ksj        # 7. generate route shapes from KSJ railway
+npm run pipeline:build:v2-shapes:gtfs    # 6v2. generate v2 route shapes from GTFS
+npm run pipeline:build:v2-shapes:ksj     # 7v2. generate v2 route shapes from KSJ railway
 npm run data:sync                        # 8. copy pipeline/workspace/_build/data/ -> public/data/
 ```
 

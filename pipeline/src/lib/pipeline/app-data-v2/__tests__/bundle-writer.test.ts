@@ -8,8 +8,8 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { DataBundle } from '../../../../../../src/types/data/transit-v2-json';
-import { writeDataBundle } from '../bundle-writer';
+import type { DataBundle, ShapesBundle } from '../../../../../../src/types/data/transit-v2-json';
+import { writeDataBundle, writeShapesBundle } from '../bundle-writer';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-bundle-writer-test');
 
@@ -91,5 +91,60 @@ describe('writeDataBundle', () => {
     writeDataBundle(dir, makeBundle());
 
     expect(existsSync(join(dir, 'data.json'))).toBe(true);
+  });
+});
+
+describe('writeShapesBundle', () => {
+  it('creates directory and writes shapes.json', () => {
+    const dir = join(TMP_DIR, 'shapes-test');
+    const shapes = {
+      'pfx:R1': [
+        [
+          [35.68, 139.76],
+          [35.69, 139.77],
+        ] as [number, number][],
+      ],
+    };
+
+    writeShapesBundle(dir, shapes);
+
+    const filePath = join(dir, 'shapes.json');
+    expect(existsSync(filePath)).toBe(true);
+
+    const written = JSON.parse(readFileSync(filePath, 'utf-8')) as ShapesBundle;
+    expect(written.bundle_version).toBe(2);
+    expect(written.kind).toBe('shapes');
+    expect(written.shapes.v).toBe(2);
+    expect(written.shapes.data['pfx:R1']).toHaveLength(1);
+    expect(written.shapes.data['pfx:R1'][0]).toEqual([
+      [35.68, 139.76],
+      [35.69, 139.77],
+    ]);
+  });
+
+  it('does not leave a temp file after successful write', () => {
+    const dir = join(TMP_DIR, 'shapes-test');
+    writeShapesBundle(dir, {});
+
+    expect(existsSync(join(dir, 'shapes.json.tmp'))).toBe(false);
+  });
+
+  it('overwrites existing shapes.json', () => {
+    const dir = join(TMP_DIR, 'shapes-test');
+
+    writeShapesBundle(dir, { 'pfx:R1': [[[35.0, 139.0]]] });
+    writeShapesBundle(dir, { 'pfx:R2': [[[36.0, 140.0]]] });
+
+    const written = JSON.parse(readFileSync(join(dir, 'shapes.json'), 'utf-8')) as ShapesBundle;
+    expect(written.shapes.data).not.toHaveProperty('pfx:R1');
+    expect(written.shapes.data).toHaveProperty('pfx:R2');
+  });
+
+  it('writes empty shapes', () => {
+    const dir = join(TMP_DIR, 'shapes-test');
+    writeShapesBundle(dir, {});
+
+    const written = JSON.parse(readFileSync(join(dir, 'shapes.json'), 'utf-8')) as ShapesBundle;
+    expect(written.shapes.data).toEqual({});
   });
 });

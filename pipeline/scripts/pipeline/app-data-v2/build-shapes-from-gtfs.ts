@@ -1,24 +1,24 @@
 #!/usr/bin/env -S npx tsx
 
 /**
- * Extract GTFS shapes into shapes.json for sources that have shapes.txt.
+ * Build v2 ShapesBundle from GTFS shapes.txt data.
  *
- * This is a dedicated shapes script, separate from build-app-data-from-gtfs.ts,
- * so that shapes generation does not conflict with other scripts that also
- * produce shapes.json (e.g. build-route-shapes-from-ksj-railway.ts).
+ * Each invocation processes a single GTFS source. For batch processing,
+ * use `--targets <file>`.
  *
  * Input:  pipeline/workspace/_build/db/{outDir}.db (built by build-gtfs-db.ts)
- * Output: pipeline/workspace/_build/data/{prefix}/shapes.json
+ * Output: pipeline/workspace/_build/data-v2/{prefix}/shapes.json (ShapesBundle)
  *
  * Usage:
- *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts <source-name>
- *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts --targets <file>
- *   npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts --list
+ *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts <source-name>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts --targets <file>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts --list
  */
 
 import Database from 'better-sqlite3';
-import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { existsSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/load-gtfs-sources';
 import {
@@ -30,51 +30,16 @@ import {
   runBatch,
   runMain,
 } from '../../../src/lib/pipeline/pipeline-utils';
-import { formatBytes } from '../../../src/lib/format-utils';
 import { extractShapes } from '../../../src/lib/pipeline/extract-shapes-from-gtfs';
-import type { ShapePointV2 } from '../../../../src/types/data/transit-v2-json';
+import { writeShapesBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
 
 // ---------------------------------------------------------------------------
 // Paths
 // ---------------------------------------------------------------------------
 
-import { DB_DIR, V1_OUTPUT_DIR } from '../../../src/lib/paths';
+import { DB_DIR, V2_OUTPUT_DIR } from '../../../src/lib/paths';
 
-const OUTPUT_DIR = V1_OUTPUT_DIR;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function writeJson(filePath: string, data: unknown): void {
-  writeFileSync(filePath, JSON.stringify(data));
-  const size = statSync(filePath).size;
-  const name = basename(filePath);
-  console.log(`  ${name.padEnd(20)} ${formatBytes(size).padStart(10)}`);
-}
-
-// ---------------------------------------------------------------------------
-// V1 format conversion
-// ---------------------------------------------------------------------------
-
-/**
- * Strip optional shape_dist_traveled from ShapePointV2 tuples.
- *
- * v1 format uses `[lat, lon]` only. extractShapes() may return
- * `[lat, lon, dist]` when the source provides shape_dist_traveled,
- * so this function drops the third element to keep v1 output stable.
- */
-export function stripShapeDistance(
-  shapes: Record<string, ShapePointV2[][]>,
-): Record<string, [number, number][][]> {
-  const result: Record<string, [number, number][][]> = {};
-  for (const [routeId, polylines] of Object.entries(shapes)) {
-    result[routeId] = polylines.map((polyline) =>
-      polyline.map(([lat, lon]): [number, number] => [lat, lon]),
-    );
-  }
-  return result;
-}
+const OUTPUT_DIR = V2_OUTPUT_DIR;
 
 // ---------------------------------------------------------------------------
 // Per-source processing
@@ -88,21 +53,18 @@ function buildSourceShapes(outDir: string, prefix: string, nameEn: string): void
 
   console.log(`Reading ${outDir}.db (${nameEn})...`);
   const db = new Database(dbPath, { readonly: true });
-  try {
-    const v2Shapes = extractShapes(db, prefix);
 
-    if (Object.keys(v2Shapes).length === 0) {
+  try {
+    const shapes = extractShapes(db, prefix);
+
+    if (Object.keys(shapes).length === 0) {
       console.log(`  No shapes found, skipping.`);
       return;
     }
 
-    const shapes = stripShapeDistance(v2Shapes);
-
     const outputDir = join(OUTPUT_DIR, prefix);
-    mkdirSync(outputDir, { recursive: true });
-
-    console.log(`\n  Writing:`);
-    writeJson(join(outputDir, 'shapes.json'), shapes);
+    writeShapesBundle(outputDir, shapes);
+    console.log(`  Written: ${outputDir}/shapes.json`);
   } finally {
     db.close();
   }
@@ -114,13 +76,13 @@ function buildSourceShapes(outDir: string, prefix: string, nameEn: string): void
 
 function printUsage(): void {
   console.log(
-    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts <source-name>',
+    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts <source-name>',
   );
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts --targets <file>',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts --targets <file>',
   );
   console.log(
-    '       npx tsx pipeline/scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts --list\n',
+    '       npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts --list\n',
   );
   console.log('Options:');
   console.log('  --targets <file>  Batch build from a target list file (.ts)');
@@ -151,8 +113,8 @@ async function main(): Promise<void> {
 
   if (arg.kind === 'targets') {
     const sourceNames = await loadTargetFile(arg.path);
-    console.log(`=== Batch build-gtfs-shapes (${sourceNames.length} targets) ===\n`);
-    const scriptPath = resolve(import.meta.dirname, 'build-route-shapes-from-gtfs.ts');
+    console.log(`=== Batch build-v2-shapes-from-gtfs (${sourceNames.length} targets) ===\n`);
+    const scriptPath = resolve(import.meta.dirname, 'build-shapes-from-gtfs.ts');
     const results = runBatch(scriptPath, sourceNames);
     printBatchSummary(results);
     const exitCode = determineBatchExitCode(results);
@@ -177,6 +139,10 @@ async function main(): Promise<void> {
   }
 
   console.log(`=== ${arg.name} [START] ===\n`);
+  console.log(`  Name:   ${sourceDef.resource.nameEn}`);
+  console.log(`  Input:  ${join(DB_DIR, `${sourceDef.pipeline.outDir}.db`)}`);
+  console.log(`  Output: ${join(OUTPUT_DIR, sourceDef.pipeline.prefix)}/shapes.json`);
+  console.log('');
 
   const t0 = performance.now();
 
@@ -198,4 +164,9 @@ async function main(): Promise<void> {
   }
 }
 
-runMain(main);
+// Only run main() when executed directly (not when imported by other scripts).
+const isDirectExecution =
+  process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectExecution) {
+  runMain(main);
+}
