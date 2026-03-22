@@ -77,7 +77,7 @@ describe('buildServiceGroups', () => {
     expect(result[1]).toEqual({ key: 'wk', serviceIds: ['svc-wk'] });
   });
 
-  it('generates hash-based key for unknown patterns', () => {
+  it('generates deterministic bitstring key for unknown patterns', () => {
     const calendar = makeCalendar([{ id: 'svc-mwf', d: [1, 0, 1, 0, 1, 0, 0] }]);
 
     const result = buildServiceGroups(calendar);

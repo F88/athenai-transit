@@ -3,7 +3,7 @@
  *
  * Groups GTFS services by their day-of-week pattern (the `d` array in
  * CalendarServiceJson), assigns a short key to each group, and returns
- * them sorted by priority (weekday → Saturday → Sunday → others).
+ * them sorted by priority (weekday → Saturday → Sunday → weekend → every day → others).
  *
  * This is the mandatory section of InsightsBundle — every source that
  * has a DataBundle can produce serviceGroups.

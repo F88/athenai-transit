@@ -15,7 +15,7 @@
  *   npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts --list
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -126,23 +126,8 @@ function printUsage(): void {
   console.log('       npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts --list\n');
   console.log('Options:');
   console.log('  --targets <file>  Batch build from a target list file (.ts)');
-  console.log('  --list            List available source prefixes (from data-v2/ directories)');
+  console.log('  --list            List available source names (with data.json)');
   console.log('  --help            Show this help message');
-}
-
-/**
- * List source prefixes that have a data.json in the output directory.
- */
-function listAvailableSources(): string[] {
-  if (!existsSync(OUTPUT_DIR)) {
-    return [];
-  }
-  return readdirSync(OUTPUT_DIR)
-    .filter((name) => {
-      const dir = join(OUTPUT_DIR, name);
-      return statSync(dir).isDirectory() && existsSync(join(dir, 'data.json'));
-    })
-    .sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -158,7 +143,11 @@ async function main(): Promise<void> {
   }
 
   if (arg.kind === 'list') {
-    const names = listAvailableSources();
+    const prefixMap = await buildSourcePrefixMap();
+    const names = [...prefixMap.entries()]
+      .filter(([, prefix]) => existsSync(join(OUTPUT_DIR, prefix, 'data.json')))
+      .map(([name]) => name)
+      .sort();
     console.log('Available sources (with data.json):\n');
     for (const name of names) {
       console.log(`  ${name}`);

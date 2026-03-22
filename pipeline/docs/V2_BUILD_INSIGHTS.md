@@ -26,7 +26,7 @@ Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts <source-n
 | ------------------ | -------------------------------------------- |
 | `<source-name>`    | 単体実行。ソース名を指定 (例: toei-bus)      |
 | `--targets <file>` | ターゲットリストファイルで一括ビルド         |
-| `--list`           | data.json が存在するソース prefix 一覧を表示 |
+| `--list`           | data.json が存在するソース名一覧を表示       |
 | `--help, -h`       | ヘルプ表示                                   |
 
 ### ソース識別子
