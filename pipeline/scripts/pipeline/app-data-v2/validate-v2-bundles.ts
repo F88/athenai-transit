@@ -349,15 +349,16 @@ interface CalendarServiceEntry {
  * Reuses CalendarServiceMeta from validateDataBundle results to avoid
  * re-reading data.json files.
  */
-function collectCalendarFreshness(calendarByPrefix: Map<string, CalendarServiceMeta[]>): {
+function collectCalendarFreshness(
+  calendarByPrefix: Map<string, CalendarServiceMeta[]>,
+  today: Date,
+): {
   expired: CalendarServiceEntry[];
   expiringSoon: CalendarServiceEntry[];
 } {
   const expired: CalendarServiceEntry[] = [];
   const expiringSoon: CalendarServiceEntry[] = [];
 
-  const raw = new Date();
-  const now = new Date(Date.UTC(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate()));
   const thresholdMs = WARN_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
 
   for (const [prefix, services] of calendarByPrefix) {
@@ -366,7 +367,7 @@ function collectCalendarFreshness(calendarByPrefix: Map<string, CalendarServiceM
       if (!endDate) {
         continue;
       }
-      const diffMs = endDate.getTime() - now.getTime();
+      const diffMs = endDate.getTime() - today.getTime();
       const daysLeft = Math.floor(diffMs / (24 * 60 * 60 * 1000));
 
       if (diffMs < 0) {
@@ -399,10 +400,8 @@ function printMarkdownSummary(
   unvalidatedDirs: string[],
   missingFiles: Array<{ prefix: string; filename: string }>,
   calendarByPrefix: Map<string, CalendarServiceMeta[]>,
+  today: Date,
 ): void {
-  const raw = new Date();
-  const today = new Date(Date.UTC(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate()));
-
   console.log('## V2 Bundle Validation\n');
   console.log(`Checked on: ${formatDateForSummary(today)}\n`);
 
@@ -451,7 +450,7 @@ function printMarkdownSummary(
   }
 
   // Calendar freshness (service_id level, matching v1 format)
-  const { expired, expiringSoon } = collectCalendarFreshness(calendarByPrefix);
+  const { expired, expiringSoon } = collectCalendarFreshness(calendarByPrefix, today);
 
   if (expired.length > 0) {
     console.log('### ⚠️ Expired services\n');
@@ -547,6 +546,10 @@ async function main(): Promise<void> {
   const totalSteps = isTargetsMode ? 3 : 2;
   let stepNum = 0;
   const t0 = performance.now();
+  const rawDate = new Date();
+  const today = new Date(
+    Date.UTC(rawDate.getUTCFullYear(), rawDate.getUTCMonth(), rawDate.getUTCDate()),
+  );
 
   console.log(`=== Validate v2 bundles (${V2_OUTPUT_DIR}) ===\n`);
   console.log(`  Validating ${prefixes.length} sources: ${prefixes.join(', ')}\n`);
@@ -620,7 +623,7 @@ async function main(): Promise<void> {
 
   if (!allExistencePassed) {
     // Print summary before early return so CI gets missing-files report
-    printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, calendarByPrefix);
+    printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, calendarByPrefix, today);
     console.log('❌ Validation failed (required files missing).\n');
     const elapsed = Math.round(performance.now() - t0);
     console.log(`Done in ${elapsed}ms. (exit code: ${EXIT_ERROR})`);
@@ -646,7 +649,7 @@ async function main(): Promise<void> {
   }
 
   // Markdown summary
-  printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, calendarByPrefix);
+  printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, calendarByPrefix, today);
 
   // Final result
   let exitCode: number;
