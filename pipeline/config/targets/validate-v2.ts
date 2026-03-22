@@ -1,8 +1,9 @@
 /**
- * Target list for v2 ShapesBundle validation.
+ * Target list for v2 bundle validation.
  *
- * Each entry is a source-name (outDir) that produces shapes.json.
- * Combines GTFS shapes and KSJ railway shapes sources.
+ * Each entry is a source-name (outDir) that produces v2 bundles.
+ * The validator checks all available bundle types (DataBundle,
+ * ShapesBundle, InsightsBundle) for each source.
  *
  * Comment out entries to temporarily skip them.
  */

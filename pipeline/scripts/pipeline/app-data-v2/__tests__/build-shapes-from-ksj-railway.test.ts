@@ -1,5 +1,5 @@
 /**
- * Integration tests for build-shapes-from-ksj.ts ShapesBundle assembly.
+ * Integration tests for build-shapes-from-ksj-railway.ts ShapesBundle assembly.
  *
  * Uses in-memory GeoJSON data to verify the full pipeline from
  * shape extraction through ShapesBundle write.

@@ -50,8 +50,8 @@ export function extractShapes(
   }
 
   // Load all shape points, ordered by shape_id and sequence.
-  // shape_dist_traveled is included when the column exists;
-  // SQLite returns NULL for rows where the value is absent.
+  // shape_dist_traveled is always present in the schema (gtfs-schema.ts)
+  // but its value is NULL when the GTFS source does not provide it.
   const shapePoints = db
     .prepare(
       `SELECT shape_id, shape_pt_lat, shape_pt_lon, shape_dist_traveled

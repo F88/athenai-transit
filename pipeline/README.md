@@ -32,7 +32,7 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 | 3     | v2 GTFS shapes.txt から路線形状を生成 | `scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts`              | `npm run pipeline:build:v2-shapes:gtfs` |
 | 3     | v2 国土数値情報から鉄道路線形状を生成 | `scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts`       | `npm run pipeline:build:v2-shapes:ksj`  |
 | 3     | アプリ用 JSON の検証                  | `scripts/pipeline/app-data-v1/validate-app-data.ts`                   | `npm run pipeline:validate`             |
-| 3     | v2 ShapesBundle の検証                | `scripts/pipeline/app-data-v2/validate-shapes-bundle.ts`              | `npm run pipeline:validate:v2-shapes`   |
+| 3     | v2 バンドルの検証                     | `scripts/pipeline/app-data-v2/validate-v2-bundles.ts`                 | `npm run pipeline:validate:v2`          |
 | -     | 全リソース定義の一覧表示              | `scripts/dev/describe-resources.ts`                                   | `npm run pipeline:describe`             |
 | -     | ODPT リソース更新チェック             | `scripts/pipeline/check-odpt-resources.ts`                            | `npm run pipeline:check:odpt-resources` |
 
@@ -54,9 +54,9 @@ npm run pipeline:build:odpt-train
 npm run pipeline:build:shapes:gtfs       # pipeline:build:json の後
 npm run pipeline:build:shapes:ksj        # pipeline:build:json, :odpt-train の後
 npm run pipeline:build:v2-shapes:gtfs    # pipeline:build:db の後
-npm run pipeline:build:v2-shapes:ksj     # pipeline:build:db の後
+npm run pipeline:build:v2-shapes:ksj     # MLIT GeoJSON 取得後
 npm run pipeline:validate
-npm run pipeline:validate:v2-shapes      # v2 shapes ビルドの後
+npm run pipeline:validate:v2             # v2 バンドルビルドの後
 
 # public/ へコピー (pipeline スコープ外)
 npm run data:sync

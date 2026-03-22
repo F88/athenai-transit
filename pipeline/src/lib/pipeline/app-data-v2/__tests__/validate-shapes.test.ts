@@ -1,5 +1,5 @@
 /**
- * Tests for validate-shapes-bundle.ts validateShapesBundle function.
+ * Tests for validate-shapes.ts validateShapesBundle function.
  *
  * Creates temporary ShapesBundle files and validates them,
  * verifying correct detection of structural and data quality issues.
@@ -11,8 +11,8 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { ShapesBundle } from '../../../../../src/types/data/transit-v2-json';
-import { EXIT_ERROR, EXIT_OK, EXIT_WARN, validateShapesBundle } from '../validate-shapes-bundle';
+import type { ShapesBundle } from '../../../../../../src/types/data/transit-v2-json';
+import { validateShapesBundle } from '../validate-shapes';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-validate-shapes-test');
 
@@ -107,13 +107,37 @@ describe('validateShapesBundle', () => {
     });
   });
 
-  describe('empty shapes', () => {
+  describe('empty and malformed shapes', () => {
     it('warns when shapes.data is empty', () => {
       writeBundle('empty', makeValidBundle({}));
       const result = validateShapesBundle('empty', TMP_DIR);
       expect(result.issues).toHaveLength(1);
       expect(result.issues[0].level).toBe('warn');
       expect(result.issues[0].message).toContain('empty');
+    });
+
+    it('reports error when shapes.data is null', () => {
+      writeBundle('null-data', { bundle_version: 2, kind: 'shapes', shapes: { v: 2, data: null } });
+      const result = validateShapesBundle('null-data', TMP_DIR);
+      expect(
+        result.issues.some((i) => i.level === 'error' && i.message.includes('Invalid shapes.data')),
+      ).toBe(true);
+    });
+
+    it('reports error when shapes.data is missing', () => {
+      writeBundle('no-data', { bundle_version: 2, kind: 'shapes', shapes: { v: 2 } });
+      const result = validateShapesBundle('no-data', TMP_DIR);
+      expect(
+        result.issues.some((i) => i.level === 'error' && i.message.includes('Invalid shapes.data')),
+      ).toBe(true);
+    });
+
+    it('reports error when shapes.data is an array', () => {
+      writeBundle('array-data', { bundle_version: 2, kind: 'shapes', shapes: { v: 2, data: [] } });
+      const result = validateShapesBundle('array-data', TMP_DIR);
+      expect(
+        result.issues.some((i) => i.level === 'error' && i.message.includes('Invalid shapes.data')),
+      ).toBe(true);
     });
   });
 
@@ -412,14 +436,6 @@ describe('validateShapesBundle', () => {
 
       const result = validateShapesBundle('dist-reset', TMP_DIR);
       expect(result.issues).toHaveLength(0);
-    });
-  });
-
-  describe('exit code constants', () => {
-    it('defines correct exit code values', () => {
-      expect(EXIT_OK).toBe(0);
-      expect(EXIT_WARN).toBe(1);
-      expect(EXIT_ERROR).toBe(2);
     });
   });
 });
