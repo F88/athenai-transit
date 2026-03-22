@@ -134,7 +134,19 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 ### InsightsBundle (`insights.json`)
 
-TODO: pipeline 完成後に検証内容を定義する。
+#### Structure
+
+| チェック                                  | レベル |
+| ----------------------------------------- | ------ |
+| `bundle_version` = 2                      | error  |
+| `kind` = "insights"                       | error  |
+| 必須セクション `serviceGroups` が存在する | error  |
+| `serviceGroups.v` = 1                     | error  |
+| `serviceGroups.data` が配列である         | error  |
+
+#### Data quality / Referential integrity
+
+現在は structure チェックのみ。optional セクション (tripPatternStats, tripPatternGeo, stopStats) の実装に合わせて追加予定。
 
 ## 出力形式
 
