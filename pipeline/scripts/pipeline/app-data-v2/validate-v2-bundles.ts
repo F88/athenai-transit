@@ -203,12 +203,14 @@ function validateSource(
   prefix: string,
   existingFiles: Map<string, boolean>,
   state: { hasError: boolean; hasWarn: boolean },
+  allIssues: ValidationIssue[],
 ): void {
   // DataBundle
   if (existingFiles.get('data.json')) {
     console.log('    [DataBundle]');
     const r = validateDataBundle(prefix, V2_OUTPUT_DIR);
     trackIssues(r.issues, state);
+    allIssues.push(...r.issues);
 
     // Structure issues are fatal — skip per-section output
     const structureErrors = r.issues.filter(
@@ -267,6 +269,7 @@ function validateSource(
     console.log('    [InsightsBundle]');
     const r = validateInsightsBundle(prefix, V2_OUTPUT_DIR);
     trackIssues(r.issues, state);
+    allIssues.push(...r.issues);
 
     if (r.issues.length === 0) {
       console.log(`      Structure:     OK (${r.serviceGroupCount} service groups)`);
@@ -281,6 +284,7 @@ function validateSource(
     console.log('    [ShapesBundle]');
     const r = validateShapesBundle(prefix, V2_OUTPUT_DIR);
     trackIssues(r.issues, state);
+    allIssues.push(...r.issues);
 
     // Structure issues are fatal
     const structureErrors = r.issues.filter(
@@ -308,6 +312,65 @@ function validateSource(
         printIssueDetails(dataIssues);
       }
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Markdown summary (for GitHub Actions Job Summary)
+// ---------------------------------------------------------------------------
+
+/**
+ * Print a Markdown summary of validation results.
+ */
+function printMarkdownSummary(
+  allIssues: ValidationIssue[],
+  unvalidatedDirs: string[],
+  missingFiles: Array<{ prefix: string; filename: string }>,
+): void {
+  console.log('## V2 Bundle Validation\n');
+
+  // Unvalidated directories
+  if (unvalidatedDirs.length > 0) {
+    console.log('### Unvalidated directories\n');
+    for (const dir of unvalidatedDirs) {
+      console.log(`- \`${dir}/\``);
+    }
+    console.log('');
+  }
+
+  // Missing required files
+  if (missingFiles.length > 0) {
+    console.log('### Missing files\n');
+    console.log('| Prefix | File |');
+    console.log('|--------|------|');
+    for (const m of missingFiles) {
+      console.log(`| ${m.prefix} | ${m.filename} |`);
+    }
+    console.log('');
+  }
+
+  // Errors
+  const errors = allIssues.filter((i) => i.level === 'error');
+  if (errors.length > 0) {
+    console.log('### Errors\n');
+    console.log('| Prefix | Message |');
+    console.log('|--------|---------|');
+    for (const e of errors) {
+      console.log(`| ${e.prefix} | ${e.message} |`);
+    }
+    console.log('');
+  }
+
+  // Warnings
+  const warns = allIssues.filter((i) => i.level === 'warn');
+  if (warns.length > 0) {
+    console.log('### Warnings\n');
+    console.log('| Prefix | Message |');
+    console.log('|--------|---------|');
+    for (const w of warns) {
+      console.log(`| ${w.prefix} | ${w.message} |`);
+    }
+    console.log('');
   }
 }
 
@@ -376,9 +439,13 @@ async function main(): Promise<void> {
   }
 
   const state = { hasError: false, hasWarn: false };
+  const allIssues: ValidationIssue[] = [];
+  let unvalidatedDirs: string[] = [];
+  const missingFiles: Array<{ prefix: string; filename: string }> = [];
   const isTargetsMode = arg.kind === 'targets';
   const totalSteps = isTargetsMode ? 3 : 2;
   let stepNum = 0;
+  const t0 = performance.now();
 
   console.log(`=== Validate v2 bundles (${prefixes.length} sources) ===\n`);
 
@@ -391,16 +458,16 @@ async function main(): Promise<void> {
     console.log(`--- [${stepNum}/${totalSteps}] Unvalidated directory check ---\n`);
 
     const validatedPrefixes = new Set(prefixes);
-    const unvalidated = checkUnvalidatedDirs(validatedPrefixes);
+    unvalidatedDirs = checkUnvalidatedDirs(validatedPrefixes);
 
-    if (unvalidated.length === 0) {
+    if (unvalidatedDirs.length === 0) {
       console.log('  Result: All directories are covered by targets.');
     } else {
-      for (const dir of unvalidated) {
+      for (const dir of unvalidatedDirs) {
         console.log(`  ERROR: Unvalidated directory: ${dir}/`);
       }
       console.log(
-        `  Result: ${unvalidated.length} unvalidated director${unvalidated.length === 1 ? 'y' : 'ies'} found.`,
+        `  Result: ${unvalidatedDirs.length} unvalidated director${unvalidatedDirs.length === 1 ? 'y' : 'ies'} found.`,
       );
       state.hasError = true;
     }
@@ -437,7 +504,9 @@ async function main(): Promise<void> {
       const exists = result.files.get(bf.filename)!;
       if (exists) {
         presentFiles++;
-      } else if (!bf.required) {
+      } else if (bf.required) {
+        missingFiles.push({ prefix, filename: bf.filename });
+      } else {
         optionalSkipped++;
       }
     }
@@ -463,21 +532,29 @@ async function main(): Promise<void> {
   for (const prefix of prefixes) {
     console.log(`  ${prefix}:`);
     const existence = existenceResults.get(prefix)!;
-    validateSource(prefix, existence.files, state);
+    validateSource(prefix, existence.files, state, allIssues);
     console.log('');
   }
 
-  // Summary
+  // Markdown summary
+  printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles);
+
+  // Final result
+  let exitCode: number;
   if (state.hasError) {
     console.log('Result: FAILED (errors found)');
-    process.exitCode = EXIT_ERROR;
+    exitCode = EXIT_ERROR;
   } else if (state.hasWarn) {
     console.log('Result: PASSED with warnings');
-    process.exitCode = EXIT_WARN;
+    exitCode = EXIT_WARN;
   } else {
     console.log('Result: PASSED');
-    process.exitCode = EXIT_OK;
+    exitCode = EXIT_OK;
   }
+
+  const elapsed = Math.round(performance.now() - t0);
+  console.log(`\nDone in ${elapsed}ms. (exit code: ${exitCode})`);
+  process.exitCode = exitCode;
 }
 
 // Only run main() when executed directly (not when imported by other scripts).

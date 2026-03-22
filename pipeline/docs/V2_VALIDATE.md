@@ -157,47 +157,59 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 --- [1/3] Unvalidated directory check ---
 
-  Result: OK
+  Result: All directories are covered by targets.
 
 --- [2/3] File existence check ---
 
-  toei-bus (minkuru):
-    data.json ........ OK
-    insights.json .... OK
-    shapes.json ...... OK
-  keio-bus (keibus):
-    data.json ........ OK
-    insights.json .... OK
-    shapes.json ...... not found (optional, skipped)
+  minkuru:
+    data.json ......... OK
+    insights.json ..... OK
+    shapes.json ....... OK
+  kobus:
+    data.json ......... OK
+    insights.json ..... OK
+    shapes.json ....... not found (optional, skipped)
   Result: 5/6 files present (1 optional skipped).
 
 --- [3/3] Validate each bundle ---
 
-  toei-bus (minkuru):
+  minkuru:
     [DataBundle]
       Structure:     OK (bundle_version=2, kind=data, 9 sections)
       Sections:
-        stops:         3695 stops, OK
-        routes:        134 routes, OK
-        calendar:      2 services, OK
-        tripPatterns:  512 patterns, OK
-        timetable:     3695 stops, OK
+        stops:           3695 stops, OK
+        routes:          134 routes, OK
+        calendar:        2 services, OK
+        tripPatterns:    512 patterns, OK
+        timetable:       3695 stops, OK
+    [InsightsBundle]
+      Structure:     OK (3 service groups)
     [ShapesBundle]
       shapes:        134 routes, 267 polylines, 18340 points, OK
-  keio-bus (keibus):
+  kobus:
     [DataBundle]
       Structure:     OK (bundle_version=2, kind=data, 9 sections)
       Sections:
-        stops:         2100 stops, OK
-        routes:        89 routes, OK
-        calendar:      3 services, WARN: expires within 30 days
-        tripPatterns:  340 patterns, 2 errors
-          ERROR: pattern "keibus:P42": route "keibus:R_OLD" not found
-          ERROR: pattern "keibus:P42": stop "keibus:S999" not found
-        timetable:     2100 stops, OK
+        stops:           2100 stops, OK
+        routes:          89 routes, OK
+        calendar:        3 services, 1 warning(s)
+          WARN:  Calendar expires within 30 days (earliest end_date approaching)
+        tripPatterns:    340 patterns, OK
+        timetable:       2100 stops, OK
+    [InsightsBundle]
+      Structure:     OK (3 service groups)
 
-Result: FAILED (errors found)
-Done in 42ms. (exit code: 2)
+## V2 Bundle Validation
+
+### Warnings
+
+| Prefix | Message |
+|--------|---------|
+| kobus | Calendar expires within 30 days (earliest end_date approaching) |
+
+Result: PASSED with warnings
+
+Done in 42ms. (exit code: 1)
 ```
 
 ## Exit Code
