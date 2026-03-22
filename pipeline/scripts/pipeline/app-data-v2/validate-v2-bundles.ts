@@ -144,7 +144,7 @@ function printExistenceResult(
     if (exists) {
       console.log(`    ${bf.filename} ${pad} OK`);
     } else if (bf.required) {
-      console.log(`    ${bf.filename} ${pad} MISSING (required)`);
+      console.log(`    ${bf.filename} ${pad} ❌ MISSING (required)`);
       state.hasError = true;
     } else {
       console.log(`    ${bf.filename} ${pad} not found (optional, skipped)`);
@@ -179,9 +179,9 @@ function formatSectionLine(label: string, stats: string, issues: ValidationIssue
 function printIssueDetails(issues: ValidationIssue[]): void {
   for (const issue of issues) {
     if (issue.level === 'error') {
-      console.log(`        ERROR: ${issue.message}`);
+      console.log(`        ❌ ERROR: ${issue.message}`);
     } else {
-      console.log(`        WARN:  ${issue.message}`);
+      console.log(`        ⚠️ WARN:  ${issue.message}`);
     }
   }
 }
@@ -189,9 +189,9 @@ function printIssueDetails(issues: ValidationIssue[]): void {
 function printSectionIssues(issues: ValidationIssue[]): void {
   for (const issue of issues) {
     if (issue.level === 'error') {
-      console.log(`          ERROR: ${issue.message}`);
+      console.log(`          ❌ ERROR: ${issue.message}`);
     } else {
-      console.log(`          WARN:  ${issue.message}`);
+      console.log(`          ⚠️ WARN:  ${issue.message}`);
     }
   }
 }
@@ -575,7 +575,7 @@ async function main(): Promise<void> {
       console.log('  Result: All directories are covered by targets.');
     } else {
       for (const dir of unvalidatedDirs) {
-        console.log(`  ERROR: Unvalidated directory: ${dir}/`);
+        console.log(`  ❌ ERROR: Unvalidated directory: ${dir}/`);
       }
       console.log(
         `  Result: ${unvalidatedDirs.length} unvalidated director${unvalidatedDirs.length === 1 ? 'y' : 'ies'} found.`,
