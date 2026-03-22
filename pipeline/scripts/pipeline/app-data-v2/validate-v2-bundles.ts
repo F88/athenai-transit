@@ -27,6 +27,10 @@ import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/
 import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/pipeline-utils';
 import { collectAllKsjTargets } from '../../../src/lib/pipeline/extract-shapes-from-ksj';
 import {
+  validateDataBundle,
+  type DataValidationResult,
+} from '../../../src/lib/pipeline/app-data-v2/validate-data';
+import {
   validateShapesBundle,
   type ShapesValidationResult,
 } from '../../../src/lib/pipeline/app-data-v2/validate-shapes';
@@ -87,6 +91,26 @@ async function resolvePrefix(sourceName: string): Promise<string | null> {
 // ---------------------------------------------------------------------------
 // Result printing
 // ---------------------------------------------------------------------------
+
+function printDataResult(result: DataValidationResult): void {
+  console.log(`    Stops:     ${result.stopCount}`);
+  console.log(`    Routes:    ${result.routeCount}`);
+  console.log(`    Services:  ${result.serviceCount}`);
+  console.log(`    Patterns:  ${result.patternCount}`);
+  console.log(`    TT Stops:  ${result.timetableStopCount}`);
+
+  if (result.issues.length === 0) {
+    console.log('    Result:    OK');
+  } else {
+    for (const issue of result.issues) {
+      if (issue.level === 'error') {
+        console.log(`    ERROR: ${issue.message}`);
+      } else {
+        console.log(`    WARN:  ${issue.message}`);
+      }
+    }
+  }
+}
 
 function printShapesResult(result: ShapesValidationResult): void {
   console.log(`    Routes:    ${result.routeCount}`);
@@ -171,7 +195,18 @@ async function main(): Promise<void> {
   for (const { name, prefix } of sources) {
     console.log(`--- ${name} (${prefix}) ---\n`);
 
-    // TODO: validateDataBundle (next task)
+    // DataBundle validation
+    console.log('  [DataBundle]');
+    const dataResult = validateDataBundle(prefix, V2_OUTPUT_DIR);
+    printDataResult(dataResult);
+
+    for (const issue of dataResult.issues) {
+      if (issue.level === 'error') {
+        hasError = true;
+      } else {
+        hasWarn = true;
+      }
+    }
 
     // ShapesBundle validation (optional — skip if shapes.json not expected)
     console.log('  [ShapesBundle]');

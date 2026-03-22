@@ -122,15 +122,19 @@ pipeline/config/resources/
 
 ## ドキュメント
 
-| ドキュメント                                              | 概要                                                                                         |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| [DOWNLOADER.md](./docs/DOWNLOADER.md)                     | ダウンローダーの仕様 (CLI、バッチ、認証、リトライ、exit code)                                |
-| [GTFS_TO_RDB.md](./docs/GTFS_TO_RDB.md)                   | GTFS CSV → SQLite 変換の仕様                                                                 |
-| [APP_DATA_FROM_GTFS.md](./docs/APP_DATA_FROM_GTFS.md)     | SQLite → アプリ用 JSON 変換の仕様                                                            |
-| [BUILD_TRAIN_SHAPES.md](./docs/BUILD_TRAIN_SHAPES.md)     | 鉄道路線形状生成の仕様                                                                       |
-| [VALIDATE.md](./docs/VALIDATE.md)                         | アプリ用 JSON 検証の仕様 (ディレクトリ検査、ファイル存在チェック、カレンダー鮮度、exit code) |
-| [DESCRIBE_RESOURCES.md](./docs/DESCRIBE_RESOURCES.md)     | リソース定義一覧表示の仕様                                                                   |
-| [RESOURCE-DEFINITIONS.md](./docs/RESOURCE-DEFINITIONS.md) | リソース定義の型構造と追加手順                                                               |
+| ドキュメント                                                | 概要                                                          |
+| ----------------------------------------------------------- | ------------------------------------------------------------- |
+| [DOWNLOADER.md](./docs/DOWNLOADER.md)                       | ダウンローダーの仕様 (CLI、バッチ、認証、リトライ、exit code) |
+| [GTFS_TO_RDB.md](./docs/GTFS_TO_RDB.md)                     | GTFS CSV → SQLite 変換の仕様                                  |
+| [V1_APP_DATA_FROM_GTFS.md](./docs/V1_APP_DATA_FROM_GTFS.md) | (v1) SQLite → アプリ用 JSON 変換の仕様                        |
+| [V1_BUILD_TRAIN_SHAPES.md](./docs/V1_BUILD_TRAIN_SHAPES.md) | (v1) 鉄道路線形状生成の仕様                                   |
+| [V1_VALIDATE.md](./docs/V1_VALIDATE.md)                     | (v1) アプリ用 JSON 検証の仕様                                 |
+| [V2_APP_DATA.md](./docs/V2_APP_DATA.md)                     | (v2) DataBundle ビルド仕様 (TODO)                             |
+| [V2_BUILD_SHAPES.md](./docs/V2_BUILD_SHAPES.md)             | (v2) ShapesBundle ビルド仕様 (TODO)                           |
+| [V2_BUILD_INSIGHTS.md](./docs/V2_BUILD_INSIGHTS.md)         | (v2) InsightsBundle ビルド仕様 (TODO)                         |
+| [V2_VALIDATE.md](./docs/V2_VALIDATE.md)                     | (v2) バンドル検証仕様 (TODO)                                  |
+| [DESCRIBE_RESOURCES.md](./docs/DESCRIBE_RESOURCES.md)       | リソース定義一覧表示の仕様                                    |
+| [RESOURCE-DEFINITIONS.md](./docs/RESOURCE-DEFINITIONS.md)   | リソース定義の型構造と追加手順                                |
 
 ### 運用ツール
 
