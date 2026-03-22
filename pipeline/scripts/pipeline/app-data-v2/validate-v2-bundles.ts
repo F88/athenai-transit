@@ -72,35 +72,25 @@ const BUNDLE_FILES: BundleFile[] = [
 // ---------------------------------------------------------------------------
 
 /**
- * Collect all source names (outDir) that have v2 bundles.
+ * Build a map from source name (outDir) to prefix.
+ * Loads all GTFS and KSJ source definitions once.
  */
-async function collectAllSourceNames(): Promise<string[]> {
-  const names = new Set<string>();
+async function buildSourcePrefixMap(): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
 
   for (const name of listGtfsSourceNames()) {
-    names.add(name);
+    const source = await loadGtfsSource(name);
+    map.set(name, source.pipeline.prefix);
   }
 
   const ksjTargets = await collectAllKsjTargets();
   for (const t of ksjTargets) {
-    names.add(t.name);
+    if (!map.has(t.name)) {
+      map.set(t.name, t.prefix);
+    }
   }
 
-  return [...names].sort();
-}
-
-/**
- * Resolve a source name (outDir) to its prefix.
- */
-async function resolvePrefix(sourceName: string): Promise<string | null> {
-  try {
-    const source = await loadGtfsSource(sourceName);
-    return source.pipeline.prefix;
-  } catch {
-    const ksjTargets = await collectAllKsjTargets();
-    const target = ksjTargets.find((t) => t.name === sourceName);
-    return target?.prefix ?? null;
-  }
+  return map;
 }
 
 // ---------------------------------------------------------------------------
@@ -381,8 +371,11 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Build source name → prefix map once (used by --list and validation)
+  const prefixMap = await buildSourcePrefixMap();
+
   if (arg.kind === 'list') {
-    const names = await collectAllSourceNames();
+    const names = [...prefixMap.keys()].sort();
     console.log('Available v2 bundle sources:\n');
     for (const name of names) {
       console.log(`  ${name}`);
@@ -401,7 +394,7 @@ async function main(): Promise<void> {
   // Resolve source names to prefixes
   const sources: Array<{ name: string; prefix: string }> = [];
   for (const name of sourceNames) {
-    const prefix = await resolvePrefix(name);
+    const prefix = prefixMap.get(name);
     if (!prefix) {
       console.error(`Error: Unknown source "${name}".`);
       process.exitCode = EXIT_ERROR;
