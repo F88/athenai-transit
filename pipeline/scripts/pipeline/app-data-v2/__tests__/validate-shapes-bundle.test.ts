@@ -326,6 +326,95 @@ describe('validateShapesBundle', () => {
     });
   });
 
+  describe('multiple issues in a single bundle', () => {
+    it('detects coordinate error and dist error simultaneously', () => {
+      const bundle: ShapesBundle = {
+        bundle_version: 2,
+        kind: 'shapes',
+        shapes: {
+          v: 2,
+          data: {
+            'test:R1': [
+              [
+                [91.0, 139.76, -5],
+                [35.69, 139.77, 100],
+              ],
+            ],
+          },
+        },
+      };
+      writeBundle('multi-issue', bundle);
+
+      const result = validateShapesBundle('multi-issue', TMP_DIR);
+      const latError = result.issues.find((i) => i.message.includes('lat'));
+      const distError = result.issues.find((i) => i.message.includes('negative'));
+      expect(latError).toBeDefined();
+      expect(distError).toBeDefined();
+      expect(result.issues.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('reports errors in one route while another is valid', () => {
+      const bundle: ShapesBundle = {
+        bundle_version: 2,
+        kind: 'shapes',
+        shapes: {
+          v: 2,
+          data: {
+            'test:R1': [
+              [
+                [35.68, 139.76],
+                [35.69, 139.77],
+              ],
+            ],
+            'test:R2': [
+              [
+                [95.0, 139.76],
+                [35.69, 139.77],
+              ],
+            ],
+          },
+        },
+      };
+      writeBundle('mixed-routes', bundle);
+
+      const result = validateShapesBundle('mixed-routes', TMP_DIR);
+      expect(result.issues).toHaveLength(1);
+      expect(result.issues[0].message).toContain('test:R2');
+      expect(result.issues[0].message).toContain('lat');
+    });
+  });
+
+  describe('dist resets between polylines', () => {
+    it('does not flag dist reset across separate polylines', () => {
+      // polyline[0] ends at 300, polyline[1] starts at 0 — this is valid
+      // because each polyline represents a separate shape
+      const bundle: ShapesBundle = {
+        bundle_version: 2,
+        kind: 'shapes',
+        shapes: {
+          v: 2,
+          data: {
+            'test:R1': [
+              [
+                [35.68, 139.76, 0],
+                [35.69, 139.77, 150],
+                [35.7, 139.78, 300],
+              ],
+              [
+                [35.71, 139.79, 0],
+                [35.72, 139.8, 100],
+              ],
+            ],
+          },
+        },
+      };
+      writeBundle('dist-reset', bundle);
+
+      const result = validateShapesBundle('dist-reset', TMP_DIR);
+      expect(result.issues).toHaveLength(0);
+    });
+  });
+
   describe('exit code constants', () => {
     it('defines correct exit code values', () => {
       expect(EXIT_OK).toBe(0);
