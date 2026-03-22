@@ -29,6 +29,8 @@ import type { ShapePointV2, ShapesBundle } from '../../../../../src/types/data/t
 export interface ValidationIssue {
   prefix: string;
   level: 'error' | 'warn';
+  /** Machine-readable category for grouping issues in output. */
+  category: 'structure' | 'quality' | 'integrity';
   message: string;
 }
 
@@ -60,7 +62,12 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
 
   // File existence
   if (!existsSync(filePath)) {
-    issues.push({ prefix, level: 'error', message: 'shapes.json not found' });
+    issues.push({
+      prefix,
+      level: 'error',
+      category: 'structure',
+      message: 'shapes.json not found',
+    });
     return { issues, routeCount, polylineCount, pointCount };
   }
 
@@ -73,6 +80,7 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
     issues.push({
       prefix,
       level: 'error',
+      category: 'structure',
       message: `Failed to parse shapes.json: ${e instanceof Error ? e.message : String(e)}`,
     });
     return { issues, routeCount, polylineCount, pointCount };
@@ -83,6 +91,7 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
     issues.push({
       prefix,
       level: 'error',
+      category: 'structure',
       message: `Invalid bundle_version: expected 2, got ${String(bundle.bundle_version)}`,
     });
   }
@@ -90,6 +99,7 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
     issues.push({
       prefix,
       level: 'error',
+      category: 'structure',
       message: `Invalid kind: expected "shapes", got "${String(bundle.kind)}"`,
     });
   }
@@ -97,6 +107,7 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
     issues.push({
       prefix,
       level: 'error',
+      category: 'structure',
       message: `Invalid shapes.v: expected 2, got ${String(bundle.shapes?.v)}`,
     });
   }
@@ -111,6 +122,7 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
     issues.push({
       prefix,
       level: 'error',
+      category: 'structure',
       message: 'Invalid shapes.data: expected a non-null object mapping route IDs to polylines',
     });
     return { issues, routeCount, polylineCount, pointCount };
@@ -118,7 +130,12 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
   routeCount = Object.keys(data).length;
 
   if (routeCount === 0) {
-    issues.push({ prefix, level: 'warn', message: 'shapes.data is empty (0 routes)' });
+    issues.push({
+      prefix,
+      level: 'warn',
+      category: 'quality',
+      message: 'shapes.data is empty (0 routes)',
+    });
     return { issues, routeCount, polylineCount, pointCount };
   }
 
@@ -134,6 +151,7 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
         issues.push({
           prefix,
           level: 'warn',
+          category: 'quality',
           message: `${routeId} polyline[${pi}]: only ${polyline.length} point(s) (expected >= 2)`,
         });
       }
@@ -149,6 +167,7 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
           issues.push({
             prefix,
             level: 'error',
+            category: 'quality',
             message: `${routeId} polyline[${pi}][${i}]: lat ${lat} out of range [-90, 90]`,
           });
         }
@@ -156,6 +175,7 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
           issues.push({
             prefix,
             level: 'error',
+            category: 'quality',
             message: `${routeId} polyline[${pi}][${i}]: lon ${lon} out of range [-180, 180]`,
           });
         }
@@ -167,6 +187,7 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
             issues.push({
               prefix,
               level: 'error',
+              category: 'quality',
               message: `${routeId} polyline[${pi}][${i}]: shape_dist_traveled ${dist} is negative`,
             });
           }
@@ -174,6 +195,7 @@ export function validateShapesBundle(prefix: string, baseDir: string): ShapesVal
             issues.push({
               prefix,
               level: 'error',
+              category: 'quality',
               message: `${routeId} polyline[${pi}][${i}]: shape_dist_traveled ${dist} < previous ${prevDist} (not monotonically non-decreasing)`,
             });
           }

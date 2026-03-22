@@ -250,12 +250,7 @@ function validateSource(
 
     // Structure issues are fatal — skip per-section output
     const structureErrors = r.issues.filter(
-      (i) =>
-        i.level === 'error' &&
-        (i.message.includes('bundle_version') ||
-          i.message.includes('kind') ||
-          i.message.includes('Missing required section') ||
-          i.message.includes('.v:')),
+      (i) => i.level === 'error' && i.category === 'structure',
     );
     if (structureErrors.length > 0) {
       console.log(`      Structure:     FAILED`);
@@ -327,24 +322,14 @@ function validateSource(
 
     // Structure issues are fatal
     const structureErrors = r.issues.filter(
-      (i) =>
-        i.level === 'error' &&
-        (i.message.includes('bundle_version') ||
-          i.message.includes('kind') ||
-          i.message.includes('shapes.v') ||
-          i.message.includes('Invalid shapes.data')),
+      (i) => i.level === 'error' && i.category === 'structure',
     );
     if (structureErrors.length > 0) {
       console.log(`      Structure:     FAILED`);
       printIssueDetails(structureErrors);
     } else {
       const stats = `${r.routeCount} routes, ${r.polylineCount} polylines, ${r.pointCount} points`;
-      const dataIssues = r.issues.filter(
-        (i) =>
-          !i.message.includes('bundle_version') &&
-          !i.message.includes('kind') &&
-          !i.message.includes('shapes.v'),
-      );
+      const dataIssues = r.issues.filter((i) => i.category !== 'structure');
       if (dataIssues.length === 0) {
         console.log(`      shapes:        ${stats}, OK`);
       } else {

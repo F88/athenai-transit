@@ -51,7 +51,12 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
 
   // File existence
   if (!existsSync(filePath)) {
-    issues.push({ prefix, level: 'error', message: 'insights.json not found' });
+    issues.push({
+      prefix,
+      level: 'error',
+      category: 'structure',
+      message: 'insights.json not found',
+    });
     return { issues, serviceGroupCount };
   }
 
@@ -64,6 +69,7 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
     issues.push({
       prefix,
       level: 'error',
+      category: 'structure',
       message: `Failed to parse insights.json: ${e instanceof Error ? e.message : String(e)}`,
     });
     return { issues, serviceGroupCount };
@@ -74,6 +80,7 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
     issues.push({
       prefix,
       level: 'error',
+      category: 'structure',
       message: `Invalid bundle_version: expected 2, got ${String(bundle.bundle_version)}`,
     });
   }
@@ -81,6 +88,7 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
     issues.push({
       prefix,
       level: 'error',
+      category: 'structure',
       message: `Invalid kind: expected "insights", got "${String(bundle.kind)}"`,
     });
   }
@@ -90,6 +98,7 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
     issues.push({
       prefix,
       level: 'error',
+      category: 'structure',
       message: 'Missing required section: serviceGroups',
     });
   } else {
@@ -97,6 +106,7 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
       issues.push({
         prefix,
         level: 'error',
+        category: 'structure',
         message: `Invalid serviceGroups.v: expected 1, got ${String(bundle.serviceGroups.v)}`,
       });
     }
@@ -106,6 +116,7 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
       issues.push({
         prefix,
         level: 'error',
+        category: 'structure',
         message: 'Invalid serviceGroups.data: expected an array',
       });
     }

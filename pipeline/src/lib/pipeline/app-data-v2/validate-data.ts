@@ -107,7 +107,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
 
   // File existence
   if (!existsSync(filePath)) {
-    issues.push({ prefix, level: 'error', message: 'data.json not found' });
+    issues.push({ prefix, level: 'error', category: 'structure', message: 'data.json not found' });
     return { issues, stopCount, routeCount, serviceCount, patternCount, timetableStopCount };
   }
 
@@ -120,6 +120,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
     issues.push({
       prefix,
       level: 'error',
+      category: 'structure',
       message: `Failed to parse data.json: ${e instanceof Error ? e.message : String(e)}`,
     });
     return { issues, stopCount, routeCount, serviceCount, patternCount, timetableStopCount };
@@ -130,6 +131,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
     issues.push({
       prefix,
       level: 'error',
+      category: 'structure',
       message: `Invalid bundle_version: expected 2, got ${String(bundle.bundle_version)}`,
     });
   }
@@ -137,6 +139,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
     issues.push({
       prefix,
       level: 'error',
+      category: 'structure',
       message: `Invalid kind: expected "data", got "${String(bundle.kind)}"`,
     });
   }
@@ -148,6 +151,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
       issues.push({
         prefix,
         level: 'error',
+        category: 'structure',
         message: `Missing required section: ${sectionName}`,
       });
       continue;
@@ -157,6 +161,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
       issues.push({
         prefix,
         level: 'error',
+        category: 'structure',
         message: `Invalid ${sectionName}.v: expected ${expectedVersion}, got ${String(v)}`,
       });
     }
@@ -198,15 +203,26 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
   // ---------------------------------------------------------------------------
 
   if (stopCount === 0) {
-    issues.push({ prefix, level: 'warn', message: 'stops.data is empty (0 stops)' });
+    issues.push({
+      prefix,
+      level: 'warn',
+      category: 'quality',
+      message: 'stops.data is empty (0 stops)',
+    });
   }
   if (routeCount === 0) {
-    issues.push({ prefix, level: 'warn', message: 'routes.data is empty (0 routes)' });
+    issues.push({
+      prefix,
+      level: 'warn',
+      category: 'quality',
+      message: 'routes.data is empty (0 routes)',
+    });
   }
   if (serviceCount === 0) {
     issues.push({
       prefix,
       level: 'warn',
+      category: 'quality',
       message: 'calendar.data.services is empty (0 services)',
     });
   }
@@ -233,12 +249,14 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
         issues.push({
           prefix,
           level: 'warn',
+          category: 'quality',
           message: `Calendar has expired services (earliest end_date already passed)`,
         });
       } else if (diffMs < thirtyDaysMs) {
         issues.push({
           prefix,
           level: 'warn',
+          category: 'quality',
           message: `Calendar expires within 30 days (earliest end_date approaching)`,
         });
       }
@@ -254,6 +272,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
       issues.push({
         prefix,
         level: 'error',
+        category: 'quality',
         message: `Stop ${stop.i}: lat ${stop.a} out of range [-90, 90]`,
       });
     }
@@ -261,6 +280,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
       issues.push({
         prefix,
         level: 'error',
+        category: 'quality',
         message: `Stop ${stop.i}: lon ${stop.o} out of range [-180, 180]`,
       });
     }
@@ -275,6 +295,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
       issues.push({
         prefix,
         level: 'error',
+        category: 'integrity',
         message: `tripPattern ${patternId}: route "${pattern.r}" not found in routes`,
       });
     }
@@ -283,6 +304,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
         issues.push({
           prefix,
           level: 'error',
+          category: 'integrity',
           message: `tripPattern ${patternId}: stop "${stopId}" not found in stops`,
         });
       }
@@ -303,6 +325,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
         issues.push({
           prefix,
           level: 'error',
+          category: 'integrity',
           message: `timetable[${stopId}][${gi}]: tripPattern "${group.tp}" not found in tripPatterns`,
         });
       }
@@ -315,6 +338,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
           issues.push({
             prefix,
             level: 'error',
+            category: 'integrity',
             message: `timetable[${stopId}][${gi}]: service "${sid}" has departures but no arrivals`,
           });
           continue;
@@ -323,6 +347,7 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
           issues.push({
             prefix,
             level: 'error',
+            category: 'integrity',
             message: `timetable[${stopId}][${gi}]: service "${sid}" d.length (${dLen}) !== a.length (${aArr.length})`,
           });
         }
