@@ -164,24 +164,25 @@ TODO: pipeline 完成後に検証内容を定義する。
   toei-bus (minkuru):
     [DataBundle]
       Structure:     OK (bundle_version=2, kind=data, 9 sections)
-      stops:         3695 stops, OK
-      routes:        134 routes, OK
-      calendar:      2 services, OK
-      tripPatterns:  512 patterns, OK
-      timetable:     3695 stops, OK
+      Sections:
+        stops:         3695 stops, OK
+        routes:        134 routes, OK
+        calendar:      2 services, OK
+        tripPatterns:  512 patterns, OK
+        timetable:     3695 stops, OK
     [ShapesBundle]
-      Structure:     OK
       shapes:        134 routes, 267 polylines, 18340 points, OK
   keio-bus (keibus):
     [DataBundle]
       Structure:     OK (bundle_version=2, kind=data, 9 sections)
-      stops:         2100 stops, OK
-      routes:        89 routes, OK
-      calendar:      3 services, WARN: expires within 30 days
-      tripPatterns:  340 patterns, 2 errors
-        ERROR: pattern "keibus:P42": route "keibus:R_OLD" not found
-        ERROR: pattern "keibus:P42": stop "keibus:S999" not found
-      timetable:     2100 stops, OK
+      Sections:
+        stops:         2100 stops, OK
+        routes:        89 routes, OK
+        calendar:      3 services, WARN: expires within 30 days
+        tripPatterns:  340 patterns, 2 errors
+          ERROR: pattern "keibus:P42": route "keibus:R_OLD" not found
+          ERROR: pattern "keibus:P42": stop "keibus:S999" not found
+        timetable:     2100 stops, OK
 
 Result: FAILED (errors found)
 Done in 42ms. (exit code: 2)

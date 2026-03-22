@@ -194,10 +194,10 @@ function printExistenceResult(
 // ---------------------------------------------------------------------------
 
 /**
- * Format a summary line: "label: stats, result".
+ * Format a section summary line: "label: stats, result".
  * If no errors/warns, result is "OK". Otherwise shows count.
  */
-function formatSummaryLine(label: string, stats: string, issues: ValidationIssue[]): string {
+function formatSectionLine(label: string, stats: string, issues: ValidationIssue[]): string {
   const errors = issues.filter((i) => i.level === 'error');
   const warns = issues.filter((i) => i.level === 'warn');
 
@@ -210,7 +210,7 @@ function formatSummaryLine(label: string, stats: string, issues: ValidationIssue
   }
   const result = parts.length > 0 ? parts.join(', ') : 'OK';
 
-  return `      ${label.padEnd(16)} ${stats}, ${result}`;
+  return `        ${label.padEnd(16)} ${stats}, ${result}`;
 }
 
 function printIssueDetails(issues: ValidationIssue[]): void {
@@ -219,6 +219,16 @@ function printIssueDetails(issues: ValidationIssue[]): void {
       console.log(`        ERROR: ${issue.message}`);
     } else {
       console.log(`        WARN:  ${issue.message}`);
+    }
+  }
+}
+
+function printSectionIssues(issues: ValidationIssue[]): void {
+  for (const issue of issues) {
+    if (issue.level === 'error') {
+      console.log(`          ERROR: ${issue.message}`);
+    } else {
+      console.log(`          WARN:  ${issue.message}`);
     }
   }
 }
@@ -254,16 +264,18 @@ function validateSource(
       console.log(`      Structure:     OK (bundle_version=2, kind=data, 9 sections)`);
 
       // Per-section summary lines
+      console.log('      Sections:');
+
       const stopIssues = r.issues.filter((i) => i.message.startsWith('Stop '));
-      console.log(formatSummaryLine('stops:', `${r.stopCount} stops`, stopIssues));
+      console.log(formatSectionLine('stops:', `${r.stopCount} stops`, stopIssues));
       if (stopIssues.length > 0) {
-        printIssueDetails(stopIssues);
+        printSectionIssues(stopIssues);
       }
 
       const routeIssues = r.issues.filter((i) => i.message.includes('routes.data is empty'));
-      console.log(formatSummaryLine('routes:', `${r.routeCount} routes`, routeIssues));
+      console.log(formatSectionLine('routes:', `${r.routeCount} routes`, routeIssues));
       if (routeIssues.length > 0) {
-        printIssueDetails(routeIssues);
+        printSectionIssues(routeIssues);
       }
 
       const calendarIssues = r.issues.filter(
@@ -272,21 +284,21 @@ function validateSource(
           i.message.includes('Calendar') ||
           i.message.includes('services'),
       );
-      console.log(formatSummaryLine('calendar:', `${r.serviceCount} services`, calendarIssues));
+      console.log(formatSectionLine('calendar:', `${r.serviceCount} services`, calendarIssues));
       if (calendarIssues.length > 0) {
-        printIssueDetails(calendarIssues);
+        printSectionIssues(calendarIssues);
       }
 
       const patternIssues = r.issues.filter((i) => i.message.includes('tripPattern '));
-      console.log(formatSummaryLine('tripPatterns:', `${r.patternCount} patterns`, patternIssues));
+      console.log(formatSectionLine('tripPatterns:', `${r.patternCount} patterns`, patternIssues));
       if (patternIssues.length > 0) {
-        printIssueDetails(patternIssues);
+        printSectionIssues(patternIssues);
       }
 
       const ttIssues = r.issues.filter((i) => i.message.includes('timetable['));
-      console.log(formatSummaryLine('timetable:', `${r.timetableStopCount} stops`, ttIssues));
+      console.log(formatSectionLine('timetable:', `${r.timetableStopCount} stops`, ttIssues));
       if (ttIssues.length > 0) {
-        printIssueDetails(ttIssues);
+        printSectionIssues(ttIssues);
       }
     }
   }
