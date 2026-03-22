@@ -266,7 +266,9 @@ function validateSource(
       // Per-section summary lines
       console.log('      Sections:');
 
-      const stopIssues = r.issues.filter((i) => i.message.startsWith('Stop '));
+      const stopIssues = r.issues.filter(
+        (i) => i.message.startsWith('Stop ') || i.message.includes('stops.data is empty'),
+      );
       console.log(formatSectionLine('stops:', `${r.stopCount} stops`, stopIssues));
       if (stopIssues.length > 0) {
         printSectionIssues(stopIssues);
