@@ -578,7 +578,8 @@ async function main(): Promise<void> {
   let stepNum = 0;
   const t0 = performance.now();
 
-  console.log(`=== Validate v2 bundles (${prefixes.length} sources) ===\n`);
+  console.log(`=== Validate v2 bundles (${V2_OUTPUT_DIR}) ===\n`);
+  console.log(`  Validating ${prefixes.length} sources: ${prefixes.join(', ')}\n`);
 
   // -------------------------------------------------------------------------
   // Step 1: Unvalidated directory check (--targets mode only)

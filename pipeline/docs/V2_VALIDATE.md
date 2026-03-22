@@ -152,8 +152,12 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 問題がなければ1行で完結し、問題があるときだけ詳細行を出力する。
 
+### 警告のみの例 (exit code: 1)
+
 ```plain
-=== Validate v2 bundles (2 sources) ===
+=== Validate v2 bundles (/path/to/pipeline/workspace/_build/data-v2) ===
+
+  Validating 2 sources: minkuru, kobus
 
 --- [1/3] Unvalidated directory check ---
 
@@ -193,7 +197,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
         stops:           2100 stops, OK
         routes:          89 routes, OK
         calendar:        3 services, 1 warning(s)
-          WARN:  Calendar expires within 30 days (earliest end_date approaching)
+          ⚠️ WARN:  Calendar expires within 30 days (earliest end_date approaching)
         tripPatterns:    340 patterns, OK
         timetable:       2100 stops, OK
     [InsightsBundle]
@@ -201,15 +205,67 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 ## V2 Bundle Validation
 
-### Warnings
+Checked on: 2026-03-22
 
-| Prefix | Message |
-|--------|---------|
-| kobus | Calendar expires within 30 days (earliest end_date approaching) |
+### ⚠️ Expiring within 30 days
 
-Result: PASSED with warnings
+| Prefix | Service ID | End Date | Days Left |
+|--------|-----------|----------|-----------|
+| kobus | `kobus:O_0001_1` | 2026-03-31 | 9 |
+| kobus | `kobus:O_0001_2` | 2026-03-31 | 9 |
+
+⚠️ Validation passed with warnings.
 
 Done in 42ms. (exit code: 1)
+```
+
+### エラーありの例 (exit code: 2)
+
+```plain
+=== Validate v2 bundles (/path/to/pipeline/workspace/_build/data-v2) ===
+
+  Validating 3 sources: minkuru, kobus, unknown
+
+--- [1/3] Unvalidated directory check ---
+
+  ❌ ERROR: Unvalidated directory: broken/
+  Result: 1 unvalidated directory found.
+
+--- [2/3] File existence check ---
+
+  minkuru:
+    data.json ......... OK
+    insights.json ..... OK
+    shapes.json ....... OK
+  kobus:
+    data.json ......... OK
+    insights.json ..... ❌ MISSING (required)
+    shapes.json ....... not found (optional, skipped)
+  unknown:
+    data.json ......... ❌ MISSING (required)
+    insights.json ..... ❌ MISSING (required)
+    shapes.json ....... not found (optional, skipped)
+  Result: 4/9 files present (2 optional skipped).
+
+❌ Validation failed (required files missing).
+
+Done in 12ms. (exit code: 2)
+```
+
+参照整合性エラーがある場合、Step 3 で以下のように表示される:
+
+```plain
+  kobus:
+    [DataBundle]
+      Structure:     OK (bundle_version=2, kind=data, 9 sections)
+      Sections:
+        stops:           2100 stops, OK
+        routes:          89 routes, OK
+        calendar:        3 services, OK
+        tripPatterns:    340 patterns, 2 error(s)
+          ❌ ERROR: tripPattern "kobus:P42": route "kobus:R_OLD" not found
+          ❌ ERROR: tripPattern "kobus:P42": stop "kobus:S999" not found
+        timetable:       2100 stops, OK
 ```
 
 ## Exit Code
