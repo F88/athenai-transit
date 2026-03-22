@@ -16,7 +16,7 @@
  *   2 — errors (missing files, invalid structure, invalid data)
  *
  * Usage:
- *   npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts <source-name>
+ *   npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts <prefix>
  *   npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts --targets <file>
  *   npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts --list
  */
@@ -25,9 +25,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/load-gtfs-sources';
 import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/pipeline-utils';
-import { collectAllKsjTargets } from '../../../src/lib/pipeline/extract-shapes-from-ksj';
 import { validateDataBundle } from '../../../src/lib/pipeline/app-data-v2/validate-data';
 import { validateInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-insights';
 import { validateShapesBundle } from '../../../src/lib/pipeline/app-data-v2/validate-shapes';
@@ -66,32 +64,6 @@ const BUNDLE_FILES: BundleFile[] = [
   { filename: 'insights.json', label: 'InsightsBundle', required: true },
   { filename: 'shapes.json', label: 'ShapesBundle', required: false },
 ];
-
-// ---------------------------------------------------------------------------
-// CLI helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Build a map from source name (outDir) to prefix.
- * Loads all GTFS and KSJ source definitions once.
- */
-async function buildSourcePrefixMap(): Promise<Map<string, string>> {
-  const map = new Map<string, string>();
-
-  for (const name of listGtfsSourceNames()) {
-    const source = await loadGtfsSource(name);
-    map.set(name, source.pipeline.prefix);
-  }
-
-  const ksjTargets = await collectAllKsjTargets();
-  for (const t of ksjTargets) {
-    if (!map.has(t.name)) {
-      map.set(t.name, t.prefix);
-    }
-  }
-
-  return map;
-}
 
 // ---------------------------------------------------------------------------
 // Result tracking
@@ -345,7 +317,7 @@ function validateSource(
 
 function printUsage(): void {
   console.log(
-    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts <source-name>',
+    'Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts <prefix>',
   );
   console.log(
     '       npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts --targets <file>',
@@ -355,8 +327,23 @@ function printUsage(): void {
   );
   console.log('Options:');
   console.log('  --targets <file>  Validate from a target list file (.ts)');
-  console.log('  --list            List available source names');
+  console.log('  --list            List available prefixes (from data-v2/ directories)');
   console.log('  --help            Show this help message');
+}
+
+/**
+ * List prefix directories that exist in the output directory.
+ */
+function listAvailablePrefixes(): string[] {
+  if (!existsSync(V2_OUTPUT_DIR)) {
+    return [];
+  }
+  return readdirSync(V2_OUTPUT_DIR)
+    .filter((name) => {
+      const dir = join(V2_OUTPUT_DIR, name);
+      return statSync(dir).isDirectory();
+    })
+    .sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -371,36 +358,21 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Build source name → prefix map once (used by --list and validation)
-  const prefixMap = await buildSourcePrefixMap();
-
   if (arg.kind === 'list') {
-    const names = [...prefixMap.keys()].sort();
-    console.log('Available v2 bundle sources:\n');
-    for (const name of names) {
-      console.log(`  ${name}`);
+    const prefixes = listAvailablePrefixes();
+    console.log('Available v2 bundle prefixes:\n');
+    for (const prefix of prefixes) {
+      console.log(`  ${prefix}`);
     }
     return;
   }
 
-  // Resolve target source names
-  let sourceNames: string[];
+  // Resolve target prefixes
+  let prefixes: string[];
   if (arg.kind === 'targets') {
-    sourceNames = await loadTargetFile(arg.path);
+    prefixes = await loadTargetFile(arg.path);
   } else {
-    sourceNames = [arg.name];
-  }
-
-  // Resolve source names to prefixes
-  const sources: Array<{ name: string; prefix: string }> = [];
-  for (const name of sourceNames) {
-    const prefix = prefixMap.get(name);
-    if (!prefix) {
-      console.error(`Error: Unknown source "${name}".`);
-      process.exitCode = EXIT_ERROR;
-      return;
-    }
-    sources.push({ name, prefix });
+    prefixes = [arg.name];
   }
 
   const state = { hasError: false, hasWarn: false };
@@ -408,7 +380,7 @@ async function main(): Promise<void> {
   const totalSteps = isTargetsMode ? 3 : 2;
   let stepNum = 0;
 
-  console.log(`=== Validate v2 bundles (${sources.length} sources) ===\n`);
+  console.log(`=== Validate v2 bundles (${prefixes.length} sources) ===\n`);
 
   // -------------------------------------------------------------------------
   // Step 1: Unvalidated directory check (--targets mode only)
@@ -418,7 +390,7 @@ async function main(): Promise<void> {
     stepNum++;
     console.log(`--- [${stepNum}/${totalSteps}] Unvalidated directory check ---\n`);
 
-    const validatedPrefixes = new Set(sources.map((s) => s.prefix));
+    const validatedPrefixes = new Set(prefixes);
     const unvalidated = checkUnvalidatedDirs(validatedPrefixes);
 
     if (unvalidated.length === 0) {
@@ -450,8 +422,8 @@ async function main(): Promise<void> {
   let presentFiles = 0;
   let optionalSkipped = 0;
 
-  for (const { name, prefix } of sources) {
-    console.log(`  ${name} (${prefix}):`);
+  for (const prefix of prefixes) {
+    console.log(`  ${prefix}:`);
     const result = checkFileExistence(prefix);
     existenceResults.set(prefix, result);
     printExistenceResult(prefix, result, state);
@@ -488,8 +460,8 @@ async function main(): Promise<void> {
   stepNum++;
   console.log(`--- [${stepNum}/${totalSteps}] Validate each bundle ---\n`);
 
-  for (const { name, prefix } of sources) {
-    console.log(`  ${name} (${prefix}):`);
+  for (const prefix of prefixes) {
+    console.log(`  ${prefix}:`);
     const existence = existenceResults.get(prefix)!;
     validateSource(prefix, existence.files, state);
     console.log('');

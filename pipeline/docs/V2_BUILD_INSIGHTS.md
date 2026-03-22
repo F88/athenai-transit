@@ -15,27 +15,23 @@ DataBundle から分析データを導出し、`insights.json` (InsightsBundle) 
 ## CLI インターフェース
 
 ```plain
-Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts <source-name>
+Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts <prefix>
        npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts --targets <file>
        npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts --list
        npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts --help
        npm run pipeline:build:v2-insights
 ```
 
-| 引数/オプション    | 説明                                         |
-| ------------------ | -------------------------------------------- |
-| `<source-name>`    | 単体実行。ソース名を指定 (例: toei-bus)      |
-| `--targets <file>` | ターゲットリストファイルで一括ビルド         |
-| `--list`           | data.json が存在するソース名一覧を表示       |
-| `--help, -h`       | ヘルプ表示                                   |
-
-### ソース識別子
-
-ソース名 (例: `toei-bus`) を引数に取り、スクリプト内部で prefix (例: `minkuru`) を解決する。GTFS, ODPT Train, KSJ のいずれのソース種別でも使用可能。
+| 引数/オプション    | 説明                                   |
+| ------------------ | -------------------------------------- |
+| `<prefix>`         | 単体実行。prefix を指定 (例: minkuru)  |
+| `--targets <file>` | ターゲットリストファイルで一括ビルド   |
+| `--list`           | data.json が存在する prefix 一覧を表示 |
+| `--help, -h`       | ヘルプ表示                             |
 
 ### data.json が存在しない場合
 
-単体実行時、指定ソースの `data.json` が存在しない場合はスキップ (exit 0)。バッチ実行時は `runBatch` による子プロセス実行。
+単体実行時、指定 prefix の `data.json` が存在しない場合はスキップ (exit 0)。バッチ実行時は `runBatch` による子プロセス実行。
 
 ## InsightsBundle 構成
 
