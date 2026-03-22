@@ -22,6 +22,9 @@ import { fileURLToPath } from 'node:url';
 import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
 import { V2_OUTPUT_DIR } from '../../../src/lib/paths';
 import { buildServiceGroups } from '../../../src/lib/pipeline/app-data-v2/build-service-groups';
+import { buildStopStats } from '../../../src/lib/pipeline/app-data-v2/build-stop-stats';
+import { buildTripPatternGeo } from '../../../src/lib/pipeline/app-data-v2/build-trip-pattern-geo';
+import { buildTripPatternStats } from '../../../src/lib/pipeline/app-data-v2/build-trip-pattern-stats';
 import { writeInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
 import {
   determineBatchExitCode,
@@ -67,7 +70,35 @@ function buildSourceInsights(prefix: string): boolean {
     `  Service groups: ${serviceGroups.length} (${serviceGroups.map((g) => g.key).join(', ')})`,
   );
 
-  writeInsightsBundle(sourceDir, serviceGroups);
+  // tripPatternGeo (service-group independent)
+  const tripPatternGeo = buildTripPatternGeo(bundle.tripPatterns.data, bundle.stops.data);
+  const geoCount = Object.keys(tripPatternGeo).length;
+  console.log(`  Trip pattern geo: ${String(geoCount)} patterns`);
+
+  // tripPatternStats (per service group)
+  const tripPatternStats = buildTripPatternStats(
+    bundle.tripPatterns.data,
+    bundle.timetable.data,
+    serviceGroups,
+  );
+  console.log(`  Trip pattern stats: ${Object.keys(tripPatternStats).length} groups`);
+
+  // stopStats (per service group)
+  const stopStats = buildStopStats(
+    bundle.timetable.data,
+    bundle.tripPatterns.data,
+    bundle.routes.data,
+    serviceGroups,
+  );
+  for (const [key, stats] of Object.entries(stopStats)) {
+    console.log(`  Stop stats [${key}]: ${String(Object.keys(stats).length)} stops`);
+  }
+
+  writeInsightsBundle(sourceDir, serviceGroups, {
+    tripPatternGeo,
+    tripPatternStats,
+    stopStats,
+  });
   console.log(`  Written: ${sourceDir}/insights.json`);
   return true;
 }

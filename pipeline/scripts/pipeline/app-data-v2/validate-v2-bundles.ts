@@ -280,7 +280,17 @@ function validateSource(
     allIssues.push(...r.issues);
 
     if (r.issues.length === 0) {
-      console.log(`      Structure:     OK (${r.serviceGroupCount} service groups)`);
+      const parts = [`${r.serviceGroupCount} service groups`];
+      if (r.tripPatternGeoCount > 0) {
+        parts.push(`${r.tripPatternGeoCount} pattern geo`);
+      }
+      if (r.tripPatternStatsGroupCount > 0) {
+        parts.push(`${r.tripPatternStatsGroupCount} stats groups`);
+      }
+      if (r.stopStatsGroupCount > 0) {
+        parts.push(`${r.stopStatsGroupCount} stop stats groups`);
+      }
+      console.log(`      Structure:     OK (${parts.join(', ')})`);
     } else {
       console.log(`      Structure:     FAILED`);
       printIssueDetails(r.issues);
