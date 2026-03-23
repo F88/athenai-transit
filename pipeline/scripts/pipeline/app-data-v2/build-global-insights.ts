@@ -200,14 +200,20 @@ async function main(): Promise<void> {
       console.log(`\n  ${skipped} source(s) skipped.`);
     }
 
-    // Separate l=0 and l=1 in a single pass
+    // Separate l=0 / l=1 and build childrenMap in a single pass
     const l0Stops: StopEntry[] = [];
     const l1Stops: StopEntry[] = [];
+    const childrenMap = new Map<string, string[]>();
     for (const entry of allStopEntries) {
       if (entry.locationType === 0) {
         l0Stops.push(entry);
       } else if (entry.locationType === 1) {
         l1Stops.push(entry);
+      }
+      if (entry.parentStation) {
+        const list = childrenMap.get(entry.parentStation) ?? [];
+        list.push(entry.id);
+        childrenMap.set(entry.parentStation, list);
       }
     }
 
@@ -224,14 +230,6 @@ async function main(): Promise<void> {
 
     // Step 3: Compute stopGeo for l=1
     console.log('--- Computing stopGeo (l=1) ---\n');
-    const childrenMap = new Map<string, string[]>();
-    for (const stop of allStopEntries) {
-      if (stop.parentStation) {
-        const list = childrenMap.get(stop.parentStation) ?? [];
-        list.push(stop.id);
-        childrenMap.set(stop.parentStation, list);
-      }
-    }
 
     const l1Geo = buildParentStopGeo(l1Stops, childrenMap, l0Geo, l0Stops, GROUP_KEY);
     console.log(`  l=1 stopGeo: ${Object.keys(l1Geo).length} entries\n`);
