@@ -79,7 +79,7 @@ describe('validateGlobalInsightsBundle', () => {
     expect(result.stopGeoCount).toBe(3);
   });
 
-  it('validates a valid bundle without stopGeo', () => {
+  it('warns when stopGeo section is absent', () => {
     writeGlobalInsights({
       bundle_version: 2,
       kind: 'global-insights',
@@ -87,7 +87,9 @@ describe('validateGlobalInsightsBundle', () => {
 
     const result = validateGlobalInsightsBundle(TMP_DIR);
 
-    expect(result.issues).toHaveLength(0);
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0].level).toBe('warn');
+    expect(result.issues[0].message).toContain('stopGeo section is absent');
     expect(result.stopGeoCount).toBe(0);
   });
 

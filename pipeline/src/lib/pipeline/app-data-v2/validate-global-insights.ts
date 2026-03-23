@@ -100,6 +100,16 @@ export function validateGlobalInsightsBundle(baseDir: string): GlobalInsightsVal
   }
 
   // Optional section: stopGeo
+  if (bundle.stopGeo === undefined) {
+    issues.push({
+      prefix: 'global',
+      level: 'warn',
+      category: 'structure',
+      message: 'stopGeo section is absent — is this intentional?',
+    });
+    return { issues, stopGeoCount };
+  }
+
   if (bundle.stopGeo !== undefined) {
     if (
       bundle.stopGeo === null ||
