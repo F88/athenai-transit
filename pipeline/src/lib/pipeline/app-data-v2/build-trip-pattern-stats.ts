@@ -9,18 +9,20 @@
  *
  * For circular routes (`stops[0] === stops[last]`), the origin/terminal stop
  * has 2x the departures of interior stops because it appears at both
- * position 0 and the last position. To get accurate freq counts, we use
+ * position 0 and the last position. To get accurate `freq` counts, we use
  * an interior stop (position 1) as the reference for departure counting.
  *
- * For `rd` computation, segment travel times between consecutive interior
- * stops use positional alignment. The origin segment (position 0→1)
- * uses the interior stop count as the reference for alignment.
+ * For `rd` computation, segments that touch the origin/terminal stop
+ * (first and last segments) are skipped because the origin/terminal has
+ * 2x departures interleaved when sorted, making positional alignment
+ * unreliable. Skipped segments are filled by gap interpolation.
  *
  * ### Stops without timetable entries
  *
  * Some stops in a pattern may have no corresponding timetable entry
  * (e.g. GTFS stops with NULL departure_time). For `rd`, these gaps
- * are filled by linear interpolation from neighboring segments.
+ * are filled using nearest-neighbor averaging/copying from adjacent
+ * known segments, not via proportional linear interpolation.
  */
 
 import type {

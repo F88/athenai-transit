@@ -162,6 +162,7 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
         category: 'structure',
         message: `Invalid ${sectionName}.v: expected 1, got ${String(section.v)}`,
       });
+      return 0;
     }
     if (section.data && typeof section.data === 'object' && !Array.isArray(section.data)) {
       return Object.keys(section.data).length;
