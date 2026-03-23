@@ -1,6 +1,6 @@
 {
   "sourceName": "oshima-bus",
-  "checkedAt": "2026-03-23T10:39:59.127Z",
+  "checkedAt": "2026-03-23T10:47:14.414Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20231002&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]",
     "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20240215&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]",

@@ -1,0 +1,10 @@
+{
+  "sourceName": "nagoya-srt",
+  "checkedAt": "2026-03-23T10:47:14.417Z",
+  "resourceUrls": [
+    "https://api-public.odpt.org/api/v4/files/odpt/NagoyaHousingCityPlanningBureau/NagoyaSRT_AllLines.zip?date=20260213"
+  ],
+  "result": "ok",
+  "warnings": [],
+  "errors": []
+}
