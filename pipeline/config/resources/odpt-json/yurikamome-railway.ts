@@ -14,8 +14,11 @@ const yurikamomeRailway: OdptJsonSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/yurikamome',
+      datasetUrl: 'https://ckan.odpt.org/dataset/r_route-yurikamome',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/r_route-yurikamome/resource/0806342a-8baa-4a8b-8566-af97a0e02821',
       resourceId: '0806342a-8baa-4a8b-8566-af97a0e02821',
-      url: 'https://ckan.odpt.org/dataset/r_route-yurikamome/resource/0806342a-8baa-4a8b-8566-af97a0e02821',
     },
     provider: {
       name: {

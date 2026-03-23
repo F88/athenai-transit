@@ -14,8 +14,11 @@ const yurikamomeStationTimetable: OdptJsonSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/yurikamome',
+      datasetUrl: 'https://ckan.odpt.org/dataset/r_station_timetable-yurikamome',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/r_station_timetable-yurikamome/resource/d83a1b77-6d9f-494e-b63c-be082fea6c56',
       resourceId: 'd83a1b77-6d9f-494e-b63c-be082fea6c56',
-      url: 'https://ckan.odpt.org/dataset/r_station_timetable-yurikamome/resource/d83a1b77-6d9f-494e-b63c-be082fea6c56',
     },
     provider: {
       name: {

@@ -10,10 +10,14 @@
 /** Resource published on ODPT (Public Transportation Open Data Center). */
 export interface CatalogOdpt {
   type: 'odpt';
-  /** CKAN resource UUID. */
+  /** CKAN organization page URL (e.g. https://ckan.odpt.org/organization/...). */
+  organizationUrl: string;
+  /** CKAN dataset page URL (e.g. https://ckan.odpt.org/dataset/...). */
+  datasetUrl: string;
+  /** CKAN resource page URL for the current version. */
+  resourceUrl: string;
+  /** CKAN resource UUID for the current version. */
   resourceId: string;
-  /** URL of the catalog page for this resource. */
-  url: string;
 }
 
 /** Resource published on a municipal or other catalog site. */

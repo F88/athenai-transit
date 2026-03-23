@@ -14,8 +14,11 @@ const keiseiTransitBus: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/keisei_transit_bus',
+      datasetUrl: 'https://ckan.odpt.org/dataset/keisei_transit_bus_all_lines',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/keisei_transit_bus_all_lines/resource/af855ba1-374e-4157-a80d-211a5c425d29',
       resourceId: 'af855ba1-374e-4157-a80d-211a5c425d29',
-      url: 'https://ckan.odpt.org/dataset/keisei_transit_bus_all_lines/resource/af855ba1-374e-4157-a80d-211a5c425d29',
     },
     provider: {
       name: {

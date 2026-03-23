@@ -14,8 +14,11 @@ const mirTrain: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/mir',
+      datasetUrl: 'https://ckan.odpt.org/dataset/train-mir',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/train-mir/resource/663ebc8f-6c0c-4151-b966-f97f5d9b148c',
       resourceId: '663ebc8f-6c0c-4151-b966-f97f5d9b148c',
-      url: 'https://ckan.odpt.org/dataset/train-mir/resource/663ebc8f-6c0c-4151-b966-f97f5d9b148c',
     },
     provider: {
       name: {

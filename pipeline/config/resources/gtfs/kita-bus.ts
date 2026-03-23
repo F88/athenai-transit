@@ -14,8 +14,11 @@ const kitaBus: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/hitachi_automobile_transportation',
+      datasetUrl: 'https://ckan.odpt.org/dataset/hitachi_automobile_transportation_kita_all_lines',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/hitachi_automobile_transportation_kita_all_lines/resource/b551e2d8-0ae1-4fb4-9a4d-aa8de7f3095c',
       resourceId: 'b551e2d8-0ae1-4fb4-9a4d-aa8de7f3095c',
-      url: 'https://ckan.odpt.org/dataset/hitachi_automobile_transportation_kita_all_lines/resource/b551e2d8-0ae1-4fb4-9a4d-aa8de7f3095c',
     },
     provider: {
       name: {

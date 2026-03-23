@@ -13,8 +13,11 @@ const kantoBus: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/kanto_bus',
+      datasetUrl: 'https://ckan.odpt.org/dataset/kanto_bus_all_lines',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/kanto_bus_all_lines/resource/05a8cd54-0412-4921-9747-dba755d27538',
       resourceId: '05a8cd54-0412-4921-9747-dba755d27538',
-      url: 'https://ckan.odpt.org/dataset/kanto_bus_all_lines/resource/05a8cd54-0412-4921-9747-dba755d27538',
     },
     provider: {
       name: {

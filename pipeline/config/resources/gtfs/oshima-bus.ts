@@ -13,8 +13,11 @@ const oshimaBus: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/oshima_bus',
+      datasetUrl: 'https://ckan.odpt.org/dataset/oshima_bus_all_lines',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/oshima_bus_all_lines/resource/ef2e0472-f50f-4a8e-b4b4-df9002dd219a',
       resourceId: 'ef2e0472-f50f-4a8e-b4b4-df9002dd219a',
-      url: 'https://ckan.odpt.org/dataset/oshima_bus_all_lines/resource/ef2e0472-f50f-4a8e-b4b4-df9002dd219a',
     },
     provider: {
       name: {

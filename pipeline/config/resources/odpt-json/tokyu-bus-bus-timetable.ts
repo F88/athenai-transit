@@ -13,8 +13,11 @@ const tokyuBusBusTimetable: OdptJsonSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/tokyu_bus',
+      datasetUrl: 'https://ckan.odpt.org/dataset/tokyu_bus__b-bus_timetable',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/tokyu_bus__b-bus_timetable/resource/c18d5280-bb74-46e8-8e76-08070a41fcf5',
       resourceId: 'c18d5280-bb74-46e8-8e76-08070a41fcf5',
-      url: 'https://ckan.odpt.org/dataset/tokyu_bus__b-bus_timetable/resource/c18d5280-bb74-46e8-8e76-08070a41fcf5',
     },
     provider: {
       name: {

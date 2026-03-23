@@ -13,8 +13,11 @@ const suginamiGsm: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/tokyo_suginami_city',
+      datasetUrl: 'https://ckan.odpt.org/dataset/tokyo_suginami_city_green_slow_mobility',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/tokyo_suginami_city_green_slow_mobility/resource/bdf054b4-8fe9-4673-a69f-6ac7e56e73aa',
       resourceId: 'bdf054b4-8fe9-4673-a69f-6ac7e56e73aa',
-      url: 'https://ckan.odpt.org/dataset/tokyo_suginami_city_green_slow_mobility/resource/bdf054b4-8fe9-4673-a69f-6ac7e56e73aa',
     },
     provider: {
       name: {
