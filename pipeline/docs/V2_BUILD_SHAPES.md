@@ -4,10 +4,10 @@ v2 パイプラインの ShapesBundle (`shapes.json`) ビルド仕様。GTFS sha
 
 ## 概要
 
-| スクリプト                         | 入力                        | 出力                           |
-| ---------------------------------- | --------------------------- | ------------------------------ |
-| `build-shapes-from-gtfs.ts`        | SQLite DB (shapes テーブル) | `data-v2/{prefix}/shapes.json` |
-| `build-shapes-from-ksj-railway.ts` | MLIT GeoJSON                | `data-v2/{prefix}/shapes.json` |
+| スクリプト                         | 入力                                       | 出力                                                     |
+| ---------------------------------- | ------------------------------------------ | -------------------------------------------------------- |
+| `build-shapes-from-gtfs.ts`        | `pipeline/workspace/_build/db/{outDir}.db` | `pipeline/workspace/_build/data-v2/{prefix}/shapes.json` |
+| `build-shapes-from-ksj-railway.ts` | MLIT GeoJSON                               | `pipeline/workspace/_build/data-v2/{prefix}/shapes.json` |
 
 抽出ロジックは `pipeline/src/lib/pipeline/` の共有関数に集約されており、v1 と v2 の両方から利用される。
 
