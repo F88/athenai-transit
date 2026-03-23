@@ -591,8 +591,9 @@ describe('buildTripPatternStats', () => {
       expect(rd[0]).toBe(20);
     });
 
-    it('returns NO_DATA when all diffs are negative', () => {
-      // s2 departs BEFORE s1 for all trips → all diffs negative
+    it('handles all-negative diffs by gap interpolation from neighbors', () => {
+      // s2 departs BEFORE s1 for all trips → all diffs negative → NO_DATA
+      // The NO_DATA gap is then filled by interpolation from the known neighbor
       const patterns: Record<string, TripPatternJson> = {
         p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },
       };
@@ -618,7 +619,7 @@ describe('buildTripPatternStats', () => {
     });
 
     it('does not confuse 0 (valid) with NO_DATA (-1) during gap interpolation', () => {
-      // segments: [10, 0, NO_DATA, 5] → gap should interpolate from neighbors (0, 5)
+      // s2→s3 has 0 travel time (valid), s3→s4 and s4→s5 are gaps (s4 missing)
       const patterns: Record<string, TripPatternJson> = {
         p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3', 's4', 's5'] },
       };
