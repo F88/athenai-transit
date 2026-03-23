@@ -166,6 +166,34 @@ describe('validateGlobalInsightsBundle', () => {
     expect(result.issues.some((i) => i.message.includes('nr: expected number'))).toBe(true);
   });
 
+  it('detects JSON.parse returning null', () => {
+    mkdirSync(GLOBAL_DIR, { recursive: true });
+    writeFileSync(join(GLOBAL_DIR, 'insights.json'), 'null');
+
+    const result = validateGlobalInsightsBundle(TMP_DIR);
+
+    expect(result.issues.some((i) => i.message.includes('expected an object'))).toBe(true);
+  });
+
+  it('detects null entry in stopGeo.data', () => {
+    writeGlobalInsights({
+      bundle_version: 2,
+      kind: 'global-insights',
+      stopGeo: {
+        v: 1,
+        data: {
+          s1: null,
+        },
+      },
+    });
+
+    const result = validateGlobalInsightsBundle(TMP_DIR);
+
+    expect(result.issues.some((i) => i.message.includes('expected an object, got null'))).toBe(
+      true,
+    );
+  });
+
   it('uses prefix "global" for all issues', () => {
     writeGlobalInsights({
       bundle_version: 1,

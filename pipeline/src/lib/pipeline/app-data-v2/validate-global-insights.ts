@@ -70,6 +70,17 @@ export function validateGlobalInsightsBundle(baseDir: string): GlobalInsightsVal
     return { issues, stopGeoCount };
   }
 
+  // Guard against JSON.parse returning null (e.g. file contains "null")
+  if (bundle === null || typeof bundle !== 'object' || Array.isArray(bundle)) {
+    issues.push({
+      prefix: 'global',
+      level: 'error',
+      category: 'structure',
+      message: 'Invalid GlobalInsightsBundle: expected an object',
+    });
+    return { issues, stopGeoCount };
+  }
+
   // Bundle structure
   if (bundle.bundle_version !== 2) {
     issues.push({
@@ -119,6 +130,15 @@ export function validateGlobalInsightsBundle(baseDir: string): GlobalInsightsVal
 
         // Spot-check: nr must be a number for each entry
         for (const [stopId, geo] of Object.entries(bundle.stopGeo.data)) {
+          if (geo === null || typeof geo !== 'object') {
+            issues.push({
+              prefix: 'global',
+              level: 'error',
+              category: 'quality',
+              message: `stopGeo[${stopId}]: expected an object, got ${geo === null ? 'null' : typeof geo}`,
+            });
+            break;
+          }
           if (typeof geo.nr !== 'number') {
             issues.push({
               prefix: 'global',

@@ -1,12 +1,13 @@
 #!/usr/bin/env -S npx tsx
 
 /**
- * Validate v2 bundle files (DataBundle, ShapesBundle, InsightsBundle).
+ * Validate v2 bundle files (DataBundle, ShapesBundle, InsightsBundle, GlobalInsightsBundle).
  *
- * Runs validation in up to three steps:
+ * Runs validation in up to four steps:
  *   Step 1 — Unvalidated directory check (--targets mode only)
  *   Step 2 — File existence check (required bundles must exist)
  *   Step 3 — Validate each bundle (structure, data quality, referential integrity)
+ *   Step 4 — Validate GlobalInsightsBundle (global/insights.json)
  *
  * Target: pipeline/workspace/_build/data-v2/{prefix}/
  *
@@ -512,10 +513,11 @@ function listAvailablePrefixes(): string[] {
   if (!existsSync(V2_OUTPUT_DIR)) {
     return [];
   }
+  // 'global' is validated separately (GlobalInsightsBundle), not a per-source prefix.
   return readdirSync(V2_OUTPUT_DIR)
     .filter((name) => {
       const dir = join(V2_OUTPUT_DIR, name);
-      return statSync(dir).isDirectory();
+      return name !== 'global' && statSync(dir).isDirectory();
     })
     .sort();
 }
