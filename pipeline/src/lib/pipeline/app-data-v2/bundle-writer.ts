@@ -13,10 +13,12 @@ import { join } from 'node:path';
 
 import type {
   DataBundle,
+  GlobalInsightsBundle,
   InsightsBundle,
   ServiceGroupEntry,
   ShapePointV2,
   ShapesBundle,
+  StopGeoJson,
   StopStatsJson,
   TripPatternGeoJson,
   TripPatternStatsJson,
@@ -120,5 +122,22 @@ export function writeInsightsBundle(
     bundle.stopStats = { v: 1, data: sections.stopStats };
   }
 
+  writeAtomicJson(dir, 'insights.json', bundle);
+}
+
+/**
+ * Write a GlobalInsightsBundle to `{dir}/insights.json` atomically.
+ *
+ * Output path is typically `pipeline/workspace/_build/data-v2/global/insights.json`.
+ *
+ * @param dir - Output directory (e.g. `pipeline/workspace/_build/data-v2/global`).
+ * @param stopGeo - Per-stop geographic metrics computed across all sources.
+ */
+export function writeGlobalInsightsBundle(dir: string, stopGeo: Record<string, StopGeoJson>): void {
+  const bundle: GlobalInsightsBundle = {
+    bundle_version: 2,
+    kind: 'global-insights',
+    stopGeo: { v: 1, data: stopGeo },
+  };
   writeAtomicJson(dir, 'insights.json', bundle);
 }
