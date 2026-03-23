@@ -89,7 +89,7 @@ describe('validateGlobalInsightsBundle', () => {
 
     expect(result.issues).toHaveLength(1);
     expect(result.issues[0].level).toBe('warn');
-    expect(result.issues[0].message).toContain('stopGeo section is absent');
+    expect(result.issues[0].message).toContain('stopGeo section is not present');
     expect(result.stopGeoCount).toBe(0);
   });
 

@@ -105,7 +105,8 @@ export function validateGlobalInsightsBundle(baseDir: string): GlobalInsightsVal
       prefix: 'global',
       level: 'warn',
       category: 'structure',
-      message: 'stopGeo section is absent — is this intentional?',
+      message:
+        'stopGeo section is not present — OK if intentional, but no spatial metrics will be available',
     });
     return { issues, stopGeoCount };
   }
