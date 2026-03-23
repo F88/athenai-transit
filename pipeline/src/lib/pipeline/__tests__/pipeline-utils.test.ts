@@ -115,6 +115,95 @@ describe('parseCliArg', () => {
     process.argv = ['node', 'script.ts', 'toei-bus'];
     expect(parseCliArg()).toEqual({ kind: 'source-name', name: 'toei-bus' });
   });
+
+  // extra arguments after valid args → help
+  it('returns help when --targets <file> has extra arguments', () => {
+    process.argv = ['node', 'script.ts', '--targets', 'path/to/targets.ts', '--list'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help when --targets <file> has extra source name', () => {
+    process.argv = ['node', 'script.ts', '--targets', 'path/to/targets.ts', 'toei-bus'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help when --list has extra arguments', () => {
+    process.argv = ['node', 'script.ts', '--list', '--targets', 'path/to/targets.ts'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help when --list has extra source name', () => {
+    process.argv = ['node', 'script.ts', '--list', 'toei-bus'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help when source name has extra arguments', () => {
+    process.argv = ['node', 'script.ts', 'toei-bus', 'extra-arg'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help when source name has extra flag', () => {
+    process.argv = ['node', 'script.ts', 'toei-bus', '--list'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  // --help with extra args still returns help
+  it('returns help for --help with extra args', () => {
+    process.argv = ['node', 'script.ts', '--help', '--list'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  // --targets + flag as file path → help
+  it('returns help when --targets is followed by --list', () => {
+    process.argv = ['node', 'script.ts', '--targets', '--list'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help when --targets is followed by --help', () => {
+    process.argv = ['node', 'script.ts', '--targets', '--help'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help when --targets is followed by -h', () => {
+    process.argv = ['node', 'script.ts', '--targets', '-h'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help when --targets is followed by unknown flag', () => {
+    process.argv = ['node', 'script.ts', '--targets', '--unknown'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help when --targets is followed by short flag', () => {
+    process.argv = ['node', 'script.ts', '--targets', '-f'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  // unknown flags return help
+  it('returns help for unknown double-dash flag', () => {
+    process.argv = ['node', 'script.ts', '--unknown'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help for unknown short flag', () => {
+    process.argv = ['node', 'script.ts', '-x'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help for single dash', () => {
+    process.argv = ['node', 'script.ts', '-'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help for double dash alone', () => {
+    process.argv = ['node', 'script.ts', '--'];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help for empty string argument', () => {
+    process.argv = ['node', 'script.ts', ''];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
 });
 
 // ---------------------------------------------------------------------------
