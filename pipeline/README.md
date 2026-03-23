@@ -2,7 +2,7 @@
 
 GTFS / ODPT JSON データを取得し、WebApp 向けの JSON ファイルに変換するデータパイプライン。
 
-WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/data/transit-json.ts`) のみが両者の契約となる。
+WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/data/transit-json.ts`, `src/types/data/transit-v2-json.ts`) が両者の契約となる。
 
 ## Stage
 
@@ -20,22 +20,25 @@ WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/
 
 各スクリプトの詳細な仕様は `docs/` を参照。
 
-| Stage | 概要                                  | スクリプト                                                            | npm script                              |
-| ----- | ------------------------------------- | --------------------------------------------------------------------- | --------------------------------------- |
-| 1     | GTFS ZIP をバッチダウンロード         | `scripts/pipeline/download-gtfs.ts`                                   | `npm run pipeline:download:gtfs`        |
-| 1     | ODPT JSON をバッチダウンロード        | `scripts/pipeline/download-odpt-json.ts`                              | `npm run pipeline:download:odpt-json`   |
-| 2     | GTFS CSV を SQLite に変換             | `scripts/pipeline/build-gtfs-db.ts`                                   | `npm run pipeline:build:db`             |
-| 3     | SQLite からアプリ用 JSON を生成       | `scripts/pipeline/app-data-v1/build-app-data-from-gtfs.ts`            | `npm run pipeline:build:json`           |
-| 3     | ODPT Train からアプリ用 JSON を生成   | `scripts/pipeline/app-data-v1/build-app-data-from-odpt-train.ts`      | `npm run pipeline:build:odpt-train`     |
-| 3     | GTFS shapes.txt から路線形状を生成    | `scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts`        | `npm run pipeline:build:shapes:gtfs`    |
-| 3     | 国土数値情報から鉄道路線形状を生成    | `scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts` | `npm run pipeline:build:shapes:ksj`     |
-| 3     | v2 GTFS shapes.txt から路線形状を生成 | `scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts`              | `npm run pipeline:build:v2-shapes:gtfs` |
-| 3     | v2 国土数値情報から鉄道路線形状を生成 | `scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts`       | `npm run pipeline:build:v2-shapes:ksj`  |
-| 3     | アプリ用 JSON の検証                  | `scripts/pipeline/app-data-v1/validate-app-data.ts`                   | `npm run pipeline:validate`             |
-| 3     | v2 InsightsBundle を生成              | `scripts/pipeline/app-data-v2/build-insights.ts`                      | `npm run pipeline:build:v2-insights`    |
-| 3     | v2 バンドルの検証                     | `scripts/pipeline/app-data-v2/validate-v2-bundles.ts`                 | `npm run pipeline:validate:v2`          |
-| -     | 全リソース定義の一覧表示              | `scripts/dev/describe-resources.ts`                                   | `npm run pipeline:describe`             |
-| -     | ODPT リソース更新チェック             | `scripts/pipeline/check-odpt-resources.ts`                            | `npm run pipeline:check:odpt-resources` |
+| Stage | 概要                                     | スクリプト                                                            | npm script                                  |
+| ----- | ---------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------- |
+| 1     | GTFS ZIP をバッチダウンロード            | `scripts/pipeline/download-gtfs.ts`                                   | `npm run pipeline:download:gtfs`            |
+| 1     | ODPT JSON をバッチダウンロード           | `scripts/pipeline/download-odpt-json.ts`                              | `npm run pipeline:download:odpt-json`       |
+| 2     | GTFS CSV を SQLite に変換                | `scripts/pipeline/build-gtfs-db.ts`                                   | `npm run pipeline:build:db`                 |
+| 3     | SQLite からアプリ用 JSON を生成 (v1)     | `scripts/pipeline/app-data-v1/build-app-data-from-gtfs.ts`            | `npm run pipeline:build:json`               |
+| 3     | ODPT Train からアプリ用 JSON を生成 (v1) | `scripts/pipeline/app-data-v1/build-app-data-from-odpt-train.ts`      | `npm run pipeline:build:odpt-train`         |
+| 3     | GTFS shapes から路線形状を生成 (v1)      | `scripts/pipeline/app-data-v1/build-route-shapes-from-gtfs.ts`        | `npm run pipeline:build:shapes:gtfs`        |
+| 3     | KSJ から鉄道路線形状を生成 (v1)          | `scripts/pipeline/app-data-v1/build-route-shapes-from-ksj-railway.ts` | `npm run pipeline:build:shapes:ksj`         |
+| 3     | v2 DataBundle を生成 (GTFS)              | `scripts/pipeline/app-data-v2/build-from-gtfs.ts`                     | `npm run pipeline:build:v2-data`            |
+| 3     | v2 DataBundle を生成 (ODPT Train)        | `scripts/pipeline/app-data-v2/build-from-odpt-train.ts`               | `npm run pipeline:build:v2-odpt-train`      |
+| 3     | v2 ShapesBundle を生成 (GTFS)            | `scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts`              | `npm run pipeline:build:v2-shapes:gtfs`     |
+| 3     | v2 ShapesBundle を生成 (KSJ)             | `scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts`       | `npm run pipeline:build:v2-shapes:ksj`      |
+| 3     | v2 InsightsBundle を生成                 | `scripts/pipeline/app-data-v2/build-insights.ts`                      | `npm run pipeline:build:v2-insights`        |
+| 3     | v2 GlobalInsightsBundle を生成           | `scripts/pipeline/app-data-v2/build-global-insights.ts`               | `npm run pipeline:build:v2-global-insights` |
+| 3     | アプリ用 JSON の検証 (v1)                | `scripts/pipeline/app-data-v1/validate-app-data.ts`                   | `npm run pipeline:validate`                 |
+| 3     | v2 バンドルの検証                        | `scripts/pipeline/app-data-v2/validate-v2-bundles.ts`                 | `npm run pipeline:validate:v2`              |
+| -     | 全リソース定義の一覧表示                 | `scripts/dev/describe-resources.ts`                                   | `npm run pipeline:describe`                 |
+| -     | ODPT リソース更新チェック                | `scripts/pipeline/check-odpt-resources.ts`                            | `npm run pipeline:check:odpt-resources`     |
 
 ## 実行順序
 
@@ -49,16 +52,23 @@ npm run pipeline:download:odpt-json
 # Stage 2: Build DB
 npm run pipeline:build:db
 
-# Stage 3: Build App Data
+# Stage 3: Build App Data (v1)
 npm run pipeline:build:json
 npm run pipeline:build:odpt-train
-npm run pipeline:build:shapes:gtfs       # pipeline:build:json の後
-npm run pipeline:build:shapes:ksj        # pipeline:build:json, :odpt-train の後
-npm run pipeline:build:v2-shapes:gtfs    # pipeline:build:db の後
+npm run pipeline:build:shapes:gtfs
+npm run pipeline:build:shapes:ksj
+
+# Stage 3: Build App Data (v2)
+npm run pipeline:build:v2-data           # DB の後
+npm run pipeline:build:v2-odpt-train     # ODPT JSON の後
+npm run pipeline:build:v2-shapes:gtfs    # DB の後
 npm run pipeline:build:v2-shapes:ksj     # MLIT GeoJSON 取得後
-npm run pipeline:build:v2-insights       # v2 DataBundle ビルドの後
+npm run pipeline:build:v2-insights       # v2 DataBundle の後
+npm run pipeline:build:v2-global-insights # v2 DataBundle (全ソース) の後
+
+# Validate
 npm run pipeline:validate
-npm run pipeline:validate:v2             # v2 バンドルビルドの後
+npm run pipeline:validate:v2
 
 # public/ へコピー (pipeline スコープ外)
 npm run data:sync
@@ -102,7 +112,7 @@ flowchart TD
     JSON --> SYNC["data:sync → public/data/"]
 ```
 
-`pipeline/workspace/_build/data/` が pipeline の最終出力。`public/data/` へのコピーは `npm run data:sync` の責務。
+上図は v1 パイプラインのみ。v2 パイプラインも同じ DB/JSON を入力として `_build/data-v2/` に出力する。`npm run data:sync` で `public/data/` (v1) と `public/data-v2/` (v2) の両方にコピーされる。
 
 ## リソース定義
 
