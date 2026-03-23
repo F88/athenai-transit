@@ -78,7 +78,9 @@ function extractStopEntries(bundle: DataBundle, serviceIds: Set<string>): StopEn
   const patterns = bundle.tripPatterns.data;
   const entries: StopEntry[] = [];
 
-  // Build stop -> route -> freq mapping
+  // stopRouteIds: ALL routes structurally serving each stop (day-agnostic).
+  // Used for nr (network topology). Not filtered by serviceIds because nr
+  // measures "does a different route exist nearby?" regardless of day type.
   const stopRouteFreqs = new Map<string, Map<string, number>>();
   const stopRouteIds = new Map<string, Set<string>>();
 
@@ -91,7 +93,8 @@ function extractStopEntries(bundle: DataBundle, serviceIds: Set<string>): StopEn
     }
   }
 
-  // Count freq per stop per route from timetable
+  // stopRouteFreqs: departure counts filtered to serviceIds (day-dependent).
+  // Used for cn (connectivity) where actual service frequency matters.
   for (const [stopId, groups] of Object.entries(bundle.timetable.data)) {
     for (const g of groups) {
       const pattern = patterns[g.tp];

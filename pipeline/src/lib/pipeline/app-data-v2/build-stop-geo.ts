@@ -9,10 +9,16 @@
  *
  * - `nr`: distance (km) to the nearest stop served by a route NOT
  *   in this stop's own route set (definition B).
+ *   **Day-agnostic**: uses all routes that structurally serve the stop
+ *   (from tripPatterns), regardless of which service group is active.
+ *   This measures network topology, not service availability.
  * - `wp`: distance (km) to the nearest stop with a different
  *   `parent_station`. Omitted when the stop has no parent_station.
+ *   Day-agnostic like `nr`.
  * - `cn`: connectivity within 300m radius — route count, freq total,
  *   and nearby stop count, keyed by service group.
+ *   **Day-dependent**: uses routeFreqs filtered to the target service
+ *   group, so frequency reflects actual service on that day type.
  *
  * ### location_type handling
  *
@@ -35,9 +41,21 @@ export interface StopEntry {
   id: string;
   lat: number;
   lon: number;
-  /** Route IDs serving this stop (from tripPatterns). */
+  /**
+   * All route IDs structurally serving this stop (from tripPatterns).
+   *
+   * Includes routes from ALL service groups (weekday, Saturday, Sunday, etc.),
+   * not filtered by a specific service group. Used by `nr` to measure
+   * network topology — "does a different route exist nearby?" — which is
+   * independent of which day type is selected.
+   */
   routeIds: Set<string>;
-  /** Per-route freq for a specific service group. */
+  /**
+   * Per-route departure frequency for a specific service group.
+   *
+   * Unlike `routeIds`, this IS filtered to a target service group.
+   * Used by `cn` (connectivity) where actual service availability matters.
+   */
   routeFreqs: Map<string, number>;
   /** Parent station stop_id, if any. */
   parentStation?: string;
@@ -258,7 +276,10 @@ export function buildParentStopGeo(
       continue;
     }
 
-    // nr: min of children
+    // nr: min of children's positive values.
+    // nr=0 is a sentinel meaning "no different-route stop exists", not a
+    // distance. Filter it out so the parent gets the nearest real distance.
+    // If ALL children have nr=0, the parent also gets 0 (no alternative).
     const nrs = childGeos.map((g) => g.nr).filter((n) => n > 0);
     const nr = nrs.length > 0 ? Math.min(...nrs) : 0;
 
