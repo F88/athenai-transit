@@ -248,8 +248,8 @@ export function buildStopGeo(
 /**
  * Derive stopGeo for l=1 (parent/station) stops from their children's values.
  *
- * - nr: minimum of children's nr
- * - wp: minimum of children's wp
+ * - nr: minimum of children's positive nr (nr=0 excluded; see StopGeoJson)
+ * - wp: minimum of children's wp (undefined excluded)
  * - cn: computed directly using parent's coordinates
  *
  * @param parents - All l=1 stops.

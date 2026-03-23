@@ -165,7 +165,7 @@ async function main(): Promise<void> {
   console.log(`=== global-insights [START] ===\n`);
   console.log(`  Targets: ${targetPrefixes.length} sources (${targetPrefixes.join(', ')})`);
   console.log(`  Output:  ${GLOBAL_DIR}/insights.json`);
-  console.log(`  Group:   ${GROUP_KEY} (Sunday/holiday)`);
+  console.log(`  Group:   ${GROUP_KEY} (Sunday-pattern)`);
   console.log('');
 
   const t0 = performance.now();

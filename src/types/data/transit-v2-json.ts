@@ -723,7 +723,9 @@ export interface StopGeoJson {
    * group identifier. Measures transfer convenience at this stop
    * across all sources.
    *
-   * Initial implementation provides `ho` (holiday/Sunday) only.
+   * Initial implementation provides `ho` (Sunday-pattern) only.
+   * Selection is based on weekly calendar pattern `d[6] === 1`;
+   * calendar_dates holiday exceptions are not considered.
    * Future keys (e.g. `wd` for weekday) may be added.
    *
    * For l=1 (station) stops: computed directly using the parent's
