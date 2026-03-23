@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import type { StopGeoJson } from '../../../../../../src/types/data/transit-v2-json';
 import type { StopEntry } from '../build-stop-geo';
 import { buildStopGeo, buildParentStopGeo } from '../build-stop-geo';
 
@@ -226,10 +227,7 @@ describe('buildStopGeo', () => {
 
 describe('buildParentStopGeo', () => {
   it('derives nr as min of children', () => {
-    const childGeo: Record<
-      string,
-      import('../../../../../../src/types/data/transit-v2-json').StopGeoJson
-    > = {
+    const childGeo: Record<string, StopGeoJson> = {
       c1: { nr: 0.1, cn: { ho: { rc: 5, freq: 100, sc: 3 } } },
       c2: { nr: 0.05, cn: { ho: { rc: 5, freq: 100, sc: 3 } } },
       c3: { nr: 0.2, cn: { ho: { rc: 5, freq: 100, sc: 3 } } },
@@ -252,11 +250,57 @@ describe('buildParentStopGeo', () => {
     expect(result['p1'].nr).toBe(0.05); // min
   });
 
+  it('derives nr ignoring children with nr=0 (no different-route stop sentinel)', () => {
+    // nr=0 means "no stop with a different route exists" — sentinel, not distance.
+    // Parent derivation should skip zeros and take min of positive values.
+    const childGeo: Record<string, StopGeoJson> = {
+      c1: { nr: 0.5 },
+      c2: { nr: 0 }, // sentinel: no different-route stop found
+      c3: { nr: 0.8 },
+    };
+
+    const parents: StopEntry[] = [
+      {
+        id: 'p1',
+        lat: 35.68,
+        lon: 139.76,
+        routeIds: new Set(),
+        routeFreqs: new Map(),
+        locationType: 1,
+      },
+    ];
+    const childrenMap = new Map([['p1', ['c1', 'c2', 'c3']]]);
+
+    const result = buildParentStopGeo(parents, childrenMap, childGeo, [], 'ho');
+
+    expect(result['p1'].nr).toBe(0.5); // min of [0.5, 0.8], ignoring sentinel 0
+  });
+
+  it('derives nr=0 when all children have nr=0', () => {
+    const childGeo: Record<string, StopGeoJson> = {
+      c1: { nr: 0 },
+      c2: { nr: 0 },
+    };
+
+    const parents: StopEntry[] = [
+      {
+        id: 'p1',
+        lat: 35.68,
+        lon: 139.76,
+        routeIds: new Set(),
+        routeFreqs: new Map(),
+        locationType: 1,
+      },
+    ];
+    const childrenMap = new Map([['p1', ['c1', 'c2']]]);
+
+    const result = buildParentStopGeo(parents, childrenMap, childGeo, [], 'ho');
+
+    expect(result['p1'].nr).toBe(0); // all children have sentinel → parent also 0
+  });
+
   it('derives wp as min of children', () => {
-    const childGeo: Record<
-      string,
-      import('../../../../../../src/types/data/transit-v2-json').StopGeoJson
-    > = {
+    const childGeo: Record<string, StopGeoJson> = {
       c1: { nr: 0.1, wp: 0.3 },
       c2: { nr: 0.1, wp: 0.15 },
     };
@@ -279,10 +323,7 @@ describe('buildParentStopGeo', () => {
   });
 
   it('omits wp when no children have wp', () => {
-    const childGeo: Record<
-      string,
-      import('../../../../../../src/types/data/transit-v2-json').StopGeoJson
-    > = {
+    const childGeo: Record<string, StopGeoJson> = {
       c1: { nr: 0.1 },
       c2: { nr: 0.1 },
     };
@@ -305,10 +346,7 @@ describe('buildParentStopGeo', () => {
   });
 
   it('computes cn at parent coordinates', () => {
-    const childGeo: Record<
-      string,
-      import('../../../../../../src/types/data/transit-v2-json').StopGeoJson
-    > = {
+    const childGeo: Record<string, StopGeoJson> = {
       c1: { nr: 0.1 },
     };
 
