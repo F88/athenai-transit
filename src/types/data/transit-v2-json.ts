@@ -684,17 +684,21 @@ export interface StopGeoJson {
    * "Different route" means a route not in this stop's own route set
    * (definition B). Same route at a different platform is not counted.
    *
-   * High value = isolated (陸の孤島), transit desert.
-   * Low value = dense transit area, many nearby alternatives.
+   * Higher value = more isolated (陸の孤島), transit desert.
+   * Lower positive value = dense transit area, nearby alternatives.
    *
-   * `0` means either no different-route stop exists (isolated) or
-   * a different-route stop is colocated at identical coordinates.
-   * Both cases indicate "no walking needed to reach an alternative
-   * (or none exists)" — functionally equivalent for UI purposes.
+   * `0` when no different-route stop exists anywhere (truly isolated,
+   * or only one route in the entire dataset), or when a different-route
+   * stop is colocated at identical coordinates (distance = 0km).
+   * In practice, consumers can treat nr=0 as "not meaningfully isolated"
+   * since both cases require zero walking distance to an alternative
+   * (or no alternative exists at all).
    *
-   * For l=1 (station) stops: derived as the minimum positive nr
-   * across all child (l=0) stops. Children with nr=0 are excluded
-   * from the min calculation (they indicate no alternative).
+   * For l=1 (station) stops: derived as the minimum of children's
+   * positive nr values. Children with nr=0 are excluded because
+   * nr=0 is ambiguous (see above); the parent metric focuses on the
+   * nearest child that has a measurable distance to an alternative.
+   * See {@link buildParentStopGeo} for the exact derivation logic.
    */
   nr: number;
 

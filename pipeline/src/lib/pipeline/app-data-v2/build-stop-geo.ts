@@ -262,7 +262,7 @@ export function buildStopGeo(
 export function buildParentStopGeo(
   parents: StopEntry[],
   childrenMap: Map<string, string[]>,
-  childGeo: Record<string, StopGeoJson>,
+  childGeo: Partial<Record<string, StopGeoJson>>,
   allL0Stops: StopEntry[],
   groupKey: string,
 ): Record<string, StopGeoJson> {
