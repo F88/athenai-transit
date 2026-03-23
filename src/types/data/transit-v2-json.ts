@@ -681,8 +681,14 @@ export interface StopGeoJson {
    * Distance (km) to the nearest stop served by a different route,
    * computed via Haversine formula.
    *
+   * "Different route" means a route not in this stop's own route set
+   * (definition B). Same route at a different platform is not counted.
+   *
    * High value = isolated (陸の孤島), transit desert.
    * Low value = dense transit area, many nearby alternatives.
+   *
+   * For l=1 (station) stops: derived as the minimum nr across
+   * all child (l=0) stops.
    */
   nr: number;
 
@@ -696,8 +702,39 @@ export interface StopGeoJson {
    *
    * Requires parent_station data in the source. Omitted when
    * parent_station is not available for this stop.
+   *
+   * For l=1 (station) stops: derived as the minimum wp across
+   * all child (l=0) stops.
    */
   wp?: number;
+
+  /**
+   * Connectivity metrics within a 300m radius, keyed by service
+   * group identifier. Measures transfer convenience at this stop
+   * across all sources.
+   *
+   * Initial implementation provides `ho` (holiday/Sunday) only.
+   * Future keys (e.g. `wd` for weekday) may be added.
+   *
+   * For l=1 (station) stops: computed directly using the parent's
+   * coordinates (not derived from children), because the parent
+   * has no routes of its own but its location represents the
+   * station as a whole.
+   *
+   * Omitted when no routes operate within 300m for the given
+   * service group.
+   */
+  cn?: Record<
+    string,
+    {
+      /** Number of unique routes within 300m (including this stop's own routes). */
+      rc: number;
+      /** Sum of unique routes' daily departures (each route counted once at its max-freq stop). */
+      freq: number;
+      /** Number of other stops within 300m. */
+      sc: number;
+    }
+  >;
 }
 
 /**
