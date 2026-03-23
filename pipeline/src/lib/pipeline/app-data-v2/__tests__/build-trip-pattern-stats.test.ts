@@ -445,6 +445,30 @@ describe('buildTripPatternStats', () => {
       expect(result['wd']['p1'].rd).toEqual([0, 0, 0]);
     });
 
+    it('handles 2-stop circular pattern (degenerate: no interior stop)', () => {
+      // 2-stop circular: [s1, s1] — origin and terminal are the same stop.
+      // No interior stop exists, so freq uses stops[0] which includes 2x departures.
+      // This is a known limitation: 2-stop circular patterns cannot be correctly
+      // decomposed with the current algorithm.
+      const patterns: Record<string, TripPatternJson> = {
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's1'] },
+      };
+
+      // s1 has 2x departures (origin + terminal interleaved)
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [makeTimetableGroup('p1', { svc1: [480, 500, 540, 560] })],
+      };
+
+      const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
+
+      const result = buildTripPatternStats(patterns, timetable, groups);
+
+      // freq counts all departures at stops[0] (2x, known limitation)
+      expect(result['wd']['p1'].freq).toBe(4);
+      // depsA === depsB (same stop), all diffs = 0, rd = [0, 0]
+      expect(result['wd']['p1'].rd).toEqual([0, 0]);
+    });
+
     it('preserves zero travel time between consecutive stops (not treated as gap)', () => {
       const patterns: Record<string, TripPatternJson> = {
         p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3', 's4'] },

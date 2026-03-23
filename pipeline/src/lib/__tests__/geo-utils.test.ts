@@ -39,6 +39,14 @@ describe('haversineKm', () => {
     expect(d).toBeCloseTo(20015, -1); // half the Earth's circumference
   });
 
+  it('does not return NaN for nearly antipodal points (floating-point guard)', () => {
+    // Points very close to antipodal can cause a > 1 due to floating-point error,
+    // which makes Math.asin(Math.sqrt(a)) return NaN without clamping.
+    const d = haversineKm(89.999999, 0, -89.999999, 179.999999);
+    expect(Number.isNaN(d)).toBe(false);
+    expect(d).toBeGreaterThan(20000);
+  });
+
   it('handles equator crossing', () => {
     const d = haversineKm(1, 0, -1, 0);
     // 2 degrees of latitude ≈ 222 km
@@ -48,6 +56,12 @@ describe('haversineKm', () => {
   it('handles meridian crossing', () => {
     const d = haversineKm(0, -1, 0, 1);
     // 2 degrees of longitude at equator ≈ 222 km
+    expect(d).toBeCloseTo(222, 0);
+  });
+
+  it('handles dateline crossing (179° to -179°)', () => {
+    const d = haversineKm(0, 179, 0, -179);
+    // 2 degrees of longitude at equator ≈ 222 km, not ~40000 km
     expect(d).toBeCloseTo(222, 0);
   });
 

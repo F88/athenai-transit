@@ -35,7 +35,7 @@ import type {
 // ---------------------------------------------------------------------------
 
 /**
- * Count departures for a pattern at a specific stop position,
+ * Count departures for a pattern at a given stop,
  * summing across all service IDs in the service group.
  */
 function countDepartures(
@@ -183,7 +183,7 @@ function computeSegmentTimes(
     }
   }
 
-  // Fill gaps (NO_DATA) by linear interpolation from neighbors.
+  // Fill gaps (NO_DATA) using nearest known neighbors (average, or copy).
   // Only NO_DATA (-1) entries are filled — segments with value 0
   // (zero travel time) are valid and preserved.
   for (let i = 0; i < segmentCount; i++) {

@@ -137,83 +137,38 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
     }
   }
 
-  // Optional section: tripPatternGeo
-  if (bundle.tripPatternGeo) {
-    if (bundle.tripPatternGeo.v !== 1) {
+  // Validate an optional BundleSection<1, Record<...>> section.
+  // Returns the number of keys in data, or 0 if absent/invalid.
+  const validateOptionalRecordSection = (
+    sectionName: 'tripPatternGeo' | 'tripPatternStats' | 'stopStats',
+  ): number => {
+    const section = bundle[sectionName];
+    if (!section) {
+      return 0;
+    }
+    if (section.v !== 1) {
       issues.push({
         prefix,
         level: 'error',
         category: 'structure',
-        message: `Invalid tripPatternGeo.v: expected 1, got ${String(bundle.tripPatternGeo.v)}`,
+        message: `Invalid ${sectionName}.v: expected 1, got ${String(section.v)}`,
       });
     }
-    if (
-      bundle.tripPatternGeo.data &&
-      typeof bundle.tripPatternGeo.data === 'object' &&
-      !Array.isArray(bundle.tripPatternGeo.data)
-    ) {
-      tripPatternGeoCount = Object.keys(bundle.tripPatternGeo.data).length;
-    } else {
-      issues.push({
-        prefix,
-        level: 'error',
-        category: 'structure',
-        message: 'Invalid tripPatternGeo.data: expected a record',
-      });
+    if (section.data && typeof section.data === 'object' && !Array.isArray(section.data)) {
+      return Object.keys(section.data).length;
     }
-  }
+    issues.push({
+      prefix,
+      level: 'error',
+      category: 'structure',
+      message: `Invalid ${sectionName}.data: expected a record`,
+    });
+    return 0;
+  };
 
-  // Optional section: tripPatternStats
-  if (bundle.tripPatternStats) {
-    if (bundle.tripPatternStats.v !== 1) {
-      issues.push({
-        prefix,
-        level: 'error',
-        category: 'structure',
-        message: `Invalid tripPatternStats.v: expected 1, got ${String(bundle.tripPatternStats.v)}`,
-      });
-    }
-    if (
-      bundle.tripPatternStats.data &&
-      typeof bundle.tripPatternStats.data === 'object' &&
-      !Array.isArray(bundle.tripPatternStats.data)
-    ) {
-      tripPatternStatsGroupCount = Object.keys(bundle.tripPatternStats.data).length;
-    } else {
-      issues.push({
-        prefix,
-        level: 'error',
-        category: 'structure',
-        message: 'Invalid tripPatternStats.data: expected a record',
-      });
-    }
-  }
-
-  // Optional section: stopStats
-  if (bundle.stopStats) {
-    if (bundle.stopStats.v !== 1) {
-      issues.push({
-        prefix,
-        level: 'error',
-        category: 'structure',
-        message: `Invalid stopStats.v: expected 1, got ${String(bundle.stopStats.v)}`,
-      });
-    }
-    if (
-      bundle.stopStats.data &&
-      typeof bundle.stopStats.data === 'object' &&
-      !Array.isArray(bundle.stopStats.data)
-    ) {
-      stopStatsGroupCount = Object.keys(bundle.stopStats.data).length;
-    } else {
-      issues.push({
-        prefix,
-        level: 'error',
-        category: 'structure',
-        message: 'Invalid stopStats.data: expected a record',
-      });
-    }
-  }
+  tripPatternGeoCount = validateOptionalRecordSection('tripPatternGeo');
+  tripPatternStatsGroupCount = validateOptionalRecordSection('tripPatternStats');
+  stopStatsGroupCount = validateOptionalRecordSection('stopStats');
 
   return {
     issues,
