@@ -34,6 +34,8 @@ const HOME_LOCATIONS = [
   { name: 'Chiyoda City Hall', lat: 35.6948, lng: 139.7533, zoom: 16 },
   { name: 'Ikebukuro Station', lat: 35.7299, lng: 139.7108, zoom: 16 },
   { name: 'Shinjuku Station West', lat: 35.6913, lng: 139.6985, zoom: 17 },
+  { name: 'Nagoya', lat: 35.1697, lng: 136.8954, zoom: 13 },
+  { name: 'Matsuyama (Okaido crossing)', lat: 33.8412, lng: 132.7701, zoom: 16 },
 ] as const;
 
 const logger = createLogger('MapDefaults');

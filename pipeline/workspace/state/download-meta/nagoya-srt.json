@@ -1,0 +1,73 @@
+{
+  "sourceName": "nagoya-srt",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-03-23T09:51:41.115Z",
+  "url": "https://api-public.odpt.org/api/v4/files/odpt/NagoyaHousingCityPlanningBureau/NagoyaSRT_AllLines.zip?date=20260213",
+  "size": 5399,
+  "contentType": "text/plain; charset=ASCII-8BIT",
+  "durationMs": 240,
+  "archivePath": "workspace/_archives/gtfs/nagoya-srt/NagoyaSRT_AllLines_20260323-185141.zip",
+  "extractedFiles": [
+    {
+      "name": "agency.txt",
+      "size": 300
+    },
+    {
+      "name": "calendar.txt",
+      "size": 141
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 249
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 71
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 52
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 236
+    },
+    {
+      "name": "routes.txt",
+      "size": 161
+    },
+    {
+      "name": "shapes.txt",
+      "size": 1726
+    },
+    {
+      "name": "stops.txt",
+      "size": 455
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 8019
+    },
+    {
+      "name": "transfers.txt",
+      "size": 57
+    },
+    {
+      "name": "translations.txt",
+      "size": 2999
+    },
+    {
+      "name": "trips.txt",
+      "size": 1149
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "名古屋市",
+    "publisherUrl": "https://www.city.nagoya.jp/shisei/keikaku/1009818/1010119/1010123.html",
+    "lang": "ja",
+    "startDate": "20260213",
+    "endDate": "20270331",
+    "version": "2026/02/13改正-見える化ver2.6e"
+  }
+}

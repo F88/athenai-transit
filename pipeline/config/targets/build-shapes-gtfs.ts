@@ -19,4 +19,5 @@ export default [
   'kyoto-city-bus',
   'oshima-bus',
   'keisei-transit-bus',
+  'nagoya-srt',
 ];

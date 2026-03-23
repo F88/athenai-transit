@@ -22,4 +22,5 @@ export default [
   'miyake-bus',
   'keisei-transit-bus',
   'mir-train',
+  'nagoya-srt',
 ];

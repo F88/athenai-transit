@@ -11,6 +11,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- SRT名古屋 (Smart Roadway Transit) データソース追加:
+    - 名駅-栄間の循環バス路線 (1路線、7停留所、12便/日)。
+    - CC BY 4.0、shapes.txt あり、translations 5言語。
+    - HOME_LOCATIONS に名古屋、松山を追加。
 - v2 GlobalInsightsBundle validator (`pipeline:validate:v2` Step 4):
     - global/insights.json の構造検証 (bundle_version, kind, stopGeo section)。
     - stopGeo エントリの spot-check (nr が number であること)。
