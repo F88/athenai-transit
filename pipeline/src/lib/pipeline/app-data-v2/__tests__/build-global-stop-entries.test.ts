@@ -271,4 +271,106 @@ describe('extractStopEntries', () => {
 
     expect(entries[0].routeFreqs.size).toBe(0);
   });
+
+  it('aggregates routeFreqs across multiple timetable groups for same stop', () => {
+    const bundle = makeDataBundle({
+      stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
+      patterns: {
+        p1: { r: 'r1', stops: ['s1'] },
+        p2: { r: 'r2', stops: ['s1'] },
+      },
+      timetable: {
+        s1: [
+          { tp: 'p1', d: { su: [480, 540] } },
+          { tp: 'p2', d: { su: [500] } },
+        ],
+      },
+    });
+
+    const entries = extractStopEntries(bundle, new Set(['su']));
+
+    const s1 = entries[0];
+    expect(s1.routeFreqs.get('r1')).toBe(2);
+    expect(s1.routeFreqs.get('r2')).toBe(1);
+  });
+
+  it('includes routeIds for weekday-only routes even when filtering Sunday freqs', () => {
+    // routeIds is day-agnostic (all patterns), routeFreqs is day-dependent.
+    // A weekday-only route should appear in routeIds but NOT in routeFreqs.
+    const bundle = makeDataBundle({
+      stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
+      patterns: {
+        p1: { r: 'r-weekday', stops: ['s1'] },
+        p2: { r: 'r-sunday', stops: ['s1'] },
+      },
+      timetable: {
+        s1: [
+          { tp: 'p1', d: { wd: [480] } }, // weekday only
+          { tp: 'p2', d: { su: [500] } }, // sunday only
+        ],
+      },
+    });
+
+    const entries = extractStopEntries(bundle, new Set(['su']));
+
+    const s1 = entries[0];
+    // routeIds: both routes (day-agnostic)
+    expect(s1.routeIds).toEqual(new Set(['r-weekday', 'r-sunday']));
+    // routeFreqs: only Sunday route has departures
+    expect(s1.routeFreqs.has('r-weekday')).toBe(false);
+    expect(s1.routeFreqs.get('r-sunday')).toBe(1);
+  });
+
+  it('preserves lat/lon coordinates', () => {
+    const bundle = makeDataBundle({
+      stops: [{ i: 's1', a: 35.123456, o: 139.654321, l: 0 }],
+    });
+
+    const entries = extractStopEntries(bundle, new Set());
+
+    expect(entries[0].lat).toBe(35.123456);
+    expect(entries[0].lon).toBe(139.654321);
+  });
+
+  it('returns empty array when no stops exist', () => {
+    const bundle = makeDataBundle({ stops: [] });
+
+    const entries = extractStopEntries(bundle, new Set());
+
+    expect(entries).toEqual([]);
+  });
+
+  it('handles circular pattern with duplicate stop in stops array', () => {
+    // Circular route: stops = ['s1', 's2', 's1'] — s1 appears twice.
+    // routeIds should still contain the route just once.
+    const bundle = makeDataBundle({
+      stops: [
+        { i: 's1', a: 35.68, o: 139.76, l: 0 },
+        { i: 's2', a: 35.69, o: 139.77, l: 0 },
+      ],
+      patterns: {
+        p1: { r: 'r1', stops: ['s1', 's2', 's1'] },
+      },
+    });
+
+    const entries = extractStopEntries(bundle, new Set());
+
+    const s1 = entries.find((e) => e.id === 's1')!;
+    expect(s1.routeIds).toEqual(new Set(['r1'])); // deduplicated by Set
+  });
+
+  it('returns one entry per stop in stops.data', () => {
+    const bundle = makeDataBundle({
+      stops: [
+        { i: 's1', a: 35.68, o: 139.76, l: 0 },
+        { i: 's2', a: 35.69, o: 139.77, l: 0 },
+        { i: 'p1', a: 35.68, o: 139.76, l: 1 },
+      ],
+    });
+
+    const entries = extractStopEntries(bundle, new Set());
+
+    expect(entries).toHaveLength(3);
+    expect(entries.map((e) => e.id).sort()).toEqual(['p1', 's1', 's2']);
+  });
 });
