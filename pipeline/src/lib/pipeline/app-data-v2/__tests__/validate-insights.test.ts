@@ -266,6 +266,17 @@ describe('validateInsightsBundle', () => {
       expect(result.issues.some((i) => i.message.includes('stopStats.data'))).toBe(true);
     });
 
+    it('reports error when optional section is null (present but invalid)', () => {
+      const bundle = {
+        ...makeValidBundle(),
+        tripPatternGeo: null,
+      };
+      writeBundle('null-geo', bundle);
+
+      const result = validateInsightsBundle('null-geo', TMP_DIR);
+      expect(result.issues.some((i) => i.message.includes('tripPatternGeo'))).toBe(true);
+    });
+
     it('returns zero counts when optional sections are absent', () => {
       writeBundle('no-optional', makeValidBundle());
 

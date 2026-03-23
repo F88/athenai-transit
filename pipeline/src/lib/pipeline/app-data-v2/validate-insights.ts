@@ -143,7 +143,16 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
     sectionName: 'tripPatternGeo' | 'tripPatternStats' | 'stopStats',
   ): number => {
     const section = bundle[sectionName];
-    if (!section) {
+    if (section === undefined) {
+      return 0;
+    }
+    if (section === null || typeof section !== 'object') {
+      issues.push({
+        prefix,
+        level: 'error',
+        category: 'structure',
+        message: `Invalid ${sectionName}: expected an object with { v, data }`,
+      });
       return 0;
     }
     if (section.v !== 1) {
