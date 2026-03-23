@@ -38,7 +38,13 @@ import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/
 const OUTPUT_DIR = V2_OUTPUT_DIR;
 const GLOBAL_DIR = join(OUTPUT_DIR, 'global');
 
-/** Service group key for holiday/Sunday. */
+/**
+ * Service group key for Sunday-pattern services.
+ *
+ * Uses 'ho' (holiday/Sunday) as the cn key. The selection logic picks
+ * services where d[6] === 1 (Sunday in weekly calendar patterns);
+ * date-based holiday exceptions (calendar_dates) are not considered.
+ */
 const GROUP_KEY = 'ho';
 
 // ---------------------------------------------------------------------------
@@ -194,9 +200,16 @@ async function main(): Promise<void> {
       console.log(`\n  ${skipped} source(s) skipped.`);
     }
 
-    // Separate l=0 and l=1
-    const l0Stops = allStopEntries.filter((e) => e.locationType === 0);
-    const l1Stops = allStopEntries.filter((e) => e.locationType === 1);
+    // Separate l=0 and l=1 in a single pass
+    const l0Stops: StopEntry[] = [];
+    const l1Stops: StopEntry[] = [];
+    for (const entry of allStopEntries) {
+      if (entry.locationType === 0) {
+        l0Stops.push(entry);
+      } else if (entry.locationType === 1) {
+        l1Stops.push(entry);
+      }
+    }
 
     console.log(`\n  Total: ${l0Stops.length} l=0 stops, ${l1Stops.length} l=1 stops\n`);
 
@@ -231,6 +244,9 @@ async function main(): Promise<void> {
     console.log(`  Total entries: ${Object.keys(allGeo).length}`);
   } catch (err) {
     console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
+    if (err instanceof Error && err.cause instanceof Error) {
+      console.error(`  Cause: ${err.cause.message}`);
+    }
     process.exitCode = 1;
   } finally {
     const durationMs = performance.now() - t0;

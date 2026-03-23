@@ -687,8 +687,14 @@ export interface StopGeoJson {
    * High value = isolated (陸の孤島), transit desert.
    * Low value = dense transit area, many nearby alternatives.
    *
-   * For l=1 (station) stops: derived as the minimum nr across
-   * all child (l=0) stops.
+   * `0` means either no different-route stop exists (isolated) or
+   * a different-route stop is colocated at identical coordinates.
+   * Both cases indicate "no walking needed to reach an alternative
+   * (or none exists)" — functionally equivalent for UI purposes.
+   *
+   * For l=1 (station) stops: derived as the minimum positive nr
+   * across all child (l=0) stops. Children with nr=0 are excluded
+   * from the min calculation (they indicate no alternative).
    */
   nr: number;
 

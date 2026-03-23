@@ -237,8 +237,8 @@ export function buildStopGeo(
     }
   }
 
-  // Final progress callback
-  if (onProgress) {
+  // Final progress callback (skip if last iteration already reported)
+  if (onProgress && stops.length % 500 !== 0) {
     onProgress(stops.length, stops.length);
   }
 
