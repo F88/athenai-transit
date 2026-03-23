@@ -42,6 +42,22 @@ per-source InsightsBundle とは異なり、全ソースを横断した空間分
 interface StopGeoJson {
     nr: number; // nearest different-route stop (km)
     wp?: number; // nearest different-parent_station stop (km)
+    cn?: {
+        // connectivity (300m radius), keyed by group
+        [groupKey: string]: {
+            rc: number; // unique route count
+            freq: number; // unique routes' freq total
+            sc: number; // nearby stop count
+        };
+    };
+}
+```
+
+初期実装では `ho` (holiday: 日曜/祝日ダイヤ) のみ。将来 `wd` 等を追加可能。
+
+```json
+"cn": {
+  "ho": { "rc": 7, "freq": 687, "sc": 8 }
 }
 ```
 
@@ -53,9 +69,18 @@ interface StopGeoJson {
 
 **設計上の課題**:
 
-1. **「異なるルート」の定義**: 同一ソース内の別ルートか? 別ソースのルートか? → 全ソース横断で「自分の stop_id に通るルート以外のルートが通る最寄り stop」とすべき
-2. **同一バス停の重複**: 共同運行路線 (例: 渋66) で同じ物理的バス停が複数ソースに別 stop_id で存在する場合、nr = 0 になるが意味がない
-3. **location_type=1 (駅)**: 親駅は除外すべきか? location_type=0 (stop/platform) のみを対象とすべき
+1. **「異なるルート」の定義**: 自分の stop に通るルート集合に含まれないルートが通る最寄りの stop (定義B)。全ソース横断。同じルートの別乗り場は「代替手段」ではないため除外される
+2. **location_type の扱い**: l=0 で直接計算、l=1 は子から導出、l=2〜4 は対象外。詳細は「location_type の扱い」セクション参照
+
+### 注意: 共同運行路線と nr ≈ 0
+
+共同運行路線 (例: 渋66 は京王バスと都営バスが共同運行) では、同じ物理的バス停が複数ソースに別 stop_id で登録されている (例: `kobus:0006_00` と `minkuru:0029-01` は阿佐ヶ谷駅で 5m の距離)。
+
+この場合 nr ≈ 0 になるが、これは**正しい結果**として扱う。理由:
+
+- 共同運行はデータ上で明示されていない (GTFS に共同運行を示すフィールドはない)
+- 実際にその場所で複数事業者のバスに乗れるので「孤立していない」は事実
+- 共同運行の stop 統合は将来課題 (Issue 等で別途管理) であり、stopGeo の算出ロジックでは考慮しない
 
 ### wp (walkable portal)
 
@@ -63,11 +88,88 @@ interface StopGeoJson {
 
 **用途**: 徒歩で乗り換え可能な隠れたポイントの発見。0.1-0.2km なら別の駅複合施設への近道。
 
-**設計上の課題**:
+**parent_station の提供状況** (16ソース中3ソースのみ):
 
-1. **parent_station が未提供のソースが多い**: 日本の GTFS ソースでは parent_station はオプション。提供していないソースの stop は wp を算出できない
-2. **クロスソースの parent_station 不一致**: 同じ駅でもソースごとに parent_station の有無や値が異なる
-3. **parent_station がないソース同士**: 全停留所が独立 (parent_station なし) の場合、全ペアが「異なる parent_station」扱いになり nr と同じ値になる
+- minkuru (都営バス): 全 l=0 に ps あり (3,695 stops)
+- ktbus (関東バス): 66% に ps あり (1,326 stops)
+- kcbus (京都市バス): 7 stops のみ
+- 他13ソース: ps なし
+
+**方針**: ps がある stop のみ wp を算出・出力。ps がない stop は wp を省略 (`wp?: number` — TSDoc で optional 定義済み)。
+
+ps がないソース同士で wp を算出すると、全ペアが「異なる parent_station」扱いになり nr と同じ値になるため意味がない。
+
+**注意事項**:
+
+- クロスソースでは parent_station の値が一致しない (ソースごとに独立した ID 体系)。例: 都営バスの阿佐ヶ谷駅 (`minkuru:0029`) と京王バスの阿佐ヶ谷駅 (`kobus:0006`) は別の parent_station。wp は同一ソース内での乗り換えポイント検出に限定される
+- 将来、より多くのソースが parent_station を提供するようになれば、wp の有用性は向上する
+
+### cn (connectivity)
+
+**定義**: 半径 300m 以内の乗り換え利便性スコア。全ソース横断。
+
+**半径 300m の根拠**:
+
+- アプリの同心円表示の緑バンド (300m) と一致
+- 徒歩約4-5分の距離
+- 都バスの停留所間平均距離 (388m, 直線) より短く、隣の停留所がちょうど含まれる/含まれない境界
+- ターミナル (渋谷駅: 38カ所) と住宅街の差が明確に出る
+
+**用途**:
+
+- T7 (Terminal Popularity) view — 終点の乗り換え利便性でソート
+- marker の表示 — connectivity が高い停留所を強調
+- 逆用途: connectivity が低い停留所を巡る旅 (穴場、人混みを避ける)
+
+**曜日依存**: connectivity は曜日によって大きく変わる (平日のみ運行の路線がある)。service group 別に算出が必要。
+
+- nr/wp は座標ベースだが、「そのルートがその曜日に運行しているか」を考慮するなら nr/wp も曜日依存
+- stopGeo 全体を service group 別にする可能性がある
+
+**初期実装方針**: まず「土日祝日」の connectivity を1つ実装して有効性を確認する。service group の区分設計は実装時に決定。
+
+**service group の横断集計**:
+
+各ソースの service group キーは同じロジックで生成されるため、同じキー (wd, sa, su 等) は同じ曜日パターンを意味する。ただしソースによって粒度が異なる (minkuru: wd/sa/su、kbus: wd/wk/all)。
+
+あるグローバル group (例: su) に対して各ソースの対応 group を見つけるには、曜日パターン `d` 配列で判定する。例: su = [0,0,0,0,0,0,1] を含む kbus の group は wk = [0,0,0,0,0,1,1]。アプリ側の service group マッチングと同じロジック。
+
+**算出方法**: 300m 圏内の全停留所 (全ソース横断) から以下を集計。
+
+```typescript
+cn?: {
+  [groupKey: string]: {  // "ho" (holiday) etc.
+    rc: number;    // 300m 圏内のユニークルート数 (自身含む)
+    freq: number;  // ユニークルートの freq 合計 (各ルートは最大 freq の stop で1回カウント)
+    sc: number;    // 300m 圏内の停留所数 (自身除く)
+  };
+}
+```
+
+- `rc`: 乗り換え先の選択肢の数。アプリで「路線数で並べる」に使用
+- `freq`: 交通密度。「便数で並べる」に使用。同一ルートが複数停留所を通る場合の重複カウントを避けるため、各ルートは最大 freq の停留所で1回だけカウント
+- `sc`: 周辺の停留所密度
+
+単一スコアに圧縮せず、アプリ側で用途に応じて使い分ける。
+
+group key `ho` の算出: 各ソースの calendar から日曜 (d[6]=1) を含む service を抽出し、その service の departure 数を freq とする。平日の祝日にも参考値として使える。
+
+- 入力: 各ソースの DataBundle から `buildServiceGroups` + `buildStopStats` と同じロジックで freq を算出
+- 全ソース横断で 300m 圏内を空間検索
+
+**実データでの検証結果** (日曜ダイヤ):
+
+| 場所             | rc  | freq  | sc  |
+| ---------------- | --- | ----- | --- |
+| 荻窪駅西口(GSM)  | 31  | 1,168 | 24  |
+| 阿佐ヶ谷駅       | 19  | 502   | 17  |
+| 渋谷駅西口       | 18  | 1,009 | 19  |
+| 錦糸町駅前       | 15  | 1,012 | 16  |
+| 中野車庫         | 8   | 360   | 6   |
+| 東京ビッグサイト | 7   | 687   | 8   |
+| 熊野前(都電)     | 4   | 753   | 8   |
+
+**注意**: connectivity はデータソースの充実度に依存する。ソースが追加されれば自動的に値が改善される。例えば北千住駅は現在のデータでは都バス + TX のみだが、実際には東武バス、京成バス等も乗り入れている。
 
 ## 計算量の問題
 
@@ -81,33 +183,100 @@ interface StopGeoJson {
 
 ## 実データ規模
 
-```
+```text
 TODO: 全ソースの停留所数を調査
 ```
 
 ## 入力データ
 
-各ソースの DataBundle から以下を読み取る:
+各ソースの DataBundle (`data.json`) のみを入力とする。InsightsBundle は不要。
 
+freq 等の統計値は `buildServiceGroups` + `buildStopStats` を再利用して DataBundle から直接算出する。per-source InsightsBundle と同じロジック・同じ結果が保証される。
+
+各ソースから読み取るセクション:
+
+- `calendar.data`: service group 導出 (`buildServiceGroups`)
 - `stops.data`: stop_id, lat, lon, location_type, parent_station
+- `timetable.data`: departure 配列 (freq 算出)
 - `tripPatterns.data`: stops (stop_id 一覧), route FK
-- `routes.data`: route_id
+- `routes.data`: route_id, route_type
+
+## location_type の扱い
+
+| l   | 意味          | stopGeo                                                                  |
+| --- | ------------- | ------------------------------------------------------------------------ |
+| 0   | Stop/platform | `computeStopGeo()` — 座標ベースで直接計算                                |
+| 1   | Station (親)  | `computeParentStopGeo()` — nr/wp は子の min、cn は parent 座標で直接計算 |
+| 2   | Entrance/exit | 対象外 (出力しない)                                                      |
+| 3   | Generic node  | 対象外 (出力しない)                                                      |
+| 4   | Boarding area | 対象外 (出力しない)                                                      |
+
+日本の GTFS では l=0 と l=1 のみ使用されている。l=2〜4 は将来データに出現した場合に対応を検討する。
 
 ## 処理フロー (案)
 
-1. 全ソースの DataBundle を読み込み
-2. 全停留所を統合リストに構築 (stop_id, lat, lon, routes, parent_station)
+1. targets リストで指定された全ソースの DataBundle を読み込み
+2. l=0 の停留所を統合リストに構築 (stop_id, lat, lon, routes, parent_station)
 3. 空間インデックスを構築
-4. 各停留所について:
-    - nr: 自分のルート集合と重ならないルートを持つ最寄り stop を検索
-    - wp: 自分の parent_station と異なる parent_station を持つ最寄り stop を検索
-5. GlobalInsightsBundle として出力
+4. l=0 の各停留所について `computeStopGeo()` で nr/wp を計算
+5. l=1 の各停留所について `computeParentStopGeo()` で子の値から nr/wp を導出
+6. GlobalInsightsBundle として出力
 
 ## 未決定事項
 
-- [ ] 「異なるルート」の定義を確定
-- [ ] 同一物理バス停の重複 (共同運行) の扱い
-- [ ] location_type=1 の除外方針
-- [ ] parent_station 未提供ソースの wp 扱い
-- [ ] 空間インデックスの実装方法 (ライブラリ or 自前)
-- [ ] 計算時間の許容範囲 (バッチ処理、CI での実行時間)
+- [x] ~~「異なるルート」の定義を確定~~ → 定義B: 自分の stop に通るルート集合に含まれないルートが通る最寄りの stop
+- [x] ~~同一物理バス停の重複 (共同運行) の扱い~~ → 考慮不要 (共同運行はデータで明示されていない。nr ≈ 0 は正しい結果)
+- [x] ~~parent_station 未提供ソースの wp 扱い~~ → ps がない stop は wp を省略。ps があるソース内でのみ算出
+- [x] ~~`computeParentStopGeo()` の導出ロジック~~ → nr/wp は子 (l=0) の min、cn は parent 座標で直接計算 (parent に route がないため nr/wp は直接計算不可)
+- [x] ~~空間インデックスの実装方法~~ → rbush (R-tree) を使用。全探索と比較計測して判断。明確に速ければ最初から導入
+- [x] ~~計算時間の許容範囲~~ → target 絞り込みで制御。小さい target から始めて段階的にソース追加
+
+## パフォーマンス計測
+
+### 開発環境 (Apple Silicon Mac)
+
+Python 全探索、l=0 のみ:
+
+| 処理              | stops  | 時間              |
+| ----------------- | ------ | ----------------- |
+| Load (16ソース)   | 15,798 | 1.2s              |
+| nr (全探索)       | 15,798 | 168s (2.8min)     |
+| cn (300m, 全探索) | 15,798 | 143s (2.4min)     |
+| **合計**          |        | **311s (5.2min)** |
+
+注意: CI 環境 (GitHub Actions) はこれより遅い。target を絞って実行時間を制御する必要がある。
+
+| 構成                  | stops (l=0) | nr   | cn   | 合計          |
+| --------------------- | ----------- | ---- | ---- | ------------- |
+| 全16ソース            | 15,798      | 168s | 143s | 311s (5.2min) |
+| 5ソース除外           | 4,588       | 14s  | 12s  | 26s           |
+| 6ソース除外 (+都バス) | 893         | 0.5s | 0.4s | 1s            |
+
+O(N^2) のため stops 数に劇的に依存。空間インデックスは全ソース対応時に必要になったら導入。
+
+### ソース別 stops 数 (l=0)
+
+| prefix  | 事業者                         | stops (l=0) | 備考                 |
+| ------- | ------------------------------ | ----------- | -------------------- |
+| minkuru | 都営バス                       | 3,695       |                      |
+| sbbus   | 西武バス                       | 4,125       | 初期 target から除外 |
+| kobus   | 京王バス                       | 2,988       | 初期 target から除外 |
+| ktbus   | 関東バス                       | 1,326       | 初期 target から除外 |
+| kcbus   | 京都市営バス                   | 1,677       | 初期 target から除外 |
+| iyt2    | 伊予鉄バス                     | 1,094       |                      |
+| kseiw   | 京成トランジットバス           | 233         |                      |
+| mykbus  | 三宅村営バス                   | 147         |                      |
+| osmbus  | 大島バス                       | 111         |                      |
+| toaran  | 都営交通 (地下鉄/都電/舎人)    | 149         |                      |
+| edobus  | 江戸川区コミュニティバス       | 73          |                      |
+| kazag   | 葛飾区コミュニティバス         | 79          |                      |
+| kbus    | 北区コミュニティバス           | 61          |                      |
+| sggsm   | 杉並区グリーンスローモビリティ | 4           |                      |
+| mir     | みらいレール (舎人ライナー)    | 20          |                      |
+| yurimo  | ゆりかもめ                     | 16          |                      |
+
+合計: 15,798 stops (l=0)。初期 target 除外後: 5,682 stops。
+
+### target 絞り込み
+
+初期実装では stops 数が多い4ソースを除外して実行時間を短縮:
