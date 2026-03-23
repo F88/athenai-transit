@@ -123,7 +123,7 @@ export function validateGlobalInsightsBundle(baseDir: string): GlobalInsightsVal
             issues.push({
               prefix: 'global',
               level: 'error',
-              category: 'data',
+              category: 'quality',
               message: `stopGeo[${stopId}].nr: expected number, got ${typeof geo.nr}`,
             });
             break; // One example is enough

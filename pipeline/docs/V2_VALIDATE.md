@@ -82,7 +82,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 ### DataBundle (`data.json`)
 
-#### Structure
+#### DataBundle Structure
 
 | チェック                                                                                                                                 | レベル |
 | ---------------------------------------------------------------------------------------------------------------------------------------- | ------ |
@@ -91,7 +91,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 | 9セクション全て存在 (stops, routes, agency, calendar, feedInfo, timetable, tripPatterns, translations, lookup)                           | error  |
 | 各セクションの `v` が期待値 (stops=2, routes=2, agency=1, calendar=1, feedInfo=1, timetable=2, tripPatterns=2, translations=1, lookup=2) | error  |
 
-#### Data quality
+#### DataBundle Data quality
 
 | チェック                                                            | レベル |
 | ------------------------------------------------------------------- | ------ |
@@ -102,7 +102,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 | stops 座標範囲 (lat: -90..90, lon: -180..180)                       | error  |
 | timetable d/a 配列長一致 (同一 service_id の `d` と `a` が同じ長さ) | error  |
 
-#### Referential integrity
+#### DataBundle Referential integrity
 
 | チェック                                       | レベル |
 | ---------------------------------------------- | ------ |
@@ -114,7 +114,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 任意バンドル。存在する場合のみ検証する。
 
-#### Structure
+#### ShapesBundle Structure
 
 | チェック                         | レベル |
 | -------------------------------- | ------ |
@@ -123,7 +123,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 | `shapes.v` = 2                   | error  |
 | `shapes.data` が non-null object | error  |
 
-#### Data quality
+#### ShapesBundle Data quality
 
 | チェック                                | レベル |
 | --------------------------------------- | ------ |
@@ -135,7 +135,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 ### InsightsBundle (`insights.json`)
 
-#### Structure
+#### InsightsBundle Structure
 
 | チェック                                  | レベル |
 | ----------------------------------------- | ------ |
@@ -145,7 +145,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 | `serviceGroups.v` = 1                     | error  |
 | `serviceGroups.data` が配列である         | error  |
 
-#### Data quality / Referential integrity
+#### InsightsBundle Data quality
 
 現在は structure チェックのみ。optional セクション (tripPatternStats, tripPatternGeo, stopStats) の実装に合わせて追加予定。
 
