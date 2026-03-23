@@ -114,6 +114,13 @@ const settings: SourceGroup[] = [
     prefixes: ['mir'],
     enabled: true,
   },
+  {
+    id: 'nagoya-srt',
+    name_ja: 'SRT名古屋',
+    category: 'bus',
+    prefixes: ['nsrt'],
+    enabled: true,
+  },
 ];
 
 export default settings;

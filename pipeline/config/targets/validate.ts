@@ -23,5 +23,6 @@ export default [
   'kseiw', // keisei-transit-bus
   'mir', // mir-train
   'yurimo', // yurikamome
+  'nsrt', // nagoya-srt
   // 'tkbus', // tokyu-bus (not built)
 ];
