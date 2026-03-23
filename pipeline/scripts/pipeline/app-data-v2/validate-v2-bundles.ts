@@ -29,6 +29,7 @@ import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/
 import { parseGtfsDate } from '../../../src/lib/gtfs-date-utils';
 import type { CalendarServiceMeta } from '../../../src/lib/pipeline/app-data-v2/validate-data';
 import { validateDataBundle } from '../../../src/lib/pipeline/app-data-v2/validate-data';
+import { validateGlobalInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-global-insights';
 import { validateInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-insights';
 import { validateShapesBundle } from '../../../src/lib/pipeline/app-data-v2/validate-shapes';
 import type { ValidationIssue } from '../../../src/lib/pipeline/app-data-v2/validate-shapes';
@@ -104,7 +105,8 @@ function checkUnvalidatedDirs(validatedPrefixes: Set<string>): string[] {
     return statSync(entryPath).isDirectory();
   });
 
-  return dirs.filter((dir) => !validatedPrefixes.has(dir)).sort();
+  // 'global' is validated separately (GlobalInsightsBundle), not per-prefix.
+  return dirs.filter((dir) => dir !== 'global' && !validatedPrefixes.has(dir)).sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -553,7 +555,7 @@ async function main(): Promise<void> {
   const missingFiles: Array<{ prefix: string; filename: string }> = [];
   const calendarByPrefix = new Map<string, CalendarServiceMeta[]>();
   const isTargetsMode = arg.kind === 'targets';
-  const totalSteps = isTargetsMode ? 3 : 2;
+  const totalSteps = isTargetsMode ? 4 : 3;
   let stepNum = 0;
   const t0 = performance.now();
   const rawDate = new Date();
@@ -657,6 +659,34 @@ async function main(): Promise<void> {
     }
     console.log('');
   }
+
+  // -------------------------------------------------------------------------
+  // Step 4 (or 3): Validate GlobalInsightsBundle
+  // -------------------------------------------------------------------------
+
+  stepNum++;
+  console.log(`--- [${stepNum}/${totalSteps}] Validate GlobalInsightsBundle ---\n`);
+
+  const globalResult = validateGlobalInsightsBundle(V2_OUTPUT_DIR);
+  trackIssues(globalResult.issues, state);
+  allIssues.push(...globalResult.issues);
+
+  if (globalResult.issues.length === 0) {
+    if (globalResult.stopGeoCount > 0) {
+      console.log(`  global/insights.json: OK (${globalResult.stopGeoCount} stopGeo entries)`);
+    } else {
+      console.log('  global/insights.json: OK (no stopGeo section)');
+    }
+  } else {
+    for (const issue of globalResult.issues) {
+      if (issue.level === 'error') {
+        console.log(`  ❌ ERROR: ${issue.message}`);
+      } else {
+        console.log(`  ⚠️ WARN:  ${issue.message}`);
+      }
+    }
+  }
+  console.log('');
 
   // Markdown summary
   printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, calendarByPrefix, today);
