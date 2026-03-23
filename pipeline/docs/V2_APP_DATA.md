@@ -141,7 +141,7 @@ URL や description など、全 stop/route に存在しない任意フィール
 
 ### agency (v=1), calendar (v=1), feedInfo (v=1), translations (v=1)
 
-v1 から変更なし。型定義は `src/types/data/transit-json.ts` で定義され、`transit-v2-json.ts` から re-import されている。
+v1 から変更なし。型定義は `src/types/data/transit-json.ts` を参照。
 
 ## v1 → v2 変更サマリ
 
