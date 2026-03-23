@@ -71,4 +71,62 @@ describe('haversineKm', () => {
     expect(d).toBeGreaterThan(0.05);
     expect(d).toBeLessThan(0.15);
   });
+
+  it('computes pure latitude distance (1 degree ≈ 111 km)', () => {
+    const d = haversineKm(0, 0, 1, 0);
+    expect(d).toBeCloseTo(111, 0);
+  });
+
+  it('computes pure longitude distance at equator (1 degree ≈ 111 km)', () => {
+    const d = haversineKm(0, 0, 0, 1);
+    expect(d).toBeCloseTo(111, 0);
+  });
+
+  it('returns 0 for longitude change at north pole (meridians converge)', () => {
+    const d = haversineKm(90, 0, 90, 180);
+    expect(d).toBeCloseTo(0, 5);
+  });
+
+  it('handles Southern hemisphere coordinates', () => {
+    // Canberra area: (-35.27, 149.13) to (-36.23, 148.23)
+    const d = haversineKm(-35.27, 149.13, -36.23, 148.23);
+    expect(d).toBeGreaterThan(100);
+    expect(d).toBeLessThan(150);
+  });
+
+  it('computes opposite points on equator (half circumference)', () => {
+    const d = haversineKm(0, 0, 0, 180);
+    // π * R ≈ 20015 km
+    expect(d).toBeCloseTo(20015, 0);
+  });
+
+  it('normalizes large positive longitude difference', () => {
+    // lon2 - lon1 = 350° should normalize to -10° (same as 10° apart)
+    const direct = haversineKm(0, 0, 0, 10);
+    const wrapped = haversineKm(0, 0, 0, 350);
+    expect(wrapped).toBeCloseTo(direct, 5);
+  });
+
+  it('normalizes large negative longitude difference', () => {
+    // lon2 - lon1 = -350° should normalize to 10°
+    const direct = haversineKm(0, 0, 0, 10);
+    const wrapped = haversineKm(0, 350, 0, 0);
+    expect(wrapped).toBeCloseTo(direct, 5);
+  });
+
+  it('returns non-negative finite distance for any valid coordinates', () => {
+    const cases: [number, number, number, number][] = [
+      [0, 0, 45, 90],
+      [45, 0, -45, 90],
+      [-90, 0, 90, 180],
+      [60, 120, -60, -120],
+      [0, -180, 0, 180],
+    ];
+    for (const [lat1, lon1, lat2, lon2] of cases) {
+      const d = haversineKm(lat1, lon1, lat2, lon2);
+      expect(Number.isFinite(d)).toBe(true);
+      expect(d).toBeGreaterThanOrEqual(0);
+      expect(d).toBeLessThanOrEqual(20016); // half circumference
+    }
+  });
 });
