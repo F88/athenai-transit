@@ -4,7 +4,7 @@ Pipeline execution time measurements for local development and CI environments.
 
 ## 2026-03-23: Full Pipeline (16 GTFS + 7 ODPT JSON sources)
 
-### Environment
+### Full Pipeline Environment
 
 |         | Local (dev)  | CI                                                                                          |
 | ------- | ------------ | ------------------------------------------------------------------------------------------- |
@@ -13,7 +13,7 @@ Pipeline execution time measurements for local development and CI environments.
 | Runner  | —            | ubuntu-24.04 (20260309.50.1)                                                                |
 | Run     | manual       | [actions/runs/23427582657](https://github.com/F88/athenai-transit/actions/runs/23427582657) |
 
-### Results
+### Full Pipeline Results
 
 | Step                           | npm script                     | Local      | CI         | CI/Local |
 | ------------------------------ | ------------------------------ | ---------- | ---------- | -------- |
@@ -28,7 +28,7 @@ Pipeline execution time measurements for local development and CI environments.
 | Validate                       | `pipeline:validate`            | 1.2s       | 2.0s       | 1.7x     |
 | **Pipeline Total**             |                                | **116.6s** | **179.0s** | **1.5x** |
 
-### Observations
+### Full Pipeline Observations
 
 - Download steps are network-bound: CI (US West) vs local (Japan) explains the 1.7-2.4x difference.
 - CPU-bound steps (Build DB, Build JSON) show 1.3-1.4x difference (M4 vs GitHub Actions runner).
@@ -37,7 +37,7 @@ Pipeline execution time measurements for local development and CI environments.
 
 ## 2026-03-23: Check Transit Resources (15 ODPT sources)
 
-### Environment
+### Check Resources Environment
 
 |         | Local (dev)  | CI                                                                                          |
 | ------- | ------------ | ------------------------------------------------------------------------------------------- |
@@ -46,13 +46,13 @@ Pipeline execution time measurements for local development and CI environments.
 | Runner  | —            | ubuntu-24.04 (20260309.50.1)                                                                |
 | Run     | manual       | [actions/runs/23427954758](https://github.com/F88/athenai-transit/actions/runs/23427954758) |
 
-### Results
+### Check Resources Results
 
 | Step                 | Local | CI   | CI/Local |
 | -------------------- | ----- | ---- | -------- |
 | Check ODPT resources | 7.5s  | 8.0s | 1.1x     |
 
-### Observations
+### Check Resources Observations
 
 - Primarily network-bound (Members Portal API call). Local and CI show similar times.
 - Results: 4 errors (oshima-bus EXPIRED, chuo-bus EXPIRED + NO_VALID_DATA, keisei-transit-bus EXPIRED), 2 warnings (kanto-bus EXPIRING_SOON, iyotetsu-bus EXPIRING_SOON).

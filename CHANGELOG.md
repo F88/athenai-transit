@@ -11,6 +11,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- v2 GlobalInsightsBundle validator (`pipeline:validate:v2` Step 4):
+    - global/insights.json の構造検証 (bundle_version, kind, stopGeo section)。
+    - stopGeo エントリの spot-check (nr が number であること)。
+    - stopGeo セクション不在時の warning。
 - v2 GlobalInsightsBundle builder (`pipeline:build:v2-global-insights`):
     - stopGeo: per-stop 孤立度 (nr)、乗り換えポイント (wp)、connectivity (cn)。
     - connectivity: 300m 圏内のユニークルート数 (rc)、便数合計 (freq)、停留所数 (sc)。

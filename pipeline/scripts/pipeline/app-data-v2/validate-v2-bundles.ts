@@ -1,12 +1,13 @@
 #!/usr/bin/env -S npx tsx
 
 /**
- * Validate v2 bundle files (DataBundle, ShapesBundle, InsightsBundle).
+ * Validate v2 bundle files (DataBundle, ShapesBundle, InsightsBundle, GlobalInsightsBundle).
  *
- * Runs validation in up to three steps:
+ * Runs validation in up to four steps:
  *   Step 1 — Unvalidated directory check (--targets mode only)
  *   Step 2 — File existence check (required bundles must exist)
  *   Step 3 — Validate each bundle (structure, data quality, referential integrity)
+ *   Step 4 — Validate GlobalInsightsBundle (global/insights.json)
  *
  * Target: pipeline/workspace/_build/data-v2/{prefix}/
  *
@@ -29,6 +30,7 @@ import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/
 import { parseGtfsDate } from '../../../src/lib/gtfs-date-utils';
 import type { CalendarServiceMeta } from '../../../src/lib/pipeline/app-data-v2/validate-data';
 import { validateDataBundle } from '../../../src/lib/pipeline/app-data-v2/validate-data';
+import { validateGlobalInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-global-insights';
 import { validateInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-insights';
 import { validateShapesBundle } from '../../../src/lib/pipeline/app-data-v2/validate-shapes';
 import type { ValidationIssue } from '../../../src/lib/pipeline/app-data-v2/validate-shapes';
@@ -104,7 +106,8 @@ function checkUnvalidatedDirs(validatedPrefixes: Set<string>): string[] {
     return statSync(entryPath).isDirectory();
   });
 
-  return dirs.filter((dir) => !validatedPrefixes.has(dir)).sort();
+  // 'global' is validated separately (GlobalInsightsBundle), not per-prefix.
+  return dirs.filter((dir) => dir !== 'global' && !validatedPrefixes.has(dir)).sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -510,10 +513,11 @@ function listAvailablePrefixes(): string[] {
   if (!existsSync(V2_OUTPUT_DIR)) {
     return [];
   }
+  // 'global' is validated separately (GlobalInsightsBundle), not a per-source prefix.
   return readdirSync(V2_OUTPUT_DIR)
     .filter((name) => {
       const dir = join(V2_OUTPUT_DIR, name);
-      return statSync(dir).isDirectory();
+      return name !== 'global' && statSync(dir).isDirectory();
     })
     .sort();
 }
@@ -553,7 +557,7 @@ async function main(): Promise<void> {
   const missingFiles: Array<{ prefix: string; filename: string }> = [];
   const calendarByPrefix = new Map<string, CalendarServiceMeta[]>();
   const isTargetsMode = arg.kind === 'targets';
-  const totalSteps = isTargetsMode ? 3 : 2;
+  const totalSteps = isTargetsMode ? 4 : 3;
   let stepNum = 0;
   const t0 = performance.now();
   const rawDate = new Date();
@@ -657,6 +661,34 @@ async function main(): Promise<void> {
     }
     console.log('');
   }
+
+  // -------------------------------------------------------------------------
+  // Step 4 (or 3): Validate GlobalInsightsBundle
+  // -------------------------------------------------------------------------
+
+  stepNum++;
+  console.log(`--- [${stepNum}/${totalSteps}] Validate GlobalInsightsBundle ---\n`);
+
+  const globalResult = validateGlobalInsightsBundle(V2_OUTPUT_DIR);
+  trackIssues(globalResult.issues, state);
+  allIssues.push(...globalResult.issues);
+
+  if (globalResult.issues.length === 0) {
+    if (globalResult.stopGeoCount > 0) {
+      console.log(`  global/insights.json: OK (${globalResult.stopGeoCount} stopGeo entries)`);
+    } else {
+      console.log('  global/insights.json: OK (stopGeo present, 0 entries)');
+    }
+  } else {
+    for (const issue of globalResult.issues) {
+      if (issue.level === 'error') {
+        console.log(`  ❌ ERROR: ${issue.message}`);
+      } else {
+        console.log(`  ⚠️ WARN:  ${issue.message}`);
+      }
+    }
+  }
+  console.log('');
 
   // Markdown summary
   printMarkdownSummary(allIssues, unvalidatedDirs, missingFiles, calendarByPrefix, today);
