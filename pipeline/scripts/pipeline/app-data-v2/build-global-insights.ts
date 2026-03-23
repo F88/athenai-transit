@@ -152,7 +152,8 @@ async function main(): Promise<void> {
   }
 
   const targetPrefixes = await loadTargetFile(arg.path);
-  console.log(`=== Global Insights Build ===\n`);
+
+  console.log(`=== global-insights [START] ===\n`);
   console.log(`  Targets: ${targetPrefixes.length} sources (${targetPrefixes.join(', ')})`);
   console.log(`  Output:  ${GLOBAL_DIR}/insights.json`);
   console.log(`  Group:   ${GROUP_KEY} (Sunday/holiday)`);
@@ -160,73 +161,81 @@ async function main(): Promise<void> {
 
   const t0 = performance.now();
 
-  // Step 1: Load all DataBundles
-  console.log('--- Loading DataBundles ---\n');
-  const allStopEntries: StopEntry[] = [];
-  let skipped = 0;
+  try {
+    // Step 1: Load all DataBundles
+    console.log('--- Loading DataBundles ---\n');
+    const allStopEntries: StopEntry[] = [];
+    let skipped = 0;
 
-  for (const prefix of targetPrefixes) {
-    const dataPath = join(OUTPUT_DIR, prefix, 'data.json');
-    if (!existsSync(dataPath)) {
-      console.log(`  Skipped: ${dataPath} not found`);
-      skipped++;
-      continue;
+    for (const prefix of targetPrefixes) {
+      const dataPath = join(OUTPUT_DIR, prefix, 'data.json');
+      if (!existsSync(dataPath)) {
+        console.log(`  Skipped: ${dataPath} not found`);
+        skipped++;
+        continue;
+      }
+
+      const raw = readFileSync(dataPath, 'utf-8');
+      const bundle = JSON.parse(raw) as DataBundle;
+      const sundayIds = findSundayServiceIds(bundle);
+      const entries = extractStopEntries(bundle, sundayIds);
+
+      const l0Count = entries.filter((e) => e.locationType === 0).length;
+      const l1Count = entries.filter((e) => e.locationType === 1).length;
+      console.log(`  ${prefix}: ${entries.length} stops (l0=${l0Count}, l1=${l1Count})`);
+
+      allStopEntries.push(...entries);
     }
 
-    const raw = readFileSync(dataPath, 'utf-8');
-    const bundle = JSON.parse(raw) as DataBundle;
-    const sundayIds = findSundayServiceIds(bundle);
-    const entries = extractStopEntries(bundle, sundayIds);
-
-    const l0Count = entries.filter((e) => e.locationType === 0).length;
-    const l1Count = entries.filter((e) => e.locationType === 1).length;
-    console.log(`  ${prefix}: ${entries.length} stops (l0=${l0Count}, l1=${l1Count})`);
-
-    allStopEntries.push(...entries);
-  }
-
-  if (skipped > 0) {
-    console.log(`\n  ${skipped} source(s) skipped.`);
-  }
-
-  // Separate l=0 and l=1
-  const l0Stops = allStopEntries.filter((e) => e.locationType === 0);
-  const l1Stops = allStopEntries.filter((e) => e.locationType === 1);
-
-  console.log(`\n  Total: ${l0Stops.length} l=0 stops, ${l1Stops.length} l=1 stops\n`);
-
-  // Step 2: Compute stopGeo for l=0
-  console.log('--- Computing stopGeo (l=0) ---\n');
-  const l0Geo = buildStopGeo(l0Stops, GROUP_KEY, (current, total) => {
-    const pct = ((current / total) * 100).toFixed(1);
-    const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
-    console.log(`  [${current}/${total}] ${pct}% (${elapsed}s)`);
-  });
-  console.log(`  l=0 stopGeo: ${Object.keys(l0Geo).length} entries\n`);
-
-  // Step 3: Compute stopGeo for l=1
-  console.log('--- Computing stopGeo (l=1) ---\n');
-  const childrenMap = new Map<string, string[]>();
-  for (const stop of allStopEntries) {
-    if (stop.parentStation) {
-      const list = childrenMap.get(stop.parentStation) ?? [];
-      list.push(stop.id);
-      childrenMap.set(stop.parentStation, list);
+    if (skipped > 0) {
+      console.log(`\n  ${skipped} source(s) skipped.`);
     }
+
+    // Separate l=0 and l=1
+    const l0Stops = allStopEntries.filter((e) => e.locationType === 0);
+    const l1Stops = allStopEntries.filter((e) => e.locationType === 1);
+
+    console.log(`\n  Total: ${l0Stops.length} l=0 stops, ${l1Stops.length} l=1 stops\n`);
+
+    // Step 2: Compute stopGeo for l=0
+    console.log('--- Computing stopGeo (l=0) ---\n');
+    const l0Geo = buildStopGeo(l0Stops, GROUP_KEY, (current, total) => {
+      const pct = ((current / total) * 100).toFixed(1);
+      const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+      console.log(`  [${current}/${total}] ${pct}% (${elapsed}s)`);
+    });
+    console.log(`  l=0 stopGeo: ${Object.keys(l0Geo).length} entries\n`);
+
+    // Step 3: Compute stopGeo for l=1
+    console.log('--- Computing stopGeo (l=1) ---\n');
+    const childrenMap = new Map<string, string[]>();
+    for (const stop of allStopEntries) {
+      if (stop.parentStation) {
+        const list = childrenMap.get(stop.parentStation) ?? [];
+        list.push(stop.id);
+        childrenMap.set(stop.parentStation, list);
+      }
+    }
+
+    const l1Geo = buildParentStopGeo(l1Stops, childrenMap, l0Geo, l0Stops, GROUP_KEY);
+    console.log(`  l=1 stopGeo: ${Object.keys(l1Geo).length} entries\n`);
+
+    // Step 4: Merge and write
+    const allGeo = { ...l0Geo, ...l1Geo };
+    console.log('--- Writing GlobalInsightsBundle ---\n');
+    writeGlobalInsightsBundle(GLOBAL_DIR, allGeo);
+    console.log(`  Written: ${GLOBAL_DIR}/insights.json`);
+    console.log(`  Total entries: ${Object.keys(allGeo).length}`);
+  } catch (err) {
+    console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
+    process.exitCode = 1;
+  } finally {
+    const durationMs = performance.now() - t0;
+    const code = process.exitCode ?? 0;
+    const label = code === 0 ? 'ok' : 'error';
+    console.log(`\nDuration: ${(durationMs / 1000).toFixed(1)}s`);
+    console.log(`Exit code: ${code} (${label})\n=== global-insights [END] ===`);
   }
-
-  const l1Geo = buildParentStopGeo(l1Stops, childrenMap, l0Geo, l0Stops, GROUP_KEY);
-  console.log(`  l=1 stopGeo: ${Object.keys(l1Geo).length} entries\n`);
-
-  // Step 4: Merge and write
-  const allGeo = { ...l0Geo, ...l1Geo };
-  console.log('--- Writing GlobalInsightsBundle ---\n');
-  writeGlobalInsightsBundle(GLOBAL_DIR, allGeo);
-  console.log(`  Written: ${GLOBAL_DIR}/insights.json`);
-  console.log(`  Total entries: ${Object.keys(allGeo).length}`);
-
-  const durationMs = performance.now() - t0;
-  console.log(`\nDuration: ${(durationMs / 1000).toFixed(1)}s`);
 }
 
 // Only run main() when executed directly (not when imported by other scripts).

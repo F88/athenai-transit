@@ -4,23 +4,19 @@
  * Each entry is a prefix whose DataBundle (data.json) will be loaded
  * and analyzed for cross-source spatial metrics. All prefixes are
  * processed in a single run (not per-source batch).
- *
- * Large sources are commented out to keep computation time manageable.
- * Add them back as spatial indexing or performance improvements are
- * implemented.
  */
 export default [
   'minkuru', // toei-bus
   'toaran', // toei-train
-  // 'ktbus', // kanto-bus (1,326 stops — large)
-  // 'kobus', // keio-bus (2,988 stops — large)
+  'ktbus', // kanto-bus
+  'kobus', // keio-bus
   'sggsm', // suginami-gsm
   'kazag', // chiyoda-bus (community)
   'edobus', // chuo-bus (community)
-  // 'sbbus', // seibu-bus (4,125 stops — large)
-  // 'iyt2', // iyotetsu-bus (1,094 stops — large)
+  'sbbus', // seibu-bus
+  'iyt2', // iyotetsu-bus
   'kbus', // kita-bus (community)
-  // 'kcbus', // kyoto-city-bus (1,677 stops — large)
+  'kcbus', // kyoto-city-bus
   'osmbus', // oshima-bus
   'mykbus', // miyake-bus
   'kseiw', // keisei-transit-bus
