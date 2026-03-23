@@ -9,8 +9,13 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.03.23]
+
 ### Added
 
+- `data:sync` に v2 データ sync を追加 (`_build/data-v2/` → `public/data-v2/`)。
+- CatalogOdpt スキーマを拡張 (`organizationUrl`, `datasetUrl`, `resourceUrl`, `resourceId`)。
+- Pipeline ベンチマーク記録 (`PIPELINE-BENCHMARKS.md`)。
 - SRT名古屋 (Smart Roadway Transit) データソース追加:
     - 名駅-栄間の循環バス路線 (1路線、7停留所、12便/日)。
     - CC BY 4.0、shapes.txt あり、translations 5言語。
@@ -52,6 +57,7 @@ and this project adheres to [CalVer](https://calver.org/).
     - pipeline で日本の祝日 calendar_dates を自動生成。WebApp 変更不要。
     - calendar 有効期間を issued + 1年 → 2年に延長。
 - `validate-app-data.ts`: 期限切れサービスを error から warning に変更。CI のデータ更新がブロックされる問題を修正 (#26)
+- 京都市バスの CKAN resourceId と downloadUrl を最新版に更新 (date=20260309 → 20260323)。
 
 ### Changed
 
