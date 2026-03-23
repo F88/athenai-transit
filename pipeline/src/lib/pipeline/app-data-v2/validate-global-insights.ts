@@ -111,64 +111,65 @@ export function validateGlobalInsightsBundle(baseDir: string): GlobalInsightsVal
     return { issues, stopGeoCount };
   }
 
-  if (bundle.stopGeo !== undefined) {
-    if (
-      bundle.stopGeo === null ||
-      typeof bundle.stopGeo !== 'object' ||
-      Array.isArray(bundle.stopGeo)
-    ) {
-      issues.push({
-        prefix: 'global',
-        level: 'error',
-        category: 'structure',
-        message: 'Invalid stopGeo: expected an object with { v, data }',
-      });
-    } else {
-      if (bundle.stopGeo.v !== 1) {
-        issues.push({
-          prefix: 'global',
-          level: 'error',
-          category: 'structure',
-          message: `Invalid stopGeo.v: expected 1, got ${String(bundle.stopGeo.v)}`,
-        });
-      }
-      if (
-        bundle.stopGeo.data &&
-        typeof bundle.stopGeo.data === 'object' &&
-        !Array.isArray(bundle.stopGeo.data)
-      ) {
-        stopGeoCount = Object.keys(bundle.stopGeo.data).length;
+  // At this point bundle.stopGeo is defined (undefined case returned early above)
+  if (
+    bundle.stopGeo === null ||
+    typeof bundle.stopGeo !== 'object' ||
+    Array.isArray(bundle.stopGeo)
+  ) {
+    issues.push({
+      prefix: 'global',
+      level: 'error',
+      category: 'structure',
+      message: 'Invalid stopGeo: expected an object with { v, data }',
+    });
+    return { issues, stopGeoCount };
+  }
 
-        // Spot-check: nr must be a number for each entry
-        for (const [stopId, geo] of Object.entries(bundle.stopGeo.data)) {
-          if (geo === null || typeof geo !== 'object') {
-            issues.push({
-              prefix: 'global',
-              level: 'error',
-              category: 'quality',
-              message: `stopGeo[${stopId}]: expected an object, got ${geo === null ? 'null' : typeof geo}`,
-            });
-            break;
-          }
-          if (typeof geo.nr !== 'number') {
-            issues.push({
-              prefix: 'global',
-              level: 'error',
-              category: 'quality',
-              message: `stopGeo[${stopId}].nr: expected number, got ${typeof geo.nr}`,
-            });
-            break; // One example is enough
-          }
-        }
-      } else {
+  if (bundle.stopGeo.v !== 1) {
+    issues.push({
+      prefix: 'global',
+      level: 'error',
+      category: 'structure',
+      message: `Invalid stopGeo.v: expected 1, got ${String(bundle.stopGeo.v)}`,
+    });
+  }
+
+  if (
+    bundle.stopGeo.data &&
+    typeof bundle.stopGeo.data === 'object' &&
+    !Array.isArray(bundle.stopGeo.data)
+  ) {
+    stopGeoCount = Object.keys(bundle.stopGeo.data).length;
+
+    // Spot-check: nr must be a number for each entry
+    for (const [stopId, geo] of Object.entries(bundle.stopGeo.data)) {
+      if (geo === null || typeof geo !== 'object') {
         issues.push({
           prefix: 'global',
           level: 'error',
-          category: 'structure',
-          message: 'Invalid stopGeo.data: expected a record',
+          category: 'quality',
+          message: `stopGeo[${stopId}]: expected an object, got ${geo === null ? 'null' : typeof geo}`,
         });
+        break;
+      }
+      if (typeof geo.nr !== 'number') {
+        issues.push({
+          prefix: 'global',
+          level: 'error',
+          category: 'quality',
+          message: `stopGeo[${stopId}].nr: expected number, got ${typeof geo.nr}`,
+        });
+        break; // One example is enough
       }
     }
+  } else {
+    issues.push({
+      prefix: 'global',
+      level: 'error',
+      category: 'structure',
+      message: 'Invalid stopGeo.data: expected a record',
+    });
   }
 
   return { issues, stopGeoCount };

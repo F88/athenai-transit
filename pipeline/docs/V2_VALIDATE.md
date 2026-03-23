@@ -276,6 +276,7 @@ Done in 12ms. (exit code: 2)
 - ファイルが存在しない場合は warning (未ビルドの可能性)
 - 存在する場合: bundle_version=2, kind='global-insights' を確認
 - stopGeo セクション (optional): v=1, data が Record であること、nr が number であることを spot-check
+- stopGeo セクションが存在しない場合は warning (意図的であれば問題ないが、空間メトリクスが利用不可)
 
 ## Exit Code
 

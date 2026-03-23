@@ -677,7 +677,7 @@ async function main(): Promise<void> {
     if (globalResult.stopGeoCount > 0) {
       console.log(`  global/insights.json: OK (${globalResult.stopGeoCount} stopGeo entries)`);
     } else {
-      console.log('  global/insights.json: OK (no stopGeo section)');
+      console.log('  global/insights.json: OK (stopGeo present, 0 entries)');
     }
   } else {
     for (const issue of globalResult.issues) {
