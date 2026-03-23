@@ -37,6 +37,20 @@ import type {
 // ---------------------------------------------------------------------------
 
 /**
+ * Whether a pattern is circular: the first and last stop share the
+ * same stop_id, with at least one interior stop in between.
+ *
+ * Requires `stops.length > 2` because circular route handling relies
+ * on an interior stop (position 1) for accurate freq counting.
+ * A degenerate 2-stop circular `[s1, s1]` has no interior stop and
+ * cannot be correctly decomposed — this is a known limitation
+ * tracked in #47 (TimetableGroupV2Json needs `seq`).
+ */
+function isCircularPattern(stops: string[]): boolean {
+  return stops.length > 2 && stops[0] === stops[stops.length - 1];
+}
+
+/**
  * Count departures for a pattern at a given stop,
  * summing across all service IDs in the service group.
  */
@@ -109,6 +123,112 @@ function median(sorted: number[]): number {
 }
 
 /**
+ * Fill NO_DATA gaps in a segment array using nearest known neighbors.
+ *
+ * This function uses **simple neighbor averaging**, not proportional
+ * linear interpolation. The rationale:
+ *
+ * - Adjacent bus/train segments between consecutive stops tend to have
+ *   similar durations (1–3 min each). A gradient assumption (linear
+ *   interpolation) is not more accurate than averaging for typical
+ *   transit data.
+ * - Across all 16 current sources, only 6 stops in a single pattern
+ *   (Toei Asakusa Line toaran:p15) require gap filling. Consecutive
+ *   gaps are at most 2 segments long, making the difference between
+ *   averaging and interpolation negligible.
+ *
+ * **Important**: `0` is a valid segment value (zero travel time between
+ * consecutive stops departing at the same minute). Only entries matching
+ * `noData` are treated as gaps. See the NO_DATA sentinel in
+ * {@link computeSegmentTimes} for details.
+ *
+ * When no valid neighbors exist at all (e.g. 3-stop circular where
+ * every segment is skipped), gaps are set to `0` as a safe fallback.
+ * The caller accumulates segments into `rd` via addition, so preserving
+ * a negative sentinel would corrupt the output.
+ *
+ * @param segments - Mutable array of segment travel times. Modified in place.
+ * @param noData - Sentinel value indicating missing data (typically -1).
+ */
+function fillSegmentGaps(segments: number[], noData: number): void {
+  for (let i = 0; i < segments.length; i++) {
+    if (segments[i] !== noData) {
+      continue;
+    }
+    let prevIdx = -1;
+    for (let j = i - 1; j >= 0; j--) {
+      if (segments[j] !== noData) {
+        prevIdx = j;
+        break;
+      }
+    }
+    let nextIdx = -1;
+    for (let j = i + 1; j < segments.length; j++) {
+      if (segments[j] !== noData) {
+        nextIdx = j;
+        break;
+      }
+    }
+
+    if (prevIdx >= 0 && nextIdx >= 0) {
+      segments[i] = (segments[prevIdx] + segments[nextIdx]) / 2;
+    } else if (prevIdx >= 0) {
+      segments[i] = segments[prevIdx];
+    } else if (nextIdx >= 0) {
+      segments[i] = segments[nextIdx];
+    } else {
+      // No valid neighbors exist (e.g. 3-stop circular where all segments
+      // are skipped). Use 0 rather than preserving noData, because the
+      // caller accumulates segments into rd via addition — a negative
+      // sentinel would produce negative rd values.
+      segments[i] = 0;
+    }
+  }
+}
+
+/**
+ * Compute the median travel time for a single segment (stop A → stop B)
+ * by positional alignment of departure arrays.
+ *
+ * Pairs up departures at the same index `j` and computes
+ * `depsB[j] - depsA[j]`. Negative diffs are filtered out (can occur
+ * with data anomalies). The median of the remaining diffs is returned.
+ *
+ * Returns `noData` if:
+ * - Either departure array is empty
+ * - The arrays have different lengths (alignment impossible)
+ * - All diffs are negative
+ *
+ * @param depsA - Sorted departure minutes at stop A.
+ * @param depsB - Sorted departure minutes at stop B.
+ * @param noData - Sentinel value to return when no valid data exists.
+ * @returns Median travel time in minutes, or `noData`.
+ */
+function computeSegmentMedian(depsA: number[], depsB: number[], noData: number): number {
+  if (depsA.length === 0 || depsB.length === 0) {
+    return noData;
+  }
+  if (depsA.length !== depsB.length) {
+    return noData;
+  }
+
+  const diffs: number[] = [];
+  for (let j = 0; j < depsA.length; j++) {
+    const diff = depsB[j] - depsA[j];
+    if (diff >= 0) {
+      diffs.push(diff);
+    }
+  }
+
+  if (diffs.length === 0) {
+    return noData;
+  }
+
+  diffs.sort((a, b) => a - b);
+  return median(diffs);
+}
+
+/**
  * Compute segment travel times between consecutive stops using
  * positional alignment of departure arrays.
  *
@@ -135,7 +255,7 @@ function computeSegmentTimes(
   const NO_DATA = -1;
   const segments = new Array<number>(segmentCount).fill(NO_DATA);
 
-  const isCircular = stops.length > 2 && stops[0] === stops[stops.length - 1];
+  const isCircular = isCircularPattern(stops);
 
   // Cache departures per stop to avoid redundant timetable scans and sorts.
   // Each stop appears in two consecutive segments (as end of one, start of next),
@@ -160,69 +280,17 @@ function computeSegmentTimes(
       continue;
     }
 
-    const depsA = getCachedDeps(stops[i]);
-    const depsB = getCachedDeps(stops[i + 1]);
-
-    if (depsA.length === 0 || depsB.length === 0) {
-      continue;
-    }
-
-    if (depsA.length !== depsB.length) {
-      continue;
-    }
-
-    const diffs: number[] = [];
-    for (let j = 0; j < depsA.length; j++) {
-      const diff = depsB[j] - depsA[j];
-      if (diff >= 0) {
-        diffs.push(diff);
-      }
-    }
-
-    if (diffs.length > 0) {
-      diffs.sort((a, b) => a - b);
-      segments[i] = median(diffs);
+    const result = computeSegmentMedian(
+      getCachedDeps(stops[i]),
+      getCachedDeps(stops[i + 1]),
+      NO_DATA,
+    );
+    if (result !== NO_DATA) {
+      segments[i] = result;
     }
   }
 
-  // Fill gaps (NO_DATA) using nearest known neighbors (average, or copy).
-  // Only NO_DATA (-1) entries are filled — segments with value 0
-  // (zero travel time) are valid and preserved.
-  for (let i = 0; i < segmentCount; i++) {
-    if (segments[i] !== NO_DATA) {
-      continue;
-    }
-    let prevIdx = -1;
-    for (let j = i - 1; j >= 0; j--) {
-      if (segments[j] !== NO_DATA) {
-        prevIdx = j;
-        break;
-      }
-    }
-    let nextIdx = -1;
-    for (let j = i + 1; j < segmentCount; j++) {
-      if (segments[j] !== NO_DATA) {
-        nextIdx = j;
-        break;
-      }
-    }
-
-    if (prevIdx >= 0 && nextIdx >= 0) {
-      segments[i] = (segments[prevIdx] + segments[nextIdx]) / 2;
-    } else if (prevIdx >= 0) {
-      segments[i] = segments[prevIdx];
-    } else if (nextIdx >= 0) {
-      segments[i] = segments[nextIdx];
-    } else {
-      // No valid neighbors exist (e.g. 3-stop circular where all segments
-      // are skipped). Use 0 rather than preserving NO_DATA (-1), because
-      // the caller accumulates segments into rd via addition — a -1 would
-      // produce negative rd values. 0 is the safest fallback: it means
-      // "unknown duration treated as instant" rather than corrupting rd.
-      // In practice this only occurs in degenerate patterns (3-stop circular).
-      segments[i] = 0;
-    }
-  }
+  fillSegmentGaps(segments, NO_DATA);
 
   return segments;
 }
@@ -257,8 +325,8 @@ export function buildTripPatternStats(
       }
 
       // freq: use interior stop (position 1) for circular routes to avoid 2x
-      const isCircular = stops.length > 2 && stops[0] === stops[stops.length - 1];
-      const freqStopId = isCircular && stops.length > 2 ? stops[1] : stops[0];
+      const isCircular = isCircularPattern(stops);
+      const freqStopId = isCircular ? stops[1] : stops[0];
       const freq = countDepartures(timetable[freqStopId], patternId, group.serviceIds);
 
       // Omit patterns with no departures in this service group.

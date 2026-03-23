@@ -266,6 +266,21 @@ describe('validateInsightsBundle', () => {
       expect(result.issues.some((i) => i.message.includes('stopStats.data'))).toBe(true);
     });
 
+    it('reports error when optional section is an array (not an object)', () => {
+      const bundle = {
+        ...makeValidBundle(),
+        tripPatternGeo: [1, 2, 3],
+      };
+      writeBundle('array-geo', bundle);
+
+      const result = validateInsightsBundle('array-geo', TMP_DIR);
+      expect(
+        result.issues.some(
+          (i) => i.message.includes('tripPatternGeo') && i.message.includes('object'),
+        ),
+      ).toBe(true);
+    });
+
     it('reports error when optional section is null (present but invalid)', () => {
       const bundle = {
         ...makeValidBundle(),

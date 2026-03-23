@@ -140,7 +140,7 @@ Origin/terminal stop は departure が 2x (出発と到着が interleave)。orig
 
 ### Timetable のない stop
 
-隣接する既知 segment の平均で線形補間。
+隣接する既知 segment の平均値で補間 (比例配分の線形補間ではない)。`fillSegmentGaps` 関数で処理。
 
 ### 注意: segment travel time = 0 の扱い
 

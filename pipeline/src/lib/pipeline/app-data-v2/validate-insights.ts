@@ -146,7 +146,7 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
     if (section === undefined) {
       return 0;
     }
-    if (section === null || typeof section !== 'object') {
+    if (section === null || typeof section !== 'object' || Array.isArray(section)) {
       issues.push({
         prefix,
         level: 'error',
