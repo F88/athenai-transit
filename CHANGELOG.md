@@ -9,6 +9,13 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- CI に v2 パイプラインのビルド・検証ステップを追加 (`update-transit-data.yml`):
+    - v2 data, shapes, insights, global-insights のビルド。
+    - v2 validate (Job Summary 出力)。
+    - `public/data-v2/` を git add/commit 対象に追加。
+
 ## [2026.03.23]
 
 ### Added

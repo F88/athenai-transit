@@ -166,6 +166,81 @@ jobs:
       - name: Build route shapes from KSJ railway
         run: npm run pipeline:build:shapes:ksj
 
+      # ── Transform v2 (DB → v2 JSON bundles) ─────────────────
+      - name: Build v2 data from GTFS
+        id: build-v2-data
+        run: |
+          set +e
+          npm run pipeline:build:v2-data
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on v2 data build partial failure
+        if: steps.build-v2-data.outputs.exit_code == '1'
+        run: echo "::warning::Some v2 data builds failed (partial failure)."
+
+      - name: Fail on v2 data build failure
+        if: steps.build-v2-data.outputs.exit_code == '2'
+        run: |
+          echo "::error::All v2 data builds failed."
+          exit 1
+
+      - name: Build v2 ODPT Train data
+        id: build-v2-odpt-train
+        run: |
+          set +e
+          npm run pipeline:build:v2-odpt-train
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on v2 ODPT Train build partial failure
+        if: steps.build-v2-odpt-train.outputs.exit_code == '1'
+        run: echo "::warning::Some v2 ODPT Train builds failed (partial failure)."
+
+      - name: Fail on v2 ODPT Train build failure
+        if: steps.build-v2-odpt-train.outputs.exit_code == '2'
+        run: |
+          echo "::error::All v2 ODPT Train builds failed."
+          exit 1
+
+      - name: Build v2 route shapes from GTFS
+        id: build-v2-shapes-gtfs
+        run: |
+          set +e
+          npm run pipeline:build:v2-shapes:gtfs
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on v2 GTFS shapes build partial failure
+        if: steps.build-v2-shapes-gtfs.outputs.exit_code == '1'
+        run: echo "::warning::Some v2 GTFS shapes builds failed (partial failure)."
+
+      - name: Fail on v2 GTFS shapes build failure
+        if: steps.build-v2-shapes-gtfs.outputs.exit_code == '2'
+        run: |
+          echo "::error::All v2 GTFS shapes builds failed."
+          exit 1
+
+      - name: Build v2 route shapes from KSJ railway
+        run: npm run pipeline:build:v2-shapes:ksj
+
+      - name: Build v2 insights
+        id: build-v2-insights
+        run: |
+          set +e
+          npm run pipeline:build:v2-insights
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on v2 insights build partial failure
+        if: steps.build-v2-insights.outputs.exit_code == '1'
+        run: echo "::warning::Some v2 insights builds failed (partial failure)."
+
+      - name: Fail on v2 insights build failure
+        if: steps.build-v2-insights.outputs.exit_code == '2'
+        run: |
+          echo "::error::All v2 insights builds failed."
+          exit 1
+
+      - name: Build v2 global insights
+        run: npm run pipeline:build:v2-global-insights
+
       - name: Sync to public/
         run: npm run data:sync
 
@@ -186,11 +261,25 @@ jobs:
           echo "::error::Generated data validation failed. See Job Summary for details."
           exit 1
 
+      - name: Validate v2 bundles
+        id: validate-v2
+        run: |
+          set +e
+          npm run pipeline:validate:v2 2>&1 | tee validate-v2-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          cat validate-v2-output.txt >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail on v2 validation errors
+        if: steps.validate-v2.outputs.exit_code == '2'
+        run: |
+          echo "::error::V2 bundle validation failed. See Job Summary for details."
+          exit 1
+
       # ── Report & Deploy ────────────────────────────────────
       - name: Detect changes
         id: changes
         run: |
-          git add public/data/ pipeline/workspace/state/
+          git add public/data/ public/data-v2/ pipeline/workspace/state/
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No data changes detected."
@@ -222,7 +311,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/ pipeline/workspace/state/
+          git add public/data/ public/data-v2/ pipeline/workspace/state/
           git commit -m "chore(data): update transit data"
           git push
 
@@ -249,6 +338,10 @@ jobs:
           if [ "${{ steps.build-json.outputs.exit_code }}" = "1" ]; then WARN="${WARN}JSON build, "; fi
           if [ "${{ steps.build-odpt-train.outputs.exit_code }}" = "1" ]; then WARN="${WARN}ODPT Train, "; fi
           if [ "${{ steps.build-shapes-gtfs.outputs.exit_code }}" = "1" ]; then WARN="${WARN}GTFS shapes, "; fi
+          if [ "${{ steps.build-v2-data.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 data, "; fi
+          if [ "${{ steps.build-v2-odpt-train.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 ODPT Train, "; fi
+          if [ "${{ steps.build-v2-shapes-gtfs.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 GTFS shapes, "; fi
+          if [ "${{ steps.build-v2-insights.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 insights, "; fi
           if [ -n "$WARN" ]; then
             PARTS+=("Partial failure: ${WARN%, }")
             HAS_WARN=true
