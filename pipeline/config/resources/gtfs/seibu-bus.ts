@@ -13,8 +13,11 @@ const seibuBus: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/seibu_bus',
+      datasetUrl: 'https://ckan.odpt.org/dataset/seibu_bus__b-bus_gtfs',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/seibu_bus__b-bus_gtfs/resource/8a2d63ed-6023-42bf-ae34-1796c56f607f',
       resourceId: '8a2d63ed-6023-42bf-ae34-1796c56f607f',
-      url: 'https://ckan.odpt.org/dataset/seibu_bus__b-bus_gtfs/resource/8a2d63ed-6023-42bf-ae34-1796c56f607f',
     },
     provider: {
       name: {

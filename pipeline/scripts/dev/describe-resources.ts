@@ -177,7 +177,9 @@ function printCommonFields(resource: BaseResource, pipeline: PipelineConfig): vo
     console.log(`  Registration:   ${resource.authentication.registrationUrl}`);
   }
   if (resource.catalog.type === 'odpt') {
-    console.log(`  Catalog:        ODPT (${resource.catalog.url})`);
+    console.log(`  Organization:   ${resource.catalog.organizationUrl}`);
+    console.log(`  Dataset:        ${resource.catalog.datasetUrl}`);
+    console.log(`  Resource:       ${resource.catalog.resourceUrl}`);
     console.log(`  Resource ID:    ${resource.catalog.resourceId}`);
   } else if (resource.catalog.type === 'municipal') {
     console.log(

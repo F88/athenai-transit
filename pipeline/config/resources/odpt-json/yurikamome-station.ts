@@ -14,8 +14,11 @@ const yurikamomeStation: OdptJsonSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/yurikamome',
+      datasetUrl: 'https://ckan.odpt.org/dataset/r_station-yurikamome',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/r_station-yurikamome/resource/8815e3f7-0ec7-4f8c-b5c8-e406e3354419',
       resourceId: '8815e3f7-0ec7-4f8c-b5c8-e406e3354419',
-      url: 'https://ckan.odpt.org/dataset/r_station-yurikamome/resource/8815e3f7-0ec7-4f8c-b5c8-e406e3354419',
     },
     provider: {
       name: {

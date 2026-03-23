@@ -14,8 +14,12 @@ const chiyodaBus: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/hitachi_automobile_transportation',
+      datasetUrl:
+        'https://ckan.odpt.org/dataset/hitachi_automobile_transportation_chiyoda_alllines',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/hitachi_automobile_transportation_chiyoda_alllines/resource/ab65587e-18cb-49ae-9b1b-fa319cdc149a',
       resourceId: 'ab65587e-18cb-49ae-9b1b-fa319cdc149a',
-      url: 'https://ckan.odpt.org/dataset/hitachi_automobile_transportation_chiyoda_alllines/resource/ab65587e-18cb-49ae-9b1b-fa319cdc149a',
     },
     provider: {
       name: {

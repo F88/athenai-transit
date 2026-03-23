@@ -13,8 +13,11 @@ const chuoBus: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/tokyo_chuo_city',
+      datasetUrl: 'https://ckan.odpt.org/dataset/tokyo_chuo_city_alldata',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/tokyo_chuo_city_alldata/resource/6674c46b-d4aa-44a6-a427-0862df7b7189',
       resourceId: '6674c46b-d4aa-44a6-a427-0862df7b7189',
-      url: 'https://ckan.odpt.org/dataset/tokyo_chuo_city_alldata/resource/6674c46b-d4aa-44a6-a427-0862df7b7189',
     },
     provider: {
       name: {

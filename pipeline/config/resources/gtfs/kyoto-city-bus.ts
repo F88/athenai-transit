@@ -13,8 +13,12 @@ const kyotoCityBus: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/kyoto_municipal_transportation',
+      datasetUrl:
+        'https://ckan.odpt.org/dataset/kyoto_municipal_transportation_kyoto_city_bus_gtfs',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/kyoto_municipal_transportation_kyoto_city_bus_gtfs/resource/e91e1179-9e23-4b52-904c-7251b79b8eaf',
       resourceId: 'e91e1179-9e23-4b52-904c-7251b79b8eaf',
-      url: 'https://ckan.odpt.org/dataset/kyoto_municipal_transportation_kyoto_city_bus_gtfs/resource/e91e1179-9e23-4b52-904c-7251b79b8eaf',
     },
     provider: {
       name: {

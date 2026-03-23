@@ -13,8 +13,11 @@ const tokyuBusBusroute: OdptJsonSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/tokyu_bus',
+      datasetUrl: 'https://ckan.odpt.org/dataset/tokyu_bus__b-busroute',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/tokyu_bus__b-busroute/resource/a3088ab9-671f-4eff-be93-5ff5d8d8341c',
       resourceId: 'a3088ab9-671f-4eff-be93-5ff5d8d8341c',
-      url: 'https://ckan.odpt.org/dataset/tokyu_bus__b-busroute/resource/a3088ab9-671f-4eff-be93-5ff5d8d8341c',
     },
     provider: {
       name: {

@@ -14,8 +14,11 @@ const toeiTrain: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/toei',
+      datasetUrl: 'https://ckan.odpt.org/dataset/train-toei',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/train-toei/resource/35b68908-4558-47ae-bfa5-867e58544a1a',
       resourceId: '35b68908-4558-47ae-bfa5-867e58544a1a',
-      url: 'https://ckan.odpt.org/dataset/train-toei/resource/35b68908-4558-47ae-bfa5-867e58544a1a',
     },
     provider: {
       name: {

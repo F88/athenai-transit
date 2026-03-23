@@ -97,11 +97,11 @@ if (resource.dataFormat.type === 'GTFS/GTFS-JP') {
 
 データカタログの出典情報。`catalog.type` で判別する discriminated union。
 
-| type          | 説明                                  | フィールド          |
-| ------------- | ------------------------------------- | ------------------- |
-| `'odpt'`      | ODPT (公共交通オープンデータセンター) | `resourceId`, `url` |
-| `'municipal'` | 自治体等のカタログサイト              | `url?`              |
-| `'direct'`    | カタログなし (直接 URL)               | (なし)              |
+| type          | 説明                                  | フィールド                                                   |
+| ------------- | ------------------------------------- | ------------------------------------------------------------ |
+| `'odpt'`      | ODPT (公共交通オープンデータセンター) | `organizationUrl`, `datasetUrl`, `resourceUrl`, `resourceId` |
+| `'municipal'` | 自治体等のカタログサイト              | `url?`                                                       |
+| `'direct'`    | カタログなし (直接 URL)               | (なし)                                                       |
 
 ## Authentication
 
@@ -132,8 +132,10 @@ const toeiBus: GtfsSourceDefinition = {
         routeTypes: ['bus'],
         catalog: {
             type: 'odpt',
+            organizationUrl: 'https://ckan.odpt.org/organization/toei',
+            datasetUrl: 'https://ckan.odpt.org/dataset/b_bus_gtfs_jp-toei',
+            resourceUrl: 'https://ckan.odpt.org/dataset/b_bus_gtfs_jp-toei/resource/171a583d-...',
             resourceId: '171a583d-4bf3-4f71-ae57-16f2140babda',
-            url: 'https://ckan.odpt.org/dataset/b_bus_gtfs_jp-toei/resource/171a583d-...',
         },
         provider: {
             nameJa: '東京都交通局',
@@ -170,8 +172,10 @@ const yurikamomeStation: OdptJsonSourceDefinition = {
             'https://api.odpt.org/api/v4/odpt:Station?odpt:operator=odpt.Operator:Yurikamome',
         catalog: {
             type: 'odpt',
+            organizationUrl: 'https://ckan.odpt.org/organization/yurikamome',
+            datasetUrl: 'https://ckan.odpt.org/dataset/t_info_yurikamome',
+            resourceUrl: 'https://ckan.odpt.org/dataset/t_info_yurikamome/resource/48202580-...',
             resourceId: '48202580-e879-4284-9804-bed64a42356d',
-            url: 'https://ckan.odpt.org/dataset/t_info_yurikamome/resource/48202580-...',
         },
         provider: {
             nameJa: 'ゆりかもめ',

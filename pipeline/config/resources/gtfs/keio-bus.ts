@@ -13,8 +13,11 @@ const keioBus: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/keio_bus',
+      datasetUrl: 'https://ckan.odpt.org/dataset/keio_bus_all_lines',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/keio_bus_all_lines/resource/7e191a71-db33-40b6-b304-72ac7405eee9',
       resourceId: '7e191a71-db33-40b6-b304-72ac7405eee9',
-      url: 'https://ckan.odpt.org/dataset/keio_bus_all_lines/resource/7e191a71-db33-40b6-b304-72ac7405eee9',
     },
     provider: {
       name: {

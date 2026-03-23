@@ -14,8 +14,11 @@ const toeiBus: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/toei',
+      datasetUrl: 'https://ckan.odpt.org/dataset/b_bus_gtfs_jp-toei',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/b_bus_gtfs_jp-toei/resource/171a583d-4bf3-4f71-ae57-16f2140babda',
       resourceId: '171a583d-4bf3-4f71-ae57-16f2140babda',
-      url: 'https://ckan.odpt.org/dataset/b_bus_gtfs_jp-toei/resource/171a583d-4bf3-4f71-ae57-16f2140babda',
     },
     provider: {
       name: {

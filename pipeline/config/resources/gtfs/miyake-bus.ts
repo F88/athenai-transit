@@ -13,8 +13,11 @@ const miyakeBus: GtfsSourceDefinition = {
     },
     catalog: {
       type: 'odpt',
+      organizationUrl: 'https://ckan.odpt.org/organization/miyake_vill',
+      datasetUrl: 'https://ckan.odpt.org/dataset/miyake_vill_all_line',
+      resourceUrl:
+        'https://ckan.odpt.org/dataset/miyake_vill_all_line/resource/f526db08-21ea-452c-b6ed-ea5758b3c44a',
       resourceId: 'f526db08-21ea-452c-b6ed-ea5758b3c44a',
-      url: 'https://ckan.odpt.org/dataset/miyake_vill_all_line/resource/f526db08-21ea-452c-b6ed-ea5758b3c44a',
     },
     provider: {
       name: {
