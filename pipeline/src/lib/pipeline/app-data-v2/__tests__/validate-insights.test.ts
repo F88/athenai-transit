@@ -153,4 +153,178 @@ describe('validateInsightsBundle', () => {
       expect(result.serviceGroupCount).toBe(3);
     });
   });
+
+  describe('optional sections', () => {
+    it('passes for valid tripPatternGeo section', () => {
+      const bundle: InsightsBundle = {
+        ...makeValidBundle(),
+        tripPatternGeo: {
+          v: 1,
+          data: { p1: { dist: 5.0, pathDist: 6.5, cl: false } },
+        },
+      };
+      writeBundle('valid-geo', bundle);
+
+      const result = validateInsightsBundle('valid-geo', TMP_DIR);
+      expect(result.issues).toHaveLength(0);
+      expect(result.tripPatternGeoCount).toBe(1);
+    });
+
+    it('reports error for wrong tripPatternGeo.v', () => {
+      const bundle = {
+        ...makeValidBundle(),
+        tripPatternGeo: { v: 2, data: {} },
+      };
+      writeBundle('bad-geo-v', bundle);
+
+      const result = validateInsightsBundle('bad-geo-v', TMP_DIR);
+      expect(result.issues.some((i) => i.message.includes('tripPatternGeo.v'))).toBe(true);
+    });
+
+    it('reports error when tripPatternGeo.data is not a record', () => {
+      const bundle = {
+        ...makeValidBundle(),
+        tripPatternGeo: { v: 1, data: [1, 2, 3] },
+      };
+      writeBundle('bad-geo-data', bundle);
+
+      const result = validateInsightsBundle('bad-geo-data', TMP_DIR);
+      expect(result.issues.some((i) => i.message.includes('tripPatternGeo.data'))).toBe(true);
+    });
+
+    it('passes for valid tripPatternStats section', () => {
+      const bundle: InsightsBundle = {
+        ...makeValidBundle(),
+        tripPatternStats: {
+          v: 1,
+          data: { wd: { p1: { freq: 10, rd: [20, 10, 0] } } },
+        },
+      };
+      writeBundle('valid-stats', bundle);
+
+      const result = validateInsightsBundle('valid-stats', TMP_DIR);
+      expect(result.issues).toHaveLength(0);
+      expect(result.tripPatternStatsGroupCount).toBe(1);
+    });
+
+    it('reports error for wrong tripPatternStats.v', () => {
+      const bundle = {
+        ...makeValidBundle(),
+        tripPatternStats: { v: 2, data: {} },
+      };
+      writeBundle('bad-stats-v', bundle);
+
+      const result = validateInsightsBundle('bad-stats-v', TMP_DIR);
+      expect(result.issues.some((i) => i.message.includes('tripPatternStats.v'))).toBe(true);
+    });
+
+    it('reports error when tripPatternStats.data is not a record', () => {
+      const bundle = {
+        ...makeValidBundle(),
+        tripPatternStats: { v: 1, data: [1, 2, 3] },
+      };
+      writeBundle('bad-stats-data', bundle);
+
+      const result = validateInsightsBundle('bad-stats-data', TMP_DIR);
+      expect(result.issues.some((i) => i.message.includes('tripPatternStats.data'))).toBe(true);
+    });
+
+    it('passes for valid stopStats section', () => {
+      const bundle: InsightsBundle = {
+        ...makeValidBundle(),
+        stopStats: {
+          v: 1,
+          data: { wd: { s1: { freq: 15, rc: 2, rtc: 1, ed: 360, ld: 1380 } } },
+        },
+      };
+      writeBundle('valid-ss', bundle);
+
+      const result = validateInsightsBundle('valid-ss', TMP_DIR);
+      expect(result.issues).toHaveLength(0);
+      expect(result.stopStatsGroupCount).toBe(1);
+    });
+
+    it('reports error for wrong stopStats.v', () => {
+      const bundle = {
+        ...makeValidBundle(),
+        stopStats: { v: 2, data: {} },
+      };
+      writeBundle('bad-ss-v', bundle);
+
+      const result = validateInsightsBundle('bad-ss-v', TMP_DIR);
+      expect(result.issues.some((i) => i.message.includes('stopStats.v'))).toBe(true);
+    });
+
+    it('reports error when stopStats.data is not a record', () => {
+      const bundle = {
+        ...makeValidBundle(),
+        stopStats: { v: 1, data: [1, 2, 3] },
+      };
+      writeBundle('bad-ss-data', bundle);
+
+      const result = validateInsightsBundle('bad-ss-data', TMP_DIR);
+      expect(result.issues.some((i) => i.message.includes('stopStats.data'))).toBe(true);
+    });
+
+    it('reports error when optional section is an array (not an object)', () => {
+      const bundle = {
+        ...makeValidBundle(),
+        tripPatternGeo: [1, 2, 3],
+      };
+      writeBundle('array-geo', bundle);
+
+      const result = validateInsightsBundle('array-geo', TMP_DIR);
+      expect(
+        result.issues.some(
+          (i) => i.message.includes('tripPatternGeo') && i.message.includes('object'),
+        ),
+      ).toBe(true);
+    });
+
+    it('reports error when optional section is null (present but invalid)', () => {
+      const bundle = {
+        ...makeValidBundle(),
+        tripPatternGeo: null,
+      };
+      writeBundle('null-geo', bundle);
+
+      const result = validateInsightsBundle('null-geo', TMP_DIR);
+      expect(result.issues.some((i) => i.message.includes('tripPatternGeo'))).toBe(true);
+    });
+
+    it('returns zero counts when optional sections are absent', () => {
+      writeBundle('no-optional', makeValidBundle());
+
+      const result = validateInsightsBundle('no-optional', TMP_DIR);
+      expect(result.issues).toHaveLength(0);
+      expect(result.tripPatternGeoCount).toBe(0);
+      expect(result.tripPatternStatsGroupCount).toBe(0);
+      expect(result.stopStatsGroupCount).toBe(0);
+    });
+
+    it('passes for bundle with all optional sections', () => {
+      const bundle: InsightsBundle = {
+        ...makeValidBundle(),
+        tripPatternGeo: {
+          v: 1,
+          data: { p1: { dist: 1.0, pathDist: 1.5, cl: false } },
+        },
+        tripPatternStats: {
+          v: 1,
+          data: { wd: { p1: { freq: 5, rd: [10, 0] } } },
+        },
+        stopStats: {
+          v: 1,
+          data: { wd: { s1: { freq: 5, rc: 1, rtc: 1, ed: 480, ld: 1080 } } },
+        },
+      };
+      writeBundle('all-optional', bundle);
+
+      const result = validateInsightsBundle('all-optional', TMP_DIR);
+      expect(result.issues).toHaveLength(0);
+      expect(result.tripPatternGeoCount).toBe(1);
+      expect(result.tripPatternStatsGroupCount).toBe(1);
+      expect(result.stopStatsGroupCount).toBe(1);
+    });
+  });
 });

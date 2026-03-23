@@ -793,11 +793,19 @@ export interface InsightsBundle {
    */
   serviceGroups: BundleSection<1, ServiceGroupEntry[]>;
 
-  /** Per-pattern operational statistics. Keyed by service group, then pattern ID. */
+  /**
+   * Per-pattern operational statistics. Keyed by service group, then pattern ID.
+   * Only patterns with at least one departure in the service group are included.
+   * Patterns with no departures (freq=0) are omitted from the inner record.
+   */
   tripPatternStats?: BundleSection<1, Record<string, Record<string, TripPatternStatsJson>>>;
   /** Per-pattern geographic metrics. Keyed by pattern ID. Service-group independent. */
   tripPatternGeo?: BundleSection<1, Record<string, TripPatternGeoJson>>;
-  /** Per-stop operational statistics. Keyed by service group, then stop ID. */
+  /**
+   * Per-stop operational statistics. Keyed by service group, then stop ID.
+   * Only stops with at least one departure in the service group are included.
+   * Stops with no departures (freq=0) are omitted from the inner record.
+   */
   stopStats?: BundleSection<1, Record<string, Record<string, StopStatsJson>>>;
 }
 

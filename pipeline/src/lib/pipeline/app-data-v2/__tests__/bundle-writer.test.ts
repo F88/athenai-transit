@@ -188,13 +188,46 @@ describe('writeInsightsBundle', () => {
     expect(written.serviceGroups.data).toEqual([]);
   });
 
-  it('does not include optional sections', () => {
+  it('does not include optional sections when not provided', () => {
     const dir = join(TMP_DIR, 'insights-test');
     writeInsightsBundle(dir, [{ key: 'wd', serviceIds: ['svc-1'] }]);
 
     const written = JSON.parse(readFileSync(join(dir, 'insights.json'), 'utf-8')) as InsightsBundle;
     expect(written).not.toHaveProperty('tripPatternStats');
     expect(written).not.toHaveProperty('tripPatternGeo');
+    expect(written).not.toHaveProperty('stopStats');
+  });
+
+  it('includes optional sections when provided', () => {
+    const dir = join(TMP_DIR, 'insights-optional');
+    const serviceGroups = [{ key: 'wd', serviceIds: ['svc-1'] }];
+    const tripPatternGeo = { p1: { dist: 5.0, pathDist: 6.5, cl: false } };
+    const tripPatternStats = { wd: { p1: { freq: 10, rd: [20, 10, 0] } } };
+    const stopStats = {
+      wd: { s1: { freq: 15, rc: 2, rtc: 1, ed: 360, ld: 1380 } },
+    };
+
+    writeInsightsBundle(dir, serviceGroups, {
+      tripPatternGeo,
+      tripPatternStats,
+      stopStats,
+    });
+
+    const written = JSON.parse(readFileSync(join(dir, 'insights.json'), 'utf-8')) as InsightsBundle;
+    expect(written.tripPatternGeo).toEqual({ v: 1, data: tripPatternGeo });
+    expect(written.tripPatternStats).toEqual({ v: 1, data: tripPatternStats });
+    expect(written.stopStats).toEqual({ v: 1, data: stopStats });
+  });
+
+  it('includes only provided optional sections', () => {
+    const dir = join(TMP_DIR, 'insights-partial');
+    writeInsightsBundle(dir, [{ key: 'wd', serviceIds: ['svc-1'] }], {
+      tripPatternGeo: { p1: { dist: 1.0, pathDist: 1.5, cl: false } },
+    });
+
+    const written = JSON.parse(readFileSync(join(dir, 'insights.json'), 'utf-8')) as InsightsBundle;
+    expect(written.tripPatternGeo).toBeDefined();
+    expect(written).not.toHaveProperty('tripPatternStats');
     expect(written).not.toHaveProperty('stopStats');
   });
 });

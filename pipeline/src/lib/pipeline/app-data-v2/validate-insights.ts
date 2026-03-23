@@ -4,15 +4,12 @@
  * Pure validation logic — no CLI, no console output.
  * Used by the validate-v2-bundles script.
  *
- * Currently only checks bundle structure. Detailed data quality
- * and referential integrity checks will be added when the
- * insights pipeline is complete.
- *
  * Checks:
  * - File existence
  * - JSON parse
  * - Bundle structure (bundle_version, kind)
  * - Required section: serviceGroups (v=1)
+ * - Optional sections: tripPatternGeo, tripPatternStats, stopStats (v=1)
  *
  * @module
  */
@@ -30,6 +27,9 @@ import type { ValidationIssue } from './validate-shapes';
 export interface InsightsValidationResult {
   issues: ValidationIssue[];
   serviceGroupCount: number;
+  tripPatternGeoCount: number;
+  tripPatternStatsGroupCount: number;
+  stopStatsGroupCount: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -46,6 +46,9 @@ export interface InsightsValidationResult {
 export function validateInsightsBundle(prefix: string, baseDir: string): InsightsValidationResult {
   const issues: ValidationIssue[] = [];
   let serviceGroupCount = 0;
+  let tripPatternGeoCount = 0;
+  let tripPatternStatsGroupCount = 0;
+  let stopStatsGroupCount = 0;
 
   const filePath = join(baseDir, prefix, 'insights.json');
 
@@ -57,7 +60,13 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
       category: 'structure',
       message: 'insights.json not found',
     });
-    return { issues, serviceGroupCount };
+    return {
+      issues,
+      serviceGroupCount,
+      tripPatternGeoCount,
+      tripPatternStatsGroupCount,
+      stopStatsGroupCount,
+    };
   }
 
   // JSON parse
@@ -72,7 +81,13 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
       category: 'structure',
       message: `Failed to parse insights.json: ${e instanceof Error ? e.message : String(e)}`,
     });
-    return { issues, serviceGroupCount };
+    return {
+      issues,
+      serviceGroupCount,
+      tripPatternGeoCount,
+      tripPatternStatsGroupCount,
+      stopStatsGroupCount,
+    };
   }
 
   // Bundle structure
@@ -122,8 +137,54 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
     }
   }
 
-  // TODO: Data quality and referential integrity checks
-  // will be added when the insights pipeline is complete.
+  // Validate an optional BundleSection<1, Record<...>> section.
+  // Returns the number of keys in data, or 0 if absent/invalid.
+  const validateOptionalRecordSection = (
+    sectionName: 'tripPatternGeo' | 'tripPatternStats' | 'stopStats',
+  ): number => {
+    const section = bundle[sectionName];
+    if (section === undefined) {
+      return 0;
+    }
+    if (section === null || typeof section !== 'object' || Array.isArray(section)) {
+      issues.push({
+        prefix,
+        level: 'error',
+        category: 'structure',
+        message: `Invalid ${sectionName}: expected an object with { v, data }`,
+      });
+      return 0;
+    }
+    if (section.v !== 1) {
+      issues.push({
+        prefix,
+        level: 'error',
+        category: 'structure',
+        message: `Invalid ${sectionName}.v: expected 1, got ${String(section.v)}`,
+      });
+      return 0;
+    }
+    if (section.data && typeof section.data === 'object' && !Array.isArray(section.data)) {
+      return Object.keys(section.data).length;
+    }
+    issues.push({
+      prefix,
+      level: 'error',
+      category: 'structure',
+      message: `Invalid ${sectionName}.data: expected a record`,
+    });
+    return 0;
+  };
 
-  return { issues, serviceGroupCount };
+  tripPatternGeoCount = validateOptionalRecordSection('tripPatternGeo');
+  tripPatternStatsGroupCount = validateOptionalRecordSection('tripPatternStats');
+  stopStatsGroupCount = validateOptionalRecordSection('stopStats');
+
+  return {
+    issues,
+    serviceGroupCount,
+    tripPatternGeoCount,
+    tripPatternStatsGroupCount,
+    stopStatsGroupCount,
+  };
 }

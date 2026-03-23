@@ -13,6 +13,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { DataBundle, InsightsBundle } from '../../../../../src/types/data/transit-v2-json';
 import { buildServiceGroups } from '../../../../src/lib/pipeline/app-data-v2/build-service-groups';
+import { buildStopStats } from '../../../../src/lib/pipeline/app-data-v2/build-stop-stats';
+import { buildTripPatternGeo } from '../../../../src/lib/pipeline/app-data-v2/build-trip-pattern-geo';
+import { buildTripPatternStats } from '../../../../src/lib/pipeline/app-data-v2/build-trip-pattern-stats';
 import {
   writeDataBundle,
   writeInsightsBundle,
@@ -178,22 +181,81 @@ describe('InsightsBundle assembly', () => {
     expect(dataAfter.calendar.data.services[0].i).toBe('svc-1');
   });
 
-  it('optional sections are absent from the output', () => {
-    const outDir = join(TMP_DIR, 'no-optional');
+  it('produces all insight sections from a DataBundle with timetable data', () => {
+    const outDir = join(TMP_DIR, 'full-insights');
 
-    const dataBundle = makeDataBundle([{ id: 'svc-1', d: [1, 1, 1, 1, 1, 0, 0] }]);
+    const dataBundle = makeDataBundle([{ id: 'svc-wd', d: [1, 1, 1, 1, 1, 0, 0] }]);
+
+    // Add stops, routes, patterns, and timetable
+    dataBundle.stops = {
+      v: 2,
+      data: [
+        { v: 2, i: 's1', n: 'Stop 1', a: 35.68, o: 139.76, l: 0 },
+        { v: 2, i: 's2', n: 'Stop 2', a: 35.69, o: 139.77, l: 0 },
+      ],
+    };
+    dataBundle.routes = {
+      v: 2,
+      data: [{ v: 2, i: 'r1', s: 'R1', l: 'Route 1', t: 3, c: '000000', tc: 'FFFFFF', ai: 'a1' }],
+    };
+    dataBundle.tripPatterns = {
+      v: 2,
+      data: {
+        p1: { v: 2, r: 'r1', h: 'Stop 2', stops: ['s1', 's2'] },
+      },
+    };
+    dataBundle.timetable = {
+      v: 2,
+      data: {
+        s1: [{ v: 2, tp: 'p1', d: { 'svc-wd': [480, 540] }, a: { 'svc-wd': [480, 540] } }],
+        s2: [{ v: 2, tp: 'p1', d: { 'svc-wd': [490, 550] }, a: { 'svc-wd': [490, 550] } }],
+      },
+    };
+
     writeDataBundle(outDir, dataBundle);
 
     const raw = readFileSync(join(outDir, 'data.json'), 'utf-8');
     const parsed = JSON.parse(raw) as DataBundle;
     const serviceGroups = buildServiceGroups(parsed.calendar.data);
-    writeInsightsBundle(outDir, serviceGroups);
+    const tripPatternGeo = buildTripPatternGeo(parsed.tripPatterns.data, parsed.stops.data);
+    const tripPatternStats = buildTripPatternStats(
+      parsed.tripPatterns.data,
+      parsed.timetable.data,
+      serviceGroups,
+    );
+    const stopStats = buildStopStats(
+      parsed.timetable.data,
+      parsed.tripPatterns.data,
+      parsed.routes.data,
+      serviceGroups,
+    );
+    writeInsightsBundle(outDir, serviceGroups, { tripPatternGeo, tripPatternStats, stopStats });
 
     const insights = JSON.parse(
       readFileSync(join(outDir, 'insights.json'), 'utf-8'),
     ) as InsightsBundle;
-    expect(insights).not.toHaveProperty('tripPatternStats');
-    expect(insights).not.toHaveProperty('tripPatternGeo');
-    expect(insights).not.toHaveProperty('stopStats');
+
+    // serviceGroups
+    expect(insights.serviceGroups.data).toHaveLength(1);
+    expect(insights.serviceGroups.data[0].key).toBe('wd');
+
+    // tripPatternGeo
+    expect(insights.tripPatternGeo).toBeDefined();
+    expect(insights.tripPatternGeo!.v).toBe(1);
+    expect(insights.tripPatternGeo!.data['p1'].dist).toBeGreaterThan(0);
+    expect(insights.tripPatternGeo!.data['p1'].cl).toBe(false);
+
+    // tripPatternStats
+    expect(insights.tripPatternStats).toBeDefined();
+    expect(insights.tripPatternStats!.v).toBe(1);
+    expect(insights.tripPatternStats!.data['wd']['p1'].freq).toBe(2);
+    expect(insights.tripPatternStats!.data['wd']['p1'].rd).toHaveLength(2);
+    expect(insights.tripPatternStats!.data['wd']['p1'].rd[1]).toBe(0);
+
+    // stopStats
+    expect(insights.stopStats).toBeDefined();
+    expect(insights.stopStats!.v).toBe(1);
+    expect(insights.stopStats!.data['wd']['s1'].freq).toBe(2);
+    expect(insights.stopStats!.data['wd']['s1'].rc).toBe(1);
   });
 });

@@ -17,6 +17,9 @@ import type {
   ServiceGroupEntry,
   ShapePointV2,
   ShapesBundle,
+  StopStatsJson,
+  TripPatternGeoJson,
+  TripPatternStatsJson,
 } from '../../../../../src/types/data/transit-v2-json';
 
 // ---------------------------------------------------------------------------
@@ -76,18 +79,46 @@ export function writeShapesBundle(dir: string, shapes: Record<string, ShapePoint
 }
 
 /**
+ * Optional sections for an InsightsBundle.
+ *
+ * All fields are optional — sections are only included in the output
+ * when the corresponding data is provided.
+ */
+export interface InsightsSections {
+  tripPatternGeo?: Record<string, TripPatternGeoJson>;
+  tripPatternStats?: Record<string, Record<string, TripPatternStatsJson>>;
+  stopStats?: Record<string, Record<string, StopStatsJson>>;
+}
+
+/**
  * Write an InsightsBundle to `{dir}/insights.json` atomically.
  *
  * Creates the output directory if it does not exist.
  *
  * @param dir - Output directory (e.g. `pipeline/workspace/_build/data-v2/{prefix}`).
  * @param serviceGroups - Service group entries produced by {@link buildServiceGroups}.
+ * @param sections - Optional insight sections to include in the bundle.
  */
-export function writeInsightsBundle(dir: string, serviceGroups: ServiceGroupEntry[]): void {
+export function writeInsightsBundle(
+  dir: string,
+  serviceGroups: ServiceGroupEntry[],
+  sections?: InsightsSections,
+): void {
   const bundle: InsightsBundle = {
     bundle_version: 2,
     kind: 'insights',
     serviceGroups: { v: 1, data: serviceGroups },
   };
+
+  if (sections?.tripPatternGeo) {
+    bundle.tripPatternGeo = { v: 1, data: sections.tripPatternGeo };
+  }
+  if (sections?.tripPatternStats) {
+    bundle.tripPatternStats = { v: 1, data: sections.tripPatternStats };
+  }
+  if (sections?.stopStats) {
+    bundle.stopStats = { v: 1, data: sections.stopStats };
+  }
+
   writeAtomicJson(dir, 'insights.json', bundle);
 }
