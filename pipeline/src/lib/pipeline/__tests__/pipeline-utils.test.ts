@@ -204,6 +204,46 @@ describe('parseCliArg', () => {
     process.argv = ['node', 'script.ts', ''];
     expect(parseCliArg()).toEqual({ kind: 'help' });
   });
+
+  // ParseCliOptions: disabling modes
+  describe('with ParseCliOptions', () => {
+    it('rejects --list when allowList is false', () => {
+      process.argv = ['node', 'script.ts', '--list'];
+      expect(parseCliArg({ allowList: false })).toEqual({ kind: 'help' });
+    });
+
+    it('rejects --targets when allowTargets is false', () => {
+      process.argv = ['node', 'script.ts', '--targets', 'file.ts'];
+      expect(parseCliArg({ allowTargets: false })).toEqual({ kind: 'help' });
+    });
+
+    it('rejects source-name when allowSourceName is false', () => {
+      process.argv = ['node', 'script.ts', 'toei-bus'];
+      expect(parseCliArg({ allowSourceName: false })).toEqual({ kind: 'help' });
+    });
+
+    it('allows --targets when only allowTargets is true', () => {
+      process.argv = ['node', 'script.ts', '--targets', 'file.ts'];
+      expect(parseCliArg({ allowList: false, allowSourceName: false })).toEqual({
+        kind: 'targets',
+        path: 'file.ts',
+      });
+    });
+
+    it('still returns help for --help regardless of options', () => {
+      process.argv = ['node', 'script.ts', '--help'];
+      expect(
+        parseCliArg({ allowList: false, allowTargets: false, allowSourceName: false }),
+      ).toEqual({ kind: 'help' });
+    });
+
+    it('still returns help for no args regardless of options', () => {
+      process.argv = ['node', 'script.ts'];
+      expect(
+        parseCliArg({ allowList: false, allowTargets: false, allowSourceName: false }),
+      ).toEqual({ kind: 'help' });
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------

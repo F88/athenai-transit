@@ -29,11 +29,33 @@ export type ParsedArg =
   | { kind: 'targets'; path: string };
 
 /**
+ * Options for {@link parseCliArg} to enable/disable specific argument modes.
+ *
+ * All options default to `true`. Set to `false` to reject that mode
+ * (returns `{ kind: 'help' }` instead).
+ *
+ * Example — global builder that only accepts `--targets`:
+ * ```ts
+ * parseCliArg({ allowList: false, allowSourceName: false })
+ * ```
+ */
+export interface ParseCliOptions {
+  /** Allow `--list` mode. @default true */
+  allowList?: boolean;
+  /** Allow `--targets <file>` mode. @default true */
+  allowTargets?: boolean;
+  /** Allow `<source-name>` positional argument. @default true */
+  allowSourceName?: boolean;
+}
+
+/**
  * Parse the first CLI argument (`process.argv[2]`) for pipeline scripts.
  *
+ * @param options - Optional flags to disable specific modes.
  * @returns Parsed argument result.
  */
-export function parseCliArg(): ParsedArg {
+export function parseCliArg(options?: ParseCliOptions): ParsedArg {
+  const { allowList = true, allowTargets = true, allowSourceName = true } = options ?? {};
   const arg = process.argv[2];
 
   switch (arg) {
@@ -44,10 +66,16 @@ export function parseCliArg(): ParsedArg {
       return { kind: 'help' };
 
     case '--list':
+      if (!allowList) {
+        return { kind: 'help' };
+      }
       // --list takes no additional arguments; extra args indicate user error.
       return process.argv[3] ? { kind: 'help' } : { kind: 'list' };
 
     case '--targets': {
+      if (!allowTargets) {
+        return { kind: 'help' };
+      }
       const filePath = process.argv[3];
       // Missing path or flag-like path (e.g. --targets --list) is invalid.
       if (!filePath || filePath.startsWith('-')) {
@@ -60,6 +88,9 @@ export function parseCliArg(): ParsedArg {
     default:
       // Unknown flags (e.g. --unknown, -x, --, -) are invalid arguments.
       if (arg.startsWith('-')) {
+        return { kind: 'help' };
+      }
+      if (!allowSourceName) {
         return { kind: 'help' };
       }
       // Source name takes no additional arguments; extra args indicate user error.
