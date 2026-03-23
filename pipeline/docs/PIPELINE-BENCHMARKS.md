@@ -35,6 +35,46 @@ Pipeline execution time measurements for local development and CI environments.
 - Small tasks (ODPT Train, Shapes, Sync) show negligible difference.
 - CI total pipeline fits well within the 15-minute timeout.
 
+## 2026-03-23: Full Pipeline with v2 (16 GTFS + 7 ODPT JSON sources)
+
+### v1+v2 Pipeline Environment
+
+|         | CI                                                                                          |
+| ------- | ------------------------------------------------------------------------------------------- |
+| Machine | GitHub Actions ubuntu-latest                                                                |
+| Node.js | v22.22.1                                                                                    |
+| Runner  | ubuntu-24.04                                                                                |
+| Run     | [actions/runs/23436460520](https://github.com/F88/athenai-transit/actions/runs/23436460520) |
+
+### v1+v2 Pipeline Results
+
+| Step                           | CI    |
+| ------------------------------ | ----- |
+| Download GTFS (16 sources)     | 54.0s |
+| Download ODPT JSON (7 sources) | 17.0s |
+| Build SQLite DB                | 45.0s |
+| Build JSON (v1)                | 43.0s |
+| Build ODPT Train (v1)          | 2.0s  |
+| Build Shapes GTFS (v1)         | 10.0s |
+| Build Shapes KSJ (v1)          | 5.0s  |
+| **Build v2 data (GTFS)**       | 43.0s |
+| **Build v2 ODPT Train**        | 2.0s  |
+| **Build v2 shapes (GTFS)**     | 10.0s |
+| **Build v2 shapes (KSJ)**      | 5.0s  |
+| **Build v2 insights**          | 19.0s |
+| **Build v2 global insights**   | 18.0s |
+| Data Sync (v1+v2)              | 1.0s  |
+| Validate (v1)                  | 1.0s  |
+| **Validate (v2)**              | 2.0s  |
+| **Pipeline Total**             | ~304s |
+
+### v1+v2 Pipeline Observations
+
+- v2 追加分は約 99s (1分40秒)。v1 のみの 179s から 304s に増加。
+- v1 と v2 の data/shapes ビルドはほぼ同じ時間 (同じ DB から生成)。
+- v2 insights (19s) + global insights (18s) が v2 固有のコスト。
+- 全体 304s で timeout 15分 (900s) の 1/3。十分な余裕。
+
 ## 2026-03-23: Check Transit Resources (15 ODPT sources)
 
 ### Check Resources Environment
