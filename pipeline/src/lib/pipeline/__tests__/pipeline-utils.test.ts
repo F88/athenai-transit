@@ -205,6 +205,22 @@ describe('parseCliArg', () => {
     expect(parseCliArg()).toEqual({ kind: 'help' });
   });
 
+  // empty string as extra argument (detected via argv.length)
+  it('returns help when --list has empty string extra arg', () => {
+    process.argv = ['node', 'script.ts', '--list', ''];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help when --targets <file> has empty string extra arg', () => {
+    process.argv = ['node', 'script.ts', '--targets', 'file.ts', ''];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
+  it('returns help when source name has empty string extra arg', () => {
+    process.argv = ['node', 'script.ts', 'toei-bus', ''];
+    expect(parseCliArg()).toEqual({ kind: 'help' });
+  });
+
   // ParseCliOptions: disabling modes
   describe('with ParseCliOptions', () => {
     it('rejects --list when allowList is false', () => {

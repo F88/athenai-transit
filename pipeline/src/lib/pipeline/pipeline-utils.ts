@@ -70,7 +70,7 @@ export function parseCliArg(options?: ParseCliOptions): ParsedArg {
         return { kind: 'help' };
       }
       // --list takes no additional arguments; extra args indicate user error.
-      return process.argv[3] ? { kind: 'help' } : { kind: 'list' };
+      return process.argv.length > 3 ? { kind: 'help' } : { kind: 'list' };
 
     case '--targets': {
       if (!allowTargets) {
@@ -82,7 +82,7 @@ export function parseCliArg(options?: ParseCliOptions): ParsedArg {
         return { kind: 'help' };
       }
       // --targets <file> takes exactly one argument; extra args indicate user error.
-      return process.argv[4] ? { kind: 'help' } : { kind: 'targets', path: filePath };
+      return process.argv.length > 4 ? { kind: 'help' } : { kind: 'targets', path: filePath };
     }
 
     default:
@@ -94,7 +94,7 @@ export function parseCliArg(options?: ParseCliOptions): ParsedArg {
         return { kind: 'help' };
       }
       // Source name takes no additional arguments; extra args indicate user error.
-      return process.argv[3] ? { kind: 'help' } : { kind: 'source-name', name: arg };
+      return process.argv.length > 3 ? { kind: 'help' } : { kind: 'source-name', name: arg };
   }
 }
 
