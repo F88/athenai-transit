@@ -539,6 +539,116 @@ describe('buildTripPatternStats', () => {
       expect(rd[0]).toBeGreaterThan(rd[1]);
     });
 
+    it('fills gap at start of segment array (copy from following)', () => {
+      // s1 has 3 deps, s2 has 2 deps → segment 0 (s1→s2) count mismatch → NO_DATA
+      // segment 1 (s2→s3) is known → gap copies from next neighbor
+      const patterns: Record<string, TripPatternJson> = {
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },
+      };
+
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [makeTimetableGroup('p1', { svc1: [480, 540, 600] })], // 3 deps
+        s2: [makeTimetableGroup('p1', { svc1: [490, 550] })], // 2 deps (mismatch)
+        s3: [makeTimetableGroup('p1', { svc1: [500, 560] })], // 2 deps
+      };
+
+      const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
+
+      const result = buildTripPatternStats(patterns, timetable, groups);
+      const rd = result['wd']['p1'].rd;
+
+      expect(rd).toHaveLength(3);
+      expect(rd[2]).toBe(0);
+      // s2→s3 = 10 min (known, counts match)
+      expect(rd[1]).toBe(10);
+      // s1→s2 gap filled from next neighbor (10) → rd[0] = 10 + 10 = 20
+      expect(rd[0]).toBe(20);
+    });
+
+    it('fills gap at end of segment array (copy from preceding)', () => {
+      // s2 has 2 deps, s3 has 3 deps → segment 1 (s2→s3) count mismatch → NO_DATA
+      // segment 0 (s1→s2) is known → gap copies from previous neighbor
+      const patterns: Record<string, TripPatternJson> = {
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },
+      };
+
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [makeTimetableGroup('p1', { svc1: [480, 540] })], // 2 deps
+        s2: [makeTimetableGroup('p1', { svc1: [490, 550] })], // 2 deps
+        s3: [makeTimetableGroup('p1', { svc1: [500, 560, 620] })], // 3 deps (mismatch)
+      };
+
+      const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
+
+      const result = buildTripPatternStats(patterns, timetable, groups);
+      const rd = result['wd']['p1'].rd;
+
+      expect(rd).toHaveLength(3);
+      expect(rd[2]).toBe(0);
+      // s2→s3 gap filled from previous neighbor (s1→s2 = 10) → rd[1] = 10
+      expect(rd[1]).toBe(10);
+      // rd[0] = segment(s1→s2) + rd[1] = 10 + 10 = 20
+      expect(rd[0]).toBe(20);
+    });
+
+    it('handles all-negative diffs by gap interpolation from neighbors', () => {
+      // s2 departs BEFORE s1 for all trips → all diffs negative → NO_DATA
+      // The NO_DATA gap is then filled by interpolation from the known neighbor
+      const patterns: Record<string, TripPatternJson> = {
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },
+      };
+
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [makeTimetableGroup('p1', { svc1: [500, 560] })],
+        s2: [makeTimetableGroup('p1', { svc1: [490, 550] })], // earlier than s1
+        s3: [makeTimetableGroup('p1', { svc1: [510, 570] })],
+      };
+
+      const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
+
+      const result = buildTripPatternStats(patterns, timetable, groups);
+      const rd = result['wd']['p1'].rd;
+
+      expect(rd).toHaveLength(3);
+      expect(rd[2]).toBe(0);
+      // s1→s2: all negative → NO_DATA, filled by gap interpolation from s2→s3 (20 min)
+      // s2→s3: diffs = [20, 20] → 20
+      expect(rd[1]).toBe(20);
+      // s1→s2 gap interpolated from s2→s3 → 20
+      expect(rd[0]).toBe(40);
+    });
+
+    it('does not confuse 0 (valid) with NO_DATA (-1) during gap interpolation', () => {
+      // s2→s3 has 0 travel time (valid), s3→s4 and s4→s5 are gaps (s4 missing)
+      const patterns: Record<string, TripPatternJson> = {
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3', 's4', 's5'] },
+      };
+
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [makeTimetableGroup('p1', { svc1: [480] })],
+        s2: [makeTimetableGroup('p1', { svc1: [490] })], // +10
+        s3: [makeTimetableGroup('p1', { svc1: [490] })], // +0 (same time, valid)
+        // s4 missing → NO_DATA gap
+        s5: [makeTimetableGroup('p1', { svc1: [495] })],
+      };
+
+      const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
+
+      const result = buildTripPatternStats(patterns, timetable, groups);
+      const rd = result['wd']['p1'].rd;
+
+      expect(rd).toHaveLength(5);
+      expect(rd[4]).toBe(0);
+      // s3→s4 gap: prev neighbor = 0 (s2→s3), next neighbor = ? (s4→s5 also gap)
+      // Actually s4 is missing so both s3→s4 and s4→s5 are gaps
+      // Only s1→s2 (10) and s2→s3 (0) are known
+      // Gaps filled: s3→s4 copies from prev (0), s4→s5 copies from prev (0)
+      // So rd = [10+0+0+0, 0+0+0, 0+0, 0, 0] = [10, 0, 0, 0, 0]
+      expect(rd[0]).toBe(10);
+      expect(rd[1]).toBe(0);
+      expect(rd[2]).toBe(0);
+    });
+
     it('omits pattern when timetable has entries only for other patterns', () => {
       const patterns: Record<string, TripPatternJson> = {
         p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },

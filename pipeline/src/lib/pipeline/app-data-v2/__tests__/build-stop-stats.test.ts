@@ -374,4 +374,48 @@ describe('buildStopStats', () => {
     expect(result['wd']['s1'].ed).toBe(360); // min across groups
     expect(result['wd']['s1'].ld).toBe(1440); // max across groups
   });
+
+  it('handles empty serviceIds in group (no departures counted)', () => {
+    const patterns: Record<string, TripPatternJson> = {
+      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+    };
+    const routes = [makeRoute('r1', 3)];
+
+    const timetable: Record<string, TimetableGroupV2Json[]> = {
+      s1: [makeTimetableGroup('p1', { svc1: [480] })],
+      s2: [makeTimetableGroup('p1', { svc1: [490] })],
+    };
+
+    const groups: ServiceGroupEntry[] = [{ key: 'empty', serviceIds: [] }];
+
+    const result = buildStopStats(timetable, patterns, routes, groups);
+
+    // No service IDs → no departures → all stops excluded
+    expect(Object.keys(result['empty'])).toHaveLength(0);
+  });
+
+  it('skips multiple timetable groups with unknown pattern IDs', () => {
+    const patterns: Record<string, TripPatternJson> = {
+      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1'] },
+    };
+    const routes = [makeRoute('r1', 3)];
+
+    const timetable: Record<string, TimetableGroupV2Json[]> = {
+      s1: [
+        makeTimetableGroup('p_unknown1', { svc1: [480] }),
+        makeTimetableGroup('p_unknown2', { svc1: [540] }),
+        makeTimetableGroup('p1', { svc1: [600] }),
+      ],
+    };
+
+    const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
+
+    const result = buildStopStats(timetable, patterns, routes, groups);
+
+    // Only p1 counted, unknown patterns skipped
+    expect(result['wd']['s1'].freq).toBe(1);
+    expect(result['wd']['s1'].rc).toBe(1);
+    expect(result['wd']['s1'].ed).toBe(600);
+    expect(result['wd']['s1'].ld).toBe(600);
+  });
 });

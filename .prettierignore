@@ -5,6 +5,7 @@
 dist
 node_modules
 public/data
+public/data-v2
 pipeline/workspace
 package-lock.json
 
