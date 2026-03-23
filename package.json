@@ -49,6 +49,7 @@
     "pipeline:build:v2-shapes:gtfs": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts --targets pipeline/config/targets/build-shapes-gtfs.ts",
     "pipeline:build:v2-shapes:ksj": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts --targets pipeline/config/targets/build-shapes-ksj.ts",
     "pipeline:build:v2-insights": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts --targets pipeline/config/targets/build-insights.ts",
+    "pipeline:build:v2-global-insights": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-global-insights.ts --targets pipeline/config/targets/build-global-insights.ts",
     "pipeline:validate": "npx tsx pipeline/scripts/pipeline/app-data-v1/validate-app-data.ts --targets pipeline/config/targets/validate.ts",
     "pipeline:validate:v2": "npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts --targets pipeline/config/targets/validate.ts",
     "pipeline:analyze:gtfs-stop-times": "npx tsx pipeline/scripts/dev/analyze-gtfs-stop-times.ts",

@@ -681,8 +681,24 @@ export interface StopGeoJson {
    * Distance (km) to the nearest stop served by a different route,
    * computed via Haversine formula.
    *
-   * High value = isolated (陸の孤島), transit desert.
-   * Low value = dense transit area, many nearby alternatives.
+   * "Different route" means a route not in this stop's own route set
+   * (definition B). Same route at a different platform is not counted.
+   *
+   * Higher value = more isolated (陸の孤島), transit desert.
+   * Lower positive value = dense transit area, nearby alternatives.
+   *
+   * `0` when no different-route stop exists anywhere (truly isolated,
+   * or only one route in the entire dataset), or when a different-route
+   * stop is colocated at identical coordinates (distance = 0km).
+   * In practice, consumers can treat nr=0 as "not meaningfully isolated"
+   * since both cases require zero walking distance to an alternative
+   * (or no alternative exists at all).
+   *
+   * For l=1 (station) stops: derived as the minimum of children's
+   * positive nr values. Children with nr=0 are excluded because
+   * nr=0 is ambiguous (see above); the parent metric focuses on the
+   * nearest child that has a measurable distance to an alternative.
+   * See {@link buildParentStopGeo} for the exact derivation logic.
    */
   nr: number;
 
@@ -696,8 +712,41 @@ export interface StopGeoJson {
    *
    * Requires parent_station data in the source. Omitted when
    * parent_station is not available for this stop.
+   *
+   * For l=1 (station) stops: derived as the minimum wp across
+   * all child (l=0) stops.
    */
   wp?: number;
+
+  /**
+   * Connectivity metrics within a 300m radius, keyed by service
+   * group identifier. Measures transfer convenience at this stop
+   * across all sources.
+   *
+   * Initial implementation provides `ho` (Sunday-pattern) only.
+   * Selection is based on weekly calendar pattern `d[6] === 1`;
+   * calendar_dates holiday exceptions are not considered.
+   * Future keys (e.g. `wd` for weekday) may be added.
+   *
+   * For l=1 (station) stops: computed directly using the parent's
+   * coordinates (not derived from children), because the parent
+   * has no routes of its own but its location represents the
+   * station as a whole.
+   *
+   * Omitted when no routes operate within 300m for the given
+   * service group.
+   */
+  cn?: Record<
+    string,
+    {
+      /** Number of unique routes within 300m (including this stop's own routes). */
+      rc: number;
+      /** Sum of unique routes' daily departures (each route counted once at its max-freq stop). */
+      freq: number;
+      /** Number of other stops within 300m. */
+      sc: number;
+    }
+  >;
 }
 
 /**

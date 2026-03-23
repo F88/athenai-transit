@@ -11,6 +11,12 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- v2 GlobalInsightsBundle builder (`pipeline:build:v2-global-insights`):
+    - stopGeo: per-stop 孤立度 (nr)、乗り換えポイント (wp)、connectivity (cn)。
+    - connectivity: 300m 圏内のユニークルート数 (rc)、便数合計 (freq)、停留所数 (sc)。
+    - 日曜/祝日ダイヤ (ho) 基準。全ソース横断の空間分析。
+    - l=0 direct compute, l=1 parent 導出 (nr/wp=min, cn=direct)。
+    - single-pass 全探索で 15,798 stops を 9.2秒で処理。
 - v2 InsightsBundle builder (`pipeline:build:v2-insights`):
     - DataBundle の calendar セクションから曜日パターンで service groups を導出。
     - 既知パターン (wd/sa/su/wk/all) は短縮キー、未知パターンはビット列キーを生成。
