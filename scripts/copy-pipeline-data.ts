@@ -8,7 +8,7 @@
  *   pipeline/workspace/_build/data-v2/ -> public/data-v2/ (v2)
  *
  * Each directory is cleaned before copying to ensure a fresh state.
- * Missing source directories are skipped with a warning (not an error),
+ * Missing source directories are skipped with a notice (not an error),
  * so partial pipeline runs are supported.
  *
  * Usage:
@@ -41,17 +41,20 @@ const TARGETS: SyncTarget[] = [
 ];
 
 function syncTarget(target: SyncTarget): boolean {
+  const relSrc = target.src.substring(PROJECT_ROOT.length + 1);
+  const relDest = target.dest.substring(PROJECT_ROOT.length + 1);
+
   if (!existsSync(target.src)) {
-    console.log(`  [${target.label}] Skipped: ${target.src} not found`);
+    console.log(`  [${target.label}] Skipped: ${relSrc} not found`);
     return false;
   }
 
-  console.log(`  [${target.label}] ${target.src}`);
-  console.log(`  [${target.label}] → ${target.dest}`);
+  console.log(`  [${target.label}] ${relSrc}`);
+  console.log(`  [${target.label}] → ${relDest}`);
 
   if (existsSync(target.dest)) {
     rmSync(target.dest, { recursive: true, force: true });
-    console.log(`  [${target.label}] Cleaned existing ${target.dest}`);
+    console.log(`  [${target.label}] Cleaned existing ${relDest}`);
   }
 
   cpSync(target.src, target.dest, { recursive: true });
