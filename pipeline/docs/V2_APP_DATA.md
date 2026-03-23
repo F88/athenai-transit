@@ -69,7 +69,7 @@ interface StopV2Json {
     n: string; // stop_name
     a: number; // stop_lat
     o: number; // stop_lon
-    l: number; // location_type (0=stop, 1=station, 2=entrance/exit)
+    l: number; // location_type (0=stop, 1=station, 2=entrance/exit, 3=generic node, 4=boarding area)
     wb?: 0 | 1 | 2; // wheelchair_boarding
     ps?: string; // parent_station FK (prefixed)
     pc?: string; // platform_code
@@ -141,7 +141,7 @@ URL や description など、全 stop/route に存在しない任意フィール
 
 ### agency (v=1), calendar (v=1), feedInfo (v=1), translations (v=1)
 
-v1 から変更なし。詳細は型定義 `src/types/data/transit-v2-json.ts` を参照。
+v1 から変更なし。型定義は `src/types/data/transit-json.ts` で定義され、`transit-v2-json.ts` から re-import されている。
 
 ## v1 → v2 変更サマリ
 
