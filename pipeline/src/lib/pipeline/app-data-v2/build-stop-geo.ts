@@ -270,7 +270,9 @@ export function buildParentStopGeo(
 
   for (const parent of parents) {
     const childIds = childrenMap.get(parent.id) ?? [];
-    const childGeos = childIds.map((cid) => childGeo[cid]).filter(Boolean);
+    const childGeos = childIds
+      .map((cid) => childGeo[cid])
+      .filter((g): g is StopGeoJson => g !== undefined);
 
     if (childGeos.length === 0) {
       continue;
