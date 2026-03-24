@@ -360,7 +360,13 @@ function printResult(
 
   for (const r of resources) {
     const date = extractDateParam(r.url) ?? '';
-    const avail = r.is_feed_available_period ? 'VALID' : 'expired';
+    let avail: string;
+    if (r.is_feed_available_period) {
+      avail = 'VALID';
+    } else {
+      const daysUntilEnd = getDaysUntilExpiry(r.feed_end_date.replace(/-/g, ''));
+      avail = daysUntilEnd > 0 ? 'not-yet-active' : 'expired';
+    }
     const isCurrent =
       meta &&
       extractUrlBase(r.url) === extractUrlBase(meta.url) &&
