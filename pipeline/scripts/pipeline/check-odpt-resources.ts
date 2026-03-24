@@ -376,7 +376,7 @@ function printResult(
     const localMarker = isCurrent ? ' <-- LOCAL' : '';
     const newMarker = newUrls.has(r.url) ? ' [NEW]' : '';
     console.log(
-      `    date=${date}  feed=${r.feed_start_date} - ${r.feed_end_date}  ${avail}  uploaded=${r.uploaded_at}${localMarker}${newMarker}`,
+      `    date=${date}  feed=${r.feed_start_date ?? '?'} - ${r.feed_end_date ?? '?'}  ${avail}  uploaded=${r.uploaded_at}${localMarker}${newMarker}`,
     );
   }
 
