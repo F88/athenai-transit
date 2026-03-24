@@ -1,6 +1,6 @@
 {
   "sourceName": "oshima-bus",
-  "checkedAt": "2026-03-23T10:47:14.414Z",
+  "checkedAt": "2026-03-24T04:01:16.632Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20231002&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]",
     "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20240215&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]",
@@ -15,9 +15,9 @@
     "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20260202&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]",
     "https://api.odpt.org/api/v4/files/odpt/OshimaBus/AllLines.zip?date=20260328&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]"
   ],
-  "result": "critical",
-  "warnings": [],
-  "errors": [
-    "EXPIRED"
-  ]
+  "result": "attention",
+  "warnings": [
+    "NOT_YET_ACTIVE"
+  ],
+  "errors": []
 }
