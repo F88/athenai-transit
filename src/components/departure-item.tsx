@@ -7,6 +7,7 @@ import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
 import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
 import { minutesToDate } from '../domain/transit/calendar-utils';
+import { hasBoardableDeparture } from '../domain/transit/timetable-utils';
 import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
 
@@ -70,6 +71,11 @@ export function DepartureItem({
         <RouteBadge route={route} infoLevel={infoLevel} />
         {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
         <span className="text-sm font-medium text-[#333] dark:text-gray-200">{headsignName}</span>
+        {!hasBoardableDeparture(entries) && (
+          <span className="shrink-0 rounded bg-red-100 px-1 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
+            降車専用
+          </span>
+        )}
         {info.isDetailedEnabled && agencyName && (
           <span className="shrink-0 text-[10px] text-[#888] dark:text-gray-400">{agencyName}</span>
         )}
@@ -98,12 +104,29 @@ export function DepartureItem({
             {formatRelativeTime(first, now)}
           </span>
         )}
-        {displayTimes.slice(1).map((dep, i) => (
+        {displayTimes.map((dep, i) => (
           <span key={i} className="text-sm text-[#757575] dark:text-gray-400">
             {formatAbsoluteTime(dep)}
           </span>
         ))}
       </div>
+      {info.isVerboseEnabled && (
+        <div className="mt-1 space-y-0.5 pl-1">
+          {displayEntries.map((e, i) => (
+            <div key={i} className="text-[9px] text-[#999] dark:text-gray-500">
+              {formatAbsoluteTime(displayTimes[i])}
+              {` pt=${e.boarding.pickupType} dt=${e.boarding.dropOffType}`}
+              {e.patternPosition.isTerminal && ' TERM'}
+              {e.patternPosition.isOrigin && ' ORIG'}
+              {` [${e.patternPosition.stopIndex}/${e.patternPosition.totalStops}]`}
+              {` d=${e.schedule.departureMinutes}`}
+              {e.schedule.arrivalMinutes !== e.schedule.departureMinutes &&
+                ` a=${e.schedule.arrivalMinutes}`}
+              {e.routeDirection.direction !== undefined && ` dir=${e.routeDirection.direction}`}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   hasDwellTime,
   getDwellMinutes,
   getRemainingMinutes,
+  hasBoardableDeparture,
 } from '../timetable-utils';
 import type { TimetableEntry } from '../../../types/app/transit-composed';
 import type { Route } from '../../../types/app/transit';
@@ -185,5 +186,35 @@ describe('getRemainingMinutes', () => {
 
   it('returns 0 for terminal stop', () => {
     expect(getRemainingMinutes(makeEntry({ remainingMinutes: 0 }))).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// hasBoardableDeparture
+// ---------------------------------------------------------------------------
+
+describe('hasBoardableDeparture', () => {
+  it('returns false for empty array', () => {
+    expect(hasBoardableDeparture([])).toBe(false);
+  });
+
+  it('returns true when at least one entry is boardable', () => {
+    expect(hasBoardableDeparture([makeEntry(), makeEntry({ pickupType: 1 })])).toBe(true);
+  });
+
+  it('returns false when all entries are drop-off only (pickupType=1)', () => {
+    expect(
+      hasBoardableDeparture([makeEntry({ pickupType: 1 }), makeEntry({ pickupType: 1 })]),
+    ).toBe(false);
+  });
+
+  it('returns false when all entries are terminal (pattern inference)', () => {
+    expect(
+      hasBoardableDeparture([makeEntry({ isTerminal: true }), makeEntry({ isTerminal: true })]),
+    ).toBe(false);
+  });
+
+  it('returns true when terminal is mixed with non-terminal', () => {
+    expect(hasBoardableDeparture([makeEntry({ isTerminal: true }), makeEntry()])).toBe(true);
   });
 });

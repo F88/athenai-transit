@@ -97,3 +97,16 @@ export function requiresArrangement(entry: TimetableEntry): boolean {
 export function isPassThrough(entry: TimetableEntry): boolean {
   return entry.boarding.pickupType === 1 && entry.boarding.dropOffType === 1;
 }
+
+/**
+ * Whether at least one entry in the list is boardable (not drop-off only).
+ *
+ * Works at any grouping level:
+ * - **Stop level**: pass all entries for a stop → "is this stop boardable?"
+ * - **Route+headsign level**: pass grouped entries → "is this group boardable?"
+ *
+ * Returns false for an empty list (no departures = nothing to board).
+ */
+export function hasBoardableDeparture(entries: TimetableEntry[]): boolean {
+  return entries.some((entry) => !isDropOffOnly(entry));
+}

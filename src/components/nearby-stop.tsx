@@ -9,6 +9,7 @@ import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { getServiceDay } from '../domain/transit/service-day';
 import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
 import { resolveAgencyDisplayName } from '../domain/transit/get-agency-display-name';
+import { hasBoardableDeparture } from '../domain/transit/timetable-utils';
 import { DepartureItem } from './departure-item';
 import { AgencyBadge } from './badge/agency-badge';
 import { DistanceBadge } from './badge/distance-badge';
@@ -60,6 +61,11 @@ export function NearbyStop({
     [departures],
   );
 
+  const isStopDropOffOnly = useMemo(
+    () => departures.length > 0 && !hasBoardableDeparture(departures),
+    [departures],
+  );
+
   return (
     <div
       data-stop-id={stop.stop_id}
@@ -82,6 +88,11 @@ export function NearbyStop({
           {stopNames.name}
           {distance != null && distance >= 10 && <DistanceBadge meters={distance} />}
         </p>
+        {isStopDropOffOnly && (
+          <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
+            降車専用
+          </span>
+        )}
         {agencies.length > 0 &&
           agencies.map((agency) => (
             <AgencyBadge key={agency.agency_id} agency={agency} infoLevel={infoLevel} size="xs" />
@@ -99,6 +110,14 @@ export function NearbyStop({
           </button>
         )}
       </div>
+      {info.isVerboseEnabled && departures.length > 0 && (
+        <p className="m-0 mb-1 text-[9px] text-[#999] dark:text-gray-500">
+          entries={departures.length}
+          {` boardable=${departures.filter((e) => e.boarding.pickupType !== 1 && !e.patternPosition.isTerminal).length}`}
+          {` dropOffOnly=${departures.filter((e) => e.boarding.pickupType === 1 || e.patternPosition.isTerminal).length}`}
+          {isStopDropOffOnly && ' (ALL DROP-OFF ONLY)'}
+        </p>
+      )}
       {hasUnknownHeadsign && (
         <p className="m-0 mb-1 text-[11px] text-amber-600 dark:text-amber-400">
           行先が表示されない路線があります
