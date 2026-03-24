@@ -478,12 +478,14 @@ http://localhost:5173/?diag=v2-load
 
 | name      | 内容                                                                   |
 | --------- | ---------------------------------------------------------------------- |
-| `v2-load` | v2 バンドル (data/shapes/insights/global) の全ソースロードベンチマーク |
+| `v2-load` | v2 バンドル (data/shapes/insights/global) のロードベンチマーク |
+
+対象ソースは `DataSourceManager` の有効ソース (`?sources=` や localStorage で絞り込み可能)。
 
 ### `v2-load` の出力
 
-- Phase 1: 全ソースの `data.json` を並列ロード (件数、所要時間)
-- Phase 2: 全ソースの `shapes.json` + `insights.json` を並列ロード
+- Phase 1: 有効ソースの `data.json` を並列ロード (件数、所要時間)
+- Phase 2: 成功ソースの `shapes.json` + `insights.json` を並列ロード
 - Phase 3: `global/insights.json` をロード
 - サマリー: `Total: Xms (data=Xms, shapes+insights=Xms, global=Xms)`
 

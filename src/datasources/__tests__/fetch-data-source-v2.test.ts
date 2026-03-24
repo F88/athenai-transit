@@ -122,6 +122,17 @@ describe('FetchDataSourceV2', () => {
       );
     });
 
+    it('normalizes trailing slash in basePath', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(makeDataBundle()));
+      const ds = new FetchDataSourceV2('/custom/path/');
+      await ds.loadData('tobus');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/custom/path/tobus/data.json',
+        expect.objectContaining({ signal: expect.any(AbortSignal) as AbortSignal }),
+      );
+    });
+
     it('throws on invalid prefix', async () => {
       const ds = new FetchDataSourceV2();
       await expect(ds.loadData('../etc')).rejects.toThrow('Invalid prefix');

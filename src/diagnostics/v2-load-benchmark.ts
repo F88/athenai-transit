@@ -52,7 +52,7 @@ export async function runV2LoadBenchmark(
       );
     } else {
       failed.push(prefixes[i]);
-      logger.warn(`${prefixes[i]}: FAILED — ${String(r.reason)}`);
+      logger.warn(`${prefixes[i]}: FAILED`, r.reason);
     }
   }
   logger.info(
@@ -82,7 +82,7 @@ export async function runV2LoadBenchmark(
     } else if (r.status === 'fulfilled') {
       shapesNull++;
     } else {
-      logger.warn(`${loaded[i]}/shapes: FAILED — ${String(r.reason)}`);
+      logger.warn(`${loaded[i]}/shapes: FAILED`, r.reason);
     }
   }
   logger.info(`Shapes bundles: ${shapesLoaded} loaded, ${shapesNull} not available`);
@@ -107,7 +107,7 @@ export async function runV2LoadBenchmark(
     } else if (r.status === 'fulfilled') {
       insightsNull++;
     } else {
-      logger.warn(`${loaded[i]}/insights: FAILED — ${String(r.reason)}`);
+      logger.warn(`${loaded[i]}/insights: FAILED`, r.reason);
     }
   }
   logger.info(`Insights bundles: ${insightsLoaded} loaded, ${insightsNull} not available`);

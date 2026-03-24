@@ -131,7 +131,8 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
    *                    Defaults to {@link DEFAULT_TIMEOUT_MS} (30s).
    */
   constructor(basePath: string = BASE_PATH, timeoutMs: number = DEFAULT_TIMEOUT_MS) {
-    this.basePath = basePath;
+    // Normalize trailing slash to prevent double-slash in URLs
+    this.basePath = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
     this.timeoutMs = timeoutMs;
   }
 
