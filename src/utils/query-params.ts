@@ -11,6 +11,7 @@
  * - `?sources=minkuru,yurimo` — filter data sources by prefix
  * - `?lat=35.68&lng=139.77` — initial map center
  * - `?zm=14` — initial map zoom level
+ * - `?diag=v2-load` — run diagnostics (see DEVELOPMENT.md)
  */
 
 import { MAX_ZOOM } from '../config/map-defaults';
