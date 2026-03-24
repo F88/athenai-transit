@@ -35,6 +35,16 @@ export function hasMockDataParam(): boolean {
 }
 
 /**
+ * Returns the `?diag=` param value, or null if not present.
+ * Used to trigger diagnostic/benchmark tools.
+ *
+ * @returns The diag parameter value (e.g. "v2-load"), or null.
+ */
+export function getDiagParam(): string | null {
+  return getParams().get('diag');
+}
+
+/**
  * Returns the `?sources=` param value, or null if not present.
  * The raw string is returned for the caller to split/validate.
  *

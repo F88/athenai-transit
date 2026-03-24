@@ -8,7 +8,7 @@ import { DataSourceManager } from './config/data-source-manager';
 import { AthenaiRepository } from './repositories/athenai-repository';
 import type { TransitRepository } from './repositories/transit-repository';
 import { createLogger } from './utils/logger';
-import { hasMockDataParam } from './utils/query-params';
+import { getDiagParam, hasMockDataParam } from './utils/query-params';
 
 const logger = createLogger('App');
 
@@ -28,6 +28,13 @@ async function createRepository(): Promise<TransitRepository> {
 
 async function init() {
   const repository = await createRepository();
+
+  // Run diagnostics if requested via query param.
+  // Dynamic import: diagnostics code is not loaded on normal page visits.
+  if (getDiagParam()) {
+    const { runDiagnostics } = await import('./diagnostics');
+    await runDiagnostics(getDiagParam()!);
+  }
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
