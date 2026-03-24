@@ -266,6 +266,38 @@ describe('getUpcomingDepartures', () => {
       expect(group.departures.length).toBeLessThanOrEqual(2);
     }
   });
+
+  it('returns earliest departures across patterns when limit is applied', async () => {
+    const fixture = createFixtureV2();
+    // Modify tp_bus_i2 to have a departure at 610 (earlier than tp_bus_i's 612)
+    // bus_01 timetable: tp_bus_i has deps(492)=[492,552,612,672,732]
+    //                   tp_bus_i2 has [494,554] (before now=600)
+    // Add 610 to tp_bus_i2 so it has an upcoming departure earlier than tp_bus_i's 612
+    const tt = fixture.data.timetable.data['bus_01'];
+    const bus_i2_group = tt.find((g) => g.tp === 'tp_bus_i2');
+    if (bus_i2_group) {
+      bus_i2_group.d['svc_weekday'] = [494, 554, 610];
+      bus_i2_group.a['svc_weekday'] = [494, 554, 610];
+    }
+
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // With limit=2, should get the 2 earliest: 610 (from tp_bus_i2) and 612 (from tp_bus_i)
+    const result = await repository.getUpcomingDepartures('bus_01', WEEKDAY, 2);
+    assertSuccess(result);
+
+    const ikebukuroGroups = result.data.filter(
+      (g) => g.route.route_id === 'route_bus' && g.headsign === 'Ikebukuro-eki',
+    );
+    expect(ikebukuroGroups).toHaveLength(1);
+    expect(ikebukuroGroups[0].departures).toHaveLength(2);
+
+    // First departure should be 610 (10:10), from tp_bus_i2
+    const firstMinutes = ikebukuroGroups[0].departures[0].getHours() * 60
+      + ikebukuroGroups[0].departures[0].getMinutes();
+    expect(firstMinutes).toBe(610);
+  });
 });
 
 // ---------------------------------------------------------------------------

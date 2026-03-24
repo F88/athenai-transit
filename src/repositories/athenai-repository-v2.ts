@@ -655,6 +655,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         aggregated.set(aggKey, agg);
       }
 
+      // Collect ALL upcoming departure times first, then apply limit
+      // after sorting. This ensures the earliest N departures are returned
+      // even when multiple patterns contribute to the same route+headsign
+      // group. Applying limit during iteration would risk keeping later
+      // times from pattern A while skipping earlier times from pattern B.
+
       // Today's services
       for (const [serviceId, times] of Object.entries(group.d)) {
         if (!todayServiceIds.has(serviceId)) {
@@ -663,9 +669,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const startIdx = binarySearchFirstGte(times, nowMinutes);
         for (let i = startIdx; i < times.length; i++) {
           agg.totalAvailable++;
-          if (limit === undefined || agg.departureTimes.length < limit) {
-            agg.departureTimes.push(minutesToDate(serviceDay, times[i]));
-          }
+          agg.departureTimes.push(minutesToDate(serviceDay, times[i]));
         }
       }
 
@@ -678,9 +682,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const startIdx = binarySearchFirstGte(times, overnightTarget);
         for (let i = startIdx; i < times.length; i++) {
           agg.totalAvailable++;
-          if (limit === undefined || agg.departureTimes.length < limit) {
-            agg.departureTimes.push(minutesToDate(prevServiceDay, times[i]));
-          }
+          agg.departureTimes.push(minutesToDate(prevServiceDay, times[i]));
         }
       }
     }
@@ -693,11 +695,15 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       if (agg.departureTimes.length === 0) {
         continue;
       }
-      if (limit !== undefined && agg.totalAvailable > limit) {
+
+      // Sort all collected times, then truncate to limit.
+      // This guarantees the earliest N departures across all patterns.
+      agg.departureTimes.sort((a, b) => a.getTime() - b.getTime());
+      if (limit !== undefined && agg.departureTimes.length > limit) {
+        agg.departureTimes = agg.departureTimes.slice(0, limit);
         anyTruncated = true;
       }
 
-      agg.departureTimes.sort((a, b) => a.getTime() - b.getTime());
       const sourceTranslations = this.headsignTranslations.get(agg.prefix);
       const headsignNames = sourceTranslations?.headsigns[agg.headsign] ?? {};
 
