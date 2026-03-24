@@ -8,12 +8,7 @@
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, RouteType, Stop } from '../types/app/transit';
-import type {
-  DepartureGroup,
-  FullDayStopDeparture,
-  SourceMeta,
-  StopWithMeta,
-} from '../types/app/transit-composed';
+import type { SourceMeta, StopWithMeta, TimetableEntry } from '../types/app/transit-composed';
 import type { CollectionResult, Result } from '../types/app/repository';
 
 /**
@@ -63,11 +58,13 @@ export interface TransitRepository {
   getStopsInBounds(bounds: Bounds, limit: number): Promise<CollectionResult<StopWithMeta>>;
 
   /**
-   * Returns upcoming departures from a specific stop, grouped by
-   * route and headsign.
+   * Returns upcoming departures from a specific stop as individual
+   * timetable entries, sorted by departure time (earliest first).
    *
-   * Each group contains up to `limit` departure times (earliest first).
-   * Groups are sorted by their earliest departure time.
+   * Each entry includes route/headsign, boarding availability
+   * (pickupType/dropOffType), and pattern position (isTerminal/isOrigin).
+   * Consumers are responsible for filtering (e.g. excluding drop-off-only
+   * entries) and grouping (e.g. by route+headsign for display).
    *
    * ### Service day boundary
    * The GTFS service day does not change at midnight but at 03:00.
@@ -81,9 +78,9 @@ export interface TransitRepository {
    * day that extend into the current real-world time are included.
    *
    * ### Truncation
-   * `truncated` is `true` when any route/headsign group had more
-   * upcoming departures than `limit` allowed. When `limit` is omitted,
-   * `truncated` is always `false`.
+   * `truncated` is `true` when the total number of upcoming entries
+   * exceeds `limit`. When `limit` is omitted, all upcoming entries
+   * are returned and `truncated` is `false`.
    *
    * ### Error conditions
    * - No departure data for `stopId`:
@@ -92,15 +89,15 @@ export interface TransitRepository {
    * @param stopId - GTFS `stop_id` of the target stop.
    * @param now    - Real-world reference time. The service day is
    *                 determined internally (03:00 boundary).
-   * @param limit  - Maximum number of departures per route/headsign.
-   *                 When omitted, all upcoming departures are returned.
-   * @returns Departure groups sorted by earliest departure.
+   * @param limit  - Maximum number of entries to return.
+   *                 When omitted, all upcoming entries are returned.
+   * @returns Timetable entries sorted by departure time.
    */
-  getUpcomingDepartures(
+  getUpcomingTimetableEntries(
     stopId: string,
     now: Date,
     limit?: number,
-  ): Promise<CollectionResult<DepartureGroup>>;
+  ): Promise<CollectionResult<TimetableEntry>>;
 
   /**
    * Returns all GTFS route_type values for a stop.
@@ -211,7 +208,8 @@ export interface TransitRepository {
    *
    * Unlike {@link getFullDayDepartures}, this method does not require a
    * specific route/headsign — it returns every departure at the stop,
-   * each tagged with its route and headsign.
+   * each tagged with its route, headsign, boarding availability, and
+   * pattern position.
    *
    * ### Sorting
    * Results are sorted by departure time (earliest first). When two
@@ -227,12 +225,12 @@ export interface TransitRepository {
    * @param stopId   - GTFS stop_id.
    * @param dateTime - Reference real-world time. The repository converts
    *                   this to the GTFS service day internally (03:00 boundary).
-   * @returns All departures at the stop for the service day.
+   * @returns All timetable entries at the stop for the service day.
    */
-  getFullDayDeparturesForStop(
+  getFullDayTimetableEntries(
     stopId: string,
     dateTime: Date,
-  ): Promise<CollectionResult<FullDayStopDeparture>>;
+  ): Promise<CollectionResult<TimetableEntry>>;
 
   /**
    * Returns all stops in the dataset.

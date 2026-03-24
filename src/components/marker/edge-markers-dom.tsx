@@ -118,7 +118,7 @@ function EdgeMarkerItem({
   }
   const alignClass = ALIGN_CLASSES[alignKey];
 
-  const hasData = departures && departures.groups.length > 0;
+  const hasData = departures && departures.departures.length > 0;
 
   // Vertical: show above if marker is in lower half, below otherwise
   const tooltipVClass =
@@ -178,7 +178,7 @@ function EdgeMarkerItem({
             stop={marker.stop}
             routeTypes={marker.routeTypes}
             agencies={departures?.agencies ?? agencies}
-            groups={hasData ? departures.groups : undefined}
+            entries={hasData ? departures.departures : undefined}
             now={now}
             infoLevel={infoLevel}
           />

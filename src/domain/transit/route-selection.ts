@@ -1,6 +1,6 @@
 import type { RouteShape } from '../../types/app/map';
 import type { Route, RouteType, Stop } from '../../types/app/transit';
-import type { DepartureGroup, StopWithContext } from '../../types/app/transit-composed';
+import type { StopWithContext, TimetableEntry } from '../../types/app/transit-composed';
 
 /** Selection info for a stop. */
 export interface StopSelectionInfo {
@@ -41,29 +41,29 @@ export function extractRouteIdsForStop(departures: StopWithContext[], stopId: st
   if (!ctx) {
     return new Set();
   }
-  // Prefer active departure groups; fall back to StopWithMeta.routes
-  // when all services have ended for the day (groups is empty).
-  if (ctx.groups.length > 0) {
-    return new Set(ctx.groups.map((g) => g.route.route_id));
+  // Prefer active departures; fall back to StopWithMeta.routes
+  // when all services have ended for the day (departures is empty).
+  if (ctx.departures.length > 0) {
+    return new Set(ctx.departures.map((e) => e.routeDirection.route.route_id));
   }
   return new Set(ctx.routes.map((r) => r.route_id));
 }
 
 /**
- * Builds a lookup map from stop ID to its departure groups.
+ * Builds a lookup map from stop ID to its timetable entries.
  *
- * Extracts only the `groups` from each {@link StopWithContext}, discarding
+ * Extracts only the `departures` from each {@link StopWithContext}, discarding
  * `stop` and `routeTypes` which are already available via other props.
  *
- * @param departures - Array of stop departure contexts.
- * @returns A Map keyed by stop_id containing only DepartureGroup arrays.
+ * @param contexts - Array of stop departure contexts.
+ * @returns A Map keyed by stop_id containing TimetableEntry arrays.
  */
-export function buildDepartureGroupsMap(
-  departures: StopWithContext[],
-): Map<string, DepartureGroup[]> {
-  const map = new Map<string, DepartureGroup[]>();
-  for (const d of departures) {
-    map.set(d.stop.stop_id, d.groups);
+export function buildTimetableEntriesMap(
+  contexts: StopWithContext[],
+): Map<string, TimetableEntry[]> {
+  const map = new Map<string, TimetableEntry[]>();
+  for (const d of contexts) {
+    map.set(d.stop.stop_id, d.departures);
   }
   return map;
 }
@@ -80,22 +80,22 @@ export function buildDepartureGroupsMap(
  * use {@link extractRouteIdsForStop} instead.
  *
  * @param stopId - The selected stop ID, or null if no stop is selected.
- * @param departureGroupsMap - Map of stop IDs to their departure groups.
+ * @param timetableEntriesMap - Map of stop IDs to their timetable entries.
  * @returns A Set of route IDs for the selected stop, or null if no stop is selected
  *          or the stop has no departures.
  */
 export function getRouteIdsForStop(
   stopId: string | null,
-  departureGroupsMap: Map<string, DepartureGroup[]>,
+  timetableEntriesMap: Map<string, TimetableEntry[]>,
 ): Set<string> | null {
   if (!stopId) {
     return null;
   }
-  const groups = departureGroupsMap.get(stopId);
-  if (!groups || groups.length === 0) {
+  const entries = timetableEntriesMap.get(stopId);
+  if (!entries || entries.length === 0) {
     return null;
   }
-  return new Set(groups.map((g) => g.route.route_id));
+  return new Set(entries.map((e) => e.routeDirection.route.route_id));
 }
 
 /**
@@ -104,18 +104,18 @@ export function getRouteIdsForStop(
  *
  * @param selectedRouteId - Directly selected route ID (from shape click), or null.
  * @param selectedStopId - Selected stop ID, or null.
- * @param departureGroupsMap - Map of stop IDs to departure groups.
+ * @param timetableEntriesMap - Map of stop IDs to timetable entries.
  * @returns Set of route IDs to highlight, or null if nothing is selected.
  */
 export function resolveSelectedRouteIds(
   selectedRouteId: string | null,
   selectedStopId: string | null,
-  departureGroupsMap: Map<string, DepartureGroup[]>,
+  timetableEntriesMap: Map<string, TimetableEntry[]>,
 ): Set<string> | null {
   if (selectedRouteId) {
     return new Set([selectedRouteId]);
   }
-  return getRouteIdsForStop(selectedStopId, departureGroupsMap);
+  return getRouteIdsForStop(selectedStopId, timetableEntriesMap);
 }
 
 /**
@@ -213,7 +213,10 @@ function getFreqBasedWeight(routeType: number, freq: number | undefined): number
  * @param freq - Departures per day, or undefined if not available.
  * @returns Fill and outline style for highlighted state.
  */
-function getHighlightedRouteShapeStyle(routeType: number, freq: number | undefined): RouteShapeStyle {
+function getHighlightedRouteShapeStyle(
+  routeType: number,
+  freq: number | undefined,
+): RouteShapeStyle {
   const weight = Math.max(getFreqBasedWeight(routeType, freq), ROUTE_WEIGHT.highlighted);
   return {
     weight,

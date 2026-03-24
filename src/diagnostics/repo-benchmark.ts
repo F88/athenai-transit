@@ -110,12 +110,12 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
     const nearbyCount = nearbyResult.success ? nearbyResult.data.length : 0;
     totalNearby += nearbyCount;
 
-    // getUpcomingDepartures for all nearby stops (simulates real usage)
+    // getUpcomingTimetableEntries for all nearby stops (simulates real usage)
     if (nearbyResult.success && nearbyResult.data.length > 0) {
       const depT0 = performance.now();
       let groups = 0;
       for (const stopMeta of nearbyResult.data) {
-        const result = await repository.getUpcomingDepartures(stopMeta.stop.stop_id, now, 3);
+        const result = await repository.getUpcomingTimetableEntries(stopMeta.stop.stop_id, now, 3);
         if (result.success) {
           groups += result.data.length;
         }
@@ -134,12 +134,12 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
       totalRouteTypesMs += performance.now() - rtT0;
     }
 
-    // getFullDayDeparturesForStop (first 2 stops per location)
+    // getFullDayTimetableEntries (first 2 stops per location)
     if (nearbyResult.success && nearbyResult.data.length > 0) {
       const sampleSize = Math.min(2, nearbyResult.data.length);
       const fdT0 = performance.now();
       for (let i = 0; i < sampleSize; i++) {
-        const result = await repository.getFullDayDeparturesForStop(
+        const result = await repository.getFullDayTimetableEntries(
           nearbyResult.data[i].stop.stop_id,
           now,
         );
@@ -163,13 +163,13 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
     `getStopsNearby (${BENCH_LOCATIONS.length} locations): ${totalNearbyMs.toFixed(2)}ms total, ${totalNearby} stops`,
   );
   logger.info(
-    `getUpcomingDepartures (${totalDepartureStops} stops): ${totalDeparturesMs.toFixed(2)}ms total, ${(totalDepartureStops > 0 ? totalDeparturesMs / totalDepartureStops : 0).toFixed(2)}ms/stop, ${totalDepartureGroups} groups`,
+    `getUpcomingTimetableEntries (${totalDepartureStops} stops): ${totalDeparturesMs.toFixed(2)}ms total, ${(totalDepartureStops > 0 ? totalDeparturesMs / totalDepartureStops : 0).toFixed(2)}ms/stop, ${totalDepartureGroups} groups`,
   );
   logger.info(
     `getRouteTypesForStop (${totalDepartureStops} stops): ${totalRouteTypesMs.toFixed(2)}ms total`,
   );
   logger.info(
-    `getFullDayDeparturesForStop: ${totalFullDayMs.toFixed(2)}ms total, ${totalFullDayDeps} departures`,
+    `getFullDayTimetableEntries: ${totalFullDayMs.toFixed(2)}ms total, ${totalFullDayDeps} departures`,
   );
 
   const totalMs = performance.now() - t0;

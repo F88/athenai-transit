@@ -7,26 +7,15 @@ import type {
 } from '../types/data/transit-json';
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
-import type {
-  DepartureGroup,
-  FullDayStopDeparture,
-  SourceMeta,
-  StopWithMeta,
-} from '../types/app/transit-composed';
+import type { SourceMeta, StopWithMeta, TimetableEntry } from '../types/app/transit-composed';
 import type { CollectionResult, Result } from '../types/app/repository';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitDataSource } from '../datasources/transit-data-source';
 import type { SourceData } from '../datasources/transit-data-source';
 import { FetchDataSource } from '../datasources/fetch-data-source';
 import { createLogger } from '../utils/logger';
-import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
-import {
-  binarySearchFirstGte,
-  computeActiveServiceIds,
-  extractPrefix,
-  formatDateKey,
-  minutesToDate,
-} from '../domain/transit/calendar-utils';
+import { getServiceDay } from '../domain/transit/service-day';
+import { computeActiveServiceIds, formatDateKey } from '../domain/transit/calendar-utils';
 import type { TransitRepository } from './transit-repository';
 
 const logger = createLogger('AthenaiRepository');
@@ -316,6 +305,7 @@ export class AthenaiRepository implements TransitRepository {
   private calendarExceptions: Map<string, CalendarExceptionJson[]>;
   private timetable: TimetableJson;
   private shapesRaw: ShapesJson;
+  // @ts-expect-error -- v1 repo stub: field assigned by constructor but unused after getUpcomingTimetableEntries was stubbed
   private headsignTranslations: HeadsignTranslationsByPrefix;
   private sourceMetas: SourceMeta[];
 
@@ -482,110 +472,17 @@ export class AthenaiRepository implements TransitRepository {
     return Promise.resolve({ success: true, data, truncated });
   }
 
-  /** {@inheritDoc TransitRepository.getUpcomingDepartures} */
-  getUpcomingDepartures(
+  /**
+   * @deprecated v1 repo does not support TimetableEntry. Use v2 repo instead.
+   * Returns empty result. v1 data lacks pickup_type/drop_off_type/pattern info.
+   */
+  getUpcomingTimetableEntries(
     stopId: string,
-    now: Date,
-    limit?: number,
-  ): Promise<CollectionResult<DepartureGroup>> {
-    const t0 = performance.now();
-    const timetableGroups = this.timetable[stopId];
-    if (!timetableGroups) {
-      return Promise.resolve({ success: false, error: `No departure data for stop: ${stopId}` });
-    }
-
-    // Use service day boundary (03:00) to determine which calendar day
-    // we are operating on. Before 03:00, we are still on the previous
-    // day's service (and nowMinutes will be >= 1440).
-    const serviceDay = getServiceDay(now);
-    const todayServiceIds = this.getActiveServiceIds(serviceDay);
-
-    // Previous service day for overnight trips that started even earlier
-    const prevServiceDay = new Date(serviceDay);
-    prevServiceDay.setDate(prevServiceDay.getDate() - 1);
-    const yesterdayServiceIds = this.getActiveServiceIds(prevServiceDay);
-
-    // Minutes from midnight of the service day
-    const nowMinutes = getServiceDayMinutes(now);
-
-    const result: DepartureGroup[] = [];
-    let anyTruncated = false;
-    let totalReturned = 0;
-    let totalAvailableAll = 0;
-
-    for (const group of timetableGroups) {
-      const route = this.routeMap.get(group.r);
-      if (!route) {
-        continue;
-      }
-
-      const departureTimes: Date[] = [];
-      let totalAvailable = 0;
-
-      // Today's services: all times from nowMinutes onward (including >= 1440
-      // for overnight departures that run past midnight tonight).
-      // minutesToDate uses serviceDay as base, so times >= 1440 correctly
-      // produce next-day Date values.
-      for (const [serviceId, times] of Object.entries(group.d)) {
-        if (!todayServiceIds.has(serviceId)) {
-          continue;
-        }
-
-        const startIdx = binarySearchFirstGte(times, nowMinutes);
-        for (let i = startIdx; i < times.length; i++) {
-          totalAvailable++;
-          if (limit === undefined || departureTimes.length < limit) {
-            departureTimes.push(minutesToDate(serviceDay, times[i]));
-          }
-        }
-      }
-
-      // Previous service day's overnight times (>= 1440) that extend into
-      // the current service day's early hours. Only relevant when nowMinutes
-      // >= 1440 (i.e. real time is before SERVICE_DAY_BOUNDARY_HOUR).
-      for (const [serviceId, times] of Object.entries(group.d)) {
-        if (!yesterdayServiceIds.has(serviceId)) {
-          continue;
-        }
-
-        const overnightTarget = nowMinutes + 1440;
-        const startIdx = binarySearchFirstGte(times, overnightTarget);
-        for (let i = startIdx; i < times.length; i++) {
-          totalAvailable++;
-          if (limit === undefined || departureTimes.length < limit) {
-            departureTimes.push(minutesToDate(prevServiceDay, times[i]));
-          }
-        }
-      }
-
-      totalAvailableAll += totalAvailable;
-      totalReturned += departureTimes.length;
-
-      if (limit !== undefined && totalAvailable > limit) {
-        anyTruncated = true;
-      }
-
-      if (departureTimes.length > 0) {
-        departureTimes.sort((a, b) => a.getTime() - b.getTime());
-        const prefix = extractPrefix(group.ai);
-        const sourceTranslations = this.headsignTranslations.get(prefix);
-        const headsignNames = sourceTranslations?.headsigns[group.h] ?? {};
-        result.push({
-          route,
-          headsign: group.h,
-          headsign_names: headsignNames,
-          departures: departureTimes,
-        });
-      }
-    }
-
-    result.sort((a, b) => a.departures[0].getTime() - b.departures[0].getTime());
-
-    const elapsed = Math.round(performance.now() - t0);
-    logger.debug(
-      `getUpcomingDepartures: ${stopId} → ${result.length} groups, ${totalReturned}/${totalAvailableAll} departures in ${elapsed}ms (${anyTruncated ? 'truncated' : 'all'})`,
-    );
-    return Promise.resolve({ success: true, data: result, truncated: anyTruncated });
+    _now: Date,
+    _limit?: number,
+  ): Promise<CollectionResult<TimetableEntry>> {
+    logger.warn(`getUpcomingTimetableEntries: v1 repo stub called for ${stopId}`);
+    return Promise.resolve({ success: true, data: [], truncated: false });
   }
 
   /** {@inheritDoc TransitRepository.getFullDayDepartures} */
@@ -628,46 +525,16 @@ export class AthenaiRepository implements TransitRepository {
     return Promise.resolve({ success: true, data: allMinutes, truncated: false });
   }
 
-  /** {@inheritDoc TransitRepository.getFullDayDeparturesForStop} */
-  getFullDayDeparturesForStop(
+  /**
+   * @deprecated v1 repo does not support TimetableEntry. Use v2 repo instead.
+   * Returns empty result. v1 data lacks pickup_type/drop_off_type/pattern info.
+   */
+  getFullDayTimetableEntries(
     stopId: string,
-    dateTime: Date,
-  ): Promise<CollectionResult<FullDayStopDeparture>> {
-    const t0 = performance.now();
-    const groups = this.timetable[stopId];
-    if (!groups) {
-      return Promise.resolve({ success: true, data: [], truncated: false });
-    }
-
-    const serviceDate = getServiceDay(dateTime);
-    const activeServiceIds = this.getActiveServiceIds(serviceDate);
-    const departures: FullDayStopDeparture[] = [];
-
-    for (const group of groups) {
-      const route = this.routeMap.get(group.r);
-      if (!route) {
-        continue;
-      }
-
-      for (const [serviceId, times] of Object.entries(group.d)) {
-        if (!activeServiceIds.has(serviceId)) {
-          continue;
-        }
-        const prefix = extractPrefix(group.ai);
-        const sourceTranslations = this.headsignTranslations.get(prefix);
-        const headsignNames = sourceTranslations?.headsigns[group.h] ?? {};
-        for (const t of times) {
-          departures.push({ minutes: t, route, headsign: group.h, headsign_names: headsignNames });
-        }
-      }
-    }
-
-    departures.sort((a, b) => a.minutes - b.minutes);
-    const elapsed = Math.round(performance.now() - t0);
-    logger.debug(
-      `getFullDayDeparturesForStop: ${stopId} → ${departures.length} departures in ${elapsed}ms`,
-    );
-    return Promise.resolve({ success: true, data: departures, truncated: false });
+    _dateTime: Date,
+  ): Promise<CollectionResult<TimetableEntry>> {
+    logger.warn(`getFullDayTimetableEntries: v1 repo stub called for ${stopId}`);
+    return Promise.resolve({ success: true, data: [], truncated: false });
   }
 
   /** {@inheritDoc TransitRepository.getRouteTypesForStop} */

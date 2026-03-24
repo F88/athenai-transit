@@ -1,15 +1,20 @@
+import { useMemo } from 'react';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
-import type { DepartureGroup } from '../types/app/transit-composed';
+import type { TimetableEntry } from '../types/app/transit-composed';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
 import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
+import { minutesToDate } from '../domain/transit/calendar-utils';
 import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
 
 interface DepartureItemProps {
-  group: DepartureGroup;
+  /** Timetable entries for a single route+headsign group. */
+  entries: TimetableEntry[];
+  /** Service day used to resolve departure minutes to Date. */
+  serviceDay: Date;
   now: Date;
   infoLevel: InfoLevel;
   /** Whether to show route_type emoji (e.g. when stop serves multiple route types). */
@@ -18,33 +23,51 @@ interface DepartureItemProps {
   agencyName?: string;
   /** Agency object for badge display at detailed+ info level. */
   agency?: Agency;
-  onShowTimetable?: (group: DepartureGroup) => void;
+  /** Maximum number of departures to display. Defaults to 3. */
+  maxDisplay?: number;
+  onShowTimetable?: (routeId: string, headsign: string) => void;
 }
 
 export function DepartureItem({
-  group,
+  entries,
+  serviceDay,
   now,
   infoLevel,
   showRouteTypeIcon,
   agencyName,
   agency,
+  maxDisplay = 3,
   onShowTimetable,
 }: DepartureItemProps) {
   const info = useInfoLevel(infoLevel);
-  const headsignName = getHeadsignDisplayNames(group.headsign, group.route, infoLevel).name;
-  // Display at most 3 departures: 1st as relative time, rest as absolute.
-  const MAX_DISPLAY = 3;
-  const displayDepartures = group.departures.slice(0, MAX_DISPLAY);
-  const first = displayDepartures[0];
-  const bgColor = group.route.route_color ? `#${group.route.route_color}` : undefined;
+  const firstEntry = entries[0];
+  if (!firstEntry) {
+    return null;
+  }
+
+  const { route, headsign } = firstEntry.routeDirection;
+  const headsignName = getHeadsignDisplayNames(headsign, route, infoLevel).name;
+
+  // Display at most N departures: 1st as relative time, rest as absolute.
+  const displayEntries = entries.slice(0, maxDisplay);
+
+  // Convert minutes to Date for display — lightweight, only up to 3 entries.
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- entries/serviceDay are stable within a render
+  const displayTimes = useMemo(
+    () => displayEntries.map((e) => minutesToDate(serviceDay, e.schedule.departureMinutes)),
+    [displayEntries, serviceDay],
+  );
+
+  const first = displayTimes[0];
+  const bgColor = route.route_color ? `#${route.route_color}` : undefined;
 
   return (
     <div className="border-b border-[#e0e0e0] py-3 last:border-b-0 dark:border-gray-700">
       <div className="mb-1.5 flex items-center gap-2">
         {showRouteTypeIcon && (
-          <span className="shrink-0 text-base">{routeTypeEmoji(group.route.route_type)}</span>
+          <span className="shrink-0 text-base">{routeTypeEmoji(route.route_type)}</span>
         )}
-        <RouteBadge route={group.route} infoLevel={infoLevel} />
+        <RouteBadge route={route} infoLevel={infoLevel} />
         {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
         <span className="text-sm font-medium text-[#333] dark:text-gray-200">{headsignName}</span>
         {info.isDetailedEnabled && agencyName && (
@@ -59,7 +82,7 @@ export function DepartureItem({
             className="ml-auto shrink-0 cursor-pointer rounded border border-[#1976d2] bg-transparent px-2 py-0.5 text-xs whitespace-nowrap text-[#1976d2] active:bg-[rgba(25,118,210,0.1)] dark:border-blue-400 dark:text-blue-400"
             onClick={(e) => {
               e.stopPropagation();
-              onShowTimetable(group);
+              onShowTimetable(route.route_id, headsign);
             }}
           >
             時刻表
@@ -75,7 +98,7 @@ export function DepartureItem({
             {formatRelativeTime(first, now)}
           </span>
         )}
-        {displayDepartures.slice(1).map((dep, i) => (
+        {displayTimes.slice(1).map((dep, i) => (
           <span key={i} className="text-sm text-[#757575] dark:text-gray-400">
             {formatAbsoluteTime(dep)}
           </span>

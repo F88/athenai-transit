@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { RouteType, Stop } from './types/app/transit';
-import type { DepartureGroup, StopWithContext, StopWithMeta } from './types/app/transit-composed';
+import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
 import { useDateTime } from './hooks/use-date-time';
@@ -176,34 +176,39 @@ export default function App() {
         return null;
       }
       const [depsResult, rtResult] = await Promise.all([
-        repo.getUpcomingDepartures(stopId, dateTime),
+        repo.getUpcomingTimetableEntries(stopId, dateTime),
         repo.getRouteTypesForStop(stopId),
       ]);
-      const groups = depsResult.success ? depsResult.data : [];
+      const departures = depsResult.success ? depsResult.data : [];
       const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-      return { stop: meta.stop, routeTypes, groups, agencies: meta.agencies, routes: meta.routes };
+      return {
+        stop: meta.stop,
+        routeTypes,
+        departures,
+        agencies: meta.agencies,
+        routes: meta.routes,
+      };
     },
     [repo, dateTime, inBoundStops, radiusStops],
   );
 
   const handleShowTimetable = useCallback(
-    async (stopId: string, group: DepartureGroup) => {
+    async (stopId: string, routeId: string, headsign: string) => {
       const meta = radiusStops.find((s) => s.stop.stop_id === stopId);
       if (!meta) {
         return;
       }
-      const result = await repo.getFullDayDepartures(
-        stopId,
-        group.route.route_id,
-        group.headsign,
-        dateTime,
-      );
+      const result = await repo.getFullDayDepartures(stopId, routeId, headsign, dateTime);
       const departures = result.success ? result.data : [];
+      const route = meta.routes.find((r) => r.route_id === routeId);
+      if (!route) {
+        return;
+      }
       setTimetableModal({
         type: 'route-headsign',
         stop: meta.stop,
-        route: group.route,
-        headsign: group.headsign,
+        route,
+        headsign,
         serviceDate: getServiceDay(dateTime),
         departures,
         agencies: meta.agencies,
@@ -219,8 +224,16 @@ export default function App() {
         return;
       }
 
-      const result = await repo.getFullDayDeparturesForStop(stopId, dateTime);
-      const departures = result.success ? result.data : [];
+      const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
+      const entries = result.success ? result.data : [];
+
+      // Convert TimetableEntry[] to StopTimetableDeparture[] for the timetable modal.
+      // The modal will be migrated to TimetableEntry in a future PR.
+      const departures = entries.map((e) => ({
+        minutes: e.schedule.departureMinutes,
+        route: e.routeDirection.route,
+        headsign: e.routeDirection.headsign,
+      }));
 
       setTimetableModal({
         type: 'stop',

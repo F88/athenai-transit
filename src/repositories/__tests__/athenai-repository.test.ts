@@ -199,16 +199,16 @@ describe('AthenaiRepository', () => {
     });
   });
 
-  describe('getUpcomingDepartures', () => {
+  describe('getUpcomingTimetableEntries', () => {
     it('returns failure for unknown stop', async () => {
       const repo = await createRepo();
-      const result = await repo.getUpcomingDepartures('unknown', WEEKDAY);
+      const result = await repo.getUpcomingTimetableEntries('unknown', WEEKDAY);
       expect(result.success).toBe(false);
     });
 
     it('returns failure for stop with no timetable', async () => {
       const repo = await createRepo();
-      const result = await repo.getUpcomingDepartures('stop_closed', WEEKDAY);
+      const result = await repo.getUpcomingTimetableEntries('stop_closed', WEEKDAY);
       expect(result.success).toBe(false);
     });
 
@@ -217,7 +217,7 @@ describe('AthenaiRepository', () => {
       // sub_01 has 2 subway groups (2 headsigns)
       // At 10:00 (600 min), Nishi-takashimadaira has 5 upcoming (600,660,720,1442,1470)
       // Meguro has 3 upcoming (605,665,725)
-      const result = await repo.getUpcomingDepartures('sub_01', WEEKDAY);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', WEEKDAY);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -229,7 +229,7 @@ describe('AthenaiRepository', () => {
     it('returns multi-route departure groups', async () => {
       const repo = await createRepo();
       // sub_02 has subway (2 headsigns) + bus (1 headsign) = 3 groups
-      const result = await repo.getUpcomingDepartures('sub_02', WEEKDAY);
+      const result = await repo.getUpcomingTimetableEntries('sub_02', WEEKDAY);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -243,7 +243,7 @@ describe('AthenaiRepository', () => {
     it('returns holiday service on Saturday', async () => {
       const repo = await createRepo();
       // Saturday has svc_holiday service
-      const result = await repo.getUpcomingDepartures('sub_01', SATURDAY);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', SATURDAY);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -258,7 +258,7 @@ describe('AthenaiRepository', () => {
 
     it('respects limit and sets truncated', async () => {
       const repo = await createRepo();
-      const result = await repo.getUpcomingDepartures('sub_01', WEEKDAY, 1);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', WEEKDAY, 1);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -271,7 +271,7 @@ describe('AthenaiRepository', () => {
 
     it('returns all departures when limit is omitted', async () => {
       const repo = await createRepo();
-      const result = await repo.getUpcomingDepartures('sub_01', WEEKDAY);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', WEEKDAY);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -285,7 +285,7 @@ describe('AthenaiRepository', () => {
 
     it('includes overnight departures (>= 24:00) from today service', async () => {
       const repo = await createRepo();
-      const result = await repo.getUpcomingDepartures('sub_01', WEEKDAY);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', WEEKDAY);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -312,7 +312,7 @@ describe('AthenaiRepository', () => {
       // nowMinutes = (1+24)*60 + 30 = 1530. Only times >= 1530 are upcoming.
       // sub_01 Nishi-takashimadaira: 1625 >= 1530 → 1 upcoming (Thu 03:05).
       // 1442 and 1470 are < 1530, so not upcoming.
-      const result = await repo.getUpcomingDepartures('sub_01', WEEKDAY_OVERNIGHT);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', WEEKDAY_OVERNIGHT);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -331,7 +331,7 @@ describe('AthenaiRepository', () => {
       // nowMinutes = 240. Times >= 240 from sub_01:
       // Nishi-takashimadaira: 480, 540, 600, 660, 720, 1442, 1470 (all >= 240)
       // Meguro: 485, 545, 605, 665, 725 (all >= 240)
-      const result = await repo.getUpcomingDepartures('sub_01', WEEKDAY_AFTER_BOUNDARY);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', WEEKDAY_AFTER_BOUNDARY);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -347,7 +347,7 @@ describe('AthenaiRepository', () => {
       // Sat Mar 7 01:30 → service day = Fri Mar 6 (weekday → has service).
       // nowMinutes = 1530. Only 1625 >= 1530 → 1 upcoming (Sat 03:05).
       const satOvernight = new Date('2026-03-07T01:30:00');
-      const result = await repo.getUpcomingDepartures('sub_01', satOvernight);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', satOvernight);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -364,7 +364,7 @@ describe('AthenaiRepository', () => {
       // nowMinutes = 180. Today's times >= 180: all 8 weekday times.
       // prevServiceDay = Tue Mar 10 (weekday). overnightTarget = 180+1440 = 1620.
       // Tue's Nishi-takashimadaira times >= 1620: [1625] → 1 extra (Wed 03:05).
-      const result = await repo.getUpcomingDepartures('sub_01', BOUNDARY_EXACT);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', BOUNDARY_EXACT);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -383,7 +383,7 @@ describe('AthenaiRepository', () => {
       // prevServiceDay = Tue (weekday). overnightTarget = 182+1440 = 1622.
       // Tue's times >= 1622: [1625] → minutesToDate(Tue, 1625) = Wed 03:05 (1 dep)
       // Total: 9 departures. Tue's overnight (Wed 03:05) should sort first.
-      const result = await repo.getUpcomingDepartures('sub_01', BOUNDARY_JUST_AFTER);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', BOUNDARY_JUST_AFTER);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -411,7 +411,7 @@ describe('AthenaiRepository', () => {
       // At 10:00 (600 min), holiday service for sub_01:
       // Nishi-takashimadaira: 600, 660 (from svc_holiday [540,600,660], >= 600)
       // Meguro: 605 (from svc_holiday [545,605], >= 600)
-      const result = await repo.getUpcomingDepartures('sub_01', EXCEPTION_HOLIDAY);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', EXCEPTION_HOLIDAY);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -425,7 +425,7 @@ describe('AthenaiRepository', () => {
 
     it('returns departures sorted by earliest time', async () => {
       const repo = await createRepo();
-      const result = await repo.getUpcomingDepartures('sub_01', WEEKDAY);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', WEEKDAY);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -444,7 +444,7 @@ describe('AthenaiRepository', () => {
       // nowMinutes = 1410. Only overnight times are upcoming.
       // Nishi-takashimadaira: 1442, 1470, 1625 are >= 1410 → 3 upcoming
       const lateNight = new Date('2026-03-11T23:30:00');
-      const result = await repo.getUpcomingDepartures('sub_01', lateNight);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', lateNight);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -456,7 +456,7 @@ describe('AthenaiRepository', () => {
 
     it('sets truncated to false when limit is not specified', async () => {
       const repo = await createRepo();
-      const result = await repo.getUpcomingDepartures('sub_01', WEEKDAY);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', WEEKDAY);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -843,10 +843,10 @@ describe('AthenaiRepository', () => {
     });
   });
 
-  describe('getUpcomingDepartures (empty headsign)', () => {
+  describe('getUpcomingTimetableEntries (empty headsign)', () => {
     it('returns empty headsign for routes with no trip_headsign', async () => {
       const repo = await createRepo();
-      const result = await repo.getUpcomingDepartures('bus_01', WEEKDAY);
+      const result = await repo.getUpcomingTimetableEntries('bus_01', WEEKDAY);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -858,10 +858,10 @@ describe('AthenaiRepository', () => {
     });
   });
 
-  describe('getUpcomingDepartures (headsign_names)', () => {
+  describe('getUpcomingTimetableEntries (headsign_names)', () => {
     it('includes headsign_names in departure groups', async () => {
       const repo = await createRepo();
-      const result = await repo.getUpcomingDepartures('sub_01', WEEKDAY);
+      const result = await repo.getUpcomingTimetableEntries('sub_01', WEEKDAY);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;
@@ -873,10 +873,10 @@ describe('AthenaiRepository', () => {
     });
   });
 
-  describe('getFullDayDeparturesForStop (headsign_names)', () => {
+  describe('getFullDayTimetableEntries (headsign_names)', () => {
     it('includes headsign_names in departures', async () => {
       const repo = await createRepo();
-      const result = await repo.getFullDayDeparturesForStop('sub_01', WEEKDAY);
+      const result = await repo.getFullDayTimetableEntries('sub_01', WEEKDAY);
       expect(result.success).toBe(true);
       if (!result.success) {
         return;

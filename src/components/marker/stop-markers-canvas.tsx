@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
-import type { DepartureGroup, StopWithContext } from '../../types/app/transit-composed';
+import type { TimetableEntry, StopWithContext } from '../../types/app/transit-composed';
 import { getRouteTypeColor } from '../../lib/leaflet-helpers';
 import { primaryRouteType } from '../../domain/transit/route-type-color';
 import { createLogger } from '../../utils/logger';
@@ -17,7 +17,7 @@ interface StopMarkersCanvasProps {
   stops: Stop[];
   selectedStopId: string | null;
   routeTypeMap: Map<string, RouteType[]>;
-  nearbyDepartures?: Map<string, DepartureGroup[]>;
+  nearbyDepartures?: Map<string, TimetableEntry[]>;
   time?: Date;
   infoLevel: InfoLevel;
   onStopSelected: (stop: Stop) => void;
@@ -51,7 +51,7 @@ function buildSummaryHtml(
   stop: Stop,
   routeTypes: RouteType[],
   agencies: Agency[],
-  groups: DepartureGroup[] | undefined,
+  entries: TimetableEntry[] | undefined,
   now: Date | undefined,
   infoLevel: InfoLevel,
 ): string {
@@ -60,7 +60,7 @@ function buildSummaryHtml(
       stop={stop}
       routeTypes={routeTypes}
       agencies={agencies}
-      groups={groups}
+      entries={entries}
       now={now}
       infoLevel={infoLevel}
     />,
@@ -190,7 +190,7 @@ export function StopMarkersCanvas({
     if (showTooltip && now && selectedStopId) {
       const selectedStop = stops.find((s) => s.stop_id === selectedStopId);
       if (selectedStop) {
-        const groups = nearbyDepartures?.get(selectedStopId);
+        const entries = nearbyDepartures?.get(selectedStopId);
         const popup = L.popup({
           autoPan: false,
           offset: [0, -8],
@@ -202,7 +202,7 @@ export function StopMarkersCanvas({
               selectedStop,
               routeTypeMap.get(selectedStopId) ?? [3],
               agenciesMap?.get(selectedStopId) ?? [],
-              groups,
+              entries,
               now,
               infoLevel,
             ),
@@ -256,7 +256,7 @@ function createMarker(
     routeTypeMap: Map<string, RouteType[]>;
     renderer: L.Canvas;
     showTooltip: boolean;
-    nearbyDepartures?: Map<string, DepartureGroup[]>;
+    nearbyDepartures?: Map<string, TimetableEntry[]>;
     now?: Date;
     infoLevel: InfoLevel;
     agenciesMap?: Map<string, Agency[]>;
@@ -316,7 +316,7 @@ function updateMarkerStyle(
     selectedStopId: string | null;
     routeTypeMap: Map<string, RouteType[]>;
     showTooltip: boolean;
-    nearbyDepartures?: Map<string, DepartureGroup[]>;
+    nearbyDepartures?: Map<string, TimetableEntry[]>;
     now?: Date;
     infoLevel: InfoLevel;
     agenciesMap?: Map<string, Agency[]>;

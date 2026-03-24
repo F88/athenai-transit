@@ -17,12 +17,7 @@
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
-import type {
-  DepartureGroup,
-  FullDayStopDeparture,
-  SourceMeta,
-  StopWithMeta,
-} from '../types/app/transit-composed';
+import type { SourceMeta, StopWithMeta, TimetableEntry } from '../types/app/transit-composed';
 import type { CollectionResult, Result } from '../types/app/repository';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
@@ -658,13 +653,6 @@ function generateFixedMinutes(routeId: string, headsign: string): number[] {
   return minutes;
 }
 
-/** Convert service-day minutes to a Date on the same day as `now`. */
-function minutesToDate(minutes: number, now: Date): Date {
-  const d = new Date(now);
-  d.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
-  return d;
-}
-
 /** Euclidean distance approximation in km at ~35 N latitude. */
 function approxDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const dlat = (lat1 - lat2) * 111;
@@ -705,19 +693,19 @@ export class MockRepository implements TransitRepository {
     return Promise.resolve({ success: true, data, truncated });
   }
 
-  /** {@inheritDoc TransitRepository.getUpcomingDepartures} */
-  getUpcomingDepartures(
+  /** {@inheritDoc TransitRepository.getUpcomingTimetableEntries} */
+  getUpcomingTimetableEntries(
     stopId: string,
     now: Date,
     limit = 3,
-  ): Promise<CollectionResult<DepartureGroup>> {
+  ): Promise<CollectionResult<TimetableEntry>> {
     const stop = STOPS.find((s) => s.stop_id === stopId);
     if (!stop) {
       return Promise.resolve({ success: false, error: `No departure data for stop: ${stopId}` });
     }
 
     const stopRoutes = STOP_ROUTES[stopId] ?? [];
-    const groups: DepartureGroup[] = [];
+    const entries: TimetableEntry[] = [];
 
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
@@ -728,17 +716,20 @@ export class MockRepository implements TransitRepository {
       }
 
       const allMinutes = generateFixedMinutes(routeId, headsign);
-      const upcoming = allMinutes.filter((m) => m >= nowMinutes);
-      const departures = upcoming.slice(0, limit).map((m) => minutesToDate(m, now));
-      if (departures.length === 0) {
-        continue;
+      const upcoming = allMinutes.filter((m) => m >= nowMinutes).slice(0, limit);
+      for (const minutes of upcoming) {
+        entries.push({
+          schedule: { departureMinutes: minutes, arrivalMinutes: minutes },
+          routeDirection: { route, headsign, headsign_names: {} },
+          boarding: { pickupType: 0, dropOffType: 0 },
+          patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
+        });
       }
-      groups.push({ route, headsign, headsign_names: {}, departures });
     }
 
-    groups.sort((a, b) => a.departures[0].getTime() - b.departures[0].getTime());
+    entries.sort((a, b) => a.schedule.departureMinutes - b.schedule.departureMinutes);
 
-    return Promise.resolve({ success: true, data: groups, truncated: false });
+    return Promise.resolve({ success: true, data: entries, truncated: false });
   }
 
   /** {@inheritDoc TransitRepository.getRouteTypesForStop} */
@@ -793,28 +784,33 @@ export class MockRepository implements TransitRepository {
     return Promise.resolve({ success: true, data: minutes, truncated: false });
   }
 
-  /** {@inheritDoc TransitRepository.getFullDayDeparturesForStop} */
-  getFullDayDeparturesForStop(
+  /** {@inheritDoc TransitRepository.getFullDayTimetableEntries} */
+  getFullDayTimetableEntries(
     stopId: string,
     ...[
       /* dateTime */
     ]: [Date]
-  ): Promise<CollectionResult<FullDayStopDeparture>> {
+  ): Promise<CollectionResult<TimetableEntry>> {
     const stopRoutes = STOP_ROUTES[stopId] ?? [];
-    const departures: FullDayStopDeparture[] = [];
+    const entries: TimetableEntry[] = [];
 
     for (const { routeId, headsign } of stopRoutes) {
       const route = ROUTES.find((r) => r.route_id === routeId);
       if (!route) {
         continue;
       }
-      for (const m of generateFixedMinutes(routeId, headsign)) {
-        departures.push({ minutes: m, route, headsign, headsign_names: {} });
+      for (const minutes of generateFixedMinutes(routeId, headsign)) {
+        entries.push({
+          schedule: { departureMinutes: minutes, arrivalMinutes: minutes },
+          routeDirection: { route, headsign, headsign_names: {} },
+          boarding: { pickupType: 0, dropOffType: 0 },
+          patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
+        });
       }
     }
 
-    departures.sort((a, b) => a.minutes - b.minutes);
-    return Promise.resolve({ success: true, data: departures, truncated: false });
+    entries.sort((a, b) => a.schedule.departureMinutes - b.schedule.departureMinutes);
+    return Promise.resolve({ success: true, data: entries, truncated: false });
   }
 
   /** {@inheritDoc TransitRepository.getAllStops} */

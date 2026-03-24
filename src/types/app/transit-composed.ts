@@ -125,7 +125,7 @@ export interface DepartureGroup {
  */
 export interface StopWithContext extends StopWithMeta {
   routeTypes: RouteType[];
-  groups: DepartureGroup[];
+  departures: TimetableEntry[];
   /**
    * Geographic metrics from GlobalInsightsBundle.
    * Undefined when global insights data is not loaded (v1 repository).
