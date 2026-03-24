@@ -60,7 +60,13 @@ function validateBundleEnvelope<K extends string>(
   expectedKind: K,
   path: string,
 ): asserts json is { bundle_version: 2; kind: K } {
-  if (typeof json !== 'object' || json === null) {
+  if (json === null) {
+    throw new Error(`${path}: expected JSON object, got null`);
+  }
+  if (Array.isArray(json)) {
+    throw new Error(`${path}: expected JSON object, got array`);
+  }
+  if (typeof json !== 'object') {
     throw new Error(`${path}: expected JSON object, got ${typeof json}`);
   }
   const obj = json as Record<string, unknown>;
@@ -133,9 +139,8 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     const path = `${prefix}/data.json`;
     const result = await this.fetchBundle(path, false);
 
-    // fetchBundle with optional=false always returns non-null
-    validateBundleEnvelope(result!.json, 'data', path);
-    const data = result!.json as DataBundle;
+    validateBundleEnvelope(result.json, 'data', path);
+    const data = result.json as DataBundle;
 
     const elapsed = Math.round(performance.now() - t0);
     logger.info(
@@ -192,6 +197,8 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
    * @throws On network error, timeout, or HTTP error for required files.
    * @throws On non-JSON content-type for required files (SPA fallback detection).
    */
+  private async fetchBundle(path: string, optional: true): Promise<FetchBundleResult | null>;
+  private async fetchBundle(path: string, optional: false): Promise<FetchBundleResult>;
   private async fetchBundle(path: string, optional: boolean): Promise<FetchBundleResult | null> {
     const url = `${this.basePath}/${path}`;
     const t0 = performance.now();
@@ -277,7 +284,14 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     }
     clearTimeout(timeoutId);
     const tNetwork = performance.now();
-    const json = JSON.parse(text) as unknown;
+
+    let json: unknown;
+    try {
+      json = JSON.parse(text) as unknown;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      throw new Error(`${path}: JSON parse error — ${message}`);
+    }
     const tParse = performance.now();
 
     const networkMs = Math.round(tNetwork - t0);

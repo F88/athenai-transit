@@ -67,8 +67,10 @@ export async function runV2LoadBenchmark(
   // --- Phase 2: shapes + insights for ALL sources ---
   const t1 = performance.now();
 
-  const shapesResults = await Promise.allSettled(loaded.map((p) => dataSource.loadShapes(p)));
-  const insightsResults = await Promise.allSettled(loaded.map((p) => dataSource.loadInsights(p)));
+  const [shapesResults, insightsResults] = await Promise.all([
+    Promise.allSettled(loaded.map((p) => dataSource.loadShapes(p))),
+    Promise.allSettled(loaded.map((p) => dataSource.loadInsights(p))),
+  ]);
 
   let shapesLoaded = 0;
   let shapesNull = 0;

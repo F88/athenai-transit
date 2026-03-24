@@ -31,9 +31,14 @@ async function init() {
 
   // Run diagnostics if requested via query param.
   // Dynamic import: diagnostics code is not loaded on normal page visits.
-  if (getDiagParam()) {
-    const { runDiagnostics } = await import('./diagnostics');
-    await runDiagnostics(getDiagParam()!);
+  const diag = getDiagParam();
+  if (diag) {
+    try {
+      const { runDiagnostics } = await import('./diagnostics');
+      await runDiagnostics(diag);
+    } catch (e) {
+      logger.warn(`Diagnostics failed: ${String(e)}`);
+    }
   }
 
   createRoot(document.getElementById('root')!).render(
