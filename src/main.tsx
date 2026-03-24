@@ -37,7 +37,7 @@ async function init() {
       const { runDiagnostics } = await import('./diagnostics');
       await runDiagnostics(diag);
     } catch (e) {
-      logger.warn(`Diagnostics failed: ${String(e)}`);
+      logger.warn('Diagnostics failed:', e);
     }
   }
 

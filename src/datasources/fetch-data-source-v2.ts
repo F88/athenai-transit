@@ -235,7 +235,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
         logger.debug(`${path}: network error (optional, skipping)`);
         return null;
       }
-      logger.warn(`${path}: network error`);
+      logger.warn(`${path}: network error`, e);
       throw new Error(`${path}: network error`, { cause: e });
     }
 
@@ -301,7 +301,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
         logger.debug(`${path}: body read error (optional, skipping)`);
         return null;
       }
-      logger.warn(`${path}: body read error`);
+      logger.warn(`${path}: body read error`, e);
       throw new Error(`${path}: body read error`, { cause: e });
     }
     clearTimeout(timeoutId);
@@ -315,7 +315,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
         logger.debug(`${path}: JSON parse error (optional, skipping)`);
         return null;
       }
-      logger.warn(`${path}: JSON parse error`);
+      logger.warn(`${path}: JSON parse error`, e);
       throw new Error(`${path}: JSON parse error`, { cause: e });
     }
     const tParse = performance.now();
