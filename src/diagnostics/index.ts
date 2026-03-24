@@ -9,6 +9,7 @@
 
 import { DataSourceManager } from '../config/data-source-manager';
 import { createLogger } from '../utils/logger';
+import type { TransitRepository } from '../repositories/transit-repository';
 
 const logger = createLogger('diagnostics');
 
@@ -16,8 +17,9 @@ const logger = createLogger('diagnostics');
  * Run a named diagnostic tool.
  *
  * @param name - Diagnostic name from `?diag=` query parameter.
+ * @param repository - The active TransitRepository instance (for repo-bench).
  */
-export async function runDiagnostics(name: string): Promise<void> {
+export async function runDiagnostics(name: string, repository?: TransitRepository): Promise<void> {
   const prefixes = new DataSourceManager().getEnabledPrefixes();
 
   switch (name) {
@@ -26,7 +28,16 @@ export async function runDiagnostics(name: string): Promise<void> {
       await runV2LoadBenchmark(prefixes);
       break;
     }
+    case 'repo-bench': {
+      if (!repository) {
+        logger.warn('repo-bench requires a repository instance');
+        break;
+      }
+      const { runRepoBenchmark } = await import('./repo-benchmark');
+      await runRepoBenchmark(repository);
+      break;
+    }
     default:
-      logger.warn(`Unknown diag: "${name}". Available: v2-load`);
+      logger.warn(`Unknown diag: "${name}". Available: v2-load, repo-bench`);
   }
 }

@@ -478,9 +478,10 @@ http://localhost:5173/?diag=v2-load
 
 ### 利用可能な diagnostics
 
-| name      | 内容                                                           |
-| --------- | -------------------------------------------------------------- |
-| `v2-load` | v2 バンドル (data/shapes/insights/global) のロードベンチマーク |
+| name         | 内容                                                           |
+| ------------ | -------------------------------------------------------------- |
+| `v2-load`    | v2 バンドル (data/shapes/insights/global) のロードベンチマーク |
+| `repo-bench` | Repository API のクエリ性能ベンチマーク (12地点)               |
 
 対象ソースは `DataSourceManager` の有効ソース (`?sources=` や localStorage で絞り込み可能)。
 
@@ -492,6 +493,17 @@ http://localhost:5173/?diag=v2-load
 - サマリー: `Total: Xms (data=Xms, shapes+insights=Xms, global=Xms)`
 
 `FetchDataSourceV2` の debug ログでソースごとの network/parse 内訳も確認可能。
+
+### `repo-bench` の出力
+
+`?repo=` で選択した Repository の API を 12 の HOME_LOCATIONS で呼び出し、所要時間を計測。
+
+```text
+?diag=repo-bench           → v1 repo のベンチマーク
+?diag=repo-bench&repo=v2   → v2 repo のベンチマーク
+```
+
+計測対象: getAllStops, getRouteShapes, getAllSourceMeta, getStopsInBounds, getStopsNearby, getUpcomingDepartures, getRouteTypesForStop, getFullDayDeparturesForStop
 
 ### diagnostics の追加
 

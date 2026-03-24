@@ -50,7 +50,7 @@ async function init() {
   if (diag) {
     try {
       const { runDiagnostics } = await import('./diagnostics');
-      await runDiagnostics(diag);
+      await runDiagnostics(diag, repository);
     } catch (e) {
       logger.warn('Diagnostics failed:', e);
     }
