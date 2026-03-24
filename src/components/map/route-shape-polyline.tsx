@@ -58,10 +58,11 @@ export const RouteShapePolylines = memo(function RouteShapePolylines({
   onRouteShapeSelected,
 }: RouteShapePolylinesProps) {
   // Precompute styles and sort so dimmed routes render before highlighted.
+  // When freq is available, scale line weight by frequency.
   const styledShapes = useMemo(() => {
     const items = shapes.map((shape, idx) => ({
       shape,
-      style: getRouteShapeStyle(selectedRouteIds, shape.routeId),
+      style: getRouteShapeStyle(selectedRouteIds, shape.routeId, shape.routeType, shape.freq),
       stableIndex: idx,
     }));
     if (selectedRouteIds === null) {

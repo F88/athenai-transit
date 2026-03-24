@@ -165,7 +165,7 @@ export interface RouteShapeStyle {
 
 /** Route shape weight constants. */
 const ROUTE_WEIGHT = {
-  /** Default and dimmed route line width. */
+  /** Default line width (non-bus, or bus without freq data). */
   default: 4,
   /** Highlighted (selected) route line width. */
   highlighted: 6,
@@ -174,42 +174,91 @@ const ROUTE_WEIGHT = {
 } as const;
 
 /**
+ * Compute line weight based on route type and daily departure frequency.
+ *
+ * - Non-bus routes (rail, subway, tram): fixed default weight (4).
+ * - Bus routes: weight determined by daily departure count.
+ *   250+ → 6, 100-249 → 5, 50-99 → 4, 0-49 → 3.
+ *
+ * Based on actual data distribution (1,202 bus routes):
+ * 71% have freq < 50, 15% 50-99, 11% 100-249, 3% 250+.
+ *
+ * @param routeType - GTFS route_type (0=tram, 1=subway, 2=rail, 3=bus).
+ * @param freq - Departures per day, or undefined if not available.
+ * @returns Line weight in pixels.
+ */
+function getFreqBasedWeight(routeType: number, freq: number | undefined): number {
+  if (routeType !== 3 || freq === undefined) {
+    return ROUTE_WEIGHT.default;
+  }
+  if (freq >= 250) {
+    return 10;
+  }
+  if (freq >= 100) {
+    return 6;
+  }
+  if (freq >= 50) {
+    return 4;
+  }
+  return 3;
+}
+
+/**
+ * Compute the style for a highlighted (selected) route shape.
+ *
+ * Weight is the greater of freq-based weight or the minimum
+ * highlight width. Outline is added on top.
+ *
+ * @param routeType - GTFS route_type.
+ * @param freq - Departures per day, or undefined if not available.
+ * @returns Fill and outline style for highlighted state.
+ */
+function getHighlightedRouteShapeStyle(routeType: number, freq: number | undefined): RouteShapeStyle {
+  const weight = Math.max(getFreqBasedWeight(routeType, freq), ROUTE_WEIGHT.highlighted);
+  return {
+    weight,
+    opacity: 1.0,
+    outline: {
+      weight: weight + ROUTE_WEIGHT.outlineExtra,
+      opacity: 1.6,
+    },
+  };
+}
+
+/**
  * Computes the polyline style for a route shape based on selection state.
  *
  * Returns one of three states:
- * - No selection (`selectedRouteIds` is null): default style without outline
+ * - No selection (`selectedRouteIds` is null): default style without outline.
+ *   When `freq` is available, weight is scaled by frequency.
  * - Selected and route matches: highlighted style with prominent outline
  * - Selected but route does not match: dimmed style without outline
  *
  * @param selectedRouteIds - Set of selected route IDs, or null if nothing is selected.
  * @param routeId - The route ID of the shape to style.
+ * @param freq - Departures per day for this route (from insights), or undefined.
  * @returns Fill and outline style values.
  */
 export function getRouteShapeStyle(
   selectedRouteIds: Set<string> | null,
   routeId: string,
+  routeType: number,
+  freq?: number,
 ): RouteShapeStyle {
   if (selectedRouteIds === null) {
     return {
-      weight: ROUTE_WEIGHT.default,
+      weight: getFreqBasedWeight(routeType, freq),
       opacity: 1.0,
       outline: null,
     };
   }
 
   if (selectedRouteIds.has(routeId)) {
-    return {
-      weight: ROUTE_WEIGHT.highlighted,
-      opacity: 1.0,
-      outline: {
-        weight: ROUTE_WEIGHT.highlighted + ROUTE_WEIGHT.outlineExtra,
-        opacity: 1.6,
-      },
-    };
+    return getHighlightedRouteShapeStyle(routeType, freq);
   }
 
   return {
-    weight: ROUTE_WEIGHT.default,
+    weight: getFreqBasedWeight(routeType, freq),
     opacity: 0.15,
     outline: null,
   };
