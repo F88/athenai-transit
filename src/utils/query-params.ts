@@ -11,6 +11,7 @@
  * - `?sources=minkuru,yurimo` — filter data sources by prefix
  * - `?lat=35.68&lng=139.77` — initial map center
  * - `?zm=14` — initial map zoom level
+ * - `?diag=v2-load` — run diagnostics (see DEVELOPMENT.md)
  */
 
 import { MAX_ZOOM } from '../config/map-defaults';
@@ -32,6 +33,16 @@ function getParams(): URLSearchParams {
  */
 export function hasMockDataParam(): boolean {
   return getParams().has('mock-data');
+}
+
+/**
+ * Returns the `?diag=` param value, or null if not present.
+ * Used to trigger diagnostic/benchmark tools.
+ *
+ * @returns The diag parameter value (e.g. "v2-load"), or null.
+ */
+export function getDiagParam(): string | null {
+  return getParams().get('diag');
 }
 
 /**
