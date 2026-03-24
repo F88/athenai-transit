@@ -7,7 +7,7 @@
  * are accepted and passed to downstream consumers.
  *
  * Supported query params:
- * - `?mock-data` — use MockRepository
+ * - `?repo=v1|v2|mock` — select repository implementation (default: v1)
  * - `?sources=minkuru,yurimo` — filter data sources by prefix
  * - `?lat=35.68&lng=139.77` — initial map center
  * - `?zm=14` — initial map zoom level
@@ -26,13 +26,25 @@ function getParams(): URLSearchParams {
   return cachedParams;
 }
 
+/** Valid values for the `?repo=` query parameter. */
+export type RepoParam = 'v1' | 'v2' | 'mock';
+
 /**
- * Returns true if `?mock-data` is present in the URL.
+ * Returns the `?repo=` param value, defaulting to 'v1'.
  *
- * @returns Whether the mock-data query parameter is set.
+ * Controls which TransitRepository implementation is used:
+ * - `v1` (default): AthenaiRepository (v1 JSON data)
+ * - `v2`: AthenaiRepositoryV2 (v2 bundle data)
+ * - `mock`: MockRepository (fictional in-memory data)
+ *
+ * @returns The repository selection ('v1', 'v2', or 'mock').
  */
-export function hasMockDataParam(): boolean {
-  return getParams().has('mock-data');
+export function getRepoParam(): RepoParam {
+  const value = getParams().get('repo');
+  if (value === 'v2' || value === 'mock') {
+    return value;
+  }
+  return 'v1';
 }
 
 /**

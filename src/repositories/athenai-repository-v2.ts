@@ -395,8 +395,6 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
 export class AthenaiRepositoryV2 implements TransitRepository {
   private activeServiceCache: { key: string; ids: Set<string> } | null = null;
   private stops: Stop[];
-  // Retained for Phase B (future response type extensions).
-  // Currently used only in static loadAllShapes via create().
   private readonly routeMap: Map<string, Route>;
   private agencyMap: Map<string, Agency>;
   private resolvedPatterns: Map<string, ResolvedPattern>;
@@ -410,10 +408,10 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private sourceMetas: SourceMeta[];
 
   // Shapes: background-loaded after create()
-  private shapesPromise: Promise<RouteShape[]>;
+  private shapesPromise: Promise<RouteShape[]> = Promise.resolve([]);
   private shapesCache: RouteShape[] | null = null;
 
-  private constructor(merged: MergedDataV2, shapesPromise: Promise<RouteShape[]>) {
+  private constructor(merged: MergedDataV2) {
     this.stops = merged.stops;
     this.routeMap = merged.routeMap;
     this.agencyMap = merged.agencyMap;
@@ -426,7 +424,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     this.timetable = merged.timetable;
     this.headsignTranslations = merged.headsignTranslations;
     this.sourceMetas = merged.sourceMetas;
-    this.shapesPromise = shapesPromise;
+  }
+
+  /** Start background loading of shapes for all loaded prefixes. */
+  private startShapesLoad(prefixes: string[], dataSource: TransitDataSourceV2): void {
+    this.shapesPromise = this.loadAllShapes(prefixes, dataSource);
   }
 
   /**
@@ -471,14 +473,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       );
     }
 
-    // Start background shapes loading
-    const shapesPromise = AthenaiRepositoryV2.loadAllShapes(
-      loadResult.loaded,
-      merged.routeMap,
-      dataSource,
-    );
-
-    const repository = new AthenaiRepositoryV2(merged, shapesPromise);
+    const repository = new AthenaiRepositoryV2(merged);
+    // Start background shapes loading after repository creation
+    repository.startShapesLoad(loadResult.loaded, dataSource);
     return { repository, loadResult };
   }
 
@@ -486,9 +483,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   // Shapes background loading
   // ---------------------------------------------------------------------------
 
-  private static async loadAllShapes(
+  private async loadAllShapes(
     prefixes: string[],
-    routeMap: Map<string, Route>,
     dataSource: TransitDataSourceV2,
   ): Promise<RouteShape[]> {
     const t0 = performance.now();
@@ -502,7 +498,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         continue;
       }
       for (const [routeId, polylines] of Object.entries(r.value.shapes.data)) {
-        const route = routeMap.get(routeId);
+        const route = this.routeMap.get(routeId);
         const color = route?.route_color ? `#${route.route_color}` : '#888888';
         const routeType = route?.route_type ?? 3;
         for (const points of polylines) {
