@@ -20,62 +20,16 @@ import type { SourceData } from '../datasources/transit-data-source';
 import { FetchDataSource } from '../datasources/fetch-data-source';
 import { createLogger } from '../utils/logger';
 import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
+import {
+  binarySearchFirstGte,
+  computeActiveServiceIds,
+  extractPrefix,
+  formatDateKey,
+  minutesToDate,
+} from '../domain/transit/calendar-utils';
 import type { TransitRepository } from './transit-repository';
 
 const logger = createLogger('AthenaiRepository');
-
-// ---------------------------------------------------------------------------
-// Pure helper functions
-// ---------------------------------------------------------------------------
-
-/**
- * Find the index of the first element >= target in a sorted array.
- * Returns array.length if all elements are less than target.
- */
-function binarySearchFirstGte(sorted: number[], target: number): number {
-  let lo = 0;
-  let hi = sorted.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >>> 1;
-    if (sorted[mid] < target) {
-      lo = mid + 1;
-    } else {
-      hi = mid;
-    }
-  }
-  return lo;
-}
-
-/** Extract the source prefix from a prefixed ID (e.g. "kobus:123" → "kobus"). */
-function extractPrefix(prefixedId: string): string {
-  const colonIdx = prefixedId.indexOf(':');
-  return colonIdx >= 0 ? prefixedId.substring(0, colonIdx) : prefixedId;
-}
-
-/** Format a date as "YYYYMMDD" string for calendar comparison. */
-function formatDateKey(serviceDate: Date): string {
-  const y = serviceDate.getFullYear();
-  const m = String(serviceDate.getMonth() + 1).padStart(2, '0');
-  const d = String(serviceDate.getDate()).padStart(2, '0');
-  return `${y}${m}${d}`;
-}
-
-/** Get the day-of-week index (0=mon .. 6=sun) for calendar.d array. */
-function getDayIndex(serviceDate: Date): number {
-  // JS: 0=Sun, 1=Mon, ..., 6=Sat -> GTFS: 0=Mon, ..., 6=Sun
-  const jsDay = serviceDate.getDay();
-  return jsDay === 0 ? 6 : jsDay - 1;
-}
-
-/**
- * Convert minutes-from-midnight to a Date on the same day as `baseDate`.
- * Negative minutes or minutes >= 1440 adjust the day accordingly.
- */
-function minutesToDate(baseDate: Date, minutes: number): Date {
-  const result = new Date(baseDate);
-  result.setHours(Math.floor(minutes / 60), minutes % 60, 0, 0);
-  return result;
-}
 
 // ---------------------------------------------------------------------------
 // Fetch and merge (used by create)
@@ -534,6 +488,7 @@ export class AthenaiRepository implements TransitRepository {
     now: Date,
     limit?: number,
   ): Promise<CollectionResult<DepartureGroup>> {
+    const t0 = performance.now();
     const timetableGroups = this.timetable[stopId];
     if (!timetableGroups) {
       return Promise.resolve({ success: false, error: `No departure data for stop: ${stopId}` });
@@ -626,8 +581,9 @@ export class AthenaiRepository implements TransitRepository {
 
     result.sort((a, b) => a.departures[0].getTime() - b.departures[0].getTime());
 
+    const elapsed = Math.round(performance.now() - t0);
     logger.debug(
-      `getUpcomingDepartures: ${stopId} → ${result.length} groups, ${totalReturned}/${totalAvailableAll} departures (${anyTruncated ? 'truncated' : 'all'})`,
+      `getUpcomingDepartures: ${stopId} → ${result.length} groups, ${totalReturned}/${totalAvailableAll} departures in ${elapsed}ms (${anyTruncated ? 'truncated' : 'all'})`,
     );
     return Promise.resolve({ success: true, data: result, truncated: anyTruncated });
   }
@@ -639,6 +595,7 @@ export class AthenaiRepository implements TransitRepository {
     headsign: string,
     dateTime: Date,
   ): Promise<CollectionResult<number>> {
+    const t0 = performance.now();
     const groups = this.timetable[stopId];
     if (!groups) {
       return Promise.resolve({ success: true, data: [], truncated: false });
@@ -664,7 +621,8 @@ export class AthenaiRepository implements TransitRepository {
     }
 
     allMinutes.sort((a, b) => a - b);
-    logger.debug(`getFullDayDepartures: ${stopId}/${routeId} → ${allMinutes.length} departures`);
+    const elapsed = Math.round(performance.now() - t0);
+    logger.debug(`getFullDayDepartures: ${stopId}/${routeId} → ${allMinutes.length} departures in ${elapsed}ms`);
     return Promise.resolve({ success: true, data: allMinutes, truncated: false });
   }
 
@@ -673,6 +631,7 @@ export class AthenaiRepository implements TransitRepository {
     stopId: string,
     dateTime: Date,
   ): Promise<CollectionResult<FullDayStopDeparture>> {
+    const t0 = performance.now();
     const groups = this.timetable[stopId];
     if (!groups) {
       return Promise.resolve({ success: true, data: [], truncated: false });
@@ -702,7 +661,8 @@ export class AthenaiRepository implements TransitRepository {
     }
 
     departures.sort((a, b) => a.minutes - b.minutes);
-    logger.debug(`getFullDayDeparturesForStop: ${stopId} → ${departures.length} departures`);
+    const elapsed = Math.round(performance.now() - t0);
+    logger.debug(`getFullDayDeparturesForStop: ${stopId} → ${departures.length} departures in ${elapsed}ms`);
     return Promise.resolve({ success: true, data: departures, truncated: false });
   }
 
@@ -766,31 +726,13 @@ export class AthenaiRepository implements TransitRepository {
       return this.activeServiceCache.ids;
     }
 
-    const dayIndex = getDayIndex(serviceDate);
-    const active = new Set<string>();
+    const ids = computeActiveServiceIds(
+      serviceDate,
+      this.calendarServices,
+      this.calendarExceptions,
+    );
 
-    // Check calendar: date range + day-of-week
-    for (const svc of this.calendarServices) {
-      if (key >= svc.s && key <= svc.e && svc.d[dayIndex] === 1) {
-        active.add(svc.i);
-      }
-    }
-
-    // Apply calendar_dates exceptions
-    for (const [serviceId, exceptions] of this.calendarExceptions) {
-      for (const ex of exceptions) {
-        if (ex.d !== key) {
-          continue;
-        }
-        if (ex.t === 1) {
-          active.add(serviceId); // Added
-        } else if (ex.t === 2) {
-          active.delete(serviceId); // Removed
-        }
-      }
-    }
-
-    this.activeServiceCache = { key, ids: active };
-    return active;
+    this.activeServiceCache = { key, ids };
+    return ids;
   }
 }

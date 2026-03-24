@@ -40,11 +40,11 @@ TransitRepository          <- interface used by UI
   └── MockRepository        <- for UI testing with fictional data
 ```
 
-#### MockRepository (`?mock-data` mode)
+#### MockRepository (`?repo=mock` mode)
 
 `MockRepository` is an in-memory implementation with fictional stops/routes for testing UI behavior with data that is valid per GTFS spec but does not exist in real datasets (e.g., stops served by multiple route types).
 
-- **Activation**: Add `?mock-data` to the URL (e.g., `http://localhost:5173/?mock-data`). Available in all builds including production.
+- **Activation**: Add `?repo=mock` to the URL (e.g., `http://localhost:5173/?repo=mock`). Available in all builds including production.
 - **When to use**: Only when testing requires data shapes not present in real GTFS sources. For normal development, use real data.
 - **Location**: `src/repositories/mock-repository.ts`
 
