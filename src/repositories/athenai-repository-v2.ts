@@ -457,9 +457,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     this.sourceMetas = merged.sourceMetas;
   }
 
-  /** Start background loading of shapes for all loaded prefixes. */
+  /** Start background loading of shapes and insights for all loaded prefixes. */
   private startShapesLoad(prefixes: string[], dataSource: TransitDataSourceV2): void {
-    this.shapesPromise = this.loadAllShapes(prefixes, dataSource);
+    this.shapesPromise = this.loadAllShapesWithInsights(prefixes, dataSource);
   }
 
   /**
@@ -514,17 +514,71 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   // Shapes background loading
   // ---------------------------------------------------------------------------
 
-  private async loadAllShapes(
+  private async loadAllShapesWithInsights(
     prefixes: string[],
     dataSource: TransitDataSourceV2,
   ): Promise<RouteShape[]> {
     const t0 = performance.now();
-    const results = await Promise.allSettled(
-      prefixes.map((prefix) => dataSource.loadShapes(prefix)),
-    );
 
+    // Load shapes and insights in parallel
+    const [shapesResults, insightsResults] = await Promise.all([
+      Promise.allSettled(prefixes.map((prefix) => dataSource.loadShapes(prefix))),
+      Promise.allSettled(prefixes.map((prefix) => dataSource.loadInsights(prefix))),
+    ]);
+
+    // Build per-route insights lookup from all insights bundles.
+    // tripPatternGeo is keyed by pattern ID; we resolve to route ID
+    // via resolvedPatterns to find the best freq and geo for each route.
+    // When multiple patterns exist for a route, use the highest freq.
+    const routeFreq = new Map<string, number>();
+    const routeGeo = new Map<string, { pathDist: number; isCircular: boolean }>();
+
+    for (const r of insightsResults) {
+      if (r.status !== 'fulfilled' || !r.value) {
+        continue;
+      }
+      const insights = r.value;
+
+      // Geo: keyed by pattern ID, service-group independent
+      if (insights.tripPatternGeo) {
+        for (const [patternId, geo] of Object.entries(insights.tripPatternGeo.data)) {
+          const resolved = this.resolvedPatterns.get(patternId);
+          if (!resolved) {
+            continue;
+          }
+          const routeId = resolved.route.route_id;
+          if (!routeGeo.has(routeId)) {
+            routeGeo.set(routeId, { pathDist: geo.pathDist, isCircular: geo.cl });
+          }
+        }
+      }
+
+      // Freq: keyed by service group, then pattern ID.
+      // Use the first service group (highest priority = most common day type).
+      if (insights.tripPatternStats) {
+        const serviceGroups = insights.serviceGroups.data;
+        const firstGroupKey = serviceGroups[0]?.key;
+        if (firstGroupKey) {
+          const statsForGroup = insights.tripPatternStats.data[firstGroupKey];
+          if (statsForGroup) {
+            for (const [patternId, stats] of Object.entries(statsForGroup)) {
+              const resolved = this.resolvedPatterns.get(patternId);
+              if (!resolved) {
+                continue;
+              }
+              const routeId = resolved.route.route_id;
+              const current = routeFreq.get(routeId) ?? 0;
+              // Accumulate freq across patterns for the same route
+              routeFreq.set(routeId, current + stats.freq);
+            }
+          }
+        }
+      }
+    }
+
+    // Build shapes with insights enrichment
     const shapes: RouteShape[] = [];
-    for (const r of results) {
+    for (const r of shapesResults) {
       if (r.status !== 'fulfilled' || !r.value) {
         continue;
       }
@@ -532,16 +586,28 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const route = this.routeMap.get(routeId);
         const color = route?.route_color ? `#${route.route_color}` : '#888888';
         const routeType = route?.route_type ?? 3;
+        const geo = routeGeo.get(routeId);
+        const freq = routeFreq.get(routeId);
+
         for (const points of polylines) {
-          // ShapePointV2 is [lat, lon, dist?] — strip optional dist
-          const coords: [number, number][] = points.map((p) => [p[0], p[1]]);
-          shapes.push({ routeId, routeType, color, route: route ?? null, points: coords });
+          shapes.push({
+            routeId,
+            routeType,
+            color,
+            route: route ?? null,
+            points,
+            freq,
+            pathDist: geo?.pathDist,
+            isCircular: geo?.isCircular,
+          });
         }
       }
     }
 
     const elapsed = Math.round(performance.now() - t0);
-    logger.info(`Shapes loaded: ${shapes.length} shapes in ${elapsed}ms`);
+    logger.info(
+      `Shapes loaded: ${shapes.length} shapes in ${elapsed}ms (insights: ${routeGeo.size} geo, ${routeFreq.size} freq)`,
+    );
     return shapes;
   }
 

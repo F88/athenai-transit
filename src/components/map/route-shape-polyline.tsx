@@ -1,7 +1,17 @@
 import { memo, useMemo } from 'react';
 import { Polyline } from 'react-leaflet';
+import type { LatLngExpression } from 'leaflet';
 import type { RouteShape } from '../../types/app/map';
 import { getRouteShapeStyle } from '../../domain/transit/route-selection';
+
+/**
+ * Extract [lat, lon] positions from shape points, stripping the
+ * optional third element (shape_dist_traveled) to prevent Leaflet
+ * from interpreting it as altitude.
+ */
+function toLatLng(points: [number, number, number?][]): LatLngExpression[] {
+  return points.map((p) => [p[0], p[1]] as [number, number]);
+}
 
 interface RouteShapePolylinesProps {
   /** Route shapes to render. */
@@ -73,7 +83,7 @@ export const RouteShapePolylines = memo(function RouteShapePolylines({
             style.outline && (
               <Polyline
                 key={`${shape.routeId}-${stableIndex}-outline`}
-                positions={shape.points}
+                positions={toLatLng(shape.points)}
                 interactive={false}
                 pane={outlinePane}
                 pathOptions={{ color: '#000000', ...style.outline }}
