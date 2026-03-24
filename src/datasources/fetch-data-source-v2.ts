@@ -139,19 +139,11 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
   async loadData(prefix: string): Promise<SourceDataV2> {
     validatePrefix(prefix);
 
-    const t0 = performance.now();
     const path = `${prefix}/data.json`;
     const result = await this.fetchBundle(path, false);
 
     validateBundleEnvelope(result.json, 'data', path);
-    const data = result.json as DataBundle;
-
-    const elapsed = Math.round(performance.now() - t0);
-    logger.info(
-      `Loaded ${path} in ${elapsed}ms: ${data.stops.data.length} stops, ${data.routes.data.length} routes`,
-    );
-
-    return { prefix, data };
+    return { prefix, data: result.json as DataBundle };
   }
 
   /** {@inheritDoc TransitDataSourceV2.loadShapes} */
@@ -195,12 +187,19 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
   /**
    * Fetch, validate content-type, and parse a JSON bundle file.
    *
+   * All outcomes are logged at the appropriate level:
+   * - Success: info (path, size, network/parse timing)
+   * - Timeout: error (always, regardless of optional flag)
+   * - Other failures: warn for required, debug for optional
+   *
    * @param path - Relative path under base (e.g. "tobus/data.json").
    * @param optional - When true, returns `null` on any non-OK HTTP status,
-   *                   non-JSON content-type, network error, or timeout.
+   *                   non-JSON content-type, network error, timeout, or
+   *                   JSON parse error.
    * @returns Parsed result with timing metrics, or `null` for unavailable optional files.
    * @throws On network error, timeout, or HTTP error for required files.
    * @throws On non-JSON content-type for required files (SPA fallback detection).
+   * @throws On JSON parse error for required files.
    */
   private async fetchBundle(path: string, optional: true): Promise<FetchBundleResult | null>;
   private async fetchBundle(path: string, optional: false): Promise<FetchBundleResult>;
@@ -220,13 +219,19 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     } catch (e) {
       clearTimeout(timeoutId);
       const isTimeout = e instanceof DOMException && e.name === 'AbortError';
-      if (optional) {
-        logger.debug(`${path}: ${isTimeout ? 'timeout' : 'network error'} (optional, skipping)`);
-        return null;
-      }
       if (isTimeout) {
+        // Timeout is always logged as error regardless of optional flag
+        logger.error(`${path}: timeout after ${this.timeoutMs}ms`);
+        if (optional) {
+          return null;
+        }
         throw new Error(`${path}: timeout after ${this.timeoutMs}ms`);
       }
+      if (optional) {
+        logger.debug(`${path}: network error (optional, skipping)`);
+        return null;
+      }
+      logger.warn(`${path}: network error`);
       throw new Error(`${path}: network error`, { cause: e });
     }
 
@@ -239,6 +244,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
         logger.debug(`${path}: 404 (optional, skipping)`);
         return null;
       }
+      logger.warn(`${path}: HTTP 404`);
       throw new Error(`${path}: HTTP 404`);
     }
     if (!response.ok) {
@@ -247,6 +253,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
         logger.debug(`${path}: HTTP ${response.status} (optional, skipping)`);
         return null;
       }
+      logger.warn(`${path}: HTTP ${response.status}`);
       throw new Error(`${path}: HTTP ${response.status}`);
     }
 
@@ -262,6 +269,9 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
         logger.debug(`${path}: non-JSON content-type (optional, skipping)`);
         return null;
       }
+      logger.warn(
+        `${path}: expected application/json but got "${contentType}" (possible SPA fallback)`,
+      );
       throw new Error(
         `${path}: expected application/json but got "${contentType}" (possible SPA fallback)`,
       );
@@ -276,15 +286,18 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     } catch (e) {
       clearTimeout(timeoutId);
       const isTimeout = e instanceof DOMException && e.name === 'AbortError';
-      if (optional) {
-        logger.debug(
-          `${path}: ${isTimeout ? 'timeout during body' : 'read error'} (optional, skipping)`,
-        );
-        return null;
-      }
       if (isTimeout) {
+        logger.error(`${path}: timeout after ${this.timeoutMs}ms (during body download)`);
+        if (optional) {
+          return null;
+        }
         throw new Error(`${path}: timeout after ${this.timeoutMs}ms (during body download)`);
       }
+      if (optional) {
+        logger.debug(`${path}: body read error (optional, skipping)`);
+        return null;
+      }
+      logger.warn(`${path}: body read error`);
       throw new Error(`${path}: body read error`, { cause: e });
     }
     clearTimeout(timeoutId);
@@ -294,6 +307,11 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     try {
       json = JSON.parse(text) as unknown;
     } catch (e) {
+      if (optional) {
+        logger.debug(`${path}: JSON parse error (optional, skipping)`);
+        return null;
+      }
+      logger.warn(`${path}: JSON parse error`);
       throw new Error(`${path}: JSON parse error`, { cause: e });
     }
     const tParse = performance.now();
@@ -301,7 +319,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     const networkMs = Math.round(tNetwork - t0);
     const parseMs = Math.round(tParse - tNetwork);
     const sizeKB = (text.length / 1024).toFixed(1);
-    logger.debug(`${path}: ${sizeKB}KB (network=${networkMs}ms, parse=${parseMs}ms)`);
+    logger.info(`${path}: ${sizeKB}KB (network=${networkMs}ms, parse=${parseMs}ms)`);
 
     return { json, sizeApprox: text.length, networkMs, parseMs };
   }

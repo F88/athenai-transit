@@ -67,6 +67,14 @@ function htmlResponse(status = 200): Response {
   });
 }
 
+/** Create a mock Response with invalid JSON body but application/json content-type. */
+function brokenJsonResponse(): Response {
+  return new Response('{"broken json', {
+    status: 200,
+    headers: { 'content-type': 'application/json' },
+  });
+}
+
 /** Create a 404 Response. */
 function notFoundResponse(): Response {
   return new Response('', { status: 404 });
@@ -147,6 +155,12 @@ describe('FetchDataSourceV2', () => {
       await expect(ds.loadData('tobus')).rejects.toThrow('invalid bundle kind');
     });
 
+    it('throws on JSON parse error', async () => {
+      fetchMock.mockResolvedValueOnce(brokenJsonResponse());
+      const ds = new FetchDataSourceV2();
+      await expect(ds.loadData('tobus')).rejects.toThrow('JSON parse error');
+    });
+
     it('throws on network error', async () => {
       fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
       const ds = new FetchDataSourceV2();
@@ -187,6 +201,12 @@ describe('FetchDataSourceV2', () => {
 
     it('returns null on network error', async () => {
       fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+      const ds = new FetchDataSourceV2();
+      expect(await ds.loadShapes('tobus')).toBeNull();
+    });
+
+    it('returns null on JSON parse error', async () => {
+      fetchMock.mockResolvedValueOnce(brokenJsonResponse());
       const ds = new FetchDataSourceV2();
       expect(await ds.loadShapes('tobus')).toBeNull();
     });

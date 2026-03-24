@@ -66,8 +66,8 @@ export interface TransitDataSourceV2 {
    * loaded lazily after startup (e.g. when shapes layer is enabled).
    *
    * @param prefix - Source identifier (e.g. "tobus").
-   * @returns The parsed shapes bundle, or `null` if unavailable.
-   * @throws When the response is valid JSON but has an invalid bundle format.
+   * @returns The parsed shapes bundle, or `null` if unavailable
+   *          (not found, network error, timeout, non-JSON, or parse error).
    */
   loadShapes(prefix: string): Promise<ShapesBundle | null>;
 
@@ -78,8 +78,8 @@ export interface TransitDataSourceV2 {
    * Intended to be loaded lazily when analytics views are accessed.
    *
    * @param prefix - Source identifier (e.g. "tobus").
-   * @returns The parsed insights bundle, or `null` if unavailable.
-   * @throws When the response is valid JSON but has an invalid bundle format.
+   * @returns The parsed insights bundle, or `null` if unavailable
+   *          (not found, network error, timeout, non-JSON, or parse error).
    */
   loadInsights(prefix: string): Promise<InsightsBundle | null>;
 
@@ -89,8 +89,8 @@ export interface TransitDataSourceV2 {
    * Contains metrics computed across all sources (e.g. stop geo).
    * Loaded independently of any specific source prefix.
    *
-   * @returns The parsed global insights bundle, or `null` if unavailable.
-   * @throws When the response is valid JSON but has an invalid bundle format.
+   * @returns The parsed global insights bundle, or `null` if unavailable
+   *          (not found, network error, timeout, non-JSON, or parse error).
    */
   loadGlobalInsights(): Promise<GlobalInsightsBundle | null>;
 }
