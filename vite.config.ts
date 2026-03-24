@@ -24,7 +24,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
-        globIgnores: ['data/**'],
+        globIgnores: ['data/**', 'data-v2/**'],
         runtimeCaching: [
           {
             urlPattern: /\/data\/.*\.json$/,
@@ -33,7 +33,18 @@ export default defineConfig({
               cacheName: 'gtfs-data',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 7 * 24 * 60 * 60,
+                maxAgeSeconds: 24 * 60 * 60,
+              },
+            },
+          },
+          {
+            urlPattern: /\/data-v2\/.*\.json$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'gtfs-data-v2',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 24 * 60 * 60,
               },
             },
           },
