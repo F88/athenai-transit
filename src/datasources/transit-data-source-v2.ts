@@ -44,7 +44,11 @@ export interface SourceDataV2 {
  * Implementations handle fetch, parsing, and bundle_version/kind
  * validation. Errors should be thrown for required data; optional
  * bundles return `null` when the data is unavailable (not found,
- * network error, timeout, or non-JSON response).
+ * network error, timeout, non-JSON response, or JSON parse error).
+ *
+ * Bundle envelope validation errors (wrong bundle_version or kind)
+ * always throw regardless of optional flag — these indicate a
+ * pipeline bug or file corruption, not a missing resource.
  */
 export interface TransitDataSourceV2 {
   /**
@@ -68,6 +72,7 @@ export interface TransitDataSourceV2 {
    * @param prefix - Source identifier (e.g. "tobus").
    * @returns The parsed shapes bundle, or `null` if unavailable
    *          (not found, network error, timeout, non-JSON, or parse error).
+   * @throws When bundle envelope is invalid (wrong bundle_version or kind).
    */
   loadShapes(prefix: string): Promise<ShapesBundle | null>;
 
@@ -80,6 +85,7 @@ export interface TransitDataSourceV2 {
    * @param prefix - Source identifier (e.g. "tobus").
    * @returns The parsed insights bundle, or `null` if unavailable
    *          (not found, network error, timeout, non-JSON, or parse error).
+   * @throws When bundle envelope is invalid (wrong bundle_version or kind).
    */
   loadInsights(prefix: string): Promise<InsightsBundle | null>;
 
@@ -91,6 +97,7 @@ export interface TransitDataSourceV2 {
    *
    * @returns The parsed global insights bundle, or `null` if unavailable
    *          (not found, network error, timeout, non-JSON, or parse error).
+   * @throws When bundle envelope is invalid (wrong bundle_version or kind).
    */
   loadGlobalInsights(): Promise<GlobalInsightsBundle | null>;
 }

@@ -95,7 +95,10 @@ function validatePrefix(prefix: string): void {
 
 /**
  * Result of fetching a bundle file.
- * `null` means the file was not found (optional bundles only).
+ *
+ * For optional bundles, `fetchBundle` returns `null` when the data
+ * is unavailable (404, HTTP error, timeout, network error, non-JSON
+ * content-type, or JSON parse error). See {@link FetchDataSourceV2.fetchBundle}.
  */
 interface FetchBundleResult {
   /** Parsed JSON content. */
