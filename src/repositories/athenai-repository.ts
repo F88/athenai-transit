@@ -488,6 +488,7 @@ export class AthenaiRepository implements TransitRepository {
     now: Date,
     limit?: number,
   ): Promise<CollectionResult<DepartureGroup>> {
+    const t0 = performance.now();
     const timetableGroups = this.timetable[stopId];
     if (!timetableGroups) {
       return Promise.resolve({ success: false, error: `No departure data for stop: ${stopId}` });
@@ -580,8 +581,9 @@ export class AthenaiRepository implements TransitRepository {
 
     result.sort((a, b) => a.departures[0].getTime() - b.departures[0].getTime());
 
+    const elapsed = Math.round(performance.now() - t0);
     logger.debug(
-      `getUpcomingDepartures: ${stopId} → ${result.length} groups, ${totalReturned}/${totalAvailableAll} departures (${anyTruncated ? 'truncated' : 'all'})`,
+      `getUpcomingDepartures: ${stopId} → ${result.length} groups, ${totalReturned}/${totalAvailableAll} departures in ${elapsed}ms (${anyTruncated ? 'truncated' : 'all'})`,
     );
     return Promise.resolve({ success: true, data: result, truncated: anyTruncated });
   }
@@ -593,6 +595,7 @@ export class AthenaiRepository implements TransitRepository {
     headsign: string,
     dateTime: Date,
   ): Promise<CollectionResult<number>> {
+    const t0 = performance.now();
     const groups = this.timetable[stopId];
     if (!groups) {
       return Promise.resolve({ success: true, data: [], truncated: false });
@@ -618,7 +621,8 @@ export class AthenaiRepository implements TransitRepository {
     }
 
     allMinutes.sort((a, b) => a - b);
-    logger.debug(`getFullDayDepartures: ${stopId}/${routeId} → ${allMinutes.length} departures`);
+    const elapsed = Math.round(performance.now() - t0);
+    logger.debug(`getFullDayDepartures: ${stopId}/${routeId} → ${allMinutes.length} departures in ${elapsed}ms`);
     return Promise.resolve({ success: true, data: allMinutes, truncated: false });
   }
 
@@ -627,6 +631,7 @@ export class AthenaiRepository implements TransitRepository {
     stopId: string,
     dateTime: Date,
   ): Promise<CollectionResult<FullDayStopDeparture>> {
+    const t0 = performance.now();
     const groups = this.timetable[stopId];
     if (!groups) {
       return Promise.resolve({ success: true, data: [], truncated: false });
@@ -656,7 +661,8 @@ export class AthenaiRepository implements TransitRepository {
     }
 
     departures.sort((a, b) => a.minutes - b.minutes);
-    logger.debug(`getFullDayDeparturesForStop: ${stopId} → ${departures.length} departures`);
+    const elapsed = Math.round(performance.now() - t0);
+    logger.debug(`getFullDayDeparturesForStop: ${stopId} → ${departures.length} departures in ${elapsed}ms`);
     return Promise.resolve({ success: true, data: departures, truncated: false });
   }
 
