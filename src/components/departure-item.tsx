@@ -73,7 +73,7 @@ export function DepartureItem({
         <span className="text-sm font-medium text-[#333] dark:text-gray-200">{headsignName}</span>
         {!hasBoardableDeparture(entries) && (
           <span className="shrink-0 rounded bg-red-100 px-1 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
-            降車専用
+            乗車不可
           </span>
         )}
         {info.isDetailedEnabled && agencyName && (
@@ -118,7 +118,7 @@ export function DepartureItem({
               {` pt=${e.boarding.pickupType} dt=${e.boarding.dropOffType}`}
               {e.patternPosition.isTerminal && ' TERM'}
               {e.patternPosition.isOrigin && ' ORIG'}
-              {` [${e.patternPosition.stopIndex}/${e.patternPosition.totalStops}]`}
+              {` [${e.patternPosition.stopIndex + 1}/${e.patternPosition.totalStops}]`}
               {` d=${e.schedule.departureMinutes}`}
               {e.schedule.arrivalMinutes !== e.schedule.departureMinutes &&
                 ` a=${e.schedule.arrivalMinutes}`}

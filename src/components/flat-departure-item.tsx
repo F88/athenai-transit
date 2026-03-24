@@ -5,7 +5,6 @@ import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
 import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
-import { isDropOffOnly } from '../domain/transit/timetable-utils';
 import { minutesToDate } from '../domain/transit/calendar-utils';
 import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
@@ -51,7 +50,8 @@ export function FlatDepartureItem({
   const headsignName = getHeadsignDisplayNames(headsign, route, infoLevel).name;
   const bgColor = route.route_color ? `#${route.route_color}` : undefined;
   const departureTime = minutesToDate(serviceDay, entry.schedule.departureMinutes);
-  const dropOffOnly = isDropOffOnly(entry);
+  const isTerminal = entry.patternPosition.isTerminal;
+  const isPickupUnavailable = entry.boarding.pickupType === 1;
 
   return (
     <div className="border-b border-[#e0e0e0] py-2 last:border-b-0 dark:border-gray-700">
@@ -78,9 +78,14 @@ export function FlatDepartureItem({
         <RouteBadge route={route} infoLevel={infoLevel} className="shrink-0" />
         {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
         <span className="truncate text-sm text-[#333] dark:text-gray-200">{headsignName}</span>
-        {dropOffOnly && (
+        {isTerminal && (
+          <span className="shrink-0 rounded bg-gray-100 px-1 text-[10px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+            終点
+          </span>
+        )}
+        {isPickupUnavailable && (
           <span className="shrink-0 rounded bg-red-100 px-1 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
-            降車専用
+            乗車不可
           </span>
         )}
         {info.isDetailedEnabled && agencyName && (
@@ -95,7 +100,7 @@ export function FlatDepartureItem({
           pt={entry.boarding.pickupType} dt={entry.boarding.dropOffType}
           {entry.patternPosition.isTerminal && ' TERM'}
           {entry.patternPosition.isOrigin && ' ORIG'}
-          {` [${entry.patternPosition.stopIndex}/${entry.patternPosition.totalStops}]`}
+          {` [${entry.patternPosition.stopIndex + 1}/${entry.patternPosition.totalStops}]`}
           {` d=${entry.schedule.departureMinutes}`}
           {entry.schedule.arrivalMinutes !== entry.schedule.departureMinutes &&
             ` a=${entry.schedule.arrivalMinutes}`}
