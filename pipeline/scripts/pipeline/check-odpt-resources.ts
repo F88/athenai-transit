@@ -48,8 +48,8 @@ interface OdptDataResource {
   end_at: string | null;
   uploaded_at: string;
   url: string;
-  feed_start_date: string;
-  feed_end_date: string;
+  feed_start_date: string | null;
+  feed_end_date: string | null;
   is_feed_available_period: boolean;
 }
 
@@ -360,7 +360,15 @@ function printResult(
 
   for (const r of resources) {
     const date = extractDateParam(r.url) ?? '';
-    const avail = r.is_feed_available_period ? 'VALID' : 'expired';
+    let avail: string;
+    if (r.is_feed_available_period) {
+      avail = 'VALID';
+    } else if (r.feed_end_date) {
+      const daysUntilEnd = getDaysUntilExpiry(r.feed_end_date.replace(/-/g, ''));
+      avail = daysUntilEnd > 0 ? 'not-yet-active' : 'expired';
+    } else {
+      avail = 'expired';
+    }
     const isCurrent =
       meta &&
       extractUrlBase(r.url) === extractUrlBase(meta.url) &&
@@ -368,7 +376,7 @@ function printResult(
     const localMarker = isCurrent ? ' <-- LOCAL' : '';
     const newMarker = newUrls.has(r.url) ? ' [NEW]' : '';
     console.log(
-      `    date=${date}  feed=${r.feed_start_date} - ${r.feed_end_date}  ${avail}  uploaded=${r.uploaded_at}${localMarker}${newMarker}`,
+      `    date=${date}  feed=${r.feed_start_date ?? '?'} - ${r.feed_end_date ?? '?'}  ${avail}  uploaded=${r.uploaded_at}${localMarker}${newMarker}`,
     );
   }
 

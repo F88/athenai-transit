@@ -15,7 +15,10 @@ import type { DownloadMetaSuccess } from '../download/download-meta';
 export interface RemoteResource {
   url: string;
   is_feed_available_period: boolean;
-  feed_end_date: string;
+  /** Feed start date in `YYYY-MM-DD` format, or null if not provided by API. */
+  feed_start_date: string | null;
+  /** Feed end date in `YYYY-MM-DD` format, or null if not provided by API. */
+  feed_end_date: string | null;
 }
 
 /** Previous check snapshot for diff detection. */
@@ -30,6 +33,7 @@ export interface LocalInfo {
 
 export type Warning =
   | { type: 'EXPIRED'; message: string }
+  | { type: 'NOT_YET_ACTIVE'; message: string }
   | { type: 'REMOVED'; message: string }
   | { type: 'NO_VALID_DATA'; message: string }
   | { type: 'EXPIRING_SOON'; message: string; daysLeft: number }
@@ -88,7 +92,7 @@ export function getDaysUntilExpiry(endDateStr: string, now: Date = new Date()): 
 // ---------------------------------------------------------------------------
 
 /** Days before feed_end_date to trigger EXPIRING_SOON. */
-export const EXPIRING_SOON_DAYS = 14;
+export const EXPIRING_SOON_DAYS = 10;
 
 /**
  * Detect warnings by comparing local state against remote resources.
@@ -129,12 +133,31 @@ export function detectWarnings(
     warnings.push({ type: 'REMOVED', message: 'Local resource no longer exists in remote' });
   }
 
-  // EXPIRED: LOCAL is no longer valid
+  // EXPIRED or NOT_YET_ACTIVE: LOCAL is outside the valid period.
+  // is_feed_available_period=false means the feed is not currently valid,
+  // but does not distinguish between "already expired" and "not yet started".
+  // We compare feed_end_date against now to determine which case it is.
   if (localInRemote && !localInRemote.is_feed_available_period) {
-    warnings.push({
-      type: 'EXPIRED',
-      message: `Local data expired (feed_end: ${localInRemote.feed_end_date})`,
-    });
+    if (localInRemote.feed_end_date) {
+      const daysUntilEnd = getDaysUntilExpiry(localInRemote.feed_end_date.replace(/-/g, ''), now);
+      if (daysUntilEnd > 0) {
+        warnings.push({
+          type: 'NOT_YET_ACTIVE',
+          message: `Local data not yet active (valid: ${localInRemote.feed_start_date ?? '?'} - ${localInRemote.feed_end_date})`,
+        });
+      } else {
+        warnings.push({
+          type: 'EXPIRED',
+          message: `Local data expired (feed_end: ${localInRemote.feed_end_date})`,
+        });
+      }
+    } else {
+      // No feed_end_date — treat as expired (cannot determine validity)
+      warnings.push({
+        type: 'EXPIRED',
+        message: 'Local data expired (no feed_end_date)',
+      });
+    }
   }
 
   // NO_VALID_DATA: no valid resources at all
@@ -143,8 +166,11 @@ export function detectWarnings(
     warnings.push({ type: 'NO_VALID_DATA', message: 'No currently valid resources available' });
   }
 
-  // EXPIRING_SOON: LOCAL feed_end_date is within threshold
-  if (meta.feedInfo?.endDate) {
+  // EXPIRING_SOON: LOCAL feed_end_date is within threshold.
+  // Only relevant when the feed is currently active — a feed that
+  // hasn't started yet cannot be "expiring soon".
+  const isCurrentlyActive = localInRemote?.is_feed_available_period ?? false;
+  if (isCurrentlyActive && meta.feedInfo?.endDate) {
     const endStr = meta.feedInfo.endDate;
     const daysLeft = getDaysUntilExpiry(endStr, now);
     if (daysLeft >= 0 && daysLeft <= EXPIRING_SOON_DAYS) {

@@ -7,10 +7,16 @@ import type { DownloadMetaSuccess } from '../../download/download-meta';
 // Helper factories
 // ---------------------------------------------------------------------------
 
-function makeRemote(date: string, available: boolean, feedEnd = '2026-12-31'): RemoteResource {
+function makeRemote(
+  date: string,
+  available: boolean,
+  feedEnd = '2026-12-31',
+  feedStart = '2026-01-01',
+): RemoteResource {
   return {
     url: `https://api.odpt.org/api/v4/files/odpt/TestBus/AllLines.zip?date=${date}`,
     is_feed_available_period: available,
+    feed_start_date: feedStart,
     feed_end_date: feedEnd,
   };
 }
@@ -96,11 +102,24 @@ describe('detectWarnings', () => {
     expect(warnings).toHaveLength(0);
   });
 
-  it('returns EXPIRED when LOCAL is no longer valid', () => {
+  it('returns EXPIRED when LOCAL is no longer valid and feed_end is past', () => {
     const resources = [makeRemote('20260301', false, '2026-02-28')];
     const meta = makeMeta('20260301', '20260228');
     const warnings = detectWarnings(resources, makeLocal(meta), null, now);
     expect(warnings.some((w) => w.type === 'EXPIRED')).toBe(true);
+    expect(warnings.some((w) => w.type === 'NOT_YET_ACTIVE')).toBe(false);
+  });
+
+  it('returns NOT_YET_ACTIVE when LOCAL is not valid but feed_end is future', () => {
+    // Feed validity: 2026-03-28 to 2026-06-30, now is 2026-03-17
+    const resources = [makeRemote('20260328', false, '2026-06-30', '2026-03-28')];
+    const meta = makeMeta('20260328', '20260630');
+    const warnings = detectWarnings(resources, makeLocal(meta), null, now);
+    const notYetActive = warnings.find((w) => w.type === 'NOT_YET_ACTIVE');
+    expect(notYetActive).toBeDefined();
+    expect(notYetActive!.message).toContain('2026-03-28');
+    expect(notYetActive!.message).toContain('2026-06-30');
+    expect(warnings.some((w) => w.type === 'EXPIRED')).toBe(false);
   });
 
   it('returns REMOVED when LOCAL URL is not in remote list', () => {
@@ -117,7 +136,7 @@ describe('detectWarnings', () => {
     expect(warnings.some((w) => w.type === 'NO_VALID_DATA')).toBe(true);
   });
 
-  it('returns EXPIRING_SOON when feed_end_date is within 14 days', () => {
+  it('returns EXPIRING_SOON when feed_end_date is within EXPIRING_SOON_DAYS', () => {
     const resources = [makeRemote('20260301', true, '2026-03-25')];
     const meta = makeMeta('20260301', '20260325');
     const warnings = detectWarnings(resources, makeLocal(meta), null, now);
@@ -132,6 +151,16 @@ describe('detectWarnings', () => {
     const resources = [makeRemote('20260301', true)];
     const meta = makeMeta('20260301', '20261231');
     const warnings = detectWarnings(resources, makeLocal(meta), null, now);
+    expect(warnings.some((w) => w.type === 'EXPIRING_SOON')).toBe(false);
+  });
+
+  it('does not return EXPIRING_SOON when feed is not yet active', () => {
+    // Feed starts 2026-03-20, ends 2026-03-25, now is 2026-03-17
+    // feed_end is 8 days away (within EXPIRING_SOON_DAYS) but feed is not active yet
+    const resources = [makeRemote('20260320', false, '2026-03-25', '2026-03-20')];
+    const meta = makeMeta('20260320', '20260325');
+    const warnings = detectWarnings(resources, makeLocal(meta), null, now);
+    expect(warnings.some((w) => w.type === 'NOT_YET_ACTIVE')).toBe(true);
     expect(warnings.some((w) => w.type === 'EXPIRING_SOON')).toBe(false);
   });
 
@@ -178,10 +207,13 @@ describe('detectWarnings', () => {
 
   it('returns multiple warnings simultaneously', () => {
     // EXPIRED + NO_VALID_DATA + NEW_RESOURCE
-    const resources = [makeRemote('20260301', false), makeRemote('20260401', false)];
+    const resources = [
+      makeRemote('20260301', false, '2026-02-28'),
+      makeRemote('20260401', false, '2026-02-28'),
+    ];
     const meta = makeMeta('20260301', '20260228');
     const snapshot: ResourceSnapshot = {
-      resourceUrls: [makeRemote('20260301', false).url],
+      resourceUrls: [makeRemote('20260301', false, '2026-02-28').url],
     };
     const warnings = detectWarnings(resources, makeLocal(meta), snapshot, now);
     const types = warnings.map((w) => w.type);
