@@ -135,7 +135,95 @@ export interface DepartureViewMeta {
 }
 
 /**
+ * Stop service availability for a specific departure.
+ *
+ * Describes whether passengers can board (pickup) or alight (drop-off)
+ * at a stop for a given departure. Values align with GTFS
+ * pickup_type/drop_off_type but are used as app-level domain types.
+ *
+ * - 0 = available (scheduled service)
+ * - 1 = not available
+ * - 2 = phone required (must phone agency)
+ * - 3 = coordinate required (must coordinate with driver)
+ */
+export type StopServiceType = 0 | 1 | 2 | 3;
+
+/**
+ * A single entry in a stop's timetable.
+ *
+ * Enriched version of {@link FullDayStopDeparture} with v2 data:
+ * arrival time, boarding availability, and trip pattern context.
+ *
+ * Used by the timetable modal for detailed schedule display.
+ * Returned by v2 repository; v1 repository returns
+ * {@link FullDayStopDeparture} (legacy).
+ */
+export interface TimetableEntry {
+  /** Schedule: departure and arrival times. */
+  schedule: {
+    /** Departure minutes from midnight of the service day. */
+    departureMinutes: number;
+    /** Arrival minutes from midnight of the service day. */
+    arrivalMinutes: number;
+  };
+
+  /**
+   * Route and direction context.
+   *
+   * TODO: Extract as a composite type (e.g. RouteDirection) — this
+   * combination of route + headsign + direction is reused across
+   * DepartureGroup, TimetableEntry, and other composed types.
+   */
+  routeDirection: {
+    route: Route;
+    headsign: string;
+    /** Headsign translations resolved from TranslationsJson. */
+    headsign_names: Record<string, string>;
+    /**
+     * Trip direction (0 or 1). Distinguishes opposite directions on
+     * the same route (e.g. inbound vs outbound).
+     * Undefined when the source does not provide direction_id.
+     */
+    direction?: 0 | 1;
+  };
+
+  /** Boarding availability at this stop. */
+  boarding: {
+    /** Pickup (boarding) availability. */
+    pickupType: StopServiceType;
+    /** Drop-off (alighting) availability. */
+    dropOffType: StopServiceType;
+  };
+
+  /** Position of this stop within the trip pattern's stop sequence. */
+  patternPosition: {
+    /** 0-based index of this stop in the pattern. */
+    stopIndex: number;
+    /** Total number of stops in the pattern. */
+    totalStops: number;
+    /** Whether this stop is the last stop (terminal). */
+    isTerminal: boolean;
+    /** Whether this stop is the first stop (origin). */
+    isOrigin: boolean;
+  };
+
+  /**
+   * Analytics derived from InsightsBundle.
+   * Undefined when insights data is not loaded.
+   */
+  insights?: {
+    /**
+     * Estimated remaining travel time (minutes) from this stop
+     * to the terminal.
+     */
+    remainingMinutes: number;
+  };
+}
+
+/**
  * A single departure in a full-day stop timetable.
+ *
+ * Legacy type used by v1 repository. For v2, see {@link TimetableEntry}.
  *
  * Returned by {@link TransitRepository.getFullDayDeparturesForStop}
  * and used directly by the timetable modal.
