@@ -43,7 +43,8 @@ export interface SourceDataV2 {
  *
  * Implementations handle fetch, parsing, and bundle_version/kind
  * validation. Errors should be thrown for required data; optional
- * bundles return `null` when the file does not exist.
+ * bundles return `null` when the data is unavailable (not found,
+ * network error, timeout, or non-JSON response).
  */
 export interface TransitDataSourceV2 {
   /**
@@ -65,8 +66,8 @@ export interface TransitDataSourceV2 {
    * loaded lazily after startup (e.g. when shapes layer is enabled).
    *
    * @param prefix - Source identifier (e.g. "tobus").
-   * @returns The parsed shapes bundle, or `null` if the source has no shapes.
-   * @throws When the file exists but fails to parse.
+   * @returns The parsed shapes bundle, or `null` if unavailable.
+   * @throws When the response is valid JSON but has an invalid bundle format.
    */
   loadShapes(prefix: string): Promise<ShapesBundle | null>;
 
@@ -77,8 +78,8 @@ export interface TransitDataSourceV2 {
    * Intended to be loaded lazily when analytics views are accessed.
    *
    * @param prefix - Source identifier (e.g. "tobus").
-   * @returns The parsed insights bundle, or `null` if not available.
-   * @throws When the file exists but fails to parse.
+   * @returns The parsed insights bundle, or `null` if unavailable.
+   * @throws When the response is valid JSON but has an invalid bundle format.
    */
   loadInsights(prefix: string): Promise<InsightsBundle | null>;
 
@@ -88,8 +89,8 @@ export interface TransitDataSourceV2 {
    * Contains metrics computed across all sources (e.g. stop geo).
    * Loaded independently of any specific source prefix.
    *
-   * @returns The parsed global insights bundle, or `null` if not available.
-   * @throws When the file exists but fails to parse.
+   * @returns The parsed global insights bundle, or `null` if unavailable.
+   * @throws When the response is valid JSON but has an invalid bundle format.
    */
   loadGlobalInsights(): Promise<GlobalInsightsBundle | null>;
 }

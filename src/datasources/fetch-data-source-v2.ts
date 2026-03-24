@@ -100,8 +100,12 @@ function validatePrefix(prefix: string): void {
 interface FetchBundleResult {
   /** Parsed JSON content. */
   json: unknown;
-  /** Raw text size in bytes. */
-  sizeBytes: number;
+  /**
+   * Approximate size via `text.length` (UTF-16 code units).
+   * Close to actual bytes for ASCII-dominant JSON; not exact for
+   * multi-byte characters. Sufficient for logging and diagnostics.
+   */
+  sizeApprox: number;
   /** Time spent on network + response.text() (ms). */
   networkMs: number;
   /** Time spent on JSON.parse (ms). */
@@ -192,8 +196,9 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
    * Fetch, validate content-type, and parse a JSON bundle file.
    *
    * @param path - Relative path under base (e.g. "tobus/data.json").
-   * @param optional - When true, returns `null` on 404 or non-JSON response.
-   * @returns Parsed result with timing metrics, or `null` for missing optional files.
+   * @param optional - When true, returns `null` on any non-OK HTTP status,
+   *                   non-JSON content-type, network error, or timeout.
+   * @returns Parsed result with timing metrics, or `null` for unavailable optional files.
    * @throws On network error, timeout, or HTTP error for required files.
    * @throws On non-JSON content-type for required files (SPA fallback detection).
    */
@@ -222,7 +227,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       if (isTimeout) {
         throw new Error(`${path}: timeout after ${this.timeoutMs}ms`);
       }
-      throw new Error(`${path}: network error — ${String(e)}`);
+      throw new Error(`${path}: network error`, { cause: e });
     }
 
     // --- HTTP status check ---
@@ -280,7 +285,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       if (isTimeout) {
         throw new Error(`${path}: timeout after ${this.timeoutMs}ms (during body download)`);
       }
-      throw new Error(`${path}: body read error — ${String(e)}`);
+      throw new Error(`${path}: body read error`, { cause: e });
     }
     clearTimeout(timeoutId);
     const tNetwork = performance.now();
@@ -289,8 +294,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     try {
       json = JSON.parse(text) as unknown;
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      throw new Error(`${path}: JSON parse error — ${message}`);
+      throw new Error(`${path}: JSON parse error`, { cause: e });
     }
     const tParse = performance.now();
 
@@ -299,6 +303,6 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     const sizeKB = (text.length / 1024).toFixed(1);
     logger.debug(`${path}: ${sizeKB}KB (network=${networkMs}ms, parse=${parseMs}ms)`);
 
-    return { json, sizeBytes: text.length, networkMs, parseMs };
+    return { json, sizeApprox: text.length, networkMs, parseMs };
   }
 }
