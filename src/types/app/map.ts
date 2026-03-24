@@ -44,5 +44,27 @@ export interface RouteShape {
   routeType: RouteType; // GTFS route_type (0=tram, 1=subway, 2=rail, 3=bus) — always single for a route
   color: string; // hex with #, e.g. "#F1B34E"
   route: Route | null; // full Route object for display; null if routeMap lookup fails
-  points: [number, number][]; // [lat, lon][]
+  /**
+   * Shape points as [lat, lon] or [lat, lon, dist].
+   * The optional third element is GTFS shape_dist_traveled —
+   * cumulative distance along the shape from the first point.
+   * Currently no sources provide dist; Leaflet ignores the third element.
+   */
+  points: [number, number, number?][];
+  /**
+   * Departures per day for the primary trip pattern using this shape.
+   * Derived from InsightsBundle tripPatternStats.
+   * Can be used for line thickness visualization.
+   */
+  freq?: number;
+  /**
+   * Total path distance (km) along the stop sequence.
+   * Derived from InsightsBundle tripPatternGeo.
+   */
+  pathDist?: number;
+  /**
+   * Whether this route is circular (first and last stop are the same).
+   * Derived from InsightsBundle tripPatternGeo.
+   */
+  isCircular?: boolean;
 }
