@@ -27,24 +27,28 @@ describe('mergeSourcesV2', () => {
   it('converts stops with empty agency_id', () => {
     const fixture = createFixtureV2();
     const merged = mergeSourcesV2([fixture]);
-    const sub01 = merged.stops.find((s) => s.stop_id === 'sub_01');
-    expect(sub01).toBeDefined();
-    expect(sub01!.agency_id).toBe('');
+    // Use l=0 stop (l=1 stops are filtered out)
+    const tdn01 = merged.stops.find((s) => s.stop_id === 'tdn_01');
+    expect(tdn01).toBeDefined();
+    expect(tdn01!.agency_id).toBe('');
   });
 
   it('resolves stop_names from translations', () => {
     const fixture = createFixtureV2();
     const merged = mergeSourcesV2([fixture]);
-    const sub01 = merged.stops.find((s) => s.stop_id === 'sub_01');
-    expect(sub01!.stop_names).toEqual({ ja: '西巣鴨', en: 'Nishi-sugamo' });
+    const tdn01 = merged.stops.find((s) => s.stop_id === 'tdn_01');
+    expect(tdn01!.stop_names).toEqual({ ja: '新庚申塚', en: 'Shin-koshinzuka' });
   });
 
-  it('includes location_type=1 stops', () => {
+  it('excludes location_type=1 stops (parent stations filtered until UI supports grouping)', () => {
     const fixture = createFixtureV2();
     const merged = mergeSourcesV2([fixture]);
     const station = merged.stops.find((s) => s.stop_id === 'sta_parent');
-    expect(station).toBeDefined();
-    expect(station!.location_type).toBe(1);
+    expect(station).toBeUndefined();
+    // All stops should be l=0
+    for (const s of merged.stops) {
+      expect(s.location_type).toBe(0);
+    }
   });
 
   it('builds routeMap from v2 routes', () => {
@@ -161,7 +165,7 @@ describe('getStopsInBounds', () => {
     expect(result.truncated).toBe(false);
   });
 
-  it('includes location_type=1 stops', async () => {
+  it('excludes location_type=1 stops', async () => {
     const fixture = createFixtureV2();
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
@@ -172,7 +176,7 @@ describe('getStopsInBounds', () => {
     );
     assertSuccess(result);
     const ids = result.data.map((s) => s.stop.stop_id);
-    expect(ids).toContain('sta_parent');
+    expect(ids).not.toContain('sta_parent');
   });
 });
 

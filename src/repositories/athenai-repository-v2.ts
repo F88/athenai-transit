@@ -191,9 +191,17 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     }
   }
 
-  // --- Stops (v2: no agency_id, includes all location_types) ---
+  // --- Stops (v2: no agency_id) ---
+  // Currently excludes location_type=1 (parent station) stops because
+  // the UI does not yet support station grouping. Parent stations have
+  // no timetable entries and display "本日の運行は終了しました", which
+  // is confusing. When the UI adds station grouping support, remove
+  // this filter to include parent stations.
+  // See: v2 pipeline outputs all location_types (unlike v1 which
+  // only output l=0). The data is available in DataBundle.stops.
   const stops: Stop[] = sources
     .flatMap((s) => s.data.stops.data)
+    .filter((s) => s.l === 0)
     .map((s) => ({
       stop_id: s.i,
       stop_name: s.n,
@@ -747,7 +755,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
     allMinutes.sort((a, b) => a - b);
     const elapsed = Math.round(performance.now() - t0);
-    logger.debug(`getFullDayDepartures: ${stopId}/${routeId} → ${allMinutes.length} departures in ${elapsed}ms`);
+    logger.debug(
+      `getFullDayDepartures: ${stopId}/${routeId} → ${allMinutes.length} departures in ${elapsed}ms`,
+    );
     return Promise.resolve({ success: true, data: allMinutes, truncated: false });
   }
 
@@ -791,7 +801,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
     departures.sort((a, b) => a.minutes - b.minutes);
     const elapsed = Math.round(performance.now() - t0);
-    logger.debug(`getFullDayDeparturesForStop: ${stopId} → ${departures.length} departures in ${elapsed}ms`);
+    logger.debug(
+      `getFullDayDeparturesForStop: ${stopId} → ${departures.length} departures in ${elapsed}ms`,
+    );
     return Promise.resolve({ success: true, data: departures, truncated: false });
   }
 
