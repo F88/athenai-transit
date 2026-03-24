@@ -136,7 +136,7 @@ describe('detectWarnings', () => {
     expect(warnings.some((w) => w.type === 'NO_VALID_DATA')).toBe(true);
   });
 
-  it('returns EXPIRING_SOON when feed_end_date is within 14 days', () => {
+  it('returns EXPIRING_SOON when feed_end_date is within EXPIRING_SOON_DAYS', () => {
     const resources = [makeRemote('20260301', true, '2026-03-25')];
     const meta = makeMeta('20260301', '20260325');
     const warnings = detectWarnings(resources, makeLocal(meta), null, now);

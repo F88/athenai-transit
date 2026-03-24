@@ -15,7 +15,9 @@ import type { DownloadMetaSuccess } from '../download/download-meta';
 export interface RemoteResource {
   url: string;
   is_feed_available_period: boolean;
+  /** Feed start date in `YYYY-MM-DD` format, or null if not provided by API. */
   feed_start_date: string | null;
+  /** Feed end date in `YYYY-MM-DD` format, or null if not provided by API. */
   feed_end_date: string | null;
 }
 
