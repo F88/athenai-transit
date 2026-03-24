@@ -477,9 +477,7 @@ export class AthenaiRepository implements TransitRepository {
    * Returns empty result. v1 data lacks pickup_type/drop_off_type/pattern info.
    */
   getUpcomingTimetableEntries(
-    stopId: string,
-    _now: Date,
-    _limit?: number,
+    ...[stopId]: [string, Date, number?]
   ): Promise<CollectionResult<TimetableEntry>> {
     logger.warn(`getUpcomingTimetableEntries: v1 repo stub called for ${stopId}`);
     return Promise.resolve({ success: true, data: [], truncated: false });
@@ -530,8 +528,7 @@ export class AthenaiRepository implements TransitRepository {
    * Returns empty result. v1 data lacks pickup_type/drop_off_type/pattern info.
    */
   getFullDayTimetableEntries(
-    stopId: string,
-    _dateTime: Date,
+    ...[stopId]: [string, Date]
   ): Promise<CollectionResult<TimetableEntry>> {
     logger.warn(`getFullDayTimetableEntries: v1 repo stub called for ${stopId}`);
     return Promise.resolve({ success: true, data: [], truncated: false });
