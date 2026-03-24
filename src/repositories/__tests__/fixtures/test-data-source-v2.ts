@@ -130,13 +130,23 @@ export function createFixtureV2(): SourceDataV2 {
         { v: 2, i: 'lnr_01', n: 'Adachi-odai', a: 35.753, o: 139.748, l: 1 },
         { v: 2, i: 'lnr_02', n: 'Ogi-ohashi', a: 35.757, o: 139.752, l: 1 },
         // Bus stops
-        { v: 2, i: 'bus_01', n: 'Nishi-sugamo-eki', a: 35.746, o: 139.731, l: 0 },
+        {
+          v: 2,
+          i: 'bus_01',
+          n: 'Nishi-sugamo-eki',
+          a: 35.746,
+          o: 139.731,
+          l: 0,
+          wb: 1,
+          ps: 'sta_parent',
+          pc: '1',
+        },
         { v: 2, i: 'bus_02', n: 'Takinogawa-7chome', a: 35.749, o: 139.736, l: 0 },
-        { v: 2, i: 'bus_03', n: 'Oji-5chome', a: 35.753, o: 139.741, l: 0 },
+        { v: 2, i: 'bus_03', n: 'Oji-5chome', a: 35.753, o: 139.741, l: 0, wb: 2 },
         // No-timetable stop
         { v: 2, i: 'stop_closed', n: 'Closed Stop', a: 35.751, o: 139.735, l: 0 },
         // Station parent (location_type=1, v2-specific)
-        { v: 2, i: 'sta_parent', n: 'Test Station', a: 35.746, o: 139.731, l: 1 },
+        { v: 2, i: 'sta_parent', n: 'Test Station', a: 35.746, o: 139.731, l: 1, wb: 1 },
       ],
     },
 

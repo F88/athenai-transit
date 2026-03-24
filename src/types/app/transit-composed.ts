@@ -79,6 +79,23 @@ export interface StopWithMeta {
   agencies: Agency[];
   /** Routes serving this stop, resolved from timetable data (shared references, not copies). */
   routes: Route[];
+  /**
+   * Per-stop operational statistics from InsightsBundle.
+   * Undefined when insights data is not loaded (v1 repository).
+   * Values are for the current service group (e.g. weekday, Saturday).
+   */
+  stats?: {
+    /** Total departures per day for this service group. */
+    freq: number;
+    /** Number of distinct routes serving this stop. */
+    routeCount: number;
+    /** Number of distinct route types (bus, subway, etc.) serving this stop. */
+    routeTypeCount: number;
+    /** Earliest departure time (minutes from midnight). */
+    earliestDeparture: number;
+    /** Latest departure time (minutes from midnight). Values >= 1440 = overnight past midnight. */
+    latestDeparture: number;
+  };
 }
 
 /**
@@ -109,6 +126,39 @@ export interface DepartureGroup {
 export interface StopWithContext extends StopWithMeta {
   routeTypes: RouteType[];
   groups: DepartureGroup[];
+  /**
+   * Geographic metrics from GlobalInsightsBundle.
+   * Undefined when global insights data is not loaded (v1 repository).
+   */
+  geo?: {
+    /**
+     * Distance (km) to the nearest stop served by a different route.
+     * Higher = more isolated (transit desert). 0 = colocated or no alternative.
+     */
+    nearestRoute: number;
+    /**
+     * Distance (km) to the nearest stop with a different parent_station.
+     * Reveals "walkable portals" between station complexes.
+     * Undefined when parent_station data is not available.
+     */
+    walkablePortal?: number;
+    /**
+     * Connectivity within 300m radius, keyed by service group (e.g. "ho").
+     * Measures transfer convenience across all sources.
+     * Undefined when no routes operate within 300m.
+     */
+    connectivity?: Record<
+      string,
+      {
+        /** Number of unique routes within 300m. */
+        routeCount: number;
+        /** Sum of unique routes' daily departures. */
+        freq: number;
+        /** Number of other stops within 300m. */
+        stopCount: number;
+      }
+    >;
+  };
 }
 
 /**

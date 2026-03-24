@@ -39,6 +39,25 @@ export interface Stop {
   stop_lon: number;
   location_type: number; // 0: stop/platform, 1: station
   agency_id: string;
+
+  // --- v2 optional fields (omitted in v1 repository) ---
+
+  /**
+   * GTFS wheelchair_boarding.
+   * 0 = no info, 1 = accessible, 2 = not accessible.
+   * For child stops (l=0), value 0 inherits from parent_station.
+   */
+  wheelchair_boarding?: 0 | 1 | 2;
+  /**
+   * GTFS parent_station — FK to a parent stop (location_type=1).
+   * Present on stops that belong to a station complex.
+   */
+  parent_station?: string;
+  /**
+   * GTFS platform_code — platform identifier within a station.
+   * e.g. "1", "A", "北口".
+   */
+  platform_code?: string;
 }
 
 /**

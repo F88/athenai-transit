@@ -232,6 +232,10 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
       // v2: GTFS spec has no agency_id on stops. Agency is resolved
       // via timetable -> tripPattern -> route -> agency_id.
       agency_id: '',
+      // v2 optional fields — omitted when the source does not provide them.
+      ...(s.wb !== undefined && { wheelchair_boarding: s.wb }),
+      ...(s.ps !== undefined && { parent_station: s.ps }),
+      ...(s.pc !== undefined && { platform_code: s.pc }),
     }));
 
   // --- Routes ---

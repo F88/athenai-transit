@@ -622,7 +622,9 @@ export class AthenaiRepository implements TransitRepository {
 
     allMinutes.sort((a, b) => a - b);
     const elapsed = Math.round(performance.now() - t0);
-    logger.debug(`getFullDayDepartures: ${stopId}/${routeId} → ${allMinutes.length} departures in ${elapsed}ms`);
+    logger.debug(
+      `getFullDayDepartures: ${stopId}/${routeId} → ${allMinutes.length} departures in ${elapsed}ms`,
+    );
     return Promise.resolve({ success: true, data: allMinutes, truncated: false });
   }
 
@@ -662,7 +664,9 @@ export class AthenaiRepository implements TransitRepository {
 
     departures.sort((a, b) => a.minutes - b.minutes);
     const elapsed = Math.round(performance.now() - t0);
-    logger.debug(`getFullDayDeparturesForStop: ${stopId} → ${departures.length} departures in ${elapsed}ms`);
+    logger.debug(
+      `getFullDayDeparturesForStop: ${stopId} → ${departures.length} departures in ${elapsed}ms`,
+    );
     return Promise.resolve({ success: true, data: departures, truncated: false });
   }
 

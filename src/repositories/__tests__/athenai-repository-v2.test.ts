@@ -108,6 +108,32 @@ describe('mergeSourcesV2', () => {
     const merged = mergeSourcesV2([fixture]);
     expect(merged.lookup).toBeDefined();
   });
+
+  it('converts v2 optional stop fields (wb, ps, pc)', () => {
+    const fixture = createFixtureV2();
+    const merged = mergeSourcesV2([fixture]);
+
+    // bus_01 has wb=1, ps='sta_parent', pc='1'
+    const bus01 = merged.stops.find((s) => s.stop_id === 'bus_01');
+    expect(bus01).toBeDefined();
+    expect(bus01!.wheelchair_boarding).toBe(1);
+    expect(bus01!.parent_station).toBe('sta_parent');
+    expect(bus01!.platform_code).toBe('1');
+
+    // bus_03 has wb=2, no ps/pc
+    const bus03 = merged.stops.find((s) => s.stop_id === 'bus_03');
+    expect(bus03).toBeDefined();
+    expect(bus03!.wheelchair_boarding).toBe(2);
+    expect(bus03!.parent_station).toBeUndefined();
+    expect(bus03!.platform_code).toBeUndefined();
+
+    // tdn_01 has no v2 optional fields
+    const tdn01 = merged.stops.find((s) => s.stop_id === 'tdn_01');
+    expect(tdn01).toBeDefined();
+    expect(tdn01!.wheelchair_boarding).toBeUndefined();
+    expect(tdn01!.parent_station).toBeUndefined();
+    expect(tdn01!.platform_code).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -294,8 +320,9 @@ describe('getUpcomingDepartures', () => {
     expect(ikebukuroGroups[0].departures).toHaveLength(2);
 
     // First departure should be 610 (10:10), from tp_bus_i2
-    const firstMinutes = ikebukuroGroups[0].departures[0].getHours() * 60
-      + ikebukuroGroups[0].departures[0].getMinutes();
+    const firstMinutes =
+      ikebukuroGroups[0].departures[0].getHours() * 60 +
+      ikebukuroGroups[0].departures[0].getMinutes();
     expect(firstMinutes).toBe(610);
   });
 });
