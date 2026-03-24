@@ -12,7 +12,8 @@
  *   route+headsign are merged at query time
  * - Shapes lazy-loaded in background after create()
  * - Stop.agency_id is empty string (v2 GTFS spec compliance)
- * - location_type=1 (station) stops are included
+ * - location_type=1 (station) stops are filtered out until the UI
+ *   supports station grouping (v2 pipeline outputs all location_types)
  * - create() returns CreateResult with loadResult for error tracking
  */
 
@@ -109,6 +110,25 @@ export interface MergedDataV2 {
 }
 
 // ---------------------------------------------------------------------------
+// Stop filtering
+// ---------------------------------------------------------------------------
+
+/**
+ * Filter v2 stops to only include location_type=0 (stop/platform).
+ *
+ * The v2 pipeline outputs all location_types including l=1 (parent
+ * station), but the UI does not yet support station grouping. Parent
+ * stations have no timetable entries and would confusingly display
+ * "本日の運行は終了しました".
+ *
+ * TODO: Remove this filter when the UI adds station grouping support.
+ * The pipeline data is ready — only this filter needs to be removed.
+ */
+function isVisibleStop(stop: { l: number }): boolean {
+  return stop.l === 0;
+}
+
+// ---------------------------------------------------------------------------
 // Merge logic
 // ---------------------------------------------------------------------------
 
@@ -201,7 +221,7 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
   // only output l=0). The data is available in DataBundle.stops.
   const stops: Stop[] = sources
     .flatMap((s) => s.data.stops.data)
-    .filter((s) => s.l === 0)
+    .filter(isVisibleStop)
     .map((s) => ({
       stop_id: s.i,
       stop_name: s.n,
@@ -363,7 +383,10 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
       routeTypes: sourceRouteTypes,
       keywords: [],
       stats: {
-        stopCount: source.data.stops.data.length,
+        // Count only l=0 stops to match the repository's stop filter.
+        // When location_type=1 support is added to the UI, update this
+        // to include all location_types from the pipeline output.
+        stopCount: source.data.stops.data.filter((s) => s.l === 0).length,
         routeCount: source.data.routes.data.length,
       },
     });

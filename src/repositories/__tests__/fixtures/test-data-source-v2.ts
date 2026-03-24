@@ -10,7 +10,7 @@
  * Key v2-specific test scenarios:
  * - TripPattern FK resolution (tp -> route + headsign)
  * - Re-aggregation of multiple patterns with same route+headsign
- * - location_type=1 stops included (v2 pipeline output)
+ * - location_type=1 stops in fixture data (filtered out by mergeSourcesV2)
  * - Stop.agency_id is empty (v2 GTFS compliance)
  */
 
