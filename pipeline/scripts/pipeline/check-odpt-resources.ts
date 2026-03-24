@@ -48,8 +48,8 @@ interface OdptDataResource {
   end_at: string | null;
   uploaded_at: string;
   url: string;
-  feed_start_date: string;
-  feed_end_date: string;
+  feed_start_date: string | null;
+  feed_end_date: string | null;
   is_feed_available_period: boolean;
 }
 
@@ -363,9 +363,11 @@ function printResult(
     let avail: string;
     if (r.is_feed_available_period) {
       avail = 'VALID';
-    } else {
+    } else if (r.feed_end_date) {
       const daysUntilEnd = getDaysUntilExpiry(r.feed_end_date.replace(/-/g, ''));
       avail = daysUntilEnd > 0 ? 'not-yet-active' : 'expired';
+    } else {
+      avail = 'expired';
     }
     const isCurrent =
       meta &&

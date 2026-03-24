@@ -15,8 +15,8 @@ import type { DownloadMetaSuccess } from '../download/download-meta';
 export interface RemoteResource {
   url: string;
   is_feed_available_period: boolean;
-  feed_start_date: string;
-  feed_end_date: string;
+  feed_start_date: string | null;
+  feed_end_date: string | null;
 }
 
 /** Previous check snapshot for diff detection. */
@@ -136,16 +136,24 @@ export function detectWarnings(
   // but does not distinguish between "already expired" and "not yet started".
   // We compare feed_end_date against now to determine which case it is.
   if (localInRemote && !localInRemote.is_feed_available_period) {
-    const daysUntilEnd = getDaysUntilExpiry(localInRemote.feed_end_date.replace(/-/g, ''), now);
-    if (daysUntilEnd > 0) {
-      warnings.push({
-        type: 'NOT_YET_ACTIVE',
-        message: `Local data not yet active (valid: ${localInRemote.feed_start_date} - ${localInRemote.feed_end_date})`,
-      });
+    if (localInRemote.feed_end_date) {
+      const daysUntilEnd = getDaysUntilExpiry(localInRemote.feed_end_date.replace(/-/g, ''), now);
+      if (daysUntilEnd > 0) {
+        warnings.push({
+          type: 'NOT_YET_ACTIVE',
+          message: `Local data not yet active (valid: ${localInRemote.feed_start_date ?? '?'} - ${localInRemote.feed_end_date})`,
+        });
+      } else {
+        warnings.push({
+          type: 'EXPIRED',
+          message: `Local data expired (feed_end: ${localInRemote.feed_end_date})`,
+        });
+      }
     } else {
+      // No feed_end_date — treat as expired (cannot determine validity)
       warnings.push({
         type: 'EXPIRED',
-        message: `Local data expired (feed_end: ${localInRemote.feed_end_date})`,
+        message: 'Local data expired (no feed_end_date)',
       });
     }
   }
