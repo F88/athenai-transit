@@ -97,7 +97,7 @@ export function makeStopWithContext(
 export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRepository {
   return {
     getStopsInBounds: vi.fn(),
-    getUpcomingDepartures: vi.fn().mockResolvedValue({
+    getUpcomingTimetableEntries: vi.fn().mockResolvedValue({
       success: true,
       data: [],
       truncated: false,
@@ -109,7 +109,7 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
     getStopsNearby: vi.fn(),
     getRouteShapes: vi.fn(),
     getFullDayDepartures: vi.fn(),
-    getFullDayDeparturesForStop: vi.fn().mockResolvedValue({
+    getFullDayTimetableEntries: vi.fn().mockResolvedValue({
       success: true,
       data: [],
       truncated: false,
