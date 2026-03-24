@@ -5,8 +5,8 @@ import './index.css';
 import App from './app';
 import { TransitRepositoryProvider } from './contexts/transit-repository-provider';
 import { DataSourceManager } from './config/data-source-manager';
-import { AthenaiRepository } from './repositories/athenai-repository';
 import type { TransitRepository } from './repositories/transit-repository';
+import { AthenaiRepositoryV2 } from './repositories/athenai-repository-v2';
 import { createLogger } from './utils/logger';
 import { getDiagParam, getRepoParam } from './utils/query-params';
 
@@ -24,21 +24,21 @@ async function createRepository(): Promise<TransitRepository> {
   const dsm = new DataSourceManager();
   const prefixes = dsm.getEnabledPrefixes();
 
-  if (repo === 'v2') {
-    logger.info(`Using AthenaiRepositoryV2: [${prefixes.join(', ')}]`);
-    // Dynamic import: v2 repository code is not loaded when using v1.
-    const { AthenaiRepositoryV2 } = await import('./repositories/athenai-repository-v2');
-    const { repository, loadResult } = await AthenaiRepositoryV2.create(prefixes);
-    if (loadResult.failed.length > 0) {
-      logger.warn(
-        `Failed to load ${loadResult.failed.length} source(s): [${loadResult.failed.map((f) => f.prefix).join(', ')}]`,
-      );
-    }
-    return repository;
+  if (repo === 'v1') {
+    logger.info(`Using AthenaiRepository (v1, deprecated): [${prefixes.join(', ')}]`);
+    const { AthenaiRepository } = await import('./repositories/athenai-repository');
+    return AthenaiRepository.create(prefixes);
   }
 
-  logger.info(`Using AthenaiRepository: [${prefixes.join(', ')}]`);
-  return AthenaiRepository.create(prefixes);
+  // Default: v2 repository
+  logger.info(`Using AthenaiRepositoryV2: [${prefixes.join(', ')}]`);
+  const { repository, loadResult } = await AthenaiRepositoryV2.create(prefixes);
+  if (loadResult.failed.length > 0) {
+    logger.warn(
+      `Failed to load ${loadResult.failed.length} source(s): [${loadResult.failed.map((f) => f.prefix).join(', ')}]`,
+    );
+  }
+  return repository;
 }
 
 async function init() {
