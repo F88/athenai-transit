@@ -113,6 +113,14 @@ export interface StopWithContext extends StopWithMeta {
   routeTypes: RouteType[];
   departures: TimetableEntry[];
   /**
+   * Whether at least one boardable entry exists in the full service day.
+   *
+   * From {@link TimetableQueryMeta.isBoardableOnServiceDay}. Independent
+   * of `departures` (which only contains upcoming entries).
+   * A stop with `isBoardableOnServiceDay === false` is drop-off only.
+   */
+  isBoardableOnServiceDay: boolean;
+  /**
    * Geographic metrics from GlobalInsightsBundle.
    * Undefined when global insights data is not loaded (v1 repository).
    */

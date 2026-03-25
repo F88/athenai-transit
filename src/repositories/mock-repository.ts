@@ -18,7 +18,13 @@
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
 import type { SourceMeta, StopWithMeta, TimetableEntry } from '../types/app/transit-composed';
-import type { CollectionResult, Result } from '../types/app/repository';
+import type {
+  CollectionResult,
+  Result,
+  TimetableQueryMeta,
+  TimetableResult,
+} from '../types/app/repository';
+import { isDropOffOnly } from '../domain/transit/timetable-utils';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
 
@@ -840,11 +846,7 @@ export class MockRepository implements TransitRepository {
   }
 
   /** {@inheritDoc TransitRepository.getUpcomingTimetableEntries} */
-  getUpcomingTimetableEntries(
-    stopId: string,
-    now: Date,
-    limit = 3,
-  ): Promise<CollectionResult<TimetableEntry>> {
+  getUpcomingTimetableEntries(stopId: string, now: Date, limit = 3): Promise<TimetableResult> {
     const stop = STOPS.find((s) => s.stop_id === stopId);
     if (!stop) {
       return Promise.resolve({ success: false, error: `No departure data for stop: ${stopId}` });
@@ -852,6 +854,8 @@ export class MockRepository implements TransitRepository {
 
     const stopRoutes = STOP_ROUTES[stopId] ?? [];
     const entries: TimetableEntry[] = [];
+    let fullDayCount = 0;
+    let hasBoardable = false;
 
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
@@ -862,13 +866,17 @@ export class MockRepository implements TransitRepository {
       }
 
       const allMinutes = generateFixedMinutes(routeId, headsign);
-      const upcoming = allMinutes.filter((m) => m >= nowMinutes).slice(0, limit);
-      // pickupType is determined solely by DROP_OFF_ONLY_STOPS, not by terminal status.
-      // Real GTFS data varies: some operators (Keio Bus) set pickupType=1 at terminals,
-      // others (Toei Bus) do not.
       const pickupType = DROP_OFF_ONLY_STOPS.has(stopId) ? 1 : 0;
       const dwellTime = DWELL_TIME_ROUTES.get(routeId) ?? 0;
       const position = getPatternPosition(routeId, headsign, stopId);
+
+      // Count full-day entries and check boardability.
+      fullDayCount += allMinutes.length;
+      if (!hasBoardable && pickupType !== 1 && !position.isTerminal) {
+        hasBoardable = true;
+      }
+
+      const upcoming = allMinutes.filter((m) => m >= nowMinutes).slice(0, limit);
       for (const minutes of upcoming) {
         const arrivalMinutes = dwellTime > 0 ? minutes - dwellTime : minutes;
         entries.push({
@@ -882,7 +890,11 @@ export class MockRepository implements TransitRepository {
 
     entries.sort((a, b) => a.schedule.departureMinutes - b.schedule.departureMinutes);
 
-    return Promise.resolve({ success: true, data: entries, truncated: false });
+    const meta: TimetableQueryMeta = {
+      isBoardableOnServiceDay: hasBoardable,
+      totalEntries: fullDayCount,
+    };
+    return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }
 
   /** {@inheritDoc TransitRepository.getRouteTypesForStop} */
@@ -935,7 +947,7 @@ export class MockRepository implements TransitRepository {
     ...[
       /* dateTime */
     ]: [Date]
-  ): Promise<CollectionResult<TimetableEntry>> {
+  ): Promise<TimetableResult> {
     const stopRoutes = STOP_ROUTES[stopId] ?? [];
     const entries: TimetableEntry[] = [];
 
@@ -959,7 +971,11 @@ export class MockRepository implements TransitRepository {
     }
 
     entries.sort((a, b) => a.schedule.departureMinutes - b.schedule.departureMinutes);
-    return Promise.resolve({ success: true, data: entries, truncated: false });
+    const meta: TimetableQueryMeta = {
+      isBoardableOnServiceDay: entries.some((e) => !isDropOffOnly(e)),
+      totalEntries: entries.length,
+    };
+    return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }
 
   /** {@inheritDoc TransitRepository.getAllStops} */

@@ -34,7 +34,13 @@ import type {
   StopWithMeta,
   TimetableEntry,
 } from '../types/app/transit-composed';
-import type { CollectionResult, Result } from '../types/app/repository';
+import type {
+  CollectionResult,
+  Result,
+  TimetableQueryMeta,
+  TimetableResult,
+} from '../types/app/repository';
+import { isDropOffOnly } from '../domain/transit/timetable-utils';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
 import type { TransitDataSourceV2 } from '../datasources/transit-data-source-v2';
@@ -697,11 +703,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   }
 
   /** {@inheritDoc TransitRepository.getUpcomingTimetableEntries} */
-  getUpcomingTimetableEntries(
-    stopId: string,
-    now: Date,
-    limit?: number,
-  ): Promise<CollectionResult<TimetableEntry>> {
+  getUpcomingTimetableEntries(stopId: string, now: Date, limit?: number): Promise<TimetableResult> {
     const t0 = performance.now();
     const timetableGroups = this.timetable[stopId];
     if (!timetableGroups) {
@@ -710,6 +712,10 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
     const serviceDay = getServiceDay(now);
     const todayServiceIds = this.getActiveServiceIds(serviceDay);
+
+    // Track full-day metadata during scan.
+    let fullDayCount = 0;
+    let hasBoardable = false;
 
     const prevServiceDay = new Date(serviceDay);
     prevServiceDay.setDate(prevServiceDay.getDate() - 1);
@@ -744,6 +750,20 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const arrivals = group.a?.[serviceId];
         const pickupTypes = group.pt?.[serviceId];
         const dropOffTypes = group.dt?.[serviceId];
+
+        // Count full-day entries and check boardability before time filtering.
+        for (let j = 0; j < times.length; j++) {
+          fullDayCount++;
+          if (!hasBoardable) {
+            const pt = (pickupTypes?.[j] ?? 0) as StopServiceType;
+            const si = isCircularStop && pt === 1 ? lastIndex : firstIndex;
+            const isTerminal = si === totalStops - 1;
+            if (pt !== 1 && !isTerminal) {
+              hasBoardable = true;
+            }
+          }
+        }
+
         const startIdx = binarySearchFirstGte(times, nowMinutes);
         for (let i = startIdx; i < times.length; i++) {
           const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
@@ -824,18 +844,20 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     logger.debug(
       `getUpcomingTimetableEntries: ${stopId} → ${result.length}/${totalAvailable} entries in ${elapsed}ms (${truncated ? 'truncated' : 'all'})`,
     );
-    return Promise.resolve({ success: true, data: result, truncated });
+    const meta: TimetableQueryMeta = {
+      isBoardableOnServiceDay: hasBoardable,
+      totalEntries: fullDayCount,
+    };
+    return Promise.resolve({ success: true, data: result, truncated, meta });
   }
 
   /** {@inheritDoc TransitRepository.getFullDayTimetableEntries} */
-  getFullDayTimetableEntries(
-    stopId: string,
-    dateTime: Date,
-  ): Promise<CollectionResult<TimetableEntry>> {
+  getFullDayTimetableEntries(stopId: string, dateTime: Date): Promise<TimetableResult> {
     const t0 = performance.now();
+    const emptyMeta: TimetableQueryMeta = { isBoardableOnServiceDay: false, totalEntries: 0 };
     const timetableGroups = this.timetable[stopId];
     if (!timetableGroups) {
-      return Promise.resolve({ success: true, data: [], truncated: false });
+      return Promise.resolve({ success: true, data: [], truncated: false, meta: emptyMeta });
     }
 
     const serviceDate = getServiceDay(dateTime);
@@ -896,7 +918,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     logger.debug(
       `getFullDayTimetableEntries: ${stopId} → ${entries.length} entries in ${elapsed}ms`,
     );
-    return Promise.resolve({ success: true, data: entries, truncated: false });
+    const meta: TimetableQueryMeta = {
+      isBoardableOnServiceDay: entries.some((e) => !isDropOffOnly(e)),
+      totalEntries: entries.length,
+    };
+    return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }
 
   /** {@inheritDoc TransitRepository.getRouteTypesForStop} */

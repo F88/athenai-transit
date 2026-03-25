@@ -53,8 +53,11 @@ export function useNearbyDepartures(
                 repo.getRouteTypesForStop(stop.stop_id),
               ]);
               const departures = depsResult.success ? depsResult.data : [];
+              const isBoardableOnServiceDay = depsResult.success
+                ? depsResult.meta.isBoardableOnServiceDay
+                : false;
               const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-              return { stop, routeTypes, departures, agencies, routes };
+              return { stop, routeTypes, departures, isBoardableOnServiceDay, agencies, routes };
             }),
           );
 

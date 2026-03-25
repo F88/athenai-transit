@@ -181,11 +181,15 @@ export default function App() {
         repo.getRouteTypesForStop(stopId),
       ]);
       const departures = depsResult.success ? depsResult.data : [];
+      const isBoardableOnServiceDay = depsResult.success
+        ? depsResult.meta.isBoardableOnServiceDay
+        : false;
       const routeTypes = rtResult.success ? rtResult.data : [3 as const];
       return {
         stop: meta.stop,
         routeTypes,
         departures,
+        isBoardableOnServiceDay,
         agencies: meta.agencies,
         routes: meta.routes,
       };
@@ -200,17 +204,14 @@ export default function App() {
     async (stopId: string) => {
       const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
       const allEntries = result.success ? result.data : [];
-      // Determine boardability from unfiltered data (time-independent).
-      const canBoard = allEntries.some(
-        (e) => !e.patternPosition.isTerminal && e.boarding.pickupType === 0,
-      );
+      const isBoardableOnServiceDay = result.success ? result.meta.isBoardableOnServiceDay : false;
       // Below verbose: hide terminal arrivals (passengers cannot board at terminals).
       if (infoLevelFlags.isVerboseEnabled) {
-        return { entries: allEntries, omitted: { terminal: 0 }, canBoard };
+        return { entries: allEntries, omitted: { terminal: 0 }, isBoardableOnServiceDay };
       }
       const entries = allEntries.filter((e) => !e.patternPosition.isTerminal);
       const terminalCount = allEntries.length - entries.length;
-      return { entries, omitted: { terminal: terminalCount }, canBoard };
+      return { entries, omitted: { terminal: terminalCount }, isBoardableOnServiceDay };
     },
     [repo, dateTime, infoLevelFlags],
   );
@@ -225,7 +226,7 @@ export default function App() {
       if (!route) {
         return;
       }
-      const { entries, omitted, canBoard } = await fetchTimetableEntries(stopId);
+      const { entries, omitted, isBoardableOnServiceDay } = await fetchTimetableEntries(stopId);
       const departures = entries.filter(
         (e) =>
           e.routeDirection.route.route_id === routeId && e.routeDirection.headsign === headsign,
@@ -238,7 +239,7 @@ export default function App() {
         serviceDate: getServiceDay(dateTime),
         timetableEntries: departures,
         omitted,
-        canBoard,
+        isBoardableOnServiceDay,
         agencies: meta.agencies,
       });
     },
@@ -251,7 +252,7 @@ export default function App() {
       if (!meta) {
         return;
       }
-      const { entries, omitted, canBoard } = await fetchTimetableEntries(stopId);
+      const { entries, omitted, isBoardableOnServiceDay } = await fetchTimetableEntries(stopId);
       setTimetableModal({
         type: 'stop',
         stop: meta.stop,
@@ -259,7 +260,7 @@ export default function App() {
         serviceDate: getServiceDay(dateTime),
         timetableEntries: entries,
         omitted,
-        canBoard,
+        isBoardableOnServiceDay,
         agencies: meta.agencies,
       });
     },

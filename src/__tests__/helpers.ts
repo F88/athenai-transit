@@ -101,6 +101,7 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
       success: true,
       data: [],
       truncated: false,
+      meta: { isBoardableOnServiceDay: false, totalEntries: 0 },
     }),
     getRouteTypesForStop: vi.fn().mockResolvedValue({
       success: true,
@@ -112,6 +113,7 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
       success: true,
       data: [],
       truncated: false,
+      meta: { isBoardableOnServiceDay: false, totalEntries: 0 },
     }),
     getAllStops: vi.fn(),
     getAgency: vi.fn().mockResolvedValue({

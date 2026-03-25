@@ -9,7 +9,6 @@ import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { getServiceDay } from '../domain/transit/service-day';
 import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
 import { resolveAgencyDisplayName } from '../domain/transit/get-agency-display-name';
-import { hasBoardableDeparture } from '../domain/transit/timetable-utils';
 import { DepartureItem } from './departure-item';
 import { AgencyBadge } from './badge/agency-badge';
 import { DistanceBadge } from './badge/distance-badge';
@@ -30,7 +29,7 @@ interface NearbyStopProps {
 }
 
 export function NearbyStop({
-  data: { stop, routeTypes, departures, agencies },
+  data: { stop, routeTypes, departures, isBoardableOnServiceDay, agencies },
   isSelected,
   now,
   mapCenter,
@@ -69,10 +68,7 @@ export function NearbyStop({
     [departures],
   );
 
-  const isStopDropOffOnly = useMemo(
-    () => departures.length > 0 && !hasBoardableDeparture(departures),
-    [departures],
-  );
+  const isStopDropOffOnly = !isBoardableOnServiceDay;
 
   return (
     <div

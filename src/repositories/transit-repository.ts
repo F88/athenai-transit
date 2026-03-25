@@ -8,8 +8,8 @@
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, RouteType, Stop } from '../types/app/transit';
-import type { SourceMeta, StopWithMeta, TimetableEntry } from '../types/app/transit-composed';
-import type { CollectionResult, Result } from '../types/app/repository';
+import type { SourceMeta, StopWithMeta } from '../types/app/transit-composed';
+import type { CollectionResult, Result, TimetableResult } from '../types/app/repository';
 
 /**
  * Maximum number of stops that any single query can return.
@@ -93,11 +93,7 @@ export interface TransitRepository {
    *                 When omitted, all upcoming entries are returned.
    * @returns Timetable entries sorted by departure time.
    */
-  getUpcomingTimetableEntries(
-    stopId: string,
-    now: Date,
-    limit?: number,
-  ): Promise<CollectionResult<TimetableEntry>>;
+  getUpcomingTimetableEntries(stopId: string, now: Date, limit?: number): Promise<TimetableResult>;
 
   /**
    * Returns all GTFS route_type values for a stop.
@@ -191,10 +187,7 @@ export interface TransitRepository {
    *                   this to the GTFS service day internally (03:00 boundary).
    * @returns All timetable entries at the stop for the service day.
    */
-  getFullDayTimetableEntries(
-    stopId: string,
-    dateTime: Date,
-  ): Promise<CollectionResult<TimetableEntry>>;
+  getFullDayTimetableEntries(stopId: string, dateTime: Date): Promise<TimetableResult>;
 
   /**
    * Returns all stops in the dataset.

@@ -360,6 +360,9 @@ describe('getFullDayTimetableEntries', () => {
         result.data[i - 1].schedule.departureMinutes,
       );
     }
+    // meta: all entries are boardable (non-terminal, pickupType=0)
+    expect(result.meta.isBoardableOnServiceDay).toBe(true);
+    expect(result.meta.totalEntries).toBe(17);
   });
 });
 

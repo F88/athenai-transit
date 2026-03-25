@@ -40,7 +40,7 @@ export interface RouteHeadsignTimetable {
   timetableEntries: TimetableEntry[];
   omitted: TimetableOmitted;
   /** Whether at least one boardable (non-terminal, pickupType=0) entry exists in the full day. */
-  canBoard: boolean;
+  isBoardableOnServiceDay: boolean;
   agencies: Agency[];
 }
 
@@ -54,7 +54,7 @@ export interface StopTimetable {
   timetableEntries: TimetableEntry[];
   omitted: TimetableOmitted;
   /** Whether at least one boardable (non-terminal, pickupType=0) entry exists in the full day. */
-  canBoard: boolean;
+  isBoardableOnServiceDay: boolean;
   agencies: Agency[];
 }
 
@@ -147,7 +147,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
             <VerboseMetadata
               timetableEntries={filteredTimetableEntries}
               omitted={data.omitted}
-              canBoard={data.canBoard}
+              isBoardableOnServiceDay={data.isBoardableOnServiceDay}
             />
           )}
 
@@ -294,11 +294,11 @@ function TimetableMetadata({
 function VerboseMetadata({
   timetableEntries,
   omitted,
-  canBoard,
+  isBoardableOnServiceDay,
 }: {
   timetableEntries: TimetableEntry[];
   omitted: TimetableOmitted;
-  canBoard: boolean;
+  isBoardableOnServiceDay: boolean;
 }) {
   const boardable = timetableEntries.filter((e) => e.boarding.pickupType === 0).length;
   const dropOffOnly = timetableEntries.filter((e) => e.boarding.pickupType === 1).length;
@@ -343,7 +343,8 @@ function VerboseMetadata({
       </p>
       {dwellCount > 0 && <p>dwell={dwellCount}</p>}
       <p>
-        canBoard={String(canBoard)} omitted.terminal={omitted.terminal}
+        isBoardableOnServiceDay={String(isBoardableOnServiceDay)} omitted.terminal=
+        {omitted.terminal}
       </p>
     </div>
   );
@@ -595,7 +596,8 @@ function VerboseEntryRow({ entry }: { entry: TimetableEntry }) {
 function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: InfoLevel }) {
   const stopNames = getStopDisplayNames(data.stop, infoLevel);
   const isDropOffOnly =
-    !data.canBoard && (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
+    !data.isBoardableOnServiceDay &&
+    (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
 
   // Collect route types for emoji display.
   const routeTypes = data.type === 'route-headsign' ? [data.route.route_type] : data.routeTypes;
