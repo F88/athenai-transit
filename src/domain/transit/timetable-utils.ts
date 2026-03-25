@@ -110,3 +110,16 @@ export function isPassThrough(entry: TimetableEntry): boolean {
 export function hasBoardableDeparture(entries: TimetableEntry[]): boolean {
   return entries.some((entry) => !isDropOffOnly(entry));
 }
+
+/**
+ * Filter out drop-off-only entries, returning only boardable departures.
+ *
+ * Used to exclude terminal arrivals and pickup-unavailable stops
+ * from the NearbyStop display in non-verbose mode.
+ *
+ * Each entry's boardability is determined by {@link isDropOffOnly}
+ * (pickupType === 1 OR isTerminal).
+ */
+export function filterBoardable(entries: TimetableEntry[]): TimetableEntry[] {
+  return entries.filter((entry) => !isDropOffOnly(entry));
+}

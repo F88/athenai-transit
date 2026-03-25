@@ -9,7 +9,7 @@ import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { getServiceDay } from '../domain/transit/service-day';
 import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
 import { resolveAgencyDisplayName } from '../domain/transit/get-agency-display-name';
-import { hasBoardableDeparture } from '../domain/transit/timetable-utils';
+import { filterBoardable, hasBoardableDeparture } from '../domain/transit/timetable-utils';
 import { DepartureItem } from './departure-item';
 import { AgencyBadge } from './badge/agency-badge';
 import { DistanceBadge } from './badge/distance-badge';
@@ -51,9 +51,16 @@ export function NearbyStop({
   const hasMultipleRouteTypes = routeTypes.length > 1;
   const showRouteTypeIcon = info.isVerboseEnabled || hasMultipleRouteTypes;
 
+  // verbose: show all entries (including terminal/drop-off-only with labels)
+  // non-verbose: show only boardable departures
+  const displayDepartures = useMemo(
+    () => (info.isVerboseEnabled ? departures : filterBoardable(departures)),
+    [info.isVerboseEnabled, departures],
+  );
+
   const grouped = useMemo(
-    () => (viewId !== 'stop' ? groupByRouteHeadsign(departures) : []),
-    [viewId, departures],
+    () => (viewId !== 'stop' ? groupByRouteHeadsign(displayDepartures) : []),
+    [viewId, displayDepartures],
   );
 
   const hasUnknownHeadsign = useMemo(
@@ -123,9 +130,9 @@ export function NearbyStop({
           行先が表示されない路線があります
         </p>
       )}
-      {departures.length > 0 ? (
+      {displayDepartures.length > 0 ? (
         viewId === 'stop' ? (
-          departures
+          displayDepartures
             .slice(0, 5)
             .map((entry, i) => (
               <FlatDepartureItem
@@ -170,7 +177,9 @@ export function NearbyStop({
           ))
         )
       ) : (
-        <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">本日の運行は終了しました</p>
+        <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">
+          {isStopDropOffOnly ? '降車専用' : '本日の運行は終了しました'}
+        </p>
       )}
     </div>
   );
