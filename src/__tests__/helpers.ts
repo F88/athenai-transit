@@ -80,6 +80,7 @@ export function makeStopWithContext(
       boarding: { pickupType: 0 as const, dropOffType: 0 as const },
       patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
     })),
+    isBoardableOnServiceDay: true,
     agencies: [],
     routes,
   };

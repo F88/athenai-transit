@@ -42,6 +42,7 @@ describe('extractRouteIdsForStop', () => {
       stop,
       routeTypes: [3 as const],
       departures: [] as TimetableEntry[],
+      isBoardableOnServiceDay: true,
       agencies: [],
       routes: [makeRoute('r1'), makeRoute('r2')],
     };
@@ -54,6 +55,7 @@ describe('extractRouteIdsForStop', () => {
       stop,
       routeTypes: [3 as const],
       departures: [] as TimetableEntry[],
+      isBoardableOnServiceDay: false,
       agencies: [],
       routes: [],
     };
@@ -66,6 +68,7 @@ describe('extractRouteIdsForStop', () => {
       stop,
       routeTypes: [3 as const],
       departures: makeEntries(['r1']),
+      isBoardableOnServiceDay: true,
       agencies: [],
       routes: [makeRoute('r1'), makeRoute('r2'), makeRoute('r3')],
     };
