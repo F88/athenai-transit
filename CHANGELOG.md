@@ -12,7 +12,7 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Added
 
 - 時刻表モーダルを `TimetableEntry` ベースに移行:
-    - 終点では到着時刻 (`arrivalMinutes`) を表示。
+    - 終点では到着時刻 (`arrivalMinutes`) を `nn着` と表示。
     - 終点/始発/乗車不可/降車不可ラベルを InfoLevel に応じて表示。
     - verbose: 全データダンプ (`VerboseEntryRow`, `VerboseMetadata`)。
     - 降車専用バス停の検出と表示 (`canBoard`, `omitted.terminal`)。
@@ -33,8 +33,11 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Fixed
 
-- 循環路線で終点到着の `stopIndex` が常に 0 になる問題 (Refs #47)。
-- 時刻表 `DialogDescription` がフィルタ前の件数を使用していた問題。
+- 時刻表関連の問題を修正:
+    - 循環路線で終点到着の `stopIndex` が常に 0 になる問題 (Refs #47)。
+    - 路線フィルタボタンの選択がメタデータに反映されない問題。
+    - `DialogDescription` (SR) がフィルタ前の件数を使用していた問題。
+    - 多路線バス停でダイアログ幅が不足しフィルタボタンが見切れる問題。
 
 ### Changed
 
