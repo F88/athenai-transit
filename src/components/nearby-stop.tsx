@@ -175,7 +175,7 @@ export function NearbyStop({
         )
       ) : (
         <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">
-          {isStopDropOffOnly ? '降車専用' : '本日の運行は終了しました'}
+          本日の運行は終了しました
         </p>
       )}
     </div>
