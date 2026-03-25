@@ -193,6 +193,21 @@ export default function App() {
     [repo, dateTime, inBoundStops, radiusStops],
   );
 
+  const infoLevelFlags = useMemo(() => createInfoLevel(settings.infoLevel), [settings.infoLevel]);
+
+  /** Fetch full-day timetable entries for a stop, filtering out terminal arrivals below detailed. */
+  const fetchTimetableEntries = useCallback(
+    async (stopId: string) => {
+      const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
+      const allEntries = result.success ? result.data : [];
+      // Below verbose: hide terminal arrivals (passengers cannot board at terminals).
+      return infoLevelFlags.isVerboseEnabled
+        ? allEntries
+        : allEntries.filter((e) => !e.patternPosition.isTerminal);
+    },
+    [repo, dateTime, infoLevelFlags],
+  );
+
   const handleShowTimetable = useCallback(
     async (stopId: string, routeId: string, headsign: string) => {
       const meta = radiusStops.find((s) => s.stop.stop_id === stopId);
@@ -203,15 +218,8 @@ export default function App() {
       if (!route) {
         return;
       }
-      // Fetch all entries and filter by route+headsign to preserve TimetableEntry metadata.
-      const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
-      const allEntries = result.success ? result.data : [];
-      const info = createInfoLevel(settings.infoLevel);
-      // Below detailed: hide terminal arrivals (passengers cannot board at terminals).
-      const entries = info.isDetailedEnabled
-        ? allEntries
-        : allEntries.filter((e) => !e.patternPosition.isTerminal);
-      const departures = entries.filter(
+      const timetableEntries = await fetchTimetableEntries(stopId);
+      const departures = timetableEntries.filter(
         (e) =>
           e.routeDirection.route.route_id === routeId && e.routeDirection.headsign === headsign,
       );
@@ -221,11 +229,11 @@ export default function App() {
         route,
         headsign,
         serviceDate: getServiceDay(dateTime),
-        departures,
+        timetableEntries: departures,
         agencies: meta.agencies,
       });
     },
-    [repo, dateTime, radiusStops, settings.infoLevel],
+    [dateTime, radiusStops, fetchTimetableEntries],
   );
 
   const handleShowStopTimetable = useCallback(
@@ -234,25 +242,17 @@ export default function App() {
       if (!meta) {
         return;
       }
-
-      const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
-      const allEntries = result.success ? result.data : [];
-      const info = createInfoLevel(settings.infoLevel);
-      // Below detailed: hide terminal arrivals (passengers cannot board at terminals).
-      const departures = info.isDetailedEnabled
-        ? allEntries
-        : allEntries.filter((e) => !e.patternPosition.isTerminal);
-
+      const timetableEntries = await fetchTimetableEntries(stopId);
       setTimetableModal({
         type: 'stop',
         stop: meta.stop,
         routeTypes: routeTypeMap.get(stopId) ?? [3],
         serviceDate: getServiceDay(dateTime),
-        departures,
+        timetableEntries: timetableEntries,
         agencies: meta.agencies,
       });
     },
-    [repo, dateTime, radiusStops, routeTypeMap, settings.infoLevel],
+    [dateTime, radiusStops, routeTypeMap, fetchTimetableEntries],
   );
 
   // Select + pan to a stop from history. Uses focusStop to set

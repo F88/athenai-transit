@@ -31,18 +31,18 @@ export interface RouteHeadsignTimetable {
   headsign: string;
   /** GTFS service date for this timetable (not real-world time). */
   serviceDate: Date;
-  departures: TimetableEntry[];
+  timetableEntries: TimetableEntry[];
   agencies: Agency[];
 }
 
-/** Timetable for all departures at a stop. */
+/** Timetable for all at a stop. */
 export interface StopTimetable {
   type: 'stop';
   stop: Stop;
   routeTypes: RouteType[];
   /** GTFS service date for this timetable (not real-world time). */
   serviceDate: Date;
-  departures: TimetableEntry[];
+  timetableEntries: TimetableEntry[];
   agencies: Agency[];
 }
 
@@ -64,7 +64,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
   const currentHour = Math.floor(getServiceDayMinutes(time) / 60);
 
   // Filter state for stop timetable (route+headsign toggle).
-  // Empty set = show all departures (no filter active).
+  // Empty set = show all timetable (no filter active).
   const [activeFilters, setActiveFilters] = useState<Set<string>>(() => new Set());
 
   const toggleFilter = useCallback((key: string) => {
@@ -80,21 +80,21 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
   }, []);
 
   // Both timetable types now use TimetableEntry[] directly.
-  const allDepartures: TimetableEntry[] = useMemo(() => {
+  const allTimetableEntries: TimetableEntry[] = useMemo(() => {
     if (!data) {
       return [];
     }
-    return data.departures;
+    return data.timetableEntries;
   }, [data]);
 
-  const filteredDepartures = useMemo(() => {
+  const filteredTimetableEntries = useMemo(() => {
     if (!data || data.type !== 'stop' || activeFilters.size === 0) {
-      return allDepartures;
+      return allTimetableEntries;
     }
-    return allDepartures.filter((d) =>
+    return allTimetableEntries.filter((d) =>
       activeFilters.has(`${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`),
     );
-  }, [data, allDepartures, activeFilters]);
+  }, [data, allTimetableEntries, activeFilters]);
 
   if (!data) {
     return (
@@ -124,12 +124,12 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
           </DialogTitle>
           <DialogDescription className="sr-only">
             {data.type === 'route-headsign'
-              ? `${data.stop.stop_name} ${data.route.route_short_name || data.route.route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${data.departures.length}本`
-              : `${data.stop.stop_name}の全路線時刻表 ${data.departures.length}本`}
+              ? `${data.stop.stop_name} ${data.route.route_short_name || data.route.route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${data.timetableEntries.length}本`
+              : `${data.stop.stop_name}の全路線時刻表 ${data.timetableEntries.length}本`}
           </DialogDescription>
 
           {info.isDetailedEnabled && (
-            <TimetableMetadata departures={filteredDepartures} infoLevel={infoLevel} />
+            <TimetableMetadata timetableEntries={filteredTimetableEntries} infoLevel={infoLevel} />
           )}
 
           <TimetableDateLabel serviceDate={data.serviceDate} time={time} />
@@ -144,7 +144,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
           {((data.type === 'route-headsign' && data.headsign === '') ||
             (data.type === 'stop' &&
               hasUnknownDestination(
-                data.departures.map((d) => ({ headsign: d.routeDirection.headsign })),
+                data.timetableEntries.map((d) => ({ headsign: d.routeDirection.headsign })),
               ))) && (
             <p className="m-0 text-center text-[11px] text-amber-600 dark:text-amber-400">
               行先が表示されない路線があります
@@ -153,11 +153,11 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
         </DialogHeader>
         <div className="overflow-y-auto px-4 pt-3 pb-4">
           <TimetableGrid
-            timetableEntries={filteredDepartures}
+            timetableEntries={filteredTimetableEntries}
             showHeadsign={
               info.isVerboseEnabled ||
               new Set(
-                filteredDepartures.map(
+                filteredTimetableEntries.map(
                   (d) => `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`,
                 ),
               ).size > 1
@@ -205,15 +205,15 @@ function TimetableDateLabel({ serviceDate, time }: { serviceDate: Date; time: Da
 
 /** Metadata summary shown above the timetable grid. */
 function TimetableMetadata({
-  departures,
+  timetableEntries: timetableEntries,
   infoLevel,
 }: {
-  departures: TimetableEntry[];
+  timetableEntries: TimetableEntry[];
   infoLevel: InfoLevel;
 }) {
   // Compute departure count and operating hours.
   // Use the display time (arrival for terminal, departure otherwise) for statistics.
-  const allMinutes = departures.map((d) => getDisplayMinutes(d));
+  const allMinutes = timetableEntries.map((d) => getDisplayMinutes(d));
   const count = allMinutes.length;
   const firstTime = count > 0 ? formatMinutes(allMinutes[0]) : null;
   const lastTime = count > 0 ? formatMinutes(allMinutes[count - 1]) : null;
@@ -222,7 +222,7 @@ function TimetableMetadata({
   // Route+headsign breakdown
   const routeBreakdown = useMemo(() => {
     const counts = new Map<string, { route: Route; headsign: string; count: number }>();
-    for (const dep of departures) {
+    for (const dep of timetableEntries) {
       const key = `${dep.routeDirection.route.route_id}__${dep.routeDirection.headsign}`;
       const entry = counts.get(key);
       if (entry) {
@@ -236,7 +236,7 @@ function TimetableMetadata({
       }
     }
     return Array.from(counts.values());
-  }, [departures]);
+  }, [timetableEntries]);
 
   return (
     <div className="border-border text-muted-foreground mb-3 space-y-0.5 rounded border p-2 text-[11px]">
@@ -516,7 +516,7 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
       ? [data.route]
       : Array.from(
           new Map(
-            data.departures.map(
+            data.timetableEntries.map(
               (d) => [d.routeDirection.route.route_id, d.routeDirection.route] as const,
             ),
           ).values(),
@@ -572,7 +572,7 @@ function StopTimetableFilter({
 }) {
   const routeHeadsigns = Array.from(
     new Map(
-      data.departures.map((d) => [
+      data.timetableEntries.map((d) => [
         `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`,
         { route: d.routeDirection.route, headsign: d.routeDirection.headsign },
       ]),
