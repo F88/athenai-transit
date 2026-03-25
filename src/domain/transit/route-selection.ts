@@ -178,7 +178,7 @@ const ROUTE_WEIGHT = {
  *
  * - Non-bus routes (rail, subway, tram): fixed default weight (4).
  * - Bus routes: weight determined by daily departure count.
- *   250+ → 6, 100-249 → 5, 50-99 → 4, 0-49 → 3.
+ *   250+ → 10, 100-249 → 6, 50-99 → 4, 0-49 → 3.
  *
  * Based on actual data distribution (1,202 bus routes):
  * 71% have freq < 50, 15% 50-99, 11% 100-249, 3% 250+.
@@ -223,7 +223,7 @@ function getHighlightedRouteShapeStyle(
     opacity: 1.0,
     outline: {
       weight: weight + ROUTE_WEIGHT.outlineExtra,
-      opacity: 1.6,
+      opacity: 1.0,
     },
   };
 }

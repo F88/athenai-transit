@@ -130,11 +130,20 @@ export function cleanupInvalidQueryParams(): void {
     return;
   }
 
-  const url = new URL(window.location.href);
-  for (const key of keysToRemove) {
-    url.searchParams.delete(key);
-  }
-  history.replaceState(history.state, '', url.toString());
+  // Remove keys from the raw query string to preserve special characters
+  // like `+` in timezone offsets (URLSearchParams encodes `+` as space).
+  const keysSet = new Set(keysToRemove);
+  const rawSearch = window.location.search;
+  const pairs = rawSearch
+    .slice(1) // remove leading '?'
+    .split('&')
+    .filter((pair) => {
+      const key = pair.split('=')[0];
+      return !keysSet.has(decodeURIComponent(key));
+    });
+  const newSearch = pairs.length > 0 ? `?${pairs.join('&')}` : '';
+  const newUrl = `${window.location.pathname}${newSearch}${window.location.hash}`;
+  history.replaceState(history.state, '', newUrl);
   resetParamsCache();
 }
 

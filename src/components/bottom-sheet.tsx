@@ -101,11 +101,10 @@ export function BottomSheet({
     if (activeOnly) {
       result = result.filter((swc) => swc.departures.length > 0);
     }
-    // Hide drop-off-only stops in non-detailed mode.
-    // Uses isBoardableOnServiceDay (full-day, time-independent) instead of
-    // checking departures (now-filtered), so drop-off-only stops are hidden
-    // even when they still have upcoming terminal arrivals.
-    // if (!info.isDetailedEnabled) {
+    // Drop-off-only stop filtering is intentionally disabled (isSimpleEnabled is always true).
+    // StopMarkers always show all stops on the map, so hiding them from NearbyStop
+    // would be inconsistent. Drop-off-only stops display a "降車専用" badge instead.
+    // See Issue #64 for future handling of drop-off-only + end-of-service states.
     if (!info.isSimpleEnabled) {
       result = result.filter((swc) => swc.isBoardableOnServiceDay || swc.departures.length === 0);
     }

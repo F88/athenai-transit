@@ -96,7 +96,7 @@ export const RouteShapePolylines = memo(function RouteShapePolylines({
       {styledShapes.map(({ shape, style, stableIndex }) => (
         <Polyline
           key={`${shape.routeId}-${stableIndex}`}
-          positions={shape.points}
+          positions={toLatLng(shape.points)}
           interactive={true}
           bubblingMouseEvents={false}
           pane={pane}

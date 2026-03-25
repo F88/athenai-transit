@@ -213,7 +213,7 @@ describe('getRouteShapeStyle', () => {
     const result = getRouteShapeStyle(ids, 'route-A', 3);
     expect(result.weight).toBe(6);
     expect(result.opacity).toBe(1.0);
-    expect(result.outline).toEqual({ weight: 10, opacity: 1.6 });
+    expect(result.outline).toEqual({ weight: 10, opacity: 1.0 });
   });
 
   it('returns dimmed style without outline for a non-matching route', () => {

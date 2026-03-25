@@ -81,7 +81,7 @@ export interface StopWithMeta {
   routes: Route[];
   /**
    * Per-stop operational statistics from InsightsBundle.
-   * Undefined when insights data is not loaded (v1 repository).
+   * Undefined when insights data is not loaded.
    * Values are for the current service group (e.g. weekday, Saturday).
    */
   stats?: {
@@ -122,7 +122,7 @@ export interface StopWithContext extends StopWithMeta {
   isBoardableOnServiceDay: boolean;
   /**
    * Geographic metrics from GlobalInsightsBundle.
-   * Undefined when global insights data is not loaded (v1 repository).
+   * Undefined when global insights data is not loaded.
    */
   geo?: {
     /**

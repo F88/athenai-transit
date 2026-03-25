@@ -876,6 +876,8 @@ export class MockRepository implements TransitRepository {
         hasBoardable = true;
       }
 
+      // Note: limit is applied per route+headsign (simplified mock behavior).
+      // Production repo collects all entries then applies limit globally.
       const upcoming = allMinutes.filter((m) => m >= nowMinutes).slice(0, limit);
       for (const minutes of upcoming) {
         const arrivalMinutes = dwellTime > 0 ? minutes - dwellTime : minutes;

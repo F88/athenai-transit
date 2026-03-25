@@ -539,7 +539,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     // Build per-route insights lookup from all insights bundles.
     // tripPatternGeo is keyed by pattern ID; we resolve to route ID
     // via resolvedPatterns to find the best freq and geo for each route.
-    // When multiple patterns exist for a route, use the highest freq.
+    // When multiple patterns exist for a route, sum their freq.
     const routeFreq = new Map<string, number>();
     const routeGeo = new Map<string, { pathDist: number; isCircular: boolean }>();
 

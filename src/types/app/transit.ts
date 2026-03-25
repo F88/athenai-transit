@@ -40,7 +40,7 @@ export interface Stop {
   location_type: number; // 0: stop/platform, 1: station
   agency_id: string;
 
-  // --- v2 optional fields (omitted in v1 repository) ---
+  // --- optional fields (omitted when source does not provide them) ---
 
   /**
    * GTFS wheelchair_boarding.

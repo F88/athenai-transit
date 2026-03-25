@@ -199,14 +199,14 @@ export default function App() {
 
   const infoLevelFlags = useMemo(() => createInfoLevel(settings.infoLevel), [settings.infoLevel]);
 
-  /** Fetch full-day timetable entries for a stop, filtering out terminal arrivals below verbose. */
+  /** Fetch full-day timetable entries for a stop, filtering out terminal arrivals below detailed. */
   const fetchTimetableEntries = useCallback(
     async (stopId: string) => {
       const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
       const allEntries = result.success ? result.data : [];
       const isBoardableOnServiceDay = result.success ? result.meta.isBoardableOnServiceDay : false;
-      // Below verbose: hide terminal arrivals (passengers cannot board at terminals).
-      if (infoLevelFlags.isVerboseEnabled) {
+      // Below detailed: hide terminal arrivals (passengers cannot board at terminals).
+      if (infoLevelFlags.isDetailedEnabled) {
         return { entries: allEntries, omitted: { terminal: 0 }, isBoardableOnServiceDay };
       }
       const entries = allEntries.filter((e) => !e.patternPosition.isTerminal);

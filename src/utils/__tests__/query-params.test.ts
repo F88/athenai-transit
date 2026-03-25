@@ -130,10 +130,9 @@ describe('parseQueryTime', () => {
     expect(parseQueryTime('<script>alert(1)</script>')).toBeNull();
   });
 
-  it('returns null for date-only without time', () => {
-    // Date-only strings are parsed as UTC by spec, but we accept them
+  it('accepts date-only without time (midnight UTC)', () => {
+    // Date-only strings are parsed as UTC by spec — we accept them.
     const date = parseQueryTime('2026-03-25');
-    // This is valid per Date constructor — returns midnight UTC
     expect(date).not.toBeNull();
   });
 });
@@ -154,7 +153,9 @@ describe('cleanupInvalidQueryParams', () => {
 
   /** Extract the cleaned URL from replaceState call. */
   function getCleanedUrl(): URL {
-    return new URL(replaceStateMock.mock.calls[0][2] as string);
+    const raw = replaceStateMock.mock.calls[0][2] as string;
+    // replaceState receives a path (e.g. "/?lat=35"), make it absolute for URL parsing.
+    return new URL(raw, 'http://localhost');
   }
 
   beforeEach(() => {
@@ -320,6 +321,32 @@ describe('cleanupInvalidQueryParams', () => {
     expect(url.searchParams.get('lat')).toBe('35.68');
     expect(url.searchParams.has('lng')).toBe(false);
     expect(url.searchParams.get('zm')).toBe('14');
+  });
+
+  // --- time param with + in timezone offset ---
+
+  it('preserves ?time= with encoded + when other params are removed', () => {
+    setSearch('?repo=v1&time=2026-03-25T20%3A55%3A00%2B09%3A00');
+    cleanupInvalidQueryParams();
+
+    expect(replaceStateMock).toHaveBeenCalledOnce();
+    const url = getCleanedUrl();
+    expect(url.searchParams.has('repo')).toBe(false);
+    // time should still be parseable after URL reconstruction
+    const timeValue = url.searchParams.get('time');
+    expect(timeValue).not.toBeNull();
+    expect(parseQueryTime(timeValue)).not.toBeNull();
+  });
+
+  it('preserves ?time= with raw + when other params are removed', () => {
+    setSearch('?repo=v1&time=2026-03-25T20:55:00+09:00');
+    cleanupInvalidQueryParams();
+
+    expect(replaceStateMock).toHaveBeenCalledOnce();
+    // Verify raw URL string preserves + (not via URLSearchParams which decodes + as space)
+    const rawUrl = replaceStateMock.mock.calls[0][2] as string;
+    expect(rawUrl).not.toContain('repo=');
+    expect(rawUrl).toContain('time=2026-03-25T20:55:00+09:00');
   });
 
   // --- no params / all valid ---

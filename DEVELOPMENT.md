@@ -451,9 +451,8 @@ http://localhost:5173/?lat=35.68&lng=139.39&zm=16&time=2026-03-25T20:55
 `?repo=` パラメータで使用する Repository 実装を切り替えられる。本番ビルドでも使用可能。
 
 ```text
-http://localhost:5173/            → v2 (default)
-http://localhost:5173/?repo=v1    → AthenaiRepository (v1, deprecated — timetable data empty)
-http://localhost:5173/?repo=mock  → MockRepository (fictional in-memory data)
+http://localhost:5173/              → v2 (default)
+http://localhost:5173/?repo=mock    → MockRepository (fictional in-memory data)
 ```
 
 ### MockRepository (`?repo=mock`)
