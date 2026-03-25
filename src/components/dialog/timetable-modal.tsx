@@ -131,6 +131,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
           {info.isDetailedEnabled && (
             <TimetableMetadata timetableEntries={filteredTimetableEntries} infoLevel={infoLevel} />
           )}
+          {info.isVerboseEnabled && <VerboseMetadata timetableEntries={filteredTimetableEntries} />}
 
           <TimetableDateLabel serviceDate={data.serviceDate} time={time} />
           {data.type === 'stop' && (
@@ -266,6 +267,54 @@ function TimetableMetadata({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Verbose-only metadata dump: boarding stats, direction, pattern breakdown. */
+function VerboseMetadata({ timetableEntries }: { timetableEntries: TimetableEntry[] }) {
+  const boardable = timetableEntries.filter((e) => e.boarding.pickupType === 0).length;
+  const dropOffOnly = timetableEntries.filter((e) => e.boarding.pickupType === 1).length;
+  const originCount = timetableEntries.filter((e) => e.patternPosition.isOrigin).length;
+  const terminalCount = timetableEntries.filter((e) => e.patternPosition.isTerminal).length;
+
+  // Direction breakdown
+  const dirCounts = new Map<string, number>();
+  for (const e of timetableEntries) {
+    const dir =
+      e.routeDirection.direction !== undefined ? `dir=${e.routeDirection.direction}` : 'dir=N/A';
+    dirCounts.set(dir, (dirCounts.get(dir) ?? 0) + 1);
+  }
+
+  // Pattern breakdown (stopIndex/totalStops combinations)
+  const patternCounts = new Map<string, number>();
+  for (const e of timetableEntries) {
+    const key = `[${e.patternPosition.stopIndex + 1}/${e.patternPosition.totalStops}]`;
+    patternCounts.set(key, (patternCounts.get(key) ?? 0) + 1);
+  }
+
+  // Dwell time stats
+  const dwellCount = timetableEntries.filter(
+    (e) => e.schedule.arrivalMinutes !== e.schedule.departureMinutes,
+  ).length;
+
+  return (
+    <div className="border-border text-muted-foreground mb-1 space-y-0.5 rounded border p-2 text-[11px]">
+      <p>
+        boardable={boardable} dropOffOnly={dropOffOnly} origin={originCount} terminal=
+        {terminalCount}
+      </p>
+      <p>
+        {Array.from(dirCounts.entries())
+          .map(([dir, n]) => `${dir}:${n}`)
+          .join(' ')}
+      </p>
+      <p>
+        {Array.from(patternCounts.entries())
+          .map(([pat, n]) => `${pat}:${n}`)
+          .join(' ')}
+      </p>
+      {dwellCount > 0 && <p>dwell={dwellCount}</p>}
     </div>
   );
 }
