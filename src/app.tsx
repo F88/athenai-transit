@@ -177,6 +177,7 @@ export default function App() {
         return null;
       }
       const [depsResult, rtResult] = await Promise.all([
+        // No limit: departure stats and verbose display need all entries.
         repo.getUpcomingTimetableEntries(stopId, dateTime),
         repo.getRouteTypesForStop(stopId),
       ]);

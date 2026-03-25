@@ -49,10 +49,15 @@ export function useNearbyDepartures(
         : Promise.all(
             radiusStops.map(async ({ stop, agencies, routes }) => {
               const [depsResult, rtResult] = await Promise.all([
+                // No limit: NearbyStop uses all entries for boarding stats and verbose display.
                 repo.getUpcomingTimetableEntries(stop.stop_id, dateTime),
                 repo.getRouteTypesForStop(stop.stop_id),
               ]);
               const departures = depsResult.success ? depsResult.data : [];
+              // When timetable data is missing for a stop (success=false),
+              // default to false. This only happens when the stop has no
+              // timetable data at all (not a network error), so false is
+              // semantically correct — no boardable entries exist.
               const isBoardableOnServiceDay = depsResult.success
                 ? depsResult.meta.isBoardableOnServiceDay
                 : false;

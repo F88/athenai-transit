@@ -731,6 +731,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         continue;
       }
 
+      // pattern is guaranteed to exist when resolved exists — both are built
+      // from the same tripPatterns map during initialization.
       const pattern = this.tripPatterns.get(group.tp);
       const totalStops = pattern ? pattern.stops.length : 0;
       // For circular routes, the same stop_id appears at both index 0 and last.
@@ -870,6 +872,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         continue;
       }
 
+      // pattern is guaranteed to exist when resolved exists — both are built
+      // from the same tripPatterns map during initialization.
       const pattern = this.tripPatterns.get(group.tp);
       const totalStops = pattern ? pattern.stops.length : 0;
       const firstIndex = pattern ? pattern.stops.indexOf(stopId) : -1;
