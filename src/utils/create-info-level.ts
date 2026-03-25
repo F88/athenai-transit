@@ -4,7 +4,7 @@ const LEVEL_ORDER: InfoLevel[] = ['simple', 'normal', 'detailed', 'verbose'];
 
 /** Pre-computed boolean flags for each info verbosity threshold. */
 export interface InfoLevelFlags {
-  /** True when the current level is "simple". */
+  /** True when the current level is "simple" or above (always true for valid levels). */
   isSimpleEnabled: boolean;
   /** True when the current level is "normal" or above. */
   isNormalEnabled: boolean;

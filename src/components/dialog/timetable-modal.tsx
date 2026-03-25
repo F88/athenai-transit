@@ -300,6 +300,8 @@ function VerboseMetadata({
   omitted: TimetableOmitted;
   isBoardableOnServiceDay: boolean;
 }) {
+  // Raw GTFS data counts (not domain-interpreted). pickupType 2/3 are intentionally
+  // excluded from boardable here — they are shown as raw data for debugging.
   const boardable = timetableEntries.filter((e) => e.boarding.pickupType === 0).length;
   const dropOffOnly = timetableEntries.filter((e) => e.boarding.pickupType === 1).length;
   const originCount = timetableEntries.filter((e) => e.patternPosition.isOrigin).length;

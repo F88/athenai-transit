@@ -64,7 +64,11 @@ export function StopSummary({
       </div>
       {items.map((entry, i) => {
         // now and serviceDay are guaranteed defined here because items is empty when now is undefined
-        const depTime = minutesToDate(serviceDay!, entry.schedule.departureMinutes);
+        // Terminal entries show arrival time; all others show departure time.
+        const displayMinutes = entry.patternPosition.isTerminal
+          ? entry.schedule.arrivalMinutes
+          : entry.schedule.departureMinutes;
+        const depTime = minutesToDate(serviceDay!, displayMinutes);
         const diffMin = Math.floor((depTime.getTime() - now!.getTime()) / 60000);
         const relative = diffMin <= 0 ? 'まもなく' : `${diffMin}分`;
         const { route, headsign } = entry.routeDirection;
