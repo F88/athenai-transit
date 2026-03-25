@@ -450,6 +450,9 @@ function TimetableGrid({
                   >
                     <span className="text-muted-foreground text-sm tabular-nums">
                       {String(minutes % 60).padStart(2, '0')}
+                      {entry.patternPosition.isTerminal && (
+                        <span className="text-[9px] opacity-70">着</span>
+                      )}
                     </span>
                     {showHeadsign && (
                       <HeadsignBadge
