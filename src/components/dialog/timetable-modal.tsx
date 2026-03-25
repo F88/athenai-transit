@@ -14,6 +14,7 @@ import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
+import { hasBoardableDeparture } from '@/domain/transit/timetable-utils';
 import { PillButton } from '@/components/button/pill-button';
 import {
   Dialog,
@@ -116,7 +117,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
     >
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[80dvh] max-w-120 flex-col gap-0 overflow-hidden p-0"
+        className="flex max-h-[80dvh] max-w-[90dvw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[90dvw]"
       >
         <DialogHeader className="border-border shrink-0 border-b p-4 text-left">
           <DialogTitle className="flex flex-col gap-1">
@@ -555,6 +556,8 @@ function VerboseEntryRow({ entry }: { entry: TimetableEntry }) {
 
 function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: InfoLevel }) {
   const stopNames = getStopDisplayNames(data.stop, infoLevel);
+  const isDropOffOnly =
+    data.timetableEntries.length > 0 && !hasBoardableDeparture(data.timetableEntries);
 
   // Collect route types for emoji display.
   const routeTypes = data.type === 'route-headsign' ? [data.route.route_type] : data.routeTypes;
@@ -591,6 +594,11 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
         <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
           {stopNames.name}
         </span>
+        {isDropOffOnly && (
+          <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
+            降車専用
+          </span>
+        )}
         {displayAgencies.length > 0 &&
           displayAgencies.map((a) => (
             <AgencyBadge key={a.agency_id} agency={a} infoLevel={infoLevel} size="xs" />
