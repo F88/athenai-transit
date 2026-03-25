@@ -53,9 +53,16 @@ export function DepartureItem({
   const displayEntries = entries.slice(0, maxDisplay);
 
   // Convert minutes to Date for display — lightweight, only up to 3 entries.
+  // Terminal entries show arrival time; all others show departure time.
   // eslint-disable-next-line react-hooks/rules-of-hooks -- entries/serviceDay are stable within a render
   const displayTimes = useMemo(
-    () => displayEntries.map((e) => minutesToDate(serviceDay, e.schedule.departureMinutes)),
+    () =>
+      displayEntries.map((e) =>
+        minutesToDate(
+          serviceDay,
+          e.patternPosition.isTerminal ? e.schedule.arrivalMinutes : e.schedule.departureMinutes,
+        ),
+      ),
     [displayEntries, serviceDay],
   );
 
@@ -102,11 +109,17 @@ export function DepartureItem({
             style={bgColor ? { color: bgColor } : undefined}
           >
             {formatRelativeTime(first, now)}
+            {firstEntry.patternPosition.isTerminal && (
+              <span className="text-xs font-normal opacity-70">着</span>
+            )}
           </span>
         )}
         {displayTimes.map((dep, i) => (
           <span key={i} className="text-sm text-[#757575] dark:text-gray-400">
             {formatAbsoluteTime(dep)}
+            {displayEntries[i]?.patternPosition.isTerminal && (
+              <span className="text-[10px] opacity-70">着</span>
+            )}
           </span>
         ))}
       </div>

@@ -49,8 +49,12 @@ export function FlatDepartureItem({
   const { route, headsign } = entry.routeDirection;
   const headsignName = getHeadsignDisplayNames(headsign, route, infoLevel).name;
   const bgColor = route.route_color ? `#${route.route_color}` : undefined;
-  const departureTime = minutesToDate(serviceDay, entry.schedule.departureMinutes);
   const isTerminal = entry.patternPosition.isTerminal;
+  // Terminal entries show arrival time; all others show departure time.
+  const displayMinutes = isTerminal
+    ? entry.schedule.arrivalMinutes
+    : entry.schedule.departureMinutes;
+  const departureTime = minutesToDate(serviceDay, displayMinutes);
   const isPickupUnavailable = entry.boarding.pickupType === 1;
 
   return (
@@ -63,6 +67,7 @@ export function FlatDepartureItem({
               style={bgColor ? { color: bgColor } : undefined}
             >
               {formatRelativeTime(departureTime, now)}
+              {isTerminal && <span className="text-xs font-normal opacity-70">着</span>}
             </div>
           )}
           <div
@@ -70,6 +75,7 @@ export function FlatDepartureItem({
             style={bgColor ? { color: bgColor } : undefined}
           >
             {formatAbsoluteTime(departureTime)}
+            {isTerminal && <span className="text-[10px] font-normal opacity-70">着</span>}
           </div>
         </div>
         {showRouteTypeIcon && (

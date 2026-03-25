@@ -8,7 +8,6 @@ import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-vi
 import { routeTypeColor } from '../domain/transit/route-type-color';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
-import { hasBoardableDeparture } from '../domain/transit/timetable-utils';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { PillButton } from './button/pill-button';
 import { NearbyStop } from './nearby-stop';
@@ -103,12 +102,12 @@ export function BottomSheet({
       result = result.filter((swc) => swc.departures.length > 0);
     }
     // Hide drop-off-only stops in non-detailed mode.
-    // These stops have no boardable departures (all terminal or pt=1).
+    // Uses isBoardableOnServiceDay (full-day, time-independent) instead of
+    // checking departures (now-filtered), so drop-off-only stops are hidden
+    // even when they still have upcoming terminal arrivals.
     // if (!info.isDetailedEnabled) {
     if (!info.isSimpleEnabled) {
-      result = result.filter(
-        (swc) => swc.departures.length === 0 || hasBoardableDeparture(swc.departures),
-      );
+      result = result.filter((swc) => swc.isBoardableOnServiceDay || swc.departures.length === 0);
     }
     if (hiddenRouteTypes.size > 0) {
       result = result.filter((swc) => !swc.routeTypes.every((rt) => hiddenRouteTypes.has(rt)));
