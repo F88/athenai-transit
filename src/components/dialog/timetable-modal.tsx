@@ -14,7 +14,6 @@ import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
-import { hasBoardableDeparture } from '@/domain/transit/timetable-utils';
 import { PillButton } from '@/components/button/pill-button';
 import {
   Dialog,
@@ -23,6 +22,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+
+/** Entries omitted by pre-filter (e.g. terminal arrivals hidden in simple/normal). */
+export interface TimetableOmitted {
+  /** Number of terminal arrival entries omitted. */
+  terminal: number;
+}
 
 /** Timetable for a specific route + headsign at a stop. */
 export interface RouteHeadsignTimetable {
@@ -33,6 +38,9 @@ export interface RouteHeadsignTimetable {
   /** GTFS service date for this timetable (not real-world time). */
   serviceDate: Date;
   timetableEntries: TimetableEntry[];
+  omitted: TimetableOmitted;
+  /** Whether at least one boardable (non-terminal, pickupType=0) entry exists in the full day. */
+  canBoard: boolean;
   agencies: Agency[];
 }
 
@@ -44,6 +52,9 @@ export interface StopTimetable {
   /** GTFS service date for this timetable (not real-world time). */
   serviceDate: Date;
   timetableEntries: TimetableEntry[];
+  omitted: TimetableOmitted;
+  /** Whether at least one boardable (non-terminal, pickupType=0) entry exists in the full day. */
+  canBoard: boolean;
   agencies: Agency[];
 }
 
@@ -132,7 +143,13 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
           {info.isDetailedEnabled && (
             <TimetableMetadata timetableEntries={filteredTimetableEntries} infoLevel={infoLevel} />
           )}
-          {info.isVerboseEnabled && <VerboseMetadata timetableEntries={filteredTimetableEntries} />}
+          {info.isVerboseEnabled && (
+            <VerboseMetadata
+              timetableEntries={filteredTimetableEntries}
+              omitted={data.omitted}
+              canBoard={data.canBoard}
+            />
+          )}
 
           <TimetableDateLabel serviceDate={data.serviceDate} time={time} />
           {data.type === 'stop' && (
@@ -166,6 +183,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
             }
             currentHour={currentHour}
             infoLevel={infoLevel}
+            omitted={data.omitted}
           />
         </div>
       </DialogContent>
@@ -273,7 +291,15 @@ function TimetableMetadata({
 }
 
 /** Verbose-only metadata dump: boarding stats, direction, pattern breakdown. */
-function VerboseMetadata({ timetableEntries }: { timetableEntries: TimetableEntry[] }) {
+function VerboseMetadata({
+  timetableEntries,
+  omitted,
+  canBoard,
+}: {
+  timetableEntries: TimetableEntry[];
+  omitted: TimetableOmitted;
+  canBoard: boolean;
+}) {
   const boardable = timetableEntries.filter((e) => e.boarding.pickupType === 0).length;
   const dropOffOnly = timetableEntries.filter((e) => e.boarding.pickupType === 1).length;
   const originCount = timetableEntries.filter((e) => e.patternPosition.isOrigin).length;
@@ -316,6 +342,9 @@ function VerboseMetadata({ timetableEntries }: { timetableEntries: TimetableEntr
           .join(' ')}
       </p>
       {dwellCount > 0 && <p>dwell={dwellCount}</p>}
+      <p>
+        canBoard={String(canBoard)} omitted.terminal={omitted.terminal}
+      </p>
     </div>
   );
 }
@@ -348,11 +377,13 @@ function TimetableGrid({
   showHeadsign,
   currentHour,
   infoLevel,
+  omitted,
 }: {
   timetableEntries: TimetableEntry[];
   showHeadsign: boolean;
   currentHour: number;
   infoLevel: InfoLevel;
+  omitted: TimetableOmitted;
 }) {
   const scrollRef = useCurrentHourScroll();
   const info = useInfoLevel(infoLevel);
@@ -383,7 +414,11 @@ function TimetableGrid({
   }
 
   if (hourGroups.size === 0) {
-    return <p className="text-muted-foreground p-4 text-center">この日の運行はありません</p>;
+    return (
+      <p className="text-muted-foreground p-4 text-center">
+        {omitted.terminal > 0 ? '降車専用' : 'この日の運行はありません'}
+      </p>
+    );
   }
 
   // Display flags — structured for per-level adjustment.
@@ -557,7 +592,7 @@ function VerboseEntryRow({ entry }: { entry: TimetableEntry }) {
 function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: InfoLevel }) {
   const stopNames = getStopDisplayNames(data.stop, infoLevel);
   const isDropOffOnly =
-    data.timetableEntries.length > 0 && !hasBoardableDeparture(data.timetableEntries);
+    !data.canBoard && (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
 
   // Collect route types for emoji display.
   const routeTypes = data.type === 'route-headsign' ? [data.route.route_type] : data.routeTypes;

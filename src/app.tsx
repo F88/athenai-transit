@@ -195,15 +195,22 @@ export default function App() {
 
   const infoLevelFlags = useMemo(() => createInfoLevel(settings.infoLevel), [settings.infoLevel]);
 
-  /** Fetch full-day timetable entries for a stop, filtering out terminal arrivals below detailed. */
+  /** Fetch full-day timetable entries for a stop, filtering out terminal arrivals below verbose. */
   const fetchTimetableEntries = useCallback(
     async (stopId: string) => {
       const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
       const allEntries = result.success ? result.data : [];
+      // Determine boardability from unfiltered data (time-independent).
+      const canBoard = allEntries.some(
+        (e) => !e.patternPosition.isTerminal && e.boarding.pickupType === 0,
+      );
       // Below verbose: hide terminal arrivals (passengers cannot board at terminals).
-      return infoLevelFlags.isVerboseEnabled
-        ? allEntries
-        : allEntries.filter((e) => !e.patternPosition.isTerminal);
+      if (infoLevelFlags.isVerboseEnabled) {
+        return { entries: allEntries, omitted: { terminal: 0 }, canBoard };
+      }
+      const entries = allEntries.filter((e) => !e.patternPosition.isTerminal);
+      const terminalCount = allEntries.length - entries.length;
+      return { entries, omitted: { terminal: terminalCount }, canBoard };
     },
     [repo, dateTime, infoLevelFlags],
   );
@@ -218,8 +225,8 @@ export default function App() {
       if (!route) {
         return;
       }
-      const timetableEntries = await fetchTimetableEntries(stopId);
-      const departures = timetableEntries.filter(
+      const { entries, omitted, canBoard } = await fetchTimetableEntries(stopId);
+      const departures = entries.filter(
         (e) =>
           e.routeDirection.route.route_id === routeId && e.routeDirection.headsign === headsign,
       );
@@ -230,6 +237,8 @@ export default function App() {
         headsign,
         serviceDate: getServiceDay(dateTime),
         timetableEntries: departures,
+        omitted,
+        canBoard,
         agencies: meta.agencies,
       });
     },
@@ -242,13 +251,15 @@ export default function App() {
       if (!meta) {
         return;
       }
-      const timetableEntries = await fetchTimetableEntries(stopId);
+      const { entries, omitted, canBoard } = await fetchTimetableEntries(stopId);
       setTimetableModal({
         type: 'stop',
         stop: meta.stop,
         routeTypes: routeTypeMap.get(stopId) ?? [3],
         serviceDate: getServiceDay(dateTime),
-        timetableEntries: timetableEntries,
+        timetableEntries: entries,
+        omitted,
+        canBoard,
         agencies: meta.agencies,
       });
     },
