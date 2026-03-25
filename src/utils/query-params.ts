@@ -77,7 +77,7 @@ function getRawTimeValue(): string | null {
   try {
     return decodeURIComponent(match[1]);
   } catch {
-    return null; // malformed percent-encoding
+    return ''; // malformed percent-encoding — returns empty so cleanup treats it as invalid
   }
 }
 
@@ -203,7 +203,11 @@ export function getTimeParam(): Date | null {
   if (!match) {
     return null;
   }
-  return parseQueryTime(decodeURIComponent(match[1]));
+  try {
+    return parseQueryTime(decodeURIComponent(match[1]));
+  } catch {
+    return null; // malformed percent-encoding
+  }
 }
 
 /**

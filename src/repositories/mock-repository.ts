@@ -547,7 +547,6 @@ const ROUTE_STOP_SEQUENCES = new Map<string, string[]>([
   ['subway_airport__つき宇宙空港', ['sta_central', 'bus_hotel_mangetsu', 'sta_airport']],
   ['subway_airport__あおば中央方面', ['sta_airport', 'bus_hotel_mangetsu', 'sta_central']],
   ['subway_airport__あおば中央', ['sta_airport', 'bus_hotel_mangetsu', 'sta_central']],
-  ['subway_airport__つき宇宙空港', ['sta_central', 'bus_hotel_mangetsu', 'sta_airport']],
   // subway_airport_sora: 中央駅 ↔ つき宇宙空港駅 (そら急)
   ['subway_airport_sora__つき宇宙空港', ['sta_central', 'sta_airport']],
   ['subway_airport_sora__あおば中央方面', ['sta_airport', 'sta_central']],
