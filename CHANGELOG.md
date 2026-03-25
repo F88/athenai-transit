@@ -11,10 +11,34 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
-- CI に v2 パイプラインのビルド・検証ステップを追加 (`update-transit-data.yml`):
-    - v2 data, shapes, insights, global-insights のビルド。
-    - v2 validate (Job Summary 出力)。
-    - `public/data-v2/` を git add/commit 対象に追加。
+- 時刻表モーダルを `TimetableEntry` ベースに移行:
+    - 終点では到着時刻 (`arrivalMinutes`) を表示。
+    - 終点/始発/乗車不可/降車不可ラベルを InfoLevel に応じて表示。
+    - verbose: 全データダンプ (`VerboseEntryRow`, `VerboseMetadata`)。
+    - 降車専用バス停の検出と表示 (`canBoard`, `omitted.terminal`)。
+    - 路線フィルタと `TimetableMetadata` の連動。
+- simple/normal で終点到着便を非表示 (乗車可能な便のみ表示)。
+- 無効クエリパラメータの自動クリーンアップ (`cleanupInvalidQueryParams`)。
+- MockRepository: 降車専用バス停、dwell time 路線、停車順序データ追加。
+- `InfoLevelFlags.isSimpleEnabled` 追加。
+
+### Removed
+
+- v1 Repository および関連コード (v2 完全移行):
+    - `AthenaiRepository`, v1 DataSource, `flatten-departures`。
+    - `DepartureGroup`, `FlatDeparture`, `FullDayStopDeparture` 型。
+    - `getFullDayDepartures` (旧 `number[]` API)。
+    - `StopTimetableDeparture` 型 (`TimetableEntry` に統合)。
+    - `RepoParam` から `'v1'` 削除。
+
+### Fixed
+
+- 循環路線で終点到着の `stopIndex` が常に 0 になる問題 (Refs #47)。
+- 時刻表 `DialogDescription` がフィルタ前の件数を使用していた問題。
+
+### Changed
+
+- 時刻表ダイアログ幅: 固定 480px → `90dvw`。
 
 ## [2026.03.23]
 
