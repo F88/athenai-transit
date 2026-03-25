@@ -124,8 +124,8 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
           </DialogTitle>
           <DialogDescription className="sr-only">
             {data.type === 'route-headsign'
-              ? `${data.stop.stop_name} ${data.route.route_short_name || data.route.route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${data.timetableEntries.length}本`
-              : `${data.stop.stop_name}の全路線時刻表 ${data.timetableEntries.length}本`}
+              ? `${data.stop.stop_name} ${data.route.route_short_name || data.route.route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
+              : `${data.stop.stop_name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
           </DialogDescription>
 
           {info.isDetailedEnabled && (
