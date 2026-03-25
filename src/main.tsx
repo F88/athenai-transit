@@ -8,7 +8,7 @@ import { DataSourceManager } from './config/data-source-manager';
 import type { TransitRepository } from './repositories/transit-repository';
 import { AthenaiRepositoryV2 } from './repositories/athenai-repository-v2';
 import { createLogger } from './utils/logger';
-import { getDiagParam, getRepoParam } from './utils/query-params';
+import { cleanupInvalidQueryParams, getDiagParam, getRepoParam } from './utils/query-params';
 
 const logger = createLogger('App');
 
@@ -35,6 +35,9 @@ async function createRepository(): Promise<TransitRepository> {
 }
 
 async function init() {
+  // Remove invalid query params (e.g., legacy ?repo=v1, malformed ?time=) from the URL.
+  cleanupInvalidQueryParams();
+
   const repository = await createRepository();
 
   // Run diagnostics if requested via query param.

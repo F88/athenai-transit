@@ -7,7 +7,7 @@
  * are accepted and passed to downstream consumers.
  *
  * Supported query params:
- * - `?repo=v1|v2|mock` — select repository implementation (default: v2)
+ * - `?repo=v2|mock` — select repository implementation (default: v2)
  * - `?sources=minkuru,yurimo` — filter data sources by prefix
  * - `?lat=35.68&lng=139.77` — initial map center
  * - `?zm=14` — initial map zoom level
@@ -17,8 +17,20 @@
 
 import { MAX_ZOOM } from '../config/map-defaults';
 
-/** Lazily cached URLSearchParams instance. */
+/**
+ * Lazily cached URLSearchParams instance.
+ * Use {@link resetParamsCache} in tests to clear this cache.
+ */
 let cachedParams: URLSearchParams | null = null;
+
+/**
+ * Reset the internal URLSearchParams cache.
+ * Exported only for testing — production code should not call this directly.
+ * @internal
+ */
+export function resetParamsCache(): void {
+  cachedParams = null;
+}
 
 function getParams(): URLSearchParams {
   if (!cachedParams) {
@@ -29,6 +41,9 @@ function getParams(): URLSearchParams {
 
 /** Valid values for the `?repo=` query parameter. */
 export type RepoParam = 'v2' | 'mock';
+
+/** Set of recognized `?repo=` values. */
+const VALID_REPO_VALUES = new Set<string>(['v2', 'mock']);
 
 /**
  * Returns the `?repo=` param value, defaulting to 'v2'.
@@ -45,6 +60,82 @@ export function getRepoParam(): RepoParam {
     return value;
   }
   return 'v2';
+}
+
+/**
+ * Extract the raw value of `?time=` from the query string without URLSearchParams,
+ * which decodes `+` as space per application/x-www-form-urlencoded spec,
+ * breaking timezone offsets like `+09:00`.
+ *
+ * @returns The raw (URI-decoded) time value, or null if absent.
+ */
+function getRawTimeValue(): string | null {
+  const match = window.location.search.match(/[?&]time=([^&]*)/);
+  if (!match) {
+    return null;
+  }
+  return decodeURIComponent(match[1]);
+}
+
+/**
+ * Remove invalid query parameters from the URL.
+ *
+ * Validates each supported parameter using its corresponding parser.
+ * Parameters that are absent are left alone; parameters that are present
+ * but fail validation are removed. Uses `history.replaceState` so the
+ * browser history is not polluted.
+ *
+ * This should be called once at app startup (e.g., in main.tsx) to clean up
+ * legacy or invalid values (such as `?repo=v1` after v1 removal, or
+ * malformed `?time=`, `?lat=`, `?lng=`, `?zm=` values).
+ *
+ * Not validated (free-form): `?sources=`, `?diag=`.
+ */
+export function cleanupInvalidQueryParams(): void {
+  const params = getParams();
+  const keysToRemove: string[] = [];
+
+  // ?repo= — must be a recognized value
+  const repo = params.get('repo');
+  if (repo !== null && !VALID_REPO_VALUES.has(repo)) {
+    keysToRemove.push('repo');
+  }
+
+  // ?time= — must parse as a valid Date.
+  // Uses raw query string extraction to preserve `+` in timezone offsets.
+  const timeRaw = getRawTimeValue();
+  if (timeRaw !== null && parseQueryTime(timeRaw) === null) {
+    keysToRemove.push('time');
+  }
+
+  // ?lat= — must be a valid latitude (-90..90)
+  const lat = params.get('lat');
+  if (lat !== null && parseQueryLat(lat) === null) {
+    keysToRemove.push('lat');
+  }
+
+  // ?lng= — must be a valid longitude (-180..180)
+  const lng = params.get('lng');
+  if (lng !== null && parseQueryLng(lng) === null) {
+    keysToRemove.push('lng');
+  }
+
+  // ?zm= — must be a valid zoom level (1..MAX_ZOOM)
+  const zm = params.get('zm');
+  if (zm !== null && parseQueryZoom(zm) === null) {
+    keysToRemove.push('zm');
+  }
+
+  if (keysToRemove.length === 0) {
+    return;
+  }
+
+  const url = new URL(window.location.href);
+  for (const key of keysToRemove) {
+    url.searchParams.delete(key);
+  }
+  history.replaceState(history.state, '', url.toString());
+  resetParamsCache();
 }
 
 /**
