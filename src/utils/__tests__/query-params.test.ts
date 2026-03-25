@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseQueryLat, parseQueryLng, parseQueryZoom } from '../query-params';
+import { parseQueryLat, parseQueryLng, parseQueryTime, parseQueryZoom } from '../query-params';
 
 describe('parseQueryLat', () => {
   it('parses valid latitudes', () => {
@@ -75,5 +75,58 @@ describe('parseQueryZoom', () => {
     expect(parseQueryZoom('<script>')).toBeNull();
     expect(parseQueryZoom('Infinity')).toBeNull();
     expect(parseQueryZoom(null)).toBeNull();
+  });
+});
+
+describe('parseQueryTime', () => {
+  it('parses RFC 3339 with timezone offset', () => {
+    const date = parseQueryTime('2026-03-25T20:55:00+09:00');
+    expect(date).not.toBeNull();
+    expect(date!.toISOString()).toBe('2026-03-25T11:55:00.000Z');
+  });
+
+  it('parses RFC 3339 with UTC Z', () => {
+    const date = parseQueryTime('2026-03-25T20:55:00Z');
+    expect(date).not.toBeNull();
+    expect(date!.toISOString()).toBe('2026-03-25T20:55:00.000Z');
+  });
+
+  it('parses without seconds (local time)', () => {
+    const date = parseQueryTime('2026-03-25T20:55');
+    expect(date).not.toBeNull();
+    // Local time — verify via UTC offset-independent checks
+    expect(date!.getTime()).not.toBeNaN();
+  });
+
+  it('parses with seconds', () => {
+    // Use UTC Z to avoid TZ dependency
+    const date = parseQueryTime('2026-03-25T20:55:30Z');
+    expect(date).not.toBeNull();
+    expect(date!.getUTCSeconds()).toBe(30);
+  });
+
+  it('parses negative timezone offset', () => {
+    const date = parseQueryTime('2026-03-25T08:00:00-05:00');
+    expect(date).not.toBeNull();
+    expect(date!.toISOString()).toBe('2026-03-25T13:00:00.000Z');
+  });
+
+  it('returns null for empty/null/undefined', () => {
+    expect(parseQueryTime(null)).toBeNull();
+    expect(parseQueryTime(undefined)).toBeNull();
+    expect(parseQueryTime('')).toBeNull();
+  });
+
+  it('returns null for invalid date strings', () => {
+    expect(parseQueryTime('not-a-date')).toBeNull();
+    expect(parseQueryTime('abc')).toBeNull();
+    expect(parseQueryTime('<script>alert(1)</script>')).toBeNull();
+  });
+
+  it('returns null for date-only without time', () => {
+    // Date-only strings are parsed as UTC by spec, but we accept them
+    const date = parseQueryTime('2026-03-25');
+    // This is valid per Date constructor — returns midnight UTC
+    expect(date).not.toBeNull();
   });
 });

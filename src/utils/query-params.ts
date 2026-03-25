@@ -11,6 +11,7 @@
  * - `?sources=minkuru,yurimo` — filter data sources by prefix
  * - `?lat=35.68&lng=139.77` — initial map center
  * - `?zm=14` — initial map zoom level
+ * - `?time=2026-03-25T20:55:00+09:00` — initial date/time (RFC 3339)
  * - `?diag=v2-load` — run diagnostics (see DEVELOPMENT.md)
  */
 
@@ -55,6 +56,47 @@ export function getRepoParam(): RepoParam {
  */
 export function getDiagParam(): string | null {
   return getParams().get('diag');
+}
+
+/**
+ * Parse a date/time string in RFC 3339 format.
+ *
+ * Accepts:
+ * - Full RFC 3339: `2026-03-25T20:55:00+09:00`
+ * - UTC: `2026-03-25T20:55:00Z`
+ * - Without timezone (local time): `2026-03-25T20:55`
+ * - Without seconds: `2026-03-25T20:55`
+ *
+ * @param value - Raw string value.
+ * @returns Parsed Date, or null if invalid.
+ */
+export function parseQueryTime(value: string | null | undefined): Date | null {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date;
+}
+
+/**
+ * Returns the `?time=` param value as a Date, or null if not present or invalid.
+ *
+ * Uses raw query string parsing instead of URLSearchParams.get()
+ * because URLSearchParams decodes `+` as space per
+ * application/x-www-form-urlencoded spec, breaking timezone
+ * offsets like `+09:00`.
+ *
+ * @returns Parsed Date, or null if absent or invalid.
+ */
+export function getTimeParam(): Date | null {
+  const match = window.location.search.match(/[?&]time=([^&]*)/);
+  if (!match) {
+    return null;
+  }
+  return parseQueryTime(decodeURIComponent(match[1]));
 }
 
 /**
