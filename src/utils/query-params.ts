@@ -74,7 +74,11 @@ function getRawTimeValue(): string | null {
   if (!match) {
     return null;
   }
-  return decodeURIComponent(match[1]);
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null; // malformed percent-encoding
+  }
 }
 
 /**
@@ -139,7 +143,11 @@ export function cleanupInvalidQueryParams(): void {
     .split('&')
     .filter((pair) => {
       const key = pair.split('=')[0];
-      return !keysSet.has(decodeURIComponent(key));
+      try {
+        return !keysSet.has(decodeURIComponent(key));
+      } catch {
+        return true; // keep pairs with malformed keys
+      }
     });
   const newSearch = pairs.length > 0 ? `?${pairs.join('&')}` : '';
   const newUrl = `${window.location.pathname}${newSearch}${window.location.hash}`;
