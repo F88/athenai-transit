@@ -39,7 +39,7 @@ export interface RouteHeadsignTimetable {
   serviceDate: Date;
   timetableEntries: TimetableEntry[];
   omitted: TimetableOmitted;
-  /** Whether at least one boardable (non-terminal, pickupType=0) entry exists in the full day. */
+  /** Whether at least one non-drop-off-only entry (pickupType !== 1, non-terminal) exists in the full service day. */
   isBoardableOnServiceDay: boolean;
   agencies: Agency[];
 }
@@ -53,7 +53,7 @@ export interface StopTimetable {
   serviceDate: Date;
   timetableEntries: TimetableEntry[];
   omitted: TimetableOmitted;
-  /** Whether at least one boardable (non-terminal, pickupType=0) entry exists in the full day. */
+  /** Whether at least one non-drop-off-only entry (pickupType !== 1, non-terminal) exists in the full service day. */
   isBoardableOnServiceDay: boolean;
   agencies: Agency[];
 }
