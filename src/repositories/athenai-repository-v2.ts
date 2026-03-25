@@ -6,10 +6,9 @@
  * Consumes v2 DataBundle directly, using TripPattern FK for
  * route/headsign resolution instead of v1's inline fields.
  *
- * Key differences from v1 AthenaiRepository:
+ * Key features:
  * - TripPattern-based timetable: route+headsign resolved via tp FK
- * - DepartureGroup re-aggregation: multiple patterns with same
- *   route+headsign are merged at query time
+ * - TimetableEntry: per-departure boarding info and pattern position
  * - Shapes lazy-loaded in background after create()
  * - Stop.agency_id is empty string (v2 GTFS spec compliance)
  * - location_type=1 (station) stops are filtered out until the UI

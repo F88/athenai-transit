@@ -24,13 +24,6 @@ async function createRepository(): Promise<TransitRepository> {
   const dsm = new DataSourceManager();
   const prefixes = dsm.getEnabledPrefixes();
 
-  if (repo === 'v1') {
-    logger.info(`Using AthenaiRepository (v1, deprecated): [${prefixes.join(', ')}]`);
-    const { AthenaiRepository } = await import('./repositories/athenai-repository');
-    return AthenaiRepository.create(prefixes);
-  }
-
-  // Default: v2 repository
   logger.info(`Using AthenaiRepositoryV2: [${prefixes.join(', ')}]`);
   const { repository, loadResult } = await AthenaiRepositoryV2.create(prefixes);
   if (loadResult.failed.length > 0) {

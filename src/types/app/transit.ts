@@ -8,7 +8,7 @@
  *
  * These types are stable and rarely change — they reflect the
  * pipeline's output schema. For webapp-specific composed types
- * (e.g. StopWithMeta, DepartureGroup), see {@link transit-composed.ts}.
+ * (e.g. StopWithMeta, TimetableEntry), see {@link transit-composed.ts}.
  */
 
 /**

@@ -28,21 +28,20 @@ function getParams(): URLSearchParams {
 }
 
 /** Valid values for the `?repo=` query parameter. */
-export type RepoParam = 'v1' | 'v2' | 'mock';
+export type RepoParam = 'v2' | 'mock';
 
 /**
  * Returns the `?repo=` param value, defaulting to 'v2'.
  *
  * Controls which TransitRepository implementation is used:
  * - `v2` (default): AthenaiRepositoryV2 (v2 bundle data)
- * - `v1`: AthenaiRepository (v1 JSON data, deprecated — returns empty timetable data)
  * - `mock`: MockRepository (fictional in-memory data)
  *
- * @returns The repository selection ('v1', 'v2', or 'mock').
+ * @returns The repository selection ('v2' or 'mock').
  */
 export function getRepoParam(): RepoParam {
   const value = getParams().get('repo');
-  if (value === 'v1' || value === 'mock') {
+  if (value === 'mock') {
     return value;
   }
   return 'v2';

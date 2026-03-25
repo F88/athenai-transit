@@ -354,7 +354,7 @@ export interface TripPatternJson {
  * for the same route+headsign when different trip patterns pass
  * through it (e.g. 宿91 新宿駅西口行き has 3 patterns with different
  * origins). Consumers that need route+headsign grouping (e.g.
- * DepartureGroup) must re-aggregate across patterns.
+ * BottomSheet T2 view) must group across patterns.
  */
 export interface TimetableGroupV2Json {
   /** Schema version — see {@link RouteV2Json.v} for rationale. */

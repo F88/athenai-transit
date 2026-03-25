@@ -99,25 +99,11 @@ export interface StopWithMeta {
 }
 
 /**
- * Departures grouped by route and headsign.
- *
- * Each group contains up to 3 upcoming departure times for a specific
- * route + headsign combination at a given stop.
- */
-export interface DepartureGroup {
-  route: Route;
-  headsign: string;
-  /** Headsign translations resolved from TranslationsJson. */
-  headsign_names: Record<string, string>;
-  departures: Date[];
-}
-
-/**
- * A stop paired with its route types and upcoming departure groups.
+ * A stop paired with its route types and upcoming timetable entries.
  *
  * Extends {@link StopWithMeta} with departure context.
  * Used by BottomSheet and MapView tooltip to display nearby stop info.
- * When all services have ended, `groups` is an empty array and the UI
+ * When all services have ended, `departures` is an empty array and the UI
  * shows "本日の運行は終了しました".
  *
  * `routeTypes` contains all GTFS route_type values serving this stop,
@@ -201,12 +187,10 @@ export type StopServiceType = 0 | 1 | 2 | 3;
 /**
  * A single entry in a stop's timetable.
  *
- * Enriched version of {@link FullDayStopDeparture} with v2 data:
- * arrival time, boarding availability, and trip pattern context.
+ * A single entry in a stop's timetable with arrival time,
+ * boarding availability, and trip pattern context.
  *
- * Used by the timetable modal for detailed schedule display.
- * Returned by v2 repository; v1 repository returns
- * {@link FullDayStopDeparture} (legacy).
+ * Used by both the timetable modal and the NearbyStop display.
  */
 export interface TimetableEntry {
   /** Schedule: departure and arrival times. */
@@ -222,7 +206,7 @@ export interface TimetableEntry {
    *
    * TODO: Extract as a composite type (e.g. RouteDirection) — this
    * combination of route + headsign + direction is reused across
-   * DepartureGroup, TimetableEntry, and other composed types.
+   * TimetableEntry and other composed types.
    */
   routeDirection: {
     route: Route;
@@ -268,36 +252,4 @@ export interface TimetableEntry {
      */
     remainingMinutes: number;
   };
-}
-
-/**
- * A single departure in a full-day stop timetable.
- *
- * Legacy type used by v1 repository. For v2, see {@link TimetableEntry}.
- *
- * Returned by {@link TransitRepository.getFullDayDeparturesForStop}
- * and used directly by the timetable modal.
- */
-export interface FullDayStopDeparture {
-  /** Minutes from midnight of the service day. */
-  minutes: number;
-  route: Route;
-  headsign: string;
-  /** Headsign translations resolved from TranslationsJson. */
-  headsign_names: Record<string, string>;
-}
-
-/**
- * A single departure flattened from {@link DepartureGroup}.
- *
- * Used by the T1 (Stop) view to display all departures in
- * chronological order regardless of route or headsign.
- */
-export interface FlatDeparture {
-  /** Route this departure belongs to (reference, not a copy). */
-  route: Route;
-  /** Headsign/destination (reference). */
-  headsign: string;
-  /** Scheduled departure time (reference). */
-  departure: Date;
 }

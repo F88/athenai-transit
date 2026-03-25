@@ -107,7 +107,7 @@ function ttGroup(tp: string, departures: Record<string, number[]>): TimetableGro
  * | tp_ptr_e | route_partner  | (empty headsign)         |
  *
  * Multi-pattern test: tp_bus_i2 has the same route+headsign as tp_bus_i
- * but a different stop sequence. This tests DepartureGroup re-aggregation.
+ * but a different stop sequence. This tests cross-pattern entry merging.
  */
 export function createFixtureV2(): SourceDataV2 {
   const data: DataBundle = {
