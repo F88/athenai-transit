@@ -128,7 +128,9 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
               : `${data.stop.stop_name}の全路線時刻表 ${data.departures.length}本`}
           </DialogDescription>
 
-          {info.isDetailedEnabled && <TimetableMetadata data={data} infoLevel={infoLevel} />}
+          {info.isDetailedEnabled && (
+            <TimetableMetadata departures={filteredDepartures} infoLevel={infoLevel} />
+          )}
 
           <TimetableDateLabel serviceDate={data.serviceDate} time={time} />
           {data.type === 'stop' && (
@@ -201,23 +203,26 @@ function TimetableDateLabel({ serviceDate, time }: { serviceDate: Date; time: Da
   );
 }
 
-/** Verbose metadata summary shown above the timetable grid. */
-function TimetableMetadata({ data, infoLevel }: { data: TimetableData; infoLevel: InfoLevel }) {
+/** Metadata summary shown above the timetable grid. */
+function TimetableMetadata({
+  departures,
+  infoLevel,
+}: {
+  departures: TimetableEntry[];
+  infoLevel: InfoLevel;
+}) {
   // Compute departure count and operating hours.
   // Use the display time (arrival for terminal, departure otherwise) for statistics.
-  const allMinutes = data.departures.map((d) => getDisplayMinutes(d));
+  const allMinutes = departures.map((d) => getDisplayMinutes(d));
   const count = allMinutes.length;
   const firstTime = count > 0 ? formatMinutes(allMinutes[0]) : null;
   const lastTime = count > 0 ? formatMinutes(allMinutes[count - 1]) : null;
   const avgInterval = computeAverageInterval(allMinutes);
 
-  // Route+headsign breakdown for stop timetable
+  // Route+headsign breakdown
   const routeBreakdown = useMemo(() => {
-    if (data.type !== 'stop') {
-      return [];
-    }
     const counts = new Map<string, { route: Route; headsign: string; count: number }>();
-    for (const dep of data.departures) {
+    for (const dep of departures) {
       const key = `${dep.routeDirection.route.route_id}__${dep.routeDirection.headsign}`;
       const entry = counts.get(key);
       if (entry) {
@@ -231,7 +236,7 @@ function TimetableMetadata({ data, infoLevel }: { data: TimetableData; infoLevel
       }
     }
     return Array.from(counts.values());
-  }, [data]);
+  }, [departures]);
 
   return (
     <div className="border-border text-muted-foreground mb-3 space-y-0.5 rounded border p-2 text-[11px]">
@@ -332,10 +337,11 @@ function TimetableGrid({
   }
 
   // Display flags — structured for per-level adjustment.
-  const isDisplayTerminal = true; // Always show terminal label (arrival time is shown for these, so no risk of collision).
+  const isDisplayTerminal = info.isSimpleEnabled;
+  // const isDisplayOrigin = info.isNormalEnabled;
   const isDisplayOrigin = info.isDetailedEnabled;
-  const isDisplayPickupUnavailable = info.isDetailedEnabled;
-  const isDisplayDropOffUnavailable = info.isDetailedEnabled;
+  const isDisplayPickupUnavailable = info.isVerboseEnabled;
+  const isDisplayDropOffUnavailable = info.isVerboseEnabled;
 
   return (
     <>

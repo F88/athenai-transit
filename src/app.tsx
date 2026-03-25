@@ -18,6 +18,7 @@ import {
   nextTileIndex,
 } from './utils/settings-helpers';
 import { nextInfoLevel } from './utils/next-info-level';
+import { createInfoLevel } from './utils/create-info-level';
 import { createLogger } from './utils/logger';
 import { getServiceDay } from './domain/transit/service-day';
 
@@ -204,7 +205,12 @@ export default function App() {
       }
       // Fetch all entries and filter by route+headsign to preserve TimetableEntry metadata.
       const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
-      const entries = result.success ? result.data : [];
+      const allEntries = result.success ? result.data : [];
+      const info = createInfoLevel(settings.infoLevel);
+      // Below detailed: hide terminal arrivals (passengers cannot board at terminals).
+      const entries = info.isDetailedEnabled
+        ? allEntries
+        : allEntries.filter((e) => !e.patternPosition.isTerminal);
       const departures = entries.filter(
         (e) =>
           e.routeDirection.route.route_id === routeId && e.routeDirection.headsign === headsign,
@@ -219,7 +225,7 @@ export default function App() {
         agencies: meta.agencies,
       });
     },
-    [repo, dateTime, radiusStops],
+    [repo, dateTime, radiusStops, settings.infoLevel],
   );
 
   const handleShowStopTimetable = useCallback(
@@ -230,7 +236,12 @@ export default function App() {
       }
 
       const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
-      const departures = result.success ? result.data : [];
+      const allEntries = result.success ? result.data : [];
+      const info = createInfoLevel(settings.infoLevel);
+      // Below detailed: hide terminal arrivals (passengers cannot board at terminals).
+      const departures = info.isDetailedEnabled
+        ? allEntries
+        : allEntries.filter((e) => !e.patternPosition.isTerminal);
 
       setTimetableModal({
         type: 'stop',
@@ -241,7 +252,7 @@ export default function App() {
         agencies: meta.agencies,
       });
     },
-    [repo, dateTime, radiusStops, routeTypeMap],
+    [repo, dateTime, radiusStops, routeTypeMap, settings.infoLevel],
   );
 
   // Select + pan to a stop from history. Uses focusStop to set
