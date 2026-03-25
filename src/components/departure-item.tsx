@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { TimetableEntry } from '../types/app/transit-composed';
@@ -54,16 +53,11 @@ export function DepartureItem({
 
   // Convert minutes to Date for display — lightweight, only up to 3 entries.
   // Terminal entries show arrival time; all others show departure time.
-  // eslint-disable-next-line react-hooks/rules-of-hooks -- entries/serviceDay are stable within a render
-  const displayTimes = useMemo(
-    () =>
-      displayEntries.map((e) =>
-        minutesToDate(
-          serviceDay,
-          e.patternPosition.isTerminal ? e.schedule.arrivalMinutes : e.schedule.departureMinutes,
-        ),
-      ),
-    [displayEntries, serviceDay],
+  const displayTimes = displayEntries.map((e) =>
+    minutesToDate(
+      serviceDay,
+      e.patternPosition.isTerminal ? e.schedule.arrivalMinutes : e.schedule.departureMinutes,
+    ),
   );
 
   const first = displayTimes[0];
