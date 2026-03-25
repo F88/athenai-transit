@@ -342,46 +342,6 @@ describe('getRouteTypesForStop', () => {
 });
 
 // ---------------------------------------------------------------------------
-// getFullDayDepartures
-// ---------------------------------------------------------------------------
-
-describe('getFullDayDepartures', () => {
-  it('returns departures for specific route+headsign', async () => {
-    const fixture = createFixtureV2();
-    const ds = new TestDataSourceV2({ test: fixture });
-    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
-
-    const result = await repository.getFullDayDepartures(
-      'sub_01',
-      'route_subway',
-      'Nishi-takashimadaira',
-      WEEKDAY,
-    );
-    assertSuccess(result);
-    expect(result.data).toHaveLength(8);
-    for (let i = 1; i < result.data.length; i++) {
-      expect(result.data[i]).toBeGreaterThanOrEqual(result.data[i - 1]);
-    }
-  });
-
-  it('aggregates across multiple patterns with same route+headsign', async () => {
-    const fixture = createFixtureV2();
-    const ds = new TestDataSourceV2({ test: fixture });
-    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
-
-    const result = await repository.getFullDayDepartures(
-      'bus_01',
-      'route_bus',
-      'Ikebukuro-eki',
-      WEEKDAY,
-    );
-    assertSuccess(result);
-    // tp_bus_i: 5 departures + tp_bus_i2: 2 departures = 7
-    expect(result.data).toHaveLength(7);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // getFullDayTimetableEntries
 // ---------------------------------------------------------------------------
 

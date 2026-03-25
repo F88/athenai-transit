@@ -827,47 +827,6 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return Promise.resolve({ success: true, data: result, truncated });
   }
 
-  /** {@inheritDoc TransitRepository.getFullDayDepartures} */
-  getFullDayDepartures(
-    stopId: string,
-    routeId: string,
-    headsign: string,
-    dateTime: Date,
-  ): Promise<CollectionResult<number>> {
-    const t0 = performance.now();
-    const groups = this.timetable[stopId];
-    if (!groups) {
-      return Promise.resolve({ success: true, data: [], truncated: false });
-    }
-
-    const serviceDate = getServiceDay(dateTime);
-    const activeServiceIds = this.getActiveServiceIds(serviceDate);
-    const allMinutes: number[] = [];
-
-    for (const group of groups) {
-      const resolved = this.resolvedPatterns.get(group.tp);
-      if (!resolved || resolved.route.route_id !== routeId || resolved.headsign !== headsign) {
-        continue;
-      }
-
-      for (const [serviceId, times] of Object.entries(group.d)) {
-        if (!activeServiceIds.has(serviceId)) {
-          continue;
-        }
-        for (const t of times) {
-          allMinutes.push(t);
-        }
-      }
-    }
-
-    allMinutes.sort((a, b) => a - b);
-    const elapsed = Math.round(performance.now() - t0);
-    logger.debug(
-      `getFullDayDepartures: ${stopId}/${routeId} → ${allMinutes.length} departures in ${elapsed}ms`,
-    );
-    return Promise.resolve({ success: true, data: allMinutes, truncated: false });
-  }
-
   /** {@inheritDoc TransitRepository.getFullDayTimetableEntries} */
   getFullDayTimetableEntries(
     stopId: string,

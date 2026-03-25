@@ -929,14 +929,6 @@ export class MockRepository implements TransitRepository {
     return Promise.resolve({ success: true, data: ROUTE_SHAPES, truncated: false });
   }
 
-  /** {@inheritDoc TransitRepository.getFullDayDepartures} */
-  getFullDayDepartures(
-    ...[, routeId, headsign]: [string, string, string, Date]
-  ): Promise<CollectionResult<number>> {
-    const minutes = generateFixedMinutes(routeId, headsign);
-    return Promise.resolve({ success: true, data: minutes, truncated: false });
-  }
-
   /** {@inheritDoc TransitRepository.getFullDayTimetableEntries} */
   getFullDayTimetableEntries(
     stopId: string,

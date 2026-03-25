@@ -108,7 +108,6 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
     }),
     getStopsNearby: vi.fn(),
     getRouteShapes: vi.fn(),
-    getFullDayDepartures: vi.fn(),
     getFullDayTimetableEntries: vi.fn().mockResolvedValue({
       success: true,
       data: [],

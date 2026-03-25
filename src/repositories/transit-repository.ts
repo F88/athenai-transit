@@ -169,47 +169,11 @@ export interface TransitRepository {
   getRouteShapes(): Promise<CollectionResult<RouteShape>>;
 
   /**
-   * Returns all departure times (in minutes from midnight) for a
-   * specific stop/route/headsign combination on a given date.
-   *
-   * ### Sorting
-   * Results are sorted in ascending order (earliest first).
-   * Overnight times (>= 1440, i.e. past midnight) appear at the end.
-   *
-   * ### Calendar filtering
-   * Only service IDs active on the GTFS service day (per calendar and
-   * calendar exceptions) are included.
-   *
-   * ### Truncation
-   * Currently returns all departures for the day. `truncated` is
-   * `false` under normal conditions.
-   *
-   * ### Error conditions
-   * - Unknown combination of stopId/routeId/headsign:
-   *   Returns `{ success: true, data: [], truncated: false }` (not an error).
-   *
-   * @param stopId    - GTFS stop_id.
-   * @param routeId   - GTFS route_id.
-   * @param headsign  - Trip headsign string.
-   * @param dateTime  - Reference real-world time. The repository converts
-   *                    this to the GTFS service day internally (03:00 boundary).
-   * @returns Sorted array of departure minutes from midnight.
-   */
-  getFullDayDepartures(
-    stopId: string,
-    routeId: string,
-    headsign: string,
-    dateTime: Date,
-  ): Promise<CollectionResult<number>>;
-
-  /**
    * Returns all departures for all route/headsign combinations at a stop
    * on the service day derived from `dateTime`.
    *
-   * Unlike {@link getFullDayDepartures}, this method does not require a
-   * specific route/headsign — it returns every departure at the stop,
-   * each tagged with its route, headsign, boarding availability, and
-   * pattern position.
+   * Returns every departure at the stop, each tagged with its route,
+   * headsign, boarding availability, and pattern position.
    *
    * ### Sorting
    * Results are sorted by departure time (earliest first). When two
