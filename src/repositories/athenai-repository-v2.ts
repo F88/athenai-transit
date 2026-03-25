@@ -726,10 +726,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       }
 
       const pattern = this.tripPatterns.get(group.tp);
-      const stopIndex = pattern ? pattern.stops.indexOf(stopId) : -1;
       const totalStops = pattern ? pattern.stops.length : 0;
-      const isTerminal = stopIndex === totalStops - 1;
-      const isOrigin = stopIndex === 0;
+      // For circular routes, the same stop_id appears at both index 0 and last.
+      // Pre-compute both indices to resolve per-entry using boarding types.
+      const firstIndex = pattern ? pattern.stops.indexOf(stopId) : -1;
+      const lastIndex = pattern ? pattern.stops.lastIndexOf(stopId) : -1;
+      const isCircularStop = firstIndex !== lastIndex;
 
       const sourceTranslations = this.headsignTranslations.get(resolved.sourcePrefix);
       const headsignNames = sourceTranslations?.headsigns[resolved.headsign] ?? {};
@@ -744,6 +746,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const dropOffTypes = group.dt?.[serviceId];
         const startIdx = binarySearchFirstGte(times, nowMinutes);
         for (let i = startIdx; i < times.length; i++) {
+          const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
+          const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
+          // Circular routes: same stop_id at first and last position.
+          // Use pickupType to distinguish: terminal arrivals have pickupType=1.
+          const stopIndex = isCircularStop && pickupType === 1 ? lastIndex : firstIndex;
           entries.push({
             schedule: {
               departureMinutes: times[i],
@@ -755,15 +762,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               headsign_names: headsignNames,
               direction: pattern?.dir,
             },
-            boarding: {
-              pickupType: (pickupTypes?.[i] ?? 0) as StopServiceType,
-              dropOffType: (dropOffTypes?.[i] ?? 0) as StopServiceType,
-            },
+            boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
               totalStops,
-              isTerminal,
-              isOrigin,
+              isTerminal: stopIndex === totalStops - 1,
+              isOrigin: stopIndex === 0,
             },
           });
         }
@@ -780,6 +784,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const overnightTarget = nowMinutes + 1440;
         const startIdx = binarySearchFirstGte(times, overnightTarget);
         for (let i = startIdx; i < times.length; i++) {
+          const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
+          const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
+          const stopIndex = isCircularStop && pickupType === 1 ? lastIndex : firstIndex;
           entries.push({
             schedule: {
               departureMinutes: times[i],
@@ -791,15 +798,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               headsign_names: headsignNames,
               direction: pattern?.dir,
             },
-            boarding: {
-              pickupType: (pickupTypes?.[i] ?? 0) as StopServiceType,
-              dropOffType: (dropOffTypes?.[i] ?? 0) as StopServiceType,
-            },
+            boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
               totalStops,
-              isTerminal,
-              isOrigin,
+              isTerminal: stopIndex === totalStops - 1,
+              isOrigin: stopIndex === 0,
             },
           });
         }
@@ -886,10 +890,10 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       }
 
       const pattern = this.tripPatterns.get(group.tp);
-      const stopIndex = pattern ? pattern.stops.indexOf(stopId) : -1;
       const totalStops = pattern ? pattern.stops.length : 0;
-      const isTerminal = stopIndex === totalStops - 1;
-      const isOrigin = stopIndex === 0;
+      const firstIndex = pattern ? pattern.stops.indexOf(stopId) : -1;
+      const lastIndex = pattern ? pattern.stops.lastIndexOf(stopId) : -1;
+      const isCircularStop = firstIndex !== lastIndex;
 
       const sourceTranslations = this.headsignTranslations.get(resolved.sourcePrefix);
       const headsignNames = sourceTranslations?.headsigns[resolved.headsign] ?? {};
@@ -902,6 +906,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const pickupTypes = group.pt?.[serviceId];
         const dropOffTypes = group.dt?.[serviceId];
         for (let i = 0; i < times.length; i++) {
+          const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
+          const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
+          const stopIndex = isCircularStop && pickupType === 1 ? lastIndex : firstIndex;
           entries.push({
             schedule: {
               departureMinutes: times[i],
@@ -913,15 +920,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               headsign_names: headsignNames,
               direction: pattern?.dir,
             },
-            boarding: {
-              pickupType: (pickupTypes?.[i] ?? 0) as StopServiceType,
-              dropOffType: (dropOffTypes?.[i] ?? 0) as StopServiceType,
-            },
+            boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
               totalStops,
-              isTerminal,
-              isOrigin,
+              isTerminal: stopIndex === totalStops - 1,
+              isOrigin: stopIndex === 0,
             },
           });
         }
