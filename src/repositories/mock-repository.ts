@@ -133,6 +133,20 @@ const STOPS: Stop[] = [
     location_type: 1,
     agency_id: 'mock:aoba',
   },
+  // Drop-off only bus stop near あおば中央駅
+  {
+    stop_id: 'bus_central_dropoff',
+    stop_name: 'あおば中央駅(降車専用)',
+    stop_names: {
+      ja: 'あおば中央駅(降車専用)',
+      'ja-Hrkt': 'あおばちゅうおうえき(こうしゃせんよう)',
+      en: 'Aoba-Chuo Sta. (Drop-off Only)',
+    },
+    stop_lat: 35.7489,
+    stop_lon: 139.7706,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
   // Bus stops (location_type: 0)
   {
     stop_id: 'bus_park',
@@ -362,6 +376,18 @@ const ROUTES: Route[] = [
     route_text_color: 'FFFFFF',
     agency_id: 'mock:soraq',
   },
+  // Slow bus with 3-minute dwell at every stop (arrival + 3min = departure).
+  // Tests arrival/departure time difference in timetable display.
+  {
+    route_id: 'bus_yukkuri01',
+    route_short_name: 'ゆ01',
+    route_long_name: 'ゆっくり01',
+    route_names: {},
+    route_type: 3,
+    route_color: 'A1887F',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:aoba',
+  },
   // Tram route (route_type: 0) — for multi-type testing
   {
     route_id: 'tram_hoshi',
@@ -398,6 +424,7 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
     { routeId: 'bus_aoba01', headsign: 'にじ橋' },
     { routeId: 'bus_aoba02', headsign: 'そらタワー' },
     { routeId: 'bus_sora_exp01', headsign: 'つきみの駅' },
+    { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
   ],
   sta_central_s: [
     { routeId: 'rail_aoba', headsign: 'はなみ' },
@@ -434,17 +461,33 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
     { routeId: 'rail_midori', headsign: 'ゆめの丘' },
     { routeId: 'rail_midori', headsign: 'ひかり台' },
   ],
+  // Drop-off only: pickupType=1 is handled in getUpcomingTimetableEntries
+  bus_central_dropoff: [
+    { routeId: 'bus_aoba01', headsign: 'あおば中央駅' },
+    { routeId: 'bus_aoba02', headsign: 'あおば中央駅' },
+    { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
+  ],
   bus_park: [
     { routeId: 'bus_aoba01', headsign: 'にじ橋' },
     { routeId: 'bus_aoba01', headsign: 'あおば中央駅' },
     { routeId: 'bus_nohd01', headsign: '' }, // empty headsign — tests missing destination annotation
+    { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
+    { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
   ],
   bus_library: [
     { routeId: 'bus_aoba01', headsign: 'にじ橋' },
     { routeId: 'bus_aoba02', headsign: 'そらタワー' },
+    { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
+    { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
+    { routeId: 'bus_nohd01', headsign: '' },
   ],
   bus_tower: [{ routeId: 'bus_aoba02', headsign: 'あおば中央駅' }],
-  bus_bridge: [{ routeId: 'bus_aoba01', headsign: 'あおば中央駅' }],
+  bus_bridge: [
+    { routeId: 'bus_aoba01', headsign: 'あおば中央駅' },
+    { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
+    { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
+    { routeId: 'bus_nohd01', headsign: '' },
+  ],
   tram_hoshi_park: [
     { routeId: 'tram_hoshi', headsign: 'あおば中央方面' },
     { routeId: 'tram_hoshi', headsign: 'ほし公園' },
@@ -464,6 +507,90 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
   ],
   bus_hotel_shingetsu: [{ routeId: 'subway_hotel_shuttle', headsign: 'つき宇宙空港' }],
 };
+
+/** Stops where all departures are drop-off only (pickupType=1). */
+const DROP_OFF_ONLY_STOPS = new Set(['bus_central_dropoff']);
+
+/** Routes with dwell time: arrival + N minutes = departure at every stop. */
+const DWELL_TIME_ROUTES = new Map<string, number>([['bus_yukkuri01', 3]]);
+
+/**
+ * Stop sequences per route+headsign.
+ * Used to compute patternPosition (stopIndex, totalStops, isOrigin, isTerminal).
+ * Key: `${routeId}__${headsign}`
+ */
+const ROUTE_STOP_SEQUENCES = new Map<string, string[]>([
+  // rail_aoba: かぜの駅 ↔ はなみ駅
+  ['rail_aoba__はなみ', ['sta_south', 'sta_central_s', 'sta_central', 'sta_north']],
+  ['rail_aoba__かぜの', ['sta_north', 'sta_central', 'sta_central_s', 'sta_south']],
+  // rail_hikari: みどり丘駅 ↔ ひかり台駅
+  ['rail_hikari__あおば中央', ['sta_east', 'sta_north', 'sta_central']],
+  ['rail_hikari__みどり丘', ['sta_central', 'sta_north', 'sta_east', 'sta_hill']],
+  // rail_midori: ひかり台駅 ↔ つきみの駅
+  ['rail_midori__ゆめの丘', ['sta_east', 'sta_hill', 'sta_northwest']],
+  ['rail_midori__ひかり台', ['sta_northwest', 'sta_hill', 'sta_east']],
+  // subway_sora: かぜの駅 ↔ そら西駅
+  ['subway_sora__そらタワー', ['sta_south', 'sta_central_s', 'bus_tower', 'subway_sora_nishi']],
+  ['subway_sora__にじ橋', ['subway_sora_nishi', 'bus_tower', 'sta_central_s', 'sta_south']],
+  ['subway_sora__にじ橋方面', ['subway_sora_nishi', 'bus_tower', 'sta_central_s', 'sta_south']],
+  ['subway_sora__そらタワー方面', ['sta_south', 'sta_central_s', 'bus_tower', 'subway_sora_nishi']],
+  // tram_hoshi: 中央駅 ↔ ほし公園前
+  ['tram_hoshi__ほし公園', ['sta_central', 'sta_east', 'tram_hoshi_park']],
+  ['tram_hoshi__あおば中央方面', ['tram_hoshi_park', 'sta_east', 'sta_central']],
+  // subway_airport: 中央駅 ↔ つき宇宙空港駅
+  ['subway_airport__つき宇宙空港', ['sta_central', 'bus_hotel_mangetsu', 'sta_airport']],
+  ['subway_airport__あおば中央方面', ['sta_airport', 'bus_hotel_mangetsu', 'sta_central']],
+  ['subway_airport__あおば中央', ['sta_airport', 'bus_hotel_mangetsu', 'sta_central']],
+  ['subway_airport__つき宇宙空港', ['sta_central', 'bus_hotel_mangetsu', 'sta_airport']],
+  // subway_airport_sora: 中央駅 ↔ つき宇宙空港駅 (そら急)
+  ['subway_airport_sora__つき宇宙空港', ['sta_central', 'sta_airport']],
+  ['subway_airport_sora__あおば中央方面', ['sta_airport', 'sta_central']],
+  ['subway_airport_sora__ホテル満月', ['sta_central', 'bus_hotel_mangetsu']],
+  // subway_hotel_shuttle: つき宇宙空港駅 ↔ ホテル新月
+  ['subway_hotel_shuttle__ホテル新月', ['sta_airport', 'bus_hotel_shingetsu']],
+  ['subway_hotel_shuttle__つき宇宙空港', ['bus_hotel_shingetsu', 'sta_airport']],
+  // bus_aoba01: 中央駅 ↔ にじ橋
+  [
+    'bus_aoba01__にじ橋',
+    ['sta_central', 'bus_central_dropoff', 'bus_park', 'bus_library', 'bus_bridge'],
+  ],
+  ['bus_aoba01__あおば中央駅', ['bus_bridge', 'bus_library', 'bus_park', 'bus_central_dropoff']],
+  // bus_aoba02: 中央駅 ↔ そらタワー下
+  ['bus_aoba02__そらタワー', ['sta_central', 'bus_central_dropoff', 'bus_tower']],
+  ['bus_aoba02__あおば中央駅', ['bus_tower', 'bus_central_dropoff']],
+  // bus_midori10: みどり丘駅 → かぜの駅
+  ['bus_midori10__かぜの駅', ['sta_hill', 'sta_south']],
+  // bus_sora_exp01: 中央駅 → つきみの駅
+  ['bus_sora_exp01__つきみの駅', ['sta_central', 'sta_west']],
+  // bus_nohd01: にじ橋 → 図書館前 → もり公園前 (headsign empty — tests empty headsign)
+  ['bus_nohd01__', ['bus_bridge', 'bus_library', 'bus_park']],
+  // bus_yukkuri01: もり公園前 ↔ 降車専用
+  ['bus_yukkuri01__あおば中央駅', ['bus_park', 'bus_library', 'bus_bridge', 'bus_central_dropoff']],
+  ['bus_yukkuri01__もり公園前', ['sta_central', 'bus_bridge', 'bus_library', 'bus_park']],
+]);
+
+/** Look up pattern position for a stop within a route+headsign sequence. */
+function getPatternPosition(
+  routeId: string,
+  headsign: string,
+  stopId: string,
+): { stopIndex: number; totalStops: number; isTerminal: boolean; isOrigin: boolean } {
+  const seq = ROUTE_STOP_SEQUENCES.get(`${routeId}__${headsign}`);
+  if (!seq) {
+    // No sequence defined — fall back to unknown position.
+    return { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false };
+  }
+  const idx = seq.indexOf(stopId);
+  if (idx === -1) {
+    return { stopIndex: 0, totalStops: seq.length, isTerminal: false, isOrigin: false };
+  }
+  return {
+    stopIndex: idx,
+    totalStops: seq.length,
+    isTerminal: idx === seq.length - 1,
+    isOrigin: idx === 0,
+  };
+}
 
 /**
  * Pre-computed per-stop metadata: routeTypes, agencies, and routes.
@@ -597,7 +724,13 @@ const ROUTE_SHAPES: RouteShape[] = [
     routeType: 3,
     color: `#${ROUTE_MAP.get('bus_aoba01')!.route_color}`,
     route: ROUTE_MAP.get('bus_aoba01')!,
-    points: [coord('sta_central'), coord('bus_park'), coord('bus_library'), coord('bus_bridge')],
+    points: [
+      coord('sta_central'),
+      coord('bus_central_dropoff'),
+      coord('bus_park'),
+      coord('bus_library'),
+      coord('bus_bridge'),
+    ],
   },
   // bus_aoba02: 中央駅 → そらタワー下
   {
@@ -605,7 +738,20 @@ const ROUTE_SHAPES: RouteShape[] = [
     routeType: 3,
     color: `#${ROUTE_MAP.get('bus_aoba02')!.route_color}`,
     route: ROUTE_MAP.get('bus_aoba02')!,
-    points: [coord('sta_central'), coord('bus_tower')],
+    points: [coord('sta_central'), coord('bus_central_dropoff'), coord('bus_tower')],
+  },
+  // bus_yukkuri01: もり公園前 → 図書館前 → にじ橋 → 中央駅(降車専用)
+  {
+    routeId: 'bus_yukkuri01',
+    routeType: 3,
+    color: `#${ROUTE_MAP.get('bus_yukkuri01')!.route_color}`,
+    route: ROUTE_MAP.get('bus_yukkuri01')!,
+    points: [
+      coord('bus_park'),
+      coord('bus_library'),
+      coord('bus_bridge'),
+      coord('bus_central_dropoff'),
+    ],
   },
   // bus_sora_exp01: 中央駅 → つきみの駅 (そら急行バス)
   {
@@ -717,12 +863,19 @@ export class MockRepository implements TransitRepository {
 
       const allMinutes = generateFixedMinutes(routeId, headsign);
       const upcoming = allMinutes.filter((m) => m >= nowMinutes).slice(0, limit);
+      // pickupType is determined solely by DROP_OFF_ONLY_STOPS, not by terminal status.
+      // Real GTFS data varies: some operators (Keio Bus) set pickupType=1 at terminals,
+      // others (Toei Bus) do not.
+      const pickupType = DROP_OFF_ONLY_STOPS.has(stopId) ? 1 : 0;
+      const dwellTime = DWELL_TIME_ROUTES.get(routeId) ?? 0;
+      const position = getPatternPosition(routeId, headsign, stopId);
       for (const minutes of upcoming) {
+        const arrivalMinutes = dwellTime > 0 ? minutes - dwellTime : minutes;
         entries.push({
-          schedule: { departureMinutes: minutes, arrivalMinutes: minutes },
+          schedule: { departureMinutes: minutes, arrivalMinutes },
           routeDirection: { route, headsign, headsign_names: {} },
-          boarding: { pickupType: 0, dropOffType: 0 },
-          patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
+          boarding: { pickupType, dropOffType: 0 },
+          patternPosition: position,
         });
       }
     }
@@ -799,12 +952,16 @@ export class MockRepository implements TransitRepository {
       if (!route) {
         continue;
       }
+      const pickupType = DROP_OFF_ONLY_STOPS.has(stopId) ? 1 : 0;
+      const dwellTime = DWELL_TIME_ROUTES.get(routeId) ?? 0;
+      const position = getPatternPosition(routeId, headsign, stopId);
       for (const minutes of generateFixedMinutes(routeId, headsign)) {
+        const arrivalMinutes = dwellTime > 0 ? minutes - dwellTime : minutes;
         entries.push({
-          schedule: { departureMinutes: minutes, arrivalMinutes: minutes },
+          schedule: { departureMinutes: minutes, arrivalMinutes },
           routeDirection: { route, headsign, headsign_names: {} },
-          boarding: { pickupType: 0, dropOffType: 0 },
-          patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
+          boarding: { pickupType, dropOffType: 0 },
+          patternPosition: position,
         });
       }
     }

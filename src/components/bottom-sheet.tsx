@@ -102,9 +102,10 @@ export function BottomSheet({
     if (activeOnly) {
       result = result.filter((swc) => swc.departures.length > 0);
     }
-    // Hide drop-off-only stops in non-verbose mode.
+    // Hide drop-off-only stops in non-detailed mode.
     // These stops have no boardable departures (all terminal or pt=1).
-    if (!info.isVerboseEnabled) {
+    // if (!info.isDetailedEnabled) {
+    if (!info.isSimpleEnabled) {
       result = result.filter(
         (swc) => swc.departures.length === 0 || hasBoardableDeparture(swc.departures),
       );
@@ -119,7 +120,7 @@ export function BottomSheet({
   }, [
     nearbyDepartures,
     activeOnly,
-    info.isVerboseEnabled,
+    info.isSimpleEnabled,
     hiddenRouteTypes,
     hiddenAgencyIds,
     presentAgencies,

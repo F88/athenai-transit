@@ -198,12 +198,17 @@ export default function App() {
       if (!meta) {
         return;
       }
-      const result = await repo.getFullDayDepartures(stopId, routeId, headsign, dateTime);
-      const departures = result.success ? result.data : [];
       const route = meta.routes.find((r) => r.route_id === routeId);
       if (!route) {
         return;
       }
+      // Fetch all entries and filter by route+headsign to preserve TimetableEntry metadata.
+      const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
+      const entries = result.success ? result.data : [];
+      const departures = entries.filter(
+        (e) =>
+          e.routeDirection.route.route_id === routeId && e.routeDirection.headsign === headsign,
+      );
       setTimetableModal({
         type: 'route-headsign',
         stop: meta.stop,
@@ -225,15 +230,7 @@ export default function App() {
       }
 
       const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
-      const entries = result.success ? result.data : [];
-
-      // Convert TimetableEntry[] to StopTimetableDeparture[] for the timetable modal.
-      // The modal will be migrated to TimetableEntry in a future PR.
-      const departures = entries.map((e) => ({
-        minutes: e.schedule.departureMinutes,
-        route: e.routeDirection.route,
-        headsign: e.routeDirection.headsign,
-      }));
+      const departures = result.success ? result.data : [];
 
       setTimetableModal({
         type: 'stop',

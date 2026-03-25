@@ -9,7 +9,7 @@ import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { getServiceDay } from '../domain/transit/service-day';
 import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
 import { resolveAgencyDisplayName } from '../domain/transit/get-agency-display-name';
-import { filterBoardable, hasBoardableDeparture } from '../domain/transit/timetable-utils';
+import { hasBoardableDeparture } from '../domain/transit/timetable-utils';
 import { DepartureItem } from './departure-item';
 import { AgencyBadge } from './badge/agency-badge';
 import { DistanceBadge } from './badge/distance-badge';
@@ -49,14 +49,15 @@ export function NearbyStop({
   // multiple route_types (so the user can distinguish bus vs tram etc.).
   // verbose: always show. detailed and below: only when multiple types.
   const hasMultipleRouteTypes = routeTypes.length > 1;
-  const showRouteTypeIcon = info.isVerboseEnabled || hasMultipleRouteTypes;
+  const showRouteTypeIconForAllDepartures = info.isVerboseEnabled || hasMultipleRouteTypes;
 
-  // verbose: show all entries (including terminal/drop-off-only with labels)
-  // non-verbose: show only boardable departures
-  const displayDepartures = useMemo(
-    () => (info.isVerboseEnabled ? departures : filterBoardable(departures)),
-    [info.isVerboseEnabled, departures],
-  );
+  // detailed: show all entries (including terminal/drop-off-only with labels)
+  // non-detailed: show only boardable departures
+  // const displayDepartures = useMemo(
+  //   () => (info.isDetailedEnabled ? departures : filterBoardable(departures)),
+  //   [info.isDetailedEnabled, departures],
+  // );
+  const displayDepartures = departures;
 
   const grouped = useMemo(
     () => (viewId !== 'stop' ? groupByRouteHeadsign(displayDepartures) : []),
@@ -141,7 +142,7 @@ export function NearbyStop({
                 serviceDay={serviceDay}
                 now={now}
                 isFirst={i === 0}
-                showRouteTypeIcon={showRouteTypeIcon}
+                showRouteTypeIcon={showRouteTypeIconForAllDepartures}
                 infoLevel={infoLevel}
                 agencyName={resolveAgencyDisplayName(
                   entry.routeDirection.route.agency_id,
@@ -159,7 +160,7 @@ export function NearbyStop({
               serviceDay={serviceDay}
               now={now}
               infoLevel={infoLevel}
-              showRouteTypeIcon={showRouteTypeIcon}
+              showRouteTypeIcon={showRouteTypeIconForAllDepartures}
               agencyName={resolveAgencyDisplayName(
                 entries[0].routeDirection.route.agency_id,
                 agencies,
