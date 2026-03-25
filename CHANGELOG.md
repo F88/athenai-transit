@@ -33,11 +33,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Fixed
 
-- 時刻表関連の問題を修正:
-    - 循環路線で終点到着の `stopIndex` が常に 0 になる問題 (Refs #47)。
-    - 路線フィルタボタンの選択がメタデータに反映されない問題。
-    - `DialogDescription` (SR) がフィルタ前の件数を使用していた問題。
-    - 多路線バス停でダイアログ幅が不足しフィルタボタンが見切れる問題。
+- 多路線バス停で時刻表ダイアログ幅が不足しフィルタボタンが見切れる問題。
 
 ### Changed
 
