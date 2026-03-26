@@ -22,7 +22,7 @@ import { createLogger } from '../../utils/logger';
 import type { StopHistoryEntry } from '../../domain/transit/stop-history';
 import type { SelectionInfo } from '../../domain/transit/route-selection';
 import {
-  buildDepartureGroupsMap,
+  buildTimetableEntriesMap,
   filterVisibleRouteShapes,
 } from '../../domain/transit/route-selection';
 import { RouteShapePolylines } from './route-shape-polyline';
@@ -277,8 +277,8 @@ export function MapView({
   // Avoids multiple <canvas> elements stacking and blocking pointer events.
   const canvasRenderer = useMemo(() => L.canvas({ padding: 0.5 }), []);
 
-  const departureGroupsMap = useMemo(
-    () => buildDepartureGroupsMap(nearbyDepartures),
+  const timetableEntriesMap = useMemo(
+    () => buildTimetableEntriesMap(nearbyDepartures),
     [nearbyDepartures],
   );
 
@@ -401,7 +401,7 @@ export function MapView({
           stops={filteredNearbyStops}
           selectedStopId={selectedStopId}
           routeTypeMap={routeTypeMap}
-          nearbyDepartures={departureGroupsMap}
+          nearbyDepartures={timetableEntriesMap}
           agenciesMap={agenciesMap}
           showTooltip={true}
           // showTooltip={false}

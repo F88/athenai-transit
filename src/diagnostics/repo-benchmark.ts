@@ -81,7 +81,9 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
   let totalNearbyMs = 0;
   let totalDeparturesMs = 0;
   let totalDepartureStops = 0;
-  let totalDepartureGroups = 0;
+  let totalDepartureEntries = 0;
+  let totalDeparturesNoLimitMs = 0;
+  let totalDepartureNoLimitEntries = 0;
   let totalRouteTypesMs = 0;
   let totalFullDayMs = 0;
   let totalFullDayDeps = 0;
@@ -110,19 +112,33 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
     const nearbyCount = nearbyResult.success ? nearbyResult.data.length : 0;
     totalNearby += nearbyCount;
 
-    // getUpcomingDepartures for all nearby stops (simulates real usage)
+    // getUpcomingTimetableEntries for all nearby stops (simulates real usage)
     if (nearbyResult.success && nearbyResult.data.length > 0) {
       const depT0 = performance.now();
-      let groups = 0;
+      let entries = 0;
       for (const stopMeta of nearbyResult.data) {
-        const result = await repository.getUpcomingDepartures(stopMeta.stop.stop_id, now, 3);
+        const result = await repository.getUpcomingTimetableEntries(stopMeta.stop.stop_id, now, 3);
         if (result.success) {
-          groups += result.data.length;
+          entries += result.data.length;
         }
       }
       totalDeparturesMs += performance.now() - depT0;
       totalDepartureStops += nearbyResult.data.length;
-      totalDepartureGroups += groups;
+      totalDepartureEntries += entries;
+    }
+
+    // getUpcomingTimetableEntries without limit (simulates NearbyStop real usage)
+    if (nearbyResult.success && nearbyResult.data.length > 0) {
+      const depT0 = performance.now();
+      let entries = 0;
+      for (const stopMeta of nearbyResult.data) {
+        const result = await repository.getUpcomingTimetableEntries(stopMeta.stop.stop_id, now);
+        if (result.success) {
+          entries += result.data.length;
+        }
+      }
+      totalDeparturesNoLimitMs += performance.now() - depT0;
+      totalDepartureNoLimitEntries += entries;
     }
 
     // getRouteTypesForStop for all nearby stops
@@ -134,12 +150,12 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
       totalRouteTypesMs += performance.now() - rtT0;
     }
 
-    // getFullDayDeparturesForStop (first 2 stops per location)
+    // getFullDayTimetableEntries (first 2 stops per location)
     if (nearbyResult.success && nearbyResult.data.length > 0) {
       const sampleSize = Math.min(2, nearbyResult.data.length);
       const fdT0 = performance.now();
       for (let i = 0; i < sampleSize; i++) {
-        const result = await repository.getFullDayDeparturesForStop(
+        const result = await repository.getFullDayTimetableEntries(
           nearbyResult.data[i].stop.stop_id,
           now,
         );
@@ -163,13 +179,16 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
     `getStopsNearby (${BENCH_LOCATIONS.length} locations): ${totalNearbyMs.toFixed(2)}ms total, ${totalNearby} stops`,
   );
   logger.info(
-    `getUpcomingDepartures (${totalDepartureStops} stops): ${totalDeparturesMs.toFixed(2)}ms total, ${(totalDepartureStops > 0 ? totalDeparturesMs / totalDepartureStops : 0).toFixed(2)}ms/stop, ${totalDepartureGroups} groups`,
+    `getUpcomingTimetableEntries limit=3 (${totalDepartureStops} stops): ${totalDeparturesMs.toFixed(2)}ms total, ${(totalDepartureStops > 0 ? totalDeparturesMs / totalDepartureStops : 0).toFixed(2)}ms/stop, ${totalDepartureEntries} entries`,
+  );
+  logger.info(
+    `getUpcomingTimetableEntries no-limit (${totalDepartureStops} stops): ${totalDeparturesNoLimitMs.toFixed(2)}ms total, ${(totalDepartureStops > 0 ? totalDeparturesNoLimitMs / totalDepartureStops : 0).toFixed(2)}ms/stop, ${totalDepartureNoLimitEntries} entries`,
   );
   logger.info(
     `getRouteTypesForStop (${totalDepartureStops} stops): ${totalRouteTypesMs.toFixed(2)}ms total`,
   );
   logger.info(
-    `getFullDayDeparturesForStop: ${totalFullDayMs.toFixed(2)}ms total, ${totalFullDayDeps} departures`,
+    `getFullDayTimetableEntries: ${totalFullDayMs.toFixed(2)}ms total, ${totalFullDayDeps} departures`,
   );
 
   const totalMs = performance.now() - t0;

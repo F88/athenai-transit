@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { RouteType, Stop } from './types/app/transit';
-import type { DepartureGroup, StopWithContext, StopWithMeta } from './types/app/transit-composed';
+import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
 import { useDateTime } from './hooks/use-date-time';
@@ -18,8 +18,13 @@ import {
   nextTileIndex,
 } from './utils/settings-helpers';
 import { nextInfoLevel } from './utils/next-info-level';
+import { createInfoLevel } from './utils/create-info-level';
 import { createLogger } from './utils/logger';
 import { getServiceDay } from './domain/transit/service-day';
+import {
+  prepareStopTimetable,
+  prepareRouteHeadsignTimetable,
+} from './domain/transit/timetable-filter';
 
 const logger = createLogger('App');
 import { MapView } from './components/map/map-view';
@@ -176,40 +181,73 @@ export default function App() {
         return null;
       }
       const [depsResult, rtResult] = await Promise.all([
-        repo.getUpcomingDepartures(stopId, dateTime),
+        // No limit: departure stats and verbose display need all entries.
+        repo.getUpcomingTimetableEntries(stopId, dateTime),
         repo.getRouteTypesForStop(stopId),
       ]);
-      const groups = depsResult.success ? depsResult.data : [];
+      const departures = depsResult.success ? depsResult.data : [];
+      const isBoardableOnServiceDay = depsResult.success
+        ? depsResult.meta.isBoardableOnServiceDay
+        : false;
       const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-      return { stop: meta.stop, routeTypes, groups, agencies: meta.agencies, routes: meta.routes };
+      return {
+        stop: meta.stop,
+        routeTypes,
+        departures,
+        isBoardableOnServiceDay,
+        agencies: meta.agencies,
+        routes: meta.routes,
+      };
     },
     [repo, dateTime, inBoundStops, radiusStops],
   );
 
+  const infoLevelFlags = useMemo(() => createInfoLevel(settings.infoLevel), [settings.infoLevel]);
+
+  /** Fetch full-day timetable entries for a stop (no filtering). */
+  const fetchTimetableEntries = useCallback(
+    async (stopId: string) => {
+      const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
+      const allEntries = result.success ? result.data : [];
+      const isBoardableOnServiceDay = result.success ? result.meta.isBoardableOnServiceDay : false;
+      return { allEntries, isBoardableOnServiceDay };
+    },
+    [repo, dateTime],
+  );
+
   const handleShowTimetable = useCallback(
-    async (stopId: string, group: DepartureGroup) => {
+    async (stopId: string, routeId: string, headsign: string) => {
       const meta = radiusStops.find((s) => s.stop.stop_id === stopId);
       if (!meta) {
         return;
       }
-      const result = await repo.getFullDayDepartures(
-        stopId,
-        group.route.route_id,
-        group.headsign,
-        dateTime,
+      const route = meta.routes.find((r) => r.route_id === routeId);
+      if (!route) {
+        return;
+      }
+      const { allEntries, isBoardableOnServiceDay } = await fetchTimetableEntries(stopId);
+      const { entries, omitted } = prepareRouteHeadsignTimetable(
+        allEntries,
+        routeId,
+        headsign,
+        infoLevelFlags.isDetailedEnabled,
       );
-      const departures = result.success ? result.data : [];
+      logger.debug(
+        `timetable(route-headsign) [${settings.infoLevel}]: ${stopId} ${routeId} "${headsign}" → entries=${entries.length} omitted.terminal=${omitted.terminal} total=${allEntries.length} isBoardableOnServiceDay=${isBoardableOnServiceDay}`,
+      );
       setTimetableModal({
         type: 'route-headsign',
         stop: meta.stop,
-        route: group.route,
-        headsign: group.headsign,
+        route,
+        headsign,
         serviceDate: getServiceDay(dateTime),
-        departures,
+        timetableEntries: entries,
+        omitted,
+        isBoardableOnServiceDay,
         agencies: meta.agencies,
       });
     },
-    [repo, dateTime, radiusStops],
+    [dateTime, radiusStops, infoLevelFlags, fetchTimetableEntries, settings.infoLevel],
   );
 
   const handleShowStopTimetable = useCallback(
@@ -218,20 +256,33 @@ export default function App() {
       if (!meta) {
         return;
       }
-
-      const result = await repo.getFullDayDeparturesForStop(stopId, dateTime);
-      const departures = result.success ? result.data : [];
-
+      const { allEntries, isBoardableOnServiceDay } = await fetchTimetableEntries(stopId);
+      const { entries, omitted } = prepareStopTimetable(
+        allEntries,
+        infoLevelFlags.isDetailedEnabled,
+      );
+      logger.debug(
+        `timetable(stop) [${settings.infoLevel}]: ${stopId} → entries=${entries.length} omitted.terminal=${omitted.terminal} total=${allEntries.length} isBoardableOnServiceDay=${isBoardableOnServiceDay}`,
+      );
       setTimetableModal({
         type: 'stop',
         stop: meta.stop,
         routeTypes: routeTypeMap.get(stopId) ?? [3],
         serviceDate: getServiceDay(dateTime),
-        departures,
+        timetableEntries: entries,
+        omitted,
+        isBoardableOnServiceDay,
         agencies: meta.agencies,
       });
     },
-    [repo, dateTime, radiusStops, routeTypeMap],
+    [
+      dateTime,
+      radiusStops,
+      routeTypeMap,
+      infoLevelFlags,
+      fetchTimetableEntries,
+      settings.infoLevel,
+    ],
   );
 
   // Select + pan to a stop from history. Uses focusStop to set

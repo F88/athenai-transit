@@ -16,6 +16,7 @@ const TEST_PROVIDER: Provider = {
     en: { long: 'Test Transit', short: 'Test' },
   },
   url: 'https://example.com',
+  colors: [{ bg: '000000', text: 'FFFFFF' }],
 };
 
 let db: Database.Database;
@@ -64,7 +65,7 @@ describe('extractAgenciesV2', () => {
       l: 'ja',
       tz: '',
       fu: '',
-      cs: [],
+      cs: [{ b: '000000', t: 'FFFFFF' }],
     });
   });
 

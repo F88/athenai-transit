@@ -16,7 +16,7 @@ export interface UseNearbyDeparturesReturn {
 }
 
 /**
- * Fetches upcoming departures for all nearby stops.
+ * Fetches upcoming timetable entries for all nearby stops.
  *
  * Automatically re-fetches when `radiusStops`, `dateTime`, or `repo` change.
  * Loading state is managed internally: set to `true` when dependencies change,
@@ -49,12 +49,22 @@ export function useNearbyDepartures(
         : Promise.all(
             radiusStops.map(async ({ stop, agencies, routes }) => {
               const [depsResult, rtResult] = await Promise.all([
-                repo.getUpcomingDepartures(stop.stop_id, dateTime),
+                // No limit: T4 view needs all entries to group by route+headsign
+                // without losing groups. Limit would not reduce repo cost anyway
+                // (full scan + sort required for meta and overnight interleave).
+                repo.getUpcomingTimetableEntries(stop.stop_id, dateTime),
                 repo.getRouteTypesForStop(stop.stop_id),
               ]);
-              const groups = depsResult.success ? depsResult.data : [];
+              const departures = depsResult.success ? depsResult.data : [];
+              // When timetable data is missing for a stop (success=false),
+              // default to false. This only happens when the stop has no
+              // timetable data at all (not a network error), so false is
+              // semantically correct — no boardable entries exist.
+              const isBoardableOnServiceDay = depsResult.success
+                ? depsResult.meta.isBoardableOnServiceDay
+                : false;
               const routeTypes = rtResult.success ? rtResult.data : [3 as const];
-              return { stop, routeTypes, groups, agencies, routes };
+              return { stop, routeTypes, departures, isBoardableOnServiceDay, agencies, routes };
             }),
           );
 
@@ -63,7 +73,7 @@ export function useNearbyDepartures(
         if (cancelled) {
           return;
         }
-        const withDepartures = results.filter((r) => r.groups.length > 0);
+        const withDepartures = results.filter((r) => r.departures.length > 0);
         logger.debug(
           `nearby departures: ${withDepartures.length}/${results.length} stops with departures`,
         );

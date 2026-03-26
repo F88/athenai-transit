@@ -6,10 +6,9 @@
  * Consumes v2 DataBundle directly, using TripPattern FK for
  * route/headsign resolution instead of v1's inline fields.
  *
- * Key differences from v1 AthenaiRepository:
+ * Key features:
  * - TripPattern-based timetable: route+headsign resolved via tp FK
- * - DepartureGroup re-aggregation: multiple patterns with same
- *   route+headsign are merged at query time
+ * - TimetableEntry / ContextualTimetableEntry: per-departure boarding info and pattern position
  * - Shapes lazy-loaded in background after create()
  * - Stop.agency_id is empty string (v2 GTFS spec compliance)
  * - location_type=1 (station) stops are filtered out until the UI
@@ -30,12 +29,20 @@ import type {
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
 import type {
-  DepartureGroup,
-  FullDayStopDeparture,
+  ContextualTimetableEntry,
   SourceMeta,
+  StopServiceType,
   StopWithMeta,
+  TimetableEntry,
 } from '../types/app/transit-composed';
-import type { CollectionResult, Result } from '../types/app/repository';
+import type {
+  CollectionResult,
+  Result,
+  TimetableQueryMeta,
+  TimetableResult,
+  UpcomingTimetableResult,
+} from '../types/app/repository';
+import { isDropOffOnly } from '../domain/transit/timetable-utils';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
 import type { TransitDataSourceV2 } from '../datasources/transit-data-source-v2';
@@ -232,6 +239,10 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
       // v2: GTFS spec has no agency_id on stops. Agency is resolved
       // via timetable -> tripPattern -> route -> agency_id.
       agency_id: '',
+      // v2 optional fields — omitted when the source does not provide them.
+      ...(s.wb !== undefined && { wheelchair_boarding: s.wb }),
+      ...(s.ps !== undefined && { parent_station: s.ps }),
+      ...(s.pc !== undefined && { platform_code: s.pc }),
     }));
 
   // --- Routes ---
@@ -429,6 +440,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private readonly routeMap: Map<string, Route>;
   private agencyMap: Map<string, Agency>;
   private resolvedPatterns: Map<string, ResolvedPattern>;
+  private tripPatterns: Map<string, TripPatternJson>;
   private stopRouteTypeMap: Map<string, RouteType[]>;
   private stopAgenciesMap: Map<string, Agency[]>;
   private stopRoutesMap: Map<string, Route[]>;
@@ -447,6 +459,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     this.routeMap = merged.routeMap;
     this.agencyMap = merged.agencyMap;
     this.resolvedPatterns = merged.resolvedPatterns;
+    this.tripPatterns = merged.tripPatterns;
     this.stopRouteTypeMap = merged.stopRouteTypeMap;
     this.stopAgenciesMap = merged.stopAgenciesMap;
     this.stopRoutesMap = merged.stopRoutesMap;
@@ -457,9 +470,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     this.sourceMetas = merged.sourceMetas;
   }
 
-  /** Start background loading of shapes for all loaded prefixes. */
+  /** Start background loading of shapes and insights for all loaded prefixes. */
   private startShapesLoad(prefixes: string[], dataSource: TransitDataSourceV2): void {
-    this.shapesPromise = this.loadAllShapes(prefixes, dataSource);
+    this.shapesPromise = this.loadAllShapesWithInsights(prefixes, dataSource);
   }
 
   /**
@@ -514,17 +527,71 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   // Shapes background loading
   // ---------------------------------------------------------------------------
 
-  private async loadAllShapes(
+  private async loadAllShapesWithInsights(
     prefixes: string[],
     dataSource: TransitDataSourceV2,
   ): Promise<RouteShape[]> {
     const t0 = performance.now();
-    const results = await Promise.allSettled(
-      prefixes.map((prefix) => dataSource.loadShapes(prefix)),
-    );
 
+    // Load shapes and insights in parallel
+    const [shapesResults, insightsResults] = await Promise.all([
+      Promise.allSettled(prefixes.map((prefix) => dataSource.loadShapes(prefix))),
+      Promise.allSettled(prefixes.map((prefix) => dataSource.loadInsights(prefix))),
+    ]);
+
+    // Build per-route insights lookup from all insights bundles.
+    // tripPatternGeo is keyed by pattern ID; we resolve to route ID
+    // via resolvedPatterns to find the best freq and geo for each route.
+    // When multiple patterns exist for a route, sum their freq.
+    const routeFreq = new Map<string, number>();
+    const routeGeo = new Map<string, { pathDist: number; isCircular: boolean }>();
+
+    for (const r of insightsResults) {
+      if (r.status !== 'fulfilled' || !r.value) {
+        continue;
+      }
+      const insights = r.value;
+
+      // Geo: keyed by pattern ID, service-group independent
+      if (insights.tripPatternGeo) {
+        for (const [patternId, geo] of Object.entries(insights.tripPatternGeo.data)) {
+          const resolved = this.resolvedPatterns.get(patternId);
+          if (!resolved) {
+            continue;
+          }
+          const routeId = resolved.route.route_id;
+          if (!routeGeo.has(routeId)) {
+            routeGeo.set(routeId, { pathDist: geo.pathDist, isCircular: geo.cl });
+          }
+        }
+      }
+
+      // Freq: keyed by service group, then pattern ID.
+      // Use the first service group (highest priority = most common day type).
+      if (insights.tripPatternStats) {
+        const serviceGroups = insights.serviceGroups.data;
+        const firstGroupKey = serviceGroups[0]?.key;
+        if (firstGroupKey) {
+          const statsForGroup = insights.tripPatternStats.data[firstGroupKey];
+          if (statsForGroup) {
+            for (const [patternId, stats] of Object.entries(statsForGroup)) {
+              const resolved = this.resolvedPatterns.get(patternId);
+              if (!resolved) {
+                continue;
+              }
+              const routeId = resolved.route.route_id;
+              const current = routeFreq.get(routeId) ?? 0;
+              // Accumulate freq across patterns for the same route
+              routeFreq.set(routeId, current + stats.freq);
+            }
+          }
+        }
+      }
+    }
+
+    // Build shapes with insights enrichment
     const shapes: RouteShape[] = [];
-    for (const r of results) {
+    for (const r of shapesResults) {
       if (r.status !== 'fulfilled' || !r.value) {
         continue;
       }
@@ -532,16 +599,28 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const route = this.routeMap.get(routeId);
         const color = route?.route_color ? `#${route.route_color}` : '#888888';
         const routeType = route?.route_type ?? 3;
+        const geo = routeGeo.get(routeId);
+        const freq = routeFreq.get(routeId);
+
         for (const points of polylines) {
-          // ShapePointV2 is [lat, lon, dist?] — strip optional dist
-          const coords: [number, number][] = points.map((p) => [p[0], p[1]]);
-          shapes.push({ routeId, routeType, color, route: route ?? null, points: coords });
+          shapes.push({
+            routeId,
+            routeType,
+            color,
+            route: route ?? null,
+            points,
+            freq,
+            pathDist: geo?.pathDist,
+            isCircular: geo?.isCircular,
+          });
         }
       }
     }
 
     const elapsed = Math.round(performance.now() - t0);
-    logger.info(`Shapes loaded: ${shapes.length} shapes in ${elapsed}ms`);
+    logger.info(
+      `Shapes loaded: ${shapes.length} shapes in ${elapsed}ms (insights: ${routeGeo.size} geo, ${routeFreq.size} freq)`,
+    );
     return shapes;
   }
 
@@ -626,12 +705,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return Promise.resolve({ success: true, data, truncated });
   }
 
-  /** {@inheritDoc TransitRepository.getUpcomingDepartures} */
-  getUpcomingDepartures(
+  /** {@inheritDoc TransitRepository.getUpcomingTimetableEntries} */
+  getUpcomingTimetableEntries(
     stopId: string,
     now: Date,
     limit?: number,
-  ): Promise<CollectionResult<DepartureGroup>> {
+  ): Promise<UpcomingTimetableResult> {
     const t0 = performance.now();
     const timetableGroups = this.timetable[stopId];
     if (!timetableGroups) {
@@ -641,23 +720,17 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const serviceDay = getServiceDay(now);
     const todayServiceIds = this.getActiveServiceIds(serviceDay);
 
+    // Track full-day metadata during scan.
+    let fullDayCount = 0;
+    let hasBoardable = false;
+
     const prevServiceDay = new Date(serviceDay);
     prevServiceDay.setDate(prevServiceDay.getDate() - 1);
     const yesterdayServiceIds = this.getActiveServiceIds(prevServiceDay);
 
     const nowMinutes = getServiceDayMinutes(now);
 
-    // Re-aggregate across trip patterns: group by route_id + headsign
-    const aggregated = new Map<
-      string,
-      {
-        route: Route;
-        headsign: string;
-        prefix: string;
-        departureTimes: Date[];
-        totalAvailable: number;
-      }
-    >();
+    const entries: ContextualTimetableEntry[] = [];
 
     for (const group of timetableGroups) {
       const resolved = this.resolvedPatterns.get(group.tp);
@@ -665,175 +738,236 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         continue;
       }
 
-      const aggKey = `${resolved.route.route_id}\0${resolved.headsign}`;
-      let agg = aggregated.get(aggKey);
-      if (!agg) {
-        agg = {
-          route: resolved.route,
-          headsign: resolved.headsign,
-          prefix: resolved.sourcePrefix,
-          departureTimes: [],
-          totalAvailable: 0,
-        };
-        aggregated.set(aggKey, agg);
+      // pattern is guaranteed to exist when resolved exists — both are built
+      // from the same tripPatterns map during initialization. Guard defensively
+      // to prevent incorrect isTerminal=true when totalStops=0, stopIndex=-1.
+      const pattern = this.tripPatterns.get(group.tp);
+      if (!pattern) {
+        continue;
       }
+      const totalStops = pattern.stops.length;
+      // For circular routes, the same stop_id appears at both index 0 and last.
+      // Pre-compute both indices to resolve per-entry using boarding types.
+      const firstIndex = pattern.stops.indexOf(stopId);
+      const lastIndex = pattern.stops.lastIndexOf(stopId);
+      const isCircularStop = firstIndex !== lastIndex;
 
-      // Collect ALL upcoming departure times first, then apply limit
-      // after sorting. This ensures the earliest N departures are returned
-      // even when multiple patterns contribute to the same route+headsign
-      // group. Applying limit during iteration would risk keeping later
-      // times from pattern A while skipping earlier times from pattern B.
+      const sourceTranslations = this.headsignTranslations.get(resolved.sourcePrefix);
+      const headsignNames = sourceTranslations?.headsigns[resolved.headsign] ?? {};
 
       // Today's services
       for (const [serviceId, times] of Object.entries(group.d)) {
         if (!todayServiceIds.has(serviceId)) {
           continue;
         }
+        const arrivals = group.a?.[serviceId];
+        const pickupTypes = group.pt?.[serviceId];
+        const dropOffTypes = group.dt?.[serviceId];
+
+        // Count full-day entries and check boardability before time filtering.
+        for (let j = 0; j < times.length; j++) {
+          fullDayCount++;
+          if (!hasBoardable) {
+            const pt = (pickupTypes?.[j] ?? 0) as StopServiceType;
+            const si = isCircularStop && pt === 1 ? lastIndex : firstIndex;
+            const isTerminal = si === totalStops - 1;
+            if (pt !== 1 && !isTerminal) {
+              hasBoardable = true;
+            }
+          }
+        }
+
         const startIdx = binarySearchFirstGte(times, nowMinutes);
         for (let i = startIdx; i < times.length; i++) {
-          agg.totalAvailable++;
-          agg.departureTimes.push(minutesToDate(serviceDay, times[i]));
+          const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
+          const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
+          // Circular routes: same stop_id at first and last position.
+          // Use pickupType to distinguish: terminal arrivals have pickupType=1.
+          const stopIndex = isCircularStop && pickupType === 1 ? lastIndex : firstIndex;
+          entries.push({
+            schedule: {
+              departureMinutes: times[i],
+              arrivalMinutes: arrivals?.[i] ?? times[i],
+            },
+            routeDirection: {
+              route: resolved.route,
+              headsign: resolved.headsign,
+              headsign_names: headsignNames,
+              direction: pattern?.dir,
+            },
+            boarding: { pickupType, dropOffType },
+            patternPosition: {
+              stopIndex,
+              totalStops,
+              isTerminal: stopIndex === totalStops - 1,
+              isOrigin: stopIndex === 0,
+            },
+            serviceDate: serviceDay,
+          });
         }
       }
 
-      // Previous service day's overnight times
+      // Previous service day's overnight times (departures >= 24:00 from yesterday)
       for (const [serviceId, times] of Object.entries(group.d)) {
         if (!yesterdayServiceIds.has(serviceId)) {
           continue;
         }
+        const arrivals = group.a?.[serviceId];
+        const pickupTypes = group.pt?.[serviceId];
+        const dropOffTypes = group.dt?.[serviceId];
+
+        // Count overnight entries (>= 1440) for meta consistency with data.
+        for (let j = 0; j < times.length; j++) {
+          if (times[j] < 1440) {
+            continue;
+          }
+          fullDayCount++;
+          if (!hasBoardable) {
+            const pt = (pickupTypes?.[j] ?? 0) as StopServiceType;
+            const si = isCircularStop && pt === 1 ? lastIndex : firstIndex;
+            const isTerminal = si === totalStops - 1;
+            if (pt !== 1 && !isTerminal) {
+              hasBoardable = true;
+            }
+          }
+        }
+
         const overnightTarget = nowMinutes + 1440;
         const startIdx = binarySearchFirstGte(times, overnightTarget);
         for (let i = startIdx; i < times.length; i++) {
-          agg.totalAvailable++;
-          agg.departureTimes.push(minutesToDate(prevServiceDay, times[i]));
-        }
-      }
-    }
-
-    // Build result
-    const result: DepartureGroup[] = [];
-    let anyTruncated = false;
-
-    for (const agg of aggregated.values()) {
-      if (agg.departureTimes.length === 0) {
-        continue;
-      }
-
-      // Sort all collected times, then truncate to limit.
-      // This guarantees the earliest N departures across all patterns.
-      agg.departureTimes.sort((a, b) => a.getTime() - b.getTime());
-      if (limit !== undefined && agg.departureTimes.length > limit) {
-        agg.departureTimes = agg.departureTimes.slice(0, limit);
-        anyTruncated = true;
-      }
-
-      const sourceTranslations = this.headsignTranslations.get(agg.prefix);
-      const headsignNames = sourceTranslations?.headsigns[agg.headsign] ?? {};
-
-      result.push({
-        route: agg.route,
-        headsign: agg.headsign,
-        headsign_names: headsignNames,
-        departures: agg.departureTimes,
-      });
-    }
-
-    result.sort((a, b) => a.departures[0].getTime() - b.departures[0].getTime());
-
-    const totalReturned = result.reduce((sum, g) => sum + g.departures.length, 0);
-    const totalAvailable = [...aggregated.values()].reduce((sum, a) => sum + a.totalAvailable, 0);
-    const elapsed = Math.round(performance.now() - t0);
-    logger.debug(
-      `getUpcomingDepartures: ${stopId} → ${result.length} groups, ${totalReturned}/${totalAvailable} departures in ${elapsed}ms (${anyTruncated ? 'truncated' : 'all'})`,
-    );
-    return Promise.resolve({ success: true, data: result, truncated: anyTruncated });
-  }
-
-  /** {@inheritDoc TransitRepository.getFullDayDepartures} */
-  getFullDayDepartures(
-    stopId: string,
-    routeId: string,
-    headsign: string,
-    dateTime: Date,
-  ): Promise<CollectionResult<number>> {
-    const t0 = performance.now();
-    const groups = this.timetable[stopId];
-    if (!groups) {
-      return Promise.resolve({ success: true, data: [], truncated: false });
-    }
-
-    const serviceDate = getServiceDay(dateTime);
-    const activeServiceIds = this.getActiveServiceIds(serviceDate);
-    const allMinutes: number[] = [];
-
-    for (const group of groups) {
-      const resolved = this.resolvedPatterns.get(group.tp);
-      if (!resolved || resolved.route.route_id !== routeId || resolved.headsign !== headsign) {
-        continue;
-      }
-
-      for (const [serviceId, times] of Object.entries(group.d)) {
-        if (!activeServiceIds.has(serviceId)) {
-          continue;
-        }
-        for (const t of times) {
-          allMinutes.push(t);
-        }
-      }
-    }
-
-    allMinutes.sort((a, b) => a - b);
-    const elapsed = Math.round(performance.now() - t0);
-    logger.debug(
-      `getFullDayDepartures: ${stopId}/${routeId} → ${allMinutes.length} departures in ${elapsed}ms`,
-    );
-    return Promise.resolve({ success: true, data: allMinutes, truncated: false });
-  }
-
-  /** {@inheritDoc TransitRepository.getFullDayDeparturesForStop} */
-  getFullDayDeparturesForStop(
-    stopId: string,
-    dateTime: Date,
-  ): Promise<CollectionResult<FullDayStopDeparture>> {
-    const t0 = performance.now();
-    const groups = this.timetable[stopId];
-    if (!groups) {
-      return Promise.resolve({ success: true, data: [], truncated: false });
-    }
-
-    const serviceDate = getServiceDay(dateTime);
-    const activeServiceIds = this.getActiveServiceIds(serviceDate);
-    const departures: FullDayStopDeparture[] = [];
-
-    for (const group of groups) {
-      const resolved = this.resolvedPatterns.get(group.tp);
-      if (!resolved) {
-        continue;
-      }
-
-      for (const [serviceId, times] of Object.entries(group.d)) {
-        if (!activeServiceIds.has(serviceId)) {
-          continue;
-        }
-        const sourceTranslations = this.headsignTranslations.get(resolved.sourcePrefix);
-        const headsignNames = sourceTranslations?.headsigns[resolved.headsign] ?? {};
-        for (const t of times) {
-          departures.push({
-            minutes: t,
-            route: resolved.route,
-            headsign: resolved.headsign,
-            headsign_names: headsignNames,
+          const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
+          const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
+          const stopIndex = isCircularStop && pickupType === 1 ? lastIndex : firstIndex;
+          entries.push({
+            schedule: {
+              departureMinutes: times[i],
+              arrivalMinutes: arrivals?.[i] ?? times[i],
+            },
+            routeDirection: {
+              route: resolved.route,
+              headsign: resolved.headsign,
+              headsign_names: headsignNames,
+              direction: pattern?.dir,
+            },
+            boarding: { pickupType, dropOffType },
+            patternPosition: {
+              stopIndex,
+              totalStops,
+              isTerminal: stopIndex === totalStops - 1,
+              isOrigin: stopIndex === 0,
+            },
+            serviceDate: prevServiceDay,
           });
         }
       }
     }
 
-    departures.sort((a, b) => a.minutes - b.minutes);
+    // Sort by actual chronological time using serviceDate + departureMinutes.
+    // Simple departureMinutes comparison is insufficient because overnight entries
+    // from the previous service day (e.g., prevDay + 1900 min) must interleave
+    // correctly with today's entries (e.g., today + 400 min).
+    entries.sort((a, b) => {
+      const aTime = minutesToDate(a.serviceDate, a.schedule.departureMinutes).getTime();
+      const bTime = minutesToDate(b.serviceDate, b.schedule.departureMinutes).getTime();
+      return aTime - bTime;
+    });
+    const totalAvailable = entries.length;
+    let truncated = false;
+    let result = entries;
+    if (limit !== undefined && entries.length > limit) {
+      result = entries.slice(0, limit);
+      truncated = true;
+    }
+
     const elapsed = Math.round(performance.now() - t0);
     logger.debug(
-      `getFullDayDeparturesForStop: ${stopId} → ${departures.length} departures in ${elapsed}ms`,
+      `getUpcomingTimetableEntries: ${stopId} → ${result.length}/${totalAvailable} entries in ${elapsed}ms (${truncated ? 'truncated' : 'all'}) serviceDay=${formatDateKey(serviceDay)} prev=${formatDateKey(prevServiceDay)}`,
     );
-    return Promise.resolve({ success: true, data: departures, truncated: false });
+    const meta: TimetableQueryMeta = {
+      isBoardableOnServiceDay: hasBoardable,
+      totalEntries: fullDayCount,
+    };
+    return Promise.resolve({ success: true, data: result, truncated, meta });
+  }
+
+  /** {@inheritDoc TransitRepository.getFullDayTimetableEntries} */
+  getFullDayTimetableEntries(stopId: string, dateTime: Date): Promise<TimetableResult> {
+    const t0 = performance.now();
+    const emptyMeta: TimetableQueryMeta = { isBoardableOnServiceDay: false, totalEntries: 0 };
+    const timetableGroups = this.timetable[stopId];
+    if (!timetableGroups) {
+      return Promise.resolve({ success: true, data: [], truncated: false, meta: emptyMeta });
+    }
+
+    const serviceDate = getServiceDay(dateTime);
+    const activeServiceIds = this.getActiveServiceIds(serviceDate);
+    const entries: TimetableEntry[] = [];
+
+    for (const group of timetableGroups) {
+      const resolved = this.resolvedPatterns.get(group.tp);
+      if (!resolved) {
+        continue;
+      }
+
+      // pattern is guaranteed to exist when resolved exists — both are built
+      // from the same tripPatterns map during initialization. Guard defensively
+      // to prevent incorrect isTerminal=true when totalStops=0, stopIndex=-1.
+      const pattern = this.tripPatterns.get(group.tp);
+      if (!pattern) {
+        continue;
+      }
+      const totalStops = pattern.stops.length;
+      const firstIndex = pattern.stops.indexOf(stopId);
+      const lastIndex = pattern.stops.lastIndexOf(stopId);
+      const isCircularStop = firstIndex !== lastIndex;
+
+      const sourceTranslations = this.headsignTranslations.get(resolved.sourcePrefix);
+      const headsignNames = sourceTranslations?.headsigns[resolved.headsign] ?? {};
+
+      for (const [serviceId, times] of Object.entries(group.d)) {
+        if (!activeServiceIds.has(serviceId)) {
+          continue;
+        }
+        const arrivals = group.a?.[serviceId];
+        const pickupTypes = group.pt?.[serviceId];
+        const dropOffTypes = group.dt?.[serviceId];
+        for (let i = 0; i < times.length; i++) {
+          const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
+          const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
+          const stopIndex = isCircularStop && pickupType === 1 ? lastIndex : firstIndex;
+          entries.push({
+            schedule: {
+              departureMinutes: times[i],
+              arrivalMinutes: arrivals?.[i] ?? times[i],
+            },
+            routeDirection: {
+              route: resolved.route,
+              headsign: resolved.headsign,
+              headsign_names: headsignNames,
+              direction: pattern?.dir,
+            },
+            boarding: { pickupType, dropOffType },
+            patternPosition: {
+              stopIndex,
+              totalStops,
+              isTerminal: stopIndex === totalStops - 1,
+              isOrigin: stopIndex === 0,
+            },
+          });
+        }
+      }
+    }
+
+    entries.sort((a, b) => a.schedule.departureMinutes - b.schedule.departureMinutes);
+    const elapsed = Math.round(performance.now() - t0);
+    logger.debug(
+      `getFullDayTimetableEntries: ${stopId} → ${entries.length} entries in ${elapsed}ms`,
+    );
+    const meta: TimetableQueryMeta = {
+      isBoardableOnServiceDay: entries.some((e) => !isDropOffOnly(e)),
+      totalEntries: entries.length,
+    };
+    return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }
 
   /** {@inheritDoc TransitRepository.getRouteTypesForStop} */

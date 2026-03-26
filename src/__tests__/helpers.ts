@@ -59,27 +59,29 @@ export function makeRoute(id: string, routeType: RouteType = 3): Route {
  * Creates a minimal StopWithContext for testing.
  *
  * @param stop - The Stop to wrap
- * @param routeIds - Route IDs to generate DepartureGroups for
+ * @param routeIds - Route IDs to generate ContextualTimetableEntry items for
  * @param routeTypes - GTFS route_type values (default `[3]` = bus)
- * @returns A StopWithContext with one DepartureGroup per routeId
+ * @returns A StopWithContext with one ContextualTimetableEntry per routeId
  */
 export function makeStopWithContext(
   stop: Stop,
   routeIds: string[],
   routeTypes: RouteType[] = [3],
 ): StopWithContext {
-  // Create Route objects once and share references between groups and routes,
+  // Create Route objects once and share references between departures and routes,
   // mirroring production behavior where both reference the same routeMap entries.
   const routes = routeIds.map((rid) => makeRoute(rid));
   return {
     stop,
     routeTypes,
-    groups: routes.map((route) => ({
-      route,
-      headsign: 'Test',
-      headsign_names: {},
-      departures: [new Date()],
+    departures: routes.map((route) => ({
+      schedule: { departureMinutes: 480, arrivalMinutes: 480 },
+      routeDirection: { route, headsign: 'Test', headsign_names: {} },
+      boarding: { pickupType: 0 as const, dropOffType: 0 as const },
+      patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
+      serviceDate: new Date('2026-01-01'),
     })),
+    isBoardableOnServiceDay: true,
     agencies: [],
     routes,
   };
@@ -97,10 +99,11 @@ export function makeStopWithContext(
 export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRepository {
   return {
     getStopsInBounds: vi.fn(),
-    getUpcomingDepartures: vi.fn().mockResolvedValue({
+    getUpcomingTimetableEntries: vi.fn().mockResolvedValue({
       success: true,
       data: [],
       truncated: false,
+      meta: { isBoardableOnServiceDay: false, totalEntries: 0 },
     }),
     getRouteTypesForStop: vi.fn().mockResolvedValue({
       success: true,
@@ -108,11 +111,11 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
     }),
     getStopsNearby: vi.fn(),
     getRouteShapes: vi.fn(),
-    getFullDayDepartures: vi.fn(),
-    getFullDayDeparturesForStop: vi.fn().mockResolvedValue({
+    getFullDayTimetableEntries: vi.fn().mockResolvedValue({
       success: true,
       data: [],
       truncated: false,
+      meta: { isBoardableOnServiceDay: false, totalEntries: 0 },
     }),
     getAllStops: vi.fn(),
     getAgency: vi.fn().mockResolvedValue({

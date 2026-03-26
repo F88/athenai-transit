@@ -1,13 +1,12 @@
 import { useMemo } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
-import type { DepartureGroup, StopWithContext } from '../types/app/transit-composed';
+import type { StopWithContext } from '../types/app/transit-composed';
 import { distanceM } from '../domain/transit/distance';
-import { flattenDepartures } from '../domain/transit/flatten-departures';
+import { groupByRouteHeadsign } from '../domain/transit/group-timetable-entries';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
-import { hasUnknownDestination } from '../domain/transit/has-unknown-destination';
 import { resolveAgencyDisplayName } from '../domain/transit/get-agency-display-name';
 import { DepartureItem } from './departure-item';
 import { AgencyBadge } from './badge/agency-badge';
@@ -24,12 +23,12 @@ interface NearbyStopProps {
   /** Active departure view pattern ID. */
   viewId: string;
   onStopSelected: (stopId: string) => void;
-  onShowTimetable?: (stopId: string, group: DepartureGroup) => void;
+  onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
 }
 
 export function NearbyStop({
-  data: { stop, routeTypes, groups, agencies },
+  data: { stop, routeTypes, departures, isBoardableOnServiceDay, agencies },
   isSelected,
   now,
   mapCenter,
@@ -42,17 +41,31 @@ export function NearbyStop({
   const info = useInfoLevel(infoLevel);
   const stopNames = getStopDisplayNames(stop, infoLevel);
   const distance = mapCenter ? Math.round(distanceM(mapCenter, stop)) : null;
-
   // Show route_type emoji on each departure row when the stop serves
   // multiple route_types (so the user can distinguish bus vs tram etc.).
   // verbose: always show. detailed and below: only when multiple types.
   const hasMultipleRouteTypes = routeTypes.length > 1;
-  const showRouteTypeIcon = info.isVerboseEnabled || hasMultipleRouteTypes;
+  const showRouteTypeIconForAllDepartures = info.isVerboseEnabled || hasMultipleRouteTypes;
 
-  const flatDepartures = useMemo(
-    () => (viewId === 'stop' ? flattenDepartures(groups) : []),
-    [viewId, groups],
+  // detailed: show all entries (including terminal/drop-off-only with labels)
+  // non-detailed: show only boardable departures
+  // const displayDepartures = useMemo(
+  //   () => (info.isDetailedEnabled ? departures : filterBoardable(departures)),
+  //   [info.isDetailedEnabled, departures],
+  // );
+  const displayDepartures = departures;
+
+  const grouped = useMemo(
+    () => (viewId !== 'stop' ? groupByRouteHeadsign(displayDepartures) : []),
+    [viewId, displayDepartures],
   );
+
+  const hasUnknownHeadsign = useMemo(
+    () => departures.some((e) => e.routeDirection.headsign === ''),
+    [departures],
+  );
+
+  const isStopDropOffOnly = !isBoardableOnServiceDay;
 
   return (
     <div
@@ -76,6 +89,11 @@ export function NearbyStop({
           {stopNames.name}
           {distance != null && distance >= 10 && <DistanceBadge meters={distance} />}
         </p>
+        {isStopDropOffOnly && (
+          <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
+            降車専用
+          </span>
+        )}
         {agencies.length > 0 &&
           agencies.map((agency) => (
             <AgencyBadge key={agency.agency_id} agency={agency} infoLevel={infoLevel} size="xs" />
@@ -93,39 +111,59 @@ export function NearbyStop({
           </button>
         )}
       </div>
-      {hasUnknownDestination(groups) && (
+      {info.isVerboseEnabled && departures.length > 0 && (
+        <p className="m-0 mb-1 text-[9px] text-[#999] dark:text-gray-500">
+          entries={departures.length}
+          {` boardable=${departures.filter((e) => e.boarding.pickupType !== 1 && !e.patternPosition.isTerminal).length}`}
+          {` dropOffOnly=${departures.filter((e) => e.boarding.pickupType === 1 || e.patternPosition.isTerminal).length}`}
+          {isStopDropOffOnly && ' (ALL DROP-OFF ONLY)'}
+        </p>
+      )}
+      {hasUnknownHeadsign && (
         <p className="m-0 mb-1 text-[11px] text-amber-600 dark:text-amber-400">
           行先が表示されない路線があります
         </p>
       )}
-      {groups.length > 0 ? (
+      {displayDepartures.length > 0 ? (
         viewId === 'stop' ? (
-          flatDepartures
+          displayDepartures
             .slice(0, 5)
-            .map((item, i) => (
+            .map((entry, i) => (
               <FlatDepartureItem
-                key={`${item.route.route_id}__${item.headsign}__${item.departure.getTime()}__${i}`}
-                item={item}
+                key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}__${i}`}
+                entry={entry}
                 now={now}
                 isFirst={i === 0}
-                showRouteTypeIcon={showRouteTypeIcon}
+                showRouteTypeIcon={showRouteTypeIconForAllDepartures}
                 infoLevel={infoLevel}
-                agencyName={resolveAgencyDisplayName(item.route.agency_id, agencies, infoLevel)}
-                agency={agencies.find((a) => a.agency_id === item.route.agency_id)}
+                agencyName={resolveAgencyDisplayName(
+                  entry.routeDirection.route.agency_id,
+                  agencies,
+                  infoLevel,
+                )}
+                agency={agencies.find((a) => a.agency_id === entry.routeDirection.route.agency_id)}
               />
             ))
         ) : (
-          groups.map((group) => (
+          grouped.map(([key, entries]) => (
             <DepartureItem
-              key={`${stop.stop_id}__${group.route.route_id}__${group.headsign}`}
-              group={group}
+              key={`${stop.stop_id}__${key}`}
+              entries={entries}
               now={now}
               infoLevel={infoLevel}
-              showRouteTypeIcon={showRouteTypeIcon}
-              agencyName={resolveAgencyDisplayName(group.route.agency_id, agencies, infoLevel)}
-              agency={agencies.find((a) => a.agency_id === group.route.agency_id)}
+              showRouteTypeIcon={showRouteTypeIconForAllDepartures}
+              agencyName={resolveAgencyDisplayName(
+                entries[0].routeDirection.route.agency_id,
+                agencies,
+                infoLevel,
+              )}
+              agency={agencies.find(
+                (a) => a.agency_id === entries[0].routeDirection.route.agency_id,
+              )}
               onShowTimetable={
-                onShowTimetable ? (g) => onShowTimetable(stop.stop_id, g) : undefined
+                onShowTimetable
+                  ? (routeId, headsign) => onShowTimetable(stop.stop_id, routeId, headsign)
+                  : undefined
               }
             />
           ))

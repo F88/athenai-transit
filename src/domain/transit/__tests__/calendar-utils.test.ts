@@ -144,6 +144,75 @@ describe('minutesToDate', () => {
     minutesToDate(baseDate, 600);
     expect(baseDate.getTime()).toBe(original.getTime());
   });
+
+  it('handles exactly 1440 minutes (24:00 boundary)', () => {
+    const result = minutesToDate(baseDate, 1440); // 24:00 = next day 0:00
+    expect(result.getDate()).toBe(25);
+    expect(result.getHours()).toBe(0);
+    expect(result.getMinutes()).toBe(0);
+  });
+
+  it('handles 1625 minutes (27:05) — real overnight value from iyt2', () => {
+    const result = minutesToDate(baseDate, 1625); // 27:05 = next day 3:05
+    expect(result.getDate()).toBe(25);
+    expect(result.getHours()).toBe(3);
+    expect(result.getMinutes()).toBe(5);
+  });
+
+  it('handles 1900 minutes (31:40) — long-haul overnight arrival', () => {
+    const result = minutesToDate(baseDate, 1900); // 31:40 = next day 7:40
+    expect(result.getDate()).toBe(25);
+    expect(result.getHours()).toBe(7);
+    expect(result.getMinutes()).toBe(40);
+  });
+
+  it('handles 1975 minutes (32:55) — latest known overnight value', () => {
+    const result = minutesToDate(baseDate, 1975); // 32:55 = next day 8:55
+    expect(result.getDate()).toBe(25);
+    expect(result.getHours()).toBe(8);
+    expect(result.getMinutes()).toBe(55);
+  });
+
+  it('previous service day + overnight produces correct date', () => {
+    // Simulates Issue #66: serviceDate = Wed Mar 25, d=1900
+    // Expected: Thu Mar 26 07:40 (not Fri Mar 27)
+    const wednesday = new Date(2026, 2, 25, 0, 0, 0, 0);
+    const result = minutesToDate(wednesday, 1900);
+    expect(result.getDate()).toBe(26); // Thursday
+    expect(result.getMonth()).toBe(2); // March
+    expect(result.getHours()).toBe(7);
+    expect(result.getMinutes()).toBe(40);
+  });
+
+  it('today service day + overnight produces next calendar day', () => {
+    // serviceDate = Thu Mar 26, d=1900
+    // Expected: Fri Mar 27 07:40
+    const thursday = new Date(2026, 2, 26, 0, 0, 0, 0);
+    const result = minutesToDate(thursday, 1900);
+    expect(result.getDate()).toBe(27); // Friday
+    expect(result.getMonth()).toBe(2); // March
+    expect(result.getHours()).toBe(7);
+    expect(result.getMinutes()).toBe(40);
+  });
+
+  it('handles month boundary rollover', () => {
+    // Mar 31 + 1500 min (25:00) = Apr 1 01:00
+    const lastDay = new Date(2026, 2, 31, 0, 0, 0, 0);
+    const result = minutesToDate(lastDay, 1500);
+    expect(result.getMonth()).toBe(3); // April
+    expect(result.getDate()).toBe(1);
+    expect(result.getHours()).toBe(1);
+    expect(result.getMinutes()).toBe(0);
+  });
+
+  it('handles non-midnight baseDate by resetting to midnight', () => {
+    // baseDate at 15:30 — setHours should override, not add
+    const afternoon = new Date(2026, 2, 24, 15, 30, 0, 0);
+    const result = minutesToDate(afternoon, 600); // 10:00
+    expect(result.getHours()).toBe(10);
+    expect(result.getMinutes()).toBe(0);
+    expect(result.getDate()).toBe(24);
+  });
 });
 
 // ---------------------------------------------------------------------------

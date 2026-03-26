@@ -6,8 +6,11 @@ import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { resolveMinPrefixLengths } from '@/utils/resolve-min-prefix-lengths';
 import { routeTypesEmoji } from '@/domain/transit/route-type-emoji';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
+import { isDropOffOnly } from '@/domain/transit/timetable-utils';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route, RouteType, Stop } from '@/types/app/transit';
+import type { TimetableEntry } from '@/types/app/transit-composed';
+import type { TimetableOmitted } from '@/types/app/repository';
 import { AgencyBadge } from '@/components/badge/agency-badge';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
@@ -30,26 +33,24 @@ export interface RouteHeadsignTimetable {
   headsign: string;
   /** GTFS service date for this timetable (not real-world time). */
   serviceDate: Date;
-  departures: number[]; // minutes from midnight, sorted
+  timetableEntries: TimetableEntry[];
+  omitted: TimetableOmitted;
+  /** Whether at least one non-drop-off-only entry (pickupType !== 1, non-terminal) exists in the full service day. */
+  isBoardableOnServiceDay: boolean;
   agencies: Agency[];
 }
 
-/** A single departure in a stop timetable with route/headsign metadata. */
-export interface StopTimetableDeparture {
-  /** Minutes from midnight. */
-  minutes: number;
-  route: Route;
-  headsign: string;
-}
-
-/** Timetable for all departures at a stop. */
+/** Timetable for all at a stop. */
 export interface StopTimetable {
   type: 'stop';
   stop: Stop;
   routeTypes: RouteType[];
   /** GTFS service date for this timetable (not real-world time). */
   serviceDate: Date;
-  departures: StopTimetableDeparture[]; // sorted by minutes
+  timetableEntries: TimetableEntry[];
+  omitted: TimetableOmitted;
+  /** Whether at least one non-drop-off-only entry (pickupType !== 1, non-terminal) exists in the full service day. */
+  isBoardableOnServiceDay: boolean;
   agencies: Agency[];
 }
 
@@ -71,7 +72,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
   const currentHour = Math.floor(getServiceDayMinutes(time) / 60);
 
   // Filter state for stop timetable (route+headsign toggle).
-  // Empty set = show all departures (no filter active).
+  // Empty set = show all timetable (no filter active).
   const [activeFilters, setActiveFilters] = useState<Set<string>>(() => new Set());
 
   const toggleFilter = useCallback((key: string) => {
@@ -86,28 +87,22 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
     });
   }, []);
 
-  // Normalize departures to StopTimetableDeparture[] for both timetable types.
-  const allDepartures: StopTimetableDeparture[] = useMemo(() => {
+  // Both timetable types now use TimetableEntry[] directly.
+  const allTimetableEntries: TimetableEntry[] = useMemo(() => {
     if (!data) {
       return [];
     }
-    if (data.type === 'stop') {
-      return data.departures;
-    }
-    // Convert route-headsign minutes to StopTimetableDeparture[].
-    return data.departures.map((minutes) => ({
-      minutes,
-      route: data.route,
-      headsign: data.headsign,
-    }));
+    return data.timetableEntries;
   }, [data]);
 
-  const filteredDepartures = useMemo(() => {
+  const filteredTimetableEntries = useMemo(() => {
     if (!data || data.type !== 'stop' || activeFilters.size === 0) {
-      return allDepartures;
+      return allTimetableEntries;
     }
-    return allDepartures.filter((d) => activeFilters.has(`${d.route.route_id}__${d.headsign}`));
-  }, [data, allDepartures, activeFilters]);
+    return allTimetableEntries.filter((d) =>
+      activeFilters.has(`${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`),
+    );
+  }, [data, allTimetableEntries, activeFilters]);
 
   if (!data) {
     return (
@@ -129,7 +124,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
     >
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[80dvh] max-w-120 flex-col gap-0 overflow-hidden p-0"
+        className="flex max-h-[80dvh] max-w-[90dvw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[90dvw]"
       >
         <DialogHeader className="border-border shrink-0 border-b p-4 text-left">
           <DialogTitle className="flex flex-col gap-1">
@@ -137,11 +132,20 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
           </DialogTitle>
           <DialogDescription className="sr-only">
             {data.type === 'route-headsign'
-              ? `${data.stop.stop_name} ${data.route.route_short_name || data.route.route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${data.departures.length}本`
-              : `${data.stop.stop_name}の全路線時刻表 ${data.departures.length}本`}
+              ? `${data.stop.stop_name} ${data.route.route_short_name || data.route.route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
+              : `${data.stop.stop_name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
           </DialogDescription>
 
-          {info.isDetailedEnabled && <TimetableMetadata data={data} infoLevel={infoLevel} />}
+          {info.isDetailedEnabled && (
+            <TimetableMetadata timetableEntries={filteredTimetableEntries} infoLevel={infoLevel} />
+          )}
+          {info.isVerboseEnabled && (
+            <VerboseMetadata
+              timetableEntries={filteredTimetableEntries}
+              omitted={data.omitted}
+              isBoardableOnServiceDay={data.isBoardableOnServiceDay}
+            />
+          )}
 
           <TimetableDateLabel serviceDate={data.serviceDate} time={time} />
           {data.type === 'stop' && (
@@ -153,7 +157,10 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
             />
           )}
           {((data.type === 'route-headsign' && data.headsign === '') ||
-            (data.type === 'stop' && hasUnknownDestination(data.departures))) && (
+            (data.type === 'stop' &&
+              hasUnknownDestination(
+                data.timetableEntries.map((d) => ({ headsign: d.routeDirection.headsign })),
+              ))) && (
             <p className="m-0 text-center text-[11px] text-amber-600 dark:text-amber-400">
               行先が表示されない路線があります
             </p>
@@ -161,15 +168,18 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
         </DialogHeader>
         <div className="overflow-y-auto px-4 pt-3 pb-4">
           <TimetableGrid
-            departures={filteredDepartures}
+            timetableEntries={filteredTimetableEntries}
             showHeadsign={
               info.isVerboseEnabled ||
-              (info.isNormalEnabled &&
-                new Set(filteredDepartures.map((d) => `${d.route.route_id}__${d.headsign}`)).size >
-                  1)
+              new Set(
+                filteredTimetableEntries.map(
+                  (d) => `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`,
+                ),
+              ).size > 1
             }
             currentHour={currentHour}
             infoLevel={infoLevel}
+            omitted={data.omitted}
           />
         </div>
       </DialogContent>
@@ -209,33 +219,40 @@ function TimetableDateLabel({ serviceDate, time }: { serviceDate: Date; time: Da
   );
 }
 
-/** Verbose metadata summary shown above the timetable grid. */
-function TimetableMetadata({ data, infoLevel }: { data: TimetableData; infoLevel: InfoLevel }) {
-  // Compute departure count and operating hours
-  const allMinutes =
-    data.type === 'route-headsign' ? data.departures : data.departures.map((d) => d.minutes);
+/** Metadata summary shown above the timetable grid. */
+function TimetableMetadata({
+  timetableEntries: timetableEntries,
+  infoLevel,
+}: {
+  timetableEntries: TimetableEntry[];
+  infoLevel: InfoLevel;
+}) {
+  // Compute departure count and operating hours.
+  // Use the display time (arrival for terminal, departure otherwise) for statistics.
+  const allMinutes = timetableEntries.map((d) => getDisplayMinutes(d));
   const count = allMinutes.length;
   const firstTime = count > 0 ? formatMinutes(allMinutes[0]) : null;
   const lastTime = count > 0 ? formatMinutes(allMinutes[count - 1]) : null;
   const avgInterval = computeAverageInterval(allMinutes);
 
-  // Route+headsign breakdown for stop timetable
+  // Route+headsign breakdown
   const routeBreakdown = useMemo(() => {
-    if (data.type !== 'stop') {
-      return [];
-    }
     const counts = new Map<string, { route: Route; headsign: string; count: number }>();
-    for (const dep of data.departures) {
-      const key = `${dep.route.route_id}__${dep.headsign}`;
+    for (const dep of timetableEntries) {
+      const key = `${dep.routeDirection.route.route_id}__${dep.routeDirection.headsign}`;
       const entry = counts.get(key);
       if (entry) {
         entry.count++;
       } else {
-        counts.set(key, { route: dep.route, headsign: dep.headsign, count: 1 });
+        counts.set(key, {
+          route: dep.routeDirection.route,
+          headsign: dep.routeDirection.headsign,
+          count: 1,
+        });
       }
     }
     return Array.from(counts.values());
-  }, [data]);
+  }, [timetableEntries]);
 
   return (
     <div className="border-border text-muted-foreground mb-3 space-y-0.5 rounded border p-2 text-[11px]">
@@ -269,6 +286,68 @@ function TimetableMetadata({ data, infoLevel }: { data: TimetableData; infoLevel
   );
 }
 
+/** Verbose-only metadata dump: boarding stats, direction, pattern breakdown. */
+function VerboseMetadata({
+  timetableEntries,
+  omitted,
+  isBoardableOnServiceDay,
+}: {
+  timetableEntries: TimetableEntry[];
+  omitted: TimetableOmitted;
+  isBoardableOnServiceDay: boolean;
+}) {
+  // Domain-consistent counts using isDropOffOnly (pickupType === 1 OR isTerminal).
+  // pickupType 2/3 (phone/coordination required) are considered boardable.
+  const dropOff = timetableEntries.filter((e) => isDropOffOnly(e)).length;
+  const boardable = timetableEntries.length - dropOff;
+  const originCount = timetableEntries.filter((e) => e.patternPosition.isOrigin).length;
+  const terminalCount = timetableEntries.filter((e) => e.patternPosition.isTerminal).length;
+
+  // Direction breakdown
+  const dirCounts = new Map<string, number>();
+  for (const e of timetableEntries) {
+    const dir =
+      e.routeDirection.direction !== undefined ? `dir=${e.routeDirection.direction}` : 'dir=N/A';
+    dirCounts.set(dir, (dirCounts.get(dir) ?? 0) + 1);
+  }
+
+  // Pattern breakdown (stopIndex/totalStops combinations)
+  const patternCounts = new Map<string, number>();
+  for (const e of timetableEntries) {
+    const key = `[${e.patternPosition.stopIndex + 1}/${e.patternPosition.totalStops}]`;
+    patternCounts.set(key, (patternCounts.get(key) ?? 0) + 1);
+  }
+
+  // Dwell time stats
+  const dwellCount = timetableEntries.filter(
+    (e) => e.schedule.arrivalMinutes !== e.schedule.departureMinutes,
+  ).length;
+
+  return (
+    <div className="border-border text-muted-foreground mb-1 space-y-0.5 rounded border p-2 text-[11px]">
+      <p>
+        boardable={boardable} dropOffOnly={dropOff} origin={originCount} terminal=
+        {terminalCount}
+      </p>
+      <p>
+        {Array.from(dirCounts.entries())
+          .map(([dir, n]) => `${dir}:${n}`)
+          .join(' ')}
+      </p>
+      <p>
+        {Array.from(patternCounts.entries())
+          .map(([pat, n]) => `${pat}:${n}`)
+          .join(' ')}
+      </p>
+      {dwellCount > 0 && <p>dwell={dwellCount}</p>}
+      <p>
+        isBoardableOnServiceDay={String(isBoardableOnServiceDay)} omitted.terminal=
+        {omitted.terminal}
+      </p>
+    </div>
+  );
+}
+
 /** Ref callback that scrolls the current hour row into view on mount. */
 function useCurrentHourScroll() {
   return useCallback((el: HTMLDivElement | null) => {
@@ -281,19 +360,32 @@ function useCurrentHourScroll() {
   }, []);
 }
 
-/** Hour-grouped timetable grid. Shows headsign badge per departure when enabled. */
+/**
+ * Get the display time for a timetable entry.
+ * Terminal stops show arrival time; all others show departure time.
+ */
+function getDisplayMinutes(entry: TimetableEntry): number {
+  return entry.patternPosition.isTerminal
+    ? entry.schedule.arrivalMinutes
+    : entry.schedule.departureMinutes;
+}
+
+/** Hour-grouped timetable grid. Shows headsign badge per entry when enabled. */
 function TimetableGrid({
-  departures,
+  timetableEntries,
   showHeadsign,
   currentHour,
   infoLevel,
+  omitted,
 }: {
-  departures: StopTimetableDeparture[];
+  timetableEntries: TimetableEntry[];
   showHeadsign: boolean;
   currentHour: number;
   infoLevel: InfoLevel;
+  omitted: TimetableOmitted;
 }) {
   const scrollRef = useCurrentHourScroll();
+  const info = useInfoLevel(infoLevel);
 
   // Compute minimum display length per headsign to avoid collision.
   // Skip when headsign badges are not rendered.
@@ -301,69 +393,209 @@ function TimetableGrid({
     () =>
       showHeadsign
         ? resolveMinPrefixLengths(
-            departures.map((d) => d.headsign),
+            timetableEntries.map((d) => d.routeDirection.headsign),
             2,
           )
         : new Map<string, number>(),
-    [departures, showHeadsign],
+    [timetableEntries, showHeadsign],
   );
 
-  // Group by hour
-  const hourGroups = new Map<number, StopTimetableDeparture[]>();
-  for (const dep of departures) {
-    const hour = Math.floor(dep.minutes / 60);
+  // Group by hour using the display time (arrival for terminal, departure otherwise).
+  const hourGroups = new Map<number, TimetableEntry[]>();
+  for (const entry of timetableEntries) {
+    const hour = Math.floor(getDisplayMinutes(entry) / 60);
     const list = hourGroups.get(hour);
     if (list) {
-      list.push(dep);
+      list.push(entry);
     } else {
-      hourGroups.set(hour, [dep]);
+      hourGroups.set(hour, [entry]);
     }
   }
 
   if (hourGroups.size === 0) {
-    return <p className="text-muted-foreground p-4 text-center">この日の運行はありません</p>;
+    return (
+      <p className="text-muted-foreground p-4 text-center">
+        {omitted.terminal > 0 ? '降車専用' : 'この日の運行はありません'}
+      </p>
+    );
   }
+
+  // Display flags — structured for per-level adjustment.
+  const isDisplayTerminal = info.isSimpleEnabled;
+  // const isDisplayOrigin = info.isNormalEnabled;
+  const isDisplayOrigin = info.isDetailedEnabled;
+  const isDisplayPickupUnavailable = info.isVerboseEnabled;
+  const isDisplayDropOffUnavailable = info.isVerboseEnabled;
 
   return (
     <>
-      {Array.from(hourGroups.entries()).map(([hour, deps]) => (
+      {Array.from(hourGroups.entries()).map(([hour, entries]) => (
         <div
           key={hour}
           ref={hour === currentHour ? scrollRef : undefined}
-          className={`border-border flex items-baseline gap-2 border-b py-1.5 last:border-b-0 ${hour === currentHour ? 'bg-accent rounded' : ''}`}
+          className={`border-border border-b py-1.5 last:border-b-0 ${hour === currentHour ? 'bg-accent rounded' : ''}`}
         >
-          <span className="text-foreground w-10 shrink-0 text-right text-sm font-bold">
-            {hour}時
-          </span>
-          <span className="flex flex-wrap gap-1.5">
-            {deps.map((dep, i) => (
-              <span
-                key={`${dep.route.route_id}__${dep.headsign}__${dep.minutes}__${i}`}
-                className="inline-flex items-baseline gap-0.5"
-              >
-                <span className="text-muted-foreground text-sm tabular-nums">
-                  {String(dep.minutes % 60).padStart(2, '0')}
-                </span>
-                {showHeadsign && (
-                  <HeadsignBadge
-                    headsign={dep.headsign}
-                    route={dep.route}
-                    infoLevel={infoLevel}
-                    maxLength={headsignLengths.get(dep.headsign)}
-                    size="xs"
-                  />
-                )}
-              </span>
-            ))}
-          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-foreground w-10 shrink-0 text-right text-sm font-bold">
+              {hour}時
+            </span>
+            <span className="flex flex-wrap gap-1.5">
+              {entries.map((entry, i) => {
+                const minutes = getDisplayMinutes(entry);
+                return (
+                  <span
+                    key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${minutes}__${i}`}
+                    className="inline-flex items-baseline gap-0.5"
+                  >
+                    <span className="text-muted-foreground text-sm tabular-nums">
+                      {String(minutes % 60).padStart(2, '0')}
+                      {entry.patternPosition.isTerminal && (
+                        <span className="text-[9px] opacity-70">着</span>
+                      )}
+                    </span>
+                    {showHeadsign && (
+                      <HeadsignBadge
+                        headsign={entry.routeDirection.headsign}
+                        route={entry.routeDirection.route}
+                        infoLevel={infoLevel}
+                        maxLength={headsignLengths.get(entry.routeDirection.headsign)}
+                        size="xs"
+                      />
+                    )}
+                    <EntryLabels
+                      entry={entry}
+                      isDisplayTerminal={isDisplayTerminal}
+                      isDisplayOrigin={isDisplayOrigin}
+                      isDisplayPickupUnavailable={isDisplayPickupUnavailable}
+                      isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
+                    />
+                  </span>
+                );
+              })}
+            </span>
+          </div>
+          {info.isVerboseEnabled && (
+            <div className="mt-0.5 flex flex-col gap-0.5">
+              {entries.map((entry, i) => (
+                <VerboseEntryRow key={i} entry={entry} />
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </>
   );
 }
 
+/** Compact labels for terminal, origin, and boarding availability. */
+function EntryLabels({
+  entry,
+  isDisplayTerminal,
+  isDisplayOrigin,
+  isDisplayPickupUnavailable,
+  isDisplayDropOffUnavailable,
+}: {
+  entry: TimetableEntry;
+  isDisplayTerminal: boolean;
+  isDisplayOrigin: boolean;
+  isDisplayPickupUnavailable: boolean;
+  isDisplayDropOffUnavailable: boolean;
+}) {
+  const { boarding, patternPosition } = entry;
+
+  const showTerminal = isDisplayTerminal && patternPosition.isTerminal;
+  const showOrigin = isDisplayOrigin && patternPosition.isOrigin;
+  const showPickupUnavailable = isDisplayPickupUnavailable && boarding.pickupType === 1;
+  const showDropOffUnavailable = isDisplayDropOffUnavailable && boarding.dropOffType === 1;
+
+  if (!showTerminal && !showOrigin && !showPickupUnavailable && !showDropOffUnavailable) {
+    return null;
+  }
+
+  return (
+    <span className="inline-flex items-baseline gap-0.5">
+      {showTerminal && (
+        <span className="rounded bg-gray-500 px-0.5 text-[9px] leading-tight text-white">終点</span>
+      )}
+      {showOrigin && (
+        <span className="rounded bg-blue-500 px-0.5 text-[9px] leading-tight text-white">始発</span>
+      )}
+      {showPickupUnavailable && (
+        <span className="rounded bg-red-500 px-0.5 text-[9px] leading-tight text-white">乗×</span>
+      )}
+      {showDropOffUnavailable && (
+        <span className="rounded bg-red-500 px-0.5 text-[9px] leading-tight text-white">降×</span>
+      )}
+    </span>
+  );
+}
+
+/** Single row in verbose timetable: shows all TimetableEntry fields. */
+function VerboseEntryRow({ entry }: { entry: TimetableEntry }) {
+  const { schedule, routeDirection, boarding, patternPosition, insights } = entry;
+  const { route, headsign, direction } = routeDirection;
+
+  const arr = String(schedule.arrivalMinutes % 60).padStart(2, '0');
+  const dep = String(schedule.departureMinutes % 60).padStart(2, '0');
+
+  return (
+    <div className="text-muted-foreground border-border flex flex-wrap items-baseline gap-x-1.5 gap-y-0 rounded border p-1 text-[11px]">
+      {/* Arrival / Departure */}
+      <span className="tabular-nums">
+        <span className="opacity-70">着</span>
+        {arr}
+        <span className="opacity-70">発</span>
+        {dep}
+      </span>
+
+      {/* Route + headsign (verbose mode includes route_id in badge) */}
+      <span>
+        <HeadsignBadge headsign={headsign} route={route} infoLevel="verbose" size="xs" />
+      </span>
+
+      {/* Direction */}
+      {direction !== undefined && <span className="opacity-60">dir={direction}</span>}
+
+      {/* Pattern position */}
+      <span className="opacity-60">
+        [{patternPosition.stopIndex + 1}/{patternPosition.totalStops}]
+      </span>
+
+      {/* Terminal / Origin labels */}
+      {patternPosition.isTerminal && (
+        <span className="rounded bg-gray-600 px-1 text-[10px] text-white">終点</span>
+      )}
+      {patternPosition.isOrigin && (
+        <span className="rounded bg-blue-600 px-1 text-[10px] text-white">始発</span>
+      )}
+
+      {/* Boarding availability */}
+      {boarding.pickupType === 1 && (
+        <span className="rounded bg-red-600 px-1 text-[10px] text-white">乗車不可</span>
+      )}
+      {boarding.pickupType === 2 && (
+        <span className="rounded bg-amber-600 px-1 text-[10px] text-white">要電話</span>
+      )}
+      {boarding.pickupType === 3 && (
+        <span className="rounded bg-amber-600 px-1 text-[10px] text-white">要調整</span>
+      )}
+      {boarding.dropOffType === 1 && (
+        <span className="rounded bg-red-600 px-1 text-[10px] text-white">降車不可</span>
+      )}
+
+      {/* Remaining minutes to terminal */}
+      {insights?.remainingMinutes !== undefined && (
+        <span className="opacity-60">残{insights.remainingMinutes}分</span>
+      )}
+    </div>
+  );
+}
+
 function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: InfoLevel }) {
   const stopNames = getStopDisplayNames(data.stop, infoLevel);
+  const isDropOffOnly =
+    !data.isBoardableOnServiceDay &&
+    (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
 
   // Collect route types for emoji display.
   const routeTypes = data.type === 'route-headsign' ? [data.route.route_type] : data.routeTypes;
@@ -373,7 +605,11 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
     data.type === 'route-headsign'
       ? [data.route]
       : Array.from(
-          new Map(data.departures.map((d) => [d.route.route_id, d.route] as const)).values(),
+          new Map(
+            data.timetableEntries.map(
+              (d) => [d.routeDirection.route.route_id, d.routeDirection.route] as const,
+            ),
+          ).values(),
         );
 
   // For route-headsign, show only the agency of that route.
@@ -396,6 +632,11 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
         <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
           {stopNames.name}
         </span>
+        {isDropOffOnly && (
+          <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
+            降車専用
+          </span>
+        )}
         {displayAgencies.length > 0 &&
           displayAgencies.map((a) => (
             <AgencyBadge key={a.agency_id} agency={a} infoLevel={infoLevel} size="xs" />
@@ -426,9 +667,9 @@ function StopTimetableFilter({
 }) {
   const routeHeadsigns = Array.from(
     new Map(
-      data.departures.map((d) => [
-        `${d.route.route_id}__${d.headsign}`,
-        { route: d.route, headsign: d.headsign },
+      data.timetableEntries.map((d) => [
+        `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`,
+        { route: d.routeDirection.route, headsign: d.routeDirection.headsign },
       ]),
     ).values(),
   );

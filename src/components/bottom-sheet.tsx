@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
-import type { DepartureGroup, StopWithContext } from '../types/app/transit-composed';
+import type { StopWithContext } from '../types/app/transit-composed';
 import { collectPresentAgencies, filterStopsByAgency } from '../domain/transit/agency-filter';
 import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-views';
 import { routeTypeColor } from '../domain/transit/route-type-color';
@@ -28,7 +28,7 @@ interface BottomSheetProps {
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
   onStopSelected: (stopId: string) => void;
-  onShowTimetable?: (stopId: string, group: DepartureGroup) => void;
+  onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
 }
 
@@ -99,7 +99,14 @@ export function BottomSheet({
   const filteredDepartures = useMemo(() => {
     let result = nearbyDepartures;
     if (activeOnly) {
-      result = result.filter((swc) => swc.groups.length > 0);
+      result = result.filter((swc) => swc.departures.length > 0);
+    }
+    // Drop-off-only stop filtering is intentionally disabled (isSimpleEnabled is always true).
+    // StopMarkers always show all stops on the map, so hiding them from NearbyStop
+    // would be inconsistent. Drop-off-only stops display a "降車専用" badge instead.
+    // See Issue #64 for future handling of drop-off-only + end-of-service states.
+    if (!info.isSimpleEnabled) {
+      result = result.filter((swc) => swc.isBoardableOnServiceDay || swc.departures.length === 0);
     }
     if (hiddenRouteTypes.size > 0) {
       result = result.filter((swc) => !swc.routeTypes.every((rt) => hiddenRouteTypes.has(rt)));
@@ -108,10 +115,17 @@ export function BottomSheet({
       result = filterStopsByAgency(result, hiddenAgencyIds);
     }
     return result;
-  }, [nearbyDepartures, activeOnly, hiddenRouteTypes, hiddenAgencyIds, presentAgencies]);
+  }, [
+    nearbyDepartures,
+    activeOnly,
+    info.isSimpleEnabled,
+    hiddenRouteTypes,
+    hiddenAgencyIds,
+    presentAgencies,
+  ]);
 
   const activeCount = useMemo(
-    () => nearbyDepartures.filter((swc) => swc.groups.length > 0).length,
+    () => nearbyDepartures.filter((swc) => swc.departures.length > 0).length,
     [nearbyDepartures],
   );
 

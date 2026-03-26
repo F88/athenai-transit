@@ -24,6 +24,7 @@ const miyakeBus: GtfsSourceDefinition = {
         ja: { long: '三宅村', short: '三宅村営バス' },
         en: { long: 'Miyake Village', short: 'Miyake Village Bus' },
       },
+      colors: [{ bg: '2E81E1', text: 'FFFFFF' }],
     },
     authentication: { required: false },
 

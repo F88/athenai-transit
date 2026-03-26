@@ -432,14 +432,27 @@ pipeline で .json.gz を生成
 - 地図オーバーレイ用ボタン (MapOverlayButton, MapToggleButton) は shadcn Button を使わない (配置・スタイルが特殊)
 - shadcn Dialog の z-index はデフォルト `z-50` から `z-2000` に変更済み (上記 z-index 階層を参照)
 
+## 日時指定 (`?time=`)
+
+`?time=` パラメータで初期日時を指定できる。デモ URL の共有や特定時刻の動作確認に使用。
+
+```text
+http://localhost:5173/?time=2026-03-25T20:55
+http://localhost:5173/?time=2026-03-25T20:55:00+09:00
+http://localhost:5173/?time=2026-03-25T20:55:00Z
+http://localhost:5173/?lat=35.68&lng=139.39&zm=16&time=2026-03-25T20:55
+```
+
+- RFC 3339 形式。秒、タイムゾーンは省略可 (省略時はローカル時間)
+- 指定するとカスタム時間モードになる (ヘッダーにピンアイコン表示)
+
 ## Repository 切り替え (`?repo=` mode)
 
 `?repo=` パラメータで使用する Repository 実装を切り替えられる。本番ビルドでも使用可能。
 
 ```text
-http://localhost:5173/            → v1 (default)
-http://localhost:5173/?repo=v2    → AthenaiRepositoryV2 (v2 bundle data)
-http://localhost:5173/?repo=mock  → MockRepository (fictional in-memory data)
+http://localhost:5173/              → v2 (default)
+http://localhost:5173/?repo=mock    → MockRepository (fictional in-memory data)
 ```
 
 ### MockRepository (`?repo=mock`)
@@ -468,7 +481,7 @@ http://localhost:5173/?repo=mock  → MockRepository (fictional in-memory data)
 
 ## Diagnostics (`?diag=` mode)
 
-`?diag=<name>` パラメータで診断ツールを実行できる。v1 Repository 生成後、React 描画前に実行され、結果はブラウザコンソールに出力される。diagnostics モジュールは dynamic import のため、通常アクセス時にはロードされない。
+`?diag=<name>` パラメータで診断ツールを実行できる。Repository 生成後、React 描画前に実行され、結果はブラウザコンソールに出力される。diagnostics モジュールは dynamic import のため、通常アクセス時にはロードされない。
 
 ### 起動方法 Diagnostics mode
 
@@ -499,11 +512,10 @@ http://localhost:5173/?diag=v2-load
 `?repo=` で選択した Repository の API を 12 の HOME_LOCATIONS で呼び出し、所要時間を計測。
 
 ```text
-?diag=repo-bench           → v1 repo のベンチマーク
-?diag=repo-bench&repo=v2   → v2 repo のベンチマーク
+?diag=repo-bench           → repo のベンチマーク
 ```
 
-計測対象: getAllStops, getRouteShapes, getAllSourceMeta, getStopsInBounds, getStopsNearby, getUpcomingDepartures, getRouteTypesForStop, getFullDayDeparturesForStop
+計測対象: getAllStops, getRouteShapes, getAllSourceMeta, getStopsInBounds, getStopsNearby, getUpcomingTimetableEntries, getRouteTypesForStop, getFullDayTimetableEntries
 
 ### diagnostics の追加
 

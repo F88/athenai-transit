@@ -15,6 +15,7 @@ const TEST_PROVIDER: Provider = {
     ja: { long: 'テスト交通', short: 'テスト' },
     en: { long: 'Test Transit', short: 'Test' },
   },
+  colors: [{ bg: '000000', text: 'FFFFFF' }],
 };
 
 function makeRailway(

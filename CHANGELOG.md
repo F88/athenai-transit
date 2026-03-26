@@ -11,10 +11,45 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
-- CI に v2 パイプラインのビルド・検証ステップを追加 (`update-transit-data.yml`):
-    - v2 data, shapes, insights, global-insights のビルド。
-    - v2 validate (Job Summary 出力)。
-    - `public/data-v2/` を git add/commit 対象に追加。
+- `ContextualTimetableEntry` 型を導入 (Issue #66):
+    - `WithServiceDate`: サービス日の文脈を持つ独立 interface (`readonly serviceDate`)。
+    - `ContextualTimetableEntry`: `TimetableEntry` + `WithServiceDate` の合成型。
+    - `UpcomingTimetableResult`: `getUpcomingTimetableEntries` 専用の Result 型。
+    - overnight 便 (前日サービスの深夜便) の日時表示が1日ずれる問題を修正。
+    - repo が `serviceDate` を付与し、Date ベースでソート (時系列順保証)。
+    - UI は `entry.serviceDate` で `minutesToDate` を呼出 (serviceDay props 廃止)。
+    - verbose 出力に `sd=` (サービス日)、repo ログに `serviceDay=`/`prev=` を追加。
+    - `minutesToDate` テスト拡充 (境界値、overnight、月跨ぎ)。
+- 時刻表モーダルを `TimetableEntry` ベースに移行:
+    - 終点では到着時刻 (`arrivalMinutes`) を `nn着` と表示。
+    - 終点/始発/乗車不可/降車不可ラベルを InfoLevel に応じて表示。
+    - verbose: 全データダンプ (`VerboseEntryRow`, `VerboseMetadata`)。
+    - 降車専用バス停の検出と表示 (`canBoard`, `omitted.terminal`)。
+    - 路線フィルタと `TimetableMetadata` の連動。
+- simple/normal で終点到着便を非表示 (乗車可能な便のみ表示)。
+- 無効クエリパラメータの自動クリーンアップ (`cleanupInvalidQueryParams`)。
+- MockRepository: 降車専用バス停、dwell time 路線、停車順序データ追加。
+- `InfoLevelFlags.isSimpleEnabled` 追加。
+
+### Removed
+
+- v1 Repository および関連コード (v2 完全移行):
+    - `AthenaiRepository`, v1 DataSource, `flatten-departures`。
+    - `DepartureGroup`, `FlatDeparture`, `FullDayStopDeparture` 型。
+    - `getFullDayDepartures` (旧 `number[]` API)。
+    - `StopTimetableDeparture` 型 (`TimetableEntry` に統合)。
+    - `RepoParam` から `'v1'` 削除。
+
+### Fixed
+
+- overnight 便 (前日サービスの 24:00+ 出発) の相対時刻・絶対時刻が1日ずれる問題 (#66):
+    - NearbyStop、マーカー tooltip の両方で発生。
+    - 影響: 伊予鉄バス (iyt2) 等の 27:00+ の便、03:00〜09:03 の時間帯。
+- 多路線バス停で時刻表ダイアログ幅が不足しフィルタボタンが見切れる問題。
+
+### Changed
+
+- 時刻表ダイアログ幅: 固定 480px → `90dvw`。
 
 ## [2026.03.23]
 

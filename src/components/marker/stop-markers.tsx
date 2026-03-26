@@ -2,7 +2,7 @@ import L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { EffectiveRenderMode } from '../../utils/render-mode';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
-import type { DepartureGroup, StopWithContext } from '../../types/app/transit-composed';
+import type { ContextualTimetableEntry, StopWithContext } from '../../types/app/transit-composed';
 import { StopMarkersDom } from './stop-markers-dom';
 import { StopMarkersCanvas } from './stop-markers-canvas';
 import { createLogger } from '../../utils/logger';
@@ -23,7 +23,7 @@ interface StopMarkersProps {
   /** Called when a stop marker is clicked. */
   onStopSelected: (stop: Stop) => void;
   /** Preloaded departure groups keyed by stop ID. Omit for far stops. */
-  nearbyDepartures?: Map<string, DepartureGroup[]>;
+  nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
   /** Current time for relative departure display ("in X min"). Omit for far stops. */
   time?: Date;
   /** Fetches departures on hover/click. Omit for far stops (no on-demand fetch). */

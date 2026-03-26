@@ -29,7 +29,7 @@ describe('useNearbyDepartures', () => {
 
     expect(result.current.nearbyDepartures).toHaveLength(2);
     // eslint-disable-next-line @typescript-eslint/unbound-method
-    expect(repo.getUpcomingDepartures).toHaveBeenCalledTimes(2);
+    expect(repo.getUpcomingTimetableEntries).toHaveBeenCalledTimes(2);
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(repo.getRouteTypesForStop).toHaveBeenCalledTimes(2);
   });
@@ -41,7 +41,7 @@ describe('useNearbyDepartures', () => {
     });
 
     const repo = makeRepo({
-      getUpcomingDepartures: vi.fn().mockImplementation(() =>
+      getUpcomingTimetableEntries: vi.fn().mockImplementation(() =>
         pending.then(() => ({
           success: true,
           data: [],
@@ -107,9 +107,9 @@ describe('useNearbyDepartures', () => {
     expect(result.current.nearbyDepartures[0].routeTypes).toEqual([3]);
   });
 
-  it('falls back to empty groups when getUpcomingDepartures fails', async () => {
+  it('falls back to empty groups when getUpcomingTimetableEntries fails', async () => {
     const repo = makeRepo({
-      getUpcomingDepartures: vi.fn().mockResolvedValue({
+      getUpcomingTimetableEntries: vi.fn().mockResolvedValue({
         success: false,
         error: 'No data',
       }),
@@ -123,10 +123,10 @@ describe('useNearbyDepartures', () => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyDepartures[0].groups).toEqual([]);
+    expect(result.current.nearbyDepartures[0].departures).toEqual([]);
   });
 
-  it('passes correct dateTime to repo.getUpcomingDepartures', async () => {
+  it('passes correct dateTime to repo.getUpcomingTimetableEntries', async () => {
     const repo = makeRepo();
     const stops = [makeStopMeta('A')];
     const specificTime = new Date('2025-03-01T09:00:00');
@@ -138,7 +138,7 @@ describe('useNearbyDepartures', () => {
     });
 
     // eslint-disable-next-line @typescript-eslint/unbound-method
-    expect(repo.getUpcomingDepartures).toHaveBeenCalledWith('A', specificTime);
+    expect(repo.getUpcomingTimetableEntries).toHaveBeenCalledWith('A', specificTime);
   });
 
   it('re-fetches when dateTime changes', async () => {
@@ -163,12 +163,12 @@ describe('useNearbyDepartures', () => {
     });
 
     // eslint-disable-next-line @typescript-eslint/unbound-method -- vitest mock assertion
-    expect(repo.getUpcomingDepartures).toHaveBeenCalledWith('A', time2);
+    expect(repo.getUpcomingTimetableEntries).toHaveBeenCalledWith('A', time2);
   });
 
   it('resets isNearbyLoading on promise rejection', async () => {
     const repo = makeRepo({
-      getUpcomingDepartures: vi.fn().mockRejectedValue(new Error('Network error')),
+      getUpcomingTimetableEntries: vi.fn().mockRejectedValue(new Error('Network error')),
     });
     const stops = [makeStopMeta('A')];
     const now = new Date();

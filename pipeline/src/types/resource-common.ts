@@ -135,8 +135,8 @@ export interface Provider {
   };
   /** Provider's website URL, if known. */
   url?: string;
-  /** Brand colors. [0]=primary, [1]=secondary, etc. */
-  colors?: { bg: string; text: string }[];
+  /** Brand colors. [0]=primary, [1]=secondary, etc. At least one required. */
+  colors: { bg: string; text: string }[];
 }
 
 /** License information. */

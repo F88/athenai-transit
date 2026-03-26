@@ -8,7 +8,7 @@
  *
  * These types are stable and rarely change — they reflect the
  * pipeline's output schema. For webapp-specific composed types
- * (e.g. StopWithMeta, DepartureGroup), see {@link transit-composed.ts}.
+ * (e.g. StopWithMeta, TimetableEntry), see {@link transit-composed.ts}.
  */
 
 /**
@@ -39,6 +39,25 @@ export interface Stop {
   stop_lon: number;
   location_type: number; // 0: stop/platform, 1: station
   agency_id: string;
+
+  // --- optional fields (omitted when source does not provide them) ---
+
+  /**
+   * GTFS wheelchair_boarding.
+   * 0 = no info, 1 = accessible, 2 = not accessible.
+   * For child stops (l=0), value 0 inherits from parent_station.
+   */
+  wheelchair_boarding?: 0 | 1 | 2;
+  /**
+   * GTFS parent_station — FK to a parent stop (location_type=1).
+   * Present on stops that belong to a station complex.
+   */
+  parent_station?: string;
+  /**
+   * GTFS platform_code — platform identifier within a station.
+   * e.g. "1", "A", "北口".
+   */
+  platform_code?: string;
 }
 
 /**

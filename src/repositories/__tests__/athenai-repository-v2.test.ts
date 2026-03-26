@@ -7,8 +7,11 @@ import {
   WEEKDAY,
   SATURDAY,
   WEEKDAY_OVERNIGHT,
+  AFTER_BOUNDARY,
+  AFTER_BOUNDARY_PAST,
   EXCEPTION_HOLIDAY,
 } from './fixtures/test-data-source-v2';
+import { minutesToDate } from '../../domain/transit/calendar-utils';
 
 /** Assert result is successful and return narrowed type for safe data access. */
 function assertSuccess<T>(result: {
@@ -108,6 +111,32 @@ describe('mergeSourcesV2', () => {
     const merged = mergeSourcesV2([fixture]);
     expect(merged.lookup).toBeDefined();
   });
+
+  it('converts v2 optional stop fields (wb, ps, pc)', () => {
+    const fixture = createFixtureV2();
+    const merged = mergeSourcesV2([fixture]);
+
+    // bus_01 has wb=1, ps='sta_parent', pc='1'
+    const bus01 = merged.stops.find((s) => s.stop_id === 'bus_01');
+    expect(bus01).toBeDefined();
+    expect(bus01!.wheelchair_boarding).toBe(1);
+    expect(bus01!.parent_station).toBe('sta_parent');
+    expect(bus01!.platform_code).toBe('1');
+
+    // bus_03 has wb=2, no ps/pc
+    const bus03 = merged.stops.find((s) => s.stop_id === 'bus_03');
+    expect(bus03).toBeDefined();
+    expect(bus03!.wheelchair_boarding).toBe(2);
+    expect(bus03!.parent_station).toBeUndefined();
+    expect(bus03!.platform_code).toBeUndefined();
+
+    // tdn_01 has no v2 optional fields
+    const tdn01 = merged.stops.find((s) => s.stop_id === 'tdn_01');
+    expect(tdn01).toBeDefined();
+    expect(tdn01!.wheelchair_boarding).toBeUndefined();
+    expect(tdn01!.parent_station).toBeUndefined();
+    expect(tdn01!.platform_code).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -181,18 +210,19 @@ describe('getStopsInBounds', () => {
 });
 
 // ---------------------------------------------------------------------------
-// getUpcomingDepartures
+// getUpcomingTimetableEntries
 // ---------------------------------------------------------------------------
 
-describe('getUpcomingDepartures', () => {
+describe('getUpcomingTimetableEntries', () => {
   it('returns departures on weekday', async () => {
     const fixture = createFixtureV2();
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
 
-    const result = await repository.getUpcomingDepartures('sub_01', WEEKDAY);
+    const result = await repository.getUpcomingTimetableEntries('sub_01', WEEKDAY);
     assertSuccess(result);
-    expect(result.data.length).toBe(2);
+    // tp_sub_n: 6 entries (600,660,720,1442,1470,1625) + tp_sub_m: 3 entries (605,665,725) = 9
+    expect(result.data.length).toBe(9);
   });
 
   it('returns no departures on Saturday for weekday-only route', async () => {
@@ -200,30 +230,29 @@ describe('getUpcomingDepartures', () => {
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
 
-    const result = await repository.getUpcomingDepartures('tdn_01', SATURDAY);
+    const result = await repository.getUpcomingTimetableEntries('tdn_01', SATURDAY);
     assertSuccess(result);
     expect(result.data).toHaveLength(0);
   });
 
-  it('re-aggregates departures from multiple patterns with same route+headsign', async () => {
+  it('returns flat TimetableEntry[] from multiple patterns with same route+headsign', async () => {
     const fixture = createFixtureV2();
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
 
-    // bus_01 has tp_bus_i (deps(492)=[492,552,612,672,732]) and tp_bus_i2 ([494,554])
-    // Both are route_bus + Ikebukuro-eki, should be merged into one group.
+    // bus_01 has tp_bus_i (deps=[492,552,612,672,732]) and tp_bus_i2 ([494,554])
     // At WEEKDAY 10:00 (nowMinutes=600), upcoming departures are:
-    //   tp_bus_i: 612, 672, 732 (3 departures >= 600)
+    //   tp_bus_i: 612, 672, 732 (3 entries >= 600)
     //   tp_bus_i2: none (494, 554 are before 600)
-    const result = await repository.getUpcomingDepartures('bus_01', WEEKDAY);
+    const result = await repository.getUpcomingTimetableEntries('bus_01', WEEKDAY);
     assertSuccess(result);
 
-    const ikebukuroGroups = result.data.filter(
-      (g) => g.route.route_id === 'route_bus' && g.headsign === 'Ikebukuro-eki',
+    const ikebukuroEntries = result.data.filter(
+      (e) =>
+        e.routeDirection.route.route_id === 'route_bus' &&
+        e.routeDirection.headsign === 'Ikebukuro-eki',
     );
-    // Should be 1 merged group, not 2 separate groups
-    expect(ikebukuroGroups).toHaveLength(1);
-    expect(ikebukuroGroups[0].departures.length).toBe(3);
+    expect(ikebukuroEntries).toHaveLength(3);
   });
 
   it('returns error for unknown stop', async () => {
@@ -231,7 +260,7 @@ describe('getUpcomingDepartures', () => {
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
 
-    const result = await repository.getUpcomingDepartures('nonexistent', WEEKDAY);
+    const result = await repository.getUpcomingTimetableEntries('nonexistent', WEEKDAY);
     expect(result.success).toBe(false);
   });
 
@@ -240,39 +269,142 @@ describe('getUpcomingDepartures', () => {
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
 
-    const result = await repository.getUpcomingDepartures('sub_01', EXCEPTION_HOLIDAY);
+    const result = await repository.getUpcomingTimetableEntries('sub_01', EXCEPTION_HOLIDAY);
     assertSuccess(result);
-    expect(result.data.length).toBe(2);
+    // With flat TimetableEntry[], each departure is a separate entry.
+    // Previously 2 groups (route+headsign aggregated), now 3 individual entries.
+    expect(result.data.length).toBe(3);
   });
 
-  it('handles overnight departures', async () => {
+  // --- previous service day's overnight entries ---
+
+  describe('previous service day overnight entries', () => {
+    it('includes overnight entries in data with correct serviceDate', async () => {
+      const fixture = createFixtureV2();
+      const ds = new TestDataSourceV2({ test: fixture });
+      const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+      // WEEKDAY_OVERNIGHT = Thu 01:30 → service day = Wed (Mar 11)
+      // sub_01 has overnight entries 1442, 1470, 1625 on svc_weekday
+      const result = await repository.getUpcomingTimetableEntries('sub_01', WEEKDAY_OVERNIGHT);
+      assertSuccess(result);
+      expect(result.data.length).toBeGreaterThan(0);
+
+      // All entries should have a serviceDate
+      for (const entry of result.data) {
+        expect(entry.serviceDate).toBeInstanceOf(Date);
+      }
+    });
+
+    it('meta.totalEntries includes overnight entries from previous service day', async () => {
+      const fixture = createFixtureV2();
+      const ds = new TestDataSourceV2({ test: fixture });
+      const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+      // At WEEKDAY_OVERNIGHT (Thu 01:30, service day = Wed),
+      // today (Wed) entries + yesterday (Tue) overnight entries should both be in totalEntries
+      const result = await repository.getUpcomingTimetableEntries('sub_01', WEEKDAY_OVERNIGHT);
+      assertSuccess(result);
+      // totalEntries should be >= data.length (meta counts full day including overnight)
+      expect(result.meta.totalEntries).toBeGreaterThanOrEqual(result.data.length);
+    });
+
+    it('meta.isBoardableOnServiceDay reflects overnight boardable entries', async () => {
+      const fixture = createFixtureV2();
+      const ds = new TestDataSourceV2({ test: fixture });
+      const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+      // sub_01 has boardable entries (non-terminal, pickupType=0) in both today and overnight
+      const result = await repository.getUpcomingTimetableEntries('sub_01', WEEKDAY_OVERNIGHT);
+      assertSuccess(result);
+      expect(result.meta.isBoardableOnServiceDay).toBe(true);
+    });
+  });
+
+  // --- after service day boundary (03:00+) overnight edge cases ---
+
+  describe('after service day boundary (03:00+)', () => {
+    it('includes yesterday overnight entry that has not yet passed', async () => {
+      const fixture = createFixtureV2();
+      const ds = new TestDataSourceV2({ test: fixture });
+      const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+      // AFTER_BOUNDARY = Thu 03:03, service day = Thu
+      // Wednesday's svc_weekday has 1625 (27:05 = Thu 03:05), still 2 min away.
+      // Thursday also has 1625 from today's service.
+      // So we expect 2 entries at 1625 (yesterday overnight + today).
+      const result = await repository.getUpcomingTimetableEntries('sub_01', AFTER_BOUNDARY);
+      assertSuccess(result);
+      const entries1625 = result.data.filter((e) => e.schedule.departureMinutes === 1625);
+      expect(entries1625).toHaveLength(2); // yesterday overnight + today
+    });
+
+    it('excludes yesterday overnight entry that has already passed', async () => {
+      const fixture = createFixtureV2();
+      const ds = new TestDataSourceV2({ test: fixture });
+      const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+      // AFTER_BOUNDARY_PAST = Thu 03:06, service day = Thu
+      // Wednesday's 1625 (27:05 = Thu 03:05) has passed 1 min ago.
+      // However, Thursday also has 1625 in svc_weekday (today loop),
+      // so departureMinutes=1625 still appears from today's service.
+      // We can only verify that the count of 1625 entries is 1 (today only),
+      // not 2 (today + yesterday overnight).
+      const result = await repository.getUpcomingTimetableEntries('sub_01', AFTER_BOUNDARY_PAST);
+      assertSuccess(result);
+      const overnightEntries = result.data.filter((e) => e.schedule.departureMinutes === 1625);
+      // Only 1 (from today/Thursday), not 2 (today + yesterday/Wednesday)
+      expect(overnightEntries).toHaveLength(1);
+    });
+
+    it('overnight entry from yesterday has correct serviceDate for display', async () => {
+      const fixture = createFixtureV2();
+      const ds = new TestDataSourceV2({ test: fixture });
+      const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+      // AFTER_BOUNDARY = Thu 03:03 (Mar 12), service day = Thu
+      // Wednesday's 1625 (27:05 = Thu 03:05) is returned as upcoming.
+      const result = await repository.getUpcomingTimetableEntries('sub_01', AFTER_BOUNDARY);
+      assertSuccess(result);
+
+      // Find the overnight entries (1625 appears twice: today + yesterday)
+      const entries1625 = result.data.filter((e) => e.schedule.departureMinutes === 1625);
+      expect(entries1625.length).toBeGreaterThanOrEqual(2);
+
+      // Yesterday's overnight entry should have serviceDate = Wednesday (Mar 11)
+      // Today's entry should have serviceDate = Thursday (Mar 12)
+      const yesterdayEntry = entries1625.find((e) => e.serviceDate.getDate() === 11);
+      const todayEntry = entries1625.find((e) => e.serviceDate.getDate() === 12);
+      expect(yesterdayEntry).toBeDefined();
+      expect(todayEntry).toBeDefined();
+
+      // Using entry.serviceDate produces correct display date.
+      // Yesterday's overnight: minutesToDate(Wed Mar 11, 1625) = Thu 03:05 (Mar 12)
+      const displayDate = minutesToDate(yesterdayEntry!.serviceDate, 1625);
+      expect(displayDate.getDate()).toBe(12); // March 12 (Thursday)
+      expect(displayDate.getHours()).toBe(3);
+      expect(displayDate.getMinutes()).toBe(5);
+
+      // Today's entry: minutesToDate(Thu Mar 12, 1625) = Fri 03:05 (Mar 13)
+      // This is a different trip — it will depart tomorrow at 03:05.
+      const todayDisplayDate = minutesToDate(todayEntry!.serviceDate, 1625);
+      expect(todayDisplayDate.getDate()).toBe(13); // March 13 (Friday)
+    });
+  });
+
+  it('respects limit on total entries', async () => {
     const fixture = createFixtureV2();
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
 
-    const result = await repository.getUpcomingDepartures('sub_01', WEEKDAY_OVERNIGHT);
+    const result = await repository.getUpcomingTimetableEntries('sub_01', WEEKDAY, 2);
     assertSuccess(result);
-    expect(result.data.length).toBeGreaterThan(0);
+    expect(result.data.length).toBeLessThanOrEqual(2);
   });
 
-  it('respects limit per group', async () => {
-    const fixture = createFixtureV2();
-    const ds = new TestDataSourceV2({ test: fixture });
-    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
-
-    const result = await repository.getUpcomingDepartures('sub_01', WEEKDAY, 2);
-    assertSuccess(result);
-    for (const group of result.data) {
-      expect(group.departures.length).toBeLessThanOrEqual(2);
-    }
-  });
-
-  it('returns earliest departures across patterns when limit is applied', async () => {
+  it('returns earliest entries across patterns when limit is applied', async () => {
     const fixture = createFixtureV2();
     // Modify tp_bus_i2 to have a departure at 610 (earlier than tp_bus_i's 612)
-    // bus_01 timetable: tp_bus_i has deps(492)=[492,552,612,672,732]
-    //                   tp_bus_i2 has [494,554] (before now=600)
-    // Add 610 to tp_bus_i2 so it has an upcoming departure earlier than tp_bus_i's 612
     const tt = fixture.data.timetable.data['bus_01'];
     const bus_i2_group = tt.find((g) => g.tp === 'tp_bus_i2');
     if (bus_i2_group) {
@@ -283,20 +415,13 @@ describe('getUpcomingDepartures', () => {
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
 
-    // With limit=2, should get the 2 earliest: 610 (from tp_bus_i2) and 612 (from tp_bus_i)
-    const result = await repository.getUpcomingDepartures('bus_01', WEEKDAY, 2);
+    // With limit=2, should get the 2 earliest overall
+    const result = await repository.getUpcomingTimetableEntries('bus_01', WEEKDAY, 2);
     assertSuccess(result);
+    expect(result.data).toHaveLength(2);
 
-    const ikebukuroGroups = result.data.filter(
-      (g) => g.route.route_id === 'route_bus' && g.headsign === 'Ikebukuro-eki',
-    );
-    expect(ikebukuroGroups).toHaveLength(1);
-    expect(ikebukuroGroups[0].departures).toHaveLength(2);
-
-    // First departure should be 610 (10:10), from tp_bus_i2
-    const firstMinutes = ikebukuroGroups[0].departures[0].getHours() * 60
-      + ikebukuroGroups[0].departures[0].getMinutes();
-    expect(firstMinutes).toBe(610);
+    // First entry should be 610 (10:10), from tp_bus_i2
+    expect(result.data[0].schedule.departureMinutes).toBe(610);
   });
 });
 
@@ -326,62 +451,27 @@ describe('getRouteTypesForStop', () => {
 });
 
 // ---------------------------------------------------------------------------
-// getFullDayDepartures
+// getFullDayTimetableEntries
 // ---------------------------------------------------------------------------
 
-describe('getFullDayDepartures', () => {
-  it('returns departures for specific route+headsign', async () => {
-    const fixture = createFixtureV2();
-    const ds = new TestDataSourceV2({ test: fixture });
-    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
-
-    const result = await repository.getFullDayDepartures(
-      'sub_01',
-      'route_subway',
-      'Nishi-takashimadaira',
-      WEEKDAY,
-    );
-    assertSuccess(result);
-    expect(result.data).toHaveLength(8);
-    for (let i = 1; i < result.data.length; i++) {
-      expect(result.data[i]).toBeGreaterThanOrEqual(result.data[i - 1]);
-    }
-  });
-
-  it('aggregates across multiple patterns with same route+headsign', async () => {
-    const fixture = createFixtureV2();
-    const ds = new TestDataSourceV2({ test: fixture });
-    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
-
-    const result = await repository.getFullDayDepartures(
-      'bus_01',
-      'route_bus',
-      'Ikebukuro-eki',
-      WEEKDAY,
-    );
-    assertSuccess(result);
-    // tp_bus_i: 5 departures + tp_bus_i2: 2 departures = 7
-    expect(result.data).toHaveLength(7);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// getFullDayDeparturesForStop
-// ---------------------------------------------------------------------------
-
-describe('getFullDayDeparturesForStop', () => {
+describe('getFullDayTimetableEntries', () => {
   it('returns all departures for a stop', async () => {
     const fixture = createFixtureV2();
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
 
-    const result = await repository.getFullDayDeparturesForStop('bus_01', WEEKDAY);
+    const result = await repository.getFullDayTimetableEntries('bus_01', WEEKDAY);
     assertSuccess(result);
     // tp_bus_i(5) + tp_bus_o(5) + tp_ptr_e(5) + tp_bus_i2(2) = 17
     expect(result.data).toHaveLength(17);
     for (let i = 1; i < result.data.length; i++) {
-      expect(result.data[i].minutes).toBeGreaterThanOrEqual(result.data[i - 1].minutes);
+      expect(result.data[i].schedule.departureMinutes).toBeGreaterThanOrEqual(
+        result.data[i - 1].schedule.departureMinutes,
+      );
     }
+    // meta: all entries are boardable (non-terminal, pickupType=0)
+    expect(result.meta.isBoardableOnServiceDay).toBe(true);
+    expect(result.meta.totalEntries).toBe(17);
   });
 });
 

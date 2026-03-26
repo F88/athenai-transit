@@ -25,6 +25,7 @@ const iyotetsuBus: GtfsSourceDefinition = {
         en: { long: 'Iyotetsu Bus Co., Ltd.', short: 'Iyotetsu Bus' },
       },
       url: 'https://www.iyotetsu.co.jp/',
+      colors: [{ bg: 'EB6100', text: 'FFFFFF' }],
     },
     authentication: {
       required: true,

@@ -24,6 +24,7 @@ const oshimaBus: GtfsSourceDefinition = {
         ja: { long: '大島旅客自動車株式会社', short: '大島バス' },
         en: { long: 'Oshima Passenger Car Co., Ltd.', short: 'Oshima Bus' },
       },
+      colors: [{ bg: 'FDD23D', text: '0099FF' }],
     },
     authentication: {
       required: true,

@@ -1,7 +1,17 @@
 import { memo, useMemo } from 'react';
 import { Polyline } from 'react-leaflet';
+import type { LatLngExpression } from 'leaflet';
 import type { RouteShape } from '../../types/app/map';
 import { getRouteShapeStyle } from '../../domain/transit/route-selection';
+
+/**
+ * Extract [lat, lon] positions from shape points, stripping the
+ * optional third element (shape_dist_traveled) to prevent Leaflet
+ * from interpreting it as altitude.
+ */
+function toLatLng(points: [number, number, number?][]): LatLngExpression[] {
+  return points.map((p) => [p[0], p[1]] as [number, number]);
+}
 
 interface RouteShapePolylinesProps {
   /** Route shapes to render. */
@@ -48,10 +58,12 @@ export const RouteShapePolylines = memo(function RouteShapePolylines({
   onRouteShapeSelected,
 }: RouteShapePolylinesProps) {
   // Precompute styles and sort so dimmed routes render before highlighted.
+  // When freq is available, scale line weight by frequency.
   const styledShapes = useMemo(() => {
     const items = shapes.map((shape, idx) => ({
       shape,
-      style: getRouteShapeStyle(selectedRouteIds, shape.routeId),
+      positions: toLatLng(shape.points),
+      style: getRouteShapeStyle(selectedRouteIds, shape.routeId, shape.routeType, shape.freq),
       stableIndex: idx,
     }));
     if (selectedRouteIds === null) {
@@ -69,11 +81,11 @@ export const RouteShapePolylines = memo(function RouteShapePolylines({
       {/* Outlines — rendered into a separate pane with lower z-index */}
       {outline &&
         styledShapes.map(
-          ({ shape, style, stableIndex }) =>
+          ({ shape, positions, style, stableIndex }) =>
             style.outline && (
               <Polyline
                 key={`${shape.routeId}-${stableIndex}-outline`}
-                positions={shape.points}
+                positions={positions}
                 interactive={false}
                 pane={outlinePane}
                 pathOptions={{ color: '#000000', ...style.outline }}
@@ -82,10 +94,10 @@ export const RouteShapePolylines = memo(function RouteShapePolylines({
         )}
 
       {/* Fills */}
-      {styledShapes.map(({ shape, style, stableIndex }) => (
+      {styledShapes.map(({ shape, positions, style, stableIndex }) => (
         <Polyline
           key={`${shape.routeId}-${stableIndex}`}
-          positions={shape.points}
+          positions={positions}
           interactive={true}
           bubblingMouseEvents={false}
           pane={pane}

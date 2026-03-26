@@ -107,7 +107,7 @@ function ttGroup(tp: string, departures: Record<string, number[]>): TimetableGro
  * | tp_ptr_e | route_partner  | (empty headsign)         |
  *
  * Multi-pattern test: tp_bus_i2 has the same route+headsign as tp_bus_i
- * but a different stop sequence. This tests DepartureGroup re-aggregation.
+ * but a different stop sequence. This tests cross-pattern entry merging.
  */
 export function createFixtureV2(): SourceDataV2 {
   const data: DataBundle = {
@@ -130,13 +130,23 @@ export function createFixtureV2(): SourceDataV2 {
         { v: 2, i: 'lnr_01', n: 'Adachi-odai', a: 35.753, o: 139.748, l: 1 },
         { v: 2, i: 'lnr_02', n: 'Ogi-ohashi', a: 35.757, o: 139.752, l: 1 },
         // Bus stops
-        { v: 2, i: 'bus_01', n: 'Nishi-sugamo-eki', a: 35.746, o: 139.731, l: 0 },
+        {
+          v: 2,
+          i: 'bus_01',
+          n: 'Nishi-sugamo-eki',
+          a: 35.746,
+          o: 139.731,
+          l: 0,
+          wb: 1,
+          ps: 'sta_parent',
+          pc: '1',
+        },
         { v: 2, i: 'bus_02', n: 'Takinogawa-7chome', a: 35.749, o: 139.736, l: 0 },
-        { v: 2, i: 'bus_03', n: 'Oji-5chome', a: 35.753, o: 139.741, l: 0 },
+        { v: 2, i: 'bus_03', n: 'Oji-5chome', a: 35.753, o: 139.741, l: 0, wb: 2 },
         // No-timetable stop
         { v: 2, i: 'stop_closed', n: 'Closed Stop', a: 35.751, o: 139.735, l: 0 },
         // Station parent (location_type=1, v2-specific)
-        { v: 2, i: 'sta_parent', n: 'Test Station', a: 35.746, o: 139.731, l: 1 },
+        { v: 2, i: 'sta_parent', n: 'Test Station', a: 35.746, o: 139.731, l: 1, wb: 1 },
       ],
     },
 
@@ -448,6 +458,16 @@ export const WEEKDAY = new Date('2026-03-11T10:00:00');
 export const SATURDAY = new Date('2026-03-07T10:00:00');
 /** Thursday 01:30 — before service day boundary, service day = Wednesday (Mar 11). */
 export const WEEKDAY_OVERNIGHT = new Date('2026-03-12T01:30:00');
+/**
+ * Thursday 03:03 — just after service day boundary, service day = Thursday (Mar 12).
+ * Wednesday's overnight entry at 1625 (27:05 = Thu 03:05) is still upcoming (2 min away).
+ */
+export const AFTER_BOUNDARY = new Date('2026-03-12T03:03:00');
+/**
+ * Thursday 03:06 — after service day boundary, service day = Thursday (Mar 12).
+ * Wednesday's overnight entry at 1625 (27:05 = Thu 03:05) has already passed.
+ */
+export const AFTER_BOUNDARY_PAST = new Date('2026-03-12T03:06:00');
 /**
  * Wednesday Mar 4 at 10:00 — has calendar_dates exceptions:
  * svc_weekday removed, svc_holiday added.

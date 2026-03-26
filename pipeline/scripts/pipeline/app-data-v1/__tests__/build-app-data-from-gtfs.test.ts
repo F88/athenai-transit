@@ -26,6 +26,7 @@ const TEST_PROVIDER: Provider = {
     en: { long: 'Test Transit', short: 'Test' },
   },
   url: 'https://example.com',
+  colors: [{ bg: '000000', text: 'FFFFFF' }],
 };
 
 // ---------------------------------------------------------------------------
@@ -131,7 +132,7 @@ describe('extractAgencies', () => {
       l: 'ja',
       tz: '',
       fu: '',
-      cs: [],
+      cs: [{ b: '000000', t: 'FFFFFF' }],
     });
   });
 
@@ -149,14 +150,14 @@ describe('extractAgencies', () => {
     expect(result[0].cs).toEqual([{ b: '00377E', t: 'FFFFFF' }]);
   });
 
-  it('returns empty cs when no provider colors are configured', () => {
+  it('returns cs from provider colors', () => {
     db.exec(`
       INSERT INTO agency (agency_id, agency_name)
       VALUES ('A001', 'Test Agency');
     `);
 
     const result = extractAgencies(db, 'test', TEST_PROVIDER);
-    expect(result[0].cs).toEqual([]);
+    expect(result[0].cs).toEqual([{ b: '000000', t: 'FFFFFF' }]);
   });
 
   it('handles NULL agency_url and agency_lang as empty strings', () => {

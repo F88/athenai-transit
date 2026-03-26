@@ -5,10 +5,10 @@ import './index.css';
 import App from './app';
 import { TransitRepositoryProvider } from './contexts/transit-repository-provider';
 import { DataSourceManager } from './config/data-source-manager';
-import { AthenaiRepository } from './repositories/athenai-repository';
 import type { TransitRepository } from './repositories/transit-repository';
+import { AthenaiRepositoryV2 } from './repositories/athenai-repository-v2';
 import { createLogger } from './utils/logger';
-import { getDiagParam, getRepoParam } from './utils/query-params';
+import { cleanupInvalidQueryParams, getDiagParam, getRepoParam } from './utils/query-params';
 
 const logger = createLogger('App');
 
@@ -24,24 +24,20 @@ async function createRepository(): Promise<TransitRepository> {
   const dsm = new DataSourceManager();
   const prefixes = dsm.getEnabledPrefixes();
 
-  if (repo === 'v2') {
-    logger.info(`Using AthenaiRepositoryV2: [${prefixes.join(', ')}]`);
-    // Dynamic import: v2 repository code is not loaded when using v1.
-    const { AthenaiRepositoryV2 } = await import('./repositories/athenai-repository-v2');
-    const { repository, loadResult } = await AthenaiRepositoryV2.create(prefixes);
-    if (loadResult.failed.length > 0) {
-      logger.warn(
-        `Failed to load ${loadResult.failed.length} source(s): [${loadResult.failed.map((f) => f.prefix).join(', ')}]`,
-      );
-    }
-    return repository;
+  logger.info(`Using AthenaiRepositoryV2: [${prefixes.join(', ')}]`);
+  const { repository, loadResult } = await AthenaiRepositoryV2.create(prefixes);
+  if (loadResult.failed.length > 0) {
+    logger.warn(
+      `Failed to load ${loadResult.failed.length} source(s): [${loadResult.failed.map((f) => f.prefix).join(', ')}]`,
+    );
   }
-
-  logger.info(`Using AthenaiRepository: [${prefixes.join(', ')}]`);
-  return AthenaiRepository.create(prefixes);
+  return repository;
 }
 
 async function init() {
+  // Remove invalid query params (e.g., legacy ?repo=v1, malformed ?time=) from the URL.
+  cleanupInvalidQueryParams();
+
   const repository = await createRepository();
 
   // Run diagnostics if requested via query param.

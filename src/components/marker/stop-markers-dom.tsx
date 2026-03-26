@@ -2,7 +2,7 @@ import { memo, useCallback, useRef, useState } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
-import type { DepartureGroup, StopWithContext } from '../../types/app/transit-composed';
+import type { ContextualTimetableEntry, StopWithContext } from '../../types/app/transit-composed';
 import { createStopIcon } from '../../lib/leaflet-helpers';
 import { primaryRouteType } from '../../domain/transit/route-type-color';
 import { createLogger } from '../../utils/logger';
@@ -18,7 +18,7 @@ function StopMarkerDomItem({
   isSelected,
   dimmed,
   zIndexOffset,
-  preloadedGroups,
+  preloadedEntries,
   now,
   infoLevel,
   onFetchDepartures,
@@ -31,32 +31,32 @@ function StopMarkerDomItem({
   isSelected: boolean;
   dimmed: boolean;
   zIndexOffset: number;
-  preloadedGroups?: DepartureGroup[];
+  preloadedEntries?: ContextualTimetableEntry[];
   now?: Date;
   infoLevel: InfoLevel;
   onFetchDepartures?: (stopId: string) => Promise<StopWithContext | null>;
   showTooltip: boolean;
   onClick: () => void;
 }) {
-  const [hoverGroups, setHoverGroups] = useState<DepartureGroup[] | null>(null);
+  const [hoverEntries, setHoverEntries] = useState<ContextualTimetableEntry[] | null>(null);
   const [hoverAgencies, setHoverAgencies] = useState<Agency[] | null>(null);
   const fetchedRef = useRef<string | null>(null);
 
-  const groups = preloadedGroups ?? hoverGroups;
-  const hasGroups = groups && groups.length > 0;
+  const entries = preloadedEntries ?? hoverEntries;
+  const hasEntries = entries && entries.length > 0;
 
   const handleMouseOver = useCallback(() => {
     if (!onFetchDepartures) {
       return;
     }
-    if (preloadedGroups || fetchedRef.current === stop.stop_id) {
+    if (preloadedEntries || fetchedRef.current === stop.stop_id) {
       return;
     }
     fetchedRef.current = stop.stop_id;
     onFetchDepartures(stop.stop_id)
       .then((result) => {
         if (result) {
-          setHoverGroups(result.groups);
+          setHoverEntries(result.departures);
           if (result.agencies) {
             setHoverAgencies(result.agencies);
           }
@@ -65,7 +65,7 @@ function StopMarkerDomItem({
       .catch((error) => {
         logger.error('Failed to fetch departures for stop:', error);
       });
-  }, [stop.stop_id, preloadedGroups, onFetchDepartures]);
+  }, [stop.stop_id, preloadedEntries, onFetchDepartures]);
 
   return (
     <Marker
@@ -96,7 +96,7 @@ function StopMarkerDomItem({
             stop={stop}
             routeTypes={routeTypes}
             agencies={hoverAgencies ?? agencies}
-            groups={hasGroups ? groups : undefined}
+            entries={hasEntries ? entries : undefined}
             now={now}
             infoLevel={infoLevel}
           />
@@ -110,7 +110,7 @@ interface StopMarkersDomProps {
   stops: Stop[];
   selectedStopId: string | null;
   routeTypeMap: Map<string, RouteType[]>;
-  nearbyDepartures?: Map<string, DepartureGroup[]>;
+  nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
   time?: Date;
   infoLevel: InfoLevel;
   onStopSelected: (stop: Stop) => void;
@@ -161,7 +161,7 @@ export const StopMarkersDom = memo(function StopMarkersDom({
           isSelected={selectedStopId === stop.stop_id}
           dimmed={!!selectedStopId && selectedStopId !== stop.stop_id}
           zIndexOffset={index}
-          preloadedGroups={nearbyDepartures?.get(stop.stop_id)}
+          preloadedEntries={nearbyDepartures?.get(stop.stop_id)}
           now={now}
           infoLevel={infoLevel}
           onFetchDepartures={onFetchDepartures}

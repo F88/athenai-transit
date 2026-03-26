@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { getTimeParam } from '../utils/query-params';
 
 const NOW_UPDATE_INTERVAL_MS = 15_000;
 
@@ -26,7 +27,8 @@ export interface UseDateTimeReturn {
  */
 export function useDateTime(): UseDateTimeReturn {
   const [now, setNow] = useState(() => new Date());
-  const [customTime, setCustomTimeState] = useState<Date | null>(null);
+  // Initialize custom time from ?time= query param (RFC 3339)
+  const [customTime, setCustomTimeState] = useState<Date | null>(() => getTimeParam());
 
   const isCustomTime = customTime !== null;
   const dateTime = customTime ?? now;

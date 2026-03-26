@@ -8,13 +8,13 @@
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, RouteType, Stop } from '../types/app/transit';
+import type { SourceMeta, StopWithMeta } from '../types/app/transit-composed';
 import type {
-  DepartureGroup,
-  FullDayStopDeparture,
-  SourceMeta,
-  StopWithMeta,
-} from '../types/app/transit-composed';
-import type { CollectionResult, Result } from '../types/app/repository';
+  CollectionResult,
+  Result,
+  TimetableResult,
+  UpcomingTimetableResult,
+} from '../types/app/repository';
 
 /**
  * Maximum number of stops that any single query can return.
@@ -63,11 +63,20 @@ export interface TransitRepository {
   getStopsInBounds(bounds: Bounds, limit: number): Promise<CollectionResult<StopWithMeta>>;
 
   /**
-   * Returns upcoming departures from a specific stop, grouped by
-   * route and headsign.
+   * Returns upcoming departures from a specific stop as
+   * {@link ContextualTimetableEntry} items, sorted chronologically.
    *
-   * Each group contains up to `limit` departure times (earliest first).
-   * Groups are sorted by their earliest departure time.
+   * Each entry includes route/headsign, boarding availability
+   * (pickupType/dropOffType), pattern position (isTerminal/isOrigin),
+   * and `serviceDate` for accurate minutes-to-Date conversion.
+   * Consumers are responsible for filtering (e.g. excluding drop-off-only
+   * entries) and grouping (e.g. by route+headsign for display).
+   *
+   * ### Sorting
+   * Results are sorted by actual chronological time using
+   * `minutesToDate(serviceDate, departureMinutes)`. This ensures
+   * correct ordering when entries from different service days
+   * (today vs previous day overnight) are mixed.
    *
    * ### Service day boundary
    * The GTFS service day does not change at midnight but at 03:00.
@@ -79,11 +88,18 @@ export interface TransitRepository {
    * service day are included as they represent late-night runs past
    * midnight. Additionally, overnight times from the previous service
    * day that extend into the current real-world time are included.
+   * Each entry's `serviceDate` reflects which service day it belongs to.
    *
    * ### Truncation
-   * `truncated` is `true` when any route/headsign group had more
-   * upcoming departures than `limit` allowed. When `limit` is omitted,
-   * `truncated` is always `false`.
+   * `truncated` is `true` when the total number of upcoming entries
+   * exceeds `limit`. When `limit` is omitted, all upcoming entries
+   * are returned and `truncated` is `false`.
+   *
+   * Note: `limit` only truncates the returned `data` array. The
+   * implementation still performs a full scan (for `meta`) and a
+   * full sort (for overnight interleave), so `limit` does not
+   * reduce computation cost. Callers that need all route+headsign
+   * groups (e.g. T4 view) should omit `limit`.
    *
    * ### Error conditions
    * - No departure data for `stopId`:
@@ -92,15 +108,15 @@ export interface TransitRepository {
    * @param stopId - GTFS `stop_id` of the target stop.
    * @param now    - Real-world reference time. The service day is
    *                 determined internally (03:00 boundary).
-   * @param limit  - Maximum number of departures per route/headsign.
-   *                 When omitted, all upcoming departures are returned.
-   * @returns Departure groups sorted by earliest departure.
+   * @param limit  - Maximum number of entries to return.
+   *                 When omitted, all upcoming entries are returned.
+   * @returns ContextualTimetableEntry items sorted chronologically.
    */
-  getUpcomingDepartures(
+  getUpcomingTimetableEntries(
     stopId: string,
     now: Date,
     limit?: number,
-  ): Promise<CollectionResult<DepartureGroup>>;
+  ): Promise<UpcomingTimetableResult>;
 
   /**
    * Returns all GTFS route_type values for a stop.
@@ -172,46 +188,11 @@ export interface TransitRepository {
   getRouteShapes(): Promise<CollectionResult<RouteShape>>;
 
   /**
-   * Returns all departure times (in minutes from midnight) for a
-   * specific stop/route/headsign combination on a given date.
-   *
-   * ### Sorting
-   * Results are sorted in ascending order (earliest first).
-   * Overnight times (>= 1440, i.e. past midnight) appear at the end.
-   *
-   * ### Calendar filtering
-   * Only service IDs active on the GTFS service day (per calendar and
-   * calendar exceptions) are included.
-   *
-   * ### Truncation
-   * Currently returns all departures for the day. `truncated` is
-   * `false` under normal conditions.
-   *
-   * ### Error conditions
-   * - Unknown combination of stopId/routeId/headsign:
-   *   Returns `{ success: true, data: [], truncated: false }` (not an error).
-   *
-   * @param stopId    - GTFS stop_id.
-   * @param routeId   - GTFS route_id.
-   * @param headsign  - Trip headsign string.
-   * @param dateTime  - Reference real-world time. The repository converts
-   *                    this to the GTFS service day internally (03:00 boundary).
-   * @returns Sorted array of departure minutes from midnight.
-   */
-  getFullDayDepartures(
-    stopId: string,
-    routeId: string,
-    headsign: string,
-    dateTime: Date,
-  ): Promise<CollectionResult<number>>;
-
-  /**
    * Returns all departures for all route/headsign combinations at a stop
    * on the service day derived from `dateTime`.
    *
-   * Unlike {@link getFullDayDepartures}, this method does not require a
-   * specific route/headsign — it returns every departure at the stop,
-   * each tagged with its route and headsign.
+   * Returns every departure at the stop, each tagged with its route,
+   * headsign, boarding availability, and pattern position.
    *
    * ### Sorting
    * Results are sorted by departure time (earliest first). When two
@@ -227,12 +208,9 @@ export interface TransitRepository {
    * @param stopId   - GTFS stop_id.
    * @param dateTime - Reference real-world time. The repository converts
    *                   this to the GTFS service day internally (03:00 boundary).
-   * @returns All departures at the stop for the service day.
+   * @returns All timetable entries at the stop for the service day.
    */
-  getFullDayDeparturesForStop(
-    stopId: string,
-    dateTime: Date,
-  ): Promise<CollectionResult<FullDayStopDeparture>>;
+  getFullDayTimetableEntries(stopId: string, dateTime: Date): Promise<TimetableResult>;
 
   /**
    * Returns all stops in the dataset.

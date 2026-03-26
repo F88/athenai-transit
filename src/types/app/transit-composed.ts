@@ -79,28 +79,31 @@ export interface StopWithMeta {
   agencies: Agency[];
   /** Routes serving this stop, resolved from timetable data (shared references, not copies). */
   routes: Route[];
+  /**
+   * Per-stop operational statistics from InsightsBundle.
+   * Undefined when insights data is not loaded.
+   * Values are for the current service group (e.g. weekday, Saturday).
+   */
+  stats?: {
+    /** Total departures per day for this service group. */
+    freq: number;
+    /** Number of distinct routes serving this stop. */
+    routeCount: number;
+    /** Number of distinct route types (bus, subway, etc.) serving this stop. */
+    routeTypeCount: number;
+    /** Earliest departure time (minutes from midnight). */
+    earliestDeparture: number;
+    /** Latest departure time (minutes from midnight). Values >= 1440 = overnight past midnight. */
+    latestDeparture: number;
+  };
 }
 
 /**
- * Departures grouped by route and headsign.
- *
- * Each group contains up to 3 upcoming departure times for a specific
- * route + headsign combination at a given stop.
- */
-export interface DepartureGroup {
-  route: Route;
-  headsign: string;
-  /** Headsign translations resolved from TranslationsJson. */
-  headsign_names: Record<string, string>;
-  departures: Date[];
-}
-
-/**
- * A stop paired with its route types and upcoming departure groups.
+ * A stop paired with its route types and upcoming {@link ContextualTimetableEntry} items.
  *
  * Extends {@link StopWithMeta} with departure context.
  * Used by BottomSheet and MapView tooltip to display nearby stop info.
- * When all services have ended, `groups` is an empty array and the UI
+ * When all services have ended, `departures` is an empty array and the UI
  * shows "本日の運行は終了しました".
  *
  * `routeTypes` contains all GTFS route_type values serving this stop,
@@ -108,7 +111,48 @@ export interface DepartureGroup {
  */
 export interface StopWithContext extends StopWithMeta {
   routeTypes: RouteType[];
-  groups: DepartureGroup[];
+  departures: ContextualTimetableEntry[];
+  /**
+   * Whether at least one boardable entry exists in the full service day.
+   *
+   * From {@link TimetableQueryMeta.isBoardableOnServiceDay}. Independent
+   * of `departures` (which only contains upcoming entries).
+   * A stop with `isBoardableOnServiceDay === false` is drop-off only.
+   */
+  isBoardableOnServiceDay: boolean;
+  /**
+   * Geographic metrics from GlobalInsightsBundle.
+   * Undefined when global insights data is not loaded.
+   */
+  geo?: {
+    /**
+     * Distance (km) to the nearest stop served by a different route.
+     * Higher = more isolated (transit desert). 0 = colocated or no alternative.
+     */
+    nearestRoute: number;
+    /**
+     * Distance (km) to the nearest stop with a different parent_station.
+     * Reveals "walkable portals" between station complexes.
+     * Undefined when parent_station data is not available.
+     */
+    walkablePortal?: number;
+    /**
+     * Connectivity within 300m radius, keyed by service group (e.g. "ho").
+     * Measures transfer convenience across all sources.
+     * Undefined when no routes operate within 300m.
+     */
+    connectivity?: Record<
+      string,
+      {
+        /** Number of unique routes within 300m. */
+        routeCount: number;
+        /** Sum of unique routes' daily departures. */
+        freq: number;
+        /** Number of other stops within 300m. */
+        stopCount: number;
+      }
+    >;
+  };
 }
 
 /**
@@ -135,31 +179,126 @@ export interface DepartureViewMeta {
 }
 
 /**
- * A single departure in a full-day stop timetable.
+ * Stop service availability for a specific departure.
  *
- * Returned by {@link TransitRepository.getFullDayDeparturesForStop}
- * and used directly by the timetable modal.
+ * Describes whether passengers can board (pickup) or alight (drop-off)
+ * at a stop for a given departure. Values align with GTFS
+ * pickup_type/drop_off_type but are used as app-level domain types.
+ *
+ * - 0 = available (scheduled service)
+ * - 1 = not available
+ * - 2 = phone required (must phone agency)
+ * - 3 = coordinate required (must coordinate with driver)
  */
-export interface FullDayStopDeparture {
-  /** Minutes from midnight of the service day. */
-  minutes: number;
-  route: Route;
-  headsign: string;
-  /** Headsign translations resolved from TranslationsJson. */
-  headsign_names: Record<string, string>;
+export type StopServiceType = 0 | 1 | 2 | 3;
+
+/**
+ * A single entry in a stop's timetable.
+ *
+ * A single entry in a stop's timetable with arrival time,
+ * boarding availability, and trip pattern context.
+ *
+ * Used directly by the timetable modal. NearbyStop uses
+ * {@link ContextualTimetableEntry} which extends this with serviceDate.
+ */
+export interface TimetableEntry {
+  /** Schedule: departure and arrival times. */
+  schedule: {
+    /** Departure minutes from midnight of the service day. */
+    departureMinutes: number;
+    /** Arrival minutes from midnight of the service day. */
+    arrivalMinutes: number;
+  };
+
+  /**
+   * Route and direction context.
+   *
+   * TODO: Extract as a composite type (e.g. RouteDirection) — this
+   * combination of route + headsign + direction is reused across
+   * TimetableEntry and other composed types.
+   */
+  routeDirection: {
+    route: Route;
+    headsign: string;
+    /** Headsign translations resolved from TranslationsJson. */
+    headsign_names: Record<string, string>;
+    /**
+     * Trip direction (0 or 1). Distinguishes opposite directions on
+     * the same route (e.g. inbound vs outbound).
+     * Undefined when the source does not provide direction_id.
+     */
+    direction?: 0 | 1;
+  };
+
+  /** Boarding availability at this stop. */
+  boarding: {
+    /** Pickup (boarding) availability. */
+    pickupType: StopServiceType;
+    /** Drop-off (alighting) availability. */
+    dropOffType: StopServiceType;
+  };
+
+  /** Position of this stop within the trip pattern's stop sequence. */
+  patternPosition: {
+    /** 0-based index of this stop in the pattern. */
+    stopIndex: number;
+    /** Total number of stops in the pattern. */
+    totalStops: number;
+    /** Whether this stop is the last stop (terminal). */
+    isTerminal: boolean;
+    /** Whether this stop is the first stop (origin). */
+    isOrigin: boolean;
+  };
+
+  /**
+   * Analytics derived from InsightsBundle.
+   * Undefined when insights data is not loaded.
+   */
+  insights?: {
+    /**
+     * Estimated remaining travel time (minutes) from this stop
+     * to the terminal.
+     */
+    remainingMinutes: number;
+  };
 }
 
 /**
- * A single departure flattened from {@link DepartureGroup}.
+ * Service date context for accurate minutes-to-Date conversion.
  *
- * Used by the T1 (Stop) view to display all departures in
- * chronological order regardless of route or headsign.
+ * GTFS departure/arrival times are minutes from midnight (e.g., 1625 = 27:05).
+ * To convert to a correct Date, the service date (not wall-clock date) is needed.
+ * Without it, overnight entries (>= 1440 min) from the previous service day
+ * produce dates 1 day ahead.
+ *
+ * Defined as an independent interface for reuse across multiple types:
+ * {@link ContextualTimetableEntry} (NearbyStop), and future types for
+ * route display, trip details, and survival indicators.
  */
-export interface FlatDeparture {
-  /** Route this departure belongs to (reference, not a copy). */
-  route: Route;
-  /** Headsign/destination (reference). */
-  headsign: string;
-  /** Scheduled departure time (reference). */
-  departure: Date;
+export interface WithServiceDate {
+  /**
+   * GTFS service date this entry belongs to, as midnight (00:00) local time.
+   *
+   * Date type for consistency with getServiceDay() and minutesToDate(),
+   * which both operate on Date. Minutes are added from midnight,
+   * so hours >= 24 roll into the next calendar day.
+   *
+   * Do not mutate — multiple entries may share the same Date instance.
+   */
+  readonly serviceDate: Date;
 }
+
+/**
+ * TimetableEntry with service day context for accurate datetime computation.
+ *
+ * Extends {@link TimetableEntry} with {@link WithServiceDate} to enable
+ * correct Date conversion via `minutesToDate(serviceDate, departureMinutes)`.
+ * Without serviceDate, overnight entries from the previous service day
+ * produce dates 1 day ahead.
+ *
+ * Returned by `getUpcomingTimetableEntries`. The timetable modal
+ * (`getFullDayTimetableEntries`) continues to use plain {@link TimetableEntry}.
+ *
+ * Follows the naming pattern of {@link StopWithContext} (domain type + contextual metadata).
+ */
+export interface ContextualTimetableEntry extends TimetableEntry, WithServiceDate {}
