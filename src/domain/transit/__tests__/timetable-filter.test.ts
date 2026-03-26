@@ -223,21 +223,14 @@ describe('prepareStopTimetable', () => {
     it('circular route: isTerminal && isOrigin both true → filtered out', () => {
       // Circular routes have the same stop as both origin and terminal.
       // isTerminal should win and the entry should be removed.
-      const entries = [
-        makeEntry({ isTerminal: true, isOrigin: true }),
-        makeEntry(),
-      ];
+      const entries = [makeEntry({ isTerminal: true, isOrigin: true }), makeEntry()];
       const result = prepareStopTimetable(entries, false);
       expect(result.entries).toHaveLength(1);
       expect(result.omitted.terminal).toBe(1);
     });
 
     it('does not modify the input array', () => {
-      const entries = [
-        makeEntry(),
-        makeEntry({ isTerminal: true }),
-        makeEntry(),
-      ];
+      const entries = [makeEntry(), makeEntry({ isTerminal: true }), makeEntry()];
       const original = [...entries];
       prepareStopTimetable(entries, false);
       expect(entries).toHaveLength(original.length);

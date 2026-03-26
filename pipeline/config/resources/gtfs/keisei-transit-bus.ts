@@ -25,6 +25,11 @@ const keiseiTransitBus: GtfsSourceDefinition = {
         ja: { long: '京成バス千葉ウエスト株式会社', short: '京成千葉W' },
         en: { long: 'Keisei Transit Bus Co., Ltd.', short: 'Keisei Transit Bus' },
       },
+      url: 'https://bus.shinkeisei.co.jp/',
+      colors: [
+        { bg: 'E82826', text: 'FFFFFF' } /* Primary */,
+        { bg: '16479F', text: 'FFFFFF' } /* Secondary */,
+      ],
     },
     authentication: { required: false },
 
