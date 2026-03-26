@@ -82,6 +82,8 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
   let totalDeparturesMs = 0;
   let totalDepartureStops = 0;
   let totalDepartureEntries = 0;
+  let totalDeparturesNoLimitMs = 0;
+  let totalDepartureNoLimitEntries = 0;
   let totalRouteTypesMs = 0;
   let totalFullDayMs = 0;
   let totalFullDayDeps = 0;
@@ -125,6 +127,20 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
       totalDepartureEntries += entries;
     }
 
+    // getUpcomingTimetableEntries without limit (simulates NearbyStop real usage)
+    if (nearbyResult.success && nearbyResult.data.length > 0) {
+      const depT0 = performance.now();
+      let entries = 0;
+      for (const stopMeta of nearbyResult.data) {
+        const result = await repository.getUpcomingTimetableEntries(stopMeta.stop.stop_id, now);
+        if (result.success) {
+          entries += result.data.length;
+        }
+      }
+      totalDeparturesNoLimitMs += performance.now() - depT0;
+      totalDepartureNoLimitEntries += entries;
+    }
+
     // getRouteTypesForStop for all nearby stops
     if (nearbyResult.success && nearbyResult.data.length > 0) {
       const rtT0 = performance.now();
@@ -163,7 +179,10 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
     `getStopsNearby (${BENCH_LOCATIONS.length} locations): ${totalNearbyMs.toFixed(2)}ms total, ${totalNearby} stops`,
   );
   logger.info(
-    `getUpcomingTimetableEntries (${totalDepartureStops} stops): ${totalDeparturesMs.toFixed(2)}ms total, ${(totalDepartureStops > 0 ? totalDeparturesMs / totalDepartureStops : 0).toFixed(2)}ms/stop, ${totalDepartureEntries} entries`,
+    `getUpcomingTimetableEntries limit=3 (${totalDepartureStops} stops): ${totalDeparturesMs.toFixed(2)}ms total, ${(totalDepartureStops > 0 ? totalDeparturesMs / totalDepartureStops : 0).toFixed(2)}ms/stop, ${totalDepartureEntries} entries`,
+  );
+  logger.info(
+    `getUpcomingTimetableEntries no-limit (${totalDepartureStops} stops): ${totalDeparturesNoLimitMs.toFixed(2)}ms total, ${(totalDepartureStops > 0 ? totalDeparturesNoLimitMs / totalDepartureStops : 0).toFixed(2)}ms/stop, ${totalDepartureNoLimitEntries} entries`,
   );
   logger.info(
     `getRouteTypesForStop (${totalDepartureStops} stops): ${totalRouteTypesMs.toFixed(2)}ms total`,
