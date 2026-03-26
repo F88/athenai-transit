@@ -166,19 +166,28 @@ export function getDiagParam(): string | null {
 }
 
 /**
- * Parse a date/time string in RFC 3339 format.
+ * Parse a date/time string in ISO 8601 / RFC 3339 format.
+ *
+ * Validates format with a regex before passing to `new Date()` to
+ * avoid browser-dependent parsing of non-standard strings.
  *
  * Accepts:
  * - Full RFC 3339: `2026-03-25T20:55:00+09:00`
  * - UTC: `2026-03-25T20:55:00Z`
  * - Without timezone (local time): `2026-03-25T20:55`
  * - Without seconds: `2026-03-25T20:55`
+ * - Date only: `2026-03-25` (parsed as UTC midnight)
  *
  * @param value - Raw string value.
- * @returns Parsed Date, or null if invalid.
+ * @returns Parsed Date, or null if absent or invalid format.
  */
+const ISO_DATE_TIME_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?(Z|[+-]\d{2}:\d{2})?)?$/;
+
 export function parseQueryTime(value: string | null | undefined): Date | null {
   if (!value) {
+    return null;
+  }
+  if (!ISO_DATE_TIME_RE.test(value)) {
     return null;
   }
   const date = new Date(value);

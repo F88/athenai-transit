@@ -135,6 +135,40 @@ describe('parseQueryTime', () => {
     const date = parseQueryTime('2026-03-25');
     expect(date).not.toBeNull();
   });
+
+  describe('rejects non-ISO formats that new Date() would accept', () => {
+    it('rejects US date format', () => {
+      expect(parseQueryTime('March 25, 2026')).toBeNull();
+    });
+
+    it('rejects slash-separated date', () => {
+      expect(parseQueryTime('2026/03/25')).toBeNull();
+    });
+
+    it('rejects date with space instead of T', () => {
+      expect(parseQueryTime('2026-03-25 20:55:00')).toBeNull();
+    });
+
+    it('rejects timestamp in milliseconds', () => {
+      expect(parseQueryTime('1774488000000')).toBeNull();
+    });
+
+    it('rejects day-month-year format', () => {
+      expect(parseQueryTime('25-03-2026')).toBeNull();
+    });
+
+    it('rejects partial date', () => {
+      expect(parseQueryTime('2026-03')).toBeNull();
+    });
+
+    it('rejects time only', () => {
+      expect(parseQueryTime('20:55:00')).toBeNull();
+    });
+
+    it('rejects date with trailing text', () => {
+      expect(parseQueryTime('2026-03-25T20:55:00Z extra')).toBeNull();
+    });
+  });
 });
 
 describe('cleanupInvalidQueryParams', () => {
