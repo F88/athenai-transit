@@ -4,8 +4,7 @@
  * Copy pipeline build output to the public directory.
  *
  * Copies:
- *   pipeline/workspace/_build/data/    -> public/data/    (v1)
- *   pipeline/workspace/_build/data-v2/ -> public/data-v2/ (v2)
+ *   pipeline/workspace/_build/data-v2/ -> public/data-v2/
  *
  * Each directory is cleaned before copying to ensure a fresh state.
  * Missing source directories are skipped with a notice (not an error),
@@ -28,11 +27,6 @@ interface SyncTarget {
 }
 
 const TARGETS: SyncTarget[] = [
-  {
-    label: 'v1',
-    src: join(PROJECT_ROOT, 'pipeline/workspace/_build/data'),
-    dest: join(PROJECT_ROOT, 'public/data'),
-  },
   {
     label: 'v2',
     src: join(PROJECT_ROOT, 'pipeline/workspace/_build/data-v2'),
