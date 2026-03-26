@@ -84,6 +84,10 @@ export function FlatDepartureItem({
         <RouteBadge route={route} infoLevel={infoLevel} className="shrink-0" />
         {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
         <span className="truncate text-sm text-[#333] dark:text-gray-200">{headsignName}</span>
+        {/* Terminal/pickup labels are shown at all InfoLevels (unlike TimetableGrid's
+            EntryLabels which gates by level). NearbyStop needs these labels to explain
+            why a departure is not boardable — hiding them would leave users unable to
+            distinguish drop-off-only arrivals from normal departures. */}
         {isTerminal && (
           <span className="shrink-0 rounded bg-gray-100 px-1 text-[10px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
             終点

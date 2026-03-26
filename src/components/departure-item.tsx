@@ -72,6 +72,8 @@ export function DepartureItem({
         <RouteBadge route={route} infoLevel={infoLevel} />
         {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
         <span className="text-sm font-medium text-[#333] dark:text-gray-200">{headsignName}</span>
+        {/* Shown at all InfoLevels — users need to know why this group is not boardable.
+            See FlatDepartureItem for the same rationale. */}
         {!hasBoardableDeparture(entries) && (
           <span className="shrink-0 rounded bg-red-100 px-1 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
             乗車不可
