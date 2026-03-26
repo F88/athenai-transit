@@ -33,7 +33,8 @@ function makeEntry(
     headsign?: string;
     isTerminal?: boolean;
     isOrigin?: boolean;
-    pickupType?: 0 | 1;
+    pickupType?: 0 | 1 | 2 | 3;
+    dropOffType?: 0 | 1 | 2 | 3;
     departureMinutes?: number;
   } = {},
 ): TimetableEntry {
@@ -47,7 +48,7 @@ function makeEntry(
       headsign: overrides.headsign ?? 'Terminal',
       headsign_names: {},
     },
-    boarding: { pickupType: overrides.pickupType ?? 0, dropOffType: 0 },
+    boarding: { pickupType: overrides.pickupType ?? 0, dropOffType: overrides.dropOffType ?? 0 },
     patternPosition: {
       stopIndex: 0,
       totalStops: 10,
