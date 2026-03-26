@@ -17,15 +17,21 @@
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
-import type { SourceMeta, StopWithMeta, TimetableEntry } from '../types/app/transit-composed';
+import type {
+  ContextualTimetableEntry,
+  SourceMeta,
+  StopWithMeta,
+  TimetableEntry,
+} from '../types/app/transit-composed';
 import type {
   CollectionResult,
   Result,
   TimetableQueryMeta,
   TimetableResult,
+  UpcomingTimetableResult,
 } from '../types/app/repository';
 import { isDropOffOnly } from '../domain/transit/timetable-utils';
-import { getServiceDayMinutes } from '../domain/transit/service-day';
+import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
 
@@ -846,17 +852,22 @@ export class MockRepository implements TransitRepository {
   }
 
   /** {@inheritDoc TransitRepository.getUpcomingTimetableEntries} */
-  getUpcomingTimetableEntries(stopId: string, now: Date, limit = 3): Promise<TimetableResult> {
+  getUpcomingTimetableEntries(
+    stopId: string,
+    now: Date,
+    limit = 3,
+  ): Promise<UpcomingTimetableResult> {
     const stop = STOPS.find((s) => s.stop_id === stopId);
     if (!stop) {
       return Promise.resolve({ success: false, error: `No departure data for stop: ${stopId}` });
     }
 
     const stopRoutes = STOP_ROUTES[stopId] ?? [];
-    const entries: TimetableEntry[] = [];
+    const entries: ContextualTimetableEntry[] = [];
     let fullDayCount = 0;
     let hasBoardable = false;
 
+    const serviceDate = getServiceDay(now);
     const nowMinutes = getServiceDayMinutes(now);
 
     for (const { routeId, headsign } of stopRoutes) {
@@ -886,6 +897,7 @@ export class MockRepository implements TransitRepository {
           routeDirection: { route, headsign, headsign_names: {} },
           boarding: { pickupType, dropOffType: 0 },
           patternPosition: position,
+          serviceDate,
         });
       }
     }

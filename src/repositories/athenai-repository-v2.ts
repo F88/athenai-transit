@@ -8,7 +8,7 @@
  *
  * Key features:
  * - TripPattern-based timetable: route+headsign resolved via tp FK
- * - TimetableEntry: per-departure boarding info and pattern position
+ * - TimetableEntry / ContextualTimetableEntry: per-departure boarding info and pattern position
  * - Shapes lazy-loaded in background after create()
  * - Stop.agency_id is empty string (v2 GTFS spec compliance)
  * - location_type=1 (station) stops are filtered out until the UI
@@ -29,6 +29,7 @@ import type {
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
 import type {
+  ContextualTimetableEntry,
   SourceMeta,
   StopServiceType,
   StopWithMeta,
@@ -39,6 +40,7 @@ import type {
   Result,
   TimetableQueryMeta,
   TimetableResult,
+  UpcomingTimetableResult,
 } from '../types/app/repository';
 import { isDropOffOnly } from '../domain/transit/timetable-utils';
 import { MAX_STOPS_RESULT } from './transit-repository';
@@ -53,6 +55,7 @@ import {
   computeActiveServiceIds,
   extractPrefix,
   formatDateKey,
+  minutesToDate,
 } from '../domain/transit/calendar-utils';
 
 const logger = createLogger('AthenaiRepositoryV2');
@@ -703,7 +706,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   }
 
   /** {@inheritDoc TransitRepository.getUpcomingTimetableEntries} */
-  getUpcomingTimetableEntries(stopId: string, now: Date, limit?: number): Promise<TimetableResult> {
+  getUpcomingTimetableEntries(
+    stopId: string,
+    now: Date,
+    limit?: number,
+  ): Promise<UpcomingTimetableResult> {
     const t0 = performance.now();
     const timetableGroups = this.timetable[stopId];
     if (!timetableGroups) {
@@ -723,7 +730,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
     const nowMinutes = getServiceDayMinutes(now);
 
-    const entries: TimetableEntry[] = [];
+    const entries: ContextualTimetableEntry[] = [];
 
     for (const group of timetableGroups) {
       const resolved = this.resolvedPatterns.get(group.tp);
@@ -791,6 +798,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               isTerminal: stopIndex === totalStops - 1,
               isOrigin: stopIndex === 0,
             },
+            serviceDate: serviceDay,
           });
         }
       }
@@ -844,13 +852,21 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               isTerminal: stopIndex === totalStops - 1,
               isOrigin: stopIndex === 0,
             },
+            serviceDate: prevServiceDay,
           });
         }
       }
     }
 
-    // Sort by departure time, then apply limit
-    entries.sort((a, b) => a.schedule.departureMinutes - b.schedule.departureMinutes);
+    // Sort by actual chronological time using serviceDate + departureMinutes.
+    // Simple departureMinutes comparison is insufficient because overnight entries
+    // from the previous service day (e.g., prevDay + 1900 min) must interleave
+    // correctly with today's entries (e.g., today + 400 min).
+    entries.sort((a, b) => {
+      const aTime = minutesToDate(a.serviceDate, a.schedule.departureMinutes).getTime();
+      const bTime = minutesToDate(b.serviceDate, b.schedule.departureMinutes).getTime();
+      return aTime - bTime;
+    });
     const totalAvailable = entries.length;
     let truncated = false;
     let result = entries;
@@ -861,7 +877,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
     const elapsed = Math.round(performance.now() - t0);
     logger.debug(
-      `getUpcomingTimetableEntries: ${stopId} → ${result.length}/${totalAvailable} entries in ${elapsed}ms (${truncated ? 'truncated' : 'all'})`,
+      `getUpcomingTimetableEntries: ${stopId} → ${result.length}/${totalAvailable} entries in ${elapsed}ms (${truncated ? 'truncated' : 'all'}) serviceDay=${formatDateKey(serviceDay)} prev=${formatDateKey(prevServiceDay)}`,
     );
     const meta: TimetableQueryMeta = {
       isBoardableOnServiceDay: hasBoardable,

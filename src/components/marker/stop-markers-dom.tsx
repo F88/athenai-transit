@@ -2,7 +2,7 @@ import { memo, useCallback, useRef, useState } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
-import type { TimetableEntry, StopWithContext } from '../../types/app/transit-composed';
+import type { ContextualTimetableEntry, StopWithContext } from '../../types/app/transit-composed';
 import { createStopIcon } from '../../lib/leaflet-helpers';
 import { primaryRouteType } from '../../domain/transit/route-type-color';
 import { createLogger } from '../../utils/logger';
@@ -31,14 +31,14 @@ function StopMarkerDomItem({
   isSelected: boolean;
   dimmed: boolean;
   zIndexOffset: number;
-  preloadedEntries?: TimetableEntry[];
+  preloadedEntries?: ContextualTimetableEntry[];
   now?: Date;
   infoLevel: InfoLevel;
   onFetchDepartures?: (stopId: string) => Promise<StopWithContext | null>;
   showTooltip: boolean;
   onClick: () => void;
 }) {
-  const [hoverEntries, setHoverEntries] = useState<TimetableEntry[] | null>(null);
+  const [hoverEntries, setHoverEntries] = useState<ContextualTimetableEntry[] | null>(null);
   const [hoverAgencies, setHoverAgencies] = useState<Agency[] | null>(null);
   const fetchedRef = useRef<string | null>(null);
 
@@ -110,7 +110,7 @@ interface StopMarkersDomProps {
   stops: Stop[];
   selectedStopId: string | null;
   routeTypeMap: Map<string, RouteType[]>;
-  nearbyDepartures?: Map<string, TimetableEntry[]>;
+  nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
   time?: Date;
   infoLevel: InfoLevel;
   onStopSelected: (stop: Stop) => void;

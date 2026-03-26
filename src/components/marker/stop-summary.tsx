@@ -1,11 +1,10 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
-import type { TimetableEntry } from '../../types/app/transit-composed';
+import type { ContextualTimetableEntry } from '../../types/app/transit-composed';
 import { createInfoLevel } from '../../utils/create-info-level';
 import { getStopDisplayNames } from '../../domain/transit/get-stop-display-names';
 import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
 import { minutesToDate } from '../../domain/transit/calendar-utils';
-import { getServiceDay } from '../../domain/transit/service-day';
 import { AgencyBadge } from '../badge/agency-badge';
 import { RouteBadge } from '../badge/route-badge';
 import { routeTypesEmoji } from '../../domain/transit/route-type-emoji';
@@ -14,7 +13,7 @@ interface StopSummaryProps {
   stop: Stop;
   routeTypes: RouteType[];
   agencies: Agency[];
-  entries?: TimetableEntry[];
+  entries?: ContextualTimetableEntry[];
   now?: Date;
   /** Info level for controlling display verbosity. Uses createInfoLevel
    *  instead of the useInfoLevel hook because this component is also
@@ -39,7 +38,6 @@ export function StopSummary({
   const stopNames = getStopDisplayNames(stop, infoLevel);
   // Departure items require `now` for relative time display
   const items = now ? (entries?.slice(0, 3) ?? []) : [];
-  const serviceDay = now ? getServiceDay(now) : null;
 
   return (
     <>
@@ -63,12 +61,12 @@ export function StopSummary({
           ))}
       </div>
       {items.map((entry, i) => {
-        // now and serviceDay are guaranteed defined here because items is empty when now is undefined
+        // now is guaranteed defined here because items is empty when now is undefined
         // Terminal entries show arrival time; all others show departure time.
         const displayMinutes = entry.patternPosition.isTerminal
           ? entry.schedule.arrivalMinutes
           : entry.schedule.departureMinutes;
-        const depTime = minutesToDate(serviceDay!, displayMinutes);
+        const depTime = minutesToDate(entry.serviceDate, displayMinutes);
         const diffMin = Math.floor((depTime.getTime() - now!.getTime()) / 60000);
         const relative = diffMin <= 0 ? 'まもなく' : `${diffMin}分`;
         const { route, headsign } = entry.routeDirection;

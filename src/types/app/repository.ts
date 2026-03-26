@@ -5,7 +5,7 @@
  * {@link TransitRepository} methods.
  */
 
-import type { TimetableEntry } from './transit-composed';
+import type { ContextualTimetableEntry, TimetableEntry } from './transit-composed';
 
 /**
  * Result for single-value queries.
@@ -75,4 +75,20 @@ export interface TimetableQueryMeta {
  */
 export type TimetableResult =
   | { success: true; data: TimetableEntry[]; truncated: boolean; meta: TimetableQueryMeta }
+  | { success: false; error: string };
+
+/**
+ * Result for upcoming timetable queries with service-day context.
+ *
+ * Like {@link TimetableResult} but carries {@link ContextualTimetableEntry}
+ * entries that include `serviceDate` for correct minutes-to-Date conversion.
+ * Used exclusively by `getUpcomingTimetableEntries`.
+ */
+export type UpcomingTimetableResult =
+  | {
+      success: true;
+      data: ContextualTimetableEntry[];
+      truncated: boolean;
+      meta: TimetableQueryMeta;
+    }
   | { success: false; error: string };

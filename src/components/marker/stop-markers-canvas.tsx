@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
-import type { TimetableEntry, StopWithContext } from '../../types/app/transit-composed';
+import type { ContextualTimetableEntry, StopWithContext } from '../../types/app/transit-composed';
 import { getRouteTypeColor } from '../../lib/leaflet-helpers';
 import { primaryRouteType } from '../../domain/transit/route-type-color';
 import { createLogger } from '../../utils/logger';
@@ -17,7 +17,7 @@ interface StopMarkersCanvasProps {
   stops: Stop[];
   selectedStopId: string | null;
   routeTypeMap: Map<string, RouteType[]>;
-  nearbyDepartures?: Map<string, TimetableEntry[]>;
+  nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
   time?: Date;
   infoLevel: InfoLevel;
   onStopSelected: (stop: Stop) => void;
@@ -51,7 +51,7 @@ function buildSummaryHtml(
   stop: Stop,
   routeTypes: RouteType[],
   agencies: Agency[],
-  entries: TimetableEntry[] | undefined,
+  entries: ContextualTimetableEntry[] | undefined,
   now: Date | undefined,
   infoLevel: InfoLevel,
 ): string {
@@ -256,7 +256,7 @@ function createMarker(
     routeTypeMap: Map<string, RouteType[]>;
     renderer: L.Canvas;
     showTooltip: boolean;
-    nearbyDepartures?: Map<string, TimetableEntry[]>;
+    nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
     now?: Date;
     infoLevel: InfoLevel;
     agenciesMap?: Map<string, Agency[]>;
@@ -316,7 +316,7 @@ function updateMarkerStyle(
     selectedStopId: string | null;
     routeTypeMap: Map<string, RouteType[]>;
     showTooltip: boolean;
-    nearbyDepartures?: Map<string, TimetableEntry[]>;
+    nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
     now?: Date;
     infoLevel: InfoLevel;
     agenciesMap?: Map<string, Agency[]>;

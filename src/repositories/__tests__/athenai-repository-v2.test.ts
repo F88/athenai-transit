@@ -12,7 +12,6 @@ import {
   EXCEPTION_HOLIDAY,
 } from './fixtures/test-data-source-v2';
 import { minutesToDate } from '../../domain/transit/calendar-utils';
-import { getServiceDay } from '../../domain/transit/service-day';
 
 /** Assert result is successful and return narrowed type for safe data access. */
 function assertSuccess<T>(result: {
@@ -280,7 +279,7 @@ describe('getUpcomingTimetableEntries', () => {
   // --- previous service day's overnight entries ---
 
   describe('previous service day overnight entries', () => {
-    it('includes overnight entries in data', async () => {
+    it('includes overnight entries in data with correct serviceDate', async () => {
       const fixture = createFixtureV2();
       const ds = new TestDataSourceV2({ test: fixture });
       const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
@@ -290,6 +289,11 @@ describe('getUpcomingTimetableEntries', () => {
       const result = await repository.getUpcomingTimetableEntries('sub_01', WEEKDAY_OVERNIGHT);
       assertSuccess(result);
       expect(result.data.length).toBeGreaterThan(0);
+
+      // All entries should have a serviceDate
+      for (const entry of result.data) {
+        expect(entry.serviceDate).toBeInstanceOf(Date);
+      }
     });
 
     it('meta.totalEntries includes overnight entries from previous service day', async () => {
@@ -353,7 +357,7 @@ describe('getUpcomingTimetableEntries', () => {
       expect(overnightEntries).toHaveLength(1);
     });
 
-    it('overnight entry from yesterday can be correctly displayed as time', async () => {
+    it('overnight entry from yesterday has correct serviceDate for display', async () => {
       const fixture = createFixtureV2();
       const ds = new TestDataSourceV2({ test: fixture });
       const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
@@ -365,17 +369,26 @@ describe('getUpcomingTimetableEntries', () => {
 
       // Find the overnight entries (1625 appears twice: today + yesterday)
       const entries1625 = result.data.filter((e) => e.schedule.departureMinutes === 1625);
-      expect(entries1625.length).toBeGreaterThanOrEqual(1);
+      expect(entries1625.length).toBeGreaterThanOrEqual(2);
 
-      // UI displays time using: minutesToDate(getServiceDay(now), departureMinutes)
-      // For yesterday's overnight entry, this must produce the correct date (Thu 03:05).
-      const serviceDay = getServiceDay(AFTER_BOUNDARY); // = Thursday (Mar 12)
-      const displayDate = minutesToDate(serviceDay, 1625);
+      // Yesterday's overnight entry should have serviceDate = Wednesday (Mar 11)
+      // Today's entry should have serviceDate = Thursday (Mar 12)
+      const yesterdayEntry = entries1625.find((e) => e.serviceDate.getDate() === 11);
+      const todayEntry = entries1625.find((e) => e.serviceDate.getDate() === 12);
+      expect(yesterdayEntry).toBeDefined();
+      expect(todayEntry).toBeDefined();
 
-      // Correct: Thu 03:05 (Mar 12). Not Fri 03:05 (Mar 13).
+      // Using entry.serviceDate produces correct display date.
+      // Yesterday's overnight: minutesToDate(Wed Mar 11, 1625) = Thu 03:05 (Mar 12)
+      const displayDate = minutesToDate(yesterdayEntry!.serviceDate, 1625);
       expect(displayDate.getDate()).toBe(12); // March 12 (Thursday)
       expect(displayDate.getHours()).toBe(3);
       expect(displayDate.getMinutes()).toBe(5);
+
+      // Today's entry: minutesToDate(Thu Mar 12, 1625) = Fri 03:05 (Mar 13)
+      // This is a different trip — it will depart tomorrow at 03:05.
+      const todayDisplayDate = minutesToDate(todayEntry!.serviceDate, 1625);
+      expect(todayDisplayDate.getDate()).toBe(13); // March 13 (Friday)
     });
   });
 

@@ -14,8 +14,8 @@ import type { TimetableEntry } from '../../types/app/transit-composed';
  * @returns Groups as an array of [key, entries] tuples, sorted by the
  *          earliest departure time in each group.
  */
-export function groupByRouteHeadsign(entries: TimetableEntry[]): [string, TimetableEntry[]][] {
-  const map = new Map<string, TimetableEntry[]>();
+export function groupByRouteHeadsign<T extends TimetableEntry>(entries: T[]): [string, T[]][] {
+  const map = new Map<string, T[]>();
 
   for (const entry of entries) {
     const key = `${entry.routeDirection.route.route_id}\0${entry.routeDirection.headsign}`;

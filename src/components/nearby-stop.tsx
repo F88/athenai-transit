@@ -6,7 +6,6 @@ import { distanceM } from '../domain/transit/distance';
 import { groupByRouteHeadsign } from '../domain/transit/group-timetable-entries';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
-import { getServiceDay } from '../domain/transit/service-day';
 import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
 import { resolveAgencyDisplayName } from '../domain/transit/get-agency-display-name';
 import { DepartureItem } from './departure-item';
@@ -42,8 +41,6 @@ export function NearbyStop({
   const info = useInfoLevel(infoLevel);
   const stopNames = getStopDisplayNames(stop, infoLevel);
   const distance = mapCenter ? Math.round(distanceM(mapCenter, stop)) : null;
-  const serviceDay = useMemo(() => getServiceDay(now), [now]);
-
   // Show route_type emoji on each departure row when the stop serves
   // multiple route_types (so the user can distinguish bus vs tram etc.).
   // verbose: always show. detailed and below: only when multiple types.
@@ -135,7 +132,6 @@ export function NearbyStop({
               <FlatDepartureItem
                 key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}__${i}`}
                 entry={entry}
-                serviceDay={serviceDay}
                 now={now}
                 isFirst={i === 0}
                 showRouteTypeIcon={showRouteTypeIconForAllDepartures}
@@ -153,7 +149,6 @@ export function NearbyStop({
             <DepartureItem
               key={`${stop.stop_id}__${key}`}
               entries={entries}
-              serviceDay={serviceDay}
               now={now}
               infoLevel={infoLevel}
               showRouteTypeIcon={showRouteTypeIconForAllDepartures}

@@ -1,20 +1,18 @@
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
-import type { TimetableEntry } from '../types/app/transit-composed';
+import type { ContextualTimetableEntry } from '../types/app/transit-composed';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
 import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
-import { minutesToDate } from '../domain/transit/calendar-utils';
+import { formatDateKey, minutesToDate } from '../domain/transit/calendar-utils';
 import { hasBoardableDeparture } from '../domain/transit/timetable-utils';
 import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
 
 interface DepartureItemProps {
   /** Timetable entries for a single route+headsign group. */
-  entries: TimetableEntry[];
-  /** Service day used to resolve departure minutes to Date. */
-  serviceDay: Date;
+  entries: ContextualTimetableEntry[];
   now: Date;
   infoLevel: InfoLevel;
   /** Whether to show route_type emoji (e.g. when stop serves multiple route types). */
@@ -30,7 +28,6 @@ interface DepartureItemProps {
 
 export function DepartureItem({
   entries,
-  serviceDay,
   now,
   infoLevel,
   showRouteTypeIcon,
@@ -55,7 +52,7 @@ export function DepartureItem({
   // Terminal entries show arrival time; all others show departure time.
   const displayTimes = displayEntries.map((e) =>
     minutesToDate(
-      serviceDay,
+      e.serviceDate,
       e.patternPosition.isTerminal ? e.schedule.arrivalMinutes : e.schedule.departureMinutes,
     ),
   );
@@ -136,6 +133,7 @@ export function DepartureItem({
               {e.schedule.arrivalMinutes !== e.schedule.departureMinutes &&
                 ` a=${e.schedule.arrivalMinutes}`}
               {e.routeDirection.direction !== undefined && ` dir=${e.routeDirection.direction}`}
+              {` sd=${formatDateKey(e.serviceDate)}`}
             </div>
           ))}
         </div>

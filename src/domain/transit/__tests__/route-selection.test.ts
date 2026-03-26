@@ -9,11 +9,11 @@ import {
 } from '../route-selection';
 import type { RouteShape } from '../../../types/app/map';
 import type { RouteType } from '../../../types/app/transit';
-import type { TimetableEntry } from '../../../types/app/transit-composed';
+import type { ContextualTimetableEntry, TimetableEntry } from '../../../types/app/transit-composed';
 import { makeRoute, makeStop, makeStopWithContext } from '../../../__tests__/helpers';
 
-/** Shorthand: creates TimetableEntry[] from route ID strings. */
-function makeEntries(routeIds: string[]): TimetableEntry[] {
+/** Shorthand: creates ContextualTimetableEntry[] from route ID strings. */
+function makeEntries(routeIds: string[]): ContextualTimetableEntry[] {
   return routeIds.map((id) => ({
     schedule: { departureMinutes: 480, arrivalMinutes: 480 },
     routeDirection: {
@@ -23,6 +23,7 @@ function makeEntries(routeIds: string[]): TimetableEntry[] {
     },
     boarding: { pickupType: 0 as const, dropOffType: 0 as const },
     patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
+    serviceDate: new Date('2026-01-01'),
   }));
 }
 
@@ -41,7 +42,7 @@ describe('extractRouteIdsForStop', () => {
     const ctx = {
       stop,
       routeTypes: [3 as const],
-      departures: [] as TimetableEntry[],
+      departures: [] as ContextualTimetableEntry[],
       isBoardableOnServiceDay: true,
       agencies: [],
       routes: [makeRoute('r1'), makeRoute('r2')],
@@ -54,7 +55,7 @@ describe('extractRouteIdsForStop', () => {
     const ctx = {
       stop,
       routeTypes: [3 as const],
-      departures: [] as TimetableEntry[],
+      departures: [] as ContextualTimetableEntry[],
       isBoardableOnServiceDay: false,
       agencies: [],
       routes: [],

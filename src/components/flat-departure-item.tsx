@@ -1,19 +1,17 @@
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
-import type { TimetableEntry } from '../types/app/transit-composed';
+import type { ContextualTimetableEntry } from '../types/app/transit-composed';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
 import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
-import { minutesToDate } from '../domain/transit/calendar-utils';
+import { formatDateKey, minutesToDate } from '../domain/transit/calendar-utils';
 import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
 
 interface FlatDepartureItemProps {
   /** The timetable entry to display. */
-  entry: TimetableEntry;
-  /** Service day used to resolve departure minutes to Date. */
-  serviceDay: Date;
+  entry: ContextualTimetableEntry;
   /** Current time for relative time calculation. */
   now: Date;
   /** Whether this is the first item in the list. */
@@ -37,7 +35,6 @@ interface FlatDepartureItemProps {
  */
 export function FlatDepartureItem({
   entry,
-  serviceDay,
   now,
   isFirst,
   showRouteTypeIcon,
@@ -54,7 +51,7 @@ export function FlatDepartureItem({
   const displayMinutes = isTerminal
     ? entry.schedule.arrivalMinutes
     : entry.schedule.departureMinutes;
-  const departureTime = minutesToDate(serviceDay, displayMinutes);
+  const departureTime = minutesToDate(entry.serviceDate, displayMinutes);
   const isPickupUnavailable = entry.boarding.pickupType === 1;
 
   return (
@@ -117,6 +114,7 @@ export function FlatDepartureItem({
           {entry.schedule.arrivalMinutes !== entry.schedule.departureMinutes &&
             ` a=${entry.schedule.arrivalMinutes}`}
           {entry.routeDirection.direction !== undefined && ` dir=${entry.routeDirection.direction}`}
+          {` sd=${formatDateKey(entry.serviceDate)}`}
         </div>
       )}
     </div>

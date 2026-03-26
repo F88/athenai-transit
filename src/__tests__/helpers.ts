@@ -59,9 +59,9 @@ export function makeRoute(id: string, routeType: RouteType = 3): Route {
  * Creates a minimal StopWithContext for testing.
  *
  * @param stop - The Stop to wrap
- * @param routeIds - Route IDs to generate TimetableEntry items for
+ * @param routeIds - Route IDs to generate ContextualTimetableEntry items for
  * @param routeTypes - GTFS route_type values (default `[3]` = bus)
- * @returns A StopWithContext with one TimetableEntry per routeId
+ * @returns A StopWithContext with one ContextualTimetableEntry per routeId
  */
 export function makeStopWithContext(
   stop: Stop,
@@ -79,6 +79,7 @@ export function makeStopWithContext(
       routeDirection: { route, headsign: 'Test', headsign_names: {} },
       boarding: { pickupType: 0 as const, dropOffType: 0 as const },
       patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
+      serviceDate: new Date('2026-01-01'),
     })),
     isBoardableOnServiceDay: true,
     agencies: [],

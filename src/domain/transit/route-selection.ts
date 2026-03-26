@@ -1,6 +1,10 @@
 import type { RouteShape } from '../../types/app/map';
 import type { Route, RouteType, Stop } from '../../types/app/transit';
-import type { StopWithContext, TimetableEntry } from '../../types/app/transit-composed';
+import type {
+  ContextualTimetableEntry,
+  StopWithContext,
+  TimetableEntry,
+} from '../../types/app/transit-composed';
 
 /** Selection info for a stop. */
 export interface StopSelectionInfo {
@@ -56,12 +60,12 @@ export function extractRouteIdsForStop(departures: StopWithContext[], stopId: st
  * `stop` and `routeTypes` which are already available via other props.
  *
  * @param contexts - Array of stop departure contexts.
- * @returns A Map keyed by stop_id containing TimetableEntry arrays.
+ * @returns A Map keyed by stop_id containing ContextualTimetableEntry arrays.
  */
 export function buildTimetableEntriesMap(
   contexts: StopWithContext[],
-): Map<string, TimetableEntry[]> {
-  const map = new Map<string, TimetableEntry[]>();
+): Map<string, ContextualTimetableEntry[]> {
+  const map = new Map<string, ContextualTimetableEntry[]>();
   for (const d of contexts) {
     map.set(d.stop.stop_id, d.departures);
   }

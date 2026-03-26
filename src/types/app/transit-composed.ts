@@ -99,7 +99,7 @@ export interface StopWithMeta {
 }
 
 /**
- * A stop paired with its route types and upcoming timetable entries.
+ * A stop paired with its route types and upcoming {@link ContextualTimetableEntry} items.
  *
  * Extends {@link StopWithMeta} with departure context.
  * Used by BottomSheet and MapView tooltip to display nearby stop info.
@@ -111,7 +111,7 @@ export interface StopWithMeta {
  */
 export interface StopWithContext extends StopWithMeta {
   routeTypes: RouteType[];
-  departures: TimetableEntry[];
+  departures: ContextualTimetableEntry[];
   /**
    * Whether at least one boardable entry exists in the full service day.
    *
@@ -198,7 +198,8 @@ export type StopServiceType = 0 | 1 | 2 | 3;
  * A single entry in a stop's timetable with arrival time,
  * boarding availability, and trip pattern context.
  *
- * Used by both the timetable modal and the NearbyStop display.
+ * Used directly by the timetable modal. NearbyStop uses
+ * {@link ContextualTimetableEntry} which extends this with serviceDate.
  */
 export interface TimetableEntry {
   /** Schedule: departure and arrival times. */
@@ -261,3 +262,43 @@ export interface TimetableEntry {
     remainingMinutes: number;
   };
 }
+
+/**
+ * Service date context for accurate minutes-to-Date conversion.
+ *
+ * GTFS departure/arrival times are minutes from midnight (e.g., 1625 = 27:05).
+ * To convert to a correct Date, the service date (not wall-clock date) is needed.
+ * Without it, overnight entries (>= 1440 min) from the previous service day
+ * produce dates 1 day ahead.
+ *
+ * Defined as an independent interface for reuse across multiple types:
+ * {@link ContextualTimetableEntry} (NearbyStop), and future types for
+ * route display, trip details, and survival indicators.
+ */
+export interface WithServiceDate {
+  /**
+   * GTFS service date this entry belongs to, as midnight (00:00) local time.
+   *
+   * Date type for consistency with getServiceDay() and minutesToDate(),
+   * which both operate on Date. Minutes are added from midnight,
+   * so hours >= 24 roll into the next calendar day.
+   *
+   * Do not mutate — multiple entries may share the same Date instance.
+   */
+  readonly serviceDate: Date;
+}
+
+/**
+ * TimetableEntry with service day context for accurate datetime computation.
+ *
+ * Extends {@link TimetableEntry} with {@link WithServiceDate} to enable
+ * correct Date conversion via `minutesToDate(serviceDate, departureMinutes)`.
+ * Without serviceDate, overnight entries from the previous service day
+ * produce dates 1 day ahead.
+ *
+ * Returned by `getUpcomingTimetableEntries`. The timetable modal
+ * (`getFullDayTimetableEntries`) continues to use plain {@link TimetableEntry}.
+ *
+ * Follows the naming pattern of {@link StopWithContext} (domain type + contextual metadata).
+ */
+export interface ContextualTimetableEntry extends TimetableEntry, WithServiceDate {}

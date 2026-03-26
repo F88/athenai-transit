@@ -9,7 +9,12 @@
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, RouteType, Stop } from '../types/app/transit';
 import type { SourceMeta, StopWithMeta } from '../types/app/transit-composed';
-import type { CollectionResult, Result, TimetableResult } from '../types/app/repository';
+import type {
+  CollectionResult,
+  Result,
+  TimetableResult,
+  UpcomingTimetableResult,
+} from '../types/app/repository';
 
 /**
  * Maximum number of stops that any single query can return.
@@ -58,13 +63,20 @@ export interface TransitRepository {
   getStopsInBounds(bounds: Bounds, limit: number): Promise<CollectionResult<StopWithMeta>>;
 
   /**
-   * Returns upcoming departures from a specific stop as individual
-   * timetable entries, sorted by departure time (earliest first).
+   * Returns upcoming departures from a specific stop as
+   * {@link ContextualTimetableEntry} items, sorted chronologically.
    *
    * Each entry includes route/headsign, boarding availability
-   * (pickupType/dropOffType), and pattern position (isTerminal/isOrigin).
+   * (pickupType/dropOffType), pattern position (isTerminal/isOrigin),
+   * and `serviceDate` for accurate minutes-to-Date conversion.
    * Consumers are responsible for filtering (e.g. excluding drop-off-only
    * entries) and grouping (e.g. by route+headsign for display).
+   *
+   * ### Sorting
+   * Results are sorted by actual chronological time using
+   * `minutesToDate(serviceDate, departureMinutes)`. This ensures
+   * correct ordering when entries from different service days
+   * (today vs previous day overnight) are mixed.
    *
    * ### Service day boundary
    * The GTFS service day does not change at midnight but at 03:00.
@@ -76,6 +88,7 @@ export interface TransitRepository {
    * service day are included as they represent late-night runs past
    * midnight. Additionally, overnight times from the previous service
    * day that extend into the current real-world time are included.
+   * Each entry's `serviceDate` reflects which service day it belongs to.
    *
    * ### Truncation
    * `truncated` is `true` when the total number of upcoming entries
@@ -91,9 +104,13 @@ export interface TransitRepository {
    *                 determined internally (03:00 boundary).
    * @param limit  - Maximum number of entries to return.
    *                 When omitted, all upcoming entries are returned.
-   * @returns Timetable entries sorted by departure time.
+   * @returns ContextualTimetableEntry items sorted chronologically.
    */
-  getUpcomingTimetableEntries(stopId: string, now: Date, limit?: number): Promise<TimetableResult>;
+  getUpcomingTimetableEntries(
+    stopId: string,
+    now: Date,
+    limit?: number,
+  ): Promise<UpcomingTimetableResult>;
 
   /**
    * Returns all GTFS route_type values for a stop.
