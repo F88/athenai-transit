@@ -229,6 +229,37 @@ describe('detectWarnings', () => {
     expect(warnings.some((w) => w.type === 'NEWER_AVAILABLE')).toBe(false);
   });
 
+  it('returns NEWER_AVAILABLE with multiple newer resources', () => {
+    const resources = [
+      makeRemote('20260301', true),
+      makeRemote('20260401', false, '2026-09-28', '2026-04-01'),
+      makeRemote('20260501', false, '2026-12-31', '2026-05-01'),
+    ];
+    const meta = makeMeta('20260301');
+    const warnings = detectWarnings(resources, makeLocal(meta), null, now);
+    const newer = warnings.find((w) => w.type === 'NEWER_AVAILABLE');
+    expect(newer).toBeDefined();
+    if (newer?.type === 'NEWER_AVAILABLE') {
+      expect(newer.urls).toHaveLength(2);
+      expect(newer.message).toContain('2 newer resource(s)');
+      expect(newer.message).toContain('2026-04-01 - 2026-09-28');
+      expect(newer.message).toContain('2026-05-01 - 2026-12-31');
+    }
+  });
+
+  it('NEWER_AVAILABLE message includes valid period without date= prefix', () => {
+    const resources = [
+      makeRemote('20260301', true),
+      makeRemote('20260401', false, '2026-09-28', '2026-04-01'),
+    ];
+    const meta = makeMeta('20260301');
+    const warnings = detectWarnings(resources, makeLocal(meta), null, now);
+    const newer = warnings.find((w) => w.type === 'NEWER_AVAILABLE');
+    expect(newer).toBeDefined();
+    expect(newer!.message).toContain('valid: 2026-04-01 - 2026-09-28');
+    expect(newer!.message).not.toContain('date=');
+  });
+
   it('NEWER_AVAILABLE fires every time (not snapshot-dependent)', () => {
     const resources = [
       makeRemote('20260301', true),

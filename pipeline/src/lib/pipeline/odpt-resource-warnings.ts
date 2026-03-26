@@ -201,17 +201,18 @@ export function detectWarnings(
   // until the local data is updated, so unapplied resources stay visible.
   if (meta) {
     const localDate = extractDateParam(meta.url) ?? '';
-    const newerUrls = resources
-      .filter((r) => {
-        const remoteDate = extractDateParam(r.url) ?? '';
-        return remoteDate > localDate;
-      })
-      .map((r) => r.url);
-    if (newerUrls.length > 0) {
+    const newerResources = resources.filter((r) => {
+      const remoteDate = extractDateParam(r.url) ?? '';
+      return remoteDate > localDate;
+    });
+    if (newerResources.length > 0) {
+      const details = newerResources
+        .map((r) => `valid: ${r.feed_start_date ?? '?'} - ${r.feed_end_date ?? '?'}`)
+        .join(', ');
       warnings.push({
         type: 'NEWER_AVAILABLE',
-        message: `${newerUrls.length} newer resource(s) available (local: date=${localDate})`,
-        urls: newerUrls,
+        message: `${newerResources.length} newer resource(s) available (${details})`,
+        urls: newerResources.map((r) => r.url),
       });
     }
   }
