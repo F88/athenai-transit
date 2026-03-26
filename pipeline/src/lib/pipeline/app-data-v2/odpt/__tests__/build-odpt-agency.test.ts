@@ -30,7 +30,7 @@ describe('buildAgencyV2', () => {
       l: 'ja',
       tz: 'Asia/Tokyo',
       fu: '',
-      cs: [{ b: '000000', t: 'FFFFFF' }],
+      cs: [],
     });
   });
 

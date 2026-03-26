@@ -65,7 +65,7 @@ describe('extractAgenciesV2', () => {
       l: 'ja',
       tz: '',
       fu: '',
-      cs: [{ b: '000000', t: 'FFFFFF' }],
+      cs: [],
     });
   });
 

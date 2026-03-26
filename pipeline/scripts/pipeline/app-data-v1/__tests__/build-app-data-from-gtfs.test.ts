@@ -132,7 +132,7 @@ describe('extractAgencies', () => {
       l: 'ja',
       tz: '',
       fu: '',
-      cs: [{ b: '000000', t: 'FFFFFF' }],
+      cs: [],
     });
   });
 
@@ -150,14 +150,14 @@ describe('extractAgencies', () => {
     expect(result[0].cs).toEqual([{ b: '00377E', t: 'FFFFFF' }]);
   });
 
-  it('returns cs from provider colors', () => {
+  it('returns empty cs when no provider colors are configured', () => {
     db.exec(`
       INSERT INTO agency (agency_id, agency_name)
       VALUES ('A001', 'Test Agency');
     `);
 
     const result = extractAgencies(db, 'test', TEST_PROVIDER);
-    expect(result[0].cs).toEqual([{ b: '000000', t: 'FFFFFF' }]);
+    expect(result[0].cs).toEqual([]);
   });
 
   it('handles NULL agency_url and agency_lang as empty strings', () => {
