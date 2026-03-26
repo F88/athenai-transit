@@ -89,7 +89,7 @@ Run the full pipeline for the new source.
 Use the script directly (not `npm run`) to run for a single source:
 
 ```bash
-npx tsx pipeline/scripts/pipeline/download-gtfs.ts {source-name}
+npx tsx --env-file-if-exists=pipeline/.env.pipeline.local pipeline/scripts/pipeline/download-gtfs.ts {source-name}
 npx tsx pipeline/scripts/pipeline/build-gtfs-db.ts {source-name}
 npx tsx pipeline/scripts/pipeline/app-data-v2/build-from-gtfs.ts {source-name}
 npm run data:sync
