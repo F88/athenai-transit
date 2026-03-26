@@ -219,6 +219,30 @@ describe('prepareStopTimetable', () => {
       expect(result.entries[0].boarding.pickupType).toBe(1);
       expect(result.omitted.terminal).toBe(1);
     });
+
+    it('circular route: isTerminal && isOrigin both true → filtered out', () => {
+      // Circular routes have the same stop as both origin and terminal.
+      // isTerminal should win and the entry should be removed.
+      const entries = [
+        makeEntry({ isTerminal: true, isOrigin: true }),
+        makeEntry(),
+      ];
+      const result = prepareStopTimetable(entries, false);
+      expect(result.entries).toHaveLength(1);
+      expect(result.omitted.terminal).toBe(1);
+    });
+
+    it('does not modify the input array', () => {
+      const entries = [
+        makeEntry(),
+        makeEntry({ isTerminal: true }),
+        makeEntry(),
+      ];
+      const original = [...entries];
+      prepareStopTimetable(entries, false);
+      expect(entries).toHaveLength(original.length);
+      expect(entries).toEqual(original);
+    });
   });
 });
 
@@ -439,7 +463,7 @@ describe('prepareRouteHeadsignTimetable', () => {
       const entries = [
         makeEntry({ route: routeA, headsign: 'North' }),
         makeEntry({ route: routeA, headsign: 'North ' }), // trailing space
-        makeEntry({ route: routeA, headsign: 'north' }),   // different case
+        makeEntry({ route: routeA, headsign: 'north' }), // different case
       ];
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', true);
       expect(result.entries).toHaveLength(1);
@@ -453,6 +477,28 @@ describe('prepareRouteHeadsignTimetable', () => {
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
       expect(result.entries).toHaveLength(0);
       expect(result.omitted.terminal).toBe(0); // not 100
+    });
+
+    it('circular route: isTerminal && isOrigin both true → filtered out', () => {
+      const entries = [
+        makeEntry({ route: routeA, headsign: 'North', isTerminal: true, isOrigin: true }),
+        makeEntry({ route: routeA, headsign: 'North' }),
+      ];
+      const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
+      expect(result.entries).toHaveLength(1);
+      expect(result.omitted.terminal).toBe(1);
+    });
+
+    it('does not modify the input array', () => {
+      const entries = [
+        makeEntry({ route: routeA, headsign: 'North' }),
+        makeEntry({ route: routeA, headsign: 'North', isTerminal: true }),
+        makeEntry({ route: routeB, headsign: 'South' }),
+      ];
+      const original = [...entries];
+      prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
+      expect(entries).toHaveLength(original.length);
+      expect(entries).toEqual(original);
     });
   });
 });
