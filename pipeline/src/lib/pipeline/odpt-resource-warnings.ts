@@ -38,6 +38,7 @@ export type Warning =
   | { type: 'NO_VALID_DATA'; message: string }
   | { type: 'EXPIRING_SOON'; message: string; daysLeft: number }
   | { type: 'NEW_RESOURCE'; message: string; urls: string[] }
+  | { type: 'NEWER_AVAILABLE'; message: string; urls: string[] }
   | { type: 'NO_DOWNLOAD_REPORT'; message: string };
 
 // ---------------------------------------------------------------------------
@@ -191,6 +192,29 @@ export function detectWarnings(
         type: 'NEW_RESOURCE',
         message: `${newUrls.length} new resource(s) since last check`,
         urls: newUrls,
+      });
+    }
+  }
+
+  // NEWER_AVAILABLE: remote resources with a later feed_start_date than local.
+  // Unlike NEW_RESOURCE (snapshot-based, fires once), this fires every time
+  // until the local data is updated, so unapplied resources stay visible.
+  const localFeedStart = localInRemote?.feed_start_date ?? meta.feedInfo?.startDate ?? null;
+  if (localFeedStart) {
+    const newerResources = resources.filter((r) => {
+      if (!r.feed_start_date) {
+        return false;
+      }
+      return r.feed_start_date > localFeedStart;
+    });
+    if (newerResources.length > 0) {
+      const details = newerResources
+        .map((r) => `valid: ${r.feed_start_date ?? '?'} - ${r.feed_end_date ?? '?'}`)
+        .join(', ');
+      warnings.push({
+        type: 'NEWER_AVAILABLE',
+        message: `${newerResources.length} newer resource(s) available (${details})`,
+        urls: newerResources.map((r) => r.url),
       });
     }
   }
