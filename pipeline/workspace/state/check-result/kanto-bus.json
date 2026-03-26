@@ -1,6 +1,6 @@
 {
   "sourceName": "kanto-bus",
-  "checkedAt": "2026-03-26T05:31:30.501Z",
+  "checkedAt": "2026-03-26T09:15:13.255Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260116&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]",
     "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260130&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]",
@@ -10,8 +10,7 @@
   ],
   "result": "attention",
   "warnings": [
-    "EXPIRING_SOON",
-    "NEW_RESOURCE"
+    "EXPIRING_SOON"
   ],
   "errors": []
 }
