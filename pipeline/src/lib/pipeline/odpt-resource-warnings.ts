@@ -38,6 +38,7 @@ export type Warning =
   | { type: 'NO_VALID_DATA'; message: string }
   | { type: 'EXPIRING_SOON'; message: string; daysLeft: number }
   | { type: 'NEW_RESOURCE'; message: string; urls: string[] }
+  | { type: 'NEWER_AVAILABLE'; message: string; urls: string[] }
   | { type: 'NO_DOWNLOAD_REPORT'; message: string };
 
 // ---------------------------------------------------------------------------
@@ -191,6 +192,26 @@ export function detectWarnings(
         type: 'NEW_RESOURCE',
         message: `${newUrls.length} new resource(s) since last check`,
         urls: newUrls,
+      });
+    }
+  }
+
+  // NEWER_AVAILABLE: remote resources newer than local that have not been applied.
+  // Unlike NEW_RESOURCE (snapshot-based, fires once), this fires every time
+  // until the local data is updated, so unapplied resources stay visible.
+  if (meta) {
+    const localDate = extractDateParam(meta.url) ?? '';
+    const newerUrls = resources
+      .filter((r) => {
+        const remoteDate = extractDateParam(r.url) ?? '';
+        return remoteDate > localDate;
+      })
+      .map((r) => r.url);
+    if (newerUrls.length > 0) {
+      warnings.push({
+        type: 'NEWER_AVAILABLE',
+        message: `${newerUrls.length} newer resource(s) available (local: date=${localDate})`,
+        urls: newerUrls,
       });
     }
   }

@@ -205,6 +205,46 @@ describe('detectWarnings', () => {
     expect(warnings.some((w) => w.type === 'NEW_RESOURCE')).toBe(false);
   });
 
+  // --- NEWER_AVAILABLE ---
+
+  it('returns NEWER_AVAILABLE when remote has newer date than local', () => {
+    const resources = [
+      makeRemote('20260301', true),
+      makeRemote('20260401', false, '2026-09-28', '2026-04-01'),
+    ];
+    const meta = makeMeta('20260301');
+    const warnings = detectWarnings(resources, makeLocal(meta), null, now);
+    const newer = warnings.find((w) => w.type === 'NEWER_AVAILABLE');
+    expect(newer).toBeDefined();
+    if (newer?.type === 'NEWER_AVAILABLE') {
+      expect(newer.urls).toHaveLength(1);
+      expect(newer.urls[0]).toContain('date=20260401');
+    }
+  });
+
+  it('does not return NEWER_AVAILABLE when local is the newest', () => {
+    const resources = [makeRemote('20260301', true), makeRemote('20260201', false, '2026-02-28')];
+    const meta = makeMeta('20260301');
+    const warnings = detectWarnings(resources, makeLocal(meta), null, now);
+    expect(warnings.some((w) => w.type === 'NEWER_AVAILABLE')).toBe(false);
+  });
+
+  it('NEWER_AVAILABLE fires every time (not snapshot-dependent)', () => {
+    const resources = [
+      makeRemote('20260301', true),
+      makeRemote('20260401', false, '2026-09-28', '2026-04-01'),
+    ];
+    const meta = makeMeta('20260301');
+    // Even with snapshot containing the newer URL, NEWER_AVAILABLE still fires
+    const snapshot: ResourceSnapshot = {
+      resourceUrls: resources.map((r) => r.url),
+    };
+    const warnings = detectWarnings(resources, makeLocal(meta), snapshot, now);
+    expect(warnings.some((w) => w.type === 'NEWER_AVAILABLE')).toBe(true);
+    // NEW_RESOURCE should NOT fire (already in snapshot)
+    expect(warnings.some((w) => w.type === 'NEW_RESOURCE')).toBe(false);
+  });
+
   it('returns multiple warnings simultaneously', () => {
     // EXPIRED + NO_VALID_DATA + NEW_RESOURCE
     const resources = [
