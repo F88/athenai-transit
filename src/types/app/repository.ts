@@ -28,6 +28,12 @@ export type CollectionResult<T> =
   | { success: true; data: T[]; truncated: boolean }
   | { success: false; error: string };
 
+/** Entries omitted by pre-filter (e.g. terminal arrivals hidden in simple/normal). */
+export interface TimetableOmitted {
+  /** Number of terminal arrival entries omitted. */
+  terminal: number;
+}
+
 /**
  * Metadata computed during timetable scan over the full service day.
  *

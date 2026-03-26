@@ -9,6 +9,7 @@ import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route, RouteType, Stop } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
+import type { TimetableOmitted } from '@/types/app/repository';
 import { AgencyBadge } from '@/components/badge/agency-badge';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
@@ -22,12 +23,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-
-/** Entries omitted by pre-filter (e.g. terminal arrivals hidden in simple/normal). */
-export interface TimetableOmitted {
-  /** Number of terminal arrival entries omitted. */
-  terminal: number;
-}
 
 /** Timetable for a specific route + headsign at a stop. */
 export interface RouteHeadsignTimetable {

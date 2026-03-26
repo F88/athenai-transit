@@ -21,6 +21,10 @@ import { nextInfoLevel } from './utils/next-info-level';
 import { createInfoLevel } from './utils/create-info-level';
 import { createLogger } from './utils/logger';
 import { getServiceDay } from './domain/transit/service-day';
+import {
+  prepareStopTimetable,
+  prepareRouteHeadsignTimetable,
+} from './domain/transit/timetable-filter';
 
 const logger = createLogger('App');
 import { MapView } from './components/map/map-view';
@@ -200,21 +204,15 @@ export default function App() {
 
   const infoLevelFlags = useMemo(() => createInfoLevel(settings.infoLevel), [settings.infoLevel]);
 
-  /** Fetch full-day timetable entries for a stop, filtering out terminal arrivals below detailed. */
+  /** Fetch full-day timetable entries for a stop (no filtering). */
   const fetchTimetableEntries = useCallback(
     async (stopId: string) => {
       const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
       const allEntries = result.success ? result.data : [];
       const isBoardableOnServiceDay = result.success ? result.meta.isBoardableOnServiceDay : false;
-      // Below detailed: hide terminal arrivals (passengers cannot board at terminals).
-      if (infoLevelFlags.isDetailedEnabled) {
-        return { entries: allEntries, omitted: { terminal: 0 }, isBoardableOnServiceDay };
-      }
-      const entries = allEntries.filter((e) => !e.patternPosition.isTerminal);
-      const terminalCount = allEntries.length - entries.length;
-      return { entries, omitted: { terminal: terminalCount }, isBoardableOnServiceDay };
+      return { allEntries, isBoardableOnServiceDay };
     },
-    [repo, dateTime, infoLevelFlags],
+    [repo, dateTime],
   );
 
   const handleShowTimetable = useCallback(
@@ -227,10 +225,12 @@ export default function App() {
       if (!route) {
         return;
       }
-      const { entries, omitted, isBoardableOnServiceDay } = await fetchTimetableEntries(stopId);
-      const departures = entries.filter(
-        (e) =>
-          e.routeDirection.route.route_id === routeId && e.routeDirection.headsign === headsign,
+      const { allEntries, isBoardableOnServiceDay } = await fetchTimetableEntries(stopId);
+      const { entries, omitted } = prepareRouteHeadsignTimetable(
+        allEntries,
+        routeId,
+        headsign,
+        infoLevelFlags.isDetailedEnabled,
       );
       setTimetableModal({
         type: 'route-headsign',
@@ -238,13 +238,13 @@ export default function App() {
         route,
         headsign,
         serviceDate: getServiceDay(dateTime),
-        timetableEntries: departures,
+        timetableEntries: entries,
         omitted,
         isBoardableOnServiceDay,
         agencies: meta.agencies,
       });
     },
-    [dateTime, radiusStops, fetchTimetableEntries],
+    [dateTime, radiusStops, infoLevelFlags, fetchTimetableEntries],
   );
 
   const handleShowStopTimetable = useCallback(
@@ -253,7 +253,11 @@ export default function App() {
       if (!meta) {
         return;
       }
-      const { entries, omitted, isBoardableOnServiceDay } = await fetchTimetableEntries(stopId);
+      const { allEntries, isBoardableOnServiceDay } = await fetchTimetableEntries(stopId);
+      const { entries, omitted } = prepareStopTimetable(
+        allEntries,
+        infoLevelFlags.isDetailedEnabled,
+      );
       setTimetableModal({
         type: 'stop',
         stop: meta.stop,
@@ -265,7 +269,7 @@ export default function App() {
         agencies: meta.agencies,
       });
     },
-    [dateTime, radiusStops, routeTypeMap, fetchTimetableEntries],
+    [dateTime, radiusStops, routeTypeMap, infoLevelFlags, fetchTimetableEntries],
   );
 
   // Select + pan to a stop from history. Uses focusStop to set
