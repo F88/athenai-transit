@@ -49,7 +49,9 @@ export function useNearbyDepartures(
         : Promise.all(
             radiusStops.map(async ({ stop, agencies, routes }) => {
               const [depsResult, rtResult] = await Promise.all([
-                // No limit: NearbyStop uses all entries for boarding stats and verbose display.
+                // No limit: T4 view needs all entries to group by route+headsign
+                // without losing groups. Limit would not reduce repo cost anyway
+                // (full scan + sort required for meta and overnight interleave).
                 repo.getUpcomingTimetableEntries(stop.stop_id, dateTime),
                 repo.getRouteTypesForStop(stop.stop_id),
               ]);

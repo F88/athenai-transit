@@ -95,6 +95,12 @@ export interface TransitRepository {
    * exceeds `limit`. When `limit` is omitted, all upcoming entries
    * are returned and `truncated` is `false`.
    *
+   * Note: `limit` only truncates the returned `data` array. The
+   * implementation still performs a full scan (for `meta`) and a
+   * full sort (for overnight interleave), so `limit` does not
+   * reduce computation cost. Callers that need all route+headsign
+   * groups (e.g. T4 view) should omit `limit`.
+   *
    * ### Error conditions
    * - No departure data for `stopId`:
    *   `{ success: false, error: "No departure data for stop: {stopId}" }`
