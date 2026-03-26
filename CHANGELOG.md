@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.03.26]
+
 ### Added
 
 - `ContextualTimetableEntry` 型を導入 (Issue #66):
@@ -30,6 +32,9 @@ and this project adheres to [CalVer](https://calver.org/).
 - 無効クエリパラメータの自動クリーンアップ (`cleanupInvalidQueryParams`)。
 - MockRepository: 降車専用バス停、dwell time 路線、停車順序データ追加。
 - `InfoLevelFlags.isSimpleEnabled` 追加。
+- リソースチェックに `NEWER_AVAILABLE` warning を追加:
+    - ローカルより新しい `feed_start_date` のリモートリソースを毎回検知。
+    - `NEW_RESOURCE` (初回のみ) と異なり、適用されるまで常に表示。
 
 ### Removed
 
