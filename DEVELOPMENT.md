@@ -481,7 +481,7 @@ http://localhost:5173/?repo=mock    → MockRepository (fictional in-memory data
 
 ## Diagnostics (`?diag=` mode)
 
-`?diag=<name>` パラメータで診断ツールを実行できる。v1 Repository 生成後、React 描画前に実行され、結果はブラウザコンソールに出力される。diagnostics モジュールは dynamic import のため、通常アクセス時にはロードされない。
+`?diag=<name>` パラメータで診断ツールを実行できる。Repository 生成後、React 描画前に実行され、結果はブラウザコンソールに出力される。diagnostics モジュールは dynamic import のため、通常アクセス時にはロードされない。
 
 ### 起動方法 Diagnostics mode
 
@@ -512,8 +512,7 @@ http://localhost:5173/?diag=v2-load
 `?repo=` で選択した Repository の API を 12 の HOME_LOCATIONS で呼び出し、所要時間を計測。
 
 ```text
-?diag=repo-bench           → v1 repo のベンチマーク
-?diag=repo-bench&repo=v2   → v2 repo のベンチマーク
+?diag=repo-bench           → repo のベンチマーク
 ```
 
 計測対象: getAllStops, getRouteShapes, getAllSourceMeta, getStopsInBounds, getStopsNearby, getUpcomingTimetableEntries, getRouteTypesForStop, getFullDayTimetableEntries
