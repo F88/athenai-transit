@@ -99,6 +99,7 @@ export function DepartureItem({
         )}
       </div>
       <div className="flex items-baseline gap-3 pl-1">
+        {/* Relative time hint — easy to scan at a glance (e.g. "あと5分") */}
         {first && (
           <span
             className="text-xl font-bold text-[#333] dark:text-gray-100"
@@ -110,6 +111,9 @@ export function DepartureItem({
             )}
           </span>
         )}
+        {/* Absolute times for all entries including the first.
+            The first entry intentionally appears in both relative and absolute
+            because relative alone (e.g. "あと400分") is hard to interpret. */}
         {displayTimes.map((dep, i) => (
           <span key={i} className="text-sm text-[#757575] dark:text-gray-400">
             {formatAbsoluteTime(dep)}

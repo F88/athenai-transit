@@ -61,6 +61,7 @@ export function FlatDepartureItem({
     <div className="border-b border-[#e0e0e0] py-2 last:border-b-0 dark:border-gray-700">
       <div className="flex items-center gap-2">
         <div className="w-18 shrink-0 text-right">
+          {/* Relative time hint for first entry or entries within 10 min */}
           {(isFirst || departureTime.getTime() - now.getTime() <= 10 * 60 * 1000) && (
             <div
               className="text-sm font-bold text-[#333] dark:text-gray-100"
@@ -70,6 +71,7 @@ export function FlatDepartureItem({
               {isTerminal && <span className="text-xs font-normal opacity-70">着</span>}
             </div>
           )}
+          {/* Absolute time — always shown alongside relative for precise reference */}
           <div
             className="text-sm font-bold text-[#333] dark:text-gray-100"
             style={bgColor ? { color: bgColor } : undefined}

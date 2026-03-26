@@ -53,9 +53,9 @@ export interface RouteShape {
    */
   points: [number, number, number?][];
   /**
-   * Departures per day for the primary trip pattern using this shape.
-   * Derived from InsightsBundle tripPatternStats.
-   * Can be used for line thickness visualization.
+   * Total departures per day across all trip patterns for this route.
+   * Accumulated from InsightsBundle tripPatternStats.
+   * Used for line thickness visualization (frequency-based weight).
    */
   freq?: number;
   /**
