@@ -795,7 +795,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         }
       }
 
-      // Previous service day's overnight times
+      // Previous service day's overnight times (departures >= 24:00 from yesterday)
       for (const [serviceId, times] of Object.entries(group.d)) {
         if (!yesterdayServiceIds.has(serviceId)) {
           continue;
@@ -803,6 +803,23 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const arrivals = group.a?.[serviceId];
         const pickupTypes = group.pt?.[serviceId];
         const dropOffTypes = group.dt?.[serviceId];
+
+        // Count overnight entries (>= 1440) for meta consistency with data.
+        for (let j = 0; j < times.length; j++) {
+          if (times[j] < 1440) {
+            continue;
+          }
+          fullDayCount++;
+          if (!hasBoardable) {
+            const pt = (pickupTypes?.[j] ?? 0) as StopServiceType;
+            const si = isCircularStop && pt === 1 ? lastIndex : firstIndex;
+            const isTerminal = si === totalStops - 1;
+            if (pt !== 1 && !isTerminal) {
+              hasBoardable = true;
+            }
+          }
+        }
+
         const overnightTarget = nowMinutes + 1440;
         const startIdx = binarySearchFirstGte(times, overnightTarget);
         for (let i = startIdx; i < times.length; i++) {

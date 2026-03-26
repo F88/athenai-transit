@@ -48,7 +48,8 @@ export interface RouteShape {
    * Shape points as [lat, lon] or [lat, lon, dist].
    * The optional third element is GTFS shape_dist_traveled —
    * cumulative distance along the shape from the first point.
-   * Currently no sources provide dist; Leaflet ignores the third element.
+   * Consumers must strip the third element before passing to Leaflet
+   * (via toLatLng in route-shape-polyline.tsx) to prevent altitude interpretation.
    */
   points: [number, number, number?][];
   /**

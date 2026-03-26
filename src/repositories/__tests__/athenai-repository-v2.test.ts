@@ -273,14 +273,44 @@ describe('getUpcomingTimetableEntries', () => {
     expect(result.data.length).toBe(3);
   });
 
-  it('handles overnight departures', async () => {
-    const fixture = createFixtureV2();
-    const ds = new TestDataSourceV2({ test: fixture });
-    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+  // --- previous service day's overnight entries ---
 
-    const result = await repository.getUpcomingTimetableEntries('sub_01', WEEKDAY_OVERNIGHT);
-    assertSuccess(result);
-    expect(result.data.length).toBeGreaterThan(0);
+  describe('previous service day overnight entries', () => {
+    it('includes overnight entries in data', async () => {
+      const fixture = createFixtureV2();
+      const ds = new TestDataSourceV2({ test: fixture });
+      const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+      // WEEKDAY_OVERNIGHT = Thu 01:30 → service day = Wed (Mar 11)
+      // sub_01 has overnight entries 1442, 1470, 1625 on svc_weekday
+      const result = await repository.getUpcomingTimetableEntries('sub_01', WEEKDAY_OVERNIGHT);
+      assertSuccess(result);
+      expect(result.data.length).toBeGreaterThan(0);
+    });
+
+    it('meta.totalEntries includes overnight entries from previous service day', async () => {
+      const fixture = createFixtureV2();
+      const ds = new TestDataSourceV2({ test: fixture });
+      const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+      // At WEEKDAY_OVERNIGHT (Thu 01:30, service day = Wed),
+      // today (Wed) entries + yesterday (Tue) overnight entries should both be in totalEntries
+      const result = await repository.getUpcomingTimetableEntries('sub_01', WEEKDAY_OVERNIGHT);
+      assertSuccess(result);
+      // totalEntries should be >= data.length (meta counts full day including overnight)
+      expect(result.meta.totalEntries).toBeGreaterThanOrEqual(result.data.length);
+    });
+
+    it('meta.isBoardableOnServiceDay reflects overnight boardable entries', async () => {
+      const fixture = createFixtureV2();
+      const ds = new TestDataSourceV2({ test: fixture });
+      const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+      // sub_01 has boardable entries (non-terminal, pickupType=0) in both today and overnight
+      const result = await repository.getUpcomingTimetableEntries('sub_01', WEEKDAY_OVERNIGHT);
+      assertSuccess(result);
+      expect(result.meta.isBoardableOnServiceDay).toBe(true);
+    });
   });
 
   it('respects limit on total entries', async () => {
