@@ -196,14 +196,16 @@ export function detectWarnings(
     }
   }
 
-  // NEWER_AVAILABLE: remote resources newer than local that have not been applied.
+  // NEWER_AVAILABLE: remote resources with a later feed_start_date than local.
   // Unlike NEW_RESOURCE (snapshot-based, fires once), this fires every time
   // until the local data is updated, so unapplied resources stay visible.
-  if (meta) {
-    const localDate = extractDateParam(meta.url) ?? '';
+  const localFeedStart = localInRemote?.feed_start_date ?? meta.feedInfo?.startDate ?? null;
+  if (localFeedStart) {
     const newerResources = resources.filter((r) => {
-      const remoteDate = extractDateParam(r.url) ?? '';
-      return remoteDate > localDate;
+      if (!r.feed_start_date) {
+        return false;
+      }
+      return r.feed_start_date > localFeedStart;
     });
     if (newerResources.length > 0) {
       const details = newerResources

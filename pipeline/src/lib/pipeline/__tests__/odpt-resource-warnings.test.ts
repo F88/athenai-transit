@@ -207,7 +207,7 @@ describe('detectWarnings', () => {
 
   // --- NEWER_AVAILABLE ---
 
-  it('returns NEWER_AVAILABLE when remote has newer date than local', () => {
+  it('returns NEWER_AVAILABLE when remote has newer feed_start_date than local', () => {
     const resources = [
       makeRemote('20260301', true),
       makeRemote('20260401', false, '2026-09-28', '2026-04-01'),
@@ -258,6 +258,29 @@ describe('detectWarnings', () => {
     expect(newer).toBeDefined();
     expect(newer!.message).toContain('valid: 2026-04-01 - 2026-09-28');
     expect(newer!.message).not.toContain('date=');
+  });
+
+  it('NEWER_AVAILABLE compares by feed_start_date, not URL date param', () => {
+    // URL date= is older (20260201) but feed_start_date is newer (2026-04-01)
+    const resources = [
+      makeRemote('20260301', true),
+      makeRemote('20260201', false, '2026-09-28', '2026-04-01'),
+    ];
+    const meta = makeMeta('20260301');
+    const warnings = detectWarnings(resources, makeLocal(meta), null, now);
+    const newer = warnings.find((w) => w.type === 'NEWER_AVAILABLE');
+    // Should detect as newer based on feed_start_date, despite older URL date=
+    expect(newer).toBeDefined();
+  });
+
+  it('NEWER_AVAILABLE skips resources without feed_start_date', () => {
+    const resources = [
+      makeRemote('20260301', true),
+      { ...makeRemote('20260401', false), feed_start_date: null },
+    ];
+    const meta = makeMeta('20260301');
+    const warnings = detectWarnings(resources, makeLocal(meta), null, now);
+    expect(warnings.some((w) => w.type === 'NEWER_AVAILABLE')).toBe(false);
   });
 
   it('NEWER_AVAILABLE fires every time (not snapshot-dependent)', () => {
