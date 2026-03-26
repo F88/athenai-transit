@@ -70,14 +70,13 @@ npm run preview      # preview production build
 npm run pipeline:download:gtfs            # 1. download GTFS data (batch)
 npm run pipeline:download:odpt-json      # 2. download ODPT JSON data (batch, requires .env.pipeline.local)
 npm run pipeline:build:db                # 3. convert GTFS CSV -> pipeline/workspace/_build/db/*.db
-npm run pipeline:build:json              # 4. generate JSON -> pipeline/workspace/_build/data/
-npm run pipeline:build:odpt-train        # 5. generate ODPT Train JSON -> pipeline/workspace/_build/data/
-npm run pipeline:build:shapes:gtfs       # 6. generate route shapes from GTFS
-npm run pipeline:build:shapes:ksj        # 7. generate route shapes from KSJ railway
-npm run pipeline:build:v2-shapes:gtfs    # 6v2. generate v2 route shapes from GTFS
-npm run pipeline:build:v2-shapes:ksj     # 7v2. generate v2 route shapes from KSJ railway
-npm run pipeline:build:v2-insights       # 8v2. generate v2 InsightsBundle from DataBundle
-npm run data:sync                        # 9. copy pipeline/workspace/_build/data/ -> public/data/
+npm run pipeline:build:v2-data           # 4. generate v2 DataBundle from GTFS
+npm run pipeline:build:v2-odpt-train     # 5. generate v2 ODPT Train DataBundle
+npm run pipeline:build:v2-shapes:gtfs    # 6. generate v2 route shapes from GTFS
+npm run pipeline:build:v2-shapes:ksj     # 7. generate v2 route shapes from KSJ railway
+npm run pipeline:build:v2-insights       # 8. generate v2 InsightsBundle from DataBundle
+npm run pipeline:build:v2-global-insights # 9. generate v2 GlobalInsightsBundle
+npm run data:sync                        # 10. copy pipeline/workspace/_build/data-v2/ -> public/data-v2/
 ```
 
 ## Key UX Requirements

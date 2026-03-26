@@ -92,7 +92,7 @@ jobs:
           echo "::error::All ODPT JSON downloads failed."
           exit 1
 
-      # ── Transform (GTFS CSV → SQLite → JSON) ──────────────
+      # ── Transform (GTFS CSV → SQLite) ──────────────────────
       # Exit codes: 0=OK, 1=partial failure, 2=all failed.
       # Build steps use npm run (no --env-file-if-exists, safe for CI).
       - name: Build SQLite DB
@@ -111,60 +111,6 @@ jobs:
         run: |
           echo "::error::All DB builds failed."
           exit 1
-
-      - name: Build JSON
-        id: build-json
-        run: |
-          set +e
-          npm run pipeline:build:json
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
-
-      - name: Warn on JSON build partial failure
-        if: steps.build-json.outputs.exit_code == '1'
-        run: echo "::warning::Some JSON builds failed (partial failure)."
-
-      - name: Fail on JSON build failure
-        if: steps.build-json.outputs.exit_code == '2'
-        run: |
-          echo "::error::All JSON builds failed."
-          exit 1
-
-      - name: Build ODPT Train JSON
-        id: build-odpt-train
-        run: |
-          set +e
-          npm run pipeline:build:odpt-train
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
-
-      - name: Warn on ODPT Train build partial failure
-        if: steps.build-odpt-train.outputs.exit_code == '1'
-        run: echo "::warning::Some ODPT Train builds failed (partial failure)."
-
-      - name: Fail on ODPT Train build failure
-        if: steps.build-odpt-train.outputs.exit_code == '2'
-        run: |
-          echo "::error::All ODPT Train builds failed."
-          exit 1
-
-      - name: Build route shapes from GTFS
-        id: build-shapes-gtfs
-        run: |
-          set +e
-          npm run pipeline:build:shapes:gtfs
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
-
-      - name: Warn on GTFS shapes build partial failure
-        if: steps.build-shapes-gtfs.outputs.exit_code == '1'
-        run: echo "::warning::Some GTFS shapes builds failed (partial failure)."
-
-      - name: Fail on GTFS shapes build failure
-        if: steps.build-shapes-gtfs.outputs.exit_code == '2'
-        run: |
-          echo "::error::All GTFS shapes builds failed."
-          exit 1
-
-      - name: Build route shapes from KSJ railway
-        run: npm run pipeline:build:shapes:ksj
 
       # ── Transform v2 (DB → v2 JSON bundles) ─────────────────
       - name: Build v2 data from GTFS
@@ -245,22 +191,6 @@ jobs:
         run: npm run data:sync
 
       # ── Validate ───────────────────────────────────────────
-      - name: Validate generated data
-        id: validate
-        # Exit codes: 0=OK, 1=warnings, 2=errors.
-        # Capture exit code so the step doesn't fail on warnings (exit 1).
-        run: |
-          set +e
-          npm run pipeline:validate 2>&1 | tee validate-output.txt
-          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
-          cat validate-output.txt >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Fail on validation errors
-        if: steps.validate.outputs.exit_code == '2'
-        run: |
-          echo "::error::Generated data validation failed. See Job Summary for details."
-          exit 1
-
       - name: Validate v2 bundles
         id: validate-v2
         run: |
@@ -279,7 +209,7 @@ jobs:
       - name: Detect changes
         id: changes
         run: |
-          git add public/data/ public/data-v2/ pipeline/workspace/state/
+          git add public/data-v2/ pipeline/workspace/state/
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No data changes detected."
@@ -311,7 +241,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/ public/data-v2/ pipeline/workspace/state/
+          git add public/data-v2/ pipeline/workspace/state/
           git commit -m "chore(data): update transit data"
           git push
 
@@ -335,9 +265,6 @@ jobs:
           if [ "${{ steps.download-gtfs.outputs.exit_code }}" = "1" ]; then WARN="${WARN}GTFS download, "; fi
           if [ "${{ steps.download-odpt-json.outputs.exit_code }}" = "1" ]; then WARN="${WARN}ODPT download, "; fi
           if [ "${{ steps.build-db.outputs.exit_code }}" = "1" ]; then WARN="${WARN}DB build, "; fi
-          if [ "${{ steps.build-json.outputs.exit_code }}" = "1" ]; then WARN="${WARN}JSON build, "; fi
-          if [ "${{ steps.build-odpt-train.outputs.exit_code }}" = "1" ]; then WARN="${WARN}ODPT Train, "; fi
-          if [ "${{ steps.build-shapes-gtfs.outputs.exit_code }}" = "1" ]; then WARN="${WARN}GTFS shapes, "; fi
           if [ "${{ steps.build-v2-data.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 data, "; fi
           if [ "${{ steps.build-v2-odpt-train.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 ODPT Train, "; fi
           if [ "${{ steps.build-v2-shapes-gtfs.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 GTFS shapes, "; fi

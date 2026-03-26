@@ -39,6 +39,13 @@ and this project adheres to [CalVer](https://calver.org/).
     - `getFullDayDepartures` (旧 `number[]` API)。
     - `StopTimetableDeparture` 型 (`TimetableEntry` に統合)。
     - `RepoParam` から `'v1'` 削除。
+- v1 pipeline を CI / npm scripts / ドキュメントから除去:
+    - CI (`update-transit-data.yml`): v1 build / validate / Slack 通知を削除。
+    - npm scripts: `pipeline:build:json`, `pipeline:build:odpt-train`, `pipeline:build:shapes:gtfs`, `pipeline:build:shapes:ksj`, `pipeline:validate` を削除。
+    - `scripts/copy-pipeline-data.ts`: v1 sync ターゲット削除。
+    - `public/data/` (v1 データ 28MB) を削除。
+    - v1 ドキュメントを `pipeline/docs/v1-archive/` に移動。
+    - v1 スクリプト (`pipeline/scripts/pipeline/app-data-v1/`) は参考用に残存。
 
 ### Fixed
 
