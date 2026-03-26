@@ -15,6 +15,7 @@ const TEST_PROVIDER: Provider = {
     en: { long: 'Test Transit', short: 'Test' },
   },
   url: 'https://example.com',
+  colors: [{ bg: '000000', text: 'FFFFFF' }],
 };
 
 describe('buildAgencyV2', () => {
@@ -48,6 +49,7 @@ describe('buildAgencyV2', () => {
         ja: { long: 'テスト', short: 'テスト' },
         en: { long: 'Test', short: 'Test' },
       },
+      colors: [{ bg: '000000', text: 'FFFFFF' }],
     };
     const result = buildAgencyV2('test', provider);
     expect(result[0].u).toBe('');

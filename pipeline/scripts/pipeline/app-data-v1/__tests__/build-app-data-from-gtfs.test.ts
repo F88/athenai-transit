@@ -26,6 +26,7 @@ const TEST_PROVIDER: Provider = {
     en: { long: 'Test Transit', short: 'Test' },
   },
   url: 'https://example.com',
+  colors: [{ bg: '000000', text: 'FFFFFF' }],
 };
 
 // ---------------------------------------------------------------------------

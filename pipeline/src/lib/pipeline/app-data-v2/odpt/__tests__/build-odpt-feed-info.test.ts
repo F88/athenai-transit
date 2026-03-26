@@ -15,6 +15,7 @@ const TEST_PROVIDER: Provider = {
     en: { long: 'Test Transit', short: 'Test' },
   },
   url: 'https://example.com',
+  colors: [{ bg: '000000', text: 'FFFFFF' }],
 };
 
 describe('buildFeedInfoV2', () => {
@@ -43,6 +44,7 @@ describe('buildFeedInfoV2', () => {
         ja: { long: 'テスト交通', short: 'テスト' },
         en: { long: 'Test Transit', short: 'Test' },
       },
+      colors: [{ bg: '000000', text: 'FFFFFF' }],
       // url is undefined
     };
 
