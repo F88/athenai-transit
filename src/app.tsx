@@ -247,7 +247,7 @@ export default function App() {
         agencies: meta.agencies,
       });
     },
-    [dateTime, radiusStops, infoLevelFlags, fetchTimetableEntries],
+    [dateTime, radiusStops, infoLevelFlags, fetchTimetableEntries, settings.infoLevel],
   );
 
   const handleShowStopTimetable = useCallback(
@@ -275,7 +275,14 @@ export default function App() {
         agencies: meta.agencies,
       });
     },
-    [dateTime, radiusStops, routeTypeMap, infoLevelFlags, fetchTimetableEntries],
+    [
+      dateTime,
+      radiusStops,
+      routeTypeMap,
+      infoLevelFlags,
+      fetchTimetableEntries,
+      settings.infoLevel,
+    ],
   );
 
   // Select + pan to a stop from history. Uses focusStop to set
