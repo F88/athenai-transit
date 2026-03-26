@@ -7,8 +7,12 @@ import {
   WEEKDAY,
   SATURDAY,
   WEEKDAY_OVERNIGHT,
+  AFTER_BOUNDARY,
+  AFTER_BOUNDARY_PAST,
   EXCEPTION_HOLIDAY,
 } from './fixtures/test-data-source-v2';
+import { minutesToDate } from '../../domain/transit/calendar-utils';
+import { getServiceDay } from '../../domain/transit/service-day';
 
 /** Assert result is successful and return narrowed type for safe data access. */
 function assertSuccess<T>(result: {
@@ -310,6 +314,68 @@ describe('getUpcomingTimetableEntries', () => {
       const result = await repository.getUpcomingTimetableEntries('sub_01', WEEKDAY_OVERNIGHT);
       assertSuccess(result);
       expect(result.meta.isBoardableOnServiceDay).toBe(true);
+    });
+  });
+
+  // --- after service day boundary (03:00+) overnight edge cases ---
+
+  describe('after service day boundary (03:00+)', () => {
+    it('includes yesterday overnight entry that has not yet passed', async () => {
+      const fixture = createFixtureV2();
+      const ds = new TestDataSourceV2({ test: fixture });
+      const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+      // AFTER_BOUNDARY = Thu 03:03, service day = Thu
+      // Wednesday's svc_weekday has 1625 (27:05 = Thu 03:05), still 2 min away.
+      // Thursday also has 1625 from today's service.
+      // So we expect 2 entries at 1625 (yesterday overnight + today).
+      const result = await repository.getUpcomingTimetableEntries('sub_01', AFTER_BOUNDARY);
+      assertSuccess(result);
+      const entries1625 = result.data.filter((e) => e.schedule.departureMinutes === 1625);
+      expect(entries1625).toHaveLength(2); // yesterday overnight + today
+    });
+
+    it('excludes yesterday overnight entry that has already passed', async () => {
+      const fixture = createFixtureV2();
+      const ds = new TestDataSourceV2({ test: fixture });
+      const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+      // AFTER_BOUNDARY_PAST = Thu 03:06, service day = Thu
+      // Wednesday's 1625 (27:05 = Thu 03:05) has passed 1 min ago.
+      // However, Thursday also has 1625 in svc_weekday (today loop),
+      // so departureMinutes=1625 still appears from today's service.
+      // We can only verify that the count of 1625 entries is 1 (today only),
+      // not 2 (today + yesterday overnight).
+      const result = await repository.getUpcomingTimetableEntries('sub_01', AFTER_BOUNDARY_PAST);
+      assertSuccess(result);
+      const overnightEntries = result.data.filter((e) => e.schedule.departureMinutes === 1625);
+      // Only 1 (from today/Thursday), not 2 (today + yesterday/Wednesday)
+      expect(overnightEntries).toHaveLength(1);
+    });
+
+    it('overnight entry from yesterday can be correctly displayed as time', async () => {
+      const fixture = createFixtureV2();
+      const ds = new TestDataSourceV2({ test: fixture });
+      const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+      // AFTER_BOUNDARY = Thu 03:03 (Mar 12), service day = Thu
+      // Wednesday's 1625 (27:05 = Thu 03:05) is returned as upcoming.
+      const result = await repository.getUpcomingTimetableEntries('sub_01', AFTER_BOUNDARY);
+      assertSuccess(result);
+
+      // Find the overnight entries (1625 appears twice: today + yesterday)
+      const entries1625 = result.data.filter((e) => e.schedule.departureMinutes === 1625);
+      expect(entries1625.length).toBeGreaterThanOrEqual(1);
+
+      // UI displays time using: minutesToDate(getServiceDay(now), departureMinutes)
+      // For yesterday's overnight entry, this must produce the correct date (Thu 03:05).
+      const serviceDay = getServiceDay(AFTER_BOUNDARY); // = Thursday (Mar 12)
+      const displayDate = minutesToDate(serviceDay, 1625);
+
+      // Correct: Thu 03:05 (Mar 12). Not Fri 03:05 (Mar 13).
+      expect(displayDate.getDate()).toBe(12); // March 12 (Thursday)
+      expect(displayDate.getHours()).toBe(3);
+      expect(displayDate.getMinutes()).toBe(5);
     });
   });
 

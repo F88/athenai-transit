@@ -459,6 +459,16 @@ export const SATURDAY = new Date('2026-03-07T10:00:00');
 /** Thursday 01:30 — before service day boundary, service day = Wednesday (Mar 11). */
 export const WEEKDAY_OVERNIGHT = new Date('2026-03-12T01:30:00');
 /**
+ * Thursday 03:03 — just after service day boundary, service day = Thursday (Mar 12).
+ * Wednesday's overnight entry at 1625 (27:05 = Thu 03:05) is still upcoming (2 min away).
+ */
+export const AFTER_BOUNDARY = new Date('2026-03-12T03:03:00');
+/**
+ * Thursday 03:06 — after service day boundary, service day = Thursday (Mar 12).
+ * Wednesday's overnight entry at 1625 (27:05 = Thu 03:05) has already passed.
+ */
+export const AFTER_BOUNDARY_PAST = new Date('2026-03-12T03:06:00');
+/**
  * Wednesday Mar 4 at 10:00 — has calendar_dates exceptions:
  * svc_weekday removed, svc_holiday added.
  */
