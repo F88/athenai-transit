@@ -25,6 +25,7 @@ import type {
   TimetableResult,
 } from '../types/app/repository';
 import { isDropOffOnly } from '../domain/transit/timetable-utils';
+import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
 
@@ -856,7 +857,7 @@ export class MockRepository implements TransitRepository {
     let fullDayCount = 0;
     let hasBoardable = false;
 
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const nowMinutes = getServiceDayMinutes(now);
 
     for (const { routeId, headsign } of stopRoutes) {
       const route = ROUTES.find((r) => r.route_id === routeId);
