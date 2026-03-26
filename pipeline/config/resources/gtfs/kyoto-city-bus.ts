@@ -26,6 +26,7 @@ const kyotoCityBus: GtfsSourceDefinition = {
         en: { long: 'Kyoto Municipal Transportation', short: 'Kyoto City Bus' },
       },
       url: 'https://www.city.kyoto.lg.jp/kotsu/',
+      colors: [{ bg: '138060', text: 'FFFFFF' }],
     },
     authentication: {
       required: true,

@@ -26,6 +26,7 @@ const nagoyaSrt: GtfsSourceDefinition = {
         en: { long: 'Nagoya Housing & City Planning Bureau', short: 'Nagoya SRT' },
       },
       url: 'https://www.srt.city.nagoya.jp/',
+      colors: [{ bg: 'B7A66D', text: 'FFFFFF' }],
     },
     authentication: { required: false },
 

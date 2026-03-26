@@ -26,6 +26,7 @@ const kitaBus: GtfsSourceDefinition = {
         en: { long: 'Hitachi Automobile Transportation Co., Ltd.', short: 'K-bus' },
       },
       url: 'https://www.hitachi-gr.com/',
+      colors: [{ bg: 'D67BA3', text: 'FFFFFF' }],
     },
     authentication: { required: false },
 

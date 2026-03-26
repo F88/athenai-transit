@@ -25,6 +25,11 @@ const seibuBus: GtfsSourceDefinition = {
         en: { long: 'Seibu Bus Co., Ltd.', short: 'Seibu Bus' },
       },
       url: 'https://www.seibubus.co.jp/',
+      colors: [
+        { bg: '0076BB', text: 'FFFFFF' } /* Seibu Blue (primary) */,
+        { bg: '0090C4', text: 'FFFFFF' } /* Seibu Light Blue */,
+        { bg: '27AA6D', text: 'FFFFFF' } /* Seibu Green */,
+      ],
     },
     authentication: {
       required: true,

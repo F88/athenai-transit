@@ -26,6 +26,7 @@ const mirTrain: GtfsSourceDefinition = {
         en: { long: 'Metropolitan Intercity Railway Company', short: 'Tsukuba Express' },
       },
       url: 'https://www.mir.co.jp/',
+      colors: [{ bg: '003B83', text: 'FFFFFF' }],
     },
     authentication: {
       required: true,
