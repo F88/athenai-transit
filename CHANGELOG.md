@@ -11,6 +11,15 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- `ContextualTimetableEntry` 型を導入 (Issue #66):
+    - `WithServiceDate`: サービス日の文脈を持つ独立 interface (`readonly serviceDate`)。
+    - `ContextualTimetableEntry`: `TimetableEntry` + `WithServiceDate` の合成型。
+    - `UpcomingTimetableResult`: `getUpcomingTimetableEntries` 専用の Result 型。
+    - overnight 便 (前日サービスの深夜便) の日時表示が1日ずれる問題を修正。
+    - repo が `serviceDate` を付与し、Date ベースでソート (時系列順保証)。
+    - UI は `entry.serviceDate` で `minutesToDate` を呼出 (serviceDay props 廃止)。
+    - verbose 出力に `sd=` (サービス日)、repo ログに `serviceDay=`/`prev=` を追加。
+    - `minutesToDate` テスト拡充 (境界値、overnight、月跨ぎ)。
 - 時刻表モーダルを `TimetableEntry` ベースに移行:
     - 終点では到着時刻 (`arrivalMinutes`) を `nn着` と表示。
     - 終点/始発/乗車不可/降車不可ラベルを InfoLevel に応じて表示。
@@ -33,6 +42,9 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Fixed
 
+- overnight 便 (前日サービスの 24:00+ 出発) の相対時刻・絶対時刻が1日ずれる問題 (#66):
+    - NearbyStop、マーカー tooltip の両方で発生。
+    - 影響: 伊予鉄バス (iyt2) 等の 27:00+ の便、03:00〜09:03 の時間帯。
 - 多路線バス停で時刻表ダイアログ幅が不足しフィルタボタンが見切れる問題。
 
 ### Changed
