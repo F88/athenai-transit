@@ -739,13 +739,17 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       }
 
       // pattern is guaranteed to exist when resolved exists — both are built
-      // from the same tripPatterns map during initialization.
+      // from the same tripPatterns map during initialization. Guard defensively
+      // to prevent incorrect isTerminal=true when totalStops=0, stopIndex=-1.
       const pattern = this.tripPatterns.get(group.tp);
-      const totalStops = pattern ? pattern.stops.length : 0;
+      if (!pattern) {
+        continue;
+      }
+      const totalStops = pattern.stops.length;
       // For circular routes, the same stop_id appears at both index 0 and last.
       // Pre-compute both indices to resolve per-entry using boarding types.
-      const firstIndex = pattern ? pattern.stops.indexOf(stopId) : -1;
-      const lastIndex = pattern ? pattern.stops.lastIndexOf(stopId) : -1;
+      const firstIndex = pattern.stops.indexOf(stopId);
+      const lastIndex = pattern.stops.lastIndexOf(stopId);
       const isCircularStop = firstIndex !== lastIndex;
 
       const sourceTranslations = this.headsignTranslations.get(resolved.sourcePrefix);
@@ -906,11 +910,15 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       }
 
       // pattern is guaranteed to exist when resolved exists — both are built
-      // from the same tripPatterns map during initialization.
+      // from the same tripPatterns map during initialization. Guard defensively
+      // to prevent incorrect isTerminal=true when totalStops=0, stopIndex=-1.
       const pattern = this.tripPatterns.get(group.tp);
-      const totalStops = pattern ? pattern.stops.length : 0;
-      const firstIndex = pattern ? pattern.stops.indexOf(stopId) : -1;
-      const lastIndex = pattern ? pattern.stops.lastIndexOf(stopId) : -1;
+      if (!pattern) {
+        continue;
+      }
+      const totalStops = pattern.stops.length;
+      const firstIndex = pattern.stops.indexOf(stopId);
+      const lastIndex = pattern.stops.lastIndexOf(stopId);
       const isCircularStop = firstIndex !== lastIndex;
 
       const sourceTranslations = this.headsignTranslations.get(resolved.sourcePrefix);

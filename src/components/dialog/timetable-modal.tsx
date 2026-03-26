@@ -6,6 +6,7 @@ import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { resolveMinPrefixLengths } from '@/utils/resolve-min-prefix-lengths';
 import { routeTypesEmoji } from '@/domain/transit/route-type-emoji';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
+import { isDropOffOnly } from '@/domain/transit/timetable-utils';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route, RouteType, Stop } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
@@ -295,10 +296,10 @@ function VerboseMetadata({
   omitted: TimetableOmitted;
   isBoardableOnServiceDay: boolean;
 }) {
-  // Raw GTFS data counts (not domain-interpreted). pickupType 2/3 are intentionally
-  // excluded from boardable here — they are shown as raw data for debugging.
-  const boardable = timetableEntries.filter((e) => e.boarding.pickupType === 0).length;
-  const dropOffOnly = timetableEntries.filter((e) => e.boarding.pickupType === 1).length;
+  // Domain-consistent counts using isDropOffOnly (pickupType === 1 OR isTerminal).
+  // pickupType 2/3 (phone/coordination required) are considered boardable.
+  const dropOff = timetableEntries.filter((e) => isDropOffOnly(e)).length;
+  const boardable = timetableEntries.length - dropOff;
   const originCount = timetableEntries.filter((e) => e.patternPosition.isOrigin).length;
   const terminalCount = timetableEntries.filter((e) => e.patternPosition.isTerminal).length;
 
@@ -325,7 +326,7 @@ function VerboseMetadata({
   return (
     <div className="border-border text-muted-foreground mb-1 space-y-0.5 rounded border p-2 text-[11px]">
       <p>
-        boardable={boardable} dropOffOnly={dropOffOnly} origin={originCount} terminal=
+        boardable={boardable} dropOffOnly={dropOff} origin={originCount} terminal=
         {terminalCount}
       </p>
       <p>
