@@ -179,6 +179,46 @@ describe('prepareStopTimetable', () => {
       expect(result.entries[0].schedule.departureMinutes).toBe(600);
       expect(result.entries[1].schedule.departureMinutes).toBe(540);
     });
+
+    it('is not affected by boarding pickupType/dropOffType values', () => {
+      // This function filters by isTerminal only, not by boarding types.
+      // Entries with pickupType 2/3 (phone/coordinate) are not filtered.
+      const entries = [
+        makeEntry({ pickupType: 0 }),
+        makeEntry({ pickupType: 1 }),
+        makeEntry({ pickupType: 2 }),
+        makeEntry({ pickupType: 3 }),
+        makeEntry({ dropOffType: 1 }),
+      ];
+      const result = prepareStopTimetable(entries, false);
+      expect(result.entries).toHaveLength(5);
+      expect(result.omitted.terminal).toBe(0);
+    });
+
+    it('is not affected by isOrigin (only isTerminal matters)', () => {
+      // isOrigin: true entries are kept — only isTerminal triggers removal.
+      const entries = [
+        makeEntry({ isOrigin: true }),
+        makeEntry({ isOrigin: true, isTerminal: true }),
+        makeEntry({ isOrigin: false }),
+      ];
+      const result = prepareStopTimetable(entries, false);
+      expect(result.entries).toHaveLength(2);
+      expect(result.omitted.terminal).toBe(1);
+    });
+
+    it('filter criterion is isTerminal only, not boarding (mixed scenario)', () => {
+      // terminal + pickupType=0: removed (terminal wins)
+      // non-terminal + pickupType=1: kept (boarding does not affect filter)
+      const entries = [
+        makeEntry({ isTerminal: true, pickupType: 0 }),
+        makeEntry({ isTerminal: false, pickupType: 1 }),
+      ];
+      const result = prepareStopTimetable(entries, false);
+      expect(result.entries).toHaveLength(1);
+      expect(result.entries[0].boarding.pickupType).toBe(1);
+      expect(result.omitted.terminal).toBe(1);
+    });
   });
 });
 
@@ -368,6 +408,51 @@ describe('prepareRouteHeadsignTimetable', () => {
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', true);
       expect(result.entries[0].schedule.departureMinutes).toBe(600);
       expect(result.entries[1].schedule.departureMinutes).toBe(540);
+    });
+
+    it('is not affected by boarding pickupType/dropOffType values', () => {
+      // Filtering is by isTerminal and route+headsign only, not boarding types.
+      const entries = [
+        makeEntry({ route: routeA, headsign: 'North', pickupType: 0 }),
+        makeEntry({ route: routeA, headsign: 'North', pickupType: 1 }),
+        makeEntry({ route: routeA, headsign: 'North', pickupType: 2 }),
+        makeEntry({ route: routeA, headsign: 'North', pickupType: 3 }),
+        makeEntry({ route: routeA, headsign: 'North', dropOffType: 1 }),
+      ];
+      const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
+      expect(result.entries).toHaveLength(5);
+      expect(result.omitted.terminal).toBe(0);
+    });
+
+    it('is not affected by isOrigin (only isTerminal matters)', () => {
+      const entries = [
+        makeEntry({ route: routeA, headsign: 'North', isOrigin: true }),
+        makeEntry({ route: routeA, headsign: 'North', isOrigin: true, isTerminal: true }),
+      ];
+      const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
+      expect(result.entries).toHaveLength(1);
+      expect(result.omitted.terminal).toBe(1);
+    });
+
+    it('uses exact match for route_id and headsign (no normalization)', () => {
+      // Ensure no trim, case-fold, or other normalization is applied.
+      const entries = [
+        makeEntry({ route: routeA, headsign: 'North' }),
+        makeEntry({ route: routeA, headsign: 'North ' }), // trailing space
+        makeEntry({ route: routeA, headsign: 'north' }),   // different case
+      ];
+      const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', true);
+      expect(result.entries).toHaveLength(1);
+    });
+
+    it('zero matches with large data from other scopes', () => {
+      // Target route+headsign has 0 entries, but other scopes have many terminals.
+      const entries = Array.from({ length: 100 }, () =>
+        makeEntry({ route: routeB, headsign: 'South', isTerminal: true }),
+      );
+      const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
+      expect(result.entries).toHaveLength(0);
+      expect(result.omitted.terminal).toBe(0); // not 100
     });
   });
 });
