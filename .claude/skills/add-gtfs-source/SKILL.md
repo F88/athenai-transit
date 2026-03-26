@@ -85,12 +85,13 @@ Add an entry to `src/config/data-source-settings.ts`. This registers the source 
 
 ### 5. Run the pipeline and check data quality
 
-Run the full pipeline for the new source:
+Run the full pipeline for the new source.
+Use the script directly (not `npm run`) to run for a single source:
 
 ```bash
-npm run pipeline:download:gtfs -- {source-name}
-npm run pipeline:build:db -- {source-name}
-npm run pipeline:build:v2-data -- {source-name}
+npx tsx pipeline/scripts/pipeline/download-gtfs.ts {source-name}
+npx tsx pipeline/scripts/pipeline/build-gtfs-db.ts {source-name}
+npx tsx pipeline/scripts/pipeline/app-data-v2/build-from-gtfs.ts {source-name}
 npm run data:sync
 ```
 
@@ -108,7 +109,12 @@ routeColorFallbacks: {
 },
 ```
 
-The `'*'` key applies to all routes without a valid color. Per-route overrides use the route_id as key. After adding fallbacks, re-run `pipeline:build:v2-data` and `data:sync`.
+The `'*'` key applies to all routes without a valid color. Per-route overrides use the route_id as key. After adding fallbacks, re-run the build and data:sync:
+
+```bash
+npx tsx pipeline/scripts/pipeline/app-data-v2/build-from-gtfs.ts {source-name}
+npm run data:sync
+```
 
 Ask the user for the operator's corporate/brand color if not obvious.
 
@@ -119,7 +125,7 @@ Check if the GTFS ZIP contains `shapes.txt`. ODPT-sourced bus data often does no
 If shapes.txt exists, add the source to `pipeline/config/targets/build-shapes-gtfs.ts` and run:
 
 ```bash
-npm run pipeline:build:v2-shapes:gtfs -- {source-name}
+npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-gtfs.ts {source-name}
 npm run data:sync
 ```
 
