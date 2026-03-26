@@ -90,7 +90,7 @@ Run the full pipeline for the new source:
 ```bash
 npm run pipeline:download:gtfs -- {source-name}
 npm run pipeline:build:db -- {source-name}
-npm run pipeline:build:json -- {source-name}
+npm run pipeline:build:v2-data -- {source-name}
 npm run data:sync
 ```
 
@@ -108,7 +108,7 @@ routeColorFallbacks: {
 },
 ```
 
-The `'*'` key applies to all routes without a valid color. Per-route overrides use the route_id as key. After adding fallbacks, re-run `pipeline:build:json` and `data:sync`.
+The `'*'` key applies to all routes without a valid color. Per-route overrides use the route_id as key. After adding fallbacks, re-run `pipeline:build:v2-data` and `data:sync`.
 
 Ask the user for the operator's corporate/brand color if not obvious.
 
@@ -119,7 +119,7 @@ Check if the GTFS ZIP contains `shapes.txt`. ODPT-sourced bus data often does no
 If shapes.txt exists, add the source to `pipeline/config/targets/build-shapes-gtfs.ts` and run:
 
 ```bash
-npm run pipeline:build:shapes:gtfs -- {source-name}
+npm run pipeline:build:v2-shapes:gtfs -- {source-name}
 npm run data:sync
 ```
 
