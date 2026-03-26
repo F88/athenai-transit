@@ -232,6 +232,9 @@ export default function App() {
         headsign,
         infoLevelFlags.isDetailedEnabled,
       );
+      logger.debug(
+        `timetable(route-headsign) [${settings.infoLevel}]: ${stopId} ${routeId} "${headsign}" → entries=${entries.length} omitted.terminal=${omitted.terminal} total=${allEntries.length} isBoardableOnServiceDay=${isBoardableOnServiceDay}`,
+      );
       setTimetableModal({
         type: 'route-headsign',
         stop: meta.stop,
@@ -257,6 +260,9 @@ export default function App() {
       const { entries, omitted } = prepareStopTimetable(
         allEntries,
         infoLevelFlags.isDetailedEnabled,
+      );
+      logger.debug(
+        `timetable(stop) [${settings.infoLevel}]: ${stopId} → entries=${entries.length} omitted.terminal=${omitted.terminal} total=${allEntries.length} isBoardableOnServiceDay=${isBoardableOnServiceDay}`,
       );
       setTimetableModal({
         type: 'stop',
