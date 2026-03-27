@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.03.27]
+
 ### Added
 
 - `?stop=` クエリパラメータで初期選択 stop を指定可能。
