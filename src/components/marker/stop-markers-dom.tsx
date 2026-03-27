@@ -147,11 +147,11 @@ export const StopMarkersDom = memo(function StopMarkersDom({
   disableDimming = false,
 }: StopMarkersDomProps) {
   if (stops.length === 0) {
-    logger.verbose('stops=0, skipping render');
+    // logger.verbose('stops=0, skipping render');
     return null;
   }
 
-  logger.verbose(`stops=${stops.length}, selectedStopId=${selectedStopId}`);
+  // logger.verbose(`stops=${stops.length}, selectedStopId=${selectedStopId}`);
 
   return (
     <>

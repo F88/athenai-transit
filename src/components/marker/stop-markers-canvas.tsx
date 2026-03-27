@@ -134,11 +134,11 @@ export function StopMarkersCanvas({
         popupRef.current = null;
       }
       if (markersRef.current.size > 0) {
-        logger.verbose(`stops=0, clearing ${markersRef.current.size} markers`);
+        // logger.verbose(`stops=0, clearing ${markersRef.current.size} markers`);
         group.clearLayers();
         markersRef.current.clear();
       } else {
-        logger.verbose('stops=0, no markers to clear');
+        // logger.verbose('stops=0, no markers to clear');
       }
       return;
     }
@@ -289,18 +289,13 @@ function createMarker(
     opacity: dimmed ? MARKER_STYLES.dimmedOpacity : 1,
   });
 
+  // Lazy tooltip generation: bind only on mouseover to avoid HTML rendering overhead
   if (opts.showTooltip) {
-    marker.bindTooltip(
-      buildSummaryHtml(
-        stop,
-        routeTypes,
-        opts.agenciesMap?.get(stop.stop_id) ?? [],
-        opts.nearbyDepartures?.get(stop.stop_id),
-        opts.now,
-        opts.infoLevel,
-      ),
-      { direction: 'top', offset: [0, -8] },
-    );
+    marker.on('mouseover', () => {
+      if (!marker.getTooltip()) {
+        bindTooltipLazy(marker, stop, routeTypes, opts);
+      }
+    });
   }
 
   marker.on('click', () => {
@@ -343,18 +338,43 @@ function updateMarkerStyle(
     opacity: dimmed ? MARKER_STYLES.dimmedOpacity : 1,
   });
 
-  if (opts.showTooltip) {
-    marker.unbindTooltip();
-    marker.bindTooltip(
-      buildSummaryHtml(
-        stop,
-        routeTypes,
-        opts.agenciesMap?.get(stop.stop_id) ?? [],
-        opts.nearbyDepartures?.get(stop.stop_id),
-        opts.now,
-        opts.infoLevel,
-      ),
-      { direction: 'top', offset: [0, -8] },
-    );
+  // Lazy tooltip: keep existing or will be created on mouseover
+  // Do not regenerate tooltip during incremental updates (performance optimization)
+  if (opts.showTooltip && !marker.getTooltip()) {
+    marker.on('mouseover', () => {
+      if (!marker.getTooltip()) {
+        bindTooltipLazy(marker, stop, routeTypes, opts);
+      }
+    });
   }
+}
+
+/**
+ * Lazy-bind tooltip HTML on demand when marker is hovered.
+ * Defers expensive HTML rendering until needed, avoiding generateAll-at-once cost.
+ *
+ * @internal
+ */
+function bindTooltipLazy(
+  marker: L.CircleMarker,
+  stop: Stop,
+  routeTypes: RouteType[],
+  opts: {
+    nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
+    now?: Date;
+    infoLevel: InfoLevel;
+    agenciesMap?: Map<string, Agency[]>;
+  },
+): void {
+  marker.bindTooltip(
+    buildSummaryHtml(
+      stop,
+      routeTypes,
+      opts.agenciesMap?.get(stop.stop_id) ?? [],
+      opts.nearbyDepartures?.get(stop.stop_id),
+      opts.now,
+      opts.infoLevel,
+    ),
+    { direction: 'top', offset: [0, -8] },
+  );
 }
