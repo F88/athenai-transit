@@ -5,9 +5,6 @@ import type { Agency, RouteType, Stop } from '../../types/app/transit';
 import type { ContextualTimetableEntry, StopWithContext } from '../../types/app/transit-composed';
 import { StopMarkersDom } from './stop-markers-dom';
 import { StopMarkersCanvas } from './stop-markers-canvas';
-import { createLogger } from '../../utils/logger';
-
-const logger = createLogger('StopMarkers');
 
 interface StopMarkersProps {
   /** Stops to render as markers. */
@@ -58,9 +55,9 @@ export function StopMarkers({
   agenciesMap,
   disableDimming = false,
 }: StopMarkersProps) {
-  logger.verbose(
-    `stops=${stops.length}, renderMode=${renderMode}, incremental=${incremental}, selectedStopId=${selectedStopId}`,
-  );
+  // logger.verbose(
+  //   `stops=${stops.length}, renderMode=${renderMode}, incremental=${incremental}, selectedStopId=${selectedStopId}`,
+  // );
   return renderMode === 'lightweight' ? (
     <StopMarkersCanvas
       stops={stops}
