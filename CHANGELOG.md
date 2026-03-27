@@ -9,6 +9,15 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- BottomSheet を BottomSheetHeader / BottomSheetStops に分割。
+- ボトムシートのヘッダーに nearby 半径を表示 (例: `1km圏内`)。
+- 初回データ取得完了前に「近くに乗り場がありません」が一瞬表示される問題を修正。
+- `NearbyStopsCounts` (total/active/filtered) を導入し、件数情報を統合。
+- `DataConfig` を BottomSheet に props で渡す設計に変更。
+- ESLint: `_` プレフィックス付きの未使用変数を許可。
+
 ## [2026.03.26]
 
 ### Added

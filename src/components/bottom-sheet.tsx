@@ -45,7 +45,7 @@ interface BottomSheetProps {
 export function BottomSheet({
   nearbyDepartures,
   selectedStopId,
-  isNearbyLoading,
+  isNearbyLoading: _isNearbyLoading,
   hasNearbyLoaded,
   dataConfig,
   time: now,
@@ -195,7 +195,6 @@ export function BottomSheet({
       </div>
 
       <BottomSheetHeader
-        isNearbyLoading={isNearbyLoading}
         hasNearbyLoaded={hasNearbyLoaded}
         counts={counts}
         dataConfig={dataConfig}

@@ -11,7 +11,6 @@ import { useInfoLevel } from '../hooks/use-info-level';
 import { PillButton } from './button/pill-button';
 
 interface BottomSheetHeaderProps {
-  isNearbyLoading: boolean;
   hasNearbyLoaded: boolean;
   counts: NearbyStopsCounts;
   dataConfig: DataConfig;
@@ -30,7 +29,6 @@ interface BottomSheetHeaderProps {
 }
 
 export function BottomSheetHeader({
-  isNearbyLoading,
   hasNearbyLoaded,
   counts,
   dataConfig,
@@ -52,7 +50,6 @@ export function BottomSheetHeader({
   return (
     <div className="shrink-0 px-4 pb-2">
       <NearbyStopsSummary
-        isNearbyLoading={isNearbyLoading}
         hasLoaded={hasNearbyLoaded}
         counts={counts}
         nearbyRadius={dataConfig.stops.nearbyRadius}
@@ -156,29 +153,23 @@ function getNearbyStopsSummaryText(
 const summaryLogger = createLogger('NearbyStopsSummary');
 
 interface NearbyStopsSummaryProps {
-  isNearbyLoading: boolean;
-  hasLoaded: boolean;
   counts: NearbyStopsCounts;
   nearbyRadius: number;
   activeOnly: boolean;
+  hasLoaded: boolean;
 }
 
 function NearbyStopsSummary({
-  isNearbyLoading,
-  hasLoaded,
   counts,
   nearbyRadius,
   activeOnly,
+  hasLoaded,
 }: NearbyStopsSummaryProps) {
   summaryLogger.debug(
     hasLoaded
       ? `found ${counts.total} nearby stops (${counts.active} active, ${counts.filtered} after filter)`
       : 'not loaded yet',
   );
-  if (isNearbyLoading) {
-    summaryLogger.debug('loading nearby departures...');
-  }
-
   const radiusLabel = `${formatRadius(nearbyRadius)}圏内`;
   const text = getNearbyStopsSummaryText(hasLoaded, counts, activeOnly);
 
