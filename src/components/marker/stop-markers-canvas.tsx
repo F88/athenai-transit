@@ -291,11 +291,7 @@ function createMarker(
 
   // Lazy tooltip generation: bind only on mouseover to avoid HTML rendering overhead
   if (opts.showTooltip) {
-    marker.on('mouseover', () => {
-      if (!marker.getTooltip()) {
-        bindTooltipLazy(marker, stop, routeTypes, opts);
-      }
-    });
+    bindTooltipLazyListener(marker, stop, routeTypes, opts);
   }
 
   marker.on('click', () => {
@@ -341,12 +337,41 @@ function updateMarkerStyle(
   // Lazy tooltip: keep existing or will be created on mouseover
   // Do not regenerate tooltip during incremental updates (performance optimization)
   if (opts.showTooltip && !marker.getTooltip()) {
-    marker.on('mouseover', () => {
-      if (!marker.getTooltip()) {
-        bindTooltipLazy(marker, stop, routeTypes, opts);
-      }
-    });
+    bindTooltipLazyListener(marker, stop, routeTypes, opts);
   }
+
+  // Unbind stale tooltip when deps change (refreshes content on next hover)
+  if (opts.showTooltip && marker.getTooltip()) {
+    marker.unbindTooltip();
+  }
+}
+
+/**
+ * Attach mouseover listener to bind tooltip on demand, exactly once per marker.
+ * Prevents duplicate listener registration during incremental updates.
+ *
+ * @internal
+ */
+function bindTooltipLazyListener(
+  marker: L.CircleMarker,
+  stop: Stop,
+  routeTypes: RouteType[],
+  opts: {
+    nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
+    now?: Date;
+    infoLevel: InfoLevel;
+    agenciesMap?: Map<string, Agency[]>;
+  },
+): void {
+  const markerAny = marker as any;
+  if (markerAny._lazyTooltipHandlerBound) {
+    return; // Already bound, skip to prevent duplicate listeners
+  }
+  markerAny._lazyTooltipHandlerBound = true;
+
+  marker.on('mouseover', () => {
+    bindTooltipLazy(marker, stop, routeTypes, opts);
+  });
 }
 
 /**
@@ -366,6 +391,10 @@ function bindTooltipLazy(
     agenciesMap?: Map<string, Agency[]>;
   },
 ): void {
+  if (marker.getTooltip()) {
+    return; // Tooltip already bound, skip
+  }
+
   marker.bindTooltip(
     buildSummaryHtml(
       stop,
