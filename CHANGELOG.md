@@ -13,6 +13,9 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - `?stop=` クエリパラメータで初期選択 stop を指定可能。
 - production 環境で debug ログレベルを有効化。
+- Route Stops Layer: 路線選択時に路線上の全停留所を表示。nearby/far layer より描画優先度が高い。路線図データが無い路線でも実際の走行区間を可視化可能。
+- `useRouteStops` hook で停留所の路線別フィルタリング。
+- `disableDimming` prop で selected stop による dimming を制御。Route Stops Layer では stop 選択時も全停留所が通常表示される。
 
 ### Changed
 
