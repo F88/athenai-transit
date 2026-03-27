@@ -13,6 +13,14 @@ const logger = createLogger('StopMarkersCanvas');
 import { MARKER_STYLES } from '../../config/marker-styles';
 import { StopSummary } from './stop-summary';
 
+/**
+ * Track markers with lazy tooltip binding to prevent duplicate listeners during incremental updates.
+ *
+ * **Risk**: If marker.off('mouseover', ...) is added in the future, registered markers will not be
+ * re-bound (WeakSet retains the entry). Current code does not call off(), so no issue in practice.
+ */
+const tooltipBoundMarkers = new WeakSet<L.CircleMarker>();
+
 interface StopMarkersCanvasProps {
   stops: Stop[];
   selectedStopId: string | null;
@@ -360,11 +368,10 @@ function bindTooltipLazyListener(
     agenciesMap?: Map<string, Agency[]>;
   },
 ): void {
-  const markerAny = marker as any;
-  if (markerAny._lazyTooltipHandlerBound) {
+  if (tooltipBoundMarkers.has(marker)) {
     return; // Already bound, skip to prevent duplicate listeners
   }
-  markerAny._lazyTooltipHandlerBound = true;
+  tooltipBoundMarkers.add(marker);
 
   marker.on('mouseover', () => {
     bindTooltipLazy(marker, stop, routeTypes, opts);
