@@ -119,6 +119,8 @@ interface StopMarkersDomProps {
   showTooltip?: boolean;
   /** Map of stop ID to agencies operating at each stop. */
   agenciesMap?: Map<string, Agency[]>;
+  /** When true, disables dimming of non-selected stops. Selected stop highlight is preserved. */
+  disableDimming?: boolean;
 }
 
 /**
@@ -142,6 +144,7 @@ export const StopMarkersDom = memo(function StopMarkersDom({
   onFetchDepartures,
   showTooltip = true,
   agenciesMap,
+  disableDimming = false,
 }: StopMarkersDomProps) {
   if (stops.length === 0) {
     logger.verbose('stops=0, skipping render');
@@ -159,7 +162,7 @@ export const StopMarkersDom = memo(function StopMarkersDom({
           routeTypes={routeTypeMap.get(stop.stop_id) ?? [3]}
           agencies={agenciesMap?.get(stop.stop_id) ?? []}
           isSelected={selectedStopId === stop.stop_id}
-          dimmed={!!selectedStopId && selectedStopId !== stop.stop_id}
+          dimmed={!disableDimming && !!selectedStopId && selectedStopId !== stop.stop_id}
           zIndexOffset={index}
           preloadedEntries={nearbyDepartures?.get(stop.stop_id)}
           now={now}

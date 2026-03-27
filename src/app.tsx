@@ -8,6 +8,7 @@ import { useDateTime } from './hooks/use-date-time';
 import { useNearbyDepartures } from './hooks/use-nearby-departures';
 import { useSelection } from './hooks/use-selection';
 import { useStopHistory } from './hooks/use-stop-history';
+import { useRouteStops } from './hooks/use-route-stops';
 import { PERF_PROFILES } from './config/perf-profiles';
 import { TILE_SOURCES } from './config/tile-sources';
 import {
@@ -94,6 +95,9 @@ export default function App() {
     radiusStops,
     inBoundStops,
   });
+
+  const routeStops = useRouteStops(selectionInfo?.routeIds ?? null, repo);
+  // console.debug('routeStops', routeStops.length);
 
   const { history, pushStop } = useStopHistory();
 
@@ -429,6 +433,8 @@ export default function App() {
           routeTypeMap={routeTypeMap}
           routeShapes={routeShapes}
           selectionInfo={selectionInfo}
+          routeStops={routeStops}
+          // routeStops={[]}
           visibleStopTypes={visibleStopTypes}
           visibleRouteShapes={visibleRouteShapes}
           tileIndex={settings.tileIndex}

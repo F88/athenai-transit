@@ -201,6 +201,8 @@ interface MapViewProps {
   routeTypeMap: Map<string, RouteType[]>;
   routeShapes: RouteShape[];
   selectionInfo: SelectionInfo | null;
+  /** Stops on the selected routes. Rendered as a separate layer on top of dimmed markers. */
+  routeStops: StopWithMeta[];
   visibleStopTypes: Set<number>;
   visibleRouteShapes: Set<number>;
   tileIndex: number | null;
@@ -240,6 +242,7 @@ export function MapView({
   routeTypeMap,
   routeShapes,
   selectionInfo,
+  routeStops,
   visibleStopTypes,
   visibleRouteShapes,
   tileIndex,
@@ -302,23 +305,56 @@ export function MapView({
     [routeShapes, visibleRouteShapes, selectedRouteIds, hideUnselected],
   );
 
-  const filteredNearbyStops = useMemo(
-    () =>
-      filterStopsByType(radiusStops, routeTypeMap, visibleStopTypes)
-        .sort((a, b) => (b.distance ?? 0) - (a.distance ?? 0))
-        .map((m) => m.stop),
-    [radiusStops, routeTypeMap, visibleStopTypes],
-  );
+  // Route stops get rendering priority: build the set of route stop IDs first
+  const routeStopIds = useMemo(() => new Set(routeStops.map((m) => m.stop.stop_id)), [routeStops]);
 
-  // farStops = inBoundStops excluding radiusStops
+  const filteredNearbyStops = useMemo(() => {
+    const stops = filterStopsByType(radiusStops, routeTypeMap, visibleStopTypes)
+      .sort((a, b) => (b.distance ?? 0) - (a.distance ?? 0))
+      .map((m) => m.stop);
+    // Exclude stops that will be shown in route stops layer (they have rendering priority)
+    const filtered = stops.filter((s) => !routeStopIds.has(s.stop_id));
+    if (routeStopIds.size > 0 && filtered.length < stops.length) {
+      logger.debug(
+        `filteredNearbyStops: ${stops.length} → ${filtered.length} (excluded ${stops.length - filtered.length} for routeStops)`,
+      );
+    }
+    return filtered;
+  }, [radiusStops, routeTypeMap, visibleStopTypes, routeStopIds]);
+
+  // farStops = inBoundStops excluding radiusStops and routeStops
   const filteredFarStops = useMemo(() => {
     const nearbyIds = new Set(radiusStops.map((s) => s.stop.stop_id));
-    return filterStopsByType(
+    const stops = filterStopsByType(
       excludeStopsByIds(inBoundStops, nearbyIds),
       routeTypeMap,
       visibleStopTypes,
     ).map((m) => m.stop);
-  }, [inBoundStops, radiusStops, routeTypeMap, visibleStopTypes]);
+    // Exclude stops that will be shown in route stops layer (they have rendering priority)
+    const filtered = stops.filter((s) => !routeStopIds.has(s.stop_id));
+    if (routeStopIds.size > 0 && filtered.length < stops.length) {
+      logger.debug(
+        `filteredFarStops: ${stops.length} → ${filtered.length} (excluded ${stops.length - filtered.length} for routeStops)`,
+      );
+    }
+    return filtered;
+  }, [inBoundStops, radiusStops, routeTypeMap, visibleStopTypes, routeStopIds]);
+
+  // Route stops: extract Stop[] (takes rendering priority over nearby/far)
+  const routeStopMarkers = useMemo(() => routeStops.map((m) => m.stop), [routeStops]);
+  const routeStopsRouteTypeMap = useMemo(() => {
+    const map = new Map<string, RouteType[]>();
+    for (const m of routeStops) {
+      const types = m.routes.map((r) => r.route_type);
+      if (types.length > 0) {
+        map.set(
+          m.stop.stop_id,
+          [...new Set(types)].sort((a, b) => a - b),
+        );
+      }
+    }
+    return map;
+  }, [routeStops]);
 
   const handleLocated = useCallback((location: UserLocation) => setUserLocation(location), []);
 
@@ -397,6 +433,12 @@ export function MapView({
         {/* Nearby: all radiusStops including out-of-view (pre-rendered for
          * instant display on pan). EdgeMarkersSwitch (below MapContainer)
          * handles edge arrows for the same stops. */}
+        {
+          (logger.debug(
+            `layers: nearby=${filteredNearbyStops.length} (${nearbyRenderMode}), far=${filteredFarStops.length} (${farRenderMode}), routeStops=${routeStopMarkers.length} (${nearbyRenderMode}) [perfMode=${perfMode}, renderMode=${renderMode}]`,
+          ),
+          null)
+        }
         <StopMarkers
           stops={filteredNearbyStops}
           selectedStopId={selectedStopId}
@@ -426,6 +468,23 @@ export function MapView({
           incremental={true}
           // incremental={false}
         />
+        {/* Route stops: stops on selected routes, rendered on top of dimmed markers */}
+        {routeStopMarkers.length > 0 && (
+          <StopMarkers
+            stops={routeStopMarkers}
+            selectedStopId={selectedStopId}
+            routeTypeMap={routeStopsRouteTypeMap}
+            showTooltip={true}
+            nearbyDepartures={timetableEntriesMap}
+            time={now}
+            renderMode={nearbyRenderMode}
+            infoLevel={infoLevel}
+            renderer={canvasRenderer}
+            onStopSelected={onStopSelected}
+            agenciesMap={agenciesMap}
+            disableDimming={true}
+          />
+        )}
       </MapContainer>
       {mapInstance && (
         <MapNavigationPanel map={mapInstance} infoLevel={infoLevel} onLocated={handleLocated} />

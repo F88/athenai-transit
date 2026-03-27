@@ -38,6 +38,8 @@ interface StopMarkersProps {
   incremental?: boolean;
   /** Map of stop ID to agencies operating at each stop. */
   agenciesMap?: Map<string, Agency[]>;
+  /** When true, disables dimming of non-selected stops. Selected stop highlight is preserved. */
+  disableDimming?: boolean;
 }
 
 export function StopMarkers({
@@ -54,6 +56,7 @@ export function StopMarkers({
   renderer,
   incremental = false,
   agenciesMap,
+  disableDimming = false,
 }: StopMarkersProps) {
   logger.verbose(
     `stops=${stops.length}, renderMode=${renderMode}, incremental=${incremental}, selectedStopId=${selectedStopId}`,
@@ -72,6 +75,7 @@ export function StopMarkers({
       renderer={renderer}
       incremental={incremental}
       agenciesMap={agenciesMap}
+      disableDimming={disableDimming}
     />
   ) : (
     <StopMarkersDom
@@ -85,6 +89,7 @@ export function StopMarkers({
       onFetchDepartures={onFetchDepartures}
       showTooltip={showTooltip}
       agenciesMap={agenciesMap}
+      disableDimming={disableDimming}
     />
   );
 }

@@ -34,6 +34,8 @@ interface StopMarkersCanvasProps {
   incremental?: boolean;
   /** Map of stop ID to agencies operating at each stop. */
   agenciesMap?: Map<string, Agency[]>;
+  /** When true, disables dimming of non-selected stops. Selected stop highlight is preserved. */
+  disableDimming?: boolean;
 }
 
 /**
@@ -90,6 +92,7 @@ export function StopMarkersCanvas({
   renderer,
   incremental = false,
   agenciesMap,
+  disableDimming = false,
 }: StopMarkersCanvasProps) {
   const map = useMap();
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -117,6 +120,7 @@ export function StopMarkersCanvas({
       onStopSelectedRef,
       onFetchDeparturesRef,
       agenciesMap,
+      disableDimming,
     };
     if (!layerGroupRef.current) {
       layerGroupRef.current = L.layerGroup().addTo(map);
@@ -230,6 +234,7 @@ export function StopMarkersCanvas({
     infoLevel,
     showTooltip,
     incremental,
+    disableDimming,
   ]);
 
   // Clean up layer group on unmount
@@ -260,6 +265,7 @@ function createMarker(
     now?: Date;
     infoLevel: InfoLevel;
     agenciesMap?: Map<string, Agency[]>;
+    disableDimming?: boolean;
     onStopSelectedRef: React.RefObject<(stop: Stop) => void>;
     onFetchDeparturesRef: React.RefObject<
       ((stopId: string) => Promise<StopWithContext | null>) | undefined
@@ -269,7 +275,7 @@ function createMarker(
   const isSelected = stop.stop_id === opts.selectedStopId;
   const routeTypes = opts.routeTypeMap.get(stop.stop_id) ?? [3 as RouteType];
   const color = getRouteTypeColor(primaryRouteType(routeTypes));
-  const dimmed = !!opts.selectedStopId && !isSelected;
+  const dimmed = !opts.disableDimming && !!opts.selectedStopId && !isSelected;
 
   const marker = L.circleMarker([stop.stop_lat, stop.stop_lon], {
     renderer: opts.renderer,
@@ -320,12 +326,13 @@ function updateMarkerStyle(
     now?: Date;
     infoLevel: InfoLevel;
     agenciesMap?: Map<string, Agency[]>;
+    disableDimming?: boolean;
   },
 ): void {
   const isSelected = stop.stop_id === opts.selectedStopId;
   const routeTypes = opts.routeTypeMap.get(stop.stop_id) ?? [3 as RouteType];
   const color = getRouteTypeColor(primaryRouteType(routeTypes));
-  const dimmed = !!opts.selectedStopId && !isSelected;
+  const dimmed = !opts.disableDimming && !!opts.selectedStopId && !isSelected;
 
   marker.setRadius(isSelected ? MARKER_STYLES.selectedRadius : MARKER_STYLES.normalRadius);
   marker.setStyle({
