@@ -204,6 +204,58 @@ describe('getStopMetaById', () => {
 });
 
 // ---------------------------------------------------------------------------
+// getStopsForRoutes
+// ---------------------------------------------------------------------------
+
+describe('getStopsForRoutes', () => {
+  it('returns stop IDs for a single route', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const stopIds = repository.getStopsForRoutes(new Set(['route_subway']));
+    expect(stopIds).toEqual(new Set(['sub_01', 'sub_02', 'sub_03']));
+  });
+
+  it('returns union of stops for multiple routes', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const stopIds = repository.getStopsForRoutes(new Set(['route_subway', 'route_liner']));
+    expect(stopIds).toEqual(new Set(['sub_01', 'sub_02', 'sub_03', 'tdn_04', 'lnr_01', 'lnr_02']));
+  });
+
+  it('returns empty set for unknown route', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const stopIds = repository.getStopsForRoutes(new Set(['nonexistent_route']));
+    expect(stopIds.size).toBe(0);
+  });
+
+  it('returns empty set for empty input', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const stopIds = repository.getStopsForRoutes(new Set());
+    expect(stopIds.size).toBe(0);
+  });
+
+  it('deduplicates stops shared across patterns of the same route', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // route_bus has multiple patterns (tp_bus_i, tp_bus_o, tp_bus_i2) with overlapping stops
+    const stopIds = repository.getStopsForRoutes(new Set(['route_bus']));
+    expect(stopIds).toEqual(new Set(['bus_01', 'bus_02', 'bus_03', 'sub_02']));
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getStopsInBounds
 // ---------------------------------------------------------------------------
 

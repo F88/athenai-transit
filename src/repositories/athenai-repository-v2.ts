@@ -450,6 +450,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private headsignTranslations: HeadsignTranslationsByPrefix;
   private sourceMetas: SourceMeta[];
 
+  // Lazy-initialized reverse map: route_id → Set<stop_id>.
+  // Built on first getStopsForRoutes() call by scanning all tripPatterns once.
+  // Safe to cache because tripPatterns are immutable after load.
+  private routeStopsCache: Map<string, Set<string>> | null = null;
+
   // Shapes: background-loaded after create()
   private shapesPromise: Promise<RouteShape[]> = Promise.resolve([]);
   private shapesCache: RouteShape[] | null = null;
@@ -995,6 +1000,46 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       });
     }
     return Promise.resolve({ success: false, error: `Stop not found: ${stopId}` });
+  }
+
+  /** {@inheritDoc TransitRepository.getStopsForRoutes} */
+  getStopsForRoutes(routeIds: Set<string>): Set<string> {
+    const cache = this.getRouteStopsMap();
+    const stopIds = new Set<string>();
+    for (const routeId of routeIds) {
+      const stops = cache.get(routeId);
+      if (stops) {
+        for (const stopId of stops) {
+          stopIds.add(stopId);
+        }
+      }
+    }
+    logger.debug(`getStopsForRoutes: ${routeIds.size} routes → ${stopIds.size} stops`);
+    return stopIds;
+  }
+
+  /** Builds and caches the route_id → stop_ids reverse map on first call. */
+  private getRouteStopsMap(): Map<string, Set<string>> {
+    if (this.routeStopsCache) {
+      return this.routeStopsCache;
+    }
+    const t0 = performance.now();
+    const map = new Map<string, Set<string>>();
+    for (const pattern of this.tripPatterns.values()) {
+      let stops = map.get(pattern.r);
+      if (!stops) {
+        stops = new Set();
+        map.set(pattern.r, stops);
+      }
+      for (const stopId of pattern.stops) {
+        stops.add(stopId);
+      }
+    }
+    this.routeStopsCache = map;
+    logger.debug(
+      `routeStopsCache built: ${map.size} routes in ${(performance.now() - t0).toFixed(2)}ms`,
+    );
+    return map;
   }
 
   /** {@inheritDoc TransitRepository.getAllStops} */

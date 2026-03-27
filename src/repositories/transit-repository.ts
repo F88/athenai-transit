@@ -250,6 +250,18 @@ export interface TransitRepository {
   getAllStops(): Promise<CollectionResult<Stop>>;
 
   /**
+   * Returns the set of stop IDs served by the given routes.
+   *
+   * Scans trip patterns to collect all stops belonging to the specified routes.
+   * A single route may have multiple trip patterns (e.g. different directions
+   * or route variants), and the result is the union of all their stops.
+   *
+   * @param routeIds - Set of route IDs to look up.
+   * @returns Set of stop IDs belonging to the specified routes.
+   */
+  getStopsForRoutes(routeIds: Set<string>): Set<string>;
+
+  /**
    * Returns an agency by its ID.
    *
    * ### Error conditions

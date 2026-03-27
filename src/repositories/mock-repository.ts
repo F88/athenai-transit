@@ -1008,6 +1008,20 @@ export class MockRepository implements TransitRepository {
     return Promise.resolve({ success: false, error: `Stop not found: ${stopId}` });
   }
 
+  /** {@inheritDoc TransitRepository.getStopsForRoutes} */
+  getStopsForRoutes(routeIds: Set<string>): Set<string> {
+    const stopIds = new Set<string>();
+    for (const [key, stops] of ROUTE_STOP_SEQUENCES) {
+      const routeId = key.split('__')[0];
+      if (routeIds.has(routeId)) {
+        for (const stopId of stops) {
+          stopIds.add(stopId);
+        }
+      }
+    }
+    return stopIds;
+  }
+
   /** {@inheritDoc TransitRepository.getAllStops} */
   getAllStops(): Promise<CollectionResult<Stop>> {
     return Promise.resolve({ success: true, data: STOPS, truncated: false });
