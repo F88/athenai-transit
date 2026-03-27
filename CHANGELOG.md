@@ -30,6 +30,12 @@ and this project adheres to [CalVer](https://calver.org/).
 - `getUpcomingTimetableEntries` のログレベルを verbose に変更。
 - ESLint: `_` プレフィックス付きの未使用変数を許可。
 
+### Optimized
+
+- Repository: `stopsMetaMap` を導入し、stop metadata の O(n) lookup → O(1) lookup に改善。
+- Repository: `getStopsForRoutes()` で lazy-initialized reverse map (route_id → Set<stop_id>) を実装。複数ルートの停留所解決が高速化。
+- Repository: `getStopsInBounds()` / `getStopsNearby()` で pre-built `stopsMetaMap` を活用し、per-query assembly を廃止。
+
 ## [2026.03.26]
 
 ### Added
