@@ -880,7 +880,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     }
 
     const elapsed = Math.round(performance.now() - t0);
-    logger.debug(
+    logger.verbose(
       `getUpcomingTimetableEntries: ${stopId} → ${result.length}/${totalAvailable} entries in ${elapsed}ms (${truncated ? 'truncated' : 'all'}) serviceDay=${formatDateKey(serviceDay)} prev=${formatDateKey(prevServiceDay)}`,
     );
     const meta: TimetableQueryMeta = {
