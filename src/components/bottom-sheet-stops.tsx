@@ -4,7 +4,7 @@ import type { InfoLevel } from '../types/app/settings';
 import type { StopWithContext } from '../types/app/transit-composed';
 import { NearbyStop } from './nearby-stop';
 
-interface BottomSheetStopListProps {
+interface BottomSheetStopsProps {
   filteredDepartures: StopWithContext[];
   selectedStopId: string | null;
   now: Date;
@@ -17,7 +17,7 @@ interface BottomSheetStopListProps {
   onShowStopTimetable?: (stopId: string) => void;
 }
 
-export function BottomSheetStopList({
+export function BottomSheetStops({
   filteredDepartures,
   selectedStopId,
   now,
@@ -28,7 +28,7 @@ export function BottomSheetStopList({
   onStopSelected,
   onShowTimetable,
   onShowStopTimetable,
-}: BottomSheetStopListProps) {
+}: BottomSheetStopsProps) {
   return (
     <div
       className="grid flex-1 grid-cols-1 content-start gap-0 overflow-y-auto px-4 pb-0 sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-3"

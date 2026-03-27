@@ -2,7 +2,9 @@ import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { DepartureViewMeta } from '../types/app/transit-composed';
+import type { NearbyStopsCounts } from './bottom-sheet';
 import { DEPARTURE_VIEWS } from '../domain/transit/departure-views';
+import { createLogger } from '../utils/logger';
 import { routeTypeColor } from '../domain/transit/route-type-color';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { useInfoLevel } from '../hooks/use-info-level';
@@ -10,11 +12,10 @@ import { PillButton } from './button/pill-button';
 
 interface BottomSheetHeaderProps {
   isNearbyLoading: boolean;
-  filteredCount: number;
-  hasNearbyDepartures: boolean;
+  hasNearbyLoaded: boolean;
+  counts: NearbyStopsCounts;
   dataConfig: DataConfig;
   activeOnly: boolean;
-  activeCount: number;
   viewId: string;
   selectedView: DepartureViewMeta | undefined;
   infoLevel: InfoLevel;
@@ -30,11 +31,10 @@ interface BottomSheetHeaderProps {
 
 export function BottomSheetHeader({
   isNearbyLoading,
-  filteredCount,
-  hasNearbyDepartures,
+  hasNearbyLoaded,
+  counts,
   dataConfig,
   activeOnly,
-  activeCount,
   viewId,
   selectedView,
   infoLevel,
@@ -51,15 +51,13 @@ export function BottomSheetHeader({
 
   return (
     <div className="shrink-0 px-4 pb-2">
-      <p className="m-0 text-base font-bold text-[#212121] dark:text-gray-100">
-        {isNearbyLoading
-          ? '読み込み中...'
-          : filteredCount > 0
-            ? `近くの乗り場 ${filteredCount}カ所, ${dataConfig.stops.nearbyRadius >= 1000 ? `${dataConfig.stops.nearbyRadius / 1000}km` : `${dataConfig.stops.nearbyRadius}m`}圏内`
-            : activeOnly && hasNearbyDepartures
-              ? '運行中の乗り場はありません'
-              : '近くに乗り場がありません'}
-      </p>
+      <NearbyStopsSummary
+        isNearbyLoading={isNearbyLoading}
+        hasLoaded={hasNearbyLoaded}
+        counts={counts}
+        nearbyRadius={dataConfig.stops.nearbyRadius}
+        activeOnly={activeOnly}
+      />
       <div className="no-scrollbar mt-1.5 flex gap-1 overflow-x-auto">
         {DEPARTURE_VIEWS.filter((v) => v.visible).map((view) => (
           <PillButton
@@ -80,7 +78,7 @@ export function BottomSheetHeader({
           onClick={onToggleActiveOnly}
           title="次便がある乗り場のみ表示"
         >
-          運行中 ({activeCount})
+          運行中 ({counts.active})
         </PillButton>
 
         {/* Route types filter */}
@@ -127,5 +125,66 @@ export function BottomSheetHeader({
         </div>
       )}
     </div>
+  );
+}
+
+function formatRadius(meters: number): string {
+  if (meters >= 1000) {
+    return `${meters / 1000}km`;
+  }
+  return `${meters}m`;
+}
+
+function getNearbyStopsSummaryText(
+  hasLoaded: boolean,
+  counts: NearbyStopsCounts,
+  activeOnly: boolean,
+): string {
+  if (!hasLoaded) {
+    return 'Loading...';
+  }
+  if (counts.filtered > 0) {
+    return `近くの乗り場 ${counts.filtered}カ所`;
+    // return `${counts.filtered}`;
+  }
+  if (activeOnly && counts.total > 0) {
+    return '運行中の乗り場はありません';
+  }
+  return '近くに乗り場がありません';
+}
+
+const summaryLogger = createLogger('NearbyStopsSummary');
+
+interface NearbyStopsSummaryProps {
+  isNearbyLoading: boolean;
+  hasLoaded: boolean;
+  counts: NearbyStopsCounts;
+  nearbyRadius: number;
+  activeOnly: boolean;
+}
+
+function NearbyStopsSummary({
+  isNearbyLoading,
+  hasLoaded,
+  counts,
+  nearbyRadius,
+  activeOnly,
+}: NearbyStopsSummaryProps) {
+  summaryLogger.debug(
+    hasLoaded
+      ? `found ${counts.total} nearby stops (${counts.active} active, ${counts.filtered} after filter)`
+      : 'not loaded yet',
+  );
+  if (isNearbyLoading) {
+    summaryLogger.debug('loading nearby departures...');
+  }
+
+  const radiusLabel = `${formatRadius(nearbyRadius)}圏内`;
+  const text = getNearbyStopsSummaryText(hasLoaded, counts, activeOnly);
+
+  return (
+    <p className="m-0 flex items-center gap-1 text-base font-bold text-[#212121] dark:text-gray-100">
+      {text} / {radiusLabel}
+    </p>
   );
 }

@@ -45,6 +45,7 @@ export default function App() {
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
   const [routeShapes, setRouteShapes] = useState<RouteShape[]>([]);
   const [timetableModal, setTimetableModal] = useState<TimetableData | null>(null);
+  const [hasNearbyLoaded, setHasNearbyLoaded] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
 
@@ -164,6 +165,7 @@ export default function App() {
           );
           setInBoundStops(inBounds);
           setNearbyStops(nearby);
+          setHasNearbyLoaded(true);
           setMapCenter(center);
           clearFocus();
         });
@@ -432,6 +434,7 @@ export default function App() {
         nearbyDepartures={filteredNearbyDepartures}
         selectedStopId={selectedStopId}
         isNearbyLoading={isNearbyLoading}
+        hasNearbyLoaded={hasNearbyLoaded}
         dataConfig={perfProfile.data}
         time={dateTime}
         mapCenter={mapCenter}

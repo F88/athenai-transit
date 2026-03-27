@@ -9,7 +9,7 @@ import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-vi
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { BottomSheetHeader } from './bottom-sheet-header';
-import { BottomSheetStopList } from './bottom-sheet-stop-list';
+import { BottomSheetStops } from './bottom-sheet-stops';
 
 const DRAG_THRESHOLD = 50;
 
@@ -19,10 +19,20 @@ const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
 /** Route type display order matching StopTypeFilterPanel. */
 const ROUTE_TYPE_ORDER = [3, 1, 0, 2, 4, 5, 6, 7] as const;
 
+export interface NearbyStopsCounts {
+  /** Total number of nearby stops before any filtering. */
+  total: number;
+  /** Stops with at least one upcoming departure. */
+  active: number;
+  /** Stops remaining after all filters (activeOnly, routeType, agency). */
+  filtered: number;
+}
+
 interface BottomSheetProps {
   nearbyDepartures: StopWithContext[];
   selectedStopId: string | null;
   isNearbyLoading: boolean;
+  hasNearbyLoaded: boolean;
   dataConfig: DataConfig;
   time: Date;
   mapCenter: LatLng | null;
@@ -36,6 +46,7 @@ export function BottomSheet({
   nearbyDepartures,
   selectedStopId,
   isNearbyLoading,
+  hasNearbyLoaded,
   dataConfig,
   time: now,
   mapCenter,
@@ -125,9 +136,13 @@ export function BottomSheet({
     presentAgencies,
   ]);
 
-  const activeCount = useMemo(
-    () => nearbyDepartures.filter((swc) => swc.departures.length > 0).length,
-    [nearbyDepartures],
+  const counts: NearbyStopsCounts = useMemo(
+    () => ({
+      total: nearbyDepartures.length,
+      active: nearbyDepartures.filter((swc) => swc.departures.length > 0).length,
+      filtered: filteredDepartures.length,
+    }),
+    [nearbyDepartures, filteredDepartures],
   );
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -181,11 +196,10 @@ export function BottomSheet({
 
       <BottomSheetHeader
         isNearbyLoading={isNearbyLoading}
-        filteredCount={filteredDepartures.length}
-        hasNearbyDepartures={nearbyDepartures.length > 0}
+        hasNearbyLoaded={hasNearbyLoaded}
+        counts={counts}
         dataConfig={dataConfig}
         activeOnly={activeOnly}
-        activeCount={activeCount}
         viewId={viewId}
         selectedView={selectedView}
         infoLevel={infoLevel}
@@ -198,7 +212,7 @@ export function BottomSheet({
         onToggleRouteType={toggleRouteType}
         onToggleAgency={toggleAgency}
       />
-      <BottomSheetStopList
+      <BottomSheetStops
         filteredDepartures={filteredDepartures}
         selectedStopId={selectedStopId}
         now={now}
