@@ -1,8 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   cleanupInvalidQueryParams,
+  getDiagParam,
+  getRepoParam,
+  getSourcesParam,
+  getStopParam,
+  getTimeParam,
   parseQueryLat,
   parseQueryLng,
+  parseQueryStopId,
   parseQueryTime,
   parseQueryZoom,
   resetParamsCache,
@@ -171,19 +177,156 @@ describe('parseQueryTime', () => {
   });
 });
 
-describe('cleanupInvalidQueryParams', () => {
-  const originalLocation = window.location;
-  let replaceStateMock: ReturnType<typeof vi.fn>;
+describe('parseQueryStopId', () => {
+  it('returns trimmed stop ID for valid strings', () => {
+    expect(parseQueryStopId('keio_S0123')).toBe('keio_S0123');
+    expect(parseQueryStopId('tobus_13001')).toBe('tobus_13001');
+    expect(parseQueryStopId('  abc_123  ')).toBe('abc_123');
+  });
 
-  /** Helper to set window.location.search and reset the params cache. */
-  function setSearch(search: string): void {
-    Object.defineProperty(window, 'location', {
-      value: { ...originalLocation, search, href: `http://localhost${search}` },
-      writable: true,
-      configurable: true,
-    });
-    resetParamsCache();
-  }
+  it('returns null for empty, whitespace-only, null, and undefined', () => {
+    expect(parseQueryStopId('')).toBeNull();
+    expect(parseQueryStopId('   ')).toBeNull();
+    expect(parseQueryStopId(null)).toBeNull();
+    expect(parseQueryStopId(undefined)).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// get*Param — read values from window.location.search
+// ---------------------------------------------------------------------------
+
+/**
+ * Shared helpers for tests that need to manipulate window.location.search.
+ * Each describe block saves/restores the original location in beforeEach/afterEach.
+ */
+const originalLocation = window.location;
+
+/** Set window.location.search and reset the internal params cache. */
+function setSearch(search: string): void {
+  Object.defineProperty(window, 'location', {
+    value: { ...originalLocation, search, href: `http://localhost${search}` },
+    writable: true,
+    configurable: true,
+  });
+  resetParamsCache();
+}
+
+function restoreLocation(): void {
+  Object.defineProperty(window, 'location', {
+    value: originalLocation,
+    writable: true,
+    configurable: true,
+  });
+  resetParamsCache();
+}
+
+describe('getRepoParam', () => {
+  afterEach(restoreLocation);
+
+  it('returns "v2" by default when no param', () => {
+    setSearch('');
+    expect(getRepoParam()).toBe('v2');
+  });
+
+  it('returns "mock" when ?repo=mock', () => {
+    setSearch('?repo=mock');
+    expect(getRepoParam()).toBe('mock');
+  });
+
+  it('returns "v2" for unrecognized values', () => {
+    setSearch('?repo=unknown');
+    expect(getRepoParam()).toBe('v2');
+  });
+});
+
+describe('getTimeParam', () => {
+  afterEach(restoreLocation);
+
+  it('returns null when no param', () => {
+    setSearch('');
+    expect(getTimeParam()).toBeNull();
+  });
+
+  it('returns Date for valid RFC 3339 value', () => {
+    setSearch('?time=2026-03-25T20:55:00Z');
+    const result = getTimeParam();
+    expect(result).not.toBeNull();
+    expect(result!.toISOString()).toBe('2026-03-25T20:55:00.000Z');
+  });
+
+  it('preserves + in timezone offset (not decoded as space)', () => {
+    setSearch('?time=2026-03-25T20:55:00+09:00');
+    const result = getTimeParam();
+    expect(result).not.toBeNull();
+    expect(result!.toISOString()).toBe('2026-03-25T11:55:00.000Z');
+  });
+
+  it('returns null for invalid value', () => {
+    setSearch('?time=not-a-date');
+    expect(getTimeParam()).toBeNull();
+  });
+});
+
+describe('getSourcesParam', () => {
+  afterEach(restoreLocation);
+
+  it('returns null when no param', () => {
+    setSearch('');
+    expect(getSourcesParam()).toBeNull();
+  });
+
+  it('returns raw string value', () => {
+    setSearch('?sources=minkuru,yurimo');
+    expect(getSourcesParam()).toBe('minkuru,yurimo');
+  });
+});
+
+describe('getDiagParam', () => {
+  afterEach(restoreLocation);
+
+  it('returns null when no param', () => {
+    setSearch('');
+    expect(getDiagParam()).toBeNull();
+  });
+
+  it('returns string value', () => {
+    setSearch('?diag=v2-load');
+    expect(getDiagParam()).toBe('v2-load');
+  });
+});
+
+describe('getStopParam', () => {
+  afterEach(restoreLocation);
+
+  it('returns null when no param', () => {
+    setSearch('');
+    expect(getStopParam()).toBeNull();
+  });
+
+  it('returns stop ID for valid value', () => {
+    setSearch('?stop=keio_S0123');
+    expect(getStopParam()).toBe('keio_S0123');
+  });
+
+  it('returns null for empty value', () => {
+    setSearch('?stop=');
+    expect(getStopParam()).toBeNull();
+  });
+
+  it('returns null for whitespace-only value', () => {
+    setSearch('?stop=%20%20');
+    expect(getStopParam()).toBeNull();
+  });
+
+  it('works alongside other params', () => {
+    setSearch('?lat=35.68&stop=tobus_001&zm=16');
+    expect(getStopParam()).toBe('tobus_001');
+  });
+});
+
+describe('cleanupInvalidQueryParams', () => {
+  let replaceStateMock: ReturnType<typeof vi.fn>;
 
   /** Extract the cleaned URL from replaceState call. */
   function getCleanedUrl(): URL {
@@ -200,12 +343,7 @@ describe('cleanupInvalidQueryParams', () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(window, 'location', {
-      value: originalLocation,
-      writable: true,
-      configurable: true,
-    });
-    resetParamsCache();
+    restoreLocation();
     vi.restoreAllMocks();
   });
 
@@ -326,6 +464,30 @@ describe('cleanupInvalidQueryParams', () => {
 
   it('keeps valid ?zm= value', () => {
     setSearch('?zm=14');
+    cleanupInvalidQueryParams();
+    expect(replaceStateMock).not.toHaveBeenCalled();
+  });
+
+  // --- ?stop= ---
+
+  it('removes empty ?stop= value', () => {
+    setSearch('?stop=');
+    cleanupInvalidQueryParams();
+
+    expect(replaceStateMock).toHaveBeenCalledOnce();
+    expect(getCleanedUrl().searchParams.has('stop')).toBe(false);
+  });
+
+  it('removes whitespace-only ?stop= value', () => {
+    setSearch('?stop=%20%20');
+    cleanupInvalidQueryParams();
+
+    expect(replaceStateMock).toHaveBeenCalledOnce();
+    expect(getCleanedUrl().searchParams.has('stop')).toBe(false);
+  });
+
+  it('keeps valid ?stop= value', () => {
+    setSearch('?stop=keio_S0123');
     cleanupInvalidQueryParams();
     expect(replaceStateMock).not.toHaveBeenCalled();
   });

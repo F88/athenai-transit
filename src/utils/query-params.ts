@@ -12,6 +12,7 @@
  * - `?lat=35.68&lng=139.77` — initial map center
  * - `?zm=14` — initial map zoom level
  * - `?time=2026-03-25T20:55:00+09:00` — initial date/time (RFC 3339)
+ * - `?stop=keio_S0123` — initial stop selection (overrides lat/lng)
  * - `?diag=v2-load` — run diagnostics (see DEVELOPMENT.md)
  */
 
@@ -130,6 +131,12 @@ export function cleanupInvalidQueryParams(): void {
     keysToRemove.push('zm');
   }
 
+  // ?stop= — must be a non-empty string
+  const stop = params.get('stop');
+  if (stop !== null && parseQueryStopId(stop) === null) {
+    keysToRemove.push('stop');
+  }
+
   if (keysToRemove.length === 0) {
     return;
   }
@@ -153,6 +160,36 @@ export function cleanupInvalidQueryParams(): void {
   const newUrl = `${window.location.pathname}${newSearch}${window.location.hash}`;
   history.replaceState(history.state, '', newUrl);
   resetParamsCache();
+}
+
+/**
+ * Parse a stop ID from a query param string.
+ *
+ * A valid stop ID is a non-empty, non-whitespace string.
+ * No further validation is possible without the repository.
+ *
+ * @param value - Raw string value from URLSearchParams.get().
+ * @returns Trimmed stop ID, or null if empty/whitespace-only.
+ */
+export function parseQueryStopId(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return trimmed;
+}
+
+/**
+ * Returns the `?stop=` param value, or null if not present.
+ *
+ * When present, the app selects this stop on initial load
+ * and pans the map to its location. This takes priority over
+ * `?lat=` / `?lng=` for determining the initial map center.
+ *
+ * @returns The stop ID, or null if absent or empty.
+ */
+export function getStopParam(): string | null {
+  return parseQueryStopId(getParams().get('stop'));
 }
 
 /**

@@ -992,6 +992,22 @@ export class MockRepository implements TransitRepository {
     return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }
 
+  /** {@inheritDoc TransitRepository.getStopMetaById} */
+  getStopMetaById(stopId: string): Promise<Result<StopWithMeta>> {
+    const stop = STOPS.find((s) => s.stop_id === stopId);
+    if (stop) {
+      return Promise.resolve({
+        success: true,
+        data: {
+          stop,
+          agencies: STOP_AGENCIES.get(stopId) ?? [],
+          routes: STOP_ROUTES_RESOLVED.get(stopId) ?? [],
+        },
+      });
+    }
+    return Promise.resolve({ success: false, error: `Stop not found: ${stopId}` });
+  }
+
   /** {@inheritDoc TransitRepository.getAllStops} */
   getAllStops(): Promise<CollectionResult<Stop>> {
     return Promise.resolve({ success: true, data: STOPS, truncated: false });

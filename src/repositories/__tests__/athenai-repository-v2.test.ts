@@ -176,6 +176,34 @@ describe('AthenaiRepositoryV2.create', () => {
 });
 
 // ---------------------------------------------------------------------------
+// getStopMetaById
+// ---------------------------------------------------------------------------
+
+describe('getStopMetaById', () => {
+  it('returns the stop with metadata when it exists', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getStopMetaById('tdn_01');
+    assertSuccess(result);
+    expect(result.data.stop.stop_id).toBe('tdn_01');
+    expect(result.data.stop.stop_name).toBe('Shin-koshinzuka');
+    expect(result.data.agencies).toBeDefined();
+    expect(result.data.routes).toBeDefined();
+  });
+
+  it('returns failure for unknown stop ID', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getStopMetaById('nonexistent_stop');
+    expect(result.success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getStopsInBounds
 // ---------------------------------------------------------------------------
 

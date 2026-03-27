@@ -25,6 +25,7 @@ import {
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
 } from './domain/transit/timetable-filter';
+import { getStopParam } from './utils/query-params';
 
 const logger = createLogger('App');
 import { MapView } from './components/map/map-view';
@@ -130,6 +131,38 @@ export default function App() {
     },
     [selectStopById, pushStop, findStopWithMeta, routeTypeMap],
   );
+
+  // Apply ?stop= query param: select and pan to the stop after data loads.
+  // Uses a ref to ensure the effect runs only once (the first time
+  // the repo resolves the stop). Same pattern as handleHistorySelect —
+  // focusStop sets directFocusPosition so the map pans even when the
+  // stop is outside the initial viewport.
+  const stopParamApplied = useRef(false);
+  useEffect(() => {
+    if (stopParamApplied.current) {
+      return;
+    }
+    const stopId = getStopParam();
+    if (!stopId) {
+      stopParamApplied.current = true;
+      return;
+    }
+    void repo.getStopMetaById(stopId).then((result) => {
+      if (stopParamApplied.current) {
+        return;
+      }
+      if (result.success) {
+        const stop = result.data;
+        logger.info(`Applying ?stop=${stopId}: ${stop.stop.stop_name}`);
+        focusStop(stop.stop);
+        pushStop(stop, routeTypeMap.get(stopId) ?? [3]);
+        stopParamApplied.current = true;
+      } else {
+        logger.warn(`?stop=${stopId}: not found`);
+        stopParamApplied.current = true;
+      }
+    });
+  }, [repo, focusStop, pushStop, routeTypeMap]);
 
   // Load route shapes once on mount
   useEffect(() => {

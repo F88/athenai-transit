@@ -981,6 +981,22 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return Promise.resolve({ success: true, data: routeTypes });
   }
 
+  /** {@inheritDoc TransitRepository.getStopMetaById} */
+  getStopMetaById(stopId: string): Promise<Result<StopWithMeta>> {
+    const stop = this.stops.find((s) => s.stop_id === stopId);
+    if (stop) {
+      return Promise.resolve({
+        success: true,
+        data: {
+          stop,
+          agencies: this.stopAgenciesMap.get(stopId) ?? [],
+          routes: this.stopRoutesMap.get(stopId) ?? [],
+        },
+      });
+    }
+    return Promise.resolve({ success: false, error: `Stop not found: ${stopId}` });
+  }
+
   /** {@inheritDoc TransitRepository.getAllStops} */
   getAllStops(): Promise<CollectionResult<Stop>> {
     const t0 = performance.now();
