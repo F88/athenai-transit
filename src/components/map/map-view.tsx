@@ -433,12 +433,12 @@ export function MapView({
         {/* Nearby: all radiusStops including out-of-view (pre-rendered for
          * instant display on pan). EdgeMarkersSwitch (below MapContainer)
          * handles edge arrows for the same stops. */}
-        {
+        {/* {
           (logger.debug(
             `layers: nearby=${filteredNearbyStops.length} (${nearbyRenderMode}), far=${filteredFarStops.length} (${farRenderMode}), routeStops=${routeStopMarkers.length} (${nearbyRenderMode}) [perfMode=${perfMode}, renderMode=${renderMode}]`,
           ),
           null)
-        }
+        } */}
         <StopMarkers
           stops={filteredNearbyStops}
           selectedStopId={selectedStopId}
