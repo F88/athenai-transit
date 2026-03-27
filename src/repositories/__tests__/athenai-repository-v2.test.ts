@@ -89,12 +89,12 @@ describe('mergeSourcesV2', () => {
     expect(merged.stopRouteTypeMap.get('tdn_04')).toEqual([0, 2]);
   });
 
-  it('builds stopAgenciesMap via tripPattern -> route -> agency', () => {
+  it('builds stopsMetaMap with agencies via tripPattern -> route -> agency', () => {
     const fixture = createFixtureV2();
     const merged = mergeSourcesV2([fixture]);
-    const agencies = merged.stopAgenciesMap.get('bus_01');
-    expect(agencies).toBeDefined();
-    const ids = agencies!.map((a) => a.agency_id).sort();
+    const meta = merged.stopsMetaMap.get('bus_01');
+    expect(meta).toBeDefined();
+    const ids = meta!.agencies.map((a) => a.agency_id).sort();
     expect(ids).toEqual(['test:agency', 'test:partner']);
   });
 

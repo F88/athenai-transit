@@ -56,7 +56,6 @@ export class TestDataSourceV2 implements TransitDataSourceV2 {
     return Promise.resolve(this.shapesFixtures[prefix] ?? null);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   loadInsights(_prefix: string): Promise<InsightsBundle | null> {
     return Promise.resolve(null);
   }
