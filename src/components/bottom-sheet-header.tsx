@@ -165,7 +165,7 @@ function NearbyStopsSummary({
   activeOnly,
   hasLoaded,
 }: NearbyStopsSummaryProps) {
-  summaryLogger.debug(
+  summaryLogger.verbose(
     hasLoaded
       ? `found ${counts.total} nearby stops (${counts.active} active, ${counts.filtered} after filter)`
       : 'not loaded yet',
