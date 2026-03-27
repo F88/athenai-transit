@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '../types/app/map';
+import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { StopWithContext } from '../types/app/transit-composed';
 import { collectPresentAgencies, filterStopsByAgency } from '../domain/transit/agency-filter';
 import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-views';
-import { routeTypeColor } from '../domain/transit/route-type-color';
-import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { useInfoLevel } from '../hooks/use-info-level';
-import { PillButton } from './button/pill-button';
-import { NearbyStop } from './nearby-stop';
+import { BottomSheetHeader } from './bottom-sheet-header';
+import { BottomSheetStops } from './bottom-sheet-stops';
 
 const DRAG_THRESHOLD = 50;
 
@@ -20,10 +19,21 @@ const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
 /** Route type display order matching StopTypeFilterPanel. */
 const ROUTE_TYPE_ORDER = [3, 1, 0, 2, 4, 5, 6, 7] as const;
 
+export interface NearbyStopsCounts {
+  /** Total number of nearby stops before any filtering. */
+  total: number;
+  /** Stops with at least one upcoming departure. */
+  active: number;
+  /** Stops remaining after all filters (activeOnly, routeType, agency). */
+  filtered: number;
+}
+
 interface BottomSheetProps {
   nearbyDepartures: StopWithContext[];
   selectedStopId: string | null;
   isNearbyLoading: boolean;
+  hasNearbyLoaded: boolean;
+  dataConfig: DataConfig;
   time: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
@@ -35,7 +45,9 @@ interface BottomSheetProps {
 export function BottomSheet({
   nearbyDepartures,
   selectedStopId,
-  isNearbyLoading,
+  isNearbyLoading: _isNearbyLoading,
+  hasNearbyLoaded,
+  dataConfig,
   time: now,
   mapCenter,
   infoLevel,
@@ -124,9 +136,13 @@ export function BottomSheet({
     presentAgencies,
   ]);
 
-  const activeCount = useMemo(
-    () => nearbyDepartures.filter((swc) => swc.departures.length > 0).length,
-    [nearbyDepartures],
+  const counts: NearbyStopsCounts = useMemo(
+    () => ({
+      total: nearbyDepartures.length,
+      active: nearbyDepartures.filter((swc) => swc.departures.length > 0).length,
+      filtered: filteredDepartures.length,
+    }),
+    [nearbyDepartures, filteredDepartures],
   );
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -157,6 +173,14 @@ export function BottomSheet({
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [selectedStopId, nearbyDepartures]);
 
+  const handleStopSelected = useCallback(
+    (stopId: string) => {
+      setExpanded(false);
+      onStopSelected(stopId);
+    },
+    [onStopSelected],
+  );
+
   return (
     <div
       className={`fixed right-0 bottom-0 left-0 z-1000 flex touch-none flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_-2px_12px_rgba(0,0,0,0.15)] transition-[height] duration-300 ease-in-out dark:bg-gray-900 ${expanded ? 'h-[70dvh]' : 'h-[40dvh]'}`}
@@ -170,107 +194,35 @@ export function BottomSheet({
         <div className="h-1 w-9 rounded-sm bg-[#bdbdbd] dark:bg-gray-600" />
       </div>
 
-      <div className="shrink-0 px-4 pb-2">
-        <p className="m-0 text-base font-bold text-[#212121] dark:text-gray-100">
-          {isNearbyLoading
-            ? '読み込み中...'
-            : filteredDepartures.length > 0
-              ? `近くの乗り場 (${filteredDepartures.length}カ所)`
-              : activeOnly && nearbyDepartures.length > 0
-                ? '運行中の乗り場はありません'
-                : '近くに乗り場がありません'}
-        </p>
-        <div className="no-scrollbar mt-1.5 flex gap-1 overflow-x-auto">
-          {DEPARTURE_VIEWS.filter((v) => v.visible).map((view) => (
-            <PillButton
-              key={view.id}
-              active={viewId === view.id}
-              disabled={!view.enabled}
-              onClick={() => setViewId(view.id)}
-              title={view.title}
-            >
-              {view.icon}
-              {info.isDetailedEnabled ? ` ${view.label}` : ''}
-            </PillButton>
-          ))}
-        </div>
-        <div className="no-scrollbar mt-1 flex gap-1 overflow-x-auto">
-          <PillButton
-            active={activeOnly}
-            onClick={() => setActiveOnlyOverride((v) => !(v ?? isLateNight))}
-            title="次便がある乗り場のみ表示"
-          >
-            運行中 ({activeCount})
-          </PillButton>
-
-          {/* Route types filter */}
-          {presentRouteTypes.length > 1 &&
-            presentRouteTypes.map((rt) => (
-              <PillButton
-                key={rt}
-                active={!hiddenRouteTypes.has(rt)}
-                activeBg={`${routeTypeColor(rt)}20`}
-                activeBorder={routeTypeColor(rt)}
-                onClick={() => toggleRouteType(rt)}
-              >
-                {routeTypeEmoji(rt)}
-              </PillButton>
-            ))}
-          {/* Agency filter — shown only when 2+ agencies are present */}
-          {presentAgencies.length > 1 &&
-            presentAgencies.map((agency) => {
-              const primary = agency.agency_colors[0];
-              const bgColor = primary ? `#${primary.bg}` : undefined;
-              const fgColor = primary ? `#${primary.text}` : undefined;
-              return (
-                <PillButton
-                  key={agency.agency_id}
-                  active={!hiddenAgencyIds.has(agency.agency_id)}
-                  activeBg={bgColor}
-                  activeFg={fgColor}
-                  activeBorder={bgColor}
-                  inactiveBorder={bgColor}
-                  onClick={() => toggleAgency(agency)}
-                  title={agency.agency_name}
-                >
-                  {agency.agency_short_name || agency.agency_name}
-                </PillButton>
-              );
-            })}
-        </div>
-        {selectedView && info.isNormalEnabled && (
-          <div className="mt-1">
-            <p className="text-[11px] text-[#888] dark:text-gray-400">{selectedView.title}</p>
-            {info.isDetailedEnabled && (
-              <p className="text-[10px] text-[#aaa] dark:text-gray-500">
-                {selectedView.description}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-      <div
-        className="grid flex-1 grid-cols-1 content-start gap-0 overflow-y-auto px-4 pb-0 sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-3"
-        ref={contentRef}
-      >
-        {filteredDepartures.map((swc) => (
-          <NearbyStop
-            key={swc.stop.stop_id}
-            data={swc}
-            isSelected={selectedStopId === swc.stop.stop_id}
-            now={now}
-            mapCenter={mapCenter}
-            infoLevel={infoLevel}
-            viewId={viewId}
-            onStopSelected={(stopId) => {
-              setExpanded(false);
-              onStopSelected(stopId);
-            }}
-            onShowTimetable={onShowTimetable}
-            onShowStopTimetable={onShowStopTimetable}
-          />
-        ))}
-      </div>
+      <BottomSheetHeader
+        hasNearbyLoaded={hasNearbyLoaded}
+        counts={counts}
+        dataConfig={dataConfig}
+        activeOnly={activeOnly}
+        viewId={viewId}
+        selectedView={selectedView}
+        infoLevel={infoLevel}
+        presentRouteTypes={presentRouteTypes}
+        hiddenRouteTypes={hiddenRouteTypes}
+        presentAgencies={presentAgencies}
+        hiddenAgencyIds={hiddenAgencyIds}
+        onToggleActiveOnly={() => setActiveOnlyOverride((v) => !(v ?? isLateNight))}
+        onViewChange={setViewId}
+        onToggleRouteType={toggleRouteType}
+        onToggleAgency={toggleAgency}
+      />
+      <BottomSheetStops
+        filteredDepartures={filteredDepartures}
+        selectedStopId={selectedStopId}
+        now={now}
+        mapCenter={mapCenter}
+        infoLevel={infoLevel}
+        viewId={viewId}
+        contentRef={contentRef}
+        onStopSelected={handleStopSelected}
+        onShowTimetable={onShowTimetable}
+        onShowStopTimetable={onShowStopTimetable}
+      />
     </div>
   );
 }

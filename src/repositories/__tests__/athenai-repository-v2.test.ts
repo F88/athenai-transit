@@ -89,12 +89,12 @@ describe('mergeSourcesV2', () => {
     expect(merged.stopRouteTypeMap.get('tdn_04')).toEqual([0, 2]);
   });
 
-  it('builds stopAgenciesMap via tripPattern -> route -> agency', () => {
+  it('builds stopsMetaMap with agencies via tripPattern -> route -> agency', () => {
     const fixture = createFixtureV2();
     const merged = mergeSourcesV2([fixture]);
-    const agencies = merged.stopAgenciesMap.get('bus_01');
-    expect(agencies).toBeDefined();
-    const ids = agencies!.map((a) => a.agency_id).sort();
+    const meta = merged.stopsMetaMap.get('bus_01');
+    expect(meta).toBeDefined();
+    const ids = meta!.agencies.map((a) => a.agency_id).sort();
     expect(ids).toEqual(['test:agency', 'test:partner']);
   });
 
@@ -172,6 +172,86 @@ describe('AthenaiRepositoryV2.create', () => {
     const stops = await repository.getAllStops();
     assertSuccess(stops);
     expect(stops.data.length).toBeGreaterThan(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getStopMetaById
+// ---------------------------------------------------------------------------
+
+describe('getStopMetaById', () => {
+  it('returns the stop with metadata when it exists', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getStopMetaById('tdn_01');
+    assertSuccess(result);
+    expect(result.data.stop.stop_id).toBe('tdn_01');
+    expect(result.data.stop.stop_name).toBe('Shin-koshinzuka');
+    expect(result.data.agencies).toBeDefined();
+    expect(result.data.routes).toBeDefined();
+  });
+
+  it('returns failure for unknown stop ID', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getStopMetaById('nonexistent_stop');
+    expect(result.success).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getStopsForRoutes
+// ---------------------------------------------------------------------------
+
+describe('getStopsForRoutes', () => {
+  it('returns stop IDs for a single route', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const stopIds = repository.getStopsForRoutes(new Set(['route_subway']));
+    expect(stopIds).toEqual(new Set(['sub_01', 'sub_02', 'sub_03']));
+  });
+
+  it('returns union of stops for multiple routes', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const stopIds = repository.getStopsForRoutes(new Set(['route_subway', 'route_liner']));
+    expect(stopIds).toEqual(new Set(['sub_01', 'sub_02', 'sub_03', 'tdn_04', 'lnr_01', 'lnr_02']));
+  });
+
+  it('returns empty set for unknown route', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const stopIds = repository.getStopsForRoutes(new Set(['nonexistent_route']));
+    expect(stopIds.size).toBe(0);
+  });
+
+  it('returns empty set for empty input', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const stopIds = repository.getStopsForRoutes(new Set());
+    expect(stopIds.size).toBe(0);
+  });
+
+  it('deduplicates stops shared across patterns of the same route', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // route_bus has multiple patterns (tp_bus_i, tp_bus_o, tp_bus_i2) with overlapping stops
+    const stopIds = repository.getStopsForRoutes(new Set(['route_bus']));
+    expect(stopIds).toEqual(new Set(['bus_01', 'bus_02', 'bus_03', 'sub_02']));
   });
 });
 

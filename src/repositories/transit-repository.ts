@@ -213,6 +213,33 @@ export interface TransitRepository {
   getFullDayTimetableEntries(stopId: string, dateTime: Date): Promise<TimetableResult>;
 
   /**
+   * Returns a single stop with metadata by its GTFS stop_id.
+   *
+   * Used for URL-based stop selection (`?stop=<id>`) where only
+   * the stop ID is known and the full stop with agencies/routes
+   * metadata is needed.
+   *
+   * ### Error conditions
+   * - Unknown stop_id:
+   *   `{ success: false, error: "Stop not found: {stopId}" }`
+   *
+   * @param stopId - GTFS `stop_id` to look up.
+   * @returns The StopWithMeta if found, or a failure Result if not found.
+   */
+  getStopMetaById(stopId: string): Promise<Result<StopWithMeta>>;
+
+  /**
+   * Returns StopWithMeta for each of the given stop IDs.
+   *
+   * Unknown stop IDs are silently skipped. The returned array preserves
+   * no particular order.
+   *
+   * @param stopIds - Set of stop IDs to look up.
+   * @returns Array of StopWithMeta for found stops.
+   */
+  getStopMetaByIds(stopIds: Set<string>): StopWithMeta[];
+
+  /**
    * Returns all stops in the dataset.
    *
    * Used for stop name search functionality.
@@ -232,6 +259,18 @@ export interface TransitRepository {
    * @returns All stops (up to {@link MAX_STOPS_RESULT}).
    */
   getAllStops(): Promise<CollectionResult<Stop>>;
+
+  /**
+   * Returns the set of stop IDs served by the given routes.
+   *
+   * Scans trip patterns to collect all stops belonging to the specified routes.
+   * A single route may have multiple trip patterns (e.g. different directions
+   * or route variants), and the result is the union of all their stops.
+   *
+   * @param routeIds - Set of route IDs to look up.
+   * @returns Set of stop IDs belonging to the specified routes.
+   */
+  getStopsForRoutes(routeIds: Set<string>): Set<string>;
 
   /**
    * Returns an agency by its ID.

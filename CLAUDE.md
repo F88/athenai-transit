@@ -36,7 +36,7 @@ UI components depend only on `TransitRepository`, keeping UI and data layers loo
 
 ```text
 TransitRepository          <- interface used by UI
-  ├── GtfsRepository        <- production (GTFS JSON data)
+  ├── AthenaiRepositoryV2   <- production (v2 DataBundle JSON)
   └── MockRepository        <- for UI testing with fictional data
 ```
 
@@ -50,7 +50,7 @@ TransitRepository          <- interface used by UI
 
 ### Data Pipeline
 
-A Node.js pre-build pipeline (`pipeline/`) converts GTFS CSV files into per-source SQLite databases (`pipeline/workspace/_build/db/`), then generates optimized JSON files for the app (`public/data/`). See [pipeline/README.md](./pipeline/README.md) for details.
+A Node.js pre-build pipeline (`pipeline/`) converts GTFS CSV files into per-source SQLite databases (`pipeline/workspace/_build/db/`), then generates optimized JSON files for the app (`public/data-v2/`). See [pipeline/README.md](./pipeline/README.md) for details.
 
 ## Development Commands
 

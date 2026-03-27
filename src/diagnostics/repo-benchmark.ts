@@ -17,6 +17,7 @@
 
 import { createLogger } from '../utils/logger';
 import type { TransitRepository } from '../repositories/transit-repository';
+import type { StopWithMeta } from '../types/app/transit-composed';
 
 const logger = createLogger('diag:repo-bench');
 
@@ -36,6 +37,98 @@ const BENCH_LOCATIONS = [
   { name: 'Matsuyama (Okaido)', lat: 33.8412, lng: 132.7701 },
 ] as const;
 
+// ---------------------------------------------------------------------------
+// Timing helper
+// ---------------------------------------------------------------------------
+
+interface TimedResult<T> {
+  value: T;
+  ms: number;
+}
+
+function timed<T>(fn: () => T): TimedResult<T> {
+  const t0 = performance.now();
+  const value = fn();
+  return { value, ms: performance.now() - t0 };
+}
+
+async function timedAsync<T>(fn: () => Promise<T>): Promise<TimedResult<T>> {
+  const t0 = performance.now();
+  const value = await fn();
+  return { value, ms: performance.now() - t0 };
+}
+
+// ---------------------------------------------------------------------------
+// Per-stop benchmarks
+// ---------------------------------------------------------------------------
+
+async function benchUpcoming(
+  repo: TransitRepository,
+  stops: StopWithMeta[],
+  now: Date,
+  limit?: number,
+): Promise<{ ms: number; entries: number }> {
+  const t0 = performance.now();
+  let entries = 0;
+  for (const s of stops) {
+    const result = await repo.getUpcomingTimetableEntries(s.stop.stop_id, now, limit);
+    if (result.success) {
+      entries += result.data.length;
+    }
+  }
+  return { ms: performance.now() - t0, entries };
+}
+
+async function benchRouteTypes(repo: TransitRepository, stops: StopWithMeta[]): Promise<number> {
+  const t0 = performance.now();
+  for (const s of stops) {
+    await repo.getRouteTypesForStop(s.stop.stop_id);
+  }
+  return performance.now() - t0;
+}
+
+async function benchFullDay(
+  repo: TransitRepository,
+  stops: StopWithMeta[],
+  now: Date,
+  sampleSize: number,
+): Promise<{ ms: number; deps: number }> {
+  const n = Math.min(sampleSize, stops.length);
+  const t0 = performance.now();
+  let deps = 0;
+  for (let i = 0; i < n; i++) {
+    const result = await repo.getFullDayTimetableEntries(stops[i].stop.stop_id, now);
+    if (result.success) {
+      deps += result.data.length;
+    }
+  }
+  return { ms: performance.now() - t0, deps };
+}
+
+function benchStopsForRoutes(
+  repo: TransitRepository,
+  stops: StopWithMeta[],
+): { ms: number; stopCount: number } | null {
+  const routeIds = new Set(stops[0].routes.map((r) => r.route_id));
+  if (routeIds.size === 0) {
+    return null;
+  }
+  const { value: stopIds, ms } = timed(() => repo.getStopsForRoutes(routeIds));
+  return { ms, stopCount: stopIds.size };
+}
+
+// ---------------------------------------------------------------------------
+// Summary formatting
+// ---------------------------------------------------------------------------
+
+function avg(total: number, count: number): string {
+  return (count > 0 ? total / count : 0).toFixed(2);
+}
+
+// ---------------------------------------------------------------------------
+// Main benchmark
+// ---------------------------------------------------------------------------
+
 /**
  * Run benchmark suite on the given repository.
  *
@@ -49,148 +142,102 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
   const t0 = performance.now();
   const now = new Date();
 
-  // --- getAllStops ---
-  const stopsT0 = performance.now();
-  const allStopsResult = await repository.getAllStops();
-  const stopsMs = performance.now() - stopsT0;
-  if (!allStopsResult.success) {
+  // --- Global benchmarks ---
+  const allStops = await timedAsync(() => repository.getAllStops());
+  if (!allStops.value.success) {
     logger.warn('getAllStops failed, cannot continue benchmark');
     return;
   }
-  logger.info(`getAllStops: ${stopsMs.toFixed(2)}ms (${allStopsResult.data.length} stops)`);
+  logger.info(`getAllStops: ${allStops.ms.toFixed(2)}ms (${allStops.value.data.length} stops)`);
 
-  // --- getRouteShapes ---
-  const shapesT0 = performance.now();
-  const shapesResult = await repository.getRouteShapes();
-  const shapesMs = performance.now() - shapesT0;
-  if (shapesResult.success) {
-    logger.info(`getRouteShapes: ${shapesMs.toFixed(2)}ms (${shapesResult.data.length} shapes)`);
+  const shapes = await timedAsync(() => repository.getRouteShapes());
+  if (shapes.value.success) {
+    logger.info(`getRouteShapes: ${shapes.ms.toFixed(2)}ms (${shapes.value.data.length} shapes)`);
   }
 
-  // --- getAllSourceMeta ---
-  const metaT0 = performance.now();
-  const metaResult = await repository.getAllSourceMeta();
-  const metaMs = performance.now() - metaT0;
-  if (metaResult.success) {
-    logger.info(`getAllSourceMeta: ${metaMs.toFixed(2)}ms (${metaResult.data.length} sources)`);
+  const meta = await timedAsync(() => repository.getAllSourceMeta());
+  if (meta.value.success) {
+    logger.info(`getAllSourceMeta: ${meta.ms.toFixed(2)}ms (${meta.value.data.length} sources)`);
   }
 
-  // --- Per-location benchmarks ---
+  // --- Per-location accumulators ---
   let totalNearby = 0;
   let totalBoundsMs = 0;
   let totalNearbyMs = 0;
-  let totalDeparturesMs = 0;
-  let totalDepartureStops = 0;
-  let totalDepartureEntries = 0;
-  let totalDeparturesNoLimitMs = 0;
-  let totalDepartureNoLimitEntries = 0;
-  let totalRouteTypesMs = 0;
-  let totalFullDayMs = 0;
-  let totalFullDayDeps = 0;
+  let totalStops = 0;
+  const upcomingLimit = { ms: 0, entries: 0 };
+  const upcomingNoLimit = { ms: 0, entries: 0 };
+  let routeTypesMs = 0;
+  const fullDay = { ms: 0, deps: 0 };
+  const stopsForRoutes = { ms: 0, stopCount: 0, calls: 0 };
 
   for (const loc of BENCH_LOCATIONS) {
-    // getStopsInBounds (~1km viewport)
     const bounds = {
       north: loc.lat + 0.005,
       south: loc.lat - 0.005,
       east: loc.lng + 0.006,
       west: loc.lng - 0.006,
     };
-    const boundsT0 = performance.now();
-    const boundsResult = await repository.getStopsInBounds(bounds, 1000);
-    totalBoundsMs += performance.now() - boundsT0;
+    const boundsResult = await timedAsync(() => repository.getStopsInBounds(bounds, 1000));
+    totalBoundsMs += boundsResult.ms;
 
-    // getStopsNearby (1km)
-    const nearbyT0 = performance.now();
-    const nearbyResult = await repository.getStopsNearby(
-      { lat: loc.lat, lng: loc.lng },
-      1000,
-      1000,
+    const nearbyResult = await timedAsync(() =>
+      repository.getStopsNearby({ lat: loc.lat, lng: loc.lng }, 1000, 1000),
     );
-    totalNearbyMs += performance.now() - nearbyT0;
+    totalNearbyMs += nearbyResult.ms;
 
-    const nearbyCount = nearbyResult.success ? nearbyResult.data.length : 0;
-    totalNearby += nearbyCount;
+    const nearbyStops = nearbyResult.value.success ? nearbyResult.value.data : [];
+    totalNearby += nearbyStops.length;
 
-    // getUpcomingTimetableEntries for all nearby stops (simulates real usage)
-    if (nearbyResult.success && nearbyResult.data.length > 0) {
-      const depT0 = performance.now();
-      let entries = 0;
-      for (const stopMeta of nearbyResult.data) {
-        const result = await repository.getUpcomingTimetableEntries(stopMeta.stop.stop_id, now, 3);
-        if (result.success) {
-          entries += result.data.length;
-        }
+    if (nearbyStops.length > 0) {
+      totalStops += nearbyStops.length;
+
+      const ul = await benchUpcoming(repository, nearbyStops, now, 3);
+      upcomingLimit.ms += ul.ms;
+      upcomingLimit.entries += ul.entries;
+
+      const unl = await benchUpcoming(repository, nearbyStops, now);
+      upcomingNoLimit.ms += unl.ms;
+      upcomingNoLimit.entries += unl.entries;
+
+      routeTypesMs += await benchRouteTypes(repository, nearbyStops);
+
+      const fd = await benchFullDay(repository, nearbyStops, now, 2);
+      fullDay.ms += fd.ms;
+      fullDay.deps += fd.deps;
+
+      const sfr = benchStopsForRoutes(repository, nearbyStops);
+      if (sfr) {
+        stopsForRoutes.ms += sfr.ms;
+        stopsForRoutes.stopCount += sfr.stopCount;
+        stopsForRoutes.calls++;
       }
-      totalDeparturesMs += performance.now() - depT0;
-      totalDepartureStops += nearbyResult.data.length;
-      totalDepartureEntries += entries;
     }
 
-    // getUpcomingTimetableEntries without limit (simulates NearbyStop real usage)
-    if (nearbyResult.success && nearbyResult.data.length > 0) {
-      const depT0 = performance.now();
-      let entries = 0;
-      for (const stopMeta of nearbyResult.data) {
-        const result = await repository.getUpcomingTimetableEntries(stopMeta.stop.stop_id, now);
-        if (result.success) {
-          entries += result.data.length;
-        }
-      }
-      totalDeparturesNoLimitMs += performance.now() - depT0;
-      totalDepartureNoLimitEntries += entries;
-    }
-
-    // getRouteTypesForStop for all nearby stops
-    if (nearbyResult.success && nearbyResult.data.length > 0) {
-      const rtT0 = performance.now();
-      for (const stopMeta of nearbyResult.data) {
-        await repository.getRouteTypesForStop(stopMeta.stop.stop_id);
-      }
-      totalRouteTypesMs += performance.now() - rtT0;
-    }
-
-    // getFullDayTimetableEntries (first 2 stops per location)
-    if (nearbyResult.success && nearbyResult.data.length > 0) {
-      const sampleSize = Math.min(2, nearbyResult.data.length);
-      const fdT0 = performance.now();
-      for (let i = 0; i < sampleSize; i++) {
-        const result = await repository.getFullDayTimetableEntries(
-          nearbyResult.data[i].stop.stop_id,
-          now,
-        );
-        if (result.success) {
-          totalFullDayDeps += result.data.length;
-        }
-      }
-      totalFullDayMs += performance.now() - fdT0;
-    }
-
-    const inBound = boundsResult.success ? boundsResult.data.length : 0;
-    logger.info(`  ${loc.name}: nearby=${nearbyCount} inBound=${inBound}`);
+    const inBound = boundsResult.value.success ? boundsResult.value.data.length : 0;
+    logger.info(`  ${loc.name}: nearby=${nearbyStops.length} inBound=${inBound}`);
   }
 
   // --- Summary ---
+  const n = BENCH_LOCATIONS.length;
   logger.info('--- Summary ---');
+  logger.info(`getStopsInBounds (${n} locations): ${totalBoundsMs.toFixed(2)}ms total`);
   logger.info(
-    `getStopsInBounds (${BENCH_LOCATIONS.length} locations): ${totalBoundsMs.toFixed(2)}ms total`,
+    `getStopsNearby (${n} locations): ${totalNearbyMs.toFixed(2)}ms total, ${totalNearby} stops`,
   );
   logger.info(
-    `getStopsNearby (${BENCH_LOCATIONS.length} locations): ${totalNearbyMs.toFixed(2)}ms total, ${totalNearby} stops`,
+    `getUpcomingTimetableEntries limit=3 (${totalStops} stops): ${upcomingLimit.ms.toFixed(2)}ms total, ${avg(upcomingLimit.ms, totalStops)}ms/stop, ${upcomingLimit.entries} entries`,
   );
   logger.info(
-    `getUpcomingTimetableEntries limit=3 (${totalDepartureStops} stops): ${totalDeparturesMs.toFixed(2)}ms total, ${(totalDepartureStops > 0 ? totalDeparturesMs / totalDepartureStops : 0).toFixed(2)}ms/stop, ${totalDepartureEntries} entries`,
+    `getUpcomingTimetableEntries no-limit (${totalStops} stops): ${upcomingNoLimit.ms.toFixed(2)}ms total, ${avg(upcomingNoLimit.ms, totalStops)}ms/stop, ${upcomingNoLimit.entries} entries`,
+  );
+  logger.info(`getRouteTypesForStop (${totalStops} stops): ${routeTypesMs.toFixed(2)}ms total`);
+  logger.info(
+    `getFullDayTimetableEntries: ${fullDay.ms.toFixed(2)}ms total, ${fullDay.deps} departures`,
   );
   logger.info(
-    `getUpcomingTimetableEntries no-limit (${totalDepartureStops} stops): ${totalDeparturesNoLimitMs.toFixed(2)}ms total, ${(totalDepartureStops > 0 ? totalDeparturesNoLimitMs / totalDepartureStops : 0).toFixed(2)}ms/stop, ${totalDepartureNoLimitEntries} entries`,
-  );
-  logger.info(
-    `getRouteTypesForStop (${totalDepartureStops} stops): ${totalRouteTypesMs.toFixed(2)}ms total`,
-  );
-  logger.info(
-    `getFullDayTimetableEntries: ${totalFullDayMs.toFixed(2)}ms total, ${totalFullDayDeps} departures`,
+    `getStopsForRoutes (${stopsForRoutes.calls} calls): ${stopsForRoutes.ms.toFixed(2)}ms total, ${avg(stopsForRoutes.ms, stopsForRoutes.calls)}ms/call, ${stopsForRoutes.stopCount} stops`,
   );
 
-  const totalMs = performance.now() - t0;
-  logger.info(`Benchmark complete: ${totalMs.toFixed(2)}ms`);
+  logger.info(`Benchmark complete: ${(performance.now() - t0).toFixed(2)}ms`);
 }

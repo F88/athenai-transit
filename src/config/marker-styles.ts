@@ -1,7 +1,8 @@
 /** Shared visual constants for stop markers across rendering modes. */
 export const MARKER_STYLES = {
   /** Opacity applied to non-selected markers when a stop is selected. */
-  dimmedOpacity: 0.4,
+  // dimmedOpacity: 0.4,
+  dimmedOpacity: 0.2,
   /** Fill opacity for normal (non-dimmed) markers. */
   fillOpacity: 0.9,
   /** Border color for the selected marker. */

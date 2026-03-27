@@ -34,6 +34,8 @@ interface StopMarkersCanvasProps {
   incremental?: boolean;
   /** Map of stop ID to agencies operating at each stop. */
   agenciesMap?: Map<string, Agency[]>;
+  /** When true, disables dimming of non-selected stops. Selected stop highlight is preserved. */
+  disableDimming?: boolean;
 }
 
 /**
@@ -90,6 +92,7 @@ export function StopMarkersCanvas({
   renderer,
   incremental = false,
   agenciesMap,
+  disableDimming = false,
 }: StopMarkersCanvasProps) {
   const map = useMap();
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -117,6 +120,7 @@ export function StopMarkersCanvas({
       onStopSelectedRef,
       onFetchDeparturesRef,
       agenciesMap,
+      disableDimming,
     };
     if (!layerGroupRef.current) {
       layerGroupRef.current = L.layerGroup().addTo(map);
@@ -130,11 +134,8 @@ export function StopMarkersCanvas({
         popupRef.current = null;
       }
       if (markersRef.current.size > 0) {
-        logger.verbose(`stops=0, clearing ${markersRef.current.size} markers`);
         group.clearLayers();
         markersRef.current.clear();
-      } else {
-        logger.verbose('stops=0, no markers to clear');
       }
       return;
     }
@@ -230,6 +231,7 @@ export function StopMarkersCanvas({
     infoLevel,
     showTooltip,
     incremental,
+    disableDimming,
   ]);
 
   // Clean up layer group on unmount
@@ -260,6 +262,7 @@ function createMarker(
     now?: Date;
     infoLevel: InfoLevel;
     agenciesMap?: Map<string, Agency[]>;
+    disableDimming?: boolean;
     onStopSelectedRef: React.RefObject<(stop: Stop) => void>;
     onFetchDeparturesRef: React.RefObject<
       ((stopId: string) => Promise<StopWithContext | null>) | undefined
@@ -269,7 +272,7 @@ function createMarker(
   const isSelected = stop.stop_id === opts.selectedStopId;
   const routeTypes = opts.routeTypeMap.get(stop.stop_id) ?? [3 as RouteType];
   const color = getRouteTypeColor(primaryRouteType(routeTypes));
-  const dimmed = !!opts.selectedStopId && !isSelected;
+  const dimmed = !opts.disableDimming && !!opts.selectedStopId && !isSelected;
 
   const marker = L.circleMarker([stop.stop_lat, stop.stop_lon], {
     renderer: opts.renderer,
@@ -283,18 +286,9 @@ function createMarker(
     opacity: dimmed ? MARKER_STYLES.dimmedOpacity : 1,
   });
 
+  // Lazy tooltip generation: bind only on mouseover to avoid HTML rendering overhead
   if (opts.showTooltip) {
-    marker.bindTooltip(
-      buildSummaryHtml(
-        stop,
-        routeTypes,
-        opts.agenciesMap?.get(stop.stop_id) ?? [],
-        opts.nearbyDepartures?.get(stop.stop_id),
-        opts.now,
-        opts.infoLevel,
-      ),
-      { direction: 'top', offset: [0, -8] },
-    );
+    bindTooltipLazyListener(marker, stop, routeTypes, opts);
   }
 
   marker.on('click', () => {
@@ -320,12 +314,13 @@ function updateMarkerStyle(
     now?: Date;
     infoLevel: InfoLevel;
     agenciesMap?: Map<string, Agency[]>;
+    disableDimming?: boolean;
   },
 ): void {
   const isSelected = stop.stop_id === opts.selectedStopId;
   const routeTypes = opts.routeTypeMap.get(stop.stop_id) ?? [3 as RouteType];
   const color = getRouteTypeColor(primaryRouteType(routeTypes));
-  const dimmed = !!opts.selectedStopId && !isSelected;
+  const dimmed = !opts.disableDimming && !!opts.selectedStopId && !isSelected;
 
   marker.setRadius(isSelected ? MARKER_STYLES.selectedRadius : MARKER_STYLES.normalRadius);
   marker.setStyle({
@@ -336,18 +331,76 @@ function updateMarkerStyle(
     opacity: dimmed ? MARKER_STYLES.dimmedOpacity : 1,
   });
 
-  if (opts.showTooltip) {
-    marker.unbindTooltip();
-    marker.bindTooltip(
-      buildSummaryHtml(
-        stop,
-        routeTypes,
-        opts.agenciesMap?.get(stop.stop_id) ?? [],
-        opts.nearbyDepartures?.get(stop.stop_id),
-        opts.now,
-        opts.infoLevel,
-      ),
-      { direction: 'top', offset: [0, -8] },
-    );
+  // Lazy tooltip: keep existing or will be created on mouseover
+  // Do not regenerate tooltip during incremental updates (performance optimization)
+  if (opts.showTooltip && !marker.getTooltip()) {
+    bindTooltipLazyListener(marker, stop, routeTypes, opts);
   }
+
+  // Unbind stale tooltip when deps change (refreshes content on next hover)
+  if (opts.showTooltip && marker.getTooltip()) {
+    marker.unbindTooltip();
+  }
+}
+
+/**
+ * Attach mouseover listener to bind tooltip on demand, exactly once per marker.
+ * Prevents duplicate listener registration during incremental updates.
+ *
+ * @internal
+ */
+function bindTooltipLazyListener(
+  marker: L.CircleMarker,
+  stop: Stop,
+  routeTypes: RouteType[],
+  opts: {
+    nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
+    now?: Date;
+    infoLevel: InfoLevel;
+    agenciesMap?: Map<string, Agency[]>;
+  },
+): void {
+  const markerAny = marker as any;
+  if (markerAny._lazyTooltipHandlerBound) {
+    return; // Already bound, skip to prevent duplicate listeners
+  }
+  markerAny._lazyTooltipHandlerBound = true;
+
+  marker.on('mouseover', () => {
+    bindTooltipLazy(marker, stop, routeTypes, opts);
+  });
+}
+
+/**
+ * Lazy-bind tooltip HTML on demand when marker is hovered.
+ * Defers expensive HTML rendering until needed, avoiding generateAll-at-once cost.
+ *
+ * @internal
+ */
+function bindTooltipLazy(
+  marker: L.CircleMarker,
+  stop: Stop,
+  routeTypes: RouteType[],
+  opts: {
+    nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
+    now?: Date;
+    infoLevel: InfoLevel;
+    agenciesMap?: Map<string, Agency[]>;
+  },
+): void {
+  if (marker.getTooltip()) {
+    return; // Tooltip already bound, skip
+  }
+
+  marker.bindTooltip(
+    buildSummaryHtml(
+      stop,
+      routeTypes,
+      opts.agenciesMap?.get(stop.stop_id) ?? [],
+      opts.nearbyDepartures?.get(stop.stop_id),
+      opts.now,
+      opts.infoLevel,
+    ),
+    { direction: 'top', offset: [0, -8] },
+  );
 }

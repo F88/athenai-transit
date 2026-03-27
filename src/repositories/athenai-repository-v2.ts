@@ -100,6 +100,7 @@ type HeadsignTranslationsByPrefix = Map<
 /** Merged data from multiple v2 sources. */
 export interface MergedDataV2 {
   stops: Stop[];
+  stopsMetaMap: Map<string, StopWithMeta>;
   routeMap: Map<string, Route>;
   agencyMap: Map<string, Agency>;
   tripPatterns: Map<string, TripPatternJson>;
@@ -108,8 +109,6 @@ export interface MergedDataV2 {
   calendarServices: CalendarServiceJson[];
   calendarExceptions: Map<string, CalendarExceptionJson[]>;
   stopRouteTypeMap: Map<string, RouteType[]>;
-  stopAgenciesMap: Map<string, Agency[]>;
-  stopRoutesMap: Map<string, Route[]>;
   translationsMap: TranslationsJson;
   headsignTranslations: HeadsignTranslationsByPrefix;
   lookup: LookupV2Json;
@@ -403,8 +402,19 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     });
   }
 
+  // --- StopWithMeta map (stop_id → StopWithMeta) ---
+  const stopsMetaMap = new Map<string, StopWithMeta>();
+  for (const stop of stops) {
+    stopsMetaMap.set(stop.stop_id, {
+      stop,
+      agencies: stopAgenciesMap.get(stop.stop_id) ?? [],
+      routes: stopRoutesMap.get(stop.stop_id) ?? [],
+    });
+  }
+
   return {
     stops,
+    stopsMetaMap,
     routeMap,
     agencyMap,
     tripPatterns,
@@ -413,8 +423,6 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     calendarServices,
     calendarExceptions,
     stopRouteTypeMap,
-    stopAgenciesMap,
-    stopRoutesMap,
     translationsMap,
     headsignTranslations,
     lookup,
@@ -437,18 +445,22 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
 export class AthenaiRepositoryV2 implements TransitRepository {
   private activeServiceCache: { key: string; ids: Set<string> } | null = null;
   private stops: Stop[];
+  private stopsMetaMap: Map<string, StopWithMeta>;
   private readonly routeMap: Map<string, Route>;
   private agencyMap: Map<string, Agency>;
   private resolvedPatterns: Map<string, ResolvedPattern>;
   private tripPatterns: Map<string, TripPatternJson>;
   private stopRouteTypeMap: Map<string, RouteType[]>;
-  private stopAgenciesMap: Map<string, Agency[]>;
-  private stopRoutesMap: Map<string, Route[]>;
   private calendarServices: CalendarServiceJson[];
   private calendarExceptions: Map<string, CalendarExceptionJson[]>;
   private timetable: Record<string, TimetableGroupV2Json[]>;
   private headsignTranslations: HeadsignTranslationsByPrefix;
   private sourceMetas: SourceMeta[];
+
+  // Lazy-initialized reverse map: route_id → Set<stop_id>.
+  // Built on first getStopsForRoutes() call by scanning all tripPatterns once.
+  // Safe to cache because tripPatterns are immutable after load.
+  private routeStopsCache: Map<string, Set<string>> | null = null;
 
   // Shapes: background-loaded after create()
   private shapesPromise: Promise<RouteShape[]> = Promise.resolve([]);
@@ -456,13 +468,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
   private constructor(merged: MergedDataV2) {
     this.stops = merged.stops;
+    this.stopsMetaMap = merged.stopsMetaMap;
     this.routeMap = merged.routeMap;
     this.agencyMap = merged.agencyMap;
     this.resolvedPatterns = merged.resolvedPatterns;
     this.tripPatterns = merged.tripPatterns;
     this.stopRouteTypeMap = merged.stopRouteTypeMap;
-    this.stopAgenciesMap = merged.stopAgenciesMap;
-    this.stopRoutesMap = merged.stopRoutesMap;
     this.calendarServices = merged.calendarServices;
     this.calendarExceptions = merged.calendarExceptions;
     this.timetable = merged.timetable;
@@ -495,6 +506,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
     const { sources, loadResult } = await fetchSourcesV2(prefixes, dataSource);
     const tFetch = performance.now();
+    const fetchMs = Math.round(tFetch - t0);
+    logger.debug(`fetchSources: ${fetchMs}ms (${sources.length} sources)`);
 
     for (const source of sources) {
       logger.info(
@@ -503,12 +516,14 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     }
 
     const merged = mergeSourcesV2(sources);
-    const tEnd = performance.now();
+    const tMerge = performance.now();
+    const mergeMs = Math.round(tMerge - tFetch);
+    logger.debug(
+      `mergeSources: ${mergeMs}ms (stops=${merged.stops.length} routes=${merged.routeMap.size} stopsMetaMap=${merged.stopsMetaMap.size})`,
+    );
 
-    const fetchMs = Math.round(tFetch - t0);
-    const mergeMs = Math.round(tEnd - tFetch);
     logger.info(
-      `Initialized in ${Math.round(tEnd - t0)}ms (fetch=${fetchMs}ms, merge=${mergeMs}ms): stops=${merged.stops.length} routes=${merged.routeMap.size} timetable_stops=${Object.keys(merged.timetable).length}`,
+      `Initialized in ${Math.round(tMerge - t0)}ms (fetch=${fetchMs}ms, merge=${mergeMs}ms): stops=${merged.stops.length} routes=${merged.routeMap.size} timetable_stops=${Object.keys(merged.timetable).length}`,
     );
 
     for (const meta of merged.sourceMetas) {
@@ -635,8 +650,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const centerLat = (bounds.north + bounds.south) / 2;
     const centerLng = (bounds.east + bounds.west) / 2;
 
-    const matching: { stop: Stop; dist: number }[] = [];
-    for (const stop of this.stops) {
+    const matching: { meta: StopWithMeta; dist: number }[] = [];
+    for (const meta of this.stopsMetaMap.values()) {
+      const { stop } = meta;
       if (
         stop.stop_lat >= bounds.south &&
         stop.stop_lat <= bounds.north &&
@@ -646,18 +662,14 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const dlat = stop.stop_lat - centerLat;
         const dlng = stop.stop_lon - centerLng;
         const dist = dlat * dlat + dlng * dlng;
-        matching.push({ stop, dist });
+        matching.push({ meta, dist });
       }
     }
 
     matching.sort((a, b) => a.dist - b.dist);
 
     const truncated = matching.length > effectiveLimit;
-    const data = matching.slice(0, effectiveLimit).map((m) => ({
-      stop: m.stop,
-      agencies: this.stopAgenciesMap.get(m.stop.stop_id) ?? [],
-      routes: this.stopRoutesMap.get(m.stop.stop_id) ?? [],
-    }));
+    const data = matching.slice(0, effectiveLimit).map((m) => m.meta);
 
     const elapsed = Math.round(performance.now() - t0);
     logger.debug(
@@ -679,23 +691,23 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const t0 = performance.now();
     const effectiveLimit = Math.min(limit, MAX_STOPS_RESULT);
     const radiusKm = radiusM / 1000;
-    const sorted = this.stops
-      .map((stop) => {
-        const dlat = stop.stop_lat - center.lat;
-        const dlng = stop.stop_lon - center.lng;
-        // Rough approximation: 1 degree lat ~ 111km, 1 degree lng ~ 91km (at 35 N)
-        const distKm = Math.sqrt((dlat * 111) ** 2 + (dlng * 91) ** 2);
-        return { stop, distKm };
-      })
-      .filter(({ distKm }) => distKm <= radiusKm)
-      .sort((a, b) => a.distKm - b.distKm);
+    const sorted: { meta: StopWithMeta; distKm: number }[] = [];
+    for (const meta of this.stopsMetaMap.values()) {
+      const { stop } = meta;
+      const dlat = stop.stop_lat - center.lat;
+      const dlng = stop.stop_lon - center.lng;
+      // Rough approximation: 1 degree lat ~ 111km, 1 degree lng ~ 91km (at 35 N)
+      const distKm = Math.sqrt((dlat * 111) ** 2 + (dlng * 91) ** 2);
+      if (distKm <= radiusKm) {
+        sorted.push({ meta, distKm });
+      }
+    }
+    sorted.sort((a, b) => a.distKm - b.distKm);
 
     const truncated = sorted.length > effectiveLimit;
-    const data = sorted.slice(0, effectiveLimit).map(({ stop, distKm }) => ({
-      stop,
+    const data = sorted.slice(0, effectiveLimit).map(({ meta, distKm }) => ({
+      ...meta,
       distance: distKm * 1000,
-      agencies: this.stopAgenciesMap.get(stop.stop_id) ?? [],
-      routes: this.stopRoutesMap.get(stop.stop_id) ?? [],
     }));
 
     const elapsed = Math.round(performance.now() - t0);
@@ -880,7 +892,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     }
 
     const elapsed = Math.round(performance.now() - t0);
-    logger.debug(
+    logger.verbose(
       `getUpcomingTimetableEntries: ${stopId} → ${result.length}/${totalAvailable} entries in ${elapsed}ms (${truncated ? 'truncated' : 'all'}) serviceDay=${formatDateKey(serviceDay)} prev=${formatDateKey(prevServiceDay)}`,
     );
     const meta: TimetableQueryMeta = {
@@ -979,6 +991,67 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     }
     logger.verbose(`getRouteTypesForStop: ${stopId} → [${routeTypes.join(', ')}]`);
     return Promise.resolve({ success: true, data: routeTypes });
+  }
+
+  /** {@inheritDoc TransitRepository.getStopMetaById} */
+  getStopMetaById(stopId: string): Promise<Result<StopWithMeta>> {
+    const meta = this.stopsMetaMap.get(stopId);
+    if (meta) {
+      return Promise.resolve({ success: true, data: meta });
+    }
+    return Promise.resolve({ success: false, error: `Stop not found: ${stopId}` });
+  }
+
+  /** {@inheritDoc TransitRepository.getStopMetaByIds} */
+  getStopMetaByIds(stopIds: Set<string>): StopWithMeta[] {
+    const result: StopWithMeta[] = [];
+    for (const stopId of stopIds) {
+      const meta = this.stopsMetaMap.get(stopId);
+      if (meta) {
+        result.push(meta);
+      }
+    }
+    return result;
+  }
+
+  /** {@inheritDoc TransitRepository.getStopsForRoutes} */
+  getStopsForRoutes(routeIds: Set<string>): Set<string> {
+    const cache = this.getRouteStopsMap();
+    const stopIds = new Set<string>();
+    for (const routeId of routeIds) {
+      const stops = cache.get(routeId);
+      if (stops) {
+        for (const stopId of stops) {
+          stopIds.add(stopId);
+        }
+      }
+    }
+    logger.debug(`getStopsForRoutes: ${routeIds.size} routes → ${stopIds.size} stops`);
+    return stopIds;
+  }
+
+  /** Builds and caches the route_id → stop_ids reverse map on first call. */
+  private getRouteStopsMap(): Map<string, Set<string>> {
+    if (this.routeStopsCache) {
+      return this.routeStopsCache;
+    }
+    const t0 = performance.now();
+    const map = new Map<string, Set<string>>();
+    for (const pattern of this.tripPatterns.values()) {
+      let stops = map.get(pattern.r);
+      if (!stops) {
+        stops = new Set();
+        map.set(pattern.r, stops);
+      }
+      for (const stopId of pattern.stops) {
+        stops.add(stopId);
+      }
+    }
+    this.routeStopsCache = map;
+    logger.debug(
+      `routeStopsCache built: ${map.size} routes in ${(performance.now() - t0).toFixed(2)}ms`,
+    );
+    return map;
   }
 
   /** {@inheritDoc TransitRepository.getAllStops} */

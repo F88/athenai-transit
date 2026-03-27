@@ -28,6 +28,10 @@ export default defineConfig([
     },
     rules: {
       curly: 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
   ...storybook.configs['flat/recommended'],

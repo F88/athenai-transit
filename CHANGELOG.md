@@ -9,6 +9,27 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `?stop=` クエリパラメータで初期選択 stop を指定可能。
+- Route Stops Layer: 路線選択時に路線上の全停留所を表示。nearby/far layer より描画優先度が高い。路線図データが無い路線でも実際の走行区間を可視化可能。
+- `useRouteStops` hook で停留所の路線別フィルタリング。
+- `disableDimming` prop で selected stop による dimming を制御。Route Stops Layer では stop 選択時も全停留所が通常表示される。
+
+### Fixed
+
+- StopMarkersCanvas: Tooltip lazy generation で incremental marker update を最適化。map panning 時のマーカー更新を 99.8% 削減 (700-850ms → 2-6ms @941 stops)。
+
+### Changed
+
+- BottomSheet を BottomSheetHeader / BottomSheetStops に分割。
+- ボトムシートのヘッダーに nearby 半径を表示 (例: `1km圏内`)。
+- 初回データ取得完了前に「近くに乗り場がありません」が一瞬表示される問題を修正。
+- `NearbyStopsCounts` (total/active/filtered) を導入し、件数情報を統合。
+- `DataConfig` を BottomSheet に props で渡す設計に変更。
+- `getUpcomingTimetableEntries` のログレベルを verbose に変更。
+- ESLint: `_` プレフィックス付きの未使用変数を許可。
+
 ## [2026.03.26]
 
 ### Added

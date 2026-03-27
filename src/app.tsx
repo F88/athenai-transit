@@ -8,6 +8,7 @@ import { useDateTime } from './hooks/use-date-time';
 import { useNearbyDepartures } from './hooks/use-nearby-departures';
 import { useSelection } from './hooks/use-selection';
 import { useStopHistory } from './hooks/use-stop-history';
+import { useRouteStops } from './hooks/use-route-stops';
 import { PERF_PROFILES } from './config/perf-profiles';
 import { TILE_SOURCES } from './config/tile-sources';
 import {
@@ -25,6 +26,7 @@ import {
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
 } from './domain/transit/timetable-filter';
+import { getStopParam } from './utils/query-params';
 
 const logger = createLogger('App');
 import { MapView } from './components/map/map-view';
@@ -45,6 +47,7 @@ export default function App() {
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
   const [routeShapes, setRouteShapes] = useState<RouteShape[]>([]);
   const [timetableModal, setTimetableModal] = useState<TimetableData | null>(null);
+  const [hasNearbyLoaded, setHasNearbyLoaded] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
 
@@ -93,6 +96,9 @@ export default function App() {
     inBoundStops,
   });
 
+  const routeStops = useRouteStops(selectionInfo?.routeIds ?? null, repo);
+  // console.debug('routeStops', routeStops.length);
+
   const { history, pushStop } = useStopHistory();
 
   // Find StopWithMeta by stop_id from nearby or inBound stops
@@ -130,6 +136,38 @@ export default function App() {
     [selectStopById, pushStop, findStopWithMeta, routeTypeMap],
   );
 
+  // Apply ?stop= query param: select and pan to the stop after data loads.
+  // Uses a ref to ensure the effect runs only once (the first time
+  // the repo resolves the stop). Same pattern as handleHistorySelect —
+  // focusStop sets directFocusPosition so the map pans even when the
+  // stop is outside the initial viewport.
+  const stopParamApplied = useRef(false);
+  useEffect(() => {
+    if (stopParamApplied.current) {
+      return;
+    }
+    const stopId = getStopParam();
+    if (!stopId) {
+      stopParamApplied.current = true;
+      return;
+    }
+    void repo.getStopMetaById(stopId).then((result) => {
+      if (stopParamApplied.current) {
+        return;
+      }
+      if (result.success) {
+        const stop = result.data;
+        logger.info(`Applying ?stop=${stopId}: ${stop.stop.stop_name}`);
+        focusStop(stop.stop);
+        pushStop(stop, routeTypeMap.get(stopId) ?? [3]);
+        stopParamApplied.current = true;
+      } else {
+        logger.warn(`?stop=${stopId}: not found`);
+        stopParamApplied.current = true;
+      }
+    });
+  }, [repo, focusStop, pushStop, routeTypeMap]);
+
   // Load route shapes once on mount
   useEffect(() => {
     void repo.getRouteShapes().then((result) => {
@@ -164,6 +202,7 @@ export default function App() {
           );
           setInBoundStops(inBounds);
           setNearbyStops(nearby);
+          setHasNearbyLoaded(true);
           setMapCenter(center);
           clearFocus();
         });
@@ -394,6 +433,8 @@ export default function App() {
           routeTypeMap={routeTypeMap}
           routeShapes={routeShapes}
           selectionInfo={selectionInfo}
+          routeStops={routeStops}
+          // routeStops={[]}
           visibleStopTypes={visibleStopTypes}
           visibleRouteShapes={visibleRouteShapes}
           tileIndex={settings.tileIndex}
@@ -432,6 +473,8 @@ export default function App() {
         nearbyDepartures={filteredNearbyDepartures}
         selectedStopId={selectedStopId}
         isNearbyLoading={isNearbyLoading}
+        hasNearbyLoaded={hasNearbyLoaded}
+        dataConfig={perfProfile.data}
         time={dateTime}
         mapCenter={mapCenter}
         infoLevel={settings.infoLevel}
