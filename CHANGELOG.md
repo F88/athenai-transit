@@ -9,6 +9,11 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `?stop=` クエリパラメータで初期選択 stop を指定可能。
+- production 環境で debug ログレベルを有効化。
+
 ### Changed
 
 - BottomSheet を BottomSheetHeader / BottomSheetStops に分割。
@@ -16,6 +21,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - 初回データ取得完了前に「近くに乗り場がありません」が一瞬表示される問題を修正。
 - `NearbyStopsCounts` (total/active/filtered) を導入し、件数情報を統合。
 - `DataConfig` を BottomSheet に props で渡す設計に変更。
+- NearbyStopsSummary のログレベルを verbose に変更。
+- `getUpcomingTimetableEntries` のログレベルを verbose に変更。
 - ESLint: `_` プレフィックス付きの未使用変数を許可。
 
 ## [2026.03.26]
