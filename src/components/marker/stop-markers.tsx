@@ -55,9 +55,6 @@ export function StopMarkers({
   agenciesMap,
   disableDimming = false,
 }: StopMarkersProps) {
-  // logger.verbose(
-  //   `stops=${stops.length}, renderMode=${renderMode}, incremental=${incremental}, selectedStopId=${selectedStopId}`,
-  // );
   return renderMode === 'lightweight' ? (
     <StopMarkersCanvas
       stops={stops}

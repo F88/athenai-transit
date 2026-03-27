@@ -134,11 +134,8 @@ export function StopMarkersCanvas({
         popupRef.current = null;
       }
       if (markersRef.current.size > 0) {
-        // logger.verbose(`stops=0, clearing ${markersRef.current.size} markers`);
         group.clearLayers();
         markersRef.current.clear();
-      } else {
-        // logger.verbose('stops=0, no markers to clear');
       }
       return;
     }
