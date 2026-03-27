@@ -229,6 +229,17 @@ export interface TransitRepository {
   getStopMetaById(stopId: string): Promise<Result<StopWithMeta>>;
 
   /**
+   * Returns StopWithMeta for each of the given stop IDs.
+   *
+   * Unknown stop IDs are silently skipped. The returned array preserves
+   * no particular order.
+   *
+   * @param stopIds - Set of stop IDs to look up.
+   * @returns Array of StopWithMeta for found stops.
+   */
+  getStopMetaByIds(stopIds: Set<string>): StopWithMeta[];
+
+  /**
    * Returns all stops in the dataset.
    *
    * Used for stop name search functionality.

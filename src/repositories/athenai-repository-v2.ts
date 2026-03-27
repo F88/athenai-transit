@@ -100,6 +100,7 @@ type HeadsignTranslationsByPrefix = Map<
 /** Merged data from multiple v2 sources. */
 export interface MergedDataV2 {
   stops: Stop[];
+  stopsMetaMap: Map<string, StopWithMeta>;
   routeMap: Map<string, Route>;
   agencyMap: Map<string, Agency>;
   tripPatterns: Map<string, TripPatternJson>;
@@ -403,8 +404,19 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     });
   }
 
+  // --- StopWithMeta map (stop_id → StopWithMeta) ---
+  const stopsMetaMap = new Map<string, StopWithMeta>();
+  for (const stop of stops) {
+    stopsMetaMap.set(stop.stop_id, {
+      stop,
+      agencies: stopAgenciesMap.get(stop.stop_id) ?? [],
+      routes: stopRoutesMap.get(stop.stop_id) ?? [],
+    });
+  }
+
   return {
     stops,
+    stopsMetaMap,
     routeMap,
     agencyMap,
     tripPatterns,
@@ -437,6 +449,7 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
 export class AthenaiRepositoryV2 implements TransitRepository {
   private activeServiceCache: { key: string; ids: Set<string> } | null = null;
   private stops: Stop[];
+  private stopsMetaMap: Map<string, StopWithMeta>;
   private readonly routeMap: Map<string, Route>;
   private agencyMap: Map<string, Agency>;
   private resolvedPatterns: Map<string, ResolvedPattern>;
@@ -461,6 +474,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
   private constructor(merged: MergedDataV2) {
     this.stops = merged.stops;
+    this.stopsMetaMap = merged.stopsMetaMap;
     this.routeMap = merged.routeMap;
     this.agencyMap = merged.agencyMap;
     this.resolvedPatterns = merged.resolvedPatterns;
@@ -988,18 +1002,23 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
   /** {@inheritDoc TransitRepository.getStopMetaById} */
   getStopMetaById(stopId: string): Promise<Result<StopWithMeta>> {
-    const stop = this.stops.find((s) => s.stop_id === stopId);
-    if (stop) {
-      return Promise.resolve({
-        success: true,
-        data: {
-          stop,
-          agencies: this.stopAgenciesMap.get(stopId) ?? [],
-          routes: this.stopRoutesMap.get(stopId) ?? [],
-        },
-      });
+    const meta = this.stopsMetaMap.get(stopId);
+    if (meta) {
+      return Promise.resolve({ success: true, data: meta });
     }
     return Promise.resolve({ success: false, error: `Stop not found: ${stopId}` });
+  }
+
+  /** {@inheritDoc TransitRepository.getStopMetaByIds} */
+  getStopMetaByIds(stopIds: Set<string>): StopWithMeta[] {
+    const result: StopWithMeta[] = [];
+    for (const stopId of stopIds) {
+      const meta = this.stopsMetaMap.get(stopId);
+      if (meta) {
+        result.push(meta);
+      }
+    }
+    return result;
   }
 
   /** {@inheritDoc TransitRepository.getStopsForRoutes} */

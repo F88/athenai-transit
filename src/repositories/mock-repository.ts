@@ -1008,6 +1008,22 @@ export class MockRepository implements TransitRepository {
     return Promise.resolve({ success: false, error: `Stop not found: ${stopId}` });
   }
 
+  /** {@inheritDoc TransitRepository.getStopMetaByIds} */
+  getStopMetaByIds(stopIds: Set<string>): StopWithMeta[] {
+    const result: StopWithMeta[] = [];
+    for (const stopId of stopIds) {
+      const stop = STOPS.find((s) => s.stop_id === stopId);
+      if (stop) {
+        result.push({
+          stop,
+          agencies: STOP_AGENCIES.get(stopId) ?? [],
+          routes: STOP_ROUTES_RESOLVED.get(stopId) ?? [],
+        });
+      }
+    }
+    return result;
+  }
+
   /** {@inheritDoc TransitRepository.getStopsForRoutes} */
   getStopsForRoutes(routeIds: Set<string>): Set<string> {
     const stopIds = new Set<string>();

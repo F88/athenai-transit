@@ -118,6 +118,9 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
       meta: { isBoardableOnServiceDay: false, totalEntries: 0 },
     }),
     getAllStops: vi.fn(),
+    getStopMetaById: vi.fn().mockResolvedValue({ success: false, error: 'Not found' }),
+    getStopMetaByIds: vi.fn().mockReturnValue([]),
+    getStopsForRoutes: vi.fn().mockReturnValue(new Set()),
     getAgency: vi.fn().mockResolvedValue({
       success: false,
       error: 'Not found',
