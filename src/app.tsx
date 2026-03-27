@@ -432,6 +432,7 @@ export default function App() {
         nearbyDepartures={filteredNearbyDepartures}
         selectedStopId={selectedStopId}
         isNearbyLoading={isNearbyLoading}
+        dataConfig={perfProfile.data}
         time={dateTime}
         mapCenter={mapCenter}
         infoLevel={settings.infoLevel}
