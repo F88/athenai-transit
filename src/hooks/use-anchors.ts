@@ -44,11 +44,17 @@ export function useAnchors(repo: UserDataRepository): UseAnchorsReturn {
     setLastError(null);
   }, []);
 
-  // Load anchors from repository on mount
+  // Load anchors from repository on mount.
+  // Cancellation flag prevents stale responses from overwriting state
+  // when repo changes or the component unmounts during an async load.
   useEffect(() => {
+    let cancelled = false;
     void repo
       .getAnchors()
       .then((result) => {
+        if (cancelled) {
+          return;
+        }
         if (result.success) {
           setAnchors(result.data);
           setLastError(null);
@@ -57,9 +63,15 @@ export function useAnchors(repo: UserDataRepository): UseAnchorsReturn {
         setLastError(result.error);
       })
       .catch((error: unknown) => {
+        if (cancelled) {
+          return;
+        }
         logger.error('Failed to load anchors', error);
         setLastError('Failed to load anchors');
       });
+    return () => {
+      cancelled = true;
+    };
   }, [repo]);
 
   const addStop = useCallback(
