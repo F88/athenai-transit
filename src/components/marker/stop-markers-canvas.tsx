@@ -117,6 +117,7 @@ export function StopMarkersCanvas({
     now,
     infoLevel,
     agenciesMap,
+    selectedStopId,
   });
 
   useEffect(() => {
@@ -128,6 +129,7 @@ export function StopMarkersCanvas({
       now,
       infoLevel,
       agenciesMap,
+      selectedStopId,
     };
   });
 
@@ -277,6 +279,7 @@ type TooltipDataRef = React.RefObject<{
   now?: Date;
   infoLevel: InfoLevel;
   agenciesMap?: Map<string, Agency[]>;
+  selectedStopId: string | null;
 }>;
 
 /** Creates a CircleMarker with style, tooltip, and click handler. */
@@ -395,6 +398,11 @@ function bindTooltipLazyListener(
       return; // Tooltip already bound, skip
     }
     const data = tooltipDataRef.current;
+    // Selected stop has a dedicated permanent tooltip on the map;
+    // skip hover tooltip to avoid duplication.
+    if (data.selectedStopId === stop.stop_id) {
+      return;
+    }
     const routeTypes = data.routeTypeMap.get(stop.stop_id) ?? [3 as RouteType];
     marker.bindTooltip(
       buildSummaryHtml(
