@@ -364,6 +364,11 @@ function updateMarkerStyle(
 
   // Lazy tooltip: register listener if not yet bound (WeakSet guards duplicates).
   // Listener reads latest data from tooltipDataRef on each hover.
+  //
+  // Known limitation: when showTooltip switches from true to false at runtime,
+  // already-bound hover tooltips are not removed. Currently no UI path toggles
+  // showTooltip dynamically, so this is acceptable. If such a path is added,
+  // an explicit unbind for showTooltip=false must be added here.
   if (opts.showTooltip) {
     bindTooltipLazyListener(marker, stop, opts.tooltipDataRef);
   }
@@ -380,6 +385,11 @@ function updateMarkerStyle(
  *
  * The listener reads the latest data from `tooltipDataRef` on each hover,
  * so tooltip content always reflects current props even after incremental updates.
+ *
+ * Known limitation: the `stop` object is captured by closure at registration
+ * time. stop_name, stop_lat, stop_lon are assumed immutable for a given
+ * stop_id during app lifetime (GTFS static data). If stop metadata were to
+ * change at runtime, the listener would need to read stop from a ref as well.
  *
  * @internal
  */
