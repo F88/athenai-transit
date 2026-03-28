@@ -9,6 +9,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Canvas mode (lightweight) の選択時 stop tooltip がダークモード未対応だった問題を修正。`L.popup` から `L.tooltip` に統一し、DOM mode とレイアウト・テーマを一致させた。
+
 ## [2026.03.28]
 
 ### Added
