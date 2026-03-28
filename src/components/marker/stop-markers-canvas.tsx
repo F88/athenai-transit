@@ -53,7 +53,7 @@ interface StopMarkersCanvasProps {
  * display logic is shared with standard-mode tooltips.
  *
  * @param stop - The stop to display.
- * @param departures - Pre-fetched departure data, if available.
+ * @param entries - Pre-fetched departure data, if available.
  * @param now - Current time for relative display.
  * @returns HTML string.
  */
@@ -272,7 +272,7 @@ export function StopMarkersCanvas({
   return null;
 }
 
-/** Ref holding the latest tooltip data, updated every render. */
+/** Ref holding the latest tooltip data, refreshed after each render. */
 type TooltipDataRef = React.RefObject<{
   routeTypeMap: Map<string, RouteType[]>;
   nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
@@ -366,8 +366,7 @@ function updateMarkerStyle(
   // Listener reads latest data from tooltipDataRef on each hover.
   //
   // Known limitation: when showTooltip switches from true to false at runtime,
-  // already-bound hover tooltips are not removed. Currently no UI path toggles
-  // showTooltip dynamically, so this is acceptable. If such a path is added,
+  // already-bound hover tooltips are not removed. If runtime toggling is added,
   // an explicit unbind for showTooltip=false must be added here.
   if (opts.showTooltip) {
     bindTooltipLazyListener(marker, stop, opts.tooltipDataRef);
