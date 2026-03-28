@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { isAnchor, type AnchorEntry } from '../domain/portal/anchor';
+import { isAnchor, MAX_ANCHOR_SIZE, type AnchorEntry } from '../domain/portal/anchor';
 import type { Result } from '../types/app/repository';
 import type { UserDataRepository } from '../repositories/user-data-repository';
 import { createLogger } from '../utils/logger';
@@ -79,7 +79,7 @@ export function useAnchors(repo: UserDataRepository): UseAnchorsReturn {
       try {
         const result = await repo.addAnchor(entry);
         if (result.success) {
-          setAnchors((prev) => [result.data, ...prev]);
+          setAnchors((prev) => [result.data, ...prev].slice(0, MAX_ANCHOR_SIZE));
           setLastError(null);
           return result;
         }

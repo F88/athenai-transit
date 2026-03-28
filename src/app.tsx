@@ -137,11 +137,13 @@ export default function App() {
     }
     const stopIds = new Set(anchors.map((a) => a.stopId));
     const metas = repo.getStopMetaByIds(stopIds);
+    // Mark as done regardless of result. Even if no metas are found
+    // (all anchor stopIds removed from GTFS), we should not retry
+    // on every dependency change.
+    anchorRefreshDone.current = true;
     if (metas.length === 0) {
-      // repo not ready yet (no data loaded)
       return;
     }
-    anchorRefreshDone.current = true;
     const metaMap = new Map(metas.map((m) => [m.stop.stop_id, m]));
     for (const anchor of anchors) {
       const meta = metaMap.get(anchor.stopId);

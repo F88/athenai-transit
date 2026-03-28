@@ -121,6 +121,8 @@ export class LocalStorageUserDataRepository implements UserDataRepository {
         logger.warn(
           `Dropped ${parsed.length - valid.length} invalid anchor entries from localStorage`,
         );
+        // Re-save immediately so invalid entries are not re-read on next startup
+        this.saveAnchorsToStorage(valid);
       }
       return valid;
     } catch (e) {
