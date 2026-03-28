@@ -565,6 +565,28 @@ describe('buildAnchorRefreshUpdates', () => {
     expect(updates[0].stopId).toBe('B');
     expect(updates[0].stopName).toBe('Updated B');
   });
+
+  it('detects routeTypes-only change', () => {
+    const meta = makeStopMeta('A');
+    const anchors: AnchorEntry[] = [
+      {
+        stopId: 'A',
+        stopName: meta.stop.stop_name,
+        stopLat: meta.stop.stop_lat,
+        stopLon: meta.stop.stop_lon,
+        routeTypes: [3],
+        createdAt: 1000,
+      },
+    ];
+    const metas: StopWithMeta[] = [
+      { ...meta, routes: [makeRoute('r1', 0), makeRoute('r2', 3)] },
+    ];
+
+    const updates = buildAnchorRefreshUpdates(anchors, metas);
+
+    expect(updates).toHaveLength(1);
+    expect(updates[0].routeTypes).toEqual([0, 3]);
+  });
 });
 
 describe('MAX_ANCHOR_SIZE', () => {
