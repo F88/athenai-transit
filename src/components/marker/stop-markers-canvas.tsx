@@ -107,13 +107,28 @@ export function StopMarkersCanvas({
   const selectedTooltipRef = useRef<L.Tooltip | null>(null);
   const markersRef = useRef<Map<string, L.CircleMarker>>(new Map());
 
-  // Stable refs for callbacks so useEffect doesn't re-run on handler identity changes
+  // Stable refs for callbacks and tooltip data so useEffect doesn't re-run on
+  // identity changes, and lazy mouseover listeners always read the latest values.
   const onStopSelectedRef = useRef(onStopSelected);
   const onFetchDeparturesRef = useRef(onFetchDepartures);
+  const tooltipDataRef = useRef({
+    routeTypeMap,
+    nearbyDepartures,
+    now,
+    infoLevel,
+    agenciesMap,
+  });
 
   useEffect(() => {
     onStopSelectedRef.current = onStopSelected;
     onFetchDeparturesRef.current = onFetchDepartures;
+    tooltipDataRef.current = {
+      routeTypeMap,
+      nearbyDepartures,
+      now,
+      infoLevel,
+      agenciesMap,
+    };
   });
 
   useEffect(() => {
@@ -122,25 +137,26 @@ export function StopMarkersCanvas({
       routeTypeMap,
       renderer,
       showTooltip,
-      nearbyDepartures,
-      now,
-      infoLevel,
+      disableDimming,
       onStopSelectedRef,
       onFetchDeparturesRef,
-      agenciesMap,
-      disableDimming,
+      tooltipDataRef,
     };
     if (!layerGroupRef.current) {
       layerGroupRef.current = L.layerGroup().addTo(map);
     }
     const group = layerGroupRef.current;
 
-    // Early return when no stops to render
-    if (stops.length === 0) {
+    const removeSelectedTooltip = () => {
       if (selectedTooltipRef.current) {
         map.removeLayer(selectedTooltipRef.current);
         selectedTooltipRef.current = null;
       }
+    };
+
+    // Early return when no stops to render
+    if (stops.length === 0) {
+      removeSelectedTooltip();
       if (markersRef.current.size > 0) {
         group.clearLayers();
         markersRef.current.clear();
@@ -148,11 +164,7 @@ export function StopMarkersCanvas({
       return;
     }
 
-    // Remove previous selected tooltip
-    if (selectedTooltipRef.current) {
-      map.removeLayer(selectedTooltipRef.current);
-      selectedTooltipRef.current = null;
-    }
+    removeSelectedTooltip();
 
     const t0 = performance.now();
 
@@ -195,8 +207,10 @@ export function StopMarkersCanvas({
       logger.debug(`rebuild: ${stops.length} stops in ${elapsed}ms`);
     }
 
-    // Show permanent tooltip for selected stop (only when tooltip and departure data are available)
-    if (showTooltip && now && selectedStopId) {
+    // Show permanent tooltip for selected stop when tooltip display is enabled.
+    // Unlike hover tooltips, this does not require `now` — StopSummary renders
+    // stop name and agencies even without time data (matching DOM mode behavior).
+    if (showTooltip && selectedStopId) {
       const selectedStop = stops.find((s) => s.stop_id === selectedStopId);
       if (selectedStop) {
         const entries = nearbyDepartures?.get(selectedStopId);
@@ -223,10 +237,7 @@ export function StopMarkersCanvas({
     }
 
     return () => {
-      if (selectedTooltipRef.current) {
-        map.removeLayer(selectedTooltipRef.current);
-        selectedTooltipRef.current = null;
-      }
+      removeSelectedTooltip();
     };
   }, [
     map,
@@ -259,6 +270,15 @@ export function StopMarkersCanvas({
   return null;
 }
 
+/** Ref holding the latest tooltip data, updated every render. */
+type TooltipDataRef = React.RefObject<{
+  routeTypeMap: Map<string, RouteType[]>;
+  nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
+  now?: Date;
+  infoLevel: InfoLevel;
+  agenciesMap?: Map<string, Agency[]>;
+}>;
+
 /** Creates a CircleMarker with style, tooltip, and click handler. */
 function createMarker(
   stop: Stop,
@@ -267,15 +287,12 @@ function createMarker(
     routeTypeMap: Map<string, RouteType[]>;
     renderer: L.Canvas;
     showTooltip: boolean;
-    nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
-    now?: Date;
-    infoLevel: InfoLevel;
-    agenciesMap?: Map<string, Agency[]>;
     disableDimming?: boolean;
     onStopSelectedRef: React.RefObject<(stop: Stop) => void>;
     onFetchDeparturesRef: React.RefObject<
       ((stopId: string) => Promise<StopWithContext | null>) | undefined
     >;
+    tooltipDataRef: TooltipDataRef;
   },
 ): L.CircleMarker {
   const isSelected = stop.stop_id === opts.selectedStopId;
@@ -297,7 +314,7 @@ function createMarker(
 
   // Lazy tooltip generation: bind only on mouseover to avoid HTML rendering overhead
   if (opts.showTooltip) {
-    bindTooltipLazyListener(marker, stop, routeTypes, opts);
+    bindTooltipLazyListener(marker, stop, opts.tooltipDataRef);
   }
 
   marker.on('click', () => {
@@ -311,7 +328,12 @@ function createMarker(
   return marker;
 }
 
-/** Updates an existing CircleMarker's style and tooltip without recreating it. */
+/** Updates an existing CircleMarker's style without recreating it.
+ *
+ * Tooltip content is NOT regenerated here. The lazy mouseover listener
+ * reads the latest data from {@link TooltipDataRef} on each hover,
+ * so stale tooltip content is resolved by unbinding + re-hover.
+ */
 function updateMarkerStyle(
   marker: L.CircleMarker,
   stop: Stop,
@@ -319,11 +341,8 @@ function updateMarkerStyle(
     selectedStopId: string | null;
     routeTypeMap: Map<string, RouteType[]>;
     showTooltip: boolean;
-    nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
-    now?: Date;
-    infoLevel: InfoLevel;
-    agenciesMap?: Map<string, Agency[]>;
     disableDimming?: boolean;
+    tooltipDataRef: TooltipDataRef;
   },
 ): void {
   const isSelected = stop.stop_id === opts.selectedStopId;
@@ -340,10 +359,10 @@ function updateMarkerStyle(
     opacity: dimmed ? MARKER_STYLES.dimmedOpacity : 1,
   });
 
-  // Lazy tooltip: keep existing or will be created on mouseover
-  // Do not regenerate tooltip during incremental updates (performance optimization)
-  if (opts.showTooltip && !marker.getTooltip()) {
-    bindTooltipLazyListener(marker, stop, routeTypes, opts);
+  // Lazy tooltip: register listener if not yet bound (WeakSet guards duplicates).
+  // Listener reads latest data from tooltipDataRef on each hover.
+  if (opts.showTooltip) {
+    bindTooltipLazyListener(marker, stop, opts.tooltipDataRef);
   }
 
   // Unbind stale tooltip when deps change (refreshes content on next hover)
@@ -356,18 +375,15 @@ function updateMarkerStyle(
  * Attach mouseover listener to bind tooltip on demand, exactly once per marker.
  * Prevents duplicate listener registration during incremental updates.
  *
+ * The listener reads the latest data from `tooltipDataRef` on each hover,
+ * so tooltip content always reflects current props even after incremental updates.
+ *
  * @internal
  */
 function bindTooltipLazyListener(
   marker: L.CircleMarker,
   stop: Stop,
-  routeTypes: RouteType[],
-  opts: {
-    nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
-    now?: Date;
-    infoLevel: InfoLevel;
-    agenciesMap?: Map<string, Agency[]>;
-  },
+  tooltipDataRef: TooltipDataRef,
 ): void {
   if (tooltipBoundMarkers.has(marker)) {
     return; // Already bound, skip to prevent duplicate listeners
@@ -375,40 +391,21 @@ function bindTooltipLazyListener(
   tooltipBoundMarkers.add(marker);
 
   marker.on('mouseover', () => {
-    bindTooltipLazy(marker, stop, routeTypes, opts);
+    if (marker.getTooltip()) {
+      return; // Tooltip already bound, skip
+    }
+    const data = tooltipDataRef.current;
+    const routeTypes = data.routeTypeMap.get(stop.stop_id) ?? [3 as RouteType];
+    marker.bindTooltip(
+      buildSummaryHtml(
+        stop,
+        routeTypes,
+        data.agenciesMap?.get(stop.stop_id) ?? [],
+        data.nearbyDepartures?.get(stop.stop_id),
+        data.now,
+        data.infoLevel,
+      ),
+      { direction: 'top', offset: [0, -8] },
+    );
   });
-}
-
-/**
- * Lazy-bind tooltip HTML on demand when marker is hovered.
- * Defers expensive HTML rendering until needed, avoiding generateAll-at-once cost.
- *
- * @internal
- */
-function bindTooltipLazy(
-  marker: L.CircleMarker,
-  stop: Stop,
-  routeTypes: RouteType[],
-  opts: {
-    nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
-    now?: Date;
-    infoLevel: InfoLevel;
-    agenciesMap?: Map<string, Agency[]>;
-  },
-): void {
-  if (marker.getTooltip()) {
-    return; // Tooltip already bound, skip
-  }
-
-  marker.bindTooltip(
-    buildSummaryHtml(
-      stop,
-      routeTypes,
-      opts.agenciesMap?.get(stop.stop_id) ?? [],
-      opts.nearbyDepartures?.get(stop.stop_id),
-      opts.now,
-      opts.infoLevel,
-    ),
-    { direction: 'top', offset: [0, -8] },
-  );
 }
