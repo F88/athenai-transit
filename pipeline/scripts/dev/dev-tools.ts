@@ -43,6 +43,11 @@ const SCRIPTS: AnalysisScript[] = [
     file: './analyze-odpt-station-timetable.ts',
     description: 'ODPT StationTimetable データパターン分析',
   },
+  {
+    name: 'analyze-v2-name-fields',
+    file: './analyze-v2-name-fields.ts',
+    description: 'V2 名称系調査対象の source 別件数集計',
+  },
 ];
 
 const SCRIPT_DIR = import.meta.dirname;
