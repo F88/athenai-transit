@@ -136,6 +136,7 @@ describe('App anchor error toast', () => {
       addStop: vi.fn(),
       removeStop: vi.fn(),
       updateStop: vi.fn(),
+      batchUpdateStops: vi.fn(),
       isStopAnchor: vi.fn(() => false),
     });
 
@@ -156,6 +157,7 @@ describe('App anchor error toast', () => {
       addStop: vi.fn(),
       removeStop: vi.fn(),
       updateStop: vi.fn(),
+      batchUpdateStops: vi.fn(),
       isStopAnchor: vi.fn(() => false),
     });
 
