@@ -22,6 +22,8 @@ export interface UseAnchorsReturn {
   removeStop: (stopId: string) => Promise<Result<void>>;
   /** Update an existing anchor's mutable fields. Returns the entry (updated or existing) on success, or error if not found. Idempotent. */
   updateStop: (update: Omit<AnchorEntry, 'createdAt'>) => Promise<Result<AnchorEntry>>;
+  /** Update multiple anchors in a single operation. Single state update + single persistence write. */
+  batchUpdateStops: (updates: Omit<AnchorEntry, 'createdAt'>[]) => Promise<Result<AnchorEntry[]>>;
   /** Check if a stop is currently in the anchor list. */
   isStopAnchor: (stopId: string) => boolean;
 }
@@ -137,7 +139,37 @@ export function useAnchors(repo: UserDataRepository): UseAnchorsReturn {
     [repo],
   );
 
+  const batchUpdateStops = useCallback(
+    async (updates: Omit<AnchorEntry, 'createdAt'>[]): Promise<Result<AnchorEntry[]>> => {
+      try {
+        const result = await repo.batchUpdateAnchors(updates);
+        if (result.success) {
+          setAnchors(result.data);
+          setLastError(null);
+          return result;
+        }
+        setLastError(result.error);
+        return result;
+      } catch (error: unknown) {
+        logger.error('Failed to batch update anchors', error);
+        const fallbackError = 'Failed to batch update anchors';
+        setLastError(fallbackError);
+        return { success: false, error: fallbackError };
+      }
+    },
+    [repo],
+  );
+
   const isStopAnchor = useCallback((stopId: string) => isAnchor(anchors, stopId), [anchors]);
 
-  return { anchors, lastError, clearError, addStop, removeStop, updateStop, isStopAnchor };
+  return {
+    anchors,
+    lastError,
+    clearError,
+    addStop,
+    removeStop,
+    updateStop,
+    batchUpdateStops,
+    isStopAnchor,
+  };
 }

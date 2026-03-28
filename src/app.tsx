@@ -111,7 +111,7 @@ export default function App() {
     clearError: clearAnchorError,
     addStop: addAnchor,
     removeStop: removeAnchor,
-    updateStop: updateAnchor,
+    batchUpdateStops: batchUpdateAnchors,
     isStopAnchor,
   } = useAnchors(userDataRepo);
 
@@ -145,20 +145,22 @@ export default function App() {
       return;
     }
     const metaMap = new Map(metas.map((m) => [m.stop.stop_id, m]));
-    for (const anchor of anchors) {
-      const meta = metaMap.get(anchor.stopId);
-      if (!meta) {
-        continue;
-      }
-      void updateAnchor({
-        stopId: anchor.stopId,
-        stopName: meta.stop.stop_name,
-        stopLat: meta.stop.stop_lat,
-        stopLon: meta.stop.stop_lon,
-        routeTypes: routeTypeMap.get(anchor.stopId) ?? anchor.routeTypes,
+    const updates = anchors
+      .filter((a) => metaMap.has(a.stopId))
+      .map((anchor) => {
+        const meta = metaMap.get(anchor.stopId)!;
+        return {
+          stopId: anchor.stopId,
+          stopName: meta.stop.stop_name,
+          stopLat: meta.stop.stop_lat,
+          stopLon: meta.stop.stop_lon,
+          routeTypes: routeTypeMap.get(anchor.stopId) ?? anchor.routeTypes,
+        };
       });
+    if (updates.length > 0) {
+      void batchUpdateAnchors(updates);
     }
-  }, [anchors, repo, routeTypeMap, updateAnchor]);
+  }, [anchors, repo, routeTypeMap, batchUpdateAnchors]);
 
   // Find StopWithMeta by stop_id from nearby or inBound stops
   const findStopWithMeta = useCallback(

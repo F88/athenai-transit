@@ -65,6 +65,22 @@ function makeMockRepo(initialAnchors: AnchorEntry[] = []): UserDataRepository {
         return { success: true, data: updated };
       },
     ),
+    batchUpdateAnchors: vi.fn(
+      async (entries: Omit<AnchorEntry, 'createdAt'>[]): Promise<Result<AnchorEntry[]>> => {
+        for (const entry of entries) {
+          const index = anchors.findIndex((a) => a.stopId === entry.stopId);
+          if (index !== -1) {
+            const updated: AnchorEntry = {
+              ...entry,
+              createdAt: anchors[index].createdAt,
+              portal: entry.portal ?? anchors[index].portal,
+            };
+            anchors = anchors.map((a) => (a.stopId === entry.stopId ? updated : a));
+          }
+        }
+        return { success: true, data: [...anchors] };
+      },
+    ),
   };
 }
 
@@ -338,6 +354,85 @@ describe('useAnchors', () => {
 
       act(() => result.current.clearError());
       expect(result.current.lastError).toBeNull();
+    });
+  });
+
+  describe('batchUpdateStops', () => {
+    it('updates multiple anchors and replaces state with repo result', async () => {
+      const repo = makeMockRepo([makeAnchorEntry('A'), makeAnchorEntry('B')]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
+
+      const res = await act(async () =>
+        result.current.batchUpdateStops([
+          { ...makeAnchorInput('A'), stopName: 'Updated A' },
+          { ...makeAnchorInput('B'), stopName: 'Updated B' },
+        ]),
+      );
+
+      expect(res.success).toBe(true);
+      expect(result.current.anchors).toHaveLength(2);
+      expect(result.current.anchors[0].stopName).toBe('Updated A');
+      expect(result.current.anchors[1].stopName).toBe('Updated B');
+    });
+
+    it('calls repo.batchUpdateAnchors once', async () => {
+      const repo = makeMockRepo([makeAnchorEntry('A'), makeAnchorEntry('B')]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
+
+      await act(async () =>
+        result.current.batchUpdateStops([
+          { ...makeAnchorInput('A'), stopName: 'X' },
+          { ...makeAnchorInput('B'), stopName: 'Y' },
+        ]),
+      );
+
+      expect(repo.batchUpdateAnchors).toHaveBeenCalledOnce();
+    });
+
+    it('sets lastError when repo returns failure', async () => {
+      const repo: UserDataRepository = {
+        ...makeMockRepo([makeAnchorEntry('A')]),
+        batchUpdateAnchors: vi.fn(
+          async (): Promise<Result<AnchorEntry[]>> => ({
+            success: false,
+            error: 'Failed to persist',
+          }),
+        ),
+      };
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
+
+      const res = await act(async () =>
+        result.current.batchUpdateStops([{ ...makeAnchorInput('A'), stopName: 'X' }]),
+      );
+
+      expect(res.success).toBe(false);
+      expect(result.current.lastError).toBe('Failed to persist');
+      // State should not have changed
+      expect(result.current.anchors[0].stopName).toBe('Stop A');
+    });
+
+    it('sets fallback error when repo throws', async () => {
+      const repo: UserDataRepository = {
+        ...makeMockRepo([makeAnchorEntry('A')]),
+        batchUpdateAnchors: vi.fn(async () => {
+          throw new Error('Network error');
+        }),
+      };
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
+
+      const res = await act(async () =>
+        result.current.batchUpdateStops([{ ...makeAnchorInput('A'), stopName: 'X' }]),
+      );
+
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.error).toContain('Failed to batch update');
+      }
+      expect(result.current.lastError).toBe('Failed to batch update anchors');
     });
   });
 

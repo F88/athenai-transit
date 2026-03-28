@@ -329,4 +329,109 @@ describe('LocalStorageUserDataRepository', () => {
       }
     });
   });
+
+  describe('batchUpdateAnchors', () => {
+    it('updates multiple anchors with single persistence write', async () => {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify([makeAnchorEntry('A'), makeAnchorEntry('B'), makeAnchorEntry('C')]),
+      );
+      const repo = new LocalStorageUserDataRepository();
+
+      const result = await repo.batchUpdateAnchors([
+        { ...makeAnchorInput('A'), stopName: 'Updated A' },
+        { ...makeAnchorInput('C'), stopName: 'Updated C' },
+      ]);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(3);
+        expect(result.data.find((a) => a.stopId === 'A')?.stopName).toBe('Updated A');
+        expect(result.data.find((a) => a.stopId === 'B')?.stopName).toBe('Stop B');
+        expect(result.data.find((a) => a.stopId === 'C')?.stopName).toBe('Updated C');
+      }
+
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as AnchorEntry[];
+      expect(stored.find((a) => a.stopId === 'A')?.stopName).toBe('Updated A');
+    });
+
+    it('skips entries not found and updates the rest', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([makeAnchorEntry('A')]));
+      const repo = new LocalStorageUserDataRepository();
+
+      const result = await repo.batchUpdateAnchors([
+        { ...makeAnchorInput('A'), stopName: 'Updated' },
+        { ...makeAnchorInput('Z'), stopName: 'Ghost' },
+      ]);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(1);
+        expect(result.data[0].stopName).toBe('Updated');
+      }
+    });
+
+    it('returns success without persisting when all entries are unchanged', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([makeAnchorEntry('A')]));
+      const repo = new LocalStorageUserDataRepository();
+      const originalJson = localStorage.getItem(STORAGE_KEY);
+
+      const result = await repo.batchUpdateAnchors([makeAnchorInput('A')]);
+
+      expect(result.success).toBe(true);
+      // localStorage should not have been rewritten
+      expect(localStorage.getItem(STORAGE_KEY)).toBe(originalJson);
+    });
+
+    it('returns success for empty updates array', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([makeAnchorEntry('A')]));
+      const repo = new LocalStorageUserDataRepository();
+
+      const result = await repo.batchUpdateAnchors([]);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toHaveLength(1);
+      }
+    });
+
+    it('returns error when persistence fails', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([makeAnchorEntry('A')]));
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+      const repo = new LocalStorageUserDataRepository();
+
+      const result = await repo.batchUpdateAnchors([
+        { ...makeAnchorInput('A'), stopName: 'Updated' },
+      ]);
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain('Failed to persist');
+      }
+    });
+
+    it('preserves portal fields during batch update', async () => {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify([
+          { ...makeAnchorEntry('A'), portal: 'group-1' },
+          { ...makeAnchorEntry('B'), portal: 'group-2' },
+        ]),
+      );
+      const repo = new LocalStorageUserDataRepository();
+
+      const result = await repo.batchUpdateAnchors([
+        { ...makeAnchorInput('A'), stopName: 'Updated A' },
+        { ...makeAnchorInput('B'), stopName: 'Updated B' },
+      ]);
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.find((a) => a.stopId === 'A')?.portal).toBe('group-1');
+        expect(result.data.find((a) => a.stopId === 'B')?.portal).toBe('group-2');
+      }
+    });
+  });
 });

@@ -103,6 +103,28 @@ export class LocalStorageUserDataRepository implements UserDataRepository {
     return { success: true, data: updated };
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async batchUpdateAnchors(
+    entries: Omit<AnchorEntry, 'createdAt'>[],
+  ): Promise<Result<AnchorEntry[]>> {
+    let current = this.anchors;
+    for (const entry of entries) {
+      const next = updateAnchor(current, entry);
+      if (next !== current) {
+        current = next;
+      }
+    }
+    if (current === this.anchors) {
+      // Nothing changed — all entries were unchanged or not found
+      return { success: true, data: [...this.anchors] };
+    }
+    if (!this.saveAnchorsToStorage(current)) {
+      return { success: false, error: 'Failed to persist to storage' };
+    }
+    this.anchors = current;
+    return { success: true, data: [...this.anchors] };
+  }
+
   // --- Private ---
 
   private loadAnchorsFromStorage(): AnchorEntry[] {

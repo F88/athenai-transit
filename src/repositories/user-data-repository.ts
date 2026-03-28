@@ -69,4 +69,16 @@ export interface UserDataRepository {
    * @returns The entry (updated or existing) on success, or error if not found.
    */
   updateAnchor(entry: Omit<AnchorEntry, 'createdAt'>): Promise<Result<AnchorEntry>>;
+
+  /**
+   * Updates multiple anchor entries in a single operation.
+   *
+   * Each entry is matched by stopId. Entries not found are silently
+   * skipped. Unchanged entries are treated as success (idempotent).
+   * Persistence is performed once after all updates are applied.
+   *
+   * @param entries - Array of fields to update.
+   * @returns The full updated anchor list on success, or error if persistence fails.
+   */
+  batchUpdateAnchors(entries: Omit<AnchorEntry, 'createdAt'>[]): Promise<Result<AnchorEntry[]>>;
 }
