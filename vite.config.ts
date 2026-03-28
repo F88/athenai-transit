@@ -27,17 +27,6 @@ export default defineConfig({
         globIgnores: ['data/**', 'data-v2/**'],
         runtimeCaching: [
           {
-            urlPattern: /\/data\/.*\.json$/,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'gtfs-data',
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 24 * 60 * 60,
-              },
-            },
-          },
-          {
             urlPattern: /\/data-v2\/.*\.json$/,
             handler: 'StaleWhileRevalidate',
             options: {
@@ -70,14 +59,21 @@ export default defineConfig({
       manifest: {
         name: 'あてのない乗換案内',
         short_name: 'アテナイ',
-        description: '目的地なしの乗換案内。ここからどこへ行ける?を探索するアプリ。',
+        description:
+          '行き先はまだ決めない。バス停や駅から次の便を眺めて、気の向くままに街を歩く。あてのない乗換案内 Athenai Transit',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         lang: 'ja',
+        id: '/',
         display: 'standalone',
-        orientation: 'portrait',
+        display_override: ['window-controls-overlay', 'standalone'],
+        orientation: 'any',
         scope: '/',
         start_url: '/',
+        categories: ['travel', 'navigation'],
+        launch_handler: {
+          client_mode: 'focus-existing',
+        },
         icons: [
           {
             src: '/icons/icon-192x192.png',
