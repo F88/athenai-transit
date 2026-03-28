@@ -37,9 +37,13 @@ interface BottomSheetProps {
   time: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
+  /** Set of stop IDs currently in the anchor list. */
+  anchorIds: Set<string>;
   onStopSelected: (stopId: string) => void;
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
+  /** Toggle anchor (bookmark) status for a stop. */
+  onToggleAnchor: (stopId: string) => void;
 }
 
 export function BottomSheet({
@@ -51,9 +55,11 @@ export function BottomSheet({
   time: now,
   mapCenter,
   infoLevel,
+  anchorIds,
   onStopSelected,
   onShowTimetable,
   onShowStopTimetable,
+  onToggleAnchor,
 }: BottomSheetProps) {
   const [expanded, setExpanded] = useState(false);
   const [viewId, setViewId] = useState(DEFAULT_VIEW_ID);
@@ -219,9 +225,11 @@ export function BottomSheet({
         infoLevel={infoLevel}
         viewId={viewId}
         contentRef={contentRef}
+        anchorIds={anchorIds}
         onStopSelected={handleStopSelected}
         onShowTimetable={onShowTimetable}
         onShowStopTimetable={onShowStopTimetable}
+        onToggleAnchor={onToggleAnchor}
       />
     </div>
   );

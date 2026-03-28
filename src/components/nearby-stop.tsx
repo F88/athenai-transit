@@ -8,6 +8,7 @@ import { useInfoLevel } from '../hooks/use-info-level';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
 import { resolveAgencyDisplayName } from '../domain/transit/get-agency-display-name';
+import { Clock, Signpost } from 'lucide-react';
 import { DepartureItem } from './departure-item';
 import { AgencyBadge } from './badge/agency-badge';
 import { DistanceBadge } from './badge/distance-badge';
@@ -22,9 +23,13 @@ interface NearbyStopProps {
   infoLevel: InfoLevel;
   /** Active departure view pattern ID. */
   viewId: string;
+  /** Whether this stop is in the anchor (bookmark) list. */
+  isAnchor: boolean;
   onStopSelected: (stopId: string) => void;
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
+  /** Toggle anchor (bookmark) status for this stop. */
+  onToggleAnchor: (stopId: string) => void;
 }
 
 export function NearbyStop({
@@ -34,9 +39,11 @@ export function NearbyStop({
   mapCenter,
   infoLevel,
   viewId,
+  isAnchor,
   onStopSelected,
   onShowTimetable,
   onShowStopTimetable,
+  onToggleAnchor,
 }: NearbyStopProps) {
   const info = useInfoLevel(infoLevel);
   const stopNames = getStopDisplayNames(stop, infoLevel);
@@ -98,16 +105,34 @@ export function NearbyStop({
           agencies.map((agency) => (
             <AgencyBadge key={agency.agency_id} agency={agency} infoLevel={infoLevel} size="xs" />
           ))}
+        <button
+          type="button"
+          className="ml-auto shrink-0 cursor-pointer rounded border border-amber-400 bg-transparent px-1.5 py-0.5 active:bg-amber-50 dark:border-amber-500 dark:active:bg-amber-950"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleAnchor(stop.stop_id);
+          }}
+          title={isAnchor ? 'Remove anchor' : 'Add anchor'}
+          aria-label={isAnchor ? 'Remove anchor' : 'Add anchor'}
+        >
+          <Signpost
+            size={16}
+            strokeWidth={2}
+            className={isAnchor ? 'text-amber-500' : 'text-gray-400'}
+          />
+        </button>
         {onShowStopTimetable && (
           <button
             type="button"
-            className="ml-auto shrink-0 cursor-pointer rounded border border-[#1976d2] bg-transparent px-2 py-0.5 text-xs whitespace-nowrap text-[#1976d2] active:bg-[rgba(25,118,210,0.1)] dark:border-blue-400 dark:text-blue-400"
+            className="shrink-0 cursor-pointer rounded border border-[#1976d2] bg-transparent px-1.5 py-0.5 text-[#1976d2] active:bg-[rgba(25,118,210,0.1)] dark:border-blue-400 dark:text-blue-400"
             onClick={(e) => {
               e.stopPropagation();
               onShowStopTimetable(stop.stop_id);
             }}
+            title="Show timetable"
+            aria-label="Show timetable"
           >
-            時刻表
+            <Clock size={16} strokeWidth={2} />
           </button>
         )}
       </div>
