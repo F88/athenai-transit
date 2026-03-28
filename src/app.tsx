@@ -9,7 +9,7 @@ import { useNearbyDepartures } from './hooks/use-nearby-departures';
 import { useSelection } from './hooks/use-selection';
 import { useStopHistory } from './hooks/use-stop-history';
 import { useAnchors } from './hooks/use-anchors';
-import type { AnchorEntry } from './domain/portal/anchor';
+import { buildAnchorRefreshUpdates, type AnchorEntry } from './domain/portal/anchor';
 import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
 import { useRouteStops } from './hooks/use-route-stops';
 import { PERF_PROFILES } from './config/perf-profiles';
@@ -137,30 +137,16 @@ export default function App() {
     }
     const stopIds = new Set(anchors.map((a) => a.stopId));
     const metas = repo.getStopMetaByIds(stopIds);
-    // Mark as done regardless of result. Even if no metas are found
-    // (all anchor stopIds removed from GTFS), we should not retry
-    // on every dependency change.
+    // Mark as done regardless of result. repo is fully loaded before
+    // injection (all GTFS data is in memory), so metas is only empty
+    // when all anchor stopIds have been removed from the dataset.
+    // We must not retry on every dependency change.
     anchorRefreshDone.current = true;
-    if (metas.length === 0) {
-      return;
-    }
-    const metaMap = new Map(metas.map((m) => [m.stop.stop_id, m]));
-    const updates = anchors
-      .filter((a) => metaMap.has(a.stopId))
-      .map((anchor) => {
-        const meta = metaMap.get(anchor.stopId)!;
-        return {
-          stopId: anchor.stopId,
-          stopName: meta.stop.stop_name,
-          stopLat: meta.stop.stop_lat,
-          stopLon: meta.stop.stop_lon,
-          routeTypes: routeTypeMap.get(anchor.stopId) ?? anchor.routeTypes,
-        };
-      });
+    const updates = buildAnchorRefreshUpdates(anchors, metas);
     if (updates.length > 0) {
       void batchUpdateAnchors(updates);
     }
-  }, [anchors, repo, routeTypeMap, batchUpdateAnchors]);
+  }, [anchors, repo, batchUpdateAnchors]);
 
   // Find StopWithMeta by stop_id from nearby or inBound stops
   const findStopWithMeta = useCallback(

@@ -1,4 +1,5 @@
 import type { RouteType } from '../../types/app/transit';
+import type { StopWithMeta } from '../../types/app/transit-composed';
 
 /** Maximum number of anchor entries. */
 export const MAX_ANCHOR_SIZE = 100;
@@ -123,4 +124,42 @@ export function removeAnchor(anchors: AnchorEntry[], stopId: string): AnchorEntr
  */
 export function isAnchor(anchors: AnchorEntry[], stopId: string): boolean {
   return anchors.some((a) => a.stopId === stopId);
+}
+
+/**
+ * Builds update entries for refreshing anchors with latest GTFS data.
+ *
+ * For each anchor that has a matching StopWithMeta, produces an update
+ * with the latest stopName, stopLat, stopLon, and routeTypes. Anchors
+ * without a match (removed from GTFS) are skipped. routeTypes are
+ * derived from meta.routes, falling back to the anchor's existing
+ * routeTypes when the stop has no routes.
+ *
+ * @param anchors - Current anchor list.
+ * @param metas - Latest StopWithMeta entries from the repository.
+ * @returns Update entries for anchors that have matching metas.
+ */
+export function buildAnchorRefreshUpdates(
+  anchors: AnchorEntry[],
+  metas: StopWithMeta[],
+): Omit<AnchorEntry, 'createdAt'>[] {
+  if (metas.length === 0) {
+    return [];
+  }
+  const metaMap = new Map(metas.map((m) => [m.stop.stop_id, m]));
+  return anchors
+    .filter((a) => metaMap.has(a.stopId))
+    .map((anchor) => {
+      const meta = metaMap.get(anchor.stopId)!;
+      return {
+        stopId: anchor.stopId,
+        stopName: meta.stop.stop_name,
+        stopLat: meta.stop.stop_lat,
+        stopLon: meta.stop.stop_lon,
+        routeTypes:
+          meta.routes.length > 0
+            ? ([...new Set(meta.routes.map((r) => r.route_type))] as RouteType[])
+            : anchor.routeTypes,
+      };
+    });
 }
