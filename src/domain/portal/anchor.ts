@@ -132,8 +132,9 @@ export function isAnchor(anchors: AnchorEntry[], stopId: string): boolean {
  * For each anchor that has a matching StopWithMeta, produces an update
  * with the latest stopName, stopLat, stopLon, and routeTypes. Anchors
  * without a match (removed from GTFS) are skipped. routeTypes are
- * derived from meta.routes, falling back to the anchor's existing
- * routeTypes when the stop has no routes.
+ * derived from meta.routes (deduplicated, sorted ascending to match
+ * stopRouteTypeMap), falling back to the anchor's existing routeTypes
+ * when the stop has no routes.
  *
  * @param anchors - Current anchor list.
  * @param metas - Latest StopWithMeta entries from the repository.
