@@ -20,7 +20,7 @@ export interface UseAnchorsReturn {
   addStop: (entry: Omit<AnchorEntry, 'createdAt'>) => Promise<Result<AnchorEntry>>;
   /** Remove a stop from anchors. Returns void on success, or error if not found. */
   removeStop: (stopId: string) => Promise<Result<void>>;
-  /** Update an existing anchor's mutable fields. Returns the updated entry on success, or error if not found or unchanged. */
+  /** Update an existing anchor's mutable fields. Returns the entry (updated or existing) on success, or error if not found. Idempotent. */
   updateStop: (update: Omit<AnchorEntry, 'createdAt'>) => Promise<Result<AnchorEntry>>;
   /** Check if a stop is currently in the anchor list. */
   isStopAnchor: (stopId: string) => boolean;
