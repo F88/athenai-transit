@@ -26,8 +26,11 @@ function isValidAnchorEntry(e: unknown): e is AnchorEntry {
   const obj = e as Record<string, unknown>;
   return (
     typeof obj.stopId === 'string' &&
+    typeof obj.stopName === 'string' &&
     typeof obj.stopLat === 'number' &&
-    typeof obj.stopLon === 'number'
+    typeof obj.stopLon === 'number' &&
+    Array.isArray(obj.routeTypes) &&
+    typeof obj.createdAt === 'number'
   );
 }
 
@@ -49,7 +52,7 @@ export class LocalStorageUserDataRepository implements UserDataRepository {
 
   // eslint-disable-next-line @typescript-eslint/require-await -- localStorage is synchronous; await will be used when migrated to Web API
   async getAnchors(): Promise<Result<AnchorEntry[]>> {
-    return { success: true, data: this.anchors };
+    return { success: true, data: [...this.anchors] };
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await

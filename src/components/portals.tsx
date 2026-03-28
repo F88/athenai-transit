@@ -50,7 +50,10 @@ export function Portals({ anchors, infoLevel, onSelect }: PortalsProps) {
       {/* INTENTIONAL: value is always "" — same technique as StopHistory.
           Keeps every click firing onValueChange, even for re-selection. */}
       <Select value="" onValueChange={handleValueChange} open={open} onOpenChange={setOpen}>
-        <SelectTrigger className="h-8 gap-1.5 rounded-2xl border-none bg-white/70 px-2 text-sm text-black/80 dark:bg-black/60 dark:text-white/80">
+        <SelectTrigger
+          className="h-8 gap-1.5 rounded-2xl border-none bg-white/70 px-2 text-sm text-black/80 dark:bg-black/60 dark:text-white/80"
+          aria-label="Portal"
+        >
           <span data-slot="select-value" className="flex items-center gap-1!">
             <DoorOpen size={14} strokeWidth={3} className="text-pink-400" />
             <span className="text-xs">{anchors.length}</span>

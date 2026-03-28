@@ -67,7 +67,10 @@ export function StopHistory({ history, selectedStopId, infoLevel, onSelect }: St
           lost, but this dropdown is a navigation shortcut, not a form control,
           so that is acceptable. */}
       <Select value="" onValueChange={handleValueChange} open={open} onOpenChange={setOpen}>
-        <SelectTrigger className="h-8 max-w-[50dvw] gap-1.5 rounded-2xl border-none bg-white/70 px-2 text-sm text-black dark:bg-black/60 dark:text-white">
+        <SelectTrigger
+          className="h-8 max-w-[50dvw] gap-1.5 rounded-2xl border-none bg-white/70 px-2 text-sm text-black dark:bg-black/60 dark:text-white"
+          aria-label="履歴"
+        >
           {/* Wrap in data-slot="select-value" to inherit SelectTrigger's flex/gap/line-clamp styles.
              Explicit text color overrides the data-placeholder:text-muted-foreground
              that Radix applies because value is always "". */}
