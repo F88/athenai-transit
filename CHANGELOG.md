@@ -9,16 +9,21 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.03.28]
+
 ### Added
 
-- Portal / Anchor 機能: お気に入り停留所 (Anchor) を登録し、Portal ドロップダウンから即座に移動できる機能。
-    - `AnchorEntry` 軽量参照モデル (stopId, stopName, stopLat, stopLon, routeTypes, createdAt, portal?)。
-    - `portal?` フィールドで将来的なグループ分類に対応。
-    - `useAnchors` hook: localStorage 永続化。`Result<T>` 型の async API で Web API 移行に備えた設計。
-    - ドメインロジック: `addAnchor`, `removeAnchor`, `updateAnchor`, `isAnchor` (純関数)。
+- Portal / Anchor 機能: お気に入り Stop (Anchor) を登録し、Portal ドロップダウンから即座に移動できる機能。
     - Portal ドロップダウン: 画面上部に履歴と並列表示。Lucide `DoorOpen` アイコン (pink)。
     - NearbyStop カードに Anchor トグルボタン (Lucide `Signpost`)。
     - 時刻表ボタンを Lucide `Clock` アイコンに変更。
+    - エラー通知: sonner トーストで Anchor 操作エラーを表示。
+    - `AnchorEntry` 軽量参照モデル (stopId, stopName, stopLat, stopLon, routeTypes, createdAt, portal?)。
+    - `portal?` フィールドで将来的なグループ分類に対応。
+    - `UserDataRepository` インターフェース + `LocalStorageUserDataRepository` 実装。async `Result<T>` API で Web API 移行に備えた設計。
+    - `useAnchors(repo)` hook: repo 注入パターン。`lastError`/`clearError` によるエラー状態管理。
+    - ドメインロジック: `addAnchor`, `removeAnchor`, `updateAnchor`, `isAnchor`, `buildAnchorRefreshUpdates` (純関数)。
+    - `batchUpdateAnchors`: 複数 Anchor を1回の永続化で一括更新。
 
 ### Changed
 
@@ -28,6 +33,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - StopHistory の最大幅を `max-w-[50dvw]` に調整。
 - SelectContent の z-index を `z-1002` に設定 (地図オーバーレイより前面)。
 - DEVELOPMENT.md の z-index 階層表を更新。
+- import 順序を ES module 規約に準拠 (app.tsx)。
 
 ## [2026.03.27]
 

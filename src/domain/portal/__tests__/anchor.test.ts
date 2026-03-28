@@ -578,9 +578,7 @@ describe('buildAnchorRefreshUpdates', () => {
         createdAt: 1000,
       },
     ];
-    const metas: StopWithMeta[] = [
-      { ...meta, routes: [makeRoute('r1', 0), makeRoute('r2', 3)] },
-    ];
+    const metas: StopWithMeta[] = [{ ...meta, routes: [makeRoute('r1', 0), makeRoute('r2', 3)] }];
 
     const updates = buildAnchorRefreshUpdates(anchors, metas);
 
