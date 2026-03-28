@@ -1,4 +1,5 @@
 import type { RouteType } from '../../types/app/transit';
+import type { StopWithMeta } from '../../types/app/transit-composed';
 
 /** Maximum number of anchor entries. */
 export const MAX_ANCHOR_SIZE = 100;
@@ -123,4 +124,59 @@ export function removeAnchor(anchors: AnchorEntry[], stopId: string): AnchorEntr
  */
 export function isAnchor(anchors: AnchorEntry[], stopId: string): boolean {
   return anchors.some((a) => a.stopId === stopId);
+}
+
+/**
+ * Builds update entries for refreshing anchors with latest GTFS data.
+ *
+ * For each anchor that has a matching StopWithMeta, produces an update
+ * with the latest stopName, stopLat, stopLon, and routeTypes. Anchors
+ * without a match (removed from GTFS) are skipped. routeTypes are
+ * derived from meta.routes (deduplicated, sorted ascending to match
+ * stopRouteTypeMap), falling back to the anchor's existing routeTypes
+ * when the stop has no routes.
+ *
+ * Only entries where at least one field differs from the current
+ * anchor are included. Returns an empty array when nothing needs
+ * updating, so the caller can skip the batch update entirely.
+ *
+ * @param anchors - Current anchor list.
+ * @param metas - Latest StopWithMeta entries from the repository.
+ * @returns Update entries for anchors that have changed.
+ */
+export function buildAnchorRefreshUpdates(
+  anchors: AnchorEntry[],
+  metas: StopWithMeta[],
+): Omit<AnchorEntry, 'createdAt'>[] {
+  if (metas.length === 0) {
+    return [];
+  }
+  const metaMap = new Map(metas.map((m) => [m.stop.stop_id, m]));
+  return anchors
+    .filter((a) => metaMap.has(a.stopId))
+    .map((anchor) => {
+      const meta = metaMap.get(anchor.stopId)!;
+      return {
+        anchor,
+        update: {
+          stopId: anchor.stopId,
+          stopName: meta.stop.stop_name,
+          stopLat: meta.stop.stop_lat,
+          stopLon: meta.stop.stop_lon,
+          routeTypes:
+            meta.routes.length > 0
+              ? [...new Set(meta.routes.map((r) => r.route_type))].sort((a, b) => a - b)
+              : anchor.routeTypes,
+        },
+      };
+    })
+    .filter(
+      ({ anchor, update }) =>
+        anchor.stopName !== update.stopName ||
+        anchor.stopLat !== update.stopLat ||
+        anchor.stopLon !== update.stopLon ||
+        anchor.routeTypes.length !== update.routeTypes.length ||
+        anchor.routeTypes.some((rt, i) => rt !== update.routeTypes[i]),
+    )
+    .map(({ update }) => update);
 }
