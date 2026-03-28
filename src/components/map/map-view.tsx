@@ -546,13 +546,13 @@ export function MapView({
       />
       {/* Top-center dropdown group: Portals + History */}
       <div className="pointer-events-none absolute top-[calc(4rem+env(safe-area-inset-top))] left-1/2 z-1001 flex -translate-x-1/2 gap-2 *:pointer-events-auto">
-        <Portals anchors={anchors} infoLevel={infoLevel} onSelect={onPortalSelect} />
         <StopHistory
           history={stopHistory}
           selectedStopId={selectedStopId}
           infoLevel={infoLevel}
           onSelect={onHistorySelect}
         />
+        <Portals anchors={anchors} infoLevel={infoLevel} onSelect={onPortalSelect} />
       </div>
     </div>
   );
