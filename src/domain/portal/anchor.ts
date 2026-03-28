@@ -158,7 +158,9 @@ export function buildAnchorRefreshUpdates(
         stopLon: meta.stop.stop_lon,
         routeTypes:
           meta.routes.length > 0
-            ? ([...new Set(meta.routes.map((r) => r.route_type))] as RouteType[])
+            ? ([...new Set(meta.routes.map((r) => r.route_type))].sort(
+                (a, b) => a - b,
+              ))
             : anchor.routeTypes,
       };
     });

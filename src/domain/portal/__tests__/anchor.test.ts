@@ -427,7 +427,7 @@ describe('buildAnchorRefreshUpdates', () => {
     expect(updates[0].routeTypes).toEqual([2]);
   });
 
-  it('deduplicates route types', () => {
+  it('deduplicates and sorts route types ascending', () => {
     const anchors: AnchorEntry[] = [makeAnchorEntry('A', [3], 1000)];
     const metas: StopWithMeta[] = [
       {
@@ -438,7 +438,8 @@ describe('buildAnchorRefreshUpdates', () => {
 
     const updates = buildAnchorRefreshUpdates(anchors, metas);
 
-    expect(updates[0].routeTypes).toEqual([3, 0]);
+    // Sorted ascending, consistent with stopRouteTypeMap in AthenaiRepositoryV2
+    expect(updates[0].routeTypes).toEqual([0, 3]);
   });
 
   it('updates stopName and coordinates from meta', () => {
