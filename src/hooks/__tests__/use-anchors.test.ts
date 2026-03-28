@@ -1,11 +1,11 @@
+/* eslint-disable @typescript-eslint/require-await, @typescript-eslint/unbound-method */
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { useAnchors } from '../use-anchors';
 import type { AnchorEntry } from '../../domain/portal/anchor';
+import type { UserDataRepository } from '../../repositories/user-data-repository';
 import type { Result } from '../../types/app/repository';
 import type { RouteType } from '../../types/app/transit';
-
-const STORAGE_KEY = 'portals';
 
 function makeAnchorInput(
   id: string,
@@ -20,86 +20,175 @@ function makeAnchorInput(
   };
 }
 
-beforeEach(() => {
-  localStorage.clear();
-});
+function makeAnchorEntry(id: string, routeTypes: RouteType[] = [3], createdAt = 1000): AnchorEntry {
+  return { ...makeAnchorInput(id, routeTypes), createdAt };
+}
+
+function makeMockRepo(initialAnchors: AnchorEntry[] = []): UserDataRepository {
+  let anchors = [...initialAnchors];
+  return {
+    getAnchors: vi.fn(
+      async (): Promise<Result<AnchorEntry[]>> => ({
+        success: true,
+        data: anchors,
+      }),
+    ),
+    addAnchor: vi.fn(
+      async (entry: Omit<AnchorEntry, 'createdAt'>): Promise<Result<AnchorEntry>> => {
+        if (anchors.some((a) => a.stopId === entry.stopId)) {
+          return { success: false, error: `Duplicate stop: ${entry.stopId}` };
+        }
+        const newEntry: AnchorEntry = { ...entry, createdAt: Date.now() };
+        anchors = [newEntry, ...anchors];
+        return { success: true, data: newEntry };
+      },
+    ),
+    removeAnchor: vi.fn(async (stopId: string): Promise<Result<void>> => {
+      if (!anchors.some((a) => a.stopId === stopId)) {
+        return { success: false, error: `Stop not found: ${stopId}` };
+      }
+      anchors = anchors.filter((a) => a.stopId !== stopId);
+      return { success: true, data: undefined };
+    }),
+    updateAnchor: vi.fn(
+      async (entry: Omit<AnchorEntry, 'createdAt'>): Promise<Result<AnchorEntry>> => {
+        const index = anchors.findIndex((a) => a.stopId === entry.stopId);
+        if (index === -1) {
+          return { success: false, error: `Stop not found: ${entry.stopId}` };
+        }
+        const updated: AnchorEntry = {
+          ...entry,
+          createdAt: anchors[index].createdAt,
+          portal: entry.portal ?? anchors[index].portal,
+        };
+        anchors = anchors.map((a) => (a.stopId === entry.stopId ? updated : a));
+        return { success: true, data: updated };
+      },
+    ),
+  };
+}
 
 describe('useAnchors', () => {
   describe('initial load', () => {
-    it('returns empty anchors when localStorage is empty', () => {
-      const { result } = renderHook(() => useAnchors());
+    it('loads anchors from repository on mount', async () => {
+      const repo = makeMockRepo([makeAnchorEntry('A'), makeAnchorEntry('B')]);
+      const { result } = renderHook(() => useAnchors(repo));
+
+      await act(async () => {});
+
+      expect(repo.getAnchors).toHaveBeenCalledOnce();
+      expect(result.current.anchors).toHaveLength(2);
+      expect(result.current.anchors[0].stopId).toBe('A');
+    });
+
+    it('returns empty anchors when repository is empty', async () => {
+      const repo = makeMockRepo();
+      const { result } = renderHook(() => useAnchors(repo));
+
+      await act(async () => {});
+
       expect(result.current.anchors).toEqual([]);
     });
 
-    it('loads existing anchors from localStorage', () => {
-      const entry: AnchorEntry = {
-        stopId: 'A',
-        stopName: 'Stop A',
-        stopLat: 35.0,
-        stopLon: 139.0,
-        routeTypes: [3],
-        createdAt: 1000,
+    it('keeps empty anchors when initial repository load fails', async () => {
+      const repo: UserDataRepository = {
+        ...makeMockRepo(),
+        getAnchors: vi.fn(
+          async (): Promise<Result<AnchorEntry[]>> => ({
+            success: false,
+            error: 'load failed',
+          }),
+        ),
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([entry]));
+      const { result } = renderHook(() => useAnchors(repo));
 
-      const { result } = renderHook(() => useAnchors());
-      expect(result.current.anchors).toHaveLength(1);
-      expect(result.current.anchors[0].stopId).toBe('A');
-      expect(result.current.anchors[0].routeTypes).toEqual([3]);
+      await act(async () => {});
+
+      expect(repo.getAnchors).toHaveBeenCalledOnce();
+      expect(result.current.anchors).toEqual([]);
+      expect(result.current.lastError).toBe('load failed');
+    });
+
+    it('sets fallback error when initial repository load throws', async () => {
+      const repo: UserDataRepository = {
+        ...makeMockRepo(),
+        getAnchors: vi.fn(async (): Promise<Result<AnchorEntry[]>> => {
+          throw new Error('boom');
+        }),
+      };
+      const { result } = renderHook(() => useAnchors(repo));
+
+      await act(async () => {});
+
+      expect(result.current.anchors).toEqual([]);
+      expect(result.current.lastError).toBe('Failed to load anchors');
     });
   });
 
   describe('addStop', () => {
     it('adds a stop and returns success with created entry', async () => {
-      const { result } = renderHook(() => useAnchors());
-      let res: Result<AnchorEntry> = { success: false, error: '' };
+      const repo = makeMockRepo();
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
 
-      await act(async () => {
-        res = await result.current.addStop(makeAnchorInput('X'));
-      });
+      const res = await act(async () => result.current.addStop(makeAnchorInput('X')));
 
       expect(res.success).toBe(true);
-      if (res.success) {
-        expect(res.data.stopId).toBe('X');
-        expect(res.data.stopName).toBe('Stop X');
-        expect(res.data.createdAt).toBeGreaterThan(0);
-      }
-
       expect(result.current.anchors).toHaveLength(1);
-
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as AnchorEntry[];
-      expect(stored).toHaveLength(1);
-      expect(stored[0].stopId).toBe('X');
+      expect(result.current.anchors[0].stopId).toBe('X');
     });
 
     it('returns error for duplicate stop', async () => {
-      const { result } = renderHook(() => useAnchors());
+      const repo = makeMockRepo([makeAnchorEntry('A')]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
 
-      await act(async () => {
-        await result.current.addStop(makeAnchorInput('A'));
-      });
+      const res = await act(async () => result.current.addStop(makeAnchorInput('A')));
 
-      let res: Result<AnchorEntry> = { success: true, data: {} as AnchorEntry };
-      await act(async () => {
-        res = await result.current.addStop(makeAnchorInput('A'));
-      });
+      expect(res.success).toBe(false);
+      expect(result.current.anchors).toHaveLength(1);
+      expect(result.current.lastError).toContain('Duplicate stop');
+    });
+
+    it('normalizes thrown error to failure Result', async () => {
+      const repo: UserDataRepository = {
+        ...makeMockRepo(),
+        addAnchor: vi.fn(async (): Promise<Result<AnchorEntry>> => {
+          throw new Error('boom');
+        }),
+      };
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
+
+      const res = await act(async () => result.current.addStop(makeAnchorInput('X')));
 
       expect(res.success).toBe(false);
       if (!res.success) {
-        expect(res.error).toContain('Duplicate');
+        expect(res.error).toBe('Failed to add anchor');
       }
-      expect(result.current.anchors).toHaveLength(1);
+      expect(result.current.lastError).toBe('Failed to add anchor');
+      expect(result.current.anchors).toEqual([]);
+    });
+
+    it('clears previous error on success', async () => {
+      const repo = makeMockRepo([makeAnchorEntry('A')]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
+
+      await act(async () => result.current.addStop(makeAnchorInput('A')));
+      expect(result.current.lastError).toContain('Duplicate stop');
+
+      await act(async () => result.current.addStop(makeAnchorInput('B')));
+      expect(result.current.lastError).toBeNull();
     });
 
     it('prepends new stop to front', async () => {
-      const { result } = renderHook(() => useAnchors());
+      const repo = makeMockRepo();
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
 
-      await act(async () => {
-        await result.current.addStop(makeAnchorInput('A'));
-      });
-      await act(async () => {
-        await result.current.addStop(makeAnchorInput('B'));
-      });
+      await act(async () => result.current.addStop(makeAnchorInput('A')));
+      await act(async () => result.current.addStop(makeAnchorInput('B')));
 
       expect(result.current.anchors[0].stopId).toBe('B');
       expect(result.current.anchors[1].stopId).toBe('A');
@@ -108,233 +197,189 @@ describe('useAnchors', () => {
 
   describe('removeStop', () => {
     it('removes a stop and returns success', async () => {
-      const entries: AnchorEntry[] = [
-        { ...makeAnchorInput('A'), createdAt: 1000 },
-        { ...makeAnchorInput('B'), createdAt: 2000 },
-      ];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      const repo = makeMockRepo([makeAnchorEntry('A'), makeAnchorEntry('B')]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
 
-      const { result } = renderHook(() => useAnchors());
-      let res: Result<void> = { success: false, error: '' };
-
-      await act(async () => {
-        res = await result.current.removeStop('A');
-      });
+      const res = await act(async () => result.current.removeStop('A'));
 
       expect(res.success).toBe(true);
       expect(result.current.anchors).toHaveLength(1);
       expect(result.current.anchors[0].stopId).toBe('B');
-
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as AnchorEntry[];
-      expect(stored).toHaveLength(1);
-      expect(stored[0].stopId).toBe('B');
     });
 
     it('returns error when stopId not found', async () => {
-      const entries: AnchorEntry[] = [{ ...makeAnchorInput('A'), createdAt: 1000 }];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      const repo = makeMockRepo([makeAnchorEntry('A')]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
 
-      const { result } = renderHook(() => useAnchors());
-      let res: Result<void> = { success: true, data: undefined };
+      const res = await act(async () => result.current.removeStop('Z'));
 
-      await act(async () => {
-        res = await result.current.removeStop('Z');
-      });
+      expect(res.success).toBe(false);
+      expect(result.current.anchors).toHaveLength(1);
+      expect(result.current.lastError).toContain('Stop not found');
+    });
+
+    it('normalizes thrown error to failure Result', async () => {
+      const repo: UserDataRepository = {
+        ...makeMockRepo([makeAnchorEntry('A')]),
+        removeAnchor: vi.fn(async (): Promise<Result<void>> => {
+          throw new Error('boom');
+        }),
+      };
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
+
+      const res = await act(async () => result.current.removeStop('A'));
 
       expect(res.success).toBe(false);
       if (!res.success) {
-        expect(res.error).toContain('not found');
+        expect(res.error).toBe('Failed to remove anchor');
       }
+      expect(result.current.lastError).toBe('Failed to remove anchor');
       expect(result.current.anchors).toHaveLength(1);
     });
   });
 
   describe('updateStop', () => {
     it('updates an anchor and returns success with updated entry', async () => {
-      const entries: AnchorEntry[] = [{ ...makeAnchorInput('A'), createdAt: 1000 }];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      const repo = makeMockRepo([makeAnchorEntry('A')]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
 
-      const { result } = renderHook(() => useAnchors());
-      let res: Result<AnchorEntry> = { success: false, error: '' };
-
-      await act(async () => {
-        res = await result.current.updateStop({ ...makeAnchorInput('A'), stopName: 'Updated' });
-      });
+      const res = await act(async () =>
+        result.current.updateStop({ ...makeAnchorInput('A'), stopName: 'Updated' }),
+      );
 
       expect(res.success).toBe(true);
-      if (res.success) {
-        expect(res.data.stopName).toBe('Updated');
-        expect(res.data.createdAt).toBe(1000);
-      }
-
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as AnchorEntry[];
-      expect(stored[0].stopName).toBe('Updated');
-    });
-
-    it('returns error when nothing changed', async () => {
-      const entries: AnchorEntry[] = [{ ...makeAnchorInput('A'), createdAt: 1000 }];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-
-      const { result } = renderHook(() => useAnchors());
-      let res: Result<AnchorEntry> = { success: true, data: {} as AnchorEntry };
-
-      await act(async () => {
-        res = await result.current.updateStop(makeAnchorInput('A'));
-      });
-
-      expect(res.success).toBe(false);
+      expect(result.current.anchors[0].stopName).toBe('Updated');
     });
 
     it('returns error when stopId not found', async () => {
-      const { result } = renderHook(() => useAnchors());
-      let res: Result<AnchorEntry> = { success: true, data: {} as AnchorEntry };
+      const repo = makeMockRepo();
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
 
-      await act(async () => {
-        res = await result.current.updateStop(makeAnchorInput('Z'));
-      });
+      const res = await act(async () => result.current.updateStop(makeAnchorInput('Z')));
 
       expect(res.success).toBe(false);
-      if (!res.success) {
-        expect(res.error).toContain('not found');
-      }
+      expect(result.current.lastError).toContain('Stop not found');
     });
 
     it('preserves portal when update omits it', async () => {
-      const entries: AnchorEntry[] = [
-        { ...makeAnchorInput('A'), createdAt: 1000, portal: 'my-group' },
-      ];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      const repo = makeMockRepo([{ ...makeAnchorEntry('A'), portal: 'my-group' }]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
 
-      const { result } = renderHook(() => useAnchors());
-
-      await act(async () => {
-        await result.current.updateStop({ ...makeAnchorInput('A'), stopName: 'New Name' });
-      });
+      await act(async () =>
+        result.current.updateStop({ ...makeAnchorInput('A'), stopName: 'New Name' }),
+      );
 
       expect(result.current.anchors[0].stopName).toBe('New Name');
       expect(result.current.anchors[0].portal).toBe('my-group');
     });
 
     it('updates portal when provided', async () => {
-      const entries: AnchorEntry[] = [{ ...makeAnchorInput('A'), createdAt: 1000, portal: 'old' }];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      const repo = makeMockRepo([{ ...makeAnchorEntry('A'), portal: 'old' }]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
 
-      const { result } = renderHook(() => useAnchors());
-
-      await act(async () => {
-        await result.current.updateStop({ ...makeAnchorInput('A'), portal: 'new' });
-      });
+      await act(async () => result.current.updateStop({ ...makeAnchorInput('A'), portal: 'new' }));
 
       expect(result.current.anchors[0].portal).toBe('new');
+    });
+
+    it('updates only the target anchor and preserves others', async () => {
+      const repo = makeMockRepo([makeAnchorEntry('A'), makeAnchorEntry('B')]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
+
+      const res = await act(async () =>
+        result.current.updateStop({ ...makeAnchorInput('A'), stopName: 'Updated A' }),
+      );
+
+      expect(res.success).toBe(true);
+      expect(result.current.anchors).toHaveLength(2);
+      expect(result.current.anchors[0].stopId).toBe('A');
+      expect(result.current.anchors[0].stopName).toBe('Updated A');
+      expect(result.current.anchors[1].stopId).toBe('B');
+      expect(result.current.anchors[1].stopName).toBe('Stop B');
+    });
+
+    it('normalizes thrown error to failure Result', async () => {
+      const repo: UserDataRepository = {
+        ...makeMockRepo([makeAnchorEntry('A')]),
+        updateAnchor: vi.fn(async (): Promise<Result<AnchorEntry>> => {
+          throw new Error('boom');
+        }),
+      };
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
+
+      const res = await act(async () => result.current.updateStop(makeAnchorInput('A')));
+
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.error).toBe('Failed to update anchor');
+      }
+      expect(result.current.lastError).toBe('Failed to update anchor');
+      expect(result.current.anchors[0].stopName).toBe('Stop A');
+    });
+  });
+
+  describe('error state', () => {
+    it('clears error via clearError', async () => {
+      const repo = makeMockRepo([makeAnchorEntry('A')]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
+
+      await act(async () => result.current.addStop(makeAnchorInput('A')));
+      expect(result.current.lastError).toContain('Duplicate stop');
+
+      act(() => result.current.clearError());
+      expect(result.current.lastError).toBeNull();
     });
   });
 
   describe('isStopAnchor', () => {
-    it('returns true for an anchored stop', () => {
-      const entries: AnchorEntry[] = [{ ...makeAnchorInput('A'), createdAt: 1000 }];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    it('returns true for an anchored stop', async () => {
+      const repo = makeMockRepo([makeAnchorEntry('A')]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
 
-      const { result } = renderHook(() => useAnchors());
       expect(result.current.isStopAnchor('A')).toBe(true);
     });
 
-    it('returns false for a non-anchored stop', () => {
-      const { result } = renderHook(() => useAnchors());
+    it('returns false for a non-anchored stop', async () => {
+      const repo = makeMockRepo();
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
+
       expect(result.current.isStopAnchor('Z')).toBe(false);
     });
 
     it('reflects changes after addStop', async () => {
-      const { result } = renderHook(() => useAnchors());
+      const repo = makeMockRepo();
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
 
       expect(result.current.isStopAnchor('X')).toBe(false);
 
-      await act(async () => {
-        await result.current.addStop(makeAnchorInput('X'));
-      });
+      await act(async () => result.current.addStop(makeAnchorInput('X')));
 
       expect(result.current.isStopAnchor('X')).toBe(true);
     });
 
     it('reflects changes after removeStop', async () => {
-      const entries: AnchorEntry[] = [{ ...makeAnchorInput('A'), createdAt: 1000 }];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      const repo = makeMockRepo([makeAnchorEntry('A')]);
+      const { result } = renderHook(() => useAnchors(repo));
+      await act(async () => {});
 
-      const { result } = renderHook(() => useAnchors());
       expect(result.current.isStopAnchor('A')).toBe(true);
 
-      await act(async () => {
-        await result.current.removeStop('A');
-      });
+      await act(async () => result.current.removeStop('A'));
 
       expect(result.current.isStopAnchor('A')).toBe(false);
-    });
-  });
-
-  describe('validation', () => {
-    it('drops entries with missing stopId', () => {
-      const entries = [
-        { stopName: 'No ID', stopLat: 35.0, stopLon: 139.0, routeTypes: [3], createdAt: 1000 },
-        {
-          stopId: 'valid',
-          stopName: 'Valid',
-          stopLat: 35.0,
-          stopLon: 139.0,
-          routeTypes: [3],
-          createdAt: 2000,
-        },
-      ];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-
-      const { result } = renderHook(() => useAnchors());
-      expect(result.current.anchors).toHaveLength(1);
-      expect(result.current.anchors[0].stopId).toBe('valid');
-    });
-
-    it('drops entries with missing stopLat/stopLon', () => {
-      const entries = [
-        { stopId: 'nocoord', stopName: 'No Coord', routeTypes: [3], createdAt: 1000 },
-        {
-          stopId: 'valid',
-          stopName: 'Valid',
-          stopLat: 35.0,
-          stopLon: 139.0,
-          routeTypes: [3],
-          createdAt: 2000,
-        },
-      ];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-
-      const { result } = renderHook(() => useAnchors());
-      expect(result.current.anchors).toHaveLength(1);
-      expect(result.current.anchors[0].stopId).toBe('valid');
-    });
-
-    it('drops non-object entries', () => {
-      const entries = [
-        'string',
-        null,
-        42,
-        {
-          stopId: 'ok',
-          stopName: 'OK',
-          stopLat: 35.0,
-          stopLon: 139.0,
-          routeTypes: [3],
-          createdAt: 1000,
-        },
-      ];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-
-      const { result } = renderHook(() => useAnchors());
-      expect(result.current.anchors).toHaveLength(1);
-      expect(result.current.anchors[0].stopId).toBe('ok');
-    });
-
-    it('returns empty array for corrupted JSON', () => {
-      localStorage.setItem(STORAGE_KEY, 'not valid json');
-
-      const { result } = renderHook(() => useAnchors());
-      expect(result.current.anchors).toEqual([]);
     });
   });
 });

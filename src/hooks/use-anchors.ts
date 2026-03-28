@@ -1,68 +1,10 @@
-import { useCallback, useRef, useState } from 'react';
-import {
-  addAnchor,
-  isAnchor,
-  removeAnchor,
-  updateAnchor,
-  type AnchorEntry,
-} from '../domain/portal/anchor';
+import { useCallback, useEffect, useState } from 'react';
+import { isAnchor, type AnchorEntry } from '../domain/portal/anchor';
 import type { Result } from '../types/app/repository';
+import type { UserDataRepository } from '../repositories/user-data-repository';
 import { createLogger } from '../utils/logger';
 
-const STORAGE_KEY = 'portals';
-const logger = createLogger('useAnchors');
-
-/**
- * Persists anchors to localStorage.
- *
- * @param anchors - Anchor entries to save.
- * @returns true if saved successfully, false if storage is unavailable.
- */
-function saveAnchors(anchors: AnchorEntry[]): boolean {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(anchors));
-    return true;
-  } catch (e) {
-    logger.error('Failed to save anchors to localStorage', e);
-    return false;
-  }
-}
-
-/**
- * Loads anchors from localStorage.
- *
- * Validates that each entry has a string stopId. Invalid entries
- * are silently filtered out.
- *
- * @returns Stored anchor entries, or empty array on failure.
- */
-function loadAnchors(): AnchorEntry[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-    const parsed = JSON.parse(raw) as unknown[];
-    const valid = parsed.filter((e): e is AnchorEntry => {
-      if (typeof e !== 'object' || e === null) {
-        return false;
-      }
-      const obj = e as Record<string, unknown>;
-      return (
-        typeof obj.stopId === 'string' &&
-        typeof obj.stopLat === 'number' &&
-        typeof obj.stopLon === 'number'
-      );
-    });
-    if (valid.length < parsed.length) {
-      logger.warn(`Dropped ${parsed.length - valid.length} invalid entries from localStorage`);
-    }
-    return valid;
-  } catch (e) {
-    logger.warn('Failed to load anchors from localStorage', e);
-    return [];
-  }
-}
+const logger = createLogger('Anchors');
 
 /**
  * Return type for the useAnchors hook.
@@ -70,6 +12,10 @@ function loadAnchors(): AnchorEntry[] {
 export interface UseAnchorsReturn {
   /** Anchor entries, most recently added first. */
   anchors: AnchorEntry[];
+  /** Latest repository error message. Null when no error. */
+  lastError: string | null;
+  /** Clear the latest repository error message. */
+  clearError: () => void;
   /** Add a stop to anchors. Returns the created entry on success, or error if duplicate. */
   addStop: (entry: Omit<AnchorEntry, 'createdAt'>) => Promise<Result<AnchorEntry>>;
   /** Remove a stop from anchors. Returns void on success, or error if not found. */
@@ -81,83 +27,105 @@ export interface UseAnchorsReturn {
 }
 
 /**
- * Manages a list of anchor (bookmarked) stops with localStorage persistence.
+ * Manages anchor (bookmarked stop) state backed by a {@link UserDataRepository}.
  *
- * Mutation methods are async and return {@link Result} to allow future
- * migration to a Web API backend without changing the caller interface.
+ * The hook owns the React state and delegates persistence to the repository.
+ * All mutation methods are async and return {@link Result} — the repository
+ * determines the actual storage mechanism (localStorage, Web API, etc.).
  *
+ * @param repo - The repository to use for persistence.
  * @returns Anchor state and mutation functions.
  */
-export function useAnchors(): UseAnchorsReturn {
-  const [anchors, setAnchors] = useState<AnchorEntry[]>(loadAnchors);
-  // Ref to communicate the result out of the setState updater.
-  const resultRef = useRef<Result<AnchorEntry> | Result<void>>({ success: false, error: '' });
+export function useAnchors(repo: UserDataRepository): UseAnchorsReturn {
+  const [anchors, setAnchors] = useState<AnchorEntry[]>([]);
+  const [lastError, setLastError] = useState<string | null>(null);
+
+  const clearError = useCallback(() => {
+    setLastError(null);
+  }, []);
+
+  // Load anchors from repository on mount
+  useEffect(() => {
+    void repo
+      .getAnchors()
+      .then((result) => {
+        if (result.success) {
+          setAnchors(result.data);
+          setLastError(null);
+          return;
+        }
+        setLastError(result.error);
+      })
+      .catch((error: unknown) => {
+        logger.error('Failed to load anchors', error);
+        setLastError('Failed to load anchors');
+      });
+  }, [repo]);
 
   const addStop = useCallback(
     async (entry: Omit<AnchorEntry, 'createdAt'>): Promise<Result<AnchorEntry>> => {
-      resultRef.current = { success: false, error: `Duplicate stop: ${entry.stopId}` };
-      setAnchors((prev) => {
-        const next = addAnchor(prev, entry, Date.now());
-        if (next === prev) {
-          logger.warn(`addStop: duplicate stopId=${entry.stopId}`);
-          return prev;
+      try {
+        const result = await repo.addAnchor(entry);
+        if (result.success) {
+          setAnchors((prev) => [result.data, ...prev]);
+          setLastError(null);
+          return result;
         }
-        if (!saveAnchors(next)) {
-          resultRef.current = { success: false, error: 'Failed to persist to storage' };
-          return prev;
-        }
-        resultRef.current = { success: true, data: next[0] };
-        return next;
-      });
-      return resultRef.current as Result<AnchorEntry>;
+        setLastError(result.error);
+        return result;
+      } catch (error: unknown) {
+        logger.error('Failed to add anchor', error);
+        const fallbackError = 'Failed to add anchor';
+        setLastError(fallbackError);
+        return { success: false, error: fallbackError };
+      }
     },
-    [],
+    [repo],
   );
 
-  const removeStop = useCallback(async (stopId: string): Promise<Result<void>> => {
-    resultRef.current = { success: false, error: `Stop not found: ${stopId}` };
-    setAnchors((prev) => {
-      const next = removeAnchor(prev, stopId);
-      if (next === prev) {
-        logger.warn(`removeStop: stopId=${stopId} not found`);
-        return prev;
+  const removeStop = useCallback(
+    async (stopId: string): Promise<Result<void>> => {
+      try {
+        const result = await repo.removeAnchor(stopId);
+        if (result.success) {
+          setAnchors((prev) => prev.filter((a) => a.stopId !== stopId));
+          setLastError(null);
+          return result;
+        }
+        setLastError(result.error);
+        return result;
+      } catch (error: unknown) {
+        logger.error('Failed to remove anchor', error);
+        const fallbackError = 'Failed to remove anchor';
+        setLastError(fallbackError);
+        return { success: false, error: fallbackError };
       }
-      if (!saveAnchors(next)) {
-        resultRef.current = { success: false, error: 'Failed to persist to storage' };
-        return prev;
-      }
-      resultRef.current = { success: true, data: undefined };
-      return next;
-    });
-    return resultRef.current as Result<void>;
-  }, []);
+    },
+    [repo],
+  );
 
   const updateStop = useCallback(
     async (update: Omit<AnchorEntry, 'createdAt'>): Promise<Result<AnchorEntry>> => {
-      resultRef.current = {
-        success: false,
-        error: `Stop not found or unchanged: ${update.stopId}`,
-      };
-      setAnchors((prev) => {
-        const next = updateAnchor(prev, update);
-        if (next === prev) {
-          logger.warn(`updateStop: stopId=${update.stopId} not found or unchanged`);
-          return prev;
+      try {
+        const result = await repo.updateAnchor(update);
+        if (result.success) {
+          setAnchors((prev) => prev.map((a) => (a.stopId === update.stopId ? result.data : a)));
+          setLastError(null);
+          return result;
         }
-        if (!saveAnchors(next)) {
-          resultRef.current = { success: false, error: 'Failed to persist to storage' };
-          return prev;
-        }
-        const updated = next.find((a) => a.stopId === update.stopId)!;
-        resultRef.current = { success: true, data: updated };
-        return next;
-      });
-      return resultRef.current as Result<AnchorEntry>;
+        setLastError(result.error);
+        return result;
+      } catch (error: unknown) {
+        logger.error('Failed to update anchor', error);
+        const fallbackError = 'Failed to update anchor';
+        setLastError(fallbackError);
+        return { success: false, error: fallbackError };
+      }
     },
-    [],
+    [repo],
   );
 
   const isStopAnchor = useCallback((stopId: string) => isAnchor(anchors, stopId), [anchors]);
 
-  return { anchors, addStop, removeStop, updateStop, isStopAnchor };
+  return { anchors, lastError, clearError, addStop, removeStop, updateStop, isStopAnchor };
 }

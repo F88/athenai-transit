@@ -10,6 +10,7 @@ import { useSelection } from './hooks/use-selection';
 import { useStopHistory } from './hooks/use-stop-history';
 import { useAnchors } from './hooks/use-anchors';
 import type { AnchorEntry } from './domain/portal/anchor';
+import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
 import { useRouteStops } from './hooks/use-route-stops';
 import { PERF_PROFILES } from './config/perf-profiles';
 import { TILE_SOURCES } from './config/tile-sources';
@@ -37,11 +38,14 @@ import { TimeControls } from './components/time-controls';
 import { TimetableModal, type TimetableData } from './components/dialog/timetable-modal';
 import { StopSearchModal } from './components/dialog/stop-search-modal';
 import { InfoDialog } from './components/dialog/info-dialog';
+import { Toaster } from './components/ui/sonner';
+import { toast } from 'sonner';
 
 const DEBOUNCE_MS = 300;
 
 export default function App() {
   const repo = useTransitRepository();
+  const [userDataRepo] = useState(() => new LocalStorageUserDataRepository());
   const { settings, updateSetting, updateSettings } = useUserSettings();
 
   const [inBoundStops, setInBoundStops] = useState<StopWithMeta[]>([]);
@@ -104,11 +108,25 @@ export default function App() {
   const { history, pushStop } = useStopHistory();
   const {
     anchors,
+    lastError: anchorError,
+    clearError: clearAnchorError,
     addStop: addAnchor,
     removeStop: removeAnchor,
     updateStop: updateAnchor,
     isStopAnchor,
-  } = useAnchors();
+  } = useAnchors(userDataRepo);
+
+  useEffect(() => {
+    if (!anchorError) {
+      return;
+    }
+    logger.warn(`anchor operation failed: ${anchorError}`);
+    toast.error('アンカー更新に失敗しました', {
+      description: anchorError,
+      duration: 4500,
+    });
+    clearAnchorError();
+  }, [anchorError, clearAnchorError]);
 
   // Refresh anchor entries with latest GTFS data on app load.
   // Runs once after repo is ready. Updates stopName, stopLat, stopLon,
@@ -588,6 +606,7 @@ export default function App() {
         infoLevel={settings.infoLevel}
         onClose={() => setTimetableModal(null)}
       />
+      <Toaster theme={settings.theme} position="top-center" closeButton richColors expand={false} />
     </>
   );
 }
