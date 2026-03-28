@@ -104,7 +104,7 @@ export function StopMarkersCanvas({
 }: StopMarkersCanvasProps) {
   const map = useMap();
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
-  const popupRef = useRef<L.Popup | null>(null);
+  const selectedTooltipRef = useRef<L.Tooltip | null>(null);
   const markersRef = useRef<Map<string, L.CircleMarker>>(new Map());
 
   // Stable refs for callbacks so useEffect doesn't re-run on handler identity changes
@@ -137,9 +137,9 @@ export function StopMarkersCanvas({
 
     // Early return when no stops to render
     if (stops.length === 0) {
-      if (popupRef.current) {
-        map.closePopup(popupRef.current);
-        popupRef.current = null;
+      if (selectedTooltipRef.current) {
+        map.removeLayer(selectedTooltipRef.current);
+        selectedTooltipRef.current = null;
       }
       if (markersRef.current.size > 0) {
         group.clearLayers();
@@ -148,10 +148,10 @@ export function StopMarkersCanvas({
       return;
     }
 
-    // Close previous popup
-    if (popupRef.current) {
-      map.closePopup(popupRef.current);
-      popupRef.current = null;
+    // Remove previous selected tooltip
+    if (selectedTooltipRef.current) {
+      map.removeLayer(selectedTooltipRef.current);
+      selectedTooltipRef.current = null;
     }
 
     const t0 = performance.now();
@@ -195,15 +195,16 @@ export function StopMarkersCanvas({
       logger.debug(`rebuild: ${stops.length} stops in ${elapsed}ms`);
     }
 
-    // Open popup for selected stop (only when tooltip and departure data are available)
+    // Show permanent tooltip for selected stop (only when tooltip and departure data are available)
     if (showTooltip && now && selectedStopId) {
       const selectedStop = stops.find((s) => s.stop_id === selectedStopId);
       if (selectedStop) {
         const entries = nearbyDepartures?.get(selectedStopId);
-        const popup = L.popup({
-          autoPan: false,
+        const tooltip = L.tooltip({
+          permanent: true,
+          direction: 'top',
           offset: [0, -8],
-          closeButton: false,
+          className: 'w-max max-w-80 whitespace-normal',
         })
           .setLatLng([selectedStop.stop_lat, selectedStop.stop_lon])
           .setContent(
@@ -216,15 +217,15 @@ export function StopMarkersCanvas({
               infoLevel,
             ),
           );
-        popup.openOn(map);
-        popupRef.current = popup;
+        tooltip.addTo(map);
+        selectedTooltipRef.current = tooltip;
       }
     }
 
     return () => {
-      if (popupRef.current) {
-        map.closePopup(popupRef.current);
-        popupRef.current = null;
+      if (selectedTooltipRef.current) {
+        map.removeLayer(selectedTooltipRef.current);
+        selectedTooltipRef.current = null;
       }
     };
   }, [
