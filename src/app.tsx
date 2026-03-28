@@ -30,8 +30,6 @@ import {
   prepareRouteHeadsignTimetable,
 } from './domain/transit/timetable-filter';
 import { getStopParam } from './utils/query-params';
-
-const logger = createLogger('App');
 import { MapView } from './components/map/map-view';
 import { BottomSheet } from './components/bottom-sheet';
 import { TimeControls } from './components/time-controls';
@@ -41,6 +39,7 @@ import { InfoDialog } from './components/dialog/info-dialog';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 
+const logger = createLogger('App');
 const DEBOUNCE_MS = 300;
 
 export default function App() {
