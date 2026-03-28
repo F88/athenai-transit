@@ -136,9 +136,13 @@ export function isAnchor(anchors: AnchorEntry[], stopId: string): boolean {
  * stopRouteTypeMap), falling back to the anchor's existing routeTypes
  * when the stop has no routes.
  *
+ * Only entries where at least one field differs from the current
+ * anchor are included. Returns an empty array when nothing needs
+ * updating, so the caller can skip the batch update entirely.
+ *
  * @param anchors - Current anchor list.
  * @param metas - Latest StopWithMeta entries from the repository.
- * @returns Update entries for anchors that have matching metas.
+ * @returns Update entries for anchors that have changed.
  */
 export function buildAnchorRefreshUpdates(
   anchors: AnchorEntry[],
@@ -153,16 +157,26 @@ export function buildAnchorRefreshUpdates(
     .map((anchor) => {
       const meta = metaMap.get(anchor.stopId)!;
       return {
-        stopId: anchor.stopId,
-        stopName: meta.stop.stop_name,
-        stopLat: meta.stop.stop_lat,
-        stopLon: meta.stop.stop_lon,
-        routeTypes:
-          meta.routes.length > 0
-            ? ([...new Set(meta.routes.map((r) => r.route_type))].sort(
-                (a, b) => a - b,
-              ))
-            : anchor.routeTypes,
+        anchor,
+        update: {
+          stopId: anchor.stopId,
+          stopName: meta.stop.stop_name,
+          stopLat: meta.stop.stop_lat,
+          stopLon: meta.stop.stop_lon,
+          routeTypes:
+            meta.routes.length > 0
+              ? [...new Set(meta.routes.map((r) => r.route_type))].sort((a, b) => a - b)
+              : anchor.routeTypes,
+        },
       };
-    });
+    })
+    .filter(
+      ({ anchor, update }) =>
+        anchor.stopName !== update.stopName ||
+        anchor.stopLat !== update.stopLat ||
+        anchor.stopLon !== update.stopLon ||
+        anchor.routeTypes.length !== update.routeTypes.length ||
+        anchor.routeTypes.some((rt, i) => rt !== update.routeTypes[i]),
+    )
+    .map(({ update }) => update);
 }

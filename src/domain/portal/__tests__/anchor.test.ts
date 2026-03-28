@@ -378,31 +378,58 @@ describe('isAnchor', () => {
 });
 
 describe('buildAnchorRefreshUpdates', () => {
-  it('builds updates from matching metas', () => {
+  it('builds updates for anchors with changed fields', () => {
     const anchors: AnchorEntry[] = [
-      makeAnchorEntry('A', [3], 1000),
-      makeAnchorEntry('B', [3], 2000),
+      {
+        stopId: 'A',
+        stopName: 'Old A',
+        stopLat: 35.0,
+        stopLon: 139.0,
+        routeTypes: [3],
+        createdAt: 1000,
+      },
+      {
+        stopId: 'B',
+        stopName: 'Old B',
+        stopLat: 35.1,
+        stopLon: 139.1,
+        routeTypes: [3],
+        createdAt: 2000,
+      },
     ];
+    const metaA = makeStopMeta('A');
+    metaA.stop.stop_name = 'New A';
+    const metaB = makeStopMeta('B');
+    metaB.stop.stop_name = 'New B';
     const metas: StopWithMeta[] = [
-      { ...makeStopMeta('A'), routes: [makeRoute('r1', 3)] },
-      { ...makeStopMeta('B'), routes: [makeRoute('r2', 0), makeRoute('r3', 3)] },
+      { ...metaA, routes: [makeRoute('r1', 3)] },
+      { ...metaB, routes: [makeRoute('r2', 0), makeRoute('r3', 3)] },
     ];
 
     const updates = buildAnchorRefreshUpdates(anchors, metas);
 
     expect(updates).toHaveLength(2);
     expect(updates[0].stopId).toBe('A');
-    expect(updates[0].routeTypes).toEqual([3]);
+    expect(updates[0].stopName).toBe('New A');
     expect(updates[1].stopId).toBe('B');
     expect(updates[1].routeTypes).toEqual([0, 3]);
   });
 
   it('skips anchors without matching meta', () => {
     const anchors: AnchorEntry[] = [
-      makeAnchorEntry('A', [3], 1000),
+      {
+        stopId: 'A',
+        stopName: 'Old A',
+        stopLat: 35.0,
+        stopLon: 139.0,
+        routeTypes: [3],
+        createdAt: 1000,
+      },
       makeAnchorEntry('Z', [3], 2000),
     ];
-    const metas: StopWithMeta[] = [{ ...makeStopMeta('A'), routes: [makeRoute('r1', 3)] }];
+    const metaA = makeStopMeta('A');
+    metaA.stop.stop_name = 'New A';
+    const metas: StopWithMeta[] = [{ ...metaA, routes: [makeRoute('r1', 3)] }];
 
     const updates = buildAnchorRefreshUpdates(anchors, metas);
 
@@ -417,14 +444,26 @@ describe('buildAnchorRefreshUpdates', () => {
     expect(updates).toEqual([]);
   });
 
-  it('falls back to anchor routeTypes when meta has no routes', () => {
-    const anchors: AnchorEntry[] = [makeAnchorEntry('A', [2], 1000)];
-    const metas: StopWithMeta[] = [{ ...makeStopMeta('A'), routes: [] }];
+  it('falls back to anchor routeTypes when meta has no routes but name changed', () => {
+    const anchors: AnchorEntry[] = [
+      {
+        stopId: 'A',
+        stopName: 'Old Name',
+        stopLat: 35.0,
+        stopLon: 139.0,
+        routeTypes: [2],
+        createdAt: 1000,
+      },
+    ];
+    const metaA = makeStopMeta('A');
+    metaA.stop.stop_name = 'New Name';
+    const metas: StopWithMeta[] = [{ ...metaA, routes: [] }];
 
     const updates = buildAnchorRefreshUpdates(anchors, metas);
 
     expect(updates).toHaveLength(1);
     expect(updates[0].routeTypes).toEqual([2]);
+    expect(updates[0].stopName).toBe('New Name');
   });
 
   it('deduplicates and sorts route types ascending', () => {
@@ -472,6 +511,59 @@ describe('buildAnchorRefreshUpdates', () => {
     const updates = buildAnchorRefreshUpdates([], metas);
 
     expect(updates).toEqual([]);
+  });
+
+  it('returns empty array when nothing has changed', () => {
+    const meta = makeStopMeta('A');
+    const anchors: AnchorEntry[] = [
+      {
+        stopId: 'A',
+        stopName: meta.stop.stop_name,
+        stopLat: meta.stop.stop_lat,
+        stopLon: meta.stop.stop_lon,
+        routeTypes: [3],
+        createdAt: 1000,
+      },
+    ];
+    const metas: StopWithMeta[] = [{ ...meta, routes: [makeRoute('r1', 3)] }];
+
+    const updates = buildAnchorRefreshUpdates(anchors, metas);
+
+    expect(updates).toEqual([]);
+  });
+
+  it('includes only anchors with actual changes', () => {
+    const metaA = makeStopMeta('A');
+    const metaB = makeStopMeta('B');
+    metaB.stop.stop_name = 'Updated B';
+    const anchors: AnchorEntry[] = [
+      {
+        stopId: 'A',
+        stopName: metaA.stop.stop_name,
+        stopLat: metaA.stop.stop_lat,
+        stopLon: metaA.stop.stop_lon,
+        routeTypes: [3],
+        createdAt: 1000,
+      },
+      {
+        stopId: 'B',
+        stopName: 'Old B',
+        stopLat: metaB.stop.stop_lat,
+        stopLon: metaB.stop.stop_lon,
+        routeTypes: [3],
+        createdAt: 2000,
+      },
+    ];
+    const metas: StopWithMeta[] = [
+      { ...metaA, routes: [makeRoute('r1', 3)] },
+      { ...metaB, routes: [makeRoute('r2', 3)] },
+    ];
+
+    const updates = buildAnchorRefreshUpdates(anchors, metas);
+
+    expect(updates).toHaveLength(1);
+    expect(updates[0].stopId).toBe('B');
+    expect(updates[0].stopName).toBe('Updated B');
   });
 });
 
