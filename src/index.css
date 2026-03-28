@@ -59,6 +59,11 @@
   background: #2d2d44;
 }
 
+/* Override Leaflet's white-space: nowrap so tooltip content can wrap */
+.leaflet-tooltip.whitespace-normal {
+  white-space: normal;
+}
+
 /* Dark mode overrides for Leaflet UI */
 .dark .leaflet-tooltip {
   background: #1f2937;

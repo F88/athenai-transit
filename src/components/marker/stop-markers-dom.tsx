@@ -90,7 +90,7 @@ function StopMarkerDomItem({
           direction="top"
           offset={[0, -24]}
           permanent={isSelected}
-          className="w-max max-w-80 whitespace-normal"
+          className={MARKER_STYLES.tooltip.className}
         >
           <StopSummary
             stop={stop}

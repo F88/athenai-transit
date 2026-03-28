@@ -17,4 +17,9 @@ export const MARKER_STYLES = {
   normalRadius: 6,
   /** Circle radius for the selected marker (Canvas mode). */
   selectedRadius: 10,
+  /** Tooltip styling shared by DOM and Canvas modes. */
+  tooltip: {
+    /** CSS class applied to Leaflet tooltip containers. */
+    className: 'w-max max-w-80 whitespace-normal',
+  },
 } as const;

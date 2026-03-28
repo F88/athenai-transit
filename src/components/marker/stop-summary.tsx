@@ -47,7 +47,7 @@ export function StopSummary({
         </div>
       )}
       {stopNames.subNames.length > 0 && (
-        <div className="text-[11px] font-normal text-[#888] dark:text-gray-400">
+        <div className="text-[11px] font-normal break-all text-[#888] dark:text-gray-400">
           {stopNames.subNames.join(' / ')}
         </div>
       )}

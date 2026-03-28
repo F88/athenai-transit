@@ -220,7 +220,7 @@ export function StopMarkersCanvas({
           permanent: true,
           direction: 'top',
           offset: [0, -8],
-          className: 'w-max max-w-80 whitespace-normal',
+          className: MARKER_STYLES.tooltip.className,
         })
           .setLatLng([selectedStop.stop_lat, selectedStop.stop_lon])
           .setContent(
@@ -422,7 +422,7 @@ function bindTooltipLazyListener(
         data.now,
         data.infoLevel,
       ),
-      { direction: 'top', offset: [0, -8] },
+      { direction: 'top', offset: [0, -8], className: MARKER_STYLES.tooltip.className },
     );
   });
 }
