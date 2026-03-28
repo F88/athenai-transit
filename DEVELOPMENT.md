@@ -126,7 +126,8 @@ Leaflet のカスタム pane を使い、描画レイヤーの前後関係を制
 | 600     | `shadowPane` — マーカーの影                                         |
 | 700     | `markerPane` — マーカー本体                                         |
 | 1000    | MapOverlayButton, BottomSheet                                       |
-| 1001    | SelectionIndicator                                                  |
+| 1001    | SelectionIndicator, Portal/History dropdown trigger                 |
+| 1002    | Portal/History SelectContent (dropdown list)                        |
 | 2000    | モーダルダイアログ (shadcn Dialog, StopSearchModal, TimetableModal) |
 
 > **Note**: outline pane は fill pane より低い z-index を持つ必要がある。react-leaflet の Polyline は Leaflet の `addTo()` を通じて pane 末尾に append されるため、同一 pane 内では mount 順に依存した描画順になる。pane を分離することで mount 順に関係なく正しい前後関係を保証する。

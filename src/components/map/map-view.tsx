@@ -20,6 +20,7 @@ import { StopTypeFilterPanel } from '../panel/stop-type-filter-panel';
 import { CLICK_SUPPRESSION_MS, shouldSuppressMapClick } from '../../utils/map-click';
 import { createLogger } from '../../utils/logger';
 import type { StopHistoryEntry } from '../../domain/transit/stop-history';
+import type { AnchorEntry } from '../../domain/portal/anchor';
 import type { SelectionInfo } from '../../domain/transit/route-selection';
 import {
   buildTimetableEntriesMap,
@@ -31,6 +32,7 @@ import { excludeStopsByIds, filterStopsByType } from '../../domain/transit/stop-
 import { TILE_SOURCES } from '../../config/tile-sources';
 import { EdgeMarkersSwitch } from '../marker/edge-markers';
 // import { SelectionIndicator } from './selection-indicator';
+import { Portals } from '../portals';
 import { StopHistory } from '../stop-history';
 
 import { INITIAL_CENTER, INITIAL_ZOOM } from '../../config/map-defaults';
@@ -231,6 +233,10 @@ interface MapViewProps {
   stopHistory: StopHistoryEntry[];
   /** Called when a history entry is chosen. */
   onHistorySelect: (stop: Stop) => void;
+  /** Anchor (bookmarked stop) entries, most recently added first. */
+  anchors: AnchorEntry[];
+  /** Called when an anchor is chosen from the Portal dropdown. */
+  onPortalSelect: (entry: AnchorEntry) => void;
 }
 
 export function MapView({
@@ -269,6 +275,8 @@ export function MapView({
   onInfoClick,
   stopHistory,
   onHistorySelect,
+  anchors,
+  onPortalSelect,
 }: MapViewProps) {
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
@@ -536,12 +544,16 @@ export function MapView({
         infoLevel={infoLevel}
         onStopClick={handleIndicatorClick}
       />
-      <StopHistory
-        history={stopHistory}
-        selectedStopId={selectedStopId}
-        infoLevel={infoLevel}
-        onSelect={onHistorySelect}
-      />
+      {/* Top-center dropdown group: Portals + History */}
+      <div className="pointer-events-none absolute top-[calc(4rem+env(safe-area-inset-top))] left-1/2 z-1001 flex -translate-x-1/2 gap-2 *:pointer-events-auto">
+        <Portals anchors={anchors} infoLevel={infoLevel} onSelect={onPortalSelect} />
+        <StopHistory
+          history={stopHistory}
+          selectedStopId={selectedStopId}
+          infoLevel={infoLevel}
+          onSelect={onHistorySelect}
+        />
+      </div>
     </div>
   );
 }

@@ -8,6 +8,9 @@ import { useDateTime } from './hooks/use-date-time';
 import { useNearbyDepartures } from './hooks/use-nearby-departures';
 import { useSelection } from './hooks/use-selection';
 import { useStopHistory } from './hooks/use-stop-history';
+import { useAnchors } from './hooks/use-anchors';
+import type { AnchorEntry } from './domain/portal/anchor';
+import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
 import { useRouteStops } from './hooks/use-route-stops';
 import { PERF_PROFILES } from './config/perf-profiles';
 import { TILE_SOURCES } from './config/tile-sources';
@@ -27,19 +30,21 @@ import {
   prepareRouteHeadsignTimetable,
 } from './domain/transit/timetable-filter';
 import { getStopParam } from './utils/query-params';
-
-const logger = createLogger('App');
 import { MapView } from './components/map/map-view';
 import { BottomSheet } from './components/bottom-sheet';
 import { TimeControls } from './components/time-controls';
 import { TimetableModal, type TimetableData } from './components/dialog/timetable-modal';
 import { StopSearchModal } from './components/dialog/stop-search-modal';
 import { InfoDialog } from './components/dialog/info-dialog';
+import { Toaster } from './components/ui/sonner';
+import { toast } from 'sonner';
 
+const logger = createLogger('App');
 const DEBOUNCE_MS = 300;
 
 export default function App() {
   const repo = useTransitRepository();
+  const [userDataRepo] = useState(() => new LocalStorageUserDataRepository());
   const { settings, updateSetting, updateSettings } = useUserSettings();
 
   const [inBoundStops, setInBoundStops] = useState<StopWithMeta[]>([]);
@@ -100,6 +105,62 @@ export default function App() {
   // console.debug('routeStops', routeStops.length);
 
   const { history, pushStop } = useStopHistory();
+  const {
+    anchors,
+    lastError: anchorError,
+    clearError: clearAnchorError,
+    addStop: addAnchor,
+    removeStop: removeAnchor,
+    batchUpdateStops: batchUpdateAnchors,
+    isStopAnchor,
+  } = useAnchors(userDataRepo);
+
+  useEffect(() => {
+    if (!anchorError) {
+      return;
+    }
+    logger.warn(`anchor operation failed: ${anchorError}`);
+    toast.error('アンカー更新に失敗しました', {
+      description: anchorError,
+      duration: 4500,
+    });
+    clearAnchorError();
+  }, [anchorError, clearAnchorError]);
+
+  // Refresh anchor entries with latest GTFS data on app load.
+  // Runs once after repo is ready. Updates stopName, stopLat, stopLon,
+  // and routeTypes if they have changed since the anchor was saved.
+  const anchorRefreshDone = useRef(false);
+  useEffect(() => {
+    if (anchorRefreshDone.current || anchors.length === 0) {
+      return;
+    }
+    const stopIds = new Set(anchors.map((a) => a.stopId));
+    const metas = repo.getStopMetaByIds(stopIds);
+    // Mark as done regardless of result. Even if no metas are found
+    // (all anchor stopIds removed from GTFS), we should not retry
+    // on every dependency change.
+    anchorRefreshDone.current = true;
+    if (metas.length === 0) {
+      return;
+    }
+    const metaMap = new Map(metas.map((m) => [m.stop.stop_id, m]));
+    const updates = anchors
+      .filter((a) => metaMap.has(a.stopId))
+      .map((anchor) => {
+        const meta = metaMap.get(anchor.stopId)!;
+        return {
+          stopId: anchor.stopId,
+          stopName: meta.stop.stop_name,
+          stopLat: meta.stop.stop_lat,
+          stopLon: meta.stop.stop_lon,
+          routeTypes: routeTypeMap.get(anchor.stopId) ?? anchor.routeTypes,
+        };
+      });
+    if (updates.length > 0) {
+      void batchUpdateAnchors(updates);
+    }
+  }, [anchors, repo, routeTypeMap, batchUpdateAnchors]);
 
   // Find StopWithMeta by stop_id from nearby or inBound stops
   const findStopWithMeta = useCallback(
@@ -337,6 +398,54 @@ export default function App() {
     [focusStop, pushStop, findStopWithMeta, routeTypeMap],
   );
 
+  // Anchor stop_id set for efficient lookup in BottomSheet
+  const anchorIds = useMemo(() => new Set(anchors.map((a) => a.stopId)), [anchors]);
+
+  // Toggle anchor (bookmark) status for a stop
+  const handleToggleAnchor = useCallback(
+    (stopId: string) => {
+      if (isStopAnchor(stopId)) {
+        logger.debug(`handleToggleAnchor: removing stopId=${stopId}`);
+        void removeAnchor(stopId);
+      } else {
+        const meta = findStopWithMeta(stopId);
+        if (meta) {
+          logger.debug(`handleToggleAnchor: adding stopId=${stopId}, name=${meta.stop.stop_name}`);
+          void addAnchor({
+            stopId: meta.stop.stop_id,
+            stopName: meta.stop.stop_name,
+            stopLat: meta.stop.stop_lat,
+            stopLon: meta.stop.stop_lon,
+            routeTypes: routeTypeMap.get(stopId) ?? [3],
+          });
+        }
+      }
+    },
+    [isStopAnchor, removeAnchor, addAnchor, findStopWithMeta, routeTypeMap],
+  );
+
+  // Select + pan to a stop from Portal dropdown
+  const handlePortalSelect = useCallback(
+    (entry: AnchorEntry) => {
+      logger.debug(`handlePortalSelect [Portal]: stopId=${entry.stopId}, name=${entry.stopName}`);
+      // Build a minimal Stop from AnchorEntry for map pan
+      const stop: Stop = {
+        stop_id: entry.stopId,
+        stop_name: entry.stopName,
+        stop_names: {},
+        stop_lat: entry.stopLat,
+        stop_lon: entry.stopLon,
+        location_type: 0,
+        agency_id: '',
+      };
+      focusStop(stop);
+      // Also record in history
+      const meta = findStopWithMeta(entry.stopId) ?? { stop, agencies: [], routes: [] };
+      pushStop(meta, entry.routeTypes);
+    },
+    [focusStop, findStopWithMeta, pushStop],
+  );
+
   const handleSearchSelect = useCallback(
     (stop: Stop) => {
       logger.debug(`handleSearchSelect [Search]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
@@ -461,6 +570,8 @@ export default function App() {
           onInfoClick={() => setInfoDialogOpen(true)}
           stopHistory={history}
           onHistorySelect={handleHistorySelect}
+          anchors={anchors}
+          onPortalSelect={handlePortalSelect}
         />
         <TimeControls
           time={dateTime}
@@ -478,9 +589,11 @@ export default function App() {
         time={dateTime}
         mapCenter={mapCenter}
         infoLevel={settings.infoLevel}
+        anchorIds={anchorIds}
         onStopSelected={handleSelectStopById}
         onShowTimetable={(...args) => void handleShowTimetable(...args)}
         onShowStopTimetable={(...args) => void handleShowStopTimetable(...args)}
+        onToggleAnchor={handleToggleAnchor}
       />
       <StopSearchModal
         repo={repo}
@@ -496,6 +609,7 @@ export default function App() {
         infoLevel={settings.infoLevel}
         onClose={() => setTimetableModal(null)}
       />
+      <Toaster theme={settings.theme} position="top-center" closeButton richColors expand={false} />
     </>
   );
 }

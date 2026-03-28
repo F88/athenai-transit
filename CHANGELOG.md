@@ -9,6 +9,26 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Portal / Anchor 機能: お気に入り停留所 (Anchor) を登録し、Portal ドロップダウンから即座に移動できる機能。
+    - `AnchorEntry` 軽量参照モデル (stopId, stopName, stopLat, stopLon, routeTypes, createdAt, portal?)。
+    - `portal?` フィールドで将来的なグループ分類に対応。
+    - `useAnchors` hook: localStorage 永続化。`Result<T>` 型の async API で Web API 移行に備えた設計。
+    - ドメインロジック: `addAnchor`, `removeAnchor`, `updateAnchor`, `isAnchor` (純関数)。
+    - Portal ドロップダウン: 画面上部に履歴と並列表示。Lucide `DoorOpen` アイコン (pink)。
+    - NearbyStop カードに Anchor トグルボタン (Lucide `Signpost`)。
+    - 時刻表ボタンを Lucide `Clock` アイコンに変更。
+
+### Changed
+
+- StopHistory / Portal ドロップダウンをテーマ対応 (light: 白背景, dark: 黒背景)。
+- StopHistory の未選択時アイコンを Lucide `History` (sky) に変更。
+- StopHistory の絶対配置を親 flex コンテナに委譲し、Portal と並列配置可能に。
+- StopHistory の最大幅を `max-w-[50dvw]` に調整。
+- SelectContent の z-index を `z-1002` に設定 (地図オーバーレイより前面)。
+- DEVELOPMENT.md の z-index 階層表を更新。
+
 ## [2026.03.27]
 
 ### Added

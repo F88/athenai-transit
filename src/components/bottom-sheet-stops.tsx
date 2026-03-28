@@ -12,9 +12,13 @@ interface BottomSheetStopsProps {
   infoLevel: InfoLevel;
   viewId: string;
   contentRef: RefObject<HTMLDivElement | null>;
+  /** Set of stop IDs currently in the anchor list. */
+  anchorIds: Set<string>;
   onStopSelected: (stopId: string) => void;
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
+  /** Toggle anchor (bookmark) status for a stop. */
+  onToggleAnchor: (stopId: string) => void;
 }
 
 export function BottomSheetStops({
@@ -25,9 +29,11 @@ export function BottomSheetStops({
   infoLevel,
   viewId,
   contentRef,
+  anchorIds,
   onStopSelected,
   onShowTimetable,
   onShowStopTimetable,
+  onToggleAnchor,
 }: BottomSheetStopsProps) {
   return (
     <div
@@ -43,9 +49,11 @@ export function BottomSheetStops({
           mapCenter={mapCenter}
           infoLevel={infoLevel}
           viewId={viewId}
+          isAnchor={anchorIds.has(swc.stop.stop_id)}
           onStopSelected={onStopSelected}
           onShowTimetable={onShowTimetable}
           onShowStopTimetable={onShowStopTimetable}
+          onToggleAnchor={onToggleAnchor}
         />
       ))}
     </div>
