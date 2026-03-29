@@ -4,13 +4,13 @@
 
 ## スクリプト一覧
 
-| スクリプト | 対象データ | 概要 |
-| --- | --- | --- |
-| `describe-resources.ts` | `pipeline/config/resources/` (リソース定義) | リソース定義の一覧表示 (`npm run pipeline:describe`) |
-| `find-joint-routes.ts` | `public/data/` (生成済み JSON) | 共同運行路線の検出。ソース間で route_short_name が一致する路線を検出し、停留所名の突き合わせと座標による近接分析を行う |
-| `analyze-gtfs-stop-times.ts` | `pipeline/workspace/_build/db/` (SQLite DB) | GTFS stop_times パターン分析 (terminal-only stops, circular routes, pickup/drop-off types 等) |
-| `analyze-odpt-station-timetable.ts` | `pipeline/workspace/data/odpt-json/` (ODPT JSON) | ODPT StationTimetable データパターン分析 (time field availability, station/direction/calendar coverage 等) |
-| `analyze-v2-name-fields.ts` | `public/data-v2/` (生成済み V2 DataBundle) | 定義済みの名称系調査対象について、V2 JSON 上の `nonEmpty` / `empty` 件数を source ごとに集計する |
+| スクリプト                          | 対象データ                                       | 概要                                                                                                                   |
+| ----------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `describe-resources.ts`             | `pipeline/config/resources/` (リソース定義)      | リソース定義の一覧表示 (`npm run pipeline:describe`)                                                                   |
+| `find-joint-routes.ts`              | `public/data/` (生成済み JSON)                   | 共同運行路線の検出。ソース間で route_short_name が一致する路線を検出し、停留所名の突き合わせと座標による近接分析を行う |
+| `analyze-gtfs-stop-times.ts`        | `pipeline/workspace/_build/db/` (SQLite DB)      | GTFS stop_times パターン分析 (terminal-only stops, circular routes, pickup/drop-off types 等)                          |
+| `analyze-odpt-station-timetable.ts` | `pipeline/workspace/data/odpt-json/` (ODPT JSON) | ODPT StationTimetable データパターン分析 (time field availability, station/direction/calendar coverage 等)             |
+| `analyze-v2-name-fields.ts`         | `public/data-v2/` (生成済み V2 DataBundle)       | 定義済みの名称系調査対象について、V2 JSON 上の `nonEmpty` / `empty` 件数を source ごとに集計する                       |
 
 ## `analyze-v2-name-fields.ts`
 
