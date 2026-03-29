@@ -98,9 +98,9 @@ Each field should end up classified into at least one of these categories:
 3. A prioritized list of high-impact gaps.
 4. Documentation or type-comment updates where design intent is currently implicit.
 5. Follow-up issues if needed, for example:
-     - add `trip_short_name` to the V2 schema
-     - expose additional agency / TTS fields
-     - document intentionally excluded GTFS-JP extensions
+    - add `trip_short_name` to the V2 schema
+    - expose additional agency / TTS fields
+    - document intentionally excluded GTFS-JP extensions
 
 ## Notes
 
