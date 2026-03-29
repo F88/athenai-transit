@@ -169,14 +169,21 @@ export function BottomSheet({
     }
   }, []);
 
-  // Scroll to selected stop
+  // Scroll behavior when the stop list or selection changes:
+  // - Selected stop exists in the list → scroll to that stop (by DOM position, not array index)
+  // - Selected stop is absent or null  → reset scroll to the top of the list
   useEffect(() => {
-    if (!selectedStopId || !contentRef.current) {
+    if (!contentRef.current) {
       return;
     }
-
-    const el = contentRef.current.querySelector(`[data-stop-id="${selectedStopId}"]`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (selectedStopId) {
+      const el = contentRef.current.querySelector(`[data-stop-id="${selectedStopId}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+    }
+    contentRef.current.scrollTop = 0;
   }, [selectedStopId, nearbyDepartures]);
 
   const handleStopSelected = useCallback(
