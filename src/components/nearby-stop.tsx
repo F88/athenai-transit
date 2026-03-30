@@ -4,7 +4,6 @@ import type { InfoLevel } from '../types/app/settings';
 import type { StopWithContext } from '../types/app/transit-composed';
 import { groupByRouteHeadsign } from '../domain/transit/group-timetable-entries';
 import { useInfoLevel } from '../hooks/use-info-level';
-import { resolveAgencyDisplayName } from '../domain/transit/get-agency-display-name';
 import { Clock, Signpost } from 'lucide-react';
 import { DepartureItem } from './departure-item';
 import { FlatDepartureItem } from './flat-departure-item';
@@ -155,11 +154,6 @@ export function NearbyStop({
                 isFirst={i === 0}
                 showRouteTypeIcon={showRouteTypeIconForAllDepartures}
                 infoLevel={infoLevel}
-                agencyName={resolveAgencyDisplayName(
-                  entry.routeDirection.route.agency_id,
-                  agencies,
-                  infoLevel,
-                )}
                 agency={agencies.find((a) => a.agency_id === entry.routeDirection.route.agency_id)}
               />
             ))
@@ -171,11 +165,6 @@ export function NearbyStop({
               now={now}
               infoLevel={infoLevel}
               showRouteTypeIcon={showRouteTypeIconForAllDepartures}
-              agencyName={resolveAgencyDisplayName(
-                entries[0].routeDirection.route.agency_id,
-                agencies,
-                infoLevel,
-              )}
               agency={agencies.find(
                 (a) => a.agency_id === entries[0].routeDirection.route.agency_id,
               )}
