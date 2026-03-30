@@ -169,7 +169,14 @@ export function BottomSheet({
     }
   }, []);
 
-  // Scroll behavior when the stop list or selection changes:
+  // Stable key that changes only when the stop list composition changes,
+  // not on every time-tick refresh of departure data.
+  const stopIdsKey = useMemo(
+    () => nearbyDepartures.map((d) => d.stop.stop_id).join(','),
+    [nearbyDepartures],
+  );
+
+  // Scroll behavior when the stop list composition or selection changes:
   // - Selected stop exists in the list → scroll to that stop (by DOM position, not array index)
   // - Selected stop is absent or null  → reset scroll to the top of the list
   useEffect(() => {
@@ -184,7 +191,7 @@ export function BottomSheet({
       }
     }
     contentRef.current.scrollTop = 0;
-  }, [selectedStopId, nearbyDepartures]);
+  }, [selectedStopId, stopIdsKey]);
 
   const handleStopSelected = useCallback(
     (stopId: string) => {
