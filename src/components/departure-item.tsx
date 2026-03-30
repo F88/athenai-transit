@@ -35,6 +35,7 @@ export function DepartureItem({
   onShowTimetable,
 }: DepartureItemProps) {
   const info = useInfoLevel(infoLevel);
+  const showVerbose = infoLevel === 'verbose';
   const firstEntry = entries[0];
   if (!firstEntry) {
     return null;
@@ -116,7 +117,7 @@ export function DepartureItem({
         ))}
       </div>
       {/* Verbose data */}
-      {info.isVerboseEnabled && (
+      {showVerbose && (
         <VerboseContextualTimetableEntries
           //
           entries={displayEntries}

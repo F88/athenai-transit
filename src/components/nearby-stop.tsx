@@ -51,6 +51,7 @@ export function NearbyStop({
   onToggleAnchor,
 }: NearbyStopProps) {
   const info = useInfoLevel(infoLevel);
+  const showVerbose = infoLevel === 'verbose';
   // Show route_type emoji on each departure row when the stop serves
   // multiple route_types (so the user can distinguish bus vs tram etc.).
   // verbose: always show. detailed and below: only when multiple types.
@@ -83,7 +84,7 @@ export function NearbyStop({
       className={`mb-2 cursor-pointer rounded-lg px-3 pt-2.5 pb-3 last:mb-0 ${isSelected ? 'border border-[#90caf9] bg-[#e3f2fd] dark:border-blue-700 dark:bg-blue-950' : 'bg-[#f5f7fa] dark:bg-gray-800'}`}
       onClick={() => onStopSelected(stop.stop_id)}
     >
-      {info.isVerboseEnabled && (
+      {showVerbose && (
         <VerboseNearbyStopSummary
           departures={departures}
           isBoardableOnServiceDay={isBoardableOnServiceDay}

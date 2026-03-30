@@ -9,6 +9,16 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- VerboseContextualTimetableEntry: departure の全フィールド dump (schedule, routeDirection, headsign, boarding, patternPosition, insights)。details/summary 内包、disableVerbose、defaultOpen prop。
+- VerboseNearbyStopSummary: NearbyStop レベルの UI 状態と departures 集計の dump。
+
+### Changed
+
+- VerboseStopData: details/summary を内包。StopInfo 側の wrapper を不要に。stop_id を dump に追加。
+- 未使用の agencyName prop を DepartureItem/FlatDepartureItem から削除。
+
 ## [2026.03.30]
 
 ### Added

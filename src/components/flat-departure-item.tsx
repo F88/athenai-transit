@@ -41,6 +41,7 @@ export function FlatDepartureItem({
   agency,
 }: FlatDepartureItemProps) {
   const info = useInfoLevel(infoLevel);
+  const showVerbose = infoLevel === 'verbose';
   const { route, headsign } = entry.routeDirection;
   const headsignName = getHeadsignDisplayNames(headsign, route, infoLevel).name;
   const bgColor = route.route_color ? `#${route.route_color}` : undefined;
@@ -111,7 +112,7 @@ export function FlatDepartureItem({
         )}
       </div>
       {/* Verbose data */}
-      {info.isVerboseEnabled && (
+      {showVerbose && (
         <VerboseContextualTimetableEntry
           //
           entry={entry}

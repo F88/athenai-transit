@@ -57,6 +57,7 @@ export function HeadsignBadge({
     maxLength != null && headsign.length > maxLength ? headsign.slice(0, maxLength) : headsign;
   // Show full headsign as tooltip when truncated.
   const title = label !== headsign ? headsign : undefined;
+  const showVerbose = infoLevel === 'verbose' && !disableVerbose;
 
   return (
     <div className="inline-flex flex-col gap-0.5 font-normal">
@@ -72,22 +73,10 @@ export function HeadsignBadge({
         >
           {label}
         </span>
-        {infoLevel === 'verbose' && !disableVerbose && <IdBadge>{route.route_id}</IdBadge>}
+        {showVerbose && <IdBadge>{route.route_id}</IdBadge>}
       </span>
-      {infoLevel === 'verbose' && !disableVerbose && (
-        <details className="inline text-[9px] text-[#999] dark:text-gray-500">
-          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-            [Headsign]
-          </summary>
-          <div className="mt-0.5 space-y-0.5">
-            <VerboseHeadsign
-              headsign={headsign}
-              route={route}
-              label={label}
-              maxLength={maxLength}
-            />
-          </div>
-        </details>
+      {showVerbose && (
+        <VerboseHeadsign headsign={headsign} route={route} label={label} maxLength={maxLength} />
       )}
     </div>
   );
