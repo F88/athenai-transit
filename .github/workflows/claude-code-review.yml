@@ -10,9 +10,6 @@ on:
 
 jobs:
   claude-review:
-    # Only run for PRs from org members (skip fork PRs from external users)
-    if: >-
-      contains(fromJSON('["OWNER","MEMBER"]'), github.event.pull_request.author_association)
     runs-on: ubuntu-latest
     permissions:
       contents: read
