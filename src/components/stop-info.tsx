@@ -121,7 +121,9 @@ export function StopInfo({
       {/* Verbose data */}
       {info.isVerboseEnabled && (
         <details className="mt-1 text-[9px] font-normal text-[#999] dark:text-gray-500">
-          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>[StopData]</summary>
+          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+            [StopData]
+          </summary>
           <div className="mt-0.5 space-y-0.5">
             <VerboseStopData
               stop={stop}

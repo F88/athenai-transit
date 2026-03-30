@@ -76,7 +76,9 @@ export function HeadsignBadge({
       </span>
       {infoLevel === 'verbose' && !disableVerbose && (
         <details className="inline text-[9px] text-[#999] dark:text-gray-500">
-          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>[Headsign]</summary>
+          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+            [Headsign]
+          </summary>
           <div className="mt-0.5 space-y-0.5">
             <VerboseHeadsign
               headsign={headsign}
