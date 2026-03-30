@@ -40,12 +40,18 @@ const AGENCY: Agency = {
   agency_id: 'mock:aoba',
   agency_name: 'あおば交通株式会社',
   agency_short_name: 'あおバス',
-  agency_names: { ja: 'あおば交通株式会社', en: 'Aoba Transit Co.' },
-  agency_short_names: { ja: 'あおバス', en: 'Aoba' },
-  agency_url: 'https://example.com',
+  agency_names: {
+    ja: 'あおば交通株式会社',
+    en: 'Aoba Transit Co.',
+    ko: '아오바교통',
+    'zh-Hans': '青叶交通株式会社',
+    'zh-Hant': '青葉交通株式會社',
+  },
+  agency_short_names: { ja: 'あおバス', en: 'Aoba', ko: '아오바', 'zh-Hans': '青叶巴士' },
+  agency_url: 'https://example.com/aoba',
   agency_lang: 'ja',
   agency_timezone: 'Asia/Tokyo',
-  agency_fare_url: '',
+  agency_fare_url: 'https://example.com/aoba/fare',
   agency_colors: [{ bg: '2E7D32', text: 'FFFFFF' }],
 };
 
@@ -53,12 +59,17 @@ const AGENCY_SORA: Agency = {
   agency_id: 'mock:soraq',
   agency_name: 'そら急行バス株式会社',
   agency_short_name: 'そら急',
-  agency_names: { ja: 'そら急行バス株式会社', en: 'Sora Express Bus Co.' },
-  agency_short_names: { ja: 'そら急', en: 'Sora Exp' },
+  agency_names: {
+    ja: 'そら急行バス株式会社',
+    en: 'Sora Express Bus Co.',
+    ko: '소라급행버스',
+    'zh-Hans': '空急行巴士株式会社',
+  },
+  agency_short_names: { ja: 'そら急', en: 'Sora Exp', ko: '소라급' },
   agency_url: 'https://example.com/sora',
   agency_lang: 'ja',
   agency_timezone: 'Asia/Tokyo',
-  agency_fare_url: '',
+  agency_fare_url: 'https://example.com/sora/fare',
   agency_colors: [{ bg: '1565C0', text: 'FFFFFF' }],
 };
 
