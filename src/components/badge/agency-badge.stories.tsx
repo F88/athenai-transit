@@ -5,7 +5,6 @@ import {
   agencyTobus,
   agencyLong,
   agencyNoColor,
-  allAgencies,
 } from '../../stories/fixtures';
 import { AgencyBadge } from './agency-badge';
 
@@ -87,60 +86,20 @@ export const SizeComparison: Story = {
   ),
 };
 
-// --- Kitchen sink: all agencies, all info levels ---
-
-/** All agencies — default info level. */
-export const KitchenSink: Story = {
-  args: { agency: agencyTobus },
-  render: (args) => (
-    <div className="flex flex-wrap items-center gap-2">
-      {allAgencies.map((a) => (
-        <AgencyBadge key={a.agency_id} agency={a} infoLevel={args.infoLevel} size={args.size} />
-      ))}
-    </div>
-  ),
-};
+// --- Kitchen sink: single agency, all info levels ---
 
 export const KitchenSinkInfoLevelSimple: Story = {
-  args: { agency: agencyTobus, infoLevel: 'simple' },
-  render: (args) => (
-    <div className="flex flex-wrap items-center gap-2">
-      {allAgencies.map((a) => (
-        <AgencyBadge key={a.agency_id} agency={a} infoLevel={args.infoLevel} size={args.size} />
-      ))}
-    </div>
-  ),
+  args: { infoLevel: 'simple' },
 };
 
 export const KitchenSinkInfoLevelNormal: Story = {
-  args: { agency: agencyTobus, infoLevel: 'normal' },
-  render: (args) => (
-    <div className="flex flex-wrap items-center gap-2">
-      {allAgencies.map((a) => (
-        <AgencyBadge key={a.agency_id} agency={a} infoLevel={args.infoLevel} size={args.size} />
-      ))}
-    </div>
-  ),
+  args: { infoLevel: 'normal' },
 };
 
 export const KitchenSinkInfoLevelDetailed: Story = {
-  args: { agency: agencyTobus, infoLevel: 'detailed' },
-  render: (args) => (
-    <div className="flex flex-wrap items-center gap-2">
-      {allAgencies.map((a) => (
-        <AgencyBadge key={a.agency_id} agency={a} infoLevel={args.infoLevel} size={args.size} />
-      ))}
-    </div>
-  ),
+  args: { infoLevel: 'detailed' },
 };
 
 export const KitchenSinkInfoLevelVerbose: Story = {
-  args: { agency: agencyTobus, infoLevel: 'verbose' },
-  render: (args) => (
-    <div className="flex flex-wrap items-center gap-2">
-      {allAgencies.map((a) => (
-        <AgencyBadge key={a.agency_id} agency={a} infoLevel={args.infoLevel} size={args.size} />
-      ))}
-    </div>
-  ),
+  args: { infoLevel: 'verbose' },
 };
