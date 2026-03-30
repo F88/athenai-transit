@@ -114,3 +114,72 @@ Benchmark:
 - Benchmarks run in a browser tab alongside UI rendering. Service Worker
   caching may affect fetch times between runs, but `mergeSources` is pure
   CPU work and should not be affected.
+
+## 2026-03-30: enrichStopInsights introduction
+
+### Change
+
+Add `enrichStopInsights()` to `create()`: loads per-source stopStats and
+global stopGeo during initialization, mapping them onto `stopsMetaMap`.
+Move `geo` from `StopWithContext` to `StopWithMeta`. Pass `stats` and
+`geo` through `useNearbyDepartures` to `StopWithContext`.
+
+### Results (5 runs each, median)
+
+Initialization:
+
+| Metric       | Before (median) | After (median) | Change         |
+| ------------ | --------------- | -------------- | -------------- |
+| mergeSources | 40ms            | 38ms           | (noise)        |
+| enrich       | —               | 58ms           | +58ms (new)    |
+
+Benchmark:
+
+| Metric           | Before (median) | After (median) | Change |
+| ---------------- | --------------- | -------------- | ------ |
+| getStopsInBounds | 3.10ms          | 5.10ms         | +2.0ms |
+| getStopsNearby   | 3.60ms          | 4.60ms         | +1.0ms |
+| Benchmark total  | ~115ms          | 105.30ms       | (noise) |
+
+#### Raw data (5 runs)
+
+| Run | merge | enrich | InBounds | Nearby | Bench total |
+| --- | ----- | ------ | -------- | ------ | ----------- |
+| 1   | 36ms  | 61ms   | 5.60ms   | 5.00ms | 104.50ms    |
+| 2   | 42ms  | 54ms   | 4.10ms   | 4.40ms | 109.00ms    |
+| 3   | 38ms  | 55ms   | 6.80ms\* | 4.60ms | 104.50ms    |
+| 4   | 38ms  | 58ms   | 4.70ms   | 4.60ms | 105.30ms    |
+| 5   | 40ms  | 59ms   | 5.10ms   | 4.90ms | 103.70ms    |
+
+\*Run 3 InBounds=6.80ms is an outlier.
+
+### Observations
+
+#### Initialization (enrichStopInsights)
+
+- `enrichStopInsights` adds ~58ms (median) to initialization. This includes:
+  - Fetching 17 per-source insights.json in parallel (~30ms network)
+  - Fetching global/insights.json (~35ms network, 1267KB)
+  - Mapping stopStats (15,338 stops) and stopGeo (15,805 stops) onto stopsMetaMap
+- The fetch is parallelized with global insights, so wall-clock time is
+  dominated by the largest file (global/insights.json at 1.3MB).
+- `mergeSources` is unaffected (38ms vs 40ms, within noise).
+
+#### Benchmark (repo API queries)
+
+- `getStopsInBounds` median increased from 3.10ms to 5.10ms (+2.0ms).
+  `getStopsNearby` median increased from 3.60ms to 4.60ms (+1.0ms).
+  These increases may be due to larger `StopWithMeta` objects (now
+  including `stats` and `geo` fields), increasing memory pressure and
+  cache misses during iteration. However, the variance is high
+  (InBounds: 4.10-6.80ms) and the before data (2.80-3.20ms) was
+  measured in a different session, so the difference may partly be
+  environmental noise.
+- Benchmark total is actually lower (105ms vs 115ms), suggesting the
+  per-query increases are within measurement noise at this scale.
+
+#### Trade-off
+
+- +58ms initialization cost is acceptable: it runs once at startup and
+  is parallelized with network fetch. Users see stop metrics immediately
+  when the bottom sheet renders, without a second loading phase.
