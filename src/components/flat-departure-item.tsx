@@ -20,8 +20,6 @@ interface FlatDepartureItemProps {
   showRouteTypeIcon: boolean;
   /** Current info verbosity level for route label formatting. */
   infoLevel: InfoLevel;
-  /** Agency short name to display at detailed+ info level. */
-  agencyName?: string;
   /** Agency object for badge display at detailed+ info level. */
   agency?: Agency;
 }
@@ -39,7 +37,6 @@ export function FlatDepartureItem({
   isFirst,
   showRouteTypeIcon,
   infoLevel,
-  agencyName,
   agency,
 }: FlatDepartureItemProps) {
   const info = useInfoLevel(infoLevel);
@@ -80,7 +77,12 @@ export function FlatDepartureItem({
         {showRouteTypeIcon && (
           <span className="shrink-0 text-base">{routeTypeEmoji(route.route_type)}</span>
         )}
-        <RouteBadge route={route} infoLevel={infoLevel} className="shrink-0" />
+        <RouteBadge
+          className="shrink-0"
+          route={route}
+          infoLevel={infoLevel}
+          disableVerbose={true}
+        />
         {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
         <span className="truncate text-sm text-[#333] dark:text-gray-200">{headsignName}</span>
         {/* Terminal/pickup labels are shown at all InfoLevels (unlike TimetableGrid's
@@ -97,11 +99,14 @@ export function FlatDepartureItem({
             乗車不可
           </span>
         )}
-        {info.isDetailedEnabled && agencyName && (
-          <span className="shrink-0 text-[10px] text-[#888] dark:text-gray-400">{agencyName}</span>
-        )}
         {info.isDetailedEnabled && agency && (
-          <AgencyBadge agency={agency} infoLevel={infoLevel} size="xs" />
+          <AgencyBadge
+            //
+            size="xs"
+            agency={agency}
+            infoLevel={infoLevel}
+            disableVerbose={true}
+          />
         )}
       </div>
       {info.isVerboseEnabled && (

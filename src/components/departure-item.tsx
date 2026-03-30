@@ -17,8 +17,6 @@ interface DepartureItemProps {
   infoLevel: InfoLevel;
   /** Whether to show route_type emoji (e.g. when stop serves multiple route types). */
   showRouteTypeIcon: boolean;
-  /** Agency short name to display at detailed+ info level. */
-  agencyName?: string;
   /** Agency object for badge display at detailed+ info level. */
   agency?: Agency;
   /** Maximum number of departures to display. Defaults to 3. */
@@ -31,7 +29,6 @@ export function DepartureItem({
   now,
   infoLevel,
   showRouteTypeIcon,
-  agencyName,
   agency,
   maxDisplay = 3,
   onShowTimetable,
@@ -66,7 +63,7 @@ export function DepartureItem({
         {showRouteTypeIcon && (
           <span className="shrink-0 text-base">{routeTypeEmoji(route.route_type)}</span>
         )}
-        <RouteBadge route={route} infoLevel={infoLevel} />
+        <RouteBadge route={route} infoLevel={infoLevel} disableVerbose={true} />
         {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
         <span className="text-sm font-medium text-[#333] dark:text-gray-200">{headsignName}</span>
         {/* Shown at all InfoLevels — users need to know why this group is not boardable.
@@ -76,11 +73,8 @@ export function DepartureItem({
             乗車不可
           </span>
         )}
-        {info.isDetailedEnabled && agencyName && (
-          <span className="shrink-0 text-[10px] text-[#888] dark:text-gray-400">{agencyName}</span>
-        )}
         {info.isDetailedEnabled && agency && (
-          <AgencyBadge agency={agency} infoLevel={infoLevel} size="xs" />
+          <AgencyBadge size="xs" agency={agency} infoLevel={infoLevel} disableVerbose={true} />
         )}
         {onShowTimetable && (
           <button
