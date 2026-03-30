@@ -30,6 +30,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - IdBadge に `font-normal` を追加。配置場所による太さの不一致を解消。
 - Storybook: RouteBadge, HeadsignBadge, StopMetrics の stories を追加。AgencyBadge stories を簡素化。
 - MockRepository に `wheelchair_boarding`, `platform_code` テストデータを追加。
+- Repository: InsightsBundle の stopStats と GlobalInsightsBundle の stopGeo を StopWithMeta にマッピング。`geo` を StopWithContext から StopWithMeta に移動し、初期化時に同期的にロード。
 
 ### Fixed
 
