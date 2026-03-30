@@ -5,6 +5,8 @@ interface VerboseContextualTimetableEntryProps {
   entry: ContextualTimetableEntry;
   /** Suppress verbose rendering. Use in non-interactive contexts like tooltips. */
   disableVerbose?: boolean;
+  /** Start with details expanded. @default false */
+  defaultOpen?: boolean;
 }
 
 /**
@@ -15,13 +17,14 @@ interface VerboseContextualTimetableEntryProps {
 export function VerboseContextualTimetableEntry({
   entry,
   disableVerbose = false,
+  defaultOpen = false,
 }: VerboseContextualTimetableEntryProps) {
   if (disableVerbose) {
     return null;
   }
 
   return (
-    <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
+    <details open={defaultOpen} className="text-[9px] font-normal text-[#999] dark:text-gray-500">
       <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
         [Departure]
       </summary>
@@ -57,7 +60,7 @@ export function VerboseContextualTimetableEntries({
       </summary>
       <div className="mt-0.5 space-y-0.5">
         {entries.map((e, i) => (
-          <VerboseContextualTimetableEntry key={i} entry={e} />
+          <VerboseContextualTimetableEntry key={i} entry={e} defaultOpen />
         ))}
       </div>
     </details>
