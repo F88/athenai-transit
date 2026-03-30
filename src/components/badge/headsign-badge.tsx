@@ -33,7 +33,7 @@ interface HeadsignBadgeProps {
  *
  * Background color uses the route's designated color (`route_color`),
  * falling back to `bg-muted-foreground` when no color is set.
- * In verbose mode, an {@link IdBadge} with the route_id is prepended.
+ * In verbose mode, an {@link IdBadge} with the route_id is shown after the label.
  *
  * @param headsign - Destination text.
  * @param route - Route for color derivation and verbose route_id.

@@ -32,7 +32,7 @@ interface AgencyBadgeProps {
  * Uses the agency's primary brand color (`agency_colors[0]`),
  * falling back to `bg-muted-foreground text-white` when no color is set.
  * Label shows `agency_short_name`, falling back to `agency_name`.
- * In verbose mode, an {@link IdBadge} with the agency_id is prepended.
+ * In verbose mode, an {@link IdBadge} with the agency_id is shown after the label.
  */
 export function AgencyBadge({
   agency,

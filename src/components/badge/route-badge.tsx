@@ -33,7 +33,7 @@ interface RouteBadgeProps {
  * Background color uses the route's designated color (`route_color`),
  * falling back to `bg-muted-foreground` when no color is set.
  * The label is formatted via {@link formatRouteLabel} based on infoLevel.
- * In verbose mode, an {@link IdBadge} with the route_id is prepended.
+ * In verbose mode, an {@link IdBadge} with the route_id is shown after the label.
  *
  * @param route - The route to display.
  * @param infoLevel - Controls label verbosity.

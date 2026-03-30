@@ -30,7 +30,7 @@ export function DistanceBadge({ meters, bearingDeg, showDirection = false }: Dis
         <span
           className="inline-block h-[0.8em] w-[0.8em] bg-current [clip-path:polygon(50%_10%,30%_70%,70%_70%)]"
           style={{ transform: `rotate(${bearingDeg}deg)` }}
-          aria-label={`Direction: ${Math.round(bearingDeg)} degrees`}
+          aria-hidden="true"
         />
       )}
       {formatDistance(meters)}

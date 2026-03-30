@@ -19,8 +19,8 @@ interface StopMetricsProps {
  *
  * Info level controls which metrics are shown:
  * - normal: freq, connectivity
- * - detailed: + nearestRoute, walkablePortal
- * - verbose: + dump of all fields
+ * - detailed: + nearestRoute
+ * - verbose: + walkablePortal, full dump
  *
  * Data sources:
  * - stats (InsightsBundle): freq, routeCount, etc.
