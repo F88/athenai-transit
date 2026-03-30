@@ -26,6 +26,10 @@ Benchmarks run across 12 fixed locations (`BENCH_LOCATIONS` in `src/diagnostics/
 3. 各回は前回のベンチマークが完全に完了してからページをリロードして開始する。
 4. Run 1 は JIT warmup の影響で外れ値になりやすい。外れ値は `*` で注記する。
 5. 代表値は median を採用する。
+6. レポートには以下の3点を含める:
+    - **全メトリクス記録** (raw data): 初期化 (fetch, merge, enrich, shapes) と repo API (全メソッド) を分離した2テーブル。次回比較のベースライン。
+    - **前回との比較**: 前回計測の median との差分テーブル。
+    - **考察 (Observations)**: 変化の原因分析、トレードオフの評価。
 
 ## 2026-03-27: Baseline
 
@@ -132,32 +136,61 @@ global stopGeo during initialization, mapping them onto `stopsMetaMap`.
 Move `geo` from `StopWithContext` to `StopWithMeta`. Pass `stats` and
 `geo` through `useNearbyDepartures` to `StopWithContext`.
 
-### enrichStopInsights: Results (5 runs each, median)
+### enrichStopInsights: Results (5 runs, median)
 
 Initialization:
 
-| Metric       | Before (median) | After (median) | Change      |
-| ------------ | --------------- | -------------- | ----------- |
-| mergeSources | 40ms            | 38ms           | (noise)     |
-| enrich       | —               | 58ms           | +58ms (new) |
+| Metric       | Result |
+| ------------ | ------ |
+| mergeSources | 38ms   |
+| enrich       | 58ms   |
+| shapes       | 48ms   |
 
-Benchmark:
+Benchmark results:
 
-| Metric           | Before (median) | After (median) | Change  |
-| ---------------- | --------------- | -------------- | ------- |
-| getStopsInBounds | 3.10ms          | 5.10ms         | +2.0ms  |
-| getStopsNearby   | 3.60ms          | 4.60ms         | +1.0ms  |
-| Benchmark total  | ~115ms          | 105.30ms       | (noise) |
+| Method                                           | Result                                   |
+| ------------------------------------------------ | ---------------------------------------- |
+| getAllStops                                      | 0.10ms (15,805 stops)                    |
+| getRouteShapes                                   | 0.00ms (1,623 shapes)                    |
+| getAllSourceMeta                                 | 0.10ms (17 sources)                      |
+| getStopsInBounds (12 locations total)            | 4.70-5.60ms                              |
+| getStopsNearby (12 locations total)              | 4.40-5.00ms, 653 stops                   |
+| getUpcomingTimetableEntries limit=3 (653 stops)  | 42.70-50.50ms, 0.07ms/stop               |
+| getUpcomingTimetableEntries no-limit (653 stops) | 38.00-42.90ms, 0.06ms/stop               |
+| getRouteTypesForStop (653 stops)                 | 1.00-1.60ms                              |
+| getFullDayTimetableEntries (24 stops)            | 2.20-2.50ms, 2,247 departures            |
+| getStopsForRoutes (12 calls)                     | 5.20-5.70ms, 0.43-0.48ms/call, 838 stops |
+| **Benchmark total**                              | **103.70-109.00ms**                      |
 
-#### Raw data (5 runs)
+Comparison with previous (2026-03-27 stopsMetaMap After median):
 
-| Run | merge | enrich | shapes (lazy) | InBounds | Nearby | Bench total |
-| --- | ----- | ------ | ------------- | -------- | ------ | ----------- |
-| 1   | 36ms  | 61ms   | 47ms          | 5.60ms   | 5.00ms | 104.50ms    |
-| 2   | 42ms  | 54ms   | 48ms          | 4.10ms   | 4.40ms | 109.00ms    |
-| 3   | 38ms  | 55ms   | 53ms          | 6.80ms\* | 4.60ms | 104.50ms    |
-| 4   | 38ms  | 58ms   | 48ms          | 4.70ms   | 4.60ms | 105.30ms    |
-| 5   | 40ms  | 59ms   | 47ms          | 5.10ms   | 4.90ms | 103.70ms    |
+| Metric           | Before (median) | After (median) | Change      |
+| ---------------- | --------------- | -------------- | ----------- |
+| mergeSources     | 40ms            | 38ms           | (noise)     |
+| enrich           | —               | 58ms           | +58ms (new) |
+| getStopsInBounds | 3.10ms          | 5.10ms         | +2.0ms      |
+| getStopsNearby   | 3.60ms          | 4.60ms         | +1.0ms      |
+| Benchmark total  | ~115ms          | 105.30ms       | (noise)     |
+
+#### Raw data: Initialization (5 runs)
+
+| Run | fetch | merge | enrich | Initialized | shapes (lazy) |
+| --- | ----- | ----- | ------ | ----------- | ------------- |
+| 1   | 387ms | 36ms  | 61ms   | 498ms       | 47ms          |
+| 2   | 387ms | 42ms  | 54ms   | 429ms       | 48ms          |
+| 3   | 394ms | 38ms  | 55ms   | 432ms       | 53ms          |
+| 4   | 409ms | 38ms  | 58ms   | 446ms       | 48ms          |
+| 5   | 493ms | 40ms  | 59ms   | 533ms       | 47ms          |
+
+#### Raw data: Repo API benchmark (5 runs)
+
+| Run | InBounds | Nearby | Upcoming lim=3 | Upcoming nolim | RouteTypes | FullDay | StopsForRoutes | Bench total |
+| --- | -------- | ------ | -------------- | -------------- | ---------- | ------- | -------------- | ----------- |
+| 1   | 5.60ms   | 5.00ms | 50.50ms        | 38.60ms        | 1.30ms     | 2.50ms  | 5.70ms         | 104.50ms    |
+| 2   | 4.10ms   | 4.40ms | 47.10ms        | 42.90ms        | 1.60ms     | 2.40ms  | 5.70ms         | 109.00ms    |
+| 3   | 6.80ms\* | 4.60ms | 42.70ms        | 40.60ms        | 1.00ms     | 2.30ms  | 5.30ms         | 104.50ms    |
+| 4   | 4.70ms   | 4.60ms | 46.00ms        | 39.80ms        | 1.10ms     | 2.50ms  | 5.20ms         | 105.30ms    |
+| 5   | 5.10ms   | 4.90ms | 45.40ms        | 38.00ms        | 1.20ms     | 2.20ms  | 5.50ms         | 103.70ms    |
 
 \*Run 3 InBounds=6.80ms is an outlier.
 
