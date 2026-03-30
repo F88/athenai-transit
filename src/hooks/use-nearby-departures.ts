@@ -47,7 +47,7 @@ export function useNearbyDepartures(
       radiusStops.length === 0
         ? Promise.resolve([])
         : Promise.all(
-            radiusStops.map(async ({ stop, agencies, routes, stats, geo }) => {
+            radiusStops.map(async ({ stop, agencies, routes, distance, stats, geo }) => {
               const [depsResult, rtResult] = await Promise.all([
                 // No limit: T4 view needs all entries to group by route+headsign
                 // without losing groups. Limit would not reduce repo cost anyway
@@ -71,6 +71,7 @@ export function useNearbyDepartures(
                 isBoardableOnServiceDay,
                 agencies,
                 routes,
+                distance,
                 stats,
                 geo,
               };
