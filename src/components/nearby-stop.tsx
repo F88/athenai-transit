@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { StopWithContext } from '../types/app/transit-composed';
-import { distanceM } from '../domain/transit/distance';
+import { bearingDeg, distanceM } from '../domain/transit/distance';
 import { groupByRouteHeadsign } from '../domain/transit/group-timetable-entries';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
@@ -48,6 +48,7 @@ export function NearbyStop({
   const info = useInfoLevel(infoLevel);
   const stopNames = getStopDisplayNames(stop, infoLevel);
   const distance = mapCenter ? Math.round(distanceM(mapCenter, stop)) : null;
+  const bearing = mapCenter ? bearingDeg(mapCenter, stop) : null;
   // Show route_type emoji on each departure row when the stop serves
   // multiple route_types (so the user can distinguish bus vs tram etc.).
   // verbose: always show. detailed and below: only when multiple types.
@@ -94,7 +95,9 @@ export function NearbyStop({
         <p className="m-0 text-base font-semibold text-[#1565c0] dark:text-blue-400">
           <span className="mr-1 align-middle text-[22px]">{routeTypesEmoji(routeTypes)}</span>
           {stopNames.name}
-          {distance != null && distance >= 10 && <DistanceBadge meters={distance} />}
+          {distance != null && distance >= 10 && (
+            <DistanceBadge meters={distance} bearingDeg={bearing} showDirection />
+          )}
         </p>
         {isStopDropOffOnly && (
           <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">

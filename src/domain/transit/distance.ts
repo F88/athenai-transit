@@ -49,6 +49,26 @@ export function formatDistance(meters: number, unit = true): string {
 }
 
 /**
+ * Calculate the geographic bearing (azimuth) from point `a` to point `b`
+ * using a flat-earth approximation with latitude-adjusted longitude.
+ *
+ * Returns degrees clockwise from north: 0 = north, 90 = east, 180 = south, 270 = west.
+ *
+ * @param a - Origin point as {@link LatLng}.
+ * @param b - Destination point with `stop_lat` / `stop_lon` fields.
+ * @returns Bearing in degrees [0, 360).
+ */
+export function bearingDeg(a: LatLng, b: { stop_lat: number; stop_lon: number }): number {
+  const midLat = ((a.lat + b.stop_lat) / 2) * (Math.PI / 180);
+  const metersPerDegreeLng = METERS_PER_DEGREE_LAT * Math.cos(midLat);
+  const dy = (b.stop_lat - a.lat) * METERS_PER_DEGREE_LAT;
+  const dx = (b.stop_lon - a.lng) * metersPerDegreeLng;
+  // atan2(dx, dy) gives angle from north (Y-axis), clockwise positive
+  const rad = Math.atan2(dx, dy);
+  return ((rad * 180) / Math.PI + 360) % 360;
+}
+
+/**
  * Format a distance compactly without unit suffix for small badges.
  *
  * - Under 1 km: rounded integer with comma separator, no unit.
