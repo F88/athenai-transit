@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "Pull request number to review"
+        description: 'Pull request number to review'
         required: true
         type: string
 
