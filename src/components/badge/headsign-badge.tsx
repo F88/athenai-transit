@@ -2,6 +2,7 @@ import type { InfoLevel } from '../../types/app/settings';
 import type { Route } from '../../types/app/transit';
 import { cn } from '../../lib/utils';
 import { IdBadge } from './id-badge';
+import { VerboseHeadsign } from '../verbose/verbose-headsign';
 
 const sizeVariants = {
   default: 'text-xs px-2 py-0.5',
@@ -20,6 +21,9 @@ interface HeadsignBadgeProps {
   maxLength?: number;
   /** Size variant. @default 'default' */
   size?: keyof typeof sizeVariants;
+  /** Suppress verbose-only rendering (IdBadge, details dump).
+   *  Use in non-interactive contexts like tooltips. */
+  disableVerbose?: boolean;
   /** Additional CSS classes. */
   className?: string;
 }
@@ -44,6 +48,7 @@ export function HeadsignBadge({
   infoLevel,
   maxLength,
   size = 'default',
+  disableVerbose = false,
   className,
 }: HeadsignBadgeProps) {
   const bg = route.route_color ? `#${route.route_color}` : undefined;
@@ -54,19 +59,34 @@ export function HeadsignBadge({
   const title = label !== headsign ? headsign : undefined;
 
   return (
-    <span className="inline-flex items-center gap-0.5">
-      <span
-        className={cn(
-          'bg-muted-foreground inline-flex items-center justify-center rounded font-bold whitespace-nowrap text-white',
-          sizeVariants[size],
-          className,
-        )}
-        style={bg ? { background: bg, color: fg } : undefined}
-        title={title}
-      >
-        {label}
+    <span className="inline-flex flex-col gap-0.5 font-normal">
+      <span className="inline-flex items-center gap-0.5">
+        <span
+          className={cn(
+            'bg-muted-foreground inline-flex items-center justify-center rounded font-bold whitespace-nowrap text-white',
+            sizeVariants[size],
+            className,
+          )}
+          style={bg ? { background: bg, color: fg } : undefined}
+          title={title}
+        >
+          {label}
+        </span>
+        {infoLevel === 'verbose' && !disableVerbose && <IdBadge>{route.route_id}</IdBadge>}
       </span>
-      {infoLevel === 'verbose' && <IdBadge>{route.route_id}</IdBadge>}
+      {infoLevel === 'verbose' && !disableVerbose && (
+        <details className="inline text-[9px] text-[#999] dark:text-gray-500">
+          <summary className="cursor-pointer select-none">[Headsign]</summary>
+          <div className="mt-0.5 space-y-0.5">
+            <VerboseHeadsign
+              headsign={headsign}
+              route={route}
+              label={label}
+              maxLength={maxLength}
+            />
+          </div>
+        </details>
+      )}
     </span>
   );
 }

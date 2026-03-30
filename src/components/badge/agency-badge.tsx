@@ -3,6 +3,8 @@ import type { Agency } from '../../types/app/transit';
 import { getAgencyDisplayNames } from '../../domain/transit/get-agency-display-name';
 import { cn } from '../../lib/utils';
 import { IdBadge } from './id-badge';
+import { VerboseAgency } from '../verbose/verbose-agency';
+import { VerboseAgencyDisplayNames } from '../verbose/verbose-agency-display-names';
 
 const sizeVariants = {
   default: 'text-xs px-2 py-0.5',
@@ -17,6 +19,9 @@ interface AgencyBadgeProps {
   infoLevel: InfoLevel;
   /** Size variant. @default 'xs' */
   size?: keyof typeof sizeVariants;
+  /** Suppress verbose-only rendering (IdBadge, details dump).
+   *  Use in non-interactive contexts like tooltips. */
+  disableVerbose?: boolean;
   /** Additional CSS classes. */
   className?: string;
 }
@@ -29,24 +34,42 @@ interface AgencyBadgeProps {
  * Label shows `agency_short_name`, falling back to `agency_name`.
  * In verbose mode, an {@link IdBadge} with the agency_id is prepended.
  */
-export function AgencyBadge({ agency, infoLevel, size = 'xs', className }: AgencyBadgeProps) {
-  const { name: label } = getAgencyDisplayNames(agency, infoLevel);
+export function AgencyBadge({
+  agency,
+  infoLevel,
+  size = 'xs',
+  disableVerbose = false,
+  className,
+}: AgencyBadgeProps) {
+  const agencyNames = getAgencyDisplayNames(agency, infoLevel);
   const primary = agency.agency_colors[0];
   const bg = primary ? `#${primary.bg}` : undefined;
   const fg = primary ? `#${primary.text}` : undefined;
+  const showVerbose = infoLevel === 'verbose' && !disableVerbose;
 
   return (
-    <span className={cn('inline-flex items-center gap-0.5', className)}>
-      <span
-        className={cn(
-          'bg-muted-foreground inline-flex items-center justify-center rounded font-bold whitespace-nowrap text-white',
-          sizeVariants[size],
-        )}
-        style={bg ? { background: bg, color: fg } : undefined}
-      >
-        {label}
+    <span className={cn('inline-flex flex-col gap-0.5 font-normal', className)}>
+      <span className="inline-flex items-center gap-0.5">
+        <span
+          className={cn(
+            'bg-muted-foreground inline-flex items-center justify-center rounded font-bold whitespace-nowrap text-white',
+            sizeVariants[size],
+          )}
+          style={bg ? { background: bg, color: fg } : undefined}
+        >
+          {agencyNames.name}
+        </span>
+        {showVerbose && <IdBadge>{agency.agency_id}</IdBadge>}
       </span>
-      {infoLevel === 'verbose' && <IdBadge>{agency.agency_id}</IdBadge>}
+      {showVerbose && (
+        <details className="inline text-[9px] text-[#999] dark:text-gray-500">
+          <summary className="cursor-pointer select-none">[Agency]</summary>
+          <div className="mt-0.5 space-y-0.5">
+            <VerboseAgency agency={agency} />
+            <VerboseAgencyDisplayNames names={agencyNames} />
+          </div>
+        </details>
+      )}
     </span>
   );
 }
