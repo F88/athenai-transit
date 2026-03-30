@@ -147,6 +147,7 @@ function createStopWithContext(
     isBoardableOnServiceDay: boolean;
     agencies: Agency[];
     routes: Route[];
+    distance: number;
   }> = {},
 ): StopWithContext {
   return {
@@ -162,6 +163,7 @@ function createStopWithContext(
     isBoardableOnServiceDay: overrides.isBoardableOnServiceDay ?? true,
     agencies: overrides.agencies ?? [agency],
     routes: overrides.routes ?? [busRoute, busRoute2],
+    distance: overrides.distance ?? 235,
   };
 }
 
@@ -232,11 +234,17 @@ export const RouteHeadsignView: Story = {
 // --- Distance & direction ---
 
 export const Near: Story = {
-  args: { mapCenter: { lat: 35.6955, lng: 139.8134 } },
+  args: {
+    data: createStopWithContext({ distance: 12 }),
+    mapCenter: { lat: 35.6955, lng: 139.8134 },
+  },
 };
 
 export const Far: Story = {
-  args: { mapCenter: { lat: 35.691, lng: 139.805 } },
+  args: {
+    data: createStopWithContext({ distance: 850 }),
+    mapCenter: { lat: 35.691, lng: 139.805 },
+  },
 };
 
 export const NoMapCenter: Story = {
