@@ -19,6 +19,14 @@ Benchmarks run across 12 fixed locations (`BENCH_LOCATIONS` in `src/diagnostics/
 | limit / radius | 1,000 / 1,000m             | Hardcoded in benchmark (equivalent to normal perfMode) |
 | bounds         | lat +/-0.005, lng +/-0.006 | ~1km viewport                                          |
 
+## Measurement Protocol
+
+1. 開発中は単発実行で結果の傾向を確認する。
+2. 結果が安定したら、5回以上計測してレポートに記載する。
+3. 各回は前回のベンチマークが完全に完了してからページをリロードして開始する。
+4. Run 1 は JIT warmup の影響で外れ値になりやすい。外れ値は `*` で注記する。
+5. 代表値は median を採用する。
+
 ## 2026-03-27: Baseline
 
 Initialization (from `mergeSources` debug log, not included in benchmark):
