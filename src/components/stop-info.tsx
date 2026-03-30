@@ -11,6 +11,7 @@ import { AgencyBadge } from './badge/agency-badge';
 import { DistanceBadge } from './badge/distance-badge';
 import { IdBadge } from './badge/id-badge';
 import { RouteBadge } from './badge/route-badge';
+import { StopMetrics } from './stop-metrics';
 import { VerboseStopData } from './verbose/verbose-stop-data';
 import { VerboseStopDisplayNames } from './verbose/verbose-stop-display-names';
 
@@ -110,31 +111,12 @@ export function StopInfo({
             />
           ))}
       </div>
-      {(stats?.freq != null ||
-        stats?.routeCount != null ||
-        geo ||
-        (routes && routes.length > 0)) && (
+      <StopMetrics stats={stats} geo={geo} infoLevel={infoLevel} />
+      {info.isVerboseEnabled && routes && routes.length > 0 && (
         <div className="mt-0.5 flex flex-wrap items-center gap-1">
-          {stats?.freq != null && (
-            <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-              {stats.freq}本/日
-            </span>
-          )}
-          {stats?.routeCount != null && (
-            <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-              {stats.routeCount}路線
-            </span>
-          )}
-          {geo?.nearestRoute != null && (
-            <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-              最寄{geo.nearestRoute}km
-            </span>
-          )}
-          {routes &&
-            routes.length > 0 &&
-            routes.map((r) => (
-              <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} size="xs" />
-            ))}
+          {routes.map((r) => (
+            <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} size="xs" />
+          ))}
         </div>
       )}
       {info.isVerboseEnabled && (
