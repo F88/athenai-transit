@@ -53,12 +53,12 @@ Benchmark results:
 
 ## 2026-03-27: stopsMetaMap introduction
 
-### Change
+### stopsMetaMap: Change
 
 Replace per-query `StopWithMeta` assembly (`stopAgenciesMap.get()` + `stopRoutesMap.get()`)
 with pre-built `Map<string, StopWithMeta>` (`stopsMetaMap`) in `mergeSourcesV2()`.
 
-### Results (5 runs each, median)
+### stopsMetaMap: Results (5 runs each, median)
 
 Initialization (from `mergeSources` debug log, not included in benchmark):
 
@@ -95,9 +95,9 @@ Benchmark:
 | 4   | 48ms  | 3.20ms   | 3.60ms |
 | 5   | 43ms  | 3.20ms   | 3.30ms |
 
-### Observations
+### stopsMetaMap: Observations
 
-#### Initialization (mergeSources)
+#### stopsMetaMap: Initialization (mergeSources)
 
 - `mergeSources` median shows before=44ms, after=40ms, but the ranges overlap
   (before 38-51ms, after 37-48ms). The `stopsMetaMap` construction adds ~15,805
@@ -106,7 +106,7 @@ Benchmark:
   the difference is within normal browser execution variance.
 - Memory overhead is minimal (shared `Stop`, `Agency[]`, `Route[]` references).
 
-#### Benchmark (repo API queries)
+#### stopsMetaMap: Benchmark (repo API queries)
 
 - `getStopsNearby` shows consistent ~31% improvement (median 5.20ms → 3.60ms).
 - `getStopsInBounds` shows ~18% improvement (median 3.80ms → 3.10ms).
@@ -125,28 +125,28 @@ Benchmark:
 
 ## 2026-03-30: enrichStopInsights introduction
 
-### Change
+### enrichStopInsights: Change
 
 Add `enrichStopInsights()` to `create()`: loads per-source stopStats and
 global stopGeo during initialization, mapping them onto `stopsMetaMap`.
 Move `geo` from `StopWithContext` to `StopWithMeta`. Pass `stats` and
 `geo` through `useNearbyDepartures` to `StopWithContext`.
 
-### Results (5 runs each, median)
+### enrichStopInsights: Results (5 runs each, median)
 
 Initialization:
 
-| Metric       | Before (median) | After (median) | Change         |
-| ------------ | --------------- | -------------- | -------------- |
-| mergeSources | 40ms            | 38ms           | (noise)        |
-| enrich       | —               | 58ms           | +58ms (new)    |
+| Metric       | Before (median) | After (median) | Change      |
+| ------------ | --------------- | -------------- | ----------- |
+| mergeSources | 40ms            | 38ms           | (noise)     |
+| enrich       | —               | 58ms           | +58ms (new) |
 
 Benchmark:
 
-| Metric           | Before (median) | After (median) | Change |
-| ---------------- | --------------- | -------------- | ------ |
-| getStopsInBounds | 3.10ms          | 5.10ms         | +2.0ms |
-| getStopsNearby   | 3.60ms          | 4.60ms         | +1.0ms |
+| Metric           | Before (median) | After (median) | Change  |
+| ---------------- | --------------- | -------------- | ------- |
+| getStopsInBounds | 3.10ms          | 5.10ms         | +2.0ms  |
+| getStopsNearby   | 3.60ms          | 4.60ms         | +1.0ms  |
 | Benchmark total  | ~115ms          | 105.30ms       | (noise) |
 
 #### Raw data (5 runs)
@@ -161,19 +161,19 @@ Benchmark:
 
 \*Run 3 InBounds=6.80ms is an outlier.
 
-### Observations
+### enrichStopInsights: Observations
 
-#### Initialization (enrichStopInsights)
+#### enrichStopInsights: Initialization
 
 - `enrichStopInsights` adds ~58ms (median) to initialization. This includes:
-  - Fetching 17 per-source insights.json in parallel (~30ms network)
-  - Fetching global/insights.json (~35ms network, 1267KB)
-  - Mapping stopStats (15,338 stops) and stopGeo (15,805 stops) onto stopsMetaMap
+    - Fetching 17 per-source insights.json in parallel (~30ms network)
+    - Fetching global/insights.json (~35ms network, 1267KB)
+    - Mapping stopStats (15,338 stops) and stopGeo (15,805 stops) onto stopsMetaMap
 - The fetch is parallelized with global insights, so wall-clock time is
   dominated by the largest file (global/insights.json at 1.3MB).
 - `mergeSources` is unaffected (38ms vs 40ms, within noise).
 
-#### Benchmark (repo API queries)
+#### enrichStopInsights: Benchmark (repo API queries)
 
 - `getStopsInBounds` median increased from 3.10ms to 5.10ms (+2.0ms).
   `getStopsNearby` median increased from 3.60ms to 4.60ms (+1.0ms).
