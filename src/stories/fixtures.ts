@@ -256,11 +256,15 @@ export const baseStop: Stop = {
   agency_id: 'minkuru:8000020130001',
 };
 
-/** Long stop name with 6-language support (matching Kyoto City Bus GTFS coverage). */
+/** Long stop name with 6-language support and all optional fields populated. */
 export const longNameStop: Stop = {
   ...baseStop,
   stop_id: 'stop-long',
   stop_name: '東京都立産業技術研究センター前',
+  location_type: 0,
+  wheelchair_boarding: 1,
+  parent_station: 'station-001',
+  platform_code: '2',
   stop_names: {
     ja: '東京都立産業技術研究センター前',
     'ja-Hrkt': 'とうきょうとりつさんぎょうぎじゅつけんきゅうせんたーまえ',

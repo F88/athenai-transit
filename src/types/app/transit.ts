@@ -67,14 +67,14 @@ export interface Stop {
  */
 export interface Route {
   route_id: string;
+  route_type: RouteType;
+  agency_id: string;
   route_short_name: string;
   route_long_name: string;
   /** Merged from translations.txt. Not a GTFS-JP standard field. */
   route_names: Record<string, string>;
-  route_type: RouteType;
   route_color: string; // hex without #, e.g. "F1B34E"
   route_text_color: string; // hex without #
-  agency_id: string;
 }
 
 /**

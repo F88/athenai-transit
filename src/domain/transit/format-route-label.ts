@@ -7,14 +7,14 @@ import type { InfoLevel } from '@/types/app/settings';
  *
  * - simple: `name` only (e.g. "E", "都01")
  * - normal+: `name / subName1 / subName2` (e.g. "E / Oedo Line")
- * - verbose: appends raw `[shortName|longName]` for data inspection
- *   (e.g. "E / Oedo Line [E|大江戸線]")
+ *
+ * Verbose-level raw field inspection is handled by the
+ * {@link VerboseRoute} component, not by this formatter.
  *
  * @param names - Resolved route display names from {@link getRouteDisplayNames}.
  * @param infoLevel - Current info verbosity level.
  * @returns Formatted route label string.
  */
-
 export function formatRouteLabel(names: RouteDisplayNames, infoLevel: InfoLevel): string {
   let ret = names.name || '?';
   const info = createInfoLevel(infoLevel);
@@ -25,15 +25,5 @@ export function formatRouteLabel(names: RouteDisplayNames, infoLevel: InfoLevel)
       ret += ' / ' + subs.join(' / ');
     }
   }
-
-  if (info.isVerboseEnabled) {
-    const sl = [
-      //
-      names.shortName || 'N/A',
-      names.longName || 'N/A',
-    ].join('|');
-    ret += ` [${sl}]`;
-  }
-
   return ret;
 }

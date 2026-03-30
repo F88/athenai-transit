@@ -9,6 +9,9 @@ import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
 import { AgencyBadge } from './badge/agency-badge';
 import { DistanceBadge } from './badge/distance-badge';
 import { IdBadge } from './badge/id-badge';
+import { RouteBadge } from './badge/route-badge';
+import { VerboseStopData } from './verbose/verbose-stop-data';
+import { VerboseStopDisplayNames } from './verbose/verbose-stop-display-names';
 
 interface StopInfoProps {
   stop: Stop;
@@ -88,118 +91,52 @@ export function StopInfo({
             />
           ))}
       </div>
+      {(stats?.freq != null ||
+        stats?.routeCount != null ||
+        geo ||
+        (routes && routes.length > 0)) && (
+        <div className="mt-0.5 flex flex-wrap items-center gap-1">
+          {stats?.freq != null && (
+            <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+              {stats.freq}本/日
+            </span>
+          )}
+          {stats?.routeCount != null && (
+            <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+              {stats.routeCount}路線
+            </span>
+          )}
+          {geo?.nearestRoute != null && (
+            <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+              最寄{geo.nearestRoute}km
+            </span>
+          )}
+          {routes &&
+            routes.length > 0 &&
+            routes.map((r) => (
+              <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} size="xs" />
+            ))}
+        </div>
+      )}
       {info.isVerboseEnabled && (
-        <VerboseData
-          stop={stop}
-          distance={distance}
-          bearing={bearing}
-          routeTypes={routeTypes}
-          agencies={agencies}
-          routes={routes}
-          stats={stats}
-          geo={geo}
-        />
+        <details className="mt-1 text-[9px] font-normal text-[#999] dark:text-gray-500">
+          <summary className="cursor-pointer select-none">[StopData]</summary>
+          <div className="mt-0.5 space-y-0.5">
+            <VerboseStopData
+              stop={stop}
+              isDropOffOnly={isDropOffOnly}
+              distance={distance}
+              bearing={bearing}
+              routeTypes={routeTypes}
+              agencies={agencies}
+              routes={routes}
+              stats={stats}
+              geo={geo}
+            />
+            <VerboseStopDisplayNames names={stopNames} />
+          </div>
+        </details>
       )}
     </div>
-  );
-}
-
-/**
- * Debug dump of all StopInfo props.
- * Only rendered in verbose info level.
- */
-function VerboseData({
-  stop,
-  distance,
-  bearing,
-  routeTypes,
-  agencies,
-  routes,
-  stats,
-  geo,
-}: {
-  stop: Stop;
-  distance?: number;
-  bearing: number | null;
-  routeTypes: RouteType[];
-  agencies: Agency[];
-  routes?: Route[];
-  stats?: StopWithMeta['stats'];
-  geo?: StopWithContext['geo'];
-}) {
-  return (
-    <div className="mt-1 space-y-0.5 text-[9px] text-[#999] dark:text-gray-500">
-      <VerboseStop stop={stop} />
-      <p className="m-0">
-        [position] distance={distance ?? '?'}m bearing=
-        {bearing != null ? `${Math.round(bearing)}°` : '?'}
-        {` routeTypes=[${routeTypes.join(',')}]`}
-      </p>
-      <VerboseAgencies agencies={agencies} />
-      <VerboseRoutes routes={routes} />
-      <VerboseStats stats={stats} />
-      <VerboseGeo geo={geo} />
-    </div>
-  );
-}
-
-function VerboseStop({ stop }: { stop: Stop }) {
-  return (
-    <p className="m-0">
-      [stop] lat={stop.stop_lat} lon={stop.stop_lon} loc={stop.location_type}
-      {stop.wheelchair_boarding != null && ` wb=${stop.wheelchair_boarding}`}
-      {stop.parent_station && ` parent=${stop.parent_station}`}
-      {stop.platform_code && ` platform=${stop.platform_code}`}
-    </p>
-  );
-}
-
-function VerboseAgencies({ agencies }: { agencies: Agency[] }) {
-  if (agencies.length === 0) {
-    return null;
-  }
-  return (
-    <p className="m-0">
-      [agencies] [{agencies.map((a) => a.agency_short_name || a.agency_id).join(', ')}]
-    </p>
-  );
-}
-
-function VerboseStats({ stats }: { stats?: StopWithMeta['stats'] }) {
-  if (!stats) {
-    return null;
-  }
-  return (
-    <p className="m-0">
-      [stats] freq={stats.freq} routes={stats.routeCount} types={stats.routeTypeCount}
-      {` earliest=${stats.earliestDeparture} latest=${stats.latestDeparture}`}
-    </p>
-  );
-}
-
-function VerboseGeo({ geo }: { geo?: StopWithContext['geo'] }) {
-  if (!geo) {
-    return null;
-  }
-  return (
-    <p className="m-0">
-      [geo] nearestRoute={geo.nearestRoute}km
-      {geo.walkablePortal != null && ` portal=${geo.walkablePortal}km`}
-      {geo.connectivity &&
-        Object.entries(geo.connectivity).map(
-          ([group, c]) => ` ${group}:routes=${c.routeCount},freq=${c.freq},stops=${c.stopCount}`,
-        )}
-    </p>
-  );
-}
-
-function VerboseRoutes({ routes }: { routes?: Route[] }) {
-  if (!routes || routes.length === 0) {
-    return null;
-  }
-  return (
-    <p className="m-0">
-      [routes] [{routes.map((r) => r.route_short_name || r.route_id).join(', ')}]
-    </p>
   );
 }
