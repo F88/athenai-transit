@@ -113,7 +113,7 @@ export function BottomSheetHeader({
             );
           })}
       </div>
-      {selectedView && info.isNormalEnabled && (
+      {selectedView && info.isVerboseEnabled && (
         <div className="mt-1">
           <p className="text-[11px] text-[#888] dark:text-gray-400">{selectedView.title}</p>
           {info.isDetailedEnabled && (
