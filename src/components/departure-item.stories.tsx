@@ -230,13 +230,12 @@ export const MaxDisplay5: Story = {
 // --- Info levels ---
 
 export const Detailed: Story = {
-  args: { infoLevel: 'detailed', agencyName: '都営バス', agency },
+  args: { infoLevel: 'detailed', agency },
 };
 
 export const Verbose: Story = {
   args: {
     infoLevel: 'verbose',
-    agencyName: '都営バス',
     agency,
     entries: [
       createEntry({ departureMinutes: 870, direction: 0 }),
