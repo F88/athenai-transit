@@ -96,30 +96,6 @@ export interface StopWithMeta {
     /** Latest departure time (minutes from midnight). Values >= 1440 = overnight past midnight. */
     latestDeparture: number;
   };
-}
-
-/**
- * A stop paired with its route types and upcoming {@link ContextualTimetableEntry} items.
- *
- * Extends {@link StopWithMeta} with departure context.
- * Used by BottomSheet and MapView tooltip to display nearby stop info.
- * When all services have ended, `departures` is an empty array and the UI
- * shows "本日の運行は終了しました".
- *
- * `routeTypes` contains all GTFS route_type values serving this stop,
- * sorted in ascending order (e.g. `[0, 3]` for a tram+bus stop).
- */
-export interface StopWithContext extends StopWithMeta {
-  routeTypes: RouteType[];
-  departures: ContextualTimetableEntry[];
-  /**
-   * Whether at least one boardable entry exists in the full service day.
-   *
-   * From {@link TimetableQueryMeta.isBoardableOnServiceDay}. Independent
-   * of `departures` (which only contains upcoming entries).
-   * A stop with `isBoardableOnServiceDay === false` is drop-off only.
-   */
-  isBoardableOnServiceDay: boolean;
   /**
    * Geographic metrics from GlobalInsightsBundle.
    * Undefined when global insights data is not loaded.
@@ -153,6 +129,30 @@ export interface StopWithContext extends StopWithMeta {
       }
     >;
   };
+}
+
+/**
+ * A stop paired with its route types and upcoming {@link ContextualTimetableEntry} items.
+ *
+ * Extends {@link StopWithMeta} with departure context.
+ * Used by BottomSheet and MapView tooltip to display nearby stop info.
+ * When all services have ended, `departures` is an empty array and the UI
+ * shows "本日の運行は終了しました".
+ *
+ * `routeTypes` contains all GTFS route_type values serving this stop,
+ * sorted in ascending order (e.g. `[0, 3]` for a tram+bus stop).
+ */
+export interface StopWithContext extends StopWithMeta {
+  routeTypes: RouteType[];
+  departures: ContextualTimetableEntry[];
+  /**
+   * Whether at least one boardable entry exists in the full service day.
+   *
+   * From {@link TimetableQueryMeta.isBoardableOnServiceDay}. Independent
+   * of `departures` (which only contains upcoming entries).
+   * A stop with `isBoardableOnServiceDay === false` is drop-off only.
+   */
+  isBoardableOnServiceDay: boolean;
 }
 
 /**
