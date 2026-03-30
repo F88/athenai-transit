@@ -1,7 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ContextualTimetableEntry } from '../types/app/transit-composed';
-import type { Agency, Route, Stop } from '../types/app/transit';
-import type { StopWithContext } from '../types/app/transit-composed';
+import type {
+  ContextualTimetableEntry,
+  StopServiceType,
+  StopWithContext,
+} from '../types/app/transit-composed';
+import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
 import { fn } from 'storybook/test';
 import { NearbyStop } from './nearby-stop';
 
@@ -76,6 +79,21 @@ const baseStop: Stop = {
   agency_id: 'agency-001',
 };
 
+/** Long stop name for layout wrapping tests. Includes 6-language names matching real GTFS coverage (e.g. Kyoto City Bus). */
+const longNameStop: Stop = {
+  ...baseStop,
+  stop_id: 'stop-long',
+  stop_name: '東京都立産業技術研究センター前',
+  stop_names: {
+    ja: '東京都立産業技術研究センター前',
+    'ja-Hrkt': 'とうきょうとりつさんぎょうぎじゅつけんきゅうせんたーまえ',
+    en: 'Tokyo Metropolitan Industrial Technology Research Institute',
+    ko: '도쿄도립산업기술연구센터앞',
+    'zh-Hans': '东京都立产业技术研究中心前',
+    'zh-Hant': '東京都立產業技術研究中心前',
+  },
+};
+
 /** now = 14:25 */
 const now = new Date('2026-03-30T14:25:00');
 
@@ -88,8 +106,8 @@ function createEntry(
     arrivalMinutes: number;
     route: Route;
     headsign: string;
-    pickupType: number;
-    dropOffType: number;
+    pickupType: StopServiceType;
+    dropOffType: StopServiceType;
     isTerminal: boolean;
     isOrigin: boolean;
     stopIndex: number;
@@ -124,7 +142,7 @@ function createEntry(
 function createStopWithContext(
   overrides: Partial<{
     stop: Stop;
-    routeTypes: number[];
+    routeTypes: RouteType[];
     departures: ContextualTimetableEntry[];
     isBoardableOnServiceDay: boolean;
     agencies: Agency[];
@@ -313,6 +331,82 @@ export const MultipleAgencies: Story = {
         createEntry({ departureMinutes: 870, headsign: '大塚駅前' }),
         createEntry({ departureMinutes: 875, route: tramRoute, headsign: '早稲田' }),
       ],
+    }),
+  },
+};
+
+// --- Header only (no departures) ---
+
+/** Header layout inspection — departures are empty to isolate the header. */
+export const HeaderOnly: Story = {
+  args: {
+    data: createStopWithContext({ departures: [] }),
+  },
+};
+
+/** Header with drop-off-only label and multiple badges. */
+export const HeaderDropOffOnly: Story = {
+  args: {
+    data: createStopWithContext({
+      isBoardableOnServiceDay: false,
+      departures: [],
+    }),
+  },
+};
+
+/** Header with multiple route types and agencies. */
+export const HeaderMultiType: Story = {
+  args: {
+    data: createStopWithContext({
+      routeTypes: [0, 3],
+      agencies: [agency, agency2],
+      routes: [busRoute, tramRoute],
+      departures: [],
+    }),
+  },
+};
+
+/** Header with drop-off-only + multiple route types and agencies. */
+export const HeaderDropOffMultiType: Story = {
+  args: {
+    data: createStopWithContext({
+      isBoardableOnServiceDay: false,
+      routeTypes: [0, 3],
+      agencies: [agency, agency2],
+      routes: [busRoute, tramRoute],
+      departures: [],
+    }),
+  },
+};
+
+/** Header with anchor enabled. */
+export const HeaderAnchored: Story = {
+  args: {
+    isAnchor: true,
+    data: createStopWithContext({ departures: [] }),
+  },
+};
+
+/** Header with a long stop name to verify wrapping behavior. */
+export const HeaderLongName: Story = {
+  args: {
+    data: createStopWithContext({
+      stop: longNameStop,
+      departures: [],
+    }),
+  },
+};
+
+/** Header with a long stop name + drop-off-only + multi-type. */
+export const HeaderLongNameFull: Story = {
+  args: {
+    data: createStopWithContext({
+      stop: longNameStop,
+      isBoardableOnServiceDay: false,
+      routeTypes: [0, 3],
+      agencies: [agency, agency2],
+      routes: [busRoute, tramRoute],
+      departures: [],
     }),
   },
 };
