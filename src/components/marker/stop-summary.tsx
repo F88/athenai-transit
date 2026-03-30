@@ -8,6 +8,7 @@ import { minutesToDate } from '../../domain/transit/calendar-utils';
 import { AgencyBadge } from '../badge/agency-badge';
 import { RouteBadge } from '../badge/route-badge';
 import { routeTypesEmoji } from '../../domain/transit/route-type-emoji';
+import { IdBadge } from '../badge/id-badge';
 
 interface StopSummaryProps {
   stop: Stop;
@@ -41,11 +42,7 @@ export function StopSummary({
 
   return (
     <>
-      {info.isVerboseEnabled && (
-        <div className="mb-0.5 inline-block rounded-[3px] bg-[#f0f0f0] px-1.5 text-[10px] leading-[1.4] font-normal text-[#666] dark:bg-gray-700 dark:text-gray-400">
-          {stop.stop_id}
-        </div>
-      )}
+      {info.isVerboseEnabled && <IdBadge>{stop.stop_id}</IdBadge>}
       {stopNames.subNames.length > 0 && (
         <div className="text-[11px] font-normal break-all text-[#888] dark:text-gray-400">
           {stopNames.subNames.join(' / ')}
@@ -57,7 +54,13 @@ export function StopSummary({
         </span>
         {agencies.length > 0 &&
           agencies.map((a) => (
-            <AgencyBadge key={a.agency_id} agency={a} infoLevel={infoLevel} size="xs" />
+            <AgencyBadge
+              key={a.agency_id}
+              agency={a}
+              infoLevel={infoLevel}
+              size="xs"
+              disableVerbose
+            />
           ))}
       </div>
       {items.map((entry, i) => {
@@ -76,7 +79,7 @@ export function StopSummary({
             key={i}
             className="mt-0.5 flex items-center gap-1 text-[11px] text-[#555] dark:text-gray-400"
           >
-            <RouteBadge route={route} infoLevel={infoLevel} size="sm" />
+            <RouteBadge route={route} infoLevel={infoLevel} size="sm" disableVerbose />
             {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
             <span>{headsignName}</span>
             <span>{relative}</span>

@@ -9,6 +9,33 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- 近くののりばに方角を表示するようにした。DistanceBadge に三角形の方角インジケーターを追加。
+- StopInfo コンポーネントを NearbyStop から抽出。停留所の識別情報 (名前、路線種別、距離、事業者) を担当。
+- Verbose パターン: `<details>/<summary>` による折りたたみ式デバッグダンプ。Badge (Route, Agency, Headsign) と StopInfo に統一的に適用。
+    - `src/components/verbose/` に dump コンポーネントを集約。
+    - 生データ dump と resolver 結果 dump を分離 (例: VerboseRoute + VerboseRouteDisplayNames)。
+    - summary ラベルで識別 (`[Route]`, `[Agency]`, `[Headsign]`, `[StopData]`, `[Metrics]`)。
+    - `disableVerbose` prop で非インタラクティブなコンテキスト (tooltip) での verbose 抑制。
+- StopInfo に `wheelchair_boarding` 表示 (Accessibility アイコン、1=青, 2=グレーアウト)。
+- StopInfo に `platform_code` 表示 (amber バッジ、枠線付き)。
+- StopMetrics コンポーネント: stats/geo の指標を info level に応じて表示。
+    - normal+: freq (CalendarDays), connectivity (Waypoints)
+    - detailed+: nearestRoute (Milestone/teal)
+    - verbose: walkablePortal (Milestone/purple) + 全フィールド dump
+- RouteBadge で路線表示 (StopInfo の routes plain text を置き換え)。
+- `formatRouteLabel` から verbose 固有の `[shortName|longName]` 出力を除去 (VerboseRoute が担当)。
+- Badge ルート要素に `font-normal` リセット。親の font 設定に依存しない統一スタイル。
+- IdBadge に `font-normal` を追加。配置場所による太さの不一致を解消。
+- Storybook: RouteBadge, HeadsignBadge, StopMetrics の stories を追加。AgencyBadge stories を簡素化。
+- MockRepository に `wheelchair_boarding`, `platform_code` テストデータを追加。
+- Repository: InsightsBundle の stopStats と GlobalInsightsBundle の stopGeo を StopWithMeta にマッピング。`geo` を StopWithContext から StopWithMeta に移動し、初期化時に同期的にロード。
+
+### Performance
+
+- BottomSheet の NearbyStop カードを IntersectionObserver で遅延レンダリング。最初の 6 件のみ即座にマウントし、残りはスクロール時に遅延マウント。
+
 ### Fixed
 
 - Canvas mode (lightweight) の選択時 stop tooltip がダークモード未対応だった問題を修正。`L.popup` から `L.tooltip` に統一し、DOM mode とレイアウト・テーマを一致させた。

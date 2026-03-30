@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { distanceM, formatDistance, formatDistanceCompact } from '../distance';
+import { bearingDeg, distanceM, formatDistance, formatDistanceCompact } from '../distance';
 
 describe('distanceM', () => {
   it('returns 0 for identical points', () => {
@@ -91,6 +91,51 @@ describe('formatDistance', () => {
   it('stays in meter branch when raw value < 1000 even if rounded to 1000', () => {
     // 999.5 < 1000, so enters sub-km branch; Math.round(999.5) = 1000
     expect(formatDistance(999.5)).toBe('1000m');
+  });
+});
+
+describe('bearingDeg', () => {
+  const origin = { lat: 35.0, lng: 139.0 };
+
+  it('returns 0 for due north', () => {
+    const north = { stop_lat: 36.0, stop_lon: 139.0 };
+    expect(bearingDeg(origin, north)).toBeCloseTo(0, 0);
+  });
+
+  it('returns 90 for due east', () => {
+    const east = { stop_lat: 35.0, stop_lon: 140.0 };
+    expect(bearingDeg(origin, east)).toBeCloseTo(90, 0);
+  });
+
+  it('returns 180 for due south', () => {
+    const south = { stop_lat: 34.0, stop_lon: 139.0 };
+    expect(bearingDeg(origin, south)).toBeCloseTo(180, 0);
+  });
+
+  it('returns 270 for due west', () => {
+    const west = { stop_lat: 35.0, stop_lon: 138.0 };
+    expect(bearingDeg(origin, west)).toBeCloseTo(270, 0);
+  });
+
+  it('returns ~45 for northeast', () => {
+    // Use latitude-adjusted offset so bearing is close to 45°
+    const midLat = 35.0 * (Math.PI / 180);
+    const lngOffset = 1 / Math.cos(midLat); // compensate for longitude shrinkage
+    const ne = { stop_lat: 36.0, stop_lon: 139.0 + lngOffset };
+    expect(bearingDeg(origin, ne)).toBeCloseTo(45, 0);
+  });
+
+  it('returns value in [0, 360) range', () => {
+    const sw = { stop_lat: 34.0, stop_lon: 138.0 };
+    const bearing = bearingDeg(origin, sw);
+    expect(bearing).toBeGreaterThanOrEqual(0);
+    expect(bearing).toBeLessThan(360);
+  });
+
+  it('returns 0 for identical points (degenerate case)', () => {
+    const same = { stop_lat: 35.0, stop_lon: 139.0 };
+    // atan2(0, 0) = 0 → bearing = 0
+    expect(bearingDeg(origin, same)).toBe(0);
   });
 });
 

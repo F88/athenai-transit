@@ -66,28 +66,23 @@ describe('formatRouteLabel', () => {
     expect(formatRouteLabel(names, 'detailed')).toBe('E / Oedo Line');
   });
 
-  // --- verbose level: name + subNames + [short|long] ---
+  // --- verbose level: same as normal (raw field dump moved to VerboseRoute) ---
 
-  it('appends raw values at verbose level (bus)', () => {
-    expect(formatRouteLabel(busNames(), 'verbose')).toBe('都01 [都01|N/A]');
+  it('behaves like normal at verbose level (bus)', () => {
+    expect(formatRouteLabel(busNames(), 'verbose')).toBe('都01');
   });
 
-  it('appends raw values at verbose level (train)', () => {
-    expect(formatRouteLabel(trainNames(), 'verbose')).toBe('大江戸線 [N/A|大江戸線]');
+  it('behaves like normal at verbose level (train)', () => {
+    expect(formatRouteLabel(trainNames(), 'verbose')).toBe('大江戸線');
   });
 
-  it('appends raw values at verbose level (both)', () => {
-    expect(formatRouteLabel(bothNames(), 'verbose')).toBe('E [E|大江戸線]');
+  it('behaves like normal at verbose level (both)', () => {
+    expect(formatRouteLabel(bothNames(), 'verbose')).toBe('E');
   });
 
-  it('includes subNames and raw values at verbose level', () => {
+  it('includes subNames at verbose level', () => {
     const names = bothNames({ subNames: ['Oedo Line'] });
-    expect(formatRouteLabel(names, 'verbose')).toBe('E / Oedo Line [E|大江戸線]');
-  });
-
-  it('shows N/A for both when neither name exists at verbose level', () => {
-    const names: RouteDisplayNames = { name: 'R001', subNames: [], shortName: '', longName: '' };
-    expect(formatRouteLabel(names, 'verbose')).toBe('R001 [N/A|N/A]');
+    expect(formatRouteLabel(names, 'verbose')).toBe('E / Oedo Line');
   });
 
   // --- edge case: empty name ---

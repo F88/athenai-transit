@@ -431,6 +431,107 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
 }
 
 // ---------------------------------------------------------------------------
+// Stop insights enrichment (stopStats + stopGeo)
+// ---------------------------------------------------------------------------
+
+/**
+ * Enrich stopsMetaMap with per-stop stats and geo data from insights bundles.
+ *
+ * - stopStats: from per-source InsightsBundle (first service group)
+ * - stopGeo: from GlobalInsightsBundle
+ *
+ * Errors (network failures, invalid bundles) are logged as warnings
+ * but do not prevent initialization. Stats and geo are optional
+ * enhancements — stopsMetaMap entries remain valid without them.
+ */
+async function enrichStopInsights(
+  stopsMetaMap: Map<string, StopWithMeta>,
+  prefixes: string[],
+  dataSource: TransitDataSourceV2,
+): Promise<void> {
+  const t0 = performance.now();
+
+  // Load per-source insights and global insights in parallel
+  const [insightsResults, globalResult] = await Promise.all([
+    Promise.allSettled(prefixes.map((prefix) => dataSource.loadInsights(prefix))),
+    dataSource.loadGlobalInsights().catch((e) => {
+      logger.warn('Failed to load global insights:', e);
+      return null;
+    }),
+  ]);
+
+  // Apply stopStats from per-source insights
+  let statsCount = 0;
+  for (let i = 0; i < insightsResults.length; i++) {
+    const r = insightsResults[i];
+    if (r.status === 'rejected') {
+      logger.warn(`Failed to load insights for ${prefixes[i]}:`, r.reason);
+      continue;
+    }
+    if (!r.value) {
+      continue;
+    }
+    const insights = r.value;
+    if (!insights.stopStats) {
+      continue;
+    }
+
+    // Use the first service group (highest priority = most common day type)
+    const firstGroupKey = insights.serviceGroups.data[0]?.key;
+    if (!firstGroupKey) {
+      continue;
+    }
+    const statsForGroup = insights.stopStats.data[firstGroupKey];
+    if (!statsForGroup) {
+      continue;
+    }
+
+    for (const [stopId, s] of Object.entries(statsForGroup)) {
+      const meta = stopsMetaMap.get(stopId);
+      if (meta) {
+        meta.stats = {
+          freq: s.freq,
+          routeCount: s.rc,
+          routeTypeCount: s.rtc,
+          earliestDeparture: s.ed,
+          latestDeparture: s.ld,
+        };
+        statsCount++;
+      }
+    }
+  }
+
+  // Apply stopGeo from global insights
+  let geoCount = 0;
+  if (globalResult?.stopGeo) {
+    for (const [stopId, g] of Object.entries(globalResult.stopGeo.data)) {
+      const meta = stopsMetaMap.get(stopId);
+      if (!meta) {
+        continue;
+      }
+      meta.geo = {
+        nearestRoute: g.nr,
+        walkablePortal: g.wp,
+        connectivity: g.cn
+          ? Object.fromEntries(
+              Object.entries(g.cn).map(([group, c]) => [
+                group,
+                { routeCount: c.rc, freq: c.freq, stopCount: c.sc },
+              ]),
+            )
+          : undefined,
+      };
+      geoCount++;
+    }
+  }
+
+  const elapsed = Math.round(performance.now() - t0);
+  logger.info(
+    `Stop insights enriched in ${elapsed}ms: stats=${statsCount} stops, geo=${geoCount} stops`,
+  );
+}
+
+// ---------------------------------------------------------------------------
 // AthenaiRepositoryV2
 // ---------------------------------------------------------------------------
 
@@ -522,15 +623,21 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       `mergeSources: ${mergeMs}ms (stops=${merged.stops.length} routes=${merged.routeMap.size} stopsMetaMap=${merged.stopsMetaMap.size})`,
     );
 
-    logger.info(
-      `Initialized in ${Math.round(tMerge - t0)}ms (fetch=${fetchMs}ms, merge=${mergeMs}ms): stops=${merged.stops.length} routes=${merged.routeMap.size} timetable_stops=${Object.keys(merged.timetable).length}`,
-    );
-
     for (const meta of merged.sourceMetas) {
       logger.info(
         `[${meta.id}] ${meta.name}: validity=${meta.validity.startDate}-${meta.validity.endDate} stops=${meta.stats.stopCount} routes=${meta.stats.routeCount} types=[${meta.routeTypes.join(',')}]`,
       );
     }
+
+    // Enrich stopsMetaMap with insights (stopStats + stopGeo).
+    // Errors are logged but non-fatal — stats/geo are optional enhancements.
+    const tEnrich = performance.now();
+    await enrichStopInsights(merged.stopsMetaMap, loadResult.loaded, dataSource);
+    const enrichMs = Math.round(performance.now() - tEnrich);
+
+    logger.info(
+      `Initialized in ${Math.round(performance.now() - t0)}ms (fetch=${fetchMs}ms, merge=${mergeMs}ms, enrich=${enrichMs}ms): stops=${merged.stops.length} routes=${merged.routeMap.size} timetable_stops=${Object.keys(merged.timetable).length}`,
+    );
 
     const repository = new AthenaiRepositoryV2(merged);
     // Start background shapes loading after repository creation
