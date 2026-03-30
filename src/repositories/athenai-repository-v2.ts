@@ -454,13 +454,21 @@ async function enrichStopInsights(
   // Load per-source insights and global insights in parallel
   const [insightsResults, globalResult] = await Promise.all([
     Promise.allSettled(prefixes.map((prefix) => dataSource.loadInsights(prefix))),
-    dataSource.loadGlobalInsights().catch(() => null),
+    dataSource.loadGlobalInsights().catch((e) => {
+      logger.warn('Failed to load global insights:', e);
+      return null;
+    }),
   ]);
 
   // Apply stopStats from per-source insights
   let statsCount = 0;
-  for (const r of insightsResults) {
-    if (r.status !== 'fulfilled' || !r.value) {
+  for (let i = 0; i < insightsResults.length; i++) {
+    const r = insightsResults[i];
+    if (r.status === 'rejected') {
+      logger.warn(`Failed to load insights for ${prefixes[i]}:`, r.reason);
+      continue;
+    }
+    if (!r.value) {
       continue;
     }
     const insights = r.value;

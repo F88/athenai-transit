@@ -10,7 +10,7 @@ import { DepartureItem } from './departure-item';
 import { FlatDepartureItem } from './flat-departure-item';
 import { StopInfo } from './stop-info';
 
-interface NearbyStopProps {
+export interface NearbyStopProps {
   data: StopWithContext;
   isSelected: boolean;
   now: Date;
