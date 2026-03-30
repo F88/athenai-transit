@@ -57,7 +57,8 @@ export function BottomSheetStops({
           onShowStopTimetable,
           onToggleAnchor,
         };
-        return i < EAGER_RENDER_COUNT ? (
+        // Eager render: first N stops, or the selected stop (so scroll-to-selected works)
+        return i < EAGER_RENDER_COUNT || props.isSelected ? (
           <NearbyStop key={swc.stop.stop_id} {...props} />
         ) : (
           <LazyNearbyStop key={swc.stop.stop_id} scrollRoot={contentRef} {...props} />
