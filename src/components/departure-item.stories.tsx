@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ContextualTimetableEntry } from '../types/app/transit-composed';
-import type { Agency } from '../types/app/transit';
+import type { ContextualTimetableEntry, StopServiceType } from '../types/app/transit-composed';
+import type { Agency, Route } from '../types/app/transit';
 import { fn } from 'storybook/test';
 import { DepartureItem } from './departure-item';
 
 /** Fictional base route for stories. */
-const baseRoute = {
+const baseRoute: Route = {
   route_id: 'route-001',
   route_short_name: '渋64',
   route_long_name: '渋谷駅〜中野駅',
@@ -16,7 +16,7 @@ const baseRoute = {
   agency_id: 'agency-001',
 };
 
-const greenRoute = {
+const greenRoute: Route = {
   ...baseRoute,
   route_id: 'route-002',
   route_short_name: '都01',
@@ -24,7 +24,7 @@ const greenRoute = {
   route_color: '00A850',
 };
 
-const tramRoute = {
+const tramRoute: Route = {
   ...baseRoute,
   route_id: 'route-003',
   route_short_name: '荒川線',
@@ -33,7 +33,7 @@ const tramRoute = {
   route_color: 'E60012',
 };
 
-const noColorRoute = {
+const noColorRoute: Route = {
   ...baseRoute,
   route_id: 'route-004',
   route_short_name: 'A5',
@@ -60,10 +60,10 @@ function createEntry(
   overrides: Partial<{
     departureMinutes: number;
     arrivalMinutes: number;
-    route: typeof baseRoute;
+    route: Route;
     headsign: string;
-    pickupType: number;
-    dropOffType: number;
+    pickupType: StopServiceType;
+    dropOffType: StopServiceType;
     isTerminal: boolean;
     isOrigin: boolean;
     stopIndex: number;
