@@ -28,7 +28,17 @@ interface NearbyStopProps {
 }
 
 export function NearbyStop({
-  data: { stop, routeTypes, departures, isBoardableOnServiceDay, agencies },
+  data: {
+    stop,
+    routeTypes,
+    departures,
+    isBoardableOnServiceDay,
+    agencies,
+    routes,
+    distance,
+    stats,
+    geo,
+  },
   isSelected,
   now,
   mapCenter,
@@ -78,9 +88,13 @@ export function NearbyStop({
           stop={stop}
           routeTypes={routeTypes}
           agencies={agencies}
+          distance={distance}
           mapCenter={mapCenter}
           infoLevel={infoLevel}
           isDropOffOnly={isStopDropOffOnly}
+          routes={routes}
+          stats={stats}
+          geo={geo}
         />
         <div className="ml-auto flex shrink-0 items-center gap-1">
           <button

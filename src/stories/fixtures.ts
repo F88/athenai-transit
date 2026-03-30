@@ -5,7 +5,12 @@
  * Import from `../../stories/fixtures` in story files.
  */
 import type { Agency, Route, Stop } from '../types/app/transit';
-import type { ContextualTimetableEntry, StopServiceType } from '../types/app/transit-composed';
+import type {
+  ContextualTimetableEntry,
+  StopServiceType,
+  StopWithContext,
+  StopWithMeta,
+} from '../types/app/transit-composed';
 
 // ---------------------------------------------------------------------------
 // Agencies
@@ -263,6 +268,28 @@ export const longNameStop: Stop = {
     ko: '도쿄도립산업기술연구센터앞',
     'zh-Hans': '东京都立产业技术研究中心前',
     'zh-Hant': '東京都立產業技術研究中心前',
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Stats & Geo
+// ---------------------------------------------------------------------------
+
+/** Sample stats for a moderately busy bus stop. */
+export const sampleStats: StopWithMeta['stats'] = {
+  freq: 42,
+  routeCount: 3,
+  routeTypeCount: 1,
+  earliestDeparture: 330, // 5:30
+  latestDeparture: 1390, // 23:10
+};
+
+/** Sample geo metrics. */
+export const sampleGeo: StopWithContext['geo'] = {
+  nearestRoute: 0.12,
+  walkablePortal: 0.35,
+  connectivity: {
+    ho: { routeCount: 5, freq: 120, stopCount: 3 },
   },
 };
 

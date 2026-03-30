@@ -6,8 +6,13 @@ import {
   agencyTobus,
   allAgencies,
   baseStop,
+  busRoute,
+  busRoute2,
   longNameStop,
+  sampleGeo,
+  sampleStats,
   storyMapCenter,
+  tramRoute,
 } from '../stories/fixtures';
 import { StopInfo } from './stop-info';
 
@@ -20,9 +25,11 @@ const meta = {
     stop: baseStop,
     routeTypes: [3] as RouteType[],
     agencies: [agencyTobus],
+    distance: 235,
     mapCenter: storyMapCenter,
     infoLevel: 'normal',
     isDropOffOnly: false,
+    routes: [busRoute],
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
@@ -116,12 +123,15 @@ export const LongNameMultiType: Story = {
   },
 };
 
-/** Kitchen sink: long name, multi-type, all 4 agencies, drop-off-only — all elements visible. */
+/** Kitchen sink: long name, multi-type, all agencies, drop-off-only, stats, geo, routes — all elements visible. */
 const kitchenSinkArgs = {
   stop: longNameStop,
   routeTypes: [0, 3] as RouteType[],
   agencies: allAgencies,
   isDropOffOnly: true,
+  routes: [busRoute, busRoute2, tramRoute],
+  stats: sampleStats,
+  geo: sampleGeo,
 };
 
 export const KitchenSinkInfoLevelSimple: Story = {
