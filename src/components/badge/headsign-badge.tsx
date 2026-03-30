@@ -55,7 +55,6 @@ export function HeadsignBadge({
 
   return (
     <span className="inline-flex items-center gap-0.5">
-      {infoLevel === 'verbose' && <IdBadge>{route.route_id}</IdBadge>}
       <span
         className={cn(
           'bg-muted-foreground inline-flex items-center justify-center rounded font-bold whitespace-nowrap text-white',
@@ -67,6 +66,7 @@ export function HeadsignBadge({
       >
         {label}
       </span>
+      {infoLevel === 'verbose' && <IdBadge>{route.route_id}</IdBadge>}
     </span>
   );
 }

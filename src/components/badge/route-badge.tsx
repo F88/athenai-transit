@@ -42,7 +42,6 @@ export function RouteBadge({ route, infoLevel, size = 'default', className }: Ro
 
   return (
     <span className={cn('inline-flex items-center gap-0.5', className)}>
-      {infoLevel === 'verbose' && <IdBadge>{route.route_id}</IdBadge>}
       <span
         className={cn(
           'bg-muted-foreground inline-flex items-center justify-center rounded font-bold whitespace-nowrap text-white',
@@ -52,6 +51,7 @@ export function RouteBadge({ route, infoLevel, size = 'default', className }: Ro
       >
         {formatRouteLabel(routeNames, infoLevel)}
       </span>
+      {infoLevel === 'verbose' && <IdBadge>{route.route_id}</IdBadge>}
     </span>
   );
 }
