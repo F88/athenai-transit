@@ -440,9 +440,9 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
  * - stopStats: from per-source InsightsBundle (first service group)
  * - stopGeo: from GlobalInsightsBundle
  *
- * Errors (network failures, missing data) are silently ignored since
- * stats and geo are optional enhancements. The stopsMetaMap entries
- * remain valid without them.
+ * Errors (network failures, invalid bundles) are logged as warnings
+ * but do not prevent initialization. Stats and geo are optional
+ * enhancements — stopsMetaMap entries remain valid without them.
  */
 async function enrichStopInsights(
   stopsMetaMap: Map<string, StopWithMeta>,
@@ -630,7 +630,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     }
 
     // Enrich stopsMetaMap with insights (stopStats + stopGeo).
-    // Errors are silently ignored — stats/geo are optional enhancements.
+    // Errors are logged but non-fatal — stats/geo are optional enhancements.
     const tEnrich = performance.now();
     await enrichStopInsights(merged.stopsMetaMap, loadResult.loaded, dataSource);
     const enrichMs = Math.round(performance.now() - tEnrich);

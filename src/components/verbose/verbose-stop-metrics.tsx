@@ -21,7 +21,7 @@ export function VerboseStopMetrics({
       </span>
       <span className="block">
         [geo] nearestRoute={geo?.nearestRoute ?? '(none)'}km portal=
-        {geo?.walkablePortal ?? '(none)'}
+        {geo?.walkablePortal != null ? `${geo.walkablePortal}km` : '(none)'}
       </span>
       <span className="block">
         [connectivity]{' '}
