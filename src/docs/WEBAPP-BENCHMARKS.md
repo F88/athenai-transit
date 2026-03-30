@@ -151,13 +151,13 @@ Benchmark:
 
 #### Raw data (5 runs)
 
-| Run | merge | enrich | InBounds | Nearby | Bench total |
-| --- | ----- | ------ | -------- | ------ | ----------- |
-| 1   | 36ms  | 61ms   | 5.60ms   | 5.00ms | 104.50ms    |
-| 2   | 42ms  | 54ms   | 4.10ms   | 4.40ms | 109.00ms    |
-| 3   | 38ms  | 55ms   | 6.80ms\* | 4.60ms | 104.50ms    |
-| 4   | 38ms  | 58ms   | 4.70ms   | 4.60ms | 105.30ms    |
-| 5   | 40ms  | 59ms   | 5.10ms   | 4.90ms | 103.70ms    |
+| Run | merge | enrich | shapes (lazy) | InBounds | Nearby | Bench total |
+| --- | ----- | ------ | ------------- | -------- | ------ | ----------- |
+| 1   | 36ms  | 61ms   | 47ms          | 5.60ms   | 5.00ms | 104.50ms    |
+| 2   | 42ms  | 54ms   | 48ms          | 4.10ms   | 4.40ms | 109.00ms    |
+| 3   | 38ms  | 55ms   | 53ms          | 6.80ms\* | 4.60ms | 104.50ms    |
+| 4   | 38ms  | 58ms   | 48ms          | 4.70ms   | 4.60ms | 105.30ms    |
+| 5   | 40ms  | 59ms   | 47ms          | 5.10ms   | 4.90ms | 103.70ms    |
 
 \*Run 3 InBounds=6.80ms is an outlier.
 

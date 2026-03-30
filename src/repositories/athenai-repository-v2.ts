@@ -615,10 +615,6 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       `mergeSources: ${mergeMs}ms (stops=${merged.stops.length} routes=${merged.routeMap.size} stopsMetaMap=${merged.stopsMetaMap.size})`,
     );
 
-    logger.info(
-      `Initialized in ${Math.round(tMerge - t0)}ms (fetch=${fetchMs}ms, merge=${mergeMs}ms): stops=${merged.stops.length} routes=${merged.routeMap.size} timetable_stops=${Object.keys(merged.timetable).length}`,
-    );
-
     for (const meta of merged.sourceMetas) {
       logger.info(
         `[${meta.id}] ${meta.name}: validity=${meta.validity.startDate}-${meta.validity.endDate} stops=${meta.stats.stopCount} routes=${meta.stats.routeCount} types=[${meta.routeTypes.join(',')}]`,
@@ -628,6 +624,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     // Enrich stopsMetaMap with insights (stopStats + stopGeo).
     // Errors are silently ignored — stats/geo are optional enhancements.
     await enrichStopInsights(merged.stopsMetaMap, loadResult.loaded, dataSource);
+    const enrichMs = Math.round(performance.now() - tMerge);
+
+    logger.info(
+      `Initialized in ${Math.round(performance.now() - t0)}ms (fetch=${fetchMs}ms, merge=${mergeMs}ms, enrich=${enrichMs}ms): stops=${merged.stops.length} routes=${merged.routeMap.size} timetable_stops=${Object.keys(merged.timetable).length}`,
+    );
 
     const repository = new AthenaiRepositoryV2(merged);
     // Start background shapes loading after repository creation
