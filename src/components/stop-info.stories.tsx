@@ -1,66 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Agency, RouteType, Stop } from '../types/app/transit';
+import type { RouteType } from '../types/app/transit';
+import {
+  agencyGx,
+  agencyOretetsu,
+  agencyTobus,
+  allAgencies,
+  baseStop,
+  longNameStop,
+  storyMapCenter,
+} from '../stories/fixtures';
 import { StopInfo } from './stop-info';
-
-// --- Fixtures ---
-
-const agency: Agency = {
-  agency_id: 'agency-001',
-  agency_name: '都営バス',
-  agency_short_name: '都営',
-  agency_names: {},
-  agency_short_names: {},
-  agency_url: '',
-  agency_lang: 'ja',
-  agency_timezone: 'Asia/Tokyo',
-  agency_fare_url: '',
-  agency_colors: [{ bg: '#00A850', text: '#FFFFFF' }],
-};
-
-const agency2: Agency = {
-  agency_id: 'agency-002',
-  agency_name: '京王バス',
-  agency_short_name: '京王',
-  agency_names: {},
-  agency_short_names: {},
-  agency_url: '',
-  agency_lang: 'ja',
-  agency_timezone: 'Asia/Tokyo',
-  agency_fare_url: '',
-  agency_colors: [{ bg: '#E60012', text: '#FFFFFF' }],
-};
-
-const baseStop: Stop = {
-  stop_id: 'stop-001',
-  stop_name: '錦糸町駅前',
-  stop_names: {
-    ja: '錦糸町駅前',
-    'ja-Hrkt': 'きんしちょうえきまえ',
-    en: 'Kinshichō Sta.',
-  },
-  stop_lat: 35.6955,
-  stop_lon: 139.8135,
-  location_type: 0,
-  agency_id: 'agency-001',
-};
-
-/** Long stop name with 6-language support (matching Kyoto City Bus GTFS coverage). */
-const longNameStop: Stop = {
-  ...baseStop,
-  stop_id: 'stop-long',
-  stop_name: '東京都立産業技術研究センター前',
-  stop_names: {
-    ja: '東京都立産業技術研究センター前',
-    'ja-Hrkt': 'とうきょうとりつさんぎょうぎじゅつけんきゅうせんたーまえ',
-    en: 'Tokyo Metropolitan Industrial Technology Research Institute',
-    ko: '도쿄도립산업기술연구센터앞',
-    'zh-Hans': '东京都立产业技术研究中心前',
-    'zh-Hant': '東京都立產業技術研究中心前',
-  },
-};
-
-/** Map center ~70m west of the stop. */
-const mapCenter = { lat: 35.6955, lng: 139.8127 };
 
 // --- Meta ---
 
@@ -70,8 +19,8 @@ const meta = {
   args: {
     stop: baseStop,
     routeTypes: [3] as RouteType[],
-    agencies: [agency],
-    mapCenter,
+    agencies: [agencyTobus],
+    mapCenter: storyMapCenter,
     infoLevel: 'normal',
     isDropOffOnly: false,
   },
@@ -124,13 +73,13 @@ export const Tram: Story = {
 };
 
 export const MultiType: Story = {
-  args: { routeTypes: [0, 3] as RouteType[], agencies: [agency, agency2] },
+  args: { routeTypes: [0, 3] as RouteType[], agencies: [agencyGx, agencyOretetsu] },
 };
 
 export const MultiTypeDropOff: Story = {
   args: {
     routeTypes: [0, 3] as RouteType[],
-    agencies: [agency, agency2],
+    agencies: [agencyGx, agencyOretetsu],
     isDropOffOnly: true,
   },
 };
@@ -163,26 +112,30 @@ export const LongNameMultiType: Story = {
   args: {
     stop: longNameStop,
     routeTypes: [0, 3] as RouteType[],
-    agencies: [agency, agency2],
+    agencies: [agencyGx, agencyOretetsu],
   },
 };
 
-export const LongNameFull: Story = {
-  args: {
-    stop: longNameStop,
-    routeTypes: [0, 3] as RouteType[],
-    agencies: [agency, agency2],
-    isDropOffOnly: true,
-  },
+/** Kitchen sink: long name, multi-type, all 4 agencies, drop-off-only — all elements visible. */
+const kitchenSinkArgs = {
+  stop: longNameStop,
+  routeTypes: [0, 3] as RouteType[],
+  agencies: allAgencies,
+  isDropOffOnly: true,
 };
 
-/** Long name with verbose info level — shows ID, all subNames, and all badges. */
-export const LongNameVerbose: Story = {
-  args: {
-    stop: longNameStop,
-    routeTypes: [0, 3] as RouteType[],
-    agencies: [agency, agency2],
-    isDropOffOnly: true,
-    infoLevel: 'verbose',
-  },
+export const KitchenSinkInfoLevelSimple: Story = {
+  args: { ...kitchenSinkArgs, infoLevel: 'simple' as const },
+};
+
+export const KitchenSinkInfoLevelNormal: Story = {
+  args: { ...kitchenSinkArgs, infoLevel: 'normal' as const },
+};
+
+export const KitchenSinkInfoLevelDetailed: Story = {
+  args: { ...kitchenSinkArgs, infoLevel: 'detailed' as const },
+};
+
+export const KitchenSinkInfoLevelVerbose: Story = {
+  args: { ...kitchenSinkArgs, infoLevel: 'verbose' as const },
 };
