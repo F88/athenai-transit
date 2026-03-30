@@ -58,9 +58,12 @@ export function StopInfo({
   return (
     <div className="min-w-0 flex-1">
       {info.isVerboseEnabled && (
-        <div className="mb-1">
-          <IdBadge>{stop.stop_id}</IdBadge>
-        </div>
+        <>
+          <div className="mb-1 flex gap-1">
+            <IdBadge>{stop.stop_id}</IdBadge>
+            {stop.parent_station && <IdBadge>p:{stop.parent_station}</IdBadge>}
+          </div>
+        </>
       )}
       {stopNames.subNames.length > 0 && (
         <p className="m-0 mb-0.5 text-xs font-normal text-[#888] dark:text-gray-400">
