@@ -1,6 +1,6 @@
 {
   "sourceName": "keio-bus",
-  "checkedAt": "2026-03-30T05:42:26.040Z",
+  "checkedAt": "2026-03-30T12:15:37.836Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260126&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]",
     "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260401&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]"
