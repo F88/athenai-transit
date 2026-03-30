@@ -37,11 +37,11 @@ export const NoData: Story = {
 // --- Geo variants ---
 
 export const WithWalkablePortal: Story = {
-  args: { geo: { ...sampleGeo, walkablePortal: 0.35 } },
+  args: { geo: { nearestRoute: 0.12, walkablePortal: 0.35 } },
 };
 
 export const WithoutWalkablePortal: Story = {
-  args: { geo: { ...sampleGeo, walkablePortal: undefined } },
+  args: { geo: { nearestRoute: 0.12 } },
 };
 
 export const WithoutConnectivity: Story = {
