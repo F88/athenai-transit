@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.03.30]
+
 ### Added
 
 - 近くののりばに方角を表示するようにした。DistanceBadge に三角形の方角インジケーターを追加。
