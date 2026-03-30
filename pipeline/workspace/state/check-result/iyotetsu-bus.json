@@ -1,10 +1,15 @@
 {
   "sourceName": "iyotetsu-bus",
-  "checkedAt": "2026-03-30T05:42:26.041Z",
-  "resourceUrls": [],
+  "checkedAt": "2026-03-30T12:15:37.836Z",
+  "resourceUrls": [
+    "https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260330&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]"
+  ],
   "result": "critical",
-  "warnings": [],
+  "warnings": [
+    "NEW_RESOURCE"
+  ],
   "errors": [
-    "EXPIRED"
+    "NO_VALID_DATA",
+    "REMOVED"
   ]
 }
