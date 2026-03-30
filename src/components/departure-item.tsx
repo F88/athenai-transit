@@ -5,10 +5,11 @@ import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
 import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
-import { formatDateKey, minutesToDate } from '../domain/transit/calendar-utils';
+import { minutesToDate } from '../domain/transit/calendar-utils';
 import { hasBoardableDeparture } from '../domain/transit/timetable-utils';
 import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
+import { VerboseContextualTimetableEntries } from './verbose/verbose-contextual-timetable-entry';
 
 interface DepartureItemProps {
   /** Timetable entries for a single route+headsign group. */
@@ -114,23 +115,13 @@ export function DepartureItem({
           </span>
         ))}
       </div>
+      {/* Verbose data */}
       {info.isVerboseEnabled && (
-        <div className="mt-1 space-y-0.5 pl-1">
-          {displayEntries.map((e, i) => (
-            <div key={i} className="text-[9px] text-[#999] dark:text-gray-500">
-              {formatAbsoluteTime(displayTimes[i])}
-              {` pt=${e.boarding.pickupType} dt=${e.boarding.dropOffType}`}
-              {e.patternPosition.isTerminal && ' TERM'}
-              {e.patternPosition.isOrigin && ' ORIG'}
-              {` [${e.patternPosition.stopIndex + 1}/${e.patternPosition.totalStops}]`}
-              {` d=${e.schedule.departureMinutes}`}
-              {e.schedule.arrivalMinutes !== e.schedule.departureMinutes &&
-                ` a=${e.schedule.arrivalMinutes}`}
-              {e.routeDirection.direction !== undefined && ` dir=${e.routeDirection.direction}`}
-              {` sd=${formatDateKey(e.serviceDate)}`}
-            </div>
-          ))}
-        </div>
+        <VerboseContextualTimetableEntries
+          //
+          entries={displayEntries}
+          // disableVerbose={true}
+        />
       )}
     </div>
   );

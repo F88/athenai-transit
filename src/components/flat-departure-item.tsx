@@ -5,9 +5,10 @@ import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
 import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
 import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
-import { formatDateKey, minutesToDate } from '../domain/transit/calendar-utils';
+import { minutesToDate } from '../domain/transit/calendar-utils';
 import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
+import { VerboseContextualTimetableEntry } from './verbose/verbose-contextual-timetable-entry';
 
 interface FlatDepartureItemProps {
   /** The timetable entry to display. */
@@ -109,18 +110,13 @@ export function FlatDepartureItem({
           />
         )}
       </div>
+      {/* Verbose data */}
       {info.isVerboseEnabled && (
-        <div className="mt-0.5 pl-18 text-[9px] text-[#999] dark:text-gray-500">
-          pt={entry.boarding.pickupType} dt={entry.boarding.dropOffType}
-          {entry.patternPosition.isTerminal && ' TERM'}
-          {entry.patternPosition.isOrigin && ' ORIG'}
-          {` [${entry.patternPosition.stopIndex + 1}/${entry.patternPosition.totalStops}]`}
-          {` d=${entry.schedule.departureMinutes}`}
-          {entry.schedule.arrivalMinutes !== entry.schedule.departureMinutes &&
-            ` a=${entry.schedule.arrivalMinutes}`}
-          {entry.routeDirection.direction !== undefined && ` dir=${entry.routeDirection.direction}`}
-          {` sd=${formatDateKey(entry.serviceDate)}`}
-        </div>
+        <VerboseContextualTimetableEntry
+          //
+          entry={entry}
+          // disableVerbose={true}
+        />
       )}
     </div>
   );
