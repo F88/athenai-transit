@@ -32,6 +32,10 @@ and this project adheres to [CalVer](https://calver.org/).
 - MockRepository に `wheelchair_boarding`, `platform_code` テストデータを追加。
 - Repository: InsightsBundle の stopStats と GlobalInsightsBundle の stopGeo を StopWithMeta にマッピング。`geo` を StopWithContext から StopWithMeta に移動し、初期化時に同期的にロード。
 
+### Performance
+
+- BottomSheet の NearbyStop カードを IntersectionObserver で遅延レンダリング。最初の 6 件のみ即座にマウントし、残りはスクロール時に遅延マウント。
+
 ### Fixed
 
 - Canvas mode (lightweight) の選択時 stop tooltip がダークモード未対応だった問題を修正。`L.popup` から `L.tooltip` に統一し、DOM mode とレイアウト・テーマを一致させた。
