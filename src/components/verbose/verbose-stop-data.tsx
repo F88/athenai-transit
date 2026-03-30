@@ -1,12 +1,16 @@
+import type { StopDisplayNames } from '../../domain/transit/get-stop-display-names';
 import type { Agency, Route, RouteType, Stop } from '../../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../../types/app/transit-composed';
+import { VerboseStopDisplayNames } from './verbose-stop-display-names';
 
 /**
  * Debug dump of all StopInfo props.
+ * Includes its own details/summary for collapsed display.
  * Only rendered in verbose info level.
  */
 export function VerboseStopData({
   stop,
+  stopNames,
   isDropOffOnly,
   distance,
   bearing,
@@ -17,6 +21,7 @@ export function VerboseStopData({
   geo,
 }: {
   stop: Stop;
+  stopNames: StopDisplayNames;
   isDropOffOnly: boolean;
   distance?: number;
   bearing: number | null;
@@ -27,18 +32,26 @@ export function VerboseStopData({
   geo?: StopWithContext['geo'];
 }) {
   return (
-    <div className="mt-0.5 space-y-0.5 overflow-x-auto rounded border border-dashed border-gray-300 p-1.5 text-[9px] whitespace-nowrap text-[#999] dark:border-gray-600 dark:text-gray-500">
-      <VerboseStop stop={stop} isDropOffOnly={isDropOffOnly} />
-      <p className="m-0">
-        [position] distance={distance ?? '?'}m bearing=
-        {bearing != null ? `${Math.round(bearing)}°` : '?'}
-        {` routeTypes=[${routeTypes.join(',')}]`}
-      </p>
-      <VerboseAgencies agencies={agencies} />
-      <VerboseRoutes routes={routes} />
-      <VerboseStats stats={stats} />
-      <VerboseGeo geo={geo} />
-    </div>
+    <details className="mt-1 text-[9px] font-normal text-[#999] dark:text-gray-500">
+      <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+        [StopData]
+      </summary>
+      <div className="mt-0.5 space-y-0.5">
+        <div className="overflow-x-auto rounded border border-dashed border-gray-300 p-1.5 whitespace-nowrap dark:border-gray-600">
+          <VerboseStop stop={stop} isDropOffOnly={isDropOffOnly} />
+          <p className="m-0">
+            [position] distance={distance ?? '?'}m bearing=
+            {bearing != null ? `${Math.round(bearing)}°` : '?'}
+            {` routeTypes=[${routeTypes.join(',')}]`}
+          </p>
+          <VerboseAgencies agencies={agencies} />
+          <VerboseRoutes routes={routes} />
+          <VerboseStats stats={stats} />
+          <VerboseGeo geo={geo} />
+        </div>
+        <VerboseStopDisplayNames names={stopNames} />
+      </div>
+    </details>
   );
 }
 
@@ -46,7 +59,8 @@ function VerboseStop({ stop, isDropOffOnly }: { stop: Stop; isDropOffOnly: boole
   return (
     <>
       <p className="m-0">
-        [stop] agency={stop.agency_id} lat={stop.stop_lat} lon={stop.stop_lon} loc=
+        [stop] id={stop.stop_id} agency={stop.agency_id} lat={stop.stop_lat} lon={stop.stop_lon}{' '}
+        loc=
         {stop.location_type}
         {stop.wheelchair_boarding != null && ` wb=${stop.wheelchair_boarding}`}
         {stop.parent_station && ` parent=${stop.parent_station}`}

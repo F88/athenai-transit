@@ -8,6 +8,7 @@ import { Clock, Signpost } from 'lucide-react';
 import { DepartureItem } from './departure-item';
 import { FlatDepartureItem } from './flat-departure-item';
 import { StopInfo } from './stop-info';
+import { VerboseNearbyStopSummary } from './verbose/verbose-nearby-stop-summary';
 
 export interface NearbyStopProps {
   data: StopWithContext;
@@ -82,6 +83,15 @@ export function NearbyStop({
       className={`mb-2 cursor-pointer rounded-lg px-3 pt-2.5 pb-3 last:mb-0 ${isSelected ? 'border border-[#90caf9] bg-[#e3f2fd] dark:border-blue-700 dark:bg-blue-950' : 'bg-[#f5f7fa] dark:bg-gray-800'}`}
       onClick={() => onStopSelected(stop.stop_id)}
     >
+      {info.isVerboseEnabled && (
+        <VerboseNearbyStopSummary
+          departures={departures}
+          isBoardableOnServiceDay={isBoardableOnServiceDay}
+          isSelected={isSelected}
+          isAnchor={isAnchor}
+          viewId={viewId}
+        />
+      )}
       <div className="m-0 mb-1.5 flex items-start gap-1">
         <StopInfo
           stop={stop}
@@ -129,14 +139,7 @@ export function NearbyStop({
           )}
         </div>
       </div>
-      {info.isVerboseEnabled && departures.length > 0 && (
-        <p className="m-0 mb-1 text-[9px] text-[#999] dark:text-gray-500">
-          entries={departures.length}
-          {` boardable=${departures.filter((e) => e.boarding.pickupType !== 1 && !e.patternPosition.isTerminal).length}`}
-          {` dropOffOnly=${departures.filter((e) => e.boarding.pickupType === 1 || e.patternPosition.isTerminal).length}`}
-          {isStopDropOffOnly && ' (ALL DROP-OFF ONLY)'}
-        </p>
-      )}
+
       {hasUnknownHeadsign && (
         <p className="m-0 mb-1 text-[11px] text-amber-600 dark:text-amber-400">
           行先が表示されない路線があります

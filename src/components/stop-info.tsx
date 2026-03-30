@@ -13,7 +13,6 @@ import { IdBadge } from './badge/id-badge';
 import { RouteBadge } from './badge/route-badge';
 import { StopMetrics } from './stop-metrics';
 import { VerboseStopData } from './verbose/verbose-stop-data';
-import { VerboseStopDisplayNames } from './verbose/verbose-stop-display-names';
 
 interface StopInfoProps {
   stop: Stop;
@@ -59,6 +58,20 @@ export function StopInfo({
 
   return (
     <div className="min-w-0 flex-1">
+      {info.isVerboseEnabled && (
+        <VerboseStopData
+          stop={stop}
+          stopNames={stopNames}
+          isDropOffOnly={isDropOffOnly}
+          distance={distance}
+          bearing={bearing}
+          routeTypes={routeTypes}
+          agencies={agencies}
+          routes={routes}
+          stats={stats}
+          geo={geo}
+        />
+      )}
       {info.isVerboseEnabled && (
         <>
           <div className="mb-1 flex gap-1">
@@ -116,29 +129,6 @@ export function StopInfo({
             <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} size="xs" />
           ))}
         </div>
-      )}
-
-      {/* Verbose data */}
-      {info.isVerboseEnabled && (
-        <details className="mt-1 text-[9px] font-normal text-[#999] dark:text-gray-500">
-          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-            [StopData]
-          </summary>
-          <div className="mt-0.5 space-y-0.5">
-            <VerboseStopData
-              stop={stop}
-              isDropOffOnly={isDropOffOnly}
-              distance={distance}
-              bearing={bearing}
-              routeTypes={routeTypes}
-              agencies={agencies}
-              routes={routes}
-              stats={stats}
-              geo={geo}
-            />
-            <VerboseStopDisplayNames names={stopNames} />
-          </div>
-        </details>
       )}
     </div>
   );
