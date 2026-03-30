@@ -51,7 +51,7 @@ const agency: Agency = {
   agency_lang: 'ja',
   agency_timezone: 'Asia/Tokyo',
   agency_fare_url: '',
-  agency_colors: [{ bg: '#00A850', text: '#FFFFFF' }],
+  agency_colors: [{ bg: '00A850', text: 'FFFFFF' }],
 };
 
 /** Create a ContextualTimetableEntry for stories. */

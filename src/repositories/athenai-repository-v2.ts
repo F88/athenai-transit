@@ -623,8 +623,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
     // Enrich stopsMetaMap with insights (stopStats + stopGeo).
     // Errors are silently ignored — stats/geo are optional enhancements.
+    const tEnrich = performance.now();
     await enrichStopInsights(merged.stopsMetaMap, loadResult.loaded, dataSource);
-    const enrichMs = Math.round(performance.now() - tMerge);
+    const enrichMs = Math.round(performance.now() - tEnrich);
 
     logger.info(
       `Initialized in ${Math.round(performance.now() - t0)}ms (fetch=${fetchMs}ms, merge=${mergeMs}ms, enrich=${enrichMs}ms): stops=${merged.stops.length} routes=${merged.routeMap.size} timetable_stops=${Object.keys(merged.timetable).length}`,

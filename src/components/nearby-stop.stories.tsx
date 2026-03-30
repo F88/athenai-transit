@@ -20,7 +20,7 @@ const agency: Agency = {
   agency_lang: 'ja',
   agency_timezone: 'Asia/Tokyo',
   agency_fare_url: '',
-  agency_colors: [{ bg: '#00A850', text: '#FFFFFF' }],
+  agency_colors: [{ bg: '00A850', text: 'FFFFFF' }],
 };
 
 const agency2: Agency = {
@@ -33,7 +33,7 @@ const agency2: Agency = {
   agency_lang: 'ja',
   agency_timezone: 'Asia/Tokyo',
   agency_fare_url: '',
-  agency_colors: [{ bg: '#E60012', text: '#FFFFFF' }],
+  agency_colors: [{ bg: 'E60012', text: 'FFFFFF' }],
 };
 
 const busRoute: Route = {

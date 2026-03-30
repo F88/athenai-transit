@@ -2,7 +2,7 @@
  * Shared story fixtures for Storybook.
  *
  * Provides realistic test data based on actual GTFS sources.
- * Import from `../../stories/fixtures` in story files.
+ * Import from `src/stories/fixtures` in story files.
  */
 import type { Agency, Route, Stop } from '../types/app/transit';
 import type {
