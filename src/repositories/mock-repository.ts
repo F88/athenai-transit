@@ -88,6 +88,8 @@ const STOPS: Stop[] = [
     stop_lon: 139.7699,
     location_type: 1,
     agency_id: 'mock:aoba',
+    wheelchair_boarding: 1,
+    platform_code: '1',
   },
   {
     stop_id: 'sta_central_s',
@@ -101,6 +103,8 @@ const STOPS: Stop[] = [
     stop_lon: 139.7703,
     location_type: 1,
     agency_id: 'mock:aoba',
+    wheelchair_boarding: 2,
+    platform_code: '2',
   },
   {
     stop_id: 'sta_hill',
@@ -110,6 +114,7 @@ const STOPS: Stop[] = [
     stop_lon: 139.7579,
     location_type: 1,
     agency_id: 'mock:aoba',
+    wheelchair_boarding: 1,
   },
   {
     stop_id: 'sta_east',

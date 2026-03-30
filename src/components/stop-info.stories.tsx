@@ -105,6 +105,30 @@ export const Verbose: Story = {
   args: { infoLevel: 'verbose' },
 };
 
+// --- Platform code ---
+
+export const PlatformCode: Story = {
+  args: { stop: { ...baseStop, platform_code: '2' } },
+};
+
+export const PlatformCodeAlpha: Story = {
+  args: { stop: { ...baseStop, platform_code: 'G' } },
+};
+
+// --- Wheelchair boarding ---
+
+export const WheelchairAccessible: Story = {
+  args: { stop: { ...baseStop, wheelchair_boarding: 1 } },
+};
+
+export const WheelchairNotAccessible: Story = {
+  args: { stop: { ...baseStop, wheelchair_boarding: 2 } },
+};
+
+export const WheelchairUnknown: Story = {
+  args: { stop: { ...baseStop, wheelchair_boarding: 0 } },
+};
+
 // --- Long name ---
 
 export const LongName: Story = {

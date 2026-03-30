@@ -6,6 +6,7 @@ import { bearingDeg } from '../domain/transit/distance';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
+import { Accessibility } from 'lucide-react';
 import { AgencyBadge } from './badge/agency-badge';
 import { DistanceBadge } from './badge/distance-badge';
 import { IdBadge } from './badge/id-badge';
@@ -73,8 +74,23 @@ export function StopInfo({
       <div className="m-0 flex flex-wrap items-center gap-1 text-xl font-semibold text-[#1565c0] dark:text-blue-400">
         <span className="mr-1">{routeTypesEmoji(routeTypes)}</span>
         <span>{stopNames.name}</span>
+        {stop.platform_code && (
+          <span className="shrink-0 rounded border border-amber-400 bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-600 dark:bg-amber-900 dark:text-amber-300">
+            {stop.platform_code}
+          </span>
+        )}
         {distanceRounded != null && distanceRounded >= 10 && (
           <DistanceBadge meters={distanceRounded} bearingDeg={bearing} showDirection />
+        )}
+        {stop.wheelchair_boarding === 1 && (
+          <span className="shrink-0 rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+            <Accessibility size={14} strokeWidth={2} />
+          </span>
+        )}
+        {stop.wheelchair_boarding === 2 && (
+          <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-gray-700 opacity-30 dark:bg-gray-700 dark:text-gray-300">
+            <Accessibility size={14} strokeWidth={2} />
+          </span>
         )}
         {isDropOffOnly && (
           <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
