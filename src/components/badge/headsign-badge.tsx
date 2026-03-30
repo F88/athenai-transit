@@ -59,7 +59,7 @@ export function HeadsignBadge({
   const title = label !== headsign ? headsign : undefined;
 
   return (
-    <span className="inline-flex flex-col gap-0.5 font-normal">
+    <div className="inline-flex flex-col gap-0.5 font-normal">
       <span className="inline-flex items-center gap-0.5">
         <span
           className={cn(
@@ -87,6 +87,6 @@ export function HeadsignBadge({
           </div>
         </details>
       )}
-    </span>
+    </div>
   );
 }

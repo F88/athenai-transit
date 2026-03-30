@@ -53,7 +53,7 @@ export function RouteBadge({
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;
 
   return (
-    <span className={cn('inline-flex flex-col gap-0.5 font-normal', className)}>
+    <div className={cn('inline-flex flex-col gap-0.5 font-normal', className)}>
       <span className="inline-flex items-center gap-0.5">
         <span
           className={cn(
@@ -75,6 +75,6 @@ export function RouteBadge({
           </div>
         </details>
       )}
-    </span>
+    </div>
   );
 }

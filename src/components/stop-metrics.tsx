@@ -46,7 +46,7 @@ export function StopMetrics({ stats, geo, infoLevel }: StopMetricsProps) {
               className="inline-flex shrink-0 items-center gap-0.5 rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300"
             >
               <Waypoints size={12} strokeWidth={2} />
-              {c.routeCount}路線 {c.freq}便 {c.stopCount}のりば (300m圏内)
+              {c.routeCount}路線 {c.freq}便 {c.stopCount}のりば (300m)
             </span>
           ))}
         {info.isDetailedEnabled && geo?.nearestRoute != null && (

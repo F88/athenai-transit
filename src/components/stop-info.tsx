@@ -105,20 +105,20 @@ export function StopInfo({
               agency={agency}
               infoLevel={infoLevel}
               //
-              // size="xs"
               size="sm"
-              // size="default"
             />
           ))}
       </div>
       <StopMetrics stats={stats} geo={geo} infoLevel={infoLevel} />
-      {info.isVerboseEnabled && routes && routes.length > 0 && (
+      {info.isDetailedEnabled && routes && routes.length > 0 && (
         <div className="mt-0.5 flex flex-wrap items-center gap-1">
           {routes.map((r) => (
             <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} size="xs" />
           ))}
         </div>
       )}
+
+      {/* Verbose data */}
       {info.isVerboseEnabled && (
         <details className="mt-1 text-[9px] font-normal text-[#999] dark:text-gray-500">
           <summary className="cursor-pointer select-none">[StopData]</summary>
