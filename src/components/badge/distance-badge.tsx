@@ -23,7 +23,7 @@ interface DistanceBadgeProps {
 export function DistanceBadge({ meters, bearingDeg, showDirection = false }: DistanceBadgeProps) {
   return (
     <span
-      className="ml-2 inline-flex items-center gap-0.5 text-xl font-bold whitespace-nowrap"
+      className="ml-2 inline-flex items-center gap-0.5 align-middle text-xl font-bold whitespace-nowrap"
       style={{ color: distanceColor(meters) }}
     >
       {showDirection && bearingDeg != null && (
