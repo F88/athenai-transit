@@ -1,0 +1,335 @@
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ContextualTimetableEntry } from '../types/app/transit-composed';
+import type { Agency, Route, Stop } from '../types/app/transit';
+import type { StopWithContext } from '../types/app/transit-composed';
+import { fn } from 'storybook/test';
+import { NearbyStop } from './nearby-stop';
+
+// --- Fixtures ---
+
+const agency: Agency = {
+  agency_id: 'agency-001',
+  agency_name: '都営バス',
+  agency_short_name: '都営',
+  agency_names: {},
+  agency_short_names: {},
+  agency_url: '',
+  agency_lang: 'ja',
+  agency_timezone: 'Asia/Tokyo',
+  agency_fare_url: '',
+  agency_colors: [{ bg: '#00A850', text: '#FFFFFF' }],
+};
+
+const agency2: Agency = {
+  agency_id: 'agency-002',
+  agency_name: '京王バス',
+  agency_short_name: '京王',
+  agency_names: {},
+  agency_short_names: {},
+  agency_url: '',
+  agency_lang: 'ja',
+  agency_timezone: 'Asia/Tokyo',
+  agency_fare_url: '',
+  agency_colors: [{ bg: '#E60012', text: '#FFFFFF' }],
+};
+
+const busRoute: Route = {
+  route_id: 'route-001',
+  route_short_name: '都02',
+  route_long_name: '大塚駅〜錦糸町駅前',
+  route_names: {},
+  route_type: 3,
+  route_color: '1976D2',
+  route_text_color: 'FFFFFF',
+  agency_id: 'agency-001',
+};
+
+const busRoute2: Route = {
+  route_id: 'route-002',
+  route_short_name: '都08',
+  route_long_name: '日暮里駅〜錦糸町駅前',
+  route_names: {},
+  route_type: 3,
+  route_color: '00A850',
+  route_text_color: 'FFFFFF',
+  agency_id: 'agency-001',
+};
+
+const tramRoute: Route = {
+  route_id: 'route-003',
+  route_short_name: '荒川線',
+  route_long_name: '三ノ輪橋〜早稲田',
+  route_names: {},
+  route_type: 0,
+  route_color: 'E60012',
+  route_text_color: 'FFFFFF',
+  agency_id: 'agency-002',
+};
+
+const baseStop: Stop = {
+  stop_id: 'stop-001',
+  stop_name: '錦糸町駅前',
+  stop_names: { ja: '錦糸町駅前', 'ja-Hrkt': 'きんしちょうえきまえ', en: 'Kinshichō Sta.' },
+  stop_lat: 35.6955,
+  stop_lon: 139.8135,
+  location_type: 0,
+  agency_id: 'agency-001',
+};
+
+/** now = 14:25 */
+const now = new Date('2026-03-30T14:25:00');
+
+/** Map center ~70m west of the stop. */
+const mapCenter = { lat: 35.6955, lng: 139.8127 };
+
+function createEntry(
+  overrides: Partial<{
+    departureMinutes: number;
+    arrivalMinutes: number;
+    route: Route;
+    headsign: string;
+    pickupType: number;
+    dropOffType: number;
+    isTerminal: boolean;
+    isOrigin: boolean;
+    stopIndex: number;
+    totalStops: number;
+  }> = {},
+): ContextualTimetableEntry {
+  const depMin = overrides.departureMinutes ?? 870;
+  return {
+    schedule: {
+      departureMinutes: depMin,
+      arrivalMinutes: overrides.arrivalMinutes ?? depMin,
+    },
+    routeDirection: {
+      route: overrides.route ?? busRoute,
+      headsign: overrides.headsign ?? '大塚駅前',
+      headsign_names: {},
+    },
+    boarding: {
+      pickupType: overrides.pickupType ?? 0,
+      dropOffType: overrides.dropOffType ?? 0,
+    },
+    patternPosition: {
+      stopIndex: overrides.stopIndex ?? 3,
+      totalStops: overrides.totalStops ?? 15,
+      isTerminal: overrides.isTerminal ?? false,
+      isOrigin: overrides.isOrigin ?? false,
+    },
+    serviceDate: new Date('2026-03-30T00:00:00'),
+  };
+}
+
+function createStopWithContext(
+  overrides: Partial<{
+    stop: Stop;
+    routeTypes: number[];
+    departures: ContextualTimetableEntry[];
+    isBoardableOnServiceDay: boolean;
+    agencies: Agency[];
+    routes: Route[];
+  }> = {},
+): StopWithContext {
+  return {
+    stop: overrides.stop ?? baseStop,
+    routeTypes: overrides.routeTypes ?? [3],
+    departures: overrides.departures ?? [
+      createEntry({ departureMinutes: 870, headsign: '大塚駅前' }),
+      createEntry({ departureMinutes: 885, headsign: '大塚駅前' }),
+      createEntry({ departureMinutes: 900, headsign: '大塚駅前' }),
+      createEntry({ departureMinutes: 872, route: busRoute2, headsign: '日暮里駅前' }),
+      createEntry({ departureMinutes: 892, route: busRoute2, headsign: '日暮里駅前' }),
+    ],
+    isBoardableOnServiceDay: overrides.isBoardableOnServiceDay ?? true,
+    agencies: overrides.agencies ?? [agency],
+    routes: overrides.routes ?? [busRoute, busRoute2],
+  };
+}
+
+// --- Meta ---
+
+const meta = {
+  title: 'BottomSheet/NearbyStop',
+  component: NearbyStop,
+  args: {
+    data: createStopWithContext(),
+    isSelected: false,
+    now,
+    mapCenter,
+    infoLevel: 'normal',
+    viewId: 'route-headsign',
+    isAnchor: false,
+    onStopSelected: fn(),
+    onShowTimetable: fn(),
+    onShowStopTimetable: fn(),
+    onToggleAnchor: fn(),
+  },
+  argTypes: {
+    infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
+    viewId: { control: 'inline-radio', options: ['stop', 'route-headsign'] },
+    isSelected: { control: 'boolean' },
+    isAnchor: { control: 'boolean' },
+  },
+  decorators: [
+    (Story) => (
+      <div className="max-w-md">
+        <Story />
+      </div>
+    ),
+  ],
+} satisfies Meta<typeof NearbyStop>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+// --- Basic ---
+
+export const Default: Story = {};
+
+export const Selected: Story = {
+  args: { isSelected: true },
+};
+
+export const Anchored: Story = {
+  args: { isAnchor: true },
+};
+
+export const SelectedAndAnchored: Story = {
+  args: { isSelected: true, isAnchor: true },
+};
+
+// --- View modes ---
+
+/** T1: Stop view — flat chronological list, max 5 items. */
+export const StopView: Story = {
+  args: { viewId: 'stop' },
+};
+
+/** T2: Route+Headsign view — grouped by route and headsign. */
+export const RouteHeadsignView: Story = {
+  args: { viewId: 'route-headsign' },
+};
+
+// --- Distance & direction ---
+
+export const Near: Story = {
+  args: { mapCenter: { lat: 35.6955, lng: 139.8134 } },
+};
+
+export const Far: Story = {
+  args: { mapCenter: { lat: 35.691, lng: 139.805 } },
+};
+
+export const NoMapCenter: Story = {
+  args: { mapCenter: null },
+};
+
+// --- Route types ---
+
+/** Stop served by both bus and tram. */
+export const MultipleRouteTypes: Story = {
+  args: {
+    data: createStopWithContext({
+      routeTypes: [0, 3],
+      departures: [
+        createEntry({ departureMinutes: 870, headsign: '大塚駅前' }),
+        createEntry({ departureMinutes: 875, route: tramRoute, headsign: '早稲田' }),
+        createEntry({ departureMinutes: 885, headsign: '大塚駅前' }),
+        createEntry({ departureMinutes: 890, route: tramRoute, headsign: '早稲田' }),
+      ],
+      agencies: [agency, agency2],
+      routes: [busRoute, tramRoute],
+    }),
+  },
+};
+
+// --- Special states ---
+
+export const DropOffOnly: Story = {
+  args: {
+    data: createStopWithContext({
+      isBoardableOnServiceDay: false,
+      departures: [
+        createEntry({
+          departureMinutes: 870,
+          pickupType: 1,
+          isTerminal: true,
+          arrivalMinutes: 870,
+        }),
+        createEntry({
+          departureMinutes: 885,
+          pickupType: 1,
+          isTerminal: true,
+          arrivalMinutes: 885,
+          route: busRoute2,
+          headsign: '日暮里駅前',
+        }),
+      ],
+    }),
+  },
+};
+
+export const NoDepartures: Story = {
+  args: {
+    data: createStopWithContext({ departures: [] }),
+  },
+};
+
+export const UnknownHeadsign: Story = {
+  args: {
+    data: createStopWithContext({
+      departures: [
+        createEntry({ departureMinutes: 870, headsign: '' }),
+        createEntry({ departureMinutes: 885, headsign: '大塚駅前' }),
+      ],
+    }),
+  },
+};
+
+// --- Info levels ---
+
+export const Detailed: Story = {
+  args: { infoLevel: 'detailed' },
+};
+
+export const Verbose: Story = {
+  args: { infoLevel: 'verbose' },
+};
+
+export const Simple: Story = {
+  args: { infoLevel: 'simple' },
+};
+
+// --- Multiple agencies ---
+
+export const MultipleAgencies: Story = {
+  args: {
+    data: createStopWithContext({
+      agencies: [agency, agency2],
+      routes: [busRoute, tramRoute],
+      routeTypes: [0, 3],
+      departures: [
+        createEntry({ departureMinutes: 870, headsign: '大塚駅前' }),
+        createEntry({ departureMinutes: 875, route: tramRoute, headsign: '早稲田' }),
+      ],
+    }),
+  },
+};
+
+// --- Sub names ---
+
+export const WithSubNames: Story = {
+  args: {
+    data: createStopWithContext({
+      stop: {
+        ...baseStop,
+        stop_names: {
+          ja: '錦糸町駅前',
+          'ja-Hrkt': 'きんしちょうえきまえ',
+          en: 'Kinshichō Sta.',
+        },
+      },
+    }),
+  },
+};
