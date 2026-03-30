@@ -68,7 +68,7 @@ export function RouteBadge({
       </span>
       {showVerbose && (
         <details className="inline text-[9px] text-[#999] dark:text-gray-500">
-          <summary className="cursor-pointer select-none">[Route]</summary>
+          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>[Route]</summary>
           <div className="mt-0.5 space-y-0.5">
             <VerboseRoute route={route} infoLevel={infoLevel} />
             <VerboseRouteDisplayNames names={routeNames} />
