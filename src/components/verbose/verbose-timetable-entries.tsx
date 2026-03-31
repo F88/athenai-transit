@@ -1,11 +1,27 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
 
+interface VerboseTimetableEntryProps {
+  /** The timetable entry to dump. */
+  entry: TimetableEntry;
+  /** Suppress verbose rendering. Use in non-interactive contexts like tooltips. */
+  disableVerbose?: boolean;
+  /** Start with details expanded. @default false */
+  defaultOpen?: boolean;
+}
+
 /**
- * Debug dump of a single TimetableEntry.
+ * Debug dump of a single TimetableEntry (text format).
  * Renders all fields except serviceDate (which is on ContextualTimetableEntry).
  * Used as a building block by {@link VerboseContextualTimetableEntry}.
  */
-export function VerboseTimetableEntry({ entry }: { entry: TimetableEntry }) {
+export function VerboseTimetableEntry({
+  entry,
+  disableVerbose = false,
+}: VerboseTimetableEntryProps) {
+  if (disableVerbose) {
+    return null;
+  }
+
   return (
     <>
       <span className="block">

@@ -16,6 +16,7 @@ import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-we
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { PillButton } from '@/components/button/pill-button';
+import { TimetableGridEntry } from '@/components/timetable/timetable-grid-entry';
 import { VerboseTimetableSummary } from '@/components/verbose/verbose-timetable-summary';
 import {
   Dialog,
@@ -113,6 +114,13 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
         className="flex max-h-[80dvh] max-w-[90dvw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[90dvw]"
       >
         <DialogHeader className="border-border shrink-0 border-b p-4 text-left">
+          {info.isVerboseEnabled && (
+            <VerboseTimetableSummary
+              timetableEntries={filteredTimetableEntries}
+              omitted={data.omitted}
+              isBoardableOnServiceDay={data.isBoardableOnServiceDay}
+            />
+          )}
           <DialogTitle className="flex flex-col gap-1">
             <TimetableHeader data={data} infoLevel={infoLevel} />
           </DialogTitle>
@@ -124,13 +132,6 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
 
           {info.isDetailedEnabled && (
             <TimetableMetadata timetableEntries={filteredTimetableEntries} infoLevel={infoLevel} />
-          )}
-          {info.isVerboseEnabled && (
-            <VerboseTimetableSummary
-              timetableEntries={filteredTimetableEntries}
-              omitted={data.omitted}
-              isBoardableOnServiceDay={data.isBoardableOnServiceDay}
-            />
           )}
 
           <TimetableDateLabel serviceDate={data.serviceDate} time={time} />
@@ -366,154 +367,47 @@ function TimetableGrid({
               {hour}時
             </span>
             <span className="flex flex-wrap gap-1.5">
-              {entries.map((entry, i) => {
-                const minutes = getDisplayMinutes(entry);
-                return (
-                  <span
-                    key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${minutes}__${i}`}
-                    className="inline-flex items-baseline gap-0.5"
-                  >
-                    <span className="text-muted-foreground text-sm tabular-nums">
-                      {String(minutes % 60).padStart(2, '0')}
-                      {entry.patternPosition.isTerminal && (
-                        <span className="text-[9px] opacity-70">着</span>
-                      )}
-                    </span>
-                    {showHeadsign && (
-                      <HeadsignBadge
-                        headsign={entry.routeDirection.headsign}
-                        route={entry.routeDirection.route}
-                        infoLevel={infoLevel}
-                        maxLength={headsignLengths.get(entry.routeDirection.headsign)}
-                        size="xs"
-                      />
-                    )}
-                    <EntryLabels
-                      entry={entry}
-                      isDisplayTerminal={isDisplayTerminal}
-                      isDisplayOrigin={isDisplayOrigin}
-                      isDisplayPickupUnavailable={isDisplayPickupUnavailable}
-                      isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
-                    />
-                  </span>
-                );
-              })}
+              {entries.map((entry, i) => (
+                <TimetableGridEntry
+                  key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${i}`}
+                  entry={entry}
+                  showHeadsign={showHeadsign}
+                  headsignMaxLength={headsignLengths.get(entry.routeDirection.headsign)}
+                  infoLevel={infoLevel}
+                  isDisplayTerminal={isDisplayTerminal}
+                  isDisplayOrigin={isDisplayOrigin}
+                  isDisplayPickupUnavailable={isDisplayPickupUnavailable}
+                  isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
+                  disableVerbose={true}
+                />
+              ))}
             </span>
           </div>
           {info.isVerboseEnabled && (
-            <div className="mt-0.5 flex flex-col gap-0.5">
-              {entries.map((entry, i) => (
-                <VerboseEntryRow key={i} entry={entry} />
-              ))}
-            </div>
+            <details className="mt-0.5 text-[9px] font-normal text-[#999] dark:text-gray-500">
+              <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+                [{hour}時 {entries.length}件]
+              </summary>
+              <div className="mt-0.5 flex flex-col gap-0.5">
+                {entries.map((entry, i) => (
+                  <TimetableGridEntry
+                    key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${i}`}
+                    entry={entry}
+                    showHeadsign={showHeadsign}
+                    headsignMaxLength={headsignLengths.get(entry.routeDirection.headsign)}
+                    infoLevel={infoLevel}
+                    isDisplayTerminal={isDisplayTerminal}
+                    isDisplayOrigin={isDisplayOrigin}
+                    isDisplayPickupUnavailable={isDisplayPickupUnavailable}
+                    isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
+                  />
+                ))}
+              </div>
+            </details>
           )}
         </div>
       ))}
     </>
-  );
-}
-
-/** Compact labels for terminal, origin, and boarding availability. */
-function EntryLabels({
-  entry,
-  isDisplayTerminal,
-  isDisplayOrigin,
-  isDisplayPickupUnavailable,
-  isDisplayDropOffUnavailable,
-}: {
-  entry: TimetableEntry;
-  isDisplayTerminal: boolean;
-  isDisplayOrigin: boolean;
-  isDisplayPickupUnavailable: boolean;
-  isDisplayDropOffUnavailable: boolean;
-}) {
-  const { boarding, patternPosition } = entry;
-
-  const showTerminal = isDisplayTerminal && patternPosition.isTerminal;
-  const showOrigin = isDisplayOrigin && patternPosition.isOrigin;
-  const showPickupUnavailable = isDisplayPickupUnavailable && boarding.pickupType === 1;
-  const showDropOffUnavailable = isDisplayDropOffUnavailable && boarding.dropOffType === 1;
-
-  if (!showTerminal && !showOrigin && !showPickupUnavailable && !showDropOffUnavailable) {
-    return null;
-  }
-
-  return (
-    <span className="inline-flex items-baseline gap-0.5">
-      {showTerminal && (
-        <span className="rounded bg-gray-500 px-0.5 text-[9px] leading-tight text-white">終点</span>
-      )}
-      {showOrigin && (
-        <span className="rounded bg-blue-500 px-0.5 text-[9px] leading-tight text-white">始発</span>
-      )}
-      {showPickupUnavailable && (
-        <span className="rounded bg-red-500 px-0.5 text-[9px] leading-tight text-white">乗×</span>
-      )}
-      {showDropOffUnavailable && (
-        <span className="rounded bg-red-500 px-0.5 text-[9px] leading-tight text-white">降×</span>
-      )}
-    </span>
-  );
-}
-
-/** Single row in verbose timetable: shows all TimetableEntry fields. */
-function VerboseEntryRow({ entry }: { entry: TimetableEntry }) {
-  const { schedule, routeDirection, boarding, patternPosition, insights } = entry;
-  const { route, headsign, direction } = routeDirection;
-
-  const arr = String(schedule.arrivalMinutes % 60).padStart(2, '0');
-  const dep = String(schedule.departureMinutes % 60).padStart(2, '0');
-
-  return (
-    <div className="text-muted-foreground border-border flex flex-wrap items-baseline gap-x-1.5 gap-y-0 rounded border p-1 text-[11px]">
-      {/* Arrival / Departure */}
-      <span className="tabular-nums">
-        <span className="opacity-70">着</span>
-        {arr}
-        <span className="opacity-70">発</span>
-        {dep}
-      </span>
-
-      {/* Route + headsign (verbose mode includes route_id in badge) */}
-      <span>
-        <HeadsignBadge headsign={headsign} route={route} infoLevel="verbose" size="xs" />
-      </span>
-
-      {/* Direction */}
-      {direction !== undefined && <span className="opacity-60">dir={direction}</span>}
-
-      {/* Pattern position */}
-      <span className="opacity-60">
-        [{patternPosition.stopIndex + 1}/{patternPosition.totalStops}]
-      </span>
-
-      {/* Terminal / Origin labels */}
-      {patternPosition.isTerminal && (
-        <span className="rounded bg-gray-600 px-1 text-[10px] text-white">終点</span>
-      )}
-      {patternPosition.isOrigin && (
-        <span className="rounded bg-blue-600 px-1 text-[10px] text-white">始発</span>
-      )}
-
-      {/* Boarding availability */}
-      {boarding.pickupType === 1 && (
-        <span className="rounded bg-red-600 px-1 text-[10px] text-white">乗車不可</span>
-      )}
-      {boarding.pickupType === 2 && (
-        <span className="rounded bg-amber-600 px-1 text-[10px] text-white">要電話</span>
-      )}
-      {boarding.pickupType === 3 && (
-        <span className="rounded bg-amber-600 px-1 text-[10px] text-white">要調整</span>
-      )}
-      {boarding.dropOffType === 1 && (
-        <span className="rounded bg-red-600 px-1 text-[10px] text-white">降車不可</span>
-      )}
-
-      {/* Remaining minutes to terminal */}
-      {insights?.remainingMinutes !== undefined && (
-        <span className="opacity-60">残{insights.remainingMinutes}分</span>
-      )}
-    </div>
   );
 }
 

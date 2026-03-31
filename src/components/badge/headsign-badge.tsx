@@ -24,6 +24,8 @@ interface HeadsignBadgeProps {
   /** Suppress verbose-only rendering (IdBadge, details dump).
    *  Use in non-interactive contexts like tooltips. */
   disableVerbose?: boolean;
+  /** Whether to show the verbose IdBadge. @default true */
+  showVerboseId?: boolean;
   /** Additional CSS classes. */
   className?: string;
 }
@@ -49,6 +51,7 @@ export function HeadsignBadge({
   maxLength,
   size = 'default',
   disableVerbose = false,
+  showVerboseId = true,
   className,
 }: HeadsignBadgeProps) {
   const bg = route.route_color ? `#${route.route_color}` : undefined;
@@ -73,7 +76,7 @@ export function HeadsignBadge({
         >
           {label}
         </span>
-        {showVerbose && <IdBadge>{route.route_id}</IdBadge>}
+        {showVerbose && showVerboseId && <IdBadge>{route.route_id}</IdBadge>}
       </span>
       {showVerbose && (
         <VerboseHeadsign headsign={headsign} route={route} label={label} maxLength={maxLength} />
