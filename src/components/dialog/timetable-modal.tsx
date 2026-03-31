@@ -427,7 +427,7 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
 
   // Convert route types into emoji.
   // Duplicates are not removed; it's simply a conversion.
-  const routeTypes = data.routes.map((r) => r.route_type);
+  const routeTypes = [...new Set(data.routes.map((r) => r.route_type))];
 
   // Unique routes for badge display.
   const uniqueRoutes = data.routes;
