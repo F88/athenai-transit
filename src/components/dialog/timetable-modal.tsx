@@ -8,7 +8,7 @@ import { routeTypesEmoji } from '@/domain/transit/route-type-emoji';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { isDropOffOnly } from '@/domain/transit/timetable-utils';
 import type { InfoLevel } from '@/types/app/settings';
-import type { Agency, Route, RouteType, Stop } from '@/types/app/transit';
+import type { Agency, Route, Stop } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
 import type { TimetableOmitted } from '@/types/app/repository';
 import { AgencyBadge } from '@/components/badge/agency-badge';
@@ -25,37 +25,23 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-/** Timetable for a specific route + headsign at a stop. */
-export interface RouteHeadsignTimetable {
-  type: 'route-headsign';
-  stop: Stop;
-  route: Route;
-  headsign: string;
-  /** GTFS service date for this timetable (not real-world time). */
-  serviceDate: Date;
-  timetableEntries: TimetableEntry[];
-  omitted: TimetableOmitted;
-  /** Whether at least one non-drop-off-only entry (pickupType !== 1, non-terminal) exists in the full service day. */
-  isBoardableOnServiceDay: boolean;
-  agencies: Agency[];
-}
-
-/** Timetable for all at a stop. */
-export interface StopTimetable {
-  type: 'stop';
-  stop: Stop;
-  routeTypes: RouteType[];
-  /** GTFS service date for this timetable (not real-world time). */
-  serviceDate: Date;
-  timetableEntries: TimetableEntry[];
-  omitted: TimetableOmitted;
-  /** Whether at least one non-drop-off-only entry (pickupType !== 1, non-terminal) exists in the full service day. */
-  isBoardableOnServiceDay: boolean;
-  agencies: Agency[];
-}
-
 /** Data needed to render the timetable modal. */
-export type TimetableData = RouteHeadsignTimetable | StopTimetable;
+export interface TimetableData {
+  type: 'route-headsign' | 'stop';
+  stop: Stop;
+  /** Routes serving this stop in this timetable context.
+   *  For route-headsign: single route. For stop: all routes. */
+  routes: Route[];
+  /** Headsign filter. Present only for route-headsign type. */
+  headsign?: string;
+  /** GTFS service date for this timetable (not real-world time). */
+  serviceDate: Date;
+  timetableEntries: TimetableEntry[];
+  omitted: TimetableOmitted;
+  /** Whether at least one non-drop-off-only entry (pickupType !== 1, non-terminal) exists in the full service day. */
+  isBoardableOnServiceDay: boolean;
+  agencies: Agency[];
+}
 
 interface TimetableModalProps {
   /** Pass null when the modal should be closed. */
@@ -132,7 +118,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
           </DialogTitle>
           <DialogDescription className="sr-only">
             {data.type === 'route-headsign'
-              ? `${data.stop.stop_name} ${data.route.route_short_name || data.route.route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
+              ? `${data.stop.stop_name} ${data.routes[0].route_short_name || data.routes[0].route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
               : `${data.stop.stop_name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
           </DialogDescription>
 
@@ -598,25 +584,16 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
     (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
 
   // Collect route types for emoji display.
-  const routeTypes = data.type === 'route-headsign' ? [data.route.route_type] : data.routeTypes;
+  const routeTypes = data.routes.map((r) => r.route_type);
 
-  // Unique routes for badge display (keyed by route_id).
-  const uniqueRoutes =
-    data.type === 'route-headsign'
-      ? [data.route]
-      : Array.from(
-          new Map(
-            data.timetableEntries.map(
-              (d) => [d.routeDirection.route.route_id, d.routeDirection.route] as const,
-            ),
-          ).values(),
-        );
+  // Unique routes for badge display.
+  const uniqueRoutes = data.routes;
 
   // For route-headsign, show only the agency of that route.
   // For stop timetable, show all agencies.
   const displayAgencies =
     data.type === 'route-headsign'
-      ? data.agencies.filter((a) => a.agency_id === data.route.agency_id)
+      ? data.agencies.filter((a) => a.agency_id === data.routes[0].agency_id)
       : data.agencies;
 
   return (
@@ -660,7 +637,7 @@ function StopTimetableFilter({
   onToggleFilter,
   infoLevel,
 }: {
-  data: StopTimetable;
+  data: TimetableData;
   activeFilters: Set<string>;
   onToggleFilter: (key: string) => void;
   infoLevel: InfoLevel;
@@ -696,7 +673,6 @@ function StopTimetableFilter({
             inactiveBorder={bg}
             onClick={() => onToggleFilter(key)}
           >
-            {infoLevel === 'verbose' && <IdBadge>{r.route.route_id}</IdBadge>}
             {/* Filter button has no RouteBadge — fall back to route name so it is never blank. */}
             {getHeadsignDisplayNames(r.headsign, r.route, infoLevel).name ||
               r.route.route_short_name ||
