@@ -9,6 +9,7 @@ import {
   getRemainingMinutes,
   hasBoardableDeparture,
   filterBoardable,
+  getDisplayMinutes,
 } from '../timetable-utils';
 import type { TimetableEntry } from '../../../types/app/transit-composed';
 import type { Route } from '../../../types/app/transit';
@@ -470,6 +471,42 @@ describe('filterBoardable', () => {
       // pt=0 is ambiguous (available OR not set). isTerminal takes precedence.
       const entry = makeEntry({ isTerminal: true, isOrigin: true, pickupType: 0 });
       expect(filterBoardable([entry])).toHaveLength(0);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // getDisplayMinutes
+  // -------------------------------------------------------------------------
+
+  describe('getDisplayMinutes', () => {
+    it('returns departureMinutes for non-terminal stop', () => {
+      const entry = makeEntry({ departureMinutes: 600, arrivalMinutes: 598, isTerminal: false });
+      expect(getDisplayMinutes(entry)).toBe(600);
+    });
+
+    it('returns arrivalMinutes for terminal stop', () => {
+      const entry = makeEntry({ departureMinutes: 600, arrivalMinutes: 598, isTerminal: true });
+      expect(getDisplayMinutes(entry)).toBe(598);
+    });
+
+    it('returns departureMinutes when arrival equals departure (non-terminal)', () => {
+      const entry = makeEntry({ departureMinutes: 480, arrivalMinutes: 480, isTerminal: false });
+      expect(getDisplayMinutes(entry)).toBe(480);
+    });
+
+    it('returns arrivalMinutes when arrival equals departure (terminal)', () => {
+      const entry = makeEntry({ departureMinutes: 480, arrivalMinutes: 480, isTerminal: true });
+      expect(getDisplayMinutes(entry)).toBe(480);
+    });
+
+    it('handles overnight times (>= 1440)', () => {
+      const entry = makeEntry({ departureMinutes: 1500, arrivalMinutes: 1498, isTerminal: false });
+      expect(getDisplayMinutes(entry)).toBe(1500);
+    });
+
+    it('handles overnight terminal times (>= 1440)', () => {
+      const entry = makeEntry({ departureMinutes: 1500, arrivalMinutes: 1498, isTerminal: true });
+      expect(getDisplayMinutes(entry)).toBe(1498);
     });
   });
 });
