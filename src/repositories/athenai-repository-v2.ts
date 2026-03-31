@@ -497,6 +497,10 @@ async function enrichStopInsights(
         }
         let entry = stopInsightsMap.get(stopId);
         if (!entry) {
+          // Groups are set from the first source to populate this entry.
+          // This assumes each stop ID belongs to at most one source (prefixed IDs).
+          // If two sources share a stop ID, stats from the second source's group
+          // keys may not be resolvable via selectServiceGroup.
           entry = { groups, stats: {} };
           stopInsightsMap.set(stopId, entry);
         }
@@ -739,6 +743,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
             // Store per-group freq in routeFreqMap for resolveRouteFreq
             let entry = this.routeFreqMap.get(routeId);
             if (!entry) {
+              // Groups from the first source; assumes route IDs are source-prefixed.
+              // See stopInsightsMap comment for multi-source assumption.
               entry = { groups: serviceGroups, freqs: {} };
               this.routeFreqMap.set(routeId, entry);
             }

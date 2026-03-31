@@ -45,6 +45,9 @@ export function useNearbyDepartures(
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Loading must be set synchronously when deps change
     setIsNearbyLoading(true);
 
+    // Hoist service day computation to avoid per-stop recalculation.
+    const sd = getServiceDay(dateTime);
+
     const promise =
       radiusStops.length === 0
         ? Promise.resolve([])
@@ -68,7 +71,7 @@ export function useNearbyDepartures(
               const routeTypes = rtResult.success ? rtResult.data : [3 as const];
               // Resolve stats for the current dateTime's service group
               // instead of using the baked-in stats from enrichStopInsights.
-              const stats = repo.resolveStopStats(stop.stop_id, getServiceDay(dateTime));
+              const stats = repo.resolveStopStats(stop.stop_id, sd);
               return {
                 stop,
                 routeTypes,
@@ -90,7 +93,6 @@ export function useNearbyDepartures(
         }
         const withDepartures = results.filter((r) => r.departures.length > 0);
         const totalFreq = results.reduce((sum, r) => sum + (r.stats?.freq ?? 0), 0);
-        const sd = getServiceDay(dateTime);
         logger.debug(
           `nearby departures: ${withDepartures.length}/${results.length} stops with departures (serviceDay=${formatDateKey(sd)} totalFreq=${totalFreq})`,
         );

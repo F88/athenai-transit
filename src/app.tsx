@@ -486,8 +486,10 @@ export default function App() {
 
   useEffect(() => {
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    logger.info(`Service day: ${serviceDayKey} (${dayNames[serviceDay.getDay()]})`);
-  }, [serviceDayKey, serviceDay]);
+    const day = new Date(serviceDayKey.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'));
+    logger.info(`Service day: ${serviceDayKey} (${dayNames[day.getDay()]})`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- serviceDayKey is the stable identity; serviceDay is a new Date each tick
+  }, [serviceDayKey]);
 
   const resolveRouteFreq = useCallback(
     (routeId: string) => repo.resolveRouteFreq(routeId, serviceDay),
