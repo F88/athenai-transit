@@ -266,7 +266,6 @@ function TimetableMetadata({
                 active={true}
                 activeBg={bg}
                 activeFg={fg}
-                onClick={() => {}}
                 count={rb.count}
               >
                 {label}

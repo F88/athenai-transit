@@ -47,7 +47,7 @@ export function TimetableGridEntry({
   isDisplayPickupUnavailable,
   isDisplayDropOffUnavailable,
   disableVerbose = false,
-  defaultOpen: _defaultOpen = false,
+  defaultOpen = false,
 }: TimetableGridEntryProps) {
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;
   const displayMinutes = getDisplayMinutes(entry);
@@ -87,6 +87,7 @@ export function TimetableGridEntry({
           isDisplayOrigin={isDisplayOrigin}
           isDisplayPickupUnavailable={isDisplayPickupUnavailable}
           isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
+          defaultOpen={defaultOpen}
         />
       )}
     </span>

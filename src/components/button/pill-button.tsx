@@ -21,8 +21,8 @@ interface PillButtonProps {
   activeBorder?: string;
   /** Custom border color when inactive (e.g. route color as outline). */
   inactiveBorder?: string;
-  /** Click handler. */
-  onClick: () => void;
+  /** Click handler. Omit for display-only (non-interactive) badges. */
+  onClick?: () => void;
   /** Optional tooltip text. */
   title?: string;
   /** Count badge displayed as chip-in-chip (inverted colors). */

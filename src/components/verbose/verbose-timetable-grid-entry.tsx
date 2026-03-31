@@ -17,6 +17,7 @@ export function VerboseTimetableGridEntry({
   isDisplayOrigin,
   isDisplayPickupUnavailable,
   isDisplayDropOffUnavailable,
+  defaultOpen = false,
 }: {
   entry: TimetableEntry;
   displayMinutes: number;
@@ -27,9 +28,11 @@ export function VerboseTimetableGridEntry({
   isDisplayOrigin: boolean;
   isDisplayPickupUnavailable: boolean;
   isDisplayDropOffUnavailable: boolean;
+  /** Start with details expanded. @default false */
+  defaultOpen?: boolean;
 }) {
   return (
-    <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
+    <details open={defaultOpen} className="text-[9px] font-normal text-[#999] dark:text-gray-500">
       <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
         [GridEntry]
       </summary>

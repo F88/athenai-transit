@@ -5,8 +5,6 @@ interface VerboseTimetableEntryProps {
   entry: TimetableEntry;
   /** Suppress verbose rendering. Use in non-interactive contexts like tooltips. */
   disableVerbose?: boolean;
-  /** Start with details expanded. @default false */
-  defaultOpen?: boolean;
 }
 
 /**
