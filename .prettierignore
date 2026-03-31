@@ -1,6 +1,9 @@
 # Ignore Prettier config files
 .agents
 
+# Ignore Claude Code worktrees
+.claude/worktrees
+
 # Ignore build and distribution directories
 dist
 node_modules

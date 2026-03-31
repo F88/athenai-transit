@@ -2,6 +2,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { useNearbyDepartures } from '../use-nearby-departures';
 import { makeStop, makeStopMeta, makeRepo } from '../../__tests__/helpers';
+import { getServiceDay } from '../../domain/transit/service-day';
 
 describe('useNearbyDepartures', () => {
   it('returns empty departures for empty stops', async () => {
@@ -239,5 +240,71 @@ describe('useNearbyDepartures', () => {
     });
 
     expect(result.current.nearbyDepartures[0].agencies).toEqual([]);
+  });
+
+  it('uses resolveStopStats return value as stats', async () => {
+    const mockStats = {
+      freq: 42,
+      routeCount: 3,
+      routeTypeCount: 2,
+      earliestDeparture: 360,
+      latestDeparture: 1380,
+    };
+    const repo = makeRepo({
+      resolveStopStats: vi.fn().mockReturnValue(mockStats),
+    });
+    const stops = [makeStopMeta('A')];
+    const now = new Date('2026-03-11T10:00:00');
+
+    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
+
+    await waitFor(() => {
+      expect(result.current.isNearbyLoading).toBe(false);
+    });
+
+    expect(result.current.nearbyDepartures[0].stats).toBe(mockStats);
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(repo.resolveStopStats).toHaveBeenCalledWith('A', getServiceDay(now));
+  });
+
+  it('passes service day (not raw dateTime) to resolveStopStats', async () => {
+    const repo = makeRepo({
+      resolveStopStats: vi.fn().mockReturnValue(undefined),
+    });
+    const stops = [makeStopMeta('A')];
+    // 02:30 is before the 03:00 service day boundary.
+    // Service day should be the previous calendar day (Mar 11).
+    const beforeBoundary = new Date('2026-03-12T02:30:00');
+
+    const { result } = renderHook(() => useNearbyDepartures(stops, beforeBoundary, repo));
+
+    await waitFor(() => {
+      expect(result.current.isNearbyLoading).toBe(false);
+    });
+
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(repo.resolveStopStats).toHaveBeenCalledWith(
+      'A',
+      getServiceDay(beforeBoundary), // Mar 11, not Mar 12
+    );
+    // Verify the service day is indeed Mar 11 (Wednesday)
+    const serviceDay = getServiceDay(beforeBoundary);
+    expect(serviceDay.getDate()).toBe(11);
+  });
+
+  it('returns undefined stats when resolveStopStats returns undefined', async () => {
+    const repo = makeRepo({
+      resolveStopStats: vi.fn().mockReturnValue(undefined),
+    });
+    const stops = [makeStopMeta('A')];
+    const now = new Date();
+
+    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
+
+    await waitFor(() => {
+      expect(result.current.isNearbyLoading).toBe(false);
+    });
+
+    expect(result.current.nearbyDepartures[0].stats).toBeUndefined();
   });
 });

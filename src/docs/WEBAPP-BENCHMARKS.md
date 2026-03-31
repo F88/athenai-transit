@@ -224,3 +224,110 @@ Comparison with previous (2026-03-27 stopsMetaMap After median):
 - +58ms initialization cost is acceptable: it runs once at startup and
   is parallelized with network fetch. Users see stop metrics immediately
   when the bottom sheet renders, without a second loading phase.
+
+## 2026-03-31: Date-aware service group selection (Issue #87)
+
+### Change
+
+Replace fixed `serviceGroups.data[0]` selection with date-aware resolution.
+Store all service groups' stats/freq in `stopInsightsMap`/`routeFreqMap`
+and resolve at read time via `resolveStopStats`/`resolveRouteFreq`.
+
+- `enrichStopInsights`: iterate all groups instead of `data[0]` only
+  (15,770 → 44,668 entries stored in `stopInsightsMap`)
+- `loadAllShapesWithInsights`: iterate all groups for `routeFreqMap`
+- `RouteShape.freq` still uses first group as default (no change)
+- `resolveStopStats`/`resolveRouteFreq` added (O(1) map lookup + service group matching)
+
+### Results (5 runs, median)
+
+Initialization:
+
+| Metric       | Result |
+| ------------ | ------ |
+| mergeSources | 42ms   |
+| enrich       | 65ms   |
+| shapes       | 48ms   |
+
+Benchmark results:
+
+| Method                                           | Result                                   |
+| ------------------------------------------------ | ---------------------------------------- |
+| getAllStops                                      | 0.10ms (15,805 stops)                    |
+| getRouteShapes                                   | 0.00ms (1,623 shapes)                    |
+| getAllSourceMeta                                 | 0.00ms (17 sources)                      |
+| getStopsInBounds (12 locations total)            | 2.90-4.50ms                              |
+| getStopsNearby (12 locations total)              | 3.30-4.40ms, 653 stops                   |
+| getUpcomingTimetableEntries limit=3 (653 stops)  | 36.60-41.90ms, 0.06ms/stop               |
+| getUpcomingTimetableEntries no-limit (653 stops) | 30.50-35.60ms, 0.05ms/stop               |
+| getRouteTypesForStop (653 stops)                 | 0.90-1.40ms                              |
+| getFullDayTimetableEntries (24 stops)            | 2.40-4.00ms, 2,225 departures            |
+| getStopsForRoutes (12 calls)                     | 5.20-5.70ms, 0.43-0.48ms/call, 838 stops |
+| resolveStopStats (653 stops)                     | 0.60-1.00ms, 0.00ms/stop, 547 resolved   |
+| resolveRouteFreq (151 routes)                    | 0.20-0.70ms                              |
+| **Benchmark total**                              | **84.30-90.00ms**                        |
+
+Comparison with previous (2026-03-30 enrichStopInsights After median):
+
+| Metric           | Before (median) | After (median) | Change       |
+| ---------------- | --------------- | -------------- | ------------ |
+| mergeSources     | 38ms            | 42ms           | +4ms (noise) |
+| enrich           | 58ms            | 65ms           | +7ms         |
+| shapes           | 48ms            | 48ms           | (unchanged)  |
+| getStopsInBounds | 5.10ms          | 3.80ms         | (noise)      |
+| getStopsNearby   | 4.60ms          | 4.10ms         | (noise)      |
+| Benchmark total  | 105.30ms        | 91.90ms        | (noise)      |
+
+#### Raw data: Initialization (5 runs, service group selection)
+
+| Run | fetch | merge | enrich | shapes |
+| --- | ----- | ----- | ------ | ------ |
+| 1   | 394ms | 36ms  | 65ms   | 48ms   |
+| 2   | 417ms | 42ms  | 63ms   | 81ms   |
+| 3   | 421ms | 50ms  | 62ms   | 48ms   |
+| 4   | 475ms | 36ms  | 66ms   | 47ms   |
+| 5   | 381ms | 46ms  | 70ms   | 52ms   |
+
+#### Raw data: Repo API benchmark (5 runs, service group selection)
+
+| Run | InBounds | Nearby | Upcoming lim=3 | Upcoming nolim | RouteTypes | FullDay | StopsForRoutes | StopStats | RouteFreq | Bench total |
+| --- | -------- | ------ | -------------- | -------------- | ---------- | ------- | -------------- | --------- | --------- | ----------- |
+| 1   | 5.00ms   | 4.50ms | 38.20ms        | 30.30ms        | 1.10ms     | 2.80ms  | 5.20ms         | 0.60ms    | 0.70ms    | 89.30ms     |
+| 2   | 4.50ms   | 4.90ms | 36.50ms        | 31.50ms        | 1.00ms     | 2.50ms  | 5.50ms         | 0.60ms    | 0.20ms    | 89.00ms     |
+| 3   | 3.10ms   | 3.80ms | 37.50ms        | 30.60ms        | 1.00ms     | 2.40ms  | 4.90ms         | 1.00ms    | 0.50ms    | 86.40ms     |
+| 4   | 3.90ms   | 3.70ms | 37.40ms        | 28.70ms        | 1.20ms     | 2.30ms  | 4.90ms         | 0.80ms    | 0.20ms    | 84.30ms     |
+| 5   | 3.80ms   | 3.80ms | 40.00ms        | 30.40ms        | 1.30ms     | 2.30ms  | 5.90ms         | 0.80ms    | 0.20ms    | 90.00ms     |
+
+### Service group selection: Observations
+
+#### Service group selection: Initialization
+
+- `enrich` increased from 58ms to 65ms (+7ms). The function now iterates
+  all service groups (44,668 entries vs 15,770) to populate `stopInsightsMap`,
+  but the increase is modest because network fetch (~30ms) dominates
+  the total enrich time.
+- `shapes` is unchanged at 48ms. `loadAllShapesWithInsights` now populates
+  `routeFreqMap` with all groups' freq, but the additional Map operations
+  are negligible compared to network fetch.
+- `mergeSources` is unaffected (42ms vs 38ms, within noise).
+
+#### Service group selection: Benchmark (repo API queries)
+
+- No regression in any existing API method.
+- `resolveStopStats` (653 stops): 0.80ms median (0.00ms/stop). 547/653
+  stops resolved (stops without insights data return undefined).
+- `resolveRouteFreq` (151 unique routes): 0.20ms median. Sub-millisecond.
+- Both methods are dominated by `getActiveServiceIds` cache lookup and
+  `selectServiceGroup` overlap counting (~30 iterations per call).
+- Benchmark total is comparable to previous (89.00ms vs 105.30ms, noise).
+
+#### Service group selection: Trade-off
+
+- +7ms enrich cost is acceptable: stored data grows ~2.8x (all service
+  groups instead of one), but the processing cost increase is minimal
+  because network fetch remains the bottleneck.
+- `resolveStopStats`/`resolveRouteFreq` are O(1) map lookups + O(30)
+  service group matching. Measured at 0.80ms/653 stops and 0.20ms/151 routes.
+  Called ~50 times per NearbyDepartures update, total cost is sub-millisecond.
+- shapes re-render on dateTime change is avoided by stabilizing
+  `resolveRouteFreq` identity on `serviceDayKey` (changes only at 03:00).

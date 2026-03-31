@@ -227,6 +227,8 @@ interface MapViewProps {
   onToggleDarkMode: () => void;
   onDeselectStop: () => void;
   onRouteShapeSelected: (routeId: string) => void;
+  /** Resolves daily departure frequency for a route based on the current service day. */
+  resolveRouteFreq: (routeId: string) => number | undefined;
   onSearchClick: () => void;
   onInfoClick: () => void;
   /** Stop selection history entries, most recent first. */
@@ -271,6 +273,7 @@ export function MapView({
   onToggleDarkMode,
   onDeselectStop,
   onRouteShapeSelected,
+  resolveRouteFreq,
   onSearchClick,
   onInfoClick,
   stopHistory,
@@ -437,6 +440,7 @@ export function MapView({
           pane={ROUTE_SHAPE_PANE}
           outlinePane={ROUTE_SHAPE_OUTLINE_PANE}
           onRouteShapeSelected={onRouteShapeSelected}
+          resolveFreq={resolveRouteFreq}
         />
         {/* Nearby: all radiusStops including out-of-view (pre-rendered for
          * instant display on pan). EdgeMarkersSwitch (below MapContainer)

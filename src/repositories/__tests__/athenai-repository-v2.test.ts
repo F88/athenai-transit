@@ -4,6 +4,7 @@ import {
   TestDataSourceV2,
   createFixtureV2,
   createShapesFixtureV2,
+  createInsightsFixtureV2,
   WEEKDAY,
   SATURDAY,
   WEEKDAY_OVERNIGHT,
@@ -580,6 +581,75 @@ describe('getRouteShapes', () => {
     assertSuccess(result);
     expect(result.data).toHaveLength(0);
   });
+
+  it('enriches shapes with default freq from first service group', async () => {
+    const fixture = createFixtureV2();
+    const shapesBundle = createShapesFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, { test: shapesBundle }, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getRouteShapes();
+    assertSuccess(result);
+
+    // route_bus shape should have freq from the first service group ("wd").
+    // wd: tp_bus_i (freq=50) + tp_bus_o (freq=30) = 80
+    const busShape = result.data.find((s) => s.routeId === 'route_bus');
+    expect(busShape).toBeDefined();
+    expect(busShape!.freq).toBe(80);
+
+    // route_toden shape: wd has tp_tdn_w (freq=30)
+    const todenShape = result.data.find((s) => s.routeId === 'route_toden');
+    expect(todenShape).toBeDefined();
+    expect(todenShape!.freq).toBe(30);
+
+    // route_subway has no tripPatternStats → freq undefined
+    const subwayShape = result.data.find((s) => s.routeId === 'route_subway');
+    expect(subwayShape).toBeDefined();
+    expect(subwayShape!.freq).toBeUndefined();
+  });
+
+  it('does not bake stats into RouteShape.freq for non-first groups', async () => {
+    const fixture = createFixtureV2();
+    const shapesBundle = createShapesFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, { test: shapesBundle }, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getRouteShapes();
+    assertSuccess(result);
+
+    // RouteShape.freq uses the first service group as default.
+    // Verify it does NOT contain holiday values (which would indicate
+    // the wrong group or overwrite behavior).
+    const busShape = result.data.find((s) => s.routeId === 'route_bus');
+    expect(busShape!.freq).toBe(80); // wd (first group), not 25 (ho)
+  });
+});
+
+// ---------------------------------------------------------------------------
+// StopWithMeta.stats after enrichment
+// ---------------------------------------------------------------------------
+
+describe('StopWithMeta.stats after enrichment', () => {
+  it('stats is not baked into StopWithMeta (use resolveStopStats instead)', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, {}, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // After enrichStopInsights, StopWithMeta.stats is NOT set.
+    // Stats are stored in the internal stopInsightsMap and accessed
+    // via resolveStopStats(stopId, serviceDate) for date-aware resolution.
+    const result = await repository.getStopMetaById('tdn_01');
+    assertSuccess(result);
+    expect(result.data.stats).toBeUndefined();
+
+    // But resolveStopStats returns the correct stats for the date.
+    const stats = repository.resolveStopStats('tdn_01', WEEKDAY);
+    expect(stats).toBeDefined();
+    expect(stats!.freq).toBe(100);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -597,5 +667,221 @@ describe('getAllSourceMeta', () => {
     expect(result.data).toHaveLength(1);
     expect(result.data[0].id).toBe('test');
     expect(result.data[0].name).toBe('Test');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// resolveStopStats / resolveRouteFreq (Issue #87)
+// ---------------------------------------------------------------------------
+
+describe('resolveStopStats', () => {
+  it('returns weekday stats on a weekday', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, {}, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const stats = repository.resolveStopStats('tdn_01', WEEKDAY);
+    expect(stats).toBeDefined();
+    expect(stats!.freq).toBe(100);
+    expect(stats!.routeCount).toBe(2);
+    expect(stats!.routeTypeCount).toBe(1);
+    expect(stats!.earliestDeparture).toBe(490);
+    expect(stats!.latestDeparture).toBe(730);
+  });
+
+  it('returns holiday stats on a Saturday', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, {}, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const stats = repository.resolveStopStats('bus_01', SATURDAY);
+    expect(stats).toBeDefined();
+    expect(stats!.freq).toBe(80);
+    expect(stats!.routeCount).toBe(2);
+    expect(stats!.routeTypeCount).toBe(1);
+    expect(stats!.earliestDeparture).toBe(540);
+    expect(stats!.latestDeparture).toBe(700);
+  });
+
+  it('returns holiday stats on exception holiday (weekday overridden)', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, {}, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // EXCEPTION_HOLIDAY: Wed Mar 4 with svc_weekday removed, svc_holiday added
+    const stats = repository.resolveStopStats('bus_01', EXCEPTION_HOLIDAY);
+    expect(stats).toBeDefined();
+    expect(stats!.freq).toBe(80); // holiday freq
+  });
+
+  it('returns undefined for unknown stop', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, {}, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    expect(repository.resolveStopStats('nonexistent', WEEKDAY)).toBeUndefined();
+  });
+
+  it('returns undefined when insights are not loaded', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    expect(repository.resolveStopStats('tdn_01', WEEKDAY)).toBeUndefined();
+  });
+
+  it('returns undefined when no service group matches active services', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, {}, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // Date outside the calendar validity period (20260101-20261231).
+    // No service IDs are active, so no group can match.
+    const outOfRange = new Date('2028-06-15T10:00:00');
+    expect(repository.resolveStopStats('tdn_01', outOfRange)).toBeUndefined();
+  });
+
+  it('returns undefined when stop exists in insights but not in the matched group', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, {}, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // bus_03 exists in the timetable but is NOT in stopStats for any group.
+    // Service group matches (weekday), but no stats entry for this stop.
+    expect(repository.resolveStopStats('bus_03', WEEKDAY)).toBeUndefined();
+  });
+
+  it('returns undefined when stop has stats in one group but not the matched group', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, {}, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // tdn_01 has stats in "wd" group (freq=100) but NOT in "ho" group.
+    // On Saturday (holiday), the "ho" group is matched but has no stats for tdn_01.
+    expect(repository.resolveStopStats('tdn_01', WEEKDAY)).toBeDefined();
+    expect(repository.resolveStopStats('tdn_01', WEEKDAY)!.freq).toBe(100);
+    expect(repository.resolveStopStats('tdn_01', SATURDAY)).toBeUndefined();
+  });
+});
+
+describe('resolveRouteFreq', () => {
+  it('returns weekday freq on a weekday (accumulated across patterns)', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const shapes = createShapesFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, { test: shapes }, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+    // Wait for shapes background load to complete
+    await repository.getRouteShapes();
+
+    // route_bus has tp_bus_i (freq=50) + tp_bus_o (freq=30) = 80
+    const freq = repository.resolveRouteFreq('route_bus', WEEKDAY);
+    expect(freq).toBe(80);
+  });
+
+  it('returns holiday freq on a Saturday (accumulated across patterns)', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const shapes = createShapesFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, { test: shapes }, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+    await repository.getRouteShapes();
+
+    // route_bus has tp_bus_i (freq=15) + tp_bus_o (freq=10) = 25
+    const freq = repository.resolveRouteFreq('route_bus', SATURDAY);
+    expect(freq).toBe(25);
+  });
+
+  it('returns undefined for unknown route', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const shapes = createShapesFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, { test: shapes }, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+    await repository.getRouteShapes();
+
+    expect(repository.resolveRouteFreq('nonexistent', WEEKDAY)).toBeUndefined();
+  });
+
+  it('returns undefined for route that exists in shapes but has no tripPatternStats', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const shapes = createShapesFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, { test: shapes }, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+    await repository.getRouteShapes();
+
+    // route_liner exists in shapes but has no entry in insights tripPatternStats
+    expect(repository.resolveRouteFreq('route_liner', WEEKDAY)).toBeUndefined();
+  });
+
+  it('returns undefined when insights are not loaded', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    expect(repository.resolveRouteFreq('route_bus', WEEKDAY)).toBeUndefined();
+  });
+
+  it('returns undefined when no service group matches active services', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const shapes = createShapesFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, { test: shapes }, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+    await repository.getRouteShapes();
+
+    const outOfRange = new Date('2028-06-15T10:00:00');
+    expect(repository.resolveRouteFreq('route_bus', outOfRange)).toBeUndefined();
+  });
+
+  it('returns undefined when route exists in routeFreqMap but matched group has no freq', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const shapes = createShapesFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, { test: shapes }, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+    await repository.getRouteShapes();
+
+    // route_toden has tp_tdn_w in "wd" group (freq=30) but NOT in "ho" group.
+    // On Saturday (holiday), the "ho" group is matched but has no freq for route_toden.
+    expect(repository.resolveRouteFreq('route_toden', WEEKDAY)).toBe(30);
+    expect(repository.resolveRouteFreq('route_toden', SATURDAY)).toBeUndefined();
+  });
+
+  // Note: resolveRouteFreq depends on routeFreqMap which is populated by
+  // loadAllShapesWithInsights (background load). Before that completes,
+  // resolveRouteFreq returns undefined because the map is empty. This is
+  // by design — routeFreqMap is NOT populated by enrichStopInsights.
+  // A deterministic test for this race is not feasible due to microtask
+  // ordering, so the invariant is documented here rather than asserted.
+});
+
+// ---------------------------------------------------------------------------
+// Service group selection via repository (Issue #87 integration)
+// ---------------------------------------------------------------------------
+
+describe('resolveStopStats service group selection', () => {
+  it('selects correct group when only one group has overlap', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, {}, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // EXCEPTION_HOLIDAY: Mar 4 (Wed) with svc_weekday REMOVED, svc_holiday ADDED.
+    // Active serviceIds = { svc_holiday }.
+    // "wd" group has { svc_weekday } → 0 overlap
+    // "ho" group has { svc_holiday } → 1 overlap
+    // Must pick "ho" (not "wd" which is data[0]).
+    const stats = repository.resolveStopStats('bus_01', EXCEPTION_HOLIDAY);
+    expect(stats).toBeDefined();
+    expect(stats!.freq).toBe(80); // ho group freq, not wd (200)
   });
 });

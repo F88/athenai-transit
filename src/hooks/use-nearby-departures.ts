@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
 import type { TransitRepository } from '../repositories/transit-repository';
+import { getServiceDay } from '../domain/transit/service-day';
+import { formatDateKey } from '../domain/transit/calendar-utils';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('NearbyDepartures');
@@ -43,11 +45,14 @@ export function useNearbyDepartures(
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Loading must be set synchronously when deps change
     setIsNearbyLoading(true);
 
+    // Hoist service day computation to avoid per-stop recalculation.
+    const sd = getServiceDay(dateTime);
+
     const promise =
       radiusStops.length === 0
         ? Promise.resolve([])
         : Promise.all(
-            radiusStops.map(async ({ stop, agencies, routes, distance, stats, geo }) => {
+            radiusStops.map(async ({ stop, agencies, routes, distance, geo }) => {
               const [depsResult, rtResult] = await Promise.all([
                 // No limit: T4 view needs all entries to group by route+headsign
                 // without losing groups. Limit would not reduce repo cost anyway
@@ -64,6 +69,9 @@ export function useNearbyDepartures(
                 ? depsResult.meta.isBoardableOnServiceDay
                 : false;
               const routeTypes = rtResult.success ? rtResult.data : [3 as const];
+              // Resolve stats for the current dateTime's service group
+              // instead of using the baked-in stats from enrichStopInsights.
+              const stats = repo.resolveStopStats(stop.stop_id, sd);
               return {
                 stop,
                 routeTypes,
@@ -84,8 +92,9 @@ export function useNearbyDepartures(
           return;
         }
         const withDepartures = results.filter((r) => r.departures.length > 0);
+        const totalFreq = results.reduce((sum, r) => sum + (r.stats?.freq ?? 0), 0);
         logger.debug(
-          `nearby departures: ${withDepartures.length}/${results.length} stops with departures`,
+          `nearby departures: ${withDepartures.length}/${results.length} stops with departures (serviceDay=${formatDateKey(sd)} totalFreq=${totalFreq})`,
         );
         setNearbyDepartures(results);
       })

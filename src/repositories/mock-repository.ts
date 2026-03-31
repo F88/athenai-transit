@@ -1068,6 +1068,25 @@ export class MockRepository implements TransitRepository {
     return Promise.resolve({ success: false, error: `Agency not found: ${agencyId}` });
   }
 
+  /** {@inheritDoc TransitRepository.resolveStopStats} */
+  resolveStopStats(_stopId: string, _serviceDate: Date): StopWithMeta['stats'] | undefined {
+    // MockRepository does not have real insights data; return undefined.
+    return undefined;
+  }
+
+  /** {@inheritDoc TransitRepository.resolveRouteFreq} */
+  resolveRouteFreq(routeId: string, serviceDate: Date): number | undefined {
+    // Return exaggerated weekday/weekend freq difference for visual testing.
+    // Weekday: high freq (thick lines), Weekend: low freq (thin lines).
+    const day = serviceDate.getDay(); // 0=Sun, 6=Sat
+    const isWeekend = day === 0 || day === 6;
+    const route = ROUTE_MAP.get(routeId);
+    if (!route || route.route_type !== 3) {
+      return undefined; // Only bus routes have freq
+    }
+    return isWeekend ? 10 : 300;
+  }
+
   /** {@inheritDoc TransitRepository.getAllSourceMeta} */
   getAllSourceMeta(): Promise<CollectionResult<SourceMeta>> {
     const meta: SourceMeta = {
