@@ -505,7 +505,9 @@ export function createInsightsFixtureV2(): InsightsBundle {
           bus_01: { freq: 200, rc: 3, rtc: 1, ed: 492, ld: 740 },
         },
         ho: {
-          tdn_01: { freq: 40, rc: 1, rtc: 1, ed: 540, ld: 660 },
+          // tdn_01 intentionally omitted from "ho" group to test
+          // resolveStopStats returning undefined when the matched group
+          // has no stats for a stop that exists in other groups.
           bus_01: { freq: 80, rc: 2, rtc: 1, ed: 540, ld: 700 },
         },
       },
@@ -521,7 +523,9 @@ export function createInsightsFixtureV2(): InsightsBundle {
         ho: {
           tp_bus_i: { freq: 15, rd: [30, 20, 10, 0] },
           tp_bus_o: { freq: 10, rd: [20, 10, 0] },
-          tp_tdn_w: { freq: 10, rd: [20, 15, 10, 0] },
+          // tp_tdn_w intentionally omitted from "ho" group to test
+          // resolveRouteFreq returning undefined when the matched group
+          // has no freq for a route that exists in other groups.
         },
       },
     },

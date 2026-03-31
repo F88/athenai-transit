@@ -696,13 +696,13 @@ describe('resolveStopStats', () => {
     const ds = new TestDataSourceV2({ test: fixture }, {}, { test: insights });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
 
-    const stats = repository.resolveStopStats('tdn_01', SATURDAY);
+    const stats = repository.resolveStopStats('bus_01', SATURDAY);
     expect(stats).toBeDefined();
-    expect(stats!.freq).toBe(40);
-    expect(stats!.routeCount).toBe(1);
+    expect(stats!.freq).toBe(80);
+    expect(stats!.routeCount).toBe(2);
     expect(stats!.routeTypeCount).toBe(1);
     expect(stats!.earliestDeparture).toBe(540);
-    expect(stats!.latestDeparture).toBe(660);
+    expect(stats!.latestDeparture).toBe(700);
   });
 
   it('returns holiday stats on exception holiday (weekday overridden)', async () => {
@@ -744,6 +744,30 @@ describe('resolveStopStats', () => {
     // No service IDs are active, so no group can match.
     const outOfRange = new Date('2028-06-15T10:00:00');
     expect(repository.resolveStopStats('tdn_01', outOfRange)).toBeUndefined();
+  });
+
+  it('returns undefined when stop exists in insights but not in the matched group', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, {}, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // bus_03 exists in the timetable but is NOT in stopStats for any group.
+    // Service group matches (weekday), but no stats entry for this stop.
+    expect(repository.resolveStopStats('bus_03', WEEKDAY)).toBeUndefined();
+  });
+
+  it('returns undefined when stop has stats in one group but not the matched group', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, {}, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // tdn_01 has stats in "wd" group (freq=100) but NOT in "ho" group.
+    // On Saturday (holiday), the "ho" group is matched but has no stats for tdn_01.
+    expect(repository.resolveStopStats('tdn_01', WEEKDAY)).toBeDefined();
+    expect(repository.resolveStopStats('tdn_01', WEEKDAY)!.freq).toBe(100);
+    expect(repository.resolveStopStats('tdn_01', SATURDAY)).toBeUndefined();
   });
 });
 
@@ -818,6 +842,20 @@ describe('resolveRouteFreq', () => {
     expect(repository.resolveRouteFreq('route_bus', outOfRange)).toBeUndefined();
   });
 
+  it('returns undefined when route exists in routeFreqMap but matched group has no freq', async () => {
+    const fixture = createFixtureV2();
+    const insights = createInsightsFixtureV2();
+    const shapes = createShapesFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture }, { test: shapes }, { test: insights });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+    await repository.getRouteShapes();
+
+    // route_toden has tp_tdn_w in "wd" group (freq=30) but NOT in "ho" group.
+    // On Saturday (holiday), the "ho" group is matched but has no freq for route_toden.
+    expect(repository.resolveRouteFreq('route_toden', WEEKDAY)).toBe(30);
+    expect(repository.resolveRouteFreq('route_toden', SATURDAY)).toBeUndefined();
+  });
+
   // Note: resolveRouteFreq depends on routeFreqMap which is populated by
   // loadAllShapesWithInsights (background load). Before that completes,
   // resolveRouteFreq returns undefined because the map is empty. This is
@@ -842,8 +880,8 @@ describe('resolveStopStats service group selection', () => {
     // "wd" group has { svc_weekday } → 0 overlap
     // "ho" group has { svc_holiday } → 1 overlap
     // Must pick "ho" (not "wd" which is data[0]).
-    const stats = repository.resolveStopStats('tdn_01', EXCEPTION_HOLIDAY);
+    const stats = repository.resolveStopStats('bus_01', EXCEPTION_HOLIDAY);
     expect(stats).toBeDefined();
-    expect(stats!.freq).toBe(40); // ho group freq, not wd (100)
+    expect(stats!.freq).toBe(80); // ho group freq, not wd (200)
   });
 });

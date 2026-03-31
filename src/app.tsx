@@ -487,9 +487,11 @@ export default function App() {
 
   useEffect(() => {
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const day = new Date(serviceDayKey.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'));
-    logger.info(`Service day: ${serviceDayKey} (${dayNames[day.getDay()]})`);
-     
+    // Use serviceDay.getDay() for timezone-safe day-of-week.
+    // Do NOT reparse serviceDayKey via new Date('YYYY-MM-DD') — JS parses
+    // date-only strings as UTC, which yields wrong getDay() in non-UTC timezones.
+    logger.info(`Service day: ${serviceDayKey} (${dayNames[serviceDay.getDay()]})`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- serviceDayKey is the stable identity; serviceDay is a new Date each tick but getDay() is deterministic for the same serviceDayKey
   }, [serviceDayKey]);
 
   const resolveRouteFreq = useCallback(

@@ -453,7 +453,10 @@ async function enrichStopInsights(
   dataSource: TransitDataSourceV2,
   stopInsightsMap: Map<
     string,
-    { groups: ServiceGroupEntry[]; stats: Record<string, NonNullable<StopWithMeta['stats']>> }
+    {
+      groups: ServiceGroupEntry[];
+      stats: Partial<Record<string, NonNullable<StopWithMeta['stats']>>>;
+    }
   >,
 ): Promise<void> {
   const t0 = performance.now();
@@ -584,7 +587,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     string,
     {
       groups: ServiceGroupEntry[];
-      stats: Record<string, NonNullable<StopWithMeta['stats']>>;
+      stats: Partial<Record<string, NonNullable<StopWithMeta['stats']>>>;
     }
   >();
 
@@ -594,7 +597,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     string,
     {
       groups: ServiceGroupEntry[];
-      freqs: Record<string, number>;
+      freqs: Partial<Record<string, number>>;
     }
   >();
 
