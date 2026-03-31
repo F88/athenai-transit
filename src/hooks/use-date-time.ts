@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getTimeParam } from '../utils/query-params';
+import { createLogger } from '../utils/logger';
 
+const logger = createLogger('DateTime');
 const NOW_UPDATE_INTERVAL_MS = 15_000;
 
 /**
@@ -28,7 +30,13 @@ export interface UseDateTimeReturn {
 export function useDateTime(): UseDateTimeReturn {
   const [now, setNow] = useState(() => new Date());
   // Initialize custom time from ?time= query param (RFC 3339)
-  const [customTime, setCustomTimeState] = useState<Date | null>(() => getTimeParam());
+  const [customTime, setCustomTimeState] = useState<Date | null>(() => {
+    const param = getTimeParam();
+    if (param) {
+      logger.info(`Custom time from URL: ${param.toISOString()}`);
+    }
+    return param;
+  });
 
   const isCustomTime = customTime !== null;
   const dateTime = customTime ?? now;
@@ -45,11 +53,13 @@ export function useDateTime(): UseDateTimeReturn {
   }, [customTime]);
 
   const resetToNow = useCallback(() => {
+    logger.info('Reset to real-time mode');
     setCustomTimeState(null);
     setNow(new Date());
   }, []);
 
   const setCustomTime = useCallback((date: Date) => {
+    logger.info(`Custom time set: ${date.toISOString()}`);
     setCustomTimeState(date);
   }, []);
 

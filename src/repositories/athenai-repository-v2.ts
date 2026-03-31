@@ -23,6 +23,7 @@ import type {
 } from '../types/data/transit-json';
 import type {
   LookupV2Json,
+  ServiceGroupEntry,
   TimetableGroupV2Json,
   TripPatternJson,
 } from '../types/data/transit-v2-json';
@@ -50,6 +51,7 @@ import type { SourceDataV2 } from '../datasources/transit-data-source-v2';
 import { FetchDataSourceV2 } from '../datasources/fetch-data-source-v2';
 import { createLogger } from '../utils/logger';
 import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
+import { selectServiceGroup } from '../domain/transit/select-service-group';
 import {
   binarySearchFirstGte,
   computeActiveServiceIds,
@@ -437,7 +439,8 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
 /**
  * Enrich stopsMetaMap with per-stop stats and geo data from insights bundles.
  *
- * - stopStats: from per-source InsightsBundle (first service group)
+ * - stopStats: from per-source InsightsBundle (all service groups stored
+ *   in stopInsightsMap for date-aware resolution via resolveStopStats)
  * - stopGeo: from GlobalInsightsBundle
  *
  * Errors (network failures, invalid bundles) are logged as warnings
@@ -448,6 +451,10 @@ async function enrichStopInsights(
   stopsMetaMap: Map<string, StopWithMeta>,
   prefixes: string[],
   dataSource: TransitDataSourceV2,
+  stopInsightsMap: Map<
+    string,
+    { groups: ServiceGroupEntry[]; stats: Record<string, NonNullable<StopWithMeta['stats']>> }
+  >,
 ): Promise<void> {
   const t0 = performance.now();
 
@@ -476,20 +483,24 @@ async function enrichStopInsights(
       continue;
     }
 
-    // Use the first service group (highest priority = most common day type)
-    const firstGroupKey = insights.serviceGroups.data[0]?.key;
-    if (!firstGroupKey) {
-      continue;
-    }
-    const statsForGroup = insights.stopStats.data[firstGroupKey];
-    if (!statsForGroup) {
+    const groups = insights.serviceGroups.data;
+    if (groups.length === 0) {
       continue;
     }
 
-    for (const [stopId, s] of Object.entries(statsForGroup)) {
-      const meta = stopsMetaMap.get(stopId);
-      if (meta) {
-        meta.stats = {
+    // Store all service groups' stats for date-aware resolution.
+    for (const [groupKey, groupStats] of Object.entries(insights.stopStats.data)) {
+      for (const [stopId, s] of Object.entries(groupStats)) {
+        const meta = stopsMetaMap.get(stopId);
+        if (!meta) {
+          continue;
+        }
+        let entry = stopInsightsMap.get(stopId);
+        if (!entry) {
+          entry = { groups, stats: {} };
+          stopInsightsMap.set(stopId, entry);
+        }
+        entry.stats[groupKey] = {
           freq: s.freq,
           routeCount: s.rc,
           routeTypeCount: s.rtc,
@@ -563,6 +574,26 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   // Safe to cache because tripPatterns are immutable after load.
   private routeStopsCache: Map<string, Set<string>> | null = null;
 
+  // Per-stop insights for date-aware stats resolution.
+  // Populated by enrichStopInsights, queried by resolveStopStats.
+  private stopInsightsMap = new Map<
+    string,
+    {
+      groups: ServiceGroupEntry[];
+      stats: Record<string, NonNullable<StopWithMeta['stats']>>;
+    }
+  >();
+
+  // Per-route freq for date-aware frequency resolution.
+  // Populated by loadAllShapesWithInsights, queried by resolveRouteFreq.
+  private routeFreqMap = new Map<
+    string,
+    {
+      groups: ServiceGroupEntry[];
+      freqs: Record<string, number>;
+    }
+  >();
+
   // Shapes: background-loaded after create()
   private shapesPromise: Promise<RouteShape[]> = Promise.resolve([]);
   private shapesCache: RouteShape[] | null = null;
@@ -629,17 +660,22 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       );
     }
 
+    const repository = new AthenaiRepositoryV2(merged);
+
     // Enrich stopsMetaMap with insights (stopStats + stopGeo).
     // Errors are logged but non-fatal — stats/geo are optional enhancements.
     const tEnrich = performance.now();
-    await enrichStopInsights(merged.stopsMetaMap, loadResult.loaded, dataSource);
+    await enrichStopInsights(
+      merged.stopsMetaMap,
+      loadResult.loaded,
+      dataSource,
+      repository.stopInsightsMap,
+    );
     const enrichMs = Math.round(performance.now() - tEnrich);
 
     logger.info(
       `Initialized in ${Math.round(performance.now() - t0)}ms (fetch=${fetchMs}ms, merge=${mergeMs}ms, enrich=${enrichMs}ms): stops=${merged.stops.length} routes=${merged.routeMap.size} timetable_stops=${Object.keys(merged.timetable).length}`,
     );
-
-    const repository = new AthenaiRepositoryV2(merged);
     // Start background shapes loading after repository creation
     repository.startShapesLoad(loadResult.loaded, dataSource);
     return { repository, loadResult };
@@ -689,9 +725,29 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       }
 
       // Freq: keyed by service group, then pattern ID.
-      // Use the first service group (highest priority = most common day type).
+      // Store all service groups' freq for date-aware resolution.
       if (insights.tripPatternStats) {
         const serviceGroups = insights.serviceGroups.data;
+        for (const [groupKey, groupStats] of Object.entries(insights.tripPatternStats.data)) {
+          for (const [patternId, stats] of Object.entries(groupStats)) {
+            const resolved = this.resolvedPatterns.get(patternId);
+            if (!resolved) {
+              continue;
+            }
+            const routeId = resolved.route.route_id;
+
+            // Store per-group freq in routeFreqMap for resolveRouteFreq
+            let entry = this.routeFreqMap.get(routeId);
+            if (!entry) {
+              entry = { groups: serviceGroups, freqs: {} };
+              this.routeFreqMap.set(routeId, entry);
+            }
+            entry.freqs[groupKey] = (entry.freqs[groupKey] ?? 0) + stats.freq;
+          }
+        }
+
+        // Also populate routeFreq (used for RouteShape.freq initial value)
+        // using the first group as default
         const firstGroupKey = serviceGroups[0]?.key;
         if (firstGroupKey) {
           const statsForGroup = insights.tripPatternStats.data[firstGroupKey];
@@ -703,7 +759,6 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               }
               const routeId = resolved.route.route_id;
               const current = routeFreq.get(routeId) ?? 0;
-              // Accumulate freq across patterns for the same route
               routeFreq.set(routeId, current + stats.freq);
             }
           }
@@ -780,7 +835,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
     const elapsed = Math.round(performance.now() - t0);
     logger.debug(
-      `getStopsInBounds: ${data.length}/${matching.length} stops in ${elapsed}ms (${truncated ? 'truncated' : 'all'})`,
+      `getStopsInBounds: ${data.length}/${matching.length} stops in ${elapsed}ms (${truncated ? 'truncated' : 'all'}) center=(${centerLat.toFixed(4)}, ${centerLng.toFixed(4)})`,
     );
     return Promise.resolve({ success: true, data, truncated });
   }
@@ -819,7 +874,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
     const elapsed = Math.round(performance.now() - t0);
     logger.debug(
-      `getStopsNearby: ${data.length}/${sorted.length} stops within ${radiusM}m in ${elapsed}ms (${truncated ? 'truncated' : 'all'})`,
+      `getStopsNearby: ${data.length}/${sorted.length} stops within ${radiusM}m in ${elapsed}ms (${truncated ? 'truncated' : 'all'}) center=(${center.lat.toFixed(4)}, ${center.lng.toFixed(4)})`,
     );
     return Promise.resolve({ success: true, data, truncated });
   }
@@ -1196,6 +1251,34 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   /** {@inheritDoc TransitRepository.getAllSourceMeta} */
   getAllSourceMeta(): Promise<CollectionResult<SourceMeta>> {
     return Promise.resolve({ success: true, data: this.sourceMetas, truncated: false });
+  }
+
+  /** {@inheritDoc TransitRepository.resolveStopStats} */
+  resolveStopStats(stopId: string, serviceDate: Date): StopWithMeta['stats'] | undefined {
+    const entry = this.stopInsightsMap.get(stopId);
+    if (!entry) {
+      return undefined;
+    }
+    const activeIds = this.getActiveServiceIds(serviceDate);
+    const groupKey = selectServiceGroup(entry.groups, activeIds);
+    if (!groupKey) {
+      return undefined;
+    }
+    return entry.stats[groupKey];
+  }
+
+  /** {@inheritDoc TransitRepository.resolveRouteFreq} */
+  resolveRouteFreq(routeId: string, serviceDate: Date): number | undefined {
+    const entry = this.routeFreqMap.get(routeId);
+    if (!entry) {
+      return undefined;
+    }
+    const activeIds = this.getActiveServiceIds(serviceDate);
+    const groupKey = selectServiceGroup(entry.groups, activeIds);
+    if (!groupKey) {
+      return undefined;
+    }
+    return entry.freqs[groupKey];
   }
 
   // ---------------------------------------------------------------------------

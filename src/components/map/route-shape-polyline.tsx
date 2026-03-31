@@ -26,6 +26,12 @@ interface RouteShapePolylinesProps {
   outlinePane?: string;
   /** Called when a route shape is clicked. */
   onRouteShapeSelected?: (routeId: string) => void;
+  /**
+   * Resolves daily departure frequency for a route, used for line thickness.
+   * When provided, its return value is used as-is (including undefined).
+   * When the prop itself is omitted, `shape.freq` is used as fallback.
+   */
+  resolveFreq?: (routeId: string) => number | undefined;
 }
 
 /**
@@ -56,6 +62,7 @@ export const RouteShapePolylines = memo(function RouteShapePolylines({
   outline,
   outlinePane,
   onRouteShapeSelected,
+  resolveFreq,
 }: RouteShapePolylinesProps) {
   // Precompute styles and sort so dimmed routes render before highlighted.
   // When freq is available, scale line weight by frequency.
@@ -63,7 +70,12 @@ export const RouteShapePolylines = memo(function RouteShapePolylines({
     const items = shapes.map((shape, idx) => ({
       shape,
       positions: toLatLng(shape.points),
-      style: getRouteShapeStyle(selectedRouteIds, shape.routeId, shape.routeType, shape.freq),
+      style: getRouteShapeStyle(
+        selectedRouteIds,
+        shape.routeId,
+        shape.routeType,
+        resolveFreq ? resolveFreq(shape.routeId) : shape.freq,
+      ),
       stableIndex: idx,
     }));
     if (selectedRouteIds === null) {
@@ -74,7 +86,7 @@ export const RouteShapePolylines = memo(function RouteShapePolylines({
       const bSelected = selectedRouteIds.has(b.shape.routeId) ? 1 : 0;
       return aSelected - bSelected;
     });
-  }, [shapes, selectedRouteIds]);
+  }, [shapes, selectedRouteIds, resolveFreq]);
 
   return (
     <>

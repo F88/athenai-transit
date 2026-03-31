@@ -15,6 +15,7 @@
 # Claude
 .claude/settings.local.json
 .claude/skills/shadcn
+.claude/worktrees
 
 # Agent skills (installed externally; shadcn creates both .agents/ and .agent/)
 .agents/skills/shadcn

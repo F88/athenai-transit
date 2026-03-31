@@ -298,4 +298,30 @@ export interface TransitRepository {
    * @returns Metadata for all sources with validity information.
    */
   getAllSourceMeta(): Promise<CollectionResult<SourceMeta>>;
+
+  /**
+   * Resolves per-stop stats for the service group matching the given date.
+   *
+   * Uses active service IDs for the date to select the best matching
+   * service group from InsightsBundle data. Returns undefined if insights
+   * are not loaded or no group matches.
+   *
+   * @param stopId - GTFS stop_id.
+   * @param serviceDate - The date to resolve stats for.
+   * @returns Stats for the matched service group, or undefined.
+   */
+  resolveStopStats(stopId: string, serviceDate: Date): StopWithMeta['stats'] | undefined;
+
+  /**
+   * Resolves per-route daily departure frequency for the service group
+   * matching the given date.
+   *
+   * Used for frequency-based route shape line thickness. Returns undefined
+   * if insights are not loaded or no group matches.
+   *
+   * @param routeId - GTFS route_id.
+   * @param serviceDate - The date to resolve freq for.
+   * @returns Daily departure count for the matched service group, or undefined.
+   */
+  resolveRouteFreq(routeId: string, serviceDate: Date): number | undefined;
 }

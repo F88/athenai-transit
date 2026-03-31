@@ -35,13 +35,16 @@ import type {
 export class TestDataSourceV2 implements TransitDataSourceV2 {
   private fixtures: Record<string, SourceDataV2>;
   private shapesFixtures: Record<string, ShapesBundle>;
+  private insightsFixtures: Record<string, InsightsBundle>;
 
   constructor(
     fixtures: Record<string, SourceDataV2>,
     shapesFixtures: Record<string, ShapesBundle> = {},
+    insightsFixtures: Record<string, InsightsBundle> = {},
   ) {
     this.fixtures = fixtures;
     this.shapesFixtures = shapesFixtures;
+    this.insightsFixtures = insightsFixtures;
   }
 
   loadData(prefix: string): Promise<SourceDataV2> {
@@ -56,8 +59,8 @@ export class TestDataSourceV2 implements TransitDataSourceV2 {
     return Promise.resolve(this.shapesFixtures[prefix] ?? null);
   }
 
-  loadInsights(_prefix: string): Promise<InsightsBundle | null> {
-    return Promise.resolve(null);
+  loadInsights(prefix: string): Promise<InsightsBundle | null> {
+    return Promise.resolve(this.insightsFixtures[prefix] ?? null);
   }
 
   loadGlobalInsights(): Promise<GlobalInsightsBundle | null> {
@@ -472,3 +475,55 @@ export const AFTER_BOUNDARY_PAST = new Date('2026-03-12T03:06:00');
  * svc_weekday removed, svc_holiday added.
  */
 export const EXCEPTION_HOLIDAY = new Date('2026-03-04T10:00:00');
+
+/**
+ * Creates an InsightsBundle fixture for testing service group resolution.
+ *
+ * Service groups match the calendar fixture:
+ * - "wd" group: svc_weekday (Mon-Fri)
+ * - "ho" group: svc_holiday (Sat-Sun)
+ *
+ * stopStats: different freq values per group for tdn_01 and bus_01.
+ * tripPatternStats: different freq values per group for tp_bus_i and tp_tdn_w.
+ */
+export function createInsightsFixtureV2(): InsightsBundle {
+  return {
+    bundle_version: 2,
+    kind: 'insights',
+    serviceGroups: {
+      v: 1,
+      data: [
+        { key: 'wd', serviceIds: ['svc_weekday'] },
+        { key: 'ho', serviceIds: ['svc_holiday'] },
+      ],
+    },
+    stopStats: {
+      v: 1,
+      data: {
+        wd: {
+          tdn_01: { freq: 100, rc: 2, rtc: 1, ed: 490, ld: 730 },
+          bus_01: { freq: 200, rc: 3, rtc: 1, ed: 492, ld: 740 },
+        },
+        ho: {
+          tdn_01: { freq: 40, rc: 1, rtc: 1, ed: 540, ld: 660 },
+          bus_01: { freq: 80, rc: 2, rtc: 1, ed: 540, ld: 700 },
+        },
+      },
+    },
+    tripPatternStats: {
+      v: 1,
+      data: {
+        wd: {
+          tp_bus_i: { freq: 50, rd: [30, 20, 10, 0] },
+          tp_bus_o: { freq: 30, rd: [20, 10, 0] },
+          tp_tdn_w: { freq: 30, rd: [20, 15, 10, 0] },
+        },
+        ho: {
+          tp_bus_i: { freq: 15, rd: [30, 20, 10, 0] },
+          tp_bus_o: { freq: 10, rd: [20, 10, 0] },
+          tp_tdn_w: { freq: 10, rd: [20, 15, 10, 0] },
+        },
+      },
+    },
+  };
+}

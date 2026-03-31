@@ -70,7 +70,8 @@ export function makeStopWithContext(
 ): StopWithContext {
   // Create Route objects once and share references between departures and routes,
   // mirroring production behavior where both reference the same routeMap entries.
-  const routes = routeIds.map((rid) => makeRoute(rid));
+  // Each route's route_type matches the corresponding routeTypes entry.
+  const routes = routeIds.map((rid, i) => makeRoute(rid, routeTypes[i % routeTypes.length]));
   return {
     stop,
     routeTypes,
@@ -98,7 +99,11 @@ export function makeStopWithContext(
  */
 export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRepository {
   return {
-    getStopsInBounds: vi.fn(),
+    getStopsInBounds: vi.fn().mockResolvedValue({
+      success: true,
+      data: [],
+      truncated: false,
+    }),
     getUpcomingTimetableEntries: vi.fn().mockResolvedValue({
       success: true,
       data: [],
@@ -109,15 +114,27 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
       success: true,
       data: [3],
     }),
-    getStopsNearby: vi.fn(),
-    getRouteShapes: vi.fn(),
+    getStopsNearby: vi.fn().mockResolvedValue({
+      success: true,
+      data: [],
+      truncated: false,
+    }),
+    getRouteShapes: vi.fn().mockResolvedValue({
+      success: true,
+      data: [],
+      truncated: false,
+    }),
     getFullDayTimetableEntries: vi.fn().mockResolvedValue({
       success: true,
       data: [],
       truncated: false,
       meta: { isBoardableOnServiceDay: false, totalEntries: 0 },
     }),
-    getAllStops: vi.fn(),
+    getAllStops: vi.fn().mockResolvedValue({
+      success: true,
+      data: [],
+      truncated: false,
+    }),
     getStopMetaById: vi.fn().mockResolvedValue({ success: false, error: 'Not found' }),
     getStopMetaByIds: vi.fn().mockReturnValue([]),
     getStopsForRoutes: vi.fn().mockReturnValue(new Set()),
@@ -130,6 +147,8 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
       data: [],
       truncated: false,
     }),
+    resolveStopStats: vi.fn().mockReturnValue(undefined),
+    resolveRouteFreq: vi.fn().mockReturnValue(undefined),
     ...overrides,
   } as TransitRepository;
 }

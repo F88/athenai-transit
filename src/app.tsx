@@ -25,6 +25,7 @@ import { nextInfoLevel } from './utils/next-info-level';
 import { createInfoLevel } from './utils/create-info-level';
 import { createLogger } from './utils/logger';
 import { getServiceDay } from './domain/transit/service-day';
+import { formatDateKey } from './domain/transit/calendar-utils';
 import {
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
@@ -477,6 +478,23 @@ export default function App() {
     [settings.visibleRouteShapes],
   );
 
+  // Memoize service day to avoid re-creating resolveRouteFreq on every
+  // 15-second dateTime tick. Service day only changes at the 03:00 boundary,
+  // so shapes re-render is skipped for the vast majority of ticks.
+  const serviceDay = useMemo(() => getServiceDay(dateTime), [dateTime]);
+  const serviceDayKey = formatDateKey(serviceDay);
+
+  useEffect(() => {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    logger.info(`Service day: ${serviceDayKey} (${dayNames[serviceDay.getDay()]})`);
+  }, [serviceDayKey, serviceDay]);
+
+  const resolveRouteFreq = useCallback(
+    (routeId: string) => repo.resolveRouteFreq(routeId, serviceDay),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- serviceDay is a new Date each tick; use serviceDayKey for stable identity
+    [repo, serviceDayKey],
+  );
+
   const handleToggleBusShapes = useCallback(() => {
     updateSetting('visibleRouteShapes', toggleInList(settings.visibleRouteShapes, 3));
   }, [settings.visibleRouteShapes, updateSetting]);
@@ -542,6 +560,7 @@ export default function App() {
           onCycleInfoLevel={handleCycleInfoLevel}
           onDeselectStop={deselectStop}
           onRouteShapeSelected={selectRouteShape}
+          resolveRouteFreq={resolveRouteFreq}
           theme={settings.theme}
           doubleTapDrag={settings.doubleTapDrag}
           onToggleDarkMode={handleToggleDarkMode}
