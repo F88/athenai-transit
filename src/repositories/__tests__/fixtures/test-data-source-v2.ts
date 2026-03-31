@@ -30,7 +30,7 @@ import type {
  * In-memory v2 data source for testing.
  *
  * Resolves prefixes from a pre-built record. Throws for unknown prefixes.
- * Shapes and insights return null (not needed for repository tests).
+ * Shapes and insights return per-prefix fixtures when provided, null otherwise.
  */
 export class TestDataSourceV2 implements TransitDataSourceV2 {
   private fixtures: Record<string, SourceDataV2>;

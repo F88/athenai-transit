@@ -137,7 +137,7 @@ function benchResolveRouteFreq(
   repo: TransitRepository,
   stops: StopWithMeta[],
   serviceDate: Date,
-): { ms: number; resolved: number } {
+): { ms: number; resolved: number; total: number } {
   const t0 = performance.now();
   let resolved = 0;
   const seen = new Set<string>();
@@ -151,7 +151,7 @@ function benchResolveRouteFreq(
       }
     }
   }
-  return { ms: performance.now() - t0, resolved };
+  return { ms: performance.now() - t0, resolved, total: seen.size };
 }
 
 // ---------------------------------------------------------------------------
@@ -208,7 +208,7 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
   const fullDay = { ms: 0, deps: 0 };
   const stopsForRoutes = { ms: 0, stopCount: 0, calls: 0 };
   const resolveStats = { ms: 0, resolved: 0, total: 0 };
-  const resolveFreq = { ms: 0, resolved: 0, routes: 0 };
+  const resolveFreq = { ms: 0, resolved: 0, total: 0 };
   const serviceDate = getServiceDay(now);
 
   for (const loc of BENCH_LOCATIONS) {
@@ -261,6 +261,7 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
       const rf = benchResolveRouteFreq(repository, nearbyStops, serviceDate);
       resolveFreq.ms += rf.ms;
       resolveFreq.resolved += rf.resolved;
+      resolveFreq.total += rf.total;
     }
 
     const inBound = boundsResult.value.success ? boundsResult.value.data.length : 0;
@@ -291,7 +292,7 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
     `resolveStopStats (${resolveStats.total} stops): ${resolveStats.ms.toFixed(2)}ms total, ${avg(resolveStats.ms, resolveStats.total)}ms/stop, ${resolveStats.resolved} resolved`,
   );
   logger.info(
-    `resolveRouteFreq (${resolveFreq.resolved} routes): ${resolveFreq.ms.toFixed(2)}ms total`,
+    `resolveRouteFreq (${resolveFreq.total} routes, ${resolveFreq.resolved} resolved): ${resolveFreq.ms.toFixed(2)}ms total`,
   );
 
   logger.info(`Benchmark complete: ${(performance.now() - t0).toFixed(2)}ms`);

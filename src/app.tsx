@@ -478,9 +478,10 @@ export default function App() {
     [settings.visibleRouteShapes],
   );
 
-  // Memoize service day to avoid re-creating resolveRouteFreq on every
-  // 15-second dateTime tick. Service day only changes at the 03:00 boundary,
-  // so shapes re-render is skipped for the vast majority of ticks.
+  // Derive service day from dateTime. serviceDay itself recomputes every
+  // 15-second tick (new Date), but serviceDayKey (string) only changes at
+  // the 03:00 boundary. resolveRouteFreq depends on serviceDayKey, so
+  // shapes re-render is skipped for the vast majority of ticks.
   const serviceDay = useMemo(() => getServiceDay(dateTime), [dateTime]);
   const serviceDayKey = formatDateKey(serviceDay);
 
@@ -488,7 +489,7 @@ export default function App() {
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const day = new Date(serviceDayKey.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3'));
     logger.info(`Service day: ${serviceDayKey} (${dayNames[day.getDay()]})`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- serviceDayKey is the stable identity; serviceDay is a new Date each tick
+     
   }, [serviceDayKey]);
 
   const resolveRouteFreq = useCallback(
