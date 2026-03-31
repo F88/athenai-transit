@@ -1,17 +1,24 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
 import type { TimetableOmitted } from '../../types/app/repository';
+import { formatDateKey } from '../../domain/transit/calendar-utils';
 import { isDropOffOnly } from '../../domain/transit/timetable-utils';
 
 /**
- * Debug dump of timetable-level summary statistics.
+ * Debug dump of timetable-level metadata and entry statistics.
  * Includes its own details/summary for collapsed display.
  * Only rendered in verbose info level.
  */
 export function VerboseTimetableSummary({
+  type,
+  headsign,
+  serviceDate,
   timetableEntries,
   omitted,
   isBoardableOnServiceDay,
 }: {
+  type: 'route-headsign' | 'stop';
+  headsign?: string;
+  serviceDate: Date;
   timetableEntries: TimetableEntry[];
   omitted: TimetableOmitted;
   isBoardableOnServiceDay: boolean;
@@ -50,6 +57,10 @@ export function VerboseTimetableSummary({
       </summary>
       <div className="mt-0.5">
         <span className="block overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
+          <span className="block">
+            [timetable] serviceDate={formatDateKey(serviceDate)} type={type}
+          </span>
+          {headsign != null && <span className="block">[headsign] &quot;{headsign}&quot;</span>}
           <span className="block">
             [entries] total={timetableEntries.length} boardable={boardable} dropOffOnly={dropOff}{' '}
             origin={originCount} terminal={terminalCount}

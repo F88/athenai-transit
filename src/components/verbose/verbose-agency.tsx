@@ -7,9 +7,18 @@ import { VerboseAgencyDisplayNames } from './verbose-agency-display-names';
  * Includes its own details/summary for collapsed display.
  * Only rendered in verbose info level.
  */
-export function VerboseAgency({ agency, names }: { agency: Agency; names: AgencyDisplayNames }) {
+export function VerboseAgency({
+  agency,
+  names,
+  defaultOpen = false,
+}: {
+  agency: Agency;
+  names: AgencyDisplayNames;
+  /** Start with details expanded. @default false */
+  defaultOpen?: boolean;
+}) {
   return (
-    <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
+    <details open={defaultOpen} className="text-[9px] font-normal text-[#999] dark:text-gray-500">
       <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
         [Agency]
       </summary>

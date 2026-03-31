@@ -17,6 +17,10 @@ import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-n
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { PillButton } from '@/components/button/pill-button';
 import { TimetableGridEntry } from '@/components/timetable/timetable-grid-entry';
+import { VerboseAgencies } from '@/components/verbose/verbose-agencies';
+import { VerboseStop } from '@/components/verbose/verbose-stop';
+import { VerboseStopDisplayNames } from '@/components/verbose/verbose-stop-display-names';
+import { VerboseRoutes } from '@/components/verbose/verbose-routes';
 import { VerboseTimetableSummary } from '@/components/verbose/verbose-timetable-summary';
 import {
   Dialog,
@@ -116,6 +120,9 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
         <DialogHeader className="border-border shrink-0 border-b p-4 text-left">
           {info.isVerboseEnabled && (
             <VerboseTimetableSummary
+              type={data.type}
+              headsign={data.headsign}
+              serviceDate={data.serviceDate}
               timetableEntries={filteredTimetableEntries}
               omitted={data.omitted}
               isBoardableOnServiceDay={data.isBoardableOnServiceDay}
@@ -430,9 +437,11 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
       ? data.agencies.filter((a) => a.agency_id === data.routes[0].agency_id)
       : data.agencies;
 
+  const showVerbose = infoLevel === 'verbose';
+
   return (
     <>
-      {infoLevel === 'verbose' && <IdBadge>{data.stop.stop_id}</IdBadge>}
+      {showVerbose && <IdBadge>{data.stop.stop_id}</IdBadge>}
       {stopNames.subNames.length > 0 && (
         <p className="m-0 text-[11px] font-normal text-[#888] dark:text-gray-400">
           {stopNames.subNames.join(' / ')}
@@ -450,15 +459,42 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
         )}
         {displayAgencies.length > 0 &&
           displayAgencies.map((a) => (
-            <AgencyBadge key={a.agency_id} agency={a} infoLevel={infoLevel} size="xs" />
+            <AgencyBadge
+              key={a.agency_id}
+              agency={a}
+              infoLevel={infoLevel}
+              size="xs"
+              disableVerbose
+            />
           ))}
       </div>
+
       {uniqueRoutes.length > 0 && (
         <div className="flex flex-wrap items-center gap-1">
           {uniqueRoutes.map((r) => (
-            <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} />
+            <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} disableVerbose />
           ))}
         </div>
+      )}
+      {showVerbose && (
+        <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
+          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+            [META]
+          </summary>
+          <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
+            <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+              [Stop]
+            </summary>
+            <div className="mt-0.5">
+              <span className="block overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
+                <VerboseStop stop={data.stop} isDropOffOnly={isDropOffOnly} />
+              </span>
+            </div>
+            <VerboseStopDisplayNames names={stopNames} />
+          </details>
+          <VerboseAgencies agencies={displayAgencies} infoLevel={infoLevel} />
+          <VerboseRoutes routes={uniqueRoutes} infoLevel={infoLevel} />
+        </details>
       )}
     </>
   );

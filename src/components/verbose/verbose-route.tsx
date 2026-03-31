@@ -13,15 +13,18 @@ export function VerboseRoute({
   route,
   names,
   infoLevel,
+  defaultOpen = false,
 }: {
   route: Route;
   names: RouteDisplayNames;
   infoLevel: InfoLevel;
+  /** Start with details expanded. @default false */
+  defaultOpen?: boolean;
 }) {
   const label = formatRouteLabel(names, infoLevel);
 
   return (
-    <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
+    <details open={defaultOpen} className="text-[9px] font-normal text-[#999] dark:text-gray-500">
       <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
         [Route]
       </summary>
