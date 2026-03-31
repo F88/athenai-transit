@@ -214,11 +214,7 @@ function TimetableDateLabel({ serviceDate, time }: { serviceDate: Date; time: Da
 }
 
 /** Metadata summary shown above the timetable grid. */
-function TimetableMetadata({
-  timetableEntries: timetableEntries,
-}: {
-  timetableEntries: TimetableEntry[];
-}) {
+function TimetableMetadata({ timetableEntries }: { timetableEntries: TimetableEntry[] }) {
   // Compute departure count and operating hours.
   // Use the display time (arrival for terminal, departure otherwise) for statistics.
   const allMinutes = timetableEntries.map((d) => getDisplayMinutes(d));
@@ -377,9 +373,9 @@ function TimetableGrid({
               {hour}時
             </span>
             <span className="flex flex-wrap gap-1.5">
-              {entries.map((entry) => (
+              {entries.map((entry, i) => (
                 <TimetableGridEntry
-                  key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}`}
+                  key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}_${i}`}
                   entry={entry}
                   showHeadsign={showHeadsign}
                   headsignMaxLength={headsignLengths.get(entry.routeDirection.headsign)}
@@ -400,9 +396,9 @@ function TimetableGrid({
                 [{hour}時 {entries.length}件]
               </summary>
               <div className="mt-0.5 flex flex-col gap-0.5">
-                {entries.map((entry) => (
+                {entries.map((entry, i) => (
                   <TimetableGridEntry
-                    key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}`}
+                    key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}_${i}`}
                     entry={entry}
                     showHeadsign={showHeadsign}
                     headsignMaxLength={headsignLengths.get(entry.routeDirection.headsign)}
@@ -492,10 +488,8 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
               <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
                 [Stop]
               </summary>
-              <div className="mt-1">
-                <span className="block overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
-                  <VerboseStop stop={data.stop} isDropOffOnly={isDropOffOnly} />
-                </span>
+              <div className="mt-1 overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
+                <VerboseStop stop={data.stop} isDropOffOnly={isDropOffOnly} />
               </div>
               <VerboseStopDisplayNames names={stopNames} />
             </details>

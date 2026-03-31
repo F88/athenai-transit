@@ -2,7 +2,7 @@ import type { Stop } from '../../types/app/transit';
 
 /**
  * Debug dump of Stop basic fields.
- * Renders as inline content (no details/summary, no border).
+ * Renders block-level content (no details/summary, no border).
  * Used as a building block by {@link VerboseStopData} and other components.
  */
 export function VerboseStop({ stop, isDropOffOnly }: { stop: Stop; isDropOffOnly: boolean }) {
