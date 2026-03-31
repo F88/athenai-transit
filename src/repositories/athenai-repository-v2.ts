@@ -667,6 +667,14 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       );
     }
 
+    // Create the repository instance first, then populate its internal maps.
+    // stopInsightsMap is populated by enrichStopInsights (below), and
+    // routeFreqMap is populated by loadAllShapesWithInsights (background).
+    // Both mutate the instance's maps after construction — this is intentional:
+    // constructor injection would require blocking on shapes load (which runs
+    // in background) or breaking the symmetry between the two maps.
+    // The mutation is confined to create() — no external code observes the
+    // intermediate state before this method returns.
     const repository = new AthenaiRepositoryV2(merged);
 
     // Enrich stopsMetaMap with insights (stopStats + stopGeo).
