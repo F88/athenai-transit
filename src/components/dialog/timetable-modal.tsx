@@ -425,8 +425,6 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
     !data.isBoardableOnServiceDay &&
     (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
 
-  // Convert route types into emoji.
-  // Duplicates are not removed; it's simply a conversion.
   const routeTypes = data.routes.map((r) => r.route_type);
 
   // Unique routes for badge display.
