@@ -9,8 +9,24 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- insights の service group 選択を `data[0]` 固定から日付ベースの動的解決に修正 (#87)。
+    - `resolveStopStats(stopId, serviceDate)` / `resolveRouteFreq(routeId, serviceDate)` を追加。
+    - NearbyStop の stats (freq 等) が曜日に応じて正しい値を表示。
+    - route shapes の線の太さも dateTime に応じて動的に変化。
+    - shapes 再描画を serviceDayKey で安定化し、15秒ティックでの不要な再計算を防止。
+
 ### Added
 
+- 日時セレクター機能を PRD.md に追加 (Section E)、README/ABOUT に反映。
+- `?time=` / `?stop=` URL パラメータを PRD.md に追記。
+- `selectServiceGroup()` 関数: active service IDs と最も overlap が大きいグループを選択。
+- repo-benchmark に `resolveStopStats` / `resolveRouteFreq` の計測を追加。
+- webapp-benchmark skill を追加。
+- `useDateTime` に INFO ログ追加 (Custom time set / from URL / Reset)。
+- `NearbyDepartures` ログに serviceDay と totalFreq を追加。
+- `getStopsInBounds` / `getStopsNearby` ログに center 座標を追加。
 - timetable-modal のコンポーネント抽出:
     - TimetableGridEntry: 時刻表グリッドの1エントリ (minutes + headsign + labels)。
     - EntryLabels: boarding/position labels。
