@@ -35,7 +35,7 @@ const iyotetsuBus: GtfsSourceDefinition = {
 
     /** GtfsResource */
     routeTypes: ['bus'],
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260313',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260330',
   },
   pipeline: {
     outDir: 'iyotetsu-bus',
