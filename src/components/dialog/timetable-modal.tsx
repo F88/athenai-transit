@@ -229,8 +229,23 @@ function TimetableMetadata({
   const lastTime = count > 0 ? formatMinutes(allMinutes[count - 1]) : null;
   const avgInterval = computeAverageInterval(allMinutes);
 
-  // Route+headsign breakdown
+  // Route breakdown (always available)
   const routeBreakdown = useMemo(() => {
+    const counts = new Map<string, { route: Route; count: number }>();
+    for (const dep of timetableEntries) {
+      const routeId = dep.routeDirection.route.route_id;
+      const entry = counts.get(routeId);
+      if (entry) {
+        entry.count++;
+      } else {
+        counts.set(routeId, { route: dep.routeDirection.route, count: 1 });
+      }
+    }
+    return Array.from(counts.values());
+  }, [timetableEntries]);
+
+  // Route+headsign breakdown (useful when headsigns are present)
+  const routeHeadsignBreakdown = useMemo(() => {
     const counts = new Map<string, { route: Route; headsign: string; count: number }>();
     for (const dep of timetableEntries) {
       const key = `${dep.routeDirection.route.route_id}__${dep.routeDirection.headsign}`;
@@ -248,6 +263,10 @@ function TimetableMetadata({
     return Array.from(counts.values());
   }, [timetableEntries]);
 
+  // Show route+headsign breakdown only when headsigns add distinction
+  const hasHeadsigns = routeHeadsignBreakdown.some((rb) => rb.headsign !== '');
+  const showRouteHeadsign = hasHeadsigns && routeHeadsignBreakdown.length > 1;
+
   return (
     <div className="border-border text-muted-foreground mb-3 space-y-0.5 rounded border p-2 text-[11px]">
       {firstTime && lastTime && (
@@ -261,6 +280,16 @@ function TimetableMetadata({
       {routeBreakdown.length > 1 && (
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
           {routeBreakdown.map((rb) => (
+            <span key={rb.route.route_id} className="inline-flex items-center gap-0.5">
+              <RouteBadge route={rb.route} infoLevel={infoLevel} size="xs" disableVerbose />
+              <span className="font-medium">{rb.count}</span>
+            </span>
+          ))}
+        </div>
+      )}
+      {showRouteHeadsign && (
+        <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+          {routeHeadsignBreakdown.map((rb) => (
             <span
               key={`${rb.route.route_id}__${rb.headsign}`}
               className="inline-flex items-center gap-0.5"
@@ -270,6 +299,7 @@ function TimetableMetadata({
                 route={rb.route}
                 infoLevel={infoLevel}
                 size="xs"
+                disableVerbose
               />
               <span className="font-medium">{rb.count}</span>
             </span>
@@ -512,14 +542,22 @@ function StopTimetableFilter({
   onToggleFilter: (key: string) => void;
   infoLevel: InfoLevel;
 }) {
-  const routeHeadsigns = Array.from(
-    new Map(
-      data.timetableEntries.map((d) => [
-        `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`,
-        { route: d.routeDirection.route, headsign: d.routeDirection.headsign },
-      ]),
-    ).values(),
-  );
+  // Count entries per route+headsign
+  const routeHeadsignCounts = new Map<string, { route: Route; headsign: string; count: number }>();
+  for (const d of data.timetableEntries) {
+    const key = `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`;
+    const entry = routeHeadsignCounts.get(key);
+    if (entry) {
+      entry.count++;
+    } else {
+      routeHeadsignCounts.set(key, {
+        route: d.routeDirection.route,
+        headsign: d.routeDirection.headsign,
+        count: 1,
+      });
+    }
+  }
+  const routeHeadsigns = Array.from(routeHeadsignCounts.values());
 
   const noFilter = activeFilters.size === 0;
 
@@ -537,11 +575,13 @@ function StopTimetableFilter({
         return (
           <PillButton
             key={key}
+            size={'sm'}
             active={isActive}
             activeBg={bg}
             activeFg={fg}
             inactiveBorder={bg}
             onClick={() => onToggleFilter(key)}
+            count={r.count}
           >
             {/* Filter button has no RouteBadge — fall back to route name so it is never blank. */}
             {getHeadsignDisplayNames(r.headsign, r.route, infoLevel).name ||

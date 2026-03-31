@@ -200,3 +200,128 @@ export const TimetableFilters: Story = {
     );
   },
 };
+
+// --- Count badge ---
+
+export const WithCount: Story = {
+  args: { active: true, children: '秋葉原ルート', count: 22 },
+};
+
+export const WithCountInactive: Story = {
+  args: { active: false, children: '秋葉原ルート', count: 22 },
+};
+
+export const WithCountCustomColor: Story = {
+  args: {
+    active: true,
+    activeBg: TOEI_GREEN,
+    activeFg: '#ffffff',
+    children: '新宿方面',
+    count: 42,
+  },
+};
+
+export const WithCountNoCount: Story = {
+  args: { active: true, children: 'カウントなし' },
+};
+
+/** Count badge with various digit counts. */
+export const CountDigits: Story = {
+  args: { active: false },
+  render: (args) => (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <PillButton {...args} active activeBg={TOEI_GREEN} activeFg="#fff" count={8}>
+          default 1桁
+        </PillButton>
+        <PillButton {...args} active activeBg={TOEI_GREEN} activeFg="#fff" count={78}>
+          default 2桁
+        </PillButton>
+        <PillButton {...args} active activeBg={TOEI_GREEN} activeFg="#fff" count={123}>
+          default 3桁
+        </PillButton>
+        <PillButton {...args} active activeBg={TOEI_GREEN} activeFg="#fff" count={7890}>
+          default 4桁
+        </PillButton>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <PillButton {...args} active activeBg={TOEI_GREEN} activeFg="#fff" size="sm" count={8}>
+          sm 1桁
+        </PillButton>
+        <PillButton {...args} active activeBg={TOEI_GREEN} activeFg="#fff" size="sm" count={78}>
+          sm 2桁
+        </PillButton>
+        <PillButton {...args} active activeBg={TOEI_GREEN} activeFg="#fff" size="sm" count={123}>
+          sm 3桁
+        </PillButton>
+        <PillButton {...args} active activeBg={TOEI_GREEN} activeFg="#fff" size="sm" count={7890}>
+          sm 4桁
+        </PillButton>
+      </div>
+    </div>
+  ),
+};
+
+/** Kitchen sink: count badge in various states. */
+export const KitchenSinkCount: Story = {
+  args: { active: false },
+  render: (args) => {
+    const routes = [
+      { label: '麹町ルート', color: '#e60012', count: 22 },
+      { label: '秋葉原ルート', color: '#00a850', count: 20 },
+      { label: '内神田ルート', color: '#0078c8', count: 22 },
+      { label: '富士見・神保町', color: '#f39800', count: 20 },
+    ];
+    return (
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-1">
+          {routes.map((r) => (
+            <PillButton
+              key={r.label}
+              {...args}
+              active
+              activeBg={r.color}
+              activeFg="#fff"
+              count={r.count}
+            >
+              {r.label}
+            </PillButton>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {routes.map((r) => (
+            <PillButton
+              key={`off-${r.label}`}
+              {...args}
+              active={false}
+              inactiveBorder={r.color}
+              count={r.count}
+            >
+              {r.label}
+            </PillButton>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {routes.map((r) => (
+            <PillButton key={`no-${r.label}`} {...args} active activeBg={r.color} activeFg="#fff">
+              {r.label}
+            </PillButton>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {routes.map((r) => (
+            <PillButton
+              key={`no-${r.label}`}
+              {...args}
+              active={false}
+              activeBg={r.color}
+              activeFg="#fff"
+            >
+              {r.label}
+            </PillButton>
+          ))}
+        </div>
+      </div>
+    );
+  },
+};
