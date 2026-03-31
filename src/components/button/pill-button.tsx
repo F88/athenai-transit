@@ -101,6 +101,8 @@ export function PillButton({
       )}
       style={style}
       onClick={onClick}
+      tabIndex={onClick ? undefined : -1}
+      aria-hidden={onClick ? undefined : true}
       title={title}
     >
       {children}

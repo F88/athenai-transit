@@ -123,3 +123,16 @@ export function hasBoardableDeparture(entries: TimetableEntry[]): boolean {
 export function filterBoardable(entries: TimetableEntry[]): TimetableEntry[] {
   return entries.filter((entry) => !isDropOffOnly(entry));
 }
+
+/**
+ * Get the display time in minutes for a timetable entry.
+ *
+ * Terminal entries show arrival time; all others show departure time.
+ * This is a key domain rule: the time shown to the user depends on
+ * whether the stop is the last stop in the pattern.
+ */
+export function getDisplayMinutes(entry: TimetableEntry): number {
+  return entry.patternPosition.isTerminal
+    ? entry.schedule.arrivalMinutes
+    : entry.schedule.departureMinutes;
+}

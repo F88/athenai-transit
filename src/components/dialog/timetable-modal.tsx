@@ -5,6 +5,7 @@ import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { resolveMinPrefixLengths } from '@/utils/resolve-min-prefix-lengths';
 import { routeTypesEmoji } from '@/domain/transit/route-type-emoji';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
+import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route, Stop } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
@@ -296,11 +297,6 @@ function useCurrentHourScroll() {
  * Get the display time for a timetable entry.
  * Terminal stops show arrival time; all others show departure time.
  */
-function getDisplayMinutes(entry: TimetableEntry): number {
-  return entry.patternPosition.isTerminal
-    ? entry.schedule.arrivalMinutes
-    : entry.schedule.departureMinutes;
-}
 
 /** Hour-grouped timetable grid. Shows headsign badge per entry when enabled. */
 function TimetableGrid({
@@ -372,9 +368,9 @@ function TimetableGrid({
               {hour}時
             </span>
             <span className="flex flex-wrap gap-1.5">
-              {entries.map((entry, i) => (
+              {entries.map((entry) => (
                 <TimetableGridEntry
-                  key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${i}`}
+                  key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}`}
                   entry={entry}
                   showHeadsign={showHeadsign}
                   headsignMaxLength={headsignLengths.get(entry.routeDirection.headsign)}
@@ -395,9 +391,9 @@ function TimetableGrid({
                 [{hour}時 {entries.length}件]
               </summary>
               <div className="mt-0.5 flex flex-col gap-0.5">
-                {entries.map((entry, i) => (
+                {entries.map((entry) => (
                   <TimetableGridEntry
-                    key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${i}`}
+                    key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}`}
                     entry={entry}
                     showHeadsign={showHeadsign}
                     headsignMaxLength={headsignLengths.get(entry.routeDirection.headsign)}
@@ -424,7 +420,7 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
     !data.isBoardableOnServiceDay &&
     (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
 
-  // Collect route types for emoji display.
+  // Convert route types into emoji.
   // Duplicates are not removed; it's simply a conversion.
   const routeTypes = data.routes.map((r) => r.route_type);
 
@@ -515,22 +511,24 @@ function StopTimetableFilter({
   onToggleFilter: (key: string) => void;
   infoLevel: InfoLevel;
 }) {
-  // Count entries per route+headsign
-  const routeHeadsignCounts = new Map<string, { route: Route; headsign: string; count: number }>();
-  for (const d of data.timetableEntries) {
-    const key = `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`;
-    const entry = routeHeadsignCounts.get(key);
-    if (entry) {
-      entry.count++;
-    } else {
-      routeHeadsignCounts.set(key, {
-        route: d.routeDirection.route,
-        headsign: d.routeDirection.headsign,
-        count: 1,
-      });
+  // Count entries per route+headsign (memoized for filter toggle re-renders)
+  const routeHeadsigns = useMemo(() => {
+    const counts = new Map<string, { route: Route; headsign: string; count: number }>();
+    for (const d of data.timetableEntries) {
+      const key = `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`;
+      const entry = counts.get(key);
+      if (entry) {
+        entry.count++;
+      } else {
+        counts.set(key, {
+          route: d.routeDirection.route,
+          headsign: d.routeDirection.headsign,
+          count: 1,
+        });
+      }
     }
-  }
-  const routeHeadsigns = Array.from(routeHeadsignCounts.values());
+    return Array.from(counts.values());
+  }, [data.timetableEntries]);
 
   const noFilter = activeFilters.size === 0;
 

@@ -1,15 +1,9 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { TimetableEntry } from '../../types/app/transit-composed';
+import { getDisplayMinutes } from '../../domain/transit/timetable-utils';
 import { HeadsignBadge } from '../badge/headsign-badge';
 import { VerboseTimetableGridEntry as VerboseGridEntry } from '../verbose/verbose-timetable-grid-entry';
 import { EntryLabels } from './entry-labels';
-
-/** Terminal entries show arrival time; all others show departure time. */
-function getDisplayMinutes(entry: TimetableEntry): number {
-  return entry.patternPosition.isTerminal
-    ? entry.schedule.arrivalMinutes
-    : entry.schedule.departureMinutes;
-}
 
 interface TimetableGridEntryProps {
   entry: TimetableEntry;
