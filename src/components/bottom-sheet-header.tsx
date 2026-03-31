@@ -59,6 +59,7 @@ export function BottomSheetHeader({
         {DEPARTURE_VIEWS.filter((v) => v.visible).map((view) => (
           <PillButton
             key={view.id}
+            size={'sm'}
             active={viewId === view.id}
             disabled={!view.enabled}
             onClick={() => onViewChange(view.id)}
@@ -71,11 +72,16 @@ export function BottomSheetHeader({
       </div>
       <div className="no-scrollbar mt-1 flex gap-1 overflow-x-auto">
         <PillButton
+          size={'sm'}
           active={activeOnly}
+          activeBg={'#1565c0'}
+          activeBorder={'#1565c0'}
+          inactiveBorder={'#1565c0'}
           onClick={onToggleActiveOnly}
           title="次便がある乗り場のみ表示"
+          count={counts.active}
         >
-          運行中 ({counts.active})
+          運行中
         </PillButton>
 
         {/* Route types filter */}
@@ -83,6 +89,7 @@ export function BottomSheetHeader({
           presentRouteTypes.map((rt) => (
             <PillButton
               key={rt}
+              size={'sm'}
               active={!hiddenRouteTypes.has(rt)}
               activeBg={`${routeTypeColor(rt)}20`}
               activeBorder={routeTypeColor(rt)}
@@ -100,6 +107,7 @@ export function BottomSheetHeader({
             return (
               <PillButton
                 key={agency.agency_id}
+                size={'sm'}
                 active={!hiddenAgencyIds.has(agency.agency_id)}
                 activeBg={bgColor}
                 activeFg={fgColor}

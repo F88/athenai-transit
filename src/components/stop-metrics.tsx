@@ -28,6 +28,7 @@ interface StopMetricsProps {
  */
 export function StopMetrics({ stats, geo, infoLevel }: StopMetricsProps) {
   const info = useInfoLevel(infoLevel);
+  const showVerbose = infoLevel === 'verbose';
 
   return (
     <>
@@ -62,16 +63,7 @@ export function StopMetrics({ stats, geo, infoLevel }: StopMetricsProps) {
           </span>
         )}
       </div>
-      {info.isVerboseEnabled && (
-        <details className="mt-0.5 text-[9px] font-normal text-[#999] dark:text-gray-500">
-          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-            [Metrics]
-          </summary>
-          <div className="mt-0.5">
-            <VerboseStopMetrics stats={stats} geo={geo} />
-          </div>
-        </details>
-      )}
+      {showVerbose && <VerboseStopMetrics stats={stats} geo={geo} />}
     </>
   );
 }

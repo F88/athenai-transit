@@ -3,7 +3,7 @@ import { cn } from '../../lib/utils';
 
 const sizeVariants = {
   default: 'px-2.5 py-1 text-xs',
-  sm: 'px-2 py-0.5 text-[11px]',
+  sm: 'px-2 py-0.5 text-[10px]',
 } as const;
 
 interface PillButtonProps {
@@ -21,10 +21,12 @@ interface PillButtonProps {
   activeBorder?: string;
   /** Custom border color when inactive (e.g. route color as outline). */
   inactiveBorder?: string;
-  /** Click handler. */
-  onClick: () => void;
+  /** Click handler. Omit for display-only (non-interactive) badges. */
+  onClick?: () => void;
   /** Optional tooltip text. */
   title?: string;
+  /** Count badge displayed as chip-in-chip (inverted colors). */
+  count?: number;
   /** Additional CSS classes. */
   className?: string;
   children: React.ReactNode;
@@ -61,6 +63,7 @@ export function PillButton({
   inactiveBorder,
   onClick,
   title,
+  count,
   className,
   children,
 }: PillButtonProps) {
@@ -85,7 +88,7 @@ export function PillButton({
       type="button"
       disabled={disabled}
       className={cn(
-        'shrink-0 rounded-full font-medium whitespace-nowrap transition-colors',
+        'inline-flex shrink-0 items-center rounded-full font-medium whitespace-nowrap transition-colors',
         sizeVariants[size] ?? sizeVariants.default,
         active
           ? activeBg
@@ -98,9 +101,27 @@ export function PillButton({
       )}
       style={style}
       onClick={onClick}
+      tabIndex={onClick ? undefined : -1}
       title={title}
     >
       {children}
+      {count != null && (
+        <span
+          className="ml-1 inline-flex min-h-[1.4em] min-w-[1.4em] items-center justify-center rounded-full px-1 text-[0.85em] leading-none font-bold"
+          style={
+            disabled
+              ? { background: '#bbb', color: '#f0f0f0' }
+              : active
+                ? { background: activeFg ?? 'white', color: activeBg ?? '#1565c0' }
+                : {
+                    background: activeBg ?? inactiveBorder ?? '#1565c0',
+                    color: activeFg ?? 'white',
+                  }
+          }
+        >
+          {count.toLocaleString()}
+        </span>
+      )}
     </button>
   );
 }

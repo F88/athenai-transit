@@ -324,7 +324,7 @@ export default function App() {
       setTimetableModal({
         type: 'route-headsign',
         stop: meta.stop,
-        route,
+        routes: [route],
         headsign,
         serviceDate: getServiceDay(dateTime),
         timetableEntries: entries,
@@ -353,7 +353,7 @@ export default function App() {
       setTimetableModal({
         type: 'stop',
         stop: meta.stop,
-        routeTypes: routeTypeMap.get(stopId) ?? [3],
+        routes: meta.routes,
         serviceDate: getServiceDay(dateTime),
         timetableEntries: entries,
         omitted,
@@ -361,14 +361,7 @@ export default function App() {
         agencies: meta.agencies,
       });
     },
-    [
-      dateTime,
-      radiusStops,
-      routeTypeMap,
-      infoLevelFlags,
-      fetchTimetableEntries,
-      settings.infoLevel,
-    ],
+    [dateTime, radiusStops, infoLevelFlags, fetchTimetableEntries, settings.infoLevel],
   );
 
   // Select + pan to a stop from history. Uses focusStop to set

@@ -1,14 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
-import { HeadsignBadge } from '@/components/badge/headsign-badge';
 import { IdBadge } from '@/components/badge/id-badge';
 import { RouteBadge } from '@/components/badge/route-badge';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { resolveMinPrefixLengths } from '@/utils/resolve-min-prefix-lengths';
 import { routeTypesEmoji } from '@/domain/transit/route-type-emoji';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
-import { isDropOffOnly } from '@/domain/transit/timetable-utils';
+import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
 import type { InfoLevel } from '@/types/app/settings';
-import type { Agency, Route, RouteType, Stop } from '@/types/app/transit';
+import type { Agency, Route, Stop } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
 import type { TimetableOmitted } from '@/types/app/repository';
 import { AgencyBadge } from '@/components/badge/agency-badge';
@@ -17,6 +16,12 @@ import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-we
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { PillButton } from '@/components/button/pill-button';
+import { TimetableGridEntry } from '@/components/timetable/timetable-grid-entry';
+import { VerboseAgencies } from '@/components/verbose/verbose-agencies';
+import { VerboseStop } from '@/components/verbose/verbose-stop';
+import { VerboseStopDisplayNames } from '@/components/verbose/verbose-stop-display-names';
+import { VerboseRoutes } from '@/components/verbose/verbose-routes';
+import { VerboseTimetableSummary } from '@/components/verbose/verbose-timetable-summary';
 import {
   Dialog,
   DialogContent,
@@ -25,37 +30,23 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 
-/** Timetable for a specific route + headsign at a stop. */
-export interface RouteHeadsignTimetable {
-  type: 'route-headsign';
-  stop: Stop;
-  route: Route;
-  headsign: string;
-  /** GTFS service date for this timetable (not real-world time). */
-  serviceDate: Date;
-  timetableEntries: TimetableEntry[];
-  omitted: TimetableOmitted;
-  /** Whether at least one non-drop-off-only entry (pickupType !== 1, non-terminal) exists in the full service day. */
-  isBoardableOnServiceDay: boolean;
-  agencies: Agency[];
-}
-
-/** Timetable for all at a stop. */
-export interface StopTimetable {
-  type: 'stop';
-  stop: Stop;
-  routeTypes: RouteType[];
-  /** GTFS service date for this timetable (not real-world time). */
-  serviceDate: Date;
-  timetableEntries: TimetableEntry[];
-  omitted: TimetableOmitted;
-  /** Whether at least one non-drop-off-only entry (pickupType !== 1, non-terminal) exists in the full service day. */
-  isBoardableOnServiceDay: boolean;
-  agencies: Agency[];
-}
-
 /** Data needed to render the timetable modal. */
-export type TimetableData = RouteHeadsignTimetable | StopTimetable;
+export interface TimetableData {
+  type: 'route-headsign' | 'stop';
+  stop: Stop;
+  /** Routes serving this stop in this timetable context.
+   *  For route-headsign: single route. For stop: all routes. */
+  routes: Route[];
+  /** Headsign filter. Present only for route-headsign type. */
+  headsign?: string;
+  /** GTFS service date for this timetable (not real-world time). */
+  serviceDate: Date;
+  timetableEntries: TimetableEntry[];
+  omitted: TimetableOmitted;
+  /** Whether at least one non-drop-off-only entry (pickupType !== 1, non-terminal) exists in the full service day. */
+  isBoardableOnServiceDay: boolean;
+  agencies: Agency[];
+}
 
 interface TimetableModalProps {
   /** Pass null when the modal should be closed. */
@@ -127,24 +118,27 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
         className="flex max-h-[80dvh] max-w-[90dvw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[90dvw]"
       >
         <DialogHeader className="border-border shrink-0 border-b p-4 text-left">
+          {info.isVerboseEnabled && (
+            <VerboseTimetableSummary
+              type={data.type}
+              headsign={data.headsign}
+              serviceDate={data.serviceDate}
+              timetableEntries={filteredTimetableEntries}
+              omitted={data.omitted}
+              isBoardableOnServiceDay={data.isBoardableOnServiceDay}
+            />
+          )}
           <DialogTitle className="flex flex-col gap-1">
             <TimetableHeader data={data} infoLevel={infoLevel} />
           </DialogTitle>
           <DialogDescription className="sr-only">
             {data.type === 'route-headsign'
-              ? `${data.stop.stop_name} ${data.route.route_short_name || data.route.route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
+              ? `${data.stop.stop_name} ${data.routes[0].route_short_name || data.routes[0].route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
               : `${data.stop.stop_name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
           </DialogDescription>
 
           {info.isDetailedEnabled && (
-            <TimetableMetadata timetableEntries={filteredTimetableEntries} infoLevel={infoLevel} />
-          )}
-          {info.isVerboseEnabled && (
-            <VerboseMetadata
-              timetableEntries={filteredTimetableEntries}
-              omitted={data.omitted}
-              isBoardableOnServiceDay={data.isBoardableOnServiceDay}
-            />
+            <TimetableMetadata timetableEntries={filteredTimetableEntries} />
           )}
 
           <TimetableDateLabel serviceDate={data.serviceDate} time={time} />
@@ -220,13 +214,7 @@ function TimetableDateLabel({ serviceDate, time }: { serviceDate: Date; time: Da
 }
 
 /** Metadata summary shown above the timetable grid. */
-function TimetableMetadata({
-  timetableEntries: timetableEntries,
-  infoLevel,
-}: {
-  timetableEntries: TimetableEntry[];
-  infoLevel: InfoLevel;
-}) {
+function TimetableMetadata({ timetableEntries }: { timetableEntries: TimetableEntry[] }) {
   // Compute departure count and operating hours.
   // Use the display time (arrival for terminal, departure otherwise) for statistics.
   const allMinutes = timetableEntries.map((d) => getDisplayMinutes(d));
@@ -235,20 +223,16 @@ function TimetableMetadata({
   const lastTime = count > 0 ? formatMinutes(allMinutes[count - 1]) : null;
   const avgInterval = computeAverageInterval(allMinutes);
 
-  // Route+headsign breakdown
+  // Route breakdown (always available)
   const routeBreakdown = useMemo(() => {
-    const counts = new Map<string, { route: Route; headsign: string; count: number }>();
+    const counts = new Map<string, { route: Route; count: number }>();
     for (const dep of timetableEntries) {
-      const key = `${dep.routeDirection.route.route_id}__${dep.routeDirection.headsign}`;
-      const entry = counts.get(key);
+      const routeId = dep.routeDirection.route.route_id;
+      const entry = counts.get(routeId);
       if (entry) {
         entry.count++;
       } else {
-        counts.set(key, {
-          route: dep.routeDirection.route,
-          headsign: dep.routeDirection.headsign,
-          count: 1,
-        });
+        counts.set(routeId, { route: dep.routeDirection.route, count: 1 });
       }
     }
     return Array.from(counts.values());
@@ -256,30 +240,35 @@ function TimetableMetadata({
 
   return (
     <div className="border-border text-muted-foreground mb-3 space-y-0.5 rounded border p-2 text-[11px]">
-      {firstTime && lastTime && (
-        <p>
-          {firstTime} - {lastTime}
-        </p>
-      )}
       <p>
-        {count}本{avgInterval !== null && <span> / 平均{avgInterval}分間隔</span>}
+        {firstTime && lastTime && (
+          <span>
+            {firstTime} - {lastTime}
+          </span>
+        )}
+        <span> / {count.toLocaleString()}本</span>
+        {avgInterval !== null && <span> / 平均{avgInterval}分間隔</span>}
       </p>
       {routeBreakdown.length > 1 && (
-        <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-          {routeBreakdown.map((rb) => (
-            <span
-              key={`${rb.route.route_id}__${rb.headsign}`}
-              className="inline-flex items-center gap-0.5"
-            >
-              <HeadsignBadge
-                headsign={rb.headsign}
-                route={rb.route}
-                infoLevel={infoLevel}
-                size="xs"
-              />
-              <span className="font-medium">{rb.count}</span>
-            </span>
-          ))}
+        <div className="flex flex-wrap gap-1">
+          {routeBreakdown.map((rb) => {
+            const bg = rb.route.route_color ? `#${rb.route.route_color}` : undefined;
+            const fg = rb.route.route_text_color ? `#${rb.route.route_text_color}` : undefined;
+            const label =
+              rb.route.route_short_name || rb.route.route_long_name || rb.route.route_id;
+            return (
+              <PillButton
+                key={rb.route.route_id}
+                size="sm"
+                active={true}
+                activeBg={bg}
+                activeFg={fg}
+                count={rb.count}
+              >
+                {label}
+              </PillButton>
+            );
+          })}
         </div>
       )}
     </div>
@@ -287,66 +276,6 @@ function TimetableMetadata({
 }
 
 /** Verbose-only metadata dump: boarding stats, direction, pattern breakdown. */
-function VerboseMetadata({
-  timetableEntries,
-  omitted,
-  isBoardableOnServiceDay,
-}: {
-  timetableEntries: TimetableEntry[];
-  omitted: TimetableOmitted;
-  isBoardableOnServiceDay: boolean;
-}) {
-  // Domain-consistent counts using isDropOffOnly (pickupType === 1 OR isTerminal).
-  // pickupType 2/3 (phone/coordination required) are considered boardable.
-  const dropOff = timetableEntries.filter((e) => isDropOffOnly(e)).length;
-  const boardable = timetableEntries.length - dropOff;
-  const originCount = timetableEntries.filter((e) => e.patternPosition.isOrigin).length;
-  const terminalCount = timetableEntries.filter((e) => e.patternPosition.isTerminal).length;
-
-  // Direction breakdown
-  const dirCounts = new Map<string, number>();
-  for (const e of timetableEntries) {
-    const dir =
-      e.routeDirection.direction !== undefined ? `dir=${e.routeDirection.direction}` : 'dir=N/A';
-    dirCounts.set(dir, (dirCounts.get(dir) ?? 0) + 1);
-  }
-
-  // Pattern breakdown (stopIndex/totalStops combinations)
-  const patternCounts = new Map<string, number>();
-  for (const e of timetableEntries) {
-    const key = `[${e.patternPosition.stopIndex + 1}/${e.patternPosition.totalStops}]`;
-    patternCounts.set(key, (patternCounts.get(key) ?? 0) + 1);
-  }
-
-  // Dwell time stats
-  const dwellCount = timetableEntries.filter(
-    (e) => e.schedule.arrivalMinutes !== e.schedule.departureMinutes,
-  ).length;
-
-  return (
-    <div className="border-border text-muted-foreground mb-1 space-y-0.5 rounded border p-2 text-[11px]">
-      <p>
-        boardable={boardable} dropOffOnly={dropOff} origin={originCount} terminal=
-        {terminalCount}
-      </p>
-      <p>
-        {Array.from(dirCounts.entries())
-          .map(([dir, n]) => `${dir}:${n}`)
-          .join(' ')}
-      </p>
-      <p>
-        {Array.from(patternCounts.entries())
-          .map(([pat, n]) => `${pat}:${n}`)
-          .join(' ')}
-      </p>
-      {dwellCount > 0 && <p>dwell={dwellCount}</p>}
-      <p>
-        isBoardableOnServiceDay={String(isBoardableOnServiceDay)} omitted.terminal=
-        {omitted.terminal}
-      </p>
-    </div>
-  );
-}
 
 /** Ref callback that scrolls the current hour row into view on mount. */
 function useCurrentHourScroll() {
@@ -364,11 +293,6 @@ function useCurrentHourScroll() {
  * Get the display time for a timetable entry.
  * Terminal stops show arrival time; all others show departure time.
  */
-function getDisplayMinutes(entry: TimetableEntry): number {
-  return entry.patternPosition.isTerminal
-    ? entry.schedule.arrivalMinutes
-    : entry.schedule.departureMinutes;
-}
 
 /** Hour-grouped timetable grid. Shows headsign badge per entry when enabled. */
 function TimetableGrid({
@@ -427,12 +351,21 @@ function TimetableGrid({
   const isDisplayPickupUnavailable = info.isVerboseEnabled;
   const isDisplayDropOffUnavailable = info.isVerboseEnabled;
 
+  const hasCurrentHour = hourGroups.has(currentHour);
+  const firstHour = hourGroups.keys().next().value as number;
+
   return (
     <>
       {Array.from(hourGroups.entries()).map(([hour, entries]) => (
         <div
           key={hour}
-          ref={hour === currentHour ? scrollRef : undefined}
+          ref={
+            hour === currentHour
+              ? scrollRef
+              : !hasCurrentHour && hour === firstHour
+                ? scrollRef
+                : undefined
+          }
           className={`border-border border-b py-1.5 last:border-b-0 ${hour === currentHour ? 'bg-accent rounded' : ''}`}
         >
           <div className="flex items-baseline gap-2">
@@ -440,154 +373,49 @@ function TimetableGrid({
               {hour}時
             </span>
             <span className="flex flex-wrap gap-1.5">
-              {entries.map((entry, i) => {
-                const minutes = getDisplayMinutes(entry);
-                return (
-                  <span
-                    key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${minutes}__${i}`}
-                    className="inline-flex items-baseline gap-0.5"
-                  >
-                    <span className="text-muted-foreground text-sm tabular-nums">
-                      {String(minutes % 60).padStart(2, '0')}
-                      {entry.patternPosition.isTerminal && (
-                        <span className="text-[9px] opacity-70">着</span>
-                      )}
-                    </span>
-                    {showHeadsign && (
-                      <HeadsignBadge
-                        headsign={entry.routeDirection.headsign}
-                        route={entry.routeDirection.route}
-                        infoLevel={infoLevel}
-                        maxLength={headsignLengths.get(entry.routeDirection.headsign)}
-                        size="xs"
-                      />
-                    )}
-                    <EntryLabels
-                      entry={entry}
-                      isDisplayTerminal={isDisplayTerminal}
-                      isDisplayOrigin={isDisplayOrigin}
-                      isDisplayPickupUnavailable={isDisplayPickupUnavailable}
-                      isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
-                    />
-                  </span>
-                );
-              })}
+              {entries.map((entry, i) => (
+                <TimetableGridEntry
+                  key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}_${i}`}
+                  entry={entry}
+                  showHeadsign={showHeadsign}
+                  headsignMaxLength={headsignLengths.get(entry.routeDirection.headsign)}
+                  infoLevel={infoLevel}
+                  isDisplayTerminal={isDisplayTerminal}
+                  isDisplayOrigin={isDisplayOrigin}
+                  isDisplayPickupUnavailable={isDisplayPickupUnavailable}
+                  isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
+                  disableVerbose={true}
+                  defaultOpen={false}
+                />
+              ))}
             </span>
           </div>
           {info.isVerboseEnabled && (
-            <div className="mt-0.5 flex flex-col gap-0.5">
-              {entries.map((entry, i) => (
-                <VerboseEntryRow key={i} entry={entry} />
-              ))}
-            </div>
+            <details className="mt-0.5 text-[9px] font-normal text-[#999] dark:text-gray-500">
+              <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+                [{hour}時 {entries.length}件]
+              </summary>
+              <div className="mt-0.5 flex flex-col gap-0.5">
+                {entries.map((entry, i) => (
+                  <TimetableGridEntry
+                    key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}_${i}`}
+                    entry={entry}
+                    showHeadsign={showHeadsign}
+                    headsignMaxLength={headsignLengths.get(entry.routeDirection.headsign)}
+                    infoLevel={infoLevel}
+                    isDisplayTerminal={isDisplayTerminal}
+                    isDisplayOrigin={isDisplayOrigin}
+                    isDisplayPickupUnavailable={isDisplayPickupUnavailable}
+                    isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
+                    defaultOpen={false}
+                  />
+                ))}
+              </div>
+            </details>
           )}
         </div>
       ))}
     </>
-  );
-}
-
-/** Compact labels for terminal, origin, and boarding availability. */
-function EntryLabels({
-  entry,
-  isDisplayTerminal,
-  isDisplayOrigin,
-  isDisplayPickupUnavailable,
-  isDisplayDropOffUnavailable,
-}: {
-  entry: TimetableEntry;
-  isDisplayTerminal: boolean;
-  isDisplayOrigin: boolean;
-  isDisplayPickupUnavailable: boolean;
-  isDisplayDropOffUnavailable: boolean;
-}) {
-  const { boarding, patternPosition } = entry;
-
-  const showTerminal = isDisplayTerminal && patternPosition.isTerminal;
-  const showOrigin = isDisplayOrigin && patternPosition.isOrigin;
-  const showPickupUnavailable = isDisplayPickupUnavailable && boarding.pickupType === 1;
-  const showDropOffUnavailable = isDisplayDropOffUnavailable && boarding.dropOffType === 1;
-
-  if (!showTerminal && !showOrigin && !showPickupUnavailable && !showDropOffUnavailable) {
-    return null;
-  }
-
-  return (
-    <span className="inline-flex items-baseline gap-0.5">
-      {showTerminal && (
-        <span className="rounded bg-gray-500 px-0.5 text-[9px] leading-tight text-white">終点</span>
-      )}
-      {showOrigin && (
-        <span className="rounded bg-blue-500 px-0.5 text-[9px] leading-tight text-white">始発</span>
-      )}
-      {showPickupUnavailable && (
-        <span className="rounded bg-red-500 px-0.5 text-[9px] leading-tight text-white">乗×</span>
-      )}
-      {showDropOffUnavailable && (
-        <span className="rounded bg-red-500 px-0.5 text-[9px] leading-tight text-white">降×</span>
-      )}
-    </span>
-  );
-}
-
-/** Single row in verbose timetable: shows all TimetableEntry fields. */
-function VerboseEntryRow({ entry }: { entry: TimetableEntry }) {
-  const { schedule, routeDirection, boarding, patternPosition, insights } = entry;
-  const { route, headsign, direction } = routeDirection;
-
-  const arr = String(schedule.arrivalMinutes % 60).padStart(2, '0');
-  const dep = String(schedule.departureMinutes % 60).padStart(2, '0');
-
-  return (
-    <div className="text-muted-foreground border-border flex flex-wrap items-baseline gap-x-1.5 gap-y-0 rounded border p-1 text-[11px]">
-      {/* Arrival / Departure */}
-      <span className="tabular-nums">
-        <span className="opacity-70">着</span>
-        {arr}
-        <span className="opacity-70">発</span>
-        {dep}
-      </span>
-
-      {/* Route + headsign (verbose mode includes route_id in badge) */}
-      <span>
-        <HeadsignBadge headsign={headsign} route={route} infoLevel="verbose" size="xs" />
-      </span>
-
-      {/* Direction */}
-      {direction !== undefined && <span className="opacity-60">dir={direction}</span>}
-
-      {/* Pattern position */}
-      <span className="opacity-60">
-        [{patternPosition.stopIndex + 1}/{patternPosition.totalStops}]
-      </span>
-
-      {/* Terminal / Origin labels */}
-      {patternPosition.isTerminal && (
-        <span className="rounded bg-gray-600 px-1 text-[10px] text-white">終点</span>
-      )}
-      {patternPosition.isOrigin && (
-        <span className="rounded bg-blue-600 px-1 text-[10px] text-white">始発</span>
-      )}
-
-      {/* Boarding availability */}
-      {boarding.pickupType === 1 && (
-        <span className="rounded bg-red-600 px-1 text-[10px] text-white">乗車不可</span>
-      )}
-      {boarding.pickupType === 2 && (
-        <span className="rounded bg-amber-600 px-1 text-[10px] text-white">要電話</span>
-      )}
-      {boarding.pickupType === 3 && (
-        <span className="rounded bg-amber-600 px-1 text-[10px] text-white">要調整</span>
-      )}
-      {boarding.dropOffType === 1 && (
-        <span className="rounded bg-red-600 px-1 text-[10px] text-white">降車不可</span>
-      )}
-
-      {/* Remaining minutes to terminal */}
-      {insights?.remainingMinutes !== undefined && (
-        <span className="opacity-60">残{insights.remainingMinutes}分</span>
-      )}
-    </div>
   );
 }
 
@@ -597,31 +425,23 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
     !data.isBoardableOnServiceDay &&
     (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
 
-  // Collect route types for emoji display.
-  const routeTypes = data.type === 'route-headsign' ? [data.route.route_type] : data.routeTypes;
+  const routeTypes = data.routes.map((r) => r.route_type);
 
-  // Unique routes for badge display (keyed by route_id).
-  const uniqueRoutes =
-    data.type === 'route-headsign'
-      ? [data.route]
-      : Array.from(
-          new Map(
-            data.timetableEntries.map(
-              (d) => [d.routeDirection.route.route_id, d.routeDirection.route] as const,
-            ),
-          ).values(),
-        );
+  // Unique routes for badge display.
+  const uniqueRoutes = data.routes;
 
   // For route-headsign, show only the agency of that route.
   // For stop timetable, show all agencies.
   const displayAgencies =
     data.type === 'route-headsign'
-      ? data.agencies.filter((a) => a.agency_id === data.route.agency_id)
+      ? data.agencies.filter((a) => a.agency_id === data.routes[0].agency_id)
       : data.agencies;
+
+  const showVerbose = infoLevel === 'verbose';
 
   return (
     <>
-      {infoLevel === 'verbose' && <IdBadge>{data.stop.stop_id}</IdBadge>}
+      {showVerbose && <IdBadge>{data.stop.stop_id}</IdBadge>}
       {stopNames.subNames.length > 0 && (
         <p className="m-0 text-[11px] font-normal text-[#888] dark:text-gray-400">
           {stopNames.subNames.join(' / ')}
@@ -639,15 +459,42 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
         )}
         {displayAgencies.length > 0 &&
           displayAgencies.map((a) => (
-            <AgencyBadge key={a.agency_id} agency={a} infoLevel={infoLevel} size="xs" />
+            <AgencyBadge
+              key={a.agency_id}
+              agency={a}
+              infoLevel={infoLevel}
+              size="xs"
+              disableVerbose
+            />
           ))}
       </div>
+
       {uniqueRoutes.length > 0 && (
         <div className="flex flex-wrap items-center gap-1">
           {uniqueRoutes.map((r) => (
-            <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} />
+            <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} disableVerbose />
           ))}
         </div>
+      )}
+      {showVerbose && (
+        <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
+          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+            [META]
+          </summary>
+          <div className="mt-1 ml-2 space-y-1">
+            <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
+              <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+                [Stop]
+              </summary>
+              <div className="mt-1 overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
+                <VerboseStop stop={data.stop} isDropOffOnly={isDropOffOnly} />
+              </div>
+              <VerboseStopDisplayNames names={stopNames} />
+            </details>
+            <VerboseAgencies agencies={displayAgencies} infoLevel={infoLevel} />
+            <VerboseRoutes routes={uniqueRoutes} infoLevel={infoLevel} />
+          </div>
+        </details>
       )}
     </>
   );
@@ -660,19 +507,29 @@ function StopTimetableFilter({
   onToggleFilter,
   infoLevel,
 }: {
-  data: StopTimetable;
+  data: TimetableData;
   activeFilters: Set<string>;
   onToggleFilter: (key: string) => void;
   infoLevel: InfoLevel;
 }) {
-  const routeHeadsigns = Array.from(
-    new Map(
-      data.timetableEntries.map((d) => [
-        `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`,
-        { route: d.routeDirection.route, headsign: d.routeDirection.headsign },
-      ]),
-    ).values(),
-  );
+  // Count entries per route+headsign (memoized for filter toggle re-renders)
+  const routeHeadsigns = useMemo(() => {
+    const counts = new Map<string, { route: Route; headsign: string; count: number }>();
+    for (const d of data.timetableEntries) {
+      const key = `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`;
+      const entry = counts.get(key);
+      if (entry) {
+        entry.count++;
+      } else {
+        counts.set(key, {
+          route: d.routeDirection.route,
+          headsign: d.routeDirection.headsign,
+          count: 1,
+        });
+      }
+    }
+    return Array.from(counts.values());
+  }, [data.timetableEntries]);
 
   const noFilter = activeFilters.size === 0;
 
@@ -690,13 +547,14 @@ function StopTimetableFilter({
         return (
           <PillButton
             key={key}
+            size={'sm'}
             active={isActive}
             activeBg={bg}
             activeFg={fg}
             inactiveBorder={bg}
             onClick={() => onToggleFilter(key)}
+            count={r.count}
           >
-            {infoLevel === 'verbose' && <IdBadge>{r.route.route_id}</IdBadge>}
             {/* Filter button has no RouteBadge — fall back to route name so it is never blank. */}
             {getHeadsignDisplayNames(r.headsign, r.route, infoLevel).name ||
               r.route.route_short_name ||

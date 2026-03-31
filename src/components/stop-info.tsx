@@ -52,13 +52,14 @@ export function StopInfo({
   geo,
 }: StopInfoProps) {
   const info = useInfoLevel(infoLevel);
+  const showVerbose = infoLevel === 'verbose';
   const stopNames = getStopDisplayNames(stop, infoLevel);
   const distanceRounded = distance != null ? Math.round(distance) : null;
   const bearing = mapCenter ? bearingDeg(mapCenter, stop) : null;
 
   return (
     <div className="min-w-0 flex-1">
-      {info.isVerboseEnabled && (
+      {showVerbose && (
         <VerboseStopData
           stop={stop}
           stopNames={stopNames}
@@ -72,7 +73,7 @@ export function StopInfo({
           geo={geo}
         />
       )}
-      {info.isVerboseEnabled && (
+      {showVerbose && (
         <>
           <div className="mb-1 flex gap-1">
             <IdBadge>{stop.stop_id}</IdBadge>

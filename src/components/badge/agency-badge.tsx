@@ -4,7 +4,6 @@ import { getAgencyDisplayNames } from '../../domain/transit/get-agency-display-n
 import { cn } from '../../lib/utils';
 import { IdBadge } from './id-badge';
 import { VerboseAgency } from '../verbose/verbose-agency';
-import { VerboseAgencyDisplayNames } from '../verbose/verbose-agency-display-names';
 
 const sizeVariants = {
   default: 'text-xs px-2 py-0.5',
@@ -61,17 +60,7 @@ export function AgencyBadge({
         </span>
         {showVerbose && <IdBadge>{agency.agency_id}</IdBadge>}
       </span>
-      {showVerbose && (
-        <details className="inline text-[9px] text-[#999] dark:text-gray-500">
-          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-            [Agency]
-          </summary>
-          <div className="mt-0.5 space-y-0.5">
-            <VerboseAgency agency={agency} />
-            <VerboseAgencyDisplayNames names={agencyNames} />
-          </div>
-        </details>
-      )}
+      {showVerbose && <VerboseAgency agency={agency} names={agencyNames} />}
     </div>
   );
 }

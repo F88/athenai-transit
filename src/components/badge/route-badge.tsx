@@ -5,7 +5,6 @@ import { getRouteDisplayNames } from '../../domain/transit/get-route-display-nam
 import { cn } from '../../lib/utils';
 import { IdBadge } from './id-badge';
 import { VerboseRoute } from '../verbose/verbose-route';
-import { VerboseRouteDisplayNames } from '../verbose/verbose-route-display-names';
 
 const sizeVariants = {
   default: 'text-xs px-2 py-0.5',
@@ -66,17 +65,7 @@ export function RouteBadge({
         </span>
         {showVerbose && <IdBadge>{route.route_id}</IdBadge>}
       </span>
-      {showVerbose && (
-        <details className="inline text-[9px] text-[#999] dark:text-gray-500">
-          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-            [Route]
-          </summary>
-          <div className="mt-0.5 space-y-0.5">
-            <VerboseRoute route={route} infoLevel={infoLevel} />
-            <VerboseRouteDisplayNames names={routeNames} />
-          </div>
-        </details>
-      )}
+      {showVerbose && <VerboseRoute route={route} names={routeNames} infoLevel={infoLevel} />}
     </div>
   );
 }

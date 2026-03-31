@@ -9,6 +9,33 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- timetable-modal のコンポーネント抽出:
+    - TimetableGridEntry: 時刻表グリッドの1エントリ (minutes + headsign + labels)。
+    - EntryLabels: boarding/position labels。
+    - TimetableData 型統一: RouteHeadsignTimetable/StopTimetable を単一 interface に統合、routes[] 追加。
+- PillButton に count badge 追加 (chip-in-chip スタイル、色反転、em 相対サイズ)。
+- StopTimetableFilter に便数表示。
+- TimetableMetadata の route breakdown を PillButton count に統一。
+- Hour-group verbose を collapsed 表示 ([N時 M件])。
+- Verbose パターン統一: 全 verbose コンポーネントが details/summary を内包。呼び出し側は `<VerboseXxx ... />` だけで完結。
+    - VerboseAgency, VerboseRoute: DisplayNames を吸収、defaultOpen prop 追加。
+    - VerboseHeadsign, VerboseStopMetrics: details/summary 内包。
+    - VerboseStop: VerboseStopData から切り出し (再利用可能な building block)。
+    - VerboseAgencies, VerboseRoutes: 複数アイテムの collapsed dump。
+    - VerboseContextualTimetableEntry: 全フィールド dump、disableVerbose、defaultOpen prop。
+    - VerboseNearbyStopSummary: NearbyStop レベルの UI 状態と departures 集計の dump。
+    - VerboseTimetableSummary: timetable メタデータ + エントリ集計の統合 dump。
+    - VerboseTimetableEntry: TimetableEntry テキスト dump (building block)。
+    - VerboseTimetableGridEntry: GridEntry の props + entry dump。
+
+### Changed
+
+- VerboseStopData: details/summary を内包。StopInfo 側の wrapper を不要に。stop_id を dump に追加。
+- 未使用の agencyName prop を DepartureItem/FlatDepartureItem から削除。
+- PillButton: onClick を optional に (display-only badges 対応)。
+
 ## [2026.03.30]
 
 ### Added
