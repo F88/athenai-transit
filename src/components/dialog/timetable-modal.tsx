@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { HeadsignBadge } from '@/components/badge/headsign-badge';
 import { IdBadge } from '@/components/badge/id-badge';
 import { RouteBadge } from '@/components/badge/route-badge';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
@@ -138,7 +137,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
           </DialogDescription>
 
           {info.isDetailedEnabled && (
-            <TimetableMetadata timetableEntries={filteredTimetableEntries} infoLevel={infoLevel} />
+            <TimetableMetadata timetableEntries={filteredTimetableEntries} />
           )}
 
           <TimetableDateLabel serviceDate={data.serviceDate} time={time} />
@@ -216,10 +215,8 @@ function TimetableDateLabel({ serviceDate, time }: { serviceDate: Date; time: Da
 /** Metadata summary shown above the timetable grid. */
 function TimetableMetadata({
   timetableEntries: timetableEntries,
-  infoLevel,
 }: {
   timetableEntries: TimetableEntry[];
-  infoLevel: InfoLevel;
 }) {
   // Compute departure count and operating hours.
   // Use the display time (arrival for terminal, departure otherwise) for statistics.
@@ -244,66 +241,38 @@ function TimetableMetadata({
     return Array.from(counts.values());
   }, [timetableEntries]);
 
-  // Route+headsign breakdown (useful when headsigns are present)
-  const routeHeadsignBreakdown = useMemo(() => {
-    const counts = new Map<string, { route: Route; headsign: string; count: number }>();
-    for (const dep of timetableEntries) {
-      const key = `${dep.routeDirection.route.route_id}__${dep.routeDirection.headsign}`;
-      const entry = counts.get(key);
-      if (entry) {
-        entry.count++;
-      } else {
-        counts.set(key, {
-          route: dep.routeDirection.route,
-          headsign: dep.routeDirection.headsign,
-          count: 1,
-        });
-      }
-    }
-    return Array.from(counts.values());
-  }, [timetableEntries]);
-
-  // Show route+headsign breakdown only when headsigns add distinction
-  const hasHeadsigns = routeHeadsignBreakdown.some((rb) => rb.headsign !== '');
-  const showRouteHeadsign = hasHeadsigns && routeHeadsignBreakdown.length > 1;
-
   return (
     <div className="border-border text-muted-foreground mb-3 space-y-0.5 rounded border p-2 text-[11px]">
-      {firstTime && lastTime && (
-        <p>
-          {firstTime} - {lastTime}
-        </p>
-      )}
       <p>
-        {count}本{avgInterval !== null && <span> / 平均{avgInterval}分間隔</span>}
+        {firstTime && lastTime && (
+          <span>
+            {firstTime} - {lastTime}
+          </span>
+        )}
+        <span> / {count.toLocaleString()}本</span>
+        {avgInterval !== null && <span> / 平均{avgInterval}分間隔</span>}
       </p>
       {routeBreakdown.length > 1 && (
-        <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-          {routeBreakdown.map((rb) => (
-            <span key={rb.route.route_id} className="inline-flex items-center gap-0.5">
-              <RouteBadge route={rb.route} infoLevel={infoLevel} size="xs" disableVerbose />
-              <span className="font-medium">{rb.count}</span>
-            </span>
-          ))}
-        </div>
-      )}
-      {showRouteHeadsign && (
-        <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-          {routeHeadsignBreakdown.map((rb) => (
-            <span
-              key={`${rb.route.route_id}__${rb.headsign}`}
-              className="inline-flex items-center gap-0.5"
-            >
-              <HeadsignBadge
-                headsign={rb.headsign}
-                route={rb.route}
-                infoLevel={infoLevel}
-                size="xs"
-                disableVerbose
-              />
-              <span className="font-medium">{rb.count}</span>
-            </span>
-          ))}
+        <div className="flex flex-wrap gap-1">
+          {routeBreakdown.map((rb) => {
+            const bg = rb.route.route_color ? `#${rb.route.route_color}` : undefined;
+            const fg = rb.route.route_text_color ? `#${rb.route.route_text_color}` : undefined;
+            const label =
+              rb.route.route_short_name || rb.route.route_long_name || rb.route.route_id;
+            return (
+              <PillButton
+                key={rb.route.route_id}
+                size="sm"
+                active={true}
+                activeBg={bg}
+                activeFg={fg}
+                onClick={() => {}}
+                count={rb.count}
+              >
+                {label}
+              </PillButton>
+            );
+          })}
         </div>
       )}
     </div>
@@ -507,7 +476,7 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
         </div>
       )}
       {showVerbose && (
-        <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
+        <details className="gap-10 text-[9px] font-normal text-[#999] dark:text-gray-500">
           <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
             [META]
           </summary>
