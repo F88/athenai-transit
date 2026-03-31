@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.03.31]
+
 ### Fixed
 
 - insights の service group 選択を `data[0]` 固定から日付ベースの動的解決に修正 (#87)。
@@ -16,6 +18,7 @@ and this project adheres to [CalVer](https://calver.org/).
     - NearbyStop の stats (freq 等) が曜日に応じて正しい値を表示。
     - route shapes の線の太さも dateTime に応じて動的に変化。
     - shapes 再描画を serviceDayKey で安定化し、15秒ティックでの不要な再計算を防止。
+- GTFS download URL を新ダイヤ対応に更新 (関東バス、京王バス、伊予鉄バス) (#89)。
 
 ### Added
 
