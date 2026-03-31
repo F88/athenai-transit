@@ -2,12 +2,12 @@
   "sourceName": "kanto-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-03-28T04:44:56.244Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260301",
-  "size": 2431335,
+  "downloadedAt": "2026-03-31T09:10:32.340Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260401",
+  "size": 2360606,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 2522,
-  "archivePath": "workspace/_archives/gtfs/kanto-bus/AllLines_20260328-044458.zip",
+  "durationMs": 3388,
+  "archivePath": "workspace/_archives/gtfs/kanto-bus/AllLines_20260331-091035.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -15,23 +15,23 @@
     },
     {
       "name": "stops.txt",
-      "size": 130306
+      "size": 130483
     },
     {
       "name": "routes.txt",
-      "size": 27719
+      "size": 27680
     },
     {
       "name": "trips.txt",
-      "size": 1633349
+      "size": 1669169
     },
     {
       "name": "pattern_jp.txt",
-      "size": 26535
+      "size": 26311
     },
     {
       "name": "stop_times.txt",
-      "size": 22246463
+      "size": 22544540
     },
     {
       "name": "fare_attributes.txt",
@@ -39,7 +39,7 @@
     },
     {
       "name": "fare_rules.txt",
-      "size": 884237
+      "size": 884263
     },
     {
       "name": "calendar.txt",
@@ -47,7 +47,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 116
+      "size": 32
     },
     {
       "name": "feed_info.txt",
@@ -55,7 +55,7 @@
     },
     {
       "name": "translations.txt",
-      "size": 263029
+      "size": 263245
     },
     {
       "name": "office_jp.txt",
@@ -66,8 +66,8 @@
     "publisherName": "NECネクサソリューションズ株式会社",
     "publisherUrl": "https://www.nec-nexs.com",
     "lang": "ja",
-    "startDate": "20260216",
-    "endDate": "20260331",
-    "version": "20260216_20260228"
+    "startDate": "20260401",
+    "endDate": "20260928",
+    "version": "20260401_00000000"
   }
 }

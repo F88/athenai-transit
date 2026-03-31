@@ -2,12 +2,12 @@
   "sourceName": "iyotetsu-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-03-28T04:45:14.364Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260313",
-  "size": 869913,
+  "downloadedAt": "2026-03-31T09:12:46.334Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260330",
+  "size": 869260,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1926,
-  "archivePath": "workspace/_archives/gtfs/iyotetsu-bus/AllLines_20260328-044516.zip",
+  "durationMs": 9397,
+  "archivePath": "workspace/_archives/gtfs/iyotetsu-bus/AllLines_20260331-091255.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -23,7 +23,7 @@
     },
     {
       "name": "trips.txt",
-      "size": 253631
+      "size": 252991
     },
     {
       "name": "pattern_jp.txt",
@@ -31,7 +31,7 @@
     },
     {
       "name": "stop_times.txt",
-      "size": 5946238
+      "size": 5937876
     },
     {
       "name": "fare_attributes.txt",
@@ -47,7 +47,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 242
+      "size": 32
     },
     {
       "name": "feed_info.txt",
@@ -70,8 +70,8 @@
     "publisherName": "伊予鉄バス株式会社",
     "publisherUrl": "https://www.iyotetsu.co.jp/",
     "lang": "ja",
-    "startDate": "20260313",
-    "endDate": "20260328",
-    "version": "20260313_20260328"
+    "startDate": "20260401",
+    "endDate": "20260414",
+    "version": "20260401_20260414"
   }
 }
