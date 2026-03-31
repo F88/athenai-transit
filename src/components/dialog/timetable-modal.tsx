@@ -6,7 +6,6 @@ import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { resolveMinPrefixLengths } from '@/utils/resolve-min-prefix-lengths';
 import { routeTypesEmoji } from '@/domain/transit/route-type-emoji';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
-import { isDropOffOnly } from '@/domain/transit/timetable-utils';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route, Stop } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
@@ -17,6 +16,7 @@ import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-we
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { PillButton } from '@/components/button/pill-button';
+import { VerboseTimetableSummary } from '@/components/verbose/verbose-timetable-summary';
 import {
   Dialog,
   DialogContent,
@@ -126,7 +126,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
             <TimetableMetadata timetableEntries={filteredTimetableEntries} infoLevel={infoLevel} />
           )}
           {info.isVerboseEnabled && (
-            <VerboseMetadata
+            <VerboseTimetableSummary
               timetableEntries={filteredTimetableEntries}
               omitted={data.omitted}
               isBoardableOnServiceDay={data.isBoardableOnServiceDay}
@@ -273,66 +273,6 @@ function TimetableMetadata({
 }
 
 /** Verbose-only metadata dump: boarding stats, direction, pattern breakdown. */
-function VerboseMetadata({
-  timetableEntries,
-  omitted,
-  isBoardableOnServiceDay,
-}: {
-  timetableEntries: TimetableEntry[];
-  omitted: TimetableOmitted;
-  isBoardableOnServiceDay: boolean;
-}) {
-  // Domain-consistent counts using isDropOffOnly (pickupType === 1 OR isTerminal).
-  // pickupType 2/3 (phone/coordination required) are considered boardable.
-  const dropOff = timetableEntries.filter((e) => isDropOffOnly(e)).length;
-  const boardable = timetableEntries.length - dropOff;
-  const originCount = timetableEntries.filter((e) => e.patternPosition.isOrigin).length;
-  const terminalCount = timetableEntries.filter((e) => e.patternPosition.isTerminal).length;
-
-  // Direction breakdown
-  const dirCounts = new Map<string, number>();
-  for (const e of timetableEntries) {
-    const dir =
-      e.routeDirection.direction !== undefined ? `dir=${e.routeDirection.direction}` : 'dir=N/A';
-    dirCounts.set(dir, (dirCounts.get(dir) ?? 0) + 1);
-  }
-
-  // Pattern breakdown (stopIndex/totalStops combinations)
-  const patternCounts = new Map<string, number>();
-  for (const e of timetableEntries) {
-    const key = `[${e.patternPosition.stopIndex + 1}/${e.patternPosition.totalStops}]`;
-    patternCounts.set(key, (patternCounts.get(key) ?? 0) + 1);
-  }
-
-  // Dwell time stats
-  const dwellCount = timetableEntries.filter(
-    (e) => e.schedule.arrivalMinutes !== e.schedule.departureMinutes,
-  ).length;
-
-  return (
-    <div className="border-border text-muted-foreground mb-1 space-y-0.5 rounded border p-2 text-[11px]">
-      <p>
-        boardable={boardable} dropOffOnly={dropOff} origin={originCount} terminal=
-        {terminalCount}
-      </p>
-      <p>
-        {Array.from(dirCounts.entries())
-          .map(([dir, n]) => `${dir}:${n}`)
-          .join(' ')}
-      </p>
-      <p>
-        {Array.from(patternCounts.entries())
-          .map(([pat, n]) => `${pat}:${n}`)
-          .join(' ')}
-      </p>
-      {dwellCount > 0 && <p>dwell={dwellCount}</p>}
-      <p>
-        isBoardableOnServiceDay={String(isBoardableOnServiceDay)} omitted.terminal=
-        {omitted.terminal}
-      </p>
-    </div>
-  );
-}
 
 /** Ref callback that scrolls the current hour row into view on mount. */
 function useCurrentHourScroll() {
