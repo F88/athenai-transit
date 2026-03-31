@@ -355,12 +355,21 @@ function TimetableGrid({
   const isDisplayPickupUnavailable = info.isVerboseEnabled;
   const isDisplayDropOffUnavailable = info.isVerboseEnabled;
 
+  const hasCurrentHour = hourGroups.has(currentHour);
+  const firstHour = hourGroups.keys().next().value as number;
+
   return (
     <>
       {Array.from(hourGroups.entries()).map(([hour, entries]) => (
         <div
           key={hour}
-          ref={hour === currentHour ? scrollRef : undefined}
+          ref={
+            hour === currentHour
+              ? scrollRef
+              : !hasCurrentHour && hour === firstHour
+                ? scrollRef
+                : undefined
+          }
           className={`border-border border-b py-1.5 last:border-b-0 ${hour === currentHour ? 'bg-accent rounded' : ''}`}
         >
           <div className="flex items-baseline gap-2">
