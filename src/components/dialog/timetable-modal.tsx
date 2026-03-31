@@ -424,6 +424,7 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
     (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
 
   // Collect route types for emoji display.
+  // Duplicates are not removed; it's simply a conversion.
   const routeTypes = data.routes.map((r) => r.route_type);
 
   // Unique routes for badge display.
@@ -476,23 +477,25 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
         </div>
       )}
       {showVerbose && (
-        <details className="gap-10 text-[9px] font-normal text-[#999] dark:text-gray-500">
+        <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
           <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
             [META]
           </summary>
-          <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
-            <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-              [Stop]
-            </summary>
-            <div className="mt-0.5">
-              <span className="block overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
-                <VerboseStop stop={data.stop} isDropOffOnly={isDropOffOnly} />
-              </span>
-            </div>
-            <VerboseStopDisplayNames names={stopNames} />
-          </details>
-          <VerboseAgencies agencies={displayAgencies} infoLevel={infoLevel} />
-          <VerboseRoutes routes={uniqueRoutes} infoLevel={infoLevel} />
+          <div className="mt-1 ml-2 space-y-1">
+            <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
+              <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+                [Stop]
+              </summary>
+              <div className="mt-1">
+                <span className="block overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
+                  <VerboseStop stop={data.stop} isDropOffOnly={isDropOffOnly} />
+                </span>
+              </div>
+              <VerboseStopDisplayNames names={stopNames} />
+            </details>
+            <VerboseAgencies agencies={displayAgencies} infoLevel={infoLevel} />
+            <VerboseRoutes routes={uniqueRoutes} infoLevel={infoLevel} />
+          </div>
         </details>
       )}
     </>
