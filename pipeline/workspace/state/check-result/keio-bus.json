@@ -1,13 +1,13 @@
 {
   "sourceName": "keio-bus",
-  "checkedAt": "2026-04-01T22:13:01.124Z",
+  "checkedAt": "2026-04-01T23:30:43.315Z",
   "resourceUrls": [
-    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260126&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]",
-    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260401&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]"
+    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260126",
+    "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260401"
   ],
   "result": "attention",
   "warnings": [
-    "NEWER_AVAILABLE"
+    "REMOTE_KNOWN_IN_PERIOD"
   ],
   "errors": []
 }

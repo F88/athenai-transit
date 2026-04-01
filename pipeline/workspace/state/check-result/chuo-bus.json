@@ -1,13 +1,13 @@
 {
   "sourceName": "chuo-bus",
-  "checkedAt": "2026-04-01T22:13:01.125Z",
+  "checkedAt": "2026-04-01T23:30:43.316Z",
   "resourceUrls": [
-    "https://api.odpt.org/api/v4/files/odpt/TokyoChuoCity/Alldata.zip?date=20250108&acl:consumerKey=[アクセストークン/YOUR_ACCESS_TOKEN]"
+    "https://api.odpt.org/api/v4/files/odpt/TokyoChuoCity/Alldata.zip?date=20250108"
   ],
   "result": "critical",
   "warnings": [],
   "errors": [
-    "EXPIRED",
-    "NO_VALID_DATA"
+    "ADOPTED_EXPIRED",
+    "REMOTE_NO_VALID_DATA"
   ]
 }
