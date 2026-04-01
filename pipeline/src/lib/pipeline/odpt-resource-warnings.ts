@@ -207,15 +207,17 @@ export function detectWarnings(
     const status = remote.getPeriodStatus(now);
     const isNewResource = remote.isNew() ?? true; // no-snapshot → treat as new
 
+    const detail = `${remote.url} (start_at: ${remote.startAt}, valid: ${remote.from ?? '?'} - ${remote.to ?? '?'})`;
+
     if (isInPeriod(status)) {
       warnings.push({
         type: isNewResource ? 'REMOTE_NEW_IN_PERIOD' : 'REMOTE_KNOWN_IN_PERIOD',
-        message: `${remote.url} (valid: ${remote.from ?? '?'} - ${remote.to ?? '?'})`,
+        message: detail,
       });
     } else if (isBeforePeriod(status)) {
       warnings.push({
         type: isNewResource ? 'REMOTE_NEW_BEFORE_PERIOD' : 'REMOTE_KNOWN_BEFORE_PERIOD',
-        message: `${remote.url} (valid: ${remote.from ?? '?'} - ${remote.to ?? '?'})`,
+        message: detail,
       });
     }
     // after-period / unknown → no warning

@@ -274,6 +274,21 @@ describe('detectWarnings', () => {
     expect(warnings.some((w) => w.type === 'ADOPTED_EXPIRED')).toBe(false);
   });
 
+  // --- Message format ---
+
+  it('includes start_at in REMOTE warning messages', () => {
+    const localUrl = `${BASE_URL}?date=20260301`;
+    const local = makeLocal('20260301', {}, [localUrl]);
+    const remotes = [
+      makeRemote('20260301', {}, null, localUrl),
+      makeRemote('20260401', {}, null, null),
+    ];
+    const warnings = detectWarnings(local, remotes, now);
+    const remoteWarning = warnings.find((w) => w.type === 'REMOTE_NEW_IN_PERIOD');
+    expect(remoteWarning).toBeDefined();
+    expect(remoteWarning!.message).toContain('start_at: 2026-04-01');
+  });
+
   // --- Security: malformed URL redaction ---
 
   it('does not leak credentials from malformed URL in warning messages', () => {
