@@ -9,10 +9,7 @@
  */
 
 import type { DownloadMetaSuccess } from '../download/download-meta';
-import {
-  LocalResource,
-  RemoteResource,
-} from '../../../scripts/pipeline/lib/odpt-resources';
+import { LocalResource, RemoteResource } from '../../../scripts/pipeline/lib/odpt-resources';
 import type { PeriodStatus } from '../../../scripts/pipeline/lib/odpt-resources';
 
 // ---------------------------------------------------------------------------
@@ -30,16 +27,20 @@ export interface LocalInfo {
 }
 
 export type Warning =
-  | { type: 'EXPIRED'; message: string }
-  | { type: 'NOT_YET_ACTIVE'; message: string }
-  | { type: 'REMOVED'; message: string }
-  | { type: 'NO_VALID_DATA'; message: string }
-  | { type: 'EXPIRING_SOON'; message: string; daysLeft: number }
-  | { type: 'NEW_IN_PERIOD'; message: string }
-  | { type: 'KNOWN_IN_PERIOD'; message: string }
-  | { type: 'NEW_BEFORE_PERIOD'; message: string }
-  | { type: 'KNOWN_BEFORE_PERIOD'; message: string }
-  | { type: 'NO_DOWNLOAD_REPORT'; message: string };
+  // LOCAL
+  | { type: 'LOCAL_NO_DOWNLOAD_REPORT'; message: string }
+  // ADOPTED (currently used resource)
+  | { type: 'ADOPTED_EXPIRED'; message: string }
+  | { type: 'ADOPTED_MISSING'; message: string }
+  | { type: 'ADOPTED_BEFORE_PERIOD'; message: string }
+  | { type: 'ADOPTED_EXPIRING_SOON'; message: string; daysLeft: number }
+  // REMOTE (individual resources, non-adopted)
+  | { type: 'REMOTE_NEW_IN_PERIOD'; message: string }
+  | { type: 'REMOTE_NEW_BEFORE_PERIOD'; message: string }
+  | { type: 'REMOTE_KNOWN_IN_PERIOD'; message: string }
+  | { type: 'REMOTE_KNOWN_BEFORE_PERIOD'; message: string }
+  // REMOTE (aggregate)
+  | { type: 'REMOTE_NO_VALID_DATA'; message: string };
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -131,41 +132,39 @@ export function detectWarnings(
 
   if (!local) {
     warnings.push({
-      type: 'NO_DOWNLOAD_REPORT',
+      type: 'LOCAL_NO_DOWNLOAD_REPORT',
       message: 'No download report — run download first',
     });
     return warnings;
   }
 
   if (!local.isAdopted()) {
-    warnings.push({ type: 'REMOVED', message: 'Local resource no longer exists in remote' });
+    warnings.push({
+      type: 'ADOPTED_MISSING',
+      message: 'Adopted resource no longer exists in remote',
+    });
   }
 
   const localStatus = local.getPeriodStatus(now);
   if (isBeforePeriod(localStatus)) {
     warnings.push({
-      type: 'NOT_YET_ACTIVE',
-      message: `Local data not yet active (valid: ${local.from ?? '?'} - ${local.to ?? '?'})`,
+      type: 'ADOPTED_BEFORE_PERIOD',
+      message: `Adopted data not yet active (valid: ${local.from ?? '?'} - ${local.to ?? '?'})`,
     });
-  } else if (!isInPeriod(localStatus) && localStatus !== 'unknown') {
+  } else if (!isInPeriod(localStatus)) {
     warnings.push({
-      type: 'EXPIRED',
+      type: 'ADOPTED_EXPIRED',
       message: local.to
-        ? `Local data expired (feed_end: ${local.to})`
-        : 'Local data expired (no feed_end_date)',
-    });
-  } else if (localStatus === 'unknown') {
-    warnings.push({
-      type: 'EXPIRED',
-      message: 'Local data expired (no feed_end_date)',
+        ? `Adopted data expired (feed_end: ${local.to})`
+        : 'Adopted data expired (no feed_end_date)',
     });
   }
 
   if (local.isExpiringSoon(now, EXPIRING_SOON_DAYS)) {
     const daysLeft = getDaysUntilExpiry(local.to!.replace(/-/g, ''), now);
     warnings.push({
-      type: 'EXPIRING_SOON',
-      message: `Local data expires in ${daysLeft} days (${local.to})`,
+      type: 'ADOPTED_EXPIRING_SOON',
+      message: `Adopted data expires in ${daysLeft} days (${local.to})`,
       daysLeft,
     });
   }
@@ -174,7 +173,10 @@ export function detectWarnings(
 
   const inPeriodCount = remotes.filter((r) => isInPeriod(r.getPeriodStatus(now))).length;
   if (inPeriodCount === 0) {
-    warnings.push({ type: 'NO_VALID_DATA', message: 'No currently valid resources available' });
+    warnings.push({
+      type: 'REMOTE_NO_VALID_DATA',
+      message: 'No currently valid resources available',
+    });
   }
 
   // --- RemoteResource checks (non-adopted only) ---
@@ -189,12 +191,12 @@ export function detectWarnings(
 
     if (isInPeriod(status)) {
       warnings.push({
-        type: isNewResource ? 'NEW_IN_PERIOD' : 'KNOWN_IN_PERIOD',
+        type: isNewResource ? 'REMOTE_NEW_IN_PERIOD' : 'REMOTE_KNOWN_IN_PERIOD',
         message: `${remote.url} (valid: ${remote.from ?? '?'} - ${remote.to ?? '?'})`,
       });
     } else if (isBeforePeriod(status)) {
       warnings.push({
-        type: isNewResource ? 'NEW_BEFORE_PERIOD' : 'KNOWN_BEFORE_PERIOD',
+        type: isNewResource ? 'REMOTE_NEW_BEFORE_PERIOD' : 'REMOTE_KNOWN_BEFORE_PERIOD',
         message: `${remote.url} (valid: ${remote.from ?? '?'} - ${remote.to ?? '?'})`,
       });
     }

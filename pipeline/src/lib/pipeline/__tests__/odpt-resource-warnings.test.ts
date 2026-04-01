@@ -73,7 +73,7 @@ describe('detectWarnings', () => {
     const remotes = [makeRemote('20260301')];
     const warnings = detectWarnings(null, remotes, now);
     expect(warnings).toHaveLength(1);
-    expect(warnings[0].type).toBe('NO_DOWNLOAD_REPORT');
+    expect(warnings[0].type).toBe('LOCAL_NO_DOWNLOAD_REPORT');
   });
 
   it('returns empty when LOCAL is valid and up to date', () => {
@@ -90,7 +90,7 @@ describe('detectWarnings', () => {
     const local = makeLocal('20260301', { from: '2026-01-01', to: '2026-02-28' }, [url]);
     const remotes = [makeRemote('20260301', { from: '2026-01-01', to: '2026-02-28' }, null, url)];
     const warnings = detectWarnings(local, remotes, now);
-    expect(warnings.some((w) => w.type === 'EXPIRED')).toBe(true);
+    expect(warnings.some((w) => w.type === 'ADOPTED_EXPIRED')).toBe(true);
   });
 
   it('returns NOT_YET_ACTIVE when LOCAL feed period has not started', () => {
@@ -98,8 +98,8 @@ describe('detectWarnings', () => {
     const local = makeLocal('20260328', { from: '2026-03-28', to: '2026-06-30' }, [url]);
     const remotes = [makeRemote('20260328', { from: '2026-03-28', to: '2026-06-30' }, null, url)];
     const warnings = detectWarnings(local, remotes, now);
-    expect(warnings.some((w) => w.type === 'NOT_YET_ACTIVE')).toBe(true);
-    expect(warnings.some((w) => w.type === 'EXPIRED')).toBe(false);
+    expect(warnings.some((w) => w.type === 'ADOPTED_BEFORE_PERIOD')).toBe(true);
+    expect(warnings.some((w) => w.type === 'ADOPTED_EXPIRED')).toBe(false);
   });
 
   it('returns REMOVED when LOCAL URL is not in remote list', () => {
@@ -107,7 +107,7 @@ describe('detectWarnings', () => {
     const local = makeLocal('20260301', {}, [`${BASE_URL}?date=20260401`]);
     const remotes = [makeRemote('20260401', {}, null, localUrl)];
     const warnings = detectWarnings(local, remotes, now);
-    expect(warnings.some((w) => w.type === 'REMOVED')).toBe(true);
+    expect(warnings.some((w) => w.type === 'ADOPTED_MISSING')).toBe(true);
   });
 
   it('returns NO_VALID_DATA when all resources are expired', () => {
@@ -118,7 +118,7 @@ describe('detectWarnings', () => {
       makeRemote('20260201', { from: '2026-01-01', to: '2026-02-28' }, null, null),
     ];
     const warnings = detectWarnings(local, remotes, now);
-    expect(warnings.some((w) => w.type === 'NO_VALID_DATA')).toBe(true);
+    expect(warnings.some((w) => w.type === 'REMOTE_NO_VALID_DATA')).toBe(true);
   });
 
   it('returns EXPIRING_SOON when feed_end is within threshold', () => {
@@ -126,9 +126,9 @@ describe('detectWarnings', () => {
     const local = makeLocal('20260301', { from: '2026-01-01', to: '2026-03-25' }, [url]);
     const remotes = [makeRemote('20260301', { from: '2026-01-01', to: '2026-03-25' }, null, url)];
     const warnings = detectWarnings(local, remotes, now);
-    const expiring = warnings.find((w) => w.type === 'EXPIRING_SOON');
+    const expiring = warnings.find((w) => w.type === 'ADOPTED_EXPIRING_SOON');
     expect(expiring).toBeDefined();
-    if (expiring?.type === 'EXPIRING_SOON') {
+    if (expiring?.type === 'ADOPTED_EXPIRING_SOON') {
       expect(expiring.daysLeft).toBe(8);
     }
   });
@@ -138,7 +138,7 @@ describe('detectWarnings', () => {
     const local = makeLocal('20260301', {}, [url]);
     const remotes = [makeRemote('20260301', {}, null, url)];
     const warnings = detectWarnings(local, remotes, now);
-    expect(warnings.some((w) => w.type === 'EXPIRING_SOON')).toBe(false);
+    expect(warnings.some((w) => w.type === 'ADOPTED_EXPIRING_SOON')).toBe(false);
   });
 
   it('does not return EXPIRING_SOON when feed is not yet active', () => {
@@ -146,8 +146,8 @@ describe('detectWarnings', () => {
     const local = makeLocal('20260320', { from: '2026-03-20', to: '2026-03-25' }, [url]);
     const remotes = [makeRemote('20260320', { from: '2026-03-20', to: '2026-03-25' }, null, url)];
     const warnings = detectWarnings(local, remotes, now);
-    expect(warnings.some((w) => w.type === 'NOT_YET_ACTIVE')).toBe(true);
-    expect(warnings.some((w) => w.type === 'EXPIRING_SOON')).toBe(false);
+    expect(warnings.some((w) => w.type === 'ADOPTED_BEFORE_PERIOD')).toBe(true);
+    expect(warnings.some((w) => w.type === 'ADOPTED_EXPIRING_SOON')).toBe(false);
   });
 
   // --- RemoteResource checks (new warning types) ---
@@ -160,7 +160,7 @@ describe('detectWarnings', () => {
       makeRemote('20260401', {}, { resourceUrls: [localUrl] }, localUrl),
     ];
     const warnings = detectWarnings(local, remotes, now);
-    expect(warnings.some((w) => w.type === 'NEW_IN_PERIOD')).toBe(true);
+    expect(warnings.some((w) => w.type === 'REMOTE_NEW_IN_PERIOD')).toBe(true);
   });
 
   it('returns KNOWN_IN_PERIOD for known resource that is in-period', () => {
@@ -173,7 +173,7 @@ describe('detectWarnings', () => {
       makeRemote('20260201', {}, snapshot, localUrl),
     ];
     const warnings = detectWarnings(local, remotes, now);
-    expect(warnings.some((w) => w.type === 'KNOWN_IN_PERIOD')).toBe(true);
+    expect(warnings.some((w) => w.type === 'REMOTE_KNOWN_IN_PERIOD')).toBe(true);
   });
 
   it('returns NEW_BEFORE_PERIOD for new resource that is before-period', () => {
@@ -181,10 +181,15 @@ describe('detectWarnings', () => {
     const local = makeLocal('20260301', {}, [localUrl]);
     const remotes = [
       makeRemote('20260301', {}, { resourceUrls: [localUrl] }, localUrl),
-      makeRemote('20260401', { from: '2026-04-01', to: '2026-09-28' }, { resourceUrls: [localUrl] }, localUrl),
+      makeRemote(
+        '20260401',
+        { from: '2026-04-01', to: '2026-09-28' },
+        { resourceUrls: [localUrl] },
+        localUrl,
+      ),
     ];
     const warnings = detectWarnings(local, remotes, now);
-    expect(warnings.some((w) => w.type === 'NEW_BEFORE_PERIOD')).toBe(true);
+    expect(warnings.some((w) => w.type === 'REMOTE_NEW_BEFORE_PERIOD')).toBe(true);
   });
 
   it('returns KNOWN_BEFORE_PERIOD for known resource that is before-period', () => {
@@ -197,7 +202,7 @@ describe('detectWarnings', () => {
       makeRemote('20260401', { from: '2026-04-01', to: '2026-09-28' }, snapshot, localUrl),
     ];
     const warnings = detectWarnings(local, remotes, now);
-    expect(warnings.some((w) => w.type === 'KNOWN_BEFORE_PERIOD')).toBe(true);
+    expect(warnings.some((w) => w.type === 'REMOTE_KNOWN_BEFORE_PERIOD')).toBe(true);
   });
 
   it('does not emit warning for non-adopted after-period resource', () => {
@@ -209,8 +214,8 @@ describe('detectWarnings', () => {
       makeRemote('20260101', { from: '2025-01-01', to: '2026-02-28' }, snapshot, localUrl),
     ];
     const warnings = detectWarnings(local, remotes, now);
-    expect(warnings.some((w) => w.type === 'KNOWN_IN_PERIOD')).toBe(false);
-    expect(warnings.some((w) => w.type === 'NEW_IN_PERIOD')).toBe(false);
+    expect(warnings.some((w) => w.type === 'REMOTE_KNOWN_IN_PERIOD')).toBe(false);
+    expect(warnings.some((w) => w.type === 'REMOTE_NEW_IN_PERIOD')).toBe(false);
   });
 
   it('does not emit warning for non-adopted unknown-period resource', () => {
@@ -223,9 +228,12 @@ describe('detectWarnings', () => {
     ];
     const warnings = detectWarnings(local, remotes, now);
     // unknown-period resource should not generate any of these warnings
-    const otherWarnings = warnings.filter((w) =>
-      w.type === 'NEW_IN_PERIOD' || w.type === 'KNOWN_IN_PERIOD'
-      || w.type === 'NEW_BEFORE_PERIOD' || w.type === 'KNOWN_BEFORE_PERIOD',
+    const otherWarnings = warnings.filter(
+      (w) =>
+        w.type === 'REMOTE_NEW_IN_PERIOD' ||
+        w.type === 'REMOTE_KNOWN_IN_PERIOD' ||
+        w.type === 'REMOTE_NEW_BEFORE_PERIOD' ||
+        w.type === 'REMOTE_KNOWN_BEFORE_PERIOD',
     );
     expect(otherWarnings).toHaveLength(0);
   });
@@ -239,7 +247,7 @@ describe('detectWarnings', () => {
     ];
     const warnings = detectWarnings(local, remotes, now);
     // No snapshot → isNew() returns null → treated as new
-    expect(warnings.some((w) => w.type === 'NEW_BEFORE_PERIOD')).toBe(true);
+    expect(warnings.some((w) => w.type === 'REMOTE_NEW_BEFORE_PERIOD')).toBe(true);
   });
 
   it('returns multiple warnings simultaneously', () => {
@@ -251,7 +259,7 @@ describe('detectWarnings', () => {
     ];
     const warnings = detectWarnings(local, remotes, now);
     // EXPIRED (local after-period) + NO_VALID_DATA (all expired)
-    expect(warnings.some((w) => w.type === 'EXPIRED')).toBe(true);
-    expect(warnings.some((w) => w.type === 'NO_VALID_DATA')).toBe(true);
+    expect(warnings.some((w) => w.type === 'ADOPTED_EXPIRED')).toBe(true);
+    expect(warnings.some((w) => w.type === 'REMOTE_NO_VALID_DATA')).toBe(true);
   });
 });

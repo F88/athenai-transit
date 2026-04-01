@@ -53,7 +53,6 @@ import type {
 } from '../../src/types/odpt-members-portal';
 
 import { Resource, LocalResource, RemoteResource } from './lib/odpt-resources';
-import type { PeriodStatus } from './lib/odpt-resources';
 
 // ---------------------------------------------------------------------------
 // API fetch
@@ -262,7 +261,7 @@ function printUsage(): void {
 // ---------------------------------------------------------------------------
 
 /** Warning types that require immediate action (exit code 1). */
-const CRITICAL_WARNINGS = new Set(['EXPIRED', 'REMOVED', 'NO_VALID_DATA']);
+const CRITICAL_WARNINGS = new Set(['ADOPTED_EXPIRED', 'ADOPTED_MISSING', 'REMOTE_NO_VALID_DATA']);
 
 function printResult(
   org: OdptOrganization,
@@ -382,7 +381,9 @@ function printResult(
     const avail = res.getPeriodStatus();
     const isCurrent = meta && stripAuthParams(r.url) === stripAuthParams(meta.url);
     const localMarker = isCurrent ? ' <-- LOCAL' : '';
-    const remoteRes = remoteResources.find((rr) => stripAuthParams(rr.url) === stripAuthParams(r.url));
+    const remoteRes = remoteResources.find(
+      (rr) => stripAuthParams(rr.url) === stripAuthParams(r.url),
+    );
     const isNew = remoteRes?.isNew();
     const newMarker = isNew === true || isNew === null ? ' [NEW]' : '';
     console.log(
@@ -538,12 +539,15 @@ async function main(): Promise<void> {
           const endStr = meta.feedInfo.endDate;
           const daysLeft = getDaysUntilExpiry(endStr);
           if (daysLeft < 0) {
-            const w: Warning = { type: 'EXPIRED', message: `Local data expired (${endStr})` };
+            const w: Warning = {
+              type: 'ADOPTED_EXPIRED',
+              message: `Adopted data expired (${endStr})`,
+            };
             console.log(`  *** ${w.type}: ${w.message}`);
             localWarnings.push(w);
           } else if (daysLeft <= EXPIRING_SOON_DAYS) {
             const w: Warning = {
-              type: 'EXPIRING_SOON',
+              type: 'ADOPTED_EXPIRING_SOON',
               message: `Local data expires in ${daysLeft} days (${endStr})`,
               daysLeft,
             };
@@ -561,7 +565,7 @@ async function main(): Promise<void> {
           console.log('  Local:      (no download metadata)');
         }
         const w: Warning = {
-          type: 'NO_DOWNLOAD_REPORT',
+          type: 'LOCAL_NO_DOWNLOAD_REPORT',
           message: isLastFailed
             ? 'Last download failed — check error and retry'
             : 'No download report — run download first',
