@@ -61,20 +61,36 @@ export function extractUrlBase(url: string): string {
 }
 
 /**
+ * Sensitive query parameters to strip from URLs.
+ *
+ * Single source of truth — all URL sanitization functions
+ * (stripAuthParams, sanitizeUrl) must use this list.
+ * Update here when new auth param names are identified.
+ */
+export const SENSITIVE_PARAMS = ['acl:consumerKey', 'access_token', 'api_key'] as const;
+
+/**
  * Strip authentication parameters from a URL, keeping all other
  * query parameters intact. Used for resource identity comparison
- * — two URLs that differ only by auth token are the same resource.
+ * and URL storage — two URLs that differ only by auth token are
+ * the same resource.
  *
- * @param url - Full URL that may contain `acl:consumerKey` param.
- * @returns URL without auth parameters.
+ * Handles acl:consumerKey (ODPT), access_token, api_key.
+ * Malformed URLs are redacted entirely to prevent credential leakage —
+ * a URL that cannot be parsed cannot be guaranteed free of auth params.
+ *
+ * @param url - Full URL that may contain auth params.
+ * @returns URL without auth parameters, or '[malformed-url-redacted]' if unparseable.
  */
 export function stripAuthParams(url: string): string {
   try {
     const u = new URL(url);
-    u.searchParams.delete('acl:consumerKey');
+    for (const param of SENSITIVE_PARAMS) {
+      u.searchParams.delete(param);
+    }
     return u.toString();
   } catch {
-    return url;
+    return '[malformed-url-redacted]';
   }
 }
 
@@ -151,7 +167,9 @@ export function detectWarnings(
       type: 'ADOPTED_BEFORE_PERIOD',
       message: `Adopted data not yet active (valid: ${local.from ?? '?'} - ${local.to ?? '?'})`,
     });
-  } else if (!isInPeriod(localStatus)) {
+  } else if (localStatus === 'after' || localStatus === 'after-no-start') {
+    // Only emit EXPIRED when we know the period has ended (after-period).
+    // 'unknown' (no feed_info.txt) is NOT treated as expired.
     warnings.push({
       type: 'ADOPTED_EXPIRED',
       message: local.to

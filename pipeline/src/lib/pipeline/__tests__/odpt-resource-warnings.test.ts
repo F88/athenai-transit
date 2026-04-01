@@ -262,4 +262,43 @@ describe('detectWarnings', () => {
     expect(warnings.some((w) => w.type === 'ADOPTED_EXPIRED')).toBe(true);
     expect(warnings.some((w) => w.type === 'REMOTE_NO_VALID_DATA')).toBe(true);
   });
+
+  // --- Regression tests ---
+
+  it('does not emit ADOPTED_EXPIRED when feedInfo is absent (unknown period)', () => {
+    const localUrl = `${BASE_URL}?date=20260301`;
+    const local = makeLocal('20260301', { from: null, to: null }, [localUrl]);
+    const remotes = [makeRemote('20260301', {}, null, localUrl)];
+    const warnings = detectWarnings(local, remotes, now);
+    // unknown period ≠ expired
+    expect(warnings.some((w) => w.type === 'ADOPTED_EXPIRED')).toBe(false);
+  });
+
+  // --- Security: malformed URL redaction ---
+
+  it('does not leak credentials from malformed URL in warning messages', () => {
+    const localUrl = `${BASE_URL}?date=20260301`;
+    const local = makeLocal('20260301', {}, [localUrl]);
+    // Simulate a malformed URL entering via API — stripAuthParams will redact it
+    const malformedRemote = new RemoteResource(
+      {
+        url: 'not-a-valid-url?access_token=SECRET',
+        from: '2026-01-01',
+        to: '2026-12-31',
+        startAt: '2026-04-01',
+        uploadedAt: '2026-03-01T00:00:00Z',
+      },
+      null,
+      null,
+    );
+    const remotes = [makeRemote('20260301', {}, null, localUrl), malformedRemote];
+    const warnings = detectWarnings(local, remotes, now);
+    // Verify no warning message contains the credential
+    for (const w of warnings) {
+      expect(w.message).not.toContain('SECRET');
+    }
+    // The malformed URL should appear as redacted in the message
+    const malformedWarning = warnings.find((w) => w.message.includes('[malformed-url-redacted]'));
+    expect(malformedWarning).toBeDefined();
+  });
 });

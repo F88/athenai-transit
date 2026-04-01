@@ -23,6 +23,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { listGtfsSourceNames, loadGtfsSource } from '../../src/lib/resources/load-gtfs-sources';
 import { loadDownloadMeta } from '../../src/lib/download/download-meta';
@@ -38,10 +39,12 @@ import {
 
 /**
  * Extract the `date` query parameter from a URL for display purposes only.
- * Do NOT use for resource identity or ordering — URLs are the source of truth.
+ * URL is sanitized first to remove auth params.
+ * Do NOT use for resource identity or ordering.
  */
-function extractDateParam(url: string): string | null {
-  const match = url.match(/[?&]date=(\d{8})/);
+export function extractDateParam(url: string): string | null {
+  const safe = sanitizeUrl(url);
+  const match = safe.match(/[?&]date=(\d{8})/);
   return match ? match[1] : null;
 }
 import type { Warning, ResourceSnapshot } from '../../src/lib/pipeline/odpt-resource-warnings';
@@ -52,7 +55,8 @@ import type {
   OdptOrganization,
 } from '../../src/types/odpt-members-portal';
 
-import { Resource, LocalResource, RemoteResource } from './lib/odpt-resources';
+import { LocalResource, RemoteResource } from './lib/odpt-resources';
+import { printRemoteResources, sanitizeUrl } from './lib/check-odpt-report';
 
 // ---------------------------------------------------------------------------
 // API fetch
@@ -101,11 +105,12 @@ interface SnapshotFile extends ResourceSnapshot {
   errors: string[];
 }
 
-function saveSnapshot(
+export function saveSnapshot(
   sourceName: string,
-  resources: OdptDataResource[],
+  resources: RemoteResource[],
   warnings: Warning[],
 ): void {
+  // RemoteResource.url is already stripped of auth params.
   const newUrls = resources.map((r) => r.url).sort();
   const warningTypes = warnings
     .filter((w) => !CRITICAL_WARNINGS.has(w.type))
@@ -133,7 +138,7 @@ function saveSnapshot(
   );
 }
 
-function loadSnapshot(sourceName: string): SnapshotFile | null {
+export function loadSnapshot(sourceName: string): SnapshotFile | null {
   const filePath = join(SNAPSHOT_DIR, `${sourceName}.json`);
   if (!existsSync(filePath)) {
     return null;
@@ -190,7 +195,7 @@ interface CliArgs {
   isTsv: boolean;
 }
 
-function parseArgs(): CliArgs {
+export function parseArgs(): CliArgs {
   const args = process.argv.slice(2);
 
   if (args.includes('--help') || args.includes('-h')) {
@@ -274,7 +279,7 @@ function printResult(
   const meta = local?.downloadMeta ?? null;
 
   // Detect warnings regardless of output mode (needed for exit code)
-  const remoteUrls = ds.dataresource.map((r) => r.url);
+  const remoteUrls = ds.dataresource.map((r) => stripAuthParams(r.url));
   const localResource = meta
     ? new LocalResource(
         {
@@ -328,7 +333,7 @@ function printResult(
     );
 
     if (isTracked && local) {
-      saveSnapshot(local.name, ds.dataresource, warnings);
+      saveSnapshot(local.name, remoteResources, warnings);
     }
     return warnings;
   }
@@ -340,8 +345,7 @@ function printResult(
 
   // Local info from download metadata
   if (meta) {
-    const localUrl = meta.url;
-    const localDate = extractDateParam(localUrl) ?? '(no date param)';
+    const localDate = extractDateParam(meta.url) ?? '(no date param)';
     console.log(`  Local:      date=${localDate} downloaded=${meta.downloadedAt}`);
     if (meta.feedInfo) {
       console.log(
@@ -365,35 +369,13 @@ function printResult(
     }
   }
 
-  // Remote resources (sorted by start_at descending — newest first)
-  const resources = [...ds.dataresource].sort((a, b) => b.start_at.localeCompare(a.start_at));
-  const validCount = resources.filter((r) => {
-    const s = new Resource(r.url, r.feed_start_date, r.feed_end_date).getPeriodStatus();
-    return s === 'in' || s === 'in-no-end' || s === 'in-no-start';
-  }).length;
-  console.log(
-    `  Remote:     ${resources.length} resources, ${validCount} currently valid (sorted by start_at desc)`,
-  );
-
-  for (const r of resources) {
-    const date = extractDateParam(r.url) ?? '';
-    const res = new Resource(r.url, r.feed_start_date, r.feed_end_date);
-    const avail = res.getPeriodStatus();
-    const isCurrent = meta && stripAuthParams(r.url) === stripAuthParams(meta.url);
-    const localMarker = isCurrent ? ' <-- LOCAL' : '';
-    const remoteRes = remoteResources.find(
-      (rr) => stripAuthParams(rr.url) === stripAuthParams(r.url),
-    );
-    const isNew = remoteRes?.isNew();
-    const newMarker = isNew === true || isNew === null ? ' [NEW]' : '';
-    console.log(
-      `    #${resources.indexOf(r) + 1}  date=${date}  start_at=${r.start_at}  feed=${r.feed_start_date ?? '?'} - ${r.feed_end_date ?? '?'}  ${avail}  uploaded=${r.uploaded_at}${localMarker}${newMarker}`,
-    );
-  }
+  // Remote resources — all output via check-odpt-report.ts (URLs sanitized)
+  printRemoteResources(remoteResources);
 
   // Save snapshot for next diff (tracked sources only)
+  // RemoteResource.url is already stripped of auth params.
   if (isTracked && local) {
-    saveSnapshot(local.name, ds.dataresource, warnings);
+    saveSnapshot(local.name, remoteResources, warnings);
   }
 
   console.log(`=== ${tracked} [END] ===\n`);
@@ -615,8 +597,18 @@ async function main(): Promise<void> {
   process.exitCode = exitCode;
 }
 
-main().catch((err) => {
-  console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
-  console.error('\nExit code: 1 (error)');
-  process.exitCode = 1;
-});
+function isDirectExecution(): boolean {
+  const entry = process.argv[1];
+  if (!entry) {
+    return false;
+  }
+  return import.meta.url === pathToFileURL(entry).href;
+}
+
+if (isDirectExecution()) {
+  main().catch((err) => {
+    console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
+    console.error('\nExit code: 1 (error)');
+    process.exitCode = 1;
+  });
+}

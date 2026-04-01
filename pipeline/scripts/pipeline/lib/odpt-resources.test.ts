@@ -122,11 +122,11 @@ describe('Resource', () => {
       expect(r.url).toContain('date=20260401');
     });
 
-    // TODO: malformed URL causes acl:consumerKey to survive (stripAuthParams
-    // fallback returns original string). This is a known limitation — when URL
-    // parsing is strengthened to handle malformed input, this test should be
-    // updated to expect the token removed.
-    it.todo('strips acl:consumerKey from malformed URL');
+    it('redacts malformed URL entirely to prevent credential leakage', () => {
+      const r = new Resource('not-a-valid-url?acl:consumerKey=LEAKED', null, null);
+      expect(r.url).toBe('[malformed-url-redacted]');
+      expect(r.url).not.toContain('LEAKED');
+    });
   });
 });
 
