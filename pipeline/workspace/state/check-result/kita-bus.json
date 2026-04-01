@@ -1,12 +1,14 @@
 {
   "sourceName": "kita-bus",
-  "checkedAt": "2026-04-01T05:39:32.758Z",
+  "checkedAt": "2026-04-01T08:09:06.582Z",
   "resourceUrls": [
     "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/KitaAllLines.zip?date=20240418",
     "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/KitaAllLines.zip?date=20250401",
     "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/KitaAllLines.zip?date=20251220"
   ],
-  "result": "ok",
-  "warnings": [],
+  "result": "attention",
+  "warnings": [
+    "NEWER_AVAILABLE"
+  ],
   "errors": []
 }

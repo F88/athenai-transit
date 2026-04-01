@@ -11,14 +11,69 @@ import type { DownloadMetaSuccess } from '../download/download-meta';
 // Types
 // ---------------------------------------------------------------------------
 
-/** Minimal remote resource info needed for warning detection. */
+/**
+ * Minimal remote resource info needed for warning detection.
+ *
+ * Only three fields are used for decision logic:
+ * - `url` — resource identity (auth params excluded for comparison)
+ * - `feed_start_date` / `feed_end_date` — feed period evaluation
+ *
+ * Other API fields (`start_at`, `is_feed_available_period`, `uploaded_at`, etc.)
+ * are NOT used for decisions — they are for display/sorting only.
+ *
+ * @see https://developer.odpt.org/api_addendum
+ */
 export interface RemoteResource {
+  /** エンドポイントURL. Resource identity (auth params excluded for comparison). */
   url: string;
-  is_feed_available_period: boolean;
-  /** Feed start date in `YYYY-MM-DD` format, or null if not provided by API. */
+  /** feed_info.txt の feed_start_date. Format: YYYY-MM-DD, or null if absent. */
   feed_start_date: string | null;
-  /** Feed end date in `YYYY-MM-DD` format, or null if not provided by API. */
+  /** feed_info.txt の feed_end_date. Format: YYYY-MM-DD, or null if absent. */
   feed_end_date: string | null;
+}
+
+/**
+ * Feed availability status for a remote resource.
+ *
+ * - `in-period`: feed is currently within its valid period
+ * - `before-period`: feed period has not started yet (start date is in the future)
+ * - `after-period`: feed period has ended
+ * - `unknown-period`: feed dates are not available (e.g. no feed_info.txt)
+ */
+export type FeedStatus = 'in-period' | 'before-period' | 'after-period' | 'unknown-period';
+
+/**
+ * Determine the feed availability status of a remote resource.
+ *
+ * Determined solely from `feed_start_date` and `feed_end_date`.
+ * `is_feed_available_period` from the API is NOT used here — it is
+ * a reference value that may not account for upcoming data.
+ *
+ * @param resource - Remote resource to evaluate.
+ * @param now - Current date for comparison.
+ * @returns Feed availability status.
+ */
+export function getFeedStatus(resource: RemoteResource, now: Date = new Date()): FeedStatus {
+  const { feed_start_date, feed_end_date } = resource;
+
+  if (!feed_start_date && !feed_end_date) {
+    return 'unknown-period';
+  }
+
+  const nowStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
+
+  // Period has ended
+  if (feed_end_date && feed_end_date < nowStr) {
+    return 'after-period';
+  }
+
+  // Period has not started yet
+  if (feed_start_date && feed_start_date > nowStr) {
+    return 'before-period';
+  }
+
+  // Within period (or no boundary to contradict)
+  return 'in-period';
 }
 
 /** Previous check snapshot for diff detection. */
@@ -46,21 +101,10 @@ export type Warning =
 // ---------------------------------------------------------------------------
 
 /**
- * Extract the `date` query parameter (YYYYMMDD) from a download URL.
- *
- * @param url - Download URL that may contain a `?date=YYYYMMDD` or `&date=YYYYMMDD` parameter.
- * @returns The 8-digit date string, or null if no date parameter is present.
- */
-export function extractDateParam(url: string): string | null {
-  const match = url.match(/[?&]date=(\d{8})/);
-  return match ? match[1] : null;
-}
-
-/**
  * Extract the URL base path without query string.
  *
- * Used to match remote and local resources by their path,
- * ignoring date or authentication query parameters.
+ * Used to strip query parameters (including auth tokens) for safe
+ * logging — prevents credential leakage in CI output and Slack.
  *
  * @param url - Full URL with optional query string.
  * @returns URL without the query string portion.
@@ -68,6 +112,24 @@ export function extractDateParam(url: string): string | null {
 export function extractUrlBase(url: string): string {
   const idx = url.indexOf('?');
   return idx >= 0 ? url.substring(0, idx) : url;
+}
+
+/**
+ * Strip authentication parameters from a URL, keeping all other
+ * query parameters intact. Used for resource identity comparison
+ * — two URLs that differ only by auth token are the same resource.
+ *
+ * @param url - Full URL that may contain `acl:consumerKey` param.
+ * @returns URL without auth parameters.
+ */
+export function stripAuthParams(url: string): string {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete('acl:consumerKey');
+    return u.toString();
+  } catch {
+    return url;
+  }
 }
 
 /**
@@ -121,57 +183,44 @@ export function detectWarnings(
     return warnings;
   }
 
-  // Find LOCAL resource in remote list
+  // Find LOCAL resource in remote list, ignoring auth tokens.
   const localUrl = meta.url;
-  const localInRemote = resources.find(
-    (r) =>
-      extractUrlBase(r.url) === extractUrlBase(localUrl) &&
-      extractDateParam(r.url) === extractDateParam(localUrl),
-  );
+  const localUrlStripped = stripAuthParams(localUrl);
+  const localInRemote = resources.find((r) => stripAuthParams(r.url) === localUrlStripped);
 
   // REMOVED: LOCAL not found in remote
   if (!localInRemote) {
     warnings.push({ type: 'REMOVED', message: 'Local resource no longer exists in remote' });
   }
 
-  // EXPIRED or NOT_YET_ACTIVE: LOCAL is outside the valid period.
-  // is_feed_available_period=false means the feed is not currently valid,
-  // but does not distinguish between "already expired" and "not yet started".
-  // We compare feed_end_date against now to determine which case it is.
-  if (localInRemote && !localInRemote.is_feed_available_period) {
-    if (localInRemote.feed_end_date) {
-      const daysUntilEnd = getDaysUntilExpiry(localInRemote.feed_end_date.replace(/-/g, ''), now);
-      if (daysUntilEnd > 0) {
-        warnings.push({
-          type: 'NOT_YET_ACTIVE',
-          message: `Local data not yet active (valid: ${localInRemote.feed_start_date ?? '?'} - ${localInRemote.feed_end_date})`,
-        });
-      } else {
-        warnings.push({
-          type: 'EXPIRED',
-          message: `Local data expired (feed_end: ${localInRemote.feed_end_date})`,
-        });
-      }
-    } else {
-      // No feed_end_date — treat as expired (cannot determine validity)
+  // EXPIRED or NOT_YET_ACTIVE: LOCAL feed period is not current.
+  if (localInRemote) {
+    const localStatus = getFeedStatus(localInRemote, now);
+    if (localStatus === 'before-period') {
+      warnings.push({
+        type: 'NOT_YET_ACTIVE',
+        message: `Local data not yet active (valid: ${localInRemote.feed_start_date ?? '?'} - ${localInRemote.feed_end_date ?? '?'})`,
+      });
+    } else if (localStatus === 'after-period' || localStatus === 'unknown-period') {
       warnings.push({
         type: 'EXPIRED',
-        message: 'Local data expired (no feed_end_date)',
+        message: localInRemote.feed_end_date
+          ? `Local data expired (feed_end: ${localInRemote.feed_end_date})`
+          : 'Local data expired (no feed_end_date)',
       });
     }
   }
 
-  // NO_VALID_DATA: no valid resources at all
-  const validCount = resources.filter((r) => r.is_feed_available_period).length;
+  // NO_VALID_DATA: no resources with feed period that includes today
+  const validCount = resources.filter((r) => getFeedStatus(r, now) === 'in-period').length;
   if (validCount === 0) {
     warnings.push({ type: 'NO_VALID_DATA', message: 'No currently valid resources available' });
   }
 
   // EXPIRING_SOON: LOCAL feed_end_date is within threshold.
-  // Only relevant when the feed is currently active — a feed that
-  // hasn't started yet cannot be "expiring soon".
-  const isCurrentlyActive = localInRemote?.is_feed_available_period ?? false;
-  if (isCurrentlyActive && meta.feedInfo?.endDate) {
+  // Only relevant when the feed is currently active.
+  const localIsActive = localInRemote ? getFeedStatus(localInRemote, now) === 'in-period' : false;
+  if (localIsActive && meta.feedInfo?.endDate) {
     const endStr = meta.feedInfo.endDate;
     const daysLeft = getDaysUntilExpiry(endStr, now);
     if (daysLeft >= 0 && daysLeft <= EXPIRING_SOON_DAYS) {
@@ -183,40 +232,39 @@ export function detectWarnings(
     }
   }
 
-  // NEW_RESOURCE: resources added since last check
-  if (previousSnapshot) {
-    const previousUrls = new Set(previousSnapshot.resourceUrls);
-    const newUrls = resources.map((r) => r.url).filter((url) => !previousUrls.has(url));
-    if (newUrls.length > 0) {
-      warnings.push({
-        type: 'NEW_RESOURCE',
-        message: `${newUrls.length} new resource(s) since last check`,
-        urls: newUrls,
-      });
-    }
+  // NEW_RESOURCE: resources not seen in previous check.
+  // On first run (no snapshot), all resources are treated as new.
+  const previousUrls = new Set(previousSnapshot?.resourceUrls ?? []);
+  const newUrls = resources.map((r) => r.url).filter((url) => !previousUrls.has(url));
+  if (newUrls.length > 0) {
+    warnings.push({
+      type: 'NEW_RESOURCE',
+      message: `${newUrls.length} new resource(s) since last check`,
+      urls: newUrls,
+    });
   }
 
-  // NEWER_AVAILABLE: remote resources with a later feed_start_date than local.
+  // NEWER_AVAILABLE: remote resources with a different URL than local
+  // whose feed period has not ended (in-period or before-period).
+  // Decision uses only: url (identity) + feed_start_date/feed_end_date (period).
   // Unlike NEW_RESOURCE (snapshot-based, fires once), this fires every time
   // until the local data is updated, so unapplied resources stay visible.
-  const localFeedStart = localInRemote?.feed_start_date ?? meta.feedInfo?.startDate ?? null;
-  if (localFeedStart) {
-    const newerResources = resources.filter((r) => {
-      if (!r.feed_start_date) {
-        return false;
-      }
-      return r.feed_start_date > localFeedStart;
-    });
-    if (newerResources.length > 0) {
-      const details = newerResources
-        .map((r) => `valid: ${r.feed_start_date ?? '?'} - ${r.feed_end_date ?? '?'}`)
-        .join(', ');
-      warnings.push({
-        type: 'NEWER_AVAILABLE',
-        message: `${newerResources.length} newer resource(s) available (${details})`,
-        urls: newerResources.map((r) => r.url),
-      });
+  const unappliedResources = resources.filter((r) => {
+    if (stripAuthParams(r.url) === localUrlStripped) {
+      return false;
     }
+    const status = getFeedStatus(r, now);
+    return status === 'in-period' || status === 'before-period';
+  });
+  if (unappliedResources.length > 0) {
+    const details = unappliedResources
+      .map((r) => `valid: ${r.feed_start_date ?? '?'} - ${r.feed_end_date ?? '?'}`)
+      .join(', ');
+    warnings.push({
+      type: 'NEWER_AVAILABLE',
+      message: `${unappliedResources.length} newer resource(s) available (${details})`,
+      urls: unappliedResources.map((r) => r.url),
+    });
   }
 
   return warnings;

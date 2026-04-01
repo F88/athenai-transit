@@ -1,6 +1,6 @@
 {
   "sourceName": "chiyoda-bus",
-  "checkedAt": "2026-04-01T05:39:32.759Z",
+  "checkedAt": "2026-04-01T08:09:06.586Z",
   "resourceUrls": [
     "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/Chiyoda_ALLLINES.zip?date=20241227",
     "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/Chiyoda_ALLLINES.zip?date=20250402",
@@ -9,7 +9,7 @@
   ],
   "result": "attention",
   "warnings": [
-    "NEW_RESOURCE"
+    "NEWER_AVAILABLE"
   ],
   "errors": []
 }
