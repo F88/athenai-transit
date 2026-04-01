@@ -2,12 +2,12 @@
   "sourceName": "keio-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-04-01T05:06:16.845Z",
+  "downloadedAt": "2026-04-01T23:24:52.499Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260401",
-  "size": 5828765,
+  "size": 5828269,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 4635,
-  "archivePath": "workspace/_archives/gtfs/keio-bus/AllLines_20260401-050621.zip",
+  "durationMs": 8156,
+  "archivePath": "workspace/_archives/gtfs/keio-bus/AllLines_20260401-232500.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -31,7 +31,7 @@
     },
     {
       "name": "translations.txt",
-      "size": 59132235
+      "size": 59132125
     },
     {
       "name": "feed_info.txt",
@@ -39,19 +39,19 @@
     },
     {
       "name": "stops.txt",
-      "size": 196534
+      "size": 196594
     },
     {
       "name": "trips.txt",
-      "size": 1551550
+      "size": 1551553
     },
     {
       "name": "routes.txt",
-      "size": 11056
+      "size": 10996
     },
     {
       "name": "fare_rules.txt",
-      "size": 1138994
+      "size": 1136469
     },
     {
       "name": "fare_attributes.txt",
@@ -64,6 +64,6 @@
     "lang": "ja",
     "startDate": "20260401",
     "endDate": "20261231",
-    "version": "20260327082751"
+    "version": "20260401145454"
   }
 }

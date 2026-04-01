@@ -2,24 +2,32 @@
   "sourceName": "chiyoda-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-04-01T05:06:24.895Z",
-  "url": "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/Chiyoda_ALLLINES.zip?date=20250601",
-  "size": 30743,
+  "downloadedAt": "2026-04-01T23:25:03.672Z",
+  "url": "https://api-public.odpt.org/api/v4/files/odpt/HitachiAutomobileTransportation/Chiyoda_ALLLINES.zip?date=20260401",
+  "size": 29985,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1746,
-  "archivePath": "workspace/_archives/gtfs/chiyoda-bus/Chiyoda_ALLLINES_20260401-050626.zip",
+  "durationMs": 1139,
+  "archivePath": "workspace/_archives/gtfs/chiyoda-bus/Chiyoda_ALLLINES_20260401-232504.zip",
   "extractedFiles": [
     {
+      "name": "agency.txt",
+      "size": 204
+    },
+    {
+      "name": "agency_jp.txt",
+      "size": 164
+    },
+    {
+      "name": "calendar.txt",
+      "size": 212
+    },
+    {
       "name": "calendar_dates.txt",
-      "size": 836
+      "size": 1221
     },
     {
       "name": "fare_attributes.txt",
       "size": 73
-    },
-    {
-      "name": "fare_rules.txt",
-      "size": 144
     },
     {
       "name": "feed_info.txt",
@@ -39,31 +47,19 @@
     },
     {
       "name": "stop_times.txt",
-      "size": 165793
+      "size": 128728
     },
     {
       "name": "stops.txt",
-      "size": 5209
+      "size": 5692
     },
     {
       "name": "transfers.txt",
-      "size": 83
+      "size": 91
     },
     {
       "name": "trips.txt",
-      "size": 4612
-    },
-    {
-      "name": "agency.txt",
-      "size": 204
-    },
-    {
-      "name": "agency_jp.txt",
-      "size": 164
-    },
-    {
-      "name": "calendar.txt",
-      "size": 215
+      "size": 5916
     }
   ],
   "feedInfo": {
