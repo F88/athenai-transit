@@ -53,6 +53,9 @@ import type {
   OdptOrganization,
 } from '../../src/types/odpt-members-portal';
 
+import { LocalResource, CheckRemoteResource } from './lib/odpt-resources';
+import type { PeriodStatus } from './lib/odpt-resources';
+
 // ---------------------------------------------------------------------------
 // API fetch
 // ---------------------------------------------------------------------------

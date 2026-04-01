@@ -94,6 +94,7 @@ export type Warning =
   | { type: 'EXPIRING_SOON'; message: string; daysLeft: number }
   | { type: 'NEW_RESOURCE'; message: string; urls: string[] }
   | { type: 'NEWER_AVAILABLE'; message: string; urls: string[] }
+  | { type: 'OTHER_AVAILABLE'; message: string; urls: string[] }
   | { type: 'NO_DOWNLOAD_REPORT'; message: string };
 
 // ---------------------------------------------------------------------------
@@ -244,11 +245,16 @@ export function detectWarnings(
     });
   }
 
-  // NEWER_AVAILABLE: remote resources with a different URL than local
-  // whose feed period has not ended (in-period or before-period).
+  // NEWER_AVAILABLE / OTHER_AVAILABLE: remote resources with a different URL
+  // than local whose feed period has not ended (in-period or before-period).
   // Decision uses only: url (identity) + feed_start_date/feed_end_date (period).
-  // Unlike NEW_RESOURCE (snapshot-based, fires once), this fires every time
+  // Unlike NEW_RESOURCE (snapshot-based, fires once), these fire every time
   // until the local data is updated, so unapplied resources stay visible.
+  //
+  // Split by feed_start_date comparison against local:
+  //   NEWER_AVAILABLE: feed_start_date > local → genuinely newer data
+  //   OTHER_AVAILABLE: feed_start_date <= local or unknown → old or same period
+  const localFeedStart = localInRemote?.feed_start_date ?? meta.feedInfo?.startDate ?? null;
   const unappliedResources = resources.filter((r) => {
     if (stripAuthParams(r.url) === localUrlStripped) {
       return false;
@@ -256,14 +262,30 @@ export function detectWarnings(
     const status = getFeedStatus(r, now);
     return status === 'in-period' || status === 'before-period';
   });
-  if (unappliedResources.length > 0) {
-    const details = unappliedResources
+  const newerResources = unappliedResources.filter(
+    (r) => localFeedStart && r.feed_start_date && r.feed_start_date > localFeedStart,
+  );
+  const otherResources = unappliedResources.filter(
+    (r) => !localFeedStart || !r.feed_start_date || r.feed_start_date <= localFeedStart,
+  );
+  if (newerResources.length > 0) {
+    const details = newerResources
       .map((r) => `valid: ${r.feed_start_date ?? '?'} - ${r.feed_end_date ?? '?'}`)
       .join(', ');
     warnings.push({
       type: 'NEWER_AVAILABLE',
-      message: `${unappliedResources.length} newer resource(s) available (${details})`,
-      urls: unappliedResources.map((r) => r.url),
+      message: `${newerResources.length} newer resource(s) available (${details})`,
+      urls: newerResources.map((r) => r.url),
+    });
+  }
+  if (otherResources.length > 0) {
+    const details = otherResources
+      .map((r) => `valid: ${r.feed_start_date ?? '?'} - ${r.feed_end_date ?? '?'}`)
+      .join(', ');
+    warnings.push({
+      type: 'OTHER_AVAILABLE',
+      message: `${otherResources.length} other resource(s) available (${details})`,
+      urls: otherResources.map((r) => r.url),
     });
   }
 
