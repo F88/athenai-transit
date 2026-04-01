@@ -16,18 +16,19 @@ vi.mock('../../src/lib/fs-utils', () => ({
   ensureDir: ensureDirMock,
 }));
 
-vi.mock(import('node:fs'), () => {
-  return {
-    default: {
-      existsSync: existsSyncMock,
-      readdirSync: readdirSyncMock,
-      readFileSync: readFileSyncMock,
-      writeFileSync: writeFileSyncMock,
-    },
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  const mockedFs = {
+    ...actual,
     existsSync: existsSyncMock,
     readdirSync: readdirSyncMock,
     readFileSync: readFileSyncMock,
     writeFileSync: writeFileSyncMock,
+  };
+
+  return {
+    ...mockedFs,
+    default: mockedFs,
   };
 });
 
