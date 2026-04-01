@@ -9,6 +9,30 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- DepartureItem / FlatDepartureItem に headsign の subNames (翻訳名) を表示。
+- `RouteDirection` 型を `transit-composed.ts` に抽出 (#82)。
+- `HeadsignBadge` に resolver パターンを統合: `routeDirection` を受け取り、内部で `getHeadsignDisplayNames` を呼ぶ。
+- `translateHeadsign` を実装: `headsign_names` から言語別翻訳を取得。
+- `VerboseHeadsignDisplayNames` コンポーネントを追加。
+- `RelativeTime` コンポーネント: 時間帯に応じた色と opacity で相対時刻を表示。
+    - size variants (sm / default / lg)、`hidePrefix` (「あと」省略)、`isTerminal` (「着」付加)。
+- `time-style.ts`: 5段階の時間帯カラーバンド (3分 orange, 10分 green, 15分 blue, 30分/60分 gray)。
+- `TripInfo` に `size` variant (sm / default) と `ellipsisHeadsign` prop を追加。
+- `StopSummary` に TripInfo + RelativeTime を統合。終点/乗車不可ラベルも表示。
+
+### Changed
+
+- `getHeadsignDisplayNames` のシグネチャを `(routeDirection, infoLevel, lang?)` に変更。
+- `HeadsignBadge` の props を `headsign` + `route` から `routeDirection: RouteDirection` に変更。
+- `VerboseHeadsign` に `headsign_names`、`direction`、`HeadsignDisplayNames` dump を追加。
+- `DepartureItem` / `FlatDepartureItem` の相対時刻表示を `RelativeTime` コンポーネントに置換。
+- `FlatDepartureItem` のレイアウト調整: 時間カラムに `min-h-8` + `flex-col justify-center`。
+- 相対時刻の表示範囲を60分以内に拡大。90分超は「あと」を省略。
+- `StopSummary` の stop subNames に ellipsis を適用。
+- インライン `displayMinutes` 計算を `getDisplayMinutes` util に統一。
+
 ## [2026.03.31]
 
 ### Fixed

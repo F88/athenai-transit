@@ -1,7 +1,7 @@
 import type { InfoLevel } from '../../types/app/settings';
-import type { Route } from '../../types/app/transit';
+import type { RouteDirection } from '../../types/app/transit-composed';
 import { cn } from '../../lib/utils';
-import { IdBadge } from './id-badge';
+import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
 import { VerboseHeadsign } from '../verbose/verbose-headsign';
 
 const sizeVariants = {
@@ -11,10 +11,8 @@ const sizeVariants = {
 } as const;
 
 interface HeadsignBadgeProps {
-  /** Headsign (destination) text to display. */
-  headsign: string;
-  /** The route, used to derive badge colors and verbose route_id. */
-  route: Route;
+  /** Route direction context containing headsign, translations, and route. */
+  routeDirection: RouteDirection;
   /** Current info verbosity level. Verbose shows route_id via IdBadge. */
   infoLevel: InfoLevel;
   /** Maximum characters to display. Truncated text is not suffixed. @default undefined (no limit) */
@@ -24,8 +22,6 @@ interface HeadsignBadgeProps {
   /** Suppress verbose-only rendering (IdBadge, details dump).
    *  Use in non-interactive contexts like tooltips. */
   disableVerbose?: boolean;
-  /** Whether to show the verbose IdBadge. @default true */
-  showVerboseId?: boolean;
   /** Additional CSS classes. */
   className?: string;
 }
@@ -33,33 +29,33 @@ interface HeadsignBadgeProps {
 /**
  * Colored badge displaying a headsign (destination) name.
  *
+ * Internally calls {@link getHeadsignDisplayNames} to resolve the display
+ * name and sub-names from headsign translations, following the same
+ * resolver pattern as {@link RouteBadge} and {@link AgencyBadge}.
+ *
  * Background color uses the route's designated color (`route_color`),
  * falling back to `bg-muted-foreground` when no color is set.
- * In verbose mode, an {@link IdBadge} with the route_id is shown after the label.
- *
- * @param headsign - Destination text.
- * @param route - Route for color derivation and verbose route_id.
- * @param infoLevel - Controls whether route_id IdBadge is shown.
- * @param maxLength - Truncate headsign to first N characters. No limit when omitted.
- * @param size - Size variant: `'default'`, `'sm'`, or `'xs'`.
- * @param className - Additional CSS classes.
+ * In verbose mode, a {@link VerboseHeadsign} dump is shown below the badge.
  */
 export function HeadsignBadge({
-  headsign,
-  route,
+  routeDirection,
   infoLevel,
   maxLength,
   size = 'default',
   disableVerbose = false,
-  showVerboseId = true,
   className,
 }: HeadsignBadgeProps) {
+  const { route } = routeDirection;
+  const headsignNames = getHeadsignDisplayNames(routeDirection, infoLevel);
+
   const bg = route.route_color ? `#${route.route_color}` : undefined;
   const fg = route.route_text_color ? `#${route.route_text_color}` : undefined;
   const label =
-    maxLength != null && headsign.length > maxLength ? headsign.slice(0, maxLength) : headsign;
+    maxLength != null && headsignNames.name.length > maxLength
+      ? headsignNames.name.slice(0, maxLength)
+      : headsignNames.name;
   // Show full headsign as tooltip when truncated.
-  const title = label !== headsign ? headsign : undefined;
+  const title = label !== headsignNames.name ? headsignNames.name : undefined;
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;
 
   return (
@@ -76,10 +72,14 @@ export function HeadsignBadge({
         >
           {label}
         </span>
-        {showVerbose && showVerboseId && <IdBadge>{route.route_id}</IdBadge>}
       </span>
       {showVerbose && (
-        <VerboseHeadsign headsign={headsign} route={route} label={label} maxLength={maxLength} />
+        <VerboseHeadsign
+          routeDirection={routeDirection}
+          names={headsignNames}
+          label={label}
+          maxLength={maxLength}
+        />
       )}
     </div>
   );

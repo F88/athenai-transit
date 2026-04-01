@@ -1,13 +1,11 @@
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
-import { useInfoLevel } from '../hooks/use-info-level';
-import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
-import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
-import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
+import { formatAbsoluteTime } from '../domain/transit/time';
 import { minutesToDate } from '../domain/transit/calendar-utils';
-import { AgencyBadge } from './badge/agency-badge';
-import { RouteBadge } from './badge/route-badge';
+import { getDisplayMinutes } from '../domain/transit/timetable-utils';
+import { RelativeTime } from './relative-time';
+import { TripInfo } from './trip-info';
 import { VerboseContextualTimetableEntry } from './verbose/verbose-contextual-timetable-entry';
 
 interface FlatDepartureItemProps {
@@ -40,76 +38,45 @@ export function FlatDepartureItem({
   infoLevel,
   agency,
 }: FlatDepartureItemProps) {
-  const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
-  const { route, headsign } = entry.routeDirection;
-  const headsignName = getHeadsignDisplayNames(headsign, route, infoLevel).name;
+  const { route } = entry.routeDirection;
   const bgColor = route.route_color ? `#${route.route_color}` : undefined;
   const isTerminal = entry.patternPosition.isTerminal;
-  // Terminal entries show arrival time; all others show departure time.
-  const displayMinutes = isTerminal
-    ? entry.schedule.arrivalMinutes
-    : entry.schedule.departureMinutes;
-  const departureTime = minutesToDate(entry.serviceDate, displayMinutes);
+  const departureTime = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
   const isPickupUnavailable = entry.boarding.pickupType === 1;
+  const diffMs = departureTime.getTime() - now.getTime();
+  const showRelativeTime = isFirst || diffMs <= 60 * 60 * 1000;
 
   return (
-    <div className="border-b border-[#e0e0e0] py-2 last:border-b-0 dark:border-gray-700">
-      <div className="flex items-center gap-2">
-        <div className="w-18 shrink-0 text-right">
-          {/* Relative time hint for first entry or entries within 10 min */}
-          {(isFirst || departureTime.getTime() - now.getTime() <= 10 * 60 * 1000) && (
-            <div
-              className="text-sm font-bold text-[#333] dark:text-gray-100"
-              style={bgColor ? { color: bgColor } : undefined}
-            >
-              {formatRelativeTime(departureTime, now)}
-              {isTerminal && <span className="text-xs font-normal opacity-70">着</span>}
-            </div>
+    <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
+      <div className="flex gap-2">
+        <div className="flex min-h-8 w-14 shrink-0 flex-col justify-center text-right leading-none">
+          {showRelativeTime && (
+            <RelativeTime
+              now={now}
+              departureTime={departureTime}
+              isTerminal={isTerminal}
+              // Hide prefix for departures >90min to save space.
+              hidePrefix={diffMs > 90 * 60 * 1000}
+            />
           )}
           {/* Absolute time — always shown alongside relative for precise reference */}
           <div
-            className="text-sm font-bold text-[#333] dark:text-gray-100"
+            className="text-base text-[#333] dark:text-gray-100"
             style={bgColor ? { color: bgColor } : undefined}
           >
             {formatAbsoluteTime(departureTime)}
             {isTerminal && <span className="text-[10px] font-normal opacity-70">着</span>}
           </div>
         </div>
-        {showRouteTypeIcon && (
-          <span className="shrink-0 text-base">{routeTypeEmoji(route.route_type)}</span>
-        )}
-        <RouteBadge
-          className="shrink-0"
-          route={route}
+        <TripInfo
+          routeDirection={entry.routeDirection}
           infoLevel={infoLevel}
-          disableVerbose={true}
+          showRouteTypeIcon={showRouteTypeIcon}
+          agency={agency}
+          isTerminal={isTerminal}
+          isPickupUnavailable={isPickupUnavailable}
         />
-        {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
-        <span className="truncate text-sm text-[#333] dark:text-gray-200">{headsignName}</span>
-        {/* Terminal/pickup labels are shown at all InfoLevels (unlike TimetableGrid's
-            EntryLabels which gates by level). NearbyStop needs these labels to explain
-            why a departure is not boardable — hiding them would leave users unable to
-            distinguish drop-off-only arrivals from normal departures. */}
-        {isTerminal && (
-          <span className="shrink-0 rounded bg-gray-100 px-1 text-[10px] font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-            終点
-          </span>
-        )}
-        {isPickupUnavailable && (
-          <span className="shrink-0 rounded bg-red-100 px-1 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
-            乗車不可
-          </span>
-        )}
-        {info.isDetailedEnabled && agency && (
-          <AgencyBadge
-            //
-            size="xs"
-            agency={agency}
-            infoLevel={infoLevel}
-            disableVerbose={true}
-          />
-        )}
       </div>
       {/* Verbose data */}
       {showVerbose && (

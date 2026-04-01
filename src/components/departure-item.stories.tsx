@@ -55,6 +55,19 @@ const agency: Agency = {
   agency_colors: [{ bg: '00A850', text: 'FFFFFF' }],
 };
 
+const longAgency: Agency = {
+  agency_id: 'agency-002',
+  agency_name: '東京都交通局',
+  agency_short_name: '都営交通',
+  agency_names: {},
+  agency_short_names: {},
+  agency_url: '',
+  agency_lang: 'ja',
+  agency_timezone: 'Asia/Tokyo',
+  agency_fare_url: '',
+  agency_colors: [{ bg: 'E60012', text: 'FFFFFF' }],
+};
+
 /** Create a ContextualTimetableEntry for stories. */
 function createEntry(
   overrides: Partial<{
@@ -298,4 +311,246 @@ export const MultipleGroups: Story = {
       </div>
     );
   },
+};
+
+/** Long route name (no short name) — tests layout. */
+const longRoute: Route = {
+  ...baseRoute,
+  route_id: 'toaran:SA',
+  route_short_name: '',
+  route_long_name: '東京さくらトラム（都電荒川線）',
+  route_type: 0 as const,
+  route_color: 'E60012',
+};
+
+/** Kitchen sink groups: various data patterns to verify layout. */
+const kitchenSinkGroups: { entries: ContextualTimetableEntry[]; agency?: Agency }[] = [
+  // Short route + short headsign
+  {
+    entries: [
+      createEntry({ departureMinutes: 870, headsign: '中野駅' }),
+      createEntry({ departureMinutes: 885, headsign: '中野駅' }),
+      createEntry({ departureMinutes: 900, headsign: '中野駅' }),
+    ],
+    agency,
+  },
+  // Short route + headsign with translations
+  {
+    entries: [
+      {
+        ...createEntry({ departureMinutes: 872 }),
+        routeDirection: {
+          route: greenRoute,
+          headsign: '新橋駅前',
+          headsign_names: {
+            ja: '新橋駅前',
+            'ja-Hrkt': 'しんばしえきまえ',
+            en: 'Shimbashi Sta.',
+          },
+        },
+      },
+      {
+        ...createEntry({ departureMinutes: 892 }),
+        routeDirection: {
+          route: greenRoute,
+          headsign: '新橋駅前',
+          headsign_names: {
+            ja: '新橋駅前',
+            'ja-Hrkt': 'しんばしえきまえ',
+            en: 'Shimbashi Sta.',
+          },
+        },
+      },
+    ],
+    agency,
+  },
+  // Long route name + headsign with translations
+  {
+    entries: [
+      {
+        ...createEntry({ route: longRoute, departureMinutes: 875 }),
+        routeDirection: {
+          route: longRoute,
+          headsign: '三ノ輪橋',
+          headsign_names: { 'ja-Hrkt': 'みのわばし', en: 'Minowabashi' },
+        },
+      },
+      {
+        ...createEntry({ route: longRoute, departureMinutes: 890 }),
+        routeDirection: {
+          route: longRoute,
+          headsign: '三ノ輪橋',
+          headsign_names: { 'ja-Hrkt': 'みのわばし', en: 'Minowabashi' },
+        },
+      },
+    ],
+    agency: longAgency,
+  },
+  // Long route name + different headsign with translations
+  {
+    entries: [
+      {
+        ...createEntry({ route: longRoute, departureMinutes: 880 }),
+        routeDirection: {
+          route: longRoute,
+          headsign: '早稲田',
+          headsign_names: { 'ja-Hrkt': 'わせだ', en: 'Waseda' },
+        },
+      },
+    ],
+    agency: longAgency,
+  },
+  // Long route + long headsign with long translations (Kyoto-style)
+  {
+    entries: [
+      {
+        ...createEntry({ route: longRoute, departureMinutes: 882 }),
+        routeDirection: {
+          route: longRoute,
+          headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
+          headsign_names: {
+            en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+          },
+        },
+      },
+    ],
+    agency: longAgency,
+  },
+  // Long route + terminal
+  {
+    entries: [
+      {
+        ...createEntry({
+          route: longRoute,
+          departureMinutes: 884,
+          isTerminal: true,
+          arrivalMinutes: 884,
+        }),
+        routeDirection: {
+          route: longRoute,
+          headsign: '三ノ輪橋',
+          headsign_names: { 'ja-Hrkt': 'みのわばし', en: 'Minowabashi' },
+        },
+      },
+    ],
+    agency: longAgency,
+  },
+  // All elements: icon + long route + long subNames + long headsign + drop-off only + agency
+  {
+    entries: [
+      {
+        ...createEntry({
+          route: longRoute,
+          departureMinutes: 886,
+          pickupType: 1,
+        }),
+        routeDirection: {
+          route: longRoute,
+          headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
+          headsign_names: {
+            en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+          },
+        },
+      },
+    ],
+    agency: longAgency,
+  },
+  // All elements short: icon + short route + short subNames + short headsign + drop-off only + agency
+  {
+    entries: [
+      {
+        ...createEntry({
+          departureMinutes: 888,
+          pickupType: 1,
+        }),
+        routeDirection: {
+          route: baseRoute,
+          headsign: '新宿',
+          headsign_names: { en: 'Shinjuku' },
+        },
+      },
+    ],
+    agency,
+  },
+  // Empty headsign
+  {
+    entries: [createEntry({ departureMinutes: 905, headsign: '' })],
+    agency,
+  },
+];
+
+export const KitchenSinkInfoLevelSimple: Story = {
+  args: { entries: threeEntries },
+  render: () => (
+    <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
+      {kitchenSinkGroups.map((group, i) => (
+        <DepartureItem
+          key={i}
+          entries={group.entries}
+          now={now}
+          infoLevel="simple"
+          showRouteTypeIcon
+          agency={group.agency}
+          onShowTimetable={fn()}
+        />
+      ))}
+    </div>
+  ),
+};
+
+export const KitchenSinkInfoLevelNormal: Story = {
+  args: { entries: threeEntries },
+  render: () => (
+    <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
+      {kitchenSinkGroups.map((group, i) => (
+        <DepartureItem
+          key={i}
+          entries={group.entries}
+          now={now}
+          infoLevel="normal"
+          showRouteTypeIcon
+          agency={group.agency}
+          onShowTimetable={fn()}
+        />
+      ))}
+    </div>
+  ),
+};
+
+export const KitchenSinkInfoLevelDetailed: Story = {
+  args: { entries: threeEntries },
+  render: () => (
+    <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
+      {kitchenSinkGroups.map((group, i) => (
+        <DepartureItem
+          key={i}
+          entries={group.entries}
+          now={now}
+          infoLevel="detailed"
+          showRouteTypeIcon
+          agency={group.agency}
+          onShowTimetable={fn()}
+        />
+      ))}
+    </div>
+  ),
+};
+
+export const KitchenSinkInfoLevelVerbose: Story = {
+  args: { entries: threeEntries },
+  render: () => (
+    <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
+      {kitchenSinkGroups.map((group, i) => (
+        <DepartureItem
+          key={i}
+          entries={group.entries}
+          now={now}
+          infoLevel="verbose"
+          showRouteTypeIcon
+          agency={group.agency}
+          onShowTimetable={fn()}
+        />
+      ))}
+    </div>
+  ),
 };

@@ -1,5 +1,5 @@
 import type { InfoLevel } from '../../types/app/settings';
-import type { Route } from '../../types/app/transit';
+import type { RouteDirection } from '../../types/app/transit-composed';
 import { createInfoLevel } from '../../utils/create-info-level';
 import { translateHeadsign } from './i18n/translate-headsign';
 
@@ -10,11 +10,9 @@ export interface HeadsignDisplayNames {
   /** Primary display name resolved for the requested language. */
   name: string;
   /**
-   * Alternative names (translations) to show below the primary name.
+   * Alternative names (readings, translations) to show below the primary name.
    * Empty array when infoLevel is below "normal" or no alternatives exist.
-   *
-   * Currently always empty — will be populated when `translateHeadsign`
-   * is implemented and headsign translations are added to the data pipeline.
+   * Values only — language keys are stripped for display simplicity.
    */
   subNames: string[];
 }
@@ -39,39 +37,45 @@ export interface HeadsignDisplayNames {
  * {result.name && <span>{result.name}</span>}
  * ```
  *
- * @param headsign - Raw headsign string from timetable data.
- * @param route - Route context. Currently unused; reserved for future
- *                headsign translation lookup when translations are available.
+ * Sub-names are extracted from `routeDirection.headsign_names` (GTFS
+ * translations.txt for trip_headsign). Values that match the primary
+ * name are excluded. Sub-names are shown at "normal" level and above.
+ *
+ * @param routeDirection - Route direction context containing headsign
+ *   and headsign_names translations.
  * @param infoLevel - Current info verbosity level.
- * @param lang - Optional language key for i18n translation (future).
+ * @param lang - Optional language key for primary name resolution.
  * @returns Primary name and sub-names.
  *
  * @example
  * ```ts
- * getHeadsignDisplayNames('新宿駅西口', route, 'normal');
- * // { name: '新宿駅西口', subNames: [] }
+ * getHeadsignDisplayNames(routeDirection, 'normal');
+ * // { name: '新橋駅前', subNames: ['しんばしえきまえ', 'Shimbashi Sta.'] }
  *
- * getHeadsignDisplayNames('', busRoute, 'normal');
+ * getHeadsignDisplayNames(emptyHeadsignDirection, 'normal');
  * // { name: '', subNames: [] }  — caller decides fallback
  * ```
  */
 export function getHeadsignDisplayNames(
-  headsign: string,
-  route: Route,
+  routeDirection: RouteDirection,
   infoLevel: InfoLevel,
   lang?: string,
 ): HeadsignDisplayNames {
-  const name = translateHeadsign(headsign, lang);
-
+  const name = translateHeadsign(routeDirection.headsign, routeDirection.headsign_names, lang);
   const info = createInfoLevel(infoLevel);
 
-  // subNames: multilingual alternatives, only at normal+.
-  // Currently always empty — will be populated when headsign
-  // translations (translations.txt field_name=trip_headsign)
-  // are processed by the pipeline.
-  const subNames: string[] = [];
-  void info; // Will be used for subNames filtering when translations are available
-  void route; // Will be used for headsign translation lookup when available
+  if (!info.isNormalEnabled) {
+    return { name, subNames: [] };
+  }
+
+  // Collect alternative names from headsign_names translations,
+  // excluding the primary name to avoid showing the same text twice.
+  // Follows the same pattern as getStopDisplayNames.
+  const subNames = [
+    ...new Set(
+      Object.values(routeDirection.headsign_names).filter((value) => value && value !== name),
+    ),
+  ];
 
   return { name, subNames };
 }

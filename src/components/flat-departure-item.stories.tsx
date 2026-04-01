@@ -218,3 +218,233 @@ export const MultipleItems: Story = {
     );
   },
 };
+
+/** Long route name (no short name) — tests layout wrapping. */
+const longRoute: Route = {
+  ...baseRoute,
+  route_id: 'toaran:SA',
+  route_short_name: '',
+  route_long_name: '東京さくらトラム（都電荒川線）',
+  route_type: 0 as const,
+  route_color: 'E60012',
+};
+
+/** Kitchen sink items: various data patterns to verify layout. */
+const kitchenSinkItems: {
+  entry: ContextualTimetableEntry;
+  agency?: Agency;
+  icon?: boolean;
+}[] = [
+  // 0分後 — まもなく, short route
+  { entry: createEntry({ departureMinutes: 865, headsign: '中野駅' }) },
+  // 1分後 — short route + headsign with translations
+  {
+    entry: {
+      ...createEntry({ departureMinutes: 866 }),
+      routeDirection: {
+        route: greenRoute,
+        headsign: '新橋駅前',
+        headsign_names: { ja: '新橋駅前', 'ja-Hrkt': 'しんばしえきまえ', en: 'Shimbashi Sta.' },
+      },
+    },
+    agency,
+  },
+  // 1分後 — long route + short headsign
+  {
+    entry: createEntry({ route: longRoute, departureMinutes: 866, headsign: '三ノ輪橋' }),
+    icon: true,
+  },
+  // 2分後 — long route + headsign with translations
+  {
+    entry: {
+      ...createEntry({ route: longRoute, departureMinutes: 867 }),
+      routeDirection: {
+        route: longRoute,
+        headsign: '三ノ輪橋',
+        headsign_names: { 'ja-Hrkt': 'みのわばし', en: 'Minowabashi' },
+      },
+    },
+    icon: true,
+    agency,
+  },
+  // 3分後 — long route + headsign with translations (Waseda)
+  {
+    entry: {
+      ...createEntry({ route: longRoute, departureMinutes: 868 }),
+      routeDirection: {
+        route: longRoute,
+        headsign: '早稲田',
+        headsign_names: { 'ja-Hrkt': 'わせだ', en: 'Waseda' },
+      },
+    },
+    icon: true,
+  },
+  // 3分後 — long route + long headsign (Kyoto-style)
+  {
+    entry: {
+      ...createEntry({ route: longRoute, departureMinutes: 868 }),
+      routeDirection: {
+        route: longRoute,
+        headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
+        headsign_names: {
+          en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+        },
+      },
+    },
+    icon: true,
+    agency,
+  },
+  // 5分後 — all long + terminal
+  {
+    entry: {
+      ...createEntry({
+        route: longRoute,
+        departureMinutes: 870,
+        isTerminal: true,
+        arrivalMinutes: 870,
+      }),
+      routeDirection: {
+        route: longRoute,
+        headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
+        headsign_names: {
+          en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+        },
+      },
+    },
+    icon: true,
+    agency,
+  },
+  // 9分後 — all long + pickup unavailable
+  {
+    entry: {
+      ...createEntry({
+        route: longRoute,
+        departureMinutes: 874,
+        pickupType: 1,
+      }),
+      routeDirection: {
+        route: longRoute,
+        headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
+        headsign_names: {
+          en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+        },
+      },
+    },
+    icon: true,
+    agency,
+  },
+  // 10分後 — all short + terminal
+  {
+    entry: {
+      ...createEntry({
+        departureMinutes: 875,
+        isTerminal: true,
+        arrivalMinutes: 875,
+      }),
+      routeDirection: {
+        route: baseRoute,
+        headsign: '新宿',
+        headsign_names: { en: 'Shinjuku' },
+      },
+    },
+    icon: true,
+    agency,
+  },
+  // 11分後 — long route + terminal (no relative time)
+  {
+    entry: createEntry({
+      route: longRoute,
+      departureMinutes: 876,
+      headsign: '三ノ輪橋',
+      isTerminal: true,
+      arrivalMinutes: 876,
+    }),
+    icon: true,
+  },
+  // 14分後 — pickup unavailable (no relative time)
+  { entry: createEntry({ departureMinutes: 879, headsign: '車庫前', pickupType: 1 }) },
+  // 15分後 — empty headsign
+  { entry: createEntry({ departureMinutes: 880, headsign: '' }) },
+  // 30分後
+  { entry: createEntry({ departureMinutes: 895, headsign: '中野駅' }) },
+  // 60分後
+  { entry: createEntry({ departureMinutes: 925, headsign: '中野駅' }) },
+  // 120分後
+  { entry: createEntry({ departureMinutes: 985, headsign: '中野駅' }) },
+];
+
+export const KitchenSinkInfoLevelSimple: Story = {
+  args: { entry: createEntry() },
+  render: () => (
+    <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
+      {kitchenSinkItems.map(({ entry, agency: a, icon }, i) => (
+        <FlatDepartureItem
+          key={i}
+          entry={entry}
+          now={now}
+          isFirst={i === 0}
+          showRouteTypeIcon={icon ?? false}
+          infoLevel="simple"
+          agency={a}
+        />
+      ))}
+    </div>
+  ),
+};
+
+export const KitchenSinkInfoLevelNormal: Story = {
+  args: { entry: createEntry() },
+  render: () => (
+    <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
+      {kitchenSinkItems.map(({ entry, agency: a, icon }, i) => (
+        <FlatDepartureItem
+          key={i}
+          entry={entry}
+          now={now}
+          isFirst={i === 0}
+          showRouteTypeIcon={icon ?? false}
+          infoLevel="normal"
+          agency={a}
+        />
+      ))}
+    </div>
+  ),
+};
+
+export const KitchenSinkInfoLevelDetailed: Story = {
+  args: { entry: createEntry() },
+  render: () => (
+    <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
+      {kitchenSinkItems.map(({ entry, agency: a, icon }, i) => (
+        <FlatDepartureItem
+          key={i}
+          entry={entry}
+          now={now}
+          isFirst={i === 0}
+          showRouteTypeIcon={icon ?? false}
+          infoLevel="detailed"
+          agency={a}
+        />
+      ))}
+    </div>
+  ),
+};
+
+export const KitchenSinkInfoLevelVerbose: Story = {
+  args: { entry: createEntry() },
+  render: () => (
+    <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
+      {kitchenSinkItems.map(({ entry, agency: a, icon }, i) => (
+        <FlatDepartureItem
+          key={i}
+          entry={entry}
+          now={now}
+          isFirst={i === 0}
+          showRouteTypeIcon={icon ?? false}
+          infoLevel="verbose"
+          agency={a}
+        />
+      ))}
+    </div>
+  ),
+};

@@ -1,23 +1,27 @@
 /**
  * Translate the display name of a headsign for a given language.
  *
- * Currently a passthrough — returns the raw headsign string as-is.
- * When headsign translations are added to the data pipeline
- * (translations.txt field_name=trip_headsign), this function will
- * look up a `headsign_names` record by the `lang` key, following
- * the same pattern as {@link translateStopName} and {@link translateRouteName}.
+ * Looks up the `headsign_names` record by the `lang` key.
+ * Falls back to the raw `headsign` string when the requested
+ * language is not available or `lang` is omitted.
  *
  * This is the lowest-level i18n function — it has
  * no knowledge of info levels or display formatting.
  *
  * @param headsign - Raw headsign string from timetable data.
- * @param lang - BCP 47-ish language key (future use).
+ * @param headsignNames - Headsign translations from GTFS translations.txt
+ *   (field_name=trip_headsign). Keyed by language (e.g. "ja", "ja-Hrkt", "en").
+ * @param lang - BCP 47-ish language key matching translations.txt
+ *               (e.g. `"en"`, `"ja-Hrkt"`). Defaults to primary name.
  * @returns The translated headsign string.
  */
-export function translateHeadsign(headsign: string, lang?: string): string {
-  // Headsign translations are not yet available in the data pipeline.
-  // When headsign_names (Record<string, string>) is added to the
-  // timetable data, this will look up by lang key like translateStopName.
-  void lang;
+export function translateHeadsign(
+  headsign: string,
+  headsignNames: Record<string, string>,
+  lang?: string,
+): string {
+  if (lang && headsignNames[lang]) {
+    return headsignNames[lang];
+  }
   return headsign;
 }
