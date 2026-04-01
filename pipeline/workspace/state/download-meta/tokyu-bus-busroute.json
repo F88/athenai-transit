@@ -2,10 +2,10 @@
   "sourceName": "tokyu-bus-busroute",
   "type": "odpt-json",
   "status": "ok",
-  "downloadedAt": "2026-03-31T09:13:31.945Z",
+  "downloadedAt": "2026-04-01T05:07:14.526Z",
   "url": "https://api.odpt.org/api/v4/odpt:BusroutePattern?odpt:operator=odpt.Operator:TokyuBus",
   "size": 1424659,
   "contentType": "application/json; charset=utf-8",
-  "durationMs": 1405,
-  "archivePath": "workspace/_archives/odpt-json/tokyu-bus/odpt_BusroutePattern_20260331-091333.json"
+  "durationMs": 1460,
+  "archivePath": "workspace/_archives/odpt-json/tokyu-bus/odpt_BusroutePattern_20260401-050715.json"
 }
