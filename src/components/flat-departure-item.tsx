@@ -62,7 +62,7 @@ export function FlatDepartureItem({
           )}
           {/* Absolute time — always shown alongside relative for precise reference */}
           <div
-            className="text-default text-[#333] dark:text-gray-100"
+            className="text-base text-[#333] dark:text-gray-100"
             style={bgColor ? { color: bgColor } : undefined}
           >
             {formatAbsoluteTime(departureTime)}

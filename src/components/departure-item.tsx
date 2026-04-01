@@ -40,7 +40,7 @@ export function DepartureItem({
 
   const { route } = firstEntry.routeDirection;
 
-  // Display at most N departures: 1st as relative time, rest as absolute.
+  // Display at most N departures: 1st as both relative + absolute, rest as absolute only.
   const displayEntries = entries.slice(0, maxDisplay);
 
   // Convert minutes to Date for display — lightweight, only up to 3 entries.

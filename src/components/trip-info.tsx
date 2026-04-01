@@ -9,12 +9,15 @@ import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
 
 const sizeVariants = {
+  // Compact variant for StopSummary tooltips. Small text sizes are
+  // intentional — secondary info must stay subordinate in limited space.
   sm: {
     emoji: 'text-xs',
     headsignSub: 'text-[8px]',
     headsign: 'text-[11px]',
     label: 'text-[8px]',
   },
+  // Standard variant for DepartureItem / FlatDepartureItem.
   default: {
     emoji: 'text-base',
     headsignSub: 'text-[10px]',

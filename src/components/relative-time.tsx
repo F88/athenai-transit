@@ -1,6 +1,9 @@
 import { cn } from '../lib/utils';
 import { relativeTimeStyle } from '../utils/time-style';
 
+// "imminent" is intentionally smaller than "number" — Athenai avoids
+// urgency cues. "まもなく" should feel calm, not alarming.
+// font-bold is applied on the parent <span>, so variants omit font-weight.
 const variants = {
   sm: { number: 'text-xs', label: 'text-[9px]', imminent: 'text-[10px]' },
   default: { number: 'text-sm', label: 'text-[10px]', imminent: 'text-xs' },
@@ -27,7 +30,7 @@ interface RelativeTimeProps {
  *
  * "あと" and "分" are displayed in small text, while the number
  * is displayed in bold. Color is determined by the time band
- * from {@link relativeTimeColor}.
+ * from {@link relativeTimeStyle}.
  *
  * - `<= 0 min`: "まもなく"
  * - `> 0 min`: "あと N 分"
