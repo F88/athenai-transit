@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detectWarnings, extractDateParam, extractUrlBase } from '../odpt-resource-warnings';
+import { detectWarnings, extractUrlBase } from '../odpt-resource-warnings';
 import type { RemoteResource, ResourceSnapshot, LocalInfo } from '../odpt-resource-warnings';
 import type { DownloadMetaSuccess } from '../../download/download-meta';
 
@@ -9,13 +9,12 @@ import type { DownloadMetaSuccess } from '../../download/download-meta';
 
 function makeRemote(
   date: string,
-  available: boolean,
-  feedEnd = '2026-12-31',
-  feedStart = '2026-01-01',
+  _available?: boolean,
+  feedEnd: string | null = '2026-12-31',
+  feedStart: string | null = '2026-01-01',
 ): RemoteResource {
   return {
     url: `https://api.odpt.org/api/v4/files/odpt/TestBus/AllLines.zip?date=${date}`,
-    is_feed_available_period: available,
     feed_start_date: feedStart,
     feed_end_date: feedEnd,
   };
@@ -48,24 +47,6 @@ function makeLocal(meta: DownloadMetaSuccess | null): LocalInfo {
 }
 
 // ---------------------------------------------------------------------------
-// extractDateParam
-// ---------------------------------------------------------------------------
-
-describe('extractDateParam', () => {
-  it('extracts date from ?date=YYYYMMDD', () => {
-    expect(extractDateParam('https://example.com/file.zip?date=20260301')).toBe('20260301');
-  });
-
-  it('extracts date from &date=YYYYMMDD', () => {
-    expect(extractDateParam('https://example.com/file.zip?key=val&date=20260301')).toBe('20260301');
-  });
-
-  it('returns null when no date param', () => {
-    expect(extractDateParam('https://example.com/file.zip')).toBeNull();
-  });
-});
-
-// ---------------------------------------------------------------------------
 // extractUrlBase
 // ---------------------------------------------------------------------------
 
@@ -96,9 +77,10 @@ describe('detectWarnings', () => {
   });
 
   it('returns empty when LOCAL is valid and up to date', () => {
-    const resources = [makeRemote('20260301', true)];
+    const resources = [makeRemote('20260301')];
     const meta = makeMeta('20260301');
-    const warnings = detectWarnings(resources, makeLocal(meta), null, now);
+    const snapshot: ResourceSnapshot = { resourceUrls: resources.map((r) => r.url) };
+    const warnings = detectWarnings(resources, makeLocal(meta), snapshot, now);
     expect(warnings).toHaveLength(0);
   });
 
@@ -130,7 +112,10 @@ describe('detectWarnings', () => {
   });
 
   it('returns NO_VALID_DATA when all resources are expired', () => {
-    const resources = [makeRemote('20260301', false), makeRemote('20260201', false)];
+    const resources = [
+      makeRemote('20260301', false, '2026-02-28'),
+      makeRemote('20260201', false, '2026-02-28'),
+    ];
     const meta = makeMeta('20260301', '20260228');
     const warnings = detectWarnings(resources, makeLocal(meta), null, now);
     expect(warnings.some((w) => w.type === 'NO_VALID_DATA')).toBe(true);
@@ -188,11 +173,15 @@ describe('detectWarnings', () => {
     }
   });
 
-  it('does not return NEW_RESOURCE when no snapshot exists', () => {
-    const resources = [makeRemote('20260301', true), makeRemote('20260401', true)];
+  it('returns NEW_RESOURCE for all resources when no snapshot exists (first run)', () => {
+    const resources = [makeRemote('20260301'), makeRemote('20260401')];
     const meta = makeMeta('20260301');
     const warnings = detectWarnings(resources, makeLocal(meta), null, now);
-    expect(warnings.some((w) => w.type === 'NEW_RESOURCE')).toBe(false);
+    const newRes = warnings.find((w) => w.type === 'NEW_RESOURCE');
+    expect(newRes).toBeDefined();
+    if (newRes?.type === 'NEW_RESOURCE') {
+      expect(newRes.urls).toHaveLength(2);
+    }
   });
 
   it('does not return NEW_RESOURCE when URLs are unchanged', () => {
@@ -273,13 +262,14 @@ describe('detectWarnings', () => {
     expect(newer).toBeDefined();
   });
 
-  it('NEWER_AVAILABLE skips resources without feed_start_date', () => {
+  it('NEWER_AVAILABLE excludes resources with unknown period (no feed dates)', () => {
     const resources = [
-      makeRemote('20260301', true),
-      { ...makeRemote('20260401', false), feed_start_date: null },
+      makeRemote('20260301'),
+      { ...makeRemote('20260401'), feed_start_date: null, feed_end_date: null },
     ];
     const meta = makeMeta('20260301');
     const warnings = detectWarnings(resources, makeLocal(meta), null, now);
+    // No feed dates → unknown-period → excluded
     expect(warnings.some((w) => w.type === 'NEWER_AVAILABLE')).toBe(false);
   });
 

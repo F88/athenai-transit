@@ -31,41 +31,27 @@ import { ensureDir } from '../../src/lib/fs-utils';
 import {
   detectWarnings,
   EXPIRING_SOON_DAYS,
-  extractDateParam,
   extractUrlBase,
   getDaysUntilExpiry,
+  getFeedStatus,
+  stripAuthParams,
 } from '../../src/lib/pipeline/odpt-resource-warnings';
+
+/**
+ * Extract the `date` query parameter from a URL for display purposes only.
+ * Do NOT use for resource identity or ordering — URLs are the source of truth.
+ */
+function extractDateParam(url: string): string | null {
+  const match = url.match(/[?&]date=(\d{8})/);
+  return match ? match[1] : null;
+}
 import type { Warning, ResourceSnapshot } from '../../src/lib/pipeline/odpt-resource-warnings';
 
-// ---------------------------------------------------------------------------
-// ODPT Members Portal API types
-// ---------------------------------------------------------------------------
-
-interface OdptDataResource {
-  explain_ja: string;
-  explain_en: string;
-  start_at: string;
-  end_at: string | null;
-  uploaded_at: string;
-  url: string;
-  feed_start_date: string | null;
-  feed_end_date: string | null;
-  is_feed_available_period: boolean;
-}
-
-interface OdptDataset {
-  name_ja: string;
-  name_en: string;
-  format_type: string;
-  dataresource: OdptDataResource[];
-}
-
-interface OdptOrganization {
-  name_ja: string;
-  name_en: string;
-  label: string;
-  datasets: OdptDataset[];
-}
+import type {
+  OdptDataResource,
+  OdptDataset,
+  OdptOrganization,
+} from '../../src/types/odpt-members-portal';
 
 // ---------------------------------------------------------------------------
 // API fetch
@@ -198,7 +184,7 @@ async function loadTrackedSources(): Promise<LocalSourceInfo[]> {
 // ---------------------------------------------------------------------------
 
 interface CliArgs {
-  mode: 'all-tracked' | 'all-odpt' | 'single' | 'list';
+  mode: 'all-tracked' | 'all-odpt' | 'single' | 'list' | 'dump';
   sourceName?: string;
   isTsv: boolean;
 }
@@ -226,6 +212,9 @@ function parseArgs(): CliArgs {
 
   if (args.includes('--list')) {
     return { mode: 'list', isTsv: false };
+  }
+  if (args.includes('--dump')) {
+    return { mode: 'dump', isTsv: false };
   }
   if (args.includes('--all')) {
     return { mode: 'all-odpt', isTsv };
@@ -261,6 +250,7 @@ function printUsage(): void {
   console.log('  <source-name>   Check a single source (e.g. kanto-bus, keio-bus)');
   console.log('  --all           Show all ODPT sources (including not tracked)');
   console.log('  --list          List tracked ODPT sources');
+  console.log('  --dump          Fetch and output raw API response as JSON');
   console.log('  --format tsv    Output in TSV format');
   console.log('  --help          Show this help message');
 }
@@ -360,23 +350,12 @@ function printResult(
 
   for (const r of resources) {
     const date = extractDateParam(r.url) ?? '';
-    let avail: string;
-    if (r.is_feed_available_period) {
-      avail = 'VALID';
-    } else if (r.feed_end_date) {
-      const daysUntilEnd = getDaysUntilExpiry(r.feed_end_date.replace(/-/g, ''));
-      avail = daysUntilEnd > 0 ? 'not-yet-active' : 'expired';
-    } else {
-      avail = 'expired';
-    }
-    const isCurrent =
-      meta &&
-      extractUrlBase(r.url) === extractUrlBase(meta.url) &&
-      date === (extractDateParam(meta.url) ?? '');
+    const avail = getFeedStatus(r);
+    const isCurrent = meta && stripAuthParams(r.url) === stripAuthParams(meta.url);
     const localMarker = isCurrent ? ' <-- LOCAL' : '';
     const newMarker = newUrls.has(r.url) ? ' [NEW]' : '';
     console.log(
-      `    date=${date}  feed=${r.feed_start_date ?? '?'} - ${r.feed_end_date ?? '?'}  ${avail}  uploaded=${r.uploaded_at}${localMarker}${newMarker}`,
+      `    #${resources.indexOf(r) + 1}  date=${date}  start_at=${r.start_at}  feed=${r.feed_start_date ?? '?'} - ${r.feed_end_date ?? '?'}  ${avail}  uploaded=${r.uploaded_at}${localMarker}${newMarker}`,
     );
   }
 
@@ -395,6 +374,13 @@ function printResult(
 
 async function main(): Promise<void> {
   const cli = parseArgs();
+
+  // --dump: fetch and output raw API response as JSON
+  if (cli.mode === 'dump') {
+    const orgs = await fetchOdptResources('gtfs');
+    console.log(JSON.stringify(orgs, null, 2));
+    return;
+  }
 
   // --list: show tracked ODPT sources and exit
   if (cli.mode === 'list') {
