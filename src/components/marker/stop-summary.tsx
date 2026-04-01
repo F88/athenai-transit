@@ -72,8 +72,8 @@ export function StopSummary({
         const depTime = minutesToDate(entry.serviceDate, displayMinutes);
         const diffMin = Math.floor((depTime.getTime() - now!.getTime()) / 60000);
         const relative = diffMin <= 0 ? 'まもなく' : `${diffMin}分`;
-        const { route, headsign } = entry.routeDirection;
-        const headsignName = getHeadsignDisplayNames(headsign, route, infoLevel).name;
+        const { route } = entry.routeDirection;
+        const headsignName = getHeadsignDisplayNames(entry.routeDirection, infoLevel).name;
         return (
           <div
             key={i}

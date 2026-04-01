@@ -54,13 +54,11 @@ export function TimetableGridEntry({
       </span>
       {showHeadsign && (
         <HeadsignBadge
-          headsign={entry.routeDirection.headsign}
-          route={entry.routeDirection.route}
+          routeDirection={entry.routeDirection}
           infoLevel={infoLevel}
           maxLength={headsignMaxLength}
           size="xs"
           disableVerbose={disableVerbose}
-          showVerboseId={false}
         />
       )}
       <EntryLabels

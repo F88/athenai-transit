@@ -193,6 +193,32 @@ export interface DepartureViewMeta {
 export type StopServiceType = 0 | 1 | 2 | 3;
 
 /**
+ * Route and direction context for a trip pattern.
+ *
+ * Combines the route, headsign (destination), headsign translations,
+ * and direction into a single composite type. Used by
+ * {@link TimetableEntry} and {@link ContextualTimetableEntry}.
+ */
+export interface RouteDirection {
+  /** The route serving this trip pattern. */
+  route: Route;
+  /** Raw headsign (destination) text from GTFS trip_headsign. */
+  headsign: string;
+  /**
+   * Headsign translations resolved from GTFS translations.txt.
+   * Keyed by language (e.g. "ja", "ja-Hrkt", "en").
+   * Empty object when no translations are available for this headsign.
+   */
+  headsign_names: Record<string, string>;
+  /**
+   * Trip direction (0 or 1). Distinguishes opposite directions on
+   * the same route (e.g. inbound vs outbound).
+   * Undefined when the source does not provide direction_id.
+   */
+  direction?: 0 | 1;
+}
+
+/**
  * A single entry in a stop's timetable.
  *
  * A single entry in a stop's timetable with arrival time,
@@ -210,25 +236,8 @@ export interface TimetableEntry {
     arrivalMinutes: number;
   };
 
-  /**
-   * Route and direction context.
-   *
-   * TODO: Extract as a composite type (e.g. RouteDirection) — this
-   * combination of route + headsign + direction is reused across
-   * TimetableEntry and other composed types.
-   */
-  routeDirection: {
-    route: Route;
-    headsign: string;
-    /** Headsign translations resolved from TranslationsJson. */
-    headsign_names: Record<string, string>;
-    /**
-     * Trip direction (0 or 1). Distinguishes opposite directions on
-     * the same route (e.g. inbound vs outbound).
-     * Undefined when the source does not provide direction_id.
-     */
-    direction?: 0 | 1;
-  };
+  /** Route and direction context for this departure. */
+  routeDirection: RouteDirection;
 
   /** Boarding availability at this stop. */
   boarding: {

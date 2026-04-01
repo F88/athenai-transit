@@ -42,8 +42,8 @@ export function FlatDepartureItem({
 }: FlatDepartureItemProps) {
   const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
-  const { route, headsign } = entry.routeDirection;
-  const headsignName = getHeadsignDisplayNames(headsign, route, infoLevel).name;
+  const { route } = entry.routeDirection;
+  const headsignNames = getHeadsignDisplayNames(entry.routeDirection, infoLevel);
   const bgColor = route.route_color ? `#${route.route_color}` : undefined;
   const isTerminal = entry.patternPosition.isTerminal;
   // Terminal entries show arrival time; all others show departure time.
@@ -86,7 +86,16 @@ export function FlatDepartureItem({
           disableVerbose={true}
         />
         {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
-        <span className="truncate text-sm text-[#333] dark:text-gray-200">{headsignName}</span>
+        <span className="inline-flex min-w-0 flex-col">
+          {headsignNames.subNames.length > 0 && (
+            <span className="text-[10px] font-normal text-[#888] dark:text-gray-400">
+              {headsignNames.subNames.join(' / ')}
+            </span>
+          )}
+          <span className="truncate text-sm text-[#333] dark:text-gray-200">
+            {headsignNames.name}
+          </span>
+        </span>
         {/* Terminal/pickup labels are shown at all InfoLevels (unlike TimetableGrid's
             EntryLabels which gates by level). NearbyStop needs these labels to explain
             why a departure is not boardable — hiding them would leave users unable to

@@ -9,6 +9,20 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- DepartureItem / FlatDepartureItem に headsign の subNames (ふりがな、英語nadonado) を表示。
+- `RouteDirection` 型を `transit-composed.ts` に抽出 (#82)。
+- `HeadsignBadge` に resolver パターンを統合: `routeDirection` を受け取り、内部で `getHeadsignDisplayNames` を呼ぶ。
+- `translateHeadsign` を実装: `headsign_names` から言語別翻訳を取得。
+- `VerboseHeadsignDisplayNames` コンポーネントを追加。
+
+### Changed
+
+- `getHeadsignDisplayNames` のシグネチャを `(routeDirection, infoLevel, lang?)` に変更。
+- `HeadsignBadge` の props を `headsign` + `route` から `routeDirection: RouteDirection` に変更。
+- `VerboseHeadsign` に `headsign_names`、`direction`、`HeadsignDisplayNames` dump を追加。
+
 ## [2026.03.31]
 
 ### Fixed

@@ -8,7 +8,7 @@ import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route, Stop } from '@/types/app/transit';
-import type { TimetableEntry } from '@/types/app/transit-composed';
+import type { RouteDirection, TimetableEntry } from '@/types/app/transit-composed';
 import type { TimetableOmitted } from '@/types/app/repository';
 import { AgencyBadge } from '@/components/badge/agency-badge';
 import { useInfoLevel } from '@/hooks/use-info-level';
@@ -514,7 +514,7 @@ function StopTimetableFilter({
 }) {
   // Count entries per route+headsign (memoized for filter toggle re-renders)
   const routeHeadsigns = useMemo(() => {
-    const counts = new Map<string, { route: Route; headsign: string; count: number }>();
+    const counts = new Map<string, { routeDirection: RouteDirection; count: number }>();
     for (const d of data.timetableEntries) {
       const key = `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`;
       const entry = counts.get(key);
@@ -522,8 +522,7 @@ function StopTimetableFilter({
         entry.count++;
       } else {
         counts.set(key, {
-          route: d.routeDirection.route,
-          headsign: d.routeDirection.headsign,
+          routeDirection: d.routeDirection,
           count: 1,
         });
       }
@@ -540,10 +539,11 @@ function StopTimetableFilter({
   return (
     <div className="flex flex-wrap gap-1">
       {routeHeadsigns.map((r) => {
-        const key = `${r.route.route_id}__${r.headsign}`;
+        const { route } = r.routeDirection;
+        const key = `${route.route_id}__${r.routeDirection.headsign}`;
         const isActive = noFilter || activeFilters.has(key);
-        const bg = r.route.route_color ? `#${r.route.route_color}` : undefined;
-        const fg = r.route.route_text_color ? `#${r.route.route_text_color}` : undefined;
+        const bg = route.route_color ? `#${route.route_color}` : undefined;
+        const fg = route.route_text_color ? `#${route.route_text_color}` : undefined;
         return (
           <PillButton
             key={key}
@@ -556,10 +556,10 @@ function StopTimetableFilter({
             count={r.count}
           >
             {/* Filter button has no RouteBadge — fall back to route name so it is never blank. */}
-            {getHeadsignDisplayNames(r.headsign, r.route, infoLevel).name ||
-              r.route.route_short_name ||
-              r.route.route_long_name ||
-              r.route.route_id}
+            {getHeadsignDisplayNames(r.routeDirection, infoLevel).name ||
+              route.route_short_name ||
+              route.route_long_name ||
+              route.route_id}
           </PillButton>
         );
       })}

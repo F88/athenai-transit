@@ -41,8 +41,8 @@ export function DepartureItem({
     return null;
   }
 
-  const { route, headsign } = firstEntry.routeDirection;
-  const headsignName = getHeadsignDisplayNames(headsign, route, infoLevel).name;
+  const { route } = firstEntry.routeDirection;
+  const headsignNames = getHeadsignDisplayNames(firstEntry.routeDirection, infoLevel);
 
   // Display at most N departures: 1st as relative time, rest as absolute.
   const displayEntries = entries.slice(0, maxDisplay);
@@ -67,7 +67,16 @@ export function DepartureItem({
         )}
         <RouteBadge route={route} infoLevel={infoLevel} disableVerbose={true} />
         {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
-        <span className="text-sm font-medium text-[#333] dark:text-gray-200">{headsignName}</span>
+        <span className="inline-flex flex-col">
+          {headsignNames.subNames.length > 0 && (
+            <span className="text-[10px] font-normal text-[#888] dark:text-gray-400">
+              {headsignNames.subNames.join(' / ')}
+            </span>
+          )}
+          <span className="text-sm font-medium text-[#333] dark:text-gray-200">
+            {headsignNames.name}
+          </span>
+        </span>
         {/* Shown at all InfoLevels — users need to know why this group is not boardable.
             See FlatDepartureItem for the same rationale. */}
         {!hasBoardableDeparture(entries) && (
@@ -84,7 +93,7 @@ export function DepartureItem({
             className="ml-auto shrink-0 cursor-pointer rounded border border-[#1976d2] bg-transparent px-2 py-0.5 text-xs whitespace-nowrap text-[#1976d2] active:bg-[rgba(25,118,210,0.1)] dark:border-blue-400 dark:text-blue-400"
             onClick={(e) => {
               e.stopPropagation();
-              onShowTimetable(route.route_id, headsign);
+              onShowTimetable(route.route_id, firstEntry.routeDirection.headsign);
             }}
           >
             時刻表
