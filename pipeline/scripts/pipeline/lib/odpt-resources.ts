@@ -88,7 +88,7 @@ export class Resource {
   }
 
   /** Determine period status from this resource's from/to vs now. */
-  getPeriodStatus(now: Date): PeriodStatus {
+  getPeriodStatus(now: Date = new Date()): PeriodStatus {
     const nowStr = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`;
 
     if (this.from && this.to) {

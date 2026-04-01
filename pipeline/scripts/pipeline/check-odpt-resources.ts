@@ -33,7 +33,6 @@ import {
   EXPIRING_SOON_DAYS,
   extractUrlBase,
   getDaysUntilExpiry,
-  getFeedStatus,
   stripAuthParams,
 } from '../../src/lib/pipeline/odpt-resource-warnings';
 
@@ -53,7 +52,7 @@ import type {
   OdptOrganization,
 } from '../../src/types/odpt-members-portal';
 
-import { LocalResource, CheckRemoteResource } from './lib/odpt-resources';
+import { Resource, LocalResource, RemoteResource } from './lib/odpt-resources';
 import type { PeriodStatus } from './lib/odpt-resources';
 
 // ---------------------------------------------------------------------------
@@ -276,9 +275,38 @@ function printResult(
   const meta = local?.downloadMeta ?? null;
 
   // Detect warnings regardless of output mode (needed for exit code)
-  const warnings = isTracked
-    ? detectWarnings(ds.dataresource, { downloadMeta: meta }, previousSnapshot)
-    : [];
+  const remoteUrls = ds.dataresource.map((r) => r.url);
+  const localResource = meta
+    ? new LocalResource(
+        {
+          url: meta.url,
+          from: meta.feedInfo?.startDate
+            ? `${meta.feedInfo.startDate.substring(0, 4)}-${meta.feedInfo.startDate.substring(4, 6)}-${meta.feedInfo.startDate.substring(6, 8)}`
+            : null,
+          to: meta.feedInfo?.endDate
+            ? `${meta.feedInfo.endDate.substring(0, 4)}-${meta.feedInfo.endDate.substring(4, 6)}-${meta.feedInfo.endDate.substring(6, 8)}`
+            : null,
+          downloadedAt: meta.downloadedAt,
+          feedVersion: meta.feedInfo?.version,
+        },
+        remoteUrls,
+      )
+    : null;
+  const remoteResources = ds.dataresource.map(
+    (r) =>
+      new RemoteResource(
+        {
+          url: r.url,
+          from: r.feed_start_date,
+          to: r.feed_end_date,
+          startAt: r.start_at,
+          uploadedAt: r.uploaded_at,
+        },
+        previousSnapshot,
+        meta?.url ?? null,
+      ),
+  );
+  const warnings = isTracked ? detectWarnings(localResource, remoteResources) : [];
 
   if (isTsv) {
     const latest = findLatestResource(ds.dataresource);
@@ -340,23 +368,23 @@ function printResult(
 
   // Remote resources (sorted by start_at descending — newest first)
   const resources = [...ds.dataresource].sort((a, b) => b.start_at.localeCompare(a.start_at));
-  const validCount = resources.filter((r) => r.is_feed_available_period).length;
+  const validCount = resources.filter((r) => {
+    const s = new Resource(r.url, r.feed_start_date, r.feed_end_date).getPeriodStatus();
+    return s === 'in' || s === 'in-no-end' || s === 'in-no-start';
+  }).length;
   console.log(
     `  Remote:     ${resources.length} resources, ${validCount} currently valid (sorted by start_at desc)`,
   );
 
-  const newUrls = new Set(
-    warnings
-      .filter((w): w is Warning & { type: 'NEW_RESOURCE' } => w.type === 'NEW_RESOURCE')
-      .flatMap((w) => w.urls),
-  );
-
   for (const r of resources) {
     const date = extractDateParam(r.url) ?? '';
-    const avail = getFeedStatus(r);
+    const res = new Resource(r.url, r.feed_start_date, r.feed_end_date);
+    const avail = res.getPeriodStatus();
     const isCurrent = meta && stripAuthParams(r.url) === stripAuthParams(meta.url);
     const localMarker = isCurrent ? ' <-- LOCAL' : '';
-    const newMarker = newUrls.has(r.url) ? ' [NEW]' : '';
+    const remoteRes = remoteResources.find((rr) => stripAuthParams(rr.url) === stripAuthParams(r.url));
+    const isNew = remoteRes?.isNew();
+    const newMarker = isNew === true || isNew === null ? ' [NEW]' : '';
     console.log(
       `    #${resources.indexOf(r) + 1}  date=${date}  start_at=${r.start_at}  feed=${r.feed_start_date ?? '?'} - ${r.feed_end_date ?? '?'}  ${avail}  uploaded=${r.uploaded_at}${localMarker}${newMarker}`,
     );
