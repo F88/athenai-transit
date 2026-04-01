@@ -17,7 +17,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - `translateHeadsign` を実装: `headsign_names` から言語別翻訳を取得。
 - `VerboseHeadsignDisplayNames` コンポーネントを追加。
 - `RelativeTime` コンポーネント: 時間帯に応じた色と opacity で相対時刻を表示。
-  - size variants (sm / default / lg)、`hidePrefix` (「あと」省略)、`isTerminal` (「着」付加)。
+    - size variants (sm / default / lg)、`hidePrefix` (「あと」省略)、`isTerminal` (「着」付加)。
 - `time-style.ts`: 5段階の時間帯カラーバンド (3分 orange, 10分 green, 15分 blue, 30分/60分 gray)。
 - `TripInfo` に `size` variant (sm / default) と `ellipsisHeadsign` prop を追加。
 - `StopSummary` に TripInfo + RelativeTime を統合。終点/乗車不可ラベルも表示。
