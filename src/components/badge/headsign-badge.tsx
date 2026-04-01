@@ -35,7 +35,7 @@ interface HeadsignBadgeProps {
  *
  * Background color uses the route's designated color (`route_color`),
  * falling back to `bg-muted-foreground` when no color is set.
- * In verbose mode, an {@link IdBadge} with the route_id is shown after the label.
+ * In verbose mode, a {@link VerboseHeadsign} dump is shown below the badge.
  */
 export function HeadsignBadge({
   routeDirection,

@@ -44,7 +44,7 @@ export interface HeadsignDisplayNames {
  * @param routeDirection - Route direction context containing headsign
  *   and headsign_names translations.
  * @param infoLevel - Current info verbosity level.
- * @param lang - Optional language key for primary name resolution (future).
+ * @param lang - Optional language key for primary name resolution.
  * @returns Primary name and sub-names.
  *
  * @example

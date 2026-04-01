@@ -40,7 +40,7 @@ describe('translateHeadsign', () => {
     expect(translateHeadsign('', {}, 'en')).toBe('');
   });
 
-  it('does not return translation for empty headsign even if names has empty key', () => {
+  it('returns translation for empty headsign when names has value for lang', () => {
     expect(translateHeadsign('', { en: 'Something' }, 'en')).toBe('Something');
   });
 });
