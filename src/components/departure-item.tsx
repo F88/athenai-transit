@@ -1,9 +1,10 @@
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
-import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
+import { formatAbsoluteTime } from '../domain/transit/time';
 import { minutesToDate } from '../domain/transit/calendar-utils';
-import { hasBoardableDeparture } from '../domain/transit/timetable-utils';
+import { getDisplayMinutes, hasBoardableDeparture } from '../domain/transit/timetable-utils';
+import { RelativeTime } from './relative-time';
 import { TripInfo } from './trip-info';
 import { VerboseContextualTimetableEntries } from './verbose/verbose-contextual-timetable-entry';
 import { Clock } from 'lucide-react';
@@ -43,20 +44,16 @@ export function DepartureItem({
   const displayEntries = entries.slice(0, maxDisplay);
 
   // Convert minutes to Date for display — lightweight, only up to 3 entries.
-  // Terminal entries show arrival time; all others show departure time.
   const displayTimes = displayEntries.map((e) =>
-    minutesToDate(
-      e.serviceDate,
-      e.patternPosition.isTerminal ? e.schedule.arrivalMinutes : e.schedule.departureMinutes,
-    ),
+    minutesToDate(e.serviceDate, getDisplayMinutes(e)),
   );
 
   const first = displayTimes[0];
-  const bgColor = route.route_color ? `#${route.route_color}` : undefined;
+  const diffMs = first ? first.getTime() - now.getTime() : 0;
 
   return (
-    <div className="border-b border-[#e0e0e0] py-3 last:border-b-0 dark:border-gray-700">
-      <div className="mb-1.5">
+    <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
+      <div>
         <TripInfo
           routeDirection={firstEntry.routeDirection}
           infoLevel={infoLevel}
@@ -69,15 +66,13 @@ export function DepartureItem({
       <div className="flex items-center gap-3 pl-1">
         {/* Relative time hint — easy to scan at a glance (e.g. "あと5分") */}
         {first && (
-          <span
-            className="text-xl font-bold text-[#333] dark:text-gray-100"
-            style={bgColor ? { color: bgColor } : undefined}
-          >
-            {formatRelativeTime(first, now)}
-            {firstEntry.patternPosition.isTerminal && (
-              <span className="text-xs font-normal opacity-70">着</span>
-            )}
-          </span>
+          <RelativeTime
+            departureTime={first}
+            now={now}
+            size="lg"
+            isTerminal={firstEntry.patternPosition.isTerminal}
+            hidePrefix={diffMs > 90 * 60 * 1000}
+          />
         )}
         {/* Absolute times for all entries including the first.
             The first entry intentionally appears in both relative and absolute

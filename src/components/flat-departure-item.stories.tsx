@@ -235,12 +235,12 @@ const kitchenSinkItems: {
   agency?: Agency;
   icon?: boolean;
 }[] = [
-  // Short route + short headsign — "まもなく" (departure before now)
-  { entry: createEntry({ departureMinutes: 864, headsign: '中野駅' }) },
-  // Short route + headsign with translations — "あと5分"
+  // 0分後 — まもなく, short route
+  { entry: createEntry({ departureMinutes: 865, headsign: '中野駅' }) },
+  // 1分後 — short route + headsign with translations
   {
     entry: {
-      ...createEntry({ departureMinutes: 870 }),
+      ...createEntry({ departureMinutes: 866 }),
       routeDirection: {
         route: greenRoute,
         headsign: '新橋駅前',
@@ -249,21 +249,15 @@ const kitchenSinkItems: {
     },
     agency,
   },
-  // Long route name + short headsign — "あと10分着"
+  // 1分後 — long route + short headsign
   {
-    entry: createEntry({
-      route: longRoute,
-      departureMinutes: 875,
-      headsign: '三ノ輪橋',
-      isTerminal: true,
-      arrivalMinutes: 875,
-    }),
+    entry: createEntry({ route: longRoute, departureMinutes: 866, headsign: '三ノ輪橋' }),
     icon: true,
   },
-  // Long route name + headsign with translations
+  // 2分後 — long route + headsign with translations
   {
     entry: {
-      ...createEntry({ route: longRoute, departureMinutes: 885 }),
+      ...createEntry({ route: longRoute, departureMinutes: 867 }),
       routeDirection: {
         route: longRoute,
         headsign: '三ノ輪橋',
@@ -273,10 +267,10 @@ const kitchenSinkItems: {
     icon: true,
     agency,
   },
-  // Long route name + headsign with translations (Waseda)
+  // 3分後 — long route + headsign with translations (Waseda)
   {
     entry: {
-      ...createEntry({ route: longRoute, departureMinutes: 890 }),
+      ...createEntry({ route: longRoute, departureMinutes: 868 }),
       routeDirection: {
         route: longRoute,
         headsign: '早稲田',
@@ -285,10 +279,10 @@ const kitchenSinkItems: {
     },
     icon: true,
   },
-  // Long route + long headsign with long translations (Kyoto-style)
+  // 3分後 — long route + long headsign (Kyoto-style)
   {
     entry: {
-      ...createEntry({ route: longRoute, departureMinutes: 893 }),
+      ...createEntry({ route: longRoute, departureMinutes: 868 }),
       routeDirection: {
         route: longRoute,
         headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
@@ -300,14 +294,14 @@ const kitchenSinkItems: {
     icon: true,
     agency,
   },
-  // All elements visible: icon + long route + long subNames + long headsign + terminal + agency
+  // 5分後 — all long + terminal
   {
     entry: {
       ...createEntry({
         route: longRoute,
-        departureMinutes: 896,
+        departureMinutes: 870,
         isTerminal: true,
-        arrivalMinutes: 896,
+        arrivalMinutes: 870,
       }),
       routeDirection: {
         route: longRoute,
@@ -320,12 +314,12 @@ const kitchenSinkItems: {
     icon: true,
     agency,
   },
-  // All elements: icon + long route + long subNames + long headsign + pickup unavailable + agency
+  // 9分後 — all long + pickup unavailable
   {
     entry: {
       ...createEntry({
         route: longRoute,
-        departureMinutes: 898,
+        departureMinutes: 874,
         pickupType: 1,
       }),
       routeDirection: {
@@ -339,13 +333,13 @@ const kitchenSinkItems: {
     icon: true,
     agency,
   },
-  // All elements visible: icon + short route + short subNames + short headsign + terminal + agency
+  // 10分後 — all short + terminal
   {
     entry: {
       ...createEntry({
-        departureMinutes: 897,
+        departureMinutes: 875,
         isTerminal: true,
-        arrivalMinutes: 897,
+        arrivalMinutes: 875,
       }),
       routeDirection: {
         route: baseRoute,
@@ -356,21 +350,27 @@ const kitchenSinkItems: {
     icon: true,
     agency,
   },
-  // Terminal with long route
+  // 11分後 — long route + terminal (no relative time)
   {
     entry: createEntry({
       route: longRoute,
-      departureMinutes: 895,
+      departureMinutes: 876,
       headsign: '三ノ輪橋',
       isTerminal: true,
-      arrivalMinutes: 895,
+      arrivalMinutes: 876,
     }),
     icon: true,
   },
-  // Pickup unavailable
-  { entry: createEntry({ departureMinutes: 900, headsign: '車庫前', pickupType: 1 }) },
-  // Empty headsign
-  { entry: createEntry({ departureMinutes: 905, headsign: '' }) },
+  // 14分後 — pickup unavailable (no relative time)
+  { entry: createEntry({ departureMinutes: 879, headsign: '車庫前', pickupType: 1 }) },
+  // 15分後 — empty headsign
+  { entry: createEntry({ departureMinutes: 880, headsign: '' }) },
+  // 30分後
+  { entry: createEntry({ departureMinutes: 895, headsign: '中野駅' }) },
+  // 60分後
+  { entry: createEntry({ departureMinutes: 925, headsign: '中野駅' }) },
+  // 120分後
+  { entry: createEntry({ departureMinutes: 985, headsign: '中野駅' }) },
 ];
 
 export const KitchenSinkInfoLevelSimple: Story = {

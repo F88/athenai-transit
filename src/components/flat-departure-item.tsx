@@ -1,8 +1,10 @@
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
-import { formatAbsoluteTime, formatRelativeTime } from '../domain/transit/time';
+import { formatAbsoluteTime } from '../domain/transit/time';
 import { minutesToDate } from '../domain/transit/calendar-utils';
+import { getDisplayMinutes } from '../domain/transit/timetable-utils';
+import { RelativeTime } from './relative-time';
 import { TripInfo } from './trip-info';
 import { VerboseContextualTimetableEntry } from './verbose/verbose-contextual-timetable-entry';
 
@@ -40,30 +42,27 @@ export function FlatDepartureItem({
   const { route } = entry.routeDirection;
   const bgColor = route.route_color ? `#${route.route_color}` : undefined;
   const isTerminal = entry.patternPosition.isTerminal;
-  // Terminal entries show arrival time; all others show departure time.
-  const displayMinutes = isTerminal
-    ? entry.schedule.arrivalMinutes
-    : entry.schedule.departureMinutes;
-  const departureTime = minutesToDate(entry.serviceDate, displayMinutes);
+  const departureTime = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
   const isPickupUnavailable = entry.boarding.pickupType === 1;
+  const diffMs = departureTime.getTime() - now.getTime();
+  const showRelativeTime = isFirst || diffMs <= 60 * 60 * 1000;
 
   return (
-    <div className="border-b border-[#e0e0e0] py-2 last:border-b-0 dark:border-gray-700">
+    <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
       <div className="flex gap-2">
-        <div className="w-14 shrink-0 text-right">
-          {/* Relative time hint for first entry or entries within 10 min */}
-          {(isFirst || departureTime.getTime() - now.getTime() <= 10 * 60 * 1000) && (
-            <div
-              className="text-sm font-bold text-[#333] dark:text-gray-100"
-              style={bgColor ? { color: bgColor } : undefined}
-            >
-              {formatRelativeTime(departureTime, now)}
-              {isTerminal && <span className="text-xs font-normal opacity-70">着</span>}
-            </div>
+        <div className="flex min-h-8 w-14 shrink-0 flex-col justify-center text-right leading-none">
+          {showRelativeTime && (
+            <RelativeTime
+              now={now}
+              departureTime={departureTime}
+              isTerminal={isTerminal}
+              // Hide prefix for departures >90min to save space.
+              hidePrefix={diffMs > 90 * 60 * 1000}
+            />
           )}
           {/* Absolute time — always shown alongside relative for precise reference */}
           <div
-            className="text-sm text-[#333] dark:text-gray-100"
+            className="text-default text-[#333] dark:text-gray-100"
             style={bgColor ? { color: bgColor } : undefined}
           >
             {formatAbsoluteTime(departureTime)}

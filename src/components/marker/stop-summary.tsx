@@ -3,12 +3,13 @@ import type { Agency, RouteType, Stop } from '../../types/app/transit';
 import type { ContextualTimetableEntry } from '../../types/app/transit-composed';
 import { createInfoLevel } from '../../utils/create-info-level';
 import { getStopDisplayNames } from '../../domain/transit/get-stop-display-names';
-import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
 import { minutesToDate } from '../../domain/transit/calendar-utils';
+import { getDisplayMinutes } from '../../domain/transit/timetable-utils';
 import { AgencyBadge } from '../badge/agency-badge';
-import { RouteBadge } from '../badge/route-badge';
 import { routeTypesEmoji } from '../../domain/transit/route-type-emoji';
 import { IdBadge } from '../badge/id-badge';
+import { RelativeTime } from '../relative-time';
+import { TripInfo } from '../trip-info';
 
 interface StopSummaryProps {
   stop: Stop;
@@ -44,7 +45,7 @@ export function StopSummary({
     <>
       {info.isVerboseEnabled && <IdBadge>{stop.stop_id}</IdBadge>}
       {stopNames.subNames.length > 0 && (
-        <div className="text-[11px] font-normal break-all text-[#888] dark:text-gray-400">
+        <div className="truncate text-[11px] font-normal text-[#888] dark:text-gray-400">
           {stopNames.subNames.join(' / ')}
         </div>
       )}
@@ -64,25 +65,30 @@ export function StopSummary({
           ))}
       </div>
       {items.map((entry, i) => {
-        // now is guaranteed defined here because items is empty when now is undefined
-        // Terminal entries show arrival time; all others show departure time.
-        const displayMinutes = entry.patternPosition.isTerminal
-          ? entry.schedule.arrivalMinutes
-          : entry.schedule.departureMinutes;
-        const depTime = minutesToDate(entry.serviceDate, displayMinutes);
-        const diffMin = Math.floor((depTime.getTime() - now!.getTime()) / 60000);
-        const relative = diffMin <= 0 ? 'まもなく' : `${diffMin}分`;
-        const { route } = entry.routeDirection;
-        const headsignName = getHeadsignDisplayNames(entry.routeDirection, infoLevel).name;
+        const depTime = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
         return (
           <div
             key={i}
             className="mt-0.5 flex items-center gap-1 text-[11px] text-[#555] dark:text-gray-400"
           >
-            <RouteBadge route={route} infoLevel={infoLevel} size="sm" disableVerbose />
-            {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
-            <span>{headsignName}</span>
-            <span>{relative}</span>
+            <TripInfo
+              size={'sm'}
+              routeDirection={entry.routeDirection}
+              // infoLevel is forced to 'simple' for TripInfo within StopSummary to avoid redundant info and save space.
+              // infoLevel={infoLevel}
+              infoLevel={'simple'}
+              showRouteTypeIcon={false}
+              isTerminal={entry.patternPosition.isTerminal}
+              isPickupUnavailable={entry.boarding.pickupType === 1}
+              ellipsisHeadsign={true}
+            />
+
+            <RelativeTime
+              departureTime={depTime}
+              now={now!}
+              size="sm"
+              isTerminal={entry.patternPosition.isTerminal}
+            />
           </div>
         );
       })}
