@@ -17,11 +17,10 @@ interface ControlPanelProps {
 
 /**
  * Groups multiple toggle buttons into a vertical strip overlaid on the map.
- * Automatically applies `env(safe-area-inset-top)` or `env(safe-area-inset-bottom)`
- * based on the `edge` prop.
+ * Automatically applies `env(safe-area-inset-top)` when anchored to the top edge.
  *
  * @param side - Which side to place the panel (`"left"` or `"right"`).
- * @param edge - Vertical edge (`"top"` or `"bottom"`).
+ * @param edge - Vertical edge (`"top"` or `"bottom"`). Only `"top"` adds safe-area inset.
  * @param offset - CSS length offset from the edge.
  * @param infoLevel - Current info level; `"verbose"` shows a border around the panel.
  * @param children - Toggle button elements to render inside the panel.

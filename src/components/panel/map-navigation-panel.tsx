@@ -63,7 +63,7 @@ export function MapNavigationPanel({
         active={!locating}
         onClick={handleLocate}
         label="現在位置へ移動"
-        // disabled={locating}
+        disabled={locating}
       >
         {locating ? '.' : '🎯'}
       </MapToggleButton>

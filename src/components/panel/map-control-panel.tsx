@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
 import type L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
-import { changeZoom } from '../../lib/map-zoom';
+import { useMapZoom } from '../../hooks/use-map-zoom';
 import { MapToggleButton } from '../button/map-toggle-button';
 import { ControlPanel } from '../shared/control-panel';
 
@@ -11,31 +10,7 @@ interface MapControlPanelProps {
 }
 
 export function MapControlPanel({ map, infoLevel }: MapControlPanelProps) {
-  const [zoom, setZoom] = useState(() => map.getZoom());
-
-  useEffect(() => {
-    const handleZoomEnd = () => {
-      setZoom(map.getZoom());
-    };
-
-    map.on('zoomend', handleZoomEnd);
-    handleZoomEnd();
-
-    return () => {
-      map.off('zoomend', handleZoomEnd);
-    };
-  }, [map]);
-
-  const handleZoomIn = useCallback(() => {
-    changeZoom(map, 1);
-  }, [map]);
-
-  const handleZoomOut = useCallback(() => {
-    changeZoom(map, -1);
-  }, [map]);
-
-  const canZoomIn = zoom < map.getMaxZoom();
-  const canZoomOut = zoom > map.getMinZoom();
+  const { canZoomIn, canZoomOut, handleZoomIn, handleZoomOut } = useMapZoom(map);
 
   return (
     <ControlPanel
