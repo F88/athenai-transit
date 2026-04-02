@@ -486,14 +486,36 @@ describe('extractTripPatternsAndTimetable', () => {
     expect(p.stops[1].sh).toBeUndefined();
   });
 
-  it('omits sh when stop_headsign is empty string', () => {
+  it('preserves empty string sh (distinct from NULL — intentionally no display)', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '');
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
-    expect(tripPatterns['test:p1'].stops[0].sh).toBeUndefined();
+    // Empty string is a valid GTFS value meaning "no destination display".
+    // NULL means "not specified, fall back to trip_headsign".
+    expect(tripPatterns['test:p1'].stops[0].sh).toBe('');
+  });
+
+  it('creates separate patterns for NULL vs empty string stop_headsign', () => {
+    // NULL = not specified (fall back to trip_headsign)
+    // Empty string = intentionally no display
+    // These must be distinct patterns because they have different meaning.
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, '');
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    expect(Object.keys(tripPatterns)).toHaveLength(2);
+    const patterns = Object.values(tripPatterns);
+    const withNull = patterns.find((p) => p.stops[0].sh === undefined)!;
+    const withEmpty = patterns.find((p) => p.stops[0].sh === '')!;
+    expect(withNull).toBeDefined();
+    expect(withEmpty).toBeDefined();
   });
 
   it('includes sh when stop_headsign equals trip_headsign (no omission)', () => {

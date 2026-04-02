@@ -250,7 +250,10 @@ export function extractTripPatternsAndTimetable(
           id: `${prefix}:${s}`,
         };
         const sh = refTrip.stopHeadsigns[idx];
-        if (sh != null && sh !== '') {
+        // NULL = stop_headsign not specified (fall back to trip_headsign)
+        // Empty string = intentionally empty (no destination display)
+        // Both are valid GTFS values with distinct meanings.
+        if (sh != null) {
           stop.sh = sh;
         }
         return stop;
