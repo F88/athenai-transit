@@ -1,22 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import type L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
+import { changeZoom } from '../../lib/map-zoom';
 import { MapToggleButton } from '../button/map-toggle-button';
 import { ControlPanel } from '../shared/control-panel';
-
-function setZoomLevel(map: L.Map, zoom: number): void {
-  const currentZoom = map.getZoom();
-  const nextZoom = Math.max(map.getMinZoom(), Math.min(zoom, map.getMaxZoom()));
-  if (nextZoom === currentZoom) {
-    return;
-  }
-
-  map.setZoom(nextZoom, { animate: true });
-}
-
-function changeZoom(map: L.Map, delta: 1 | -1): void {
-  setZoomLevel(map, map.getZoom() + delta);
-}
 
 interface MapControlPanelProps {
   map: L.Map;
