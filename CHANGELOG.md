@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.04.02]
+
 ### Added
 
 - 地図にズームコントロール (+/-) ボタンを追加。ナビゲーションパネル横に配置。
@@ -22,6 +24,9 @@ and this project adheres to [CalVer](https://calver.org/).
 - `time-style.ts`: 5段階の時間帯カラーバンド (3分 orange, 10分 green, 15分 blue, 30分/60分 gray)。
 - `TripInfo` に `size` variant (sm / default) と `ellipsisHeadsign` prop を追加。
 - `StopSummary` に TripInfo + RelativeTime を統合。終点/乗車不可ラベルも表示。
+- Pipeline: `Resource` / `LocalResource` / `RemoteResource` クラスを追加 (check tool のリファクタ)。
+- Pipeline: REMOTE warning に `start_at` 情報を追加。
+- Pipeline: check-odpt-resources のユニットテストを追加。
 
 ### Changed
 
@@ -35,6 +40,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - 相対時刻の表示範囲を60分以内に拡大。90分超は「あと」を省略。
 - `StopSummary` の stop subNames に ellipsis を適用。
 - インライン `displayMinutes` 計算を `getDisplayMinutes` util に統一。
+- Pipeline: `detectWarnings` を Resource クラスベースにリファクタ。warning type を `LOCAL_` / `ADOPTED_` / `REMOTE_` prefix に統一。
+- Pipeline: chiyoda-bus resource を `date=20260401` に更新。
 
 ### Fixed
 
@@ -42,6 +49,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - サイコロボタン押下時に、ランダム移動の前に stop 選択状態を解除するよう修正。
 - 現在地ボタン押下時に、地図中心が現在地に近い場合は不要な pan を避けつつ段階的に zoom in するよう修正。
 - ズームボタンが min/max ズーム時に disabled 状態になるよう修正 (a11y)。
+- Pipeline: resource check の URL マッチングと feed status 検出を改善 (#94)。
+- Pipeline: 不正な URL のリダクションと `SENSITIVE_PARAMS` の統一 (#94)。
 
 ## [2026.03.31]
 
