@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { UserLocation } from '../../types/app/map';
@@ -66,7 +66,7 @@ function applyLocateAction(map: L.Map, loc: UserLocation, action: LocateAction):
       logger.debug(
         `handleLocate: center near current location (${action.distanceToLocation.toFixed(1)}m <= ${String(LOCATE_NEAR_THRESHOLD_METERS)}m), zooming in ${String(action.currentZoom)} -> ${String(action.nextZoom)}`,
       );
-      setZoomLevel(map, action.nextZoom);
+      map.setZoom(action.nextZoom, { animate: true });
       return;
     case 'noop':
       logger.debug(
@@ -74,36 +74,6 @@ function applyLocateAction(map: L.Map, loc: UserLocation, action: LocateAction):
       );
       return;
   }
-}
-
-function setZoomLevel(map: L.Map, zoom: number): void {
-  const currentZoom = map.getZoom();
-  const nextZoom = Math.max(map.getMinZoom(), Math.min(zoom, map.getMaxZoom()));
-  if (nextZoom === currentZoom) {
-    return;
-  }
-
-  map.setZoom(nextZoom, { animate: true });
-}
-
-function changeZoom(map: L.Map, delta: 1 | -1): void {
-  setZoomLevel(map, map.getZoom() + delta);
-}
-
-function ZoomInButton({ active, onClick }: { active: boolean; onClick: () => void }) {
-  return (
-    <MapToggleButton active={active} onClick={onClick} label="拡大">
-      +
-    </MapToggleButton>
-  );
-}
-
-function ZoomOutButton({ active, onClick }: { active: boolean; onClick: () => void }) {
-  return (
-    <MapToggleButton active={active} onClick={onClick} label="縮小">
-      -
-    </MapToggleButton>
-  );
 }
 
 interface MapNavigationPanelProps {
@@ -128,20 +98,6 @@ export function MapNavigationPanel({
   onDeselectStop,
 }: MapNavigationPanelProps) {
   const [locating, setLocating] = useState(false);
-  const [zoom, setZoom] = useState(() => map.getZoom());
-
-  useEffect(() => {
-    const handleZoomEnd = () => {
-      setZoom(map.getZoom());
-    };
-
-    map.on('zoomend', handleZoomEnd);
-    handleZoomEnd();
-
-    return () => {
-      map.off('zoomend', handleZoomEnd);
-    };
-  }, [map]);
 
   const handleLocate = useCallback(() => {
     if (!navigator.geolocation) {
@@ -169,21 +125,8 @@ export function MapNavigationPanel({
     smoothMoveTo(map, center, zoom);
   }, [map, onDeselectStop]);
 
-  const handleZoomIn = useCallback(() => {
-    changeZoom(map, 1);
-  }, [map]);
-
-  const handleZoomOut = useCallback(() => {
-    changeZoom(map, -1);
-  }, [map]);
-
-  const canZoomIn = zoom < map.getMaxZoom();
-  const canZoomOut = zoom > map.getMinZoom();
-
   return (
     <ControlPanel side="right" edge="bottom" offset="2rem" infoLevel={infoLevel}>
-      <ZoomInButton active={canZoomIn} onClick={handleZoomIn} />
-      <ZoomOutButton active={canZoomOut} onClick={handleZoomOut} />
       <MapToggleButton active={!locating} onClick={handleLocate} label="現在位置へ移動">
         {locating ? '...' : '🎯'}
       </MapToggleButton>
