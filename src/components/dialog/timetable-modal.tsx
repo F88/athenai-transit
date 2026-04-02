@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IdBadge } from '@/components/badge/id-badge';
 import { RouteBadge } from '@/components/badge/route-badge';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
@@ -95,6 +95,13 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
     );
   }, [data, allTimetableEntries, activeFilters]);
 
+  const headerScroll = useScrollFades(
+    `${data?.type ?? 'closed'}:${data?.headsign ?? ''}:${filteredTimetableEntries.length}:${infoLevel}`,
+  );
+  const gridScroll = useScrollFades(
+    `${data?.type ?? 'closed'}:${filteredTimetableEntries.length}:${infoLevel}:${currentHour}`,
+  );
+
   if (!data) {
     return (
       <Dialog open={false} onOpenChange={() => onClose()}>
@@ -115,69 +122,146 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
     >
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[80dvh] max-w-[90dvw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[90dvw]"
+        className="flex max-h-[80dvh] max-w-[90dvw] flex-col gap-0 overflow-hidden border-4 p-0 sm:max-w-[90dvw]"
       >
-        <DialogHeader className="border-border max-h-[40dvh] shrink-0 overflow-y-auto border-b p-4 text-left">
-          {info.isVerboseEnabled && (
-            <VerboseTimetableSummary
-              type={data.type}
-              headsign={data.headsign}
-              serviceDate={data.serviceDate}
+        <div
+          ref={headerScroll.containerRef}
+          onScroll={headerScroll.handleScroll}
+          className="border-border relative max-h-[40dvh] shrink-0 overflow-y-auto border-b"
+        >
+          {headerScroll.showTop && <ScrollFadeEdge position="top" />}
+          <DialogHeader className="p-4 text-left">
+            {info.isVerboseEnabled && (
+              <VerboseTimetableSummary
+                type={data.type}
+                headsign={data.headsign}
+                serviceDate={data.serviceDate}
+                timetableEntries={filteredTimetableEntries}
+                omitted={data.omitted}
+                isBoardableOnServiceDay={data.isBoardableOnServiceDay}
+              />
+            )}
+            <DialogTitle className="flex flex-col gap-1">
+              <TimetableHeader data={data} infoLevel={infoLevel} />
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              {data.type === 'route-headsign'
+                ? `${data.stop.stop_name} ${data.routes[0].route_short_name || data.routes[0].route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
+                : `${data.stop.stop_name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
+            </DialogDescription>
+
+            {info.isDetailedEnabled && (
+              <TimetableMetadata timetableEntries={filteredTimetableEntries} />
+            )}
+
+            <TimetableDateLabel serviceDate={data.serviceDate} time={time} />
+            {data.type === 'stop' && (
+              <StopTimetableFilter
+                data={data}
+                activeFilters={activeFilters}
+                onToggleFilter={toggleFilter}
+                infoLevel={infoLevel}
+              />
+            )}
+            {((data.type === 'route-headsign' && data.headsign === '') ||
+              (data.type === 'stop' &&
+                hasUnknownDestination(
+                  data.timetableEntries.map((d) => ({ headsign: d.routeDirection.headsign })),
+                ))) && (
+              <p className="m-0 text-center text-[11px] text-amber-600 dark:text-amber-400">
+                行先が表示されない路線があります
+              </p>
+            )}
+          </DialogHeader>
+          {headerScroll.showBottom && <ScrollFadeEdge position="bottom" />}
+        </div>
+        <div
+          ref={gridScroll.containerRef}
+          onScroll={gridScroll.handleScroll}
+          className="relative min-h-0 flex-1 overflow-y-auto"
+        >
+          {gridScroll.showTop && <ScrollFadeEdge position="top" />}
+          <div className="px-4 pt-3 pb-4">
+            <TimetableGrid
               timetableEntries={filteredTimetableEntries}
-              omitted={data.omitted}
-              isBoardableOnServiceDay={data.isBoardableOnServiceDay}
-            />
-          )}
-          <DialogTitle className="flex flex-col gap-1">
-            <TimetableHeader data={data} infoLevel={infoLevel} />
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            {data.type === 'route-headsign'
-              ? `${data.stop.stop_name} ${data.routes[0].route_short_name || data.routes[0].route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
-              : `${data.stop.stop_name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
-          </DialogDescription>
-
-          {info.isDetailedEnabled && (
-            <TimetableMetadata timetableEntries={filteredTimetableEntries} />
-          )}
-
-          <TimetableDateLabel serviceDate={data.serviceDate} time={time} />
-          {data.type === 'stop' && (
-            <StopTimetableFilter
-              data={data}
-              activeFilters={activeFilters}
-              onToggleFilter={toggleFilter}
+              showHeadsign={
+                info.isVerboseEnabled ||
+                new Set(
+                  filteredTimetableEntries.map(
+                    (d) => `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`,
+                  ),
+                ).size > 1
+              }
+              currentHour={currentHour}
               infoLevel={infoLevel}
+              omitted={data.omitted}
             />
-          )}
-          {((data.type === 'route-headsign' && data.headsign === '') ||
-            (data.type === 'stop' &&
-              hasUnknownDestination(
-                data.timetableEntries.map((d) => ({ headsign: d.routeDirection.headsign })),
-              ))) && (
-            <p className="m-0 text-center text-[11px] text-amber-600 dark:text-amber-400">
-              行先が表示されない路線があります
-            </p>
-          )}
-        </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-4">
-          <TimetableGrid
-            timetableEntries={filteredTimetableEntries}
-            showHeadsign={
-              info.isVerboseEnabled ||
-              new Set(
-                filteredTimetableEntries.map(
-                  (d) => `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`,
-                ),
-              ).size > 1
-            }
-            currentHour={currentHour}
-            infoLevel={infoLevel}
-            omitted={data.omitted}
-          />
+          </div>
+          {gridScroll.showBottom && <ScrollFadeEdge position="bottom" />}
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function useScrollFades(resetKey: string) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [fadeState, setFadeState] = useState({ showTop: false, showBottom: false });
+
+  const updateFadeState = useCallback(() => {
+    const el = ref.current;
+    if (!el) {
+      return;
+    }
+
+    const showTop = el.scrollTop > 1;
+    const showBottom = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+
+    setFadeState((prev) =>
+      prev.showTop === showTop && prev.showBottom === showBottom ? prev : { showTop, showBottom },
+    );
+  }, []);
+
+  useEffect(() => {
+    updateFadeState();
+
+    const el = ref.current;
+    if (!el) {
+      return;
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateFadeState();
+    });
+
+    resizeObserver.observe(el);
+    if (el.firstElementChild instanceof HTMLElement) {
+      resizeObserver.observe(el.firstElementChild);
+    }
+
+    window.addEventListener('resize', updateFadeState);
+    const frameId = requestAnimationFrame(updateFadeState);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', updateFadeState);
+      resizeObserver.disconnect();
+    };
+  }, [resetKey, updateFadeState]);
+
+  return {
+    containerRef: ref,
+    handleScroll: updateFadeState,
+    showTop: fadeState.showTop,
+    showBottom: fadeState.showBottom,
+  };
+}
+
+function ScrollFadeEdge({ position }: { position: 'top' | 'bottom' }) {
+  return position === 'top' ? (
+    <div className="from-background via-background/90 pointer-events-none sticky top-0 z-10 -mb-5 h-5 bg-linear-to-b to-transparent" />
+  ) : (
+    <div className="from-background via-background/90 pointer-events-none sticky bottom-0 z-10 -mt-5 h-5 bg-linear-to-t to-transparent" />
   );
 }
 
@@ -366,7 +450,7 @@ function TimetableGrid({
                 ? scrollRef
                 : undefined
           }
-          className={`border-border border-b py-1.5 last:border-b-0 ${hour === currentHour ? 'bg-accent rounded' : ''}`}
+          className={`border-border scroll-mt-6 border-b py-1.5 last:border-b-0 ${hour === currentHour ? 'bg-accent rounded' : ''}`}
         >
           <div className="flex items-baseline gap-2">
             <span className="text-foreground w-10 shrink-0 text-right text-sm font-bold">
@@ -425,7 +509,7 @@ function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: 
     !data.isBoardableOnServiceDay &&
     (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
 
-  const routeTypes = data.routes.map((r) => r.route_type);
+  const routeTypes = [...new Set(data.routes.map((r) => r.route_type))];
 
   // Unique routes for badge display.
   const uniqueRoutes = data.routes;
