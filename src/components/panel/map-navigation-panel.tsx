@@ -14,11 +14,12 @@ interface MapNavigationPanelProps {
 
 /**
  * Navigation panel placed at the bottom-right of the map.
- * Provides buttons to jump to user's current location or the initial position.
+ * Provides buttons to locate the user's current position and jump to a random place.
  *
  * @param map - Leaflet map instance.
  * @param infoLevel - Current info level for ControlPanel border display.
  * @param onLocated - Callback fired with the user's geolocation result.
+ * @param onDeselectStop - Callback fired before jumping to a random place.
  */
 export function MapNavigationPanel({
   map,

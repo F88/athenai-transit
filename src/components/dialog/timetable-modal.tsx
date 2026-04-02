@@ -124,6 +124,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
         }
       }}
     >
+      {/* border-4: intentional thick border to visually distinguish the timetable modal from the map background */}
       <DialogContent
         showCloseButton={false}
         className="flex max-h-[80dvh] max-w-[90dvw] flex-col gap-0 overflow-hidden border-4 p-0 sm:max-w-[90dvw]"
