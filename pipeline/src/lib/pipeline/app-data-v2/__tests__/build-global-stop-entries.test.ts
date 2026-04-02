@@ -18,7 +18,7 @@ function makeDataBundle(opts: {
   services?: { id: string; d: number[] }[];
   stops?: { i: string; a: number; o: number; l: number; ps?: string }[];
   routes?: { i: string }[];
-  patterns?: Record<string, { r: string; stops: string[] }>;
+  patterns?: Record<string, { r: string; stops: { id: string }[] }>;
   timetable?: Record<string, { tp: string; d: Record<string, number[]> }[]>;
 }): DataBundle {
   return {
@@ -147,8 +147,8 @@ describe('extractStopEntries', () => {
         { i: 's2', a: 35.69, o: 139.77, l: 0 },
       ],
       patterns: {
-        p1: { r: 'r1', stops: ['s1', 's2'] },
-        p2: { r: 'r2', stops: ['s1'] },
+        p1: { r: 'r1', stops: [{ id: 's1' }, { id: 's2' }] },
+        p2: { r: 'r2', stops: [{ id: 's1' }] },
       },
     });
 
@@ -165,7 +165,7 @@ describe('extractStopEntries', () => {
     const bundle = makeDataBundle({
       stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
       patterns: {
-        p1: { r: 'r1', stops: ['s1'] },
+        p1: { r: 'r1', stops: [{ id: 's1' }] },
       },
       timetable: {
         s1: [
@@ -202,7 +202,7 @@ describe('extractStopEntries', () => {
     const bundle = makeDataBundle({
       stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
       patterns: {
-        p1: { r: 'r1', stops: ['s1'] },
+        p1: { r: 'r1', stops: [{ id: 's1' }] },
       },
       timetable: {
         s1: [{ tp: 'p1', d: { 'svc-wd': [480] } }],
@@ -238,7 +238,7 @@ describe('extractStopEntries', () => {
     const bundle = makeDataBundle({
       stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
       patterns: {
-        p1: { r: 'r1', stops: ['s1'] },
+        p1: { r: 'r1', stops: [{ id: 's1' }] },
       },
       timetable: {
         s1: [
@@ -276,8 +276,8 @@ describe('extractStopEntries', () => {
     const bundle = makeDataBundle({
       stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
       patterns: {
-        p1: { r: 'r1', stops: ['s1'] },
-        p2: { r: 'r2', stops: ['s1'] },
+        p1: { r: 'r1', stops: [{ id: 's1' }] },
+        p2: { r: 'r2', stops: [{ id: 's1' }] },
       },
       timetable: {
         s1: [
@@ -300,8 +300,8 @@ describe('extractStopEntries', () => {
     const bundle = makeDataBundle({
       stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
       patterns: {
-        p1: { r: 'r-weekday', stops: ['s1'] },
-        p2: { r: 'r-sunday', stops: ['s1'] },
+        p1: { r: 'r-weekday', stops: [{ id: 's1' }] },
+        p2: { r: 'r-sunday', stops: [{ id: 's1' }] },
       },
       timetable: {
         s1: [
@@ -349,7 +349,7 @@ describe('extractStopEntries', () => {
         { i: 's2', a: 35.69, o: 139.77, l: 0 },
       ],
       patterns: {
-        p1: { r: 'r1', stops: ['s1', 's2', 's1'] },
+        p1: { r: 'r1', stops: [{ id: 's1' }, { id: 's2' }, { id: 's1' }] },
       },
     });
 

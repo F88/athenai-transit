@@ -38,7 +38,7 @@ describe('buildTripPatternStats', () => {
   describe('freq', () => {
     it('counts departures for a basic pattern', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -56,7 +56,7 @@ describe('buildTripPatternStats', () => {
 
     it('sums departures across multiple service IDs in a group', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -73,7 +73,7 @@ describe('buildTripPatternStats', () => {
 
     it('separates freq by service group', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -95,7 +95,12 @@ describe('buildTripPatternStats', () => {
     it('uses interior stop for circular route freq (avoids 2x)', () => {
       // Circular: s1 → s2 → s3 → s1
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3', 's1'] },
+        p1: {
+          v: 2,
+          r: 'r1',
+          h: 'Terminal',
+          stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }, { id: 's1' }],
+        },
       };
 
       // s1 has 2x departures (origin + terminal)
@@ -119,7 +124,7 @@ describe('buildTripPatternStats', () => {
 
     it('omits pattern when timetable is empty (no departures)', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {};
@@ -133,7 +138,7 @@ describe('buildTripPatternStats', () => {
 
     it('omits pattern for service group with no matching departures', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -159,7 +164,7 @@ describe('buildTripPatternStats', () => {
 
     it('omits empty stops pattern', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [] as { id: string }[] },
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -171,7 +176,7 @@ describe('buildTripPatternStats', () => {
 
     it('omits single-stop pattern with no departures', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {};
@@ -195,7 +200,7 @@ describe('buildTripPatternStats', () => {
 
     it('returns empty result when service groups is empty', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
       };
 
       const result = buildTripPatternStats(patterns, {}, []);
@@ -207,7 +212,7 @@ describe('buildTripPatternStats', () => {
   describe('rd (remaining duration)', () => {
     it('computes rd for a simple 3-stop pattern', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }] },
       };
 
       // Each trip takes 10 min per segment
@@ -230,7 +235,12 @@ describe('buildTripPatternStats', () => {
 
     it('rd is monotonically decreasing', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3', 's4'] },
+        p1: {
+          v: 2,
+          r: 'r1',
+          h: 'Terminal',
+          stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }, { id: 's4' }],
+        },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -254,7 +264,7 @@ describe('buildTripPatternStats', () => {
 
     it('rd last element is always 0', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -271,7 +281,7 @@ describe('buildTripPatternStats', () => {
 
     it('handles single-stop pattern (rd = [0])', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -289,7 +299,12 @@ describe('buildTripPatternStats', () => {
       // 4 stops where s2 has no timetable entry, but s1→s2 and s2→s3
       // segments can be interpolated from neighboring known segments
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3', 's4'] },
+        p1: {
+          v: 2,
+          r: 'r1',
+          h: 'Terminal',
+          stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }, { id: 's4' }],
+        },
       };
 
       // s2 has no timetable entry; s1→s3 = 20 min, s3→s4 = 10 min
@@ -318,7 +333,12 @@ describe('buildTripPatternStats', () => {
     it('computes rd for circular route via interpolation of origin/terminal segments', () => {
       // Circular: s1 → s2 → s3 → s1
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3', 's1'] },
+        p1: {
+          v: 2,
+          r: 'r1',
+          h: 'Terminal',
+          stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }, { id: 's1' }],
+        },
       };
 
       // Origin s1 has 2x departures (interleaved start/return)
@@ -351,7 +371,7 @@ describe('buildTripPatternStats', () => {
 
     it('uses median for segment travel times', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
       };
 
       // 3 trips with different travel times: 10, 12, 20 → median = 12
@@ -370,7 +390,7 @@ describe('buildTripPatternStats', () => {
 
     it('rounds rd to 1 decimal place', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
       };
 
       // 2 trips: travel time = 7 and 8 → median = 7.5
@@ -389,7 +409,7 @@ describe('buildTripPatternStats', () => {
 
     it('computes median as average of two middle values for even trip count', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
       };
 
       // 4 trips with travel times: 8, 10, 12, 14 → median = (10+12)/2 = 11
@@ -407,7 +427,7 @@ describe('buildTripPatternStats', () => {
 
     it('filters out negative time diffs between consecutive stops', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
       };
 
       // 3 trips: diffs = 10, -5 (negative, filtered), 10 → median of [10, 10] = 10
@@ -427,7 +447,7 @@ describe('buildTripPatternStats', () => {
       // Circular with exactly 3 stops: s1 → s2 → s1
       // segmentCount = 2, both segments involve origin/terminal → both skipped
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's1'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }, { id: 's1' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -451,7 +471,7 @@ describe('buildTripPatternStats', () => {
       // This is a known limitation: 2-stop circular patterns cannot be correctly
       // decomposed with the current algorithm.
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's1'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's1' }] },
       };
 
       // s1 has 2x departures (origin + terminal interleaved)
@@ -471,7 +491,12 @@ describe('buildTripPatternStats', () => {
 
     it('preserves zero travel time between consecutive stops (not treated as gap)', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3', 's4'] },
+        p1: {
+          v: 2,
+          r: 'r1',
+          h: 'Terminal',
+          stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }, { id: 's4' }],
+        },
       };
 
       // s2→s3: same departure time (diff = 0), a valid zero-minute segment
@@ -493,8 +518,8 @@ describe('buildTripPatternStats', () => {
 
     it('computes rd independently for multiple patterns', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'A', stops: ['s1', 's2'] },
-        p2: { v: 2, r: 'r1', h: 'B', stops: ['s3', 's4'] },
+        p1: { v: 2, r: 'r1', h: 'A', stops: [{ id: 's1' }, { id: 's2' }] },
+        p2: { v: 2, r: 'r1', h: 'B', stops: [{ id: 's3' }, { id: 's4' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -516,7 +541,7 @@ describe('buildTripPatternStats', () => {
 
     it('skips segment when departure counts differ between consecutive stops', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }] },
       };
 
       // s1 has 3 deps, s2 has 2 deps (count mismatch), s3 has 2 deps
@@ -543,7 +568,7 @@ describe('buildTripPatternStats', () => {
       // s1 has 3 deps, s2 has 2 deps → segment 0 (s1→s2) count mismatch → NO_DATA
       // segment 1 (s2→s3) is known → gap copies from next neighbor
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -569,7 +594,7 @@ describe('buildTripPatternStats', () => {
       // s2 has 2 deps, s3 has 3 deps → segment 1 (s2→s3) count mismatch → NO_DATA
       // segment 0 (s1→s2) is known → gap copies from previous neighbor
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -595,7 +620,7 @@ describe('buildTripPatternStats', () => {
       // s2 departs BEFORE s1 for all trips → all diffs negative → NO_DATA
       // The NO_DATA gap is then filled by interpolation from the known neighbor
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -621,7 +646,12 @@ describe('buildTripPatternStats', () => {
     it('does not confuse 0 (valid) with NO_DATA (-1) during gap interpolation', () => {
       // s2→s3 has 0 travel time (valid), s3→s4 and s4→s5 are gaps (s4 missing)
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3', 's4', 's5'] },
+        p1: {
+          v: 2,
+          r: 'r1',
+          h: 'Terminal',
+          stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }, { id: 's4' }, { id: 's5' }],
+        },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -651,7 +681,7 @@ describe('buildTripPatternStats', () => {
 
     it('omits pattern when timetable has entries only for other patterns', () => {
       const patterns: Record<string, TripPatternJson> = {
-        p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3'] },
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }] },
       };
 
       // Timetable entries exist but for a different pattern

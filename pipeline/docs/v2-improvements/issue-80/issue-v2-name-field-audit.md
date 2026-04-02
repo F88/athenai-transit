@@ -56,7 +56,7 @@ At minimum, this audit should cover fields defined in the following GTFS / GTFS-
 - `stops.stop_name`
 - `stops.stop_desc` (via lookup)
 - `trips.trip_headsign`
-- `stop_times.stop_headsign` (currently via translations only)
+- `stop_times.stop_headsign` (primary: `tripPatterns.stops[].sh`, translations: `translations.stop_headsigns`)
 - `agency.agency_name`
 - `agency.agency_short_name`
 

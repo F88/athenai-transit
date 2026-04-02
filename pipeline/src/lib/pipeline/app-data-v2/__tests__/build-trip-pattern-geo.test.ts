@@ -19,7 +19,7 @@ function makeStop(id: string, lat: number, lon: number): StopV2Json {
 
 function makePattern(id: string, stopIds: string[]): Record<string, TripPatternJson> {
   return {
-    [id]: { v: 2, r: 'r1', h: 'Terminal', stops: stopIds },
+    [id]: { v: 2, r: 'r1', h: 'Terminal', stops: stopIds.map((sid) => ({ id: sid })) },
   };
 }
 
@@ -125,8 +125,8 @@ describe('buildTripPatternGeo', () => {
       makeStop('s3', 35.7, 139.78),
     ];
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'A', stops: ['s1', 's2'] },
-      p2: { v: 2, r: 'r1', h: 'B', stops: ['s1', 's2', 's3'] },
+      p1: { v: 2, r: 'r1', h: 'A', stops: [{ id: 's1' }, { id: 's2' }] },
+      p2: { v: 2, r: 'r1', h: 'B', stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }] },
     };
 
     const result = buildTripPatternGeo(patterns, stops);

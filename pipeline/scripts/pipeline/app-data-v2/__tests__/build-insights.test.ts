@@ -201,7 +201,7 @@ describe('InsightsBundle assembly', () => {
     dataBundle.tripPatterns = {
       v: 2,
       data: {
-        p1: { v: 2, r: 'r1', h: 'Stop 2', stops: ['s1', 's2'] },
+        p1: { v: 2, r: 'r1', h: 'Stop 2', stops: [{ id: 's1' }, { id: 's2' }] },
       },
     };
     dataBundle.timetable = {

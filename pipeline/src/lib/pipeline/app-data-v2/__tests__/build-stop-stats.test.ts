@@ -36,7 +36,7 @@ function makeTimetableGroup(
 describe('buildStopStats', () => {
   it('computes basic stats (freq, rc, rtc, ed, ld)', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+      p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
 
     const routes = [makeRoute('r1', 3)]; // bus
@@ -60,8 +60,8 @@ describe('buildStopStats', () => {
 
   it('aggregates across multiple patterns at the same stop', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'A', stops: ['s1', 's2'] },
-      p2: { v: 2, r: 'r2', h: 'B', stops: ['s1', 's3'] },
+      p1: { v: 2, r: 'r1', h: 'A', stops: [{ id: 's1' }, { id: 's2' }] },
+      p2: { v: 2, r: 'r2', h: 'B', stops: [{ id: 's1' }, { id: 's3' }] },
     };
 
     const routes = [makeRoute('r1', 3), makeRoute('r2', 3)];
@@ -86,8 +86,8 @@ describe('buildStopStats', () => {
 
   it('counts distinct route types', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'A', stops: ['s1', 's2'] },
-      p2: { v: 2, r: 'r2', h: 'B', stops: ['s1', 's3'] },
+      p1: { v: 2, r: 'r1', h: 'A', stops: [{ id: 's1' }, { id: 's2' }] },
+      p2: { v: 2, r: 'r2', h: 'B', stops: [{ id: 's1' }, { id: 's3' }] },
     };
 
     const routes = [
@@ -108,7 +108,7 @@ describe('buildStopStats', () => {
 
   it('handles overnight departures (ld >= 1440)', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+      p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
 
     const routes = [makeRoute('r1', 3)];
@@ -127,7 +127,7 @@ describe('buildStopStats', () => {
 
   it('separates stats by service group', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+      p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
 
     const routes = [makeRoute('r1', 3)];
@@ -149,7 +149,7 @@ describe('buildStopStats', () => {
 
   it('excludes stops with no departures in a service group', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+      p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
 
     const routes = [makeRoute('r1', 3)];
@@ -182,7 +182,7 @@ describe('buildStopStats', () => {
 
   it('skips timetable groups whose pattern ID is not in patterns map', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'A', stops: ['s1', 's2'] },
+      p1: { v: 2, r: 'r1', h: 'A', stops: [{ id: 's1' }, { id: 's2' }] },
     };
 
     const routes = [makeRoute('r1', 3)];
@@ -205,8 +205,8 @@ describe('buildStopStats', () => {
 
   it('counts rc=1 when multiple patterns share the same route', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'A', stops: ['s1', 's2'] },
-      p2: { v: 2, r: 'r1', h: 'B', stops: ['s1', 's3'] },
+      p1: { v: 2, r: 'r1', h: 'A', stops: [{ id: 's1' }, { id: 's2' }] },
+      p2: { v: 2, r: 'r1', h: 'B', stops: [{ id: 's1' }, { id: 's3' }] },
     };
 
     const routes = [makeRoute('r1', 3)];
@@ -226,7 +226,7 @@ describe('buildStopStats', () => {
 
   it('handles route not found in routes array (rtc excludes unknown routes)', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r_unknown', h: 'A', stops: ['s1', 's2'] },
+      p1: { v: 2, r: 'r_unknown', h: 'A', stops: [{ id: 's1' }, { id: 's2' }] },
     };
 
     const routes: RouteV2Json[] = []; // route not in array
@@ -246,7 +246,7 @@ describe('buildStopStats', () => {
 
   it('returns empty result when service groups is empty', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+      p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
     const routes = [makeRoute('r1', 3)];
     const timetable: Record<string, TimetableGroupV2Json[]> = {
@@ -261,7 +261,12 @@ describe('buildStopStats', () => {
   it('counts 2x departures at circular route origin/terminal stop', () => {
     // Circular: s1 → s2 → s3 → s1
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2', 's3', 's1'] },
+      p1: {
+        v: 2,
+        r: 'r1',
+        h: 'Terminal',
+        stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }, { id: 's1' }],
+      },
     };
 
     const routes = [makeRoute('r1', 3)];
@@ -286,7 +291,7 @@ describe('buildStopStats', () => {
 
   it('does not count departures from timetable groups with no matching service IDs', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+      p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
 
     const routes = [makeRoute('r1', 3)];
@@ -313,7 +318,7 @@ describe('buildStopStats', () => {
 
   it('sums freq across multiple service IDs in same group', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+      p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
 
     const routes = [makeRoute('r1', 3)];
@@ -333,7 +338,7 @@ describe('buildStopStats', () => {
 
   it('sets ed === ld when only one departure exists', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+      p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
 
     const routes = [makeRoute('r1', 3)];
@@ -353,8 +358,8 @@ describe('buildStopStats', () => {
 
   it('computes ed/ld across multiple timetable groups (min of eds, max of lds)', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'A', stops: ['s1', 's2'] },
-      p2: { v: 2, r: 'r2', h: 'B', stops: ['s1', 's3'] },
+      p1: { v: 2, r: 'r1', h: 'A', stops: [{ id: 's1' }, { id: 's2' }] },
+      p2: { v: 2, r: 'r2', h: 'B', stops: [{ id: 's1' }, { id: 's3' }] },
     };
 
     const routes = [makeRoute('r1', 3), makeRoute('r2', 3)];
@@ -377,7 +382,7 @@ describe('buildStopStats', () => {
 
   it('handles empty serviceIds in group (no departures counted)', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1', 's2'] },
+      p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
     const routes = [makeRoute('r1', 3)];
 
@@ -396,7 +401,7 @@ describe('buildStopStats', () => {
 
   it('skips multiple timetable groups with unknown pattern IDs', () => {
     const patterns: Record<string, TripPatternJson> = {
-      p1: { v: 2, r: 'r1', h: 'Terminal', stops: ['s1'] },
+      p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }] },
     };
     const routes = [makeRoute('r1', 3)];
 

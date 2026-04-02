@@ -106,7 +106,7 @@ function makeValidBundle(overrides?: Partial<DataBundle>): DataBundle {
     tripPatterns: {
       v: 2,
       data: {
-        'test:P1': { v: 2, r: 'test:R1', h: 'Terminal', stops: ['test:S1'] },
+        'test:P1': { v: 2, r: 'test:R1', h: 'Terminal', stops: [{ id: 'test:S1' }] },
       },
     },
     translations: {
@@ -400,7 +400,12 @@ describe('validateDataBundle', () => {
         tripPatterns: {
           v: 2,
           data: {
-            'test:P1': { v: 2, r: 'test:R1', h: 'Terminal', stops: ['test:S1', 'test:S2'] },
+            'test:P1': {
+              v: 2,
+              r: 'test:R1',
+              h: 'Terminal',
+              stops: [{ id: 'test:S1' }, { id: 'test:S2' }],
+            },
           },
         },
         timetable: {
@@ -427,7 +432,7 @@ describe('validateDataBundle', () => {
         tripPatterns: {
           v: 2,
           data: {
-            'test:P1': { v: 2, r: 'test:R_MISSING', h: 'Terminal', stops: ['test:S1'] },
+            'test:P1': { v: 2, r: 'test:R_MISSING', h: 'Terminal', stops: [{ id: 'test:S1' }] },
           },
         },
       });
@@ -447,7 +452,7 @@ describe('validateDataBundle', () => {
         tripPatterns: {
           v: 2,
           data: {
-            'test:P1': { v: 2, r: 'test:R1', h: 'Terminal', stops: ['test:S_MISSING'] },
+            'test:P1': { v: 2, r: 'test:R1', h: 'Terminal', stops: [{ id: 'test:S_MISSING' }] },
           },
         },
       });
@@ -607,8 +612,18 @@ describe('validateDataBundle', () => {
         tripPatterns: {
           v: 2,
           data: {
-            'test:P1': { v: 2, r: 'test:R1', h: 'Terminal A', stops: ['test:S1', 'test:S2'] },
-            'test:P2': { v: 2, r: 'test:R2', h: 'Terminal B', stops: ['test:S2', 'test:S3'] },
+            'test:P1': {
+              v: 2,
+              r: 'test:R1',
+              h: 'Terminal A',
+              stops: [{ id: 'test:S1' }, { id: 'test:S2' }],
+            },
+            'test:P2': {
+              v: 2,
+              r: 'test:R2',
+              h: 'Terminal B',
+              stops: [{ id: 'test:S2' }, { id: 'test:S3' }],
+            },
           },
         },
         timetable: {
@@ -643,7 +658,7 @@ describe('validateDataBundle', () => {
         tripPatterns: {
           v: 2,
           data: {
-            'test:P1': { v: 2, r: 'test:R_MISSING', h: 'Terminal', stops: ['test:S1'] },
+            'test:P1': { v: 2, r: 'test:R_MISSING', h: 'Terminal', stops: [{ id: 'test:S1' }] },
           },
         },
       });
