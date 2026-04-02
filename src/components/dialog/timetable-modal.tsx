@@ -117,7 +117,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
         showCloseButton={false}
         className="flex max-h-[80dvh] max-w-[90dvw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[90dvw]"
       >
-        <DialogHeader className="border-border shrink-0 border-b p-4 text-left">
+        <DialogHeader className="border-border max-h-[40dvh] shrink-0 overflow-y-auto border-b p-4 text-left">
           {info.isVerboseEnabled && (
             <VerboseTimetableSummary
               type={data.type}
@@ -160,7 +160,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
             </p>
           )}
         </DialogHeader>
-        <div className="overflow-y-auto px-4 pt-3 pb-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-4">
           <TimetableGrid
             timetableEntries={filteredTimetableEntries}
             showHeadsign={

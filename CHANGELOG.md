@@ -33,6 +33,10 @@ and this project adheres to [CalVer](https://calver.org/).
 - `StopSummary` の stop subNames に ellipsis を適用。
 - インライン `displayMinutes` 計算を `getDisplayMinutes` util に統一。
 
+### Fixed
+
+- 時刻表モーダルでヘッダが長い場合でも、ヘッダを内部スクロールにして本文グリッドが初期表示で見えるように修正。
+
 ## [2026.03.31]
 
 ### Fixed
