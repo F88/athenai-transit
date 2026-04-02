@@ -32,7 +32,7 @@ vi.mock('../hooks/use-user-settings', () => ({
   useUserSettings: () => ({
     settings: {
       perfMode: 'normal',
-      renderMode: 'dom',
+      renderMode: 'auto',
       tileIndex: 0,
       infoLevel: 'normal',
       visibleStopTypes: [3],
