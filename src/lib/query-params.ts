@@ -100,38 +100,31 @@ export function cleanupInvalidQueryParams(): void {
   const params = getParams();
   const keysToRemove: string[] = [];
 
-  // ?repo= — must be a recognized value
   const repo = params.get('repo');
   if (repo !== null && !VALID_REPO_VALUES.has(repo)) {
     keysToRemove.push('repo');
   }
 
-  // ?time= — must parse as a valid Date.
-  // Uses raw query string extraction to preserve `+` in timezone offsets.
   const timeRaw = getRawTimeValue();
   if (timeRaw !== null && parseQueryTime(timeRaw) === null) {
     keysToRemove.push('time');
   }
 
-  // ?lat= — must be a valid latitude (-90..90)
   const lat = params.get('lat');
   if (lat !== null && parseQueryLat(lat) === null) {
     keysToRemove.push('lat');
   }
 
-  // ?lng= — must be a valid longitude (-180..180)
   const lng = params.get('lng');
   if (lng !== null && parseQueryLng(lng) === null) {
     keysToRemove.push('lng');
   }
 
-  // ?zm= — must be a valid zoom level (1..MAX_ZOOM)
   const zm = params.get('zm');
   if (zm !== null && parseQueryZoom(zm) === null) {
     keysToRemove.push('zm');
   }
 
-  // ?stop= — must be a non-empty string
   const stop = params.get('stop');
   if (stop !== null && parseQueryStopId(stop) === null) {
     keysToRemove.push('stop');
@@ -141,19 +134,17 @@ export function cleanupInvalidQueryParams(): void {
     return;
   }
 
-  // Remove keys from the raw query string to preserve special characters
-  // like `+` in timezone offsets (URLSearchParams encodes `+` as space).
   const keysSet = new Set(keysToRemove);
   const rawSearch = window.location.search;
   const pairs = rawSearch
-    .slice(1) // remove leading '?'
+    .slice(1)
     .split('&')
     .filter((pair) => {
       const key = pair.split('=')[0];
       try {
         return !keysSet.has(decodeURIComponent(key));
       } catch {
-        return true; // keep pairs with malformed keys
+        return true;
       }
     });
   const newSearch = pairs.length > 0 ? `?${pairs.join('&')}` : '';
@@ -252,7 +243,7 @@ export function getTimeParam(): Date | null {
   try {
     return parseQueryTime(decodeURIComponent(match[1]));
   } catch {
-    return null; // malformed percent-encoding
+    return null;
   }
 }
 

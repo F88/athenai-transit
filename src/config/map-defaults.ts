@@ -10,7 +10,7 @@
  * will use random center but override zoom to 14.
  */
 
-import { parseQueryLat, parseQueryLng, parseQueryZoom } from '../utils/query-params';
+import { parseQueryLat, parseQueryLng, parseQueryZoom } from '../lib/query-params';
 import { createLogger } from '../utils/logger';
 
 /** Maximum zoom level supported by the app. Used by MapContainer and query param validation. */

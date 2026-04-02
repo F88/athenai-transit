@@ -7,8 +7,8 @@ import { TransitRepositoryProvider } from './contexts/transit-repository-provide
 import { DataSourceManager } from './config/data-source-manager';
 import type { TransitRepository } from './repositories/transit-repository';
 import { AthenaiRepositoryV2 } from './repositories/athenai-repository-v2';
+import { cleanupInvalidQueryParams, getDiagParam, getRepoParam } from './lib/query-params';
 import { createLogger } from './utils/logger';
-import { cleanupInvalidQueryParams, getDiagParam, getRepoParam } from './utils/query-params';
 
 const logger = createLogger('App');
 

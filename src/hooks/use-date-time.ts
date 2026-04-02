@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { getTimeParam } from '../utils/query-params';
+import { getTimeParam } from '../lib/query-params';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('DateTime');

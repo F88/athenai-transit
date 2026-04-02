@@ -24,13 +24,13 @@ import {
 import { nextInfoLevel } from './utils/next-info-level';
 import { createInfoLevel } from './utils/create-info-level';
 import { createLogger } from './utils/logger';
+import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
 import { formatDateKey } from './domain/transit/calendar-utils';
 import {
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
 } from './domain/transit/timetable-filter';
-import { getStopParam } from './utils/query-params';
 import { MapView } from './components/map/map-view';
 import { BottomSheet } from './components/bottom-sheet';
 import { TimeControls } from './components/time-controls';

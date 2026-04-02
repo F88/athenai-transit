@@ -1,5 +1,5 @@
 import settings from './data-source-settings';
-import { getSourcesParam } from '../utils/query-params';
+import { getSourcesParam } from '../lib/query-params';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger('DataSourceManager');

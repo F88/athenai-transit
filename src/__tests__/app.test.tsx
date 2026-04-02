@@ -90,7 +90,7 @@ vi.mock('../hooks/use-anchors', () => ({
   useAnchors: (...args: unknown[]) => mockUseAnchors(...args),
 }));
 
-vi.mock('../utils/query-params', () => ({
+vi.mock('../lib/query-params', () => ({
   getStopParam: () => null,
 }));
 
