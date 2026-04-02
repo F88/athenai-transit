@@ -8,9 +8,7 @@ import {
 /**
  * Memoized React wrapper around map selection layer preparation.
  */
-export function useMapSelectionLayers(
-  params: MapSelectionLayersParams,
-): MapSelectionLayersResult {
+export function useMapSelectionLayers(params: MapSelectionLayersParams): MapSelectionLayersResult {
   const {
     inBoundStops,
     radiusStops,
@@ -23,7 +21,17 @@ export function useMapSelectionLayers(
   } = params;
 
   return useMemo(
-    () => buildMapSelectionLayers(params),
+    () =>
+      buildMapSelectionLayers({
+        inBoundStops,
+        radiusStops,
+        routeStops,
+        routeShapes,
+        routeTypeMap,
+        visibleStopTypes,
+        visibleRouteShapes,
+        selectionInfo,
+      }),
     [
       inBoundStops,
       radiusStops,

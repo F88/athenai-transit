@@ -68,7 +68,12 @@ describe('buildMapSelectionLayers', () => {
 
   it('deduplicates and sorts route types for route stop markers', () => {
     const routeStop = makeStopMeta(makeStop('route-stop'));
-    routeStop.routes = [makeRoute('r1', 3), makeRoute('r2', 1), makeRoute('r3', 3), makeRoute('r4', 0)];
+    routeStop.routes = [
+      makeRoute('r1', 3),
+      makeRoute('r2', 1),
+      makeRoute('r3', 3),
+      makeRoute('r4', 0),
+    ];
 
     const result = buildMapSelectionLayers({
       inBoundStops: [],

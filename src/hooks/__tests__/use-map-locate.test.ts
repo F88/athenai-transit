@@ -9,9 +9,9 @@ const mockResolveLocateAction = vi.fn();
 const mockToUserLocation = vi.fn();
 
 vi.mock('../../lib/map-locate', () => ({
-  applyLocateAction: (...args: unknown[]) => mockApplyLocateAction(...args),
-  resolveLocateAction: (...args: unknown[]) => mockResolveLocateAction(...args),
-  toUserLocation: (...args: unknown[]) => mockToUserLocation(...args),
+  applyLocateAction: (...args: unknown[]): unknown => mockApplyLocateAction(...args),
+  resolveLocateAction: (...args: unknown[]): unknown => mockResolveLocateAction(...args),
+  toUserLocation: (...args: unknown[]): unknown => mockToUserLocation(...args),
 }));
 
 describe('useMapLocate', () => {
@@ -27,7 +27,9 @@ describe('useMapLocate', () => {
     const onLocated = vi.fn();
     const loc: UserLocation = { lat: 35.0, lng: 139.0, accuracy: 10 };
     const action = { kind: 'move', distanceToLocation: 100 } as const;
-    const pos = { coords: { latitude: 35.0, longitude: 139.0, accuracy: 10 } } as GeolocationPosition;
+    const pos = {
+      coords: { latitude: 35.0, longitude: 139.0, accuracy: 10 },
+    } as GeolocationPosition;
     let success: PositionCallback | undefined;
 
     mockToUserLocation.mockReturnValue(loc);

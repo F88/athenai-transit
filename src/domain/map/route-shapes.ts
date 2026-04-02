@@ -55,7 +55,10 @@ function getFreqBasedWeight(routeType: number, freq: number | undefined): number
   return 3;
 }
 
-function getHighlightedRouteShapeStyle(routeType: number, freq: number | undefined): RouteShapeStyle {
+function getHighlightedRouteShapeStyle(
+  routeType: number,
+  freq: number | undefined,
+): RouteShapeStyle {
   const weight = Math.max(getFreqBasedWeight(routeType, freq), ROUTE_WEIGHT.highlighted);
   return {
     weight,

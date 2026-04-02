@@ -11,6 +11,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- 地図にズームコントロール (+/-) ボタンを追加。ナビゲーションパネル横に配置。
 - DepartureItem / FlatDepartureItem に headsign の subNames (翻訳名) を表示。
 - `RouteDirection` 型を `transit-composed.ts` に抽出 (#82)。
 - `HeadsignBadge` に resolver パターンを統合: `routeDirection` を受け取り、内部で `getHeadsignDisplayNames` を呼ぶ。
@@ -24,6 +25,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- MapNavigationPanel / MapControlPanel をカスタムフック + ドメインモジュールに分離。
+- 地図ドメインロジックを `src/domain/map/` に分離 (stop フィルタ含む)。
 - `getHeadsignDisplayNames` のシグネチャを `(routeDirection, infoLevel, lang?)` に変更。
 - `HeadsignBadge` の props を `headsign` + `route` から `routeDirection: RouteDirection` に変更。
 - `VerboseHeadsign` に `headsign_names`、`direction`、`HeadsignDisplayNames` dump を追加。
@@ -38,6 +41,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - 時刻表モーダルでヘッダが長い場合でも、ヘッダを内部スクロールにして本文グリッドが初期表示で見えるように修正。
 - サイコロボタン押下時に、ランダム移動の前に stop 選択状態を解除するよう修正。
 - 現在地ボタン押下時に、地図中心が現在地に近い場合は不要な pan を避けつつ段階的に zoom in するよう修正。
+- ズームボタンが min/max ズーム時に disabled 状態になるよう修正 (a11y)。
 
 ## [2026.03.31]
 
