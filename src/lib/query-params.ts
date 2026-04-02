@@ -16,7 +16,7 @@
  * - `?diag=v2-load` — run diagnostics (see DEVELOPMENT.md)
  */
 
-import { MAX_ZOOM } from '../config/map-defaults';
+import { MAX_ZOOM } from '../config/map-constants';
 
 /**
  * Lazily cached URLSearchParams instance.

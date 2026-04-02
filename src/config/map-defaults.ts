@@ -9,12 +9,8 @@
  * Each param is resolved independently — e.g. `?zm=14` with no lat/lng
  * will use random center but override zoom to 14.
  */
-
 import { parseQueryLat, parseQueryLng, parseQueryZoom } from '../lib/query-params';
 import { createLogger } from '../lib/logger';
-
-/** Maximum zoom level supported by the app. Used by MapContainer and query param validation. */
-export const MAX_ZOOM = 20;
 
 /**
  * Curated locations for random initial display.
