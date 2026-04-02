@@ -1,12 +1,12 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import type L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { UserLocation } from '../../types/app/map';
 import { smoothMoveTo } from '../../lib/leaflet-helpers';
-import { toUserLocation, resolveLocateAction, applyLocateAction } from '../../lib/map-locate';
 import { ControlPanel } from '../shared/control-panel';
 import { MapToggleButton } from '../button/map-toggle-button';
 import { pickRandomHome } from '../../config/map-defaults';
+import { useMapLocate } from '../../hooks/use-map-locate';
 
 interface MapNavigationPanelProps {
   map: L.Map;
@@ -29,27 +29,7 @@ export function MapNavigationPanel({
   onLocated,
   onDeselectStop,
 }: MapNavigationPanelProps) {
-  const [locating, setLocating] = useState(false);
-
-  const handleLocate = useCallback(() => {
-    if (!navigator.geolocation) {
-      return;
-    }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const loc = toUserLocation(pos);
-        const action = resolveLocateAction(map, loc);
-        applyLocateAction(map, loc, action);
-        onLocated(loc);
-        setLocating(false);
-      },
-      () => {
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }, [map, onLocated]);
+  const { locating, handleLocate } = useMapLocate(map, onLocated);
 
   const handleRandomJump = useCallback(() => {
     onDeselectStop();
