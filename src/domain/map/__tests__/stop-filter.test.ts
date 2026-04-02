@@ -6,9 +6,9 @@ import type { RouteType } from '../../../types/app/transit';
 describe('filterStopsByType', () => {
   const stops = [makeStopMeta('a'), makeStopMeta('b'), makeStopMeta('c')];
   const routeTypeMap = new Map<string, RouteType[]>([
-    ['a', [3]], // bus
-    ['b', [1]], // subway
-    ['c', [0]], // tram
+    ['a', [3]],
+    ['b', [1]],
+    ['c', [0]],
   ]);
 
   it('returns only stops whose route type is visible', () => {
@@ -26,7 +26,7 @@ describe('filterStopsByType', () => {
     expect(result).toEqual([]);
   });
 
-  it('defaults to route_type [3] (bus) for stops not in routeTypeMap', () => {
+  it('defaults to route_type [3] for stops not in routeTypeMap', () => {
     const unknownStop = makeStopMeta('unknown');
     const result = filterStopsByType([unknownStop], new Map(), new Set([3]));
     expect(result.map((s) => s.stop.stop_id)).toEqual(['unknown']);
@@ -38,7 +38,7 @@ describe('filterStopsByType', () => {
     expect(result).toEqual([]);
   });
 
-  it('includes stop when at least one of its route types is visible', () => {
+  it('includes stop when at least one route type is visible', () => {
     const multiTypeMap = new Map<string, RouteType[]>([['a', [1, 3]]]);
     const result = filterStopsByType([makeStopMeta('a')], multiTypeMap, new Set([3]));
     expect(result.map((s) => s.stop.stop_id)).toEqual(['a']);

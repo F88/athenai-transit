@@ -3,7 +3,7 @@ import type { RouteType, Stop } from '../../types/app/transit';
 import type { StopWithMeta } from '../../types/app/transit-composed';
 import type { SelectionInfo } from './selection';
 import { filterVisibleRouteShapes } from './route-shapes';
-import { excludeStopsByIds, filterStopsByType } from '../transit/stop-filter';
+import { excludeStopsByIds, filterStopsByType } from './stop-filter';
 
 export interface MapSelectionLayersParams {
   inBoundStops: StopWithMeta[];
