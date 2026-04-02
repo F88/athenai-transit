@@ -52,11 +52,11 @@ export function extractStopEntries(bundle: DataBundle, serviceIds: Set<string>):
   const stopRouteIds = new Map<string, Set<string>>();
 
   for (const [, pattern] of Object.entries(patterns)) {
-    for (const sid of pattern.stops) {
-      if (!stopRouteIds.has(sid)) {
-        stopRouteIds.set(sid, new Set());
+    for (const stop of pattern.stops) {
+      if (!stopRouteIds.has(stop.id)) {
+        stopRouteIds.set(stop.id, new Set());
       }
-      stopRouteIds.get(sid)!.add(pattern.r);
+      stopRouteIds.get(stop.id)!.add(pattern.r);
     }
   }
 
