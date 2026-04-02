@@ -2,7 +2,7 @@ import { memo, useMemo } from 'react';
 import { Polyline } from 'react-leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { RouteShape } from '../../types/app/map';
-import { getRouteShapeStyle } from '../../domain/transit/route-selection';
+import { getRouteShapeStyle } from '../../domain/map/route-shapes';
 
 /**
  * Extract [lat, lon] positions from shape points, stripping the

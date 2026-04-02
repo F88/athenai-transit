@@ -10,34 +10,24 @@ import { enableDoubleTapZoom } from '../../lib/double-tap-zoom';
 import { smoothMoveTo, toBounds, toCenter } from '../../lib/leaflet-helpers';
 import { StopMarkers } from '../marker/stop-markers';
 import type { UserLocation } from '../../types/app/map';
-import { InfoPanel } from '../panel/info-panel';
-import { MapLayerPanel } from '../panel/map-layer-panel';
-import { MapNavigationPanel } from '../panel/map-navigation-panel';
-import { RenderingPanel } from '../panel/rendering-panel';
-import { StopControlPanel } from '../panel/stop-control-panel';
-import { StopTypeFilterPanel } from '../panel/stop-type-filter-panel';
+import { MapOverlayPanels } from './map-overlay-panels';
 
 import { CLICK_SUPPRESSION_MS, shouldSuppressMapClick } from '../../utils/map-click';
 import { createLogger } from '../../utils/logger';
 import type { StopHistoryEntry } from '../../domain/transit/stop-history';
 import type { AnchorEntry } from '../../domain/portal/anchor';
-import type { SelectionInfo } from '../../domain/transit/route-selection';
-import {
-  buildTimetableEntriesMap,
-  filterVisibleRouteShapes,
-} from '../../domain/transit/route-selection';
+import type { SelectionInfo } from '../../domain/map/selection';
+import { buildTimetableEntriesMap } from '../../domain/map/selection';
 import { RouteShapePolylines } from './route-shape-polyline';
 import { resolveRenderModes } from '../../utils/render-mode';
-import { excludeStopsByIds, filterStopsByType } from '../../domain/transit/stop-filter';
 import { TILE_SOURCES } from '../../config/tile-sources';
 import { EdgeMarkersSwitch } from '../marker/edge-markers';
 // import { SelectionIndicator } from './selection-indicator';
-import { Portals } from '../portals';
-import { StopHistory } from '../stop-history';
 
 import { INITIAL_CENTER, INITIAL_ZOOM } from '../../config/map-defaults';
 import { DISTANCE_BANDS } from '../../utils/distance-style';
 import { SelectionIndicator } from './selection-indicator';
+import { useMapSelectionLayers } from '../../hooks/use-map-selection-layers';
 
 const USER_LOCATION_ICON = L.divIcon({
   className: '',
@@ -305,67 +295,23 @@ export function MapView({
     return map;
   }, [inBoundStops, radiusStops]);
 
-  const selectedRouteIds = selectionInfo?.routeIds ?? null;
-
-  // stop selection: hide unrelated routes (only show routes passing through the stop)
-  // route selection: keep all routes visible (selected is highlighted, others are dimmed)
-  const hideUnselected = selectionInfo?.type === 'stop';
-  const visibleShapes = useMemo(
-    () =>
-      filterVisibleRouteShapes(routeShapes, visibleRouteShapes, selectedRouteIds, hideUnselected),
-    [routeShapes, visibleRouteShapes, selectedRouteIds, hideUnselected],
-  );
-
-  // Route stops get rendering priority: build the set of route stop IDs first
-  const routeStopIds = useMemo(() => new Set(routeStops.map((m) => m.stop.stop_id)), [routeStops]);
-
-  const filteredNearbyStops = useMemo(() => {
-    const stops = filterStopsByType(radiusStops, routeTypeMap, visibleStopTypes)
-      .sort((a, b) => (b.distance ?? 0) - (a.distance ?? 0))
-      .map((m) => m.stop);
-    // Exclude stops that will be shown in route stops layer (they have rendering priority)
-    const filtered = stops.filter((s) => !routeStopIds.has(s.stop_id));
-    if (routeStopIds.size > 0 && filtered.length < stops.length) {
-      logger.debug(
-        `filteredNearbyStops: ${stops.length} → ${filtered.length} (excluded ${stops.length - filtered.length} for routeStops)`,
-      );
-    }
-    return filtered;
-  }, [radiusStops, routeTypeMap, visibleStopTypes, routeStopIds]);
-
-  // farStops = inBoundStops excluding radiusStops and routeStops
-  const filteredFarStops = useMemo(() => {
-    const nearbyIds = new Set(radiusStops.map((s) => s.stop.stop_id));
-    const stops = filterStopsByType(
-      excludeStopsByIds(inBoundStops, nearbyIds),
-      routeTypeMap,
-      visibleStopTypes,
-    ).map((m) => m.stop);
-    // Exclude stops that will be shown in route stops layer (they have rendering priority)
-    const filtered = stops.filter((s) => !routeStopIds.has(s.stop_id));
-    if (routeStopIds.size > 0 && filtered.length < stops.length) {
-      logger.debug(
-        `filteredFarStops: ${stops.length} → ${filtered.length} (excluded ${stops.length - filtered.length} for routeStops)`,
-      );
-    }
-    return filtered;
-  }, [inBoundStops, radiusStops, routeTypeMap, visibleStopTypes, routeStopIds]);
-
-  // Route stops: extract Stop[] (takes rendering priority over nearby/far)
-  const routeStopMarkers = useMemo(() => routeStops.map((m) => m.stop), [routeStops]);
-  const routeStopsRouteTypeMap = useMemo(() => {
-    const map = new Map<string, RouteType[]>();
-    for (const m of routeStops) {
-      const types = m.routes.map((r) => r.route_type);
-      if (types.length > 0) {
-        map.set(
-          m.stop.stop_id,
-          [...new Set(types)].sort((a, b) => a - b),
-        );
-      }
-    }
-    return map;
-  }, [routeStops]);
+  const {
+    selectedRouteIds,
+    visibleShapes,
+    filteredNearbyStops,
+    filteredFarStops,
+    routeStopMarkers,
+    routeStopsRouteTypeMap,
+  } = useMapSelectionLayers({
+    inBoundStops,
+    radiusStops,
+    routeStops,
+    routeShapes,
+    routeTypeMap,
+    visibleStopTypes,
+    visibleRouteShapes,
+    selectionInfo,
+  });
 
   const handleLocated = useCallback((location: UserLocation) => setUserLocation(location), []);
 
@@ -498,9 +444,34 @@ export function MapView({
           />
         )}
       </MapContainer>
-      {mapInstance && (
-        <MapNavigationPanel map={mapInstance} infoLevel={infoLevel} onLocated={handleLocated} />
-      )}
+
+      <MapOverlayPanels
+        map={mapInstance}
+        tileIndex={tileIndex}
+        visibleRouteShapes={visibleRouteShapes}
+        visibleStopTypes={visibleStopTypes}
+        renderMode={renderMode}
+        perfMode={perfMode}
+        infoLevel={infoLevel}
+        theme={theme}
+        selectedStopId={selectedStopId}
+        stopHistory={stopHistory}
+        anchors={anchors}
+        onCycleTile={onCycleTile}
+        onToggleBusShapes={onToggleBusShapes}
+        onToggleNonBusShapes={onToggleNonBusShapes}
+        onToggleRenderMode={onToggleRenderMode}
+        onTogglePerfMode={onTogglePerfMode}
+        onCycleInfoLevel={onCycleInfoLevel}
+        onToggleDarkMode={onToggleDarkMode}
+        onToggleStopType={onToggleStopType}
+        onSearchClick={onSearchClick}
+        onInfoClick={onInfoClick}
+        onLocated={handleLocated}
+        onDeselectStop={onDeselectStop}
+        onHistorySelect={onHistorySelect}
+        onPortalSelect={onPortalSelect}
+      />
       {mapInstance && (
         <EdgeMarkersSwitch
           map={mapInstance}
@@ -514,50 +485,11 @@ export function MapView({
           onFetchDepartures={onFetchDepartures}
         />
       )}
-      {/* Right top: map layer controls */}
-      <MapLayerPanel
-        tileIndex={tileIndex}
-        visibleRouteShapes={visibleRouteShapes}
-        infoLevel={infoLevel}
-        onCycleTile={onCycleTile}
-        onToggleBusShapes={onToggleBusShapes}
-        onToggleNonBusShapes={onToggleNonBusShapes}
-      />
-      {/* Left: rendering controls */}
-      <RenderingPanel
-        renderMode={renderMode}
-        perfMode={perfMode}
-        infoLevel={infoLevel}
-        theme={theme}
-        onToggleRenderMode={onToggleRenderMode}
-        onTogglePerfMode={onTogglePerfMode}
-        onCycleInfoLevel={onCycleInfoLevel}
-        onToggleDarkMode={onToggleDarkMode}
-      />
-      {/* Right bottom: stop type filters (existing MapToggleButton) */}
-      <StopTypeFilterPanel
-        visibleStopTypes={visibleStopTypes}
-        infoLevel={infoLevel}
-        onToggleStopType={onToggleStopType}
-      />
-
-      <StopControlPanel infoLevel={infoLevel} onSearchClick={onSearchClick} />
-      <InfoPanel infoLevel={infoLevel} onInfoClick={onInfoClick} />
       <SelectionIndicator
         info={selectionInfo}
         infoLevel={infoLevel}
         onStopClick={handleIndicatorClick}
       />
-      {/* Top-center dropdown group: Portals + History */}
-      <div className="pointer-events-none absolute top-[calc(4rem+env(safe-area-inset-top))] left-1/2 z-1001 flex -translate-x-1/2 gap-2 *:pointer-events-auto">
-        <StopHistory
-          history={stopHistory}
-          selectedStopId={selectedStopId}
-          infoLevel={infoLevel}
-          onSelect={onHistorySelect}
-        />
-        <Portals anchors={anchors} infoLevel={infoLevel} onSelect={onPortalSelect} />
-      </div>
     </div>
   );
 }

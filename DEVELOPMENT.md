@@ -26,6 +26,8 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 
 ### ファイル構成
 
+以下の配置ルールは webapp の `src/` 配下に適用する。`pipeline/` は別責務のため、同じ分類基準を直接適用しない。
+
 | ディレクトリ         | 配置基準                                                             |
 | -------------------- | -------------------------------------------------------------------- |
 | `src/domain/`        | ドメイン固有の純粋関数 (例: transit ロジック、i18n)                  |
@@ -38,6 +40,44 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 | `src/types/`         | 型定義                                                               |
 | `src/config/`        | 設定値                                                               |
 | `pipeline/`          | データパイプライン ([pipeline/README.md](./pipeline/README.md) 参照) |
+
+#### 配置判断の詳細
+
+ファイルの配置は「そのコードが何を知っているか」で判断する。
+
+- `src/domain/`
+  このアプリ固有の意味やルールを持つコードを置く。ライブラリの使い方ではなく、「何を表示するべきか」「どう扱うべきか」という判断を持つもの。
+- `src/lib/`
+  外部ライブラリやブラウザ API に依存する技術的なヘルパーを置く。Leaflet 操作、DOM 操作、adapter 的な処理はこちら。
+- `src/utils/`
+  依存が薄く、ドメイン知識をほとんど持たない軽量な補助関数を置く。
+
+#### `src/domain/` の分割方針
+
+- `src/domain/transit/`
+  GTFS、時刻表、route/stop、service day など transit 自体のルール。
+- `src/domain/map/`
+  地図画面における選択、route shape 表示、layer 構築、map 向け filter など、地図上の見せ方に関わるルール。
+- 新しいサブディレクトリを作る判断
+  `transit` や `map` に自然に収まらないまとまりが継続的に増えた場合に限る。単発の整理のために増やさないこと。
+
+#### 判断ルール
+
+- アプリ固有の判断を含むなら `utils` ではなく `domain`
+- Leaflet や DOM 前提なら `domain` ではなく `lib`
+- 地図画面での表示・選択・可視判定に依存するなら `src/domain/map/`
+- GTFS / timetable / service day の意味に依存するなら `src/domain/transit/`
+- `lib` から `domain` を import しない
+- `utils` は domain の代替置き場にしない
+
+#### 具体例
+
+- `src/domain/map/`
+  `selection.ts`, `route-shapes.ts`, `map-selection-layers.ts`, `stop-filter.ts`
+- `src/domain/transit/`
+  `service-day.ts`, `timetable-filter.ts`, `timetable-utils.ts`
+- `src/lib/`
+  `leaflet-helpers.ts`, `map-zoom.ts`, `double-tap-zoom.ts`
 
 ## Logger
 
