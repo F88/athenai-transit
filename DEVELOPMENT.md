@@ -8,6 +8,7 @@
 - `pipeline/src/lib/`、`pipeline/scripts/` の関数にもテスト必須
 - エッジケースを含め品質を保証するテストとすること
 - テストはタイムゾーンに依存しないこと (相対比較やエポックミリ秒を使用)
+- Vitest の設定は `vitest.config.ts` に置き、`vite.config.ts` は app/build 設定に専念させる
 
 ### Lint / Format
 
@@ -101,7 +102,7 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 ### Basic Usage
 
 ```typescript
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 
 const logger = createLogger('GTFS');
 
