@@ -66,7 +66,7 @@ function applyLocateAction(map: L.Map, loc: UserLocation, action: LocateAction):
       logger.debug(
         `handleLocate: center near current location (${action.distanceToLocation.toFixed(1)}m <= ${String(LOCATE_NEAR_THRESHOLD_METERS)}m), zooming in ${String(action.currentZoom)} -> ${String(action.nextZoom)}`,
       );
-     changeZoom(map, 1);
+      setZoomLevel(map, action.nextZoom);
       return;
     case 'noop':
       logger.debug(
@@ -76,14 +76,18 @@ function applyLocateAction(map: L.Map, loc: UserLocation, action: LocateAction):
   }
 }
 
-function changeZoom(map: L.Map, delta: 1 | -1): void {
+function setZoomLevel(map: L.Map, zoom: number): void {
   const currentZoom = map.getZoom();
-  const nextZoom = Math.max(map.getMinZoom(), Math.min(currentZoom + delta, map.getMaxZoom()));
+  const nextZoom = Math.max(map.getMinZoom(), Math.min(zoom, map.getMaxZoom()));
   if (nextZoom === currentZoom) {
     return;
   }
 
   map.setZoom(nextZoom, { animate: true });
+}
+
+function changeZoom(map: L.Map, delta: 1 | -1): void {
+  setZoomLevel(map, map.getZoom() + delta);
 }
 
 function ZoomInButton({ active, onClick }: { active: boolean; onClick: () => void }) {
