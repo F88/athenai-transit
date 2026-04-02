@@ -76,7 +76,8 @@ describe('mergeSourcesV2', () => {
   it('builds resolvedPatterns from tripPatterns', () => {
     const fixture = createFixtureV2();
     const merged = mergeSourcesV2([fixture]);
-    expect(merged.resolvedPatterns.size).toBe(10);
+    // 10 original patterns + 1 circular (tp_bus_c)
+    expect(merged.resolvedPatterns.size).toBe(11);
     const subN = merged.resolvedPatterns.get('tp_sub_n');
     expect(subN).toBeDefined();
     expect(subN!.route.route_id).toBe('route_subway');
@@ -137,6 +138,38 @@ describe('mergeSourcesV2', () => {
     expect(tdn01!.wheelchair_boarding).toBeUndefined();
     expect(tdn01!.parent_station).toBeUndefined();
     expect(tdn01!.platform_code).toBeUndefined();
+  });
+
+  it('converts TripPatternJson to app-internal TripPattern with string[] stops', () => {
+    const fixture = createFixtureV2();
+    const merged = mergeSourcesV2([fixture]);
+
+    // tripPatterns should be converted from JSON schema to app-internal type
+    const pattern = merged.tripPatterns.get('tp_sub_n');
+    expect(pattern).toBeDefined();
+    expect(pattern!.route_id).toBe('route_subway');
+    expect(pattern!.headsign).toBe('Nishi-takashimadaira');
+    // stops must be plain string[] (extracted from {id}[] JSON format)
+    expect(pattern!.stops).toEqual(['sub_01', 'sub_02', 'sub_03']);
+
+    // direction=0 must be preserved (not dropped by falsy check)
+    expect(pattern!.direction).toBe(0);
+
+    // direction=1 must also be preserved
+    const patternM = merged.tripPatterns.get('tp_sub_m');
+    expect(patternM).toBeDefined();
+    expect(patternM!.direction).toBe(1);
+
+    // direction should be undefined when dir is not set in JSON
+    const busPattern = merged.tripPatterns.get('tp_bus_o');
+    expect(busPattern).toBeDefined();
+    expect(busPattern!.direction).toBeUndefined();
+
+    // empty headsign should be preserved
+    const emptyH = merged.tripPatterns.get('tp_ptr_e');
+    expect(emptyH).toBeDefined();
+    expect(emptyH!.headsign).toBe('');
+    expect(emptyH!.stops).toEqual(['bus_01']);
   });
 });
 
@@ -504,6 +537,34 @@ describe('getUpcomingTimetableEntries', () => {
     // First entry should be 610 (10:10), from tp_bus_i2
     expect(result.data[0].schedule.departureMinutes).toBe(610);
   });
+
+  it('sets correct patternPosition for circular route (origin vs terminal at same stop)', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // bus_01 is both origin (index 0) and terminal (index 3) in tp_bus_c.
+    // The fixture has two departures: 620 (pickupType=0, origin) and 650 (pickupType=1, terminal).
+    const result = await repository.getUpcomingTimetableEntries('bus_01', WEEKDAY);
+    assertSuccess(result);
+
+    const circularEntries = result.data.filter((e) => e.routeDirection.headsign === 'Circular');
+    expect(circularEntries).toHaveLength(2);
+
+    // Origin departure (pickupType=0, stopIndex=0)
+    const origin = circularEntries.find((e) => e.schedule.departureMinutes === 620)!;
+    expect(origin).toBeDefined();
+    expect(origin.patternPosition.stopIndex).toBe(0);
+    expect(origin.patternPosition.isOrigin).toBe(true);
+    expect(origin.patternPosition.isTerminal).toBe(false);
+
+    // Terminal arrival (pickupType=1, stopIndex=3)
+    const terminal = circularEntries.find((e) => e.schedule.departureMinutes === 650)!;
+    expect(terminal).toBeDefined();
+    expect(terminal.patternPosition.stopIndex).toBe(3);
+    expect(terminal.patternPosition.isTerminal).toBe(true);
+    expect(terminal.patternPosition.isOrigin).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -543,8 +604,8 @@ describe('getFullDayTimetableEntries', () => {
 
     const result = await repository.getFullDayTimetableEntries('bus_01', WEEKDAY);
     assertSuccess(result);
-    // tp_bus_i(5) + tp_bus_o(5) + tp_ptr_e(5) + tp_bus_i2(2) = 17
-    expect(result.data).toHaveLength(17);
+    // tp_bus_i(5) + tp_bus_o(5) + tp_ptr_e(5) + tp_bus_i2(2) + tp_bus_c(2) = 19
+    expect(result.data).toHaveLength(19);
     for (let i = 1; i < result.data.length; i++) {
       expect(result.data[i].schedule.departureMinutes).toBeGreaterThanOrEqual(
         result.data[i - 1].schedule.departureMinutes,
@@ -552,7 +613,7 @@ describe('getFullDayTimetableEntries', () => {
     }
     // meta: all entries are boardable (non-terminal, pickupType=0)
     expect(result.meta.isBoardableOnServiceDay).toBe(true);
-    expect(result.meta.totalEntries).toBe(17);
+    expect(result.meta.totalEntries).toBe(19);
   });
 });
 

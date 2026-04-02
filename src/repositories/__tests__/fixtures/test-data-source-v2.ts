@@ -108,8 +108,13 @@ function ttGroup(tp: string, departures: Record<string, number[]>): TimetableGro
  * | tp_bus_o | route_bus      | Oji-eki                  |
  * | tp_ptr_e | route_partner  | (empty headsign)         |
  *
+ * | tp_bus_c | route_bus      | Circular                 |
+ *
  * Multi-pattern test: tp_bus_i2 has the same route+headsign as tp_bus_i
  * but a different stop sequence. This tests cross-pattern entry merging.
+ *
+ * Circular route test: tp_bus_c has bus_01 as both origin and terminal.
+ * Terminal arrivals have pickupType=1 to distinguish from origin departures.
  */
 export function createFixtureV2(): SourceDataV2 {
   const data: DataBundle = {
@@ -267,38 +272,67 @@ export function createFixtureV2(): SourceDataV2 {
           v: 2,
           r: 'route_subway',
           h: 'Nishi-takashimadaira',
-          stops: ['sub_01', 'sub_02', 'sub_03'],
+          dir: 0,
+          stops: [{ id: 'sub_01' }, { id: 'sub_02' }, { id: 'sub_03' }],
         },
-        tp_sub_m: { v: 2, r: 'route_subway', h: 'Meguro', stops: ['sub_03', 'sub_02', 'sub_01'] },
+        tp_sub_m: {
+          v: 2,
+          r: 'route_subway',
+          h: 'Meguro',
+          dir: 1,
+          stops: [{ id: 'sub_03' }, { id: 'sub_02' }, { id: 'sub_01' }],
+        },
         tp_tdn_w: {
           v: 2,
           r: 'route_toden',
           h: 'Waseda',
-          stops: ['tdn_01', 'tdn_02', 'tdn_03', 'tdn_04'],
+          stops: [{ id: 'tdn_01' }, { id: 'tdn_02' }, { id: 'tdn_03' }, { id: 'tdn_04' }],
         },
         tp_tdn_m: {
           v: 2,
           r: 'route_toden',
           h: 'Minowabashi',
-          stops: ['tdn_04', 'tdn_03', 'tdn_02', 'tdn_01'],
+          stops: [{ id: 'tdn_04' }, { id: 'tdn_03' }, { id: 'tdn_02' }, { id: 'tdn_01' }],
         },
         tp_lnr_s: {
           v: 2,
           r: 'route_liner',
           h: 'Minumadai-shinsuikoen',
-          stops: ['tdn_04', 'lnr_01', 'lnr_02'],
+          stops: [{ id: 'tdn_04' }, { id: 'lnr_01' }, { id: 'lnr_02' }],
         },
-        tp_lnr_n: { v: 2, r: 'route_liner', h: 'Nippori', stops: ['lnr_02', 'lnr_01', 'tdn_04'] },
+        tp_lnr_n: {
+          v: 2,
+          r: 'route_liner',
+          h: 'Nippori',
+          stops: [{ id: 'lnr_02' }, { id: 'lnr_01' }, { id: 'tdn_04' }],
+        },
         tp_bus_i: {
           v: 2,
           r: 'route_bus',
           h: 'Ikebukuro-eki',
-          stops: ['bus_03', 'bus_02', 'bus_01', 'sub_02'],
+          stops: [{ id: 'bus_03' }, { id: 'bus_02' }, { id: 'bus_01' }, { id: 'sub_02' }],
         },
-        tp_bus_o: { v: 2, r: 'route_bus', h: 'Oji-eki', stops: ['bus_01', 'bus_02', 'bus_03'] },
-        tp_ptr_e: { v: 2, r: 'route_partner', h: '', stops: ['bus_01'] },
+        tp_bus_o: {
+          v: 2,
+          r: 'route_bus',
+          h: 'Oji-eki',
+          stops: [{ id: 'bus_01' }, { id: 'bus_02' }, { id: 'bus_03' }],
+        },
+        tp_ptr_e: { v: 2, r: 'route_partner', h: '', stops: [{ id: 'bus_01' }] },
         // Re-aggregation test: same route+headsign, different pattern
-        tp_bus_i2: { v: 2, r: 'route_bus', h: 'Ikebukuro-eki', stops: ['bus_03', 'bus_01'] },
+        tp_bus_i2: {
+          v: 2,
+          r: 'route_bus',
+          h: 'Ikebukuro-eki',
+          stops: [{ id: 'bus_03' }, { id: 'bus_01' }],
+        },
+        // Circular route test: origin and terminal are the same stop
+        tp_bus_c: {
+          v: 2,
+          r: 'route_bus',
+          h: 'Circular',
+          stops: [{ id: 'bus_01' }, { id: 'bus_02' }, { id: 'bus_03' }, { id: 'bus_01' }],
+        },
       },
     },
 
@@ -357,14 +391,27 @@ export function createFixtureV2(): SourceDataV2 {
           ttGroup('tp_ptr_e', { svc_weekday: deps(497) }),
           // Re-aggregation: same route+headsign as tp_bus_i, different pattern
           ttGroup('tp_bus_i2', { svc_weekday: [494, 554] }),
+          // Circular route: bus_01 appears at both index 0 (origin) and index 3 (terminal).
+          // Origin departures have pickupType=0, terminal arrivals have pickupType=1.
+          // Times must be >= 600 (10:00) because WEEKDAY fixture starts at 10:00.
+          {
+            v: 2,
+            tp: 'tp_bus_c',
+            d: { svc_weekday: [620, 650] },
+            a: { svc_weekday: [620, 650] },
+            pt: { svc_weekday: [0, 1] },
+            dt: { svc_weekday: [0, 0] },
+          },
         ],
         bus_02: [
           ttGroup('tp_bus_i', { svc_weekday: deps(498) }),
           ttGroup('tp_bus_o', { svc_weekday: deps(508) }),
+          ttGroup('tp_bus_c', { svc_weekday: [525] }),
         ],
         bus_03: [
           ttGroup('tp_bus_i', { svc_weekday: deps(504) }),
           ttGroup('tp_bus_o', { svc_weekday: deps(514) }),
+          ttGroup('tp_bus_c', { svc_weekday: [530] }),
         ],
         // stop_closed: intentionally no timetable
       },
