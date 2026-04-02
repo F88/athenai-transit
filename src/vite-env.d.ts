@@ -12,6 +12,8 @@ interface ImportMetaEnv {
   readonly VITE_INITIAL_LAT_LNG?: string;
   /** Initial map zoom level (e.g. "15"). Overrides the default zoom. */
   readonly VITE_INITIAL_ZOOM_LEVEL?: string;
+  /** Base path for transit data files (e.g. "/data-v3"). Defaults to "/data-v2". */
+  readonly VITE_TRANSIT_DATA_PATH?: string;
 }
 
 interface ImportMeta {

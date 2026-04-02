@@ -22,6 +22,8 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+    env:
+      PIPELINE_TRANSIT_DATA_DIR: ${{ vars.PIPELINE_TRANSIT_DATA_DIR || 'data-v2' }}
 
     steps:
       # ── Setup ──────────────────────────────────────────────
@@ -209,7 +211,7 @@ jobs:
       - name: Detect changes
         id: changes
         run: |
-          git add public/data-v2/ pipeline/workspace/state/
+          git add "public/${PIPELINE_TRANSIT_DATA_DIR}/" pipeline/workspace/state/
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "::notice::No data changes detected."
@@ -241,7 +243,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data-v2/ pipeline/workspace/state/
+          git add "public/${PIPELINE_TRANSIT_DATA_DIR}/" pipeline/workspace/state/
           git commit -m "chore(data): update transit data"
           git push
 
