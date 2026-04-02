@@ -11,6 +11,7 @@
 
 export type LogLevel = 'verbose' | 'debug' | 'info' | 'warn' | 'error';
 
+/** Logger instance bound to a specific tag. */
 export interface Logger {
   verbose: (...args: unknown[]) => void;
   debug: (...args: unknown[]) => void;
@@ -19,6 +20,13 @@ export interface Logger {
   error: (...args: unknown[]) => void;
 }
 
+/**
+ * Logger configuration.
+ *
+ * @property level - Minimum log level to output.
+ * @property enabledTags - Tag filter patterns. `"*"` matches all, `"Stop*"` matches prefixes, `"-App"` excludes a tag.
+ * @property tagLevels - Per-tag log level overrides.
+ */
 export interface LoggerConfig {
   level: LogLevel;
   enabledTags: string[];
@@ -61,10 +69,20 @@ function resolveInitialConfig(): LoggerConfig {
 
 let config: LoggerConfig = resolveInitialConfig();
 
+/**
+ * Update logger configuration. Partial updates are merged with the current config.
+ *
+ * @param partial - Config fields to override.
+ */
 export function configureLogger(partial: Partial<LoggerConfig>): void {
   config = { ...config, ...partial };
 }
 
+/**
+ * Get a readonly snapshot of the current logger configuration.
+ *
+ * @returns Current logger configuration.
+ */
 export function getLoggerConfig(): Readonly<LoggerConfig> {
   return config;
 }
@@ -118,6 +136,7 @@ function shouldLog(level: LogLevel, tag: string): boolean {
     return false;
   }
 
+  // warn/error bypass tag filters so actionable failures are always surfaced.
   if (LOG_LEVEL_ORDER[level] >= LOG_LEVEL_ORDER.warn) {
     return true;
   }
@@ -125,6 +144,12 @@ function shouldLog(level: LogLevel, tag: string): boolean {
   return isTagEnabled(tag, config.enabledTags);
 }
 
+/**
+ * Create a logger instance bound to a specific tag.
+ *
+ * @param tag - Module or component identifier.
+ * @returns Logger with `verbose`, `debug`, `info`, `warn`, and `error` methods.
+ */
 export function createLogger(tag: string): Logger {
   function emit(level: LogLevel, args: unknown[]): void {
     if (!shouldLog(level, tag)) {

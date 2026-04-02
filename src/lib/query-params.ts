@@ -105,6 +105,8 @@ export function cleanupInvalidQueryParams(): void {
     keysToRemove.push('repo');
   }
 
+  // Use raw query extraction here so timezone offsets like `+09:00`
+  // are preserved instead of being decoded as spaces.
   const timeRaw = getRawTimeValue();
   if (timeRaw !== null && parseQueryTime(timeRaw) === null) {
     keysToRemove.push('time');
@@ -134,11 +136,14 @@ export function cleanupInvalidQueryParams(): void {
     return;
   }
 
+  // Rebuild from the raw query string so valid `time=` values keep their
+  // original `+HH:MM` timezone offsets while invalid keys are removed.
   const keysSet = new Set(keysToRemove);
   const rawSearch = window.location.search;
   const pairs = rawSearch
     .slice(1)
     .split('&')
+    .filter(Boolean)
     .filter((pair) => {
       const key = pair.split('=')[0];
       try {

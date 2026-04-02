@@ -357,4 +357,12 @@ describe('cleanupInvalidQueryParams', () => {
       '/?time=2026-03-25T20:55:00+09:00',
     );
   });
+
+  it('drops empty query pairs when rebuilding the cleaned URL', () => {
+    setSearch('?repo=v1&&sources=minkuru');
+
+    cleanupInvalidQueryParams();
+
+    expect(replaceStateSpy).toHaveBeenCalledWith(history.state, '', '/?sources=minkuru');
+  });
 });
