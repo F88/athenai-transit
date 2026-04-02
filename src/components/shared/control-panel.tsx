@@ -24,6 +24,7 @@ interface ControlPanelProps {
  * @param edge - Vertical edge (`"top"` or `"bottom"`). Only `"top"` adds safe-area inset.
  * @param offset - CSS length offset from the edge.
  * @param infoLevel - Current info level; `"verbose"` shows a border around the panel.
+ * @param className - Additional CSS classes to apply to the panel container.
  * @param children - Toggle button elements to render inside the panel.
  */
 export function ControlPanel({

@@ -20,10 +20,15 @@ export function MapControlPanel({ map, infoLevel }: MapControlPanelProps) {
       infoLevel={infoLevel}
       className="right-14!"
     >
-      <MapToggleButton active={canZoomIn} onClick={handleZoomIn} label="拡大">
+      <MapToggleButton active={canZoomIn} onClick={handleZoomIn} label="拡大" disabled={!canZoomIn}>
         +
       </MapToggleButton>
-      <MapToggleButton active={canZoomOut} onClick={handleZoomOut} label="縮小">
+      <MapToggleButton
+        active={canZoomOut}
+        onClick={handleZoomOut}
+        label="縮小"
+        disabled={!canZoomOut}
+      >
         -
       </MapToggleButton>
     </ControlPanel>
