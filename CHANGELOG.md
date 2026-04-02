@@ -9,6 +9,15 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `src/domain/` / `src/utils/` / `src/lib/` の配置基準を `DEVELOPMENT.md` で明確化し、関連モジュールを再配置。
+- route type 関連ロジックを責務別に分割: 表示色を `src/utils/route-type-color.ts`、優先判定を `src/domain/transit/route-type-priority.ts`、地図上の可視判定を `src/domain/map/route-type-visibility.ts` に整理。
+- browser / runtime 依存の helper を `src/lib/` に集約 (`query-params.ts`, `logger.ts`) し、関連テストも移設。
+- settings helper を `list-toggle.ts` と `settings-cycle.ts` に分割し、汎用トグル処理と app 設定の循環ロジックを分離。
+- 地図関連の純粋ロジックを `src/domain/map/` に整理し、double tap / click suppression まわりの補助関数を責務ごとに分割。
+- Vitest 設定を `vite.config.ts` から `vitest.config.ts` に分離し、親 repo 実行時に `.claude/**` 配下を test / coverage 対象から除外。
+
 ## [2026.04.02]
 
 ### Added
