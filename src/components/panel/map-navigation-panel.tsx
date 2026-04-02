@@ -66,7 +66,7 @@ function applyLocateAction(map: L.Map, loc: UserLocation, action: LocateAction):
       logger.debug(
         `handleLocate: center near current location (${action.distanceToLocation.toFixed(1)}m <= ${String(LOCATE_NEAR_THRESHOLD_METERS)}m), zooming in ${String(action.currentZoom)} -> ${String(action.nextZoom)}`,
       );
-      smoothMoveTo(map, [loc.lat, loc.lng], action.nextZoom);
+     changeZoom(map, 1);
       return;
     case 'noop':
       logger.debug(
@@ -83,8 +83,23 @@ function changeZoom(map: L.Map, delta: 1 | -1): void {
     return;
   }
 
-  const center = map.getCenter();
-  smoothMoveTo(map, [center.lat, center.lng], nextZoom);
+  map.setZoom(nextZoom, { animate: true });
+}
+
+function ZoomInButton({ active, onClick }: { active: boolean; onClick: () => void }) {
+  return (
+    <MapToggleButton active={active} onClick={onClick} label="拡大">
+      +
+    </MapToggleButton>
+  );
+}
+
+function ZoomOutButton({ active, onClick }: { active: boolean; onClick: () => void }) {
+  return (
+    <MapToggleButton active={active} onClick={onClick} label="縮小">
+      -
+    </MapToggleButton>
+  );
 }
 
 interface MapNavigationPanelProps {
@@ -163,12 +178,8 @@ export function MapNavigationPanel({
 
   return (
     <ControlPanel side="right" edge="bottom" offset="2rem" infoLevel={infoLevel}>
-      <MapToggleButton active={canZoomIn} onClick={handleZoomIn} label="拡大">
-        +
-      </MapToggleButton>
-      <MapToggleButton active={canZoomOut} onClick={handleZoomOut} label="縮小">
-        -
-      </MapToggleButton>
+      <ZoomInButton active={canZoomIn} onClick={handleZoomIn} />
+      <ZoomOutButton active={canZoomOut} onClick={handleZoomOut} />
       <MapToggleButton active={!locating} onClick={handleLocate} label="現在位置へ移動">
         {locating ? '...' : '🎯'}
       </MapToggleButton>
