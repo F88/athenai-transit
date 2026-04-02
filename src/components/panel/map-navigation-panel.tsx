@@ -8,7 +8,6 @@ import { ControlPanel } from '../shared/control-panel';
 import { MapToggleButton } from '../button/map-toggle-button';
 
 import { pickRandomHome } from '../../config/map-defaults';
-// import { INITIAL_CENTER, INITIAL_ZOOM } from '../../config/map-defaults'; // for future HOME button
 const CURRENT_LOCATION_TARGET_ZOOM = 16;
 const LOCATE_NEAR_THRESHOLD_METERS = 10;
 
@@ -135,10 +134,6 @@ export function MapNavigationPanel({
       >
         {locating ? '.' : '🎯'}
       </MapToggleButton>
-      {/* HOME button hidden — kept for future USER HOME feature */}
-      {/* <MapToggleButton active onClick={handleHome} label="初期位置へ戻る">
-        🏠
-      </MapToggleButton> */}
       <MapToggleButton active onClick={handleRandomJump} label="ランダムな場所へ移動">
         🎲
       </MapToggleButton>
