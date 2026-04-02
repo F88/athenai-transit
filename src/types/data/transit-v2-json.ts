@@ -26,7 +26,7 @@
  *
  * | Section        | Purpose                                            |
  * | -------------- | -------------------------------------------------- |
- * | tripPatterns   | Route + headsign + direction + ordered stop list    |
+ * | tripPatterns   | Route + headsign + direction + ordered per-stop records |
  * | lookup         | Normalized lookup tables (URLs, descriptions, etc.) |
  *
  * ### Bundle structure
@@ -632,7 +632,7 @@ export interface TripPatternGeoJson {
    * This is a rough approximation of actual road distance — it
    * connects stops with straight lines rather than following the
    * actual route. For more accurate distances, use
-   * {@link TripPatternJson.sd} (shape_dist_traveled) when available.
+   * {@link TripPatternJson.stops}[i].sd (shape_dist_traveled) when available.
    */
   pathDist: number;
 
