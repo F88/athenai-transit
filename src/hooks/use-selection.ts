@@ -3,8 +3,8 @@ import type { LatLng, RouteShape } from '../types/app/map';
 import type { RouteType, Stop } from '../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
 
-import type { SelectionInfo } from '../domain/transit/route-selection';
-import { extractRouteIdsForStop } from '../domain/transit/route-selection';
+import type { SelectionInfo } from '../domain/map/selection';
+import { extractRouteIdsForStop } from '../domain/map/selection';
 import { resolveFocusPosition } from '../utils/focus-position';
 import { useStableLatLng } from './use-stable-lat-lng';
 import { createLogger } from '../utils/logger';

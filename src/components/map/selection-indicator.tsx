@@ -1,5 +1,5 @@
 import type { InfoLevel } from '../../types/app/settings';
-import type { SelectionInfo } from '../../domain/transit/route-selection';
+import type { SelectionInfo } from '../../domain/map/selection';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { useInfoLevel } from '../../hooks/use-info-level';
 import { routeTypeEmoji } from '../../domain/transit/route-type-emoji';
