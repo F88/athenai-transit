@@ -34,7 +34,7 @@ import { EdgeMarkersSwitch } from '../marker/edge-markers';
 // import { SelectionIndicator } from './selection-indicator';
 import { Portals } from '../portals';
 import { StopHistory } from '../stop-history';
-// import { MapControlPanel } from '../panel/map-control-panel';
+import { MapControlPanel } from '../panel/map-control-panel';
 
 import { INITIAL_CENTER, INITIAL_ZOOM } from '../../config/map-defaults';
 import { DISTANCE_BANDS } from '../../utils/distance-style';
@@ -500,8 +500,8 @@ export function MapView({
         )}
       </MapContainer>
 
-      {/* Map Control (disabled) */}
-      {/* {mapInstance && <MapControlPanel map={mapInstance} infoLevel={infoLevel} />} */}
+      {/* Map Control (temporarily disabled) */}
+      {mapInstance && <MapControlPanel map={mapInstance} infoLevel={infoLevel} />}
 
       {/* Map Navigation */}
       {mapInstance && (
