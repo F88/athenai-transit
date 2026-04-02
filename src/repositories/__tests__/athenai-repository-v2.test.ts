@@ -615,6 +615,30 @@ describe('getFullDayTimetableEntries', () => {
     expect(result.meta.isBoardableOnServiceDay).toBe(true);
     expect(result.meta.totalEntries).toBe(19);
   });
+
+  it('sets correct patternPosition for circular route in full-day timetable', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getFullDayTimetableEntries('bus_01', WEEKDAY);
+    assertSuccess(result);
+
+    const circularEntries = result.data.filter((e) => e.routeDirection.headsign === 'Circular');
+    expect(circularEntries).toHaveLength(2);
+
+    const origin = circularEntries.find((e) => e.schedule.departureMinutes === 620)!;
+    expect(origin).toBeDefined();
+    expect(origin.patternPosition.stopIndex).toBe(0);
+    expect(origin.patternPosition.isOrigin).toBe(true);
+    expect(origin.patternPosition.isTerminal).toBe(false);
+
+    const terminal = circularEntries.find((e) => e.schedule.departureMinutes === 650)!;
+    expect(terminal).toBeDefined();
+    expect(terminal.patternPosition.stopIndex).toBe(3);
+    expect(terminal.patternPosition.isOrigin).toBe(false);
+    expect(terminal.patternPosition.isTerminal).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
