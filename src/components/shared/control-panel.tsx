@@ -10,6 +10,8 @@ interface ControlPanelProps {
   offset: string;
   /** Current info level. When `"verbose"`, a border is shown around the panel. */
   infoLevel: InfoLevel;
+  /** Additional CSS classes to apply to the panel container. */
+  className?: string;
   children: React.ReactNode;
 }
 
@@ -24,7 +26,14 @@ interface ControlPanelProps {
  * @param infoLevel - Current info level; `"verbose"` shows a border around the panel.
  * @param children - Toggle button elements to render inside the panel.
  */
-export function ControlPanel({ side, edge, offset, infoLevel, children }: ControlPanelProps) {
+export function ControlPanel({
+  side,
+  edge,
+  offset,
+  infoLevel,
+  className,
+  children,
+}: ControlPanelProps) {
   const sideClass = side === 'left' ? 'left-3' : 'right-3';
   const borderClass = infoLevel === 'verbose' ? 'rounded-lg bg-black/30' : '';
   // Only top edge needs safe-area-inset (Dynamic Island / notch).
@@ -33,7 +42,7 @@ export function ControlPanel({ side, edge, offset, infoLevel, children }: Contro
     edge === 'top' ? { top: `calc(${offset} + env(safe-area-inset-top))` } : { bottom: offset };
   return (
     <div
-      className={`pointer-events-none absolute z-1000 flex flex-col gap-1 ${sideClass} ${borderClass} *:pointer-events-auto`}
+      className={`pointer-events-none absolute z-1000 flex flex-col gap-1 ${sideClass} ${borderClass} *:pointer-events-auto ${className ?? ''}`}
       style={positionStyle}
     >
       {children}

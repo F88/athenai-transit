@@ -67,7 +67,13 @@ export function MapControlPanel({ map, infoLevel }: MapControlPanelProps) {
   const canZoomOut = zoom > map.getMinZoom();
 
   return (
-    <ControlPanel side="right" edge="bottom" offset="7.5rem" infoLevel={infoLevel}>
+    <ControlPanel
+      side="right"
+      edge="bottom"
+      offset="2rem"
+      infoLevel={infoLevel}
+      className="right-14!"
+    >
       <ZoomInButton active={canZoomIn} onClick={handleZoomIn} />
       <ZoomOutButton active={canZoomOut} onClick={handleZoomOut} />
     </ControlPanel>
