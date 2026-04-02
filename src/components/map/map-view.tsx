@@ -10,12 +10,7 @@ import { enableDoubleTapZoom } from '../../lib/double-tap-zoom';
 import { smoothMoveTo, toBounds, toCenter } from '../../lib/leaflet-helpers';
 import { StopMarkers } from '../marker/stop-markers';
 import type { UserLocation } from '../../types/app/map';
-import { InfoPanel } from '../panel/info-panel';
-import { MapLayerPanel } from '../panel/map-layer-panel';
-import { MapNavigationPanel } from '../panel/map-navigation-panel';
-import { RenderingPanel } from '../panel/rendering-panel';
-import { StopControlPanel } from '../panel/stop-control-panel';
-import { StopTypeFilterPanel } from '../panel/stop-type-filter-panel';
+import { MapOverlayPanels } from './map-overlay-panels';
 
 import { CLICK_SUPPRESSION_MS, shouldSuppressMapClick } from '../../utils/map-click';
 import { createLogger } from '../../utils/logger';
@@ -32,9 +27,6 @@ import { excludeStopsByIds, filterStopsByType } from '../../domain/transit/stop-
 import { TILE_SOURCES } from '../../config/tile-sources';
 import { EdgeMarkersSwitch } from '../marker/edge-markers';
 // import { SelectionIndicator } from './selection-indicator';
-import { Portals } from '../portals';
-import { StopHistory } from '../stop-history';
-import { MapControlPanel } from '../panel/map-control-panel';
 
 import { INITIAL_CENTER, INITIAL_ZOOM } from '../../config/map-defaults';
 import { DISTANCE_BANDS } from '../../utils/distance-style';
@@ -500,18 +492,33 @@ export function MapView({
         )}
       </MapContainer>
 
-      {/* Map Control (temporarily disabled) */}
-      {mapInstance && <MapControlPanel map={mapInstance} infoLevel={infoLevel} />}
-
-      {/* Map Navigation */}
-      {mapInstance && (
-        <MapNavigationPanel
-          map={mapInstance}
-          infoLevel={infoLevel}
-          onLocated={handleLocated}
-          onDeselectStop={onDeselectStop}
-        />
-      )}
+      <MapOverlayPanels
+        map={mapInstance}
+        tileIndex={tileIndex}
+        visibleRouteShapes={visibleRouteShapes}
+        visibleStopTypes={visibleStopTypes}
+        renderMode={renderMode}
+        perfMode={perfMode}
+        infoLevel={infoLevel}
+        theme={theme}
+        selectedStopId={selectedStopId}
+        stopHistory={stopHistory}
+        anchors={anchors}
+        onCycleTile={onCycleTile}
+        onToggleBusShapes={onToggleBusShapes}
+        onToggleNonBusShapes={onToggleNonBusShapes}
+        onToggleRenderMode={onToggleRenderMode}
+        onTogglePerfMode={onTogglePerfMode}
+        onCycleInfoLevel={onCycleInfoLevel}
+        onToggleDarkMode={onToggleDarkMode}
+        onToggleStopType={onToggleStopType}
+        onSearchClick={onSearchClick}
+        onInfoClick={onInfoClick}
+        onLocated={handleLocated}
+        onDeselectStop={onDeselectStop}
+        onHistorySelect={onHistorySelect}
+        onPortalSelect={onPortalSelect}
+      />
       {mapInstance && (
         <EdgeMarkersSwitch
           map={mapInstance}
@@ -525,50 +532,11 @@ export function MapView({
           onFetchDepartures={onFetchDepartures}
         />
       )}
-      {/* Right top: map layer controls */}
-      <MapLayerPanel
-        tileIndex={tileIndex}
-        visibleRouteShapes={visibleRouteShapes}
-        infoLevel={infoLevel}
-        onCycleTile={onCycleTile}
-        onToggleBusShapes={onToggleBusShapes}
-        onToggleNonBusShapes={onToggleNonBusShapes}
-      />
-      {/* Left: rendering controls */}
-      <RenderingPanel
-        renderMode={renderMode}
-        perfMode={perfMode}
-        infoLevel={infoLevel}
-        theme={theme}
-        onToggleRenderMode={onToggleRenderMode}
-        onTogglePerfMode={onTogglePerfMode}
-        onCycleInfoLevel={onCycleInfoLevel}
-        onToggleDarkMode={onToggleDarkMode}
-      />
-      {/* Right bottom: stop type filters (existing MapToggleButton) */}
-      <StopTypeFilterPanel
-        visibleStopTypes={visibleStopTypes}
-        infoLevel={infoLevel}
-        onToggleStopType={onToggleStopType}
-      />
-
-      <StopControlPanel infoLevel={infoLevel} onSearchClick={onSearchClick} />
-      <InfoPanel infoLevel={infoLevel} onInfoClick={onInfoClick} />
       <SelectionIndicator
         info={selectionInfo}
         infoLevel={infoLevel}
         onStopClick={handleIndicatorClick}
       />
-      {/* Top-center dropdown group: Portals + History */}
-      <div className="pointer-events-none absolute top-[calc(4rem+env(safe-area-inset-top))] left-1/2 z-1001 flex -translate-x-1/2 gap-2 *:pointer-events-auto">
-        <StopHistory
-          history={stopHistory}
-          selectedStopId={selectedStopId}
-          infoLevel={infoLevel}
-          onSelect={onHistorySelect}
-        />
-        <Portals anchors={anchors} infoLevel={infoLevel} onSelect={onPortalSelect} />
-      </div>
     </div>
   );
 }

@@ -1,12 +1,9 @@
-import { useCallback } from 'react';
 import type L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { UserLocation } from '../../types/app/map';
-import { smoothMoveTo } from '../../lib/leaflet-helpers';
 import { ControlPanel } from '../shared/control-panel';
 import { MapToggleButton } from '../button/map-toggle-button';
-import { pickRandomHome } from '../../config/map-defaults';
-import { useMapLocate } from '../../hooks/use-map-locate';
+import { useMapNavigationActions } from '../../hooks/use-map-navigation-actions';
 
 interface MapNavigationPanelProps {
   map: L.Map;
@@ -29,13 +26,11 @@ export function MapNavigationPanel({
   onLocated,
   onDeselectStop,
 }: MapNavigationPanelProps) {
-  const { locating, handleLocate } = useMapLocate(map, onLocated);
-
-  const handleRandomJump = useCallback(() => {
-    onDeselectStop();
-    const { center, zoom } = pickRandomHome();
-    smoothMoveTo(map, center, zoom);
-  }, [map, onDeselectStop]);
+  const { locating, handleLocate, handleRandomJump } = useMapNavigationActions(
+    map,
+    onLocated,
+    onDeselectStop,
+  );
 
   return (
     <ControlPanel side="right" edge="bottom" offset="2rem" infoLevel={infoLevel}>
