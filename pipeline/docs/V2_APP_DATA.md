@@ -106,7 +106,7 @@ interface TripPatternJson {
     dir?: 0 | 1; // direction_id
     stops: {
         id: string; // stop_id (prefixed)
-        sh?: string; // stop_headsign (GTFS stop_times.stop_headsign)
+        sh?: string; // stop_headsign
         sd?: number; // shape_dist_traveled
     }[];
 }
@@ -114,7 +114,7 @@ interface TripPatternJson {
 
 同一の route_id、trip_headsign、direction_id、stop sequence を持つ trip をグループ化したもの。timetable の `tp` フィールドから参照される。
 
-`stops` は per-stop の属性をまとめたオブジェクト配列。各要素の `id`, `sh`, `sd` は同一の GTFS `stop_times` レコードに由来する。以前は `stops: string[]` と `sd?: number[]` を positional alignment で分離していたが、同一データソース由来の情報をまとめて構造的安全性を確保するために統合した。
+`stops` は per-stop の属性をまとめたオブジェクト配列。各要素の `id`, `sh`, `sd` は同一 stop に対する属性である。以前は `stops: string[]` と `sd?: number[]` を positional alignment で分離していたが、同一 stop 由来の情報をまとめて構造的安全性を確保するために統合した。
 
 #### stops[i].sh (stop_headsign)
 
