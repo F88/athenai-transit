@@ -61,6 +61,8 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
   const currentHour = Math.floor(getServiceDayMinutes(time) / 60);
+  const headerContainerRef = useRef<HTMLDivElement | null>(null);
+  const gridContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Filter state for stop timetable (route+headsign toggle).
   // Empty set = show all timetable (no filter active).
@@ -96,9 +98,11 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
   }, [data, allTimetableEntries, activeFilters]);
 
   const headerScroll = useScrollFades(
+    headerContainerRef,
     `${data?.type ?? 'closed'}:${data?.headsign ?? ''}:${filteredTimetableEntries.length}:${infoLevel}`,
   );
   const gridScroll = useScrollFades(
+    gridContainerRef,
     `${data?.type ?? 'closed'}:${filteredTimetableEntries.length}:${infoLevel}:${currentHour}`,
   );
 
@@ -125,7 +129,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
         className="flex max-h-[80dvh] max-w-[90dvw] flex-col gap-0 overflow-hidden border-4 p-0 sm:max-w-[90dvw]"
       >
         <div
-          ref={headerScroll.containerRef}
+          ref={headerContainerRef}
           onScroll={headerScroll.handleScroll}
           className="border-border relative max-h-[40dvh] shrink-0 overflow-y-auto border-b"
         >
@@ -176,7 +180,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
           {headerScroll.showBottom && <ScrollFadeEdge position="bottom" />}
         </div>
         <div
-          ref={gridScroll.containerRef}
+          ref={gridContainerRef}
           onScroll={gridScroll.handleScroll}
           className="relative min-h-0 flex-1 overflow-y-auto"
         >
@@ -204,8 +208,7 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
   );
 }
 
-function useScrollFades(resetKey: string) {
-  const ref = useRef<HTMLDivElement | null>(null);
+function useScrollFades(ref: React.RefObject<HTMLDivElement | null>, resetKey: string) {
   const [fadeState, setFadeState] = useState({ showTop: false, showBottom: false });
 
   const updateFadeState = useCallback(() => {
@@ -220,7 +223,7 @@ function useScrollFades(resetKey: string) {
     setFadeState((prev) =>
       prev.showTop === showTop && prev.showBottom === showBottom ? prev : { showTop, showBottom },
     );
-  }, []);
+  }, [ref]);
 
   useEffect(() => {
     updateFadeState();
@@ -247,10 +250,9 @@ function useScrollFades(resetKey: string) {
       window.removeEventListener('resize', updateFadeState);
       resizeObserver.disconnect();
     };
-  }, [resetKey, updateFadeState]);
+  }, [ref, resetKey, updateFadeState]);
 
   return {
-    containerRef: ref,
     handleScroll: updateFadeState,
     showTop: fadeState.showTop,
     showBottom: fadeState.showBottom,
