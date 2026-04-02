@@ -127,8 +127,13 @@ export function MapNavigationPanel({
 
   return (
     <ControlPanel side="right" edge="bottom" offset="2rem" infoLevel={infoLevel}>
-      <MapToggleButton active={!locating} onClick={handleLocate} label="現在位置へ移動">
-        {locating ? '...' : '🎯'}
+      <MapToggleButton
+        active={!locating}
+        onClick={handleLocate}
+        label="現在位置へ移動"
+        // disabled={locating}
+      >
+        {locating ? '.' : '🎯'}
       </MapToggleButton>
       {/* HOME button hidden — kept for future USER HOME feature */}
       {/* <MapToggleButton active onClick={handleHome} label="初期位置へ戻る">

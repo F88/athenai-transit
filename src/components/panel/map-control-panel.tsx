@@ -18,22 +18,6 @@ function changeZoom(map: L.Map, delta: 1 | -1): void {
   setZoomLevel(map, map.getZoom() + delta);
 }
 
-function ZoomInButton({ active, onClick }: { active: boolean; onClick: () => void }) {
-  return (
-    <MapToggleButton active={active} onClick={onClick} label="拡大">
-      +
-    </MapToggleButton>
-  );
-}
-
-function ZoomOutButton({ active, onClick }: { active: boolean; onClick: () => void }) {
-  return (
-    <MapToggleButton active={active} onClick={onClick} label="縮小">
-      -
-    </MapToggleButton>
-  );
-}
-
 interface MapControlPanelProps {
   map: L.Map;
   infoLevel: InfoLevel;
@@ -74,8 +58,12 @@ export function MapControlPanel({ map, infoLevel }: MapControlPanelProps) {
       infoLevel={infoLevel}
       className="right-14!"
     >
-      <ZoomInButton active={canZoomIn} onClick={handleZoomIn} />
-      <ZoomOutButton active={canZoomOut} onClick={handleZoomOut} />
+      <MapToggleButton active={canZoomIn} onClick={handleZoomIn} label="拡大">
+        +
+      </MapToggleButton>
+      <MapToggleButton active={canZoomOut} onClick={handleZoomOut} label="縮小">
+        -
+      </MapToggleButton>
     </ControlPanel>
   );
 }
