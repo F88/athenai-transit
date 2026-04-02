@@ -486,22 +486,23 @@ describe('extractTripPatternsAndTimetable', () => {
     expect(p.stops[1].sh).toBeUndefined();
   });
 
-  it('preserves empty string sh (distinct from NULL — intentionally no display)', () => {
+  it('preserves empty string sh when DB contains empty string', () => {
+    // In practice the CSV→DB import converts empty fields to NULL,
+    // so empty strings rarely appear. This test verifies the pipeline
+    // does not silently drop them if they do exist in the DB.
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '');
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
-    // Empty string is a valid GTFS value meaning "no destination display".
-    // NULL means "not specified, fall back to trip_headsign".
     expect(tripPatterns['test:p1'].stops[0].sh).toBe('');
   });
 
-  it('creates separate patterns for NULL vs empty string stop_headsign', () => {
-    // NULL = not specified (fall back to trip_headsign)
-    // Empty string = intentionally no display
-    // These must be distinct patterns because they have different meaning.
+  it('creates separate patterns for NULL vs empty string stop_headsign in DB', () => {
+    // NULL and empty string produce different pattern keys.
+    // In practice empty strings do not appear (CSV import normalizes to NULL),
+    // but if they did, they must not be conflated.
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);

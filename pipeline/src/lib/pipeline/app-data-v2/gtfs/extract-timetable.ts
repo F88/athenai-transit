@@ -250,9 +250,9 @@ export function extractTripPatternsAndTimetable(
           id: `${prefix}:${s}`,
         };
         const sh = refTrip.stopHeadsigns[idx];
-        // NULL = stop_headsign not specified (fall back to trip_headsign)
-        // Empty string = intentionally empty (no destination display)
-        // Both are valid GTFS values with distinct meanings.
+        // NULL = stop_headsign not specified → omit sh (consumer falls back to h).
+        // In practice, the CSV→DB import converts empty CSV fields to NULL,
+        // so sh is either a non-empty string or null here.
         if (sh != null) {
           stop.sh = sh;
         }

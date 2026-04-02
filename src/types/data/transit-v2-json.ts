@@ -341,12 +341,8 @@ export interface TripPatternJson {
      * `translations.stop_headsigns[sh]`; otherwise use
      * `translations.headsigns[h]`.
      *
-     * Omitted when the source does not provide `stop_headsign`,
-     * or when the value is NULL in the database.
-     *
-     * An empty string (`""`) is a valid value — it means the source
-     * intentionally specifies no destination display at this stop.
-     * This is distinct from NULL (not specified, fall back to `h`).
+     * Omitted when the source does not provide `stop_headsign`
+     * or when the value is NULL.
      */
     sh?: string;
 
