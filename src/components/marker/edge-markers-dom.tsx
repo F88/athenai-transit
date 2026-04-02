@@ -5,7 +5,9 @@ import type { Agency, Stop } from '../../types/app/transit';
 import type { StopWithContext } from '../../types/app/transit-composed';
 import { truncateLabel } from '../../utils/truncate-label';
 import { formatDistance } from '../../domain/transit/distance';
+import { primaryRouteType } from '../../domain/transit/route-type-priority';
 import { distanceStyle } from '../../utils/distance-style';
+import { routeTypeColor } from '../../utils/route-type-color';
 import { createInfoLevel } from '../../utils/create-info-level';
 import { createLogger } from '../../utils/logger';
 import { StopSummary } from './stop-summary';
@@ -13,8 +15,6 @@ import { StopSummary } from './stop-summary';
 const logger = createLogger('EdgeMarkersDom');
 
 const EDGE_LABEL_MAX_LENGTH = 5;
-
-import { primaryRouteType, routeTypeColor } from '../../domain/transit/route-type-color';
 
 /**
  * Converts a hex color and opacity to an rgba string.
