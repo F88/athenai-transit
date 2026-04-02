@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { InfoLevel } from '../../types/app/settings';
+import { cn } from '../../lib/utils';
 
 interface ControlPanelProps {
   /** Which side of the map to place the panel. */
@@ -41,7 +42,12 @@ export function ControlPanel({
     edge === 'top' ? { top: `calc(${offset} + env(safe-area-inset-top))` } : { bottom: offset };
   return (
     <div
-      className={`pointer-events-none absolute z-1000 flex flex-col gap-1 ${sideClass} ${borderClass} *:pointer-events-auto ${className ?? ''}`}
+      className={cn(
+        'pointer-events-none absolute z-1000 flex flex-col gap-1 *:pointer-events-auto',
+        sideClass,
+        borderClass,
+        className,
+      )}
       style={positionStyle}
     >
       {children}
