@@ -3,11 +3,11 @@ import type { LatLng, RouteShape } from '../types/app/map';
 import type { RouteType, Stop } from '../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
 
+import { resolveFocusPosition } from '../domain/map/focus-position';
 import type { SelectionInfo } from '../domain/map/selection';
 import { extractRouteIdsForStop } from '../domain/map/selection';
-import { resolveFocusPosition } from '../utils/focus-position';
 import { useStableLatLng } from './use-stable-lat-lng';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 
 const logger = createLogger('Selection');
 

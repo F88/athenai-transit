@@ -3,7 +3,7 @@ import type { StopWithContext, StopWithMeta } from '../types/app/transit-compose
 import type { TransitRepository } from '../repositories/transit-repository';
 import { getServiceDay } from '../domain/transit/service-day';
 import { formatDateKey } from '../domain/transit/calendar-utils';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 
 const logger = createLogger('NearbyDepartures');
 

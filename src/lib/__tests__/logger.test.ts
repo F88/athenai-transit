@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { configureLogger, createLogger, getLoggerConfig, type LoggerConfig } from '../logger';
 
-/**
- * Helper to set config and restore it after test.
- */
 function withConfig(partial: Partial<LoggerConfig>, fn: () => void): void {
   const saved = { ...getLoggerConfig() };
   configureLogger(partial);
@@ -189,7 +186,6 @@ describe('createLogger', () => {
       withConfig({ level: 'verbose', enabledTags: ['*'], tagLevels: {} }, () => {
         createLogger('MyTag')[level]('test message');
         const prefix = getSpy().mock.calls[0][0] as string;
-        // Format: [HH:mm:ss.SSS] DEBUG [MyTag]
         const pattern = new RegExp(
           `^\\[\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\] ${level.toUpperCase()} \\[MyTag\\]$`,
         );
@@ -215,7 +211,6 @@ describe('createLogger', () => {
         logger.info('i');
         logger.warn('w');
         logger.error('e');
-        // verbose and debug both map to console.debug
         expect(debugSpy).toHaveBeenCalledTimes(2);
         expect(infoSpy).toHaveBeenCalledTimes(1);
         expect(warnSpy).toHaveBeenCalledTimes(1);
@@ -236,7 +231,6 @@ describe('configureLogger / getLoggerConfig', () => {
     const after = getLoggerConfig();
     expect(after.level).toBe('error');
     expect(after.enabledTags).toEqual(before.enabledTags);
-    // Restore
     configureLogger(before);
   });
 
@@ -247,7 +241,6 @@ describe('configureLogger / getLoggerConfig', () => {
     expect(config.level).toBe('info');
     expect(config.enabledTags).toEqual(['Test']);
     expect(config.tagLevels).toEqual({ X: 'warn' });
-    // Restore
     configureLogger(original);
   });
 });

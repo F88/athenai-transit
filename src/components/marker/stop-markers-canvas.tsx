@@ -5,9 +5,9 @@ import L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
 import type { ContextualTimetableEntry, StopWithContext } from '../../types/app/transit-composed';
+import { primaryRouteType } from '../../domain/transit/route-type-priority';
 import { getRouteTypeColor } from '../../lib/leaflet-helpers';
-import { primaryRouteType } from '../../domain/transit/route-type-color';
-import { createLogger } from '../../utils/logger';
+import { createLogger } from '../../lib/logger';
 
 const logger = createLogger('StopMarkersCanvas');
 import { MARKER_STYLES } from '../../config/marker-styles';

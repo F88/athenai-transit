@@ -13,7 +13,7 @@
  * normally after the benchmark completes.
  */
 
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 import { FetchDataSourceV2 } from '../datasources/fetch-data-source-v2';
 import type { TransitDataSourceV2 } from '../datasources/transit-data-source-v2';
 

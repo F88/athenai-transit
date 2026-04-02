@@ -8,6 +8,7 @@
 - `pipeline/src/lib/`、`pipeline/scripts/` の関数にもテスト必須
 - エッジケースを含め品質を保証するテストとすること
 - テストはタイムゾーンに依存しないこと (相対比較やエポックミリ秒を使用)
+- Vitest の設定は `vitest.config.ts` に置き、`vite.config.ts` は app/build 設定に専念させる
 
 ### Lint / Format
 
@@ -50,7 +51,15 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 - `src/lib/`
   外部ライブラリやブラウザ API に依存する技術的なヘルパーを置く。Leaflet 操作、DOM 操作、adapter 的な処理はこちら。
 - `src/utils/`
-  依存が薄く、ドメイン知識をほとんど持たない軽量な補助関数を置く。
+  依存が薄く、ドメイン知識をほとんど持たない軽量な補助関数を置く。`utils` は domain や lib の代替置き場ではなく、domain と lib の両方から使える純粋ロジックの置き場と考える。
+
+#### 依存方向
+
+- `domain` と `lib` は直接依存させない
+- `lib` から `domain` を import しない
+- `domain` から `lib` を import しない
+- domain と lib の両方から使いたい純粋関数は `src/utils/` に置く
+- `hooks` / `components` は `domain`、`utils`、`lib` を組み合わせてよいが、非 UI ロジックを TSX に戻さない
 
 #### `src/domain/` の分割方針
 
@@ -59,7 +68,14 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 - `src/domain/map/`
   地図画面における選択、route shape 表示、layer 構築、map 向け filter など、地図上の見せ方に関わるルール。
 - 新しいサブディレクトリを作る判断
-  `transit` や `map` に自然に収まらないまとまりが継続的に増えた場合に限る。単発の整理のために増やさないこと。
+  `transit` や `map` に自然に収まらないまとまりが継続的に増えた場合に限る。単発の整理のために増やさないこと。少数ファイルを移すためだけに新しい分類を作らず、まず既存の `transit` / `map` / `utils` / `lib` に収まるかを検討する。
+
+#### mixed-purpose file の扱い
+
+- 配置は「補助的に何を使うか」ではなく「主たる責務は何か」で決める
+- 技術的ヘルパーとアプリ固有の判断が同居している場合、主たる責務が明確ならその責務側に置く
+- 主たる責務が 2 つに割れており、片方が `lib` で片方が `domain` / `utils` に属する場合は分割を優先する
+- `utils` に置いてよいのは、移動先が決めにくいファイルではなく、アプリ固有の判断をほとんど持たない純粋関数だけ
 
 #### 判断ルール
 
@@ -67,15 +83,17 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 - Leaflet や DOM 前提なら `domain` ではなく `lib`
 - 地図画面での表示・選択・可視判定に依存するなら `src/domain/map/`
 - GTFS / timetable / service day の意味に依存するなら `src/domain/transit/`
-- `lib` から `domain` を import しない
+- transit / map のどちらにも自然に収まらない場合でも、まず `domain` か `utils` か `lib` の責務を先に決める
 - `utils` は domain の代替置き場にしない
 
 #### 具体例
 
 - `src/domain/map/`
-  `selection.ts`, `route-shapes.ts`, `map-selection-layers.ts`, `stop-filter.ts`
+  `selection.ts`, `route-shapes.ts`, `map-selection-layers.ts`, `stop-filter.ts`, `focus-position.ts`, `render-mode.ts`
 - `src/domain/transit/`
   `service-day.ts`, `timetable-filter.ts`, `timetable-utils.ts`
+- `src/utils/`
+  `datetime.ts`, `day-of-week.ts`, `kana-normalize.ts`, `truncate-label.ts`
 - `src/lib/`
   `leaflet-helpers.ts`, `map-zoom.ts`, `double-tap-zoom.ts`
 
@@ -84,7 +102,7 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 ### Basic Usage
 
 ```typescript
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 
 const logger = createLogger('GTFS');
 

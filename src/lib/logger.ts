@@ -2,7 +2,6 @@
  * Structured logger with level control and tag filtering.
  *
  * Usage:
- *   import { createLogger } from "../utils/logger";
  *   const logger = createLogger("GTFS");
  *   logger.debug("Loading sources:", prefixes);
  *
@@ -10,7 +9,6 @@
  *   [14:05:23.456] DEBUG [GTFS] Loading sources: ["tobus", "toaran"]
  */
 
-/** Log severity levels in ascending order. */
 export type LogLevel = 'verbose' | 'debug' | 'info' | 'warn' | 'error';
 
 /** Logger instance bound to a specific tag. */
@@ -26,8 +24,8 @@ export interface Logger {
  * Logger configuration.
  *
  * @property level - Minimum log level to output.
- * @property enabledTags - Tag filter patterns. `"*"` matches all, `"Stop*"` for prefix, `"-App"` to exclude.
- * @property tagLevels - Per-tag level overrides (e.g. `{ GTFS: "warn" }`).
+ * @property enabledTags - Tag filter patterns. `"*"` matches all, `"Stop*"` matches prefixes, `"-App"` excludes a tag.
+ * @property tagLevels - Per-tag log level overrides.
  */
 export interface LoggerConfig {
   level: LogLevel;
@@ -56,14 +54,13 @@ function isValidLogLevel(value: unknown): value is LogLevel {
 }
 
 function resolveInitialConfig(): LoggerConfig {
-  // Base from env vars
   const envLevel = import.meta.env.VITE_LOG_LEVEL;
   const envTags = import.meta.env.VITE_LOG_TAGS;
 
   const level: LogLevel = isValidLogLevel(envLevel) ? envLevel : 'warn';
   const enabledTags: string[] =
     typeof envTags === 'string' && envTags.length > 0
-      ? envTags.split(',').map((t) => t.trim())
+      ? envTags.split(',').map((tag) => tag.trim())
       : [];
   const tagLevels: Record<string, LogLevel> = {};
 
@@ -73,9 +70,9 @@ function resolveInitialConfig(): LoggerConfig {
 let config: LoggerConfig = resolveInitialConfig();
 
 /**
- * Update logger configuration. Partial updates are merged with current config.
+ * Update logger configuration. Partial updates are merged with the current config.
  *
- * @param partial - Fields to override.
+ * @param partial - Config fields to override.
  */
 export function configureLogger(partial: Partial<LoggerConfig>): void {
   config = { ...config, ...partial };
@@ -84,7 +81,7 @@ export function configureLogger(partial: Partial<LoggerConfig>): void {
 /**
  * Get a readonly snapshot of the current logger configuration.
  *
- * @returns Current config.
+ * @returns Current logger configuration.
  */
 export function getLoggerConfig(): Readonly<LoggerConfig> {
   return config;
@@ -103,23 +100,17 @@ function formatTimestamp(): string {
   );
 }
 
-/**
- * Check if a tag is enabled by the current tag filter patterns.
- * Evaluation order: negation patterns take priority, then positive match.
- */
 function isTagEnabled(tag: string, patterns: string[]): boolean {
   if (patterns.length === 0) {
     return false;
   }
 
-  // Check negation patterns first
   for (const pattern of patterns) {
     if (pattern.startsWith('-') && pattern.slice(1) === tag) {
       return false;
     }
   }
 
-  // Check positive patterns
   for (const pattern of patterns) {
     if (pattern.startsWith('-')) {
       continue;
@@ -131,10 +122,8 @@ function isTagEnabled(tag: string, patterns: string[]): boolean {
       if (tag.startsWith(pattern.slice(0, -1))) {
         return true;
       }
-    } else {
-      if (pattern === tag) {
-        return true;
-      }
+    } else if (pattern === tag) {
+      return true;
     }
   }
 
@@ -142,14 +131,13 @@ function isTagEnabled(tag: string, patterns: string[]): boolean {
 }
 
 function shouldLog(level: LogLevel, tag: string): boolean {
-  // Resolve effective level: per-tag override > global
   const effectiveLevel = config.tagLevels[tag] ?? config.level;
   if (LOG_LEVEL_ORDER[level] < LOG_LEVEL_ORDER[effectiveLevel]) {
     return false;
   }
 
-  // warn/error bypass tag filter — always output if level is met
-  if (LOG_LEVEL_ORDER[level] >= LOG_LEVEL_ORDER['warn']) {
+  // warn/error bypass tag filters so actionable failures are always surfaced.
+  if (LOG_LEVEL_ORDER[level] >= LOG_LEVEL_ORDER.warn) {
     return true;
   }
 
@@ -159,8 +147,8 @@ function shouldLog(level: LogLevel, tag: string): boolean {
 /**
  * Create a logger instance bound to a specific tag.
  *
- * @param tag - Module/component identifier (e.g. `"GTFS"`, `"App"`).
- * @returns Logger with `verbose`, `debug`, `info`, `warn`, `error` methods.
+ * @param tag - Module or component identifier.
+ * @returns Logger with `verbose`, `debug`, `info`, `warn`, and `error` methods.
  */
 export function createLogger(tag: string): Logger {
   function emit(level: LogLevel, args: unknown[]): void {
@@ -180,7 +168,6 @@ export function createLogger(tag: string): Logger {
   };
 }
 
-// Expose devtools helper in development
 if (import.meta.env.DEV) {
   const devHelper = {
     setLevel(level: LogLevel) {

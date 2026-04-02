@@ -15,7 +15,7 @@
  *   ?diag=repo-bench&repo=v2   → benchmark v2 repo
  */
 
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 import type { TransitRepository } from '../repositories/transit-repository';
 import type { StopWithMeta } from '../types/app/transit-composed';
 import { getServiceDay } from '../domain/transit/service-day';

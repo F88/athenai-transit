@@ -2,9 +2,9 @@ import type { InfoLevel } from '../../types/app/settings';
 import type { SelectionInfo } from '../../domain/map/selection';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { useInfoLevel } from '../../hooks/use-info-level';
-import { routeTypeEmoji } from '../../domain/transit/route-type-emoji';
+import { routeTypeEmoji } from '../../utils/route-type-emoji';
 import { RouteBadge } from '../badge/route-badge';
-import { createLogger } from '../../utils/logger';
+import { createLogger } from '../../lib/logger';
 
 const logger = createLogger('SelectionIndicator');
 

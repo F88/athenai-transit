@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import type { EffectiveRenderMode } from '../../domain/map/render-mode';
 import type { EdgeMarker } from '../../types/app/map';
 import type { InfoLevel } from '../../types/app/settings';
-import type { EffectiveRenderMode } from '../../utils/render-mode';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
 import type { StopWithContext } from '../../types/app/transit-composed';
 import { buildEdgeMarkers } from '../../lib/edge-marker';

@@ -5,8 +5,8 @@ import type { InfoLevel } from '@/types/app/settings';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { katakanaToHiragana } from '@/utils/kana-normalize';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
-import { routeTypesEmoji } from '@/domain/transit/route-type-emoji';
-import { createLogger } from '@/utils/logger';
+import { routeTypesEmoji } from '@/utils/route-type-emoji';
+import { createLogger } from '@/lib/logger';
 import {
   Dialog,
   DialogContent,

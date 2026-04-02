@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { EdgeMarker } from '../../types/app/map';
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, Stop } from '../../types/app/transit';
+import { primaryRouteType } from '../../domain/transit/route-type-priority';
 import { getRouteTypeColor } from '../../lib/leaflet-helpers';
-import { primaryRouteType } from '../../domain/transit/route-type-color';
 import { formatDistance } from '../../domain/transit/distance';
 import { distanceStyle } from '../../utils/distance-style';
 import { StopSummary } from './stop-summary';
-import { createLogger } from '../../utils/logger';
+import { createLogger } from '../../lib/logger';
 
 const logger = createLogger('EdgeMarkersCanvas');
 

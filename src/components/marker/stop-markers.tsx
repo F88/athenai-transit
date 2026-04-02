@@ -1,6 +1,6 @@
 import L from 'leaflet';
+import type { EffectiveRenderMode } from '../../domain/map/render-mode';
 import type { InfoLevel } from '../../types/app/settings';
-import type { EffectiveRenderMode } from '../../utils/render-mode';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
 import type { ContextualTimetableEntry, StopWithContext } from '../../types/app/transit-composed';
 import { StopMarkersDom } from './stop-markers-dom';

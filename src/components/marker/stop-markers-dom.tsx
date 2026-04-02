@@ -3,9 +3,9 @@ import { Marker, Tooltip } from 'react-leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
 import type { ContextualTimetableEntry, StopWithContext } from '../../types/app/transit-composed';
+import { primaryRouteType } from '../../domain/transit/route-type-priority';
 import { createStopIcon } from '../../lib/leaflet-helpers';
-import { primaryRouteType } from '../../domain/transit/route-type-color';
-import { createLogger } from '../../utils/logger';
+import { createLogger } from '../../lib/logger';
 import { MARKER_STYLES } from '../../config/marker-styles';
 import { StopSummary } from './stop-summary';
 

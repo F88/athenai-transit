@@ -3,7 +3,7 @@ import { IdBadge } from '@/components/badge/id-badge';
 import { RouteBadge } from '@/components/badge/route-badge';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { resolveMinPrefixLengths } from '@/utils/resolve-min-prefix-lengths';
-import { routeTypesEmoji } from '@/domain/transit/route-type-emoji';
+import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
 import type { InfoLevel } from '@/types/app/settings';

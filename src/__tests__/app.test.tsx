@@ -32,7 +32,7 @@ vi.mock('../hooks/use-user-settings', () => ({
   useUserSettings: () => ({
     settings: {
       perfMode: 'normal',
-      renderMode: 'dom',
+      renderMode: 'auto',
       tileIndex: 0,
       infoLevel: 'normal',
       visibleStopTypes: [3],
@@ -90,7 +90,7 @@ vi.mock('../hooks/use-anchors', () => ({
   useAnchors: (...args: unknown[]) => mockUseAnchors(...args),
 }));
 
-vi.mock('../utils/query-params', () => ({
+vi.mock('../lib/query-params', () => ({
   getStopParam: () => null,
 }));
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { resolveFocusPosition } from '../focus-position';
-import type { LatLng } from '../../types/app/map';
-import { makeStop } from '../../__tests__/helpers';
+import type { LatLng } from '../../../types/app/map';
+import { makeStop } from '../../../__tests__/helpers';
 
 describe('resolveFocusPosition', () => {
   const radiusStops = [

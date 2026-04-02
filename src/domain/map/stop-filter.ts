@@ -1,6 +1,6 @@
 import type { RouteType } from '../../types/app/transit';
 import type { StopWithMeta } from '../../types/app/transit-composed';
-import { isRouteTypeVisible } from '../transit/route-type-color';
+import { isRouteTypeVisible } from './route-type-visibility';
 
 /** Default GTFS route_types used when a stop has no entry in routeTypeMap. */
 const DEFAULT_ROUTE_TYPES: RouteType[] = [3];

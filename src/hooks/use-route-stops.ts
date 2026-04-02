@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { StopWithMeta } from '../types/app/transit-composed';
 import type { TransitRepository } from '../repositories/transit-repository';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 
 const logger = createLogger('RouteStops');
 

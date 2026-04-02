@@ -5,21 +5,24 @@ import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../../types/app/transit-composed';
-import { MAX_ZOOM } from '../../config/map-defaults';
+import { MAX_ZOOM } from '../../config/map-constants';
 import { enableDoubleTapZoom } from '../../lib/double-tap-zoom';
 import { smoothMoveTo, toBounds, toCenter } from '../../lib/leaflet-helpers';
 import { StopMarkers } from '../marker/stop-markers';
 import type { UserLocation } from '../../types/app/map';
 import { MapOverlayPanels } from './map-overlay-panels';
 
-import { CLICK_SUPPRESSION_MS, shouldSuppressMapClick } from '../../utils/map-click';
-import { createLogger } from '../../utils/logger';
+import {
+  CLICK_SUPPRESSION_MS,
+  shouldSuppressMapClick,
+} from '../../domain/map/map-click-suppression';
+import { createLogger } from '../../lib/logger';
 import type { StopHistoryEntry } from '../../domain/transit/stop-history';
 import type { AnchorEntry } from '../../domain/portal/anchor';
 import type { SelectionInfo } from '../../domain/map/selection';
 import { buildTimetableEntriesMap } from '../../domain/map/selection';
+import { resolveRenderModes } from '../../domain/map/render-mode';
 import { RouteShapePolylines } from './route-shape-polyline';
-import { resolveRenderModes } from '../../utils/render-mode';
 import { TILE_SOURCES } from '../../config/tile-sources';
 import { EdgeMarkersSwitch } from '../marker/edge-markers';
 // import { SelectionIndicator } from './selection-indicator';

@@ -2,7 +2,8 @@ import L from 'leaflet';
 import type { Bounds, LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import { createInfoLevel } from '../utils/create-info-level';
-import { routeTypeLabel } from '../domain/transit/route-type-label';
+import { routeTypeColor } from '../utils/route-type-color';
+import { routeTypeLabel } from '../utils/route-type-label';
 
 /**
  * Escape HTML special characters to prevent XSS when embedding in HTML strings.
@@ -119,18 +120,7 @@ export function createStopIcon(
  * @returns Hex color string.
  */
 export function getRouteTypeColor(routeType: number): string {
-  switch (routeType) {
-    case 0:
-      return '#f57f17'; // tram
-    case 1:
-      return '#7b1fa2'; // subway
-    case 2:
-      return '#1565c0'; // rail
-    case 3:
-      return '#2e7d32'; // bus
-    default:
-      return '#616161'; // unknown
-  }
+  return routeTypeColor(routeType);
 }
 
 /** Threshold in degrees (~50m) below which flyTo is skipped to avoid jitter. */
