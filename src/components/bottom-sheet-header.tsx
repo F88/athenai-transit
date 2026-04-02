@@ -4,7 +4,7 @@ import type { Agency } from '../types/app/transit';
 import type { DepartureViewMeta } from '../types/app/transit-composed';
 import type { NearbyStopsCounts } from './bottom-sheet';
 import { DEPARTURE_VIEWS } from '../domain/transit/departure-views';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 import { routeTypeColor } from '../utils/route-type-color';
 import { routeTypeEmoji } from '../utils/route-type-emoji';
 import { useInfoLevel } from '../hooks/use-info-level';

@@ -14,16 +14,10 @@ import { LocalStorageUserDataRepository } from './repositories/local-storage-use
 import { useRouteStops } from './hooks/use-route-stops';
 import { PERF_PROFILES } from './config/perf-profiles';
 import { TILE_SOURCES } from './config/tile-sources';
-import {
-  toggleInList,
-  toggleGroupInList,
-  nextRenderMode,
-  nextPerfMode,
-  nextTileIndex,
-} from './utils/settings-helpers';
-import { nextInfoLevel } from './utils/next-info-level';
 import { createInfoLevel } from './utils/create-info-level';
-import { createLogger } from './utils/logger';
+import { toggleGroupInList, toggleInList } from './utils/list-toggle';
+import { createLogger } from './lib/logger';
+import { nextInfoLevel, nextPerfMode, nextRenderMode, nextTileIndex } from './utils/settings-cycle';
 import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
 import { formatDateKey } from './domain/transit/calendar-utils';

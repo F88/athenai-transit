@@ -1,6 +1,6 @@
 import type L from 'leaflet';
 import { createDoubleTapDetector } from './double-tap-detector';
-import { createLogger } from '../utils/logger';
+import { createLogger } from './logger';
 import { isDoubleTap, slideToZoom } from '../utils/double-tap';
 
 const logger = createLogger('DoubleTapZoom');

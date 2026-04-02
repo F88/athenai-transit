@@ -1,7 +1,7 @@
 import type L from 'leaflet';
 import type { RouteType, Stop } from '../types/app/transit';
 import type { EdgeMarker } from '../types/app/map';
-import { createLogger } from '../utils/logger';
+import { createLogger } from './logger';
 
 const logger = createLogger('EdgeMarker');
 

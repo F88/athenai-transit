@@ -4,7 +4,7 @@ import type { AnchorEntry } from '../domain/portal/anchor';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypesEmoji } from '../utils/route-type-emoji';
 import { DoorOpen } from 'lucide-react';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select';
 

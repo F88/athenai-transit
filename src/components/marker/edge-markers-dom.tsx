@@ -9,7 +9,7 @@ import { primaryRouteType } from '../../domain/transit/route-type-priority';
 import { distanceStyle } from '../../utils/distance-style';
 import { routeTypeColor } from '../../utils/route-type-color';
 import { createInfoLevel } from '../../utils/create-info-level';
-import { createLogger } from '../../utils/logger';
+import { createLogger } from '../../lib/logger';
 import { StopSummary } from './stop-summary';
 
 const logger = createLogger('EdgeMarkersDom');

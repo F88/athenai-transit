@@ -16,7 +16,7 @@ import {
   CLICK_SUPPRESSION_MS,
   shouldSuppressMapClick,
 } from '../../domain/map/map-click-suppression';
-import { createLogger } from '../../utils/logger';
+import { createLogger } from '../../lib/logger';
 import type { StopHistoryEntry } from '../../domain/transit/stop-history';
 import type { AnchorEntry } from '../../domain/portal/anchor';
 import type { SelectionInfo } from '../../domain/map/selection';

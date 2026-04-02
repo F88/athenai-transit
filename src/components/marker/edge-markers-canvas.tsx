@@ -7,7 +7,7 @@ import { getRouteTypeColor } from '../../lib/leaflet-helpers';
 import { formatDistance } from '../../domain/transit/distance';
 import { distanceStyle } from '../../utils/distance-style';
 import { StopSummary } from './stop-summary';
-import { createLogger } from '../../utils/logger';
+import { createLogger } from '../../lib/logger';
 
 const logger = createLogger('EdgeMarkersCanvas');
 

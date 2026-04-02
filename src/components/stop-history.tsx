@@ -5,7 +5,7 @@ import type { StopHistoryEntry } from '../domain/transit/stop-history';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypesEmoji } from '../utils/route-type-emoji';
 import { History } from 'lucide-react';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select';
 

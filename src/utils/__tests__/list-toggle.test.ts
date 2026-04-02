@@ -1,11 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import {
-  toggleInList,
-  toggleGroupInList,
-  nextRenderMode,
-  nextPerfMode,
-  nextTileIndex,
-} from '../settings-helpers';
+import { describe, expect, it } from 'vitest';
+import { toggleGroupInList, toggleInList } from '../list-toggle';
 
 describe('toggleInList', () => {
   it('adds value when absent', () => {
@@ -33,8 +27,7 @@ describe('toggleInList', () => {
     expect(original).toEqual([0, 1, 2]);
   });
 
-  it('removes only the first-matching value (no duplicates assumed)', () => {
-    // Even with duplicates in input, filter removes all occurrences
+  it('removes all occurrences when duplicates exist', () => {
     expect(toggleInList([1, 1, 2], 1)).toEqual([2]);
   });
 
@@ -73,10 +66,9 @@ describe('toggleGroupInList', () => {
   });
 
   it('does not create duplicates when adding partially present values', () => {
-    // [0, 3] + group [0, 1, 2]: 0 is already present, should not duplicate
     const result = toggleGroupInList([0, 3], [0, 1, 2]);
     const counts = result.reduce(
-      (acc, v) => acc.set(v, (acc.get(v) ?? 0) + 1),
+      (acc, value) => acc.set(value, (acc.get(value) ?? 0) + 1),
       new Map<number, number>(),
     );
     for (const [, count] of counts) {
@@ -94,63 +86,5 @@ describe('toggleGroupInList', () => {
     expect(toggleGroupInList([0, 1], [1])).toEqual([0]);
     const result = toggleGroupInList([0], [1]);
     expect(result).toEqual(expect.arrayContaining([0, 1]));
-  });
-});
-
-describe('nextRenderMode', () => {
-  it('cycles auto → lightweight → standard → auto', () => {
-    expect(nextRenderMode('auto')).toBe('lightweight');
-    expect(nextRenderMode('lightweight')).toBe('standard');
-    expect(nextRenderMode('standard')).toBe('auto');
-  });
-
-  it('full cycle returns to starting mode', () => {
-    const start = 'auto' as const;
-    const result = nextRenderMode(nextRenderMode(nextRenderMode(start)));
-    expect(result).toBe(start);
-  });
-});
-
-describe('nextPerfMode', () => {
-  it('cycles normal → lite → full → normal', () => {
-    expect(nextPerfMode('normal')).toBe('lite');
-    expect(nextPerfMode('lite')).toBe('full');
-    expect(nextPerfMode('full')).toBe('normal');
-  });
-
-  it('full cycle returns to starting mode', () => {
-    const start = 'normal' as const;
-    const result = nextPerfMode(nextPerfMode(nextPerfMode(start)));
-    expect(result).toBe(start);
-  });
-});
-
-describe('nextTileIndex', () => {
-  it('cycles 0 → 1 → 2 → 3 with count=4', () => {
-    expect(nextTileIndex(0, 4)).toBe(1);
-    expect(nextTileIndex(1, 4)).toBe(2);
-    expect(nextTileIndex(2, 4)).toBe(3);
-  });
-
-  it('wraps to null at end', () => {
-    expect(nextTileIndex(3, 4)).toBeNull();
-  });
-
-  it('wraps from null back to 0', () => {
-    expect(nextTileIndex(null, 4)).toBe(0);
-  });
-
-  it('full cycle returns to starting index', () => {
-    let idx: number | null = 0;
-    for (let i = 0; i < 5; i++) {
-      idx = nextTileIndex(idx, 4);
-    }
-    // 0→1→2→3→null→0
-    expect(idx).toBe(0);
-  });
-
-  it('count=1 cycles between 0 and null', () => {
-    expect(nextTileIndex(0, 1)).toBeNull();
-    expect(nextTileIndex(null, 1)).toBe(0);
   });
 });

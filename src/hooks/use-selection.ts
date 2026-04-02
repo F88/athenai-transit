@@ -7,7 +7,7 @@ import { resolveFocusPosition } from '../domain/map/focus-position';
 import type { SelectionInfo } from '../domain/map/selection';
 import { extractRouteIdsForStop } from '../domain/map/selection';
 import { useStableLatLng } from './use-stable-lat-lng';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 
 const logger = createLogger('Selection');
 

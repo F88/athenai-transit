@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { isAnchor, MAX_ANCHOR_SIZE, type AnchorEntry } from '../domain/portal/anchor';
 import type { Result } from '../types/app/repository';
 import type { UserDataRepository } from '../repositories/user-data-repository';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 
 const logger = createLogger('Anchors');
 

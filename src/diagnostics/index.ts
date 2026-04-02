@@ -8,7 +8,7 @@
  */
 
 import { DataSourceManager } from '../config/data-source-manager';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 import type { TransitRepository } from '../repositories/transit-repository';
 
 const logger = createLogger('diagnostics');

@@ -49,7 +49,7 @@ import type { TransitRepository } from './transit-repository';
 import type { TransitDataSourceV2 } from '../datasources/transit-data-source-v2';
 import type { SourceDataV2 } from '../datasources/transit-data-source-v2';
 import { FetchDataSourceV2 } from '../datasources/fetch-data-source-v2';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
 import { selectServiceGroup } from '../domain/transit/select-service-group';
 import {

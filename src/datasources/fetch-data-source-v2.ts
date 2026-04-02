@@ -16,7 +16,7 @@
  * (e.g. Vercel returning 200 + HTML for missing static files).
  */
 
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 import type {
   DataBundle,
   GlobalInsightsBundle,

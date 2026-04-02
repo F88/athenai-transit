@@ -4,7 +4,7 @@ import { getRouteDisplayNames } from '../../domain/transit/get-route-display-nam
 import { useInfoLevel } from '../../hooks/use-info-level';
 import { routeTypeEmoji } from '../../utils/route-type-emoji';
 import { RouteBadge } from '../badge/route-badge';
-import { createLogger } from '../../utils/logger';
+import { createLogger } from '../../lib/logger';
 
 const logger = createLogger('SelectionIndicator');
 

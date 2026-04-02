@@ -1,4 +1,4 @@
-import { createLogger } from '../utils/logger';
+import { createLogger } from './logger';
 import { DOUBLE_TAP_WINDOW_MS, isDoubleTap } from '../utils/double-tap';
 
 const logger = createLogger('DoubleTapDetector');

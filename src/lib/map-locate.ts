@@ -1,7 +1,7 @@
 import type L from 'leaflet';
 import type { UserLocation } from '../types/app/map';
 import { smoothMoveTo } from './leaflet-helpers';
-import { createLogger } from '../utils/logger';
+import { createLogger } from './logger';
 
 const CURRENT_LOCATION_TARGET_ZOOM = 16;
 const LOCATE_NEAR_THRESHOLD_METERS = 10;

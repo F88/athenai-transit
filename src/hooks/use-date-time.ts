@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getTimeParam } from '../lib/query-params';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../lib/logger';
 
 const logger = createLogger('DateTime');
 const NOW_UPDATE_INTERVAL_MS = 15_000;
