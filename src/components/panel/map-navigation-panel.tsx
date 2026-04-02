@@ -14,6 +14,7 @@ interface MapNavigationPanelProps {
   map: L.Map;
   infoLevel: InfoLevel;
   onLocated: (location: UserLocation) => void;
+  onDeselectStop: () => void;
 }
 
 /**
@@ -24,7 +25,12 @@ interface MapNavigationPanelProps {
  * @param infoLevel - Current info level for ControlPanel border display.
  * @param onLocated - Callback fired with the user's geolocation result.
  */
-export function MapNavigationPanel({ map, infoLevel, onLocated }: MapNavigationPanelProps) {
+export function MapNavigationPanel({
+  map,
+  infoLevel,
+  onLocated,
+  onDeselectStop,
+}: MapNavigationPanelProps) {
   const [locating, setLocating] = useState(false);
 
   const handleLocate = useCallback(() => {
@@ -55,9 +61,10 @@ export function MapNavigationPanel({ map, infoLevel, onLocated }: MapNavigationP
   // }, [map]);
 
   const handleRandomJump = useCallback(() => {
+    onDeselectStop();
     const { center, zoom } = pickRandomHome();
     smoothMoveTo(map, center, zoom);
-  }, [map]);
+  }, [map, onDeselectStop]);
 
   return (
     <ControlPanel side="right" edge="bottom" offset="2rem" infoLevel={infoLevel}>

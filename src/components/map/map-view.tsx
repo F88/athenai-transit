@@ -499,7 +499,12 @@ export function MapView({
         )}
       </MapContainer>
       {mapInstance && (
-        <MapNavigationPanel map={mapInstance} infoLevel={infoLevel} onLocated={handleLocated} />
+        <MapNavigationPanel
+          map={mapInstance}
+          infoLevel={infoLevel}
+          onLocated={handleLocated}
+          onDeselectStop={onDeselectStop}
+        />
       )}
       {mapInstance && (
         <EdgeMarkersSwitch
