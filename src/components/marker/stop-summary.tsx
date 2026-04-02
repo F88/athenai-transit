@@ -6,7 +6,7 @@ import { getStopDisplayNames } from '../../domain/transit/get-stop-display-names
 import { minutesToDate } from '../../domain/transit/calendar-utils';
 import { getDisplayMinutes } from '../../domain/transit/timetable-utils';
 import { AgencyBadge } from '../badge/agency-badge';
-import { routeTypesEmoji } from '../../domain/transit/route-type-emoji';
+import { routeTypesEmoji } from '../../utils/route-type-emoji';
 import { IdBadge } from '../badge/id-badge';
 import { RelativeTime } from '../relative-time';
 import { TripInfo } from '../trip-info';

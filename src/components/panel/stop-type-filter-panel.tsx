@@ -1,7 +1,7 @@
 import type { InfoLevel } from '../../types/app/settings';
 import { ControlPanel } from '../shared/control-panel';
 import { MapToggleButton } from '../button/map-toggle-button';
-import { routeTypeEmoji } from '../../domain/transit/route-type-emoji';
+import { routeTypeEmoji } from '../../utils/route-type-emoji';
 
 /** Route types displayed in the filter panel, in display order. */
 const STOP_TYPE_ENTRIES = [

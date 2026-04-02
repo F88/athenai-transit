@@ -1,4 +1,4 @@
-import type { RenderMode } from '../types/app/settings';
+import type { RenderMode } from '../../types/app/settings';
 
 /** Resolved render modes for nearby and far stop layers. */
 export type EffectiveRenderMode = 'standard' | 'lightweight';

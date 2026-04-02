@@ -3,7 +3,7 @@ import type { Agency } from '../types/app/transit';
 import type { RouteDirection } from '../types/app/transit-composed';
 import { cn } from '../lib/utils';
 import { useInfoLevel } from '../hooks/use-info-level';
-import { routeTypeEmoji } from '../domain/transit/route-type-emoji';
+import { routeTypeEmoji } from '../utils/route-type-emoji';
 import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
 import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';

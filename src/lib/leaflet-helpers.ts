@@ -2,7 +2,7 @@ import L from 'leaflet';
 import type { Bounds, LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import { createInfoLevel } from '../utils/create-info-level';
-import { routeTypeLabel } from '../domain/transit/route-type-label';
+import { routeTypeLabel } from '../utils/route-type-label';
 
 /**
  * Escape HTML special characters to prevent XSS when embedding in HTML strings.

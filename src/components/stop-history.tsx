@@ -3,7 +3,7 @@ import type { InfoLevel } from '../types/app/settings';
 import type { Stop } from '../types/app/transit';
 import type { StopHistoryEntry } from '../domain/transit/stop-history';
 import { useInfoLevel } from '../hooks/use-info-level';
-import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
+import { routeTypesEmoji } from '../utils/route-type-emoji';
 import { History } from 'lucide-react';
 import { createLogger } from '../utils/logger';
 import { Badge } from './ui/badge';

@@ -3,6 +3,9 @@
  *
  * 0: tram, 1: subway, 2: rail, 3: bus, 4: ferry,
  * 5: cable tram, 6: gondola, 7: funicular
+ *
+ * @param routeType - GTFS route_type value.
+ * @returns Emoji for the given route type.
  */
 export function routeTypeEmoji(routeType: number): string {
   switch (routeType) {

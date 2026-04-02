@@ -5,7 +5,7 @@ import type { StopWithContext, StopWithMeta } from '../types/app/transit-compose
 import { bearingDeg } from '../domain/transit/distance';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
-import { routeTypesEmoji } from '../domain/transit/route-type-emoji';
+import { routeTypesEmoji } from '../utils/route-type-emoji';
 import { Accessibility } from 'lucide-react';
 import { AgencyBadge } from './badge/agency-badge';
 import { DistanceBadge } from './badge/distance-badge';
