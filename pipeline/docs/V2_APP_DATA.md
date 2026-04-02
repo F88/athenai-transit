@@ -118,9 +118,7 @@ interface TripPatternJson {
 
 #### stops[i].sh (stop_headsign)
 
-GTFS `stop_times.stop_headsign` の値をそのまま格納する。`trip_headsign` (`h`) と同一でも省略しない (Pipeline はデータの忠実な保持に徹する)。NULL の場合は省略。
-
-なお、Pipeline の CSV→DB 変換では GTFS CSV の空フィールドは NULL として格納されるため、実際には `sh` は非空の文字列か省略のいずれかとなる。
+ソースが提供する stop_headsign の値をそのまま格納する。`trip_headsign` (`h`) と同一でも省略しない (Pipeline はデータの忠実な保持に徹する)。値が存在しない場合は省略。
 
 消費側 (WebApp) が effective headsign を決定する想定: `effectiveHeadsign = stops[i].sh ?? h`
 
