@@ -21,6 +21,8 @@ interface StopSummaryProps {
    *  instead of the useInfoLevel hook because this component is also
    *  rendered via renderToStaticMarkup (Canvas mode). */
   infoLevel: InfoLevel;
+  /** Display language for translated names. */
+  lang: string;
 }
 
 /**
@@ -35,6 +37,7 @@ export function StopSummary({
   entries,
   now,
   infoLevel,
+  lang,
 }: StopSummaryProps) {
   const info = createInfoLevel(infoLevel);
   const stopNames = getStopDisplayNames(stop, infoLevel);
@@ -77,6 +80,7 @@ export function StopSummary({
               // infoLevel is forced to 'simple' for TripInfo within StopSummary to avoid redundant info and save space.
               // infoLevel={infoLevel}
               infoLevel={'simple'}
+              lang={lang}
               showRouteTypeIcon={false}
               isTerminal={entry.patternPosition.isTerminal}
               isPickupUnavailable={entry.boarding.pickupType === 1}

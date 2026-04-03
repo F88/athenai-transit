@@ -1,4 +1,5 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
+import { getEffectiveHeadsign } from '../../domain/transit/get-effective-headsign';
 
 interface VerboseTimetableEntryProps {
   /** The timetable entry to dump. */
@@ -31,12 +32,26 @@ export function VerboseTimetableEntry({
         {entry.routeDirection.direction !== undefined && ` dir=${entry.routeDirection.direction}`}
       </span>
       <span className="block">
-        [headsign] &quot;{entry.routeDirection.headsign}&quot;
-        {Object.keys(entry.routeDirection.headsign_names).length > 0
-          ? ` names=${Object.entries(entry.routeDirection.headsign_names)
+        [headsign] effective=&quot;{getEffectiveHeadsign(entry.routeDirection)}&quot; trip=&quot;
+        {entry.routeDirection.tripHeadsign.name}&quot;
+        {entry.routeDirection.stopHeadsign != null &&
+          ` stop="${entry.routeDirection.stopHeadsign.name}"`}
+      </span>
+      <span className="block">
+        [headsign-names] trip=
+        {Object.keys(entry.routeDirection.tripHeadsign.names).length > 0
+          ? Object.entries(entry.routeDirection.tripHeadsign.names)
               .map(([k, v]) => `${k}=${v}`)
-              .join(' ')}`
-          : ' names=(none)'}
+              .join(' ')
+          : '(none)'}
+        {entry.routeDirection.stopHeadsign != null &&
+          ` stop=${
+            Object.keys(entry.routeDirection.stopHeadsign.names).length > 0
+              ? Object.entries(entry.routeDirection.stopHeadsign.names)
+                  .map(([k, v]) => `${k}=${v}`)
+                  .join(' ')
+              : '(none)'
+          }`}
       </span>
       <span className="block">
         [boarding] pt={entry.boarding.pickupType} dt={entry.boarding.dropOffType}

@@ -319,6 +319,27 @@ export function createFixtureV2(): SourceDataV2 {
           stops: [{ id: 'bus_01' }, { id: 'bus_02' }, { id: 'bus_03' }],
         },
         tp_ptr_e: { v: 2, r: 'route_partner', h: '', stops: [{ id: 'bus_01' }] },
+        // stop_headsign test: empty trip_headsign + stop_headsign present (keio-bus pattern)
+        tp_ptr_sh: {
+          v: 2,
+          r: 'route_partner',
+          h: '',
+          stops: [
+            { id: 'bus_01', sh: 'Oji-eki via Park' },
+            { id: 'bus_02', sh: 'Oji-eki' },
+          ],
+        },
+        // stop_headsign test: non-empty trip_headsign + different stop_headsign (kyoto-city-bus pattern)
+        tp_bus_sh: {
+          v: 2,
+          r: 'route_bus',
+          h: 'Oji-eki via All Stops',
+          stops: [
+            { id: 'bus_01', sh: 'Oji-eki via All Stops' },
+            { id: 'bus_02', sh: 'Oji-eki' },
+            { id: 'bus_03' },
+          ],
+        },
         // Re-aggregation test: same route+headsign, different pattern
         tp_bus_i2: {
           v: 2,
@@ -389,6 +410,8 @@ export function createFixtureV2(): SourceDataV2 {
           ttGroup('tp_bus_i', { svc_weekday: deps(492) }),
           ttGroup('tp_bus_o', { svc_weekday: deps(502) }),
           ttGroup('tp_ptr_e', { svc_weekday: deps(497) }),
+          ttGroup('tp_ptr_sh', { svc_weekday: deps(499) }),
+          ttGroup('tp_bus_sh', { svc_weekday: deps(501) }),
           // Re-aggregation: same route+headsign as tp_bus_i, different pattern
           ttGroup('tp_bus_i2', { svc_weekday: [494, 554] }),
           // Circular route: bus_01 appears at both index 0 (origin) and index 3 (terminal).
@@ -407,6 +430,8 @@ export function createFixtureV2(): SourceDataV2 {
           ttGroup('tp_bus_i', { svc_weekday: deps(498) }),
           ttGroup('tp_bus_o', { svc_weekday: deps(508) }),
           ttGroup('tp_bus_c', { svc_weekday: [525] }),
+          ttGroup('tp_ptr_sh', { svc_weekday: deps(503) }),
+          ttGroup('tp_bus_sh', { svc_weekday: deps(505) }),
         ],
         bus_03: [
           ttGroup('tp_bus_i', { svc_weekday: deps(504) }),
@@ -420,8 +445,14 @@ export function createFixtureV2(): SourceDataV2 {
     translations: {
       v: 1,
       data: {
-        headsigns: {},
-        stop_headsigns: {},
+        headsigns: {
+          'Oji-eki via All Stops': { en: 'Oji Station via All Stops' },
+        },
+        stop_headsigns: {
+          'Oji-eki via Park': { en: 'Oji Station via Park' },
+          'Oji-eki': { en: 'Oji Station' },
+          'Oji-eki via All Stops': { en: 'Oji Station via All Stops' },
+        },
         stop_names: {
           sub_01: { ja: '西巣鴨', en: 'Nishi-sugamo' },
           sub_02: { ja: '巣鴨新田', en: 'Sugamo-shinden' },

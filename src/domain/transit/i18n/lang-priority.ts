@@ -61,7 +61,7 @@ function langPrefix(key: string): string {
  * // → ['ja', 'ja-Hrkt', 'en', 'ko', 'origin']
  * ```
  */
-export function sortLangKeysByPriority(keys: string[], preferred: string[]): string[] {
+export function sortLangKeysByPriority(keys: string[], preferred: readonly string[]): string[] {
   const preferredPrefixes = new Set(preferred.map(langPrefix));
 
   function sortKey(key: string): number {

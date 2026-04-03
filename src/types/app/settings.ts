@@ -46,4 +46,6 @@ export interface UserSettings {
    * - `'zoom-in'`  — up = zoom in (Apple Maps style)
    */
   doubleTapDrag: 'zoom-in' | 'zoom-out';
+  /** Display language for translated names (headsigns, stops, etc.). */
+  lang: string;
 }

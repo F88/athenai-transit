@@ -204,6 +204,8 @@ interface MapViewProps {
   renderMode: RenderMode;
   perfMode: PerfMode;
   infoLevel: InfoLevel;
+  /** Display language for translated names. */
+  lang: string;
   time: Date;
   onBoundsChanged: (bounds: Bounds, center: LatLng) => void;
   onStopSelected: (stop: Stop) => void;
@@ -250,6 +252,7 @@ export function MapView({
   renderMode,
   perfMode,
   infoLevel,
+  lang,
   time: now,
   onBoundsChanged,
   onStopSelected,
@@ -410,6 +413,7 @@ export function MapView({
           // showTooltip={false}
           time={now}
           infoLevel={infoLevel}
+          lang={lang}
           renderMode={nearbyRenderMode}
           renderer={canvasRenderer}
           onStopSelected={onStopSelected}
@@ -424,6 +428,7 @@ export function MapView({
           showTooltip={true}
           renderMode={farRenderMode}
           infoLevel={infoLevel}
+          lang={lang}
           renderer={canvasRenderer}
           onStopSelected={onStopSelected}
           incremental={true}
@@ -440,6 +445,7 @@ export function MapView({
             time={now}
             renderMode={nearbyRenderMode}
             infoLevel={infoLevel}
+            lang={lang}
             renderer={canvasRenderer}
             onStopSelected={onStopSelected}
             agenciesMap={agenciesMap}
@@ -483,6 +489,7 @@ export function MapView({
           agenciesMap={agenciesMap}
           now={now}
           infoLevel={infoLevel}
+          lang={lang}
           renderMode={nearbyRenderMode}
           onStopSelected={onStopSelected}
           onFetchDepartures={onFetchDepartures}

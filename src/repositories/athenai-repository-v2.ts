@@ -30,6 +30,7 @@ import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
 import type {
   ContextualTimetableEntry,
+  RouteDirection,
   SourceMeta,
   StopServiceType,
   StopWithMeta,
@@ -288,7 +289,11 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
         route_id: pattern.r,
         headsign: pattern.h,
         direction: pattern.dir,
-        stops: pattern.stops.map((s) => s.id),
+        stops: pattern.stops.map((s) => ({
+          id: s.id,
+          ...(s.sh != null ? { headsign: s.sh } : {}),
+          ...(s.sd != null ? { shapeDistTraveled: s.sd } : {}),
+        })),
       });
     }
   }
@@ -947,12 +952,15 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       const totalStops = pattern.stops.length;
       // For circular routes, the same stop_id appears at both index 0 and last.
       // Pre-compute both indices to resolve per-entry using boarding types.
-      const firstIndex = pattern.stops.indexOf(stopId);
-      const lastIndex = pattern.stops.lastIndexOf(stopId);
+      const firstIndex = pattern.stops.findIndex((s) => s.id === stopId);
+      let lastIndex = -1;
+      for (let k = pattern.stops.length - 1; k >= 0; k--) {
+        if (pattern.stops[k].id === stopId) {
+          lastIndex = k;
+          break;
+        }
+      }
       const isCircularStop = firstIndex !== lastIndex;
-
-      const sourceTranslations = this.headsignTranslations.get(resolved.sourcePrefix);
-      const headsignNames = sourceTranslations?.headsigns[resolved.headsign] ?? {};
 
       // Today's services
       for (const [serviceId, times] of Object.entries(group.d)) {
@@ -988,12 +996,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
             },
-            routeDirection: {
-              route: resolved.route,
-              headsign: resolved.headsign,
-              headsign_names: headsignNames,
-              direction: pattern?.direction,
-            },
+            routeDirection: this.resolveRouteDirection(resolved, pattern, stopIndex),
             boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
@@ -1042,12 +1045,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
             },
-            routeDirection: {
-              route: resolved.route,
-              headsign: resolved.headsign,
-              headsign_names: headsignNames,
-              direction: pattern?.direction,
-            },
+            routeDirection: this.resolveRouteDirection(resolved, pattern, stopIndex),
             boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
@@ -1116,12 +1114,15 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         continue;
       }
       const totalStops = pattern.stops.length;
-      const firstIndex = pattern.stops.indexOf(stopId);
-      const lastIndex = pattern.stops.lastIndexOf(stopId);
+      const firstIndex = pattern.stops.findIndex((s) => s.id === stopId);
+      let lastIndex = -1;
+      for (let k = pattern.stops.length - 1; k >= 0; k--) {
+        if (pattern.stops[k].id === stopId) {
+          lastIndex = k;
+          break;
+        }
+      }
       const isCircularStop = firstIndex !== lastIndex;
-
-      const sourceTranslations = this.headsignTranslations.get(resolved.sourcePrefix);
-      const headsignNames = sourceTranslations?.headsigns[resolved.headsign] ?? {};
 
       for (const [serviceId, times] of Object.entries(group.d)) {
         if (!activeServiceIds.has(serviceId)) {
@@ -1139,12 +1140,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
             },
-            routeDirection: {
-              route: resolved.route,
-              headsign: resolved.headsign,
-              headsign_names: headsignNames,
-              direction: pattern?.direction,
-            },
+            routeDirection: this.resolveRouteDirection(resolved, pattern, stopIndex),
             boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
@@ -1230,8 +1226,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         stops = new Set();
         map.set(pattern.route_id, stops);
       }
-      for (const stopId of pattern.stops) {
-        stops.add(stopId);
+      for (const stop of pattern.stops) {
+        stops.add(stop.id);
       }
     }
     this.routeStopsCache = map;
@@ -1309,6 +1305,37 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   // ---------------------------------------------------------------------------
   // Internal helpers
   // ---------------------------------------------------------------------------
+
+  /**
+   * Build a RouteDirection for a specific stop in a trip pattern.
+   *
+   * Resolves both trip-level and stop-level headsigns with their
+   * translations into {@link TranslatableText} objects. Effective
+   * headsign selection is deferred to the display name resolver.
+   */
+  private resolveRouteDirection(
+    resolved: ResolvedPattern,
+    pattern: TripPattern,
+    stopIndex: number,
+  ): RouteDirection {
+    const stop = pattern.stops[stopIndex];
+    const src = this.headsignTranslations.get(resolved.sourcePrefix);
+    return {
+      route: resolved.route,
+      tripHeadsign: {
+        name: resolved.headsign,
+        names: src?.headsigns[resolved.headsign] ?? {},
+      },
+      stopHeadsign:
+        stop.headsign != null
+          ? {
+              name: stop.headsign,
+              names: src?.stop_headsigns[stop.headsign] ?? {},
+            }
+          : undefined,
+      direction: pattern.direction,
+    };
+  }
 
   private getActiveServiceIds(serviceDate: Date): Set<string> {
     const key = formatDateKey(serviceDate);

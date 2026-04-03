@@ -546,6 +546,7 @@ export default function App() {
           renderMode={settings.renderMode}
           perfMode={settings.perfMode}
           infoLevel={settings.infoLevel}
+          lang={settings.lang}
           time={dateTime}
           onBoundsChanged={handleBoundsChanged}
           onStopSelected={handleSelectStop}
@@ -586,6 +587,7 @@ export default function App() {
         time={dateTime}
         mapCenter={mapCenter}
         infoLevel={settings.infoLevel}
+        lang={settings.lang}
         anchorIds={anchorIds}
         onStopSelected={handleSelectStopById}
         onShowTimetable={(...args) => void handleShowTimetable(...args)}
@@ -604,6 +606,7 @@ export default function App() {
         data={timetableModal}
         time={dateTime}
         infoLevel={settings.infoLevel}
+        lang={settings.lang}
         onClose={() => setTimetableModal(null)}
       />
       <Toaster theme={settings.theme} position="top-center" closeButton richColors expand={false} />

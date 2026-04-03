@@ -1,5 +1,6 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { RouteDirection } from '../../types/app/transit-composed';
+import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { cn } from '../../lib/utils';
 import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
 import { VerboseHeadsign } from '../verbose/verbose-headsign';
@@ -15,6 +16,8 @@ interface HeadsignBadgeProps {
   routeDirection: RouteDirection;
   /** Current info verbosity level. Verbose shows route_id via IdBadge. */
   infoLevel: InfoLevel;
+  /** Display language for translated names. */
+  lang: string;
   /** Maximum characters to display. Truncated text is not suffixed. @default undefined (no limit) */
   maxLength?: number;
   /** Size variant. @default 'default' */
@@ -40,22 +43,23 @@ interface HeadsignBadgeProps {
 export function HeadsignBadge({
   routeDirection,
   infoLevel,
+  lang,
   maxLength,
   size = 'default',
   disableVerbose = false,
   className,
 }: HeadsignBadgeProps) {
   const { route } = routeDirection;
-  const headsignNames = getHeadsignDisplayNames(routeDirection, infoLevel);
+  const headsignNames = getHeadsignDisplayNames(routeDirection, 'stop', lang, DEFAULT_AGENCY_LANG);
 
   const bg = route.route_color ? `#${route.route_color}` : undefined;
   const fg = route.route_text_color ? `#${route.route_text_color}` : undefined;
   const label =
-    maxLength != null && headsignNames.name.length > maxLength
-      ? headsignNames.name.slice(0, maxLength)
-      : headsignNames.name;
+    maxLength != null && headsignNames.resolved.name.length > maxLength
+      ? headsignNames.resolved.name.slice(0, maxLength)
+      : headsignNames.resolved.name;
   // Show full headsign as tooltip when truncated.
-  const title = label !== headsignNames.name ? headsignNames.name : undefined;
+  const title = label !== headsignNames.resolved.name ? headsignNames.resolved.name : undefined;
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;
 
   return (

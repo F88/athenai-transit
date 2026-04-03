@@ -10,6 +10,7 @@
 
 import type { TimetableEntry } from '../../types/app/transit-composed';
 import type { TimetableOmitted } from '../../types/app/repository';
+import { getEffectiveHeadsign } from './get-effective-headsign';
 
 /**
  * Filter and compute omitted stats for a stop timetable.
@@ -53,7 +54,9 @@ export function prepareRouteHeadsignTimetable(
   includeTerminals: boolean,
 ): { entries: TimetableEntry[]; omitted: TimetableOmitted } {
   const routeEntries = allEntries.filter(
-    (e) => e.routeDirection.route.route_id === routeId && e.routeDirection.headsign === headsign,
+    (e) =>
+      e.routeDirection.route.route_id === routeId &&
+      getEffectiveHeadsign(e.routeDirection) === headsign,
   );
   if (includeTerminals) {
     return { entries: routeEntries, omitted: { terminal: 0 } };

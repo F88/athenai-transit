@@ -13,6 +13,8 @@ import type { TimetableOmitted } from '@/types/app/repository';
 import { AgencyBadge } from '@/components/badge/agency-badge';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
+import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
+import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { PillButton } from '@/components/button/pill-button';
@@ -54,10 +56,11 @@ interface TimetableModalProps {
   /** Current time reference for highlighting the active hour row. */
   time: Date;
   infoLevel: InfoLevel;
+  lang: string;
   onClose: () => void;
 }
 
-export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModalProps) {
+export function TimetableModal({ data, time, infoLevel, lang, onClose }: TimetableModalProps) {
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
   const currentHour = Math.floor(getServiceDayMinutes(time) / 60);
@@ -93,7 +96,9 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
       return allTimetableEntries;
     }
     return allTimetableEntries.filter((d) =>
-      activeFilters.has(`${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`),
+      activeFilters.has(
+        `${d.routeDirection.route.route_id}__${getEffectiveHeadsign(d.routeDirection)}`,
+      ),
     );
   }, [data, allTimetableEntries, activeFilters]);
 
@@ -166,12 +171,15 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
                 activeFilters={activeFilters}
                 onToggleFilter={toggleFilter}
                 infoLevel={infoLevel}
+                lang={lang}
               />
             )}
             {((data.type === 'route-headsign' && data.headsign === '') ||
               (data.type === 'stop' &&
                 hasUnknownDestination(
-                  data.timetableEntries.map((d) => ({ headsign: d.routeDirection.headsign })),
+                  data.timetableEntries.map((d) => ({
+                    headsign: getEffectiveHeadsign(d.routeDirection),
+                  })),
                 ))) && (
               <p className="m-0 text-center text-[11px] text-amber-600 dark:text-amber-400">
                 行先が表示されない路線があります
@@ -193,12 +201,14 @@ export function TimetableModal({ data, time, infoLevel, onClose }: TimetableModa
                 info.isVerboseEnabled ||
                 new Set(
                   filteredTimetableEntries.map(
-                    (d) => `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`,
+                    (d) =>
+                      `${d.routeDirection.route.route_id}__${getEffectiveHeadsign(d.routeDirection)}`,
                   ),
                 ).size > 1
               }
               currentHour={currentHour}
               infoLevel={infoLevel}
+              lang={lang}
               omitted={data.omitted}
             />
           </div>
@@ -387,12 +397,14 @@ function TimetableGrid({
   showHeadsign,
   currentHour,
   infoLevel,
+  lang,
   omitted,
 }: {
   timetableEntries: TimetableEntry[];
   showHeadsign: boolean;
   currentHour: number;
   infoLevel: InfoLevel;
+  lang: string;
   omitted: TimetableOmitted;
 }) {
   const scrollRef = useCurrentHourScroll();
@@ -404,7 +416,7 @@ function TimetableGrid({
     () =>
       showHeadsign
         ? resolveMinPrefixLengths(
-            timetableEntries.map((d) => d.routeDirection.headsign),
+            timetableEntries.map((d) => getEffectiveHeadsign(d.routeDirection)),
             2,
           )
         : new Map<string, number>(),
@@ -462,11 +474,14 @@ function TimetableGrid({
             <span className="flex flex-wrap gap-1.5">
               {entries.map((entry, i) => (
                 <TimetableGridEntry
-                  key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}_${i}`}
+                  key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}_${i}`}
                   entry={entry}
                   showHeadsign={showHeadsign}
-                  headsignMaxLength={headsignLengths.get(entry.routeDirection.headsign)}
+                  headsignMaxLength={headsignLengths.get(
+                    getEffectiveHeadsign(entry.routeDirection),
+                  )}
                   infoLevel={infoLevel}
+                  lang={lang}
                   isDisplayTerminal={isDisplayTerminal}
                   isDisplayOrigin={isDisplayOrigin}
                   isDisplayPickupUnavailable={isDisplayPickupUnavailable}
@@ -485,11 +500,14 @@ function TimetableGrid({
               <div className="mt-0.5 flex flex-col gap-0.5">
                 {entries.map((entry, i) => (
                   <TimetableGridEntry
-                    key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}_${i}`}
+                    key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}_${i}`}
                     entry={entry}
                     showHeadsign={showHeadsign}
-                    headsignMaxLength={headsignLengths.get(entry.routeDirection.headsign)}
+                    headsignMaxLength={headsignLengths.get(
+                      getEffectiveHeadsign(entry.routeDirection),
+                    )}
                     infoLevel={infoLevel}
+                    lang={lang}
                     isDisplayTerminal={isDisplayTerminal}
                     isDisplayOrigin={isDisplayOrigin}
                     isDisplayPickupUnavailable={isDisplayPickupUnavailable}
@@ -592,18 +610,20 @@ function StopTimetableFilter({
   data,
   activeFilters,
   onToggleFilter,
-  infoLevel,
+  infoLevel: _infoLevel,
+  lang,
 }: {
   data: TimetableData;
   activeFilters: Set<string>;
   onToggleFilter: (key: string) => void;
   infoLevel: InfoLevel;
+  lang: string;
 }) {
   // Count entries per route+headsign (memoized for filter toggle re-renders)
   const routeHeadsigns = useMemo(() => {
     const counts = new Map<string, { routeDirection: RouteDirection; count: number }>();
     for (const d of data.timetableEntries) {
-      const key = `${d.routeDirection.route.route_id}__${d.routeDirection.headsign}`;
+      const key = `${d.routeDirection.route.route_id}__${getEffectiveHeadsign(d.routeDirection)}`;
       const entry = counts.get(key);
       if (entry) {
         entry.count++;
@@ -627,7 +647,7 @@ function StopTimetableFilter({
     <div className="flex flex-wrap gap-1">
       {routeHeadsigns.map((r) => {
         const { route } = r.routeDirection;
-        const key = `${route.route_id}__${r.routeDirection.headsign}`;
+        const key = `${route.route_id}__${getEffectiveHeadsign(r.routeDirection)}`;
         const isActive = noFilter || activeFilters.has(key);
         const bg = route.route_color ? `#${route.route_color}` : undefined;
         const fg = route.route_text_color ? `#${route.route_text_color}` : undefined;
@@ -643,7 +663,8 @@ function StopTimetableFilter({
             count={r.count}
           >
             {/* Filter button has no RouteBadge — fall back to route name so it is never blank. */}
-            {getHeadsignDisplayNames(r.routeDirection, infoLevel).name ||
+            {getHeadsignDisplayNames(r.routeDirection, 'stop', lang, DEFAULT_AGENCY_LANG).resolved
+              .name ||
               route.route_short_name ||
               route.route_long_name ||
               route.route_id}

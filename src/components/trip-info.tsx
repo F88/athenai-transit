@@ -1,6 +1,7 @@
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { RouteDirection } from '../types/app/transit-composed';
+import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
 import { cn } from '../lib/utils';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypeEmoji } from '../utils/route-type-emoji';
@@ -31,6 +32,8 @@ interface TripInfoProps {
   routeDirection: RouteDirection;
   /** Current info verbosity level. */
   infoLevel: InfoLevel;
+  /** Display language for translated names. */
+  lang: string;
   /** Whether to show the route type emoji icon. */
   showRouteTypeIcon?: boolean;
   /** Agency operating this trip. Shown at detailed+ info level. */
@@ -55,6 +58,7 @@ interface TripInfoProps {
 export function TripInfo({
   routeDirection,
   infoLevel,
+  lang,
   showRouteTypeIcon = false,
   agency,
   isTerminal = false,
@@ -64,7 +68,7 @@ export function TripInfo({
 }: TripInfoProps) {
   const { route } = routeDirection;
   const info = useInfoLevel(infoLevel);
-  const headsignNames = getHeadsignDisplayNames(routeDirection, infoLevel);
+  const headsignNames = getHeadsignDisplayNames(routeDirection, 'stop', lang, DEFAULT_AGENCY_LANG);
   const v = sizeVariants[size];
 
   return (
@@ -83,7 +87,7 @@ export function TripInfo({
       )}
       {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
       <span className="inline-flex min-w-0 flex-col">
-        {headsignNames.subNames.length > 0 && (
+        {headsignNames.resolved.subNames.length > 0 && (
           <span
             className={cn(
               v.headsignSub,
@@ -91,7 +95,7 @@ export function TripInfo({
               ellipsisHeadsign && 'truncate',
             )}
           >
-            {headsignNames.subNames.join(' / ')}
+            {headsignNames.resolved.subNames.join(' / ')}
           </span>
         )}
         <span
@@ -101,7 +105,7 @@ export function TripInfo({
             ellipsisHeadsign && 'truncate',
           )}
         >
-          {headsignNames.name}
+          {headsignNames.resolved.name}
         </span>
       </span>
       {isTerminal && (

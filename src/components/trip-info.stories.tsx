@@ -46,32 +46,64 @@ const longAgency: Agency = {
 
 const shortRd: RouteDirection = {
   route: baseRoute,
-  headsign: '中野駅',
-  headsign_names: {},
+  tripHeadsign: { name: '中野駅', names: {} },
 };
 
 const shortRdWithNames: RouteDirection = {
   route: baseRoute,
-  headsign: '新橋駅前',
-  headsign_names: { ja: '新橋駅前', 'ja-Hrkt': 'しんばしえきまえ', en: 'Shimbashi Sta.' },
+  tripHeadsign: {
+    name: '新橋駅前',
+    names: { ja: '新橋駅前', 'ja-Hrkt': 'しんばしえきまえ', en: 'Shimbashi Sta.' },
+  },
 };
 
 const longRd: RouteDirection = {
   route: longRoute,
-  headsign: '三ノ輪橋',
-  headsign_names: { 'ja-Hrkt': 'みのわばし', en: 'Minowabashi' },
+  tripHeadsign: {
+    name: '三ノ輪橋',
+    names: { 'ja-Hrkt': 'みのわばし', en: 'Minowabashi' },
+  },
 };
 
 const longRdKyoto: RouteDirection = {
   route: longRoute,
-  headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
-  headsign_names: {
-    ja: '北大路バスターミナル・下鴨神社・出町柳駅',
-    'ja-Hrkt': 'きたおおじバスターミナル・しもがもじんじゃ・でまちやなぎえき',
-    en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
-    ko: '기타오지 버스 터미널・시모가모 신사・데마치야나기역',
-    'zh-Hans': '北大路公交总站・下鸭神社・出町柳站',
-    'zh-Hant': '北大路公交總站・下鴨神社・出町柳站',
+  tripHeadsign: {
+    name: '北大路バスターミナル・下鴨神社・出町柳駅',
+    names: {
+      ja: '北大路バスターミナル・下鴨神社・出町柳駅',
+      'ja-Hrkt': 'きたおおじバスターミナル・しもがもじんじゃ・でまちやなぎえき',
+      en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+      ko: '기타오지 버스 터미널・시모가모 신사・데마치야나기역',
+      'zh-Hans': '北大路公交总站・下鸭神社・出町柳站',
+      'zh-Hant': '北大路公交總站・下鴨神社・出町柳站',
+    },
+  },
+};
+
+/** trip empty + stop present (keio-bus pattern). */
+const tripEmptyStopRd: RouteDirection = {
+  route: baseRoute,
+  tripHeadsign: { name: '', names: {} },
+  stopHeadsign: { name: '武蔵小金井駅南口', names: {} },
+};
+
+/** stop overrides trip — mid-trip headsign changes to shorter destination. */
+const stopOverridesTripRd: RouteDirection = {
+  route: longRoute,
+  tripHeadsign: {
+    name: '北大路バスターミナル・下鴨神社・出町柳駅',
+    names: {
+      ja: '北大路バスターミナル・下鴨神社・出町柳駅',
+      en: 'Demachiyanagi Sta. via Kitaoji BT and Shimogamo-jinja',
+    },
+  },
+  stopHeadsign: {
+    name: '出町柳駅',
+    names: {
+      ja: '出町柳駅',
+      'ja-Hrkt': 'でまちやなぎえき',
+      en: 'Demachiyanagi Sta.',
+    },
   },
 };
 
@@ -81,6 +113,7 @@ const meta = {
   args: {
     routeDirection: shortRd,
     infoLevel: 'normal',
+    lang: 'ja',
     showRouteTypeIcon: true,
     agency,
   },
@@ -127,7 +160,22 @@ export const PickupUnavailable: Story = {
 };
 
 export const EmptyHeadsign: Story = {
-  args: { routeDirection: { ...shortRd, headsign: '' } },
+  args: { routeDirection: { ...shortRd, tripHeadsign: { name: '', names: {} } } },
+};
+
+/** trip empty + stop present — effective shows stop_headsign. */
+export const TripEmptyStopPresent: Story = {
+  args: { routeDirection: tripEmptyStopRd },
+};
+
+/** stop overrides trip — subNames should include trip_headsign as context. */
+export const StopOverridesTrip: Story = {
+  args: { routeDirection: stopOverridesTripRd, agency: longAgency },
+};
+
+/** stop overrides trip — verbose shows both headsign data. */
+export const StopOverridesTripVerbose: Story = {
+  args: { routeDirection: stopOverridesTripRd, agency: longAgency, infoLevel: 'verbose' },
 };
 
 // --- All elements (short data) ---

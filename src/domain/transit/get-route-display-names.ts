@@ -12,7 +12,6 @@ export interface RouteDisplayNames {
   /**
    * Alternative names (translations) to show below the primary name.
    * Empty array when infoLevel is below "normal" or no alternatives exist.
-   * Semantically equivalent to {@link StopDisplayNames.subNames}.
    *
    * Currently always empty — will be populated when `route_names`
    * (translations.txt) is added to the {@link Route} type.

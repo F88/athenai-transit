@@ -13,6 +13,7 @@ interface BottomSheetStopsProps {
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
+  lang: string;
   viewId: string;
   contentRef: RefObject<HTMLDivElement | null>;
   /** Set of stop IDs currently in the anchor list. */
@@ -30,6 +31,7 @@ export function BottomSheetStops({
   now,
   mapCenter,
   infoLevel,
+  lang,
   viewId,
   contentRef,
   anchorIds,
@@ -50,6 +52,7 @@ export function BottomSheetStops({
           now,
           mapCenter,
           infoLevel,
+          lang,
           viewId,
           isAnchor: anchorIds.has(swc.stop.stop_id),
           onStopSelected,

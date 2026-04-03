@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { AthenaiRepositoryV2, mergeSourcesV2 } from '../athenai-repository-v2';
+import { getEffectiveHeadsign } from '../../domain/transit/get-effective-headsign';
 import {
   TestDataSourceV2,
   createFixtureV2,
@@ -77,7 +78,7 @@ describe('mergeSourcesV2', () => {
     const fixture = createFixtureV2();
     const merged = mergeSourcesV2([fixture]);
     // 10 original patterns + 1 circular (tp_bus_c)
-    expect(merged.resolvedPatterns.size).toBe(11);
+    expect(merged.resolvedPatterns.size).toBe(13);
     const subN = merged.resolvedPatterns.get('tp_sub_n');
     expect(subN).toBeDefined();
     expect(subN!.route.route_id).toBe('route_subway');
@@ -140,7 +141,7 @@ describe('mergeSourcesV2', () => {
     expect(tdn01!.platform_code).toBeUndefined();
   });
 
-  it('converts TripPatternJson to app-internal TripPattern with string[] stops', () => {
+  it('converts TripPatternJson to app-internal TripPattern with object array stops', () => {
     const fixture = createFixtureV2();
     const merged = mergeSourcesV2([fixture]);
 
@@ -149,8 +150,8 @@ describe('mergeSourcesV2', () => {
     expect(pattern).toBeDefined();
     expect(pattern!.route_id).toBe('route_subway');
     expect(pattern!.headsign).toBe('Nishi-takashimadaira');
-    // stops must be plain string[] (extracted from {id}[] JSON format)
-    expect(pattern!.stops).toEqual(['sub_01', 'sub_02', 'sub_03']);
+    // stops must be object array with id (and optional headsign/shapeDistTraveled)
+    expect(pattern!.stops).toEqual([{ id: 'sub_01' }, { id: 'sub_02' }, { id: 'sub_03' }]);
 
     // direction=0 must be preserved (not dropped by falsy check)
     expect(pattern!.direction).toBe(0);
@@ -169,7 +170,29 @@ describe('mergeSourcesV2', () => {
     const emptyH = merged.tripPatterns.get('tp_ptr_e');
     expect(emptyH).toBeDefined();
     expect(emptyH!.headsign).toBe('');
-    expect(emptyH!.stops).toEqual(['bus_01']);
+    expect(emptyH!.stops).toEqual([{ id: 'bus_01' }]);
+  });
+
+  it('preserves stop_headsign (sh) in TripPattern.stops', () => {
+    const merged = mergeSourcesV2([createFixtureV2()]);
+    const pattern = merged.tripPatterns.get('tp_ptr_sh');
+    expect(pattern).toBeDefined();
+    expect(pattern!.headsign).toBe('');
+    expect(pattern!.stops).toEqual([
+      { id: 'bus_01', headsign: 'Oji-eki via Park' },
+      { id: 'bus_02', headsign: 'Oji-eki' },
+    ]);
+  });
+
+  it('preserves stop_headsign alongside non-empty trip_headsign', () => {
+    const merged = mergeSourcesV2([createFixtureV2()]);
+    const pattern = merged.tripPatterns.get('tp_bus_sh');
+    expect(pattern).toBeDefined();
+    expect(pattern!.headsign).toBe('Oji-eki via All Stops');
+    expect(pattern!.stops[0]).toEqual({ id: 'bus_01', headsign: 'Oji-eki via All Stops' });
+    expect(pattern!.stops[1]).toEqual({ id: 'bus_02', headsign: 'Oji-eki' });
+    // bus_03 has no stop_headsign
+    expect(pattern!.stops[2]).toEqual({ id: 'bus_03' });
   });
 });
 
@@ -364,7 +387,7 @@ describe('getUpcomingTimetableEntries', () => {
     const ikebukuroEntries = result.data.filter(
       (e) =>
         e.routeDirection.route.route_id === 'route_bus' &&
-        e.routeDirection.headsign === 'Ikebukuro-eki',
+        getEffectiveHeadsign(e.routeDirection) === 'Ikebukuro-eki',
     );
     expect(ikebukuroEntries).toHaveLength(3);
   });
@@ -548,7 +571,9 @@ describe('getUpcomingTimetableEntries', () => {
     const result = await repository.getUpcomingTimetableEntries('bus_01', WEEKDAY);
     assertSuccess(result);
 
-    const circularEntries = result.data.filter((e) => e.routeDirection.headsign === 'Circular');
+    const circularEntries = result.data.filter(
+      (e) => getEffectiveHeadsign(e.routeDirection) === 'Circular',
+    );
     expect(circularEntries).toHaveLength(2);
 
     // Origin departure (pickupType=0, stopIndex=0)
@@ -564,6 +589,57 @@ describe('getUpcomingTimetableEntries', () => {
     expect(terminal.patternPosition.stopIndex).toBe(3);
     expect(terminal.patternPosition.isTerminal).toBe(true);
     expect(terminal.patternPosition.isOrigin).toBe(false);
+  });
+
+  it('resolves stop_headsign into RouteDirection (keio-bus: h="" + sh)', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getUpcomingTimetableEntries('bus_01', WEEKDAY);
+    assertSuccess(result);
+
+    // tp_ptr_sh: empty trip_headsign, stop_headsign = 'Oji-eki via Park' at bus_01
+    const shEntries = result.data.filter(
+      (e) => getEffectiveHeadsign(e.routeDirection) === 'Oji-eki via Park',
+    );
+    expect(shEntries.length).toBeGreaterThan(0);
+
+    const entry = shEntries[0];
+    expect(entry.routeDirection.tripHeadsign.name).toBe('');
+    expect(entry.routeDirection.stopHeadsign).toBeDefined();
+    expect(entry.routeDirection.stopHeadsign!.name).toBe('Oji-eki via Park');
+    // stop_headsigns translation should be resolved
+    expect(entry.routeDirection.stopHeadsign!.names).toEqual({ en: 'Oji Station via Park' });
+  });
+
+  it('resolves mid-trip stop_headsign change (kyoto-city-bus pattern)', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // bus_01: tp_bus_sh has sh='Oji-eki via All Stops'
+    const result1 = await repository.getUpcomingTimetableEntries('bus_01', WEEKDAY);
+    assertSuccess(result1);
+    const bus01Entries = result1.data.filter(
+      (e) => getEffectiveHeadsign(e.routeDirection) === 'Oji-eki via All Stops',
+    );
+    expect(bus01Entries.length).toBeGreaterThan(0);
+    expect(bus01Entries[0].routeDirection.stopHeadsign!.name).toBe('Oji-eki via All Stops');
+    expect(bus01Entries[0].routeDirection.tripHeadsign.name).toBe('Oji-eki via All Stops');
+
+    // bus_02: tp_bus_sh has sh='Oji-eki' (different from trip_headsign 'Oji-eki via All Stops')
+    const result2 = await repository.getUpcomingTimetableEntries('bus_02', WEEKDAY);
+    assertSuccess(result2);
+    // Find entries from tp_bus_sh: stopHeadsign present AND tripHeadsign = 'Oji-eki via All Stops'
+    const shEntry = result2.data.find(
+      (e) =>
+        e.routeDirection.stopHeadsign != null &&
+        e.routeDirection.tripHeadsign.name === 'Oji-eki via All Stops',
+    );
+    expect(shEntry).toBeDefined();
+    expect(shEntry!.routeDirection.stopHeadsign!.name).toBe('Oji-eki');
+    expect(getEffectiveHeadsign(shEntry!.routeDirection)).toBe('Oji-eki');
   });
 });
 
@@ -604,8 +680,8 @@ describe('getFullDayTimetableEntries', () => {
 
     const result = await repository.getFullDayTimetableEntries('bus_01', WEEKDAY);
     assertSuccess(result);
-    // tp_bus_i(5) + tp_bus_o(5) + tp_ptr_e(5) + tp_bus_i2(2) + tp_bus_c(2) = 19
-    expect(result.data).toHaveLength(19);
+    // tp_bus_i(5) + tp_bus_o(5) + tp_ptr_e(5) + tp_ptr_sh(5) + tp_bus_sh(5) + tp_bus_i2(2) + tp_bus_c(2) = 29
+    expect(result.data).toHaveLength(29);
     for (let i = 1; i < result.data.length; i++) {
       expect(result.data[i].schedule.departureMinutes).toBeGreaterThanOrEqual(
         result.data[i - 1].schedule.departureMinutes,
@@ -613,7 +689,7 @@ describe('getFullDayTimetableEntries', () => {
     }
     // meta: all entries are boardable (non-terminal, pickupType=0)
     expect(result.meta.isBoardableOnServiceDay).toBe(true);
-    expect(result.meta.totalEntries).toBe(19);
+    expect(result.meta.totalEntries).toBe(29);
   });
 
   it('sets correct patternPosition for circular route in full-day timetable', async () => {
@@ -624,7 +700,9 @@ describe('getFullDayTimetableEntries', () => {
     const result = await repository.getFullDayTimetableEntries('bus_01', WEEKDAY);
     assertSuccess(result);
 
-    const circularEntries = result.data.filter((e) => e.routeDirection.headsign === 'Circular');
+    const circularEntries = result.data.filter(
+      (e) => getEffectiveHeadsign(e.routeDirection) === 'Circular',
+    );
     expect(circularEntries).toHaveLength(2);
 
     const origin = circularEntries.find((e) => e.schedule.departureMinutes === 620)!;

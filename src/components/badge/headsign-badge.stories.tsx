@@ -6,8 +6,7 @@ import { HeadsignBadge } from './headsign-badge';
 /** Default routeDirection fixture for stories. */
 const defaultRouteDirection: RouteDirection = {
   route: busRoute,
-  headsign: '大塚駅前',
-  headsign_names: {},
+  tripHeadsign: { name: '大塚駅前', names: {} },
 };
 
 const meta = {
@@ -16,6 +15,7 @@ const meta = {
   args: {
     routeDirection: defaultRouteDirection,
     infoLevel: 'normal',
+    lang: 'ja',
     size: 'default',
   },
   argTypes: {
@@ -45,19 +45,22 @@ export const SizeXs: Story = {
 
 /** Short headsign. */
 export const Short: Story = {
-  args: { routeDirection: { ...defaultRouteDirection, headsign: '新宿' } },
+  args: { routeDirection: { ...defaultRouteDirection, tripHeadsign: { name: '新宿', names: {} } } },
 };
 
 /** Long headsign. */
 export const Long: Story = {
   args: {
-    routeDirection: { ...defaultRouteDirection, headsign: '東京都立産業技術研究センター前' },
+    routeDirection: {
+      ...defaultRouteDirection,
+      tripHeadsign: { name: '東京都立産業技術研究センター前', names: {} },
+    },
   },
 };
 
 /** Empty headsign — caller should handle fallback. */
 export const Empty: Story = {
-  args: { routeDirection: { ...defaultRouteDirection, headsign: '' } },
+  args: { routeDirection: { ...defaultRouteDirection, tripHeadsign: { name: '', names: {} } } },
 };
 
 // --- Truncation ---
@@ -65,7 +68,10 @@ export const Empty: Story = {
 /** Truncated to 5 characters. */
 export const Truncated: Story = {
   args: {
-    routeDirection: { ...defaultRouteDirection, headsign: '東京都立産業技術研究センター前' },
+    routeDirection: {
+      ...defaultRouteDirection,
+      tripHeadsign: { name: '東京都立産業技術研究センター前', names: {} },
+    },
     maxLength: 5,
   },
 };
@@ -118,7 +124,10 @@ export const Verbose: Story = {
 /** Verbose with truncation — shows truncation info in dump. */
 export const VerboseTruncated: Story = {
   args: {
-    routeDirection: { ...defaultRouteDirection, headsign: '東京都立産業技術研究センター前' },
+    routeDirection: {
+      ...defaultRouteDirection,
+      tripHeadsign: { name: '東京都立産業技術研究センター前', names: {} },
+    },
     maxLength: 5,
     infoLevel: 'verbose',
   },
@@ -129,14 +138,61 @@ export const WithTranslations: Story = {
   args: {
     routeDirection: {
       ...defaultRouteDirection,
-      headsign: '新橋駅前',
-      headsign_names: {
-        ja: '新橋駅前',
-        'ja-Hrkt': 'しんばしえきまえ',
-        en: 'Shimbashi Sta.',
+      tripHeadsign: {
+        name: '新橋駅前',
+        names: {
+          ja: '新橋駅前',
+          'ja-Hrkt': 'しんばしえきまえ',
+          en: 'Shimbashi Sta.',
+        },
       },
     },
     infoLevel: 'verbose',
+  },
+};
+
+// --- stop_headsign variants ---
+
+/**
+ * trip_headsign empty + stop_headsign present.
+ * Effective headsign = stop_headsign ("武蔵小金井駅南口").
+ */
+export const TripEmptyStopPresent: Story = {
+  args: {
+    routeDirection: {
+      route: busRoute,
+      tripHeadsign: { name: '', names: {} },
+      stopHeadsign: { name: '武蔵小金井駅南口', names: {} },
+    },
+  },
+};
+
+/**
+ * trip_headsign and stop_headsign both present but different.
+ * Effective headsign = stop_headsign ("出町柳駅").
+ * trip_headsign ("北大路BT・下鴨神社・出町柳駅") appears in subNames as context.
+ */
+export const StopOverridesTrip: Story = {
+  args: {
+    routeDirection: {
+      route: busRoute2,
+      tripHeadsign: {
+        name: '北大路バスターミナル・下鴨神社・出町柳駅',
+        names: {
+          ja: '北大路バスターミナル・下鴨神社・出町柳駅',
+          en: 'Demachiyanagi Sta. via Kitaoji BT and Shimogamo-jinja',
+        },
+      },
+      stopHeadsign: {
+        name: '出町柳駅',
+        names: {
+          ja: '出町柳駅',
+          'ja-Hrkt': 'でまちやなぎえき',
+          en: 'Demachiyanagi Sta.',
+        },
+      },
+    },
+    infoLevel: 'normal',
   },
 };
 
@@ -146,11 +202,22 @@ export const WithTranslations: Story = {
 export const SizeComparison: Story = {
   render: (args) => (
     <div className="flex items-center gap-2">
-      <HeadsignBadge routeDirection={args.routeDirection} infoLevel={args.infoLevel} size="xs" />
-      <HeadsignBadge routeDirection={args.routeDirection} infoLevel={args.infoLevel} size="sm" />
       <HeadsignBadge
         routeDirection={args.routeDirection}
         infoLevel={args.infoLevel}
+        lang={args.lang}
+        size="xs"
+      />
+      <HeadsignBadge
+        routeDirection={args.routeDirection}
+        infoLevel={args.infoLevel}
+        lang={args.lang}
+        size="sm"
+      />
+      <HeadsignBadge
+        routeDirection={args.routeDirection}
+        infoLevel={args.infoLevel}
+        lang={args.lang}
         size="default"
       />
     </div>
@@ -173,4 +240,43 @@ export const KitchenSinkInfoLevelDetailed: Story = {
 
 export const KitchenSinkInfoLevelVerbose: Story = {
   args: { infoLevel: 'verbose' },
+};
+
+// --- Kitchen sink: stop_headsign patterns ---
+
+/** trip_headsign empty + stop_headsign present — verbose shows stop_headsign data. */
+export const KitchenSinkTripEmptyStopVerbose: Story = {
+  args: {
+    routeDirection: {
+      route: busRoute,
+      tripHeadsign: { name: '', names: {} },
+      stopHeadsign: { name: '武蔵小金井駅南口', names: {} },
+    },
+    infoLevel: 'verbose',
+  },
+};
+
+/** stop_headsign overrides trip_headsign — verbose shows both headsign data. */
+export const KitchenSinkStopOverridesVerbose: Story = {
+  args: {
+    routeDirection: {
+      route: busRoute2,
+      tripHeadsign: {
+        name: '北大路バスターミナル・下鴨神社・出町柳駅',
+        names: {
+          ja: '北大路バスターミナル・下鴨神社・出町柳駅',
+          en: 'Demachiyanagi Sta. via Kitaoji BT and Shimogamo-jinja',
+        },
+      },
+      stopHeadsign: {
+        name: '出町柳駅',
+        names: {
+          ja: '出町柳駅',
+          'ja-Hrkt': 'でまちやなぎえき',
+          en: 'Demachiyanagi Sta.',
+        },
+      },
+    },
+    infoLevel: 'verbose',
+  },
 };

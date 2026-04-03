@@ -302,10 +302,11 @@ const ROUTES: Route[] = [
     agency_id: 'mock:aoba',
   },
   /**
-   * Route with empty headsign (GTFS trip_headsign is optional).
-   * Assigned to `bus_park` alongside normal routes (bus_aoba01) to test
-   * that the stop card displays a "行先が表示されない路線があります"
-   * annotation when headsign-present and headsign-absent routes coexist.
+   * Route with empty trip_headsign but per-stop stop_headsign (keio-bus pattern).
+   * Assigned to `bus_park`, `bus_library`, `bus_bridge` with stop_headsign
+   * values that change per stop (kyoto-city-bus pattern). Tests:
+   * - effective headsign = stop_headsign when trip_headsign is empty
+   * - mid-trip headsign change across stops
    */
   {
     route_id: 'bus_nohd01',
@@ -440,102 +441,108 @@ const ROUTES: Route[] = [
  * - sta_east: tram(0) + rail(2)
  * - sta_south: subway(1) + rail(2)
  */
-const STOP_ROUTES: Record<string, { routeId: string; headsign: string }[]> = {
-  sta_central: [
-    { routeId: 'rail_aoba', headsign: 'はなみ' },
-    { routeId: 'rail_aoba', headsign: 'かぜの' },
-    { routeId: 'subway_sora', headsign: 'そらタワー' },
-    { routeId: 'subway_sora', headsign: 'にじ橋' },
-    { routeId: 'subway_airport', headsign: 'つき宇宙空港' },
-    { routeId: 'subway_airport_sora', headsign: 'つき宇宙空港' },
-    { routeId: 'subway_airport_sora', headsign: 'ホテル満月' },
-    { routeId: 'tram_hoshi', headsign: 'ほし公園' },
-    { routeId: 'bus_aoba01', headsign: 'にじ橋' },
-    { routeId: 'bus_aoba02', headsign: 'そらタワー' },
-    { routeId: 'bus_sora_exp01', headsign: 'つきみの駅' },
-    { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
-  ],
-  sta_central_s: [
-    { routeId: 'rail_aoba', headsign: 'はなみ' },
-    { routeId: 'rail_aoba', headsign: 'かぜの' },
-    { routeId: 'subway_sora', headsign: 'そらタワー' },
-    { routeId: 'subway_sora', headsign: 'にじ橋' },
-    { routeId: 'bus_aoba02', headsign: 'そらタワー' },
-  ],
-  sta_hill: [
-    { routeId: 'rail_midori', headsign: 'ゆめの丘' },
-    { routeId: 'rail_midori', headsign: 'ひかり台' },
-    { routeId: 'bus_midori10', headsign: 'かぜの駅' },
-  ],
-  sta_east: [
-    { routeId: 'rail_hikari', headsign: 'あおば中央' },
-    { routeId: 'rail_hikari', headsign: 'みどり丘' },
-    { routeId: 'tram_hoshi', headsign: 'ほし公園' },
-  ],
-  sta_north: [
-    { routeId: 'rail_hikari', headsign: 'あおば中央' },
-    { routeId: 'rail_hikari', headsign: 'みどり丘' },
-  ],
-  sta_west: [
-    { routeId: 'rail_midori', headsign: 'ゆめの丘' },
-    { routeId: 'rail_midori', headsign: 'ひかり台' },
-  ],
-  sta_south: [
-    { routeId: 'rail_aoba', headsign: 'はなみ' },
-    { routeId: 'rail_aoba', headsign: 'かぜの' },
-    { routeId: 'subway_sora', headsign: 'そらタワー' },
-    { routeId: 'subway_sora', headsign: 'にじ橋' },
-  ],
-  sta_northwest: [
-    { routeId: 'rail_midori', headsign: 'ゆめの丘' },
-    { routeId: 'rail_midori', headsign: 'ひかり台' },
-  ],
-  // Drop-off only: pickupType=1 is handled in getUpcomingTimetableEntries
-  bus_central_dropoff: [
-    { routeId: 'bus_aoba01', headsign: 'あおば中央駅' },
-    { routeId: 'bus_aoba02', headsign: 'あおば中央駅' },
-    { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
-  ],
-  bus_park: [
-    { routeId: 'bus_aoba01', headsign: 'にじ橋' },
-    { routeId: 'bus_aoba01', headsign: 'あおば中央駅' },
-    { routeId: 'bus_nohd01', headsign: '' }, // empty headsign — tests missing destination annotation
-    { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
-    { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
-  ],
-  bus_library: [
-    { routeId: 'bus_aoba01', headsign: 'にじ橋' },
-    { routeId: 'bus_aoba02', headsign: 'そらタワー' },
-    { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
-    { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
-    { routeId: 'bus_nohd01', headsign: '' },
-  ],
-  bus_tower: [{ routeId: 'bus_aoba02', headsign: 'あおば中央駅' }],
-  bus_bridge: [
-    { routeId: 'bus_aoba01', headsign: 'あおば中央駅' },
-    { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
-    { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
-    { routeId: 'bus_nohd01', headsign: '' },
-  ],
-  tram_hoshi_park: [
-    { routeId: 'tram_hoshi', headsign: 'あおば中央方面' },
-    { routeId: 'tram_hoshi', headsign: 'ほし公園' },
-  ],
-  subway_sora_nishi: [
-    { routeId: 'subway_sora', headsign: 'にじ橋方面' },
-    { routeId: 'subway_sora', headsign: 'そらタワー方面' },
-  ],
-  sta_airport: [
-    { routeId: 'subway_airport', headsign: 'あおば中央方面' },
-    { routeId: 'subway_airport_sora', headsign: 'あおば中央方面' },
-    { routeId: 'subway_hotel_shuttle', headsign: 'ホテル新月' },
-  ],
-  bus_hotel_mangetsu: [
-    { routeId: 'subway_airport', headsign: 'あおば中央' },
-    { routeId: 'subway_airport', headsign: 'つき宇宙空港' },
-  ],
-  bus_hotel_shingetsu: [{ routeId: 'subway_hotel_shuttle', headsign: 'つき宇宙空港' }],
-};
+const STOP_ROUTES: Record<string, { routeId: string; headsign: string; stopHeadsign?: string }[]> =
+  {
+    sta_central: [
+      { routeId: 'rail_aoba', headsign: 'はなみ' },
+      { routeId: 'rail_aoba', headsign: 'かぜの' },
+      { routeId: 'subway_sora', headsign: 'そらタワー' },
+      { routeId: 'subway_sora', headsign: 'にじ橋' },
+      { routeId: 'subway_airport', headsign: 'つき宇宙空港' },
+      { routeId: 'subway_airport_sora', headsign: 'つき宇宙空港' },
+      { routeId: 'subway_airport_sora', headsign: 'ホテル満月' },
+      { routeId: 'tram_hoshi', headsign: 'ほし公園' },
+      { routeId: 'bus_aoba01', headsign: 'にじ橋' },
+      { routeId: 'bus_aoba02', headsign: 'そらタワー' },
+      { routeId: 'bus_sora_exp01', headsign: 'つきみの駅' },
+      { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
+    ],
+    sta_central_s: [
+      { routeId: 'rail_aoba', headsign: 'はなみ' },
+      { routeId: 'rail_aoba', headsign: 'かぜの' },
+      { routeId: 'subway_sora', headsign: 'そらタワー' },
+      { routeId: 'subway_sora', headsign: 'にじ橋' },
+      { routeId: 'bus_aoba02', headsign: 'そらタワー' },
+    ],
+    sta_hill: [
+      { routeId: 'rail_midori', headsign: 'ゆめの丘' },
+      { routeId: 'rail_midori', headsign: 'ひかり台' },
+      { routeId: 'bus_midori10', headsign: 'かぜの駅' },
+    ],
+    sta_east: [
+      { routeId: 'rail_hikari', headsign: 'あおば中央' },
+      { routeId: 'rail_hikari', headsign: 'みどり丘' },
+      { routeId: 'tram_hoshi', headsign: 'ほし公園' },
+    ],
+    sta_north: [
+      { routeId: 'rail_hikari', headsign: 'あおば中央' },
+      { routeId: 'rail_hikari', headsign: 'みどり丘' },
+    ],
+    sta_west: [
+      { routeId: 'rail_midori', headsign: 'ゆめの丘' },
+      { routeId: 'rail_midori', headsign: 'ひかり台' },
+    ],
+    sta_south: [
+      { routeId: 'rail_aoba', headsign: 'はなみ' },
+      { routeId: 'rail_aoba', headsign: 'かぜの' },
+      { routeId: 'subway_sora', headsign: 'そらタワー' },
+      { routeId: 'subway_sora', headsign: 'にじ橋' },
+    ],
+    sta_northwest: [
+      { routeId: 'rail_midori', headsign: 'ゆめの丘' },
+      { routeId: 'rail_midori', headsign: 'ひかり台' },
+    ],
+    // Drop-off only: pickupType=1 is handled in getUpcomingTimetableEntries
+    bus_central_dropoff: [
+      { routeId: 'bus_aoba01', headsign: 'あおば中央駅' },
+      { routeId: 'bus_aoba02', headsign: 'あおば中央駅' },
+      { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
+    ],
+    bus_park: [
+      { routeId: 'bus_aoba01', headsign: 'にじ橋' },
+      { routeId: 'bus_aoba01', headsign: 'あおば中央駅' },
+      // bus_nohd01: trip_headsign empty + stop_headsign present (keio-bus pattern).
+      // stop_headsign becomes the effective headsign via GTFS spec.
+      { routeId: 'bus_nohd01', headsign: '', stopHeadsign: 'もり公園前' },
+      { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
+      { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
+    ],
+    bus_library: [
+      { routeId: 'bus_aoba01', headsign: 'にじ橋' },
+      { routeId: 'bus_aoba02', headsign: 'そらタワー' },
+      { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
+      { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
+      // bus_nohd01: mid-trip stop_headsign differs from bus_park
+      // (kyoto-city-bus pattern: stop_headsign changes as stops pass).
+      { routeId: 'bus_nohd01', headsign: '', stopHeadsign: 'もり公園前・にじ橋' },
+    ],
+    bus_tower: [{ routeId: 'bus_aoba02', headsign: 'あおば中央駅' }],
+    bus_bridge: [
+      { routeId: 'bus_aoba01', headsign: 'あおば中央駅' },
+      { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
+      { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
+      // bus_nohd01 at origin: stop_headsign shows full route
+      { routeId: 'bus_nohd01', headsign: '', stopHeadsign: '図書館前・もり公園前' },
+    ],
+    tram_hoshi_park: [
+      { routeId: 'tram_hoshi', headsign: 'あおば中央方面' },
+      { routeId: 'tram_hoshi', headsign: 'ほし公園' },
+    ],
+    subway_sora_nishi: [
+      { routeId: 'subway_sora', headsign: 'にじ橋方面' },
+      { routeId: 'subway_sora', headsign: 'そらタワー方面' },
+    ],
+    sta_airport: [
+      { routeId: 'subway_airport', headsign: 'あおば中央方面' },
+      { routeId: 'subway_airport_sora', headsign: 'あおば中央方面' },
+      { routeId: 'subway_hotel_shuttle', headsign: 'ホテル新月' },
+    ],
+    bus_hotel_mangetsu: [
+      { routeId: 'subway_airport', headsign: 'あおば中央' },
+      { routeId: 'subway_airport', headsign: 'つき宇宙空港' },
+    ],
+    bus_hotel_shingetsu: [{ routeId: 'subway_hotel_shuttle', headsign: 'つき宇宙空港' }],
+  };
 
 /** Stops where all departures are drop-off only (pickupType=1). */
 const DROP_OFF_ONLY_STOPS = new Set(['bus_central_dropoff']);
@@ -590,7 +597,7 @@ const ROUTE_STOP_SEQUENCES = new Map<string, string[]>([
   ['bus_midori10__かぜの駅', ['sta_hill', 'sta_south']],
   // bus_sora_exp01: 中央駅 → つきみの駅
   ['bus_sora_exp01__つきみの駅', ['sta_central', 'sta_west']],
-  // bus_nohd01: にじ橋 → 図書館前 → もり公園前 (headsign empty — tests empty headsign)
+  // bus_nohd01: にじ橋 → 図書館前 → もり公園前 (trip_headsign empty, stop_headsign per stop)
   ['bus_nohd01__', ['bus_bridge', 'bus_library', 'bus_park']],
   // bus_yukkuri01: もり公園前 ↔ 降車専用
   ['bus_yukkuri01__あおば中央駅', ['bus_park', 'bus_library', 'bus_bridge', 'bus_central_dropoff']],
@@ -886,7 +893,7 @@ export class MockRepository implements TransitRepository {
     const serviceDate = getServiceDay(now);
     const nowMinutes = getServiceDayMinutes(now);
 
-    for (const { routeId, headsign } of stopRoutes) {
+    for (const { routeId, headsign, stopHeadsign } of stopRoutes) {
       const route = ROUTES.find((r) => r.route_id === routeId);
       if (!route) {
         continue;
@@ -910,7 +917,11 @@ export class MockRepository implements TransitRepository {
         const arrivalMinutes = dwellTime > 0 ? minutes - dwellTime : minutes;
         entries.push({
           schedule: { departureMinutes: minutes, arrivalMinutes },
-          routeDirection: { route, headsign, headsign_names: {} },
+          routeDirection: {
+            route,
+            tripHeadsign: { name: headsign, names: {} },
+            ...(stopHeadsign != null ? { stopHeadsign: { name: stopHeadsign, names: {} } } : {}),
+          },
           boarding: { pickupType, dropOffType: 0 },
           patternPosition: position,
           serviceDate,
@@ -981,7 +992,7 @@ export class MockRepository implements TransitRepository {
     const stopRoutes = STOP_ROUTES[stopId] ?? [];
     const entries: TimetableEntry[] = [];
 
-    for (const { routeId, headsign } of stopRoutes) {
+    for (const { routeId, headsign, stopHeadsign } of stopRoutes) {
       const route = ROUTES.find((r) => r.route_id === routeId);
       if (!route) {
         continue;
@@ -993,7 +1004,11 @@ export class MockRepository implements TransitRepository {
         const arrivalMinutes = dwellTime > 0 ? minutes - dwellTime : minutes;
         entries.push({
           schedule: { departureMinutes: minutes, arrivalMinutes },
-          routeDirection: { route, headsign, headsign_names: {} },
+          routeDirection: {
+            route,
+            tripHeadsign: { name: headsign, names: {} },
+            ...(stopHeadsign != null ? { stopHeadsign: { name: stopHeadsign, names: {} } } : {}),
+          },
           boarding: { pickupType, dropOffType: 0 },
           patternPosition: position,
         });

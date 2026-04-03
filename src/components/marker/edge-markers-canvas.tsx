@@ -64,6 +64,8 @@ interface EdgeMarkersCanvasProps {
   mapContainer: HTMLElement;
   /** Info level for controlling tooltip display verbosity. */
   infoLevel: InfoLevel;
+  /** Display language for translated names. */
+  lang: string;
   /** Measured container height for top/bottom tooltip alignment. */
   containerHeight: number;
   agenciesMap?: Map<string, Agency[]>;
@@ -81,6 +83,7 @@ export function EdgeMarkersCanvas({
   showDistance,
   mapContainer,
   infoLevel,
+  lang,
   containerHeight,
   agenciesMap,
   onStopSelected,
@@ -271,6 +274,7 @@ export function EdgeMarkersCanvas({
               routeTypes={hoveredMarker.routeTypes}
               agencies={agenciesMap?.get(hoveredMarker.stop.stop_id) ?? []}
               infoLevel={infoLevel}
+              lang={lang}
             />
           </div>
         </div>

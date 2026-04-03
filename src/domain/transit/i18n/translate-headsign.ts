@@ -1,27 +1,41 @@
+import type { TranslatableText } from '../../../types/app/transit-composed';
+
 /**
- * Translate the display name of a headsign for a given language.
+ * Result of {@link translateHeadsign}.
+ */
+export interface TranslatedHeadsignNames {
+  /** trip_headsign resolved for the requested language. */
+  tripName: string;
+  /** stop_headsign resolved for the requested language. Empty when not provided. */
+  stopName: string;
+}
+
+/**
+ * Translate the headsign names of a RouteDirection for a given language.
  *
- * Looks up the `headsign_names` record by the `lang` key.
- * Falls back to the raw `headsign` string when the requested
- * language is not available or `lang` is omitted.
+ * Resolves both trip_headsign and stop_headsign for the requested language.
+ * Falls back to the raw text when the requested language is not available
+ * or `lang` is omitted.
+ *
+ * Follows the same pattern as {@link translateRouteName} which resolves
+ * both `route_short_name` and `route_long_name`.
  *
  * This is the lowest-level i18n function — it has
- * no knowledge of info levels or display formatting.
+ * no knowledge of info levels, display formatting, or effective
+ * headsign selection.
  *
- * @param headsign - Raw headsign string from timetable data.
- * @param headsignNames - Headsign translations from GTFS translations.txt
- *   (field_name=trip_headsign). Keyed by language (e.g. "ja", "ja-Hrkt", "en").
+ * @param tripHeadsign - Trip-level headsign with translations.
+ * @param stopHeadsign - Stop-level headsign with translations (optional).
  * @param lang - BCP 47-ish language key matching translations.txt
  *               (e.g. `"en"`, `"ja-Hrkt"`). Defaults to primary name.
- * @returns The translated headsign string.
+ * @returns The translated headsign names.
  */
 export function translateHeadsign(
-  headsign: string,
-  headsignNames: Record<string, string>,
+  tripHeadsign: TranslatableText,
+  stopHeadsign: TranslatableText | undefined,
   lang?: string,
-): string {
-  if (lang && headsignNames[lang]) {
-    return headsignNames[lang];
-  }
-  return headsign;
+): TranslatedHeadsignNames {
+  const tripName = (lang && tripHeadsign.names[lang]) || tripHeadsign.name;
+  const stopName = stopHeadsign ? (lang && stopHeadsign.names[lang]) || stopHeadsign.name : '';
+  return { tripName, stopName };
 }

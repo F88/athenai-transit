@@ -1,6 +1,7 @@
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
+import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { minutesToDate } from '../domain/transit/calendar-utils';
 import { getDisplayMinutes, hasBoardableDeparture } from '../domain/transit/timetable-utils';
@@ -14,6 +15,7 @@ interface DepartureItemProps {
   entries: ContextualTimetableEntry[];
   now: Date;
   infoLevel: InfoLevel;
+  lang: string;
   /** Whether to show route_type emoji (e.g. when stop serves multiple route types). */
   showRouteTypeIcon: boolean;
   /** Agency object for badge display at detailed+ info level. */
@@ -27,6 +29,7 @@ export function DepartureItem({
   entries,
   now,
   infoLevel,
+  lang,
   showRouteTypeIcon,
   agency,
   maxDisplay = 3,
@@ -57,6 +60,7 @@ export function DepartureItem({
         <TripInfo
           routeDirection={firstEntry.routeDirection}
           infoLevel={infoLevel}
+          lang={lang}
           showRouteTypeIcon={showRouteTypeIcon}
           agency={agency}
           isTerminal={firstEntry.patternPosition.isTerminal}
@@ -91,7 +95,7 @@ export function DepartureItem({
             className="ml-auto shrink-0 cursor-pointer rounded border border-[#1976d2] bg-transparent px-1.5 py-0.5 text-[#1976d2] active:bg-[rgba(25,118,210,0.1)] dark:border-blue-400 dark:text-blue-400"
             onClick={(e) => {
               e.stopPropagation();
-              onShowTimetable(route.route_id, firstEntry.routeDirection.headsign);
+              onShowTimetable(route.route_id, getEffectiveHeadsign(firstEntry.routeDirection));
             }}
             title="Show timetable"
             aria-label="Show timetable"

@@ -193,6 +193,26 @@ export interface DepartureViewMeta {
 export type StopServiceType = 0 | 1 | 2 | 3;
 
 /**
+ * Text value with per-language translations, not yet resolved to a
+ * specific language.
+ *
+ * Used to carry a raw GTFS field value together with its translations
+ * from translations.txt. The language resolution is performed by
+ * `translateXxx` functions in the i18n layer; this type simply holds
+ * the data.
+ *
+ * Designed as a generic building block — currently used by
+ * {@link RouteDirection} for headsign data, but applicable to
+ * stop names, route names, and other translatable fields.
+ */
+export interface TranslatableText {
+  /** Original text (raw value from data source). */
+  name: string;
+  /** Translations keyed by language (e.g. "ja", "en", "ja-Hrkt"). */
+  names: Record<string, string>;
+}
+
+/**
  * App-internal representation of a trip pattern.
  *
  * Converted from {@link TripPatternJson} (the JSON schema shared with
@@ -200,10 +220,6 @@ export type StopServiceType = 0 | 1 | 2 | 3;
  * business logic from the pipeline's JSON structure, so future changes
  * to TripPatternJson (e.g. adding per-stop attributes) can be absorbed
  * in the Repository without touching downstream consumers.
- *
- * Currently exposes only the fields needed by existing webapp logic.
- * When stop_headsign support is implemented, additional fields
- * (e.g. stopHeadsigns) can be added here without changing TripPatternJson.
  */
 export interface TripPattern {
   /** Route ID (prefixed). */
@@ -212,28 +228,64 @@ export interface TripPattern {
   headsign: string;
   /** GTFS direction_id (0 or 1). Undefined when not provided. */
   direction?: 0 | 1;
-  /** Ordered stop IDs (prefixed) from origin to destination. */
-  stops: string[];
+  /**
+   * Ordered per-stop records from origin to destination.
+   *
+   * Each element bundles stop ID and per-stop attributes from the
+   * pipeline's {@link TripPatternJson.stops} object array.
+   * JSON short names (`sh`, `sd`) are mapped to descriptive names.
+   */
+  stops: {
+    /** Stop ID (prefixed). */
+    id: string;
+    /**
+     * GTFS `stop_times.stop_headsign` for this stop.
+     *
+     * Per GTFS spec, overrides the trip-level headsign at this stop.
+     * Undefined when not provided by the source.
+     */
+    headsign?: string;
+    /**
+     * Cumulative distance along the route shape from origin to this stop.
+     *
+     * Sourced from GTFS `stop_times.shape_dist_traveled`.
+     * Currently not present in any source data; reserved for future use.
+     */
+    shapeDistTraveled?: number;
+  }[];
 }
 
 /**
  * Route and direction context for a trip pattern.
  *
- * Combines the route, headsign (destination), headsign translations,
+ * Combines the route, headsign data (trip-level and stop-level),
  * and direction into a single composite type. Used by
  * {@link TimetableEntry} and {@link ContextualTimetableEntry}.
+ *
+ * Both `tripHeadsign` and `stopHeadsign` carry their own translations
+ * because GTFS translations.txt uses separate `field_name` values
+ * (`trip_headsign` vs `stop_headsign`), which may produce different
+ * translations for the same text.
+ *
+ * Effective headsign selection (`stopHeadsign ?? tripHeadsign`) is
+ * performed by the display name resolver, not by this type.
+ * Follows the same pattern as {@link Route} providing both
+ * `route_short_name` and `route_long_name` for the resolver to choose.
  */
 export interface RouteDirection {
   /** The route serving this trip pattern. */
   route: Route;
-  /** Raw headsign (destination) text from GTFS trip_headsign. */
-  headsign: string;
   /**
-   * Headsign translations resolved from GTFS translations.txt.
-   * Keyed by language (e.g. "ja", "ja-Hrkt", "en").
-   * Empty object when no translations are available for this headsign.
+   * Trip-level headsign (GTFS trip_headsign) with translations.
+   * `name` may be empty when the source does not provide trip_headsign.
    */
-  headsign_names: Record<string, string>;
+  tripHeadsign: TranslatableText;
+  /**
+   * Stop-level headsign (GTFS stop_headsign) with translations.
+   * Per GTFS spec, overrides tripHeadsign at a specific stop.
+   * Undefined when the source does not provide stop_headsign for this stop.
+   */
+  stopHeadsign?: TranslatableText;
   /**
    * Trip direction (0 or 1). Distinguishes opposite directions on
    * the same route (e.g. inbound vs outbound).

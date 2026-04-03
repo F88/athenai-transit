@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { StopWithContext } from '../types/app/transit-composed';
+import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { groupByRouteHeadsign } from '../domain/transit/group-timetable-entries';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { Clock, Signpost } from 'lucide-react';
@@ -16,6 +17,8 @@ export interface NearbyStopProps {
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
+  /** Display language for translated names. */
+  lang: string;
   /** Active departure view pattern ID. */
   viewId: string;
   /** Whether this stop is in the anchor (bookmark) list. */
@@ -43,6 +46,7 @@ export function NearbyStop({
   now,
   mapCenter,
   infoLevel,
+  lang,
   viewId,
   isAnchor,
   onStopSelected,
@@ -72,7 +76,7 @@ export function NearbyStop({
   );
 
   const hasUnknownHeadsign = useMemo(
-    () => departures.some((e) => e.routeDirection.headsign === ''),
+    () => departures.some((e) => getEffectiveHeadsign(e.routeDirection) === ''),
     [departures],
   );
 
@@ -152,12 +156,13 @@ export function NearbyStop({
             .slice(0, 5)
             .map((entry, i) => (
               <FlatDepartureItem
-                key={`${entry.routeDirection.route.route_id}__${entry.routeDirection.headsign}__${entry.schedule.departureMinutes}__${i}`}
+                key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}__${i}`}
                 entry={entry}
                 now={now}
                 isFirst={i === 0}
                 showRouteTypeIcon={showRouteTypeIconForAllDepartures}
                 infoLevel={infoLevel}
+                lang={lang}
                 agency={agencies.find((a) => a.agency_id === entry.routeDirection.route.agency_id)}
               />
             ))
@@ -168,6 +173,7 @@ export function NearbyStop({
               entries={entries}
               now={now}
               infoLevel={infoLevel}
+              lang={lang}
               showRouteTypeIcon={showRouteTypeIconForAllDepartures}
               agency={agencies.find(
                 (a) => a.agency_id === entries[0].routeDirection.route.agency_id,
