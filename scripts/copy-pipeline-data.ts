@@ -17,7 +17,7 @@
 
 import { cpSync, existsSync, rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
-import { sanitizeDirName } from '../pipeline/scripts/pipeline/lib/file-utils';
+import { sanitizeDirName } from './lib/sanitize-dir-name';
 
 const PROJECT_ROOT = resolve(import.meta.dirname, '..');
 
