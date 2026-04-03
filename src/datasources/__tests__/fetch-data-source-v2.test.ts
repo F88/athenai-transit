@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
-import { FetchDataSourceV2 } from '../fetch-data-source-v2';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { FetchDataSourceV2, validateBasePath } from '../fetch-data-source-v2';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -291,14 +291,6 @@ describe('FetchDataSourceV2', () => {
 // ---------------------------------------------------------------------------
 
 describe('validateBasePath', () => {
-  // Dynamic import to avoid module-level BASE_PATH evaluation interfering
-  let validateBasePath: (value: string) => string;
-
-  beforeAll(async () => {
-    const mod = await import('../fetch-data-source-v2');
-    validateBasePath = mod.validateBasePath;
-  });
-
   it('returns value unchanged when it starts with /', () => {
     expect(validateBasePath('/data-v2')).toBe('/data-v2');
   });
