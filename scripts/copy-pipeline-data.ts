@@ -17,6 +17,7 @@
 
 import { cpSync, existsSync, rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { sanitizeDirName } from './lib/sanitize-dir-name';
 
 const PROJECT_ROOT = resolve(import.meta.dirname, '..');
@@ -90,7 +91,16 @@ function main(): void {
   console.log(`Done! (${synced}/${TARGETS.length} targets synced)`);
 }
 
-// Only run when executed directly (not when imported by tests).
-if (!process.env.VITEST) {
+// Only run when executed directly (not when imported by other modules).
+// Same pattern as pipeline/scripts/pipeline/check-odpt-resources.ts.
+function isDirectExecution(): boolean {
+  const entry = process.argv[1];
+  if (!entry) {
+    return false;
+  }
+  return import.meta.url === pathToFileURL(entry).href;
+}
+
+if (isDirectExecution()) {
   main();
 }
