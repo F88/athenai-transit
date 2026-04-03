@@ -1,6 +1,6 @@
 {
   "sourceName": "kanto-bus",
-  "checkedAt": "2026-04-02T05:31:34.242Z",
+  "checkedAt": "2026-04-03T05:31:27.955Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260401",
     "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260402",
@@ -8,7 +8,6 @@
   ],
   "result": "attention",
   "warnings": [
-    "REMOTE_KNOWN_BEFORE_PERIOD",
     "REMOTE_KNOWN_IN_PERIOD"
   ],
   "errors": []
