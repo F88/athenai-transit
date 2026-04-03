@@ -26,7 +26,9 @@
 
 - V2 primary field: `routes.s`, `routes.l`, `agency.n`, `agency.sn`, `tripPatterns.h`, `stops.n`
 - V2 translations: `translations.agency_names`, `translations.agency_short_names`, `translations.headsigns`, `translations.stop_headsigns`, `translations.stop_names`, `translations.route_names`
-- V2 未出力の監査対象: `trips.trip_short_name`, `stop_times.stop_headsign`, `stops.tts_stop_name`, `agency_jp.agency_official_name`, `trips.jp_trip_desc`, `trips.jp_trip_desc_symbol`
+- V2 未出力の監査対象: `trips.trip_short_name`, `stops.tts_stop_name`, `agency_jp.agency_official_name`, `trips.jp_trip_desc`, `trips.jp_trip_desc_symbol`
+
+> **Note**: `stop_times.stop_headsign` は `tripPatterns.stops[].sh` として出力されるようになったため、未出力リストから除外した。
 
 ## 実行方法
 

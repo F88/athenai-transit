@@ -8,22 +8,22 @@ follow-up 候補の整理を主目的とする。
 
 ## 確定分類
 
-| Field                            | Schema defined         | Current pipeline read | Current V2 exposure                              | Classification                            | Notes                                                                                                                |
-| -------------------------------- | ---------------------- | --------------------- | ------------------------------------------------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `routes.route_short_name`        | Yes                    | Yes                   | `routes[].s`                                     | `emitted-primary`                         | 主要表示 field としてそのまま出力されている。                                                                        |
-| `routes.route_long_name`         | Yes                    | Yes                   | `routes[].l`, `translations.route_names`         | `emitted-primary`, `emitted-translations` | 主値は `l`。翻訳は `route_long_name` ベースで別保持。                                                                |
-| `routes.route_desc`              | Yes                    | Yes                   | `routes[].desc`                                  | `emitted-primary`                         | v2 で primary field として追加済み。                                                                                 |
-| `stops.stop_name`                | Yes                    | Yes                   | `stops[].n`, `translations.stop_names`           | `emitted-primary`, `emitted-translations` | stop 本体名は `n`、翻訳は別 map。                                                                                    |
-| `stops.stop_desc`                | Yes                    | Yes                   | `lookup.stopDescs`                               | `emitted-lookup`                          | main record ではなく lookup に移動済み。                                                                             |
-| `trips.trip_headsign`            | Yes                    | Yes                   | `tripPatterns[*].h`, `translations.headsigns`    | `emitted-primary`, `emitted-translations` | pattern 単位の primary field として保持。翻訳も別 map。                                                              |
-| `stop_times.stop_headsign`       | Yes                    | Yes                   | `translations.stop_headsigns`                    | `emitted-translations`                    | extractor は明示的にこの field を読む。source に translations 行や値が無ければ空になり得るが、field 自体は抽出対象。 |
-| `agency.agency_name`             | Yes                    | Yes                   | `agency[].n`, `translations.agency_names`        | `emitted-primary`, `emitted-translations` | agency 本体名は primary。翻訳も保持。                                                                                |
-| `agency.agency_short_name`       | No in current `SCHEMA` | No as raw GTFS field  | `agency[].sn`, `translations.agency_short_names` | `derived-not-direct`                      | 現在は GTFS schema field ではなく provider metadata 由来。Issue #80 本体の schema coverage とは切り分けた方がよい。  |
-| `trips.trip_short_name`          | Yes                    | No                    | Not present                                      | `not-emitted`                             | schema にはあるが `TripPatternJson` に field がなく、GTFS -> V2 抽出でも未読。                                       |
-| `stops.tts_stop_name`            | Yes                    | No                    | Not present                                      | `not-emitted`                             | schema 定義はあるが app-data-v2 で未参照。                                                                           |
-| `agency_jp.agency_official_name` | Yes                    | No                    | Not present                                      | `intentionally-excluded`                  | `transit-v2-json.ts` に `agency_jp` を含む GTFS-JP extension を除外対象として記述あり。実装上も未読。                |
-| `trips.jp_trip_desc`             | Yes                    | No                    | Not present                                      | `intentionally-excluded`                  | `transit-v2-json.ts` に `All jp_ extensions` を除外対象とする記述あり。実装上も未読。                                |
-| `trips.jp_trip_desc_symbol`      | Yes                    | No                    | Not present                                      | `intentionally-excluded`                  | `transit-v2-json.ts` に `All jp_ extensions` を除外対象とする記述あり。実装上も未読。                                |
+| Field                            | Schema defined         | Current pipeline read | Current V2 exposure                                      | Classification                            | Notes                                                                                                               |
+| -------------------------------- | ---------------------- | --------------------- | -------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `routes.route_short_name`        | Yes                    | Yes                   | `routes[].s`                                             | `emitted-primary`                         | 主要表示 field としてそのまま出力されている。                                                                       |
+| `routes.route_long_name`         | Yes                    | Yes                   | `routes[].l`, `translations.route_names`                 | `emitted-primary`, `emitted-translations` | 主値は `l`。翻訳は `route_long_name` ベースで別保持。                                                               |
+| `routes.route_desc`              | Yes                    | Yes                   | `routes[].desc`                                          | `emitted-primary`                         | v2 で primary field として追加済み。                                                                                |
+| `stops.stop_name`                | Yes                    | Yes                   | `stops[].n`, `translations.stop_names`                   | `emitted-primary`, `emitted-translations` | stop 本体名は `n`、翻訳は別 map。                                                                                   |
+| `stops.stop_desc`                | Yes                    | Yes                   | `lookup.stopDescs`                                       | `emitted-lookup`                          | main record ではなく lookup に移動済み。                                                                            |
+| `trips.trip_headsign`            | Yes                    | Yes                   | `tripPatterns[*].h`, `translations.headsigns`            | `emitted-primary`, `emitted-translations` | pattern 単位の primary field として保持。翻訳も別 map。                                                             |
+| `stop_times.stop_headsign`       | Yes                    | Yes                   | `tripPatterns.stops[].sh`, `translations.stop_headsigns` | `emitted-primary`, `emitted-translations` | 一次データとして `tripPatterns.stops[].sh` に格納。翻訳は `translations.stop_headsigns`。                           |
+| `agency.agency_name`             | Yes                    | Yes                   | `agency[].n`, `translations.agency_names`                | `emitted-primary`, `emitted-translations` | agency 本体名は primary。翻訳も保持。                                                                               |
+| `agency.agency_short_name`       | No in current `SCHEMA` | No as raw GTFS field  | `agency[].sn`, `translations.agency_short_names`         | `derived-not-direct`                      | 現在は GTFS schema field ではなく provider metadata 由来。Issue #80 本体の schema coverage とは切り分けた方がよい。 |
+| `trips.trip_short_name`          | Yes                    | No                    | Not present                                              | `not-emitted`                             | schema にはあるが `TripPatternJson` に field がなく、GTFS -> V2 抽出でも未読。                                      |
+| `stops.tts_stop_name`            | Yes                    | No                    | Not present                                              | `not-emitted`                             | schema 定義はあるが app-data-v2 で未参照。                                                                          |
+| `agency_jp.agency_official_name` | Yes                    | No                    | Not present                                              | `intentionally-excluded`                  | `transit-v2-json.ts` に `agency_jp` を含む GTFS-JP extension を除外対象として記述あり。実装上も未読。               |
+| `trips.jp_trip_desc`             | Yes                    | No                    | Not present                                              | `intentionally-excluded`                  | `transit-v2-json.ts` に `All jp_ extensions` を除外対象とする記述あり。実装上も未読。                               |
+| `trips.jp_trip_desc_symbol`      | Yes                    | No                    | Not present                                              | `intentionally-excluded`                  | `transit-v2-json.ts` に `All jp_ extensions` を除外対象とする記述あり。実装上も未読。                               |
 
 ## 根拠
 
@@ -37,7 +37,7 @@ follow-up 候補の整理を主目的とする。
 - `extractAgenciesV2()` の `agency[].sn` は GTFS raw field ではなく `provider.name.ja.short` 由来。
 - `transit-v2-json.ts` の型コメントには `trips.block_id`, `trips.wheelchair_accessible`, `stops.zone_id`, `All jp_ extensions (agency_jp, office_jp, pattern_jp)` を reviewed and excluded とする記述がある。
 - `gtfs-schema.ts` には `trip_short_name`, `tts_stop_name`, `agency_official_name`, `jp_trip_desc`, `jp_trip_desc_symbol`, `stop_headsign`, `route_desc`, `stop_desc` が定義されている。
-- full schema audit により、`stop_times.shape_dist_traveled` は型と docs に `TripPatternJson.sd` がある一方、現行 `extractTripPatternsAndTimetable()` では未読と確認できた。
+- full schema audit により、`stop_times.shape_dist_traveled` は型と docs に `TripPatternJson.stops[].sd` がある一方、現行 `extractTripPatternsAndTimetable()` では未読と確認できた。
 
 ## 高影響 gap 要約
 
@@ -48,7 +48,7 @@ follow-up 候補の整理を主目的とする。
 - `stops.tts_stop_name`
   schema に存在し、読み上げや音声用途で意味を持ちうるが、現行 V2 では未読かつ未出力。
 - `stop_times.shape_dist_traveled`
-  型と docs では `TripPatternJson.sd` を想定している一方、現行 GTFS DataBundle extractor は未読。
+  型と docs では `TripPatternJson.stops[].sd` を想定している一方、現行 GTFS DataBundle extractor は未読。
   これは単なる未実装に加えて、型・docs・実装がずれている点で優先度が高い。
 
 ### 今回は gap ではなく、意図的除外として扱えるもの
@@ -65,7 +65,7 @@ follow-up 候補の整理を主目的とする。
 ## 追加メモ
 
 - GTFS の `translations` は汎用全件コピーではなく、実装で対象 field が限定されている。
-- `stop_times.stop_headsign` は「失われている」のではなく、今は translation-only の扱いになっている。空の source があるのは、値や translation row が無いケースと整合する。
+- `stop_times.stop_headsign` は `tripPatterns.stops[].sh` として一次データも出力されるようになった (Issue #92)。翻訳は引き続き `translations.stop_headsigns` に格納。
 - ODPT 側の `stop_headsigns` は data absence ではなく builder が空 object を返す実装になっている。
 - 今回の監査計画は GTFS / GTFS-JP schema coverage を対象にしており、ODPT schema coverage を独立 workstream としては含めていなかった。
 - そのため、ODPT Train / ODPT Bus については「今回の 4 項目を再確認するか」ではなく、ODPT 固有 schema を前提に別監査として計画し直す必要がある。
@@ -96,7 +96,7 @@ silent loss 監視対象としては引き続き妥当である。
 
 ## Follow-up issue 候補
 
-1. `stop_times.shape_dist_traveled` を `TripPatternJson.sd` に実装するか、型と docs から落として整合させるか決める。
+1. `stop_times.shape_dist_traveled` を `TripPatternJson.stops[].sd` に実装するか、型と docs から落として整合させるか決める。
 2. `trip_short_name` を V2 に持つべきかを、UI 表示要件と source 実データの両面から評価する。
 3. `tts_stop_name` を読み上げ用途として保持するかを検討する。
 4. `agency.agency_short_name` のような provider-derived 値を、schema coverage 本体と別枠で整理する方針を決める。

@@ -41,7 +41,7 @@ const GROUP_KEY = 'ho';
 function makeDataBundle(opts: {
   services: { id: string; d: number[] }[];
   stops: { i: string; a: number; o: number; l: number; ps?: string }[];
-  patterns?: Record<string, { r: string; stops: string[] }>;
+  patterns?: Record<string, { r: string; stops: { id: string }[] }>;
   timetable?: Record<string, { tp: string; d: Record<string, number[]> }[]>;
 }): DataBundle {
   return {
@@ -191,7 +191,7 @@ describe('GlobalInsightsBundle assembly', () => {
         { i: 's2', a: 35.69, o: 139.77, l: 0 },
       ],
       patterns: {
-        p1: { r: 'r1', stops: ['s1', 's2'] },
+        p1: { r: 'r1', stops: [{ id: 's1' }, { id: 's2' }] },
       },
       timetable: {
         s1: [{ tp: 'p1', d: { su: [480, 540] } }],
@@ -222,13 +222,13 @@ describe('GlobalInsightsBundle assembly', () => {
     const bundle1 = makeDataBundle({
       services: [{ id: 'su', d: [0, 0, 0, 0, 0, 0, 1] }],
       stops: [{ i: 'a:s1', a: 35.68, o: 139.76, l: 0 }],
-      patterns: { p1: { r: 'r1', stops: ['a:s1'] } },
+      patterns: { p1: { r: 'r1', stops: [{ id: 'a:s1' }] } },
       timetable: { 'a:s1': [{ tp: 'p1', d: { su: [480] } }] },
     });
     const bundle2 = makeDataBundle({
       services: [{ id: 'su', d: [0, 0, 0, 0, 0, 0, 1] }],
       stops: [{ i: 'b:s1', a: 35.69, o: 139.77, l: 0 }],
-      patterns: { p1: { r: 'r1', stops: ['b:s1'] } },
+      patterns: { p1: { r: 'r1', stops: [{ id: 'b:s1' }] } },
       timetable: { 'b:s1': [{ tp: 'p1', d: { su: [500] } }] },
     });
 
@@ -256,8 +256,8 @@ describe('GlobalInsightsBundle assembly', () => {
         { i: 's2', a: 35.681, o: 139.76, l: 0 }, // ~111m north
       ],
       patterns: {
-        p1: { r: 'r1', stops: ['s1'] },
-        p2: { r: 'r2', stops: ['s2'] },
+        p1: { r: 'r1', stops: [{ id: 's1' }] },
+        p2: { r: 'r2', stops: [{ id: 's2' }] },
       },
       timetable: {
         s1: [{ tp: 'p1', d: { su: [480] } }],
@@ -288,8 +288,8 @@ describe('GlobalInsightsBundle assembly', () => {
         { i: 's2', a: 35.6801, o: 139.76, l: 0 }, // ~11m, within 300m
       ],
       patterns: {
-        p1: { r: 'r1', stops: ['s1'] },
-        p2: { r: 'r2', stops: ['s2'] },
+        p1: { r: 'r1', stops: [{ id: 's1' }] },
+        p2: { r: 'r2', stops: [{ id: 's2' }] },
       },
       timetable: {
         s1: [{ tp: 'p1', d: { su: [480, 540, 600] } }],
@@ -325,9 +325,9 @@ describe('GlobalInsightsBundle assembly', () => {
         { i: 'other', a: 35.69, o: 139.77, l: 0 }, // far, different route
       ],
       patterns: {
-        pa: { r: 'r1', stops: ['c1'] },
-        pb: { r: 'r1', stops: ['c2'] },
-        pc: { r: 'r2', stops: ['other'] },
+        pa: { r: 'r1', stops: [{ id: 'c1' }] },
+        pb: { r: 'r1', stops: [{ id: 'c2' }] },
+        pc: { r: 'r2', stops: [{ id: 'other' }] },
       },
       timetable: {
         c1: [{ tp: 'pa', d: { su: [480] } }],
@@ -378,7 +378,7 @@ describe('GlobalInsightsBundle assembly', () => {
     const bundle = makeDataBundle({
       services: [{ id: 'wd', d: [1, 1, 1, 1, 1, 0, 0] }], // no Sunday
       stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
-      patterns: { p1: { r: 'r1', stops: ['s1'] } },
+      patterns: { p1: { r: 'r1', stops: [{ id: 's1' }] } },
       timetable: { s1: [{ tp: 'p1', d: { wd: [480] } }] },
     });
     writeDataBundle(join(srcDir, 'src'), bundle);

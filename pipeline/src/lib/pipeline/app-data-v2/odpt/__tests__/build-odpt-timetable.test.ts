@@ -132,7 +132,11 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     expect(p.v).toBe(2);
     expect(p.r).toBe('test:U');
     expect(p.h).toBe('C駅');
-    expect(p.stops).toEqual(['test:A', 'test:B', 'test:C']);
+    expect(p.stops).toEqual([{ id: 'test:A' }, { id: 'test:B' }, { id: 'test:C' }]);
+    // ODPT does not provide stop_headsign — sh must not be present
+    for (const stop of p.stops) {
+      expect(stop.sh).toBeUndefined();
+    }
   });
 
   it('creates truncated pattern for short-turn Outbound service', () => {
@@ -150,7 +154,7 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
     const p = Object.values(tripPatterns)[0];
     expect(p.h).toBe('B駅');
-    expect(p.stops).toEqual(['test:A', 'test:B']); // truncated at B
+    expect(p.stops).toEqual([{ id: 'test:A' }, { id: 'test:B' }]); // truncated at B
   });
 
   it('creates truncated pattern for short-turn Inbound service', () => {
@@ -168,7 +172,7 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
     const p = Object.values(tripPatterns)[0];
     expect(p.h).toBe('B駅');
-    expect(p.stops).toEqual(['test:C', 'test:B']); // C to B, reversed
+    expect(p.stops).toEqual([{ id: 'test:C' }, { id: 'test:B' }]); // C to B, reversed
   });
 
   it('separates full-route and short-turn into different patterns', () => {
@@ -199,8 +203,8 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const fullPattern = patterns.find((p) => p.h === 'C駅')!;
     const shortPattern = patterns.find((p) => p.h === 'B駅')!;
 
-    expect(fullPattern.stops).toEqual(['test:A', 'test:B', 'test:C']);
-    expect(shortPattern.stops).toEqual(['test:A', 'test:B']);
+    expect(fullPattern.stops).toEqual([{ id: 'test:A' }, { id: 'test:B' }, { id: 'test:C' }]);
+    expect(shortPattern.stops).toEqual([{ id: 'test:A' }, { id: 'test:B' }]);
 
     // Timetable at A: 2 groups (one per pattern)
     const groups = timetable['test:A'];
@@ -231,7 +235,7 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
     const p = Object.values(tripPatterns)[0];
     expect(p.h).toBe('A駅');
-    expect(p.stops).toEqual(['test:C', 'test:B', 'test:A']);
+    expect(p.stops).toEqual([{ id: 'test:C' }, { id: 'test:B' }, { id: 'test:A' }]);
   });
 
   it('builds timetable with correct d/a structure', () => {
@@ -335,7 +339,7 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
     const p = Object.values(tripPatterns)[0];
     expect(p.h).toBe('C駅'); // fallback to terminal
-    expect(p.stops).toEqual(['test:A', 'test:B', 'test:C']);
+    expect(p.stops).toEqual([{ id: 'test:A' }, { id: 'test:B' }, { id: 'test:C' }]);
   });
 
   it('normalizes terminal destination and missing destination into the same full-route pattern', () => {
@@ -359,7 +363,11 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     ]);
 
     expect(Object.keys(tripPatterns)).toHaveLength(1);
-    expect(Object.values(tripPatterns)[0].stops).toEqual(['test:A', 'test:B', 'test:C']);
+    expect(Object.values(tripPatterns)[0].stops).toEqual([
+      { id: 'test:A' },
+      { id: 'test:B' },
+      { id: 'test:C' },
+    ]);
     expect(timetable['test:A']).toHaveLength(1);
     expect(timetable['test:A'][0].d['test:weekday']).toEqual([360, 390]);
   });
@@ -379,7 +387,7 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const { tripPatterns } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [railway]);
     const p = Object.values(tripPatterns)[0];
     expect(p.h).toBe('C駅');
-    expect(p.stops).toEqual(['test:A', 'test:B', 'test:C']);
+    expect(p.stops).toEqual([{ id: 'test:A' }, { id: 'test:B' }, { id: 'test:C' }]);
   });
 
   it('handles multiple railways with a shared station correctly', () => {
@@ -428,8 +436,8 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const xPattern = patterns.find((p) => p.r === 'test:X')!;
     const yPattern = patterns.find((p) => p.r === 'test:Y')!;
 
-    expect(xPattern.stops).toEqual(['test:A', 'test:B', 'test:C']);
-    expect(yPattern.stops).toEqual(['test:B', 'test:D', 'test:E']);
+    expect(xPattern.stops).toEqual([{ id: 'test:A' }, { id: 'test:B' }, { id: 'test:C' }]);
+    expect(yPattern.stops).toEqual([{ id: 'test:B' }, { id: 'test:D' }, { id: 'test:E' }]);
   });
 
   it('uses per-railway station index for destination truncation (no cross-railway collision)', () => {
@@ -470,7 +478,7 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     const p = Object.values(tripPatterns)[0];
     // Must use X's index (B at 1), so stops = [A, B] (not just [A] if Y's index 0 were used)
     expect(p.r).toBe('test:X');
-    expect(p.stops).toEqual(['test:A', 'test:B']);
+    expect(p.stops).toEqual([{ id: 'test:A' }, { id: 'test:B' }]);
     expect(p.h).toBe('B駅');
   });
 
@@ -504,7 +512,7 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     expect(Object.keys(tripPatterns)).toHaveLength(1);
     const [patternId, pattern] = Object.entries(tripPatterns)[0];
     expect(pattern.r).toBe('test:X');
-    expect(pattern.stops).toEqual(['test:B', 'test:C']);
+    expect(pattern.stops).toEqual([{ id: 'test:B' }, { id: 'test:C' }]);
     expect(timetable['test:B'][0].tp).toBe(patternId);
     expect(timetable['test:B'][0].d['test:weekday']).toEqual([360]);
   });

@@ -25,7 +25,6 @@ import type {
   LookupV2Json,
   ServiceGroupEntry,
   TimetableGroupV2Json,
-  TripPatternJson,
 } from '../types/data/transit-v2-json';
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
@@ -35,6 +34,7 @@ import type {
   StopServiceType,
   StopWithMeta,
   TimetableEntry,
+  TripPattern,
 } from '../types/app/transit-composed';
 import type {
   CollectionResult,
@@ -105,7 +105,7 @@ export interface MergedDataV2 {
   stopsMetaMap: Map<string, StopWithMeta>;
   routeMap: Map<string, Route>;
   agencyMap: Map<string, Agency>;
-  tripPatterns: Map<string, TripPatternJson>;
+  tripPatterns: Map<string, TripPattern>;
   resolvedPatterns: Map<string, ResolvedPattern>;
   timetable: Record<string, TimetableGroupV2Json[]>;
   calendarServices: CalendarServiceJson[];
@@ -278,21 +278,29 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
   }
 
   // --- TripPatterns ---
-  const tripPatterns = new Map<string, TripPatternJson>();
+  // Convert TripPatternJson (pipeline JSON schema) to TripPattern (app-internal type).
+  // This decouples downstream logic from the JSON structure so that future
+  // TripPatternJson changes (e.g. per-stop attributes) are absorbed here.
+  const tripPatterns = new Map<string, TripPattern>();
   for (const source of sources) {
     for (const [id, pattern] of Object.entries(source.data.tripPatterns.data)) {
-      tripPatterns.set(id, pattern);
+      tripPatterns.set(id, {
+        route_id: pattern.r,
+        headsign: pattern.h,
+        direction: pattern.dir,
+        stops: pattern.stops.map((s) => s.id),
+      });
     }
   }
 
   // --- Resolved patterns (pre-computed for O(1) lookup) ---
   const resolvedPatterns = new Map<string, ResolvedPattern>();
   for (const [id, pattern] of tripPatterns) {
-    const route = routeMap.get(pattern.r);
+    const route = routeMap.get(pattern.route_id);
     if (route) {
       resolvedPatterns.set(id, {
         route,
-        headsign: pattern.h,
+        headsign: pattern.headsign,
         agencyId: route.agency_id,
         sourcePrefix: extractPrefix(route.agency_id),
       });
@@ -568,7 +576,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private readonly routeMap: Map<string, Route>;
   private agencyMap: Map<string, Agency>;
   private resolvedPatterns: Map<string, ResolvedPattern>;
-  private tripPatterns: Map<string, TripPatternJson>;
+  private tripPatterns: Map<string, TripPattern>;
   private stopRouteTypeMap: Map<string, RouteType[]>;
   private calendarServices: CalendarServiceJson[];
   private calendarExceptions: Map<string, CalendarExceptionJson[]>;
@@ -984,7 +992,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               route: resolved.route,
               headsign: resolved.headsign,
               headsign_names: headsignNames,
-              direction: pattern?.dir,
+              direction: pattern?.direction,
             },
             boarding: { pickupType, dropOffType },
             patternPosition: {
@@ -1038,7 +1046,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               route: resolved.route,
               headsign: resolved.headsign,
               headsign_names: headsignNames,
-              direction: pattern?.dir,
+              direction: pattern?.direction,
             },
             boarding: { pickupType, dropOffType },
             patternPosition: {
@@ -1135,7 +1143,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               route: resolved.route,
               headsign: resolved.headsign,
               headsign_names: headsignNames,
-              direction: pattern?.dir,
+              direction: pattern?.direction,
             },
             boarding: { pickupType, dropOffType },
             patternPosition: {
@@ -1217,10 +1225,10 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const t0 = performance.now();
     const map = new Map<string, Set<string>>();
     for (const pattern of this.tripPatterns.values()) {
-      let stops = map.get(pattern.r);
+      let stops = map.get(pattern.route_id);
       if (!stops) {
         stops = new Set();
-        map.set(pattern.r, stops);
+        map.set(pattern.route_id, stops);
       }
       for (const stopId of pattern.stops) {
         stops.add(stopId);

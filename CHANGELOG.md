@@ -9,8 +9,16 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Pipeline: GTFS `stop_times.stop_headsign` を `TripPatternJson.stops[].sh` として出力 (#92)。
+- Pipeline: pattern grouping key に stop_headsign を含め、同一 stop sequence でも stop_headsign が異なる trip を別パターンに分離。
+- WebApp: `TripPattern` アプリ内部型を導入し、JSON schema (`TripPatternJson`) の変更を Repository 層で吸収。
+- `VITE_TRANSIT_DATA_PATH` / `PIPELINE_TRANSIT_DATA_DIR` 環境変数を追加。transit data の fetch パスと sync 先を設定可能に。
+
 ### Changed
 
+- `TripPatternJson.stops` を `string[]` から `{id, sh?, sd?}[]` に変更。同一 `stop_times` レコード由来の属性をオブジェクトに統合し、positional alignment のズレリスクを排除。
 - `src/domain/` / `src/utils/` / `src/lib/` の配置基準を `DEVELOPMENT.md` で明確化し、関連モジュールを再配置。
 - route type 関連ロジックを責務別に分割: 表示色を `src/utils/route-type-color.ts`、優先判定を `src/domain/transit/route-type-priority.ts`、地図上の可視判定を `src/domain/map/route-type-visibility.ts` に整理。
 - browser / runtime 依存の helper を `src/lib/` に集約 (`query-params.ts`, `logger.ts`) し、関連テストも移設。

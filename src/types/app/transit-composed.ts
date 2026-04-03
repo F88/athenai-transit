@@ -193,6 +193,30 @@ export interface DepartureViewMeta {
 export type StopServiceType = 0 | 1 | 2 | 3;
 
 /**
+ * App-internal representation of a trip pattern.
+ *
+ * Converted from {@link TripPatternJson} (the JSON schema shared with
+ * the pipeline) in the Repository layer. This decouples the webapp's
+ * business logic from the pipeline's JSON structure, so future changes
+ * to TripPatternJson (e.g. adding per-stop attributes) can be absorbed
+ * in the Repository without touching downstream consumers.
+ *
+ * Currently exposes only the fields needed by existing webapp logic.
+ * When stop_headsign support is implemented, additional fields
+ * (e.g. stopHeadsigns) can be added here without changing TripPatternJson.
+ */
+export interface TripPattern {
+  /** Route ID (prefixed). */
+  route_id: string;
+  /** Trip headsign (GTFS trip_headsign). May be empty. */
+  headsign: string;
+  /** GTFS direction_id (0 or 1). Undefined when not provided. */
+  direction?: 0 | 1;
+  /** Ordered stop IDs (prefixed) from origin to destination. */
+  stops: string[];
+}
+
+/**
  * Route and direction context for a trip pattern.
  *
  * Combines the route, headsign (destination), headsign translations,

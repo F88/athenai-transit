@@ -308,13 +308,13 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
         message: `tripPattern ${patternId}: route "${pattern.r}" not found in routes`,
       });
     }
-    for (const stopId of pattern.stops) {
-      if (!stopIds.has(stopId)) {
+    for (const stop of pattern.stops) {
+      if (!stopIds.has(stop.id)) {
         issues.push({
           prefix,
           level: 'error',
           category: 'integrity',
-          message: `tripPattern ${patternId}: stop "${stopId}" not found in stops`,
+          message: `tripPattern ${patternId}: stop "${stop.id}" not found in stops`,
         });
       }
     }

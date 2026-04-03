@@ -26,7 +26,7 @@
  *
  * | Section        | Purpose                                            |
  * | -------------- | -------------------------------------------------- |
- * | tripPatterns   | Route + headsign + direction + ordered stop list    |
+ * | tripPatterns   | Route + headsign + direction + ordered per-stop records |
  * | lookup         | Normalized lookup tables (URLs, descriptions, etc.) |
  *
  * ### Bundle structure
@@ -258,9 +258,9 @@ export type ShapePointV2 = [number, number, number?];
  * - Origin stop: `stops[0]`
  * - Terminal stop: `stops[stops.length - 1]`
  * - Number of stops: `stops.length`
- * - Circular route: `stops[0] === stops[stops.length - 1]`
- * - Whether a stop is on this pattern: `stops.includes(stopId)`
- * - Stop position in pattern: `stops.indexOf(stopId)`
+ * - Circular route: `stops[0].id === stops[stops.length - 1].id`
+ * - Whether a stop is on this pattern: `stops.some(s => s.id === stopId)`
+ * - Stop position in pattern: `stops.findIndex(s => s.id === stopId)`
  *
  * Agency is not stored here — resolve via `r` -> RouteV2Json.ai.
  * GTFS spec defines route:agency as 1:1 (routes.txt.agency_id).
@@ -280,7 +280,7 @@ export interface TripPatternJson {
    *
    * May be empty when the GTFS source does not provide trip_headsign
    * (e.g. keio-bus). In that case, consumers can derive a display
-   * name from the terminal stop: `stops[stops.length - 1]` ->
+   * name from the terminal stop: `stops[stops.length - 1].id` ->
    * StopV2Json.n or translations.
    */
   h: string;
@@ -300,7 +300,14 @@ export interface TripPatternJson {
   dir?: 0 | 1;
 
   /**
-   * Ordered stop IDs (prefixed) from origin to destination.
+   * Ordered per-stop records from origin to destination.
+   *
+   * Each element bundles all attributes that originate from the same
+   * GTFS `stop_times` record for one stop on this pattern.
+   * Previously, stop IDs were stored as `stops: string[]` with a
+   * separate `sd?: number[]` array in positional alignment. This was
+   * consolidated into a single object array so that related fields
+   * cannot fall out of sync.
    *
    * - `stops[0]` is the first stop (origin).
    * - `stops[stops.length - 1]` is the terminal.
@@ -315,31 +322,45 @@ export interface TripPatternJson {
    * intermediate timepoints without scheduled departures). Consumers
    * MUST NOT assume every stop has departures in the timetable.
    */
-  stops: string[];
+  stops: {
+    /** Stop ID (prefixed). FK -> stops section in DataBundle. */
+    id: string;
 
-  /**
-   * Cumulative distance along the route shape per stop.
-   * `sd[i]` corresponds to `stops[i]` — the distance from the
-   * origin to that stop along the shape. Length MUST equal
-   * `stops.length`. Order MUST NOT be changed — indices are
-   * positional.
-   *
-   * Sourced from GTFS stop_times.txt shape_dist_traveled.
-   * Units are consistent with {@link ShapePointV2} distances.
-   *
-   * Together with the per-point distances in the shapes bundle, this enables
-   * partial shape rendering: to highlight the segment from stop A
-   * to stop B, scan the shape point array for the distance range
-   * `[sd[a], sd[b]]`. This works correctly even on looping routes
-   * where the vehicle crosses the same coordinates twice, because
-   * the distance values are monotonically increasing.
-   *
-   * Also derivable: total pattern distance (`sd[sd.length - 1]`)
-   * and inter-stop distance (`sd[i+1] - sd[i]`).
-   *
-   * Omitted when the source does not provide shape_dist_traveled.
-   */
-  sd?: number[];
+    /**
+     * GTFS `stop_times.stop_headsign`.
+     *
+     * Per GTFS spec, `stop_headsign` overrides the trip-level headsign
+     * ({@link TripPatternJson.h}) at this specific stop. It does NOT
+     * carry forward to subsequent stops — each stop has its own value.
+     *
+     * The pipeline stores the raw GTFS value as-is without comparing
+     * it to `h`. Consumers decide the effective headsign:
+     * `effectiveHeadsign = stops[i].sh ?? h`
+     *
+     * For translation lookup, when `sh` is present use
+     * `translations.stop_headsigns[sh]`; otherwise use
+     * `translations.headsigns[h]`.
+     *
+     * Omitted when the source does not provide `stop_headsign`
+     * or when the value is NULL.
+     */
+    sh?: string;
+
+    /**
+     * Cumulative distance along the route shape from origin to this stop.
+     *
+     * Sourced from GTFS `stop_times.shape_dist_traveled`.
+     * Units are consistent with {@link ShapePointV2} distances.
+     *
+     * Together with the per-point distances in the shapes bundle, this
+     * enables partial shape rendering: to highlight the segment from
+     * stop A to stop B, scan the shape point array for the distance
+     * range `[stops[a].sd, stops[b].sd]`.
+     *
+     * Omitted when the source does not provide `shape_dist_traveled`.
+     */
+    sd?: number;
+  }[];
 }
 
 // -----------------------------------------------------------------------
@@ -556,7 +577,7 @@ export interface ShapesBundle {
  *
  * The `rd` array is parallel to {@link TripPatternJson.stops}:
  * `rd[i]` is the approximate remaining ride time (minutes) from
- * `stops[i]` to the terminal `stops[stops.length - 1]`.
+ * stop `i` to the terminal stop.
  *
  * Derivable:
  * - Total pattern duration: `rd[0]`
@@ -568,7 +589,8 @@ export interface TripPatternStatsJson {
   freq: number;
   /**
    * Remaining minutes from each stop to the terminal.
-   * `rd[i]` corresponds to {@link TripPatternJson}.stops[i].
+   * `rd[i]` corresponds to {@link TripPatternJson}.stops[i]
+   * (i.e. the stop whose ID is `stops[i].id`).
    * Length MUST equal TripPatternJson.stops.length.
    * Values are monotonically decreasing; `rd[last]` is always 0.
    * Order MUST NOT be changed — indices are positional.
@@ -610,16 +632,16 @@ export interface TripPatternGeoJson {
    * This is a rough approximation of actual road distance — it
    * connects stops with straight lines rather than following the
    * actual route. For more accurate distances, use
-   * {@link TripPatternJson.sd} (shape_dist_traveled) when available.
+   * {@link TripPatternJson.stops}[i].sd (shape_dist_traveled) when available.
    */
   pathDist: number;
 
   /**
    * Whether this pattern is circular: the first and last stop are
-   * the same (`stops[0] === stops[stops.length - 1]`).
+   * the same (`stops[0].id === stops[stops.length - 1].id`).
    *
    * Note: "6-shaped" routes (e.g. Oedo Line) where a mid-route stop
-   * appears twice but `stops[0] !== stops[last]` are NOT flagged as
+   * appears twice but `stops[0].id !== stops[last].id` are NOT flagged as
    * circular. They have a valid `dist` and can be scored normally.
    */
   cl: boolean;

@@ -36,25 +36,25 @@ export function buildTripPatternGeo(
   const result: Record<string, TripPatternGeoJson> = {};
 
   for (const [patternId, pattern] of Object.entries(patterns)) {
-    const { stops: stopIds } = pattern;
+    const { stops } = pattern;
 
-    if (stopIds.length === 0) {
+    if (stops.length === 0) {
       result[patternId] = { dist: 0, pathDist: 0, cl: false };
       continue;
     }
 
-    if (stopIds.length === 1) {
+    if (stops.length === 1) {
       result[patternId] = { dist: 0, pathDist: 0, cl: false };
       continue;
     }
 
-    const cl = stopIds[0] === stopIds[stopIds.length - 1];
+    const cl = stops[0].id === stops[stops.length - 1].id;
 
     // Straight-line distance: 0 for circular routes
     let dist = 0;
     if (!cl) {
-      const first = stopCoords.get(stopIds[0]);
-      const last = stopCoords.get(stopIds[stopIds.length - 1]);
+      const first = stopCoords.get(stops[0].id);
+      const last = stopCoords.get(stops[stops.length - 1].id);
       if (first && last) {
         dist = haversineKm(first.lat, first.lon, last.lat, last.lon);
       }
@@ -62,9 +62,9 @@ export function buildTripPatternGeo(
 
     // Path distance: sum of consecutive stop distances
     let pathDist = 0;
-    for (let i = 0; i < stopIds.length - 1; i++) {
-      const a = stopCoords.get(stopIds[i]);
-      const b = stopCoords.get(stopIds[i + 1]);
+    for (let i = 0; i < stops.length - 1; i++) {
+      const a = stopCoords.get(stops[i].id);
+      const b = stopCoords.get(stops[i + 1].id);
       if (a && b) {
         pathDist += haversineKm(a.lat, a.lon, b.lat, b.lon);
       }

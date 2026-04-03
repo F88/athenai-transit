@@ -202,10 +202,10 @@ describe('GTFS DataBundle assembly', () => {
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
     db.close();
 
-    const stopIds = new Set(stops.map((s) => s.i));
+    const stopIdSet = new Set(stops.map((s) => s.i));
     for (const p of Object.values(tripPatterns)) {
-      for (const sid of p.stops) {
-        expect(stopIds.has(sid)).toBe(true);
+      for (const stop of p.stops) {
+        expect(stopIdSet.has(stop.id)).toBe(true);
       }
     }
   });

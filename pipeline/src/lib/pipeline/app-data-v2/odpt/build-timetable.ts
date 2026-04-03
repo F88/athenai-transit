@@ -88,10 +88,10 @@ function buildStopSequence(
   destination: string | undefined,
   rw: RailwayInfo,
   prefix: string,
-): string[] {
-  const allStops = rw.stationOrder.map(
-    (so) => `${prefix}:${extractStationShortId(so['odpt:station'])}`,
-  );
+): TripPatternJson['stops'] {
+  const allStops = rw.stationOrder.map((so) => ({
+    id: `${prefix}:${extractStationShortId(so['odpt:station'])}`,
+  }));
 
   const destIdx = destination ? rw.stationIndexMap.get(destination) : undefined;
 
@@ -108,8 +108,12 @@ function buildStopSequence(
 /**
  * Deterministic sort key for a pattern.
  */
-function patternSortKey(routeId: string, headsign: string, stops: string[]): string {
-  return `${routeId}\0${headsign}\0${stops.join(',')}`;
+function patternSortKey(
+  routeId: string,
+  headsign: string,
+  stops: TripPatternJson['stops'],
+): string {
+  return `${routeId}\0${headsign}\0${JSON.stringify(stops.map((s) => s.id))}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +176,7 @@ export function buildTripPatternsAndTimetableFromOdpt(
   // 1. Discover patterns: route + direction + destination -> pattern
   const patternMap = new Map<
     string,
-    { routeId: string; headsign: string; stops: string[]; sortKey: string }
+    { routeId: string; headsign: string; stops: TripPatternJson['stops']; sortKey: string }
   >();
 
   // Helper: get or create pattern for a (railway, direction, destination) combo

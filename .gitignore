@@ -40,6 +40,9 @@ __LOCAL_DOCS__/
 
 ### Web app
 
+# Ignore Json files for development and testing (not needed in production)
+public/next-dev
+
 # Node modules and build artifacts
 node_modules
 dist
@@ -53,3 +56,4 @@ coverage
 ### Storybook
 *storybook.log
 storybook-static
+

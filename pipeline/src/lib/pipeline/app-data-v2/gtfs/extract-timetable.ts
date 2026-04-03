@@ -36,6 +36,7 @@ interface StopTimeRow {
   arrival_time: string | null;
   pickup_type: number | null;
   drop_off_type: number | null;
+  stop_headsign: string | null;
 }
 
 /** Internal representation of a trip's stop sequence and times. */
@@ -50,6 +51,7 @@ interface TripStopTimes {
   arrivals: (number | null)[];
   pickupTypes: (number | null)[];
   dropOffTypes: (number | null)[];
+  stopHeadsigns: (string | null)[];
 }
 
 // ---------------------------------------------------------------------------
@@ -58,16 +60,23 @@ interface TripStopTimes {
 
 /**
  * Deterministic sort key for a trip pattern.
- * route_id → headsign → direction → stops.join(",")
+ * route_id → headsign → direction → stops → stopHeadsigns
+ *
+ * stopHeadsigns is included so that trips with the same stop sequence
+ * but different stop_headsign values form separate patterns. Without
+ * this, the first trip's stopHeadsigns would silently win (see #92).
  */
 function patternSortKey(p: {
   routeId: string;
   headsign: string;
   directionId: number | null;
   stops: string[];
+  stopHeadsigns: (string | null)[];
 }): string {
   const dir = p.directionId ?? -1;
-  return `${p.routeId}\0${p.headsign}\0${dir}\0${p.stops.join(',')}`;
+  // JSON.stringify for arrays to avoid delimiter collision.
+  // GTFS IDs and headsigns are free-text UTF-8 and may contain commas.
+  return `${p.routeId}\0${p.headsign}\0${dir}\0${JSON.stringify(p.stops)}\0${JSON.stringify(p.stopHeadsigns)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -105,7 +114,7 @@ export function extractTripPatternsAndTimetable(
   const stopTimeRows = db
     .prepare(
       `SELECT trip_id, stop_id, stop_sequence, departure_time, arrival_time,
-              pickup_type, drop_off_type
+              pickup_type, drop_off_type, stop_headsign
        FROM stop_times
        ORDER BY trip_id, stop_sequence`,
     )
@@ -139,6 +148,7 @@ export function extractTripPatternsAndTimetable(
         arrivals: [],
         pickupTypes: [],
         dropOffTypes: [],
+        stopHeadsigns: [],
       };
       tripStopTimesMap.set(st.trip_id, currentTrip);
     }
@@ -151,15 +161,18 @@ export function extractTripPatternsAndTimetable(
     currentTrip.arrivals.push(st.arrival_time ? timeToMinutes(st.arrival_time) : null);
     currentTrip.pickupTypes.push(st.pickup_type);
     currentTrip.dropOffTypes.push(st.drop_off_type);
+    currentTrip.stopHeadsigns.push(st.stop_headsign);
   }
 
   if (skipped > 0) {
     console.warn(`  [${prefix}] WARN: ${skipped} stop_times skipped (trip not found)`);
   }
 
-  // 4. Group trips by pattern (route + headsign + direction + stop sequence)
+  // 4. Group trips by pattern (route + headsign + direction + stop sequence + stop headsigns)
+  // stop_headsign is included in the key so that trips with the same stop
+  // sequence but different stop_headsign values form separate patterns.
   const patternKey = (t: TripStopTimes): string =>
-    `${t.routeId}\0${t.headsign}\0${t.directionId ?? ''}\0${t.stops.join(',')}`;
+    `${t.routeId}\0${t.headsign}\0${t.directionId ?? ''}\0${JSON.stringify(t.stops)}\0${JSON.stringify(t.stopHeadsigns)}`;
 
   const patternGroups = new Map<
     string,
@@ -168,6 +181,7 @@ export function extractTripPatternsAndTimetable(
       headsign: string;
       directionId: number | null;
       stops: string[];
+      stopHeadsigns: (string | null)[];
       trips: TripStopTimes[];
     }
   >();
@@ -181,6 +195,7 @@ export function extractTripPatternsAndTimetable(
         headsign: trip.headsign,
         directionId: trip.directionId,
         stops: trip.stops,
+        stopHeadsigns: trip.stopHeadsigns,
         trips: [],
       };
       patternGroups.set(key, group);
@@ -207,11 +222,28 @@ export function extractTripPatternsAndTimetable(
     const key = patternKey(p.trips[0]);
     patternIdByKey.set(key, patternId);
 
+    // Use the first trip's stopHeadsigns as the representative values.
+    // All trips in the same pattern share the same stop_headsign at each
+    // stop — guaranteed by patternKey including stopHeadsigns.
+    const refTrip = p.trips[0];
+
     const pattern: TripPatternJson = {
       v: 2,
       r: `${prefix}:${p.routeId}`,
       h: p.headsign,
-      stops: p.stops.map((s) => `${prefix}:${s}`),
+      stops: p.stops.map((s, idx) => {
+        const stop: TripPatternJson['stops'][number] = {
+          id: `${prefix}:${s}`,
+        };
+        const sh = refTrip.stopHeadsigns[idx];
+        // NULL = stop_headsign not specified → omit sh (consumer falls back to h).
+        // In practice, the CSV→DB import converts empty CSV fields to NULL,
+        // so sh is either a non-empty string or null here.
+        if (sh != null) {
+          stop.sh = sh;
+        }
+        return stop;
+      }),
     };
 
     if (p.directionId != null) {
@@ -244,6 +276,7 @@ export function extractTripPatternsAndTimetable(
         continue;
       }
 
+      // stop_id is not yet prefixed in the internal TripStopTimes
       const prefixedStopId = `${prefix}:${trip.stops[stopIdx]}`;
       const arr = trip.arrivals[stopIdx] ?? dep;
       const pt = trip.pickupTypes[stopIdx] ?? 0;

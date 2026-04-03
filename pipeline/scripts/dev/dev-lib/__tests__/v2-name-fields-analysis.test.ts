@@ -77,8 +77,8 @@ function createTestBundle(overrides?: Partial<DataBundle>): DataBundle {
     tripPatterns: {
       v: 2,
       data: {
-        'pattern:1': { v: 2, r: 'route:1', h: 'To A', stops: ['stop:a'] },
-        'pattern:2': { v: 2, r: 'route:2', h: '', stops: ['stop:b'] },
+        'pattern:1': { v: 2, r: 'route:1', h: 'To A', stops: [{ id: 'stop:a' }] },
+        'pattern:2': { v: 2, r: 'route:2', h: '', stops: [{ id: 'stop:b' }] },
       },
     },
     translations: {

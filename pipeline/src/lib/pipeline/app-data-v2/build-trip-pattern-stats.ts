@@ -46,8 +46,8 @@ import type {
  * cannot be correctly decomposed — this is a known limitation
  * tracked in #47 (TimetableGroupV2Json needs `seq`).
  */
-function isCircularPattern(stops: string[]): boolean {
-  return stops.length > 2 && stops[0] === stops[stops.length - 1];
+function isCircularPattern(stops: TripPatternJson['stops']): boolean {
+  return stops.length > 2 && stops[0].id === stops[stops.length - 1].id;
 }
 
 /**
@@ -281,8 +281,8 @@ function computeSegmentTimes(
     }
 
     const result = computeSegmentMedian(
-      getCachedDeps(stops[i]),
-      getCachedDeps(stops[i + 1]),
+      getCachedDeps(stops[i].id),
+      getCachedDeps(stops[i + 1].id),
       NO_DATA,
     );
     if (result !== NO_DATA) {
@@ -326,7 +326,7 @@ export function buildTripPatternStats(
 
       // freq: use interior stop (position 1) for circular routes to avoid 2x
       const isCircular = isCircularPattern(stops);
-      const freqStopId = isCircular ? stops[1] : stops[0];
+      const freqStopId = isCircular ? stops[1].id : stops[0].id;
       const freq = countDepartures(timetable[freqStopId], patternId, group.serviceIds);
 
       // Omit patterns with no departures in this service group.

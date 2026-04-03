@@ -17,6 +17,8 @@
 
 import { cpSync, existsSync, rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { sanitizeDirName } from './lib/sanitize-dir-name';
 
 const PROJECT_ROOT = resolve(import.meta.dirname, '..');
 
@@ -26,11 +28,24 @@ interface SyncTarget {
   dest: string;
 }
 
+/**
+ * Resolve the destination directory for transit data sync.
+ * Reads `PIPELINE_TRANSIT_DATA_DIR` env var; defaults to `data-v2`.
+ * Always under `public/`.
+ */
+export function resolveDestDir(env: Record<string, string | undefined> = process.env): string {
+  const dir = sanitizeDirName(
+    env.PIPELINE_TRANSIT_DATA_DIR ?? 'data-v2',
+    'PIPELINE_TRANSIT_DATA_DIR',
+  );
+  return 'public/' + dir;
+}
+
 const TARGETS: SyncTarget[] = [
   {
     label: 'v2',
     src: join(PROJECT_ROOT, 'pipeline/workspace/_build/data-v2'),
-    dest: join(PROJECT_ROOT, 'public/data-v2'),
+    dest: join(PROJECT_ROOT, resolveDestDir()),
   },
 ];
 
@@ -76,4 +91,16 @@ function main(): void {
   console.log(`Done! (${synced}/${TARGETS.length} targets synced)`);
 }
 
-main();
+// Only run when executed directly (not when imported by other modules).
+// Same pattern as pipeline/scripts/pipeline/check-odpt-resources.ts.
+function isDirectExecution(): boolean {
+  const entry = process.argv[1];
+  if (!entry) {
+    return false;
+  }
+  return import.meta.url === pathToFileURL(entry).href;
+}
+
+if (isDirectExecution()) {
+  main();
+}

@@ -28,6 +28,7 @@ function createSchema(database: Database.Database): void {
       arrival_time TEXT,
       pickup_type INTEGER,
       drop_off_type INTEGER,
+      stop_headsign TEXT,
       PRIMARY KEY (trip_id, stop_sequence)
     );
   `);
@@ -53,26 +54,26 @@ describe('extractTripPatternsAndTimetable', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S002', 2, '09:10:00', '09:10:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S002', 2, '09:10:00', '09:10:00', 0, 0, NULL);
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
     const patternIds = Object.keys(tripPatterns);
     expect(patternIds).toHaveLength(1);
-    expect(tripPatterns[patternIds[0]].stops).toEqual(['test:S001', 'test:S002']);
+    expect(tripPatterns[patternIds[0]].stops).toEqual([{ id: 'test:S001' }, { id: 'test:S002' }]);
   });
 
   it('creates separate patterns for different stop sequences', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S003', 2, '09:10:00', '09:10:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S003', 2, '09:10:00', '09:10:00', 0, 0, NULL);
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
@@ -82,7 +83,7 @@ describe('extractTripPatternsAndTimetable', () => {
   it('assigns deterministic pattern IDs: {prefix}:p{1-indexed}', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
@@ -94,8 +95,8 @@ describe('extractTripPatternsAndTimetable', () => {
   it('pattern includes route, headsign, direction, stops', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 1);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
@@ -104,13 +105,13 @@ describe('extractTripPatternsAndTimetable', () => {
     expect(p.r).toBe('test:R001');
     expect(p.h).toBe('渋谷');
     expect(p.dir).toBe(1);
-    expect(p.stops).toEqual(['test:S001', 'test:S002']);
+    expect(p.stops).toEqual([{ id: 'test:S001' }, { id: 'test:S002' }]);
   });
 
   it('omits dir when direction_id is NULL', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', NULL);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
@@ -120,8 +121,8 @@ describe('extractTripPatternsAndTimetable', () => {
   it('timetable d/a/pt/dt are positionally aligned', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '07:59:00', 0, 1);
-      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:09:00', 2, 3);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '07:59:00', 0, 1, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:09:00', 2, 3, NULL);
     `);
 
     const { timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -143,7 +144,7 @@ describe('extractTripPatternsAndTimetable', () => {
   it('copies departure to arrival when arrival_time is NULL', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', NULL, 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', NULL, 0, 0, NULL);
     `);
 
     const { timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -155,7 +156,7 @@ describe('extractTripPatternsAndTimetable', () => {
   it('handles overnight departures (25:00 etc.)', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '25:30:00', '25:30:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '25:30:00', '25:30:00', 0, 0, NULL);
     `);
 
     const { timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -166,8 +167,8 @@ describe('extractTripPatternsAndTimetable', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO trips VALUES ('T002', 'R001', 'HD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
     `);
 
     const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -182,8 +183,8 @@ describe('extractTripPatternsAndTimetable', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
     const { timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -193,7 +194,7 @@ describe('extractTripPatternsAndTimetable', () => {
   it('GTFS always includes pt/dt (even when all values are 0)', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
     const { timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -209,8 +210,8 @@ describe('extractTripPatternsAndTimetable', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO trips VALUES ('T002', 'R001', 'WD', '新宿', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
@@ -224,7 +225,7 @@ describe('extractTripPatternsAndTimetable', () => {
   it('includes direction_id=0 in pattern (not omitted)', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
@@ -234,7 +235,7 @@ describe('extractTripPatternsAndTimetable', () => {
   it('handles pickup_type/drop_off_type NULL as 0', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', NULL, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', NULL, NULL, NULL);
     `);
 
     const { timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -246,14 +247,18 @@ describe('extractTripPatternsAndTimetable', () => {
   it('NULL departure stop is in pattern.stops but not in timetable', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S002', 2, NULL, NULL, 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S003', 3, '08:10:00', '08:10:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, NULL, NULL, 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S003', 3, '08:10:00', '08:10:00', 0, 0, NULL);
     `);
 
     const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
     // Pattern includes all 3 stops (including pass-through)
-    expect(tripPatterns['test:p1'].stops).toEqual(['test:S001', 'test:S002', 'test:S003']);
+    expect(tripPatterns['test:p1'].stops).toEqual([
+      { id: 'test:S001' },
+      { id: 'test:S002' },
+      { id: 'test:S003' },
+    ]);
     // But timetable has no entry for S002
     expect(timetable['test:S002']).toBeUndefined();
   });
@@ -261,9 +266,9 @@ describe('extractTripPatternsAndTimetable', () => {
   it('skips stop_times with NULL departure_time', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S002', 2, NULL, '08:05:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S003', 3, '08:10:00', '08:10:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, NULL, '08:05:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S003', 3, '08:10:00', '08:10:00', 0, 0, NULL);
     `);
 
     const { timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -278,8 +283,8 @@ describe('extractTripPatternsAndTimetable', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '07:59:00', 1, 2);
-      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '08:59:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '07:59:00', 1, 2, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '08:59:00', 0, 0, NULL);
     `);
 
     const { timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -296,10 +301,10 @@ describe('extractTripPatternsAndTimetable', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S003', 1, '09:00:00', '09:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S002', 2, '09:10:00', '09:10:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S003', 1, '09:00:00', '09:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S002', 2, '09:10:00', '09:10:00', 0, 0, NULL);
     `);
 
     const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -312,16 +317,16 @@ describe('extractTripPatternsAndTimetable', () => {
   it('handles circular route (same first and last stop)', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '都庁前', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 3, '08:20:00', '08:20:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 3, '08:20:00', '08:20:00', 0, 0, NULL);
     `);
 
     const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
     const p = Object.values(tripPatterns)[0];
     // Circular: first and last stop are the same
-    expect(p.stops[0]).toBe(p.stops[p.stops.length - 1]);
-    expect(p.stops).toEqual(['test:S001', 'test:S002', 'test:S001']);
+    expect(p.stops[0].id).toBe(p.stops[p.stops.length - 1].id);
+    expect(p.stops).toEqual([{ id: 'test:S001' }, { id: 'test:S002' }, { id: 'test:S001' }]);
     // S001 appears twice in the pattern -> timetable has 2 departures (at seq 1 and seq 3)
     const g = timetable['test:S001'][0];
     expect(g.d['test:WD']).toEqual([480, 500]);
@@ -330,7 +335,7 @@ describe('extractTripPatternsAndTimetable', () => {
   it('route_url is NOT included in route output (moved to lookup)', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
@@ -344,8 +349,8 @@ describe('extractTripPatternsAndTimetable', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R002', 'WD', '新宿', 0);
       INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
@@ -362,8 +367,8 @@ describe('extractTripPatternsAndTimetable', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '10:00:00', '09:58:00', 1, 2);
-      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '08:00:00', '07:55:00', 0, 3);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '10:00:00', '09:58:00', 1, 2, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '08:00:00', '07:55:00', 0, 3, NULL);
     `);
 
     const { timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -379,10 +384,10 @@ describe('extractTripPatternsAndTimetable', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '都庁前', 0);
       INSERT INTO trips VALUES ('T002', 'R001', 'WD', '都庁前', 1);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S002', 2, '09:10:00', '09:10:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S002', 2, '09:10:00', '09:10:00', 0, 0, NULL);
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
@@ -396,8 +401,8 @@ describe('extractTripPatternsAndTimetable', () => {
   it('skips stop_times whose trip_id is not in trips table', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('ORPHAN', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('ORPHAN', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
     `);
 
     const { timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -407,7 +412,7 @@ describe('extractTripPatternsAndTimetable', () => {
   it('empty headsign is preserved (not converted to undefined)', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
@@ -417,7 +422,7 @@ describe('extractTripPatternsAndTimetable', () => {
   it('NULL trip_headsign is converted to empty string', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', NULL, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
     const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
@@ -427,16 +432,16 @@ describe('extractTripPatternsAndTimetable', () => {
   it('ignores orphan stop_times across multiple rows and keeps valid patterns intact', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('ORPHAN', 'SX01', 1, '07:00:00', '07:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('ORPHAN', 'SX02', 2, '07:10:00', '07:10:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0);
+      INSERT INTO stop_times VALUES ('ORPHAN', 'SX01', 1, '07:00:00', '07:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('ORPHAN', 'SX02', 2, '07:10:00', '07:10:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
     `);
 
     const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
 
     expect(Object.keys(tripPatterns)).toEqual(['test:p1']);
-    expect(tripPatterns['test:p1'].stops).toEqual(['test:S001', 'test:S002']);
+    expect(tripPatterns['test:p1'].stops).toEqual([{ id: 'test:S001' }, { id: 'test:S002' }]);
     expect(timetable['test:S001'][0].d['test:WD']).toEqual([480]);
     expect(timetable['test:SX01']).toBeUndefined();
     expect(timetable['test:SX02']).toBeUndefined();
@@ -446,8 +451,8 @@ describe('extractTripPatternsAndTimetable', () => {
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', NULL);
       INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0);
-      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
     `);
 
     const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
@@ -460,5 +465,192 @@ describe('extractTripPatternsAndTimetable', () => {
     expect(groups).toHaveLength(2);
     expect(groups.find((g) => g.tp === 'test:p1')!.d['test:WD']).toEqual([480]);
     expect(groups.find((g) => g.tp === 'test:p2')!.d['test:WD']).toEqual([540]);
+  });
+
+  // -------------------------------------------------------------------------
+  // stop_headsign (sh) tests
+  // -------------------------------------------------------------------------
+
+  it('omits sh when stop_headsign is NULL', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    const p = tripPatterns['test:p1'];
+    expect(p.stops[0]).toEqual({ id: 'test:S001' });
+    expect(p.stops[1]).toEqual({ id: 'test:S002' });
+    expect(p.stops[0].sh).toBeUndefined();
+    expect(p.stops[1].sh).toBeUndefined();
+  });
+
+  it('preserves empty string sh when DB contains empty string', () => {
+    // In practice the CSV→DB import converts empty fields to NULL,
+    // so empty strings rarely appear. This test verifies the pipeline
+    // does not silently drop them if they do exist in the DB.
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '');
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    expect(tripPatterns['test:p1'].stops[0].sh).toBe('');
+  });
+
+  it('creates separate patterns for NULL vs empty string stop_headsign in DB', () => {
+    // NULL and empty string produce different pattern keys.
+    // In practice empty strings do not appear (CSV import normalizes to NULL),
+    // but if they did, they must not be conflated.
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, '');
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    expect(Object.keys(tripPatterns)).toHaveLength(2);
+    const patterns = Object.values(tripPatterns);
+    const withNull = patterns.find((p) => p.stops[0].sh === undefined)!;
+    const withEmpty = patterns.find((p) => p.stops[0].sh === '')!;
+    expect(withNull).toBeDefined();
+    expect(withEmpty).toBeDefined();
+  });
+
+  it('includes sh when stop_headsign equals trip_headsign (no omission)', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '渋谷');
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    // Pipeline stores raw GTFS value without comparing to trip_headsign
+    expect(tripPatterns['test:p1'].stops[0].sh).toBe('渋谷');
+  });
+
+  it('includes sh when stop_headsign differs from trip_headsign', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '豊洲市場', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '豊洲市場（急行）');
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, '豊洲市場');
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    const p = tripPatterns['test:p1'];
+    expect(p.h).toBe('豊洲市場');
+    expect(p.stops[0].sh).toBe('豊洲市場（急行）');
+    expect(p.stops[1].sh).toBe('豊洲市場');
+  });
+
+  it('includes sh when trip_headsign is empty but stop_headsign is provided', () => {
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '中野駅');
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    const p = tripPatterns['test:p1'];
+    expect(p.h).toBe('');
+    expect(p.stops[0].sh).toBe('中野駅');
+    // Terminal stop with NULL stop_headsign
+    expect(p.stops[1].sh).toBeUndefined();
+  });
+
+  it('stores different sh per stop within the same trip (mid-trip headsign change)', () => {
+    // Simulates kyoto-city-bus pattern: headsign changes as bus passes intermediate stops
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '北大路BT・出町柳駅', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '北大路BT・出町柳駅');
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, '出町柳駅');
+      INSERT INTO stop_times VALUES ('T001', 'S003', 3, '08:20:00', '08:20:00', 0, 0, '西賀茂車庫');
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    const p = tripPatterns['test:p1'];
+    expect(p.stops[0].sh).toBe('北大路BT・出町柳駅');
+    expect(p.stops[1].sh).toBe('出町柳駅');
+    expect(p.stops[2].sh).toBe('西賀茂車庫');
+  });
+
+  it('creates separate patterns when stop_headsign differs but stop sequence is the same', () => {
+    // Same route, same stops, but different stop_headsign at S001
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '永福町');
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, '峰');
+      INSERT INTO stop_times VALUES ('T002', 'S002', 2, '09:10:00', '09:10:00', 0, 0, NULL);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    // Must be 2 separate patterns because stop_headsign differs
+    expect(Object.keys(tripPatterns)).toHaveLength(2);
+    const patterns = Object.values(tripPatterns);
+    const shs = patterns.map((p) => p.stops[0].sh).sort();
+    expect(shs).toEqual(['峰', '永福町']);
+  });
+
+  it('does not conflate patterns when stop_headsign contains commas', () => {
+    // stop_headsign is free text and may contain commas.
+    // Pattern key must use delimiter-safe encoding (JSON.stringify)
+    // so that ["A,B", "C"] and ["A", "B,C"] produce different keys.
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, 'A,B');
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, 'C');
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, 'A');
+      INSERT INTO stop_times VALUES ('T002', 'S002', 2, '09:10:00', '09:10:00', 0, 0, 'B,C');
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    // Must be 2 separate patterns — comma in headsign must not cause conflation
+    expect(Object.keys(tripPatterns)).toHaveLength(2);
+    const patterns = Object.values(tripPatterns);
+    const p1 = patterns.find((p) => p.stops[0].sh === 'A,B')!;
+    const p2 = patterns.find((p) => p.stops[0].sh === 'A')!;
+    expect(p1.stops[1].sh).toBe('C');
+    expect(p2.stops[1].sh).toBe('B,C');
+  });
+
+  it('does not conflate patterns when stop_id contains commas', () => {
+    // GTFS stop_id is "any UTF-8 characters" so commas are valid.
+    // Pattern key must use delimiter-safe encoding (JSON.stringify)
+    // so that ["S,1","2"] and ["S","1,2"] produce different keys.
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', 'X', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', 'X', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S,1', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', '2', 2, '08:10:00', '08:10:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S', 1, '09:00:00', '09:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', '1,2', 2, '09:10:00', '09:10:00', 0, 0, NULL);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    // ["S,1","2"] vs ["S","1,2"] — must be 2 separate patterns
+    expect(Object.keys(tripPatterns)).toHaveLength(2);
+  });
+
+  it('uses first trip stop_headsign as representative for same-pattern trips', () => {
+    // All trips in the same pattern should have the same stop_headsign at each stop
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '渋谷駅');
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, '渋谷駅');
+      INSERT INTO stop_times VALUES ('T002', 'S002', 2, '09:10:00', '09:10:00', 0, 0, NULL);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    const patternIds = Object.keys(tripPatterns);
+    expect(patternIds).toHaveLength(1);
+    const p = tripPatterns[patternIds[0]];
+    expect(p.stops[0].sh).toBe('渋谷駅');
+    expect(p.stops[1].sh).toBeUndefined();
   });
 });

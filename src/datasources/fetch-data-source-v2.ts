@@ -17,6 +17,7 @@
  */
 
 import { createLogger } from '../lib/logger';
+import { sanitizeDirName } from '../utils/sanitize-dir-name';
 import type {
   DataBundle,
   GlobalInsightsBundle,
@@ -27,8 +28,20 @@ import type { SourceDataV2, TransitDataSourceV2 } from './transit-data-source-v2
 
 const logger = createLogger('FetchDataSourceV2');
 
-/** Default base path for v2 data files. */
-const BASE_PATH = '/data-v2';
+/**
+ * Base path for transit data files.
+ * Configurable via `VITE_TRANSIT_DATA_PATH` environment variable.
+ * Defaults to `/data-v2` when not set.
+ * The value must be `/<simple-dir-name>` (e.g. `/data-v2`, `/next-dev`).
+ */
+const BASE_PATH = validateBasePath(import.meta.env.VITE_TRANSIT_DATA_PATH ?? '/data-v2');
+
+/** @internal Exported for testing. */
+export function validateBasePath(value: string): string {
+  const dir = value.startsWith('/') ? value.slice(1) : value;
+  sanitizeDirName(dir, 'VITE_TRANSIT_DATA_PATH');
+  return value.startsWith('/') ? value : `/${value}`;
+}
 
 /** Expected bundle_version for all v2 bundles. */
 const EXPECTED_BUNDLE_VERSION = 2;
