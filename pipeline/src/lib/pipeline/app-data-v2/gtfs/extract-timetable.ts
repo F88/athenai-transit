@@ -74,10 +74,9 @@ function patternSortKey(p: {
   stopHeadsigns: (string | null)[];
 }): string {
   const dir = p.directionId ?? -1;
-  // JSON.stringify for stopHeadsigns to avoid delimiter collision.
-  // stop_headsign is free text and may contain commas, so comma-join
-  // would conflate different arrays (e.g. ["A,B","C"] vs ["A","B,C"]).
-  return `${p.routeId}\0${p.headsign}\0${dir}\0${p.stops.join(',')}\0${JSON.stringify(p.stopHeadsigns)}`;
+  // JSON.stringify for arrays to avoid delimiter collision.
+  // GTFS IDs and headsigns are free-text UTF-8 and may contain commas.
+  return `${p.routeId}\0${p.headsign}\0${dir}\0${JSON.stringify(p.stops)}\0${JSON.stringify(p.stopHeadsigns)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -173,7 +172,7 @@ export function extractTripPatternsAndTimetable(
   // stop_headsign is included in the key so that trips with the same stop
   // sequence but different stop_headsign values form separate patterns.
   const patternKey = (t: TripStopTimes): string =>
-    `${t.routeId}\0${t.headsign}\0${t.directionId ?? ''}\0${t.stops.join(',')}\0${JSON.stringify(t.stopHeadsigns)}`;
+    `${t.routeId}\0${t.headsign}\0${t.directionId ?? ''}\0${JSON.stringify(t.stops)}\0${JSON.stringify(t.stopHeadsigns)}`;
 
   const patternGroups = new Map<
     string,
@@ -225,21 +224,8 @@ export function extractTripPatternsAndTimetable(
 
     // Use the first trip's stopHeadsigns as the representative values.
     // All trips in the same pattern share the same stop_headsign at each
-    // stop (verified invariant — stops array difference = different pattern).
-    // Validate this invariant and warn if violated.
+    // stop — guaranteed by patternKey including stopHeadsigns.
     const refTrip = p.trips[0];
-    for (let t = 1; t < p.trips.length; t++) {
-      for (let s = 0; s < p.stops.length; s++) {
-        const ref = refTrip.stopHeadsigns[s] ?? '';
-        const cur = p.trips[t].stopHeadsigns[s] ?? '';
-        if (ref !== cur) {
-          console.warn(
-            `  [${prefix}] WARN: conflicting stop_headsign at stop ${p.stops[s]} seq ${s} in pattern ${patternId}: "${ref}" vs "${cur}" (trip ${p.trips[t].tripId})`,
-          );
-          break;
-        }
-      }
-    }
 
     const pattern: TripPatternJson = {
       v: 2,

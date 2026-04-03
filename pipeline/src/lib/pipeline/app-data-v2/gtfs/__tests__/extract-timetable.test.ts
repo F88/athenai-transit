@@ -617,6 +617,24 @@ describe('extractTripPatternsAndTimetable', () => {
     expect(p2.stops[1].sh).toBe('B,C');
   });
 
+  it('does not conflate patterns when stop_id contains commas', () => {
+    // GTFS stop_id is "any UTF-8 characters" so commas are valid.
+    // Pattern key must use delimiter-safe encoding (JSON.stringify)
+    // so that ["S,1","2"] and ["S","1,2"] produce different keys.
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', 'X', 0);
+      INSERT INTO trips VALUES ('T002', 'R001', 'WD', 'X', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S,1', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', '2', 2, '08:10:00', '08:10:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', 'S', 1, '09:00:00', '09:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T002', '1,2', 2, '09:10:00', '09:10:00', 0, 0, NULL);
+    `);
+
+    const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+    // ["S,1","2"] vs ["S","1,2"] — must be 2 separate patterns
+    expect(Object.keys(tripPatterns)).toHaveLength(2);
+  });
+
   it('uses first trip stop_headsign as representative for same-pattern trips', () => {
     // All trips in the same pattern should have the same stop_headsign at each stop
     db.exec(`

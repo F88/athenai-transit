@@ -113,7 +113,7 @@ function patternSortKey(
   headsign: string,
   stops: TripPatternJson['stops'],
 ): string {
-  return `${routeId}\0${headsign}\0${stops.map((s) => s.id).join(',')}`;
+  return `${routeId}\0${headsign}\0${JSON.stringify(stops.map((s) => s.id))}`;
 }
 
 // ---------------------------------------------------------------------------

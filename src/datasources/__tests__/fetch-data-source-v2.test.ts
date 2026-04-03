@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import { FetchDataSourceV2 } from '../fetch-data-source-v2';
 
 // ---------------------------------------------------------------------------
@@ -283,5 +283,39 @@ describe('FetchDataSourceV2', () => {
         expect.objectContaining({ signal: expect.any(AbortSignal) as AbortSignal }),
       );
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validateBasePath
+// ---------------------------------------------------------------------------
+
+describe('validateBasePath', () => {
+  // Dynamic import to avoid module-level BASE_PATH evaluation interfering
+  let validateBasePath: (value: string) => string;
+
+  beforeAll(async () => {
+    const mod = await import('../fetch-data-source-v2');
+    validateBasePath = mod.validateBasePath;
+  });
+
+  it('returns value unchanged when it starts with /', () => {
+    expect(validateBasePath('/data-v2')).toBe('/data-v2');
+  });
+
+  it('prepends / when value does not start with /', () => {
+    expect(validateBasePath('data-v2')).toBe('/data-v2');
+  });
+
+  it('throws on path traversal', () => {
+    expect(() => validateBasePath('../foo')).toThrow('Invalid VITE_TRANSIT_DATA_PATH');
+  });
+
+  it('throws on absolute path with subdirectories', () => {
+    expect(() => validateBasePath('/foo/bar')).toThrow('Invalid VITE_TRANSIT_DATA_PATH');
+  });
+
+  it('throws on empty string', () => {
+    expect(() => validateBasePath('/')).toThrow('Invalid VITE_TRANSIT_DATA_PATH');
   });
 });

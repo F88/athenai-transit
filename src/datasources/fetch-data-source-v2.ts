@@ -36,7 +36,8 @@ const logger = createLogger('FetchDataSourceV2');
  */
 const BASE_PATH = validateBasePath(import.meta.env.VITE_TRANSIT_DATA_PATH ?? '/data-v2');
 
-function validateBasePath(value: string): string {
+/** @internal Exported for testing. */
+export function validateBasePath(value: string): string {
   const dir = value.startsWith('/') ? value.slice(1) : value;
   sanitizeDirName(dir, 'VITE_TRANSIT_DATA_PATH');
   return value.startsWith('/') ? value : `/${value}`;

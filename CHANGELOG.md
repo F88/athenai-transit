@@ -14,6 +14,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - Pipeline: GTFS `stop_times.stop_headsign` を `TripPatternJson.stops[].sh` として出力 (#92)。
 - Pipeline: pattern grouping key に stop_headsign を含め、同一 stop sequence でも stop_headsign が異なる trip を別パターンに分離。
 - WebApp: `TripPattern` アプリ内部型を導入し、JSON schema (`TripPatternJson`) の変更を Repository 層で吸収。
+- `VITE_TRANSIT_DATA_PATH` / `PIPELINE_TRANSIT_DATA_DIR` 環境変数を追加。transit data の fetch パスと sync 先を設定可能に。
 
 ### Changed
 
