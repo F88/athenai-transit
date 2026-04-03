@@ -1,5 +1,9 @@
 /**
- * Sanitize a directory name to prevent path traversal.
+ * Sanitize a directory name to prevent path traversal (for scripts).
+ *
+ * Intentionally duplicated across project boundaries (src/, scripts/, pipeline/).
+ * Each boundary has its own copy because cross-boundary imports are not possible
+ * (`.vercelignore` excludes `pipeline/`, `scripts/` is outside `src/`).
  *
  * Only simple directory names are allowed: lowercase alphanumeric,
  * hyphens, and underscores. Rejects path traversal (`..`), absolute
