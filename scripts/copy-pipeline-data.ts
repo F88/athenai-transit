@@ -90,4 +90,7 @@ function main(): void {
   console.log(`Done! (${synced}/${TARGETS.length} targets synced)`);
 }
 
-main();
+// Only run when executed directly (not when imported by tests).
+if (!process.env.VITEST) {
+  main();
+}
