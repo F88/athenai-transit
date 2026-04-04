@@ -2,12 +2,12 @@
   "sourceName": "seibu-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-04-03T04:54:02.704Z",
+  "downloadedAt": "2026-04-04T04:42:32.139Z",
   "url": "https://api.odpt.org/api/v4/files/SeibuBus/data/SeibuBus-GTFS.zip",
-  "size": 4304535,
+  "size": 4304541,
   "contentType": "application/zip",
-  "durationMs": 2833,
-  "archivePath": "workspace/_archives/gtfs/seibu-bus/SeibuBus-GTFS_20260403-045405.zip",
+  "durationMs": 3701,
+  "archivePath": "workspace/_archives/gtfs/seibu-bus/SeibuBus-GTFS_20260404-044235.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -27,15 +27,15 @@
     },
     {
       "name": "translations.txt",
-      "size": 715022
+      "size": 714758
     },
     {
       "name": "routes.txt",
-      "size": 21649
+      "size": 21643
     },
     {
       "name": "trips.txt",
-      "size": 2872354
+      "size": 2872312
     },
     {
       "name": "stop_times.txt",
@@ -55,7 +55,7 @@
     },
     {
       "name": "fare_rules.txt",
-      "size": 6445455
+      "size": 6445519
     },
     {
       "name": "feed_info.txt",
@@ -68,6 +68,6 @@
     "lang": "ja",
     "startDate": "20260401",
     "endDate": "20260630",
-    "version": "20260319"
+    "version": "20260402"
   }
 }
