@@ -9,42 +9,35 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.04.06]
+
 ### Added
 
 - Pipeline: GTFS `stop_times.stop_headsign` を `TripPatternJson.stops[].sh` として出力 (#92)。
 - Pipeline: pattern grouping key に stop_headsign を含め、同一 stop sequence でも stop_headsign が異なる trip を別パターンに分離。
-- WebApp: `TripPattern` アプリ内部型を導入し、JSON schema (`TripPatternJson`) の変更を Repository 層で吸収。
-- `VITE_TRANSIT_DATA_PATH` / `PIPELINE_TRANSIT_DATA_DIR` 環境変数を追加。transit data の fetch パスと sync 先を設定可能に。
-- WebApp: stop_headsign 表示対応 (#92)。GTFS 仕様に準拠し stop_headsign が trip_headsign を上書きする。
-- i18n: `resolveTranslatableText`, `sortLangKeysByPriority`, `resolveDisplayNamesWithTranslatableText` ユーティリティ追加。`TranslatableText` から言語解決 + subNames 生成。
-- i18n: `lang` ユーザー設定を追加。停留所名、ヘッドサイン、サブネームの表示言語を切替可能。
-- `HeadsignSource` 型 (`'stop' | 'trip'`) と `resolvedSource` フィールドで、effective headsign のソース種別を追跡。
+- WebApp: `TripPattern` アプリ内部型を導入し、JSON schema の変更を Repository 層で吸収。
+- WebApp: stop_headsign 表示対応 (#92)。GTFS 仕様に準拠し stop_headsign が trip_headsign を上書き。
+- i18n: `resolveTranslatableText`, `sortLangKeysByPriority`, `resolveDisplayNamesWithTranslatableText` ユーティリティ追加。
+- i18n: `lang` ユーザー設定を追加。停留所名、ヘッドサイン、サブネームの表示言語を切替可能に。
+- `HeadsignSource` 型と `resolvedSource` フィールドで effective headsign のソース種別を追跡。
+- `getEffectiveHeadsign`: GTFS 仕様に準拠した stop_headsign ?? trip_headsign 解決。
+- `hasDisplayContent`, `resolveAgencyLang` ユーティリティ追加。
 - `headsignSourceEmoji`: verbose モードで trip (🪧) / stop (📍) のソース種別を視覚表示。
-- `getEffectiveHeadsign`: GTFS 仕様に準拠した stop_headsign ?? trip_headsign 解決 (グルーピング/フィルタキー用)。
-- `hasDisplayContent`: `ResolvedDisplayNames` の空判定ユーティリティ。
-- `resolveAgencyLang`: agency_lang を解決し subNames ソート優先度に使用。
+- `VITE_TRANSIT_DATA_PATH` / `PIPELINE_TRANSIT_DATA_DIR` 環境変数を追加。
 - PRD.md: InfoLevel の4段階設計原則を section 3.A に追加。
 
 ### Changed
 
-- `RouteDirection` を再構造化: `headsign`/`headsign_names` フラットフィールドを `tripHeadsign`/`stopHeadsign` (`TranslatableText`) に分離。
-- `TripPatternJson.stops` を `string[]` から `{id, sh?, sd?}[]` に変更。同一 `stop_times` レコード由来の属性をオブジェクトに統合し、positional alignment のズレリスクを排除。
+- `RouteDirection` を再構造化: `headsign`/`headsign_names` を `tripHeadsign`/`stopHeadsign` (`TranslatableText`) に分離。
+- `TripPatternJson.stops` を `string[]` から `{id, sh?, sd?}[]` に変更。
 - `getHeadsignDisplayNames` を prefer 戦略ベースに書き換え。trip/stop を個別に解決し `resolved` + `tripName` + `stopName` を返却。
-- `TripInfo`: `HeadsignInfo` 内部コンポーネントを抽出。verbose で trip/stop 両方を emoji 付きで表示。
-- `TripInfo`: simple レベルで headsign subNames (翻訳名) を非表示に。
-- `lang` prop を全 UI チェーンに伝搬: app → MapView → StopMarkers/EdgeMarkers → StopSummary → TripInfo、app → BottomSheet → NearbyStop → DepartureItem。
-- `showTimetable` にハンドラを統合 (`handleShowTimetable` + `handleShowStopTimetable` → `showTimetable` + thin wrappers)。
-- 時刻表モーダル: `DialogDescription` を可視テキストに変更 (旧 sr-only)。
+- `TripInfo`: `HeadsignInfo` 内部コンポーネント抽出。verbose で trip/stop 両方を emoji 付きで表示。simple レベルで subNames を非表示に。
+- `lang` prop を全 UI チェーンに伝搬 (app → MapView → StopMarkers → StopSummary → TripInfo 等)。
+- `showTimetable` にハンドラを統合。時刻表モーダル `DialogDescription` を可視テキストに変更。
 
 ### Removed
 
 - `translateHeadsign`: `resolveDisplayNamesWithTranslatableText` に置き換えられた dead code を削除。
-- `src/domain/` / `src/utils/` / `src/lib/` の配置基準を `DEVELOPMENT.md` で明確化し、関連モジュールを再配置。
-- route type 関連ロジックを責務別に分割: 表示色を `src/utils/route-type-color.ts`、優先判定を `src/domain/transit/route-type-priority.ts`、地図上の可視判定を `src/domain/map/route-type-visibility.ts` に整理。
-- browser / runtime 依存の helper を `src/lib/` に集約 (`query-params.ts`, `logger.ts`) し、関連テストも移設。
-- settings helper を `list-toggle.ts` と `settings-cycle.ts` に分割し、汎用トグル処理と app 設定の循環ロジックを分離。
-- 地図関連の純粋ロジックを `src/domain/map/` に整理し、double tap / click suppression まわりの補助関数を責務ごとに分割。
-- Vitest 設定を `vite.config.ts` から `vitest.config.ts` に分離し、親 repo 実行時に `.claude/**` 配下を test / coverage 対象から除外。
 
 ## [2026.04.02]
 
