@@ -2,6 +2,9 @@
   "common": {
     "loading": "Loading..."
   },
+  "info": {
+    "status": "Work in progress"
+  },
   "nearbyStops": {
     "summary": "{{count}} nearby stops (within {{radius}})",
     "noStops": "No stops (within {{radius}})",

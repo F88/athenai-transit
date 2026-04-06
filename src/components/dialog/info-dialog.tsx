@@ -1,4 +1,5 @@
 import ReactMarkdown, { type Components } from 'react-markdown';
+import { useTranslation } from 'react-i18next';
 import { remarkAlert } from 'remark-github-blockquote-alert';
 import remarkGfm from 'remark-gfm';
 
@@ -50,6 +51,7 @@ interface InfoDialogProps {
  * @param onOpenChange - Called when the open state changes.
  */
 export function InfoDialog({ open, onOpenChange }: InfoDialogProps) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[80dvh] max-w-120 flex-col gap-0 overflow-hidden">
@@ -57,7 +59,7 @@ export function InfoDialog({ open, onOpenChange }: InfoDialogProps) {
           <DialogTitle className="text-base">Where to Next?</DialogTitle>
           {`${__APP_VERSION__}`}
           <DialogDescription className="text-center sm:text-center">
-            まだまだ荒削り 鋭意開発中
+            {t('info.status')}
           </DialogDescription>
         </DialogHeader>
         <div className="text-muted-foreground overflow-y-auto pt-3 text-sm leading-relaxed">
