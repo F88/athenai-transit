@@ -149,15 +149,15 @@ function getNearbyStopsSummaryText(
   t: (key: string, options?: Record<string, unknown>) => string,
 ): string {
   if (!hasLoaded) {
-    return t('loading');
+    return t('common.loading');
   }
   if (counts.filtered > 0) {
-    return t('nearbyStopsSummary', { count: counts.filtered, radius });
+    return t('nearby.summary', { count: counts.filtered, radius });
   }
   if (activeOnly && counts.total > 0) {
-    return t('noOperatingStops', { radius });
+    return t('nearby.noOperating', { radius });
   }
-  return t('noStopsNearby', { radius });
+  return t('nearby.noStops', { radius });
 }
 
 const summaryLogger = createLogger('NearbyStopsSummary');

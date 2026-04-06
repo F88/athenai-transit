@@ -44,7 +44,7 @@ export function TimeControls({
         type="button"
         className="bg-background/85 border-border text-foreground hover:bg-background/95 active:bg-accent absolute top-[calc(1.25rem+env(safe-area-inset-top))] left-1/2 z-1000 -translate-x-1/2 cursor-pointer rounded-full border px-4 py-1.5 text-sm font-semibold whitespace-nowrap shadow-md backdrop-blur-sm transition-colors"
         onClick={openDialog}
-        aria-label={t('timeSettingLabel')}
+        aria-label={t('time.settingLabel')}
       >
         {isCustomTime && '📌 '}
         {dateText} <span className={colorClass}>({dayLabel})</span> {timeText}

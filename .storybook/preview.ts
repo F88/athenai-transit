@@ -1,5 +1,6 @@
 import type { Preview } from '@storybook/react-vite';
 import '../src/index.css';
+import '../src/i18n';
 
 // Override app's overflow:hidden on html/body (needed for full-screen map)
 // so that Storybook docs pages and story previews can scroll.

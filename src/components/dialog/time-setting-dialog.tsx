@@ -73,13 +73,13 @@ export function TimeSettingDialog({
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>{t('timeSettingTitle')}</DialogTitle>
-          <DialogDescription className="sr-only">{t('timeSettingDescription')}</DialogDescription>
+          <DialogTitle>{t('time.settingTitle')}</DialogTitle>
+          <DialogDescription className="sr-only">{t('time.settingDescription')}</DialogDescription>
         </DialogHeader>
         {isCustomTime && (
           <Alert className="border-amber-200 bg-amber-50 py-2 dark:border-amber-800 dark:bg-amber-950/50">
             <AlertTitle className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-              {t('timeFrozen')}
+              {t('time.frozen')}
             </AlertTitle>
           </Alert>
         )}
@@ -99,14 +99,14 @@ export function TimeSettingDialog({
             disabled={!isCustomTime}
             onClick={handleResetToNowAndClose}
           >
-            {t('timeNow')}
+            {t('time.now')}
           </Button>
           <Button
             size="lg"
             className="border-2 border-blue-500 bg-blue-200 text-blue-900 hover:bg-blue-300"
             onClick={handleSubmit}
           >
-            {t('timeSet')}
+            {t('time.set')}
           </Button>
         </div>
       </DialogContent>

@@ -1,12 +1,69 @@
 {
-  "nearbyStopsSummary": "{{count}} nearby stops (within {{radius}})",
-  "noStopsNearby": "No stops (within {{radius}})",
-  "noOperatingStops": "No operating stops (within {{radius}})",
-  "loading": "Loading...",
-  "timeSettingTitle": "Set date & time",
-  "timeSettingDescription": "Change the date and time for timetable display",
-  "timeSettingLabel": "Set date & time",
-  "timeFrozen": "📌 Time frozen",
-  "timeNow": "🕐 Now",
-  "timeSet": "🧙 Time, freeze!"
+  "common": {
+    "loading": "Loading..."
+  },
+  "nearby": {
+    "summary": "{{count}} nearby stops (within {{radius}})",
+    "noStops": "No stops (within {{radius}})",
+    "noOperating": "No operating stops (within {{radius}})",
+    "noDestination": "Some routes have no destination displayed",
+    "serviceEnded": "Service ended for today"
+  },
+  "time": {
+    "settingTitle": "Set date & time",
+    "settingDescription": "Change the date and time for timetable display",
+    "settingLabel": "Set date & time",
+    "frozen": "📌 Time frozen",
+    "now": "🕐 Now",
+    "set": "🧙 Time, freeze!"
+  },
+  "departure": {
+    "soon": "Soon",
+    "in": "in",
+    "minutes": "min",
+    "arriving": "arr.",
+    "terminal": "Terminal",
+    "origin": "Origin",
+    "noBoarding": "No boarding",
+    "noPickup": "No pickup",
+    "noDropOff": "No drop-off"
+  },
+  "timetable": {
+    "routeHeadsignDescription": "{{stop}} {{route}} {{headsign}} timetable ({{count}})",
+    "stopDescription": "{{stop}} all routes timetable ({{count}})",
+    "noDestination": "Some routes have no destination displayed",
+    "dropOffOnly": "Drop-off only",
+    "noService": "No service on this day",
+    "hour": "{{hour}}:00",
+    "entries": "{{hour}}:00 ({{count}})"
+  },
+  "toast": {
+    "anchorUpdateFailed": "Failed to update anchor"
+  },
+  "panel": {
+    "appInfo": "App info",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "toggleMap": "Toggle map tiles",
+    "toggleBusRoutes": "Toggle bus route shapes",
+    "toggleNonBusRoutes": "Toggle non-bus route shapes",
+    "currentLocation": "Go to current location",
+    "randomLocation": "Jump to random place",
+    "toggleRenderMode": "Toggle render mode",
+    "togglePerfMode": "Toggle performance mode",
+    "toggleInfoLevel": "Toggle info level",
+    "toggleDarkMode": "Toggle dark mode",
+    "toggleLang": "Toggle language",
+    "searchStops": "Search stops"
+  },
+  "anchor": {
+    "add": "Add anchor",
+    "remove": "Remove anchor"
+  },
+  "search": {
+    "title": "Search stops",
+    "description": "Search for stops and stations by name",
+    "placeholder": "Enter stop name...",
+    "noResults": "No matching stops found"
+  }
 }

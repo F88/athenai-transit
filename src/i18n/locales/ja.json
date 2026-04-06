@@ -1,12 +1,69 @@
 {
-  "nearbyStopsSummary": "近くの乗り場 {{count}}カ所 / {{radius}}圏内",
-  "noStopsNearby": "乗り場がありません / {{radius}}圏内",
-  "noOperatingStops": "運行中の乗り場がありません / {{radius}}圏内",
-  "loading": "読み込み中...",
-  "timeSettingTitle": "日時を指定",
-  "timeSettingDescription": "時刻表の表示日時を変更します",
-  "timeSettingLabel": "日時を設定",
-  "timeFrozen": "📌 時間停止中",
-  "timeNow": "🕐 いま",
-  "timeSet": "🧙 とまれ!"
+  "common": {
+    "loading": "読み込み中..."
+  },
+  "nearby": {
+    "summary": "近くの乗り場 {{count}}カ所 / {{radius}}圏内",
+    "noStops": "乗り場がありません / {{radius}}圏内",
+    "noOperating": "運行中の乗り場がありません / {{radius}}圏内",
+    "noDestination": "行先が表示されない路線があります",
+    "serviceEnded": "本日の運行は終了しました"
+  },
+  "time": {
+    "settingTitle": "日時を指定",
+    "settingDescription": "時刻表の表示日時を変更します",
+    "settingLabel": "日時を設定",
+    "frozen": "📌 時間停止中",
+    "now": "🕐 いま",
+    "set": "🧙 とまれ!"
+  },
+  "departure": {
+    "soon": "まもなく",
+    "in": "あと",
+    "minutes": "分",
+    "arriving": "着",
+    "terminal": "終点",
+    "origin": "始発",
+    "noBoarding": "乗車不可",
+    "noPickup": "乗×",
+    "noDropOff": "降×"
+  },
+  "timetable": {
+    "routeHeadsignDescription": "{{stop}} {{route}}{{headsign}}の時刻表 {{count}}本",
+    "stopDescription": "{{stop}}の全路線時刻表 {{count}}本",
+    "noDestination": "行先が表示されない路線があります",
+    "dropOffOnly": "降車専用",
+    "noService": "この日の運行はありません",
+    "hour": "{{hour}}時",
+    "entries": "{{hour}}時 {{count}}件"
+  },
+  "toast": {
+    "anchorUpdateFailed": "アンカー更新に失敗しました"
+  },
+  "panel": {
+    "appInfo": "アプリ情報",
+    "zoomIn": "拡大",
+    "zoomOut": "縮小",
+    "toggleMap": "地図の表示切替",
+    "toggleBusRoutes": "バス路線図の表示切替",
+    "toggleNonBusRoutes": "バス以外の路線図の表示切替",
+    "currentLocation": "現在位置へ移動",
+    "randomLocation": "ランダムな場所へ移動",
+    "toggleRenderMode": "描画モードの切替",
+    "togglePerfMode": "パフォーマンスモードの切替",
+    "toggleInfoLevel": "情報レベルの切替",
+    "toggleDarkMode": "ダークモード切替",
+    "toggleLang": "言語切替",
+    "searchStops": "のりばを検索"
+  },
+  "anchor": {
+    "add": "Add anchor",
+    "remove": "Remove anchor"
+  },
+  "search": {
+    "title": "のりばを検索",
+    "description": "のりば名で停留所や駅を検索します",
+    "placeholder": "のりば名を入力...",
+    "noResults": "該当するのりばが見つかりません"
+  }
 }
