@@ -32,14 +32,16 @@
       "terminal": "終点",
       "origin": "始発",
       "noPickup": "乗×",
-      "noDropOff": "降×",
-      "dropOffOnly": "降車専用",
-      "noService": "この日の運行はありません"
+      "noDropOff": "降×"
     },
     "grid": {
       "row": {
         "hour": "{{hour}}時",
         "entries": "{{hour}}時 {{count}}件"
+      },
+      "empty": {
+        "dropOffOnly": "降車専用",
+        "noService": "この日の運行はありません"
       }
     },
     "header": {

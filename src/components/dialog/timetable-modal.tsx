@@ -468,7 +468,9 @@ function TimetableGrid({
   if (hourGroups.size === 0) {
     return (
       <p className="text-muted-foreground p-4 text-center">
-        {omitted.terminal > 0 ? t('timetable.entry.dropOffOnly') : t('timetable.entry.noService')}
+        {omitted.terminal > 0
+          ? t('timetable.grid.empty.dropOffOnly')
+          : t('timetable.grid.empty.noService')}
       </p>
     );
   }
@@ -600,7 +602,7 @@ function TimetableHeader({
         </span>
         {isDropOffOnly && (
           <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
-            {t('timetable.entry.dropOffOnly')}
+            {t('timetable.grid.empty.dropOffOnly')}
           </span>
         )}
         {displayAgencies.length > 0 &&
