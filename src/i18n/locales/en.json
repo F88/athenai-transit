@@ -2,6 +2,43 @@
   "common": {
     "loading": "Loading..."
   },
+  "view": {
+    "stop": {
+      "label": "ALL",
+      "title": "All departures",
+      "description": "Show all departures in chronological order"
+    },
+    "routeHeadsign": {
+      "label": "Route",
+      "title": "By route + destination",
+      "description": "Group by route and destination"
+    },
+    "route": {
+      "label": "Route",
+      "title": "By route",
+      "description": "Group by route"
+    },
+    "headsign": {
+      "label": "Dest.",
+      "title": "By destination",
+      "description": "Group by destination"
+    },
+    "frequency": {
+      "label": "Freq.",
+      "title": "By frequency",
+      "description": "Weight by service frequency"
+    },
+    "duration": {
+      "label": "Duration",
+      "title": "By travel time",
+      "description": "Sort by travel time to terminal"
+    },
+    "terminal": {
+      "label": "Terminal",
+      "title": "By terminal activity",
+      "description": "Sort by terminal stop activity"
+    }
+  },
   "history": {
     "label": "History"
   },

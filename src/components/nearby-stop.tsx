@@ -123,7 +123,7 @@ export function NearbyStop({
             }}
             title={isAnchor ? t('anchor.remove') : t('anchor.add')}
             aria-label={isAnchor ? t('anchor.remove') : t('anchor.add')}
-            aria-pressed={isAnchor ? 'true' : 'false'}
+            aria-pressed={isAnchor}
           >
             <Signpost
               size={16}

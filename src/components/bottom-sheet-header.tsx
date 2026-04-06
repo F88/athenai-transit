@@ -65,10 +65,10 @@ export function BottomSheetHeader({
             active={viewId === view.id}
             disabled={!view.enabled}
             onClick={() => onViewChange(view.id)}
-            title={view.title}
+            title={t(view.titleKey)}
           >
             {view.icon}
-            {info.isDetailedEnabled ? ` ${view.label}` : ''}
+            {info.isDetailedEnabled ? ` ${t(view.labelKey)}` : ''}
           </PillButton>
         ))}
       </div>
@@ -125,9 +125,11 @@ export function BottomSheetHeader({
       </div>
       {selectedView && info.isVerboseEnabled && (
         <div className="mt-1">
-          <p className="text-[11px] text-[#888] dark:text-gray-400">{selectedView.title}</p>
+          <p className="text-[11px] text-[#888] dark:text-gray-400">{t(selectedView.titleKey)}</p>
           {info.isDetailedEnabled && (
-            <p className="text-[10px] text-[#aaa] dark:text-gray-500">{selectedView.description}</p>
+            <p className="text-[10px] text-[#aaa] dark:text-gray-500">
+              {t(selectedView.descriptionKey)}
+            </p>
           )}
         </div>
       )}

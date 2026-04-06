@@ -2,6 +2,43 @@
   "common": {
     "loading": "読み込み中..."
   },
+  "view": {
+    "stop": {
+      "label": "ALL",
+      "title": "すべて",
+      "description": "全ての時間を表示します"
+    },
+    "routeHeadsign": {
+      "label": "路線+行先",
+      "title": "路線+行先別",
+      "description": "路線と行先の組み合わせでグループ化して表示します"
+    },
+    "route": {
+      "label": "路線",
+      "title": "路線別",
+      "description": "路線ごとにグループ化して表示します"
+    },
+    "headsign": {
+      "label": "行先",
+      "title": "行先別",
+      "description": "行先ごとにグループ化して表示します"
+    },
+    "frequency": {
+      "label": "頻度",
+      "title": "運行頻度順",
+      "description": "運行頻度で重み付けして表示します"
+    },
+    "duration": {
+      "label": "乗車時間",
+      "title": "乗車時間",
+      "description": "終点までの乗車時間順で表示します"
+    },
+    "terminal": {
+      "label": "終点の賑わい",
+      "title": "終点の賑わい度順",
+      "description": "終点の賑わい度で表示します"
+    }
+  },
   "history": {
     "label": "履歴"
   },
