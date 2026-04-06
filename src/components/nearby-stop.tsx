@@ -121,8 +121,8 @@ export function NearbyStop({
               e.stopPropagation();
               onToggleAnchor(stop.stop_id);
             }}
-            title={isAnchor ? 'Remove anchor' : 'Add anchor'}
-            aria-label={isAnchor ? 'Remove anchor' : 'Add anchor'}
+            title={isAnchor ? t('anchor.remove') : t('anchor.add')}
+            aria-label={isAnchor ? t('anchor.remove') : t('anchor.add')}
             aria-pressed={isAnchor ? 'true' : 'false'}
           >
             <Signpost

@@ -48,9 +48,6 @@
       "noDestination": "行先が表示されない路線があります"
     }
   },
-  "toast": {
-    "anchorUpdateFailed": "アンカー更新に失敗しました"
-  },
   "panel": {
     "appInfo": "アプリ情報",
     "zoomIn": "拡大",
@@ -68,8 +65,9 @@
     "searchStops": "のりばを検索"
   },
   "anchor": {
-    "add": "Add anchor",
-    "remove": "Remove anchor"
+    "add": "アンカーを追加",
+    "remove": "アンカーを削除",
+    "anchorUpdateFailed": "アンカー更新に失敗しました"
   },
   "search": {
     "title": "のりばを検索",

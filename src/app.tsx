@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { RouteType, Stop } from './types/app/transit';
@@ -49,6 +50,7 @@ const logger = createLogger('App');
 const DEBOUNCE_MS = 300;
 
 export default function App() {
+  const { t } = useTranslation();
   const repo = useTransitRepository();
   const [userDataRepo] = useState(() => new LocalStorageUserDataRepository());
   const { settings, updateSetting, updateSettings } = useUserSettings();
@@ -136,12 +138,12 @@ export default function App() {
       return;
     }
     logger.warn(`anchor operation failed: ${anchorError}`);
-    toast.error('アンカー更新に失敗しました', {
+    toast.error(t('anchor.anchorUpdateFailed'), {
       description: anchorError,
       duration: 4500,
     });
     clearAnchorError();
-  }, [anchorError, clearAnchorError]);
+  }, [anchorError, clearAnchorError, t]);
 
   // Refresh anchor entries with latest GTFS data on app load.
   // Runs once after repo is ready. Updates stopName, stopLat, stopLon,
