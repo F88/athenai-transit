@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { RouteType, Stop } from '@/types/app/transit';
 import type { TransitRepository } from '@/repositories/transit-repository';
 import type { InfoLevel } from '@/types/app/settings';
@@ -135,6 +136,7 @@ export function StopSearchModal({
   open,
   onOpenChange,
 }: StopSearchModalProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [allStops, setAllStops] = useState<Stop[]>([]);
   const [routeTypeMap, setRouteTypeMap] = useState<Map<string, RouteType[]>>(() => new Map());
@@ -241,17 +243,15 @@ export function StopSearchModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="top-12 flex max-h-[80dvh] max-w-120 translate-y-0 flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="border-border shrink-0 border-b p-4">
-          <DialogTitle className="text-[15px]">のりばを検索</DialogTitle>
-          <DialogDescription className="sr-only">
-            のりば名で停留所や駅を検索します
-          </DialogDescription>
+          <DialogTitle className="text-[15px]">{t('search.title')}</DialogTitle>
+          <DialogDescription className="sr-only">{t('search.description')}</DialogDescription>
         </DialogHeader>
         <div className="border-border shrink-0 border-b px-4 py-3">
           <input
             ref={inputRef}
             type="text"
             className="border-input bg-background focus:border-ring focus:ring-ring/20 w-full rounded-lg border px-3 py-2.5 text-base outline-none focus:ring-2"
-            placeholder="のりば名を入力..."
+            placeholder={t('search.placeholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -272,7 +272,7 @@ export function StopSearchModal({
               ))
             : query.trim() !== '' && (
                 <p className="text-muted-foreground px-4 py-6 text-center text-sm">
-                  該当するのりばが見つかりません
+                  {t('search.noResults')}
                 </p>
               )}
         </div>
