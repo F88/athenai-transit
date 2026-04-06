@@ -38,8 +38,8 @@
     },
     "grid": {
       "row": {
-        "hour": "{{hour}}:00",
-        "entries": "{{hour}}:00 ({{count}})"
+        "hour": "{{hour}}",
+        "entries": "{{hour}} ({{count}})"
       }
     },
     "header": {

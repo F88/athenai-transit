@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IdBadge } from '@/components/badge/id-badge';
 import { RouteBadge } from '@/components/badge/route-badge';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
@@ -63,6 +64,7 @@ interface TimetableModalProps {
 }
 
 export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: TimetableModalProps) {
+  const { t } = useTranslation();
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
   const currentHour = Math.floor(getServiceDayMinutes(time) / 60);
@@ -155,8 +157,16 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
             )}
             <DialogDescription className="text-muted-foreground text-xs">
               {data.type === 'route-headsign'
-                ? `${getStopDisplayNames(data.stop, infoLevel, dataLang).name} ${data.routes[0].route_short_name || data.routes[0].route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
-                : `${getStopDisplayNames(data.stop, infoLevel, dataLang).name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
+                ? t('timetable.header.routeHeadsignDescription', {
+                    stop: getStopDisplayNames(data.stop, infoLevel, dataLang).name,
+                    route: data.routes[0].route_short_name || data.routes[0].route_long_name,
+                    headsign: data.headsign ?? '',
+                    count: filteredTimetableEntries.length,
+                  })
+                : t('timetable.header.stopDescription', {
+                    stop: getStopDisplayNames(data.stop, infoLevel, dataLang).name,
+                    count: filteredTimetableEntries.length,
+                  })}
             </DialogDescription>
 
             <DialogTitle className="flex flex-col gap-1">
@@ -185,7 +195,7 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
                   })),
                 ))) && (
               <p className="m-0 text-center text-[11px] text-amber-600 dark:text-amber-400">
-                行先が表示されない路線があります
+                {t('timetable.header.noDestination')}
               </p>
             )}
           </DialogHeader>
@@ -427,6 +437,7 @@ function TimetableGrid({
   omitted: TimetableOmitted;
 }) {
   const scrollRef = useCurrentHourScroll();
+  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
 
   // Compute minimum display length per headsign to avoid collision.
@@ -457,7 +468,7 @@ function TimetableGrid({
   if (hourGroups.size === 0) {
     return (
       <p className="text-muted-foreground p-4 text-center">
-        {omitted.terminal > 0 ? '降車専用' : 'この日の運行はありません'}
+        {omitted.terminal > 0 ? t('timetable.entry.dropOffOnly') : t('timetable.entry.noService')}
       </p>
     );
   }
@@ -488,7 +499,7 @@ function TimetableGrid({
         >
           <div className="flex items-baseline gap-2">
             <span className="text-foreground w-10 shrink-0 text-right text-sm font-bold">
-              {hour}時
+              {t('timetable.grid.row.hour', { hour })}
             </span>
             <span className="flex flex-wrap gap-1.5">
               {entries.map((entry, i) => (
@@ -515,7 +526,7 @@ function TimetableGrid({
           {info.isVerboseEnabled && (
             <details className="mt-0.5 text-[9px] font-normal text-[#999] dark:text-gray-500">
               <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-                [{hour}時 {entries.length}件]
+                [{t('timetable.grid.row.entries', { hour, count: entries.length })}]
               </summary>
               <div className="mt-0.5 flex flex-col gap-0.5">
                 {entries.map((entry, i) => (
@@ -554,6 +565,7 @@ function TimetableHeader({
   infoLevel: InfoLevel;
   dataLang: readonly string[];
 }) {
+  const { t } = useTranslation();
   const stopNames = getStopDisplayNames(data.stop, infoLevel, dataLang);
   const isDropOffOnly =
     !data.isBoardableOnServiceDay &&
@@ -588,7 +600,7 @@ function TimetableHeader({
         </span>
         {isDropOffOnly && (
           <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
-            降車専用
+            {t('timetable.entry.dropOffOnly')}
           </span>
         )}
         {displayAgencies.length > 0 &&
