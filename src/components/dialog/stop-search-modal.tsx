@@ -25,8 +25,8 @@ interface StopSearchResultItemProps {
   query: string;
   normalizedQuery: string;
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   onSelect: (stop: Stop) => void;
 }
 
@@ -36,12 +36,12 @@ function StopSearchResultItem({
   query,
   normalizedQuery,
   infoLevel,
-  lang,
+  dataLang,
   onSelect,
 }: StopSearchResultItemProps) {
   const info = useInfoLevel(infoLevel);
   // Always show subNames in search results for discoverability.
-  const stopNames = getStopDisplayNames(stop, 'normal', lang);
+  const stopNames = getStopDisplayNames(stop, 'normal', dataLang);
 
   return (
     <button
@@ -120,8 +120,8 @@ function HighlightedName({
 interface StopSearchModalProps {
   repo: TransitRepository;
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   onSelectStop: (stop: Stop) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -130,7 +130,7 @@ interface StopSearchModalProps {
 export function StopSearchModal({
   repo,
   infoLevel,
-  lang,
+  dataLang,
   onSelectStop,
   open,
   onOpenChange,
@@ -266,7 +266,7 @@ export function StopSearchModal({
                   query={trimmedQuery}
                   normalizedQuery={normalizedQuery}
                   infoLevel={infoLevel}
-                  lang={lang}
+                  dataLang={dataLang}
                   onSelect={handleSelect}
                 />
               ))

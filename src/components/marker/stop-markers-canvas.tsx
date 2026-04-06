@@ -28,8 +28,8 @@ interface StopMarkersCanvasProps {
   nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
   time?: Date;
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   onStopSelected: (stop: Stop) => void;
   onFetchDepartures?: (stopId: string) => Promise<StopWithContext | null>;
   /** Whether to show tooltip on hover/select. Defaults to true. */
@@ -66,7 +66,7 @@ function buildSummaryHtml(
   entries: ContextualTimetableEntry[] | undefined,
   now: Date | undefined,
   infoLevel: InfoLevel,
-  lang: string,
+  dataLang: readonly string[],
 ): string {
   return renderToStaticMarkup(
     <StopSummary
@@ -76,7 +76,7 @@ function buildSummaryHtml(
       entries={entries}
       now={now}
       infoLevel={infoLevel}
-      lang={lang}
+      dataLang={dataLang}
     />,
   );
 }
@@ -98,7 +98,7 @@ export function StopMarkersCanvas({
   nearbyDepartures,
   time: now,
   infoLevel,
-  lang,
+  dataLang,
   onStopSelected,
   onFetchDepartures,
   showTooltip = true,
@@ -121,7 +121,7 @@ export function StopMarkersCanvas({
     nearbyDepartures,
     now,
     infoLevel,
-    lang,
+    dataLang,
     agenciesMap,
     selectedStopId,
   });
@@ -134,7 +134,7 @@ export function StopMarkersCanvas({
       nearbyDepartures,
       now,
       infoLevel,
-      lang,
+      dataLang,
       agenciesMap,
       selectedStopId,
     };
@@ -238,7 +238,7 @@ export function StopMarkersCanvas({
               entries,
               now,
               infoLevel,
-              lang,
+              dataLang,
             ),
           );
         tooltip.addTo(map);
@@ -259,7 +259,7 @@ export function StopMarkersCanvas({
     agenciesMap,
     now,
     infoLevel,
-    lang,
+    dataLang,
     showTooltip,
     incremental,
     disableDimming,
@@ -287,7 +287,7 @@ type TooltipDataRef = React.RefObject<{
   nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
   now?: Date;
   infoLevel: InfoLevel;
-  lang: string;
+  dataLang: readonly string[];
   agenciesMap?: Map<string, Agency[]>;
   selectedStopId: string | null;
 }>;
@@ -431,7 +431,7 @@ function bindTooltipLazyListener(
         data.nearbyDepartures?.get(stop.stop_id),
         data.now,
         data.infoLevel,
-        data.lang,
+        data.dataLang,
       ),
       { direction: 'top', offset: [0, -8], className: MARKER_STYLES.tooltip.className },
     );

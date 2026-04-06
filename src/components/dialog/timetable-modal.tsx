@@ -56,11 +56,12 @@ interface TimetableModalProps {
   /** Current time reference for highlighting the active hour row. */
   time: Date;
   infoLevel: InfoLevel;
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   onClose: () => void;
 }
 
-export function TimetableModal({ data, time, infoLevel, lang, onClose }: TimetableModalProps) {
+export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: TimetableModalProps) {
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
   const currentHour = Math.floor(getServiceDayMinutes(time) / 60);
@@ -153,12 +154,12 @@ export function TimetableModal({ data, time, infoLevel, lang, onClose }: Timetab
             )}
             <DialogDescription className="text-muted-foreground text-xs">
               {data.type === 'route-headsign'
-                ? `${getStopDisplayNames(data.stop, infoLevel, lang).name} ${data.routes[0].route_short_name || data.routes[0].route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
-                : `${getStopDisplayNames(data.stop, infoLevel, lang).name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
+                ? `${getStopDisplayNames(data.stop, infoLevel, dataLang).name} ${data.routes[0].route_short_name || data.routes[0].route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
+                : `${getStopDisplayNames(data.stop, infoLevel, dataLang).name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
             </DialogDescription>
 
             <DialogTitle className="flex flex-col gap-1">
-              <TimetableHeader data={data} infoLevel={infoLevel} lang={lang} />
+              <TimetableHeader data={data} infoLevel={infoLevel} dataLang={dataLang} />
             </DialogTitle>
 
             {info.isDetailedEnabled && (
@@ -172,7 +173,7 @@ export function TimetableModal({ data, time, infoLevel, lang, onClose }: Timetab
                 activeFilters={activeFilters}
                 onToggleFilter={toggleFilter}
                 infoLevel={infoLevel}
-                lang={lang}
+                dataLang={dataLang}
               />
             )}
             {((data.type === 'route-headsign' && data.headsign === '') ||
@@ -209,7 +210,7 @@ export function TimetableModal({ data, time, infoLevel, lang, onClose }: Timetab
               }
               currentHour={currentHour}
               infoLevel={infoLevel}
-              lang={lang}
+              dataLang={dataLang}
               agencies={data.agencies}
               omitted={data.omitted}
             />
@@ -399,7 +400,7 @@ function TimetableGrid({
   showHeadsign,
   currentHour,
   infoLevel,
-  lang,
+  dataLang,
   agencies,
   omitted,
 }: {
@@ -407,7 +408,7 @@ function TimetableGrid({
   showHeadsign: boolean;
   currentHour: number;
   infoLevel: InfoLevel;
-  lang: string;
+  dataLang: readonly string[];
   agencies: Agency[];
   omitted: TimetableOmitted;
 }) {
@@ -485,7 +486,7 @@ function TimetableGrid({
                     getEffectiveHeadsign(entry.routeDirection),
                   )}
                   infoLevel={infoLevel}
-                  lang={lang}
+                  dataLang={dataLang}
                   agencyLang={resolveAgencyLang(agencies, entry.routeDirection.route.agency_id)}
                   isDisplayTerminal={isDisplayTerminal}
                   isDisplayOrigin={isDisplayOrigin}
@@ -512,7 +513,7 @@ function TimetableGrid({
                       getEffectiveHeadsign(entry.routeDirection),
                     )}
                     infoLevel={infoLevel}
-                    lang={lang}
+                    dataLang={dataLang}
                     agencyLang={resolveAgencyLang(agencies, entry.routeDirection.route.agency_id)}
                     isDisplayTerminal={isDisplayTerminal}
                     isDisplayOrigin={isDisplayOrigin}
@@ -533,13 +534,13 @@ function TimetableGrid({
 function TimetableHeader({
   data,
   infoLevel,
-  lang,
+  dataLang,
 }: {
   data: TimetableData;
   infoLevel: InfoLevel;
-  lang: string;
+  dataLang: readonly string[];
 }) {
-  const stopNames = getStopDisplayNames(data.stop, infoLevel, lang);
+  const stopNames = getStopDisplayNames(data.stop, infoLevel, dataLang);
   const isDropOffOnly =
     !data.isBoardableOnServiceDay &&
     (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
@@ -625,13 +626,13 @@ function StopTimetableFilter({
   activeFilters,
   onToggleFilter,
   infoLevel: _infoLevel,
-  lang,
+  dataLang,
 }: {
   data: TimetableData;
   activeFilters: Set<string>;
   onToggleFilter: (key: string) => void;
   infoLevel: InfoLevel;
-  lang: string;
+  dataLang: readonly string[];
 }) {
   // Count entries per route+headsign (memoized for filter toggle re-renders)
   const routeHeadsigns = useMemo(() => {
@@ -680,7 +681,7 @@ function StopTimetableFilter({
             {getHeadsignDisplayNames(
               r.routeDirection,
               'stop',
-              lang,
+              dataLang,
               resolveAgencyLang(data.agencies, route.agency_id),
             ).resolved.name ||
               route.route_short_name ||

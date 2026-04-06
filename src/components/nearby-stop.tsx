@@ -17,8 +17,8 @@ export interface NearbyStopProps {
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   /** Active departure view pattern ID. */
   viewId: string;
   /** Whether this stop is in the anchor (bookmark) list. */
@@ -46,7 +46,7 @@ export function NearbyStop({
   now,
   mapCenter,
   infoLevel,
-  lang,
+  dataLang,
   viewId,
   isAnchor,
   onStopSelected,
@@ -105,7 +105,7 @@ export function NearbyStop({
           distance={distance}
           mapCenter={mapCenter}
           infoLevel={infoLevel}
-          lang={lang}
+          dataLang={dataLang}
           isDropOffOnly={isStopDropOffOnly}
           routes={routes}
           stats={stats}
@@ -163,7 +163,7 @@ export function NearbyStop({
                 isFirst={i === 0}
                 showRouteTypeIcon={showRouteTypeIconForAllDepartures}
                 infoLevel={infoLevel}
-                lang={lang}
+                dataLang={dataLang}
                 agency={agencies.find((a) => a.agency_id === entry.routeDirection.route.agency_id)}
               />
             ))
@@ -174,7 +174,7 @@ export function NearbyStop({
               entries={entries}
               now={now}
               infoLevel={infoLevel}
-              lang={lang}
+              dataLang={dataLang}
               showRouteTypeIcon={showRouteTypeIconForAllDepartures}
               agency={agencies.find(
                 (a) => a.agency_id === entries[0].routeDirection.route.agency_id,

@@ -42,7 +42,7 @@ export interface HeadsignDisplayNames {
 export function getHeadsignDisplayNames(
   routeDirection: RouteDirection,
   prefer: HeadsignSource = 'stop',
-  lang: string,
+  lang: string | readonly string[],
   agencyLang: readonly string[],
 ): HeadsignDisplayNames {
   const tripName = resolveDisplayNamesWithTranslatableText(

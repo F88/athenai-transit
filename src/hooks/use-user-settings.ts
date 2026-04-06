@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { UserSettings } from '../types/app/settings';
-import { DEFAULT_LANG, SUPPORTED_LANG_CODES } from '../config/supported-langs';
+import { DEFAULT_LANG, normalizeLang } from '../config/supported-langs';
 
 const STORAGE_KEY = 'athenai-settings';
 
@@ -48,11 +48,7 @@ function loadSettings(): UserSettings {
       return DEFAULTS;
     }
     const stored = { ...DEFAULTS, ...stripTransient(JSON.parse(raw) as Partial<UserSettings>) };
-    // Normalize lang to a supported value. Prevents unsupported or corrupted
-    // values from propagating through the entire UI.
-    if (!SUPPORTED_LANG_CODES.includes(stored.lang)) {
-      stored.lang = DEFAULT_LANG;
-    }
+    stored.lang = normalizeLang(stored.lang);
     return stored;
   } catch {
     return DEFAULTS;
@@ -67,11 +63,7 @@ function loadSettings(): UserSettings {
  * @param settings - Settings object to save.
  */
 function saveSettings(settings: UserSettings): void {
-  // Normalize lang before persisting (same check as loadSettings).
-  const normalized = SUPPORTED_LANG_CODES.includes(settings.lang)
-    ? settings
-    : { ...settings, lang: DEFAULT_LANG };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(stripTransient(normalized)));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(stripTransient(settings)));
 }
 
 /**
@@ -94,6 +86,7 @@ export function useUserSettings(): {
     <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
       setSettings((prev) => {
         const next = { ...prev, [key]: value };
+        next.lang = normalizeLang(next.lang);
         saveSettings(next);
         return next;
       });
@@ -104,6 +97,7 @@ export function useUserSettings(): {
   const updateSettings = useCallback((partial: Partial<UserSettings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...partial };
+      next.lang = normalizeLang(next.lang);
       saveSettings(next);
       return next;
     });

@@ -17,8 +17,8 @@ interface EdgeMarkersSwitchProps {
   agenciesMap?: Map<string, Agency[]>;
   now: Date;
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   renderMode: EffectiveRenderMode;
   onStopSelected: (stop: Stop) => void;
   onFetchDepartures: (stopId: string) => Promise<StopWithContext | null>;
@@ -38,7 +38,7 @@ export function EdgeMarkersSwitch({
   agenciesMap,
   now,
   infoLevel,
-  lang,
+  dataLang,
   renderMode,
   onStopSelected,
   onFetchDepartures,
@@ -108,7 +108,7 @@ export function EdgeMarkersSwitch({
             showDistance={showDistance}
             mapContainer={map.getContainer()}
             infoLevel={infoLevel}
-            lang={lang}
+            dataLang={dataLang}
             agenciesMap={agenciesMap}
             onStopSelected={onStopSelected}
             containerHeight={containerHeight}
@@ -118,7 +118,7 @@ export function EdgeMarkersSwitch({
             markers={markers}
             now={now}
             infoLevel={infoLevel}
-            lang={lang}
+            dataLang={dataLang}
             showDistance={showDistance}
             agenciesMap={agenciesMap}
             onStopSelected={onStopSelected}

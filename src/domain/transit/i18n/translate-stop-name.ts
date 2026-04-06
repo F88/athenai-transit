@@ -15,9 +15,18 @@ import type { Stop } from '../../../types/app/transit';
  *               (e.g. `"en"`, `"ja-Hrkt"`). Defaults to primary name.
  * @returns The translated stop name string.
  */
-export function translateStopName(stop: Stop, lang?: string): string {
-  if (lang && stop.stop_names[lang]) {
-    return stop.stop_names[lang];
+export function translateStopName(stop: Stop, lang?: string | readonly string[]): string {
+  if (lang) {
+    const langs = typeof lang === 'string' ? [lang] : lang;
+    const keys = Object.keys(stop.stop_names);
+    for (const l of langs) {
+      // Case-insensitive match per BCP 47 (RFC 5646 §2.1.1).
+      const lLower = l.toLowerCase();
+      const key = keys.find((k) => k.toLowerCase() === lLower);
+      if (key != null && stop.stop_names[key]) {
+        return stop.stop_names[key];
+      }
+    }
   }
   return stop.stop_name;
 }

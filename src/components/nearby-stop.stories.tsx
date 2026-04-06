@@ -181,7 +181,7 @@ const meta = {
     now,
     mapCenter,
     infoLevel: 'normal',
-    lang: 'ja',
+    dataLang: ['ja'],
     viewId: 'route-headsign',
     isAnchor: false,
     onStopSelected: fn(),

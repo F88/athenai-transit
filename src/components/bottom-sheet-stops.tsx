@@ -13,7 +13,8 @@ interface BottomSheetStopsProps {
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   viewId: string;
   contentRef: RefObject<HTMLDivElement | null>;
   /** Set of stop IDs currently in the anchor list. */
@@ -31,7 +32,7 @@ export function BottomSheetStops({
   now,
   mapCenter,
   infoLevel,
-  lang,
+  dataLang,
   viewId,
   contentRef,
   anchorIds,
@@ -52,7 +53,7 @@ export function BottomSheetStops({
           now,
           mapCenter,
           infoLevel,
-          lang,
+          dataLang,
           viewId,
           isAnchor: anchorIds.has(swc.stop.stop_id),
           onStopSelected,

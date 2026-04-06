@@ -57,3 +57,20 @@ export const DEFAULT_LANG = SUPPORTED_LANGS[0].code;
 
 /** All supported language codes. */
 export const SUPPORTED_LANG_CODES: readonly string[] = SUPPORTED_LANGS.map((l) => l.code);
+
+/**
+ * Normalize a language code to a supported value.
+ *
+ * Returns the code as-is if it's in {@link SUPPORTED_LANG_CODES},
+ * otherwise returns {@link DEFAULT_LANG}.
+ *
+ * @param lang - Language code to normalize.
+ * @returns A guaranteed-supported language code.
+ */
+export function normalizeLang(lang: string): string {
+  // Case-insensitive match per BCP 47 (RFC 5646 §2.1.1).
+  // Returns the canonical code from SUPPORTED_LANGS, not the input casing.
+  const lower = lang.toLowerCase();
+  const match = SUPPORTED_LANGS.find((l) => l.code.toLowerCase() === lower);
+  return match?.code ?? DEFAULT_LANG;
+}

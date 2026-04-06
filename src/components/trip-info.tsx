@@ -64,8 +64,8 @@ interface TripInfoProps {
   routeDirection: RouteDirection;
   /** Current info verbosity level. */
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   /** Whether to show the route type emoji icon. */
   showRouteTypeIcon?: boolean;
   /** Agency operating this trip. Shown at detailed+ info level. */
@@ -90,7 +90,7 @@ interface TripInfoProps {
 export function TripInfo({
   routeDirection,
   infoLevel,
-  lang,
+  dataLang,
   showRouteTypeIcon = false,
   agency,
   isTerminal = false,
@@ -102,7 +102,7 @@ export function TripInfo({
   const info = useInfoLevel(infoLevel);
   const v = sizeVariants[size];
   const agencyLang = agency?.agency_lang ? [agency.agency_lang] : DEFAULT_AGENCY_LANG;
-  const headsignNames = getHeadsignDisplayNames(routeDirection, 'stop', lang, agencyLang);
+  const headsignNames = getHeadsignDisplayNames(routeDirection, 'stop', dataLang, agencyLang);
 
   const headsignClass = cn(v.headsign, 'font-medium text-[#333] dark:text-gray-200');
   const subClass = cn(v.headsignSub, 'font-normal text-[#888] dark:text-gray-400');

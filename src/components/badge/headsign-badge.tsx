@@ -16,8 +16,8 @@ interface HeadsignBadgeProps {
   routeDirection: RouteDirection;
   /** Current info verbosity level. Verbose shows route_id via IdBadge. */
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   /** Agency languages for subNames sort priority. @default DEFAULT_AGENCY_LANG */
   agencyLang?: readonly string[];
   /** Maximum characters to display. Truncated text is not suffixed. @default undefined (no limit) */
@@ -45,7 +45,7 @@ interface HeadsignBadgeProps {
 export function HeadsignBadge({
   routeDirection,
   infoLevel,
-  lang,
+  dataLang,
   agencyLang = DEFAULT_AGENCY_LANG,
   maxLength,
   size = 'default',
@@ -53,7 +53,7 @@ export function HeadsignBadge({
   className,
 }: HeadsignBadgeProps) {
   const { route } = routeDirection;
-  const headsignNames = getHeadsignDisplayNames(routeDirection, 'stop', lang, agencyLang);
+  const headsignNames = getHeadsignDisplayNames(routeDirection, 'stop', dataLang, agencyLang);
 
   const bg = route.route_color ? `#${route.route_color}` : undefined;
   const fg = route.route_text_color ? `#${route.route_text_color}` : undefined;

@@ -33,7 +33,8 @@ interface MapOverlayPanelsProps {
   onCycleInfoLevel: () => void;
   onToggleDarkMode: () => void;
   onCycleLang: () => void;
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   onToggleStopType: (rt: number) => void;
   onSearchClick: () => void;
   onInfoClick: () => void;
@@ -63,7 +64,7 @@ export function MapOverlayPanels({
   onCycleInfoLevel,
   onToggleDarkMode,
   onCycleLang,
-  lang,
+  dataLang,
   onToggleStopType,
   onSearchClick,
   onInfoClick,
@@ -97,7 +98,7 @@ export function MapOverlayPanels({
         perfMode={perfMode}
         infoLevel={infoLevel}
         theme={theme}
-        lang={lang}
+        lang={dataLang[0]}
         onToggleRenderMode={onToggleRenderMode}
         onTogglePerfMode={onTogglePerfMode}
         onCycleInfoLevel={onCycleInfoLevel}

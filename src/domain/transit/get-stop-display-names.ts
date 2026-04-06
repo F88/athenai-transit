@@ -36,7 +36,7 @@ import { translateStopName } from './i18n/translate-stop-name';
 export function getStopDisplayNames(
   stop: Stop,
   infoLevel: InfoLevel,
-  lang?: string,
+  lang?: string | readonly string[],
 ): ResolvedDisplayNames {
   const name = translateStopName(stop, lang);
   const info = createInfoLevel(infoLevel);

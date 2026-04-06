@@ -23,7 +23,7 @@ const meta = {
   args: {
     routeDirection: defaultRouteDirection,
     infoLevel: 'normal',
-    lang: 'ja',
+    dataLang: ['ja'],
     size: 'default',
   },
   argTypes: {
@@ -173,21 +173,19 @@ export const WithDirection: Story = {
 export const LangComparison: Story = {
   render: (args) => (
     <div className="flex flex-col gap-2">
-      {(
-        [
-          { lang: 'ja', label: 'ja' },
-          { lang: 'en', label: 'en' },
-          { lang: 'ko', label: 'ko' },
-          { lang: 'de', label: 'de (missing)' },
-          { lang: '', label: '(none)' },
-        ] as const
-      ).map(({ lang, label }) => (
+      {[
+        { dataLang: ['ja'] as string[], label: 'ja' },
+        { dataLang: ['en'] as string[], label: 'en' },
+        { dataLang: ['ko'] as string[], label: 'ko' },
+        { dataLang: ['de'] as string[], label: 'de (missing)' },
+        { dataLang: [] as string[], label: '(none)' },
+      ].map(({ dataLang, label }) => (
         <div key={label} className="flex items-center gap-2">
           <span className="w-20 text-[10px] text-gray-400">{label}</span>
           <HeadsignBadge
             routeDirection={args.routeDirection}
             infoLevel={args.infoLevel}
-            lang={lang}
+            dataLang={dataLang}
             size={args.size}
           />
         </div>
@@ -214,7 +212,7 @@ export const LangEnStopOverride: Story = {
         names: { en: 'Demachiyanagi Sta.', 'ja-Hrkt': 'でまちやなぎえき' },
       },
     },
-    lang: 'en',
+    dataLang: ['en'],
     infoLevel: 'normal',
   },
 };
@@ -228,19 +226,19 @@ export const SizeComparison: Story = {
       <HeadsignBadge
         routeDirection={args.routeDirection}
         infoLevel={args.infoLevel}
-        lang={args.lang}
+        dataLang={args.dataLang}
         size="xs"
       />
       <HeadsignBadge
         routeDirection={args.routeDirection}
         infoLevel={args.infoLevel}
-        lang={args.lang}
+        dataLang={args.dataLang}
         size="sm"
       />
       <HeadsignBadge
         routeDirection={args.routeDirection}
         infoLevel={args.infoLevel}
-        lang={args.lang}
+        dataLang={args.dataLang}
         size="default"
       />
     </div>

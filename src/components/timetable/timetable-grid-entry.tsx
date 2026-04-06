@@ -12,8 +12,8 @@ interface TimetableGridEntryProps {
   /** Maximum characters for headsign truncation. */
   headsignMaxLength?: number;
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   /** Agency languages for subNames sort priority. */
   agencyLang?: readonly string[];
   /** Whether to show terminal label. */
@@ -40,7 +40,7 @@ export function TimetableGridEntry({
   showHeadsign,
   headsignMaxLength,
   infoLevel,
-  lang,
+  dataLang,
   agencyLang,
   isDisplayTerminal,
   isDisplayOrigin,
@@ -62,7 +62,7 @@ export function TimetableGridEntry({
         <HeadsignBadge
           routeDirection={entry.routeDirection}
           infoLevel={infoLevel}
-          lang={lang}
+          dataLang={dataLang}
           agencyLang={agencyLang}
           maxLength={headsignMaxLength}
           size="xs"

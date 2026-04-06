@@ -118,7 +118,7 @@ const meta = {
   args: {
     routeDirection: shortRd,
     infoLevel: 'normal',
-    lang: 'ja',
+    dataLang: ['ja'],
     showRouteTypeIcon: true,
     agency,
   },
@@ -191,22 +191,20 @@ export const LangComparison: Story = {
   args: { routeDirection: kyotoBusRd, agency: kyotoAgency },
   render: (args) => (
     <div className="flex flex-col gap-3">
-      {(
-        [
-          { lang: 'ja', label: 'ja' },
-          { lang: 'en', label: 'en' },
-          { lang: 'ko', label: 'ko' },
-          { lang: 'zh-Hans', label: 'zh-Hans' },
-          { lang: 'de', label: 'de (missing)' },
-          { lang: '', label: '(none)' },
-        ] as const
-      ).map(({ lang, label }) => (
+      {[
+        { dataLang: ['ja'] as string[], label: 'ja' },
+        { dataLang: ['en'] as string[], label: 'en' },
+        { dataLang: ['ko'] as string[], label: 'ko' },
+        { dataLang: ['zh-Hans'] as string[], label: 'zh-Hans' },
+        { dataLang: ['de'] as string[], label: 'de (missing)' },
+        { dataLang: [] as string[], label: '(none)' },
+      ].map(({ dataLang, label }) => (
         <div key={label}>
           <span className="mb-0.5 block text-[10px] text-gray-400">{label}</span>
           <TripInfo
             routeDirection={args.routeDirection}
             infoLevel={args.infoLevel}
-            lang={lang}
+            dataLang={dataLang}
             showRouteTypeIcon={args.showRouteTypeIcon}
             agency={args.agency}
           />

@@ -34,7 +34,7 @@ import { resolveTranslatableText } from './resolve-translatable-text';
  */
 export function resolveDisplayNamesWithTranslatableText(
   text: TranslatableText,
-  lang: string,
+  lang: string | readonly string[],
   agencyLang: readonly string[],
 ): ResolvedDisplayNames {
   const { resolved, others } = resolveTranslatableText(text, lang);

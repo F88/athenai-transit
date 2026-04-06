@@ -26,6 +26,7 @@ import {
   nextTileIndex,
 } from './utils/settings-cycle';
 import { SUPPORTED_LANGS } from './config/supported-langs';
+import { resolveLangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
 import { formatDateKey } from './domain/transit/calendar-utils';
@@ -54,6 +55,11 @@ export default function App() {
   useEffect(() => {
     void i18n.changeLanguage(settings.lang);
   }, [settings.lang]);
+
+  // Resolve language fallback chain once when lang changes.
+  // Components receive this as dataLang (ordered priority list for
+  // GTFS/ODPT data translation resolution).
+  const dataLang = useMemo(() => resolveLangChain(settings.lang, SUPPORTED_LANGS), [settings.lang]);
 
   const [inBoundStops, setInBoundStops] = useState<StopWithMeta[]>([]);
   const [radiusStops, setNearbyStops] = useState<StopWithMeta[]>([]);
@@ -568,7 +574,7 @@ export default function App() {
           renderMode={settings.renderMode}
           perfMode={settings.perfMode}
           infoLevel={settings.infoLevel}
-          lang={settings.lang}
+          dataLang={dataLang}
           time={dateTime}
           onBoundsChanged={handleBoundsChanged}
           onStopSelected={handleSelectStop}
@@ -610,7 +616,7 @@ export default function App() {
         time={dateTime}
         mapCenter={mapCenter}
         infoLevel={settings.infoLevel}
-        lang={settings.lang}
+        dataLang={dataLang}
         anchorIds={anchorIds}
         onStopSelected={handleSelectStopById}
         onShowTimetable={handleShowTimetable}
@@ -620,7 +626,7 @@ export default function App() {
       <StopSearchModal
         repo={repo}
         infoLevel={settings.infoLevel}
-        lang={settings.lang}
+        dataLang={dataLang}
         onSelectStop={handleSearchSelect}
         open={searchModalOpen}
         onOpenChange={setSearchModalOpen}
@@ -630,7 +636,7 @@ export default function App() {
         data={timetableModal}
         time={dateTime}
         infoLevel={settings.infoLevel}
-        lang={settings.lang}
+        dataLang={dataLang}
         onClose={() => setTimetableModal(null)}
       />
       <Toaster theme={settings.theme} position="top-center" closeButton richColors expand={false} />
