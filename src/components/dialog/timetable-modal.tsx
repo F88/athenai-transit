@@ -151,14 +151,15 @@ export function TimetableModal({ data, time, infoLevel, lang, onClose }: Timetab
                 isBoardableOnServiceDay={data.isBoardableOnServiceDay}
               />
             )}
-            <DialogTitle className="flex flex-col gap-1">
-              <TimetableHeader data={data} infoLevel={infoLevel} />
-            </DialogTitle>
-            <DialogDescription className="sr-only">
+            <DialogDescription className="text-muted-foreground text-xs">
               {data.type === 'route-headsign'
                 ? `${data.stop.stop_name} ${data.routes[0].route_short_name || data.routes[0].route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
                 : `${data.stop.stop_name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
             </DialogDescription>
+
+            <DialogTitle className="flex flex-col gap-1">
+              <TimetableHeader data={data} infoLevel={infoLevel} />
+            </DialogTitle>
 
             {info.isDetailedEnabled && (
               <TimetableMetadata timetableEntries={filteredTimetableEntries} />

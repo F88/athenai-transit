@@ -296,30 +296,46 @@ export default function App() {
     [repo, dateTime],
   );
 
-  const handleShowTimetable = useCallback(
-    async (stopId: string, routeId: string, headsign: string) => {
+  const showTimetable = useCallback(
+    async (
+      stopId: string,
+      filter: { type: 'route-headsign'; routeId: string; headsign: string } | { type: 'stop' },
+    ) => {
       const meta = radiusStops.find((s) => s.stop.stop_id === stopId);
       if (!meta) {
         return;
       }
-      const route = meta.routes.find((r) => r.route_id === routeId);
-      if (!route) {
+
+      // Resolve routes: single matched route for route-headsign, all for stop.
+      const routes =
+        filter.type === 'route-headsign'
+          ? meta.routes.filter((r) => r.route_id === filter.routeId)
+          : meta.routes;
+      if (filter.type === 'route-headsign' && routes.length === 0) {
         return;
       }
+
       const { allEntries, isBoardableOnServiceDay } = await fetchTimetableEntries(stopId);
-      const { entries, omitted } = prepareRouteHeadsignTimetable(
-        allEntries,
-        routeId,
-        headsign,
-        infoLevelFlags.isDetailedEnabled,
-      );
+      const { entries, omitted } =
+        filter.type === 'route-headsign'
+          ? prepareRouteHeadsignTimetable(
+              allEntries,
+              filter.routeId,
+              filter.headsign,
+              infoLevelFlags.isDetailedEnabled,
+            )
+          : prepareStopTimetable(allEntries, infoLevelFlags.isDetailedEnabled);
+
+      const headsign = filter.type === 'route-headsign' ? filter.headsign : undefined;
+
       logger.debug(
-        `timetable(route-headsign) [${settings.infoLevel}]: ${stopId} ${routeId} "${headsign}" → entries=${entries.length} omitted.terminal=${omitted.terminal} total=${allEntries.length} isBoardableOnServiceDay=${isBoardableOnServiceDay}`,
+        `timetable(${filter.type}) [${settings.infoLevel}]: ${stopId}${filter.type === 'route-headsign' ? ` ${filter.routeId} "${headsign}"` : ''} → entries=${entries.length} omitted.terminal=${omitted.terminal} total=${allEntries.length}`,
       );
+
       setTimetableModal({
-        type: 'route-headsign',
+        type: filter.type,
         stop: meta.stop,
-        routes: [route],
+        routes,
         headsign,
         serviceDate: getServiceDay(dateTime),
         timetableEntries: entries,
@@ -331,32 +347,18 @@ export default function App() {
     [dateTime, radiusStops, infoLevelFlags, fetchTimetableEntries, settings.infoLevel],
   );
 
-  const handleShowStopTimetable = useCallback(
-    async (stopId: string) => {
-      const meta = radiusStops.find((s) => s.stop.stop_id === stopId);
-      if (!meta) {
-        return;
-      }
-      const { allEntries, isBoardableOnServiceDay } = await fetchTimetableEntries(stopId);
-      const { entries, omitted } = prepareStopTimetable(
-        allEntries,
-        infoLevelFlags.isDetailedEnabled,
-      );
-      logger.debug(
-        `timetable(stop) [${settings.infoLevel}]: ${stopId} → entries=${entries.length} omitted.terminal=${omitted.terminal} total=${allEntries.length} isBoardableOnServiceDay=${isBoardableOnServiceDay}`,
-      );
-      setTimetableModal({
-        type: 'stop',
-        stop: meta.stop,
-        routes: meta.routes,
-        serviceDate: getServiceDay(dateTime),
-        timetableEntries: entries,
-        omitted,
-        isBoardableOnServiceDay,
-        agencies: meta.agencies,
-      });
+  const handleShowTimetable = useCallback(
+    (stopId: string, routeId: string, headsign: string) => {
+      void showTimetable(stopId, { type: 'route-headsign', routeId, headsign });
     },
-    [dateTime, radiusStops, infoLevelFlags, fetchTimetableEntries, settings.infoLevel],
+    [showTimetable],
+  );
+
+  const handleShowStopTimetable = useCallback(
+    (stopId: string) => {
+      void showTimetable(stopId, { type: 'stop' });
+    },
+    [showTimetable],
   );
 
   // Select + pan to a stop from history. Uses focusStop to set
@@ -590,8 +592,8 @@ export default function App() {
         lang={settings.lang}
         anchorIds={anchorIds}
         onStopSelected={handleSelectStopById}
-        onShowTimetable={(...args) => void handleShowTimetable(...args)}
-        onShowStopTimetable={(...args) => void handleShowStopTimetable(...args)}
+        onShowTimetable={handleShowTimetable}
+        onShowStopTimetable={handleShowStopTimetable}
         onToggleAnchor={handleToggleAnchor}
       />
       <StopSearchModal
