@@ -96,11 +96,92 @@ describe('resolveTranslatableText', () => {
       expect(actual.others['en']).toBe('A-en');
     });
 
+    it('lang=origin always returns text.name, ignoring names.origin', () => {
+      const actual = resolveTranslatableText(
+        { name: 'A', names: { origin: 'X', en: 'A-en' } },
+        'origin',
+      );
+      expect(actual.resolved.lang).toBe('origin');
+      expect(actual.resolved.value).toBe('A');
+      expect(actual.others['origin']).toBeUndefined();
+      expect(actual.others['en']).toBe('A-en');
+    });
+
+    it('lang=origin deduplicates case-variant keys in others', () => {
+      const actual = resolveTranslatableText(
+        { name: 'A', names: { 'ja-Hrkt': 'ひらがな', 'ja-HrKt': 'カタカナ', en: 'A-en' } },
+        'origin',
+      );
+      expect(actual.resolved.value).toBe('A');
+      // Only one of the case variants should appear in others.
+      const hrktKeys = Object.keys(actual.others).filter((k) => k.toLowerCase() === 'ja-hrkt');
+      expect(hrktKeys).toHaveLength(1);
+      expect(actual.others['en']).toBe('A-en');
+    });
+
     it('keeps all keys with same value', () => {
       const actual = resolveTranslatableText({ name: 'A', names: { en: 'B', fr: 'B' } }, 'ko');
       expect(actual.resolved.value).toBe('A');
       expect(actual.others['en']).toBe('B');
       expect(actual.others['fr']).toBe('B');
+    });
+  });
+
+  describe('BCP 47 case-insensitive lookup', () => {
+    it('lang=ja-Hrkt matches key ja-Hrkt (exact)', () => {
+      const text = { name: '渋谷駅', names: { 'ja-Hrkt': 'しぶやえき', en: 'Shibuya Sta.' } };
+      const actual = resolveTranslatableText(text, 'ja-Hrkt');
+      expect(actual.resolved.lang).toBe('ja-Hrkt');
+      expect(actual.resolved.value).toBe('しぶやえき');
+    });
+
+    it('lang=ja-Hrkt matches key ja-HrKt (case differs)', () => {
+      const text = { name: '渋谷駅', names: { 'ja-HrKt': 'しぶやえき', en: 'Shibuya Sta.' } };
+      const actual = resolveTranslatableText(text, 'ja-Hrkt');
+      expect(actual.resolved.lang).toBe('ja-Hrkt');
+      expect(actual.resolved.value).toBe('しぶやえき');
+    });
+
+    it('lang=ja-HrKt matches key ja-Hrkt (reverse case differs)', () => {
+      const text = { name: '渋谷駅', names: { 'ja-Hrkt': 'しぶやえき' } };
+      const actual = resolveTranslatableText(text, 'ja-HrKt');
+      expect(actual.resolved.lang).toBe('ja-HrKt');
+      expect(actual.resolved.value).toBe('しぶやえき');
+    });
+
+    it('lang=EN matches key en', () => {
+      const text = { name: '渋谷駅', names: { en: 'Shibuya Sta.' } };
+      const actual = resolveTranslatableText(text, 'EN');
+      expect(actual.resolved.lang).toBe('EN');
+      expect(actual.resolved.value).toBe('Shibuya Sta.');
+    });
+
+    it('lang=ZH-HANS matches key zh-Hans', () => {
+      const text = { name: '渋谷駅', names: { 'zh-Hans': '涩谷站' } };
+      const actual = resolveTranslatableText(text, 'ZH-HANS');
+      expect(actual.resolved.lang).toBe('ZH-HANS');
+      expect(actual.resolved.value).toBe('涩谷站');
+    });
+
+    it('duplicate keys with different casing: first match wins, duplicate excluded from others', () => {
+      // Per BCP 47 (RFC 5646 §2.1.1), subtag comparisons are case-insensitive.
+      // If the data contains both "ja-Hrkt" and "ja-HrKt", they refer to the
+      // same language. The resolver returns the first match and excludes the
+      // duplicate from others to prevent it leaking into subNames.
+      const text = {
+        name: '渋谷駅',
+        names: { 'ja-Hrkt': 'しぶやえき', 'ja-HrKt': 'シブヤエキ', en: 'Shibuya Sta.' },
+      };
+      const actual = resolveTranslatableText(text, 'ja-Hrkt');
+      expect(actual.resolved.lang).toBe('ja-Hrkt');
+      expect(actual.resolved.value).toBe('しぶやえき');
+      // Duplicate "ja-HrKt" must not appear in others.
+      expect(actual.others['ja-HrKt']).toBeUndefined();
+      expect(actual.others['ja-Hrkt']).toBeUndefined();
+      // Other languages are still present.
+      expect(actual.others['en']).toBe('Shibuya Sta.');
+      expect(actual.others['origin']).toBe('渋谷駅');
+      expect(Object.keys(actual.others)).toHaveLength(2);
     });
   });
 });

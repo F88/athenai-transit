@@ -39,6 +39,12 @@ export interface ResolvedTranslatableText {
  * The `'origin'` key is reserved for `text.name` (the raw source value).
  * If `text.names` contains an `'origin'` key, `text.name` takes priority.
  *
+ * Language lookup is **case-insensitive** per BCP 47 (RFC 5646 §2.1.1).
+ * `"ja-Hrkt"` matches a key `"ja-HrKt"` in `text.names`.
+ * If `text.names` contains duplicate keys that differ only in case
+ * (e.g. both `"ja-Hrkt"` and `"ja-HrKt"`), the first match is used
+ * and the duplicate is ignored.
+ *
  * @param text - The translatable text to resolve.
  * @param lang - BCP 47-ish language key (e.g. `"en"`, `"ja-Hrkt"`).
  *               Falls back to raw `text.name` when not found.
@@ -61,18 +67,51 @@ export function resolveTranslatableText(
   text: TranslatableText,
   lang: string,
 ): ResolvedTranslatableText {
-  const translation = text.names[lang];
+  // 'origin' is an internal reserved key for text.name.
+  // If lang='origin' is passed, always return text.name directly
+  // without looking up text.names (even if it contains an 'origin' key).
+  if (lang === 'origin') {
+    const others: Record<string, string> = {};
+    const seen = new Set<string>(['origin']);
+    for (const [key, value] of Object.entries(text.names)) {
+      const keyLower = key.toLowerCase();
+      if (seen.has(keyLower)) {
+        continue;
+      }
+      seen.add(keyLower);
+      if (value && value !== text.name) {
+        others[key] = value;
+      }
+    }
+    return { resolved: { lang: 'origin', value: text.name }, others };
+  }
+
+  // Case-insensitive lookup: BCP 47 subtags are case-insensitive
+  // per RFC 5646 §2.1.1 (e.g. "ja-Hrkt" and "ja-HrKt" should match).
+  const langLower = lang.toLowerCase();
+  const matchedKey = Object.keys(text.names).find((k) => k.toLowerCase() === langLower);
+  const translation = matchedKey != null ? text.names[matchedKey] : undefined;
   const resolved =
     translation != null ? { lang, value: translation } : { lang: 'origin', value: text.name };
 
-  // 'origin' is reserved for text.name. Spread text.names first,
-  // then overwrite with text.name to ensure origin always wins.
-  const all: Record<string, string> = { ...text.names, origin: text.name };
+  // Build others: deduplicate by lowercase key to prevent case-variant
+  // duplicates (e.g. "ja-Hrkt" and "ja-HrKt") from leaking into subNames.
+  // 'origin' always maps to text.name, overwriting any 'origin' in text.names.
   const others: Record<string, string> = {};
-  for (const [key, value] of Object.entries(all)) {
-    if (value && value !== resolved.value) {
+  const seen = new Set<string>();
+  // Mark the resolved language as seen so it's excluded from others.
+  seen.add(langLower);
+  seen.add('origin');
+  for (const [key, value] of Object.entries(text.names)) {
+    const keyLower = key.toLowerCase();
+    if (!seen.has(keyLower) && value && value !== resolved.value) {
       others[key] = value;
+      seen.add(keyLower);
     }
+  }
+  // Add origin (text.name) if it differs from resolved value.
+  if (text.name && text.name !== resolved.value) {
+    others['origin'] = text.name;
   }
 
   return { resolved, others };
