@@ -1,4 +1,4 @@
-import type { HeadsignSource } from '../domain/transit/get-headsign-display-names';
+import type { HeadsignSource } from './get-headsign-display-names';
 
 /**
  * Return an emoji/symbol representing the given {@link HeadsignSource}.

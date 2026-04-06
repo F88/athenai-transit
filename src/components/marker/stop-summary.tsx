@@ -40,7 +40,7 @@ export function StopSummary({
   lang,
 }: StopSummaryProps) {
   const info = createInfoLevel(infoLevel);
-  const stopNames = getStopDisplayNames(stop, infoLevel);
+  const stopNames = getStopDisplayNames(stop, infoLevel, lang);
   // Departure items require `now` for relative time display
   const items = now ? (entries?.slice(0, 3) ?? []) : [];
 
@@ -78,7 +78,6 @@ export function StopSummary({
               size={'sm'}
               routeDirection={entry.routeDirection}
               infoLevel={infoLevel === 'verbose' ? infoLevel : 'simple'}
-              // infoLevel={'simple'}
               lang={lang}
               showRouteTypeIcon={false}
               isTerminal={entry.patternPosition.isTerminal}

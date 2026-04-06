@@ -158,7 +158,7 @@ export function TimetableModal({ data, time, infoLevel, lang, onClose }: Timetab
             </DialogDescription>
 
             <DialogTitle className="flex flex-col gap-1">
-              <TimetableHeader data={data} infoLevel={infoLevel} />
+              <TimetableHeader data={data} infoLevel={infoLevel} lang={lang} />
             </DialogTitle>
 
             {info.isDetailedEnabled && (
@@ -525,8 +525,16 @@ function TimetableGrid({
   );
 }
 
-function TimetableHeader({ data, infoLevel }: { data: TimetableData; infoLevel: InfoLevel }) {
-  const stopNames = getStopDisplayNames(data.stop, infoLevel);
+function TimetableHeader({
+  data,
+  infoLevel,
+  lang,
+}: {
+  data: TimetableData;
+  infoLevel: InfoLevel;
+  lang: string;
+}) {
+  const stopNames = getStopDisplayNames(data.stop, infoLevel, lang);
   const isDropOffOnly =
     !data.isBoardableOnServiceDay &&
     (data.omitted.terminal > 0 || data.timetableEntries.length > 0);

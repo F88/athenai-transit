@@ -14,3 +14,12 @@ export interface ResolvedDisplayNames {
    */
   subNames: string[];
 }
+
+/**
+ * Whether the resolved display names contain any displayable content.
+ *
+ * Returns `false` when `name` is empty and all `subNames` are empty strings.
+ */
+export function hasDisplayContent(names: ResolvedDisplayNames): boolean {
+  return !!names.name || names.subNames.some(Boolean);
+}
