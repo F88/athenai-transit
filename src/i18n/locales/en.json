@@ -23,19 +23,22 @@
     "minutes": "min",
     "arriving": "",
     "terminal": "Terminal",
-    "origin": "Origin",
-    "noBoarding": "No boarding",
-    "noPickup": "No pickup",
-    "noDropOff": "No drop-off"
+    "noBoarding": "No boarding"
   },
   "timetable": {
+    "entry": {
+      "terminal": "Terminal",
+      "origin": "Origin",
+      "noPickup": "No pickup",
+      "noDropOff": "No drop-off",
+      "dropOffOnly": "Drop-off only",
+      "noService": "No service on this day",
+      "hour": "{{hour}}:00",
+      "entries": "{{hour}}:00 ({{count}})"
+    },
     "routeHeadsignDescription": "{{stop}} {{route}} {{headsign}} timetable ({{count}})",
     "stopDescription": "{{stop}} all routes timetable ({{count}})",
-    "noDestination": "Some routes have no destination displayed",
-    "dropOffOnly": "Drop-off only",
-    "noService": "No service on this day",
-    "hour": "{{hour}}:00",
-    "entries": "{{hour}}:00 ({{count}})"
+    "noDestination": "Some routes have no destination displayed"
   },
   "toast": {
     "anchorUpdateFailed": "Failed to update anchor"
