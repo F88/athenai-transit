@@ -173,7 +173,7 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
               <TimetableHeader data={data} infoLevel={infoLevel} dataLang={dataLang} />
             </DialogTitle>
 
-            {info.isDetailedEnabled && (
+            {info.isDetailedEnabled && filteredTimetableEntries.length > 0 && (
               <TimetableMetadata timetableEntries={filteredTimetableEntries} />
             )}
 
@@ -339,6 +339,7 @@ function TimetableDateLabel({
 
 /** Metadata summary shown above the timetable grid. */
 function TimetableMetadata({ timetableEntries }: { timetableEntries: TimetableEntry[] }) {
+  const { t } = useTranslation();
   // Compute departure count and operating hours.
   // Use the display time (arrival for terminal, departure otherwise) for statistics.
   const allMinutes = timetableEntries.map((d) => getDisplayMinutes(d));
@@ -370,8 +371,10 @@ function TimetableMetadata({ timetableEntries }: { timetableEntries: TimetableEn
             {firstTime} - {lastTime}
           </span>
         )}
-        <span> / {count.toLocaleString()}本</span>
-        {avgInterval !== null && <span> / 平均{avgInterval}分間隔</span>}
+        <span> / {t('timetable.metadata.count', { count })}</span>
+        {avgInterval !== null && (
+          <span> / {t('timetable.metadata.avgInterval', { interval: avgInterval })}</span>
+        )}
       </p>
       {routeBreakdown.length > 1 && (
         <div className="flex flex-wrap gap-1">

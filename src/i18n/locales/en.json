@@ -44,6 +44,10 @@
         "noService": "No service on this day"
       }
     },
+    "metadata": {
+      "count": "{{count}} trips",
+      "avgInterval": "avg. {{interval}} min interval"
+    },
     "header": {
       "routeHeadsignDescription": "{{stop}} {{route}} {{headsign}} timetable ({{count}})",
       "stopDescription": "{{stop}} all routes timetable ({{count}})",

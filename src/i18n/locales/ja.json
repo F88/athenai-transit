@@ -44,6 +44,10 @@
         "noService": "この日の運行はありません"
       }
     },
+    "metadata": {
+      "count": "{{count}}本",
+      "avgInterval": "平均{{interval}}分間隔"
+    },
     "header": {
       "routeHeadsignDescription": "{{stop}} {{route}}{{headsign}}の時刻表 {{count}}本",
       "stopDescription": "{{stop}}の全路線時刻表 {{count}}本",
