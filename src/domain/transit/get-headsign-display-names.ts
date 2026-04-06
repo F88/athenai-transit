@@ -3,11 +3,21 @@ import type { ResolvedDisplayNames } from './get-display-names';
 import { resolveDisplayNamesWithTranslatableText } from './i18n/resolve-display-names-with-translatable-text';
 
 /**
+ * Headsign source type.
+ *
+ * - `'stop'` — stop_headsign (GTFS default; overrides trip_headsign).
+ * - `'trip'` — trip_headsign; falls back to stop_headsign.
+ */
+export type HeadsignSource = 'stop' | 'trip';
+
+/**
  * Result of {@link getHeadsignDisplayNames}.
  */
 export interface HeadsignDisplayNames {
   /** Effective headsign resolved by `prefer` strategy. */
   resolved: ResolvedDisplayNames;
+  /** Which source was used for `resolved`. */
+  resolvedSource: HeadsignSource;
   /** trip_headsign resolved for the requested language. */
   tripName: ResolvedDisplayNames;
   /** stop_headsign resolved for the requested language. Undefined when not provided. */
@@ -31,7 +41,7 @@ export interface HeadsignDisplayNames {
  */
 export function getHeadsignDisplayNames(
   routeDirection: RouteDirection,
-  prefer: 'stop' | 'trip' = 'stop',
+  prefer: HeadsignSource = 'stop',
   lang: string,
   agencyLang: readonly string[],
 ): HeadsignDisplayNames {
@@ -44,14 +54,29 @@ export function getHeadsignDisplayNames(
     ? resolveDisplayNamesWithTranslatableText(routeDirection.stopHeadsign, lang, agencyLang)
     : undefined;
 
-  const resolved =
-    prefer === 'trip'
-      ? tripName.name
-        ? tripName
-        : (stopName ?? tripName)
-      : stopName?.name
-        ? stopName
-        : tripName;
+  let resolved: ResolvedDisplayNames;
+  let resolvedSource: HeadsignSource;
 
-  return { resolved, tripName, stopName };
+  if (prefer === 'trip') {
+    if (tripName.name) {
+      resolved = tripName;
+      resolvedSource = 'trip';
+    } else if (stopName) {
+      resolved = stopName;
+      resolvedSource = 'stop';
+    } else {
+      resolved = tripName;
+      resolvedSource = 'trip';
+    }
+  } else {
+    if (stopName?.name) {
+      resolved = stopName;
+      resolvedSource = 'stop';
+    } else {
+      resolved = tripName;
+      resolvedSource = 'trip';
+    }
+  }
+
+  return { resolved, resolvedSource, tripName, stopName };
 }

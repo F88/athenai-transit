@@ -97,6 +97,7 @@ describe('getHeadsignDisplayNames', () => {
       DEFAULT_AGENCY_LANG,
     );
     expect(result.resolved.name).toBe('新宿駅西口');
+    expect(result.resolvedSource).toBe('trip');
   });
 
   it('returns headsign even when route has names', () => {
@@ -238,11 +239,13 @@ describe('getHeadsignDisplayNames', () => {
     it('effective name is stop_headsign by default (prefer=stop)', () => {
       const result = getHeadsignDisplayNames(kyotoRd, 'stop', DEFAULT_LANG, DEFAULT_AGENCY_LANG);
       expect(result.resolved.name).toBe('B');
+      expect(result.resolvedSource).toBe('stop');
     });
 
     it('effective name is trip_headsign when prefer=trip', () => {
       const result = getHeadsignDisplayNames(kyotoRd, 'trip', DEFAULT_LANG, DEFAULT_AGENCY_LANG);
       expect(result.resolved.name).toBe('A経由B');
+      expect(result.resolvedSource).toBe('trip');
     });
 
     it('resolves tripName and stopName for lang=en', () => {
@@ -276,6 +279,7 @@ describe('getHeadsignDisplayNames', () => {
       });
       const result = getHeadsignDisplayNames(rd, 'stop', DEFAULT_LANG, DEFAULT_AGENCY_LANG);
       expect(result.resolved.name).toBe('X');
+      expect(result.resolvedSource).toBe('trip');
       expect(result.stopName).toBeUndefined();
     });
 
@@ -286,6 +290,7 @@ describe('getHeadsignDisplayNames', () => {
       });
       const result = getHeadsignDisplayNames(rd, 'trip', DEFAULT_LANG, DEFAULT_AGENCY_LANG);
       expect(result.resolved.name).toBe('Y');
+      expect(result.resolvedSource).toBe('stop');
     });
   });
 });

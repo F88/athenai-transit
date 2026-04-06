@@ -77,9 +77,8 @@ export function StopSummary({
             <TripInfo
               size={'sm'}
               routeDirection={entry.routeDirection}
-              // infoLevel is forced to 'simple' for TripInfo within StopSummary to avoid redundant info and save space.
-              // infoLevel={infoLevel}
-              infoLevel={'simple'}
+              infoLevel={infoLevel === 'verbose' ? infoLevel : 'simple'}
+              // infoLevel={'simple'}
               lang={lang}
               showRouteTypeIcon={false}
               isTerminal={entry.patternPosition.isTerminal}
