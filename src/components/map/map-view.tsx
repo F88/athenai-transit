@@ -220,6 +220,7 @@ interface MapViewProps {
   theme: Theme;
   doubleTapDrag: 'zoom-in' | 'zoom-out';
   onToggleDarkMode: () => void;
+  onCycleLang: () => void;
   onDeselectStop: () => void;
   onRouteShapeSelected: (routeId: string) => void;
   /** Resolves daily departure frequency for a route based on the current service day. */
@@ -267,6 +268,7 @@ export function MapView({
   theme,
   doubleTapDrag,
   onToggleDarkMode,
+  onCycleLang,
   onDeselectStop,
   onRouteShapeSelected,
   resolveRouteFreq,
@@ -473,6 +475,8 @@ export function MapView({
         onTogglePerfMode={onTogglePerfMode}
         onCycleInfoLevel={onCycleInfoLevel}
         onToggleDarkMode={onToggleDarkMode}
+        onCycleLang={onCycleLang}
+        lang={lang}
         onToggleStopType={onToggleStopType}
         onSearchClick={onSearchClick}
         onInfoClick={onInfoClick}

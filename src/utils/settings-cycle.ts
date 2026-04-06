@@ -1,7 +1,24 @@
 import type { InfoLevel, PerfMode, RenderMode } from '../types/app/settings';
+import { DEFAULT_LANG, SUPPORTED_LANG_CODES } from '../config/supported-langs';
 
 const INFO_LEVEL_ORDER: InfoLevel[] = ['simple', 'normal', 'detailed', 'verbose'];
 const PERF_MODE_ORDER: PerfMode[] = ['normal', 'lite', 'full'];
+
+/**
+ * Cycle display language through {@link SUPPORTED_LANG_CODES}.
+ *
+ * If `current` is not in the list, returns {@link DEFAULT_LANG}.
+ *
+ * @param current - Current language.
+ * @returns Next language.
+ */
+export function nextLang(current: string): string {
+  const index = SUPPORTED_LANG_CODES.indexOf(current);
+  if (index === -1) {
+    return DEFAULT_LANG;
+  }
+  return SUPPORTED_LANG_CODES[(index + 1) % SUPPORTED_LANG_CODES.length];
+}
 
 /**
  * Cycle info level: simple → normal → detailed → verbose → simple.

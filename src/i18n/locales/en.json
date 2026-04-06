@@ -1,0 +1,6 @@
+{
+  "nearbyStops": "Nearby stops",
+  "nearbyStopsCount": "{{count}} stops",
+  "noStopsNearby": "No stops nearby",
+  "noOperatingStops": "No operating stops"
+}

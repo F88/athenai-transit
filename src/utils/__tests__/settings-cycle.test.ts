@@ -1,5 +1,39 @@
 import { describe, expect, it } from 'vitest';
-import { nextInfoLevel, nextPerfMode, nextRenderMode, nextTileIndex } from '../settings-cycle';
+import {
+  nextInfoLevel,
+  nextLang,
+  nextPerfMode,
+  nextRenderMode,
+  nextTileIndex,
+} from '../settings-cycle';
+
+describe('nextLang', () => {
+  it('cycles through all supported languages', () => {
+    expect(nextLang('ja')).toBe('ja-Hrkt');
+    expect(nextLang('ja-Hrkt')).toBe('en');
+    expect(nextLang('en')).toBe('zh-Hans');
+    expect(nextLang('zh-Hans')).toBe('zh-Hant');
+    expect(nextLang('zh-Hant')).toBe('ko');
+    expect(nextLang('ko')).toBe('de');
+    expect(nextLang('de')).toBe('es');
+    expect(nextLang('es')).toBe('fr');
+    expect(nextLang('fr')).toBe('ja');
+  });
+
+  it('full cycle returns to starting lang', () => {
+    let lang = 'ja';
+    for (let i = 0; i < 9; i++) {
+      lang = nextLang(lang);
+    }
+    expect(lang).toBe('ja');
+  });
+
+  it('returns default for unknown lang', () => {
+    expect(nextLang('pt')).toBe('ja');
+    expect(nextLang('not-a-lang')).toBe('ja');
+    expect(nextLang('')).toBe('ja');
+  });
+});
 
 describe('nextInfoLevel', () => {
   it('cycles simple -> normal', () => {

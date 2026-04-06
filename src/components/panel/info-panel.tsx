@@ -16,7 +16,7 @@ interface InfoPanelProps {
  */
 export function InfoPanel({ infoLevel, onInfoClick }: InfoPanelProps) {
   return (
-    <ControlPanel side="right" edge="top" offset="13rem" infoLevel={infoLevel}>
+    <ControlPanel side="right" edge="top" offset="14.75rem" infoLevel={infoLevel}>
       <MapToggleButton active onClick={onInfoClick} label="アプリ情報">
         ℹ️
       </MapToggleButton>

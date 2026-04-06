@@ -32,6 +32,8 @@ interface MapOverlayPanelsProps {
   onTogglePerfMode: () => void;
   onCycleInfoLevel: () => void;
   onToggleDarkMode: () => void;
+  onCycleLang: () => void;
+  lang: string;
   onToggleStopType: (rt: number) => void;
   onSearchClick: () => void;
   onInfoClick: () => void;
@@ -60,6 +62,8 @@ export function MapOverlayPanels({
   onTogglePerfMode,
   onCycleInfoLevel,
   onToggleDarkMode,
+  onCycleLang,
+  lang,
   onToggleStopType,
   onSearchClick,
   onInfoClick,
@@ -93,10 +97,12 @@ export function MapOverlayPanels({
         perfMode={perfMode}
         infoLevel={infoLevel}
         theme={theme}
+        lang={lang}
         onToggleRenderMode={onToggleRenderMode}
         onTogglePerfMode={onTogglePerfMode}
         onCycleInfoLevel={onCycleInfoLevel}
         onToggleDarkMode={onToggleDarkMode}
+        onCycleLang={onCycleLang}
       />
       <StopTypeFilterPanel
         visibleStopTypes={visibleStopTypes}

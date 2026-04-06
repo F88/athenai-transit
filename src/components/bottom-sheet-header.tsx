@@ -8,6 +8,7 @@ import { createLogger } from '../lib/logger';
 import { routeTypeColor } from '../utils/route-type-color';
 import { routeTypeEmoji } from '../utils/route-type-emoji';
 import { useInfoLevel } from '../hooks/use-info-level';
+import { useTranslation } from 'react-i18next';
 import { PillButton } from './button/pill-button';
 
 interface BottomSheetHeaderProps {
@@ -144,18 +145,18 @@ function getNearbyStopsSummaryText(
   hasLoaded: boolean,
   counts: NearbyStopsCounts,
   activeOnly: boolean,
+  t: (key: string, options?: Record<string, unknown>) => string,
 ): string {
   if (!hasLoaded) {
     return 'Loading...';
   }
   if (counts.filtered > 0) {
-    return `近くの乗り場 ${counts.filtered}カ所`;
-    // return `${counts.filtered}`;
+    return `${t('nearbyStops')} ${t('nearbyStopsCount', { count: counts.filtered })}`;
   }
   if (activeOnly && counts.total > 0) {
-    return '運行中の乗り場はありません';
+    return t('noOperatingStops');
   }
-  return '近くに乗り場がありません';
+  return t('noStopsNearby');
 }
 
 const summaryLogger = createLogger('NearbyStopsSummary');
@@ -173,13 +174,14 @@ function NearbyStopsSummary({
   activeOnly,
   hasLoaded,
 }: NearbyStopsSummaryProps) {
+  const { t } = useTranslation();
   summaryLogger.verbose(
     hasLoaded
       ? `found ${counts.total} nearby stops (${counts.active} active, ${counts.filtered} after filter)`
       : 'not loaded yet',
   );
   const radiusLabel = `${formatRadius(nearbyRadius)}圏内`;
-  const text = getNearbyStopsSummaryText(hasLoaded, counts, activeOnly);
+  const text = getNearbyStopsSummaryText(hasLoaded, counts, activeOnly, t);
 
   return (
     <p className="m-0 flex items-center gap-1 text-base font-bold text-[#212121] dark:text-gray-100">

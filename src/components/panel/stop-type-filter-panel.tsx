@@ -35,7 +35,7 @@ export function StopTypeFilterPanel({
   onToggleStopType,
 }: StopTypeFilterPanelProps) {
   return (
-    <ControlPanel side="left" edge="top" offset="10.25rem" infoLevel={infoLevel}>
+    <ControlPanel side="left" edge="top" offset="10rem" infoLevel={infoLevel}>
       {STOP_TYPE_ENTRIES.map(({ routeType, label }) => (
         <MapToggleButton
           key={routeType}

@@ -1,0 +1,6 @@
+{
+  "nearbyStops": "近くの乗り場",
+  "nearbyStopsCount": "{{count}}カ所",
+  "noStopsNearby": "近くに乗り場がありません",
+  "noOperatingStops": "運行中の乗り場はありません"
+}

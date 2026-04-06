@@ -8,33 +8,48 @@ export interface SupportedLang {
   label: string;
   /** Short label for compact UI (e.g. toggle buttons). */
   shortLabel: string;
+  /**
+   * Fallback language code when translation is not found.
+   *
+   * The resolver chains through fallbacks until a translation is found
+   * or `undefined` is reached (falling back to origin text).
+   * e.g. `zh-Hant` → `zh-Hans` → `en` → origin.
+   */
+  fallback?: string;
 }
 
 /**
- * Supported display languages in cycle order.
+ * User-selectable display languages in cycle order.
+ *
+ * This list defines which languages the user can switch between
+ * via the UI toggle button. It does NOT imply that all UI text
+ * is translated for every language listed — static UI labels
+ * fall back to `fallbackLng` (ja) via i18next when no translation
+ * exists. GTFS data translations (stop names, headsigns, etc.)
+ * are resolved independently via `TranslatableText`.
  *
  * The first entry is the default language used as fallback
  * when a stored or unknown value is not in this list.
  */
 export const SUPPORTED_LANGS: readonly SupportedLang[] = [
   // Japanese
-  { code: 'ja', label: '日本語', shortLabel: 'JA' },
-  { code: 'ja-Hrkt', label: 'かな', shortLabel: 'あ' },
+  { code: 'ja', label: '日本語', shortLabel: 'JA', fallback: 'en' },
+  { code: 'ja-Hrkt', label: 'かな', shortLabel: 'あ', fallback: 'ja' },
 
   // Global Fallback
   { code: 'en', label: 'English', shortLabel: 'EN' },
 
   // East Asian (High Inbound Demand)
-  { code: 'zh-Hans', label: '简体中文', shortLabel: '简' },
-  { code: 'zh-Hant', label: '繁體中文', shortLabel: '繁' },
-  { code: 'ko', label: '한국어', shortLabel: '한' },
+  { code: 'zh-Hans', label: '简体中文', shortLabel: '简', fallback: 'en' },
+  { code: 'zh-Hant', label: '繁體中文', shortLabel: '繁', fallback: 'zh-Hans' },
+  { code: 'ko', label: '한국어', shortLabel: '한', fallback: 'en' },
 
   // European / Others (Alphabetical)
-  { code: 'de', label: 'Deutsch', shortLabel: 'DE' },
-  { code: 'es', label: 'Español', shortLabel: 'ES' },
-  { code: 'fr', label: 'Français', shortLabel: 'FR' },
-  // { code: 'ru', label: 'Русский', shortLabel: 'RU' },
-  // { code: 'ar', label: 'العربية', shortLabel: 'AR' }, // RTL not supported
+  { code: 'de', label: 'Deutsch', shortLabel: 'DE', fallback: 'en' },
+  { code: 'es', label: 'Español', shortLabel: 'ES', fallback: 'en' },
+  { code: 'fr', label: 'Français', shortLabel: 'FR', fallback: 'en' },
+  // { code: 'ru', label: 'Русский', shortLabel: 'RU', fallback: 'en' },
+  // { code: 'ar', label: 'العربية', shortLabel: 'AR', fallback: 'en' }, // RTL not supported
 ];
 
 /** Default display language code. */

@@ -40,15 +40,24 @@ function perfModeIcon(mode: PerfMode): string {
   }
 }
 
+import { SUPPORTED_LANGS } from '../../config/supported-langs';
+
+/** Short label for the language toggle button. */
+function langShortLabel(lang: string): string {
+  return SUPPORTED_LANGS.find((l) => l.code === lang)?.shortLabel ?? lang.toUpperCase();
+}
+
 interface RenderingPanelProps {
   renderMode: RenderMode;
   perfMode: PerfMode;
   infoLevel: InfoLevel;
   theme: Theme;
+  lang: string;
   onToggleRenderMode: () => void;
   onTogglePerfMode: () => void;
   onCycleInfoLevel: () => void;
   onToggleDarkMode: () => void;
+  onCycleLang: () => void;
 }
 
 /**
@@ -69,10 +78,12 @@ export function RenderingPanel({
   perfMode,
   infoLevel,
   theme,
+  lang,
   onToggleRenderMode,
   onTogglePerfMode,
   onCycleInfoLevel,
   onToggleDarkMode,
+  onCycleLang,
 }: RenderingPanelProps) {
   return (
     <ControlPanel side="right" edge="top" offset="0.75rem" infoLevel={infoLevel}>
@@ -87,6 +98,9 @@ export function RenderingPanel({
       </MapToggleButton>
       <MapToggleButton active onClick={onToggleDarkMode} label="ダークモード切替">
         {theme === 'dark' ? '🌙' : '☀️'}
+      </MapToggleButton>
+      <MapToggleButton active onClick={onCycleLang} label="言語切替">
+        {langShortLabel(lang)}
       </MapToggleButton>
     </ControlPanel>
   );

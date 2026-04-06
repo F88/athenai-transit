@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import i18n from './i18n';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { RouteType, Stop } from './types/app/transit';
 import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
@@ -17,7 +18,14 @@ import { TILE_SOURCES } from './config/tile-sources';
 import { createInfoLevel } from './utils/create-info-level';
 import { toggleGroupInList, toggleInList } from './utils/list-toggle';
 import { createLogger } from './lib/logger';
-import { nextInfoLevel, nextPerfMode, nextRenderMode, nextTileIndex } from './utils/settings-cycle';
+import {
+  nextInfoLevel,
+  nextLang,
+  nextPerfMode,
+  nextRenderMode,
+  nextTileIndex,
+} from './utils/settings-cycle';
+import { SUPPORTED_LANGS } from './config/supported-langs';
 import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
 import { formatDateKey } from './domain/transit/calendar-utils';
@@ -41,6 +49,11 @@ export default function App() {
   const repo = useTransitRepository();
   const [userDataRepo] = useState(() => new LocalStorageUserDataRepository());
   const { settings, updateSetting, updateSettings } = useUserSettings();
+
+  // Sync i18next language with user setting.
+  useEffect(() => {
+    void i18n.changeLanguage(settings.lang);
+  }, [settings.lang]);
 
   const [inBoundStops, setInBoundStops] = useState<StopWithMeta[]>([]);
   const [radiusStops, setNearbyStops] = useState<StopWithMeta[]>([]);
@@ -523,6 +536,13 @@ export default function App() {
     updateSetting('theme', next);
   }, [settings.theme, updateSetting]);
 
+  const handleCycleLang = useCallback(() => {
+    const next = nextLang(settings.lang);
+    const nextLangEntry = SUPPORTED_LANGS.find((l) => l.code === next);
+    logger.info(`lang: ${settings.lang} -> ${next} (${nextLangEntry?.label ?? 'unknown'})`);
+    updateSetting('lang', next);
+  }, [settings.lang, updateSetting]);
+
   // Sync dark class on <html> element
   useEffect(() => {
     document.documentElement.classList.toggle('dark', settings.theme === 'dark');
@@ -566,6 +586,7 @@ export default function App() {
           theme={settings.theme}
           doubleTapDrag={settings.doubleTapDrag}
           onToggleDarkMode={handleToggleDarkMode}
+          onCycleLang={handleCycleLang}
           onSearchClick={() => setSearchModalOpen(true)}
           onInfoClick={() => setInfoDialogOpen(true)}
           stopHistory={history}
