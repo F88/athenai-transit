@@ -2,10 +2,12 @@
   "common": {
     "loading": "読み込み中..."
   },
-  "nearby": {
+  "nearbyStops": {
     "summary": "近くの乗り場 {{count}}カ所 / {{radius}}圏内",
     "noStops": "乗り場がありません / {{radius}}圏内",
-    "noOperating": "運行中の乗り場がありません / {{radius}}圏内",
+    "noOperating": "運行中の乗り場がありません / {{radius}}圏内"
+  },
+  "nearbyStop": {
     "noDestination": "行先が表示されない路線があります",
     "serviceEnded": "本日の運行は終了しました"
   },

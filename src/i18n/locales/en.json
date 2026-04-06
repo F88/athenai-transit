@@ -2,12 +2,14 @@
   "common": {
     "loading": "Loading..."
   },
-  "nearby": {
+  "nearbyStops": {
     "summary": "{{count}} nearby stops (within {{radius}})",
     "noStops": "No stops (within {{radius}})",
-    "noOperating": "No operating stops (within {{radius}})",
-    "noDestination": "Some routes have no destination displayed",
-    "serviceEnded": "Service ended for today"
+    "noOperating": "No operating stops (within {{radius}})"
+  },
+  "nearbyStop": {
+    "noDestination": "Some routes have no destination",
+    "serviceEnded": "No more service today"
   },
   "time": {
     "settingTitle": "Set date & time",
@@ -43,7 +45,7 @@
     "header": {
       "routeHeadsignDescription": "{{stop}} {{route}} {{headsign}} timetable ({{count}})",
       "stopDescription": "{{stop}} all routes timetable ({{count}})",
-      "noDestination": "Some routes have no destination displayed"
+      "noDestination": "Some routes have no destination"
     }
   },
   "toast": {

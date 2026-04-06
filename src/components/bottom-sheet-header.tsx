@@ -152,12 +152,12 @@ function getNearbyStopsSummaryText(
     return t('common.loading');
   }
   if (counts.filtered > 0) {
-    return t('nearby.summary', { count: counts.filtered, radius });
+    return t('nearbyStops.summary', { count: counts.filtered, radius });
   }
   if (activeOnly && counts.total > 0) {
-    return t('nearby.noOperating', { radius });
+    return t('nearbyStops.noOperating', { radius });
   }
-  return t('nearby.noStops', { radius });
+  return t('nearbyStops.noStops', { radius });
 }
 
 const summaryLogger = createLogger('NearbyStopsSummary');

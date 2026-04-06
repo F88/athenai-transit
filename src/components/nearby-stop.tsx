@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { StopWithContext } from '../types/app/transit-composed';
@@ -54,6 +55,7 @@ export function NearbyStop({
   onShowStopTimetable,
   onToggleAnchor,
 }: NearbyStopProps) {
+  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
   // Show route_type emoji on each departure row when the stop serves
@@ -148,7 +150,7 @@ export function NearbyStop({
 
       {hasUnknownHeadsign && (
         <p className="m-0 mb-1 text-[11px] text-amber-600 dark:text-amber-400">
-          行先が表示されない路線があります
+          {t('nearbyStop.noDestination')}
         </p>
       )}
       {displayDepartures.length > 0 ? (
@@ -188,7 +190,9 @@ export function NearbyStop({
           ))
         )
       ) : (
-        <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">本日の運行は終了しました</p>
+        <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">
+          {t('nearbyStop.serviceEnded')}
+        </p>
       )}
     </div>
   );
