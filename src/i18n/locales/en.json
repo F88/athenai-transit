@@ -5,7 +5,9 @@
   "nearbyStops": {
     "summary": "{{count}} nearby stops (within {{radius}})",
     "noStops": "No stops (within {{radius}})",
-    "noOperating": "No operating stops (within {{radius}})"
+    "noOperating": "No operating stops (within {{radius}})",
+    "activeOnly": "Active",
+    "activeOnlyTitle": "Show only stops with upcoming departures"
   },
   "nearbyStop": {
     "noDestination": "Some routes have no destination",

@@ -46,6 +46,7 @@ export function BottomSheetHeader({
   onToggleRouteType,
   onToggleAgency,
 }: BottomSheetHeaderProps) {
+  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
 
   return (
@@ -79,10 +80,10 @@ export function BottomSheetHeader({
           activeBorder={'#1565c0'}
           inactiveBorder={'#1565c0'}
           onClick={onToggleActiveOnly}
-          title="次便がある乗り場のみ表示"
+          title={t('nearbyStops.activeOnlyTitle')}
           count={counts.active}
         >
-          運行中
+          {t('nearbyStops.activeOnly')}
         </PillButton>
 
         {/* Route types filter */}
