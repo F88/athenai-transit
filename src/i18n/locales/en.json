@@ -19,9 +19,9 @@
   },
   "departure": {
     "soon": "Soon",
-    "in": "in",
+    "in": "",
     "minutes": "min",
-    "arriving": "arr.",
+    "arriving": "",
     "terminal": "Terminal",
     "origin": "Origin",
     "noBoarding": "No boarding",

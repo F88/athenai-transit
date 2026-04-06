@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/utils';
 import { relativeTimeStyle } from '../utils/time-style';
 
@@ -43,6 +44,7 @@ export function RelativeTime({
   size = 'default',
   className,
 }: RelativeTimeProps) {
+  const { t } = useTranslation();
   const diffMs = departureTime.getTime() - now.getTime();
   const diffMin = Math.floor(diffMs / 60000);
   const style = relativeTimeStyle(Math.floor(diffMs / 1000));
@@ -54,17 +56,19 @@ export function RelativeTime({
       style={{ color: style.color, opacity: style.opacity }}
     >
       {diffMin <= 0 ? (
-        <span className={v.imminent}>まもなく</span>
+        <span className={v.imminent}>{t('departure.soon')}</span>
       ) : (
         <>
-          {!hidePrefix && <span className={`${v.label} font-normal`}>あと</span>}
+          {!hidePrefix && <span className={`${v.label} font-normal`}>{t('departure.in')}</span>}
           <span>
             <span className={v.number}>{diffMin}</span>
-            <span className={`${v.label} font-normal`}>分</span>
+            <span className={`${v.label} font-normal`}>{t('departure.minutes')}</span>
           </span>
         </>
       )}
-      {isTerminal && <span className={`${v.label} font-normal opacity-70`}>着</span>}
+      {isTerminal && (
+        <span className={`${v.label} font-normal opacity-70`}>{t('departure.arriving')}</span>
+      )}
     </span>
   );
 }
