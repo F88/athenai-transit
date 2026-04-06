@@ -12,7 +12,7 @@ const LANG_PRIORITY: readonly string[] = [
   'en',
   'fr',
   'es',
-  'ar',
+  // 'ar', // RTL Unhandled → disabled
   'zh',
   'zh-Hans',
   'zh-Hant',
@@ -62,16 +62,20 @@ function langPrefix(key: string): string {
  * ```
  */
 export function sortLangKeysByPriority(keys: string[], preferred: readonly string[]): string[] {
-  const preferredPrefixes = new Set(preferred.map(langPrefix));
+  // Case-insensitive comparisons per BCP 47 (RFC 5646 §2.1.1).
+  const preferredLower = preferred.map((p) => p.toLowerCase());
+  const preferredPrefixes = new Set(preferredLower.map(langPrefix));
+  const priorityLower = LANG_PRIORITY.map((p) => p.toLowerCase());
 
   function sortKey(key: string): number {
-    const prefix = langPrefix(key);
+    const keyLower = key.toLowerCase();
+    const prefix = langPrefix(keyLower);
     const isAgencyVariant = preferredPrefixes.has(prefix);
-    const priorityIndex = LANG_PRIORITY.indexOf(key);
+    const priorityIndex = priorityLower.indexOf(keyLower);
 
     if (isAgencyVariant) {
       // Agency lang exact match → top priority
-      if (preferred.includes(key)) {
+      if (preferredLower.includes(keyLower)) {
         return -3000;
       }
       // Agency variant defined in LANG_PRIORITY

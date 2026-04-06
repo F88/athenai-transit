@@ -87,4 +87,26 @@ describe('sortLangKeysByPriority', () => {
       expect(actual).toEqual(['en', 'en']);
     });
   });
+
+  describe('BCP 47 case-insensitive', () => {
+    it('ja-HrKt is treated as ja variant when preferred is ja', () => {
+      const actual = sortLangKeysByPriority(['en', 'ja-HrKt', 'ko', 'ja'], ['ja']);
+      expect(actual).toEqual(['ja', 'ja-HrKt', 'en', 'ko']);
+    });
+
+    it('preferred with different casing matches exact', () => {
+      const actual = sortLangKeysByPriority(['en', 'ja-Hrkt', 'ko'], ['ja-HRKT']);
+      expect(actual[0]).toBe('ja-Hrkt');
+    });
+
+    it('ZH-HANS is sorted by LANG_PRIORITY position', () => {
+      const actual = sortLangKeysByPriority(['ko', 'ZH-HANS', 'en'], []);
+      expect(actual).toEqual(['en', 'ZH-HANS', 'ko']);
+    });
+
+    it('EN matches en in LANG_PRIORITY', () => {
+      const actual = sortLangKeysByPriority(['ko', 'EN', 'fr'], []);
+      expect(actual).toEqual(['EN', 'fr', 'ko']);
+    });
+  });
 });
