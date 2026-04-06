@@ -37,10 +37,16 @@ describe('normalizeLang', () => {
     expect(normalizeLang('ja-JP')).toBe('ja');
   });
 
-  it('prefix match: zh-CN falls back to DEFAULT_LANG (no standalone zh entry)', () => {
-    // zh-CN is not an exact match; prefix 'zh' is not in SUPPORTED_LANGS
-    // (only zh-Hans and zh-Hant exist), so falls back to DEFAULT_LANG
-    expect(normalizeLang('zh-CN')).toBe('ja');
+  it('region match: zh-CN → zh-Hans', () => {
+    expect(normalizeLang('zh-CN')).toBe('zh-Hans');
+  });
+
+  it('region match: zh-TW → zh-Hant', () => {
+    expect(normalizeLang('zh-TW')).toBe('zh-Hant');
+  });
+
+  it('region match: zh-HK → zh-Hant', () => {
+    expect(normalizeLang('zh-HK')).toBe('zh-Hant');
   });
 
   it('exact match takes precedence over prefix', () => {

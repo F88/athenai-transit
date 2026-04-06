@@ -67,6 +67,19 @@ export const SUPPORTED_LANG_CODES: readonly string[] = SUPPORTED_LANGS.map((l) =
  * @param lang - Language code to normalize.
  * @returns A guaranteed-supported language code.
  */
+/**
+ * Region-to-script mapping for Chinese locale variants.
+ * navigator.language returns region-based codes (zh-CN, zh-TW, zh-HK)
+ * but SUPPORTED_LANGS uses script-based codes (zh-Hans, zh-Hant).
+ */
+const REGION_TO_LANG: Record<string, string> = {
+  'zh-cn': 'zh-Hans',
+  'zh-sg': 'zh-Hans',
+  'zh-tw': 'zh-Hant',
+  'zh-hk': 'zh-Hant',
+  'zh-mo': 'zh-Hant',
+};
+
 export function normalizeLang(lang: string): string {
   // Case-insensitive match per BCP 47 (RFC 5646 §2.1.1).
   // Returns the canonical code from SUPPORTED_LANGS, not the input casing.
@@ -75,6 +88,11 @@ export function normalizeLang(lang: string): string {
   const exact = SUPPORTED_LANGS.find((l) => l.code.toLowerCase() === lower);
   if (exact) {
     return exact.code;
+  }
+  // Region-to-script mapping (e.g. "zh-CN" → "zh-Hans", "zh-TW" → "zh-Hant")
+  const regionMatch = REGION_TO_LANG[lower];
+  if (regionMatch) {
+    return regionMatch;
   }
   // Prefix match (e.g. "en-US" → "en", "ja-JP" → "ja")
   const prefix = lower.split('-')[0];
