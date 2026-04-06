@@ -513,6 +513,7 @@ function TimetableGrid({
                     )}
                     infoLevel={infoLevel}
                     lang={lang}
+                    agencyLang={resolveAgencyLang(agencies, entry.routeDirection.route.agency_id)}
                     isDisplayTerminal={isDisplayTerminal}
                     isDisplayOrigin={isDisplayOrigin}
                     isDisplayPickupUnavailable={isDisplayPickupUnavailable}
