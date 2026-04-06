@@ -37,9 +37,9 @@ describe('normalizeLang', () => {
     expect(normalizeLang('ja-JP')).toBe('ja');
   });
 
-  it('prefix match: zh-CN → zh-Hans (exact first, then prefix)', () => {
+  it('prefix match: zh-CN falls back to DEFAULT_LANG (no standalone zh entry)', () => {
     // zh-CN is not an exact match; prefix 'zh' is not in SUPPORTED_LANGS
-    // as a standalone code, so falls back to DEFAULT_LANG
+    // (only zh-Hans and zh-Hant exist), so falls back to DEFAULT_LANG
     expect(normalizeLang('zh-CN')).toBe('ja');
   });
 
