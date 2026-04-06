@@ -599,6 +599,7 @@ export default function App() {
       <StopSearchModal
         repo={repo}
         infoLevel={settings.infoLevel}
+        lang={settings.lang}
         onSelectStop={handleSearchSelect}
         open={searchModalOpen}
         onOpenChange={setSearchModalOpen}

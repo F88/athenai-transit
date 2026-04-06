@@ -105,6 +105,7 @@ export function NearbyStop({
           distance={distance}
           mapCenter={mapCenter}
           infoLevel={infoLevel}
+          lang={lang}
           isDropOffOnly={isStopDropOffOnly}
           routes={routes}
           stats={stats}
