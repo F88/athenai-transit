@@ -309,6 +309,45 @@ describe('useUserSettings', () => {
       expect(result.current.settings.lang).toBe('ja');
       expect(result.current.settings.tileIndex).toBe(1);
     });
+
+    it('normalizes unsupported lang to default on load', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ lang: 'pt' }));
+
+      const { result } = renderHook(() => useUserSettings());
+
+      expect(result.current.settings.lang).toBe('ja');
+    });
+
+    it('normalizes corrupted lang to default on load', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ lang: 'not-a-lang' }));
+
+      const { result } = renderHook(() => useUserSettings());
+
+      expect(result.current.settings.lang).toBe('ja');
+    });
+
+    it('normalizes unsupported lang to default on save via updateSetting', () => {
+      const { result } = renderHook(() => useUserSettings());
+
+      act(() => {
+        result.current.updateSetting('lang', 'pt');
+      });
+
+      // localStorage should have the normalized value
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
+      expect(stored.lang).toBe('ja');
+    });
+
+    it('accepts supported lang de on save', () => {
+      const { result } = renderHook(() => useUserSettings());
+
+      act(() => {
+        result.current.updateSetting('lang', 'de');
+      });
+
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
+      expect(stored.lang).toBe('de');
+    });
   });
 
   // ── persistence round-trip ────────────────────────────

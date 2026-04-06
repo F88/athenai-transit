@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { UserSettings } from '../types/app/settings';
+import { DEFAULT_LANG, SUPPORTED_LANG_CODES } from '../config/supported-langs';
 
 const STORAGE_KEY = 'athenai-settings';
 
@@ -15,7 +16,7 @@ const DEFAULTS: UserSettings = {
   infoLevel: 'normal',
   theme: 'light',
   doubleTapDrag: 'zoom-out',
-  lang: 'ja',
+  lang: DEFAULT_LANG,
 };
 
 /**
@@ -46,7 +47,13 @@ function loadSettings(): UserSettings {
     if (!raw) {
       return DEFAULTS;
     }
-    return { ...DEFAULTS, ...stripTransient(JSON.parse(raw) as Partial<UserSettings>) };
+    const stored = { ...DEFAULTS, ...stripTransient(JSON.parse(raw) as Partial<UserSettings>) };
+    // Normalize lang to a supported value. Prevents unsupported or corrupted
+    // values from propagating through the entire UI.
+    if (!SUPPORTED_LANG_CODES.includes(stored.lang)) {
+      stored.lang = DEFAULT_LANG;
+    }
+    return stored;
   } catch {
     return DEFAULTS;
   }
@@ -60,7 +67,11 @@ function loadSettings(): UserSettings {
  * @param settings - Settings object to save.
  */
 function saveSettings(settings: UserSettings): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(stripTransient(settings)));
+  // Normalize lang before persisting (same check as loadSettings).
+  const normalized = SUPPORTED_LANG_CODES.includes(settings.lang)
+    ? settings
+    : { ...settings, lang: DEFAULT_LANG };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(stripTransient(normalized)));
 }
 
 /**
