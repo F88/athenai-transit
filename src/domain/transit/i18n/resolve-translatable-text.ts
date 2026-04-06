@@ -9,7 +9,7 @@ export interface ResolvedTranslatableText {
    *
    * - When `lang` is provided and found in `text.names`:
    *   `{ lang: <requested lang>, value: <translation> }`
-   * - When `lang` is omitted, not found, or `text.names` is empty:
+   * - When `lang` is not found in `text.names`, or `text.names` is empty:
    *   `{ lang: 'origin', value: text.name }`
    *
    * `lang === 'origin'` indicates the raw source value was used

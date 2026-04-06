@@ -1,7 +1,7 @@
 import type { ResolvedDisplayNames } from '../../domain/transit/get-display-names';
 
 /**
- * Debug dump of resolved {@link StopDisplayNames}.
+ * Debug dump of resolved {@link ResolvedDisplayNames}.
  * Shows the output of `getStopDisplayNames` — the resolved display values
  * after i18n translation and infoLevel filtering.
  *
