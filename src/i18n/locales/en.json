@@ -96,6 +96,7 @@
     },
     "header": {
       "routeHeadsignDescription": "{{stop}} {{route}} {{headsign}} timetable ({{count}})",
+      "routeDescription": "{{stop}} {{route}} timetable ({{count}})",
       "stopDescription": "{{stop}} all routes timetable ({{count}})",
       "noDestination": "Some routes have no destination"
     }

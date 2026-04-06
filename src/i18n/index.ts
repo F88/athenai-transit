@@ -7,7 +7,7 @@ import en from './locales/en.json';
  * i18next initialization for UI text translation.
  *
  * GTFS data translations (stop names, headsigns, route names) are handled
- * separately via the `TranslatableText` / `lang` prop system.
+ * separately via the `TranslatableText` / `dataLang` prop system.
  * This module covers only static UI labels and messages.
  */
 void i18n.use(initReactI18next).init({
