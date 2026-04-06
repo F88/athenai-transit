@@ -1,4 +1,5 @@
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
+import { useTranslation } from 'react-i18next';
 import { ControlPanel } from '../shared/control-panel';
 import { MapToggleButton } from '../button/map-toggle-button';
 
@@ -85,21 +86,22 @@ export function RenderingPanel({
   onToggleDarkMode,
   onCycleLang,
 }: RenderingPanelProps) {
+  const { t } = useTranslation();
   return (
     <ControlPanel side="right" edge="top" offset="0.75rem" infoLevel={infoLevel}>
-      <MapToggleButton active onClick={onToggleRenderMode} label="描画モードの切替">
+      <MapToggleButton active onClick={onToggleRenderMode} label={t('panel.toggleRenderMode')}>
         {renderModeIcon(renderMode)}
       </MapToggleButton>
-      <MapToggleButton active onClick={onTogglePerfMode} label="パフォーマンスモードの切替">
+      <MapToggleButton active onClick={onTogglePerfMode} label={t('panel.togglePerfMode')}>
         {perfModeIcon(perfMode)}
       </MapToggleButton>
-      <MapToggleButton active onClick={onCycleInfoLevel} label="情報レベルの切替">
+      <MapToggleButton active onClick={onCycleInfoLevel} label={t('panel.toggleInfoLevel')}>
         {infoLevelIcon(infoLevel)}
       </MapToggleButton>
-      <MapToggleButton active onClick={onToggleDarkMode} label="ダークモード切替">
+      <MapToggleButton active onClick={onToggleDarkMode} label={t('panel.toggleDarkMode')}>
         {theme === 'dark' ? '🌙' : '☀️'}
       </MapToggleButton>
-      <MapToggleButton active onClick={onCycleLang} label="言語切替">
+      <MapToggleButton active onClick={onCycleLang} label={t('panel.toggleLang')}>
         {langShortLabel(lang)}
       </MapToggleButton>
     </ControlPanel>

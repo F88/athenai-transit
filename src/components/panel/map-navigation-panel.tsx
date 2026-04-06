@@ -1,6 +1,7 @@
 import type L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
 import type { UserLocation } from '../../types/app/map';
+import { useTranslation } from 'react-i18next';
 import { ControlPanel } from '../shared/control-panel';
 import { MapToggleButton } from '../button/map-toggle-button';
 import { useMapNavigationActions } from '../../hooks/use-map-navigation-actions';
@@ -27,6 +28,7 @@ export function MapNavigationPanel({
   onLocated,
   onDeselectStop,
 }: MapNavigationPanelProps) {
+  const { t } = useTranslation();
   const { locating, handleLocate, handleRandomJump } = useMapNavigationActions(
     map,
     onLocated,
@@ -38,12 +40,12 @@ export function MapNavigationPanel({
       <MapToggleButton
         active={!locating}
         onClick={handleLocate}
-        label="現在位置へ移動"
+        label={t('panel.currentLocation')}
         disabled={locating}
       >
         {locating ? '.' : '🎯'}
       </MapToggleButton>
-      <MapToggleButton active onClick={handleRandomJump} label="ランダムな場所へ移動">
+      <MapToggleButton active onClick={handleRandomJump} label={t('panel.randomLocation')}>
         🎲
       </MapToggleButton>
     </ControlPanel>

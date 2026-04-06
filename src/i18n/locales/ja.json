@@ -62,7 +62,11 @@
     "toggleInfoLevel": "情報レベルの切替",
     "toggleDarkMode": "ダークモード切替",
     "toggleLang": "言語切替",
-    "searchStops": "のりばを検索"
+    "searchStops": "のりばを検索",
+    "toggleBus": "バスの表示切替",
+    "toggleSubway": "地下鉄の表示切替",
+    "toggleTram": "路面電車の表示切替",
+    "toggleRail": "鉄道の表示切替"
   },
   "anchor": {
     "add": "アンカーを追加",

@@ -62,7 +62,11 @@
     "toggleInfoLevel": "Toggle info level",
     "toggleDarkMode": "Toggle dark mode",
     "toggleLang": "Toggle language",
-    "searchStops": "Search stops"
+    "searchStops": "Search stops",
+    "toggleBus": "Toggle bus stops",
+    "toggleSubway": "Toggle subway stops",
+    "toggleTram": "Toggle tram stops",
+    "toggleRail": "Toggle rail stops"
   },
   "anchor": {
     "add": "Add anchor",

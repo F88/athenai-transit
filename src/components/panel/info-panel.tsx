@@ -1,4 +1,5 @@
 import type { InfoLevel } from '../../types/app/settings';
+import { useTranslation } from 'react-i18next';
 import { ControlPanel } from '../shared/control-panel';
 import { MapToggleButton } from '../button/map-toggle-button';
 
@@ -15,9 +16,10 @@ interface InfoPanelProps {
  * @param onInfoClick - Callback to open the app info dialog.
  */
 export function InfoPanel({ infoLevel, onInfoClick }: InfoPanelProps) {
+  const { t } = useTranslation();
   return (
     <ControlPanel side="right" edge="top" offset="14.75rem" infoLevel={infoLevel}>
-      <MapToggleButton active onClick={onInfoClick} label="アプリ情報">
+      <MapToggleButton active onClick={onInfoClick} label={t('panel.appInfo')}>
         ℹ️
       </MapToggleButton>
     </ControlPanel>
