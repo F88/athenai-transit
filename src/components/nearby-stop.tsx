@@ -139,8 +139,8 @@ export function NearbyStop({
                 e.stopPropagation();
                 onShowStopTimetable(stop.stop_id);
               }}
-              title="Show timetable"
-              aria-label="Show timetable"
+              title={t('showTimetable')}
+              aria-label={t('showTimetable')}
             >
               <Clock size={16} strokeWidth={2} />
             </button>

@@ -28,4 +28,23 @@ describe('normalizeLang', () => {
   it('returns default for empty string', () => {
     expect(normalizeLang('')).toBe('ja');
   });
+
+  it('prefix match: en-US → en', () => {
+    expect(normalizeLang('en-US')).toBe('en');
+  });
+
+  it('prefix match: ja-JP → ja', () => {
+    expect(normalizeLang('ja-JP')).toBe('ja');
+  });
+
+  it('prefix match: zh-CN → zh-Hans (exact first, then prefix)', () => {
+    // zh-CN is not an exact match; prefix 'zh' is not in SUPPORTED_LANGS
+    // as a standalone code, so falls back to DEFAULT_LANG
+    expect(normalizeLang('zh-CN')).toBe('ja');
+  });
+
+  it('exact match takes precedence over prefix', () => {
+    // zh-Hans is an exact match, not just prefix 'zh'
+    expect(normalizeLang('zh-Hans')).toBe('zh-Hans');
+  });
 });

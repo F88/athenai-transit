@@ -71,6 +71,13 @@ export function normalizeLang(lang: string): string {
   // Case-insensitive match per BCP 47 (RFC 5646 §2.1.1).
   // Returns the canonical code from SUPPORTED_LANGS, not the input casing.
   const lower = lang.toLowerCase();
-  const match = SUPPORTED_LANGS.find((l) => l.code.toLowerCase() === lower);
-  return match?.code ?? DEFAULT_LANG;
+  // Exact match first (e.g. "zh-Hans" → "zh-Hans")
+  const exact = SUPPORTED_LANGS.find((l) => l.code.toLowerCase() === lower);
+  if (exact) {
+    return exact.code;
+  }
+  // Prefix match (e.g. "en-US" → "en", "ja-JP" → "ja")
+  const prefix = lower.split('-')[0];
+  const prefixMatch = SUPPORTED_LANGS.find((l) => l.code.toLowerCase() === prefix);
+  return prefixMatch?.code ?? DEFAULT_LANG;
 }

@@ -1,4 +1,5 @@
 import type { InfoLevel } from '../types/app/settings';
+import { useTranslation } from 'react-i18next';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
@@ -36,6 +37,7 @@ export function DepartureItem({
   maxDisplay = 3,
   onShowTimetable,
 }: DepartureItemProps) {
+  const { t } = useTranslation();
   const showVerbose = infoLevel === 'verbose';
   const firstEntry = entries[0];
   if (!firstEntry) {
@@ -98,8 +100,8 @@ export function DepartureItem({
               e.stopPropagation();
               onShowTimetable(route.route_id, getEffectiveHeadsign(firstEntry.routeDirection));
             }}
-            title="Show timetable"
-            aria-label="Show timetable"
+            title={t('showTimetable')}
+            aria-label={t('showTimetable')}
           >
             <Clock size={14} strokeWidth={2} />
           </button>
