@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { UserSettings } from '../types/app/settings';
-import { DEFAULT_LANG, normalizeLang } from '../config/supported-langs';
+import { normalizeLang } from '../config/supported-langs';
 
 const STORAGE_KEY = 'athenai-settings';
 
@@ -16,7 +16,9 @@ const DEFAULTS: UserSettings = {
   infoLevel: 'normal',
   theme: 'light',
   doubleTapDrag: 'zoom-out',
-  lang: DEFAULT_LANG,
+  // Use browser language as default; normalizeLang falls back to DEFAULT_LANG
+  // for unsupported languages or when navigator is unavailable (e.g. tests).
+  lang: normalizeLang(typeof navigator !== 'undefined' ? navigator.language : ''),
 };
 
 /**
