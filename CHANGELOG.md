@@ -9,6 +9,29 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- i18n: react-i18next を導入。UI テキストの多言語対応基盤を構築。
+- i18n: 言語切替ボタンを RenderingPanel に追加 (9言語対応: ja, ja-Hrkt, en, de, es, fr, ko, zh-Hans, zh-Hant)。
+- i18n: `SUPPORTED_LANGS` 設定に fallback chain を定義 (e.g. zh-Hant → zh-Hans → en)。
+- i18n: `resolveLangChain` で言語フォールバックチェーンを解決。
+- i18n: `normalizeLang` で BCP 47 prefix マッチ対応 (e.g. en-US → en)。
+- i18n: `navigator.language` をデフォルト表示言語として使用。
+- i18n: `DEFAULT_TIMEZONE` を追加 (暫定 Asia/Tokyo、Issue #65 参照)。
+
+### Changed
+
+- `lang: string` prop を `dataLang: readonly string[]` にリネーム。GTFS/ODPT データ翻訳用の言語フォールバックチェーンを伝搬。
+- 日付フォーマットを `Intl.DateTimeFormat` ベースに移行。locale に応じた自然な日付・曜日表示。
+- `formatDateTimeParts` と `formatDateWithDay` を `formatDateParts` に統合。`timeZone` 必須パラメータを追加。
+- `getDayColorCategory` の曜日判定を timezone-aware に修正。
+- `resolveTranslatableText` を配列 (fallback chain) 対応に拡張。
+- `sortLangKeysByPriority` を BCP 47 case-insensitive に修正。
+- i18next `fallbackLng` を `ja` → `en` に変更。ja-\* 以外は英語にフォールバック。
+- `DepartureViewMeta` の label/title/description を i18n キーに変更。
+- UI テキスト i18n 化: relative-time, trip-info, entry-labels, timetable-modal, nearby-stop, bottom-sheet-header, time-setting-dialog, stop-search-modal, info-dialog, 全 panel aria-label, anchor, toast。
+- locale ファイルをネスト構造に整理 (common, nearbyStops, nearbyStop, departure, timetable, view, panel, anchor, search, time, info)。
+
 ## [2026.04.06]
 
 ### Added
