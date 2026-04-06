@@ -32,13 +32,19 @@
       "noPickup": "乗×",
       "noDropOff": "降×",
       "dropOffOnly": "降車専用",
-      "noService": "この日の運行はありません",
-      "hour": "{{hour}}時",
-      "entries": "{{hour}}時 {{count}}件"
+      "noService": "この日の運行はありません"
     },
-    "routeHeadsignDescription": "{{stop}} {{route}}{{headsign}}の時刻表 {{count}}本",
-    "stopDescription": "{{stop}}の全路線時刻表 {{count}}本",
-    "noDestination": "行先が表示されない路線があります"
+    "grid": {
+      "row": {
+        "hour": "{{hour}}時",
+        "entries": "{{hour}}時 {{count}}件"
+      }
+    },
+    "header": {
+      "routeHeadsignDescription": "{{stop}} {{route}}{{headsign}}の時刻表 {{count}}本",
+      "stopDescription": "{{stop}}の全路線時刻表 {{count}}本",
+      "noDestination": "行先が表示されない路線があります"
+    }
   },
   "toast": {
     "anchorUpdateFailed": "アンカー更新に失敗しました"
