@@ -1,6 +1,12 @@
 {
-  "nearbyStops": "近くの乗り場",
-  "nearbyStopsCount": "{{count}}カ所",
-  "noStopsNearby": "近くに乗り場がありません",
-  "noOperatingStops": "運行中の乗り場はありません"
+  "nearbyStopsSummary": "近くの乗り場 {{count}}カ所 / {{radius}}圏内",
+  "noStopsNearby": "乗り場がありません / {{radius}}圏内",
+  "noOperatingStops": "運行中の乗り場がありません / {{radius}}圏内",
+  "loading": "読み込み中...",
+  "timeSettingTitle": "日時を指定",
+  "timeSettingDescription": "時刻表の表示日時を変更します",
+  "timeSettingLabel": "日時を設定",
+  "timeFrozen": "📌 時間停止中",
+  "timeNow": "🕐 いま",
+  "timeSet": "🧙 とまれ!"
 }

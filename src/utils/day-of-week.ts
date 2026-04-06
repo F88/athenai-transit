@@ -1,10 +1,13 @@
 /**
- * Day-of-week color classification for Japanese calendar conventions.
+ * Day-of-week color classification for calendar display.
  *
- * - Monday–Friday: 'weekday' (black)
+ * - Monday–Friday: 'weekday' (default text color)
  * - Saturday: 'saturday' (blue)
  * - Sunday: 'sunday' (red)
  * - National holiday: 'holiday' (red)
+ *
+ * Holiday detection currently uses Japanese holidays only.
+ * See Issue #100 for future locale-dependent detection.
  */
 import { isJapaneseHoliday } from './japanese-holidays';
 
@@ -13,7 +16,7 @@ export type DayColorCategory = 'weekday' | 'saturday' | 'sunday' | 'holiday';
 
 /**
  * Classify a date into a day-of-week color category.
- * Japanese national holidays return 'holiday' (displayed in red, same as sunday).
+ *
  * @param date - The date to classify.
  * @returns The day color category.
  */
@@ -38,32 +41,3 @@ export const DAY_COLOR_CATEGORY_CLASSES: Record<DayColorCategory, string> = {
   sunday: 'text-red-600 dark:text-red-400',
   holiday: 'text-red-600 dark:text-red-400',
 };
-
-/** Japanese day-of-week labels (short). */
-const DAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'] as const;
-
-/**
- * Format a date as Japanese date string with day-of-week category.
- *
- * Does not include CSS classes — callers decide how to style each category
- * based on their display context.
- *
- * @param date - The date to format.
- * @returns Object with formatted text and day color category.
- */
-export function formatDateWithDay(date: Date): {
-  dateText: string;
-  dayLabel: string;
-  dayColorCategory: DayColorCategory;
-} {
-  const m = date.getMonth() + 1;
-  const d = date.getDate();
-  const dayIndex = date.getDay();
-  const category = getDayColorCategory(date);
-
-  return {
-    dateText: `${date.getFullYear()}年${m}月${d}日`,
-    dayLabel: DAY_LABELS[dayIndex],
-    dayColorCategory: category,
-  };
-}

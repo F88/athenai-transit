@@ -12,8 +12,9 @@ import type { RouteDirection, TimetableEntry } from '@/types/app/transit-compose
 import type { TimetableOmitted } from '@/types/app/repository';
 import { AgencyBadge } from '@/components/badge/agency-badge';
 import { useInfoLevel } from '@/hooks/use-info-level';
-import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
-import { resolveAgencyLang } from '@/config/transit-defaults';
+import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
+import { formatDateParts } from '@/utils/datetime';
+import { DEFAULT_TIMEZONE, resolveAgencyLang } from '@/config/transit-defaults';
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
@@ -166,7 +167,7 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
               <TimetableMetadata timetableEntries={filteredTimetableEntries} />
             )}
 
-            <TimetableDateLabel serviceDate={data.serviceDate} time={time} />
+            <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLang[0]} />
             {data.type === 'stop' && (
               <StopTimetableFilter
                 data={data}
@@ -298,8 +299,21 @@ function computeAverageInterval(minutes: number[]): number | null {
 }
 
 /** Date and time label shown at the bottom of the dialog header. */
-function TimetableDateLabel({ serviceDate, time }: { serviceDate: Date; time: Date }) {
-  const { dateText, dayLabel, dayColorCategory } = formatDateWithDay(serviceDate);
+function TimetableDateLabel({
+  serviceDate,
+  time,
+  lang,
+}: {
+  serviceDate: Date;
+  time: Date;
+  lang: string;
+}) {
+  const { dateText, dayLabel, dayColorCategory } = formatDateParts(
+    serviceDate,
+    lang,
+    DEFAULT_TIMEZONE,
+    { showYear: true },
+  );
   // Weekday inherits the parent's muted color; only sat/sun/holiday get color override.
   const dayLabelClass =
     dayColorCategory === 'weekday' ? undefined : DAY_COLOR_CATEGORY_CLASSES[dayColorCategory];

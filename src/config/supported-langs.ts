@@ -24,7 +24,7 @@ export interface SupportedLang {
  * This list defines which languages the user can switch between
  * via the UI toggle button. It does NOT imply that all UI text
  * is translated for every language listed — static UI labels
- * fall back to `fallbackLng` (ja) via i18next when no translation
+ * fall back to `fallbackLng` (en) via i18next when no translation
  * exists. GTFS data translations (stop names, headsigns, etc.)
  * are resolved independently via `TranslatableText`.
  *

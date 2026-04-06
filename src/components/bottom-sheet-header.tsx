@@ -145,18 +145,19 @@ function getNearbyStopsSummaryText(
   hasLoaded: boolean,
   counts: NearbyStopsCounts,
   activeOnly: boolean,
+  radius: string,
   t: (key: string, options?: Record<string, unknown>) => string,
 ): string {
   if (!hasLoaded) {
-    return 'Loading...';
+    return t('loading');
   }
   if (counts.filtered > 0) {
-    return `${t('nearbyStops')} ${t('nearbyStopsCount', { count: counts.filtered })}`;
+    return t('nearbyStopsSummary', { count: counts.filtered, radius });
   }
   if (activeOnly && counts.total > 0) {
-    return t('noOperatingStops');
+    return t('noOperatingStops', { radius });
   }
-  return t('noStopsNearby');
+  return t('noStopsNearby', { radius });
 }
 
 const summaryLogger = createLogger('NearbyStopsSummary');
@@ -180,12 +181,17 @@ function NearbyStopsSummary({
       ? `found ${counts.total} nearby stops (${counts.active} active, ${counts.filtered} after filter)`
       : 'not loaded yet',
   );
-  const radiusLabel = `${formatRadius(nearbyRadius)}圏内`;
-  const text = getNearbyStopsSummaryText(hasLoaded, counts, activeOnly, t);
+  const text = getNearbyStopsSummaryText(
+    hasLoaded,
+    counts,
+    activeOnly,
+    formatRadius(nearbyRadius),
+    t,
+  );
 
   return (
     <p className="m-0 flex items-center gap-1 text-base font-bold text-[#212121] dark:text-gray-100">
-      {text} / {radiusLabel}
+      {text}
     </p>
   );
 }

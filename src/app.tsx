@@ -26,6 +26,8 @@ import {
   nextTileIndex,
 } from './utils/settings-cycle';
 import { SUPPORTED_LANGS } from './config/supported-langs';
+import { DEFAULT_TIMEZONE } from './config/transit-defaults';
+import { formatDateParts } from './utils/datetime';
 import { resolveLangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
@@ -545,7 +547,11 @@ export default function App() {
   const handleCycleLang = useCallback(() => {
     const next = nextLang(settings.lang);
     const nextLangEntry = SUPPORTED_LANGS.find((l) => l.code === next);
-    logger.info(`lang: ${settings.lang} -> ${next} (${nextLangEntry?.label ?? 'unknown'})`);
+    const now = new Date();
+    const { dateText, dayLabel } = formatDateParts(now, next, DEFAULT_TIMEZONE, { showYear: true });
+    logger.info(
+      `lang: ${settings.lang} -> ${next} (${nextLangEntry?.label ?? 'unknown'}) date: ${dateText} (${dayLabel})`,
+    );
     updateSetting('lang', next);
   }, [settings.lang, updateSetting]);
 

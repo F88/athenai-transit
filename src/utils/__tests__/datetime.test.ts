@@ -1,86 +1,73 @@
 import { describe, expect, it } from 'vitest';
-import { formatDateTimeJaJp, formatDateTimeJaJpParts, toDatetimeLocalValue } from '../datetime';
+import { formatDateParts, toDatetimeLocalValue } from '../datetime';
 
-// Construct dates using explicit component values to avoid TZ ambiguity.
-// new Date(year, monthIndex, day, hours, minutes) uses local time.
+const TZ = 'Asia/Tokyo';
 
-describe('formatDateTimeJaJp', () => {
-  it('formats a Wednesday morning', () => {
-    // 2026-03-04 is a Wednesday
-    const date = new Date(2026, 2, 4, 9, 15);
-    expect(formatDateTimeJaJp(date)).toBe('3 月 4 日 (水) 09:15');
-  });
+// Use UTC dates to avoid CI timezone dependency.
+// 2026-03-04T00:15:00Z = 2026-03-04T09:15:00+09:00 (JST)
+const WED_0915_UTC = new Date('2026-03-04T00:15:00Z');
+// 2026-03-07T14:59:00Z = 2026-03-07T23:59:00+09:00 (JST, Saturday)
+const SAT_2359_UTC = new Date('2026-03-07T14:59:00Z');
+// 2026-03-01T09:30:00Z = 2026-03-01T18:30:00+09:00 (JST, Sunday)
+const SUN_1830_UTC = new Date('2026-03-01T09:30:00Z');
+// 2026-01-01T01:00:00Z = 2026-01-01T10:00:00+09:00 (JST, New Year)
+const HOLIDAY_UTC = new Date('2026-01-01T01:00:00Z');
 
-  it('pads single-digit hours and minutes', () => {
-    const date = new Date(2026, 0, 5, 3, 5);
-    expect(formatDateTimeJaJp(date)).toBe('1 月 5 日 (月) 03:05');
-  });
-
-  it('formats midnight correctly', () => {
-    const date = new Date(2026, 5, 14, 0, 0);
-    expect(formatDateTimeJaJp(date)).toBe('6 月 14 日 (日) 00:00');
-  });
-
-  it('formats a Sunday', () => {
-    const date = new Date(2026, 2, 1, 18, 30);
-    expect(formatDateTimeJaJp(date)).toBe('3 月 1 日 (日) 18:30');
-  });
-
-  it('formats a Saturday', () => {
-    const date = new Date(2026, 2, 7, 23, 59);
-    expect(formatDateTimeJaJp(date)).toBe('3 月 7 日 (土) 23:59');
-  });
-});
-
-describe('formatDateTimeJaJpParts', () => {
-  it('returns weekday category for a Wednesday', () => {
-    const date = new Date(2026, 2, 4, 9, 15);
-    const result = formatDateTimeJaJpParts(date);
-    expect(result.prefix).toBe('3 月 4 日 ');
-    expect(result.dayLabel).toBe('(水)');
-    expect(result.suffix).toBe(' 09:15');
+describe('formatDateParts', () => {
+  it('returns dateText, dayLabel, and dayColorCategory', () => {
+    const result = formatDateParts(WED_0915_UTC, 'ja', TZ);
+    expect(result.dateText).toBeTruthy();
+    expect(result.dayLabel).toBeTruthy();
+    expect(result.time).toBeUndefined();
     expect(result.dayColorCategory).toBe('weekday');
   });
 
-  it('returns saturday category for a Saturday', () => {
-    // 2026-03-07 is Saturday
-    const date = new Date(2026, 2, 7, 23, 59);
-    const result = formatDateTimeJaJpParts(date);
-    expect(result.prefix).toBe('3 月 7 日 ');
-    expect(result.dayLabel).toBe('(土)');
-    expect(result.suffix).toBe(' 23:59');
+  it('includes time when showTime is true', () => {
+    const result = formatDateParts(WED_0915_UTC, 'ja', TZ, { showTime: true });
+    expect(result.time).toBeTruthy();
+    expect(result.time).toContain('09');
+    expect(result.time).toContain('15');
+  });
+
+  it('omits time when showTime is false', () => {
+    const result = formatDateParts(WED_0915_UTC, 'ja', TZ, { showTime: false });
+    expect(result.time).toBeUndefined();
+  });
+
+  it('returns saturday category for Saturday', () => {
+    const result = formatDateParts(SAT_2359_UTC, 'en', TZ);
     expect(result.dayColorCategory).toBe('saturday');
   });
 
-  it('returns sunday category for a Sunday', () => {
-    // 2026-03-01 is Sunday
-    const date = new Date(2026, 2, 1, 18, 30);
-    const result = formatDateTimeJaJpParts(date);
-    expect(result.prefix).toBe('3 月 1 日 ');
-    expect(result.dayLabel).toBe('(日)');
-    expect(result.suffix).toBe(' 18:30');
+  it('returns sunday category for Sunday', () => {
+    const result = formatDateParts(SUN_1830_UTC, 'en', TZ);
     expect(result.dayColorCategory).toBe('sunday');
   });
 
-  it('returns holiday category for a holiday on a weekday (New Year)', () => {
-    // 2026-01-01 is Thursday but is a national holiday
-    const date = new Date(2026, 0, 1, 10, 0);
-    const result = formatDateTimeJaJpParts(date);
-    expect(result.prefix).toBe('1 月 1 日 ');
-    expect(result.dayLabel).toBe('(木)');
-    expect(result.suffix).toBe(' 10:00');
+  it('returns holiday category for a national holiday', () => {
+    const result = formatDateParts(HOLIDAY_UTC, 'ja', TZ);
     expect(result.dayColorCategory).toBe('holiday');
+  });
+
+  it('produces different dayLabel for different locales', () => {
+    const ja = formatDateParts(WED_0915_UTC, 'ja', TZ);
+    const en = formatDateParts(WED_0915_UTC, 'en', TZ);
+    expect(ja.dayLabel).not.toBe(en.dayLabel);
+  });
+
+  it('produces different dateText for different locales', () => {
+    const ja = formatDateParts(WED_0915_UTC, 'ja', TZ, { showYear: true });
+    const en = formatDateParts(WED_0915_UTC, 'en', TZ, { showYear: true });
+    expect(ja.dateText).not.toBe(en.dateText);
   });
 });
 
 describe('toDatetimeLocalValue', () => {
   it('returns ISO-like local datetime string', () => {
-    const date = new Date(2026, 2, 4, 9, 5);
-    expect(toDatetimeLocalValue(date)).toBe('2026-03-04T09:05');
+    expect(toDatetimeLocalValue(new Date(2026, 2, 4, 9, 5))).toBe('2026-03-04T09:05');
   });
 
   it('pads month, day, hours and minutes', () => {
-    const date = new Date(2026, 0, 3, 1, 2);
-    expect(toDatetimeLocalValue(date)).toBe('2026-01-03T01:02');
+    expect(toDatetimeLocalValue(new Date(2026, 0, 3, 1, 2))).toBe('2026-01-03T01:02');
   });
 });

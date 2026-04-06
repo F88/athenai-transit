@@ -1,6 +1,12 @@
 {
-  "nearbyStops": "Nearby stops",
-  "nearbyStopsCount": "{{count}} stops",
-  "noStopsNearby": "No stops nearby",
-  "noOperatingStops": "No operating stops"
+  "nearbyStopsSummary": "{{count}} nearby stops (within {{radius}})",
+  "noStopsNearby": "No stops (within {{radius}})",
+  "noOperatingStops": "No operating stops (within {{radius}})",
+  "loading": "Loading...",
+  "timeSettingTitle": "Set date & time",
+  "timeSettingDescription": "Change the date and time for timetable display",
+  "timeSettingLabel": "Set date & time",
+  "timeFrozen": "📌 Time frozen",
+  "timeNow": "🕐 Now",
+  "timeSet": "🧙 Time, freeze!"
 }

@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toDatetimeLocalValue } from '@/utils/datetime';
 import {
   Dialog,
@@ -62,6 +63,8 @@ export function TimeSettingDialog({
     onOpenChange(false);
   }, [onResetToNow, onOpenChange]);
 
+  const { t } = useTranslation();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -70,13 +73,13 @@ export function TimeSettingDialog({
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>日時を指定</DialogTitle>
-          <DialogDescription className="sr-only">時刻表の表示日時を変更します</DialogDescription>
+          <DialogTitle>{t('timeSettingTitle')}</DialogTitle>
+          <DialogDescription className="sr-only">{t('timeSettingDescription')}</DialogDescription>
         </DialogHeader>
         {isCustomTime && (
           <Alert className="border-amber-200 bg-amber-50 py-2 dark:border-amber-800 dark:bg-amber-950/50">
             <AlertTitle className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-              📌 時間停止中
+              {t('timeFrozen')}
             </AlertTitle>
           </Alert>
         )}
@@ -96,14 +99,14 @@ export function TimeSettingDialog({
             disabled={!isCustomTime}
             onClick={handleResetToNowAndClose}
           >
-            🕐 いま
+            {t('timeNow')}
           </Button>
           <Button
             size="lg"
             className="border-2 border-blue-500 bg-blue-200 text-blue-900 hover:bg-blue-300"
             onClick={handleSubmit}
           >
-            🧙 とまれ!
+            {t('timeSet')}
           </Button>
         </div>
       </DialogContent>
