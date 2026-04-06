@@ -184,4 +184,43 @@ describe('resolveTranslatableText', () => {
       expect(Object.keys(actual.others)).toHaveLength(2);
     });
   });
+
+  describe('array fallback chain', () => {
+    const text = { name: 'A', names: { en: 'A-en', de: 'A-de' } };
+
+    it('resolves first match in chain', () => {
+      const actual = resolveTranslatableText(text, ['ko', 'en']);
+      expect(actual.resolved.lang).toBe('en');
+      expect(actual.resolved.value).toBe('A-en');
+    });
+
+    it('falls back to origin when no chain entry matches', () => {
+      const actual = resolveTranslatableText(text, ['ko', 'fr']);
+      expect(actual.resolved.lang).toBe('origin');
+      expect(actual.resolved.value).toBe('A');
+    });
+
+    it('origin at start of chain resolves to text.name', () => {
+      const actual = resolveTranslatableText(text, ['origin', 'en']);
+      expect(actual.resolved.lang).toBe('origin');
+      expect(actual.resolved.value).toBe('A');
+    });
+
+    it('origin in middle of chain stops lookup and resolves to text.name', () => {
+      const actual = resolveTranslatableText(text, ['ko', 'origin', 'en']);
+      expect(actual.resolved.lang).toBe('origin');
+      expect(actual.resolved.value).toBe('A');
+      // All chain languages (including 'en' after 'origin') are excluded from others
+      expect(actual.others['en']).toBeUndefined();
+      expect(actual.others['de']).toBe('A-de');
+    });
+
+    it('excludes all chain languages from others', () => {
+      const actual = resolveTranslatableText(text, ['de', 'en']);
+      expect(actual.resolved.value).toBe('A-de');
+      // 'en' is in the chain, so excluded from others even though it has a value
+      expect(actual.others['en']).toBeUndefined();
+      expect(actual.others['origin']).toBe('A');
+    });
+  });
 });

@@ -46,8 +46,9 @@ export interface ResolvedTranslatableText {
  * and the duplicate is ignored.
  *
  * @param text - The translatable text to resolve.
- * @param lang - BCP 47-ish language key (e.g. `"en"`, `"ja-Hrkt"`).
- *               Falls back to raw `text.name` when not found.
+ * @param lang - BCP 47-ish language key or ordered fallback chain
+ *               (e.g. `"en"`, `["zh-Hant", "zh-Hans", "en"]`).
+ *               Falls back to raw `text.name` when no match is found.
  * @returns Resolved value with lang key, and remaining values.
  *
  * @example
@@ -65,42 +66,44 @@ export interface ResolvedTranslatableText {
  */
 export function resolveTranslatableText(
   text: TranslatableText,
-  lang: string,
+  lang: string | readonly string[],
 ): ResolvedTranslatableText {
-  // 'origin' is an internal reserved key for text.name.
-  // If lang='origin' is passed, always return text.name directly
-  // without looking up text.names (even if it contains an 'origin' key).
-  if (lang === 'origin') {
-    const others: Record<string, string> = {};
-    const seen = new Set<string>(['origin']);
-    for (const [key, value] of Object.entries(text.names)) {
-      const keyLower = key.toLowerCase();
-      if (seen.has(keyLower)) {
-        continue;
-      }
-      seen.add(keyLower);
-      if (value && value !== text.name) {
-        others[key] = value;
-      }
-    }
-    return { resolved: { lang: 'origin', value: text.name }, others };
-  }
+  // Normalize to array for uniform processing.
+  const langs = typeof lang === 'string' ? [lang] : lang;
 
   // Case-insensitive lookup: BCP 47 subtags are case-insensitive
   // per RFC 5646 §2.1.1 (e.g. "ja-Hrkt" and "ja-HrKt" should match).
-  const langLower = lang.toLowerCase();
-  const matchedKey = Object.keys(text.names).find((k) => k.toLowerCase() === langLower);
-  const translation = matchedKey != null ? text.names[matchedKey] : undefined;
+  // Try each language in the chain until a translation is found.
+  // 'origin' is a reserved key — if encountered at any position in the
+  // chain, resolve immediately to text.name without looking up text.names.
+  let matchedLang: string | undefined;
+  let translation: string | undefined;
+  for (const l of langs) {
+    if (l === 'origin') {
+      break; // Fall through to origin resolution below
+    }
+    const lLower = l.toLowerCase();
+    const key = Object.keys(text.names).find((k) => k.toLowerCase() === lLower);
+    if (key != null && text.names[key]) {
+      matchedLang = l;
+      translation = text.names[key];
+      break;
+    }
+  }
   const resolved =
-    translation != null ? { lang, value: translation } : { lang: 'origin', value: text.name };
+    translation != null
+      ? { lang: matchedLang!, value: translation }
+      : { lang: 'origin', value: text.name };
 
   // Build others: deduplicate by lowercase key to prevent case-variant
   // duplicates (e.g. "ja-Hrkt" and "ja-HrKt") from leaking into subNames.
   // 'origin' always maps to text.name, overwriting any 'origin' in text.names.
   const others: Record<string, string> = {};
   const seen = new Set<string>();
-  // Mark the resolved language as seen so it's excluded from others.
-  seen.add(langLower);
+  // Mark all languages in the chain as seen so they're excluded from others.
+  for (const l of langs) {
+    seen.add(l.toLowerCase());
+  }
   seen.add('origin');
   for (const [key, value] of Object.entries(text.names)) {
     const keyLower = key.toLowerCase();
