@@ -69,6 +69,9 @@ export function getHeadsignDisplayNames(
       resolvedSource = 'trip';
     }
   } else {
+    // Truthy check (not nullish): the pipeline never produces empty `name`
+    // with non-empty translations, so empty `name` means "absent".
+    // This keeps parity with getEffectiveHeadsign which uses `||`.
     if (stopName?.name) {
       resolved = stopName;
       resolvedSource = 'stop';

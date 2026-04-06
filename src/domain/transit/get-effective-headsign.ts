@@ -9,6 +9,13 @@ import type { RouteDirection } from '../../types/app/transit-composed';
  * resolution, intended for grouping keys, filter comparisons,
  * React keys, and callback arguments.
  *
+ * Uses `||` (not `??`) intentionally: the pipeline never produces
+ * `TranslatableText` with an empty `name` and non-empty `names`,
+ * so empty `name` always means "absent" and should fall through.
+ * This keeps parity with {@link getHeadsignDisplayNames} which
+ * uses the same truthy check (`stopName?.name`) for its prefer
+ * resolution.
+ *
  * @param routeDirection - Route direction context.
  * @returns The effective headsign string. May be empty when both
  *   trip_headsign and stop_headsign are absent.
