@@ -1,6 +1,8 @@
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { RouteDirection } from '../types/app/transit-composed';
+import type { HeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
+import type { InfoLevelFlags } from '../utils/create-info-level';
 import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
 import { cn } from '../lib/utils';
 import { useInfoLevel } from '../hooks/use-info-level';
@@ -26,6 +28,37 @@ const sizeVariants = {
     label: 'text-[10px]',
   },
 } as const;
+
+/**
+ * Headsign display within TripInfo.
+ *
+ * - simple: resolved name only
+ * - normal+: resolved subNames + resolved name
+ */
+function HeadsignInfo({
+  names,
+  info,
+  headsignClass,
+  subClass,
+  ellipsis,
+}: {
+  names: HeadsignDisplayNames;
+  info: InfoLevelFlags;
+  headsignClass: string;
+  subClass: string;
+  ellipsis: boolean;
+}) {
+  return (
+    <span className="inline-flex min-w-0 flex-col">
+      {info.isNormalEnabled && names.resolved.subNames.length > 0 && (
+        <span className={cn(subClass, ellipsis && 'truncate')}>
+          {names.resolved.subNames.join(' / ')}
+        </span>
+      )}
+      <span className={cn(headsignClass, ellipsis && 'truncate')}>{names.resolved.name}</span>
+    </span>
+  );
+}
 
 interface TripInfoProps {
   /** Route direction context for this trip. */
@@ -85,29 +118,13 @@ export function TripInfo({
       {info.isDetailedEnabled && agency && (
         <AgencyBadge size="xs" agency={agency} infoLevel={infoLevel} disableVerbose={true} />
       )}
-      {/* Empty when headsign is unavailable — RouteBadge already identifies the route. */}
-      <span className="inline-flex min-w-0 flex-col">
-        {headsignNames.resolved.subNames.length > 0 && (
-          <span
-            className={cn(
-              v.headsignSub,
-              'font-normal text-[#888] dark:text-gray-400',
-              ellipsisHeadsign && 'truncate',
-            )}
-          >
-            {headsignNames.resolved.subNames.join(' / ')}
-          </span>
-        )}
-        <span
-          className={cn(
-            v.headsign,
-            'font-medium text-[#333] dark:text-gray-200',
-            ellipsisHeadsign && 'truncate',
-          )}
-        >
-          {headsignNames.resolved.name}
-        </span>
-      </span>
+      <HeadsignInfo
+        names={headsignNames}
+        info={info}
+        headsignClass={cn(v.headsign, 'font-medium text-[#333] dark:text-gray-200')}
+        subClass={cn(v.headsignSub, 'font-normal text-[#888] dark:text-gray-400')}
+        ellipsis={ellipsisHeadsign}
+      />
       {isTerminal && (
         <span
           className={`shrink-0 rounded bg-gray-100 px-1 ${v.label} font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300`}

@@ -6,7 +6,15 @@ import { HeadsignBadge } from './headsign-badge';
 /** Default routeDirection fixture for stories. */
 const defaultRouteDirection: RouteDirection = {
   route: busRoute,
-  tripHeadsign: { name: '大塚駅前', names: {} },
+  tripHeadsign: {
+    name: '大塚駅前',
+    names: {
+      ja: '大塚駅前',
+      'ja-Hrkt': 'おおつかえきまえ',
+      en: 'Otsuka Sta.',
+      ko: '오쓰카역앞',
+    },
+  },
 };
 
 const meta = {
@@ -26,20 +34,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-// --- Size variants ---
-
-export const SizeDefault: Story = {
-  args: { size: 'default' },
-};
-
-export const SizeSm: Story = {
-  args: { size: 'sm' },
-};
-
-export const SizeXs: Story = {
-  args: { size: 'xs' },
-};
 
 // --- Headsign variants ---
 
@@ -76,11 +70,6 @@ export const Truncated: Story = {
   },
 };
 
-/** maxLength larger than headsign — no truncation. */
-export const NoTruncation: Story = {
-  args: { maxLength: 10 },
-};
-
 // --- Route color variants ---
 
 /** Bus route with blue color. */
@@ -105,22 +94,6 @@ export const NoColor: Story = {
 
 // --- Info levels ---
 
-export const Simple: Story = {
-  args: { infoLevel: 'simple' },
-};
-
-export const Normal: Story = {
-  args: { infoLevel: 'normal' },
-};
-
-export const Detailed: Story = {
-  args: { infoLevel: 'detailed' },
-};
-
-export const Verbose: Story = {
-  args: { infoLevel: 'verbose' },
-};
-
 /** Verbose with truncation — shows truncation info in dump. */
 export const VerboseTruncated: Story = {
   args: {
@@ -135,20 +108,7 @@ export const VerboseTruncated: Story = {
 
 /** With headsign translations — shows sub-names in verbose. */
 export const WithTranslations: Story = {
-  args: {
-    routeDirection: {
-      ...defaultRouteDirection,
-      tripHeadsign: {
-        name: '新橋駅前',
-        names: {
-          ja: '新橋駅前',
-          'ja-Hrkt': 'しんばしえきまえ',
-          en: 'Shimbashi Sta.',
-        },
-      },
-    },
-    infoLevel: 'verbose',
-  },
+  args: { infoLevel: 'verbose' },
 };
 
 // --- stop_headsign variants ---
@@ -170,7 +130,7 @@ export const TripEmptyStopPresent: Story = {
 /**
  * trip_headsign and stop_headsign both present but different.
  * Effective headsign = stop_headsign ("出町柳駅").
- * trip_headsign ("北大路BT・下鴨神社・出町柳駅") appears in subNames as context.
+ * trip_headsign is available separately via `tripName` in HeadsignDisplayNames.
  */
 export const StopOverridesTrip: Story = {
   args: {
@@ -192,6 +152,69 @@ export const StopOverridesTrip: Story = {
         },
       },
     },
+    infoLevel: 'normal',
+  },
+};
+
+/** With direction_id — badge may display direction context. */
+export const WithDirection: Story = {
+  args: {
+    routeDirection: {
+      ...defaultRouteDirection,
+      direction: 0,
+    },
+    infoLevel: 'verbose',
+  },
+};
+
+// --- i18n: lang resolution ---
+
+/** All languages side by side: ja, en, ko, de (missing), "" (no lang). */
+export const LangComparison: Story = {
+  render: (args) => (
+    <div className="flex flex-col gap-2">
+      {(
+        [
+          { lang: 'ja', label: 'ja' },
+          { lang: 'en', label: 'en' },
+          { lang: 'ko', label: 'ko' },
+          { lang: 'de', label: 'de (missing)' },
+          { lang: '', label: '(none)' },
+        ] as const
+      ).map(({ lang, label }) => (
+        <div key={label} className="flex items-center gap-2">
+          <span className="w-20 text-[10px] text-gray-400">{label}</span>
+          <HeadsignBadge
+            routeDirection={args.routeDirection}
+            infoLevel={args.infoLevel}
+            lang={lang}
+            size={args.size}
+          />
+        </div>
+      ))}
+    </div>
+  ),
+};
+
+/**
+ * lang=en with stop_headsign override.
+ * stopHeadsign has en translation, tripHeadsign also has en.
+ * Effective name should be stopHeadsign resolved in English.
+ */
+export const LangEnStopOverride: Story = {
+  args: {
+    routeDirection: {
+      route: busRoute2,
+      tripHeadsign: {
+        name: '北大路バスターミナル・下鴨神社・出町柳駅',
+        names: { en: 'Demachiyanagi Sta. via Kitaoji BT and Shimogamo-jinja' },
+      },
+      stopHeadsign: {
+        name: '出町柳駅',
+        names: { en: 'Demachiyanagi Sta.', 'ja-Hrkt': 'でまちやなぎえき' },
+      },
+    },
+    lang: 'en',
     infoLevel: 'normal',
   },
 };
