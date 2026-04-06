@@ -18,6 +18,8 @@ interface HeadsignBadgeProps {
   infoLevel: InfoLevel;
   /** Display language for translated names. */
   lang: string;
+  /** Agency languages for subNames sort priority. @default DEFAULT_AGENCY_LANG */
+  agencyLang?: readonly string[];
   /** Maximum characters to display. Truncated text is not suffixed. @default undefined (no limit) */
   maxLength?: number;
   /** Size variant. @default 'default' */
@@ -44,13 +46,14 @@ export function HeadsignBadge({
   routeDirection,
   infoLevel,
   lang,
+  agencyLang = DEFAULT_AGENCY_LANG,
   maxLength,
   size = 'default',
   disableVerbose = false,
   className,
 }: HeadsignBadgeProps) {
   const { route } = routeDirection;
-  const headsignNames = getHeadsignDisplayNames(routeDirection, 'stop', lang, DEFAULT_AGENCY_LANG);
+  const headsignNames = getHeadsignDisplayNames(routeDirection, 'stop', lang, agencyLang);
 
   const bg = route.route_color ? `#${route.route_color}` : undefined;
   const fg = route.route_text_color ? `#${route.route_text_color}` : undefined;

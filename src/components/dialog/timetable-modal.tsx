@@ -210,6 +210,7 @@ export function TimetableModal({ data, time, infoLevel, lang, onClose }: Timetab
               currentHour={currentHour}
               infoLevel={infoLevel}
               lang={lang}
+              agencies={data.agencies}
               omitted={data.omitted}
             />
           </div>
@@ -399,6 +400,7 @@ function TimetableGrid({
   currentHour,
   infoLevel,
   lang,
+  agencies,
   omitted,
 }: {
   timetableEntries: TimetableEntry[];
@@ -406,6 +408,7 @@ function TimetableGrid({
   currentHour: number;
   infoLevel: InfoLevel;
   lang: string;
+  agencies: Agency[];
   omitted: TimetableOmitted;
 }) {
   const scrollRef = useCurrentHourScroll();
@@ -483,6 +486,7 @@ function TimetableGrid({
                   )}
                   infoLevel={infoLevel}
                   lang={lang}
+                  agencyLang={resolveAgencyLang(agencies, entry.routeDirection.route.agency_id)}
                   isDisplayTerminal={isDisplayTerminal}
                   isDisplayOrigin={isDisplayOrigin}
                   isDisplayPickupUnavailable={isDisplayPickupUnavailable}

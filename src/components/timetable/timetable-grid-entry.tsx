@@ -14,6 +14,8 @@ interface TimetableGridEntryProps {
   infoLevel: InfoLevel;
   /** Display language for translated names. */
   lang: string;
+  /** Agency languages for subNames sort priority. */
+  agencyLang?: readonly string[];
   /** Whether to show terminal label. */
   isDisplayTerminal: boolean;
   /** Whether to show origin label. */
@@ -39,6 +41,7 @@ export function TimetableGridEntry({
   headsignMaxLength,
   infoLevel,
   lang,
+  agencyLang,
   isDisplayTerminal,
   isDisplayOrigin,
   isDisplayPickupUnavailable,
@@ -60,6 +63,7 @@ export function TimetableGridEntry({
           routeDirection={entry.routeDirection}
           infoLevel={infoLevel}
           lang={lang}
+          agencyLang={agencyLang}
           maxLength={headsignMaxLength}
           size="xs"
           disableVerbose={disableVerbose}
