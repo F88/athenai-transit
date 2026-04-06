@@ -51,6 +51,7 @@ function EdgeMarkerItem({
   marker,
   now,
   infoLevel,
+  lang,
   showDistance,
   containerHeight,
   agencies,
@@ -60,6 +61,7 @@ function EdgeMarkerItem({
   marker: EdgeMarker;
   now: Date;
   infoLevel: InfoLevel;
+  lang: string;
   showDistance: boolean;
   /** Measured container height for top/bottom alignment decision. */
   containerHeight: number;
@@ -181,6 +183,7 @@ function EdgeMarkerItem({
             entries={hasData ? departures.departures : undefined}
             now={now}
             infoLevel={infoLevel}
+            lang={lang}
           />
         </div>
       )}
@@ -192,6 +195,8 @@ interface EdgeMarkersDomProps {
   markers: EdgeMarker[];
   now: Date;
   infoLevel: InfoLevel;
+  /** Display language for translated names. */
+  lang: string;
   /** Whether to show distance badges on markers. */
   showDistance: boolean;
   /** Measured container height for top/bottom alignment. */
@@ -210,6 +215,7 @@ export function EdgeMarkersDom({
   markers,
   now,
   infoLevel,
+  lang,
   showDistance,
   containerHeight,
   agenciesMap,
@@ -224,6 +230,7 @@ export function EdgeMarkersDom({
           marker={marker}
           now={now}
           infoLevel={infoLevel}
+          lang={lang}
           showDistance={showDistance}
           containerHeight={containerHeight}
           agencies={agenciesMap?.get(marker.stop.stop_id) ?? []}

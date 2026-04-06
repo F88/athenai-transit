@@ -64,8 +64,7 @@ function makeEntry(
     },
     routeDirection: {
       route: overrides.route ?? testRoute,
-      headsign: overrides.headsign ?? 'Test Terminal',
-      headsign_names: {},
+      tripHeadsign: { name: overrides.headsign ?? 'Test Terminal', names: {} },
     },
     boarding: {
       pickupType: overrides.pickupType ?? 0,

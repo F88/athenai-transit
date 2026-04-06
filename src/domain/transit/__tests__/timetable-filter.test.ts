@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Route } from '../../../types/app/transit';
 import type { TimetableEntry } from '../../../types/app/transit-composed';
 import { prepareStopTimetable, prepareRouteHeadsignTimetable } from '../timetable-filter';
+import { getEffectiveHeadsign } from '../get-effective-headsign';
 
 // --- Test fixtures ---
 
@@ -45,8 +46,7 @@ function makeEntry(
     },
     routeDirection: {
       route: overrides.route ?? routeA,
-      headsign: overrides.headsign ?? 'Terminal',
-      headsign_names: {},
+      tripHeadsign: { name: overrides.headsign ?? 'Terminal', names: {} },
     },
     boarding: { pickupType: overrides.pickupType ?? 0, dropOffType: overrides.dropOffType ?? 0 },
     patternPosition: {
@@ -254,7 +254,7 @@ describe('prepareRouteHeadsignTimetable', () => {
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', true);
       expect(result.entries).toHaveLength(1);
       expect(result.entries[0].routeDirection.route.route_id).toBe('routeA');
-      expect(result.entries[0].routeDirection.headsign).toBe('North');
+      expect(getEffectiveHeadsign(result.entries[0].routeDirection)).toBe('North');
     });
 
     it('matches both route_id and headsign (same route, different headsign)', () => {
@@ -283,7 +283,7 @@ describe('prepareRouteHeadsignTimetable', () => {
       ];
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', '', true);
       expect(result.entries).toHaveLength(1);
-      expect(result.entries[0].routeDirection.headsign).toBe('');
+      expect(getEffectiveHeadsign(result.entries[0].routeDirection)).toBe('');
     });
 
     it('returns empty when no entries match', () => {
@@ -394,7 +394,8 @@ describe('prepareRouteHeadsignTimetable', () => {
       const result = prepareRouteHeadsignTimetable(entries, 'routeA', 'North', false);
       const totalMatching = entries.filter(
         (e) =>
-          e.routeDirection.route.route_id === 'routeA' && e.routeDirection.headsign === 'North',
+          e.routeDirection.route.route_id === 'routeA' &&
+          getEffectiveHeadsign(e.routeDirection) === 'North',
       ).length;
       expect(result.entries.length + result.omitted.terminal).toBe(totalMatching);
     });

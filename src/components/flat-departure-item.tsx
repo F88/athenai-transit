@@ -19,6 +19,8 @@ interface FlatDepartureItemProps {
   showRouteTypeIcon: boolean;
   /** Current info verbosity level for route label formatting. */
   infoLevel: InfoLevel;
+  /** Display language for translated names. */
+  lang: string;
   /** Agency object for badge display at detailed+ info level. */
   agency?: Agency;
 }
@@ -36,6 +38,7 @@ export function FlatDepartureItem({
   isFirst,
   showRouteTypeIcon,
   infoLevel,
+  lang,
   agency,
 }: FlatDepartureItemProps) {
   const showVerbose = infoLevel === 'verbose';
@@ -72,6 +75,7 @@ export function FlatDepartureItem({
         <TripInfo
           routeDirection={entry.routeDirection}
           infoLevel={infoLevel}
+          lang={lang}
           showRouteTypeIcon={showRouteTypeIcon}
           agency={agency}
           isTerminal={isTerminal}

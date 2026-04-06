@@ -28,6 +28,7 @@ const meta = {
     distance: 235,
     mapCenter: storyMapCenter,
     infoLevel: 'normal',
+    lang: 'ja',
     isDropOffOnly: false,
     routes: [busRoute],
   },

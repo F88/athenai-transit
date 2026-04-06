@@ -61,6 +61,7 @@ function createEntry(
     arrivalMinutes: number;
     route: Route;
     headsign: string;
+    stopHeadsign: string;
     pickupType: StopServiceType;
     dropOffType: StopServiceType;
     isTerminal: boolean;
@@ -78,8 +79,10 @@ function createEntry(
     },
     routeDirection: {
       route: overrides.route ?? baseRoute,
-      headsign: overrides.headsign ?? '中野駅',
-      headsign_names: {},
+      tripHeadsign: { name: overrides.headsign ?? '中野駅', names: {} },
+      ...(overrides.stopHeadsign != null
+        ? { stopHeadsign: { name: overrides.stopHeadsign, names: {} } }
+        : {}),
       direction: overrides.direction,
     },
     boarding: {
@@ -108,6 +111,7 @@ const meta = {
     isFirst: true,
     showRouteTypeIcon: false,
     infoLevel: 'normal',
+    lang: 'ja',
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
@@ -212,6 +216,7 @@ export const MultipleItems: Story = {
             isFirst={i === 0}
             showRouteTypeIcon
             infoLevel="normal"
+            lang="ja"
           />
         ))}
       </div>
@@ -243,8 +248,10 @@ const kitchenSinkItems: {
       ...createEntry({ departureMinutes: 866 }),
       routeDirection: {
         route: greenRoute,
-        headsign: '新橋駅前',
-        headsign_names: { ja: '新橋駅前', 'ja-Hrkt': 'しんばしえきまえ', en: 'Shimbashi Sta.' },
+        tripHeadsign: {
+          name: '新橋駅前',
+          names: { ja: '新橋駅前', 'ja-Hrkt': 'しんばしえきまえ', en: 'Shimbashi Sta.' },
+        },
       },
     },
     agency,
@@ -260,8 +267,10 @@ const kitchenSinkItems: {
       ...createEntry({ route: longRoute, departureMinutes: 867 }),
       routeDirection: {
         route: longRoute,
-        headsign: '三ノ輪橋',
-        headsign_names: { 'ja-Hrkt': 'みのわばし', en: 'Minowabashi' },
+        tripHeadsign: {
+          name: '三ノ輪橋',
+          names: { 'ja-Hrkt': 'みのわばし', en: 'Minowabashi' },
+        },
       },
     },
     icon: true,
@@ -273,8 +282,10 @@ const kitchenSinkItems: {
       ...createEntry({ route: longRoute, departureMinutes: 868 }),
       routeDirection: {
         route: longRoute,
-        headsign: '早稲田',
-        headsign_names: { 'ja-Hrkt': 'わせだ', en: 'Waseda' },
+        tripHeadsign: {
+          name: '早稲田',
+          names: { 'ja-Hrkt': 'わせだ', en: 'Waseda' },
+        },
       },
     },
     icon: true,
@@ -285,9 +296,11 @@ const kitchenSinkItems: {
       ...createEntry({ route: longRoute, departureMinutes: 868 }),
       routeDirection: {
         route: longRoute,
-        headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
-        headsign_names: {
-          en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+        tripHeadsign: {
+          name: '北大路バスターミナル・下鴨神社・出町柳駅',
+          names: {
+            en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+          },
         },
       },
     },
@@ -305,9 +318,11 @@ const kitchenSinkItems: {
       }),
       routeDirection: {
         route: longRoute,
-        headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
-        headsign_names: {
-          en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+        tripHeadsign: {
+          name: '北大路バスターミナル・下鴨神社・出町柳駅',
+          names: {
+            en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+          },
         },
       },
     },
@@ -324,9 +339,11 @@ const kitchenSinkItems: {
       }),
       routeDirection: {
         route: longRoute,
-        headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
-        headsign_names: {
-          en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+        tripHeadsign: {
+          name: '北大路バスターミナル・下鴨神社・出町柳駅',
+          names: {
+            en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+          },
         },
       },
     },
@@ -343,8 +360,10 @@ const kitchenSinkItems: {
       }),
       routeDirection: {
         route: baseRoute,
-        headsign: '新宿',
-        headsign_names: { en: 'Shinjuku' },
+        tripHeadsign: {
+          name: '新宿',
+          names: { en: 'Shinjuku' },
+        },
       },
     },
     icon: true,
@@ -385,6 +404,7 @@ export const KitchenSinkInfoLevelSimple: Story = {
           isFirst={i === 0}
           showRouteTypeIcon={icon ?? false}
           infoLevel="simple"
+          lang="ja"
           agency={a}
         />
       ))}
@@ -404,6 +424,7 @@ export const KitchenSinkInfoLevelNormal: Story = {
           isFirst={i === 0}
           showRouteTypeIcon={icon ?? false}
           infoLevel="normal"
+          lang="ja"
           agency={a}
         />
       ))}
@@ -423,6 +444,7 @@ export const KitchenSinkInfoLevelDetailed: Story = {
           isFirst={i === 0}
           showRouteTypeIcon={icon ?? false}
           infoLevel="detailed"
+          lang="ja"
           agency={a}
         />
       ))}
@@ -442,9 +464,27 @@ export const KitchenSinkInfoLevelVerbose: Story = {
           isFirst={i === 0}
           showRouteTypeIcon={icon ?? false}
           infoLevel="verbose"
+          lang="ja"
           agency={a}
         />
       ))}
     </div>
   ),
+};
+
+// --- stop_headsign patterns ---
+
+/** trip empty + stop present (keio-bus pattern). */
+export const TripEmptyStopPresent: Story = {
+  args: { entry: createEntry({ headsign: '', stopHeadsign: '武蔵小金井駅南口' }) },
+};
+
+/** stop overrides trip — stop_headsign differs from trip_headsign. */
+export const StopOverridesTrip: Story = {
+  args: {
+    entry: createEntry({
+      headsign: '北大路BT・下鴨神社・出町柳駅',
+      stopHeadsign: '出町柳駅',
+    }),
+  },
 };

@@ -3,7 +3,7 @@ import type { RouteDirection } from '../types/app/transit-composed';
 import type { Agency, Route } from '../types/app/transit';
 import { TripInfo } from './trip-info';
 
-const baseRoute: Route = {
+const busRoute: Route = {
   route_id: 'route-001',
   route_short_name: '渋64',
   route_long_name: '渋谷駅〜中野駅',
@@ -14,13 +14,23 @@ const baseRoute: Route = {
   agency_id: 'agency-001',
 };
 
-const longRoute: Route = {
-  ...baseRoute,
+const tramRoute: Route = {
+  ...busRoute,
   route_id: 'toaran:SA',
   route_short_name: '',
   route_long_name: '東京さくらトラム（都電荒川線）',
   route_type: 0 as const,
   route_color: 'E60012',
+};
+
+const kyotoBusRoute: Route = {
+  ...busRoute,
+  route_id: 'kyoto:205',
+  route_short_name: '205',
+  route_long_name: '河原町通・北大路バスターミナル',
+  route_type: 3 as const,
+  route_color: '009f40',
+  agency_id: 'agency-002',
 };
 
 const agency: Agency = {
@@ -36,7 +46,7 @@ const agency: Agency = {
   agency_colors: [{ bg: '00A850', text: 'FFFFFF' }],
 };
 
-const longAgency: Agency = {
+const kyotoAgency: Agency = {
   ...agency,
   agency_id: 'agency-002',
   agency_name: '京都市交通局',
@@ -45,33 +55,60 @@ const longAgency: Agency = {
 };
 
 const shortRd: RouteDirection = {
-  route: baseRoute,
-  headsign: '中野駅',
-  headsign_names: {},
+  route: busRoute,
+  tripHeadsign: {
+    name: '中野駅',
+    names: { ja: '中野駅', 'ja-Hrkt': 'なかのえき', en: 'Nakano Sta.', ko: '나카노역' },
+  },
 };
 
-const shortRdWithNames: RouteDirection = {
-  route: baseRoute,
-  headsign: '新橋駅前',
-  headsign_names: { ja: '新橋駅前', 'ja-Hrkt': 'しんばしえきまえ', en: 'Shimbashi Sta.' },
+const tramRd: RouteDirection = {
+  route: tramRoute,
+  tripHeadsign: {
+    name: '三ノ輪橋',
+    names: { 'ja-Hrkt': 'みのわばし', en: 'Minowabashi' },
+  },
 };
 
-const longRd: RouteDirection = {
-  route: longRoute,
-  headsign: '三ノ輪橋',
-  headsign_names: { 'ja-Hrkt': 'みのわばし', en: 'Minowabashi' },
+const kyotoBusRd: RouteDirection = {
+  route: kyotoBusRoute,
+  tripHeadsign: {
+    name: '北大路バスターミナル・下鴨神社・出町柳駅',
+    names: {
+      ja: '北大路バスターミナル・下鴨神社・出町柳駅',
+      'ja-Hrkt': 'きたおおじバスターミナル・しもがもじんじゃ・でまちやなぎえき',
+      en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
+      ko: '기타오지 버스 터미널・시모가모 신사・데마치야나기역',
+      'zh-Hans': '北大路公交总站・下鸭神社・出町柳站',
+      'zh-Hant': '北大路公交總站・下鴨神社・出町柳站',
+    },
+  },
 };
 
-const longRdKyoto: RouteDirection = {
-  route: longRoute,
-  headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
-  headsign_names: {
-    ja: '北大路バスターミナル・下鴨神社・出町柳駅',
-    'ja-Hrkt': 'きたおおじバスターミナル・しもがもじんじゃ・でまちやなぎえき',
-    en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
-    ko: '기타오지 버스 터미널・시모가모 신사・데마치야나기역',
-    'zh-Hans': '北大路公交总站・下鸭神社・出町柳站',
-    'zh-Hant': '北大路公交總站・下鴨神社・出町柳站',
+/** trip empty + stop present (keio-bus pattern). */
+const tripEmptyStopRd: RouteDirection = {
+  route: busRoute,
+  tripHeadsign: { name: '', names: {} },
+  stopHeadsign: { name: '武蔵小金井駅南口', names: {} },
+};
+
+/** stop overrides trip — mid-trip headsign changes to shorter destination. */
+const stopOverridesTripRd: RouteDirection = {
+  route: kyotoBusRoute,
+  tripHeadsign: {
+    name: '北大路バスターミナル・下鴨神社・出町柳駅',
+    names: {
+      ja: '北大路バスターミナル・下鴨神社・出町柳駅',
+      en: 'Demachiyanagi Sta. via Kitaoji BT and Shimogamo-jinja',
+    },
+  },
+  stopHeadsign: {
+    name: '出町柳駅',
+    names: {
+      ja: '出町柳駅',
+      'ja-Hrkt': 'でまちやなぎえき',
+      en: 'Demachiyanagi Sta.',
+    },
   },
 };
 
@@ -81,6 +118,7 @@ const meta = {
   args: {
     routeDirection: shortRd,
     infoLevel: 'normal',
+    lang: 'ja',
     showRouteTypeIcon: true,
     agency,
   },
@@ -106,16 +144,12 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const ShortWithTranslations: Story = {
-  args: { routeDirection: shortRdWithNames },
+export const TramRoute: Story = {
+  args: { routeDirection: tramRd },
 };
 
-export const LongRoute: Story = {
-  args: { routeDirection: longRd, agency: longAgency },
-};
-
-export const LongRouteKyoto: Story = {
-  args: { routeDirection: longRdKyoto, agency: longAgency },
+export const KyotoBusRoute: Story = {
+  args: { routeDirection: kyotoBusRd, agency: kyotoAgency },
 };
 
 export const Terminal: Story = {
@@ -127,84 +161,61 @@ export const PickupUnavailable: Story = {
 };
 
 export const EmptyHeadsign: Story = {
-  args: { routeDirection: { ...shortRd, headsign: '' } },
+  args: { routeDirection: { ...shortRd, tripHeadsign: { name: '', names: {} } } },
 };
 
-// --- All elements (short data) ---
+// --- stop_headsign ---
 
-export const AllElementsShortInfoLevelSimple: Story = {
-  args: {
-    routeDirection: shortRdWithNames,
-    isTerminal: true,
-    isPickupUnavailable: true,
-    infoLevel: 'simple',
-  },
+/** trip empty + stop present — effective shows stop_headsign. */
+export const TripEmptyStopPresent: Story = {
+  args: { routeDirection: tripEmptyStopRd },
 };
 
-export const AllElementsShortInfoLevelNormal: Story = {
-  args: {
-    routeDirection: shortRdWithNames,
-    isTerminal: true,
-    isPickupUnavailable: true,
-    infoLevel: 'normal',
-  },
+/**
+ * stop overrides trip — effective headsign is stop_headsign.
+ * trip_headsign is available separately via `tripName` in HeadsignDisplayNames.
+ */
+export const StopOverridesTrip: Story = {
+  args: { routeDirection: stopOverridesTripRd, agency: kyotoAgency },
 };
 
-export const AllElementsShortInfoLevelDetailed: Story = {
-  args: {
-    routeDirection: shortRdWithNames,
-    isTerminal: true,
-    isPickupUnavailable: true,
-    infoLevel: 'detailed',
-  },
+/** stop overrides trip — verbose shows both headsign data. */
+export const StopOverridesTripVerbose: Story = {
+  args: { routeDirection: stopOverridesTripRd, agency: kyotoAgency, infoLevel: 'verbose' },
 };
 
-// --- All elements (long data) ---
+// --- i18n: lang resolution ---
 
-export const AllElementsLongInfoLevelSimple: Story = {
-  args: {
-    routeDirection: longRdKyoto,
-    agency: longAgency,
-    isTerminal: true,
-    isPickupUnavailable: true,
-    infoLevel: 'simple',
-  },
+/** All languages side by side. */
+export const LangComparison: Story = {
+  args: { routeDirection: kyotoBusRd, agency: kyotoAgency },
+  render: (args) => (
+    <div className="flex flex-col gap-3">
+      {(
+        [
+          { lang: 'ja', label: 'ja' },
+          { lang: 'en', label: 'en' },
+          { lang: 'ko', label: 'ko' },
+          { lang: 'zh-Hans', label: 'zh-Hans' },
+          { lang: 'de', label: 'de (missing)' },
+          { lang: '', label: '(none)' },
+        ] as const
+      ).map(({ lang, label }) => (
+        <div key={label}>
+          <span className="mb-0.5 block text-[10px] text-gray-400">{label}</span>
+          <TripInfo
+            routeDirection={args.routeDirection}
+            infoLevel={args.infoLevel}
+            lang={lang}
+            showRouteTypeIcon={args.showRouteTypeIcon}
+            agency={args.agency}
+          />
+        </div>
+      ))}
+    </div>
+  ),
 };
 
-export const AllElementsLongInfoLevelNormal: Story = {
-  args: {
-    routeDirection: longRdKyoto,
-    agency: longAgency,
-    isTerminal: true,
-    isPickupUnavailable: true,
-    infoLevel: 'normal',
-  },
-};
-
-export const AllElementsLongInfoLevelDetailed: Story = {
-  args: {
-    routeDirection: longRdKyoto,
-    agency: longAgency,
-    isTerminal: true,
-    isPickupUnavailable: true,
-    infoLevel: 'detailed',
-  },
-};
-
-// --- Info levels ---
-
-export const KitchenSinkInfoLevelSimple: Story = {
-  args: { routeDirection: longRd, agency: longAgency, infoLevel: 'simple', isTerminal: true },
-};
-
-export const KitchenSinkInfoLevelNormal: Story = {
-  args: { routeDirection: longRd, agency: longAgency, infoLevel: 'normal', isTerminal: true },
-};
-
-export const KitchenSinkInfoLevelDetailed: Story = {
-  args: { routeDirection: longRd, agency: longAgency, infoLevel: 'detailed', isTerminal: true },
-};
-
-export const KitchenSinkInfoLevelVerbose: Story = {
-  args: { routeDirection: longRd, agency: longAgency, infoLevel: 'verbose', isTerminal: true },
+export const KitchenSink: Story = {
+  args: { routeDirection: tramRd, agency: kyotoAgency, infoLevel: 'verbose', isTerminal: true },
 };

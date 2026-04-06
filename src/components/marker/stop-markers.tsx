@@ -15,6 +15,8 @@ interface StopMarkersProps {
   routeTypeMap: Map<string, RouteType[]>;
   /** Controls display detail (e.g. stop name labels). */
   infoLevel: InfoLevel;
+  /** Display language for translated names. */
+  lang: string;
   /** Resolved render mode. Switches between DOM and Canvas rendering. */
   renderMode: EffectiveRenderMode;
   /** Called when a stop marker is clicked. */
@@ -44,6 +46,7 @@ export function StopMarkers({
   selectedStopId,
   routeTypeMap,
   infoLevel,
+  lang,
   renderMode,
   onStopSelected,
   nearbyDepartures,
@@ -61,6 +64,7 @@ export function StopMarkers({
       selectedStopId={selectedStopId}
       routeTypeMap={routeTypeMap}
       infoLevel={infoLevel}
+      lang={lang}
       onStopSelected={onStopSelected}
       nearbyDepartures={nearbyDepartures}
       time={time}
@@ -77,6 +81,7 @@ export function StopMarkers({
       selectedStopId={selectedStopId}
       routeTypeMap={routeTypeMap}
       infoLevel={infoLevel}
+      lang={lang}
       onStopSelected={onStopSelected}
       nearbyDepartures={nearbyDepartures}
       time={time}

@@ -13,8 +13,7 @@ function makeEntries(routeIds: string[]): ContextualTimetableEntry[] {
     schedule: { departureMinutes: 480, arrivalMinutes: 480 },
     routeDirection: {
       route: makeRoute(id),
-      headsign: '',
-      headsign_names: {},
+      tripHeadsign: { name: '', names: {} },
     },
     boarding: { pickupType: 0 as const, dropOffType: 0 as const },
     patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },

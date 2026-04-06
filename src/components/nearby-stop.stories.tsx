@@ -106,6 +106,7 @@ function createEntry(
     arrivalMinutes: number;
     route: Route;
     headsign: string;
+    stopHeadsign: string;
     pickupType: StopServiceType;
     dropOffType: StopServiceType;
     isTerminal: boolean;
@@ -122,8 +123,10 @@ function createEntry(
     },
     routeDirection: {
       route: overrides.route ?? busRoute,
-      headsign: overrides.headsign ?? '大塚駅前',
-      headsign_names: {},
+      tripHeadsign: { name: overrides.headsign ?? '大塚駅前', names: {} },
+      ...(overrides.stopHeadsign != null
+        ? { stopHeadsign: { name: overrides.stopHeadsign, names: {} } }
+        : {}),
     },
     boarding: {
       pickupType: overrides.pickupType ?? 0,
@@ -178,6 +181,7 @@ const meta = {
     now,
     mapCenter,
     infoLevel: 'normal',
+    lang: 'ja',
     viewId: 'route-headsign',
     isAnchor: false,
     onStopSelected: fn(),
@@ -432,6 +436,43 @@ export const WithSubNames: Story = {
           en: 'Kinshichō Sta.',
         },
       },
+    }),
+  },
+};
+
+// --- stop_headsign patterns ---
+
+/** trip empty + stop present (keio-bus pattern). */
+export const TripEmptyStopPresent: Story = {
+  args: {
+    data: createStopWithContext({
+      departures: [
+        createEntry({ headsign: '', stopHeadsign: '武蔵小金井駅南口', departureMinutes: 870 }),
+        createEntry({ headsign: '', stopHeadsign: '武蔵小金井駅南口', departureMinutes: 885 }),
+        createEntry({ headsign: '大塚駅前', departureMinutes: 875 }),
+      ],
+      agencies: [agency2],
+    }),
+  },
+};
+
+/** stop overrides trip — departures show stop_headsign as effective. */
+export const StopOverridesTrip: Story = {
+  args: {
+    data: createStopWithContext({
+      departures: [
+        createEntry({
+          headsign: '北大路BT・下鴨神社・出町柳駅',
+          stopHeadsign: '出町柳駅',
+          departureMinutes: 870,
+        }),
+        createEntry({
+          headsign: '北大路BT・下鴨神社・出町柳駅',
+          stopHeadsign: '出町柳駅',
+          departureMinutes: 885,
+        }),
+        createEntry({ headsign: '大塚駅前', departureMinutes: 875 }),
+      ],
     }),
   },
 };

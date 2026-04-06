@@ -333,8 +333,7 @@ export function createEntry(
     },
     routeDirection: {
       route: overrides.route ?? busRoute,
-      headsign: overrides.headsign ?? '大塚駅前',
-      headsign_names: {},
+      tripHeadsign: { name: overrides.headsign ?? '大塚駅前', names: {} },
       direction: overrides.direction,
     },
     boarding: {

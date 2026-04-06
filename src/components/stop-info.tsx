@@ -22,6 +22,8 @@ interface StopInfoProps {
   distance?: number;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
+  /** Display language for translated names. */
+  lang: string;
   /** Whether this stop is drop-off only (no boardable departures). */
   isDropOffOnly: boolean;
   /** Routes serving this stop. */
@@ -46,6 +48,7 @@ export function StopInfo({
   distance,
   mapCenter,
   infoLevel,
+  lang,
   isDropOffOnly,
   routes,
   stats,
@@ -53,7 +56,7 @@ export function StopInfo({
 }: StopInfoProps) {
   const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
-  const stopNames = getStopDisplayNames(stop, infoLevel);
+  const stopNames = getStopDisplayNames(stop, infoLevel, lang);
   const distanceRounded = distance != null ? Math.round(distance) : null;
   const bearing = mapCenter ? bearingDeg(mapCenter, stop) : null;
 

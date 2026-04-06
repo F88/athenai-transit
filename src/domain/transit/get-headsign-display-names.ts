@@ -1,81 +1,85 @@
-import type { InfoLevel } from '../../types/app/settings';
 import type { RouteDirection } from '../../types/app/transit-composed';
-import { createInfoLevel } from '../../utils/create-info-level';
-import { translateHeadsign } from './i18n/translate-headsign';
+import type { ResolvedDisplayNames } from './get-display-names';
+import { resolveDisplayNamesWithTranslatableText } from './i18n/resolve-display-names-with-translatable-text';
+
+/**
+ * Headsign source type.
+ *
+ * - `'stop'` — stop_headsign (GTFS default; overrides trip_headsign).
+ * - `'trip'` — trip_headsign; falls back to stop_headsign.
+ */
+export type HeadsignSource = 'stop' | 'trip';
 
 /**
  * Result of {@link getHeadsignDisplayNames}.
  */
 export interface HeadsignDisplayNames {
-  /** Primary display name resolved for the requested language. */
-  name: string;
-  /**
-   * Alternative names (readings, translations) to show below the primary name.
-   * Empty array when infoLevel is below "normal" or no alternatives exist.
-   * Values only — language keys are stripped for display simplicity.
-   */
-  subNames: string[];
+  /** Effective headsign resolved by `prefer` strategy. */
+  resolved: ResolvedDisplayNames;
+  /** Which source was used for `resolved`. */
+  resolvedSource: HeadsignSource;
+  /** trip_headsign resolved for the requested language. */
+  tripName: ResolvedDisplayNames;
+  /** stop_headsign resolved for the requested language. Undefined when not provided. */
+  stopName?: ResolvedDisplayNames;
 }
 
 /**
- * Compute display names for a headsign based on info level and language.
+ * Compute display names for headsigns based on preference.
  *
- * GTFS `trip_headsign` is a single string field with no short/long variants.
- * Some GTFS sources (e.g. Keio Bus) omit it entirely.
+ * Resolves trip_headsign and stop_headsign independently via
+ * {@link resolveDisplayNamesWithTranslatableText}, then selects
+ * the effective one based on `prefer`. Each headsign's `subNames`
+ * are resolved from its own translations — they are never mixed.
  *
- * This resolver does NOT fall back to route names — `name` can be empty.
- * Callers that need a non-empty label (e.g. timetable filter buttons where
- * no RouteBadge is shown) should fall back to route names themselves:
- *
- * ```ts
- * result.name || route.route_short_name || route.route_long_name || route.route_id
- * ```
- *
- * Callers that already display a RouteBadge can conditionally render:
- *
- * ```ts
- * {result.name && <span>{result.name}</span>}
- * ```
- *
- * Sub-names are extracted from `routeDirection.headsign_names` (GTFS
- * translations.txt for trip_headsign). Values that match the primary
- * name are excluded. Sub-names are shown at "normal" level and above.
- *
- * @param routeDirection - Route direction context containing headsign
- *   and headsign_names translations.
- * @param infoLevel - Current info verbosity level.
- * @param lang - Optional language key for primary name resolution.
- * @returns Primary name and sub-names.
- *
- * @example
- * ```ts
- * getHeadsignDisplayNames(routeDirection, 'normal');
- * // { name: '新橋駅前', subNames: ['しんばしえきまえ', 'Shimbashi Sta.'] }
- *
- * getHeadsignDisplayNames(emptyHeadsignDirection, 'normal');
- * // { name: '', subNames: [] }  — caller decides fallback
- * ```
+ * @param routeDirection - Route direction context containing headsigns.
+ * @param prefer - Which headsign to use as effective. Defaults to `'stop'`
+ *   (per GTFS spec: stop_headsign overrides trip_headsign).
+ * @param lang - Language key to resolve for.
+ * @param agencyLang - Agency languages for subNames sort priority.
+ * @returns Effective headsign, plus individual trip/stop resolved names.
  */
 export function getHeadsignDisplayNames(
   routeDirection: RouteDirection,
-  infoLevel: InfoLevel,
-  lang?: string,
+  prefer: HeadsignSource = 'stop',
+  lang: string,
+  agencyLang: readonly string[],
 ): HeadsignDisplayNames {
-  const name = translateHeadsign(routeDirection.headsign, routeDirection.headsign_names, lang);
-  const info = createInfoLevel(infoLevel);
+  const tripName = resolveDisplayNamesWithTranslatableText(
+    routeDirection.tripHeadsign,
+    lang,
+    agencyLang,
+  );
+  const stopName = routeDirection.stopHeadsign
+    ? resolveDisplayNamesWithTranslatableText(routeDirection.stopHeadsign, lang, agencyLang)
+    : undefined;
 
-  if (!info.isNormalEnabled) {
-    return { name, subNames: [] };
+  let resolved: ResolvedDisplayNames;
+  let resolvedSource: HeadsignSource;
+
+  if (prefer === 'trip') {
+    if (tripName.name) {
+      resolved = tripName;
+      resolvedSource = 'trip';
+    } else if (stopName) {
+      resolved = stopName;
+      resolvedSource = 'stop';
+    } else {
+      resolved = tripName;
+      resolvedSource = 'trip';
+    }
+  } else {
+    // Truthy check (not nullish): the pipeline never produces empty `name`
+    // with non-empty translations, so empty `name` means "absent".
+    // This keeps parity with getEffectiveHeadsign which uses `||`.
+    if (stopName?.name) {
+      resolved = stopName;
+      resolvedSource = 'stop';
+    } else {
+      resolved = tripName;
+      resolvedSource = 'trip';
+    }
   }
 
-  // Collect alternative names from headsign_names translations,
-  // excluding the primary name to avoid showing the same text twice.
-  // Follows the same pattern as getStopDisplayNames.
-  const subNames = [
-    ...new Set(
-      Object.values(routeDirection.headsign_names).filter((value) => value && value !== name),
-    ),
-  ];
-
-  return { name, subNames };
+  return { resolved, resolvedSource, tripName, stopName };
 }

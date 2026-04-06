@@ -24,6 +24,7 @@ describe('useUserSettings', () => {
         visibleStopTypes: [0, 1, 2, 3],
         theme: 'light',
         doubleTapDrag: 'zoom-out',
+        lang: 'ja',
       });
     });
 
@@ -59,6 +60,7 @@ describe('useUserSettings', () => {
         visibleStopTypes: [0, 1, 2, 3],
         theme: 'light',
         doubleTapDrag: 'zoom-out',
+        lang: 'ja',
       });
     });
   });
@@ -266,6 +268,46 @@ describe('useUserSettings', () => {
       });
 
       spy.mockRestore();
+    });
+  });
+
+  // ── lang setting ─────────────────────────────────────
+
+  describe('lang setting', () => {
+    it('defaults to ja', () => {
+      const { result } = renderHook(() => useUserSettings());
+
+      expect(result.current.settings.lang).toBe('ja');
+    });
+
+    it('persists lang to localStorage', () => {
+      const { result } = renderHook(() => useUserSettings());
+
+      act(() => {
+        result.current.updateSetting('lang', 'en');
+      });
+
+      expect(result.current.settings.lang).toBe('en');
+
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
+      expect(stored.lang).toBe('en');
+    });
+
+    it('restores lang from localStorage on reload', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ lang: 'en' }));
+
+      const { result } = renderHook(() => useUserSettings());
+
+      expect(result.current.settings.lang).toBe('en');
+    });
+
+    it('fills lang with default when missing from stored data', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: 1 }));
+
+      const { result } = renderHook(() => useUserSettings());
+
+      expect(result.current.settings.lang).toBe('ja');
+      expect(result.current.settings.tileIndex).toBe(1);
     });
   });
 

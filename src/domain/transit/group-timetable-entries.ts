@@ -1,7 +1,8 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
+import { getEffectiveHeadsign } from './get-effective-headsign';
 
 /**
- * Group timetable entries by route_id + headsign.
+ * Group timetable entries by route_id + effective headsign.
  *
  * Used by the T2 (Route+Headsign) view to display departures grouped
  * by route and direction. Entries within each group retain their
@@ -18,7 +19,7 @@ export function groupByRouteHeadsign<T extends TimetableEntry>(entries: T[]): [s
   const map = new Map<string, T[]>();
 
   for (const entry of entries) {
-    const key = `${entry.routeDirection.route.route_id}\0${entry.routeDirection.headsign}`;
+    const key = `${entry.routeDirection.route.route_id}\0${getEffectiveHeadsign(entry.routeDirection)}`;
     let group = map.get(key);
     if (!group) {
       group = [];

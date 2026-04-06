@@ -1,21 +1,8 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Stop } from '../../types/app/transit';
 import { createInfoLevel } from '../../utils/create-info-level';
+import type { ResolvedDisplayNames } from './get-display-names';
 import { translateStopName } from './i18n/translate-stop-name';
-
-/**
- * Result of {@link getStopDisplayNames}.
- */
-export interface StopDisplayNames {
-  /** Primary display name (resolved for the requested language). */
-  name: string;
-  /**
-   * Alternative names (readings, translations) to show below the primary name.
-   * Empty array when infoLevel is below "normal" or no alternatives exist.
-   * Values only — language keys are stripped for display simplicity.
-   */
-  subNames: string[];
-}
 
 /**
  * Compute the display names for a stop based on info level and language.
@@ -50,7 +37,7 @@ export function getStopDisplayNames(
   stop: Stop,
   infoLevel: InfoLevel,
   lang?: string,
-): StopDisplayNames {
+): ResolvedDisplayNames {
   const name = translateStopName(stop, lang);
   const info = createInfoLevel(infoLevel);
 

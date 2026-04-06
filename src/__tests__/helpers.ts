@@ -77,7 +77,7 @@ export function makeStopWithContext(
     routeTypes,
     departures: routes.map((route) => ({
       schedule: { departureMinutes: 480, arrivalMinutes: 480 },
-      routeDirection: { route, headsign: 'Test', headsign_names: {} },
+      routeDirection: { route, tripHeadsign: { name: 'Test', names: {} } },
       boarding: { pickupType: 0 as const, dropOffType: 0 as const },
       patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
       serviceDate: new Date('2026-01-01'),

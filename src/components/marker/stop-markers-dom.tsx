@@ -21,6 +21,7 @@ function StopMarkerDomItem({
   preloadedEntries,
   now,
   infoLevel,
+  lang,
   onFetchDepartures,
   showTooltip,
   onClick,
@@ -34,6 +35,7 @@ function StopMarkerDomItem({
   preloadedEntries?: ContextualTimetableEntry[];
   now?: Date;
   infoLevel: InfoLevel;
+  lang: string;
   onFetchDepartures?: (stopId: string) => Promise<StopWithContext | null>;
   showTooltip: boolean;
   onClick: () => void;
@@ -99,6 +101,7 @@ function StopMarkerDomItem({
             entries={hasEntries ? entries : undefined}
             now={now}
             infoLevel={infoLevel}
+            lang={lang}
           />
         </Tooltip>
       )}
@@ -113,6 +116,8 @@ interface StopMarkersDomProps {
   nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
   time?: Date;
   infoLevel: InfoLevel;
+  /** Display language for translated names. */
+  lang: string;
   onStopSelected: (stop: Stop) => void;
   onFetchDepartures?: (stopId: string) => Promise<StopWithContext | null>;
   /** Whether to show tooltip on hover/select. Defaults to true. */
@@ -140,6 +145,7 @@ export const StopMarkersDom = memo(function StopMarkersDom({
   nearbyDepartures,
   time: now,
   infoLevel,
+  lang,
   onStopSelected,
   onFetchDepartures,
   showTooltip = true,
@@ -164,6 +170,7 @@ export const StopMarkersDom = memo(function StopMarkersDom({
           preloadedEntries={nearbyDepartures?.get(stop.stop_id)}
           now={now}
           infoLevel={infoLevel}
+          lang={lang}
           onFetchDepartures={onFetchDepartures}
           showTooltip={showTooltip}
           onClick={() => onStopSelected(stop)}

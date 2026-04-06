@@ -15,6 +15,7 @@ const DEFAULTS: UserSettings = {
   infoLevel: 'normal',
   theme: 'light',
   doubleTapDrag: 'zoom-out',
+  lang: 'ja',
 };
 
 /**
