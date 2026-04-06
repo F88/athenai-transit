@@ -13,7 +13,7 @@ import type { TimetableOmitted } from '@/types/app/repository';
 import { AgencyBadge } from '@/components/badge/agency-badge';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
-import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
+import { resolveAgencyLang } from '@/config/transit-defaults';
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
@@ -153,8 +153,8 @@ export function TimetableModal({ data, time, infoLevel, lang, onClose }: Timetab
             )}
             <DialogDescription className="text-muted-foreground text-xs">
               {data.type === 'route-headsign'
-                ? `${data.stop.stop_name} ${data.routes[0].route_short_name || data.routes[0].route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
-                : `${data.stop.stop_name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
+                ? `${getStopDisplayNames(data.stop, infoLevel, lang).name} ${data.routes[0].route_short_name || data.routes[0].route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
+                : `${getStopDisplayNames(data.stop, infoLevel, lang).name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
             </DialogDescription>
 
             <DialogTitle className="flex flex-col gap-1">
@@ -672,8 +672,12 @@ function StopTimetableFilter({
             count={r.count}
           >
             {/* Filter button has no RouteBadge — fall back to route name so it is never blank. */}
-            {getHeadsignDisplayNames(r.routeDirection, 'stop', lang, DEFAULT_AGENCY_LANG).resolved
-              .name ||
+            {getHeadsignDisplayNames(
+              r.routeDirection,
+              'stop',
+              lang,
+              resolveAgencyLang(data.agencies, route.agency_id),
+            ).resolved.name ||
               route.route_short_name ||
               route.route_long_name ||
               route.route_id}
