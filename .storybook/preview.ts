@@ -1,3 +1,5 @@
+/// <reference path="./vite-env.d.ts" />
+
 import type { Preview } from '@storybook/react-vite';
 import '../src/index.css';
 import i18n from '../src/i18n';
