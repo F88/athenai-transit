@@ -55,7 +55,9 @@
   "stop": {
     "noDestination": "行先が表示されない路線があります",
     "serviceEnded": "本日の運行は終了しました",
-    "dropOffOnly": "降車専用"
+    "dropOffOnly": "降車専用",
+    "wheelchairAccessible": "車椅子で利用可能",
+    "wheelchairNotAccessible": "車椅子では利用不可"
   },
   "time": {
     "settingTitle": "日時を指定",

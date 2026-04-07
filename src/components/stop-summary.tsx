@@ -92,6 +92,8 @@ export function StopSummary({
     'shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300';
   const resolvedAgencyBadgeSize = agencyBadgeSize ?? 'sm';
   const resolvedRouteBadgeSize = routeBadgeSize ?? 'xs';
+  const wheelchairAccessibleLabel = t('stop.wheelchairAccessible');
+  const wheelchairNotAccessibleLabel = t('stop.wheelchairNotAccessible');
 
   return (
     <div className="min-w-0 flex-1">
@@ -110,13 +112,23 @@ export function StopSummary({
         {stop.platform_code && <span className={platformCodeClass}>{stop.platform_code}</span>}
         {distanceBadge}
         {stop.wheelchair_boarding === 1 && (
-          <span className={accessibilityClass}>
-            <Accessibility size={14} strokeWidth={2} />
+          <span
+            className={accessibilityClass}
+            role="img"
+            aria-label={wheelchairAccessibleLabel}
+            title={wheelchairAccessibleLabel}
+          >
+            <Accessibility size={14} strokeWidth={2} aria-hidden="true" focusable="false" />
           </span>
         )}
         {stop.wheelchair_boarding === 2 && (
-          <span className={inaccessibleClass}>
-            <Accessibility size={14} strokeWidth={2} />
+          <span
+            className={inaccessibleClass}
+            role="img"
+            aria-label={wheelchairNotAccessibleLabel}
+            title={wheelchairNotAccessibleLabel}
+          >
+            <Accessibility size={14} strokeWidth={2} aria-hidden="true" focusable="false" />
           </span>
         )}
         {isDropOffOnly && <span className={dropOffClass}>{t('stop.dropOffOnly')}</span>}

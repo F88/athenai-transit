@@ -55,7 +55,9 @@
   "stop": {
     "noDestination": "Some routes have no destination",
     "serviceEnded": "No more service today",
-    "dropOffOnly": "Drop-off only"
+    "dropOffOnly": "Drop-off only",
+    "wheelchairAccessible": "Wheelchair accessible",
+    "wheelchairNotAccessible": "Not wheelchair accessible"
   },
   "time": {
     "settingTitle": "Set date & time",
