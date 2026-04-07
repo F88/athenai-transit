@@ -22,6 +22,7 @@ import type {
   SourceMeta,
   StopWithMeta,
   TimetableEntry,
+  TranslatableText,
 } from '../types/app/transit-composed';
 import type {
   CollectionResult,
@@ -73,7 +74,71 @@ const AGENCY_SORA: Agency = {
   agency_colors: [{ bg: '1565C0', text: 'FFFFFF' }],
 };
 
+const AGENCY_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
+  'mock:aoba': {
+    'zh-Hant': '青葉交通株式會社',
+  },
+  'mock:soraq': {
+    ko: '소라급행버스',
+    'zh-Hans': '空急行巴士株式会社',
+    'zh-Hant': '空急行巴士株式會社',
+  },
+};
+
+const AGENCY_SHORT_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
+  'mock:aoba': {
+    'zh-Hant': '青葉巴士',
+  },
+  'mock:soraq': {
+    ko: '소라급',
+    'zh-Hans': '空急',
+    'zh-Hant': '空急',
+  },
+};
+
+for (const agency of [AGENCY, AGENCY_SORA]) {
+  Object.assign(agency.agency_names, AGENCY_NAME_TRANSLATIONS[agency.agency_id] ?? {});
+  Object.assign(agency.agency_short_names, AGENCY_SHORT_NAME_TRANSLATIONS[agency.agency_id] ?? {});
+}
+
 const AGENCY_MAP = new Map<string, Agency>([AGENCY, AGENCY_SORA].map((a) => [a.agency_id, a]));
+
+const STOP_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
+  sta_central: { ko: '아오바중앙역', 'zh-Hans': '青叶中央站', 'zh-Hant': '青葉中央站' },
+  sta_central_s: {
+    ko: '아오바중앙역 남쪽 출구',
+    'zh-Hans': '青叶中央站南口',
+    'zh-Hant': '青葉中央站南口',
+  },
+  sta_hill: { ko: '미도리오카역', 'zh-Hans': '绿丘站', 'zh-Hant': '綠丘站' },
+  sta_east: { ko: '히카리다이역', 'zh-Hans': '光台站', 'zh-Hant': '光台站' },
+  sta_north: { ko: '하나미역', 'zh-Hans': '花见站', 'zh-Hant': '花見站' },
+  sta_west: { ko: '쓰키미노역', 'zh-Hans': '月见野站', 'zh-Hant': '月見野站' },
+  sta_south: { ko: '가제노역', 'zh-Hans': '风野站', 'zh-Hant': '風野站' },
+  sta_northwest: { ko: '유메노오카역', 'zh-Hans': '梦之丘站', 'zh-Hant': '夢之丘站' },
+  bus_central_dropoff: {
+    ko: '아오바중앙역(하차 전용)',
+    'zh-Hans': '青叶中央站(仅下车)',
+    'zh-Hant': '青葉中央站(僅下車)',
+  },
+  bus_park: { ko: '모리공원 앞', 'zh-Hans': '森公园前', 'zh-Hant': '森公園前' },
+  bus_library: {
+    ko: '아오바도서관 앞',
+    'zh-Hans': '青叶图书馆前',
+    'zh-Hant': '青葉圖書館前',
+  },
+  bus_tower: { ko: '소라타워 아래', 'zh-Hans': '空塔下', 'zh-Hant': '空塔下' },
+  bus_bridge: { ko: '니지다리', 'zh-Hans': '彩虹桥', 'zh-Hant': '彩虹橋' },
+  tram_hoshi_park: { ko: '호시공원 앞', 'zh-Hans': '星公园前', 'zh-Hant': '星公園前' },
+  subway_sora_nishi: { ko: '소라니시역', 'zh-Hans': '空西站', 'zh-Hant': '空西站' },
+  bus_hotel_mangetsu: { ko: '호텔 만게쓰', 'zh-Hans': '满月酒店', 'zh-Hant': '滿月酒店' },
+  bus_hotel_shingetsu: { ko: '호텔 신게쓰', 'zh-Hans': '新月酒店', 'zh-Hant': '新月酒店' },
+  sta_airport: {
+    ko: '츠키 우주공항역',
+    'zh-Hans': '月宇宙机场站',
+    'zh-Hant': '月宇宙機場站',
+  },
+};
 
 // --- Fictional stops clustered around Kumano-mae (~2 km spread) ---
 // Center: 35.7485, 139.7699
@@ -269,6 +334,91 @@ const STOPS: Stop[] = [
   },
 ];
 
+for (const stop of STOPS) {
+  Object.assign(stop.stop_names, STOP_NAME_TRANSLATIONS[stop.stop_id] ?? {});
+}
+
+const ROUTE_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
+  bus_aoba01: {
+    en: 'Aoba-Chuo - Niji Bridge',
+    ko: '아오바중앙-니지다리',
+    'zh-Hans': '青叶中央-彩虹桥',
+    'zh-Hant': '青葉中央-彩虹橋',
+  },
+  bus_aoba02: {
+    en: 'Aoba-Chuo - Sora Tower',
+    ko: '아오바중앙-소라타워',
+    'zh-Hans': '青叶中央-空塔',
+    'zh-Hant': '青葉中央-空塔',
+  },
+  bus_midori10: {
+    en: 'Midori-oka - Kazeno Sta.',
+    ko: '미도리오카-가제노역',
+    'zh-Hans': '绿丘-风野站',
+    'zh-Hant': '綠丘-風野站',
+  },
+  bus_sora_exp01: {
+    en: 'Aoba-Chuo - Tsukimino Sta.',
+    ko: '아오바중앙-쓰키미노역',
+    'zh-Hans': '青叶中央-月见野站',
+    'zh-Hant': '青葉中央-月見野站',
+  },
+  subway_hotel_shuttle: {
+    en: 'Tsuki Spaceport - Hotel Shingetsu',
+    ko: '츠키 우주공항-호텔 신게쓰',
+    'zh-Hans': '月宇宙机场-新月酒店',
+    'zh-Hant': '月宇宙機場-新月酒店',
+  },
+  rail_aoba: {
+    en: 'Aoba Line',
+    ko: '아오바선',
+    'zh-Hans': '青叶线',
+    'zh-Hant': '青葉線',
+  },
+  rail_hikari: {
+    en: 'Hikari Line',
+    ko: '히카리선',
+    'zh-Hans': '光线',
+    'zh-Hant': '光線',
+  },
+  rail_midori: {
+    en: 'Midori Line',
+    ko: '미도리선',
+    'zh-Hans': '绿线',
+    'zh-Hant': '綠線',
+  },
+  subway_sora: {
+    en: 'Sora Line',
+    ko: '소라선',
+    'zh-Hans': '空线',
+    'zh-Hant': '空線',
+  },
+  subway_airport: {
+    en: 'Airport Liner',
+    ko: '에어포트 라이너',
+    'zh-Hans': '机场线',
+    'zh-Hant': '機場線',
+  },
+  subway_airport_sora: {
+    en: 'Airport Liner',
+    ko: '에어포트 라이너',
+    'zh-Hans': '机场线',
+    'zh-Hant': '機場線',
+  },
+  bus_yukkuri01: {
+    en: 'Slow 01',
+    ko: '천천히 01',
+    'zh-Hans': '慢行01',
+    'zh-Hant': '慢行01',
+  },
+  tram_hoshi: {
+    en: 'Hoshi Tram Line',
+    ko: '호시전차선',
+    'zh-Hans': '星电车线',
+    'zh-Hant': '星電車線',
+  },
+};
+
 const ROUTES: Route[] = [
   // Bus routes (route_type: 3)
   {
@@ -430,6 +580,133 @@ const ROUTES: Route[] = [
     agency_id: 'mock:aoba',
   },
 ];
+
+for (const route of ROUTES) {
+  route.route_names = ROUTE_NAME_TRANSLATIONS[route.route_id] ?? route.route_names;
+}
+
+const HEADSIGN_TRANSLATIONS: Record<string, Record<string, string>> = {
+  はなみ: { en: 'Hanami', ko: '하나미', 'zh-Hans': '花见', 'zh-Hant': '花見' },
+  かぜの: { en: 'Kazeno', ko: '가제노', 'zh-Hans': '风野', 'zh-Hant': '風野' },
+  そらタワー: {
+    en: 'Sora Tower',
+    ko: '소라타워',
+    'zh-Hans': '空塔',
+    'zh-Hant': '空塔',
+  },
+  にじ橋: {
+    en: 'Niji Bridge',
+    ko: '니지다리',
+    'zh-Hans': '彩虹桥',
+    'zh-Hant': '彩虹橋',
+  },
+  つき宇宙空港: {
+    en: 'Tsuki Spaceport',
+    ko: '츠키 우주공항',
+    'zh-Hans': '月宇宙机场',
+    'zh-Hant': '月宇宙機場',
+  },
+  ホテル満月: {
+    en: 'Hotel Mangetsu',
+    ko: '호텔 만게쓰',
+    'zh-Hans': '满月酒店',
+    'zh-Hant': '滿月酒店',
+  },
+  ほし公園: {
+    en: 'Hoshi Park',
+    ko: '호시공원',
+    'zh-Hans': '星公园',
+    'zh-Hant': '星公園',
+  },
+  つきみの駅: {
+    en: 'Tsukimino Sta.',
+    ko: '쓰키미노역',
+    'zh-Hans': '月见野站',
+    'zh-Hant': '月見野站',
+  },
+  もり公園前: {
+    en: 'Mori Park',
+    ko: '모리공원 앞',
+    'zh-Hans': '森公园前',
+    'zh-Hant': '森公園前',
+  },
+  ゆめの丘: {
+    en: 'Yumeno-oka',
+    ko: '유메노오카',
+    'zh-Hans': '梦之丘',
+    'zh-Hant': '夢之丘',
+  },
+  ひかり台: {
+    en: 'Hikari-dai',
+    ko: '히카리다이',
+    'zh-Hans': '光台',
+    'zh-Hant': '光台',
+  },
+  かぜの駅: {
+    en: 'Kazeno Sta.',
+    ko: '가제노역',
+    'zh-Hans': '风野站',
+    'zh-Hant': '風野站',
+  },
+  あおば中央: {
+    en: 'Aoba-Chuo',
+    ko: '아오바중앙',
+    'zh-Hans': '青叶中央',
+    'zh-Hant': '青葉中央',
+  },
+  あおば中央駅: {
+    en: 'Aoba-Chuo Sta.',
+    ko: '아오바중앙역',
+    'zh-Hans': '青叶中央站',
+    'zh-Hant': '青葉中央站',
+  },
+  'もり公園前・にじ橋': {
+    en: 'Mori Park / Niji Bridge',
+    ko: '모리공원 앞 / 니지다리',
+    'zh-Hans': '森公园前 / 彩虹桥',
+    'zh-Hant': '森公園前 / 彩虹橋',
+  },
+  '図書館前・もり公園前': {
+    en: 'Library / Mori Park',
+    ko: '도서관 앞 / 모리공원 앞',
+    'zh-Hans': '图书馆前 / 森公园前',
+    'zh-Hant': '圖書館前 / 森公園前',
+  },
+  あおば中央方面: {
+    en: 'For Aoba-Chuo',
+    ko: '아오바중앙 방면',
+    'zh-Hans': '往青叶中央',
+    'zh-Hant': '往青葉中央',
+  },
+  にじ橋方面: {
+    en: 'For Niji Bridge',
+    ko: '니지다리 방면',
+    'zh-Hans': '往彩虹桥',
+    'zh-Hant': '往彩虹橋',
+  },
+  そらタワー方面: {
+    en: 'For Sora Tower',
+    ko: '소라타워 방면',
+    'zh-Hans': '往空塔',
+    'zh-Hant': '往空塔',
+  },
+  ホテル新月: {
+    en: 'Hotel Shingetsu',
+    ko: '호텔 신게쓰',
+    'zh-Hans': '新月酒店',
+    'zh-Hant': '新月酒店',
+  },
+  みどり丘: {
+    en: 'Midori-oka',
+    ko: '미도리오카',
+    'zh-Hans': '绿丘',
+    'zh-Hant': '綠丘',
+  },
+};
+
+function createMockTranslatableText(name: string): TranslatableText {
+  return { name, names: HEADSIGN_TRANSLATIONS[name] ?? {} };
+}
 
 /**
  * Which routes serve which stops.
@@ -919,8 +1196,10 @@ export class MockRepository implements TransitRepository {
           schedule: { departureMinutes: minutes, arrivalMinutes },
           routeDirection: {
             route,
-            tripHeadsign: { name: headsign, names: {} },
-            ...(stopHeadsign != null ? { stopHeadsign: { name: stopHeadsign, names: {} } } : {}),
+            tripHeadsign: createMockTranslatableText(headsign),
+            ...(stopHeadsign != null
+              ? { stopHeadsign: createMockTranslatableText(stopHeadsign) }
+              : {}),
           },
           boarding: { pickupType, dropOffType: 0 },
           patternPosition: position,
@@ -1006,8 +1285,10 @@ export class MockRepository implements TransitRepository {
           schedule: { departureMinutes: minutes, arrivalMinutes },
           routeDirection: {
             route,
-            tripHeadsign: { name: headsign, names: {} },
-            ...(stopHeadsign != null ? { stopHeadsign: { name: stopHeadsign, names: {} } } : {}),
+            tripHeadsign: createMockTranslatableText(headsign),
+            ...(stopHeadsign != null
+              ? { stopHeadsign: createMockTranslatableText(stopHeadsign) }
+              : {}),
           },
           boarding: { pickupType, dropOffType: 0 },
           patternPosition: position,
