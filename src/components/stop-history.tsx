@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { InfoLevel } from '../types/app/settings';
 import type { Stop } from '../types/app/transit';
 import type { StopHistoryEntry } from '../domain/transit/stop-history';
@@ -36,6 +37,7 @@ interface StopHistoryProps {
  * @param onSelect - Called when a history entry is chosen.
  */
 export function StopHistory({ history, selectedStopId, infoLevel, onSelect }: StopHistoryProps) {
+  const { t } = useTranslation();
   const il = useInfoLevel(infoLevel);
   const [open, setOpen] = useState(false);
 
@@ -69,7 +71,7 @@ export function StopHistory({ history, selectedStopId, infoLevel, onSelect }: St
       <Select value="" onValueChange={handleValueChange} open={open} onOpenChange={setOpen}>
         <SelectTrigger
           className="h-8 max-w-[50dvw] gap-1.5 rounded-2xl border-none bg-white/70 px-2 text-sm text-black dark:bg-black/60 dark:text-white"
-          aria-label="履歴"
+          aria-label={t('history.label')}
         >
           {/* Wrap in data-slot="select-value" to inherit SelectTrigger's flex/gap/line-clamp styles.
              Explicit text color overrides the data-placeholder:text-muted-foreground

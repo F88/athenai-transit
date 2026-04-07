@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { UserSettings } from '../types/app/settings';
+import { normalizeLang } from '../config/supported-langs';
 
 const STORAGE_KEY = 'athenai-settings';
 
@@ -15,7 +16,9 @@ const DEFAULTS: UserSettings = {
   infoLevel: 'normal',
   theme: 'light',
   doubleTapDrag: 'zoom-out',
-  lang: 'ja',
+  // Use browser language as default; normalizeLang falls back to DEFAULT_LANG
+  // for unsupported languages or when navigator is unavailable (e.g. tests).
+  lang: normalizeLang(typeof navigator !== 'undefined' ? navigator.language : ''),
 };
 
 /**
@@ -46,7 +49,9 @@ function loadSettings(): UserSettings {
     if (!raw) {
       return DEFAULTS;
     }
-    return { ...DEFAULTS, ...stripTransient(JSON.parse(raw) as Partial<UserSettings>) };
+    const stored = { ...DEFAULTS, ...stripTransient(JSON.parse(raw) as Partial<UserSettings>) };
+    stored.lang = normalizeLang(stored.lang);
+    return stored;
   } catch {
     return DEFAULTS;
   }
@@ -83,6 +88,7 @@ export function useUserSettings(): {
     <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {
       setSettings((prev) => {
         const next = { ...prev, [key]: value };
+        next.lang = normalizeLang(next.lang);
         saveSettings(next);
         return next;
       });
@@ -93,6 +99,7 @@ export function useUserSettings(): {
   const updateSettings = useCallback((partial: Partial<UserSettings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...partial };
+      next.lang = normalizeLang(next.lang);
       saveSettings(next);
       return next;
     });

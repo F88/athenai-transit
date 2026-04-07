@@ -1,5 +1,6 @@
 import type L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
+import { useTranslation } from 'react-i18next';
 import { useMapZoom } from '../../hooks/use-map-zoom';
 import { MapToggleButton } from '../button/map-toggle-button';
 import { ControlPanel } from '../shared/control-panel';
@@ -10,6 +11,7 @@ interface MapControlPanelProps {
 }
 
 export function MapControlPanel({ map, infoLevel }: MapControlPanelProps) {
+  const { t } = useTranslation();
   const { canZoomIn, canZoomOut, handleZoomIn, handleZoomOut } = useMapZoom(map);
 
   return (
@@ -20,13 +22,18 @@ export function MapControlPanel({ map, infoLevel }: MapControlPanelProps) {
       infoLevel={infoLevel}
       className="right-14!"
     >
-      <MapToggleButton active={canZoomIn} onClick={handleZoomIn} label="拡大" disabled={!canZoomIn}>
+      <MapToggleButton
+        active={canZoomIn}
+        onClick={handleZoomIn}
+        label={t('panel.zoomIn')}
+        disabled={!canZoomIn}
+      >
         +
       </MapToggleButton>
       <MapToggleButton
         active={canZoomOut}
         onClick={handleZoomOut}
-        label="縮小"
+        label={t('panel.zoomOut')}
         disabled={!canZoomOut}
       >
         -

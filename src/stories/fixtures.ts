@@ -58,6 +58,34 @@ export const agencyDe: Agency = {
   agency_colors: [{ bg: 'F0D722', text: '000000' }],
 };
 
+/** Fictional UK agency — English primary language, rail-focused branding. */
+export const agencyUk: Agency = {
+  agency_id: 'fixture:uk',
+  agency_name: 'West Midlands Railways',
+  agency_short_name: 'WMR',
+  agency_names: { ja: 'ウェスト・ミッドランズ鉄道', de: 'West Midlands Eisenbahn' },
+  agency_short_names: { ja: 'WMR', de: 'WMR' },
+  agency_url: 'https://wmr.example.co.uk/',
+  agency_lang: 'en',
+  agency_timezone: 'Europe/London',
+  agency_fare_url: 'https://wmr.example.co.uk/fares',
+  agency_colors: [{ bg: '1D428A', text: 'FFFFFF' }],
+};
+
+/** Fictional Austrian agency — German primary language, lighter branding. */
+export const agencyAt: Agency = {
+  agency_id: 'fixture:at',
+  agency_name: 'Wiener Linien Regional',
+  agency_short_name: 'WLR',
+  agency_names: { en: 'Vienna Regional Lines', ja: 'ウィーン地域線' },
+  agency_short_names: { en: 'WLR', ja: 'WLR' },
+  agency_url: 'https://wlr.example.at/',
+  agency_lang: 'de',
+  agency_timezone: 'Europe/Vienna',
+  agency_fare_url: 'https://wlr.example.at/tickets',
+  agency_colors: [{ bg: 'D52B1E', text: 'FFFFFF' }],
+};
+
 /** 5-char short name (typical real example — Oretetsu Bus). */
 export const agencyOretetsu: Agency = {
   agency_id: 'iyt2:0000038000143',
@@ -187,6 +215,8 @@ export const allAgencies: Agency[] = [
   agencyYellow,
   agencyUs,
   agencyDe,
+  agencyUk,
+  agencyAt,
   agencyNoColor,
 ];
 
@@ -198,7 +228,12 @@ export const busRoute: Route = {
   route_id: 'route-001',
   route_short_name: '都02',
   route_long_name: '大塚駅〜錦糸町駅前',
-  route_names: {},
+  route_names: {
+    en: 'Otsuka Station - Kinshicho Station',
+    ko: '오쓰카역 - 긴시초역',
+    'zh-Hans': '大塚站 - 锦糸町站',
+    'zh-Hant': '大塚站 - 錦糸町站',
+  },
   route_type: 3,
   route_color: '1976D2',
   route_text_color: 'FFFFFF',
@@ -209,7 +244,12 @@ export const busRoute2: Route = {
   route_id: 'route-002',
   route_short_name: '都08',
   route_long_name: '日暮里駅〜錦糸町駅前',
-  route_names: {},
+  route_names: {
+    en: 'Nippori Station - Kinshicho Station',
+    ko: '닛포리역 - 긴시초역',
+    'zh-Hans': '日暮里站 - 锦糸町站',
+    'zh-Hant': '日暮里站 - 錦糸町站',
+  },
   route_type: 3,
   route_color: '00A850',
   route_text_color: 'FFFFFF',
@@ -220,7 +260,12 @@ export const tramRoute: Route = {
   route_id: 'route-003',
   route_short_name: '荒川線',
   route_long_name: '三ノ輪橋〜早稲田',
-  route_names: {},
+  route_names: {
+    en: 'Minowabashi - Waseda',
+    ko: '미노와바시 - 와세다',
+    'zh-Hans': '三之轮桥 - 早稻田',
+    'zh-Hant': '三之輪橋 - 早稻田',
+  },
   route_type: 0,
   route_color: 'E60012',
   route_text_color: 'FFFFFF',
@@ -231,12 +276,134 @@ export const noColorRoute: Route = {
   route_id: 'route-004',
   route_short_name: 'A5',
   route_long_name: '',
-  route_names: {},
+  route_names: {
+    en: 'Airport Connector',
+    ko: '공항 연결선',
+    'zh-Hans': '机场联络线',
+    'zh-Hant': '機場聯絡線',
+  },
   route_type: 3,
   route_color: '',
   route_text_color: '',
   agency_id: 'nocolor:0000000000000',
 };
+
+/** Subway line — short name only. */
+export const subwayRoute: Route = {
+  route_id: 'route-005',
+  route_short_name: 'E',
+  route_long_name: '大江戸線',
+  route_names: {
+    en: 'Oedo Line',
+    ko: '오에도선',
+    'zh-Hans': '大江户线',
+    'zh-Hant': '大江戶線',
+  },
+  route_type: 1,
+  route_color: 'B6007A',
+  route_text_color: 'FFFFFF',
+  agency_id: 'fixture:purple',
+};
+
+/** Rail line. */
+export const railRoute: Route = {
+  route_id: 'route-006',
+  route_short_name: 'TX',
+  route_long_name: 'つくばエクスプレス',
+  route_names: {
+    en: 'Tsukuba Express',
+    ko: '쓰쿠바 익스프레스',
+    'zh-Hans': '筑波快线',
+    'zh-Hant': '筑波快線',
+  },
+  route_type: 2,
+  route_color: '003B83',
+  route_text_color: 'FFFFFF',
+  agency_id: 'mir:0000020001320',
+};
+
+/** US bus route. */
+export const usRoute: Route = {
+  route_id: 'route-007',
+  route_short_name: 'BART',
+  route_long_name: 'Richmond - Millbrae',
+  route_names: {
+    ja: 'リッチモンド - ミルブレー',
+    ko: '리치먼드 - 밀브레이',
+    'zh-Hans': '里士满 - 密尔布雷',
+    'zh-Hant': '里奇蒙 - 密爾布雷',
+  },
+  route_type: 1,
+  route_color: '0060A9',
+  route_text_color: 'FFFFFF',
+  agency_id: 'fixture:us',
+};
+
+/** German tram route. */
+export const deRoute: Route = {
+  route_id: 'route-008',
+  route_short_name: 'M10',
+  route_long_name: 'Warschauer Str. - Nordbahnhof',
+  route_names: {
+    en: 'Warschauer Str. - Nordbahnhof',
+    ja: 'ワルシャウアー通り - ノルトバーンホーフ',
+    ko: '바르샤우어 슈트라세 - 노르트반호프',
+    'zh-Hans': '华沙大街 - 北站',
+    'zh-Hant': '華沙大街 - 北站',
+  },
+  route_type: 0,
+  route_color: 'F0D722',
+  route_text_color: '000000',
+  agency_id: 'fixture:de',
+};
+
+/** Green bus route. */
+export const greenBusRoute: Route = {
+  route_id: 'route-009',
+  route_short_name: '緑01',
+  route_long_name: '緑色市役所〜中央公園',
+  route_names: {
+    en: 'Green City Hall - Central Park',
+    ko: '녹색 시청 - 중앙공원',
+    'zh-Hans': '绿色市政府 - 中央公园',
+    'zh-Hant': '綠色市政府 - 中央公園',
+  },
+  route_type: 3,
+  route_color: '138060',
+  route_text_color: 'FFFFFF',
+  agency_id: 'fixture:green',
+};
+
+/** Red bus route. */
+export const redBusRoute: Route = {
+  route_id: 'route-010',
+  route_short_name: '赤02',
+  route_long_name: '赤色駅〜港',
+  route_names: {
+    en: 'Red Station - Harbor',
+    ko: '붉은역 - 항구',
+    'zh-Hans': '赤色站 - 港口',
+    'zh-Hant': '紅色站 - 港口',
+  },
+  route_type: 3,
+  route_color: 'E60013',
+  route_text_color: 'FFFFFF',
+  agency_id: 'fixture:red',
+};
+
+/** All routes for multi-route scenarios. */
+export const allRoutes: Route[] = [
+  busRoute,
+  busRoute2,
+  tramRoute,
+  noColorRoute,
+  subwayRoute,
+  railRoute,
+  usRoute,
+  deRoute,
+  greenBusRoute,
+  redBusRoute,
+];
 
 // ---------------------------------------------------------------------------
 // Stops

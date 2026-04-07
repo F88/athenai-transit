@@ -37,8 +37,8 @@ interface BottomSheetProps {
   time: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   /** Set of stop IDs currently in the anchor list. */
   anchorIds: Set<string>;
   onStopSelected: (stopId: string) => void;
@@ -57,7 +57,7 @@ export function BottomSheet({
   time: now,
   mapCenter,
   infoLevel,
-  lang,
+  dataLang,
   anchorIds,
   onStopSelected,
   onShowTimetable,
@@ -240,7 +240,7 @@ export function BottomSheet({
         now={now}
         mapCenter={mapCenter}
         infoLevel={infoLevel}
-        lang={lang}
+        dataLang={dataLang}
         viewId={viewId}
         contentRef={contentRef}
         anchorIds={anchorIds}

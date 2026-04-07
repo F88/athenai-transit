@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils';
 
 const sizeVariants = {
@@ -67,6 +68,7 @@ export function PillButton({
   className,
   children,
 }: PillButtonProps) {
+  const { i18n } = useTranslation();
   // All buttons get a 2px transparent border for consistent sizing.
   // Border color is overridden per state as needed.
   const style: CSSProperties = {
@@ -119,7 +121,7 @@ export function PillButton({
                   }
           }
         >
-          {count.toLocaleString()}
+          {count.toLocaleString(i18n.language)}
         </span>
       )}
     </button>

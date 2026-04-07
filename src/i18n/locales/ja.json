@@ -1,0 +1,139 @@
+{
+  "common": {
+    "loading": "読み込み中..."
+  },
+  "view": {
+    "stop": {
+      "label": "ALL",
+      "title": "すべて",
+      "description": "全ての時間を表示します"
+    },
+    "routeHeadsign": {
+      "label": "路線+行先",
+      "title": "路線+行先別",
+      "description": "路線と行先の組み合わせでグループ化して表示します"
+    },
+    "route": {
+      "label": "路線",
+      "title": "路線別",
+      "description": "路線ごとにグループ化して表示します"
+    },
+    "headsign": {
+      "label": "行先",
+      "title": "行先別",
+      "description": "行先ごとにグループ化して表示します"
+    },
+    "frequency": {
+      "label": "頻度",
+      "title": "運行頻度順",
+      "description": "運行頻度で重み付けして表示します"
+    },
+    "duration": {
+      "label": "乗車時間",
+      "title": "乗車時間",
+      "description": "終点までの乗車時間順で表示します"
+    },
+    "terminal": {
+      "label": "終点の賑わい",
+      "title": "終点の賑わい度順",
+      "description": "終点の賑わい度で表示します"
+    }
+  },
+  "history": {
+    "label": "履歴"
+  },
+  "info": {
+    "status": "まだまだ荒削り 鋭意開発中"
+  },
+  "nearbyStops": {
+    "summary": "近くの乗り場 {{count}}カ所 / {{radius}}圏内",
+    "noStops": "乗り場がありません / {{radius}}圏内",
+    "noOperating": "運行中の乗り場がありません / {{radius}}圏内",
+    "activeOnly": "運行中",
+    "activeOnlyTitle": "次便がある乗り場のみ表示"
+  },
+  "stop": {
+    "noDestination": "行先が表示されない路線があります",
+    "serviceEnded": "本日の運行は終了しました",
+    "dropOffOnly": "降車専用",
+    "wheelchairAccessible": "車椅子で利用可能",
+    "wheelchairNotAccessible": "車椅子では利用不可"
+  },
+  "time": {
+    "settingTitle": "日時を指定",
+    "settingDescription": "時刻表の表示日時を変更します",
+    "settingLabel": "日時を設定",
+    "frozen": "📌 時間停止中",
+    "now": "🕐 いま",
+    "set": "🧙 とまれ!"
+  },
+  "departure": {
+    "soon": "まもなく",
+    "in": "あと",
+    "minutes": "分",
+    "arriving": "",
+    "terminal": "終点",
+    "noBoarding": "乗車不可"
+  },
+  "showTimetable": "時刻表を表示",
+  "timetable": {
+    "title": "時刻表",
+    "entry": {
+      "terminal": "終点",
+      "origin": "始発",
+      "noPickup": "乗×",
+      "noDropOff": "降×"
+    },
+    "grid": {
+      "row": {
+        "hour": "{{hour}}時",
+        "entries": "{{hour}}時 {{count}}件"
+      },
+      "empty": {
+        "dropOffOnly": "降車専用",
+        "noService": "この日の運行はありません"
+      }
+    },
+    "metadata": {
+      "count": "{{count}}本",
+      "avgInterval": "平均{{interval}}分間隔"
+    },
+    "header": {
+      "routeHeadsignDescription": "{{stop}} {{route}} {{headsign}}方面の時刻表 {{count}}本",
+      "routeDescription": "{{stop}} {{route}}の時刻表 {{count}}本",
+      "stopDescription": "{{stop}}の全路線時刻表 {{count}}本",
+      "noDestination": "行先が表示されない路線があります"
+    }
+  },
+  "panel": {
+    "appInfo": "アプリ情報",
+    "zoomIn": "拡大",
+    "zoomOut": "縮小",
+    "toggleMap": "地図の表示切替",
+    "toggleBusRoutes": "バス路線図の表示切替",
+    "toggleNonBusRoutes": "バス以外の路線図の表示切替",
+    "currentLocation": "現在位置へ移動",
+    "randomLocation": "ランダムな場所へ移動",
+    "toggleRenderMode": "描画モードの切替",
+    "togglePerfMode": "パフォーマンスモードの切替",
+    "toggleInfoLevel": "情報レベルの切替",
+    "toggleDarkMode": "ダークモード切替",
+    "toggleLang": "言語切替",
+    "searchStops": "のりばを検索",
+    "toggleBus": "バスの表示切替",
+    "toggleSubway": "地下鉄の表示切替",
+    "toggleTram": "路面電車の表示切替",
+    "toggleRail": "鉄道の表示切替"
+  },
+  "anchor": {
+    "add": "アンカーを追加",
+    "remove": "アンカーを削除",
+    "anchorUpdateFailed": "アンカー更新に失敗しました"
+  },
+  "search": {
+    "title": "のりばを検索",
+    "description": "のりば名で停留所や駅を検索します",
+    "placeholder": "のりば名を入力...",
+    "noResults": "該当するのりばが見つかりません"
+  }
+}

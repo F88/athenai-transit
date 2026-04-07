@@ -262,6 +262,30 @@ export const CountDigits: Story = {
   ),
 };
 
+/** Locale-aware number formatting. Switch Storybook lang (globe icon) to see different separators. */
+export const CountLocale: Story = {
+  args: { active: false },
+  render: (args) => (
+    <div className="space-y-2">
+      <p className="text-muted-foreground text-xs">
+        Switch language via the globe toolbar to see locale-specific separators (e.g. de: 1.234, fr:
+        1 234, ja/en: 1,234)
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <PillButton {...args} active activeBg={TOEI_GREEN} activeFg="#fff" count={1234}>
+          1,234
+        </PillButton>
+        <PillButton {...args} active activeBg={TOEI_GREEN} activeFg="#fff" count={12345}>
+          12,345
+        </PillButton>
+        <PillButton {...args} active activeBg={TOEI_GREEN} activeFg="#fff" count={1234567}>
+          1,234,567
+        </PillButton>
+      </div>
+    </div>
+  ),
+};
+
 /** Kitchen sink: count badge in various states. */
 export const KitchenSinkCount: Story = {
   args: { active: false },

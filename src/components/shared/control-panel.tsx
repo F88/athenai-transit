@@ -44,7 +44,7 @@ export function ControlPanel({
   return (
     <div
       className={cn(
-        'pointer-events-none absolute z-1000 flex flex-col gap-1 *:pointer-events-auto',
+        'pointer-events-none absolute z-1000 flex flex-col gap-0.5 *:pointer-events-auto',
         sideClass,
         borderClass,
         className,

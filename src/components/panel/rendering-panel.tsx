@@ -1,5 +1,7 @@
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
+import { useTranslation } from 'react-i18next';
 import { ControlPanel } from '../shared/control-panel';
+import { SUPPORTED_LANGS } from '../../config/supported-langs';
 import { MapToggleButton } from '../button/map-toggle-button';
 
 /** Icon label for each render mode toggle button. */
@@ -40,53 +42,68 @@ function perfModeIcon(mode: PerfMode): string {
   }
 }
 
+/** Short label for the language toggle button. */
+function langShortLabel(lang: string): string {
+  return SUPPORTED_LANGS.find((l) => l.code === lang)?.shortLabel ?? lang.toUpperCase();
+}
+
 interface RenderingPanelProps {
   renderMode: RenderMode;
   perfMode: PerfMode;
   infoLevel: InfoLevel;
   theme: Theme;
+  lang: string;
   onToggleRenderMode: () => void;
   onTogglePerfMode: () => void;
   onCycleInfoLevel: () => void;
   onToggleDarkMode: () => void;
+  onCycleLang: () => void;
 }
 
 /**
  * Rendering control panel placed at the top-right of the map.
- * Controls render mode, performance mode, info level, and theme.
+ * Controls render mode, performance mode, info level, theme, and language.
  *
  * @param renderMode - Current render mode.
  * @param perfMode - Current performance mode.
  * @param infoLevel - Current info level.
  * @param theme - Current theme for dark mode icon display.
+ * @param lang - Current display language code.
  * @param onToggleRenderMode - Callback to toggle render mode.
  * @param onTogglePerfMode - Callback to toggle performance mode.
  * @param onCycleInfoLevel - Callback to cycle info level.
  * @param onToggleDarkMode - Callback to toggle dark mode.
+ * @param onCycleLang - Callback to cycle display language.
  */
 export function RenderingPanel({
   renderMode,
   perfMode,
   infoLevel,
   theme,
+  lang,
   onToggleRenderMode,
   onTogglePerfMode,
   onCycleInfoLevel,
   onToggleDarkMode,
+  onCycleLang,
 }: RenderingPanelProps) {
+  const { t } = useTranslation();
   return (
     <ControlPanel side="right" edge="top" offset="0.75rem" infoLevel={infoLevel}>
-      <MapToggleButton active onClick={onToggleRenderMode} label="描画モードの切替">
+      <MapToggleButton active onClick={onToggleRenderMode} label={t('panel.toggleRenderMode')}>
         {renderModeIcon(renderMode)}
       </MapToggleButton>
-      <MapToggleButton active onClick={onTogglePerfMode} label="パフォーマンスモードの切替">
+      <MapToggleButton active onClick={onTogglePerfMode} label={t('panel.togglePerfMode')}>
         {perfModeIcon(perfMode)}
       </MapToggleButton>
-      <MapToggleButton active onClick={onCycleInfoLevel} label="情報レベルの切替">
+      <MapToggleButton active onClick={onCycleInfoLevel} label={t('panel.toggleInfoLevel')}>
         {infoLevelIcon(infoLevel)}
       </MapToggleButton>
-      <MapToggleButton active onClick={onToggleDarkMode} label="ダークモード切替">
+      <MapToggleButton active onClick={onToggleDarkMode} label={t('panel.toggleDarkMode')}>
         {theme === 'dark' ? '🌙' : '☀️'}
+      </MapToggleButton>
+      <MapToggleButton active onClick={onCycleLang} label={t('panel.toggleLang')}>
+        {langShortLabel(lang)}
       </MapToggleButton>
     </ControlPanel>
   );

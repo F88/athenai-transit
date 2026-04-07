@@ -8,6 +8,7 @@ import { createLogger } from '../lib/logger';
 import { routeTypeColor } from '../utils/route-type-color';
 import { routeTypeEmoji } from '../utils/route-type-emoji';
 import { useInfoLevel } from '../hooks/use-info-level';
+import { useTranslation } from 'react-i18next';
 import { PillButton } from './button/pill-button';
 
 interface BottomSheetHeaderProps {
@@ -45,6 +46,7 @@ export function BottomSheetHeader({
   onToggleRouteType,
   onToggleAgency,
 }: BottomSheetHeaderProps) {
+  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
 
   return (
@@ -63,10 +65,10 @@ export function BottomSheetHeader({
             active={viewId === view.id}
             disabled={!view.enabled}
             onClick={() => onViewChange(view.id)}
-            title={view.title}
+            title={t(view.titleKey)}
           >
             {view.icon}
-            {info.isDetailedEnabled ? ` ${view.label}` : ''}
+            {info.isDetailedEnabled ? ` ${t(view.labelKey)}` : ''}
           </PillButton>
         ))}
       </div>
@@ -78,10 +80,10 @@ export function BottomSheetHeader({
           activeBorder={'#1565c0'}
           inactiveBorder={'#1565c0'}
           onClick={onToggleActiveOnly}
-          title="次便がある乗り場のみ表示"
+          title={t('nearbyStops.activeOnlyTitle')}
           count={counts.active}
         >
-          運行中
+          {t('nearbyStops.activeOnly')}
         </PillButton>
 
         {/* Route types filter */}
@@ -123,9 +125,11 @@ export function BottomSheetHeader({
       </div>
       {selectedView && info.isVerboseEnabled && (
         <div className="mt-1">
-          <p className="text-[11px] text-[#888] dark:text-gray-400">{selectedView.title}</p>
+          <p className="text-[11px] text-[#888] dark:text-gray-400">{t(selectedView.titleKey)}</p>
           {info.isDetailedEnabled && (
-            <p className="text-[10px] text-[#aaa] dark:text-gray-500">{selectedView.description}</p>
+            <p className="text-[10px] text-[#aaa] dark:text-gray-500">
+              {t(selectedView.descriptionKey)}
+            </p>
           )}
         </div>
       )}
@@ -144,18 +148,20 @@ function getNearbyStopsSummaryText(
   hasLoaded: boolean,
   counts: NearbyStopsCounts,
   activeOnly: boolean,
+  radius: string,
+  lang: string,
+  t: (key: string, options?: Record<string, unknown>) => string,
 ): string {
   if (!hasLoaded) {
-    return 'Loading...';
+    return t('common.loading');
   }
   if (counts.filtered > 0) {
-    return `近くの乗り場 ${counts.filtered}カ所`;
-    // return `${counts.filtered}`;
+    return t('nearbyStops.summary', { count: counts.filtered.toLocaleString(lang), radius });
   }
   if (activeOnly && counts.total > 0) {
-    return '運行中の乗り場はありません';
+    return t('nearbyStops.noOperating', { radius });
   }
-  return '近くに乗り場がありません';
+  return t('nearbyStops.noStops', { radius });
 }
 
 const summaryLogger = createLogger('NearbyStopsSummary');
@@ -173,17 +179,24 @@ function NearbyStopsSummary({
   activeOnly,
   hasLoaded,
 }: NearbyStopsSummaryProps) {
+  const { t, i18n } = useTranslation();
   summaryLogger.verbose(
     hasLoaded
       ? `found ${counts.total} nearby stops (${counts.active} active, ${counts.filtered} after filter)`
       : 'not loaded yet',
   );
-  const radiusLabel = `${formatRadius(nearbyRadius)}圏内`;
-  const text = getNearbyStopsSummaryText(hasLoaded, counts, activeOnly);
+  const text = getNearbyStopsSummaryText(
+    hasLoaded,
+    counts,
+    activeOnly,
+    formatRadius(nearbyRadius),
+    i18n.language,
+    t,
+  );
 
   return (
     <p className="m-0 flex items-center gap-1 text-base font-bold text-[#212121] dark:text-gray-100">
-      {text} / {radiusLabel}
+      {text}
     </p>
   );
 }

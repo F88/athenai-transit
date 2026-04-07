@@ -1,28 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IdBadge } from '@/components/badge/id-badge';
-import { RouteBadge } from '@/components/badge/route-badge';
+import { useTranslation } from 'react-i18next';
+import { StopSummary } from '@/components/stop-summary';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { resolveMinPrefixLengths } from '@/utils/resolve-min-prefix-lengths';
-import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route, Stop } from '@/types/app/transit';
 import type { RouteDirection, TimetableEntry } from '@/types/app/transit-composed';
 import type { TimetableOmitted } from '@/types/app/repository';
-import { AgencyBadge } from '@/components/badge/agency-badge';
 import { useInfoLevel } from '@/hooks/use-info-level';
-import { DAY_COLOR_CATEGORY_CLASSES, formatDateWithDay } from '@/utils/day-of-week';
-import { resolveAgencyLang } from '@/config/transit-defaults';
+import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
+import { formatDateParts } from '@/utils/datetime';
+import { DEFAULT_TIMEZONE, resolveAgencyLang } from '@/config/transit-defaults';
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { PillButton } from '@/components/button/pill-button';
 import { TimetableGridEntry } from '@/components/timetable/timetable-grid-entry';
-import { VerboseAgencies } from '@/components/verbose/verbose-agencies';
-import { VerboseStop } from '@/components/verbose/verbose-stop';
-import { VerboseStopDisplayNames } from '@/components/verbose/verbose-stop-display-names';
-import { VerboseRoutes } from '@/components/verbose/verbose-routes';
 import { VerboseTimetableSummary } from '@/components/verbose/verbose-timetable-summary';
 import {
   Dialog,
@@ -56,11 +51,13 @@ interface TimetableModalProps {
   /** Current time reference for highlighting the active hour row. */
   time: Date;
   infoLevel: InfoLevel;
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   onClose: () => void;
 }
 
-export function TimetableModal({ data, time, infoLevel, lang, onClose }: TimetableModalProps) {
+export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: TimetableModalProps) {
+  const { t, i18n } = useTranslation();
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
   const currentHour = Math.floor(getServiceDayMinutes(time) / 60);
@@ -151,28 +148,40 @@ export function TimetableModal({ data, time, infoLevel, lang, onClose }: Timetab
                 isBoardableOnServiceDay={data.isBoardableOnServiceDay}
               />
             )}
+            <DialogTitle className="sr-only">{t('timetable.title')}</DialogTitle>
             <DialogDescription className="text-muted-foreground text-xs">
               {data.type === 'route-headsign'
-                ? `${getStopDisplayNames(data.stop, infoLevel, lang).name} ${data.routes[0].route_short_name || data.routes[0].route_long_name}${data.headsign ? ` ${data.headsign}方面` : ''}の時刻表 ${filteredTimetableEntries.length}本`
-                : `${getStopDisplayNames(data.stop, infoLevel, lang).name}の全路線時刻表 ${filteredTimetableEntries.length}本`}
+                ? t(
+                    data.headsign
+                      ? 'timetable.header.routeHeadsignDescription'
+                      : 'timetable.header.routeDescription',
+                    {
+                      stop: getStopDisplayNames(data.stop, dataLang).name,
+                      route: data.routes[0].route_short_name || data.routes[0].route_long_name,
+                      headsign: data.headsign ?? '',
+                      count: filteredTimetableEntries.length.toLocaleString(i18n.language),
+                    },
+                  )
+                : t('timetable.header.stopDescription', {
+                    stop: getStopDisplayNames(data.stop, dataLang).name,
+                    count: filteredTimetableEntries.length.toLocaleString(i18n.language),
+                  })}
             </DialogDescription>
 
-            <DialogTitle className="flex flex-col gap-1">
-              <TimetableHeader data={data} infoLevel={infoLevel} lang={lang} />
-            </DialogTitle>
+            <TimetableHeader data={data} infoLevel={infoLevel} dataLang={dataLang} />
 
-            {info.isDetailedEnabled && (
+            {info.isDetailedEnabled && filteredTimetableEntries.length > 0 && (
               <TimetableMetadata timetableEntries={filteredTimetableEntries} />
             )}
 
-            <TimetableDateLabel serviceDate={data.serviceDate} time={time} />
+            <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLang[0]} />
             {data.type === 'stop' && (
               <StopTimetableFilter
                 data={data}
                 activeFilters={activeFilters}
                 onToggleFilter={toggleFilter}
                 infoLevel={infoLevel}
-                lang={lang}
+                dataLang={dataLang}
               />
             )}
             {((data.type === 'route-headsign' && data.headsign === '') ||
@@ -183,7 +192,7 @@ export function TimetableModal({ data, time, infoLevel, lang, onClose }: Timetab
                   })),
                 ))) && (
               <p className="m-0 text-center text-[11px] text-amber-600 dark:text-amber-400">
-                行先が表示されない路線があります
+                {t('timetable.header.noDestination')}
               </p>
             )}
           </DialogHeader>
@@ -209,7 +218,7 @@ export function TimetableModal({ data, time, infoLevel, lang, onClose }: Timetab
               }
               currentHour={currentHour}
               infoLevel={infoLevel}
-              lang={lang}
+              dataLang={dataLang}
               agencies={data.agencies}
               omitted={data.omitted}
             />
@@ -297,23 +306,38 @@ function computeAverageInterval(minutes: number[]): number | null {
 }
 
 /** Date and time label shown at the bottom of the dialog header. */
-function TimetableDateLabel({ serviceDate, time }: { serviceDate: Date; time: Date }) {
-  const { dateText, dayLabel, dayColorCategory } = formatDateWithDay(serviceDate);
+function TimetableDateLabel({
+  serviceDate,
+  time,
+  lang,
+}: {
+  serviceDate: Date;
+  time: Date;
+  lang: string;
+}) {
+  const { dateText, dayLabel, dayColorCategory } = formatDateParts(
+    serviceDate,
+    lang,
+    DEFAULT_TIMEZONE,
+    { showYear: true },
+  );
+  const { time: currentTimeText } = formatDateParts(time, lang, DEFAULT_TIMEZONE, {
+    showTime: true,
+  });
   // Weekday inherits the parent's muted color; only sat/sun/holiday get color override.
   const dayLabelClass =
     dayColorCategory === 'weekday' ? undefined : DAY_COLOR_CATEGORY_CLASSES[dayColorCategory];
-  const hh = String(time.getHours()).padStart(2, '0');
-  const mm = String(time.getMinutes()).padStart(2, '0');
 
   return (
     <p className="text-muted-foreground m-0 text-center font-normal">
-      {dateText} <span className={dayLabelClass}>({dayLabel})</span> {hh}:{mm}
+      {dateText} <span className={dayLabelClass}>({dayLabel})</span> {currentTimeText}
     </p>
   );
 }
 
 /** Metadata summary shown above the timetable grid. */
 function TimetableMetadata({ timetableEntries }: { timetableEntries: TimetableEntry[] }) {
+  const { t, i18n } = useTranslation();
   // Compute departure count and operating hours.
   // Use the display time (arrival for terminal, departure otherwise) for statistics.
   const allMinutes = timetableEntries.map((d) => getDisplayMinutes(d));
@@ -345,8 +369,19 @@ function TimetableMetadata({ timetableEntries }: { timetableEntries: TimetableEn
             {firstTime} - {lastTime}
           </span>
         )}
-        <span> / {count.toLocaleString()}本</span>
-        {avgInterval !== null && <span> / 平均{avgInterval}分間隔</span>}
+        <span>
+          {' '}
+          / {t('timetable.metadata.count', { count: count.toLocaleString(i18n.language) })}
+        </span>
+        {avgInterval !== null && (
+          <span>
+            {' '}
+            /{' '}
+            {t('timetable.metadata.avgInterval', {
+              interval: avgInterval.toLocaleString(i18n.language),
+            })}
+          </span>
+        )}
       </p>
       {routeBreakdown.length > 1 && (
         <div className="flex flex-wrap gap-1">
@@ -399,7 +434,7 @@ function TimetableGrid({
   showHeadsign,
   currentHour,
   infoLevel,
-  lang,
+  dataLang,
   agencies,
   omitted,
 }: {
@@ -407,11 +442,12 @@ function TimetableGrid({
   showHeadsign: boolean;
   currentHour: number;
   infoLevel: InfoLevel;
-  lang: string;
+  dataLang: readonly string[];
   agencies: Agency[];
   omitted: TimetableOmitted;
 }) {
   const scrollRef = useCurrentHourScroll();
+  const { t, i18n } = useTranslation();
   const info = useInfoLevel(infoLevel);
 
   // Compute minimum display length per headsign to avoid collision.
@@ -442,7 +478,9 @@ function TimetableGrid({
   if (hourGroups.size === 0) {
     return (
       <p className="text-muted-foreground p-4 text-center">
-        {omitted.terminal > 0 ? '降車専用' : 'この日の運行はありません'}
+        {omitted.terminal > 0
+          ? t('timetable.grid.empty.dropOffOnly')
+          : t('timetable.grid.empty.noService')}
       </p>
     );
   }
@@ -473,7 +511,7 @@ function TimetableGrid({
         >
           <div className="flex items-baseline gap-2">
             <span className="text-foreground w-10 shrink-0 text-right text-sm font-bold">
-              {hour}時
+              {t('timetable.grid.row.hour', { hour })}
             </span>
             <span className="flex flex-wrap gap-1.5">
               {entries.map((entry, i) => (
@@ -485,7 +523,7 @@ function TimetableGrid({
                     getEffectiveHeadsign(entry.routeDirection),
                   )}
                   infoLevel={infoLevel}
-                  lang={lang}
+                  dataLang={dataLang}
                   agencyLang={resolveAgencyLang(agencies, entry.routeDirection.route.agency_id)}
                   isDisplayTerminal={isDisplayTerminal}
                   isDisplayOrigin={isDisplayOrigin}
@@ -500,7 +538,12 @@ function TimetableGrid({
           {info.isVerboseEnabled && (
             <details className="mt-0.5 text-[9px] font-normal text-[#999] dark:text-gray-500">
               <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-                [{hour}時 {entries.length}件]
+                [
+                {t('timetable.grid.row.entries', {
+                  hour,
+                  count: entries.length.toLocaleString(i18n.language),
+                })}
+                ]
               </summary>
               <div className="mt-0.5 flex flex-col gap-0.5">
                 {entries.map((entry, i) => (
@@ -512,7 +555,7 @@ function TimetableGrid({
                       getEffectiveHeadsign(entry.routeDirection),
                     )}
                     infoLevel={infoLevel}
-                    lang={lang}
+                    dataLang={dataLang}
                     agencyLang={resolveAgencyLang(agencies, entry.routeDirection.route.agency_id)}
                     isDisplayTerminal={isDisplayTerminal}
                     isDisplayOrigin={isDisplayOrigin}
@@ -533,21 +576,17 @@ function TimetableGrid({
 function TimetableHeader({
   data,
   infoLevel,
-  lang,
+  dataLang,
 }: {
   data: TimetableData;
   infoLevel: InfoLevel;
-  lang: string;
+  dataLang: readonly string[];
 }) {
-  const stopNames = getStopDisplayNames(data.stop, infoLevel, lang);
   const isDropOffOnly =
     !data.isBoardableOnServiceDay &&
     (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
 
   const routeTypes = [...new Set(data.routes.map((r) => r.route_type))];
-
-  // Unique routes for badge display.
-  const uniqueRoutes = data.routes;
 
   // For route-headsign, show only the agency of that route.
   // For stop timetable, show all agencies.
@@ -556,66 +595,18 @@ function TimetableHeader({
       ? data.agencies.filter((a) => a.agency_id === data.routes[0].agency_id)
       : data.agencies;
 
-  const showVerbose = infoLevel === 'verbose';
-
   return (
-    <>
-      {showVerbose && <IdBadge>{data.stop.stop_id}</IdBadge>}
-      {stopNames.subNames.length > 0 && (
-        <p className="m-0 text-[11px] font-normal text-[#888] dark:text-gray-400">
-          {stopNames.subNames.join(' / ')}
-        </p>
-      )}
-      <div className="flex flex-wrap items-center gap-2 text-base">
-        <span className="shrink-0">{routeTypesEmoji(routeTypes)}</span>
-        <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-          {stopNames.name}
-        </span>
-        {isDropOffOnly && (
-          <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
-            降車専用
-          </span>
-        )}
-        {displayAgencies.length > 0 &&
-          displayAgencies.map((a) => (
-            <AgencyBadge
-              key={a.agency_id}
-              agency={a}
-              infoLevel={infoLevel}
-              size="xs"
-              disableVerbose
-            />
-          ))}
-      </div>
-
-      {uniqueRoutes.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1">
-          {uniqueRoutes.map((r) => (
-            <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} disableVerbose />
-          ))}
-        </div>
-      )}
-      {showVerbose && (
-        <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
-          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-            [META]
-          </summary>
-          <div className="mt-1 ml-2 space-y-1">
-            <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
-              <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-                [Stop]
-              </summary>
-              <div className="mt-1 overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
-                <VerboseStop stop={data.stop} isDropOffOnly={isDropOffOnly} />
-              </div>
-              <VerboseStopDisplayNames names={stopNames} />
-            </details>
-            <VerboseAgencies agencies={displayAgencies} infoLevel={infoLevel} />
-            <VerboseRoutes routes={uniqueRoutes} infoLevel={infoLevel} />
-          </div>
-        </details>
-      )}
-    </>
+    <StopSummary
+      stop={data.stop}
+      routeTypes={routeTypes}
+      agencies={displayAgencies}
+      infoLevel={infoLevel}
+      dataLang={dataLang}
+      isDropOffOnly={isDropOffOnly}
+      routes={data.routes}
+      agencyBadgeSize="default"
+      routeBadgeSize="default"
+    />
   );
 }
 
@@ -625,13 +616,13 @@ function StopTimetableFilter({
   activeFilters,
   onToggleFilter,
   infoLevel: _infoLevel,
-  lang,
+  dataLang,
 }: {
   data: TimetableData;
   activeFilters: Set<string>;
   onToggleFilter: (key: string) => void;
   infoLevel: InfoLevel;
-  lang: string;
+  dataLang: readonly string[];
 }) {
   // Count entries per route+headsign (memoized for filter toggle re-renders)
   const routeHeadsigns = useMemo(() => {
@@ -679,9 +670,9 @@ function StopTimetableFilter({
             {/* Filter button has no RouteBadge — fall back to route name so it is never blank. */}
             {getHeadsignDisplayNames(
               r.routeDirection,
-              'stop',
-              lang,
+              dataLang,
               resolveAgencyLang(data.agencies, route.agency_id),
+              'stop',
             ).resolved.name ||
               route.route_short_name ||
               route.route_long_name ||

@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 const dirname =
   typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const isStorybook = process.env.STORYBOOK === '1';
 
 export default defineConfig({
   define: {
@@ -17,80 +18,84 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
-        globIgnores: ['data/**', 'data-v2/**'],
-        runtimeCaching: [
-          {
-            urlPattern: /\/data-v2\/.*\.json$/,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'gtfs-data-v2',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 24 * 60 * 60,
-              },
+    ...(!isStorybook
+      ? [
+          VitePWA({
+            registerType: 'autoUpdate',
+            workbox: {
+              globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+              globIgnores: ['data/**', 'data-v2/**'],
+              runtimeCaching: [
+                {
+                  urlPattern: /\/data-v2\/.*\.json$/,
+                  handler: 'StaleWhileRevalidate',
+                  options: {
+                    cacheName: 'gtfs-data-v2',
+                    expiration: {
+                      maxEntries: 100,
+                      maxAgeSeconds: 24 * 60 * 60,
+                    },
+                  },
+                },
+                {
+                  urlPattern: /^https:\/\/cyberjapandata\.gsi\.go\.jp\//,
+                  handler: 'CacheFirst',
+                  options: {
+                    cacheName: 'map-tiles',
+                    expiration: {
+                      // GSI tiles are opaque responses (no CORS). Chrome pads each ~7 MB
+                      // to Storage Quota, so 50 entries ≈ 350 MB quota usage.
+                      maxEntries: 50,
+                      maxAgeSeconds: 30 * 24 * 60 * 60,
+                    },
+                    cacheableResponse: {
+                      statuses: [0, 200],
+                    },
+                  },
+                },
+              ],
+              navigateFallback: '/index.html',
             },
-          },
-          {
-            urlPattern: /^https:\/\/cyberjapandata\.gsi\.go\.jp\//,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'map-tiles',
-              expiration: {
-                // GSI tiles are opaque responses (no CORS). Chrome pads each ~7 MB
-                // to Storage Quota, so 50 entries ≈ 350 MB quota usage.
-                maxEntries: 50,
-                maxAgeSeconds: 30 * 24 * 60 * 60,
+            manifest: {
+              name: 'あてのない乗換案内',
+              short_name: 'アテナイ',
+              description:
+                '行き先はまだ決めない。バス停や駅から次の便を眺めて、気の向くままに街を歩く。あてのない乗換案内 Athenai Transit',
+              theme_color: '#ffffff',
+              background_color: '#ffffff',
+              lang: 'ja',
+              id: '/',
+              display: 'standalone',
+              display_override: ['window-controls-overlay', 'standalone'],
+              orientation: 'any',
+              scope: '/',
+              start_url: '/',
+              categories: ['travel', 'navigation'],
+              launch_handler: {
+                client_mode: 'focus-existing',
               },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
+              icons: [
+                {
+                  src: '/icons/icon-192x192.png',
+                  sizes: '192x192',
+                  type: 'image/png',
+                },
+                {
+                  src: '/icons/icon-512x512.png',
+                  sizes: '512x512',
+                  type: 'image/png',
+                },
+                {
+                  src: '/icons/icon-512x512.png',
+                  sizes: '512x512',
+                  type: 'image/png',
+                  purpose: 'maskable',
+                },
+              ],
             },
-          },
-        ],
-        navigateFallback: '/index.html',
-      },
-      manifest: {
-        name: 'あてのない乗換案内',
-        short_name: 'アテナイ',
-        description:
-          '行き先はまだ決めない。バス停や駅から次の便を眺めて、気の向くままに街を歩く。あてのない乗換案内 Athenai Transit',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
-        lang: 'ja',
-        id: '/',
-        display: 'standalone',
-        display_override: ['window-controls-overlay', 'standalone'],
-        orientation: 'any',
-        scope: '/',
-        start_url: '/',
-        categories: ['travel', 'navigation'],
-        launch_handler: {
-          client_mode: 'focus-existing',
-        },
-        icons: [
-          {
-            src: '/icons/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: '/icons/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-          {
-            src: '/icons/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable',
-          },
-        ],
-      },
-    }),
+          }),
+        ]
+      : []),
   ],
   resolve: {
     alias: {

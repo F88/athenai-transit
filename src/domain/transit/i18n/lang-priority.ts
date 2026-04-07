@@ -12,7 +12,7 @@ const LANG_PRIORITY: readonly string[] = [
   'en',
   'fr',
   'es',
-  'ar',
+  // 'ar', // RTL Unhandled → disabled
   'zh',
   'zh-Hans',
   'zh-Hant',
@@ -39,40 +39,63 @@ function langPrefix(key: string): string {
 }
 
 /**
- * Sort language keys for display, prioritizing agency languages
- * and their variants, then international order.
+ * Sort language keys for display.
+ *
+ * The base order is always {@link LANG_PRIORITY}. When `preferred`
+ * is non-empty, exact matches and their variants are moved ahead of
+ * that base order.
  *
  * Priority order:
- * 1. Preferred languages and their variants — exact match first,
+ * 1. Preferred languages and their variants — exact match first in
+ *    `preferred` array order,
  *    then variants defined in {@link LANG_PRIORITY},
  *    then undefined variants
- * 2. Remaining keys in {@link LANG_PRIORITY} order
+ * 2. Remaining keys in the base {@link LANG_PRIORITY} order
  * 3. Keys not in any list (original relative order preserved)
+ *
+ * Comparison rules:
+ * - Matching is case-insensitive per BCP 47.
+ * - `preferred` is treated as an ordered precedence list, not an
+ *   unordered set.
+ * - Even when `preferred` is empty, keys in {@link LANG_PRIORITY}
+ *   are still sorted by that base order.
+ * - Keys with identical computed priority preserve their original
+ *   relative order from `keys`.
  *
  * Does not deduplicate — use `new Set()` or similar if needed.
  *
  * @param keys - Language keys to sort.
- * @param preferred - Languages to prioritize (e.g. `['ja']` from agency_lang).
+ * @param preferred - Languages to prioritize in descending order
+ * of precedence (e.g. `['en', 'ja']` means `en` exact match sorts
+ * before `ja` exact match).
  * @returns A new sorted array.
  *
  * @example
  * ```ts
  * sortLangKeysByPriority(['en', 'ja-Hrkt', 'ko', 'ja', 'origin'], ['ja']);
  * // → ['ja', 'ja-Hrkt', 'en', 'ko', 'origin']
+ *
+ * sortLangKeysByPriority(['ja', 'en', 'ja-Hrkt'], ['en', 'ja']);
+ * // → ['en', 'ja', 'ja-Hrkt']
  * ```
  */
 export function sortLangKeysByPriority(keys: string[], preferred: readonly string[]): string[] {
-  const preferredPrefixes = new Set(preferred.map(langPrefix));
+  // Case-insensitive comparisons per BCP 47 (RFC 5646 §2.1.1).
+  const preferredLower = preferred.map((p) => p.toLowerCase());
+  const preferredPrefixes = new Set(preferredLower.map(langPrefix));
+  const priorityLower = LANG_PRIORITY.map((p) => p.toLowerCase());
 
   function sortKey(key: string): number {
-    const prefix = langPrefix(key);
+    const keyLower = key.toLowerCase();
+    const prefix = langPrefix(keyLower);
     const isAgencyVariant = preferredPrefixes.has(prefix);
-    const priorityIndex = LANG_PRIORITY.indexOf(key);
+    const priorityIndex = priorityLower.indexOf(keyLower);
 
     if (isAgencyVariant) {
-      // Agency lang exact match → top priority
-      if (preferred.includes(key)) {
-        return -3000;
+      // Agency lang exact match → top priority in preferred order
+      const preferredIndex = preferredLower.indexOf(keyLower);
+      if (preferredIndex !== -1) {
+        return -3000 + preferredIndex;
       }
       // Agency variant defined in LANG_PRIORITY
       if (priorityIndex !== -1) {

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from './i18n';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { RouteType, Stop } from './types/app/transit';
 import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
@@ -17,7 +19,17 @@ import { TILE_SOURCES } from './config/tile-sources';
 import { createInfoLevel } from './utils/create-info-level';
 import { toggleGroupInList, toggleInList } from './utils/list-toggle';
 import { createLogger } from './lib/logger';
-import { nextInfoLevel, nextPerfMode, nextRenderMode, nextTileIndex } from './utils/settings-cycle';
+import {
+  nextInfoLevel,
+  nextLang,
+  nextPerfMode,
+  nextRenderMode,
+  nextTileIndex,
+} from './utils/settings-cycle';
+import { SUPPORTED_LANGS } from './config/supported-langs';
+import { DEFAULT_TIMEZONE } from './config/transit-defaults';
+import { formatDateParts } from './utils/datetime';
+import { resolveLangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
 import { formatDateKey } from './domain/transit/calendar-utils';
@@ -38,9 +50,24 @@ const logger = createLogger('App');
 const DEBOUNCE_MS = 300;
 
 export default function App() {
+  const { t } = useTranslation();
   const repo = useTransitRepository();
   const [userDataRepo] = useState(() => new LocalStorageUserDataRepository());
   const { settings, updateSetting, updateSettings } = useUserSettings();
+
+  // Sync i18next language with user setting.
+  useEffect(() => {
+    void i18n.changeLanguage(settings.lang);
+  }, [settings.lang]);
+
+  // Resolve language fallback chain once when lang changes.
+  // Components receive this as dataLang (ordered priority list for
+  // GTFS/ODPT data translation resolution).
+  const dataLang = useMemo(() => resolveLangChain(settings.lang, SUPPORTED_LANGS), [settings.lang]);
+
+  useEffect(() => {
+    logger.debug(`LangChain: ${settings.lang} → [${dataLang.join(' → ')}]`);
+  }, [settings.lang, dataLang]);
 
   const [inBoundStops, setInBoundStops] = useState<StopWithMeta[]>([]);
   const [radiusStops, setNearbyStops] = useState<StopWithMeta[]>([]);
@@ -115,12 +142,12 @@ export default function App() {
       return;
     }
     logger.warn(`anchor operation failed: ${anchorError}`);
-    toast.error('アンカー更新に失敗しました', {
+    toast.error(t('anchor.anchorUpdateFailed'), {
       description: anchorError,
       duration: 4500,
     });
     clearAnchorError();
-  }, [anchorError, clearAnchorError]);
+  }, [anchorError, clearAnchorError, t]);
 
   // Refresh anchor entries with latest GTFS data on app load.
   // Runs once after repo is ready. Updates stopName, stopLat, stopLon,
@@ -523,6 +550,17 @@ export default function App() {
     updateSetting('theme', next);
   }, [settings.theme, updateSetting]);
 
+  const handleCycleLang = useCallback(() => {
+    const next = nextLang(settings.lang);
+    const nextLangEntry = SUPPORTED_LANGS.find((l) => l.code === next);
+    const now = new Date();
+    const { dateText, dayLabel } = formatDateParts(now, next, DEFAULT_TIMEZONE, { showYear: true });
+    logger.info(
+      `lang: ${settings.lang} -> ${next} (${nextLangEntry?.label ?? 'unknown'}) date: ${dateText} (${dayLabel})`,
+    );
+    updateSetting('lang', next);
+  }, [settings.lang, updateSetting]);
+
   // Sync dark class on <html> element
   useEffect(() => {
     document.documentElement.classList.toggle('dark', settings.theme === 'dark');
@@ -548,7 +586,7 @@ export default function App() {
           renderMode={settings.renderMode}
           perfMode={settings.perfMode}
           infoLevel={settings.infoLevel}
-          lang={settings.lang}
+          dataLang={dataLang}
           time={dateTime}
           onBoundsChanged={handleBoundsChanged}
           onStopSelected={handleSelectStop}
@@ -566,6 +604,7 @@ export default function App() {
           theme={settings.theme}
           doubleTapDrag={settings.doubleTapDrag}
           onToggleDarkMode={handleToggleDarkMode}
+          onCycleLang={handleCycleLang}
           onSearchClick={() => setSearchModalOpen(true)}
           onInfoClick={() => setInfoDialogOpen(true)}
           stopHistory={history}
@@ -589,7 +628,7 @@ export default function App() {
         time={dateTime}
         mapCenter={mapCenter}
         infoLevel={settings.infoLevel}
-        lang={settings.lang}
+        dataLang={dataLang}
         anchorIds={anchorIds}
         onStopSelected={handleSelectStopById}
         onShowTimetable={handleShowTimetable}
@@ -599,7 +638,7 @@ export default function App() {
       <StopSearchModal
         repo={repo}
         infoLevel={settings.infoLevel}
-        lang={settings.lang}
+        dataLang={dataLang}
         onSelectStop={handleSearchSelect}
         open={searchModalOpen}
         onOpenChange={setSearchModalOpen}
@@ -609,7 +648,7 @@ export default function App() {
         data={timetableModal}
         time={dateTime}
         infoLevel={settings.infoLevel}
-        lang={settings.lang}
+        dataLang={dataLang}
         onClose={() => setTimetableModal(null)}
       />
       <Toaster theme={settings.theme} position="top-center" closeButton richColors expand={false} />

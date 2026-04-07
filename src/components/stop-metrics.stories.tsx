@@ -3,7 +3,7 @@ import { sampleGeo, sampleStats } from '../stories/fixtures';
 import { StopMetrics } from './stop-metrics';
 
 const meta = {
-  title: 'StopInfo/StopMetrics',
+  title: 'Stop/StopMetrics',
   component: StopMetrics,
   args: {
     stats: sampleStats,

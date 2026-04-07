@@ -1,0 +1,139 @@
+{
+  "common": {
+    "loading": "Loading..."
+  },
+  "view": {
+    "stop": {
+      "label": "ALL",
+      "title": "All departures",
+      "description": "Show all departures in chronological order"
+    },
+    "routeHeadsign": {
+      "label": "Route",
+      "title": "By route + destination",
+      "description": "Group by route and destination"
+    },
+    "route": {
+      "label": "Route",
+      "title": "By route",
+      "description": "Group by route"
+    },
+    "headsign": {
+      "label": "Dest.",
+      "title": "By destination",
+      "description": "Group by destination"
+    },
+    "frequency": {
+      "label": "Freq.",
+      "title": "By frequency",
+      "description": "Weight by service frequency"
+    },
+    "duration": {
+      "label": "Duration",
+      "title": "By travel time",
+      "description": "Sort by travel time to terminal"
+    },
+    "terminal": {
+      "label": "Terminal",
+      "title": "By terminal activity",
+      "description": "Sort by terminal stop activity"
+    }
+  },
+  "history": {
+    "label": "History"
+  },
+  "info": {
+    "status": "Work in progress"
+  },
+  "nearbyStops": {
+    "summary": "{{count}} nearby stops (within {{radius}})",
+    "noStops": "No stops (within {{radius}})",
+    "noOperating": "No operating stops (within {{radius}})",
+    "activeOnly": "Active",
+    "activeOnlyTitle": "Show only stops with upcoming departures"
+  },
+  "stop": {
+    "noDestination": "Some routes have no destination",
+    "serviceEnded": "No more service today",
+    "dropOffOnly": "Drop-off only",
+    "wheelchairAccessible": "Wheelchair accessible",
+    "wheelchairNotAccessible": "Not wheelchair accessible"
+  },
+  "time": {
+    "settingTitle": "Set date & time",
+    "settingDescription": "Change the date and time for timetable display",
+    "settingLabel": "Set date & time",
+    "frozen": "📌 Time frozen",
+    "now": "🕐 Now",
+    "set": "🧙 Time, freeze!"
+  },
+  "departure": {
+    "soon": "Soon",
+    "in": "",
+    "minutes": "min",
+    "arriving": "",
+    "terminal": "Terminal",
+    "noBoarding": "No boarding"
+  },
+  "showTimetable": "Show timetable",
+  "timetable": {
+    "title": "Timetable",
+    "entry": {
+      "terminal": "Terminal",
+      "origin": "Origin",
+      "noPickup": "No pickup",
+      "noDropOff": "No drop-off"
+    },
+    "grid": {
+      "row": {
+        "hour": "{{hour}}",
+        "entries": "{{hour}} ({{count}})"
+      },
+      "empty": {
+        "dropOffOnly": "Drop-off only",
+        "noService": "No service on this day"
+      }
+    },
+    "metadata": {
+      "count": "{{count}} trips",
+      "avgInterval": "avg. {{interval}} min interval"
+    },
+    "header": {
+      "routeHeadsignDescription": "{{stop}} {{route}} {{headsign}} timetable ({{count}})",
+      "routeDescription": "{{stop}} {{route}} timetable ({{count}})",
+      "stopDescription": "{{stop}} all routes timetable ({{count}})",
+      "noDestination": "Some routes have no destination"
+    }
+  },
+  "panel": {
+    "appInfo": "App info",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "toggleMap": "Toggle map tiles",
+    "toggleBusRoutes": "Toggle bus route shapes",
+    "toggleNonBusRoutes": "Toggle non-bus route shapes",
+    "currentLocation": "Go to current location",
+    "randomLocation": "Jump to random place",
+    "toggleRenderMode": "Toggle render mode",
+    "togglePerfMode": "Toggle performance mode",
+    "toggleInfoLevel": "Toggle info level",
+    "toggleDarkMode": "Toggle dark mode",
+    "toggleLang": "Toggle language",
+    "searchStops": "Search stops",
+    "toggleBus": "Toggle bus stops",
+    "toggleSubway": "Toggle subway stops",
+    "toggleTram": "Toggle tram stops",
+    "toggleRail": "Toggle rail stops"
+  },
+  "anchor": {
+    "add": "Add anchor",
+    "remove": "Remove anchor",
+    "anchorUpdateFailed": "Failed to update anchor"
+  },
+  "search": {
+    "title": "Search stops",
+    "description": "Search for stops and stations by name",
+    "placeholder": "Enter stop name...",
+    "noResults": "No matching stops found"
+  }
+}

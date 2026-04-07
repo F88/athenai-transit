@@ -1,4 +1,5 @@
 import type { InfoLevel } from '../types/app/settings';
+import { useTranslation } from 'react-i18next';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
@@ -15,7 +16,8 @@ interface DepartureItemProps {
   entries: ContextualTimetableEntry[];
   now: Date;
   infoLevel: InfoLevel;
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   /** Whether to show route_type emoji (e.g. when stop serves multiple route types). */
   showRouteTypeIcon: boolean;
   /** Agency object for badge display at detailed+ info level. */
@@ -29,12 +31,13 @@ export function DepartureItem({
   entries,
   now,
   infoLevel,
-  lang,
+  dataLang,
   showRouteTypeIcon,
   agency,
   maxDisplay = 3,
   onShowTimetable,
 }: DepartureItemProps) {
+  const { t } = useTranslation();
   const showVerbose = infoLevel === 'verbose';
   const firstEntry = entries[0];
   if (!firstEntry) {
@@ -60,7 +63,7 @@ export function DepartureItem({
         <TripInfo
           routeDirection={firstEntry.routeDirection}
           infoLevel={infoLevel}
-          lang={lang}
+          dataLang={dataLang}
           showRouteTypeIcon={showRouteTypeIcon}
           agency={agency}
           isTerminal={firstEntry.patternPosition.isTerminal}
@@ -97,8 +100,8 @@ export function DepartureItem({
               e.stopPropagation();
               onShowTimetable(route.route_id, getEffectiveHeadsign(firstEntry.routeDirection));
             }}
-            title="Show timetable"
-            aria-label="Show timetable"
+            title={t('showTimetable')}
+            aria-label={t('showTimetable')}
           >
             <Clock size={14} strokeWidth={2} />
           </button>

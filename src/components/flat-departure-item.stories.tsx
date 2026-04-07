@@ -111,7 +111,7 @@ const meta = {
     isFirst: true,
     showRouteTypeIcon: false,
     infoLevel: 'normal',
-    lang: 'ja',
+    dataLang: ['ja'],
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
@@ -216,7 +216,7 @@ export const MultipleItems: Story = {
             isFirst={i === 0}
             showRouteTypeIcon
             infoLevel="normal"
-            lang="ja"
+            dataLang={['ja']}
           />
         ))}
       </div>
@@ -404,7 +404,7 @@ export const KitchenSinkInfoLevelSimple: Story = {
           isFirst={i === 0}
           showRouteTypeIcon={icon ?? false}
           infoLevel="simple"
-          lang="ja"
+          dataLang={['ja']}
           agency={a}
         />
       ))}
@@ -424,7 +424,7 @@ export const KitchenSinkInfoLevelNormal: Story = {
           isFirst={i === 0}
           showRouteTypeIcon={icon ?? false}
           infoLevel="normal"
-          lang="ja"
+          dataLang={['ja']}
           agency={a}
         />
       ))}
@@ -444,7 +444,7 @@ export const KitchenSinkInfoLevelDetailed: Story = {
           isFirst={i === 0}
           showRouteTypeIcon={icon ?? false}
           infoLevel="detailed"
-          lang="ja"
+          dataLang={['ja']}
           agency={a}
         />
       ))}
@@ -464,7 +464,7 @@ export const KitchenSinkInfoLevelVerbose: Story = {
           isFirst={i === 0}
           showRouteTypeIcon={icon ?? false}
           infoLevel="verbose"
-          lang="ja"
+          dataLang={['ja']}
           agency={a}
         />
       ))}

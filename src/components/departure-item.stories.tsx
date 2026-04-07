@@ -130,7 +130,7 @@ const meta = {
     entries: threeEntries,
     now,
     infoLevel: 'normal',
-    lang: 'ja',
+    dataLang: ['ja'],
     showRouteTypeIcon: false,
   },
   argTypes: {
@@ -308,7 +308,7 @@ export const MultipleGroups: Story = {
             entries={group.entries}
             now={now}
             infoLevel="normal"
-            lang="ja"
+            dataLang={['ja']}
             showRouteTypeIcon
             onShowTimetable={fn()}
           />
@@ -512,7 +512,7 @@ export const KitchenSinkInfoLevelSimple: Story = {
           entries={group.entries}
           now={now}
           infoLevel="simple"
-          lang="ja"
+          dataLang={['ja']}
           showRouteTypeIcon
           agency={group.agency}
           onShowTimetable={fn()}
@@ -532,7 +532,7 @@ export const KitchenSinkInfoLevelNormal: Story = {
           entries={group.entries}
           now={now}
           infoLevel="normal"
-          lang="ja"
+          dataLang={['ja']}
           showRouteTypeIcon
           agency={group.agency}
           onShowTimetable={fn()}
@@ -552,7 +552,7 @@ export const KitchenSinkInfoLevelDetailed: Story = {
           entries={group.entries}
           now={now}
           infoLevel="detailed"
-          lang="ja"
+          dataLang={['ja']}
           showRouteTypeIcon
           agency={group.agency}
           onShowTimetable={fn()}
@@ -572,7 +572,7 @@ export const KitchenSinkInfoLevelVerbose: Story = {
           entries={group.entries}
           now={now}
           infoLevel="verbose"
-          lang="ja"
+          dataLang={['ja']}
           showRouteTypeIcon
           agency={group.agency}
           onShowTimetable={fn()}

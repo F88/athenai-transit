@@ -1,4 +1,5 @@
 import type { InfoLevel } from '../../types/app/settings';
+import { useTranslation } from 'react-i18next';
 import { ControlPanel } from '../shared/control-panel';
 import { MapToggleButton } from '../button/map-toggle-button';
 
@@ -30,22 +31,27 @@ export function MapLayerPanel({
   onToggleBusShapes,
   onToggleNonBusShapes,
 }: MapLayerPanelProps) {
+  const { t } = useTranslation();
   return (
     <ControlPanel side="left" edge="top" offset="0.75rem" infoLevel={infoLevel}>
-      <MapToggleButton active={tileIndex !== null} onClick={onCycleTile} label="地図の表示切替">
+      <MapToggleButton
+        active={tileIndex !== null}
+        onClick={onCycleTile}
+        label={t('panel.toggleMap')}
+      >
         🗺
       </MapToggleButton>
       <MapToggleButton
         active={visibleRouteShapes.has(3)}
         onClick={onToggleBusShapes}
-        label="バス路線図の表示切替"
+        label={t('panel.toggleBusRoutes')}
       >
         🧑🏼‍🎨
       </MapToggleButton>
       <MapToggleButton
         active={[0, 1, 2, 4, 5, 6, 7].every((t) => visibleRouteShapes.has(t))}
         onClick={onToggleNonBusShapes}
-        label="バス以外の路線図の表示切替"
+        label={t('panel.toggleNonBusRoutes')}
       >
         👨🏻‍🎨
       </MapToggleButton>

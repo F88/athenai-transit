@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/utils';
 import { relativeTimeStyle } from '../utils/time-style';
 
@@ -15,9 +16,9 @@ interface RelativeTimeProps {
   departureTime: Date;
   /** Current time for relative calculation. */
   now: Date;
-  /** Whether this is a terminal (arrival) entry. Appends "着" suffix. */
+  /** Whether this is a terminal (arrival) entry. Appends localized arrival suffix. */
   isTerminal?: boolean;
-  /** Hide the "あと" prefix to save horizontal space. */
+  /** Hide the localized prefix (e.g. "あと" in ja) to save horizontal space. */
   hidePrefix?: boolean;
   /** Size variant. @default 'default' */
   size?: keyof typeof variants;
@@ -28,12 +29,12 @@ interface RelativeTimeProps {
 /**
  * Displays relative time with emphasis on the number.
  *
- * "あと" and "分" are displayed in small text, while the number
- * is displayed in bold. Color is determined by the time band
- * from {@link relativeTimeStyle}.
+ * Localized prefix and unit labels are displayed in small text,
+ * while the number is displayed in bold. Color is determined by
+ * the time band from {@link relativeTimeStyle}.
  *
- * - `<= 0 min`: "まもなく"
- * - `> 0 min`: "あと N 分"
+ * - `<= 0 min`: imminent label (e.g. "まもなく" in ja, "Soon" in en)
+ * - `> 0 min`: prefix + number + unit (e.g. "あと N 分" in ja, "N min" in en)
  */
 export function RelativeTime({
   departureTime,
@@ -43,6 +44,7 @@ export function RelativeTime({
   size = 'default',
   className,
 }: RelativeTimeProps) {
+  const { t } = useTranslation();
   const diffMs = departureTime.getTime() - now.getTime();
   const diffMin = Math.floor(diffMs / 60000);
   const style = relativeTimeStyle(Math.floor(diffMs / 1000));
@@ -54,17 +56,19 @@ export function RelativeTime({
       style={{ color: style.color, opacity: style.opacity }}
     >
       {diffMin <= 0 ? (
-        <span className={v.imminent}>まもなく</span>
+        <span className={v.imminent}>{t('departure.soon')}</span>
       ) : (
         <>
-          {!hidePrefix && <span className={`${v.label} font-normal`}>あと</span>}
+          {!hidePrefix && <span className={`${v.label} font-normal`}>{t('departure.in')}</span>}
           <span>
             <span className={v.number}>{diffMin}</span>
-            <span className={`${v.label} font-normal`}>分</span>
+            <span className={`${v.label} font-normal`}>{t('departure.minutes')}</span>
           </span>
         </>
       )}
-      {isTerminal && <span className={`${v.label} font-normal opacity-70`}>着</span>}
+      {isTerminal && (
+        <span className={`${v.label} font-normal opacity-70`}>{t('departure.arriving')}</span>
+      )}
     </span>
   );
 }

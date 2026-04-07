@@ -204,8 +204,8 @@ interface MapViewProps {
   renderMode: RenderMode;
   perfMode: PerfMode;
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   time: Date;
   onBoundsChanged: (bounds: Bounds, center: LatLng) => void;
   onStopSelected: (stop: Stop) => void;
@@ -220,6 +220,7 @@ interface MapViewProps {
   theme: Theme;
   doubleTapDrag: 'zoom-in' | 'zoom-out';
   onToggleDarkMode: () => void;
+  onCycleLang: () => void;
   onDeselectStop: () => void;
   onRouteShapeSelected: (routeId: string) => void;
   /** Resolves daily departure frequency for a route based on the current service day. */
@@ -252,7 +253,7 @@ export function MapView({
   renderMode,
   perfMode,
   infoLevel,
-  lang,
+  dataLang,
   time: now,
   onBoundsChanged,
   onStopSelected,
@@ -267,6 +268,7 @@ export function MapView({
   theme,
   doubleTapDrag,
   onToggleDarkMode,
+  onCycleLang,
   onDeselectStop,
   onRouteShapeSelected,
   resolveRouteFreq,
@@ -413,7 +415,7 @@ export function MapView({
           // showTooltip={false}
           time={now}
           infoLevel={infoLevel}
-          lang={lang}
+          dataLang={dataLang}
           renderMode={nearbyRenderMode}
           renderer={canvasRenderer}
           onStopSelected={onStopSelected}
@@ -428,7 +430,7 @@ export function MapView({
           showTooltip={true}
           renderMode={farRenderMode}
           infoLevel={infoLevel}
-          lang={lang}
+          dataLang={dataLang}
           renderer={canvasRenderer}
           onStopSelected={onStopSelected}
           incremental={true}
@@ -445,7 +447,7 @@ export function MapView({
             time={now}
             renderMode={nearbyRenderMode}
             infoLevel={infoLevel}
-            lang={lang}
+            dataLang={dataLang}
             renderer={canvasRenderer}
             onStopSelected={onStopSelected}
             agenciesMap={agenciesMap}
@@ -473,6 +475,8 @@ export function MapView({
         onTogglePerfMode={onTogglePerfMode}
         onCycleInfoLevel={onCycleInfoLevel}
         onToggleDarkMode={onToggleDarkMode}
+        onCycleLang={onCycleLang}
+        dataLang={dataLang}
         onToggleStopType={onToggleStopType}
         onSearchClick={onSearchClick}
         onInfoClick={onInfoClick}
@@ -489,7 +493,7 @@ export function MapView({
           agenciesMap={agenciesMap}
           now={now}
           infoLevel={infoLevel}
-          lang={lang}
+          dataLang={dataLang}
           renderMode={nearbyRenderMode}
           onStopSelected={onStopSelected}
           onFetchDepartures={onFetchDepartures}

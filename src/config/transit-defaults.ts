@@ -10,6 +10,15 @@ import type { Agency } from '../types/app/transit';
 export const DEFAULT_AGENCY_LANG: readonly string[] = ['ja'];
 
 /**
+ * Default timezone for date/time display.
+ *
+ * All current data sources use Asia/Tokyo. This should eventually be
+ * resolved from agency_timezone or map center position.
+ * See Issue #65 for timezone-aware implementation.
+ */
+export const DEFAULT_TIMEZONE = 'Asia/Tokyo';
+
+/**
  * Resolve agency language for subNames sort priority.
  *
  * Looks up the agency by ID and returns `[agency_lang]`.

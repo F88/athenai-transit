@@ -5,9 +5,9 @@ import {
   agencyOretetsu,
   agencyTobus,
   allAgencies,
+  allRoutes,
   baseStop,
   busRoute,
-  busRoute2,
   longNameStop,
   sampleGeo,
   sampleStats,
@@ -19,7 +19,7 @@ import { StopInfo } from './stop-info';
 // --- Meta ---
 
 const meta = {
-  title: 'StopInfo/StopInfo',
+  title: 'Stop/StopInfo',
   component: StopInfo,
   args: {
     stop: baseStop,
@@ -28,13 +28,15 @@ const meta = {
     distance: 235,
     mapCenter: storyMapCenter,
     infoLevel: 'normal',
-    lang: 'ja',
+    dataLang: ['ja'],
     isDropOffOnly: false,
     routes: [busRoute],
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     isDropOffOnly: { control: 'boolean' },
+    agencyBadgeSize: { control: 'inline-radio', options: ['xs', 'sm', 'default'] },
+    routeBadgeSize: { control: 'inline-radio', options: ['xs', 'sm', 'default'] },
   },
   decorators: [
     (Story) => (
@@ -90,6 +92,46 @@ export const MultiTypeDropOff: Story = {
     agencies: [agencyGx, agencyOretetsu],
     isDropOffOnly: true,
   },
+};
+
+// --- Badge sizes ---
+
+export const CompactBadges: Story = {
+  args: {
+    infoLevel: 'detailed',
+    agencies: [agencyGx, agencyOretetsu],
+    routes: [busRoute, tramRoute],
+    routeTypes: [0, 3] as RouteType[],
+    agencyBadgeSize: 'xs',
+    routeBadgeSize: 'xs',
+  },
+};
+
+export const LargeBadges: Story = {
+  args: {
+    infoLevel: 'detailed',
+    agencies: [agencyGx, agencyOretetsu],
+    routes: [busRoute, tramRoute],
+    routeTypes: [0, 3] as RouteType[],
+    agencyBadgeSize: 'default',
+    routeBadgeSize: 'default',
+  },
+};
+
+export const BadgeSizeComparison: Story = {
+  args: {
+    infoLevel: 'detailed',
+    agencies: [agencyGx, agencyOretetsu],
+    routes: [busRoute, tramRoute],
+    routeTypes: [0, 3] as RouteType[],
+  },
+  render: (args) => (
+    <div className="flex flex-col gap-3">
+      <StopInfo {...args} agencyBadgeSize="xs" routeBadgeSize="xs" />
+      <StopInfo {...args} agencyBadgeSize="sm" routeBadgeSize="sm" />
+      <StopInfo {...args} agencyBadgeSize="default" routeBadgeSize="default" />
+    </div>
+  ),
 };
 
 // --- Info levels ---
@@ -154,23 +196,11 @@ const kitchenSinkArgs = {
   routeTypes: [0, 3] as RouteType[],
   agencies: allAgencies,
   isDropOffOnly: true,
-  routes: [busRoute, busRoute2, tramRoute],
+  routes: allRoutes,
   stats: sampleStats,
   geo: sampleGeo,
 };
 
-export const KitchenSinkInfoLevelSimple: Story = {
-  args: { ...kitchenSinkArgs, infoLevel: 'simple' as const },
-};
-
-export const KitchenSinkInfoLevelNormal: Story = {
-  args: { ...kitchenSinkArgs, infoLevel: 'normal' as const },
-};
-
-export const KitchenSinkInfoLevelDetailed: Story = {
+export const KitchenSink: Story = {
   args: { ...kitchenSinkArgs, infoLevel: 'detailed' as const },
-};
-
-export const KitchenSinkInfoLevelVerbose: Story = {
-  args: { ...kitchenSinkArgs, infoLevel: 'verbose' as const },
 };

@@ -9,7 +9,14 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([
-  globalIgnores(['dist', '.storybook', 'vitest.shims.d.ts', 'coverage', '.claude/worktrees']),
+  globalIgnores([
+    'dist',
+    '.storybook',
+    'storybook-static',
+    'vitest.shims.d.ts',
+    'coverage',
+    '.claude/worktrees',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

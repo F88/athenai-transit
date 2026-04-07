@@ -21,8 +21,8 @@ interface StopSummaryProps {
    *  instead of the useInfoLevel hook because this component is also
    *  rendered via renderToStaticMarkup (Canvas mode). */
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
 }
 
 /**
@@ -37,17 +37,17 @@ export function StopSummary({
   entries,
   now,
   infoLevel,
-  lang,
+  dataLang,
 }: StopSummaryProps) {
   const info = createInfoLevel(infoLevel);
-  const stopNames = getStopDisplayNames(stop, infoLevel, lang);
+  const stopNames = getStopDisplayNames(stop, dataLang);
   // Departure items require `now` for relative time display
   const items = now ? (entries?.slice(0, 3) ?? []) : [];
 
   return (
     <>
       {info.isVerboseEnabled && <IdBadge>{stop.stop_id}</IdBadge>}
-      {stopNames.subNames.length > 0 && (
+      {info.isNormalEnabled && stopNames.subNames.length > 0 && (
         <div className="truncate text-[11px] font-normal text-[#888] dark:text-gray-400">
           {stopNames.subNames.join(' / ')}
         </div>
@@ -78,7 +78,7 @@ export function StopSummary({
               size={'sm'}
               routeDirection={entry.routeDirection}
               infoLevel={infoLevel === 'verbose' ? infoLevel : 'simple'}
-              lang={lang}
+              dataLang={dataLang}
               showRouteTypeIcon={false}
               isTerminal={entry.patternPosition.isTerminal}
               isPickupUnavailable={entry.boarding.pickupType === 1}

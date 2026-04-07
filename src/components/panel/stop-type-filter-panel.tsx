@@ -1,19 +1,20 @@
 import type { InfoLevel } from '../../types/app/settings';
+import { useTranslation } from 'react-i18next';
 import { ControlPanel } from '../shared/control-panel';
 import { MapToggleButton } from '../button/map-toggle-button';
 import { routeTypeEmoji } from '../../utils/route-type-emoji';
 
 /** Route types displayed in the filter panel, in display order. */
 const STOP_TYPE_ENTRIES = [
-  { routeType: 3, label: 'バスの表示切替' },
-  { routeType: 1, label: '地下鉄の表示切替' },
-  { routeType: 0, label: '路面電車の表示切替' },
-  { routeType: 2, label: '鉄道の表示切替' },
+  { routeType: 3, labelKey: 'panel.toggleBus' },
+  { routeType: 1, labelKey: 'panel.toggleSubway' },
+  { routeType: 0, labelKey: 'panel.toggleTram' },
+  { routeType: 2, labelKey: 'panel.toggleRail' },
   // Uncomment when data sources for these route types are added:
-  // { routeType: 4, label: 'フェリーの表示切替' },
-  // { routeType: 5, label: 'ケーブルカーの表示切替' },
-  // { routeType: 6, label: 'ゴンドラの表示切替' },
-  // { routeType: 7, label: 'フニクラーの表示切替' },
+  // { routeType: 4, labelKey: 'panel.toggleFerry' },
+  // { routeType: 5, labelKey: 'panel.toggleCableTram' },
+  // { routeType: 6, labelKey: 'panel.toggleGondola' },
+  // { routeType: 7, labelKey: 'panel.toggleFunicular' },
 ] as const;
 
 interface StopTypeFilterPanelProps {
@@ -34,14 +35,15 @@ export function StopTypeFilterPanel({
   infoLevel,
   onToggleStopType,
 }: StopTypeFilterPanelProps) {
+  const { t } = useTranslation();
   return (
-    <ControlPanel side="left" edge="top" offset="10.25rem" infoLevel={infoLevel}>
-      {STOP_TYPE_ENTRIES.map(({ routeType, label }) => (
+    <ControlPanel side="left" edge="top" offset="10rem" infoLevel={infoLevel}>
+      {STOP_TYPE_ENTRIES.map(({ routeType, labelKey }) => (
         <MapToggleButton
           key={routeType}
           active={visibleStopTypes.has(routeType)}
           onClick={() => onToggleStopType(routeType)}
-          label={label}
+          label={t(labelKey)}
         >
           {routeTypeEmoji(routeType)}
         </MapToggleButton>

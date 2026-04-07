@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { StopWithContext } from '../types/app/transit-composed';
@@ -17,8 +18,8 @@ export interface NearbyStopProps {
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   /** Active departure view pattern ID. */
   viewId: string;
   /** Whether this stop is in the anchor (bookmark) list. */
@@ -46,7 +47,7 @@ export function NearbyStop({
   now,
   mapCenter,
   infoLevel,
-  lang,
+  dataLang,
   viewId,
   isAnchor,
   onStopSelected,
@@ -54,6 +55,7 @@ export function NearbyStop({
   onShowStopTimetable,
   onToggleAnchor,
 }: NearbyStopProps) {
+  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
   // Show route_type emoji on each departure row when the stop serves
@@ -105,7 +107,7 @@ export function NearbyStop({
           distance={distance}
           mapCenter={mapCenter}
           infoLevel={infoLevel}
-          lang={lang}
+          dataLang={dataLang}
           isDropOffOnly={isStopDropOffOnly}
           routes={routes}
           stats={stats}
@@ -119,9 +121,9 @@ export function NearbyStop({
               e.stopPropagation();
               onToggleAnchor(stop.stop_id);
             }}
-            title={isAnchor ? 'Remove anchor' : 'Add anchor'}
-            aria-label={isAnchor ? 'Remove anchor' : 'Add anchor'}
-            aria-pressed={isAnchor ? 'true' : 'false'}
+            title={isAnchor ? t('anchor.remove') : t('anchor.add')}
+            aria-label={isAnchor ? t('anchor.remove') : t('anchor.add')}
+            aria-pressed={isAnchor}
           >
             <Signpost
               size={16}
@@ -137,8 +139,8 @@ export function NearbyStop({
                 e.stopPropagation();
                 onShowStopTimetable(stop.stop_id);
               }}
-              title="Show timetable"
-              aria-label="Show timetable"
+              title={t('showTimetable')}
+              aria-label={t('showTimetable')}
             >
               <Clock size={16} strokeWidth={2} />
             </button>
@@ -148,7 +150,7 @@ export function NearbyStop({
 
       {hasUnknownHeadsign && (
         <p className="m-0 mb-1 text-[11px] text-amber-600 dark:text-amber-400">
-          行先が表示されない路線があります
+          {t('stop.noDestination')}
         </p>
       )}
       {displayDepartures.length > 0 ? (
@@ -163,7 +165,7 @@ export function NearbyStop({
                 isFirst={i === 0}
                 showRouteTypeIcon={showRouteTypeIconForAllDepartures}
                 infoLevel={infoLevel}
-                lang={lang}
+                dataLang={dataLang}
                 agency={agencies.find((a) => a.agency_id === entry.routeDirection.route.agency_id)}
               />
             ))
@@ -174,7 +176,7 @@ export function NearbyStop({
               entries={entries}
               now={now}
               infoLevel={infoLevel}
-              lang={lang}
+              dataLang={dataLang}
               showRouteTypeIcon={showRouteTypeIconForAllDepartures}
               agency={agencies.find(
                 (a) => a.agency_id === entries[0].routeDirection.route.agency_id,
@@ -188,7 +190,7 @@ export function NearbyStop({
           ))
         )
       ) : (
-        <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">本日の運行は終了しました</p>
+        <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">{t('stop.serviceEnded')}</p>
       )}
     </div>
   );

@@ -166,12 +166,12 @@ export interface DepartureViewMeta {
   id: string;
   /** Emoji icon for the toggle button (empty string allowed). */
   icon: string;
-  /** Short label for the toggle button (empty string allowed). */
-  label: string;
-  /** Short description of the view. */
-  title: string;
-  /** Detailed description of the view. */
-  description: string;
+  /** i18n key for the short toggle button label. */
+  labelKey: string;
+  /** i18n key for the short description. */
+  titleKey: string;
+  /** i18n key for the detailed description. */
+  descriptionKey: string;
   /** Whether this view is implemented. false = greyed out, not selectable. */
   enabled: boolean;
   /** Whether this view appears in the UI. false = hidden entirely. */

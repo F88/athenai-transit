@@ -6,11 +6,13 @@ import { cn } from '../../lib/utils';
 import { IdBadge } from './id-badge';
 import { VerboseRoute } from '../verbose/verbose-route';
 
-const sizeVariants = {
+export type RouteBadgeSize = 'default' | 'sm' | 'xs';
+
+const sizeVariants: Record<RouteBadgeSize, string> = {
   default: 'text-xs px-2 py-0.5',
   sm: 'text-[10px] px-1',
   xs: 'text-[9px] px-0.5',
-} as const;
+};
 
 interface RouteBadgeProps {
   /** The route to display. */
@@ -18,7 +20,7 @@ interface RouteBadgeProps {
   /** Current info verbosity level for label formatting. */
   infoLevel: InfoLevel;
   /** Size variant. @default 'default' */
-  size?: keyof typeof sizeVariants;
+  size?: RouteBadgeSize;
   /** Suppress verbose-only rendering (IdBadge, details dump).
    *  Use in non-interactive contexts like tooltips. */
   disableVerbose?: boolean;

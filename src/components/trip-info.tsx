@@ -3,6 +3,7 @@ import type { Agency } from '../types/app/transit';
 import type { RouteDirection } from '../types/app/transit-composed';
 import { type ResolvedDisplayNames, hasDisplayContent } from '../domain/transit/get-display-names';
 import type { InfoLevelFlags } from '../utils/create-info-level';
+import { useTranslation } from 'react-i18next';
 import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
 import { cn } from '../lib/utils';
 import { useInfoLevel } from '../hooks/use-info-level';
@@ -64,8 +65,8 @@ interface TripInfoProps {
   routeDirection: RouteDirection;
   /** Current info verbosity level. */
   infoLevel: InfoLevel;
-  /** Display language for translated names. */
-  lang: string;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   /** Whether to show the route type emoji icon. */
   showRouteTypeIcon?: boolean;
   /** Agency operating this trip. Shown at detailed+ info level. */
@@ -90,7 +91,7 @@ interface TripInfoProps {
 export function TripInfo({
   routeDirection,
   infoLevel,
-  lang,
+  dataLang,
   showRouteTypeIcon = false,
   agency,
   isTerminal = false,
@@ -99,10 +100,11 @@ export function TripInfo({
   ellipsisHeadsign = false,
 }: TripInfoProps) {
   const { route } = routeDirection;
+  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const v = sizeVariants[size];
   const agencyLang = agency?.agency_lang ? [agency.agency_lang] : DEFAULT_AGENCY_LANG;
-  const headsignNames = getHeadsignDisplayNames(routeDirection, 'stop', lang, agencyLang);
+  const headsignNames = getHeadsignDisplayNames(routeDirection, dataLang, agencyLang, 'stop');
 
   const headsignClass = cn(v.headsign, 'font-medium text-[#333] dark:text-gray-200');
   const subClass = cn(v.headsignSub, 'font-normal text-[#888] dark:text-gray-400');
@@ -170,14 +172,14 @@ export function TripInfo({
         <span
           className={`shrink-0 rounded bg-gray-100 px-1 ${v.label} font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300`}
         >
-          終点
+          {t('departure.terminal')}
         </span>
       )}
       {isPickupUnavailable && (
         <span
           className={`shrink-0 rounded bg-red-100 px-1 ${v.label} font-medium text-red-700 dark:bg-red-900 dark:text-red-300`}
         >
-          乗車不可
+          {t('departure.noBoarding')}
         </span>
       )}
     </div>

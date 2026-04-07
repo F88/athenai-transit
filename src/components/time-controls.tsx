@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
-import { formatDateTimeJaJpParts } from '../utils/datetime';
+import { useTranslation } from 'react-i18next';
+import { DEFAULT_TIMEZONE } from '../config/transit-defaults';
+import { formatDateParts } from '../utils/datetime';
 import { DAY_COLOR_CATEGORY_CLASSES } from '../utils/day-of-week';
 import { TimeSettingDialog } from './dialog/time-setting-dialog';
 
@@ -24,7 +26,13 @@ export function TimeControls({
     setDialogOpen(true);
   }, [time]);
 
-  const { prefix, dayLabel, suffix, dayColorCategory } = formatDateTimeJaJpParts(time);
+  const { t, i18n } = useTranslation();
+  const {
+    dateText,
+    dayLabel,
+    time: timeText,
+    dayColorCategory,
+  } = formatDateParts(time, i18n.language, DEFAULT_TIMEZONE, { showTime: true });
   const colorClass = DAY_COLOR_CATEGORY_CLASSES[dayColorCategory];
 
   return (
@@ -36,12 +44,10 @@ export function TimeControls({
         type="button"
         className="bg-background/85 border-border text-foreground hover:bg-background/95 active:bg-accent absolute top-[calc(1.25rem+env(safe-area-inset-top))] left-1/2 z-1000 -translate-x-1/2 cursor-pointer rounded-full border px-4 py-1.5 text-sm font-semibold whitespace-nowrap shadow-md backdrop-blur-sm transition-colors"
         onClick={openDialog}
-        aria-label="日時を設定"
+        aria-label={t('time.settingLabel')}
       >
         {isCustomTime && '📌 '}
-        {prefix}
-        <span className={colorClass}>{dayLabel}</span>
-        {suffix}
+        {dateText} <span className={colorClass}>({dayLabel})</span> {timeText}
       </button>
 
       <TimeSettingDialog
