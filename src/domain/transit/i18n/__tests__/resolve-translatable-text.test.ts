@@ -31,10 +31,28 @@ describe('resolveTranslatableText', () => {
       });
     });
 
-    it('treats empty-string translations as missing', () => {
+    it('falls back to origin when lang is an empty array', () => {
+      expect(resolveTranslatableText({ name: 'A', names: { en: 'A-en', de: 'A-de' } }, [])).toEqual(
+        {
+          resolved: { lang: 'origin', value: 'A' },
+          others: { en: 'A-en', de: 'A-de' },
+        },
+      );
+    });
+
+    it('falls back to an empty origin value when text.name is empty', () => {
+      expect(
+        resolveTranslatableText({ name: '', names: { en: 'A-en', de: 'A-de' } }, 'ko'),
+      ).toEqual({
+        resolved: { lang: 'origin', value: '' },
+        others: { en: 'A-en', de: 'A-de' },
+      });
+    });
+
+    it('resolves an empty-string translation when the key exists', () => {
       expect(resolveTranslatableText({ name: 'A', names: { en: '', de: 'A-de' } }, 'en')).toEqual({
-        resolved: { lang: 'origin', value: 'A' },
-        others: { de: 'A-de' },
+        resolved: { lang: 'en', value: '' },
+        others: { de: 'A-de', origin: 'A' },
       });
     });
   });
@@ -78,6 +96,18 @@ describe('resolveTranslatableText', () => {
       expect(resolveTranslatableText({ name: 'A', names: { en: 'B', fr: 'B' } }, 'ko')).toEqual({
         resolved: { lang: 'origin', value: 'A' },
         others: { en: 'B', fr: 'B' },
+      });
+    });
+
+    it('keeps empty-string translations in others', () => {
+      expect(
+        resolveTranslatableText(
+          { name: 'A', names: { en: 'A-en', de: 'A-de', fr: '', FR: 'FR' } },
+          'en',
+        ),
+      ).toEqual({
+        resolved: { lang: 'en', value: 'A-en' },
+        others: { de: 'A-de', fr: '', origin: 'A' },
       });
     });
 
@@ -144,6 +174,15 @@ describe('resolveTranslatableText', () => {
       ).toEqual({
         resolved: { lang: 'en', value: 'A-en' },
         others: { de: 'A-de', origin: 'A' },
+      });
+    });
+
+    it('keeps others.origin even when text.name is empty', () => {
+      expect(
+        resolveTranslatableText({ name: '', names: { en: 'A-en', de: 'A-de' } }, 'en'),
+      ).toEqual({
+        resolved: { lang: 'en', value: 'A-en' },
+        others: { de: 'A-de', origin: '' },
       });
     });
 
@@ -265,6 +304,18 @@ describe('resolveTranslatableText', () => {
         others: { ja: 'B', origin: 'A' },
       });
     });
+
+    it('uses the first case-insensitive duplicate for resolution even when it is empty', () => {
+      expect(
+        resolveTranslatableText(
+          { name: '', names: { origin: 'X', Origin: 'A-o', en: 'A', de: 'A', fr: '', FR: 'FR' } },
+          ['FR'],
+        ),
+      ).toEqual({
+        resolved: { lang: 'FR', value: '' },
+        others: { en: 'A', de: 'A', origin: '' },
+      });
+    });
   });
 
   describe('supports fallback chains', () => {
@@ -317,6 +368,33 @@ describe('resolveTranslatableText', () => {
       ).toEqual({
         resolved: { lang: 'origin', value: 'A' },
         others: { en: 'A', de: 'A' },
+      });
+    });
+
+    it('resolves to an empty origin value and omits origin variants when origin stops the chain', () => {
+      expect(
+        resolveTranslatableText(
+          {
+            name: '',
+            names: { origin: 'X', ORIGIN: 'A-O', Origin: 'A-o', en: 'A', de: 'A' },
+          },
+          ['ko', 'origin', 'en'],
+        ),
+      ).toEqual({
+        resolved: { lang: 'origin', value: '' },
+        others: { en: 'A', de: 'A' },
+      });
+    });
+
+    it('keeps empty-string translations and empty origin in others after chain resolution', () => {
+      expect(
+        resolveTranslatableText(
+          { name: '', names: { origin: 'X', Origin: 'A-o', en: 'A', de: 'A', fr: '' } },
+          ['ko', 'en'],
+        ),
+      ).toEqual({
+        resolved: { lang: 'en', value: 'A' },
+        others: { de: 'A', fr: '', origin: '' },
       });
     });
 
