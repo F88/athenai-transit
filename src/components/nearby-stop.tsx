@@ -11,6 +11,7 @@ import { DepartureItem } from './departure-item';
 import { FlatDepartureItem } from './flat-departure-item';
 import { StopInfo } from './stop-info';
 import { VerboseNearbyStopSummary } from './verbose/verbose-nearby-stop-summary';
+import { StopIdentity } from './stop-identity';
 
 export interface NearbyStopProps {
   data: StopWithContext;
@@ -112,6 +113,54 @@ export function NearbyStop({
           routes={routes}
           stats={stats}
           geo={geo}
+        />
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            className="shrink-0 cursor-pointer rounded border border-amber-400 bg-transparent px-1.5 py-0.5 active:bg-amber-50 dark:border-amber-500 dark:active:bg-amber-950"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleAnchor(stop.stop_id);
+            }}
+            title={isAnchor ? t('anchor.remove') : t('anchor.add')}
+            aria-label={isAnchor ? t('anchor.remove') : t('anchor.add')}
+            aria-pressed={isAnchor}
+          >
+            <Signpost
+              size={16}
+              strokeWidth={2}
+              className={isAnchor ? 'text-amber-500' : 'text-gray-400'}
+            />
+          </button>
+          {onShowStopTimetable && (
+            <button
+              type="button"
+              className="shrink-0 cursor-pointer rounded border border-[#1976d2] bg-transparent px-1.5 py-0.5 text-[#1976d2] active:bg-[rgba(25,118,210,0.1)] dark:border-blue-400 dark:text-blue-400"
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowStopTimetable(stop.stop_id);
+              }}
+              title={t('showTimetable')}
+              aria-label={t('showTimetable')}
+            >
+              <Clock size={16} strokeWidth={2} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="m-0 mb-1.5 flex items-start gap-1">
+        <StopIdentity
+          variant="default"
+          stop={stop}
+          routeTypes={routeTypes}
+          agencies={agencies}
+          infoLevel={infoLevel}
+          dataLang={dataLang}
+          isDropOffOnly={isStopDropOffOnly}
+          routes={routes}
+          agencyBadgeSize={'xs'}
+          routeBadgeSize={'xs'}
         />
         <div className="ml-auto flex shrink-0 items-center gap-1">
           <button

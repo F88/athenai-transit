@@ -8,10 +8,10 @@ import { useInfoLevel } from '../hooks/use-info-level';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { routeTypesEmoji } from '../utils/route-type-emoji';
 import { Accessibility } from 'lucide-react';
-import { AgencyBadge } from './badge/agency-badge';
+import { AgencyBadge, type AgencyBadgeSize } from './badge/agency-badge';
 import { DistanceBadge } from './badge/distance-badge';
 import { IdBadge } from './badge/id-badge';
-import { RouteBadge } from './badge/route-badge';
+import { RouteBadge, type RouteBadgeSize } from './badge/route-badge';
 import { StopMetrics } from './stop-metrics';
 import { VerboseStopData } from './verbose/verbose-stop-data';
 
@@ -29,6 +29,8 @@ interface StopInfoProps {
   isDropOffOnly: boolean;
   /** Routes serving this stop. */
   routes?: Route[];
+  agencyBadgeSize?: AgencyBadgeSize;
+  routeBadgeSize?: RouteBadgeSize;
   /** Per-stop operational statistics from InsightsBundle. */
   stats?: StopWithMeta['stats'];
   /** Geographic metrics from GlobalInsightsBundle. */
@@ -52,6 +54,8 @@ export function StopInfo({
   dataLang,
   isDropOffOnly,
   routes,
+  agencyBadgeSize,
+  routeBadgeSize,
   stats,
   geo,
 }: StopInfoProps) {
@@ -61,6 +65,8 @@ export function StopInfo({
   const stopNames = getStopDisplayNames(stop, infoLevel, dataLang);
   const distanceRounded = distance != null ? Math.round(distance) : null;
   const bearing = mapCenter ? bearingDeg(mapCenter, stop) : null;
+  const resolvedAgencyBadgeSize = agencyBadgeSize ?? 'sm';
+  const resolvedRouteBadgeSize = routeBadgeSize ?? 'xs';
 
   return (
     <div className="min-w-0 flex-1">
@@ -123,8 +129,7 @@ export function StopInfo({
               key={agency.agency_id}
               agency={agency}
               infoLevel={infoLevel}
-              //
-              size="sm"
+              size={resolvedAgencyBadgeSize}
             />
           ))}
       </div>
@@ -132,7 +137,12 @@ export function StopInfo({
       {info.isDetailedEnabled && routes && routes.length > 0 && (
         <div className="mt-0.5 flex flex-wrap items-center gap-1">
           {routes.map((r) => (
-            <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} size="xs" />
+            <RouteBadge
+              key={r.route_id}
+              route={r}
+              infoLevel={infoLevel}
+              size={resolvedRouteBadgeSize}
+            />
           ))}
         </div>
       )}
