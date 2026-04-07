@@ -27,10 +27,18 @@ and this project adheres to [CalVer](https://calver.org/).
 - `getDayColorCategory` の曜日判定を timezone-aware に修正。
 - `resolveTranslatableText` を配列 (fallback chain) 対応に拡張。
 - `sortLangKeysByPriority` を BCP 47 case-insensitive に修正。
+- `sortLangKeysByPriority` の優先順ルールを整理し、exact preferred match は `preferred` 配列順を尊重するように統一。
 - i18next `fallbackLng` を `ja` → `en` に変更。ja-\* 以外は英語にフォールバック。
 - `DepartureViewMeta` の label/title/description を i18n キーに変更。
 - UI テキスト i18n 化: relative-time, trip-info, entry-labels, timetable-modal, nearby-stop, bottom-sheet-header, time-setting-dialog, stop-search-modal, info-dialog, 全 panel aria-label, anchor, toast。
 - locale ファイルをネスト構造に整理 (common, nearbyStops, nearbyStop, departure, timetable, view, panel, anchor, search, time, info)。
+- `getStopDisplayNames` を presentation-free な reference implementation に整理し、`getHeadsignDisplayNames` の引数順も整合させた。
+
+### Fixed
+
+- 停留所 summary の車椅子アイコンに `aria-label` と tooltip を追加し、状態が支援技術と hover の両方で伝わるように修正。
+- 時刻表モーダルのヘッダで、日付と時刻が異なるタイムゾーン基準で表示される問題を修正。両方とも `DEFAULT_TIMEZONE` 基準に統一。
+- `useUserSettings` テストを強化し、`navigator.language` 初期化と `lang` 正規化のケースを deterministic に検証するよう改善。
 
 ## [2026.04.06]
 
