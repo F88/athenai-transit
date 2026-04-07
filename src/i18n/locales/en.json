@@ -75,6 +75,7 @@
   },
   "showTimetable": "Show timetable",
   "timetable": {
+    "title": "Timetable",
     "entry": {
       "terminal": "Terminal",
       "origin": "Origin",

@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { IdBadge } from '@/components/badge/id-badge';
-import { RouteBadge } from '@/components/badge/route-badge';
+import { StopIdentity } from '@/components/stop-identity';
+import { StopInfo } from '@/components/stop-info';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { resolveMinPrefixLengths } from '@/utils/resolve-min-prefix-lengths';
-import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route, Stop } from '@/types/app/transit';
 import type { RouteDirection, TimetableEntry } from '@/types/app/transit-composed';
 import type { TimetableOmitted } from '@/types/app/repository';
-import { AgencyBadge } from '@/components/badge/agency-badge';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
 import { formatDateParts } from '@/utils/datetime';
@@ -21,10 +19,6 @@ import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-n
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { PillButton } from '@/components/button/pill-button';
 import { TimetableGridEntry } from '@/components/timetable/timetable-grid-entry';
-import { VerboseAgencies } from '@/components/verbose/verbose-agencies';
-import { VerboseStop } from '@/components/verbose/verbose-stop';
-import { VerboseStopDisplayNames } from '@/components/verbose/verbose-stop-display-names';
-import { VerboseRoutes } from '@/components/verbose/verbose-routes';
 import { VerboseTimetableSummary } from '@/components/verbose/verbose-timetable-summary';
 import {
   Dialog,
@@ -123,6 +117,15 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
     );
   }
 
+  const headerIsDropOffOnly =
+    !data.isBoardableOnServiceDay &&
+    (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
+  const headerRouteTypes = [...new Set(data.routes.map((r) => r.route_type))];
+  const headerAgencies =
+    data.type === 'route-headsign'
+      ? data.agencies.filter((a) => a.agency_id === data.routes[0].agency_id)
+      : data.agencies;
+
   return (
     <Dialog
       open={open}
@@ -155,6 +158,7 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
                 isBoardableOnServiceDay={data.isBoardableOnServiceDay}
               />
             )}
+            <DialogTitle className="sr-only">{t('timetable.title')}</DialogTitle>
             <DialogDescription className="text-muted-foreground text-xs">
               {data.type === 'route-headsign'
                 ? t(
@@ -174,9 +178,56 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
                   })}
             </DialogDescription>
 
-            <DialogTitle className="flex flex-col gap-1">
-              <TimetableHeader data={data} infoLevel={infoLevel} dataLang={dataLang} />
-            </DialogTitle>
+            <TimetableHeader data={data} infoLevel={infoLevel} dataLang={dataLang} />
+            <StopInfo
+              stop={data.stop}
+              routeTypes={headerRouteTypes}
+              agencies={headerAgencies}
+              mapCenter={null}
+              infoLevel={infoLevel}
+              dataLang={dataLang}
+              isDropOffOnly={headerIsDropOffOnly}
+              routes={data.routes}
+            />
+
+            <StopIdentity
+              variant="default"
+              stop={data.stop}
+              routeTypes={headerRouteTypes}
+              agencies={headerAgencies}
+              infoLevel={infoLevel}
+              dataLang={dataLang}
+              isDropOffOnly={headerIsDropOffOnly}
+              routes={data.routes}
+              agencyBadgeSize={'default'}
+              routeBadgeSize={'default'}
+            />
+
+            <StopIdentity
+              variant="default"
+              stop={data.stop}
+              routeTypes={headerRouteTypes}
+              agencies={headerAgencies}
+              infoLevel={infoLevel}
+              dataLang={dataLang}
+              isDropOffOnly={headerIsDropOffOnly}
+              routes={data.routes}
+              agencyBadgeSize={'sm'}
+              routeBadgeSize={'sm'}
+            />
+
+            <StopIdentity
+              variant="default"
+              stop={data.stop}
+              routeTypes={headerRouteTypes}
+              agencies={headerAgencies}
+              infoLevel={infoLevel}
+              dataLang={dataLang}
+              isDropOffOnly={headerIsDropOffOnly}
+              routes={data.routes}
+              agencyBadgeSize={'xs'}
+              routeBadgeSize={'xs'}
+            />
 
             {info.isDetailedEnabled && filteredTimetableEntries.length > 0 && (
               <TimetableMetadata timetableEntries={filteredTimetableEntries} />
@@ -575,16 +626,11 @@ function TimetableHeader({
   infoLevel: InfoLevel;
   dataLang: readonly string[];
 }) {
-  const { t } = useTranslation();
-  const stopNames = getStopDisplayNames(data.stop, infoLevel, dataLang);
   const isDropOffOnly =
     !data.isBoardableOnServiceDay &&
     (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
 
   const routeTypes = [...new Set(data.routes.map((r) => r.route_type))];
-
-  // Unique routes for badge display.
-  const uniqueRoutes = data.routes;
 
   // For route-headsign, show only the agency of that route.
   // For stop timetable, show all agencies.
@@ -593,66 +639,18 @@ function TimetableHeader({
       ? data.agencies.filter((a) => a.agency_id === data.routes[0].agency_id)
       : data.agencies;
 
-  const showVerbose = infoLevel === 'verbose';
-
   return (
-    <>
-      {showVerbose && <IdBadge>{data.stop.stop_id}</IdBadge>}
-      {stopNames.subNames.length > 0 && (
-        <p className="m-0 text-[11px] font-normal text-[#888] dark:text-gray-400">
-          {stopNames.subNames.join(' / ')}
-        </p>
-      )}
-      <div className="flex flex-wrap items-center gap-2 text-base">
-        <span className="shrink-0">{routeTypesEmoji(routeTypes)}</span>
-        <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
-          {stopNames.name}
-        </span>
-        {isDropOffOnly && (
-          <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
-            {t('timetable.grid.empty.dropOffOnly')}
-          </span>
-        )}
-        {displayAgencies.length > 0 &&
-          displayAgencies.map((a) => (
-            <AgencyBadge
-              key={a.agency_id}
-              agency={a}
-              infoLevel={infoLevel}
-              size="xs"
-              disableVerbose
-            />
-          ))}
-      </div>
-
-      {uniqueRoutes.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1">
-          {uniqueRoutes.map((r) => (
-            <RouteBadge key={r.route_id} route={r} infoLevel={infoLevel} disableVerbose />
-          ))}
-        </div>
-      )}
-      {showVerbose && (
-        <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
-          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-            [META]
-          </summary>
-          <div className="mt-1 ml-2 space-y-1">
-            <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
-              <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-                [Stop]
-              </summary>
-              <div className="mt-1 overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
-                <VerboseStop stop={data.stop} isDropOffOnly={isDropOffOnly} />
-              </div>
-              <VerboseStopDisplayNames names={stopNames} />
-            </details>
-            <VerboseAgencies agencies={displayAgencies} infoLevel={infoLevel} />
-            <VerboseRoutes routes={uniqueRoutes} infoLevel={infoLevel} />
-          </div>
-        </details>
-      )}
-    </>
+    <StopIdentity
+      stop={data.stop}
+      routeTypes={routeTypes}
+      agencies={displayAgencies}
+      infoLevel={infoLevel}
+      dataLang={dataLang}
+      isDropOffOnly={isDropOffOnly}
+      routes={data.routes}
+      agencyBadgeSize="default"
+      routeBadgeSize="default"
+    />
   );
 }
 

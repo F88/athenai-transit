@@ -75,6 +75,7 @@
   },
   "showTimetable": "時刻表を表示",
   "timetable": {
+    "title": "時刻表",
     "entry": {
       "terminal": "終点",
       "origin": "始発",

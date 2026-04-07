@@ -5,11 +5,13 @@ import { cn } from '../../lib/utils';
 import { IdBadge } from './id-badge';
 import { VerboseAgency } from '../verbose/verbose-agency';
 
-const sizeVariants = {
+export type AgencyBadgeSize = 'default' | 'sm' | 'xs';
+
+const sizeVariants: Record<AgencyBadgeSize, string> = {
   default: 'text-xs px-2 py-0.5',
   sm: 'text-[10px] px-1',
   xs: 'text-[9px] px-0.5',
-} as const;
+};
 
 interface AgencyBadgeProps {
   /** The agency to display. */
@@ -17,7 +19,7 @@ interface AgencyBadgeProps {
   /** Current info verbosity level. Verbose shows agency_id via IdBadge. */
   infoLevel: InfoLevel;
   /** Size variant. @default 'xs' */
-  size?: keyof typeof sizeVariants;
+  size?: AgencyBadgeSize;
   /** Suppress verbose-only rendering (IdBadge, details dump).
    *  Use in non-interactive contexts like tooltips. */
   disableVerbose?: boolean;
