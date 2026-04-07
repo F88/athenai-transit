@@ -113,7 +113,7 @@ export function resolveTranslatableText(
   let matchedLang: string | undefined;
   let translation: string | undefined;
   for (const preferredLang of preferredLangs) {
-    if (preferredLang === RESERVED_ORIGIN_KEY) {
+    if (isOriginKey(preferredLang)) {
       break; // Fall through to origin resolution below
     }
     const match = findMatchingTranslation(data.names, preferredLang);
