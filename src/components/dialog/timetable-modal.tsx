@@ -321,15 +321,16 @@ function TimetableDateLabel({
     DEFAULT_TIMEZONE,
     { showYear: true },
   );
+  const { time: currentTimeText } = formatDateParts(time, lang, DEFAULT_TIMEZONE, {
+    showTime: true,
+  });
   // Weekday inherits the parent's muted color; only sat/sun/holiday get color override.
   const dayLabelClass =
     dayColorCategory === 'weekday' ? undefined : DAY_COLOR_CATEGORY_CLASSES[dayColorCategory];
-  const hh = String(time.getHours()).padStart(2, '0');
-  const mm = String(time.getMinutes()).padStart(2, '0');
 
   return (
     <p className="text-muted-foreground m-0 text-center font-normal">
-      {dateText} <span className={dayLabelClass}>({dayLabel})</span> {hh}:{mm}
+      {dateText} <span className={dayLabelClass}>({dayLabel})</span> {currentTimeText}
     </p>
   );
 }
