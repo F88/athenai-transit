@@ -1,30 +1,80 @@
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
+import { DEFAULT_LANG, normalizeLang } from '../../config/supported-langs';
 import { useUserSettings } from '../use-user-settings';
 
 const STORAGE_KEY = 'athenai-settings';
+const originalNavigatorLanguageDescriptor = Object.getOwnPropertyDescriptor(
+  window.navigator,
+  'language',
+);
+
+function setNavigatorLanguage(lang: string): void {
+  Object.defineProperty(window.navigator, 'language', {
+    configurable: true,
+    value: lang,
+  });
+}
+
+function readStoredSettings(): Record<string, unknown> {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
+}
+
+async function renderFreshUseUserSettings() {
+  vi.resetModules();
+  const module = await import('../use-user-settings');
+  return renderHook(() => module.useUserSettings());
+}
+
+const IMPORT_TIME_DEFAULT_LANG = normalizeLang(
+  typeof navigator !== 'undefined' ? navigator.language : '',
+);
 
 beforeEach(() => {
   localStorage.clear();
+  vi.restoreAllMocks();
+  setNavigatorLanguage('ja-JP');
+});
+
+afterAll(() => {
+  if (originalNavigatorLanguageDescriptor) {
+    Object.defineProperty(window.navigator, 'language', originalNavigatorLanguageDescriptor);
+  }
 });
 
 describe('useUserSettings', () => {
   // ── initial load ──────────────────────────────────────
 
   describe('initial load', () => {
-    it('returns defaults when localStorage is empty', () => {
-      const { result } = renderHook(() => useUserSettings());
+    it('returns defaults when localStorage is empty', async () => {
+      const { result } = await renderFreshUseUserSettings();
       const s = result.current.settings;
 
       expect(s.infoLevel).toBe('normal');
       expect(s.perfMode).toBe('normal');
       expect(s.renderMode).toBe('auto');
+      expect(s.visibleRouteShapes).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+      expect(s.visibleStopTypes).toEqual([0, 1, 2, 3]);
       expect(s.tileIndex).toBe(0);
       expect(s.theme).toBe('light');
       expect(s.doubleTapDrag).toBe('zoom-out');
-      // lang depends on navigator.language; verify it's a supported value
-      expect(typeof s.lang).toBe('string');
-      expect(s.lang.length).toBeGreaterThan(0);
+      expect(s.lang).toBe('ja');
+    });
+
+    it('normalizes navigator.language on initial load', async () => {
+      setNavigatorLanguage('zh-TW');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.lang).toBe('zh-Hant');
+    });
+
+    it('falls back to DEFAULT_LANG when navigator.language is unsupported', async () => {
+      setNavigatorLanguage('pt-BR');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.lang).toBe(DEFAULT_LANG);
     });
 
     it('merges stored values with defaults', () => {
@@ -45,18 +95,21 @@ describe('useUserSettings', () => {
       expect(result.current.settings.tileIndex).toBe(0);
     });
 
-    it('returns defaults when localStorage contains invalid JSON', () => {
+    it('returns defaults when localStorage contains invalid JSON', async () => {
       localStorage.setItem(STORAGE_KEY, 'not-json');
 
-      const { result } = renderHook(() => useUserSettings());
+      const { result } = await renderFreshUseUserSettings();
       const s = result.current.settings;
 
       expect(s.infoLevel).toBe('normal');
       expect(s.perfMode).toBe('normal');
       expect(s.renderMode).toBe('auto');
+      expect(s.visibleRouteShapes).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+      expect(s.visibleStopTypes).toEqual([0, 1, 2, 3]);
       expect(s.tileIndex).toBe(0);
       expect(s.theme).toBe('light');
-      expect(typeof s.lang).toBe('string');
+      expect(s.doubleTapDrag).toBe('zoom-out');
+      expect(s.lang).toBe('ja');
     });
   });
 
@@ -78,7 +131,7 @@ describe('useUserSettings', () => {
       expect(result.current.settings.renderMode).toBe('standard');
 
       // localStorage does not contain transient keys
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
+      const stored = readStoredSettings();
       expect(stored.perfMode).toBeUndefined();
       expect(stored.renderMode).toBeUndefined();
     });
@@ -134,7 +187,7 @@ describe('useUserSettings', () => {
 
       expect(result.current.settings.infoLevel).toBe('detailed');
 
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
+      const stored = readStoredSettings();
       expect(stored.infoLevel).toBe('detailed');
     });
 
@@ -147,7 +200,7 @@ describe('useUserSettings', () => {
 
       expect(result.current.settings.perfMode).toBe('full');
 
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
+      const stored = readStoredSettings();
       expect(stored.perfMode).toBeUndefined();
     });
 
@@ -179,7 +232,7 @@ describe('useUserSettings', () => {
       expect(result.current.settings.infoLevel).toBe('verbose');
       expect(result.current.settings.tileIndex).toBe(3);
 
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
+      const stored = readStoredSettings();
       expect(stored.infoLevel).toBe('verbose');
       expect(stored.tileIndex).toBe(3);
     });
@@ -269,11 +322,9 @@ describe('useUserSettings', () => {
   // ── lang setting ─────────────────────────────────────
 
   describe('lang setting', () => {
-    it('defaults to navigator.language when supported, otherwise DEFAULT_LANG', () => {
-      const { result } = renderHook(() => useUserSettings());
-      const expected = ['ja', 'ja-Hrkt', 'en', 'de', 'es', 'fr', 'ko', 'zh-Hans', 'zh-Hant'];
-      // navigator.language in test env may vary; result must be a supported lang
-      expect(expected).toContain(result.current.settings.lang);
+    it('defaults to navigator.language when supported, otherwise DEFAULT_LANG', async () => {
+      const { result } = await renderFreshUseUserSettings();
+      expect(result.current.settings.lang).toBe('ja');
     });
 
     it('persists lang to localStorage', () => {
@@ -285,7 +336,7 @@ describe('useUserSettings', () => {
 
       expect(result.current.settings.lang).toBe('en');
 
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
+      const stored = readStoredSettings();
       expect(stored.lang).toBe('en');
     });
 
@@ -302,8 +353,7 @@ describe('useUserSettings', () => {
 
       const { result } = renderHook(() => useUserSettings());
 
-      // lang falls back to navigator.language (normalized), not necessarily 'ja'
-      expect(typeof result.current.settings.lang).toBe('string');
+      expect(result.current.settings.lang).toBe(IMPORT_TIME_DEFAULT_LANG);
       expect(result.current.settings.tileIndex).toBe(1);
     });
 
@@ -331,7 +381,7 @@ describe('useUserSettings', () => {
       });
 
       // localStorage should have the normalized value
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
+      const stored = readStoredSettings();
       expect(stored.lang).toBe('ja');
     });
 
@@ -342,8 +392,19 @@ describe('useUserSettings', () => {
         result.current.updateSetting('lang', 'de');
       });
 
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
+      const stored = readStoredSettings();
       expect(stored.lang).toBe('de');
+    });
+
+    it('normalizes unsupported lang to default on save via updateSettings', () => {
+      const { result } = renderHook(() => useUserSettings());
+
+      act(() => {
+        result.current.updateSettings({ lang: 'pt-BR' });
+      });
+
+      expect(result.current.settings.lang).toBe(DEFAULT_LANG);
+      expect(readStoredSettings().lang).toBe(DEFAULT_LANG);
     });
   });
 
