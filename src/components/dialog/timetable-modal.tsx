@@ -156,14 +156,14 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
                       ? 'timetable.header.routeHeadsignDescription'
                       : 'timetable.header.routeDescription',
                     {
-                      stop: getStopDisplayNames(data.stop, infoLevel, dataLang).name,
+                      stop: getStopDisplayNames(data.stop, dataLang).name,
                       route: data.routes[0].route_short_name || data.routes[0].route_long_name,
                       headsign: data.headsign ?? '',
                       count: filteredTimetableEntries.length.toLocaleString(i18n.language),
                     },
                   )
                 : t('timetable.header.stopDescription', {
-                    stop: getStopDisplayNames(data.stop, infoLevel, dataLang).name,
+                    stop: getStopDisplayNames(data.stop, dataLang).name,
                     count: filteredTimetableEntries.length.toLocaleString(i18n.language),
                   })}
             </DialogDescription>
@@ -669,9 +669,9 @@ function StopTimetableFilter({
             {/* Filter button has no RouteBadge — fall back to route name so it is never blank. */}
             {getHeadsignDisplayNames(
               r.routeDirection,
-              'stop',
               dataLang,
               resolveAgencyLang(data.agencies, route.agency_id),
+              'stop',
             ).resolved.name ||
               route.route_short_name ||
               route.route_long_name ||

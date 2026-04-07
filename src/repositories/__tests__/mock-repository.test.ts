@@ -46,9 +46,9 @@ describe('MockRepository i18n data', () => {
 
     const stopDisplay = getHeadsignDisplayNames(
       stopHeadsignEntry!.routeDirection,
-      'stop',
       'zh-Hant',
       ['ja'],
+      'stop',
     );
     expect(stopDisplay.resolved.name).toBe('森公園前 / 彩虹橋');
 
@@ -59,9 +59,12 @@ describe('MockRepository i18n data', () => {
     );
     expect(tripHeadsignEntry).toBeDefined();
 
-    const tripDisplay = getHeadsignDisplayNames(tripHeadsignEntry!.routeDirection, 'trip', 'ko', [
-      'ja',
-    ]);
+    const tripDisplay = getHeadsignDisplayNames(
+      tripHeadsignEntry!.routeDirection,
+      'ko',
+      ['ja'],
+      'trip',
+    );
     expect(tripDisplay.resolved.name).toBe('니지다리');
   });
 });

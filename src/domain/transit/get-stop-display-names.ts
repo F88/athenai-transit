@@ -1,58 +1,44 @@
-import type { InfoLevel } from '../../types/app/settings';
 import type { Stop } from '../../types/app/transit';
-import { createInfoLevel } from '../../utils/create-info-level';
+import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import type { ResolvedDisplayNames } from './get-display-names';
-import { translateStopName } from './i18n/translate-stop-name';
+import { resolveDisplayNamesWithTranslatableText } from './i18n/resolve-display-names-with-translatable-text';
 
 /**
- * Compute the display names for a stop based on info level and language.
+ * Compute the display names for a stop.
  *
- * Consolidates the repeated pattern of:
- * 1. Resolving the primary name for a language
- * 2. Extracting sub-names filtered by infoLevel
- *
- * Sub-names are shown at "normal" level and above. At "simple" level
- * the array is always empty.
+ * Delegates to {@link resolveDisplayNamesWithTranslatableText} for
+ * language resolution and subNames sorting/deduplication. This is the
+ * simplest reference implementation of the pattern — a single
+ * translatable field with fallback chain support.
  *
  * @param stop - The stop to compute names for.
- * @param infoLevel - Current info verbosity level.
- * @param lang - Optional language key for primary name resolution.
+ * @param lang - Language fallback chain for primary name resolution.
+ * @param agencyLang - Agency languages used as sub-name sort priority.
  * @returns Primary name and filtered sub-names.
  *
  * @example
  * ```ts
- * const { name, subNames } = getStopDisplayNames(stop, 'normal');
+ * const { name, subNames } = getStopDisplayNames(stop);
  * // name: "曙橋"
  * // subNames: ["あけぼのばし", "Akebonobashi"]
  *
- * const { name, subNames } = getStopDisplayNames(stop, 'simple');
- * // name: "曙橋"
- * // subNames: []
- *
- * const { name } = getStopDisplayNames(stop, 'normal', 'en');
+ * const { name } = getStopDisplayNames(stop, 'en');
  * // name: "Akebonobashi"
  * ```
  */
 export function getStopDisplayNames(
   stop: Stop,
-  infoLevel: InfoLevel,
   lang?: string | readonly string[],
+  agencyLang: readonly string[] = DEFAULT_AGENCY_LANG,
 ): ResolvedDisplayNames {
-  const name = translateStopName(stop, lang);
-  const info = createInfoLevel(infoLevel);
-
-  if (!info.isNormalEnabled) {
-    return { name, subNames: [] };
-  }
-
-  // Collect alternative names, excluding the resolved primary name
-  // to avoid showing the same name twice.
-  // When lang is omitted, name === stop_name so this matches the
-  // original getSubNames behavior. When lang is specified (e.g. 'en'),
-  // stop_name ('曙橋') is kept as a subName since it differs from name.
-  const subNames = [
-    ...new Set(Object.values(stop.stop_names).filter((value) => value && value !== name)),
-  ];
-
-  return { name, subNames };
+  // Normalize the primary-name fallback chain for the shared resolver.
+  const preferredDisplayLangs = lang == null ? [] : typeof lang === 'string' ? [lang] : lang;
+  // Stop subNames follow agency language priority when ordering candidates.
+  const subNamePriorityLangs = agencyLang;
+  const resolved = resolveDisplayNamesWithTranslatableText(
+    { name: stop.stop_name, names: stop.stop_names },
+    preferredDisplayLangs,
+    subNamePriorityLangs,
+  );
+  return resolved;
 }

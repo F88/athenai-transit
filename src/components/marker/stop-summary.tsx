@@ -40,14 +40,14 @@ export function StopSummary({
   dataLang,
 }: StopSummaryProps) {
   const info = createInfoLevel(infoLevel);
-  const stopNames = getStopDisplayNames(stop, infoLevel, dataLang);
+  const stopNames = getStopDisplayNames(stop, dataLang);
   // Departure items require `now` for relative time display
   const items = now ? (entries?.slice(0, 3) ?? []) : [];
 
   return (
     <>
       {info.isVerboseEnabled && <IdBadge>{stop.stop_id}</IdBadge>}
-      {stopNames.subNames.length > 0 && (
+      {info.isNormalEnabled && stopNames.subNames.length > 0 && (
         <div className="truncate text-[11px] font-normal text-[#888] dark:text-gray-400">
           {stopNames.subNames.join(' / ')}
         </div>

@@ -53,7 +53,7 @@ export function HeadsignBadge({
   className,
 }: HeadsignBadgeProps) {
   const { route } = routeDirection;
-  const headsignNames = getHeadsignDisplayNames(routeDirection, 'stop', dataLang, agencyLang);
+  const headsignNames = getHeadsignDisplayNames(routeDirection, dataLang, agencyLang, 'stop');
 
   const bg = route.route_color ? `#${route.route_color}` : undefined;
   const fg = route.route_text_color ? `#${route.route_text_color}` : undefined;

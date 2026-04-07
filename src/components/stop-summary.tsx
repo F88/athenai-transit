@@ -74,7 +74,7 @@ export function StopSummary({
   const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
-  const stopNames = getStopDisplayNames(stop, infoLevel, dataLang);
+  const stopNames = getStopDisplayNames(stop, dataLang);
 
   const idRowClass = 'mb-1 flex gap-1';
   const subNameClass = 'm-0 mb-0.5 text-xs font-normal text-[#888] dark:text-gray-400';
@@ -101,7 +101,7 @@ export function StopSummary({
           {stop.parent_station && <IdBadge>p:{stop.parent_station}</IdBadge>}
         </div>
       )}
-      {stopNames.subNames.length > 0 && (
+      {info.isNormalEnabled && stopNames.subNames.length > 0 && (
         <p className={subNameClass}>{stopNames.subNames.join(' / ')}</p>
       )}
       <div className={mainRowClass}>

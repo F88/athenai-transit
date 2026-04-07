@@ -104,7 +104,7 @@ export function TripInfo({
   const info = useInfoLevel(infoLevel);
   const v = sizeVariants[size];
   const agencyLang = agency?.agency_lang ? [agency.agency_lang] : DEFAULT_AGENCY_LANG;
-  const headsignNames = getHeadsignDisplayNames(routeDirection, 'stop', dataLang, agencyLang);
+  const headsignNames = getHeadsignDisplayNames(routeDirection, dataLang, agencyLang, 'stop');
 
   const headsignClass = cn(v.headsign, 'font-medium text-[#333] dark:text-gray-200');
   const subClass = cn(v.headsignSub, 'font-normal text-[#888] dark:text-gray-400');

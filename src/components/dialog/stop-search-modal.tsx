@@ -42,7 +42,7 @@ function StopSearchResultItem({
 }: StopSearchResultItemProps) {
   const info = useInfoLevel(infoLevel);
   // Always show subNames in search results for discoverability.
-  const stopNames = getStopDisplayNames(stop, 'normal', dataLang);
+  const stopNames = getStopDisplayNames(stop, dataLang);
 
   return (
     <button
