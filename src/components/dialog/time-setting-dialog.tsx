@@ -84,7 +84,7 @@ export function TimeSettingDialog({
           </Alert>
         )}
         <label htmlFor="custom-datetime" className="sr-only">
-          Date and time
+          {t('time.settingLabel')}
         </label>
         <input
           id="custom-datetime"
