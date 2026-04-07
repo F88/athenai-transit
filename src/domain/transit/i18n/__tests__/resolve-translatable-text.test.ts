@@ -11,21 +11,21 @@ import { resolveTranslatableText } from '../resolve-translatable-text';
 describe('resolveTranslatableText', () => {
   describe('resolves the primary display value', () => {
     it('falls back to origin when translations are missing', () => {
-      expect(resolveTranslatableText({ name: 'A', names: {} }, 'en')).toEqual({
+      expect(resolveTranslatableText({ name: 'A', names: {} }, ['en'])).toEqual({
         resolved: { lang: 'origin', value: 'A' },
         others: {},
       });
     });
 
     it('resolves a direct language match', () => {
-      expect(resolveTranslatableText({ name: 'A', names: { en: 'A-en' } }, 'en')).toEqual({
+      expect(resolveTranslatableText({ name: 'A', names: { en: 'A-en' } }, ['en'])).toEqual({
         resolved: { lang: 'en', value: 'A-en' },
         others: { origin: 'A' },
       });
     });
 
     it('falls back to origin when the requested language is missing', () => {
-      expect(resolveTranslatableText({ name: 'A', names: { en: 'A-en' } }, 'ko')).toEqual({
+      expect(resolveTranslatableText({ name: 'A', names: { en: 'A-en' } }, ['ko'])).toEqual({
         resolved: { lang: 'origin', value: 'A' },
         others: { en: 'A-en' },
       });
@@ -42,7 +42,7 @@ describe('resolveTranslatableText', () => {
 
     it('falls back to an empty origin value when text.name is empty', () => {
       expect(
-        resolveTranslatableText({ name: '', names: { en: 'A-en', de: 'A-de' } }, 'ko'),
+        resolveTranslatableText({ name: '', names: { en: 'A-en', de: 'A-de' } }, ['ko']),
       ).toEqual({
         resolved: { lang: 'origin', value: '' },
         others: { en: 'A-en', de: 'A-de' },
@@ -50,17 +50,19 @@ describe('resolveTranslatableText', () => {
     });
 
     it('resolves an empty-string translation when the key exists', () => {
-      expect(resolveTranslatableText({ name: 'A', names: { en: '', de: 'A-de' } }, 'en')).toEqual({
-        resolved: { lang: 'en', value: '' },
-        others: { de: 'A-de', origin: 'A' },
-      });
+      expect(resolveTranslatableText({ name: 'A', names: { en: '', de: 'A-de' } }, ['en'])).toEqual(
+        {
+          resolved: { lang: 'en', value: '' },
+          others: { de: 'A-de', origin: 'A' },
+        },
+      );
     });
   });
 
   describe('builds others from non-resolved entries', () => {
     it('includes remaining translations and origin for a resolved language', () => {
       expect(
-        resolveTranslatableText({ name: 'A', names: { en: 'A-en', de: 'A-de' } }, 'en'),
+        resolveTranslatableText({ name: 'A', names: { en: 'A-en', de: 'A-de' } }, ['en']),
       ).toEqual({
         resolved: { lang: 'en', value: 'A-en' },
         others: { de: 'A-de', origin: 'A' },
@@ -69,7 +71,7 @@ describe('resolveTranslatableText', () => {
 
     it('excludes only the resolved language key', () => {
       expect(
-        resolveTranslatableText({ name: 'A', names: { en: 'A-en', de: 'A-de' } }, 'de'),
+        resolveTranslatableText({ name: 'A', names: { en: 'A-en', de: 'A-de' } }, ['de']),
       ).toEqual({
         resolved: { lang: 'de', value: 'A-de' },
         others: { en: 'A-en', origin: 'A' },
@@ -78,7 +80,7 @@ describe('resolveTranslatableText', () => {
 
     it('keeps all translations when resolved falls back to origin', () => {
       expect(
-        resolveTranslatableText({ name: 'A', names: { en: 'A-en', de: 'A-de' } }, 'ko'),
+        resolveTranslatableText({ name: 'A', names: { en: 'A-en', de: 'A-de' } }, ['ko']),
       ).toEqual({
         resolved: { lang: 'origin', value: 'A' },
         others: { en: 'A-en', de: 'A-de' },
@@ -86,14 +88,16 @@ describe('resolveTranslatableText', () => {
     });
 
     it('keeps entries with the same value as resolved', () => {
-      expect(resolveTranslatableText({ name: 'A', names: { ja: 'A', en: 'A-en' } }, 'ja')).toEqual({
+      expect(
+        resolveTranslatableText({ name: 'A', names: { ja: 'A', en: 'A-en' } }, ['ja']),
+      ).toEqual({
         resolved: { lang: 'ja', value: 'A' },
         others: { en: 'A-en', origin: 'A' },
       });
     });
 
     it('keeps duplicate values under different keys', () => {
-      expect(resolveTranslatableText({ name: 'A', names: { en: 'B', fr: 'B' } }, 'ko')).toEqual({
+      expect(resolveTranslatableText({ name: 'A', names: { en: 'B', fr: 'B' } }, ['ko'])).toEqual({
         resolved: { lang: 'origin', value: 'A' },
         others: { en: 'B', fr: 'B' },
       });
@@ -103,7 +107,7 @@ describe('resolveTranslatableText', () => {
       expect(
         resolveTranslatableText(
           { name: 'A', names: { en: 'A-en', de: 'A-de', fr: '', FR: 'FR' } },
-          'en',
+          ['en'],
         ),
       ).toEqual({
         resolved: { lang: 'en', value: 'A-en' },
@@ -150,7 +154,7 @@ describe('resolveTranslatableText', () => {
 
   describe('handles reserved origin semantics', () => {
     it('resolves origin directly when requested', () => {
-      expect(resolveTranslatableText({ name: 'A', names: {} }, 'origin')).toEqual({
+      expect(resolveTranslatableText({ name: 'A', names: {} }, ['origin'])).toEqual({
         resolved: { lang: 'origin', value: 'A' },
         others: {},
       });
@@ -158,7 +162,7 @@ describe('resolveTranslatableText', () => {
 
     it('ignores names.origin when resolved falls back to origin', () => {
       expect(
-        resolveTranslatableText({ name: 'A', names: { origin: 'X', en: 'A-en' } }, 'ko'),
+        resolveTranslatableText({ name: 'A', names: { origin: 'X', en: 'A-en' } }, ['ko']),
       ).toEqual({
         resolved: { lang: 'origin', value: 'A' },
         others: { en: 'A-en' },
@@ -167,10 +171,9 @@ describe('resolveTranslatableText', () => {
 
     it('uses text.name as others.origin when a non-origin language resolves', () => {
       expect(
-        resolveTranslatableText(
-          { name: 'A', names: { origin: 'X', en: 'A-en', de: 'A-de' } },
+        resolveTranslatableText({ name: 'A', names: { origin: 'X', en: 'A-en', de: 'A-de' } }, [
           'en',
-        ),
+        ]),
       ).toEqual({
         resolved: { lang: 'en', value: 'A-en' },
         others: { de: 'A-de', origin: 'A' },
@@ -179,7 +182,7 @@ describe('resolveTranslatableText', () => {
 
     it('keeps others.origin even when text.name is empty', () => {
       expect(
-        resolveTranslatableText({ name: '', names: { en: 'A-en', de: 'A-de' } }, 'en'),
+        resolveTranslatableText({ name: '', names: { en: 'A-en', de: 'A-de' } }, ['en']),
       ).toEqual({
         resolved: { lang: 'en', value: 'A-en' },
         others: { de: 'A-de', origin: '' },
@@ -193,7 +196,7 @@ describe('resolveTranslatableText', () => {
             name: 'A',
             names: { origin: 'X', ORIGIN: 'A-O', Origin: 'A-o', en: 'A', de: 'A' },
           },
-          'origin',
+          ['origin'],
         ),
       ).toEqual({
         resolved: { lang: 'origin', value: 'A' },
@@ -203,7 +206,7 @@ describe('resolveTranslatableText', () => {
 
     it('does not resolve names.origin for mixed-case ORIGIN', () => {
       expect(
-        resolveTranslatableText({ name: 'A', names: { origin: 'X', en: 'A-en' } }, 'ORIGIN'),
+        resolveTranslatableText({ name: 'A', names: { origin: 'X', en: 'A-en' } }, ['ORIGIN']),
       ).toEqual({
         resolved: { lang: 'origin', value: 'A' },
         others: { en: 'A-en' },
@@ -216,7 +219,7 @@ describe('resolveTranslatableText', () => {
       expect(
         resolveTranslatableText(
           { name: '渋谷駅', names: { 'ja-Hrkt': 'しぶやえき', en: 'Shibuya Sta.' } },
-          'ja-Hrkt',
+          ['ja-Hrkt'],
         ),
       ).toEqual({
         resolved: { lang: 'ja-Hrkt', value: 'しぶやえき' },
@@ -228,7 +231,7 @@ describe('resolveTranslatableText', () => {
       expect(
         resolveTranslatableText(
           { name: '渋谷駅', names: { 'ja-HrKt': 'しぶやえき', en: 'Shibuya Sta.' } },
-          'ja-Hrkt',
+          ['ja-Hrkt'],
         ),
       ).toEqual({
         resolved: { lang: 'ja-Hrkt', value: 'しぶやえき' },
@@ -238,7 +241,9 @@ describe('resolveTranslatableText', () => {
 
     it('matches when the requested key casing differs', () => {
       expect(
-        resolveTranslatableText({ name: '渋谷駅', names: { 'ja-Hrkt': 'しぶやえき' } }, 'ja-HrKt'),
+        resolveTranslatableText({ name: '渋谷駅', names: { 'ja-Hrkt': 'しぶやえき' } }, [
+          'ja-HrKt',
+        ]),
       ).toEqual({
         resolved: { lang: 'ja-HrKt', value: 'しぶやえき' },
         others: { origin: '渋谷駅' },
@@ -247,7 +252,7 @@ describe('resolveTranslatableText', () => {
 
     it('matches simple language tags case-insensitively', () => {
       expect(
-        resolveTranslatableText({ name: '渋谷駅', names: { en: 'Shibuya Sta.' } }, 'EN'),
+        resolveTranslatableText({ name: '渋谷駅', names: { en: 'Shibuya Sta.' } }, ['EN']),
       ).toEqual({
         resolved: { lang: 'EN', value: 'Shibuya Sta.' },
         others: { origin: '渋谷駅' },
@@ -256,7 +261,7 @@ describe('resolveTranslatableText', () => {
 
     it('matches script subtags case-insensitively', () => {
       expect(
-        resolveTranslatableText({ name: '渋谷駅', names: { 'zh-Hans': '涩谷站' } }, 'ZH-HANS'),
+        resolveTranslatableText({ name: '渋谷駅', names: { 'zh-Hans': '涩谷站' } }, ['ZH-HANS']),
       ).toEqual({
         resolved: { lang: 'ZH-HANS', value: '涩谷站' },
         others: { origin: '渋谷駅' },
@@ -272,7 +277,7 @@ describe('resolveTranslatableText', () => {
             name: '渋谷駅',
             names: { 'ja-Hrkt': 'しぶやえき', 'ja-HrKt': 'シブヤエキ', en: 'Shibuya Sta.' },
           },
-          'ja-Hrkt',
+          ['ja-Hrkt'],
         ),
       ).toEqual({
         resolved: { lang: 'ja-Hrkt', value: 'しぶやえき' },
@@ -284,7 +289,7 @@ describe('resolveTranslatableText', () => {
       expect(
         resolveTranslatableText(
           { name: 'A', names: { 'ja-Hrkt': 'ひらがな', 'ja-HrKt': 'カタカナ', en: 'A-en' } },
-          'origin',
+          ['origin'],
         ),
       ).toEqual({
         resolved: { lang: 'origin', value: 'A' },
