@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StopIdentity } from '@/components/stop-identity';
+import { StopSummary } from '@/components/stop-summary';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { resolveMinPrefixLengths } from '@/utils/resolve-min-prefix-lengths';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
@@ -581,7 +581,7 @@ function TimetableHeader({
       : data.agencies;
 
   return (
-    <StopIdentity
+    <StopSummary
       stop={data.stop}
       routeTypes={routeTypes}
       agencies={displayAgencies}

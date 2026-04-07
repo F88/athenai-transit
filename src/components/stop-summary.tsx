@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Accessibility } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useInfoLevel } from '../hooks/use-info-level';
@@ -13,22 +14,52 @@ import { VerboseStopDisplayNames } from './verbose/verbose-stop-display-names';
 import { VerboseAgencies } from './verbose/verbose-agencies';
 import { VerboseRoutes } from './verbose/verbose-routes';
 
-export type StopIdentityVariant = 'default' | 'compact';
+export type StopSummaryVariant = 'default' | 'compact';
 
-interface StopIdentityProps {
+/**
+ * Shared core props for stop summary presentation.
+ *
+ * These fields describe the common stop context reused by StopSummary and
+ * wrapper components such as StopInfo.
+ */
+export interface StopSummaryCoreProps {
+  /** Agencies to render as badges for this stop context. */
   agencies: Agency[];
+  /** Route types served by the stop, rendered as the lead emoji. */
   routeTypes: RouteType[];
+  /** Routes to render as badges in detailed mode. */
   routes?: Route[];
+  /** Stop to display. */
   stop: Stop;
+  /** Active information density level. */
   infoLevel: InfoLevel;
+  /** Display language fallback chain for translated names. */
   dataLang: readonly string[];
+  /** Whether the stop context is drop-off only. */
   isDropOffOnly: boolean;
-  variant?: StopIdentityVariant;
+  /** Badge size override for agency badges. */
   agencyBadgeSize?: AgencyBadgeSize;
+  /** Badge size override for route badges. */
   routeBadgeSize?: RouteBadgeSize;
 }
 
-export function StopIdentity({
+/**
+ * Props for the shared stop summary block.
+ *
+ * This component owns the common stop presentation used across screens,
+ * such as stop name, sub names, route type, platform code, accessibility,
+ * drop-off status, agencies, routes, and verbose metadata.
+ */
+interface StopSummaryProps extends StopSummaryCoreProps {
+  /**
+   * Optional inline badge/content inserted in the main row after platform code.
+   * Used by wrappers such as StopInfo to place distance without reimplementing
+   * the shared row structure.
+   */
+  distanceBadge?: ReactNode;
+}
+
+export function StopSummary({
   agencies,
   routeTypes,
   routes,
@@ -36,10 +67,10 @@ export function StopIdentity({
   infoLevel,
   dataLang,
   isDropOffOnly,
-  variant: _variant = 'default',
   agencyBadgeSize,
   routeBadgeSize,
-}: StopIdentityProps) {
+  distanceBadge,
+}: StopSummaryProps) {
   const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
@@ -77,6 +108,7 @@ export function StopIdentity({
         <span className={routeTypeClass}>{routeTypesEmoji(routeTypes)}</span>
         <span className={nameClass}>{stopNames.name}</span>
         {stop.platform_code && <span className={platformCodeClass}>{stop.platform_code}</span>}
+        {distanceBadge}
         {stop.wheelchair_boarding === 1 && (
           <span className={accessibilityClass}>
             <Accessibility size={14} strokeWidth={2} />
@@ -113,7 +145,6 @@ export function StopIdentity({
         </div>
       )}
 
-      {/* Verbose */}
       {showVerbose && (
         <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
           <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>

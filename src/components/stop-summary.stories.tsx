@@ -9,24 +9,20 @@ import {
   baseStop,
   busRoute,
   longNameStop,
-  sampleGeo,
-  sampleStats,
-  storyMapCenter,
   tramRoute,
+  storyMapCenter,
 } from '../stories/fixtures';
-import { StopInfo } from './stop-info';
-
-// --- Meta ---
+import { bearingDeg } from '../domain/transit/distance';
+import { DistanceBadge } from './badge/distance-badge';
+import { StopSummary } from './stop-summary';
 
 const meta = {
-  title: 'Stop/StopInfo',
-  component: StopInfo,
+  title: 'Stop/StopSummary',
+  component: StopSummary,
   args: {
     stop: baseStop,
     routeTypes: [3] as RouteType[],
     agencies: [agencyTobus],
-    distance: 235,
-    mapCenter: storyMapCenter,
     infoLevel: 'normal',
     dataLang: ['ja'],
     isDropOffOnly: false,
@@ -45,7 +41,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof StopInfo>;
+} satisfies Meta<typeof StopSummary>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -56,20 +52,6 @@ export const Default: Story = {};
 
 export const DropOffOnly: Story = {
   args: { isDropOffOnly: true },
-};
-
-// --- Distance & direction ---
-
-export const Near: Story = {
-  args: { mapCenter: { lat: 35.6955, lng: 139.8134 } },
-};
-
-export const Far: Story = {
-  args: { mapCenter: { lat: 35.691, lng: 139.805 } },
-};
-
-export const NoMapCenter: Story = {
-  args: { mapCenter: null },
 };
 
 // --- Route types ---
@@ -84,14 +66,6 @@ export const Tram: Story = {
 
 export const MultiType: Story = {
   args: { routeTypes: [0, 3] as RouteType[], agencies: [agencyGx, agencyOretetsu] },
-};
-
-export const MultiTypeDropOff: Story = {
-  args: {
-    routeTypes: [0, 3] as RouteType[],
-    agencies: [agencyGx, agencyOretetsu],
-    isDropOffOnly: true,
-  },
 };
 
 // --- Badge sizes ---
@@ -127,9 +101,9 @@ export const BadgeSizeComparison: Story = {
   },
   render: (args) => (
     <div className="flex flex-col gap-3">
-      <StopInfo {...args} agencyBadgeSize="xs" routeBadgeSize="xs" />
-      <StopInfo {...args} agencyBadgeSize="sm" routeBadgeSize="sm" />
-      <StopInfo {...args} agencyBadgeSize="default" routeBadgeSize="default" />
+      <StopSummary {...args} agencyBadgeSize="xs" routeBadgeSize="xs" />
+      <StopSummary {...args} agencyBadgeSize="sm" routeBadgeSize="sm" />
+      <StopSummary {...args} agencyBadgeSize="default" routeBadgeSize="default" />
     </div>
   ),
 };
@@ -190,17 +164,39 @@ export const LongNameMultiType: Story = {
   },
 };
 
-/** Kitchen sink: long name, multi-type, all agencies, drop-off-only, stats, geo, routes — all elements visible. */
+// --- Inline extension ---
+
+export const WithDistanceBadge: Story = {
+  args: {
+    stop: longNameStop,
+    infoLevel: 'detailed',
+    routes: [busRoute, tramRoute],
+    routeTypes: [0, 3] as RouteType[],
+    agencies: [agencyGx, agencyOretetsu],
+  },
+  render: (args) => (
+    <StopSummary
+      {...args}
+      distanceBadge={
+        <DistanceBadge
+          meters={235}
+          bearingDeg={bearingDeg(storyMapCenter, args.stop)}
+          showDirection
+        />
+      }
+    />
+  ),
+};
+
+/** Kitchen sink: long name, multi-type, all agencies, all route badges, drop-off-only. */
 const kitchenSinkArgs = {
   stop: longNameStop,
   routeTypes: [0, 3] as RouteType[],
   agencies: allAgencies,
   isDropOffOnly: true,
   routes: allRoutes,
-  stats: sampleStats,
-  geo: sampleGeo,
 };
 
 export const KitchenSink: Story = {
-  args: { ...kitchenSinkArgs, infoLevel: 'detailed' as const },
+  args: { ...kitchenSinkArgs, infoLevel: 'simple' as const },
 };
