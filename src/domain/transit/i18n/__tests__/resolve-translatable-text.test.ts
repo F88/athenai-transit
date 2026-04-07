@@ -212,6 +212,19 @@ describe('resolveTranslatableText', () => {
         others: { en: 'A-en' },
       });
     });
+
+    it('stops the fallback chain for mixed-case ORIGIN in the middle', () => {
+      expect(
+        resolveTranslatableText({ name: 'A', names: { en: 'A-en', de: 'A-de' } }, [
+          'ko',
+          'ORIGIN',
+          'en',
+        ]),
+      ).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A-en', de: 'A-de' },
+      });
+    });
   });
 
   describe('supports case-insensitive lookup', () => {
@@ -403,7 +416,7 @@ describe('resolveTranslatableText', () => {
       });
     });
 
-    it('does not treat mixed-case ORIGIN as the reserved stop keyword', () => {
+    it('treats mixed-case ORIGIN as the reserved origin keyword', () => {
       expect(
         resolveTranslatableText({ name: 'A', names: { origin: 'X', en: 'A-en', de: 'A-de' } }, [
           'ko',
@@ -411,12 +424,12 @@ describe('resolveTranslatableText', () => {
           'en',
         ]),
       ).toEqual({
-        resolved: { lang: 'en', value: 'A-en' },
-        others: { de: 'A-de', origin: 'A' },
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A-en', de: 'A-de' },
       });
     });
 
-    it('ignores origin case variants in names for mixed-case ORIGIN chain entries', () => {
+    it('ignores origin case variants in names when mixed-case ORIGIN stops the chain', () => {
       expect(
         resolveTranslatableText(
           {
@@ -426,8 +439,8 @@ describe('resolveTranslatableText', () => {
           ['ko', 'ORIGIN', 'en'],
         ),
       ).toEqual({
-        resolved: { lang: 'en', value: 'A-en' },
-        others: { de: 'A-de', origin: 'A' },
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A-en', de: 'A-de' },
       });
     });
 
