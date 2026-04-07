@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StopIdentity } from '@/components/stop-identity';
-import { StopInfo } from '@/components/stop-info';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { resolveMinPrefixLengths } from '@/utils/resolve-min-prefix-lengths';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
@@ -117,15 +116,6 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
     );
   }
 
-  const headerIsDropOffOnly =
-    !data.isBoardableOnServiceDay &&
-    (data.omitted.terminal > 0 || data.timetableEntries.length > 0);
-  const headerRouteTypes = [...new Set(data.routes.map((r) => r.route_type))];
-  const headerAgencies =
-    data.type === 'route-headsign'
-      ? data.agencies.filter((a) => a.agency_id === data.routes[0].agency_id)
-      : data.agencies;
-
   return (
     <Dialog
       open={open}
@@ -179,55 +169,6 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
             </DialogDescription>
 
             <TimetableHeader data={data} infoLevel={infoLevel} dataLang={dataLang} />
-            <StopInfo
-              stop={data.stop}
-              routeTypes={headerRouteTypes}
-              agencies={headerAgencies}
-              mapCenter={null}
-              infoLevel={infoLevel}
-              dataLang={dataLang}
-              isDropOffOnly={headerIsDropOffOnly}
-              routes={data.routes}
-            />
-
-            <StopIdentity
-              variant="default"
-              stop={data.stop}
-              routeTypes={headerRouteTypes}
-              agencies={headerAgencies}
-              infoLevel={infoLevel}
-              dataLang={dataLang}
-              isDropOffOnly={headerIsDropOffOnly}
-              routes={data.routes}
-              agencyBadgeSize={'default'}
-              routeBadgeSize={'default'}
-            />
-
-            <StopIdentity
-              variant="default"
-              stop={data.stop}
-              routeTypes={headerRouteTypes}
-              agencies={headerAgencies}
-              infoLevel={infoLevel}
-              dataLang={dataLang}
-              isDropOffOnly={headerIsDropOffOnly}
-              routes={data.routes}
-              agencyBadgeSize={'sm'}
-              routeBadgeSize={'sm'}
-            />
-
-            <StopIdentity
-              variant="default"
-              stop={data.stop}
-              routeTypes={headerRouteTypes}
-              agencies={headerAgencies}
-              infoLevel={infoLevel}
-              dataLang={dataLang}
-              isDropOffOnly={headerIsDropOffOnly}
-              routes={data.routes}
-              agencyBadgeSize={'xs'}
-              routeBadgeSize={'xs'}
-            />
 
             {info.isDetailedEnabled && filteredTimetableEntries.length > 0 && (
               <TimetableMetadata timetableEntries={filteredTimetableEntries} />
