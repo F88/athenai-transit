@@ -62,16 +62,18 @@ interface RenderingPanelProps {
 
 /**
  * Rendering control panel placed at the top-right of the map.
- * Controls render mode, performance mode, info level, and theme.
+ * Controls render mode, performance mode, info level, theme, and language.
  *
  * @param renderMode - Current render mode.
  * @param perfMode - Current performance mode.
  * @param infoLevel - Current info level.
  * @param theme - Current theme for dark mode icon display.
+ * @param lang - Current display language code.
  * @param onToggleRenderMode - Callback to toggle render mode.
  * @param onTogglePerfMode - Callback to toggle performance mode.
  * @param onCycleInfoLevel - Callback to cycle info level.
  * @param onToggleDarkMode - Callback to toggle dark mode.
+ * @param onCycleLang - Callback to cycle display language.
  */
 export function RenderingPanel({
   renderMode,

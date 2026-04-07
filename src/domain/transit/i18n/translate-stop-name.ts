@@ -11,8 +11,9 @@ import type { Stop } from '../../../types/app/transit';
  * no knowledge of info levels or display formatting.
  *
  * @param stop - The stop to translate a name for.
- * @param lang - BCP 47-ish language key matching translations.txt
- *               (e.g. `"en"`, `"ja-Hrkt"`). Defaults to primary name.
+ * @param lang - BCP 47-ish language key or ordered fallback chain
+ *               (e.g. `"en"`, `["zh-Hant", "zh-Hans", "en"]`).
+ *               Defaults to primary name when omitted.
  * @returns The translated stop name string.
  */
 export function translateStopName(stop: Stop, lang?: string | readonly string[]): string {
