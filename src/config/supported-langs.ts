@@ -59,6 +59,19 @@ export const DEFAULT_LANG = SUPPORTED_LANGS[0].code;
 export const SUPPORTED_LANG_CODES: readonly string[] = SUPPORTED_LANGS.map((l) => l.code);
 
 /**
+ * Region-to-script mapping for Chinese locale variants.
+ * navigator.language returns region-based codes (zh-CN, zh-TW, zh-HK)
+ * but SUPPORTED_LANGS uses script-based codes (zh-Hans, zh-Hant).
+ */
+const REGION_TO_LANG: Record<string, string> = {
+  'zh-cn': 'zh-Hans',
+  'zh-sg': 'zh-Hans',
+  'zh-tw': 'zh-Hant',
+  'zh-hk': 'zh-Hant',
+  'zh-mo': 'zh-Hant',
+};
+
+/**
  * Normalize a language code to a supported value.
  *
  * Tries the following strategies in order (case-insensitive per BCP 47):
@@ -73,19 +86,6 @@ export const SUPPORTED_LANG_CODES: readonly string[] = SUPPORTED_LANGS.map((l) =
  * @param lang - Language code to normalize (e.g. `navigator.language`).
  * @returns A guaranteed-supported language code.
  */
-/**
- * Region-to-script mapping for Chinese locale variants.
- * navigator.language returns region-based codes (zh-CN, zh-TW, zh-HK)
- * but SUPPORTED_LANGS uses script-based codes (zh-Hans, zh-Hant).
- */
-const REGION_TO_LANG: Record<string, string> = {
-  'zh-cn': 'zh-Hans',
-  'zh-sg': 'zh-Hans',
-  'zh-tw': 'zh-Hant',
-  'zh-hk': 'zh-Hant',
-  'zh-mo': 'zh-Hant',
-};
-
 export function normalizeLang(lang: string): string {
   // Case-insensitive match per BCP 47 (RFC 5646 §2.1.1).
   // Returns the canonical code from SUPPORTED_LANGS, not the input casing.
