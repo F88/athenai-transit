@@ -15,11 +15,16 @@ export type LangChain = readonly string[];
  *
  * @param lang - Starting language code.
  * @param langs - Language definitions with fallback chains.
- * @returns Ordered fallback chain (e.g. `['zh-Hant', 'zh-Hans', 'en']`).
+ * @returns Ordered fallback chain. Includes generic parent language
+ *   prefixes (e.g. `zh`) after the last subtag variant of the same
+ *   family, so data keyed by the generic code is found after explicit
+ *   fallbacks but before unrelated languages.
  *
  * @example
  * ```ts
- * resolveLangChain('zh-Hant', SUPPORTED_LANGS); // → ['zh-Hant', 'zh-Hans', 'en']
+ * resolveLangChain('zh-Hant', SUPPORTED_LANGS); // → ['zh-Hant', 'zh-Hans', 'zh', 'en']
+ * resolveLangChain('zh-Hans', SUPPORTED_LANGS); // → ['zh-Hans', 'zh', 'en']
+ * resolveLangChain('ja-Hrkt', SUPPORTED_LANGS); // → ['ja-Hrkt', 'ja', 'en']
  * resolveLangChain('ja', SUPPORTED_LANGS);      // → ['ja', 'en']
  * resolveLangChain('en', SUPPORTED_LANGS);      // → ['en']
  * ```
