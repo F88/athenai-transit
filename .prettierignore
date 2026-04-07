@@ -6,6 +6,7 @@
 
 # Ignore build and distribution directories
 dist
+storybook-static
 node_modules
 public/data
 public/data-v2

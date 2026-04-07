@@ -46,7 +46,7 @@ export function BottomSheetHeader({
   onToggleRouteType,
   onToggleAgency,
 }: BottomSheetHeaderProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
 
   return (
