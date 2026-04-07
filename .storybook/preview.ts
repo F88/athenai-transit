@@ -1,6 +1,7 @@
 import type { Preview } from '@storybook/react-vite';
 import '../src/index.css';
-import '../src/i18n';
+import i18n from '../src/i18n';
+import { SUPPORTED_LANGS, normalizeLang } from '../src/config/supported-langs';
 
 // Override app's overflow:hidden on html/body (needed for full-screen map)
 // so that Storybook docs pages and story previews can scroll.
@@ -11,6 +12,34 @@ if (typeof document !== 'undefined') {
 
 const preview: Preview = {
   tags: ['autodocs'],
+  globalTypes: {
+    lang: {
+      name: 'Lang',
+      description: 'UI language for Storybook preview',
+      defaultValue: normalizeLang(typeof navigator !== 'undefined' ? navigator.language : ''),
+      toolbar: {
+        icon: 'globe',
+        items: SUPPORTED_LANGS.map((lang) => ({
+          value: lang.code,
+          title: lang.label,
+          right: lang.shortLabel,
+        })),
+        dynamicTitle: true,
+      },
+    },
+  },
+  decorators: [
+    (Story, context) => {
+      const nextLang = normalizeLang(String(context.globals.lang ?? ''));
+      if (typeof document !== 'undefined') {
+        document.documentElement.lang = nextLang;
+      }
+      if (i18n.language !== nextLang) {
+        void i18n.changeLanguage(nextLang);
+      }
+      return Story();
+    },
+  ],
   parameters: {
     controls: {
       matchers: {
