@@ -9,218 +9,365 @@ import { describe, expect, it } from 'vitest';
 import { resolveTranslatableText } from '../resolve-translatable-text';
 
 describe('resolveTranslatableText', () => {
-  describe('name + 0 names', () => {
-    const text = { name: 'A', names: {} };
-
-    it('lang=en (not found)', () => {
-      const actual = resolveTranslatableText(text, 'en');
-      expect(actual.resolved.lang).toBe('origin');
-      expect(actual.resolved.value).toBe('A');
-      expect(Object.keys(actual.others).length).toBe(0);
+  describe('resolves the primary display value', () => {
+    it('falls back to origin when translations are missing', () => {
+      expect(resolveTranslatableText({ name: 'A', names: {} }, 'en')).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: {},
+      });
     });
 
-    it('lang=origin', () => {
-      const actual = resolveTranslatableText(text, 'origin');
-      expect(actual.resolved.lang).toBe('origin');
-      expect(actual.resolved.value).toBe('A');
-      expect(Object.keys(actual.others).length).toBe(0);
-    });
-  });
-
-  describe('name + 1 names', () => {
-    const text = { name: 'A', names: { en: 'A-en' } };
-
-    it('lang=en (found)', () => {
-      const actual = resolveTranslatableText(text, 'en');
-      expect(actual.resolved.lang).toBe('en');
-      expect(actual.resolved.value).toBe('A-en');
-      expect(Object.keys(actual.others).length).toBe(1);
-      expect(actual.others['origin']).toBe('A');
+    it('resolves a direct language match', () => {
+      expect(resolveTranslatableText({ name: 'A', names: { en: 'A-en' } }, 'en')).toEqual({
+        resolved: { lang: 'en', value: 'A-en' },
+        others: { origin: 'A' },
+      });
     });
 
-    it('lang=ko (not found)', () => {
-      const actual = resolveTranslatableText(text, 'ko');
-      expect(actual.resolved.lang).toBe('origin');
-      expect(actual.resolved.value).toBe('A');
-      expect(Object.keys(actual.others).length).toBe(1);
-      expect(actual.others['en']).toBe('A-en');
+    it('falls back to origin when the requested language is missing', () => {
+      expect(resolveTranslatableText({ name: 'A', names: { en: 'A-en' } }, 'ko')).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A-en' },
+      });
+    });
+
+    it('treats empty-string translations as missing', () => {
+      expect(resolveTranslatableText({ name: 'A', names: { en: '', de: 'A-de' } }, 'en')).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { de: 'A-de' },
+      });
     });
   });
 
-  describe('name + 2 names', () => {
+  describe('builds others from non-resolved entries', () => {
+    it('includes remaining translations and origin for a resolved language', () => {
+      expect(
+        resolveTranslatableText({ name: 'A', names: { en: 'A-en', de: 'A-de' } }, 'en'),
+      ).toEqual({
+        resolved: { lang: 'en', value: 'A-en' },
+        others: { de: 'A-de', origin: 'A' },
+      });
+    });
+
+    it('excludes only the resolved language key', () => {
+      expect(
+        resolveTranslatableText({ name: 'A', names: { en: 'A-en', de: 'A-de' } }, 'de'),
+      ).toEqual({
+        resolved: { lang: 'de', value: 'A-de' },
+        others: { en: 'A-en', origin: 'A' },
+      });
+    });
+
+    it('keeps all translations when resolved falls back to origin', () => {
+      expect(
+        resolveTranslatableText({ name: 'A', names: { en: 'A-en', de: 'A-de' } }, 'ko'),
+      ).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A-en', de: 'A-de' },
+      });
+    });
+
+    it('keeps entries with the same value as resolved', () => {
+      expect(resolveTranslatableText({ name: 'A', names: { ja: 'A', en: 'A-en' } }, 'ja')).toEqual({
+        resolved: { lang: 'ja', value: 'A' },
+        others: { en: 'A-en', origin: 'A' },
+      });
+    });
+
+    it('keeps duplicate values under different keys', () => {
+      expect(resolveTranslatableText({ name: 'A', names: { en: 'B', fr: 'B' } }, 'ko')).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'B', fr: 'B' },
+      });
+    });
+
+    it('keeps same-value translations when origin stops the fallback chain', () => {
+      expect(
+        resolveTranslatableText({ name: 'A', names: { en: 'A', de: 'A' } }, ['ko', 'origin', 'en']),
+      ).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A', de: 'A' },
+      });
+    });
+
+    it('keeps all non-resolved translations in multilingual data', () => {
+      expect(
+        resolveTranslatableText(
+          {
+            name: '曙橋',
+            names: {
+              ja: '曙橋',
+              'ja-Hrkt': 'あけぼのばし',
+              en: 'Akebonobashi',
+              ko: '아케보노바시',
+              'zh-Hans': '曙桥',
+            },
+          },
+          ['ja-Hrkt', 'ja', 'en'],
+        ),
+      ).toEqual({
+        resolved: { lang: 'ja-Hrkt', value: 'あけぼのばし' },
+        others: {
+          ja: '曙橋',
+          en: 'Akebonobashi',
+          ko: '아케보노바시',
+          'zh-Hans': '曙桥',
+          origin: '曙橋',
+        },
+      });
+    });
+  });
+
+  describe('handles reserved origin semantics', () => {
+    it('resolves origin directly when requested', () => {
+      expect(resolveTranslatableText({ name: 'A', names: {} }, 'origin')).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: {},
+      });
+    });
+
+    it('ignores names.origin when resolved falls back to origin', () => {
+      expect(
+        resolveTranslatableText({ name: 'A', names: { origin: 'X', en: 'A-en' } }, 'ko'),
+      ).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A-en' },
+      });
+    });
+
+    it('uses text.name as others.origin when a non-origin language resolves', () => {
+      expect(
+        resolveTranslatableText(
+          { name: 'A', names: { origin: 'X', en: 'A-en', de: 'A-de' } },
+          'en',
+        ),
+      ).toEqual({
+        resolved: { lang: 'en', value: 'A-en' },
+        others: { de: 'A-de', origin: 'A' },
+      });
+    });
+
+    it('ignores all origin case variants when lang is origin', () => {
+      expect(
+        resolveTranslatableText(
+          {
+            name: 'A',
+            names: { origin: 'X', ORIGIN: 'A-O', Origin: 'A-o', en: 'A', de: 'A' },
+          },
+          'origin',
+        ),
+      ).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A', de: 'A' },
+      });
+    });
+
+    it('does not resolve names.origin for mixed-case ORIGIN', () => {
+      expect(
+        resolveTranslatableText({ name: 'A', names: { origin: 'X', en: 'A-en' } }, 'ORIGIN'),
+      ).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A-en' },
+      });
+    });
+  });
+
+  describe('supports case-insensitive lookup', () => {
+    it('matches an exact key', () => {
+      expect(
+        resolveTranslatableText(
+          { name: '渋谷駅', names: { 'ja-Hrkt': 'しぶやえき', en: 'Shibuya Sta.' } },
+          'ja-Hrkt',
+        ),
+      ).toEqual({
+        resolved: { lang: 'ja-Hrkt', value: 'しぶやえき' },
+        others: { en: 'Shibuya Sta.', origin: '渋谷駅' },
+      });
+    });
+
+    it('matches when the stored key casing differs', () => {
+      expect(
+        resolveTranslatableText(
+          { name: '渋谷駅', names: { 'ja-HrKt': 'しぶやえき', en: 'Shibuya Sta.' } },
+          'ja-Hrkt',
+        ),
+      ).toEqual({
+        resolved: { lang: 'ja-Hrkt', value: 'しぶやえき' },
+        others: { en: 'Shibuya Sta.', origin: '渋谷駅' },
+      });
+    });
+
+    it('matches when the requested key casing differs', () => {
+      expect(
+        resolveTranslatableText({ name: '渋谷駅', names: { 'ja-Hrkt': 'しぶやえき' } }, 'ja-HrKt'),
+      ).toEqual({
+        resolved: { lang: 'ja-HrKt', value: 'しぶやえき' },
+        others: { origin: '渋谷駅' },
+      });
+    });
+
+    it('matches simple language tags case-insensitively', () => {
+      expect(
+        resolveTranslatableText({ name: '渋谷駅', names: { en: 'Shibuya Sta.' } }, 'EN'),
+      ).toEqual({
+        resolved: { lang: 'EN', value: 'Shibuya Sta.' },
+        others: { origin: '渋谷駅' },
+      });
+    });
+
+    it('matches script subtags case-insensitively', () => {
+      expect(
+        resolveTranslatableText({ name: '渋谷駅', names: { 'zh-Hans': '涩谷站' } }, 'ZH-HANS'),
+      ).toEqual({
+        resolved: { lang: 'ZH-HANS', value: '涩谷站' },
+        others: { origin: '渋谷駅' },
+      });
+    });
+  });
+
+  describe('deduplicates case-variant keys with first-wins semantics', () => {
+    it('excludes duplicate case variants from others after a direct match', () => {
+      expect(
+        resolveTranslatableText(
+          {
+            name: '渋谷駅',
+            names: { 'ja-Hrkt': 'しぶやえき', 'ja-HrKt': 'シブヤエキ', en: 'Shibuya Sta.' },
+          },
+          'ja-Hrkt',
+        ),
+      ).toEqual({
+        resolved: { lang: 'ja-Hrkt', value: 'しぶやえき' },
+        others: { en: 'Shibuya Sta.', origin: '渋谷駅' },
+      });
+    });
+
+    it('keeps the first case-variant key in others when resolved is origin', () => {
+      expect(
+        resolveTranslatableText(
+          { name: 'A', names: { 'ja-Hrkt': 'ひらがな', 'ja-HrKt': 'カタカナ', en: 'A-en' } },
+          'origin',
+        ),
+      ).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { 'ja-Hrkt': 'ひらがな', en: 'A-en' },
+      });
+    });
+
+    it('keeps the first case-insensitive duplicate key in others', () => {
+      expect(
+        resolveTranslatableText({ name: 'A', names: { ja: 'B', JA: 'C', ko: 'X' } }, [
+          'ko',
+          'ja',
+          'en',
+        ]),
+      ).toEqual({
+        resolved: { lang: 'ko', value: 'X' },
+        others: { ja: 'B', origin: 'A' },
+      });
+    });
+  });
+
+  describe('supports fallback chains', () => {
     const text = { name: 'A', names: { en: 'A-en', de: 'A-de' } };
 
-    it('lang=en', () => {
-      const actual = resolveTranslatableText(text, 'en');
-      expect(actual.resolved.lang).toBe('en');
-      expect(actual.resolved.value).toBe('A-en');
-      expect(Object.keys(actual.others).length).toBe(2);
-      expect(actual.others['origin']).toBe('A');
-      expect(actual.others['de']).toBe('A-de');
+    it('resolves the first matching language in the chain', () => {
+      expect(resolveTranslatableText(text, ['ko', 'en'])).toEqual({
+        resolved: { lang: 'en', value: 'A-en' },
+        others: { de: 'A-de', origin: 'A' },
+      });
     });
 
-    it('lang=de', () => {
-      const actual = resolveTranslatableText(text, 'de');
-      expect(actual.resolved.lang).toBe('de');
-      expect(actual.resolved.value).toBe('A-de');
-      expect(Object.keys(actual.others).length).toBe(2);
-      expect(actual.others['origin']).toBe('A');
-      expect(actual.others['en']).toBe('A-en');
-    });
-
-    it('lang=ko (not found)', () => {
-      const actual = resolveTranslatableText(text, 'ko');
-      expect(actual.resolved.lang).toBe('origin');
-      expect(actual.resolved.value).toBe('A');
-      expect(Object.keys(actual.others).length).toBe(2);
-      expect(actual.others['en']).toBe('A-en');
-      expect(actual.others['de']).toBe('A-de');
-    });
-
-    it('others excludes values matching resolved', () => {
-      const actual = resolveTranslatableText({ name: 'A', names: { ja: 'A', en: 'A-en' } }, 'ja');
-      expect(actual.resolved.value).toBe('A');
-      expect(actual.others['ja']).toBeUndefined();
-      expect(actual.others['origin']).toBeUndefined(); // same value as resolved
-      expect(actual.others['en']).toBe('A-en');
-    });
-
-    it('names contains origin key — text.name wins', () => {
-      const actual = resolveTranslatableText(
-        { name: 'A', names: { origin: 'X', en: 'A-en' } },
-        'ko',
-      );
-      expect(actual.resolved.lang).toBe('origin');
-      expect(actual.resolved.value).toBe('A');
-      expect(actual.others['origin']).toBeUndefined();
-      expect(actual.others['en']).toBe('A-en');
-    });
-
-    it('lang=origin always returns text.name, ignoring names.origin', () => {
-      const actual = resolveTranslatableText(
-        { name: 'A', names: { origin: 'X', en: 'A-en' } },
-        'origin',
-      );
-      expect(actual.resolved.lang).toBe('origin');
-      expect(actual.resolved.value).toBe('A');
-      expect(actual.others['origin']).toBeUndefined();
-      expect(actual.others['en']).toBe('A-en');
-    });
-
-    it('lang=origin deduplicates case-variant keys in others', () => {
-      const actual = resolveTranslatableText(
-        { name: 'A', names: { 'ja-Hrkt': 'ひらがな', 'ja-HrKt': 'カタカナ', en: 'A-en' } },
-        'origin',
-      );
-      expect(actual.resolved.value).toBe('A');
-      // Only one of the case variants should appear in others.
-      const hrktKeys = Object.keys(actual.others).filter((k) => k.toLowerCase() === 'ja-hrkt');
-      expect(hrktKeys).toHaveLength(1);
-      expect(actual.others['en']).toBe('A-en');
-    });
-
-    it('keeps all keys with same value', () => {
-      const actual = resolveTranslatableText({ name: 'A', names: { en: 'B', fr: 'B' } }, 'ko');
-      expect(actual.resolved.value).toBe('A');
-      expect(actual.others['en']).toBe('B');
-      expect(actual.others['fr']).toBe('B');
-    });
-  });
-
-  describe('BCP 47 case-insensitive lookup', () => {
-    it('lang=ja-Hrkt matches key ja-Hrkt (exact)', () => {
-      const text = { name: '渋谷駅', names: { 'ja-Hrkt': 'しぶやえき', en: 'Shibuya Sta.' } };
-      const actual = resolveTranslatableText(text, 'ja-Hrkt');
-      expect(actual.resolved.lang).toBe('ja-Hrkt');
-      expect(actual.resolved.value).toBe('しぶやえき');
-    });
-
-    it('lang=ja-Hrkt matches key ja-HrKt (case differs)', () => {
-      const text = { name: '渋谷駅', names: { 'ja-HrKt': 'しぶやえき', en: 'Shibuya Sta.' } };
-      const actual = resolveTranslatableText(text, 'ja-Hrkt');
-      expect(actual.resolved.lang).toBe('ja-Hrkt');
-      expect(actual.resolved.value).toBe('しぶやえき');
-    });
-
-    it('lang=ja-HrKt matches key ja-Hrkt (reverse case differs)', () => {
-      const text = { name: '渋谷駅', names: { 'ja-Hrkt': 'しぶやえき' } };
-      const actual = resolveTranslatableText(text, 'ja-HrKt');
-      expect(actual.resolved.lang).toBe('ja-HrKt');
-      expect(actual.resolved.value).toBe('しぶやえき');
-    });
-
-    it('lang=EN matches key en', () => {
-      const text = { name: '渋谷駅', names: { en: 'Shibuya Sta.' } };
-      const actual = resolveTranslatableText(text, 'EN');
-      expect(actual.resolved.lang).toBe('EN');
-      expect(actual.resolved.value).toBe('Shibuya Sta.');
-    });
-
-    it('lang=ZH-HANS matches key zh-Hans', () => {
-      const text = { name: '渋谷駅', names: { 'zh-Hans': '涩谷站' } };
-      const actual = resolveTranslatableText(text, 'ZH-HANS');
-      expect(actual.resolved.lang).toBe('ZH-HANS');
-      expect(actual.resolved.value).toBe('涩谷站');
-    });
-
-    it('duplicate keys with different casing: first match wins, duplicate excluded from others', () => {
-      // Per BCP 47 (RFC 5646 §2.1.1), subtag comparisons are case-insensitive.
-      // If the data contains both "ja-Hrkt" and "ja-HrKt", they refer to the
-      // same language. The resolver returns the first match and excludes the
-      // duplicate from others to prevent it leaking into subNames.
-      const text = {
-        name: '渋谷駅',
-        names: { 'ja-Hrkt': 'しぶやえき', 'ja-HrKt': 'シブヤエキ', en: 'Shibuya Sta.' },
-      };
-      const actual = resolveTranslatableText(text, 'ja-Hrkt');
-      expect(actual.resolved.lang).toBe('ja-Hrkt');
-      expect(actual.resolved.value).toBe('しぶやえき');
-      // Duplicate "ja-HrKt" must not appear in others.
-      expect(actual.others['ja-HrKt']).toBeUndefined();
-      expect(actual.others['ja-Hrkt']).toBeUndefined();
-      // Other languages are still present.
-      expect(actual.others['en']).toBe('Shibuya Sta.');
-      expect(actual.others['origin']).toBe('渋谷駅');
-      expect(Object.keys(actual.others)).toHaveLength(2);
-    });
-  });
-
-  describe('array fallback chain', () => {
-    const text = { name: 'A', names: { en: 'A-en', de: 'A-de' } };
-
-    it('resolves first match in chain', () => {
-      const actual = resolveTranslatableText(text, ['ko', 'en']);
-      expect(actual.resolved.lang).toBe('en');
-      expect(actual.resolved.value).toBe('A-en');
+    it('resolves the first matching language case-insensitively', () => {
+      expect(resolveTranslatableText(text, ['KO', 'EN'])).toEqual({
+        resolved: { lang: 'EN', value: 'A-en' },
+        others: { de: 'A-de', origin: 'A' },
+      });
     });
 
     it('falls back to origin when no chain entry matches', () => {
-      const actual = resolveTranslatableText(text, ['ko', 'fr']);
-      expect(actual.resolved.lang).toBe('origin');
-      expect(actual.resolved.value).toBe('A');
+      expect(resolveTranslatableText(text, ['ko', 'fr'])).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A-en', de: 'A-de' },
+      });
     });
 
-    it('origin at start of chain resolves to text.name', () => {
-      const actual = resolveTranslatableText(text, ['origin', 'en']);
-      expect(actual.resolved.lang).toBe('origin');
-      expect(actual.resolved.value).toBe('A');
+    it('stops at origin when it appears first in the chain', () => {
+      expect(resolveTranslatableText(text, ['origin', 'en'])).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A-en', de: 'A-de' },
+      });
     });
 
-    it('origin in middle of chain stops lookup and resolves to text.name', () => {
-      const actual = resolveTranslatableText(text, ['ko', 'origin', 'en']);
-      expect(actual.resolved.lang).toBe('origin');
-      expect(actual.resolved.value).toBe('A');
-      // All chain languages (including 'en' after 'origin') are excluded from others
-      expect(actual.others['en']).toBeUndefined();
-      expect(actual.others['de']).toBe('A-de');
+    it('stops at origin when it appears in the middle of the chain', () => {
+      expect(resolveTranslatableText(text, ['ko', 'origin', 'en'])).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A-en', de: 'A-de' },
+      });
     });
 
-    it('excludes all chain languages from others', () => {
-      const actual = resolveTranslatableText(text, ['de', 'en']);
-      expect(actual.resolved.value).toBe('A-de');
-      // 'en' is in the chain, so excluded from others even though it has a value
-      expect(actual.others['en']).toBeUndefined();
-      expect(actual.others['origin']).toBe('A');
+    it('ignores origin case variants in names when origin stops the chain', () => {
+      expect(
+        resolveTranslatableText(
+          {
+            name: 'A',
+            names: { origin: 'X', ORIGIN: 'A-O', Origin: 'A-o', en: 'A', de: 'A' },
+          },
+          ['ko', 'origin', 'en'],
+        ),
+      ).toEqual({
+        resolved: { lang: 'origin', value: 'A' },
+        others: { en: 'A', de: 'A' },
+      });
+    });
+
+    it('does not treat mixed-case ORIGIN as the reserved stop keyword', () => {
+      expect(
+        resolveTranslatableText({ name: 'A', names: { origin: 'X', en: 'A-en', de: 'A-de' } }, [
+          'ko',
+          'ORIGIN',
+          'en',
+        ]),
+      ).toEqual({
+        resolved: { lang: 'en', value: 'A-en' },
+        others: { de: 'A-de', origin: 'A' },
+      });
+    });
+
+    it('ignores origin case variants in names for mixed-case ORIGIN chain entries', () => {
+      expect(
+        resolveTranslatableText(
+          {
+            name: 'A',
+            names: { origin: 'X', ORIGIN: 'A-O', Origin: 'A-o', en: 'A-en', de: 'A-de' },
+          },
+          ['ko', 'ORIGIN', 'en'],
+        ),
+      ).toEqual({
+        resolved: { lang: 'en', value: 'A-en' },
+        others: { de: 'A-de', origin: 'A' },
+      });
+    });
+
+    it('keeps non-resolved chain languages in others', () => {
+      expect(resolveTranslatableText(text, ['de', 'en'])).toEqual({
+        resolved: { lang: 'de', value: 'A-de' },
+        others: { en: 'A-en', origin: 'A' },
+      });
+    });
+
+    it('uses the first case-insensitive match in chain and excludes duplicate case variants', () => {
+      expect(
+        resolveTranslatableText(
+          {
+            name: '渋谷駅',
+            names: { 'ja-Hrkt': 'しぶやえき', 'ja-HrKt': 'シブヤエキ', en: 'Shibuya Sta.' },
+          },
+          ['KO', 'JA-HRKT'],
+        ),
+      ).toEqual({
+        resolved: { lang: 'JA-HRKT', value: 'しぶやえき' },
+        others: { en: 'Shibuya Sta.', origin: '渋谷駅' },
+      });
     });
   });
 });

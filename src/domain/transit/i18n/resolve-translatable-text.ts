@@ -19,10 +19,11 @@ export interface ResolvedTranslatableText {
   /**
    * All available values except the resolved one, keyed by language.
    *
-   * `text.name` is included under the reserved key `'origin'`.
+   * Entries are excluded by resolved language key, not by value.
    * Translation entries from `text.names` are included under their
-   * language keys. Entries whose value matches `resolved.value`
-   * are excluded to avoid duplication.
+   * language keys even when their value matches `resolved.value`.
+   * `text.name` is included under the reserved key `'origin'`
+   * only when `resolved.lang !== 'origin'`.
    *
    * **Reserved key**: `'origin'` is always `text.name`. If `text.names`
    * contains an `'origin'` key, it is overwritten by `text.name`.
@@ -34,16 +35,23 @@ export interface ResolvedTranslatableText {
  * Resolve a {@link TranslatableText} for a given language.
  *
  * Selects the best display value based on `lang`, then returns
- * all remaining values as `others` for the caller to use as needed.
+ * all remaining language-keyed values as `others` for the caller to
+ * use as needed.
  *
  * The `'origin'` key is reserved for `text.name` (the raw source value).
  * If `text.names` contains an `'origin'` key, `text.name` takes priority.
+ * The reserved keyword is the exact lowercase string `'origin'`.
  *
  * Language lookup is **case-insensitive** per BCP 47 (RFC 5646 §2.1.1).
  * `"ja-Hrkt"` matches a key `"ja-HrKt"` in `text.names`.
  * If `text.names` contains duplicate keys that differ only in case
  * (e.g. both `"ja-Hrkt"` and `"ja-HrKt"`), the first match is used
  * and the duplicate is ignored.
+ *
+ * `others` preserves non-resolved translations even when they have the
+ * same string value as `resolved.value`. Value-based deduplication is
+ * intentionally left to higher-level display helpers.
+ * Empty-string translation values are treated as missing.
  *
  * @param text - The translatable text to resolve.
  * @param lang - BCP 47-ish language key or ordered fallback chain
@@ -83,7 +91,9 @@ export function resolveTranslatableText(
       break; // Fall through to origin resolution below
     }
     const lLower = l.toLowerCase();
-    const key = Object.keys(text.names).find((k) => k.toLowerCase() === lLower);
+    const key = Object.keys(text.names).find(
+      (k) => k.toLowerCase() !== 'origin' && k.toLowerCase() === lLower,
+    );
     if (key != null && text.names[key]) {
       matchedLang = l;
       translation = text.names[key];
@@ -95,25 +105,28 @@ export function resolveTranslatableText(
       ? { lang: matchedLang!, value: translation }
       : { lang: 'origin', value: text.name };
 
-  // Build others: deduplicate by lowercase key to prevent case-variant
-  // duplicates (e.g. "ja-Hrkt" and "ja-HrKt") from leaking into subNames.
+  // Build others: all translations except the resolved language key.
+  // Deduplicate by lowercase key to prevent case-variant duplicates
+  // (e.g. "ja-Hrkt" and "ja-HrKt") from appearing twice.
+  // Values are never compared — value deduplication is the caller's
+  // responsibility (e.g. resolveDisplayNamesWithTranslatableText).
   // 'origin' always maps to text.name, overwriting any 'origin' in text.names.
   const others: Record<string, string> = {};
   const seen = new Set<string>();
-  // Mark all languages in the chain as seen so they're excluded from others.
-  for (const l of langs) {
-    seen.add(l.toLowerCase());
+  if (matchedLang) {
+    seen.add(matchedLang.toLowerCase());
   }
   seen.add('origin');
   for (const [key, value] of Object.entries(text.names)) {
     const keyLower = key.toLowerCase();
-    if (!seen.has(keyLower) && value && value !== resolved.value) {
+    if (!seen.has(keyLower) && value) {
       others[key] = value;
       seen.add(keyLower);
     }
   }
-  // Add origin (text.name) if it differs from resolved value.
-  if (text.name && text.name !== resolved.value) {
+  // Add origin (text.name) only when resolved is NOT origin.
+  // When resolved is origin, text.name is already the resolved value.
+  if (text.name && resolved.lang !== 'origin') {
     others['origin'] = text.name;
   }
 
