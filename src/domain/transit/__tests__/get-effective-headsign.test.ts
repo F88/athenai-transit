@@ -59,7 +59,7 @@ describe('getEffectiveHeadsign', () => {
  * key and the displayed label.
  */
 describe('getEffectiveHeadsign / getHeadsignDisplayNames parity', () => {
-  const LANG = 'ja';
+  const DISPLAY_LANGS = ['ja'] as const;
   const AGENCY_LANG = ['ja'] as const;
 
   function makeRDWithNames(
@@ -87,13 +87,15 @@ describe('getEffectiveHeadsign / getHeadsignDisplayNames parity', () => {
   it('trip only — both return tripHeadsign', () => {
     const rd = makeRDWithNames('中野駅', { en: 'Nakano Sta.' });
     expect(getEffectiveHeadsign(rd)).toBe('中野駅');
-    expect(getHeadsignDisplayNames(rd, LANG, AGENCY_LANG, 'stop').resolved.name).toBe('中野駅');
+    expect(getHeadsignDisplayNames(rd, DISPLAY_LANGS, AGENCY_LANG, 'stop').resolved.name).toBe(
+      '中野駅',
+    );
   });
 
   it('stop overrides trip — both return stopHeadsign', () => {
     const rd = makeRDWithNames('潮見駅前', {}, '木場ルート(循環)', { en: 'Kiba Route (loop)' });
     expect(getEffectiveHeadsign(rd)).toBe('木場ルート(循環)');
-    expect(getHeadsignDisplayNames(rd, LANG, AGENCY_LANG, 'stop').resolved.name).toBe(
+    expect(getHeadsignDisplayNames(rd, DISPLAY_LANGS, AGENCY_LANG, 'stop').resolved.name).toBe(
       '木場ルート(循環)',
     );
   });
@@ -101,7 +103,7 @@ describe('getEffectiveHeadsign / getHeadsignDisplayNames parity', () => {
   it('trip empty + stop present — both return stopHeadsign', () => {
     const rd = makeRDWithNames('', {}, '武蔵小金井駅南口', {});
     expect(getEffectiveHeadsign(rd)).toBe('武蔵小金井駅南口');
-    expect(getHeadsignDisplayNames(rd, LANG, AGENCY_LANG, 'stop').resolved.name).toBe(
+    expect(getHeadsignDisplayNames(rd, DISPLAY_LANGS, AGENCY_LANG, 'stop').resolved.name).toBe(
       '武蔵小金井駅南口',
     );
   });
@@ -109,13 +111,15 @@ describe('getEffectiveHeadsign / getHeadsignDisplayNames parity', () => {
   it('both empty — both return empty string', () => {
     const rd = makeRDWithNames('', {});
     expect(getEffectiveHeadsign(rd)).toBe('');
-    expect(getHeadsignDisplayNames(rd, LANG, AGENCY_LANG, 'stop').resolved.name).toBe('');
+    expect(getHeadsignDisplayNames(rd, DISPLAY_LANGS, AGENCY_LANG, 'stop').resolved.name).toBe('');
   });
 
   it('stop empty fallback — both return tripHeadsign', () => {
     const rd = makeRDWithNames('渋谷駅前', {}, '', {});
     expect(getEffectiveHeadsign(rd)).toBe('渋谷駅前');
-    expect(getHeadsignDisplayNames(rd, LANG, AGENCY_LANG, 'stop').resolved.name).toBe('渋谷駅前');
+    expect(getHeadsignDisplayNames(rd, DISPLAY_LANGS, AGENCY_LANG, 'stop').resolved.name).toBe(
+      '渋谷駅前',
+    );
   });
 
   it('lang resolution does not break parity (same effective source)', () => {
@@ -125,7 +129,7 @@ describe('getEffectiveHeadsign / getHeadsignDisplayNames parity', () => {
     // Raw key uses stop (ja)
     expect(getEffectiveHeadsign(rd)).toBe('北大路BT');
     // Display resolver also uses stop, but resolved for lang=en
-    const names = getHeadsignDisplayNames(rd, 'en', AGENCY_LANG, 'stop');
+    const names = getHeadsignDisplayNames(rd, ['en'], AGENCY_LANG, 'stop');
     expect(names.resolvedSource).toBe('stop');
     // Both chose the same source (stop), though the displayed value differs by language
     expect(names.resolved.name).toBe('Kitaoji BT');

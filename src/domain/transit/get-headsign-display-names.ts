@@ -33,29 +33,28 @@ export interface HeadsignDisplayNames {
  * are resolved from its own translations — they are never mixed.
  *
  * @param routeDirection - Route direction context containing headsigns.
- * @param lang - Language key to resolve for.
- * @param agencyLang - Agency languages for subNames sort priority.
+ * @param preferredDisplayLangs - Ordered language fallback chain for primary display resolution.
+ * @param agencyLangs - Agency languages for subNames sort priority.
  * @param prefer - Which headsign to use as effective. Defaults to `'stop'`
  *   (per GTFS spec: stop_headsign overrides trip_headsign).
  * @returns Effective headsign, plus individual trip/stop resolved names.
  */
 export function getHeadsignDisplayNames(
-  routeDirection: RouteDirection,
-  lang: string | readonly string[],
-  agencyLang: readonly string[],
+  routeDirection: Readonly<RouteDirection>,
+  preferredDisplayLangs: readonly string[],
+  agencyLangs: readonly string[],
   prefer: HeadsignSource = 'stop',
 ): HeadsignDisplayNames {
-  const preferredDisplayLangs = typeof lang === 'string' ? [lang] : lang;
   const tripName = resolveDisplayNamesWithTranslatableText(
     routeDirection.tripHeadsign,
     preferredDisplayLangs,
-    agencyLang,
+    agencyLangs,
   );
   const stopName = routeDirection.stopHeadsign
     ? resolveDisplayNamesWithTranslatableText(
         routeDirection.stopHeadsign,
         preferredDisplayLangs,
-        agencyLang,
+        agencyLangs,
       )
     : undefined;
 

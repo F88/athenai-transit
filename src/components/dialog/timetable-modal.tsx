@@ -156,14 +156,22 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
                       ? 'timetable.header.routeHeadsignDescription'
                       : 'timetable.header.routeDescription',
                     {
-                      stop: getStopDisplayNames(data.stop, dataLang).name,
+                      stop: getStopDisplayNames(
+                        data.stop,
+                        dataLang,
+                        resolveAgencyLang(data.agencies, data.stop.agency_id),
+                      ).name,
                       route: data.routes[0].route_short_name || data.routes[0].route_long_name,
                       headsign: data.headsign ?? '',
                       count: filteredTimetableEntries.length.toLocaleString(i18n.language),
                     },
                   )
                 : t('timetable.header.stopDescription', {
-                    stop: getStopDisplayNames(data.stop, dataLang).name,
+                    stop: getStopDisplayNames(
+                      data.stop,
+                      dataLang,
+                      resolveAgencyLang(data.agencies, data.stop.agency_id),
+                    ).name,
                     count: filteredTimetableEntries.length.toLocaleString(i18n.language),
                   })}
             </DialogDescription>

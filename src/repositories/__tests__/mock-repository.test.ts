@@ -46,7 +46,7 @@ describe('MockRepository i18n data', () => {
 
     const stopDisplay = getHeadsignDisplayNames(
       stopHeadsignEntry!.routeDirection,
-      'zh-Hant',
+      ['zh-Hant'],
       ['ja'],
       'stop',
     );
@@ -61,7 +61,7 @@ describe('MockRepository i18n data', () => {
 
     const tripDisplay = getHeadsignDisplayNames(
       tripHeadsignEntry!.routeDirection,
-      'ko',
+      ['ko'],
       ['ja'],
       'trip',
     );

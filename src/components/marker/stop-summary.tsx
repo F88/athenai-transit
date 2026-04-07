@@ -1,6 +1,7 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
 import type { ContextualTimetableEntry } from '../../types/app/transit-composed';
+import { resolveAgencyLang } from '../../config/transit-defaults';
 import { createInfoLevel } from '../../utils/create-info-level';
 import { getStopDisplayNames } from '../../domain/transit/get-stop-display-names';
 import { minutesToDate } from '../../domain/transit/calendar-utils';
@@ -40,7 +41,11 @@ export function StopSummary({
   dataLang,
 }: StopSummaryProps) {
   const info = createInfoLevel(infoLevel);
-  const stopNames = getStopDisplayNames(stop, dataLang);
+  const stopNames = getStopDisplayNames(
+    stop,
+    dataLang,
+    resolveAgencyLang(agencies, stop.agency_id),
+  );
   // Departure items require `now` for relative time display
   const items = now ? (entries?.slice(0, 3) ?? []) : [];
 

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Accessibility } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { resolveAgencyLang } from '../config/transit-defaults';
 import { useInfoLevel } from '../hooks/use-info-level';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
@@ -74,7 +75,11 @@ export function StopSummary({
   const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
-  const stopNames = getStopDisplayNames(stop, dataLang);
+  const stopNames = getStopDisplayNames(
+    stop,
+    dataLang,
+    resolveAgencyLang(agencies, stop.agency_id),
+  );
 
   const idRowClass = 'mb-1 flex gap-1';
   const subNameClass = 'm-0 mb-0.5 text-xs font-normal text-[#888] dark:text-gray-400';
