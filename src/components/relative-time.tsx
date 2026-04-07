@@ -16,7 +16,7 @@ interface RelativeTimeProps {
   departureTime: Date;
   /** Current time for relative calculation. */
   now: Date;
-  /** Whether this is a terminal (arrival) entry. Appends "着" suffix. */
+  /** Whether this is a terminal (arrival) entry. Appends localized arrival suffix. */
   isTerminal?: boolean;
   /** Hide the "あと" prefix to save horizontal space. */
   hidePrefix?: boolean;

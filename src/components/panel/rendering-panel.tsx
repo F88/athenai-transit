@@ -1,6 +1,7 @@
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
 import { useTranslation } from 'react-i18next';
 import { ControlPanel } from '../shared/control-panel';
+import { SUPPORTED_LANGS } from '../../config/supported-langs';
 import { MapToggleButton } from '../button/map-toggle-button';
 
 /** Icon label for each render mode toggle button. */
@@ -40,8 +41,6 @@ function perfModeIcon(mode: PerfMode): string {
       return '\u{1F525}';
   }
 }
-
-import { SUPPORTED_LANGS } from '../../config/supported-langs';
 
 /** Short label for the language toggle button. */
 function langShortLabel(lang: string): string {

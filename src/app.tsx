@@ -65,6 +65,10 @@ export default function App() {
   // GTFS/ODPT data translation resolution).
   const dataLang = useMemo(() => resolveLangChain(settings.lang, SUPPORTED_LANGS), [settings.lang]);
 
+  useEffect(() => {
+    logger.debug(`LangChain: ${settings.lang} → [${dataLang.join(' → ')}]`);
+  }, [settings.lang, dataLang]);
+
   const [inBoundStops, setInBoundStops] = useState<StopWithMeta[]>([]);
   const [radiusStops, setNearbyStops] = useState<StopWithMeta[]>([]);
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);

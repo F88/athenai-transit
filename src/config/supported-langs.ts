@@ -61,10 +61,16 @@ export const SUPPORTED_LANG_CODES: readonly string[] = SUPPORTED_LANGS.map((l) =
 /**
  * Normalize a language code to a supported value.
  *
- * Returns the code as-is if it's in {@link SUPPORTED_LANG_CODES},
- * otherwise returns {@link DEFAULT_LANG}.
+ * Tries the following strategies in order (case-insensitive per BCP 47):
+ * 1. Exact match against {@link SUPPORTED_LANG_CODES}
+ * 2. Region-to-script mapping via {@link REGION_TO_LANG} (e.g. `zh-CN` → `zh-Hans`)
+ * 3. Script subtag match (e.g. `zh-Hant-TW` → `zh-Hant`)
+ * 4. Primary language prefix match (e.g. `en-US` → `en`)
+ * 5. Falls back to {@link DEFAULT_LANG}
  *
- * @param lang - Language code to normalize.
+ * Returns the canonical code from {@link SUPPORTED_LANGS} (not the input casing).
+ *
+ * @param lang - Language code to normalize (e.g. `navigator.language`).
  * @returns A guaranteed-supported language code.
  */
 /**

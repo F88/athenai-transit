@@ -1,7 +1,4 @@
 import type { SupportedLang } from '../../../config/supported-langs';
-import { createLogger } from '../../../lib/logger';
-
-const logger = createLogger('LangChain');
 
 /** Ordered language fallback chain (e.g. `['zh-Hant', 'zh-Hans', 'en']`). */
 export type LangChain = readonly string[];
@@ -78,6 +75,5 @@ export function resolveLangChain(lang: string, langs: readonly SupportedLang[]):
     }
   }
 
-  logger.debug(`${lang} → [${result.join(' → ')}]`);
   return result;
 }

@@ -57,7 +57,7 @@ interface TimetableModalProps {
 }
 
 export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: TimetableModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
   const currentHour = Math.floor(getServiceDayMinutes(time) / 60);
@@ -159,12 +159,12 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
                       stop: getStopDisplayNames(data.stop, infoLevel, dataLang).name,
                       route: data.routes[0].route_short_name || data.routes[0].route_long_name,
                       headsign: data.headsign ?? '',
-                      count: filteredTimetableEntries.length,
+                      count: filteredTimetableEntries.length.toLocaleString(i18n.language),
                     },
                   )
                 : t('timetable.header.stopDescription', {
                     stop: getStopDisplayNames(data.stop, infoLevel, dataLang).name,
-                    count: filteredTimetableEntries.length,
+                    count: filteredTimetableEntries.length.toLocaleString(i18n.language),
                   })}
             </DialogDescription>
 
@@ -336,7 +336,7 @@ function TimetableDateLabel({
 
 /** Metadata summary shown above the timetable grid. */
 function TimetableMetadata({ timetableEntries }: { timetableEntries: TimetableEntry[] }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // Compute departure count and operating hours.
   // Use the display time (arrival for terminal, departure otherwise) for statistics.
   const allMinutes = timetableEntries.map((d) => getDisplayMinutes(d));
@@ -368,9 +368,18 @@ function TimetableMetadata({ timetableEntries }: { timetableEntries: TimetableEn
             {firstTime} - {lastTime}
           </span>
         )}
-        <span> / {t('timetable.metadata.count', { count })}</span>
+        <span>
+          {' '}
+          / {t('timetable.metadata.count', { count: count.toLocaleString(i18n.language) })}
+        </span>
         {avgInterval !== null && (
-          <span> / {t('timetable.metadata.avgInterval', { interval: avgInterval })}</span>
+          <span>
+            {' '}
+            /{' '}
+            {t('timetable.metadata.avgInterval', {
+              interval: avgInterval.toLocaleString(i18n.language),
+            })}
+          </span>
         )}
       </p>
       {routeBreakdown.length > 1 && (
@@ -437,7 +446,7 @@ function TimetableGrid({
   omitted: TimetableOmitted;
 }) {
   const scrollRef = useCurrentHourScroll();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const info = useInfoLevel(infoLevel);
 
   // Compute minimum display length per headsign to avoid collision.
@@ -528,7 +537,12 @@ function TimetableGrid({
           {info.isVerboseEnabled && (
             <details className="mt-0.5 text-[9px] font-normal text-[#999] dark:text-gray-500">
               <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-                [{t('timetable.grid.row.entries', { hour, count: entries.length })}]
+                [
+                {t('timetable.grid.row.entries', {
+                  hour,
+                  count: entries.length.toLocaleString(i18n.language),
+                })}
+                ]
               </summary>
               <div className="mt-0.5 flex flex-col gap-0.5">
                 {entries.map((entry, i) => (

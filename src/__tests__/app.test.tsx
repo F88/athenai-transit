@@ -1,5 +1,6 @@
 import { render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import i18n from '../i18n';
 import App from '../app';
 import type { UseAnchorsReturn } from '../hooks/use-anchors';
 
@@ -119,7 +120,9 @@ vi.mock('../components/dialog/info-dialog', () => ({
 }));
 
 describe('App anchor error toast', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    // Fix i18n language to 'ja' so toast message assertions are deterministic.
+    await i18n.changeLanguage('ja');
     mockToastError.mockReset();
     mockUseAnchors.mockReset();
     mockGetRouteShapes.mockReset();

@@ -46,7 +46,7 @@ export function BottomSheetHeader({
   onToggleRouteType,
   onToggleAgency,
 }: BottomSheetHeaderProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const info = useInfoLevel(infoLevel);
 
   return (
@@ -149,13 +149,14 @@ function getNearbyStopsSummaryText(
   counts: NearbyStopsCounts,
   activeOnly: boolean,
   radius: string,
+  lang: string,
   t: (key: string, options?: Record<string, unknown>) => string,
 ): string {
   if (!hasLoaded) {
     return t('common.loading');
   }
   if (counts.filtered > 0) {
-    return t('nearbyStops.summary', { count: counts.filtered, radius });
+    return t('nearbyStops.summary', { count: counts.filtered.toLocaleString(lang), radius });
   }
   if (activeOnly && counts.total > 0) {
     return t('nearbyStops.noOperating', { radius });
@@ -178,7 +179,7 @@ function NearbyStopsSummary({
   activeOnly,
   hasLoaded,
 }: NearbyStopsSummaryProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   summaryLogger.verbose(
     hasLoaded
       ? `found ${counts.total} nearby stops (${counts.active} active, ${counts.filtered} after filter)`
@@ -189,6 +190,7 @@ function NearbyStopsSummary({
     counts,
     activeOnly,
     formatRadius(nearbyRadius),
+    i18n.language,
     t,
   );
 
