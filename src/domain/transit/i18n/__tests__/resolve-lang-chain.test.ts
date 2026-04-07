@@ -13,15 +13,22 @@ describe('resolveLangChain (SUPPORTED_LANGS)', () => {
   });
 
   it('ja-Hrkt falls back to ja then en', () => {
+    // ja-Hrkt → ja (fallback) → en (fallback). ja prefix already in chain.
     expect(resolveLangChain('ja-Hrkt', SUPPORTED_LANGS)).toEqual(['ja-Hrkt', 'ja', 'en']);
   });
 
-  it('zh-Hant falls back to zh-Hans then en', () => {
-    expect(resolveLangChain('zh-Hant', SUPPORTED_LANGS)).toEqual(['zh-Hant', 'zh-Hans', 'en']);
+  it('zh-Hant includes zh prefix after zh-family entries', () => {
+    // zh-Hant → zh-Hans (explicit fallback) → zh (generic) → en
+    expect(resolveLangChain('zh-Hant', SUPPORTED_LANGS)).toEqual([
+      'zh-Hant',
+      'zh-Hans',
+      'zh',
+      'en',
+    ]);
   });
 
-  it('zh-Hans falls back to en', () => {
-    expect(resolveLangChain('zh-Hans', SUPPORTED_LANGS)).toEqual(['zh-Hans', 'en']);
+  it('zh-Hans includes zh prefix', () => {
+    expect(resolveLangChain('zh-Hans', SUPPORTED_LANGS)).toEqual(['zh-Hans', 'zh', 'en']);
   });
 
   it('ko falls back to en', () => {
@@ -68,13 +75,13 @@ describe('resolveLangChain (custom langs)', () => {
     expect(resolveLangChain('x', custom)).toEqual(['x']);
   });
 
-  it('case-insensitive: ZH-HANT canonicalized to zh-Hant', () => {
+  it('case-insensitive: ZH-HANT with zh prefix after zh-family', () => {
     const langs: SupportedLang[] = [
       { code: 'zh-Hant', label: '', shortLabel: '', fallback: 'zh-Hans' },
       { code: 'zh-Hans', label: '', shortLabel: '', fallback: 'en' },
       { code: 'en', label: '', shortLabel: '' },
     ];
-    expect(resolveLangChain('ZH-HANT', langs)).toEqual(['zh-Hant', 'zh-Hans', 'en']);
+    expect(resolveLangChain('ZH-HANT', langs)).toEqual(['zh-Hant', 'zh-Hans', 'zh', 'en']);
   });
 
   it('case-insensitive: ja-HrKt canonicalized to ja-Hrkt', () => {
@@ -83,6 +90,7 @@ describe('resolveLangChain (custom langs)', () => {
       { code: 'ja', label: '', shortLabel: '', fallback: 'en' },
       { code: 'en', label: '', shortLabel: '' },
     ];
+    // ja prefix already present via fallback, no duplicate
     expect(resolveLangChain('ja-HrKt', langs)).toEqual(['ja-Hrkt', 'ja', 'en']);
   });
 

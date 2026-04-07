@@ -49,6 +49,18 @@ describe('normalizeLang', () => {
     expect(normalizeLang('zh-HK')).toBe('zh-Hant');
   });
 
+  it('script+region: zh-Hant-TW → zh-Hant', () => {
+    expect(normalizeLang('zh-Hant-TW')).toBe('zh-Hant');
+  });
+
+  it('script+region: zh-Hans-CN → zh-Hans', () => {
+    expect(normalizeLang('zh-Hans-CN')).toBe('zh-Hans');
+  });
+
+  it('script+region: zh-Hant-HK → zh-Hant', () => {
+    expect(normalizeLang('zh-Hant-HK')).toBe('zh-Hant');
+  });
+
   it('exact match takes precedence over prefix', () => {
     // zh-Hans is an exact match, not just prefix 'zh'
     expect(normalizeLang('zh-Hans')).toBe('zh-Hans');

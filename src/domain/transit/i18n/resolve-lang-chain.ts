@@ -42,6 +42,37 @@ export function resolveLangChain(lang: string, langs: readonly SupportedLang[]):
     current = match?.fallback;
   }
 
-  logger.debug(`${lang} → [${chain.join(' → ')}]`);
-  return chain;
+  // Insert parent language prefixes after the last subtag variant of the
+  // same language family (e.g. zh-Hant → zh-Hans → [zh] → en).
+  // This allows data keyed by the generic language code (e.g. "zh") to be
+  // found after explicit fallbacks but before unrelated languages.
+  // Build set of all codes already in chain (including those from fallback)
+  // to avoid duplicate prefix insertion.
+  const chainLower = new Set(chain.map((c) => c.toLowerCase()));
+  const result: string[] = [];
+  const inserted = new Set<string>();
+  for (let i = 0; i < chain.length; i++) {
+    const code = chain[i];
+    result.push(code);
+    inserted.add(code.toLowerCase());
+
+    const dash = code.indexOf('-');
+    if (dash !== -1) {
+      const prefix = code.slice(0, dash);
+      const prefixLower = prefix.toLowerCase();
+      // Insert prefix if: not already in chain (from fallback or earlier prefix),
+      // and the next chain entry is NOT the same language family.
+      if (!chainLower.has(prefixLower) && !inserted.has(prefixLower)) {
+        const nextCode = chain[i + 1];
+        const nextIsFamily = nextCode?.toLowerCase().startsWith(prefixLower + '-');
+        if (!nextIsFamily) {
+          result.push(prefix);
+          inserted.add(prefixLower);
+        }
+      }
+    }
+  }
+
+  logger.debug(`${lang} → [${result.join(' → ')}]`);
+  return result;
 }

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
@@ -54,6 +55,7 @@ export function StopInfo({
   stats,
   geo,
 }: StopInfoProps) {
+  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
   const stopNames = getStopDisplayNames(stop, infoLevel, dataLang);
@@ -112,7 +114,7 @@ export function StopInfo({
         )}
         {isDropOffOnly && (
           <span className="shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300">
-            降車専用
+            {t('stop.dropOffOnly')}
           </span>
         )}
         {agencies.length > 0 &&

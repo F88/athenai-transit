@@ -150,7 +150,7 @@ export function NearbyStop({
 
       {hasUnknownHeadsign && (
         <p className="m-0 mb-1 text-[11px] text-amber-600 dark:text-amber-400">
-          {t('nearbyStop.noDestination')}
+          {t('stop.noDestination')}
         </p>
       )}
       {displayDepartures.length > 0 ? (
@@ -190,9 +190,7 @@ export function NearbyStop({
           ))
         )
       ) : (
-        <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">
-          {t('nearbyStop.serviceEnded')}
-        </p>
+        <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">{t('stop.serviceEnded')}</p>
       )}
     </div>
   );

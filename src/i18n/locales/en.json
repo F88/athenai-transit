@@ -52,9 +52,10 @@
     "activeOnly": "Active",
     "activeOnlyTitle": "Show only stops with upcoming departures"
   },
-  "nearbyStop": {
+  "stop": {
     "noDestination": "Some routes have no destination",
-    "serviceEnded": "No more service today"
+    "serviceEnded": "No more service today",
+    "dropOffOnly": "Drop-off only"
   },
   "time": {
     "settingTitle": "Set date & time",

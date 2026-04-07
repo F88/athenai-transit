@@ -94,8 +94,17 @@ export function normalizeLang(lang: string): string {
   if (regionMatch) {
     return regionMatch;
   }
+  // Script subtag match (e.g. "zh-Hant-TW" → "zh-Hant", "zh-Hans-CN" → "zh-Hans")
+  // BCP 47: language-script-region, script is 4 letters
+  const parts = lower.split('-');
+  if (parts.length >= 2) {
+    const scriptCandidate = `${parts[0]}-${parts[1]}`;
+    const scriptMatch = SUPPORTED_LANGS.find((l) => l.code.toLowerCase() === scriptCandidate);
+    if (scriptMatch) {
+      return scriptMatch.code;
+    }
+  }
   // Prefix match (e.g. "en-US" → "en", "ja-JP" → "ja")
-  const prefix = lower.split('-')[0];
-  const prefixMatch = SUPPORTED_LANGS.find((l) => l.code.toLowerCase() === prefix);
+  const prefixMatch = SUPPORTED_LANGS.find((l) => l.code.toLowerCase() === parts[0]);
   return prefixMatch?.code ?? DEFAULT_LANG;
 }

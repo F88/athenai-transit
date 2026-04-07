@@ -52,9 +52,10 @@
     "activeOnly": "運行中",
     "activeOnlyTitle": "次便がある乗り場のみ表示"
   },
-  "nearbyStop": {
+  "stop": {
     "noDestination": "行先が表示されない路線があります",
-    "serviceEnded": "本日の運行は終了しました"
+    "serviceEnded": "本日の運行は終了しました",
+    "dropOffOnly": "降車専用"
   },
   "time": {
     "settingTitle": "日時を指定",
