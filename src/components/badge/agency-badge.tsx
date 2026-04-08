@@ -23,6 +23,10 @@ const sizeVariants: Record<AgencyBadgeSize, string> = {
 // `Seibu Bus`, `西武バス株式会社` / `Seibu Bus Co., Ltd.`), while their raw
 // source names remain distinct (`西武観光バス` vs `西武バス`).
 //
+// Only `sbbus:3013301006265` needs an explicit override here. The other agency
+// can keep the default translated label; this exception exists only so the two
+// agencies remain distinguishable instead of both rendering as the same label.
+//
 // This is not a generic formatting preference. It preserves operator
 // distinguishability that would otherwise be lost by the current data model.
 // Do not remove or generalize this without introducing repository-level
