@@ -37,7 +37,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "preview": "vite preview",
-    "data:sync": "npx tsx scripts/copy-pipeline-data.ts",
+    "data:sync": "npx tsx --env-file-if-exists=pipeline/.env.pipeline.local scripts/copy-pipeline-data.ts",
     "pipeline:download:gtfs": "npx tsx --env-file-if-exists=pipeline/.env.pipeline.local pipeline/scripts/pipeline/download-gtfs.ts --targets pipeline/config/targets/download-gtfs.ts",
     "pipeline:download:odpt-json": "npx tsx --env-file-if-exists=pipeline/.env.pipeline.local pipeline/scripts/pipeline/download-odpt-json.ts --targets pipeline/config/targets/download-odpt-json.ts",
     "pipeline:build:db": "npx tsx pipeline/scripts/pipeline/build-gtfs-db.ts --targets pipeline/config/targets/build-db.ts",
