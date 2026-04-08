@@ -133,6 +133,7 @@ export interface Provider {
     ja: { long: string; short: string };
     en: { long: string; short: string };
     de?: { long: string; short: string };
+    it?: { long: string; short: string };
   };
   /** Provider's website URL, if known. */
   url?: string;
