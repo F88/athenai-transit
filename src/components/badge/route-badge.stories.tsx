@@ -1,12 +1,37 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { busRoute, busRoute2, tramRoute, noColorRoute } from '../../stories/fixtures';
+import { busRoute, busRoute2, noColorRoute, subwayRoute, tramRoute } from '../../stories/fixtures';
+import { LANG_COMPARISON_CASES } from '../../stories/lang-comparison';
 import { RouteBadge } from './route-badge';
+
+const translatedShortRoute = {
+  ...busRoute,
+  route_id: 'route-short-source',
+  route_short_names: {
+    en: 'To 02',
+    ko: '도 02',
+  },
+} as const;
+
+const longFallbackRoute = {
+  ...subwayRoute,
+  route_id: 'route-long-source',
+  route_short_name: '',
+  route_short_names: {},
+  route_long_names: {
+    'ja-Hrkt': 'おおえどせん',
+    en: 'Oedo Line',
+    ko: '오에도선',
+    'zh-Hans': '大江户线',
+    'zh-Hant': '大江戶線',
+  },
+} as const;
 
 const meta = {
   title: 'Badge/RouteBadge',
   component: RouteBadge,
   args: {
     route: busRoute,
+    dataLang: ['ja'],
     infoLevel: 'normal',
     size: 'default',
   },
@@ -79,27 +104,83 @@ export const Verbose: Story = {
 export const SizeComparison: Story = {
   render: (args) => (
     <div className="flex items-center gap-2">
-      <RouteBadge route={args.route} infoLevel={args.infoLevel} size="xs" />
-      <RouteBadge route={args.route} infoLevel={args.infoLevel} size="sm" />
-      <RouteBadge route={args.route} infoLevel={args.infoLevel} size="default" />
+      <RouteBadge
+        route={args.route}
+        dataLang={args.dataLang}
+        infoLevel={args.infoLevel}
+        size="xs"
+      />
+      <RouteBadge
+        route={args.route}
+        dataLang={args.dataLang}
+        infoLevel={args.infoLevel}
+        size="sm"
+      />
+      <RouteBadge
+        route={args.route}
+        dataLang={args.dataLang}
+        infoLevel={args.infoLevel}
+        size="default"
+      />
     </div>
   ),
 };
 
-// --- Kitchen sink: single route, all info levels ---
+// --- i18n: lang resolution ---
 
-export const KitchenSinkInfoLevelSimple: Story = {
-  args: { infoLevel: 'simple' },
+/** All supported languages, one unsupported language, and no language. */
+export const LangComparison: Story = {
+  args: {
+    route: longFallbackRoute,
+    infoLevel: 'normal',
+  },
+  render: (args) => (
+    <div className="flex flex-col gap-2">
+      {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
+        <div key={label} className="flex items-center gap-2">
+          <span className="w-20 text-[10px] text-gray-400">{label}</span>
+          <RouteBadge
+            route={args.route}
+            dataLang={dataLang}
+            infoLevel={args.infoLevel}
+            size={args.size}
+          />
+        </div>
+      ))}
+    </div>
+  ),
 };
 
-export const KitchenSinkInfoLevelNormal: Story = {
-  args: { infoLevel: 'normal' },
-};
-
-export const KitchenSinkInfoLevelDetailed: Story = {
+export const KitchenSink: Story = {
   args: { infoLevel: 'detailed' },
 };
 
-export const KitchenSinkInfoLevelVerbose: Story = {
-  args: { infoLevel: 'verbose' },
+/** Compare verbose output when the resolved source is short vs long. */
+export const VerboseResolvedSourceComparison: Story = {
+  args: {
+    infoLevel: 'verbose',
+    dataLang: ['en'],
+  },
+  render: (args) => (
+    <div className="flex flex-col gap-3">
+      <div className="space-y-1">
+        <p className="text-sm font-medium">
+          resolvedSource: short
+          <span className="text-muted-foreground ml-2 text-xs font-normal">
+            route_short_name translation exists, so short side wins
+          </span>
+        </p>
+        <RouteBadge route={translatedShortRoute} dataLang={args.dataLang} infoLevel="verbose" />
+      </div>
+      <div className="space-y-1">
+        <p className="text-sm font-medium">
+          resolvedSource: long
+          <span className="text-muted-foreground ml-2 text-xs font-normal">
+            route_short_name is empty, so long side becomes the fallback winner
+          </span>
+        </p>
+        <RouteBadge route={longFallbackRoute} dataLang={args.dataLang} infoLevel="verbose" />
+      </div>
+    </div>
+  ),
 };

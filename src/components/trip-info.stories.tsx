@@ -1,13 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { RouteDirection } from '../types/app/transit-composed';
 import type { Agency, Route } from '../types/app/transit';
+import {
+  createRouteDirection,
+  emptyHeadsign,
+  headsignKyotoLong,
+  headsignKyotoLongShortJa,
+  headsignMinowabashi,
+  headsignNakano,
+  stopHeadsignDemachiyanagi,
+  stopHeadsignMusashiKoganeiSouth,
+} from '../stories/fixtures';
+import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
 import { TripInfo } from './trip-info';
 
 const busRoute: Route = {
   route_id: 'route-001',
   route_short_name: '渋64',
+  route_short_names: {},
   route_long_name: '渋谷駅〜中野駅',
-  route_names: {},
+  route_long_names: {},
   route_type: 3 as const,
   route_color: '1976D2',
   route_text_color: 'FFFFFF',
@@ -18,6 +29,7 @@ const tramRoute: Route = {
   ...busRoute,
   route_id: 'toaran:SA',
   route_short_name: '',
+  route_short_names: {},
   route_long_name: '東京さくらトラム（都電荒川線）',
   route_type: 0 as const,
   route_color: 'E60012',
@@ -27,7 +39,21 @@ const kyotoBusRoute: Route = {
   ...busRoute,
   route_id: 'kyoto:205',
   route_short_name: '205',
+  route_short_names: {
+    ja: '市バス205',
+    en: '205 City Bus',
+    ko: '205번 시영버스',
+    'zh-Hans': '市营巴士205路',
+    'zh-Hant': '市營巴士205路',
+  },
   route_long_name: '河原町通・北大路バスターミナル',
+  route_long_names: {
+    ja: '河原町通・北大路バスターミナル',
+    en: 'Kawaramachi St. / Kitaoji Bus Terminal',
+    ko: '가와라마치도리・기타오지 버스 터미널',
+    'zh-Hans': '河原町通・北大路公交总站',
+    'zh-Hant': '河原町通・北大路公交總站',
+  },
   route_type: 3 as const,
   route_color: '009f40',
   agency_id: 'agency-002',
@@ -54,63 +80,25 @@ const kyotoAgency: Agency = {
   agency_colors: [{ bg: '009f40', text: 'FFFFFF' }],
 };
 
-const shortRd: RouteDirection = {
-  route: busRoute,
-  tripHeadsign: {
-    name: '中野駅',
-    names: { ja: '中野駅', 'ja-Hrkt': 'なかのえき', en: 'Nakano Sta.', ko: '나카노역' },
-  },
-};
+const shortRd = createRouteDirection({ route: busRoute, tripHeadsign: headsignNakano });
 
-const tramRd: RouteDirection = {
-  route: tramRoute,
-  tripHeadsign: {
-    name: '三ノ輪橋',
-    names: { 'ja-Hrkt': 'みのわばし', en: 'Minowabashi' },
-  },
-};
+const tramRd = createRouteDirection({ route: tramRoute, tripHeadsign: headsignMinowabashi });
 
-const kyotoBusRd: RouteDirection = {
-  route: kyotoBusRoute,
-  tripHeadsign: {
-    name: '北大路バスターミナル・下鴨神社・出町柳駅',
-    names: {
-      ja: '北大路バスターミナル・下鴨神社・出町柳駅',
-      'ja-Hrkt': 'きたおおじバスターミナル・しもがもじんじゃ・でまちやなぎえき',
-      en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
-      ko: '기타오지 버스 터미널・시모가모 신사・데마치야나기역',
-      'zh-Hans': '北大路公交总站・下鸭神社・出町柳站',
-      'zh-Hant': '北大路公交總站・下鴨神社・出町柳站',
-    },
-  },
-};
+const kyotoBusRd = createRouteDirection({ route: kyotoBusRoute, tripHeadsign: headsignKyotoLong });
 
 /** trip empty + stop present (keio-bus pattern). */
-const tripEmptyStopRd: RouteDirection = {
+const tripEmptyStopRd = createRouteDirection({
   route: busRoute,
-  tripHeadsign: { name: '', names: {} },
-  stopHeadsign: { name: '武蔵小金井駅南口', names: {} },
-};
+  tripHeadsign: emptyHeadsign,
+  stopHeadsign: stopHeadsignMusashiKoganeiSouth,
+});
 
 /** stop overrides trip — mid-trip headsign changes to shorter destination. */
-const stopOverridesTripRd: RouteDirection = {
+const stopOverridesTripRd = createRouteDirection({
   route: kyotoBusRoute,
-  tripHeadsign: {
-    name: '北大路バスターミナル・下鴨神社・出町柳駅',
-    names: {
-      ja: '北大路バスターミナル・下鴨神社・出町柳駅',
-      en: 'Demachiyanagi Sta. via Kitaoji BT and Shimogamo-jinja',
-    },
-  },
-  stopHeadsign: {
-    name: '出町柳駅',
-    names: {
-      ja: '出町柳駅',
-      'ja-Hrkt': 'でまちやなぎえき',
-      en: 'Demachiyanagi Sta.',
-    },
-  },
-};
+  tripHeadsign: headsignKyotoLongShortJa,
+  stopHeadsign: stopHeadsignDemachiyanagi,
+});
 
 const meta = {
   title: 'Departure/TripInfo',
@@ -161,7 +149,7 @@ export const PickupUnavailable: Story = {
 };
 
 export const EmptyHeadsign: Story = {
-  args: { routeDirection: { ...shortRd, tripHeadsign: { name: '', names: {} } } },
+  args: { routeDirection: createRouteDirection({ ...shortRd, tripHeadsign: emptyHeadsign }) },
 };
 
 // --- stop_headsign ---
@@ -191,14 +179,7 @@ export const LangComparison: Story = {
   args: { routeDirection: kyotoBusRd, agency: kyotoAgency },
   render: (args) => (
     <div className="flex flex-col gap-3">
-      {[
-        { dataLang: ['ja'] as string[], label: 'ja' },
-        { dataLang: ['en'] as string[], label: 'en' },
-        { dataLang: ['ko'] as string[], label: 'ko' },
-        { dataLang: ['zh-Hans'] as string[], label: 'zh-Hans' },
-        { dataLang: ['de'] as string[], label: 'de (missing)' },
-        { dataLang: [] as string[], label: '(none)' },
-      ].map(({ dataLang, label }) => (
+      {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
         <div key={label}>
           <span className="mb-0.5 block text-[10px] text-gray-400">{label}</span>
           <TripInfo

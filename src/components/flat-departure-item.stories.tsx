@@ -1,58 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ContextualTimetableEntry, StopServiceType } from '../types/app/transit-composed';
 import type { Agency, Route } from '../types/app/transit';
+import {
+  agencyTobus as agency,
+  busRoute as baseRoute,
+  busRoute2 as greenRoute,
+  createRouteDirection,
+  emptyHeadsign,
+  headsignKyotoLong,
+  headsignMinowabashi,
+  headsignShimbashiEkimae,
+  headsignShinjuku,
+  headsignWaseda,
+  noColorRoute,
+  stopHeadsignDemachiyanagi,
+  stopHeadsignMusashiKoganeiSouth,
+  tramRoute,
+} from '../stories/fixtures';
+import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
 import { FlatDepartureItem } from './flat-departure-item';
-
-/** Fictional base route for stories. */
-const baseRoute: Route = {
-  route_id: 'route-001',
-  route_short_name: '渋64',
-  route_long_name: '渋谷駅〜中野駅',
-  route_names: {},
-  route_type: 3 as const,
-  route_color: '1976D2',
-  route_text_color: 'FFFFFF',
-  agency_id: 'agency-001',
-};
-
-const greenRoute: Route = {
-  ...baseRoute,
-  route_id: 'route-002',
-  route_short_name: '都01',
-  route_long_name: '渋谷駅〜新橋駅',
-  route_color: '00A850',
-};
-
-const tramRoute: Route = {
-  ...baseRoute,
-  route_id: 'route-003',
-  route_short_name: '荒川線',
-  route_long_name: '三ノ輪橋〜早稲田',
-  route_type: 0 as const,
-  route_color: 'E60012',
-};
-
-const noColorRoute: Route = {
-  ...baseRoute,
-  route_id: 'route-004',
-  route_short_name: 'A5',
-  route_long_name: '',
-  route_color: '',
-  route_text_color: '',
-};
-
-const agency: Agency = {
-  agency_id: 'agency-001',
-  agency_name: '都営バス',
-  agency_short_name: '都営',
-  agency_names: {},
-  agency_short_names: {},
-  agency_url: '',
-  agency_lang: 'ja',
-  agency_timezone: 'Asia/Tokyo',
-  agency_fare_url: '',
-  agency_colors: [{ bg: '00A850', text: 'FFFFFF' }],
-};
 
 /** Create a ContextualTimetableEntry for stories. */
 function createEntry(
@@ -229,9 +195,72 @@ const longRoute: Route = {
   ...baseRoute,
   route_id: 'toaran:SA',
   route_short_name: '',
+  route_short_names: {},
   route_long_name: '東京さくらトラム（都電荒川線）',
   route_type: 0 as const,
   route_color: 'E60012',
+};
+
+// --- stop_headsign patterns ---
+
+/** trip empty + stop present (keio-bus pattern). */
+export const TripEmptyStopPresent: Story = {
+  args: {
+    entry: {
+      ...createEntry(),
+      routeDirection: createRouteDirection({
+        ...createEntry().routeDirection,
+        tripHeadsign: emptyHeadsign,
+        stopHeadsign: stopHeadsignMusashiKoganeiSouth,
+      }),
+    },
+  },
+};
+
+/** stop overrides trip — stop_headsign differs from trip_headsign. */
+export const StopOverridesTrip: Story = {
+  args: {
+    entry: {
+      ...createEntry(),
+      routeDirection: createRouteDirection({
+        ...createEntry().routeDirection,
+        tripHeadsign: headsignKyotoLong,
+        stopHeadsign: stopHeadsignDemachiyanagi,
+      }),
+    },
+  },
+};
+
+export const LangComparison: Story = {
+  args: {
+    agency,
+    entry: {
+      ...createEntry({ route: greenRoute, departureMinutes: 870 }),
+      routeDirection: createRouteDirection({
+        route: greenRoute,
+        tripHeadsign: headsignShimbashiEkimae,
+      }),
+    },
+    infoLevel: 'normal',
+  },
+  render: (args) => (
+    <div className="flex flex-col gap-3">
+      {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
+        <div key={label} className="space-y-1">
+          <span className="block text-[10px] text-gray-400">{label}</span>
+          <FlatDepartureItem
+            entry={args.entry}
+            now={args.now}
+            isFirst={args.isFirst}
+            showRouteTypeIcon={args.showRouteTypeIcon}
+            infoLevel={args.infoLevel}
+            dataLang={dataLang}
+            agency={args.agency}
+          />
+        </div>
+      ))}
+    </div>
+  ),
 };
 
 /** Kitchen sink items: various data patterns to verify layout. */
@@ -246,13 +275,10 @@ const kitchenSinkItems: {
   {
     entry: {
       ...createEntry({ departureMinutes: 866 }),
-      routeDirection: {
+      routeDirection: createRouteDirection({
         route: greenRoute,
-        tripHeadsign: {
-          name: '新橋駅前',
-          names: { ja: '新橋駅前', 'ja-Hrkt': 'しんばしえきまえ', en: 'Shimbashi Sta.' },
-        },
-      },
+        tripHeadsign: headsignShimbashiEkimae,
+      }),
     },
     agency,
   },
@@ -265,13 +291,7 @@ const kitchenSinkItems: {
   {
     entry: {
       ...createEntry({ route: longRoute, departureMinutes: 867 }),
-      routeDirection: {
-        route: longRoute,
-        tripHeadsign: {
-          name: '三ノ輪橋',
-          names: { 'ja-Hrkt': 'みのわばし', en: 'Minowabashi' },
-        },
-      },
+      routeDirection: createRouteDirection({ route: longRoute, tripHeadsign: headsignMinowabashi }),
     },
     icon: true,
     agency,
@@ -280,13 +300,7 @@ const kitchenSinkItems: {
   {
     entry: {
       ...createEntry({ route: longRoute, departureMinutes: 868 }),
-      routeDirection: {
-        route: longRoute,
-        tripHeadsign: {
-          name: '早稲田',
-          names: { 'ja-Hrkt': 'わせだ', en: 'Waseda' },
-        },
-      },
+      routeDirection: createRouteDirection({ route: longRoute, tripHeadsign: headsignWaseda }),
     },
     icon: true,
   },
@@ -294,15 +308,7 @@ const kitchenSinkItems: {
   {
     entry: {
       ...createEntry({ route: longRoute, departureMinutes: 868 }),
-      routeDirection: {
-        route: longRoute,
-        tripHeadsign: {
-          name: '北大路バスターミナル・下鴨神社・出町柳駅',
-          names: {
-            en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
-          },
-        },
-      },
+      routeDirection: createRouteDirection({ route: longRoute, tripHeadsign: headsignKyotoLong }),
     },
     icon: true,
     agency,
@@ -316,15 +322,7 @@ const kitchenSinkItems: {
         isTerminal: true,
         arrivalMinutes: 870,
       }),
-      routeDirection: {
-        route: longRoute,
-        tripHeadsign: {
-          name: '北大路バスターミナル・下鴨神社・出町柳駅',
-          names: {
-            en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
-          },
-        },
-      },
+      routeDirection: createRouteDirection({ route: longRoute, tripHeadsign: headsignKyotoLong }),
     },
     icon: true,
     agency,
@@ -337,15 +335,7 @@ const kitchenSinkItems: {
         departureMinutes: 874,
         pickupType: 1,
       }),
-      routeDirection: {
-        route: longRoute,
-        tripHeadsign: {
-          name: '北大路バスターミナル・下鴨神社・出町柳駅',
-          names: {
-            en: 'Kitaoji Bus Terminal via Shimogamo Shrine & Demachiyanagi Sta.',
-          },
-        },
-      },
+      routeDirection: createRouteDirection({ route: longRoute, tripHeadsign: headsignKyotoLong }),
     },
     icon: true,
     agency,
@@ -358,13 +348,7 @@ const kitchenSinkItems: {
         isTerminal: true,
         arrivalMinutes: 875,
       }),
-      routeDirection: {
-        route: baseRoute,
-        tripHeadsign: {
-          name: '新宿',
-          names: { en: 'Shinjuku' },
-        },
-      },
+      routeDirection: createRouteDirection({ route: baseRoute, tripHeadsign: headsignShinjuku }),
     },
     icon: true,
     agency,
@@ -392,47 +376,7 @@ const kitchenSinkItems: {
   { entry: createEntry({ departureMinutes: 985, headsign: '中野駅' }) },
 ];
 
-export const KitchenSinkInfoLevelSimple: Story = {
-  args: { entry: createEntry() },
-  render: () => (
-    <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
-      {kitchenSinkItems.map(({ entry, agency: a, icon }, i) => (
-        <FlatDepartureItem
-          key={i}
-          entry={entry}
-          now={now}
-          isFirst={i === 0}
-          showRouteTypeIcon={icon ?? false}
-          infoLevel="simple"
-          dataLang={['ja']}
-          agency={a}
-        />
-      ))}
-    </div>
-  ),
-};
-
-export const KitchenSinkInfoLevelNormal: Story = {
-  args: { entry: createEntry() },
-  render: () => (
-    <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
-      {kitchenSinkItems.map(({ entry, agency: a, icon }, i) => (
-        <FlatDepartureItem
-          key={i}
-          entry={entry}
-          now={now}
-          isFirst={i === 0}
-          showRouteTypeIcon={icon ?? false}
-          infoLevel="normal"
-          dataLang={['ja']}
-          agency={a}
-        />
-      ))}
-    </div>
-  ),
-};
-
-export const KitchenSinkInfoLevelDetailed: Story = {
+export const KitchenSink: Story = {
   args: { entry: createEntry() },
   render: () => (
     <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
@@ -450,41 +394,4 @@ export const KitchenSinkInfoLevelDetailed: Story = {
       ))}
     </div>
   ),
-};
-
-export const KitchenSinkInfoLevelVerbose: Story = {
-  args: { entry: createEntry() },
-  render: () => (
-    <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
-      {kitchenSinkItems.map(({ entry, agency: a, icon }, i) => (
-        <FlatDepartureItem
-          key={i}
-          entry={entry}
-          now={now}
-          isFirst={i === 0}
-          showRouteTypeIcon={icon ?? false}
-          infoLevel="verbose"
-          dataLang={['ja']}
-          agency={a}
-        />
-      ))}
-    </div>
-  ),
-};
-
-// --- stop_headsign patterns ---
-
-/** trip empty + stop present (keio-bus pattern). */
-export const TripEmptyStopPresent: Story = {
-  args: { entry: createEntry({ headsign: '', stopHeadsign: '武蔵小金井駅南口' }) },
-};
-
-/** stop overrides trip — stop_headsign differs from trip_headsign. */
-export const StopOverridesTrip: Story = {
-  args: {
-    entry: createEntry({
-      headsign: '北大路BT・下鴨神社・出町柳駅',
-      stopHeadsign: '出町柳駅',
-    }),
-  },
 };
