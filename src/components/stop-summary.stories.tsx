@@ -189,7 +189,6 @@ export const WithDistanceBadge: Story = {
   ),
 };
 
-
 export const LangComparison: Story = {
   args: {
     stop: longNameStop,
@@ -209,7 +208,6 @@ export const LangComparison: Story = {
     </div>
   ),
 };
-
 
 /** Kitchen sink: long name, multi-type, all agencies, all route badges, drop-off-only. */
 const kitchenSinkArgs = {

@@ -149,8 +149,6 @@ export const Verbose: Story = {
   args: { infoLevel: 'verbose' },
 };
 
-
-
 // --- Platform code ---
 
 export const PlatformCode: Story = {
@@ -212,7 +210,6 @@ export const LangComparison: Story = {
     </div>
   ),
 };
-
 
 /** Kitchen sink: long name, multi-type, all agencies, drop-off-only, stats, geo, routes — all elements visible. */
 const kitchenSinkArgs = {
