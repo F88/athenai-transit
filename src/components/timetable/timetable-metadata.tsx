@@ -1,12 +1,16 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { resolveAgencyLang } from '@/config/transit-defaults';
+import { getRouteDisplayNames } from '@/domain/transit/get-route-display-names';
 import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
-import type { Route } from '@/types/app/transit';
+import type { Agency, Route } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
 import { PillButton } from '../button/pill-button';
 
 interface TimetableMetadataProps {
   timetableEntries: TimetableEntry[];
+  dataLang: readonly string[];
+  agencies: Agency[];
 }
 
 function formatMinutes(minutes: number): string {
@@ -30,7 +34,11 @@ function computeAverageInterval(minutes: number[]): number | null {
  * @param props - Metadata rendering inputs.
  * @returns The rendered timetable metadata block.
  */
-export function TimetableMetadata({ timetableEntries }: TimetableMetadataProps) {
+export function TimetableMetadata({
+  timetableEntries,
+  dataLang,
+  agencies,
+}: TimetableMetadataProps) {
   const { t, i18n } = useTranslation();
   const allMinutes = timetableEntries.map((entry) => getDisplayMinutes(entry));
   const count = allMinutes.length;
@@ -81,8 +89,11 @@ export function TimetableMetadata({ timetableEntries }: TimetableMetadataProps) 
           {routeBreakdown.map((item) => {
             const bg = item.route.route_color ? `#${item.route.route_color}` : undefined;
             const fg = item.route.route_text_color ? `#${item.route.route_text_color}` : undefined;
-            const label =
-              item.route.route_short_name || item.route.route_long_name || item.route.route_id;
+            const label = getRouteDisplayNames(
+              item.route,
+              dataLang,
+              resolveAgencyLang(agencies, item.route.agency_id),
+            ).resolved.name;
 
             return (
               <PillButton

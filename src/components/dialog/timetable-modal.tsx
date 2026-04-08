@@ -216,7 +216,11 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
             />
 
             {info.isDetailedEnabled && filteredTimetableEntries.length > 0 && (
-              <TimetableMetadata timetableEntries={filteredTimetableEntries} />
+              <TimetableMetadata
+                timetableEntries={filteredTimetableEntries}
+                dataLang={dataLang}
+                agencies={data.agencies}
+              />
             )}
 
             <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLang[0]} />

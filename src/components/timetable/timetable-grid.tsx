@@ -2,13 +2,13 @@ import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { resolveAgencyLang } from '@/config/transit-defaults';
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
+import { getTimetableHeadsignPrefixLengths } from '@/domain/transit/get-timetable-headsign-prefix-lengths';
 import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import type { TimetableOmitted } from '@/types/app/repository';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
-import { resolveMinPrefixLengths } from '@/utils/resolve-min-prefix-lengths';
 import { TimetableGridEntry } from './timetable-grid-entry';
 
 interface TimetableGridProps {
@@ -53,12 +53,11 @@ export function TimetableGrid({
   const headsignLengths = useMemo(
     () =>
       showHeadsign
-        ? resolveMinPrefixLengths(
-            timetableEntries.map((entry) => getEffectiveHeadsign(entry.routeDirection)),
-            2,
+        ? getTimetableHeadsignPrefixLengths(timetableEntries, dataLang, (agencyId) =>
+            resolveAgencyLang(agencies, agencyId),
           )
         : new Map<string, number>(),
-    [timetableEntries, showHeadsign],
+    [timetableEntries, showHeadsign, dataLang, agencies],
   );
 
   const hourGroups = useMemo(() => {
