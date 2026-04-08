@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.04.08]
+
 ### Added
 
 - i18n: react-i18next を導入。UI テキストの多言語対応基盤を構築。
