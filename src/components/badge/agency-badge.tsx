@@ -17,6 +17,16 @@ const sizeVariants: Record<AgencyBadgeSize, string> = {
   xs: 'text-[9px] px-0.5',
 };
 
+// Intentional feed-specific exception for the Seibu Bus dataset.
+// In real sbbus data, `sbbus:3013301006265` and `sbbus:6013301006270`
+// collapse to the same translated short and long labels (`西武バス` /
+// `Seibu Bus`, `西武バス株式会社` / `Seibu Bus Co., Ltd.`), while their raw
+// source names remain distinct (`西武観光バス` vs `西武バス`).
+//
+// This is not a generic formatting preference. It preserves operator
+// distinguishability that would otherwise be lost by the current data model.
+// Do not remove or generalize this without introducing repository-level
+// metadata that can express the same exception explicitly.
 const AGENCY_BADGE_NAME_PREFERENCE_BY_ID: Record<string, AgencySource> = {
   'sbbus:3013301006265': 'long',
 };
