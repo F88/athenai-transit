@@ -21,8 +21,9 @@ import type { Route } from '../../../types/app/transit';
 const testRoute: Route = {
   route_id: 'r1',
   route_short_name: '都01',
+  route_short_names: {},
   route_long_name: 'Test Route',
-  route_names: {},
+  route_long_names: {},
   route_type: 3,
   route_color: '2E7D32',
   route_text_color: 'FFFFFF',
@@ -33,8 +34,9 @@ function makeRoute(id: string, agencyId = 'test:agency'): Route {
   return {
     route_id: id,
     route_short_name: id,
+    route_short_names: {},
     route_long_name: '',
-    route_names: {},
+    route_long_names: {},
     route_type: 3,
     route_color: '2E7D32',
     route_text_color: 'FFFFFF',

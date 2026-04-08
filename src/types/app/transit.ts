@@ -70,9 +70,11 @@ export interface Route {
   route_type: RouteType;
   agency_id: string;
   route_short_name: string;
+  /** Merged from translations.txt. Not a GTFS-JP standard field. */
+  route_short_names: Record<string, string>;
   route_long_name: string;
   /** Merged from translations.txt. Not a GTFS-JP standard field. */
-  route_names: Record<string, string>;
+  route_long_names: Record<string, string>;
   route_color: string; // hex without #, e.g. "F1B34E"
   route_text_color: string; // hex without #
 }

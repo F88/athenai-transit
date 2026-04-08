@@ -15,8 +15,9 @@ function makeRD(tripName: string, stopName?: string): RouteDirection {
     route: {
       route_id: 'r1',
       route_short_name: 'R1',
+      route_short_names: {},
       route_long_name: '',
-      route_names: {},
+      route_long_names: {},
       route_type: 3,
       route_color: '',
       route_text_color: '',
@@ -72,8 +73,9 @@ describe('getEffectiveHeadsign / getHeadsignDisplayNames parity', () => {
       route: {
         route_id: 'r1',
         route_short_name: 'R1',
+        route_short_names: {},
         route_long_name: '',
-        route_names: {},
+        route_long_names: {},
         route_type: 3,
         route_color: '',
         route_text_color: '',

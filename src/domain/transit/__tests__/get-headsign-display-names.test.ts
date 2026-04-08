@@ -8,8 +8,9 @@ function makeBusRoute(overrides?: Partial<Route>): Route {
   return {
     route_id: 'kobus:1021',
     route_short_name: '渋63',
+    route_short_names: {},
     route_long_name: '',
-    route_names: {},
+    route_long_names: {},
     route_type: 3,
     route_color: '00377E',
     route_text_color: 'FFFFFF',
@@ -23,8 +24,9 @@ function makeTrainRoute(overrides?: Partial<Route>): Route {
   return {
     route_id: 'toaran:E',
     route_short_name: '',
+    route_short_names: {},
     route_long_name: '大江戸線',
-    route_names: {},
+    route_long_names: {},
     route_type: 1,
     route_color: 'B6007A',
     route_text_color: 'FFFFFF',
@@ -38,8 +40,9 @@ function makeBothRoute(overrides?: Partial<Route>): Route {
   return {
     route_id: 'toaran:E',
     route_short_name: 'E',
+    route_short_names: {},
     route_long_name: '大江戸線',
-    route_names: {},
+    route_long_names: {},
     route_type: 1,
     route_color: 'B6007A',
     route_text_color: 'FFFFFF',
@@ -53,8 +56,9 @@ function makeEmptyRoute(overrides?: Partial<Route>): Route {
   return {
     route_id: 'test:999',
     route_short_name: '',
+    route_short_names: {},
     route_long_name: '',
-    route_names: {},
+    route_long_names: {},
     route_type: 3,
     route_color: '',
     route_text_color: '',

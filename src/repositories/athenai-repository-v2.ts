@@ -254,8 +254,9 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
       routeMap.set(r.i, {
         route_id: r.i,
         route_short_name: r.s,
+        route_short_names: {},
         route_long_name: r.l,
-        route_names: translationsMap.route_names[r.i] ?? {},
+        route_long_names: translationsMap.route_names[r.i] ?? {},
         route_type: r.t as RouteType,
         route_color: r.c,
         route_text_color: r.tc,

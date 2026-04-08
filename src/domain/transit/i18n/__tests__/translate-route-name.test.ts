@@ -7,8 +7,9 @@ function makeRoute(overrides?: Partial<Route>): Route {
   return {
     route_id: 'R001',
     route_short_name: '都01',
+    route_short_names: {},
     route_long_name: '渋谷駅前-新橋駅前',
-    route_names: {},
+    route_long_names: {},
     route_type: 3,
     route_color: 'F1B34E',
     route_text_color: 'FFFFFF',
@@ -45,17 +46,17 @@ describe('translateRouteName', () => {
     expect(result.longName).toBe('');
   });
 
-  it('returns translated longName when lang matches route_names', () => {
+  it('returns translated longName when lang matches route_long_names', () => {
     const route = makeRoute({
-      route_names: { en: 'Shibuya-Shimbashi', 'ja-Hrkt': 'しぶやえきまえ-しんばしえきまえ' },
+      route_long_names: { en: 'Shibuya-Shimbashi', 'ja-Hrkt': 'しぶやえきまえ-しんばしえきまえ' },
     });
     const result = translateRouteName(route, 'en');
     expect(result.shortName).toBe('都01');
     expect(result.longName).toBe('Shibuya-Shimbashi');
   });
 
-  it('falls back to route_long_name when lang is not in route_names', () => {
-    const route = makeRoute({ route_names: { en: 'Shibuya-Shimbashi' } });
+  it('falls back to route_long_name when lang is not in route_long_names', () => {
+    const route = makeRoute({ route_long_names: { en: 'Shibuya-Shimbashi' } });
     const result = translateRouteName(route, 'fr');
     expect(result.shortName).toBe('都01');
     expect(result.longName).toBe('渋谷駅前-新橋駅前');
@@ -67,7 +68,7 @@ describe('translateRouteName', () => {
     expect(result.longName).toBe('渋谷駅前-新橋駅前');
   });
 
-  it('falls back to route_long_name when route_names is empty', () => {
+  it('falls back to route_long_name when route_long_names is empty', () => {
     const result = translateRouteName(makeRoute(), 'en');
     expect(result.shortName).toBe('都01');
     expect(result.longName).toBe('渋谷駅前-新橋駅前');

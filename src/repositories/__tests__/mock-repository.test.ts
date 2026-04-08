@@ -24,8 +24,8 @@ describe('MockRepository i18n data', () => {
     expect(aobaAgency?.agency_short_names['zh-Hant']).toBe('青葉巴士');
 
     const airportRoute = result.data.routes.find((route) => route.route_id === 'subway_airport');
-    expect(airportRoute?.route_names.en).toBe('Airport Liner');
-    expect(airportRoute?.route_names['zh-Hans']).toBe('机场线');
+    expect(airportRoute?.route_long_names.en).toBe('Airport Liner');
+    expect(airportRoute?.route_long_names['zh-Hans']).toBe('机场线');
   });
 
   it('provides translated trip and stop headsigns', async () => {
