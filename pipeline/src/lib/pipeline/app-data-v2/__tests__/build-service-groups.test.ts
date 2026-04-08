@@ -148,7 +148,7 @@ describe('buildServiceGroups', () => {
     expect(uniqueIds).toEqual(new Set(['a', 'b', 'c', 'd', 'e']));
   });
 
-  it('ignores calendar_dates exceptions for grouping', () => {
+  it('ignores calendar_dates when timetable is not provided', () => {
     const calendar = makeCalendar(
       [
         { id: 'svc-wd', d: [1, 1, 1, 1, 1, 0, 0] },
@@ -166,5 +166,162 @@ describe('buildServiceGroups', () => {
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({ key: 'wd', serviceIds: ['svc-wd'] });
     expect(result[1]).toEqual({ key: 'su', serviceIds: ['svc-su'] });
+  });
+
+  it('builds groups from calendar_dates-only services when calendar.services is empty', () => {
+    const calendar = makeCalendar([], [{ i: 'svc-ex-su', d: '20260104', t: 1 }]);
+
+    const timetable = {
+      'stop-1': [
+        {
+          v: 2 as const,
+          tp: 'p1',
+          d: { 'svc-ex-su': [600] },
+          a: { 'svc-ex-su': [600] },
+        },
+      ],
+    };
+
+    const result = buildServiceGroups(calendar, timetable);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({ key: 'su', serviceIds: ['svc-ex-su'] });
+  });
+
+  it('adds exception-only services only when unresolved days exist', () => {
+    const calendar = makeCalendar(
+      [{ id: 'svc-wd', d: [1, 1, 1, 1, 1, 0, 0] }],
+      [
+        // Sunday-only exception service not present in calendar.services
+        { i: 'svc-ex-su', d: '20260104', t: 1 },
+      ],
+    );
+
+    const timetable = {
+      'stop-1': [
+        {
+          v: 2 as const,
+          tp: 'p1',
+          d: { 'svc-wd': [480], 'svc-ex-su': [600] },
+          a: { 'svc-wd': [480], 'svc-ex-su': [600] },
+        },
+      ],
+    };
+
+    const result = buildServiceGroups(calendar, timetable);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({ key: 'wd', serviceIds: ['svc-wd'] });
+    expect(result[1]).toEqual({ key: 'su', serviceIds: ['svc-ex-su'] });
+  });
+
+  it('does not add exception-only services when days are already resolvable', () => {
+    const calendar = makeCalendar(
+      [{ id: 'svc-wd', d: [1, 1, 1, 1, 1, 0, 0] }],
+      [
+        // Added on Monday, but Monday is already covered by svc-wd.
+        { i: 'svc-ex-mon', d: '20260105', t: 1 },
+      ],
+    );
+
+    const timetable = {
+      'stop-1': [
+        {
+          v: 2 as const,
+          tp: 'p1',
+          d: { 'svc-wd': [480], 'svc-ex-mon': [600] },
+          a: { 'svc-wd': [480], 'svc-ex-mon': [600] },
+        },
+      ],
+    };
+
+    const result = buildServiceGroups(calendar, timetable);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({ key: 'wd', serviceIds: ['svc-wd'] });
+  });
+
+  it('does not add exception-only services that do not appear in timetable', () => {
+    const calendar = makeCalendar([], [{ i: 'svc-ex-su', d: '20260104', t: 1 }]);
+
+    const timetable = {
+      'stop-1': [
+        {
+          v: 2 as const,
+          tp: 'p1',
+          d: { 'svc-other': [600] },
+          a: { 'svc-other': [600] },
+        },
+      ],
+    };
+
+    const result = buildServiceGroups(calendar, timetable);
+
+    expect(result).toEqual([]);
+  });
+
+  it('ignores remove-only exceptions for exception-only services', () => {
+    const calendar = makeCalendar([], [{ i: 'svc-ex-su', d: '20260104', t: 2 }]);
+
+    const timetable = {
+      'stop-1': [
+        {
+          v: 2 as const,
+          tp: 'p1',
+          d: { 'svc-ex-su': [600] },
+          a: { 'svc-ex-su': [600] },
+        },
+      ],
+    };
+
+    const result = buildServiceGroups(calendar, timetable);
+
+    expect(result).toEqual([]);
+  });
+
+  it('ignores invalid exception dates for derived weekday bits', () => {
+    const calendar = makeCalendar([], [{ i: 'svc-ex-invalid', d: '20261301', t: 1 }]);
+
+    const timetable = {
+      'stop-1': [
+        {
+          v: 2 as const,
+          tp: 'p1',
+          d: { 'svc-ex-invalid': [600] },
+          a: { 'svc-ex-invalid': [600] },
+        },
+      ],
+    };
+
+    const result = buildServiceGroups(calendar, timetable);
+
+    expect(result).toEqual([]);
+  });
+
+  it('derives unknown keys from exception weekday bits for needed services', () => {
+    const calendar = makeCalendar(
+      [],
+      [
+        { i: 'svc-ex-mwf', d: '20260105', t: 1 }, // Mon
+        { i: 'svc-ex-mwf', d: '20260107', t: 1 }, // Wed
+        { i: 'svc-ex-mwf', d: '20260109', t: 1 }, // Fri
+      ],
+    );
+
+    const timetable = {
+      'stop-1': [
+        {
+          v: 2 as const,
+          tp: 'p1',
+          d: { 'svc-ex-mwf': [600] },
+          a: { 'svc-ex-mwf': [600] },
+        },
+      ],
+    };
+
+    const result = buildServiceGroups(calendar, timetable);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({ key: 'd1010100', serviceIds: ['svc-ex-mwf'] });
   });
 });

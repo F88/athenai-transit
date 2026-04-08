@@ -32,6 +32,7 @@ import type { CalendarServiceMeta } from '../../../src/lib/pipeline/app-data-v2/
 import { validateDataBundle } from '../../../src/lib/pipeline/app-data-v2/validate-data';
 import { validateGlobalInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-global-insights';
 import { validateInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-insights';
+import { validateServiceGroupResolution } from '../../../src/lib/pipeline/app-data-v2/validate-service-group-resolution';
 import { validateShapesBundle } from '../../../src/lib/pipeline/app-data-v2/validate-shapes';
 import type { ValidationIssue } from '../../../src/lib/pipeline/app-data-v2/validate-shapes';
 
@@ -215,6 +216,8 @@ function validateSource(
   allIssues: ValidationIssue[],
 ): SourceValidationResult {
   const result: SourceValidationResult = { calendarServices: [] };
+  let dataStructureOk = false;
+  let insightsStructureOk = false;
   // DataBundle
   if (existingFiles.get('data.json')) {
     console.log('    [DataBundle]');
@@ -231,6 +234,7 @@ function validateSource(
       console.log(`      Structure:     FAILED`);
       printIssueDetails(structureErrors);
     } else {
+      dataStructureOk = true;
       console.log(`      Structure:     OK (bundle_version=2, kind=data, 9 sections)`);
 
       // Per-section summary lines
@@ -283,6 +287,7 @@ function validateSource(
     allIssues.push(...r.issues);
 
     if (r.issues.length === 0) {
+      insightsStructureOk = true;
       const parts = [`${r.serviceGroupCount} service groups`];
       if (r.tripPatternGeoCount > 0) {
         parts.push(`${r.tripPatternGeoCount} pattern geo`);
@@ -296,6 +301,19 @@ function validateSource(
       console.log(`      Structure:     OK (${parts.join(', ')})`);
     } else {
       console.log(`      Structure:     FAILED`);
+      printIssueDetails(r.issues);
+    }
+  }
+
+  if (dataStructureOk && insightsStructureOk) {
+    console.log('    [Cross-bundle]');
+    const r = validateServiceGroupResolution(prefix, V2_OUTPUT_DIR);
+    trackIssues(r.issues, state);
+    allIssues.push(...r.issues);
+    if (r.issues.length === 0) {
+      console.log(`      service-group resolution: OK (${r.checkedDays} active days checked)`);
+    } else {
+      console.log('      service-group resolution: FAILED');
       printIssueDetails(r.issues);
     }
   }
