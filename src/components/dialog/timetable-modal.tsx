@@ -4,6 +4,7 @@ import { TimetableGrid } from '../timetable/timetable-grid';
 import { TimetableHeader } from '../timetable/timetable-header';
 import { TimetableMetadata } from '../timetable/timetable-metadata';
 import { StopTimetableFilter } from '../timetable/stop-timetable-filter';
+import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
@@ -103,7 +104,7 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
       return '';
     }
 
-    const routeDirection = data.timetableEntries[0]?.routeDirection;
+    const routeDirection = findRouteDirectionForHeadsign(data.timetableEntries, data.headsign);
     if (!routeDirection) {
       return data.headsign;
     }

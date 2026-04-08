@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { resolveAgencyLang } from '@/config/transit-defaults';
-import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
+import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
+import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
+import { getSelectedHeadsignDisplayName } from '@/domain/transit/get-headsign-display-names';
 import { groupByRouteHeadsign } from '@/domain/transit/group-timetable-entries';
 import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
@@ -35,9 +37,16 @@ export function StopTimetableFilter({
           return null;
         }
 
+        const selectedHeadsign = getEffectiveHeadsign(firstEntry.routeDirection);
+        const routeDirection = findRouteDirectionForHeadsign(entries, selectedHeadsign);
+        if (!routeDirection) {
+          return null;
+        }
+
         return {
           key,
-          routeDirection: firstEntry.routeDirection,
+          selectedHeadsign,
+          routeDirection,
           count: entries.length,
         };
       })
@@ -69,12 +78,12 @@ export function StopTimetableFilter({
             onClick={() => onToggleFilter(item.key)}
             count={item.count}
           >
-            {getHeadsignDisplayNames(
+            {getSelectedHeadsignDisplayName(
               item.routeDirection,
+              item.selectedHeadsign,
               dataLang,
               resolveAgencyLang(agencies, route.agency_id),
-              'stop',
-            ).resolved.name ||
+            ) ||
               route.route_short_name ||
               route.route_long_name ||
               route.route_id}
