@@ -66,6 +66,8 @@ export function StopSummary({
             <AgencyBadge
               key={a.agency_id}
               agency={a}
+              dataLang={dataLang}
+              agencyLangs={resolveAgencyLang(agencies, a.agency_id)}
               infoLevel={infoLevel}
               size="xs"
               disableVerbose

@@ -1,6 +1,10 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency } from '../../types/app/transit';
-import { getAgencyDisplayNames } from '../../domain/transit/get-agency-display-name';
+import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
+import {
+  getAgencyDisplayNames,
+  type AgencySource,
+} from '../../domain/transit/get-agency-display-name';
 import { cn } from '../../lib/utils';
 import { IdBadge } from './id-badge';
 import { VerboseAgency } from '../verbose/verbose-agency';
@@ -13,9 +17,19 @@ const sizeVariants: Record<AgencyBadgeSize, string> = {
   xs: 'text-[9px] px-0.5',
 };
 
+const AGENCY_BADGE_NAME_PREFERENCE_BY_ID: Record<string, AgencySource> = {
+  'sbbus:3013301006265': 'long',
+};
+
+const AGENCY_BADGE_USE_RAW_NAME_BY_ID = new Set(['sbbus:3013301006265']);
+
 interface AgencyBadgeProps {
   /** The agency to display. */
   agency: Agency;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
+  /** Agency languages for subNames sort priority. @default DEFAULT_AGENCY_LANG */
+  agencyLangs?: readonly string[];
   /** Current info verbosity level. Verbose shows agency_id via IdBadge. */
   infoLevel: InfoLevel;
   /** Size variant. @default 'xs' */
@@ -28,21 +42,40 @@ interface AgencyBadgeProps {
 }
 
 /**
- * Colored badge displaying an agency's short name.
+ * Colored badge displaying an agency's primary display name.
  *
  * Uses the agency's primary brand color (`agency_colors[0]`),
  * falling back to `bg-muted-foreground text-white` when no color is set.
- * Label shows `agency_short_name`, falling back to `agency_name`.
+ * Label normally shows `agency_short_name`, falling back to `agency_name`.
+ * Certain agencies may prefer the long-name source when the short label is
+ * known to collapse distinct operators into the same UI label.
  * In verbose mode, an {@link IdBadge} with the agency_id is shown after the label.
  */
 export function AgencyBadge({
   agency,
+  dataLang,
+  agencyLangs = DEFAULT_AGENCY_LANG,
   infoLevel,
   size = 'xs',
   disableVerbose = false,
   className,
 }: AgencyBadgeProps) {
-  const agencyNames = getAgencyDisplayNames(agency, infoLevel);
+  const preferredSource = AGENCY_BADGE_NAME_PREFERENCE_BY_ID[agency.agency_id] ?? 'short';
+  const agencyNames = getAgencyDisplayNames(agency, dataLang, agencyLangs, preferredSource);
+  const preferredRawName =
+    preferredSource === 'long' ? agency.agency_name : agency.agency_short_name;
+  const preferredResolvedName =
+    preferredSource === 'long' ? agencyNames.longName.name : agencyNames.shortName.name;
+
+  // Keep certain agencies distinguishable even when translated labels collapse.
+  const resolvedName =
+    (AGENCY_BADGE_USE_RAW_NAME_BY_ID.has(agency.agency_id)
+      ? preferredRawName || preferredResolvedName
+      : preferredResolvedName) ||
+    agencyNames.resolved.name ||
+    preferredRawName ||
+    agency.agency_id;
+
   const primary = agency.agency_colors[0];
   const bg = primary ? `#${primary.bg}` : undefined;
   const fg = primary ? `#${primary.text}` : undefined;
@@ -58,7 +91,7 @@ export function AgencyBadge({
           )}
           style={bg ? { background: bg, color: fg } : undefined}
         >
-          {agencyNames.name}
+          {resolvedName || '?'}
         </span>
         {showVerbose && <IdBadge>{agency.agency_id}</IdBadge>}
       </span>

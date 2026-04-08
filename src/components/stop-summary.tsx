@@ -142,6 +142,8 @@ export function StopSummary({
             <AgencyBadge
               key={agency.agency_id}
               agency={agency}
+              dataLang={dataLang}
+              agencyLangs={resolveAgencyLang(agencies, agency.agency_id)}
               infoLevel={infoLevel}
               size={resolvedAgencyBadgeSize}
               disableVerbose
@@ -170,7 +172,7 @@ export function StopSummary({
             [META]
           </summary>
           <div className="mt-1 ml-2 space-y-1">
-            <VerboseAgencies agencies={agencies} infoLevel={infoLevel} />
+            <VerboseAgencies agencies={agencies} infoLevel={infoLevel} dataLang={dataLang} />
             <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
               <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
                 [Stop]

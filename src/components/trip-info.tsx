@@ -164,7 +164,14 @@ export function TripInfo({
         disableVerbose={true}
       />
       {info.isDetailedEnabled && agency && (
-        <AgencyBadge size="xs" agency={agency} infoLevel={infoLevel} disableVerbose={true} />
+        <AgencyBadge
+          size="xs"
+          agency={agency}
+          dataLang={dataLang}
+          agencyLangs={agencyLang}
+          infoLevel={infoLevel}
+          disableVerbose={true}
+        />
       )}
 
       {/* Headsign */}

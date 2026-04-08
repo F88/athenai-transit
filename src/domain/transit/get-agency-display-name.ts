@@ -1,36 +1,87 @@
-import type { InfoLevel } from '../../types/app/settings';
 import type { Agency } from '../../types/app/transit';
-import { translateAgencyName } from './i18n/translate-agency-name';
+import type { ResolvedDisplayNames } from './get-display-names';
+import { resolveDisplayNamesWithTranslatableText } from './i18n/resolve-display-names-with-translatable-text';
+
+/**
+ * Agency name source type.
+ *
+ * - `'short'` — agency_short_name and agency_short_names
+ * - `'long'` — agency_name and agency_names
+ */
+export type AgencySource = 'short' | 'long';
 
 /**
  * Result of {@link getAgencyDisplayNames}.
  */
 export interface AgencyDisplayNames {
-  /** Primary display name (short name preferred, falls back to full name). */
-  name: string;
+  /** Effective agency name resolved by `prefer` strategy. */
+  resolved: ResolvedDisplayNames;
+  /** Which source was used for `resolved`. */
+  resolvedSource: AgencySource;
+  /** agency_short_name resolved for the requested language chain. */
+  shortName: ResolvedDisplayNames;
+  /** agency_name resolved for the requested language chain. */
+  longName: ResolvedDisplayNames;
 }
 
 /**
- * Compute the display name for an agency based on info level and language.
+ * Compute display names for an agency based on preference.
  *
- * Prefers `agency_short_name` for compact display, falling back to
- * `agency_name` when short name is empty. Translates via
- * {@link translateAgencyName} when a language key is provided.
+ * Resolves `agency_short_name` and `agency_name` independently via
+ * {@link resolveDisplayNamesWithTranslatableText}, then selects the effective
+ * one based on `prefer`. Each source keeps its own `subNames`; they are never mixed.
  *
  * @param agency - The agency to compute names for.
- * @param infoLevel - Current info verbosity level.
- * @param lang - Optional language key for i18n translation.
- * @returns The resolved display name.
+ * @param preferredDisplayLangs - Ordered language fallback chain for primary display resolution.
+ * @param agencyLangs - Agency languages for subNames sort priority.
+ * @param prefer - Which agency source to use as primary. Defaults to `'short'`.
+ * @returns Effective agency display names, plus individual short/long resolved names.
  */
 export function getAgencyDisplayNames(
-  agency: Agency,
-  infoLevel: InfoLevel,
-  lang?: string,
+  agency: Readonly<Agency>,
+  preferredDisplayLangs: readonly string[],
+  agencyLangs: readonly string[],
+  prefer: AgencySource = 'short',
 ): AgencyDisplayNames {
-  const translated = translateAgencyName(agency, lang);
-  const name = translated.shortName || translated.name || agency.agency_id;
-  void infoLevel; // Reserved for future level-specific name formatting
-  return { name };
+  const shortName = resolveDisplayNamesWithTranslatableText(
+    { name: agency.agency_short_name, names: agency.agency_short_names },
+    preferredDisplayLangs,
+    agencyLangs,
+  );
+  const longName = resolveDisplayNamesWithTranslatableText(
+    { name: agency.agency_name, names: agency.agency_names },
+    preferredDisplayLangs,
+    agencyLangs,
+  );
+
+  let resolved: ResolvedDisplayNames;
+  let resolvedSource: AgencySource;
+
+  if (prefer === 'long') {
+    if (longName.name) {
+      resolved = longName;
+      resolvedSource = 'long';
+    } else if (shortName.name) {
+      resolved = shortName;
+      resolvedSource = 'short';
+    } else {
+      resolved = { name: agency.agency_id, subNames: [] };
+      resolvedSource = 'long';
+    }
+  } else {
+    if (shortName.name) {
+      resolved = shortName;
+      resolvedSource = 'short';
+    } else if (longName.name) {
+      resolved = longName;
+      resolvedSource = 'long';
+    } else {
+      resolved = { name: agency.agency_id, subNames: [] };
+      resolvedSource = 'short';
+    }
+  }
+
+  return { resolved, resolvedSource, shortName, longName };
 }
 
 /**
@@ -41,16 +92,20 @@ export function getAgencyDisplayNames(
  *
  * @param agencyId - The agency_id to look up.
  * @param agencies - The list of agencies to search.
- * @param infoLevel - Current info verbosity level.
- * @param lang - Optional language key for i18n translation.
+ * @param preferredDisplayLangs - Ordered language fallback chain for primary display resolution.
+ * @param agencyLangs - Agency languages for subNames sort priority.
+ * @param prefer - Which agency source to use as primary. Defaults to `'short'`.
  * @returns The display name, or undefined if not found.
  */
 export function resolveAgencyDisplayName(
   agencyId: string,
   agencies: Agency[],
-  infoLevel: InfoLevel,
-  lang?: string,
+  preferredDisplayLangs: readonly string[],
+  agencyLangs: readonly string[],
+  prefer: AgencySource = 'short',
 ): string | undefined {
   const agency = agencies.find((a) => a.agency_id === agencyId);
-  return agency ? getAgencyDisplayNames(agency, infoLevel, lang).name : undefined;
+  return agency
+    ? getAgencyDisplayNames(agency, preferredDisplayLangs, agencyLangs, prefer).resolved.name
+    : undefined;
 }

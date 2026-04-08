@@ -19,6 +19,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - i18n: `navigator.language` をデフォルト表示言語として使用。
 - i18n: `DEFAULT_TIMEZONE` を追加 (暫定 Asia/Tokyo、Issue #65 参照)。
 - Storybook: `LANG_COMPARISON_CASES` と shared fixture を追加し、多言語比較 stories を共通化。
+- Storybook: `AgencyBadge` に `LangComparison` story を追加し、agency 名の言語解決差分を確認しやすくした。
 
 ### Changed
 
@@ -37,12 +38,16 @@ and this project adheres to [CalVer](https://calver.org/).
 - `Route` の翻訳フィールドを `route_names` から `route_short_names` / `route_long_names` に分離。
 - `getRouteDisplayNames` を short/long 個別解決ベースに再設計し、`resolved` / `resolvedSource` / source ごとの `subNames` を返すよう変更。
 - `RouteBadge`, `SelectionIndicator`, `StopSummary`, `TripInfo`, verbose route dump を新しい route display names API と `dataLang` / `agencyLangs` 伝搬に追従。
+- `Agency` の表示名解決を route と同じ short/long source ベース API に再設計し、`resolved` / `resolvedSource` / short / long を返すよう変更。
+- `AgencyBadge`, `TripInfo`, `StopSummary`, verbose agency dump を新しい agency display names API と `dataLang` / `agencyLangs` 伝搬に追従。
 
 ### Fixed
 
 - 停留所 summary の車椅子アイコンに `aria-label` と tooltip を追加し、状態が支援技術と hover の両方で伝わるように修正。
 - 時刻表モーダルのヘッダで、日付と時刻が異なるタイムゾーン基準で表示される問題を修正。両方とも `DEFAULT_TIMEZONE` 基準に統一。
 - `useUserSettings` テストを強化し、`navigator.language` 初期化と `lang` 正規化のケースを deterministic に検証するよう改善。
+- 時刻表モーダルの説明文で、選択中の raw headsign に対応する表示言語解決済み headsign が使われるよう修正 (#99)。
+- `AgencyBadge` で翻訳済み short label が複数 agency で衝突するケースでも、source ごとの優先順位と raw name fallback により識別できるよう修正。
 
 ## [2026.04.06]
 
