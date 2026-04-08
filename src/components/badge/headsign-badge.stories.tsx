@@ -230,20 +230,8 @@ export const SizeComparison: Story = {
 
 // --- Kitchen sink: single headsign, all info levels ---
 
-export const KitchenSinkInfoLevelSimple: Story = {
-  args: { infoLevel: 'simple' },
-};
-
-export const KitchenSinkInfoLevelNormal: Story = {
-  args: { infoLevel: 'normal' },
-};
-
-export const KitchenSinkInfoLevelDetailed: Story = {
+export const KitchenSink: Story = {
   args: { infoLevel: 'detailed' },
-};
-
-export const KitchenSinkInfoLevelVerbose: Story = {
-  args: { infoLevel: 'verbose' },
 };
 
 // --- Kitchen sink: stop_headsign patterns ---
