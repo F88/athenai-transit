@@ -16,11 +16,11 @@ import type { InfoLevel } from '@/types/app/settings';
  * @returns Formatted route label string.
  */
 export function formatRouteLabel(names: RouteDisplayNames, infoLevel: InfoLevel): string {
-  let ret = names.name || '?';
+  let ret = names.resolved.name || '?';
   const info = createInfoLevel(infoLevel);
 
   if (info.isNormalEnabled) {
-    const subs = names.subNames.filter(Boolean);
+    const subs = names.resolved.subNames.filter(Boolean);
     if (subs.length > 0) {
       ret += ' / ' + subs.join(' / ');
     }

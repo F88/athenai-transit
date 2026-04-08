@@ -424,8 +424,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'bus_aoba01',
     route_short_name: 'あ01',
+    route_short_names: {},
     route_long_name: 'あおば中央-にじ橋',
-    route_names: {},
+    route_long_names: {},
     route_type: 3,
     route_color: '2E7D32',
     route_text_color: 'FFFFFF',
@@ -434,8 +435,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'bus_aoba02',
     route_short_name: 'あ02',
+    route_short_names: {},
     route_long_name: 'あおば中央-そらタワー',
-    route_names: {},
+    route_long_names: {},
     route_type: 3,
     route_color: '1565C0',
     route_text_color: 'FFFFFF',
@@ -444,8 +446,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'bus_midori10',
     route_short_name: 'み10',
+    route_short_names: {},
     route_long_name: 'みどり丘-かぜの駅',
-    route_names: {},
+    route_long_names: {},
     route_type: 3,
     route_color: 'E65100',
     route_text_color: 'FFFFFF',
@@ -461,8 +464,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'bus_nohd01',
     route_short_name: '無01',
+    route_short_names: {},
     route_long_name: '',
-    route_names: {},
+    route_long_names: {},
     route_type: 3,
     route_color: '757575',
     route_text_color: 'FFFFFF',
@@ -473,8 +477,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'bus_sora_exp01',
     route_short_name: 'そ01',
+    route_short_names: {},
     route_long_name: 'あおば中央-つきみの',
-    route_names: {},
+    route_long_names: {},
     route_type: 3,
     route_color: '1565C0',
     route_text_color: 'FFFFFF',
@@ -484,8 +489,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'subway_hotel_shuttle',
     route_short_name: 'H1',
+    route_short_names: {},
     route_long_name: 'つき宇宙空港-ホテル新月',
-    route_names: {},
+    route_long_names: {},
     route_type: 1,
     route_color: '8E24AA',
     route_text_color: 'FFFFFF',
@@ -495,8 +501,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'rail_aoba',
     route_short_name: 'あおば線',
+    route_short_names: {},
     route_long_name: 'あおば線',
-    route_names: {},
+    route_long_names: {},
     route_type: 2,
     route_color: 'F15A22',
     route_text_color: 'FFFFFF',
@@ -505,8 +512,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'rail_hikari',
     route_short_name: 'ひかり線',
+    route_short_names: {},
     route_long_name: 'ひかり線',
-    route_names: {},
+    route_long_names: {},
     route_type: 2,
     route_color: '0068B7',
     route_text_color: 'FFFFFF',
@@ -515,8 +523,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'rail_midori',
     route_short_name: 'みどり線',
+    route_short_names: {},
     route_long_name: 'みどり線',
-    route_names: {},
+    route_long_names: {},
     route_type: 2,
     route_color: 'E60012',
     route_text_color: 'FFFFFF',
@@ -526,8 +535,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'subway_sora',
     route_short_name: 'そら線',
+    route_short_names: {},
     route_long_name: 'そら線',
-    route_names: {},
+    route_long_names: {},
     route_type: 1,
     route_color: 'CF3366',
     route_text_color: 'FFFFFF',
@@ -538,8 +548,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'subway_airport',
     route_short_name: 'AL',
+    route_short_names: {},
     route_long_name: 'エアポートライナー',
-    route_names: {},
+    route_long_names: {},
     route_type: 1,
     route_color: 'E65100',
     route_text_color: 'FFFFFF',
@@ -549,8 +560,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'subway_airport_sora',
     route_short_name: 'AL',
+    route_short_names: {},
     route_long_name: 'エアポートライナー',
-    route_names: {},
+    route_long_names: {},
     route_type: 6,
     route_color: 'F9A825',
     route_text_color: 'FFFFFF',
@@ -561,8 +573,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'bus_yukkuri01',
     route_short_name: 'ゆ01',
+    route_short_names: {},
     route_long_name: 'ゆっくり01',
-    route_names: {},
+    route_long_names: {},
     route_type: 3,
     route_color: 'A1887F',
     route_text_color: 'FFFFFF',
@@ -572,8 +585,9 @@ const ROUTES: Route[] = [
   {
     route_id: 'tram_hoshi',
     route_short_name: 'ほし電車',
+    route_short_names: {},
     route_long_name: 'ほし電車線',
-    route_names: {},
+    route_long_names: {},
     route_type: 0,
     route_color: '8B0000',
     route_text_color: 'FFFFFF',
@@ -582,7 +596,7 @@ const ROUTES: Route[] = [
 ];
 
 for (const route of ROUTES) {
-  route.route_names = ROUTE_NAME_TRANSLATIONS[route.route_id] ?? route.route_names;
+  route.route_long_names = ROUTE_NAME_TRANSLATIONS[route.route_id] ?? route.route_long_names;
 }
 
 const HEADSIGN_TRANSLATIONS: Record<string, Record<string, string>> = {

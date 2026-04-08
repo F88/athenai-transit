@@ -502,6 +502,7 @@ export function MapView({
       <SelectionIndicator
         info={selectionInfo}
         infoLevel={infoLevel}
+        dataLang={dataLang}
         onStopClick={handleIndicatorClick}
       />
     </div>

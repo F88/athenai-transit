@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
 import type { RouteType, Stop } from '@/types/app/transit';
 import type { TransitRepository } from '@/repositories/transit-repository';
 import type { InfoLevel } from '@/types/app/settings';
@@ -42,7 +43,7 @@ function StopSearchResultItem({
 }: StopSearchResultItemProps) {
   const info = useInfoLevel(infoLevel);
   // Always show subNames in search results for discoverability.
-  const stopNames = getStopDisplayNames(stop, dataLang);
+  const stopNames = getStopDisplayNames(stop, dataLang, DEFAULT_AGENCY_LANG);
 
   return (
     <button

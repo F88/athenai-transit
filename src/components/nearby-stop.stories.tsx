@@ -5,6 +5,13 @@ import type {
   StopWithContext,
 } from '../types/app/transit-composed';
 import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
+import {
+  busRoute as fixtureBusRoute,
+  busRoute2 as fixtureBusRoute2,
+  createRouteDirection,
+  tramRoute as fixtureTramRoute,
+} from '../stories/fixtures';
+import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
 import { fn } from 'storybook/test';
 import { NearbyStop } from './nearby-stop';
 
@@ -37,35 +44,42 @@ const agency2: Agency = {
 };
 
 const busRoute: Route = {
-  route_id: 'route-001',
-  route_short_name: '都02',
-  route_long_name: '大塚駅〜錦糸町駅前',
-  route_names: {},
-  route_type: 3,
-  route_color: '1976D2',
-  route_text_color: 'FFFFFF',
+  ...fixtureBusRoute,
+  route_short_names: {
+    ja: fixtureBusRoute.route_short_name,
+    en: 'To 02',
+    ko: '도 02',
+  },
+  route_long_names: {
+    ja: fixtureBusRoute.route_long_name,
+    ...fixtureBusRoute.route_long_names,
+  },
   agency_id: 'agency-001',
 };
 
 const busRoute2: Route = {
-  route_id: 'route-002',
-  route_short_name: '都08',
-  route_long_name: '日暮里駅〜錦糸町駅前',
-  route_names: {},
-  route_type: 3,
-  route_color: '00A850',
-  route_text_color: 'FFFFFF',
+  ...fixtureBusRoute2,
+  route_short_names: {
+    ja: fixtureBusRoute2.route_short_name,
+    en: 'To 08',
+    ko: '도 08',
+  },
+  route_long_names: {
+    ja: fixtureBusRoute2.route_long_name,
+    ...fixtureBusRoute2.route_long_names,
+  },
   agency_id: 'agency-001',
 };
 
 const tramRoute: Route = {
-  route_id: 'route-003',
-  route_short_name: '荒川線',
-  route_long_name: '三ノ輪橋〜早稲田',
-  route_names: {},
-  route_type: 0,
-  route_color: 'E60012',
-  route_text_color: 'FFFFFF',
+  ...fixtureTramRoute,
+  route_short_names: {
+    ja: fixtureTramRoute.route_short_name,
+  },
+  route_long_names: {
+    ja: fixtureTramRoute.route_long_name,
+    ...fixtureTramRoute.route_long_names,
+  },
   agency_id: 'agency-002',
 };
 
@@ -91,6 +105,20 @@ const longNameStop: Stop = {
     ko: '도쿄도립산업기술연구센터앞',
     'zh-Hans': '东京都立产业技术研究中心前',
     'zh-Hant': '東京都立產業技術研究中心前',
+  },
+};
+
+const localizedStop: Stop = {
+  ...baseStop,
+  stop_id: 'stop-i18n',
+  stop_name: '北大路バスターミナル',
+  stop_names: {
+    ja: '北大路バスターミナル',
+    'ja-Hrkt': 'きたおおじばすたーみなる',
+    en: 'Kitaoji Bus Terminal',
+    ko: '기타오지 버스 터미널',
+    'zh-Hans': '北大路公交总站',
+    'zh-Hant': '北大路公交總站',
   },
 };
 
@@ -169,6 +197,56 @@ function createStopWithContext(
     distance: overrides.distance ?? 235,
   };
 }
+
+const localizedStopData: StopWithContext = createStopWithContext({
+  stop: localizedStop,
+  departures: [
+    {
+      ...createEntry({
+        departureMinutes: 870,
+        route: busRoute,
+        headsign: '錦糸町駅前',
+      }),
+      routeDirection: createRouteDirection({
+        route: busRoute,
+        tripHeadsign: {
+          name: '錦糸町駅前',
+          names: {
+            ja: '錦糸町駅前',
+            'ja-Hrkt': 'きんしちょうえきまえ',
+            en: 'Kinshicho Sta.',
+            ko: '긴시초역',
+            'zh-Hans': '锦丝町站前',
+            'zh-Hant': '錦糸町站前',
+          },
+        },
+      }),
+    },
+    {
+      ...createEntry({
+        departureMinutes: 878,
+        route: busRoute2,
+        headsign: '日暮里駅前',
+      }),
+      routeDirection: createRouteDirection({
+        route: busRoute2,
+        tripHeadsign: {
+          name: '日暮里駅前',
+          names: {
+            ja: '日暮里駅前',
+            'ja-Hrkt': 'にっぽりえきまえ',
+            en: 'Nippori Sta.',
+            ko: '닛포리역',
+            'zh-Hans': '日暮里站前',
+            'zh-Hant': '日暮里站前',
+          },
+        },
+      }),
+    },
+  ],
+  routes: [busRoute, busRoute2],
+  agencies: [agency],
+});
 
 // --- Meta ---
 
@@ -474,5 +552,67 @@ export const StopOverridesTrip: Story = {
         createEntry({ headsign: '大塚駅前', departureMinutes: 875 }),
       ],
     }),
+  },
+};
+
+/** All languages side by side for stop, route, and headsign resolution. */
+export const LangComparison: Story = {
+  args: {
+    data: localizedStopData,
+    viewId: 'route-headsign',
+  },
+  render: (args) => (
+    <div className="flex flex-col gap-3">
+      {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
+        <div key={label} className="space-y-1">
+          <span className="block text-[10px] text-gray-400">{label}</span>
+          <NearbyStop
+            data={args.data}
+            isSelected={args.isSelected}
+            now={args.now}
+            mapCenter={args.mapCenter}
+            infoLevel={args.infoLevel}
+            dataLang={dataLang}
+            viewId={args.viewId}
+            isAnchor={args.isAnchor}
+            onStopSelected={args.onStopSelected}
+            onShowTimetable={args.onShowTimetable}
+            onShowStopTimetable={args.onShowStopTimetable}
+            onToggleAnchor={args.onToggleAnchor}
+          />
+        </div>
+      ))}
+    </div>
+  ),
+};
+
+/** Kitchen sink: long name, multi-type, selected, anchored, drop-off-only, grouped departures. */
+const kitchenSinkData = createStopWithContext({
+  stop: longNameStop,
+  routeTypes: [0, 3],
+  isBoardableOnServiceDay: false,
+  agencies: [agency, agency2],
+  routes: [busRoute, busRoute2, tramRoute],
+  departures: [
+    createEntry({ departureMinutes: 870, route: busRoute, headsign: '大塚駅前' }),
+    createEntry({ departureMinutes: 872, route: busRoute2, headsign: '日暮里駅前' }),
+    createEntry({ departureMinutes: 875, route: tramRoute, headsign: '早稲田' }),
+    createEntry({ departureMinutes: 880, route: busRoute, headsign: '' }),
+    createEntry({
+      departureMinutes: 885,
+      route: busRoute,
+      headsign: '北大路BT・下鴨神社・出町柳駅',
+      stopHeadsign: '出町柳駅',
+    }),
+  ],
+});
+
+export const KitchenSink: Story = {
+  args: {
+    data: kitchenSinkData,
+    isSelected: true,
+    isAnchor: true,
+    infoLevel: 'detailed',
+    viewId: 'route-headsign',
   },
 };

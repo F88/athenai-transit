@@ -12,6 +12,7 @@ import {
   tramRoute,
   storyMapCenter,
 } from '../stories/fixtures';
+import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
 import { bearingDeg } from '../domain/transit/distance';
 import { DistanceBadge } from './badge/distance-badge';
 import { StopSummary } from './stop-summary';
@@ -185,6 +186,26 @@ export const WithDistanceBadge: Story = {
         />
       }
     />
+  ),
+};
+
+export const LangComparison: Story = {
+  args: {
+    stop: longNameStop,
+    routeTypes: [0, 3] as RouteType[],
+    agencies: [agencyTobus, agencyOretetsu],
+    routes: [busRoute, tramRoute],
+    infoLevel: 'detailed',
+  },
+  render: (args) => (
+    <div className="flex flex-col gap-3">
+      {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
+        <div key={label} className="space-y-1">
+          <span className="block text-[10px] text-gray-400">{label}</span>
+          <StopSummary {...args} dataLang={dataLang} />
+        </div>
+      ))}
+    </div>
   ),
 };
 

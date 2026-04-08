@@ -1,5 +1,6 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { SelectionInfo } from '../../domain/map/selection';
+import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { useInfoLevel } from '../../hooks/use-info-level';
 import { routeTypeEmoji } from '../../utils/route-type-emoji';
@@ -11,6 +12,7 @@ const logger = createLogger('SelectionIndicator');
 interface SelectionIndicatorProps {
   info: SelectionInfo | null;
   infoLevel: InfoLevel;
+  dataLang: readonly string[];
   onStopClick?: () => void;
 }
 
@@ -27,6 +29,7 @@ interface SelectionIndicatorProps {
 export function SelectionIndicator({
   info,
   infoLevel,
+  dataLang,
   // onStopClick: _onStopClick,
 }: SelectionIndicatorProps) {
   const il = useInfoLevel(infoLevel);
@@ -60,7 +63,7 @@ export function SelectionIndicator({
 
   logger.debug('Rendering route selection indicator for route', info.route);
 
-  const routeNames = getRouteDisplayNames(info.route, infoLevel);
+  const routeNames = getRouteDisplayNames(info.route, dataLang, DEFAULT_AGENCY_LANG);
 
   return (
     <div className="pointer-events-auto absolute bottom-8 left-1/2 z-1001 flex max-w-[70%] -translate-x-1/2 cursor-default flex-col items-center gap-0.5 overflow-hidden rounded-2xl border-none bg-black/75 px-3.5 py-1.5 text-sm font-semibold text-ellipsis whitespace-nowrap text-white">
@@ -71,10 +74,12 @@ export function SelectionIndicator({
       )}
       <span className="flex items-center gap-1.5 overflow-hidden">
         <span>{routeTypeEmoji(info.routeType)}</span>
-        <RouteBadge route={info.route} infoLevel={infoLevel} />
-        {il.isNormalEnabled && routeNames.longName && routeNames.longName !== routeNames.name && (
-          <span className="overflow-hidden text-ellipsis">{routeNames.longName}</span>
-        )}
+        <RouteBadge route={info.route} dataLang={dataLang} infoLevel={infoLevel} />
+        {il.isNormalEnabled &&
+          routeNames.longName.name &&
+          routeNames.longName.name !== routeNames.resolved.name && (
+            <span className="overflow-hidden text-ellipsis">{routeNames.longName.name}</span>
+          )}
       </span>
     </div>
   );

@@ -9,8 +9,9 @@ import { getEffectiveHeadsign } from '../get-effective-headsign';
 const routeA: Route = {
   route_id: 'routeA',
   route_short_name: 'A',
+  route_short_names: {},
   route_long_name: 'Route A',
-  route_names: {},
+  route_long_names: {},
   route_type: 3,
   route_color: '000000',
   route_text_color: 'FFFFFF',
@@ -20,8 +21,9 @@ const routeA: Route = {
 const routeB: Route = {
   route_id: 'routeB',
   route_short_name: 'B',
+  route_short_names: {},
   route_long_name: 'Route B',
-  route_names: {},
+  route_long_names: {},
   route_type: 3,
   route_color: '000000',
   route_text_color: 'FFFFFF',

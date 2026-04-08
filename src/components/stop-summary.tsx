@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Accessibility } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { resolveAgencyLang } from '../config/transit-defaults';
 import { useInfoLevel } from '../hooks/use-info-level';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
@@ -74,7 +75,11 @@ export function StopSummary({
   const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
-  const stopNames = getStopDisplayNames(stop, dataLang);
+  const stopNames = getStopDisplayNames(
+    stop,
+    dataLang,
+    resolveAgencyLang(agencies, stop.agency_id),
+  );
 
   const idRowClass = 'mb-1 flex gap-1';
   const subNameClass = 'm-0 mb-0.5 text-xs font-normal text-[#888] dark:text-gray-400';
@@ -137,6 +142,8 @@ export function StopSummary({
             <AgencyBadge
               key={agency.agency_id}
               agency={agency}
+              dataLang={dataLang}
+              agencyLangs={resolveAgencyLang(agencies, agency.agency_id)}
               infoLevel={infoLevel}
               size={resolvedAgencyBadgeSize}
               disableVerbose
@@ -149,6 +156,8 @@ export function StopSummary({
             <RouteBadge
               key={route.route_id}
               route={route}
+              dataLang={dataLang}
+              agencyLangs={resolveAgencyLang(agencies, route.agency_id)}
               infoLevel={infoLevel}
               size={resolvedRouteBadgeSize}
               disableVerbose
@@ -163,7 +172,7 @@ export function StopSummary({
             [META]
           </summary>
           <div className="mt-1 ml-2 space-y-1">
-            <VerboseAgencies agencies={agencies} infoLevel={infoLevel} />
+            <VerboseAgencies agencies={agencies} infoLevel={infoLevel} dataLang={dataLang} />
             <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
               <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
                 [Stop]
@@ -173,7 +182,12 @@ export function StopSummary({
               </div>
               <VerboseStopDisplayNames names={stopNames} />
             </details>
-            <VerboseRoutes routes={routes ?? []} infoLevel={infoLevel} />
+            <VerboseRoutes
+              routes={routes ?? []}
+              infoLevel={infoLevel}
+              dataLang={dataLang}
+              agencies={agencies}
+            />
           </div>
         </details>
       )}

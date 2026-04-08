@@ -1,5 +1,6 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency } from '../../types/app/transit';
+import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { getAgencyDisplayNames } from '../../domain/transit/get-agency-display-name';
 import { VerboseAgency } from './verbose-agency';
 
@@ -10,10 +11,12 @@ import { VerboseAgency } from './verbose-agency';
  */
 export function VerboseAgencies({
   agencies,
-  infoLevel,
+  infoLevel: _infoLevel,
+  dataLang,
 }: {
   agencies: Agency[];
   infoLevel: InfoLevel;
+  dataLang: readonly string[];
 }) {
   if (agencies.length === 0) {
     return null;
@@ -29,7 +32,11 @@ export function VerboseAgencies({
           <VerboseAgency
             key={a.agency_id}
             agency={a}
-            names={getAgencyDisplayNames(a, infoLevel)}
+            names={getAgencyDisplayNames(
+              a,
+              dataLang,
+              a.agency_lang ? [a.agency_lang] : DEFAULT_AGENCY_LANG,
+            )}
             defaultOpen
           />
         ))}

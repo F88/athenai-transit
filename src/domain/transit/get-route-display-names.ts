@@ -1,34 +1,35 @@
-import type { InfoLevel } from '../../types/app/settings';
 import type { Route } from '../../types/app/transit';
-import { createInfoLevel } from '../../utils/create-info-level';
-import { translateRouteName } from './i18n/translate-route-name';
+import type { ResolvedDisplayNames } from './get-display-names';
+import { resolveDisplayNamesWithTranslatableText } from './i18n/resolve-display-names-with-translatable-text';
+
+/**
+ * Route name source type.
+ *
+ * - `'short'` — route_short_name and route_short_names
+ * - `'long'` — route_long_name and route_long_names
+ */
+export type RouteSource = 'short' | 'long';
 
 /**
  * Result of {@link getRouteDisplayNames}.
  */
 export interface RouteDisplayNames {
-  /** Primary display name resolved by `prefer` strategy. */
-  name: string;
-  /**
-   * Alternative names (translations) to show below the primary name.
-   * Empty array when infoLevel is below "normal" or no alternatives exist.
-   *
-   * Currently always empty — will be populated when `route_names`
-   * (translations.txt) is added to the {@link Route} type.
-   */
-  subNames: string[];
-  /** `route_short_name`, translated if available. Empty string when not present. */
-  shortName: string;
-  /** `route_long_name`, translated for the requested language. Empty string when not present. */
-  longName: string;
+  /** Effective route name resolved by `prefer` strategy. */
+  resolved: ResolvedDisplayNames;
+  /** Which source was used for `resolved`. */
+  resolvedSource: RouteSource;
+  /** route_short_name resolved for the requested language chain. */
+  shortName: ResolvedDisplayNames;
+  /** route_long_name resolved for the requested language chain. */
+  longName: ResolvedDisplayNames;
 }
 
 /**
- * Compute display names for a route based on info level and preference.
+ * Compute display names for a route based on preference.
  *
- * Resolves a primary `name` from `route_short_name` and `route_long_name`
- * based on the `prefer` strategy. `subNames` will contain multilingual
- * alternatives when `route_names` translations are available (currently empty).
+ * Resolves `route_short_name` and `route_long_name` independently via
+ * {@link resolveDisplayNamesWithTranslatableText}, then selects the effective
+ * one based on `prefer`. Each source keeps its own `subNames`; they are never mixed.
  *
  * GTFS data populates these fields differently by transit type:
  *   - Bus: `route_short_name` only (e.g. "都01")
@@ -36,53 +37,73 @@ export interface RouteDisplayNames {
  *   - Some: both (e.g. short="E", long="大江戸線")
  *
  * @param route - The route to compute names for.
- * @param infoLevel - Current info verbosity level.
- * @param prefer - Which name to use as primary. Defaults to `'short'`.
- * @param lang - Optional language key for i18n translation of long name.
- * @returns Primary name, sub-names, and raw translated values.
+ * @param preferredDisplayLangs - Ordered language fallback chain for primary display resolution.
+ * @param agencyLangs - Agency languages for subNames sort priority.
+ * @param prefer - Which route source to use as primary. Defaults to `'short'`.
+ * @returns Effective route display names, plus individual short/long resolved names.
  *
  * @example
  * ```ts
  * // Bus: short only
- * getRouteDisplayNames(busRoute, 'normal');
- * // { name: "都01", subNames: [], shortName: "都01", longName: "" }
+ * getRouteDisplayNames(busRoute, [], ['ja']);
+ * // { resolved: { name: "都01", subNames: [] }, resolvedSource: 'short', ... }
  *
  * // Train: long only
- * getRouteDisplayNames(trainRoute, 'normal');
- * // { name: "大江戸線", subNames: [], shortName: "", longName: "大江戸線" }
+ * getRouteDisplayNames(trainRoute, [], ['ja']);
+ * // { resolved: { name: "大江戸線", subNames: [] }, resolvedSource: 'long', ... }
  *
  * // Both names, prefer short
- * getRouteDisplayNames(bothRoute, 'normal');
- * // { name: "E", subNames: [], shortName: "E", longName: "大江戸線" }
+ * getRouteDisplayNames(bothRoute, [], ['ja']);
+ * // { resolved: { name: "E", subNames: [] }, resolvedSource: 'short', ... }
  *
  * // Both names, prefer long
- * getRouteDisplayNames(bothRoute, 'normal', 'long');
- * // { name: "大江戸線", subNames: [], shortName: "E", longName: "大江戸線" }
+ * getRouteDisplayNames(bothRoute, [], ['ja'], 'long');
+ * // { resolved: { name: "大江戸線", subNames: [] }, resolvedSource: 'long', ... }
  * ```
  */
 export function getRouteDisplayNames(
-  route: Route,
-  infoLevel: InfoLevel,
-  prefer: 'short' | 'long' = 'short',
-  lang?: string,
+  route: Readonly<Route>,
+  preferredDisplayLangs: readonly string[],
+  agencyLangs: readonly string[],
+  prefer: RouteSource = 'short',
 ): RouteDisplayNames {
-  const translated = translateRouteName(route, lang);
-  const { shortName, longName } = translated;
+  const shortName = resolveDisplayNamesWithTranslatableText(
+    { name: route.route_short_name, names: route.route_short_names },
+    preferredDisplayLangs,
+    agencyLangs,
+  );
+  const longName = resolveDisplayNamesWithTranslatableText(
+    { name: route.route_long_name, names: route.route_long_names },
+    preferredDisplayLangs,
+    agencyLangs,
+  );
 
-  // Resolve primary name based on prefer strategy.
-  // Falls back to the other field, then route_id as last resort.
-  const name =
-    prefer === 'long'
-      ? longName || shortName || route.route_id
-      : shortName || longName || route.route_id;
+  let resolved: ResolvedDisplayNames;
+  let resolvedSource: RouteSource;
 
-  const info = createInfoLevel(infoLevel);
+  if (prefer === 'long') {
+    if (longName.name) {
+      resolved = longName;
+      resolvedSource = 'long';
+    } else if (shortName.name) {
+      resolved = shortName;
+      resolvedSource = 'short';
+    } else {
+      resolved = { name: route.route_id, subNames: [] };
+      resolvedSource = 'long';
+    }
+  } else {
+    if (shortName.name) {
+      resolved = shortName;
+      resolvedSource = 'short';
+    } else if (longName.name) {
+      resolved = longName;
+      resolvedSource = 'long';
+    } else {
+      resolved = { name: route.route_id, subNames: [] };
+      resolvedSource = 'short';
+    }
+  }
 
-  // subNames: multilingual alternatives, only at normal+.
-  // Currently always empty — will be populated when route_names
-  // (translations.txt) is added to the Route type.
-  const subNames: string[] = [];
-  void info; // Will be used for subNames filtering when translations are available
-
-  return { name, subNames, shortName, longName };
+  return { resolved, resolvedSource, shortName, longName };
 }

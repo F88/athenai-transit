@@ -1,5 +1,6 @@
 import type { InfoLevel } from '../../types/app/settings';
-import type { Route } from '../../types/app/transit';
+import type { Agency, Route } from '../../types/app/transit';
+import { resolveAgencyLang } from '../../config/transit-defaults';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { VerboseRoute } from './verbose-route';
 
@@ -8,7 +9,17 @@ import { VerboseRoute } from './verbose-route';
  * Includes its own details/summary for collapsed display.
  * Each route is rendered with defaultOpen via {@link VerboseRoute}.
  */
-export function VerboseRoutes({ routes, infoLevel }: { routes: Route[]; infoLevel: InfoLevel }) {
+export function VerboseRoutes({
+  routes,
+  infoLevel,
+  dataLang,
+  agencies,
+}: {
+  routes: Route[];
+  infoLevel: InfoLevel;
+  dataLang: readonly string[];
+  agencies: readonly Agency[];
+}) {
   if (routes.length === 0) {
     return null;
   }
@@ -23,7 +34,7 @@ export function VerboseRoutes({ routes, infoLevel }: { routes: Route[]; infoLeve
           <VerboseRoute
             key={r.route_id}
             route={r}
-            names={getRouteDisplayNames(r, infoLevel)}
+            names={getRouteDisplayNames(r, dataLang, resolveAgencyLang(agencies, r.agency_id))}
             infoLevel={infoLevel}
             defaultOpen
           />

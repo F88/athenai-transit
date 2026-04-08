@@ -6,6 +6,7 @@ import {
   agencyLong,
   agencyNoColor,
 } from '../../stories/fixtures';
+import { LANG_COMPARISON_CASES } from '../../stories/lang-comparison';
 import { AgencyBadge } from './agency-badge';
 
 const meta = {
@@ -13,6 +14,7 @@ const meta = {
   component: AgencyBadge,
   args: {
     agency: agencyTobus,
+    dataLang: ['ja'],
     infoLevel: 'normal',
     size: 'xs',
   },
@@ -79,27 +81,51 @@ export const SizeComparison: Story = {
   args: { agency: agencyOretetsu },
   render: (args) => (
     <div className="flex items-center gap-2">
-      <AgencyBadge agency={args.agency} infoLevel={args.infoLevel} size="xs" />
-      <AgencyBadge agency={args.agency} infoLevel={args.infoLevel} size="sm" />
-      <AgencyBadge agency={args.agency} infoLevel={args.infoLevel} size="default" />
+      <AgencyBadge
+        agency={args.agency}
+        dataLang={args.dataLang}
+        infoLevel={args.infoLevel}
+        size="xs"
+      />
+      <AgencyBadge
+        agency={args.agency}
+        dataLang={args.dataLang}
+        infoLevel={args.infoLevel}
+        size="sm"
+      />
+      <AgencyBadge
+        agency={args.agency}
+        dataLang={args.dataLang}
+        infoLevel={args.infoLevel}
+        size="default"
+      />
+    </div>
+  ),
+};
+
+// --- i18n: lang resolution ---
+
+/** All supported languages, one unsupported language, and no language. */
+export const LangComparison: Story = {
+  render: (args) => (
+    <div className="flex flex-col gap-2">
+      {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
+        <div key={label} className="flex items-center gap-2">
+          <span className="w-20 text-[10px] text-gray-400">{label}</span>
+          <AgencyBadge
+            agency={args.agency}
+            dataLang={dataLang}
+            infoLevel={args.infoLevel}
+            size={args.size}
+          />
+        </div>
+      ))}
     </div>
   ),
 };
 
 // --- Kitchen sink: single agency, all info levels ---
 
-export const KitchenSinkInfoLevelSimple: Story = {
-  args: { infoLevel: 'simple' },
-};
-
-export const KitchenSinkInfoLevelNormal: Story = {
-  args: { infoLevel: 'normal' },
-};
-
-export const KitchenSinkInfoLevelDetailed: Story = {
+export const KitchenSink: Story = {
   args: { infoLevel: 'detailed' },
-};
-
-export const KitchenSinkInfoLevelVerbose: Story = {
-  args: { infoLevel: 'verbose' },
 };

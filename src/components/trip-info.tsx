@@ -157,12 +157,21 @@ export function TripInfo({
       )}
       <RouteBadge
         route={route}
+        dataLang={dataLang}
+        agencyLangs={agencyLang}
         infoLevel={infoLevel}
         size={size === 'sm' ? 'sm' : undefined}
         disableVerbose={true}
       />
       {info.isDetailedEnabled && agency && (
-        <AgencyBadge size="xs" agency={agency} infoLevel={infoLevel} disableVerbose={true} />
+        <AgencyBadge
+          size="xs"
+          agency={agency}
+          dataLang={dataLang}
+          agencyLangs={agencyLang}
+          infoLevel={infoLevel}
+          disableVerbose={true}
+        />
       )}
 
       {/* Headsign */}
