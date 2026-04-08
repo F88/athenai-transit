@@ -23,4 +23,6 @@ export default [
   'keisei-transit-bus',
   'mir-train',
   'nagoya-srt',
+  'vag-freiburg',
+  'actv-nav',
 ];

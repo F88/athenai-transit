@@ -20,4 +20,6 @@ export default [
   'oshima-bus',
   'keisei-transit-bus',
   'nagoya-srt',
+  'vag-freiburg',
+  'actv-nav',
 ];
