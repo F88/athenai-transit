@@ -154,6 +154,8 @@ export function StopSummary({
             <RouteBadge
               key={route.route_id}
               route={route}
+              dataLang={dataLang}
+              agencyLangs={resolveAgencyLang(agencies, route.agency_id)}
               infoLevel={infoLevel}
               size={resolvedRouteBadgeSize}
               disableVerbose
@@ -178,7 +180,12 @@ export function StopSummary({
               </div>
               <VerboseStopDisplayNames names={stopNames} />
             </details>
-            <VerboseRoutes routes={routes ?? []} infoLevel={infoLevel} />
+            <VerboseRoutes
+              routes={routes ?? []}
+              infoLevel={infoLevel}
+              dataLang={dataLang}
+              agencies={agencies}
+            />
           </div>
         </details>
       )}

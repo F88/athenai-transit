@@ -40,14 +40,24 @@ export function VerboseRoute({
             color={route.route_color || '(none)'} text={route.route_text_color || '(none)'}
           </span>
           <span className="block">
-            [names]{' '}
-            {Object.keys(route.route_names).length > 0
-              ? Object.entries(route.route_names)
+            [shortNames]{' '}
+            {Object.keys(route.route_short_names).length > 0
+              ? Object.entries(route.route_short_names)
                   .map(([k, v]) => `${k}=${v}`)
                   .join(' ')
               : '(none)'}
           </span>
-          <span className="block">[label] &quot;{label}&quot;</span>
+          <span className="block">
+            [longNames]{' '}
+            {Object.keys(route.route_long_names).length > 0
+              ? Object.entries(route.route_long_names)
+                  .map(([k, v]) => `${k}=${v}`)
+                  .join(' ')
+              : '(none)'}
+          </span>
+          <span className="block">
+            [label] &quot;{label}&quot; source={names.resolvedSource}
+          </span>
         </span>
         <VerboseRouteDisplayNames names={names} />
       </div>

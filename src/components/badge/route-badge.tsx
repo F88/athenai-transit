@@ -1,6 +1,6 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Route } from '../../types/app/transit';
-import { formatRouteLabel } from '../../domain/transit/format-route-label';
+import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { cn } from '../../lib/utils';
 import { IdBadge } from './id-badge';
@@ -17,7 +17,15 @@ const sizeVariants: Record<RouteBadgeSize, string> = {
 interface RouteBadgeProps {
   /** The route to display. */
   route: Route;
-  /** Current info verbosity level for label formatting. */
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
+  /** Agency languages for subNames sort priority. @default DEFAULT_AGENCY_LANG */
+  agencyLangs?: readonly string[];
+  /**
+   * Current info verbosity level.
+   * The compact badge label itself stays on the resolved primary name;
+   * only verbose-only extras such as debug details are gated by this prop.
+   */
   infoLevel: InfoLevel;
   /** Size variant. @default 'default' */
   size?: RouteBadgeSize;
@@ -33,22 +41,25 @@ interface RouteBadgeProps {
  *
  * Background color uses the route's designated color (`route_color`),
  * falling back to `bg-muted-foreground` when no color is set.
- * The label is formatted via {@link formatRouteLabel} based on infoLevel.
+ * The badge always shows only the resolved primary route name.
+ * Alternative subNames are not rendered in this compact badge, regardless of info level.
  * In verbose mode, an {@link IdBadge} with the route_id is shown after the label.
  *
  * @param route - The route to display.
- * @param infoLevel - Controls label verbosity.
+ * @param infoLevel - Controls verbose-only extras; the badge text remains compact.
  * @param size - Size variant: `'default'`, `'sm'`, or `'xs'`.
  * @param className - Additional CSS classes for further overrides.
  */
 export function RouteBadge({
   route,
+  dataLang,
+  agencyLangs = DEFAULT_AGENCY_LANG,
   infoLevel,
   size = 'default',
   disableVerbose = false,
   className,
 }: RouteBadgeProps) {
-  const routeNames = getRouteDisplayNames(route, infoLevel);
+  const routeNames = getRouteDisplayNames(route, dataLang, agencyLangs);
   const bg = route.route_color ? `#${route.route_color}` : undefined;
   const fg = route.route_text_color ? `#${route.route_text_color}` : undefined;
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;
@@ -63,7 +74,7 @@ export function RouteBadge({
           )}
           style={bg ? { background: bg, color: fg } : undefined}
         >
-          {formatRouteLabel(routeNames, infoLevel)}
+          {routeNames.resolved.name || '?'}
         </span>
         {showVerbose && <IdBadge>{route.route_id}</IdBadge>}
       </span>

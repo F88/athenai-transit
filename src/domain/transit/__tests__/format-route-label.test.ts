@@ -3,19 +3,41 @@ import { formatRouteLabel } from '../format-route-label';
 import type { RouteDisplayNames } from '../get-route-display-names';
 import type { InfoLevel } from '../../../types/app/settings';
 
+function resolved(name: string, subNames: string[] = []) {
+  return { name, subNames };
+}
+
 /** Bus route: short name only. */
 function busNames(overrides?: Partial<RouteDisplayNames>): RouteDisplayNames {
-  return { name: '都01', subNames: [], shortName: '都01', longName: '', ...overrides };
+  return {
+    resolved: resolved('都01'),
+    resolvedSource: 'short',
+    shortName: resolved('都01'),
+    longName: resolved(''),
+    ...overrides,
+  };
 }
 
 /** Train route: long name only. */
 function trainNames(overrides?: Partial<RouteDisplayNames>): RouteDisplayNames {
-  return { name: '大江戸線', subNames: [], shortName: '', longName: '大江戸線', ...overrides };
+  return {
+    resolved: resolved('大江戸線'),
+    resolvedSource: 'long',
+    shortName: resolved(''),
+    longName: resolved('大江戸線'),
+    ...overrides,
+  };
 }
 
 /** Route with both names, prefer short. */
 function bothNames(overrides?: Partial<RouteDisplayNames>): RouteDisplayNames {
-  return { name: 'E', subNames: [], shortName: 'E', longName: '大江戸線', ...overrides };
+  return {
+    resolved: resolved('E'),
+    resolvedSource: 'short',
+    shortName: resolved('E'),
+    longName: resolved('大江戸線'),
+    ...overrides,
+  };
 }
 
 describe('formatRouteLabel', () => {
@@ -34,7 +56,7 @@ describe('formatRouteLabel', () => {
   });
 
   it('ignores subNames at simple level', () => {
-    const names = bothNames({ subNames: ['Oedo Line'] });
+    const names = bothNames({ resolved: resolved('E', ['Oedo Line']) });
     expect(formatRouteLabel(names, 'simple')).toBe('E');
   });
 
@@ -45,24 +67,24 @@ describe('formatRouteLabel', () => {
   });
 
   it('appends subNames at normal level', () => {
-    const names = bothNames({ subNames: ['Oedo Line'] });
+    const names = bothNames({ resolved: resolved('E', ['Oedo Line']) });
     expect(formatRouteLabel(names, 'normal')).toBe('E / Oedo Line');
   });
 
   it('joins multiple subNames with / at normal level', () => {
-    const names = bothNames({ subNames: ['Oedo Line', 'おおえどせん'] });
+    const names = bothNames({ resolved: resolved('E', ['Oedo Line', 'おおえどせん']) });
     expect(formatRouteLabel(names, 'normal')).toBe('E / Oedo Line / おおえどせん');
   });
 
   it('filters empty strings from subNames', () => {
-    const names = bothNames({ subNames: ['', 'Oedo Line', ''] });
+    const names = bothNames({ resolved: resolved('E', ['', 'Oedo Line', '']) });
     expect(formatRouteLabel(names, 'normal')).toBe('E / Oedo Line');
   });
 
   // --- detailed level: same as normal ---
 
   it('behaves like normal at detailed level', () => {
-    const names = bothNames({ subNames: ['Oedo Line'] });
+    const names = bothNames({ resolved: resolved('E', ['Oedo Line']) });
     expect(formatRouteLabel(names, 'detailed')).toBe('E / Oedo Line');
   });
 
@@ -81,14 +103,19 @@ describe('formatRouteLabel', () => {
   });
 
   it('includes subNames at verbose level', () => {
-    const names = bothNames({ subNames: ['Oedo Line'] });
+    const names = bothNames({ resolved: resolved('E', ['Oedo Line']) });
     expect(formatRouteLabel(names, 'verbose')).toBe('E / Oedo Line');
   });
 
   // --- edge case: empty name ---
 
   it('returns ? when name is empty', () => {
-    const names: RouteDisplayNames = { name: '', subNames: [], shortName: '', longName: '' };
+    const names: RouteDisplayNames = {
+      resolved: resolved(''),
+      resolvedSource: 'short',
+      shortName: resolved(''),
+      longName: resolved(''),
+    };
     expect(formatRouteLabel(names, 'simple')).toBe('?');
   });
 

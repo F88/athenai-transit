@@ -18,6 +18,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - i18n: `normalizeLang` で BCP 47 prefix マッチ対応 (e.g. en-US → en)。
 - i18n: `navigator.language` をデフォルト表示言語として使用。
 - i18n: `DEFAULT_TIMEZONE` を追加 (暫定 Asia/Tokyo、Issue #65 参照)。
+- Storybook: `LANG_COMPARISON_CASES` と shared fixture を追加し、多言語比較 stories を共通化。
 
 ### Changed
 
@@ -33,6 +34,9 @@ and this project adheres to [CalVer](https://calver.org/).
 - UI テキスト i18n 化: relative-time, trip-info, entry-labels, timetable-modal, nearby-stop, bottom-sheet-header, time-setting-dialog, stop-search-modal, info-dialog, 全 panel aria-label, anchor, toast。
 - locale ファイルをネスト構造に整理 (common, nearbyStops, nearbyStop, departure, timetable, view, panel, anchor, search, time, info)。
 - `getStopDisplayNames` を presentation-free な reference implementation に整理し、`getHeadsignDisplayNames` の引数順も整合させた。
+- `Route` の翻訳フィールドを `route_names` から `route_short_names` / `route_long_names` に分離。
+- `getRouteDisplayNames` を short/long 個別解決ベースに再設計し、`resolved` / `resolvedSource` / source ごとの `subNames` を返すよう変更。
+- `RouteBadge`, `SelectionIndicator`, `StopSummary`, `TripInfo`, verbose route dump を新しい route display names API と `dataLang` / `agencyLangs` 伝搬に追従。
 
 ### Fixed
 
