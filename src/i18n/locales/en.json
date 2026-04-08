@@ -99,9 +99,9 @@
       "avgInterval": "avg. {{interval}} min interval"
     },
     "header": {
-      "routeHeadsignDescription": "{{stop}} {{route}} {{headsign}} timetable ({{count}})",
-      "routeDescription": "{{stop}} {{route}} timetable ({{count}})",
-      "stopDescription": "{{stop}} all routes timetable ({{count}})",
+      "routeHeadsignDescription": "Timetable at {{stop}}: {{route}} -> {{headsign}} ({{count}})",
+      "routeDescription": "Timetable at {{stop}}: {{route}} ({{count}})",
+      "stopDescription": "Timetable at {{stop}}: all routes ({{count}})",
       "noDestination": "Some routes have no destination"
     }
   },

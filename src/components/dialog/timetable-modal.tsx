@@ -14,7 +14,11 @@ import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
 import { formatDateParts } from '@/utils/datetime';
 import { DEFAULT_TIMEZONE, resolveAgencyLang } from '@/config/transit-defaults';
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
-import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
+import {
+  getHeadsignDisplayNames,
+  getSelectedHeadsignDisplayName,
+} from '@/domain/transit/get-headsign-display-names';
+import { getRouteDisplayNames } from '@/domain/transit/get-route-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { PillButton } from '@/components/button/pill-button';
 import { TimetableGridEntry } from '@/components/timetable/timetable-grid-entry';
@@ -99,6 +103,24 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
     );
   }, [data, allTimetableEntries, activeFilters]);
 
+  const descriptionHeadsign = useMemo(() => {
+    if (!data?.headsign || data.type !== 'route-headsign') {
+      return '';
+    }
+
+    const routeDirection = data.timetableEntries[0]?.routeDirection;
+    if (!routeDirection) {
+      return data.headsign;
+    }
+
+    return getSelectedHeadsignDisplayName(
+      routeDirection,
+      data.headsign,
+      dataLang,
+      resolveAgencyLang(data.agencies, routeDirection.route.agency_id),
+    );
+  }, [data, dataLang]);
+
   const headerScroll = useScrollFades(
     headerContainerRef,
     `${data?.type ?? 'closed'}:${data?.headsign ?? ''}:${filteredTimetableEntries.length}:${infoLevel}`,
@@ -115,6 +137,34 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
       </Dialog>
     );
   }
+
+  const descriptionStopName = getStopDisplayNames(
+    data.stop,
+    dataLang,
+    resolveAgencyLang(data.agencies, data.stop.agency_id),
+  ).name;
+  const descriptionRouteName = getRouteDisplayNames(
+    data.routes[0],
+    dataLang,
+    resolveAgencyLang(data.agencies, data.routes[0].agency_id),
+  ).resolved.name;
+  const timetableDescription =
+    data.type === 'route-headsign'
+      ? t(
+          data.headsign
+            ? 'timetable.header.routeHeadsignDescription'
+            : 'timetable.header.routeDescription',
+          {
+            stop: descriptionStopName,
+            route: descriptionRouteName,
+            headsign: descriptionHeadsign,
+            count: filteredTimetableEntries.length.toLocaleString(i18n.language),
+          },
+        )
+      : t('timetable.header.stopDescription', {
+          stop: descriptionStopName,
+          count: filteredTimetableEntries.length.toLocaleString(i18n.language),
+        });
 
   return (
     <Dialog
@@ -150,30 +200,7 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
             )}
             <DialogTitle className="sr-only">{t('timetable.title')}</DialogTitle>
             <DialogDescription className="text-muted-foreground text-xs">
-              {data.type === 'route-headsign'
-                ? t(
-                    data.headsign
-                      ? 'timetable.header.routeHeadsignDescription'
-                      : 'timetable.header.routeDescription',
-                    {
-                      stop: getStopDisplayNames(
-                        data.stop,
-                        dataLang,
-                        resolveAgencyLang(data.agencies, data.stop.agency_id),
-                      ).name,
-                      route: data.routes[0].route_short_name || data.routes[0].route_long_name,
-                      headsign: data.headsign ?? '',
-                      count: filteredTimetableEntries.length.toLocaleString(i18n.language),
-                    },
-                  )
-                : t('timetable.header.stopDescription', {
-                    stop: getStopDisplayNames(
-                      data.stop,
-                      dataLang,
-                      resolveAgencyLang(data.agencies, data.stop.agency_id),
-                    ).name,
-                    count: filteredTimetableEntries.length.toLocaleString(i18n.language),
-                  })}
+              {timetableDescription}
             </DialogDescription>
 
             <TimetableHeader data={data} infoLevel={infoLevel} dataLang={dataLang} />

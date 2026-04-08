@@ -87,3 +87,40 @@ export function getHeadsignDisplayNames(
 
   return { resolved, resolvedSource, tripName, stopName };
 }
+
+/**
+ * Resolve the display name corresponding to a selected raw headsign key.
+ *
+ * `selectedHeadsign` is typically the raw value used for grouping or filtering
+ * (for example, {@link getEffectiveHeadsign}). This function preserves that
+ * selection semantics by matching the raw key against `stop_headsign` and
+ * `trip_headsign`, then returning the display-resolved name for the matched
+ * source.
+ *
+ * When both raw values are equal, `stop_headsign` is preferred to keep parity
+ * with GTFS effective headsign behavior.
+ *
+ * @param routeDirection - Route direction context containing headsigns.
+ * @param selectedHeadsign - Raw headsign key already selected by the caller.
+ * @param preferredDisplayLangs - Ordered language fallback chain for primary display resolution.
+ * @param agencyLangs - Agency languages for subNames sort priority.
+ * @returns The display-resolved name for the matching source, or the raw headsign when no source matches.
+ */
+export function getSelectedHeadsignDisplayName(
+  routeDirection: Readonly<RouteDirection>,
+  selectedHeadsign: string,
+  preferredDisplayLangs: readonly string[],
+  agencyLangs: readonly string[],
+): string {
+  const names = getHeadsignDisplayNames(routeDirection, preferredDisplayLangs, agencyLangs, 'stop');
+
+  if (routeDirection.stopHeadsign?.name === selectedHeadsign) {
+    return names.stopName?.name || selectedHeadsign;
+  }
+
+  if (routeDirection.tripHeadsign.name === selectedHeadsign) {
+    return names.tripName.name || selectedHeadsign;
+  }
+
+  return selectedHeadsign;
+}

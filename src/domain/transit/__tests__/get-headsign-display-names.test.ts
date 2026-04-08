@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { getHeadsignDisplayNames } from '../get-headsign-display-names';
+import {
+  getHeadsignDisplayNames,
+  getSelectedHeadsignDisplayName,
+} from '../get-headsign-display-names';
 import type { Route } from '../../../types/app/transit';
 import type { RouteDirection } from '../../../types/app/transit-composed';
 
@@ -326,5 +329,47 @@ describe('getHeadsignDisplayNames', () => {
       expect(result.resolved.name).toBe('Y');
       expect(result.resolvedSource).toBe('stop');
     });
+  });
+});
+
+describe('getSelectedHeadsignDisplayName', () => {
+  it('returns stop_headsign display name when the selected raw key matches stop_headsign', () => {
+    const rd = makeRouteDirection({
+      tripHeadsign: { name: '出町柳駅方面', names: { en: 'To Demachiyanagi' } },
+      stopHeadsign: { name: '出町柳駅方面', names: { en: 'Demachiyanagi Station' } },
+    });
+
+    expect(getSelectedHeadsignDisplayName(rd, '出町柳駅方面', ['en'], DEFAULT_AGENCY_LANG)).toBe(
+      'Demachiyanagi Station',
+    );
+  });
+
+  it('returns trip_headsign display name when the selected raw key matches trip_headsign only', () => {
+    const rd = makeRouteDirection({
+      tripHeadsign: { name: '都庁前', names: { en: 'Tochomae' } },
+      stopHeadsign: { name: '新宿駅西口', names: { en: 'Shinjuku Sta. West Exit' } },
+    });
+
+    expect(getSelectedHeadsignDisplayName(rd, '都庁前', ['en'], DEFAULT_AGENCY_LANG)).toBe(
+      'Tochomae',
+    );
+  });
+
+  it('prefers stop_headsign when stop and trip raw values are equal', () => {
+    const rd = makeRouteDirection({
+      tripHeadsign: { name: 'B', names: { en: 'Trip B' } },
+      stopHeadsign: { name: 'B', names: { en: 'Stop B' } },
+    });
+
+    expect(getSelectedHeadsignDisplayName(rd, 'B', ['en'], DEFAULT_AGENCY_LANG)).toBe('Stop B');
+  });
+
+  it('falls back to the raw key when it matches neither stop nor trip', () => {
+    const rd = makeRouteDirection({
+      tripHeadsign: { name: 'A', names: { en: 'Trip A' } },
+      stopHeadsign: { name: 'B', names: { en: 'Stop B' } },
+    });
+
+    expect(getSelectedHeadsignDisplayName(rd, 'C', ['en'], DEFAULT_AGENCY_LANG)).toBe('C');
   });
 });
