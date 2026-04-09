@@ -2,7 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useStopHistory } from '../use-stop-history';
 import { makeStopMeta } from '../../__tests__/helpers';
-import type { RouteType } from '../../types/app/transit';
+import type { AppRouteTypeValue } from '../../types/app/transit';
 
 const STORAGE_KEY = 'stop-history';
 
@@ -142,7 +142,7 @@ describe('useStopHistory', () => {
     it('preserves data shape when no migration is needed', () => {
       const newEntry = {
         stopWithMeta: makeStopMeta('new'),
-        routeTypes: [0, 3] as RouteType[],
+        routeTypes: [0, 3] as AppRouteTypeValue[],
         selectedAt: 300,
       };
       const json = JSON.stringify([newEntry]);

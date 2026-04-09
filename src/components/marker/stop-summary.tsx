@@ -1,5 +1,5 @@
 import type { InfoLevel } from '../../types/app/settings';
-import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { ContextualTimetableEntry } from '../../types/app/transit-composed';
 import { resolveAgencyLang } from '../../config/transit-defaults';
 import { createInfoLevel } from '../../utils/create-info-level';
@@ -14,7 +14,7 @@ import { TripInfo } from '../trip-info';
 
 interface StopSummaryProps {
   stop: Stop;
-  routeTypes: RouteType[];
+  routeTypes: AppRouteTypeValue[];
   agencies: Agency[];
   entries?: ContextualTimetableEntry[];
   now?: Date;

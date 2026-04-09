@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'r
 import L from 'leaflet';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
-import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../../types/app/transit-composed';
 import { DEFAULT_MAX_ZOOM } from '../../config/map-constants';
 import { enableDoubleTapZoom } from '../../lib/double-tap-zoom';
@@ -193,7 +193,7 @@ interface MapViewProps {
 
   selectedStopId: string | null;
   focusPosition: LatLng | null;
-  routeTypeMap: Map<string, RouteType[]>;
+  routeTypeMap: Map<string, AppRouteTypeValue[]>;
   routeShapes: RouteShape[];
   selectionInfo: SelectionInfo | null;
   /** Stops on the selected routes. Rendered as a separate layer on top of dimmed markers. */

@@ -2,9 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { addToHistory, MAX_HISTORY_SIZE } from '../stop-history';
 import { makeStopMeta } from '../../../__tests__/helpers';
 import type { StopHistoryEntry } from '../stop-history';
-import type { RouteType } from '../../../types/app/transit';
+import type { AppRouteTypeValue } from '../../../types/app/transit';
 
-function makeEntry(id: string, routeTypes: RouteType[] = [3], selectedAt = 1000): StopHistoryEntry {
+function makeEntry(
+  id: string,
+  routeTypes: AppRouteTypeValue[] = [3],
+  selectedAt = 1000,
+): StopHistoryEntry {
   return { stopWithMeta: makeStopMeta(id), routeTypes, selectedAt };
 }
 

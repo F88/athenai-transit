@@ -8,11 +8,15 @@ import {
   MAX_ANCHOR_SIZE,
 } from '../anchor';
 import type { AnchorEntry } from '../anchor';
-import type { RouteType } from '../../../types/app/transit';
+import type { AppRouteTypeValue } from '../../../types/app/transit';
 import { makeStopMeta, makeRoute } from '../../../__tests__/helpers';
 import type { StopWithMeta } from '../../../types/app/transit-composed';
 
-function makeAnchorEntry(id: string, routeTypes: RouteType[] = [3], createdAt = 1000): AnchorEntry {
+function makeAnchorEntry(
+  id: string,
+  routeTypes: AppRouteTypeValue[] = [3],
+  createdAt = 1000,
+): AnchorEntry {
   return {
     stopId: id,
     stopName: `Stop ${id}`,
@@ -30,7 +34,7 @@ describe('addAnchor', () => {
       stopName: 'Stop A',
       stopLat: 35.0,
       stopLon: 139.0,
-      routeTypes: [3 as RouteType],
+      routeTypes: [3 as AppRouteTypeValue],
     };
     const result = addAnchor([], entry, 1000);
 
@@ -47,7 +51,7 @@ describe('addAnchor', () => {
       stopName: 'Stop B',
       stopLat: 35.1,
       stopLon: 139.1,
-      routeTypes: [2 as RouteType],
+      routeTypes: [2 as AppRouteTypeValue],
     };
     const result = addAnchor(existing, entry, 2000);
 
@@ -63,7 +67,7 @@ describe('addAnchor', () => {
       stopName: 'Stop A',
       stopLat: 35.0,
       stopLon: 139.0,
-      routeTypes: [3 as RouteType],
+      routeTypes: [3 as AppRouteTypeValue],
     };
     const result = addAnchor(existing, entry, 2000);
 
@@ -82,7 +86,7 @@ describe('addAnchor', () => {
       stopName: 'New',
       stopLat: 35.0,
       stopLon: 139.0,
-      routeTypes: [3 as RouteType],
+      routeTypes: [3 as AppRouteTypeValue],
     };
     const result = addAnchor(existing, entry, 9999);
 
@@ -101,7 +105,7 @@ describe('addAnchor', () => {
       stopName: 'Stop B',
       stopLat: 35.0,
       stopLon: 139.0,
-      routeTypes: [3 as RouteType],
+      routeTypes: [3 as AppRouteTypeValue],
     };
     addAnchor(existing, entry, 2000);
 
@@ -114,7 +118,7 @@ describe('addAnchor', () => {
       stopName: 'Shibuya',
       stopLat: 35.658,
       stopLon: 139.702,
-      routeTypes: [0, 3] as RouteType[],
+      routeTypes: [0, 3] as AppRouteTypeValue[],
     };
     const result = addAnchor([], entry, 5000);
 
@@ -134,7 +138,7 @@ describe('addAnchor', () => {
       stopName: 'Stop A',
       stopLat: 35.0,
       stopLon: 139.0,
-      routeTypes: [3 as RouteType],
+      routeTypes: [3 as AppRouteTypeValue],
       portal: 'my-group',
     };
     const result = addAnchor([], entry, 1000);

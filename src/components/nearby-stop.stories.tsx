@@ -4,7 +4,7 @@ import type {
   StopServiceType,
   StopWithContext,
 } from '../types/app/transit-composed';
-import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
+import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
 import {
   busRoute as fixtureBusRoute,
   busRoute2 as fixtureBusRoute2,
@@ -173,7 +173,7 @@ function createEntry(
 function createStopWithContext(
   overrides: Partial<{
     stop: Stop;
-    routeTypes: RouteType[];
+    routeTypes: AppRouteTypeValue[];
     departures: ContextualTimetableEntry[];
     isBoardableOnServiceDay: boolean;
     agencies: Agency[];

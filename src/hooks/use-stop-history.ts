@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import type { RouteType } from '../types/app/transit';
+import type { AppRouteTypeValue } from '../types/app/transit';
 import type { StopWithMeta } from '../types/app/transit-composed';
 import { addToHistory, type StopHistoryEntry } from '../domain/transit/stop-history';
 
@@ -31,7 +31,7 @@ function migrateEntry(entry: Record<string, unknown>): StopHistoryEntry | null {
   // Legacy format: routeType (singular number)
   const legacyType =
     'routeType' in entry && typeof entry.routeType === 'number'
-      ? (entry.routeType as RouteType)
+      ? (entry.routeType as AppRouteTypeValue)
       : (3 as const);
   return {
     stopWithMeta: swm as StopHistoryEntry['stopWithMeta'],
@@ -86,7 +86,7 @@ export interface UseStopHistoryReturn {
   /** History entries, most recent first. */
   history: StopHistoryEntry[];
   /** Record a stop selection in history. */
-  pushStop: (stopWithMeta: StopWithMeta, routeTypes: RouteType[]) => void;
+  pushStop: (stopWithMeta: StopWithMeta, routeTypes: AppRouteTypeValue[]) => void;
 }
 
 /**
@@ -97,7 +97,7 @@ export interface UseStopHistoryReturn {
 export function useStopHistory(): UseStopHistoryReturn {
   const [history, setHistory] = useState<StopHistoryEntry[]>(loadHistory);
 
-  const pushStop = useCallback((stopWithMeta: StopWithMeta, routeTypes: RouteType[]) => {
+  const pushStop = useCallback((stopWithMeta: StopWithMeta, routeTypes: AppRouteTypeValue[]) => {
     setHistory((prev) => {
       const next = addToHistory(prev, stopWithMeta, routeTypes, Date.now());
       saveHistory(next);

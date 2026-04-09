@@ -7,7 +7,7 @@
  */
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
-import type { Agency, RouteType, Stop } from '../types/app/transit';
+import type { Agency, AppRouteTypeValue, Stop } from '../types/app/transit';
 import type { SourceMeta, StopWithMeta } from '../types/app/transit-composed';
 import type {
   CollectionResult,
@@ -132,7 +132,7 @@ export interface TransitRepository {
    * @param stopId - GTFS `stop_id`.
    * @returns Sorted array of route_type values serving this stop.
    */
-  getRouteTypesForStop(stopId: string): Promise<Result<RouteType[]>>;
+  getRouteTypesForStop(stopId: string): Promise<Result<AppRouteTypeValue[]>>;
 
   /**
    * Returns stops within a given radius from a center point,

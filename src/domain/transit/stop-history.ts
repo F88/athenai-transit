@@ -1,4 +1,4 @@
-import type { RouteType } from '../../types/app/transit';
+import type { AppRouteTypeValue } from '../../types/app/transit';
 import type { StopWithMeta } from '../../types/app/transit-composed';
 
 /** Maximum number of stops retained in history. */
@@ -9,7 +9,7 @@ export const MAX_HISTORY_SIZE = 20;
  */
 export interface StopHistoryEntry {
   stopWithMeta: StopWithMeta;
-  routeTypes: RouteType[];
+  routeTypes: AppRouteTypeValue[];
   /** Epoch ms when the stop was last selected. */
   selectedAt: number;
 }
@@ -29,7 +29,7 @@ export interface StopHistoryEntry {
 export function addToHistory(
   history: StopHistoryEntry[],
   stopWithMeta: StopWithMeta,
-  routeTypes: RouteType[],
+  routeTypes: AppRouteTypeValue[],
   now: number,
 ): StopHistoryEntry[] {
   const stopId = stopWithMeta.stop.stop_id;

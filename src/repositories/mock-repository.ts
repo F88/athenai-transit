@@ -16,7 +16,7 @@
  */
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
-import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
+import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
 import type {
   ContextualTimetableEntry,
   SourceMeta,
@@ -924,12 +924,12 @@ function getPatternPosition(
  */
 const { STOP_ROUTE_TYPES, STOP_AGENCIES, STOP_ROUTES_RESOLVED } = (() => {
   const routeMap = new Map(ROUTES.map((r) => [r.route_id, r]));
-  const routeTypes = new Map<string, RouteType[]>();
+  const routeTypes = new Map<string, AppRouteTypeValue[]>();
   const agencies = new Map<string, Agency[]>();
   const routesResolved = new Map<string, Route[]>();
 
   for (const [stopId, entries] of Object.entries(STOP_ROUTES)) {
-    const types = new Set<RouteType>();
+    const types = new Set<AppRouteTypeValue>();
     const agencyIds = new Set<string>();
     const uniqueRoutes = new Map<string, Route>();
 
@@ -1232,7 +1232,7 @@ export class MockRepository implements TransitRepository {
   }
 
   /** {@inheritDoc TransitRepository.getRouteTypesForStop} */
-  getRouteTypesForStop(stopId: string): Promise<Result<RouteType[]>> {
+  getRouteTypesForStop(stopId: string): Promise<Result<AppRouteTypeValue[]>> {
     const types = STOP_ROUTE_TYPES.get(stopId);
     if (!types) {
       return Promise.resolve({ success: false, error: `No route types for stop: ${stopId}` });

@@ -1,7 +1,7 @@
 import L from 'leaflet';
 import type { EffectiveRenderMode } from '../../domain/map/render-mode';
 import type { InfoLevel } from '../../types/app/settings';
-import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { ContextualTimetableEntry, StopWithContext } from '../../types/app/transit-composed';
 import { StopMarkersDom } from './stop-markers-dom';
 import { StopMarkersCanvas } from './stop-markers-canvas';
@@ -12,7 +12,7 @@ interface StopMarkersProps {
   /** Currently selected stop ID. Used for highlight and permanent tooltip. */
   selectedStopId: string | null;
   /** Map of stop ID to GTFS route_type values. Determines marker color. */
-  routeTypeMap: Map<string, RouteType[]>;
+  routeTypeMap: Map<string, AppRouteTypeValue[]>;
   /** Controls display detail (e.g. stop name labels). */
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */

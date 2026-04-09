@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { APP_ROUTE_TYPES } from '../../config/route-types';
 import type { InfoLevel } from '../../types/app/settings';
 import type { ContextualTimetableEntry } from '../../types/app/transit-composed';
-import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import {
   agencyOretetsu,
   agencyTobus,
@@ -49,7 +49,7 @@ const stopC: Stop = {
 
 const storyStops: Stop[] = [stopA, stopB, stopC];
 
-const routeTypeMap = new Map<string, RouteType[]>([
+const routeTypeMap = new Map<string, AppRouteTypeValue[]>([
   [stopA.stop_id, [3]],
   [stopB.stop_id, [0, 3]],
   [stopC.stop_id, [12]],
@@ -105,8 +105,11 @@ const allRouteTypeStops: Stop[] = routeTypeStoryItems.map(({ value, label }, ind
   },
 }));
 
-const allRouteTypeMap = new Map<string, RouteType[]>(
-  routeTypeStoryItems.map(({ value }) => [`story-route-type-${value}`, [value] as RouteType[]]),
+const allRouteTypeMap = new Map<string, AppRouteTypeValue[]>(
+  routeTypeStoryItems.map(({ value }) => [
+    `story-route-type-${value}`,
+    [value] as AppRouteTypeValue[],
+  ]),
 );
 
 const allRouteTypeAgenciesMap = new Map<string, Agency[]>(

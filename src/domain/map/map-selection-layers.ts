@@ -1,5 +1,5 @@
 import type { RouteShape } from '../../types/app/map';
-import type { RouteType, Stop } from '../../types/app/transit';
+import type { AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { StopWithMeta } from '../../types/app/transit-composed';
 import type { SelectionInfo } from './selection';
 import { filterVisibleRouteShapes } from './route-shapes';
@@ -10,7 +10,7 @@ export interface MapSelectionLayersParams {
   radiusStops: StopWithMeta[];
   routeStops: StopWithMeta[];
   routeShapes: RouteShape[];
-  routeTypeMap: Map<string, RouteType[]>;
+  routeTypeMap: Map<string, AppRouteTypeValue[]>;
   visibleStopTypes: Set<number>;
   visibleRouteShapes: Set<number>;
   selectionInfo: SelectionInfo | null;
@@ -22,7 +22,7 @@ export interface MapSelectionLayersResult {
   filteredNearbyStops: Stop[];
   filteredFarStops: Stop[];
   routeStopMarkers: Stop[];
-  routeStopsRouteTypeMap: Map<string, RouteType[]>;
+  routeStopsRouteTypeMap: Map<string, AppRouteTypeValue[]>;
 }
 
 /**
@@ -66,7 +66,7 @@ export function buildMapSelectionLayers({
 
   const routeStopMarkers = routeStops.map((m) => m.stop);
 
-  const routeStopsRouteTypeMap = new Map<string, RouteType[]>();
+  const routeStopsRouteTypeMap = new Map<string, AppRouteTypeValue[]>();
   for (const m of routeStops) {
     const types = m.routes.map((r) => r.route_type);
     if (types.length > 0) {
