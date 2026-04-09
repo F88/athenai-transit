@@ -60,7 +60,7 @@ function LeafletStopIconPreview({
 }
 
 const meta = {
-  title: 'Map/LeafletHelpers',
+  title: 'Map/LeafletStopIcon',
   component: LeafletStopIconPreview,
   args: {
     infoLevel: 'simple',
@@ -79,21 +79,14 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const RouteTypeLabelsInSimpleMode: Story = {
+export const StopIconSimple: Story = {
   args: {
     infoLevel: 'simple',
     selected: false,
   },
 };
 
-export const RouteTypeLabelsInSimpleModeSelected: Story = {
-  args: {
-    infoLevel: 'simple',
-    selected: true,
-  },
-};
-
-export const DetailedModeReference: Story = {
+export const StopIconDetailed: Story = {
   args: {
     infoLevel: 'detailed',
     selected: false,

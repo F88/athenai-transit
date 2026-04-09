@@ -30,16 +30,19 @@ function escapeHtml(text: string): string {
 function createStopIconSimple(routeType: number, selected: boolean): L.DivIcon {
   const size = selected ? 36 : 24;
   const selectedClass = selected ? 'stop-icon-selected' : '';
+  const color = getRouteTypeColor(routeType);
 
   let iconClass: string;
   if (routeType === 3) {
     iconClass = 'stop-icon-bus';
   } else if (routeType === 1) {
     iconClass = 'stop-icon-subway';
+  } else if (routeType === 2) {
+    iconClass = 'stop-icon-station';
   } else if (routeType === 0) {
     iconClass = 'stop-icon-tram';
   } else {
-    iconClass = 'stop-icon-station';
+    iconClass = 'stop-icon-bus';
   }
   const rawLabel = routeTypeLabel(routeType);
   // Tram label needs a wrapping span for styling
@@ -48,7 +51,7 @@ function createStopIconSimple(routeType: number, selected: boolean): L.DivIcon {
 
   return L.divIcon({
     className: '',
-    html: `<div class="${iconClass} ${selectedClass}">${label}</div>`,
+    html: `<div class="${iconClass} ${selectedClass}" style="background:${color}">${label}</div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });

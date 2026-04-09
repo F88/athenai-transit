@@ -8,7 +8,7 @@ export const APP_ROUTE_TYPES: readonly AppRouteType[] = [
   { value: 1, emoji: '🚇', color: '#7b1fa2', label: 'Subway' },
   { value: 2, emoji: '🚆', color: '#1565c0', label: 'Rail' },
   { value: 3, emoji: '🚌', color: '#2e7d32', label: 'Bus' },
-  { value: 4, emoji: '⛴️', color: '#006064', label: 'Ferry' },
+  { value: 4, emoji: '⛴️', color: '#0288d1', label: 'Ferry' },
   { value: 5, emoji: '🚋', color: '#c62828', label: 'Cable tram' },
   { value: 6, emoji: '🚡', color: '#283593', label: 'Gondola' },
   { value: 7, emoji: '🚞', color: '#ff8f00', label: 'Funicular' },
