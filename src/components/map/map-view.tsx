@@ -16,6 +16,7 @@ import {
   CLICK_SUPPRESSION_MS,
   shouldSuppressMapClick,
 } from '../../domain/map/map-click-suppression';
+import { resolveMapMaxZoom } from '../../domain/map/map-max-zoom';
 import { createLogger } from '../../lib/logger';
 import type { StopHistoryEntry } from '../../domain/transit/stop-history';
 import type { AnchorEntry } from '../../domain/portal/anchor';
@@ -144,6 +145,21 @@ function PanToFocus({ position }: { position: LatLng | null }) {
     logger.debug(`panning to lat=${position.lat}, lng=${position.lng}`);
     smoothMoveTo(map, [position.lat, position.lng], map.getZoom());
   }, [map, position]);
+
+  return null;
+}
+
+function TileSourceMaxZoomController({ tileIndex }: { tileIndex: number | null }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const maxZoom = resolveMapMaxZoom(tileIndex, TILE_SOURCES, DEFAULT_MAX_ZOOM);
+    map.setMaxZoom(maxZoom);
+
+    if (map.getZoom() > maxZoom) {
+      map.setZoom(maxZoom);
+    }
+  }, [map, tileIndex]);
 
   return null;
 }
@@ -342,10 +358,11 @@ export function MapView({
       <MapContainer
         center={INITIAL_CENTER}
         zoom={INITIAL_ZOOM}
-        maxZoom={DEFAULT_MAX_ZOOM}
+        maxZoom={resolveMapMaxZoom(tileIndex, TILE_SOURCES, DEFAULT_MAX_ZOOM)}
         className="relative z-0 h-full w-full"
         zoomControl={false}
       >
+        <TileSourceMaxZoomController tileIndex={tileIndex} />
         {tileIndex !== null && (
           <TileLayer
             key={TILE_SOURCES[tileIndex].id}
