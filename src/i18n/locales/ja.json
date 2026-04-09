@@ -122,8 +122,8 @@
     "searchStops": "のりばを検索",
     "toggleBus": "バスの表示切替",
     "toggleSubway": "地下鉄の表示切替",
-    "toggleTram": "路面電車の表示切替",
-    "toggleRail": "鉄道の表示切替"
+    "toggleTrain": "鉄道の表示切替",
+    "toggleOthers": "その他の表示切替"
   },
   "anchor": {
     "add": "アンカーを追加",

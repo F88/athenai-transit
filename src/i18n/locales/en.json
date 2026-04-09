@@ -122,8 +122,8 @@
     "searchStops": "Search stops",
     "toggleBus": "Toggle bus stops",
     "toggleSubway": "Toggle subway stops",
-    "toggleTram": "Toggle tram stops",
-    "toggleRail": "Toggle rail stops"
+    "toggleTrain": "Toggle train stops",
+    "toggleOthers": "Toggle other stops"
   },
   "anchor": {
     "add": "Add anchor",
