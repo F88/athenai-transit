@@ -6,7 +6,6 @@
  * characteristics, and stop-level service state from timetable data.
  */
 
-import type { TimetableQueryMeta } from '../../types/app/repository';
 import type { TimetableEntry } from '../../types/app/transit-composed';
 
 /**
@@ -31,20 +30,36 @@ import type { TimetableEntry } from '../../types/app/transit-composed';
 export type StopServiceState = 'boardable' | 'drop-off-only' | 'no-service';
 
 /**
- * Derive the stop service state from timetable query metadata.
+ * Input signals used to derive a {@link StopServiceState}.
  *
- * Takes the full {@link TimetableQueryMeta} so that future state
- * additions can reference additional meta fields without changing
- * this function's signature.
+ * Defined as a narrow structural type (not the full `TimetableQueryMeta`)
+ * so that the repository can call this helper while still *constructing*
+ * the meta — otherwise a circular dependency would occur because
+ * `TimetableQueryMeta` itself carries the derived `serviceState` field.
+ */
+export interface StopServiceStateInput {
+  /** Whether at least one boardable entry exists in the full service day. */
+  isBoardableOnServiceDay: boolean;
+  /** Total number of entries in the full service day (pre now/limit filtering). */
+  totalEntries: number;
+}
+
+/**
+ * Derive the stop service state from service day signals.
  *
- * @param meta - Timetable query meta describing the full service day.
+ * Signals are passed as a narrow structural object (see
+ * {@link StopServiceStateInput}) rather than the full `TimetableQueryMeta`,
+ * which allows the repository layer to compute the state during meta
+ * construction without a circular type dependency.
+ *
+ * @param input - Minimal service day signals.
  * @returns The service state of the stop for that service day.
  */
-export function getStopServiceState(meta: TimetableQueryMeta): StopServiceState {
-  if (meta.totalEntries === 0) {
+export function getStopServiceState(input: StopServiceStateInput): StopServiceState {
+  if (input.totalEntries === 0) {
     return 'no-service';
   }
-  if (!meta.isBoardableOnServiceDay) {
+  if (!input.isBoardableOnServiceDay) {
     return 'drop-off-only';
   }
   return 'boardable';

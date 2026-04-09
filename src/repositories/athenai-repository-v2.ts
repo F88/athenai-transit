@@ -44,7 +44,7 @@ import type {
   TimetableResult,
   UpcomingTimetableResult,
 } from '../types/app/repository';
-import { isDropOffOnly } from '../domain/transit/timetable-utils';
+import { getStopServiceState, isDropOffOnly } from '../domain/transit/timetable-utils';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
 import type { TransitDataSourceV2 } from '../datasources/transit-data-source-v2';
@@ -1084,6 +1084,10 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const meta: TimetableQueryMeta = {
       isBoardableOnServiceDay: hasBoardable,
       totalEntries: fullDayCount,
+      serviceState: getStopServiceState({
+        isBoardableOnServiceDay: hasBoardable,
+        totalEntries: fullDayCount,
+      }),
     };
     return Promise.resolve({ success: true, data: result, truncated, meta });
   }
@@ -1091,7 +1095,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   /** {@inheritDoc TransitRepository.getFullDayTimetableEntries} */
   getFullDayTimetableEntries(stopId: string, dateTime: Date): Promise<TimetableResult> {
     const t0 = performance.now();
-    const emptyMeta: TimetableQueryMeta = { isBoardableOnServiceDay: false, totalEntries: 0 };
+    const emptyMeta: TimetableQueryMeta = {
+      isBoardableOnServiceDay: false,
+      totalEntries: 0,
+      serviceState: 'no-service',
+    };
     const timetableGroups = this.timetable[stopId];
     if (!timetableGroups) {
       return Promise.resolve({ success: true, data: [], truncated: false, meta: emptyMeta });
@@ -1159,9 +1167,14 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     logger.debug(
       `getFullDayTimetableEntries: ${stopId} → ${entries.length} entries in ${elapsed}ms`,
     );
+    const isBoardableOnServiceDay = entries.some((e) => !isDropOffOnly(e));
     const meta: TimetableQueryMeta = {
-      isBoardableOnServiceDay: entries.some((e) => !isDropOffOnly(e)),
+      isBoardableOnServiceDay,
       totalEntries: entries.length,
+      serviceState: getStopServiceState({
+        isBoardableOnServiceDay,
+        totalEntries: entries.length,
+      }),
     };
     return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }

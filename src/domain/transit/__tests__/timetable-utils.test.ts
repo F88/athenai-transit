@@ -11,8 +11,8 @@ import {
   filterBoardable,
   getDisplayMinutes,
   getStopServiceState,
+  type StopServiceStateInput,
 } from '../timetable-utils';
-import type { TimetableQueryMeta } from '../../../types/app/repository';
 import type { TimetableEntry } from '../../../types/app/transit-composed';
 import type { Route } from '../../../types/app/transit';
 
@@ -518,7 +518,7 @@ describe('filterBoardable', () => {
   // -------------------------------------------------------------------------
 
   describe('getStopServiceState', () => {
-    function makeMeta(overrides: Partial<TimetableQueryMeta> = {}): TimetableQueryMeta {
+    function makeInput(overrides: Partial<StopServiceStateInput> = {}): StopServiceStateInput {
       return {
         isBoardableOnServiceDay: overrides.isBoardableOnServiceDay ?? false,
         totalEntries: overrides.totalEntries ?? 0,
@@ -527,7 +527,7 @@ describe('filterBoardable', () => {
 
     it('returns "no-service" when totalEntries is 0', () => {
       expect(
-        getStopServiceState(makeMeta({ totalEntries: 0, isBoardableOnServiceDay: false })),
+        getStopServiceState(makeInput({ totalEntries: 0, isBoardableOnServiceDay: false })),
       ).toBe('no-service');
     });
 
@@ -535,31 +535,31 @@ describe('filterBoardable', () => {
       // This combination should not happen in practice, but the totalEntries
       // signal takes precedence — no entries means no service regardless.
       expect(
-        getStopServiceState(makeMeta({ totalEntries: 0, isBoardableOnServiceDay: true })),
+        getStopServiceState(makeInput({ totalEntries: 0, isBoardableOnServiceDay: true })),
       ).toBe('no-service');
     });
 
     it('returns "drop-off-only" when entries exist but none are boardable', () => {
       expect(
-        getStopServiceState(makeMeta({ totalEntries: 5, isBoardableOnServiceDay: false })),
+        getStopServiceState(makeInput({ totalEntries: 5, isBoardableOnServiceDay: false })),
       ).toBe('drop-off-only');
     });
 
     it('returns "boardable" when at least one boardable entry exists', () => {
       expect(
-        getStopServiceState(makeMeta({ totalEntries: 10, isBoardableOnServiceDay: true })),
+        getStopServiceState(makeInput({ totalEntries: 10, isBoardableOnServiceDay: true })),
       ).toBe('boardable');
     });
 
     it('returns "boardable" for a single-entry boardable stop', () => {
       expect(
-        getStopServiceState(makeMeta({ totalEntries: 1, isBoardableOnServiceDay: true })),
+        getStopServiceState(makeInput({ totalEntries: 1, isBoardableOnServiceDay: true })),
       ).toBe('boardable');
     });
 
     it('returns "drop-off-only" for a single-entry non-boardable stop', () => {
       expect(
-        getStopServiceState(makeMeta({ totalEntries: 1, isBoardableOnServiceDay: false })),
+        getStopServiceState(makeInput({ totalEntries: 1, isBoardableOnServiceDay: false })),
       ).toBe('drop-off-only');
     });
   });

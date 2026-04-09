@@ -31,7 +31,7 @@ import type {
   TimetableResult,
   UpcomingTimetableResult,
 } from '../types/app/repository';
-import { isDropOffOnly } from '../domain/transit/timetable-utils';
+import { getStopServiceState, isDropOffOnly } from '../domain/transit/timetable-utils';
 import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
@@ -1227,6 +1227,10 @@ export class MockRepository implements TransitRepository {
     const meta: TimetableQueryMeta = {
       isBoardableOnServiceDay: hasBoardable,
       totalEntries: fullDayCount,
+      serviceState: getStopServiceState({
+        isBoardableOnServiceDay: hasBoardable,
+        totalEntries: fullDayCount,
+      }),
     };
     return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }
@@ -1311,9 +1315,14 @@ export class MockRepository implements TransitRepository {
     }
 
     entries.sort((a, b) => a.schedule.departureMinutes - b.schedule.departureMinutes);
+    const isBoardableOnServiceDay = entries.some((e) => !isDropOffOnly(e));
     const meta: TimetableQueryMeta = {
-      isBoardableOnServiceDay: entries.some((e) => !isDropOffOnly(e)),
+      isBoardableOnServiceDay,
       totalEntries: entries.length,
+      serviceState: getStopServiceState({
+        isBoardableOnServiceDay,
+        totalEntries: entries.length,
+      }),
     };
     return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }

@@ -5,6 +5,7 @@
  * {@link TransitRepository} methods.
  */
 
+import type { StopServiceState } from '../../domain/transit/timetable-utils';
 import type { ContextualTimetableEntry, TimetableEntry } from './transit-composed';
 
 /**
@@ -65,6 +66,19 @@ export interface TimetableQueryMeta {
    * - `totalEntries === 0` → no service today.
    */
   totalEntries: number;
+
+  /**
+   * High-level service state of the stop on this service day.
+   *
+   * Derived from {@link isBoardableOnServiceDay} and {@link totalEntries}
+   * by the repository at query time. Consumers should prefer this field
+   * over ad hoc `!isBoardableOnServiceDay` checks because the raw field
+   * alone cannot distinguish "all entries are drop-off only" from "no
+   * entries exist for this service day".
+   *
+   * See {@link StopServiceState} for the full set of states.
+   */
+  serviceState: StopServiceState;
 }
 
 /**
