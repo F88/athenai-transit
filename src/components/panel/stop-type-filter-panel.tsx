@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { APP_ROUTE_TYPES } from '../../config/route-types';
 import { ControlPanel } from '../shared/control-panel';
 import { MapToggleButton } from '../button/map-toggle-button';
-import { routeTypeEmoji } from '../../utils/route-type-emoji';
 import {
+  getRouteTypeCategoryEmoji,
   routeTypeCategory,
   routeTypeGroup,
   type RouteTypeCategory,
@@ -62,7 +62,7 @@ export function StopTypeFilterPanel({
             onClick={() => onToggleStopType(routeType)}
             label={t(labelKey)}
           >
-            {routeTypeEmoji(routeType)}
+            {getRouteTypeCategoryEmoji(category)}
           </MapToggleButton>
         );
       })}

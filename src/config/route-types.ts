@@ -4,6 +4,7 @@ import type { AppRouteType } from '@/types/app/transit';
  * Supported route types in display order for webapp UI.
  */
 export const APP_ROUTE_TYPES: readonly AppRouteType[] = [
+  { value: -1, emoji: '🛸', color: '#455A64', label: 'Unknown' },
   { value: 0, emoji: '🚊', color: '#f57f17', label: 'Tram' },
   { value: 1, emoji: '🚇', color: '#7b1fa2', label: 'Subway' },
   { value: 2, emoji: '🚆', color: '#1565c0', label: 'Rail' },

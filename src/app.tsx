@@ -536,7 +536,7 @@ export default function App() {
   const handleToggleNonBusShapes = useCallback(() => {
     updateSetting(
       'visibleRouteShapes',
-      toggleGroupInList(settings.visibleRouteShapes, [0, 1, 2, 4, 5, 6, 7, 12]),
+      toggleGroupInList(settings.visibleRouteShapes, [-1, 0, 1, 2, 4, 5, 6, 7, 12]),
     );
   }, [settings.visibleRouteShapes, updateSetting]);
 
