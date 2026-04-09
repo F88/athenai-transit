@@ -34,9 +34,9 @@ const HOME_LOCATIONS = [
   { name: 'Nagoya', lat: 35.1697, lng: 136.8954, zoom: 13 },
   { name: 'Matsuyama (Okaido crossing)', lat: 33.8412, lng: 132.7701, zoom: 16 },
   /** Germany */
-  // { name: 'Freiburg Hauptbahnhof', lat: 47.99610302520502, lng: 7.840770083827948, zoom: 16 },
+  { name: 'Freiburg Hauptbahnhof', lat: 47.99610302520502, lng: 7.840770083827948, zoom: 16 },
   /** Italy */
-  // { name: 'Venice Piazzale Roma', lat: 45.43391655307844, lng: 12.343352744453911, zoom: 16 },
+  { name: 'Venice Piazzale Roma', lat: 45.43391655307844, lng: 12.343352744453911, zoom: 16 },
 ] as const;
 
 const logger = createLogger('MapDefaults');
