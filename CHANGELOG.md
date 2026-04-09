@@ -34,6 +34,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - 履歴・アンカー再選択時に route type が失われる問題を修正。
 - Route type 解決で未解決の場合に Unknown タイプへ適切にフォールバックするよう修正。
 - 無効な `tileIndex` を `null` にフォールバックするよう修正。
+- 地図タイル切替時に active tile source の `maxZoom` が Leaflet map 本体にも反映されるよう修正。
+- About: 地図機能説明と地図クレジットを、現行の GSI / Stadia Maps タイル構成に合わせて更新。
 
 ## [2026.04.08]
 
