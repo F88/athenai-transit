@@ -53,11 +53,19 @@
     "activeOnlyTitle": "Show only stops with upcoming departures"
   },
   "stop": {
-    "noDestination": "Some routes have no destination",
-    "serviceEnded": "No more service today",
-    "dropOffOnly": "Drop-off only",
-    "wheelchairAccessible": "Wheelchair accessible",
-    "wheelchairNotAccessible": "Not wheelchair accessible"
+    "serviceState": {
+      "boardable": "In service",
+      "dropOffOnly": "Drop-off only",
+      "noService": "No service",
+      "serviceEnded": "No more service today"
+    },
+    "accessibility": {
+      "wheelchairAccessible": "Wheelchair accessible",
+      "wheelchairNotAccessible": "Not wheelchair accessible"
+    },
+    "dataQuality": {
+      "noDestination": "Some routes have no destination"
+    }
   },
   "time": {
     "settingTitle": "Set date & time",

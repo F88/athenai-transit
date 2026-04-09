@@ -53,11 +53,19 @@
     "activeOnlyTitle": "次便がある乗り場のみ表示"
   },
   "stop": {
-    "noDestination": "行先が表示されない路線があります",
-    "serviceEnded": "本日の運行は終了しました",
-    "dropOffOnly": "降車専用",
-    "wheelchairAccessible": "車椅子で利用可能",
-    "wheelchairNotAccessible": "車椅子では利用不可"
+    "serviceState": {
+      "boardable": "運行中",
+      "dropOffOnly": "降車専用",
+      "noService": "運行便なし",
+      "serviceEnded": "本日の運行は終了しました"
+    },
+    "accessibility": {
+      "wheelchairAccessible": "車椅子で利用可能",
+      "wheelchairNotAccessible": "車椅子では利用不可"
+    },
+    "dataQuality": {
+      "noDestination": "行先が表示されない路線があります"
+    }
   },
   "time": {
     "settingTitle": "日時を指定",

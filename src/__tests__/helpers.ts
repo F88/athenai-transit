@@ -84,6 +84,7 @@ export function makeStopWithContext(
       serviceDate: new Date('2026-01-01'),
     })),
     isBoardableOnServiceDay: true,
+    serviceState: 'boardable',
     agencies: [],
     routes,
   };

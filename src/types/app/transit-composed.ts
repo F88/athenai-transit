@@ -11,6 +11,7 @@
  * or introducing new composed types here is expected and encouraged.
  */
 
+import type { StopServiceState } from '../../domain/transit/timetable-utils';
 import type { Agency, Route, AppRouteTypeValue, Stop } from './transit';
 
 /**
@@ -150,9 +151,20 @@ export interface StopWithContext extends StopWithMeta {
    *
    * From {@link TimetableQueryMeta.isBoardableOnServiceDay}. Independent
    * of `departures` (which only contains upcoming entries).
-   * A stop with `isBoardableOnServiceDay === false` is drop-off only.
+   *
+   * **Prefer `serviceState` for drop-off-only detection** — this raw
+   * flag alone cannot distinguish "all entries are drop-off only" from
+   * "no entries at all" (both produce `false`).
    */
   isBoardableOnServiceDay: boolean;
+  /**
+   * High-level service state of the stop on the current service day.
+   *
+   * Propagated from {@link TimetableQueryMeta.serviceState}. Use this
+   * field to tell apart `'drop-off-only'` from `'no-service'` when
+   * rendering stop labels, filters, or "no service" placeholders.
+   */
+  serviceState: StopServiceState;
 }
 
 /**

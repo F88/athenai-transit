@@ -3,6 +3,7 @@ import { Accessibility } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { resolveAgencyLang } from '../config/transit-defaults';
 import { useInfoLevel } from '../hooks/use-info-level';
+import type { StopServiceState } from '../domain/transit/timetable-utils';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
@@ -38,6 +39,10 @@ export interface StopSummaryCoreProps {
   dataLang: readonly string[];
   /** Whether the stop context is drop-off only. */
   isDropOffOnly: boolean;
+  /** Service state of the stop on the current service day (optional, for verbose dump). */
+  serviceState?: StopServiceState;
+  /** Raw repo signal for verbose dump — independent of `isDropOffOnly` interpretation. */
+  isBoardableOnServiceDay?: boolean;
   /** Badge size override for agency badges. */
   agencyBadgeSize?: AgencyBadgeSize;
   /** Badge size override for route badges. */
@@ -68,6 +73,8 @@ export function StopSummary({
   infoLevel,
   dataLang,
   isDropOffOnly,
+  serviceState,
+  isBoardableOnServiceDay,
   agencyBadgeSize,
   routeBadgeSize,
   distanceBadge,
@@ -95,10 +102,12 @@ export function StopSummary({
     'shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-gray-700 opacity-30 dark:bg-gray-700 dark:text-gray-300';
   const dropOffClass =
     'shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300';
+  const noServiceClass =
+    'shrink-0 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300';
   const resolvedAgencyBadgeSize = agencyBadgeSize ?? 'sm';
   const resolvedRouteBadgeSize = routeBadgeSize ?? 'xs';
-  const wheelchairAccessibleLabel = t('stop.wheelchairAccessible');
-  const wheelchairNotAccessibleLabel = t('stop.wheelchairNotAccessible');
+  const wheelchairAccessibleLabel = t('stop.accessibility.wheelchairAccessible');
+  const wheelchairNotAccessibleLabel = t('stop.accessibility.wheelchairNotAccessible');
 
   return (
     <div className="min-w-0 flex-1">
@@ -136,7 +145,12 @@ export function StopSummary({
             <Accessibility size={14} strokeWidth={2} aria-hidden="true" focusable="false" />
           </span>
         )}
-        {isDropOffOnly && <span className={dropOffClass}>{t('stop.dropOffOnly')}</span>}
+        {isDropOffOnly && (
+          <span className={dropOffClass}>{t('stop.serviceState.dropOffOnly')}</span>
+        )}
+        {serviceState === 'no-service' && (
+          <span className={noServiceClass}>{t('stop.serviceState.noService')}</span>
+        )}
         {agencies.length > 0 &&
           agencies.map((agency) => (
             <AgencyBadge
@@ -178,7 +192,12 @@ export function StopSummary({
                 [Stop]
               </summary>
               <div className="mt-1 overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
-                <VerboseStop stop={stop} isDropOffOnly={isDropOffOnly} />
+                <VerboseStop
+                  stop={stop}
+                  isDropOffOnly={isDropOffOnly}
+                  serviceState={serviceState}
+                  isBoardableOnServiceDay={isBoardableOnServiceDay}
+                />
               </div>
               <VerboseStopDisplayNames names={stopNames} />
             </details>

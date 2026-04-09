@@ -62,12 +62,16 @@ export function useNearbyDepartures(
               ]);
               const departures = depsResult.success ? depsResult.data : [];
               // When timetable data is missing for a stop (success=false),
-              // default to false. This only happens when the stop has no
-              // timetable data at all (not a network error), so false is
-              // semantically correct — no boardable entries exist.
+              // default to false / no-service. This only happens when the
+              // stop has no timetable data at all (not a network error),
+              // so these defaults are semantically correct — no boardable
+              // entries and no service.
               const isBoardableOnServiceDay = depsResult.success
                 ? depsResult.meta.isBoardableOnServiceDay
                 : false;
+              const serviceState = depsResult.success
+                ? depsResult.meta.serviceState
+                : ('no-service' as const);
               const routeTypes = rtResult.success ? rtResult.data : [-1 as const];
               // Resolve stats for the current dateTime's service group
               // instead of using the baked-in stats from enrichStopInsights.
@@ -77,6 +81,7 @@ export function useNearbyDepartures(
                 routeTypes,
                 departures,
                 isBoardableOnServiceDay,
+                serviceState,
                 agencies,
                 routes,
                 distance,

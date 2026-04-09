@@ -1,3 +1,4 @@
+import type { StopServiceState } from '../../domain/transit/timetable-utils';
 import type { Stop } from '../../types/app/transit';
 
 /**
@@ -5,7 +6,19 @@ import type { Stop } from '../../types/app/transit';
  * Renders block-level content (no details/summary, no border).
  * Used as a building block by {@link VerboseStopData} and other components.
  */
-export function VerboseStop({ stop, isDropOffOnly }: { stop: Stop; isDropOffOnly: boolean }) {
+export function VerboseStop({
+  stop,
+  isDropOffOnly,
+  serviceState,
+  isBoardableOnServiceDay,
+}: {
+  stop: Stop;
+  isDropOffOnly: boolean;
+  /** Service state of the stop on the current service day (optional, for debug). */
+  serviceState?: StopServiceState;
+  /** Raw repo signal — whether at least one boardable entry exists today. */
+  isBoardableOnServiceDay?: boolean;
+}) {
   return (
     <>
       <p className="m-0">
@@ -17,6 +30,13 @@ export function VerboseStop({ stop, isDropOffOnly }: { stop: Stop; isDropOffOnly
         {stop.platform_code && ` platform=${stop.platform_code}`}
         {isDropOffOnly && ' DROP-OFF-ONLY'}
       </p>
+      {(serviceState != null || isBoardableOnServiceDay != null) && (
+        <p className="m-0">
+          [service]
+          {serviceState != null && ` state=${serviceState}`}
+          {isBoardableOnServiceDay != null && ` boardable=${String(isBoardableOnServiceDay)}`}
+        </p>
+      )}
       <p className="m-0">
         [names]{' '}
         {Object.keys(stop.stop_names).length > 0

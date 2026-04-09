@@ -325,12 +325,16 @@ export default function App() {
       const isBoardableOnServiceDay = depsResult.success
         ? depsResult.meta.isBoardableOnServiceDay
         : false;
+      const serviceState = depsResult.success
+        ? depsResult.meta.serviceState
+        : ('no-service' as const);
       const routeTypes = rtResult.success ? rtResult.data : [-1 as const];
       return {
         stop: meta.stop,
         routeTypes,
         departures,
         isBoardableOnServiceDay,
+        serviceState,
         agencies: meta.agencies,
         routes: meta.routes,
       };

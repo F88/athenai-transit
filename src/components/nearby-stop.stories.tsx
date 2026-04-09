@@ -4,6 +4,7 @@ import type {
   StopServiceType,
   StopWithContext,
 } from '../types/app/transit-composed';
+import type { StopServiceState } from '../domain/transit/timetable-utils';
 import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
 import {
   busRoute as fixtureBusRoute,
@@ -176,11 +177,13 @@ function createStopWithContext(
     routeTypes: AppRouteTypeValue[];
     departures: ContextualTimetableEntry[];
     isBoardableOnServiceDay: boolean;
+    serviceState: StopServiceState;
     agencies: Agency[];
     routes: Route[];
     distance: number;
   }> = {},
 ): StopWithContext {
+  const isBoardableOnServiceDay = overrides.isBoardableOnServiceDay ?? true;
   return {
     stop: overrides.stop ?? baseStop,
     routeTypes: overrides.routeTypes ?? [3],
@@ -191,7 +194,9 @@ function createStopWithContext(
       createEntry({ departureMinutes: 872, route: busRoute2, headsign: '日暮里駅前' }),
       createEntry({ departureMinutes: 892, route: busRoute2, headsign: '日暮里駅前' }),
     ],
-    isBoardableOnServiceDay: overrides.isBoardableOnServiceDay ?? true,
+    isBoardableOnServiceDay,
+    serviceState:
+      overrides.serviceState ?? (isBoardableOnServiceDay ? 'boardable' : 'drop-off-only'),
     agencies: overrides.agencies ?? [agency],
     routes: overrides.routes ?? [busRoute, busRoute2],
     distance: overrides.distance ?? 235,
