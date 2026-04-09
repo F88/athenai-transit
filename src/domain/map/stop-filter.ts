@@ -1,18 +1,18 @@
-import type { RouteType } from '../../types/app/transit';
+import type { AppRouteTypeValue } from '../../types/app/transit';
 import type { StopWithMeta } from '../../types/app/transit-composed';
 import { isRouteTypeVisible } from './route-type-visibility';
 
-/** Default GTFS route_types used when a stop has no entry in routeTypeMap. */
-const DEFAULT_ROUTE_TYPES: RouteType[] = [3];
+/** Default route_types used when a stop has no entry in routeTypeMap. */
+const DEFAULT_ROUTE_TYPES: AppRouteTypeValue[] = [-1];
 
 /**
  * Filters stops to only those with at least one visible route type.
  *
- * Stops not found in `routeTypeMap` are treated as route_type `[3]` (bus).
+ * Stops not found in `routeTypeMap` are treated as route_type `[-1]` (unknown).
  */
 export function filterStopsByType(
   stops: StopWithMeta[],
-  routeTypeMap: Map<string, RouteType[]>,
+  routeTypeMap: Map<string, AppRouteTypeValue[]>,
   visibleTypes: Set<number>,
 ): StopWithMeta[] {
   return stops.filter((s) =>

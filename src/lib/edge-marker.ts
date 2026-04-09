@@ -1,5 +1,5 @@
 import type L from 'leaflet';
-import type { RouteType, Stop } from '../types/app/transit';
+import type { AppRouteTypeValue, Stop } from '../types/app/transit';
 import type { EdgeMarker } from '../types/app/map';
 import { createLogger } from './logger';
 
@@ -26,7 +26,7 @@ const EDGE_PADDING = 20;
 export function buildEdgeMarkers(
   map: L.Map,
   edgeStops: Stop[],
-  routeTypeMap: Map<string, RouteType[]>,
+  routeTypeMap: Map<string, AppRouteTypeValue[]>,
   topPadding: number,
   bottomPadding: number,
 ): EdgeMarker[] {
@@ -85,7 +85,7 @@ export function buildEdgeMarkers(
           ? ('right' as const)
           : ('center' as const);
 
-    const routeTypes = routeTypeMap.get(stop.stop_id) ?? [3 as RouteType];
+    const routeTypes = routeTypeMap.get(stop.stop_id) ?? [-1 as AppRouteTypeValue];
     // Recalculate distance here instead of reusing StopWithMeta.distance because:
     // 1. The center shifts on every pan, so the repo's snapshot distance is stale.
     // 2. map.distance() uses haversine, which is more accurate than the repo's flat-earth approximation.
