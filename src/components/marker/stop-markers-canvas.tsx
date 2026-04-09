@@ -6,6 +6,7 @@ import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { ContextualTimetableEntry, StopWithContext } from '../../types/app/transit-composed';
 import { primaryRouteType } from '../../domain/transit/route-type-priority';
+import { resolveStopRouteTypes } from '../../domain/transit/resolve-stop-route-types';
 import { getRouteTypeColor } from '../../lib/leaflet-helpers';
 import { createLogger } from '../../lib/logger';
 
@@ -233,7 +234,12 @@ export function StopMarkersCanvas({
           .setContent(
             buildSummaryHtml(
               selectedStop,
-              routeTypeMap.get(selectedStopId) ?? [-1],
+              resolveStopRouteTypes({
+                stopId: selectedStopId,
+                routeTypeMap,
+                routes: null,
+                unknownPolicy: 'include-unknown',
+              }),
               agenciesMap?.get(selectedStopId) ?? [],
               entries,
               now,
@@ -309,7 +315,12 @@ function createMarker(
   },
 ): L.CircleMarker {
   const isSelected = stop.stop_id === opts.selectedStopId;
-  const routeTypes = opts.routeTypeMap.get(stop.stop_id) ?? [-1 as AppRouteTypeValue];
+  const routeTypes = resolveStopRouteTypes({
+    stopId: stop.stop_id,
+    routeTypeMap: opts.routeTypeMap,
+    routes: null,
+    unknownPolicy: 'include-unknown',
+  });
   const color = getRouteTypeColor(primaryRouteType(routeTypes));
   const dimmed = !opts.disableDimming && !!opts.selectedStopId && !isSelected;
 
@@ -359,7 +370,12 @@ function updateMarkerStyle(
   },
 ): void {
   const isSelected = stop.stop_id === opts.selectedStopId;
-  const routeTypes = opts.routeTypeMap.get(stop.stop_id) ?? [-1 as AppRouteTypeValue];
+  const routeTypes = resolveStopRouteTypes({
+    stopId: stop.stop_id,
+    routeTypeMap: opts.routeTypeMap,
+    routes: null,
+    unknownPolicy: 'include-unknown',
+  });
   const color = getRouteTypeColor(primaryRouteType(routeTypes));
   const dimmed = !opts.disableDimming && !!opts.selectedStopId && !isSelected;
 
@@ -422,7 +438,12 @@ function bindTooltipLazyListener(
     if (data.selectedStopId === stop.stop_id) {
       return;
     }
-    const routeTypes = data.routeTypeMap.get(stop.stop_id) ?? [-1 as AppRouteTypeValue];
+    const routeTypes = resolveStopRouteTypes({
+      stopId: stop.stop_id,
+      routeTypeMap: data.routeTypeMap,
+      routes: null,
+      unknownPolicy: 'include-unknown',
+    });
     marker.bindTooltip(
       buildSummaryHtml(
         stop,

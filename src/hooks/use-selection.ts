@@ -6,6 +6,7 @@ import type { StopWithContext, StopWithMeta } from '../types/app/transit-compose
 import { resolveFocusPosition } from '../domain/map/focus-position';
 import type { SelectionInfo } from '../domain/map/selection';
 import { extractRouteIdsForStop } from '../domain/map/selection';
+import { resolveStopRouteTypes } from '../domain/transit/resolve-stop-route-types';
 import { useStableLatLng } from './use-stable-lat-lng';
 import { createLogger } from '../lib/logger';
 
@@ -117,7 +118,12 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
       setSelectionInfo({
         type: 'stop',
         stop,
-        routeTypes: routeTypeMap.get(stop.stop_id) ?? [-1],
+        routeTypes: resolveStopRouteTypes({
+          stopId: stop.stop_id,
+          routeTypeMap,
+          routes: null,
+          unknownPolicy: 'include-unknown',
+        }),
         routeIds: extractRouteIdsForStop(nearbyDepartures, stop.stop_id),
       });
       setDirectFocusPosition(null);
@@ -181,7 +187,12 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
       setSelectionInfo({
         type: 'stop',
         stop,
-        routeTypes: routeTypeMap.get(stop.stop_id) ?? [-1],
+        routeTypes: resolveStopRouteTypes({
+          stopId: stop.stop_id,
+          routeTypeMap,
+          routes: null,
+          unknownPolicy: 'include-unknown',
+        }),
         routeIds,
       });
     },

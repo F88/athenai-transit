@@ -7,6 +7,7 @@ import type { InfoLevel } from '@/types/app/settings';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { katakanaToHiragana } from '@/utils/kana-normalize';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { resolveStopRouteTypes } from '@/domain/transit/resolve-stop-route-types';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import { createLogger } from '@/lib/logger';
 import {
@@ -265,7 +266,12 @@ export function StopSearchModal({
                 <StopSearchResultItem
                   key={stop.stop_id}
                   stop={stop}
-                  routeTypes={routeTypeMap.get(stop.stop_id) ?? [-1]}
+                  routeTypes={resolveStopRouteTypes({
+                    stopId: stop.stop_id,
+                    routeTypeMap,
+                    routes: null,
+                    unknownPolicy: 'include-unknown',
+                  })}
                   query={trimmedQuery}
                   normalizedQuery={normalizedQuery}
                   infoLevel={infoLevel}

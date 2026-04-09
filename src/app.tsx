@@ -34,6 +34,7 @@ import { resolveLangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
 import { formatDateKey } from './domain/transit/calendar-utils';
+import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
 import {
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
@@ -189,7 +190,15 @@ export default function App() {
       selectStop(stop);
       const meta = findStopWithMeta(stop.stop_id);
       if (meta) {
-        pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [-1]);
+        pushStop(
+          meta,
+          resolveStopRouteTypes({
+            stopId: stop.stop_id,
+            routeTypeMap,
+            routes: meta.routes,
+            unknownPolicy: 'include-unknown',
+          }),
+        );
       }
     },
     [selectStop, pushStop, findStopWithMeta, routeTypeMap],
@@ -202,7 +211,15 @@ export default function App() {
       selectStopById(stopId);
       const meta = findStopWithMeta(stopId);
       if (meta) {
-        pushStop(meta, routeTypeMap.get(stopId) ?? [-1]);
+        pushStop(
+          meta,
+          resolveStopRouteTypes({
+            stopId,
+            routeTypeMap,
+            routes: meta.routes,
+            unknownPolicy: 'include-unknown',
+          }),
+        );
       }
     },
     [selectStopById, pushStop, findStopWithMeta, routeTypeMap],
@@ -231,7 +248,15 @@ export default function App() {
         const stop = result.data;
         logger.info(`Applying ?stop=${stopId}: ${stop.stop.stop_name}`);
         focusStop(stop.stop);
-        pushStop(stop, routeTypeMap.get(stopId) ?? [-1]);
+        pushStop(
+          stop,
+          resolveStopRouteTypes({
+            stopId,
+            routeTypeMap,
+            routes: stop.routes,
+            unknownPolicy: 'include-unknown',
+          }),
+        );
         stopParamApplied.current = true;
       } else {
         logger.warn(`?stop=${stopId}: not found`);
@@ -459,7 +484,15 @@ export default function App() {
       // Search results may not be in radiusStops/inBoundStops yet;
       // wrap as StopWithMeta without distance
       const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
-      pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [-1]);
+      pushStop(
+        meta,
+        resolveStopRouteTypes({
+          stopId: stop.stop_id,
+          routeTypeMap,
+          routes: meta.routes,
+          unknownPolicy: 'include-unknown',
+        }),
+      );
       setSearchModalOpen(false);
     },
     [focusStop, pushStop, findStopWithMeta, routeTypeMap],
