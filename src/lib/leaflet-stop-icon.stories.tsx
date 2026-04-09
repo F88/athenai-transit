@@ -18,7 +18,6 @@ const ROUTE_TYPE_ITEMS_WITH_UNKNOWN: readonly RouteTypePreviewItem[] = [
   ...BASE_ROUTE_TYPE_ITEMS,
   { value: 8, label: 'Unknown' },
   { value: 99, label: 'Unknown' },
-  { value: -1, label: 'Unknown' },
 ];
 
 type PreviewProps = {

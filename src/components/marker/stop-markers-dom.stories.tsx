@@ -90,7 +90,6 @@ const routeTypeStoryItems = [
   ...APP_ROUTE_TYPES.map(({ value, label }) => ({ value, label })),
   { value: 8, label: 'Unknown' },
   { value: 99, label: 'Unknown' },
-  { value: -1, label: 'Unknown' },
 ] as const;
 
 const allRouteTypeStops: Stop[] = routeTypeStoryItems.map(({ value, label }, index) => ({
