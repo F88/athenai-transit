@@ -20,6 +20,7 @@ import { createLogger } from '../lib/logger';
  * immediate sense of "where can I go from here?".
  */
 const HOME_LOCATIONS = [
+  /** Japan */
   { name: 'Tokyo Station', lat: 35.6812, lng: 139.7671, zoom: 15 },
   { name: 'Kumano-mae', lat: 35.7485, lng: 139.7699, zoom: 15 },
   { name: 'Kinshicho Station', lat: 35.6967, lng: 139.8139, zoom: 17 },
@@ -32,6 +33,10 @@ const HOME_LOCATIONS = [
   { name: 'Shinjuku Station West', lat: 35.6913, lng: 139.6985, zoom: 17 },
   { name: 'Nagoya', lat: 35.1697, lng: 136.8954, zoom: 13 },
   { name: 'Matsuyama (Okaido crossing)', lat: 33.8412, lng: 132.7701, zoom: 16 },
+  /** Germany */
+  // { name: 'Freiburg Hauptbahnhof', lat: 47.99654461, lng: 7.84053173, zoom: 16 },
+  /** Italy */
+  // { name: 'Venice Piazzale Roma', lat: 45.438816, lng: 12.319038, zoom: 16 },
 ] as const;
 
 const logger = createLogger('MapDefaults');
