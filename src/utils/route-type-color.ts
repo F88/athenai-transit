@@ -1,12 +1,14 @@
+import { APP_ROUTE_TYPES } from '../config/route-types';
+
 /**
  * Background color for each GTFS route_type.
  */
-const ROUTE_TYPE_COLORS: Record<number, string> = {
-  0: '#f57f17',
-  1: '#7b1fa2',
-  2: '#1565c0',
-  3: '#2e7d32',
-};
+const ROUTE_TYPE_COLORS: Readonly<Record<number, string>> = APP_ROUTE_TYPES.reduce<
+  Record<number, string>
+>((acc, { value, color }) => {
+  acc[value] = color;
+  return acc;
+}, {});
 
 const DEFAULT_ROUTE_TYPE_COLOR = '#616161';
 

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import { PillButton } from './pill-button';
+import { APP_ROUTE_TYPES } from '@/config/route-types';
 
 const meta = {
   title: 'Button/PillButton',
@@ -107,6 +108,56 @@ export const RouteTypeInactive: Story = {
     active: false,
     children: '🚌',
   },
+};
+
+/** Route type gallery for all supported route_type values. */
+export const RouteTypeGallery: Story = {
+  args: { active: false },
+  render: (args) => (
+    <div className="w-fit overflow-x-auto rounded-md border border-[#d8dde6] bg-white">
+      <table className="text-xs">
+        <thead>
+          <tr className="border-b border-[#d8dde6] bg-[#f6f8fb] text-[#666]">
+            <th className="px-2 py-1 text-left font-medium">Type</th>
+            <th className="px-2 py-1 text-left font-medium">Active</th>
+            <th className="px-2 py-1 text-left font-medium">Inactive</th>
+          </tr>
+        </thead>
+        <tbody>
+          {APP_ROUTE_TYPES.map(({ value, label, emoji, color }) => (
+            <tr key={`rt-row-${value}`} className="border-b border-[#eef1f5] last:border-b-0">
+              <td className="px-2 py-1 text-[#444]">
+                {value}: {label}
+              </td>
+              <td className="px-2 py-1">
+                <PillButton
+                  {...args}
+                  active
+                  size="sm"
+                  activeBg={`${color}40`}
+                  // activeBorder={color}
+                  title={`route_type=${value} (${label})`}
+                >
+                  {emoji}
+                </PillButton>
+              </td>
+              <td className="px-2 py-1">
+                <PillButton
+                  {...args}
+                  active={false}
+                  size="sm"
+                  inactiveBorder={color}
+                  title={`route_type=${value} (${label})`}
+                >
+                  {emoji}
+                </PillButton>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ),
 };
 
 // --- Comparison rows ---

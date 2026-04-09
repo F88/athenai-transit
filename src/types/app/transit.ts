@@ -20,6 +20,16 @@
 export type RouteType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 11 | 12;
 
 /**
+ * Route type metadata used by webapp UI (story, filter labels, and icon previews).
+ */
+export interface AppRouteType {
+  value: RouteType;
+  emoji: string;
+  color: string;
+  label: string;
+}
+
+/**
  * A boarding location, derived from GTFS-JP stops.txt + translations.txt.
  *
  * `stop_names` is an app-specific field that merges translations.txt

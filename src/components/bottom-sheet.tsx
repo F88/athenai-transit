@@ -7,6 +7,7 @@ import type { StopWithContext } from '../types/app/transit-composed';
 import { collectPresentAgencies, filterStopsByAgency } from '../domain/transit/agency-filter';
 import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-views';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
+import { APP_ROUTE_TYPES } from '../config/route-types';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { BottomSheetHeader } from './bottom-sheet-header';
 import { BottomSheetStops } from './bottom-sheet-stops';
@@ -17,7 +18,22 @@ const DRAG_THRESHOLD = 50;
 const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
 
 /** Route type display order matching StopTypeFilterPanel. */
-const ROUTE_TYPE_ORDER = [3, 1, 0, 2, 4, 5, 6, 7] as const;
+const ROUTE_TYPE_PRIORITY: Readonly<Record<number, number>> = {
+  3: 0,
+  11: 1,
+  1: 2,
+  0: 3,
+  2: 4,
+  12: 5,
+  4: 6,
+  5: 7,
+  6: 8,
+  7: 9,
+};
+
+const ROUTE_TYPE_ORDER: number[] = [...APP_ROUTE_TYPES.map(({ value }) => value)].sort(
+  (a, b) => ROUTE_TYPE_PRIORITY[a] - ROUTE_TYPE_PRIORITY[b],
+);
 
 export interface NearbyStopsCounts {
   /** Total number of nearby stops before any filtering. */
@@ -85,7 +101,10 @@ export function BottomSheet({
         types.add(rt);
       }
     }
-    return ROUTE_TYPE_ORDER.filter((rt) => types.has(rt));
+    const routeOrderSet = new Set(ROUTE_TYPE_ORDER);
+    const known = ROUTE_TYPE_ORDER.filter((rt) => types.has(rt));
+    const extras = [...types].filter((rt) => !routeOrderSet.has(rt)).sort((a, b) => a - b);
+    return [...known, ...extras];
   }, [nearbyDepartures]);
 
   const toggleRouteType = useCallback((rt: number) => {

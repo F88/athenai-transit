@@ -53,8 +53,8 @@ describe('useUserSettings', () => {
       expect(s.infoLevel).toBe('normal');
       expect(s.perfMode).toBe('normal');
       expect(s.renderMode).toBe('auto');
-      expect(s.visibleRouteShapes).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
-      expect(s.visibleStopTypes).toEqual([0, 1, 2, 3]);
+      expect(s.visibleRouteShapes).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 11, 12]);
+      expect(s.visibleStopTypes).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 11, 12]);
       expect(s.tileIndex).toBe(0);
       expect(s.theme).toBe('light');
       expect(s.doubleTapDrag).toBe('zoom-out');
@@ -120,8 +120,8 @@ describe('useUserSettings', () => {
       expect(s.infoLevel).toBe('normal');
       expect(s.perfMode).toBe('normal');
       expect(s.renderMode).toBe('auto');
-      expect(s.visibleRouteShapes).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
-      expect(s.visibleStopTypes).toEqual([0, 1, 2, 3]);
+      expect(s.visibleRouteShapes).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 11, 12]);
+      expect(s.visibleStopTypes).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 11, 12]);
       expect(s.tileIndex).toBe(0);
       expect(s.theme).toBe('light');
       expect(s.doubleTapDrag).toBe('zoom-out');

@@ -7,6 +7,9 @@ describe('routeTypeColor', () => {
     [1, '#7b1fa2'],
     [2, '#1565c0'],
     [3, '#2e7d32'],
+    [4, '#006064'],
+    [11, '#4e342e'],
+    [12, '#37474f'],
   ])('returns the correct color for route_type %d', (routeType, expected) => {
     expect(routeTypeColor(routeType)).toBe(expected);
   });
