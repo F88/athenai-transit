@@ -53,6 +53,7 @@ import { FetchDataSourceV2 } from '../datasources/fetch-data-source-v2';
 import { createLogger } from '../lib/logger';
 import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
 import { selectServiceGroup } from '../domain/transit/select-service-group';
+import { APP_ROUTE_TYPES } from '../config/route-types';
 import {
   binarySearchFirstGte,
   computeActiveServiceIds,
@@ -60,6 +61,9 @@ import {
   formatDateKey,
   minutesToDate,
 } from '../domain/transit/calendar-utils';
+
+/** Set of valid AppRouteTypeValue integers. Values outside this set are normalized to -1. */
+const VALID_ROUTE_TYPE_VALUES = new Set<number>(APP_ROUTE_TYPES.map((rt) => rt.value));
 
 const logger = createLogger('AthenaiRepositoryV2');
 
@@ -257,7 +261,7 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
         route_short_names: {},
         route_long_name: r.l,
         route_long_names: translationsMap.route_names[r.i] ?? {},
-        route_type: r.t as AppRouteTypeValue,
+        route_type: (VALID_ROUTE_TYPE_VALUES.has(r.t) ? r.t : -1) as AppRouteTypeValue,
         route_color: r.c,
         route_text_color: r.tc,
         agency_id: r.ai,
@@ -398,7 +402,11 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     const firstAgencyId = source.data.agency.data[0]?.i;
     const agency = firstAgencyId ? agencyMap.get(firstAgencyId) : undefined;
     const sourceRouteTypes = [
-      ...new Set(source.data.routes.data.map((r) => r.t as AppRouteTypeValue)),
+      ...new Set(
+        source.data.routes.data.map((r) =>
+          VALID_ROUTE_TYPE_VALUES.has(r.t) ? (r.t as AppRouteTypeValue) : (-1 as AppRouteTypeValue),
+        ),
+      ),
     ].sort((a, b) => a - b);
 
     sourceMetas.push({
