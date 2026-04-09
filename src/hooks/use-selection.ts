@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { LatLng, RouteShape } from '../types/app/map';
-import type { RouteType, Stop } from '../types/app/transit';
+import type { AppRouteTypeValue, Stop } from '../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
 
 import { resolveFocusPosition } from '../domain/map/focus-position';
@@ -16,7 +16,7 @@ const logger = createLogger('Selection');
  */
 export interface UseSelectionParams {
   /** Route type lookup map (stopId -> routeTypes). */
-  routeTypeMap: Map<string, RouteType[]>;
+  routeTypeMap: Map<string, AppRouteTypeValue[]>;
   /** Departure contexts for nearby stops. */
   nearbyDepartures: StopWithContext[];
   /** All route shapes for route selection. */
@@ -117,7 +117,7 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
       setSelectionInfo({
         type: 'stop',
         stop,
-        routeTypes: routeTypeMap.get(stop.stop_id) ?? [3],
+        routeTypes: routeTypeMap.get(stop.stop_id) ?? [-1],
         routeIds: extractRouteIdsForStop(nearbyDepartures, stop.stop_id),
       });
       setDirectFocusPosition(null);
@@ -181,7 +181,7 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
       setSelectionInfo({
         type: 'stop',
         stop,
-        routeTypes: routeTypeMap.get(stop.stop_id) ?? [3],
+        routeTypes: routeTypeMap.get(stop.stop_id) ?? [-1],
         routeIds,
       });
     },

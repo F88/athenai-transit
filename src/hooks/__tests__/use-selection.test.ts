@@ -2,7 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { useSelection, type UseSelectionParams } from '../use-selection';
 import type { RouteShape } from '../../types/app/map';
-import type { RouteType } from '../../types/app/transit';
+import type { AppRouteTypeValue } from '../../types/app/transit';
 import { makeStop, makeStopMeta, makeRoute, makeStopWithContext } from '../../__tests__/helpers';
 
 function makeParams(overrides: Partial<UseSelectionParams> = {}): UseSelectionParams {
@@ -30,7 +30,7 @@ describe('useSelection', () => {
   describe('selectStop', () => {
     it('sets selectedStopId and selectionInfo', () => {
       const stop = makeStop('A');
-      const routeTypeMap = new Map<string, RouteType[]>([['A', [1]]]);
+      const routeTypeMap = new Map<string, AppRouteTypeValue[]>([['A', [1]]]);
       const { result } = renderHook(() => useSelection(makeParams({ routeTypeMap })));
 
       act(() => {
@@ -269,7 +269,7 @@ describe('useSelection', () => {
   });
 
   describe('selectStop edge cases', () => {
-    it('defaults routeTypes to [3] when stop is not in routeTypeMap', () => {
+    it('defaults routeTypes to [-1] when stop is not in routeTypeMap', () => {
       const stop = makeStop('UNKNOWN');
       const { result } = renderHook(() => useSelection(makeParams({ routeTypeMap: new Map() })));
 
@@ -278,7 +278,7 @@ describe('useSelection', () => {
       });
 
       if (result.current.selectionInfo?.type === 'stop') {
-        expect(result.current.selectionInfo.routeTypes).toEqual([3]);
+        expect(result.current.selectionInfo.routeTypes).toEqual([-1]);
       }
     });
 

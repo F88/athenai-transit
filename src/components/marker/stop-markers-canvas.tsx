@@ -233,7 +233,7 @@ export function StopMarkersCanvas({
           .setContent(
             buildSummaryHtml(
               selectedStop,
-              routeTypeMap.get(selectedStopId) ?? [3],
+              routeTypeMap.get(selectedStopId) ?? [-1],
               agenciesMap?.get(selectedStopId) ?? [],
               entries,
               now,
