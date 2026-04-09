@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.04.09]
+
 ### Added
 
 - Pipeline: VAG Freiburg (ドイツ・フライブルク市営交通) の GTFS データソースを追加 (#110)。
