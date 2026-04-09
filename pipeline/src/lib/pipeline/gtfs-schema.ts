@@ -37,15 +37,17 @@
  * composite), so tables referencing fare_product_id cannot declare
  * an FK in SQLite. Noted inline.
  *
- * ### 5. service_id FK omitted (calendar_dates-only feeds)
+ * ### 5. Core GTFS service_id FK omitted (calendar_dates-only feeds)
  *
  * GTFS core specifies calendar.txt and calendar_dates.txt as both
  * conditionally required — either one is sufficient. Some feeds use
  * calendar_dates-only (no calendar.txt rows for a given service_id).
  * Declaring trips.service_id → calendar(service_id) would flag these
- * feeds as violations even though they are spec-compliant. FK is
- * therefore omitted for service_id columns. Data quality for
- * service_id references is validated in the JSON build step instead.
+ * feeds as violations even though they are spec-compliant. That core
+ * GTFS FK is therefore omitted where noted inline; this is not a
+ * blanket rule for every service_id column in every table. Data
+ * quality for those core service_id references is validated in the
+ * JSON build step instead.
  */
 
 // ---------------------------------------------------------------------------
