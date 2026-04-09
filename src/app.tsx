@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
-import type { RouteType, Stop } from './types/app/transit';
+import type { AppRouteTypeValue, Stop } from './types/app/transit';
 import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
@@ -86,7 +86,9 @@ export default function App() {
   const { nearbyDepartures, isNearbyLoading } = useNearbyDepartures(radiusStops, dateTime, repo);
 
   // Build routeTypes lookup covering all visible stops (in-bound + nearby)
-  const [routeTypeMap, setRouteTypeMap] = useState<Map<string, RouteType[]>>(() => new Map());
+  const [routeTypeMap, setRouteTypeMap] = useState<Map<string, AppRouteTypeValue[]>>(
+    () => new Map(),
+  );
 
   useEffect(() => {
     const allStops = [
@@ -98,7 +100,7 @@ export default function App() {
     void Promise.all(
       uniqueIds.map(async (stopId) => {
         const result = await repo.getRouteTypesForStop(stopId);
-        const routeTypes = result.success ? result.data : [3 as const];
+        const routeTypes = result.success ? result.data : [-1 as const];
         return [stopId, routeTypes] as const;
       }),
     ).then((entries) => {
@@ -187,7 +189,7 @@ export default function App() {
       selectStop(stop);
       const meta = findStopWithMeta(stop.stop_id);
       if (meta) {
-        pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [3]);
+        pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [-1]);
       }
     },
     [selectStop, pushStop, findStopWithMeta, routeTypeMap],
@@ -200,7 +202,7 @@ export default function App() {
       selectStopById(stopId);
       const meta = findStopWithMeta(stopId);
       if (meta) {
-        pushStop(meta, routeTypeMap.get(stopId) ?? [3]);
+        pushStop(meta, routeTypeMap.get(stopId) ?? [-1]);
       }
     },
     [selectStopById, pushStop, findStopWithMeta, routeTypeMap],
@@ -229,7 +231,7 @@ export default function App() {
         const stop = result.data;
         logger.info(`Applying ?stop=${stopId}: ${stop.stop.stop_name}`);
         focusStop(stop.stop);
-        pushStop(stop, routeTypeMap.get(stopId) ?? [3]);
+        pushStop(stop, routeTypeMap.get(stopId) ?? [-1]);
         stopParamApplied.current = true;
       } else {
         logger.warn(`?stop=${stopId}: not found`);
@@ -298,7 +300,7 @@ export default function App() {
       const isBoardableOnServiceDay = depsResult.success
         ? depsResult.meta.isBoardableOnServiceDay
         : false;
-      const routeTypes = rtResult.success ? rtResult.data : [3 as const];
+      const routeTypes = rtResult.success ? rtResult.data : [-1 as const];
       return {
         stop: meta.stop,
         routeTypes,
@@ -397,7 +399,7 @@ export default function App() {
       logger.debug(`handleHistorySelect [History]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
       focusStop(stop);
       const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
-      pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [3]);
+      pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [-1]);
     },
     [focusStop, pushStop, findStopWithMeta, routeTypeMap],
   );
@@ -420,7 +422,7 @@ export default function App() {
             stopName: meta.stop.stop_name,
             stopLat: meta.stop.stop_lat,
             stopLon: meta.stop.stop_lon,
-            routeTypes: routeTypeMap.get(stopId) ?? [3],
+            routeTypes: routeTypeMap.get(stopId) ?? [-1],
           });
         }
       }
@@ -457,7 +459,7 @@ export default function App() {
       // Search results may not be in radiusStops/inBoundStops yet;
       // wrap as StopWithMeta without distance
       const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
-      pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [3]);
+      pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [-1]);
       setSearchModalOpen(false);
     },
     [focusStop, pushStop, findStopWithMeta, routeTypeMap],

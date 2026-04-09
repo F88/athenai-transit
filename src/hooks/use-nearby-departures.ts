@@ -68,7 +68,7 @@ export function useNearbyDepartures(
               const isBoardableOnServiceDay = depsResult.success
                 ? depsResult.meta.isBoardableOnServiceDay
                 : false;
-              const routeTypes = rtResult.success ? rtResult.data : [3 as const];
+              const routeTypes = rtResult.success ? rtResult.data : [-1 as const];
               // Resolve stats for the current dateTime's service group
               // instead of using the baked-in stats from enrichStopInsights.
               const stats = repo.resolveStopStats(stop.stop_id, sd);
