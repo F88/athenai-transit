@@ -1,4 +1,4 @@
-import type { Route, RouteType, Stop } from './transit';
+import type { Route, AppRouteTypeValue, Stop } from './transit';
 
 /** Map viewport bounds defined by north/south/east/west edges. */
 export interface Bounds {
@@ -30,7 +30,7 @@ export interface LatLng {
  */
 export interface EdgeMarker {
   stop: Stop;
-  routeTypes: RouteType[]; // GTFS route_type values (0=tram, 1=subway, 2=rail, 3=bus)
+  routeTypes: AppRouteTypeValue[]; // GTFS route_type values (0=tram, 1=subway, 2=rail, 3=bus)
   x: number; // screen-edge pixel x
   y: number; // screen-edge pixel y
   angle: number; // radians, for arrow rotation
@@ -41,7 +41,7 @@ export interface EdgeMarker {
 /** A route polyline for map rendering, with its display color. */
 export interface RouteShape {
   routeId: string;
-  routeType: RouteType; // GTFS route_type (0=tram, 1=subway, 2=rail, 3=bus) — always single for a route
+  routeType: AppRouteTypeValue; // GTFS route_type (0=tram, 1=subway, 2=rail, 3=bus) — always single for a route
   color: string; // hex with #, e.g. "#F1B34E"
   route: Route | null; // full Route object for display; null if routeMap lookup fails
   /**

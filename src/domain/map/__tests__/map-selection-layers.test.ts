@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { makeRoute, makeStop, makeStopMeta } from '../../../__tests__/helpers';
 import { buildMapSelectionLayers } from '../map-selection-layers';
 import type { RouteShape } from '../../../types/app/map';
-import type { RouteType } from '../../../types/app/transit';
+import type { AppRouteTypeValue } from '../../../types/app/transit';
 import type { SelectionInfo } from '../selection';
 
-function makeShape(routeId: string, routeType: RouteType): RouteShape {
+function makeShape(routeId: string, routeType: AppRouteTypeValue): RouteShape {
   return {
     routeId,
     routeType,

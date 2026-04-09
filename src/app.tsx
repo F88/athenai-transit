@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
-import type { RouteType, Stop } from './types/app/transit';
+import type { AppRouteTypeValue, Stop } from './types/app/transit';
 import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
@@ -17,7 +17,8 @@ import { useRouteStops } from './hooks/use-route-stops';
 import { PERF_PROFILES } from './config/perf-profiles';
 import { TILE_SOURCES } from './config/tile-sources';
 import { createInfoLevel } from './utils/create-info-level';
-import { toggleGroupInList, toggleInList } from './utils/list-toggle';
+import { toggleGroupInList } from './utils/list-toggle';
+import { routeTypeGroup } from './utils/route-type-category';
 import { createLogger } from './lib/logger';
 import {
   nextInfoLevel,
@@ -33,6 +34,7 @@ import { resolveLangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
 import { formatDateKey } from './domain/transit/calendar-utils';
+import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
 import {
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
@@ -85,7 +87,9 @@ export default function App() {
   const { nearbyDepartures, isNearbyLoading } = useNearbyDepartures(radiusStops, dateTime, repo);
 
   // Build routeTypes lookup covering all visible stops (in-bound + nearby)
-  const [routeTypeMap, setRouteTypeMap] = useState<Map<string, RouteType[]>>(() => new Map());
+  const [routeTypeMap, setRouteTypeMap] = useState<Map<string, AppRouteTypeValue[]>>(
+    () => new Map(),
+  );
 
   useEffect(() => {
     const allStops = [
@@ -97,7 +101,7 @@ export default function App() {
     void Promise.all(
       uniqueIds.map(async (stopId) => {
         const result = await repo.getRouteTypesForStop(stopId);
-        const routeTypes = result.success ? result.data : [3 as const];
+        const routeTypes = result.success ? result.data : [-1 as const];
         return [stopId, routeTypes] as const;
       }),
     ).then((entries) => {
@@ -186,7 +190,15 @@ export default function App() {
       selectStop(stop);
       const meta = findStopWithMeta(stop.stop_id);
       if (meta) {
-        pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [3]);
+        pushStop(
+          meta,
+          resolveStopRouteTypes({
+            stopId: stop.stop_id,
+            routeTypeMap,
+            routes: meta.routes,
+            unknownPolicy: 'include-unknown',
+          }),
+        );
       }
     },
     [selectStop, pushStop, findStopWithMeta, routeTypeMap],
@@ -199,7 +211,15 @@ export default function App() {
       selectStopById(stopId);
       const meta = findStopWithMeta(stopId);
       if (meta) {
-        pushStop(meta, routeTypeMap.get(stopId) ?? [3]);
+        pushStop(
+          meta,
+          resolveStopRouteTypes({
+            stopId,
+            routeTypeMap,
+            routes: meta.routes,
+            unknownPolicy: 'include-unknown',
+          }),
+        );
       }
     },
     [selectStopById, pushStop, findStopWithMeta, routeTypeMap],
@@ -228,7 +248,15 @@ export default function App() {
         const stop = result.data;
         logger.info(`Applying ?stop=${stopId}: ${stop.stop.stop_name}`);
         focusStop(stop.stop);
-        pushStop(stop, routeTypeMap.get(stopId) ?? [3]);
+        pushStop(
+          stop,
+          resolveStopRouteTypes({
+            stopId,
+            routeTypeMap,
+            routes: stop.routes,
+            unknownPolicy: 'include-unknown',
+          }),
+        );
         stopParamApplied.current = true;
       } else {
         logger.warn(`?stop=${stopId}: not found`);
@@ -297,12 +325,16 @@ export default function App() {
       const isBoardableOnServiceDay = depsResult.success
         ? depsResult.meta.isBoardableOnServiceDay
         : false;
-      const routeTypes = rtResult.success ? rtResult.data : [3 as const];
+      const serviceState = depsResult.success
+        ? depsResult.meta.serviceState
+        : ('no-service' as const);
+      const routeTypes = rtResult.success ? rtResult.data : [-1 as const];
       return {
         stop: meta.stop,
         routeTypes,
         departures,
         isBoardableOnServiceDay,
+        serviceState,
         agencies: meta.agencies,
         routes: meta.routes,
       };
@@ -392,13 +424,13 @@ export default function App() {
   // focus position directly from stop coordinates, ensuring the map pans
   // even when the stop is outside the current viewport.
   const handleHistorySelect = useCallback(
-    (stop: Stop) => {
+    (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleHistorySelect [History]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
       focusStop(stop);
       const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
-      pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [3]);
+      pushStop(meta, routeTypes);
     },
-    [focusStop, pushStop, findStopWithMeta, routeTypeMap],
+    [focusStop, pushStop, findStopWithMeta],
   );
 
   // Anchor stop_id set for efficient lookup in BottomSheet
@@ -406,7 +438,7 @@ export default function App() {
 
   // Toggle anchor (bookmark) status for a stop
   const handleToggleAnchor = useCallback(
-    (stopId: string) => {
+    (stopId: string, routeTypes: AppRouteTypeValue[]) => {
       if (isStopAnchor(stopId)) {
         logger.debug(`handleToggleAnchor: removing stopId=${stopId}`);
         void removeAnchor(stopId);
@@ -419,12 +451,12 @@ export default function App() {
             stopName: meta.stop.stop_name,
             stopLat: meta.stop.stop_lat,
             stopLon: meta.stop.stop_lon,
-            routeTypes: routeTypeMap.get(stopId) ?? [3],
+            routeTypes,
           });
         }
       }
     },
-    [isStopAnchor, removeAnchor, addAnchor, findStopWithMeta, routeTypeMap],
+    [isStopAnchor, removeAnchor, addAnchor, findStopWithMeta],
   );
 
   // Select + pan to a stop from Portal dropdown
@@ -456,7 +488,15 @@ export default function App() {
       // Search results may not be in radiusStops/inBoundStops yet;
       // wrap as StopWithMeta without distance
       const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
-      pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [3]);
+      pushStop(
+        meta,
+        resolveStopRouteTypes({
+          stopId: stop.stop_id,
+          routeTypeMap,
+          routes: meta.routes,
+          unknownPolicy: 'include-unknown',
+        }),
+      );
       setSearchModalOpen(false);
     },
     [focusStop, pushStop, findStopWithMeta, routeTypeMap],
@@ -476,7 +516,10 @@ export default function App() {
 
   const handleToggleStopType = useCallback(
     (rt: number) => {
-      updateSetting('visibleStopTypes', toggleInList(settings.visibleStopTypes, rt));
+      updateSetting(
+        'visibleStopTypes',
+        toggleGroupInList(settings.visibleStopTypes, routeTypeGroup(rt)),
+      );
     },
     [settings.visibleStopTypes, updateSetting],
   );
@@ -524,13 +567,13 @@ export default function App() {
   );
 
   const handleToggleBusShapes = useCallback(() => {
-    updateSetting('visibleRouteShapes', toggleInList(settings.visibleRouteShapes, 3));
+    updateSetting('visibleRouteShapes', toggleGroupInList(settings.visibleRouteShapes, [3, 11]));
   }, [settings.visibleRouteShapes, updateSetting]);
 
   const handleToggleNonBusShapes = useCallback(() => {
     updateSetting(
       'visibleRouteShapes',
-      toggleGroupInList(settings.visibleRouteShapes, [0, 1, 2, 4, 5, 6, 7]),
+      toggleGroupInList(settings.visibleRouteShapes, [-1, 0, 1, 2, 4, 5, 6, 7, 12]),
     );
   }, [settings.visibleRouteShapes, updateSetting]);
 
@@ -541,7 +584,18 @@ export default function App() {
   }, [settings.infoLevel, updateSetting]);
 
   const handleCycleTile = useCallback(() => {
-    updateSetting('tileIndex', nextTileIndex(settings.tileIndex, TILE_SOURCES.length));
+    const prevTileIndex = settings.tileIndex;
+    const nextTile = nextTileIndex(prevTileIndex, TILE_SOURCES.length);
+    const prevTileLabel =
+      prevTileIndex == null
+        ? 'none'
+        : (TILE_SOURCES[prevTileIndex]?.label ?? `unknown(${String(prevTileIndex)})`);
+    const nextTileLabel =
+      nextTile == null ? 'none' : (TILE_SOURCES[nextTile]?.label ?? `unknown(${String(nextTile)})`);
+    logger.debug(
+      `tile: ${prevTileLabel} (${String(prevTileIndex)}) -> ${nextTileLabel} (${String(nextTile)})`,
+    );
+    updateSetting('tileIndex', nextTile);
   }, [settings.tileIndex, updateSetting]);
 
   const handleToggleDarkMode = useCallback(() => {

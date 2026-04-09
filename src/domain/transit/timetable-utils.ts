@@ -1,12 +1,34 @@
 /**
  * @module timetable-utils
  *
- * Domain logic for {@link TimetableEntry}.
- * Pure functions that derive boarding status, stop role, and
- * schedule characteristics from timetable data.
+ * Domain logic for {@link TimetableEntry} and timetable query metadata.
+ * Pure functions that derive boarding status, stop role, schedule
+ * characteristics, and stop-level service state from timetable data.
  */
 
 import type { TimetableEntry } from '../../types/app/transit-composed';
+import type { StopServiceState, StopServiceStateInput } from '../../types/app/transit';
+
+/**
+ * Derive the stop service state from service day signals.
+ *
+ * Signals are passed as a narrow structural object (see
+ * {@link StopServiceStateInput}) rather than the full `TimetableQueryMeta`,
+ * which allows the repository layer to compute the state during meta
+ * construction without a circular type dependency.
+ *
+ * @param input - Minimal service day signals.
+ * @returns The service state of the stop for that service day.
+ */
+export function getStopServiceState(input: StopServiceStateInput): StopServiceState {
+  if (input.totalEntries === 0) {
+    return 'no-service';
+  }
+  if (!input.isBoardableOnServiceDay) {
+    return 'drop-off-only';
+  }
+  return 'boardable';
+}
 
 /**
  * Whether this stop is drop-off only (passengers cannot board).

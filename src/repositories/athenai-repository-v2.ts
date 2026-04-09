@@ -27,7 +27,7 @@ import type {
   TimetableGroupV2Json,
 } from '../types/data/transit-v2-json';
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
-import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
+import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
 import type {
   ContextualTimetableEntry,
   RouteDirection,
@@ -44,7 +44,7 @@ import type {
   TimetableResult,
   UpcomingTimetableResult,
 } from '../types/app/repository';
-import { isDropOffOnly } from '../domain/transit/timetable-utils';
+import { getStopServiceState, isDropOffOnly } from '../domain/transit/timetable-utils';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
 import type { TransitDataSourceV2 } from '../datasources/transit-data-source-v2';
@@ -53,6 +53,7 @@ import { FetchDataSourceV2 } from '../datasources/fetch-data-source-v2';
 import { createLogger } from '../lib/logger';
 import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
 import { selectServiceGroup } from '../domain/transit/select-service-group';
+import { APP_ROUTE_TYPES } from '../config/route-types';
 import {
   binarySearchFirstGte,
   computeActiveServiceIds,
@@ -60,6 +61,9 @@ import {
   formatDateKey,
   minutesToDate,
 } from '../domain/transit/calendar-utils';
+
+/** Set of valid AppRouteTypeValue integers. Values outside this set are normalized to -1. */
+const VALID_ROUTE_TYPE_VALUES = new Set<number>(APP_ROUTE_TYPES.map((rt) => rt.value));
 
 const logger = createLogger('AthenaiRepositoryV2');
 
@@ -111,7 +115,7 @@ export interface MergedDataV2 {
   timetable: Record<string, TimetableGroupV2Json[]>;
   calendarServices: CalendarServiceJson[];
   calendarExceptions: Map<string, CalendarExceptionJson[]>;
-  stopRouteTypeMap: Map<string, RouteType[]>;
+  stopRouteTypeMap: Map<string, AppRouteTypeValue[]>;
   translationsMap: TranslationsJson;
   headsignTranslations: HeadsignTranslationsByPrefix;
   lookup: LookupV2Json;
@@ -257,7 +261,7 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
         route_short_names: {},
         route_long_name: r.l,
         route_long_names: translationsMap.route_names[r.i] ?? {},
-        route_type: r.t as RouteType,
+        route_type: (VALID_ROUTE_TYPE_VALUES.has(r.t) ? r.t : -1) as AppRouteTypeValue,
         route_color: r.c,
         route_text_color: r.tc,
         agency_id: r.ai,
@@ -326,12 +330,12 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
   }
 
   // --- Derived maps (via tripPattern FK) ---
-  const stopRouteTypeMap = new Map<string, RouteType[]>();
+  const stopRouteTypeMap = new Map<string, AppRouteTypeValue[]>();
   const stopAgenciesMap = new Map<string, Agency[]>();
   const stopRoutesMap = new Map<string, Route[]>();
 
   for (const [stopId, groups] of Object.entries(timetable)) {
-    const types = new Set<RouteType>();
+    const types = new Set<AppRouteTypeValue>();
     const agencyIds = new Set<string>();
     const uniqueRoutes = new Map<string, Route>();
 
@@ -398,7 +402,11 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     const firstAgencyId = source.data.agency.data[0]?.i;
     const agency = firstAgencyId ? agencyMap.get(firstAgencyId) : undefined;
     const sourceRouteTypes = [
-      ...new Set(source.data.routes.data.map((r) => r.t as RouteType)),
+      ...new Set(
+        source.data.routes.data.map((r) =>
+          VALID_ROUTE_TYPE_VALUES.has(r.t) ? (r.t as AppRouteTypeValue) : (-1 as AppRouteTypeValue),
+        ),
+      ),
     ].sort((a, b) => a - b);
 
     sourceMetas.push({
@@ -583,7 +591,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private agencyMap: Map<string, Agency>;
   private resolvedPatterns: Map<string, ResolvedPattern>;
   private tripPatterns: Map<string, TripPattern>;
-  private stopRouteTypeMap: Map<string, RouteType[]>;
+  private stopRouteTypeMap: Map<string, AppRouteTypeValue[]>;
   private calendarServices: CalendarServiceJson[];
   private calendarExceptions: Map<string, CalendarExceptionJson[]>;
   private timetable: Record<string, TimetableGroupV2Json[]>;
@@ -1084,6 +1092,10 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const meta: TimetableQueryMeta = {
       isBoardableOnServiceDay: hasBoardable,
       totalEntries: fullDayCount,
+      serviceState: getStopServiceState({
+        isBoardableOnServiceDay: hasBoardable,
+        totalEntries: fullDayCount,
+      }),
     };
     return Promise.resolve({ success: true, data: result, truncated, meta });
   }
@@ -1091,7 +1103,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   /** {@inheritDoc TransitRepository.getFullDayTimetableEntries} */
   getFullDayTimetableEntries(stopId: string, dateTime: Date): Promise<TimetableResult> {
     const t0 = performance.now();
-    const emptyMeta: TimetableQueryMeta = { isBoardableOnServiceDay: false, totalEntries: 0 };
+    const emptyMeta: TimetableQueryMeta = {
+      isBoardableOnServiceDay: false,
+      totalEntries: 0,
+      serviceState: 'no-service',
+    };
     const timetableGroups = this.timetable[stopId];
     if (!timetableGroups) {
       return Promise.resolve({ success: true, data: [], truncated: false, meta: emptyMeta });
@@ -1159,15 +1175,20 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     logger.debug(
       `getFullDayTimetableEntries: ${stopId} → ${entries.length} entries in ${elapsed}ms`,
     );
+    const isBoardableOnServiceDay = entries.some((e) => !isDropOffOnly(e));
     const meta: TimetableQueryMeta = {
-      isBoardableOnServiceDay: entries.some((e) => !isDropOffOnly(e)),
+      isBoardableOnServiceDay,
       totalEntries: entries.length,
+      serviceState: getStopServiceState({
+        isBoardableOnServiceDay,
+        totalEntries: entries.length,
+      }),
     };
     return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }
 
   /** {@inheritDoc TransitRepository.getRouteTypesForStop} */
-  getRouteTypesForStop(stopId: string): Promise<Result<RouteType[]>> {
+  getRouteTypesForStop(stopId: string): Promise<Result<AppRouteTypeValue[]>> {
     const routeTypes = this.stopRouteTypeMap.get(stopId);
     if (routeTypes === undefined) {
       logger.verbose(`getRouteTypesForStop: ${stopId} → not found`);

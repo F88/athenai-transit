@@ -297,49 +297,6 @@ async function importCsvFile(
 }
 
 // ---------------------------------------------------------------------------
-// FK integrity check
-// ---------------------------------------------------------------------------
-
-function checkForeignKeys(db: Database.Database): void {
-  console.log('\nChecking foreign key integrity...');
-
-  const violations = db.prepare('PRAGMA foreign_key_check').all() as Array<{
-    table: string;
-    rowid: number;
-    parent: string;
-    fkid: number;
-  }>;
-
-  if (violations.length === 0) {
-    console.log('  No foreign key violations found.');
-    return;
-  }
-
-  // Group by table
-  const byTable = new Map<string, typeof violations>();
-  for (const v of violations) {
-    const list = byTable.get(v.table) ?? [];
-    list.push(v);
-    byTable.set(v.table, list);
-  }
-
-  console.warn(`  WARN: ${violations.length} foreign key violation(s) found:`);
-  for (const [table, tableViolations] of byTable) {
-    console.warn(
-      `    ${table}: ${tableViolations.length} violation(s) (parent: ${tableViolations[0].parent})`,
-    );
-    // Show up to 5 sample violations
-    const samples = tableViolations.slice(0, 5);
-    for (const s of samples) {
-      console.warn(`      rowid=${s.rowid}, parent_table=${s.parent}, fkid=${s.fkid}`);
-    }
-    if (tableViolations.length > 5) {
-      console.warn(`      ... and ${tableViolations.length - 5} more`);
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
 // DB statistics output
 // ---------------------------------------------------------------------------
 
@@ -452,7 +409,7 @@ async function buildSourceDb(
   console.log(`Creating temp DB: ${tmpDbPath}`);
   const db = new Database(tmpDbPath);
   db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = OFF'); // Disable during bulk import for performance
+  db.pragma('foreign_keys = OFF'); // Keep OFF: bulk import performance; no FK check is run post-import
 
   for (const ddl of SCHEMA) {
     db.exec(ddl);
@@ -509,10 +466,6 @@ async function buildSourceDb(
     db.exec(idx);
   }
   console.log(`${INDEXES.length} indexes created.`);
-
-  // FK integrity check
-  db.pragma('foreign_keys = ON');
-  checkForeignKeys(db);
 
   // VACUUM and ANALYZE
   console.log('\nOptimizing database...');

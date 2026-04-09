@@ -1,4 +1,4 @@
-import type { RouteType } from '../../types/app/transit';
+import type { AppRouteTypeValue } from '../../types/app/transit';
 import type { StopWithMeta } from '../../types/app/transit-composed';
 
 /** Maximum number of anchor entries. */
@@ -23,7 +23,7 @@ export interface AnchorEntry {
   /** Longitude snapshot. Refreshed from GTFS data on app load. */
   stopLon: number;
   /** GTFS route_type values for emoji display. Refreshed from GTFS data on app load. */
-  routeTypes: RouteType[];
+  routeTypes: AppRouteTypeValue[];
   /** Epoch ms when the anchor was created. Immutable. */
   createdAt: number;
   /**

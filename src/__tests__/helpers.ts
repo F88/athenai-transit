@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { Stop, Route, RouteType } from '../types/app/transit';
+import type { Stop, Route, AppRouteTypeValue } from '../types/app/transit';
 import type { StopWithMeta, StopWithContext } from '../types/app/transit-composed';
 import type { TransitRepository } from '../repositories/transit-repository';
 
@@ -42,7 +42,7 @@ export function makeStopMeta(stop: Stop | string, distance = 100): StopWithMeta 
  * @param routeType - GTFS route_type (default 3 = bus)
  * @returns A Route object with sensible defaults
  */
-export function makeRoute(id: string, routeType: RouteType = 3): Route {
+export function makeRoute(id: string, routeType: AppRouteTypeValue = 3): Route {
   return {
     route_id: id,
     route_short_name: `R${id}`,
@@ -67,7 +67,7 @@ export function makeRoute(id: string, routeType: RouteType = 3): Route {
 export function makeStopWithContext(
   stop: Stop,
   routeIds: string[],
-  routeTypes: RouteType[] = [3],
+  routeTypes: AppRouteTypeValue[] = [3],
 ): StopWithContext {
   // Create Route objects once and share references between departures and routes,
   // mirroring production behavior where both reference the same routeMap entries.
@@ -84,6 +84,7 @@ export function makeStopWithContext(
       serviceDate: new Date('2026-01-01'),
     })),
     isBoardableOnServiceDay: true,
+    serviceState: 'boardable',
     agencies: [],
     routes,
   };
@@ -109,7 +110,7 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
       success: true,
       data: [],
       truncated: false,
-      meta: { isBoardableOnServiceDay: false, totalEntries: 0 },
+      meta: { isBoardableOnServiceDay: false, totalEntries: 0, serviceState: 'no-service' },
     }),
     getRouteTypesForStop: vi.fn().mockResolvedValue({
       success: true,
@@ -129,7 +130,7 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
       success: true,
       data: [],
       truncated: false,
-      meta: { isBoardableOnServiceDay: false, totalEntries: 0 },
+      meta: { isBoardableOnServiceDay: false, totalEntries: 0, serviceState: 'no-service' },
     }),
     getAllStops: vi.fn().mockResolvedValue({
       success: true,

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { RouteType } from '../types/app/transit';
+import type { AppRouteTypeValue } from '../types/app/transit';
 import {
   agencyGx,
   agencyOretetsu,
@@ -22,7 +22,7 @@ const meta = {
   component: StopSummary,
   args: {
     stop: baseStop,
-    routeTypes: [3] as RouteType[],
+    routeTypes: [3] as AppRouteTypeValue[],
     agencies: [agencyTobus],
     infoLevel: 'normal',
     dataLang: ['ja'],
@@ -58,15 +58,15 @@ export const DropOffOnly: Story = {
 // --- Route types ---
 
 export const Bus: Story = {
-  args: { routeTypes: [3] as RouteType[] },
+  args: { routeTypes: [3] as AppRouteTypeValue[] },
 };
 
 export const Tram: Story = {
-  args: { routeTypes: [0] as RouteType[] },
+  args: { routeTypes: [0] as AppRouteTypeValue[] },
 };
 
 export const MultiType: Story = {
-  args: { routeTypes: [0, 3] as RouteType[], agencies: [agencyGx, agencyOretetsu] },
+  args: { routeTypes: [0, 3] as AppRouteTypeValue[], agencies: [agencyGx, agencyOretetsu] },
 };
 
 // --- Badge sizes ---
@@ -76,7 +76,7 @@ export const CompactBadges: Story = {
     infoLevel: 'detailed',
     agencies: [agencyGx, agencyOretetsu],
     routes: [busRoute, tramRoute],
-    routeTypes: [0, 3] as RouteType[],
+    routeTypes: [0, 3] as AppRouteTypeValue[],
     agencyBadgeSize: 'xs',
     routeBadgeSize: 'xs',
   },
@@ -87,7 +87,7 @@ export const LargeBadges: Story = {
     infoLevel: 'detailed',
     agencies: [agencyGx, agencyOretetsu],
     routes: [busRoute, tramRoute],
-    routeTypes: [0, 3] as RouteType[],
+    routeTypes: [0, 3] as AppRouteTypeValue[],
     agencyBadgeSize: 'default',
     routeBadgeSize: 'default',
   },
@@ -98,7 +98,7 @@ export const BadgeSizeComparison: Story = {
     infoLevel: 'detailed',
     agencies: [agencyGx, agencyOretetsu],
     routes: [busRoute, tramRoute],
-    routeTypes: [0, 3] as RouteType[],
+    routeTypes: [0, 3] as AppRouteTypeValue[],
   },
   render: (args) => (
     <div className="flex flex-col gap-3">
@@ -160,7 +160,7 @@ export const LongNameDropOff: Story = {
 export const LongNameMultiType: Story = {
   args: {
     stop: longNameStop,
-    routeTypes: [0, 3] as RouteType[],
+    routeTypes: [0, 3] as AppRouteTypeValue[],
     agencies: [agencyGx, agencyOretetsu],
   },
 };
@@ -172,7 +172,7 @@ export const WithDistanceBadge: Story = {
     stop: longNameStop,
     infoLevel: 'detailed',
     routes: [busRoute, tramRoute],
-    routeTypes: [0, 3] as RouteType[],
+    routeTypes: [0, 3] as AppRouteTypeValue[],
     agencies: [agencyGx, agencyOretetsu],
   },
   render: (args) => (
@@ -192,7 +192,7 @@ export const WithDistanceBadge: Story = {
 export const LangComparison: Story = {
   args: {
     stop: longNameStop,
-    routeTypes: [0, 3] as RouteType[],
+    routeTypes: [0, 3] as AppRouteTypeValue[],
     agencies: [agencyTobus, agencyOretetsu],
     routes: [busRoute, tramRoute],
     infoLevel: 'detailed',
@@ -212,7 +212,7 @@ export const LangComparison: Story = {
 /** Kitchen sink: long name, multi-type, all agencies, all route badges, drop-off-only. */
 const kitchenSinkArgs = {
   stop: longNameStop,
-  routeTypes: [0, 3] as RouteType[],
+  routeTypes: [0, 3] as AppRouteTypeValue[],
   agencies: allAgencies,
   isDropOffOnly: true,
   routes: allRoutes,

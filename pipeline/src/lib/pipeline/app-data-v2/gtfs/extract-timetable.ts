@@ -6,6 +6,11 @@
  * 2. Assigns deterministic pattern IDs: `{prefix}:p{1-indexed}`
  * 3. Builds per-stop timetable groups referencing patterns
  * 4. Includes arrival_time, pickup_type, drop_off_type
+ *
+ * Stops are not filtered out of the bundle when they lack timetable
+ * coverage. This extractor only builds the timetable section, so a stop
+ * with no usable departure records simply does not get a timetable key.
+ * The stop record itself is still emitted from stops.txt by design.
  */
 
 import type Database from 'better-sqlite3';

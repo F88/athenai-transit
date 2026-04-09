@@ -3,9 +3,10 @@ import { useMap } from 'react-leaflet';
 import { renderToStaticMarkup } from 'react-dom/server';
 import L from 'leaflet';
 import type { InfoLevel } from '../../types/app/settings';
-import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { ContextualTimetableEntry, StopWithContext } from '../../types/app/transit-composed';
 import { primaryRouteType } from '../../domain/transit/route-type-priority';
+import { resolveStopRouteTypes } from '../../domain/transit/resolve-stop-route-types';
 import { getRouteTypeColor } from '../../lib/leaflet-helpers';
 import { createLogger } from '../../lib/logger';
 
@@ -24,7 +25,7 @@ const tooltipBoundMarkers = new WeakSet<L.CircleMarker>();
 interface StopMarkersCanvasProps {
   stops: Stop[];
   selectedStopId: string | null;
-  routeTypeMap: Map<string, RouteType[]>;
+  routeTypeMap: Map<string, AppRouteTypeValue[]>;
   nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
   time?: Date;
   infoLevel: InfoLevel;
@@ -61,7 +62,7 @@ interface StopMarkersCanvasProps {
  */
 function buildSummaryHtml(
   stop: Stop,
-  routeTypes: RouteType[],
+  routeTypes: AppRouteTypeValue[],
   agencies: Agency[],
   entries: ContextualTimetableEntry[] | undefined,
   now: Date | undefined,
@@ -233,7 +234,12 @@ export function StopMarkersCanvas({
           .setContent(
             buildSummaryHtml(
               selectedStop,
-              routeTypeMap.get(selectedStopId) ?? [3],
+              resolveStopRouteTypes({
+                stopId: selectedStopId,
+                routeTypeMap,
+                routes: null,
+                unknownPolicy: 'include-unknown',
+              }),
               agenciesMap?.get(selectedStopId) ?? [],
               entries,
               now,
@@ -283,7 +289,7 @@ export function StopMarkersCanvas({
 
 /** Ref holding the latest tooltip data, refreshed after each render. */
 type TooltipDataRef = React.RefObject<{
-  routeTypeMap: Map<string, RouteType[]>;
+  routeTypeMap: Map<string, AppRouteTypeValue[]>;
   nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
   now?: Date;
   infoLevel: InfoLevel;
@@ -297,7 +303,7 @@ function createMarker(
   stop: Stop,
   opts: {
     selectedStopId: string | null;
-    routeTypeMap: Map<string, RouteType[]>;
+    routeTypeMap: Map<string, AppRouteTypeValue[]>;
     renderer: L.Canvas;
     showTooltip: boolean;
     disableDimming?: boolean;
@@ -309,7 +315,12 @@ function createMarker(
   },
 ): L.CircleMarker {
   const isSelected = stop.stop_id === opts.selectedStopId;
-  const routeTypes = opts.routeTypeMap.get(stop.stop_id) ?? [3 as RouteType];
+  const routeTypes = resolveStopRouteTypes({
+    stopId: stop.stop_id,
+    routeTypeMap: opts.routeTypeMap,
+    routes: null,
+    unknownPolicy: 'include-unknown',
+  });
   const color = getRouteTypeColor(primaryRouteType(routeTypes));
   const dimmed = !opts.disableDimming && !!opts.selectedStopId && !isSelected;
 
@@ -352,14 +363,19 @@ function updateMarkerStyle(
   stop: Stop,
   opts: {
     selectedStopId: string | null;
-    routeTypeMap: Map<string, RouteType[]>;
+    routeTypeMap: Map<string, AppRouteTypeValue[]>;
     showTooltip: boolean;
     disableDimming?: boolean;
     tooltipDataRef: TooltipDataRef;
   },
 ): void {
   const isSelected = stop.stop_id === opts.selectedStopId;
-  const routeTypes = opts.routeTypeMap.get(stop.stop_id) ?? [3 as RouteType];
+  const routeTypes = resolveStopRouteTypes({
+    stopId: stop.stop_id,
+    routeTypeMap: opts.routeTypeMap,
+    routes: null,
+    unknownPolicy: 'include-unknown',
+  });
   const color = getRouteTypeColor(primaryRouteType(routeTypes));
   const dimmed = !opts.disableDimming && !!opts.selectedStopId && !isSelected;
 
@@ -422,7 +438,12 @@ function bindTooltipLazyListener(
     if (data.selectedStopId === stop.stop_id) {
       return;
     }
-    const routeTypes = data.routeTypeMap.get(stop.stop_id) ?? [3 as RouteType];
+    const routeTypes = resolveStopRouteTypes({
+      stopId: stop.stop_id,
+      routeTypeMap: data.routeTypeMap,
+      routes: null,
+      unknownPolicy: 'include-unknown',
+    });
     marker.bindTooltip(
       buildSummaryHtml(
         stop,

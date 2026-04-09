@@ -86,19 +86,19 @@
 @layer components {
   /* Simple icons (route-type indicators) */
   .stop-icon-bus {
-    @apply flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#2e7d32] text-[11px] font-bold text-white shadow-[0_1px_4px_rgba(0,0,0,0.3)];
+    @apply flex h-6 w-6 items-center justify-center rounded-full border-2 border-white text-[11px] font-bold text-white shadow-[0_1px_4px_rgba(0,0,0,0.3)];
   }
   .stop-icon-station {
-    @apply flex h-6 w-6 items-center justify-center rounded border-2 border-white bg-[#1565c0] text-[11px] font-bold text-white shadow-[0_1px_4px_rgba(0,0,0,0.3)];
+    @apply flex h-6 w-6 items-center justify-center rounded border-2 border-white text-[11px] font-bold text-white shadow-[0_1px_4px_rgba(0,0,0,0.3)];
   }
   .stop-icon-tram {
-    @apply flex h-6 w-6 rotate-45 items-center justify-center rounded border-2 border-white bg-[#f57f17] text-[11px] font-bold text-white shadow-[0_1px_4px_rgba(0,0,0,0.3)];
+    @apply flex h-6 w-6 rotate-45 items-center justify-center rounded border-2 border-white text-[11px] font-bold text-white shadow-[0_1px_4px_rgba(0,0,0,0.3)];
   }
   .stop-icon-tram-label {
     @apply block -rotate-45;
   }
   .stop-icon-subway {
-    @apply flex h-6 w-6 items-center justify-center rounded-lg border-2 border-white bg-[#7b1fa2] text-[11px] font-bold text-white shadow-[0_1px_4px_rgba(0,0,0,0.3)];
+    @apply flex h-6 w-6 items-center justify-center rounded-lg border-2 border-white text-[11px] font-bold text-white shadow-[0_1px_4px_rgba(0,0,0,0.3)];
   }
   .stop-icon-selected {
     @apply h-9 w-9 border-3 border-[#ffd600] text-sm shadow-[0_0_8px_rgba(255,214,0,0.6),0_2px_6px_rgba(0,0,0,0.3)];
@@ -241,7 +241,7 @@
   }
 
   .markdown-alert p {
-    @apply !mb-0;
+    @apply mb-0!;
   }
 
   .markdown-alert-title {

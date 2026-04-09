@@ -16,7 +16,7 @@
  */
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
-import type { Agency, Route, RouteType, Stop } from '../types/app/transit';
+import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
 import type {
   ContextualTimetableEntry,
   SourceMeta,
@@ -31,7 +31,7 @@ import type {
   TimetableResult,
   UpcomingTimetableResult,
 } from '../types/app/repository';
-import { isDropOffOnly } from '../domain/transit/timetable-utils';
+import { getStopServiceState, isDropOffOnly } from '../domain/transit/timetable-utils';
 import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
@@ -924,12 +924,12 @@ function getPatternPosition(
  */
 const { STOP_ROUTE_TYPES, STOP_AGENCIES, STOP_ROUTES_RESOLVED } = (() => {
   const routeMap = new Map(ROUTES.map((r) => [r.route_id, r]));
-  const routeTypes = new Map<string, RouteType[]>();
+  const routeTypes = new Map<string, AppRouteTypeValue[]>();
   const agencies = new Map<string, Agency[]>();
   const routesResolved = new Map<string, Route[]>();
 
   for (const [stopId, entries] of Object.entries(STOP_ROUTES)) {
-    const types = new Set<RouteType>();
+    const types = new Set<AppRouteTypeValue>();
     const agencyIds = new Set<string>();
     const uniqueRoutes = new Map<string, Route>();
 
@@ -1227,12 +1227,16 @@ export class MockRepository implements TransitRepository {
     const meta: TimetableQueryMeta = {
       isBoardableOnServiceDay: hasBoardable,
       totalEntries: fullDayCount,
+      serviceState: getStopServiceState({
+        isBoardableOnServiceDay: hasBoardable,
+        totalEntries: fullDayCount,
+      }),
     };
     return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }
 
   /** {@inheritDoc TransitRepository.getRouteTypesForStop} */
-  getRouteTypesForStop(stopId: string): Promise<Result<RouteType[]>> {
+  getRouteTypesForStop(stopId: string): Promise<Result<AppRouteTypeValue[]>> {
     const types = STOP_ROUTE_TYPES.get(stopId);
     if (!types) {
       return Promise.resolve({ success: false, error: `No route types for stop: ${stopId}` });
@@ -1311,9 +1315,14 @@ export class MockRepository implements TransitRepository {
     }
 
     entries.sort((a, b) => a.schedule.departureMinutes - b.schedule.departureMinutes);
+    const isBoardableOnServiceDay = entries.some((e) => !isDropOffOnly(e));
     const meta: TimetableQueryMeta = {
-      isBoardableOnServiceDay: entries.some((e) => !isDropOffOnly(e)),
+      isBoardableOnServiceDay,
       totalEntries: entries.length,
+      serviceState: getStopServiceState({
+        isBoardableOnServiceDay,
+        totalEntries: entries.length,
+      }),
     };
     return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }

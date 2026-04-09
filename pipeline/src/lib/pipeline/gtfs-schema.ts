@@ -29,14 +29,25 @@
  *
  * Some FK relationships reference tables created later in the
  * dependency chain. SQLite accepts these declarations when
- * foreign_keys is OFF (our import mode), so we declare them to
- * benefit from PRAGMA foreign_key_check after import completes.
+ * foreign_keys is OFF (our import mode).
  *
  * ### 4. FK omissions due to composite/missing unique keys
  *
  * fare_products has no single-column unique key (its spec PK is
  * composite), so tables referencing fare_product_id cannot declare
  * an FK in SQLite. Noted inline.
+ *
+ * ### 5. Core GTFS service_id FK omitted (calendar_dates-only feeds)
+ *
+ * GTFS core specifies calendar.txt and calendar_dates.txt as both
+ * conditionally required — either one is sufficient. Some feeds use
+ * calendar_dates-only (no calendar.txt rows for a given service_id).
+ * Declaring trips.service_id → calendar(service_id) would flag these
+ * feeds as violations even though they are spec-compliant. That core
+ * GTFS FK is therefore omitted where noted inline; this is not a
+ * blanket rule for every service_id column in every table. Data
+ * quality for those core service_id references is validated in the
+ * JSON build step instead.
  */
 
 // ---------------------------------------------------------------------------
@@ -90,8 +101,8 @@ export const SCHEMA: string[] = [
     service_id     TEXT NOT NULL,
     date           TEXT NOT NULL,
     exception_type INTEGER NOT NULL,
-    PRIMARY KEY (service_id, date),
-    FOREIGN KEY (service_id) REFERENCES calendar(service_id)
+    PRIMARY KEY (service_id, date)
+    -- no FK: GTFS core allows calendar_dates-only service_ids (calendar.txt is conditionally required)
   )`,
 
   // levels.txt
@@ -165,8 +176,8 @@ export const SCHEMA: string[] = [
     jp_trip_desc_symbol   TEXT,
     jp_office_id          TEXT,
     jp_pattern_id         TEXT,
-    FOREIGN KEY (route_id) REFERENCES routes(route_id),
-    FOREIGN KEY (service_id) REFERENCES calendar(service_id)
+    FOREIGN KEY (route_id) REFERENCES routes(route_id)
+    -- no FK on service_id: GTFS core allows calendar_dates-only service_ids
   )`,
 
   // stop_times.txt
@@ -399,8 +410,8 @@ export const SCHEMA: string[] = [
     drop_off_message           TEXT,
     phone_number               TEXT,
     info_url                   TEXT,
-    booking_url                TEXT,
-    FOREIGN KEY (prior_notice_service_id) REFERENCES calendar(service_id)
+    booking_url                TEXT
+    -- no FK on prior_notice_service_id: GTFS core allows calendar_dates-only service_ids
   )`,
 
   // =========================================================================

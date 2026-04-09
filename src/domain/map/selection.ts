@@ -1,4 +1,4 @@
-import type { Route, RouteType, Stop } from '../../types/app/transit';
+import type { Route, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type {
   ContextualTimetableEntry,
   StopWithContext,
@@ -9,7 +9,7 @@ import type {
 export interface StopSelectionInfo {
   type: 'stop';
   stop: Stop;
-  routeTypes: RouteType[];
+  routeTypes: AppRouteTypeValue[];
   routeIds: Set<string>;
 }
 
@@ -17,7 +17,7 @@ export interface StopSelectionInfo {
 export interface RouteSelectionInfo {
   type: 'route';
   route: Route;
-  routeType: RouteType;
+  routeType: AppRouteTypeValue;
   routeIds: Set<string>;
 }
 

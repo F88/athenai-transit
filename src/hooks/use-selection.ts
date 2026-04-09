@@ -1,11 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { LatLng, RouteShape } from '../types/app/map';
-import type { RouteType, Stop } from '../types/app/transit';
+import type { AppRouteTypeValue, Stop } from '../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
 
 import { resolveFocusPosition } from '../domain/map/focus-position';
 import type { SelectionInfo } from '../domain/map/selection';
 import { extractRouteIdsForStop } from '../domain/map/selection';
+import { resolveStopRouteTypes } from '../domain/transit/resolve-stop-route-types';
 import { useStableLatLng } from './use-stable-lat-lng';
 import { createLogger } from '../lib/logger';
 
@@ -16,7 +17,7 @@ const logger = createLogger('Selection');
  */
 export interface UseSelectionParams {
   /** Route type lookup map (stopId -> routeTypes). */
-  routeTypeMap: Map<string, RouteType[]>;
+  routeTypeMap: Map<string, AppRouteTypeValue[]>;
   /** Departure contexts for nearby stops. */
   nearbyDepartures: StopWithContext[];
   /** All route shapes for route selection. */
@@ -117,7 +118,12 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
       setSelectionInfo({
         type: 'stop',
         stop,
-        routeTypes: routeTypeMap.get(stop.stop_id) ?? [3],
+        routeTypes: resolveStopRouteTypes({
+          stopId: stop.stop_id,
+          routeTypeMap,
+          routes: null,
+          unknownPolicy: 'include-unknown',
+        }),
         routeIds: extractRouteIdsForStop(nearbyDepartures, stop.stop_id),
       });
       setDirectFocusPosition(null);
@@ -181,7 +187,12 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
       setSelectionInfo({
         type: 'stop',
         stop,
-        routeTypes: routeTypeMap.get(stop.stop_id) ?? [3],
+        routeTypes: resolveStopRouteTypes({
+          stopId: stop.stop_id,
+          routeTypeMap,
+          routes: null,
+          unknownPolicy: 'include-unknown',
+        }),
         routeIds,
       });
     },

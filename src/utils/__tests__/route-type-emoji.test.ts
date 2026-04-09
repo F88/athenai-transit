@@ -11,6 +11,8 @@ describe('routeTypeEmoji', () => {
     [5, '🚋'],
     [6, '🚡'],
     [7, '🚞'],
+    [11, '🚎'],
+    [12, '🚝'],
   ])('returns correct emoji for route_type %d', (routeType, expected) => {
     expect(routeTypeEmoji(routeType)).toBe(expected);
   });
@@ -18,8 +20,7 @@ describe('routeTypeEmoji', () => {
   it('returns UFO emoji for unknown route_type', () => {
     expect(routeTypeEmoji(99)).toBe('🛸');
     expect(routeTypeEmoji(-1)).toBe('🛸');
-    expect(routeTypeEmoji(11)).toBe('🛸');
-    expect(routeTypeEmoji(12)).toBe('🛸');
+    expect(routeTypeEmoji(8)).toBe('🛸');
   });
 });
 

@@ -3,7 +3,7 @@ import L from 'leaflet';
 import type { EffectiveRenderMode } from '../../domain/map/render-mode';
 import type { EdgeMarker } from '../../types/app/map';
 import type { InfoLevel } from '../../types/app/settings';
-import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { StopWithContext } from '../../types/app/transit-composed';
 import { buildEdgeMarkers } from '../../lib/edge-marker';
 import { getSafeAreaInsets } from '../../lib/safe-area';
@@ -13,7 +13,7 @@ import { EdgeMarkersCanvas } from './edge-markers-canvas';
 interface EdgeMarkersSwitchProps {
   map: L.Map;
   stops: Stop[];
-  routeTypeMap: Map<string, RouteType[]>;
+  routeTypeMap: Map<string, AppRouteTypeValue[]>;
   agenciesMap?: Map<string, Agency[]>;
   now: Date;
   infoLevel: InfoLevel;

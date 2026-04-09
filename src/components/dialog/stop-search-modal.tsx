@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
-import type { RouteType, Stop } from '@/types/app/transit';
+import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
 import type { TransitRepository } from '@/repositories/transit-repository';
 import type { InfoLevel } from '@/types/app/settings';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { katakanaToHiragana } from '@/utils/kana-normalize';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { resolveStopRouteTypes } from '@/domain/transit/resolve-stop-route-types';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import { createLogger } from '@/lib/logger';
 import {
@@ -23,7 +24,7 @@ const MAX_RESULTS = 20;
 
 interface StopSearchResultItemProps {
   stop: Stop;
-  routeTypes: RouteType[];
+  routeTypes: AppRouteTypeValue[];
   query: string;
   normalizedQuery: string;
   infoLevel: InfoLevel;
@@ -140,7 +141,9 @@ export function StopSearchModal({
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [allStops, setAllStops] = useState<Stop[]>([]);
-  const [routeTypeMap, setRouteTypeMap] = useState<Map<string, RouteType[]>>(() => new Map());
+  const [routeTypeMap, setRouteTypeMap] = useState<Map<string, AppRouteTypeValue[]>>(
+    () => new Map(),
+  );
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -161,7 +164,7 @@ export function StopSearchModal({
         return Promise.all(
           result.data.map(async (stop) => {
             const rtResult = await repo.getRouteTypesForStop(stop.stop_id);
-            const routeTypes = rtResult.success ? rtResult.data : [3 as const];
+            const routeTypes = rtResult.success ? rtResult.data : [-1 as const];
             return [stop.stop_id, routeTypes] as const;
           }),
         ).then((entries) => {
@@ -263,7 +266,12 @@ export function StopSearchModal({
                 <StopSearchResultItem
                   key={stop.stop_id}
                   stop={stop}
-                  routeTypes={routeTypeMap.get(stop.stop_id) ?? [3]}
+                  routeTypes={resolveStopRouteTypes({
+                    stopId: stop.stop_id,
+                    routeTypeMap,
+                    routes: null,
+                    unknownPolicy: 'include-unknown',
+                  })}
                   query={trimmedQuery}
                   normalizedQuery={normalizedQuery}
                   infoLevel={infoLevel}

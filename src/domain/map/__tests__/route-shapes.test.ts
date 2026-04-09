@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { filterVisibleRouteShapes, getRouteShapeStyle } from '../route-shapes';
 import type { RouteShape } from '../../../types/app/map';
-import type { RouteType } from '../../../types/app/transit';
+import type { AppRouteTypeValue } from '../../../types/app/transit';
 
 function makeShape(
   routeId: string,
-  routeType: RouteType,
+  routeType: AppRouteTypeValue,
   route: RouteShape['route'] = null,
 ): RouteShape {
   return {

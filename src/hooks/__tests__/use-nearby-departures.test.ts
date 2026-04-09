@@ -89,7 +89,7 @@ describe('useNearbyDepartures', () => {
     expect(result.current.nearbyDepartures[0].stop.stop_id).toBe('B');
   });
 
-  it('falls back to routeTypes [3] when getRouteTypesForStop fails', async () => {
+  it('falls back to routeTypes [-1] when getRouteTypesForStop fails', async () => {
     const repo = makeRepo({
       getRouteTypesForStop: vi.fn().mockResolvedValue({
         success: false,
@@ -105,7 +105,7 @@ describe('useNearbyDepartures', () => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyDepartures[0].routeTypes).toEqual([3]);
+    expect(result.current.nearbyDepartures[0].routeTypes).toEqual([-1]);
   });
 
   it('falls back to empty groups when getUpcomingTimetableEntries fails', async () => {

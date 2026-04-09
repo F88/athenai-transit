@@ -65,7 +65,7 @@ function buildSourceInsights(prefix: string): boolean {
   const raw = readFileSync(dataPath, 'utf-8');
   const bundle = JSON.parse(raw) as DataBundle;
 
-  const serviceGroups = buildServiceGroups(bundle.calendar.data);
+  const serviceGroups = buildServiceGroups(bundle.calendar.data, bundle.timetable.data);
   console.log(
     `  Service groups: ${serviceGroups.length} (${serviceGroups.map((g) => g.key).join(', ')})`,
   );

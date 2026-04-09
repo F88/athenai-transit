@@ -1,7 +1,7 @@
 import { memo, useCallback, useRef, useState } from 'react';
 import { Marker, Tooltip } from 'react-leaflet';
 import type { InfoLevel } from '../../types/app/settings';
-import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { ContextualTimetableEntry, StopWithContext } from '../../types/app/transit-composed';
 import { primaryRouteType } from '../../domain/transit/route-type-priority';
 import { createStopIcon } from '../../lib/leaflet-helpers';
@@ -27,7 +27,7 @@ function StopMarkerDomItem({
   onClick,
 }: {
   stop: Stop;
-  routeTypes: RouteType[];
+  routeTypes: AppRouteTypeValue[];
   agencies: Agency[];
   isSelected: boolean;
   dimmed: boolean;
@@ -112,7 +112,7 @@ function StopMarkerDomItem({
 interface StopMarkersDomProps {
   stops: Stop[];
   selectedStopId: string | null;
-  routeTypeMap: Map<string, RouteType[]>;
+  routeTypeMap: Map<string, AppRouteTypeValue[]>;
   nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
   time?: Date;
   infoLevel: InfoLevel;
@@ -162,7 +162,7 @@ export const StopMarkersDom = memo(function StopMarkersDom({
         <StopMarkerDomItem
           key={stop.stop_id}
           stop={stop}
-          routeTypes={routeTypeMap.get(stop.stop_id) ?? [3]}
+          routeTypes={routeTypeMap.get(stop.stop_id) ?? [-1 as AppRouteTypeValue]}
           agencies={agenciesMap?.get(stop.stop_id) ?? []}
           isSelected={selectedStopId === stop.stop_id}
           dimmed={!disableDimming && !!selectedStopId && selectedStopId !== stop.stop_id}

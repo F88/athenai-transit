@@ -53,11 +53,19 @@
     "activeOnlyTitle": "次便がある乗り場のみ表示"
   },
   "stop": {
-    "noDestination": "行先が表示されない路線があります",
-    "serviceEnded": "本日の運行は終了しました",
-    "dropOffOnly": "降車専用",
-    "wheelchairAccessible": "車椅子で利用可能",
-    "wheelchairNotAccessible": "車椅子では利用不可"
+    "serviceState": {
+      "boardable": "運行中",
+      "dropOffOnly": "降車専用",
+      "noService": "運行便なし",
+      "serviceEnded": "本日の運行は終了しました"
+    },
+    "accessibility": {
+      "wheelchairAccessible": "車椅子で利用可能",
+      "wheelchairNotAccessible": "車椅子では利用不可"
+    },
+    "dataQuality": {
+      "noDestination": "行先が表示されない路線があります"
+    }
   },
   "time": {
     "settingTitle": "日時を指定",
@@ -122,8 +130,8 @@
     "searchStops": "のりばを検索",
     "toggleBus": "バスの表示切替",
     "toggleSubway": "地下鉄の表示切替",
-    "toggleTram": "路面電車の表示切替",
-    "toggleRail": "鉄道の表示切替"
+    "toggleTrain": "鉄道の表示切替",
+    "toggleOthers": "その他の表示切替"
   },
   "anchor": {
     "add": "アンカーを追加",

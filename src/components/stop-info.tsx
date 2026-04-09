@@ -31,6 +31,8 @@ export function StopInfo({
   infoLevel,
   dataLang,
   isDropOffOnly,
+  serviceState,
+  isBoardableOnServiceDay,
   routes,
   agencyBadgeSize,
   routeBadgeSize,
@@ -49,6 +51,8 @@ export function StopInfo({
         infoLevel={infoLevel}
         dataLang={dataLang}
         isDropOffOnly={isDropOffOnly}
+        serviceState={serviceState}
+        isBoardableOnServiceDay={isBoardableOnServiceDay}
         routes={routes}
         agencyBadgeSize={agencyBadgeSize}
         routeBadgeSize={routeBadgeSize}

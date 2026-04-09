@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
+import type { AppRouteTypeValue } from '../types/app/transit';
 import type { StopWithContext } from '../types/app/transit-composed';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { groupByRouteHeadsign } from '../domain/transit/group-timetable-entries';
@@ -28,7 +29,7 @@ export interface NearbyStopProps {
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
   /** Toggle anchor (bookmark) status for this stop. */
-  onToggleAnchor: (stopId: string) => void;
+  onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
 }
 
 export function NearbyStop({
@@ -37,6 +38,7 @@ export function NearbyStop({
     routeTypes,
     departures,
     isBoardableOnServiceDay,
+    serviceState,
     agencies,
     routes,
     distance,
@@ -82,7 +84,10 @@ export function NearbyStop({
     [departures],
   );
 
-  const isStopDropOffOnly = !isBoardableOnServiceDay;
+  // Use serviceState so that orphan stops (no entries at all) are NOT
+  // labeled as "drop-off only" — they have no service data, which is a
+  // distinct case from legitimately drop-off-only stops.
+  const isStopDropOffOnly = serviceState === 'drop-off-only';
 
   return (
     <div
@@ -109,6 +114,8 @@ export function NearbyStop({
           infoLevel={infoLevel}
           dataLang={dataLang}
           isDropOffOnly={isStopDropOffOnly}
+          serviceState={serviceState}
+          isBoardableOnServiceDay={isBoardableOnServiceDay}
           routes={routes}
           stats={stats}
           geo={geo}
@@ -119,11 +126,11 @@ export function NearbyStop({
             className="shrink-0 cursor-pointer rounded border border-amber-400 bg-transparent px-1.5 py-0.5 active:bg-amber-50 dark:border-amber-500 dark:active:bg-amber-950"
             onClick={(e) => {
               e.stopPropagation();
-              onToggleAnchor(stop.stop_id);
+              onToggleAnchor(stop.stop_id, routeTypes);
             }}
             title={isAnchor ? t('anchor.remove') : t('anchor.add')}
             aria-label={isAnchor ? t('anchor.remove') : t('anchor.add')}
-            aria-pressed={isAnchor}
+            aria-pressed={isAnchor ? 'true' : 'false'}
           >
             <Signpost
               size={16}
@@ -150,7 +157,7 @@ export function NearbyStop({
 
       {hasUnknownHeadsign && (
         <p className="m-0 mb-1 text-[11px] text-amber-600 dark:text-amber-400">
-          {t('stop.noDestination')}
+          {t('stop.dataQuality.noDestination')}
         </p>
       )}
       {displayDepartures.length > 0 ? (
@@ -190,7 +197,17 @@ export function NearbyStop({
           ))
         )
       ) : (
-        <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">{t('stop.serviceEnded')}</p>
+        // Show the fallback message in the departures area whenever there are
+        // no upcoming entries. The stop-level `No service` badge in StopSummary
+        // is complementary and reinforces this signal when the stop has no
+        // timetable data at all.
+        <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">
+          {t(
+            serviceState === 'no-service'
+              ? 'stop.serviceState.noService'
+              : 'stop.serviceState.serviceEnded',
+          )}
+        </p>
       )}
     </div>
   );

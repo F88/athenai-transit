@@ -46,7 +46,11 @@ export function VerboseNearbyStopSummary({
           </span>
           <span className="block">
             [departures] entries={departures.length} boardable={boardable} dropOffOnly={dropOffOnly}
-            {!isBoardableOnServiceDay && ' (ALL DROP-OFF ONLY)'}
+            {departures.length === 0
+              ? ' (NO SERVICE)'
+              : !isBoardableOnServiceDay
+                ? ' (ALL DROP-OFF ONLY)'
+                : ''}
           </span>
         </span>
       </div>

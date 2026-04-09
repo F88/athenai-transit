@@ -1,6 +1,8 @@
 import settings from './data-source-settings';
 import { getSourcesParam } from '../lib/query-params';
 import { createLogger } from '../lib/logger';
+import type { AppRouteTypeValue } from '../types/app/transit';
+import type { TranslatableText } from '../types/app/transit-composed';
 
 const logger = createLogger('DataSourceManager');
 
@@ -12,14 +14,14 @@ const logger = createLogger('DataSourceManager');
 export interface SourceGroup {
   /** Unique identifier for this source group. */
   id: string;
-  /** Japanese display name. */
-  name_ja: string;
-  /** Category label (e.g. "bus", "train"). */
-  category: string;
   /** GTFS JSON prefixes belonging to this group. */
   prefixes: string[];
+  /** GTFS route_type values represented by this source group. */
+  routeTypes: AppRouteTypeValue[];
   /** Whether this source is enabled by default. */
   enabled: boolean;
+  /** Localized display names keyed by language (e.g. ja, en). */
+  name: TranslatableText;
 }
 
 const STORAGE_KEY = 'enabled-sources';

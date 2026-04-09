@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
+import type { AppRouteTypeValue } from '../types/app/transit';
 import type { StopWithContext } from '../types/app/transit-composed';
 import { NearbyStop, type NearbyStopProps } from './nearby-stop';
 
@@ -23,7 +24,7 @@ interface BottomSheetStopsProps {
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
   /** Toggle anchor (bookmark) status for a stop. */
-  onToggleAnchor: (stopId: string) => void;
+  onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
 }
 
 export function BottomSheetStops({

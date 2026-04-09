@@ -1,8 +1,12 @@
 import { useCallback, useState } from 'react';
 import type { UserSettings } from '../types/app/settings';
+import { APP_ROUTE_TYPES } from '../config/route-types';
 import { normalizeLang } from '../config/supported-langs';
+import { TILE_SOURCES } from '../config/tile-sources';
 
 const STORAGE_KEY = 'athenai-settings';
+
+const DEFAULT_VISIBLE_ROUTE_TYPES = APP_ROUTE_TYPES.map(({ value }) => value);
 
 /** Keys excluded from localStorage persistence (always reset to defaults on reload). */
 const TRANSIENT_KEYS: (keyof UserSettings)[] = ['perfMode', 'renderMode'];
@@ -11,8 +15,8 @@ const DEFAULTS: UserSettings = {
   perfMode: 'normal',
   renderMode: 'auto',
   tileIndex: 0,
-  visibleStopTypes: [0, 1, 2, 3],
-  visibleRouteShapes: [0, 1, 2, 3, 4, 5, 6, 7],
+  visibleStopTypes: [...DEFAULT_VISIBLE_ROUTE_TYPES],
+  visibleRouteShapes: [...DEFAULT_VISIBLE_ROUTE_TYPES],
   infoLevel: 'normal',
   theme: 'light',
   doubleTapDrag: 'zoom-out',
@@ -36,6 +40,25 @@ function stripTransient(settings: Partial<UserSettings>): Partial<UserSettings> 
 }
 
 /**
+ * Normalize tile index to a safe value.
+ *
+ * @param value - Untrusted tile index value loaded from storage.
+ * @returns A valid index, or null when tiles are explicitly disabled.
+ */
+function normalizeTileIndex(value: unknown): number | null {
+  if (value === null) {
+    return null;
+  }
+  if (typeof value !== 'number' || !Number.isInteger(value)) {
+    return null;
+  }
+  if (value < 0 || value >= TILE_SOURCES.length) {
+    return null;
+  }
+  return value;
+}
+
+/**
  * Load user settings from localStorage, merging with defaults.
  *
  * Keys in {@link TRANSIENT_KEYS} are ignored even if present in stored data,
@@ -51,6 +74,7 @@ function loadSettings(): UserSettings {
     }
     const stored = { ...DEFAULTS, ...stripTransient(JSON.parse(raw) as Partial<UserSettings>) };
     stored.lang = normalizeLang(stored.lang);
+    stored.tileIndex = normalizeTileIndex(stored.tileIndex);
     return stored;
   } catch {
     return DEFAULTS;

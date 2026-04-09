@@ -1,7 +1,17 @@
 import type { InfoLevel } from '../../types/app/settings';
 import { useTranslation } from 'react-i18next';
+import { APP_ROUTE_TYPES } from '../../config/route-types';
+import { routeTypeCategory } from '../../utils/route-type-category';
 import { ControlPanel } from '../shared/control-panel';
 import { MapToggleButton } from '../button/map-toggle-button';
+
+const BUS_ROUTE_TYPES = APP_ROUTE_TYPES.filter(
+  ({ value }) => routeTypeCategory(value) === 'bus',
+).map(({ value }) => value);
+
+const NON_BUS_ROUTE_TYPES = APP_ROUTE_TYPES.filter(
+  ({ value }) => routeTypeCategory(value) !== 'bus',
+).map(({ value }) => value);
 
 interface MapLayerPanelProps {
   tileIndex: number | null;
@@ -42,14 +52,14 @@ export function MapLayerPanel({
         🗺
       </MapToggleButton>
       <MapToggleButton
-        active={visibleRouteShapes.has(3)}
+        active={BUS_ROUTE_TYPES.every((t) => visibleRouteShapes.has(t))}
         onClick={onToggleBusShapes}
         label={t('panel.toggleBusRoutes')}
       >
         🧑🏼‍🎨
       </MapToggleButton>
       <MapToggleButton
-        active={[0, 1, 2, 4, 5, 6, 7].every((t) => visibleRouteShapes.has(t))}
+        active={NON_BUS_ROUTE_TYPES.every((t) => visibleRouteShapes.has(t))}
         onClick={onToggleNonBusShapes}
         label={t('panel.toggleNonBusRoutes')}
       >

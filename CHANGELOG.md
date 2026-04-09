@@ -9,6 +9,34 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Pipeline: VAG Freiburg (ドイツ・フライブルク市営交通) の GTFS データソースを追加 (#110)。
+- Pipeline: ACTV Navigazione (イタリア・ヴェネツィア水上交通) の GTFS データソースを追加。
+- About: ACTV Navigazione のクレジット・データ情報を追加。
+- 地図タイルに Stadia Maps ソースを追加。タイルごとの `maxZoom` 設定をサポート。
+- 停留所の stopped 表示に「降車専用」「サービスなし」の視覚的区別を追加 (#112)。
+- `getStopServiceState` ドメイン関数を追加し、停留所のサービス状態 (通常/降車専用/サービスなし) を判定。
+- Storybook: 停留所マーカー story を追加。
+
+### Changed
+
+- Pipeline: SQLite スキーマから `service_id` 外部キー制約を削除し、柔軟な GTFS データに対応。
+- `TimetableQueryMeta` に `serviceState` フィールドを追加し、Repository 層でサービス状態を公開。
+- Route type 値の型名を `RouteType` から `AppRouteTypeValue` に改名。
+- Route type フィルタに Unknown タイプの動作を統合。
+- `resolveStopRouteTypes` ドメイン関数でルートタイプ解決を一元化し、`unknownPolicy` による明示的な Unknown 扱いを導入。
+- データソースグループのメタデータを拡充。Freiburg・Venice のホーム位置情報を追加。
+
+### Fixed
+
+- Pipeline: サービスグループの active-day ギャップを修正。
+- 履歴・アンカー再選択時に route type が失われる問題を修正。
+- Route type 解決で未解決の場合に Unknown タイプへ適切にフォールバックするよう修正。
+- 無効な `tileIndex` を `null` にフォールバックするよう修正。
+- 地図タイル切替時に active tile source の `maxZoom` が Leaflet map 本体にも反映されるよう修正。
+- About: 地図機能説明と地図クレジットを、現行の GSI / Stadia Maps タイル構成に合わせて更新。
+
 ## [2026.04.08]
 
 ### Added

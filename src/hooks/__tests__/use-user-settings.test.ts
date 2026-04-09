@@ -53,8 +53,8 @@ describe('useUserSettings', () => {
       expect(s.infoLevel).toBe('normal');
       expect(s.perfMode).toBe('normal');
       expect(s.renderMode).toBe('auto');
-      expect(s.visibleRouteShapes).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
-      expect(s.visibleStopTypes).toEqual([0, 1, 2, 3]);
+      expect(s.visibleRouteShapes).toEqual([-1, 0, 1, 2, 3, 4, 5, 6, 7, 11, 12]);
+      expect(s.visibleStopTypes).toEqual([-1, 0, 1, 2, 3, 4, 5, 6, 7, 11, 12]);
       expect(s.tileIndex).toBe(0);
       expect(s.theme).toBe('light');
       expect(s.doubleTapDrag).toBe('zoom-out');
@@ -86,6 +86,22 @@ describe('useUserSettings', () => {
       expect(result.current.settings.perfMode).toBe('normal');
     });
 
+    it('falls back tileIndex to null when localStorage has out-of-range value', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: 999 }));
+
+      const { result } = renderHook(() => useUserSettings());
+
+      expect(result.current.settings.tileIndex).toBeNull();
+    });
+
+    it('falls back tileIndex to null when localStorage has non-integer value', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: '2' }));
+
+      const { result } = renderHook(() => useUserSettings());
+
+      expect(result.current.settings.tileIndex).toBeNull();
+    });
+
     it('fills missing keys from defaults (migration)', () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ infoLevel: 'detailed' }));
 
@@ -104,8 +120,8 @@ describe('useUserSettings', () => {
       expect(s.infoLevel).toBe('normal');
       expect(s.perfMode).toBe('normal');
       expect(s.renderMode).toBe('auto');
-      expect(s.visibleRouteShapes).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
-      expect(s.visibleStopTypes).toEqual([0, 1, 2, 3]);
+      expect(s.visibleRouteShapes).toEqual([-1, 0, 1, 2, 3, 4, 5, 6, 7, 11, 12]);
+      expect(s.visibleStopTypes).toEqual([-1, 0, 1, 2, 3, 4, 5, 6, 7, 11, 12]);
       expect(s.tileIndex).toBe(0);
       expect(s.theme).toBe('light');
       expect(s.doubleTapDrag).toBe('zoom-out');

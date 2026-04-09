@@ -1,5 +1,5 @@
 import type { ResolvedDisplayNames } from '../../domain/transit/get-display-names';
-import type { Agency, Route, RouteType, Stop } from '../../types/app/transit';
+import type { Agency, Route, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../../types/app/transit-composed';
 import { VerboseStop } from './verbose-stop';
 import { VerboseStopDisplayNames } from './verbose-stop-display-names';
@@ -26,7 +26,7 @@ export function VerboseStopData({
   isDropOffOnly: boolean;
   distance?: number;
   bearing: number | null;
-  routeTypes: RouteType[];
+  routeTypes: AppRouteTypeValue[];
   agencies: Agency[];
   routes?: Route[];
   stats?: StopWithMeta['stats'];

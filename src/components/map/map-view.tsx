@@ -3,9 +3,9 @@ import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'r
 import L from 'leaflet';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
-import type { Agency, RouteType, Stop } from '../../types/app/transit';
+import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../../types/app/transit-composed';
-import { MAX_ZOOM } from '../../config/map-constants';
+import { DEFAULT_MAX_ZOOM } from '../../config/map-constants';
 import { enableDoubleTapZoom } from '../../lib/double-tap-zoom';
 import { smoothMoveTo, toBounds, toCenter } from '../../lib/leaflet-helpers';
 import { StopMarkers } from '../marker/stop-markers';
@@ -16,6 +16,7 @@ import {
   CLICK_SUPPRESSION_MS,
   shouldSuppressMapClick,
 } from '../../domain/map/map-click-suppression';
+import { resolveMapMaxZoom } from '../../domain/map/map-max-zoom';
 import { createLogger } from '../../lib/logger';
 import type { StopHistoryEntry } from '../../domain/transit/stop-history';
 import type { AnchorEntry } from '../../domain/portal/anchor';
@@ -148,6 +149,21 @@ function PanToFocus({ position }: { position: LatLng | null }) {
   return null;
 }
 
+function TileSourceMaxZoomController({ tileIndex }: { tileIndex: number | null }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const maxZoom = resolveMapMaxZoom(tileIndex, TILE_SOURCES, DEFAULT_MAX_ZOOM);
+    map.setMaxZoom(maxZoom);
+
+    if (map.getZoom() > maxZoom) {
+      map.setZoom(maxZoom);
+    }
+  }, [map, tileIndex]);
+
+  return null;
+}
+
 function DistanceRings() {
   const map = useMap();
   const [center, setCenter] = useState<[number, number]>(() => {
@@ -193,7 +209,7 @@ interface MapViewProps {
 
   selectedStopId: string | null;
   focusPosition: LatLng | null;
-  routeTypeMap: Map<string, RouteType[]>;
+  routeTypeMap: Map<string, AppRouteTypeValue[]>;
   routeShapes: RouteShape[];
   selectionInfo: SelectionInfo | null;
   /** Stops on the selected routes. Rendered as a separate layer on top of dimmed markers. */
@@ -230,7 +246,7 @@ interface MapViewProps {
   /** Stop selection history entries, most recent first. */
   stopHistory: StopHistoryEntry[];
   /** Called when a history entry is chosen. */
-  onHistorySelect: (stop: Stop) => void;
+  onHistorySelect: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
   /** Anchor (bookmarked stop) entries, most recently added first. */
   anchors: AnchorEntry[];
   /** Called when an anchor is chosen from the Portal dropdown. */
@@ -342,10 +358,11 @@ export function MapView({
       <MapContainer
         center={INITIAL_CENTER}
         zoom={INITIAL_ZOOM}
-        maxZoom={MAX_ZOOM}
+        maxZoom={resolveMapMaxZoom(tileIndex, TILE_SOURCES, DEFAULT_MAX_ZOOM)}
         className="relative z-0 h-full w-full"
         zoomControl={false}
       >
+        <TileSourceMaxZoomController tileIndex={tileIndex} />
         {tileIndex !== null && (
           <TileLayer
             key={TILE_SOURCES[tileIndex].id}
@@ -353,7 +370,7 @@ export function MapView({
             attribution={TILE_SOURCES[tileIndex].attribution}
             minZoom={TILE_SOURCES[tileIndex].minZoom}
             maxNativeZoom={TILE_SOURCES[tileIndex].maxNativeZoom}
-            maxZoom={MAX_ZOOM}
+            maxZoom={TILE_SOURCES[tileIndex].maxZoom ?? DEFAULT_MAX_ZOOM}
           />
         )}
         <MapEventHandler

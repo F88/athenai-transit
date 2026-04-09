@@ -10,18 +10,18 @@ describe('routeTypeLabel', () => {
     expect(routeTypeLabel(1)).toBe('M');
   });
 
-  it('returns "駅" for rail (2)', () => {
-    expect(routeTypeLabel(2)).toBe('駅');
+  it('returns "R" for rail (2)', () => {
+    expect(routeTypeLabel(2)).toBe('R');
   });
 
   it('returns "B" for bus (3)', () => {
     expect(routeTypeLabel(3)).toBe('B');
   });
 
-  it('returns "駅" for unknown route types', () => {
-    expect(routeTypeLabel(4)).toBe('駅');
-    expect(routeTypeLabel(7)).toBe('駅');
-    expect(routeTypeLabel(99)).toBe('駅');
-    expect(routeTypeLabel(-1)).toBe('駅');
+  it('returns mode-specific labels and fallback for unknown route types', () => {
+    expect(routeTypeLabel(4)).toBe('F');
+    expect(routeTypeLabel(7)).toBe('F');
+    expect(routeTypeLabel(99)).toBe('?');
+    expect(routeTypeLabel(-1)).toBe('?');
   });
 });

@@ -12,12 +12,55 @@
  */
 
 /**
- * GTFS route_type values.
+ * App-level route type values used across normalized transit sources.
  *
- * 0: tram, 1: subway, 2: rail, 3: bus, 4: ferry,
- * 5: cable tram, 6: gondola, 7: funicular, 11: trolleybus, 12: monorail
+ * The numeric values are based on GTFS `route_type` for interoperability,
+ * but this type is not GTFS-only and is not a strict GTFS compliance type.
+ * Non-GTFS sources (for example, ODPT JSON) are normalized into this same
+ * value space before being consumed by the web app.
+ *
+ * `-1` is an app-defined "unknown/unresolved" sentinel used when a stop is
+ * shown without enough operational context to resolve a concrete route type.
+ *
+ * 0: tram, 1: subway, 2: rail, 3: bus,
+ * 4: ferry, 5: cable tram, 6: gondola, 7: funicular,
+ * 11: trolleybus, 12: monorail,
+ * -1: unknown/unresolved (app-defined)
  */
-export type RouteType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 11 | 12;
+export type AppRouteTypeValue = -1 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 11 | 12;
+
+/**
+ * Route type metadata used by webapp UI (story, filter labels, and icon previews).
+ */
+export interface AppRouteType {
+  value: AppRouteTypeValue;
+  emoji: string;
+  color: string;
+  label: string;
+}
+
+/**
+ * High-level service state of a stop on a given service day.
+ *
+ * - `boardable`: At least one boardable entry exists today (normal case).
+ * - `drop-off-only`: Entries exist but none are boardable.
+ * - `no-service`: No entries for this stop today (orphan stop or off-schedule).
+ */
+export type StopServiceState = 'boardable' | 'drop-off-only' | 'no-service';
+
+/**
+ * Input signals used to derive a {@link StopServiceState}.
+ *
+ * Deliberately a narrow structural type (not the full `TimetableQueryMeta`)
+ * so the repository can call {@link getStopServiceState} while constructing
+ * the meta without a circular type dependency.
+ */
+export interface StopServiceStateInput {
+  /** Whether at least one boardable entry exists in the full service day. */
+  isBoardableOnServiceDay: boolean;
+  /** Total number of entries in the full service day (pre now/limit filtering). */
+  totalEntries: number;
+}
 
 /**
  * A boarding location, derived from GTFS-JP stops.txt + translations.txt.
@@ -67,7 +110,7 @@ export interface Stop {
  */
 export interface Route {
   route_id: string;
-  route_type: RouteType;
+  route_type: AppRouteTypeValue;
   agency_id: string;
   route_short_name: string;
   /** Merged from translations.txt. Not a GTFS-JP standard field. */

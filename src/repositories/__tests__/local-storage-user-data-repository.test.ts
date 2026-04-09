@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { LocalStorageUserDataRepository } from '../local-storage-user-data-repository';
 import type { AnchorEntry } from '../../domain/portal/anchor';
-import type { RouteType } from '../../types/app/transit';
+import type { AppRouteTypeValue } from '../../types/app/transit';
 
 const STORAGE_KEY = 'portals';
 
 function makeAnchorInput(
   id: string,
-  routeTypes: RouteType[] = [3],
+  routeTypes: AppRouteTypeValue[] = [3],
 ): Omit<AnchorEntry, 'createdAt'> {
   return {
     stopId: id,
@@ -18,7 +18,11 @@ function makeAnchorInput(
   };
 }
 
-function makeAnchorEntry(id: string, routeTypes: RouteType[] = [3], createdAt = 1000): AnchorEntry {
+function makeAnchorEntry(
+  id: string,
+  routeTypes: AppRouteTypeValue[] = [3],
+  createdAt = 1000,
+): AnchorEntry {
   return { ...makeAnchorInput(id, routeTypes), createdAt };
 }
 
