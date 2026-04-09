@@ -241,7 +241,7 @@
   }
 
   .markdown-alert p {
-    @apply !mb-0;
+    @apply mb-0!;
   }
 
   .markdown-alert-title {
