@@ -1,12 +1,54 @@
 /**
  * @module timetable-utils
  *
- * Domain logic for {@link TimetableEntry}.
- * Pure functions that derive boarding status, stop role, and
- * schedule characteristics from timetable data.
+ * Domain logic for {@link TimetableEntry} and timetable query metadata.
+ * Pure functions that derive boarding status, stop role, schedule
+ * characteristics, and stop-level service state from timetable data.
  */
 
+import type { TimetableQueryMeta } from '../../types/app/repository';
 import type { TimetableEntry } from '../../types/app/transit-composed';
+
+/**
+ * High-level service state of a stop on a given service day.
+ *
+ * Used to drive UI labels and filtering without inspecting multiple
+ * boolean/count fields ad hoc. New states can be added here as the
+ * set of user-visible stop conditions grows, and exhaustive handling
+ * at call sites can be enforced with `satisfies never` in switch blocks.
+ *
+ * - `boardable`: Stop has at least one boardable entry today
+ *   (normal case for an operating stop).
+ * - `drop-off-only`: Stop has entries today but none are boardable
+ *   (all entries are terminal or pickup_type === 1).
+ * - `no-service`: Stop has no entries today. This covers both:
+ *   - Orphan stops declared in `stops.txt` but never referenced by
+ *     `stop_times.txt` in the source GTFS.
+ *   - Stops whose scheduled services do not operate on this day.
+ *   The distinction between these two sub-cases is intentionally not
+ *   made here — it is not derivable from a single-day query.
+ */
+export type StopServiceState = 'boardable' | 'drop-off-only' | 'no-service';
+
+/**
+ * Derive the stop service state from timetable query metadata.
+ *
+ * Takes the full {@link TimetableQueryMeta} so that future state
+ * additions can reference additional meta fields without changing
+ * this function's signature.
+ *
+ * @param meta - Timetable query meta describing the full service day.
+ * @returns The service state of the stop for that service day.
+ */
+export function getStopServiceState(meta: TimetableQueryMeta): StopServiceState {
+  if (meta.totalEntries === 0) {
+    return 'no-service';
+  }
+  if (!meta.isBoardableOnServiceDay) {
+    return 'drop-off-only';
+  }
+  return 'boardable';
+}
 
 /**
  * Whether this stop is drop-off only (passengers cannot board).
