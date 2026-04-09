@@ -5,7 +5,7 @@ import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
 import type { Agency, RouteType, Stop } from '../../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../../types/app/transit-composed';
-import { MAX_ZOOM } from '../../config/map-constants';
+import { DEFAULT_MAX_ZOOM } from '../../config/map-constants';
 import { enableDoubleTapZoom } from '../../lib/double-tap-zoom';
 import { smoothMoveTo, toBounds, toCenter } from '../../lib/leaflet-helpers';
 import { StopMarkers } from '../marker/stop-markers';
@@ -342,7 +342,7 @@ export function MapView({
       <MapContainer
         center={INITIAL_CENTER}
         zoom={INITIAL_ZOOM}
-        maxZoom={MAX_ZOOM}
+        maxZoom={DEFAULT_MAX_ZOOM}
         className="relative z-0 h-full w-full"
         zoomControl={false}
       >
@@ -353,7 +353,7 @@ export function MapView({
             attribution={TILE_SOURCES[tileIndex].attribution}
             minZoom={TILE_SOURCES[tileIndex].minZoom}
             maxNativeZoom={TILE_SOURCES[tileIndex].maxNativeZoom}
-            maxZoom={MAX_ZOOM}
+            maxZoom={TILE_SOURCES[tileIndex].maxZoom ?? DEFAULT_MAX_ZOOM}
           />
         )}
         <MapEventHandler

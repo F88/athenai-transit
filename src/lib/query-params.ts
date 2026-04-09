@@ -16,7 +16,7 @@
  * - `?diag=v2-load` — run diagnostics (see DEVELOPMENT.md)
  */
 
-import { MAX_ZOOM } from '../config/map-constants';
+import { DEFAULT_MAX_ZOOM } from '../config/map-constants';
 
 /**
  * Lazily cached URLSearchParams instance.
@@ -308,7 +308,7 @@ export function parseQueryLng(value: string | null | undefined): number | null {
 
 /**
  * Parse zoom level from a query param string.
- * Valid range: 1 to {@link MAX_ZOOM}. Rejects non-numeric, Infinity, NaN, and whitespace.
+ * Valid range: 1 to {@link DEFAULT_MAX_ZOOM}. Rejects non-numeric, Infinity, NaN, and whitespace.
  *
  * @param value - Raw string value from URLSearchParams.get().
  * @returns Parsed zoom level, or null if invalid.
@@ -322,7 +322,7 @@ export function parseQueryZoom(value: string | null | undefined): number | null 
   if (Number.isNaN(n) || !Number.isFinite(n)) {
     return null;
   }
-  if (n < 1 || n > MAX_ZOOM) {
+  if (n < 1 || n > DEFAULT_MAX_ZOOM) {
     return null;
   }
   return n;
