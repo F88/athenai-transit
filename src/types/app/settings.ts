@@ -25,13 +25,17 @@ export interface UserSettings {
   /**
    * GTFS route_type values whose stop markers are visible.
    *
-   * 0 = tram, 1 = subway, 2 = rail, 3 = bus.
+   * 0 = tram, 1 = subway, 2 = rail, 3 = bus, 4 = ferry,
+   * 5 = cable tram, 6 = gondola, 7 = funicular,
+   * 11 = trolleybus, 12 = monorail.
    */
   visibleStopTypes: number[];
   /**
    * GTFS route_type values whose route shape polylines are visible.
    *
-   * 0 = tram, 1 = subway, 2 = rail, 3 = bus.
+   * 0 = tram, 1 = subway, 2 = rail, 3 = bus, 4 = ferry,
+   * 5 = cable tram, 6 = gondola, 7 = funicular,
+   * 11 = trolleybus, 12 = monorail.
    */
   visibleRouteShapes: number[];
   /** Controls how much information is shown for stop/route labels. */

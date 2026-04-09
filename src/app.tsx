@@ -17,7 +17,8 @@ import { useRouteStops } from './hooks/use-route-stops';
 import { PERF_PROFILES } from './config/perf-profiles';
 import { TILE_SOURCES } from './config/tile-sources';
 import { createInfoLevel } from './utils/create-info-level';
-import { toggleGroupInList, toggleInList } from './utils/list-toggle';
+import { toggleGroupInList } from './utils/list-toggle';
+import { routeTypeGroup } from './utils/route-type-category';
 import { createLogger } from './lib/logger';
 import {
   nextInfoLevel,
@@ -476,7 +477,10 @@ export default function App() {
 
   const handleToggleStopType = useCallback(
     (rt: number) => {
-      updateSetting('visibleStopTypes', toggleInList(settings.visibleStopTypes, rt));
+      updateSetting(
+        'visibleStopTypes',
+        toggleGroupInList(settings.visibleStopTypes, routeTypeGroup(rt)),
+      );
     },
     [settings.visibleStopTypes, updateSetting],
   );
@@ -524,13 +528,13 @@ export default function App() {
   );
 
   const handleToggleBusShapes = useCallback(() => {
-    updateSetting('visibleRouteShapes', toggleInList(settings.visibleRouteShapes, 3));
+    updateSetting('visibleRouteShapes', toggleGroupInList(settings.visibleRouteShapes, [3, 11]));
   }, [settings.visibleRouteShapes, updateSetting]);
 
   const handleToggleNonBusShapes = useCallback(() => {
     updateSetting(
       'visibleRouteShapes',
-      toggleGroupInList(settings.visibleRouteShapes, [0, 1, 2, 4, 5, 6, 7]),
+      toggleGroupInList(settings.visibleRouteShapes, [0, 1, 2, 4, 5, 6, 7, 12]),
     );
   }, [settings.visibleRouteShapes, updateSetting]);
 
