@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
-import type { Agency } from '../types/app/transit';
+import type { Agency, AppRouteTypeValue } from '../types/app/transit';
 import type { StopWithContext } from '../types/app/transit-composed';
 import { collectPresentAgencies, filterStopsByAgency } from '../domain/transit/agency-filter';
 import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-views';
@@ -61,7 +61,7 @@ interface BottomSheetProps {
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
   /** Toggle anchor (bookmark) status for a stop. */
-  onToggleAnchor: (stopId: string) => void;
+  onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
 }
 
 export function BottomSheet({

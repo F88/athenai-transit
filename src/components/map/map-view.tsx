@@ -230,7 +230,7 @@ interface MapViewProps {
   /** Stop selection history entries, most recent first. */
   stopHistory: StopHistoryEntry[];
   /** Called when a history entry is chosen. */
-  onHistorySelect: (stop: Stop) => void;
+  onHistorySelect: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
   /** Anchor (bookmarked stop) entries, most recently added first. */
   anchors: AnchorEntry[];
   /** Called when an anchor is chosen from the Portal dropdown. */

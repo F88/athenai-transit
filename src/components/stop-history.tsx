@@ -16,7 +16,7 @@ interface StopHistoryProps {
   history: StopHistoryEntry[];
   selectedStopId: string | null;
   infoLevel: InfoLevel;
-  onSelect: (stop: Stop) => void;
+  onSelect: (stop: Stop, routeTypes: StopHistoryEntry['routeTypes']) => void;
 }
 
 /**
@@ -55,7 +55,7 @@ export function StopHistory({ history, selectedStopId, infoLevel, onSelect }: St
       logger.debug(
         `select: stopId=${stopId}, name=${entry.stopWithMeta.stop.stop_name}, isCurrent=${isCurrent}`,
       );
-      onSelect(entry.stopWithMeta.stop);
+      onSelect(entry.stopWithMeta.stop, entry.routeTypes);
     }
   };
 

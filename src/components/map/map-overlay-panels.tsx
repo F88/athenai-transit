@@ -3,7 +3,7 @@ import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/set
 import type { AnchorEntry } from '../../domain/portal/anchor';
 import type { StopHistoryEntry } from '../../domain/transit/stop-history';
 import type { UserLocation } from '../../types/app/map';
-import type { Stop } from '../../types/app/transit';
+import type { AppRouteTypeValue, Stop } from '../../types/app/transit';
 import { InfoPanel } from '../panel/info-panel';
 import { MapControlPanel } from '../panel/map-control-panel';
 import { MapLayerPanel } from '../panel/map-layer-panel';
@@ -40,7 +40,7 @@ interface MapOverlayPanelsProps {
   onInfoClick: () => void;
   onLocated: (location: UserLocation) => void;
   onDeselectStop: () => void;
-  onHistorySelect: (stop: Stop) => void;
+  onHistorySelect: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
   onPortalSelect: (entry: AnchorEntry) => void;
   tileIndex: number | null;
 }

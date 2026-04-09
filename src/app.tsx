@@ -395,13 +395,13 @@ export default function App() {
   // focus position directly from stop coordinates, ensuring the map pans
   // even when the stop is outside the current viewport.
   const handleHistorySelect = useCallback(
-    (stop: Stop) => {
+    (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleHistorySelect [History]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
       focusStop(stop);
       const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
-      pushStop(meta, routeTypeMap.get(stop.stop_id) ?? [-1]);
+      pushStop(meta, routeTypes);
     },
-    [focusStop, pushStop, findStopWithMeta, routeTypeMap],
+    [focusStop, pushStop, findStopWithMeta],
   );
 
   // Anchor stop_id set for efficient lookup in BottomSheet
@@ -409,7 +409,7 @@ export default function App() {
 
   // Toggle anchor (bookmark) status for a stop
   const handleToggleAnchor = useCallback(
-    (stopId: string) => {
+    (stopId: string, routeTypes: AppRouteTypeValue[]) => {
       if (isStopAnchor(stopId)) {
         logger.debug(`handleToggleAnchor: removing stopId=${stopId}`);
         void removeAnchor(stopId);
@@ -422,12 +422,12 @@ export default function App() {
             stopName: meta.stop.stop_name,
             stopLat: meta.stop.stop_lat,
             stopLon: meta.stop.stop_lon,
-            routeTypes: routeTypeMap.get(stopId) ?? [-1],
+            routeTypes,
           });
         }
       }
     },
-    [isStopAnchor, removeAnchor, addAnchor, findStopWithMeta, routeTypeMap],
+    [isStopAnchor, removeAnchor, addAnchor, findStopWithMeta],
   );
 
   // Select + pan to a stop from Portal dropdown

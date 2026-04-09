@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
+import type { AppRouteTypeValue } from '../types/app/transit';
 import type { StopWithContext } from '../types/app/transit-composed';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { groupByRouteHeadsign } from '../domain/transit/group-timetable-entries';
@@ -28,7 +29,7 @@ export interface NearbyStopProps {
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
   /** Toggle anchor (bookmark) status for this stop. */
-  onToggleAnchor: (stopId: string) => void;
+  onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
 }
 
 export function NearbyStop({
@@ -119,11 +120,11 @@ export function NearbyStop({
             className="shrink-0 cursor-pointer rounded border border-amber-400 bg-transparent px-1.5 py-0.5 active:bg-amber-50 dark:border-amber-500 dark:active:bg-amber-950"
             onClick={(e) => {
               e.stopPropagation();
-              onToggleAnchor(stop.stop_id);
+              onToggleAnchor(stop.stop_id, routeTypes);
             }}
             title={isAnchor ? t('anchor.remove') : t('anchor.add')}
             aria-label={isAnchor ? t('anchor.remove') : t('anchor.add')}
-            aria-pressed={isAnchor}
+            aria-pressed={isAnchor ? 'true' : 'false'}
           >
             <Signpost
               size={16}
