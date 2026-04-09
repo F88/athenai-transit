@@ -11,7 +11,7 @@
  * or introducing new composed types here is expected and encouraged.
  */
 
-import type { StopServiceState } from '../../domain/transit/timetable-utils';
+import type { StopServiceState } from './transit';
 import type { Agency, Route, AppRouteTypeValue, Stop } from './transit';
 
 /**

@@ -4,7 +4,7 @@ import type {
   StopServiceType,
   StopWithContext,
 } from '../types/app/transit-composed';
-import type { StopServiceState } from '../domain/transit/timetable-utils';
+import type { StopServiceState } from '../types/app/transit';
 import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
 import {
   busRoute as fixtureBusRoute,

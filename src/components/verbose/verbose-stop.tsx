@@ -1,4 +1,4 @@
-import type { StopServiceState } from '../../domain/transit/timetable-utils';
+import type { StopServiceState } from '../../types/app/transit';
 import type { Stop } from '../../types/app/transit';
 
 /**

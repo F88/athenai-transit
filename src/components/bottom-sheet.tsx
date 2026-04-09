@@ -32,7 +32,9 @@ const ROUTE_TYPE_PRIORITY: Readonly<Record<number, number>> = {
 };
 
 const ROUTE_TYPE_ORDER: number[] = [...APP_ROUTE_TYPES.map(({ value }) => value)].sort(
-  (a, b) => ROUTE_TYPE_PRIORITY[a] - ROUTE_TYPE_PRIORITY[b],
+  (a, b) =>
+    (ROUTE_TYPE_PRIORITY[a] ?? Number.POSITIVE_INFINITY) -
+    (ROUTE_TYPE_PRIORITY[b] ?? Number.POSITIVE_INFINITY),
 );
 
 export interface NearbyStopsCounts {

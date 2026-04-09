@@ -11,8 +11,8 @@ import {
   filterBoardable,
   getDisplayMinutes,
   getStopServiceState,
-  type StopServiceStateInput,
 } from '../timetable-utils';
+import type { StopServiceStateInput } from '../../../types/app/transit';
 import type { TimetableEntry } from '../../../types/app/transit-composed';
 import type { Route } from '../../../types/app/transit';
 

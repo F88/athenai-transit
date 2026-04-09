@@ -3,7 +3,7 @@ import { Accessibility } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { resolveAgencyLang } from '../config/transit-defaults';
 import { useInfoLevel } from '../hooks/use-info-level';
-import type { StopServiceState } from '../domain/transit/timetable-utils';
+import type { StopServiceState } from '../types/app/transit';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';

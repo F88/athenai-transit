@@ -40,6 +40,29 @@ export interface AppRouteType {
 }
 
 /**
+ * High-level service state of a stop on a given service day.
+ *
+ * - `boardable`: At least one boardable entry exists today (normal case).
+ * - `drop-off-only`: Entries exist but none are boardable.
+ * - `no-service`: No entries for this stop today (orphan stop or off-schedule).
+ */
+export type StopServiceState = 'boardable' | 'drop-off-only' | 'no-service';
+
+/**
+ * Input signals used to derive a {@link StopServiceState}.
+ *
+ * Deliberately a narrow structural type (not the full `TimetableQueryMeta`)
+ * so the repository can call {@link getStopServiceState} while constructing
+ * the meta without a circular type dependency.
+ */
+export interface StopServiceStateInput {
+  /** Whether at least one boardable entry exists in the full service day. */
+  isBoardableOnServiceDay: boolean;
+  /** Total number of entries in the full service day (pre now/limit filtering). */
+  totalEntries: number;
+}
+
+/**
  * A boarding location, derived from GTFS-JP stops.txt + translations.txt.
  *
  * `stop_names` is an app-specific field that merges translations.txt

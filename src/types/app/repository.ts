@@ -5,7 +5,7 @@
  * {@link TransitRepository} methods.
  */
 
-import type { StopServiceState } from '../../domain/transit/timetable-utils';
+import type { StopServiceState } from './transit';
 import type { ContextualTimetableEntry, TimetableEntry } from './transit-composed';
 
 /**

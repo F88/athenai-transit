@@ -7,42 +7,7 @@
  */
 
 import type { TimetableEntry } from '../../types/app/transit-composed';
-
-/**
- * High-level service state of a stop on a given service day.
- *
- * Used to drive UI labels and filtering without inspecting multiple
- * boolean/count fields ad hoc. New states can be added here as the
- * set of user-visible stop conditions grows, and exhaustive handling
- * at call sites can be enforced with `satisfies never` in switch blocks.
- *
- * - `boardable`: Stop has at least one boardable entry today
- *   (normal case for an operating stop).
- * - `drop-off-only`: Stop has entries today but none are boardable
- *   (all entries are terminal or pickup_type === 1).
- * - `no-service`: Stop has no entries today. This covers both:
- *   - Orphan stops declared in `stops.txt` but never referenced by
- *     `stop_times.txt` in the source GTFS.
- *   - Stops whose scheduled services do not operate on this day.
- *   The distinction between these two sub-cases is intentionally not
- *   made here — it is not derivable from a single-day query.
- */
-export type StopServiceState = 'boardable' | 'drop-off-only' | 'no-service';
-
-/**
- * Input signals used to derive a {@link StopServiceState}.
- *
- * Defined as a narrow structural type (not the full `TimetableQueryMeta`)
- * so that the repository can call this helper while still *constructing*
- * the meta — otherwise a circular dependency would occur because
- * `TimetableQueryMeta` itself carries the derived `serviceState` field.
- */
-export interface StopServiceStateInput {
-  /** Whether at least one boardable entry exists in the full service day. */
-  isBoardableOnServiceDay: boolean;
-  /** Total number of entries in the full service day (pre now/limit filtering). */
-  totalEntries: number;
-}
+import type { StopServiceState, StopServiceStateInput } from '../../types/app/transit';
 
 /**
  * Derive the stop service state from service day signals.
