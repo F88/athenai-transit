@@ -93,8 +93,9 @@ export function BottomSheetHeader({
               key={rt}
               size={'sm'}
               active={!hiddenRouteTypes.has(rt)}
-              activeBg={`${routeTypeColor(rt)}20`}
-              activeBorder={routeTypeColor(rt)}
+              activeBg={`${routeTypeColor(rt)}40`}
+              // activeBorder={routeTypeColor(rt)}
+              inactiveBorder={routeTypeColor(rt)}
               onClick={() => onToggleRouteType(rt)}
             >
               {routeTypeEmoji(rt)}
