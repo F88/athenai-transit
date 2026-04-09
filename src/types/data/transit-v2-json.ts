@@ -140,6 +140,12 @@ export interface RouteV2Json {
  *
  * In practice, Japanese GTFS sources almost exclusively use
  * `l=0` and `l=1`. Values 2-4 are rare but not excluded.
+ *
+ * Stops are emitted from stops.txt independently of timetable coverage.
+ * A stop may appear in this section even when it has no matching
+ * timetable entry in the same bundle. This is intentional: stop
+ * infrastructure must remain visible even when no operational trip
+ * currently references it.
  */
 export interface StopV2Json {
   /** Schema version — see {@link RouteV2Json.v} for rationale. */
@@ -366,6 +372,11 @@ export interface TripPatternJson {
 // -----------------------------------------------------------------------
 // timetable section (v2)
 // -----------------------------------------------------------------------
+
+// Timetable coverage is intentionally narrower than stop coverage.
+// Only stops that have at least one departure record are keyed here.
+// Stops without operational timetable entries are still preserved in
+// the stops section and must not be treated as pipeline omissions.
 
 /**
  * Timetable group record (v2).
