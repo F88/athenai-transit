@@ -541,7 +541,18 @@ export default function App() {
   }, [settings.infoLevel, updateSetting]);
 
   const handleCycleTile = useCallback(() => {
-    updateSetting('tileIndex', nextTileIndex(settings.tileIndex, TILE_SOURCES.length));
+    const prevTileIndex = settings.tileIndex;
+    const nextTile = nextTileIndex(prevTileIndex, TILE_SOURCES.length);
+    const prevTileLabel =
+      prevTileIndex == null
+        ? 'none'
+        : (TILE_SOURCES[prevTileIndex]?.label ?? `unknown(${String(prevTileIndex)})`);
+    const nextTileLabel =
+      nextTile == null ? 'none' : (TILE_SOURCES[nextTile]?.label ?? `unknown(${String(nextTile)})`);
+    logger.debug(
+      `tile: ${prevTileLabel} (${String(prevTileIndex)}) -> ${nextTileLabel} (${String(nextTile)})`,
+    );
+    updateSetting('tileIndex', nextTile);
   }, [settings.tileIndex, updateSetting]);
 
   const handleToggleDarkMode = useCallback(() => {
