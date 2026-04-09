@@ -86,6 +86,22 @@ describe('useUserSettings', () => {
       expect(result.current.settings.perfMode).toBe('normal');
     });
 
+    it('falls back tileIndex to null when localStorage has out-of-range value', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: 999 }));
+
+      const { result } = renderHook(() => useUserSettings());
+
+      expect(result.current.settings.tileIndex).toBeNull();
+    });
+
+    it('falls back tileIndex to null when localStorage has non-integer value', () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: '2' }));
+
+      const { result } = renderHook(() => useUserSettings());
+
+      expect(result.current.settings.tileIndex).toBeNull();
+    });
+
     it('fills missing keys from defaults (migration)', () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ infoLevel: 'detailed' }));
 
