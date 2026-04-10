@@ -8,16 +8,11 @@ import type { Stop } from '../../types/app/transit';
  */
 export function VerboseStop({
   stop,
-  isDropOffOnly,
   serviceState,
-  isBoardableOnServiceDay,
 }: {
   stop: Stop;
-  isDropOffOnly: boolean;
-  /** Service state of the stop on the current service day (optional, for debug). */
+  /** Service state of the stop on the current service day. */
   serviceState?: StopServiceState;
-  /** Raw repo signal — whether at least one boardable entry exists today. */
-  isBoardableOnServiceDay?: boolean;
 }) {
   return (
     <>
@@ -28,15 +23,9 @@ export function VerboseStop({
         {stop.wheelchair_boarding != null && ` wb=${stop.wheelchair_boarding}`}
         {stop.parent_station && ` parent=${stop.parent_station}`}
         {stop.platform_code && ` platform=${stop.platform_code}`}
-        {isDropOffOnly && ' DROP-OFF-ONLY'}
+        {serviceState === 'drop-off-only' && ' DROP-OFF-ONLY'}
       </p>
-      {(serviceState != null || isBoardableOnServiceDay != null) && (
-        <p className="m-0">
-          [service]
-          {serviceState != null && ` state=${serviceState}`}
-          {isBoardableOnServiceDay != null && ` boardable=${String(isBoardableOnServiceDay)}`}
-        </p>
-      )}
+      <p className="m-0">[service] {`state=${serviceState}`}</p>
       <p className="m-0">
         [names]{' '}
         {Object.keys(stop.stop_names).length > 0

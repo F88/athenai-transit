@@ -36,6 +36,7 @@ import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
 import { formatDateKey } from './domain/transit/calendar-utils';
 import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
+import { getStopServiceState } from './domain/transit/timetable-utils';
 import {
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
@@ -421,6 +422,10 @@ export default function App() {
         timetableEntries: entries,
         omitted,
         isBoardableOnServiceDay,
+        serviceState: getStopServiceState({
+          totalEntries: allEntries.length,
+          isBoardableOnServiceDay,
+        }),
         agencies: meta.agencies,
       });
     },

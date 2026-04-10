@@ -84,11 +84,6 @@ export function NearbyStop({
     [departures],
   );
 
-  // Use serviceState so that orphan stops (no entries at all) are NOT
-  // labeled as "drop-off only" — they have no service data, which is a
-  // distinct case from legitimately drop-off-only stops.
-  const isStopDropOffOnly = serviceState === 'drop-off-only';
-
   return (
     <div
       data-stop-id={stop.stop_id}
@@ -113,7 +108,6 @@ export function NearbyStop({
           mapCenter={mapCenter}
           infoLevel={infoLevel}
           dataLang={dataLang}
-          isDropOffOnly={isStopDropOffOnly}
           serviceState={serviceState}
           isBoardableOnServiceDay={isBoardableOnServiceDay}
           routes={routes}

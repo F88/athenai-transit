@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { resolveAgencyLang } from '../config/transit-defaults';
 import { useInfoLevel } from '../hooks/use-info-level';
 import type { StopServiceState } from '../types/app/transit';
-import { BaseLabel } from './label/base-label';
 import { StopServiceStateLabel } from './label/stop-service-state-label';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
@@ -39,12 +38,8 @@ export interface StopSummaryCoreProps {
   infoLevel: InfoLevel;
   /** Display language fallback chain for translated names. */
   dataLang: readonly string[];
-  /** Whether the stop context is drop-off only. */
-  isDropOffOnly: boolean;
-  /** Service state of the stop on the current service day (optional, for verbose dump). */
+  /** Service state of the stop on the current service day. */
   serviceState?: StopServiceState;
-  /** Raw repo signal for verbose dump — independent of `isDropOffOnly` interpretation. */
-  isBoardableOnServiceDay?: boolean;
   /** Badge size override for agency badges. */
   agencyBadgeSize?: AgencyBadgeSize;
   /** Badge size override for route badges. */
@@ -74,9 +69,7 @@ export function StopSummary({
   stop,
   infoLevel,
   dataLang,
-  isDropOffOnly,
   serviceState,
-  isBoardableOnServiceDay,
   agencyBadgeSize,
   routeBadgeSize,
   distanceBadge,
@@ -143,19 +136,7 @@ export function StopSummary({
             <Accessibility size={14} strokeWidth={2} aria-hidden="true" focusable="false" />
           </span>
         )}
-        {/* serviceState covers both drop-off-only and no-service when provided.
-           isDropOffOnly is a legacy fallback for callers that don't pass serviceState yet. */}
-        {serviceState ? (
-          <StopServiceStateLabel serviceState={serviceState} />
-        ) : (
-          isDropOffOnly && (
-            <BaseLabel
-              size="md"
-              value={t('stop.serviceState.dropOffOnly')}
-              className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
-            />
-          )
-        )}
+        {serviceState && <StopServiceStateLabel serviceState={serviceState} />}
         {agencies.length > 0 &&
           agencies.map((agency) => (
             <AgencyBadge
@@ -197,12 +178,7 @@ export function StopSummary({
                 [Stop]
               </summary>
               <div className="mt-1 overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
-                <VerboseStop
-                  stop={stop}
-                  isDropOffOnly={isDropOffOnly}
-                  serviceState={serviceState}
-                  isBoardableOnServiceDay={isBoardableOnServiceDay}
-                />
+                <VerboseStop stop={stop} serviceState={serviceState} />
               </div>
               <VerboseStopDisplayNames names={stopNames} />
             </details>

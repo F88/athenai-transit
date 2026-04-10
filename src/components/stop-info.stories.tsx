@@ -30,12 +30,12 @@ const meta = {
     mapCenter: storyMapCenter,
     infoLevel: 'normal',
     dataLang: ['ja'],
-    isDropOffOnly: false,
+    serviceState: 'boardable',
     routes: [busRoute],
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
-    isDropOffOnly: { control: 'boolean' },
+    serviceState: { control: 'radio', options: ['boardable', 'drop-off-only', 'no-service'] },
     agencyBadgeSize: { control: 'inline-radio', options: ['xs', 'sm', 'default'] },
     routeBadgeSize: { control: 'inline-radio', options: ['xs', 'sm', 'default'] },
   },
@@ -56,7 +56,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const DropOffOnly: Story = {
-  args: { isDropOffOnly: true },
+  args: { serviceState: 'drop-off-only' },
 };
 
 // --- Distance & direction ---
@@ -91,7 +91,7 @@ export const MultiTypeDropOff: Story = {
   args: {
     routeTypes: [0, 3] as AppRouteTypeValue[],
     agencies: [agencyGx, agencyOretetsu],
-    isDropOffOnly: true,
+    serviceState: 'drop-off-only',
   },
 };
 
@@ -180,7 +180,7 @@ export const LongName: Story = {
 };
 
 export const LongNameDropOff: Story = {
-  args: { stop: longNameStop, isDropOffOnly: true },
+  args: { stop: longNameStop, serviceState: 'drop-off-only' },
 };
 
 export const LongNameMultiType: Story = {
@@ -216,7 +216,7 @@ const kitchenSinkArgs = {
   stop: longNameStop,
   routeTypes: [0, 3] as AppRouteTypeValue[],
   agencies: allAgencies,
-  isDropOffOnly: true,
+  serviceState: 'drop-off-only',
   routes: allRoutes,
   stats: sampleStats,
   geo: sampleGeo,
