@@ -1,27 +1,55 @@
 import settings from './data-source-settings';
 import { getSourcesParam } from '../lib/query-params';
 import { createLogger } from '../lib/logger';
-import type { AppRouteTypeValue } from '../types/app/transit';
-import type { TranslatableText } from '../types/app/transit-composed';
+import {
+  getDefaultEnabledIds,
+  getEnabledIdsFromSourcesParam,
+  getEnabledPrefixesFromGroups,
+  parseStoredEnabledIds,
+} from '../domain/datasource/data-source-selection';
+import type { SourceGroup } from '../types/app/source-group';
 
 const logger = createLogger('DataSourceManager');
 
-/**
- * A group of related GTFS data sources managed as a single toggle unit.
- *
- * For example, the "toei" group may contain both bus and train prefixes.
- */
-export interface SourceGroup {
-  /** Unique identifier for this source group. */
-  id: string;
-  /** GTFS JSON prefixes belonging to this group. */
-  prefixes: string[];
-  /** GTFS route_type values represented by this source group. */
-  routeTypes: AppRouteTypeValue[];
-  /** Whether this source is enabled by default. */
-  enabled: boolean;
-  /** Localized display names keyed by language (e.g. ja, en). */
-  name: TranslatableText;
+function dedupePrefixes(prefixes: string[]): string[] {
+  return [...new Set(prefixes)];
+}
+
+function resolveEnabledIdsFromQueryParams(groups: SourceGroup[]): Set<string> | null {
+  const sourcesParam = getSourcesParam();
+  if (!sourcesParam) {
+    return null;
+  }
+
+  if (sourcesParam === 'all') {
+    logger.info('Data sources from query params: all');
+  } else {
+    logger.info(`Data sources from query params: ${sourcesParam}`);
+  }
+
+  return getEnabledIdsFromSourcesParam(groups, sourcesParam);
+}
+
+function resolveEnabledIdsFromStorage(): Set<string> | null {
+  return parseStoredEnabledIds(localStorage.getItem(STORAGE_KEY));
+}
+
+function resolveInitialEnabledIds(groups: SourceGroup[]): Set<string> {
+  const enabledIdsFromQueryParams = resolveEnabledIdsFromQueryParams(groups);
+  if (enabledIdsFromQueryParams) {
+    return enabledIdsFromQueryParams;
+  }
+
+  try {
+    const enabledIdsFromStorage = resolveEnabledIdsFromStorage();
+    if (enabledIdsFromStorage) {
+      return enabledIdsFromStorage;
+    }
+  } catch {
+    // fall through to default
+  }
+
+  return getDefaultEnabledIds(groups);
 }
 
 const STORAGE_KEY = 'enabled-sources';
@@ -46,37 +74,7 @@ export class DataSourceManager {
    */
   constructor() {
     this.groups = settings;
-    // 1. ?sources=minkuru,yurimo or ?sources=all
-    const sourcesParam = getSourcesParam();
-    if (sourcesParam) {
-      if (sourcesParam === 'all') {
-        this.enabledIds = new Set(this.groups.map((g) => g.id));
-        logger.info('Data sources from query params: all');
-      } else {
-        const requestedPrefixes = new Set(sourcesParam.split(',').map((s) => s.trim()));
-        this.enabledIds = new Set(
-          this.groups
-            .filter((g) => g.prefixes.some((p) => requestedPrefixes.has(p)))
-            .map((g) => g.id),
-        );
-        logger.info(`Data sources from query params: ${sourcesParam}`);
-      }
-      return;
-    }
-
-    // 3. localStorage
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        this.enabledIds = new Set(JSON.parse(stored) as string[]);
-        return;
-      }
-    } catch {
-      // fall through to default
-    }
-
-    // 4. Default: only groups with enabled: true
-    this.enabledIds = new Set(this.groups.filter((g) => g.enabled).map((g) => g.id));
+    this.enabledIds = resolveInitialEnabledIds(this.groups);
   }
 
   /**
@@ -119,6 +117,6 @@ export class DataSourceManager {
    * @returns Flat array of prefixes (e.g. `["tobus", "toaran"]`).
    */
   getEnabledPrefixes(): string[] {
-    return this.groups.filter((g) => this.enabledIds.has(g.id)).flatMap((g) => g.prefixes);
+    return dedupePrefixes(getEnabledPrefixesFromGroups(this.groups, this.enabledIds));
   }
 }

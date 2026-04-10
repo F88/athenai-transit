@@ -1,4 +1,4 @@
-import type { SourceGroup } from './data-source-manager';
+import type { SourceGroup } from '../types/app/source-group';
 
 const settings: SourceGroup[] = [
   {
@@ -7,6 +7,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Toei Bus', names: { ja: '都バス', en: 'Toei Bus' } },
+    countries: ['JP'],
   },
   {
     id: 'toei-train',
@@ -14,6 +15,7 @@ const settings: SourceGroup[] = [
     routeTypes: [0, 1, 2],
     enabled: true,
     name: { name: 'Toei', names: { ja: '都営交通', en: 'Toei' } },
+    countries: ['JP'],
   },
   {
     id: 'yurikamome',
@@ -21,6 +23,7 @@ const settings: SourceGroup[] = [
     routeTypes: [2],
     enabled: true,
     name: { name: 'Yurikamome', names: { ja: 'ゆりかもめ', en: 'Yurikamome' } },
+    countries: ['JP'],
   },
   {
     id: 'kanto-bus',
@@ -28,6 +31,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Kanto Bus', names: { ja: '関東バス', en: 'Kanto Bus' } },
+    countries: ['JP'],
   },
   {
     id: 'keio-bus',
@@ -35,6 +39,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Keio Bus', names: { ja: '京王バス', en: 'Keio Bus' } },
+    countries: ['JP'],
   },
   {
     id: 'chiyoda-bus',
@@ -42,6 +47,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Kazaguruma', names: { ja: '風ぐるま', en: 'Kazaguruma' } },
+    countries: ['JP'],
   },
   {
     id: 'chuo-bus',
@@ -49,6 +55,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Edo Bus', names: { ja: '江戸バス', en: 'Edo Bus' } },
+    countries: ['JP'],
   },
   {
     id: 'suginami-gsm',
@@ -56,6 +63,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Sugimaru', names: { ja: 'すぎ丸', en: 'Sugimaru' } },
+    countries: ['JP'],
   },
   // リソース定義最終確認中
   {
@@ -64,6 +72,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Seibu Bus', names: { ja: '西武バス', en: 'Seibu Bus' } },
+    countries: ['JP'],
   },
   {
     id: 'iyotetsu-bus',
@@ -71,6 +80,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Iyotetsu Bus', names: { ja: '伊予鉄バス', en: 'Iyotetsu Bus' } },
+    countries: ['JP'],
   },
   {
     id: 'kita-bus',
@@ -78,6 +88,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'K-bus', names: { ja: 'Kバス', en: 'K-bus' } },
+    countries: ['JP'],
   },
   {
     id: 'kyoto-city-bus',
@@ -85,6 +96,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Kyoto City Bus', names: { ja: '京都市バス', en: 'Kyoto City Bus' } },
+    countries: ['JP'],
   },
   {
     id: 'oshima-bus',
@@ -92,6 +104,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Oshima Bus', names: { ja: '大島バス', en: 'Oshima Bus' } },
+    countries: ['JP'],
   },
   {
     id: 'miyake-bus',
@@ -99,6 +112,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Miyake Village Bus', names: { ja: '三宅村営バス', en: 'Miyake Village Bus' } },
+    countries: ['JP'],
   },
   {
     id: 'keisei-transit-bus',
@@ -106,6 +120,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Keisei Transit Bus', names: { ja: '京成千葉W', en: 'Keisei Transit Bus' } },
+    countries: ['JP'],
   },
   {
     id: 'mir-train',
@@ -113,6 +128,7 @@ const settings: SourceGroup[] = [
     routeTypes: [2],
     enabled: true,
     name: { name: 'Tsukuba Express', names: { ja: 'TX', en: 'Tsukuba Express' } },
+    countries: ['JP'],
   },
   {
     id: 'nagoya-srt',
@@ -120,6 +136,7 @@ const settings: SourceGroup[] = [
     routeTypes: [3],
     enabled: true,
     name: { name: 'Nagoya SRT', names: { ja: 'SRT名古屋', en: 'Nagoya SRT' } },
+    countries: ['JP'],
   },
   {
     id: 'actv-nav',
@@ -127,6 +144,7 @@ const settings: SourceGroup[] = [
     routeTypes: [4],
     enabled: true,
     name: { name: 'ACTV', names: { ja: 'ACTV', en: 'ACTV', it: 'ACTV' } },
+    countries: ['IT'],
   },
   {
     id: 'vag-freiburg',
@@ -137,6 +155,7 @@ const settings: SourceGroup[] = [
       name: 'VAG Freiburg',
       names: { ja: 'VAG Freiburg', en: 'VAG Freiburg', de: 'VAG Freiburg' },
     },
+    countries: ['DE'],
   },
 ];
 
