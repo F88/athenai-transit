@@ -1,18 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TILE_SOURCES } from '../../config/tile-sources';
 import {
   cleanupInvalidQueryParams,
   getDiagParam,
   getRepoParam,
   getSourcesParam,
   getStopParam,
+  getTileIdxParam,
   getTimeParam,
   parseQueryLat,
   parseQueryLng,
   parseQueryStopId,
+  parseQueryTileIdx,
   parseQueryTime,
   parseQueryZoom,
   resetParamsCache,
 } from '../query-params';
+
+const TILE_SOURCE_COUNT = TILE_SOURCES.length;
 
 describe('parseQueryLat', () => {
   it('parses valid latitudes', () => {
@@ -107,7 +112,12 @@ describe('parseQueryTime', () => {
   it('parses without seconds (local time)', () => {
     const date = parseQueryTime('2026-03-25T20:55');
     expect(date).not.toBeNull();
-    expect(date!.getTime()).not.toBeNaN();
+    expect(date!.getFullYear()).toBe(2026);
+    expect(date!.getMonth()).toBe(2);
+    expect(date!.getDate()).toBe(25);
+    expect(date!.getHours()).toBe(20);
+    expect(date!.getMinutes()).toBe(55);
+    expect(date!.getSeconds()).toBe(0);
   });
 
   it('parses with seconds', () => {
@@ -137,6 +147,7 @@ describe('parseQueryTime', () => {
   it('accepts date-only without time (midnight UTC)', () => {
     const date = parseQueryTime('2026-03-25');
     expect(date).not.toBeNull();
+    expect(date!.toISOString()).toBe('2026-03-25T00:00:00.000Z');
   });
 
   describe('rejects non-ISO formats that new Date() would accept', () => {
@@ -323,10 +334,12 @@ describe('cleanupInvalidQueryParams', () => {
     restoreLocation();
   });
 
-  it('removes invalid repo/time/lat/lng/zm/stop params and preserves valid free-form params', () => {
-    setSearch('?repo=v1&time=bad&lat=999&lng=abc&zm=99&stop=%20%20&sources=minkuru&diag=v2-load');
+  it('removes invalid repo/time/lat/lng/zm/stop/tileIdx params and preserves valid free-form params', () => {
+    setSearch(
+      '?repo=v1&time=bad&lat=999&lng=abc&zm=99&stop=%20%20&tileIdx=abc&sources=minkuru&diag=v2-load',
+    );
 
-    cleanupInvalidQueryParams();
+    cleanupInvalidQueryParams(TILE_SOURCE_COUNT);
 
     expect(replaceStateSpy).toHaveBeenCalledOnce();
     expect(replaceStateSpy).toHaveBeenCalledWith(
@@ -338,10 +351,10 @@ describe('cleanupInvalidQueryParams', () => {
 
   it('does nothing when all params are valid', () => {
     setSearch(
-      '?repo=mock&time=2026-03-25T20:55:00+09:00&lat=35.68&lng=139.77&zm=14&stop=keio_S0123',
+      '?repo=mock&time=2026-03-25T20:55:00+09:00&lat=35.68&lng=139.77&zm=14&stop=keio_S0123&tileIdx=3',
     );
 
-    cleanupInvalidQueryParams();
+    cleanupInvalidQueryParams(TILE_SOURCE_COUNT);
 
     expect(replaceStateSpy).not.toHaveBeenCalled();
   });
@@ -349,7 +362,7 @@ describe('cleanupInvalidQueryParams', () => {
   it('preserves + in valid time offsets when cleaning other params', () => {
     setSearch('?time=2026-03-25T20:55:00+09:00&repo=v1');
 
-    cleanupInvalidQueryParams();
+    cleanupInvalidQueryParams(TILE_SOURCE_COUNT);
 
     expect(replaceStateSpy).toHaveBeenCalledWith(
       history.state,
@@ -361,8 +374,87 @@ describe('cleanupInvalidQueryParams', () => {
   it('drops empty query pairs when rebuilding the cleaned URL', () => {
     setSearch('?repo=v1&&sources=minkuru');
 
-    cleanupInvalidQueryParams();
+    cleanupInvalidQueryParams(TILE_SOURCE_COUNT);
 
     expect(replaceStateSpy).toHaveBeenCalledWith(history.state, '', '/?sources=minkuru');
+  });
+
+  it('removes out-of-range tileIdx', () => {
+    setSearch(`?tileIdx=${TILE_SOURCE_COUNT}`);
+
+    cleanupInvalidQueryParams(TILE_SOURCE_COUNT);
+
+    expect(replaceStateSpy).toHaveBeenCalledWith(history.state, '', '/');
+  });
+
+  it('preserves valid tileIdx', () => {
+    setSearch(`?tileIdx=${Math.min(3, TILE_SOURCE_COUNT - 1)}`);
+
+    cleanupInvalidQueryParams(TILE_SOURCE_COUNT);
+
+    expect(replaceStateSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('parseQueryTileIdx', () => {
+  const COUNT = TILE_SOURCE_COUNT;
+  const VALID_TILE_IDX = Math.min(3, COUNT - 1);
+  const LAST_TILE_IDX = COUNT - 1;
+
+  it('parses valid tile indices', () => {
+    expect(parseQueryTileIdx('0', COUNT)).toBe(0);
+    expect(parseQueryTileIdx(String(VALID_TILE_IDX), COUNT)).toBe(VALID_TILE_IDX);
+    expect(parseQueryTileIdx(String(LAST_TILE_IDX), COUNT)).toBe(LAST_TILE_IDX);
+  });
+
+  it('rejects out-of-range values', () => {
+    expect(parseQueryTileIdx(String(COUNT), COUNT)).toBeUndefined();
+    expect(parseQueryTileIdx('-1', COUNT)).toBeUndefined();
+    expect(parseQueryTileIdx('100', COUNT)).toBeUndefined();
+  });
+
+  it('rejects non-integer values', () => {
+    expect(parseQueryTileIdx('1.5', COUNT)).toBeUndefined();
+    expect(parseQueryTileIdx('0.1', COUNT)).toBeUndefined();
+  });
+
+  it('rejects non-numeric and whitespace-only input', () => {
+    expect(parseQueryTileIdx('abc', COUNT)).toBeUndefined();
+    expect(parseQueryTileIdx('', COUNT)).toBeUndefined();
+    expect(parseQueryTileIdx('   ', COUNT)).toBeUndefined();
+    expect(parseQueryTileIdx(null, COUNT)).toBeUndefined();
+    expect(parseQueryTileIdx(undefined, COUNT)).toBeUndefined();
+  });
+
+  it('rejects Infinity and NaN', () => {
+    expect(parseQueryTileIdx('Infinity', COUNT)).toBeUndefined();
+    expect(parseQueryTileIdx('-Infinity', COUNT)).toBeUndefined();
+    expect(parseQueryTileIdx('NaN', COUNT)).toBeUndefined();
+  });
+});
+
+describe('getTileIdxParam', () => {
+  afterEach(restoreLocation);
+
+  const VALID_TILE_IDX = Math.min(3, TILE_SOURCE_COUNT - 1);
+
+  it('returns parsed tile index when param is present', () => {
+    setSearch(`?tileIdx=${VALID_TILE_IDX}`);
+    expect(getTileIdxParam(TILE_SOURCE_COUNT)).toBe(VALID_TILE_IDX);
+  });
+
+  it('returns undefined when param is absent', () => {
+    setSearch('');
+    expect(getTileIdxParam(TILE_SOURCE_COUNT)).toBeUndefined();
+  });
+
+  it('returns undefined for invalid value', () => {
+    setSearch('?tileIdx=abc');
+    expect(getTileIdxParam(TILE_SOURCE_COUNT)).toBeUndefined();
+  });
+
+  it('returns undefined for out-of-range value', () => {
+    setSearch(`?tileIdx=${TILE_SOURCE_COUNT}`);
+    expect(getTileIdxParam(TILE_SOURCE_COUNT)).toBeUndefined();
   });
 });

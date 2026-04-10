@@ -3,6 +3,7 @@ import type { UserSettings } from '../types/app/settings';
 import { APP_ROUTE_TYPES } from '../config/route-types';
 import { normalizeLang } from '../config/supported-langs';
 import { TILE_SOURCES } from '../config/tile-sources';
+import { getTileIdxParam } from '../lib/query-params';
 
 const STORAGE_KEY = 'athenai-settings';
 
@@ -82,6 +83,24 @@ function loadSettings(): UserSettings {
 }
 
 /**
+ * Apply URL query parameter overrides to loaded settings.
+ *
+ * Called once at initialization, after {@link loadSettings}.
+ * Overrides are temporary — they do not write to localStorage.
+ * The user can later change values via UI, which persists normally.
+ *
+ * @param settings - Settings loaded from localStorage.
+ * @returns Settings with query param overrides applied.
+ */
+function adjustSettings(settings: UserSettings): UserSettings {
+  const tileIdx = getTileIdxParam(TILE_SOURCES.length);
+  if (tileIdx !== undefined) {
+    return { ...settings, tileIndex: tileIdx };
+  }
+  return settings;
+}
+
+/**
  * Persist user settings to localStorage.
  *
  * Keys in {@link TRANSIENT_KEYS} are stripped before saving.
@@ -106,7 +125,7 @@ export function useUserSettings(): {
   updateSetting: <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => void;
   updateSettings: (partial: Partial<UserSettings>) => void;
 } {
-  const [settings, setSettings] = useState<UserSettings>(loadSettings);
+  const [settings, setSettings] = useState<UserSettings>(() => adjustSettings(loadSettings()));
 
   const updateSetting = useCallback(
     <K extends keyof UserSettings>(key: K, value: UserSettings[K]) => {

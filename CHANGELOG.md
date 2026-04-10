@@ -11,6 +11,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- `?tileIdx=<number>` URL パラメータを追加。タイルソースを URL から指定可能 (localStorage より優先、一時的な override)。
 - キーボードショートカットを追加。`/` で停留所検索ダイアログを開き、`?` でショートカット一覧モーダルを表示。
 - `ShortcutHelpDialog` コンポーネントを追加し、利用可能なキーボードショートカットを一覧表示。
 - 停留所検索 (StopSearchModal) で `↑` / `↓` による結果ハイライト移動と `Enter` による選択確定に対応。検索文字を打ち変えるとハイライトを先頭にリセット。

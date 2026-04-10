@@ -9,6 +9,7 @@ import { DataSourceManager } from './config/data-source-manager';
 import type { TransitRepository } from './repositories/transit-repository';
 import { AthenaiRepositoryV2 } from './repositories/athenai-repository-v2';
 import { cleanupInvalidQueryParams, getDiagParam, getRepoParam } from './lib/query-params';
+import { TILE_SOURCES } from './config/tile-sources';
 import { createLogger } from './lib/logger';
 
 const logger = createLogger('App');
@@ -37,7 +38,7 @@ async function createRepository(): Promise<TransitRepository> {
 
 async function init() {
   // Remove invalid query params (e.g., legacy ?repo=v1, malformed ?time=) from the URL.
-  cleanupInvalidQueryParams();
+  cleanupInvalidQueryParams(TILE_SOURCES.length);
 
   const repository = await createRepository();
 
