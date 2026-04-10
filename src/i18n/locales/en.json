@@ -136,6 +136,8 @@
   "anchor": {
     "add": "Add anchor",
     "remove": "Remove anchor",
+    "added": "Anchor added",
+    "removed": "Anchor removed",
     "anchorUpdateFailed": "Failed to update anchor"
   },
   "search": {

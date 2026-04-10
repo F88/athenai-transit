@@ -11,6 +11,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- アンカーの追加/削除操作に toast 通知を追加 (#79)。追加は成功 (緑)、削除は警告 (オレンジ) で表示。
 - `?lang=<code>` URL パラメータを追加。表示言語を URL から指定可能 (localStorage より優先、一時的な override)。`normalizeLang` で正規化。
 - `?tileIdx=<number>` URL パラメータを追加。タイルソースを URL から指定可能 (localStorage より優先、一時的な override)。
 - キーボードショートカットを追加。`/` で停留所検索ダイアログを開き、`?` でショートカット一覧モーダルを表示。
@@ -21,6 +22,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- Toast 表示位置を `top-center` から `bottom-center` に変更。展開表示 (expand) を有効化し、同時表示数の上限を10に拡大。
 - About: 地図優先の開発を示す古い WIP 注記を削除。
 
 ## [2026.04.09]

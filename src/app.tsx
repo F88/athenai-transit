@@ -19,6 +19,7 @@ import { TILE_SOURCES } from './config/tile-sources';
 import { createInfoLevel } from './utils/create-info-level';
 import { toggleGroupInList } from './utils/list-toggle';
 import { routeTypeGroup } from './utils/route-type-category';
+import { routeTypesEmoji } from './utils/route-type-emoji';
 import { createLogger } from './lib/logger';
 import {
   nextInfoLevel,
@@ -460,8 +461,16 @@ export default function App() {
   const handleToggleAnchor = useCallback(
     (stopId: string, routeTypes: AppRouteTypeValue[]) => {
       if (isStopAnchor(stopId)) {
+        // Capture stop name before removal (entry won't exist after removeAnchor)
+        const stopName = anchors.find((a) => a.stopId === stopId)?.stopName ?? stopId;
         logger.debug(`handleToggleAnchor: removing stopId=${stopId}`);
-        void removeAnchor(stopId);
+        const emoji = anchors.find((a) => a.stopId === stopId)?.routeTypes;
+        void removeAnchor(stopId).then((result) => {
+          if (result.success) {
+            const prefix = emoji ? `${routeTypesEmoji(emoji)} ` : '';
+            toast.warning(t('anchor.removed'), { description: `${prefix}${stopName}` });
+          }
+        });
       } else {
         const meta = findStopWithMeta(stopId);
         if (meta) {
@@ -472,11 +481,17 @@ export default function App() {
             stopLat: meta.stop.stop_lat,
             stopLon: meta.stop.stop_lon,
             routeTypes,
+          }).then((result) => {
+            if (result.success) {
+              toast.success(t('anchor.added'), {
+                description: `${routeTypesEmoji(routeTypes)} ${meta.stop.stop_name}`,
+              });
+            }
           });
         }
       }
     },
-    [isStopAnchor, removeAnchor, addAnchor, findStopWithMeta],
+    [isStopAnchor, anchors, removeAnchor, addAnchor, findStopWithMeta, t],
   );
 
   // Select + pan to a stop from Portal dropdown
@@ -726,7 +741,15 @@ export default function App() {
         dataLang={dataLang}
         onClose={() => setTimetableModal(null)}
       />
-      <Toaster theme={settings.theme} position="top-center" closeButton richColors expand={false} />
+      <Toaster
+        theme={settings.theme}
+        position="bottom-center"
+        // closeButton={false}
+        closeButton={true}
+        richColors
+        expand={true}
+        visibleToasts={10}
+      />
     </>
   );
 }

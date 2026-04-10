@@ -136,6 +136,8 @@
   "anchor": {
     "add": "アンカーを追加",
     "remove": "アンカーを削除",
+    "added": "アンカーを追加しました",
+    "removed": "アンカーを削除しました",
     "anchorUpdateFailed": "アンカー更新に失敗しました"
   },
   "search": {
