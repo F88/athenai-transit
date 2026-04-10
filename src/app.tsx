@@ -744,7 +744,6 @@ export default function App() {
       <Toaster
         theme={settings.theme}
         position="bottom-center"
-        // closeButton={false}
         closeButton={true}
         richColors
         expand={true}
