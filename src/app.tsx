@@ -45,6 +45,8 @@ import { TimeControls } from './components/time-controls';
 import { TimetableModal, type TimetableData } from './components/dialog/timetable-modal';
 import { StopSearchModal } from './components/dialog/stop-search-modal';
 import { InfoDialog } from './components/dialog/info-dialog';
+import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
+import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 
@@ -79,6 +81,24 @@ export default function App() {
   const [hasNearbyLoaded, setHasNearbyLoaded] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
+  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+
+  // Global keyboard shortcuts. Suppressed while any of the four primary
+  // modals owned by app.tsx is open (search / info / help / timetable),
+  // so the shortcut cannot re-open the same modal it is currently inside.
+  // Lower-frequency dialogs whose state lives in their own components
+  // (e.g. TimeSettingDialog) are intentionally NOT tracked here: Radix
+  // Dialog handles nested dialog stacking (focus trap / scroll lock /
+  // Escape order) correctly, so allowing the shortcut to layer a dialog
+  // on top of one of those is acceptable. Add a new state to this list
+  // only when a new modal becomes a primary entry point.
+  useKeyboardShortcuts({
+    enabled: !searchModalOpen && !infoDialogOpen && !shortcutHelpOpen && timetableModal === null,
+    handlers: {
+      onOpenSearch: () => setSearchModalOpen(true),
+      onOpenHelp: () => setShortcutHelpOpen(true),
+    },
+  });
 
   // --- Custom Hooks ---
 
@@ -698,6 +718,7 @@ export default function App() {
         onOpenChange={setSearchModalOpen}
       />
       <InfoDialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen} />
+      <ShortcutHelpDialog open={shortcutHelpOpen} onOpenChange={setShortcutHelpOpen} />
       <TimetableModal
         data={timetableModal}
         time={dateTime}

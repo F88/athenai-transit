@@ -589,3 +589,17 @@ http://localhost:5173/?diag=v2-load
 #### Setup shadcn/ui
 
 - [Skills - shadcn/ui](https://ui.shadcn.com/docs/skills)
+
+## deps 更新に関する注意事項 (随時更新)
+
+> [!NOTE]
+> このセクションは経験ベースで随時更新します。新しい知見・回避策・解除条件が得られたら追記してください。
+
+### 当面更新を見送るパッケージ
+
+過去にバージョンを上げた際にローカル環境で動作しなくなった経験があるため、しばらく現状維持とします。patch 更新は通常通り行って構いませんが、major / 大きな minor 更新は安全が確認できるまで控えてください。
+
+- `vitest` および `@vitest/*` 系 (`@vitest/coverage-v8`, `@vitest/browser-playwright` 等)
+- `eslint` および関連プラグイン (`typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, `eslint-plugin-storybook`)
+
+Dependabot / Renovate を利用する場合は、上記パッケージの major 更新を ignore する設定を検討してください。

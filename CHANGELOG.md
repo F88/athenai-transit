@@ -9,6 +9,18 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- キーボードショートカットを追加。`/` で停留所検索ダイアログを開き、`?` でショートカット一覧モーダルを表示。
+- `ShortcutHelpDialog` コンポーネントを追加し、利用可能なキーボードショートカットを一覧表示。
+- 停留所検索 (StopSearchModal) で `↑` / `↓` による結果ハイライト移動と `Enter` による選択確定に対応。検索文字を打ち変えるとハイライトを先頭にリセット。
+- `useKeyboardShortcuts` Hook と `shouldHandleShortcut` 純粋関数を新設。IME 変換中・修飾キー併用時・テキスト入力フォーカス時はショートカットを発火させない。
+- About: キーボードショートカットの簡潔な紹介を追加。
+
+### Changed
+
+- About: 地図優先の開発を示す古い WIP 注記を削除。
+
 ## [2026.04.09]
 
 ### Added
