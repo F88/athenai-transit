@@ -597,9 +597,12 @@ http://localhost:5173/?diag=v2-load
 
 ### 当面更新を見送るパッケージ
 
-過去にバージョンを上げた際にローカル環境で動作しなくなった経験があるため、しばらく現状維持とします。patch 更新は通常通り行って構いませんが、major / 大きな minor 更新は安全が確認できるまで控えてください。
+過去にバージョンを上げた際にローカル環境で動作しなくなった経験、あるいはエコシステムの追従待ちのため、しばらく現状維持とします。patch 更新は通常通り行って構いませんが、major / 大きな minor 更新は安全が確認できるまで控えてください。
 
-- `vitest` および `@vitest/*` 系 (`@vitest/coverage-v8`, `@vitest/browser-playwright` 等)
-- `eslint` および関連プラグイン (`typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, `eslint-plugin-storybook`)
+- `eslint` `^9` → `^10` — 破壊的変更が多いため様子見
+- `vite` `^7` → `^8` — `@vitejs/plugin-react` v6 が Vite 8+ 必須。セットで更新する必要があり、関連プラグインの追従待ち
+- `vitest` `^4.0` → `^4.1` — Storybook 10.3 が `vitest@4.0.18` を peer で要求しているため Storybook 側の対応待ち。`@vitest/*` 系 (`@vitest/coverage-v8`, `@vitest/browser-playwright` 等) も同じ理由で固定
+- `serialize-javascript` 脆弱性 (`vite-plugin-pwa` 経由) — upstream の修正待ち
+- `eslint` 関連プラグイン (`typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, `eslint-plugin-storybook`) — `eslint` の major 更新を見送っている関係で同じく現状維持
 
-Dependabot / Renovate を利用する場合は、上記パッケージの major 更新を ignore する設定を検討してください。
+Dependabot / Renovate を利用する場合は、上記パッケージの該当バージョン更新を ignore する設定を検討してください。
