@@ -558,5 +558,44 @@ describe('useUserSettings', () => {
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
       expect(stored.tileIndex).toBe(7);
     });
+
+    it('overrides lang from ?lang= query param', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ lang: 'ja' }));
+      setSearch('?lang=en');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.lang).toBe('en');
+    });
+
+    it('normalizes ?lang= value via normalizeLang', async () => {
+      setSearch('?lang=zh-TW');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.lang).toBe('zh-Hant');
+    });
+
+    it('falls back unsupported ?lang= to DEFAULT_LANG', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ lang: 'en' }));
+      setSearch('?lang=pt-BR');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.lang).toBe(DEFAULT_LANG);
+    });
+
+    it('does not write lang override to localStorage', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ lang: 'ja' }));
+      setSearch('?lang=en');
+
+      const spy = vi.spyOn(Storage.prototype, 'setItem');
+
+      await renderFreshUseUserSettings();
+
+      const writes = spy.mock.calls.filter(([key]) => key === STORAGE_KEY);
+      expect(writes).toHaveLength(0);
+      spy.mockRestore();
+    });
   });
 });

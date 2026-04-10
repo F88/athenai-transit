@@ -3,7 +3,7 @@ import type { UserSettings } from '../types/app/settings';
 import { APP_ROUTE_TYPES } from '../config/route-types';
 import { normalizeLang } from '../config/supported-langs';
 import { TILE_SOURCES } from '../config/tile-sources';
-import { getTileIdxParam } from '../lib/query-params';
+import { getLangParam, getTileIdxParam } from '../lib/query-params';
 
 const STORAGE_KEY = 'athenai-settings';
 
@@ -93,11 +93,19 @@ function loadSettings(): UserSettings {
  * @returns Settings with query param overrides applied.
  */
 function adjustSettings(settings: UserSettings): UserSettings {
+  let adjusted = settings;
+
   const tileIdx = getTileIdxParam(TILE_SOURCES.length);
   if (tileIdx !== undefined) {
-    return { ...settings, tileIndex: tileIdx };
+    adjusted = { ...adjusted, tileIndex: tileIdx };
   }
-  return settings;
+
+  const lang = getLangParam();
+  if (lang !== undefined) {
+    adjusted = { ...adjusted, lang: normalizeLang(lang) };
+  }
+
+  return adjusted;
 }
 
 /**

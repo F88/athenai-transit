@@ -11,6 +11,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- `?lang=<code>` URL パラメータを追加。表示言語を URL から指定可能 (localStorage より優先、一時的な override)。`normalizeLang` で正規化。
 - `?tileIdx=<number>` URL パラメータを追加。タイルソースを URL から指定可能 (localStorage より優先、一時的な override)。
 - キーボードショートカットを追加。`/` で停留所検索ダイアログを開き、`?` でショートカット一覧モーダルを表示。
 - `ShortcutHelpDialog` コンポーネントを追加し、利用可能なキーボードショートカットを一覧表示。

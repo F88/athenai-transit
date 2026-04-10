@@ -3,11 +3,13 @@ import { TILE_SOURCES } from '../../config/tile-sources';
 import {
   cleanupInvalidQueryParams,
   getDiagParam,
+  getLangParam,
   getRepoParam,
   getSourcesParam,
   getStopParam,
   getTileIdxParam,
   getTimeParam,
+  parseQueryLang,
   parseQueryLat,
   parseQueryLng,
   parseQueryStopId,
@@ -456,5 +458,43 @@ describe('getTileIdxParam', () => {
   it('returns undefined for out-of-range value', () => {
     setSearch(`?tileIdx=${TILE_SOURCE_COUNT}`);
     expect(getTileIdxParam(TILE_SOURCE_COUNT)).toBeUndefined();
+  });
+});
+
+describe('parseQueryLang', () => {
+  it('returns trimmed string for valid input', () => {
+    expect(parseQueryLang('en')).toBe('en');
+    expect(parseQueryLang('ja')).toBe('ja');
+    expect(parseQueryLang('zh-Hans')).toBe('zh-Hans');
+  });
+
+  it('trims whitespace', () => {
+    expect(parseQueryLang('  en  ')).toBe('en');
+  });
+
+  it('returns undefined for empty/whitespace/null/undefined', () => {
+    expect(parseQueryLang('')).toBeUndefined();
+    expect(parseQueryLang('   ')).toBeUndefined();
+    expect(parseQueryLang(null)).toBeUndefined();
+    expect(parseQueryLang(undefined)).toBeUndefined();
+  });
+});
+
+describe('getLangParam', () => {
+  afterEach(restoreLocation);
+
+  it('returns lang string when param is present', () => {
+    setSearch('?lang=en');
+    expect(getLangParam()).toBe('en');
+  });
+
+  it('returns undefined when param is absent', () => {
+    setSearch('');
+    expect(getLangParam()).toBeUndefined();
+  });
+
+  it('returns string as-is for unsupported lang (normalization is caller responsibility)', () => {
+    setSearch('?lang=pt-BR');
+    expect(getLangParam()).toBe('pt-BR');
   });
 });

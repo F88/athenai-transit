@@ -14,6 +14,7 @@
  * - `?time=2026-03-25T20:55:00+09:00` — initial date/time (RFC 3339)
  * - `?stop=keio_S0123` — initial stop selection (overrides lat/lng)
  * - `?tileIdx=0` — initial tile source index (0-based, overrides localStorage)
+ * - `?lang=en` — initial display language (BCP 47 code, overrides localStorage)
  * - `?diag=v2-load` — run diagnostics (see DEVELOPMENT.md)
  */
 
@@ -95,7 +96,7 @@ function getRawTimeValue(): string | null {
  * legacy or invalid values (such as `?repo=v1` after v1 removal, or
  * malformed `?time=`, `?lat=`, `?lng=`, `?zm=` values).
  *
- * Not validated (free-form): `?sources=`, `?diag=`.
+ * Not validated (free-form): `?sources=`, `?lang=`, `?diag=`.
  *
  * @param tileSourceCount - Number of available tile sources (for `?tileIdx=` validation).
  */
@@ -378,4 +379,36 @@ export function parseQueryTileIdx(
  */
 export function getTileIdxParam(tileSourceCount: number): number | undefined {
   return parseQueryTileIdx(getParams().get('tileIdx'), tileSourceCount);
+}
+
+/**
+ * Parse a display language code from a query param string.
+ * A valid lang is a non-empty, non-whitespace string.
+ * Actual normalization to a supported language is deferred to
+ * the caller (via `normalizeLang`).
+ *
+ * @param value - Raw string value from URLSearchParams.get().
+ * @returns Trimmed lang string, or undefined if empty/absent.
+ */
+export function parseQueryLang(value: string | null | undefined): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  return trimmed;
+}
+
+/**
+ * Returns the `?lang=` param value, or undefined if not present.
+ *
+ * When present, the app uses this display language on initial load,
+ * overriding the localStorage setting. The value is normalized via
+ * `normalizeLang` in `adjustSettings`. The localStorage value is
+ * not updated — the override is temporary until the user changes
+ * the language via UI.
+ *
+ * @returns Raw lang string, or undefined if absent.
+ */
+export function getLangParam(): string | undefined {
+  return parseQueryLang(getParams().get('lang'));
 }
