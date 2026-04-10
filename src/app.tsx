@@ -83,8 +83,15 @@ export default function App() {
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
-  // Global keyboard shortcuts. Only active when no modal is currently open,
-  // so shortcuts never fire while the user is interacting with a dialog.
+  // Global keyboard shortcuts. Suppressed while any of the four primary
+  // modals owned by app.tsx is open (search / info / help / timetable),
+  // so the shortcut cannot re-open the same modal it is currently inside.
+  // Lower-frequency dialogs whose state lives in their own components
+  // (e.g. TimeSettingDialog) are intentionally NOT tracked here: Radix
+  // Dialog handles nested dialog stacking (focus trap / scroll lock /
+  // Escape order) correctly, so allowing the shortcut to layer a dialog
+  // on top of one of those is acceptable. Add a new state to this list
+  // only when a new modal becomes a primary entry point.
   useKeyboardShortcuts({
     enabled: !searchModalOpen && !infoDialogOpen && !shortcutHelpOpen && timetableModal === null,
     handlers: {
