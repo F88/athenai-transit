@@ -131,7 +131,7 @@ interface StopSearchModalProps {
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
-  onSelectStop: (stop: Stop) => void;
+  onSelectStop: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -272,9 +272,17 @@ export function StopSearchModal({
 
   const handleSelect = useCallback(
     (stop: Stop) => {
-      onSelectStop(stop);
+      onSelectStop(
+        stop,
+        resolveStopRouteTypes({
+          stopId: stop.stop_id,
+          routeTypeMap,
+          routes: null,
+          unknownPolicy: 'include-unknown',
+        }),
+      );
     },
-    [onSelectStop],
+    [onSelectStop, routeTypeMap],
   );
 
   const handleInputKeyDown = useCallback(

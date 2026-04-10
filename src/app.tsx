@@ -517,24 +517,16 @@ export default function App() {
   );
 
   const handleSearchSelect = useCallback(
-    (stop: Stop) => {
+    (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleSearchSelect [Search]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
       focusStop(stop);
-      // Search results may not be in radiusStops/inBoundStops yet;
-      // wrap as StopWithMeta without distance
-      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
-      pushStop(
-        meta,
-        resolveStopRouteTypes({
-          stopId: stop.stop_id,
-          routeTypeMap,
-          routes: meta.routes,
-          unknownPolicy: 'include-unknown',
-        }),
-      );
       setSearchModalOpen(false);
+      // SearchDialog already resolved routeTypes from its own routeTypeMap,
+      // so we can use them directly without re-resolving.
+      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
+      pushStop(meta, routeTypes);
     },
-    [focusStop, pushStop, findStopWithMeta, routeTypeMap],
+    [focusStop, pushStop, findStopWithMeta],
   );
 
   // --- Settings handlers ---
