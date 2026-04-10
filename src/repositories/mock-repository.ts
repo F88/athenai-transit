@@ -121,6 +121,11 @@ const STOP_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
     'zh-Hans': '青叶中央站(仅下车)',
     'zh-Hant': '青葉中央站(僅下車)',
   },
+  bus_central_closed: {
+    ko: '아오바중앙역 북쪽 출구(휴지중)',
+    'zh-Hans': '青叶中央站北口(停用中)',
+    'zh-Hant': '青葉中央站北口(停用中)',
+  },
   bus_park: { ko: '모리공원 앞', 'zh-Hans': '森公园前', 'zh-Hant': '森公園前' },
   bus_library: {
     ko: '아오바도서관 앞',
@@ -238,6 +243,19 @@ const STOPS: Stop[] = [
     },
     stop_lat: 35.7489,
     stop_lon: 139.7706,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'bus_central_closed',
+    stop_name: 'あおば中央駅北口(休止中)',
+    stop_names: {
+      ja: 'あおば中央駅北口(休止中)',
+      'ja-Hrkt': 'あおばちゅうおうえききたぐち(きゅうしちゅう)',
+      en: 'Aoba-Chuo Sta. North Exit (Closed)',
+    },
+    stop_lat: 35.7494,
+    stop_lon: 139.7709,
     location_type: 0,
     agency_id: 'mock:aoba',
   },

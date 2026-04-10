@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { resolveAgencyLang } from '../config/transit-defaults';
 import { useInfoLevel } from '../hooks/use-info-level';
 import type { StopServiceState } from '../types/app/transit';
+import { BaseLabel } from './label/base-label';
+import { StopServiceStateLabel } from './label/stop-service-state-label';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
@@ -100,10 +102,6 @@ export function StopSummary({
     'shrink-0 rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
   const inaccessibleClass =
     'shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-gray-700 opacity-30 dark:bg-gray-700 dark:text-gray-300';
-  const dropOffClass =
-    'shrink-0 rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900 dark:text-red-300';
-  const noServiceClass =
-    'shrink-0 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300';
   const resolvedAgencyBadgeSize = agencyBadgeSize ?? 'sm';
   const resolvedRouteBadgeSize = routeBadgeSize ?? 'xs';
   const wheelchairAccessibleLabel = t('stop.accessibility.wheelchairAccessible');
@@ -145,11 +143,18 @@ export function StopSummary({
             <Accessibility size={14} strokeWidth={2} aria-hidden="true" focusable="false" />
           </span>
         )}
-        {isDropOffOnly && (
-          <span className={dropOffClass}>{t('stop.serviceState.dropOffOnly')}</span>
-        )}
-        {serviceState === 'no-service' && (
-          <span className={noServiceClass}>{t('stop.serviceState.noService')}</span>
+        {/* serviceState covers both drop-off-only and no-service when provided.
+           isDropOffOnly is a legacy fallback for callers that don't pass serviceState yet. */}
+        {serviceState ? (
+          <StopServiceStateLabel serviceState={serviceState} />
+        ) : (
+          isDropOffOnly && (
+            <BaseLabel
+              size="md"
+              value={t('stop.serviceState.dropOffOnly')}
+              className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+            />
+          )
         )}
         {agencies.length > 0 &&
           agencies.map((agency) => (

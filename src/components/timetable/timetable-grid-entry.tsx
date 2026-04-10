@@ -3,7 +3,7 @@ import type { TimetableEntry } from '../../types/app/transit-composed';
 import { getDisplayMinutes } from '../../domain/transit/timetable-utils';
 import { HeadsignBadge } from '../badge/headsign-badge';
 import { VerboseTimetableGridEntry as VerboseGridEntry } from '../verbose/verbose-timetable-grid-entry';
-import { EntryLabels } from './entry-labels';
+import { TimetableEntryLabels } from '../label/timetable-entry-labels';
 
 interface TimetableGridEntryProps {
   entry: TimetableEntry;
@@ -69,7 +69,7 @@ export function TimetableGridEntry({
           disableVerbose={disableVerbose}
         />
       )}
-      <EntryLabels
+      <TimetableEntryLabels
         entry={entry}
         isDisplayTerminal={isDisplayTerminal}
         isDisplayOrigin={isDisplayOrigin}

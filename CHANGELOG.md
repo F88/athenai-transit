@@ -19,11 +19,17 @@ and this project adheres to [CalVer](https://calver.org/).
 - 停留所検索 (StopSearchModal) で `↑` / `↓` による結果ハイライト移動と `Enter` による選択確定に対応。検索文字を打ち変えるとハイライトを先頭にリセット。
 - `useKeyboardShortcuts` Hook と `shouldHandleShortcut` 純粋関数を新設。IME 変換中・修飾キー併用時・テキスト入力フォーカス時はショートカットを発火させない。
 - About: キーボードショートカットの簡潔な紹介を追加。
+- `BaseLabel` コンポーネントを追加。サイズ (xs/sm/md)、文字数制限 (maxLength/ellipsis)、className による色指定をサポートするテキストラベルプリミティブ。
+- `StopServiceStateLabel` コンポーネントを追加。停留所サービス状態 (降車専用/運行なし) を BaseLabel ベースで表示。
+- `TimetableEntryLabels` コンポーネントを `src/components/label/` に移動し、BaseLabel ベースにリファクタ。
+- MockRepository: `bus_central_closed` (運行便なし/no-service) 停留所を追加。
+- Storybook: BaseLabel, StopServiceStateLabel, TimetableEntryLabels の stories を追加。
 
 ### Changed
 
 - Toast 表示位置を `top-center` から `bottom-center` に変更。展開表示 (expand) を有効化し、同時表示数の上限を10に拡大。
 - About: 地図優先の開発を示す古い WIP 注記を削除。
+- StopSummary: インラインの dropOff/noService ラベルを `StopServiceStateLabel` に統合。`serviceState` 未提供時は `isDropOffOnly` で fallback。
 
 ## [2026.04.09]
 
