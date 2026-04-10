@@ -461,13 +461,13 @@ export default function App() {
   const handleToggleAnchor = useCallback(
     (stopId: string, routeTypes: AppRouteTypeValue[]) => {
       if (isStopAnchor(stopId)) {
-        // Capture stop name before removal (entry won't exist after removeAnchor)
-        const stopName = anchors.find((a) => a.stopId === stopId)?.stopName ?? stopId;
+        // Capture anchor data before removal (entry won't exist after removeAnchor)
+        const anchor = anchors.find((a) => a.stopId === stopId);
+        const stopName = anchor?.stopName ?? stopId;
         logger.debug(`handleToggleAnchor: removing stopId=${stopId}`);
-        const emoji = anchors.find((a) => a.stopId === stopId)?.routeTypes;
         void removeAnchor(stopId).then((result) => {
           if (result.success) {
-            const prefix = emoji ? `${routeTypesEmoji(emoji)} ` : '';
+            const prefix = anchor?.routeTypes ? `${routeTypesEmoji(anchor.routeTypes)} ` : '';
             toast.warning(t('anchor.removed'), { description: `${prefix}${stopName}` });
           }
         });
