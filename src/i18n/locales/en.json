@@ -143,5 +143,14 @@
     "description": "Search for stops and stations by name",
     "placeholder": "Enter stop name...",
     "noResults": "No matching stops found"
+  },
+  "shortcut": {
+    "title": "Keyboard shortcuts",
+    "description": "Available keyboard shortcuts on desktop",
+    "entry": {
+      "search": "Search stops",
+      "help": "Show this help",
+      "close": "Close dialog"
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
 import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
@@ -30,6 +30,10 @@ interface StopSearchResultItemProps {
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
+  /** Whether this item is currently highlighted via keyboard navigation. */
+  isSelected: boolean;
+  /** Ref forwarded to the underlying button so the parent can scroll it into view. */
+  buttonRef: (el: HTMLButtonElement | null) => void;
   onSelect: (stop: Stop) => void;
 }
 
@@ -40,6 +44,8 @@ function StopSearchResultItem({
   normalizedQuery,
   infoLevel,
   dataLang,
+  isSelected,
+  buttonRef,
   onSelect,
 }: StopSearchResultItemProps) {
   const info = useInfoLevel(infoLevel);
@@ -48,7 +54,10 @@ function StopSearchResultItem({
 
   return (
     <button
-      className="border-border active:bg-accent flex w-full cursor-pointer items-center gap-2.5 border-t-0 border-r-0 border-b border-l-0 bg-transparent px-4 py-3 text-left font-[inherit] last:border-b-0"
+      ref={buttonRef}
+      className={`border-border active:bg-accent flex w-full cursor-pointer items-center gap-2.5 border-t-0 border-r-0 border-b border-l-0 px-4 py-3 text-left font-[inherit] last:border-b-0 ${
+        isSelected ? 'bg-accent' : 'bg-transparent'
+      }`}
       onClick={() => onSelect(stop)}
     >
       <div className="flex min-w-0 flex-col gap-0.5">
@@ -144,7 +153,9 @@ export function StopSearchModal({
   const [routeTypeMap, setRouteTypeMap] = useState<Map<string, AppRouteTypeValue[]>>(
     () => new Map(),
   );
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
     if (!open) {
@@ -194,6 +205,7 @@ export function StopSearchModal({
       onOpenChange(nextOpen);
       if (!nextOpen) {
         setQuery('');
+        setSelectedIndex(0);
       }
     },
     [onOpenChange],
@@ -236,11 +248,62 @@ export function StopSearchModal({
   const trimmedQuery = query.trim();
   const normalizedQuery = katakanaToHiragana(trimmedQuery.toLowerCase());
 
+  // Reset highlight to the first row whenever the result set changes so the
+  // user can press Enter immediately after typing. We use the official
+  // React 19 "store info from previous renders" pattern: comparing the
+  // memoised filteredStops identity in render and updating state inline,
+  // rather than running a setState inside useEffect (which is now lint-banned).
+  // Stale entries in itemRefs.current are cleared automatically: callback
+  // refs of unmounted rows are invoked with null on the next commit.
+  const [lastFilteredStops, setLastFilteredStops] = useState(filteredStops);
+  if (lastFilteredStops !== filteredStops) {
+    setLastFilteredStops(filteredStops);
+    setSelectedIndex(0);
+  }
+
+  // Scroll the highlighted row into view whenever the selection changes.
+  // `block: 'nearest'` keeps the row visible without jumping the list around
+  // when the row is already on screen.
+  useEffect(() => {
+    itemRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [selectedIndex]);
+
   const handleSelect = useCallback(
     (stop: Stop) => {
       onSelectStop(stop);
     },
     [onSelectStop],
+  );
+
+  const handleInputKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      // Skip while IME composition is in progress so the Enter that confirms
+      // the conversion does not also pick a result.
+      if (event.nativeEvent.isComposing) {
+        return;
+      }
+      if (filteredStops.length === 0) {
+        return;
+      }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setSelectedIndex((index) => Math.min(index + 1, filteredStops.length - 1));
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setSelectedIndex((index) => Math.max(index - 1, 0));
+        return;
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        const target = filteredStops[selectedIndex] ?? filteredStops[0];
+        if (target) {
+          handleSelect(target);
+        }
+      }
+    },
+    [filteredStops, selectedIndex, handleSelect],
   );
 
   return (
@@ -258,11 +321,12 @@ export function StopSearchModal({
             placeholder={t('search.placeholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleInputKeyDown}
           />
         </div>
         <div className="flex-1 overflow-y-auto">
           {filteredStops.length > 0
-            ? filteredStops.map((stop) => (
+            ? filteredStops.map((stop, index) => (
                 <StopSearchResultItem
                   key={stop.stop_id}
                   stop={stop}
@@ -276,6 +340,10 @@ export function StopSearchModal({
                   normalizedQuery={normalizedQuery}
                   infoLevel={infoLevel}
                   dataLang={dataLang}
+                  isSelected={index === selectedIndex}
+                  buttonRef={(el) => {
+                    itemRefs.current[index] = el;
+                  }}
                   onSelect={handleSelect}
                 />
               ))

@@ -45,6 +45,8 @@ import { TimeControls } from './components/time-controls';
 import { TimetableModal, type TimetableData } from './components/dialog/timetable-modal';
 import { StopSearchModal } from './components/dialog/stop-search-modal';
 import { InfoDialog } from './components/dialog/info-dialog';
+import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
+import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 
@@ -79,6 +81,17 @@ export default function App() {
   const [hasNearbyLoaded, setHasNearbyLoaded] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
+  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+
+  // Global keyboard shortcuts. Only active when no modal is currently open,
+  // so shortcuts never fire while the user is interacting with a dialog.
+  useKeyboardShortcuts({
+    enabled: !searchModalOpen && !infoDialogOpen && !shortcutHelpOpen && timetableModal === null,
+    handlers: {
+      onOpenSearch: () => setSearchModalOpen(true),
+      onOpenHelp: () => setShortcutHelpOpen(true),
+    },
+  });
 
   // --- Custom Hooks ---
 
@@ -698,6 +711,7 @@ export default function App() {
         onOpenChange={setSearchModalOpen}
       />
       <InfoDialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen} />
+      <ShortcutHelpDialog open={shortcutHelpOpen} onOpenChange={setShortcutHelpOpen} />
       <TimetableModal
         data={timetableModal}
         time={dateTime}
