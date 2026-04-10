@@ -36,8 +36,8 @@ const SHORTCUTS: readonly ShortcutEntry[] = [
  * Modal dialog showing the list of available keyboard shortcuts.
  *
  * Triggered by pressing `?` while no other modal is open. Mirrors the
- * structure of {@link ../dialog/info-dialog.tsx} so the two help-style
- * dialogs feel consistent.
+ * structure of {@link InfoDialog} so the two help-style dialogs feel
+ * consistent.
  *
  * @param open - Whether the dialog is open.
  * @param onOpenChange - Called when the open state changes.

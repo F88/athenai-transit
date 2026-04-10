@@ -72,6 +72,32 @@ describe('isEditableTarget', () => {
     expect(isEditableTarget(div)).toBe(false);
   });
 
+  it('returns true for a child element inside a contenteditable container', () => {
+    const editor = document.createElement('div');
+    editor.setAttribute('contenteditable', 'true');
+    const child = document.createElement('span');
+    editor.appendChild(child);
+    expect(isEditableTarget(child)).toBe(true);
+  });
+
+  it('returns true for a deeply nested element inside a contenteditable container', () => {
+    const editor = document.createElement('div');
+    editor.setAttribute('contenteditable', 'true');
+    const wrapper = document.createElement('p');
+    const inner = document.createElement('strong');
+    wrapper.appendChild(inner);
+    editor.appendChild(wrapper);
+    expect(isEditableTarget(inner)).toBe(true);
+  });
+
+  it('returns false for a child element inside a contenteditable="false" container', () => {
+    const wrapper = document.createElement('div');
+    wrapper.setAttribute('contenteditable', 'false');
+    const child = document.createElement('span');
+    wrapper.appendChild(child);
+    expect(isEditableTarget(child)).toBe(false);
+  });
+
   it('returns false for a plain <div>', () => {
     const div = document.createElement('div');
     expect(isEditableTarget(div)).toBe(false);

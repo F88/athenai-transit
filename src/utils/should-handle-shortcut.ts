@@ -20,15 +20,27 @@ export interface KeyEventLike {
 }
 
 /**
- * Returns true when the event target is a user-editable element
- * (`<input>`, `<textarea>`, or a node with `contenteditable="true"`).
+ * Returns true when the event target is — or is a descendant of — a
+ * user-editable element (`<input>`, `<textarea>`, or any node with a
+ * truthy `contenteditable` attribute).
  *
  * Used to suppress global shortcut handling while the user is typing into a
  * form control so that characters like `/` and `?` reach the control as
  * normal text input.
  *
+ * The contenteditable check uses `closest()` so that focus inside a child
+ * element of a contenteditable container (e.g. a `<span>` inside a rich
+ * text editor) is also detected. The `:not([contenteditable="false"])`
+ * filter respects the explicit opt-out value while still matching the
+ * idiomatic `contenteditable`, `contenteditable="true"`, and
+ * `contenteditable="plaintext-only"` forms.
+ *
+ * The attribute-based selector is intentionally preferred over
+ * `HTMLElement.isContentEditable`: the latter depends on the rendering
+ * pipeline and is unreliable under jsdom in the unit tests.
+ *
  * @param target - The event target to inspect. May be null.
- * @returns True if the target is an editable element.
+ * @returns True if the target is an editable element or lives inside one.
  */
 export function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
@@ -38,20 +50,7 @@ export function isEditableTarget(target: EventTarget | null): boolean {
   if (tagName === 'INPUT' || tagName === 'TEXTAREA') {
     return true;
   }
-  // Check the contenteditable attribute directly rather than
-  // HTMLElement.isContentEditable: the latter depends on the rendering
-  // pipeline and is unreliable under jsdom, while the attribute check
-  // covers the explicit cases we care about (`contenteditable`,
-  // `contenteditable="true"`, and `contenteditable="plaintext-only"`).
-  const contentEditableAttr = target.getAttribute('contenteditable');
-  if (
-    contentEditableAttr === '' ||
-    contentEditableAttr === 'true' ||
-    contentEditableAttr === 'plaintext-only'
-  ) {
-    return true;
-  }
-  return false;
+  return target.closest('[contenteditable]:not([contenteditable="false"])') !== null;
 }
 
 /**

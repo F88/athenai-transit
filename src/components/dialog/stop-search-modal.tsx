@@ -261,12 +261,17 @@ export function StopSearchModal({
     setSelectedIndex(0);
   }
 
-  // Scroll the highlighted row into view whenever the selection changes.
+  // Scroll the highlighted row into view whenever the selection changes or
+  // the result set is replaced. The `filteredStops` dep covers the case
+  // where the user has manually scrolled the list away from the highlighted
+  // row and then types more — `selectedIndex` may already be 0 (so React's
+  // setState bailout suppresses the selection effect on its own), but we
+  // still want the new top row to be visible.
   // `block: 'nearest'` keeps the row visible without jumping the list around
   // when the row is already on screen.
   useEffect(() => {
     itemRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest' });
-  }, [selectedIndex]);
+  }, [selectedIndex, filteredStops]);
 
   const handleSelect = useCallback(
     (stop: Stop) => {
