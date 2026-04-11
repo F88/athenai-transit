@@ -51,12 +51,12 @@
  *   record with the base value added under the `originLang` key.
  */
 export function injectOriginLang(
-  names: Readonly<Record<string, string>>,
+  names: Record<string, string>,
   baseValue: string,
   originLang: string | undefined,
 ): Record<string, string> {
   if (!originLang || originLang.toLowerCase() === 'mul') {
-    return names as Record<string, string>;
+    return names;
   }
 
   // Case-insensitive check: do not overwrite an explicit translation.
@@ -64,7 +64,7 @@ export function injectOriginLang(
   const originLangLower = originLang.toLowerCase();
   for (const key of Object.keys(names)) {
     if (key.toLowerCase() === originLangLower) {
-      return names as Record<string, string>;
+      return names;
     }
   }
 

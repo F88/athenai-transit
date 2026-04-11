@@ -9,13 +9,13 @@ import { describe, expect, it } from 'vitest';
 import { injectOriginLang } from '../inject-origin-lang';
 
 describe('injectOriginLang', () => {
-  describe('injects base value when agency_lang key is missing', () => {
+  describe('injects base value when originLang key is missing', () => {
     it('injects when names has no matching key', () => {
       const result = injectOriginLang({ en: 'AEON ST' }, 'イオンST', 'ja');
       expect(result).toEqual({ ja: 'イオンST', en: 'AEON ST' });
     });
 
-    it('injects for non-Japanese agency_lang', () => {
+    it('injects for non-Japanese originLang', () => {
       const result = injectOriginLang({ ja: '東京駅' }, 'Tokyo Sta.', 'en');
       expect(result).toEqual({ en: 'Tokyo Sta.', ja: '東京駅' });
     });
@@ -105,7 +105,7 @@ describe('injectOriginLang', () => {
 
   describe('real-world scenarios', () => {
     it('Seibu Bus: Japanese base with English-only translation', () => {
-      // agency_lang="ja", base is Japanese, translations.txt has only en
+      // feed_lang="ja", base is Japanese, translations.txt has only en
       const result = injectOriginLang(
         { en: 'AEON ST (Higashi-Kurume circular bus)' },
         'イオンＳＴ（東久留米循環線）',
@@ -118,7 +118,7 @@ describe('injectOriginLang', () => {
     });
 
     it('Toei Bus: Japanese base with explicit ja + en translations', () => {
-      // agency_lang="ja", translations.txt has both ja and en — no injection
+      // feed_lang="ja", translations.txt has both ja and en — no injection
       const names = {
         ja: '池袋サンシャインシティ',
         'ja-Hrkt': 'いけぶくろさんしゃいんしてぃ',
@@ -129,20 +129,20 @@ describe('injectOriginLang', () => {
     });
 
     it('multilingual feed: base in mixed language, no injection', () => {
-      // agency_lang="mul", translations.txt expected to provide all languages
+      // feed_lang="mul", translations.txt expected to provide all languages
       const names = { de: 'Genf', it: 'Ginevra', fr: 'Genève' };
       const result = injectOriginLang(names, 'Genève', 'mul');
       expect(result).toBe(names);
     });
 
     it('Italian operator: Italian base with no Italian translation key', () => {
-      // agency_lang="IT" (ACTV Venice), base is Italian
+      // feed_lang="IT" (ACTV Venice), base is Italian
       const result = injectOriginLang({ en: 'Venice' }, 'Venezia', 'IT');
       expect(result).toEqual({ IT: 'Venezia', en: 'Venice' });
     });
 
     it('German operator: German base with no German translation key', () => {
-      // agency_lang="DE" (VAG Freiburg), base is German
+      // feed_lang="DE" (VAG Freiburg), base is German
       const result = injectOriginLang({}, 'Bertoldsbrunnen', 'DE');
       expect(result).toEqual({ DE: 'Bertoldsbrunnen' });
     });
