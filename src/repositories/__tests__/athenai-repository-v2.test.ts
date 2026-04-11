@@ -14,6 +14,7 @@ import {
   EXCEPTION_HOLIDAY,
 } from './fixtures/test-data-source-v2';
 import { minutesToDate } from '../../domain/transit/calendar-utils';
+import type { SourceDataV2 } from '../../datasources/transit-data-source-v2';
 
 /** Assert result is successful and return narrowed type for safe data access. */
 function assertSuccess<T>(result: {
@@ -193,6 +194,149 @@ describe('mergeSourcesV2', () => {
     expect(pattern!.stops[1]).toEqual({ id: 'bus_02', headsign: 'Oji-eki' });
     // bus_03 has no stop_headsign
     expect(pattern!.stops[2]).toEqual({ id: 'bus_03' });
+  });
+
+  describe('i18n pre-compilation uses feed_lang (not agency_lang)', () => {
+    /**
+     * Minimal fixture where feed_lang="it" but agency_lang="en".
+     * Verifies that base values are injected under feed_lang, not agency_lang.
+     */
+    function createFeedLangFixture(): SourceDataV2 {
+      return {
+        prefix: 'itfeed',
+        data: {
+          bundle_version: 2,
+          kind: 'data',
+          stops: {
+            v: 2,
+            data: [{ v: 2, i: 'itfeed:s1', n: 'Stazione Centrale', a: 45.0, o: 9.0, l: 0 }],
+          },
+          routes: {
+            v: 2,
+            data: [
+              {
+                v: 2,
+                i: 'itfeed:r1',
+                s: 'L1',
+                l: 'Linea 1',
+                t: 3,
+                c: '',
+                tc: '',
+                ai: 'itfeed:ag1',
+              },
+            ],
+          },
+          agency: {
+            v: 1,
+            data: [
+              {
+                i: 'itfeed:ag1',
+                n: 'Compagnia Trasporti',
+                sn: 'CT',
+                u: 'https://example.com',
+                l: 'en',
+                tz: 'Europe/Rome',
+                fu: '',
+                cs: [],
+              },
+            ],
+          },
+          calendar: { v: 1, data: { services: [], exceptions: [] } },
+          feedInfo: {
+            v: 1,
+            data: { pn: 'Test', pu: 'https://example.com', l: 'it', s: '', e: '', v: '' },
+          },
+          timetable: { v: 2, data: {} },
+          tripPatterns: {
+            v: 2,
+            data: {
+              tp1: {
+                v: 2,
+                r: 'itfeed:r1',
+                h: 'Stazione Centrale',
+                stops: [{ id: 'itfeed:s1' }],
+              },
+            },
+          },
+          translations: {
+            v: 1,
+            data: {
+              headsigns: {
+                'Stazione Centrale': { en: 'Central Station' },
+              },
+              stop_headsigns: {},
+              stop_names: {
+                'itfeed:s1': { en: 'Central Station' },
+              },
+              route_names: {
+                'itfeed:r1': { en: 'Line 1' },
+              },
+              agency_names: {
+                'itfeed:ag1': { en: 'English Transit Co.' },
+              },
+              agency_short_names: {
+                'itfeed:ag1': { en: 'ETC' },
+              },
+            },
+          },
+          lookup: { v: 2, data: {} },
+        },
+      };
+    }
+
+    it('injects headsign base value under feed_lang, not agency_lang', () => {
+      const merged = mergeSourcesV2([createFeedLangFixture()]);
+      const translations = merged.headsignTranslations.get('itfeed');
+      // feed_lang="it", so "Stazione Centrale" should be injected as "it" candidate
+      expect(translations!.headsigns['Stazione Centrale']).toEqual({
+        it: 'Stazione Centrale',
+        en: 'Central Station',
+      });
+      // NOT agency_lang="en" — en already exists from translations.txt
+    });
+
+    it('injects stop_names base value under feed_lang', () => {
+      const merged = mergeSourcesV2([createFeedLangFixture()]);
+      const stop = merged.stops.find((s) => s.stop_id === 'itfeed:s1');
+      expect(stop!.stop_names).toEqual({
+        it: 'Stazione Centrale',
+        en: 'Central Station',
+      });
+    });
+
+    it('injects route_long_names base value under feed_lang', () => {
+      const merged = mergeSourcesV2([createFeedLangFixture()]);
+      const route = merged.routeMap.get('itfeed:r1');
+      expect(route!.route_long_names).toEqual({
+        it: 'Linea 1',
+        en: 'Line 1',
+      });
+    });
+
+    it('injects route_short_names base value under feed_lang', () => {
+      const merged = mergeSourcesV2([createFeedLangFixture()]);
+      const route = merged.routeMap.get('itfeed:r1');
+      expect(route!.route_short_names).toEqual({ it: 'L1' });
+    });
+
+    it('injects agency_names base value under feed_lang, not agency_lang', () => {
+      const merged = mergeSourcesV2([createFeedLangFixture()]);
+      const agency = merged.agencyMap.get('itfeed:ag1');
+      // agency_name base value should be injected under feed_lang="it".
+      expect(agency!.agency_names).toEqual({
+        en: 'English Transit Co.',
+        it: 'Compagnia Trasporti',
+      });
+    });
+
+    it('injects agency_short_names base value under feed_lang, not agency_lang', () => {
+      const merged = mergeSourcesV2([createFeedLangFixture()]);
+      const agency = merged.agencyMap.get('itfeed:ag1');
+      expect(agency!.agency_short_names).toEqual({
+        en: 'ETC',
+        it: 'CT',
+      });
+    });
   });
 });
 
@@ -610,7 +754,11 @@ describe('getUpcomingTimetableEntries', () => {
     expect(entry.routeDirection.stopHeadsign).toBeDefined();
     expect(entry.routeDirection.stopHeadsign!.name).toBe('Oji-eki via Park');
     // stop_headsigns translation should be resolved
-    expect(entry.routeDirection.stopHeadsign!.names).toEqual({ en: 'Oji Station via Park' });
+    // feed_lang="ja" → base value "Oji-eki via Park" is injected as ja candidate
+    expect(entry.routeDirection.stopHeadsign!.names).toEqual({
+      ja: 'Oji-eki via Park',
+      en: 'Oji Station via Park',
+    });
   });
 
   it('resolves mid-trip stop_headsign change (kyoto-city-bus pattern)', async () => {
