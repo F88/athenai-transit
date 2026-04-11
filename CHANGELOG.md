@@ -9,6 +9,14 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- i18n: GTFS base values (stop_name, trip_headsign 等) を `feed_lang` キーで translation names に注入し、`lang=ja` で英語 headsign が表示される問題を修正 (#107)。
+
+### Added
+
+- DEVELOPMENT.md: GTFS i18n 仕様 (`feed_lang` / `agency_lang` / `translations.txt`) のリファレンスセクションを追加。
+
 ## [2026.04.11]
 
 ### Added
