@@ -39,7 +39,7 @@ export interface StopSummaryCoreProps {
   /** Display language fallback chain for translated names. */
   dataLang: readonly string[];
   /** Service state of the stop on the current service day. */
-  serviceState?: StopServiceState;
+  stopServiceState?: StopServiceState;
   /** Badge size override for agency badges. */
   agencyBadgeSize?: AgencyBadgeSize;
   /** Badge size override for route badges. */
@@ -69,7 +69,7 @@ export function StopSummary({
   stop,
   infoLevel,
   dataLang,
-  serviceState,
+  stopServiceState,
   agencyBadgeSize,
   routeBadgeSize,
   distanceBadge,
@@ -136,7 +136,7 @@ export function StopSummary({
             <Accessibility size={14} strokeWidth={2} aria-hidden="true" focusable="false" />
           </span>
         )}
-        {serviceState && <StopServiceStateLabel serviceState={serviceState} />}
+        {stopServiceState && <StopServiceStateLabel stopServiceState={stopServiceState} />}
         {agencies.length > 0 &&
           agencies.map((agency) => (
             <AgencyBadge
@@ -178,7 +178,7 @@ export function StopSummary({
                 [Stop]
               </summary>
               <div className="mt-1 overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
-                <VerboseStop stop={stop} serviceState={serviceState} />
+                <VerboseStop stop={stop} serviceState={stopServiceState} />
               </div>
               <VerboseStopDisplayNames names={stopNames} />
             </details>

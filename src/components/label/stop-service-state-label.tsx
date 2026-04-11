@@ -17,22 +17,22 @@ const stateStyles: Record<Exclude<StopServiceState, 'boardable'>, string> = {
  * Designed to sit inline with stop name and other labels in StopSummary.
  */
 export function StopServiceStateLabel({
-  serviceState,
+  stopServiceState,
   size = 'sm',
 }: {
-  serviceState: StopServiceState;
+  stopServiceState: StopServiceState;
   size?: BaseLabelSize;
 }) {
   const { t } = useTranslation();
 
-  if (serviceState === 'boardable') {
+  if (stopServiceState === 'boardable') {
     return null;
   }
 
   const i18nKey =
-    serviceState === 'drop-off-only'
+    stopServiceState === 'drop-off-only'
       ? 'stop.serviceState.dropOffOnly'
       : 'stop.serviceState.noService';
 
-  return <BaseLabel size={size} value={t(i18nKey)} className={stateStyles[serviceState]} />;
+  return <BaseLabel size={size} value={t(i18nKey)} className={stateStyles[stopServiceState]} />;
 }

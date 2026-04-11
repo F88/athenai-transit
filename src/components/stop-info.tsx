@@ -30,7 +30,7 @@ export function StopInfo({
   mapCenter,
   infoLevel,
   dataLang,
-  serviceState,
+  stopServiceState: serviceState,
   routes,
   agencyBadgeSize,
   routeBadgeSize,
@@ -48,7 +48,7 @@ export function StopInfo({
         agencies={agencies}
         infoLevel={infoLevel}
         dataLang={dataLang}
-        serviceState={serviceState}
+        stopServiceState={serviceState}
         routes={routes}
         agencyBadgeSize={agencyBadgeSize}
         routeBadgeSize={routeBadgeSize}

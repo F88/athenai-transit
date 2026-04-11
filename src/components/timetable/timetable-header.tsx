@@ -7,7 +7,7 @@ interface TimetableHeaderProps {
   stop: Stop;
   routes: Route[];
   agencies: Agency[];
-  serviceState: StopServiceState;
+  stopServiceState: StopServiceState;
   infoLevel: InfoLevel;
   dataLang: readonly string[];
 }
@@ -23,7 +23,7 @@ export function TimetableHeader({
   stop,
   routes,
   agencies,
-  serviceState,
+  stopServiceState,
   infoLevel,
   dataLang,
 }: TimetableHeaderProps) {
@@ -42,7 +42,7 @@ export function TimetableHeader({
       agencies={displayAgencies}
       infoLevel={infoLevel}
       dataLang={dataLang}
-      serviceState={serviceState}
+      stopServiceState={stopServiceState}
       routes={routes}
       agencyBadgeSize="default"
       routeBadgeSize="default"

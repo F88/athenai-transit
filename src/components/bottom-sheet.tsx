@@ -8,7 +8,6 @@ import { collectPresentAgencies, filterStopsByAgency } from '../domain/transit/a
 import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-views';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { APP_ROUTE_TYPES } from '../config/route-types';
-import { useInfoLevel } from '../hooks/use-info-level';
 import { BottomSheetHeader } from './bottom-sheet-header';
 import { BottomSheetStops } from './bottom-sheet-stops';
 
@@ -90,7 +89,6 @@ export function BottomSheet({
   const activeOnly = activeOnlyOverride ?? isLateNight;
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
   const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
-  const info = useInfoLevel(infoLevel);
   const selectedView = DEPARTURE_VIEWS.find((v) => v.id === viewId);
   const touchStartY = useRef(0);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -143,15 +141,6 @@ export function BottomSheet({
     if (activeOnly) {
       result = result.filter((swc) => swc.departures.length > 0);
     }
-    // Drop-off-only stop filtering is intentionally disabled (isSimpleEnabled is always true).
-    // StopMarkers always show all stops on the map, so hiding them from NearbyStop
-    // would be inconsistent. Drop-off-only stops display a "降車専用" badge instead.
-    // See Issue #64 for future handling of drop-off-only + end-of-service states.
-    if (!info.isSimpleEnabled) {
-      result = result.filter(
-        (swc) => swc.stopServiceState === 'boardable' || swc.departures.length === 0,
-      );
-    }
     if (hiddenRouteTypes.size > 0) {
       result = result.filter((swc) => !swc.routeTypes.every((rt) => hiddenRouteTypes.has(rt)));
     }
@@ -159,14 +148,7 @@ export function BottomSheet({
       result = filterStopsByAgency(result, hiddenAgencyIds);
     }
     return result;
-  }, [
-    nearbyDepartures,
-    activeOnly,
-    info.isSimpleEnabled,
-    hiddenRouteTypes,
-    hiddenAgencyIds,
-    presentAgencies,
-  ]);
+  }, [nearbyDepartures, activeOnly, hiddenRouteTypes, hiddenAgencyIds, presentAgencies]);
 
   const counts: NearbyStopsCounts = useMemo(
     () => ({

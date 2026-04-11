@@ -26,12 +26,12 @@ const meta = {
     agencies: [agencyTobus],
     infoLevel: 'normal',
     dataLang: ['ja'],
-    serviceState: 'boardable',
+    stopServiceState: 'boardable',
     routes: [busRoute],
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
-    serviceState: { control: 'radio', options: ['boardable', 'drop-off-only', 'no-service'] },
+    stopServiceState: { control: 'radio', options: ['boardable', 'drop-off-only', 'no-service'] },
     agencyBadgeSize: { control: 'inline-radio', options: ['xs', 'sm', 'default'] },
     routeBadgeSize: { control: 'inline-radio', options: ['xs', 'sm', 'default'] },
   },
@@ -52,7 +52,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const DropOffOnly: Story = {
-  args: { serviceState: 'drop-off-only' },
+  args: { stopServiceState: 'drop-off-only' },
 };
 
 // --- Route types ---
@@ -154,7 +154,7 @@ export const LongName: Story = {
 };
 
 export const LongNameDropOff: Story = {
-  args: { stop: longNameStop, serviceState: 'drop-off-only' },
+  args: { stop: longNameStop, stopServiceState: 'drop-off-only' },
 };
 
 export const LongNameMultiType: Story = {
