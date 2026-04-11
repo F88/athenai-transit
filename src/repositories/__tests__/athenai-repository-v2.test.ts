@@ -610,7 +610,11 @@ describe('getUpcomingTimetableEntries', () => {
     expect(entry.routeDirection.stopHeadsign).toBeDefined();
     expect(entry.routeDirection.stopHeadsign!.name).toBe('Oji-eki via Park');
     // stop_headsigns translation should be resolved
-    expect(entry.routeDirection.stopHeadsign!.names).toEqual({ en: 'Oji Station via Park' });
+    // agency_lang="ja" → base value "Oji-eki via Park" is injected as ja candidate
+    expect(entry.routeDirection.stopHeadsign!.names).toEqual({
+      ja: 'Oji-eki via Park',
+      en: 'Oji Station via Park',
+    });
   });
 
   it('resolves mid-trip stop_headsign change (kyoto-city-bus pattern)', async () => {

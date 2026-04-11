@@ -61,6 +61,7 @@ import {
   formatDateKey,
   minutesToDate,
 } from '../domain/transit/calendar-utils';
+import { injectOriginLang } from '../domain/transit/i18n/inject-origin-lang';
 
 /** Set of valid AppRouteTypeValue integers. Values outside this set are normalized to -1. */
 const VALID_ROUTE_TYPE_VALUES = new Set<number>(APP_ROUTE_TYPES.map((rt) => rt.value));
@@ -173,6 +174,35 @@ async function fetchSourcesV2(
 
 /** Merge multiple v2 SourceDataV2 into a single unified dataset. */
 export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
+  // --- Feed language map ---
+  // Build prefix → feed_lang for normalizing translatable data below.
+  // GTFS base values (stop_name, trip_headsign, etc.) are in the language
+  // declared by feed_lang (feed_info.txt). We inject the base value under
+  // that language key into translation records so the resolver can find it
+  // as a language candidate. See Issue #107.
+  //
+  // feed_lang is per-feed (per-source), so a single value per prefix is
+  // correct — unlike agency_lang which is per-agency and could differ
+  // within a multi-agency feed.
+  //
+  // Fallback: when feed_lang is empty (e.g. VAG Freiburg), use the first
+  // non-empty agency_lang from the source as a best-effort approximation.
+  const feedLangByPrefix = new Map<string, string>();
+  for (const source of sources) {
+    const feedLang = source.data.feedInfo.data.l;
+    if (feedLang) {
+      feedLangByPrefix.set(source.prefix, feedLang);
+    } else {
+      // Fallback to first non-empty agency_lang
+      for (const a of source.data.agency.data) {
+        if (a.l) {
+          feedLangByPrefix.set(source.prefix, a.l);
+          break;
+        }
+      }
+    }
+  }
+
   // --- Translations ---
   // headsigns/stop_headsigns are kept per-source to preserve agency-specific
   // translations. Other maps use prefixed IDs and don't collide.
@@ -187,10 +217,23 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
   const headsignTranslations: HeadsignTranslationsByPrefix = new Map();
   for (const source of sources) {
     const t = source.data.translations.data;
+    const feedLang = feedLangByPrefix.get(source.prefix);
+
+    // Normalize headsign/stop_headsign translations: inject base value
+    // (the headsign text itself) under feed_lang when not already present.
+    const headsigns: Record<string, Record<string, string>> = {};
+    for (const [text, langMap] of Object.entries(t.headsigns)) {
+      headsigns[text] = injectOriginLang(langMap, text, feedLang);
+    }
+    const stopHeadsigns: Record<string, Record<string, string>> = {};
+    for (const [text, langMap] of Object.entries(t.stop_headsigns)) {
+      stopHeadsigns[text] = injectOriginLang(langMap, text, feedLang);
+    }
     headsignTranslations.set(source.prefix, {
-      headsigns: t.headsigns,
-      stop_headsigns: t.stop_headsigns,
+      headsigns,
+      stop_headsigns: stopHeadsigns,
     });
+
     if (t.stop_names) {
       Object.assign(translationsMap.stop_names, t.stop_names);
     }
@@ -206,6 +249,9 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
   }
 
   // --- Agencies (v1 same type) ---
+  // Each agency has its own agency_lang (a.l), so use it directly
+  // instead of the prefix-level lang. This correctly handles
+  // multi-agency GTFS feeds where agencies may have different languages.
   const agencyMap = new Map<string, Agency>();
   for (const source of sources) {
     for (const a of source.data.agency.data) {
@@ -213,8 +259,16 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
         agency_id: a.i,
         agency_name: a.n,
         agency_short_name: a.sn ?? '',
-        agency_names: translationsMap.agency_names[a.i] ?? {},
-        agency_short_names: translationsMap.agency_short_names[a.i] ?? {},
+        agency_names: injectOriginLang(
+          translationsMap.agency_names[a.i] ?? {},
+          a.n,
+          a.l || undefined,
+        ),
+        agency_short_names: injectOriginLang(
+          translationsMap.agency_short_names[a.i] ?? {},
+          a.sn ?? '',
+          a.l || undefined,
+        ),
         agency_url: a.u,
         agency_lang: a.l,
         agency_timezone: a.tz ?? '',
@@ -238,7 +292,11 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     .map((s) => ({
       stop_id: s.i,
       stop_name: s.n,
-      stop_names: translationsMap.stop_names[s.i] ?? {},
+      stop_names: injectOriginLang(
+        translationsMap.stop_names[s.i] ?? {},
+        s.n,
+        feedLangByPrefix.get(extractPrefix(s.i)),
+      ),
       stop_lat: s.a,
       stop_lon: s.o,
       location_type: s.l,
@@ -254,13 +312,14 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
   // --- Routes ---
   const routeMap = new Map<string, Route>();
   for (const source of sources) {
+    const feedLang = feedLangByPrefix.get(source.prefix);
     for (const r of source.data.routes.data) {
       routeMap.set(r.i, {
         route_id: r.i,
         route_short_name: r.s,
-        route_short_names: {},
+        route_short_names: injectOriginLang({}, r.s, feedLang),
         route_long_name: r.l,
-        route_long_names: translationsMap.route_names[r.i] ?? {},
+        route_long_names: injectOriginLang(translationsMap.route_names[r.i] ?? {}, r.l, feedLang),
         route_type: (VALID_ROUTE_TYPE_VALUES.has(r.t) ? r.t : -1) as AppRouteTypeValue,
         route_color: r.c,
         route_text_color: r.tc,

@@ -340,6 +340,40 @@ Leaflet のデフォルトクリック挙動を複数箇所でオーバーライ
 - `stops.nearbyRadius`: `getStopsNearby` の検索半径 (メートル)
 - `routes.enabled`: 路線図の表示有無
 
+## GTFS i18n (多言語) の仕組み
+
+GTFS 仕様における言語関連フィールドの整理。
+
+### `feed_lang` (feed_info.txt, Required)
+
+> Default language used for the text in this dataset.
+
+- **データセット内の全テキストフィールド (stop_name, trip_headsign 等) のデフォルト言語を定義する**
+- `translations.txt` で他言語への翻訳を提供可能
+- `"mul"` (ISO 639-2): 多言語フィード。ベース値が複数言語で記述される (例: スイスの Geneve / Zurich)。各言語の翻訳は `translations.txt` で提供する前提
+
+### `agency_lang` (agency.txt, Optional)
+
+> Primary language used by this transit agency. Should be provided to help GTFS consumers choose capitalization rules and other language-specific settings for the dataset.
+
+- agency が主に使用する言語。**テキストフィールドの言語を定義するものではない**
+- 大文字化ルールなど表示設定のヒントとして利用
+- per-agency フィールド (同一フィード内で agency ごとに異なりうる)
+
+### `translations.txt` の `language` フィールド
+
+> If the language is the same as in `feed_info.feed_lang`, the original value of the field will be assumed to be the default value to use in languages without specific translations.
+
+- `feed_lang` と同じ言語の translation がある場合、**ベース値はその言語のデフォルト値として扱われる**
+- 明示的 translation (`translations.txt` のエントリ) がベース値より優先
+
+### このプロジェクトでの適用
+
+- ベース値の言語は `feed_lang` で決まる (`agency_lang` ではない)
+- Repository の `mergeSourcesV2` で、`feed_lang` キーをベース値から translation names に注入して正規化 (Issue #107)
+- `feed_lang = "mul"` の場合は注入しない (言語不定)
+- `feed_lang` が空の場合は `agency_lang` にフォールバック
+
 ## TransitRepository API 仕様
 
 全メソッドは `Result<T>` または `CollectionResult<T>` を返す。domain-level エラーは `{ success: false, error }` で表現し、呼び出し側がフォールバックを決定する。
