@@ -209,12 +209,21 @@ describe('mergeSourcesV2', () => {
           kind: 'data',
           stops: {
             v: 2,
-            data: [{ i: 'itfeed:s1', n: 'Stazione Centrale', a: 45.0, o: 9.0, l: 0 }],
+            data: [{ v: 2, i: 'itfeed:s1', n: 'Stazione Centrale', a: 45.0, o: 9.0, l: 0 }],
           },
           routes: {
             v: 2,
             data: [
-              { i: 'itfeed:r1', s: 'L1', l: 'Linea 1', t: 3, c: '', tc: '', ai: 'itfeed:ag1' },
+              {
+                v: 2,
+                i: 'itfeed:r1',
+                s: 'L1',
+                l: 'Linea 1',
+                t: 3,
+                c: '',
+                tc: '',
+                ai: 'itfeed:ag1',
+              },
             ],
           },
           agency: {
@@ -241,7 +250,12 @@ describe('mergeSourcesV2', () => {
           tripPatterns: {
             v: 2,
             data: {
-              tp1: { r: 'itfeed:r1', h: 'Stazione Centrale', stops: [{ id: 'itfeed:s1' }] },
+              tp1: {
+                v: 2,
+                r: 'itfeed:r1',
+                h: 'Stazione Centrale',
+                stops: [{ id: 'itfeed:s1' }],
+              },
             },
           },
           translations: {
@@ -265,7 +279,7 @@ describe('mergeSourcesV2', () => {
               },
             },
           },
-          lookup: { v: 2, data: { stopPatterns: {} } },
+          lookup: { v: 2, data: {} },
         },
       };
     }
