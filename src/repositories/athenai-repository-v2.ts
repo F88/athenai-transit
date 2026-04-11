@@ -259,11 +259,7 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
         agency_id: a.i,
         agency_name: a.n,
         agency_short_name: a.sn ?? '',
-        agency_names: injectOriginLang(
-          translationsMap.agency_names[a.i] ?? {},
-          a.n,
-          feedLang,
-        ),
+        agency_names: injectOriginLang(translationsMap.agency_names[a.i] ?? {}, a.n, feedLang),
         agency_short_names: injectOriginLang(
           translationsMap.agency_short_names[a.i] ?? {},
           a.sn ?? '',
