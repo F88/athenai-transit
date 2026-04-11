@@ -222,8 +222,8 @@ describe('mergeSourcesV2', () => {
             data: [
               {
                 i: 'itfeed:ag1',
-                n: 'English Transit Co.',
-                sn: 'ETC',
+                n: 'Compagnia Trasporti',
+                sn: 'CT',
                 u: 'https://example.com',
                 l: 'en',
                 tz: 'Europe/Rome',
@@ -258,10 +258,10 @@ describe('mergeSourcesV2', () => {
                 'itfeed:r1': { en: 'Line 1' },
               },
               agency_names: {
-                'itfeed:ag1': { it: 'Compagnia Trasporti', en: 'English Transit Co.' },
+                'itfeed:ag1': { en: 'English Transit Co.' },
               },
               agency_short_names: {
-                'itfeed:ag1': { it: 'CT', en: 'ETC' },
+                'itfeed:ag1': { en: 'ETC' },
               },
             },
           },
@@ -308,12 +308,19 @@ describe('mergeSourcesV2', () => {
     it('injects agency_names base value under feed_lang, not agency_lang', () => {
       const merged = mergeSourcesV2([createFeedLangFixture()]);
       const agency = merged.agencyMap.get('itfeed:ag1');
-      // agency_name="English Transit Co." is the GTFS base value.
-      // feed_lang="it", but agency_names already has "it" from translations.txt,
-      // so no injection occurs. The existing explicit values are preserved.
+      // agency_name base value should be injected under feed_lang="it".
       expect(agency!.agency_names).toEqual({
-        it: 'Compagnia Trasporti',
         en: 'English Transit Co.',
+        it: 'Compagnia Trasporti',
+      });
+    });
+
+    it('injects agency_short_names base value under feed_lang, not agency_lang', () => {
+      const merged = mergeSourcesV2([createFeedLangFixture()]);
+      const agency = merged.agencyMap.get('itfeed:ag1');
+      expect(agency!.agency_short_names).toEqual({
+        en: 'ETC',
+        it: 'CT',
       });
     });
   });
