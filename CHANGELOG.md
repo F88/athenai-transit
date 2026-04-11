@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.04.11]
+
 ### Added
 
 - アンカーの追加/削除操作に toast 通知を追加 (#79)。追加は成功 (緑)、削除は警告 (オレンジ) で表示。
