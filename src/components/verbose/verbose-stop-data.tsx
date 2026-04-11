@@ -1,5 +1,11 @@
 import type { ResolvedDisplayNames } from '../../domain/transit/get-display-names';
-import type { Agency, Route, AppRouteTypeValue, Stop } from '../../types/app/transit';
+import type {
+  Agency,
+  Route,
+  AppRouteTypeValue,
+  Stop,
+  StopServiceState,
+} from '../../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../../types/app/transit-composed';
 import { VerboseStop } from './verbose-stop';
 import { VerboseStopDisplayNames } from './verbose-stop-display-names';
@@ -12,7 +18,7 @@ import { VerboseStopDisplayNames } from './verbose-stop-display-names';
 export function VerboseStopData({
   stop,
   stopNames,
-  isDropOffOnly,
+  serviceState,
   distance,
   bearing,
   routeTypes,
@@ -23,7 +29,7 @@ export function VerboseStopData({
 }: {
   stop: Stop;
   stopNames: ResolvedDisplayNames;
-  isDropOffOnly: boolean;
+  serviceState?: StopServiceState;
   distance?: number;
   bearing: number | null;
   routeTypes: AppRouteTypeValue[];
@@ -39,7 +45,7 @@ export function VerboseStopData({
       </summary>
       <div className="mt-0.5 space-y-0.5">
         <div className="overflow-x-auto rounded border border-dashed border-gray-300 p-1.5 whitespace-nowrap dark:border-gray-600">
-          <VerboseStop stop={stop} isDropOffOnly={isDropOffOnly} />
+          <VerboseStop stop={stop} serviceState={serviceState} />
           <p className="m-0">
             [position] distance={distance ?? '?'}m bearing=
             {bearing != null ? `${Math.round(bearing)}°` : '?'}

@@ -83,8 +83,7 @@ export function makeStopWithContext(
       patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
       serviceDate: new Date('2026-01-01'),
     })),
-    isBoardableOnServiceDay: true,
-    serviceState: 'boardable',
+    stopServiceState: 'boardable',
     agencies: [],
     routes,
   };
@@ -110,7 +109,7 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
       success: true,
       data: [],
       truncated: false,
-      meta: { isBoardableOnServiceDay: false, totalEntries: 0, serviceState: 'no-service' },
+      meta: { isBoardableOnServiceDay: false, totalEntries: 0 },
     }),
     getRouteTypesForStop: vi.fn().mockResolvedValue({
       success: true,
@@ -130,7 +129,7 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
       success: true,
       data: [],
       truncated: false,
-      meta: { isBoardableOnServiceDay: false, totalEntries: 0, serviceState: 'no-service' },
+      meta: { isBoardableOnServiceDay: false, totalEntries: 0 },
     }),
     getAllStops: vi.fn().mockResolvedValue({
       success: true,

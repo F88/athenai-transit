@@ -6,6 +6,7 @@ import { useInfoLevel } from '../../hooks/use-info-level';
 import { routeTypeEmoji } from '../../utils/route-type-emoji';
 import { RouteBadge } from '../badge/route-badge';
 import { createLogger } from '../../lib/logger';
+import { IdBadge } from '../badge/id-badge';
 
 const logger = createLogger('SelectionIndicator');
 
@@ -67,11 +68,7 @@ export function SelectionIndicator({
 
   return (
     <div className="pointer-events-auto absolute bottom-8 left-1/2 z-1001 flex max-w-[70%] -translate-x-1/2 cursor-default flex-col items-center gap-0.5 overflow-hidden rounded-2xl border-none bg-black/75 px-3.5 py-1.5 text-sm font-semibold text-ellipsis whitespace-nowrap text-white">
-      {il.isVerboseEnabled && (
-        <span className="rounded-[3px] bg-white/10 px-1.5 text-[10px] leading-[1.4] font-normal text-[#aaa]">
-          {info.route.route_id}
-        </span>
-      )}
+      {il.isVerboseEnabled && <IdBadge>{info.route.route_id}</IdBadge>}
       <span className="flex items-center gap-1.5 overflow-hidden">
         <span>{routeTypeEmoji(info.routeType)}</span>
         <RouteBadge route={info.route} dataLang={dataLang} infoLevel={infoLevel} />

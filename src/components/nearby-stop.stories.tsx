@@ -176,14 +176,12 @@ function createStopWithContext(
     stop: Stop;
     routeTypes: AppRouteTypeValue[];
     departures: ContextualTimetableEntry[];
-    isBoardableOnServiceDay: boolean;
-    serviceState: StopServiceState;
+    stopServiceState: StopServiceState;
     agencies: Agency[];
     routes: Route[];
     distance: number;
   }> = {},
 ): StopWithContext {
-  const isBoardableOnServiceDay = overrides.isBoardableOnServiceDay ?? true;
   return {
     stop: overrides.stop ?? baseStop,
     routeTypes: overrides.routeTypes ?? [3],
@@ -194,9 +192,7 @@ function createStopWithContext(
       createEntry({ departureMinutes: 872, route: busRoute2, headsign: '日暮里駅前' }),
       createEntry({ departureMinutes: 892, route: busRoute2, headsign: '日暮里駅前' }),
     ],
-    isBoardableOnServiceDay,
-    serviceState:
-      overrides.serviceState ?? (isBoardableOnServiceDay ? 'boardable' : 'drop-off-only'),
+    stopServiceState: overrides.stopServiceState ?? 'boardable',
     agencies: overrides.agencies ?? [agency],
     routes: overrides.routes ?? [busRoute, busRoute2],
     distance: overrides.distance ?? 235,
@@ -362,7 +358,7 @@ export const MultipleRouteTypes: Story = {
 export const DropOffOnly: Story = {
   args: {
     data: createStopWithContext({
-      isBoardableOnServiceDay: false,
+      stopServiceState: 'drop-off-only',
       departures: [
         createEntry({
           departureMinutes: 870,
@@ -443,7 +439,7 @@ export const HeaderOnly: Story = {
 export const HeaderDropOffOnly: Story = {
   args: {
     data: createStopWithContext({
-      isBoardableOnServiceDay: false,
+      stopServiceState: 'drop-off-only',
       departures: [],
     }),
   },
@@ -465,7 +461,7 @@ export const HeaderMultiType: Story = {
 export const HeaderDropOffMultiType: Story = {
   args: {
     data: createStopWithContext({
-      isBoardableOnServiceDay: false,
+      stopServiceState: 'drop-off-only',
       routeTypes: [0, 3],
       agencies: [agency, agency2],
       routes: [busRoute, tramRoute],
@@ -497,7 +493,7 @@ export const HeaderLongNameFull: Story = {
   args: {
     data: createStopWithContext({
       stop: longNameStop,
-      isBoardableOnServiceDay: false,
+      stopServiceState: 'drop-off-only',
       routeTypes: [0, 3],
       agencies: [agency, agency2],
       routes: [busRoute, tramRoute],
@@ -595,7 +591,7 @@ export const LangComparison: Story = {
 const kitchenSinkData = createStopWithContext({
   stop: longNameStop,
   routeTypes: [0, 3],
-  isBoardableOnServiceDay: false,
+  stopServiceState: 'drop-off-only',
   agencies: [agency, agency2],
   routes: [busRoute, busRoute2, tramRoute],
   departures: [

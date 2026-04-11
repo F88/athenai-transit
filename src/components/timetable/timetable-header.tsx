@@ -1,16 +1,13 @@
 import { StopSummary } from '@/components/stop-summary';
-import type { TimetableOmitted } from '@/types/app/repository';
 import type { InfoLevel } from '@/types/app/settings';
-import type { Agency, Route, Stop } from '@/types/app/transit';
+import type { Agency, Route, Stop, StopServiceState } from '@/types/app/transit';
 
 interface TimetableHeaderProps {
   type: 'route-headsign' | 'stop';
   stop: Stop;
   routes: Route[];
   agencies: Agency[];
-  omitted: TimetableOmitted;
-  hasTimetableEntries: boolean;
-  isBoardableOnServiceDay: boolean;
+  stopServiceState: StopServiceState;
   infoLevel: InfoLevel;
   dataLang: readonly string[];
 }
@@ -26,13 +23,10 @@ export function TimetableHeader({
   stop,
   routes,
   agencies,
-  omitted,
-  hasTimetableEntries,
-  isBoardableOnServiceDay,
+  stopServiceState,
   infoLevel,
   dataLang,
 }: TimetableHeaderProps) {
-  const isDropOffOnly = !isBoardableOnServiceDay && (omitted.terminal > 0 || hasTimetableEntries);
   const routeTypes = [...new Set(routes.map((route) => route.route_type))];
   const route = routes[0];
 
@@ -48,7 +42,7 @@ export function TimetableHeader({
       agencies={displayAgencies}
       infoLevel={infoLevel}
       dataLang={dataLang}
-      isDropOffOnly={isDropOffOnly}
+      stopServiceState={stopServiceState}
       routes={routes}
       agencyBadgeSize="default"
       routeBadgeSize="default"

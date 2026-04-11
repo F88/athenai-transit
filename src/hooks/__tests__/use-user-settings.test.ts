@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import { DEFAULT_LANG, normalizeLang } from '../../config/supported-langs';
+import { resetParamsCache } from '../../lib/query-params';
 import { useUserSettings } from '../use-user-settings';
 
 const STORAGE_KEY = 'athenai-settings';
@@ -26,9 +27,9 @@ async function renderFreshUseUserSettings() {
   return renderHook(() => module.useUserSettings());
 }
 
-const IMPORT_TIME_DEFAULT_LANG = normalizeLang(
-  typeof navigator !== 'undefined' ? navigator.language : '',
-);
+function getExpectedDefaultLang(): string {
+  return normalizeLang(typeof navigator !== 'undefined' ? navigator.language : '');
+}
 
 beforeEach(() => {
   localStorage.clear();
@@ -58,7 +59,7 @@ describe('useUserSettings', () => {
       expect(s.tileIndex).toBe(0);
       expect(s.theme).toBe('light');
       expect(s.doubleTapDrag).toBe('zoom-out');
-      expect(s.lang).toBe('ja');
+      expect(s.lang).toBe(getExpectedDefaultLang());
     });
 
     it('normalizes navigator.language on initial load', async () => {
@@ -125,7 +126,7 @@ describe('useUserSettings', () => {
       expect(s.tileIndex).toBe(0);
       expect(s.theme).toBe('light');
       expect(s.doubleTapDrag).toBe('zoom-out');
-      expect(s.lang).toBe('ja');
+      expect(s.lang).toBe(getExpectedDefaultLang());
     });
   });
 
@@ -340,7 +341,7 @@ describe('useUserSettings', () => {
   describe('lang setting', () => {
     it('defaults to navigator.language when supported, otherwise DEFAULT_LANG', async () => {
       const { result } = await renderFreshUseUserSettings();
-      expect(result.current.settings.lang).toBe('ja');
+      expect(result.current.settings.lang).toBe(getExpectedDefaultLang());
     });
 
     it('persists lang to localStorage', () => {
@@ -364,12 +365,12 @@ describe('useUserSettings', () => {
       expect(result.current.settings.lang).toBe('en');
     });
 
-    it('fills lang with default when missing from stored data', () => {
+    it('fills lang with current default when missing from stored data', async () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: 1 }));
 
-      const { result } = renderHook(() => useUserSettings());
+      const { result } = await renderFreshUseUserSettings();
 
-      expect(result.current.settings.lang).toBe(IMPORT_TIME_DEFAULT_LANG);
+      expect(result.current.settings.lang).toBe(getExpectedDefaultLang());
       expect(result.current.settings.tileIndex).toBe(1);
     });
 
@@ -378,7 +379,7 @@ describe('useUserSettings', () => {
 
       const { result } = renderHook(() => useUserSettings());
 
-      expect(result.current.settings.lang).toBe('ja');
+      expect(result.current.settings.lang).toBe(DEFAULT_LANG);
     });
 
     it('normalizes corrupted lang to default on load', () => {
@@ -386,7 +387,7 @@ describe('useUserSettings', () => {
 
       const { result } = renderHook(() => useUserSettings());
 
-      expect(result.current.settings.lang).toBe('ja');
+      expect(result.current.settings.lang).toBe(DEFAULT_LANG);
     });
 
     it('normalizes unsupported lang to default on save via updateSetting', () => {
@@ -398,7 +399,7 @@ describe('useUserSettings', () => {
 
       // localStorage should have the normalized value
       const stored = readStoredSettings();
-      expect(stored.lang).toBe('ja');
+      expect(stored.lang).toBe(DEFAULT_LANG);
     });
 
     it('accepts supported lang de on save', () => {
@@ -445,6 +446,156 @@ describe('useUserSettings', () => {
       // Transient keys reset to defaults
       expect(second.current.settings.perfMode).toBe('normal');
       expect(second.current.settings.renderMode).toBe('auto');
+    });
+  });
+
+  // ── adjustSettings (query param override) ──────────────────────
+
+  describe('adjustSettings (query param override)', () => {
+    const originalLocation = window.location;
+
+    function setSearch(search: string): void {
+      Object.defineProperty(window, 'location', {
+        value: { ...originalLocation, search, href: `http://localhost${search}` },
+        writable: true,
+        configurable: true,
+      });
+      resetParamsCache();
+    }
+
+    function restoreLocation(): void {
+      Object.defineProperty(window, 'location', {
+        value: originalLocation,
+        writable: true,
+        configurable: true,
+      });
+      resetParamsCache();
+    }
+
+    afterEach(restoreLocation);
+
+    it('overrides tileIndex from ?tileIdx= query param', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: 0 }));
+      setSearch('?tileIdx=3');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.tileIndex).toBe(3);
+    });
+
+    it('overrides invalid stored tileIndex with valid ?tileIdx=', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: 999 }));
+      setSearch('?tileIdx=3');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.tileIndex).toBe(3);
+    });
+
+    it('overrides stored null tileIndex with valid ?tileIdx=', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: null }));
+      setSearch('?tileIdx=4');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.tileIndex).toBe(4);
+    });
+
+    it('uses localStorage tileIndex when ?tileIdx= is absent', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: 5 }));
+      setSearch('');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.tileIndex).toBe(5);
+    });
+
+    it('falls back to localStorage for non-numeric ?tileIdx=', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: 2 }));
+      setSearch('?tileIdx=abc');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.tileIndex).toBe(2);
+    });
+
+    it('falls back to localStorage for out-of-range ?tileIdx=', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: 2 }));
+      setSearch('?tileIdx=99');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.tileIndex).toBe(2);
+    });
+
+    it('does not write to localStorage on initialization', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: 0 }));
+      setSearch('?tileIdx=5');
+
+      const spy = vi.spyOn(Storage.prototype, 'setItem');
+
+      await renderFreshUseUserSettings();
+
+      const writes = spy.mock.calls.filter(([key]) => key === STORAGE_KEY);
+      expect(writes).toHaveLength(0);
+      spy.mockRestore();
+    });
+
+    it('persists to localStorage when user changes tile via UI', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ tileIndex: 0 }));
+      setSearch('?tileIdx=5');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.tileIndex).toBe(5);
+
+      act(() => {
+        result.current.updateSetting('tileIndex', 7);
+      });
+
+      expect(result.current.settings.tileIndex).toBe(7);
+
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as Record<string, unknown>;
+      expect(stored.tileIndex).toBe(7);
+    });
+
+    it('overrides lang from ?lang= query param', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ lang: 'ja' }));
+      setSearch('?lang=en');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.lang).toBe('en');
+    });
+
+    it('normalizes ?lang= value via normalizeLang', async () => {
+      setSearch('?lang=zh-TW');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.lang).toBe('zh-Hant');
+    });
+
+    it('falls back unsupported ?lang= to DEFAULT_LANG', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ lang: 'en' }));
+      setSearch('?lang=pt-BR');
+
+      const { result } = await renderFreshUseUserSettings();
+
+      expect(result.current.settings.lang).toBe(DEFAULT_LANG);
+    });
+
+    it('does not write lang override to localStorage', async () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ lang: 'ja' }));
+      setSearch('?lang=en');
+
+      const spy = vi.spyOn(Storage.prototype, 'setItem');
+
+      await renderFreshUseUserSettings();
+
+      const writes = spy.mock.calls.filter(([key]) => key === STORAGE_KEY);
+      expect(writes).toHaveLength(0);
+      spy.mockRestore();
     });
   });
 });

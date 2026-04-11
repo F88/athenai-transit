@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { IdBadge } from '../badge/id-badge';
 
 const logger = createLogger('StopSearch');
 
@@ -61,11 +62,7 @@ function StopSearchResultItem({
       onClick={() => onSelect(stop)}
     >
       <div className="flex min-w-0 flex-col gap-0.5">
-        {info.isVerboseEnabled && (
-          <span className="text-muted-foreground bg-muted inline-block self-start rounded px-1.5 py-px text-[10px] leading-[1.4]">
-            {stop.stop_id}
-          </span>
-        )}
+        {info.isVerboseEnabled && <IdBadge>{stop.stop_id}</IdBadge>}
         <span className="text-foreground text-[15px]">
           {routeTypesEmoji(routeTypes)}{' '}
           <HighlightedName name={stopNames.name} query={query} normalizedQuery={normalizedQuery} />
@@ -134,7 +131,7 @@ interface StopSearchModalProps {
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
-  onSelectStop: (stop: Stop) => void;
+  onSelectStop: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -275,9 +272,17 @@ export function StopSearchModal({
 
   const handleSelect = useCallback(
     (stop: Stop) => {
-      onSelectStop(stop);
+      onSelectStop(
+        stop,
+        resolveStopRouteTypes({
+          stopId: stop.stop_id,
+          routeTypeMap,
+          routes: null,
+          unknownPolicy: 'include-unknown',
+        }),
+      );
     },
-    [onSelectStop],
+    [onSelectStop, routeTypeMap],
   );
 
   const handleInputKeyDown = useCallback(

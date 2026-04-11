@@ -7,7 +7,11 @@
  */
 
 import type { TimetableEntry } from '../../types/app/transit-composed';
-import type { StopServiceState, StopServiceStateInput } from '../../types/app/transit';
+import type {
+  StopServiceState,
+  StopServiceStateInput,
+  TimetableEntriesState,
+} from '../../types/app/transit';
 
 /**
  * Derive the stop service state from service day signals.
@@ -25,6 +29,27 @@ export function getStopServiceState(input: StopServiceStateInput): StopServiceSt
     return 'no-service';
   }
   if (!input.isBoardableOnServiceDay) {
+    return 'drop-off-only';
+  }
+  return 'boardable';
+}
+
+/**
+ * Derive the service state from a collection of timetable entries.
+ *
+ * Unlike {@link getStopServiceState} which takes pre-computed signals,
+ * this function inspects the entries directly. It can be applied to
+ * any subset: full-day, upcoming, filtered by route/headsign, or a
+ * specific time window.
+ *
+ * @param entries - The timetable entries to evaluate.
+ * @returns The service state of the entries collection.
+ */
+export function getTimetableEntriesState(entries: TimetableEntry[]): TimetableEntriesState {
+  if (entries.length === 0) {
+    return 'no-service';
+  }
+  if (!entries.some((entry) => !isDropOffOnly(entry))) {
     return 'drop-off-only';
   }
   return 'boardable';

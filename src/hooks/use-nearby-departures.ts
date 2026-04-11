@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
 import type { TransitRepository } from '../repositories/transit-repository';
 import { getServiceDay } from '../domain/transit/service-day';
+import { getStopServiceState } from '../domain/transit/timetable-utils';
 import { formatDateKey } from '../domain/transit/calendar-utils';
 import { createLogger } from '../lib/logger';
 
@@ -66,11 +67,8 @@ export function useNearbyDepartures(
               // stop has no timetable data at all (not a network error),
               // so these defaults are semantically correct — no boardable
               // entries and no service.
-              const isBoardableOnServiceDay = depsResult.success
-                ? depsResult.meta.isBoardableOnServiceDay
-                : false;
-              const serviceState = depsResult.success
-                ? depsResult.meta.serviceState
+              const stopServiceState = depsResult.success
+                ? getStopServiceState(depsResult.meta)
                 : ('no-service' as const);
               const routeTypes = rtResult.success ? rtResult.data : [-1 as const];
               // Resolve stats for the current dateTime's service group
@@ -80,8 +78,7 @@ export function useNearbyDepartures(
                 stop,
                 routeTypes,
                 departures,
-                isBoardableOnServiceDay,
-                serviceState,
+                stopServiceState,
                 agencies,
                 routes,
                 distance,

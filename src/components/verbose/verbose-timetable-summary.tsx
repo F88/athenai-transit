@@ -1,4 +1,5 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
+import type { StopServiceState } from '../../types/app/transit';
 import type { TimetableOmitted } from '../../types/app/repository';
 import { formatDateKey } from '../../domain/transit/calendar-utils';
 import { isDropOffOnly } from '../../domain/transit/timetable-utils';
@@ -14,14 +15,14 @@ export function VerboseTimetableSummary({
   serviceDate,
   timetableEntries,
   omitted,
-  isBoardableOnServiceDay,
+  stopServiceState,
 }: {
   type: 'route-headsign' | 'stop';
   headsign?: string;
   serviceDate: Date;
   timetableEntries: TimetableEntry[];
   omitted: TimetableOmitted;
-  isBoardableOnServiceDay: boolean;
+  stopServiceState: StopServiceState;
 }) {
   // Domain-consistent counts using isDropOffOnly (pickupType === 1 OR isTerminal).
   // pickupType 2/3 (phone/coordination required) are considered boardable.
@@ -79,7 +80,7 @@ export function VerboseTimetableSummary({
           </span>
           {dwellCount > 0 && <span className="block">[dwell] count={dwellCount}</span>}
           <span className="block">
-            [state] isBoardableOnServiceDay={String(isBoardableOnServiceDay)} omitted.terminal=
+            [state] stopServiceState={stopServiceState} omitted.terminal=
             {omitted.terminal}
           </span>
         </span>

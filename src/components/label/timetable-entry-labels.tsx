@@ -1,8 +1,10 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
 import { useTranslation } from 'react-i18next';
+import { BaseLabel, type BaseLabelSize } from './base-label';
 
-interface EntryLabelsProps {
+interface TimetableEntryLabelsProps {
   entry: TimetableEntry;
+  size?: BaseLabelSize;
   isDisplayTerminal: boolean;
   isDisplayOrigin: boolean;
   isDisplayPickupUnavailable: boolean;
@@ -10,13 +12,14 @@ interface EntryLabelsProps {
 }
 
 /** Compact labels for terminal, origin, and boarding availability. */
-export function EntryLabels({
+export function TimetableEntryLabels({
   entry,
+  size = 'xs',
   isDisplayTerminal,
   isDisplayOrigin,
   isDisplayPickupUnavailable,
   isDisplayDropOffUnavailable,
-}: EntryLabelsProps) {
+}: TimetableEntryLabelsProps) {
   const { t } = useTranslation();
   const { boarding, patternPosition } = entry;
 
@@ -32,24 +35,32 @@ export function EntryLabels({
   return (
     <span className="inline-flex items-baseline gap-0.5">
       {showTerminal && (
-        <span className="rounded bg-gray-500 px-0.5 text-[9px] leading-tight text-white">
-          {t('timetable.entry.terminal')}
-        </span>
+        <BaseLabel
+          size={size}
+          value={t('timetable.entry.terminal')}
+          className="bg-gray-500 text-white"
+        />
       )}
       {showOrigin && (
-        <span className="rounded bg-blue-500 px-0.5 text-[9px] leading-tight text-white">
-          {t('timetable.entry.origin')}
-        </span>
+        <BaseLabel
+          size={size}
+          value={t('timetable.entry.origin')}
+          className="bg-blue-500 text-white"
+        />
       )}
       {showPickupUnavailable && (
-        <span className="rounded bg-red-500 px-0.5 text-[9px] leading-tight text-white">
-          {t('timetable.entry.noPickup')}
-        </span>
+        <BaseLabel
+          size={size}
+          value={t('timetable.entry.noPickup')}
+          className="bg-red-500 text-white"
+        />
       )}
       {showDropOffUnavailable && (
-        <span className="rounded bg-red-500 px-0.5 text-[9px] leading-tight text-white">
-          {t('timetable.entry.noDropOff')}
-        </span>
+        <BaseLabel
+          size={size}
+          value={t('timetable.entry.noDropOff')}
+          className="bg-red-500 text-white"
+        />
       )}
     </span>
   );

@@ -9,7 +9,7 @@ import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import type { InfoLevel } from '@/types/app/settings';
-import type { Agency, Route, Stop } from '@/types/app/transit';
+import type { Agency, Route, Stop, StopServiceState } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
 import type { TimetableOmitted } from '@/types/app/repository';
 import { useInfoLevel } from '@/hooks/use-info-level';
@@ -42,8 +42,8 @@ export interface TimetableData {
   serviceDate: Date;
   timetableEntries: TimetableEntry[];
   omitted: TimetableOmitted;
-  /** Whether at least one non-drop-off-only entry (pickupType !== 1, non-terminal) exists in the full service day. */
-  isBoardableOnServiceDay: boolean;
+  /** Service state derived from the full service day before filtering. */
+  stopServiceState: StopServiceState;
   agencies: Agency[];
 }
 
@@ -195,7 +195,7 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
                 serviceDate={data.serviceDate}
                 timetableEntries={filteredTimetableEntries}
                 omitted={data.omitted}
-                isBoardableOnServiceDay={data.isBoardableOnServiceDay}
+                stopServiceState={data.stopServiceState}
               />
             )}
             <DialogTitle className="sr-only">{t('timetable.title')}</DialogTitle>
@@ -208,9 +208,7 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
               stop={data.stop}
               routes={data.routes}
               agencies={data.agencies}
-              omitted={data.omitted}
-              hasTimetableEntries={data.timetableEntries.length > 0}
-              isBoardableOnServiceDay={data.isBoardableOnServiceDay}
+              stopServiceState={data.stopServiceState}
               infoLevel={infoLevel}
               dataLang={dataLang}
             />

@@ -19,6 +19,7 @@ import { TILE_SOURCES } from './config/tile-sources';
 import { createInfoLevel } from './utils/create-info-level';
 import { toggleGroupInList } from './utils/list-toggle';
 import { routeTypeGroup } from './utils/route-type-category';
+import { routeTypesEmoji } from './utils/route-type-emoji';
 import { createLogger } from './lib/logger';
 import {
   nextInfoLevel,
@@ -35,6 +36,7 @@ import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
 import { formatDateKey } from './domain/transit/calendar-utils';
 import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
+import { getStopServiceState } from './domain/transit/timetable-utils';
 import {
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
@@ -342,19 +344,15 @@ export default function App() {
         repo.getRouteTypesForStop(stopId),
       ]);
       const departures = depsResult.success ? depsResult.data : [];
-      const isBoardableOnServiceDay = depsResult.success
-        ? depsResult.meta.isBoardableOnServiceDay
-        : false;
-      const serviceState = depsResult.success
-        ? depsResult.meta.serviceState
+      const stopServiceState = depsResult.success
+        ? getStopServiceState(depsResult.meta)
         : ('no-service' as const);
       const routeTypes = rtResult.success ? rtResult.data : [-1 as const];
       return {
         stop: meta.stop,
         routeTypes,
         departures,
-        isBoardableOnServiceDay,
-        serviceState,
+        stopServiceState,
         agencies: meta.agencies,
         routes: meta.routes,
       };
@@ -419,7 +417,10 @@ export default function App() {
         serviceDate: getServiceDay(dateTime),
         timetableEntries: entries,
         omitted,
-        isBoardableOnServiceDay,
+        stopServiceState: getStopServiceState({
+          totalEntries: allEntries.length,
+          isBoardableOnServiceDay,
+        }),
         agencies: meta.agencies,
       });
     },
@@ -460,8 +461,16 @@ export default function App() {
   const handleToggleAnchor = useCallback(
     (stopId: string, routeTypes: AppRouteTypeValue[]) => {
       if (isStopAnchor(stopId)) {
+        // Capture anchor data before removal (entry won't exist after removeAnchor)
+        const anchor = anchors.find((a) => a.stopId === stopId);
+        const stopName = anchor?.stopName ?? stopId;
         logger.debug(`handleToggleAnchor: removing stopId=${stopId}`);
-        void removeAnchor(stopId);
+        void removeAnchor(stopId).then((result) => {
+          if (result.success) {
+            const prefix = anchor?.routeTypes ? `${routeTypesEmoji(anchor.routeTypes)} ` : '';
+            toast.warning(t('anchor.removed'), { description: `${prefix}${stopName}` });
+          }
+        });
       } else {
         const meta = findStopWithMeta(stopId);
         if (meta) {
@@ -472,11 +481,17 @@ export default function App() {
             stopLat: meta.stop.stop_lat,
             stopLon: meta.stop.stop_lon,
             routeTypes,
+          }).then((result) => {
+            if (result.success) {
+              toast.success(t('anchor.added'), {
+                description: `${routeTypesEmoji(routeTypes)} ${meta.stop.stop_name}`,
+              });
+            }
           });
         }
       }
     },
-    [isStopAnchor, removeAnchor, addAnchor, findStopWithMeta],
+    [isStopAnchor, anchors, removeAnchor, addAnchor, findStopWithMeta, t],
   );
 
   // Select + pan to a stop from Portal dropdown
@@ -502,24 +517,16 @@ export default function App() {
   );
 
   const handleSearchSelect = useCallback(
-    (stop: Stop) => {
+    (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleSearchSelect [Search]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
       focusStop(stop);
-      // Search results may not be in radiusStops/inBoundStops yet;
-      // wrap as StopWithMeta without distance
-      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
-      pushStop(
-        meta,
-        resolveStopRouteTypes({
-          stopId: stop.stop_id,
-          routeTypeMap,
-          routes: meta.routes,
-          unknownPolicy: 'include-unknown',
-        }),
-      );
       setSearchModalOpen(false);
+      // SearchDialog already resolved routeTypes from its own routeTypeMap,
+      // so we can use them directly without re-resolving.
+      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
+      pushStop(meta, routeTypes);
     },
-    [focusStop, pushStop, findStopWithMeta, routeTypeMap],
+    [focusStop, pushStop, findStopWithMeta],
   );
 
   // --- Settings handlers ---
@@ -726,7 +733,14 @@ export default function App() {
         dataLang={dataLang}
         onClose={() => setTimetableModal(null)}
       />
-      <Toaster theme={settings.theme} position="top-center" closeButton richColors expand={false} />
+      <Toaster
+        theme={settings.theme}
+        position="bottom-center"
+        closeButton={true}
+        richColors
+        expand={true}
+        visibleToasts={10}
+      />
     </>
   );
 }

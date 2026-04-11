@@ -1,4 +1,5 @@
 import type { ContextualTimetableEntry } from '../../types/app/transit-composed';
+import type { StopServiceState } from '../../types/app/transit';
 
 /**
  * Debug dump of NearbyStop-level summary information.
@@ -10,18 +11,18 @@ import type { ContextualTimetableEntry } from '../../types/app/transit-composed'
  * - Individual departures → VerboseContextualTimetableEntry
  *
  * This component dumps: UI state (isSelected, isAnchor, viewId),
- * boarding status (isBoardableOnServiceDay), and departures summary
+ * stop service state, and departures summary
  * (total, boardable, dropOffOnly counts).
  */
 export function VerboseNearbyStopSummary({
   departures,
-  isBoardableOnServiceDay,
+  stopServiceState,
   isSelected,
   isAnchor,
   viewId,
 }: {
   departures: ContextualTimetableEntry[];
-  isBoardableOnServiceDay: boolean;
+  stopServiceState: StopServiceState;
   isSelected: boolean;
   isAnchor: boolean;
   viewId: string;
@@ -41,14 +42,12 @@ export function VerboseNearbyStopSummary({
           <span className="block">
             [state] selected={String(isSelected)} anchor={String(isAnchor)} view={viewId}
           </span>
-          <span className="block">
-            [boarding] isBoardableOnServiceDay={String(isBoardableOnServiceDay)}
-          </span>
+          <span className="block">[service] stopServiceState={stopServiceState}</span>
           <span className="block">
             [departures] entries={departures.length} boardable={boardable} dropOffOnly={dropOffOnly}
             {departures.length === 0
               ? ' (NO SERVICE)'
-              : !isBoardableOnServiceDay
+              : stopServiceState === 'drop-off-only'
                 ? ' (ALL DROP-OFF ONLY)'
                 : ''}
           </span>

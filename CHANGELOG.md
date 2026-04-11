@@ -11,15 +11,31 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- アンカーの追加/削除操作に toast 通知を追加 (#79)。追加は成功 (緑)、削除は警告 (オレンジ) で表示。
+- `?lang=<code>` URL パラメータを追加。表示言語を URL から指定可能 (localStorage より優先、一時的な override)。`normalizeLang` で正規化。
+- `?tileIdx=<number>` URL パラメータを追加。タイルソースを URL から指定可能 (localStorage より優先、一時的な override)。
 - キーボードショートカットを追加。`/` で停留所検索ダイアログを開き、`?` でショートカット一覧モーダルを表示。
 - `ShortcutHelpDialog` コンポーネントを追加し、利用可能なキーボードショートカットを一覧表示。
 - 停留所検索 (StopSearchModal) で `↑` / `↓` による結果ハイライト移動と `Enter` による選択確定に対応。検索文字を打ち変えるとハイライトを先頭にリセット。
 - `useKeyboardShortcuts` Hook と `shouldHandleShortcut` 純粋関数を新設。IME 変換中・修飾キー併用時・テキスト入力フォーカス時はショートカットを発火させない。
 - About: キーボードショートカットの簡潔な紹介を追加。
+- `BaseLabel` コンポーネントを追加。サイズ (xs/sm/md)、文字数制限 (maxLength/ellipsis)、className による色指定をサポートするテキストラベルプリミティブ。
+- `StopServiceStateLabel` コンポーネントを追加。停留所サービス状態 (降車専用/運行なし) を BaseLabel ベースで表示。
+- `TimetableEntryLabels` コンポーネントを `src/components/label/` に移動し、BaseLabel ベースにリファクタ。
+- MockRepository: `bus_central_closed` (運行便なし/no-service) 停留所を追加。
+- `TimetableEntriesState` 型を追加。任意の TimetableEntry 集合の状態を表す基本型。`StopServiceState` を型エイリアスとして再定義。
+- `getTimetableEntriesState(entries)` resolver を追加。entries を直接受け取ってサービス状態を判定。
+- Storybook: BaseLabel, StopServiceStateLabel, TimetableEntryLabels の stories を追加。
 
 ### Changed
 
+- Toast 表示位置を `top-center` から `bottom-center` に変更。展開表示 (expand) を有効化し、同時表示数の上限を10に拡大。
 - About: 地図優先の開発を示す古い WIP 注記を削除。
+- `isDropOffOnly` prop を UI 層から廃止し、`stopServiceState: StopServiceState` に統一 (#64)。StopSummary, StopInfo, NearbyStop, TimetableHeader, VerboseStop 等を更新。
+- `isBoardableOnServiceDay` を `StopWithContext` / `TimetableData` から削除。`stopServiceState` から導出可能なため。
+- `TimetableQueryMeta` から冗長な `serviceState` フィールドを削除。`getStopServiceState(meta)` で導出する設計に変更。
+- repo の `getFullDayTimetableEntries` で `getTimetableEntriesState` を使用。
+- SearchDialog から History への routeTypes 受け渡しを修正 (UFO emoji 問題)。
 
 ## [2026.04.09]
 
