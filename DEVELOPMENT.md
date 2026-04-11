@@ -350,7 +350,7 @@ GTFS 仕様における言語関連フィールドの整理。
 
 - **データセット内の全テキストフィールド (stop_name, trip_headsign 等) のデフォルト言語を定義する**
 - `translations.txt` で他言語への翻訳を提供可能
-- `"mul"` (ISO 639-2): 多言語フィード。ベース値が複数言語で記述される (例: スイスの Geneve / Zurich)。各言語の翻訳は `translations.txt` で提供する前提
+- "mul" (ISO 639-2): 多言語フィード。ベース値が複数言語で記述される (例: スイスの Genève / Zürich)。各言語の翻訳は translations.txt で提供する前提
 
 ### `agency_lang` (agency.txt, Optional)
 
