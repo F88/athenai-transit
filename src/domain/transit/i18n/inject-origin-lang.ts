@@ -43,10 +43,11 @@
  *
  * @param names - Existing translation entries keyed by language.
  * @param baseValue - The raw GTFS field value (e.g. trip_headsign, stop_name).
- * @param originLang - The language of the base value. Typically
- *   `feed_lang` for most GTFS text fields, or `agency_lang` for
- *   agency-specific fields. When `undefined`, empty, or `"mul"`
- *   (multilingual), no injection occurs.
+ * @param originLang - The language of the base value. Use `feed_lang`
+ *   for GTFS text fields — do not use `agency_lang`, which is a
+ *   display-settings hint per GTFS spec, not the language of text
+ *   fields. When `undefined`, empty, or `"mul"` (multilingual),
+ *   no injection occurs.
  * @returns The original `names` if no injection is needed, or a new
  *   record with the base value added under the `originLang` key.
  */
