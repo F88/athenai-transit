@@ -23,13 +23,19 @@ and this project adheres to [CalVer](https://calver.org/).
 - `StopServiceStateLabel` コンポーネントを追加。停留所サービス状態 (降車専用/運行なし) を BaseLabel ベースで表示。
 - `TimetableEntryLabels` コンポーネントを `src/components/label/` に移動し、BaseLabel ベースにリファクタ。
 - MockRepository: `bus_central_closed` (運行便なし/no-service) 停留所を追加。
+- `TimetableEntriesState` 型を追加。任意の TimetableEntry 集合の状態を表す基本型。`StopServiceState` を型エイリアスとして再定義。
+- `getTimetableEntriesState(entries)` resolver を追加。entries を直接受け取ってサービス状態を判定。
 - Storybook: BaseLabel, StopServiceStateLabel, TimetableEntryLabels の stories を追加。
 
 ### Changed
 
 - Toast 表示位置を `top-center` から `bottom-center` に変更。展開表示 (expand) を有効化し、同時表示数の上限を10に拡大。
 - About: 地図優先の開発を示す古い WIP 注記を削除。
-- StopSummary: インラインの dropOff/noService ラベルを `StopServiceStateLabel` に統合。`serviceState` 未提供時は `isDropOffOnly` で fallback。
+- `isDropOffOnly` prop を UI 層から廃止し、`stopServiceState: StopServiceState` に統一 (#64)。StopSummary, StopInfo, NearbyStop, TimetableHeader, VerboseStop 等を更新。
+- `isBoardableOnServiceDay` を `StopWithContext` / `TimetableData` から削除。`stopServiceState` から導出可能なため。
+- `TimetableQueryMeta` から冗長な `serviceState` フィールドを削除。`getStopServiceState(meta)` で導出する設計に変更。
+- repo の `getFullDayTimetableEntries` で `getTimetableEntriesState` を使用。
+- SearchDialog から History への routeTypes 受け渡しを修正 (UFO emoji 問題)。
 
 ## [2026.04.09]
 
