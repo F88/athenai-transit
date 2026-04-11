@@ -109,7 +109,6 @@ export function NearbyStop({
           infoLevel={infoLevel}
           dataLang={dataLang}
           serviceState={serviceState}
-          isBoardableOnServiceDay={isBoardableOnServiceDay}
           routes={routes}
           stats={stats}
           geo={geo}

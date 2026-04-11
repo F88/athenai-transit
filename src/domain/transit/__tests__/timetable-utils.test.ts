@@ -11,6 +11,7 @@ import {
   filterBoardable,
   getDisplayMinutes,
   getStopServiceState,
+  getTimetableEntriesState,
 } from '../timetable-utils';
 import type { StopServiceStateInput } from '../../../types/app/transit';
 import type { TimetableEntry } from '../../../types/app/transit-composed';
@@ -561,6 +562,44 @@ describe('filterBoardable', () => {
       expect(
         getStopServiceState(makeInput({ totalEntries: 1, isBoardableOnServiceDay: false })),
       ).toBe('drop-off-only');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // getTimetableEntriesState
+  // ---------------------------------------------------------------------------
+
+  describe('getTimetableEntriesState', () => {
+    it('returns "no-service" for empty entries', () => {
+      expect(getTimetableEntriesState([])).toBe('no-service');
+    });
+
+    it('returns "boardable" when at least one entry is boardable', () => {
+      const entries = [makeEntry(), makeEntry({ pickupType: 1 })];
+      expect(getTimetableEntriesState(entries)).toBe('boardable');
+    });
+
+    it('returns "drop-off-only" when all entries are drop-off only (pickupType)', () => {
+      const entries = [makeEntry({ pickupType: 1 }), makeEntry({ pickupType: 1 })];
+      expect(getTimetableEntriesState(entries)).toBe('drop-off-only');
+    });
+
+    it('returns "drop-off-only" when all entries are terminal', () => {
+      const entries = [makeEntry({ isTerminal: true }), makeEntry({ isTerminal: true })];
+      expect(getTimetableEntriesState(entries)).toBe('drop-off-only');
+    });
+
+    it('returns "boardable" when mixed boardable and terminal entries', () => {
+      const entries = [makeEntry(), makeEntry({ isTerminal: true })];
+      expect(getTimetableEntriesState(entries)).toBe('boardable');
+    });
+
+    it('returns "boardable" for a single boardable entry', () => {
+      expect(getTimetableEntriesState([makeEntry()])).toBe('boardable');
+    });
+
+    it('returns "drop-off-only" for a single terminal entry', () => {
+      expect(getTimetableEntriesState([makeEntry({ isTerminal: true })])).toBe('drop-off-only');
     });
   });
 });

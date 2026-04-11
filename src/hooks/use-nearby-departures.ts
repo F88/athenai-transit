@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
 import type { TransitRepository } from '../repositories/transit-repository';
 import { getServiceDay } from '../domain/transit/service-day';
+import { getStopServiceState } from '../domain/transit/timetable-utils';
 import { formatDateKey } from '../domain/transit/calendar-utils';
 import { createLogger } from '../lib/logger';
 
@@ -70,7 +71,7 @@ export function useNearbyDepartures(
                 ? depsResult.meta.isBoardableOnServiceDay
                 : false;
               const serviceState = depsResult.success
-                ? depsResult.meta.serviceState
+                ? getStopServiceState(depsResult.meta)
                 : ('no-service' as const);
               const routeTypes = rtResult.success ? rtResult.data : [-1 as const];
               // Resolve stats for the current dateTime's service group

@@ -348,7 +348,7 @@ export default function App() {
         ? depsResult.meta.isBoardableOnServiceDay
         : false;
       const serviceState = depsResult.success
-        ? depsResult.meta.serviceState
+        ? getStopServiceState(depsResult.meta)
         : ('no-service' as const);
       const routeTypes = rtResult.success ? rtResult.data : [-1 as const];
       return {
@@ -422,7 +422,7 @@ export default function App() {
         timetableEntries: entries,
         omitted,
         isBoardableOnServiceDay,
-        serviceState: getStopServiceState({
+        stopServiceState: getStopServiceState({
           totalEntries: allEntries.length,
           isBoardableOnServiceDay,
         }),

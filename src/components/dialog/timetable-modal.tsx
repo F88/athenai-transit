@@ -45,7 +45,7 @@ export interface TimetableData {
   /** Whether at least one non-drop-off-only entry (pickupType !== 1, non-terminal) exists in the full service day. */
   isBoardableOnServiceDay: boolean;
   /** Service state derived from the full service day before filtering. */
-  serviceState: StopServiceState;
+  stopServiceState: StopServiceState;
   agencies: Agency[];
 }
 
@@ -210,7 +210,7 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
               stop={data.stop}
               routes={data.routes}
               agencies={data.agencies}
-              serviceState={data.serviceState}
+              serviceState={data.stopServiceState}
               infoLevel={infoLevel}
               dataLang={dataLang}
             />

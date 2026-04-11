@@ -160,7 +160,7 @@ export interface StopWithContext extends StopWithMeta {
   /**
    * High-level service state of the stop on the current service day.
    *
-   * Propagated from {@link TimetableQueryMeta.serviceState}. Use this
+   * Propagated from `TimetableQueryMeta.timetableEntriesState`. Use this
    * field to tell apart `'drop-off-only'` from `'no-service'` when
    * rendering stop labels, filters, or "no service" placeholders.
    */

@@ -40,13 +40,28 @@ export interface AppRouteType {
 }
 
 /**
+ * Service state derived from a collection of {@link TimetableEntry}.
+ *
+ * Applicable to any subset of entries — full-day, upcoming, filtered by
+ * route/headsign, or any other slice. The meaning depends on the scope
+ * of the entries passed to the resolver.
+ *
+ * - `boardable`: At least one boardable entry exists.
+ * - `drop-off-only`: Entries exist but none are boardable.
+ * - `no-service`: No entries in the collection.
+ */
+export type TimetableEntriesState = 'boardable' | 'drop-off-only' | 'no-service';
+
+/**
  * High-level service state of a stop on a given service day.
+ *
+ * This is a {@link TimetableEntriesState} scoped to a stop's full-day entries.
  *
  * - `boardable`: At least one boardable entry exists today (normal case).
  * - `drop-off-only`: Entries exist but none are boardable.
  * - `no-service`: No entries for this stop today (orphan stop or off-schedule).
  */
-export type StopServiceState = 'boardable' | 'drop-off-only' | 'no-service';
+export type StopServiceState = TimetableEntriesState;
 
 /**
  * Input signals used to derive a {@link StopServiceState}.
