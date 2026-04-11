@@ -50,19 +50,19 @@ describe('injectOriginLang', () => {
   });
 
   describe('skips injection for undefined/empty/mul', () => {
-    it('skips when agencyLang is undefined', () => {
+    it('skips when originLang is undefined', () => {
       const names = { en: 'eng' };
       const result = injectOriginLang(names, 'base', undefined);
       expect(result).toBe(names);
     });
 
-    it('skips when agencyLang is empty string', () => {
+    it('skips when originLang is empty string', () => {
       const names = { en: 'eng' };
       const result = injectOriginLang(names, 'base', '');
       expect(result).toBe(names);
     });
 
-    it('skips when agencyLang is "mul" (multilingual)', () => {
+    it('skips when originLang is "mul" (multilingual)', () => {
       // GTFS "mul" means base values are in mixed languages;
       // translations.txt is expected to provide explicit entries.
       const names = { de: 'Genf', it: 'Ginevra' };
@@ -70,13 +70,13 @@ describe('injectOriginLang', () => {
       expect(result).toBe(names);
     });
 
-    it('skips when agencyLang is "MUL" (case-insensitive)', () => {
+    it('skips when originLang is "MUL" (case-insensitive)', () => {
       const names = { de: 'Genf' };
       const result = injectOriginLang(names, 'Genève', 'MUL');
       expect(result).toBe(names);
     });
 
-    it('skips when agencyLang is "Mul" (mixed case)', () => {
+    it('skips when originLang is "Mul" (mixed case)', () => {
       const names = { de: 'Genf' };
       const result = injectOriginLang(names, 'Genève', 'Mul');
       expect(result).toBe(names);
@@ -84,13 +84,13 @@ describe('injectOriginLang', () => {
   });
 
   describe('case-insensitive key matching', () => {
-    it('does not inject when names has uppercase variant of agencyLang', () => {
+    it('does not inject when names has uppercase variant of originLang', () => {
       const names = { JA: 'explicit-JA', en: 'eng' };
       const result = injectOriginLang(names, 'base', 'ja');
       expect(result).toBe(names);
     });
 
-    it('does not inject when agencyLang is uppercase and names has lowercase key', () => {
+    it('does not inject when originLang is uppercase and names has lowercase key', () => {
       const names = { ja: 'explicit-ja', en: 'eng' };
       const result = injectOriginLang(names, 'base', 'JA');
       expect(result).toBe(names);

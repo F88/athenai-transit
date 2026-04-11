@@ -249,11 +249,11 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
   }
 
   // --- Agencies (v1 same type) ---
-  // Each agency has its own agency_lang (a.l), so use it directly
-  // instead of the prefix-level lang. This correctly handles
-  // multi-agency GTFS feeds where agencies may have different languages.
+  // agency_name is a GTFS text field, so its language is feed_lang
+  // (not agency_lang, which is a display-settings hint per GTFS spec).
   const agencyMap = new Map<string, Agency>();
   for (const source of sources) {
+    const feedLang = feedLangByPrefix.get(source.prefix);
     for (const a of source.data.agency.data) {
       agencyMap.set(a.i, {
         agency_id: a.i,
@@ -262,12 +262,12 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
         agency_names: injectOriginLang(
           translationsMap.agency_names[a.i] ?? {},
           a.n,
-          a.l || undefined,
+          feedLang,
         ),
         agency_short_names: injectOriginLang(
           translationsMap.agency_short_names[a.i] ?? {},
           a.sn ?? '',
-          a.l || undefined,
+          feedLang,
         ),
         agency_url: a.u,
         agency_lang: a.l,
