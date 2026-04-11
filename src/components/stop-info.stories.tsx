@@ -216,7 +216,7 @@ const kitchenSinkArgs = {
   stop: longNameStop,
   routeTypes: [0, 3] as AppRouteTypeValue[],
   agencies: allAgencies,
-  serviceState: 'drop-off-only',
+  stopServiceState: 'drop-off-only' as const,
   routes: allRoutes,
   stats: sampleStats,
   geo: sampleGeo,
