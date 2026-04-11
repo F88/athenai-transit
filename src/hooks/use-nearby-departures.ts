@@ -67,10 +67,7 @@ export function useNearbyDepartures(
               // stop has no timetable data at all (not a network error),
               // so these defaults are semantically correct — no boardable
               // entries and no service.
-              const isBoardableOnServiceDay = depsResult.success
-                ? depsResult.meta.isBoardableOnServiceDay
-                : false;
-              const serviceState = depsResult.success
+              const stopServiceState = depsResult.success
                 ? getStopServiceState(depsResult.meta)
                 : ('no-service' as const);
               const routeTypes = rtResult.success ? rtResult.data : [-1 as const];
@@ -81,8 +78,7 @@ export function useNearbyDepartures(
                 stop,
                 routeTypes,
                 departures,
-                isBoardableOnServiceDay,
-                serviceState,
+                stopServiceState,
                 agencies,
                 routes,
                 distance,

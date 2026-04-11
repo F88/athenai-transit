@@ -147,24 +147,13 @@ export interface StopWithContext extends StopWithMeta {
   routeTypes: AppRouteTypeValue[];
   departures: ContextualTimetableEntry[];
   /**
-   * Whether at least one boardable entry exists in the full service day.
-   *
-   * From {@link TimetableQueryMeta.isBoardableOnServiceDay}. Independent
-   * of `departures` (which only contains upcoming entries).
-   *
-   * **Prefer `serviceState` for drop-off-only detection** — this raw
-   * flag alone cannot distinguish "all entries are drop-off only" from
-   * "no entries at all" (both produce `false`).
-   */
-  isBoardableOnServiceDay: boolean;
-  /**
    * High-level service state of the stop on the current service day.
    *
-   * Propagated from `TimetableQueryMeta.timetableEntriesState`. Use this
-   * field to tell apart `'drop-off-only'` from `'no-service'` when
-   * rendering stop labels, filters, or "no service" placeholders.
+   * Derived from `TimetableQueryMeta` via `getStopServiceState(meta)`.
+   * Use this field to tell apart `'boardable'`, `'drop-off-only'`, and
+   * `'no-service'` when rendering stop labels, filters, or placeholders.
    */
-  serviceState: StopServiceState;
+  stopServiceState: StopServiceState;
 }
 
 /**

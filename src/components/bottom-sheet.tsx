@@ -148,7 +148,9 @@ export function BottomSheet({
     // would be inconsistent. Drop-off-only stops display a "降車専用" badge instead.
     // See Issue #64 for future handling of drop-off-only + end-of-service states.
     if (!info.isSimpleEnabled) {
-      result = result.filter((swc) => swc.isBoardableOnServiceDay || swc.departures.length === 0);
+      result = result.filter(
+        (swc) => swc.stopServiceState === 'boardable' || swc.departures.length === 0,
+      );
     }
     if (hiddenRouteTypes.size > 0) {
       result = result.filter((swc) => !swc.routeTypes.every((rt) => hiddenRouteTypes.has(rt)));

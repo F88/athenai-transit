@@ -33,18 +33,7 @@ export interface NearbyStopProps {
 }
 
 export function NearbyStop({
-  data: {
-    stop,
-    routeTypes,
-    departures,
-    isBoardableOnServiceDay,
-    serviceState,
-    agencies,
-    routes,
-    distance,
-    stats,
-    geo,
-  },
+  data: { stop, routeTypes, departures, stopServiceState, agencies, routes, distance, stats, geo },
   isSelected,
   now,
   mapCenter,
@@ -93,7 +82,7 @@ export function NearbyStop({
       {showVerbose && (
         <VerboseNearbyStopSummary
           departures={departures}
-          isBoardableOnServiceDay={isBoardableOnServiceDay}
+          stopServiceState={stopServiceState}
           isSelected={isSelected}
           isAnchor={isAnchor}
           viewId={viewId}
@@ -108,7 +97,7 @@ export function NearbyStop({
           mapCenter={mapCenter}
           infoLevel={infoLevel}
           dataLang={dataLang}
-          serviceState={serviceState}
+          stopServiceState={stopServiceState}
           routes={routes}
           stats={stats}
           geo={geo}
@@ -196,7 +185,7 @@ export function NearbyStop({
         // timetable data at all.
         <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">
           {t(
-            serviceState === 'no-service'
+            stopServiceState === 'no-service'
               ? 'stop.serviceState.noService'
               : 'stop.serviceState.serviceEnded',
           )}

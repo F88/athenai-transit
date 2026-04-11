@@ -83,8 +83,7 @@ export function makeStopWithContext(
       patternPosition: { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false },
       serviceDate: new Date('2026-01-01'),
     })),
-    isBoardableOnServiceDay: true,
-    serviceState: 'boardable',
+    stopServiceState: 'boardable',
     agencies: [],
     routes,
   };

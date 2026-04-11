@@ -344,10 +344,7 @@ export default function App() {
         repo.getRouteTypesForStop(stopId),
       ]);
       const departures = depsResult.success ? depsResult.data : [];
-      const isBoardableOnServiceDay = depsResult.success
-        ? depsResult.meta.isBoardableOnServiceDay
-        : false;
-      const serviceState = depsResult.success
+      const stopServiceState = depsResult.success
         ? getStopServiceState(depsResult.meta)
         : ('no-service' as const);
       const routeTypes = rtResult.success ? rtResult.data : [-1 as const];
@@ -355,8 +352,7 @@ export default function App() {
         stop: meta.stop,
         routeTypes,
         departures,
-        isBoardableOnServiceDay,
-        serviceState,
+        stopServiceState,
         agencies: meta.agencies,
         routes: meta.routes,
       };
@@ -421,7 +417,6 @@ export default function App() {
         serviceDate: getServiceDay(dateTime),
         timetableEntries: entries,
         omitted,
-        isBoardableOnServiceDay,
         stopServiceState: getStopServiceState({
           totalEntries: allEntries.length,
           isBoardableOnServiceDay,
