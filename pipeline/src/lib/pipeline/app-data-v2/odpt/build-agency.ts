@@ -13,6 +13,10 @@ import type { Provider } from '../../../../types/resource-common';
 /**
  * Build AgencyV2Json[] from provider info.
  *
+ * The agency_id scheme (`${prefix}:${provider.name.en.long}`) must stay
+ * in sync with {@link buildRoutesV2}, which sets `RouteV2Json.ai` using
+ * the same formula so that route → agency lookups succeed after merge.
+ *
  * @param prefix - Source prefix for ID namespacing.
  * @param provider - Provider info used only for agency_id generation.
  * @returns Array with a single AgencyV2Json record.
@@ -21,7 +25,7 @@ export function buildAgencyV2(prefix: string, provider: Provider): AgencyV2Json[
   return [
     {
       v: 2,
-      i: `${prefix}:${provider.name.en.short}`,
+      i: `${prefix}:${provider.name.en.long}`,
       n: '',
       u: '',
       tz: 'Asia/Tokyo',

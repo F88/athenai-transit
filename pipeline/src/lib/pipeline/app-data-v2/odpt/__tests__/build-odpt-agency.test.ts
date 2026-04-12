@@ -24,7 +24,7 @@ describe('buildAgencyV2', () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({
       v: 2,
-      i: 'yrkm:Test',
+      i: 'yrkm:Test Transit',
       n: '',
       u: '',
       tz: 'Asia/Tokyo',
@@ -32,7 +32,7 @@ describe('buildAgencyV2', () => {
     });
   });
 
-  it('uses provider.name.en.short for agency_id', () => {
+  it('uses provider.name.en.long for agency_id (must match buildRoutesV2)', () => {
     const provider: Provider = {
       name: {
         ja: { long: 'テスト鉄道', short: 'テスト' },
@@ -42,7 +42,7 @@ describe('buildAgencyV2', () => {
       colors: [{ bg: '00B2E5', text: 'FFFFFF' }],
     };
     const result = buildAgencyV2('test', provider);
-    expect(result[0].i).toBe('test:TRW');
+    expect(result[0].i).toBe('test:Test Railway');
   });
 
   it('emits empty strings for name and url (managed on App side)', () => {
