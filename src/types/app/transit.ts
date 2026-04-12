@@ -142,17 +142,23 @@ export interface Route {
  */
 export interface Agency {
   agency_id: string;
+  /** Data source canonical name (GTFS agency_name / ODPT provider). */
   agency_name: string;
+  /** Long display name base value (from agency-attributes.ts). */
+  agency_long_name: string;
+  /** Short display name base value (from agency-attributes.ts). */
   agency_short_name: string;
-  /** Merged from translations. Not a GTFS standard field. */
+  /** Multilingual translations of agency_name (GTFS translations.txt). */
   agency_names: Record<string, string>;
-  /** Merged from translations. Not a GTFS standard field. */
+  /** Multilingual long display names (from agency-attributes.ts). */
+  agency_long_names: Record<string, string>;
+  /** Multilingual short display names (from agency-attributes.ts). */
   agency_short_names: Record<string, string>;
   agency_url: string;
   agency_lang: string;
   agency_timezone: string;
   agency_fare_url: string;
-  /** Brand colors. [0]=primary, [1]=secondary, etc. Not a GTFS standard field. */
+  /** Brand colors (from agency-attributes.ts). */
   agency_colors: { bg: string; text: string }[];
 }
 

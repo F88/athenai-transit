@@ -67,10 +67,8 @@ export interface TranslationsJson {
   stop_names: Record<string, Record<string, string>>;
   /** route_id -> { language -> translation } */
   route_names: Record<string, Record<string, string>>;
-  /** agency_id -> { language -> translation } */
+  /** agency_id -> { language -> translation of agency_name } */
   agency_names: Record<string, Record<string, string>>;
-  /** agency_id -> { language -> short name translation } */
-  agency_short_names: Record<string, Record<string, string>>;
 }
 
 /** calendar.json */

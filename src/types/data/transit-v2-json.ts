@@ -84,6 +84,39 @@
  */
 
 // -----------------------------------------------------------------------
+// agency section (v2)
+// -----------------------------------------------------------------------
+
+/**
+ * Agency record (v2).
+ *
+ * Contains only data-source-derived fields. Display names (long/short)
+ * and their translations are managed on the App side via
+ * `agency-attributes.ts`, not in the pipeline output.
+ *
+ * - GTFS: `n` is `agency_name` from agency.txt (canonical name).
+ * - ODPT: `n` is `provider.name.ja.long` (no operator name in ODPT JSON data).
+ */
+export interface AgencyV2Json {
+  /** Schema version — see {@link RouteV2Json.v} for rationale. */
+  v: 2;
+  i: string; // agency_id (prefixed)
+  n: string; // agency_name (Required)
+  u: string; // agency_url (Required)
+  tz: string; // agency_timezone (Required, IANA e.g. "Asia/Tokyo")
+  /** agency_lang. Omitted when not provided. */
+  l?: string;
+  /** agency_phone. Omitted when not provided. */
+  ph?: string;
+  /** agency_fare_url. Omitted when not provided. */
+  fu?: string;
+  /** agency_email. Omitted when not provided. */
+  em?: string;
+  /** cemv_support: 0=no info, 1=supported, 2=not supported. Omitted when not provided. */
+  cemv?: 0 | 1 | 2;
+}
+
+// -----------------------------------------------------------------------
 // routes section (v2)
 // -----------------------------------------------------------------------
 
@@ -493,7 +526,7 @@ export interface LookupV2Json {
 // Bundle wrappers
 // -----------------------------------------------------------------------
 
-import type { AgencyJson, CalendarJson, FeedInfoJson, TranslationsJson } from './transit-json';
+import type { CalendarJson, FeedInfoJson, TranslationsJson } from './transit-json';
 
 /**
  * Versioned section wrapper inside a bundle.
@@ -542,7 +575,7 @@ export interface DataBundle {
 
   stops: BundleSection<2, StopV2Json[]>;
   routes: BundleSection<2, RouteV2Json[]>;
-  agency: BundleSection<1, AgencyJson[]>;
+  agency: BundleSection<2, AgencyV2Json[]>;
   calendar: BundleSection<1, CalendarJson>;
   feedInfo: BundleSection<1, FeedInfoJson>;
   timetable: BundleSection<2, Record<string, TimetableGroupV2Json[]>>;
