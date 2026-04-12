@@ -49,7 +49,7 @@
     "summary": "近くの乗り場 {{count}}カ所 / {{radius}}圏内",
     "noStops": "乗り場がありません / {{radius}}圏内",
     "noOperating": "運行中の乗り場がありません / {{radius}}圏内",
-    "activeOnly": "運行中",
+    "activeOnly": "📍 運行中",
     "activeOnlyTitle": "次便がある乗り場のみ表示"
   },
   "stop": {

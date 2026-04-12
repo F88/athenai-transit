@@ -49,7 +49,7 @@
     "summary": "{{count}} nearby stops (within {{radius}})",
     "noStops": "No stops (within {{radius}})",
     "noOperating": "No operating stops (within {{radius}})",
-    "activeOnly": "Active",
+    "activeOnly": "📍 Operating",
     "activeOnlyTitle": "Show only stops with upcoming departures"
   },
   "stop": {
