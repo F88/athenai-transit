@@ -5,10 +5,11 @@ import { resolveDisplayNamesWithTranslatableText } from './i18n/resolve-display-
 /**
  * Agency name source type.
  *
+ * - `'original'` — agency_name (GTFS canonical) and agency_names
  * - `'short'` — agency_short_name and agency_short_names
- * - `'long'` — agency_name and agency_names
+ * - `'long'` — agency_long_name and agency_names
  */
-export type AgencySource = 'short' | 'long';
+export type AgencySource = 'original' | 'short' | 'long';
 
 /**
  * Result of {@link getAgencyDisplayNames}.
@@ -18,9 +19,11 @@ export interface AgencyDisplayNames {
   resolved: ResolvedDisplayNames;
   /** Which source was used for `resolved`. */
   resolvedSource: AgencySource;
+  /** agency_name (GTFS canonical) resolved with agency_names translations. */
+  name: ResolvedDisplayNames;
   /** agency_short_name resolved for the requested language chain. */
   shortName: ResolvedDisplayNames;
-  /** agency_name resolved for the requested language chain. */
+  /** agency_long_name resolved for the requested language chain. */
   longName: ResolvedDisplayNames;
 }
 
@@ -43,13 +46,18 @@ export function getAgencyDisplayNames(
   agencyLangs: readonly string[],
   prefer: AgencySource = 'short',
 ): AgencyDisplayNames {
+  const name = resolveDisplayNamesWithTranslatableText(
+    { name: agency.agency_name, names: agency.agency_names },
+    preferredDisplayLangs,
+    agencyLangs,
+  );
   const shortName = resolveDisplayNamesWithTranslatableText(
     { name: agency.agency_short_name, names: agency.agency_short_names },
     preferredDisplayLangs,
     agencyLangs,
   );
   const longName = resolveDisplayNamesWithTranslatableText(
-    { name: agency.agency_name, names: agency.agency_names },
+    { name: agency.agency_long_name, names: agency.agency_long_names },
     preferredDisplayLangs,
     agencyLangs,
   );
@@ -57,31 +65,49 @@ export function getAgencyDisplayNames(
   let resolved: ResolvedDisplayNames;
   let resolvedSource: AgencySource;
 
-  if (prefer === 'long') {
-    if (longName.name) {
-      resolved = longName;
-      resolvedSource = 'long';
-    } else if (shortName.name) {
-      resolved = shortName;
-      resolvedSource = 'short';
-    } else {
-      resolved = { name: agency.agency_id, subNames: [] };
-      resolvedSource = 'long';
-    }
-  } else {
-    if (shortName.name) {
-      resolved = shortName;
-      resolvedSource = 'short';
-    } else if (longName.name) {
-      resolved = longName;
-      resolvedSource = 'long';
-    } else {
-      resolved = { name: agency.agency_id, subNames: [] };
-      resolvedSource = 'short';
-    }
+  switch (prefer) {
+    case 'original':
+      if (name.name) {
+        resolved = name;
+        resolvedSource = 'original';
+      } else {
+        resolved = { name: agency.agency_id, subNames: [] };
+        resolvedSource = 'original';
+      }
+      break;
+    case 'long':
+      if (longName.name) {
+        resolved = longName;
+        resolvedSource = 'long';
+      } else if (shortName.name) {
+        resolved = shortName;
+        resolvedSource = 'short';
+      } else if (name.name) {
+        resolved = name;
+        resolvedSource = 'original';
+      } else {
+        resolved = { name: agency.agency_id, subNames: [] };
+        resolvedSource = 'long';
+      }
+      break;
+    case 'short':
+      if (shortName.name) {
+        resolved = shortName;
+        resolvedSource = 'short';
+      } else if (longName.name) {
+        resolved = longName;
+        resolvedSource = 'long';
+      } else if (name.name) {
+        resolved = name;
+        resolvedSource = 'original';
+      } else {
+        resolved = { name: agency.agency_id, subNames: [] };
+        resolvedSource = 'short';
+      }
+      break;
   }
 
-  return { resolved, resolvedSource, shortName, longName };
+  return { resolved, resolvedSource, name, shortName, longName };
 }
 
 /**

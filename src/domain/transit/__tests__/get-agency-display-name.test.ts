@@ -8,8 +8,10 @@ function makeAgency(overrides: Partial<Agency> = {}): Agency {
   return {
     agency_id: 'test:agency',
     agency_name: 'Test Agency',
+    agency_long_name: 'Test Agency',
     agency_short_name: 'Test',
     agency_names: {},
+    agency_long_names: {},
     agency_short_names: {},
     agency_url: '',
     agency_lang: 'ja',
@@ -35,7 +37,7 @@ describe('getAgencyDisplayNames', () => {
 
   it('falls back to agency_id when both names are empty', () => {
     const result = getAgencyDisplayNames(
-      makeAgency({ agency_short_name: '', agency_name: '' }),
+      makeAgency({ agency_short_name: '', agency_name: '', agency_long_name: '' }),
       [],
       DEFAULT_LANGS,
     );
@@ -55,7 +57,7 @@ describe('getAgencyDisplayNames', () => {
   it('uses translated long name when preferred source is long', () => {
     const result = getAgencyDisplayNames(
       makeAgency({
-        agency_names: { en: 'Test Agency EN' },
+        agency_long_names: { en: 'Test Agency EN' },
       }),
       ['en'],
       DEFAULT_LANGS,
@@ -68,7 +70,7 @@ describe('getAgencyDisplayNames', () => {
   it('keeps short and long names available separately', () => {
     const result = getAgencyDisplayNames(
       makeAgency({
-        agency_names: { en: 'Test Agency EN' },
+        agency_long_names: { en: 'Test Agency EN' },
         agency_short_names: { en: 'Test EN' },
       }),
       ['en'],
