@@ -4,7 +4,9 @@ import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, AppRouteTypeValue } from '../types/app/transit';
 import type { StopWithContext } from '../types/app/transit-composed';
-import { collectPresentAgencies, filterStopsByAgency } from '../domain/transit/agency-filter';
+import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
+import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
+import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-views';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { APP_ROUTE_TYPES } from '../config/route-types';
@@ -30,7 +32,7 @@ const ROUTE_TYPE_PRIORITY: Readonly<Record<number, number>> = {
   7: 9,
 };
 
-const ROUTE_TYPE_ORDER: number[] = [...APP_ROUTE_TYPES.map(({ value }) => value)].sort(
+const ROUTE_TYPE_ORDER: AppRouteTypeValue[] = [...APP_ROUTE_TYPES.map(({ value }) => value)].sort(
   (a, b) =>
     (ROUTE_TYPE_PRIORITY[a] ?? Number.POSITIVE_INFINITY) -
     (ROUTE_TYPE_PRIORITY[b] ?? Number.POSITIVE_INFINITY),
@@ -94,18 +96,15 @@ export function BottomSheet({
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Route types present in the current nearby stops.
-  const presentRouteTypes = useMemo(() => {
-    const types = new Set<number>();
-    for (const swc of nearbyDepartures) {
-      for (const rt of swc.routeTypes) {
-        types.add(rt);
-      }
-    }
-    const routeOrderSet = new Set(ROUTE_TYPE_ORDER);
-    const known = ROUTE_TYPE_ORDER.filter((rt) => types.has(rt));
-    const extras = [...types].filter((rt) => !routeOrderSet.has(rt)).sort((a, b) => a - b);
-    return [...known, ...extras];
-  }, [nearbyDepartures]);
+  const presentRouteTypes = useMemo(
+    () => collectPresentRouteTypes(nearbyDepartures, ROUTE_TYPE_ORDER),
+    [nearbyDepartures],
+  );
+
+  const presentAgencies = useMemo(
+    () => collectPresentAgencies(nearbyDepartures),
+    [nearbyDepartures],
+  );
 
   const toggleRouteType = useCallback((rt: number) => {
     setHiddenRouteTypes((prev) => {
@@ -118,11 +117,6 @@ export function BottomSheet({
       return next;
     });
   }, []);
-
-  const presentAgencies = useMemo(
-    () => collectPresentAgencies(nearbyDepartures),
-    [nearbyDepartures],
-  );
 
   const toggleAgency = useCallback((agency: Agency) => {
     setHiddenAgencyIds((prev) => {
@@ -137,18 +131,31 @@ export function BottomSheet({
   }, []);
 
   const filteredDepartures = useMemo(() => {
+    // Departure-level filters run first: agency and route_type each
+    // remove matching entries from every stop's departures list.
+    // Stops left with no departures are then dropped by the activeOnly
+    // check below (when enabled). Route type filter at departure level
+    // means a stop serving multiple types (e.g. tram + subway) stays
+    // visible even when one of its types is toggled off — only the
+    // matching departures disappear.
     let result = nearbyDepartures;
+    if (hiddenAgencyIds.size > 0) {
+      result = result.map((swc) => ({
+        ...swc,
+        departures: filterByAgency(swc.departures, hiddenAgencyIds),
+      }));
+    }
+    if (hiddenRouteTypes.size > 0) {
+      result = result.map((swc) => ({
+        ...swc,
+        departures: filterByRouteType(swc.departures, hiddenRouteTypes),
+      }));
+    }
     if (activeOnly) {
       result = result.filter((swc) => swc.departures.length > 0);
     }
-    if (hiddenRouteTypes.size > 0) {
-      result = result.filter((swc) => !swc.routeTypes.every((rt) => hiddenRouteTypes.has(rt)));
-    }
-    if (hiddenAgencyIds.size > 0 && presentAgencies.length > 1) {
-      result = filterStopsByAgency(result, hiddenAgencyIds);
-    }
     return result;
-  }, [nearbyDepartures, activeOnly, hiddenRouteTypes, hiddenAgencyIds, presentAgencies]);
+  }, [nearbyDepartures, activeOnly, hiddenRouteTypes, hiddenAgencyIds]);
 
   const counts: NearbyStopsCounts = useMemo(
     () => ({

@@ -64,3 +64,53 @@ export function prepareRouteHeadsignTimetable(
   const entries = routeEntries.filter((e) => !e.patternPosition.isTerminal);
   return { entries, omitted: { terminal: routeEntries.length - entries.length } };
 }
+
+/**
+ * Filter out timetable entries whose route belongs to a hidden agency.
+ *
+ * Each entry is classified by `routeDirection.route.agency_id`.
+ * Entries whose agency is in `hiddenAgencyIds` are removed.
+ *
+ * When `hiddenAgencyIds` is empty, the input is returned as-is.
+ *
+ * @param entries - All entries.
+ * @param hiddenAgencyIds - Set of agency IDs to hide.
+ * @returns Entries whose route.agency_id is NOT in hiddenAgencyIds.
+ */
+export function filterByAgency<T extends TimetableEntry>(
+  entries: readonly T[],
+  hiddenAgencyIds: ReadonlySet<string>,
+): T[] {
+  if (hiddenAgencyIds.size === 0) {
+    return entries as T[];
+  }
+  return entries.filter((e) => !hiddenAgencyIds.has(e.routeDirection.route.agency_id));
+}
+
+/**
+ * Filter out timetable entries whose route_type is hidden.
+ *
+ * Each entry is classified by `routeDirection.route.route_type` (the GTFS
+ * route_type category: bus, tram, subway, rail, etc.). Entries whose
+ * route_type is in `hiddenRouteTypes` are removed.
+ *
+ * When `hiddenRouteTypes` is empty, the input is returned as-is.
+ *
+ * Used by the bottom sheet route-type filter: toggling off a type
+ * (e.g. tram) should hide tram departures even when the stop also
+ * serves other types (so the stop itself remains visible as long as
+ * at least one departure of another type stays).
+ *
+ * @param entries - All entries.
+ * @param hiddenRouteTypes - Set of route_type values to hide.
+ * @returns Entries whose route.route_type is NOT in hiddenRouteTypes.
+ */
+export function filterByRouteType<T extends TimetableEntry>(
+  entries: readonly T[],
+  hiddenRouteTypes: ReadonlySet<number>,
+): T[] {
+  if (hiddenRouteTypes.size === 0) {
+    return entries as T[];
+  }
+  return entries.filter((e) => !hiddenRouteTypes.has(e.routeDirection.route.route_type));
+}
