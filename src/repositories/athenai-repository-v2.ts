@@ -271,6 +271,11 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     }
   }
 
+  // debug log
+  // for (const [id, ag] of agencyMap) {
+  //   logger.debug(`Agency ${id}:` + JSON.stringify(ag, null, 2));
+  // }
+
   // --- Stops (v2: no agency_id) ---
   // Currently excludes location_type=1 (parent station) stops because
   // the UI does not yet support station grouping. Parent stations have
