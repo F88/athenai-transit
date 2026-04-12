@@ -1,31 +1,27 @@
 /**
- * Extract AgencyJson[] from GTFS SQLite database (v2).
+ * Extract AgencyV2Json[] from GTFS SQLite database.
  *
- * Same structure as v1 — AgencyJson is an unchanged section.
+ * Outputs only data-source-derived fields. Display names (long/short)
+ * and brand colors are managed on the App side via agency-attributes.ts.
  */
 
 import type Database from 'better-sqlite3';
 
-import type { AgencyJson } from '../../../../../../src/types/data/transit-json';
-import type { Provider } from '../../../../types/resource-common';
+import type { AgencyV2Json } from '../../../../../../src/types/data/transit-v2-json';
 
 /**
  * Extract all agencies from the GTFS database.
  *
  * @param db - SQLite database handle (readonly).
  * @param prefix - Source prefix for ID namespacing.
- * @param provider - Provider info for short name and colors.
- * @returns Array of AgencyJson records.
+ * @returns Array of AgencyV2Json records.
  */
-export function extractAgenciesV2(
-  db: Database.Database,
-  prefix: string,
-  provider: Provider,
-): AgencyJson[] {
+export function extractAgenciesV2(db: Database.Database, prefix: string): AgencyV2Json[] {
   const agencies = db
     .prepare(
-      `SELECT agency_id, agency_name, agency_url, agency_lang,
-              agency_timezone, agency_fare_url
+      `SELECT agency_id, agency_name, agency_url, agency_timezone,
+              agency_lang, agency_phone, agency_fare_url, agency_email,
+              cemv_support
        FROM agency
        ORDER BY agency_id`,
     )
@@ -33,23 +29,29 @@ export function extractAgenciesV2(
     agency_id: string;
     agency_name: string;
     agency_url: string | null;
-    agency_lang: string | null;
     agency_timezone: string | null;
+    agency_lang: string | null;
+    agency_phone: string | null;
     agency_fare_url: string | null;
+    agency_email: string | null;
+    cemv_support: string | null;
   }>;
 
-  const colors = (provider.colors ?? []).map((c) => ({ b: c.bg, t: c.text }));
-
-  const result: AgencyJson[] = agencies.map((a) => ({
-    i: `${prefix}:${a.agency_id}`,
-    n: a.agency_name,
-    sn: provider.name.ja.short,
-    u: a.agency_url ?? '',
-    l: a.agency_lang ?? '',
-    tz: a.agency_timezone ?? '',
-    fu: a.agency_fare_url ?? '',
-    cs: colors,
-  }));
+  const result: AgencyV2Json[] = agencies.map((a) => {
+    const cemv = a.cemv_support != null ? Number(a.cemv_support) : undefined;
+    return {
+      v: 2 as const,
+      i: `${prefix}:${a.agency_id}`,
+      n: a.agency_name,
+      u: a.agency_url ?? '',
+      tz: a.agency_timezone ?? '',
+      ...(a.agency_lang ? { l: a.agency_lang } : {}),
+      ...(a.agency_phone ? { ph: a.agency_phone } : {}),
+      ...(a.agency_fare_url ? { fu: a.agency_fare_url } : {}),
+      ...(a.agency_email ? { em: a.agency_email } : {}),
+      ...(cemv === 0 || cemv === 1 || cemv === 2 ? { cemv } : {}),
+    };
+  });
 
   console.log(`  [${prefix}] ${agencies.length} agencies`);
   return result;

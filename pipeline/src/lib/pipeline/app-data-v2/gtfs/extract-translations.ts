@@ -8,7 +8,6 @@
 import type Database from 'better-sqlite3';
 
 import type { TranslationsJson } from '../../../../../../src/types/data/transit-json';
-import type { Provider } from '../../../../types/resource-common';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -56,16 +55,14 @@ function buildTranslationMap(
 /**
  * Extract translations from the GTFS database.
  *
+ * Only GTFS translations.txt data is extracted. Provider-derived
+ * display names (long/short) are managed on the App side.
+ *
  * @param db - SQLite database handle (readonly).
  * @param prefix - Source prefix for ID namespacing.
- * @param provider - Provider info for agency names.
  * @returns TranslationsJson with prefixed IDs.
  */
-export function extractTranslationsV2(
-  db: Database.Database,
-  prefix: string,
-  provider: Provider,
-): TranslationsJson {
+export function extractTranslationsV2(db: Database.Database, prefix: string): TranslationsJson {
   // trip_headsign translations
   const headsignRows = db
     .prepare(
@@ -160,32 +157,10 @@ export function extractTranslationsV2(
       translation: r.translation,
     })),
   );
+  // agency_names: GTFS translations for the canonical agency_name
   const agencyNames: Record<string, Record<string, string>> = {};
   for (const [agencyId, names] of agencyNamesMap) {
-    agencyNames[`${prefix}:${agencyId}`] = {
-      ja: provider.name.ja.long,
-      en: provider.name.en.long,
-      ...names,
-    };
-  }
-
-  // agency_short_names from Provider
-  const agencyShortNames: Record<string, Record<string, string>> = {};
-  const allAgencyIds = db.prepare(`SELECT agency_id FROM agency`).all() as Array<{
-    agency_id: string;
-  }>;
-  for (const { agency_id } of allAgencyIds) {
-    const prefixedId = `${prefix}:${agency_id}`;
-    if (!agencyNames[prefixedId]) {
-      agencyNames[prefixedId] = {
-        ja: provider.name.ja.long,
-        en: provider.name.en.long,
-      };
-    }
-    agencyShortNames[prefixedId] = {
-      ja: provider.name.ja.short,
-      en: provider.name.en.short,
-    };
+    agencyNames[`${prefix}:${agencyId}`] = { ...names };
   }
 
   const headsignCount = Object.keys(headsigns).length;
@@ -203,6 +178,5 @@ export function extractTranslationsV2(
     stop_names: stopNames,
     route_names: routeNames,
     agency_names: agencyNames,
-    agency_short_names: agencyShortNames,
   };
 }

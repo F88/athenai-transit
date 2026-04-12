@@ -1,5 +1,5 @@
 /**
- * Tests for v2-extract-translations.ts.
+ * Tests for extract-translations.ts (v2).
  *
  * @vitest-environment node
  */
@@ -7,17 +7,7 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { Provider } from '../../../../../types/resource-common';
 import { extractTranslationsV2 } from '../extract-translations';
-
-const TEST_PROVIDER: Provider = {
-  name: {
-    ja: { long: 'テスト交通', short: 'テスト' },
-    en: { long: 'Test Transit', short: 'Test' },
-  },
-  url: 'https://example.com',
-  colors: [{ bg: '000000', text: 'FFFFFF' }],
-};
 
 let db: Database.Database;
 
@@ -63,14 +53,13 @@ afterEach(() => {
 
 describe('extractTranslationsV2', () => {
   it('returns empty maps when no translations exist', () => {
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    const result = extractTranslationsV2(db, 'test');
     expect(result).toEqual({
       headsigns: {},
       stop_headsigns: {},
       stop_names: {},
       route_names: {},
       agency_names: {},
-      agency_short_names: {},
     });
   });
 
@@ -82,7 +71,7 @@ describe('extractTranslationsV2', () => {
       VALUES ('trips', 'trip_headsign', 'en', 'Shimbashi Sta.', 'T001');
     `);
 
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    const result = extractTranslationsV2(db, 'test');
     expect(result.headsigns['新橋駅前']).toEqual({ en: 'Shimbashi Sta.' });
   });
 
@@ -96,28 +85,31 @@ describe('extractTranslationsV2', () => {
              ('stops', 'stop_name', 'en', 'Shimbashi', 'S001');
     `);
 
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
-    // v2 includes parent stations (location_type=1) unlike v1
+    const result = extractTranslationsV2(db, 'test');
     expect(result.stop_names['test:P001']).toEqual({ en: 'Shimbashi Sta.' });
     expect(result.stop_names['test:S001']).toEqual({ en: 'Shimbashi' });
   });
 
-  it('extracts agency_name with provider defaults', () => {
+  it('extracts agency_name translations from GTFS only', () => {
     db.exec(`
       INSERT INTO agency (agency_id, agency_name) VALUES ('A001', '東京バス');
       INSERT INTO translations (table_name, field_name, language, translation, record_id)
       VALUES ('agency', 'agency_name', 'en', 'Tokyo Bus', 'A001');
     `);
 
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    const result = extractTranslationsV2(db, 'test');
     expect(result.agency_names['test:A001']).toEqual({
-      ja: 'テスト交通',
       en: 'Tokyo Bus',
     });
-    expect(result.agency_short_names['test:A001']).toEqual({
-      ja: 'テスト',
-      en: 'Test',
-    });
+  });
+
+  it('returns no agency_names entry when no translation rows exist', () => {
+    db.exec(`
+      INSERT INTO agency (agency_id, agency_name) VALUES ('A001', '都バス');
+    `);
+
+    const result = extractTranslationsV2(db, 'test');
+    expect(result.agency_names['test:A001']).toBeUndefined();
   });
 
   it('extracts trip_headsign translations via field_value (standard GTFS)', () => {
@@ -127,7 +119,7 @@ describe('extractTranslationsV2', () => {
       VALUES ('trips', 'trip_headsign', 'en', 'Tokyo Station', '東京駅');
     `);
 
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    const result = extractTranslationsV2(db, 'test');
     expect(result.headsigns['東京駅']).toEqual({ en: 'Tokyo Station' });
   });
 
@@ -140,7 +132,7 @@ describe('extractTranslationsV2', () => {
       VALUES ('stop_times', 'stop_headsign', 'en', 'For Shibuya', 'T001', '1');
     `);
 
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    const result = extractTranslationsV2(db, 'test');
     expect(result.stop_headsigns['渋谷行']).toEqual({ en: 'For Shibuya' });
   });
 
@@ -153,7 +145,7 @@ describe('extractTranslationsV2', () => {
       VALUES ('routes', 'route_long_name', 'en', 'Yamanote Line', 'R001');
     `);
 
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    const result = extractTranslationsV2(db, 'test');
     expect(result.route_names['test:R001']).toEqual({ en: 'Yamanote Line' });
   });
 
@@ -168,8 +160,7 @@ describe('extractTranslationsV2', () => {
              ('trips', 'trip_headsign', 'en', 'Shinjuku Sta.', 'T002');
     `);
 
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
-    // Should produce only one headsign entry despite two trips
+    const result = extractTranslationsV2(db, 'test');
     expect(result.headsigns['新宿駅']).toEqual({ en: 'Shinjuku Sta.' });
     expect(Object.keys(result.headsigns)).toHaveLength(1);
   });
@@ -184,28 +175,11 @@ describe('extractTranslationsV2', () => {
              ('stops', 'stop_name', 'zh-Hans', '新桥', 'S001');
     `);
 
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    const result = extractTranslationsV2(db, 'test');
     expect(result.stop_names['test:S001']).toEqual({
       en: 'Shimbashi',
       ko: '신바시',
       'zh-Hans': '新桥',
-    });
-  });
-
-  it('provides agency names/short_names even without translation rows', () => {
-    db.exec(`
-      INSERT INTO agency (agency_id, agency_name) VALUES ('A001', '都バス');
-    `);
-
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
-    // Provider defaults are used
-    expect(result.agency_names['test:A001']).toEqual({
-      ja: 'テスト交通',
-      en: 'Test Transit',
-    });
-    expect(result.agency_short_names['test:A001']).toEqual({
-      ja: 'テスト',
-      en: 'Test',
     });
   });
 
@@ -217,7 +191,7 @@ describe('extractTranslationsV2', () => {
       VALUES ('stops', 'stop_name', 'en', 'Shimbashi', '新橋');
     `);
 
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    const result = extractTranslationsV2(db, 'test');
     expect(result.stop_names['test:S001']).toEqual({ en: 'Shimbashi' });
   });
 
@@ -229,7 +203,7 @@ describe('extractTranslationsV2', () => {
       VALUES ('routes', 'route_long_name', 'en', 'Yamanote Line', '山手線');
     `);
 
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
+    const result = extractTranslationsV2(db, 'test');
     expect(result.route_names['test:R001']).toEqual({ en: 'Yamanote Line' });
   });
 
@@ -242,10 +216,8 @@ describe('extractTranslationsV2', () => {
              ('agency', 'agency_name', 'en', 'Metro', 'A002');
     `);
 
-    const result = extractTranslationsV2(db, 'test', TEST_PROVIDER);
-    expect(result.agency_names['test:A001'].en).toBe('Tobus');
-    expect(result.agency_names['test:A002'].en).toBe('Metro');
-    expect(result.agency_short_names['test:A001']).toEqual({ ja: 'テスト', en: 'Test' });
-    expect(result.agency_short_names['test:A002']).toEqual({ ja: 'テスト', en: 'Test' });
+    const result = extractTranslationsV2(db, 'test');
+    expect(result.agency_names['test:A001']).toEqual({ en: 'Tobus' });
+    expect(result.agency_names['test:A002']).toEqual({ en: 'Metro' });
   });
 });
