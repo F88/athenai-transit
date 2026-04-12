@@ -260,6 +260,7 @@ const meta = {
   component: NearbyStop,
   args: {
     data: createStopWithContext(),
+    upcomingEntriesState: 'boardable',
     isSelected: false,
     now,
     mapCenter,
@@ -573,6 +574,7 @@ export const LangComparison: Story = {
           <span className="block text-[10px] text-gray-400">{label}</span>
           <NearbyStop
             data={args.data}
+            upcomingEntriesState={args.upcomingEntriesState}
             isSelected={args.isSelected}
             now={args.now}
             mapCenter={args.mapCenter}
