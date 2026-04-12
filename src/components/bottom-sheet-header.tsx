@@ -87,44 +87,42 @@ export function BottomSheetHeader({
         </PillButton>
 
         {/* Route types filter */}
-        {presentRouteTypes.length > 1 &&
-          presentRouteTypes.map((rt) => (
+        {presentRouteTypes.map((rt) => (
+          <PillButton
+            key={rt}
+            size={'sm'}
+            active={!hiddenRouteTypes.has(rt)}
+            activeBg={`${routeTypeColor(rt)}40`}
+            // activeBorder={routeTypeColor(rt)}
+            inactiveBorder={routeTypeColor(rt)}
+            onClick={() => onToggleRouteType(rt)}
+          >
+            {routeTypeEmoji(rt)}
+          </PillButton>
+        ))}
+        {/* Agency filter */}
+        {presentAgencies.map((agency) => {
+          const primary = agency.agency_colors[0];
+          const bgColor = primary ? `#${primary.bg}` : undefined;
+          const fgColor = primary ? `#${primary.text}` : undefined;
+          const title = agency.agency_long_name || agency.agency_short_name || agency.agency_name;
+          const value = agency.agency_short_name || agency.agency_long_name || agency.agency_name;
+          return (
             <PillButton
-              key={rt}
+              key={agency.agency_id}
               size={'sm'}
-              active={!hiddenRouteTypes.has(rt)}
-              activeBg={`${routeTypeColor(rt)}40`}
-              // activeBorder={routeTypeColor(rt)}
-              inactiveBorder={routeTypeColor(rt)}
-              onClick={() => onToggleRouteType(rt)}
+              active={!hiddenAgencyIds.has(agency.agency_id)}
+              activeBg={bgColor}
+              activeFg={fgColor}
+              activeBorder={bgColor}
+              inactiveBorder={bgColor}
+              onClick={() => onToggleAgency(agency)}
+              title={title}
             >
-              {routeTypeEmoji(rt)}
+              {value}
             </PillButton>
-          ))}
-        {/* Agency filter — shown only when 2+ agencies are present */}
-        {presentAgencies.length > 1 &&
-          presentAgencies.map((agency) => {
-            const primary = agency.agency_colors[0];
-            const bgColor = primary ? `#${primary.bg}` : undefined;
-            const fgColor = primary ? `#${primary.text}` : undefined;
-            const title = agency.agency_long_name || agency.agency_short_name || agency.agency_name;
-            const value = agency.agency_short_name || agency.agency_long_name || agency.agency_name;
-            return (
-              <PillButton
-                key={agency.agency_id}
-                size={'sm'}
-                active={!hiddenAgencyIds.has(agency.agency_id)}
-                activeBg={bgColor}
-                activeFg={fgColor}
-                activeBorder={bgColor}
-                inactiveBorder={bgColor}
-                onClick={() => onToggleAgency(agency)}
-                title={title}
-              >
-                {value}
-              </PillButton>
-            );
-          })}
+          );
+        })}
       </div>
       {selectedView && info.isVerboseEnabled && (
         <div className="mt-1">
