@@ -107,6 +107,8 @@ export function BottomSheetHeader({
             const primary = agency.agency_colors[0];
             const bgColor = primary ? `#${primary.bg}` : undefined;
             const fgColor = primary ? `#${primary.text}` : undefined;
+            const title = agency.agency_long_name || agency.agency_short_name || agency.agency_name;
+            const value = agency.agency_short_name || agency.agency_long_name || agency.agency_name;
             return (
               <PillButton
                 key={agency.agency_id}
@@ -117,9 +119,9 @@ export function BottomSheetHeader({
                 activeBorder={bgColor}
                 inactiveBorder={bgColor}
                 onClick={() => onToggleAgency(agency)}
-                title={agency.agency_name}
+                title={title}
               >
-                {agency.agency_short_name || agency.agency_name}
+                {value}
               </PillButton>
             );
           })}
