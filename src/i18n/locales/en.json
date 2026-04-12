@@ -49,8 +49,8 @@
     "summary": "{{count}} nearby stops (within {{radius}})",
     "noStops": "No stops (within {{radius}})",
     "noOperating": "No operating stops (within {{radius}})",
-    "activeOnly": "📍 Operating",
-    "activeOnlyTitle": "Show only stops with upcoming departures"
+    "showOperatingStopsOnly": "📍 Operating",
+    "showOperatingStopsOnlyTitle": "Show only stops with upcoming departures"
   },
   "stop": {
     "serviceState": {
@@ -58,6 +58,10 @@
       "dropOffOnly": "Drop-off only",
       "noService": "No service",
       "serviceEnded": "No more service today"
+    },
+    "timetable": {
+      "allFilteredOut": "Hidden by filter",
+      "filteredCount": "{{count}} after filter"
     },
     "accessibility": {
       "wheelchairAccessible": "Wheelchair accessible",

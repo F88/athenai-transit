@@ -12,6 +12,7 @@ import {
   getDisplayMinutes,
   getStopServiceState,
   getTimetableEntriesState,
+  getFilteredTimetableEntriesState,
 } from '../timetable-utils';
 import type { StopServiceStateInput } from '../../../types/app/transit';
 import type { TimetableEntry } from '../../../types/app/transit-composed';
@@ -600,6 +601,92 @@ describe('filterBoardable', () => {
 
     it('returns "drop-off-only" for a single terminal entry', () => {
       expect(getTimetableEntriesState([makeEntry({ isTerminal: true })])).toBe('drop-off-only');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // getFilteredTimetableEntriesState
+  // ---------------------------------------------------------------------------
+
+  describe('getFilteredTimetableEntriesState', () => {
+    // Matrix of all physically-reachable (stopServiceState, upcomingEntriesState,
+    // filteredEntriesState) combinations. The function is purely combinatorial,
+    // so we enumerate the truth table directly.
+    //
+    // Constraints:
+    //   - filtered is a subset of upcoming → if upcoming='no-service', filtered must be 'no-service'
+    //   - upcoming is a subset of full-day → if stopServiceState='no-service', upcoming must be 'no-service'
+
+    it('returns "no-service" when the repo has no data for this stop (case 1)', () => {
+      expect(getFilteredTimetableEntriesState('no-service', 'no-service', 'no-service')).toBe(
+        'no-service',
+      );
+    });
+
+    it('returns "service-ended" when boardable repo but upcoming is empty (case 2, late-night)', () => {
+      expect(getFilteredTimetableEntriesState('boardable', 'no-service', 'no-service')).toBe(
+        'service-ended',
+      );
+    });
+
+    it('returns "service-ended" when drop-off-only repo but upcoming is empty (case 3, late-night)', () => {
+      expect(getFilteredTimetableEntriesState('drop-off-only', 'no-service', 'no-service')).toBe(
+        'service-ended',
+      );
+    });
+
+    it('returns "filter-hidden" when boardable repo + boardable upcoming but filtered empty (case 4)', () => {
+      expect(getFilteredTimetableEntriesState('boardable', 'boardable', 'no-service')).toBe(
+        'filter-hidden',
+      );
+    });
+
+    it('returns "filter-hidden" when boardable repo + drop-off-only upcoming but filtered empty (case 5)', () => {
+      expect(getFilteredTimetableEntriesState('boardable', 'drop-off-only', 'no-service')).toBe(
+        'filter-hidden',
+      );
+    });
+
+    it('returns "filter-hidden" when drop-off-only repo + drop-off-only upcoming but filtered empty (case 6)', () => {
+      expect(getFilteredTimetableEntriesState('drop-off-only', 'drop-off-only', 'no-service')).toBe(
+        'filter-hidden',
+      );
+    });
+
+    it('returns "boardable" when boardable at every level (case 7, normal display)', () => {
+      expect(getFilteredTimetableEntriesState('boardable', 'boardable', 'boardable')).toBe(
+        'boardable',
+      );
+    });
+
+    it('returns "drop-off-only" when filter removed all boardable from a boardable upcoming (case 8)', () => {
+      expect(getFilteredTimetableEntriesState('boardable', 'boardable', 'drop-off-only')).toBe(
+        'drop-off-only',
+      );
+    });
+
+    it('returns "drop-off-only" when boardable repo but upcoming is already drop-off-only (case 9)', () => {
+      expect(getFilteredTimetableEntriesState('boardable', 'drop-off-only', 'drop-off-only')).toBe(
+        'drop-off-only',
+      );
+    });
+
+    it('returns "drop-off-only" when drop-off-only at every level (case 10)', () => {
+      expect(
+        getFilteredTimetableEntriesState('drop-off-only', 'drop-off-only', 'drop-off-only'),
+      ).toBe('drop-off-only');
+    });
+
+    it('stopServiceState="no-service" dominates regardless of other inputs (defensive)', () => {
+      // These combinations are physically impossible (filtered cannot exist
+      // if repo says no-service), but the function must remain total — the
+      // repo's truth takes precedence.
+      expect(getFilteredTimetableEntriesState('no-service', 'boardable', 'boardable')).toBe(
+        'no-service',
+      );
+      expect(getFilteredTimetableEntriesState('no-service', 'drop-off-only', 'drop-off-only')).toBe(
+        'no-service',
+      );
     });
   });
 });

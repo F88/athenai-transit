@@ -49,8 +49,8 @@
     "summary": "近くの乗り場 {{count}}カ所 / {{radius}}圏内",
     "noStops": "乗り場がありません / {{radius}}圏内",
     "noOperating": "運行中の乗り場がありません / {{radius}}圏内",
-    "activeOnly": "📍 運行中",
-    "activeOnlyTitle": "次便がある乗り場のみ表示"
+    "showOperatingStopsOnly": "📍 運行中",
+    "showOperatingStopsOnlyTitle": "次便がある乗り場のみ表示"
   },
   "stop": {
     "serviceState": {
@@ -58,6 +58,10 @@
       "dropOffOnly": "降車専用",
       "noService": "運行便なし",
       "serviceEnded": "本日の運行は終了しました"
+    },
+    "timetable": {
+      "allFilteredOut": "フィルターにより表示されていません",
+      "filteredCount": "フィルター後 {{count}} 件"
     },
     "accessibility": {
       "wheelchairAccessible": "車椅子で利用可能",

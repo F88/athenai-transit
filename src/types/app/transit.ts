@@ -64,6 +64,31 @@ export type TimetableEntriesState = 'boardable' | 'drop-off-only' | 'no-service'
 export type StopServiceState = TimetableEntriesState;
 
 /**
+ * Display state for a filtered subset of timetable entries as seen by
+ * the UI. A superset of {@link TimetableEntriesState} with two additional
+ * variants to express "why is the filtered view empty":
+ *
+ * - `'boardable'` / `'drop-off-only'`: delegated from the filtered
+ *   subset (has at least one entry).
+ * - `'no-service'`: repo has no timetable data at all for this stop.
+ * - `'service-ended'`: repo has data today but the upcoming window is
+ *   empty pre-filter (late-night / already ended for today).
+ * - `'filter-hidden'`: pre-filter upcoming had entries but the user's
+ *   UI filters (agency / route_type) removed everything visible.
+ *
+ * Produced by {@link getFilteredTimetableEntriesState} from the combination
+ * of a stop's full-day {@link StopServiceState}, its pre-filter upcoming
+ * {@link TimetableEntriesState}, and its post-filter
+ * {@link TimetableEntriesState}.
+ */
+export type FilteredTimetableEntriesState =
+  | 'boardable'
+  | 'drop-off-only'
+  | 'no-service'
+  | 'service-ended'
+  | 'filter-hidden';
+
+/**
  * Input signals used to derive a {@link StopServiceState}.
  *
  * Deliberately a narrow structural type (not the full `TimetableQueryMeta`)

@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
-import type { Agency, AppRouteTypeValue } from '../types/app/transit';
+import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
 import type { StopWithContext } from '../types/app/transit-composed';
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
+import { getTimetableEntriesState } from '../domain/transit/timetable-utils';
 import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-views';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { APP_ROUTE_TYPES } from '../config/route-types';
@@ -15,7 +16,7 @@ import { BottomSheetStops } from './bottom-sheet-stops';
 
 const DRAG_THRESHOLD = 50;
 
-/** Auto-enable "active only" filter at 22:00 in service day minutes. */
+/** Auto-enable "show operating stops only" filter at 22:00 in service day minutes. */
 const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
 
 /** Route type display order matching StopTypeFilterPanel. */
@@ -43,7 +44,7 @@ export interface NearbyStopsCounts {
   total: number;
   /** Stops with at least one upcoming departure. */
   active: number;
-  /** Stops remaining after all filters (activeOnly, routeType, agency). */
+  /** Stops remaining after all filters (showOperatingStopsOnly, routeType, agency). */
   filtered: number;
 }
 
@@ -87,8 +88,10 @@ export function BottomSheet({
   const [viewId, setViewId] = useState(DEFAULT_VIEW_ID);
   const isLateNight = getServiceDayMinutes(now) >= LATE_NIGHT_THRESHOLD_MINUTES;
   // User can toggle manually; null means "use auto (isLateNight)".
-  const [activeOnlyOverride, setActiveOnlyOverride] = useState<boolean | null>(null);
-  const activeOnly = activeOnlyOverride ?? isLateNight;
+  const [showOperatingStopsOnlyOverride, setShowOperatingStopsOnlyOverride] = useState<
+    boolean | null
+  >(null);
+  const showOperatingStopsOnly = showOperatingStopsOnlyOverride ?? isLateNight;
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
   const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
   const selectedView = DEPARTURE_VIEWS.find((v) => v.id === viewId);
@@ -105,6 +108,20 @@ export function BottomSheet({
     () => collectPresentAgencies(nearbyDepartures),
     [nearbyDepartures],
   );
+
+  // Per-stop state of the upcoming entries as returned by the repo,
+  // BEFORE any UI-level filter. Used by NearbyStop to distinguish
+  // "late-night / service ended" (upcoming already empty pre-filter)
+  // from "filter-hidden" (upcoming had entries but the user's active
+  // filters removed them all). Depends only on `nearbyDepartures` so
+  // it is not recomputed when the user toggles filter pills.
+  const upcomingEntriesStates = useMemo(() => {
+    const map = new Map<string, TimetableEntriesState>();
+    for (const swc of nearbyDepartures) {
+      map.set(swc.stop.stop_id, getTimetableEntriesState([...swc.departures]));
+    }
+    return map;
+  }, [nearbyDepartures]);
 
   const toggleRouteType = useCallback((rt: number) => {
     setHiddenRouteTypes((prev) => {
@@ -131,14 +148,25 @@ export function BottomSheet({
   }, []);
 
   const filteredDepartures = useMemo(() => {
-    // Departure-level filters run first: agency and route_type each
-    // remove matching entries from every stop's departures list.
-    // Stops left with no departures are then dropped by the activeOnly
-    // check below (when enabled). Route type filter at departure level
-    // means a stop serving multiple types (e.g. tram + subway) stays
-    // visible even when one of its types is toggled off — only the
-    // matching departures disappear.
+    // Order is deliberate:
+    //
+    // 1. Stop-level filter (showOperatingStopsOnly) runs FIRST on the pre-filter list.
+    //    `showOperatingStopsOnly` means "keep only stops that have upcoming entries
+    //    today" — a property of the stop itself, independent of what the
+    //    user has chosen to hide inside. Running it before the departure
+    //    filters ensures the check is against pre-filter `departures.length`
+    //    and does not conflate with the user's agency/route_type filters.
+    //
+    // 2. Departure-level filters (agency / route_type) run AFTER on the
+    //    surviving stops. They only mutate each stop's `departures` array
+    //    and never drop stops — a stop whose departures are all removed
+    //    stays visible and shows the "allFilteredOut" fallback message.
+    //    This decouples "which stops are in the list" from "what is shown
+    //    inside each stop".
     let result = nearbyDepartures;
+    if (showOperatingStopsOnly) {
+      result = result.filter((swc) => swc.departures.length > 0);
+    }
     if (hiddenAgencyIds.size > 0) {
       result = result.map((swc) => ({
         ...swc,
@@ -151,11 +179,8 @@ export function BottomSheet({
         departures: filterByRouteType(swc.departures, hiddenRouteTypes),
       }));
     }
-    if (activeOnly) {
-      result = result.filter((swc) => swc.departures.length > 0);
-    }
     return result;
-  }, [nearbyDepartures, activeOnly, hiddenRouteTypes, hiddenAgencyIds]);
+  }, [nearbyDepartures, showOperatingStopsOnly, hiddenRouteTypes, hiddenAgencyIds]);
 
   const counts: NearbyStopsCounts = useMemo(
     () => ({
@@ -233,7 +258,7 @@ export function BottomSheet({
         hasNearbyLoaded={hasNearbyLoaded}
         counts={counts}
         dataConfig={dataConfig}
-        activeOnly={activeOnly}
+        showOperatingStopsOnly={showOperatingStopsOnly}
         viewId={viewId}
         selectedView={selectedView}
         infoLevel={infoLevel}
@@ -241,13 +266,16 @@ export function BottomSheet({
         hiddenRouteTypes={hiddenRouteTypes}
         presentAgencies={presentAgencies}
         hiddenAgencyIds={hiddenAgencyIds}
-        onToggleActiveOnly={() => setActiveOnlyOverride((v) => !(v ?? isLateNight))}
+        onToggleShowOperatingStopsOnly={() =>
+          setShowOperatingStopsOnlyOverride((v) => !(v ?? isLateNight))
+        }
         onViewChange={setViewId}
         onToggleRouteType={toggleRouteType}
         onToggleAgency={toggleAgency}
       />
       <BottomSheetStops
         filteredDepartures={filteredDepartures}
+        upcomingEntriesStates={upcomingEntriesStates}
         selectedStopId={selectedStopId}
         now={now}
         mapCenter={mapCenter}

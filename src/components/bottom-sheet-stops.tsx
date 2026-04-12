@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
-import type { AppRouteTypeValue } from '../types/app/transit';
+import type { AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
 import type { StopWithContext } from '../types/app/transit-composed';
 import { NearbyStop, type NearbyStopProps } from './nearby-stop';
 
@@ -10,6 +10,15 @@ const EAGER_RENDER_COUNT = 6;
 
 interface BottomSheetStopsProps {
   filteredDepartures: StopWithContext[];
+  /**
+   * Map from stop_id to the service state of the stop's upcoming entries
+   * as returned by the repo, BEFORE any UI-level filter. Computed once
+   * by {@link BottomSheet} from the unfiltered `nearbyDepartures` and
+   * passed down so each {@link NearbyStop} can tell "late-night service
+   * ended" apart from "filter-hidden" when its filtered departures are
+   * empty.
+   */
+  upcomingEntriesStates: ReadonlyMap<string, TimetableEntriesState>;
   selectedStopId: string | null;
   now: Date;
   mapCenter: LatLng | null;
@@ -29,6 +38,7 @@ interface BottomSheetStopsProps {
 
 export function BottomSheetStops({
   filteredDepartures,
+  upcomingEntriesStates,
   selectedStopId,
   now,
   mapCenter,
@@ -50,6 +60,11 @@ export function BottomSheetStops({
       {filteredDepartures.map((swc, i) => {
         const props: NearbyStopProps = {
           data: swc,
+          // Fallback to 'no-service' if the Map is missing this stop_id
+          // (shouldn't happen — the Map is built from the same
+          // `nearbyDepartures` that becomes `filteredDepartures` — but
+          // stay defensive in case of race conditions during rerender).
+          upcomingEntriesState: upcomingEntriesStates.get(swc.stop.stop_id) ?? 'no-service',
           isSelected: selectedStopId === swc.stop.stop_id,
           now,
           mapCenter,

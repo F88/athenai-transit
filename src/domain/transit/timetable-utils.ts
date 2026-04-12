@@ -8,6 +8,7 @@
 
 import type { TimetableEntry } from '../../types/app/transit-composed';
 import type {
+  FilteredTimetableEntriesState,
   StopServiceState,
   StopServiceStateInput,
   TimetableEntriesState,
@@ -53,6 +54,54 @@ export function getTimetableEntriesState(entries: TimetableEntry[]): TimetableEn
     return 'drop-off-only';
   }
   return 'boardable';
+}
+
+/**
+ * Combine the repo's full-day {@link StopServiceState} with the state
+ * of the pre-filter upcoming entries and the state of the post-filter
+ * entries into a unified {@link FilteredTimetableEntriesState} for UI
+ * display.
+ *
+ * Distinguishes the three "empty display" scenarios that the simpler
+ * two-state check in {@link getTimetableEntriesState} cannot tell apart:
+ *
+ * 1. `stopServiceState === 'no-service'` → `'no-service'`
+ *    (repo has no timetable data for this stop at all)
+ * 2. `upcomingEntriesState === 'no-service'` → `'service-ended'`
+ *    (repo has data today but the upcoming window is already empty
+ *    pre-filter — late-night / service ended for today)
+ * 3. `filteredEntriesState === 'no-service'` → `'filter-hidden'`
+ *    (pre-filter upcoming had entries but the user's UI filters removed
+ *    everything)
+ * 4. otherwise → `filteredEntriesState` (`'boardable'` or
+ *    `'drop-off-only'`)
+ *
+ * All three inputs are already-derived state values, so the function is
+ * purely combinatorial and has no entry-scanning cost. Callers typically
+ * compute `upcomingEntriesState` / `filteredEntriesState` via
+ * {@link getTimetableEntriesState}.
+ *
+ * @param stopServiceState - Full-day service state (from repo meta via
+ *   {@link getStopServiceState}).
+ * @param upcomingEntriesState - Pre-filter upcoming entries state.
+ * @param filteredEntriesState - Post-filter entries state.
+ * @returns Unified display state for the filtered view.
+ */
+export function getFilteredTimetableEntriesState(
+  stopServiceState: StopServiceState,
+  upcomingEntriesState: TimetableEntriesState,
+  filteredEntriesState: TimetableEntriesState,
+): FilteredTimetableEntriesState {
+  if (stopServiceState === 'no-service') {
+    return 'no-service';
+  }
+  if (upcomingEntriesState === 'no-service') {
+    return 'service-ended';
+  }
+  if (filteredEntriesState === 'no-service') {
+    return 'filter-hidden';
+  }
+  return filteredEntriesState;
 }
 
 /**
