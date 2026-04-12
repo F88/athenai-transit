@@ -38,7 +38,12 @@ export function extractAgenciesV2(db: Database.Database, prefix: string): Agency
   }>;
 
   const result: AgencyV2Json[] = agencies.map((a) => {
-    const cemv = a.cemv_support != null ? Number(a.cemv_support) : undefined;
+    // `cemv_support` may be an empty string when the GTFS CSV column is blank
+    // (common — only a few sources actually populate it). Using `Number('')`
+    // would coerce blank to 0 and emit a bogus `cemv: 0` even though the
+    // source never declared a value. `parseInt` returns NaN for both '' and
+    // whitespace, which the filter below then omits.
+    const cemv = a.cemv_support != null ? parseInt(a.cemv_support, 10) : undefined;
     return {
       v: 2 as const,
       i: `${prefix}:${a.agency_id}`,
