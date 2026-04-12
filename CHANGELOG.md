@@ -9,13 +9,42 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.04.12]
+
 ### Fixed
 
 - i18n: GTFS base values (stop_name, trip_headsign 等) を `feed_lang` キーで translation names に注入し、`lang=ja` で英語 headsign が表示される問題を修正 (#107)。
+- Multi-agency GTFS フィード (西武バス 2 社、VAG Freiburg 2 社) で全 agency に同一の provider 由来 display name が適用されていた問題を修正 (#105)。agency-attributes.ts で per-agency の display name を保持する構造に変更。
+- departure-level filter (agency / route_type) で全 departures が非表示になった stop が「本日の運行は終了しました」(`serviceEnded`) と誤表示される regression を修正。`FilteredTimetableEntriesState` と `getFilteredTimetableEntriesState` で full-day / pre-filter upcoming / post-filter の 3 state から正しい fallback メッセージを導出し、`allFilteredOut` / `serviceEnded` / `noService` を区別。
+- ODPT `buildAgencyV2` の `agency_id` 生成が `provider.name.en.short`、`buildRoutesV2.ai` は `provider.name.en.long` を使用しており、long ≠ short な provider で referential integrity が崩れる latent bug を修正。両者を `en.long` に統一。
+- GTFS `extractAgenciesV2` で `cemv_support` が空文字列のとき `Number('')` で `0` に変換され、`cemv: 0` として誤出力されていた問題を修正。`parseInt` に変更し、空文字列・空白文字は `NaN` として range filter で自然に除外。
+- `bottom-sheet.tsx` の `showOperatingStopsOnly` 判定を departure-level filter の前に実行するよう順序変更。stop visibility 制御 (次便あり) と user filter (何を隠すか) を分離。
+- `nearby-stop.tsx` の empty-fallback 判定ロジックに関連する TSDoc の不一致 (`get-agency-display-name.ts` の `'long'` source 説明、`transit-v2-json.ts` の ODPT `n` 説明) を修正。
+- `verbose-agency.tsx` の `short="..."` 属性 dump が JSX 改行まわりで whitespace 扱いが compiler 依存だった箇所を明示的な `{' '}` セパレータに書き換え。
 
 ### Added
 
 - DEVELOPMENT.md: GTFS i18n 仕様 (`feed_lang` / `agency_lang` / `translations.txt`) のリファレンスセクションを追加。
+- `AgencyV2Json` 型 (agency section version 2) を追加。pipeline は data-source 由来フィールド (`n`, `u`, `tz`, `l?`, `ph?`, `fu?`, `em?`, `cemv?`) のみ出力。
+- `src/config/agency-attributes.ts` を新設。app 側で per-agency display name (long/short multilingual) と brand colors を一元管理。multi-agency (`sbbus:3013301006265` / `sbbus:6013301006270`, `vagfr:1` / `vagfr:3` 等) を区別。
+- GTFS schema (`pipeline/src/lib/pipeline/gtfs-schema.ts`) に `cemv_support` カラムを追加 (GTFS-JP v4)。`extractAgenciesV2` が `agency_phone`, `agency_email`, `agency_fare_url` も読み取るよう拡張。
+- `Agency` app 型に `agency_long_name` / `agency_long_names` フィールドを追加。
+- `FilteredTimetableEntriesState` 型と `getFilteredTimetableEntriesState` pure function を `src/domain/transit/timetable-utils.ts` に追加。full-day service state + pre-filter upcoming state + post-filter state の 3 入力から UI display state を派生。
+- `filterByAgency`, `filterByRouteType` を departure-level filter として `src/domain/transit/timetable-filter.ts` に追加。
+- `collectPresentAgencies`, `collectPresentRouteTypes` domain helper を独立ファイルとテストに抽出。
+- i18n key `stop.timetable.allFilteredOut`, `stop.timetable.filteredCount` を追加。UI-layer の timetable 表示状態を data-layer の `stop.serviceState.*` から namespace 分離。
+
+### Changed
+
+- Agency / route type フィルターを **stop-level から departure-level へ移行**。複数 route_type / 複数 agency を持つ stop で 1 種類を off にしても stop 自体は表示されたまま、該当 departures のみ非表示になる。
+- Filter pill を常時表示に変更。1 種類しか present していないソース (京王バス単独など) でも pill が見え、ユーザーが何を絞り込めるか常に把握できる。
+- `showOperatingStopsOnly` (旧 `activeOnly`) を departure-level filter より **前** に実行。post-filter の `departures.length` を見ることによる「stop visibility と user filter の conflation」を解消。
+- `activeOnly` → `showOperatingStopsOnly` rename。古い名前では何が active なのか (stops? departures? agency?) が曖昧だった。i18n key / pill label も揃えて更新。
+- i18n: `stop.serviceState.filterHidden` → `stop.timetable.allFilteredOut` に移行 (UI 層と data 層の namespace 分離)。
+- Pipeline: GTFS / ODPT の agency / translation builder から `provider` 依存を除去。display name injection を停止し、data-source 由来フィールドのみを出力。app 側は `agency-attributes.ts` を overlay する責務に分離。
+- `getAgencyDisplayNames` に `'original'` source を追加。agency-attributes に entry が無いとき canonical `agency_name` に fallback してから agency_id に落ちる。
+- `AgencyBadge`: hardcoded Seibu workaround (`AGENCY_BADGE_NAME_PREFERENCE_BY_ID`, `AGENCY_BADGE_USE_RAW_NAME_BY_ID`) を削除し、per-agency display name を `agency-attributes.ts` に集約。
+- `TranslationsJson.agency_short_names` を削除。per-agency の short name は App 側 `agency-attributes.ts` で管理。
 
 ## [2026.04.11]
 
