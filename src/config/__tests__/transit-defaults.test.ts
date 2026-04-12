@@ -5,8 +5,10 @@ import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '../transit-defaults';
 const agency: Agency = {
   agency_id: 'a1',
   agency_name: 'Test Agency',
+  agency_long_name: 'Test Agency',
   agency_short_name: 'TA',
   agency_names: {},
+  agency_long_names: {},
   agency_short_names: {},
   agency_url: '',
   agency_lang: 'ja',

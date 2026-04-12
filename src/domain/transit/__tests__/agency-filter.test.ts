@@ -8,8 +8,10 @@ function makeAgency(id: string, shortName = '', name = `Agency ${id}`): Agency {
   return {
     agency_id: id,
     agency_name: name,
+    agency_long_name: name,
     agency_short_name: shortName,
     agency_names: {},
+    agency_long_names: {},
     agency_short_names: {},
     agency_url: '',
     agency_lang: 'ja',

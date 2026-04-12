@@ -21,8 +21,10 @@ import { NearbyStop } from './nearby-stop';
 const agency: Agency = {
   agency_id: 'agency-001',
   agency_name: '都営バス',
+  agency_long_name: '都営バス',
   agency_short_name: '都営',
   agency_names: {},
+  agency_long_names: {},
   agency_short_names: {},
   agency_url: '',
   agency_lang: 'ja',
@@ -34,8 +36,10 @@ const agency: Agency = {
 const agency2: Agency = {
   agency_id: 'agency-002',
   agency_name: '京王バス',
+  agency_long_name: '京王バス',
   agency_short_name: '京王',
   agency_names: {},
+  agency_long_names: {},
   agency_short_names: {},
   agency_url: '',
   agency_lang: 'ja',

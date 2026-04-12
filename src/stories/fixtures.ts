@@ -22,6 +22,7 @@ import type {
 export const agencyGx: Agency = {
   agency_id: 'mir:0000020001320',
   agency_name: '首都圏新都市鉄道',
+  agency_long_name: '首都圏新都市鉄道',
   agency_short_name: 'GX',
   agency_names: {
     ja: '首都圏新都市鉄道',
@@ -30,6 +31,7 @@ export const agencyGx: Agency = {
     'zh-Hans': '首都圈新都市铁道',
     'zh-Hant': '首都圈新都市鐵道',
   },
+  agency_long_names: {},
   agency_short_names: { ja: 'GX', en: 'GX', ko: 'GX', 'zh-Hans': 'GX', 'zh-Hant': 'GX' },
   agency_url: 'https://gx.example.com/',
   agency_lang: 'ja',
@@ -42,6 +44,7 @@ export const agencyGx: Agency = {
 export const agencyUs: Agency = {
   agency_id: 'fixture:us',
   agency_name: 'Bay Area Rapid Transit District',
+  agency_long_name: 'Bay Area Rapid Transit District',
   agency_short_name: 'BART',
   agency_names: {
     en: 'Bay Area Rapid Transit District',
@@ -50,6 +53,7 @@ export const agencyUs: Agency = {
     'zh-Hans': '旧金山湾区捷运',
     'zh-Hant': '舊金山灣區捷運',
   },
+  agency_long_names: {},
   agency_short_names: { en: 'BART', ja: 'BART', ko: 'BART', 'zh-Hans': 'BART' },
   agency_url: 'https://bart.example.com/',
   agency_lang: 'en',
@@ -62,6 +66,7 @@ export const agencyUs: Agency = {
 export const agencyDe: Agency = {
   agency_id: 'fixture:de',
   agency_name: 'Berliner Verkehrsbetriebe',
+  agency_long_name: 'Berliner Verkehrsbetriebe',
   agency_short_name: 'BVG',
   agency_names: {
     de: 'Berliner Verkehrsbetriebe',
@@ -70,6 +75,7 @@ export const agencyDe: Agency = {
     ko: '베를린 교통공사',
     'zh-Hans': '柏林交通公司',
   },
+  agency_long_names: {},
   agency_short_names: { de: 'BVG', en: 'BVG', ja: 'ベルリン交通', ko: 'BVG' },
   agency_url: 'https://bvg.example.de/',
   agency_lang: 'de',
@@ -82,6 +88,7 @@ export const agencyDe: Agency = {
 export const agencyUk: Agency = {
   agency_id: 'fixture:uk',
   agency_name: 'West Midlands Railways',
+  agency_long_name: 'West Midlands Railways',
   agency_short_name: 'WMR',
   agency_names: {
     en: 'West Midlands Railways',
@@ -89,6 +96,7 @@ export const agencyUk: Agency = {
     de: 'West Midlands Eisenbahn',
     ko: '웨스트 미들랜즈 철도',
   },
+  agency_long_names: {},
   agency_short_names: { en: 'WMR', ja: 'WMR', de: 'WMR', ko: 'WMR' },
   agency_url: 'https://wmr.example.co.uk/',
   agency_lang: 'en',
@@ -101,6 +109,7 @@ export const agencyUk: Agency = {
 export const agencyAt: Agency = {
   agency_id: 'fixture:at',
   agency_name: 'Wiener Linien Regional',
+  agency_long_name: 'Wiener Linien Regional',
   agency_short_name: 'WLR',
   agency_names: {
     de: 'Wiener Linien Regional',
@@ -108,6 +117,7 @@ export const agencyAt: Agency = {
     ja: 'ウィーン地域線',
     ko: '빈 지역 노선',
   },
+  agency_long_names: {},
   agency_short_names: { de: 'WLR', en: 'WLR', ja: 'WLR', ko: 'WLR' },
   agency_url: 'https://wlr.example.at/',
   agency_lang: 'de',
@@ -120,6 +130,7 @@ export const agencyAt: Agency = {
 export const agencyOretetsu: Agency = {
   agency_id: 'iyt2:0000038000143',
   agency_name: '蜜柑バス株式会社',
+  agency_long_name: '蜜柑バス株式会社',
   agency_short_name: '蜜柑バス',
   agency_names: {
     ja: '蜜柑バス株式会社',
@@ -128,6 +139,7 @@ export const agencyOretetsu: Agency = {
     'zh-Hans': '蜜柑巴士株式会社',
     'zh-Hant': '蜜柑巴士株式會社',
   },
+  agency_long_names: {},
   agency_short_names: {
     ja: '蜜柑バス',
     en: 'Mikan Bus',
@@ -146,6 +158,7 @@ export const agencyOretetsu: Agency = {
 export const agencyTobus: Agency = {
   agency_id: 'minkuru:8000020130001',
   agency_name: '都営バス',
+  agency_long_name: '都営バス',
   agency_short_name: '都バス',
   agency_names: {
     ja: '都営バス',
@@ -155,6 +168,7 @@ export const agencyTobus: Agency = {
     'zh-Hans': '都营巴士',
     'zh-Hant': '都營巴士',
   },
+  agency_long_names: {},
   agency_short_names: {
     ja: '都バス',
     en: 'Toei',
@@ -173,6 +187,7 @@ export const agencyTobus: Agency = {
 export const agencyLong: Agency = {
   agency_id: 'fictional:9999999999999',
   agency_name: '架空都市圏高速鉄道株式会社',
+  agency_long_name: '架空都市圏高速鉄道株式会社',
   agency_short_name: '架空都市圏高速鉄道',
   agency_names: {
     ja: '架空都市圏高速鉄道株式会社',
@@ -181,6 +196,7 @@ export const agencyLong: Agency = {
     'zh-Hans': '架空都市圈高速铁道株式会社',
     'zh-Hant': '架空都市圈高速鐵道株式會社',
   },
+  agency_long_names: {},
   agency_short_names: {
     ja: '架空都市圏高速鉄道',
     en: 'Fictional Metro Rapid',
@@ -199,6 +215,7 @@ export const agencyLong: Agency = {
 export const agencyRed: Agency = {
   agency_id: 'fixture:red',
   agency_name: '赤色地下鉄株式会社',
+  agency_long_name: '赤色地下鉄株式会社',
   agency_short_name: '赤色バス',
   agency_names: {
     ja: '赤色地下鉄株式会社',
@@ -207,6 +224,7 @@ export const agencyRed: Agency = {
     'zh-Hans': '赤色地铁株式会社',
     'zh-Hant': '紅色地鐵株式會社',
   },
+  agency_long_names: {},
   agency_short_names: {
     ja: '赤色バス',
     en: 'Red Bus',
@@ -225,6 +243,7 @@ export const agencyRed: Agency = {
 export const agencyBlue: Agency = {
   agency_id: 'fixture:blue',
   agency_name: '青色モノレール株式会社',
+  agency_long_name: '青色モノレール株式会社',
   agency_short_name: 'あおいろ号',
   agency_names: {
     ja: '青色モノレール株式会社',
@@ -233,6 +252,7 @@ export const agencyBlue: Agency = {
     'zh-Hans': '青色单轨株式会社',
     'zh-Hant': '青色單軌株式會社',
   },
+  agency_long_names: {},
   agency_short_names: {
     ja: 'あおいろ号',
     en: 'Blue Liner',
@@ -251,6 +271,7 @@ export const agencyBlue: Agency = {
 export const agencyGreen: Agency = {
   agency_id: 'fixture:green',
   agency_name: '緑色市交通局',
+  agency_long_name: '緑色市交通局',
   agency_short_name: '緑色市バス',
   agency_names: {
     ja: '緑色市交通局',
@@ -259,6 +280,7 @@ export const agencyGreen: Agency = {
     'zh-Hans': '绿色市交通局',
     'zh-Hant': '綠色市交通局',
   },
+  agency_long_names: {},
   agency_short_names: {
     ja: '緑色市バス',
     en: 'Green City Bus',
@@ -277,6 +299,7 @@ export const agencyGreen: Agency = {
 export const agencyYellow: Agency = {
   agency_id: 'fixture:yellow',
   agency_name: '黄色トラム株式会社',
+  agency_long_name: '黄色トラム株式会社',
   agency_short_name: '黄トラ',
   agency_names: {
     ja: '黄色トラム株式会社',
@@ -285,6 +308,7 @@ export const agencyYellow: Agency = {
     'zh-Hans': '黄色电车株式会社',
     'zh-Hant': '黃色電車株式會社',
   },
+  agency_long_names: {},
   agency_short_names: {
     ja: '黄トラ',
     en: 'Yellow Tram',
@@ -303,6 +327,7 @@ export const agencyYellow: Agency = {
 export const agencyNoColor: Agency = {
   agency_id: 'nocolor:0000000000000',
   agency_name: '無色バス株式会社',
+  agency_long_name: '無色バス株式会社',
   agency_short_name: '無色バス',
   agency_names: {
     ja: '無色バス株式会社',
@@ -311,6 +336,7 @@ export const agencyNoColor: Agency = {
     'zh-Hans': '无色巴士株式会社',
     'zh-Hant': '無色巴士株式會社',
   },
+  agency_long_names: {},
   agency_short_names: {
     ja: '無色バス',
     en: 'Colorless Bus',
