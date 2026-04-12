@@ -12,16 +12,7 @@ import type {
   OdptStationOrder,
   OdptStationTimetable,
 } from '../../../../../types/odpt-train';
-import type { Provider } from '../../../../../types/resource-common';
 import { buildTranslationsV2 } from '../build-translations';
-
-const TEST_PROVIDER: Provider = {
-  name: {
-    ja: { long: 'テスト交通', short: 'テスト' },
-    en: { long: 'Test Transit', short: 'Test' },
-  },
-  colors: [{ bg: '000000', text: 'FFFFFF' }],
-};
 
 function makeOrder(
   index: number,
@@ -81,7 +72,7 @@ describe('buildTranslationsV2', () => {
       },
     ];
 
-    const result = buildTranslationsV2('test', timetables, [railway], stations, TEST_PROVIDER);
+    const result = buildTranslationsV2('test', timetables, [railway], stations);
 
     // Headsign: derived from destinationStation
     expect(result.headsigns['B駅']).toEqual({ ja: 'B駅', en: 'Station B' });
@@ -89,15 +80,8 @@ describe('buildTranslationsV2', () => {
     expect(result.stop_names['test:A']).toEqual({ ja: 'A駅', en: 'Station A' });
     // Route names
     expect(result.route_names['test:U']).toEqual({ ja: 'テスト線', en: 'Test Line' });
-    // Agency names
-    expect(result.agency_names['test:Test Transit']).toEqual({
-      ja: 'テスト交通',
-      en: 'Test Transit',
-    });
-    expect(result.agency_short_names['test:Test Transit']).toEqual({
-      ja: 'テスト',
-      en: 'Test',
-    });
+    // Agency names: ODPT has no agency translations (managed on App side).
+    expect(result.agency_names).toEqual({});
   });
 
   it('includes ko and zh-Hans in station translations when available', () => {
@@ -114,7 +98,7 @@ describe('buildTranslationsV2', () => {
       },
     ];
 
-    const result = buildTranslationsV2('test', [], [railway], stations, TEST_PROVIDER);
+    const result = buildTranslationsV2('test', [], [railway], stations);
     expect(result.stop_names['test:A']).toEqual({
       ja: 'A駅',
       en: 'Station A',
@@ -137,7 +121,7 @@ describe('buildTranslationsV2', () => {
       },
     ];
 
-    const result = buildTranslationsV2('test', [], [railway], stations, TEST_PROVIDER);
+    const result = buildTranslationsV2('test', [], [railway], stations);
     expect(result.headsigns).toEqual({});
   });
 
@@ -169,7 +153,7 @@ describe('buildTranslationsV2', () => {
       },
     ];
 
-    const result = buildTranslationsV2('test', timetables, [railway], stations, TEST_PROVIDER);
+    const result = buildTranslationsV2('test', timetables, [railway], stations);
     expect(result.headsigns['B駅']).toEqual({ ja: 'B駅', en: 'Station B' });
     expect(result.headsigns['C駅']).toEqual({ ja: 'C駅', en: 'Station C' });
     expect(Object.keys(result.headsigns)).toHaveLength(2);
@@ -201,7 +185,7 @@ describe('buildTranslationsV2', () => {
       },
     ];
 
-    const result = buildTranslationsV2('test', timetables, [railway], stations, TEST_PROVIDER);
+    const result = buildTranslationsV2('test', timetables, [railway], stations);
     expect(result.stop_headsigns).toEqual({});
   });
 
@@ -235,7 +219,7 @@ describe('buildTranslationsV2', () => {
       },
     ];
 
-    const result = buildTranslationsV2('test', timetables, [railway], [], TEST_PROVIDER);
+    const result = buildTranslationsV2('test', timetables, [railway], []);
     expect(Object.keys(result.headsigns)).toHaveLength(1);
     expect(result.headsigns['B駅']).toEqual({ ja: 'B駅', en: 'Station B' });
   });

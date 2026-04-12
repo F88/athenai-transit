@@ -23,50 +23,37 @@ describe('buildAgencyV2', () => {
     const result = buildAgencyV2('yrkm', TEST_PROVIDER);
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({
-      i: 'yrkm:Test Transit',
-      n: 'テスト交通',
-      sn: 'テスト',
-      u: 'https://example.com',
-      l: 'ja',
+      v: 2,
+      i: 'yrkm:Test',
+      n: '',
+      u: '',
       tz: 'Asia/Tokyo',
-      fu: '',
-      cs: [{ b: '000000', t: 'FFFFFF' }],
+      l: 'ja',
     });
   });
 
-  it('includes provider colors', () => {
+  it('uses provider.name.en.short for agency_id', () => {
     const provider: Provider = {
-      ...TEST_PROVIDER,
+      name: {
+        ja: { long: 'テスト鉄道', short: 'テスト' },
+        en: { long: 'Test Railway', short: 'TRW' },
+      },
+      url: 'https://example.com',
       colors: [{ bg: '00B2E5', text: 'FFFFFF' }],
     };
     const result = buildAgencyV2('test', provider);
-    expect(result[0].cs).toEqual([{ b: '00B2E5', t: 'FFFFFF' }]);
+    expect(result[0].i).toBe('test:TRW');
   });
 
-  it('returns empty string for url when provider has no URL', () => {
-    const provider: Provider = {
-      name: {
-        ja: { long: 'テスト', short: 'テスト' },
-        en: { long: 'Test', short: 'Test' },
-      },
-      colors: [{ bg: '000000', text: 'FFFFFF' }],
-    };
-    const result = buildAgencyV2('test', provider);
+  it('emits empty strings for name and url (managed on App side)', () => {
+    const result = buildAgencyV2('test', TEST_PROVIDER);
+    expect(result[0].n).toBe('');
     expect(result[0].u).toBe('');
   });
 
-  it('includes multiple brand colors in order', () => {
-    const provider: Provider = {
-      ...TEST_PROVIDER,
-      colors: [
-        { bg: 'FF0000', text: 'FFFFFF' },
-        { bg: '0000FF', text: 'FFFFFF' },
-      ],
-    };
-    const result = buildAgencyV2('test', provider);
-    expect(result[0].cs).toEqual([
-      { b: 'FF0000', t: 'FFFFFF' },
-      { b: '0000FF', t: 'FFFFFF' },
-    ]);
+  it('sets default timezone and language', () => {
+    const result = buildAgencyV2('test', TEST_PROVIDER);
+    expect(result[0].tz).toBe('Asia/Tokyo');
+    expect(result[0].l).toBe('ja');
   });
 });
