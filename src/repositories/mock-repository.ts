@@ -40,6 +40,7 @@ import type { TransitRepository } from './transit-repository';
 const AGENCY: Agency = {
   agency_id: 'mock:aoba',
   agency_name: 'あおば交通株式会社',
+  agency_long_name: 'あおば交通株式会社',
   agency_short_name: 'あおバス',
   agency_names: {
     ja: 'あおば交通株式会社',
@@ -48,6 +49,7 @@ const AGENCY: Agency = {
     'zh-Hans': '青叶交通株式会社',
     'zh-Hant': '青葉交通株式會社',
   },
+  agency_long_names: {},
   agency_short_names: { ja: 'あおバス', en: 'Aoba', ko: '아오바', 'zh-Hans': '青叶巴士' },
   agency_url: 'https://example.com/aoba',
   agency_lang: 'ja',
@@ -59,6 +61,7 @@ const AGENCY: Agency = {
 const AGENCY_SORA: Agency = {
   agency_id: 'mock:soraq',
   agency_name: 'そら急行バス株式会社',
+  agency_long_name: 'そら急行バス株式会社',
   agency_short_name: 'そら急',
   agency_names: {
     ja: 'そら急行バス株式会社',
@@ -66,6 +69,7 @@ const AGENCY_SORA: Agency = {
     ko: '소라급행버스',
     'zh-Hans': '空急行巴士株式会社',
   },
+  agency_long_names: {},
   agency_short_names: { ja: 'そら急', en: 'Sora Exp', ko: '소라급' },
   agency_url: 'https://example.com/sora',
   agency_lang: 'ja',

@@ -15,7 +15,7 @@ interface BottomSheetHeaderProps {
   hasNearbyLoaded: boolean;
   counts: NearbyStopsCounts;
   dataConfig: DataConfig;
-  activeOnly: boolean;
+  showOperatingStopsOnly: boolean;
   viewId: string;
   selectedView: DepartureViewMeta | undefined;
   infoLevel: InfoLevel;
@@ -23,7 +23,7 @@ interface BottomSheetHeaderProps {
   hiddenRouteTypes: Set<number>;
   presentAgencies: Agency[];
   hiddenAgencyIds: Set<string>;
-  onToggleActiveOnly: () => void;
+  onToggleShowOperatingStopsOnly: () => void;
   onViewChange: (viewId: string) => void;
   onToggleRouteType: (rt: number) => void;
   onToggleAgency: (agency: Agency) => void;
@@ -33,7 +33,7 @@ export function BottomSheetHeader({
   hasNearbyLoaded,
   counts,
   dataConfig,
-  activeOnly,
+  showOperatingStopsOnly,
   viewId,
   selectedView,
   infoLevel,
@@ -41,7 +41,7 @@ export function BottomSheetHeader({
   hiddenRouteTypes,
   presentAgencies,
   hiddenAgencyIds,
-  onToggleActiveOnly,
+  onToggleShowOperatingStopsOnly,
   onViewChange,
   onToggleRouteType,
   onToggleAgency,
@@ -55,7 +55,7 @@ export function BottomSheetHeader({
         hasLoaded={hasNearbyLoaded}
         counts={counts}
         nearbyRadius={dataConfig.stops.nearbyRadius}
-        activeOnly={activeOnly}
+        showOperatingStopsOnly={showOperatingStopsOnly}
       />
       <div className="no-scrollbar mt-1.5 flex gap-1 overflow-x-auto">
         {DEPARTURE_VIEWS.filter((v) => v.visible).map((view) => (
@@ -75,54 +75,54 @@ export function BottomSheetHeader({
       <div className="no-scrollbar mt-1 flex gap-1 overflow-x-auto">
         <PillButton
           size={'sm'}
-          active={activeOnly}
+          active={showOperatingStopsOnly}
           activeBg={'#1565c0'}
           activeBorder={'#1565c0'}
           inactiveBorder={'#1565c0'}
-          onClick={onToggleActiveOnly}
-          title={t('nearbyStops.activeOnlyTitle')}
+          onClick={onToggleShowOperatingStopsOnly}
+          title={t('nearbyStops.showOperatingStopsOnlyTitle')}
           count={counts.active}
         >
-          {t('nearbyStops.activeOnly')}
+          {t('nearbyStops.showOperatingStopsOnly')}
         </PillButton>
 
         {/* Route types filter */}
-        {presentRouteTypes.length > 1 &&
-          presentRouteTypes.map((rt) => (
+        {presentRouteTypes.map((rt) => (
+          <PillButton
+            key={rt}
+            size={'sm'}
+            active={!hiddenRouteTypes.has(rt)}
+            activeBg={`${routeTypeColor(rt)}40`}
+            // activeBorder={routeTypeColor(rt)}
+            inactiveBorder={routeTypeColor(rt)}
+            onClick={() => onToggleRouteType(rt)}
+          >
+            {routeTypeEmoji(rt)}
+          </PillButton>
+        ))}
+        {/* Agency filter */}
+        {presentAgencies.map((agency) => {
+          const primary = agency.agency_colors[0];
+          const bgColor = primary ? `#${primary.bg}` : undefined;
+          const fgColor = primary ? `#${primary.text}` : undefined;
+          const title = agency.agency_long_name || agency.agency_short_name || agency.agency_name;
+          const value = agency.agency_short_name || agency.agency_long_name || agency.agency_name;
+          return (
             <PillButton
-              key={rt}
+              key={agency.agency_id}
               size={'sm'}
-              active={!hiddenRouteTypes.has(rt)}
-              activeBg={`${routeTypeColor(rt)}40`}
-              // activeBorder={routeTypeColor(rt)}
-              inactiveBorder={routeTypeColor(rt)}
-              onClick={() => onToggleRouteType(rt)}
+              active={!hiddenAgencyIds.has(agency.agency_id)}
+              activeBg={bgColor}
+              activeFg={fgColor}
+              activeBorder={bgColor}
+              inactiveBorder={bgColor}
+              onClick={() => onToggleAgency(agency)}
+              title={title}
             >
-              {routeTypeEmoji(rt)}
+              {value}
             </PillButton>
-          ))}
-        {/* Agency filter — shown only when 2+ agencies are present */}
-        {presentAgencies.length > 1 &&
-          presentAgencies.map((agency) => {
-            const primary = agency.agency_colors[0];
-            const bgColor = primary ? `#${primary.bg}` : undefined;
-            const fgColor = primary ? `#${primary.text}` : undefined;
-            return (
-              <PillButton
-                key={agency.agency_id}
-                size={'sm'}
-                active={!hiddenAgencyIds.has(agency.agency_id)}
-                activeBg={bgColor}
-                activeFg={fgColor}
-                activeBorder={bgColor}
-                inactiveBorder={bgColor}
-                onClick={() => onToggleAgency(agency)}
-                title={agency.agency_name}
-              >
-                {agency.agency_short_name || agency.agency_name}
-              </PillButton>
-            );
-          })}
+          );
+        })}
       </div>
       {selectedView && info.isVerboseEnabled && (
         <div className="mt-1">
@@ -148,7 +148,7 @@ function formatRadius(meters: number): string {
 function getNearbyStopsSummaryText(
   hasLoaded: boolean,
   counts: NearbyStopsCounts,
-  activeOnly: boolean,
+  showOperatingStopsOnly: boolean,
   radius: string,
   lang: string,
   t: (key: string, options?: Record<string, unknown>) => string,
@@ -159,7 +159,7 @@ function getNearbyStopsSummaryText(
   if (counts.filtered > 0) {
     return t('nearbyStops.summary', { count: counts.filtered.toLocaleString(lang), radius });
   }
-  if (activeOnly && counts.total > 0) {
+  if (showOperatingStopsOnly && counts.total > 0) {
     return t('nearbyStops.noOperating', { radius });
   }
   return t('nearbyStops.noStops', { radius });
@@ -170,14 +170,14 @@ const summaryLogger = createLogger('NearbyStopsSummary');
 interface NearbyStopsSummaryProps {
   counts: NearbyStopsCounts;
   nearbyRadius: number;
-  activeOnly: boolean;
+  showOperatingStopsOnly: boolean;
   hasLoaded: boolean;
 }
 
 function NearbyStopsSummary({
   counts,
   nearbyRadius,
-  activeOnly,
+  showOperatingStopsOnly,
   hasLoaded,
 }: NearbyStopsSummaryProps) {
   const { t, i18n } = useTranslation();
@@ -189,7 +189,7 @@ function NearbyStopsSummary({
   const text = getNearbyStopsSummaryText(
     hasLoaded,
     counts,
-    activeOnly,
+    showOperatingStopsOnly,
     formatRadius(nearbyRadius),
     i18n.language,
     t,

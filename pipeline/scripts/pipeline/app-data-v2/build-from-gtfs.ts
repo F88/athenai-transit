@@ -80,9 +80,9 @@ function buildSourceDataBundle(source: BuildSource): void {
     const stops = extractStopsV2(db, source.prefix);
     const routes = extractRoutesV2(db, source.prefix, source.routeColorFallbacks);
     const calendar = extractCalendarV2(db, source.prefix);
-    const agencies = extractAgenciesV2(db, source.prefix, source.provider);
+    const agencies = extractAgenciesV2(db, source.prefix);
     const feedInfo = extractFeedInfoV2(db, source.prefix);
-    const translations = extractTranslationsV2(db, source.prefix, source.provider);
+    const translations = extractTranslationsV2(db, source.prefix);
     const lookup = extractLookupV2(db, source.prefix);
     const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, source.prefix);
 
@@ -92,7 +92,7 @@ function buildSourceDataBundle(source: BuildSource): void {
       kind: 'data',
       stops: { v: 2, data: stops },
       routes: { v: 2, data: routes },
-      agency: { v: 1, data: agencies },
+      agency: { v: 2, data: agencies },
       calendar: { v: 1, data: calendar },
       feedInfo: { v: 1, data: feedInfo },
       timetable: { v: 2, data: timetable },

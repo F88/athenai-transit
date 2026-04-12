@@ -203,8 +203,10 @@ describe('useNearbyDepartures', () => {
     const mockAgency = {
       agency_id: 'a1',
       agency_name: 'Test Agency',
+      agency_long_name: 'Test Agency',
       agency_short_name: 'Test',
       agency_names: {},
+      agency_long_names: {},
       agency_short_names: {},
       agency_url: '',
       agency_lang: '',

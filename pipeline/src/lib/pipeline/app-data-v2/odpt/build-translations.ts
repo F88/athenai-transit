@@ -9,7 +9,6 @@ import type {
   OdptStationOrder,
   OdptStationTimetable,
 } from '../../../../types/odpt-train';
-import type { Provider } from '../../../../types/resource-common';
 import { extractStationShortId } from './build-stops';
 import { getHeadsignFromDestination } from './build-timetable';
 
@@ -20,7 +19,6 @@ import { getHeadsignFromDestination } from './build-timetable';
  * @param timetables - ODPT station timetable data.
  * @param railways - ODPT railway data.
  * @param stations - ODPT station data.
- * @param provider - Provider info.
  * @returns TranslationsJson with multilingual names.
  */
 export function buildTranslationsV2(
@@ -28,7 +26,6 @@ export function buildTranslationsV2(
   timetables: OdptStationTimetable[],
   railways: OdptRailway[],
   stations: OdptStation[],
-  provider: Provider,
 ): TranslationsJson {
   const headsigns: Record<string, Record<string, string>> = {};
 
@@ -116,20 +113,13 @@ export function buildTranslationsV2(
     routeNames[`${prefix}:${rw['odpt:lineCode']}`] = { ja: title.ja, en: title.en };
   }
 
-  // agency_names: provider translations
-  const agencyId = `${prefix}:${provider.name.en.long}`;
-  const agencyNames: Record<string, Record<string, string>> = {};
-  agencyNames[agencyId] = { ja: provider.name.ja.long, en: provider.name.en.long };
-
-  const agencyShortNames: Record<string, Record<string, string>> = {};
-  agencyShortNames[agencyId] = { ja: provider.name.ja.short, en: provider.name.en.short };
-
+  // agency_names: ODPT has no agency name translations — managed on
+  // the App side via agency-attributes.ts.
   return {
     headsigns,
     stop_headsigns: {},
     stop_names: stopNames,
     route_names: routeNames,
-    agency_names: agencyNames,
-    agency_short_names: agencyShortNames,
+    agency_names: {},
   };
 }

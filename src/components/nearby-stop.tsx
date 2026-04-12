@@ -2,10 +2,14 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
-import type { AppRouteTypeValue } from '../types/app/transit';
+import type { AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
 import type { StopWithContext } from '../types/app/transit-composed';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { groupByRouteHeadsign } from '../domain/transit/group-timetable-entries';
+import {
+  getFilteredTimetableEntriesState,
+  getTimetableEntriesState,
+} from '../domain/transit/timetable-utils';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { Clock, Signpost } from 'lucide-react';
 import { DepartureItem } from './departure-item';
@@ -15,6 +19,14 @@ import { VerboseNearbyStopSummary } from './verbose/verbose-nearby-stop-summary'
 
 export interface NearbyStopProps {
   data: StopWithContext;
+  /**
+   * State of the pre-filter upcoming entries for this stop, computed
+   * once by {@link BottomSheet} from the unfiltered `nearbyDepartures`.
+   * Combined with the repo's full-day `stopServiceState` and the
+   * filtered `departures` state to pick the correct empty-fallback
+   * message (no-service / service-ended / filter-hidden).
+   */
+  upcomingEntriesState: TimetableEntriesState;
   isSelected: boolean;
   now: Date;
   mapCenter: LatLng | null;
@@ -34,6 +46,7 @@ export interface NearbyStopProps {
 
 export function NearbyStop({
   data: { stop, routeTypes, departures, stopServiceState, agencies, routes, distance, stats, geo },
+  upcomingEntriesState,
   isSelected,
   now,
   mapCenter,
@@ -71,6 +84,25 @@ export function NearbyStop({
   const hasUnknownHeadsign = useMemo(
     () => departures.some((e) => getEffectiveHeadsign(e.routeDirection) === ''),
     [departures],
+  );
+
+  // Unified display state for this stop, combining three levels:
+  //   - `stopServiceState`: full-day state from the repo (all-day scope).
+  //   - `upcomingEntriesState`: pre-filter upcoming entries state (from the
+  //     Map built in BottomSheet before any user filter is applied).
+  //   - `getTimetableEntriesState(departures)`: post-filter state of what
+  //     is actually being rendered right now.
+  //
+  // Used by the fallback branch below to pick between noService /
+  // serviceEnded / allFilteredOut when `departures` is empty.
+  const filteredState = useMemo(
+    () =>
+      getFilteredTimetableEntriesState(
+        stopServiceState,
+        upcomingEntriesState,
+        getTimetableEntriesState([...departures]),
+      ),
+    [stopServiceState, upcomingEntriesState, departures],
   );
 
   return (
@@ -179,15 +211,24 @@ export function NearbyStop({
           ))
         )
       ) : (
-        // Show the fallback message in the departures area whenever there are
-        // no upcoming entries. The stop-level `No service` badge in StopSummary
-        // is complementary and reinforces this signal when the stop has no
-        // timetable data at all.
+        // Show the fallback message in the departures area whenever there
+        // are no upcoming entries. When `displayDepartures.length === 0`,
+        // `filteredState` is one of:
+        //   - `'no-service'`: repo has no timetable data for this stop at all.
+        //   - `'service-ended'`: repo has data but the upcoming window is
+        //     already empty pre-filter — late-night / service ended for today.
+        //   - `'filter-hidden'`: pre-filter upcoming had entries but the
+        //     user's UI filters removed everything visible. The service has
+        //     NOT ended; we must not say it has.
+        // ('boardable' / 'drop-off-only' only occur with non-empty departures
+        // and are handled by the render branch above.)
         <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">
           {t(
-            stopServiceState === 'no-service'
+            filteredState === 'no-service'
               ? 'stop.serviceState.noService'
-              : 'stop.serviceState.serviceEnded',
+              : filteredState === 'service-ended'
+                ? 'stop.serviceState.serviceEnded'
+                : 'stop.timetable.allFilteredOut',
           )}
         </p>
       )}

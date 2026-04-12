@@ -83,6 +83,22 @@ Add an entry to `src/config/data-source-settings.ts`. This registers the source 
 },
 ```
 
+### 4b. Add agency display attributes (App side)
+
+Add per-agency entries to `src/config/agency-attributes.ts`. The pipeline outputs only data-source agency fields (canonical name from GTFS `agency_name`). Display names (long/short, multilingual) and brand colors are merged in on the App side at load time.
+
+Key by prefixed `agency_id` (e.g. `sbbus:6013301006270`):
+
+```typescript
+'{prefix}:{agency_id}': {
+  longName: { ja: '...', en: '...' },
+  shortName: { ja: '...', en: '...' },
+  colors: [{ bg: 'HEX', text: 'HEX' }],
+},
+```
+
+Register every agency that appears in the pipeline output (one entry per `agency_id`). If no entry is provided, the UI falls back to the canonical `agency_name` and has no brand colors.
+
 ### 5. Run the pipeline and check data quality
 
 Run the full pipeline for the new source.

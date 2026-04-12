@@ -68,7 +68,8 @@ export const SCHEMA: string[] = [
     agency_lang  TEXT,
     agency_phone TEXT,
     agency_fare_url TEXT,
-    agency_email TEXT
+    agency_email TEXT,
+    cemv_support TEXT
   )`,
 
   // agency_jp.txt (GTFS-JP)

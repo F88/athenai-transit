@@ -214,27 +214,23 @@ export function createFixtureV2(): SourceDataV2 {
     },
 
     agency: {
-      v: 1,
+      v: 2,
       data: [
         {
+          v: 2,
           i: 'test:agency',
           n: 'Test Agency',
-          sn: 'Test',
           u: 'https://example.com',
-          l: 'ja',
           tz: 'Asia/Tokyo',
-          fu: '',
-          cs: [{ b: '0079C2', t: 'FFFFFF' }],
+          l: 'ja',
         },
         {
+          v: 2,
           i: 'test:partner',
           n: 'Partner Bus Co.',
-          sn: 'Partner',
           u: 'https://partner.example.com',
-          l: 'ja',
           tz: 'Asia/Tokyo',
-          fu: '',
-          cs: [{ b: 'D32F2F', t: 'FFFFFF' }],
+          l: 'ja',
         },
       ],
     },
@@ -473,10 +469,6 @@ export function createFixtureV2(): SourceDataV2 {
         agency_names: {
           'test:agency': { ja: 'テスト事業者', en: 'Test Agency' },
           'test:partner': { ja: '共同バス', en: 'Partner Bus' },
-        },
-        agency_short_names: {
-          'test:agency': { ja: 'テスト', en: 'Test' },
-          'test:partner': { ja: '共同', en: 'Partner' },
         },
       },
     },

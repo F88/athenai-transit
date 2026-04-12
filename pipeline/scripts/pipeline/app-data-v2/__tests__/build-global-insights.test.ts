@@ -74,7 +74,7 @@ function makeDataBundle(opts: {
         },
       ],
     },
-    agency: { v: 1, data: [] },
+    agency: { v: 2, data: [] },
     calendar: {
       v: 1,
       data: {
@@ -114,7 +114,6 @@ function makeDataBundle(opts: {
         stop_names: {},
         route_names: {},
         agency_names: {},
-        agency_short_names: {},
       },
     },
     lookup: { v: 2, data: {} },

@@ -64,6 +64,31 @@ export type TimetableEntriesState = 'boardable' | 'drop-off-only' | 'no-service'
 export type StopServiceState = TimetableEntriesState;
 
 /**
+ * Display state for a filtered subset of timetable entries as seen by
+ * the UI. A superset of {@link TimetableEntriesState} with two additional
+ * variants to express "why is the filtered view empty":
+ *
+ * - `'boardable'` / `'drop-off-only'`: delegated from the filtered
+ *   subset (has at least one entry).
+ * - `'no-service'`: repo has no timetable data at all for this stop.
+ * - `'service-ended'`: repo has data today but the upcoming window is
+ *   empty pre-filter (late-night / already ended for today).
+ * - `'filter-hidden'`: pre-filter upcoming had entries but the user's
+ *   UI filters (agency / route_type) removed everything visible.
+ *
+ * Produced by {@link getFilteredTimetableEntriesState} from the combination
+ * of a stop's full-day {@link StopServiceState}, its pre-filter upcoming
+ * {@link TimetableEntriesState}, and its post-filter
+ * {@link TimetableEntriesState}.
+ */
+export type FilteredTimetableEntriesState =
+  | 'boardable'
+  | 'drop-off-only'
+  | 'no-service'
+  | 'service-ended'
+  | 'filter-hidden';
+
+/**
  * Input signals used to derive a {@link StopServiceState}.
  *
  * Deliberately a narrow structural type (not the full `TimetableQueryMeta`)
@@ -142,17 +167,23 @@ export interface Route {
  */
 export interface Agency {
   agency_id: string;
+  /** Data source canonical name (GTFS agency_name / ODPT provider). */
   agency_name: string;
+  /** Long display name base value (from agency-attributes.ts). */
+  agency_long_name: string;
+  /** Short display name base value (from agency-attributes.ts). */
   agency_short_name: string;
-  /** Merged from translations. Not a GTFS standard field. */
+  /** Multilingual translations of agency_name (GTFS translations.txt). */
   agency_names: Record<string, string>;
-  /** Merged from translations. Not a GTFS standard field. */
+  /** Multilingual long display names (from agency-attributes.ts). */
+  agency_long_names: Record<string, string>;
+  /** Multilingual short display names (from agency-attributes.ts). */
   agency_short_names: Record<string, string>;
   agency_url: string;
   agency_lang: string;
   agency_timezone: string;
   agency_fare_url: string;
-  /** Brand colors. [0]=primary, [1]=secondary, etc. Not a GTFS standard field. */
+  /** Brand colors (from agency-attributes.ts). */
   agency_colors: { bg: string; text: string }[];
 }
 

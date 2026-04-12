@@ -53,7 +53,7 @@ const FIELD_TARGETS: FieldTarget[] = [
   },
   {
     field: 'agency.sn',
-    count: (bundle) => countScalarValues('agency.sn', bundle.agency.data, (agency) => agency.sn),
+    count: () => createMissingFieldCount('agency.sn'),
   },
   {
     field: 'translations.agency_names',
@@ -62,11 +62,7 @@ const FIELD_TARGETS: FieldTarget[] = [
   },
   {
     field: 'translations.agency_short_names',
-    count: (bundle) =>
-      countTranslationMap(
-        'translations.agency_short_names',
-        bundle.translations.data.agency_short_names,
-      ),
+    count: () => createMissingFieldCount('translations.agency_short_names'),
   },
   {
     field: 'tripPatterns.h',

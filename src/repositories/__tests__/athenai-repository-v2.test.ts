@@ -227,17 +227,15 @@ describe('mergeSourcesV2', () => {
             ],
           },
           agency: {
-            v: 1,
+            v: 2,
             data: [
               {
+                v: 2,
                 i: 'itfeed:ag1',
                 n: 'Compagnia Trasporti',
-                sn: 'CT',
                 u: 'https://example.com',
-                l: 'en',
                 tz: 'Europe/Rome',
-                fu: '',
-                cs: [],
+                l: 'en',
               },
             ],
           },
@@ -273,9 +271,6 @@ describe('mergeSourcesV2', () => {
               },
               agency_names: {
                 'itfeed:ag1': { en: 'English Transit Co.' },
-              },
-              agency_short_names: {
-                'itfeed:ag1': { en: 'ETC' },
               },
             },
           },
@@ -329,13 +324,14 @@ describe('mergeSourcesV2', () => {
       });
     });
 
-    it('injects agency_short_names base value under feed_lang, not agency_lang', () => {
+    it('uses empty names when agency has no entry in agency-attributes', () => {
       const merged = mergeSourcesV2([createFeedLangFixture()]);
       const agency = merged.agencyMap.get('itfeed:ag1');
-      expect(agency!.agency_short_names).toEqual({
-        en: 'ETC',
-        it: 'CT',
-      });
+      // itfeed:ag1 has no entry in AGENCY_ATTRIBUTES, so display names are empty
+      expect(agency!.agency_short_names).toEqual({});
+      expect(agency!.agency_long_names).toEqual({});
+      expect(agency!.agency_short_name).toBe('');
+      expect(agency!.agency_long_name).toBe('');
     });
   });
 });
@@ -977,7 +973,9 @@ describe('getAllSourceMeta', () => {
     assertSuccess(result);
     expect(result.data).toHaveLength(1);
     expect(result.data[0].id).toBe('test');
-    expect(result.data[0].name).toBe('Test');
+    // agency-attributes.ts has no entry for test:agency, so name
+    // falls back to prefix
+    expect(result.data[0].name).toBe('test');
   });
 });
 

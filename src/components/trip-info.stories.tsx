@@ -62,8 +62,10 @@ const kyotoBusRoute: Route = {
 const agency: Agency = {
   agency_id: 'agency-001',
   agency_name: '都営バス',
+  agency_long_name: '都営バス',
   agency_short_name: '都営',
   agency_names: {},
+  agency_long_names: {},
   agency_short_names: {},
   agency_url: '',
   agency_lang: 'ja',
@@ -76,6 +78,7 @@ const kyotoAgency: Agency = {
   ...agency,
   agency_id: 'agency-002',
   agency_name: '京都市交通局',
+  agency_long_name: '京都市交通局',
   agency_short_name: '京都市バス',
   agency_colors: [{ bg: '009f40', text: 'FFFFFF' }],
 };

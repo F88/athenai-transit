@@ -34,7 +34,7 @@ function makeDataBundle(services: { id: string; d: number[] }[]): DataBundle {
     kind: 'data',
     stops: { v: 2, data: [] },
     routes: { v: 2, data: [] },
-    agency: { v: 1, data: [] },
+    agency: { v: 2, data: [] },
     calendar: {
       v: 1,
       data: {
@@ -58,7 +58,6 @@ function makeDataBundle(services: { id: string; d: number[] }[]): DataBundle {
         stop_names: {},
         route_names: {},
         agency_names: {},
-        agency_short_names: {},
       },
     },
     lookup: { v: 2, data: {} },

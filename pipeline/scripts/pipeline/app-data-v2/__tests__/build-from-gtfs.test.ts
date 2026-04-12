@@ -13,7 +13,6 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
-import type { Provider } from '../../../../src/types/resource-common';
 import { writeDataBundle } from '../../../../src/lib/pipeline/app-data-v2/bundle-writer';
 import { extractAgenciesV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-agencies';
 import { extractCalendarV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-calendar';
@@ -25,20 +24,14 @@ import { extractTripPatternsAndTimetable } from '../../../../src/lib/pipeline/ap
 import { extractTranslationsV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-translations';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-build-gtfs-test');
-const TEST_PROVIDER: Provider = {
-  name: {
-    ja: { long: 'テスト交通', short: 'テスト' },
-    en: { long: 'Test Transit', short: 'Test' },
-  },
-  colors: [{ bg: '000000', text: 'FFFFFF' }],
-};
 
 function createMinimalGtfsDb(dbPath: string): void {
   const db = new Database(dbPath);
   db.exec(`
     CREATE TABLE agency (
       agency_id TEXT PRIMARY KEY, agency_name TEXT NOT NULL,
-      agency_url TEXT, agency_timezone TEXT, agency_lang TEXT, agency_fare_url TEXT
+      agency_url TEXT, agency_timezone TEXT, agency_lang TEXT,
+      agency_phone TEXT, agency_fare_url TEXT, agency_email TEXT, cemv_support TEXT
     );
     CREATE TABLE routes (
       route_id TEXT PRIMARY KEY, agency_id TEXT, route_short_name TEXT,
@@ -80,7 +73,8 @@ function createMinimalGtfsDb(dbPath: string): void {
       record_id TEXT, record_sub_id TEXT, record_sequence TEXT, field_value TEXT
     );
 
-    INSERT INTO agency VALUES ('A1', 'Test Bus', 'https://example.com', 'Asia/Tokyo', 'ja', '');
+    INSERT INTO agency (agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_fare_url)
+    VALUES ('A1', 'Test Bus', 'https://example.com', 'Asia/Tokyo', 'ja', '');
     INSERT INTO routes VALUES ('R1', 'A1', '01', 'Route One', 3, 'FF0000', 'FFFFFF', NULL, NULL);
     INSERT INTO stops VALUES ('S1', 'Stop A', 35.66, 139.76, 0, NULL, NULL, NULL, NULL, NULL);
     INSERT INTO stops VALUES ('S2', 'Stop B', 35.67, 139.77, 0, NULL, NULL, NULL, NULL, NULL);
@@ -119,9 +113,9 @@ describe('GTFS DataBundle assembly', () => {
     const stops = extractStopsV2(db, prefix);
     const routes = extractRoutesV2(db, prefix, {});
     const calendar = extractCalendarV2(db, prefix);
-    const agencies = extractAgenciesV2(db, prefix, TEST_PROVIDER);
+    const agencies = extractAgenciesV2(db, prefix);
     const feedInfo = extractFeedInfoV2(db, prefix);
-    const translations = extractTranslationsV2(db, prefix, TEST_PROVIDER);
+    const translations = extractTranslationsV2(db, prefix);
     const lookup = extractLookupV2(db, prefix);
     const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, prefix);
     db.close();
@@ -132,7 +126,7 @@ describe('GTFS DataBundle assembly', () => {
       kind: 'data',
       stops: { v: 2, data: stops },
       routes: { v: 2, data: routes },
-      agency: { v: 1, data: agencies },
+      agency: { v: 2, data: agencies },
       calendar: { v: 1, data: calendar },
       feedInfo: { v: 1, data: feedInfo },
       timetable: { v: 2, data: timetable },
@@ -148,7 +142,7 @@ describe('GTFS DataBundle assembly', () => {
     // Sections present with correct version
     expect(bundle.stops.v).toBe(2);
     expect(bundle.routes.v).toBe(2);
-    expect(bundle.agency.v).toBe(1);
+    expect(bundle.agency.v).toBe(2);
     expect(bundle.calendar.v).toBe(1);
     expect(bundle.feedInfo.v).toBe(1);
     expect(bundle.timetable.v).toBe(2);

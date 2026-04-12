@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Route } from '../../../types/app/transit';
 import type { TimetableEntry } from '../../../types/app/transit-composed';
-import { prepareStopTimetable, prepareRouteHeadsignTimetable } from '../timetable-filter';
+import {
+  filterByAgency,
+  filterByRouteType,
+  prepareStopTimetable,
+  prepareRouteHeadsignTimetable,
+} from '../timetable-filter';
 import { getEffectiveHeadsign } from '../get-effective-headsign';
 
 // --- Test fixtures ---
@@ -496,5 +501,134 @@ describe('prepareRouteHeadsignTimetable', () => {
       expect(entries).toHaveLength(original.length);
       expect(entries).toEqual(original);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// filterByAgency
+// ---------------------------------------------------------------------------
+
+describe('filterByAgency', () => {
+  const routeAgencyA1: Route = { ...routeA, route_id: 'a1', agency_id: 'agencyA' };
+  const routeAgencyA2: Route = { ...routeA, route_id: 'a2', agency_id: 'agencyA' };
+  const routeAgencyB1: Route = { ...routeA, route_id: 'b1', agency_id: 'agencyB' };
+
+  it('returns input unchanged when hiddenAgencyIds is empty', () => {
+    const entries = [makeEntry({ route: routeAgencyA1 }), makeEntry({ route: routeAgencyB1 })];
+    const result = filterByAgency(entries, new Set());
+    expect(result).toBe(entries);
+  });
+
+  it('excludes entries whose route belongs to a hidden agency', () => {
+    const entries = [
+      makeEntry({ route: routeAgencyA1 }),
+      makeEntry({ route: routeAgencyB1 }),
+      makeEntry({ route: routeAgencyA2 }),
+    ];
+    const result = filterByAgency(entries, new Set(['agencyA']));
+    expect(result).toHaveLength(1);
+    expect(result[0]?.routeDirection.route.agency_id).toBe('agencyB');
+  });
+
+  it('returns empty array when all entries belong to hidden agencies', () => {
+    const entries = [makeEntry({ route: routeAgencyA1 }), makeEntry({ route: routeAgencyB1 })];
+    const result = filterByAgency(entries, new Set(['agencyA', 'agencyB']));
+    expect(result).toEqual([]);
+  });
+
+  it('keeps all entries when no agency is hidden', () => {
+    const entries = [makeEntry({ route: routeAgencyA1 }), makeEntry({ route: routeAgencyB1 })];
+    const result = filterByAgency(entries, new Set(['unrelated']));
+    expect(result).toHaveLength(2);
+  });
+
+  it('handles empty entries array', () => {
+    const result = filterByAgency([], new Set(['agencyA']));
+    expect(result).toEqual([]);
+  });
+
+  it('does not modify the input array', () => {
+    const entries = [makeEntry({ route: routeAgencyA1 }), makeEntry({ route: routeAgencyB1 })];
+    const original = [...entries];
+    filterByAgency(entries, new Set(['agencyA']));
+    expect(entries).toEqual(original);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// filterByRouteType
+// ---------------------------------------------------------------------------
+
+describe('filterByRouteType', () => {
+  const routeTram: Route = { ...routeA, route_id: 'tram1', route_type: 0 };
+  const routeSubway: Route = { ...routeA, route_id: 'subway1', route_type: 1 };
+  const routeRail: Route = { ...routeA, route_id: 'rail1', route_type: 2 };
+  const routeBus: Route = { ...routeA, route_id: 'bus1', route_type: 3 };
+
+  it('returns input unchanged when hiddenRouteTypes is empty', () => {
+    const entries = [makeEntry({ route: routeTram }), makeEntry({ route: routeBus })];
+    const result = filterByRouteType(entries, new Set());
+    expect(result).toBe(entries);
+  });
+
+  it('excludes entries whose route_type is hidden', () => {
+    const entries = [
+      makeEntry({ route: routeTram }),
+      makeEntry({ route: routeSubway }),
+      makeEntry({ route: routeRail }),
+      makeEntry({ route: routeBus }),
+    ];
+    const result = filterByRouteType(entries, new Set([0]));
+    expect(result).toHaveLength(3);
+    expect(result.map((e) => e.routeDirection.route.route_type)).toEqual([1, 2, 3]);
+  });
+
+  it('hides multiple route types at once', () => {
+    const entries = [
+      makeEntry({ route: routeTram }),
+      makeEntry({ route: routeSubway }),
+      makeEntry({ route: routeRail }),
+      makeEntry({ route: routeBus }),
+    ];
+    const result = filterByRouteType(entries, new Set([0, 1]));
+    expect(result).toHaveLength(2);
+    expect(result.map((e) => e.routeDirection.route.route_type)).toEqual([2, 3]);
+  });
+
+  it('returns empty array when all entries match hidden types', () => {
+    const entries = [makeEntry({ route: routeTram }), makeEntry({ route: routeBus })];
+    const result = filterByRouteType(entries, new Set([0, 3]));
+    expect(result).toEqual([]);
+  });
+
+  it('keeps all entries when hidden type is not present', () => {
+    const entries = [makeEntry({ route: routeTram }), makeEntry({ route: routeBus })];
+    const result = filterByRouteType(entries, new Set([11]));
+    expect(result).toHaveLength(2);
+  });
+
+  it('handles empty entries array', () => {
+    const result = filterByRouteType([], new Set([3]));
+    expect(result).toEqual([]);
+  });
+
+  it('preserves entry order', () => {
+    const entries = [
+      makeEntry({ route: routeTram, departureMinutes: 600 }),
+      makeEntry({ route: routeBus, departureMinutes: 480 }),
+      makeEntry({ route: routeTram, departureMinutes: 540 }),
+      makeEntry({ route: routeBus, departureMinutes: 520 }),
+    ];
+    const result = filterByRouteType(entries, new Set([0]));
+    expect(result).toHaveLength(2);
+    expect(result[0].schedule.departureMinutes).toBe(480);
+    expect(result[1].schedule.departureMinutes).toBe(520);
+  });
+
+  it('does not modify the input array', () => {
+    const entries = [makeEntry({ route: routeTram }), makeEntry({ route: routeBus })];
+    const original = [...entries];
+    filterByRouteType(entries, new Set([0]));
+    expect(entries).toEqual(original);
   });
 });

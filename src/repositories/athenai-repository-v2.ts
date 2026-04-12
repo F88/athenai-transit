@@ -62,6 +62,7 @@ import {
   minutesToDate,
 } from '../domain/transit/calendar-utils';
 import { injectOriginLang } from '../domain/transit/i18n/inject-origin-lang';
+import { AGENCY_ATTRIBUTES } from '../config/agency-attributes';
 
 /** Set of valid AppRouteTypeValue integers. Values outside this set are normalized to -1. */
 const VALID_ROUTE_TYPE_VALUES = new Set<number>(APP_ROUTE_TYPES.map((rt) => rt.value));
@@ -212,7 +213,6 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     stop_names: {},
     route_names: {},
     agency_names: {},
-    agency_short_names: {},
   };
   const headsignTranslations: HeadsignTranslationsByPrefix = new Map();
   for (const source of sources) {
@@ -243,36 +243,38 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     if (t.agency_names) {
       Object.assign(translationsMap.agency_names, t.agency_names);
     }
-    if (t.agency_short_names) {
-      Object.assign(translationsMap.agency_short_names, t.agency_short_names);
-    }
   }
 
-  // --- Agencies (v1 same type) ---
-  // agency_name is a GTFS text field, so its language is feed_lang
-  // (not agency_lang, which is a display-settings hint per GTFS spec).
+  // --- Agencies ---
+  // Pipeline outputs data-source fields only (AgencyV2Json).
+  // Display names (long/short) and brand colors come from
+  // agency-attributes.ts, merged here at runtime.
   const agencyMap = new Map<string, Agency>();
   for (const source of sources) {
     const feedLang = feedLangByPrefix.get(source.prefix);
     for (const a of source.data.agency.data) {
+      const attrs = AGENCY_ATTRIBUTES[a.i];
       agencyMap.set(a.i, {
         agency_id: a.i,
         agency_name: a.n,
-        agency_short_name: a.sn ?? '',
+        agency_long_name: attrs?.longName.ja ?? '',
+        agency_short_name: attrs?.shortName.ja ?? '',
         agency_names: injectOriginLang(translationsMap.agency_names[a.i] ?? {}, a.n, feedLang),
-        agency_short_names: injectOriginLang(
-          translationsMap.agency_short_names[a.i] ?? {},
-          a.sn ?? '',
-          feedLang,
-        ),
+        agency_long_names: attrs?.longName ?? {},
+        agency_short_names: attrs?.shortName ?? {},
         agency_url: a.u,
-        agency_lang: a.l,
+        agency_lang: a.l ?? '',
         agency_timezone: a.tz ?? '',
         agency_fare_url: a.fu ?? '',
-        agency_colors: (a.cs ?? []).map((c) => ({ bg: c.b, text: c.t })),
+        agency_colors: attrs?.colors ?? [],
       });
     }
   }
+
+  // debug log
+  // for (const [id, ag] of agencyMap) {
+  //   logger.debug(`[AgencyMap] Agency ${id}:` + JSON.stringify(ag, null, 2));
+  // }
 
   // --- Stops (v2: no agency_id) ---
   // Currently excludes location_type=1 (parent station) stops because
