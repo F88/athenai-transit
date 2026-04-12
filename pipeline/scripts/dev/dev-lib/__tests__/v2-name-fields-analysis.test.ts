@@ -47,17 +47,15 @@ function createTestBundle(overrides?: Partial<DataBundle>): DataBundle {
       ],
     },
     agency: {
-      v: 1,
+      v: 2,
       data: [
         {
+          v: 2,
           i: 'agency:1',
           n: 'Agency One',
-          sn: '',
           u: 'https://example.com',
-          l: 'ja',
           tz: 'Asia/Tokyo',
-          fu: '',
-          cs: [],
+          l: 'ja',
         },
       ],
     },
@@ -89,7 +87,6 @@ function createTestBundle(overrides?: Partial<DataBundle>): DataBundle {
         stop_names: { 'stop:a': { en: 'Stop A' }, 'stop:b': { en: '' } },
         route_names: { 'route:1': { en: 'Route 1' } },
         agency_names: { 'agency:1': { en: 'Agency One' } },
-        agency_short_names: { 'agency:1': { en: '' } },
       },
     },
     lookup: { v: 2, data: { routeUrls: {}, stopDescs: {}, routeDescs: {} } },
@@ -121,9 +118,9 @@ describe('analyzeDataBundleSource', () => {
     expect(result.source).toBe('test');
     expect(result.bundlePath).toBe('/tmp/test/data.json');
     expect(result.fieldCounts).toContainEqual({
-      field: 'agency.sn',
-      nonEmpty: 0,
-      empty: 1,
+      field: 'agency.n',
+      nonEmpty: 1,
+      empty: 0,
     });
   });
 });

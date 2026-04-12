@@ -126,7 +126,7 @@ describe('ODPT DataBundle assembly', () => {
     const calendar = buildCalendarV2(prefix, timetables, issuedDate);
     const agencies = buildAgencyV2(prefix, TEST_PROVIDER);
     const feedInfo = buildFeedInfoV2(issuedDate, TEST_PROVIDER);
-    const translations = buildTranslationsV2(prefix, timetables, railways, stations, TEST_PROVIDER);
+    const translations = buildTranslationsV2(prefix, timetables, railways, stations);
     const { tripPatterns, timetable } = buildTripPatternsAndTimetableFromOdpt(
       prefix,
       timetables,
@@ -138,7 +138,7 @@ describe('ODPT DataBundle assembly', () => {
       kind: 'data',
       stops: { v: 2, data: stops },
       routes: { v: 2, data: routes },
-      agency: { v: 1, data: agencies },
+      agency: { v: 2, data: agencies },
       calendar: { v: 1, data: calendar },
       feedInfo: { v: 1, data: feedInfo },
       timetable: { v: 2, data: timetable },
@@ -154,7 +154,7 @@ describe('ODPT DataBundle assembly', () => {
     // Section versions
     expect(bundle.stops.v).toBe(2);
     expect(bundle.routes.v).toBe(2);
-    expect(bundle.agency.v).toBe(1);
+    expect(bundle.agency.v).toBe(2);
     expect(bundle.calendar.v).toBe(1);
     expect(bundle.feedInfo.v).toBe(1);
     expect(bundle.timetable.v).toBe(2);

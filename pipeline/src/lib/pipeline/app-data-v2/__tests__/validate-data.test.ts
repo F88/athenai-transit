@@ -58,17 +58,15 @@ function makeValidBundle(overrides?: Partial<DataBundle>): DataBundle {
       ],
     },
     agency: {
-      v: 1,
+      v: 2,
       data: [
         {
+          v: 2,
           i: 'test:A1',
           n: 'Test Agency',
-          sn: 'Test',
           u: 'https://example.com',
-          l: 'ja',
           tz: 'Asia/Tokyo',
-          fu: '',
-          cs: [{ b: 'FF0000', t: 'FFFFFF' }],
+          l: 'ja',
         },
       ],
     },
@@ -117,7 +115,6 @@ function makeValidBundle(overrides?: Partial<DataBundle>): DataBundle {
         stop_names: {},
         route_names: {},
         agency_names: {},
-        agency_short_names: {},
       },
     },
     lookup: { v: 2, data: {} },

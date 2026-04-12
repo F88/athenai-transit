@@ -54,7 +54,7 @@ export interface DataValidationResult {
 const SECTION_VERSIONS: Record<string, number> = {
   stops: 2,
   routes: 2,
-  agency: 1,
+  agency: 2,
   calendar: 1,
   feedInfo: 1,
   timetable: 2,
