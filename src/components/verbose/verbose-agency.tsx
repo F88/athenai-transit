@@ -28,9 +28,8 @@ export function VerboseAgency({
             [agency] id={agency.agency_id} lang={agency.agency_lang} tz={agency.agency_timezone}
           </span>
           <span className="block">
-            name=&quot;{agency.agency_name}&quot; long=&quot;{agency.agency_long_name}&quot;
-            short=&quot;
-            {agency.agency_short_name}&quot;
+            name=&quot;{agency.agency_name}&quot; long=&quot;{agency.agency_long_name}&quot;{' '}
+            short=&quot;{agency.agency_short_name}&quot;
           </span>
           <span className="block">
             url={agency.agency_url || '(none)'} fare={agency.agency_fare_url || '(none)'}

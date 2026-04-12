@@ -95,7 +95,9 @@
  * `agency-attributes.ts`, not in the pipeline output.
  *
  * - GTFS: `n` is `agency_name` from agency.txt (canonical name).
- * - ODPT: `n` is `provider.name.ja.long` (no operator name in ODPT JSON data).
+ * - ODPT: `n` is an empty string — ODPT JSON data does not expose an
+ *   operator name (`odpt:Operator` API is not downloaded). The display
+ *   name must be supplied by `agency-attributes.ts` on the App side.
  */
 export interface AgencyV2Json {
   /** Schema version — see {@link RouteV2Json.v} for rationale. */

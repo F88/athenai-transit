@@ -7,7 +7,7 @@ import { resolveDisplayNamesWithTranslatableText } from './i18n/resolve-display-
  *
  * - `'original'` — agency_name (GTFS canonical) and agency_names
  * - `'short'` — agency_short_name and agency_short_names
- * - `'long'` — agency_long_name and agency_names
+ * - `'long'` — agency_long_name and agency_long_names
  */
 export type AgencySource = 'original' | 'short' | 'long';
 
