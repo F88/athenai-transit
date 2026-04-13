@@ -1,11 +1,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { resolveAgencyLang } from '@/config/transit-defaults';
-import { getRouteDisplayNames } from '@/domain/transit/get-route-display-names';
 import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
 import type { Agency, Route } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
-import { PillButton } from '../button/pill-button';
 import { RouteLabel } from '../label/route-label';
 
 interface TimetableMetadataProps {
@@ -85,46 +82,20 @@ export function TimetableMetadata({
           </span>
         )}
       </p>
-      {routeBreakdown.length > 1 && (
-        <div className="flex flex-wrap gap-1">
-          {routeBreakdown.map((item) => {
-            const bg = item.route.route_color ? `#${item.route.route_color}` : undefined;
-            const fg = item.route.route_text_color ? `#${item.route.route_text_color}` : undefined;
-            const label = getRouteDisplayNames(
-              item.route,
-              dataLang,
-              resolveAgencyLang(agencies, item.route.agency_id),
-            ).resolved.name;
 
-            return (
-              <PillButton
-                key={item.route.route_id}
-                size="sm"
-                active={true}
-                activeBg={bg}
-                activeFg={fg}
-                count={item.count}
-              >
-                {label}
-              </PillButton>
-            );
-          })}
-        </div>
-      )}
-      {
-        <div className="flex flex-wrap gap-1">
-          {routeBreakdown.map((item) => (
-            <RouteLabel
-              key={item.route.route_id}
-              route={item.route}
-              count={item.count}
-              dataLang={dataLang}
-              agencies={agencies}
-              size="sm"
-            />
-          ))}
-        </div>
-      }
+      {/* Routes with their counts */}
+      <div className="flex flex-wrap gap-1">
+        {routeBreakdown.map((item) => (
+          <RouteLabel
+            key={item.route.route_id}
+            route={item.route}
+            count={item.count}
+            dataLang={dataLang}
+            agencies={agencies}
+            size="sm"
+          />
+        ))}
+      </div>
     </div>
   );
 }
