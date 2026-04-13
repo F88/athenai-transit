@@ -1,6 +1,6 @@
 /** Visual-only Tailwind classes for map overlay buttons (no positioning). */
 const MAP_OVERLAY_BUTTON_STYLE =
-  'flex h-10 w-10 items-center justify-center rounded-lg border-2 border-black/60 bg-white text-lg leading-none cursor-pointer active:bg-[#e0e0e0] disabled:cursor-not-allowed disabled:active:bg-white dark:border-white/40 dark:bg-gray-800 dark:text-white dark:active:bg-gray-700 dark:disabled:active:bg-gray-800';
+  'flex h-10 w-10 items-center justify-center rounded-lg border-2 border-black/60 bg-white text-lg leading-none cursor-pointer select-none [-webkit-touch-callout:none] active:bg-[#e0e0e0] disabled:cursor-not-allowed disabled:active:bg-white dark:border-white/40 dark:bg-gray-800 dark:text-white dark:active:bg-gray-700 dark:disabled:active:bg-gray-800';
 
 interface MapToggleButtonProps {
   active: boolean;

@@ -4,6 +4,7 @@ import type { AnchorEntry } from '../../domain/portal/anchor';
 import type { StopHistoryEntry } from '../../domain/transit/stop-history';
 import type { UserLocation } from '../../types/app/map';
 import type { AppRouteTypeValue, Stop } from '../../types/app/transit';
+import type { StopWithMeta } from '../../types/app/transit-composed';
 import { InfoPanel } from '../panel/info-panel';
 import { MapControlPanel } from '../panel/map-control-panel';
 import { MapLayerPanel } from '../panel/map-layer-panel';
@@ -42,6 +43,13 @@ interface MapOverlayPanelsProps {
   onDeselectStop: () => void;
   onHistorySelect: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
   onPortalSelect: (entry: AnchorEntry) => void;
+  /**
+   * Looks up an anchored stop's current `StopWithMeta` from the
+   * repository's full dataset. Forwarded to `Portals` so anchor
+   * display names can be resolved against the latest GTFS data
+   * at render time, regardless of viewport position.
+   */
+  lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
   tileIndex: number | null;
 }
 
@@ -72,6 +80,7 @@ export function MapOverlayPanels({
   onDeselectStop,
   onHistorySelect,
   onPortalSelect,
+  lookupAnchorStopMeta,
   tileIndex,
 }: MapOverlayPanelsProps) {
   return (
@@ -117,9 +126,16 @@ export function MapOverlayPanels({
           history={stopHistory}
           selectedStopId={selectedStopId}
           infoLevel={infoLevel}
+          dataLang={dataLang}
           onSelect={onHistorySelect}
         />
-        <Portals anchors={anchors} infoLevel={infoLevel} onSelect={onPortalSelect} />
+        <Portals
+          anchors={anchors}
+          infoLevel={infoLevel}
+          dataLang={dataLang}
+          lookupAnchorStopMeta={lookupAnchorStopMeta}
+          onSelect={onPortalSelect}
+        />
       </div>
     </>
   );

@@ -213,11 +213,25 @@ export interface TransitRepository {
   getFullDayTimetableEntries(stopId: string, dateTime: Date): Promise<TimetableResult>;
 
   /**
-   * Returns a single stop with metadata by its GTFS stop_id.
+   * Returns a single stop with metadata by its GTFS stop_id, against
+   * the **full loaded dataset** (not just the current viewport).
    *
-   * Used for URL-based stop selection (`?stop=<id>`) where only
-   * the stop ID is known and the full stop with agencies/routes
-   * metadata is needed.
+   * Async single-id variant of {@link getStopMetaByIds}. Implemented
+   * as an O(1) indexed lookup over a pre-built id → StopWithMeta
+   * map; "full dataset" describes the search scope, not a per-call
+   * scan cost. Use this for one-off lookups where the stop_id is
+   * known but the stop may be anywhere in the dataset — typically
+   * URL-based stop selection (`?stop=<id>`) where the user can paste
+   * in a stop_id from any source.
+   *
+   * For batched lookups (anchor refresh, route stops, etc.) use
+   * {@link getStopMetaByIds} instead — it is synchronous and avoids
+   * one Promise per id.
+   *
+   * Do **not** substitute the viewport-limited `findStopWithMeta`
+   * callback in `app.tsx` for this kind of persistent / arbitrary id
+   * lookup. See `DEVELOPMENT.md > Stop ID lookup の選び方` for the
+   * full rule.
    *
    * ### Error conditions
    * - Unknown stop_id:
@@ -229,13 +243,53 @@ export interface TransitRepository {
   getStopMetaById(stopId: string): Promise<Result<StopWithMeta>>;
 
   /**
-   * Returns StopWithMeta for each of the given stop IDs.
+   * Returns StopWithMeta for each of the given stop IDs against the
+   * **full loaded dataset**, not just the current viewport.
    *
-   * Unknown stop IDs are silently skipped. The returned array preserves
-   * no particular order.
+   * "Full dataset" describes the search scope (any stop loaded into
+   * the repository, regardless of where it sits geographically), not
+   * a per-call scan cost. The v2 in-memory repository implements
+   * this as a series of indexed lookups against a pre-built
+   * `stop_id → StopWithMeta` map, so the actual cost is
+   * O(`stopIds.size`) — independent of how many stops are loaded.
    *
-   * @param stopIds - Set of stop IDs to look up.
-   * @returns Array of StopWithMeta for found stops.
+   * ### When to use this method (vs. local viewport helpers)
+   *
+   * Use this method whenever the caller holds a set of stable stop IDs
+   * that may refer to stops anywhere in the dataset — including stops
+   * outside the current map viewport, outside the nearby radius, or
+   * loaded from another data source. Typical cases:
+   *
+   * - Anchor (bookmark) refresh on startup
+   * - Anchor display name resolution for the Portal dropdown
+   * - Stops belonging to a selected route (the route may extend far
+   *   beyond the current view)
+   * - Any feature that operates on persisted IDs from localStorage,
+   *   URL params, or other long-lived storage
+   *
+   * Do **not** substitute a viewport-limited helper like the
+   * `findStopWithMeta` callback in `app.tsx` for these cases — that
+   * callback only searches `radiusStops` / `inBoundStops` and will
+   * silently return null for anything outside the current view,
+   * causing display fallbacks and translation regressions. (This was
+   * the original motivation for adding this method in the first
+   * place; if you find yourself reaching for `findStopWithMeta` to
+   * resolve a stop ID that the user could have stored long ago,
+   * use `getStopMetaByIds` instead.)
+   *
+   * ### Behavior
+   *
+   * - Synchronous (the in-memory v2 repository keeps all stops
+   *   indexed by ID, so each lookup is O(1) and the whole call is
+   *   O(`stopIds.size`)).
+   * - Unknown stop IDs are silently skipped — the result length may
+   *   be smaller than `stopIds.size`.
+   * - The returned array preserves no particular order; callers that
+   *   need a lookup map should `new Map(metas.map((m) => [m.stop.stop_id, m]))`.
+   *
+   * @param stopIds - Set of stop IDs to look up. Can include IDs
+   *                  from any data source loaded into the repository.
+   * @returns Array of StopWithMeta for found stops, in unspecified order.
    */
   getStopMetaByIds(stopIds: Set<string>): StopWithMeta[];
 

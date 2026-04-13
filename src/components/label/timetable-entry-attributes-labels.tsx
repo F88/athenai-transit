@@ -1,9 +1,9 @@
-import type { TimetableEntry } from '../../types/app/transit-composed';
+import type { TimetableEntryAttributes } from '../../types/app/transit';
 import { useTranslation } from 'react-i18next';
 import { BaseLabel, type BaseLabelSize } from './base-label';
 
-interface TimetableEntryLabelsProps {
-  entry: TimetableEntry;
+interface TimetableEntryAttributesLabelsProps {
+  attributes: TimetableEntryAttributes;
   size?: BaseLabelSize;
   isDisplayTerminal: boolean;
   isDisplayOrigin: boolean;
@@ -11,22 +11,27 @@ interface TimetableEntryLabelsProps {
   isDisplayDropOffUnavailable: boolean;
 }
 
-/** Compact labels for terminal, origin, and boarding availability. */
-export function TimetableEntryLabels({
-  entry,
+/**
+ * Compact labels for the four {@link TimetableEntryAttributes} flags
+ * (terminal, origin, pickup unavailable, drop-off unavailable).
+ *
+ * Scope is deliberately limited to those four attributes — anything
+ * beyond them (headsign, route info, etc.) belongs in other components.
+ */
+export function TimetableEntryAttributesLabels({
+  attributes,
   size = 'xs',
   isDisplayTerminal,
   isDisplayOrigin,
   isDisplayPickupUnavailable,
   isDisplayDropOffUnavailable,
-}: TimetableEntryLabelsProps) {
+}: TimetableEntryAttributesLabelsProps) {
   const { t } = useTranslation();
-  const { boarding, patternPosition } = entry;
 
-  const showTerminal = isDisplayTerminal && patternPosition.isTerminal;
-  const showOrigin = isDisplayOrigin && patternPosition.isOrigin;
-  const showPickupUnavailable = isDisplayPickupUnavailable && boarding.pickupType === 1;
-  const showDropOffUnavailable = isDisplayDropOffUnavailable && boarding.dropOffType === 1;
+  const showTerminal = isDisplayTerminal && attributes.isTerminal;
+  const showOrigin = isDisplayOrigin && attributes.isOrigin;
+  const showPickupUnavailable = isDisplayPickupUnavailable && attributes.isPickupUnavailable;
+  const showDropOffUnavailable = isDisplayDropOffUnavailable && attributes.isDropOffUnavailable;
 
   if (!showTerminal && !showOrigin && !showPickupUnavailable && !showDropOffUnavailable) {
     return null;

@@ -1,10 +1,11 @@
 import type { InfoLevel } from '../types/app/settings';
 import { useTranslation } from 'react-i18next';
-import type { Agency } from '../types/app/transit';
+import type { Agency, TimetableEntryAttributes } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { minutesToDate } from '../domain/transit/calendar-utils';
+import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
 import { getDisplayMinutes, hasBoardableDeparture } from '../domain/transit/timetable-utils';
 import { RelativeTime } from './relative-time';
 import { TripInfo } from './trip-info';
@@ -57,6 +58,16 @@ export function DepartureItem({
   const first = displayTimes[0];
   const diffMs = first ? first.getTime() - now.getTime() : 0;
 
+  // Group-level attributes: terminal/origin/dropOffUnavailable come from the
+  // first entry (all entries in a route+headsign group share the same pattern
+  // position), while pickupUnavailable reflects whether the group as a whole
+  // has no boardable entry.
+  const baseAttributes = getTimetableEntryAttributes(firstEntry);
+  const groupAttributes: TimetableEntryAttributes = {
+    ...baseAttributes,
+    isPickupUnavailable: !hasBoardableDeparture(entries),
+  };
+
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
       <div>
@@ -66,8 +77,7 @@ export function DepartureItem({
           dataLang={dataLang}
           showRouteTypeIcon={showRouteTypeIcon}
           agency={agency}
-          isTerminal={firstEntry.patternPosition.isTerminal}
-          isPickupUnavailable={!hasBoardableDeparture(entries)}
+          attributes={groupAttributes}
         />
       </div>
       <div className="flex items-center gap-3 pl-1">

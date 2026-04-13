@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import type { InfoLevel } from '../types/app/settings';
 import type { AnchorEntry } from '../domain/portal/anchor';
+import type { StopWithMeta } from '../types/app/transit-composed';
+import { resolveAgencyLang } from '../config/transit-defaults';
+import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypesEmoji } from '../utils/route-type-emoji';
 import { DoorOpen } from 'lucide-react';
@@ -13,6 +16,17 @@ const logger = createLogger('Portals');
 interface PortalsProps {
   anchors: AnchorEntry[];
   infoLevel: InfoLevel;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
+  /**
+   * Looks up an anchored stop's current `StopWithMeta` from the
+   * repository's full dataset (not just the visible viewport).
+   * Used to resolve the anchor's display name in the user's current
+   * language from the latest GTFS data at render time, so newly
+   * added translations flow through without needing to rewrite the
+   * stored anchor entry.
+   */
+  lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
   onSelect: (entry: AnchorEntry) => void;
 }
 
@@ -27,7 +41,13 @@ interface PortalsProps {
  * @param infoLevel - Controls display detail.
  * @param onSelect - Called when an anchor entry is chosen.
  */
-export function Portals({ anchors, infoLevel, onSelect }: PortalsProps) {
+export function Portals({
+  anchors,
+  infoLevel,
+  dataLang,
+  lookupAnchorStopMeta,
+  onSelect,
+}: PortalsProps) {
   const il = useInfoLevel(infoLevel);
   const [open, setOpen] = useState(false);
 
@@ -63,21 +83,31 @@ export function Portals({ anchors, infoLevel, onSelect }: PortalsProps) {
           position="popper"
           className="z-1002 max-h-[40dvh] min-w-48 border-none bg-white/80 text-black backdrop-blur-sm dark:bg-black/80 dark:text-white"
         >
-          {anchors.map((entry) => (
-            <SelectItem
-              key={entry.stopId}
-              value={entry.stopId}
-              className="overflow-hidden focus:bg-black/10 focus:text-black dark:focus:bg-white/20 dark:focus:text-white"
-            >
-              <span className="shrink-0 text-base">{routeTypesEmoji(entry.routeTypes)}</span>
-              <span className="max-w-[60dvw] truncate">{entry.stopName}</span>
-              {il.isVerboseEnabled && (
-                <Badge variant="secondary" className="ml-1 text-[10px]">
-                  {entry.stopId}
-                </Badge>
-              )}
-            </SelectItem>
-          ))}
+          {anchors.map((entry) => {
+            const meta = lookupAnchorStopMeta(entry.stopId);
+            const displayName = meta
+              ? getStopDisplayNames(
+                  meta.stop,
+                  dataLang,
+                  resolveAgencyLang(meta.agencies, meta.stop.agency_id),
+                ).name || entry.stopName
+              : entry.stopName;
+            return (
+              <SelectItem
+                key={entry.stopId}
+                value={entry.stopId}
+                className="overflow-hidden focus:bg-black/10 focus:text-black dark:focus:bg-white/20 dark:focus:text-white"
+              >
+                <span className="shrink-0 text-base">{routeTypesEmoji(entry.routeTypes)}</span>
+                <span className="max-w-[60dvw] truncate">{displayName}</span>
+                {il.isVerboseEnabled && (
+                  <Badge variant="secondary" className="ml-1 text-[10px]">
+                    {entry.stopId}
+                  </Badge>
+                )}
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
     </div>

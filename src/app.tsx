@@ -29,7 +29,8 @@ import {
   nextTileIndex,
 } from './utils/settings-cycle';
 import { SUPPORTED_LANGS } from './config/supported-langs';
-import { DEFAULT_TIMEZONE } from './config/transit-defaults';
+import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
+import { getStopDisplayNames } from './domain/transit/get-stop-display-names';
 import { formatDateParts } from './utils/datetime';
 import { resolveLangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopParam } from './lib/query-params';
@@ -196,13 +197,62 @@ export default function App() {
     }
   }, [anchors, repo, batchUpdateAnchors]);
 
-  // Find StopWithMeta by stop_id from nearby or inBound stops
+  // Viewport-limited StopWithMeta lookup.
+  //
+  // ⚠️ This callback only searches `radiusStops` (~1 km from the user)
+  // and `inBoundStops` (current map viewport). It is intentionally
+  // narrow because it sits on the hot path of map interaction and is
+  // re-created whenever those collections change.
+  //
+  // Use this ONLY for stops that are by definition near the user at
+  // the moment of the call:
+  //   - the just-clicked map marker (radiusStops by construction)
+  //   - the currently selected stop being re-resolved during pan
+  //   - any other case where the caller already has the stop on screen
+  //
+  // Do NOT use this for persistent / long-lived / arbitrary stop IDs
+  // such as anchors (bookmarks), history entries, stops belonging to
+  // a selected route, or a `stop_id` from the URL `?stop=` parameter
+  // — `?stop=` is resolved via `repo.getStopMetaById(stopId)` in the
+  // effect below precisely because it can target a stop anywhere in
+  // the dataset, not just inside the viewport. Those IDs may point
+  // to stops far outside the viewport, so this lookup will silently
+  // return null and the caller will fall back to a stale snapshot.
+  // For those cases call `repo.getStopMetaByIds(...)` (full-dataset
+  // indexed lookup) instead — the anchor display lookup below
+  // (`anchorStopMetaMap`) is the canonical example.
+  //
+  // See `DEVELOPMENT.md > Stop ID lookup の選び方` for the rule and
+  // historical context (route stops and anchor i18n both regressed
+  // by reaching for this helper instead of `getStopMetaByIds`).
   const findStopWithMeta = useCallback(
     (stopId: string) =>
       radiusStops.find((s) => s.stop.stop_id === stopId) ??
       inBoundStops.find((s) => s.stop.stop_id === stopId) ??
       null,
     [radiusStops, inBoundStops],
+  );
+
+  // Pre-resolved StopWithMeta map for every anchored stop_id.
+  // Built from the repository's full dataset (not just the visible
+  // viewport) so that `Portals` can look up the latest translated
+  // display name for any anchor regardless of where it is on the map.
+  const anchorStopMetaMap = useMemo(() => {
+    if (anchors.length === 0) {
+      return new Map<string, StopWithMeta>();
+    }
+    const stopIds = new Set(anchors.map((a) => a.stopId));
+    const metas = repo.getStopMetaByIds(stopIds);
+    return new Map(metas.map((m) => [m.stop.stop_id, m]));
+  }, [anchors, repo]);
+
+  // Lookup an anchored stop's current StopWithMeta. Returns null
+  // when the anchor's stop_id is not present in the active dataset
+  // (e.g. cross-source anchor in mock mode, or a stop deleted from
+  // GTFS); callers should fall back to the AnchorEntry snapshot.
+  const lookupAnchorStopMeta = useCallback(
+    (stopId: string): StopWithMeta | null => anchorStopMetaMap.get(stopId) ?? null,
+    [anchorStopMetaMap],
   );
 
   // Wrap selectStop to also record in history
@@ -461,9 +511,27 @@ export default function App() {
   const handleToggleAnchor = useCallback(
     (stopId: string, routeTypes: AppRouteTypeValue[]) => {
       if (isStopAnchor(stopId)) {
-        // Capture anchor data before removal (entry won't exist after removeAnchor)
+        // Capture anchor data before removal (entry won't exist after removeAnchor).
+        // Resolve display name from current GTFS so the toast follows
+        // the user's current language even though the stored entry
+        // only has a snapshot stopName. We use `lookupAnchorStopMeta`
+        // (full-dataset scan over the anchor set) rather than
+        // `findStopWithMeta` (viewport-only) here because the stop_id
+        // is a persistent anchor reference and may, in some future UI
+        // path, be triggered for an anchor that is not currently in
+        // radiusStops / inBoundStops. See `DEVELOPMENT.md > Stop ID
+        // lookup の選び方` for the rule.
         const anchor = anchors.find((a) => a.stopId === stopId);
-        const stopName = anchor?.stopName ?? stopId;
+        const meta = lookupAnchorStopMeta(stopId);
+        const stopName = meta
+          ? getStopDisplayNames(
+              meta.stop,
+              dataLang,
+              resolveAgencyLang(meta.agencies, meta.stop.agency_id),
+            ).name ||
+            anchor?.stopName ||
+            stopId
+          : (anchor?.stopName ?? stopId);
         logger.debug(`handleToggleAnchor: removing stopId=${stopId}`);
         void removeAnchor(stopId).then((result) => {
           if (result.success) {
@@ -474,7 +542,13 @@ export default function App() {
       } else {
         const meta = findStopWithMeta(stopId);
         if (meta) {
-          logger.debug(`handleToggleAnchor: adding stopId=${stopId}, name=${meta.stop.stop_name}`);
+          const displayName =
+            getStopDisplayNames(
+              meta.stop,
+              dataLang,
+              resolveAgencyLang(meta.agencies, meta.stop.agency_id),
+            ).name || meta.stop.stop_name;
+          logger.debug(`handleToggleAnchor: adding stopId=${stopId}, name=${displayName}`);
           void addAnchor({
             stopId: meta.stop.stop_id,
             stopName: meta.stop.stop_name,
@@ -484,14 +558,23 @@ export default function App() {
           }).then((result) => {
             if (result.success) {
               toast.success(t('anchor.added'), {
-                description: `${routeTypesEmoji(routeTypes)} ${meta.stop.stop_name}`,
+                description: `${routeTypesEmoji(routeTypes)} ${displayName}`,
               });
             }
           });
         }
       }
     },
-    [isStopAnchor, anchors, removeAnchor, addAnchor, findStopWithMeta, t],
+    [
+      isStopAnchor,
+      anchors,
+      removeAnchor,
+      addAnchor,
+      findStopWithMeta,
+      lookupAnchorStopMeta,
+      dataLang,
+      t,
+    ],
   );
 
   // Select + pan to a stop from Portal dropdown
@@ -692,6 +775,7 @@ export default function App() {
           onHistorySelect={handleHistorySelect}
           anchors={anchors}
           onPortalSelect={handlePortalSelect}
+          lookupAnchorStopMeta={lookupAnchorStopMeta}
         />
         <TimeControls
           time={dateTime}

@@ -251,6 +251,13 @@ interface MapViewProps {
   anchors: AnchorEntry[];
   /** Called when an anchor is chosen from the Portal dropdown. */
   onPortalSelect: (entry: AnchorEntry) => void;
+  /**
+   * Looks up an anchored stop's current `StopWithMeta` from the
+   * repository's full dataset. Forwarded to the Portal dropdown so
+   * anchor display names can be resolved against the latest GTFS
+   * data at render time, regardless of viewport position.
+   */
+  lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
 }
 
 export function MapView({
@@ -291,6 +298,7 @@ export function MapView({
   onSearchClick,
   onInfoClick,
   stopHistory,
+  lookupAnchorStopMeta,
   onHistorySelect,
   anchors,
   onPortalSelect,
@@ -501,6 +509,7 @@ export function MapView({
         onDeselectStop={onDeselectStop}
         onHistorySelect={onHistorySelect}
         onPortalSelect={onPortalSelect}
+        lookupAnchorStopMeta={lookupAnchorStopMeta}
       />
       {mapInstance && (
         <EdgeMarkersSwitch

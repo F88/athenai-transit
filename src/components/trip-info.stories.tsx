@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Agency, Route } from '../types/app/transit';
+import type { Agency, Route, TimetableEntryAttributes } from '../types/app/transit';
 import {
   createRouteDirection,
   emptyHeadsign,
@@ -103,6 +103,13 @@ const stopOverridesTripRd = createRouteDirection({
   stopHeadsign: stopHeadsignDemachiyanagi,
 });
 
+const emptyAttributes: TimetableEntryAttributes = {
+  isTerminal: false,
+  isOrigin: false,
+  isPickupUnavailable: false,
+  isDropOffUnavailable: false,
+};
+
 const meta = {
   title: 'Departure/TripInfo',
   component: TripInfo,
@@ -112,12 +119,14 @@ const meta = {
     dataLang: ['ja'],
     showRouteTypeIcon: true,
     agency,
+    attributes: emptyAttributes,
+    size: 'default',
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     showRouteTypeIcon: { control: 'boolean' },
-    isTerminal: { control: 'boolean' },
-    isPickupUnavailable: { control: 'boolean' },
+    size: { control: 'inline-radio', options: ['sm', 'default'] },
+    attributes: { control: 'object' },
   },
   decorators: [
     (Story) => (
@@ -143,12 +152,127 @@ export const KyotoBusRoute: Story = {
   args: { routeDirection: kyotoBusRd, agency: kyotoAgency },
 };
 
+// --- Attributes ---
+
+/** Terminal stop — gray label ("終点"). */
 export const Terminal: Story = {
-  args: { isTerminal: true },
+  args: { attributes: { ...emptyAttributes, isTerminal: true } },
 };
 
+/** Origin stop — blue label ("始発"). */
+export const Origin: Story = {
+  args: { attributes: { ...emptyAttributes, isOrigin: true } },
+};
+
+/** Pickup unavailable — red "乗×" label. */
 export const PickupUnavailable: Story = {
-  args: { isPickupUnavailable: true },
+  args: { attributes: { ...emptyAttributes, isPickupUnavailable: true } },
+};
+
+/** Drop-off unavailable — red "降×" label. */
+export const DropOffUnavailable: Story = {
+  args: { attributes: { ...emptyAttributes, isDropOffUnavailable: true } },
+};
+
+/** All four attributes set — every label renders. */
+export const AllAttributes: Story = {
+  args: {
+    attributes: {
+      isTerminal: true,
+      isOrigin: true,
+      isPickupUnavailable: true,
+      isDropOffUnavailable: true,
+    },
+  },
+};
+
+/**
+ * Side-by-side comparison of each `TimetableEntryAttributes` state
+ * against the baseline (no attributes), using the default size.
+ */
+export const TimetableEntryAttributesComparison: Story = {
+  render: (args) => {
+    const cases: Array<{ label: string; attributes: TimetableEntryAttributes }> = [
+      { label: 'none', attributes: emptyAttributes },
+      { label: 'terminal', attributes: { ...emptyAttributes, isTerminal: true } },
+      { label: 'origin', attributes: { ...emptyAttributes, isOrigin: true } },
+      {
+        label: 'pickup unavailable',
+        attributes: { ...emptyAttributes, isPickupUnavailable: true },
+      },
+      {
+        label: 'drop-off unavailable',
+        attributes: { ...emptyAttributes, isDropOffUnavailable: true },
+      },
+      {
+        label: 'all four',
+        attributes: {
+          isTerminal: true,
+          isOrigin: true,
+          isPickupUnavailable: true,
+          isDropOffUnavailable: true,
+        },
+      },
+    ];
+    return (
+      <div className="flex flex-col gap-3">
+        {cases.map(({ label, attributes }) => (
+          <div key={label}>
+            <span className="mb-0.5 block text-[10px] text-gray-400">{label}</span>
+            <TripInfo
+              routeDirection={args.routeDirection}
+              infoLevel={args.infoLevel}
+              dataLang={args.dataLang}
+              showRouteTypeIcon={args.showRouteTypeIcon}
+              agency={args.agency}
+              attributes={attributes}
+              size={args.size}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+
+/**
+ * Size comparison — `sm` (compact, used in StopSummary popovers) vs
+ * `default` (used in DepartureItem / FlatDepartureItem).
+ *
+ * The route badge / headsign / agency badge scale with the parent
+ * `size` prop. The `TimetableEntryAttributesLabels` row uses a
+ * fixed `BaseLabelSize='sm'` regardless of the parent variant by
+ * design — these flags are visually subordinate to the main route /
+ * headsign info and should not compete for attention by scaling up.
+ * See the inline comment in `trip-info.tsx` for context.
+ */
+export const SizeComparison: Story = {
+  args: {
+    attributes: {
+      isTerminal: true,
+      isOrigin: false,
+      isPickupUnavailable: true,
+      isDropOffUnavailable: false,
+    },
+  },
+  render: (args) => (
+    <div className="flex flex-col gap-3">
+      {(['sm', 'default'] as const).map((size) => (
+        <div key={size}>
+          <span className="mb-0.5 block text-[10px] text-gray-400">size: {size}</span>
+          <TripInfo
+            routeDirection={args.routeDirection}
+            infoLevel={args.infoLevel}
+            dataLang={args.dataLang}
+            showRouteTypeIcon={args.showRouteTypeIcon}
+            agency={args.agency}
+            attributes={args.attributes}
+            size={size}
+          />
+        </div>
+      ))}
+    </div>
+  ),
 };
 
 export const EmptyHeadsign: Story = {
@@ -198,6 +322,28 @@ export const LangComparison: Story = {
   ),
 };
 
+/**
+ * KitchenSink — maximum-information composition for visual regression.
+ *
+ * - `stopOverridesTripRd` for rich multi-language route names and
+ *   both trip/stop headsigns (verbose mode renders both).
+ * - `kyotoAgency` matches `kyotoBusRoute.agency_id` so the agency
+ *   badge resolves correctly.
+ * - All four `TimetableEntryAttributes` flags enabled so every
+ *   per-entry label (Terminal / Origin / PickupUnavailable /
+ *   DropOffUnavailable) renders.
+ * - `infoLevel: 'verbose'` to surface all available verbose data.
+ */
 export const KitchenSink: Story = {
-  args: { routeDirection: tramRd, agency: kyotoAgency, infoLevel: 'verbose', isTerminal: true },
+  args: {
+    routeDirection: stopOverridesTripRd,
+    agency: kyotoAgency,
+    infoLevel: 'verbose',
+    attributes: {
+      isTerminal: true,
+      isOrigin: true,
+      isPickupUnavailable: true,
+      isDropOffUnavailable: true,
+    },
+  },
 };

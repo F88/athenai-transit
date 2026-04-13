@@ -97,6 +97,44 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 - `src/lib/`
   `leaflet-helpers.ts`, `map-zoom.ts`, `double-tap-zoom.ts`
 
+## Stop ID lookup の選び方
+
+`stop_id` から `StopWithMeta` を取得する方法は 2 系統あります。**stop_id の出所** によって正しい方を選ばないと、ビューポート外の stop で silently null フォールバックが発生し、表示や翻訳が壊れます。route stops 表示と Portal (anchor) で過去に同種の不具合を起こしているため、新規実装時は必ず以下を参照してください。
+
+### `repo.getStopMetaByIds(stopIds: Set<string>): StopWithMeta[]`
+
+**全データセットを対象**にする同期 API (`src/repositories/transit-repository.ts`)。stop_id の地理的位置に依存しません。「全データセット」は検索のスコープを意味し、データセット全体を per-call で走査するという意味ではありません。v2 リポジトリの実装は事前構築済みの `stop_id → StopWithMeta` map に対する indexed lookup なので、実コストは渡した stop_id の数に比例します (各 lookup は O(1)、全体で O(`stopIds.size`))。
+
+以下の用途には**必ずこれを使う**:
+
+- アンカー (bookmark) の表示名 / refresh — anchor は地球の裏側にあり得る
+- 履歴 (StopHistory) の name 解決 (履歴は full snapshot を持つので別経路でも可)
+- selected route の stops 描画 — route は viewport 外まで伸びる
+- URL `?stop=` パラメータからの解決
+- localStorage / 検索結果など、**永続化された / ユーザー操作の起点でない stop_id 全般**
+
+呼び出しコスト: 同期、O(`stopIds.size`)。過剰最適化を心配する必要はないので、迷ったらこちらを選ぶ。
+
+### `findStopWithMeta(stopId)` (app.tsx 内のローカル callback)
+
+**ビューポート専用** の lookup で、`radiusStops` (~1 km) と `inBoundStops` (現在のビューポート) しか見ません。ホットパス用に作られています。
+
+以下の用途のみ:
+
+- ユーザーが今クリックした map marker
+- `onStopSelected` 系の即時 selection
+- 現在地周辺で確実に viewport 内にある stop の参照
+
+**永続 ID には絶対に使わない**。アンカー / 履歴 / 選択 route の stops / `?stop=` 等に使うと、ビューポート外で null が返り、表示層は snapshot にフォールバックして翻訳/最新メタが消える。
+
+### 判断フロー
+
+1. その stop_id は **どこから来たか** ?
+    - ユーザーが今操作した直接対象 (クリックなど) → `findStopWithMeta` 可
+    - localStorage / URL / 設定 / 選択 route / 過去のセッション → `repo.getStopMetaByIds`
+2. 迷ったら `getStopMetaByIds`
+3. 新しい lookup を書くときは、コメントに「永続 ID か viewport ID か」を明記する
+
 ## Logger
 
 ### Basic Usage

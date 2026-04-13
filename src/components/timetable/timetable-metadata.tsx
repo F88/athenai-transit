@@ -1,11 +1,9 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { resolveAgencyLang } from '@/config/transit-defaults';
-import { getRouteDisplayNames } from '@/domain/transit/get-route-display-names';
 import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
 import type { Agency, Route } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
-import { PillButton } from '../button/pill-button';
+import { RouteCountBadge } from '../badge/route-count-badge';
 
 interface TimetableMetadataProps {
   timetableEntries: TimetableEntry[];
@@ -84,32 +82,29 @@ export function TimetableMetadata({
           </span>
         )}
       </p>
-      {routeBreakdown.length > 1 && (
-        <div className="flex flex-wrap gap-1">
-          {routeBreakdown.map((item) => {
-            const bg = item.route.route_color ? `#${item.route.route_color}` : undefined;
-            const fg = item.route.route_text_color ? `#${item.route.route_text_color}` : undefined;
-            const label = getRouteDisplayNames(
-              item.route,
-              dataLang,
-              resolveAgencyLang(agencies, item.route.agency_id),
-            ).resolved.name;
 
-            return (
-              <PillButton
-                key={item.route.route_id}
-                size="sm"
-                active={true}
-                activeBg={bg}
-                activeFg={fg}
-                count={item.count}
-              >
-                {label}
-              </PillButton>
-            );
-          })}
-        </div>
-      )}
+      {/* Routes with their counts.
+       *
+       * Intentionally rendered for every stop, including single-route
+       * stops, even though the previous PillButton row was gated on
+       * `routeBreakdown.length > 1`. RouteCountBadge is read-only and
+       * visually distinct from a filter pill, so the duplication with
+       * the trip count line is acceptable, and consistently surfacing
+       * the route-color chip helps users associate route × count even
+       * when there is only one route at this stop.
+       */}
+      <div className="flex flex-wrap gap-1">
+        {routeBreakdown.map((item) => (
+          <RouteCountBadge
+            key={item.route.route_id}
+            route={item.route}
+            count={item.count}
+            dataLang={dataLang}
+            agencies={agencies}
+            size="sm"
+          />
+        ))}
+      </div>
     </div>
   );
 }

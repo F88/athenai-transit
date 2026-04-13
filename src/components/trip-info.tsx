@@ -1,9 +1,8 @@
 import type { InfoLevel } from '../types/app/settings';
-import type { Agency } from '../types/app/transit';
+import type { Agency, TimetableEntryAttributes } from '../types/app/transit';
 import type { RouteDirection } from '../types/app/transit-composed';
 import { type ResolvedDisplayNames, hasDisplayContent } from '../domain/transit/get-display-names';
 import type { InfoLevelFlags } from '../utils/create-info-level';
-import { useTranslation } from 'react-i18next';
 import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
 import { cn } from '../lib/utils';
 import { useInfoLevel } from '../hooks/use-info-level';
@@ -11,6 +10,7 @@ import { routeTypeEmoji } from '../utils/route-type-emoji';
 import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
 import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
+import { TimetableEntryAttributesLabels } from './label/timetable-entry-attributes-labels';
 import { headsignSourceEmoji } from '../domain/transit/headsign-source-emoji';
 
 const sizeVariants = {
@@ -71,10 +71,13 @@ interface TripInfoProps {
   showRouteTypeIcon?: boolean;
   /** Agency operating this trip. Shown at detailed+ info level. */
   agency?: Agency;
-  /** Whether this stop is the terminal (last stop) of the trip. */
-  isTerminal?: boolean;
-  /** Whether pickup is unavailable at this stop. */
-  isPickupUnavailable?: boolean;
+  /**
+   * Per-entry boolean attributes (terminal / origin / pickup-unavailable /
+   * drop-off-unavailable). When provided, rendered via the shared
+   * `TimetableEntryAttributesLabels` primitive so the style matches the
+   * timetable grid.
+   */
+  attributes?: TimetableEntryAttributes;
   /** Size variant. @default 'default' */
   size?: keyof typeof sizeVariants;
   /** Apply CSS text-overflow ellipsis to headsign name and sub-names. */
@@ -94,13 +97,11 @@ export function TripInfo({
   dataLang,
   showRouteTypeIcon = false,
   agency,
-  isTerminal = false,
-  isPickupUnavailable = false,
+  attributes,
   size = 'default',
   ellipsisHeadsign = false,
 }: TripInfoProps) {
   const { route } = routeDirection;
-  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const v = sizeVariants[size];
   const agencyLang = agency?.agency_lang ? [agency.agency_lang] : DEFAULT_AGENCY_LANG;
@@ -177,19 +178,16 @@ export function TripInfo({
       {/* Headsign */}
       {headSignInfos}
 
-      {isTerminal && (
-        <span
-          className={`shrink-0 rounded bg-gray-100 px-1 ${v.label} font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300`}
-        >
-          {t('departure.terminal')}
-        </span>
-      )}
-      {isPickupUnavailable && (
-        <span
-          className={`shrink-0 rounded bg-red-100 px-1 ${v.label} font-medium text-red-700 dark:bg-red-900 dark:text-red-300`}
-        >
-          {t('departure.noBoarding')}
-        </span>
+      {attributes && (
+        <TimetableEntryAttributesLabels
+          attributes={attributes}
+          // size: fixed for design reasons — these labels are visually subordinate to the main route/headsign info and should not compete for attention by scaling up to the same size as the route badge.
+          size={'sm'}
+          isDisplayTerminal={true}
+          isDisplayOrigin={true}
+          isDisplayPickupUnavailable={true}
+          isDisplayDropOffUnavailable={true}
+        />
       )}
     </div>
   );
