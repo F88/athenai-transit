@@ -144,8 +144,12 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
   if (data.type === 'route-headsign') {
     const route = data.routes[0];
     const descriptionRouteName = route
-      ? getRouteDisplayNames(route, dataLang, resolveAgencyLang(data.agencies, route.agency_id))
-          .resolved.name
+      ? getRouteDisplayNames(
+          route,
+          dataLang,
+          resolveAgencyLang(data.agencies, route.agency_id),
+          'short',
+        ).resolved.name
       : '';
 
     timetableDescription = t(

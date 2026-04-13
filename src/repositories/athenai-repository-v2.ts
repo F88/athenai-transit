@@ -101,7 +101,7 @@ interface ResolvedPattern {
 type HeadsignTranslationsByPrefix = Map<
   string,
   {
-    headsigns: Record<string, Record<string, string>>;
+    trip_headsigns: Record<string, Record<string, string>>;
     stop_headsigns: Record<string, Record<string, string>>;
   }
 >;
@@ -205,40 +205,49 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
   }
 
   // --- Translations ---
-  // headsigns/stop_headsigns are kept per-source to preserve agency-specific
-  // translations. Other maps use prefixed IDs and don't collide.
+  // trip_headsigns/stop_headsigns are kept per-source to preserve
+  // agency-specific translations. Other maps use prefixed IDs and
+  // don't collide.
   const translationsMap: TranslationsJson = {
-    headsigns: {},
-    stop_headsigns: {},
-    stop_names: {},
-    route_names: {},
     agency_names: {},
+    route_long_names: {},
+    route_short_names: {},
+    stop_names: {},
+    trip_headsigns: {},
+    stop_headsigns: {},
   };
   const headsignTranslations: HeadsignTranslationsByPrefix = new Map();
   for (const source of sources) {
     const t = source.data.translations.data;
     const feedLang = feedLangByPrefix.get(source.prefix);
 
-    // Normalize headsign/stop_headsign translations: inject base value
+    // Normalize trip/stop headsign translations: inject base value
     // (the headsign text itself) under feed_lang when not already present.
-    const headsigns: Record<string, Record<string, string>> = {};
-    for (const [text, langMap] of Object.entries(t.headsigns)) {
-      headsigns[text] = injectOriginLang(langMap, text, feedLang);
+    const tripHeadsigns: Record<string, Record<string, string>> = {};
+    if (t.trip_headsigns) {
+      for (const [text, langMap] of Object.entries(t.trip_headsigns)) {
+        tripHeadsigns[text] = injectOriginLang(langMap, text, feedLang);
+      }
     }
     const stopHeadsigns: Record<string, Record<string, string>> = {};
-    for (const [text, langMap] of Object.entries(t.stop_headsigns)) {
-      stopHeadsigns[text] = injectOriginLang(langMap, text, feedLang);
+    if (t.stop_headsigns) {
+      for (const [text, langMap] of Object.entries(t.stop_headsigns)) {
+        stopHeadsigns[text] = injectOriginLang(langMap, text, feedLang);
+      }
     }
     headsignTranslations.set(source.prefix, {
-      headsigns,
+      trip_headsigns: tripHeadsigns,
       stop_headsigns: stopHeadsigns,
     });
 
     if (t.stop_names) {
       Object.assign(translationsMap.stop_names, t.stop_names);
     }
-    if (t.route_names) {
-      Object.assign(translationsMap.route_names, t.route_names);
+    if (t.route_long_names) {
+      Object.assign(translationsMap.route_long_names, t.route_long_names);
+    }
+    if (t.route_short_names) {
+      Object.assign(translationsMap.route_short_names, t.route_short_names);
     }
     if (t.agency_names) {
       Object.assign(translationsMap.agency_names, t.agency_names);
@@ -315,9 +324,17 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
       routeMap.set(r.i, {
         route_id: r.i,
         route_short_name: r.s,
-        route_short_names: injectOriginLang({}, r.s, feedLang),
+        route_short_names: injectOriginLang(
+          translationsMap.route_short_names[r.i] ?? {},
+          r.s,
+          feedLang,
+        ),
         route_long_name: r.l,
-        route_long_names: injectOriginLang(translationsMap.route_names[r.i] ?? {}, r.l, feedLang),
+        route_long_names: injectOriginLang(
+          translationsMap.route_long_names[r.i] ?? {},
+          r.l,
+          feedLang,
+        ),
         route_type: (VALID_ROUTE_TYPE_VALUES.has(r.t) ? r.t : -1) as AppRouteTypeValue,
         route_color: r.c,
         route_text_color: r.tc,
@@ -1393,7 +1410,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       route: resolved.route,
       tripHeadsign: {
         name: resolved.headsign,
-        names: src?.headsigns[resolved.headsign] ?? {},
+        names: src?.trip_headsigns[resolved.headsign] ?? {},
       },
       stopHeadsign:
         stop.headsign != null

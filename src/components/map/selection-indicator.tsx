@@ -64,7 +64,7 @@ export function SelectionIndicator({
 
   logger.debug('Rendering route selection indicator for route', info.route);
 
-  const routeNames = getRouteDisplayNames(info.route, dataLang, DEFAULT_AGENCY_LANG);
+  const routeNames = getRouteDisplayNames(info.route, dataLang, DEFAULT_AGENCY_LANG, 'short');
 
   return (
     <div className="pointer-events-auto absolute bottom-8 left-1/2 z-1001 flex max-w-[70%] -translate-x-1/2 cursor-default flex-col items-center gap-0.5 overflow-hidden rounded-2xl border-none bg-black/75 px-3.5 py-1.5 text-sm font-semibold text-ellipsis whitespace-nowrap text-white">

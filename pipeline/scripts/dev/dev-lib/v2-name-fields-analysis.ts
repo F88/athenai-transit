@@ -74,9 +74,9 @@ const FIELD_TARGETS: FieldTarget[] = [
       ),
   },
   {
-    field: 'translations.headsigns',
+    field: 'translations.trip_headsigns',
     count: (bundle) =>
-      countTranslationMap('translations.headsigns', bundle.translations.data.headsigns),
+      countTranslationMap('translations.trip_headsigns', bundle.translations.data.trip_headsigns),
   },
   {
     field: 'translations.stop_headsigns',
@@ -93,9 +93,20 @@ const FIELD_TARGETS: FieldTarget[] = [
       countTranslationMap('translations.stop_names', bundle.translations.data.stop_names),
   },
   {
-    field: 'translations.route_names',
+    field: 'translations.route_long_names',
     count: (bundle) =>
-      countTranslationMap('translations.route_names', bundle.translations.data.route_names),
+      countTranslationMap(
+        'translations.route_long_names',
+        bundle.translations.data.route_long_names,
+      ),
+  },
+  {
+    field: 'translations.route_short_names',
+    count: (bundle) =>
+      countTranslationMap(
+        'translations.route_short_names',
+        bundle.translations.data.route_short_names,
+      ),
   },
   {
     field: 'trips.trip_short_name',

@@ -32,11 +32,12 @@ function makeBundle(): DataBundle {
     translations: {
       v: 1,
       data: {
-        headsigns: {},
-        stop_headsigns: {},
-        stop_names: {},
-        route_names: {},
         agency_names: {},
+        route_long_names: {},
+        route_short_names: {},
+        stop_names: {},
+        trip_headsigns: {},
+        stop_headsigns: {},
       },
     },
     lookup: { v: 2, data: {} },

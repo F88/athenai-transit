@@ -21,12 +21,18 @@ and this project adheres to [CalVer](https://calver.org/).
 - StopHistory ドロップダウンが `stopWithMeta.stop.stop_name` (feed_lang 由来) を直接表示していた問題を修正。`getStopDisplayNames(stop, dataLang, resolveAgencyLang(agencies, stop.agency_id))` で現在表示言語に従って解決。履歴のスナップショットには既に `stop_names` 翻訳マップが含まれているため、表示層のみの修正。
 - Portal (アンカー) ドロップダウンの表示が常に保存時の `stopName` snapshot を使っていた問題を修正。`repo.getStopMetaByIds` で全データセットから fresh な `StopWithMeta` を取得し、`getStopDisplayNames` で現在表示言語に解決。viewport 外のアンカーも翻訳されるようになり、新たに追加された GTFS 翻訳にも自動追従する (anchor refresh 不要)。`AnchorEntry` のスキーマ変更なし。
 - アンカー追加/削除時の toast メッセージ (`anchor.added` / `anchor.removed`) も翻訳解決に切り替え。表示言語に応じた stop 名を表示。
+- pipeline (v2) が GTFS の `routes.route_short_name` 翻訳を抽出していなかった問題を修正 (#103)。`extract-translations.ts` に `route_short_name` 抽出ブロックを追加 (GTFS-JP の `record_id` 経由と標準 GTFS の `field_value` 経由の両方をサポート)。kyoto-city-bus (139 件) / keio-bus (31 件) などのフィードに含まれる短縮名翻訳が `data.json` の `translations.route_short_names` まで届き、`Route.route_short_names` を経由して `getRouteDisplayNames` が言語切替に追従するようになる (例: `市バス１` → `1 City Bus` を `lang=en` で表示)。
 
 ### Changed
 
 - `MapToggleButton` (地図上の全コントロールボタン) でテキスト選択不可に。`user-select: none` と `-webkit-touch-callout: none` を適用し、iPhone などタッチデバイスでボタン上の文字列が選択状態になる問題を抑止。
 - `PillButton` (BottomSheet の View/Operating/Route type/Agency フィルタ、stop 詳細の timetable フィルタ、route 内訳表示) でもテキスト選択不可に。同じく `user-select: none` と `-webkit-touch-callout: none` を適用。
 - `TransitRepository.getStopMetaByIds` / `getStopMetaById` の TSDoc を強化し、「いつ使うべきか」「viewport 制限のある `findStopWithMeta` との違い」「過去の regression の経緯」を明記。`use-route-stops.ts` と `app.tsx` の `findStopWithMeta` 定義箇所にも対応するコメントと DEVELOPMENT.md への参照を追加。
+- `TranslationsJson` (`src/types/data/transit-json.ts`) のスキーマをリネーム + 拡張し、各フィールドに TSDoc を追加 (#103):
+    - `route_names` → `route_long_names` (long であることを名前に明示)
+    - 新フィールド `route_short_names` を追加 (`route_short_name` / `route_long_name` を first-class な対等フィールドとして扱う)
+    - `headsigns` → `trip_headsigns` (`stop_headsigns` と対称にし、何の翻訳か曖昧な命名を解消)
+    - `public/data-v2/*/data.json` の再生成は別途データ更新フローで実施 (本 PR のスコープ外)
 
 ## [2026.04.12]
 

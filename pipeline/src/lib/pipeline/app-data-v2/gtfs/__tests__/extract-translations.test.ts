@@ -55,11 +55,12 @@ describe('extractTranslationsV2', () => {
   it('returns empty maps when no translations exist', () => {
     const result = extractTranslationsV2(db, 'test');
     expect(result).toEqual({
-      headsigns: {},
-      stop_headsigns: {},
-      stop_names: {},
-      route_names: {},
       agency_names: {},
+      route_long_names: {},
+      route_short_names: {},
+      stop_names: {},
+      trip_headsigns: {},
+      stop_headsigns: {},
     });
   });
 
@@ -72,7 +73,7 @@ describe('extractTranslationsV2', () => {
     `);
 
     const result = extractTranslationsV2(db, 'test');
-    expect(result.headsigns['新橋駅前']).toEqual({ en: 'Shimbashi Sta.' });
+    expect(result.trip_headsigns['新橋駅前']).toEqual({ en: 'Shimbashi Sta.' });
   });
 
   it('extracts stop_name translations for all location_types (v2)', () => {
@@ -120,7 +121,7 @@ describe('extractTranslationsV2', () => {
     `);
 
     const result = extractTranslationsV2(db, 'test');
-    expect(result.headsigns['東京駅']).toEqual({ en: 'Tokyo Station' });
+    expect(result.trip_headsigns['東京駅']).toEqual({ en: 'Tokyo Station' });
   });
 
   it('extracts stop_headsign translations', () => {
@@ -146,7 +147,67 @@ describe('extractTranslationsV2', () => {
     `);
 
     const result = extractTranslationsV2(db, 'test');
-    expect(result.route_names['test:R001']).toEqual({ en: 'Yamanote Line' });
+    expect(result.route_long_names['test:R001']).toEqual({ en: 'Yamanote Line' });
+    expect(result.route_short_names['test:R001']).toBeUndefined();
+  });
+
+  it('extracts route_short_name translations via record_id (GTFS-JP)', () => {
+    db.exec(`
+      INSERT INTO agency (agency_id, agency_name) VALUES ('A001', 'Test Agency');
+      INSERT INTO routes (route_id, agency_id, route_short_name, route_long_name, route_type)
+      VALUES ('R100', 'A001', '市バス1', '', 3);
+      INSERT INTO translations (table_name, field_name, language, translation, record_id)
+      VALUES ('routes', 'route_short_name', 'en', '1 City Bus', 'R100');
+    `);
+
+    const result = extractTranslationsV2(db, 'test');
+    expect(result.route_short_names['test:R100']).toEqual({ en: '1 City Bus' });
+    expect(result.route_long_names['test:R100']).toBeUndefined();
+  });
+
+  it('extracts route_short_name translations via field_value (standard GTFS)', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type)
+      VALUES ('R101', '1', '', 3);
+      INSERT INTO translations (table_name, field_name, language, translation, field_value)
+      VALUES ('routes', 'route_short_name', 'en', 'One', '1');
+    `);
+
+    const result = extractTranslationsV2(db, 'test');
+    expect(result.route_short_names['test:R101']).toEqual({ en: 'One' });
+  });
+
+  it('extracts both route_short_name and route_long_name translations independently', () => {
+    db.exec(`
+      INSERT INTO agency (agency_id, agency_name) VALUES ('A001', 'Test Agency');
+      INSERT INTO routes (route_id, agency_id, route_short_name, route_long_name, route_type)
+      VALUES ('R200', 'A001', '市バス2', '京都市バス2号系統', 3);
+      INSERT INTO translations (table_name, field_name, language, translation, record_id)
+      VALUES ('routes', 'route_short_name', 'en', '2 City Bus', 'R200'),
+             ('routes', 'route_long_name', 'en', 'Kyoto City Bus Route 2', 'R200');
+    `);
+
+    const result = extractTranslationsV2(db, 'test');
+    expect(result.route_short_names['test:R200']).toEqual({ en: '2 City Bus' });
+    expect(result.route_long_names['test:R200']).toEqual({ en: 'Kyoto City Bus Route 2' });
+  });
+
+  it('extracts multiple languages for a route_short_name', () => {
+    db.exec(`
+      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type)
+      VALUES ('R300', '市バス3', '', 3);
+      INSERT INTO translations (table_name, field_name, language, translation, record_id)
+      VALUES ('routes', 'route_short_name', 'en', '3 City Bus', 'R300'),
+             ('routes', 'route_short_name', 'ko', '3번 시영버스', 'R300'),
+             ('routes', 'route_short_name', 'zh-Hans', '3路市营巴士', 'R300');
+    `);
+
+    const result = extractTranslationsV2(db, 'test');
+    expect(result.route_short_names['test:R300']).toEqual({
+      en: '3 City Bus',
+      ko: '3번 시영버스',
+      'zh-Hans': '3路市营巴士',
+    });
   });
 
   it('deduplicates headsign translations when multiple trips share the same headsign', () => {
@@ -161,8 +222,8 @@ describe('extractTranslationsV2', () => {
     `);
 
     const result = extractTranslationsV2(db, 'test');
-    expect(result.headsigns['新宿駅']).toEqual({ en: 'Shinjuku Sta.' });
-    expect(Object.keys(result.headsigns)).toHaveLength(1);
+    expect(result.trip_headsigns['新宿駅']).toEqual({ en: 'Shinjuku Sta.' });
+    expect(Object.keys(result.trip_headsigns)).toHaveLength(1);
   });
 
   it('extracts multiple languages for the same stop', () => {
@@ -204,7 +265,7 @@ describe('extractTranslationsV2', () => {
     `);
 
     const result = extractTranslationsV2(db, 'test');
-    expect(result.route_names['test:R001']).toEqual({ en: 'Yamanote Line' });
+    expect(result.route_long_names['test:R001']).toEqual({ en: 'Yamanote Line' });
   });
 
   it('handles multiple agencies with translations', () => {

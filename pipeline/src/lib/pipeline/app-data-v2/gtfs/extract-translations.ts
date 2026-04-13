@@ -64,7 +64,7 @@ function buildTranslationMap(
  */
 export function extractTranslationsV2(db: Database.Database, prefix: string): TranslationsJson {
   // trip_headsign translations
-  const headsignRows = db
+  const tripHeadsignRows = db
     .prepare(
       `SELECT DISTINCT COALESCE(tr.trip_headsign, t.field_value) as headsign_text,
         t.language, t.translation
@@ -75,7 +75,7 @@ export function extractTranslationsV2(db: Database.Database, prefix: string): Tr
     )
     .all() as Array<{ headsign_text: string; language: string; translation: string }>;
 
-  const headsigns = buildTranslationMap(headsignRows);
+  const tripHeadsigns = buildTranslationMap(tripHeadsignRows);
 
   // stop_headsign translations
   const stopHeadsignRows = db
@@ -117,7 +117,7 @@ export function extractTranslationsV2(db: Database.Database, prefix: string): Tr
   }
 
   // route_long_name translations (keyed by prefixed route_id)
-  const routeNameRows = db
+  const routeLongNameRows = db
     .prepare(
       `SELECT r.route_id, t.language, t.translation
        FROM translations t
@@ -127,16 +127,39 @@ export function extractTranslationsV2(db: Database.Database, prefix: string): Tr
     )
     .all() as Array<{ route_id: string; language: string; translation: string }>;
 
-  const routeNamesMap = buildNamesMap(
-    routeNameRows.map((r) => ({
+  const routeLongNamesMap = buildNamesMap(
+    routeLongNameRows.map((r) => ({
       key: r.route_id,
       language: r.language,
       translation: r.translation,
     })),
   );
-  const routeNames: Record<string, Record<string, string>> = {};
-  for (const [routeId, names] of routeNamesMap) {
-    routeNames[`${prefix}:${routeId}`] = names;
+  const routeLongNames: Record<string, Record<string, string>> = {};
+  for (const [routeId, names] of routeLongNamesMap) {
+    routeLongNames[`${prefix}:${routeId}`] = names;
+  }
+
+  // route_short_name translations (keyed by prefixed route_id)
+  const routeShortNameRows = db
+    .prepare(
+      `SELECT r.route_id, t.language, t.translation
+       FROM translations t
+       JOIN routes r ON (r.route_id = t.record_id
+         OR (t.record_id IS NULL AND r.route_short_name = t.field_value))
+       WHERE t.table_name = 'routes' AND t.field_name = 'route_short_name'`,
+    )
+    .all() as Array<{ route_id: string; language: string; translation: string }>;
+
+  const routeShortNamesMap = buildNamesMap(
+    routeShortNameRows.map((r) => ({
+      key: r.route_id,
+      language: r.language,
+      translation: r.translation,
+    })),
+  );
+  const routeShortNames: Record<string, Record<string, string>> = {};
+  for (const [routeId, names] of routeShortNamesMap) {
+    routeShortNames[`${prefix}:${routeId}`] = names;
   }
 
   // agency_name translations (keyed by prefixed agency_id)
@@ -163,20 +186,22 @@ export function extractTranslationsV2(db: Database.Database, prefix: string): Tr
     agencyNames[`${prefix}:${agencyId}`] = { ...names };
   }
 
-  const headsignCount = Object.keys(headsigns).length;
+  const tripHeadsignCount = Object.keys(tripHeadsigns).length;
   const stopHeadsignCount = Object.keys(stopHeadsigns).length;
   const stopNameCount = Object.keys(stopNames).length;
-  const routeNameCount = Object.keys(routeNames).length;
+  const routeLongNameCount = Object.keys(routeLongNames).length;
+  const routeShortNameCount = Object.keys(routeShortNames).length;
   const agencyNameCount = Object.keys(agencyNames).length;
   console.log(
-    `  [${prefix}] translations: ${headsignCount} headsigns, ${stopHeadsignCount} stop_headsigns, ${stopNameCount} stop_names, ${routeNameCount} route_names, ${agencyNameCount} agency_names`,
+    `  [${prefix}] translations: ${tripHeadsignCount} trip_headsigns, ${stopHeadsignCount} stop_headsigns, ${stopNameCount} stop_names, ${routeLongNameCount} route_long_names, ${routeShortNameCount} route_short_names, ${agencyNameCount} agency_names`,
   );
 
   return {
-    headsigns,
-    stop_headsigns: stopHeadsigns,
-    stop_names: stopNames,
-    route_names: routeNames,
     agency_names: agencyNames,
+    route_long_names: routeLongNames,
+    route_short_names: routeShortNames,
+    stop_names: stopNames,
+    trip_headsigns: tripHeadsigns,
+    stop_headsigns: stopHeadsigns,
   };
 }

@@ -259,19 +259,20 @@ describe('mergeSourcesV2', () => {
           translations: {
             v: 1,
             data: {
-              headsigns: {
-                'Stazione Centrale': { en: 'Central Station' },
-              },
-              stop_headsigns: {},
-              stop_names: {
-                'itfeed:s1': { en: 'Central Station' },
-              },
-              route_names: {
-                'itfeed:r1': { en: 'Line 1' },
-              },
               agency_names: {
                 'itfeed:ag1': { en: 'English Transit Co.' },
               },
+              route_long_names: {
+                'itfeed:r1': { en: 'Line 1' },
+              },
+              route_short_names: {},
+              stop_names: {
+                'itfeed:s1': { en: 'Central Station' },
+              },
+              trip_headsigns: {
+                'Stazione Centrale': { en: 'Central Station' },
+              },
+              stop_headsigns: {},
             },
           },
           lookup: { v: 2, data: {} },
@@ -283,7 +284,7 @@ describe('mergeSourcesV2', () => {
       const merged = mergeSourcesV2([createFeedLangFixture()]);
       const translations = merged.headsignTranslations.get('itfeed');
       // feed_lang="it", so "Stazione Centrale" should be injected as "it" candidate
-      expect(translations!.headsigns['Stazione Centrale']).toEqual({
+      expect(translations!.trip_headsigns['Stazione Centrale']).toEqual({
         it: 'Stazione Centrale',
         en: 'Central Station',
       });
@@ -312,6 +313,26 @@ describe('mergeSourcesV2', () => {
       const merged = mergeSourcesV2([createFeedLangFixture()]);
       const route = merged.routeMap.get('itfeed:r1');
       expect(route!.route_short_names).toEqual({ it: 'L1' });
+    });
+
+    it('merges route_short_names translations from pipeline into Route', () => {
+      // Simulate a pipeline-emitted route_short_name translation
+      // (e.g. kyoto-city-bus `市バス1` → `1 City Bus`).
+      const source = createFeedLangFixture();
+      source.data.translations.data.route_short_names = {
+        'itfeed:r1': { en: 'L1 Express' },
+      };
+      const merged = mergeSourcesV2([source]);
+      const route = merged.routeMap.get('itfeed:r1');
+      expect(route!.route_short_names).toEqual({
+        it: 'L1',
+        en: 'L1 Express',
+      });
+      // route_long_names is unaffected by the short_names translation
+      expect(route!.route_long_names).toEqual({
+        it: 'Linea 1',
+        en: 'Line 1',
+      });
     });
 
     it('injects agency_names base value under feed_lang, not agency_lang', () => {
