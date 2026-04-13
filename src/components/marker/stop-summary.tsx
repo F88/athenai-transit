@@ -5,6 +5,7 @@ import { resolveAgencyLang } from '../../config/transit-defaults';
 import { createInfoLevel } from '../../utils/create-info-level';
 import { getStopDisplayNames } from '../../domain/transit/get-stop-display-names';
 import { minutesToDate } from '../../domain/transit/calendar-utils';
+import { getTimetableEntryAttributes } from '../../domain/transit/timetable-entry-attributes';
 import { getDisplayMinutes } from '../../domain/transit/timetable-utils';
 import { AgencyBadge } from '../badge/agency-badge';
 import { routeTypesEmoji } from '../../utils/route-type-emoji';
@@ -87,8 +88,7 @@ export function StopSummary({
               infoLevel={infoLevel === 'verbose' ? infoLevel : 'simple'}
               dataLang={dataLang}
               showRouteTypeIcon={false}
-              isTerminal={entry.patternPosition.isTerminal}
-              isPickupUnavailable={entry.boarding.pickupType === 1}
+              attributes={getTimetableEntryAttributes(entry)}
               ellipsisHeadsign={true}
             />
 

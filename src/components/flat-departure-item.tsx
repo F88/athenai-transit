@@ -3,6 +3,7 @@ import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { minutesToDate } from '../domain/transit/calendar-utils';
+import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
 import { getDisplayMinutes } from '../domain/transit/timetable-utils';
 import { RelativeTime } from './relative-time';
 import { TripInfo } from './trip-info';
@@ -44,9 +45,9 @@ export function FlatDepartureItem({
   const showVerbose = infoLevel === 'verbose';
   const { route } = entry.routeDirection;
   const bgColor = route.route_color ? `#${route.route_color}` : undefined;
-  const isTerminal = entry.patternPosition.isTerminal;
+  const attributes = getTimetableEntryAttributes(entry);
+  const isTerminal = attributes.isTerminal;
   const departureTime = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
-  const isPickupUnavailable = entry.boarding.pickupType === 1;
   const diffMs = departureTime.getTime() - now.getTime();
   const showRelativeTime = isFirst || diffMs <= 60 * 60 * 1000;
 
@@ -78,8 +79,7 @@ export function FlatDepartureItem({
           dataLang={dataLang}
           showRouteTypeIcon={showRouteTypeIcon}
           agency={agency}
-          isTerminal={isTerminal}
-          isPickupUnavailable={isPickupUnavailable}
+          attributes={attributes}
         />
       </div>
       {/* Verbose data */}

@@ -89,6 +89,31 @@ export type FilteredTimetableEntriesState =
   | 'filter-hidden';
 
 /**
+ * Display-relevant boolean attributes of a single timetable entry at
+ * a specific stop, extracted into a flat structure so display
+ * components can consume them without depending on the full
+ * `TimetableEntry` shape (defined in `transit-composed.ts`).
+ *
+ * All four flags are derivable from a single `TimetableEntry` via
+ * `getTimetableEntryAttributes()`; no external context (trip pattern,
+ * route, agency) is required.
+ *
+ * Used by the shared `TimetableEntryAttributesLabels` primitive so
+ * that both the timetable grid and the NearbyStop departure rows can
+ * render the same per-entry labels with the same styling.
+ */
+export interface TimetableEntryAttributes {
+  /** This stop is the last stop of the trip pattern. */
+  isTerminal: boolean;
+  /** This stop is the first stop of the trip pattern. */
+  isOrigin: boolean;
+  /** Boarding (pickup) is not available at this stop for this entry. */
+  isPickupUnavailable: boolean;
+  /** Alighting (drop-off) is not available at this stop for this entry. */
+  isDropOffUnavailable: boolean;
+}
+
+/**
  * Input signals used to derive a {@link StopServiceState}.
  *
  * Deliberately a narrow structural type (not the full `TimetableQueryMeta`)
