@@ -51,6 +51,16 @@ function StopSearchResultItem({
 }: StopSearchResultItemProps) {
   const info = useInfoLevel(infoLevel);
   // Always show subNames in search results for discoverability.
+  //
+  // We pass DEFAULT_AGENCY_LANG (not the agency-specific lang) on
+  // purpose. `getStopDisplayNames`'s third argument only controls the
+  // sort priority of the alternative names in `subNames`; it does not
+  // affect the resolved primary `name` or the set of names that appear
+  // in `subNames`. Search loads only `Stop[]` via `repo.getAllStops()`
+  // and intentionally never pulls `StopWithMeta` / agencies for every
+  // result, so we cannot call `resolveAgencyLang(agencies, ...)` here.
+  // Doing so would require a parallel batch lookup just to influence
+  // sub-name ordering, which is not worth the cost for a search list.
   const stopNames = getStopDisplayNames(stop, dataLang, DEFAULT_AGENCY_LANG);
 
   return (
