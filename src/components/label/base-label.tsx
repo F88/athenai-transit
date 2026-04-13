@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { cn } from '../../lib/utils';
 
 export type BaseLabelSize = 'xs' | 'sm' | 'md';
@@ -10,6 +11,8 @@ interface BaseLabelProps {
   /** Append "…" when truncated. Only effective with maxLength. @default true */
   ellipsis?: boolean;
   className?: string;
+  /** Inline style for runtime-computed values (e.g. GTFS route_color hex). */
+  style?: CSSProperties;
 }
 
 const sizeClasses: Record<BaseLabelSize, string> = {
@@ -18,19 +21,21 @@ const sizeClasses: Record<BaseLabelSize, string> = {
   md: 'px-1.5 py-0.5 text-[10px]',
 };
 
-/** Compact inline text label primitive. Color is controlled via className. */
+/** Compact inline text label primitive. Color is controlled via className or style. */
 export function BaseLabel({
   value,
   size = 'sm',
   maxLength,
   ellipsis = true,
   className,
+  style,
 }: BaseLabelProps) {
   const truncated = maxLength != null && value.length > maxLength;
   const display = truncated ? value.slice(0, maxLength) + (ellipsis ? '\u2026' : '') : value;
   return (
     <span
       className={cn('shrink-0 rounded font-medium', sizeClasses[size], className)}
+      style={style}
       title={truncated ? value : undefined}
     >
       {display}

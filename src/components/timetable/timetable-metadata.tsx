@@ -6,6 +6,7 @@ import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
 import type { Agency, Route } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
 import { PillButton } from '../button/pill-button';
+import { RouteLabel } from '../label/route-label';
 
 interface TimetableMetadataProps {
   timetableEntries: TimetableEntry[];
@@ -110,6 +111,20 @@ export function TimetableMetadata({
           })}
         </div>
       )}
+      {
+        <div className="flex flex-wrap gap-1">
+          {routeBreakdown.map((item) => (
+            <RouteLabel
+              key={item.route.route_id}
+              route={item.route}
+              count={item.count}
+              dataLang={dataLang}
+              agencies={agencies}
+              size="sm"
+            />
+          ))}
+        </div>
+      }
     </div>
   );
 }

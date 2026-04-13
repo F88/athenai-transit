@@ -9,6 +9,11 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `RouteLabel` (新規、`src/components/label/route-label.tsx`): `BaseLabel` を wrap した display-only のルート表示ラベル。`TimetableMetadata` で `PillButton` の route 内訳行と並べて視認比較するために追加。本命の `BaseBadge` 実装前の試験導入。
+- `BaseLabel` に `style` prop を追加。GTFS の `route_color` のようなランタイム hex 値を inline style で渡せるように (既存 `PillButton` / `RouteBadge` と同じパターン)。
+
 ### Changed
 
 - `MapToggleButton` (地図上の全コントロールボタン) でテキスト選択不可に。`user-select: none` と `-webkit-touch-callout: none` を適用し、iPhone などタッチデバイスでボタン上の文字列が選択状態になる問題を抑止。
