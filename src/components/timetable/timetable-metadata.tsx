@@ -83,7 +83,16 @@ export function TimetableMetadata({
         )}
       </p>
 
-      {/* Routes with their counts */}
+      {/* Routes with their counts.
+       *
+       * Intentionally rendered for every stop, including single-route
+       * stops, even though the previous PillButton row was gated on
+       * `routeBreakdown.length > 1`. RouteCountBadge is read-only and
+       * visually distinct from a filter pill, so the duplication with
+       * the trip count line is acceptable, and consistently surfacing
+       * the route-color chip helps users associate route × count even
+       * when there is only one route at this stop.
+       */}
       <div className="flex flex-wrap gap-1">
         {routeBreakdown.map((item) => (
           <RouteCountBadge

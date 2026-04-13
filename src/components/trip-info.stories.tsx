@@ -237,8 +237,14 @@ export const TimetableEntryAttributesComparison: Story = {
 
 /**
  * Size comparison — `sm` (compact, used in StopSummary popovers) vs
- * `default` (used in DepartureItem / FlatDepartureItem). Labels scale
- * correspondingly via BaseLabelSize.
+ * `default` (used in DepartureItem / FlatDepartureItem).
+ *
+ * The route badge / headsign / agency badge scale with the parent
+ * `size` prop. The `TimetableEntryAttributesLabels` row uses a
+ * fixed `BaseLabelSize='sm'` regardless of the parent variant by
+ * design — these flags are visually subordinate to the main route /
+ * headsign info and should not compete for attention by scaling up.
+ * See the inline comment in `trip-info.tsx` for context.
  */
 export const SizeComparison: Story = {
   args: {

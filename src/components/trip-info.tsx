@@ -181,10 +181,8 @@ export function TripInfo({
       {attributes && (
         <TimetableEntryAttributesLabels
           attributes={attributes}
-          // size={labelSize}
-          // size={'md'}
+          // size: fixed for design reasons — these labels are visually subordinate to the main route/headsign info and should not compete for attention by scaling up to the same size as the route badge.
           size={'sm'}
-          // size={'xs'}
           isDisplayTerminal={true}
           isDisplayOrigin={true}
           isDisplayPickupUnavailable={true}

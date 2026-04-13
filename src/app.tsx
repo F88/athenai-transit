@@ -511,9 +511,15 @@ export default function App() {
         // Capture anchor data before removal (entry won't exist after removeAnchor).
         // Resolve display name from current GTFS so the toast follows
         // the user's current language even though the stored entry
-        // only has a snapshot stopName.
+        // only has a snapshot stopName. We use `lookupAnchorStopMeta`
+        // (full-dataset scan over the anchor set) rather than
+        // `findStopWithMeta` (viewport-only) here because the stop_id
+        // is a persistent anchor reference and may, in some future UI
+        // path, be triggered for an anchor that is not currently in
+        // radiusStops / inBoundStops. See `DEVELOPMENT.md > Stop ID
+        // lookup の選び方` for the rule.
         const anchor = anchors.find((a) => a.stopId === stopId);
-        const meta = findStopWithMeta(stopId);
+        const meta = lookupAnchorStopMeta(stopId);
         const stopName = meta
           ? getStopDisplayNames(
               meta.stop,
@@ -556,7 +562,16 @@ export default function App() {
         }
       }
     },
-    [isStopAnchor, anchors, removeAnchor, addAnchor, findStopWithMeta, dataLang, t],
+    [
+      isStopAnchor,
+      anchors,
+      removeAnchor,
+      addAnchor,
+      findStopWithMeta,
+      lookupAnchorStopMeta,
+      dataLang,
+      t,
+    ],
   );
 
   // Select + pan to a stop from Portal dropdown
