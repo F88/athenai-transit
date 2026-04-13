@@ -1,10 +1,10 @@
 import { resolveAgencyLang } from '../../config/transit-defaults';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
+import type { BaseLabelSize } from '../label/base-label';
 import type { Agency, Route } from '../../types/app/transit';
-import { LabelCountBadge } from '../badge/label-count-badge';
-import type { BaseLabelSize } from './base-label';
+import { LabelCountBadge } from './label-count-badge';
 
-interface RouteLabelProps {
+interface RouteCountBadgeProps {
   route: Route;
   count: number;
   dataLang: readonly string[];
@@ -20,7 +20,13 @@ interface RouteLabelProps {
  * out of the presentation primitive so that `LabelCountBadge` can stay
  * reusable across other domain types (agency, stop, headsign, etc.).
  */
-export function RouteLabel({ route, count, dataLang, agencies, size = 'sm' }: RouteLabelProps) {
+export function RouteCountBadge({
+  route,
+  count,
+  dataLang,
+  agencies,
+  size = 'sm',
+}: RouteCountBadgeProps) {
   const label =
     getRouteDisplayNames(route, dataLang, resolveAgencyLang(agencies, route.agency_id)).resolved
       .name || route.route_id;

@@ -58,7 +58,7 @@ export const TruncatedNoEllipsis: Story = {
  * Use the `style` prop to pass hex values that are only known at
  * runtime (e.g. GTFS `route_color`). This is the same pattern used
  * by `PillButton` and `RouteBadge` for dynamic GTFS colors, and is
- * the path `RouteLabel` uses internally.
+ * the path `RouteCountBadge` uses internally.
  */
 export const InlineStyle: Story = {
   args: {

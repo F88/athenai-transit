@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
 import type { Agency, Route } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
-import { RouteLabel } from '../label/route-label';
+import { RouteCountBadge } from '../badge/route-count-badge';
 
 interface TimetableMetadataProps {
   timetableEntries: TimetableEntry[];
@@ -86,7 +86,7 @@ export function TimetableMetadata({
       {/* Routes with their counts */}
       <div className="flex flex-wrap gap-1">
         {routeBreakdown.map((item) => (
-          <RouteLabel
+          <RouteCountBadge
             key={item.route.route_id}
             route={item.route}
             count={item.count}

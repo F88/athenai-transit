@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { busRoute, busRoute2, noColorRoute, subwayRoute, tramRoute } from '../../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../../stories/lang-comparison';
-import { RouteLabel } from './route-label';
+import { RouteCountBadge } from './route-count-badge';
 
 /**
  * A route with a very long English translation, used to verify layout
@@ -28,8 +28,8 @@ const longNameRoute = {
 } as const;
 
 const meta = {
-  title: 'Label/RouteLabel',
-  component: RouteLabel,
+  title: 'Badge/RouteCountBadge',
+  component: RouteCountBadge,
   args: {
     route: busRoute,
     count: 42,
@@ -41,7 +41,7 @@ const meta = {
     count: { control: 'number' },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
   },
-} satisfies Meta<typeof RouteLabel>;
+} satisfies Meta<typeof RouteCountBadge>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -123,21 +123,21 @@ export const CountThousands: Story = {
 export const SizeComparison: Story = {
   render: (args) => (
     <div className="flex items-center gap-2">
-      <RouteLabel
+      <RouteCountBadge
         route={args.route}
         count={args.count}
         dataLang={args.dataLang}
         agencies={args.agencies}
         size="xs"
       />
-      <RouteLabel
+      <RouteCountBadge
         route={args.route}
         count={args.count}
         dataLang={args.dataLang}
         agencies={args.agencies}
         size="sm"
       />
-      <RouteLabel
+      <RouteCountBadge
         route={args.route}
         count={args.count}
         dataLang={args.dataLang}
@@ -156,7 +156,7 @@ export const LangComparison: Story = {
       {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
         <div key={label} className="flex items-center gap-2">
           <span className="w-20 text-[10px] text-gray-400">{label}</span>
-          <RouteLabel
+          <RouteCountBadge
             route={args.route}
             count={args.count}
             dataLang={dataLang}
@@ -186,7 +186,7 @@ export const KitchenSink: Story = {
         {samples.map(({ label, route, count }) => (
           <div key={label} className="flex items-center gap-2">
             <span className="w-28 text-xs text-gray-500">{label}</span>
-            <RouteLabel
+            <RouteCountBadge
               route={route}
               count={count}
               dataLang={args.dataLang}
