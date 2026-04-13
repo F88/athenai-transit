@@ -122,7 +122,7 @@ interface TripPatternJson {
 
 消費側 (WebApp) が effective headsign を決定する想定: `effectiveHeadsign = stops[i].sh ?? h`
 
-翻訳参照の想定: `sh` が存在する場合は `translations.stop_headsigns[sh]`、存在しない場合は `translations.headsigns[h]` を使用する。
+翻訳参照の想定: `sh` が存在する場合は `translations.stop_headsigns[sh]`、存在しない場合は `translations.trip_headsigns[h]` を使用する。
 
 > **Note**: 消費側の headsign 解決ロジックは未実装。現時点では Pipeline がデータを出力するのみ。
 
