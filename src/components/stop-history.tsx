@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import type { InfoLevel } from '../types/app/settings';
 import type { Stop } from '../types/app/transit';
 import type { StopHistoryEntry } from '../domain/transit/stop-history';
+import { resolveAgencyLang } from '../config/transit-defaults';
+import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypesEmoji } from '../utils/route-type-emoji';
 import { History } from 'lucide-react';
@@ -16,6 +18,8 @@ interface StopHistoryProps {
   history: StopHistoryEntry[];
   selectedStopId: string | null;
   infoLevel: InfoLevel;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
   onSelect: (stop: Stop, routeTypes: StopHistoryEntry['routeTypes']) => void;
 }
 
@@ -36,7 +40,13 @@ interface StopHistoryProps {
  * @param infoLevel - Controls display detail.
  * @param onSelect - Called when a history entry is chosen.
  */
-export function StopHistory({ history, selectedStopId, infoLevel, onSelect }: StopHistoryProps) {
+export function StopHistory({
+  history,
+  selectedStopId,
+  infoLevel,
+  dataLang,
+  onSelect,
+}: StopHistoryProps) {
   const { t } = useTranslation();
   const il = useInfoLevel(infoLevel);
   const [open, setOpen] = useState(false);
@@ -85,7 +95,16 @@ export function StopHistory({ history, selectedStopId, infoLevel, onSelect }: St
             {selectedEntry ? (
               <>
                 <span className="text-base">{routeTypesEmoji(selectedEntry.routeTypes)}</span>
-                <span className="truncate">{selectedEntry.stopWithMeta.stop.stop_name}</span>
+                <span className="truncate">
+                  {getStopDisplayNames(
+                    selectedEntry.stopWithMeta.stop,
+                    dataLang,
+                    resolveAgencyLang(
+                      selectedEntry.stopWithMeta.agencies,
+                      selectedEntry.stopWithMeta.stop.agency_id,
+                    ),
+                  ).name || selectedEntry.stopWithMeta.stop.stop_name}
+                </span>
               </>
             ) : (
               <History size={14} strokeWidth={3} className="inline text-sky-400" />
@@ -97,7 +116,10 @@ export function StopHistory({ history, selectedStopId, infoLevel, onSelect }: St
           className="z-1002 max-h-[40dvh] min-w-48 border-none bg-white/80 text-black backdrop-blur-sm dark:bg-black/80 dark:text-white"
         >
           {history.map((entry) => {
-            const { stop } = entry.stopWithMeta;
+            const { stop, agencies } = entry.stopWithMeta;
+            const displayName =
+              getStopDisplayNames(stop, dataLang, resolveAgencyLang(agencies, stop.agency_id))
+                .name || stop.stop_name;
             return (
               <SelectItem
                 key={stop.stop_id}
@@ -105,7 +127,7 @@ export function StopHistory({ history, selectedStopId, infoLevel, onSelect }: St
                 className="overflow-hidden focus:bg-black/10 focus:text-black dark:focus:bg-white/20 dark:focus:text-white"
               >
                 <span className="shrink-0 text-base">{routeTypesEmoji(entry.routeTypes)}</span>
-                <span className="max-w-[60dvw] truncate">{stop.stop_name}</span>
+                <span className="max-w-[60dvw] truncate">{displayName}</span>
                 {il.isVerboseEnabled && (
                   <Badge variant="secondary" className="ml-1 text-[10px]">
                     {stop.stop_id}

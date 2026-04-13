@@ -117,6 +117,7 @@ export function MapOverlayPanels({
           history={stopHistory}
           selectedStopId={selectedStopId}
           infoLevel={infoLevel}
+          dataLang={dataLang}
           onSelect={onHistorySelect}
         />
         <Portals anchors={anchors} infoLevel={infoLevel} onSelect={onPortalSelect} />
