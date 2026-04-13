@@ -27,7 +27,7 @@ export function buildTranslationsV2(
   railways: OdptRailway[],
   stations: OdptStation[],
 ): TranslationsJson {
-  const headsigns: Record<string, Record<string, string>> = {};
+  const tripHeadsigns: Record<string, Record<string, string>> = {};
 
   // Build station -> railway lookup.
   // A station shared by multiple railways maps to all of them (1:N).
@@ -67,7 +67,7 @@ export function buildTranslationsV2(
         tt['odpt:railDirection'],
         rw.stationOrder,
       );
-      if (headsigns[headsignJa]) {
+      if (tripHeadsigns[headsignJa]) {
         continue;
       }
       // Find title for the destination station
@@ -87,7 +87,7 @@ export function buildTranslationsV2(
       if (title['zh-Hans']) {
         names['zh-Hans'] = title['zh-Hans'];
       }
-      headsigns[headsignJa] = names;
+      tripHeadsigns[headsignJa] = names;
     }
   }
 
@@ -106,20 +106,27 @@ export function buildTranslationsV2(
     stopNames[`${prefix}:${shortId}`] = names;
   }
 
-  // route_names: railway translations keyed by prefixed route_id
-  const routeNames: Record<string, Record<string, string>> = {};
+  // route_long_names: railway translations keyed by prefixed route_id.
+  // ODPT railway titles are conceptually long names — they describe the
+  // line (e.g. "Yurikamome", "Tsukuba Express"), not a short identifier.
+  const routeLongNames: Record<string, Record<string, string>> = {};
   for (const rw of railways) {
     const title = rw['odpt:railwayTitle'];
-    routeNames[`${prefix}:${rw['odpt:lineCode']}`] = { ja: title.ja, en: title.en };
+    routeLongNames[`${prefix}:${rw['odpt:lineCode']}`] = { ja: title.ja, en: title.en };
   }
+
+  // route_short_names: ODPT does not provide a separate short_name
+  // translation; emit empty so the schema is satisfied.
+  const routeShortNames: Record<string, Record<string, string>> = {};
 
   // agency_names: ODPT has no agency name translations — managed on
   // the App side via agency-attributes.ts.
   return {
-    headsigns,
-    stop_headsigns: {},
-    stop_names: stopNames,
-    route_names: routeNames,
     agency_names: {},
+    route_long_names: routeLongNames,
+    route_short_names: routeShortNames,
+    stop_names: stopNames,
+    trip_headsigns: tripHeadsigns,
+    stop_headsigns: {},
   };
 }

@@ -380,7 +380,7 @@ export interface TripPatternJson {
      *
      * For translation lookup, when `sh` is present use
      * `translations.stop_headsigns[sh]`; otherwise use
-     * `translations.headsigns[h]`.
+     * `translations.trip_headsigns[h]`.
      *
      * Omitted when the source does not provide `stop_headsign`
      * or when the value is NULL.

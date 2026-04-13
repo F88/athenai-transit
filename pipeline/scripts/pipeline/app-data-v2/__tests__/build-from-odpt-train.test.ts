@@ -169,7 +169,7 @@ describe('ODPT DataBundle assembly', () => {
     expect(calendar.services).toHaveLength(1);
     expect(Object.keys(tripPatterns).length).toBeGreaterThanOrEqual(2);
     expect(Object.keys(timetable).length).toBeGreaterThanOrEqual(1);
-    expect(Object.keys(translations.headsigns).length).toBeGreaterThanOrEqual(1);
+    expect(Object.keys(translations.trip_headsigns).length).toBeGreaterThanOrEqual(1);
 
     // ODPT: lookup is empty, pt/dt are absent
     expect(bundle.lookup.data).toEqual({});

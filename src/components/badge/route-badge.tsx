@@ -59,7 +59,7 @@ export function RouteBadge({
   disableVerbose = false,
   className,
 }: RouteBadgeProps) {
-  const routeNames = getRouteDisplayNames(route, dataLang, agencyLangs);
+  const routeNames = getRouteDisplayNames(route, dataLang, agencyLangs, 'short');
   const bg = route.route_color ? `#${route.route_color}` : undefined;
   const fg = route.route_text_color ? `#${route.route_text_color}` : undefined;
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;

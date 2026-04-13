@@ -82,11 +82,12 @@ function createTestBundle(overrides?: Partial<DataBundle>): DataBundle {
     translations: {
       v: 1,
       data: {
-        headsigns: { 'To A': { en: 'To A' }, Empty: { en: '' } },
-        stop_headsigns: { 'Stop A': { en: 'Stop A' } },
-        stop_names: { 'stop:a': { en: 'Stop A' }, 'stop:b': { en: '' } },
-        route_names: { 'route:1': { en: 'Route 1' } },
         agency_names: { 'agency:1': { en: 'Agency One' } },
+        route_long_names: { 'route:1': { en: 'Route 1' } },
+        route_short_names: {},
+        stop_names: { 'stop:a': { en: 'Stop A' }, 'stop:b': { en: '' } },
+        trip_headsigns: { 'To A': { en: 'To A' }, Empty: { en: '' } },
+        stop_headsigns: { 'Stop A': { en: 'Stop A' } },
       },
     },
     lookup: { v: 2, data: { routeUrls: {}, stopDescs: {}, routeDescs: {} } },
@@ -102,9 +103,19 @@ describe('analyzeFieldCounts', () => {
     expect(counts).toContainEqual({ field: 'routes.l', nonEmpty: 2, empty: 0 });
     expect(counts).toContainEqual({ field: 'tripPatterns.h', nonEmpty: 1, empty: 1 });
     expect(counts).toContainEqual({
-      field: 'translations.headsigns',
+      field: 'translations.trip_headsigns',
       nonEmpty: 1,
       empty: 1,
+    });
+    expect(counts).toContainEqual({
+      field: 'translations.route_long_names',
+      nonEmpty: 1,
+      empty: 0,
+    });
+    expect(counts).toContainEqual({
+      field: 'translations.route_short_names',
+      nonEmpty: 0,
+      empty: 0,
     });
     expect(counts).toContainEqual({ field: 'trips.trip_short_name', nonEmpty: 0, empty: 0 });
     expect(counts).toContainEqual({ field: 'stops.tts_stop_name', nonEmpty: 0, empty: 0 });
@@ -185,7 +196,8 @@ describe('formatSourceAnalysis', () => {
 
     expect(output).toContain('=== test ===');
     expect(output).toContain('routes.s: nonEmpty=1, empty=1');
-    expect(output).toContain('translations.route_names: nonEmpty=1, empty=0');
+    expect(output).toContain('translations.route_long_names: nonEmpty=1, empty=0');
+    expect(output).toContain('translations.route_short_names: nonEmpty=0, empty=0');
     expect(output).toContain('trips.jp_trip_desc_symbol: nonEmpty=0, empty=0');
   });
 });

@@ -113,7 +113,7 @@ function buildSourceDataBundle(source: OdptTrainSource): void {
   console.log(`  feed-info: ${feedInfo.pn} (v${feedInfo.v})`);
 
   const translations = buildTranslationsV2(prefix, timetables, railways, stations);
-  console.log(`  ${Object.keys(translations.headsigns).length} headsign translations`);
+  console.log(`  ${Object.keys(translations.trip_headsigns).length} trip headsign translations`);
 
   const { tripPatterns, timetable } = buildTripPatternsAndTimetableFromOdpt(
     prefix,

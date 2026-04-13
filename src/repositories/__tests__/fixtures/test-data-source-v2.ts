@@ -441,14 +441,12 @@ export function createFixtureV2(): SourceDataV2 {
     translations: {
       v: 1,
       data: {
-        headsigns: {
-          'Oji-eki via All Stops': { en: 'Oji Station via All Stops' },
+        agency_names: {
+          'test:agency': { ja: 'テスト事業者', en: 'Test Agency' },
+          'test:partner': { ja: '共同バス', en: 'Partner Bus' },
         },
-        stop_headsigns: {
-          'Oji-eki via Park': { en: 'Oji Station via Park' },
-          'Oji-eki': { en: 'Oji Station' },
-          'Oji-eki via All Stops': { en: 'Oji Station via All Stops' },
-        },
+        route_long_names: {},
+        route_short_names: {},
         stop_names: {
           sub_01: { ja: '西巣鴨', en: 'Nishi-sugamo' },
           sub_02: { ja: '巣鴨新田', en: 'Sugamo-shinden' },
@@ -465,10 +463,13 @@ export function createFixtureV2(): SourceDataV2 {
           stop_closed: { ja: '休止停留所', en: 'Closed Stop' },
           sta_parent: { ja: 'テスト駅', en: 'Test Station' },
         },
-        route_names: {},
-        agency_names: {
-          'test:agency': { ja: 'テスト事業者', en: 'Test Agency' },
-          'test:partner': { ja: '共同バス', en: 'Partner Bus' },
+        trip_headsigns: {
+          'Oji-eki via All Stops': { en: 'Oji Station via All Stops' },
+        },
+        stop_headsigns: {
+          'Oji-eki via Park': { en: 'Oji Station via Park' },
+          'Oji-eki': { en: 'Oji Station' },
+          'Oji-eki via All Stops': { en: 'Oji Station via All Stops' },
         },
       },
     },

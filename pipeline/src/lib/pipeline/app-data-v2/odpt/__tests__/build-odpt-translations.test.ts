@@ -40,7 +40,7 @@ function makeRailway(
 }
 
 describe('buildTranslationsV2', () => {
-  it('generates headsign, stop_names, route_names, agency translations', () => {
+  it('generates headsign, stop_names, route_long_names, agency translations', () => {
     const orders: OdptStationOrder[] = [
       makeOrder(1, 'odpt.Station:Test.A', 'A駅', 'Station A'),
       makeOrder(2, 'odpt.Station:Test.B', 'B駅', 'Station B'),
@@ -75,11 +75,13 @@ describe('buildTranslationsV2', () => {
     const result = buildTranslationsV2('test', timetables, [railway], stations);
 
     // Headsign: derived from destinationStation
-    expect(result.headsigns['B駅']).toEqual({ ja: 'B駅', en: 'Station B' });
+    expect(result.trip_headsigns['B駅']).toEqual({ ja: 'B駅', en: 'Station B' });
     // Stop names
     expect(result.stop_names['test:A']).toEqual({ ja: 'A駅', en: 'Station A' });
-    // Route names
-    expect(result.route_names['test:U']).toEqual({ ja: 'テスト線', en: 'Test Line' });
+    // Route long names
+    expect(result.route_long_names['test:U']).toEqual({ ja: 'テスト線', en: 'Test Line' });
+    // Route short names: ODPT does not provide short_name translations.
+    expect(result.route_short_names).toEqual({});
     // Agency names: ODPT has no agency translations (managed on App side).
     expect(result.agency_names).toEqual({});
   });
@@ -122,7 +124,7 @@ describe('buildTranslationsV2', () => {
     ];
 
     const result = buildTranslationsV2('test', [], [railway], stations);
-    expect(result.headsigns).toEqual({});
+    expect(result.trip_headsigns).toEqual({});
   });
 
   it('produces multiple headsigns from multiple destinations', () => {
@@ -154,9 +156,9 @@ describe('buildTranslationsV2', () => {
     ];
 
     const result = buildTranslationsV2('test', timetables, [railway], stations);
-    expect(result.headsigns['B駅']).toEqual({ ja: 'B駅', en: 'Station B' });
-    expect(result.headsigns['C駅']).toEqual({ ja: 'C駅', en: 'Station C' });
-    expect(Object.keys(result.headsigns)).toHaveLength(2);
+    expect(result.trip_headsigns['B駅']).toEqual({ ja: 'B駅', en: 'Station B' });
+    expect(result.trip_headsigns['C駅']).toEqual({ ja: 'C駅', en: 'Station C' });
+    expect(Object.keys(result.trip_headsigns)).toHaveLength(2);
   });
 
   it('stop_headsigns is always empty for ODPT', () => {
@@ -220,7 +222,7 @@ describe('buildTranslationsV2', () => {
     ];
 
     const result = buildTranslationsV2('test', timetables, [railway], []);
-    expect(Object.keys(result.headsigns)).toHaveLength(1);
-    expect(result.headsigns['B駅']).toEqual({ ja: 'B駅', en: 'Station B' });
+    expect(Object.keys(result.trip_headsigns)).toHaveLength(1);
+    expect(result.trip_headsigns['B駅']).toEqual({ ja: 'B駅', en: 'Station B' });
   });
 });
