@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.04.13]
+
 ### Added
 
 - `RouteCountBadge` (新規、`src/components/badge/route-count-badge.tsx`): route の display name と `route_color` を `LabelCountBadge` に橋渡しする domain adapter。`TimetableMetadata` の route 内訳表示を PillButton から置き換え。
@@ -33,6 +35,7 @@ and this project adheres to [CalVer](https://calver.org/).
     - 新フィールド `route_short_names` を追加 (`route_short_name` / `route_long_name` を first-class な対等フィールドとして扱う)
     - `headsigns` → `trip_headsigns` (`stop_headsigns` と対称にし、何の翻訳か曖昧な命名を解消)
     - `public/data-v2/*/data.json` の再生成は別途データ更新フローで実施 (本 PR のスコープ外)
+    - pipeline ドキュメント (`pipeline/docs/V2_APP_DATA.md`, `pipeline/scripts/dev/README.md`) のフィールド名参照を新スキーマに追随。
 
 ## [2026.04.12]
 
