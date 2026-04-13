@@ -213,14 +213,16 @@ export interface TransitRepository {
   getFullDayTimetableEntries(stopId: string, dateTime: Date): Promise<TimetableResult>;
 
   /**
-   * Returns a single stop with metadata by its GTFS stop_id, scanning
-   * the **entire loaded dataset** (not just the current viewport).
+   * Returns a single stop with metadata by its GTFS stop_id, against
+   * the **full loaded dataset** (not just the current viewport).
    *
-   * Async single-id variant of {@link getStopMetaByIds}. Use this for
-   * one-off lookups where the stop_id is known but the stop may be
-   * anywhere in the dataset — typically URL-based stop selection
-   * (`?stop=<id>`) where the user can paste in a stop_id from any
-   * source.
+   * Async single-id variant of {@link getStopMetaByIds}. Implemented
+   * as an O(1) indexed lookup over a pre-built id → StopWithMeta
+   * map; "full dataset" describes the search scope, not a per-call
+   * scan cost. Use this for one-off lookups where the stop_id is
+   * known but the stop may be anywhere in the dataset — typically
+   * URL-based stop selection (`?stop=<id>`) where the user can paste
+   * in a stop_id from any source.
    *
    * For batched lookups (anchor refresh, route stops, etc.) use
    * {@link getStopMetaByIds} instead — it is synchronous and avoids
@@ -241,8 +243,15 @@ export interface TransitRepository {
   getStopMetaById(stopId: string): Promise<Result<StopWithMeta>>;
 
   /**
-   * Returns StopWithMeta for each of the given stop IDs by scanning
-   * the **entire loaded dataset**, not just the current viewport.
+   * Returns StopWithMeta for each of the given stop IDs against the
+   * **full loaded dataset**, not just the current viewport.
+   *
+   * "Full dataset" describes the search scope (any stop loaded into
+   * the repository, regardless of where it sits geographically), not
+   * a per-call scan cost. The v2 in-memory repository implements
+   * this as a series of indexed lookups against a pre-built
+   * `stop_id → StopWithMeta` map, so the actual cost is
+   * O(`stopIds.size`) — independent of how many stops are loaded.
    *
    * ### When to use this method (vs. local viewport helpers)
    *
@@ -271,7 +280,8 @@ export interface TransitRepository {
    * ### Behavior
    *
    * - Synchronous (the in-memory v2 repository keeps all stops
-   *   indexed by ID, so lookup is O(N) where N = `stopIds.size`).
+   *   indexed by ID, so each lookup is O(1) and the whole call is
+   *   O(`stopIds.size`)).
    * - Unknown stop IDs are silently skipped — the result length may
    *   be smaller than `stopIds.size`.
    * - The returned array preserves no particular order; callers that

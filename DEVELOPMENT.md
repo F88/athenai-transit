@@ -103,7 +103,7 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 
 ### `repo.getStopMetaByIds(stopIds: Set<string>): StopWithMeta[]`
 
-**全データセットを scan** する同期 API (`src/repositories/transit-repository.ts`)。stop_id の地理的位置に依存しません。
+**全データセットを対象**にする同期 API (`src/repositories/transit-repository.ts`)。stop_id の地理的位置に依存しません。「全データセット」は検索のスコープを意味し、データセット全体を per-call で走査するという意味ではありません。v2 リポジトリの実装は事前構築済みの `stop_id → StopWithMeta` map に対する indexed lookup なので、実コストは渡した stop_id の数に比例します (各 lookup は O(1)、全体で O(`stopIds.size`))。
 
 以下の用途には**必ずこれを使う**:
 
@@ -113,7 +113,7 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 - URL `?stop=` パラメータからの解決
 - localStorage / 検索結果など、**永続化された / ユーザー操作の起点でない stop_id 全般**
 
-呼び出しコスト: 同期、O(N) where N = `stopIds.size`。過剰最適化を心配する必要はないので、迷ったらこちらを選ぶ。
+呼び出しコスト: 同期、O(`stopIds.size`)。過剰最適化を心配する必要はないので、迷ったらこちらを選ぶ。
 
 ### `findStopWithMeta(stopId)` (app.tsx 内のローカル callback)
 

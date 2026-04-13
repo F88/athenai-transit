@@ -206,18 +206,21 @@ export default function App() {
   //
   // Use this ONLY for stops that are by definition near the user at
   // the moment of the call:
-  //   - the just-clicked map marker
-  //   - a stop reached via the URL `?stop=` parameter (focus then load)
+  //   - the just-clicked map marker (radiusStops by construction)
   //   - the currently selected stop being re-resolved during pan
+  //   - any other case where the caller already has the stop on screen
   //
-  // Do NOT use this for persistent / long-lived stop IDs such as
-  // anchors (bookmarks), history entries, or stops belonging to a
-  // selected route. Those IDs may point to stops far outside the
-  // viewport, so the lookup will silently return null and the caller
-  // will fall back to a stale snapshot. For those cases call
-  // `repo.getStopMetaByIds(...)` (full-dataset scan) instead — the
-  // anchor display lookup below (`anchorStopMetaMap`) is the
-  // canonical example.
+  // Do NOT use this for persistent / long-lived / arbitrary stop IDs
+  // such as anchors (bookmarks), history entries, stops belonging to
+  // a selected route, or a `stop_id` from the URL `?stop=` parameter
+  // — `?stop=` is resolved via `repo.getStopMetaById(stopId)` in the
+  // effect below precisely because it can target a stop anywhere in
+  // the dataset, not just inside the viewport. Those IDs may point
+  // to stops far outside the viewport, so this lookup will silently
+  // return null and the caller will fall back to a stale snapshot.
+  // For those cases call `repo.getStopMetaByIds(...)` (full-dataset
+  // indexed lookup) instead — the anchor display lookup below
+  // (`anchorStopMetaMap`) is the canonical example.
   //
   // See `DEVELOPMENT.md > Stop ID lookup の選び方` for the rule and
   // historical context (route stops and anchor i18n both regressed
