@@ -90,7 +90,7 @@ export function PillButton({
       type="button"
       disabled={disabled}
       className={cn(
-        'inline-flex shrink-0 items-center rounded-full font-medium whitespace-nowrap transition-colors',
+        'inline-flex shrink-0 items-center rounded-full font-medium whitespace-nowrap transition-colors select-none [-webkit-touch-callout:none]',
         sizeVariants[size] ?? sizeVariants.default,
         active
           ? activeBg

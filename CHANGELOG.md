@@ -12,6 +12,7 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Changed
 
 - `MapToggleButton` (地図上の全コントロールボタン) でテキスト選択不可に。`user-select: none` と `-webkit-touch-callout: none` を適用し、iPhone などタッチデバイスでボタン上の文字列が選択状態になる問題を抑止。
+- `PillButton` (BottomSheet の View/Operating/Route type/Agency フィルタ、stop 詳細の timetable フィルタ、route 内訳表示) でもテキスト選択不可に。同じく `user-select: none` と `-webkit-touch-callout: none` を適用。
 
 ## [2026.04.12]
 
