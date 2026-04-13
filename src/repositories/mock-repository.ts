@@ -108,7 +108,14 @@ for (const agency of [AGENCY, AGENCY_SORA]) {
 const AGENCY_MAP = new Map<string, Agency>([AGENCY, AGENCY_SORA].map((a) => [a.agency_id, a]));
 
 const STOP_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
-  sta_central: { ko: '아오바중앙역', 'zh-Hans': '青叶中央站', 'zh-Hant': '青葉中央站' },
+  sta_central: {
+    ko: '아오바중앙역',
+    'zh-Hans': '青叶中央站',
+    'zh-Hant': '青葉中央站',
+    de: 'Aoba-Chūō Bahnhof',
+    es: 'Estación Aoba-Chūō',
+    fr: "Gare d'Aoba-Chūō",
+  },
   sta_central_s: {
     ko: '아오바중앙역 남쪽 출구',
     'zh-Hans': '青叶中央站南口',

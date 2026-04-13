@@ -13,11 +13,20 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - `RouteCountBadge` (新規、`src/components/badge/route-count-badge.tsx`): route の display name と `route_color` を `LabelCountBadge` に橋渡しする domain adapter。`TimetableMetadata` の route 内訳表示を PillButton から置き換え。
 - `BaseLabel` に `style` prop を追加。GTFS の `route_color` のようなランタイム hex 値を inline style で渡せるように (既存 `PillButton` / `RouteBadge` と同じパターン)。
+- `DEVELOPMENT.md` に「Stop ID lookup の選び方」セクションを追加。永続/長寿命の `stop_id` (anchor / route stops / `?stop=` 等) は `repo.getStopMetaByIds` を使い、viewport 制限のある `findStopWithMeta` を使わない判断ルールを記述。route stops と Portal の i18n 対応で同種の regression を起こした経緯も含む。
+- MockRepository の `sta_central` に `de` / `es` / `fr` の翻訳を追加し、`SUPPORTED_LANGS` 全 9 言語をカバー。anchor 翻訳の言語切替挙動を mock 上で検証可能に。
+
+### Fixed
+
+- StopHistory ドロップダウンが `stopWithMeta.stop.stop_name` (feed_lang 由来) を直接表示していた問題を修正。`getStopDisplayNames(stop, dataLang, resolveAgencyLang(agencies, stop.agency_id))` で現在表示言語に従って解決。履歴のスナップショットには既に `stop_names` 翻訳マップが含まれているため、表示層のみの修正。
+- Portal (アンカー) ドロップダウンの表示が常に保存時の `stopName` snapshot を使っていた問題を修正。`repo.getStopMetaByIds` で全データセットから fresh な `StopWithMeta` を取得し、`getStopDisplayNames` で現在表示言語に解決。viewport 外のアンカーも翻訳されるようになり、新たに追加された GTFS 翻訳にも自動追従する (anchor refresh 不要)。`AnchorEntry` のスキーマ変更なし。
+- アンカー追加/削除時の toast メッセージ (`anchor.added` / `anchor.removed`) も翻訳解決に切り替え。表示言語に応じた stop 名を表示。
 
 ### Changed
 
 - `MapToggleButton` (地図上の全コントロールボタン) でテキスト選択不可に。`user-select: none` と `-webkit-touch-callout: none` を適用し、iPhone などタッチデバイスでボタン上の文字列が選択状態になる問題を抑止。
 - `PillButton` (BottomSheet の View/Operating/Route type/Agency フィルタ、stop 詳細の timetable フィルタ、route 内訳表示) でもテキスト選択不可に。同じく `user-select: none` と `-webkit-touch-callout: none` を適用。
+- `TransitRepository.getStopMetaByIds` / `getStopMetaById` の TSDoc を強化し、「いつ使うべきか」「viewport 制限のある `findStopWithMeta` との違い」「過去の regression の経緯」を明記。`use-route-stops.ts` と `app.tsx` の `findStopWithMeta` 定義箇所にも対応するコメントと DEVELOPMENT.md への参照を追加。
 
 ## [2026.04.12]
 
