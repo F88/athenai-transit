@@ -70,16 +70,6 @@ export function FlatDepartureItem({
                   value={`${entry.patternPosition.stopIndex + 1} / ${entry.patternPosition.totalStops} stops`}
                   className="bg-gray-500 whitespace-nowrap text-white"
                 />
-                {/* <LabelCountBadge
-                  size="sm"
-                  label={`${String(entry.patternPosition.totalStops)} stops`}
-                  count={entry.patternPosition.stopIndex + 1}
-                  labelBg="#666"
-                  labelFg="#fff"
-                  countBg="#eee"
-                  countFg="#333"
-                  frameColor="#666"
-                /> */}
               </div>
               <div className="mb-0.5 flex justify-end gap-0.5 whitespace-nowrap">
                 <BaseLabel
@@ -131,30 +121,7 @@ export function FlatDepartureItem({
             dotColor={bgColor ? `${bgColor}50` : undefined}
             currentColor={bgColor}
           />
-          {/* <TripPositionIndicator
-            stopIndex={entry.patternPosition.stopIndex}
-            totalStops={entry.patternPosition.totalStops}
-            // size="md"
-            size="sm"
-            // size="xs"
-            // showTrack={false}
-            infoLevel={infoLevel}
-            trackColor={`#${route.route_color}20`}
-            dotColor={`#${route.route_color}50`}
-            currentColor={`#${route.route_color}`}
-          /> */}
-          {/* <TripPositionIndicator
-            stopIndex={entry.patternPosition.stopIndex}
-            totalStops={entry.patternPosition.totalStops}
-            // size="md"
-            size="xs"
-            // size="xs"
-            // showTrack={false}
-            infoLevel={infoLevel}
-            trackColor={`#${route.route_color}20`}
-            dotColor={`#${route.route_color}50`}
-            currentColor={`#${route.route_color}`}
-          /> */}
+
           {showVerbose && (
             <>
               <div className="text-[10px] text-gray-500">

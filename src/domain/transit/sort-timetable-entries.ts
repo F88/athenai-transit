@@ -1,4 +1,5 @@
 import type { ContextualTimetableEntry, TimetableEntry } from '../../types/app/transit-composed';
+import { minutesToDate } from './calendar-utils';
 
 /**
  * Sorts {@link TimetableEntry} items by the following keys:
@@ -41,8 +42,7 @@ export function sortTimetableEntriesByDepartureTime<T extends TimetableEntry>(en
 /**
  * Sorts {@link ContextualTimetableEntry} items by the following keys:
  *
- * 1. absolute departure time ascending
- *    (= `serviceDate.getTime() + departureMinutes * 60_000`).
+ * 1. absolute departure time ascending (via {@link minutesToDate}).
  *    Simple `departureMinutes` comparison is insufficient because overnight
  *    entries from the previous service day (e.g., prevDay + 1900 min) must
  *    interleave correctly with today's entries (e.g., today + 400 min).
@@ -70,6 +70,16 @@ export function sortTimetableEntriesByDepartureTime<T extends TimetableEntry>(en
  * sorted correctly. The ~48-hour figure above is a use-case limit, not
  * a function limit.
  *
+ * ### DST correctness
+ *
+ * `absMs` goes through `minutesToDate` rather than adding
+ * `departureMinutes * 60_000` directly to `serviceDate.getTime()`.
+ * Direct ms arithmetic ignores DST jumps: on a spring-forward day in
+ * a DST-using timezone (e.g. Europe/Berlin, Europe/Rome for vagfr /
+ * actvnav feeds), `02:30 local + N min` differs by one hour from
+ * `midnight UTC + (150 + N) * 60_000 ms`. `minutesToDate` uses
+ * `setHours` which is DST-aware, preserving wall-clock semantics.
+ *
  * ### Performance
  *
  * Pre-computes the absolute time once per entry (O(n)) and sorts by the
@@ -83,10 +93,13 @@ export function sortTimetableEntriesChronologically<T extends ContextualTimetabl
   entries: T[],
 ): T[] {
   // Pre-compute absolute time per entry (once, not per comparison).
-  // Avoids `new Date(...)` allocation inside the sort comparator.
+  // Uses `minutesToDate` to stay DST-aware: direct `+ minutes * 60_000`
+  // arithmetic would diverge on spring-forward / fall-back days in
+  // DST-using timezones (see the "DST correctness" section above).
+  // The Date allocation cost is paid O(n) times, not O(n log n).
   const withTime = entries.map((entry) => ({
     entry,
-    absMs: entry.serviceDate.getTime() + entry.schedule.departureMinutes * 60_000,
+    absMs: minutesToDate(entry.serviceDate, entry.schedule.departureMinutes).getTime(),
   }));
   withTime.sort((a, b) => {
     // 1. absolute departure time ascending
