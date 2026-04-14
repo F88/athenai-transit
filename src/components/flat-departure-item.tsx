@@ -125,7 +125,7 @@ export function FlatDepartureItem({
           {showVerbose && (
             <>
               <div className="text-[10px] text-gray-500">
-                {entry.insights?.remainingMinutes}/ {entry.insights?.totalMinutes}
+                {entry.insights?.remainingMinutes ?? '-'} / {entry.insights?.totalMinutes ?? '-'}
               </div>
               {/* <div className="text-[10px] text-gray-500">{entry.insights?.freq} trips</div> */}
             </>
