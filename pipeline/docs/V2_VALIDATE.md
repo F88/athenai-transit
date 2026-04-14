@@ -86,7 +86,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 | チェック                                                                                                                                 | レベル |
 | ---------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `bundle_version` = 2                                                                                                                     | error  |
+| `bundle_version` = 3                                                                                                                     | error  |
 | `kind` = "data"                                                                                                                          | error  |
 | 9セクション全て存在 (stops, routes, agency, calendar, feedInfo, timetable, tripPatterns, translations, lookup)                           | error  |
 | 各セクションの `v` が期待値 (stops=2, routes=2, agency=1, calendar=1, feedInfo=1, timetable=2, tripPatterns=2, translations=1, lookup=2) | error  |
@@ -118,7 +118,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 | チェック                         | レベル |
 | -------------------------------- | ------ |
-| `bundle_version` = 2             | error  |
+| `bundle_version` = 3             | error  |
 | `kind` = "shapes"                | error  |
 | `shapes.v` = 2                   | error  |
 | `shapes.data` が non-null object | error  |
@@ -139,7 +139,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 | チェック                                  | レベル |
 | ----------------------------------------- | ------ |
-| `bundle_version` = 2                      | error  |
+| `bundle_version` = 3                      | error  |
 | `kind` = "insights"                       | error  |
 | 必須セクション `serviceGroups` が存在する | error  |
 | `serviceGroups.v` = 1                     | error  |
@@ -180,7 +180,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
   minkuru:
     [DataBundle]
-      Structure:     OK (bundle_version=2, kind=data, 9 sections)
+      Structure:     OK (bundle_version = 3, kind=data, 9 sections)
       Sections:
         stops:           3695 stops, OK
         routes:          134 routes, OK
@@ -193,7 +193,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
       shapes:        134 routes, 267 polylines, 18340 points, OK
   kobus:
     [DataBundle]
-      Structure:     OK (bundle_version=2, kind=data, 9 sections)
+      Structure:     OK (bundle_version = 3, kind=data, 9 sections)
       Sections:
         stops:           2100 stops, OK
         routes:          89 routes, OK
@@ -258,7 +258,7 @@ Done in 12ms. (exit code: 2)
 ```plain
   kobus:
     [DataBundle]
-      Structure:     OK (bundle_version=2, kind=data, 9 sections)
+      Structure:     OK (bundle_version = 3, kind=data, 9 sections)
       Sections:
         stops:           2100 stops, OK
         routes:          89 routes, OK
@@ -274,7 +274,7 @@ Done in 12ms. (exit code: 2)
 `global/insights.json` (GlobalInsightsBundle) の構造を検証する。per-prefix ではなく、全ソース横断の空間分析データ。
 
 - ファイルが存在しない場合は warning (未ビルドの可能性)
-- 存在する場合: bundle_version=2, kind='global-insights' を確認
+- 存在する場合: bundle_version = 3, kind='global-insights' を確認
 - stopGeo セクション (optional): v=1, data が Record であること、nr が number であることを spot-check
 - stopGeo セクションが存在しない場合は warning (意図的であれば問題ないが、空間メトリクスが利用不可)
 

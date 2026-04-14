@@ -33,6 +33,10 @@ import type {
 } from '../types/app/repository';
 import { getTimetableEntriesState } from '../domain/transit/timetable-utils';
 import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
+import {
+  sortTimetableEntriesByDepartureTime,
+  sortTimetableEntriesChronologically,
+} from '../domain/transit/sort-timetable-entries';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
 
@@ -361,6 +365,302 @@ const STOPS: Stop[] = [
     location_type: 1,
     agency_id: 'mock:aoba',
   },
+  // ---------------------------------------------------------------------
+  // Issue #47 fixtures: 同一 stop が pattern 内で複数回出現するトポロジー
+  //
+  // 各路線は専用 stop だけで構成し、他路線とは接続しない (隔離された fixture)。
+  // stop_id / stop_name は `r{route}-{n}` 形式で、確認時に視覚的に追跡しやすい。
+  // 配置: sta_central_s (35.7471, 139.7703) の右下 (南東、空きスペース) に
+  // クラスタとして配置。3 路線が縦に並ぶように lat を段階的に下げる。
+  //
+  // 進まない路線 (rs): [rs-1, rs-1, rs-2]              — rs-1 が連続 2 回 (dwell)
+  // 6 の字路線 (r6): [r6-1, r6-2, r6-1, r6-3]          — r6-1 が index 0, 2
+  // 8 の字路線 (r8): [r8-1, r8-2, r8-1, r8-3, r8-1]    — r8-1 が index 0, 2, 4
+  // ---------------------------------------------------------------------
+  // 進まない路線 (rs) — クラスタ最下段。
+  // [rs-1, rs-1, rs-2, rs-3] で rs-1 が連続 2 回 (dwell)、rs-3 が terminal。
+  // rs-1 → rs-2 → rs-3 はそれぞれ東へ 200m ずつ離れた直線配置。
+  {
+    stop_id: 'rs-1',
+    stop_name: 'rs-1',
+    stop_names: { ja: 'rs-1', en: 'rs-1' },
+    stop_lat: 35.7443,
+    stop_lon: 139.772,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'rs-2',
+    stop_name: 'rs-2',
+    stop_names: { ja: 'rs-2', en: 'rs-2' },
+    stop_lat: 35.7443,
+    stop_lon: 139.7742,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'rs-3',
+    stop_name: 'rs-3',
+    stop_names: { ja: 'rs-3', en: 'rs-3' },
+    stop_lat: 35.7443,
+    stop_lon: 139.7764,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  // 6 の字路線 (r6) — クラスタ中段 (元の位置から北へ約 100m 移動済)。
+  // 電卓 7-segment のように 6 点で「6」を描く。
+  //   r6-1          ← spine top
+  //   |
+  //   r6-2          ← spine middle
+  //   |
+  //   r6-3 — r6-4   ← loop top (r6-3 = closing point, visited twice)
+  //   |       |
+  //   r6-5 — r6-6   ← loop bottom
+  // pattern: [r6-1, r6-2, r6-3, r6-5, r6-6, r6-4, r6-3]
+  // r6-1 → r6-2 → r6-3 (ループ入口) → r6-5 → r6-6 → r6-4 → r6-3 (ループを閉じる)
+  {
+    stop_id: 'r6-1',
+    stop_name: 'r6-1',
+    stop_names: { ja: 'r6-1', en: 'r6-1' },
+    stop_lat: 35.7475,
+    stop_lon: 139.772,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'r6-2',
+    stop_name: 'r6-2',
+    stop_names: { ja: 'r6-2', en: 'r6-2' },
+    stop_lat: 35.7472,
+    stop_lon: 139.772,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'r6-3',
+    stop_name: 'r6-3',
+    stop_names: { ja: 'r6-3', en: 'r6-3' },
+    stop_lat: 35.7469,
+    stop_lon: 139.772,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'r6-4',
+    stop_name: 'r6-4',
+    stop_names: { ja: 'r6-4', en: 'r6-4' },
+    stop_lat: 35.7469,
+    stop_lon: 139.7724,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'r6-5',
+    stop_name: 'r6-5',
+    stop_names: { ja: 'r6-5', en: 'r6-5' },
+    stop_lat: 35.7466,
+    stop_lon: 139.772,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'r6-6',
+    stop_name: 'r6-6',
+    stop_names: { ja: 'r6-6', en: 'r6-6' },
+    stop_lat: 35.7466,
+    stop_lon: 139.7724,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  // 8 の字路線 (r8) — 元の位置から北東へ約 300m 移動済 (砂時計の交点は r8-3)。
+  // 5 stops で 7 visits: r8-3 → r8-4 → r8-5 → r8-3 → r8-1 → r8-2 → r8-3
+  //
+  //   r8-4 — r8-5   ← upper lobe
+  //      \  /
+  //      r8-3       ← cross point (origin / mid / terminal)
+  //      /  \
+  //   r8-1 — r8-2   ← lower lobe
+  {
+    stop_id: 'r8-1',
+    stop_name: 'r8-1',
+    stop_names: { ja: 'r8-1', en: 'r8-1' },
+    stop_lat: 35.7462,
+    stop_lon: 139.7742,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'r8-2',
+    stop_name: 'r8-2',
+    stop_names: { ja: 'r8-2', en: 'r8-2' },
+    stop_lat: 35.7462,
+    stop_lon: 139.7754,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'r8-3',
+    stop_name: 'r8-3',
+    stop_names: { ja: 'r8-3', en: 'r8-3' },
+    stop_lat: 35.7467,
+    stop_lon: 139.7748,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'r8-4',
+    stop_name: 'r8-4',
+    stop_names: { ja: 'r8-4', en: 'r8-4' },
+    stop_lat: 35.7472,
+    stop_lon: 139.7742,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'r8-5',
+    stop_name: 'r8-5',
+    stop_names: { ja: 'r8-5', en: 'r8-5' },
+    stop_lat: 35.7472,
+    stop_lon: 139.7754,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  // ---------------------------------------------------------------------
+  // n92 — 中92 (kobus:240) 練馬駅終点ケースの再現 fixture。
+  // Issue #47 の参考事例: 終着 stop が同一 trip 末尾に 2 連続出現し、
+  // 始発側は同名だが別 stop_id (数十 m 差) として存在する。
+  //
+  //   trip A: n92-1 → n92-2 → n92-3 → n92-3 (n92-3 は連続 dwell、両方 降車専用)
+  //   trip B: n92-4 → n92-2 → n92-1
+  //   trip C: n92-1 → n92-5 (回送便、中92 の p213 `中野駅 → 中野車庫` に相当)
+  //
+  // n92-3 と n92-4 は別 stop_id だが同じ display name 'nrm(t)' / 'nrm' で
+  // (d) (= drop-off) で区別。練馬駅の 1079_00 と 1079_02 を模した構造。
+  // n92-1 は反対側の終端 'nkn' (中野)。n92-5 は中野車庫 'nkg'。
+  //
+  // 配置 (1-2-3 を東西 200m 間隔で水平、4 は 3 の南 50m、5 は 1 の南 100m):
+  //   nkn ─── n92-2 ─── nrm(t) (n92-3)
+  //    │                  │
+  //   nkg (n92-5)        nrm (n92-4)
+  //
+  // si 修正前: trip A の 2 連続 n92-3 が同一 entry にマージされ、両方 [4/4] TERM 表示
+  // si 修正後: si=2 (中間, 降車専用) と si=3 ([4/4] TERM, 降車専用) に分離
+  // ---------------------------------------------------------------------
+  {
+    stop_id: 'n92-1',
+    stop_name: 'nkn',
+    stop_names: { ja: 'nkn', en: 'nkn' },
+    stop_lat: 35.74295,
+    stop_lon: 139.772,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'n92-4',
+    stop_name: 'nrm',
+    stop_names: { ja: 'nrm', en: 'nrm' },
+    stop_lat: 35.7425,
+    stop_lon: 139.7764,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'n92-2',
+    stop_name: 'n92-2',
+    stop_names: { ja: 'n92-2', en: 'n92-2' },
+    stop_lat: 35.74295,
+    stop_lon: 139.7742,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'n92-3',
+    stop_name: 'nrm(t)',
+    stop_names: { ja: 'nrm(t)', en: 'nrm(t)' },
+    stop_lat: 35.74295,
+    stop_lon: 139.7764,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'n92-5',
+    stop_name: 'nkg',
+    stop_names: { ja: 'nkg', en: 'nkg' },
+    stop_lat: 35.74205,
+    stop_lon: 139.772,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  // ---------------------------------------------------------------------
+  // kc10a / kc10b — 市バス10 (kcbus:01000) 三条京阪前 連続重複ケース再現。
+  // Issue #47 の参考事例: 実データでは α (p43) と β (p44) は同名 stop だが
+  // 別 stop_id を使う。mock では 2 路線 + 6 stop に分割して可視化。
+  //
+  //   route kc10a (乗降切替型, p43 模倣):
+  //     [kc10a-1, kc10a-2, kc10a-2, kc10a-3]
+  //     kc10a-2 si=1: pickup=1, dropoff=0 (降車のみ)
+  //     kc10a-2 si=2: pickup=0, dropoff=1 (乗車のみ)
+  //   route kc10b (通常停車型, p44 模倣):
+  //     [kc10b-1, kc10b-2, kc10b-2, kc10b-3]
+  //     kc10b-2 両 occ とも pickup=0, dropoff=0
+  //
+  // 配置: kc10a を東西 200m 間隔で水平 (kc10a-1 は nkg の南 200m)。
+  //       kc10b は kc10a の南 100m に並行配置。
+  // ---------------------------------------------------------------------
+  {
+    stop_id: 'kc10a-1',
+    stop_name: 'kc10a-1',
+    stop_names: { ja: 'kc10a-1', en: 'kc10a-1' },
+    stop_lat: 35.7407,
+    stop_lon: 139.772,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'kc10a-2',
+    stop_name: 'kc10a-2',
+    stop_names: { ja: 'kc10a-2', en: 'kc10a-2' },
+    stop_lat: 35.7407,
+    stop_lon: 139.7742,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'kc10a-3',
+    stop_name: 'kc10a-3',
+    stop_names: { ja: 'kc10a-3', en: 'kc10a-3' },
+    stop_lat: 35.7407,
+    stop_lon: 139.7764,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'kc10b-1',
+    stop_name: 'kc10b-1',
+    stop_names: { ja: 'kc10b-1', en: 'kc10b-1' },
+    stop_lat: 35.7398,
+    stop_lon: 139.772,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'kc10b-2',
+    stop_name: 'kc10b-2',
+    stop_names: { ja: 'kc10b-2', en: 'kc10b-2' },
+    stop_lat: 35.7398,
+    stop_lon: 139.7742,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
+  {
+    stop_id: 'kc10b-3',
+    stop_name: 'kc10b-3',
+    stop_names: { ja: 'kc10b-3', en: 'kc10b-3' },
+    stop_lat: 35.7398,
+    stop_lon: 139.7764,
+    location_type: 0,
+    agency_id: 'mock:aoba',
+  },
 ];
 
 for (const stop of STOPS) {
@@ -622,6 +922,92 @@ const ROUTES: Route[] = [
     route_text_color: 'FFFFFF',
     agency_id: 'mock:aoba',
   },
+  // ---------------------------------------------------------------------
+  // Issue #47 fixtures: duplicate stop_id within pattern test routes
+  // ---------------------------------------------------------------------
+  // bus_stuck: 進まない路線 (consecutive duplicate)
+  //   stops: [dup_a, dup_a, dup_b]  — dup_a が連続 2 回
+  {
+    route_id: 'bus_stuck',
+    route_short_name: 'ぐず',
+    route_short_names: {},
+    route_long_name: '進まない路線',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '795548',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:aoba',
+  },
+  // bus_six: 6 の字路線 (same stop visited 2 times non-consecutively)
+  //   stops: [dup_a, dup_b, dup_a, dup_c]  — dup_a が index 0 と 2
+  {
+    route_id: 'bus_six',
+    route_short_name: '六',
+    route_short_names: {},
+    route_long_name: '6の字路線',
+    route_long_names: {},
+    route_type: 3,
+    route_color: 'C2185B',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:aoba',
+  },
+  // bus_eight: 8 の字路線 (same stop visited 3 times)
+  //   stops: [dup_a, dup_b, dup_a, dup_c, dup_a]  — dup_a が index 0, 2, 4
+  {
+    route_id: 'bus_eight',
+    route_short_name: '八',
+    route_short_names: {},
+    route_long_name: '8の字路線',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '00838F',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:aoba',
+  },
+  // n92: 中92 (kobus:240) 練馬駅終点ケース再現 (Issue #47 参考事例)。
+  //   trip A: n92-1 (nkn) → n92-2 → n92-3 (nrm) → n92-3 [headsign: n92-3] (終点 2 連続、両方降車専用)
+  //   trip B: n92-4 (nrm) → n92-2 → n92-1 (nkn)         [headsign: n92-1]
+  // n92-3 と n92-4 は別 stop_id だが同じ display name 'nrm' (練馬) を共有。
+  {
+    route_id: 'n92',
+    route_short_name: '92',
+    route_short_names: {},
+    route_long_name: 'なか92系統',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '6A1B9A',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:aoba',
+  },
+  // kc10a: 市バス10 (kcbus:01000) 三条京阪前 乗降切替型 (p43 模倣) [Issue #47]
+  //   pattern: [kc10a-1, kc10a-2, kc10a-2, kc10a-3]
+  //   kc10a-2 si=1: pickup=1/dropoff=0 (降車のみ)
+  //   kc10a-2 si=2: pickup=0/dropoff=1 (乗車のみ)
+  {
+    route_id: 'kc10a',
+    route_short_name: '10a',
+    route_short_names: {},
+    route_long_name: '市バス10号系統 (乗降切替型)',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '00838F',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:aoba',
+  },
+  // kc10b: 市バス10 (kcbus:01000) 三条京阪前 通常停車型 (p44 模倣) [Issue #47]
+  //   pattern: [kc10b-1, kc10b-2, kc10b-2, kc10b-3]
+  //   kc10b-2 両 occ とも通常停車 (0/0)
+  {
+    route_id: 'kc10b',
+    route_short_name: '10b',
+    route_short_names: {},
+    route_long_name: '市バス10号系統 (通常停車型)',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '0097A7',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:aoba',
+  },
 ];
 
 for (const route of ROUTES) {
@@ -862,13 +1248,143 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string; stopHeads
       { routeId: 'subway_airport', headsign: 'つき宇宙空港' },
     ],
     bus_hotel_shingetsu: [{ routeId: 'subway_hotel_shuttle', headsign: 'つき宇宙空港' }],
+    // ---------------------------------------------------------------------
+    // Issue #47 fixtures: duplicate stop_id within pattern (isolated routes)
+    // 各路線専用 stop。他路線とは接続しない (cross-route reuse なし)。
+    // ---------------------------------------------------------------------
+    // 進まない路線 (rs): [rs-1, rs-1, rs-2, rs-3]
+    'rs-1': [{ routeId: 'bus_stuck', headsign: 'rs-3' }],
+    'rs-2': [{ routeId: 'bus_stuck', headsign: 'rs-3' }],
+    'rs-3': [{ routeId: 'bus_stuck', headsign: 'rs-3' }],
+    // 6 の字路線 (r6): [r6-1, r6-2, r6-3, r6-5, r6-6, r6-4, r6-3]
+    // r6-3 が ループの閉じ点で 2 回通過 (terminal も r6-3)
+    'r6-1': [{ routeId: 'bus_six', headsign: 'r6-3' }],
+    'r6-2': [{ routeId: 'bus_six', headsign: 'r6-3' }],
+    'r6-3': [{ routeId: 'bus_six', headsign: 'r6-3' }],
+    'r6-4': [{ routeId: 'bus_six', headsign: 'r6-3' }],
+    'r6-5': [{ routeId: 'bus_six', headsign: 'r6-3' }],
+    'r6-6': [{ routeId: 'bus_six', headsign: 'r6-3' }],
+    // 8 の字路線 (r8): [r8-3, r8-4, r8-5, r8-3, r8-1, r8-2, r8-3]
+    'r8-1': [{ routeId: 'bus_eight', headsign: 'r8-3' }],
+    'r8-2': [{ routeId: 'bus_eight', headsign: 'r8-3' }],
+    'r8-3': [{ routeId: 'bus_eight', headsign: 'r8-3' }],
+    'r8-4': [{ routeId: 'bus_eight', headsign: 'r8-3' }],
+    'r8-5': [{ routeId: 'bus_eight', headsign: 'r8-3' }],
+    // n92: 2 trip パターン (往復イメージ)
+    //   trip A [n92-1, n92-2, n92-3]: headsign = 'n92-3'
+    //   trip B [n92-4, n92-2, n92-1]: headsign = 'n92-1'
+    // n92-1, n92-2 は両 trip で参照される。
+    'n92-1': [
+      { routeId: 'n92', headsign: 'n92-3' }, // trip A origin
+      { routeId: 'n92', headsign: 'n92-1' }, // trip B terminal
+      { routeId: 'n92', headsign: 'n92-5' }, // trip C origin (回送)
+    ],
+    'n92-2': [
+      { routeId: 'n92', headsign: 'n92-3' }, // trip A 中間
+      { routeId: 'n92', headsign: 'n92-1' }, // trip B 中間
+    ],
+    'n92-3': [{ routeId: 'n92', headsign: 'n92-3' }], // trip A terminal
+    'n92-4': [{ routeId: 'n92', headsign: 'n92-1' }], // trip B origin
+    'n92-5': [{ routeId: 'n92', headsign: 'n92-5' }], // trip C terminal (中野車庫)
+
+    // kc10a: 乗降切替型 (p43 模倣)
+    'kc10a-1': [{ routeId: 'kc10a', headsign: 'kc10a-3' }],
+    'kc10a-2': [{ routeId: 'kc10a', headsign: 'kc10a-3' }],
+    'kc10a-3': [{ routeId: 'kc10a', headsign: 'kc10a-3' }],
+    // kc10b: 通常停車型 (p44 模倣)
+    'kc10b-1': [{ routeId: 'kc10b', headsign: 'kc10b-3' }],
+    'kc10b-2': [{ routeId: 'kc10b', headsign: 'kc10b-3' }],
+    'kc10b-3': [{ routeId: 'kc10b', headsign: 'kc10b-3' }],
   };
 
 /** Stops where all departures are drop-off only (pickupType=1). */
-const DROP_OFF_ONLY_STOPS = new Set(['bus_central_dropoff']);
+const DROP_OFF_ONLY_STOPS = new Set(['bus_central_dropoff', 'n92-3']);
+
+/**
+ * Time offset (minutes) added to entries for non-first occurrence of the same
+ * stop_id in a pattern. Approximates the layover/dwell time that real GTFS
+ * captures via consecutive duplicate stops with different time values
+ * (e.g., kobus:240 中92 練馬駅: stop_sequence 20 at 09:28 → 21 at 09:33).
+ */
+const OCCURRENCE_LAYOVER_MINUTES = 5;
+
+/**
+ * Per-(routeId, headsign, stopId, occurrence) override for boarding semantics.
+ * Key format: `${routeId}__${headsign}__${stopId}__${occ}` (occ is 0-based).
+ *
+ * Used to model patterns like 市バス10 (kcbus:01000) 三条京阪前 where the same
+ * stop_id appears consecutively with different pickup_type/drop_off_type per
+ * occurrence (e.g., si=3 has pt=1/dt=0, si=4 has pt=0/dt=1).
+ *
+ * Falls back to {@link DROP_OFF_ONLY_STOPS} when no override is registered.
+ */
+const BOARDING_OVERRIDES = new Map<
+  string,
+  { pickupType: 0 | 1 | 2 | 3; dropOffType: 0 | 1 | 2 | 3 }
+>([
+  // kc10a (乗降切替型): kc10a-2 occ=0 = 降車のみ, occ=1 = 乗車のみ
+  ['kc10a__kc10a-3__kc10a-2__0', { pickupType: 1, dropOffType: 0 }],
+  ['kc10a__kc10a-3__kc10a-2__1', { pickupType: 0, dropOffType: 1 }],
+  // kc10b (通常停車型) は全 stop デフォルト (pickupType=0, dropOffType=0) で表現可能。
+  // override 不要だが、明示性のため記録なし。
+]);
+
+function getBoardingTypes(
+  routeId: string,
+  headsign: string,
+  stopId: string,
+  occ: number,
+): { pickupType: 0 | 1 | 2 | 3; dropOffType: 0 | 1 | 2 | 3 } {
+  const key = `${routeId}__${headsign}__${stopId}__${occ}`;
+  const override = BOARDING_OVERRIDES.get(key);
+  if (override !== undefined) {
+    return override;
+  }
+  return {
+    pickupType: DROP_OFF_ONLY_STOPS.has(stopId) ? 1 : 0,
+    dropOffType: 0,
+  };
+}
 
 /** Routes with dwell time: arrival + N minutes = departure at every stop. */
 const DWELL_TIME_ROUTES = new Map<string, number>([['bus_yukkuri01', 3]]);
+
+/**
+ * Routes that use the "within-stop dwell" model for consecutive duplicate stops.
+ * For these routes, multiple occurrences of the same stop_id share the same
+ * departure_time, with only the first occurrence (occ=0) having a non-zero dwell.
+ *
+ * Models real GTFS like kcbus:01000 (市バス10) at 114410 (三条京阪前):
+ *   ss=3: arrival=06:38, departure=06:41 (3 min dwell)
+ *   ss=4: arrival=06:41, departure=06:41 (0 dwell, instant)
+ * The bus is physically at the stop from 06:38 to 06:41 (3 min). The 2 entries
+ * encode a boarding-mode swap within that single dwell window.
+ *
+ * Mutually exclusive with OCCURRENCE_LAYOVER_MINUTES: routes in this map do
+ * NOT receive the per-occurrence time offset (they share departure_time).
+ *
+ * Value is the dwell length in minutes for occ=0.
+ */
+const WITHIN_STOP_DWELL_ROUTES = new Map<string, number>([
+  ['kc10a', 3],
+  ['kc10b', 3],
+]);
+
+function computeOccOffset(routeId: string, occ: number): number {
+  if (WITHIN_STOP_DWELL_ROUTES.has(routeId)) {
+    return 0;
+  }
+  return occ * OCCURRENCE_LAYOVER_MINUTES;
+}
+
+function computeArrivalMinutes(routeId: string, occ: number, departureMinutes: number): number {
+  const withinStopDwell = WITHIN_STOP_DWELL_ROUTES.get(routeId);
+  if (withinStopDwell !== undefined && occ === 0) {
+    return departureMinutes - withinStopDwell;
+  }
+  const dwellTime = DWELL_TIME_ROUTES.get(routeId) ?? 0;
+  return dwellTime > 0 ? departureMinutes - dwellTime : departureMinutes;
+}
 
 /**
  * Stop sequences per route+headsign.
@@ -922,20 +1438,89 @@ const ROUTE_STOP_SEQUENCES = new Map<string, string[]>([
   // bus_yukkuri01: もり公園前 ↔ 降車専用
   ['bus_yukkuri01__あおば中央駅', ['bus_park', 'bus_library', 'bus_bridge', 'bus_central_dropoff']],
   ['bus_yukkuri01__もり公園前', ['sta_central', 'bus_bridge', 'bus_library', 'bus_park']],
+  // ---------------------------------------------------------------------
+  // Issue #47 fixtures: 同一 stop が pattern 内で複数回出現するトポロジー
+  // 各路線専用 stop。他路線とは接続しない (cross-route reuse なし)。
+  // ---------------------------------------------------------------------
+  // 進まない路線 (rs): rs-1 が連続 2 回 (dwell)、rs-3 が terminal
+  ['bus_stuck__rs-3', ['rs-1', 'rs-1', 'rs-2', 'rs-3']],
+  // 6 の字路線 (r6): 6 stops, 7 visits.
+  // 電卓 7-segment のように 6 点で「6」を描く。
+  // r6-1(spine top) → r6-2(spine mid) → r6-3(loop entry/closing) → r6-5(loop SW)
+  //   → r6-6(loop SE) → r6-4(loop NE) → r6-3(loop closes, terminal)
+  // r6-3 が index 2 と 6 で 2 回通過。
+  ['bus_six__r6-3', ['r6-1', 'r6-2', 'r6-3', 'r6-5', 'r6-6', 'r6-4', 'r6-3']],
+  // 8 の字路線 (r8): 5 stops, 7 visits.
+  // r8-3 が figure-eight の交点 — index 0 (origin), 3 (mid-cross), 6 (terminal) で 3 回通過
+  // 上ループ: r8-3 → r8-4 → r8-5 → r8-3
+  // 下ループ: r8-3 → r8-1 → r8-2 → r8-3
+  ['bus_eight__r8-3', ['r8-3', 'r8-4', 'r8-5', 'r8-3', 'r8-1', 'r8-2', 'r8-3']],
+  // n92: 中92 練馬駅終点ケース再現 (Issue #47 参考事例) + 回送便
+  //   trip A: n92-1 → n92-2 → n92-3 → n92-3  (n92-3 連続 dwell、両方降車専用)
+  //   trip B: n92-4 → n92-2 → n92-1
+  //   trip C: n92-1 → n92-5  (回送便、中92 の p213 中野駅→中野車庫 に相当)
+  ['n92__n92-3', ['n92-1', 'n92-2', 'n92-3', 'n92-3']],
+  ['n92__n92-1', ['n92-4', 'n92-2', 'n92-1']],
+  ['n92__n92-5', ['n92-1', 'n92-5']],
+  // kc10a: 市バス10 乗降切替型 (p43 模倣)
+  ['kc10a__kc10a-3', ['kc10a-1', 'kc10a-2', 'kc10a-2', 'kc10a-3']],
+  // kc10b: 市バス10 通常停車型 (p44 模倣)
+  ['kc10b__kc10b-3', ['kc10b-1', 'kc10b-2', 'kc10b-2', 'kc10b-3']],
 ]);
 
-/** Look up pattern position for a stop within a route+headsign sequence. */
+/**
+ * Count how many times a stop appears in a route+headsign sequence.
+ *
+ * Most stops appear once. Returns >1 for 6-shape and circular routes
+ * where the same stop is visited at multiple positions in one trip
+ * (Issue #47). Callers must emit one entry per occurrence.
+ */
+function countStopOccurrences(routeId: string, headsign: string, stopId: string): number {
+  const seq = ROUTE_STOP_SEQUENCES.get(`${routeId}__${headsign}`);
+  if (!seq) {
+    return 0;
+  }
+  let count = 0;
+  for (const id of seq) {
+    if (id === stopId) {
+      count++;
+    }
+  }
+  return count;
+}
+
+/**
+ * Look up pattern position for the N-th occurrence of a stop within a
+ * route+headsign sequence.
+ *
+ * The `occurrenceIndex` parameter (0-based) selects which visit when the
+ * stop appears multiple times in the same pattern (Issue #47, 6-shape /
+ * circular routes). For stops that appear only once, callers pass
+ * `occurrenceIndex=0`.
+ */
 function getPatternPosition(
   routeId: string,
   headsign: string,
   stopId: string,
+  occurrenceIndex: number,
 ): { stopIndex: number; totalStops: number; isTerminal: boolean; isOrigin: boolean } {
   const seq = ROUTE_STOP_SEQUENCES.get(`${routeId}__${headsign}`);
   if (!seq) {
     // No sequence defined — fall back to unknown position.
     return { stopIndex: 0, totalStops: 1, isTerminal: false, isOrigin: false };
   }
-  const idx = seq.indexOf(stopId);
+  // Find the occurrenceIndex-th match. Linear scan since seq is short.
+  let seen = 0;
+  let idx = -1;
+  for (let i = 0; i < seq.length; i++) {
+    if (seq[i] === stopId) {
+      if (seen === occurrenceIndex) {
+        idx = i;
+        break;
+      }
+      seen++;
+    }
+  }
   if (idx === -1) {
     return { stopIndex: 0, totalStops: seq.length, isTerminal: false, isOrigin: false };
   }
@@ -1132,6 +1717,97 @@ const ROUTE_SHAPES: RouteShape[] = [
     route: ROUTE_MAP.get('bus_midori10')!,
     points: [coord('sta_hill'), coord('bus_library'), coord('sta_south')],
   },
+  // ---------------------------------------------------------------------
+  // Issue #47 fixtures: duplicate stop_id within pattern (route shapes)
+  // ---------------------------------------------------------------------
+  // bus_six: 6 の字路線 (Issue #47, 6 stops, 7 visits, r6-3 が ループ閉じ点)
+  // ポリラインは pattern と同じ順序で stops を辿る:
+  //   r6-1 → r6-2 → r6-3 → r6-5 → r6-6 → r6-4 → r6-3
+  // r6-3 が 2 回現れることでループの「閉じ」を視覚的に表現する。
+  {
+    routeId: 'bus_six',
+    routeType: 3,
+    color: `#${ROUTE_MAP.get('bus_six')!.route_color}`,
+    route: ROUTE_MAP.get('bus_six')!,
+    points: [
+      coord('r6-1'),
+      coord('r6-2'),
+      coord('r6-3'),
+      coord('r6-5'),
+      coord('r6-6'),
+      coord('r6-4'),
+      coord('r6-3'),
+    ],
+  },
+  // bus_eight: 8 の字路線 (Issue #47, 5 stops, 7 visits, r8-3 が砂時計の交点 3 回通過)
+  // ポリラインは pattern と同じ順序で stops を辿る:
+  //   r8-3 → r8-4 → r8-5 → r8-3 → r8-1 → r8-2 → r8-3
+  // 上ループ (r8-3 → r8-4 → r8-5 → r8-3) と下ループ (r8-3 → r8-1 → r8-2 → r8-3) が
+  // r8-3 で交差して砂時計 (figure-eight) を形成する。
+  {
+    routeId: 'bus_eight',
+    routeType: 3,
+    color: `#${ROUTE_MAP.get('bus_eight')!.route_color}`,
+    route: ROUTE_MAP.get('bus_eight')!,
+    points: [
+      coord('r8-3'),
+      coord('r8-4'),
+      coord('r8-5'),
+      coord('r8-3'),
+      coord('r8-1'),
+      coord('r8-2'),
+      coord('r8-3'),
+    ],
+  },
+  // bus_stuck: 進まない路線 (Issue #47, 3 stops, 4 visits, rs-1 が連続 dwell)
+  // ポリラインは pattern と同じ順序で stops を辿る:
+  //   rs-1 → rs-1 → rs-2 → rs-3
+  // rs-1 → rs-1 は同一座標で 0 距離 (dwell)。視覚的には rs-1 → rs-2 → rs-3 の
+  // 直線として表示される。
+  {
+    routeId: 'bus_stuck',
+    routeType: 3,
+    color: `#${ROUTE_MAP.get('bus_stuck')!.route_color}`,
+    route: ROUTE_MAP.get('bus_stuck')!,
+    points: [coord('rs-1'), coord('rs-1'), coord('rs-2'), coord('rs-3')],
+  },
+  // n92: 中92 練馬駅終点ケース再現 (5 stops, 3 trips: 営業 2 + 回送 1)
+  // 実際の運行 segment は 4 本 (n92-3 → n92-4 の運行は無し):
+  //   edge a: n92-1 ↔ n92-2 (trip A/B 共通)
+  //   edge b: n92-2 ↔ n92-3 (trip A のみ、終点 dwell n92-3 → n92-3 は 0 距離で省略)
+  //   edge c: n92-2 ↔ n92-4 (trip B のみ、対角 SE)
+  //   edge d: n92-1 ↔ n92-5 (trip C 回送のみ、垂直 S)
+  // 1 polyline で全 edge を辿る (n92-1, n92-2 で折り返し): 5 → 1 → 2 → 3 → 2 → 4
+  {
+    routeId: 'n92',
+    routeType: 3,
+    color: `#${ROUTE_MAP.get('n92')!.route_color}`,
+    route: ROUTE_MAP.get('n92')!,
+    points: [
+      coord('n92-5'),
+      coord('n92-1'),
+      coord('n92-2'),
+      coord('n92-3'),
+      coord('n92-2'),
+      coord('n92-4'),
+    ],
+  },
+  // kc10a: 市バス10 乗降切替型 (p43 模倣)
+  {
+    routeId: 'kc10a',
+    routeType: 3,
+    color: `#${ROUTE_MAP.get('kc10a')!.route_color}`,
+    route: ROUTE_MAP.get('kc10a')!,
+    points: [coord('kc10a-1'), coord('kc10a-2'), coord('kc10a-3')],
+  },
+  // kc10b: 市バス10 通常停車型 (p44 模倣)、kc10a の南 100m 並行配置
+  {
+    routeId: 'kc10b',
+    routeType: 3,
+    color: `#${ROUTE_MAP.get('kc10b')!.route_color}`,
+    route: ROUTE_MAP.get('kc10b')!,
+    points: [coord('kc10b-1'), coord('kc10b-2'), coord('kc10b-3')],
+  },
 ];
 
 function simpleHash(str: string): number {
@@ -1220,38 +1896,48 @@ export class MockRepository implements TransitRepository {
       }
 
       const allMinutes = generateFixedMinutes(routeId, headsign);
-      const pickupType = DROP_OFF_ONLY_STOPS.has(stopId) ? 1 : 0;
-      const dwellTime = DWELL_TIME_ROUTES.get(routeId) ?? 0;
-      const position = getPatternPosition(routeId, headsign, stopId);
 
-      // Count full-day entries and check boardability.
-      fullDayCount += allMinutes.length;
-      if (!hasBoardable && pickupType !== 1 && !position.isTerminal) {
-        hasBoardable = true;
-      }
+      // Issue #47: a stop may appear at multiple positions in one pattern
+      // (6-shape / circular). Emit one set of entries per occurrence.
+      const occurrences = Math.max(1, countStopOccurrences(routeId, headsign, stopId));
 
-      // Note: limit is applied per route+headsign (simplified mock behavior).
-      // Production repo collects all entries then applies limit globally.
-      const upcoming = allMinutes.filter((m) => m >= nowMinutes).slice(0, limit);
-      for (const minutes of upcoming) {
-        const arrivalMinutes = dwellTime > 0 ? minutes - dwellTime : minutes;
-        entries.push({
-          schedule: { departureMinutes: minutes, arrivalMinutes },
-          routeDirection: {
-            route,
-            tripHeadsign: createMockTranslatableText(headsign),
-            ...(stopHeadsign != null
-              ? { stopHeadsign: createMockTranslatableText(stopHeadsign) }
-              : {}),
-          },
-          boarding: { pickupType, dropOffType: 0 },
-          patternPosition: position,
-          serviceDate,
-        });
+      for (let occ = 0; occ < occurrences; occ++) {
+        const position = getPatternPosition(routeId, headsign, stopId, occ);
+        const occOffset = computeOccOffset(routeId, occ);
+        const { pickupType, dropOffType } = getBoardingTypes(routeId, headsign, stopId, occ);
+
+        // Count full-day entries and check boardability (per occurrence).
+        fullDayCount += allMinutes.length;
+        if (!hasBoardable && pickupType !== 1 && !position.isTerminal) {
+          hasBoardable = true;
+        }
+
+        // Note: limit is applied per route+headsign (simplified mock behavior).
+        // Production repo collects all entries then applies limit globally.
+        const upcoming = allMinutes
+          .map((m) => m + occOffset)
+          .filter((m) => m >= nowMinutes)
+          .slice(0, limit);
+        for (const minutes of upcoming) {
+          const arrivalMinutes = computeArrivalMinutes(routeId, occ, minutes);
+          entries.push({
+            schedule: { departureMinutes: minutes, arrivalMinutes },
+            routeDirection: {
+              route,
+              tripHeadsign: createMockTranslatableText(headsign),
+              ...(stopHeadsign != null
+                ? { stopHeadsign: createMockTranslatableText(stopHeadsign) }
+                : {}),
+            },
+            boarding: { pickupType, dropOffType },
+            patternPosition: position,
+            serviceDate,
+          });
+        }
       }
     }
 
-    entries.sort((a, b) => a.schedule.departureMinutes - b.schedule.departureMinutes);
+    sortTimetableEntriesChronologically(entries);
 
     const meta: TimetableQueryMeta = {
       isBoardableOnServiceDay: hasBoardable,
@@ -1319,27 +2005,33 @@ export class MockRepository implements TransitRepository {
       if (!route) {
         continue;
       }
-      const pickupType = DROP_OFF_ONLY_STOPS.has(stopId) ? 1 : 0;
-      const dwellTime = DWELL_TIME_ROUTES.get(routeId) ?? 0;
-      const position = getPatternPosition(routeId, headsign, stopId);
-      for (const minutes of generateFixedMinutes(routeId, headsign)) {
-        const arrivalMinutes = dwellTime > 0 ? minutes - dwellTime : minutes;
-        entries.push({
-          schedule: { departureMinutes: minutes, arrivalMinutes },
-          routeDirection: {
-            route,
-            tripHeadsign: createMockTranslatableText(headsign),
-            ...(stopHeadsign != null
-              ? { stopHeadsign: createMockTranslatableText(stopHeadsign) }
-              : {}),
-          },
-          boarding: { pickupType, dropOffType: 0 },
-          patternPosition: position,
-        });
+      // Issue #47: emit one set of entries per occurrence (6-shape / circular).
+      const occurrences = Math.max(1, countStopOccurrences(routeId, headsign, stopId));
+
+      for (let occ = 0; occ < occurrences; occ++) {
+        const position = getPatternPosition(routeId, headsign, stopId, occ);
+        const occOffset = computeOccOffset(routeId, occ);
+        const { pickupType, dropOffType } = getBoardingTypes(routeId, headsign, stopId, occ);
+        for (const baseMinutes of generateFixedMinutes(routeId, headsign)) {
+          const minutes = baseMinutes + occOffset;
+          const arrivalMinutes = computeArrivalMinutes(routeId, occ, minutes);
+          entries.push({
+            schedule: { departureMinutes: minutes, arrivalMinutes },
+            routeDirection: {
+              route,
+              tripHeadsign: createMockTranslatableText(headsign),
+              ...(stopHeadsign != null
+                ? { stopHeadsign: createMockTranslatableText(stopHeadsign) }
+                : {}),
+            },
+            boarding: { pickupType, dropOffType },
+            patternPosition: position,
+          });
+        }
       }
     }
 
-    entries.sort((a, b) => a.schedule.departureMinutes - b.schedule.departureMinutes);
+    sortTimetableEntriesByDepartureTime(entries);
     const meta: TimetableQueryMeta = {
       isBoardableOnServiceDay: getTimetableEntriesState(entries) === 'boardable',
       totalEntries: entries.length,

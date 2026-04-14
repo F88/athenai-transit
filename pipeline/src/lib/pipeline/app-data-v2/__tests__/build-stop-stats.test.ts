@@ -24,9 +24,10 @@ function makeRoute(id: string, routeType: number): RouteV2Json {
 
 function makeTimetableGroup(
   patternId: string,
+  si: number,
   deps: Record<string, number[]>,
 ): TimetableGroupV2Json {
-  return { v: 2, tp: patternId, d: deps, a: deps };
+  return { v: 2, tp: patternId, si, d: deps, a: deps };
 }
 
 // ---------------------------------------------------------------------------
@@ -42,7 +43,7 @@ describe('buildStopStats', () => {
     const routes = [makeRoute('r1', 3)]; // bus
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc1: [360, 480, 600, 720] })],
+      s1: [makeTimetableGroup('p1', 0, { svc1: [360, 480, 600, 720] })],
     };
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -68,8 +69,8 @@ describe('buildStopStats', () => {
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
       s1: [
-        makeTimetableGroup('p1', { svc1: [480, 540] }),
-        makeTimetableGroup('p2', { svc1: [500, 560, 620] }),
+        makeTimetableGroup('p1', 0, { svc1: [480, 540] }),
+        makeTimetableGroup('p2', 0, { svc1: [500, 560, 620] }),
       ],
     };
 
@@ -96,7 +97,10 @@ describe('buildStopStats', () => {
     ];
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc1: [480] }), makeTimetableGroup('p2', { svc1: [500] })],
+      s1: [
+        makeTimetableGroup('p1', 0, { svc1: [480] }),
+        makeTimetableGroup('p2', 0, { svc1: [500] }),
+      ],
     };
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -114,7 +118,7 @@ describe('buildStopStats', () => {
     const routes = [makeRoute('r1', 3)];
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc1: [360, 1500] })], // 6:00 and 25:00
+      s1: [makeTimetableGroup('p1', 0, { svc1: [360, 1500] })], // 6:00 and 25:00
     };
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -133,7 +137,7 @@ describe('buildStopStats', () => {
     const routes = [makeRoute('r1', 3)];
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc_wd: [480, 540, 600], svc_sa: [480, 600] })],
+      s1: [makeTimetableGroup('p1', 0, { svc_wd: [480, 540, 600], svc_sa: [480, 600] })],
     };
 
     const groups: ServiceGroupEntry[] = [
@@ -156,7 +160,7 @@ describe('buildStopStats', () => {
 
     // s1 only has weekday departures
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc_wd: [480] })],
+      s1: [makeTimetableGroup('p1', 0, { svc_wd: [480] })],
     };
 
     const groups: ServiceGroupEntry[] = [
@@ -189,8 +193,8 @@ describe('buildStopStats', () => {
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
       s1: [
-        makeTimetableGroup('p1', { svc1: [480] }),
-        makeTimetableGroup('p_unknown', { svc1: [500] }), // pattern not in map
+        makeTimetableGroup('p1', 0, { svc1: [480] }),
+        makeTimetableGroup('p_unknown', 0, { svc1: [500] }), // pattern not in map
       ],
     };
 
@@ -212,7 +216,10 @@ describe('buildStopStats', () => {
     const routes = [makeRoute('r1', 3)];
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc1: [480] }), makeTimetableGroup('p2', { svc1: [500] })],
+      s1: [
+        makeTimetableGroup('p1', 0, { svc1: [480] }),
+        makeTimetableGroup('p2', 0, { svc1: [500] }),
+      ],
     };
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -232,7 +239,7 @@ describe('buildStopStats', () => {
     const routes: RouteV2Json[] = []; // route not in array
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc1: [480] })],
+      s1: [makeTimetableGroup('p1', 0, { svc1: [480] })],
     };
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -250,7 +257,7 @@ describe('buildStopStats', () => {
     };
     const routes = [makeRoute('r1', 3)];
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc1: [480] })],
+      s1: [makeTimetableGroup('p1', 0, { svc1: [480] })],
     };
 
     const result = buildStopStats(timetable, patterns, routes, []);
@@ -273,9 +280,9 @@ describe('buildStopStats', () => {
 
     // s1 has 2x departures (origin + terminal), interior stops have 3
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc1: [480, 500, 540, 560, 600, 620] })],
-      s2: [makeTimetableGroup('p1', { svc1: [490, 550, 610] })],
-      s3: [makeTimetableGroup('p1', { svc1: [495, 555, 615] })],
+      s1: [makeTimetableGroup('p1', 0, { svc1: [480, 500, 540, 560, 600, 620] })],
+      s2: [makeTimetableGroup('p1', 0, { svc1: [490, 550, 610] })],
+      s3: [makeTimetableGroup('p1', 0, { svc1: [495, 555, 615] })],
     };
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -298,8 +305,8 @@ describe('buildStopStats', () => {
 
     // Timetable has departures only for svc_wd, not svc_sa
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc_wd: [480, 540, 600] })],
-      s2: [makeTimetableGroup('p1', { svc_wd: [490, 550, 610] })],
+      s1: [makeTimetableGroup('p1', 0, { svc_wd: [480, 540, 600] })],
+      s2: [makeTimetableGroup('p1', 0, { svc_wd: [490, 550, 610] })],
     };
 
     const groups: ServiceGroupEntry[] = [
@@ -324,7 +331,7 @@ describe('buildStopStats', () => {
     const routes = [makeRoute('r1', 3)];
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc1: [480, 540], svc2: [600] })],
+      s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540], svc2: [600] })],
     };
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1', 'svc2'] }];
@@ -344,7 +351,7 @@ describe('buildStopStats', () => {
     const routes = [makeRoute('r1', 3)];
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc1: [720] })],
+      s1: [makeTimetableGroup('p1', 0, { svc1: [720] })],
     };
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -366,8 +373,8 @@ describe('buildStopStats', () => {
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
       s1: [
-        makeTimetableGroup('p1', { svc1: [600, 720] }), // ed=600, ld=720
-        makeTimetableGroup('p2', { svc1: [360, 1440] }), // ed=360, ld=1440
+        makeTimetableGroup('p1', 0, { svc1: [600, 720] }), // ed=600, ld=720
+        makeTimetableGroup('p2', 0, { svc1: [360, 1440] }), // ed=360, ld=1440
       ],
     };
 
@@ -387,8 +394,8 @@ describe('buildStopStats', () => {
     const routes = [makeRoute('r1', 3)];
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
-      s1: [makeTimetableGroup('p1', { svc1: [480] })],
-      s2: [makeTimetableGroup('p1', { svc1: [490] })],
+      s1: [makeTimetableGroup('p1', 0, { svc1: [480] })],
+      s2: [makeTimetableGroup('p1', 0, { svc1: [490] })],
     };
 
     const groups: ServiceGroupEntry[] = [{ key: 'empty', serviceIds: [] }];
@@ -407,9 +414,9 @@ describe('buildStopStats', () => {
 
     const timetable: Record<string, TimetableGroupV2Json[]> = {
       s1: [
-        makeTimetableGroup('p_unknown1', { svc1: [480] }),
-        makeTimetableGroup('p_unknown2', { svc1: [540] }),
-        makeTimetableGroup('p1', { svc1: [600] }),
+        makeTimetableGroup('p_unknown1', 0, { svc1: [480] }),
+        makeTimetableGroup('p_unknown2', 0, { svc1: [540] }),
+        makeTimetableGroup('p1', 0, { svc1: [600] }),
       ],
     };
 

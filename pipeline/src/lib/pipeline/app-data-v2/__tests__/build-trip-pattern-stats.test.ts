@@ -19,12 +19,14 @@ import { buildTripPatternStats } from '../build-trip-pattern-stats';
 
 function makeTimetableGroup(
   patternId: string,
+  si: number,
   stopDeps: Record<string, number[]>,
 ): TimetableGroupV2Json {
   // Arrival = departure for simplicity
   return {
     v: 2,
     tp: patternId,
+    si,
     d: stopDeps,
     a: stopDeps,
   };
@@ -42,9 +44,9 @@ describe('buildTripPatternStats', () => {
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 540, 600] })],
-        s2: [makeTimetableGroup('p1', { svc1: [490, 550, 610] })],
-        s3: [makeTimetableGroup('p1', { svc1: [500, 560, 620] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540, 600] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 550, 610] })],
+        s3: [makeTimetableGroup('p1', 2, { svc1: [500, 560, 620] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -60,8 +62,8 @@ describe('buildTripPatternStats', () => {
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 540], svc2: [600] })],
-        s2: [makeTimetableGroup('p1', { svc1: [490, 550], svc2: [610] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540], svc2: [600] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 550], svc2: [610] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1', 'svc2'] }];
@@ -77,8 +79,8 @@ describe('buildTripPatternStats', () => {
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc_wd: [480, 540, 600], svc_sa: [480, 540] })],
-        s2: [makeTimetableGroup('p1', { svc_wd: [490, 550, 610], svc_sa: [490, 550] })],
+        s1: [makeTimetableGroup('p1', 0, { svc_wd: [480, 540, 600], svc_sa: [480, 540] })],
+        s2: [makeTimetableGroup('p1', 1, { svc_wd: [490, 550, 610], svc_sa: [490, 550] })],
       };
 
       const groups: ServiceGroupEntry[] = [
@@ -103,22 +105,21 @@ describe('buildTripPatternStats', () => {
         },
       };
 
-      // s1 has 2x departures (origin + terminal)
+      // s1 appears at si=0 (origin) and si=3 (terminal), each with 3 deps
       const timetable: Record<string, TimetableGroupV2Json[]> = {
         s1: [
-          makeTimetableGroup('p1', {
-            svc1: [480, 500, 540, 560, 600, 620],
-          }),
+          makeTimetableGroup('p1', 0, { svc1: [480, 540, 600] }),
+          makeTimetableGroup('p1', 3, { svc1: [500, 560, 620] }),
         ],
-        s2: [makeTimetableGroup('p1', { svc1: [490, 550, 610] })],
-        s3: [makeTimetableGroup('p1', { svc1: [495, 555, 615] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 550, 610] })],
+        s3: [makeTimetableGroup('p1', 2, { svc1: [495, 555, 615] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
       const result = buildTripPatternStats(patterns, timetable, groups);
 
-      // Uses interior stop (s2) which has 3 departures
+      // freq = origin (si=0) departures = 3 — no longer needs interior stop workaround
       expect(result['wd']['p1'].freq).toBe(3);
     });
 
@@ -142,9 +143,9 @@ describe('buildTripPatternStats', () => {
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc_wd: [480, 540] })],
-        s2: [makeTimetableGroup('p1', { svc_wd: [490, 550] })],
-        s3: [makeTimetableGroup('p1', { svc_wd: [500, 560] })],
+        s1: [makeTimetableGroup('p1', 0, { svc_wd: [480, 540] })],
+        s2: [makeTimetableGroup('p1', 1, { svc_wd: [490, 550] })],
+        s3: [makeTimetableGroup('p1', 2, { svc_wd: [500, 560] })],
       };
 
       const groups: ServiceGroupEntry[] = [
@@ -217,9 +218,9 @@ describe('buildTripPatternStats', () => {
 
       // Each trip takes 10 min per segment
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 540, 600] })],
-        s2: [makeTimetableGroup('p1', { svc1: [490, 550, 610] })],
-        s3: [makeTimetableGroup('p1', { svc1: [500, 560, 620] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540, 600] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 550, 610] })],
+        s3: [makeTimetableGroup('p1', 2, { svc1: [500, 560, 620] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -244,10 +245,10 @@ describe('buildTripPatternStats', () => {
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 540] })],
-        s2: [makeTimetableGroup('p1', { svc1: [485, 545] })],
-        s3: [makeTimetableGroup('p1', { svc1: [495, 555] })],
-        s4: [makeTimetableGroup('p1', { svc1: [510, 570] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [485, 545] })],
+        s3: [makeTimetableGroup('p1', 2, { svc1: [495, 555] })],
+        s4: [makeTimetableGroup('p1', 3, { svc1: [510, 570] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -268,8 +269,8 @@ describe('buildTripPatternStats', () => {
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480] })],
-        s2: [makeTimetableGroup('p1', { svc1: [500] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [500] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -285,7 +286,7 @@ describe('buildTripPatternStats', () => {
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -309,10 +310,10 @@ describe('buildTripPatternStats', () => {
 
       // s2 has no timetable entry; s1→s3 = 20 min, s3→s4 = 10 min
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 540] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540] })],
         // s2 missing
-        s3: [makeTimetableGroup('p1', { svc1: [500, 560] })],
-        s4: [makeTimetableGroup('p1', { svc1: [510, 570] })],
+        s3: [makeTimetableGroup('p1', 2, { svc1: [500, 560] })],
+        s4: [makeTimetableGroup('p1', 3, { svc1: [510, 570] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -343,9 +344,9 @@ describe('buildTripPatternStats', () => {
 
       // Origin s1 has 2x departures (interleaved start/return)
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 500, 540, 560, 600, 620] })],
-        s2: [makeTimetableGroup('p1', { svc1: [490, 550, 610] })],
-        s3: [makeTimetableGroup('p1', { svc1: [495, 555, 615] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 500, 540, 560, 600, 620] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 550, 610] })],
+        s3: [makeTimetableGroup('p1', 2, { svc1: [495, 555, 615] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -376,8 +377,8 @@ describe('buildTripPatternStats', () => {
 
       // 3 trips with different travel times: 10, 12, 20 → median = 12
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 540, 600] })],
-        s2: [makeTimetableGroup('p1', { svc1: [490, 552, 620] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540, 600] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 552, 620] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -395,8 +396,8 @@ describe('buildTripPatternStats', () => {
 
       // 2 trips: travel time = 7 and 8 → median = 7.5
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 540] })],
-        s2: [makeTimetableGroup('p1', { svc1: [487, 548] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [487, 548] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -414,8 +415,8 @@ describe('buildTripPatternStats', () => {
 
       // 4 trips with travel times: 8, 10, 12, 14 → median = (10+12)/2 = 11
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 540, 600, 660] })],
-        s2: [makeTimetableGroup('p1', { svc1: [488, 550, 612, 674] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540, 600, 660] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [488, 550, 612, 674] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -432,8 +433,8 @@ describe('buildTripPatternStats', () => {
 
       // 3 trips: diffs = 10, -5 (negative, filtered), 10 → median of [10, 10] = 10
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 545, 600] })],
-        s2: [makeTimetableGroup('p1', { svc1: [490, 540, 610] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 545, 600] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 540, 610] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -443,50 +444,56 @@ describe('buildTripPatternStats', () => {
       expect(result['wd']['p1'].rd[0]).toBe(10);
     });
 
-    it('returns rd=[0,...] for 3-stop circular (all segments skipped)', () => {
+    it('computes rd for 3-stop circular with si-aware separation', () => {
       // Circular with exactly 3 stops: s1 → s2 → s1
-      // segmentCount = 2, both segments involve origin/terminal → both skipped
+      // si splits s1 into 2 groups (si=0 origin, si=2 terminal), so segments
+      // can be computed correctly via positional alignment.
       const patterns: Record<string, TripPatternJson> = {
         p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }, { id: 's1' }] },
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 500, 540, 560] })],
-        s2: [makeTimetableGroup('p1', { svc1: [490, 550] })],
+        s1: [
+          makeTimetableGroup('p1', 0, { svc1: [480, 540] }), // origin departures
+          makeTimetableGroup('p1', 2, { svc1: [500, 560] }), // terminal arrivals
+        ],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 550] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
       const result = buildTripPatternStats(patterns, timetable, groups);
 
-      // Interior stop (s2) used for freq
+      // freq = 2 (origin trips per day)
       expect(result['wd']['p1'].freq).toBe(2);
-      // All segments skipped (both touch origin/terminal), no interpolation source
-      expect(result['wd']['p1'].rd).toEqual([0, 0, 0]);
+      // s1(si=0)→s2 = 10 min, s2→s1(si=2) = 10 min → rd = [20, 10, 0]
+      expect(result['wd']['p1'].rd).toEqual([20, 10, 0]);
     });
 
-    it('handles 2-stop circular pattern (degenerate: no interior stop)', () => {
-      // 2-stop circular: [s1, s1] — origin and terminal are the same stop.
-      // No interior stop exists, so freq uses stops[0] which includes 2x departures.
-      // This is a known limitation: 2-stop circular patterns cannot be correctly
-      // decomposed with the current algorithm.
+    it('handles 2-stop circular pattern with si-aware separation', () => {
+      // 2-stop circular: [s1, s1] — origin and terminal are the same stop_id,
+      // separated by si into 2 distinct groups. With si, this case is no longer
+      // a known limitation.
       const patterns: Record<string, TripPatternJson> = {
         p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's1' }] },
       };
 
-      // s1 has 2x departures (origin + terminal interleaved)
+      // s1 split into si=0 (origin) and si=1 (terminal arrival)
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 500, 540, 560] })],
+        s1: [
+          makeTimetableGroup('p1', 0, { svc1: [480, 540] }),
+          makeTimetableGroup('p1', 1, { svc1: [500, 560] }),
+        ],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
       const result = buildTripPatternStats(patterns, timetable, groups);
 
-      // freq counts all departures at stops[0] (2x, known limitation)
-      expect(result['wd']['p1'].freq).toBe(4);
-      // depsA === depsB (same stop), all diffs = 0, rd = [0, 0]
-      expect(result['wd']['p1'].rd).toEqual([0, 0]);
+      // freq = 2 (origin trips per day) — no longer 4 (2x merged)
+      expect(result['wd']['p1'].freq).toBe(2);
+      // segment(si=0 → si=1) = 20 min
+      expect(result['wd']['p1'].rd).toEqual([20, 0]);
     });
 
     it('preserves zero travel time between consecutive stops (not treated as gap)', () => {
@@ -501,10 +508,10 @@ describe('buildTripPatternStats', () => {
 
       // s2→s3: same departure time (diff = 0), a valid zero-minute segment
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480] })],
-        s2: [makeTimetableGroup('p1', { svc1: [490] })],
-        s3: [makeTimetableGroup('p1', { svc1: [490] })], // same as s2
-        s4: [makeTimetableGroup('p1', { svc1: [500] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490] })],
+        s3: [makeTimetableGroup('p1', 2, { svc1: [490] })], // same as s2
+        s4: [makeTimetableGroup('p1', 3, { svc1: [500] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -522,11 +529,14 @@ describe('buildTripPatternStats', () => {
         p2: { v: 2, r: 'r1', h: 'B', stops: [{ id: 's3' }, { id: 's4' }] },
       };
 
+      // si is the position within the pattern, so s3 in p2 is si=0 and s4 is si=1
+      // (the perl batch update naively used the digit in the stop name, so s3/s4
+      // got si=2/3 which are wrong for a 2-stop pattern)
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 540] })],
-        s2: [makeTimetableGroup('p1', { svc1: [490, 550] })],
-        s3: [makeTimetableGroup('p2', { svc1: [480, 540] })],
-        s4: [makeTimetableGroup('p2', { svc1: [500, 560] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 550] })],
+        s3: [makeTimetableGroup('p2', 0, { svc1: [480, 540] })],
+        s4: [makeTimetableGroup('p2', 1, { svc1: [500, 560] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -546,9 +556,9 @@ describe('buildTripPatternStats', () => {
 
       // s1 has 3 deps, s2 has 2 deps (count mismatch), s3 has 2 deps
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 540, 600] })],
-        s2: [makeTimetableGroup('p1', { svc1: [490, 550] })],
-        s3: [makeTimetableGroup('p1', { svc1: [500, 560] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540, 600] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 550] })],
+        s3: [makeTimetableGroup('p1', 2, { svc1: [500, 560] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -572,9 +582,9 @@ describe('buildTripPatternStats', () => {
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 540, 600] })], // 3 deps
-        s2: [makeTimetableGroup('p1', { svc1: [490, 550] })], // 2 deps (mismatch)
-        s3: [makeTimetableGroup('p1', { svc1: [500, 560] })], // 2 deps
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540, 600] })], // 3 deps
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 550] })], // 2 deps (mismatch)
+        s3: [makeTimetableGroup('p1', 2, { svc1: [500, 560] })], // 2 deps
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -598,9 +608,9 @@ describe('buildTripPatternStats', () => {
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480, 540] })], // 2 deps
-        s2: [makeTimetableGroup('p1', { svc1: [490, 550] })], // 2 deps
-        s3: [makeTimetableGroup('p1', { svc1: [500, 560, 620] })], // 3 deps (mismatch)
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540] })], // 2 deps
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 550] })], // 2 deps
+        s3: [makeTimetableGroup('p1', 2, { svc1: [500, 560, 620] })], // 3 deps (mismatch)
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -624,9 +634,9 @@ describe('buildTripPatternStats', () => {
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [500, 560] })],
-        s2: [makeTimetableGroup('p1', { svc1: [490, 550] })], // earlier than s1
-        s3: [makeTimetableGroup('p1', { svc1: [510, 570] })],
+        s1: [makeTimetableGroup('p1', 0, { svc1: [500, 560] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490, 550] })], // earlier than s1
+        s3: [makeTimetableGroup('p1', 2, { svc1: [510, 570] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -655,11 +665,11 @@ describe('buildTripPatternStats', () => {
       };
 
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p1', { svc1: [480] })],
-        s2: [makeTimetableGroup('p1', { svc1: [490] })], // +10
-        s3: [makeTimetableGroup('p1', { svc1: [490] })], // +0 (same time, valid)
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [490] })], // +10
+        s3: [makeTimetableGroup('p1', 2, { svc1: [490] })], // +0 (same time, valid)
         // s4 missing → NO_DATA gap
-        s5: [makeTimetableGroup('p1', { svc1: [495] })],
+        s5: [makeTimetableGroup('p1', 4, { svc1: [495] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -686,9 +696,9 @@ describe('buildTripPatternStats', () => {
 
       // Timetable entries exist but for a different pattern
       const timetable: Record<string, TimetableGroupV2Json[]> = {
-        s1: [makeTimetableGroup('p_other', { svc1: [480] })],
-        s2: [makeTimetableGroup('p_other', { svc1: [490] })],
-        s3: [makeTimetableGroup('p_other', { svc1: [500] })],
+        s1: [makeTimetableGroup('p_other', 0, { svc1: [480] })],
+        s2: [makeTimetableGroup('p_other', 1, { svc1: [490] })],
+        s3: [makeTimetableGroup('p_other', 2, { svc1: [500] })],
       };
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
@@ -696,6 +706,114 @@ describe('buildTripPatternStats', () => {
       const result = buildTripPatternStats(patterns, timetable, groups);
 
       expect(result['wd']['p1']).toBeUndefined();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Issue #47: duplicate stop_id within pattern (6-shape, circular, complex)
+  // ---------------------------------------------------------------------------
+  describe('duplicate stop_id within pattern (Issue #47)', () => {
+    it('6-shape: freq is single-trip count, not double (toaran:p72 風)', () => {
+      // Pattern: s1 → s2 → s1 → s3 (s1 at non-terminal middle position 2)
+      // Equivalent to 都営大江戸線 都庁前 [0, 28] in toaran:p72
+      const patterns: Record<string, TripPatternJson> = {
+        p1: {
+          v: 2,
+          r: 'r1',
+          h: 'Terminal',
+          stops: [{ id: 's1' }, { id: 's2' }, { id: 's1' }, { id: 's3' }],
+        },
+      };
+
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [
+          // si=0 origin departures (3 trips)
+          makeTimetableGroup('p1', 0, { svc1: [480, 540, 600] }),
+          // si=2 mid-trip pass-through (3 trips, same physical pass — different time)
+          makeTimetableGroup('p1', 2, { svc1: [490, 550, 610] }),
+        ],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [485, 545, 605] })],
+        s3: [makeTimetableGroup('p1', 3, { svc1: [495, 555, 615] })],
+      };
+
+      const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
+
+      const result = buildTripPatternStats(patterns, timetable, groups);
+
+      // freq = origin (si=0) trip count = 3, NOT 6 (would be the broken merged value)
+      expect(result['wd']['p1'].freq).toBe(3);
+      // rd should be computed correctly even with duplicate stop in middle
+      // s1(si=0)→s2 = 5, s2→s1(si=2) = 5, s1(si=2)→s3 = 5 → rd = [15, 10, 5, 0]
+      expect(result['wd']['p1'].rd).toEqual([15, 10, 5, 0]);
+    });
+
+    it('complex multi-duplicate: per-pattern freq excludes double-counting (actvnav 風)', () => {
+      // Pattern: s1 → s2 → s3 → s1 → s2 → s4 (s1 at [0,3], s2 at [1,4])
+      const patterns: Record<string, TripPatternJson> = {
+        p1: {
+          v: 2,
+          r: 'r1',
+          h: 'Terminal',
+          stops: [
+            { id: 's1' },
+            { id: 's2' },
+            { id: 's3' },
+            { id: 's1' },
+            { id: 's2' },
+            { id: 's4' },
+          ],
+        },
+      };
+
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [
+          makeTimetableGroup('p1', 0, { svc1: [480, 540] }),
+          makeTimetableGroup('p1', 3, { svc1: [486, 546] }),
+        ],
+        s2: [
+          makeTimetableGroup('p1', 1, { svc1: [482, 542] }),
+          makeTimetableGroup('p1', 4, { svc1: [488, 548] }),
+        ],
+        s3: [makeTimetableGroup('p1', 2, { svc1: [484, 544] })],
+        s4: [makeTimetableGroup('p1', 5, { svc1: [490, 550] })],
+      };
+
+      const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
+
+      const result = buildTripPatternStats(patterns, timetable, groups);
+
+      // freq = trip count from origin (si=0) = 2, NOT 4 (would be naive sum)
+      expect(result['wd']['p1'].freq).toBe(2);
+    });
+
+    it('consecutive duplicate (dwell): each si is treated as independent group', () => {
+      // Pattern: s1 → s2 → s2 → s3 (s2 at consecutive positions 1 and 2, dwell)
+      const patterns: Record<string, TripPatternJson> = {
+        p1: {
+          v: 2,
+          r: 'r1',
+          h: 'Terminal',
+          stops: [{ id: 's1' }, { id: 's2' }, { id: 's2' }, { id: 's3' }],
+        },
+      };
+
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540] })],
+        s2: [
+          // dwell: same departure time at si=1 and si=2
+          makeTimetableGroup('p1', 1, { svc1: [485, 545] }),
+          makeTimetableGroup('p1', 2, { svc1: [485, 545] }),
+        ],
+        s3: [makeTimetableGroup('p1', 3, { svc1: [490, 550] })],
+      };
+
+      const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
+
+      const result = buildTripPatternStats(patterns, timetable, groups);
+
+      expect(result['wd']['p1'].freq).toBe(2);
+      // s1→s2(si=1) = 5, s2(si=1)→s2(si=2) = 0 (dwell), s2(si=2)→s3 = 5 → rd = [10, 5, 5, 0]
+      expect(result['wd']['p1'].rd).toEqual([10, 5, 5, 0]);
     });
   });
 });

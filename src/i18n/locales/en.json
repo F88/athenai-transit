@@ -144,6 +144,9 @@
     "removed": "Anchor removed",
     "anchorUpdateFailed": "Failed to update anchor"
   },
+  "dataLoad": {
+    "failed": "Failed to load data"
+  },
   "search": {
     "title": "Search stops",
     "description": "Search for stops and stations by name",

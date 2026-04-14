@@ -82,12 +82,12 @@ export function validateGlobalInsightsBundle(baseDir: string): GlobalInsightsVal
   }
 
   // Bundle structure
-  if (bundle.bundle_version !== 2) {
+  if (bundle.bundle_version !== 3) {
     issues.push({
       prefix: 'global',
       level: 'error',
       category: 'structure',
-      message: `Invalid bundle_version: expected 2, got ${String(bundle.bundle_version)}`,
+      message: `Invalid bundle_version: expected 3, got ${String(bundle.bundle_version)}`,
     });
   }
   if (bundle.kind !== 'global-insights') {

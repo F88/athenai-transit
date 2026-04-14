@@ -99,7 +99,7 @@ describe('KSJ ShapesBundle assembly', () => {
     expect(existsSync(filePath)).toBe(true);
 
     const bundle = JSON.parse(readFileSync(filePath, 'utf-8')) as ShapesBundle;
-    expect(bundle.bundle_version).toBe(2);
+    expect(bundle.bundle_version).toBe(3);
     expect(bundle.kind).toBe('shapes');
     expect(bundle.shapes.v).toBe(2);
     expect(Object.keys(bundle.shapes.data)).toHaveLength(2);

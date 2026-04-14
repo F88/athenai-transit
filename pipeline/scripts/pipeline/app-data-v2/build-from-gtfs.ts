@@ -88,7 +88,7 @@ function buildSourceDataBundle(source: BuildSource): void {
 
     // Assemble DataBundle
     const bundle: DataBundle = {
-      bundle_version: 2,
+      bundle_version: 3,
       kind: 'data',
       stops: { v: 2, data: stops },
       routes: { v: 2, data: routes },

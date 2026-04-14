@@ -314,22 +314,105 @@ describe('extractTripPatternsAndTimetable', () => {
     expect(timetable['test:S002']).toHaveLength(2);
   });
 
-  it('handles circular route (same first and last stop)', () => {
-    db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '都庁前', 0);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
-      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
-      INSERT INTO stop_times VALUES ('T001', 'S001', 3, '08:20:00', '08:20:00', 0, 0, NULL);
-    `);
+  describe('duplicate stop_id within pattern (Issue #47)', () => {
+    it('pure circular: origin and terminal share stop_id — splits by si', () => {
+      db.exec(`
+        INSERT INTO trips VALUES ('T001', 'R001', 'WD', '都庁前', 0);
+        INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S001', 3, '08:20:00', '08:20:00', 0, 0, NULL);
+      `);
 
-    const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
-    const p = Object.values(tripPatterns)[0];
-    // Circular: first and last stop are the same
-    expect(p.stops[0].id).toBe(p.stops[p.stops.length - 1].id);
-    expect(p.stops).toEqual([{ id: 'test:S001' }, { id: 'test:S002' }, { id: 'test:S001' }]);
-    // S001 appears twice in the pattern -> timetable has 2 departures (at seq 1 and seq 3)
-    const g = timetable['test:S001'][0];
-    expect(g.d['test:WD']).toEqual([480, 500]);
+      const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
+      const p = Object.values(tripPatterns)[0];
+      // Circular: first and last stop are the same
+      expect(p.stops[0].id).toBe(p.stops[p.stops.length - 1].id);
+      expect(p.stops).toEqual([{ id: 'test:S001' }, { id: 'test:S002' }, { id: 'test:S001' }]);
+      // S001 appears at array positions 0 and 2 → 2 separate groups distinguished by si
+      const groups = timetable['test:S001'];
+      expect(groups).toHaveLength(2);
+      expect(groups.map((g) => g.si)).toEqual([0, 2]);
+      expect(groups[0].d['test:WD']).toEqual([480]);
+      expect(groups[1].d['test:WD']).toEqual([500]);
+      // Interior stop has only one group at si=1
+      expect(timetable['test:S002']).toHaveLength(1);
+      expect(timetable['test:S002'][0].si).toBe(1);
+    });
+
+    it('6-shape: stop at non-terminal middle position emits 2 groups', () => {
+      // S001 at index 0 (origin) and index 2 (mid-trip), S003 at terminal (index 3)
+      db.exec(`
+        INSERT INTO trips VALUES ('T001', 'R001', 'WD', '光が丘', 0);
+        INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:05:00', '08:05:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S001', 3, '08:10:00', '08:10:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S003', 4, '08:15:00', '08:15:00', 0, 0, NULL);
+      `);
+
+      const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
+      const p = Object.values(tripPatterns)[0];
+      expect(p.stops).toEqual([
+        { id: 'test:S001' },
+        { id: 'test:S002' },
+        { id: 'test:S001' },
+        { id: 'test:S003' },
+      ]);
+
+      // S001 splits into si=0 (origin) and si=2 (mid-trip pass-through)
+      const groups = timetable['test:S001'];
+      expect(groups).toHaveLength(2);
+      expect(groups.map((g) => g.si)).toEqual([0, 2]);
+      expect(groups[0].d['test:WD']).toEqual([480]);
+      expect(groups[1].d['test:WD']).toEqual([490]);
+    });
+
+    it('complex multi-duplicate: 2 different stops each at 2 positions', () => {
+      // Pattern: S001 → S002 → S003 → S001 → S002 → S004
+      // S001 at [0, 3], S002 at [1, 4]
+      db.exec(`
+        INSERT INTO trips VALUES ('T001', 'R001', 'WD', 'S004', 0);
+        INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:02:00', '08:02:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S003', 3, '08:04:00', '08:04:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S001', 4, '08:06:00', '08:06:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S002', 5, '08:08:00', '08:08:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S004', 6, '08:10:00', '08:10:00', 0, 0, NULL);
+      `);
+
+      const { timetable } = extractTripPatternsAndTimetable(db, 'test');
+      // S001 at positions 0 and 3
+      expect(timetable['test:S001']).toHaveLength(2);
+      expect(timetable['test:S001'].map((g) => g.si)).toEqual([0, 3]);
+      // S002 at positions 1 and 4
+      expect(timetable['test:S002']).toHaveLength(2);
+      expect(timetable['test:S002'].map((g) => g.si)).toEqual([1, 4]);
+      // S003 only at position 2
+      expect(timetable['test:S003']).toHaveLength(1);
+      expect(timetable['test:S003'][0].si).toBe(2);
+      // S004 only at position 5
+      expect(timetable['test:S004']).toHaveLength(1);
+      expect(timetable['test:S004'][0].si).toBe(5);
+    });
+
+    it('consecutive duplicate (dwell): same stop_id at adjacent positions', () => {
+      // dwell representation: S002 appears consecutively at positions 1 and 2
+      db.exec(`
+        INSERT INTO trips VALUES ('T001', 'R001', 'WD', 'S003', 0);
+        INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:05:00', '08:05:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S002', 3, '08:05:00', '08:05:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('T001', 'S003', 4, '08:10:00', '08:10:00', 0, 0, NULL);
+      `);
+
+      const { timetable } = extractTripPatternsAndTimetable(db, 'test');
+      // S002 at consecutive positions 1 and 2 → still emitted as 2 separate groups
+      const groups = timetable['test:S002'];
+      expect(groups).toHaveLength(2);
+      expect(groups.map((g) => g.si)).toEqual([1, 2]);
+      // Both groups have the same departure time (dwell = 0)
+      expect(groups[0].d['test:WD']).toEqual([485]);
+      expect(groups[1].d['test:WD']).toEqual([485]);
+    });
   });
 
   it('route_url is NOT included in route output (moved to lookup)', () => {

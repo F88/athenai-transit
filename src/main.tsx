@@ -7,20 +7,23 @@ import App from './app';
 import { TransitRepositoryProvider } from './contexts/transit-repository-provider';
 import { DataSourceManager } from './config/data-source-manager';
 import type { TransitRepository } from './repositories/transit-repository';
-import { AthenaiRepositoryV2 } from './repositories/athenai-repository-v2';
+import { AthenaiRepositoryV2, type LoadResult } from './repositories/athenai-repository-v2';
 import { cleanupInvalidQueryParams, getDiagParam, getRepoParam } from './lib/query-params';
 import { TILE_SOURCES } from './config/tile-sources';
 import { createLogger } from './lib/logger';
 
 const logger = createLogger('App');
 
-async function createRepository(): Promise<TransitRepository> {
+async function createRepository(): Promise<{
+  repository: TransitRepository;
+  loadResult: LoadResult;
+}> {
   const repo = getRepoParam();
 
   if (repo === 'mock') {
     logger.info('Using MockRepository (?repo=mock)');
     const { MockRepository } = await import('./repositories/mock-repository');
-    return new MockRepository();
+    return { repository: new MockRepository(), loadResult: { loaded: [], failed: [] } };
   }
 
   const dsm = new DataSourceManager();
@@ -33,14 +36,14 @@ async function createRepository(): Promise<TransitRepository> {
       `Failed to load ${loadResult.failed.length} source(s): [${loadResult.failed.map((f) => f.prefix).join(', ')}]`,
     );
   }
-  return repository;
+  return { repository, loadResult };
 }
 
 async function init() {
   // Remove invalid query params (e.g., legacy ?repo=v1, malformed ?time=) from the URL.
   cleanupInvalidQueryParams(TILE_SOURCES.length);
 
-  const repository = await createRepository();
+  const { repository, loadResult } = await createRepository();
 
   // Run diagnostics if requested via query param.
   // Dynamic import: diagnostics code is not loaded on normal page visits.
@@ -57,7 +60,7 @@ async function init() {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <TransitRepositoryProvider repository={repository}>
-        <App />
+        <App loadResult={loadResult} />
       </TransitRepositoryProvider>
     </StrictMode>,
   );

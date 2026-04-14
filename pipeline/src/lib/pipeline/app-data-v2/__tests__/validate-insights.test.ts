@@ -28,7 +28,7 @@ function writeBundle(prefix: string, bundle: unknown): void {
 
 function makeValidBundle(): InsightsBundle {
   return {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'insights',
     serviceGroups: {
       v: 1,
@@ -96,7 +96,7 @@ describe('validateInsightsBundle', () => {
 
   describe('serviceGroups section', () => {
     it('reports error when serviceGroups is missing', () => {
-      const bundle = { bundle_version: 2, kind: 'insights' };
+      const bundle = { bundle_version: 3, kind: 'insights' };
       writeBundle('no-sg', bundle);
 
       const result = validateInsightsBundle('no-sg', TMP_DIR);
@@ -120,7 +120,7 @@ describe('validateInsightsBundle', () => {
 
     it('reports error when serviceGroups.data is not an array', () => {
       const bundle = {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'insights',
         serviceGroups: { v: 1, data: { wd: ['test:SVC1'] } },
       };
@@ -135,7 +135,7 @@ describe('validateInsightsBundle', () => {
 
     it('counts service groups correctly', () => {
       const bundle: InsightsBundle = {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'insights',
         serviceGroups: {
           v: 1,

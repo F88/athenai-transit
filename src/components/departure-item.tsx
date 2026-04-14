@@ -1,14 +1,15 @@
 import type { InfoLevel } from '../types/app/settings';
 import { useTranslation } from 'react-i18next';
-import type { Agency, TimetableEntryAttributes } from '../types/app/transit';
+import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { minutesToDate } from '../domain/transit/calendar-utils';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
-import { getDisplayMinutes, hasBoardableDeparture } from '../domain/transit/timetable-utils';
+import { getDisplayMinutes } from '../domain/transit/timetable-utils';
 import { RelativeTime } from './relative-time';
 import { TripInfo } from './trip-info';
+import { TimetableEntryAttributesLabels } from './label/timetable-entry-attributes-labels';
 import { VerboseContextualTimetableEntries } from './verbose/verbose-contextual-timetable-entry';
 import { Clock } from 'lucide-react';
 
@@ -58,15 +59,13 @@ export function DepartureItem({
   const first = displayTimes[0];
   const diffMs = first ? first.getTime() - now.getTime() : 0;
 
-  // Group-level attributes: terminal/origin/dropOffUnavailable come from the
-  // first entry (all entries in a route+headsign group share the same pattern
-  // position), while pickupUnavailable reflects whether the group as a whole
-  // has no boardable entry.
-  const baseAttributes = getTimetableEntryAttributes(firstEntry);
-  const groupAttributes: TimetableEntryAttributes = {
-    ...baseAttributes,
-    isPickupUnavailable: !hasBoardableDeparture(entries),
-  };
+  // Issue #47 / Alt F: attributes (terminal/origin/pickup/dropOff) are properties
+  // of individual departures, not groups. With si-based grouping in place, the
+  // same route+headsign bucket can contain entries with different stopIndex
+  // (6-shape routes, circular routes), so we render attribute labels per-departure
+  // inline with each time slot rather than as a single group-level badge on
+  // TripInfo. TripInfo's `attributes?` prop is kept for single-departure consumers
+  // (FlatDepartureItem, StopSummary) but DepartureItem no longer passes it.
 
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
@@ -77,7 +76,6 @@ export function DepartureItem({
           dataLang={dataLang}
           showRouteTypeIcon={showRouteTypeIcon}
           agency={agency}
-          attributes={groupAttributes}
         />
       </div>
       <div className="flex items-center gap-3 pl-1">
@@ -93,13 +91,23 @@ export function DepartureItem({
         )}
         {/* Absolute times for all entries including the first.
             The first entry intentionally appears in both relative and absolute
-            because relative alone (e.g. "あと400分") is hard to interpret. */}
-        {displayTimes.map((dep, i) => (
-          <span key={i} className="text-sm text-[#757575] dark:text-gray-400">
-            {formatAbsoluteTime(dep)}
-            {displayEntries[i]?.patternPosition.isTerminal && (
-              <span className="text-[10px] opacity-70">着</span>
-            )}
+            because relative alone (e.g. "あと400分") is hard to interpret.
+            Per Issue #47 / Alt F, each time renders its own per-departure
+            attribute labels (TERM/ORIG/noPickup/noDropOff) inline. */}
+        {displayEntries.map((entry, i) => (
+          <span
+            key={i}
+            className="inline-flex items-baseline gap-0.5 text-sm text-[#757575] dark:text-gray-400"
+          >
+            {formatAbsoluteTime(displayTimes[i])}
+            <TimetableEntryAttributesLabels
+              attributes={getTimetableEntryAttributes(entry)}
+              size="xs"
+              isDisplayTerminal
+              isDisplayOrigin
+              isDisplayPickupUnavailable
+              isDisplayDropOffUnavailable
+            />
           </span>
         ))}
         {onShowTimetable && (

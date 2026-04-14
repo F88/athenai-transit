@@ -1,6 +1,27 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
 import { getEffectiveHeadsign } from '../../domain/transit/get-effective-headsign';
 
+/**
+ * Render a one-line visual indicator of the current stop position within
+ * the trip pattern. Each `.` is one stop, `*` highlights the current stop.
+ *
+ * Example for a 39-stop pattern with current at stopIndex=28:
+ *   ............................*..........
+ *
+ * Useful for spotting 6-shape and circular routes at a glance, where the
+ * same stop_id appears at multiple positions (Issue #47).
+ */
+function renderPatternBar(stopIndex: number, totalStops: number): string {
+  if (totalStops <= 0) {
+    return '';
+  }
+  const chars: string[] = [];
+  for (let i = 0; i < totalStops; i++) {
+    chars.push(i === stopIndex ? '*' : '.');
+  }
+  return chars.join('');
+}
+
 interface VerboseTimetableEntryProps {
   /** The timetable entry to dump. */
   entry: TimetableEntry;
@@ -57,9 +78,12 @@ export function VerboseTimetableEntry({
         [boarding] pt={entry.boarding.pickupType} dt={entry.boarding.dropOffType}
       </span>
       <span className="block">
-        [pattern] [{entry.patternPosition.stopIndex + 1}/{entry.patternPosition.totalStops}]
-        {entry.patternPosition.isTerminal && ' TERM'}
+        [pattern] si={entry.patternPosition.stopIndex} [{entry.patternPosition.stopIndex + 1}/
+        {entry.patternPosition.totalStops}]{entry.patternPosition.isTerminal && ' TERM'}
         {entry.patternPosition.isOrigin && ' ORIG'}
+      </span>
+      <span className="block pl-2 font-mono text-xs">
+        {renderPatternBar(entry.patternPosition.stopIndex, entry.patternPosition.totalStops)}
       </span>
       <span className="block">
         [insights]{' '}

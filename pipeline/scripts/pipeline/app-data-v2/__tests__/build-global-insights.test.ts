@@ -42,10 +42,10 @@ function makeDataBundle(opts: {
   services: { id: string; d: number[] }[];
   stops: { i: string; a: number; o: number; l: number; ps?: string }[];
   patterns?: Record<string, { r: string; stops: { id: string }[] }>;
-  timetable?: Record<string, { tp: string; d: Record<string, number[]> }[]>;
+  timetable?: Record<string, { tp: string; si?: number; d: Record<string, number[]> }[]>;
 }): DataBundle {
   return {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'data',
     stops: {
       v: 2,
@@ -93,7 +93,7 @@ function makeDataBundle(opts: {
       data: Object.fromEntries(
         Object.entries(opts.timetable ?? {}).map(([stopId, groups]) => [
           stopId,
-          groups.map((g) => ({ v: 2 as const, tp: g.tp, d: g.d, a: g.d })),
+          groups.map((g, idx) => ({ v: 2 as const, tp: g.tp, si: g.si ?? idx, d: g.d, a: g.d })),
         ]),
       ),
     },
@@ -206,7 +206,7 @@ describe('GlobalInsightsBundle assembly', () => {
     expect(existsSync(insightsPath)).toBe(true);
 
     const result = JSON.parse(readFileSync(insightsPath, 'utf-8')) as GlobalInsightsBundle;
-    expect(result.bundle_version).toBe(2);
+    expect(result.bundle_version).toBe(3);
     expect(result.kind).toBe('global-insights');
     expect(result.stopGeo).toBeDefined();
     expect(result.stopGeo!.v).toBe(1);

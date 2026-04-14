@@ -57,14 +57,14 @@ export function TimetableEntryAttributesLabels({
         <BaseLabel
           size={size}
           value={t('timetable.entry.noPickup')}
-          className="bg-red-500 text-white"
+          className="border border-yellow-600 bg-yellow-100 text-yellow-900 dark:border-yellow-600 dark:bg-yellow-950 dark:text-yellow-200"
         />
       )}
       {showDropOffUnavailable && (
         <BaseLabel
           size={size}
           value={t('timetable.entry.noDropOff')}
-          className="bg-red-500 text-white"
+          className="border border-dashed border-yellow-600 bg-yellow-100 text-yellow-900 dark:border-yellow-600 dark:bg-yellow-950 dark:text-yellow-200"
         />
       )}
     </span>

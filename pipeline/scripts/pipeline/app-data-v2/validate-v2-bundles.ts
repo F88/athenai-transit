@@ -235,7 +235,7 @@ function validateSource(
       printIssueDetails(structureErrors);
     } else {
       dataStructureOk = true;
-      console.log(`      Structure:     OK (bundle_version=2, kind=data, 9 sections)`);
+      console.log(`      Structure:     OK (bundle_version=3, kind=data, 9 sections)`);
 
       // Per-section summary lines
       console.log('      Sections:');

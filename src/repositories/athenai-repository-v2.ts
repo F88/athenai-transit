@@ -45,6 +45,10 @@ import type {
   UpcomingTimetableResult,
 } from '../types/app/repository';
 import { getTimetableEntriesState } from '../domain/transit/timetable-utils';
+import {
+  sortTimetableEntriesByDepartureTime,
+  sortTimetableEntriesChronologically,
+} from '../domain/transit/sort-timetable-entries';
 import { MAX_STOPS_RESULT } from './transit-repository';
 import type { TransitRepository } from './transit-repository';
 import type { TransitDataSourceV2 } from '../datasources/transit-data-source-v2';
@@ -59,7 +63,6 @@ import {
   computeActiveServiceIds,
   extractPrefix,
   formatDateKey,
-  minutesToDate,
 } from '../domain/transit/calendar-utils';
 import { injectOriginLang } from '../domain/transit/i18n/inject-origin-lang';
 import { AGENCY_ATTRIBUTES } from '../config/agency-attributes';
@@ -697,6 +700,27 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     }
   >();
 
+  // Per-pattern stats (rd + freq) for date-aware resolution.
+  // Populated by loadAllShapesWithInsights from
+  // `InsightsBundle.tripPatternStats.data[group][patternId]`, queried
+  // by `resolveTripInsights` to populate `TimetableEntry.insights`.
+  //
+  // Unlike `routeFreqMap` (which aggregates freq across patterns to a
+  // single value per route), this map preserves per-pattern values
+  // because rd indices are positional and pattern-level freq carries
+  // distinct meaning from route-level freq. Keyed by patternId.
+  //
+  // `TripPatternStatsJson` is fixed at `{ rd, freq }`; no further
+  // fields are anticipated, so the shape of this map is stable.
+  private patternStatsMap = new Map<
+    string,
+    {
+      groups: ServiceGroupEntry[];
+      rds: Partial<Record<string, number[]>>;
+      freqs: Partial<Record<string, number>>;
+    }
+  >();
+
   // Shapes: background-loaded after create()
   private shapesPromise: Promise<RouteShape[]> = Promise.resolve([]);
   private shapesCache: RouteShape[] | null = null;
@@ -856,6 +880,18 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               this.routeFreqMap.set(routeId, entry);
             }
             entry.freqs[groupKey] = (entry.freqs[groupKey] ?? 0) + stats.freq;
+
+            // Store per-group rd + freq in patternStatsMap for
+            // resolveTripInsights. Kept per-pattern (not aggregated to
+            // route) because rd indices are positional and pattern-level
+            // freq is distinct from route-level freq.
+            let statsEntry = this.patternStatsMap.get(patternId);
+            if (!statsEntry) {
+              statsEntry = { groups: serviceGroups, rds: {}, freqs: {} };
+              this.patternStatsMap.set(patternId, statsEntry);
+            }
+            statsEntry.rds[groupKey] = stats.rd;
+            statsEntry.freqs[groupKey] = stats.freq;
           }
         }
 
@@ -1033,17 +1069,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         continue;
       }
       const totalStops = pattern.stops.length;
-      // For circular routes, the same stop_id appears at both index 0 and last.
-      // Pre-compute both indices to resolve per-entry using boarding types.
-      const firstIndex = pattern.stops.findIndex((s) => s.id === stopId);
-      let lastIndex = -1;
-      for (let k = pattern.stops.length - 1; k >= 0; k--) {
-        if (pattern.stops[k].id === stopId) {
-          lastIndex = k;
-          break;
-        }
-      }
-      const isCircularStop = firstIndex !== lastIndex;
+      // Issue #47: stopIndex comes directly from group.si (0-based pattern.stops index).
+      // For 6-shape and circular patterns, the same stop_id has multiple groups
+      // distinguished by si — each group is processed independently with its own
+      // stopIndex. The previous pickupType-based heuristic is no longer needed.
+      const stopIndex = group.si;
+      const isTerminalPosition = stopIndex === totalStops - 1;
 
       // Today's services
       for (const [serviceId, times] of Object.entries(group.d)) {
@@ -1059,21 +1090,17 @@ export class AthenaiRepositoryV2 implements TransitRepository {
           fullDayCount++;
           if (!hasBoardable) {
             const pt = (pickupTypes?.[j] ?? 0) as StopServiceType;
-            const si = isCircularStop && pt === 1 ? lastIndex : firstIndex;
-            const isTerminal = si === totalStops - 1;
-            if (pt !== 1 && !isTerminal) {
+            if (pt !== 1 && !isTerminalPosition) {
               hasBoardable = true;
             }
           }
         }
 
         const startIdx = binarySearchFirstGte(times, nowMinutes);
+        const tripInsights = this.resolveTripInsights(group.tp, stopIndex, serviceDay);
         for (let i = startIdx; i < times.length; i++) {
           const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
           const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
-          // Circular routes: same stop_id at first and last position.
-          // Use pickupType to distinguish: terminal arrivals have pickupType=1.
-          const stopIndex = isCircularStop && pickupType === 1 ? lastIndex : firstIndex;
           entries.push({
             schedule: {
               departureMinutes: times[i],
@@ -1084,10 +1111,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
             patternPosition: {
               stopIndex,
               totalStops,
-              isTerminal: stopIndex === totalStops - 1,
+              isTerminal: isTerminalPosition,
               isOrigin: stopIndex === 0,
             },
             serviceDate: serviceDay,
+            ...(tripInsights !== undefined ? { insights: tripInsights } : {}),
           });
         }
       }
@@ -1109,9 +1137,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
           fullDayCount++;
           if (!hasBoardable) {
             const pt = (pickupTypes?.[j] ?? 0) as StopServiceType;
-            const si = isCircularStop && pt === 1 ? lastIndex : firstIndex;
-            const isTerminal = si === totalStops - 1;
-            if (pt !== 1 && !isTerminal) {
+            if (pt !== 1 && !isTerminalPosition) {
               hasBoardable = true;
             }
           }
@@ -1119,10 +1145,10 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
         const overnightTarget = nowMinutes + 1440;
         const startIdx = binarySearchFirstGte(times, overnightTarget);
+        const tripInsights = this.resolveTripInsights(group.tp, stopIndex, prevServiceDay);
         for (let i = startIdx; i < times.length; i++) {
           const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
           const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
-          const stopIndex = isCircularStop && pickupType === 1 ? lastIndex : firstIndex;
           entries.push({
             schedule: {
               departureMinutes: times[i],
@@ -1133,24 +1159,17 @@ export class AthenaiRepositoryV2 implements TransitRepository {
             patternPosition: {
               stopIndex,
               totalStops,
-              isTerminal: stopIndex === totalStops - 1,
+              isTerminal: isTerminalPosition,
               isOrigin: stopIndex === 0,
             },
             serviceDate: prevServiceDay,
+            ...(tripInsights !== undefined ? { insights: tripInsights } : {}),
           });
         }
       }
     }
 
-    // Sort by actual chronological time using serviceDate + departureMinutes.
-    // Simple departureMinutes comparison is insufficient because overnight entries
-    // from the previous service day (e.g., prevDay + 1900 min) must interleave
-    // correctly with today's entries (e.g., today + 400 min).
-    entries.sort((a, b) => {
-      const aTime = minutesToDate(a.serviceDate, a.schedule.departureMinutes).getTime();
-      const bTime = minutesToDate(b.serviceDate, b.schedule.departureMinutes).getTime();
-      return aTime - bTime;
-    });
+    sortTimetableEntriesChronologically(entries);
     const totalAvailable = entries.length;
     let truncated = false;
     let result = entries;
@@ -1200,16 +1219,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         continue;
       }
       const totalStops = pattern.stops.length;
-      const firstIndex = pattern.stops.findIndex((s) => s.id === stopId);
-      let lastIndex = -1;
-      for (let k = pattern.stops.length - 1; k >= 0; k--) {
-        if (pattern.stops[k].id === stopId) {
-          lastIndex = k;
-          break;
-        }
-      }
-      const isCircularStop = firstIndex !== lastIndex;
+      // Issue #47: stopIndex from group.si — see getUpcomingTimetableEntries above.
+      const stopIndex = group.si;
+      const isTerminalPosition = stopIndex === totalStops - 1;
 
+      const tripInsights = this.resolveTripInsights(group.tp, stopIndex, serviceDate);
       for (const [serviceId, times] of Object.entries(group.d)) {
         if (!activeServiceIds.has(serviceId)) {
           continue;
@@ -1220,7 +1234,6 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         for (let i = 0; i < times.length; i++) {
           const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
           const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
-          const stopIndex = isCircularStop && pickupType === 1 ? lastIndex : firstIndex;
           entries.push({
             schedule: {
               departureMinutes: times[i],
@@ -1231,15 +1244,16 @@ export class AthenaiRepositoryV2 implements TransitRepository {
             patternPosition: {
               stopIndex,
               totalStops,
-              isTerminal: stopIndex === totalStops - 1,
+              isTerminal: isTerminalPosition,
               isOrigin: stopIndex === 0,
             },
+            ...(tripInsights !== undefined ? { insights: tripInsights } : {}),
           });
         }
       }
     }
 
-    entries.sort((a, b) => a.schedule.departureMinutes - b.schedule.departureMinutes);
+    sortTimetableEntriesByDepartureTime(entries);
     const elapsed = Math.round(performance.now() - t0);
     logger.debug(
       `getFullDayTimetableEntries: ${stopId} → ${entries.length} entries in ${elapsed}ms`,
@@ -1386,6 +1400,45 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       return undefined;
     }
     return entry.freqs[groupKey];
+  }
+
+  /**
+   * Resolve trip-level insights for an entry at a given stop position
+   * and service date.
+   *
+   * Looks up the service group via `selectServiceGroup`, then derives
+   * `remainingMinutes` (= `rd[stopIndex]`), `totalMinutes` (= `rd[0]`),
+   * and `freq` (= the resolved group's freq) from the pattern stats.
+   * Returns `undefined` when the pattern has no insights data, no
+   * matching service group, or the stopIndex is out of range.
+   */
+  private resolveTripInsights(
+    patternId: string,
+    stopIndex: number,
+    serviceDate: Date,
+  ): { remainingMinutes: number; totalMinutes: number; freq: number } | undefined {
+    const entry = this.patternStatsMap.get(patternId);
+    if (!entry) {
+      return undefined;
+    }
+    const activeIds = this.getActiveServiceIds(serviceDate);
+    const groupKey = selectServiceGroup(entry.groups, activeIds);
+    if (!groupKey) {
+      return undefined;
+    }
+    const rd = entry.rds[groupKey];
+    if (!rd) {
+      return undefined;
+    }
+    const remainingMinutes = rd[stopIndex];
+    if (remainingMinutes === undefined) {
+      return undefined;
+    }
+    const freq = entry.freqs[groupKey];
+    if (freq === undefined) {
+      return undefined;
+    }
+    return { remainingMinutes, totalMinutes: rd[0], freq };
   }
 
   // ---------------------------------------------------------------------------

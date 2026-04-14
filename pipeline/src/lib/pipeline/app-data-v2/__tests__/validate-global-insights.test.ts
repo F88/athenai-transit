@@ -61,7 +61,7 @@ describe('validateGlobalInsightsBundle', () => {
 
   it('validates a valid GlobalInsightsBundle with stopGeo', () => {
     writeGlobalInsights({
-      bundle_version: 2,
+      bundle_version: 3,
       kind: 'global-insights',
       stopGeo: {
         v: 1,
@@ -81,7 +81,7 @@ describe('validateGlobalInsightsBundle', () => {
 
   it('warns when stopGeo section is absent', () => {
     writeGlobalInsights({
-      bundle_version: 2,
+      bundle_version: 3,
       kind: 'global-insights',
     });
 
@@ -106,7 +106,7 @@ describe('validateGlobalInsightsBundle', () => {
 
   it('detects invalid kind', () => {
     writeGlobalInsights({
-      bundle_version: 2,
+      bundle_version: 3,
       kind: 'insights',
     });
 
@@ -117,7 +117,7 @@ describe('validateGlobalInsightsBundle', () => {
 
   it('detects invalid stopGeo.v', () => {
     writeGlobalInsights({
-      bundle_version: 2,
+      bundle_version: 3,
       kind: 'global-insights',
       stopGeo: { v: 2, data: {} },
     });
@@ -129,7 +129,7 @@ describe('validateGlobalInsightsBundle', () => {
 
   it('detects stopGeo.data as array (invalid)', () => {
     writeGlobalInsights({
-      bundle_version: 2,
+      bundle_version: 3,
       kind: 'global-insights',
       stopGeo: { v: 1, data: [] },
     });
@@ -141,7 +141,7 @@ describe('validateGlobalInsightsBundle', () => {
 
   it('detects stopGeo as null (invalid)', () => {
     writeGlobalInsights({
-      bundle_version: 2,
+      bundle_version: 3,
       kind: 'global-insights',
       stopGeo: null,
     });
@@ -153,7 +153,7 @@ describe('validateGlobalInsightsBundle', () => {
 
   it('detects invalid nr type in stopGeo entry', () => {
     writeGlobalInsights({
-      bundle_version: 2,
+      bundle_version: 3,
       kind: 'global-insights',
       stopGeo: {
         v: 1,
@@ -179,7 +179,7 @@ describe('validateGlobalInsightsBundle', () => {
 
   it('detects null entry in stopGeo.data', () => {
     writeGlobalInsights({
-      bundle_version: 2,
+      bundle_version: 3,
       kind: 'global-insights',
       stopGeo: {
         v: 1,

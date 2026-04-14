@@ -73,7 +73,7 @@ export function writeDataBundle(dir: string, data: DataBundle): void {
  */
 export function writeShapesBundle(dir: string, shapes: Record<string, ShapePointV2[][]>): void {
   const bundle: ShapesBundle = {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'shapes',
     shapes: { v: 2, data: shapes },
   };
@@ -107,7 +107,7 @@ export function writeInsightsBundle(
   sections?: InsightsSections,
 ): void {
   const bundle: InsightsBundle = {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'insights',
     serviceGroups: { v: 1, data: serviceGroups },
   };
@@ -135,7 +135,7 @@ export function writeInsightsBundle(
  */
 export function writeGlobalInsightsBundle(dir: string, stopGeo: Record<string, StopGeoJson>): void {
   const bundle: GlobalInsightsBundle = {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'global-insights',
     stopGeo: { v: 1, data: stopGeo },
   };

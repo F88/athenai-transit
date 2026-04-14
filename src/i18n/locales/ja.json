@@ -144,6 +144,9 @@
     "removed": "アンカーを削除しました",
     "anchorUpdateFailed": "アンカー更新に失敗しました"
   },
+  "dataLoad": {
+    "failed": "データの取得に失敗しました"
+  },
   "search": {
     "title": "のりばを検索",
     "description": "のりば名で停留所や駅を検索します",

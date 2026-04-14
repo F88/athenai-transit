@@ -134,7 +134,7 @@ describe('ODPT DataBundle assembly', () => {
     );
 
     const bundle: DataBundle = {
-      bundle_version: 2,
+      bundle_version: 3,
       kind: 'data',
       stops: { v: 2, data: stops },
       routes: { v: 2, data: routes },
@@ -148,7 +148,7 @@ describe('ODPT DataBundle assembly', () => {
     };
 
     // Bundle structure
-    expect(bundle.bundle_version).toBe(2);
+    expect(bundle.bundle_version).toBe(3);
     expect(bundle.kind).toBe('data');
 
     // Section versions

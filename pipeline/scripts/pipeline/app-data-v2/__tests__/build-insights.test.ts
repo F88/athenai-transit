@@ -30,7 +30,7 @@ const TMP_DIR = join(import.meta.dirname, '.tmp-build-insights-test');
 /** Create a minimal DataBundle with the given calendar services. */
 function makeDataBundle(services: { id: string; d: number[] }[]): DataBundle {
   return {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'data',
     stops: { v: 2, data: [] },
     routes: { v: 2, data: [] },
@@ -105,7 +105,7 @@ describe('InsightsBundle assembly', () => {
     expect(existsSync(insightsPath)).toBe(true);
 
     const insights = JSON.parse(readFileSync(insightsPath, 'utf-8')) as InsightsBundle;
-    expect(insights.bundle_version).toBe(2);
+    expect(insights.bundle_version).toBe(3);
     expect(insights.kind).toBe('insights');
     expect(insights.serviceGroups.v).toBe(1);
     expect(insights.serviceGroups.data).toHaveLength(3);
@@ -207,8 +207,8 @@ describe('InsightsBundle assembly', () => {
     dataBundle.timetable = {
       v: 2,
       data: {
-        s1: [{ v: 2, tp: 'p1', d: { 'svc-wd': [480, 540] }, a: { 'svc-wd': [480, 540] } }],
-        s2: [{ v: 2, tp: 'p1', d: { 'svc-wd': [490, 550] }, a: { 'svc-wd': [490, 550] } }],
+        s1: [{ v: 2, tp: 'p1', si: 0, d: { 'svc-wd': [480, 540] }, a: { 'svc-wd': [480, 540] } }],
+        s2: [{ v: 2, tp: 'p1', si: 1, d: { 'svc-wd': [490, 550] }, a: { 'svc-wd': [490, 550] } }],
       },
     };
 

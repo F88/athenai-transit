@@ -8,7 +8,7 @@ import { FetchDataSourceV2, validateBasePath } from '../fetch-data-source-v2';
 /** Create a minimal valid DataBundle JSON. */
 function makeDataBundle() {
   return {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'data',
     stops: { v: 2, data: [{ v: 2, i: 's1', n: 'Stop 1', a: 35.0, o: 139.0, l: 0 }] },
     routes: {
@@ -37,17 +37,17 @@ function makeDataBundle() {
 
 /** Create a minimal valid ShapesBundle JSON. */
 function makeShapesBundle() {
-  return { bundle_version: 2, kind: 'shapes', shapes: { v: 2, data: {} } };
+  return { bundle_version: 3, kind: 'shapes', shapes: { v: 2, data: {} } };
 }
 
 /** Create a minimal valid InsightsBundle JSON. */
 function makeInsightsBundle() {
-  return { bundle_version: 2, kind: 'insights', serviceGroups: { v: 1, data: [] } };
+  return { bundle_version: 3, kind: 'insights', serviceGroups: { v: 1, data: [] } };
 }
 
 /** Create a minimal valid GlobalInsightsBundle JSON. */
 function makeGlobalInsightsBundle() {
-  return { bundle_version: 2, kind: 'global-insights' };
+  return { bundle_version: 3, kind: 'global-insights' };
 }
 
 /** Create a mock Response with JSON body and application/json content-type. */
@@ -106,7 +106,7 @@ describe('FetchDataSourceV2', () => {
 
       expect(result.prefix).toBe('tobus');
       expect(result.data.kind).toBe('data');
-      expect(result.data.bundle_version).toBe(2);
+      expect(result.data.bundle_version).toBe(3);
       expect(result.data.stops.data).toHaveLength(1);
       expect(result.data.routes.data).toHaveLength(1);
     });

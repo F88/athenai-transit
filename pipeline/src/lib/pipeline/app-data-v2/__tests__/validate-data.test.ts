@@ -36,7 +36,7 @@ function writeBundle(prefix: string, bundle: unknown): void {
  */
 function makeValidBundle(overrides?: Partial<DataBundle>): DataBundle {
   return {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'data',
     stops: {
       v: 2,
@@ -95,6 +95,7 @@ function makeValidBundle(overrides?: Partial<DataBundle>): DataBundle {
           {
             v: 2,
             tp: 'test:P1',
+            si: 0,
             d: { 'test:SVC1': [480] },
             a: { 'test:SVC1': [480] },
           },
@@ -410,7 +411,7 @@ describe('validateDataBundle', () => {
           v: 2,
           data: {
             'test:S1': [
-              { v: 2, tp: 'test:P1', d: { 'test:SVC1': [480] }, a: { 'test:SVC1': [480] } },
+              { v: 2, tp: 'test:P1', si: 0, d: { 'test:SVC1': [480] }, a: { 'test:SVC1': [480] } },
             ],
           },
         },
@@ -476,6 +477,7 @@ describe('validateDataBundle', () => {
               {
                 v: 2,
                 tp: 'test:P_MISSING',
+                si: 0,
                 d: { 'test:SVC1': [480] },
                 a: { 'test:SVC1': [480] },
               },
@@ -507,6 +509,7 @@ describe('validateDataBundle', () => {
               {
                 v: 2,
                 tp: 'test:P1',
+                si: 0,
                 d: { 'test:SVC1': [480, 540] },
                 a: { 'test:SVC1': [480] },
               },
@@ -534,6 +537,7 @@ describe('validateDataBundle', () => {
               {
                 v: 2,
                 tp: 'test:P1',
+                si: 0,
                 d: { 'test:SVC1': [480], 'test:SVC2': [600] },
                 a: { 'test:SVC1': [480] },
               },
@@ -628,11 +632,12 @@ describe('validateDataBundle', () => {
           v: 2,
           data: {
             'test:S1': [
-              { v: 2, tp: 'test:P1', d: { 'test:SVC1': [480] }, a: { 'test:SVC1': [480] } },
+              { v: 2, tp: 'test:P1', si: 0, d: { 'test:SVC1': [480] }, a: { 'test:SVC1': [480] } },
             ],
             'test:S2': [
-              { v: 2, tp: 'test:P1', d: { 'test:SVC1': [485] }, a: { 'test:SVC1': [485] } },
-              { v: 2, tp: 'test:P2', d: { 'test:SVC1': [490] }, a: { 'test:SVC1': [490] } },
+              // test:S2 is at index 1 in P1 ([S1, S2]) and index 0 in P2 ([S2, S3])
+              { v: 2, tp: 'test:P1', si: 1, d: { 'test:SVC1': [485] }, a: { 'test:SVC1': [485] } },
+              { v: 2, tp: 'test:P2', si: 0, d: { 'test:SVC1': [490] }, a: { 'test:SVC1': [490] } },
             ],
           },
         },
@@ -668,6 +673,195 @@ describe('validateDataBundle', () => {
       expect(latError).toBeDefined();
       expect(refError).toBeDefined();
       expect(result.issues.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Issue #47: si validation
+  // ---------------------------------------------------------------------------
+  describe('si validation (Issue #47)', () => {
+    it('rejects negative si', () => {
+      const bundle = makeValidBundle({
+        timetable: {
+          v: 2,
+          data: {
+            'test:S1': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: -1,
+                d: { 'test:SVC1': [480] },
+                a: { 'test:SVC1': [480] },
+              },
+            ],
+          },
+        },
+      });
+      writeBundle('neg-si', bundle);
+      const result = validateDataBundle('neg-si', TMP_DIR);
+      const siError = result.issues.find((i) => i.message.includes('si must be a non-negative'));
+      expect(siError).toBeDefined();
+    });
+
+    it('rejects si >= pattern.stops.length', () => {
+      const bundle = makeValidBundle({
+        timetable: {
+          v: 2,
+          data: {
+            'test:S1': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 5, // pattern only has 1 stop
+                d: { 'test:SVC1': [480] },
+                a: { 'test:SVC1': [480] },
+              },
+            ],
+          },
+        },
+      });
+      writeBundle('out-of-range', bundle);
+      const result = validateDataBundle('out-of-range', TMP_DIR);
+      const siError = result.issues.find((i) => i.message.includes('out of range'));
+      expect(siError).toBeDefined();
+    });
+
+    it('rejects si pointing to wrong stop_id', () => {
+      const bundle = makeValidBundle({
+        stops: {
+          v: 2,
+          data: [
+            { v: 2, i: 'test:S1', n: 'A', a: 35.68, o: 139.76, l: 0 },
+            { v: 2, i: 'test:S2', n: 'B', a: 35.69, o: 139.77, l: 0 },
+          ],
+        },
+        tripPatterns: {
+          v: 2,
+          data: {
+            'test:P1': {
+              v: 2,
+              r: 'test:R1',
+              h: 'Terminal',
+              stops: [{ id: 'test:S1' }, { id: 'test:S2' }],
+            },
+          },
+        },
+        timetable: {
+          v: 2,
+          data: {
+            // S2 is at index 1, but we wrongly say si=0 (which points to S1)
+            'test:S2': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 0,
+                d: { 'test:SVC1': [490] },
+                a: { 'test:SVC1': [490] },
+              },
+            ],
+          },
+        },
+      });
+      writeBundle('wrong-stop', bundle);
+      const result = validateDataBundle('wrong-stop', TMP_DIR);
+      const siError = result.issues.find((i) =>
+        i.message.includes('points to "test:S1" in pattern'),
+      );
+      expect(siError).toBeDefined();
+    });
+
+    it('rejects duplicate (stop_id, tp, si) triple', () => {
+      const bundle = makeValidBundle({
+        timetable: {
+          v: 2,
+          data: {
+            'test:S1': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 0,
+                d: { 'test:SVC1': [480] },
+                a: { 'test:SVC1': [480] },
+              },
+              // Duplicate (stop, tp, si)
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 0,
+                d: { 'test:SVC1': [540] },
+                a: { 'test:SVC1': [540] },
+              },
+            ],
+          },
+        },
+      });
+      writeBundle('dup-triple', bundle);
+      const result = validateDataBundle('dup-triple', TMP_DIR);
+      const dupError = result.issues.find((i) => i.message.includes('duplicate (tp, si)'));
+      expect(dupError).toBeDefined();
+    });
+
+    it('accepts multiple groups with same (stop_id, tp) but different si', () => {
+      const bundle = makeValidBundle({
+        stops: {
+          v: 2,
+          data: [
+            { v: 2, i: 'test:S1', n: 'A', a: 35.68, o: 139.76, l: 0 },
+            { v: 2, i: 'test:S2', n: 'B', a: 35.69, o: 139.77, l: 0 },
+          ],
+        },
+        tripPatterns: {
+          v: 2,
+          data: {
+            // Circular: S1 → S2 → S1 (S1 at indices 0 and 2)
+            'test:P1': {
+              v: 2,
+              r: 'test:R1',
+              h: 'Terminal',
+              stops: [{ id: 'test:S1' }, { id: 'test:S2' }, { id: 'test:S1' }],
+            },
+          },
+        },
+        timetable: {
+          v: 2,
+          data: {
+            'test:S1': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 0, // origin
+                d: { 'test:SVC1': [480] },
+                a: { 'test:SVC1': [480] },
+              },
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 2, // terminal arrival
+                d: { 'test:SVC1': [500] },
+                a: { 'test:SVC1': [500] },
+              },
+            ],
+            'test:S2': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 1,
+                d: { 'test:SVC1': [490] },
+                a: { 'test:SVC1': [490] },
+              },
+            ],
+          },
+        },
+      });
+      writeBundle('valid-circular', bundle);
+      const result = validateDataBundle('valid-circular', TMP_DIR);
+      const siErrors = result.issues.filter(
+        (i) =>
+          i.message.includes('si ') ||
+          i.message.includes('duplicate (tp, si)') ||
+          i.message.includes('out of range'),
+      );
+      expect(siErrors).toHaveLength(0);
     });
   });
 });

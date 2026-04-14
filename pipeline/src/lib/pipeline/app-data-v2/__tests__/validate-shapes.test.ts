@@ -28,7 +28,7 @@ function writeBundle(prefix: string, bundle: unknown): void {
 
 function makeValidBundle(shapes: Record<string, [number, number][][]> = {}): ShapesBundle {
   return {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'shapes',
     shapes: { v: 2, data: shapes },
   };
@@ -77,13 +77,13 @@ describe('validateShapesBundle', () => {
     });
 
     it('reports error for wrong kind', () => {
-      writeBundle('bad-kind', { bundle_version: 2, kind: 'data', shapes: { v: 2, data: {} } });
+      writeBundle('bad-kind', { bundle_version: 3, kind: 'data', shapes: { v: 2, data: {} } });
       const result = validateShapesBundle('bad-kind', TMP_DIR);
       expect(result.issues.some((i) => i.message.includes('kind'))).toBe(true);
     });
 
     it('reports error for wrong shapes.v', () => {
-      writeBundle('bad-sv', { bundle_version: 2, kind: 'shapes', shapes: { v: 1, data: {} } });
+      writeBundle('bad-sv', { bundle_version: 3, kind: 'shapes', shapes: { v: 1, data: {} } });
       const result = validateShapesBundle('bad-sv', TMP_DIR);
       expect(result.issues.some((i) => i.message.includes('shapes.v'))).toBe(true);
     });
@@ -117,7 +117,7 @@ describe('validateShapesBundle', () => {
     });
 
     it('reports error when shapes.data is null', () => {
-      writeBundle('null-data', { bundle_version: 2, kind: 'shapes', shapes: { v: 2, data: null } });
+      writeBundle('null-data', { bundle_version: 3, kind: 'shapes', shapes: { v: 2, data: null } });
       const result = validateShapesBundle('null-data', TMP_DIR);
       expect(
         result.issues.some((i) => i.level === 'error' && i.message.includes('Invalid shapes.data')),
@@ -125,7 +125,7 @@ describe('validateShapesBundle', () => {
     });
 
     it('reports error when shapes.data is missing', () => {
-      writeBundle('no-data', { bundle_version: 2, kind: 'shapes', shapes: { v: 2 } });
+      writeBundle('no-data', { bundle_version: 3, kind: 'shapes', shapes: { v: 2 } });
       const result = validateShapesBundle('no-data', TMP_DIR);
       expect(
         result.issues.some((i) => i.level === 'error' && i.message.includes('Invalid shapes.data')),
@@ -133,7 +133,7 @@ describe('validateShapesBundle', () => {
     });
 
     it('reports error when shapes.data is an array', () => {
-      writeBundle('array-data', { bundle_version: 2, kind: 'shapes', shapes: { v: 2, data: [] } });
+      writeBundle('array-data', { bundle_version: 3, kind: 'shapes', shapes: { v: 2, data: [] } });
       const result = validateShapesBundle('array-data', TMP_DIR);
       expect(
         result.issues.some((i) => i.level === 'error' && i.message.includes('Invalid shapes.data')),
@@ -226,7 +226,7 @@ describe('validateShapesBundle', () => {
   describe('shape_dist_traveled validation', () => {
     it('reports error for negative distance', () => {
       const bundle: ShapesBundle = {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'shapes',
         shapes: {
           v: 2,
@@ -250,7 +250,7 @@ describe('validateShapesBundle', () => {
 
     it('reports error for non-monotonic distance', () => {
       const bundle: ShapesBundle = {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'shapes',
         shapes: {
           v: 2,
@@ -275,7 +275,7 @@ describe('validateShapesBundle', () => {
 
     it('accepts equal consecutive distances (non-decreasing)', () => {
       const bundle: ShapesBundle = {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'shapes',
         shapes: {
           v: 2,
@@ -298,7 +298,7 @@ describe('validateShapesBundle', () => {
 
     it('accepts valid monotonically increasing distances', () => {
       const bundle: ShapesBundle = {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'shapes',
         shapes: {
           v: 2,
@@ -353,7 +353,7 @@ describe('validateShapesBundle', () => {
   describe('multiple issues in a single bundle', () => {
     it('detects coordinate error and dist error simultaneously', () => {
       const bundle: ShapesBundle = {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'shapes',
         shapes: {
           v: 2,
@@ -379,7 +379,7 @@ describe('validateShapesBundle', () => {
 
     it('reports errors in one route while another is valid', () => {
       const bundle: ShapesBundle = {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'shapes',
         shapes: {
           v: 2,
@@ -413,7 +413,7 @@ describe('validateShapesBundle', () => {
       // polyline[0] ends at 300, polyline[1] starts at 0 — this is valid
       // because each polyline represents a separate shape
       const bundle: ShapesBundle = {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'shapes',
         shapes: {
           v: 2,
