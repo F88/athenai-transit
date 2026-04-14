@@ -122,12 +122,12 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
   }
 
   // Bundle structure
-  if (bundle.bundle_version !== 2) {
+  if (bundle.bundle_version !== 3) {
     issues.push({
       prefix,
       level: 'error',
       category: 'structure',
-      message: `Invalid bundle_version: expected 2, got ${String(bundle.bundle_version)}`,
+      message: `Invalid bundle_version: expected 3, got ${String(bundle.bundle_version)}`,
     });
   }
   if (bundle.kind !== 'data') {
@@ -326,6 +326,10 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
   // ---------------------------------------------------------------------------
 
   for (const [stopId, groups] of Object.entries(bundle.timetable.data)) {
+    // Track (stop_id, tp, si) uniqueness for Issue #47 invariant.
+    // Same (tp, si) pair for one stop indicates a duplicate group emission.
+    const seenTpSi = new Set<string>();
+
     for (let gi = 0; gi < groups.length; gi++) {
       const group = groups[gi];
 
@@ -337,6 +341,49 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
           category: 'integrity',
           message: `timetable[${stopId}][${gi}]: tripPattern "${group.tp}" not found in tripPatterns`,
         });
+      }
+
+      // si validation (Issue #47)
+      // 1. type and basic value checks
+      if (typeof group.si !== 'number' || !Number.isInteger(group.si) || group.si < 0) {
+        issues.push({
+          prefix,
+          level: 'error',
+          category: 'integrity',
+          message: `timetable[${stopId}][${gi}]: si must be a non-negative integer (got ${String(group.si)})`,
+        });
+      } else {
+        // 2. (stop_id, tp, si) uniqueness
+        const tpSiKey = `${group.tp}\0${group.si}`;
+        if (seenTpSi.has(tpSiKey)) {
+          issues.push({
+            prefix,
+            level: 'error',
+            category: 'integrity',
+            message: `timetable[${stopId}][${gi}]: duplicate (tp, si) = (${group.tp}, ${group.si}) — (stop_id, tp, si) must be unique`,
+          });
+        }
+        seenTpSi.add(tpSiKey);
+
+        // 3. si < pattern.stops.length and pattern.stops[si].id === stopId
+        const pattern = bundle.tripPatterns.data[group.tp];
+        if (pattern) {
+          if (group.si >= pattern.stops.length) {
+            issues.push({
+              prefix,
+              level: 'error',
+              category: 'integrity',
+              message: `timetable[${stopId}][${gi}]: si=${group.si} out of range for pattern "${group.tp}" (stops.length=${pattern.stops.length})`,
+            });
+          } else if (pattern.stops[group.si].id !== stopId) {
+            issues.push({
+              prefix,
+              level: 'error',
+              category: 'integrity',
+              message: `timetable[${stopId}][${gi}]: si=${group.si} points to "${pattern.stops[group.si].id}" in pattern "${group.tp}", expected "${stopId}"`,
+            });
+          }
+        }
       }
 
       // d/a array length consistency per service_id

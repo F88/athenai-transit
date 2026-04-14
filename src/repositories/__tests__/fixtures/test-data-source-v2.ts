@@ -81,12 +81,16 @@ function deps(base: number): number[] {
  * Helper to create a v2 timetable group.
  * Arrival times default to equal departure times.
  */
-function ttGroup(tp: string, departures: Record<string, number[]>): TimetableGroupV2Json {
+function ttGroup(
+  tp: string,
+  si: number,
+  departures: Record<string, number[]>,
+): TimetableGroupV2Json {
   const a: Record<string, number[]> = {};
   for (const [svcId, times] of Object.entries(departures)) {
     a[svcId] = [...times];
   }
-  return { v: 2, tp, d: departures, a };
+  return { v: 2, tp, si, d: departures, a };
 }
 
 /**
@@ -118,7 +122,7 @@ function ttGroup(tp: string, departures: Record<string, number[]>): TimetableGro
  */
 export function createFixtureV2(): SourceDataV2 {
   const data: DataBundle = {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'data',
 
     stops: {
@@ -357,82 +361,108 @@ export function createFixtureV2(): SourceDataV2 {
       v: 2,
       data: {
         // Subway stations
+        // tp_sub_n: [sub_01(0), sub_02(1), sub_03(2)]
+        // tp_sub_m: [sub_03(0), sub_02(1), sub_01(2)]
         sub_01: [
-          ttGroup('tp_sub_n', {
+          ttGroup('tp_sub_n', 0, {
             svc_weekday: [...deps(480), 1442, 1470, 1625],
             svc_holiday: [540, 600, 660],
           }),
-          ttGroup('tp_sub_m', { svc_weekday: deps(485), svc_holiday: [545, 605] }),
+          ttGroup('tp_sub_m', 2, { svc_weekday: deps(485), svc_holiday: [545, 605] }),
         ],
         sub_02: [
-          ttGroup('tp_sub_n', { svc_weekday: deps(483) }),
-          ttGroup('tp_sub_m', { svc_weekday: deps(488) }),
-          ttGroup('tp_bus_i', { svc_weekday: deps(495) }),
+          ttGroup('tp_sub_n', 1, { svc_weekday: deps(483) }),
+          ttGroup('tp_sub_m', 1, { svc_weekday: deps(488) }),
+          // tp_bus_i: [bus_03(0), bus_02(1), bus_01(2), sub_02(3)] → sub_02 is at index 3
+          ttGroup('tp_bus_i', 3, { svc_weekday: deps(495) }),
         ],
         sub_03: [
-          ttGroup('tp_sub_n', { svc_weekday: deps(486) }),
-          ttGroup('tp_sub_m', { svc_weekday: deps(491) }),
+          ttGroup('tp_sub_n', 2, { svc_weekday: deps(486) }),
+          ttGroup('tp_sub_m', 0, { svc_weekday: deps(491) }),
         ],
         // Toden stops
+        // tp_tdn_w: [tdn_01(0), tdn_02(1), tdn_03(2), tdn_04(3)]
+        // tp_tdn_m: [tdn_04(0), tdn_03(1), tdn_02(2), tdn_01(3)]
         tdn_01: [
-          ttGroup('tp_tdn_w', { svc_weekday: deps(490) }),
-          ttGroup('tp_tdn_m', { svc_weekday: deps(500) }),
+          ttGroup('tp_tdn_w', 0, { svc_weekday: deps(490) }),
+          ttGroup('tp_tdn_m', 3, { svc_weekday: deps(500) }),
         ],
         tdn_02: [
-          ttGroup('tp_tdn_w', { svc_weekday: deps(493) }),
-          ttGroup('tp_tdn_m', { svc_weekday: deps(503) }),
+          ttGroup('tp_tdn_w', 1, { svc_weekday: deps(493) }),
+          ttGroup('tp_tdn_m', 2, { svc_weekday: deps(503) }),
         ],
         tdn_03: [
-          ttGroup('tp_tdn_w', { svc_weekday: deps(496) }),
-          ttGroup('tp_tdn_m', { svc_weekday: deps(506) }),
+          ttGroup('tp_tdn_w', 2, { svc_weekday: deps(496) }),
+          ttGroup('tp_tdn_m', 1, { svc_weekday: deps(506) }),
         ],
         tdn_04: [
-          ttGroup('tp_tdn_w', { svc_weekday: deps(499) }),
-          ttGroup('tp_tdn_m', { svc_weekday: deps(509) }),
-          ttGroup('tp_lnr_s', { svc_weekday: deps(510) }),
-          ttGroup('tp_lnr_n', { svc_weekday: deps(515) }),
+          ttGroup('tp_tdn_w', 3, { svc_weekday: deps(499) }),
+          ttGroup('tp_tdn_m', 0, { svc_weekday: deps(509) }),
+          // tp_lnr_s: [tdn_04(0), lnr_01(1), lnr_02(2)]
+          ttGroup('tp_lnr_s', 0, { svc_weekday: deps(510) }),
+          // tp_lnr_n: [lnr_02(0), lnr_01(1), tdn_04(2)]
+          ttGroup('tp_lnr_n', 2, { svc_weekday: deps(515) }),
         ],
         // Liner stations
         lnr_01: [
-          ttGroup('tp_lnr_s', { svc_weekday: deps(513) }),
-          ttGroup('tp_lnr_n', { svc_weekday: deps(518) }),
+          ttGroup('tp_lnr_s', 1, { svc_weekday: deps(513) }),
+          ttGroup('tp_lnr_n', 1, { svc_weekday: deps(518) }),
         ],
         lnr_02: [
-          ttGroup('tp_lnr_s', { svc_weekday: deps(516) }),
-          ttGroup('tp_lnr_n', { svc_weekday: deps(521) }),
+          ttGroup('tp_lnr_s', 2, { svc_weekday: deps(516) }),
+          ttGroup('tp_lnr_n', 0, { svc_weekday: deps(521) }),
         ],
         // Bus stops
+        // tp_bus_i: [bus_03(0), bus_02(1), bus_01(2), sub_02(3)]
+        // tp_bus_o: [bus_01(0), bus_02(1), bus_03(2)]
+        // tp_ptr_e: [bus_01(0)]
+        // tp_ptr_sh: [bus_01(0), bus_02(1)]
+        // tp_bus_sh: [bus_01(0), bus_02(1), bus_03(2)]
+        // tp_bus_i2: [bus_03(0), bus_01(1)]
+        // tp_bus_c: [bus_01(0), bus_02(1), bus_03(2), bus_01(3)]
         bus_01: [
-          ttGroup('tp_bus_i', { svc_weekday: deps(492) }),
-          ttGroup('tp_bus_o', { svc_weekday: deps(502) }),
-          ttGroup('tp_ptr_e', { svc_weekday: deps(497) }),
-          ttGroup('tp_ptr_sh', { svc_weekday: deps(499) }),
-          ttGroup('tp_bus_sh', { svc_weekday: deps(501) }),
+          ttGroup('tp_bus_i', 2, { svc_weekday: deps(492) }),
+          ttGroup('tp_bus_o', 0, { svc_weekday: deps(502) }),
+          ttGroup('tp_ptr_e', 0, { svc_weekday: deps(497) }),
+          ttGroup('tp_ptr_sh', 0, { svc_weekday: deps(499) }),
+          ttGroup('tp_bus_sh', 0, { svc_weekday: deps(501) }),
           // Re-aggregation: same route+headsign as tp_bus_i, different pattern
-          ttGroup('tp_bus_i2', { svc_weekday: [494, 554] }),
+          ttGroup('tp_bus_i2', 1, { svc_weekday: [494, 554] }),
           // Circular route: bus_01 appears at both index 0 (origin) and index 3 (terminal).
-          // Origin departures have pickupType=0, terminal arrivals have pickupType=1.
+          // Per Issue #47, each occurrence is a separate group identified by `si`.
           // Times must be >= 600 (10:00) because WEEKDAY fixture starts at 10:00.
+          // si=0: bus_01 as origin (pickupType=0, boardable)
           {
             v: 2,
             tp: 'tp_bus_c',
-            d: { svc_weekday: [620, 650] },
-            a: { svc_weekday: [620, 650] },
-            pt: { svc_weekday: [0, 1] },
-            dt: { svc_weekday: [0, 0] },
+            si: 0,
+            d: { svc_weekday: [620] },
+            a: { svc_weekday: [620] },
+            pt: { svc_weekday: [0] },
+            dt: { svc_weekday: [0] },
+          },
+          // si=3: bus_01 as terminal arrival (pickupType=1, drop-off only)
+          {
+            v: 2,
+            tp: 'tp_bus_c',
+            si: 3,
+            d: { svc_weekday: [650] },
+            a: { svc_weekday: [650] },
+            pt: { svc_weekday: [1] },
+            dt: { svc_weekday: [0] },
           },
         ],
         bus_02: [
-          ttGroup('tp_bus_i', { svc_weekday: deps(498) }),
-          ttGroup('tp_bus_o', { svc_weekday: deps(508) }),
-          ttGroup('tp_bus_c', { svc_weekday: [525] }),
-          ttGroup('tp_ptr_sh', { svc_weekday: deps(503) }),
-          ttGroup('tp_bus_sh', { svc_weekday: deps(505) }),
+          ttGroup('tp_bus_i', 1, { svc_weekday: deps(498) }),
+          ttGroup('tp_bus_o', 1, { svc_weekday: deps(508) }),
+          ttGroup('tp_bus_c', 1, { svc_weekday: [525] }),
+          ttGroup('tp_ptr_sh', 1, { svc_weekday: deps(503) }),
+          ttGroup('tp_bus_sh', 1, { svc_weekday: deps(505) }),
         ],
         bus_03: [
-          ttGroup('tp_bus_i', { svc_weekday: deps(504) }),
-          ttGroup('tp_bus_o', { svc_weekday: deps(514) }),
-          ttGroup('tp_bus_c', { svc_weekday: [530] }),
+          ttGroup('tp_bus_i', 0, { svc_weekday: deps(504) }),
+          ttGroup('tp_bus_o', 2, { svc_weekday: deps(514) }),
+          ttGroup('tp_bus_c', 2, { svc_weekday: [530] }),
         ],
         // stop_closed: intentionally no timetable
       },
@@ -485,7 +515,7 @@ export function createFixtureV2(): SourceDataV2 {
  */
 export function createShapesFixtureV2(): ShapesBundle {
   return {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'shapes',
     shapes: {
       v: 2,
@@ -559,7 +589,7 @@ export const EXCEPTION_HOLIDAY = new Date('2026-03-04T10:00:00');
  */
 export function createInsightsFixtureV2(): InsightsBundle {
   return {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'insights',
     serviceGroups: {
       v: 1,

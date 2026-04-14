@@ -73,10 +73,8 @@ export interface TransitRepository {
    * entries) and grouping (e.g. by route+headsign for display).
    *
    * ### Sorting
-   * Results are sorted by actual chronological time using
-   * `minutesToDate(serviceDate, departureMinutes)`. This ensures
-   * correct ordering when entries from different service days
-   * (today vs previous day overnight) are mixed.
+   * Results are sorted by {@link sortTimetableEntriesChronologically}.
+   * See that function's TSDoc for the canonical sort order spec.
    *
    * ### Service day boundary
    * The GTFS service day does not change at midnight but at 03:00.
@@ -195,8 +193,8 @@ export interface TransitRepository {
    * headsign, boarding availability, and pattern position.
    *
    * ### Sorting
-   * Results are sorted by departure time (earliest first). When two
-   * departures share the same minute, the order among them is unspecified.
+   * Results are sorted by {@link sortTimetableEntriesByDepartureTime}.
+   * See that function's TSDoc for the canonical sort order spec.
    *
    * ### Calendar filtering
    * Only service IDs active on the GTFS service day are included.

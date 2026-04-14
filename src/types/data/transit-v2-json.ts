@@ -422,6 +422,14 @@ export interface TripPatternJson {
  * through it (e.g. 宿91 新宿駅西口行き has 3 patterns with different
  * origins). Consumers that need route+headsign grouping (e.g.
  * BottomSheet T2 view) must group across patterns.
+ *
+ * **Duplicate stop_id within a single pattern**: When the same stop_id
+ * appears at multiple positions within one pattern (6-shape routes,
+ * circular routes), each position emits a SEPARATE group, distinguished
+ * by the {@link si} field. Example: 都営大江戸線 都庁前 in pattern p72
+ * appears at index 0 (origin) and 28 (mid-trip after the loop) — this
+ * produces 2 groups under `timetable[都庁前]`, one with `si=0` and one
+ * with `si=28`. Consumers must handle this when iterating per (stop, tp).
  */
 export interface TimetableGroupV2Json {
   /** Schema version — see {@link RouteV2Json.v} for rationale. */
@@ -433,6 +441,30 @@ export interface TimetableGroupV2Json {
    * Agency is further resolved via TripPatternJson.r -> RouteV2Json.ai.
    */
   tp: string;
+
+  /**
+   * Stop index within the trip pattern's `stops` array (0-based position).
+   *
+   * Identifies which occurrence of `stop_id` this group represents in
+   * the pattern. For most stops `si` is the only occurrence and the
+   * value is unique per (stop_id, tp). For 6-shape and circular routes
+   * where the same stop_id appears at multiple positions, each position
+   * gets its own group with a distinct `si` value.
+   *
+   * **Important**: this is NOT the GTFS `stop_sequence` value (which is
+   * a non-consecutive monotonic identifier per the GTFS spec). It is the
+   * 0-based index into `TripPatternJson.stops`, matching the WebApp's
+   * `patternPosition.stopIndex` 1:1.
+   *
+   * Uniqueness invariant: `(stop_id, tp, si)` is a unique triple across
+   * the timetable section.
+   *
+   * Required for all sources (GTFS and ODPT). For ODPT, where station
+   * orders are monotonic and never duplicate within a single pattern,
+   * `si` is always unique per (stop, tp) but is still emitted for
+   * schema unification.
+   */
+  si: number;
 
   /**
    * Service ID -> departure minutes from midnight.
@@ -571,7 +603,7 @@ interface BundleSection<V extends number, T> {
  */
 export interface DataBundle {
   /** Bundle format version. */
-  bundle_version: 2;
+  bundle_version: 3;
   /** Discriminated union tag. */
   kind: 'data';
 
@@ -595,7 +627,7 @@ export interface DataBundle {
  */
 export interface ShapesBundle {
   /** Bundle format version. */
-  bundle_version: 2;
+  bundle_version: 3;
   /** Discriminated union tag. */
   kind: 'shapes';
 
@@ -889,7 +921,7 @@ export interface ServiceGroupEntry {
  */
 export interface InsightsBundle {
   /** Bundle format version. */
-  bundle_version: 2;
+  bundle_version: 3;
   /** Discriminated union tag. */
   kind: 'insights';
 
@@ -949,7 +981,7 @@ export type SourceBundle = DataBundle | ShapesBundle | InsightsBundle;
  */
 export interface GlobalInsightsBundle {
   /** Bundle format version. */
-  bundle_version: 2;
+  bundle_version: 3;
   /** Discriminated union tag. */
   kind: 'global-insights';
 

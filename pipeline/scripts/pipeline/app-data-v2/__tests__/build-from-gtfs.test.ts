@@ -122,7 +122,7 @@ describe('GTFS DataBundle assembly', () => {
 
     // Assemble bundle
     const bundle: DataBundle = {
-      bundle_version: 2,
+      bundle_version: 3,
       kind: 'data',
       stops: { v: 2, data: stops },
       routes: { v: 2, data: routes },
@@ -136,7 +136,7 @@ describe('GTFS DataBundle assembly', () => {
     };
 
     // Verify bundle structure
-    expect(bundle.bundle_version).toBe(2);
+    expect(bundle.bundle_version).toBe(3);
     expect(bundle.kind).toBe('data');
 
     // Sections present with correct version
@@ -162,7 +162,7 @@ describe('GTFS DataBundle assembly', () => {
     writeDataBundle(outDir, bundle);
     expect(existsSync(join(outDir, 'data.json'))).toBe(true);
     const written = JSON.parse(readFileSync(join(outDir, 'data.json'), 'utf-8')) as DataBundle;
-    expect(written.bundle_version).toBe(2);
+    expect(written.bundle_version).toBe(3);
     expect(written.kind).toBe('data');
     expect(written.stops.data).toHaveLength(2);
   });

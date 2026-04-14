@@ -176,6 +176,7 @@ describe('buildServiceGroups', () => {
         {
           v: 2 as const,
           tp: 'p1',
+          si: 0,
           d: { 'svc-ex-su': [600] },
           a: { 'svc-ex-su': [600] },
         },
@@ -202,6 +203,7 @@ describe('buildServiceGroups', () => {
         {
           v: 2 as const,
           tp: 'p1',
+          si: 0,
           d: { 'svc-wd': [480], 'svc-ex-su': [600] },
           a: { 'svc-wd': [480], 'svc-ex-su': [600] },
         },
@@ -229,6 +231,7 @@ describe('buildServiceGroups', () => {
         {
           v: 2 as const,
           tp: 'p1',
+          si: 0,
           d: { 'svc-wd': [480], 'svc-ex-mon': [600] },
           a: { 'svc-wd': [480], 'svc-ex-mon': [600] },
         },
@@ -249,6 +252,7 @@ describe('buildServiceGroups', () => {
         {
           v: 2 as const,
           tp: 'p1',
+          si: 0,
           d: { 'svc-other': [600] },
           a: { 'svc-other': [600] },
         },
@@ -268,6 +272,7 @@ describe('buildServiceGroups', () => {
         {
           v: 2 as const,
           tp: 'p1',
+          si: 0,
           d: { 'svc-ex-su': [600] },
           a: { 'svc-ex-su': [600] },
         },
@@ -287,6 +292,7 @@ describe('buildServiceGroups', () => {
         {
           v: 2 as const,
           tp: 'p1',
+          si: 0,
           d: { 'svc-ex-invalid': [600] },
           a: { 'svc-ex-invalid': [600] },
         },
@@ -313,6 +319,7 @@ describe('buildServiceGroups', () => {
         {
           v: 2 as const,
           tp: 'p1',
+          si: 0,
           d: { 'svc-ex-mwf': [600] },
           a: { 'svc-ex-mwf': [600] },
         },

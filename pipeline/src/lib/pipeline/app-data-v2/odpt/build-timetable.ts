@@ -345,10 +345,24 @@ export function buildTripPatternsAndTimetableFromOdpt(
         a[serviceId] = entries.map((e) => e.a);
       }
 
+      // si = 0-based position of stopId within the pattern's stops array.
+      // ODPT railway stationOrder never has duplicates within a single pattern
+      // (Issue #47), so si is always uniquely determined and only one group
+      // is emitted per (stopId, patId). The field is required for schema
+      // unification with GTFS sources.
+      const pattern = tripPatterns[patId];
+      const si = pattern.stops.findIndex((s) => s.id === stopId);
+      if (si === -1) {
+        // Should never happen — pattern was constructed from this stop's timetable.
+        // Skip defensively rather than emitting a malformed group.
+        continue;
+      }
+
       // ODPT has no pickup_type/drop_off_type, so pt/dt are omitted
       groups.push({
         v: 2,
         tp: patId,
+        si,
         d,
         a,
       });

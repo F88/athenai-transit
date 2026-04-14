@@ -12,7 +12,7 @@ import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
 
 function createTestBundle(overrides?: Partial<DataBundle>): DataBundle {
   return {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'data',
     stops: {
       v: 2,

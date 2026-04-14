@@ -42,7 +42,7 @@ Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-from-odpt-train.ts <s
 
 ```typescript
 interface DataBundle {
-    bundle_version: 2;
+    bundle_version: 3;
     kind: 'data';
     stops: BundleSection<2, StopV2Json[]>;
     routes: BundleSection<2, RouteV2Json[]>;

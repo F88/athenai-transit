@@ -9,6 +9,28 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- BREAKING: `bundle_version` を 2 → 3 に bump (全 v2 bundle: data / shapes / insights / global-insights)。理由: `TimetableGroupV2Json` に required な `si: number` field を追加したため。旧 v2 データは fail fast で reject される。
+- `TimetableGroupV2Json` に **`si: number` (0-based stop index within `pattern.stops`)** field を required で追加 (#47)。同一 stop_id がパターン内の複数位置に現れる 6字形ルート/循環ルートで、各位置を別 group として表現できる (例: 都営大江戸線 都庁前 in `toaran:p72` は `si=0` と `si=28` の 2 group に分離)。GTFS 生 `stop_sequence` ではなく `pattern.stops` 配列の 0-based 位置で、WebApp の `patternPosition.stopIndex` と 1 対 1 対応。
+- `DepartureItem`: per-departure attribute 描画に移行 (Alt F)。各 departure 時刻の横で `TimetableEntryAttributesLabels` を個別レンダリング。group header の `TripInfo.attributes` prop 渡しを廃止 (TripInfo 側の prop は FlatDepartureItem / StopSummary 等 single-departure 消費者用に optional のまま維持)。
+
+### Fixed
+
+- `tripPatternStats.freq` の duplicate stop double-count 問題を解消 (#47)。例: `toaran:p72` 都庁前の `freq` が 380 → 190 (正しい trip 数)。
+- 6字形/循環パターンで `stop_headsign` が誤って最初の出現位置の値で表示されていた問題を修正 (kobus / kcbus / sbbus / minkuru / edobus 計 122 stop instances)。`pattern.stops[si].sh` を per-departure で正しく解決。例: `kobus:p67` で `kobus:1694_11` が position 11 では「調布駅南口（狛江駅北口経由）」、position 15 では「調布駅南口」と表示されるようになる。
+- `DepartureItem` の group-level attribute 表示が `firstEntry.patternPosition` の sort 順次第で不安定だった既存バグを Alt F で根治 (循環ルートで `[ORIG]` / `[TERM]` ラベルが時刻によってちらつく問題)。
+
+### Removed
+
+- `pickupType` ベースの circular workaround を撤去 (`athenai-repository-v2.ts` 計 7 箇所)。`group.si` から直接 `stopIndex` を取得する形に統一。
+- `build-trip-pattern-stats.ts` の `isCircularPattern` ヘルパー関数を削除。`si` 分離後は circular skip ロジックが不要になったため。
+
+### Added
+
+- `validate-data.ts` に `si` 整合性検証を追加: 非負整数チェック、`si < pattern.stops.length`、`pattern.stops[si].id === stopId`、`(stop_id, tp, si)` 三つ組のユニーク性。
+- `verbose-timetable-entries.tsx` の verbose dump に `si=N` 表示を追加。デバッグ時に JSON 上の `si` 値と UI 表示が直接対応。
+
 ## [2026.04.13]
 
 ### Added

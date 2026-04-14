@@ -261,14 +261,19 @@ export function extractTripPatternsAndTimetable(
   console.log(`  [${prefix}] ${sortedPatterns.length} trip patterns`);
 
   // 6. Build per-stop timetable
-  // stopId -> patternId -> serviceId -> { departures, arrivals, pickupTypes, dropOffTypes }
+  // stopId -> patternId -> si (stop position within pattern) -> serviceId -> entries
+  //
+  // The 4-level nesting is required by Issue #47: when the same stop_id appears
+  // at multiple positions within one pattern (6-shape, circular routes), each
+  // position needs its own group identified by `si`. Without splitting, departures
+  // from different positions get merged and frequencies double-count.
   type DepartureData = {
     d: number;
     a: number;
     pt: number;
     dt: number;
   };
-  const stopTimetable = new Map<string, Map<string, Map<string, DepartureData[]>>>();
+  const stopTimetable = new Map<string, Map<string, Map<number, Map<string, DepartureData[]>>>>();
 
   for (const [, trip] of tripStopTimesMap) {
     const key = patternKey(trip);
@@ -287,16 +292,27 @@ export function extractTripPatternsAndTimetable(
       const pt = trip.pickupTypes[stopIdx] ?? 0;
       const dt = trip.dropOffTypes[stopIdx] ?? 0;
 
+      // si = 0-based position within pattern.stops. Same value across all trips
+      // of the same pattern (pattern key includes JSON.stringify(t.stops), so
+      // trip.stops and pattern.stops are aligned by index).
+      const si = stopIdx;
+
       let patternMap = stopTimetable.get(prefixedStopId);
       if (!patternMap) {
         patternMap = new Map();
         stopTimetable.set(prefixedStopId, patternMap);
       }
 
-      let serviceMap = patternMap.get(patId);
+      let siMap = patternMap.get(patId);
+      if (!siMap) {
+        siMap = new Map();
+        patternMap.set(patId, siMap);
+      }
+
+      let serviceMap = siMap.get(si);
       if (!serviceMap) {
         serviceMap = new Map();
-        patternMap.set(patId, serviceMap);
+        siMap.set(si, serviceMap);
       }
 
       let entries = serviceMap.get(prefixedServiceId);
@@ -316,33 +332,42 @@ export function extractTripPatternsAndTimetable(
   for (const [stopId, patternMap] of stopTimetable) {
     const groups: TimetableGroupV2Json[] = [];
 
-    for (const [patId, serviceMap] of patternMap) {
-      const d: Record<string, number[]> = {};
-      const a: Record<string, number[]> = {};
-      const pt: Record<string, (0 | 1 | 2 | 3)[]> = {};
-      const dt: Record<string, (0 | 1 | 2 | 3)[]> = {};
+    for (const [patId, siMap] of patternMap) {
+      // Emit one group per (patId, si) pair. For 6-shape/circular patterns
+      // where the same stop appears at multiple positions, this produces
+      // multiple groups under the same (stopId, patId).
+      // Sort by si for deterministic output.
+      const sortedSiEntries = [...siMap.entries()].sort((a, b) => a[0] - b[0]);
 
-      for (const [serviceId, entries] of serviceMap) {
-        // Sort by departure time
-        entries.sort((x, y) => x.d - y.d);
-        d[serviceId] = entries.map((e) => e.d);
-        a[serviceId] = entries.map((e) => e.a);
-        pt[serviceId] = entries.map((e) => e.pt as 0 | 1 | 2 | 3);
-        dt[serviceId] = entries.map((e) => e.dt as 0 | 1 | 2 | 3);
+      for (const [si, serviceMap] of sortedSiEntries) {
+        const d: Record<string, number[]> = {};
+        const a: Record<string, number[]> = {};
+        const pt: Record<string, (0 | 1 | 2 | 3)[]> = {};
+        const dt: Record<string, (0 | 1 | 2 | 3)[]> = {};
+
+        for (const [serviceId, entries] of serviceMap) {
+          // Sort by departure time
+          entries.sort((x, y) => x.d - y.d);
+          d[serviceId] = entries.map((e) => e.d);
+          a[serviceId] = entries.map((e) => e.a);
+          pt[serviceId] = entries.map((e) => e.pt as 0 | 1 | 2 | 3);
+          dt[serviceId] = entries.map((e) => e.dt as 0 | 1 | 2 | 3);
+        }
+
+        const group: TimetableGroupV2Json = {
+          v: 2,
+          tp: patId,
+          si,
+          d,
+          a,
+          // GTFS always provides pickup_type/drop_off_type, so always include
+          pt,
+          dt,
+        };
+
+        groups.push(group);
+        groupCount++;
       }
-
-      const group: TimetableGroupV2Json = {
-        v: 2,
-        tp: patId,
-        d,
-        a,
-        // GTFS always provides pickup_type/drop_off_type, so always include
-        pt,
-        dt,
-      };
-
-      groups.push(group);
-      groupCount++;
     }
 
     timetable[stopId] = groups;

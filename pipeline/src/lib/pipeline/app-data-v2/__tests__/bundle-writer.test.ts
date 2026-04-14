@@ -20,7 +20,7 @@ const TMP_DIR = join(import.meta.dirname, '.tmp-bundle-writer-test');
 /** Minimal DataBundle for testing. */
 function makeBundle(): DataBundle {
   return {
-    bundle_version: 2,
+    bundle_version: 3,
     kind: 'data',
     stops: { v: 2, data: [] },
     routes: { v: 2, data: [] },
@@ -63,7 +63,7 @@ describe('writeDataBundle', () => {
     expect(existsSync(filePath)).toBe(true);
 
     const written = JSON.parse(readFileSync(filePath, 'utf-8')) as DataBundle;
-    expect(written.bundle_version).toBe(2);
+    expect(written.bundle_version).toBe(3);
     expect(written.kind).toBe('data');
   });
 
@@ -116,7 +116,7 @@ describe('writeShapesBundle', () => {
     expect(existsSync(filePath)).toBe(true);
 
     const written = JSON.parse(readFileSync(filePath, 'utf-8')) as ShapesBundle;
-    expect(written.bundle_version).toBe(2);
+    expect(written.bundle_version).toBe(3);
     expect(written.kind).toBe('shapes');
     expect(written.shapes.v).toBe(2);
     expect(written.shapes.data['pfx:R1']).toHaveLength(1);
@@ -167,7 +167,7 @@ describe('writeInsightsBundle', () => {
     expect(existsSync(filePath)).toBe(true);
 
     const written = JSON.parse(readFileSync(filePath, 'utf-8')) as InsightsBundle;
-    expect(written.bundle_version).toBe(2);
+    expect(written.bundle_version).toBe(3);
     expect(written.kind).toBe('insights');
     expect(written.serviceGroups.v).toBe(1);
     expect(written.serviceGroups.data).toEqual(serviceGroups);

@@ -42,7 +42,7 @@ Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railw
 
 ```typescript
 interface ShapesBundle {
-    bundle_version: 2;
+    bundle_version: 3;
     kind: 'shapes';
     shapes: BundleSection<2, Record<string, ShapePointV2[][]>>;
 }

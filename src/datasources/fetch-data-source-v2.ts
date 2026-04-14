@@ -44,7 +44,7 @@ export function validateBasePath(value: string): string {
 }
 
 /** Expected bundle_version for all v2 bundles. */
-const EXPECTED_BUNDLE_VERSION = 2;
+const EXPECTED_BUNDLE_VERSION = 3;
 
 /**
  * Default per-request timeout in milliseconds.
@@ -72,7 +72,7 @@ function validateBundleEnvelope<K extends string>(
   json: unknown,
   expectedKind: K,
   path: string,
-): asserts json is { bundle_version: 2; kind: K } {
+): asserts json is { bundle_version: 3; kind: K } {
   if (json === null) {
     throw new Error(`${path}: expected JSON object, got null`);
   }

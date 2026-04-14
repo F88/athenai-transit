@@ -91,12 +91,12 @@ export function validateInsightsBundle(prefix: string, baseDir: string): Insight
   }
 
   // Bundle structure
-  if (bundle.bundle_version !== 2) {
+  if (bundle.bundle_version !== 3) {
     issues.push({
       prefix,
       level: 'error',
       category: 'structure',
-      message: `Invalid bundle_version: expected 2, got ${String(bundle.bundle_version)}`,
+      message: `Invalid bundle_version: expected 3, got ${String(bundle.bundle_version)}`,
     });
   }
   if (bundle.kind !== 'insights') {

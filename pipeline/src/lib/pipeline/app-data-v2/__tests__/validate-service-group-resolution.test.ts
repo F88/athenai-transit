@@ -32,7 +32,7 @@ describe('validateServiceGroupResolution', () => {
     writeBundles(
       'case-unresolved',
       {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'data',
         calendar: {
           v: 1,
@@ -43,7 +43,7 @@ describe('validateServiceGroupResolution', () => {
         },
       },
       {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'insights',
         serviceGroups: {
           v: 1,
@@ -65,7 +65,7 @@ describe('validateServiceGroupResolution', () => {
     writeBundles(
       'case-resolved',
       {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'data',
         calendar: {
           v: 1,
@@ -83,7 +83,7 @@ describe('validateServiceGroupResolution', () => {
         },
       },
       {
-        bundle_version: 2,
+        bundle_version: 3,
         kind: 'insights',
         serviceGroups: {
           v: 1,

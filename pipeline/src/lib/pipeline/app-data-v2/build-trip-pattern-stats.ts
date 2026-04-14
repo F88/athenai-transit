@@ -5,17 +5,13 @@
  * - `freq`: total departures per day for this service group
  * - `rd`: remaining minutes from each stop to the terminal (median-based)
  *
- * ### Circular route handling
+ * ### Duplicate stop_id handling (Issue #47)
  *
- * For circular routes (`stops[0] === stops[last]`), the origin/terminal stop
- * has 2x the departures of interior stops because it appears at both
- * position 0 and the last position. To get accurate `freq` counts, we use
- * an interior stop (position 1) as the reference for departure counting.
- *
- * For `rd` computation, segments that touch the origin/terminal stop
- * (first and last segments) are skipped because the origin/terminal has
- * 2x departures interleaved when sorted, making positional alignment
- * unreliable. Skipped segments are filled by gap interpolation.
+ * For 6-shape and circular routes where the same stop_id appears at multiple
+ * positions in a pattern, each position has its own TimetableGroupV2Json
+ * identified by `si` (0-based index in pattern.stops). All freq/rd
+ * computations select groups by `(patternId, si)` to avoid double-counting
+ * departures from different positions.
  *
  * ### Stops without timetable entries
  *
@@ -37,26 +33,16 @@ import type {
 // ---------------------------------------------------------------------------
 
 /**
- * Whether a pattern is circular: the first and last stop share the
- * same stop_id, with at least one interior stop in between.
- *
- * Requires `stops.length > 2` because circular route handling relies
- * on an interior stop (position 1) for accurate freq counting.
- * A degenerate 2-stop circular `[s1, s1]` has no interior stop and
- * cannot be correctly decomposed — this is a known limitation
- * tracked in #47 (TimetableGroupV2Json needs `seq`).
- */
-function isCircularPattern(stops: TripPatternJson['stops']): boolean {
-  return stops.length > 2 && stops[0].id === stops[stops.length - 1].id;
-}
-
-/**
- * Count departures for a pattern at a given stop,
+ * Count departures for a pattern at a given stop position,
  * summing across all service IDs in the service group.
+ *
+ * Filters by `(patternId, si)` to select the correct group when the same
+ * stop_id appears at multiple positions in the pattern (Issue #47).
  */
 function countDepartures(
   timetableGroups: TimetableGroupV2Json[] | undefined,
   patternId: string,
+  si: number,
   serviceIds: string[],
 ): number {
   if (!timetableGroups) {
@@ -65,7 +51,7 @@ function countDepartures(
 
   let count = 0;
   for (const group of timetableGroups) {
-    if (group.tp !== patternId) {
+    if (group.tp !== patternId || group.si !== si) {
       continue;
     }
     for (const svcId of serviceIds) {
@@ -79,13 +65,17 @@ function countDepartures(
 }
 
 /**
- * Get departure times for a pattern at a specific stop,
+ * Get departure times for a pattern at a specific stop position,
  * concatenated across all service IDs in the service group.
  * Returns a sorted array of departure minutes.
+ *
+ * Filters by `(patternId, si)` to select the correct group when the same
+ * stop_id appears at multiple positions in the pattern (Issue #47).
  */
 function getDepartures(
   timetableGroups: TimetableGroupV2Json[] | undefined,
   patternId: string,
+  si: number,
   serviceIds: string[],
 ): number[] {
   if (!timetableGroups) {
@@ -94,7 +84,7 @@ function getDepartures(
 
   const deps: number[] = [];
   for (const group of timetableGroups) {
-    if (group.tp !== patternId) {
+    if (group.tp !== patternId || group.si !== si) {
       continue;
     }
     for (const svcId of serviceIds) {
@@ -255,34 +245,28 @@ function computeSegmentTimes(
   const NO_DATA = -1;
   const segments = new Array<number>(segmentCount).fill(NO_DATA);
 
-  const isCircular = isCircularPattern(stops);
-
-  // Cache departures per stop to avoid redundant timetable scans and sorts.
+  // Cache departures per (stopId, si) to avoid redundant timetable scans and sorts.
   // Each stop appears in two consecutive segments (as end of one, start of next),
   // so caching halves the number of getDepartures calls.
+  // Cache key includes si because the same stop_id may have different deps
+  // at different pattern positions (Issue #47, e.g. 6-shape routes).
   const depsCache = new Map<string, number[]>();
-  function getCachedDeps(stopId: string): number[] {
-    let cached = depsCache.get(stopId);
+  function getCachedDeps(stopId: string, si: number): number[] {
+    const cacheKey = `${stopId}:${si}`;
+    let cached = depsCache.get(cacheKey);
     if (cached === undefined) {
-      cached = getDepartures(timetable[stopId], patternId, serviceIds);
-      depsCache.set(stopId, cached);
+      cached = getDepartures(timetable[stopId], patternId, si, serviceIds);
+      depsCache.set(cacheKey, cached);
     }
     return cached;
   }
 
   for (let i = 0; i < segmentCount; i++) {
-    // For circular routes, skip segments involving the origin/terminal stop
-    // (positions 0 and last). The origin/terminal has 2x departures
-    // (starting trips + returning trips) interleaved when sorted, making
-    // positional alignment unreliable. These segments are filled by
-    // interpolation below.
-    if (isCircular && (i === 0 || i === segmentCount - 1)) {
-      continue;
-    }
-
+    // No special-case for circular routes: si separates duplicate stops,
+    // so positional alignment is now reliable for every segment.
     const result = computeSegmentMedian(
-      getCachedDeps(stops[i].id),
-      getCachedDeps(stops[i + 1].id),
+      getCachedDeps(stops[i].id, i),
+      getCachedDeps(stops[i + 1].id, i + 1),
       NO_DATA,
     );
     if (result !== NO_DATA) {
@@ -324,10 +308,11 @@ export function buildTripPatternStats(
         continue;
       }
 
-      // freq: use interior stop (position 1) for circular routes to avoid 2x
-      const isCircular = isCircularPattern(stops);
-      const freqStopId = isCircular ? stops[1].id : stops[0].id;
-      const freq = countDepartures(timetable[freqStopId], patternId, group.serviceIds);
+      // freq: count departures from origin (si=0). With Issue #47's si-based
+      // grouping, the origin's group contains exactly the trip count, so no
+      // circular workaround is needed (previously we used interior stop[1]
+      // to dodge the 2x merged count).
+      const freq = countDepartures(timetable[stops[0].id], patternId, 0, group.serviceIds);
 
       // Omit patterns with no departures in this service group.
       // Consistent with stopStats, which also excludes freq=0 entries.

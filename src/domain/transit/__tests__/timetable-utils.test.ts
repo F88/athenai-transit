@@ -84,7 +84,7 @@ function makeEntry(
     },
     insights:
       overrides.remainingMinutes !== undefined
-        ? { remainingMinutes: overrides.remainingMinutes }
+        ? { remainingMinutes: overrides.remainingMinutes, totalMinutes: 0, freq: 0 }
         : undefined,
   };
 }

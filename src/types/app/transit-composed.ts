@@ -324,9 +324,25 @@ export interface TimetableEntry {
     dropOffType: StopServiceType;
   };
 
-  /** Position of this stop within the trip pattern's stop sequence. */
+  /**
+   * Position of this stop within the trip pattern's stop sequence.
+   *
+   * **Issue #47 / duplicate stop_id within pattern**: For 6-shape and circular
+   * routes where the same physical stop_id appears at multiple positions in
+   * one pattern, each position is represented by a separate `TimetableEntry`
+   * with its own `stopIndex`. Consumers MUST treat these as independent
+   * entries and not merge by stop_id alone — `stopIndex` is the unique
+   * positional identifier within the pattern.
+   *
+   * Example: 都営大江戸線 都庁前 in pattern `toaran:p72` produces entries
+   * with `stopIndex=0` (origin departure) and `stopIndex=28` (mid-trip
+   * pass-through after the loop). Both refer to the same physical stop_id
+   * but are distinct boarding events.
+   *
+   * `stopIndex` corresponds 1:1 to the `si` field on `TimetableGroupV2Json`.
+   */
   patternPosition: {
-    /** 0-based index of this stop in the pattern. */
+    /** 0-based index of this stop in the pattern (matches `TimetableGroupV2Json.si`). */
     stopIndex: number;
     /** Total number of stops in the pattern. */
     totalStops: number;
@@ -343,9 +359,28 @@ export interface TimetableEntry {
   insights?: {
     /**
      * Estimated remaining travel time (minutes) from this stop
-     * to the terminal.
+     * to the terminal. Derived from `InsightsBundle.tripPatternStats.rd[stopIndex]`.
      */
     remainingMinutes: number;
+    /**
+     * Estimated total travel time (minutes) for the entire trip pattern,
+     * from origin to terminal. Derived from
+     * `InsightsBundle.tripPatternStats.rd[0]` (the remaining duration at
+     * the origin equals the total duration).
+     */
+    totalMinutes: number;
+    /**
+     * Total trips per day for this trip pattern in the entry's
+     * service group. Derived from
+     * `InsightsBundle.tripPatternStats[group][patternId].freq`.
+     *
+     * Pattern-level: counts each trip once (not once per stop event),
+     * so for a 6-shape or circular pattern an entry at the origin and
+     * an entry at a mid-pass-through position both report the same
+     * value. Distinct from `stopStats.freq`, which counts stop-level
+     * events and may double-count duplicate occurrences.
+     */
+    freq: number;
   };
 }
 

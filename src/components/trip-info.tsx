@@ -76,6 +76,15 @@ interface TripInfoProps {
    * drop-off-unavailable). When provided, rendered via the shared
    * `TimetableEntryAttributesLabels` primitive so the style matches the
    * timetable grid.
+   *
+   * **Important**: only valid for **single-departure** consumers
+   * (FlatDepartureItem, StopSummary) where the prop describes one specific
+   * entry. Multi-departure consumers (DepartureItem) intentionally do NOT
+   * pass this prop — instead they render `TimetableEntryAttributesLabels`
+   * inline next to each individual departure time. This is required by
+   * Issue #47: with si-based grouping a route+headsign bucket can contain
+   * entries with different `stopIndex` (6-shape, circular routes), so
+   * group-level attributes would mis-represent some entries.
    */
   attributes?: TimetableEntryAttributes;
   /** Size variant. @default 'default' */

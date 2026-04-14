@@ -205,7 +205,7 @@ describe('mergeSourcesV2', () => {
       return {
         prefix: 'itfeed',
         data: {
-          bundle_version: 2,
+          bundle_version: 3,
           kind: 'data',
           stops: {
             v: 2,
