@@ -86,7 +86,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 | チェック                                                                                                                                 | レベル |
 | ---------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| `bundle_version = 3                                                                                                                      | error  |
+| `bundle_version` = 3                                                                                                                     | error  |
 | `kind` = "data"                                                                                                                          | error  |
 | 9セクション全て存在 (stops, routes, agency, calendar, feedInfo, timetable, tripPatterns, translations, lookup)                           | error  |
 | 各セクションの `v` が期待値 (stops=2, routes=2, agency=1, calendar=1, feedInfo=1, timetable=2, tripPatterns=2, translations=1, lookup=2) | error  |
@@ -118,7 +118,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 | チェック                         | レベル |
 | -------------------------------- | ------ |
-| `bundle_version = 3              | error  |
+| `bundle_version` = 3             | error  |
 | `kind` = "shapes"                | error  |
 | `shapes.v` = 2                   | error  |
 | `shapes.data` が non-null object | error  |
@@ -139,7 +139,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 | チェック                                  | レベル |
 | ----------------------------------------- | ------ |
-| `bundle_version = 3                       | error  |
+| `bundle_version` = 3                      | error  |
 | `kind` = "insights"                       | error  |
 | 必須セクション `serviceGroups` が存在する | error  |
 | `serviceGroups.v` = 1                     | error  |

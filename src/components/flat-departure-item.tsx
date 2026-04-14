@@ -124,9 +124,12 @@ export function FlatDepartureItem({
             // size="xs"
             showTrack={info.isNormalEnabled}
             infoLevel={infoLevel}
-            trackColor={`#${route.route_color}20`}
-            dotColor={`#${route.route_color}50`}
-            currentColor={`#${route.route_color}`}
+            // route_color may be empty (e.g. mir/mykbus/sbbus). Pass undefined
+            // in that case so TripPositionIndicator falls back to its default
+            // Tailwind colors instead of producing invalid CSS like "#20".
+            trackColor={bgColor ? `${bgColor}20` : undefined}
+            dotColor={bgColor ? `${bgColor}50` : undefined}
+            currentColor={bgColor}
           />
           {/* <TripPositionIndicator
             stopIndex={entry.patternPosition.stopIndex}

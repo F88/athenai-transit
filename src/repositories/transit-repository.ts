@@ -73,7 +73,8 @@ export interface TransitRepository {
    * entries) and grouping (e.g. by route+headsign for display).
    *
    * ### Sorting
-   * Results are sorted by {@link sortTimetableEntriesChronologically}.
+   * Results are sorted by `sortTimetableEntriesChronologically`
+   * (defined in `src/domain/transit/sort-timetable-entries.ts`).
    * See that function's TSDoc for the canonical sort order spec.
    *
    * ### Service day boundary
@@ -193,7 +194,8 @@ export interface TransitRepository {
    * headsign, boarding availability, and pattern position.
    *
    * ### Sorting
-   * Results are sorted by {@link sortTimetableEntriesByDepartureTime}.
+   * Results are sorted by `sortTimetableEntriesByDepartureTime`
+   * (defined in `src/domain/transit/sort-timetable-entries.ts`).
    * See that function's TSDoc for the canonical sort order spec.
    *
    * ### Calendar filtering
