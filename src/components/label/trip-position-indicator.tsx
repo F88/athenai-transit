@@ -52,6 +52,16 @@ const SIZE_CLASSES: Record<
 };
 
 /**
+ * Hard cap on rendered dots. Real trip patterns top out around
+ * 80 stops in the current dataset (都営梅70, 京都市バス11), so 300
+ * leaves a comfortable safety margin for future long-haul routes
+ * while still protecting the browser from a data bug (NaN /
+ * Infinity / corrupted value) that would otherwise render thousands
+ * of DOM nodes.
+ */
+const MAX_STOPS = 300;
+
+/**
  * Slider-style "you are here" indicator showing where a stop sits within
  * the full sequence of stops in a trip pattern.
  *
@@ -81,13 +91,22 @@ export function TripPositionIndicator({
   dotColor,
   trackColor,
 }: TripPositionIndicatorProps): ReactElement | null {
-  if (totalStops <= 0) {
+  // Reject non-finite (NaN / Infinity / -Infinity) and degenerate
+  // counts up front. `totalStops <= 1` covers 0/negative (invalid)
+  // and 1 (single-stop pattern, no position context to convey so
+  // the indicator has nothing to show). Infinity would otherwise
+  // spin the dot loop forever.
+  if (!Number.isFinite(totalStops) || totalStops <= 1) {
     return null;
   }
   // Hide at the simplest verbosity level (= keep UI uncluttered).
   if (infoLevel !== undefined && !createInfoLevel(infoLevel).isNormalEnabled) {
     return null;
   }
+  // Clamp absurdly large counts to MAX_STOPS. Real GTFS patterns
+  // top out around 80 stops, so a value beyond 300 signals a data
+  // bug that must not be allowed to freeze the browser.
+  const safeTotalStops = Math.min(Math.floor(totalStops), MAX_STOPS);
   const sizeCls = SIZE_CLASSES[size];
   // When a color prop is provided, omit the default Tailwind bg class so the
   // inline style override wins without specificity conflicts.
@@ -96,7 +115,7 @@ export function TripPositionIndicator({
   const currentStyle = currentColor ? { backgroundColor: currentColor } : undefined;
   const dotStyle = dotColor ? { backgroundColor: dotColor } : undefined;
   const dots: ReactElement[] = [];
-  for (let i = 0; i < totalStops; i++) {
+  for (let i = 0; i < safeTotalStops; i++) {
     const isCurrent = i === stopIndex;
     dots.push(
       <span
@@ -120,7 +139,7 @@ export function TripPositionIndicator({
   const containerStyle: CSSProperties | undefined = trackColor
     ? ({ '--tpi-track-color': trackColor } as CSSProperties)
     : undefined;
-  const positionLabel = `Stop ${stopIndex + 1} of ${totalStops}`;
+  const positionLabel = `Stop ${stopIndex + 1} of ${safeTotalStops}`;
   return (
     <span
       className={`relative inline-flex w-full items-center justify-between ${sizeCls.height} ${sizeCls.pad} ${trackCls}`}
