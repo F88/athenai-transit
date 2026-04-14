@@ -30,6 +30,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - `validate-data.ts` に `si` 整合性検証を追加: 非負整数チェック、`si < pattern.stops.length`、`pattern.stops[si].id === stopId`、`(stop_id, tp, si)` 三つ組のユニーク性。
 - `verbose-timetable-entries.tsx` の verbose dump に `si=N` 表示を追加。デバッグ時に JSON 上の `si` 値と UI 表示が直接対応。
+- データソース読込失敗時の error toast 表示 (#128, Phase 1)。bundle_version mismatch などで全/一部のソースがロードできなかった場合、起動時に sonner toast でユーザーに通知.これまでは console warn のみで UI 上の通知がなく、空マップ状態を「データのない地域」と誤解する原因になっていた。
 
 ## [2026.04.13]
 
