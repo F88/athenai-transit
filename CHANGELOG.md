@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.04.14]
+
 ### Changed
 
 - BREAKING: `bundle_version` を 2 → 3 に bump (全 v2 bundle: data / shapes / insights / global-insights)。理由: `TimetableGroupV2Json` に required な `si: number` field を追加したため。旧 v2 データは fail fast で reject される。
@@ -20,6 +22,10 @@ and this project adheres to [CalVer](https://calver.org/).
 - `tripPatternStats.freq` の duplicate stop double-count 問題を解消 (#47)。例: `toaran:p72` 都庁前の `freq` が 380 → 190 (正しい trip 数)。
 - 6字形/循環パターンで `stop_headsign` が誤って最初の出現位置の値で表示されていた問題を修正 (kobus / kcbus / sbbus / minkuru / edobus 計 122 stop instances)。`pattern.stops[si].sh` を per-departure で正しく解決。例: `kobus:p67` で `kobus:1694_11` が position 11 では「調布駅南口（狛江駅北口経由）」、position 15 では「調布駅南口」と表示されるようになる。
 - `DepartureItem` の group-level attribute 表示が `firstEntry.patternPosition` の sort 順次第で不安定だった既存バグを Alt F で根治 (循環ルートで `[ORIG]` / `[TERM]` ラベルが時刻によってちらつく問題)。
+- `sortTimetableEntriesChronologically` の DST correctness を修正。リファクタ時に `serviceDate.getTime() + departureMinutes * 60_000` という直接 ms 加算に変えたが、これは DST transition 日 (Europe/Berlin, Europe/Rome 等) で `minutesToDate(...).getTime()` と 1 時間ずれる。`minutesToDate` 経由での pre-compute に戻し、O(n) の Date allocation は comparator 外に保持することで hot path の最適化も維持。JST (DST なし) のみ利用なら影響なし。
+- `TripPositionIndicator` に `route_color` が空文字列の route (mir / mykbus / sbbus 等 29 routes) で `#20` / `#50` / `#` といった不正な CSS color を渡していた問題を修正。L51 の既存の `bgColor` ガードに揃える形で `trackColor` / `dotColor` / `currentColor` も `undefined` fallback するようにした。
+- `TripPositionIndicator` を hardening: `totalStops` が NaN / Infinity / 負数 / 0 / 1 の場合は null を返すように (`totalStops <= 1` で一括早期 return)、`totalStops > 300` は 300 に clamp (MAX_STOPS)。Infinity での無限ループによるブラウザハングを防ぎ、data bug に強くなった。
+- `FlatDepartureItem` の verbose 行で `entry.insights` が未解決のとき `/` だけが表示されていた問題を修正。`?? '-'` で fallback して `- / -` と表示するようにした。発生パターンは 2 系統: (1) 起動直後の shapes+insights 背景ロード完了前の race window (数百 ms 〜 数秒、user が操作すると fresh entry で解決)、(2) `tripPatternStats` に出現しない pattern (freq=0 で pipeline から dropped / 祝日等で service group mismatch) で永続 undefined。どちらも同じ `- / -` 表示にすることで状態を統一し、将来の Issue #126 (UI consumption of insights) でも同じ graceful-degradation パターンを使える前提を作る。
 
 ### Removed
 
@@ -30,6 +36,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - `validate-data.ts` に `si` 整合性検証を追加: 非負整数チェック、`si < pattern.stops.length`、`pattern.stops[si].id === stopId`、`(stop_id, tp, si)` 三つ組のユニーク性。
 - `verbose-timetable-entries.tsx` の verbose dump に `si=N` 表示を追加。デバッグ時に JSON 上の `si` 値と UI 表示が直接対応。
+- `TripPositionIndicator` 新規コンポーネント (`src/components/label/trip-position-indicator.tsx`): trip pattern 内の現在位置を slider 風の dot + track で視覚化する UI。`FlatDepartureItem` の verbose 表示で活用。xs / sm / md のサイズバリアント、`infoLevel` 連動表示、GTFS `route_color` 対応の custom color props。Storybook stories (`trip-position-indicator.stories.tsx`) に 12+ ケース (Origin / Terminal / LongPattern / 6-shape / edge cases / KitchenSink) を追加。
 - データソース読込失敗時の error toast 表示 (#128, Phase 1)。bundle_version mismatch などで全/一部のソースがロードできなかった場合、起動時に sonner toast でユーザーに通知.これまでは console warn のみで UI 上の通知がなく、空マップ状態を「データのない地域」と誤解する原因になっていた。
 
 ## [2026.04.13]
