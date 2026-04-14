@@ -4,6 +4,7 @@ import i18n from './i18n';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { AppRouteTypeValue, Stop } from './types/app/transit';
 import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
+import type { LoadResult } from './repositories/athenai-repository-v2';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
 import { useDateTime } from './hooks/use-date-time';
@@ -56,7 +57,16 @@ import { toast } from 'sonner';
 const logger = createLogger('App');
 const DEBOUNCE_MS = 300;
 
-export default function App() {
+interface AppProps {
+  /**
+   * Source loading result from startup. Used to surface a toast when
+   * one or more data sources failed to load (e.g. bundle_version
+   * mismatch during a deploy window). See Issue #128.
+   */
+  loadResult: LoadResult;
+}
+
+export default function App({ loadResult }: AppProps) {
   const { t } = useTranslation();
   const repo = useTransitRepository();
   const [userDataRepo] = useState(() => new LocalStorageUserDataRepository());
@@ -66,6 +76,25 @@ export default function App() {
   useEffect(() => {
     void i18n.changeLanguage(settings.lang);
   }, [settings.lang]);
+
+  // Surface data source loading failures via toast (Issue #128).
+  // Without this, all-source failures (e.g. bundle_version mismatch
+  // during a deploy window) leave the UI as an empty map with no
+  // visible indication that data is missing.
+  // Stable `id` dedupes across StrictMode double-mount and language
+  // changes — the same failure produces a single toast whose label
+  // updates in place when the language switches.
+  useEffect(() => {
+    if (loadResult.failed.length === 0) {
+      return;
+    }
+    const prefixes = loadResult.failed.map((f) => f.prefix).join(', ');
+    toast.error(t('dataLoad.failed'), {
+      id: 'data-load-failed',
+      description: `${loadResult.failed.length} source(s): ${prefixes}`,
+      duration: Infinity,
+    });
+  }, [loadResult, t]);
 
   // Resolve language fallback chain once when lang changes.
   // Components receive this as dataLang (ordered priority list for

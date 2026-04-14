@@ -143,7 +143,7 @@ describe('App anchor error toast', () => {
       isStopAnchor: vi.fn(() => false),
     });
 
-    render(<App />);
+    render(<App loadResult={{ loaded: [], failed: [] }} />);
 
     // Give effects time to run
     await waitFor(() => {
@@ -164,7 +164,7 @@ describe('App anchor error toast', () => {
       isStopAnchor: vi.fn(() => false),
     });
 
-    render(<App />);
+    render(<App loadResult={{ loaded: [], failed: [] }} />);
 
     await waitFor(() => {
       expect(mockToastError).toHaveBeenCalledWith('アンカー更新に失敗しました', {
