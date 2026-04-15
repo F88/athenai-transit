@@ -53,14 +53,12 @@ interface JourneyTimeBarProps {
   showTMins?: boolean;
   /**
    * Optional prefix rendered before the remaining-minutes value
-   * (e.g., `'残り'` → `'残り5'`). Ignored when `showRemainingMinutes`
-   * is `false`.
+   * (e.g., `'残り'` → `'残り5'`). Ignored when `showRMins` is `false`.
    */
   rTimeLabel?: string;
   /**
    * Optional prefix rendered before the total-minutes value
-   * (e.g., `'全体'` → `'全体25'`). Ignored when `showTotalMinutes`
-   * is `false`.
+   * (e.g., `'全体'` → `'全体25'`). Ignored when `showTMins` is `false`.
    */
   tMinsLabel?: string;
   /**
@@ -99,15 +97,27 @@ type JourneyTimeBarStyle = CSSProperties & {
 /**
  * A progress bar visualizing journey time.
  *
- * The bar's width scales with `totalMinutes` (capped at `MAX_BAR_MINUTES`),
- * so longer trips get visually longer bars. The filled portion represents
- * the remaining ratio (`remaining / total`), so the bar empties as the
- * trip progresses.
+ * The bar's width scales with `totalMinutes` (capped at
+ * `DEFAULT_MAX_BAR_MINUTES`, overridable via the `maxMinutes` prop),
+ * so longer trips get visually longer bars. The filled portion
+ * represents the remaining ratio (`remaining / total`), so the bar
+ * empties as the trip progresses.
  *
- * The caller decides which numeric labels to show via
- * `showRemainingMinutes` / `showTotalMinutes` and where to place them via
- * `minutesPosition`. When both flags are on, the combined form `"r / t"`
- * is rendered.
+ * The caller decides which numeric labels to show via `showRMins` /
+ * `showTMins` and where to place them via `minsPosition`. When both
+ * flags are on, the combined form `"r / t"` is rendered.
+ *
+ * ## `color` prop format requirement
+ *
+ * When `color` is provided, the indicator uses it verbatim and the
+ * track is derived as `${color}33` — i.e. the same color with a
+ * `33` (≈ 20%) alpha hex suffix. **`color` therefore must be a
+ * 6-digit hex string starting with `#` (`#RRGGBB`)** so the
+ * concatenation produces a valid 8-hex CSS color (`#RRGGBBAA`).
+ * Production callers (`FlatDepartureItem`) always pass
+ * `#${route.route_color}`, which is guaranteed by the GTFS
+ * `routes.txt` spec to be 6 hex chars. Named CSS colors, `rgb(...)`,
+ * and `hsl(...)` strings are NOT supported.
  */
 export function JourneyTimeBar({
   remainingMinutes,

@@ -588,14 +588,16 @@ const kitchenSinkGroups: { entries: ContextualTimetableEntry[]; agency?: Agency 
 export const LogicalLongInfoLevelComparison: Story = {
   args: {
     // Vary per-entry attributes so the inline `TimetableEntryAttributesLabels`
-    // surfaces every supported flag (terminal / origin / pickup× / dropoff×).
-    // Each row exercises exactly one flag so the story doubles as a label
-    // catalog at a glance:
-    //   1st: plain (no labels)
-    //   2nd: terminal             → 終点
-    //   3rd: origin               → 始発
-    //   4th: pickup unavailable   → 乗×
-    //   5th: dropoff unavailable  → 降×
+    // exercises every supported flag (terminal / origin / pickup× / dropoff×)
+    // across the displayed rows:
+    //   1st: plain                      → no labels
+    //   2nd: origin only                → 始発
+    //   3rd: kitchen sink               → 始発 + 終点 + 乗× + 降×
+    //
+    // The 3rd row deliberately combines all four flags to verify they
+    // can coexist visually within a single row without overflowing or
+    // overlapping the time text. Use `Detailed` / `Verbose` for the
+    // single-flag-per-row variant if needed.
     entries: [
       createLogicalLongEntry({
         departureMinutes: 870,
