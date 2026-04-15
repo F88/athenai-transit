@@ -339,6 +339,54 @@ export const StopOverridesTrip: Story = {
   },
 };
 
+// --- infoLevel comparison ---
+
+/**
+ * Side-by-side comparison of all `infoLevel` values against the
+ * logical long-form fixtures (`routeLong`, `tripHeadsignLong`,
+ * `stopHeadsignLong`). Place-name-independent — exercises the full
+ * info-level rendering range without being tied to specific
+ * real-world data.
+ */
+export const LogicalLongInfoLevelComparison: Story = {
+  args: {
+    agency,
+    entry: {
+      ...createEntry({ departureMinutes: 870 }),
+      routeDirection: {
+        route: routeLong,
+        tripHeadsign: tripHeadsignLong,
+        stopHeadsign: stopHeadsignLong,
+        direction: 0,
+      },
+    },
+    // showRouteTypeIcon: true,
+  },
+  render: (args) => {
+    const levels: InfoLevel[] = ['simple', 'normal', 'detailed', 'verbose'];
+    return (
+      <div className="flex flex-col gap-3">
+        {levels.map((level) => (
+          <div key={level} className="space-y-1">
+            <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
+            <FlatDepartureItem
+              entry={args.entry}
+              now={args.now}
+              isFirst={args.isFirst}
+              showRouteTypeIcon={level === 'verbose'}
+              infoLevel={level}
+              dataLang={args.dataLang}
+              agency={args.agency}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+
+// --- i18n: lang resolution ---
+
 /**
  * All supported languages stacked so i18n behaviour is easy to verify
  * at a glance. Uses the logical long-form fixtures
