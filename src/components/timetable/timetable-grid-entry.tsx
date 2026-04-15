@@ -1,5 +1,6 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { TimetableEntry } from '../../types/app/transit-composed';
+import { useTranslation } from 'react-i18next';
 import { getDisplayMinutes } from '../../domain/transit/timetable-utils';
 import { getTimetableEntryAttributes } from '../../domain/transit/timetable-entry-attributes';
 import { HeadsignBadge } from '../badge/headsign-badge';
@@ -50,6 +51,7 @@ export function TimetableGridEntry({
   disableVerbose = false,
   defaultOpen = false,
 }: TimetableGridEntryProps) {
+  const { t } = useTranslation();
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;
   const displayMinutes = getDisplayMinutes(entry);
 
@@ -57,7 +59,16 @@ export function TimetableGridEntry({
     <span className="inline-flex items-baseline gap-0.5">
       <span className="text-muted-foreground text-sm tabular-nums">
         {String(displayMinutes % 60).padStart(2, '0')}
-        {entry.patternPosition.isTerminal && <span className="text-[9px] opacity-70">着</span>}
+        {/*
+         * Compact inline arriving marker (e.g. "着" / "Arr") attached to the
+         * minute number for trips that terminate at this stop. This shares the
+         * `timetable.entry.*` namespace with the pill-style labels rendered by
+         * TimetableEntryAttributesLabels below, but serves a different purpose:
+         * the pill is a full-word label, whereas this is a short inline marker.
+         */}
+        {entry.patternPosition.isTerminal && (
+          <span className="text-[9px] opacity-70">{t('timetable.entry.arriving')}</span>
+        )}
       </span>
       {showHeadsign && (
         <HeadsignBadge

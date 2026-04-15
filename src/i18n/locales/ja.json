@@ -97,7 +97,8 @@
       "terminal": "終点",
       "origin": "始発",
       "noPickup": "乗×",
-      "noDropOff": "降×"
+      "noDropOff": "降×",
+      "arriving": "着"
     },
     "grid": {
       "row": {

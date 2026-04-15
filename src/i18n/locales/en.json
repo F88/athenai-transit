@@ -97,7 +97,8 @@
       "terminal": "Terminal",
       "origin": "Origin",
       "noPickup": "No pickup",
-      "noDropOff": "No drop-off"
+      "noDropOff": "No drop-off",
+      "arriving": "Arr"
     },
     "grid": {
       "row": {
