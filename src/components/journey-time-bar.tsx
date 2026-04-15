@@ -1,0 +1,257 @@
+import type { CSSProperties } from 'react';
+import { computeJourneyTime } from '../domain/transit/journey-time';
+import { BaseLabel, type BaseLabelSize } from './label/base-label';
+import { Progress } from './ui/progress';
+
+export type JourneyTimeBarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+export type JourneyTimeBarMinutesPosition = 'top' | 'bottom' | 'left' | 'right';
+export type JourneyTimeBarFillDirection = 'ltr' | 'rtl';
+export type JourneyTimeBarBorderStyle = 'solid' | 'dashed' | 'dotted';
+
+export interface JourneyTimeBarBorder {
+  /** Border width in pixels. Default `1`. */
+  width?: number;
+  /** Border color as a CSS color string. Default subtle gray. */
+  color?: string;
+  /** Border line style. Default `'solid'`. */
+  style?: JourneyTimeBarBorderStyle;
+}
+
+const DEFAULT_BORDER_WIDTH = 1;
+const DEFAULT_BORDER_COLOR = 'rgba(156, 163, 175, 0.5)';
+const DEFAULT_BORDER_STYLE: JourneyTimeBarBorderStyle = 'solid';
+
+interface JourneyTimeBarProps {
+  /** Remaining minutes from the current stop to the terminal. */
+  remainingMinutes: number | undefined;
+  /** Total minutes of the full trip pattern. */
+  totalMinutes: number | undefined;
+  /**
+   * Total minutes that map to a full-width bar. Trips longer than this
+   * are clamped (bar stays at 100% width). Defaults to
+   * {@link DEFAULT_MAX_BAR_MINUTES} (`120`). Non-positive / non-finite
+   * values fall back to the default.
+   */
+  maxMinutes?: number;
+  /** Size variant. Default `'sm'`. */
+  size?: JourneyTimeBarSize;
+  /**
+   * Fill color for the traveled portion, as a CSS color string (e.g., a
+   * GTFS `route_color` hex like `'#1976D2'`). When omitted, falls back to
+   * the shadcn primary color.
+   */
+  color?: string;
+  /**
+   * Optional outline drawn around the bar. Omit for no border (default);
+   * pass `{}` for the default subtle gray outline or provide any subset
+   * of `width` / `color` / `style` to override individual fields.
+   */
+  border?: JourneyTimeBarBorder;
+  /** Whether to render the remaining-minutes label. Default `false`. */
+  showRMins?: boolean;
+  /** Whether to render the total-minutes label. Default `false`. */
+  showTMins?: boolean;
+  /**
+   * Optional prefix rendered before the remaining-minutes value
+   * (e.g., `'残り'` → `'残り5'`). Ignored when `showRemainingMinutes`
+   * is `false`.
+   */
+  rTimeLabel?: string;
+  /**
+   * Optional prefix rendered before the total-minutes value
+   * (e.g., `'全体'` → `'全体25'`). Ignored when `showTotalMinutes`
+   * is `false`.
+   */
+  tMinsLabel?: string;
+  /**
+   * Where to place the minutes label relative to the bar.
+   * `'top'` / `'bottom'` stack vertically; `'left'` / `'right'` flow
+   * inline alongside the bar. Default `'bottom'`.
+   */
+  minsPosition?: JourneyTimeBarMinutesPosition;
+  /**
+   * Fill direction. `'ltr'` fills from the left edge growing right
+   * (default — emphasizes "you can ride this far"). `'rtl'` fills from
+   * the right edge growing left, so the colored section sits next to
+   * the terminal end of the bar ("remaining until arrival").
+   */
+  fillDirection?: JourneyTimeBarFillDirection;
+}
+
+/** Total minutes that map to a full-width bar; longer trips are clamped. */
+const DEFAULT_MAX_BAR_MINUTES = 120;
+
+const SIZE_HEIGHT_CLS: Record<JourneyTimeBarSize, string> = {
+  xs: 'h-0.5',
+  sm: 'h-1',
+  md: 'h-1.5',
+  lg: 'h-2',
+  xl: 'h-3',
+};
+
+type JourneyTimeBarStyle = CSSProperties & {
+  '--jtb-fill-color'?: string;
+  '--jtb-track-color'?: string;
+};
+
+/**
+ * A progress bar visualizing journey time.
+ *
+ * The bar's width scales with `totalMinutes` (capped at `MAX_BAR_MINUTES`),
+ * so longer trips get visually longer bars. The filled portion represents
+ * the remaining ratio (`remaining / total`), so the bar empties as the
+ * trip progresses.
+ *
+ * The caller decides which numeric labels to show via
+ * `showRemainingMinutes` / `showTotalMinutes` and where to place them via
+ * `minutesPosition`. When both flags are on, the combined form `"r / t"`
+ * is rendered.
+ */
+export function JourneyTimeBar({
+  remainingMinutes,
+  totalMinutes,
+  maxMinutes,
+  size = 'sm',
+  color,
+  border,
+  showRMins = false,
+  showTMins = false,
+  rTimeLabel,
+  tMinsLabel,
+  minsPosition: minutesPosition = 'bottom',
+  fillDirection = 'ltr',
+}: JourneyTimeBarProps) {
+  // Delegate all time math (sanitize, clamp, progress ratio, label
+  // rounding) to the domain layer. The Result type lets us bail out
+  // early when there is no usable total to render against.
+  const timeResult = computeJourneyTime({ remainingMinutes, totalMinutes });
+  if (!timeResult.ok) {
+    return null;
+  }
+  const { safeTotalMinutes, progressValue, displayTotalMinutes, displayRemainingMinutes } =
+    timeResult.value;
+
+  // Width scaling is a UI concern — it depends on the visual
+  // convention of "this is the full-width threshold", not on the time
+  // data itself. Kept local to the component so the domain helper
+  // stays pure time math.
+  const safeMaxMinutes =
+    maxMinutes != null && Number.isFinite(maxMinutes) && maxMinutes > 0
+      ? maxMinutes
+      : DEFAULT_MAX_BAR_MINUTES;
+  const widthPercent = Math.min((safeTotalMinutes / safeMaxMinutes) * 100, 100);
+
+  // When a color prop is provided, override both the track (lighter) and
+  // the indicator (solid) via CSS variables + arbitrary child selector, so
+  // the route color flows through without modifying shadcn upstream code.
+  const colorClass = color
+    ? 'bg-[var(--jtb-track-color)] [&>[data-slot=progress-indicator]]:bg-[var(--jtb-fill-color)]'
+    : '';
+  // Right-aligned fill is implemented by mirroring the whole bar via
+  // `scaleX(-1)`. Both track and indicator use `rounded-full`, so the
+  // mirror is visually indistinguishable from a truly right-anchored
+  // fill and avoids reimplementing shadcn Progress.
+  const borderStyle: CSSProperties = border
+    ? {
+        borderWidth: `${border.width ?? DEFAULT_BORDER_WIDTH}px`,
+        borderColor: border.color ?? DEFAULT_BORDER_COLOR,
+        borderStyle: border.style ?? DEFAULT_BORDER_STYLE,
+      }
+    : {};
+  const barStyle: JourneyTimeBarStyle = {
+    width: `${widthPercent}%`,
+    ...(fillDirection === 'rtl' ? { transform: 'scaleX(-1)' } : {}),
+    ...(color
+      ? {
+          '--jtb-fill-color': color,
+          '--jtb-track-color': `${color}33`,
+        }
+      : {}),
+    ...borderStyle,
+  };
+
+  const showLabel = showRMins || showTMins;
+  // `displayTotalMinutes` is always present in a successful result;
+  // `displayRemainingMinutes` is `null` only when the upstream
+  // remaining value is missing / invalid (shown as `-`).
+  const r = displayRemainingMinutes ?? '-';
+  const t = displayTotalMinutes;
+  const rText = `${rTimeLabel ?? ''}${r}`;
+  const tText = `${tMinsLabel ?? ''}${t}`;
+  const labelText =
+    showRMins && showTMins ? `${rText} / ${tText}` : showRMins ? rText : showTMins ? tText : '';
+
+  let labelSize: BaseLabelSize = 'md';
+  switch (size) {
+    case 'xs':
+      labelSize = 'xs';
+      break;
+    case 'sm':
+      labelSize = 'xs';
+      break;
+    case 'md':
+      labelSize = 'xs';
+      break;
+    case 'lg':
+      labelSize = 'xs';
+      break;
+    case 'xl':
+      labelSize = 'xs';
+      break;
+  }
+  const label = showLabel ? (
+    <BaseLabel
+      size={labelSize}
+      value={labelText}
+      className={`whitespace-nowrap text-white ${color ? '' : 'bg-gray-500'}`}
+      style={color ? { backgroundColor: color } : undefined}
+    />
+  ) : null;
+
+  const bar = (
+    <Progress
+      value={progressValue}
+      className={`${SIZE_HEIGHT_CLS[size]} ${colorClass}`.trim()}
+      style={barStyle}
+    />
+  );
+
+  // Horizontal layout (label and bar inline on the same row).
+  //
+  // - `flex w-full`        : occupy the parent's full width so the bar's
+  //                          percentage width resolves correctly
+  // - `items-center`       : center-align the label pill to the bar
+  // - `gap-1`              : comfortable inline spacing (4px)
+  if (minutesPosition === 'left' || minutesPosition === 'right') {
+    const labelFirst = minutesPosition === 'left';
+    return (
+      <div className="flex w-full items-center gap-1">
+        {labelFirst && label}
+        {bar}
+        {!labelFirst && label}
+      </div>
+    );
+  }
+
+  // Vertical layout (label stacked above/below the bar).
+  //
+  // - `flex w-full flex-col` : stack children, keep the container at
+  //                            parent width so the bar percentage
+  //                            resolves against the full width
+  // - `items-start`          : stop BaseLabel from stretching to the
+  //                            full container width (default
+  //                            `items-stretch` would otherwise turn
+  //                            the small pill into a wide block)
+  // - `gap-0.5`              : tight 2px breathing room between the
+  //                            label pill and the bar (the bar itself
+  //                            is only 2–12px tall so a large gap
+  //                            would dwarf it)
+  const labelFirst = minutesPosition === 'top';
+  return (
+    <div className="flex w-full flex-col items-start gap-0.5">
+      {labelFirst && label}
+      {bar}
+      {!labelFirst && label}
+    </div>
+  );
+}
