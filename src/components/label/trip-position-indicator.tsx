@@ -141,16 +141,22 @@ export function TripPositionIndicator({
     : undefined;
   const positionLabel = `Stop ${stopIndex + 1} of ${safeTotalStops}`;
   return (
-    <>
-      {infoLevel === 'verbose' && '🚏'}
+    <span
+      className="inline-flex w-full items-center gap-1"
+      aria-label={positionLabel}
+      title={positionLabel}
+    >
+      {infoLevel === 'verbose' && (
+        <span aria-hidden="true" className="shrink-0">
+          🚏
+        </span>
+      )}
       <span
-        className={`relative inline-flex w-full items-center justify-between ${sizeCls.height} ${sizeCls.pad} ${trackCls}`}
+        className={`relative inline-flex min-w-0 flex-1 items-center justify-between ${sizeCls.height} ${sizeCls.pad} ${trackCls}`}
         style={containerStyle}
-        aria-label={positionLabel}
-        title={positionLabel}
       >
         {dots}
       </span>
-    </>
+    </span>
   );
 }

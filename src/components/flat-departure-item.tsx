@@ -110,27 +110,29 @@ export function FlatDepartureItem({
 
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
           {/* Trip Hint */}
-          <div className="mb-0.5 flex items-center justify-end gap-1 whitespace-nowrap">
-            <TripPositionIndicator
-              stopIndex={entry.patternPosition.stopIndex}
-              totalStops={entry.patternPosition.totalStops}
-              // size="md"
-              size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
-              // size="xs"
-              showTrack={info.isNormalEnabled}
-              infoLevel={infoLevel}
-              // route_color may be empty (e.g. mir/mykbus/sbbus). Pass undefined
-              // in that case so TripPositionIndicator falls back to its default
-              // Tailwind colors instead of producing invalid CSS like "#20".
-              trackColor={bgColor ? `${bgColor}20` : undefined}
-              dotColor={bgColor ? `${bgColor}50` : undefined}
-              currentColor={bgColor}
-            />
+          <div className="mb-0.5 flex min-w-0 items-center gap-1">
+            <div className="min-w-0 flex-1">
+              <TripPositionIndicator
+                stopIndex={entry.patternPosition.stopIndex}
+                totalStops={entry.patternPosition.totalStops}
+                // size="md"
+                size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
+                // size="xs"
+                showTrack={info.isNormalEnabled}
+                infoLevel={infoLevel}
+                // route_color may be empty (e.g. mir/mykbus/sbbus). Pass undefined
+                // in that case so TripPositionIndicator falls back to its default
+                // Tailwind colors instead of producing invalid CSS like "#20".
+                trackColor={bgColor ? `${bgColor}20` : undefined}
+                dotColor={bgColor ? `${bgColor}50` : undefined}
+                currentColor={bgColor}
+              />
+            </div>
             {info.isVerboseEnabled && (
               <BaseLabel
                 size={'xs'}
                 value={`${entry.patternPosition.stopIndex + 1} / ${entry.patternPosition.totalStops}`}
-                className="bg-gray-500 whitespace-nowrap text-white"
+                className="shrink-0 bg-gray-500 whitespace-nowrap text-white"
               />
             )}
           </div>
