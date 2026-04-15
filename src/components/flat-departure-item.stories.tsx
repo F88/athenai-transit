@@ -269,16 +269,39 @@ export const InfoLevelComparison: Story = {
 
 // --- Multiple items ---
 
-/** Multiple flat items as they appear in the stop view. */
+/**
+ * Multiple flat items as they appear in the stop view.
+ *
+ * Mixes several row variants to exercise the full flat-list layout:
+ * a plain departure, a different-route row, a pickup-unavailable
+ * row, a tram row, and two terminal rows — one at the first
+ * position (so the terminal marker and `RelativeTime` interact) and
+ * one further down (so the terminal marker sits next to an
+ * absolute-only time). Terminal rows exercise the
+ * `departure.arrivingAbsolute` i18n key and are the easiest way to
+ * eyeball the "着" / "Arr" opt-out behaviour from Storybook.
+ */
 export const MultipleItems: Story = {
   args: { entry: createEntry() },
   render: (args) => {
     const entries = [
       createEntry({ departureMinutes: 870, headsign: '中野駅' }),
       createEntry({ departureMinutes: 885, route: greenRoute, headsign: '新橋駅' }),
-      createEntry({ departureMinutes: 900, headsign: '中野駅' }),
+      createEntry({
+        departureMinutes: 900,
+        headsign: '中野駅',
+        isTerminal: true,
+        arrivalMinutes: 900,
+      }),
       createEntry({ departureMinutes: 920, pickupType: 1, headsign: '車庫前' }),
       createEntry({ departureMinutes: 935, route: tramRoute, headsign: '早稲田' }),
+      createEntry({
+        departureMinutes: 950,
+        route: tramRoute,
+        headsign: '早稲田',
+        isTerminal: true,
+        arrivalMinutes: 950,
+      }),
     ];
     return (
       <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
@@ -292,6 +315,61 @@ export const MultipleItems: Story = {
             infoLevel={args.infoLevel}
             dataLang={args.dataLang}
           />
+        ))}
+      </div>
+    );
+  },
+};
+
+/**
+ * Multi-item list stacked across every supported language so the
+ * `departure.arrivingAbsolute` opt-out pattern can be verified in
+ * context: ja shows "着" next to terminal absolute times, en is
+ * silent (per locale protection of the tight row layout), other
+ * locales follow their own key value or fall through the locale
+ * chain. Uses the same entry mix as {@link MultipleItems} so the
+ * comparison is row-for-row identical across languages.
+ */
+export const MultipleItemsLangComparison: Story = {
+  args: { entry: createEntry(), infoLevel: 'normal' },
+  render: (args) => {
+    const entries = [
+      createEntry({ departureMinutes: 870, headsign: '中野駅' }),
+      createEntry({ departureMinutes: 885, route: greenRoute, headsign: '新橋駅' }),
+      createEntry({
+        departureMinutes: 900,
+        headsign: '中野駅',
+        isTerminal: true,
+        arrivalMinutes: 900,
+      }),
+      createEntry({ departureMinutes: 920, pickupType: 1, headsign: '車庫前' }),
+      createEntry({
+        departureMinutes: 935,
+        route: tramRoute,
+        headsign: '早稲田',
+        isTerminal: true,
+        arrivalMinutes: 935,
+      }),
+    ];
+    return (
+      <div className="flex flex-col gap-3">
+        {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
+          <div key={label} className="space-y-1">
+            <span className="block text-[10px] text-gray-400">{label}</span>
+            <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
+              {entries.map((entry, i) => (
+                <FlatDepartureItem
+                  key={i}
+                  entry={entry}
+                  now={args.now}
+                  isFirst={args.isFirst && i === 0}
+                  showRouteTypeIcon={args.showRouteTypeIcon}
+                  infoLevel={args.infoLevel}
+                  dataLang={dataLang}
+                />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
     );
