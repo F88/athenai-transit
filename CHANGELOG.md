@@ -11,6 +11,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- Pipeline: 伊予鉄バス (`iyotetsu-bus`) の ODPT CKAN リソースを 20260415 版 (`resourceId: 4e0f3da7-04a3-4335-ae56-2f4a213d3631`) に更新し、GTFS を再取得して v2 app data を再生成。`routeColorFallbacks` は不要、`shapes.txt` はヘッダのみで実データなし、`translations.txt` には一部全角スペースが含まれることを確認。
 - `formatDistance(meters, unit?)` / `formatDistanceCompact(meters)` (`src/domain/transit/distance.ts`) に `lang: string` 引数を追加し locale 対応化。従来は `toLocaleString('en-US')` をハードコード + km 値を `.toFixed(1)` で locale 非対応に整形していたため、fr / de ユーザに対して decimal / thousands separator が正しく出力されない潜在バグがあった (例: `1500` → en では `1.5km`、de でも `1.5km` になるが正しくは `1,5km`)。新シグネチャ:
     - `formatDistance(meters, lang, unit = true)`
     - `formatDistanceCompact(meters, lang)`

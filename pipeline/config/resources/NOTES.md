@@ -128,6 +128,33 @@ stop_name の差異パターン (渋66 の調査結果):
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20250108版
 
+## iyotetsu-bus (伊予鉄バス)
+
+- Resource definition: `pipeline/config/resources/gtfs/iyotetsu-bus.ts`
+- CKAN: <https://ckan.odpt.org/dataset/iyotetsu_bus_all_lines>
+- Resource ID (使用中): `4e0f3da7-04a3-4335-ae56-2f4a213d3631` (20260415版)
+
+### iyotetsu-bus route_color
+
+- 全 46 路線で `route_color` / `route_text_color` が設定されている
+- `000000` や空文字は確認されず、`routeColorFallbacks` は不要
+- 最多は `FBD074 / 0A0A0A` (24路線)
+
+### iyotetsu-bus shapes.txt
+
+- GTFS ZIP に `shapes.txt` は含まれるが、ヘッダのみでデータ行は 0 件
+- `shape_dist_traveleded` という非標準列名があるが、実データがないため実害はない
+
+### iyotetsu-bus translations.txt
+
+- 翻訳データあり (`translations.txt` 2401 行)
+- 一部の `route_long_name` に全角スペースが含まれる
+
+### iyotetsu-bus CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- CKAN の 20260415 版リソースと対応
+
 ## kyoto-city-bus
 
 ### route_color に黒 (000000) が 43路線
