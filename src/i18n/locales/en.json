@@ -69,6 +69,9 @@
     },
     "dataQuality": {
       "noDestination": "Some routes have no destination"
+    },
+    "metrics": {
+      "connectivity": "{{routeCount}} routes, {{freq}} trips, {{stopCount}} stops ({{radius}})"
     }
   },
   "time": {

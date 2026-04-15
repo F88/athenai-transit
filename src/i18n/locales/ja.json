@@ -69,6 +69,9 @@
     },
     "dataQuality": {
       "noDestination": "行先が表示されない路線があります"
+    },
+    "metrics": {
+      "connectivity": "{{routeCount}}路線 {{freq}}便 {{stopCount}}のりば ({{radius}})"
     }
   },
   "time": {
