@@ -87,6 +87,7 @@
     "in": "あと",
     "minutes": "分",
     "arriving": "",
+    "arrivingAbsolute": "着",
     "terminal": "終点",
     "noBoarding": "乗車不可"
   },

@@ -87,6 +87,7 @@
     "in": "",
     "minutes": "min",
     "arriving": "",
+    "arrivingAbsolute": "",
     "terminal": "Terminal",
     "noBoarding": "No boarding"
   },
