@@ -8,6 +8,18 @@
  *
  * No I/O. Formatter functions are side-effect free and return strings so
  * the CLI wrapper can direct them to stdout.
+ *
+ * ## Testing philosophy
+ *
+ * Statistical correctness of the aggregation output is intentionally not
+ * unit-tested. The numbers here are reductions over real pipeline data
+ * whose "ground truth" is that same data, so the practical validation
+ * path is manual review of the printed output. The companion test file
+ * (`__tests__/v2-insights-analysis.test.ts`) contains smoke tests only
+ * — verifying that functions return the expected shape, handle missing
+ * sections gracefully, and format without throwing. Those guard against
+ * type regressions and trivial breakage during refactor, not against
+ * algorithm bugs.
  */
 
 import type { InsightsBundle } from '../../../../src/types/data/transit-v2-json';

@@ -5,12 +5,25 @@
  * and summarizes its single section `stopGeo` — cross-source spatial
  * metrics keyed by stopId.
  *
- * Initial stub implementation: counts + `nr` distribution + coverage of
- * optional fields (`wp`, `cn`). Per-source breakdown (by stopId prefix)
- * is provided alongside the global total so sources contributing many
- * stops do not hide smaller ones.
+ * Per-source breakdown (by stopId prefix) is provided alongside the
+ * global total so sources contributing many stops do not hide smaller
+ * ones. Additional sub-sections cover the `nr` / `wp` distributions,
+ * isolation distance bands, hub/monomorphic counts, connectivity
+ * (`cn.ho`) stats, and Top-N leaderboards.
  *
  * No I/O. Formatter functions return strings.
+ *
+ * ## Testing philosophy
+ *
+ * Statistical correctness of the aggregation output is intentionally
+ * not unit-tested. The numbers here are reductions over real pipeline
+ * data whose "ground truth" is that same data, so the practical
+ * validation path is manual review of the printed output. The
+ * companion test file (`__tests__/v2-global-insights-analysis.test.ts`)
+ * contains smoke tests only — verifying that functions return the
+ * expected shape, handle missing sections gracefully, and format
+ * without throwing. Those guard against type regressions and trivial
+ * breakage during refactor, not against algorithm bugs.
  */
 
 import type { GlobalInsightsBundle } from '../../../../src/types/data/transit-v2-json';
