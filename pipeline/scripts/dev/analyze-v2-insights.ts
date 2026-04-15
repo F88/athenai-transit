@@ -74,13 +74,22 @@ function readInsights(source: string): InsightsBundle {
 /**
  * Build a prefix → nameEn map by loading every resource definition. Used
  * for full-run mode.
+ *
+ * The two `loadAll*` calls are awaited sequentially (not via
+ * `Promise.all`) to follow the established convention for loading
+ * local TypeScript resource definitions in this repo. Dynamic
+ * `import()` of local files is effectively instantaneous, so
+ * parallelisation provides no measurable benefit and the sequential
+ * form keeps the call sites uniform with `describe-resources.ts` /
+ * `extract-shapes-from-ksj.ts`.
  */
 async function buildNameMapAll(): Promise<Map<string, SourceName>> {
   const map = new Map<string, SourceName>();
-  const [gtfs, odpt] = await Promise.all([loadAllGtfsSources(), loadAllOdptJsonSources()]);
+  const gtfs = await loadAllGtfsSources();
   for (const def of gtfs) {
     map.set(def.pipeline.prefix, { nameEn: def.resource.nameEn });
   }
+  const odpt = await loadAllOdptJsonSources();
   for (const def of odpt) {
     map.set(def.pipeline.prefix, { nameEn: def.resource.nameEn });
   }

@@ -251,7 +251,11 @@ export function JourneyTimeBar({
   return (
     <div className={wrapperClassName}>
       {labelFirst && label}
-      {showEmoji && '⏳'}
+      {showEmoji && (
+        <span aria-hidden="true" className="shrink-0">
+          ⏳
+        </span>
+      )}
       {bar}
       {!labelFirst && label}
     </div>

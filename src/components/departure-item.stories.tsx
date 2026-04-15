@@ -623,7 +623,6 @@ export const LogicalLongInfoLevelComparison: Story = {
         dropOffType: 1,
       }),
     ],
-    maxDisplay: 5,
     agency: longAgency,
     onShowTimetable: fn(),
   },
