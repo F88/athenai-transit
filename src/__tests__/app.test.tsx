@@ -55,7 +55,7 @@ vi.mock('../hooks/use-date-time', () => ({
   }),
 }));
 
-vi.mock('../hooks/use-nearby-departures', () => ({
+vi.mock('../hooks/use-nearby-stop-times', () => ({
   useNearbyDepartures: () => ({
     nearbyDepartures: [],
     isNearbyLoading: false,

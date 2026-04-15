@@ -1,6 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { useNearbyDepartures } from '../use-nearby-departures';
+import { useNearbyDepartures } from '../use-nearby-stop-times';
 import { makeStop, makeStopMeta, makeRepo } from '../../__tests__/helpers';
 import { getServiceDay } from '../../domain/transit/service-day';
 

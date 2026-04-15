@@ -12,8 +12,8 @@ import {
 } from '../domain/transit/timetable-utils';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { Clock, Signpost } from 'lucide-react';
-import { DepartureItem } from './departure-item';
-import { FlatDepartureItem } from './flat-departure-item';
+import { DepartureItem } from './stop-time-item';
+import { FlatDepartureItem } from './flat-stop-time-item';
 import { StopInfo } from './stop-info';
 import { VerboseNearbyStopSummary } from './verbose/verbose-nearby-stop-summary';
 

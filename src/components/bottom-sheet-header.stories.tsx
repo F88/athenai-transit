@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import { PERF_PROFILES } from '../config/perf-profiles';
 import { APP_ROUTE_TYPES } from '../config/route-types';
-import { DEFAULT_VIEW_ID, DEPARTURE_VIEWS } from '../domain/transit/departure-views';
+import { DEFAULT_VIEW_ID, DEPARTURE_VIEWS } from '../domain/transit/stop-time-views';
 import {
   agencyAt,
   agencyBlue,

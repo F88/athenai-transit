@@ -31,7 +31,7 @@ import {
   tripHeadsignLong,
 } from '../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
-import { FlatDepartureItem } from './flat-departure-item';
+import { FlatDepartureItem } from './flat-stop-time-item';
 
 /** Create a ContextualTimetableEntry for stories. */
 function createEntry(
@@ -100,7 +100,7 @@ function createEntry(
 const now = new Date('2026-03-30T14:25:00');
 
 const meta = {
-  title: 'Departure/FlatDepartureItem',
+  title: 'StopTime/FlatDepartureItem',
   component: FlatDepartureItem,
   args: {
     entry: createEntry(),

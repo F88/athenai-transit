@@ -8,7 +8,7 @@ import { collectPresentAgencies } from '../domain/transit/collect-present-agenci
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { getTimetableEntriesState } from '../domain/transit/timetable-utils';
-import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-views';
+import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { APP_ROUTE_TYPES } from '../config/route-types';
 import { BottomSheetHeader } from './bottom-sheet-header';

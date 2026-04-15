@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ContextualTimetableEntry, StopServiceType } from '../types/app/transit-composed';
-import type { Agency, Route } from '../types/app/transit';
+import type { ContextualTimetableEntry, StopServiceType } from '../types/app/transit-composed.ts';
+import type { Agency, Route } from '../types/app/transit.ts';
 import {
   agencyLong as longAgency,
   agencyTobus as agency,
@@ -21,10 +21,10 @@ import {
   tramRoute,
   tripHeadsignLong,
   tripHeadsignShort,
-} from '../stories/fixtures';
-import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
+} from '../stories/fixtures.ts';
+import { LANG_COMPARISON_CASES } from '../stories/lang-comparison.ts';
 import { fn } from 'storybook/test';
-import { DepartureItem } from './departure-item';
+import { DepartureItem } from './stop-time-item.tsx';
 
 /** Create a ContextualTimetableEntry for stories. */
 function createEntry(
@@ -158,7 +158,7 @@ const threeEntries = [
 ];
 
 const meta = {
-  title: 'Departure/DepartureItem',
+  title: 'StopTime/DepartureItem',
   component: DepartureItem,
   args: {
     entries: threeEntries,
