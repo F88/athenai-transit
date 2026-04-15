@@ -16,6 +16,8 @@ and this project adheres to [CalVer](https://calver.org/).
     - `formatDistanceCompact(meters, lang)`
 - 全 caller を `i18n.language` 渡しに更新: `distance-badge.tsx` / `edge-markers-dom.tsx` / `edge-markers-canvas.tsx` / `stop-metrics.tsx`。`edge-markers-canvas.tsx` では描画 `useEffect` の deps に `i18n.language` を追加して言語切替時に canvas label が再描画されるようにした。
 - `distance.test.ts` を新シグネチャに更新し、locale-specific 挙動 (`de` → `1,5km`、`ja` → `1,000m` 等) の assertion を 3 件追加。
+- `BottomSheetHeaderProps` に `dataLang: readonly string[]` を追加。`bottom-sheet.tsx` の `BottomSheetHeader` 呼び出しに `dataLang={dataLang}` を 1 行追加。
+- `src/config/transit-defaults.ts` に `CONNECTIVITY_RADIUS_M = 300` を新規追加。pipeline 側の `build-stop-geo.ts` (`CONNECTIVITY_RADIUS_M = 300`) を source of truth とし、pipeline/webapp shared-code policy に従って mirror として配置 (TSDoc に両者の同期が必要である旨を明記)。
 
 ### Fixed
 
@@ -34,11 +36,6 @@ and this project adheres to [CalVer](https://calver.org/).
     - 18 の `STOP_NAME_TRANSLATIONS` エントリに `de` / `es` / `fr` を追加 (`sta_central` 以外はこれらが抜けていた)。
     - 新規 stop_headsign バリエーション 3 種追加 (`ほし公園・にじ橋` at `bus_park`/`bus_aoba01`、`にじ橋・そらタワー` at `bus_library`/`bus_aoba02`、`図書館前・あおば中央駅` at `bus_tower`/`bus_aoba02`)。いずれも 9 言語の i18n 付き。従来は `bus_nohd01` の keio-bus pattern にしか stop_headsign override が無かったが、trip_headsign + stop_headsign 併存パターンも mock で確認できるようになる。
 - `MockRepository` に新規 agency `AGENCY_DRI` (`agency_id: 'dri'`, `Data Research Institute`) を追加。`agency_lang: 'en'` の English-primary operator で、fictional foundation / purple 配色 (#6A1B9A)。agency_names / long_names / short_names は 9 言語を literal で完全記載 (merge-map 不使用)。Issue #47 の duplicate-stop-in-pattern fixture routes 6 件 (`bus_stuck` / `bus_six` / `bus_eight` / `n92` / `kc10a` / `kc10b`) を `mock:aoba` から DRI に移譲し、shape-stress fixture 群を独立 operator として責務分離。
-
-### Changed
-
-- `BottomSheetHeaderProps` に `dataLang: readonly string[]` を追加。`bottom-sheet.tsx` の `BottomSheetHeader` 呼び出しに `dataLang={dataLang}` を 1 行追加。
-- `src/config/transit-defaults.ts` に `CONNECTIVITY_RADIUS_M = 300` を新規追加。pipeline 側の `build-stop-geo.ts` (`CONNECTIVITY_RADIUS_M = 300`) を source of truth とし、pipeline/webapp shared-code policy に従って mirror として配置 (TSDoc に両者の同期が必要である旨を明記)。
 
 ## [2026.04.15]
 

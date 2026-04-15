@@ -32,10 +32,7 @@ export function StopMetrics({ stats, geo, infoLevel }: StopMetricsProps) {
   const { t, i18n } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
-  const connectivityRadius =
-    CONNECTIVITY_RADIUS_M >= 1000
-      ? `${(CONNECTIVITY_RADIUS_M / 1000).toLocaleString(i18n.language)}km`
-      : `${CONNECTIVITY_RADIUS_M.toLocaleString(i18n.language)}m`;
+  const connectivityRadius = formatDistance(CONNECTIVITY_RADIUS_M, i18n.language);
 
   return (
     <>

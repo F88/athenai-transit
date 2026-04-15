@@ -211,6 +211,13 @@ const AGENCY_SHORT_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
   },
 };
 
+// All agencies — including AGENCY_DRI, whose translations are fully inlined
+// into its literal — are folded through the same merge step so the
+// `AGENCY_*_TRANSLATIONS` maps remain the single place to add new
+// translations. For AGENCY_DRI the map lookups are currently `undefined`
+// and the `?? {}` fallback makes every Object.assign a no-op. Keeping DRI
+// in the loop means a future `AGENCY_LONG_NAME_TRANSLATIONS['dri']` entry
+// will be picked up automatically instead of silently missing the merge.
 for (const agency of [AGENCY, AGENCY_SORA, AGENCY_DRI]) {
   Object.assign(agency.agency_names, AGENCY_NAME_TRANSLATIONS[agency.agency_id] ?? {});
   Object.assign(agency.agency_long_names, AGENCY_LONG_NAME_TRANSLATIONS[agency.agency_id] ?? {});

@@ -323,12 +323,14 @@ export const MultipleItems: Story = {
 
 /**
  * Multi-item list stacked across every supported language so the
- * `departure.arrivingAbsolute` opt-out pattern can be verified in
- * context: ja shows "着" next to terminal absolute times, en is
- * silent (per locale protection of the tight row layout), other
- * locales follow their own key value or fall through the locale
- * chain. Uses the same entry mix as {@link MultipleItems} so the
- * comparison is row-for-row identical across languages.
+ * `departure.arrivingAbsolute` marker can be verified per locale:
+ * ja shows "着" next to terminal absolute times, en shows "Arr",
+ * and other locales follow their own key value or fall through the
+ * locale chain. Locale owners can still opt out for any language by
+ * setting the key to an empty string (the component always renders
+ * the span — visibility is driven entirely by i18n). Uses the same
+ * entry mix as {@link MultipleItems} so the comparison is
+ * row-for-row identical across languages.
  */
 export const MultipleItemsLangComparison: Story = {
   args: { entry: createEntry(), infoLevel: 'normal' },

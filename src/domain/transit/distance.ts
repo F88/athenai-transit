@@ -25,17 +25,19 @@ export function distanceM(a: LatLng, b: { stop_lat: number; stop_lon: number }):
  * - Under 1 km: rounded to the nearest integer, then formatted via
  *   `toLocaleString(lang)` so large values (e.g. `999.5 → 1000`) carry
  *   the correct thousands separator for the UI language
- *   (`"1,000m"` for en, `"1 000 m"` for fr, `"1.000 m"` for de, etc.).
+ *   (`"1,000m"` for en, `"1 000m"` for fr, `"1.000m"` for de, etc.).
+ *   The `"m"` unit suffix is always concatenated with no extra spacing.
  *   With unit: `"450m"`, without: `"450"`.
  * - 1 km and above: always one decimal place, formatted via
  *   `toLocaleString(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 })`
  *   so the decimal separator follows the locale (`"1.5km"` / `"1,5km"`).
+ *   The `"km"` unit suffix is also concatenated without spacing.
  *
  * Callers should pass `i18n.language` (react-i18next) as `lang`.
  *
  * @param meters - Distance in meters (may include decimals).
- * @param unit - Whether to append "m" unit for distances under 1 km. Defaults to true.
  * @param lang - BCP 47 language code for number formatting (e.g. `"ja"`, `"en"`).
+ * @param unit - Whether to append "m" unit for distances under 1 km. Defaults to true.
  * @returns Formatted distance string.
  *
  * @example
