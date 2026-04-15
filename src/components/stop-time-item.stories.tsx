@@ -158,7 +158,7 @@ const threeEntries = [
 ];
 
 const meta = {
-  title: 'StopTime/DepartureItem',
+  title: 'StopTime/StopTimeItem',
   component: StopTimeItem,
   args: {
     entries: threeEntries,

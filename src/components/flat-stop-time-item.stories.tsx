@@ -100,7 +100,7 @@ function createEntry(
 const now = new Date('2026-03-30T14:25:00');
 
 const meta = {
-  title: 'StopTime/FlatDepartureItem',
+  title: 'StopTime/FlatStopTimeItem',
   component: FlatStopTimeItem,
   args: {
     entry: createEntry(),
