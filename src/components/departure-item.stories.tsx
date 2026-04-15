@@ -89,22 +89,26 @@ function createEntry(
  */
 function createLogicalLongEntry(
   overrides: Partial<{
+    arrivalMinutes: number;
     departureMinutes: number;
     freq: number;
     totalMinutes: number;
     remainingMinutes: number;
     isTerminal: boolean;
+    isOrigin: boolean;
     pickupType: StopServiceType;
     dropOffType: StopServiceType;
   }> = {},
 ): ContextualTimetableEntry {
   return {
     ...createEntry({
+      arrivalMinutes: overrides.arrivalMinutes,
       departureMinutes: overrides.departureMinutes,
       totalMinutes: overrides.totalMinutes,
       remainingMinutes: overrides.remainingMinutes,
       freq: overrides.freq,
       isTerminal: overrides.isTerminal,
+      isOrigin: overrides.isOrigin,
       pickupType: overrides.pickupType,
       dropOffType: overrides.dropOffType,
     }),
@@ -583,12 +587,43 @@ const kitchenSinkGroups: { entries: ContextualTimetableEntry[]; agency?: Agency 
  */
 export const LogicalLongInfoLevelComparison: Story = {
   args: {
+    // Vary per-entry attributes so the inline `TimetableEntryAttributesLabels`
+    // surfaces every supported flag (terminal / origin / pickup× / dropoff×).
+    // Each row exercises exactly one flag so the story doubles as a label
+    // catalog at a glance:
+    //   1st: plain (no labels)
+    //   2nd: terminal             → 終点
+    //   3rd: origin               → 始発
+    //   4th: pickup unavailable   → 乗×
+    //   5th: dropoff unavailable  → 降×
     entries: [
-      createLogicalLongEntry({ departureMinutes: 870 }),
-      createLogicalLongEntry({ departureMinutes: 885 }),
-      createLogicalLongEntry({ departureMinutes: 900 }),
+      createLogicalLongEntry({
+        departureMinutes: 870,
+        isOrigin: false,
+        isTerminal: false,
+        pickupType: 0,
+        dropOffType: 0,
+      }),
+      createLogicalLongEntry({
+        arrivalMinutes: 855,
+        departureMinutes: 855,
+        isOrigin: true,
+        isTerminal: false,
+        pickupType: 0,
+        dropOffType: 0,
+      }),
+      createLogicalLongEntry({
+        arrivalMinutes: 900,
+        departureMinutes: 900,
+        isOrigin: true,
+        isTerminal: true,
+        pickupType: 1,
+        dropOffType: 1,
+      }),
     ],
+    maxDisplay: 5,
     agency: longAgency,
+    onShowTimetable: fn(),
   },
   render: (args) => {
     const levels = ['simple', 'normal', 'detailed', 'verbose'] as const;
@@ -605,6 +640,7 @@ export const LogicalLongInfoLevelComparison: Story = {
               showRouteTypeIcon
               agency={args.agency}
               showAgency={false}
+              onShowTimetable={args.onShowTimetable}
             />
           </div>
         ))}
