@@ -58,7 +58,7 @@ function StopMarkerDomItem({
     onFetchDepartures(stop.stop_id)
       .then((result) => {
         if (result) {
-          setHoverEntries(result.departures);
+          setHoverEntries(result.stopTimes);
           if (result.agencies) {
             setHoverAgencies(result.agencies);
           }

@@ -31,7 +31,7 @@ import {
   tripHeadsignLong,
 } from '../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
-import { FlatDepartureItem } from './flat-stop-time-item';
+import { FlatStopTimeItem } from './flat-stop-time-item';
 
 /** Create a ContextualTimetableEntry for stories. */
 function createEntry(
@@ -101,7 +101,7 @@ const now = new Date('2026-03-30T14:25:00');
 
 const meta = {
   title: 'StopTime/FlatDepartureItem',
-  component: FlatDepartureItem,
+  component: FlatStopTimeItem,
   args: {
     entry: createEntry(),
     now,
@@ -122,7 +122,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof FlatDepartureItem>;
+} satisfies Meta<typeof FlatStopTimeItem>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -204,7 +204,7 @@ export const HeadsignPatterns: Story = {
           <div key={p.label}>
             <div className="mb-1 text-xs font-semibold text-gray-500">{p.label}</div>
             <div className="rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
-              <FlatDepartureItem
+              <FlatStopTimeItem
                 entry={{ ...args.entry, routeDirection: p.routeDirection }}
                 now={args.now}
                 isFirst={args.isFirst}
@@ -250,7 +250,7 @@ export const InfoLevelComparison: Story = {
           <div key={level}>
             <div className="mb-1 text-xs font-semibold text-gray-500">infoLevel={level}</div>
             <div className="rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
-              <FlatDepartureItem
+              <FlatStopTimeItem
                 entry={args.entry}
                 now={args.now}
                 isFirst={args.isFirst}
@@ -306,7 +306,7 @@ export const MultipleItems: Story = {
     return (
       <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
         {entries.map((entry, i) => (
-          <FlatDepartureItem
+          <FlatStopTimeItem
             key={i}
             entry={entry}
             now={args.now}
@@ -360,7 +360,7 @@ export const MultipleItemsLangComparison: Story = {
             <span className="block text-[10px] text-gray-400">{label}</span>
             <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
               {entries.map((entry, i) => (
-                <FlatDepartureItem
+                <FlatStopTimeItem
                   key={i}
                   entry={entry}
                   now={args.now}
@@ -449,7 +449,7 @@ export const LogicalLongInfoLevelComparison: Story = {
         {levels.map((level) => (
           <div key={level} className="space-y-1">
             <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
-            <FlatDepartureItem
+            <FlatStopTimeItem
               entry={args.entry}
               now={args.now}
               isFirst={args.isFirst}
@@ -494,7 +494,7 @@ export const LangComparison: Story = {
       {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
         <div key={label} className="space-y-1">
           <span className="block text-[10px] text-gray-400">{label}</span>
-          <FlatDepartureItem
+          <FlatStopTimeItem
             entry={args.entry}
             now={args.now}
             isFirst={args.isFirst}
@@ -627,7 +627,7 @@ export const KitchenSink: Story = {
   render: (args) => (
     <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
       {kitchenSinkItems.map(({ entry, agency: a, icon }, i) => (
-        <FlatDepartureItem
+        <FlatStopTimeItem
           key={i}
           entry={entry}
           now={args.now}

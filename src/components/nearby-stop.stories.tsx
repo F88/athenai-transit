@@ -189,7 +189,7 @@ function createStopWithContext(
   return {
     stop: overrides.stop ?? baseStop,
     routeTypes: overrides.routeTypes ?? [3],
-    departures: overrides.departures ?? [
+    stopTimes: overrides.departures ?? [
       createEntry({ departureMinutes: 870, headsign: '大塚駅前' }),
       createEntry({ departureMinutes: 885, headsign: '大塚駅前' }),
       createEntry({ departureMinutes: 900, headsign: '大塚駅前' }),

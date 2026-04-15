@@ -8,7 +8,7 @@ import type { LoadResult } from './repositories/athenai-repository-v2';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
 import { useDateTime } from './hooks/use-date-time';
-import { useNearbyDepartures } from './hooks/use-nearby-stop-times';
+import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
 import { useSelection } from './hooks/use-selection';
 import { useStopHistory } from './hooks/use-stop-history';
 import { useAnchors } from './hooks/use-anchors';
@@ -136,7 +136,11 @@ export default function App({ loadResult }: AppProps) {
 
   const { dateTime, isCustomTime, resetToNow, setCustomTime } = useDateTime();
 
-  const { nearbyDepartures, isNearbyLoading } = useNearbyDepartures(radiusStops, dateTime, repo);
+  const { nearbyStopTimes: nearbyDepartures, isNearbyLoading } = useNearbyStopTimes(
+    radiusStops,
+    dateTime,
+    repo,
+  );
 
   // Build routeTypes lookup covering all visible stops (in-bound + nearby)
   const [routeTypeMap, setRouteTypeMap] = useState<Map<string, AppRouteTypeValue[]>>(
@@ -430,7 +434,7 @@ export default function App({ loadResult }: AppProps) {
       return {
         stop: meta.stop,
         routeTypes,
-        departures,
+        stopTimes: departures,
         stopServiceState,
         agencies: meta.agencies,
         routes: meta.routes,

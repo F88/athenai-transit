@@ -13,7 +13,7 @@ import { TimetableEntryAttributesLabels } from './label/timetable-entry-attribut
 import { VerboseContextualTimetableEntries } from './verbose/verbose-contextual-timetable-entry';
 import { Clock } from 'lucide-react';
 
-interface DepartureItemProps {
+interface StopTimeItemProps {
   /** Timetable entries for a single route+headsign group. */
   entries: ContextualTimetableEntry[];
   now: Date;
@@ -33,12 +33,12 @@ interface DepartureItemProps {
    * @default false
    */
   showAgency?: boolean;
-  /** Maximum number of departures to display. Defaults to 3. */
+  /** Maximum number of stop times to display. Defaults to 3. */
   maxDisplay?: number;
   onShowTimetable?: (routeId: string, headsign: string) => void;
 }
 
-export function DepartureItem({
+export function StopTimeItem({
   entries,
   now,
   infoLevel,
@@ -48,7 +48,7 @@ export function DepartureItem({
   showAgency = false,
   maxDisplay = 3,
   onShowTimetable,
-}: DepartureItemProps) {
+}: StopTimeItemProps) {
   const { t } = useTranslation();
   const showVerbose = infoLevel === 'verbose';
   const firstEntry = entries[0];
@@ -58,7 +58,7 @@ export function DepartureItem({
 
   const { route } = firstEntry.routeDirection;
 
-  // Display at most N departures: 1st as both relative + absolute, rest as absolute only.
+  // Display at most N stop times: 1st as both relative + absolute, rest as absolute only.
   const displayEntries = entries.slice(0, maxDisplay);
 
   // Convert minutes to Date for display — lightweight, only up to 3 entries.
@@ -70,12 +70,12 @@ export function DepartureItem({
   const diffMs = first ? first.getTime() - now.getTime() : 0;
 
   // Issue #47 / Alt F: attributes (terminal/origin/pickup/dropOff) are properties
-  // of individual departures, not groups. With si-based grouping in place, the
+  // of individual stop times, not groups. With si-based grouping in place, the
   // same route+headsign bucket can contain entries with different stopIndex
-  // (6-shape routes, circular routes), so we render attribute labels per-departure
+  // (6-shape routes, circular routes), so we render attribute labels per-stop-times
   // inline with each time slot rather than as a single group-level badge on
-  // TripInfo. TripInfo's `attributes?` prop is kept for single-departure consumers
-  // (FlatDepartureItem, StopSummary) but DepartureItem no longer passes it.
+  // TripInfo. TripInfo's `attributes?` prop is kept for single-stop-time consumers
+  // (FlatStopTimeItem, StopSummary) but StopTimeItem no longer passes it.
 
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
@@ -95,7 +95,7 @@ export function DepartureItem({
             the value even on narrow screens. */}
         {first && (
           <RelativeTime
-            departureTime={first}
+            time={first}
             now={now}
             size="lg"
             isTerminal={firstEntry.patternPosition.isTerminal}
@@ -112,7 +112,7 @@ export function DepartureItem({
           {/* Absolute times for all entries including the first.
               The first entry intentionally appears in both relative and absolute
               because relative alone (e.g. "あと400分") is hard to interpret.
-              Per Issue #47 / Alt F, each time renders its own per-departure
+              Per Issue #47 / Alt F, each time renders its own per-stop-time
               attribute labels (TERM/ORIG/noPickup/noDropOff) inline. */}
           {displayEntries.map((entry, i) => (
             <span

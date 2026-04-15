@@ -118,7 +118,7 @@ export function BottomSheet({
   const upcomingEntriesStates = useMemo(() => {
     const map = new Map<string, TimetableEntriesState>();
     for (const swc of nearbyDepartures) {
-      map.set(swc.stop.stop_id, getTimetableEntriesState([...swc.departures]));
+      map.set(swc.stop.stop_id, getTimetableEntriesState([...swc.stopTimes]));
     }
     return map;
   }, [nearbyDepartures]);
@@ -165,18 +165,18 @@ export function BottomSheet({
     //    inside each stop".
     let result = nearbyDepartures;
     if (showOperatingStopsOnly) {
-      result = result.filter((swc) => swc.departures.length > 0);
+      result = result.filter((swc) => swc.stopTimes.length > 0);
     }
     if (hiddenAgencyIds.size > 0) {
       result = result.map((swc) => ({
         ...swc,
-        departures: filterByAgency(swc.departures, hiddenAgencyIds),
+        departures: filterByAgency(swc.stopTimes, hiddenAgencyIds),
       }));
     }
     if (hiddenRouteTypes.size > 0) {
       result = result.map((swc) => ({
         ...swc,
-        departures: filterByRouteType(swc.departures, hiddenRouteTypes),
+        departures: filterByRouteType(swc.stopTimes, hiddenRouteTypes),
       }));
     }
     return result;
@@ -185,7 +185,7 @@ export function BottomSheet({
   const counts: NearbyStopsCounts = useMemo(
     () => ({
       total: nearbyDepartures.length,
-      active: nearbyDepartures.filter((swc) => swc.departures.length > 0).length,
+      active: nearbyDepartures.filter((swc) => swc.stopTimes.length > 0).length,
       filtered: filteredDepartures.length,
     }),
     [nearbyDepartures, filteredDepartures],

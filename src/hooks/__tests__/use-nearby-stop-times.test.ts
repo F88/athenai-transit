@@ -1,20 +1,20 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { useNearbyDepartures } from '../use-nearby-stop-times';
+import { useNearbyStopTimes } from '../use-nearby-stop-times';
 import { makeStop, makeStopMeta, makeRepo } from '../../__tests__/helpers';
 import { getServiceDay } from '../../domain/transit/service-day';
 
-describe('useNearbyDepartures', () => {
+describe('useNearbyStopTimes', () => {
   it('returns empty departures for empty stops', async () => {
     const repo = makeRepo();
     const now = new Date();
-    const { result } = renderHook(() => useNearbyDepartures([], now, repo));
+    const { result } = renderHook(() => useNearbyStopTimes([], now, repo));
 
     await waitFor(() => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyDepartures).toEqual([]);
+    expect(result.current.nearbyStopTimes).toEqual([]);
   });
 
   it('fetches departures for each nearby stop', async () => {
@@ -22,13 +22,13 @@ describe('useNearbyDepartures', () => {
     const repo = makeRepo();
     const now = new Date();
 
-    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
+    const { result } = renderHook(() => useNearbyStopTimes(stops, now, repo));
 
     await waitFor(() => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyDepartures).toHaveLength(2);
+    expect(result.current.nearbyStopTimes).toHaveLength(2);
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(repo.getUpcomingTimetableEntries).toHaveBeenCalledTimes(2);
     // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -53,7 +53,7 @@ describe('useNearbyDepartures', () => {
 
     const stops = [makeStopMeta('A')];
     const now = new Date();
-    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
+    const { result } = renderHook(() => useNearbyStopTimes(stops, now, repo));
 
     // Should be loading immediately
     expect(result.current.isNearbyLoading).toBe(true);
@@ -73,7 +73,7 @@ describe('useNearbyDepartures', () => {
     const stops2 = [makeStopMeta('B')];
     const now = new Date();
 
-    const { result, rerender } = renderHook(({ stops }) => useNearbyDepartures(stops, now, repo), {
+    const { result, rerender } = renderHook(({ stops }) => useNearbyStopTimes(stops, now, repo), {
       initialProps: { stops: stops1 },
     });
 
@@ -85,8 +85,8 @@ describe('useNearbyDepartures', () => {
     });
 
     // Final result should reflect the latest stops
-    expect(result.current.nearbyDepartures).toHaveLength(1);
-    expect(result.current.nearbyDepartures[0].stop.stop_id).toBe('B');
+    expect(result.current.nearbyStopTimes).toHaveLength(1);
+    expect(result.current.nearbyStopTimes[0].stop.stop_id).toBe('B');
   });
 
   it('falls back to routeTypes [-1] when getRouteTypesForStop fails', async () => {
@@ -99,13 +99,13 @@ describe('useNearbyDepartures', () => {
     const stops = [makeStopMeta('A')];
     const now = new Date();
 
-    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
+    const { result } = renderHook(() => useNearbyStopTimes(stops, now, repo));
 
     await waitFor(() => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyDepartures[0].routeTypes).toEqual([-1]);
+    expect(result.current.nearbyStopTimes[0].routeTypes).toEqual([-1]);
   });
 
   it('falls back to empty groups when getUpcomingTimetableEntries fails', async () => {
@@ -118,13 +118,13 @@ describe('useNearbyDepartures', () => {
     const stops = [makeStopMeta('A')];
     const now = new Date();
 
-    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
+    const { result } = renderHook(() => useNearbyStopTimes(stops, now, repo));
 
     await waitFor(() => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyDepartures[0].departures).toEqual([]);
+    expect(result.current.nearbyStopTimes[0].stopTimes).toEqual([]);
   });
 
   it('passes correct dateTime to repo.getUpcomingTimetableEntries', async () => {
@@ -132,7 +132,7 @@ describe('useNearbyDepartures', () => {
     const stops = [makeStopMeta('A')];
     const specificTime = new Date('2025-03-01T09:00:00');
 
-    const { result } = renderHook(() => useNearbyDepartures(stops, specificTime, repo));
+    const { result } = renderHook(() => useNearbyStopTimes(stops, specificTime, repo));
 
     await waitFor(() => {
       expect(result.current.isNearbyLoading).toBe(false);
@@ -149,7 +149,7 @@ describe('useNearbyDepartures', () => {
     const time2 = new Date('2025-01-01T12:00:00');
 
     const { result, rerender } = renderHook(
-      ({ dateTime }) => useNearbyDepartures(stops, dateTime, repo),
+      ({ dateTime }) => useNearbyStopTimes(stops, dateTime, repo),
       { initialProps: { dateTime: time1 } },
     );
 
@@ -174,14 +174,14 @@ describe('useNearbyDepartures', () => {
     const stops = [makeStopMeta('A')];
     const now = new Date();
 
-    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
+    const { result } = renderHook(() => useNearbyStopTimes(stops, now, repo));
 
     await waitFor(() => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
     // Departures should remain empty after error
-    expect(result.current.nearbyDepartures).toEqual([]);
+    expect(result.current.nearbyStopTimes).toEqual([]);
   });
 
   it('preserves stop reference in result', async () => {
@@ -190,13 +190,13 @@ describe('useNearbyDepartures', () => {
     const repo = makeRepo();
     const now = new Date();
 
-    const { result } = renderHook(() => useNearbyDepartures([meta], now, repo));
+    const { result } = renderHook(() => useNearbyStopTimes([meta], now, repo));
 
     await waitFor(() => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyDepartures[0].stop).toBe(stop);
+    expect(result.current.nearbyStopTimes[0].stop).toBe(stop);
   });
 
   it('passes through agencies from StopWithMeta', async () => {
@@ -219,15 +219,15 @@ describe('useNearbyDepartures', () => {
     const stops = [{ stop, distance: 100, agencies: [mockAgency], routes: [] }];
     const now = new Date();
 
-    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
+    const { result } = renderHook(() => useNearbyStopTimes(stops, now, repo));
 
     await waitFor(() => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
     // Agencies come from StopWithMeta, not from departure groups
-    expect(result.current.nearbyDepartures[0].agencies).toHaveLength(1);
-    expect(result.current.nearbyDepartures[0].agencies[0].agency_id).toBe('a1');
+    expect(result.current.nearbyStopTimes[0].agencies).toHaveLength(1);
+    expect(result.current.nearbyStopTimes[0].agencies[0].agency_id).toBe('a1');
   });
 
   it('preserves empty agencies from StopWithMeta', async () => {
@@ -235,13 +235,13 @@ describe('useNearbyDepartures', () => {
     const stops = [makeStopMeta('A')];
     const now = new Date();
 
-    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
+    const { result } = renderHook(() => useNearbyStopTimes(stops, now, repo));
 
     await waitFor(() => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyDepartures[0].agencies).toEqual([]);
+    expect(result.current.nearbyStopTimes[0].agencies).toEqual([]);
   });
 
   it('uses resolveStopStats return value as stats', async () => {
@@ -258,13 +258,13 @@ describe('useNearbyDepartures', () => {
     const stops = [makeStopMeta('A')];
     const now = new Date('2026-03-11T10:00:00');
 
-    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
+    const { result } = renderHook(() => useNearbyStopTimes(stops, now, repo));
 
     await waitFor(() => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyDepartures[0].stats).toBe(mockStats);
+    expect(result.current.nearbyStopTimes[0].stats).toBe(mockStats);
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(repo.resolveStopStats).toHaveBeenCalledWith('A', getServiceDay(now));
   });
@@ -278,7 +278,7 @@ describe('useNearbyDepartures', () => {
     // Service day should be the previous calendar day (Mar 11).
     const beforeBoundary = new Date('2026-03-12T02:30:00');
 
-    const { result } = renderHook(() => useNearbyDepartures(stops, beforeBoundary, repo));
+    const { result } = renderHook(() => useNearbyStopTimes(stops, beforeBoundary, repo));
 
     await waitFor(() => {
       expect(result.current.isNearbyLoading).toBe(false);
@@ -301,12 +301,12 @@ describe('useNearbyDepartures', () => {
     const stops = [makeStopMeta('A')];
     const now = new Date();
 
-    const { result } = renderHook(() => useNearbyDepartures(stops, now, repo));
+    const { result } = renderHook(() => useNearbyStopTimes(stops, now, repo));
 
     await waitFor(() => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyDepartures[0].stats).toBeUndefined();
+    expect(result.current.nearbyStopTimes[0].stats).toBeUndefined();
   });
 });

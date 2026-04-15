@@ -76,7 +76,7 @@ export function makeStopWithContext(
   return {
     stop,
     routeTypes,
-    departures: routes.map((route) => ({
+    stopTimes: routes.map((route) => ({
       schedule: { departureMinutes: 480, arrivalMinutes: 480 },
       routeDirection: { route, tripHeadsign: { name: 'Test', names: {} } },
       boarding: { pickupType: 0 as const, dropOffType: 0 as const },

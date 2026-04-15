@@ -93,7 +93,7 @@ export function StopSummary({
             />
 
             <RelativeTime
-              departureTime={depTime}
+              time={depTime}
               now={now!}
               size="sm"
               isTerminal={entry.patternPosition.isTerminal}

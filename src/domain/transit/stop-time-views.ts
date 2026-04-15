@@ -1,4 +1,4 @@
-import type { DepartureViewMeta } from '../../types/app/transit-composed';
+import type { StopTimeViewMeta } from '../../types/app/transit-composed';
 
 /**
  * All departure view pattern definitions (T1-T7).
@@ -9,7 +9,7 @@ import type { DepartureViewMeta } from '../../types/app/transit-composed';
  * Text fields (labelKey, titleKey, descriptionKey) are i18n keys resolved
  * via `t()` at render time.
  */
-export const DEPARTURE_VIEWS: readonly DepartureViewMeta[] = [
+export const DEPARTURE_VIEWS: readonly StopTimeViewMeta[] = [
   {
     id: 'stop',
     icon: '🕐',

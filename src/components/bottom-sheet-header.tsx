@@ -1,7 +1,7 @@
 import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
-import type { DepartureViewMeta } from '../types/app/transit-composed';
+import type { StopTimeViewMeta } from '../types/app/transit-composed';
 import type { NearbyStopsCounts } from './bottom-sheet';
 import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
 import { DEPARTURE_VIEWS } from '../domain/transit/stop-time-views';
@@ -20,7 +20,7 @@ interface BottomSheetHeaderProps {
   dataLang: readonly string[];
   showOperatingStopsOnly: boolean;
   viewId: string;
-  selectedView: DepartureViewMeta | undefined;
+  selectedView: StopTimeViewMeta | undefined;
   infoLevel: InfoLevel;
   presentRouteTypes: readonly number[];
   hiddenRouteTypes: Set<number>;

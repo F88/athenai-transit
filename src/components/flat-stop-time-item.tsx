@@ -14,7 +14,7 @@ import { TripPositionIndicator } from './label/trip-position-indicator';
 import { JourneyTimeBar } from './journey-time-bar';
 import { useInfoLevel } from '@/hooks/use-info-level';
 
-interface FlatDepartureItemProps {
+interface FlatStopTimeItemProps {
   /** The timetable entry to display. */
   entry: ContextualTimetableEntry;
   /** Current time for relative time calculation. */
@@ -41,13 +41,13 @@ interface FlatDepartureItemProps {
 }
 
 /**
- * A single row in the T1 (Stop) flat departure list.
+ * A single row in the T1 (Stop) flat stop time list.
  *
- * The first departure shows relative time ("あと5分"), subsequent
- * departures show absolute time ("14:30"). Route label is colored
+ * The first stop time shows relative time ("あと5分"), subsequent
+ * stop times show absolute time ("14:30"). Route label is colored
  * with the route's designated color.
  */
-export function FlatDepartureItem({
+export function FlatStopTimeItem({
   entry,
   now,
   isFirst,
@@ -56,7 +56,7 @@ export function FlatDepartureItem({
   dataLang,
   agency,
   showAgency = false,
-}: FlatDepartureItemProps) {
+}: FlatStopTimeItemProps) {
   const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = info.isVerboseEnabled;
@@ -94,7 +94,7 @@ export function FlatDepartureItem({
           {showRelativeTime && (
             <RelativeTime
               now={now}
-              departureTime={departureTime}
+              time={departureTime}
               isTerminal={isTerminal}
               // Hide prefix for departures >90min to save space.
               hidePrefix={diffMs > 90 * 60 * 1000}

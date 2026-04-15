@@ -12,8 +12,8 @@ import {
 } from '../domain/transit/timetable-utils';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { Clock, Signpost } from 'lucide-react';
-import { DepartureItem } from './stop-time-item';
-import { FlatDepartureItem } from './flat-stop-time-item';
+import { StopTimeItem } from './stop-time-item';
+import { FlatStopTimeItem } from './flat-stop-time-item';
 import { StopInfo } from './stop-info';
 import { VerboseNearbyStopSummary } from './verbose/verbose-nearby-stop-summary';
 
@@ -45,7 +45,17 @@ export interface NearbyStopProps {
 }
 
 export function NearbyStop({
-  data: { stop, routeTypes, departures, stopServiceState, agencies, routes, distance, stats, geo },
+  data: {
+    stop,
+    routeTypes,
+    stopTimes: departures,
+    stopServiceState,
+    agencies,
+    routes,
+    distance,
+    stats,
+    geo,
+  },
   upcomingEntriesState,
   isSelected,
   now,
@@ -185,7 +195,7 @@ export function NearbyStop({
             ? displayDepartures
                 .slice(0, 5)
                 .map((entry, i) => (
-                  <FlatDepartureItem
+                  <FlatStopTimeItem
                     key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}__${i}`}
                     entry={entry}
                     now={now}
@@ -200,7 +210,7 @@ export function NearbyStop({
                   />
                 ))
             : grouped.map(([key, entries]) => (
-                <DepartureItem
+                <StopTimeItem
                   key={`${stop.stop_id}__${key}`}
                   entries={entries}
                   now={now}

@@ -36,7 +36,7 @@ describe('extractRouteIdsForStop', () => {
     const ctx = {
       stop,
       routeTypes: [3 as const],
-      departures: [] as ContextualTimetableEntry[],
+      stopTimes: [] as ContextualTimetableEntry[],
       stopServiceState: 'boardable' as const,
       agencies: [],
       routes: [makeRoute('r1'), makeRoute('r2')],
@@ -49,7 +49,7 @@ describe('extractRouteIdsForStop', () => {
     const ctx = {
       stop,
       routeTypes: [3 as const],
-      departures: [] as ContextualTimetableEntry[],
+      stopTimes: [] as ContextualTimetableEntry[],
       stopServiceState: 'no-service' as const,
       agencies: [],
       routes: [],
@@ -62,7 +62,7 @@ describe('extractRouteIdsForStop', () => {
     const ctx = {
       stop,
       routeTypes: [3 as const],
-      departures: makeEntries(['r1']),
+      stopTimes: makeEntries(['r1']),
       stopServiceState: 'boardable' as const,
       agencies: [],
       routes: [makeRoute('r1'), makeRoute('r2'), makeRoute('r3')],
@@ -106,8 +106,8 @@ describe('buildTimetableEntriesMap', () => {
     const b = makeStopWithContext(makeStop('stop-b'), ['r2']);
     const result = buildTimetableEntriesMap([a, b]);
     expect(result.size).toBe(2);
-    expect(result.get('stop-a')).toBe(a.departures);
-    expect(result.get('stop-b')).toBe(b.departures);
+    expect(result.get('stop-a')).toBe(a.stopTimes);
+    expect(result.get('stop-b')).toBe(b.stopTimes);
   });
 
   it('last entry wins when duplicate stop IDs exist', () => {
@@ -115,7 +115,7 @@ describe('buildTimetableEntriesMap', () => {
     const second = makeStopWithContext(makeStop('dup'), ['r2']);
     const result = buildTimetableEntriesMap([first, second]);
     expect(result.size).toBe(1);
-    expect(result.get('dup')).toBe(second.departures);
+    expect(result.get('dup')).toBe(second.stopTimes);
   });
 });
 

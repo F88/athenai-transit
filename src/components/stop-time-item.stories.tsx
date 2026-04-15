@@ -24,7 +24,7 @@ import {
 } from '../stories/fixtures.ts';
 import { LANG_COMPARISON_CASES } from '../stories/lang-comparison.ts';
 import { fn } from 'storybook/test';
-import { DepartureItem } from './stop-time-item.tsx';
+import { StopTimeItem } from './stop-time-item.tsx';
 
 /** Create a ContextualTimetableEntry for stories. */
 function createEntry(
@@ -159,7 +159,7 @@ const threeEntries = [
 
 const meta = {
   title: 'StopTime/DepartureItem',
-  component: DepartureItem,
+  component: StopTimeItem,
   args: {
     entries: threeEntries,
     now,
@@ -179,7 +179,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof DepartureItem>;
+} satisfies Meta<typeof StopTimeItem>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -337,7 +337,7 @@ export const MultipleGroups: Story = {
     return (
       <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
         {groups.map((group, i) => (
-          <DepartureItem
+          <StopTimeItem
             key={i}
             entries={group.entries}
             now={now}
@@ -439,7 +439,7 @@ export const LangComparison: Story = {
       {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
         <div key={label} className="space-y-1">
           <span className="block text-[10px] text-gray-400">{label}</span>
-          <DepartureItem
+          <StopTimeItem
             entries={args.entries}
             now={args.now}
             infoLevel={args.infoLevel}
@@ -633,7 +633,7 @@ export const LogicalLongInfoLevelComparison: Story = {
         {levels.map((level) => (
           <div key={level} className="space-y-1">
             <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
-            <DepartureItem
+            <StopTimeItem
               entries={args.entries}
               now={now}
               infoLevel={level}
@@ -692,7 +692,7 @@ export const LogicalKitchenSink: Story = {
     return (
       <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
         {groups.map((group, i) => (
-          <DepartureItem
+          <StopTimeItem
             key={i}
             entries={group.entries}
             now={now}
@@ -713,7 +713,7 @@ export const KitchenSink: Story = {
   render: () => (
     <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
       {kitchenSinkGroups.map((group, i) => (
-        <DepartureItem
+        <StopTimeItem
           key={i}
           entries={group.entries}
           now={now}
