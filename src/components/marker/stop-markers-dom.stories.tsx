@@ -3,6 +3,7 @@ import { fn } from 'storybook/test';
 import { MapContainer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { APP_ROUTE_TYPES } from '../../config/route-types';
+import { LANG_COMPARISON_CASES } from '../../stories/lang-comparison';
 import type { InfoLevel } from '../../types/app/settings';
 import type { ContextualTimetableEntry } from '../../types/app/transit-composed';
 import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
@@ -259,6 +260,97 @@ const kitchenSinkArgs = {
   disableDimming: false,
   includeNearbyDepartures: true,
   dataLang: ['ja', 'en', 'de'],
+};
+
+// --- infoLevel comparison ---
+
+/**
+ * Side-by-side comparison of all `infoLevel` values rendered as
+ * stacked map instances. Each map uses a reduced height so the
+ * 4-up layout remains usable. Heavy — multiple Leaflet instances.
+ */
+export const LogicalLongInfoLevelComparison: Story = {
+  args: { showTooltip: true, disableDimming: true },
+  render: (args) => {
+    const levels = ['simple', 'normal', 'detailed', 'verbose'] as const;
+    return (
+      <div className="flex flex-col gap-3">
+        {levels.map((level) => (
+          <div key={level} className="space-y-1">
+            <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
+            <div className="w-full rounded-lg bg-[#f3f6fb] p-2">
+              <MapContainer
+                center={storyMapCenter}
+                zoom={15}
+                style={{ height: '220px', width: '100%' }}
+                zoomControl={false}
+                attributionControl={false}
+              >
+                <StopMarkersDom
+                  stops={storyStops}
+                  selectedStopId={args.selectedStopId}
+                  routeTypeMap={routeTypeMap}
+                  nearbyDepartures={args.includeNearbyDepartures ? nearbyDepartures : undefined}
+                  time={storyNow}
+                  infoLevel={level}
+                  dataLang={args.dataLang}
+                  onStopSelected={fn()}
+                  showTooltip={args.showTooltip}
+                  agenciesMap={agenciesMap}
+                  disableDimming={args.disableDimming}
+                />
+              </MapContainer>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+
+// --- i18n: lang resolution ---
+
+/**
+ * All supported languages side by side, each rendered as its own
+ * map instance. Heavy — multiple Leaflet instances. Stops with
+ * populated `stop_names` translations (e.g. {@link stopC}) reflect
+ * the lang change; stops without translations fall back to
+ * `stop_name`.
+ */
+export const LangComparison: Story = {
+  args: { showTooltip: true, disableDimming: true, infoLevel: 'normal' },
+  render: (args) => (
+    <div className="flex flex-col gap-3">
+      {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
+        <div key={label} className="space-y-1">
+          <span className="block text-[10px] text-gray-400">{label}</span>
+          <div className="w-full rounded-lg bg-[#f3f6fb] p-2">
+            <MapContainer
+              center={storyMapCenter}
+              zoom={15}
+              style={{ height: '220px', width: '100%' }}
+              zoomControl={false}
+              attributionControl={false}
+            >
+              <StopMarkersDom
+                stops={storyStops}
+                selectedStopId={args.selectedStopId}
+                routeTypeMap={routeTypeMap}
+                nearbyDepartures={args.includeNearbyDepartures ? nearbyDepartures : undefined}
+                time={storyNow}
+                infoLevel={args.infoLevel}
+                dataLang={dataLang}
+                onStopSelected={fn()}
+                showTooltip={args.showTooltip}
+                agenciesMap={agenciesMap}
+                disableDimming={args.disableDimming}
+              />
+            </MapContainer>
+          </div>
+        </div>
+      ))}
+    </div>
+  ),
 };
 
 // --- Kitchen sink ---

@@ -635,6 +635,95 @@ export const allRoutes: Route[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Logical Route fixtures — length axis
+// ---------------------------------------------------------------------------
+//
+// These routes are deliberately abstract (no real GTFS source) so
+// stories exercising label wrapping / truncation don't break when
+// real transit data changes. Each fixture covers every
+// {@link SUPPORTED_LANGS} entry for both `route_short_names` and
+// `route_long_names`, paired with a route color / text color so
+// chip-style rendering has something to work with.
+
+/**
+ * Synthetic short route — 2-char `route_short_name` and a compact
+ * endpoint-to-endpoint `route_long_name`. Models a typical urban
+ * bus line code.
+ */
+export const routeShort: Route = {
+  route_id: 'fixture:route-short',
+  route_short_name: 'S1',
+  route_short_names: {
+    ja: 'S1',
+    'ja-Hrkt': 'えすいち',
+    en: 'S1',
+    'zh-Hans': 'S1',
+    'zh-Hant': 'S1',
+    ko: 'S1',
+    de: 'S1',
+    es: 'S1',
+    fr: 'S1',
+  },
+  route_long_name: 'Sample Line S1 — Alpha ↔ Bravo',
+  route_long_names: {
+    ja: 'サンプル路線 S1 アルファ ⇔ ブラボー',
+    'ja-Hrkt': 'さんぷる ろせん えすいち あるふぁ ⇔ ぶらぼー',
+    en: 'Sample Line S1 — Alpha ↔ Bravo',
+    'zh-Hans': '样本线 S1 甲 ⇔ 乙',
+    'zh-Hant': '樣本線 S1 甲 ⇔ 乙',
+    ko: '샘플 노선 S1 알파 ⇔ 브라보',
+    de: 'Beispiellinie S1 — Alpha ⇔ Bravo',
+    es: 'Línea de Muestra S1 — Alfa ⇔ Bravo',
+    fr: 'Ligne d’Exemple S1 — Alpha ⇔ Bravo',
+  },
+  route_type: 3,
+  route_color: '1976D2',
+  route_text_color: 'FFFFFF',
+  agency_id: 'fixture:agency',
+};
+
+/**
+ * Synthetic long route — the longer end of the length axis. Models
+ * a Kyoto-city-bus / Tokyo-tram style line whose `route_long_name`
+ * is a system number followed by a bullet-separated list of
+ * waypoints, long enough to exercise wrapping / truncation paths
+ * in every {@link SUPPORTED_LANGS} entry.
+ */
+export const routeLong: Route = {
+  route_id: 'fixture:route-long',
+  route_short_name: 'L99',
+  route_short_names: {
+    ja: 'L99',
+    'ja-Hrkt': 'える きゅうじゅうきゅう',
+    en: 'L99',
+    'zh-Hans': 'L99',
+    'zh-Hant': 'L99',
+    ko: 'L99',
+    de: 'L99',
+    es: 'L99',
+    fr: 'L99',
+  },
+  route_long_name:
+    'Sample Line L99 System — Alpha Park · Bravo Station · Charlie Mall · Delta Harbor · Echo Terminal',
+  route_long_names: {
+    ja: 'サンプル L99 号系統 アルファ公園・ブラボー駅・チャーリー商店街・デルタ港・エコーターミナル',
+    'ja-Hrkt':
+      'さんぷる える きゅうじゅうきゅう ごうけいとう あるふぁ こうえん・ぶらぼー えき・ちゃーりー しょうてんがい・でるたこう・えこー たーみなる',
+    en: 'Sample Line L99 System — Alpha Park · Bravo Station · Charlie Mall · Delta Harbor · Echo Terminal',
+    'zh-Hans': '样本线 L99 系统 甲公园・乙站・丙商店街・丁港・戊总站',
+    'zh-Hant': '樣本線 L99 系統 甲公園・乙站・丙商店街・丁港・戊總站',
+    ko: '샘플 노선 L99 계통 알파공원・브라보역・찰리 상점가・델타항・에코 터미널',
+    de: 'Beispiellinie L99 System — Alpha-Park · Bahnhof Bravo · Charlie-Markt · Delta-Hafen · Echo-Terminal',
+    es: 'Línea de Muestra L99 Sistema — Parque Alfa · Estación Bravo · Galería Charlie · Puerto Delta · Terminal Echo',
+    fr: 'Ligne d’Exemple L99 Système — Parc Alpha · Gare Bravo · Galerie Charlie · Port Delta · Terminal Echo',
+  },
+  route_type: 3,
+  route_color: 'E60012',
+  route_text_color: 'FFFFFF',
+  agency_id: 'fixture:agency',
+};
+
+// ---------------------------------------------------------------------------
 // Stops
 // ---------------------------------------------------------------------------
 
@@ -669,6 +758,66 @@ export const longNameStop: Stop = {
     'zh-Hans': '东京都立产业技术研究中心前',
     'zh-Hant': '東京都立產業技術研究中心前',
   },
+};
+
+// ---------------------------------------------------------------------------
+// Logical Stop fixtures — length axis
+// ---------------------------------------------------------------------------
+//
+// Abstract placeholder stops in the same short/long × 9-language
+// shape as `tripHeadsignShort`/`tripHeadsignLong` and
+// `routeShort`/`routeLong`. Use these when the story cares about
+// the logical length category rather than any specific real stop.
+
+/**
+ * Synthetic short stop — a compact stop name at the shorter end of
+ * typical transit data. Covers every {@link SUPPORTED_LANGS} entry.
+ */
+export const stopShort: Stop = {
+  stop_id: 'fixture:stop-short',
+  stop_name: 'Alpha Park Stop',
+  stop_names: {
+    ja: 'アルファ公園前',
+    'ja-Hrkt': 'あるふぁ こうえん まえ',
+    en: 'Alpha Park Stop',
+    'zh-Hans': '甲公园前',
+    'zh-Hant': '甲公園前',
+    ko: '알파공원 앞',
+    de: 'Haltestelle Alpha-Park',
+    es: 'Parada Parque Alfa',
+    fr: 'Arrêt Parc Alpha',
+  },
+  stop_lat: 35.6939,
+  stop_lon: 139.8118,
+  location_type: 0,
+  agency_id: 'fixture:agency',
+};
+
+/**
+ * Synthetic long stop — exercises wrapping / truncation paths for
+ * the stop name slot. Modelled after verbose real-world entries
+ * like '東京都立産業技術研究センター前' but abstracted away from
+ * any real place.
+ */
+export const stopLong: Stop = {
+  stop_id: 'fixture:stop-long',
+  stop_name: 'Charlie Mall Central Entrance — East Wing Bus Stop',
+  stop_names: {
+    ja: 'チャーリー商店街 中央口 東棟 バス停',
+    'ja-Hrkt': 'ちゃーりー しょうてんがい ちゅうおうぐち ひがしとう ばすてい',
+    en: 'Charlie Mall Central Entrance — East Wing Bus Stop',
+    'zh-Hans': '丙商店街 中央入口 东栋 公交站',
+    'zh-Hant': '丙商店街 中央入口 東棟 公車站',
+    ko: '찰리 상점가 중앙 입구 동관 버스정류장',
+    de: 'Charlie-Markt Haupteingang — Ostflügel Bushaltestelle',
+    es: 'Parada de Autobús Galería Charlie — Entrada Principal Ala Este',
+    fr: 'Arrêt de Bus Galerie Charlie — Entrée Principale Aile Est',
+  },
+  stop_lat: 35.6945,
+  stop_lon: 139.8122,
+  location_type: 0,
+  wheelchair_boarding: 1,
+  agency_id: 'fixture:agency',
 };
 
 // ---------------------------------------------------------------------------
@@ -842,6 +991,125 @@ export const stopHeadsignMusashiKoganeiSouth: TranslatableText = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Logical headsign fixtures — place-name independent
+// ---------------------------------------------------------------------------
+//
+// The fixtures below are deliberately abstracted away from real-world
+// place names (中野駅 / 新橋駅前 / 武蔵小金井駅南口 / ...). They exist
+// to drive stories that exercise the component's *logical* handling
+// of each headsign state — trip-only, stop-only, both, etc. — so the
+// failure mode reads as "the trip-only branch is broken" rather than
+// "the Nakano fixture broke". Use these for structural / regression
+// stories; keep the named real-place fixtures above for cases where
+// the visual language of actual transit data is the point.
+
+/**
+ * Synthetic long trip headsign — an obviously-fake placeholder
+ * covering every {@link SUPPORTED_LANGS} entry. The value is
+ * intentionally abstract (no real place name) while sized to the
+ * longer end of realistic bus / train headsign character counts,
+ * so layout tests exercise the wrapping and truncation paths they
+ * will see in production.
+ */
+export const tripHeadsignLong: TranslatableText = {
+  name: 'Sample Trip Destination — Alpha Park via Central Plaza',
+  names: {
+    ja: 'サンプル行先 アルファ公園 経由 中央広場',
+    'ja-Hrkt': 'さんぷる いきさき あるふぁ こうえん けいゆ ちゅうおう ひろば',
+    en: 'Sample Trip Destination — Alpha Park via Central Plaza',
+    'zh-Hans': '样本 终点站 甲公园 途经 中央广场',
+    'zh-Hant': '樣本 終點站 甲公園 途經 中央廣場',
+    ko: '샘플 행선지 알파공원 경유 중앙광장',
+    de: 'Beispielziel — Alpha-Park über Zentralplatz',
+    es: 'Destino de Muestra — Parque Alfa vía Plaza Central',
+    fr: 'Destination Échantillon — Parc Alpha via la Place Centrale',
+  },
+};
+
+/**
+ * Synthetic short trip headsign — counterpart to
+ * {@link tripHeadsignLong}, intentionally shorter so stories can
+ * compare headsigns of different lengths side by side.
+ */
+export const tripHeadsignShort: TranslatableText = {
+  name: 'Sample — Bravo Station',
+  names: {
+    ja: 'サンプル ブラボー駅',
+    'ja-Hrkt': 'さんぷる ぶらぼーえき',
+    en: 'Sample — Bravo Station',
+    'zh-Hans': '样本 乙站',
+    'zh-Hant': '樣本 乙站',
+    ko: '샘플 브라보역',
+    de: 'Beispiel — Bahnhof Bravo',
+    es: 'Muestra — Estación Bravo',
+    fr: 'Exemple — Gare Bravo',
+  },
+};
+
+/**
+ * Synthetic short stop headsign — placeholder for the stop-level
+ * slot so stories can tell it apart from the trip-level values
+ * above. Intentionally short so stories can contrast against
+ * {@link stopHeadsignLong}.
+ */
+export const stopHeadsignShort: TranslatableText = {
+  name: 'Sub — Charlie Mall',
+  names: {
+    ja: '副行先 チャーリー商店街',
+    'ja-Hrkt': 'ふくいきさき ちゃーりーしょうてんがい',
+    en: 'Sub — Charlie Mall',
+    'zh-Hans': '副终点 丙商店街',
+    'zh-Hant': '副終點 丙商店街',
+    ko: '부차행선 찰리 상점가',
+    de: 'Unterziel — Charlie-Markt',
+    es: 'Sub-destino — Galería Charlie',
+    fr: 'Sous-destination — Galerie Charlie',
+  },
+};
+
+/**
+ * Synthetic long stop headsign — exercises the wrapping /
+ * truncation paths for the stop-level slot. Includes a "via"
+ * waypoint modelled after routes like the Kyoto city bus loops.
+ */
+export const stopHeadsignLong: TranslatableText = {
+  name: 'Sub-destination — Delta Harbor via Riverside Terminal',
+  names: {
+    ja: '副行先 デルタ港 経由 リバーサイド ターミナル',
+    'ja-Hrkt': 'ふくいきさき でるたこう けいゆ りばーさいど たーみなる',
+    en: 'Sub-destination — Delta Harbor via Riverside Terminal',
+    'zh-Hans': '副终点 丁港 途经 河畔总站',
+    'zh-Hant': '副終點 丁港 途經 河畔總站',
+    ko: '부차행선 델타항 경유 리버사이드 터미널',
+    de: 'Unterziel — Delta-Hafen über Uferterminal',
+    es: 'Sub-destino — Puerto Delta vía Terminal Ribereño',
+    fr: 'Sous-destination — Port Delta via le Terminal Riverain',
+  },
+};
+
+/** Single-character headsign — exercises minimum-length rendering. */
+export const headsignShort: TranslatableText = {
+  name: 'X',
+  names: {
+    ja: 'X',
+    en: 'X',
+  },
+};
+
+/**
+ * Long multi-part headsign — exercises wrap / truncation / overflow
+ * handling. Not a real place; the text is deliberately synthetic.
+ */
+export const headsignLong: TranslatableText = {
+  name: 'Very Long Destination Via Many Intermediate Points',
+  names: {
+    ja: '非常に長い目的地 経由地点を多数含む 行先',
+    'ja-Hrkt': 'ひじょうに ながい もくてきち けいゆ ちてん を たすう ふくむ いきさき',
+    en: 'Very Long Destination Via Many Intermediate Points',
+  },
+};
+
 /** Default service date for stories. */
 export const storyServiceDate = new Date('2026-03-30T00:00:00');
 
@@ -872,6 +1140,73 @@ export function createRouteDirection(
     direction: overrides.direction,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Logical RouteDirection fixtures — headsign state axis
+// ---------------------------------------------------------------------------
+//
+// Each fixture is a coherent RouteDirection pinned to a specific
+// headsign-state combination so stories can pick "the trip-only
+// case" / "the stop-only case" / "the both case" etc. without
+// hand-assembling parts whose consistency can silently drift.
+
+/**
+ * Trip-only headsign: the classic case. `tripHeadsign` is populated,
+ * `stopHeadsign` is absent. Covers most straightforward bus routes.
+ */
+export const routeDirectionHeadsignTripOnly: RouteDirection = {
+  route: busRoute,
+  tripHeadsign: tripHeadsignLong,
+  direction: 0,
+};
+
+/**
+ * Stop-only headsign: keio-bus pattern. `tripHeadsign` is empty,
+ * `stopHeadsign` overrides the trip-level destination. The UI must
+ * promote `stopHeadsign` to the primary label slot.
+ */
+export const routeDirectionHeadsignStopOnly: RouteDirection = {
+  route: busRoute,
+  tripHeadsign: emptyHeadsign,
+  stopHeadsign: stopHeadsignShort,
+  direction: 0,
+};
+
+/**
+ * Both headsigns present and different. Typical when the route goes
+ * to `tripHeadsignLong` but this particular stop's next service is
+ * routed via `stopHeadsignShort`. The UI should show both with their
+ * respective source markers (🪧 trip / 📍 stop).
+ */
+export const routeDirectionHeadsignBoth: RouteDirection = {
+  route: busRoute,
+  tripHeadsign: tripHeadsignLong,
+  stopHeadsign: stopHeadsignShort,
+  direction: 0,
+};
+
+/**
+ * Both headsigns present but identical (redundant upstream data).
+ * The UI should collapse the duplicate so the user is not shown the
+ * same text twice.
+ */
+export const routeDirectionHeadsignBothMatching: RouteDirection = {
+  route: busRoute,
+  tripHeadsign: tripHeadsignLong,
+  stopHeadsign: tripHeadsignLong,
+  direction: 0,
+};
+
+/**
+ * Neither headsign populated — data-quality worst case. The UI must
+ * fall back to `route_short_name` / `route_long_name` without
+ * surfacing empty strings.
+ */
+export const routeDirectionHeadsignNeither: RouteDirection = {
+  route: busRoute,
+  tripHeadsign: emptyHeadsign,
+  direction: 0,
+};
 
 export function createEntry(
   overrides: Partial<{

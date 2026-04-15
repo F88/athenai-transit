@@ -189,6 +189,50 @@ export const WithDistanceBadge: Story = {
   ),
 };
 
+// --- infoLevel comparison ---
+
+/**
+ * Side-by-side comparison of all `infoLevel` values against the
+ * long-form fixtures (`longNameStop` + multi-route + multi-agency).
+ * Place-name-independent — exercises the full info-level rendering
+ * range against the densest realistic prop combination.
+ */
+export const LogicalLongInfoLevelComparison: Story = {
+  args: {
+    stop: longNameStop,
+    routeTypes: [0, 3] as AppRouteTypeValue[],
+    agencies: allAgencies,
+    routes: allRoutes,
+    stopServiceState: 'boardable',
+    dataLang: ['ja'],
+  },
+  render: (args) => {
+    const levels = ['simple', 'normal', 'detailed', 'verbose'] as const;
+    return (
+      <div className="flex flex-col gap-3">
+        {levels.map((level) => (
+          <div key={level} className="space-y-1">
+            <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
+            <StopSummary
+              stop={args.stop}
+              routeTypes={args.routeTypes}
+              agencies={args.agencies}
+              routes={args.routes}
+              infoLevel={level}
+              dataLang={args.dataLang}
+              stopServiceState={args.stopServiceState}
+              agencyBadgeSize={args.agencyBadgeSize}
+              routeBadgeSize={args.routeBadgeSize}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+
+// --- i18n: lang resolution ---
+
 export const LangComparison: Story = {
   args: {
     stop: longNameStop,
