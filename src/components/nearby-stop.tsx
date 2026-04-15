@@ -175,41 +175,50 @@ export function NearbyStop({
         </p>
       )}
       {displayDepartures.length > 0 ? (
-        viewId === 'stop' ? (
-          displayDepartures
-            .slice(0, 5)
-            .map((entry, i) => (
-              <FlatDepartureItem
-                key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}__${i}`}
-                entry={entry}
-                now={now}
-                isFirst={i === 0}
-                showRouteTypeIcon={showRouteTypeIconForAllDepartures}
-                infoLevel={infoLevel}
-                dataLang={dataLang}
-                agency={agencies.find((a) => a.agency_id === entry.routeDirection.route.agency_id)}
-              />
-            ))
-        ) : (
-          grouped.map(([key, entries]) => (
-            <DepartureItem
-              key={`${stop.stop_id}__${key}`}
-              entries={entries}
-              now={now}
-              infoLevel={infoLevel}
-              dataLang={dataLang}
-              showRouteTypeIcon={showRouteTypeIconForAllDepartures}
-              agency={agencies.find(
-                (a) => a.agency_id === entries[0].routeDirection.route.agency_id,
-              )}
-              onShowTimetable={
-                onShowTimetable
-                  ? (routeId, headsign) => onShowTimetable(stop.stop_id, routeId, headsign)
-                  : undefined
-              }
-            />
-          ))
-        )
+        // Multi-operator stops are rare in the current dataset, so the
+        // agency badge would be redundant noise on single-operator stops
+        // (the operator is implied by the stop itself). Only surface the
+        // agency badge when there is something to disambiguate.
+        (() => {
+          const showAgency = info.isVerboseEnabled || agencies.length > 1;
+          return viewId === 'stop'
+            ? displayDepartures
+                .slice(0, 5)
+                .map((entry, i) => (
+                  <FlatDepartureItem
+                    key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}__${i}`}
+                    entry={entry}
+                    now={now}
+                    isFirst={i === 0}
+                    showRouteTypeIcon={showRouteTypeIconForAllDepartures}
+                    infoLevel={infoLevel}
+                    dataLang={dataLang}
+                    agency={agencies.find(
+                      (a) => a.agency_id === entry.routeDirection.route.agency_id,
+                    )}
+                    showAgency={showAgency}
+                  />
+                ))
+            : grouped.map(([key, entries]) => (
+                <DepartureItem
+                  key={`${stop.stop_id}__${key}`}
+                  entries={entries}
+                  now={now}
+                  infoLevel={infoLevel}
+                  dataLang={dataLang}
+                  showRouteTypeIcon={showRouteTypeIconForAllDepartures}
+                  agency={agencies.find(
+                    (a) => a.agency_id === entries[0].routeDirection.route.agency_id,
+                  )}
+                  showAgency={showAgency}
+                  onShowTimetable={
+                    onShowTimetable
+                      ? (routeId, headsign) => onShowTimetable(stop.stop_id, routeId, headsign)
+                      : undefined
+                  }
+                />
+              ));
+        })()
       ) : (
         // Show the fallback message in the departures area whenever there
         // are no upcoming entries. When `displayDepartures.length === 0`,

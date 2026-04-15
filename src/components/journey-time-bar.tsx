@@ -76,6 +76,8 @@ interface JourneyTimeBarProps {
    * the terminal end of the bar ("remaining until arrival").
    */
   fillDirection?: JourneyTimeBarFillDirection;
+
+  showEmoji?: boolean;
 }
 
 /** Total minutes that map to a full-width bar; longer trips are clamped. */
@@ -120,6 +122,7 @@ export function JourneyTimeBar({
   tMinsLabel,
   minsPosition: minutesPosition = 'bottom',
   fillDirection = 'ltr',
+  showEmoji = false,
 }: JourneyTimeBarProps) {
   // Delegate all time math (sanitize, clamp, progress ratio, label
   // rounding) to the domain layer. The Result type lets us bail out
@@ -216,40 +219,16 @@ export function JourneyTimeBar({
     />
   );
 
-  // Horizontal layout (label and bar inline on the same row).
-  //
-  // - `flex w-full`        : occupy the parent's full width so the bar's
-  //                          percentage width resolves correctly
-  // - `items-center`       : center-align the label pill to the bar
-  // - `gap-1`              : comfortable inline spacing (4px)
-  if (minutesPosition === 'left' || minutesPosition === 'right') {
-    const labelFirst = minutesPosition === 'left';
-    return (
-      <div className="flex w-full items-center gap-1">
-        {labelFirst && label}
-        {bar}
-        {!labelFirst && label}
-      </div>
-    );
-  }
+  const isHorizontal = minutesPosition === 'left' || minutesPosition === 'right';
+  const labelFirst = minutesPosition === 'left' || minutesPosition === 'top';
+  const wrapperClassName = isHorizontal
+    ? 'flex w-full items-center gap-1'
+    : 'flex w-full flex-col items-start gap-0.5';
 
-  // Vertical layout (label stacked above/below the bar).
-  //
-  // - `flex w-full flex-col` : stack children, keep the container at
-  //                            parent width so the bar percentage
-  //                            resolves against the full width
-  // - `items-start`          : stop BaseLabel from stretching to the
-  //                            full container width (default
-  //                            `items-stretch` would otherwise turn
-  //                            the small pill into a wide block)
-  // - `gap-0.5`              : tight 2px breathing room between the
-  //                            label pill and the bar (the bar itself
-  //                            is only 2–12px tall so a large gap
-  //                            would dwarf it)
-  const labelFirst = minutesPosition === 'top';
   return (
-    <div className="flex w-full flex-col items-start gap-0.5">
+    <div className={wrapperClassName}>
       {labelFirst && label}
+      {showEmoji && '⏳'}
       {bar}
       {!labelFirst && label}
     </div>

@@ -134,12 +134,14 @@ const meta = {
     dataLang: ['ja'],
     showRouteTypeIcon: true,
     agency,
+    showAgency: false,
     attributes: emptyAttributes,
     size: 'default',
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     showRouteTypeIcon: { control: 'boolean' },
+    showAgency: { control: 'boolean' },
     size: { control: 'inline-radio', options: ['sm', 'default'] },
     attributes: { control: 'object' },
   },
@@ -165,6 +167,25 @@ export const TramRoute: Story = {
 
 export const KyotoBusRoute: Story = {
   args: { routeDirection: kyotoBusRd, agency: kyotoAgency },
+};
+
+// --- Agency badge ---
+
+/**
+ * Visualizes the `showAgency={true}` rendering path. Conceptually
+ * this represents the multi-operator-stop scenario: when the
+ * underlying stop has more than one agency, `nearby-stop.tsx` opts
+ * in by passing `showAgency={agencies.length > 1}`, and the badge
+ * appears to disambiguate which operator runs this trip.
+ *
+ * Single-operator stops (the common case) intentionally render
+ * without the agency badge to avoid redundant noise.
+ */
+export const MultiAgenciesStop: Story = {
+  args: {
+    showAgency: true,
+    infoLevel: 'detailed',
+  },
 };
 
 // --- Attributes ---

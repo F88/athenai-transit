@@ -28,6 +28,15 @@ interface FlatDepartureItemProps {
   dataLang: readonly string[];
   /** Agency object for badge display at detailed+ info level. */
   agency?: Agency;
+  /**
+   * Whether to render the agency badge inside `TripInfo`. Forwarded
+   * verbatim. Callers that know the stop's full agency set should
+   * compute this as `agencies.length > 1` so the badge only appears
+   * when it actually disambiguates between multiple operators.
+   *
+   * @default false
+   */
+  showAgency?: boolean;
 }
 
 /**
@@ -45,6 +54,7 @@ export function FlatDepartureItem({
   infoLevel,
   dataLang,
   agency,
+  showAgency = false,
 }: FlatDepartureItemProps) {
   const info = useInfoLevel(infoLevel);
   const showVerbose = info.isVerboseEnabled;
@@ -90,7 +100,7 @@ export function FlatDepartureItem({
           )}
           {/* Absolute time — always shown alongside relative for precise reference */}
           <div
-            className="text-base text-[#333] dark:text-gray-100"
+            className="text-base font-bold text-[#333] dark:text-gray-100"
             style={bgColor ? { color: bgColor } : undefined}
           >
             {formatAbsoluteTime(departureTime)}
@@ -136,6 +146,7 @@ export function FlatDepartureItem({
               minsPosition="right"
               fillDirection="rtl"
               // fillDirection="ltr"
+              showEmoji={info.isVerboseEnabled}
             />
           )}
 
@@ -147,6 +158,7 @@ export function FlatDepartureItem({
               dataLang={dataLang}
               showRouteTypeIcon={showRouteTypeIcon}
               agency={agency}
+              showAgency={showAgency}
               attributes={attributes}
             />
           </div>

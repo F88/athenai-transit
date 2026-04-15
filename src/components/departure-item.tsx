@@ -24,6 +24,15 @@ interface DepartureItemProps {
   showRouteTypeIcon: boolean;
   /** Agency object for badge display at detailed+ info level. */
   agency?: Agency;
+  /**
+   * Whether to render the agency badge inside `TripInfo`. Forwarded
+   * verbatim. Callers that know the stop's full agency set should
+   * compute this as `agencies.length > 1` so the badge only appears
+   * when it actually disambiguates between multiple operators.
+   *
+   * @default false
+   */
+  showAgency?: boolean;
   /** Maximum number of departures to display. Defaults to 3. */
   maxDisplay?: number;
   onShowTimetable?: (routeId: string, headsign: string) => void;
@@ -36,6 +45,7 @@ export function DepartureItem({
   dataLang,
   showRouteTypeIcon,
   agency,
+  showAgency = false,
   maxDisplay = 3,
   onShowTimetable,
 }: DepartureItemProps) {
@@ -76,6 +86,7 @@ export function DepartureItem({
           dataLang={dataLang}
           showRouteTypeIcon={showRouteTypeIcon}
           agency={agency}
+          showAgency={showAgency}
         />
       </div>
       <div className="flex items-center gap-3 pl-1">
@@ -97,7 +108,7 @@ export function DepartureItem({
         {displayEntries.map((entry, i) => (
           <span
             key={i}
-            className="inline-flex items-baseline gap-0.5 text-sm text-[#757575] dark:text-gray-400"
+            className="inline-flex items-baseline gap-0.5 text-sm font-bold text-[#757575] dark:text-gray-400"
           >
             {formatAbsoluteTime(displayTimes[i])}
             <TimetableEntryAttributesLabels
