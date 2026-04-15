@@ -184,6 +184,12 @@ export function JourneyTimeBar({
   const labelText =
     showRMins && showTMins ? `${rText} / ${tText}` : showRMins ? rText : showTMins ? tText : '';
 
+  // Label size is intentionally fixed to 'xs' across every bar size.
+  // Visual review showed that even the largest bar (xl, h-3) reads
+  // best with an xs pill — the label is subordinate to the bar and
+  // shouldn't grow with it. The switch is retained as scaffolding so
+  // a future variant can opt into a different mapping per `size`
+  // without re-introducing the branching structure.
   let labelSize: BaseLabelSize = 'md';
   switch (size) {
     case 'xs':
@@ -211,9 +217,16 @@ export function JourneyTimeBar({
     />
   ) : null;
 
+  // Accessibility: Radix `Progress.Root` already sets `role="progressbar"`,
+  // `aria-valuemin=0`, `aria-valuemax=100`, and `aria-valuenow={value}`.
+  // We add a journey-time-specific `aria-label` so screen readers surface
+  // the meaning of the bar (remaining vs total) rather than just a bare
+  // percentage. Falls back to "?" when the remaining value is missing.
+  const ariaLabel = `Journey time: ${displayRemainingMinutes ?? '?'} of ${displayTotalMinutes} minutes remaining`;
   const bar = (
     <Progress
       value={progressValue}
+      aria-label={ariaLabel}
       className={`${SIZE_HEIGHT_CLS[size]} ${colorClass}`.trim()}
       style={barStyle}
     />

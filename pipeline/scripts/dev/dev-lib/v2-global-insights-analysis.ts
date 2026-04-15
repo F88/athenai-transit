@@ -27,6 +27,7 @@
  */
 
 import type { GlobalInsightsBundle } from '../../../../src/types/data/transit-v2-json';
+import { sortedMedian, sortedPercentile } from './stats-utils';
 
 /** Distribution summary for a numeric value array (unit-agnostic). */
 export interface DistributionStats {
@@ -395,8 +396,8 @@ function computeDistribution(values: number[]): DistributionStats {
   const sorted = [...values].sort((a, b) => a - b);
   const sum = sorted.reduce((acc, v) => acc + v, 0);
   const mean = sum / count;
-  const median = sorted[Math.floor(count / 2)];
-  const p90 = sorted[Math.floor(count * 0.9)];
+  const median = sortedMedian(sorted);
+  const p90 = sortedPercentile(sorted, 0.9);
   const variance = sorted.reduce((acc, v) => acc + (v - mean) ** 2, 0) / count;
   const std = Math.sqrt(variance);
   return { count, mean, median, p90, std };

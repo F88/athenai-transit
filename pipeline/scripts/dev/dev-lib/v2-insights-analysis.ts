@@ -23,6 +23,7 @@
  */
 
 import type { InsightsBundle } from '../../../../src/types/data/transit-v2-json';
+import { sortedMedian, sortedPercentile } from './stats-utils';
 
 /** Thresholds (minutes) for the "long trip share" columns. */
 export const OVER_THRESHOLDS_MINUTES = [30, 60, 90] as const;
@@ -230,7 +231,7 @@ export function analyzeInsightsBundle(
   const maxStops = Math.max(...stopCounts);
   const meanStops = stopCounts.reduce((acc, v) => acc + v, 0) / stopCounts.length;
   const sortedStops = [...stopCounts].sort((a, b) => a - b);
-  const medianStops = sortedStops[Math.floor(sortedStops.length / 2)];
+  const medianStops = sortedMedian(sortedStops);
   const pctTripOver = OVER_THRESHOLDS_MINUTES.map((threshold) => {
     if (tripValues.length === 0) {
       return 0;
@@ -298,7 +299,7 @@ function summarizeTripPatternGeo(bundle: InsightsBundle): TripPatternGeoSummary 
   const pathDistMaxKm = Math.max(...pathDists);
   const pathDistMeanKm = pathDists.reduce((acc, v) => acc + v, 0) / pathDists.length;
   const sortedPathDists = [...pathDists].sort((a, b) => a - b);
-  const pathDistMedianKm = sortedPathDists[Math.floor(sortedPathDists.length / 2)];
+  const pathDistMedianKm = sortedMedian(sortedPathDists);
   const pathDistDistribution = computeDistribution(pathDists);
 
   const nonCircular = entries.filter((e) => !e.cl && e.pathDist > 0);
@@ -309,7 +310,7 @@ function summarizeTripPatternGeo(bundle: InsightsBundle): TripPatternGeoSummary 
   let distMedianKm: number | null = null;
   if (nonCircular.length > 0) {
     const sortedDists = nonCircular.map((e) => e.dist).sort((a, b) => a - b);
-    distMedianKm = sortedDists[Math.floor(sortedDists.length / 2)];
+    distMedianKm = sortedMedian(sortedDists);
   }
   const straightRatioMean =
     nonCircular.length > 0
@@ -421,9 +422,9 @@ function summarizeStopStats(bundle: InsightsBundle): StopStatsSummary | null {
  * Compute a DistributionStats from a raw value array.
  *
  * Uses population std (divide by n, not n-1) since the values represent the
- * full observed set, not a sample. Median and p90 use the nearest-rank
- * method (`arr[floor(n * q)]`) — simple and deterministic for datasets
- * where interpolation would complicate interpretation.
+ * full observed set, not a sample. Median uses the standard mathematical
+ * definition (average of the two middle elements for even-length arrays).
+ * p90 uses the nearest-rank method (`ceil(0.9 * n)` 1-indexed).
  */
 function computeDistribution(values: number[]): DistributionStats {
   const count = values.length;
@@ -433,8 +434,8 @@ function computeDistribution(values: number[]): DistributionStats {
   const sorted = [...values].sort((a, b) => a - b);
   const sum = sorted.reduce((acc, v) => acc + v, 0);
   const meanMin = sum / count;
-  const medianMin = sorted[Math.floor(count / 2)];
-  const p90Min = sorted[Math.floor(count * 0.9)];
+  const medianMin = sortedMedian(sorted);
+  const p90Min = sortedPercentile(sorted, 0.9);
   const variance = sorted.reduce((acc, v) => acc + (v - meanMin) ** 2, 0) / count;
   const stdMin = Math.sqrt(variance);
   return { count, meanMin, medianMin, p90Min, stdMin };
