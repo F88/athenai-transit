@@ -27,7 +27,21 @@
  */
 
 import type { GlobalInsightsBundle } from '../../../../src/types/data/transit-v2-json';
+import { renderTable } from './render-utils';
 import { sortedMedian, sortedPercentile } from './stats-utils';
+
+// ---------------------------------------------------------------------------
+// Configuration constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Top-N size for every leaderboard rendered by this analyser
+ * (most isolated / most connected / busiest neighborhoods).
+ *
+ * Kept intentionally small so the output stays scannable in a
+ * terminal. Increase if a future analysis needs a deeper view.
+ */
+export const TOP_N = 10;
 
 /** Distribution summary for a numeric value array (unit-agnostic). */
 export interface DistributionStats {
@@ -158,9 +172,6 @@ export interface GlobalInsightsStats {
     busiestNeighborhood: LeaderboardEntry[];
   };
 }
-
-/** Top-N size for the leaderboards. */
-const TOP_N = 10;
 
 /** Extract a `GlobalInsightsStats` from a parsed GlobalInsightsBundle. */
 export function analyzeGlobalInsightsBundle(
@@ -340,6 +351,18 @@ export function analyzeGlobalInsightsBundle(
   };
 }
 
+/**
+ * Tie-breaker comparator used as the **last** sort step for every
+ * leaderboard. Compares by `stopId` (lexicographic ascending) so the
+ * Top-N output is deterministic when two stops have identical
+ * primary / secondary metric values. Without this, `Array.sort` falls
+ * back to engine-defined stability semantics and the leaderboard can
+ * shift between runs over the same data.
+ */
+function tieBreakByStopId(a: { stopId: string }, b: { stopId: string }): number {
+  return a.stopId < b.stopId ? -1 : a.stopId > b.stopId ? 1 : 0;
+}
+
 function buildLeaderboards(
   entries: {
     source: string;
@@ -350,19 +373,29 @@ function buildLeaderboards(
     sc?: number;
   }[],
 ): GlobalInsightsStats['leaderboards'] {
+  // mostIsolated: sort by nr desc, then stopId asc for deterministic ties.
   const mostIsolated = [...entries]
     .filter((e) => e.nr > 0)
-    .sort((a, b) => b.nr - a.nr)
+    .sort((a, b) => {
+      if (b.nr !== a.nr) {
+        return b.nr - a.nr;
+      }
+      return tieBreakByStopId(a, b);
+    })
     .slice(0, TOP_N)
     .map<LeaderboardEntry>((e) => ({ source: e.source, stopId: e.stopId, nr: e.nr }));
 
+  // mostConnected: sort by rc desc, then freq desc, then stopId asc.
   const mostConnected = [...entries]
     .filter((e) => e.rc !== undefined)
     .sort((a, b) => {
       if (b.rc !== a.rc) {
         return (b.rc ?? 0) - (a.rc ?? 0);
       }
-      return (b.freq ?? 0) - (a.freq ?? 0);
+      if (b.freq !== a.freq) {
+        return (b.freq ?? 0) - (a.freq ?? 0);
+      }
+      return tieBreakByStopId(a, b);
     })
     .slice(0, TOP_N)
     .map<LeaderboardEntry>((e) => ({
@@ -373,9 +406,15 @@ function buildLeaderboards(
       cnSc: e.sc,
     }));
 
+  // busiestNeighborhood: sort by freq desc, then stopId asc.
   const busiestNeighborhood = [...entries]
     .filter((e) => e.freq !== undefined)
-    .sort((a, b) => (b.freq ?? 0) - (a.freq ?? 0))
+    .sort((a, b) => {
+      if (b.freq !== a.freq) {
+        return (b.freq ?? 0) - (a.freq ?? 0);
+      }
+      return tieBreakByStopId(a, b);
+    })
     .slice(0, TOP_N)
     .map<LeaderboardEntry>((e) => ({
       source: e.source,
@@ -802,12 +841,3 @@ function formatLeaderboardBusiestNeighborhood(entries: LeaderboardEntry[]): stri
  * Render a simple padded ASCII table. The first column is left-aligned and
  * remaining columns are right-aligned so numeric values line up cleanly.
  */
-function renderTable(header: string[], body: string[][]): string {
-  const widths = header.map((h, i) =>
-    Math.max(h.length, ...body.map((row) => row[i]?.length ?? 0)),
-  );
-  const pad = (row: string[]): string =>
-    row.map((cell, i) => (i === 0 ? cell.padEnd(widths[i]) : cell.padStart(widths[i]))).join('  ');
-  const sep = widths.map((w) => '-'.repeat(w)).join('  ');
-  return [pad(header), sep, ...body.map(pad)].join('\n');
-}

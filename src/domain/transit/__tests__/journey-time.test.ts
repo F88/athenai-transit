@@ -107,6 +107,34 @@ describe('computeJourneyTime', () => {
       expect(r.value.progressValue).toBe(0);
     });
 
+    it('treats sub-epsilon negative remaining as missing', () => {
+      // Boundary: a value just below zero (e.g. floating-point noise)
+      // must still be rejected by the `>= 0` check, not silently
+      // accepted as "essentially zero".
+      const r = computeJourneyTime({ remainingMinutes: -Number.EPSILON, totalMinutes: 30 });
+      expect(r.ok).toBe(true);
+      if (!r.ok) {
+        return;
+      }
+      expect(r.value.safeRemainingMinutes).toBeUndefined();
+      expect(r.value.progressValue).toBe(0);
+      expect(r.value.displayRemainingMinutes).toBeNull();
+    });
+
+    it('accepts exactly zero remaining as a valid (fully-arrived) value', () => {
+      // Counterpart to the sub-epsilon test: zero is valid and means
+      // "trip is over". safeRemaining must be 0, progress 0%, and
+      // the display label must read "0".
+      const r = computeJourneyTime({ remainingMinutes: 0, totalMinutes: 30 });
+      expect(r.ok).toBe(true);
+      if (!r.ok) {
+        return;
+      }
+      expect(r.value.safeRemainingMinutes).toBe(0);
+      expect(r.value.progressValue).toBe(0);
+      expect(r.value.displayRemainingMinutes).toBe(0);
+    });
+
     it('treats NaN remaining as missing', () => {
       const r = computeJourneyTime({ remainingMinutes: Number.NaN, totalMinutes: 30 });
       expect(r.ok).toBe(true);

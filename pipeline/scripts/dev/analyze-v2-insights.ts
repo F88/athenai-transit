@@ -59,7 +59,16 @@ function listSourcePrefixes(): string[] {
 
 function readInsights(source: string): InsightsBundle {
   const bundlePath = join(PUBLIC_V2_DIR, source, 'insights.json');
-  return JSON.parse(readFileSync(bundlePath, 'utf-8')) as InsightsBundle;
+  const bundle = JSON.parse(readFileSync(bundlePath, 'utf-8')) as InsightsBundle;
+  // Defensive: catch corrupted or mis-named bundles early so the
+  // analyser never tries to interpret e.g. a global-insights bundle
+  // through the per-source code path.
+  if (bundle.kind !== 'insights') {
+    throw new Error(
+      `Expected insights bundle at ${bundlePath} but got kind=${String(bundle.kind)}`,
+    );
+  }
+  return bundle;
 }
 
 /**

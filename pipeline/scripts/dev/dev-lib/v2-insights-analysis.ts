@@ -23,6 +23,7 @@
  */
 
 import type { InsightsBundle } from '../../../../src/types/data/transit-v2-json';
+import { renderTable } from './render-utils';
 import { sortedMedian, sortedPercentile } from './stats-utils';
 
 /** Thresholds (minutes) for the "long trip share" columns. */
@@ -536,7 +537,7 @@ function formatOverviewTable(rows: InsightsSourceStats[]): string {
     String(r.maxStops),
     ...r.pctTripOver.map((v) => fmtNum(v)),
   ]);
-  return `## Overview\n\n${TRIP_PATTERN_STATS_OVERVIEW_LEGEND}\n\n${renderTable(header, body)}`;
+  return `## Overview\n\n${TRIP_PATTERN_STATS_OVERVIEW_LEGEND}\n\n${renderTable(header, body, 2)}`;
 }
 
 function formatDistributionTable(rows: InsightsSourceStats[]): string {
@@ -562,7 +563,7 @@ function formatDistributionTable(rows: InsightsSourceStats[]): string {
       fmtNum(r.byTrip.stdMin),
     ]);
   }
-  return `## Distribution of trip duration (minutes)\n\n${TRIP_PATTERN_STATS_DISTRIBUTION_LEGEND}\n\n${renderTable(header, body)}`;
+  return `## Distribution of trip duration (minutes)\n\n${TRIP_PATTERN_STATS_DISTRIBUTION_LEGEND}\n\n${renderTable(header, body, 2)}`;
 }
 
 function formatServiceGroupsTable(rows: InsightsSourceStats[]): string {
@@ -578,7 +579,7 @@ function formatServiceGroupsTable(rows: InsightsSourceStats[]): string {
       String(sg.nonStdKeyCount),
     ];
   });
-  return `## Summary\n\n${SERVICE_GROUPS_SUMMARY_LEGEND}\n\n${renderTable(header, body)}`;
+  return `## Summary\n\n${SERVICE_GROUPS_SUMMARY_LEGEND}\n\n${renderTable(header, body, 2)}`;
 }
 
 function formatServiceGroupsKeysDetail(rows: InsightsSourceStats[]): string {
@@ -628,7 +629,7 @@ function formatTripPatternGeoTable(rows: InsightsSourceStats[]): string {
       g.straightRatioMean !== null ? fmtNum(g.straightRatioMean, 2) : '-',
     ];
   });
-  return `## Overview\n\n${TRIP_PATTERN_GEO_OVERVIEW_LEGEND}\n\n${renderTable(header, body)}`;
+  return `## Overview\n\n${TRIP_PATTERN_GEO_OVERVIEW_LEGEND}\n\n${renderTable(header, body, 2)}`;
 }
 
 function formatPathDistDistributionTable(rows: InsightsSourceStats[]): string {
@@ -659,7 +660,7 @@ function formatPathDistDistributionTable(rows: InsightsSourceStats[]): string {
       fmtNum(d.stdMin, 2),
     ];
   });
-  return `## Distribution of pathDist (km)\n\n${TRIP_PATTERN_GEO_DISTRIBUTION_LEGEND}\n\n${renderTable(header, body)}`;
+  return `## Distribution of pathDist (km)\n\n${TRIP_PATTERN_GEO_DISTRIBUTION_LEGEND}\n\n${renderTable(header, body, 2)}`;
 }
 
 /** Format minutes-from-midnight as HH:MM, supporting 24h+ values. */
@@ -703,7 +704,7 @@ function formatStopStatsOverview(rows: InsightsSourceStats[]): string {
       fmtHhmm(s.latestMinutes),
     ];
   });
-  return `## Overview\n\n${STOP_STATS_OVERVIEW_LEGEND}\n\n${renderTable(header, body)}`;
+  return `## Overview\n\n${STOP_STATS_OVERVIEW_LEGEND}\n\n${renderTable(header, body, 2)}`;
 }
 
 function formatStopStatsDistribution(rows: InsightsSourceStats[]): string {
@@ -725,7 +726,7 @@ function formatStopStatsDistribution(rows: InsightsSourceStats[]): string {
       fmtNum(d.stdMin),
     ];
   });
-  return `## Distribution of stop freq (per day)\n\n${STOP_STATS_DISTRIBUTION_LEGEND}\n\n${renderTable(header, body)}`;
+  return `## Distribution of stop freq (per day)\n\n${STOP_STATS_DISTRIBUTION_LEGEND}\n\n${renderTable(header, body, 2)}`;
 }
 
 const SERVICE_GROUPS_SUMMARY_LEGEND = [
@@ -851,12 +852,3 @@ const STOP_STATS_DISTRIBUTION_LEGEND = [
  * Render a simple padded ASCII table. The first column is left-aligned and
  * remaining columns are right-aligned so numeric values line up cleanly.
  */
-function renderTable(header: string[], body: string[][]): string {
-  const widths = header.map((h, i) =>
-    Math.max(h.length, ...body.map((row) => row[i]?.length ?? 0)),
-  );
-  const pad = (row: string[]): string =>
-    row.map((cell, i) => (i <= 1 ? cell.padEnd(widths[i]) : cell.padStart(widths[i]))).join('  ');
-  const sep = widths.map((w) => '-'.repeat(w)).join('  ');
-  return [pad(header), sep, ...body.map(pad)].join('\n');
-}
