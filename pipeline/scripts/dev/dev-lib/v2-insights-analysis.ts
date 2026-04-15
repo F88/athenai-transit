@@ -2,9 +2,23 @@
  * Pure analysis of a v2 per-source InsightsBundle.
  *
  * Aggregates duration statistics from `tripPatternStats`:
- *   - per-pattern distribution (each pattern counted once)
- *   - per-trip distribution (each pattern counted `freq` times)
- * Plus shared min/max across the valid pattern set.
+ *   - **per-(pattern, service-group) distribution** — each pipeline
+ *     record counted once. The same `patternId` running on multiple
+ *     service groups contributes one observation per group, since
+ *     the pipeline records SG-specific median durations and these
+ *     can differ non-trivially even for the "same" pattern.
+ *     Example: `kobus:p1` is `21 / 21 / 20` minutes across `wd / sa
+ *     / su`. Collapsing to a single per-`patternId` observation
+ *     would force a synthetic representative value (or arbitrary
+ *     "first occurrence" pick), discarding the per-SG variance the
+ *     pipeline deliberately preserves. The atom of analysis here is
+ *     therefore the `(serviceGroup, patternId)` tuple — the same
+ *     atom the pipeline keys `tripPatternStats` by.
+ *   - **per-trip distribution** — each pipeline record counted
+ *     `freq` times (so a 3 trips/day pattern contributes 3
+ *     observations per service group).
+ *
+ * Plus shared min/max across the valid set.
  *
  * No I/O. Formatter functions are side-effect free and return strings so
  * the CLI wrapper can direct them to stdout.
