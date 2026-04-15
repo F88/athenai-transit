@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.04.15]
+
 ### Added
 
 - `computeJourneyTime` 純粋関数 (`src/domain/transit/journey-time.ts`): trip の remaining / total minutes から bar 描画用の値 (sanitized minutes、progress ratio、display 用の rounded values) を計算する domain helper。Result-type API (`{ ok: true, value } | { ok: false, reason }`) で `no-total` / `invalid-total` の失敗を呼び出し側が単一 gate で扱える。sub-minute total の degenerate 表示 (`0 / 0`) を回避するため `displayTotalMinutes = Math.max(1, Math.round(...))` で clamp。pipeline 由来の小数 minutes に対する 100% fill 時のラベル整合性も担保。エッジケース 40 tests 追加。
