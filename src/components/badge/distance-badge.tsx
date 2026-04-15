@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { distanceColor } from '../../utils/distance-style';
 import { formatDistance } from '../../domain/transit/distance';
 
@@ -21,6 +22,7 @@ interface DistanceBadgeProps {
  * @param bearingDeg - Geographic bearing in degrees. Optional.
  */
 export function DistanceBadge({ meters, bearingDeg, showDirection = false }: DistanceBadgeProps) {
+  const { i18n } = useTranslation();
   return (
     <span
       className="ml-2 inline-flex items-center gap-0.5 align-middle text-xl font-bold whitespace-nowrap"
@@ -33,7 +35,7 @@ export function DistanceBadge({ meters, bearingDeg, showDirection = false }: Dis
           aria-hidden="true"
         />
       )}
-      {formatDistance(meters)}
+      {formatDistance(meters, i18n.language)}
     </span>
   );
 }

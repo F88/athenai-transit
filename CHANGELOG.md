@@ -9,6 +9,14 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `formatDistance(meters, unit?)` / `formatDistanceCompact(meters)` (`src/domain/transit/distance.ts`) に `lang: string` 引数を追加し locale 対応化。従来は `toLocaleString('en-US')` をハードコード + km 値を `.toFixed(1)` で locale 非対応に整形していたため、fr / de ユーザに対して decimal / thousands separator が正しく出力されない潜在バグがあった (例: `1500` → en では `1.5km`、de でも `1.5km` になるが正しくは `1,5km`)。新シグネチャ:
+    - `formatDistance(meters, lang, unit = true)`
+    - `formatDistanceCompact(meters, lang)`
+- 全 caller を `i18n.language` 渡しに更新: `distance-badge.tsx` / `edge-markers-dom.tsx` / `edge-markers-canvas.tsx` / `stop-metrics.tsx`。`edge-markers-canvas.tsx` では描画 `useEffect` の deps に `i18n.language` を追加して言語切替時に canvas label が再描画されるようにした。
+- `distance.test.ts` を新シグネチャに更新し、locale-specific 挙動 (`de` → `1,5km`、`ja` → `1,000m` 等) の assertion を 3 件追加。
+
 ### Fixed
 
 - `BottomSheetHeader` の Agency filter PillButton が `agency.agency_short_name` / `agency.agency_long_name` の base 値を直接読んでおり、UI 言語切替に追従しない i18n 漏れを解消。canonical helper `getAgencyDisplayNames` 経由で `dataLang` chain を解決し、label (`agency_short_names`) と tooltip (`agency_long_names`) の両方を言語切替に追従させる。`BottomSheetHeader` に `dataLang: readonly string[]` prop を追加し、`BottomSheet` から透過。`AgencyBadge` / verbose 系と同じ `getAgencyDisplayNames(agency, dataLang, DEFAULT_AGENCY_LANG, 'short')` パターンに揃え、最終フォールバックは `agency.agency_id`。

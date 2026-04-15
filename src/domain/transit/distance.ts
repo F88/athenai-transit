@@ -20,32 +20,42 @@ export function distanceM(a: LatLng, b: { stop_lat: number; stop_lon: number }):
 }
 
 /**
- * Format a distance value for human-readable display.
+ * Format a distance value for human-readable display, locale-aware.
  *
- * - Under 1 km: rounded to the nearest integer. With unit: `"450m"`, without: `"450"`.
- * - 1 km and above: rounded to one decimal place, always `"N.Nkm"`.
+ * - Under 1 km: rounded to the nearest integer, then formatted via
+ *   `toLocaleString(lang)` so large values (e.g. `999.5 → 1000`) carry
+ *   the correct thousands separator for the UI language
+ *   (`"1,000m"` for en, `"1 000 m"` for fr, `"1.000 m"` for de, etc.).
+ *   With unit: `"450m"`, without: `"450"`.
+ * - 1 km and above: always one decimal place, formatted via
+ *   `toLocaleString(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 })`
+ *   so the decimal separator follows the locale (`"1.5km"` / `"1,5km"`).
  *
- * When `unit` is false and distance is under 1 km, numbers >= 1000
- * are formatted with comma separator (e.g. `"1,234"`).
+ * Callers should pass `i18n.language` (react-i18next) as `lang`.
  *
  * @param meters - Distance in meters (may include decimals).
  * @param unit - Whether to append "m" unit for distances under 1 km. Defaults to true.
+ * @param lang - BCP 47 language code for number formatting (e.g. `"ja"`, `"en"`).
  * @returns Formatted distance string.
  *
  * @example
  * ```ts
- * formatDistance(450);            // => "450m"
- * formatDistance(450, false);     // => "450"
- * formatDistance(1000);           // => "1.0km"
- * formatDistance(1000, false);    // => "1.0km"
+ * formatDistance(450, 'en');          // => "450m"
+ * formatDistance(450, 'en', false);   // => "450"
+ * formatDistance(1000, 'en');         // => "1.0km"
+ * formatDistance(1500, 'de');         // => "1,5km"
  * ```
  */
-export function formatDistance(meters: number, unit = true): string {
+export function formatDistance(meters: number, lang: string, unit = true): string {
   if (meters < 1000) {
-    const rounded = Math.round(meters);
-    return unit ? `${rounded}m` : rounded.toLocaleString('en-US');
+    const rounded = Math.round(meters).toLocaleString(lang);
+    return unit ? `${rounded}m` : rounded;
   }
-  return `${(meters / 1000).toFixed(1)}km`;
+  const km = (meters / 1000).toLocaleString(lang, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  return `${km}km`;
 }
 
 /**
@@ -69,17 +79,26 @@ export function bearingDeg(a: LatLng, b: { stop_lat: number; stop_lon: number })
 }
 
 /**
- * Format a distance compactly without unit suffix for small badges.
+ * Format a distance compactly for small badges, locale-aware.
  *
- * - Under 1 km: rounded integer with comma separator, no unit.
- * - 1 km and above: rounded to one decimal, with "km".
+ * - Under 1 km: rounded integer formatted via `toLocaleString(lang)`,
+ *   no unit (caller typically paints a unit suffix separately).
+ * - 1 km and above: one decimal formatted via `toLocaleString(lang, ...)`
+ *   with the `"km"` suffix attached.
+ *
+ * Callers should pass `i18n.language` as `lang`.
  *
  * @param meters - Distance in meters.
+ * @param lang - BCP 47 language code for number formatting.
  * @returns Formatted distance string.
  */
-export function formatDistanceCompact(meters: number): string {
+export function formatDistanceCompact(meters: number, lang: string): string {
   if (meters < 1000) {
-    return Math.round(meters).toLocaleString('en-US');
+    return Math.round(meters).toLocaleString(lang);
   }
-  return `${(meters / 1000).toFixed(1)}km`;
+  const km = (meters / 1000).toLocaleString(lang, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  return `${km}km`;
 }
