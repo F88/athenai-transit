@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { EdgeMarker } from '../../types/app/map';
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, Stop } from '../../types/app/transit';
@@ -88,6 +89,7 @@ export function EdgeMarkersCanvas({
   agenciesMap,
   onStopSelected,
 }: EdgeMarkersCanvasProps) {
+  const { i18n } = useTranslation();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const markersRef = useRef(markers);
   const [hoveredMarker, setHoveredMarker] = useState<EdgeMarker | null>(null);
@@ -132,7 +134,7 @@ export function EdgeMarkersCanvas({
       drawArrow(ctx, m.x * dpr, m.y * dpr, m.angle, scaledSize, color);
 
       if (showDistance) {
-        const label = formatDistance(m.distance, false);
+        const label = formatDistance(m.distance, i18n.language, false);
         const fontSize = 9 * dpr;
         const padX = 3 * dpr;
         const padY = 2 * dpr;
@@ -163,7 +165,7 @@ export function EdgeMarkersCanvas({
       }
       ctx.globalAlpha = 1;
     }
-  }, [markers, showDistance]);
+  }, [markers, showDistance, i18n.language]);
 
   // Document-level capture phase listeners for hit detection.
   // The canvas itself is pointer-events-none so it never blocks map

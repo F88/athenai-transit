@@ -258,6 +258,7 @@ export function BottomSheet({
         hasNearbyLoaded={hasNearbyLoaded}
         counts={counts}
         dataConfig={dataConfig}
+        dataLang={dataLang}
         showOperatingStopsOnly={showOperatingStopsOnly}
         viewId={viewId}
         selectedView={selectedView}

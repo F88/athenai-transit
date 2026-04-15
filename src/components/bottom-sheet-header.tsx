@@ -3,7 +3,9 @@ import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { DepartureViewMeta } from '../types/app/transit-composed';
 import type { NearbyStopsCounts } from './bottom-sheet';
+import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
 import { DEPARTURE_VIEWS } from '../domain/transit/departure-views';
+import { getAgencyDisplayNames } from '../domain/transit/get-agency-display-name';
 import { createLogger } from '../lib/logger';
 import { routeTypeColor } from '../utils/route-type-color';
 import { routeTypeEmoji } from '../utils/route-type-emoji';
@@ -15,6 +17,7 @@ interface BottomSheetHeaderProps {
   hasNearbyLoaded: boolean;
   counts: NearbyStopsCounts;
   dataConfig: DataConfig;
+  dataLang: readonly string[];
   showOperatingStopsOnly: boolean;
   viewId: string;
   selectedView: DepartureViewMeta | undefined;
@@ -33,6 +36,7 @@ export function BottomSheetHeader({
   hasNearbyLoaded,
   counts,
   dataConfig,
+  dataLang,
   showOperatingStopsOnly,
   viewId,
   selectedView,
@@ -105,8 +109,9 @@ export function BottomSheetHeader({
           const primary = agency.agency_colors[0];
           const bgColor = primary ? `#${primary.bg}` : undefined;
           const fgColor = primary ? `#${primary.text}` : undefined;
-          const title = agency.agency_long_name || agency.agency_short_name || agency.agency_name;
-          const value = agency.agency_short_name || agency.agency_long_name || agency.agency_name;
+          const names = getAgencyDisplayNames(agency, dataLang, DEFAULT_AGENCY_LANG, 'short');
+          const label = names.shortName.name || names.resolved.name || agency.agency_id;
+          const title = names.longName.name || names.resolved.name || agency.agency_id;
           return (
             <PillButton
               key={agency.agency_id}
@@ -119,7 +124,7 @@ export function BottomSheetHeader({
               onClick={() => onToggleAgency(agency)}
               title={title}
             >
-              {value}
+              {label}
             </PillButton>
           );
         })}

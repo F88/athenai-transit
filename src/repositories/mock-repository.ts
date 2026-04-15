@@ -44,17 +44,31 @@ import type { TransitRepository } from './transit-repository';
 const AGENCY: Agency = {
   agency_id: 'mock:aoba',
   agency_name: 'あおば交通株式会社',
-  agency_long_name: 'あおば交通株式会社',
+  agency_long_name: 'あおば交通株式会社 本社営業部',
   agency_short_name: 'あおバス',
   agency_names: {
     ja: 'あおば交通株式会社',
+    'ja-Hrkt': 'あおばこうつうかぶしきがいしゃ',
     en: 'Aoba Transit Co.',
     ko: '아오바교통',
     'zh-Hans': '青叶交通株式会社',
     'zh-Hant': '青葉交通株式會社',
   },
-  agency_long_names: {},
-  agency_short_names: { ja: 'あおバス', en: 'Aoba', ko: '아오바', 'zh-Hans': '青叶巴士' },
+  agency_long_names: {
+    ja: 'あおば交通株式会社 本社営業部',
+    'ja-Hrkt': 'あおばこうつうかぶしきがいしゃ ほんしゃえいぎょうぶ',
+    en: 'Aoba Transit Co., Ltd. - Headquarters Sales Division',
+    ko: '아오바교통 주식회사 본사 영업부',
+    'zh-Hans': '青叶交通株式会社 总公司营业部',
+    'zh-Hant': '青葉交通株式會社 總公司營業部',
+  },
+  agency_short_names: {
+    ja: 'あおバス',
+    'ja-Hrkt': 'あおばす',
+    en: 'Aoba',
+    ko: '아오바',
+    'zh-Hans': '青叶巴士',
+  },
   agency_url: 'https://example.com/aoba',
   agency_lang: 'ja',
   agency_timezone: 'Asia/Tokyo',
@@ -65,16 +79,29 @@ const AGENCY: Agency = {
 const AGENCY_SORA: Agency = {
   agency_id: 'mock:soraq',
   agency_name: 'そら急行バス株式会社',
-  agency_long_name: 'そら急行バス株式会社',
+  agency_long_name: 'そら急行バス株式会社 高速バス事業部',
   agency_short_name: 'そら急',
   agency_names: {
     ja: 'そら急行バス株式会社',
+    'ja-Hrkt': 'そらきゅうこうばすかぶしきがいしゃ',
     en: 'Sora Express Bus Co.',
     ko: '소라급행버스',
     'zh-Hans': '空急行巴士株式会社',
   },
-  agency_long_names: {},
-  agency_short_names: { ja: 'そら急', en: 'Sora Exp', ko: '소라급' },
+  agency_long_names: {
+    ja: 'そら急行バス株式会社 高速バス事業部',
+    'ja-Hrkt': 'そらきゅうこうばすかぶしきがいしゃ こうそくばすじぎょうぶ',
+    en: 'Sora Express Bus Co., Ltd. - Highway Bus Division',
+    ko: '소라급행버스 주식회사 고속버스 사업부',
+    'zh-Hans': '空急行巴士株式会社 高速巴士事业部',
+    'zh-Hant': '空急行巴士株式會社 高速巴士事業部',
+  },
+  agency_short_names: {
+    ja: 'そら急',
+    'ja-Hrkt': 'そらきゅう',
+    en: 'Sora Exp',
+    ko: '소라급',
+  },
   agency_url: 'https://example.com/sora',
   agency_lang: 'ja',
   agency_timezone: 'Asia/Tokyo',
@@ -82,34 +109,124 @@ const AGENCY_SORA: Agency = {
   agency_colors: [{ bg: '1565C0', text: 'FFFFFF' }],
 };
 
+/**
+ * English-primary research institute operator.
+ *
+ * Demonstrates an agency with `agency_lang = 'en'` and fully populated multilingual
+ * fields directly in the literal (no AGENCY_*_TRANSLATIONS merge). Operates the
+ * Issue #47 shape-stress / duplicate-stop-in-pattern fixture routes:
+ * `bus_stuck` (consecutive duplicate), `bus_six` (6-の字), `bus_eight` (8-の字),
+ * `n92` (nakano-92 終点 2 連続), `kc10a` (kyoto-city 乗降切替型), `kc10b`
+ * (kyoto-city 通常停車型).
+ */
+const AGENCY_DRI: Agency = {
+  agency_id: 'dri',
+  agency_name: 'Data Research Institute',
+  agency_long_name: 'Data Research Institute Foundation',
+  agency_short_name: 'DRI',
+  agency_names: {
+    en: 'Data Research Institute',
+    ja: 'データ研究所',
+    'ja-Hrkt': 'でーたけんきゅうじょ',
+    ko: '데이터 연구소',
+    'zh-Hans': '数据研究所',
+    'zh-Hant': '數據研究所',
+    de: 'Forschungsinstitut für Daten',
+    es: 'Instituto de Investigación de Datos',
+    fr: 'Institut de Recherche sur les Données',
+  },
+  agency_long_names: {
+    en: 'Data Research Institute Foundation',
+    ja: 'データ研究所 財団',
+    'ja-Hrkt': 'でーたけんきゅうじょ ざいだん',
+    ko: '데이터 연구소 재단',
+    'zh-Hans': '数据研究所基金会',
+    'zh-Hant': '數據研究所基金會',
+    de: 'Stiftung Forschungsinstitut für Daten',
+    es: 'Fundación Instituto de Investigación de Datos',
+    fr: 'Fondation Institut de Recherche sur les Données',
+  },
+  agency_short_names: {
+    en: 'DRI',
+    ja: 'DRI',
+    'ja-Hrkt': 'DRI',
+    ko: 'DRI',
+    'zh-Hans': 'DRI',
+    'zh-Hant': 'DRI',
+    de: 'DRI',
+    es: 'DRI',
+    fr: 'DRI',
+  },
+  agency_url: 'https://example.com/dri',
+  agency_lang: 'en',
+  agency_timezone: 'Asia/Tokyo',
+  agency_fare_url: '',
+  agency_colors: [{ bg: '6A1B9A', text: 'FFFFFF' }],
+};
+
 const AGENCY_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
   'mock:aoba': {
     'zh-Hant': '青葉交通株式會社',
+    de: 'Aoba Verkehr AG',
+    es: 'Aoba Transportes S.A.',
+    fr: 'Aoba Transport S.A.',
   },
   'mock:soraq': {
     ko: '소라급행버스',
     'zh-Hans': '空急行巴士株式会社',
     'zh-Hant': '空急行巴士株式會社',
+    de: 'Sora Schnellbus AG',
+    es: 'Sora Autobús Expreso S.A.',
+    fr: 'Sora Autocar Express S.A.',
+  },
+};
+
+const AGENCY_LONG_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
+  'mock:aoba': {
+    de: 'Aoba Verkehr AG - Hauptbüro Vertrieb',
+    es: 'Aoba Transportes S.A. - División Comercial de Oficina Central',
+    fr: 'Aoba Transport S.A. - Division commerciale du siège',
+  },
+  'mock:soraq': {
+    de: 'Sora Schnellbus AG - Geschäftsbereich Fernbus',
+    es: 'Sora Autobús Expreso S.A. - División de Autobuses de Larga Distancia',
+    fr: 'Sora Autocar Express S.A. - Division des autocars longue distance',
   },
 };
 
 const AGENCY_SHORT_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
   'mock:aoba': {
     'zh-Hant': '青葉巴士',
+    de: 'Aoba',
+    es: 'Aoba',
+    fr: 'Aoba',
   },
   'mock:soraq': {
     ko: '소라급',
     'zh-Hans': '空急',
     'zh-Hant': '空急',
+    de: 'Sora Exp',
+    es: 'Sora Exp',
+    fr: 'Sora Exp',
   },
 };
 
-for (const agency of [AGENCY, AGENCY_SORA]) {
+// All agencies — including AGENCY_DRI, whose translations are fully inlined
+// into its literal — are folded through the same merge step so the
+// `AGENCY_*_TRANSLATIONS` maps remain the single place to add new
+// translations. For AGENCY_DRI the map lookups are currently `undefined`
+// and the `?? {}` fallback makes every Object.assign a no-op. Keeping DRI
+// in the loop means a future `AGENCY_LONG_NAME_TRANSLATIONS['dri']` entry
+// will be picked up automatically instead of silently missing the merge.
+for (const agency of [AGENCY, AGENCY_SORA, AGENCY_DRI]) {
   Object.assign(agency.agency_names, AGENCY_NAME_TRANSLATIONS[agency.agency_id] ?? {});
+  Object.assign(agency.agency_long_names, AGENCY_LONG_NAME_TRANSLATIONS[agency.agency_id] ?? {});
   Object.assign(agency.agency_short_names, AGENCY_SHORT_NAME_TRANSLATIONS[agency.agency_id] ?? {});
 }
 
-const AGENCY_MAP = new Map<string, Agency>([AGENCY, AGENCY_SORA].map((a) => [a.agency_id, a]));
+const AGENCY_MAP = new Map<string, Agency>(
+  [AGENCY, AGENCY_SORA, AGENCY_DRI].map((a) => [a.agency_id, a]),
+);
 
 const STOP_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
   sta_central: {
@@ -124,39 +241,145 @@ const STOP_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
     ko: '아오바중앙역 남쪽 출구',
     'zh-Hans': '青叶中央站南口',
     'zh-Hant': '青葉中央站南口',
+    de: 'Aoba-Chūō Bahnhof Südausgang',
+    es: 'Estación Aoba-Chūō salida sur',
+    fr: "Gare d'Aoba-Chūō sortie sud",
   },
-  sta_hill: { ko: '미도리오카역', 'zh-Hans': '绿丘站', 'zh-Hant': '綠丘站' },
-  sta_east: { ko: '히카리다이역', 'zh-Hans': '光台站', 'zh-Hant': '光台站' },
-  sta_north: { ko: '하나미역', 'zh-Hans': '花见站', 'zh-Hant': '花見站' },
-  sta_west: { ko: '쓰키미노역', 'zh-Hans': '月见野站', 'zh-Hant': '月見野站' },
-  sta_south: { ko: '가제노역', 'zh-Hans': '风野站', 'zh-Hant': '風野站' },
-  sta_northwest: { ko: '유메노오카역', 'zh-Hans': '梦之丘站', 'zh-Hant': '夢之丘站' },
+  sta_hill: {
+    ko: '미도리오카역',
+    'zh-Hans': '绿丘站',
+    'zh-Hant': '綠丘站',
+    de: 'Midori-oka Bahnhof',
+    es: 'Estación Midori-oka',
+    fr: 'Gare de Midori-oka',
+  },
+  sta_east: {
+    ko: '히카리다이역',
+    'zh-Hans': '光台站',
+    'zh-Hant': '光台站',
+    de: 'Hikari-dai Bahnhof',
+    es: 'Estación Hikari-dai',
+    fr: 'Gare de Hikari-dai',
+  },
+  sta_north: {
+    ko: '하나미역',
+    'zh-Hans': '花见站',
+    'zh-Hant': '花見站',
+    de: 'Hanami Bahnhof',
+    es: 'Estación Hanami',
+    fr: 'Gare de Hanami',
+  },
+  sta_west: {
+    ko: '쓰키미노역',
+    'zh-Hans': '月见野站',
+    'zh-Hant': '月見野站',
+    de: 'Tsukimino Bahnhof',
+    es: 'Estación Tsukimino',
+    fr: 'Gare de Tsukimino',
+  },
+  sta_south: {
+    ko: '가제노역',
+    'zh-Hans': '风野站',
+    'zh-Hant': '風野站',
+    de: 'Kazeno Bahnhof',
+    es: 'Estación Kazeno',
+    fr: 'Gare de Kazeno',
+  },
+  sta_northwest: {
+    ko: '유메노오카역',
+    'zh-Hans': '梦之丘站',
+    'zh-Hant': '夢之丘站',
+    de: 'Yumeno-oka Bahnhof',
+    es: 'Estación Yumeno-oka',
+    fr: 'Gare de Yumeno-oka',
+  },
   bus_central_dropoff: {
     ko: '아오바중앙역(하차 전용)',
     'zh-Hans': '青叶中央站(仅下车)',
     'zh-Hant': '青葉中央站(僅下車)',
+    de: 'Aoba-Chūō Bahnhof (nur Ausstieg)',
+    es: 'Estación Aoba-Chūō (solo descenso)',
+    fr: "Gare d'Aoba-Chūō (descente uniquement)",
   },
   bus_central_closed: {
     ko: '아오바중앙역 북쪽 출구(휴지중)',
     'zh-Hans': '青叶中央站北口(停用中)',
     'zh-Hant': '青葉中央站北口(停用中)',
+    de: 'Aoba-Chūō Bahnhof Nordausgang (geschlossen)',
+    es: 'Estación Aoba-Chūō salida norte (cerrada)',
+    fr: "Gare d'Aoba-Chūō sortie nord (fermée)",
   },
-  bus_park: { ko: '모리공원 앞', 'zh-Hans': '森公园前', 'zh-Hant': '森公園前' },
+  bus_park: {
+    ko: '모리공원 앞',
+    'zh-Hans': '森公园前',
+    'zh-Hant': '森公園前',
+    de: 'Mori-Park',
+    es: 'Parque Mori',
+    fr: 'Parc Mori',
+  },
   bus_library: {
     ko: '아오바도서관 앞',
     'zh-Hans': '青叶图书馆前',
     'zh-Hant': '青葉圖書館前',
+    de: 'Aoba-Bibliothek',
+    es: 'Biblioteca Aoba',
+    fr: 'Bibliothèque Aoba',
   },
-  bus_tower: { ko: '소라타워 아래', 'zh-Hans': '空塔下', 'zh-Hant': '空塔下' },
-  bus_bridge: { ko: '니지다리', 'zh-Hans': '彩虹桥', 'zh-Hant': '彩虹橋' },
-  tram_hoshi_park: { ko: '호시공원 앞', 'zh-Hans': '星公园前', 'zh-Hant': '星公園前' },
-  subway_sora_nishi: { ko: '소라니시역', 'zh-Hans': '空西站', 'zh-Hant': '空西站' },
-  bus_hotel_mangetsu: { ko: '호텔 만게쓰', 'zh-Hans': '满月酒店', 'zh-Hant': '滿月酒店' },
-  bus_hotel_shingetsu: { ko: '호텔 신게쓰', 'zh-Hans': '新月酒店', 'zh-Hant': '新月酒店' },
+  bus_tower: {
+    ko: '소라타워 아래',
+    'zh-Hans': '空塔下',
+    'zh-Hant': '空塔下',
+    de: 'Unter dem Sora-Turm',
+    es: 'Bajo la Torre Sora',
+    fr: 'Sous la Tour Sora',
+  },
+  bus_bridge: {
+    ko: '니지다리',
+    'zh-Hans': '彩虹桥',
+    'zh-Hant': '彩虹橋',
+    de: 'Niji-Brücke',
+    es: 'Puente Niji',
+    fr: 'Pont Niji',
+  },
+  tram_hoshi_park: {
+    ko: '호시공원 앞',
+    'zh-Hans': '星公园前',
+    'zh-Hant': '星公園前',
+    de: 'Hoshi-Park',
+    es: 'Parque Hoshi',
+    fr: 'Parc Hoshi',
+  },
+  subway_sora_nishi: {
+    ko: '소라니시역',
+    'zh-Hans': '空西站',
+    'zh-Hant': '空西站',
+    de: 'Sora-nishi Bahnhof',
+    es: 'Estación Sora-nishi',
+    fr: 'Gare de Sora-nishi',
+  },
+  bus_hotel_mangetsu: {
+    ko: '호텔 만게쓰',
+    'zh-Hans': '满月酒店',
+    'zh-Hant': '滿月酒店',
+    de: 'Hotel Mangetsu',
+    es: 'Hotel Mangetsu',
+    fr: 'Hôtel Mangetsu',
+  },
+  bus_hotel_shingetsu: {
+    ko: '호텔 신게쓰',
+    'zh-Hans': '新月酒店',
+    'zh-Hant': '新月酒店',
+    de: 'Hotel Shingetsu',
+    es: 'Hotel Shingetsu',
+    fr: 'Hôtel Shingetsu',
+  },
   sta_airport: {
     ko: '츠키 우주공항역',
     'zh-Hans': '月宇宙机场站',
     'zh-Hant': '月宇宙機場站',
+    de: 'Tsuki-Raumhafen Bahnhof',
+    es: 'Estación Puerto Espacial Tsuki',
+    fr: 'Gare du Spatioport Tsuki',
   },
 };
 
@@ -936,7 +1159,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: '795548',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:aoba',
+    agency_id: 'dri',
   },
   // bus_six: 6 の字路線 (same stop visited 2 times non-consecutively)
   //   stops: [dup_a, dup_b, dup_a, dup_c]  — dup_a が index 0 と 2
@@ -949,7 +1172,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: 'C2185B',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:aoba',
+    agency_id: 'dri',
   },
   // bus_eight: 8 の字路線 (same stop visited 3 times)
   //   stops: [dup_a, dup_b, dup_a, dup_c, dup_a]  — dup_a が index 0, 2, 4
@@ -962,7 +1185,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: '00838F',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:aoba',
+    agency_id: 'dri',
   },
   // n92: 中92 (kobus:240) 練馬駅終点ケース再現 (Issue #47 参考事例)。
   //   trip A: n92-1 (nkn) → n92-2 → n92-3 (nrm) → n92-3 [headsign: n92-3] (終点 2 連続、両方降車専用)
@@ -977,7 +1200,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: '6A1B9A',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:aoba',
+    agency_id: 'dri',
   },
   // kc10a: 市バス10 (kcbus:01000) 三条京阪前 乗降切替型 (p43 模倣) [Issue #47]
   //   pattern: [kc10a-1, kc10a-2, kc10a-2, kc10a-3]
@@ -992,7 +1215,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: '00838F',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:aoba',
+    agency_id: 'dri',
   },
   // kc10b: 市バス10 (kcbus:01000) 三条京阪前 通常停車型 (p44 模倣) [Issue #47]
   //   pattern: [kc10b-1, kc10b-2, kc10b-2, kc10b-3]
@@ -1006,7 +1229,7 @@ const ROUTES: Route[] = [
     route_type: 3,
     route_color: '0097A7',
     route_text_color: 'FFFFFF',
-    agency_id: 'mock:aoba',
+    agency_id: 'dri',
   },
 ];
 
@@ -1015,121 +1238,246 @@ for (const route of ROUTES) {
 }
 
 const HEADSIGN_TRANSLATIONS: Record<string, Record<string, string>> = {
-  はなみ: { en: 'Hanami', ko: '하나미', 'zh-Hans': '花见', 'zh-Hant': '花見' },
-  かぜの: { en: 'Kazeno', ko: '가제노', 'zh-Hans': '风野', 'zh-Hant': '風野' },
+  はなみ: {
+    'ja-Hrkt': 'はなみ',
+    en: 'Hanami',
+    ko: '하나미',
+    'zh-Hans': '花见',
+    'zh-Hant': '花見',
+    de: 'Hanami',
+    es: 'Hanami',
+    fr: 'Hanami',
+  },
+  かぜの: {
+    'ja-Hrkt': 'かぜの',
+    en: 'Kazeno',
+    ko: '가제노',
+    'zh-Hans': '风野',
+    'zh-Hant': '風野',
+    de: 'Kazeno',
+    es: 'Kazeno',
+    fr: 'Kazeno',
+  },
   そらタワー: {
+    'ja-Hrkt': 'そらたわー',
     en: 'Sora Tower',
     ko: '소라타워',
     'zh-Hans': '空塔',
     'zh-Hant': '空塔',
+    de: 'Sora-Turm',
+    es: 'Torre Sora',
+    fr: 'Tour Sora',
   },
   にじ橋: {
+    'ja-Hrkt': 'にじばし',
     en: 'Niji Bridge',
     ko: '니지다리',
     'zh-Hans': '彩虹桥',
     'zh-Hant': '彩虹橋',
+    de: 'Niji-Brücke',
+    es: 'Puente Niji',
+    fr: 'Pont Niji',
   },
   つき宇宙空港: {
+    'ja-Hrkt': 'つきうちゅうくうこう',
     en: 'Tsuki Spaceport',
     ko: '츠키 우주공항',
     'zh-Hans': '月宇宙机场',
     'zh-Hant': '月宇宙機場',
+    de: 'Tsuki-Raumhafen',
+    es: 'Puerto Espacial Tsuki',
+    fr: 'Spatioport Tsuki',
   },
   ホテル満月: {
+    'ja-Hrkt': 'ほてるまんげつ',
     en: 'Hotel Mangetsu',
     ko: '호텔 만게쓰',
     'zh-Hans': '满月酒店',
     'zh-Hant': '滿月酒店',
+    de: 'Hotel Mangetsu',
+    es: 'Hotel Mangetsu',
+    fr: 'Hôtel Mangetsu',
   },
   ほし公園: {
+    'ja-Hrkt': 'ほしこうえん',
     en: 'Hoshi Park',
     ko: '호시공원',
     'zh-Hans': '星公园',
     'zh-Hant': '星公園',
+    de: 'Hoshi-Park',
+    es: 'Parque Hoshi',
+    fr: 'Parc Hoshi',
   },
   つきみの駅: {
+    'ja-Hrkt': 'つきみのえき',
     en: 'Tsukimino Sta.',
     ko: '쓰키미노역',
     'zh-Hans': '月见野站',
     'zh-Hant': '月見野站',
+    de: 'Bahnhof Tsukimino',
+    es: 'Estación Tsukimino',
+    fr: 'Gare de Tsukimino',
   },
   もり公園前: {
+    'ja-Hrkt': 'もりこうえんまえ',
     en: 'Mori Park',
     ko: '모리공원 앞',
     'zh-Hans': '森公园前',
     'zh-Hant': '森公園前',
+    de: 'Mori-Park',
+    es: 'Parque Mori',
+    fr: 'Parc Mori',
   },
   ゆめの丘: {
+    'ja-Hrkt': 'ゆめのおか',
     en: 'Yumeno-oka',
     ko: '유메노오카',
     'zh-Hans': '梦之丘',
     'zh-Hant': '夢之丘',
+    de: 'Yumeno-oka',
+    es: 'Yumeno-oka',
+    fr: 'Yumeno-oka',
   },
   ひかり台: {
+    'ja-Hrkt': 'ひかりだい',
     en: 'Hikari-dai',
     ko: '히카리다이',
     'zh-Hans': '光台',
     'zh-Hant': '光台',
+    de: 'Hikari-dai',
+    es: 'Hikari-dai',
+    fr: 'Hikari-dai',
   },
   かぜの駅: {
+    'ja-Hrkt': 'かぜのえき',
     en: 'Kazeno Sta.',
     ko: '가제노역',
     'zh-Hans': '风野站',
     'zh-Hant': '風野站',
+    de: 'Bahnhof Kazeno',
+    es: 'Estación Kazeno',
+    fr: 'Gare de Kazeno',
   },
   あおば中央: {
+    'ja-Hrkt': 'あおばちゅうおう',
     en: 'Aoba-Chuo',
     ko: '아오바중앙',
     'zh-Hans': '青叶中央',
     'zh-Hant': '青葉中央',
+    de: 'Aoba-Chūō',
+    es: 'Aoba-Chūō',
+    fr: 'Aoba-Chūō',
   },
   あおば中央駅: {
+    'ja-Hrkt': 'あおばちゅうおうえき',
     en: 'Aoba-Chuo Sta.',
     ko: '아오바중앙역',
     'zh-Hans': '青叶中央站',
     'zh-Hant': '青葉中央站',
+    de: 'Aoba-Chūō Bahnhof',
+    es: 'Estación Aoba-Chūō',
+    fr: "Gare d'Aoba-Chūō",
   },
   'もり公園前・にじ橋': {
+    'ja-Hrkt': 'もりこうえんまえ・にじばし',
     en: 'Mori Park / Niji Bridge',
     ko: '모리공원 앞 / 니지다리',
     'zh-Hans': '森公园前 / 彩虹桥',
     'zh-Hant': '森公園前 / 彩虹橋',
+    de: 'Mori-Park / Niji-Brücke',
+    es: 'Parque Mori / Puente Niji',
+    fr: 'Parc Mori / Pont Niji',
   },
   '図書館前・もり公園前': {
+    'ja-Hrkt': 'としょかんまえ・もりこうえんまえ',
     en: 'Library / Mori Park',
     ko: '도서관 앞 / 모리공원 앞',
     'zh-Hans': '图书馆前 / 森公园前',
     'zh-Hant': '圖書館前 / 森公園前',
+    de: 'Bibliothek / Mori-Park',
+    es: 'Biblioteca / Parque Mori',
+    fr: 'Bibliothèque / Parc Mori',
   },
   あおば中央方面: {
+    'ja-Hrkt': 'あおばちゅうおうほうめん',
     en: 'For Aoba-Chuo',
     ko: '아오바중앙 방면',
     'zh-Hans': '往青叶中央',
     'zh-Hant': '往青葉中央',
+    de: 'Richtung Aoba-Chūō',
+    es: 'Hacia Aoba-Chūō',
+    fr: 'Direction Aoba-Chūō',
   },
   にじ橋方面: {
+    'ja-Hrkt': 'にじばしほうめん',
     en: 'For Niji Bridge',
     ko: '니지다리 방면',
     'zh-Hans': '往彩虹桥',
     'zh-Hant': '往彩虹橋',
+    de: 'Richtung Niji-Brücke',
+    es: 'Hacia el Puente Niji',
+    fr: 'Direction Pont Niji',
   },
   そらタワー方面: {
+    'ja-Hrkt': 'そらたわーほうめん',
     en: 'For Sora Tower',
     ko: '소라타워 방면',
     'zh-Hans': '往空塔',
     'zh-Hant': '往空塔',
+    de: 'Richtung Sora-Turm',
+    es: 'Hacia la Torre Sora',
+    fr: 'Direction Tour Sora',
   },
   ホテル新月: {
+    'ja-Hrkt': 'ほてるしんげつ',
     en: 'Hotel Shingetsu',
     ko: '호텔 신게쓰',
     'zh-Hans': '新月酒店',
     'zh-Hant': '新月酒店',
+    de: 'Hotel Shingetsu',
+    es: 'Hotel Shingetsu',
+    fr: 'Hôtel Shingetsu',
   },
   みどり丘: {
+    'ja-Hrkt': 'みどりおか',
     en: 'Midori-oka',
     ko: '미도리오카',
     'zh-Hans': '绿丘',
     'zh-Hant': '綠丘',
+    de: 'Midori-oka',
+    es: 'Midori-oka',
+    fr: 'Midori-oka',
+  },
+  // --- Stop headsign values showing upcoming waypoints (kyoto-city-bus pattern) ---
+  'ほし公園・にじ橋': {
+    'ja-Hrkt': 'ほしこうえん・にじばし',
+    en: 'Hoshi Park / Niji Bridge',
+    ko: '호시공원 / 니지다리',
+    'zh-Hans': '星公园 / 彩虹桥',
+    'zh-Hant': '星公園 / 彩虹橋',
+    de: 'Hoshi-Park / Niji-Brücke',
+    es: 'Parque Hoshi / Puente Niji',
+    fr: 'Parc Hoshi / Pont Niji',
+  },
+  'にじ橋・そらタワー': {
+    'ja-Hrkt': 'にじばし・そらたわー',
+    en: 'Niji Bridge / Sora Tower',
+    ko: '니지다리 / 소라타워',
+    'zh-Hans': '彩虹桥 / 空塔',
+    'zh-Hant': '彩虹橋 / 空塔',
+    de: 'Niji-Brücke / Sora-Turm',
+    es: 'Puente Niji / Torre Sora',
+    fr: 'Pont Niji / Tour Sora',
+  },
+  '図書館前・あおば中央駅': {
+    'ja-Hrkt': 'としょかんまえ・あおばちゅうおうえき',
+    en: 'Library / Aoba-Chuo Sta.',
+    ko: '도서관 앞 / 아오바중앙역',
+    'zh-Hans': '图书馆前 / 青叶中央站',
+    'zh-Hant': '圖書館前 / 青葉中央站',
+    de: 'Bibliothek / Aoba-Chūō Bahnhof',
+    es: 'Biblioteca / Estación Aoba-Chūō',
+    fr: "Bibliothèque / Gare d'Aoba-Chūō",
   },
 };
 
@@ -1205,7 +1553,8 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string; stopHeads
       { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
     ],
     bus_park: [
-      { routeId: 'bus_aoba01', headsign: 'にじ橋' },
+      // bus_aoba01 with stop_headsign: shows upcoming waypoints (non-empty trip_headsign + override).
+      { routeId: 'bus_aoba01', headsign: 'にじ橋', stopHeadsign: 'ほし公園・にじ橋' },
       { routeId: 'bus_aoba01', headsign: 'あおば中央駅' },
       // bus_nohd01: trip_headsign empty + stop_headsign present (keio-bus pattern).
       // stop_headsign becomes the effective headsign via GTFS spec.
@@ -1215,14 +1564,22 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string; stopHeads
     ],
     bus_library: [
       { routeId: 'bus_aoba01', headsign: 'にじ橋' },
-      { routeId: 'bus_aoba02', headsign: 'そらタワー' },
+      // bus_aoba02 with stop_headsign: remaining waypoints via Niji Bridge to Sora Tower.
+      { routeId: 'bus_aoba02', headsign: 'そらタワー', stopHeadsign: 'にじ橋・そらタワー' },
       { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },
       { routeId: 'bus_yukkuri01', headsign: 'もり公園前' },
       // bus_nohd01: mid-trip stop_headsign differs from bus_park
       // (kyoto-city-bus pattern: stop_headsign changes as stops pass).
       { routeId: 'bus_nohd01', headsign: '', stopHeadsign: 'もり公園前・にじ橋' },
     ],
-    bus_tower: [{ routeId: 'bus_aoba02', headsign: 'あおば中央駅' }],
+    bus_tower: [
+      // bus_aoba02 return trip with stop_headsign: via Aoba Library to Aoba-Chuo Sta.
+      {
+        routeId: 'bus_aoba02',
+        headsign: 'あおば中央駅',
+        stopHeadsign: '図書館前・あおば中央駅',
+      },
+    ],
     bus_bridge: [
       { routeId: 'bus_aoba01', headsign: 'あおば中央駅' },
       { routeId: 'bus_yukkuri01', headsign: 'あおば中央駅' },

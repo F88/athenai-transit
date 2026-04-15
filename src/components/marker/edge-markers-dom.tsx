@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { EdgeMarker } from '../../types/app/map';
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, Stop } from '../../types/app/transit';
@@ -69,6 +70,7 @@ function EdgeMarkerItem({
   onStopSelected: (stop: Stop) => void;
   onFetchDepartures: (stopId: string) => Promise<StopWithContext | null>;
 }) {
+  const { i18n } = useTranslation();
   const [departures, setDepartures] = useState<StopWithContext | null>(null);
   const [hovered, setHovered] = useState(false);
   const fetchedRef = useRef<string | null>(null);
@@ -169,7 +171,7 @@ function EdgeMarkerItem({
             color: dStyle.textColor,
           }}
         >
-          {formatDistance(marker.distance, false)}
+          {formatDistance(marker.distance, i18n.language, false)}
         </span>
       )}
       {hovered && (

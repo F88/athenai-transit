@@ -69,6 +69,9 @@
     },
     "dataQuality": {
       "noDestination": "Some routes have no destination"
+    },
+    "metrics": {
+      "connectivity": "{{routeCount}} routes, {{freq}} trips, {{stopCount}} stops ({{radius}})"
     }
   },
   "time": {
@@ -84,6 +87,7 @@
     "in": "",
     "minutes": "min",
     "arriving": "",
+    "arrivingAbsolute": "Arr",
     "terminal": "Terminal",
     "noBoarding": "No boarding"
   },
@@ -94,7 +98,8 @@
       "terminal": "Terminal",
       "origin": "Origin",
       "noPickup": "No pickup",
-      "noDropOff": "No drop-off"
+      "noDropOff": "No drop-off",
+      "arriving": "Arr"
     },
     "grid": {
       "row": {

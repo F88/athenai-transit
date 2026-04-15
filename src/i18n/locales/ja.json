@@ -69,6 +69,9 @@
     },
     "dataQuality": {
       "noDestination": "行先が表示されない路線があります"
+    },
+    "metrics": {
+      "connectivity": "{{routeCount}}路線 {{freq}}便 {{stopCount}}のりば ({{radius}})"
     }
   },
   "time": {
@@ -84,6 +87,7 @@
     "in": "あと",
     "minutes": "分",
     "arriving": "",
+    "arrivingAbsolute": "着",
     "terminal": "終点",
     "noBoarding": "乗車不可"
   },
@@ -94,7 +98,8 @@
       "terminal": "終点",
       "origin": "始発",
       "noPickup": "乗×",
-      "noDropOff": "降×"
+      "noDropOff": "降×",
+      "arriving": "着"
     },
     "grid": {
       "row": {

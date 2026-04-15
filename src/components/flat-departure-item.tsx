@@ -1,6 +1,7 @@
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
+import { useTranslation } from 'react-i18next';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { minutesToDate } from '../domain/transit/calendar-utils';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
@@ -56,6 +57,7 @@ export function FlatDepartureItem({
   agency,
   showAgency = false,
 }: FlatDepartureItemProps) {
+  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = info.isVerboseEnabled;
   const { route } = entry.routeDirection;
@@ -104,7 +106,25 @@ export function FlatDepartureItem({
             style={bgColor ? { color: bgColor } : undefined}
           >
             {formatAbsoluteTime(departureTime)}
-            {isTerminal && <span className="text-[10px] font-normal opacity-70">着</span>}
+            {/*
+             * Terminal arrival marker attached to the absolute time (e.g. "22:30着" / "22:30Arr").
+             * Uses a dedicated `departure.arrivingAbsolute` key so the two terminal
+             * marker contexts in this row can be controlled independently:
+             *
+             *  - `departure.arriving` → used by `<RelativeTime>` next to the
+             *    relative time ("5分"). Currently empty in ja/en as an
+             *    intentional opt-out to keep the relative time visually quiet.
+             *  - `departure.arrivingAbsolute` → used here next to the absolute
+             *    time. Populated per locale (ja: "着", en: "Arr", etc.).
+             *    Locale owners can opt out for any language by setting the
+             *    value to an empty string — the component always renders
+             *    the span so i18n drives visibility.
+             */}
+            {isTerminal && (
+              <span className="text-[10px] font-normal opacity-70">
+                {t('departure.arrivingAbsolute')}
+              </span>
+            )}
           </div>
         </div>
 

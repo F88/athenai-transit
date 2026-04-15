@@ -19,6 +19,17 @@ export const DEFAULT_AGENCY_LANG: readonly string[] = ['ja'];
 export const DEFAULT_TIMEZONE = 'Asia/Tokyo';
 
 /**
+ * Radius in meters used to compute per-stop connectivity metrics
+ * (`geo.connectivity[group]` = `{ routeCount, freq, stopCount }`).
+ *
+ * This must stay in sync with the pipeline-side source of truth:
+ * `pipeline/src/lib/pipeline/app-data-v2/build-stop-geo.ts`
+ * (`CONNECTIVITY_RADIUS_M`). Duplicated per the pipeline/webapp
+ * shared-code policy — change both sides together.
+ */
+export const CONNECTIVITY_RADIUS_M = 300;
+
+/**
  * Resolve agency language for subNames sort priority.
  *
  * Looks up the agency by ID and returns `[agency_lang]`.

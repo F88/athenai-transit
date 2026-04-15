@@ -9,6 +9,34 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `formatDistance(meters, unit?)` / `formatDistanceCompact(meters)` (`src/domain/transit/distance.ts`) に `lang: string` 引数を追加し locale 対応化。従来は `toLocaleString('en-US')` をハードコード + km 値を `.toFixed(1)` で locale 非対応に整形していたため、fr / de ユーザに対して decimal / thousands separator が正しく出力されない潜在バグがあった (例: `1500` → en では `1.5km`、de でも `1.5km` になるが正しくは `1,5km`)。新シグネチャ:
+    - `formatDistance(meters, lang, unit = true)`
+    - `formatDistanceCompact(meters, lang)`
+- 全 caller を `i18n.language` 渡しに更新: `distance-badge.tsx` / `edge-markers-dom.tsx` / `edge-markers-canvas.tsx` / `stop-metrics.tsx`。`edge-markers-canvas.tsx` では描画 `useEffect` の deps に `i18n.language` を追加して言語切替時に canvas label が再描画されるようにした。
+- `distance.test.ts` を新シグネチャに更新し、locale-specific 挙動 (`de` → `1,5km`、`ja` → `1,000m` 等) の assertion を 3 件追加。
+- `BottomSheetHeaderProps` に `dataLang: readonly string[]` を追加。`bottom-sheet.tsx` の `BottomSheetHeader` 呼び出しに `dataLang={dataLang}` を 1 行追加。
+- `src/config/transit-defaults.ts` に `CONNECTIVITY_RADIUS_M = 300` を新規追加。pipeline 側の `build-stop-geo.ts` (`CONNECTIVITY_RADIUS_M = 300`) を source of truth とし、pipeline/webapp shared-code policy に従って mirror として配置 (TSDoc に両者の同期が必要である旨を明記)。
+
+### Fixed
+
+- `BottomSheetHeader` の Agency filter PillButton が `agency.agency_short_name` / `agency.agency_long_name` の base 値を直接読んでおり、UI 言語切替に追従しない i18n 漏れを解消。canonical helper `getAgencyDisplayNames` 経由で `dataLang` chain を解決し、label (`agency_short_names`) と tooltip (`agency_long_names`) の両方を言語切替に追従させる。`BottomSheetHeader` に `dataLang: readonly string[]` prop を追加し、`BottomSheet` から透過。`AgencyBadge` / verbose 系と同じ `getAgencyDisplayNames(agency, dataLang, DEFAULT_AGENCY_LANG, 'short')` パターンに揃え、最終フォールバックは `agency.agency_id`。
+- `StopMetrics` の connectivity 表示 (`X路線 Y便 Zのりば (300m)`) がハードコード日本語で、UI 言語切替に追従しない i18n 漏れを解消。`useTranslation()` + `stop.metrics.connectivity` i18n key に移行し、`routeCount` / `freq` / `stopCount` / `radius` を interpolation に渡す。数値は既存の locale-aware 慣習 (`timetable-metadata` / `label-count-badge` 等) に倣い `toLocaleString(i18n.language)` で整形。`stats.freq` も同様に locale 対応。`300m` は `CONNECTIVITY_RADIUS_M` (新規 `src/config/transit-defaults.ts`) から取得し、`formatDistance` の en-US hardcode 問題を回避するため inline で locale-aware に整形する。
+- `TimetableGridEntry` の terminal marker `着` がハードコード日本語だった問題を修正。`timetable.entry.arriving` i18n key を新設 (ja `"着"` / en `"Arr"`) し、`useTranslation` 経由で解決。国際時刻表の業界標準 (Arr/Dep) に準拠。`timetable.entry.*` namespace に配置し、同居する `terminal` / `origin` / `noPickup` / `noDropOff` (これらは pill-style full-word labels) と区別するため component 側に TSDoc コメントを追加。
+- `FlatDepartureItem` の absolute time 直後にあった terminal marker `着` ハードコードを解消。専用 i18n key `departure.arrivingAbsolute` を新設し `useTranslation` 経由で解決 (ja `"着"` / en `"Arr"`)。`departure.arriving` (relative time 用、`<RelativeTime>` 経由、現在 ja/en とも意図的に空文字 opt-out) とは独立した経路で、2 つの terminal marker スロットを locale 側から独立制御できる。空文字を locale 値に設定することで任意の言語で opt-out 可能 — component は常に span を描画し、表示/非表示の判定は完全に i18n 側に委譲。component 側に両 key の使い分けを説明する TSDoc コメントを追加。
+
+### Added
+
+- `bottom-sheet-header.stories.tsx` 新規追加 (22 stories): Basic / Loading / NoStops / NoOperatingStops / Route type filters (SingleRouteType, MultiRouteTypes, AllRouteTypes, RouteTypeHidden, MultipleRouteTypesHidden) / Agency filters (SingleAgency, MultiAgencies, AgencyHidden, LongAgencyName, AgencyNoColor, InternationalAgencies) / View selection (ViewRouteHeadsignSelected, ViewVerboseDescription) / LangComparison / InfoLevel (Simple/Normal/Detailed/Verbose) / KitchenSink 4 レベル。`ALL_PRESENT_ROUTE_TYPES` を `APP_ROUTE_TYPES` から自動生成し、将来の route type 追加に追従する `AllRouteTypes` story を提供。
+- `src/stories/fixtures.ts` 全 13 agencies の i18n data 拡充。`agency_long_names` が全体で空 (`{}`) だった状態を解消し、`ja-Hrkt` (かな) / `de` / `es` / `fr` の追加も含めて `agency_names` / `agency_short_names` / `agency_long_names` の 3 map を埋める。これにより Agency filter fix の `longName` tooltip 経路が stories / KitchenSink で視覚確認できるようになる。
+- `MockRepository` (`src/repositories/mock-repository.ts`) i18n data 大幅拡充:
+    - agencies `AGENCY` / `AGENCY_SORA` に `ja-Hrkt` / `de` / `es` / `fr` 追加。既存 merge-map パターンに合わせて `AGENCY_LONG_NAME_TRANSLATIONS` を新設し、merge ループを `agency_long_names` 対応に拡張。
+    - 21 の `HEADSIGN_TRANSLATIONS` エントリすべてに `ja-Hrkt` / `de` / `es` / `fr` を追加 (9 言語完全網羅)。
+    - 18 の `STOP_NAME_TRANSLATIONS` エントリに `de` / `es` / `fr` を追加 (`sta_central` 以外はこれらが抜けていた)。
+    - 新規 stop_headsign バリエーション 3 種追加 (`ほし公園・にじ橋` at `bus_park`/`bus_aoba01`、`にじ橋・そらタワー` at `bus_library`/`bus_aoba02`、`図書館前・あおば中央駅` at `bus_tower`/`bus_aoba02`)。いずれも 9 言語の i18n 付き。従来は `bus_nohd01` の keio-bus pattern にしか stop_headsign override が無かったが、trip_headsign + stop_headsign 併存パターンも mock で確認できるようになる。
+- `MockRepository` に新規 agency `AGENCY_DRI` (`agency_id: 'dri'`, `Data Research Institute`) を追加。`agency_lang: 'en'` の English-primary operator で、fictional foundation / purple 配色 (#6A1B9A)。agency_names / long_names / short_names は 9 言語を literal で完全記載 (merge-map 不使用)。Issue #47 の duplicate-stop-in-pattern fixture routes 6 件 (`bus_stuck` / `bus_six` / `bus_eight` / `n92` / `kc10a` / `kc10b`) を `mock:aoba` から DRI に移譲し、shape-stress fixture 群を独立 operator として責務分離。
+
 ## [2026.04.15]
 
 ### Added
