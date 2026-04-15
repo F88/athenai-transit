@@ -377,6 +377,7 @@ export const LogicalLongInfoLevelComparison: Story = {
               infoLevel={level}
               dataLang={args.dataLang}
               agency={args.agency}
+              showAgency={false}
             />
           </div>
         ))}

@@ -604,6 +604,7 @@ export const LogicalLongInfoLevelComparison: Story = {
               dataLang={['ja']}
               showRouteTypeIcon
               agency={args.agency}
+              showAgency={false}
             />
           </div>
         ))}
