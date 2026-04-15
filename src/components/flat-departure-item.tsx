@@ -107,7 +107,7 @@ export function FlatDepartureItem({
           >
             {formatAbsoluteTime(departureTime)}
             {/*
-             * Terminal arrival marker attached to the absolute time (e.g. "22:30着").
+             * Terminal arrival marker attached to the absolute time (e.g. "22:30着" / "22:30Arr").
              * Uses a dedicated `departure.arrivingAbsolute` key so the two terminal
              * marker contexts in this row can be controlled independently:
              *
@@ -115,10 +115,10 @@ export function FlatDepartureItem({
              *    relative time ("5分"). Currently empty in ja/en as an
              *    intentional opt-out to keep the relative time visually quiet.
              *  - `departure.arrivingAbsolute` → used here next to the absolute
-             *    time. ja shows "着"; en leaves it empty because the "22:30"
-             *    + 3-char "Arr" combo overflows the tight per-row layout.
-             *    Future locales or a layout redesign can opt back in by
-             *    populating the key.
+             *    time. Populated per locale (ja: "着", en: "Arr", etc.).
+             *    Locale owners can opt out for any language by setting the
+             *    value to an empty string — the component always renders
+             *    the span so i18n drives visibility.
              */}
             {isTerminal && (
               <span className="text-[10px] font-normal opacity-70">
