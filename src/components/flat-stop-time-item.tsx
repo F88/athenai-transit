@@ -64,8 +64,8 @@ export function FlatStopTimeItem({
   const bgColor = route.route_color ? `#${route.route_color}` : undefined;
   const attributes = getTimetableEntryAttributes(entry);
   const isTerminal = attributes.isTerminal;
-  const departureTime = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
-  const diffMs = departureTime.getTime() - now.getTime();
+  const time = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
+  const diffMs = time.getTime() - now.getTime();
   const showRelativeTime = isFirst || diffMs <= 60 * 60 * 1000;
 
   const dt = formatAbsoluteTime(minutesToDate(entry.serviceDate, entry.schedule.departureMinutes));
@@ -94,9 +94,9 @@ export function FlatStopTimeItem({
           {showRelativeTime && (
             <RelativeTime
               now={now}
-              time={departureTime}
+              time={time}
               isTerminal={isTerminal}
-              // Hide prefix for departures >90min to save space.
+              // Hide prefix for time >90min to save space.
               hidePrefix={diffMs > 90 * 60 * 1000}
             />
           )}
@@ -105,7 +105,7 @@ export function FlatStopTimeItem({
             className="text-base font-bold text-[#333] dark:text-gray-100"
             style={bgColor ? { color: bgColor } : undefined}
           >
-            {formatAbsoluteTime(departureTime)}
+            {formatAbsoluteTime(time)}
             {/*
              * Terminal arrival marker attached to the absolute time (e.g. "22:30着" / "22:30Arr").
              * Uses a dedicated `departure.arrivingAbsolute` key so the two terminal
