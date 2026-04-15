@@ -1,5 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { busRoute, busRoute2, noColorRoute, subwayRoute, tramRoute } from '../../stories/fixtures';
+import {
+  busRoute,
+  busRoute2,
+  noColorRoute,
+  routeLong,
+  subwayRoute,
+  tramRoute,
+} from '../../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../../stories/lang-comparison';
 import { RouteBadge } from './route-badge';
 
@@ -124,6 +131,36 @@ export const SizeComparison: Story = {
       />
     </div>
   ),
+};
+
+// --- infoLevel comparison ---
+
+/**
+ * Side-by-side comparison of all `infoLevel` values against the
+ * logical long-form `routeLong` fixture. Place-name-independent —
+ * exercises the full info-level rendering range without being tied
+ * to specific real-world data.
+ */
+export const LogicalLongInfoLevelComparison: Story = {
+  args: { route: routeLong },
+  render: (args) => {
+    const levels = ['simple', 'normal', 'detailed', 'verbose'] as const;
+    return (
+      <div className="flex flex-col gap-3">
+        {levels.map((level) => (
+          <div key={level} className="space-y-1">
+            <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
+            <RouteBadge
+              route={args.route}
+              dataLang={args.dataLang}
+              infoLevel={level}
+              size={args.size}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  },
 };
 
 // --- i18n: lang resolution ---

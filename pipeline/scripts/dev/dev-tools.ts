@@ -48,6 +48,17 @@ const SCRIPTS: AnalysisScript[] = [
     file: './analyze-v2-name-fields.ts',
     description: 'V2 名称系調査対象の source 別件数集計',
   },
+  {
+    name: 'analyze-v2-insights',
+    file: './analyze-v2-insights.ts',
+    description:
+      'V2 InsightsBundle 集計 (serviceGroups / tripPatternStats / tripPatternGeo / stopStats)',
+  },
+  {
+    name: 'analyze-v2-global-insights',
+    file: './analyze-v2-global-insights.ts',
+    description: 'V2 GlobalInsightsBundle 集計 (stopGeo の source 別カバレッジと nr 分布)',
+  },
 ];
 
 const SCRIPT_DIR = import.meta.dirname;

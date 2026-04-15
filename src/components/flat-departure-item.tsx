@@ -10,6 +10,7 @@ import { TripInfo } from './trip-info';
 import { VerboseContextualTimetableEntry } from './verbose/verbose-contextual-timetable-entry';
 import { BaseLabel } from './label/base-label';
 import { TripPositionIndicator } from './label/trip-position-indicator';
+import { JourneyTimeBar } from './journey-time-bar';
 import { useInfoLevel } from '@/hooks/use-info-level';
 
 interface FlatDepartureItemProps {
@@ -27,6 +28,15 @@ interface FlatDepartureItemProps {
   dataLang: readonly string[];
   /** Agency object for badge display at detailed+ info level. */
   agency?: Agency;
+  /**
+   * Whether to render the agency badge inside `TripInfo`. Forwarded
+   * verbatim. Callers that know the stop's full agency set should
+   * compute this as `agencies.length > 1` so the badge only appears
+   * when it actually disambiguates between multiple operators.
+   *
+   * @default false
+   */
+  showAgency?: boolean;
 }
 
 /**
@@ -44,6 +54,7 @@ export function FlatDepartureItem({
   infoLevel,
   dataLang,
   agency,
+  showAgency = false,
 }: FlatDepartureItemProps) {
   const info = useInfoLevel(infoLevel);
   const showVerbose = info.isVerboseEnabled;
@@ -64,13 +75,6 @@ export function FlatDepartureItem({
         <div className="flex min-h-8 w-14 shrink-0 flex-col justify-center text-right leading-none">
           {showVerbose && (
             <>
-              <div className="mb-0.5 flex justify-end gap-0.5 whitespace-nowrap">
-                <BaseLabel
-                  size={'sm'}
-                  value={`${entry.patternPosition.stopIndex + 1} / ${entry.patternPosition.totalStops} stops`}
-                  className="bg-gray-500 whitespace-nowrap text-white"
-                />
-              </div>
               <div className="mb-0.5 flex justify-end gap-0.5 whitespace-nowrap">
                 <BaseLabel
                   size={'xs'}
@@ -96,7 +100,7 @@ export function FlatDepartureItem({
           )}
           {/* Absolute time — always shown alongside relative for precise reference */}
           <div
-            className="text-base text-[#333] dark:text-gray-100"
+            className="text-base font-bold text-[#333] dark:text-gray-100"
             style={bgColor ? { color: bgColor } : undefined}
           >
             {formatAbsoluteTime(departureTime)}
@@ -104,41 +108,62 @@ export function FlatDepartureItem({
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          {/* Trip Position Indicator */}
-          <TripPositionIndicator
-            stopIndex={entry.patternPosition.stopIndex}
-            totalStops={entry.patternPosition.totalStops}
-            // size="md"
-            size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
-            // size="xs"
-            showTrack={info.isNormalEnabled}
-            infoLevel={infoLevel}
-            // route_color may be empty (e.g. mir/mykbus/sbbus). Pass undefined
-            // in that case so TripPositionIndicator falls back to its default
-            // Tailwind colors instead of producing invalid CSS like "#20".
-            trackColor={bgColor ? `${bgColor}20` : undefined}
-            dotColor={bgColor ? `${bgColor}50` : undefined}
-            currentColor={bgColor}
-          />
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+          {/* Trip Hint */}
+          <div className="mb-0.5 flex min-w-0 items-center gap-1">
+            <div className="min-w-0 flex-1">
+              <TripPositionIndicator
+                stopIndex={entry.patternPosition.stopIndex}
+                totalStops={entry.patternPosition.totalStops}
+                // size="md"
+                size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
+                // size="xs"
+                showTrack={info.isNormalEnabled}
+                infoLevel={infoLevel}
+                // route_color may be empty (e.g. mir/mykbus/sbbus). Pass undefined
+                // in that case so TripPositionIndicator falls back to its default
+                // Tailwind colors instead of producing invalid CSS like "#20".
+                trackColor={bgColor ? `${bgColor}20` : undefined}
+                dotColor={bgColor ? `${bgColor}50` : undefined}
+                currentColor={bgColor}
+              />
+            </div>
+            {info.isVerboseEnabled && (
+              <BaseLabel
+                size={'xs'}
+                value={`${entry.patternPosition.stopIndex + 1} / ${entry.patternPosition.totalStops}`}
+                className="shrink-0 bg-gray-500 whitespace-nowrap text-white"
+              />
+            )}
+          </div>
 
-          {showVerbose && (
-            <>
-              <div className="text-[10px] text-gray-500">
-                {entry.insights?.remainingMinutes ?? '-'} / {entry.insights?.totalMinutes ?? '-'}
-              </div>
-              {/* <div className="text-[10px] text-gray-500">{entry.insights?.freq} trips</div> */}
-            </>
+          {info.isDetailedEnabled && (
+            <JourneyTimeBar
+              remainingMinutes={entry.insights?.remainingMinutes}
+              totalMinutes={entry.insights?.totalMinutes}
+              size={info.isDetailedEnabled ? 'md' : 'sm'}
+              color={bgColor}
+              showRMins={info.isVerboseEnabled}
+              showTMins={info.isVerboseEnabled}
+              minsPosition="right"
+              fillDirection="rtl"
+              // fillDirection="ltr"
+              showEmoji={info.isVerboseEnabled}
+            />
           )}
+
           {/* Trip Info */}
-          <TripInfo
-            routeDirection={entry.routeDirection}
-            infoLevel={infoLevel}
-            dataLang={dataLang}
-            showRouteTypeIcon={showRouteTypeIcon}
-            agency={agency}
-            attributes={attributes}
-          />
+          <div className="min-w-0">
+            <TripInfo
+              routeDirection={entry.routeDirection}
+              infoLevel={infoLevel}
+              dataLang={dataLang}
+              showRouteTypeIcon={showRouteTypeIcon}
+              agency={agency}
+              showAgency={showAgency}
+              attributes={attributes}
+            />
+          </div>
         </div>
       </div>
       {/* Verbose data */}

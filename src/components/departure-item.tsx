@@ -24,6 +24,15 @@ interface DepartureItemProps {
   showRouteTypeIcon: boolean;
   /** Agency object for badge display at detailed+ info level. */
   agency?: Agency;
+  /**
+   * Whether to render the agency badge inside `TripInfo`. Forwarded
+   * verbatim. Callers that know the stop's full agency set should
+   * compute this as `agencies.length > 1` so the badge only appears
+   * when it actually disambiguates between multiple operators.
+   *
+   * @default false
+   */
+  showAgency?: boolean;
   /** Maximum number of departures to display. Defaults to 3. */
   maxDisplay?: number;
   onShowTimetable?: (routeId: string, headsign: string) => void;
@@ -36,6 +45,7 @@ export function DepartureItem({
   dataLang,
   showRouteTypeIcon,
   agency,
+  showAgency = false,
   maxDisplay = 3,
   onShowTimetable,
 }: DepartureItemProps) {
@@ -76,10 +86,13 @@ export function DepartureItem({
           dataLang={dataLang}
           showRouteTypeIcon={showRouteTypeIcon}
           agency={agency}
+          showAgency={showAgency}
         />
       </div>
       <div className="flex items-center gap-3 pl-1">
-        {/* Relative time hint — easy to scan at a glance (e.g. "あと5分") */}
+        {/* Relative time hint — easy to scan at a glance (e.g. "あと5分").
+            Kept as a non-wrapping single unit so the prefix stays glued to
+            the value even on narrow screens. */}
         {first && (
           <RelativeTime
             departureTime={first}
@@ -89,27 +102,35 @@ export function DepartureItem({
             hidePrefix={diffMs > 90 * 60 * 1000}
           />
         )}
-        {/* Absolute times for all entries including the first.
-            The first entry intentionally appears in both relative and absolute
-            because relative alone (e.g. "あと400分") is hard to interpret.
-            Per Issue #47 / Alt F, each time renders its own per-departure
-            attribute labels (TERM/ORIG/noPickup/noDropOff) inline. */}
-        {displayEntries.map((entry, i) => (
-          <span
-            key={i}
-            className="inline-flex items-baseline gap-0.5 text-sm text-[#757575] dark:text-gray-400"
-          >
-            {formatAbsoluteTime(displayTimes[i])}
-            <TimetableEntryAttributesLabels
-              attributes={getTimetableEntryAttributes(entry)}
-              size="xs"
-              isDisplayTerminal
-              isDisplayOrigin
-              isDisplayPickupUnavailable
-              isDisplayDropOffUnavailable
-            />
-          </span>
-        ))}
+        {/* Absolute times wrapper — own flex-wrap container so the n
+            absolute time entries can fold onto a second row when the
+            container is narrow, while RelativeTime and the timetable
+            button stay on the original row. `min-w-0 flex-1` lets it
+            consume the remaining inline space and shrink to allow
+            wrapping. */}
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-0.5">
+          {/* Absolute times for all entries including the first.
+              The first entry intentionally appears in both relative and absolute
+              because relative alone (e.g. "あと400分") is hard to interpret.
+              Per Issue #47 / Alt F, each time renders its own per-departure
+              attribute labels (TERM/ORIG/noPickup/noDropOff) inline. */}
+          {displayEntries.map((entry, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-0.5 text-sm font-bold whitespace-nowrap text-[#757575] dark:text-gray-400"
+            >
+              {formatAbsoluteTime(displayTimes[i])}
+              <TimetableEntryAttributesLabels
+                attributes={getTimetableEntryAttributes(entry)}
+                size="xs"
+                isDisplayTerminal
+                isDisplayOrigin
+                isDisplayPickupUnavailable
+                isDisplayDropOffUnavailable
+              />
+            </span>
+          ))}
+        </div>
         {onShowTimetable && (
           <button
             type="button"

@@ -7,8 +7,11 @@ import {
   headsignKyotoLongShortJa,
   headsignMinowabashi,
   headsignNakano,
+  routeLong,
   stopHeadsignDemachiyanagi,
+  stopHeadsignLong,
   stopHeadsignMusashiKoganeiSouth,
+  tripHeadsignLong,
 } from '../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
 import { TripInfo } from './trip-info';
@@ -103,6 +106,18 @@ const stopOverridesTripRd = createRouteDirection({
   stopHeadsign: stopHeadsignDemachiyanagi,
 });
 
+/**
+ * Logical long-form RouteDirection — uses the 9-language fixtures
+ * from `src/stories/fixtures.ts` so every lang row in
+ * {@link LangComparison} gets a populated trip headsign, stop
+ * headsign, and route long name.
+ */
+const logicalLongRd = createRouteDirection({
+  route: routeLong,
+  tripHeadsign: tripHeadsignLong,
+  stopHeadsign: stopHeadsignLong,
+});
+
 const emptyAttributes: TimetableEntryAttributes = {
   isTerminal: false,
   isOrigin: false,
@@ -119,12 +134,14 @@ const meta = {
     dataLang: ['ja'],
     showRouteTypeIcon: true,
     agency,
+    showAgency: false,
     attributes: emptyAttributes,
     size: 'default',
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     showRouteTypeIcon: { control: 'boolean' },
+    showAgency: { control: 'boolean' },
     size: { control: 'inline-radio', options: ['sm', 'default'] },
     attributes: { control: 'object' },
   },
@@ -150,6 +167,25 @@ export const TramRoute: Story = {
 
 export const KyotoBusRoute: Story = {
   args: { routeDirection: kyotoBusRd, agency: kyotoAgency },
+};
+
+// --- Agency badge ---
+
+/**
+ * Visualizes the `showAgency={true}` rendering path. Conceptually
+ * this represents the multi-operator-stop scenario: when the
+ * underlying stop has more than one agency, `nearby-stop.tsx` opts
+ * in by passing `showAgency={agencies.length > 1}`, and the badge
+ * appears to disambiguate which operator runs this trip.
+ *
+ * Single-operator stops (the common case) intentionally render
+ * without the agency badge to avoid redundant noise.
+ */
+export const MultiAgenciesStop: Story = {
+  args: {
+    showAgency: true,
+    infoLevel: 'detailed',
+  },
 };
 
 // --- Attributes ---
@@ -299,11 +335,53 @@ export const StopOverridesTripVerbose: Story = {
   args: { routeDirection: stopOverridesTripRd, agency: kyotoAgency, infoLevel: 'verbose' },
 };
 
+// --- infoLevel comparison ---
+
+/**
+ * Side-by-side comparison of all `infoLevel` values against the
+ * logical long-form fixtures (`routeLong`, `tripHeadsignLong`,
+ * `stopHeadsignLong`). Place-name-independent — exercises the full
+ * info-level rendering range without being tied to specific
+ * real-world data.
+ */
+export const LogicalLongInfoLevelComparison: Story = {
+  args: { routeDirection: logicalLongRd, agency },
+  render: (args) => {
+    const levels = ['simple', 'normal', 'detailed', 'verbose'] as const;
+    return (
+      <div className="flex flex-col gap-3">
+        {levels.map((level) => (
+          <div key={level} className="space-y-1">
+            <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
+            <TripInfo
+              routeDirection={args.routeDirection}
+              infoLevel={level}
+              dataLang={args.dataLang}
+              showRouteTypeIcon={args.showRouteTypeIcon}
+              agency={args.agency}
+              attributes={args.attributes}
+              size={args.size}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+
 // --- i18n: lang resolution ---
 
-/** All languages side by side. */
+/**
+ * All languages side by side.
+ *
+ * Uses the logical long-form fixtures (`routeLong`,
+ * `tripHeadsignLong`, `stopHeadsignLong`) so every supported
+ * language row is guaranteed to have populated translations for
+ * both the trip headsign and the stop headsign, exercising the
+ * wrap / truncation paths consistently per language.
+ */
 export const LangComparison: Story = {
-  args: { routeDirection: kyotoBusRd, agency: kyotoAgency },
+  args: { routeDirection: logicalLongRd, agency },
   render: (args) => (
     <div className="flex flex-col gap-3">
       {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (

@@ -1,5 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ContextualTimetableEntry, StopServiceType } from '../types/app/transit-composed';
+import type { InfoLevel } from '../types/app/settings';
+import type {
+  ContextualTimetableEntry,
+  RouteDirection,
+  StopServiceType,
+} from '../types/app/transit-composed';
 import type { Agency, Route } from '../types/app/transit';
 import {
   agencyTobus as agency,
@@ -13,9 +18,17 @@ import {
   headsignShinjuku,
   headsignWaseda,
   noColorRoute,
+  routeDirectionHeadsignBoth,
+  routeDirectionHeadsignBothMatching,
+  routeDirectionHeadsignNeither,
+  routeDirectionHeadsignStopOnly,
+  routeDirectionHeadsignTripOnly,
+  routeLong,
   stopHeadsignDemachiyanagi,
+  stopHeadsignLong,
   stopHeadsignMusashiKoganeiSouth,
   tramRoute,
+  tripHeadsignLong,
 } from '../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
 import { FlatDepartureItem } from './flat-departure-item';
@@ -35,9 +48,16 @@ function createEntry(
     stopIndex: number;
     totalStops: number;
     direction: 0 | 1;
+    remainingMinutes: number;
+    totalMinutes: number;
+    freq: number;
   }> = {},
 ): ContextualTimetableEntry {
   const depMin = overrides.departureMinutes ?? 870; // 14:30
+  const totalMinutes = overrides.totalMinutes ?? 45;
+  // Default remaining mirrors the default stopIndex (3) against
+  // totalStops (15): roughly 80% of the trip still left to ride.
+  const remainingMinutes = overrides.remainingMinutes ?? Math.round(totalMinutes * 0.8);
   return {
     schedule: {
       departureMinutes: depMin,
@@ -45,7 +65,13 @@ function createEntry(
     },
     routeDirection: {
       route: overrides.route ?? baseRoute,
-      tripHeadsign: { name: overrides.headsign ?? '中野駅', names: {} },
+      // Default to the logical `tripHeadsignLong` fixture so detailed /
+      // verbose info levels see full i18n data without pinning the
+      // story to any specific real-world place. A string override
+      // still works for quick variants (produces an empty `names`
+      // map, single-language only).
+      tripHeadsign:
+        overrides.headsign != null ? { name: overrides.headsign, names: {} } : tripHeadsignLong,
       ...(overrides.stopHeadsign != null
         ? { stopHeadsign: { name: overrides.stopHeadsign, names: {} } }
         : {}),
@@ -60,6 +86,11 @@ function createEntry(
       totalStops: overrides.totalStops ?? 15,
       isTerminal: overrides.isTerminal ?? false,
       isOrigin: overrides.isOrigin ?? false,
+    },
+    insights: {
+      remainingMinutes,
+      totalMinutes,
+      freq: overrides.freq ?? 30,
     },
     serviceDate: new Date('2026-03-30T00:00:00'),
   };
@@ -145,17 +176,94 @@ export const EmptyHeadsign: Story = {
   args: { entry: createEntry({ headsign: '' }) },
 };
 
-// --- Info levels ---
+// --- Headsign state axis ---
 
-export const Detailed: Story = {
-  args: { infoLevel: 'detailed', agency },
+/**
+ * All five logical headsign states stacked, each rendered with the
+ * same base entry. Uses the place-name-independent logical fixtures
+ * (`routeDirectionHeadsignTripOnly` etc.) so each row reads as a
+ * structural test case, not a specific trip.
+ */
+export const HeadsignPatterns: Story = {
+  args: {
+    agency,
+    entry: createEntry(),
+    infoLevel: 'detailed',
+  },
+  render: (args) => {
+    const patterns: { label: string; routeDirection: RouteDirection }[] = [
+      { label: 'trip only (classic)', routeDirection: routeDirectionHeadsignTripOnly },
+      { label: 'stop only (keio-bus pattern)', routeDirection: routeDirectionHeadsignStopOnly },
+      { label: 'both (different)', routeDirection: routeDirectionHeadsignBoth },
+      { label: 'both (matching, redundant)', routeDirection: routeDirectionHeadsignBothMatching },
+      { label: 'neither (fallback to route name)', routeDirection: routeDirectionHeadsignNeither },
+    ];
+    return (
+      <div className="flex max-w-sm flex-col gap-4">
+        {patterns.map((p) => (
+          <div key={p.label}>
+            <div className="mb-1 text-xs font-semibold text-gray-500">{p.label}</div>
+            <div className="rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
+              <FlatDepartureItem
+                entry={{ ...args.entry, routeDirection: p.routeDirection }}
+                now={args.now}
+                isFirst={args.isFirst}
+                showRouteTypeIcon={args.showRouteTypeIcon}
+                infoLevel={args.infoLevel}
+                dataLang={args.dataLang}
+                agency={args.agency}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  },
 };
 
-export const Verbose: Story = {
+// --- Info levels ---
+
+/**
+ * All four info levels stacked so the progressive disclosure is
+ * easy to compare at a glance. Each level renders the same entry —
+ * only `infoLevel` differs — so the additive features (trip position
+ * indicator, journey time bar, verbose dump, etc.) become visible
+ * row by row.
+ *
+ * Uses the `routeDirectionHeadsignBoth` logical fixture so both the
+ * trip headsign and stop headsign are populated, exercising the
+ * full headsign-rendering path at every info level.
+ */
+export const InfoLevelComparison: Story = {
   args: {
-    infoLevel: 'verbose',
     agency,
-    entry: createEntry({ direction: 0 }),
+    entry: {
+      ...createEntry({ direction: 0 }),
+      routeDirection: routeDirectionHeadsignBoth,
+    },
+  },
+  render: (args) => {
+    const levels: InfoLevel[] = ['simple', 'normal', 'detailed', 'verbose'];
+    return (
+      <div className="flex max-w-sm flex-col gap-4">
+        {levels.map((level) => (
+          <div key={level}>
+            <div className="mb-1 text-xs font-semibold text-gray-500">infoLevel={level}</div>
+            <div className="rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
+              <FlatDepartureItem
+                entry={args.entry}
+                now={args.now}
+                isFirst={args.isFirst}
+                showRouteTypeIcon={args.showRouteTypeIcon}
+                infoLevel={level}
+                dataLang={args.dataLang}
+                agency={args.agency}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   },
 };
 
@@ -164,7 +272,7 @@ export const Verbose: Story = {
 /** Multiple flat items as they appear in the stop view. */
 export const MultipleItems: Story = {
   args: { entry: createEntry() },
-  render: () => {
+  render: (args) => {
     const entries = [
       createEntry({ departureMinutes: 870, headsign: '中野駅' }),
       createEntry({ departureMinutes: 885, route: greenRoute, headsign: '新橋駅' }),
@@ -178,11 +286,11 @@ export const MultipleItems: Story = {
           <FlatDepartureItem
             key={i}
             entry={entry}
-            now={now}
-            isFirst={i === 0}
-            showRouteTypeIcon
-            infoLevel="normal"
-            dataLang={['ja']}
+            now={args.now}
+            isFirst={args.isFirst && i === 0}
+            showRouteTypeIcon={args.showRouteTypeIcon}
+            infoLevel={args.infoLevel}
+            dataLang={args.dataLang}
           />
         ))}
       </div>
@@ -231,15 +339,73 @@ export const StopOverridesTrip: Story = {
   },
 };
 
+// --- infoLevel comparison ---
+
+/**
+ * Side-by-side comparison of all `infoLevel` values against the
+ * logical long-form fixtures (`routeLong`, `tripHeadsignLong`,
+ * `stopHeadsignLong`). Place-name-independent — exercises the full
+ * info-level rendering range without being tied to specific
+ * real-world data.
+ */
+export const LogicalLongInfoLevelComparison: Story = {
+  args: {
+    agency,
+    entry: {
+      ...createEntry({ departureMinutes: 870 }),
+      routeDirection: {
+        route: routeLong,
+        tripHeadsign: tripHeadsignLong,
+        stopHeadsign: stopHeadsignLong,
+        direction: 0,
+      },
+    },
+    // showRouteTypeIcon: true,
+  },
+  render: (args) => {
+    const levels: InfoLevel[] = ['simple', 'normal', 'detailed', 'verbose'];
+    return (
+      <div className="flex flex-col gap-3">
+        {levels.map((level) => (
+          <div key={level} className="space-y-1">
+            <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
+            <FlatDepartureItem
+              entry={args.entry}
+              now={args.now}
+              isFirst={args.isFirst}
+              showRouteTypeIcon={level === 'verbose'}
+              infoLevel={level}
+              dataLang={args.dataLang}
+              agency={args.agency}
+              showAgency={false}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+
+// --- i18n: lang resolution ---
+
+/**
+ * All supported languages stacked so i18n behaviour is easy to verify
+ * at a glance. Uses the logical long-form fixtures
+ * (`tripHeadsignLong`, `stopHeadsignLong`, `routeLong`) so every
+ * language row gets a populated translation and the stop/trip
+ * headsign overflow paths are exercised per language.
+ */
 export const LangComparison: Story = {
   args: {
     agency,
     entry: {
-      ...createEntry({ route: greenRoute, departureMinutes: 870 }),
-      routeDirection: createRouteDirection({
-        route: greenRoute,
-        tripHeadsign: headsignShimbashiEkimae,
-      }),
+      ...createEntry({ departureMinutes: 870 }),
+      routeDirection: {
+        route: routeLong,
+        tripHeadsign: tripHeadsignLong,
+        stopHeadsign: stopHeadsignLong,
+        direction: 0,
+      },
     },
     infoLevel: 'normal',
   },
@@ -377,18 +543,18 @@ const kitchenSinkItems: {
 ];
 
 export const KitchenSink: Story = {
-  args: { entry: createEntry() },
-  render: () => (
+  args: { entry: createEntry(), infoLevel: 'normal' },
+  render: (args) => (
     <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
       {kitchenSinkItems.map(({ entry, agency: a, icon }, i) => (
         <FlatDepartureItem
           key={i}
           entry={entry}
-          now={now}
-          isFirst={i === 0}
-          showRouteTypeIcon={icon ?? false}
-          infoLevel="detailed"
-          dataLang={['ja']}
+          now={args.now}
+          isFirst={args.isFirst && i === 0}
+          showRouteTypeIcon={args.showRouteTypeIcon || (icon ?? false)}
+          infoLevel={args.infoLevel}
+          dataLang={args.dataLang}
           agency={a}
         />
       ))}

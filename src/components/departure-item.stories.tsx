@@ -10,14 +10,17 @@ import {
   emptyHeadsign,
   headsignKyotoLong,
   headsignMinowabashi,
-  headsignNakano,
   headsignShimbashiEkimae,
   headsignShinjuku,
   headsignWaseda,
   noColorRoute,
+  routeLong,
   stopHeadsignDemachiyanagi,
+  stopHeadsignLong,
   stopHeadsignMusashiKoganeiSouth,
   tramRoute,
+  tripHeadsignLong,
+  tripHeadsignShort,
 } from '../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
 import { fn } from 'storybook/test';
@@ -38,9 +41,14 @@ function createEntry(
     stopIndex: number;
     totalStops: number;
     direction: 0 | 1;
+    remainingMinutes: number;
+    totalMinutes: number;
+    freq: number;
   }> = {},
 ): ContextualTimetableEntry {
   const depMin = overrides.departureMinutes ?? 870; // 14:30
+  const totalMinutes = overrides.totalMinutes ?? 45;
+  const remainingMinutes = overrides.remainingMinutes ?? Math.round(totalMinutes * 0.8);
   return {
     schedule: {
       departureMinutes: depMin,
@@ -64,7 +72,78 @@ function createEntry(
       isTerminal: overrides.isTerminal ?? false,
       isOrigin: overrides.isOrigin ?? false,
     },
+    insights: {
+      remainingMinutes,
+      totalMinutes,
+      freq: overrides.freq ?? 30,
+    },
     serviceDate: new Date('2026-03-30T00:00:00'),
+  };
+}
+
+/**
+ * Create a ContextualTimetableEntry using the logical long-form
+ * fixtures (`routeLong`, `tripHeadsignLong`, `stopHeadsignLong`).
+ * Intended for place-name-independent stories that exercise
+ * structural/length characteristics.
+ */
+function createLogicalLongEntry(
+  overrides: Partial<{
+    arrivalMinutes: number;
+    departureMinutes: number;
+    freq: number;
+    totalMinutes: number;
+    remainingMinutes: number;
+    isTerminal: boolean;
+    isOrigin: boolean;
+    pickupType: StopServiceType;
+    dropOffType: StopServiceType;
+  }> = {},
+): ContextualTimetableEntry {
+  return {
+    ...createEntry({
+      arrivalMinutes: overrides.arrivalMinutes,
+      departureMinutes: overrides.departureMinutes,
+      totalMinutes: overrides.totalMinutes,
+      remainingMinutes: overrides.remainingMinutes,
+      freq: overrides.freq,
+      isTerminal: overrides.isTerminal,
+      isOrigin: overrides.isOrigin,
+      pickupType: overrides.pickupType,
+      dropOffType: overrides.dropOffType,
+    }),
+    routeDirection: createRouteDirection({
+      route: routeLong,
+      tripHeadsign: tripHeadsignLong,
+      stopHeadsign: stopHeadsignLong,
+    }),
+  };
+}
+
+/**
+ * Create a ContextualTimetableEntry using the short-form logical
+ * fixtures — short route name, short trip headsign, no stop
+ * headsign. Counterpart to {@link createLogicalLongEntry}.
+ */
+function createLogicalShortEntry(
+  overrides: Partial<{
+    departureMinutes: number;
+    freq: number;
+    totalMinutes: number;
+    remainingMinutes: number;
+  }> = {},
+): ContextualTimetableEntry {
+  return {
+    ...createEntry({
+      departureMinutes: overrides.departureMinutes,
+      totalMinutes: overrides.totalMinutes,
+      remainingMinutes: overrides.remainingMinutes,
+      freq: overrides.freq,
+    }),
+    routeDirection: createRouteDirection({
+      route: baseRoute,
+      tripHeadsign: tripHeadsignShort,
+    }),
   };
 }
 
@@ -325,27 +404,32 @@ export const StopOverridesTrip: Story = {
   },
 };
 
+/**
+ * All languages side by side using the logical long-form fixtures
+ * (`routeLong`, `tripHeadsignLong`, `stopHeadsignLong`). Every
+ * language row gets populated trip + stop headsigns and a verbose
+ * route_long_name so wrap / truncation behaviour is exercised
+ * consistently per language. A second entry uses `tripHeadsignShort`
+ * to show the short-form side by side.
+ */
 export const LangComparison: Story = {
   args: {
     agency,
     entries: [
       {
-        ...createEntry({ route: greenRoute, departureMinutes: 870 }),
+        ...createEntry({ departureMinutes: 870 }),
         routeDirection: createRouteDirection({
-          route: greenRoute,
-          tripHeadsign: headsignShimbashiEkimae,
+          route: routeLong,
+          tripHeadsign: tripHeadsignLong,
+          stopHeadsign: stopHeadsignLong,
         }),
       },
       {
-        ...createEntry({ route: greenRoute, departureMinutes: 885 }),
+        ...createEntry({ departureMinutes: 885 }),
         routeDirection: createRouteDirection({
-          route: greenRoute,
-          tripHeadsign: headsignShimbashiEkimae,
+          route: routeLong,
+          tripHeadsign: tripHeadsignShort,
         }),
-      },
-      {
-        ...createEntry({ route: baseRoute, departureMinutes: 900 }),
-        routeDirection: createRouteDirection({ route: baseRoute, tripHeadsign: headsignNakano }),
       },
     ],
     infoLevel: 'normal',
@@ -493,6 +577,136 @@ const kitchenSinkGroups: { entries: ContextualTimetableEntry[]; agency?: Agency 
     agency,
   },
 ];
+
+// --- Logical data (place-name-independent) ---
+
+/**
+ * Side-by-side comparison of all `infoLevel` values against the
+ * logical long-form fixtures. Place-name-independent alternative to
+ * {@link Detailed} / {@link Verbose} stories.
+ */
+export const LogicalLongInfoLevelComparison: Story = {
+  args: {
+    // Vary per-entry attributes so the inline `TimetableEntryAttributesLabels`
+    // exercises every supported flag (terminal / origin / pickup× / dropoff×)
+    // across the displayed rows:
+    //   1st: plain                      → no labels
+    //   2nd: origin only                → 始発
+    //   3rd: kitchen sink               → 始発 + 終点 + 乗× + 降×
+    //
+    // The 3rd row deliberately combines all four flags to verify they
+    // can coexist visually within a single row without overflowing or
+    // overlapping the time text. Use `Detailed` / `Verbose` for the
+    // single-flag-per-row variant if needed.
+    entries: [
+      createLogicalLongEntry({
+        departureMinutes: 870,
+        isOrigin: false,
+        isTerminal: false,
+        pickupType: 0,
+        dropOffType: 0,
+      }),
+      createLogicalLongEntry({
+        arrivalMinutes: 855,
+        departureMinutes: 855,
+        isOrigin: true,
+        isTerminal: false,
+        pickupType: 0,
+        dropOffType: 0,
+      }),
+      createLogicalLongEntry({
+        arrivalMinutes: 900,
+        departureMinutes: 900,
+        isOrigin: true,
+        isTerminal: true,
+        pickupType: 1,
+        dropOffType: 1,
+      }),
+    ],
+    agency: longAgency,
+    onShowTimetable: fn(),
+  },
+  render: (args) => {
+    const levels = ['simple', 'normal', 'detailed', 'verbose'] as const;
+    return (
+      <div className="flex flex-col gap-3">
+        {levels.map((level) => (
+          <div key={level} className="space-y-1">
+            <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
+            <DepartureItem
+              entries={args.entries}
+              now={now}
+              infoLevel={level}
+              dataLang={['ja']}
+              showRouteTypeIcon
+              agency={args.agency}
+              showAgency={false}
+              onShowTimetable={args.onShowTimetable}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+
+/**
+ * Logical kitchen sink — multiple groups built from logical
+ * fixtures. Mirrors the structure of {@link KitchenSink} but uses
+ * place-name-independent data so it tests layout characteristics
+ * rather than specific names.
+ */
+export const LogicalKitchenSink: Story = {
+  args: { entries: [createLogicalShortEntry()] },
+  render: () => {
+    const groups: { entries: ContextualTimetableEntry[]; agency?: Agency }[] = [
+      // Short form — 3 entries
+      {
+        entries: [
+          createLogicalShortEntry({ departureMinutes: 870 }),
+          createLogicalShortEntry({ departureMinutes: 885 }),
+          createLogicalShortEntry({ departureMinutes: 900 }),
+        ],
+        agency,
+      },
+      // Long form — 3 entries (trip + stop headsign)
+      {
+        entries: [
+          createLogicalLongEntry({ departureMinutes: 872 }),
+          createLogicalLongEntry({ departureMinutes: 892 }),
+          createLogicalLongEntry({ departureMinutes: 912 }),
+        ],
+        agency: longAgency,
+      },
+      // Long form — single terminal entry
+      {
+        entries: [createLogicalLongEntry({ departureMinutes: 880, isTerminal: true })],
+        agency: longAgency,
+      },
+      // Long form — drop-off only
+      {
+        entries: [createLogicalLongEntry({ departureMinutes: 884, pickupType: 1 })],
+        agency: longAgency,
+      },
+    ];
+    return (
+      <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
+        {groups.map((group, i) => (
+          <DepartureItem
+            key={i}
+            entries={group.entries}
+            now={now}
+            infoLevel="detailed"
+            dataLang={['ja']}
+            showRouteTypeIcon
+            agency={group.agency}
+            onShowTimetable={fn()}
+          />
+        ))}
+      </div>
+    );
+  },
+};
 
 export const KitchenSink: Story = {
   args: { entries: threeEntries },

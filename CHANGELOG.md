@@ -9,6 +9,31 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `computeJourneyTime` 純粋関数 (`src/domain/transit/journey-time.ts`): trip の remaining / total minutes から bar 描画用の値 (sanitized minutes、progress ratio、display 用の rounded values) を計算する domain helper。Result-type API (`{ ok: true, value } | { ok: false, reason }`) で `no-total` / `invalid-total` の失敗を呼び出し側が単一 gate で扱える。sub-minute total の degenerate 表示 (`0 / 0`) を回避するため `displayTotalMinutes = Math.max(1, Math.round(...))` で clamp。pipeline 由来の小数 minutes に対する 100% fill 時のラベル整合性も担保。エッジケース 40 tests 追加。
+- `JourneyTimeBar` 新規コンポーネント (`src/components/journey-time-bar.tsx`): trip の remaining / total minutes を視覚化する progress bar。`size` (sm/md/lg/xl)、`color` (route_color hex)、`border`、`fillDirection` (ltr/rtl)、`minsPosition` (left/right/top/bottom)、`showRMins` / `showTMins`、`rTimeLabel` / `tMinsLabel` の柔軟な props。`maxMinutes` (default 120) で長距離 trip の bar 幅を clamp。`showEmoji` (⏳) prop 追加 — verbose info level での at-a-glance 識別用。`shadcn/ui` の `Progress` primitive を採用。Storybook stories に 12+ ケース (Sizes / Colors / Borders / FillDirections / LabelCombinations / KitchenSink 等)。
+- `FlatDepartureItem` の `infoLevel >= detailed` で `JourneyTimeBar` を表示。verbose 時は分数ラベル (現在 / 合計 mins) も併記し、route の bgColor を bar fill にも引き継ぐ。
+- `TripInfo` に `showAgency?: boolean` prop (default `false`) を追加。agency badge は `info.isDetailedEnabled && agency && showAgency` でレンダリング。`FlatDepartureItem` / `DepartureItem` にも同名 pass-through prop を追加し、`nearby-stop.tsx` で `showAgency = info.isVerboseEnabled || agencies.length > 1` を計算して渡す。current dataset では multi-operator stop が稀なため、single-operator stop (大半) では agency badge は冗長 noise として非表示になる。
+- `TripPositionIndicator` の verbose 時に 🚏 emoji prefix を追加 (at-a-glance 識別用)。
+- 論理的 (place-name-independent) な long/short fixtures を `src/stories/fixtures.ts` に追加: `routeLong` / `tripHeadsignLong` / `tripHeadsignShort` / `stopHeadsignLong` 等、9 言語の翻訳を持つ抽象 placeholder データ (Alpha Park / Bravo Station 等)。実在地名に依存せず wrap / truncation / multi-lang fallback の構造的検証を行うため。
+- `LogicalLongInfoLevelComparison` story を全主要コンポーネントに標準化追加 (DepartureItem / FlatDepartureItem / TripInfo / HeadsignBadge / RouteBadge / StopSummary / StopMarkersDom)。4 つの `infoLevel` (simple/normal/detailed/verbose) を縦並びで一覧表示し、論理的 long-form fixtures を使って full-data 状態での rendering を視覚的に確認できる。
+- `DepartureItem.LogicalLongInfoLevelComparison` を per-departure attribute label catalog として拡張: 5 entries で `TimetableEntryAttributesLabels` の全フラグ (plain / terminal / origin / pickup× / dropoff×) を網羅。
+- `StopMarkersDom.LangComparison` 新規追加 (9 言語の地図インスタンスを stack)。
+- `TripInfo.MultiAgenciesStop` story 追加 (`showAgency=true` 時の rendering 確認)。
+- pipeline dev tools 2 件を追加: `pipeline/scripts/dev/analyze-v2-insights.ts` (per-source `InsightsBundle` 解析: `tripPatternStats` / `serviceGroups` / `tripPatternGeo` / `stopStats` の overview + distribution)、`pipeline/scripts/dev/analyze-v2-global-insights.ts` (`GlobalInsightsBundle` の `stopGeo` 解析: nr / wp / cn 分布、isolation buckets、hub counts、Top-N leaderboards)。dev-lib pattern (pure analysis + formatter + thin CLI wrapper) に従い、`dev-tools.ts` / `README.md` も更新。smoke test 追加。
+
+### Changed
+
+- `DepartureItem` の絶対時刻 row を `flex-wrap` 対応に変更。`RelativeTime` は単一 unit として非折り返しのまま、n 個の絶対時刻 entry 群を新規 `<div>` でラップして内側で wrap 可能に (`min-w-0 flex-1 flex-wrap`)。各時刻 span は `whitespace-nowrap` で「時刻 + attribute label」が分離しない。狭幅で時刻が右側に overflow して clip されていた問題を解消。
+- `DepartureItem` の各時刻 span を `items-baseline` から `items-center` に変更。attribute label pill が時刻テキストに対してベースラインではなく縦中央で揃うように調整。
+- `TimetableEntryAttributesLabels` の表示順を入れ替え: origin (始発) を terminal (終点) より先にレンダリング。両フラグが立つ場合に始発状態を先に読める自然な順序に。
+- `JourneyTimeBar` 内部の horizontal / vertical layout 分岐を統一 (`isHorizontal` フラグでクラス選択)。重複していた wrapper ロジックを 1 か所に集約。
+
+### Fixed
+
+- `FlatDepartureItem` の verbose stop 位置ラベル (`stopIndex / totalStops`) のレイアウトを微調整。`TripPositionIndicator` の右隣に inline 配置するように変更し、専用 row を廃止。
+
 ## [2026.04.14]
 
 ### Changed

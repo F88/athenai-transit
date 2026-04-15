@@ -69,8 +69,17 @@ interface TripInfoProps {
   dataLang: readonly string[];
   /** Whether to show the route type emoji icon. */
   showRouteTypeIcon?: boolean;
-  /** Agency operating this trip. Shown at detailed+ info level. */
+  /** Agency operating this trip. Rendered only when `showAgency` is true. */
   agency?: Agency;
+  /**
+   * Whether to render the agency badge. The badge is still gated by
+   * `infoLevel >= detailed` and the presence of `agency`, but this
+   * flag lets callers opt out entirely (e.g. in compact contexts
+   * where the agency would compete with the route badge for space).
+   *
+   * @default false
+   */
+  showAgency?: boolean;
   /**
    * Per-entry boolean attributes (terminal / origin / pickup-unavailable /
    * drop-off-unavailable). When provided, rendered via the shared
@@ -106,6 +115,7 @@ export function TripInfo({
   dataLang,
   showRouteTypeIcon = false,
   agency,
+  showAgency = false,
   attributes,
   size = 'default',
   ellipsisHeadsign = false,
@@ -173,7 +183,7 @@ export function TripInfo({
         size={size === 'sm' ? 'sm' : undefined}
         disableVerbose={true}
       />
-      {info.isDetailedEnabled && agency && (
+      {info.isDetailedEnabled && agency && showAgency && (
         <AgencyBadge
           size="xs"
           agency={agency}

@@ -39,18 +39,18 @@ export function TimetableEntryAttributesLabels({
 
   return (
     <span className="inline-flex items-baseline gap-0.5">
-      {showTerminal && (
-        <BaseLabel
-          size={size}
-          value={t('timetable.entry.terminal')}
-          className="bg-gray-500 text-white"
-        />
-      )}
       {showOrigin && (
         <BaseLabel
           size={size}
           value={t('timetable.entry.origin')}
           className="bg-blue-500 text-white"
+        />
+      )}
+      {showTerminal && (
+        <BaseLabel
+          size={size}
+          value={t('timetable.entry.terminal')}
+          className="bg-gray-500 text-white"
         />
       )}
       {showPickupUnavailable && (
