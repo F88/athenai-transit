@@ -273,7 +273,7 @@ export const InfoLevelComparison: Story = {
  * Multiple flat items as they appear in the stop view.
  *
  * Mixes several row variants to exercise the full flat-list layout:
- * a plain departure, a different-route row, a pickup-unavailable
+ * a plain stop time, a different-route row, a pickup-unavailable
  * row, a tram row, and two terminal rows — one at the first
  * position (so the terminal marker and `RelativeTime` interact) and
  * one further down (so the terminal marker sits next to an

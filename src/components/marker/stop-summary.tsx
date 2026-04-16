@@ -28,7 +28,7 @@ interface StopSummaryProps {
 }
 
 /**
- * Render a stop's name, sub-names, and up to 3 upcoming departures.
+ * Render a stop's name, sub-names, and up to 3 upcoming stop times.
  *
  * Shared by both standard-mode Tooltip and lightweight-mode Popup.
  */

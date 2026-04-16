@@ -431,9 +431,9 @@ export const MultipleAgencies: Story = {
   },
 };
 
-// --- Header only (no departures) ---
+// --- Header only (no stop times) ---
 
-/** Header layout inspection — departures are empty to isolate the header. */
+/** Header layout inspection — stop times are empty to isolate the header. */
 export const HeaderOnly: Story = {
   args: {
     data: createStopWithContext({ stopTimes: [] }),
@@ -540,7 +540,7 @@ export const TripEmptyStopPresent: Story = {
   },
 };
 
-/** stop overrides trip — departures show stop_headsign as effective. */
+/** stop overrides trip — stop times show stop_headsign as effective. */
 export const StopOverridesTrip: Story = {
   args: {
     data: createStopWithContext({
@@ -593,7 +593,7 @@ export const LangComparison: Story = {
   ),
 };
 
-/** Kitchen sink: long name, multi-type, selected, anchored, drop-off-only, grouped departures. */
+/** Kitchen sink: long name, multi-type, selected, anchored, drop-off-only, grouped stop times. */
 const kitchenSinkData = createStopWithContext({
   stop: longNameStop,
   routeTypes: [0, 3],

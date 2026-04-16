@@ -3,7 +3,7 @@
  *
  * These types combine the domain types from {@link transit.ts}
  * (Stop, Route, Agency, etc.) with additional context needed by
- * the webapp — spatial metadata, departure schedules, UI groupings,
+ * the webapp — spatial metadata, stop time schedules, UI groupings,
  * and other enrichments that do not exist in the pipeline output.
  *
  * Unlike the stable domain types in transit.ts, these types evolve
@@ -61,7 +61,7 @@ export interface RouteWithMeta {
 
 /**
  * A route paired with its agency and additional context.
- * Reserved for future expansion (e.g. route-level departures, statistics).
+ * Reserved for future expansion (e.g. route-level stop times, statistics).
  */
 export type RouteWithContext = RouteWithMeta;
 
@@ -69,7 +69,7 @@ export type RouteWithContext = RouteWithMeta;
  * A stop enriched with metadata from spatial queries and timetable data.
  *
  * Agencies and routes are resolved from timetable data regardless of
- * active departures, enabling features like route shape highlighting
+ * active stop times, enabling features like route shape highlighting
  * even when all services have ended for the day.
  */
 export interface StopWithMeta {
@@ -86,7 +86,7 @@ export interface StopWithMeta {
    * Values are for the current service group (e.g. weekday, Saturday).
    */
   stats?: {
-    /** Total departures per day for this service group. */
+    /** Total stop times per day for this service group. */
     freq: number;
     /** Number of distinct routes serving this stop. */
     routeCount: number;
