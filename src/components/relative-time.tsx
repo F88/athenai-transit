@@ -56,18 +56,18 @@ export function RelativeTime({
       style={{ color: style.color, opacity: style.opacity }}
     >
       {diffMin <= 0 ? (
-        <span className={v.imminent}>{t('departure.soon')}</span>
+        <span className={v.imminent}>{t('stopTimeView.soon')}</span>
       ) : (
         <>
-          {!hidePrefix && <span className={`${v.label} font-normal`}>{t('departure.in')}</span>}
+          {!hidePrefix && <span className={`${v.label} font-normal`}>{t('stopTimeView.in')}</span>}
           <span>
             <span className={v.number}>{diffMin}</span>
-            <span className={`${v.label} font-normal`}>{t('departure.minutes')}</span>
+            <span className={`${v.label} font-normal`}>{t('stopTimeView.minutes')}</span>
           </span>
         </>
       )}
       {isTerminal && (
-        <span className={`${v.label} font-normal opacity-70`}>{t('departure.arriving')}</span>
+        <span className={`${v.label} font-normal opacity-70`}>{t('stopTimeView.arriving')}</span>
       )}
     </span>
   );

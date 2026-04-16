@@ -82,7 +82,7 @@
     "now": "🕐 Now",
     "set": "🧙 Time, freeze!"
   },
-  "departure": {
+  "stopTimeView": {
     "soon": "Soon",
     "in": "",
     "minutes": "min",

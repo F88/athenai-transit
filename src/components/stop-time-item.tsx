@@ -122,7 +122,7 @@ export function StopTimeItem({
              */}
             {isTerminal && (
               <span className="text-[10px] font-normal opacity-70">
-                {t('departure.arrivingAbsolute')}
+                {t('stopTimeView.arrivingAbsolute')}
               </span>
             )}
           </div>
