@@ -101,8 +101,8 @@ export interface TransitRepository {
    * groups (e.g. T4 view) should omit `limit`.
    *
    * ### Error conditions
-   * - No departure data for `stopId`:
-   *   `{ success: false, error: "No departure data for stop: {stopId}" }`
+   * - No stop time data for `stopId`:
+   *   `{ success: false, error: "No stop time data for stop: {stopId}" }`
    *
    * @param stopId - GTFS `stop_id` of the target stop.
    * @param now    - Real-world reference time. The service day is
@@ -202,7 +202,7 @@ export interface TransitRepository {
    * Only service IDs active on the GTFS service day are included.
    *
    * ### Error conditions
-   * - No departure data for `stopId`:
+   * - No stop time data for `stopId`:
    *   `{ success: true, data: [], truncated: false }` (not an error).
    *
    * @param stopId   - GTFS stop_id.

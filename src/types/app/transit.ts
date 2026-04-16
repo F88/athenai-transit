@@ -99,7 +99,7 @@ export type FilteredTimetableEntriesState =
  * route, agency) is required.
  *
  * Used by the shared `TimetableEntryAttributesLabels` primitive so
- * that both the timetable grid and the NearbyStop departure rows can
+ * that both the timetable grid and the NearbyStop stop time(s) rows can
  * render the same per-entry labels with the same styling.
  */
 export interface TimetableEntryAttributes {
@@ -241,7 +241,7 @@ export interface Trip {
 }
 
 /**
- * Arrival/departure time at a stop for a specific trip (GTFS stop_times.txt).
+ * Arrival/Departure time at a stop for a specific trip (GTFS stop_times.txt).
  *
  * Times may exceed "24:00:00" for overnight trips that extend past midnight.
  *
