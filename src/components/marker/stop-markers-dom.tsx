@@ -22,7 +22,7 @@ function StopMarkerDomItem({
   now,
   infoLevel,
   dataLang,
-  onFetchDepartures,
+  onFetchStopTimes,
   showTooltip,
   onClick,
 }: {
@@ -36,7 +36,7 @@ function StopMarkerDomItem({
   now?: Date;
   infoLevel: InfoLevel;
   dataLang: readonly string[];
-  onFetchDepartures?: (stopId: string) => Promise<StopWithContext | null>;
+  onFetchStopTimes?: (stopId: string) => Promise<StopWithContext | null>;
   showTooltip: boolean;
   onClick: () => void;
 }) {
@@ -48,14 +48,14 @@ function StopMarkerDomItem({
   const hasEntries = entries && entries.length > 0;
 
   const handleMouseOver = useCallback(() => {
-    if (!onFetchDepartures) {
+    if (!onFetchStopTimes) {
       return;
     }
     if (preloadedEntries || fetchedRef.current === stop.stop_id) {
       return;
     }
     fetchedRef.current = stop.stop_id;
-    onFetchDepartures(stop.stop_id)
+    onFetchStopTimes(stop.stop_id)
       .then((result) => {
         if (result) {
           setHoverEntries(result.stopTimes);
@@ -65,9 +65,9 @@ function StopMarkerDomItem({
         }
       })
       .catch((error) => {
-        logger.error('Failed to fetch departures for stop:', error);
+        logger.error('Failed to fetch stop times for stop:', error);
       });
-  }, [stop.stop_id, preloadedEntries, onFetchDepartures]);
+  }, [stop.stop_id, preloadedEntries, onFetchStopTimes]);
 
   return (
     <Marker
@@ -83,7 +83,7 @@ function StopMarkerDomItem({
           handleMouseOver();
           onClick();
         },
-        ...(onFetchDepartures && { mouseover: handleMouseOver }),
+        ...(onFetchStopTimes && { mouseover: handleMouseOver }),
       }}
     >
       {showTooltip && (
@@ -113,13 +113,13 @@ interface StopMarkersDomProps {
   stops: Stop[];
   selectedStopId: string | null;
   routeTypeMap: Map<string, AppRouteTypeValue[]>;
-  nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
+  stopTimes?: Map<string, ContextualTimetableEntry[]>;
   time?: Date;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
   onStopSelected: (stop: Stop) => void;
-  onFetchDepartures?: (stopId: string) => Promise<StopWithContext | null>;
+  onFetchStopTimes?: (stopId: string) => Promise<StopWithContext | null>;
   /** Whether to show tooltip on hover/select. Defaults to true. */
   showTooltip?: boolean;
   /** Map of stop ID to agencies operating at each stop. */
@@ -142,12 +142,12 @@ export const StopMarkersDom = memo(function StopMarkersDom({
   stops,
   selectedStopId,
   routeTypeMap,
-  nearbyDepartures,
+  stopTimes,
   time: now,
   infoLevel,
   dataLang,
   onStopSelected,
-  onFetchDepartures,
+  onFetchStopTimes,
   showTooltip = true,
   agenciesMap,
   disableDimming = false,
@@ -167,11 +167,11 @@ export const StopMarkersDom = memo(function StopMarkersDom({
           isSelected={selectedStopId === stop.stop_id}
           dimmed={!disableDimming && !!selectedStopId && selectedStopId !== stop.stop_id}
           zIndexOffset={index}
-          preloadedEntries={nearbyDepartures?.get(stop.stop_id)}
+          preloadedEntries={stopTimes?.get(stop.stop_id)}
           now={now}
           infoLevel={infoLevel}
           dataLang={dataLang}
-          onFetchDepartures={onFetchDepartures}
+          onFetchStopTimes={onFetchStopTimes}
           showTooltip={showTooltip}
           onClick={() => onStopSelected(stop)}
         />

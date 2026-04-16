@@ -21,12 +21,12 @@ interface StopMarkersProps {
   renderMode: EffectiveRenderMode;
   /** Called when a stop marker is clicked. */
   onStopSelected: (stop: Stop) => void;
-  /** Preloaded departure groups keyed by stop ID. Omit for far stops. */
-  nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
-  /** Current time for relative departure display ("in X min"). Omit for far stops. */
+  /** Preloaded stop times keyed by stop ID. Omit for far stops. */
+  stopTimes?: Map<string, ContextualTimetableEntry[]>;
+  /** Current time for relative stop times display ("in X min"). Omit for far stops. */
   time?: Date;
-  /** Fetches departures on hover/click. Omit for far stops (no on-demand fetch). */
-  onFetchDepartures?: (stopId: string) => Promise<StopWithContext | null>;
+  /** Fetches stop times on hover/click. Omit for far stops (no on-demand fetch). */
+  onFetchStopTimes?: (stopId: string) => Promise<StopWithContext | null>;
   /** Whether to show tooltip on hover/select. Defaults to true. */
   showTooltip?: boolean;
   /** Shared Canvas renderer. Required so multiple Canvas instances share
@@ -49,9 +49,9 @@ export function StopMarkers({
   dataLang,
   renderMode,
   onStopSelected,
-  nearbyDepartures,
+  stopTimes,
   time,
-  onFetchDepartures,
+  onFetchStopTimes,
   showTooltip = true,
   renderer,
   incremental = false,
@@ -66,9 +66,9 @@ export function StopMarkers({
       infoLevel={infoLevel}
       dataLang={dataLang}
       onStopSelected={onStopSelected}
-      nearbyDepartures={nearbyDepartures}
+      stopTimes={stopTimes}
       time={time}
-      onFetchDepartures={onFetchDepartures}
+      onFetchStopTimes={onFetchStopTimes}
       showTooltip={showTooltip}
       renderer={renderer}
       incremental={incremental}
@@ -83,9 +83,9 @@ export function StopMarkers({
       infoLevel={infoLevel}
       dataLang={dataLang}
       onStopSelected={onStopSelected}
-      nearbyDepartures={nearbyDepartures}
+      stopTimes={stopTimes}
       time={time}
-      onFetchDepartures={onFetchDepartures}
+      onFetchStopTimes={onFetchStopTimes}
       showTooltip={showTooltip}
       agenciesMap={agenciesMap}
       disableDimming={disableDimming}

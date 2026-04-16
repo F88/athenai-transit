@@ -767,7 +767,7 @@ export default function App({ loadResult }: AppProps) {
           radiusStops={radiusStops}
           selectedStopId={selectedStopId}
           focusPosition={focusPosition}
-          nearbyDepartures={stopTimes}
+          stopTimes={stopTimes}
           routeTypeMap={routeTypeMap}
           routeShapes={routeShapes}
           selectionInfo={selectionInfo}
@@ -783,7 +783,7 @@ export default function App({ loadResult }: AppProps) {
           time={dateTime}
           onBoundsChanged={handleBoundsChanged}
           onStopSelected={handleSelectStop}
-          onFetchDepartures={handleFetchStopTimes}
+          onFetchStopTimes={handleFetchStopTimes}
           onToggleStopType={handleToggleStopType}
           onToggleBusShapes={handleToggleBusShapes}
           onToggleNonBusShapes={handleToggleNonBusShapes}
