@@ -8,29 +8,29 @@ import type { StopServiceState } from '../../types/app/transit';
  * - Stop details → VerboseStopData
  * - Resolved names → VerboseStopDisplayNames
  * - Stats/Geo → VerboseStopMetrics
- * - Individual departures → VerboseContextualTimetableEntry
+ * - Individual stop times → VerboseContextualTimetableEntry
  *
  * This component dumps: UI state (isSelected, isAnchor, viewId),
- * stop service state, and departures summary
+ * stop service state, and stop times summary
  * (total, boardable, dropOffOnly counts).
  */
 export function VerboseNearbyStopSummary({
-  departures,
+  stopTimes,
   stopServiceState,
   isSelected,
   isAnchor,
   viewId,
 }: {
-  departures: ContextualTimetableEntry[];
+  stopTimes: ContextualTimetableEntry[];
   stopServiceState: StopServiceState;
   isSelected: boolean;
   isAnchor: boolean;
   viewId: string;
 }) {
-  const boardable = departures.filter(
+  const boardable = stopTimes.filter(
     (e) => e.boarding.pickupType !== 1 && !e.patternPosition.isTerminal,
   ).length;
-  const dropOffOnly = departures.length - boardable;
+  const dropOffOnly = stopTimes.length - boardable;
 
   return (
     <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
@@ -44,8 +44,8 @@ export function VerboseNearbyStopSummary({
           </span>
           <span className="block">[service] stopServiceState={stopServiceState}</span>
           <span className="block">
-            [departures] entries={departures.length} boardable={boardable} dropOffOnly={dropOffOnly}
-            {departures.length === 0
+            [stop times] entries={stopTimes.length} boardable={boardable} dropOffOnly={dropOffOnly}
+            {stopTimes.length === 0
               ? ' (NO SERVICE)'
               : stopServiceState === 'drop-off-only'
                 ? ' (ALL DROP-OFF ONLY)'
