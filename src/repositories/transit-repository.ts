@@ -368,8 +368,14 @@ export interface TransitRepository {
   resolveStopStats(stopId: string, serviceDate: Date): StopWithMeta['stats'] | undefined;
 
   /**
-   * Resolves per-route daily departure frequency for the service group
-   * matching the given service day.
+   * Resolves the number of trips on the route in the service day matching
+   * the given service group.
+   *
+   * Returns the total number of GTFS trips (vehicle runs) for the route,
+   * summed across all of the route's trip patterns. Each trip is counted
+   * once at its pattern's origin (si=0). This is the trip count, not the
+   * trip pattern count: a route with 2 patterns running 10 + 1 trips
+   * returns 11.
    *
    * Used for frequency-based route shape line thickness. Returns undefined
    * if insights are not loaded or no group matches.
@@ -377,7 +383,7 @@ export interface TransitRepository {
    * @param routeId - GTFS route_id.
    * @param serviceDate - GTFS service day (Date at local 00:00) derived via
    *   `getServiceDay(dateTime)`. Do not pass raw dateTime directly.
-   * @returns Daily departure count for the matched service group, or undefined.
+   * @returns Number of trips in the matched service day, or undefined.
    */
   resolveRouteFreq(routeId: string, serviceDate: Date): number | undefined;
 }

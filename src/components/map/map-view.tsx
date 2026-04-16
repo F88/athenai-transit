@@ -239,7 +239,7 @@ interface MapViewProps {
   onCycleLang: () => void;
   onDeselectStop: () => void;
   onRouteShapeSelected: (routeId: string) => void;
-  /** Resolves daily departure frequency for a route based on the current service day. */
+  /** Resolves the number of trips on a route in the current service day. */
   resolveRouteFreq: (routeId: string) => number | undefined;
   onSearchClick: () => void;
   onInfoClick: () => void;

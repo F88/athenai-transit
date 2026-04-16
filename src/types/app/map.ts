@@ -53,8 +53,10 @@ export interface RouteShape {
    */
   points: [number, number, number?][];
   /**
-   * Total departures per day across all trip patterns for this route.
-   * Accumulated from InsightsBundle tripPatternStats.
+   * Total number of trips on this route per service day, summed across
+   * all trip patterns. Accumulated from InsightsBundle tripPatternStats
+   * (each pattern's freq counts trips at origin si=0). Trip count, not
+   * trip pattern count.
    * Used for line thickness visualization (frequency-based weight).
    */
   freq?: number;
