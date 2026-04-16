@@ -738,7 +738,7 @@ export interface TripPatternGeoJson {
  * Used for marker rendering and view sorting.
  */
 export interface StopStatsJson {
-  /** Total departures per day for this service group, across all patterns serving this stop. */
+  /** Total stop times per day for this service group, across all patterns serving this stop. */
   freq: number;
 
   /** Number of distinct routes serving this stop in this service group. */

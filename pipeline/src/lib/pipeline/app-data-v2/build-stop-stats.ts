@@ -2,7 +2,7 @@
  * Build stopStats section of InsightsBundle.
  *
  * Computes per-stop operational statistics segmented by service group:
- * - `freq`: total departures per day across all patterns serving this stop
+ * - `freq`: total stop times per day across all patterns serving this stop
  * - `rc`: number of distinct routes
  * - `rtc`: number of distinct route types (bus, subway, tram, etc.)
  * - `ed`: earliest departure time (minutes from midnight)
@@ -60,7 +60,7 @@ export function buildStopStats(
           continue;
         }
 
-        let hasAnyDeparture = false;
+        let hasAnyStopTime = false;
 
         for (const svcId of group.serviceIds) {
           const deps = tg.d[svcId];
@@ -68,7 +68,7 @@ export function buildStopStats(
             continue;
           }
 
-          hasAnyDeparture = true;
+          hasAnyStopTime = true;
           freq += deps.length;
 
           // deps are sorted ascending
@@ -80,7 +80,7 @@ export function buildStopStats(
           }
         }
 
-        if (hasAnyDeparture) {
+        if (hasAnyStopTime) {
           routeIds.add(pattern.r);
           const rt = routeTypeMap.get(pattern.r);
           if (rt !== undefined) {
@@ -89,7 +89,7 @@ export function buildStopStats(
         }
       }
 
-      // Only include stops that have at least one departure in this group
+      // Only include stops that have at least one stop time in this group
       if (freq > 0) {
         groupStats[stopId] = {
           freq,
