@@ -9,13 +9,13 @@ import { NearbyStop, type NearbyStopProps } from './nearby-stop';
 const EAGER_RENDER_COUNT = 6;
 
 interface BottomSheetStopsProps {
-  filteredDepartures: StopWithContext[];
+  filteredStopTimes: StopWithContext[];
   /**
    * Map from stop_id to the service state of the stop's upcoming entries
    * as returned by the repo, BEFORE any UI-level filter. Computed once
-   * by {@link BottomSheet} from the unfiltered `nearbyDepartures` and
+   * by {@link BottomSheet} from the unfiltered `stopTimes` and
    * passed down so each {@link NearbyStop} can tell "late-night service
-   * ended" apart from "filter-hidden" when its filtered departures are
+   * ended" apart from "filter-hidden" when its filtered stop times are
    * empty.
    */
   upcomingEntriesStates: ReadonlyMap<string, TimetableEntriesState>;
@@ -37,7 +37,7 @@ interface BottomSheetStopsProps {
 }
 
 export function BottomSheetStops({
-  filteredDepartures,
+  filteredStopTimes,
   upcomingEntriesStates,
   selectedStopId,
   now,
@@ -57,12 +57,12 @@ export function BottomSheetStops({
       className="grid flex-1 grid-cols-1 content-start gap-0 overflow-y-auto px-4 pb-0 sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-3"
       ref={contentRef}
     >
-      {filteredDepartures.map((swc, i) => {
+      {filteredStopTimes.map((swc, i) => {
         const props: NearbyStopProps = {
           data: swc,
           // Fallback to 'no-service' if the Map is missing this stop_id
           // (shouldn't happen — the Map is built from the same
-          // `nearbyDepartures` that becomes `filteredDepartures` — but
+          // `stopTimes` that becomes `filteredStopTimes` — but
           // stay defensive in case of race conditions during rerender).
           upcomingEntriesState: upcomingEntriesStates.get(swc.stop.stop_id) ?? 'no-service',
           isSelected: selectedStopId === swc.stop.stop_id,
