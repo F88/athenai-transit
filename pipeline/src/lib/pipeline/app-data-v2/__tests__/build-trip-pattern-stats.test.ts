@@ -38,7 +38,7 @@ function makeTimetableGroup(
 
 describe('buildTripPatternStats', () => {
   describe('freq', () => {
-    it('counts departures for a basic pattern', () => {
+    it('counts origin stop times for a basic pattern', () => {
       const patterns: Record<string, TripPatternJson> = {
         p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }] },
       };
@@ -56,7 +56,7 @@ describe('buildTripPatternStats', () => {
       expect(result['wd']['p1'].freq).toBe(3);
     });
 
-    it('sums departures across multiple service IDs in a group', () => {
+    it('sums origin stop times across multiple service IDs in a group', () => {
       const patterns: Record<string, TripPatternJson> = {
         p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
       };
@@ -94,7 +94,7 @@ describe('buildTripPatternStats', () => {
       expect(result['sa']['p1'].freq).toBe(2);
     });
 
-    it('uses interior stop for circular route freq (avoids 2x)', () => {
+    it('counts origin (si=0) only for circular route freq (avoids 2x)', () => {
       // Circular: s1 → s2 → s3 → s1
       const patterns: Record<string, TripPatternJson> = {
         p1: {
@@ -342,7 +342,7 @@ describe('buildTripPatternStats', () => {
         },
       };
 
-      // Origin s1 has 2x departures (interleaved start/return)
+      // Origin s1 has 2x stop times (interleaved origin/terminal)
       const timetable: Record<string, TimetableGroupV2Json[]> = {
         s1: [makeTimetableGroup('p1', 0, { svc1: [480, 500, 540, 560, 600, 620] })],
         s2: [makeTimetableGroup('p1', 1, { svc1: [490, 550, 610] })],
@@ -549,7 +549,7 @@ describe('buildTripPatternStats', () => {
       expect(result['wd']['p2'].rd).toEqual([20, 0]);
     });
 
-    it('skips segment when departure counts differ between consecutive stops', () => {
+    it('skips segment when departure time array lengths differ between consecutive stops', () => {
       const patterns: Record<string, TripPatternJson> = {
         p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }, { id: 's3' }] },
       };
