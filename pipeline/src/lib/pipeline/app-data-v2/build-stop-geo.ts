@@ -51,7 +51,11 @@ export interface StopEntry {
    */
   routeIds: Set<string>;
   /**
-   * Per-route departure frequency for a specific service group.
+   * Per-route stop time count for a specific service group.
+   *
+   * Counts `d`-field entries across all (pattern, si) combinations at
+   * this stop per route. Terminal arrivals are included — this is not
+   * a trip count.
    *
    * Unlike `routeIds`, this IS filtered to a target service group.
    * Used by `cn` (connectivity) where actual service availability matters.
