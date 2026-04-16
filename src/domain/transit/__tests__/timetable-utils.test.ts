@@ -215,7 +215,7 @@ describe('getRemainingMinutes', () => {
 // hasBoardableDeparture
 // ---------------------------------------------------------------------------
 
-describe('hasBoardableDeparture', () => {
+describe('hasBoardable', () => {
   it('returns false for empty array', () => {
     expect(hasBoardable([])).toBe(false);
   });
