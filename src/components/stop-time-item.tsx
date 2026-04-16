@@ -1,27 +1,32 @@
 import type { InfoLevel } from '../types/app/settings';
-import { useTranslation } from 'react-i18next';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
-import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
+import { useTranslation } from 'react-i18next';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { minutesToDate } from '../domain/transit/calendar-utils';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
 import { getDisplayMinutes } from '../domain/transit/timetable-utils';
 import { RelativeTime } from './relative-time';
 import { TripInfo } from './trip-info';
-import { TimetableEntryAttributesLabels } from './label/timetable-entry-attributes-labels';
-import { VerboseContextualTimetableEntries } from './verbose/verbose-contextual-timetable-entry';
-import { Clock } from 'lucide-react';
+import { VerboseContextualTimetableEntry } from './verbose/verbose-contextual-timetable-entry';
+import { BaseLabel } from './label/base-label';
+import { TripPositionIndicator } from './label/trip-position-indicator';
+import { JourneyTimeBar } from './journey-time-bar';
+import { useInfoLevel } from '@/hooks/use-info-level';
 
 interface StopTimeItemProps {
-  /** Timetable entries for a single route+headsign group. */
-  entries: ContextualTimetableEntry[];
+  /** The timetable entry to display. */
+  entry: ContextualTimetableEntry;
+  /** Current time for relative time calculation. */
   now: Date;
+  /** Whether this is the first item in the list. */
+  isFirst: boolean;
+  /** Whether to show route_type emoji (e.g. when stop serves multiple route types). */
+  showRouteTypeIcon: boolean;
+  /** Current info verbosity level for route label formatting. */
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
-  /** Whether to show route_type emoji (e.g. when stop serves multiple route types). */
-  showRouteTypeIcon: boolean;
   /** Agency object for badge display at detailed+ info level. */
   agency?: Agency;
   /**
@@ -33,124 +38,159 @@ interface StopTimeItemProps {
    * @default false
    */
   showAgency?: boolean;
-  /** Maximum number of stop times to display. Defaults to 3. */
-  maxDisplay?: number;
-  onShowTimetable?: (routeId: string, headsign: string) => void;
 }
 
+/**
+ * A single row in the T1 (Stop) flat stop time list.
+ *
+ * The first stop time shows relative time ("あと5分"), subsequent
+ * stop times show absolute time ("14:30"). Route label is colored
+ * with the route's designated color.
+ */
 export function StopTimeItem({
-  entries,
+  entry,
   now,
+  isFirst,
+  showRouteTypeIcon,
   infoLevel,
   dataLang,
-  showRouteTypeIcon,
   agency,
   showAgency = false,
-  maxDisplay = 3,
-  onShowTimetable,
 }: StopTimeItemProps) {
   const { t } = useTranslation();
-  const showVerbose = infoLevel === 'verbose';
-  const firstEntry = entries[0];
-  if (!firstEntry) {
-    return null;
-  }
+  const info = useInfoLevel(infoLevel);
+  const showVerbose = info.isVerboseEnabled;
+  const { route } = entry.routeDirection;
+  const bgColor = route.route_color ? `#${route.route_color}` : undefined;
+  const attributes = getTimetableEntryAttributes(entry);
+  const isTerminal = attributes.isTerminal;
+  const time = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
+  const diffMs = time.getTime() - now.getTime();
+  const showRelativeTime = isFirst || diffMs <= 60 * 60 * 1000;
 
-  const { route } = firstEntry.routeDirection;
-
-  // Display at most N stop times: 1st as both relative + absolute, rest as absolute only.
-  const displayEntries = entries.slice(0, maxDisplay);
-
-  // Convert minutes to Date for display — lightweight, only up to 3 entries.
-  const displayTimes = displayEntries.map((e) =>
-    minutesToDate(e.serviceDate, getDisplayMinutes(e)),
-  );
-
-  const first = displayTimes[0];
-  const diffMs = first ? first.getTime() - now.getTime() : 0;
-
-  // Issue #47 / Alt F: attributes (terminal/origin/pickup/dropOff) are properties
-  // of individual stop times, not groups. With si-based grouping in place, the
-  // same route+headsign bucket can contain entries with different stopIndex
-  // (6-shape routes, circular routes), so we render attribute labels per-stop-times
-  // inline with each time slot rather than as a single group-level badge on
-  // TripInfo. TripInfo's `attributes?` prop is kept for single-stop-time consumers
-  // (FlatStopTimeItem, StopSummary) but StopTimeItem no longer passes it.
+  const dt = formatAbsoluteTime(minutesToDate(entry.serviceDate, entry.schedule.departureMinutes));
+  const at = formatAbsoluteTime(minutesToDate(entry.serviceDate, entry.schedule.arrivalMinutes));
 
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
-      <div>
-        <TripInfo
-          routeDirection={firstEntry.routeDirection}
-          infoLevel={infoLevel}
-          dataLang={dataLang}
-          showRouteTypeIcon={showRouteTypeIcon}
-          agency={agency}
-          showAgency={showAgency}
-        />
-      </div>
-      <div className="flex items-center gap-3 pl-1">
-        {/* Relative time hint — easy to scan at a glance (e.g. "あと5分").
-            Kept as a non-wrapping single unit so the prefix stays glued to
-            the value even on narrow screens. */}
-        {first && (
-          <RelativeTime
-            time={first}
-            now={now}
-            size="lg"
-            isTerminal={firstEntry.patternPosition.isTerminal}
-            hidePrefix={diffMs > 90 * 60 * 1000}
-          />
-        )}
-        {/* Absolute times wrapper — own flex-wrap container so the n
-            absolute time entries can fold onto a second row when the
-            container is narrow, while RelativeTime and the timetable
-            button stay on the original row. `min-w-0 flex-1` lets it
-            consume the remaining inline space and shrink to allow
-            wrapping. */}
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-0.5">
-          {/* Absolute times for all entries including the first.
-              The first entry intentionally appears in both relative and absolute
-              because relative alone (e.g. "あと400分") is hard to interpret.
-              Per Issue #47 / Alt F, each time renders its own per-stop-time
-              attribute labels (TERM/ORIG/noPickup/noDropOff) inline. */}
-          {displayEntries.map((entry, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-0.5 text-sm font-bold whitespace-nowrap text-[#757575] dark:text-gray-400"
-            >
-              {formatAbsoluteTime(displayTimes[i])}
-              <TimetableEntryAttributesLabels
-                attributes={getTimetableEntryAttributes(entry)}
-                size="xs"
-                isDisplayTerminal
-                isDisplayOrigin
-                isDisplayPickupUnavailable
-                isDisplayDropOffUnavailable
-              />
-            </span>
-          ))}
-        </div>
-        {onShowTimetable && (
-          <button
-            type="button"
-            className="ml-auto shrink-0 cursor-pointer rounded border border-[#1976d2] bg-transparent px-1.5 py-0.5 text-[#1976d2] active:bg-[rgba(25,118,210,0.1)] dark:border-blue-400 dark:text-blue-400"
-            onClick={(e) => {
-              e.stopPropagation();
-              onShowTimetable(route.route_id, getEffectiveHeadsign(firstEntry.routeDirection));
-            }}
-            title={t('showTimetable')}
-            aria-label={t('showTimetable')}
+      <div className="flex gap-2">
+        <div className="flex min-h-8 w-14 shrink-0 flex-col justify-center text-right leading-none">
+          {showVerbose && (
+            <>
+              <div className="mb-0.5 flex justify-end gap-0.5 whitespace-nowrap">
+                <BaseLabel
+                  size={'xs'}
+                  value={at}
+                  className="bg-gray-500 whitespace-nowrap text-white"
+                />
+                <BaseLabel
+                  size={'xs'}
+                  value={dt}
+                  className="bg-blue-500 whitespace-nowrap text-white"
+                />
+              </div>
+            </>
+          )}
+          {showRelativeTime && (
+            <RelativeTime
+              now={now}
+              time={time}
+              isTerminal={isTerminal}
+              // Hide prefix for time >90min to save space.
+              hidePrefix={diffMs > 90 * 60 * 1000}
+            />
+          )}
+          {/* Absolute time — always shown alongside relative for precise reference */}
+          <div
+            className="text-base font-bold text-[#333] dark:text-gray-100"
+            style={bgColor ? { color: bgColor } : undefined}
           >
-            <Clock size={14} strokeWidth={2} />
-          </button>
-        )}
+            {formatAbsoluteTime(time)}
+            {/*
+             * Terminal arrival marker attached to the absolute time (e.g. "22:30着" / "22:30Arr").
+             * Uses a dedicated `departure.arrivingAbsolute` key so the two terminal
+             * marker contexts in this row can be controlled independently:
+             *
+             *  - `departure.arriving` → used by `<RelativeTime>` next to the
+             *    relative time ("5分"). Currently empty in ja/en as an
+             *    intentional opt-out to keep the relative time visually quiet.
+             *  - `departure.arrivingAbsolute` → used here next to the absolute
+             *    time. Populated per locale (ja: "着", en: "Arr", etc.).
+             *    Locale owners can opt out for any language by setting the
+             *    value to an empty string — the component always renders
+             *    the span so i18n drives visibility.
+             */}
+            {isTerminal && (
+              <span className="text-[10px] font-normal opacity-70">
+                {t('departure.arrivingAbsolute')}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
+          {/* Trip Hint */}
+          <div className="mb-0.5 flex min-w-0 items-center gap-1">
+            <div className="min-w-0 flex-1">
+              <TripPositionIndicator
+                stopIndex={entry.patternPosition.stopIndex}
+                totalStops={entry.patternPosition.totalStops}
+                // size="md"
+                size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
+                // size="xs"
+                showTrack={info.isNormalEnabled}
+                infoLevel={infoLevel}
+                // route_color may be empty (e.g. mir/mykbus/sbbus). Pass undefined
+                // in that case so TripPositionIndicator falls back to its default
+                // Tailwind colors instead of producing invalid CSS like "#20".
+                trackColor={bgColor ? `${bgColor}20` : undefined}
+                dotColor={bgColor ? `${bgColor}50` : undefined}
+                currentColor={bgColor}
+              />
+            </div>
+            {info.isVerboseEnabled && (
+              <BaseLabel
+                size={'xs'}
+                value={`${entry.patternPosition.stopIndex + 1} / ${entry.patternPosition.totalStops}`}
+                className="shrink-0 bg-gray-500 whitespace-nowrap text-white"
+              />
+            )}
+          </div>
+
+          {info.isDetailedEnabled && (
+            <JourneyTimeBar
+              remainingMinutes={entry.insights?.remainingMinutes}
+              totalMinutes={entry.insights?.totalMinutes}
+              size={info.isDetailedEnabled ? 'md' : 'sm'}
+              color={bgColor}
+              showRMins={info.isVerboseEnabled}
+              showTMins={info.isVerboseEnabled}
+              minsPosition="right"
+              fillDirection="rtl"
+              // fillDirection="ltr"
+              showEmoji={info.isVerboseEnabled}
+            />
+          )}
+
+          {/* Trip Info */}
+          <div className="min-w-0">
+            <TripInfo
+              routeDirection={entry.routeDirection}
+              infoLevel={infoLevel}
+              dataLang={dataLang}
+              showRouteTypeIcon={showRouteTypeIcon}
+              agency={agency}
+              showAgency={showAgency}
+              attributes={attributes}
+            />
+          </div>
+        </div>
       </div>
       {/* Verbose data */}
       {showVerbose && (
-        <VerboseContextualTimetableEntries
+        <VerboseContextualTimetableEntry
           //
-          entries={displayEntries}
+          entry={entry}
           // disableVerbose={true}
         />
       )}

@@ -12,8 +12,8 @@ import {
 } from '../domain/transit/timetable-utils';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { Clock, Signpost } from 'lucide-react';
+import { StopTimesItem } from './stop-times-item';
 import { StopTimeItem } from './stop-time-item';
-import { FlatStopTimeItem } from './flat-stop-time-item';
 import { StopInfo } from './stop-info';
 import { VerboseNearbyStopSummary } from './verbose/verbose-nearby-stop-summary';
 
@@ -195,7 +195,7 @@ export function NearbyStop({
             ? displayDepartures
                 .slice(0, 5)
                 .map((entry, i) => (
-                  <FlatStopTimeItem
+                  <StopTimeItem
                     key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}__${i}`}
                     entry={entry}
                     now={now}
@@ -210,7 +210,7 @@ export function NearbyStop({
                   />
                 ))
             : grouped.map(([key, entries]) => (
-                <StopTimeItem
+                <StopTimesItem
                   key={`${stop.stop_id}__${key}`}
                   entries={entries}
                   now={now}
