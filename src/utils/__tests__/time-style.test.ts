@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { relativeTimeColor, relativeTimeStyle, RELATIVE_TIME_BANDS } from '../time-style';
 
 describe('relativeTimeStyle', () => {
-  it('returns orange for imminent departures (<=180s)', () => {
+  it('returns orange for imminent stop times (<=180s)', () => {
     expect(relativeTimeStyle(0).color).toBe('#fb8c00');
     expect(relativeTimeStyle(-60).color).toBe('#fb8c00');
     expect(relativeTimeStyle(60).color).toBe('#fb8c00');

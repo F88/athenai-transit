@@ -375,7 +375,7 @@ describe('prepareRouteHeadsignTimetable', () => {
         ...Array.from({ length: 3 }, () =>
           makeEntry({ route: routeB, headsign: 'Shinjuku', isTerminal: true }),
         ),
-        // 京王バス route1: boardable (departures)
+        // 京王バス route1: boardable (stop times)
         ...Array.from({ length: 2 }, () => makeEntry({ route: routeA, headsign: 'Nakano' })),
       ];
       // Route A Shinjuku: all 5 are terminal

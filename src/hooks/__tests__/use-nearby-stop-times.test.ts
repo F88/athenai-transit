@@ -5,7 +5,7 @@ import { makeStop, makeStopMeta, makeRepo } from '../../__tests__/helpers';
 import { getServiceDay } from '../../domain/transit/service-day';
 
 describe('useNearbyStopTimes', () => {
-  it('returns empty departures for empty stops', async () => {
+  it('returns empty stop times for empty stops', async () => {
     const repo = makeRepo();
     const now = new Date();
     const { result } = renderHook(() => useNearbyStopTimes([], now, repo));
@@ -17,7 +17,7 @@ describe('useNearbyStopTimes', () => {
     expect(result.current.stopTimes).toEqual([]);
   });
 
-  it('fetches departures for each nearby stop', async () => {
+  it('fetches stop times for each nearby stop', async () => {
     const stops = [makeStopMeta('A'), makeStopMeta('B')];
     const repo = makeRepo();
     const now = new Date();
@@ -225,7 +225,7 @@ describe('useNearbyStopTimes', () => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    // Agencies come from StopWithMeta, not from departure groups
+    // Agencies come from StopWithMeta, not from stop time groups
     expect(result.current.stopTimes[0].agencies).toHaveLength(1);
     expect(result.current.stopTimes[0].agencies[0].agency_id).toBe('a1');
   });

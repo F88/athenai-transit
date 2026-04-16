@@ -22,16 +22,16 @@ function makeEntries(routeIds: string[]): ContextualTimetableEntry[] {
 }
 
 describe('extractRouteIdsForStop', () => {
-  it('returns empty set when stop is not in departures', () => {
+  it('returns empty set when stop is not in stop times', () => {
     expect(extractRouteIdsForStop([], 'unknown')).toEqual(new Set());
   });
 
-  it('extracts route IDs from departures', () => {
+  it('extracts route IDs from stop times', () => {
     const ctx = makeStopWithContext(makeStop('s1'), ['r1', 'r2']);
     expect(extractRouteIdsForStop([ctx], 's1')).toEqual(new Set(['r1', 'r2']));
   });
 
-  it('falls back to StopWithMeta.routes when departures are empty', () => {
+  it('falls back to StopWithMeta.routes when stop times are empty', () => {
     const stop = makeStop('s1');
     const ctx = {
       stop,
@@ -44,7 +44,7 @@ describe('extractRouteIdsForStop', () => {
     expect(extractRouteIdsForStop([ctx], 's1')).toEqual(new Set(['r1', 'r2']));
   });
 
-  it('returns empty set when both departures and routes are empty', () => {
+  it('returns empty set when both stop times and routes are empty', () => {
     const stop = makeStop('s1');
     const ctx = {
       stop,
@@ -57,7 +57,7 @@ describe('extractRouteIdsForStop', () => {
     expect(extractRouteIdsForStop([ctx], 's1')).toEqual(new Set());
   });
 
-  it('prefers departures over routes when both are available', () => {
+  it('prefers stop times over routes when both are available', () => {
     const stop = makeStop('s1');
     const ctx = {
       stop,
@@ -87,7 +87,7 @@ describe('getRouteIdsForStop', () => {
     expect(getRouteIdsForStop('stop-1', map)).toBeNull();
   });
 
-  it('returns a Set of route IDs for a stop with departures', () => {
+  it('returns a Set of route IDs for a stop with stop times', () => {
     const map = new Map<string, TimetableEntry[]>([
       ['stop-1', makeEntries(['route-A', 'route-B', 'route-C'])],
     ]);

@@ -446,7 +446,7 @@ describe('filterBoardable', () => {
     });
   });
 
-  describe('same route+headsign with mixed pt per departure', () => {
+  describe('same route+headsign with mixed pt per stop time', () => {
     it('filters individually even within same route+headsign', () => {
       // v2 pipeline では pt は便ごとの配列。同じ trip pattern でも
       // 便によって pt が異なりうる。

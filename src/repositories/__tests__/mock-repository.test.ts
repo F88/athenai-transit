@@ -370,7 +370,7 @@ describe('MockRepository duplicate stop_id within pattern (Issue #47)', () => {
   describe('getUpcomingTimetableEntries occurrence handling', () => {
     it('includes all 3 occurrences of r8-3 in the upcoming list (8 の字 cross point)', async () => {
       const repository = new MockRepository();
-      // Use early morning so all departures are upcoming
+      // Use early morning so all stop times are upcoming
       const result = await repository.getUpcomingTimetableEntries(
         'r8-3',
         new Date('2026-04-07T05:00:00+09:00'),

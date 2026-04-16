@@ -196,7 +196,7 @@ describe('useSelection', () => {
       });
 
       expect(result.current.selectionInfo?.routeIds).toEqual(new Set(['R1', 'R2']));
-    };);
+    });
   });
 
   describe('focusPosition', () => {
@@ -424,7 +424,7 @@ describe('useSelection', () => {
 
       // Should NOT be enriched because routeIds.size > 0
       expect(result.current.selectionInfo?.routeIds).toEqual(new Set(['R1']));
-    };);
+    });
   });
 
   describe('directFocusPosition clearing', () => {
