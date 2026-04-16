@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import { PERF_PROFILES } from '../config/perf-profiles';
 import { APP_ROUTE_TYPES } from '../config/route-types';
-import { DEFAULT_VIEW_ID, DEPARTURE_VIEWS } from '../domain/transit/stop-time-views';
+import { DEFAULT_VIEW_ID, STOP_TIMES_VIEWS } from '../domain/transit/stop-time-views';
 import {
   agencyAt,
   agencyBlue,
@@ -25,7 +25,7 @@ import { BottomSheetHeader } from './bottom-sheet-header';
 // --- Shared defaults ---
 
 const defaultDataConfig = PERF_PROFILES.normal.data;
-const selectView = (id: string) => DEPARTURE_VIEWS.find((v) => v.id === id);
+const selectView = (id: string) => STOP_TIMES_VIEWS.find((v) => v.id === id);
 const defaultSelectedView = selectView(DEFAULT_VIEW_ID);
 
 /** All route type values defined in APP_ROUTE_TYPES except the `-1` unknown placeholder. */

@@ -14,7 +14,7 @@ describe('useNearbyStopTimes', () => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyStopTimes).toEqual([]);
+    expect(result.current.stopTimes).toEqual([]);
   });
 
   it('fetches departures for each nearby stop', async () => {
@@ -28,7 +28,7 @@ describe('useNearbyStopTimes', () => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyStopTimes).toHaveLength(2);
+    expect(result.current.stopTimes).toHaveLength(2);
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(repo.getUpcomingTimetableEntries).toHaveBeenCalledTimes(2);
     // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -85,8 +85,8 @@ describe('useNearbyStopTimes', () => {
     });
 
     // Final result should reflect the latest stops
-    expect(result.current.nearbyStopTimes).toHaveLength(1);
-    expect(result.current.nearbyStopTimes[0].stop.stop_id).toBe('B');
+    expect(result.current.stopTimes).toHaveLength(1);
+    expect(result.current.stopTimes[0].stop.stop_id).toBe('B');
   });
 
   it('falls back to routeTypes [-1] when getRouteTypesForStop fails', async () => {
@@ -105,7 +105,7 @@ describe('useNearbyStopTimes', () => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyStopTimes[0].routeTypes).toEqual([-1]);
+    expect(result.current.stopTimes[0].routeTypes).toEqual([-1]);
   });
 
   it('falls back to empty groups when getUpcomingTimetableEntries fails', async () => {
@@ -124,7 +124,7 @@ describe('useNearbyStopTimes', () => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyStopTimes[0].stopTimes).toEqual([]);
+    expect(result.current.stopTimes[0].stopTimes).toEqual([]);
   });
 
   it('passes correct dateTime to repo.getUpcomingTimetableEntries', async () => {
@@ -181,7 +181,7 @@ describe('useNearbyStopTimes', () => {
     });
 
     // Departures should remain empty after error
-    expect(result.current.nearbyStopTimes).toEqual([]);
+    expect(result.current.stopTimes).toEqual([]);
   });
 
   it('preserves stop reference in result', async () => {
@@ -196,7 +196,7 @@ describe('useNearbyStopTimes', () => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyStopTimes[0].stop).toBe(stop);
+    expect(result.current.stopTimes[0].stop).toBe(stop);
   });
 
   it('passes through agencies from StopWithMeta', async () => {
@@ -226,8 +226,8 @@ describe('useNearbyStopTimes', () => {
     });
 
     // Agencies come from StopWithMeta, not from departure groups
-    expect(result.current.nearbyStopTimes[0].agencies).toHaveLength(1);
-    expect(result.current.nearbyStopTimes[0].agencies[0].agency_id).toBe('a1');
+    expect(result.current.stopTimes[0].agencies).toHaveLength(1);
+    expect(result.current.stopTimes[0].agencies[0].agency_id).toBe('a1');
   });
 
   it('preserves empty agencies from StopWithMeta', async () => {
@@ -241,7 +241,7 @@ describe('useNearbyStopTimes', () => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyStopTimes[0].agencies).toEqual([]);
+    expect(result.current.stopTimes[0].agencies).toEqual([]);
   });
 
   it('uses resolveStopStats return value as stats', async () => {
@@ -264,7 +264,7 @@ describe('useNearbyStopTimes', () => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyStopTimes[0].stats).toBe(mockStats);
+    expect(result.current.stopTimes[0].stats).toBe(mockStats);
     // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(repo.resolveStopStats).toHaveBeenCalledWith('A', getServiceDay(now));
   });
@@ -307,6 +307,6 @@ describe('useNearbyStopTimes', () => {
       expect(result.current.isNearbyLoading).toBe(false);
     });
 
-    expect(result.current.nearbyStopTimes[0].stats).toBeUndefined();
+    expect(result.current.stopTimes[0].stats).toBeUndefined();
   });
 });

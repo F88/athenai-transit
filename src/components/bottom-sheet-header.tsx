@@ -4,7 +4,7 @@ import type { Agency } from '../types/app/transit';
 import type { StopTimeViewMeta } from '../types/app/transit-composed';
 import type { NearbyStopsCounts } from './bottom-sheet';
 import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
-import { DEPARTURE_VIEWS } from '../domain/transit/stop-time-views';
+import { STOP_TIMES_VIEWS } from '../domain/transit/stop-time-views';
 import { getAgencyDisplayNames } from '../domain/transit/get-agency-display-name';
 import { createLogger } from '../lib/logger';
 import { routeTypeColor } from '../utils/route-type-color';
@@ -62,7 +62,7 @@ export function BottomSheetHeader({
         showOperatingStopsOnly={showOperatingStopsOnly}
       />
       <div className="no-scrollbar mt-1.5 flex gap-1 overflow-x-auto">
-        {DEPARTURE_VIEWS.filter((v) => v.visible).map((view) => (
+        {STOP_TIMES_VIEWS.filter((v) => v.visible).map((view) => (
           <PillButton
             key={view.id}
             size={'sm'}

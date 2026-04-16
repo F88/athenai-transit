@@ -1,7 +1,7 @@
 import type { StopTimeViewMeta } from '../../types/app/transit-composed';
 
 /**
- * All departure view pattern definitions (T1-T7).
+ * All stop-time view pattern definitions (T1-T7).
  *
  * Each entry describes a grouping/sorting strategy for the BottomSheet.
  * Views with `enabled: false` are shown greyed out; `visible: false` are hidden.
@@ -9,7 +9,7 @@ import type { StopTimeViewMeta } from '../../types/app/transit-composed';
  * Text fields (labelKey, titleKey, descriptionKey) are i18n keys resolved
  * via `t()` at render time.
  */
-export const DEPARTURE_VIEWS: readonly StopTimeViewMeta[] = [
+export const STOP_TIMES_VIEWS: readonly StopTimeViewMeta[] = [
   {
     id: 'stop',
     icon: '🕐',

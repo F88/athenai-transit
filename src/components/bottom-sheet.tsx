@@ -8,7 +8,7 @@ import { collectPresentAgencies } from '../domain/transit/collect-present-agenci
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { getTimetableEntriesState } from '../domain/transit/timetable-utils';
-import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
+import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { APP_ROUTE_TYPES } from '../config/route-types';
 import { BottomSheetHeader } from './bottom-sheet-header';
@@ -94,7 +94,7 @@ export function BottomSheet({
   const showOperatingStopsOnly = showOperatingStopsOnlyOverride ?? isLateNight;
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
   const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
-  const selectedView = DEPARTURE_VIEWS.find((v) => v.id === viewId);
+  const selectedView = STOP_TIMES_VIEWS.find((v) => v.id === viewId);
   const touchStartY = useRef(0);
   const contentRef = useRef<HTMLDivElement>(null);
 

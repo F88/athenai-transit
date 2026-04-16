@@ -6,14 +6,14 @@ import { getStopServiceState } from '../domain/transit/timetable-utils';
 import { formatDateKey } from '../domain/transit/calendar-utils';
 import { createLogger } from '../lib/logger';
 
-const logger = createLogger('NearbyStopTimes');
+const logger = createLogger('StopTimes');
 
 /**
  * Return type for the useNearbyStopTimes hook.
  */
 export interface UseNearbyStopTimesReturn {
   /** Stop time contexts for all nearby stops. */
-  nearbyStopTimes: StopWithContext[];
+  stopTimes: StopWithContext[];
   /** Whether stop times are currently being fetched. */
   isNearbyLoading: boolean;
 }
@@ -96,7 +96,7 @@ export function useNearbyStopTimes(
         const withStopTimes = results.filter((r) => r.stopTimes.length > 0);
         const totalFreq = results.reduce((sum, r) => sum + (r.stats?.freq ?? 0), 0);
         logger.debug(
-          `nearby stop times: ${withStopTimes.length}/${results.length} stops with stop times (serviceDay=${formatDateKey(sd)} totalFreq=${totalFreq})`,
+          `stop times: ${withStopTimes.length}/${results.length} stops with stop times (serviceDay=${formatDateKey(sd)} totalFreq=${totalFreq})`,
         );
         setNearbyStopTimes(results);
       })
@@ -104,7 +104,7 @@ export function useNearbyStopTimes(
         if (cancelled) {
           return;
         }
-        logger.error('Failed to fetch nearby stop times:', error);
+        logger.error('Failed to fetch stop times:', error);
       })
       .finally(() => {
         if (cancelled) {
@@ -118,5 +118,5 @@ export function useNearbyStopTimes(
     };
   }, [radiusStops, dateTime, repo]);
 
-  return { nearbyStopTimes, isNearbyLoading };
+  return { stopTimes: nearbyStopTimes, isNearbyLoading };
 }
