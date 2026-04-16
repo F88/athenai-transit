@@ -144,48 +144,50 @@ export function BottomSheet({
     });
   }, []);
 
+  // Split into two stages so the distinct natures of the operations are
+  // visible. The stage order is load-bearing — reversing it produces a
+  // regression where showOperatingStopsOnly checks against post-inner-filter
+  // stopTimes.length, conflating stop visibility with the user's agency /
+  // route_type filters. Do not swap these stages.
+  //
+  // Stage 1 — drop stops that have no upcoming entries today.
+  // `showOperatingStopsOnly` is a property of the stop itself and MUST be
+  // evaluated against pre-filter `stopTimes.length`.
   const filteredStopTimes = useMemo(() => {
-    // Order is deliberate:
-    //
-    // 1. Stop-level filter (showOperatingStopsOnly) runs FIRST on the pre-filter list.
-    //    `showOperatingStopsOnly` means "keep only stops that have upcoming entries
-    //    today" — a property of the stop itself, independent of what the
-    //    user has chosen to hide inside. Running it before the stopTime
-    //    filters ensures the check is against pre-filter `stopTimes.length`
-    //    and does not conflate with the user's agency/route_type filters.
-    //
-    // 2. StopTime-level filters (agency / route_type) run AFTER on the
-    //    surviving stops. They only mutate each stop's `stopTimes` array
-    //    and never drop stops — a stop whose stopTimes are all removed
-    //    stays visible and shows the "allFilteredOut" fallback message.
-    //    This decouples "which stops are in the list" from "what is shown
-    //    inside each stop".
-    let result = stopTimes;
-    if (showOperatingStopsOnly) {
-      result = result.filter((swc) => swc.stopTimes.length > 0);
+    if (!showOperatingStopsOnly) {
+      return stopTimes;
     }
-    if (hiddenAgencyIds.size > 0) {
-      result = result.map((swc) => ({
-        ...swc,
-        stopTimes: filterByAgency(swc.stopTimes, hiddenAgencyIds),
-      }));
+    return stopTimes.filter((swc) => swc.stopTimes.length > 0);
+  }, [stopTimes, showOperatingStopsOnly]);
+
+  // Stage 2 — trim each surviving stop's inner stopTimes by agency /
+  // route_type filters. This never drops stops: a stop whose stopTimes
+  // are all removed stays visible and shows the "allFilteredOut"
+  // fallback message. This decouples "which stops are in the list"
+  // from "what is shown inside each stop".
+  const trimmedStopTimes = useMemo(() => {
+    if (hiddenAgencyIds.size === 0 && hiddenRouteTypes.size === 0) {
+      return filteredStopTimes;
     }
-    if (hiddenRouteTypes.size > 0) {
-      result = result.map((swc) => ({
-        ...swc,
-        stopTimes: filterByRouteType(swc.stopTimes, hiddenRouteTypes),
-      }));
-    }
-    return result;
-  }, [stopTimes, showOperatingStopsOnly, hiddenRouteTypes, hiddenAgencyIds]);
+    return filteredStopTimes.map((swc) => {
+      let trimmed = swc.stopTimes;
+      if (hiddenAgencyIds.size > 0) {
+        trimmed = filterByAgency(trimmed, hiddenAgencyIds);
+      }
+      if (hiddenRouteTypes.size > 0) {
+        trimmed = filterByRouteType(trimmed, hiddenRouteTypes);
+      }
+      return trimmed === swc.stopTimes ? swc : { ...swc, stopTimes: trimmed };
+    });
+  }, [filteredStopTimes, hiddenAgencyIds, hiddenRouteTypes]);
 
   const counts: NearbyStopsCounts = useMemo(
     () => ({
       total: stopTimes.length,
       active: stopTimes.filter((swc) => swc.stopTimes.length > 0).length,
-      filtered: filteredStopTimes.length,
+      filtered: trimmedStopTimes.length,
     }),
-    [stopTimes, filteredStopTimes],
+    [stopTimes, trimmedStopTimes],
   );
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -267,7 +269,7 @@ export function BottomSheet({
         onToggleAgency={toggleAgency}
       />
       <BottomSheetStops
-        filteredStopTimes={filteredStopTimes}
+        stopTimes={trimmedStopTimes}
         upcomingEntriesStates={upcomingEntriesStates}
         selectedStopId={selectedStopId}
         now={now}
