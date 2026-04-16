@@ -317,7 +317,7 @@ export function buildTripPatternStats(
       // (previously we used interior stop[1] to dodge the 2x merged count).
       const freq = countStopTimes(timetable[stops[0].id], patternId, 0, group.serviceIds);
 
-      // Omit patterns with no departures in this service group.
+      // Omit patterns with no trips in this service group.
       // Consistent with stopStats, which also excludes freq=0 entries.
       if (freq === 0) {
         continue;
