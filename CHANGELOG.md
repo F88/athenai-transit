@@ -11,6 +11,22 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+Changed
+
+- Departure → StopTime naming refactor (PR #135): GTFS stop_times.txt は arrival_time と departure_time を対で持つため、event collection を "Departure"
+  と呼ぶのは不正確。webapp + pipeline 全体で naming と TSDoc を整理。主な rename:
+    - ファイル: use-nearby-departures._→ use-nearby-stop-times._、departure-views.ts → stop-time-views.ts、flat-departure-item は StopTimeItem (単数) に、departure-item は
+      StopTimesItem (複数) に再構成。
+    - 型: DepartureViewMeta → StopTimeViewMeta、UseNearbyDeparturesReturn → UseNearbyStopTimesReturn、StopWithContext.departures → stopTimes 等。
+    - i18n namespace: departure._→ stopTimeView._。
+    - pipeline: countDepartures → countStopTimes、getDepartures → getDepartureTimes、DepartureData type → StopTimeData。
+    - GTFS departure_time field、arr/dep 対比、origin-only trip count は意図的に keep。
+- resolveRouteFreq の意味を「number of trips in a service day (origin si=0 stop time count = trip count)」と明確化。UI 経路 (line thickness) も trip count 意味で整合。
+- StopStatsJson.freq は「stop time count (terminal arrival 含む)」、TripPatternStatsJson.freq は「trip count (origin-only)」、StopGeoJson.cn.freq は「operational density
+  (terminal 含む、boardable trip count ではない)」と TSDoc で区別。
+- bottom-sheet.tsx の filter 処理を 2 段に分割 (filteredStopTimes / trimmedStopTimes)。stage 順序は load-bearing と明記 (以前の逆転によるバグ再発防止)。
+- i18n UI wording 軽微更新: "departures" → "All" / "services" / "service" (view.stop.title/description、showOperatingStopsOnlyTitle)。
+- pipeline/docs/V2_APP_DATA.md を高レベル reference にスリム化、型仕様は src/types/data/transit-v2-json.ts の TSDoc を正本に。
 - Pipeline: 伊予鉄バス (`iyotetsu-bus`) の ODPT CKAN リソースを 20260415 版 (`resourceId: 4e0f3da7-04a3-4335-ae56-2f4a213d3631`) に更新し、GTFS を再取得して v2 app data を再生成。`routeColorFallbacks` は不要、`shapes.txt` はヘッダのみで実データなし、`translations.txt` には一部全角スペースが含まれることを確認。
 - `formatDistance(meters, unit?)` / `formatDistanceCompact(meters)` (`src/domain/transit/distance.ts`) に `lang: string` 引数を追加し locale 対応化。従来は `toLocaleString('en-US')` をハードコード + km 値を `.toFixed(1)` で locale 非対応に整形していたため、fr / de ユーザに対して decimal / thousands separator が正しく出力されない潜在バグがあった (例: `1500` → en では `1.5km`、de でも `1.5km` になるが正しくは `1,5km`)。新シグネチャ:
     - `formatDistance(meters, lang, unit = true)`
@@ -22,6 +38,9 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Fixed
 
+- extract-timetable.ts の出力順序を完全に deterministic 化。stopTimetable / patternMap / serviceMap を全て ID で sort。以前は service ID が Map insertion order (trip
+  traversal 順) 依存で、trip_id rename や DB 再生成で JSON property 順が揺れていた。
+- bottom-sheet.tsx の filteredStoptimes タイプミスを filteredStopTimes に修正 (他 4 ファイルは既に正しい naming で一貫)。
 - `BottomSheetHeader` の Agency filter PillButton が `agency.agency_short_name` / `agency.agency_long_name` の base 値を直接読んでおり、UI 言語切替に追従しない i18n 漏れを解消。canonical helper `getAgencyDisplayNames` 経由で `dataLang` chain を解決し、label (`agency_short_names`) と tooltip (`agency_long_names`) の両方を言語切替に追従させる。`BottomSheetHeader` に `dataLang: readonly string[]` prop を追加し、`BottomSheet` から透過。`AgencyBadge` / verbose 系と同じ `getAgencyDisplayNames(agency, dataLang, DEFAULT_AGENCY_LANG, 'short')` パターンに揃え、最終フォールバックは `agency.agency_id`。
 - `StopMetrics` の connectivity 表示 (`X路線 Y便 Zのりば (300m)`) がハードコード日本語で、UI 言語切替に追従しない i18n 漏れを解消。`useTranslation()` + `stop.metrics.connectivity` i18n key に移行し、`routeCount` / `freq` / `stopCount` / `radius` を interpolation に渡す。数値は既存の locale-aware 慣習 (`timetable-metadata` / `label-count-badge` 等) に倣い `toLocaleString(i18n.language)` で整形。`stats.freq` も同様に locale 対応。`300m` は `CONNECTIVITY_RADIUS_M` (新規 `src/config/transit-defaults.ts`) から取得し、`formatDistance` の en-US hardcode 問題を回避するため inline で locale-aware に整形する。
 - `TimetableGridEntry` の terminal marker `着` がハードコード日本語だった問題を修正。`timetable.entry.arriving` i18n key を新設 (ja `"着"` / en `"Arr"`) し、`useTranslation` 経由で解決。国際時刻表の業界標準 (Arr/Dep) に準拠。`timetable.entry.*` namespace に配置し、同居する `terminal` / `origin` / `noPickup` / `noDropOff` (これらは pill-style full-word labels) と区別するため component 側に TSDoc コメントを追加。
