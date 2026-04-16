@@ -108,13 +108,13 @@ export function StopTimeItem({
             {formatAbsoluteTime(time)}
             {/*
              * Terminal arrival marker attached to the absolute time (e.g. "22:30着" / "22:30Arr").
-             * Uses a dedicated `departure.arrivingAbsolute` key so the two terminal
+             * Uses a dedicated `stopTimeView.arrivingAbsolute` key so the two terminal
              * marker contexts in this row can be controlled independently:
              *
-             *  - `departure.arriving` → used by `<RelativeTime>` next to the
+             *  - `stopTimeView.arriving` → used by `<RelativeTime>` next to the
              *    relative time ("5分"). Currently empty in ja/en as an
              *    intentional opt-out to keep the relative time visually quiet.
-             *  - `departure.arrivingAbsolute` → used here next to the absolute
+             *  - `stopTimeView.arrivingAbsolute` → used here next to the absolute
              *    time. Populated per locale (ja: "着", en: "Arr", etc.).
              *    Locale owners can opt out for any language by setting the
              *    value to an empty string — the component always renders
