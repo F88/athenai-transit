@@ -2,7 +2,7 @@
  * Build tripPatternStats section of InsightsBundle.
  *
  * Computes per-pattern operational statistics segmented by service group:
- * - `freq`: total departures per day for this service group
+ * - `freq`: number of trips per day for this service group (counted at origin si=0)
  * - `rd`: remaining minutes from each stop to the terminal (median-based)
  *
  * ### Duplicate stop_id handling (Issue #47)
