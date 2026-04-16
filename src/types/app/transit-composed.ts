@@ -123,7 +123,14 @@ export interface StopWithMeta {
       {
         /** Number of unique routes within 300m. */
         routeCount: number;
-        /** Sum of unique routes' daily departures. */
+        /**
+         * Operational density within 300m: per-route max stop-time count,
+         * summed across unique routes. Counts all `d`-field entries
+         * including non-boardable terminal arrivals — this is a measure
+         * of how many vehicles operate in the neighborhood, not how many
+         * are boardable. See `StopGeoJson.cn[groupKey].freq` in
+         * `transit-v2-json.ts` for the canonical definition.
+         */
         freq: number;
         /** Number of other stops within 300m. */
         stopCount: number;

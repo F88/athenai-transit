@@ -358,7 +358,14 @@ export function extractTripPatternsAndTimetable(
         const pt: Record<string, (0 | 1 | 2 | 3)[]> = {};
         const dt: Record<string, (0 | 1 | 2 | 3)[]> = {};
 
-        for (const [serviceId, entries] of serviceMap) {
+        // Sort service IDs so the emitted d/a/pt/dt property order is
+        // deterministic. Without this, Map insertion order reflects
+        // trip_id traversal order and can shift the JSON property order
+        // across rebuilds (JSON.stringify preserves key insertion order).
+        const sortedServiceEntries = [...serviceMap.entries()].sort(([a], [b]) =>
+          a < b ? -1 : a > b ? 1 : 0,
+        );
+        for (const [serviceId, entries] of sortedServiceEntries) {
           // Sort by departure time
           entries.sort((x, y) => x.d - y.d);
           d[serviceId] = entries.map((e) => e.d);
