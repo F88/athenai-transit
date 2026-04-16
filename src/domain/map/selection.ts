@@ -25,10 +25,10 @@ export interface RouteSelectionInfo {
 export type SelectionInfo = StopSelectionInfo | RouteSelectionInfo;
 
 /**
- * Extracts route IDs from a stop's departure context for selection highlighting.
+ * Extracts route IDs from a stop's stop times for selection highlighting.
  */
-export function extractRouteIdsForStop(departures: StopWithContext[], stopId: string): Set<string> {
-  const ctx = departures.find((d) => d.stop.stop_id === stopId);
+export function extractRouteIdsForStop(stopTimes: StopWithContext[], stopId: string): Set<string> {
+  const ctx = stopTimes.find((d) => d.stop.stop_id === stopId);
   if (!ctx) {
     return new Set();
   }
@@ -52,7 +52,7 @@ export function buildTimetableEntriesMap(
 }
 
 /**
- * Returns the route IDs from a stop's active departure groups.
+ * Returns the route IDs from a stop's active stop times.
  */
 export function getRouteIdsForStop(
   stopId: string | null,
@@ -69,7 +69,7 @@ export function getRouteIdsForStop(
 }
 
 /**
- * Resolves selected route IDs from a route click or stop departures.
+ * Resolves selected route IDs from a route click or stop times.
  */
 export function resolveSelectedRouteIds(
   selectedRouteId: string | null,

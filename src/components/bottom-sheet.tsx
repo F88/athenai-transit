@@ -144,7 +144,7 @@ export function BottomSheet({
     });
   }, []);
 
-  const filteredStoptimes = useMemo(() => {
+  const filteredStopTimes = useMemo(() => {
     // Order is deliberate:
     //
     // 1. Stop-level filter (showOperatingStopsOnly) runs FIRST on the pre-filter list.
@@ -183,9 +183,9 @@ export function BottomSheet({
     () => ({
       total: stopTimes.length,
       active: stopTimes.filter((swc) => swc.stopTimes.length > 0).length,
-      filtered: filteredStoptimes.length,
+      filtered: filteredStopTimes.length,
     }),
-    [stopTimes, filteredStoptimes],
+    [stopTimes, filteredStopTimes],
   );
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -267,7 +267,7 @@ export function BottomSheet({
         onToggleAgency={toggleAgency}
       />
       <BottomSheetStops
-        filteredStopTimes={filteredStoptimes}
+        filteredStopTimes={filteredStopTimes}
         upcomingEntriesStates={upcomingEntriesStates}
         selectedStopId={selectedStopId}
         now={now}
