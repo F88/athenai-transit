@@ -818,7 +818,7 @@ export default function App({ loadResult }: AppProps) {
         />
       </div>
       <BottomSheet
-        nearbyDepartures={filteredNearbyDepartures}
+        stopTimes={filteredNearbyDepartures}
         selectedStopId={selectedStopId}
         isNearbyLoading={isNearbyLoading}
         hasNearbyLoaded={hasNearbyLoaded}
