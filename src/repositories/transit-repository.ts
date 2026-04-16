@@ -27,7 +27,7 @@ import type {
 export const MAX_STOPS_RESULT = 50_000; // FOR TESTING WITH LARGE DATASETS
 
 /**
- * Repository interface for querying transit stops and departures.
+ * Repository interface for querying transit stops and stop times.
  *
  * All methods return `Promise` so that implementations can be
  * synchronous in-memory mocks or asynchronous data-store queries.
@@ -63,7 +63,7 @@ export interface TransitRepository {
   getStopsInBounds(bounds: Bounds, limit: number): Promise<CollectionResult<StopWithMeta>>;
 
   /**
-   * Returns upcoming departures from a specific stop as
+   * Returns upcoming timetable entries from a specific stop as
    * {@link ContextualTimetableEntry} items, sorted chronologically.
    *
    * Each entry includes route/headsign, boarding availability
@@ -187,10 +187,10 @@ export interface TransitRepository {
   getRouteShapes(): Promise<CollectionResult<RouteShape>>;
 
   /**
-   * Returns all departures for all route/headsign combinations at a stop
+   * Returns all timetable entries for all route/headsign combinations at a stop
    * on the service day derived from `dateTime`.
    *
-   * Returns every departure at the stop, each tagged with its route,
+   * Returns every timetable entry at the stop, each tagged with its route,
    * headsign, boarding availability, and pattern position.
    *
    * ### Sorting
