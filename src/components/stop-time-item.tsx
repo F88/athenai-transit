@@ -14,7 +14,7 @@ import { TripPositionIndicator } from './label/trip-position-indicator';
 import { JourneyTimeBar } from './journey-time-bar';
 import { useInfoLevel } from '@/hooks/use-info-level';
 
-interface FlatDepartureItemProps {
+interface StopTimeItemProps {
   /** The timetable entry to display. */
   entry: ContextualTimetableEntry;
   /** Current time for relative time calculation. */
@@ -41,13 +41,13 @@ interface FlatDepartureItemProps {
 }
 
 /**
- * A single row in the T1 (Stop) flat departure list.
+ * A single row in the T1 (Stop) flat stop time list.
  *
- * The first departure shows relative time ("あと5分"), subsequent
- * departures show absolute time ("14:30"). Route label is colored
+ * The first stop time shows relative time ("あと5分"), subsequent
+ * stop times show absolute time ("14:30"). Route label is colored
  * with the route's designated color.
  */
-export function FlatDepartureItem({
+export function StopTimeItem({
   entry,
   now,
   isFirst,
@@ -56,7 +56,7 @@ export function FlatDepartureItem({
   dataLang,
   agency,
   showAgency = false,
-}: FlatDepartureItemProps) {
+}: StopTimeItemProps) {
   const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = info.isVerboseEnabled;
@@ -64,8 +64,8 @@ export function FlatDepartureItem({
   const bgColor = route.route_color ? `#${route.route_color}` : undefined;
   const attributes = getTimetableEntryAttributes(entry);
   const isTerminal = attributes.isTerminal;
-  const departureTime = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
-  const diffMs = departureTime.getTime() - now.getTime();
+  const time = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
+  const diffMs = time.getTime() - now.getTime();
   const showRelativeTime = isFirst || diffMs <= 60 * 60 * 1000;
 
   const dt = formatAbsoluteTime(minutesToDate(entry.serviceDate, entry.schedule.departureMinutes));
@@ -94,9 +94,9 @@ export function FlatDepartureItem({
           {showRelativeTime && (
             <RelativeTime
               now={now}
-              departureTime={departureTime}
+              time={time}
               isTerminal={isTerminal}
-              // Hide prefix for departures >90min to save space.
+              // Hide prefix for time >90min to save space.
               hidePrefix={diffMs > 90 * 60 * 1000}
             />
           )}
@@ -105,16 +105,16 @@ export function FlatDepartureItem({
             className="text-base font-bold text-[#333] dark:text-gray-100"
             style={bgColor ? { color: bgColor } : undefined}
           >
-            {formatAbsoluteTime(departureTime)}
+            {formatAbsoluteTime(time)}
             {/*
              * Terminal arrival marker attached to the absolute time (e.g. "22:30着" / "22:30Arr").
-             * Uses a dedicated `departure.arrivingAbsolute` key so the two terminal
+             * Uses a dedicated `stopTimeView.arrivingAbsolute` key so the two terminal
              * marker contexts in this row can be controlled independently:
              *
-             *  - `departure.arriving` → used by `<RelativeTime>` next to the
+             *  - `stopTimeView.arriving` → used by `<RelativeTime>` next to the
              *    relative time ("5分"). Currently empty in ja/en as an
              *    intentional opt-out to keep the relative time visually quiet.
-             *  - `departure.arrivingAbsolute` → used here next to the absolute
+             *  - `stopTimeView.arrivingAbsolute` → used here next to the absolute
              *    time. Populated per locale (ja: "着", en: "Arr", etc.).
              *    Locale owners can opt out for any language by setting the
              *    value to an empty string — the component always renders
@@ -122,7 +122,7 @@ export function FlatDepartureItem({
              */}
             {isTerminal && (
               <span className="text-[10px] font-normal opacity-70">
-                {t('departure.arrivingAbsolute')}
+                {t('stopTimeView.arrivingAbsolute')}
               </span>
             )}
           </div>

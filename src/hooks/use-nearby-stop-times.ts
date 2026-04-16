@@ -6,15 +6,15 @@ import { getStopServiceState } from '../domain/transit/timetable-utils';
 import { formatDateKey } from '../domain/transit/calendar-utils';
 import { createLogger } from '../lib/logger';
 
-const logger = createLogger('NearbyDepartures');
+const logger = createLogger('StopTimes');
 
 /**
- * Return type for the useNearbyDepartures hook.
+ * Return type for the useNearbyStopTimes hook.
  */
-export interface UseNearbyDeparturesReturn {
-  /** Departure contexts for all nearby stops. */
-  nearbyDepartures: StopWithContext[];
-  /** Whether departures are currently being fetched. */
+export interface UseNearbyStopTimesReturn {
+  /** Stop time contexts for all nearby stops. */
+  stopTimes: StopWithContext[];
+  /** Whether stop times are currently being fetched. */
   isNearbyLoading: boolean;
 }
 
@@ -29,16 +29,16 @@ export interface UseNearbyDeparturesReturn {
  * result is applied.
  *
  * @param radiusStops - Stops within the nearby radius.
- * @param dateTime - The reference date/time for departure lookup.
+ * @param dateTime - The reference date/time for stop time lookup.
  * @param repo - Transit data repository.
- * @returns Departure data and loading state.
+ * @returns Stop time data and loading state.
  */
-export function useNearbyDepartures(
+export function useNearbyStopTimes(
   radiusStops: StopWithMeta[],
   dateTime: Date,
   repo: TransitRepository,
-): UseNearbyDeparturesReturn {
-  const [nearbyDepartures, setNearbyDepartures] = useState<StopWithContext[]>([]);
+): UseNearbyStopTimesReturn {
+  const [nearbyStopTimes, setNearbyStopTimes] = useState<StopWithContext[]>([]);
   const [isNearbyLoading, setIsNearbyLoading] = useState(false);
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export function useNearbyDepartures(
                 repo.getUpcomingTimetableEntries(stop.stop_id, dateTime),
                 repo.getRouteTypesForStop(stop.stop_id),
               ]);
-              const departures = depsResult.success ? depsResult.data : [];
+              const stopTimes = depsResult.success ? depsResult.data : [];
               // When timetable data is missing for a stop (success=false),
               // default to false / no-service. This only happens when the
               // stop has no timetable data at all (not a network error),
@@ -77,7 +77,7 @@ export function useNearbyDepartures(
               return {
                 stop,
                 routeTypes,
-                departures,
+                stopTimes,
                 stopServiceState,
                 agencies,
                 routes,
@@ -93,18 +93,18 @@ export function useNearbyDepartures(
         if (cancelled) {
           return;
         }
-        const withDepartures = results.filter((r) => r.departures.length > 0);
+        const withStopTimes = results.filter((r) => r.stopTimes.length > 0);
         const totalFreq = results.reduce((sum, r) => sum + (r.stats?.freq ?? 0), 0);
         logger.debug(
-          `nearby departures: ${withDepartures.length}/${results.length} stops with departures (serviceDay=${formatDateKey(sd)} totalFreq=${totalFreq})`,
+          `stop times: ${withStopTimes.length}/${results.length} stops with stop times (serviceDay=${formatDateKey(sd)} totalFreq=${totalFreq})`,
         );
-        setNearbyDepartures(results);
+        setNearbyStopTimes(results);
       })
       .catch((error) => {
         if (cancelled) {
           return;
         }
-        logger.error('Failed to fetch nearby departures:', error);
+        logger.error('Failed to fetch stop times:', error);
       })
       .finally(() => {
         if (cancelled) {
@@ -118,5 +118,5 @@ export function useNearbyDepartures(
     };
   }, [radiusStops, dateTime, repo]);
 
-  return { nearbyDepartures, isNearbyLoading };
+  return { stopTimes: nearbyStopTimes, isNearbyLoading };
 }

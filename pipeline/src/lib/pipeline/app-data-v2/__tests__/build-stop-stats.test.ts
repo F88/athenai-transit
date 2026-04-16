@@ -151,14 +151,14 @@ describe('buildStopStats', () => {
     expect(result['sa']['s1'].freq).toBe(2);
   });
 
-  it('excludes stops with no departures in a service group', () => {
+  it('excludes stops with no stop times in a service group', () => {
     const patterns: Record<string, TripPatternJson> = {
       p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
 
     const routes = [makeRoute('r1', 3)];
 
-    // s1 only has weekday departures
+    // s1 only has weekday stop times
     const timetable: Record<string, TimetableGroupV2Json[]> = {
       s1: [makeTimetableGroup('p1', 0, { svc_wd: [480] })],
     };
@@ -202,7 +202,7 @@ describe('buildStopStats', () => {
 
     const result = buildStopStats(timetable, patterns, routes, groups);
 
-    // Only p1's departure is counted, p_unknown is skipped
+    // Only p1's stop time is counted, p_unknown is skipped
     expect(result['wd']['s1'].freq).toBe(1);
     expect(result['wd']['s1'].rc).toBe(1);
   });
@@ -265,7 +265,7 @@ describe('buildStopStats', () => {
     expect(result).toEqual({});
   });
 
-  it('counts 2x departures at circular route origin/terminal stop', () => {
+  it('counts 2x stop times at circular route origin/terminal stop', () => {
     // Circular: s1 → s2 → s3 → s1
     const patterns: Record<string, TripPatternJson> = {
       p1: {
@@ -278,7 +278,7 @@ describe('buildStopStats', () => {
 
     const routes = [makeRoute('r1', 3)];
 
-    // s1 has 2x departures (origin + terminal), interior stops have 3
+    // s1 has 2x stop times (origin + terminal), interior stops have 3
     const timetable: Record<string, TimetableGroupV2Json[]> = {
       s1: [makeTimetableGroup('p1', 0, { svc1: [480, 500, 540, 560, 600, 620] })],
       s2: [makeTimetableGroup('p1', 0, { svc1: [490, 550, 610] })],
@@ -289,21 +289,21 @@ describe('buildStopStats', () => {
 
     const result = buildStopStats(timetable, patterns, routes, groups);
 
-    // Origin/terminal stop has 2x departures — this is correct for stopStats
+    // Origin/terminal stop has 2x stop times — this is correct for stopStats
     // because the bus physically passes through this stop twice per trip
     expect(result['wd']['s1'].freq).toBe(6);
     expect(result['wd']['s2'].freq).toBe(3);
     expect(result['wd']['s3'].freq).toBe(3);
   });
 
-  it('does not count departures from timetable groups with no matching service IDs', () => {
+  it('does not count stop times from timetable groups with no matching service IDs', () => {
     const patterns: Record<string, TripPatternJson> = {
       p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
 
     const routes = [makeRoute('r1', 3)];
 
-    // Timetable has departures only for svc_wd, not svc_sa
+    // Timetable has stop times only for svc_wd, not svc_sa
     const timetable: Record<string, TimetableGroupV2Json[]> = {
       s1: [makeTimetableGroup('p1', 0, { svc_wd: [480, 540, 600] })],
       s2: [makeTimetableGroup('p1', 0, { svc_wd: [490, 550, 610] })],
@@ -318,7 +318,7 @@ describe('buildStopStats', () => {
 
     expect(result['wd']['s1'].freq).toBe(3);
     expect(result['wd']['s1'].rc).toBe(1);
-    // s1 has no Saturday departures → not in sa group
+    // s1 has no Saturday stop times → not in sa group
     expect(result['sa']['s1']).toBeUndefined();
     expect(result['sa']['s2']).toBeUndefined();
   });
@@ -343,7 +343,7 @@ describe('buildStopStats', () => {
     expect(result['wd']['s1'].ld).toBe(600);
   });
 
-  it('sets ed === ld when only one departure exists', () => {
+  it('sets ed === ld when only one stop time exists', () => {
     const patterns: Record<string, TripPatternJson> = {
       p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
@@ -387,7 +387,7 @@ describe('buildStopStats', () => {
     expect(result['wd']['s1'].ld).toBe(1440); // max across groups
   });
 
-  it('handles empty serviceIds in group (no departures counted)', () => {
+  it('handles empty serviceIds in group (no stop times counted)', () => {
     const patterns: Record<string, TripPatternJson> = {
       p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
     };
@@ -402,7 +402,7 @@ describe('buildStopStats', () => {
 
     const result = buildStopStats(timetable, patterns, routes, groups);
 
-    // No service IDs → no departures → all stops excluded
+    // No service IDs → no stop times → all stops excluded
     expect(Object.keys(result['empty'])).toHaveLength(0);
   });
 

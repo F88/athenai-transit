@@ -204,8 +204,8 @@ interface MapViewProps {
   inBoundStops: StopWithMeta[];
   /** Stops within the nearby radius. Used for edge markers and detailed display. */
   radiusStops: StopWithMeta[];
-  /** Departure info for nearby stops. Displayed in bottom sheet and marker details. */
-  nearbyDepartures: StopWithContext[];
+  /** Stop times for nearby stops. Displayed in bottom sheet and marker details. */
+  stopTimes: StopWithContext[];
 
   selectedStopId: string | null;
   focusPosition: LatLng | null;
@@ -225,7 +225,7 @@ interface MapViewProps {
   time: Date;
   onBoundsChanged: (bounds: Bounds, center: LatLng) => void;
   onStopSelected: (stop: Stop) => void;
-  onFetchDepartures: (stopId: string) => Promise<StopWithContext | null>;
+  onFetchStopTimes: (stopId: string) => Promise<StopWithContext | null>;
   onToggleStopType: (rt: number) => void;
   onToggleBusShapes: () => void;
   onToggleNonBusShapes: () => void;
@@ -239,7 +239,7 @@ interface MapViewProps {
   onCycleLang: () => void;
   onDeselectStop: () => void;
   onRouteShapeSelected: (routeId: string) => void;
-  /** Resolves daily departure frequency for a route based on the current service day. */
+  /** Resolves the number of trips on a route in the current service day. */
   resolveRouteFreq: (routeId: string) => number | undefined;
   onSearchClick: () => void;
   onInfoClick: () => void;
@@ -265,7 +265,7 @@ export function MapView({
   radiusStops,
   selectedStopId,
   focusPosition,
-  nearbyDepartures,
+  stopTimes,
   routeTypeMap,
   routeShapes,
   selectionInfo,
@@ -280,7 +280,7 @@ export function MapView({
   time: now,
   onBoundsChanged,
   onStopSelected,
-  onFetchDepartures,
+  onFetchStopTimes,
   onToggleStopType,
   onToggleBusShapes,
   onToggleNonBusShapes,
@@ -313,10 +313,7 @@ export function MapView({
   // Avoids multiple <canvas> elements stacking and blocking pointer events.
   const canvasRenderer = useMemo(() => L.canvas({ padding: 0.5 }), []);
 
-  const timetableEntriesMap = useMemo(
-    () => buildTimetableEntriesMap(nearbyDepartures),
-    [nearbyDepartures],
-  );
+  const timetableEntriesMap = useMemo(() => buildTimetableEntriesMap(stopTimes), [stopTimes]);
 
   // Build agenciesMap from StopWithMeta.agencies (resolved by repo from timetable)
   const agenciesMap = useMemo(() => {
@@ -434,7 +431,7 @@ export function MapView({
           stops={filteredNearbyStops}
           selectedStopId={selectedStopId}
           routeTypeMap={routeTypeMap}
-          nearbyDepartures={timetableEntriesMap}
+          stopTimes={timetableEntriesMap}
           agenciesMap={agenciesMap}
           showTooltip={true}
           // showTooltip={false}
@@ -444,7 +441,7 @@ export function MapView({
           renderMode={nearbyRenderMode}
           renderer={canvasRenderer}
           onStopSelected={onStopSelected}
-          onFetchDepartures={onFetchDepartures}
+          onFetchStopTimes={onFetchStopTimes}
         />
         {/* Far: inBoundStops excluding radiusStops. Click to select only. */}
         <StopMarkers
@@ -468,7 +465,7 @@ export function MapView({
             selectedStopId={selectedStopId}
             routeTypeMap={routeStopsRouteTypeMap}
             showTooltip={true}
-            nearbyDepartures={timetableEntriesMap}
+            stopTimes={timetableEntriesMap}
             time={now}
             renderMode={nearbyRenderMode}
             infoLevel={infoLevel}
@@ -522,7 +519,7 @@ export function MapView({
           dataLang={dataLang}
           renderMode={nearbyRenderMode}
           onStopSelected={onStopSelected}
-          onFetchDepartures={onFetchDepartures}
+          onFetchStopTimes={onFetchStopTimes}
         />
       )}
       <SelectionIndicator

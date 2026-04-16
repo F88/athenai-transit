@@ -76,16 +76,16 @@ export interface ConnectivityStats {
   rc: DistributionStats;
   /** Max routes within 300m at any single stop. */
   rcMax: number;
-  /** Departures within 300m (cn.ho.freq). */
+  /** Per-stop `cn.ho.freq` distribution (for each stop, stop times/day within 300m aggregated across unique routes at each route's max-freq stop). */
   freq: DistributionStats;
-  /** Max departures within 300m at any single stop. */
+  /** Largest `cn.ho.freq` across all stops — identifies the stop whose 300m neighborhood is the busiest. */
   freqMax: number;
   /** Stops within 300m (cn.ho.sc). */
   sc: DistributionStats;
   /** Max stops within 300m at any single stop. */
   scMax: number;
   /**
-   * Ratio `freq.mean / sc.mean`: average departures per colocated stop.
+   * Ratio `freq.mean / sc.mean`: average stop times per colocated stop.
    * High values indicate "few stops but high frequency" (urban trunks),
    * low values indicate "many stops sharing few trips" (residential).
    */
@@ -525,14 +525,14 @@ const STOP_GEO_CONNECTIVITY_LEGEND = [
   '# rcP50      : median routes within 300m (outlier-resistant)',
   '# rcP90      : 90th percentile routes within 300m',
   '# rcMax      : max routes within 300m at any single stop',
-  '# freqMean   : mean departures/day within 300m',
-  '# freqP50    : median departures/day within 300m',
-  '# freqP90    : 90th percentile departures/day within 300m',
-  '# freqMax    : max departures/day within 300m',
+  '# freqMean   : mean stop times/day within 300m',
+  '# freqP50    : median stop times/day within 300m',
+  '# freqP90    : 90th percentile stop times/day within 300m',
+  '# freqMax    : max stop times/day within 300m',
   '# scMean     : mean stops within 300m',
   '# scP50      : median stops within 300m',
   '# scMax      : max stops within 300m',
-  '# freqPerSc  : freqMean / scMean — departures per colocated stop.',
+  '# freqPerSc  : freqMean / scMean — stop times per colocated stop.',
   '#              High = "few stops but high frequency" (urban trunks),',
   '#              low = "many stops sharing few trips" (residential).',
 ].join('\n');
@@ -576,7 +576,7 @@ const STOP_GEO_LEADERBOARD_CONNECTED_LEGEND = [
 
 const STOP_GEO_LEADERBOARD_BUSIEST_LEGEND = [
   '# Top-N stops ranked by `cn.ho.freq` descending — the busiest',
-  '# neighborhoods by departures per day within 300m (holiday/Sunday).',
+  '# neighborhoods by stop times per day within 300m (holiday/Sunday).',
 ].join('\n');
 
 /** Format a GlobalInsightsStats as a multi-section human-readable report. */

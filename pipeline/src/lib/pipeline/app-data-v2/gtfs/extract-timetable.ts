@@ -9,8 +9,9 @@
  *
  * Stops are not filtered out of the bundle when they lack timetable
  * coverage. This extractor only builds the timetable section, so a stop
- * with no usable departure records simply does not get a timetable key.
- * The stop record itself is still emitted from stops.txt by design.
+ * with no usable stop time records (non-null departure_time) simply
+ * does not get a timetable key. The stop record itself is still emitted
+ * from stops.txt by design.
  */
 
 import type Database from 'better-sqlite3';
@@ -265,15 +266,15 @@ export function extractTripPatternsAndTimetable(
   //
   // The 4-level nesting is required by Issue #47: when the same stop_id appears
   // at multiple positions within one pattern (6-shape, circular routes), each
-  // position needs its own group identified by `si`. Without splitting, departures
+  // position needs its own group identified by `si`. Without splitting, stop times
   // from different positions get merged and frequencies double-count.
-  type DepartureData = {
+  type StopTimeData = {
     d: number;
     a: number;
     pt: number;
     dt: number;
   };
-  const stopTimetable = new Map<string, Map<string, Map<number, Map<string, DepartureData[]>>>>();
+  const stopTimetable = new Map<string, Map<string, Map<number, Map<string, StopTimeData[]>>>>();
 
   for (const [, trip] of tripStopTimesMap) {
     const key = patternKey(trip);
@@ -329,10 +330,22 @@ export function extractTripPatternsAndTimetable(
   const timetable: Record<string, TimetableGroupV2Json[]> = {};
   let groupCount = 0;
 
-  for (const [stopId, patternMap] of stopTimetable) {
+  // Sort stops by stopId so the output Record's key order is deterministic
+  // regardless of trip insertion order (same rationale as the patId sort below).
+  const sortedStopEntries = [...stopTimetable.entries()].sort(([a], [b]) =>
+    a < b ? -1 : a > b ? 1 : 0,
+  );
+  for (const [stopId, patternMap] of sortedStopEntries) {
     const groups: TimetableGroupV2Json[] = [];
 
-    for (const [patId, siMap] of patternMap) {
+    // Sort patterns by patId so the timetable group array order is
+    // deterministic regardless of trip insertion order. Without this,
+    // the same feed could produce different group ordering when trip_ids
+    // are renamed or the DB is regenerated, causing snapshot diff noise.
+    const sortedPatternEntries = [...patternMap.entries()].sort(([a], [b]) =>
+      a < b ? -1 : a > b ? 1 : 0,
+    );
+    for (const [patId, siMap] of sortedPatternEntries) {
       // Emit one group per (patId, si) pair. For 6-shape/circular patterns
       // where the same stop appears at multiple positions, this produces
       // multiple groups under the same (stopId, patId).
@@ -345,7 +358,14 @@ export function extractTripPatternsAndTimetable(
         const pt: Record<string, (0 | 1 | 2 | 3)[]> = {};
         const dt: Record<string, (0 | 1 | 2 | 3)[]> = {};
 
-        for (const [serviceId, entries] of serviceMap) {
+        // Sort service IDs so the emitted d/a/pt/dt property order is
+        // deterministic. Without this, Map insertion order reflects
+        // trip_id traversal order and can shift the JSON property order
+        // across rebuilds (JSON.stringify preserves key insertion order).
+        const sortedServiceEntries = [...serviceMap.entries()].sort(([a], [b]) =>
+          a < b ? -1 : a > b ? 1 : 0,
+        );
+        for (const [serviceId, entries] of sortedServiceEntries) {
           // Sort by departure time
           entries.sort((x, y) => x.d - y.d);
           d[serviceId] = entries.map((e) => e.d);

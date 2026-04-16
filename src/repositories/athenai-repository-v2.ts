@@ -8,7 +8,7 @@
  *
  * Key features:
  * - TripPattern-based timetable: route+headsign resolved via tp FK
- * - TimetableEntry / ContextualTimetableEntry: per-departure boarding info and pattern position
+ * - TimetableEntry / ContextualTimetableEntry: per-stop-time boarding info and pattern position
  * - Shapes lazy-loaded in background after create()
  * - Stop.agency_id is empty string (v2 GTFS spec compliance)
  * - location_type=1 (station) stops are filtered out until the UI
@@ -1037,7 +1037,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const t0 = performance.now();
     const timetableGroups = this.timetable[stopId];
     if (!timetableGroups) {
-      return Promise.resolve({ success: false, error: `No departure data for stop: ${stopId}` });
+      return Promise.resolve({ success: false, error: `No stop time data for stop: ${stopId}` });
     }
 
     const serviceDay = getServiceDay(now);

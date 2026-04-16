@@ -3,7 +3,7 @@
  *
  * These types combine the domain types from {@link transit.ts}
  * (Stop, Route, Agency, etc.) with additional context needed by
- * the webapp — spatial metadata, departure schedules, UI groupings,
+ * the webapp — spatial metadata, stop time schedules, UI groupings,
  * and other enrichments that do not exist in the pipeline output.
  *
  * Unlike the stable domain types in transit.ts, these types evolve
@@ -61,7 +61,7 @@ export interface RouteWithMeta {
 
 /**
  * A route paired with its agency and additional context.
- * Reserved for future expansion (e.g. route-level departures, statistics).
+ * Reserved for future expansion (e.g. route-level stop times, statistics).
  */
 export type RouteWithContext = RouteWithMeta;
 
@@ -69,7 +69,7 @@ export type RouteWithContext = RouteWithMeta;
  * A stop enriched with metadata from spatial queries and timetable data.
  *
  * Agencies and routes are resolved from timetable data regardless of
- * active departures, enabling features like route shape highlighting
+ * active stop times, enabling features like route shape highlighting
  * even when all services have ended for the day.
  */
 export interface StopWithMeta {
@@ -86,7 +86,7 @@ export interface StopWithMeta {
    * Values are for the current service group (e.g. weekday, Saturday).
    */
   stats?: {
-    /** Total departures per day for this service group. */
+    /** Total stop times per day for this service group. */
     freq: number;
     /** Number of distinct routes serving this stop. */
     routeCount: number;
@@ -123,7 +123,14 @@ export interface StopWithMeta {
       {
         /** Number of unique routes within 300m. */
         routeCount: number;
-        /** Sum of unique routes' daily departures. */
+        /**
+         * Operational density within 300m: per-route max stop-time count,
+         * summed across unique routes. Counts all `d`-field entries
+         * including non-boardable terminal arrivals — this is a measure
+         * of how many vehicles operate in the neighborhood, not how many
+         * are boardable. See `StopGeoJson.cn[groupKey].freq` in
+         * `transit-v2-json.ts` for the canonical definition.
+         */
         freq: number;
         /** Number of other stops within 300m. */
         stopCount: number;
@@ -135,9 +142,9 @@ export interface StopWithMeta {
 /**
  * A stop paired with its route types and upcoming {@link ContextualTimetableEntry} items.
  *
- * Extends {@link StopWithMeta} with departure context.
+ * Extends {@link StopWithMeta} with stop time context.
  * Used by BottomSheet and MapView tooltip to display nearby stop info.
- * When all services have ended, `departures` is an empty array and the UI
+ * When all services have ended, `stopTimes` is an empty array and the UI
  * shows "本日の運行は終了しました".
  *
  * `routeTypes` contains all GTFS route_type values serving this stop,
@@ -145,7 +152,7 @@ export interface StopWithMeta {
  */
 export interface StopWithContext extends StopWithMeta {
   routeTypes: AppRouteTypeValue[];
-  departures: ContextualTimetableEntry[];
+  stopTimes: ContextualTimetableEntry[];
   /**
    * High-level service state of the stop on the current service day.
    *
@@ -157,12 +164,12 @@ export interface StopWithContext extends StopWithMeta {
 }
 
 /**
- * Metadata for a departure view pattern (T1-T7).
+ * Metadata for a stop time view pattern (T1-T7).
  *
  * Each view defines a different grouping/sorting strategy for
- * displaying departures in the BottomSheet card.
+ * displaying stop times in the BottomSheet card.
  */
-export interface DepartureViewMeta {
+export interface StopTimeViewMeta {
   /** Unique identifier, e.g. 'stop', 'route-headsign'. */
   id: string;
   /** Emoji icon for the toggle button (empty string allowed). */
@@ -180,10 +187,10 @@ export interface DepartureViewMeta {
 }
 
 /**
- * Stop service availability for a specific departure.
+ * Stop service availability for a specific stop time.
  *
  * Describes whether passengers can board (pickup) or alight (drop-off)
- * at a stop for a given departure. Values align with GTFS
+ * at a stop for a given stop time. Values align with GTFS
  * pickup_type/drop_off_type but are used as app-level domain types.
  *
  * - 0 = available (scheduled service)
@@ -313,7 +320,7 @@ export interface TimetableEntry {
     arrivalMinutes: number;
   };
 
-  /** Route and direction context for this departure. */
+  /** Route and direction context for this entry. */
   routeDirection: RouteDirection;
 
   /** Boarding availability at this stop. */

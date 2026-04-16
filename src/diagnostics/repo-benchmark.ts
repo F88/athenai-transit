@@ -283,7 +283,7 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
   );
   logger.info(`getRouteTypesForStop (${totalStops} stops): ${routeTypesMs.toFixed(2)}ms total`);
   logger.info(
-    `getFullDayTimetableEntries: ${fullDay.ms.toFixed(2)}ms total, ${fullDay.deps} departures`,
+    `getFullDayTimetableEntries: ${fullDay.ms.toFixed(2)}ms total, ${fullDay.deps} stop times`,
   );
   logger.info(
     `getStopsForRoutes (${stopsForRoutes.calls} calls): ${stopsForRoutes.ms.toFixed(2)}ms total, ${avg(stopsForRoutes.ms, stopsForRoutes.calls)}ms/call, ${stopsForRoutes.stopCount} stops`,

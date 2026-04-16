@@ -34,11 +34,11 @@ export function findSundayServiceIds(bundle: DataBundle): Set<string> {
  *
  * - `routeIds`: ALL routes structurally serving each stop (day-agnostic).
  *   Used for nr (network topology).
- * - `routeFreqs`: departure counts filtered to serviceIds (day-dependent).
+ * - `routeFreqs`: stop time counts filtered to serviceIds (day-dependent).
  *   Used for cn (connectivity).
  *
  * @param bundle - Source DataBundle.
- * @param serviceIds - Service IDs to count departures for (e.g. Sunday services).
+ * @param serviceIds - Service IDs to count stop times for (e.g. Sunday services).
  * @returns StopEntry[] for all stops in the bundle.
  */
 export function extractStopEntries(bundle: DataBundle, serviceIds: Set<string>): StopEntry[] {
@@ -60,7 +60,7 @@ export function extractStopEntries(bundle: DataBundle, serviceIds: Set<string>):
     }
   }
 
-  // stopRouteFreqs: departure counts filtered to serviceIds (day-dependent).
+  // stopRouteFreqs: stop time counts filtered to serviceIds (day-dependent).
   // Used for cn (connectivity) where actual service frequency matters.
   for (const [stopId, groups] of Object.entries(bundle.timetable.data)) {
     for (const g of groups) {

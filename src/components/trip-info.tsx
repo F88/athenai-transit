@@ -22,7 +22,7 @@ const sizeVariants = {
     headsign: 'text-[11px]',
     label: 'text-[8px]',
   },
-  // Standard variant for DepartureItem / FlatDepartureItem.
+  // Standard variant for StopTimeItem / StopTimesItem.
   default: {
     emoji: 'text-base',
     headsignSub: 'text-[10px]',
@@ -86,11 +86,11 @@ interface TripInfoProps {
    * `TimetableEntryAttributesLabels` primitive so the style matches the
    * timetable grid.
    *
-   * **Important**: only valid for **single-departure** consumers
-   * (FlatDepartureItem, StopSummary) where the prop describes one specific
-   * entry. Multi-departure consumers (DepartureItem) intentionally do NOT
+   * **Important**: only valid for **single-stop-time** consumers
+   * (StopTimeItem, StopSummary) where the prop describes one specific
+   * entry. Multi-stop-time consumers (StopTimesItem) intentionally do NOT
    * pass this prop — instead they render `TimetableEntryAttributesLabels`
-   * inline next to each individual departure time. This is required by
+   * inline next to each individual stop time. This is required by
    * Issue #47: with si-based grouping a route+headsign bucket can contain
    * entries with different `stopIndex` (6-shape, circular routes), so
    * group-level attributes would mis-represent some entries.
@@ -107,7 +107,7 @@ interface TripInfoProps {
  * agency badge, headsign with translations, and status labels
  * (terminal / pickup unavailable).
  *
- * Shared by {@link DepartureItem} and {@link FlatDepartureItem}.
+ * Shared by {@link StopTimeItem} and {@link StopTimesItem}.
  */
 export function TripInfo({
   routeDirection,

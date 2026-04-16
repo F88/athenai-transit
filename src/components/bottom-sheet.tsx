@@ -8,7 +8,7 @@ import { collectPresentAgencies } from '../domain/transit/collect-present-agenci
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { getTimetableEntriesState } from '../domain/transit/timetable-utils';
-import { DEPARTURE_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/departure-views';
+import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { APP_ROUTE_TYPES } from '../config/route-types';
 import { BottomSheetHeader } from './bottom-sheet-header';
@@ -42,14 +42,14 @@ const ROUTE_TYPE_ORDER: AppRouteTypeValue[] = [...APP_ROUTE_TYPES.map(({ value }
 export interface NearbyStopsCounts {
   /** Total number of nearby stops before any filtering. */
   total: number;
-  /** Stops with at least one upcoming departure. */
+  /** Stops with at least one upcoming entry. */
   active: number;
   /** Stops remaining after all filters (showOperatingStopsOnly, routeType, agency). */
   filtered: number;
 }
 
 interface BottomSheetProps {
-  nearbyDepartures: StopWithContext[];
+  stopTimes: StopWithContext[];
   selectedStopId: string | null;
   isNearbyLoading: boolean;
   hasNearbyLoaded: boolean;
@@ -69,7 +69,7 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({
-  nearbyDepartures,
+  stopTimes,
   selectedStopId,
   isNearbyLoading: _isNearbyLoading,
   hasNearbyLoaded,
@@ -94,34 +94,31 @@ export function BottomSheet({
   const showOperatingStopsOnly = showOperatingStopsOnlyOverride ?? isLateNight;
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
   const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
-  const selectedView = DEPARTURE_VIEWS.find((v) => v.id === viewId);
+  const selectedView = STOP_TIMES_VIEWS.find((v) => v.id === viewId);
   const touchStartY = useRef(0);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Route types present in the current nearby stops.
   const presentRouteTypes = useMemo(
-    () => collectPresentRouteTypes(nearbyDepartures, ROUTE_TYPE_ORDER),
-    [nearbyDepartures],
+    () => collectPresentRouteTypes(stopTimes, ROUTE_TYPE_ORDER),
+    [stopTimes],
   );
 
-  const presentAgencies = useMemo(
-    () => collectPresentAgencies(nearbyDepartures),
-    [nearbyDepartures],
-  );
+  const presentAgencies = useMemo(() => collectPresentAgencies(stopTimes), [stopTimes]);
 
   // Per-stop state of the upcoming entries as returned by the repo,
   // BEFORE any UI-level filter. Used by NearbyStop to distinguish
   // "late-night / service ended" (upcoming already empty pre-filter)
   // from "filter-hidden" (upcoming had entries but the user's active
-  // filters removed them all). Depends only on `nearbyDepartures` so
+  // filters removed them all). Depends only on `stopTimes` so
   // it is not recomputed when the user toggles filter pills.
   const upcomingEntriesStates = useMemo(() => {
     const map = new Map<string, TimetableEntriesState>();
-    for (const swc of nearbyDepartures) {
-      map.set(swc.stop.stop_id, getTimetableEntriesState([...swc.departures]));
+    for (const swc of stopTimes) {
+      map.set(swc.stop.stop_id, getTimetableEntriesState([...swc.stopTimes]));
     }
     return map;
-  }, [nearbyDepartures]);
+  }, [stopTimes]);
 
   const toggleRouteType = useCallback((rt: number) => {
     setHiddenRouteTypes((prev) => {
@@ -147,48 +144,50 @@ export function BottomSheet({
     });
   }, []);
 
-  const filteredDepartures = useMemo(() => {
-    // Order is deliberate:
-    //
-    // 1. Stop-level filter (showOperatingStopsOnly) runs FIRST on the pre-filter list.
-    //    `showOperatingStopsOnly` means "keep only stops that have upcoming entries
-    //    today" — a property of the stop itself, independent of what the
-    //    user has chosen to hide inside. Running it before the departure
-    //    filters ensures the check is against pre-filter `departures.length`
-    //    and does not conflate with the user's agency/route_type filters.
-    //
-    // 2. Departure-level filters (agency / route_type) run AFTER on the
-    //    surviving stops. They only mutate each stop's `departures` array
-    //    and never drop stops — a stop whose departures are all removed
-    //    stays visible and shows the "allFilteredOut" fallback message.
-    //    This decouples "which stops are in the list" from "what is shown
-    //    inside each stop".
-    let result = nearbyDepartures;
-    if (showOperatingStopsOnly) {
-      result = result.filter((swc) => swc.departures.length > 0);
+  // Split into two stages so the distinct natures of the operations are
+  // visible. The stage order is load-bearing — reversing it produces a
+  // regression where showOperatingStopsOnly checks against post-inner-filter
+  // stopTimes.length, conflating stop visibility with the user's agency /
+  // route_type filters. Do not swap these stages.
+  //
+  // Stage 1 — drop stops that have no upcoming entries today.
+  // `showOperatingStopsOnly` is a property of the stop itself and MUST be
+  // evaluated against pre-filter `stopTimes.length`.
+  const filteredStopTimes = useMemo(() => {
+    if (!showOperatingStopsOnly) {
+      return stopTimes;
     }
-    if (hiddenAgencyIds.size > 0) {
-      result = result.map((swc) => ({
-        ...swc,
-        departures: filterByAgency(swc.departures, hiddenAgencyIds),
-      }));
+    return stopTimes.filter((swc) => swc.stopTimes.length > 0);
+  }, [stopTimes, showOperatingStopsOnly]);
+
+  // Stage 2 — trim each surviving stop's inner stopTimes by agency /
+  // route_type filters. This never drops stops: a stop whose stopTimes
+  // are all removed stays visible and shows the "allFilteredOut"
+  // fallback message. This decouples "which stops are in the list"
+  // from "what is shown inside each stop".
+  const trimmedStopTimes = useMemo(() => {
+    if (hiddenAgencyIds.size === 0 && hiddenRouteTypes.size === 0) {
+      return filteredStopTimes;
     }
-    if (hiddenRouteTypes.size > 0) {
-      result = result.map((swc) => ({
-        ...swc,
-        departures: filterByRouteType(swc.departures, hiddenRouteTypes),
-      }));
-    }
-    return result;
-  }, [nearbyDepartures, showOperatingStopsOnly, hiddenRouteTypes, hiddenAgencyIds]);
+    return filteredStopTimes.map((swc) => {
+      let trimmed = swc.stopTimes;
+      if (hiddenAgencyIds.size > 0) {
+        trimmed = filterByAgency(trimmed, hiddenAgencyIds);
+      }
+      if (hiddenRouteTypes.size > 0) {
+        trimmed = filterByRouteType(trimmed, hiddenRouteTypes);
+      }
+      return trimmed === swc.stopTimes ? swc : { ...swc, stopTimes: trimmed };
+    });
+  }, [filteredStopTimes, hiddenAgencyIds, hiddenRouteTypes]);
 
   const counts: NearbyStopsCounts = useMemo(
     () => ({
-      total: nearbyDepartures.length,
-      active: nearbyDepartures.filter((swc) => swc.departures.length > 0).length,
-      filtered: filteredDepartures.length,
+      total: stopTimes.length,
+      active: stopTimes.filter((swc) => swc.stopTimes.length > 0).length,
+      filtered: trimmedStopTimes.length,
     }),
-    [nearbyDepartures, filteredDepartures],
+    [stopTimes, trimmedStopTimes],
   );
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -209,12 +208,7 @@ export function BottomSheet({
     }
   }, []);
 
-  // Stable key that changes only when the stop list composition changes,
-  // not on every time-tick refresh of departure data.
-  const stopIdsKey = useMemo(
-    () => nearbyDepartures.map((d) => d.stop.stop_id).join(','),
-    [nearbyDepartures],
-  );
+  const stopIdsKey = useMemo(() => stopTimes.map((d) => d.stop.stop_id).join(','), [stopTimes]);
 
   // Scroll behavior when the stop list composition or selection changes:
   // - Selected stop exists in the list → scroll to that stop (by DOM position, not array index)
@@ -275,7 +269,7 @@ export function BottomSheet({
         onToggleAgency={toggleAgency}
       />
       <BottomSheetStops
-        filteredDepartures={filteredDepartures}
+        stopTimes={trimmedStopTimes}
         upcomingEntriesStates={upcomingEntriesStates}
         selectedStopId={selectedStopId}
         now={now}

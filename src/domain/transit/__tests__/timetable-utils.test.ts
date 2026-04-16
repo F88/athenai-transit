@@ -7,7 +7,7 @@ import {
   hasDwellTime,
   getDwellMinutes,
   getRemainingMinutes,
-  hasBoardableDeparture,
+  hasBoardable,
   filterBoardable,
   getDisplayMinutes,
   getStopServiceState,
@@ -212,32 +212,30 @@ describe('getRemainingMinutes', () => {
 });
 
 // ---------------------------------------------------------------------------
-// hasBoardableDeparture
+// hasBoardable
 // ---------------------------------------------------------------------------
 
-describe('hasBoardableDeparture', () => {
+describe('hasBoardable', () => {
   it('returns false for empty array', () => {
-    expect(hasBoardableDeparture([])).toBe(false);
+    expect(hasBoardable([])).toBe(false);
   });
 
   it('returns true when at least one entry is boardable', () => {
-    expect(hasBoardableDeparture([makeEntry(), makeEntry({ pickupType: 1 })])).toBe(true);
+    expect(hasBoardable([makeEntry(), makeEntry({ pickupType: 1 })])).toBe(true);
   });
 
   it('returns false when all entries are drop-off only (pickupType=1)', () => {
-    expect(
-      hasBoardableDeparture([makeEntry({ pickupType: 1 }), makeEntry({ pickupType: 1 })]),
-    ).toBe(false);
+    expect(hasBoardable([makeEntry({ pickupType: 1 }), makeEntry({ pickupType: 1 })])).toBe(false);
   });
 
   it('returns false when all entries are terminal (pattern inference)', () => {
-    expect(
-      hasBoardableDeparture([makeEntry({ isTerminal: true }), makeEntry({ isTerminal: true })]),
-    ).toBe(false);
+    expect(hasBoardable([makeEntry({ isTerminal: true }), makeEntry({ isTerminal: true })])).toBe(
+      false,
+    );
   });
 
   it('returns true when terminal is mixed with non-terminal', () => {
-    expect(hasBoardableDeparture([makeEntry({ isTerminal: true }), makeEntry()])).toBe(true);
+    expect(hasBoardable([makeEntry({ isTerminal: true }), makeEntry()])).toBe(true);
   });
 });
 
@@ -446,7 +444,7 @@ describe('filterBoardable', () => {
     });
   });
 
-  describe('same route+headsign with mixed pt per departure', () => {
+  describe('same route+headsign with mixed pt per stop time', () => {
     it('filters individually even within same route+headsign', () => {
       // v2 pipeline では pt は便ごとの配列。同じ trip pattern でも
       // 便によって pt が異なりうる。

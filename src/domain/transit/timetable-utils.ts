@@ -201,14 +201,14 @@ export function isPassThrough(entry: TimetableEntry): boolean {
  * - **Stop level**: pass all entries for a stop → "is this stop boardable?"
  * - **Route+headsign level**: pass grouped entries → "is this group boardable?"
  *
- * Returns false for an empty list (no departures = nothing to board).
+ * Returns false for an empty list (no stop times = nothing to board).
  */
-export function hasBoardableDeparture(entries: TimetableEntry[]): boolean {
+export function hasBoardable(entries: TimetableEntry[]): boolean {
   return entries.some((entry) => !isDropOffOnly(entry));
 }
 
 /**
- * Filter out drop-off-only entries, returning only boardable departures.
+ * Filter out drop-off-only entries, returning only boardable stop times.
  *
  * Used to exclude terminal arrivals and pickup-unavailable stops
  * from the NearbyStop display in non-verbose mode.

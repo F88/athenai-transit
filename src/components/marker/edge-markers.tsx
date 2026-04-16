@@ -21,7 +21,7 @@ interface EdgeMarkersSwitchProps {
   dataLang: readonly string[];
   renderMode: EffectiveRenderMode;
   onStopSelected: (stop: Stop) => void;
-  onFetchDepartures: (stopId: string) => Promise<StopWithContext | null>;
+  onFetchStopTimes: (stopId: string) => Promise<StopWithContext | null>;
 }
 
 /**
@@ -41,7 +41,7 @@ export function EdgeMarkersSwitch({
   dataLang,
   renderMode,
   onStopSelected,
-  onFetchDepartures,
+  onFetchStopTimes,
 }: EdgeMarkersSwitchProps) {
   const [markers, setMarkers] = useState<EdgeMarker[]>(() =>
     buildEdgeMarkers(map, stops, routeTypeMap, getSafeAreaInsets().top, 0),
@@ -122,7 +122,7 @@ export function EdgeMarkersSwitch({
             showDistance={showDistance}
             agenciesMap={agenciesMap}
             onStopSelected={onStopSelected}
-            onFetchDepartures={onFetchDepartures}
+            onFetchStopTimes={onFetchStopTimes}
             containerHeight={containerHeight}
           />
         ))}

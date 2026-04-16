@@ -116,27 +116,26 @@ Service group 別。各パターンの運行統計を計算する。
 
 ### tripPatternStats 出力フィルタリング
 
-freq=0 (その service group で departure がない) のパターンは出力から除外する。stopStats と同様の方針。存在しないパターンをアプリ側で「所要時間 0 分」と誤解するリスクを防ぐ。
+freq=0 (その service group で trip がない) のパターンは出力から除外する。stopStats と同様の方針。存在しないパターンをアプリ側で「所要時間 0 分」と誤解するリスクを防ぐ。
 
-### freq (運行頻度)
+### freq (trip 数)
 
-- 基準停留所の departure count を service group 内の全 service_id で合計
-- Circular route: interior stop (位置 1) を使用して 2x 問題を回避
-- Non-circular: origin stop (位置 0) を使用
+- origin stop (si=0) の stop time count を service group 内の全 service_id で合計 — origin では 1 trip = 1 stop time なので trip 数と一致する
+- circular/non-circular を問わず si=0 のみを集計 (Issue #47 の si-based grouping により同一 stop_id が複数位置に出現しても group が分離されるため、circular 対応の interior stop workaround は不要)
 
 ### rd (残り所要時間)
 
 Consecutive segment approach:
 
 1. 各 segment (stop[i] → stop[i+1]) の travel time を positional alignment で計算
-2. 同一パターンの departure 配列の j 番目同士を対応付け、差分の median を取る
+2. 同一パターンの `d` (departure_time) 配列の j 番目同士を対応付け、差分の median を取る
 3. Terminal から逆方向に累積して rd を構築: `rd[i] = rd[i+1] + segment[i]`
 4. `rd[last] = 0` (常に)
 5. 値は小数第1位に丸める
 
-### Circular route の segment 計算
+### Circular / 6-shape route での positional alignment
 
-Origin/terminal stop は departure が 2x (出発と到着が interleave)。origin/terminal に接する segment (最初と最後) は positional alignment が不可能なため skip し、gap interpolation で補間。
+同一 stop_id が複数位置に出現する pattern では、Issue #47 の si-based grouping により各位置の stop time が個別 group に分離される。`getDepartureTimes(stopId, patternId, si, ...)` は `(patternId, si)` でフィルタするので positional alignment は全 segment で reliable。circular 用の特殊処理は不要。
 
 ### Timetable のない stop
 
@@ -161,20 +160,20 @@ Service group 別。各停留所の運行統計を計算する。
 
 ### stopStats 出力フィルタリング
 
-freq=0 (その service group で departure がない) の stop は出力から除外する。tripPatternStats と同様の方針。
+freq=0 (その service group で stop time がない) の stop は出力から除外する。tripPatternStats と同様の方針。
 
 ### stopStats 処理フロー
 
 1. Route lookup (route_id → route_type) を構築
 2. 各 stop × service group について:
-    - 全 timetable group を走査
-    - service group 内の service_id で departure がある group のみ集計
-    - `freq`: departure count の合計
+    - 全 timetable group (全 (patternId, si)) を走査 — terminal arrival を含む
+    - service group 内の service_id で stop time がある group のみ集計
+    - `freq`: stop time count の合計 (terminal arrival 含む)
     - `rc`: distinct route_id の数
     - `rtc`: distinct route_type の数
-    - `ed`: 最小 departure time (deps は昇順ソート済み)
-    - `ld`: 最大 departure time (>= 1440 は深夜便)
-3. departure がない stop は出力から除外
+    - `ed`: 最小 `d` 値 (deps は昇順ソート済み) — stop_time event の departure_time 最小値
+    - `ld`: 最大 `d` 値 (>= 1440 は深夜便) — stop_time event の departure_time 最大値
+3. stop time がない stop は出力から除外
 
 ## 出力形式
 

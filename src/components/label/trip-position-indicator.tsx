@@ -70,7 +70,7 @@ const MAX_STOPS = 300;
  * highlighted as a larger colored dot. Useful for quickly spotting
  * structural anomalies like 6-shape and circular routes where the same
  * `stop_id` appears at multiple positions (Issue #47), and for giving any
- * departure entry a sense of "where am I in this trip?".
+ * stop time entry a sense of "where am I in this trip?".
  *
  * Visual example for a 5-stop pattern with current stopIndex=2:
  *

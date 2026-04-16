@@ -8,7 +8,7 @@ import { makeStop, makeStopMeta, makeRoute, makeStopWithContext } from '../../__
 function makeParams(overrides: Partial<UseSelectionParams> = {}): UseSelectionParams {
   return {
     routeTypeMap: new Map(),
-    nearbyDepartures: [],
+    stopTimes: [],
     routeShapes: [],
     radiusStops: [],
     inBoundStops: [],
@@ -44,12 +44,10 @@ describe('useSelection', () => {
       }
     });
 
-    it('extracts routeIds from departure data', () => {
+    it('extracts routeIds from stop times', () => {
       const stop = makeStop('A');
-      const departures = [makeStopWithContext(stop, ['R1', 'R2'])];
-      const { result } = renderHook(() =>
-        useSelection(makeParams({ nearbyDepartures: departures })),
-      );
+      const stopTimes = [makeStopWithContext(stop, ['R1', 'R2'])];
+      const { result } = renderHook(() => useSelection(makeParams({ stopTimes: stopTimes })));
 
       act(() => {
         result.current.selectStop(stop);
@@ -62,12 +60,10 @@ describe('useSelection', () => {
   });
 
   describe('selectStopById', () => {
-    it('looks up stop from departure context', () => {
+    it('looks up stop from stop times', () => {
       const stop = makeStop('B');
-      const departures = [makeStopWithContext(stop, ['R3'])];
-      const { result } = renderHook(() =>
-        useSelection(makeParams({ nearbyDepartures: departures })),
-      );
+      const stopTimes = [makeStopWithContext(stop, ['R3'])];
+      const { result } = renderHook(() => useSelection(makeParams({ stopTimes: stopTimes })));
 
       act(() => {
         result.current.selectStopById('B');
@@ -187,16 +183,16 @@ describe('useSelection', () => {
         initialProps: { params: makeParams() },
       });
 
-      // Select stop with no departures yet
+      // Select stop with no stop times yet
       act(() => {
         result.current.selectStop(stop);
       });
       expect(result.current.selectionInfo?.routeIds.size).toBe(0);
 
-      // Departures arrive
-      const departures = [makeStopWithContext(stop, ['R1', 'R2'])];
+      // Stop times arrive
+      const stopTimes = [makeStopWithContext(stop, ['R1', 'R2'])];
       rerender({
-        params: makeParams({ nearbyDepartures: departures }),
+        params: makeParams({ stopTimes: stopTimes }),
       });
 
       expect(result.current.selectionInfo?.routeIds).toEqual(new Set(['R1', 'R2']));
@@ -308,12 +304,10 @@ describe('useSelection', () => {
   });
 
   describe('selectStopById edge cases', () => {
-    it('clears selection when stop is not in departures', () => {
+    it('clears selection when stop is not in stop times', () => {
       const stop = makeStop('A');
-      const departures = [makeStopWithContext(stop, ['R1'])];
-      const { result } = renderHook(() =>
-        useSelection(makeParams({ nearbyDepartures: departures })),
-      );
+      const stopTimes = [makeStopWithContext(stop, ['R1'])];
+      const { result } = renderHook(() => useSelection(makeParams({ stopTimes: stopTimes })));
 
       // First select a valid stop
       act(() => {
@@ -330,10 +324,10 @@ describe('useSelection', () => {
       expect(result.current.selectionInfo).toBeNull();
     });
 
-    it('uses routeTypes from departure context', () => {
+    it('uses routeTypes from stop time context', () => {
       const stop = makeStop('A');
       const ctx = makeStopWithContext(stop, ['R1'], [1]);
-      const { result } = renderHook(() => useSelection(makeParams({ nearbyDepartures: [ctx] })));
+      const { result } = renderHook(() => useSelection(makeParams({ stopTimes: [ctx] })));
 
       act(() => {
         result.current.selectStopById('A');
@@ -409,23 +403,23 @@ describe('useSelection', () => {
 
     it('skips enrichment when routeIds are already populated', () => {
       const stop = makeStop('A');
-      const departures = [makeStopWithContext(stop, ['R1'])];
+      const stopTimes = [makeStopWithContext(stop, ['R1'])];
       const { result, rerender } = renderHook(({ params }) => useSelection(params), {
         initialProps: {
-          params: makeParams({ nearbyDepartures: departures }),
+          params: makeParams({ stopTimes: stopTimes }),
         },
       });
 
-      // Select stop — routeIds are already populated from departures
+      // Select stop — routeIds are already populated from stop times
       act(() => {
         result.current.selectStop(stop);
       });
       expect(result.current.selectionInfo?.routeIds).toEqual(new Set(['R1']));
 
-      // Rerender with additional departures — existing routeIds should remain
-      const moreDepartures = [makeStopWithContext(stop, ['R1', 'R2'])];
+      // Rerender with additional stop times — existing routeIds should remain
+      const moreStopTimes = [makeStopWithContext(stop, ['R1', 'R2'])];
       rerender({
-        params: makeParams({ nearbyDepartures: moreDepartures }),
+        params: makeParams({ stopTimes: moreStopTimes }),
       });
 
       // Should NOT be enriched because routeIds.size > 0

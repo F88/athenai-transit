@@ -179,7 +179,7 @@ function createStopWithContext(
   overrides: Partial<{
     stop: Stop;
     routeTypes: AppRouteTypeValue[];
-    departures: ContextualTimetableEntry[];
+    stopTimes: ContextualTimetableEntry[];
     stopServiceState: StopServiceState;
     agencies: Agency[];
     routes: Route[];
@@ -189,7 +189,7 @@ function createStopWithContext(
   return {
     stop: overrides.stop ?? baseStop,
     routeTypes: overrides.routeTypes ?? [3],
-    departures: overrides.departures ?? [
+    stopTimes: overrides.stopTimes ?? [
       createEntry({ departureMinutes: 870, headsign: '大塚駅前' }),
       createEntry({ departureMinutes: 885, headsign: '大塚駅前' }),
       createEntry({ departureMinutes: 900, headsign: '大塚駅前' }),
@@ -205,7 +205,7 @@ function createStopWithContext(
 
 const localizedStopData: StopWithContext = createStopWithContext({
   stop: localizedStop,
-  departures: [
+  stopTimes: [
     {
       ...createEntry({
         departureMinutes: 870,
@@ -346,7 +346,7 @@ export const MultipleRouteTypes: Story = {
   args: {
     data: createStopWithContext({
       routeTypes: [0, 3],
-      departures: [
+      stopTimes: [
         createEntry({ departureMinutes: 870, headsign: '大塚駅前' }),
         createEntry({ departureMinutes: 875, route: tramRoute, headsign: '早稲田' }),
         createEntry({ departureMinutes: 885, headsign: '大塚駅前' }),
@@ -364,7 +364,7 @@ export const DropOffOnly: Story = {
   args: {
     data: createStopWithContext({
       stopServiceState: 'drop-off-only',
-      departures: [
+      stopTimes: [
         createEntry({
           departureMinutes: 870,
           pickupType: 1,
@@ -386,14 +386,14 @@ export const DropOffOnly: Story = {
 
 export const NoDepartures: Story = {
   args: {
-    data: createStopWithContext({ departures: [] }),
+    data: createStopWithContext({ stopTimes: [] }),
   },
 };
 
 export const UnknownHeadsign: Story = {
   args: {
     data: createStopWithContext({
-      departures: [
+      stopTimes: [
         createEntry({ departureMinutes: 870, headsign: '' }),
         createEntry({ departureMinutes: 885, headsign: '大塚駅前' }),
       ],
@@ -423,7 +423,7 @@ export const MultipleAgencies: Story = {
       agencies: [agency, agency2],
       routes: [busRoute, tramRoute],
       routeTypes: [0, 3],
-      departures: [
+      stopTimes: [
         createEntry({ departureMinutes: 870, headsign: '大塚駅前' }),
         createEntry({ departureMinutes: 875, route: tramRoute, headsign: '早稲田' }),
       ],
@@ -431,12 +431,12 @@ export const MultipleAgencies: Story = {
   },
 };
 
-// --- Header only (no departures) ---
+// --- Header only (no stop times) ---
 
-/** Header layout inspection — departures are empty to isolate the header. */
+/** Header layout inspection — stop times are empty to isolate the header. */
 export const HeaderOnly: Story = {
   args: {
-    data: createStopWithContext({ departures: [] }),
+    data: createStopWithContext({ stopTimes: [] }),
   },
 };
 
@@ -445,7 +445,7 @@ export const HeaderDropOffOnly: Story = {
   args: {
     data: createStopWithContext({
       stopServiceState: 'drop-off-only',
-      departures: [],
+      stopTimes: [],
     }),
   },
 };
@@ -457,7 +457,7 @@ export const HeaderMultiType: Story = {
       routeTypes: [0, 3],
       agencies: [agency, agency2],
       routes: [busRoute, tramRoute],
-      departures: [],
+      stopTimes: [],
     }),
   },
 };
@@ -470,7 +470,7 @@ export const HeaderDropOffMultiType: Story = {
       routeTypes: [0, 3],
       agencies: [agency, agency2],
       routes: [busRoute, tramRoute],
-      departures: [],
+      stopTimes: [],
     }),
   },
 };
@@ -479,7 +479,7 @@ export const HeaderDropOffMultiType: Story = {
 export const HeaderAnchored: Story = {
   args: {
     isAnchor: true,
-    data: createStopWithContext({ departures: [] }),
+    data: createStopWithContext({ stopTimes: [] }),
   },
 };
 
@@ -488,7 +488,7 @@ export const HeaderLongName: Story = {
   args: {
     data: createStopWithContext({
       stop: longNameStop,
-      departures: [],
+      stopTimes: [],
     }),
   },
 };
@@ -502,7 +502,7 @@ export const HeaderLongNameFull: Story = {
       routeTypes: [0, 3],
       agencies: [agency, agency2],
       routes: [busRoute, tramRoute],
-      departures: [],
+      stopTimes: [],
     }),
   },
 };
@@ -530,7 +530,7 @@ export const WithSubNames: Story = {
 export const TripEmptyStopPresent: Story = {
   args: {
     data: createStopWithContext({
-      departures: [
+      stopTimes: [
         createEntry({ headsign: '', stopHeadsign: '武蔵小金井駅南口', departureMinutes: 870 }),
         createEntry({ headsign: '', stopHeadsign: '武蔵小金井駅南口', departureMinutes: 885 }),
         createEntry({ headsign: '大塚駅前', departureMinutes: 875 }),
@@ -540,11 +540,11 @@ export const TripEmptyStopPresent: Story = {
   },
 };
 
-/** stop overrides trip — departures show stop_headsign as effective. */
+/** stop overrides trip — stop times show stop_headsign as effective. */
 export const StopOverridesTrip: Story = {
   args: {
     data: createStopWithContext({
-      departures: [
+      stopTimes: [
         createEntry({
           headsign: '北大路BT・下鴨神社・出町柳駅',
           stopHeadsign: '出町柳駅',
@@ -593,14 +593,14 @@ export const LangComparison: Story = {
   ),
 };
 
-/** Kitchen sink: long name, multi-type, selected, anchored, drop-off-only, grouped departures. */
+/** Kitchen sink: long name, multi-type, selected, anchored, drop-off-only, grouped stop times. */
 const kitchenSinkData = createStopWithContext({
   stop: longNameStop,
   routeTypes: [0, 3],
   stopServiceState: 'drop-off-only',
   agencies: [agency, agency2],
   routes: [busRoute, busRoute2, tramRoute],
-  departures: [
+  stopTimes: [
     createEntry({ departureMinutes: 870, route: busRoute, headsign: '大塚駅前' }),
     createEntry({ departureMinutes: 872, route: busRoute2, headsign: '日暮里駅前' }),
     createEntry({ departureMinutes: 875, route: tramRoute, headsign: '早稲田' }),

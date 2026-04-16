@@ -26,13 +26,13 @@ interface StopMarkersCanvasProps {
   stops: Stop[];
   selectedStopId: string | null;
   routeTypeMap: Map<string, AppRouteTypeValue[]>;
-  nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
+  stopTimes?: Map<string, ContextualTimetableEntry[]>;
   time?: Date;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
   onStopSelected: (stop: Stop) => void;
-  onFetchDepartures?: (stopId: string) => Promise<StopWithContext | null>;
+  onFetchStopTimes?: (stopId: string) => Promise<StopWithContext | null>;
   /** Whether to show tooltip on hover/select. Defaults to true. */
   showTooltip?: boolean;
   /** Shared Canvas renderer. When multiple Canvas instances coexist (e.g.
@@ -56,7 +56,7 @@ interface StopMarkersCanvasProps {
  * display logic is shared with standard-mode tooltips.
  *
  * @param stop - The stop to display.
- * @param entries - Pre-fetched departure data, if available.
+ * @param entries - Pre-fetched stop times, if available.
  * @param now - Current time for relative display.
  * @returns HTML string.
  */
@@ -96,12 +96,12 @@ export function StopMarkersCanvas({
   stops,
   selectedStopId,
   routeTypeMap,
-  nearbyDepartures,
+  stopTimes,
   time: now,
   infoLevel,
   dataLang,
   onStopSelected,
-  onFetchDepartures,
+  onFetchStopTimes,
   showTooltip = true,
   renderer,
   incremental = false,
@@ -116,10 +116,10 @@ export function StopMarkersCanvas({
   // Stable refs for callbacks and tooltip data so useEffect doesn't re-run on
   // identity changes, and lazy mouseover listeners always read the latest values.
   const onStopSelectedRef = useRef(onStopSelected);
-  const onFetchDeparturesRef = useRef(onFetchDepartures);
+  const onFetchStopTimesRef = useRef(onFetchStopTimes);
   const tooltipDataRef = useRef({
     routeTypeMap,
-    nearbyDepartures,
+    stopTimes,
     now,
     infoLevel,
     dataLang,
@@ -129,10 +129,10 @@ export function StopMarkersCanvas({
 
   useEffect(() => {
     onStopSelectedRef.current = onStopSelected;
-    onFetchDeparturesRef.current = onFetchDepartures;
+    onFetchStopTimesRef.current = onFetchStopTimes;
     tooltipDataRef.current = {
       routeTypeMap,
-      nearbyDepartures,
+      stopTimes,
       now,
       infoLevel,
       dataLang,
@@ -149,7 +149,7 @@ export function StopMarkersCanvas({
       showTooltip,
       disableDimming,
       onStopSelectedRef,
-      onFetchDeparturesRef,
+      onFetchStopTimesRef,
       tooltipDataRef,
     };
     if (!layerGroupRef.current) {
@@ -223,7 +223,7 @@ export function StopMarkersCanvas({
     if (showTooltip && selectedStopId) {
       const selectedStop = stops.find((s) => s.stop_id === selectedStopId);
       if (selectedStop) {
-        const entries = nearbyDepartures?.get(selectedStopId);
+        const entries = stopTimes?.get(selectedStopId);
         const tooltip = L.tooltip({
           permanent: true,
           direction: 'top',
@@ -261,7 +261,7 @@ export function StopMarkersCanvas({
     stops,
     selectedStopId,
     routeTypeMap,
-    nearbyDepartures,
+    stopTimes,
     agenciesMap,
     now,
     infoLevel,
@@ -290,7 +290,7 @@ export function StopMarkersCanvas({
 /** Ref holding the latest tooltip data, refreshed after each render. */
 type TooltipDataRef = React.RefObject<{
   routeTypeMap: Map<string, AppRouteTypeValue[]>;
-  nearbyDepartures?: Map<string, ContextualTimetableEntry[]>;
+  stopTimes?: Map<string, ContextualTimetableEntry[]>;
   now?: Date;
   infoLevel: InfoLevel;
   dataLang: readonly string[];
@@ -308,7 +308,7 @@ function createMarker(
     showTooltip: boolean;
     disableDimming?: boolean;
     onStopSelectedRef: React.RefObject<(stop: Stop) => void>;
-    onFetchDeparturesRef: React.RefObject<
+    onFetchStopTimesRef: React.RefObject<
       ((stopId: string) => Promise<StopWithContext | null>) | undefined
     >;
     tooltipDataRef: TooltipDataRef;
@@ -344,8 +344,8 @@ function createMarker(
   marker.on('click', () => {
     logger.debug('click', stop.stop_id, stop.stop_name);
     opts.onStopSelectedRef.current(stop);
-    if (opts.onFetchDeparturesRef.current) {
-      void opts.onFetchDeparturesRef.current(stop.stop_id);
+    if (opts.onFetchStopTimesRef.current) {
+      void opts.onFetchStopTimesRef.current(stop.stop_id);
     }
   });
 
@@ -449,7 +449,7 @@ function bindTooltipLazyListener(
         stop,
         routeTypes,
         data.agenciesMap?.get(stop.stop_id) ?? [],
-        data.nearbyDepartures?.get(stop.stop_id),
+        data.stopTimes?.get(stop.stop_id),
         data.now,
         data.infoLevel,
         data.dataLang,

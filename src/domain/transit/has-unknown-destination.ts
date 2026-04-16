@@ -1,5 +1,5 @@
 /**
- * Check whether any departure group contains an empty headsign,
+ * Check whether any stop time entry contains an empty headsign,
  * indicating that destination information is missing.
  *
  * GTFS `trip_headsign` is optional, so some data sources omit it.

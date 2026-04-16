@@ -184,7 +184,7 @@ describe('extractStopEntries', () => {
     const entries = extractStopEntries(bundle, new Set(['svc-su']));
 
     const s1 = entries.find((e) => e.id === 's1')!;
-    expect(s1.routeFreqs.get('r1')).toBe(2); // svc-su has 2 departures
+    expect(s1.routeFreqs.get('r1')).toBe(2); // svc-su has 2 stop times
   });
 
   it('sets empty routeIds for stops not in any pattern', () => {
@@ -198,7 +198,7 @@ describe('extractStopEntries', () => {
     expect(entries[0].routeIds.size).toBe(0);
   });
 
-  it('sets empty routeFreqs when no departures match serviceIds', () => {
+  it('sets empty routeFreqs when no stop times match serviceIds', () => {
     const bundle = makeDataBundle({
       stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
       patterns: {
@@ -209,7 +209,7 @@ describe('extractStopEntries', () => {
       },
     });
 
-    // Filter to Sunday, but only weekday departures exist
+    // Filter to Sunday, but only weekday stop times exist
     const entries = extractStopEntries(bundle, new Set(['svc-su']));
 
     expect(entries[0].routeFreqs.size).toBe(0);
@@ -316,7 +316,7 @@ describe('extractStopEntries', () => {
     const s1 = entries[0];
     // routeIds: both routes (day-agnostic)
     expect(s1.routeIds).toEqual(new Set(['r-weekday', 'r-sunday']));
-    // routeFreqs: only Sunday route has departures
+    // routeFreqs: only Sunday route has stop times
     expect(s1.routeFreqs.has('r-weekday')).toBe(false);
     expect(s1.routeFreqs.get('r-sunday')).toBe(1);
   });

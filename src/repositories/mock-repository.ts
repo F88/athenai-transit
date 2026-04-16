@@ -2235,7 +2235,7 @@ export class MockRepository implements TransitRepository {
   ): Promise<UpcomingTimetableResult> {
     const stop = STOPS.find((s) => s.stop_id === stopId);
     if (!stop) {
-      return Promise.resolve({ success: false, error: `No departure data for stop: ${stopId}` });
+      return Promise.resolve({ success: false, error: `No stop time data for stop: ${stopId}` });
     }
 
     const stopRoutes = STOP_ROUTES[stopId] ?? [];

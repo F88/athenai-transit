@@ -2,7 +2,7 @@
  * Build tripPatternStats section of InsightsBundle.
  *
  * Computes per-pattern operational statistics segmented by service group:
- * - `freq`: total departures per day for this service group
+ * - `freq`: number of trips per day for this service group (counted at origin si=0)
  * - `rd`: remaining minutes from each stop to the terminal (median-based)
  *
  * ### Duplicate stop_id handling (Issue #47)
@@ -11,7 +11,7 @@
  * positions in a pattern, each position has its own TimetableGroupV2Json
  * identified by `si` (0-based index in pattern.stops). All freq/rd
  * computations select groups by `(patternId, si)` to avoid double-counting
- * departures from different positions.
+ * stop times from different positions.
  *
  * ### Stops without timetable entries
  *
@@ -33,13 +33,16 @@ import type {
 // ---------------------------------------------------------------------------
 
 /**
- * Count departures for a pattern at a given stop position,
+ * Count stop times for a pattern at a given stop position,
  * summing across all service IDs in the service group.
+ *
+ * Reads from the `d` array but the count equals `a` array length —
+ * each entry represents one stop_time event regardless of field.
  *
  * Filters by `(patternId, si)` to select the correct group when the same
  * stop_id appears at multiple positions in the pattern (Issue #47).
  */
-function countDepartures(
+function countStopTimes(
   timetableGroups: TimetableGroupV2Json[] | undefined,
   patternId: string,
   si: number,
@@ -65,14 +68,14 @@ function countDepartures(
 }
 
 /**
- * Get departure times for a pattern at a specific stop position,
+ * Get departure times (`d` field) for a pattern at a specific stop position,
  * concatenated across all service IDs in the service group.
- * Returns a sorted array of departure minutes.
+ * Returns a sorted array of departure minutes from midnight.
  *
  * Filters by `(patternId, si)` to select the correct group when the same
  * stop_id appears at multiple positions in the pattern (Issue #47).
  */
-function getDepartures(
+function getDepartureTimes(
   timetableGroups: TimetableGroupV2Json[] | undefined,
   patternId: string,
   si: number,
@@ -245,9 +248,9 @@ function computeSegmentTimes(
   const NO_DATA = -1;
   const segments = new Array<number>(segmentCount).fill(NO_DATA);
 
-  // Cache departures per (stopId, si) to avoid redundant timetable scans and sorts.
+  // Cache departure times per (stopId, si) to avoid redundant timetable scans and sorts.
   // Each stop appears in two consecutive segments (as end of one, start of next),
-  // so caching halves the number of getDepartures calls.
+  // so caching halves the number of getDepartureTimes calls.
   // Cache key includes si because the same stop_id may have different deps
   // at different pattern positions (Issue #47, e.g. 6-shape routes).
   const depsCache = new Map<string, number[]>();
@@ -255,7 +258,7 @@ function computeSegmentTimes(
     const cacheKey = `${stopId}:${si}`;
     let cached = depsCache.get(cacheKey);
     if (cached === undefined) {
-      cached = getDepartures(timetable[stopId], patternId, si, serviceIds);
+      cached = getDepartureTimes(timetable[stopId], patternId, si, serviceIds);
       depsCache.set(cacheKey, cached);
     }
     return cached;
@@ -308,13 +311,13 @@ export function buildTripPatternStats(
         continue;
       }
 
-      // freq: count departures from origin (si=0). With Issue #47's si-based
-      // grouping, the origin's group contains exactly the trip count, so no
-      // circular workaround is needed (previously we used interior stop[1]
-      // to dodge the 2x merged count).
-      const freq = countDepartures(timetable[stops[0].id], patternId, 0, group.serviceIds);
+      // freq: count stop times at origin (si=0) = trip departure count.
+      // With Issue #47's si-based grouping, the origin's group contains
+      // exactly the trip count, so no circular workaround is needed
+      // (previously we used interior stop[1] to dodge the 2x merged count).
+      const freq = countStopTimes(timetable[stops[0].id], patternId, 0, group.serviceIds);
 
-      // Omit patterns with no departures in this service group.
+      // Omit patterns with no trips in this service group.
       // Consistent with stopStats, which also excludes freq=0 entries.
       if (freq === 0) {
         continue;

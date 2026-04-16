@@ -8,7 +8,7 @@ import type { LoadResult } from './repositories/athenai-repository-v2';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
 import { useDateTime } from './hooks/use-date-time';
-import { useNearbyDepartures } from './hooks/use-nearby-departures';
+import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
 import { useSelection } from './hooks/use-selection';
 import { useStopHistory } from './hooks/use-stop-history';
 import { useAnchors } from './hooks/use-anchors';
@@ -136,7 +136,7 @@ export default function App({ loadResult }: AppProps) {
 
   const { dateTime, isCustomTime, resetToNow, setCustomTime } = useDateTime();
 
-  const { nearbyDepartures, isNearbyLoading } = useNearbyDepartures(radiusStops, dateTime, repo);
+  const { stopTimes, isNearbyLoading } = useNearbyStopTimes(radiusStops, dateTime, repo);
 
   // Build routeTypes lookup covering all visible stops (in-bound + nearby)
   const [routeTypeMap, setRouteTypeMap] = useState<Map<string, AppRouteTypeValue[]>>(
@@ -173,7 +173,7 @@ export default function App({ loadResult }: AppProps) {
     clearFocus,
   } = useSelection({
     routeTypeMap,
-    nearbyDepartures,
+    stopTimes: stopTimes,
     routeShapes,
     radiusStops,
     inBoundStops,
@@ -409,7 +409,7 @@ export default function App({ loadResult }: AppProps) {
     [repo, perfProfile, clearFocus],
   );
 
-  const handleFetchDepartures = useCallback(
+  const handleFetchStopTimes = useCallback(
     async (stopId: string): Promise<StopWithContext | null> => {
       const meta =
         inBoundStops.find((s) => s.stop.stop_id === stopId) ??
@@ -418,11 +418,11 @@ export default function App({ loadResult }: AppProps) {
         return null;
       }
       const [depsResult, rtResult] = await Promise.all([
-        // No limit: departure stats and verbose display need all entries.
+        // No limit: stop-time stats and verbose display need all entries.
         repo.getUpcomingTimetableEntries(stopId, dateTime),
         repo.getRouteTypesForStop(stopId),
       ]);
-      const departures = depsResult.success ? depsResult.data : [];
+      const stopTimes = depsResult.success ? depsResult.data : [];
       const stopServiceState = depsResult.success
         ? getStopServiceState(depsResult.meta)
         : ('no-service' as const);
@@ -430,7 +430,7 @@ export default function App({ loadResult }: AppProps) {
       return {
         stop: meta.stop,
         routeTypes,
-        departures,
+        stopTimes,
         stopServiceState,
         agencies: meta.agencies,
         routes: meta.routes,
@@ -648,9 +648,9 @@ export default function App({ loadResult }: AppProps) {
     [settings.visibleStopTypes],
   );
 
-  const filteredNearbyDepartures = useMemo(
-    () => nearbyDepartures.filter((d) => d.routeTypes.some((rt) => visibleStopTypes.has(rt))),
-    [nearbyDepartures, visibleStopTypes],
+  const filteredStopTimes = useMemo(
+    () => stopTimes.filter((d) => d.routeTypes.some((rt) => visibleStopTypes.has(rt))),
+    [stopTimes, visibleStopTypes],
   );
 
   const handleToggleStopType = useCallback(
@@ -767,7 +767,7 @@ export default function App({ loadResult }: AppProps) {
           radiusStops={radiusStops}
           selectedStopId={selectedStopId}
           focusPosition={focusPosition}
-          nearbyDepartures={nearbyDepartures}
+          stopTimes={stopTimes}
           routeTypeMap={routeTypeMap}
           routeShapes={routeShapes}
           selectionInfo={selectionInfo}
@@ -783,7 +783,7 @@ export default function App({ loadResult }: AppProps) {
           time={dateTime}
           onBoundsChanged={handleBoundsChanged}
           onStopSelected={handleSelectStop}
-          onFetchDepartures={handleFetchDepartures}
+          onFetchStopTimes={handleFetchStopTimes}
           onToggleStopType={handleToggleStopType}
           onToggleBusShapes={handleToggleBusShapes}
           onToggleNonBusShapes={handleToggleNonBusShapes}
@@ -814,7 +814,7 @@ export default function App({ loadResult }: AppProps) {
         />
       </div>
       <BottomSheet
-        nearbyDepartures={filteredNearbyDepartures}
+        stopTimes={filteredStopTimes}
         selectedStopId={selectedStopId}
         isNearbyLoading={isNearbyLoading}
         hasNearbyLoaded={hasNearbyLoaded}

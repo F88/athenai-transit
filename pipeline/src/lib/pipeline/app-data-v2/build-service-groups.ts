@@ -58,7 +58,7 @@ const KEY_PRIORITY: readonly string[] = ['wd', 'sa', 'su', 'wk', 'all'];
  * @param calendar - The `calendar` section from a DataBundle.
  * @param timetable - Optional timetable section, used to restrict
  * calendar_dates-only additions to service IDs that actually appear in
- * departures.
+ * the timetable.
  * @returns Sorted array of service groups. Empty array if no services.
  */
 export function buildServiceGroups(

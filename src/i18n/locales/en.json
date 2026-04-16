@@ -5,8 +5,8 @@
   "view": {
     "stop": {
       "label": "ALL",
-      "title": "All departures",
-      "description": "Show all departures in chronological order"
+      "title": "All",
+      "description": "Show all services in chronological order"
     },
     "routeHeadsign": {
       "label": "Route",
@@ -50,7 +50,7 @@
     "noStops": "No stops (within {{radius}})",
     "noOperating": "No operating stops (within {{radius}})",
     "showOperatingStopsOnly": "📍 Operating",
-    "showOperatingStopsOnlyTitle": "Show only stops with upcoming departures"
+    "showOperatingStopsOnlyTitle": "Show only stops with upcoming service"
   },
   "stop": {
     "serviceState": {
@@ -82,7 +82,7 @@
     "now": "🕐 Now",
     "set": "🧙 Time, freeze!"
   },
-  "departure": {
+  "stopTimeView": {
     "soon": "Soon",
     "in": "",
     "minutes": "min",

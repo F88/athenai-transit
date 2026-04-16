@@ -13,7 +13,7 @@ export interface TimeBandStyle {
 /**
  * Relative time thresholds with associated color and opacity.
  *
- * Closer departures use warmer colors (attention), farther departures
+ * Closer stop times use warmer colors (attention), farther stop times
  * fade to gray (no rush). Designed to avoid urgency — Athenai is a
  * leisurely transit explorer, not a "run for the bus" app.
  *

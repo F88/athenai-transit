@@ -12,8 +12,8 @@ import {
 } from '../domain/transit/timetable-utils';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { Clock, Signpost } from 'lucide-react';
-import { DepartureItem } from './departure-item';
-import { FlatDepartureItem } from './flat-departure-item';
+import { StopTimesItem } from './stop-times-item';
+import { StopTimeItem } from './stop-time-item';
 import { StopInfo } from './stop-info';
 import { VerboseNearbyStopSummary } from './verbose/verbose-nearby-stop-summary';
 
@@ -21,9 +21,9 @@ export interface NearbyStopProps {
   data: StopWithContext;
   /**
    * State of the pre-filter upcoming entries for this stop, computed
-   * once by {@link BottomSheet} from the unfiltered `nearbyDepartures`.
+   * once by {@link BottomSheet} from the unfiltered `nearbyStopTimes`.
    * Combined with the repo's full-day `stopServiceState` and the
-   * filtered `departures` state to pick the correct empty-fallback
+   * filtered `stopTimes` state to pick the correct empty-fallback
    * message (no-service / service-ended / filter-hidden).
    */
   upcomingEntriesState: TimetableEntriesState;
@@ -33,7 +33,7 @@ export interface NearbyStopProps {
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
-  /** Active departure view pattern ID. */
+  /** Active stop time view pattern ID. */
   viewId: string;
   /** Whether this stop is in the anchor (bookmark) list. */
   isAnchor: boolean;
@@ -45,7 +45,7 @@ export interface NearbyStopProps {
 }
 
 export function NearbyStop({
-  data: { stop, routeTypes, departures, stopServiceState, agencies, routes, distance, stats, geo },
+  data: { stop, routeTypes, stopTimes, stopServiceState, agencies, routes, distance, stats, geo },
   upcomingEntriesState,
   isSelected,
   now,
@@ -62,47 +62,47 @@ export function NearbyStop({
   const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
-  // Show route_type emoji on each departure row when the stop serves
+  // Show route_type emoji on each stop time row when the stop serves
   // multiple route_types (so the user can distinguish bus vs tram etc.).
   // verbose: always show. detailed and below: only when multiple types.
   const hasMultipleRouteTypes = routeTypes.length > 1;
-  const showRouteTypeIconForAllDepartures = info.isVerboseEnabled || hasMultipleRouteTypes;
+  const showRouteTypeIconForAllStopTimes = info.isVerboseEnabled || hasMultipleRouteTypes;
 
   // detailed: show all entries (including terminal/drop-off-only with labels)
-  // non-detailed: show only boardable departures
-  // const displayDepartures = useMemo(
-  //   () => (info.isDetailedEnabled ? departures : filterBoardable(departures)),
-  //   [info.isDetailedEnabled, departures],
+  // non-detailed: show only boardable stop times
+  // const displayStopTimes = useMemo(
+  //   () => (info.isDetailedEnabled ? stopTimes : filterBoardable(stopTimes)),
+  //   [info.isDetailedEnabled, stopTimes],
   // );
-  const displayDepartures = departures;
+  const displayStopTimes = stopTimes;
 
   const grouped = useMemo(
-    () => (viewId !== 'stop' ? groupByRouteHeadsign(displayDepartures) : []),
-    [viewId, displayDepartures],
+    () => (viewId !== 'stop' ? groupByRouteHeadsign(displayStopTimes) : []),
+    [viewId, displayStopTimes],
   );
 
   const hasUnknownHeadsign = useMemo(
-    () => departures.some((e) => getEffectiveHeadsign(e.routeDirection) === ''),
-    [departures],
+    () => stopTimes.some((e) => getEffectiveHeadsign(e.routeDirection) === ''),
+    [stopTimes],
   );
 
   // Unified display state for this stop, combining three levels:
   //   - `stopServiceState`: full-day state from the repo (all-day scope).
   //   - `upcomingEntriesState`: pre-filter upcoming entries state (from the
   //     Map built in BottomSheet before any user filter is applied).
-  //   - `getTimetableEntriesState(departures)`: post-filter state of what
+  //   - `getTimetableEntriesState(stopTimes)`: post-filter state of what
   //     is actually being rendered right now.
   //
   // Used by the fallback branch below to pick between noService /
-  // serviceEnded / allFilteredOut when `departures` is empty.
+  // serviceEnded / allFilteredOut when `stopTimes` is empty.
   const filteredState = useMemo(
     () =>
       getFilteredTimetableEntriesState(
         stopServiceState,
         upcomingEntriesState,
-        getTimetableEntriesState([...departures]),
+        getTimetableEntriesState([...stopTimes]),
       ),
-    [stopServiceState, upcomingEntriesState, departures],
+    [stopServiceState, upcomingEntriesState, stopTimes],
   );
 
   return (
@@ -113,7 +113,7 @@ export function NearbyStop({
     >
       {showVerbose && (
         <VerboseNearbyStopSummary
-          departures={departures}
+          stopTimes={stopTimes}
           stopServiceState={stopServiceState}
           isSelected={isSelected}
           isAnchor={isAnchor}
@@ -174,7 +174,7 @@ export function NearbyStop({
           {t('stop.dataQuality.noDestination')}
         </p>
       )}
-      {displayDepartures.length > 0 ? (
+      {displayStopTimes.length > 0 ? (
         // Multi-operator stops are rare in the current dataset, so the
         // agency badge would be redundant noise on single-operator stops
         // (the operator is implied by the stop itself). Only surface the
@@ -182,15 +182,15 @@ export function NearbyStop({
         (() => {
           const showAgency = info.isVerboseEnabled || agencies.length > 1;
           return viewId === 'stop'
-            ? displayDepartures
+            ? displayStopTimes
                 .slice(0, 5)
                 .map((entry, i) => (
-                  <FlatDepartureItem
+                  <StopTimeItem
                     key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}__${i}`}
                     entry={entry}
                     now={now}
                     isFirst={i === 0}
-                    showRouteTypeIcon={showRouteTypeIconForAllDepartures}
+                    showRouteTypeIcon={showRouteTypeIconForAllStopTimes}
                     infoLevel={infoLevel}
                     dataLang={dataLang}
                     agency={agencies.find(
@@ -200,13 +200,13 @@ export function NearbyStop({
                   />
                 ))
             : grouped.map(([key, entries]) => (
-                <DepartureItem
+                <StopTimesItem
                   key={`${stop.stop_id}__${key}`}
                   entries={entries}
                   now={now}
                   infoLevel={infoLevel}
                   dataLang={dataLang}
-                  showRouteTypeIcon={showRouteTypeIconForAllDepartures}
+                  showRouteTypeIcon={showRouteTypeIconForAllStopTimes}
                   agency={agencies.find(
                     (a) => a.agency_id === entries[0].routeDirection.route.agency_id,
                   )}
@@ -220,8 +220,8 @@ export function NearbyStop({
               ));
         })()
       ) : (
-        // Show the fallback message in the departures area whenever there
-        // are no upcoming entries. When `displayDepartures.length === 0`,
+        // Show the fallback message in the stop times area whenever there
+        // are no upcoming entries. When `displayStopTimes.length === 0`,
         // `filteredState` is one of:
         //   - `'no-service'`: repo has no timetable data for this stop at all.
         //   - `'service-ended'`: repo has data but the upcoming window is
@@ -229,7 +229,7 @@ export function NearbyStop({
         //   - `'filter-hidden'`: pre-filter upcoming had entries but the
         //     user's UI filters removed everything visible. The service has
         //     NOT ended; we must not say it has.
-        // ('boardable' / 'drop-off-only' only occur with non-empty departures
+        // ('boardable' / 'drop-off-only' only occur with non-empty stop times
         // and are handled by the render branch above.)
         <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">
           {t(

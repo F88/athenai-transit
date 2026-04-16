@@ -124,7 +124,7 @@ export interface StopStatsSummary {
   stops: number;
   /** Min of per-stop max freq (quietest stop). */
   minFreq: number;
-  /** Mean of per-stop max freq (departures/day on the busiest day). */
+  /** Mean of per-stop max freq (stop times/day on the busiest day, terminal arrivals included). */
   meanFreq: number;
   /** Max of per-stop max freq (busiest stop anywhere). */
   maxFreq: number;
@@ -764,7 +764,7 @@ const SERVICE_GROUPS_KEYS_DETAIL_LEGEND = [
 
 const TRIP_PATTERN_STATS_OVERVIEW_LEGEND = [
   '# patterns   : distinct trip patterns in the source',
-  '# trips      : total departures (sum of freq across service groups)',
+  '# trips      : total trip count (sum of tripPatternStats.freq, origin-based count across service groups)',
   '# min / max  : shortest / longest pattern total duration (minutes)',
   '# minStops   : fewest stops in any pattern (rd.length)',
   '# meanStops  : mean stops per pattern',

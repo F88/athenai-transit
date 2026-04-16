@@ -69,14 +69,14 @@ export function makeStopWithContext(
   routeIds: string[],
   routeTypes: AppRouteTypeValue[] = [3],
 ): StopWithContext {
-  // Create Route objects once and share references between departures and routes,
+  // Create Route objects once and share references between stopTimes and routes,
   // mirroring production behavior where both reference the same routeMap entries.
   // Each route's route_type matches the corresponding routeTypes entry.
   const routes = routeIds.map((rid, i) => makeRoute(rid, routeTypes[i % routeTypes.length]));
   return {
     stop,
     routeTypes,
-    departures: routes.map((route) => ({
+    stopTimes: routes.map((route) => ({
       schedule: { departureMinutes: 480, arrivalMinutes: 480 },
       routeDirection: { route, tripHeadsign: { name: 'Test', names: {} } },
       boarding: { pickupType: 0 as const, dropOffType: 0 as const },

@@ -62,7 +62,7 @@ const agenciesMap = new Map<string, Agency[]>([
   [stopC.stop_id, [agencyOretetsu]],
 ]);
 
-const nearbyDepartures = new Map<string, ContextualTimetableEntry[]>([
+const stopTimes = new Map<string, ContextualTimetableEntry[]>([
   [
     stopA.stop_id,
     [
@@ -121,7 +121,7 @@ type StopMarkersDomPreviewProps = {
   infoLevel: InfoLevel;
   showTooltip: boolean;
   disableDimming: boolean;
-  includeNearbyDepartures: boolean;
+  includeStopTimes: boolean;
   dataLang: readonly string[];
 };
 
@@ -130,7 +130,7 @@ function StopMarkersDomPreview({
   infoLevel,
   showTooltip,
   disableDimming,
-  includeNearbyDepartures,
+  includeStopTimes,
   dataLang,
 }: StopMarkersDomPreviewProps) {
   return (
@@ -146,7 +146,7 @@ function StopMarkersDomPreview({
           stops={storyStops}
           selectedStopId={selectedStopId}
           routeTypeMap={routeTypeMap}
-          nearbyDepartures={includeNearbyDepartures ? nearbyDepartures : undefined}
+          stopTimes={includeStopTimes ? stopTimes : undefined}
           time={storyNow}
           infoLevel={infoLevel}
           dataLang={dataLang}
@@ -168,7 +168,7 @@ const meta = {
     infoLevel: 'normal',
     showTooltip: true,
     disableDimming: false,
-    includeNearbyDepartures: false,
+    includeStopTimes: false,
     dataLang: ['ja', 'en'],
   },
   argTypes: {
@@ -188,7 +188,7 @@ const meta = {
     },
     showTooltip: { control: 'boolean' },
     disableDimming: { control: 'boolean' },
-    includeNearbyDepartures: { control: 'boolean' },
+    includeStopTimes: { control: 'boolean' },
   },
 } satisfies Meta<typeof StopMarkersDomPreview>;
 
@@ -225,7 +225,7 @@ export const AllRouteTypesDetailed: Story = {
     infoLevel: 'detailed',
     showTooltip: true,
     disableDimming: true,
-    includeNearbyDepartures: false,
+    includeStopTimes: false,
     dataLang: ['en'],
   },
   render: (args) => (
@@ -258,7 +258,7 @@ const kitchenSinkArgs = {
   selectedStopId: stopB.stop_id,
   showTooltip: true,
   disableDimming: false,
-  includeNearbyDepartures: true,
+  includeStopTimes: true,
   dataLang: ['ja', 'en', 'de'],
 };
 
@@ -290,7 +290,7 @@ export const LogicalLongInfoLevelComparison: Story = {
                   stops={storyStops}
                   selectedStopId={args.selectedStopId}
                   routeTypeMap={routeTypeMap}
-                  nearbyDepartures={args.includeNearbyDepartures ? nearbyDepartures : undefined}
+                  stopTimes={args.includeStopTimes ? stopTimes : undefined}
                   time={storyNow}
                   infoLevel={level}
                   dataLang={args.dataLang}
@@ -336,7 +336,7 @@ export const LangComparison: Story = {
                 stops={storyStops}
                 selectedStopId={args.selectedStopId}
                 routeTypeMap={routeTypeMap}
-                nearbyDepartures={args.includeNearbyDepartures ? nearbyDepartures : undefined}
+                stopTimes={args.includeStopTimes ? stopTimes : undefined}
                 time={storyNow}
                 infoLevel={args.infoLevel}
                 dataLang={dataLang}

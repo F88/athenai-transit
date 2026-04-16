@@ -57,7 +57,7 @@ function EdgeMarkerItem({
   containerHeight,
   agencies,
   onStopSelected,
-  onFetchDepartures,
+  onFetchStopTimes,
 }: {
   marker: EdgeMarker;
   now: Date;
@@ -68,10 +68,10 @@ function EdgeMarkerItem({
   containerHeight: number;
   agencies: Agency[];
   onStopSelected: (stop: Stop) => void;
-  onFetchDepartures: (stopId: string) => Promise<StopWithContext | null>;
+  onFetchStopTimes: (stopId: string) => Promise<StopWithContext | null>;
 }) {
   const { i18n } = useTranslation();
-  const [departures, setDepartures] = useState<StopWithContext | null>(null);
+  const [stopTimes, setStopTimes] = useState<StopWithContext | null>(null);
   const [hovered, setHovered] = useState(false);
   const fetchedRef = useRef<string | null>(null);
 
@@ -81,16 +81,16 @@ function EdgeMarkerItem({
       return;
     }
     fetchedRef.current = marker.stop.stop_id;
-    onFetchDepartures(marker.stop.stop_id)
+    onFetchStopTimes(marker.stop.stop_id)
       .then((result) => {
         if (result) {
-          setDepartures(result);
+          setStopTimes(result);
         }
       })
       .catch((error) => {
-        logger.error('Failed to fetch departures for edge marker:', error);
+        logger.error('Failed to fetch stop times for edge marker:', error);
       });
-  }, [marker.stop.stop_id, onFetchDepartures]);
+  }, [marker.stop.stop_id, onFetchStopTimes]);
 
   const handleMouseLeave = useCallback(() => {
     setHovered(false);
@@ -122,7 +122,7 @@ function EdgeMarkerItem({
   }
   const alignClass = ALIGN_CLASSES[alignKey];
 
-  const hasData = departures && departures.departures.length > 0;
+  const hasData = stopTimes && stopTimes.stopTimes.length > 0;
 
   // Vertical: show above if marker is in lower half, below otherwise
   const tooltipVClass =
@@ -181,8 +181,8 @@ function EdgeMarkerItem({
           <StopSummary
             stop={marker.stop}
             routeTypes={marker.routeTypes}
-            agencies={departures?.agencies ?? agencies}
-            entries={hasData ? departures.departures : undefined}
+            agencies={stopTimes?.agencies ?? agencies}
+            entries={hasData ? stopTimes.stopTimes : undefined}
             now={now}
             infoLevel={infoLevel}
             dataLang={dataLang}
@@ -205,7 +205,7 @@ interface EdgeMarkersDomProps {
   containerHeight: number;
   agenciesMap?: Map<string, Agency[]>;
   onStopSelected: (stop: Stop) => void;
-  onFetchDepartures: (stopId: string) => Promise<StopWithContext | null>;
+  onFetchStopTimes: (stopId: string) => Promise<StopWithContext | null>;
 }
 
 /**
@@ -222,7 +222,7 @@ export function EdgeMarkersDom({
   containerHeight,
   agenciesMap,
   onStopSelected,
-  onFetchDepartures,
+  onFetchStopTimes,
 }: EdgeMarkersDomProps) {
   return (
     <>
@@ -237,7 +237,7 @@ export function EdgeMarkersDom({
           containerHeight={containerHeight}
           agencies={agenciesMap?.get(marker.stop.stop_id) ?? []}
           onStopSelected={onStopSelected}
-          onFetchDepartures={onFetchDepartures}
+          onFetchStopTimes={onFetchStopTimes}
         />
       ))}
     </>

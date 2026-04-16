@@ -18,8 +18,8 @@ const logger = createLogger('Selection');
 export interface UseSelectionParams {
   /** Route type lookup map (stopId -> routeTypes). */
   routeTypeMap: Map<string, AppRouteTypeValue[]>;
-  /** Departure contexts for nearby stops. */
-  nearbyDepartures: StopWithContext[];
+  /** Stop time contexts for nearby stops. */
+  stopTimes: StopWithContext[];
   /** All route shapes for route selection. */
   routeShapes: RouteShape[];
   /** Stops within the nearby radius. */
@@ -56,14 +56,14 @@ export interface UseSelectionReturn {
  * Manages stop and route selection state.
  *
  * Handles selection from map clicks, bottom sheet taps, route shape clicks,
- * and search results. Enriches selection info with route IDs from departure
+ * and search results. Enriches selection info with route IDs from stop time
  * data, and resolves the map focus position.
  *
  * @param params - Dependencies for selection logic.
  * @returns Selection state and action handlers.
  */
 export function useSelection(params: UseSelectionParams): UseSelectionReturn {
-  const { routeTypeMap, nearbyDepartures, routeShapes, radiusStops, inBoundStops } = params;
+  const { routeTypeMap, stopTimes, routeShapes, radiusStops, inBoundStops } = params;
 
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const [selectionInfo, setSelectionInfo] = useState<SelectionInfo | null>(null);
@@ -74,22 +74,22 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
   // instead of staying pinned to a stale focus position.
   const [directFocusPosition, setDirectFocusPosition] = useState<LatLng | null>(null);
 
-  // Backfill routeIds when departure data arrives after stop selection.
+  // Backfill routeIds when stop time data arrives after stop selection.
   //
-  // At selection time, the stop may not yet be in nearbyDepartures (e.g. the
-  // stop is outside the nearby radius, or departures haven't loaded yet),
+  // At selection time, the stop may not yet be in stopTimes (e.g. the
+  // stop is outside the nearby radius, or stop times haven't loaded yet),
   // leaving routeIds as an empty Set. This synchronous setState-during-render
   // pattern follows React's recommendation for "adjusting state based on
   // props/state from previous renders" without an extra effect pass.
   // See: https://react.dev/reference/react/useState#storing-information-from-previous-renders
   //
   // This is NOT a useMemo (derived value). A useMemo recomputes from
-  // nearbyDepartures on every render — if the stop later leaves the nearby
+  // stopTimes on every render — if the stop later leaves the nearby
   // radius (e.g. map pan), the derived value reverts to an empty Set and
   // route highlighting is lost. A state update captures the routeIds once
-  // and preserves them regardless of subsequent nearbyDepartures changes.
+  // and preserves them regardless of subsequent stopTimes changes.
   if (selectionInfo?.type === 'stop' && selectionInfo.routeIds.size === 0) {
-    const ids = extractRouteIdsForStop(nearbyDepartures, selectionInfo.stop.stop_id);
+    const ids = extractRouteIdsForStop(stopTimes, selectionInfo.stop.stop_id);
     if (ids.size > 0) {
       setSelectionInfo({ ...selectionInfo, routeIds: ids });
     }
@@ -124,23 +124,23 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
           routes: null,
           unknownPolicy: 'include-unknown',
         }),
-        routeIds: extractRouteIdsForStop(nearbyDepartures, stop.stop_id),
+        routeIds: extractRouteIdsForStop(stopTimes, stop.stop_id),
       });
       setDirectFocusPosition(null);
     },
-    [routeTypeMap, nearbyDepartures],
+    [routeTypeMap, stopTimes],
   );
 
   const selectStopById = useCallback(
     (stopId: string) => {
-      const ctx = nearbyDepartures.find((d) => d.stop.stop_id === stopId);
+      const ctx = stopTimes.find((d) => d.stop.stop_id === stopId);
       if (ctx) {
         setSelectedStopId(stopId);
         setSelectionInfo({
           type: 'stop',
           stop: ctx.stop,
           routeTypes: ctx.routeTypes,
-          routeIds: extractRouteIdsForStop(nearbyDepartures, stopId),
+          routeIds: extractRouteIdsForStop(stopTimes, stopId),
         });
       } else {
         setSelectedStopId(null);
@@ -148,7 +148,7 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
       }
       setDirectFocusPosition(null);
     },
-    [nearbyDepartures],
+    [stopTimes],
   );
 
   const deselectStop = useCallback(() => {
@@ -178,7 +178,7 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
 
   const focusStop = useCallback(
     (stop: Stop) => {
-      const routeIds = extractRouteIdsForStop(nearbyDepartures, stop.stop_id);
+      const routeIds = extractRouteIdsForStop(stopTimes, stop.stop_id);
       logger.debug(
         `focusStop: stopId=${stop.stop_id}, name=${stop.stop_name}, routeIds=${routeIds.size}`,
       );
@@ -196,7 +196,7 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
         routeIds,
       });
     },
-    [routeTypeMap, nearbyDepartures],
+    [routeTypeMap, stopTimes],
   );
 
   const clearFocus = useCallback(() => {

@@ -27,7 +27,7 @@ interface RouteShapePolylinesProps {
   /** Called when a route shape is clicked. */
   onRouteShapeSelected?: (routeId: string) => void;
   /**
-   * Resolves daily departure frequency for a route, used for line thickness.
+   * Resolves the number of trips on a route per service day, used for line thickness.
    * When provided, its return value is used as-is (including undefined).
    * When the prop itself is omitted, `shape.freq` is used as fallback.
    */

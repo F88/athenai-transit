@@ -512,7 +512,7 @@ describe('getStopsInBounds', () => {
 // ---------------------------------------------------------------------------
 
 describe('getUpcomingTimetableEntries', () => {
-  it('returns departures on weekday', async () => {
+  it('returns stop times on weekday', async () => {
     const fixture = createFixtureV2();
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
@@ -523,7 +523,7 @@ describe('getUpcomingTimetableEntries', () => {
     expect(result.data.length).toBe(9);
   });
 
-  it('returns no departures on Saturday for weekday-only route', async () => {
+  it('returns no stop times on Saturday for weekday-only route', async () => {
     const fixture = createFixtureV2();
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
@@ -539,7 +539,7 @@ describe('getUpcomingTimetableEntries', () => {
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
 
     // bus_01 has tp_bus_i (deps=[492,552,612,672,732]) and tp_bus_i2 ([494,554])
-    // At WEEKDAY 10:00 (nowMinutes=600), upcoming departures are:
+    // At WEEKDAY 10:00 (nowMinutes=600), upcoming stop times are:
     //   tp_bus_i: 612, 672, 732 (3 entries >= 600)
     //   tp_bus_i2: none (494, 554 are before 600)
     const result = await repository.getUpcomingTimetableEntries('bus_01', WEEKDAY);
@@ -569,7 +569,7 @@ describe('getUpcomingTimetableEntries', () => {
 
     const result = await repository.getUpcomingTimetableEntries('sub_01', EXCEPTION_HOLIDAY);
     assertSuccess(result);
-    // With flat TimetableEntry[], each departure is a separate entry.
+    // With flat TimetableEntry[], each stop time is a separate entry.
     // Previously 2 groups (route+headsign aggregated), now 3 individual entries.
     expect(result.data.length).toBe(3);
   });
@@ -702,7 +702,7 @@ describe('getUpcomingTimetableEntries', () => {
 
   it('returns earliest entries across patterns when limit is applied', async () => {
     const fixture = createFixtureV2();
-    // Modify tp_bus_i2 to have a departure at 610 (earlier than tp_bus_i's 612)
+    // Modify tp_bus_i2 to have a stop time at 610 (earlier than tp_bus_i's 612)
     const tt = fixture.data.timetable.data['bus_01'];
     const bus_i2_group = tt.find((g) => g.tp === 'tp_bus_i2');
     if (bus_i2_group) {
@@ -728,7 +728,7 @@ describe('getUpcomingTimetableEntries', () => {
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
 
     // bus_01 is both origin (index 0) and terminal (index 3) in tp_bus_c.
-    // The fixture has two departures: 620 (pickupType=0, origin) and 650 (pickupType=1, terminal).
+    // The fixture has two stop times: 620 (pickupType=0, origin) and 650 (pickupType=1, terminal).
     const result = await repository.getUpcomingTimetableEntries('bus_01', WEEKDAY);
     assertSuccess(result);
 
@@ -838,7 +838,7 @@ describe('getRouteTypesForStop', () => {
 // ---------------------------------------------------------------------------
 
 describe('getFullDayTimetableEntries', () => {
-  it('returns all departures for a stop', async () => {
+  it('returns all stop times for a stop', async () => {
     const fixture = createFixtureV2();
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);

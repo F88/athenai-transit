@@ -13,7 +13,7 @@ const meta = {
   title: 'Departure/RelativeTime',
   component: RelativeTime,
   args: {
-    departureTime: dep(5),
+    time: dep(5),
     now,
     size: 'default',
   },
@@ -38,11 +38,11 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const Imminent: Story = {
-  args: { departureTime: dep(0) },
+  args: { time: dep(0) },
 };
 
 export const Terminal: Story = {
-  args: { departureTime: dep(5), isTerminal: true },
+  args: { time: dep(5), isTerminal: true },
 };
 
 // --- Size variants ---
@@ -58,27 +58,27 @@ export const SizeLg: Story = {
 // --- Size x state combinations ---
 
 export const SmImminent: Story = {
-  args: { departureTime: dep(0), size: 'sm' },
+  args: { time: dep(0), size: 'sm' },
 };
 
 export const SmTerminal: Story = {
-  args: { departureTime: dep(3), size: 'sm', isTerminal: true },
+  args: { time: dep(3), size: 'sm', isTerminal: true },
 };
 
 export const NormalImminent: Story = {
-  args: { departureTime: dep(0) },
+  args: { time: dep(0) },
 };
 
 export const NormalTerminal: Story = {
-  args: { departureTime: dep(3), isTerminal: true },
+  args: { time: dep(3), isTerminal: true },
 };
 
 export const LgImminent: Story = {
-  args: { departureTime: dep(0), size: 'lg' },
+  args: { time: dep(0), size: 'lg' },
 };
 
 export const LgTerminal: Story = {
-  args: { departureTime: dep(3), size: 'lg', isTerminal: true },
+  args: { time: dep(3), size: 'lg', isTerminal: true },
 };
 
 // --- Time bands (all colors) ---
@@ -91,12 +91,7 @@ export const AllTimeBands: Story = {
         {times.map((min) => (
           <div key={min} className="flex items-center gap-4">
             <span className="w-16 text-right text-xs text-gray-500">{min}分後</span>
-            <RelativeTime
-              departureTime={dep(min)}
-              now={now}
-              size={args.size}
-              isTerminal={args.isTerminal}
-            />
+            <RelativeTime time={dep(min)} now={now} size={args.size} isTerminal={args.isTerminal} />
           </div>
         ))}
       </div>
@@ -114,12 +109,7 @@ export const AllTimeBandsTerminal: Story = {
         {times.map((min) => (
           <div key={min} className="flex items-center gap-4">
             <span className="w-16 text-right text-xs text-gray-500">{min}分後</span>
-            <RelativeTime
-              departureTime={dep(min)}
-              now={now}
-              size={args.size}
-              isTerminal={args.isTerminal}
-            />
+            <RelativeTime time={dep(min)} now={now} size={args.size} isTerminal={args.isTerminal} />
           </div>
         ))}
       </div>

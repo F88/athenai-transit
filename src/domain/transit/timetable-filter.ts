@@ -97,9 +97,9 @@ export function filterByAgency<T extends TimetableEntry>(
  * When `hiddenRouteTypes` is empty, the input is returned as-is.
  *
  * Used by the bottom sheet route-type filter: toggling off a type
- * (e.g. tram) should hide tram departures even when the stop also
+ * (e.g. tram) should hide tram stop times even when the stop also
  * serves other types (so the stop itself remains visible as long as
- * at least one departure of another type stays).
+ * at least one stop time of another type stays).
  *
  * @param entries - All entries.
  * @param hiddenRouteTypes - Set of route_type values to hide.

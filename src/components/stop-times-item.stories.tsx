@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ContextualTimetableEntry, StopServiceType } from '../types/app/transit-composed';
-import type { Agency, Route } from '../types/app/transit';
+import type { ContextualTimetableEntry, StopServiceType } from '../types/app/transit-composed.ts';
+import type { Agency, Route } from '../types/app/transit.ts';
 import {
   agencyLong as longAgency,
   agencyTobus as agency,
@@ -21,10 +21,10 @@ import {
   tramRoute,
   tripHeadsignLong,
   tripHeadsignShort,
-} from '../stories/fixtures';
-import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
+} from '../stories/fixtures.ts';
+import { LANG_COMPARISON_CASES } from '../stories/lang-comparison.ts';
 import { fn } from 'storybook/test';
-import { DepartureItem } from './departure-item';
+import { StopTimesItem } from './stop-times-item.tsx';
 
 /** Create a ContextualTimetableEntry for stories. */
 function createEntry(
@@ -158,8 +158,8 @@ const threeEntries = [
 ];
 
 const meta = {
-  title: 'Departure/DepartureItem',
-  component: DepartureItem,
+  title: 'StopTime/StopTimesItem',
+  component: StopTimesItem,
   args: {
     entries: threeEntries,
     now,
@@ -179,7 +179,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof DepartureItem>;
+} satisfies Meta<typeof StopTimesItem>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -337,7 +337,7 @@ export const MultipleGroups: Story = {
     return (
       <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
         {groups.map((group, i) => (
-          <DepartureItem
+          <StopTimesItem
             key={i}
             entries={group.entries}
             now={now}
@@ -439,7 +439,7 @@ export const LangComparison: Story = {
       {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
         <div key={label} className="space-y-1">
           <span className="block text-[10px] text-gray-400">{label}</span>
-          <DepartureItem
+          <StopTimesItem
             entries={args.entries}
             now={args.now}
             infoLevel={args.infoLevel}
@@ -633,7 +633,7 @@ export const LogicalLongInfoLevelComparison: Story = {
         {levels.map((level) => (
           <div key={level} className="space-y-1">
             <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
-            <DepartureItem
+            <StopTimesItem
               entries={args.entries}
               now={now}
               infoLevel={level}
@@ -692,7 +692,7 @@ export const LogicalKitchenSink: Story = {
     return (
       <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
         {groups.map((group, i) => (
-          <DepartureItem
+          <StopTimesItem
             key={i}
             entries={group.entries}
             now={now}
@@ -713,7 +713,7 @@ export const KitchenSink: Story = {
   render: () => (
     <div className="max-w-sm rounded-lg bg-[#f5f7fa] p-3 dark:bg-gray-800">
       {kitchenSinkGroups.map((group, i) => (
-        <DepartureItem
+        <StopTimesItem
           key={i}
           entries={group.entries}
           now={now}
