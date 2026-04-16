@@ -177,7 +177,7 @@ export default function App({ loadResult }: AppProps) {
     clearFocus,
   } = useSelection({
     routeTypeMap,
-    nearbyDepartures,
+    stopTimes: nearbyDepartures,
     routeShapes,
     radiusStops,
     inBoundStops,
