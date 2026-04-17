@@ -227,3 +227,25 @@ export function passesAA(foreground: string, background: string): boolean {
   const res = contrastRatio(foreground, background);
   return !!res && res.levelAA;
 }
+
+/**
+ * Check whether `color` has insufficient contrast against `bg`.
+ *
+ * Returns `true` when the WCAG contrast ratio between the two colors
+ * is below `minRatio`, meaning they are visually too close (e.g. a
+ * white brand color on a white background). Returns `false` when
+ * either color is invalid, so the caller treats "cannot measure" as
+ * "no outline needed".
+ *
+ * @param color - Foreground color (CSS hex, rgb, or hsl).
+ * @param bg - Background color (CSS hex, rgb, or hsl).
+ * @param minRatio - Contrast threshold below which the pair is
+ *   considered low-contrast. Default `1.5` — high enough to catch
+ *   same-hue cases but low enough that ordinary mid-tones do not
+ *   trigger.
+ * @returns `true` when the pair is low-contrast, else `false`.
+ */
+export function isLowContrast(color: string, bg: string, minRatio: number = 1.5): boolean {
+  const ratio = contrastRatio(color, bg)?.ratio;
+  return ratio != null && ratio < minRatio;
+}

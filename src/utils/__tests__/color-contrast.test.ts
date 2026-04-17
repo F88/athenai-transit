@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { contrastRatio, passesAA, suggestTextColor } from '../color-contrast';
+import { contrastRatio, isLowContrast, passesAA, suggestTextColor } from '../color-contrast';
 
 describe('contrastRatio', () => {
   it('returns the maximum WCAG ratio (21) for black vs white', () => {
@@ -193,5 +193,39 @@ describe('passesAA', () => {
   it('returns false when either color is invalid', () => {
     expect(passesAA('not-a-color', '#ffffff')).toBe(false);
     expect(passesAA('#ffffff', '')).toBe(false);
+  });
+});
+
+describe('isLowContrast', () => {
+  it('returns true when contrast is below the default threshold (1.5)', () => {
+    // identical colors → ratio 1
+    expect(isLowContrast('#ffffff', '#ffffff')).toBe(true);
+    // GTFS actvnav route_color #FFFFFF on white
+    expect(isLowContrast('#FFFFFF', '#ffffff')).toBe(true);
+    // 伊予鉄 route_color #FBD074 on white ≈ 1.46
+    expect(isLowContrast('#FBD074', '#ffffff')).toBe(true);
+  });
+
+  it('returns false when contrast meets the default threshold', () => {
+    // black on white = 21
+    expect(isLowContrast('#000000', '#ffffff')).toBe(false);
+    // mid-gray on white ≈ 4.48
+    expect(isLowContrast('#777777', '#ffffff')).toBe(false);
+  });
+
+  it('honors a custom minRatio', () => {
+    // #777 on white ≈ 4.48 — below 5, above 4
+    expect(isLowContrast('#777777', '#ffffff', 5)).toBe(true);
+    expect(isLowContrast('#777777', '#ffffff', 4)).toBe(false);
+  });
+
+  it('applies symmetrically to dark backgrounds (#000000 route on dark)', () => {
+    // 京都市バス route_color #000000 on a dark theme background
+    expect(isLowContrast('#000000', '#111827')).toBe(true);
+  });
+
+  it('returns false when either color is invalid (cannot measure → no outline)', () => {
+    expect(isLowContrast('not-a-color', '#ffffff')).toBe(false);
+    expect(isLowContrast('#ffffff', '')).toBe(false);
   });
 });
