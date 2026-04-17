@@ -82,7 +82,7 @@ describe('extractRoutesV2', () => {
     expect(result[0].desc).toBeUndefined();
   });
 
-  it('applies wildcard color fallback', () => {
+  it('applies wildcard color fallback without synthesizing textColor', () => {
     db.exec(`
       INSERT INTO routes (route_id, route_short_name, route_long_name, route_type)
       VALUES ('R001', 'R1', 'Route 1', 3);
@@ -90,7 +90,7 @@ describe('extractRoutesV2', () => {
 
     const result = extractRoutesV2(db, 'test', { '*': '2E7D32' });
     expect(result[0].c).toBe('2E7D32');
-    expect(result[0].tc).toBe('FFFFFF');
+    expect(result[0].tc).toBe('');
   });
 
   it('applies route-specific color fallback over wildcard', () => {
@@ -111,7 +111,7 @@ describe('extractRoutesV2', () => {
 
     const result = extractRoutesV2(db, 'test', { '*': '1565C0' });
     expect(result[0].c).toBe('1565C0');
-    expect(result[0].tc).toBe('FFFFFF');
+    expect(result[0].tc).toBe('000000');
   });
 
   it('does NOT treat FFFFFF/FFFFFF as unset', () => {

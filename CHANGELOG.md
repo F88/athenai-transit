@@ -43,6 +43,7 @@ Changed
 ### Fixed
 
 - pipeline dev analyzer formatter 群で、CLI から `No args` 実行時に `sections=[]` が「全 section」ではなく「0 件指定」と解釈され、ヘッダだけ出て本文が欠落する不具合を修正。`gtfs-routes` / `gtfs-stop-times` / `odpt-station-timetable` / `v2-insights` / `v2-global-insights` の formatter をそろえて、`sections` が `undefined` または空配列なら既定で全 section を出すようにした。対応する回帰 test も追加。
+- pipeline の `route_color` fallback 処理で `route_text_color` を固定 `FFFFFF` で補っていた挙動を見直し、`route_text_color` は raw GTFS 値のまま保持するように変更。`route_color` の fallback 判定・適用ロジックは `pipeline/src/domain/gtfs/route-colors.ts` に抽出し、`extract-routes.ts` から分離した。
 
 - extract-timetable.ts の出力順序を完全に deterministic 化。stopTimetable / patternMap / serviceMap を全て ID で sort。以前は service ID が Map insertion order (trip
   traversal 順) 依存で、trip_id rename や DB 再生成で JSON property 順が揺れていた。

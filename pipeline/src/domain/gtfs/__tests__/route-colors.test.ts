@@ -50,7 +50,7 @@ describe('resolvePipelineRouteColors', () => {
       }),
     ).toEqual({
       color: '2E7D32',
-      textColor: 'FFFFFF',
+      textColor: '',
       colorUnset: true,
       usedFallback: true,
     });
@@ -66,7 +66,7 @@ describe('resolvePipelineRouteColors', () => {
       }),
     ).toEqual({
       color: 'FF0000',
-      textColor: 'FFFFFF',
+      textColor: '',
       colorUnset: true,
       usedFallback: true,
     });
@@ -98,7 +98,7 @@ describe('resolvePipelineRouteColors', () => {
       }),
     ).toEqual({
       color: '1565C0',
-      textColor: 'FFFFFF',
+      textColor: '000000',
       colorUnset: true,
       usedFallback: true,
     });
@@ -114,7 +114,7 @@ describe('resolvePipelineRouteColors', () => {
       }),
     ).toEqual({
       color: '',
-      textColor: 'FFFFFF',
+      textColor: '000000',
       colorUnset: true,
       usedFallback: true,
     });

@@ -38,7 +38,7 @@ export function resolvePipelineRouteColors({
   const fallbackColor = routeColorFallbacks[routeId] || defaultColor;
   const color = colorUnset ? fallbackColor : rawColor;
   const usedFallback = colorUnset && color !== rawColor;
-  const textColor = usedFallback ? 'FFFFFF' : rawTextColor;
+  const textColor = rawTextColor;
 
   return {
     color,
