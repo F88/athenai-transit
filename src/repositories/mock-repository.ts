@@ -164,6 +164,40 @@ const AGENCY_DRI: Agency = {
   agency_colors: [{ bg: '6A1B9A', text: 'FFFFFF' }],
 };
 
+/**
+ * Fictional operator used to stress-test low-contrast `route_color`
+ * values. Routes under this agency are deliberately given colors that
+ * coincide with the theme background (white, black, pale yellow, etc.)
+ * so the `useIsLowContrastAgainstTheme` hook and the TripPositionIndicator
+ * track outline can be verified visually.
+ */
+const AGENCY_COLORFUL: Agency = {
+  agency_id: 'mock:colorful',
+  agency_name: 'カラフルルート',
+  agency_long_name: 'カラフルルート交通株式会社',
+  agency_short_name: 'カラフル',
+  agency_names: {
+    ja: 'カラフルルート',
+    'ja-Hrkt': 'からふるるーと',
+    en: 'Colorful Route',
+  },
+  agency_long_names: {
+    ja: 'カラフルルート交通株式会社',
+    'ja-Hrkt': 'からふるるーとこうつうかぶしきがいしゃ',
+    en: 'Colorful Route Transportation Co., Ltd.',
+  },
+  agency_short_names: {
+    ja: 'カラフル',
+    'ja-Hrkt': 'からふる',
+    en: 'Colorful',
+  },
+  agency_url: 'https://example.com/colorful',
+  agency_lang: 'ja',
+  agency_timezone: 'Asia/Tokyo',
+  agency_fare_url: '',
+  agency_colors: [{ bg: '888888', text: 'FFFFFF' }],
+};
+
 const AGENCY_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
   'mock:aoba': {
     'zh-Hant': '青葉交通株式會社',
@@ -218,14 +252,14 @@ const AGENCY_SHORT_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
 // and the `?? {}` fallback makes every Object.assign a no-op. Keeping DRI
 // in the loop means a future `AGENCY_LONG_NAME_TRANSLATIONS['dri']` entry
 // will be picked up automatically instead of silently missing the merge.
-for (const agency of [AGENCY, AGENCY_SORA, AGENCY_DRI]) {
+for (const agency of [AGENCY, AGENCY_SORA, AGENCY_DRI, AGENCY_COLORFUL]) {
   Object.assign(agency.agency_names, AGENCY_NAME_TRANSLATIONS[agency.agency_id] ?? {});
   Object.assign(agency.agency_long_names, AGENCY_LONG_NAME_TRANSLATIONS[agency.agency_id] ?? {});
   Object.assign(agency.agency_short_names, AGENCY_SHORT_NAME_TRANSLATIONS[agency.agency_id] ?? {});
 }
 
 const AGENCY_MAP = new Map<string, Agency>(
-  [AGENCY, AGENCY_SORA, AGENCY_DRI].map((a) => [a.agency_id, a]),
+  [AGENCY, AGENCY_SORA, AGENCY_DRI, AGENCY_COLORFUL].map((a) => [a.agency_id, a]),
 );
 
 const STOP_NAME_TRANSLATIONS: Record<string, Record<string, string>> = {
@@ -884,6 +918,37 @@ const STOPS: Stop[] = [
     location_type: 0,
     agency_id: 'mock:aoba',
   },
+  // --- Colorful Route: three stops arranged as a 200m equilateral
+  // triangle, placed ~2km SW of sta_south. Used for visual verification
+  // of low-contrast route_color handling in the TripPositionIndicator
+  // and JourneyTimeBar.
+  {
+    stop_id: 'stop_red',
+    stop_name: 'Red',
+    stop_names: { ja: 'レッド', en: 'Red' },
+    stop_lat: 35.73,
+    stop_lon: 139.749,
+    location_type: 0,
+    agency_id: 'mock:colorful',
+  },
+  {
+    stop_id: 'stop_green',
+    stop_name: 'Green',
+    stop_names: { ja: 'グリーン', en: 'Green' },
+    stop_lat: 35.73,
+    stop_lon: 139.7512,
+    location_type: 0,
+    agency_id: 'mock:colorful',
+  },
+  {
+    stop_id: 'stop_blue',
+    stop_name: 'Blue',
+    stop_names: { ja: 'ブルー', en: 'Blue' },
+    stop_lat: 35.7316,
+    stop_lon: 139.7501,
+    location_type: 0,
+    agency_id: 'mock:colorful',
+  },
 ];
 
 for (const stop of STOPS) {
@@ -1230,6 +1295,181 @@ const ROUTES: Route[] = [
     route_color: '0097A7',
     route_text_color: 'FFFFFF',
     agency_id: 'dri',
+  },
+  // --- Colorful Route: low-contrast route_color fixtures. --------------
+  // 15 routes across three directions around the red/green/blue stops,
+  // each with a deliberately low-contrast route_color. The two
+  // mandatory cases (#FFFFFF and #000000) sit in the red→green and
+  // green→blue groups respectively; the remaining 13 cover real-world
+  // problem palettes observed in production GTFS data.
+  //
+  // red → green: colors that fade into light-theme background.
+  {
+    route_id: 'clr_rg_white',
+    route_short_name: 'W',
+    route_short_names: {},
+    route_long_name: 'White',
+    route_long_names: {},
+    route_type: 3,
+    route_color: 'FFFFFF',
+    route_text_color: '000000',
+    agency_id: 'mock:colorful',
+  },
+  {
+    route_id: 'clr_rg_pale_yellow',
+    route_short_name: 'PY',
+    route_short_names: {},
+    route_long_name: 'Pale Yellow (iyt2)',
+    route_long_names: {},
+    route_type: 3,
+    route_color: 'FBD074',
+    route_text_color: '0A0A0A',
+    agency_id: 'mock:colorful',
+  },
+  {
+    route_id: 'clr_rg_pale_gold',
+    route_short_name: 'PG',
+    route_short_names: {},
+    route_long_name: 'Pale Gold (minkuru 北47)',
+    route_long_names: {},
+    route_type: 3,
+    route_color: 'FFDB82',
+    route_text_color: '260A00',
+    agency_id: 'mock:colorful',
+  },
+  {
+    route_id: 'clr_rg_bright_yellow',
+    route_short_name: 'BY',
+    route_short_names: {},
+    route_long_name: 'Bright Yellow',
+    route_long_names: {},
+    route_type: 3,
+    route_color: 'FFFF00',
+    route_text_color: '000000',
+    agency_id: 'mock:colorful',
+  },
+  {
+    route_id: 'clr_rg_light_cyan',
+    route_short_name: 'LC',
+    route_short_names: {},
+    route_long_name: 'Light Cyan (kseiw 塩浜03)',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '80FFFF',
+    route_text_color: '000000',
+    agency_id: 'mock:colorful',
+  },
+  // green → blue: colors that fade into dark-theme background.
+  {
+    route_id: 'clr_gb_black',
+    route_short_name: 'K',
+    route_short_names: {},
+    route_long_name: 'Black',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '000000',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:colorful',
+  },
+  {
+    route_id: 'clr_gb_near_black',
+    route_short_name: 'NK',
+    route_short_names: {},
+    route_long_name: 'Near Black',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '0A1428',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:colorful',
+  },
+  {
+    route_id: 'clr_gb_gray_900',
+    route_short_name: 'G9',
+    route_short_names: {},
+    route_long_name: 'Gray 900 (dark bg)',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '111827',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:colorful',
+  },
+  {
+    route_id: 'clr_gb_gray_800',
+    route_short_name: 'G8',
+    route_short_names: {},
+    route_long_name: 'Gray 800',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '1F2937',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:colorful',
+  },
+  {
+    route_id: 'clr_gb_dark_gray',
+    route_short_name: 'DG',
+    route_short_names: {},
+    route_long_name: 'Dark Gray',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '2C2C2C',
+    route_text_color: 'FFFFFF',
+    agency_id: 'mock:colorful',
+  },
+  // blue → red: other low-contrast palettes observed in production data.
+  {
+    route_id: 'clr_br_light_yellow',
+    route_short_name: 'LY',
+    route_short_names: {},
+    route_long_name: 'Light Yellow (kseiw 浦安01)',
+    route_long_names: {},
+    route_type: 3,
+    route_color: 'FFFF80',
+    route_text_color: '000000',
+    agency_id: 'mock:colorful',
+  },
+  {
+    route_id: 'clr_br_light_green',
+    route_short_name: 'LG',
+    route_short_names: {},
+    route_long_name: 'Light Green (kseiw 行徳03)',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '80FF80',
+    route_text_color: '000000',
+    agency_id: 'mock:colorful',
+  },
+  {
+    route_id: 'clr_br_bright_green',
+    route_short_name: 'BG',
+    route_short_names: {},
+    route_long_name: 'Bright Green (ktbus 百01)',
+    route_long_names: {},
+    route_type: 3,
+    route_color: '4DFB41',
+    route_text_color: '000000',
+    agency_id: 'mock:colorful',
+  },
+  {
+    route_id: 'clr_br_gold',
+    route_short_name: 'GD',
+    route_short_names: {},
+    route_long_name: 'Gold (sbbus 吉66)',
+    route_long_names: {},
+    route_type: 3,
+    route_color: 'FDD000',
+    route_text_color: '000000',
+    agency_id: 'mock:colorful',
+  },
+  {
+    route_id: 'clr_br_light_gray',
+    route_short_name: 'LX',
+    route_short_names: {},
+    route_long_name: 'Light Gray',
+    route_long_names: {},
+    route_type: 3,
+    route_color: 'E0E0E0',
+    route_text_color: '000000',
+    agency_id: 'mock:colorful',
   },
 ];
 
@@ -1652,6 +1892,53 @@ const STOP_ROUTES: Record<string, { routeId: string; headsign: string; stopHeads
     'kc10b-1': [{ routeId: 'kc10b', headsign: 'kc10b-3' }],
     'kc10b-2': [{ routeId: 'kc10b', headsign: 'kc10b-3' }],
     'kc10b-3': [{ routeId: 'kc10b', headsign: 'kc10b-3' }],
+
+    // --- Colorful Route low-contrast fixtures -------------------------
+    // Three directions × 5 routes each, arranged as red → green → blue
+    // → red. Every stop therefore serves 10 entries: 5 as origin and
+    // 5 as terminal. Headsign values are the terminal stop name.
+    stop_red: [
+      // Origin for red → green (light-theme problem colors).
+      { routeId: 'clr_rg_white', headsign: 'green' },
+      { routeId: 'clr_rg_pale_yellow', headsign: 'green' },
+      { routeId: 'clr_rg_pale_gold', headsign: 'green' },
+      { routeId: 'clr_rg_bright_yellow', headsign: 'green' },
+      { routeId: 'clr_rg_light_cyan', headsign: 'green' },
+      // Terminal for blue → red (misc low-contrast palettes).
+      { routeId: 'clr_br_light_yellow', headsign: 'red' },
+      { routeId: 'clr_br_light_green', headsign: 'red' },
+      { routeId: 'clr_br_bright_green', headsign: 'red' },
+      { routeId: 'clr_br_gold', headsign: 'red' },
+      { routeId: 'clr_br_light_gray', headsign: 'red' },
+    ],
+    stop_green: [
+      // Terminal for red → green.
+      { routeId: 'clr_rg_white', headsign: 'green' },
+      { routeId: 'clr_rg_pale_yellow', headsign: 'green' },
+      { routeId: 'clr_rg_pale_gold', headsign: 'green' },
+      { routeId: 'clr_rg_bright_yellow', headsign: 'green' },
+      { routeId: 'clr_rg_light_cyan', headsign: 'green' },
+      // Origin for green → blue (dark-theme problem colors).
+      { routeId: 'clr_gb_black', headsign: 'blue' },
+      { routeId: 'clr_gb_near_black', headsign: 'blue' },
+      { routeId: 'clr_gb_gray_900', headsign: 'blue' },
+      { routeId: 'clr_gb_gray_800', headsign: 'blue' },
+      { routeId: 'clr_gb_dark_gray', headsign: 'blue' },
+    ],
+    stop_blue: [
+      // Terminal for green → blue.
+      { routeId: 'clr_gb_black', headsign: 'blue' },
+      { routeId: 'clr_gb_near_black', headsign: 'blue' },
+      { routeId: 'clr_gb_gray_900', headsign: 'blue' },
+      { routeId: 'clr_gb_gray_800', headsign: 'blue' },
+      { routeId: 'clr_gb_dark_gray', headsign: 'blue' },
+      // Origin for blue → red.
+      { routeId: 'clr_br_light_yellow', headsign: 'red' },
+      { routeId: 'clr_br_light_green', headsign: 'red' },
+      { routeId: 'clr_br_bright_green', headsign: 'red' },
+      { routeId: 'clr_br_gold', headsign: 'red' },
+      { routeId: 'clr_br_light_gray', headsign: 'red' },
+    ],
   };
 
 /** Stops where all departures are drop-off only (pickupType=1). */
@@ -1823,6 +2110,25 @@ const ROUTE_STOP_SEQUENCES = new Map<string, string[]>([
   ['kc10a__kc10a-3', ['kc10a-1', 'kc10a-2', 'kc10a-2', 'kc10a-3']],
   // kc10b: 市バス10 通常停車型 (p44 模倣)
   ['kc10b__kc10b-3', ['kc10b-1', 'kc10b-2', 'kc10b-2', 'kc10b-3']],
+  // Colorful Route: three directions, each 2-stop hop.
+  // red → green (5 routes, light-theme problem colors)
+  ['clr_rg_white__green', ['stop_red', 'stop_green']],
+  ['clr_rg_pale_yellow__green', ['stop_red', 'stop_green']],
+  ['clr_rg_pale_gold__green', ['stop_red', 'stop_green']],
+  ['clr_rg_bright_yellow__green', ['stop_red', 'stop_green']],
+  ['clr_rg_light_cyan__green', ['stop_red', 'stop_green']],
+  // green → blue (5 routes, dark-theme problem colors)
+  ['clr_gb_black__blue', ['stop_green', 'stop_blue']],
+  ['clr_gb_near_black__blue', ['stop_green', 'stop_blue']],
+  ['clr_gb_gray_900__blue', ['stop_green', 'stop_blue']],
+  ['clr_gb_gray_800__blue', ['stop_green', 'stop_blue']],
+  ['clr_gb_dark_gray__blue', ['stop_green', 'stop_blue']],
+  // blue → red (5 routes, misc low-contrast palettes)
+  ['clr_br_light_yellow__red', ['stop_blue', 'stop_red']],
+  ['clr_br_light_green__red', ['stop_blue', 'stop_red']],
+  ['clr_br_bright_green__red', ['stop_blue', 'stop_red']],
+  ['clr_br_gold__red', ['stop_blue', 'stop_red']],
+  ['clr_br_light_gray__red', ['stop_blue', 'stop_red']],
 ]);
 
 /**
@@ -2277,6 +2583,26 @@ export class MockRepository implements TransitRepository {
           .slice(0, limit);
         for (const minutes of upcoming) {
           const arrivalMinutes = computeArrivalMinutes(routeId, occ, minutes);
+          // Colorful Route fixtures need insights so JourneyTimeBar
+          // renders. Real insights come from InsightsBundle in production
+          // builds; for the mock we synthesize a deterministic trip
+          // length (10–120 min, per route_id) and derive remainingMinutes
+          // by linear interpolation across the pattern. `freq` is always
+          // 1 since colorful routes are one-trip-per-day fixtures.
+          const colorfulInsights = (() => {
+            if (route.agency_id !== 'mock:colorful') {
+              return undefined;
+            }
+            const totalMinutes = 10 + (simpleHash(route.route_id) % 111);
+            const remainingMinutes =
+              position.totalStops > 1
+                ? Math.round(
+                    (totalMinutes * (position.totalStops - position.stopIndex - 1)) /
+                      (position.totalStops - 1),
+                  )
+                : 0;
+            return { totalMinutes, remainingMinutes, freq: 1 };
+          })();
           entries.push({
             schedule: { departureMinutes: minutes, arrivalMinutes },
             routeDirection: {
@@ -2289,6 +2615,7 @@ export class MockRepository implements TransitRepository {
             boarding: { pickupType, dropOffType },
             patternPosition: position,
             serviceDate,
+            ...(colorfulInsights ? { insights: colorfulInsights } : {}),
           });
         }
       }
