@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { InfoLevel } from '../../types/app/settings';
 import { TripPositionIndicator, type TripPositionIndicatorSize } from './trip-position-indicator';
 
 const meta = {
@@ -9,14 +8,16 @@ const meta = {
     stopIndex: { control: { type: 'number', min: 0 } },
     totalStops: { control: { type: 'number', min: 0 } },
     size: { control: 'select', options: ['xs', 'sm', 'md'] },
-    infoLevel: {
-      control: 'select',
-      options: [undefined, 'simple', 'normal', 'detailed', 'verbose'],
-    },
     showTrack: { control: 'boolean' },
+    showEmoji: { control: 'boolean' },
+    showPositionLabel: { control: 'boolean' },
     currentColor: { control: 'color' },
     dotColor: { control: 'color' },
     trackColor: { control: 'color' },
+    trackBorderColor: { control: 'color' },
+    showTrackBorder: { control: 'boolean' },
+    labelTextColor: { control: 'color' },
+    labelBgColor: { control: 'color' },
   },
   decorators: [
     (Story) => (
@@ -176,9 +177,31 @@ export const CustomColors: Story = {
   },
 };
 
-/** Hidden at the simplest info verbosity level. */
-export const HiddenAtSimple: Story = {
-  args: { stopIndex: 2, totalStops: 5, infoLevel: 'simple' },
+/** Position label and emoji enabled together. */
+export const WithLabelAndEmoji: Story = {
+  args: {
+    stopIndex: 2,
+    totalStops: 5,
+    showEmoji: true,
+    showPositionLabel: true,
+  },
+};
+
+/** Route-colored label matching JourneyTimeBar style props. */
+export const WithColoredLabel: Story = {
+  args: {
+    stopIndex: 2,
+    totalStops: 5,
+    showEmoji: true,
+    showPositionLabel: true,
+    currentColor: '#cf3366',
+    dotColor: '#cf336650',
+    trackColor: '#cf336620',
+    trackBorderColor: '#cf3366',
+    showTrackBorder: true,
+    labelTextColor: '#ffffff',
+    labelBgColor: '#cf3366',
+  },
 };
 
 /**
@@ -213,25 +236,31 @@ export const AllSizes: Story = {
 };
 
 /**
- * All info levels side by side.
+ * All label / emoji combinations side by side.
  *
- * `simple` returns null (hidden). `normal` / `detailed` / `verbose`
- * all render, but consumers may adjust `size` based on level.
+ * Useful for checking spacing when the optional emoji and position
+ * label are toggled independently.
  */
-export const AllInfoLevels: Story = {
+export const LabelAndEmojiCombos: Story = {
   args: { stopIndex: 2, totalStops: 5 },
   render: ({ stopIndex, totalStops, ...rest }) => {
-    const levels: InfoLevel[] = ['simple', 'normal', 'detailed', 'verbose'];
+    const combos = [
+      { label: 'plain', showEmoji: false, showPositionLabel: false },
+      { label: 'emoji only', showEmoji: true, showPositionLabel: false },
+      { label: 'label only', showEmoji: false, showPositionLabel: true },
+      { label: 'emoji + label', showEmoji: true, showPositionLabel: true },
+    ] as const;
     return (
       <div className="flex flex-col gap-4">
-        {levels.map((level) => (
-          <div key={level}>
-            <div className="mb-1 text-xs font-semibold text-gray-500">{level}</div>
+        {combos.map((combo) => (
+          <div key={combo.label}>
+            <div className="mb-1 text-xs font-semibold text-gray-500">{combo.label}</div>
             <TripPositionIndicator
               {...rest}
-              infoLevel={level}
               stopIndex={stopIndex}
               totalStops={totalStops}
+              showEmoji={combo.showEmoji}
+              showPositionLabel={combo.showPositionLabel}
             />
           </div>
         ))}
@@ -347,6 +376,12 @@ export const KitchenSink: Story = {
                               currentColor={color.currentColor}
                               dotColor={color.dotColor}
                               trackColor={color.trackColor}
+                              trackBorderColor={color.currentColor}
+                              showTrackBorder={Boolean(color.currentColor)}
+                              showEmoji={size === 'md'}
+                              showPositionLabel={size !== 'xs'}
+                              labelTextColor={color.currentColor ? '#ffffff' : undefined}
+                              labelBgColor={color.currentColor}
                             />
                           </div>
                         </div>

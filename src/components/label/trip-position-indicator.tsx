@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactElement } from 'react';
-import type { InfoLevel } from '../../types/app/settings';
-import { createInfoLevel } from '../../utils/create-info-level';
+import { BaseLabel } from './base-label';
 
 export type TripPositionIndicatorSize = 'xs' | 'sm' | 'md';
 
@@ -11,12 +10,6 @@ export interface TripPositionIndicatorProps {
   totalStops: number;
   /** Size variant. Default `'sm'`. */
   size?: TripPositionIndicatorSize;
-  /**
-   * Current info verbosity level. When provided and equal to `'simple'`,
-   * the indicator is hidden (returns `null`). When omitted, the indicator
-   * is always rendered.
-   */
-  infoLevel?: InfoLevel;
   /**
    * Whether to draw the horizontal track line behind the dots. Default `true`.
    * Set to `false` when the surrounding context already provides a separator
@@ -40,6 +33,41 @@ export interface TripPositionIndicatorProps {
    * Applied via a CSS variable because the track is a `::before` pseudo-element.
    */
   trackColor?: string;
+  /**
+   * Ring (outline) color for the horizontal track, as a CSS color string.
+   * Typically the GTFS `route_color` (at full opacity) so the track
+   * gains a visible outline that still carries the route's identity,
+   * even when `trackColor` (a translucent variant of the same hue) is
+   * near the theme background.
+   * When omitted, falls back to a theme-appropriate neutral
+   * (black at 10% on light, white at 15% on dark).
+   * Only applied when {@link showTrackBorder} is `true`.
+   */
+  trackBorderColor?: string;
+  /**
+   * Whether to draw a 1px outline ring around the horizontal track.
+   * Useful when `trackColor` may be near the theme background
+   * (e.g. white `route_color` on light theme) and the track needs
+   * a visible boundary. Default `false`.
+   */
+  showTrackBorder?: boolean;
+  /**
+   * Whether to render a compact `current / total` label next to the
+   * indicator. Default `false`.
+   */
+  showPositionLabel?: boolean;
+  /** Whether to render the stop-position emoji prefix. Default `false`. */
+  showEmoji?: boolean;
+  /**
+   * Text color for the optional position label, as a CSS color string.
+   * When omitted, the label falls back to white text.
+   */
+  labelTextColor?: string;
+  /**
+   * Background color for the optional position label, as a CSS color string.
+   * When omitted, the label falls back to the neutral gray badge style.
+   */
+  labelBgColor?: string;
 }
 
 const SIZE_CLASSES: Record<
@@ -85,11 +113,16 @@ export function TripPositionIndicator({
   stopIndex,
   totalStops,
   size = 'sm',
-  infoLevel,
   showTrack = true,
   currentColor,
   dotColor,
   trackColor,
+  trackBorderColor,
+  showTrackBorder = false,
+  showPositionLabel = false,
+  showEmoji = false,
+  labelTextColor,
+  labelBgColor,
 }: TripPositionIndicatorProps): ReactElement | null {
   // Reject non-finite (NaN / Infinity / -Infinity) and degenerate
   // counts up front. `totalStops <= 1` covers 0/negative (invalid)
@@ -97,10 +130,6 @@ export function TripPositionIndicator({
   // the indicator has nothing to show). Infinity would otherwise
   // spin the dot loop forever.
   if (!Number.isFinite(totalStops) || totalStops <= 1) {
-    return null;
-  }
-  // Hide at the simplest verbosity level (= keep UI uncluttered).
-  if (infoLevel !== undefined && !createInfoLevel(infoLevel).isNormalEnabled) {
     return null;
   }
   // Clamp absurdly large counts to MAX_STOPS. Real GTFS patterns
@@ -133,20 +162,43 @@ export function TripPositionIndicator({
   const trackBgCls = trackColor
     ? 'before:bg-[var(--tpi-track-color)]'
     : 'before:bg-gray-300 dark:before:bg-gray-600';
-  const trackCls = showTrack
-    ? `before:pointer-events-none before:absolute before:inset-x-0 before:top-1/2 ${sizeCls.track} before:-translate-y-1/2 before:rounded-full ${trackBgCls}`
+  // Outer ring on the track pseudo-element (opt-in via
+  // `showTrackBorder`) gives the bar a visible outline when
+  // `trackColor` is a near-background hue (e.g. route_color #FFFFFF
+  // on light theme, #000000 on dark theme). The ring color resolves
+  // from `--tpi-track-border-color` — set to `trackBorderColor` (typically GTFS
+  // route_color at full opacity) when available, or the theme-default
+  // black/10 or white/15 provided on the container below.
+  const trackBorderCls = showTrackBorder
+    ? 'before:ring-1 before:ring-[var(--tpi-track-border-color)]'
     : '';
-  const containerStyle: CSSProperties | undefined = trackColor
-    ? ({ '--tpi-track-color': trackColor } as CSSProperties)
-    : undefined;
+  const trackCls = showTrack
+    ? `before:pointer-events-none before:absolute before:inset-x-0 before:top-1/2 ${sizeCls.track} before:-translate-y-1/2 before:rounded-full ${trackBorderCls} ${trackBgCls}`
+    : '';
+  const cssVars: Record<string, string> = {};
+  if (trackColor) {
+    cssVars['--tpi-track-color'] = trackColor;
+  }
+  if (trackBorderColor) {
+    cssVars['--tpi-track-border-color'] = trackBorderColor;
+  }
+  const containerStyle: CSSProperties | undefined =
+    Object.keys(cssVars).length > 0 ? (cssVars as CSSProperties) : undefined;
+  const positionLabelStyle: CSSProperties | undefined =
+    labelTextColor || labelBgColor
+      ? {
+          ...(labelTextColor ? { color: labelTextColor } : {}),
+          ...(labelBgColor ? { backgroundColor: labelBgColor } : {}),
+        }
+      : undefined;
   const positionLabel = `Stop ${stopIndex + 1} of ${safeTotalStops}`;
   return (
     <span
-      className="inline-flex w-full items-center gap-1"
+      className="inline-flex w-full items-center gap-1 [--tpi-track-border-color:rgb(0_0_0/0.1)] dark:[--tpi-track-border-color:rgb(255_255_255/0.15)]"
       aria-label={positionLabel}
       title={positionLabel}
     >
-      {infoLevel === 'verbose' && (
+      {showEmoji && (
         <span aria-hidden="true" className="shrink-0">
           🚏
         </span>
@@ -157,6 +209,14 @@ export function TripPositionIndicator({
       >
         {dots}
       </span>
+      {showPositionLabel && (
+        <BaseLabel
+          size={'xs'}
+          value={`${stopIndex + 1} / ${safeTotalStops}`}
+          className="shrink-0 bg-gray-500 whitespace-nowrap text-white"
+          style={positionLabelStyle}
+        />
+      )}
     </span>
   );
 }

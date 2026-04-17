@@ -41,12 +41,30 @@ interface JourneyTimeBarProps {
    * the shadcn primary color.
    */
   color?: string;
+
   /**
    * Optional outline drawn around the bar. Omit for no border (default);
    * pass `{}` for the default subtle gray outline or provide any subset
    * of `width` / `color` / `style` to override individual fields.
    */
   border?: JourneyTimeBarBorder;
+  /**
+   * Simple alternative to {@link border} — when `true`, a 1px outline
+   * is drawn around the bar using {@link borderColor} (or the default
+   * subtle gray when `borderColor` is omitted). Ignored when
+   * {@link border} is explicitly specified. Default `false`.
+   */
+  showBorder?: boolean;
+  /**
+   * Border color used when {@link showBorder} is `true`, as a CSS
+   * color string. Typically a GTFS `route_color` so the outline
+   * carries the route's identity even when the bar fill is a
+   * translucent variant of the same hue. Ignored when
+   * {@link border} is specified (use
+   * {@link JourneyTimeBarBorder.color} instead). When omitted, falls
+   * back to {@link DEFAULT_BORDER_COLOR}.
+   */
+  borderColor?: string;
   /** Whether to render the remaining-minutes label. Default `false`. */
   showRMins?: boolean;
   /** Whether to render the total-minutes label. Default `false`. */
@@ -74,6 +92,14 @@ interface JourneyTimeBarProps {
    * the terminal end of the bar ("remaining until arrival").
    */
   fillDirection?: JourneyTimeBarFillDirection;
+  /**
+   * Text color for the minutes label pill, as a CSS color string.
+   * Typically a GTFS `route_text_color` so the label stays readable
+   * on top of {@link color}. When omitted, the label falls back to
+   * `text-white`.
+   */
+  minsTextColor?: string;
+  minsBgColor?: string;
 
   showEmoji?: boolean;
 }
@@ -126,11 +152,15 @@ export function JourneyTimeBar({
   size = 'sm',
   color,
   border,
+  showBorder = false,
+  borderColor,
   showRMins = false,
   showTMins = false,
   rTimeLabel,
   tMinsLabel,
-  minsPosition: minutesPosition = 'bottom',
+  minsPosition = 'bottom',
+  minsTextColor,
+  minsBgColor,
   fillDirection = 'ltr',
   showEmoji = false,
 }: JourneyTimeBarProps) {
@@ -164,11 +194,16 @@ export function JourneyTimeBar({
   // `scaleX(-1)`. Both track and indicator use `rounded-full`, so the
   // mirror is visually indistinguishable from a truly right-anchored
   // fill and avoids reimplementing shadcn Progress.
-  const borderStyle: CSSProperties = border
+  // `border` (rich object) takes precedence when specified. Otherwise
+  // `showBorder` toggles a simple 1px outline whose color defaults to
+  // `borderColor` if provided, falling through to the subtle gray.
+  const effectiveBorder: JourneyTimeBarBorder | undefined =
+    border ?? (showBorder ? { color: borderColor } : undefined);
+  const borderStyle: CSSProperties = effectiveBorder
     ? {
-        borderWidth: `${border.width ?? DEFAULT_BORDER_WIDTH}px`,
-        borderColor: border.color ?? DEFAULT_BORDER_COLOR,
-        borderStyle: border.style ?? DEFAULT_BORDER_STYLE,
+        borderWidth: `${effectiveBorder.width ?? DEFAULT_BORDER_WIDTH}px`,
+        borderColor: effectiveBorder.color ?? DEFAULT_BORDER_COLOR,
+        borderStyle: effectiveBorder.style ?? DEFAULT_BORDER_STYLE,
       }
     : {};
   const barStyle: JourneyTimeBarStyle = {
@@ -222,8 +257,11 @@ export function JourneyTimeBar({
     <BaseLabel
       size={labelSize}
       value={labelText}
-      className={`whitespace-nowrap text-white ${color ? '' : 'bg-gray-500'}`}
-      style={color ? { backgroundColor: color } : undefined}
+      className={`whitespace-nowrap ${minsTextColor ? '' : 'text-white'} ${minsBgColor ? '' : 'bg-gray-500'}`}
+      style={{
+        ...(minsBgColor ? { backgroundColor: minsBgColor } : {}),
+        ...(minsTextColor ? { color: minsTextColor } : {}),
+      }}
     />
   ) : null;
 
@@ -242,8 +280,8 @@ export function JourneyTimeBar({
     />
   );
 
-  const isHorizontal = minutesPosition === 'left' || minutesPosition === 'right';
-  const labelFirst = minutesPosition === 'left' || minutesPosition === 'top';
+  const isHorizontal = minsPosition === 'left' || minsPosition === 'right';
+  const labelFirst = minsPosition === 'left' || minsPosition === 'top';
   const wrapperClassName = isHorizontal
     ? 'flex w-full items-center gap-1'
     : 'flex w-full flex-col items-start gap-0.5';

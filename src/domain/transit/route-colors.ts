@@ -1,4 +1,5 @@
 import type { Route } from '@/types/app/transit';
+import { convertGtfsColor, type GtfsColorFormat } from './gtfs-color';
 
 /** GTFS default route color when `route_color` is omitted. */
 const DEFAULT_ROUTE_COLOR = 'FFFFFF';
@@ -13,18 +14,12 @@ export interface AdjustedRouteColors {
   textColor: string;
 }
 
-/** Return format for route colors. */
-export type RouteColorFormat = 'raw' | 'css-hex';
-
 function normalizeRouteColor(color: string, fallback: string): string {
   return color || fallback;
 }
 
-function formatRouteColor(color: string, format: RouteColorFormat): string {
-  if (format === 'css-hex') {
-    return `#${color}`;
-  }
-  return color;
+function formatRouteColor(color: string, format: GtfsColorFormat): string {
+  return convertGtfsColor(color, format) ?? color;
 }
 
 /**
@@ -46,7 +41,7 @@ function formatRouteColor(color: string, format: RouteColorFormat): string {
 export function getAdjustedRouteColors(
   route: Pick<Route, 'route_color' | 'route_text_color'>,
   isRouteColorLowContrast: boolean,
-  format: RouteColorFormat = 'raw',
+  format: GtfsColorFormat = 'raw',
 ): AdjustedRouteColors {
   const routeColor = normalizeRouteColor(route.route_color, DEFAULT_ROUTE_COLOR);
   const routeTextColor = normalizeRouteColor(route.route_text_color, DEFAULT_ROUTE_TEXT_COLOR);

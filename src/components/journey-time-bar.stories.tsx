@@ -15,10 +15,13 @@ const meta = {
     totalMinutes: { control: { type: 'number' } },
     size: { control: 'select', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     color: { control: 'color' },
+    showEmoji: { control: 'boolean' },
     showRMins: { control: 'boolean' },
     showTMins: { control: 'boolean' },
     rTimeLabel: { control: 'text' },
     tMinsLabel: { control: 'text' },
+    minsTextColor: { control: 'color' },
+    minsBgColor: { control: 'color' },
     minsPosition: {
       control: 'inline-radio',
       options: ['top', 'bottom', 'left', 'right'],
@@ -28,6 +31,8 @@ const meta = {
       options: ['ltr', 'rtl'],
     },
     border: { control: 'object' },
+    showBorder: { control: 'boolean' },
+    borderColor: { control: 'color' },
     maxMinutes: { control: { type: 'number', min: 1 } },
   },
   args: {
@@ -162,6 +167,37 @@ export const Colors: Story = {
         ))}
       </div>
     );
+  },
+};
+
+/** Emoji prefix and colored minute pill, matching StopTimeItem usage. */
+export const WithEmojiAndColoredLabel: Story = {
+  args: {
+    remainingMinutes: 15,
+    totalMinutes: 30,
+    color: '#cf3366',
+    showEmoji: true,
+    showRMins: true,
+    showTMins: true,
+    minsPosition: 'right',
+    minsTextColor: '#ffffff',
+    minsBgColor: '#cf3366',
+  },
+};
+
+/** Simple border shortcut via showBorder/borderColor without the full border object. */
+export const BorderShortcut: Story = {
+  args: {
+    remainingMinutes: 15,
+    totalMinutes: 30,
+    color: '#cf3366',
+    showRMins: true,
+    showTMins: true,
+    minsPosition: 'right',
+    showBorder: true,
+    borderColor: '#cf3366',
+    minsTextColor: '#ffffff',
+    minsBgColor: '#cf3366',
   },
 };
 
@@ -359,11 +395,28 @@ export const KitchenSink: Story = {
   args: {
     remainingMinutes: 15,
     totalMinutes: 30,
+    showEmoji: true,
     showRMins: true,
     showTMins: true,
     minsPosition: 'right',
+    minsTextColor: '#ffffff',
+    minsBgColor: '#cf3366',
+    showBorder: true,
+    borderColor: '#cf3366',
   },
-  render: ({ size, fillDirection, minsPosition, border, showRMins, showTMins }) => (
+  render: ({
+    size,
+    fillDirection,
+    minsPosition,
+    border,
+    showRMins,
+    showTMins,
+    showEmoji,
+    minsTextColor,
+    minsBgColor,
+    showBorder,
+    borderColor,
+  }) => (
     <div className="flex flex-col gap-3">
       {colorSamples.map((c) => (
         <div key={c.label}>
@@ -383,6 +436,11 @@ export const KitchenSink: Story = {
                     minsPosition={minsPosition}
                     fillDirection={fillDirection}
                     border={border}
+                    showEmoji={showEmoji}
+                    minsTextColor={minsTextColor}
+                    minsBgColor={c.color ? minsBgColor : undefined}
+                    showBorder={showBorder}
+                    borderColor={c.color ? borderColor : undefined}
                   />
                 </div>
               </div>

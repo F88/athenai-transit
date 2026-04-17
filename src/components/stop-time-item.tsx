@@ -1,18 +1,21 @@
+import { useInfoLevel } from '@/hooks/use-info-level';
+import { useIsLowContrastAgainstTheme } from '@/hooks/use-is-low-contrast-against-theme';
+import { useTranslation } from 'react-i18next';
+import { minutesToDate } from '../domain/transit/calendar-utils';
+import { convertGtfsColor } from '../domain/transit/gtfs-color';
+import { getAdjustedRouteColors } from '../domain/transit/route-colors';
+import { formatAbsoluteTime } from '../domain/transit/time';
+import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
+import { getDisplayMinutes } from '../domain/transit/timetable-utils';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
-import { useTranslation } from 'react-i18next';
-import { formatAbsoluteTime } from '../domain/transit/time';
-import { minutesToDate } from '../domain/transit/calendar-utils';
-import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
-import { getDisplayMinutes } from '../domain/transit/timetable-utils';
+import { JourneyTimeBar } from './journey-time-bar';
+import { BaseLabel } from './label/base-label';
+import { TripPositionIndicator } from './label/trip-position-indicator';
 import { RelativeTime } from './relative-time';
 import { TripInfo } from './trip-info';
 import { VerboseContextualTimetableEntry } from './verbose/verbose-contextual-timetable-entry';
-import { BaseLabel } from './label/base-label';
-import { TripPositionIndicator } from './label/trip-position-indicator';
-import { JourneyTimeBar } from './journey-time-bar';
-import { useInfoLevel } from '@/hooks/use-info-level';
 
 interface StopTimeItemProps {
   /** The timetable entry to display. */
@@ -60,8 +63,6 @@ export function StopTimeItem({
   const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = info.isVerboseEnabled;
-  const { route } = entry.routeDirection;
-  const bgColor = route.route_color ? `#${route.route_color}` : undefined;
   const attributes = getTimetableEntryAttributes(entry);
   const isTerminal = attributes.isTerminal;
   const time = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
@@ -70,6 +71,12 @@ export function StopTimeItem({
 
   const dt = formatAbsoluteTime(minutesToDate(entry.serviceDate, entry.schedule.departureMinutes));
   const at = formatAbsoluteTime(minutesToDate(entry.serviceDate, entry.schedule.arrivalMinutes));
+
+  // Route colors
+  const { route } = entry.routeDirection;
+  const routeColor = convertGtfsColor(route.route_color, 'css-hex');
+  const routeColorIsLowContrast = useIsLowContrastAgainstTheme(routeColor);
+  const adjustedRouteColors = getAdjustedRouteColors(route, routeColorIsLowContrast, 'css-hex');
 
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
@@ -96,30 +103,14 @@ export function StopTimeItem({
               now={now}
               time={time}
               isTerminal={isTerminal}
-              // Hide prefix for time >90min to save space.
               hidePrefix={diffMs > 90 * 60 * 1000}
             />
           )}
-          {/* Absolute time — always shown alongside relative for precise reference */}
           <div
             className="text-base font-bold text-[#333] dark:text-gray-100"
-            style={bgColor ? { color: bgColor } : undefined}
+            style={{ color: adjustedRouteColors.color }}
           >
             {formatAbsoluteTime(time)}
-            {/*
-             * Terminal arrival marker attached to the absolute time (e.g. "22:30着" / "22:30Arr").
-             * Uses a dedicated `stopTimeView.arrivingAbsolute` key so the two terminal
-             * marker contexts in this row can be controlled independently:
-             *
-             *  - `stopTimeView.arriving` → used by `<RelativeTime>` next to the
-             *    relative time ("5分"). Currently empty in ja/en as an
-             *    intentional opt-out to keep the relative time visually quiet.
-             *  - `stopTimeView.arrivingAbsolute` → used here next to the absolute
-             *    time. Populated per locale (ja: "着", en: "Arr", etc.).
-             *    Locale owners can opt out for any language by setting the
-             *    value to an empty string — the component always renders
-             *    the span so i18n drives visibility.
-             */}
             {isTerminal && (
               <span className="text-[10px] font-normal opacity-70">
                 {t('stopTimeView.arrivingAbsolute')}
@@ -129,32 +120,24 @@ export function StopTimeItem({
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-          {/* Trip Hint */}
           <div className="mb-0.5 flex min-w-0 items-center gap-1">
             <div className="min-w-0 flex-1">
               <TripPositionIndicator
                 stopIndex={entry.patternPosition.stopIndex}
                 totalStops={entry.patternPosition.totalStops}
-                // size="md"
                 size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
-                // size="xs"
+                showEmoji={info.isVerboseEnabled}
                 showTrack={info.isNormalEnabled}
-                infoLevel={infoLevel}
-                // route_color may be empty (e.g. mir/mykbus/sbbus). Pass undefined
-                // in that case so TripPositionIndicator falls back to its default
-                // Tailwind colors instead of producing invalid CSS like "#20".
-                trackColor={bgColor ? `${bgColor}20` : undefined}
-                dotColor={bgColor ? `${bgColor}50` : undefined}
-                currentColor={bgColor}
+                trackColor={`${adjustedRouteColors.color}20`}
+                dotColor={`${adjustedRouteColors.color}50`}
+                currentColor={adjustedRouteColors.color}
+                trackBorderColor={adjustedRouteColors.color}
+                showTrackBorder={false}
+                showPositionLabel={info.isVerboseEnabled}
+                labelTextColor={adjustedRouteColors.textColor}
+                labelBgColor={adjustedRouteColors.color}
               />
             </div>
-            {info.isVerboseEnabled && (
-              <BaseLabel
-                size={'xs'}
-                value={`${entry.patternPosition.stopIndex + 1} / ${entry.patternPosition.totalStops}`}
-                className="shrink-0 bg-gray-500 whitespace-nowrap text-white"
-              />
-            )}
           </div>
 
           {info.isDetailedEnabled && (
@@ -162,17 +145,19 @@ export function StopTimeItem({
               remainingMinutes={entry.insights?.remainingMinutes}
               totalMinutes={entry.insights?.totalMinutes}
               size={info.isDetailedEnabled ? 'md' : 'sm'}
-              color={bgColor}
+              showEmoji={info.isVerboseEnabled}
+              color={adjustedRouteColors.color}
               showRMins={info.isVerboseEnabled}
               showTMins={info.isVerboseEnabled}
               minsPosition="right"
               fillDirection="rtl"
-              // fillDirection="ltr"
-              showEmoji={info.isVerboseEnabled}
+              borderColor={adjustedRouteColors.color}
+              minsTextColor={adjustedRouteColors.textColor}
+              minsBgColor={adjustedRouteColors.color}
+              showBorder={false}
             />
           )}
 
-          {/* Trip Info */}
           <div className="min-w-0">
             <TripInfo
               routeDirection={entry.routeDirection}
@@ -186,14 +171,7 @@ export function StopTimeItem({
           </div>
         </div>
       </div>
-      {/* Verbose data */}
-      {showVerbose && (
-        <VerboseContextualTimetableEntry
-          //
-          entry={entry}
-          // disableVerbose={true}
-        />
-      )}
+      {showVerbose && <VerboseContextualTimetableEntry entry={entry} />}
     </div>
   );
 }
