@@ -13,6 +13,7 @@
  */
 
 import { splitCsvLine } from '../../../src/lib/pipeline/gtfs-csv-parser';
+import { type AnalysisSectionDefinition } from './analysis-sections';
 import { renderTable } from './render-utils';
 
 export interface PresenceCount {
@@ -121,16 +122,18 @@ export interface GtfsRoutesAnalysisReport {
   sources: GtfsRoutesSourceStats[];
 }
 
-export const GTFS_ROUTES_SECTION_NAMES = [
-  'identity-and-names',
-  'route-types',
-  'color-fields',
-  'cemv-support',
-  'continuous-service-fields',
-  'optional-presentation-fields',
-] as const;
+export type GtfsRoutesSectionName =
+  | 'identity-and-names'
+  | 'route-types'
+  | 'color-fields'
+  | 'cemv-support'
+  | 'continuous-service-fields'
+  | 'optional-presentation-fields';
 
-export type GtfsRoutesSectionName = (typeof GTFS_ROUTES_SECTION_NAMES)[number];
+export type GtfsRoutesSectionDefinition = AnalysisSectionDefinition<
+  GtfsRoutesSourceStats[],
+  GtfsRoutesSectionName
+>;
 
 const ROUTE_TYPE_LABELS: Record<string, string> = {
   '0': 'tram',
@@ -326,7 +329,11 @@ function formatFieldMarker(fieldPresent: boolean): string {
   return fieldPresent ? 'yes' : 'no';
 }
 
-function formatIdentityAndNamesSection(results: GtfsRoutesSourceStats[]): string {
+function renderSection(title: string, description: string, body: string): string {
+  return [`## ${title}`, '', description, '', body].join('\n');
+}
+
+function formatIdentityAndNamesSectionBody(results: GtfsRoutesSourceStats[]): string {
   const totalRoutes = getTotalRoutes(results);
   const shortName = sumPresence(results, (result) => result.identityAndNames.routeShortName);
   const longName = sumPresence(results, (result) => result.identityAndNames.routeLongName);
@@ -364,8 +371,6 @@ function formatIdentityAndNamesSection(results: GtfsRoutesSourceStats[]): string
   );
 
   return [
-    '## Identity and names',
-    '',
     '### Totals',
     '',
     `routes=${totalRoutes}`,
@@ -381,7 +386,7 @@ function formatIdentityAndNamesSection(results: GtfsRoutesSourceStats[]): string
   ].join('\n');
 }
 
-function formatRouteTypesSection(results: GtfsRoutesSourceStats[]): string {
+function formatRouteTypesSectionBody(results: GtfsRoutesSourceStats[]): string {
   const combinedCounts = sumRecordCounts(results, (result) => result.routeTypes.counts);
   const summary = renderTable(
     ['source', 'prefix', 'routes', 'typeField', 'distinctTypes', 'unknown', 'types'],
@@ -398,8 +403,6 @@ function formatRouteTypesSection(results: GtfsRoutesSourceStats[]): string {
   );
 
   return [
-    '## Route types',
-    '',
     '### Totals',
     '',
     `routes=${getTotalRoutes(results)}`,
@@ -413,7 +416,7 @@ function formatRouteTypesSection(results: GtfsRoutesSourceStats[]): string {
   ].join('\n');
 }
 
-function formatColorFieldsSection(results: GtfsRoutesSourceStats[]): string {
+function formatColorFieldsSectionBody(results: GtfsRoutesSourceStats[]): string {
   const routeColor = sumPresence(results, (result) => result.colorFields.routeColor);
   const routeTextColor = sumPresence(results, (result) => result.colorFields.routeTextColor);
   const summary = renderTable(
@@ -451,8 +454,6 @@ function formatColorFieldsSection(results: GtfsRoutesSourceStats[]): string {
   );
 
   return [
-    '## Color fields',
-    '',
     '### Totals',
     '',
     `routes=${getTotalRoutes(results)}`,
@@ -466,7 +467,7 @@ function formatColorFieldsSection(results: GtfsRoutesSourceStats[]): string {
   ].join('\n');
 }
 
-function formatCemvSupportSection(results: GtfsRoutesSourceStats[]): string {
+function formatCemvSupportSectionBody(results: GtfsRoutesSourceStats[]): string {
   const summary = renderTable(
     [
       'source',
@@ -496,8 +497,6 @@ function formatCemvSupportSection(results: GtfsRoutesSourceStats[]): string {
   );
 
   return [
-    '## cEMV support',
-    '',
     '### Totals',
     '',
     `routes=${getTotalRoutes(results)}`,
@@ -510,7 +509,7 @@ function formatCemvSupportSection(results: GtfsRoutesSourceStats[]): string {
   ].join('\n');
 }
 
-function formatContinuousServiceFieldsSection(results: GtfsRoutesSourceStats[]): string {
+function formatContinuousServiceFieldsSectionBody(results: GtfsRoutesSourceStats[]): string {
   const pickupTotals = sumContinuousCounts(
     results,
     (result) => result.continuousServiceFields.pickup,
@@ -548,8 +547,6 @@ function formatContinuousServiceFieldsSection(results: GtfsRoutesSourceStats[]):
   );
 
   return [
-    '## Continuous service fields',
-    '',
     '### Totals',
     '',
     `routes=${getTotalRoutes(results)}`,
@@ -565,7 +562,7 @@ function formatContinuousServiceFieldsSection(results: GtfsRoutesSourceStats[]):
   ].join('\n');
 }
 
-function formatOptionalPresentationFieldsSection(results: GtfsRoutesSourceStats[]): string {
+function formatOptionalPresentationFieldsSectionBody(results: GtfsRoutesSourceStats[]): string {
   const routeSortOrder = sumPresence(
     results,
     (result) => result.optionalPresentationFields.routeSortOrder,
@@ -599,8 +596,6 @@ function formatOptionalPresentationFieldsSection(results: GtfsRoutesSourceStats[
   );
 
   return [
-    '## Optional presentation / operational fields',
-    '',
     '### Totals',
     '',
     `routes=${getTotalRoutes(results)}`,
@@ -613,6 +608,60 @@ function formatOptionalPresentationFieldsSection(results: GtfsRoutesSourceStats[
     summary,
   ].join('\n');
 }
+
+export const GTFS_ROUTES_SECTIONS = {
+  'identity-and-names': {
+    name: 'identity-and-names',
+    title: 'Identity and names',
+    description:
+      'Checks how route names and identifiers are populated, including short-name and long-name usage patterns.',
+    render: formatIdentityAndNamesSectionBody,
+  },
+  'route-types': {
+    name: 'route-types',
+    title: 'Route types',
+    description:
+      'Summarizes route_type coverage and distribution to show which GTFS transport modes each source uses.',
+    render: formatRouteTypesSectionBody,
+  },
+  'color-fields': {
+    name: 'color-fields',
+    title: 'Color fields',
+    description:
+      'Shows how route_color and route_text_color are populated, including missing pairings and color variety.',
+    render: formatColorFieldsSectionBody,
+  },
+  'cemv-support': {
+    name: 'cemv-support',
+    title: 'cEMV support',
+    description:
+      'Checks whether cemv_support is present and how often known supported or unsupported values are used.',
+    render: formatCemvSupportSectionBody,
+  },
+  'continuous-service-fields': {
+    name: 'continuous-service-fields',
+    title: 'Continuous service fields',
+    description:
+      'Summarizes continuous_pickup and continuous_drop_off usage, focusing on non-default operational values.',
+    render: formatContinuousServiceFieldsSectionBody,
+  },
+  'optional-presentation-fields': {
+    name: 'optional-presentation-fields',
+    title: 'Optional presentation / operational fields',
+    description:
+      'Checks optional display and grouping fields such as route_sort_order, route_url, and network_id.',
+    render: formatOptionalPresentationFieldsSectionBody,
+  },
+} satisfies Record<GtfsRoutesSectionName, GtfsRoutesSectionDefinition>;
+
+export const GTFS_ROUTES_SECTION_NAMES: readonly GtfsRoutesSectionName[] = [
+  'identity-and-names',
+  'route-types',
+  'color-fields',
+  'cemv-support',
+  'continuous-service-fields',
+  'optional-presentation-fields',
+];
 
 export function analyzeGtfsRoutesCsv(input: AnalyzeGtfsRoutesCsvInput): GtfsRoutesSourceStats {
   const normalized = input.csvText.replace(/^\uFEFF/, '').trimEnd();
@@ -914,29 +963,10 @@ export function formatGtfsRoutesAnalysis(
 
   const renderedSections: string[] = [];
   for (const sectionName of requestedSections) {
-    if (sectionName === 'identity-and-names') {
-      renderedSections.push(formatIdentityAndNamesSection(sorted));
-      continue;
-    }
-    if (sectionName === 'route-types') {
-      renderedSections.push(formatRouteTypesSection(sorted));
-      continue;
-    }
-    if (sectionName === 'color-fields') {
-      renderedSections.push(formatColorFieldsSection(sorted));
-      continue;
-    }
-    if (sectionName === 'cemv-support') {
-      renderedSections.push(formatCemvSupportSection(sorted));
-      continue;
-    }
-    if (sectionName === 'continuous-service-fields') {
-      renderedSections.push(formatContinuousServiceFieldsSection(sorted));
-      continue;
-    }
-    if (sectionName === 'optional-presentation-fields') {
-      renderedSections.push(formatOptionalPresentationFieldsSection(sorted));
-    }
+    const section = GTFS_ROUTES_SECTIONS[sectionName];
+    renderedSections.push(
+      renderSection(section.title, section.description, section.render(sorted)),
+    );
   }
 
   return [

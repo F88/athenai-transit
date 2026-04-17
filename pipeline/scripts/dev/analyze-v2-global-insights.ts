@@ -21,9 +21,11 @@ import type { GlobalInsightsBundle } from '../../../src/types/data/transit-v2-js
 import {
   analyzeGlobalInsightsBundle,
   formatGlobalInsightsAnalysis,
+  V2_GLOBAL_INSIGHTS_SECTIONS,
   V2_GLOBAL_INSIGHTS_SECTION_NAMES,
   type V2GlobalInsightsSectionName,
 } from './dev-lib/v2-global-insights-analysis';
+import { formatAnalysisSectionList } from './dev-lib/analysis-sections';
 import { parseArgsForSectionsOnly } from './dev-lib/parse-args';
 import { PIPELINE_ROOT } from '../../src/lib/paths';
 import { runMain } from '../../src/lib/pipeline/pipeline-utils';
@@ -38,7 +40,7 @@ function isV2GlobalInsightsSectionName(value: string): value is V2GlobalInsights
 function printHelp(): void {
   console.log('Usage: analyze-v2-global-insights.ts [--section <name> ...]');
   console.log('  No args    Analyze public/data-v2/global/insights.json');
-  console.log('  --list-sections  List available section names');
+  console.log('  --list-sections  List available section names with short descriptions');
   console.log('  --section <name> Limit output to the selected section (repeatable)');
   console.log('  --help     Show this help');
 }
@@ -62,8 +64,11 @@ function main(): void {
   }
 
   if (mode.kind === 'list') {
-    for (const sectionName of V2_GLOBAL_INSIGHTS_SECTION_NAMES) {
-      console.log(sectionName);
+    for (const line of formatAnalysisSectionList(
+      V2_GLOBAL_INSIGHTS_SECTION_NAMES,
+      V2_GLOBAL_INSIGHTS_SECTIONS,
+    )) {
+      console.log(line);
     }
     return;
   }

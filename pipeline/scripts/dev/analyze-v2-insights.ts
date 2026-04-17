@@ -22,10 +22,12 @@ import type { InsightsBundle } from '../../../src/types/data/transit-v2-json';
 import {
   analyzeInsightsBundle,
   formatInsightsAnalysis,
+  V2_INSIGHTS_SECTIONS,
   V2_INSIGHTS_SECTION_NAMES,
   type V2InsightsSectionName,
   type InsightsSourceStats,
 } from './dev-lib/v2-insights-analysis';
+import { formatAnalysisSectionList } from './dev-lib/analysis-sections';
 import {
   listGtfsSourceNames,
   loadAllGtfsSources,
@@ -124,7 +126,7 @@ function printHelp(): void {
   console.log('  No args    Analyze all public/data-v2 sources (excluding global/)');
   console.log('  <source>   Analyze one or more sources (by prefix)');
   console.log('  --list-sources  List available sources');
-  console.log('  --list-sections List available section names');
+  console.log('  --list-sections List available section names with short descriptions');
   console.log('  --section <name> Limit output to the selected section (repeatable)');
   console.log('  --help     Show this help');
 }
@@ -150,8 +152,11 @@ async function main(): Promise<void> {
 
   if (mode.kind === 'list') {
     if (mode.target === 'sections') {
-      for (const sectionName of V2_INSIGHTS_SECTION_NAMES) {
-        console.log(sectionName);
+      for (const line of formatAnalysisSectionList(
+        V2_INSIGHTS_SECTION_NAMES,
+        V2_INSIGHTS_SECTIONS,
+      )) {
+        console.log(line);
       }
       return;
     }

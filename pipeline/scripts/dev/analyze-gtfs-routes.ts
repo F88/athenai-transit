@@ -25,10 +25,12 @@ import { runMain } from '../../src/lib/pipeline/pipeline-utils';
 import {
   analyzeGtfsRoutesCsv,
   formatGtfsRoutesAnalysis,
+  GTFS_ROUTES_SECTIONS,
   GTFS_ROUTES_SECTION_NAMES,
   type GtfsRoutesSectionName,
   type GtfsRoutesSourceStats,
 } from './dev-lib/gtfs-routes-analysis';
+import { formatAnalysisSectionList } from './dev-lib/analysis-sections';
 import { parseArgsForMultiSources } from './dev-lib/parse-args';
 
 function printHelp(): void {
@@ -36,7 +38,7 @@ function printHelp(): void {
   console.log('  No args    Analyze all GTFS sources');
   console.log('  <source>   Analyze one or more GTFS sources');
   console.log('  --list-sources   List available GTFS sources');
-  console.log('  --list-sections  List available section names');
+  console.log('  --list-sections  List available section names with short descriptions');
   console.log('  --section <name> Limit output to the selected section (repeatable)');
 }
 
@@ -79,7 +81,12 @@ async function main(): Promise<void> {
   }
 
   if (mode.kind === 'list') {
-    const values = mode.target === 'sections' ? GTFS_ROUTES_SECTION_NAMES : sourceNames;
+    const values =
+      mode.target === 'sections'
+        ? formatAnalysisSectionList(GTFS_ROUTES_SECTION_NAMES, GTFS_ROUTES_SECTIONS, {
+            maxDescriptionLength: 72,
+          })
+        : sourceNames;
     for (const value of values) {
       console.log(value);
     }

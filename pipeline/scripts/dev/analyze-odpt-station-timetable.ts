@@ -26,9 +26,11 @@ import {
 import {
   analyzeOdptStationTimetable,
   formatOdptAnalysis,
+  ODPT_STATION_TIMETABLE_SECTIONS,
   ODPT_STATION_TIMETABLE_SECTION_NAMES,
   type OdptStationTimetableSectionName,
 } from './dev-lib/odpt-station-timetable-analysis';
+import { formatAnalysisSectionList } from './dev-lib/analysis-sections';
 import { parseArgsForMultiSources } from './dev-lib/parse-args';
 
 function isOdptStationTimetableSectionName(
@@ -79,7 +81,7 @@ async function main(): Promise<void> {
     console.log('  No args    Analyze all ODPT Train sources');
     console.log('  <source>   Analyze one or more sources');
     console.log('  --list-sources  List available sources');
-    console.log('  --list-sections List available section names');
+    console.log('  --list-sections List available section names with short descriptions');
     console.log('  --section <name> Limit output to the selected section (repeatable)');
     return;
   }
@@ -98,8 +100,11 @@ async function main(): Promise<void> {
 
   if (mode.kind === 'list') {
     if (mode.target === 'sections') {
-      for (const sectionName of ODPT_STATION_TIMETABLE_SECTION_NAMES) {
-        console.log(sectionName);
+      for (const line of formatAnalysisSectionList(
+        ODPT_STATION_TIMETABLE_SECTION_NAMES,
+        ODPT_STATION_TIMETABLE_SECTIONS,
+      )) {
+        console.log(line);
       }
       return;
     }

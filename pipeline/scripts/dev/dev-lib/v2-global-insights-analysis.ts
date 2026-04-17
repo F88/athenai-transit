@@ -27,6 +27,7 @@
  */
 
 import type { GlobalInsightsBundle } from '../../../../src/types/data/transit-v2-json';
+import { type AnalysisSectionDefinition } from './analysis-sections';
 import { renderTable } from './render-utils';
 import { sortedMedian, sortedPercentile } from './stats-utils';
 
@@ -56,6 +57,71 @@ export const V2_GLOBAL_INSIGHTS_SECTION_NAMES = [
 ] as const;
 
 export type V2GlobalInsightsSectionName = (typeof V2_GLOBAL_INSIGHTS_SECTION_NAMES)[number];
+
+export type V2GlobalInsightsSectionDefinition = AnalysisSectionDefinition<
+  GlobalInsightsStats,
+  V2GlobalInsightsSectionName
+>;
+
+export const V2_GLOBAL_INSIGHTS_SECTIONS = {
+  summary: {
+    name: 'summary',
+    title: 'Summary',
+    description: 'Provides the per-source top-level stopGeo coverage overview.',
+    render: formatSummaryTable,
+  },
+  'nr-distribution': {
+    name: 'nr-distribution',
+    title: 'Distribution of nr (km)',
+    description: 'Summarizes nearest different-route distance distributions by source.',
+    render: (stats: GlobalInsightsStats) => formatNrDistributionTable(stats.perSource),
+  },
+  'isolation-buckets': {
+    name: 'isolation-buckets',
+    title: 'Isolation buckets',
+    description: 'Buckets stops by isolation distance bands derived from nr.',
+    render: (stats: GlobalInsightsStats) => formatIsolationBucketsTable(stats.perSource),
+  },
+  connectivity: {
+    name: 'connectivity',
+    title: 'Connectivity within 300m',
+    description: 'Summarizes route, frequency, and stop connectivity within 300m.',
+    render: (stats: GlobalInsightsStats) => formatConnectivityTable(stats.perSource),
+  },
+  'hub-counts': {
+    name: 'hub-counts',
+    title: 'Hub counts',
+    description: 'Counts hubs and monomorphic stops derived from nearby route counts.',
+    render: (stats: GlobalInsightsStats) => formatHubCountsTable(stats.perSource),
+  },
+  'walkable-portal': {
+    name: 'walkable-portal',
+    title: 'Walkable portal',
+    description: 'Summarizes wp distances to different station complexes where available.',
+    render: (stats: GlobalInsightsStats) => formatWalkablePortalTable(stats.perSource),
+  },
+  'most-isolated-stops': {
+    name: 'most-isolated-stops',
+    title: 'Top 10 most isolated stops',
+    description: 'Ranks stops by the highest nearest different-route distance.',
+    render: (stats: GlobalInsightsStats) =>
+      formatLeaderboardMostIsolated(stats.leaderboards.mostIsolated),
+  },
+  'most-connected-stops': {
+    name: 'most-connected-stops',
+    title: 'Top 10 most connected stops',
+    description: 'Ranks stops by the densest nearby route connectivity within 300m.',
+    render: (stats: GlobalInsightsStats) =>
+      formatLeaderboardMostConnected(stats.leaderboards.mostConnected),
+  },
+  'busiest-neighborhoods': {
+    name: 'busiest-neighborhoods',
+    title: 'Top 10 busiest neighborhoods',
+    description: 'Ranks stops by the busiest 300m neighborhood frequency totals.',
+    render: (stats: GlobalInsightsStats) =>
+      formatLeaderboardBusiestNeighborhood(stats.leaderboards.busiestNeighborhood),
+  },
+} satisfies Record<V2GlobalInsightsSectionName, V2GlobalInsightsSectionDefinition>;
 
 /** Distribution summary for a numeric value array (unit-agnostic). */
 export interface DistributionStats {

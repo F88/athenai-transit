@@ -12,6 +12,7 @@ import type {
   OdptStationTimetable,
   OdptStationTimetableObject,
 } from '../../../src/types/odpt-train';
+import { type AnalysisSectionDefinition } from './analysis-sections';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -132,6 +133,62 @@ export const ODPT_STATION_TIMETABLE_SECTION_NAMES = [
 ] as const;
 
 export type OdptStationTimetableSectionName = (typeof ODPT_STATION_TIMETABLE_SECTION_NAMES)[number];
+
+export type OdptStationTimetableSectionDefinition = AnalysisSectionDefinition<
+  OdptStationTimetableAnalysis,
+  OdptStationTimetableSectionName
+>;
+
+export const ODPT_STATION_TIMETABLE_SECTIONS = {
+  'time-field-availability': {
+    name: 'time-field-availability',
+    title: 'Time Field Availability',
+    description: 'Checks how often arrivalTime and departureTime are present in timetable objects.',
+    render: () => '',
+  },
+  'station-coverage': {
+    name: 'station-coverage',
+    title: 'Station Coverage',
+    description: 'Compares stationOrder coverage against stations that actually have timetables.',
+    render: () => '',
+  },
+  'direction-coverage': {
+    name: 'direction-coverage',
+    title: 'Direction Coverage',
+    description: 'Checks whether stations have outbound and inbound timetable coverage.',
+    render: () => '',
+  },
+  'calendar-coverage': {
+    name: 'calendar-coverage',
+    title: 'Calendar Coverage',
+    description: 'Summarizes calendar type coverage and missing calendar variants per station.',
+    render: () => '',
+  },
+  'destination-distribution': {
+    name: 'destination-distribution',
+    title: 'Destination Distribution',
+    description: 'Shows destination availability and the most common destination values.',
+    render: () => '',
+  },
+  'train-type-distribution': {
+    name: 'train-type-distribution',
+    title: 'Train Type Distribution',
+    description: 'Shows train type availability and the most common train type values.',
+    render: () => '',
+  },
+  flags: {
+    name: 'flags',
+    title: 'isLast / isOrigin Flags',
+    description: 'Checks how often isLast and isOrigin flags are present in timetable objects.',
+    render: () => '',
+  },
+  'unknown-keys': {
+    name: 'unknown-keys',
+    title: 'Unknown Keys',
+    description: 'Detects keys outside the expected ODPT timetable schema.',
+    render: () => '',
+  },
+} satisfies Record<OdptStationTimetableSectionName, OdptStationTimetableSectionDefinition>;
 
 // ---------------------------------------------------------------------------
 // Known keys (ODPT API Spec v4.15 Section 3.3.6)

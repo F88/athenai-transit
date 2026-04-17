@@ -37,6 +37,7 @@
  */
 
 import type { InsightsBundle } from '../../../../src/types/data/transit-v2-json';
+import { type AnalysisSectionDefinition } from './analysis-sections';
 import { renderTable } from './render-utils';
 import { sortedMedian, sortedPercentile } from './stats-utils';
 
@@ -51,6 +52,42 @@ export const V2_INSIGHTS_SECTION_NAMES = [
 ] as const;
 
 export type V2InsightsSectionName = (typeof V2_INSIGHTS_SECTION_NAMES)[number];
+
+export type V2InsightsSectionDefinition = AnalysisSectionDefinition<
+  InsightsSourceStats[],
+  V2InsightsSectionName
+>;
+
+export const V2_INSIGHTS_SECTIONS = {
+  'service-groups': {
+    name: 'service-groups',
+    title: 'serviceGroups',
+    description: 'Summarizes service group keys and calendar segmentation for each source.',
+    render: (rows: InsightsSourceStats[]) =>
+      [formatServiceGroupsTable(rows), '', formatServiceGroupsKeysDetail(rows)].join('\n'),
+  },
+  'trip-pattern-stats': {
+    name: 'trip-pattern-stats',
+    title: 'tripPatternStats',
+    description: 'Shows trip duration distributions in per-pattern and per-trip views.',
+    render: (rows: InsightsSourceStats[]) =>
+      [formatOverviewTable(rows), '', formatDistributionTable(rows)].join('\n'),
+  },
+  'trip-pattern-geo': {
+    name: 'trip-pattern-geo',
+    title: 'tripPatternGeo',
+    description: 'Summarizes straight-line geometry metrics for trip patterns.',
+    render: (rows: InsightsSourceStats[]) =>
+      [formatTripPatternGeoTable(rows), '', formatPathDistDistributionTable(rows)].join('\n'),
+  },
+  'stop-stats': {
+    name: 'stop-stats',
+    title: 'stopStats',
+    description: 'Shows per-stop activity and coverage using the busiest service group view.',
+    render: (rows: InsightsSourceStats[]) =>
+      [formatStopStatsOverview(rows), '', formatStopStatsDistribution(rows)].join('\n'),
+  },
+} satisfies Record<V2InsightsSectionName, V2InsightsSectionDefinition>;
 
 /** Distribution summary for either a per-pattern or a per-trip view. */
 export interface DistributionStats {

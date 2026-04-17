@@ -7,6 +7,7 @@
  */
 
 import type Database from 'better-sqlite3';
+import { type AnalysisSectionDefinition } from './analysis-sections';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -131,6 +132,68 @@ export const GTFS_STOP_TIMES_SECTION_NAMES = [
 ] as const;
 
 export type GtfsStopTimesSectionName = (typeof GTFS_STOP_TIMES_SECTION_NAMES)[number];
+
+export type GtfsStopTimesSectionDefinition = AnalysisSectionDefinition<
+  StopTimesAnalysis,
+  GtfsStopTimesSectionName
+>;
+
+export const GTFS_STOP_TIMES_SECTIONS = {
+  'stop-position-summary': {
+    name: 'stop-position-summary',
+    title: 'Stop Position Summary',
+    description: 'Summarizes first, middle, and last stop positions across stop_times.',
+    render: () => '',
+  },
+  'terminal-only-stops': {
+    name: 'terminal-only-stops',
+    title: 'Terminal-Only Stops',
+    description: 'Lists stops that only appear as first or last stops in trips.',
+    render: () => '',
+  },
+  'circular-routes': {
+    name: 'circular-routes',
+    title: 'Circular Routes',
+    description: 'Finds routes whose trips loop back to the same stop.',
+    render: () => '',
+  },
+  'dwell-time-stops': {
+    name: 'dwell-time-stops',
+    title: 'Dwell Time Stops',
+    description: 'Finds stops where arrival and departure times differ.',
+    render: () => '',
+  },
+  'terminal-time-pattern': {
+    name: 'terminal-time-pattern',
+    title: 'Terminal Time Pattern',
+    description: 'Summarizes arrival and departure time patterns at terminal stop_times.',
+    render: () => '',
+  },
+  'pickup-drop-off-type-usage': {
+    name: 'pickup-drop-off-type-usage',
+    title: 'Pickup/Drop-off Type Usage',
+    description: 'Summarizes pickup_type and drop_off_type usage for non-boarding cases.',
+    render: () => '',
+  },
+  'pass-through-stops': {
+    name: 'pass-through-stops',
+    title: 'Pass-Through Stops',
+    description: 'Finds stops where both pickup and drop-off are disabled.',
+    render: () => '',
+  },
+  interpolation: {
+    name: 'interpolation',
+    title: 'Interpolation',
+    description: 'Counts stop_times that have neither arrival nor departure time.',
+    render: () => '',
+  },
+  'headsign-coverage': {
+    name: 'headsign-coverage',
+    title: 'Headsign Coverage',
+    description: 'Checks how often trip_headsign is populated across trips.',
+    render: () => '',
+  },
+} satisfies Record<GtfsStopTimesSectionName, GtfsStopTimesSectionDefinition>;
 
 // ---------------------------------------------------------------------------
 // Analysis

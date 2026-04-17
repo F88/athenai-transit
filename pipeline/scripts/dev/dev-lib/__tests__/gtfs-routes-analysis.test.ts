@@ -130,6 +130,12 @@ describe('report and formatter', () => {
     expect(output).toContain('## cEMV support');
     expect(output).toContain('## Continuous service fields');
     expect(output).toContain('## Optional presentation / operational fields');
+    expect(output).toContain(
+      'Checks how route names and identifiers are populated, including short-name and long-name usage patterns.',
+    );
+    expect(output).toContain(
+      'Summarizes route_type coverage and distribution to show which GTFS transport modes each source uses.',
+    );
   });
 
   it('filters output to the requested sections', () => {
