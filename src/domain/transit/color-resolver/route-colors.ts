@@ -1,6 +1,13 @@
 import type { Route } from '@/types/app/transit';
-import { convertGtfsColor, type GtfsColorFormat } from '../gtfs-color';
+import type { GtfsColorFormat } from '../gtfs-color';
 import { suggestTextColor } from '../../../utils/color-contrast';
+import {
+  formatResolvedColor,
+  formatResolvedColorPair,
+  normalizeRawColor,
+  type RawColorPair,
+  type ResolvedColorPair,
+} from './resolve-colors';
 
 /** GTFS default route color when `route_color` is omitted. */
 const DEFAULT_ROUTE_COLOR = 'FFFFFF';
@@ -23,19 +30,8 @@ export interface ResolvedRouteColors {
   routeTextColor?: string;
 }
 
-function normalizeRawGtfsColor(color: string | null | undefined): string | undefined {
-  if (!color || !/^[0-9A-Fa-f]{6}$/.test(color)) {
-    return undefined;
-  }
-  return color;
-}
-
-function formatRouteColor(color: string, format: GtfsColorFormat): string {
-  return convertGtfsColor(color, format) ?? color;
-}
-
 function toRawTextFallback(routeColor: string): string {
-  return suggestTextColor(formatRouteColor(routeColor, 'css-hex')) === 'white'
+  return suggestTextColor(formatResolvedColor(routeColor, 'css-hex')) === 'white'
     ? 'FFFFFF'
     : '000000';
 }
@@ -59,6 +55,25 @@ function resolveRawRouteTextColor(
   return explicitRawRouteTextColor;
 }
 
+function resolveRawRouteColorPair(
+  route: Pick<Route, 'route_color' | 'route_text_color'>,
+): RawColorPair {
+  const rawRouteColor = normalizeRawColor(route.route_color);
+  const explicitRawRouteTextColor = normalizeRawColor(route.route_text_color);
+
+  return {
+    primaryColor: rawRouteColor,
+    secondaryColor: resolveRawRouteTextColor(rawRouteColor, explicitRawRouteTextColor),
+  };
+}
+
+function toResolvedRouteColors(colors: ResolvedColorPair): ResolvedRouteColors {
+  return {
+    routeColor: colors.primaryColor,
+    routeTextColor: colors.secondaryColor,
+  };
+}
+
 /**
  * Resolve GTFS route colors into a usable semantic route/text pair.
  *
@@ -72,19 +87,10 @@ export function resolveRouteColors(
   route: Pick<Route, 'route_color' | 'route_text_color'>,
   format: GtfsColorFormat = 'raw',
 ): ResolvedRouteColors {
-  const rawRouteColor = normalizeRawGtfsColor(route.route_color);
-  const explicitRawRouteTextColor = normalizeRawGtfsColor(route.route_text_color);
+  const rawColors = resolveRawRouteColorPair(route);
+  const resolvedColors = formatResolvedColorPair(rawColors, format);
 
-  if (!rawRouteColor && !explicitRawRouteTextColor) {
-    return {};
-  }
-
-  const rawRouteTextColor = resolveRawRouteTextColor(rawRouteColor, explicitRawRouteTextColor);
-
-  return {
-    routeColor: rawRouteColor ? formatRouteColor(rawRouteColor, format) : undefined,
-    routeTextColor: rawRouteTextColor ? formatRouteColor(rawRouteTextColor, format) : undefined,
-  };
+  return toResolvedRouteColors(resolvedColors);
 }
 
 /**
@@ -109,9 +115,9 @@ export function getAdjustedRouteColors(
   format: GtfsColorFormat = 'raw',
 ): AdjustedRouteColors {
   const resolved = resolveRouteColors(route, format);
-  const routeColor = resolved.routeColor ?? formatRouteColor(DEFAULT_ROUTE_COLOR, format);
+  const routeColor = resolved.routeColor ?? formatResolvedColor(DEFAULT_ROUTE_COLOR, format);
   const routeTextColor =
-    resolved.routeTextColor ?? formatRouteColor(DEFAULT_ROUTE_TEXT_COLOR, format);
+    resolved.routeTextColor ?? formatResolvedColor(DEFAULT_ROUTE_TEXT_COLOR, format);
 
   if (isRouteColorLowContrast) {
     return {

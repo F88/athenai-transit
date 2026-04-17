@@ -1,5 +1,6 @@
 import type { Agency } from '@/types/app/transit';
-import { convertGtfsColor, type GtfsColorFormat } from '../gtfs-color';
+import type { GtfsColorFormat } from '../gtfs-color';
+import { formatResolvedColorPair, normalizeRawColor } from './resolve-colors';
 
 /** Agency colors resolved for UI rendering from curated app-side attributes. */
 export interface ResolvedAgencyColors {
@@ -7,17 +8,6 @@ export interface ResolvedAgencyColors {
   agencyColor?: string;
   /** Resolved text color paired with the primary agency color. */
   agencyTextColor?: string;
-}
-
-function normalizeAgencyColor(color: string | null | undefined): string | undefined {
-  if (!color || !/^[0-9A-Fa-f]{6}$/.test(color)) {
-    return undefined;
-  }
-  return color;
-}
-
-function formatAgencyColor(color: string, format: GtfsColorFormat): string {
-  return convertGtfsColor(color, format) ?? color;
 }
 
 /**
@@ -36,15 +26,18 @@ export function resolveAgencyColors(
     return {};
   }
 
-  const rawAgencyColor = normalizeAgencyColor(primary.bg);
-  const rawAgencyTextColor = normalizeAgencyColor(primary.text);
-
-  if (!rawAgencyColor && !rawAgencyTextColor) {
-    return {};
-  }
+  const rawAgencyColor = normalizeRawColor(primary.bg);
+  const rawAgencyTextColor = normalizeRawColor(primary.text);
+  const resolved = formatResolvedColorPair(
+    {
+      primaryColor: rawAgencyColor,
+      secondaryColor: rawAgencyTextColor,
+    },
+    format,
+  );
 
   return {
-    agencyColor: rawAgencyColor ? formatAgencyColor(rawAgencyColor, format) : undefined,
-    agencyTextColor: rawAgencyTextColor ? formatAgencyColor(rawAgencyTextColor, format) : undefined,
+    agencyColor: resolved.primaryColor,
+    agencyTextColor: resolved.secondaryColor,
   };
 }
