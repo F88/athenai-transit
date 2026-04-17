@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_AGENCY_LANG } from '../../../config/transit-defaults';
+import { DEFAULT_AGENCY_LANG } from '../../../../config/transit-defaults';
 import { getStopDisplayNames } from '../get-stop-display-names';
-import type { Stop } from '../../../types/app/transit';
+import type { Stop } from '../../../../types/app/transit';
 
 /** Minimal Stop fixture with multiple translations. */
 function makeStop(overrides?: Partial<Stop>): Stop {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getAgencyDisplayNames, resolveAgencyDisplayName } from '../get-agency-display-name';
-import type { Agency } from '../../../types/app/transit';
+import type { Agency } from '../../../../types/app/transit';
 
 const DEFAULT_LANGS = ['ja'];
 

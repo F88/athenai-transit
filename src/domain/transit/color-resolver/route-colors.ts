@@ -1,6 +1,6 @@
 import type { Route } from '@/types/app/transit';
-import { convertGtfsColor, type GtfsColorFormat } from './gtfs-color';
-import { suggestTextColor } from '../../utils/color-contrast';
+import { convertGtfsColor, type GtfsColorFormat } from '../gtfs-color';
+import { suggestTextColor } from '../../../utils/color-contrast';
 
 /** GTFS default route color when `route_color` is omitted. */
 const DEFAULT_ROUTE_COLOR = 'FFFFFF';

@@ -1,5 +1,5 @@
 import type { Agency } from '@/types/app/transit';
-import { convertGtfsColor, type GtfsColorFormat } from './gtfs-color';
+import { convertGtfsColor, type GtfsColorFormat } from '../gtfs-color';
 
 /** Agency colors resolved for UI rendering from curated app-side attributes. */
 export interface ResolvedAgencyColors {

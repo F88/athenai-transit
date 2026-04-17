@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_AGENCY_LANG } from '../../../config/transit-defaults';
+import { DEFAULT_AGENCY_LANG } from '../../../../config/transit-defaults';
 import { getRouteDisplayNames } from '../get-route-display-names';
-import type { Route } from '../../../types/app/transit';
+import type { Route } from '../../../../types/app/transit';
 
 const DEFAULT_DISPLAY_LANGS: readonly string[] = ['ja'];
 

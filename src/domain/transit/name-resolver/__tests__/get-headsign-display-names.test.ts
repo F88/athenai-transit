@@ -3,8 +3,8 @@ import {
   getHeadsignDisplayNames,
   getSelectedHeadsignDisplayName,
 } from '../get-headsign-display-names';
-import type { Route } from '../../../types/app/transit';
-import type { RouteDirection } from '../../../types/app/transit-composed';
+import type { Route } from '../../../../types/app/transit';
+import type { RouteDirection } from '../../../../types/app/transit-composed';
 
 /** Bus route: short name only (e.g. Keio Bus, Kanto Bus). */
 function makeBusRoute(overrides?: Partial<Route>): Route {
