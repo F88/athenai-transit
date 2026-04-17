@@ -38,7 +38,7 @@ export function VerboseNearbyStopSummary({
         [NearbyStop]
       </summary>
       <div className="mt-0.5">
-        <span className="block overflow-x-auto rounded border border-dashed border-gray-300 p-1 text-[9px] whitespace-nowrap text-[#999] dark:border-gray-600 dark:text-gray-500">
+        <span className="border-app-neutral block overflow-x-auto rounded border border-dashed p-1 text-[9px] whitespace-nowrap text-[#999] dark:text-gray-500">
           <span className="block">
             [state] selected={String(isSelected)} anchor={String(isAnchor)} view={viewId}
           </span>

@@ -28,7 +28,7 @@ export function VerboseHeadsign({
         [Headsign]
       </summary>
       <div className="mt-0.5">
-        <span className="block overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
+        <span className="border-app-neutral block overflow-x-auto rounded border border-dashed p-1 whitespace-nowrap">
           <span className="block">
             [effective] &quot;{getEffectiveHeadsign(routeDirection)}&quot;
             {maxLength != null && ` maxLength=${maxLength}`}

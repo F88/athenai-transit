@@ -75,7 +75,7 @@ export function HeadsignLabel({
           size={baseLabelSizes[size]}
           className={cn(
             'bg-muted-foreground inline-flex items-center justify-center font-bold whitespace-nowrap text-white',
-            'border border-gray-300 dark:border-gray-600',
+            'border-app-neutral border',
             className,
           )}
           style={bg ? { background: bg, color: fg } : undefined}

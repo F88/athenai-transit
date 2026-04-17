@@ -37,7 +37,7 @@ export function VerboseTimetableGridEntry({
         [GridEntry]
       </summary>
       <div className="mt-0.5 space-y-0.5">
-        <span className="block overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
+        <span className="border-app-neutral block overflow-x-auto rounded border border-dashed p-1 whitespace-nowrap">
           <span className="block">
             [display] minutes={displayMinutes} showHeadsign={String(showHeadsign)}
             {headsignMaxLength != null && ` maxLength=${headsignMaxLength}`}
@@ -49,7 +49,7 @@ export function VerboseTimetableGridEntry({
             {` dropOffUnavail=${String(isDisplayDropOffUnavailable)}`}
           </span>
         </span>
-        <span className="block overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
+        <span className="border-app-neutral block overflow-x-auto rounded border border-dashed p-1 whitespace-nowrap">
           <VerboseTimetableEntry entry={entry} />
         </span>
       </div>

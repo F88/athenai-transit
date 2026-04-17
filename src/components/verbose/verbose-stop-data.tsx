@@ -44,7 +44,7 @@ export function VerboseStopData({
         [StopData]
       </summary>
       <div className="mt-0.5 space-y-0.5">
-        <div className="overflow-x-auto rounded border border-dashed border-gray-300 p-1.5 whitespace-nowrap dark:border-gray-600">
+        <div className="border-app-neutral overflow-x-auto rounded border border-dashed p-1.5 whitespace-nowrap">
           <VerboseStop stop={stop} serviceState={serviceState} />
           <p className="m-0">
             [position] distance={distance ?? '?'}m bearing=

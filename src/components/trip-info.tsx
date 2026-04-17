@@ -182,6 +182,7 @@ export function TripInfo({
         infoLevel={infoLevel}
         size={size === 'sm' ? 'sm' : undefined}
         disableVerbose={true}
+        showBorder={true}
       />
       {info.isDetailedEnabled && agency && showAgency && (
         <AgencyBadge

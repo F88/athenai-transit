@@ -29,7 +29,7 @@ export function VerboseRoute({
         [Route]
       </summary>
       <div className="mt-0.5 space-y-0.5">
-        <span className="block overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
+        <span className="border-app-neutral block overflow-x-auto rounded border border-dashed p-1 whitespace-nowrap">
           <span className="block">
             [route] id={route.route_id} type={route.route_type} agency={route.agency_id}
           </span>
