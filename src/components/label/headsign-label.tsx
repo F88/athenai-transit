@@ -2,7 +2,7 @@ import type { InfoLevel } from '../../types/app/settings';
 import type { RouteDirection } from '../../types/app/transit-composed';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
-import { resolveRouteColors } from '../../domain/transit/route-colors';
+import { resolveRouteColors } from '../../domain/transit/color-resolver/route-colors';
 import { cn } from '../../lib/utils';
 import { BaseLabel, type BaseLabelSize } from './base-label';
 import { VerboseHeadsign } from '../verbose/verbose-headsign';

@@ -1,6 +1,6 @@
 import { resolveAgencyLang } from '../../config/transit-defaults';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
-import { resolveRouteColors } from '../../domain/transit/route-colors';
+import { resolveRouteColors } from '../../domain/transit/color-resolver/route-colors';
 import {
   useIsLowContrastAgainstTheme,
   useThemeNeutralBorderColor,

@@ -3,7 +3,7 @@ import { useIsLowContrastAgainstTheme } from '@/hooks/use-is-low-contrast-agains
 import { useTranslation } from 'react-i18next';
 import { minutesToDate } from '../domain/transit/calendar-utils';
 import { convertGtfsColor } from '../domain/transit/gtfs-color';
-import { getAdjustedRouteColors } from '../domain/transit/route-colors';
+import { getAdjustedRouteColors } from '../domain/transit/color-resolver/route-colors';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
 import { getDisplayMinutes } from '../domain/transit/timetable-utils';

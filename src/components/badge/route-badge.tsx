@@ -2,7 +2,7 @@ import type { InfoLevel } from '../../types/app/settings';
 import type { Route } from '../../types/app/transit';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
-import { resolveRouteColors } from '../../domain/transit/route-colors';
+import { resolveRouteColors } from '../../domain/transit/color-resolver/route-colors';
 import { useIsLowContrastAgainstTheme } from '../../hooks/use-is-low-contrast-against-theme';
 import { cn } from '../../lib/utils';
 import { BaseLabel, type BaseLabelSize } from '../label/base-label';

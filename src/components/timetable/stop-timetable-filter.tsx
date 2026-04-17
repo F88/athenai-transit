@@ -4,7 +4,7 @@ import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direc
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
 import { getSelectedHeadsignDisplayName } from '@/domain/transit/get-headsign-display-names';
 import { groupByRouteHeadsign } from '@/domain/transit/group-timetable-entries';
-import { resolveRouteColors } from '@/domain/transit/route-colors';
+import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import {
   useThemeContrastBackgroundColor,
   useThemeNeutralBorderColor,

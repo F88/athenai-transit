@@ -1,7 +1,7 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency } from '../../types/app/transit';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
-import { resolveAgencyColors } from '../../domain/transit/agency-colors';
+import { resolveAgencyColors } from '../../domain/transit/color-resolver/agency-colors';
 import { getAgencyDisplayNames } from '../../domain/transit/get-agency-display-name';
 import { cn } from '../../lib/utils';
 import { IdBadge } from './id-badge';
