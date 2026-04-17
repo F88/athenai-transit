@@ -21,6 +21,34 @@ export interface ContrastResult {
   levelAAA: boolean;
 }
 
+export interface ContrastAssessment {
+  /** Raw WCAG contrast ratio, or `null` when the colors could not be parsed. */
+  ratio: number | null;
+  /** Threshold used to classify the pair as low-contrast. */
+  minRatio: number;
+  /** Whether the pair is considered low-contrast for the given threshold. */
+  isLowContrast: boolean;
+}
+
+/**
+ * Default threshold for colored fills such as route badges and pills.
+ *
+ * This is intentionally permissive: `1.2` protects colors that are
+ * nearly indistinguishable from the surrounding surface, while still
+ * allowing pale but still visible badge fills.
+ */
+export const LOW_CONTRAST_BADGE_MIN_RATIO = 1.2;
+
+/**
+ * Default threshold for using a color directly as text or as a thin
+ * accent that must read clearly against the theme background.
+ *
+ * This is intentionally looser than WCAG AA because it is used for
+ * route-colored time text and thin transit accents, where preserving
+ * the operator color is still important.
+ */
+export const LOW_CONTRAST_TEXT_MIN_RATIO = 1.7;
+
 function clamp255(v: number): number {
   return Math.max(0, Math.min(255, v));
 }
@@ -229,23 +257,34 @@ export function passesAA(foreground: string, background: string): boolean {
 }
 
 /**
- * Check whether `color` has insufficient contrast against `bg`.
+ * Assess whether `color` has insufficient contrast against `bg`.
  *
- * Returns `true` when the WCAG contrast ratio between the two colors
- * is below `minRatio`, meaning they are visually too close (e.g. a
- * white brand color on a white background). Returns `false` when
- * either color is invalid, so the caller treats "cannot measure" as
- * "no outline needed".
+ * Returns both the raw ratio and the boolean classification. When
+ * either color is invalid, `ratio` is `null` and `isLowContrast`
+ * becomes `false`, so callers can treat "cannot measure" as
+ * "no outline needed" while still being able to inspect the computed
+ * value when it exists.
  *
  * @param color - Foreground color (CSS hex, rgb, or hsl).
  * @param bg - Background color (CSS hex, rgb, or hsl).
  * @param minRatio - Contrast threshold below which the pair is
- *   considered low-contrast. Default `1.5` — high enough to catch
- *   same-hue cases but low enough that ordinary mid-tones do not
- *   trigger.
- * @returns `true` when the pair is low-contrast, else `false`.
+ *   considered low-contrast. Default
+ *   {@link LOW_CONTRAST_BADGE_MIN_RATIO} — tuned for filled badges and
+ *   pills that need an outline only when they nearly disappear into
+ *   the surrounding surface.
+ * @returns An assessment object with both the raw ratio and the
+ *   boolean low-contrast classification.
  */
-export function isLowContrast(color: string, bg: string, minRatio: number = 1.5): boolean {
+export function getContrastAssessment(
+  color: string,
+  bg: string,
+  minRatio: number = LOW_CONTRAST_BADGE_MIN_RATIO,
+): ContrastAssessment {
   const ratio = contrastRatio(color, bg)?.ratio;
-  return ratio != null && ratio < minRatio;
+
+  return {
+    ratio: ratio ?? null,
+    minRatio,
+    isLowContrast: ratio != null && ratio < minRatio,
+  };
 }

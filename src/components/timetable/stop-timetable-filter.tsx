@@ -11,7 +11,7 @@ import {
 } from '@/hooks/use-is-low-contrast-against-theme';
 import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
-import { isLowContrast } from '@/utils/color-contrast';
+import { getContrastAssessment, LOW_CONTRAST_BADGE_MIN_RATIO } from '@/utils/color-contrast';
 import { PillButton } from '../button/pill-button';
 
 interface StopTimetableFilterProps {
@@ -53,12 +53,17 @@ export function StopTimetableFilter({
         }
 
         const { routeColor, routeTextColor } = resolveRouteColors(routeDirection.route, 'css-hex');
-        const routeColorIsLowContrast =
-          routeColor != null && isLowContrast(routeColor, themeContrastBackgroundColor);
+        const routeColorAssessment = routeColor
+          ? getContrastAssessment(
+              routeColor,
+              themeContrastBackgroundColor,
+              LOW_CONTRAST_BADGE_MIN_RATIO,
+            )
+          : null;
         // Keep the fill/text pair aligned with RouteBadge and use the paired
         // text color only as an inactive outline fallback when the route color
         // blends into the current theme background.
-        const inactiveBorderColor = routeColorIsLowContrast
+        const inactiveBorderColor = routeColorAssessment?.isLowContrast
           ? (routeTextColor ?? neutralBorderColor)
           : routeColor;
 

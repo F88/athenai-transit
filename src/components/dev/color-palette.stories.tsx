@@ -1,44 +1,72 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ColorPalette } from './color-palette';
+import { ColorPaletteForBadge, ColorPaletteForText } from './color-palette';
+
+type PaletteStoryItem = {
+  id: string;
+  color: string;
+  textColor?: string;
+  text?: string;
+};
 
 const meta = {
   title: 'Dev/ColorPalette',
-  component: ColorPalette,
+  component: ColorPaletteForBadge,
   argTypes: {
     color: { control: 'color' },
     text: { control: 'text' },
     textColor: { control: 'color' },
+    minRatio: { control: 'number' },
   },
-} satisfies Meta<typeof ColorPalette>;
+} satisfies Meta<typeof ColorPaletteForBadge>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** White — collides with the light-theme background. */
-export const White: Story = {
-  args: { color: '#FFFFFF' },
-};
-
-/** Black — collides with the dark-theme background. */
-export const Black: Story = {
-  args: { color: '#000000' },
-};
-
-/** Blue — a well-contrasted brand-style color against both themes. */
-export const Blue: Story = {
-  args: { color: '#1976D2' },
-};
-
-/** Three baseline colors side by side so the low-contrast result is easy to compare. */
-export const WhiteBlackBlue: Story = {
-  args: { color: '#FFFFFF' },
-  render: () => (
+function renderPaletteComparison(items: readonly PaletteStoryItem[]) {
+  return (
     <div className="flex flex-col gap-2">
-      <ColorPalette color="#FFFFFF" textColor="#000000" />
-      <ColorPalette color="#000000" textColor="#FFFFFF" />
-      <ColorPalette color="#1976D2" textColor="#FFFFFF" />
+      {items.map((item) => (
+        <div key={item.id} className="border-app-neutral/70 rounded-md border px-2 py-0">
+          <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-start">
+            {/*  Meta  */}
+            <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs md:w-72 md:self-center">
+              <span className="font-mono">{item.id}</span>
+              <span className="font-mono">{item.color}</span>
+              {item.textColor && <span className="font-mono">{item.textColor}</span>}
+            </div>
+            {/*  Palette  */}
+            <div className="grid min-w-0 flex-1 grid-cols-2 gap-2 md:self-center">
+              <div className="flex min-w-0 items-center">
+                <ColorPaletteForBadge
+                  color={item.color}
+                  text={item.text}
+                  textColor={item.textColor}
+                />
+              </div>
+              <div className="flex min-w-0 items-center">
+                <ColorPaletteForText
+                  color={item.color}
+                  text={item.text}
+                  textColor={item.textColor}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
-  ),
+  );
+}
+
+/** Three baseline colors with badge/text comparison. */
+export const WhiteBlackBlueComparison: Story = {
+  args: { color: '#FFFFFF' },
+  render: () =>
+    renderPaletteComparison([
+      { id: 'white', color: '#FFFFFF', text: 'White sample', textColor: '#000000' },
+      { id: 'black', color: '#000000', text: 'Black sample', textColor: '#FFFFFF' },
+      { id: 'blue', color: '#1976D2', text: 'Blue sample', textColor: '#FFFFFF' },
+    ]),
 };
 
 /**
@@ -205,21 +233,17 @@ const MINKURU_ROUTES = [
  * production route_color / route_text_color pairs and the
  * low-contrast classification can be compared side by side.
  */
-export const MinkuruRouteColor: Story = {
+export const MinkuruRouteColorComparison: Story = {
   args: { color: '#F1B34E', text: '波０１（ＮＭ０１）', textColor: '#350800' },
-  render: () => (
-    <div className="flex flex-col gap-2">
-      {MINKURU_ROUTES.map((s) => (
-        <div key={s.id} className="flex items-center gap-2">
-          [<span className="font-mono text-xs">{s.id}</span>
-          <span className="font-mono text-xs">{s.color}</span>
-          <span className="font-mono text-xs">{s.textColor}</span>
-          ]
-          <ColorPalette color={s.color} text={s.shortName} textColor={s.textColor} />
-        </div>
-      ))}
-    </div>
-  ),
+  render: () =>
+    renderPaletteComparison(
+      MINKURU_ROUTES.map((s) => ({
+        id: s.id,
+        color: s.color,
+        textColor: s.textColor,
+        text: s.shortName,
+      })),
+    ),
 };
 
 /**
@@ -401,21 +425,17 @@ const KC_ROUTES = [
 ] as const;
 
 /** All Kyoto City Bus routes rendered as a column. */
-export const KcRoutes: Story = {
+export const KcRoutesComparison: Story = {
   args: { color: '#0000FF', text: '市バス１', textColor: '#FFFFFF' },
-  render: () => (
-    <div className="flex flex-col gap-2">
-      {KC_ROUTES.map((s) => (
-        <div key={s.id} className="flex items-center gap-2">
-          [<span className="font-mono text-xs">{s.id}</span>
-          <span className="font-mono text-xs">{s.color}</span>
-          <span className="font-mono text-xs">{s.textColor}</span>
-          ]
-          <ColorPalette color={s.color} text={s.shortName} textColor={s.textColor} />
-        </div>
-      ))}
-    </div>
-  ),
+  render: () =>
+    renderPaletteComparison(
+      KC_ROUTES.map((s) => ({
+        id: s.id,
+        color: s.color,
+        textColor: s.textColor,
+        text: s.shortName,
+      })),
+    ),
 };
 
 /**
@@ -450,19 +470,15 @@ const ACTVNAV_ROUTES = [
 ] as const;
 
 /** All ACTV Navigazione (ベネチア水上バス) routes rendered as a column. */
-export const VeniceRoutes: Story = {
+export const VeniceRoutesComparison: Story = {
   args: { color: '#FFFFFF', text: '1', textColor: '#000000' },
-  render: () => (
-    <div className="flex flex-col gap-2">
-      {ACTVNAV_ROUTES.map((s) => (
-        <div key={s.id} className="flex items-center gap-2">
-          [<span className="font-mono text-xs">{s.id}</span>
-          <span className="font-mono text-xs">{s.color}</span>
-          <span className="font-mono text-xs">{s.textColor}</span>
-          ]
-          <ColorPalette color={s.color} text={s.shortName} textColor={s.textColor} />
-        </div>
-      ))}
-    </div>
-  ),
+  render: () =>
+    renderPaletteComparison(
+      ACTVNAV_ROUTES.map((s) => ({
+        id: s.id,
+        color: s.color,
+        textColor: s.textColor,
+        text: s.shortName,
+      })),
+    ),
 };

@@ -4,6 +4,7 @@ import type { RouteDisplayNames } from '../../domain/transit/get-route-display-n
 import { formatRouteLabel } from '../../domain/transit/format-route-label';
 import { convertGtfsColor } from '../../domain/transit/gtfs-color';
 import { VerboseRouteDisplayNames } from './verbose-route-display-names';
+import { VerboseRouteColors } from './verbose-route-colors';
 
 /**
  * Debug dump of all Route fields, resolved display names, and label.
@@ -68,6 +69,7 @@ export function VerboseRoute({
           </span>
         </span>
         <VerboseRouteDisplayNames names={names} />
+        <VerboseRouteColors route={route} />
       </div>
     </details>
   );

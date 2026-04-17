@@ -1,5 +1,5 @@
 import { useInfoLevel } from '@/hooks/use-info-level';
-import { useIsLowContrastAgainstTheme } from '@/hooks/use-is-low-contrast-against-theme';
+import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import { useTranslation } from 'react-i18next';
 import { minutesToDate } from '../domain/transit/calendar-utils';
 import { convertGtfsColor } from '../domain/transit/gtfs-color';
@@ -10,6 +10,7 @@ import { getDisplayMinutes } from '../domain/transit/timetable-utils';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
+import { LOW_CONTRAST_TEXT_MIN_RATIO } from '../utils/color-contrast';
 import { JourneyTimeBar } from './journey-time-bar';
 import { BaseLabel } from './label/base-label';
 import { TripPositionIndicator } from './label/trip-position-indicator';
@@ -43,6 +44,33 @@ interface StopTimeItemProps {
   showAgency?: boolean;
 }
 
+interface AbsoluteStopTimeProps {
+  /** Formatted absolute time text. */
+  timeText: string;
+  /** Whether this timetable entry is terminal/arrival-only. */
+  isTerminal: boolean;
+  /** Text color derived from the route color. */
+  textColor: string;
+}
+
+function AbsoluteStopTime({ timeText, isTerminal, textColor }: AbsoluteStopTimeProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div
+      className="text-base font-bold text-[#333] dark:text-gray-100"
+      style={{ color: textColor }}
+    >
+      {timeText}
+      {isTerminal && (
+        <span className="text-[10px] font-normal opacity-70">
+          {t('stopTimeView.arrivingAbsolute')}
+        </span>
+      )}
+    </div>
+  );
+}
+
 /**
  * A single row in the T1 (Stop) flat stop time list.
  *
@@ -60,7 +88,6 @@ export function StopTimeItem({
   agency,
   showAgency = false,
 }: StopTimeItemProps) {
-  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = info.isVerboseEnabled;
   const attributes = getTimetableEntryAttributes(entry);
@@ -75,8 +102,12 @@ export function StopTimeItem({
   // Route colors
   const { route } = entry.routeDirection;
   const routeColor = convertGtfsColor(route.route_color, 'css-hex');
-  const routeColorIsLowContrast = useIsLowContrastAgainstTheme(routeColor);
-  const adjustedRouteColors = getAdjustedRouteColors(route, routeColorIsLowContrast, 'css-hex');
+  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_TEXT_MIN_RATIO);
+  const adjustedRouteTextColors = getAdjustedRouteColors(
+    route,
+    routeColorAssessment.isLowContrast,
+    'css-hex',
+  );
 
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
@@ -106,17 +137,11 @@ export function StopTimeItem({
               hidePrefix={diffMs > 90 * 60 * 1000}
             />
           )}
-          <div
-            className="text-base font-bold text-[#333] dark:text-gray-100"
-            style={{ color: adjustedRouteColors.color }}
-          >
-            {formatAbsoluteTime(time)}
-            {isTerminal && (
-              <span className="text-[10px] font-normal opacity-70">
-                {t('stopTimeView.arrivingAbsolute')}
-              </span>
-            )}
-          </div>
+          <AbsoluteStopTime
+            timeText={formatAbsoluteTime(time)}
+            isTerminal={isTerminal}
+            textColor={adjustedRouteTextColors.color}
+          />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
@@ -128,14 +153,14 @@ export function StopTimeItem({
                 size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
                 showEmoji={info.isVerboseEnabled}
                 showTrack={info.isNormalEnabled}
-                trackColor={`${adjustedRouteColors.color}20`}
-                dotColor={`${adjustedRouteColors.color}50`}
-                currentColor={adjustedRouteColors.color}
-                trackBorderColor={adjustedRouteColors.color}
+                trackColor={`${adjustedRouteTextColors.color}20`}
+                dotColor={`${adjustedRouteTextColors.color}50`}
+                currentColor={adjustedRouteTextColors.color}
+                trackBorderColor={adjustedRouteTextColors.color}
                 showTrackBorder={false}
                 showPositionLabel={info.isVerboseEnabled}
-                labelTextColor={adjustedRouteColors.textColor}
-                labelBgColor={adjustedRouteColors.color}
+                labelTextColor={adjustedRouteTextColors.textColor}
+                labelBgColor={adjustedRouteTextColors.color}
               />
             </div>
           </div>
@@ -146,14 +171,14 @@ export function StopTimeItem({
               totalMinutes={entry.insights?.totalMinutes}
               size={info.isDetailedEnabled ? 'md' : 'sm'}
               showEmoji={info.isVerboseEnabled}
-              color={adjustedRouteColors.color}
+              color={adjustedRouteTextColors.color}
               showRMins={info.isVerboseEnabled}
               showTMins={info.isVerboseEnabled}
               minsPosition="right"
               fillDirection="rtl"
-              borderColor={adjustedRouteColors.color}
-              minsTextColor={adjustedRouteColors.textColor}
-              minsBgColor={adjustedRouteColors.color}
+              borderColor={adjustedRouteTextColors.color}
+              minsTextColor={adjustedRouteTextColors.textColor}
+              minsBgColor={adjustedRouteTextColors.color}
               showBorder={false}
             />
           )}

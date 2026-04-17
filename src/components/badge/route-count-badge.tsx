@@ -2,11 +2,12 @@ import { resolveAgencyLang } from '../../config/transit-defaults';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { resolveRouteColors } from '../../domain/transit/color-resolver/route-colors';
 import {
-  useIsLowContrastAgainstTheme,
+  useThemeContrastAssessment,
   useThemeNeutralBorderColor,
 } from '../../hooks/use-is-low-contrast-against-theme';
 import type { BaseLabelSize } from '../label/base-label';
 import type { Agency, Route } from '../../types/app/transit';
+import { LOW_CONTRAST_BADGE_MIN_RATIO } from '../../utils/color-contrast';
 import { LabelCountBadge } from './label-count-badge';
 
 interface RouteCountBadgeProps {
@@ -42,9 +43,9 @@ export function RouteCountBadge({
 
   // Route color
   const { routeColor, routeTextColor } = resolveRouteColors(route, 'css-hex');
-  const routeColorIsLowContrast = useIsLowContrastAgainstTheme(routeColor);
+  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
   const neutralBorderColor = useThemeNeutralBorderColor();
-  const frameColor = routeColorIsLowContrast ? neutralBorderColor : routeColor;
+  const frameColor = routeColorAssessment.isLowContrast ? neutralBorderColor : routeColor;
 
   return (
     <LabelCountBadge

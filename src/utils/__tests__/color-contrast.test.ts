@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { contrastRatio, isLowContrast, passesAA, suggestTextColor } from '../color-contrast';
+import {
+  contrastRatio,
+  getContrastAssessment,
+  LOW_CONTRAST_BADGE_MIN_RATIO,
+  LOW_CONTRAST_TEXT_MIN_RATIO,
+  passesAA,
+  suggestTextColor,
+} from '../color-contrast';
 
 describe('contrastRatio', () => {
   it('returns the maximum WCAG ratio (21) for black vs white', () => {
@@ -196,36 +203,131 @@ describe('passesAA', () => {
   });
 });
 
-describe('isLowContrast', () => {
-  it('returns true when contrast is below the default threshold (1.5)', () => {
-    // identical colors → ratio 1
-    expect(isLowContrast('#ffffff', '#ffffff')).toBe(true);
-    // GTFS actvnav route_color #FFFFFF on white
-    expect(isLowContrast('#FFFFFF', '#ffffff')).toBe(true);
-    // 伊予鉄 route_color #FBD074 on white ≈ 1.46
-    expect(isLowContrast('#FBD074', '#ffffff')).toBe(true);
+describe('getContrastAssessment', () => {
+  describe('logical threshold behavior', () => {
+    it('returns true for identical colors at the default badge threshold of 1.2', () => {
+      const assessment = getContrastAssessment('#ffffff', '#ffffff');
+      expect(assessment.isLowContrast).toBe(true);
+      expect(assessment.ratio).toBe(1);
+    });
+
+    it.each([
+      {
+        color: '#000000',
+        background: '#ffffff',
+        note: 'black on white = 21',
+      },
+      {
+        color: '#777777',
+        background: '#ffffff',
+        note: 'mid-gray on white ~= 4.48',
+      },
+    ])(
+      'returns false when contrast is comfortably above the default threshold: $color on $background ($note)',
+      ({ color, background }) => {
+        const assessment = getContrastAssessment(color, background);
+        expect(assessment.isLowContrast).toBe(false);
+        expect(assessment.ratio).not.toBeNull();
+      },
+    );
+
+    it('honors a custom minRatio', () => {
+      // #777 on white ≈ 4.48 — below 5, above 4
+      expect(getContrastAssessment('#777777', '#ffffff', 5).isLowContrast).toBe(true);
+      expect(getContrastAssessment('#777777', '#ffffff', 4).isLowContrast).toBe(false);
+    });
+
+    it('allows a badge-safe yellow while still rejecting it for text', () => {
+      expect(
+        getContrastAssessment('#FBD074', '#ffffff', LOW_CONTRAST_BADGE_MIN_RATIO).isLowContrast,
+      ).toBe(false);
+      expect(
+        getContrastAssessment('#FBD074', '#ffffff', LOW_CONTRAST_TEXT_MIN_RATIO).isLowContrast,
+      ).toBe(true);
+    });
+
+    it('returns false when either color is invalid (cannot measure → no outline)', () => {
+      expect(getContrastAssessment('not-a-color', '#ffffff')).toEqual({
+        ratio: null,
+        minRatio: LOW_CONTRAST_BADGE_MIN_RATIO,
+        isLowContrast: false,
+      });
+      expect(getContrastAssessment('#ffffff', '')).toEqual({
+        ratio: null,
+        minRatio: LOW_CONTRAST_BADGE_MIN_RATIO,
+        isLowContrast: false,
+      });
+    });
   });
 
-  it('returns false when contrast meets the default threshold', () => {
-    // black on white = 21
-    expect(isLowContrast('#000000', '#ffffff')).toBe(false);
-    // mid-gray on white ≈ 4.48
-    expect(isLowContrast('#777777', '#ffffff')).toBe(false);
-  });
+  describe('real route-color fixtures', () => {
+    it.each([
+      {
+        color: '#FFFFFF',
+        background: '#ffffff',
+        note: 'ACTV nav representative white route_color fixture still needs an outline at 1.2',
+      },
+      {
+        color: '#000000',
+        background: '#111827',
+        note: 'Kyoto City Bus representative dark route_color fixture still needs an outline at 1.2',
+      },
+    ])(
+      'returns true for production route colors that still need an outline at 1.2: $color on $background ($note)',
+      ({ color, background, note }) => {
+        const assessment = getContrastAssessment(color, background);
+        console.debug('contrast assessment route-color fixture', {
+          color,
+          background,
+          note,
+          ratio: assessment.ratio,
+          isLowContrast: assessment.isLowContrast,
+        });
 
-  it('honors a custom minRatio', () => {
-    // #777 on white ≈ 4.48 — below 5, above 4
-    expect(isLowContrast('#777777', '#ffffff', 5)).toBe(true);
-    expect(isLowContrast('#777777', '#ffffff', 4)).toBe(false);
-  });
+        expect(assessment.isLowContrast).toBe(true);
+      },
+    );
 
-  it('applies symmetrically to dark backgrounds (#000000 route on dark)', () => {
-    // 京都市バス route_color #000000 on a dark theme background
-    expect(isLowContrast('#000000', '#111827')).toBe(true);
-  });
+    it.each([
+      {
+        color: '#FFDB82',
+        background: '#ffffff',
+        note: 'Minkuru 北47 (minkuru:110) route_color #FFDB82 on white is visible enough at 1.2',
+      },
+      {
+        color: '#FBDA49',
+        background: '#ffffff',
+        note: 'Minkuru 浜95 (minkuru:163) route_color #FBDA49 on white is visible enough at 1.2',
+      },
+      {
+        color: '#FFE16B',
+        background: '#ffffff',
+        note: 'Minkuru 井98 (minkuru:172) route_color #FFE16B on white is visible enough at 1.2',
+      },
+      {
+        color: '#FBD074',
+        background: '#ffffff',
+        note: 'Iyotetsu 三津ループ (iyt2:10004) route_color #FBD074 on white remains not low-contrast at 1.2',
+      },
+      {
+        color: '#FDD000',
+        background: '#ffffff',
+        note: 'Seibu bus 吉66 (sbbus:102010) route_color #FDD000 on white remains not low-contrast at 1.2',
+      },
+    ])(
+      'returns false for production route colors that no longer need an outline at 1.2: $color on $background ($note)',
+      ({ color, background, note }) => {
+        const assessment = getContrastAssessment(color, background);
+        console.debug('contrast assessment route-color fixture', {
+          color,
+          background,
+          note,
+          ratio: assessment.ratio,
+          isLowContrast: assessment.isLowContrast,
+        });
 
-  it('returns false when either color is invalid (cannot measure → no outline)', () => {
-    expect(isLowContrast('not-a-color', '#ffffff')).toBe(false);
-    expect(isLowContrast('#ffffff', '')).toBe(false);
+        expect(assessment.isLowContrast).toBe(false);
+      },
+    );
   });
 });

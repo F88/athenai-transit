@@ -1,5 +1,9 @@
 import { useSyncExternalStore } from 'react';
-import { isLowContrast } from '../utils/color-contrast';
+import {
+  getContrastAssessment,
+  LOW_CONTRAST_BADGE_MIN_RATIO,
+  type ContrastAssessment,
+} from '../utils/color-contrast';
 
 /** Background color used as the reference when the user is on the light theme. */
 const LIGHT_BG = '#ffffff';
@@ -17,11 +21,11 @@ const DARK_NEUTRAL_BORDER = '#4b5563';
 
 /**
  * Default WCAG contrast threshold below which a color is deemed too
- * close to the theme background. `1.5` is deliberately generous — it
- * catches same-hue cases (white route_color on light theme,
- * #FBD074-style pale yellow) without flagging every mid-tone.
+ * close to the theme background. `1.2` still protects exact matches
+ * like white-on-white and near-matches like black on `#111827`, while
+ * avoiding outlines for pale but still visible yellows.
  */
-const DEFAULT_MIN_RATIO = 1.5;
+const DEFAULT_BADGE_MIN_RATIO = LOW_CONTRAST_BADGE_MIN_RATIO;
 
 /**
  * Observe the `class` attribute of `<html>` and fire the callback on
@@ -93,13 +97,13 @@ export function useThemeNeutralBorderColor(): string {
 }
 
 /**
- * React hook: returns `true` when the given foreground `color` has
- * insufficient contrast against the current theme's background.
+ * React hook: assesses the given foreground `color` against the
+ * current theme's background.
  *
  * Intended for badge / indicator components whose `color` is a raw
  * GTFS `route_color` that can coincide with the theme background
  * (e.g. `#FFFFFF` on the light theme, `#000000` on the dark theme).
- * When this hook returns `true`, the caller is expected to render an
+ * When `isLowContrast` is `true`, the caller is expected to render an
  * extra outline / border so the element remains visually
  * distinguishable.
  *
@@ -112,19 +116,23 @@ export function useThemeNeutralBorderColor(): string {
  *   a GTFS `route_color` prefixed with `#`. Passing `undefined`
  *   returns `false` (no color → nothing to protect against).
  * @param minRatio - WCAG contrast ratio threshold. Defaults to
- *   {@link DEFAULT_MIN_RATIO}.
- * @returns `true` when `color` is low-contrast against the current
- *   theme background, else `false`.
+ *   {@link DEFAULT_BADGE_MIN_RATIO}.
+ * @returns An assessment object with both the raw ratio and the
+ *   boolean low-contrast classification.
  */
-export function useIsLowContrastAgainstTheme(
+export function useThemeContrastAssessment(
   color: string | undefined,
-  minRatio: number = DEFAULT_MIN_RATIO,
-): boolean {
+  minRatio: number = DEFAULT_BADGE_MIN_RATIO,
+): ContrastAssessment {
   const bg = useThemeContrastBackgroundColor();
 
   if (!color) {
-    return false;
+    return {
+      ratio: null,
+      minRatio,
+      isLowContrast: false,
+    };
   }
 
-  return isLowContrast(color, bg, minRatio);
+  return getContrastAssessment(color, bg, minRatio);
 }
