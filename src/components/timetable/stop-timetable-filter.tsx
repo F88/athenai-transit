@@ -1,11 +1,14 @@
 import { useMemo } from 'react';
 import { resolveAgencyLang } from '@/config/transit-defaults';
+import { convertGtfsColor } from '@/domain/transit/gtfs-color';
 import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
 import { getSelectedHeadsignDisplayName } from '@/domain/transit/get-headsign-display-names';
 import { groupByRouteHeadsign } from '@/domain/transit/group-timetable-entries';
+import { useThemeContrastBackgroundColor } from '@/hooks/use-is-low-contrast-against-theme';
 import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
+import { isLowContrast } from '@/utils/color-contrast';
 import { PillButton } from '../button/pill-button';
 
 interface StopTimetableFilterProps {
@@ -29,6 +32,8 @@ export function StopTimetableFilter({
   dataLang,
   agencies,
 }: StopTimetableFilterProps) {
+  const themeContrastBackgroundColor = useThemeContrastBackgroundColor();
+
   const routeHeadsigns = useMemo(() => {
     return groupByRouteHeadsign(timetableEntries)
       .map(([key, entries]) => {
@@ -43,15 +48,30 @@ export function StopTimetableFilter({
           return null;
         }
 
+        const routeColor = convertGtfsColor(routeDirection.route.route_color, 'css-hex');
+        const routeTextColor = convertGtfsColor(routeDirection.route.route_text_color, 'css-hex');
+        const routeColorIsLowContrast =
+          routeColor != null && isLowContrast(routeColor, themeContrastBackgroundColor);
+        // Keep the fill/text pair aligned with RouteBadge and use the paired
+        // text color only as an inactive outline fallback when the route color
+        // blends into the current theme background.
+        const inactiveBorderColor = routeColorIsLowContrast
+          ? (routeTextColor ?? '#000000')
+          : routeColor;
+
         return {
           key,
           selectedHeadsign,
           routeDirection,
           count: entries.length,
+          routeColor,
+          routeTextColor,
+          inactiveBorderColor,
         };
       })
+
       .filter((entry) => entry !== null);
-  }, [timetableEntries]);
+  }, [themeContrastBackgroundColor, timetableEntries]);
 
   const noFilter = activeFilters.size === 0;
 
@@ -64,17 +84,16 @@ export function StopTimetableFilter({
       {routeHeadsigns.map((item) => {
         const { route } = item.routeDirection;
         const isActive = noFilter || activeFilters.has(item.key);
-        const bg = route.route_color ? `#${route.route_color}` : undefined;
-        const fg = route.route_text_color ? `#${route.route_text_color}` : undefined;
 
         return (
           <PillButton
             key={item.key}
             size="sm"
             active={isActive}
-            activeBg={bg}
-            activeFg={fg}
-            inactiveBorder={bg}
+            activeBg={item.routeColor}
+            activeFg={item.routeTextColor}
+            activeBorder={item.routeColor}
+            inactiveBorder={item.inactiveBorderColor}
             onClick={() => onToggleFilter(item.key)}
             count={item.count}
           >

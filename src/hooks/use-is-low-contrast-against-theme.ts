@@ -52,6 +52,27 @@ function getDarkClassServerSnapshot(): boolean {
 }
 
 /**
+ * React hook: returns the current theme background color used for
+ * contrast checks.
+ *
+ * The value tracks the `dark` class on `<html>` via the same
+ * subscription mechanism as {@link useIsLowContrastAgainstTheme}, so
+ * callers can derive multiple contrast decisions from a single theme
+ * read.
+ *
+ * @returns `#ffffff` on light theme, `#111827` on dark theme.
+ */
+export function useThemeContrastBackgroundColor(): string {
+  const isDark = useSyncExternalStore(
+    subscribeToDarkClass,
+    getDarkClassSnapshot,
+    getDarkClassServerSnapshot,
+  );
+
+  return isDark ? DARK_BG : LIGHT_BG;
+}
+
+/**
  * React hook: returns `true` when the given foreground `color` has
  * insufficient contrast against the current theme's background.
  *
@@ -79,14 +100,9 @@ export function useIsLowContrastAgainstTheme(
   color: string | undefined,
   minRatio: number = DEFAULT_MIN_RATIO,
 ): boolean {
-  const isDark = useSyncExternalStore(
-    subscribeToDarkClass,
-    getDarkClassSnapshot,
-    getDarkClassServerSnapshot,
-  );
   if (!color) {
     return false;
   }
-  const bg = isDark ? DARK_BG : LIGHT_BG;
+  const bg = useThemeContrastBackgroundColor();
   return isLowContrast(color, bg, minRatio);
 }

@@ -1,17 +1,20 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { RouteDirection } from '../../types/app/transit-composed';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
-import { cn } from '../../lib/utils';
 import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
+import { cn } from '../../lib/utils';
+import { BaseLabel, type BaseLabelSize } from './base-label';
 import { VerboseHeadsign } from '../verbose/verbose-headsign';
 
-const sizeVariants = {
-  default: 'text-xs px-2 py-0.5',
-  sm: 'text-[10px] px-1',
-  xs: 'text-[9px] px-0.5',
-} as const;
+export type HeadsignLabelSize = 'default' | 'sm' | 'xs';
 
-interface HeadsignBadgeProps {
+const baseLabelSizes: Record<HeadsignLabelSize, BaseLabelSize> = {
+  default: 'md',
+  sm: 'sm',
+  xs: 'xs',
+};
+
+export interface HeadsignLabelProps {
   /** Route direction context containing headsign, translations, and route. */
   routeDirection: RouteDirection;
   /** Current info verbosity level. Verbose shows route_id via IdBadge. */
@@ -23,7 +26,7 @@ interface HeadsignBadgeProps {
   /** Maximum characters to display. Truncated text is not suffixed. @default undefined (no limit) */
   maxLength?: number;
   /** Size variant. @default 'default' */
-  size?: keyof typeof sizeVariants;
+  size?: HeadsignLabelSize;
   /** Suppress verbose-only rendering (IdBadge, details dump).
    *  Use in non-interactive contexts like tooltips. */
   disableVerbose?: boolean;
@@ -32,17 +35,16 @@ interface HeadsignBadgeProps {
 }
 
 /**
- * Colored badge displaying a headsign (destination) name.
+ * Colored label displaying a headsign (destination) name.
  *
  * Internally calls {@link getHeadsignDisplayNames} to resolve the display
- * name and sub-names from headsign translations, following the same
- * resolver pattern as {@link RouteBadge} and {@link AgencyBadge}.
+ * name and sub-names from headsign translations.
  *
  * Background color uses the route's designated color (`route_color`),
  * falling back to `bg-muted-foreground` when no color is set.
- * In verbose mode, a {@link VerboseHeadsign} dump is shown below the badge.
+ * In verbose mode, a {@link VerboseHeadsign} dump is shown below the label.
  */
-export function HeadsignBadge({
+export function HeadsignLabel({
   routeDirection,
   infoLevel,
   dataLang,
@@ -51,7 +53,7 @@ export function HeadsignBadge({
   size = 'default',
   disableVerbose = false,
   className,
-}: HeadsignBadgeProps) {
+}: HeadsignLabelProps) {
   const { route } = routeDirection;
   const headsignNames = getHeadsignDisplayNames(routeDirection, dataLang, agencyLang, 'stop');
 
@@ -61,24 +63,23 @@ export function HeadsignBadge({
     maxLength != null && headsignNames.resolved.name.length > maxLength
       ? headsignNames.resolved.name.slice(0, maxLength)
       : headsignNames.resolved.name;
-  // Show full headsign as tooltip when truncated.
-  const title = label !== headsignNames.resolved.name ? headsignNames.resolved.name : undefined;
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;
 
   return (
     <div className="inline-flex flex-col gap-0.5 font-normal">
       <span className="inline-flex items-center gap-0.5">
-        <span
+        <BaseLabel
+          value={headsignNames.resolved.name}
+          maxLength={maxLength}
+          ellipsis={false}
+          size={baseLabelSizes[size]}
           className={cn(
-            'bg-muted-foreground inline-flex items-center justify-center rounded font-bold whitespace-nowrap text-white',
-            sizeVariants[size],
+            'bg-muted-foreground inline-flex items-center justify-center font-bold whitespace-nowrap text-white',
+            'border border-gray-300 dark:border-gray-600',
             className,
           )}
           style={bg ? { background: bg, color: fg } : undefined}
-          title={title}
-        >
-          {label}
-        </span>
+        />
       </span>
       {showVerbose && (
         <VerboseHeadsign
