@@ -1,10 +1,7 @@
 import type { Agency } from '@/types/app/transit';
 import type { GtfsColorFormat } from '../gtfs-color';
-import {
-  formatResolvedColorPair,
-  normalizeRawColor,
-  type ResolvedColorPair,
-} from './resolve-colors';
+import { normalizeHexColor, type OptionalColorPair } from '../../../utils/color-pair';
+import { formatResolvedColorPair } from './resolve-colors';
 
 /** Agency colors resolved for UI rendering from curated app-side attributes. */
 export interface ResolvedAgencyColors {
@@ -14,7 +11,7 @@ export interface ResolvedAgencyColors {
   agencyTextColor?: string;
 }
 
-function toResolvedAgencyColors(colors: ResolvedColorPair): ResolvedAgencyColors {
+function toResolvedAgencyColors(colors: OptionalColorPair): ResolvedAgencyColors {
   return {
     agencyColor: colors.primaryColor,
     agencyTextColor: colors.secondaryColor,
@@ -37,8 +34,8 @@ export function resolveAgencyColors(
     return {};
   }
 
-  const rawAgencyColor = normalizeRawColor(primary.bg);
-  const rawAgencyTextColor = normalizeRawColor(primary.text);
+  const rawAgencyColor = normalizeHexColor(primary.bg);
+  const rawAgencyTextColor = normalizeHexColor(primary.text);
   const resolved = formatResolvedColorPair(
     {
       primaryColor: rawAgencyColor,

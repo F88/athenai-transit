@@ -1,13 +1,8 @@
 import type { Route } from '@/types/app/transit';
 import type { GtfsColorFormat } from '../gtfs-color';
 import { suggestTextColor } from '../../../utils/color-contrast';
-import {
-  formatResolvedColor,
-  formatResolvedColorPair,
-  normalizeRawColor,
-  type RawColorPair,
-  type ResolvedColorPair,
-} from './resolve-colors';
+import { normalizeHexColor, type OptionalColorPair } from '../../../utils/color-pair';
+import { formatResolvedColor, formatResolvedColorPair } from './resolve-colors';
 
 /** GTFS default route color when `route_color` is omitted. */
 const DEFAULT_ROUTE_COLOR = 'FFFFFF';
@@ -57,9 +52,9 @@ function resolveRawRouteTextColor(
 
 function resolveRawRouteColorPair(
   route: Pick<Route, 'route_color' | 'route_text_color'>,
-): RawColorPair {
-  const rawRouteColor = normalizeRawColor(route.route_color);
-  const explicitRawRouteTextColor = normalizeRawColor(route.route_text_color);
+): OptionalColorPair {
+  const rawRouteColor = normalizeHexColor(route.route_color);
+  const explicitRawRouteTextColor = normalizeHexColor(route.route_text_color);
 
   return {
     primaryColor: rawRouteColor,
@@ -67,7 +62,7 @@ function resolveRawRouteColorPair(
   };
 }
 
-function toResolvedRouteColors(colors: ResolvedColorPair): ResolvedRouteColors {
+function toResolvedRouteColors(colors: OptionalColorPair): ResolvedRouteColors {
   return {
     routeColor: colors.primaryColor,
     routeTextColor: colors.secondaryColor,
