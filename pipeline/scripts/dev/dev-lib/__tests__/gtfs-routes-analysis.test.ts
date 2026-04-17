@@ -124,6 +124,11 @@ describe('report and formatter', () => {
     });
 
     expect(output).toContain('# Athenai Transit — GTFS routes.txt analysis');
+    expect(output).toContain('## Overall summary');
+    expect(output).toContain('sources=1, routes=2');
+    expect(output).toContain(
+      'names: shortOnly=0 (0.0% of routes), both=1 (50.0% of routes), longOnly=1 (50.0% of routes)',
+    );
     expect(output).toContain('## Identity and names');
     expect(output).toContain('## Route types');
     expect(output).toContain('## Color fields');
@@ -131,11 +136,12 @@ describe('report and formatter', () => {
     expect(output).toContain('## Continuous service fields');
     expect(output).toContain('## Optional presentation / operational fields');
     expect(output).toContain(
-      'Checks how route names and identifiers are populated, including short-name and long-name usage patterns.',
+      'Shows whether each source relies on short names, long names, or both.',
     );
-    expect(output).toContain(
-      'Summarizes route_type coverage and distribution to show which GTFS transport modes each source uses.',
-    );
+    expect(output).toContain('Shows whether each source is bus-only, multi-mode, or unexpected.');
+    expect(output).toContain('route_short_name: nonEmpty=1, empty=1 (50.0% of routes empty)');
+    expect(output).toContain('unknownRouteType=0 (0.0% of routes)');
+    expect(output).toContain('State: All route_type values are known GTFS values.');
   });
 
   it('filters output to the requested sections', () => {

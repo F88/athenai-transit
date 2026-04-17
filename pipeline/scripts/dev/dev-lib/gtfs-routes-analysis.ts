@@ -329,8 +329,67 @@ function formatFieldMarker(fieldPresent: boolean): string {
   return fieldPresent ? 'yes' : 'no';
 }
 
+function formatPercent(count: number, total: number): string {
+  return `${toRate(count, total).toFixed(1)}%`;
+}
+
+function formatEmptyRate(label: string, value: PresenceCount): string {
+  const total = value.nonEmpty + value.empty;
+  return `${label}: nonEmpty=${value.nonEmpty}, empty=${value.empty} (${formatPercent(value.empty, total)} of routes empty)`;
+}
+
 function renderSection(title: string, description: string, body: string): string {
   return [`## ${title}`, '', description, '', body].join('\n');
+}
+
+function formatOverallSummary(results: GtfsRoutesSourceStats[]): string {
+  const totalRoutes = getTotalRoutes(results);
+  const sourceCount = results.length;
+  const bothNames = sumNumber(results, (result) => result.identityAndNames.both);
+  const shortOnlyNames = sumNumber(results, (result) => result.identityAndNames.shortOnly);
+  const longOnlyNames = sumNumber(results, (result) => result.identityAndNames.longOnly);
+  const routeTypeCounts = sumRecordCounts(results, (result) => result.routeTypes.counts);
+  const multiModeSources = sumNumber(results, (result) =>
+    result.routeTypes.distinctRouteTypes > 1 ? 1 : 0,
+  );
+  const nonBusRoutes = Object.entries(routeTypeCounts).reduce((acc, [value, count]) => {
+    return value === '3' ? acc : acc + count;
+  }, 0);
+  const unknownRouteType = sumNumber(results, (result) => result.routeTypes.unknown);
+  const colorBoth = sumNumber(results, (result) => result.colorFields.both);
+  const colorNeither = sumNumber(results, (result) => result.colorFields.neither);
+  const colorOnly = sumNumber(results, (result) => result.colorFields.colorOnly);
+  const routeUrl = sumPresence(results, (result) => result.optionalPresentationFields.routeUrl);
+  const routeSortOrder = sumPresence(
+    results,
+    (result) => result.optionalPresentationFields.routeSortOrder,
+  );
+  const networkId = sumPresence(results, (result) => result.optionalPresentationFields.networkId);
+  const sourcesWithCemvField = countSourcesWithField(
+    results,
+    (result) => result.cemvSupport.fieldPresent,
+  );
+  const pickupNonDefault = sumNumber(
+    results,
+    (result) => result.continuousServiceFields.pickupNonDefault,
+  );
+  const dropOffNonDefault = sumNumber(
+    results,
+    (result) => result.continuousServiceFields.dropOffNonDefault,
+  );
+
+  return [
+    '## Overall summary',
+    '',
+    'Quick overview of naming style, route types, color coverage, and optional field usage before section details.',
+    '',
+    `sources=${sourceCount}, routes=${totalRoutes}`,
+    `names: shortOnly=${shortOnlyNames} (${formatPercent(shortOnlyNames, totalRoutes)} of routes), both=${bothNames} (${formatPercent(bothNames, totalRoutes)} of routes), longOnly=${longOnlyNames} (${formatPercent(longOnlyNames, totalRoutes)} of routes)`,
+    `route types: multiModeSources=${multiModeSources}/${sourceCount} (${formatPercent(multiModeSources, sourceCount)} of sources), nonBusRoutes=${nonBusRoutes} (${formatPercent(nonBusRoutes, totalRoutes)} of routes), unknown=${unknownRouteType}`,
+    `colors: both=${colorBoth} (${formatPercent(colorBoth, totalRoutes)} of routes), neither=${colorNeither} (${formatPercent(colorNeither, totalRoutes)} of routes), colorOnly=${colorOnly} (${formatPercent(colorOnly, totalRoutes)} of routes)`,
+    `optional fields: route_url=${routeUrl.nonEmpty} (${formatPercent(routeUrl.nonEmpty, totalRoutes)} of routes), route_sort_order=${routeSortOrder.nonEmpty} (${formatPercent(routeSortOrder.nonEmpty, totalRoutes)} of routes), network_id=${networkId.nonEmpty} (${formatPercent(networkId.nonEmpty, totalRoutes)} of routes)`,
+    `unused fields: cemv_support headers=${sourcesWithCemvField}/${sourceCount} (${formatPercent(sourcesWithCemvField, sourceCount)} of sources), continuous non-default=pickup ${pickupNonDefault} / drop_off ${dropOffNonDefault}`,
+  ].join('\n');
 }
 
 function formatIdentityAndNamesSectionBody(results: GtfsRoutesSourceStats[]): string {
@@ -339,6 +398,10 @@ function formatIdentityAndNamesSectionBody(results: GtfsRoutesSourceStats[]): st
   const longName = sumPresence(results, (result) => result.identityAndNames.routeLongName);
   const routeDesc = sumPresence(results, (result) => result.identityAndNames.routeDesc);
   const agencyId = sumPresence(results, (result) => result.identityAndNames.agencyId);
+  const both = sumNumber(results, (result) => result.identityAndNames.both);
+  const shortOnly = sumNumber(results, (result) => result.identityAndNames.shortOnly);
+  const longOnly = sumNumber(results, (result) => result.identityAndNames.longOnly);
+  const neither = sumNumber(results, (result) => result.identityAndNames.neither);
 
   const summary = renderTable(
     [
@@ -374,11 +437,11 @@ function formatIdentityAndNamesSectionBody(results: GtfsRoutesSourceStats[]): st
     '### Totals',
     '',
     `routes=${totalRoutes}`,
-    `route_short_name: nonEmpty=${shortName.nonEmpty}, empty=${shortName.empty}`,
-    `route_long_name: nonEmpty=${longName.nonEmpty}, empty=${longName.empty}`,
-    `route_desc: nonEmpty=${routeDesc.nonEmpty}, empty=${routeDesc.empty}`,
-    `agency_id: nonEmpty=${agencyId.nonEmpty}, empty=${agencyId.empty}`,
-    `name combinations: both=${sumNumber(results, (result) => result.identityAndNames.both)}, shortOnly=${sumNumber(results, (result) => result.identityAndNames.shortOnly)}, longOnly=${sumNumber(results, (result) => result.identityAndNames.longOnly)}, neither=${sumNumber(results, (result) => result.identityAndNames.neither)}`,
+    formatEmptyRate('route_short_name', shortName),
+    formatEmptyRate('route_long_name', longName),
+    formatEmptyRate('route_desc', routeDesc),
+    formatEmptyRate('agency_id', agencyId),
+    `name combinations: both=${both} (${formatPercent(both, totalRoutes)} of routes), shortOnly=${shortOnly} (${formatPercent(shortOnly, totalRoutes)} of routes), longOnly=${longOnly} (${formatPercent(longOnly, totalRoutes)} of routes), neither=${neither} (${formatPercent(neither, totalRoutes)} of routes)`,
     '',
     '### Summary',
     '',
@@ -388,6 +451,12 @@ function formatIdentityAndNamesSectionBody(results: GtfsRoutesSourceStats[]): st
 
 function formatRouteTypesSectionBody(results: GtfsRoutesSourceStats[]): string {
   const combinedCounts = sumRecordCounts(results, (result) => result.routeTypes.counts);
+  const totalRoutes = getTotalRoutes(results);
+  const sourcesWithRouteTypeField = countSourcesWithField(
+    results,
+    (result) => result.routeTypes.fieldPresent,
+  );
+  const unknownRouteType = sumNumber(results, (result) => result.routeTypes.unknown);
   const summary = renderTable(
     ['source', 'prefix', 'routes', 'typeField', 'distinctTypes', 'unknown', 'types'],
     results.map((result) => [
@@ -402,23 +471,29 @@ function formatRouteTypesSectionBody(results: GtfsRoutesSourceStats[]): string {
     3,
   );
 
-  return [
+  const lines = [
     '### Totals',
     '',
-    `routes=${getTotalRoutes(results)}`,
-    `sourcesWithRouteTypeField=${countSourcesWithField(results, (result) => result.routeTypes.fieldPresent)}/${results.length}`,
-    `unknownRouteType=${sumNumber(results, (result) => result.routeTypes.unknown)}`,
+    `routes=${totalRoutes}`,
+    `sourcesWithRouteTypeField=${sourcesWithRouteTypeField}/${results.length} (${formatPercent(sourcesWithRouteTypeField, results.length)} of sources)`,
+    `unknownRouteType=${unknownRouteType} (${formatPercent(unknownRouteType, totalRoutes)} of routes)`,
     `route_type values: ${formatRouteTypeSummary(combinedCounts)}`,
-    '',
-    '### Summary',
-    '',
-    summary,
-  ].join('\n');
+  ];
+  if (unknownRouteType === 0) {
+    lines.push('State: All route_type values are known GTFS values.');
+  }
+  lines.push('', '### Summary', '', summary);
+  return lines.join('\n');
 }
 
 function formatColorFieldsSectionBody(results: GtfsRoutesSourceStats[]): string {
+  const totalRoutes = getTotalRoutes(results);
   const routeColor = sumPresence(results, (result) => result.colorFields.routeColor);
   const routeTextColor = sumPresence(results, (result) => result.colorFields.routeTextColor);
+  const both = sumNumber(results, (result) => result.colorFields.both);
+  const colorOnly = sumNumber(results, (result) => result.colorFields.colorOnly);
+  const textOnly = sumNumber(results, (result) => result.colorFields.textOnly);
+  const neither = sumNumber(results, (result) => result.colorFields.neither);
   const summary = renderTable(
     [
       'source',
@@ -453,21 +528,32 @@ function formatColorFieldsSectionBody(results: GtfsRoutesSourceStats[]): string 
     3,
   );
 
-  return [
+  const lines = [
     '### Totals',
     '',
-    `routes=${getTotalRoutes(results)}`,
-    `route_color: nonEmpty=${routeColor.nonEmpty}, empty=${routeColor.empty}`,
-    `route_text_color: nonEmpty=${routeTextColor.nonEmpty}, empty=${routeTextColor.empty}`,
-    `pairings: both=${sumNumber(results, (result) => result.colorFields.both)}, colorOnly=${sumNumber(results, (result) => result.colorFields.colorOnly)}, textOnly=${sumNumber(results, (result) => result.colorFields.textOnly)}, neither=${sumNumber(results, (result) => result.colorFields.neither)}`,
-    '',
-    '### Summary',
-    '',
-    summary,
-  ].join('\n');
+    `routes=${totalRoutes}`,
+    formatEmptyRate('route_color', routeColor),
+    formatEmptyRate('route_text_color', routeTextColor),
+    `pairings: both=${both} (${formatPercent(both, totalRoutes)} of routes), colorOnly=${colorOnly} (${formatPercent(colorOnly, totalRoutes)} of routes), textOnly=${textOnly} (${formatPercent(textOnly, totalRoutes)} of routes), neither=${neither} (${formatPercent(neither, totalRoutes)} of routes)`,
+  ];
+  if (colorOnly > 0 && textOnly === 0) {
+    lines.push('Anomaly: Some sources provide route_color without route_text_color.');
+  }
+  lines.push('', '### Summary', '', summary);
+  return lines.join('\n');
 }
 
 function formatCemvSupportSectionBody(results: GtfsRoutesSourceStats[]): string {
+  const totalRoutes = getTotalRoutes(results);
+  const sourcesWithCemvField = countSourcesWithField(
+    results,
+    (result) => result.cemvSupport.fieldPresent,
+  );
+  const known = sumNumber(results, (result) => result.cemvSupport.known);
+  const unknown = sumNumber(results, (result) => result.cemvSupport.unknown);
+  const supported = sumNumber(results, (result) => result.cemvSupport.supported);
+  const unsupported = sumNumber(results, (result) => result.cemvSupport.unsupported);
+  const other = sumNumber(results, (result) => result.cemvSupport.other);
   const summary = renderTable(
     [
       'source',
@@ -496,20 +582,24 @@ function formatCemvSupportSectionBody(results: GtfsRoutesSourceStats[]): string 
     3,
   );
 
-  return [
+  const lines = [
     '### Totals',
     '',
-    `routes=${getTotalRoutes(results)}`,
-    `sourcesWithCemvField=${countSourcesWithField(results, (result) => result.cemvSupport.fieldPresent)}/${results.length}`,
-    `known=${sumNumber(results, (result) => result.cemvSupport.known)}, unknown=${sumNumber(results, (result) => result.cemvSupport.unknown)}, supported=${sumNumber(results, (result) => result.cemvSupport.supported)}, unsupported=${sumNumber(results, (result) => result.cemvSupport.unsupported)}, other=${sumNumber(results, (result) => result.cemvSupport.other)}`,
-    '',
-    '### Summary',
-    '',
-    summary,
-  ].join('\n');
+    `routes=${totalRoutes}`,
+    `sourcesWithCemvField=${sourcesWithCemvField}/${results.length} (${formatPercent(sourcesWithCemvField, results.length)} of sources)`,
+  ];
+  if (sourcesWithCemvField === 0) {
+    lines.push('State: No sources currently use cemv_support.');
+  }
+  lines.push(
+    `known=${known} (${formatPercent(known, totalRoutes)} of routes), unknown=${unknown} (${formatPercent(unknown, totalRoutes)} of routes), supported=${supported} (${formatPercent(supported, totalRoutes)} of routes), unsupported=${unsupported} (${formatPercent(unsupported, totalRoutes)} of routes), other=${other} (${formatPercent(other, totalRoutes)} of routes)`,
+  );
+  lines.push('', '### Summary', '', summary);
+  return lines.join('\n');
 }
 
 function formatContinuousServiceFieldsSectionBody(results: GtfsRoutesSourceStats[]): string {
+  const totalRoutes = getTotalRoutes(results);
   const pickupTotals = sumContinuousCounts(
     results,
     (result) => result.continuousServiceFields.pickup,
@@ -517,6 +607,26 @@ function formatContinuousServiceFieldsSectionBody(results: GtfsRoutesSourceStats
   const dropOffTotals = sumContinuousCounts(
     results,
     (result) => result.continuousServiceFields.dropOff,
+  );
+  const sourcesWithPickupField = countSourcesWithField(
+    results,
+    (result) => result.continuousServiceFields.pickupFieldPresent,
+  );
+  const sourcesWithDropOffField = countSourcesWithField(
+    results,
+    (result) => result.continuousServiceFields.dropOffFieldPresent,
+  );
+  const pickupNonDefault = sumNumber(
+    results,
+    (result) => result.continuousServiceFields.pickupNonDefault,
+  );
+  const dropOffNonDefault = sumNumber(
+    results,
+    (result) => result.continuousServiceFields.dropOffNonDefault,
+  );
+  const bothNonDefault = sumNumber(
+    results,
+    (result) => result.continuousServiceFields.bothNonDefault,
   );
   const summary = renderTable(
     [
@@ -546,23 +656,27 @@ function formatContinuousServiceFieldsSectionBody(results: GtfsRoutesSourceStats
     3,
   );
 
-  return [
+  const lines = [
     '### Totals',
     '',
-    `routes=${getTotalRoutes(results)}`,
-    `sourcesWithPickupField=${countSourcesWithField(results, (result) => result.continuousServiceFields.pickupFieldPresent)}/${results.length}`,
-    `sourcesWithDropOffField=${countSourcesWithField(results, (result) => result.continuousServiceFields.dropOffFieldPresent)}/${results.length}`,
+    `routes=${totalRoutes}`,
+    `sourcesWithPickupField=${sourcesWithPickupField}/${results.length} (${formatPercent(sourcesWithPickupField, results.length)} of sources)`,
+    `sourcesWithDropOffField=${sourcesWithDropOffField}/${results.length} (${formatPercent(sourcesWithDropOffField, results.length)} of sources)`,
+  ];
+  if (pickupNonDefault === 0 && dropOffNonDefault === 0) {
+    lines.push('State: continuous_pickup and continuous_drop_off are unused across all sources.');
+  }
+  lines.push(
     `pickup values: ${formatContinuousSummary(pickupTotals)}`,
     `drop_off values: ${formatContinuousSummary(dropOffTotals)}`,
-    `non-default usage: pickup=${sumNumber(results, (result) => result.continuousServiceFields.pickupNonDefault)}, drop_off=${sumNumber(results, (result) => result.continuousServiceFields.dropOffNonDefault)}, both=${sumNumber(results, (result) => result.continuousServiceFields.bothNonDefault)}`,
-    '',
-    '### Summary',
-    '',
-    summary,
-  ].join('\n');
+    `non-default usage: pickup=${pickupNonDefault} (${formatPercent(pickupNonDefault, totalRoutes)} of routes), drop_off=${dropOffNonDefault} (${formatPercent(dropOffNonDefault, totalRoutes)} of routes), both=${bothNonDefault} (${formatPercent(bothNonDefault, totalRoutes)} of routes)`,
+  );
+  lines.push('', '### Summary', '', summary);
+  return lines.join('\n');
 }
 
 function formatOptionalPresentationFieldsSectionBody(results: GtfsRoutesSourceStats[]): string {
+  const totalRoutes = getTotalRoutes(results);
   const routeSortOrder = sumPresence(
     results,
     (result) => result.optionalPresentationFields.routeSortOrder,
@@ -595,61 +709,65 @@ function formatOptionalPresentationFieldsSectionBody(results: GtfsRoutesSourceSt
     3,
   );
 
-  return [
+  const lines = [
     '### Totals',
     '',
-    `routes=${getTotalRoutes(results)}`,
-    `route_sort_order: nonEmpty=${routeSortOrder.nonEmpty}, empty=${routeSortOrder.empty}`,
-    `route_url: nonEmpty=${routeUrl.nonEmpty}, empty=${routeUrl.empty}`,
-    `network_id: nonEmpty=${networkId.nonEmpty}, empty=${networkId.empty}`,
-    '',
-    '### Summary',
-    '',
-    summary,
-  ].join('\n');
+    `routes=${totalRoutes}`,
+    formatEmptyRate('route_sort_order', routeSortOrder),
+    formatEmptyRate('route_url', routeUrl),
+    formatEmptyRate('network_id', networkId),
+  ];
+  if (
+    routeSortOrder.nonEmpty === 0 &&
+    countSourcesWithField(
+      results,
+      (result) => result.optionalPresentationFields.routeSortOrder.fieldPresent,
+    ) > 0
+  ) {
+    lines.push(
+      'State: route_sort_order headers exist in some sources, but no non-empty values are present.',
+    );
+  }
+  lines.push('', '### Summary', '', summary);
+  return lines.join('\n');
 }
 
 export const GTFS_ROUTES_SECTIONS = {
   'identity-and-names': {
     name: 'identity-and-names',
     title: 'Identity and names',
-    description:
-      'Checks how route names and identifiers are populated, including short-name and long-name usage patterns.',
+    description: 'Shows whether each source relies on short names, long names, or both.',
     render: formatIdentityAndNamesSectionBody,
   },
   'route-types': {
     name: 'route-types',
     title: 'Route types',
-    description:
-      'Summarizes route_type coverage and distribution to show which GTFS transport modes each source uses.',
+    description: 'Shows whether each source is bus-only, multi-mode, or unexpected.',
     render: formatRouteTypesSectionBody,
   },
   'color-fields': {
     name: 'color-fields',
     title: 'Color fields',
-    description:
-      'Shows how route_color and route_text_color are populated, including missing pairings and color variety.',
+    description: 'Shows whether route_color and route_text_color are complete as pairs.',
     render: formatColorFieldsSectionBody,
   },
   'cemv-support': {
     name: 'cemv-support',
     title: 'cEMV support',
-    description:
-      'Checks whether cemv_support is present and how often known supported or unsupported values are used.',
+    description: 'Shows whether cemv_support is used at all and whether support states are known.',
     render: formatCemvSupportSectionBody,
   },
   'continuous-service-fields': {
     name: 'continuous-service-fields',
     title: 'Continuous service fields',
     description:
-      'Summarizes continuous_pickup and continuous_drop_off usage, focusing on non-default operational values.',
+      'Shows whether continuous service fields are used and whether any non-default values appear.',
     render: formatContinuousServiceFieldsSectionBody,
   },
   'optional-presentation-fields': {
     name: 'optional-presentation-fields',
     title: 'Optional presentation / operational fields',
-    description:
-      'Checks optional display and grouping fields such as route_sort_order, route_url, and network_id.',
+    description: 'Shows whether optional presentation fields are actually used, not just declared.',
     render: formatOptionalPresentationFieldsSectionBody,
   },
 } satisfies Record<GtfsRoutesSectionName, GtfsRoutesSectionDefinition>;
@@ -975,6 +1093,8 @@ export function formatGtfsRoutesAnalysis(
     `# Analyzed at: ${analyzedAt.toISOString()}`,
     '# Current output covers routes.txt current-state sections only.',
     '# No stop_times or other file joins are applied in this report.',
+    '',
+    formatOverallSummary(sorted),
     '',
     ...renderedSections.flatMap((section, index) => (index === 0 ? [section] : ['', section])),
   ].join('\n');
