@@ -27,10 +27,8 @@
     "vite.config.ts",
     "vitest.config.ts",
     "scripts/**/*.ts",
-    "pipeline/src/lib/**/*.ts",
-    "pipeline/scripts/**/*.ts",
-    "pipeline/src/types/**/*.ts",
-    "pipeline/config/resources/**/*.ts",
-    "pipeline/config/targets/**/*.ts"
+    "pipeline/config/**/*.ts",
+    "pipeline/src/**/*.ts",
+    "pipeline/scripts/**/*.ts"
   ]
 }
