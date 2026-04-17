@@ -3,6 +3,8 @@ import { isLowContrast } from '../utils/color-contrast';
 
 /** Background color used as the reference when the user is on the light theme. */
 const LIGHT_BG = '#ffffff';
+/** Neutral border color used on the light theme. Matches `border-app-neutral`. */
+const LIGHT_NEUTRAL_BORDER = '#d1d5db';
 /**
  * Background color used as the reference when the user is on the dark
  * theme. Matches the bottom-sheet dark background (`dark:bg-gray-900`,
@@ -10,6 +12,8 @@ const LIGHT_BG = '#ffffff';
  * behind badge / indicator color swatches in dark mode.
  */
 const DARK_BG = '#111827';
+/** Neutral border color used on the dark theme. Matches `border-app-neutral`. */
+const DARK_NEUTRAL_BORDER = '#4b5563';
 
 /**
  * Default WCAG contrast threshold below which a color is deemed too
@@ -73,6 +77,22 @@ export function useThemeContrastBackgroundColor(): string {
 }
 
 /**
+ * React hook: returns the neutral border color used across the app for
+ * theme-aware fallback outlines.
+ *
+ * @returns `#d1d5db` on light theme, `#4b5563` on dark theme.
+ */
+export function useThemeNeutralBorderColor(): string {
+  const isDark = useSyncExternalStore(
+    subscribeToDarkClass,
+    getDarkClassSnapshot,
+    getDarkClassServerSnapshot,
+  );
+
+  return isDark ? DARK_NEUTRAL_BORDER : LIGHT_NEUTRAL_BORDER;
+}
+
+/**
  * React hook: returns `true` when the given foreground `color` has
  * insufficient contrast against the current theme's background.
  *
@@ -100,9 +120,11 @@ export function useIsLowContrastAgainstTheme(
   color: string | undefined,
   minRatio: number = DEFAULT_MIN_RATIO,
 ): boolean {
+  const bg = useThemeContrastBackgroundColor();
+
   if (!color) {
     return false;
   }
-  const bg = useThemeContrastBackgroundColor();
+
   return isLowContrast(color, bg, minRatio);
 }

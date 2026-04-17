@@ -5,7 +5,10 @@ import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direc
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
 import { getSelectedHeadsignDisplayName } from '@/domain/transit/get-headsign-display-names';
 import { groupByRouteHeadsign } from '@/domain/transit/group-timetable-entries';
-import { useThemeContrastBackgroundColor } from '@/hooks/use-is-low-contrast-against-theme';
+import {
+  useThemeContrastBackgroundColor,
+  useThemeNeutralBorderColor,
+} from '@/hooks/use-is-low-contrast-against-theme';
 import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
 import { isLowContrast } from '@/utils/color-contrast';
@@ -33,6 +36,7 @@ export function StopTimetableFilter({
   agencies,
 }: StopTimetableFilterProps) {
   const themeContrastBackgroundColor = useThemeContrastBackgroundColor();
+  const neutralBorderColor = useThemeNeutralBorderColor();
 
   const routeHeadsigns = useMemo(() => {
     return groupByRouteHeadsign(timetableEntries)
@@ -56,7 +60,7 @@ export function StopTimetableFilter({
         // text color only as an inactive outline fallback when the route color
         // blends into the current theme background.
         const inactiveBorderColor = routeColorIsLowContrast
-          ? (routeTextColor ?? '#000000')
+          ? (routeTextColor ?? neutralBorderColor)
           : routeColor;
 
         return {
@@ -71,7 +75,7 @@ export function StopTimetableFilter({
       })
 
       .filter((entry) => entry !== null);
-  }, [themeContrastBackgroundColor, timetableEntries]);
+  }, [neutralBorderColor, themeContrastBackgroundColor, timetableEntries]);
 
   const noFilter = activeFilters.size === 0;
 

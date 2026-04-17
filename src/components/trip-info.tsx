@@ -180,9 +180,10 @@ export function TripInfo({
         dataLang={dataLang}
         agencyLangs={agencyLang}
         infoLevel={infoLevel}
-        size={size === 'sm' ? 'sm' : undefined}
+        size={size === 'sm' ? 'sm' : 'md'}
         disableVerbose={true}
         showBorder={true}
+        borderStyle="context"
       />
       {info.isDetailedEnabled && agency && showAgency && (
         <AgencyBadge

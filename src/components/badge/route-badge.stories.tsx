@@ -40,11 +40,13 @@ const meta = {
     route: busRoute,
     dataLang: ['ja'],
     infoLevel: 'normal',
-    size: 'default',
+    size: 'md',
+    showBorder: false,
+    borderStyle: 'neutral',
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
-    size: { control: 'inline-radio', options: ['default', 'sm', 'xs'] },
+    size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
   },
 } satisfies Meta<typeof RouteBadge>;
 
@@ -53,8 +55,8 @@ type Story = StoryObj<typeof meta>;
 
 // --- Size variants ---
 
-export const SizeDefault: Story = {
-  args: { size: 'default' },
+export const SizeMd: Story = {
+  args: { size: 'md' },
 };
 
 export const SizeSm: Story = {
@@ -116,18 +118,24 @@ export const SizeComparison: Story = {
         dataLang={args.dataLang}
         infoLevel={args.infoLevel}
         size="xs"
+        showBorder={args.showBorder}
+        borderStyle={args.borderStyle}
       />
       <RouteBadge
         route={args.route}
         dataLang={args.dataLang}
         infoLevel={args.infoLevel}
         size="sm"
+        showBorder={args.showBorder}
+        borderStyle={args.borderStyle}
       />
       <RouteBadge
         route={args.route}
         dataLang={args.dataLang}
         infoLevel={args.infoLevel}
-        size="default"
+        size="md"
+        showBorder={args.showBorder}
+        borderStyle={args.borderStyle}
       />
     </div>
   ),
@@ -154,7 +162,9 @@ export const LogicalLongInfoLevelComparison: Story = {
               route={args.route}
               dataLang={args.dataLang}
               infoLevel={level}
-              size={args.size}
+              size={args.size ?? 'md'}
+              showBorder={args.showBorder}
+              borderStyle={args.borderStyle}
             />
           </div>
         ))}
@@ -180,7 +190,9 @@ export const LangComparison: Story = {
             route={args.route}
             dataLang={dataLang}
             infoLevel={args.infoLevel}
-            size={args.size}
+            size={args.size ?? 'md'}
+            showBorder={args.showBorder}
+            borderStyle={args.borderStyle}
           />
         </div>
       ))}
@@ -207,7 +219,14 @@ export const VerboseResolvedSourceComparison: Story = {
             route_short_name translation exists, so short side wins
           </span>
         </p>
-        <RouteBadge route={translatedShortRoute} dataLang={args.dataLang} infoLevel="verbose" />
+        <RouteBadge
+          route={translatedShortRoute}
+          dataLang={args.dataLang}
+          infoLevel="verbose"
+          size={args.size ?? 'md'}
+          showBorder={args.showBorder}
+          borderStyle={args.borderStyle}
+        />
       </div>
       <div className="space-y-1">
         <p className="text-sm font-medium">
@@ -216,7 +235,14 @@ export const VerboseResolvedSourceComparison: Story = {
             route_short_name is empty, so long side becomes the fallback winner
           </span>
         </p>
-        <RouteBadge route={longFallbackRoute} dataLang={args.dataLang} infoLevel="verbose" />
+        <RouteBadge
+          route={longFallbackRoute}
+          dataLang={args.dataLang}
+          infoLevel="verbose"
+          size={args.size ?? 'md'}
+          showBorder={args.showBorder}
+          borderStyle={args.borderStyle}
+        />
       </div>
     </div>
   ),

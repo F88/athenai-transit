@@ -9,10 +9,11 @@ import { BaseLabel, type BaseLabelSize } from '../label/base-label';
 import { IdBadge } from './id-badge';
 import { VerboseRoute } from '../verbose/verbose-route';
 
-export type RouteBadgeSize = 'default' | 'sm' | 'xs';
+export type RouteBadgeSize = 'md' | 'sm' | 'xs';
+export type RouteBadgeBorderStyle = 'neutral' | 'context';
 
 const baseLabelSizes: Record<RouteBadgeSize, BaseLabelSize> = {
-  default: 'md',
+  md: 'md',
   sm: 'sm',
   xs: 'xs',
 };
@@ -22,18 +23,20 @@ interface RouteBadgeProps {
   route: Route;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
-  /** Agency languages for subNames sort priority. @default DEFAULT_AGENCY_LANG */
-  agencyLangs?: readonly string[];
   /**
    * Current info verbosity level.
    * The compact badge label itself stays on the resolved primary name;
    * only verbose-only extras such as debug details are gated by this prop.
    */
   infoLevel: InfoLevel;
-  /** Size variant. @default 'default' */
-  size?: RouteBadgeSize;
-  /** Whether to render a border around the badge. @default false */
-  showBorder?: boolean;
+  /** Size variant. */
+  size: RouteBadgeSize;
+  /** Whether to render a border around the badge. */
+  showBorder: boolean;
+  /** Border color style when showBorder is enabled. */
+  borderStyle: RouteBadgeBorderStyle;
+  /** Agency languages for subNames sort priority. @default DEFAULT_AGENCY_LANG */
+  agencyLangs?: readonly string[];
   /** Suppress verbose-only rendering (IdBadge, details dump).
    *  Use in non-interactive contexts like tooltips. */
   disableVerbose?: boolean;
@@ -52,24 +55,30 @@ interface RouteBadgeProps {
  *
  * @param route - The route to display.
  * @param infoLevel - Controls verbose-only extras; the badge text remains compact.
- * @param size - Size variant: `'default'`, `'sm'`, or `'xs'`.
+ * @param size - Size variant: `'md'`, `'sm'`, or `'xs'`.
  * @param className - Additional CSS classes for further overrides.
  */
 export function RouteBadge({
   route,
   dataLang,
-  agencyLangs = DEFAULT_AGENCY_LANG,
   infoLevel,
-  size = 'default',
-  showBorder = false,
+  size,
+  showBorder,
+  borderStyle,
+  agencyLangs = DEFAULT_AGENCY_LANG,
   disableVerbose = false,
   className,
 }: RouteBadgeProps) {
   const routeNames = getRouteDisplayNames(route, dataLang, agencyLangs, 'short');
-  const bg = convertGtfsColor(route.route_color, 'css-hex');
-  const fg = convertGtfsColor(route.route_text_color, 'css-hex');
-  const routeColorIsLowContrast = useIsLowContrastAgainstTheme(bg);
-  const frameColor = !showBorder || !routeColorIsLowContrast ? undefined : (fg ?? '#000000');
+  const routeColor = convertGtfsColor(route.route_color, 'css-hex');
+  const routeTextColor = convertGtfsColor(route.route_text_color, 'css-hex');
+  const routeColorIsLowContrast = useIsLowContrastAgainstTheme(routeColor);
+  const frameColor =
+    !showBorder || borderStyle !== 'context'
+      ? undefined
+      : routeColorIsLowContrast
+        ? routeTextColor
+        : routeColor;
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;
 
   return (
@@ -80,13 +89,14 @@ export function RouteBadge({
           size={baseLabelSizes[size]}
           className={cn(
             'bg-muted-foreground inline-flex items-center justify-center font-bold whitespace-nowrap text-white',
-            showBorder && 'border-app-neutral border',
+            showBorder && 'border',
+            showBorder && borderStyle === 'neutral' && 'border-app-neutral',
           )}
           style={
-            bg
+            routeColor
               ? {
-                  background: bg,
-                  color: fg,
+                  background: routeColor,
+                  color: routeTextColor,
                   borderColor: frameColor,
                 }
               : undefined

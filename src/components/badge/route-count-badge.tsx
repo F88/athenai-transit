@@ -1,7 +1,10 @@
 import { resolveAgencyLang } from '../../config/transit-defaults';
 import { convertGtfsColor } from '../../domain/transit/gtfs-color';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
-import { useIsLowContrastAgainstTheme } from '../../hooks/use-is-low-contrast-against-theme';
+import {
+  useIsLowContrastAgainstTheme,
+  useThemeNeutralBorderColor,
+} from '../../hooks/use-is-low-contrast-against-theme';
 import type { BaseLabelSize } from '../label/base-label';
 import type { Agency, Route } from '../../types/app/transit';
 import { LabelCountBadge } from './label-count-badge';
@@ -41,7 +44,8 @@ export function RouteCountBadge({
   const routeColor = convertGtfsColor(route.route_color, 'css-hex');
   const routeTextColor = convertGtfsColor(route.route_text_color, 'css-hex');
   const routeColorIsLowContrast = useIsLowContrastAgainstTheme(routeColor);
-  const frameColor = routeColorIsLowContrast ? (routeTextColor ?? '#000000') : routeColor;
+  const neutralBorderColor = useThemeNeutralBorderColor();
+  const frameColor = routeColorIsLowContrast ? (routeTextColor ?? neutralBorderColor) : routeColor;
 
   return (
     <LabelCountBadge

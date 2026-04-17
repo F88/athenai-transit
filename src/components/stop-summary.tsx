@@ -162,6 +162,7 @@ export function StopSummary({
               size={resolvedRouteBadgeSize}
               disableVerbose
               showBorder={true}
+              borderStyle="context"
             />
           ))}
         </div>
@@ -178,7 +179,7 @@ export function StopSummary({
               <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
                 [Stop]
               </summary>
-              <div className="mt-1 overflow-x-auto rounded border border-dashed border-app-neutral p-1 whitespace-nowrap">
+              <div className="border-app-neutral mt-1 overflow-x-auto rounded border border-dashed p-1 whitespace-nowrap">
                 <VerboseStop stop={stop} serviceState={stopServiceState} />
               </div>
               <VerboseStopDisplayNames names={stopNames} />
