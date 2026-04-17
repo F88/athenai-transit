@@ -26,11 +26,9 @@ import { resolveRenderModes } from '../../domain/map/render-mode';
 import { RouteShapePolylines } from './route-shape-polyline';
 import { TILE_SOURCES } from '../../config/tile-sources';
 import { EdgeMarkersSwitch } from '../marker/edge-markers';
-// import { SelectionIndicator } from './selection-indicator';
 
 import { INITIAL_CENTER, INITIAL_ZOOM } from '../../config/map-defaults';
 import { DISTANCE_BANDS } from '../../utils/distance-style';
-import { SelectionIndicator } from './selection-indicator';
 import { useMapSelectionLayers } from '../../hooks/use-map-selection-layers';
 
 const USER_LOCATION_ICON = L.divIcon({
@@ -344,16 +342,6 @@ export function MapView({
 
   const handleLocated = useCallback((location: UserLocation) => setUserLocation(location), []);
 
-  const handleIndicatorClick = useCallback(() => {
-    if (selectionInfo?.type === 'stop' && mapInstance) {
-      smoothMoveTo(
-        mapInstance,
-        [selectionInfo.stop.stop_lat, selectionInfo.stop.stop_lon],
-        mapInstance.getZoom(),
-      );
-    }
-  }, [selectionInfo, mapInstance]);
-
   return (
     <div className="relative h-[60dvh] w-full">
       {/* Invert map tiles in dark mode via CSS filter on the tile pane */}
@@ -522,12 +510,6 @@ export function MapView({
           onFetchStopTimes={onFetchStopTimes}
         />
       )}
-      <SelectionIndicator
-        info={selectionInfo}
-        infoLevel={infoLevel}
-        dataLang={dataLang}
-        onStopClick={handleIndicatorClick}
-      />
     </div>
   );
 }
