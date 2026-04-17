@@ -1,5 +1,7 @@
 import { resolveAgencyLang } from '../../config/transit-defaults';
+import { convertGtfsColor } from '../../domain/transit/gtfs-color';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
+import { useIsLowContrastAgainstTheme } from '../../hooks/use-is-low-contrast-against-theme';
 import type { BaseLabelSize } from '../label/base-label';
 import type { Agency, Route } from '../../types/app/transit';
 import { LabelCountBadge } from './label-count-badge';
@@ -34,9 +36,21 @@ export function RouteCountBadge({
     'short',
   );
   const label = routeNames.resolved.name || route.route_id;
-  const labelBg = route.route_color ? `#${route.route_color}` : undefined;
-  const labelFg = route.route_text_color ? `#${route.route_text_color}` : undefined;
+
+  // Route color
+  const routeColor = convertGtfsColor(route.route_color, 'css-hex');
+  const routeTextColor = convertGtfsColor(route.route_text_color, 'css-hex');
+  const routeColorIsLowContrast = useIsLowContrastAgainstTheme(routeColor);
+  const frameColor = routeColorIsLowContrast ? (routeTextColor ?? '#000000') : routeColor;
+
   return (
-    <LabelCountBadge label={label} count={count} size={size} labelBg={labelBg} labelFg={labelFg} />
+    <LabelCountBadge
+      label={label}
+      count={count}
+      size={size}
+      labelBg={routeColor}
+      labelFg={routeTextColor}
+      frameColor={frameColor}
+    />
   );
 }
