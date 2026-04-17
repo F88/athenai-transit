@@ -1,5 +1,5 @@
 import type { RouteDirection } from '../../../types/app/transit-composed';
-import type { ResolvedDisplayNames } from '../get-display-names';
+import type { ResolvedDisplayNames } from './get-display-names';
 import { resolveDisplayNamesWithTranslatableText } from '../i18n/resolve-display-names-with-translatable-text';
 
 /**

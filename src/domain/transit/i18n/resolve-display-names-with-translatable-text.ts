@@ -1,5 +1,5 @@
 import type { TranslatableText } from '../../../types/app/transit-composed';
-import type { ResolvedDisplayNames } from '../get-display-names';
+import type { ResolvedDisplayNames } from '../name-resolver/get-display-names';
 import { buildNamesByLangPriority } from './build-names-by-lang-priority';
 import { resolveTranslatableText } from './resolve-translatable-text';
 

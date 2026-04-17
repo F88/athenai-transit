@@ -1,4 +1,4 @@
-import type { ResolvedDisplayNames } from '../../domain/transit/get-display-names';
+import type { ResolvedDisplayNames } from '../../domain/transit/name-resolver/get-display-names';
 
 /**
  * Debug dump of resolved {@link ResolvedDisplayNames}.
