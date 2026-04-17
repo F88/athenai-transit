@@ -29,12 +29,29 @@ const preview: Preview = {
         dynamicTitle: true,
       },
     },
+    theme: {
+      name: 'Theme',
+      description: 'Color theme for Storybook preview',
+      defaultValue: 'light',
+      toolbar: {
+        icon: 'circlehollow',
+        items: [
+          { value: 'light', title: 'Light', right: '☀' },
+          { value: 'dark', title: 'Dark', right: '☾' },
+        ],
+        dynamicTitle: true,
+      },
+    },
   },
   decorators: [
     (Story, context) => {
       const nextLang = normalizeLang(String(context.globals.lang ?? ''));
       if (typeof document !== 'undefined') {
         document.documentElement.lang = nextLang;
+        // Match the production app: the `dark` class on <html> drives
+        // all Tailwind `dark:` variants and the
+        // `useIsLowContrastAgainstTheme` hook.
+        document.documentElement.classList.toggle('dark', context.globals.theme === 'dark');
       }
       if (i18n.language !== nextLang) {
         void i18n.changeLanguage(nextLang);
