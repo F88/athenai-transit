@@ -48,6 +48,9 @@ function createRoutesCsv(): string {
       '3',
     ].join(','),
     ['r2', 'agency:1', '', 'Route B', '', '4', '', '', '', '', '', '', '', ''].join(','),
+    ['r3', 'agency:1', 'C', 'Route C', '', '3', '', '000000', '000000', '', '', '', '', ''].join(
+      ',',
+    ),
   ].join('\n');
 }
 
@@ -61,14 +64,17 @@ describe('analyzeGtfsRoutesCsv', () => {
       csvText: createRoutesCsv(),
     });
 
-    expect(result.totalRoutes).toBe(2);
-    expect(result.identityAndNames.both).toBe(1);
+    expect(result.totalRoutes).toBe(3);
+    expect(result.identityAndNames.both).toBe(2);
     expect(result.identityAndNames.longOnly).toBe(1);
+    expect(result.identityAndNames.both + result.identityAndNames.longOnly).toBe(3);
     expect(result.routeTypes.distinctRouteTypes).toBe(2);
-    expect(result.colorFields.both).toBe(1);
+    expect(result.colorFields.both).toBe(2);
     expect(result.colorFields.neither).toBe(1);
+    expect(result.colorFields.sameColorPairs).toBe(1);
+    expect(result.colorFields.sameColorPairCounts).toEqual({ '000000/000000': 1 });
     expect(result.cemvSupport.supported).toBe(1);
-    expect(result.cemvSupport.unknown).toBe(1);
+    expect(result.cemvSupport.unknown).toBe(2);
     expect(result.continuousServiceFields.pickup.two).toBe(1);
     expect(result.continuousServiceFields.dropOff.three).toBe(1);
     expect(result.optionalPresentationFields.routeSortOrder.nonEmpty).toBe(1);
@@ -106,7 +112,7 @@ describe('report and formatter', () => {
     });
 
     expect(report.meta.sourceCount).toBe(1);
-    expect(report.totalRoutes).toBe(2);
+    expect(report.totalRoutes).toBe(3);
     expect(report.sources[0]?.sourceName).toBe('test-source');
   });
 
@@ -125,9 +131,12 @@ describe('report and formatter', () => {
 
     expect(output).toContain('# Athenai Transit — GTFS routes.txt analysis');
     expect(output).toContain('## Overall summary');
-    expect(output).toContain('sources=1, routes=2');
+    expect(output).toContain('sources=1, routes=3');
     expect(output).toContain(
-      'names: shortOnly=0 (0.0% of routes), both=1 (50.0% of routes), longOnly=1 (50.0% of routes)',
+      'names: shortOnly=0 (0.0% of routes), both=2 (66.7% of routes), longOnly=1 (33.3% of routes)',
+    );
+    expect(output).toContain(
+      'colors: both=2 (66.7% of routes), samePair=1 (33.3% of routes), neither=1 (33.3% of routes), colorOnly=0 (0.0% of routes)',
     );
     expect(output).toContain('## Identity and names');
     expect(output).toContain('## Route types');
@@ -139,9 +148,16 @@ describe('report and formatter', () => {
       'Shows whether each source relies on short names, long names, or both.',
     );
     expect(output).toContain('Shows whether each source is bus-only, multi-mode, or unexpected.');
-    expect(output).toContain('route_short_name: nonEmpty=1, empty=1 (50.0% of routes empty)');
+    expect(output).toContain('route_short_name: nonEmpty=2, empty=1 (33.3% of routes empty)');
     expect(output).toContain('unknownRouteType=0 (0.0% of routes)');
     expect(output).toContain('State: All route_type values are known GTFS values.');
+    expect(output).toContain('fatal pairs: sameColor=1 (33.3% of routes)');
+    expect(output).toContain(
+      'Fatal: Some routes use identical route_color and route_text_color and should be treated as data-quality issues.',
+    );
+    expect(output).toContain('same-color values: 000000/000000:1');
+    expect(output).toContain('### Same-color values');
+    expect(output).toContain('000000/000000');
   });
 
   it('filters output to the requested sections', () => {

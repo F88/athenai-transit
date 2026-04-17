@@ -19,21 +19,13 @@ export interface PipelineResolvedRouteColors {
   usedFallback: boolean;
 }
 
-/**
- * Treat identical route/text colors as unset, except for explicit
- * white-on-white values which are preserved for historical reasons.
- */
-export function isRouteColorUnset(rawColor: string, rawTextColor: string): boolean {
-  return !rawColor || (rawColor === rawTextColor && rawColor !== 'FFFFFF');
-}
-
 export function resolvePipelineRouteColors({
   routeId,
   rawColor,
   rawTextColor,
   routeColorFallbacks,
 }: ResolvePipelineRouteColorsInput): PipelineResolvedRouteColors {
-  const colorUnset = isRouteColorUnset(rawColor, rawTextColor);
+  const colorUnset = !rawColor;
   const defaultColor = routeColorFallbacks['*'] ?? '';
   const fallbackColor = routeColorFallbacks[routeId] || defaultColor;
   const color = colorUnset ? fallbackColor : rawColor;

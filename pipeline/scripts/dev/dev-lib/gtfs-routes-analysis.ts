@@ -60,8 +60,10 @@ export interface ColorFieldsStats {
   textOnly: number;
   both: number;
   neither: number;
+  sameColorPairs: number;
   distinctRouteColors: number;
   distinctRouteTextColors: number;
+  sameColorPairCounts: Record<string, number>;
 }
 
 export interface CemvSupportStats {
@@ -325,6 +327,28 @@ function formatContinuousSummary(counts: ContinuousValueCounts): string {
   return parts.length === 0 ? '-' : parts.join(', ');
 }
 
+function formatColorPairValue(color: string, textColor: string): string {
+  return `${color}/${textColor}`;
+}
+
+function formatTopCounts(counts: Record<string, number>, limit: number): string {
+  const entries = Object.entries(counts).sort((left, right) => {
+    if (right[1] !== left[1]) {
+      return right[1] - left[1];
+    }
+    return left[0].localeCompare(right[0]);
+  });
+
+  if (entries.length === 0) {
+    return '-';
+  }
+
+  return entries
+    .slice(0, limit)
+    .map(([value, count]) => `${value}:${count}`)
+    .join(', ');
+}
+
 function formatFieldMarker(fieldPresent: boolean): string {
   return fieldPresent ? 'yes' : 'no';
 }
@@ -359,6 +383,7 @@ function formatOverallSummary(results: GtfsRoutesSourceStats[]): string {
   const colorBoth = sumNumber(results, (result) => result.colorFields.both);
   const colorNeither = sumNumber(results, (result) => result.colorFields.neither);
   const colorOnly = sumNumber(results, (result) => result.colorFields.colorOnly);
+  const sameColorPairs = sumNumber(results, (result) => result.colorFields.sameColorPairs);
   const routeUrl = sumPresence(results, (result) => result.optionalPresentationFields.routeUrl);
   const routeSortOrder = sumPresence(
     results,
@@ -386,7 +411,7 @@ function formatOverallSummary(results: GtfsRoutesSourceStats[]): string {
     `sources=${sourceCount}, routes=${totalRoutes}`,
     `names: shortOnly=${shortOnlyNames} (${formatPercent(shortOnlyNames, totalRoutes)} of routes), both=${bothNames} (${formatPercent(bothNames, totalRoutes)} of routes), longOnly=${longOnlyNames} (${formatPercent(longOnlyNames, totalRoutes)} of routes)`,
     `route types: multiModeSources=${multiModeSources}/${sourceCount} (${formatPercent(multiModeSources, sourceCount)} of sources), nonBusRoutes=${nonBusRoutes} (${formatPercent(nonBusRoutes, totalRoutes)} of routes), unknown=${unknownRouteType}`,
-    `colors: both=${colorBoth} (${formatPercent(colorBoth, totalRoutes)} of routes), neither=${colorNeither} (${formatPercent(colorNeither, totalRoutes)} of routes), colorOnly=${colorOnly} (${formatPercent(colorOnly, totalRoutes)} of routes)`,
+    `colors: both=${colorBoth} (${formatPercent(colorBoth, totalRoutes)} of routes), samePair=${sameColorPairs} (${formatPercent(sameColorPairs, totalRoutes)} of routes), neither=${colorNeither} (${formatPercent(colorNeither, totalRoutes)} of routes), colorOnly=${colorOnly} (${formatPercent(colorOnly, totalRoutes)} of routes)`,
     `optional fields: route_url=${routeUrl.nonEmpty} (${formatPercent(routeUrl.nonEmpty, totalRoutes)} of routes), route_sort_order=${routeSortOrder.nonEmpty} (${formatPercent(routeSortOrder.nonEmpty, totalRoutes)} of routes), network_id=${networkId.nonEmpty} (${formatPercent(networkId.nonEmpty, totalRoutes)} of routes)`,
     `unused fields: cemv_support headers=${sourcesWithCemvField}/${sourceCount} (${formatPercent(sourcesWithCemvField, sourceCount)} of sources), continuous non-default=pickup ${pickupNonDefault} / drop_off ${dropOffNonDefault}`,
   ].join('\n');
@@ -494,6 +519,11 @@ function formatColorFieldsSectionBody(results: GtfsRoutesSourceStats[]): string 
   const colorOnly = sumNumber(results, (result) => result.colorFields.colorOnly);
   const textOnly = sumNumber(results, (result) => result.colorFields.textOnly);
   const neither = sumNumber(results, (result) => result.colorFields.neither);
+  const sameColorPairs = sumNumber(results, (result) => result.colorFields.sameColorPairs);
+  const sameColorPairCounts = sumRecordCounts(
+    results,
+    (result) => result.colorFields.sameColorPairCounts,
+  );
   const summary = renderTable(
     [
       'source',
@@ -504,6 +534,7 @@ function formatColorFieldsSectionBody(results: GtfsRoutesSourceStats[]): string 
       'colorNonEmpty',
       'textNonEmpty',
       'both',
+      'samePair',
       'colorOnly',
       'textOnly',
       'neither',
@@ -519,12 +550,36 @@ function formatColorFieldsSectionBody(results: GtfsRoutesSourceStats[]): string 
       String(result.colorFields.routeColor.nonEmpty),
       String(result.colorFields.routeTextColor.nonEmpty),
       String(result.colorFields.both),
+      String(result.colorFields.sameColorPairs),
       String(result.colorFields.colorOnly),
       String(result.colorFields.textOnly),
       String(result.colorFields.neither),
       String(result.colorFields.distinctRouteColors),
       String(result.colorFields.distinctRouteTextColors),
     ]),
+    3,
+  );
+
+  const sameColorValuesTable = renderTable(
+    ['source', 'prefix', 'pair', 'count', 'share'],
+    results.flatMap((result) => {
+      const entries = Object.entries(result.colorFields.sameColorPairCounts).sort((left, right) => {
+        if (right[1] !== left[1]) {
+          return right[1] - left[1];
+        }
+        return left[0].localeCompare(right[0]);
+      });
+
+      return entries
+        .slice(0, 5)
+        .map(([pair, count]) => [
+          result.sourceName,
+          result.prefix,
+          pair,
+          String(count),
+          formatPercent(count, result.totalRoutes),
+        ]);
+    }),
     3,
   );
 
@@ -535,11 +590,21 @@ function formatColorFieldsSectionBody(results: GtfsRoutesSourceStats[]): string 
     formatEmptyRate('route_color', routeColor),
     formatEmptyRate('route_text_color', routeTextColor),
     `pairings: both=${both} (${formatPercent(both, totalRoutes)} of routes), colorOnly=${colorOnly} (${formatPercent(colorOnly, totalRoutes)} of routes), textOnly=${textOnly} (${formatPercent(textOnly, totalRoutes)} of routes), neither=${neither} (${formatPercent(neither, totalRoutes)} of routes)`,
+    `fatal pairs: sameColor=${sameColorPairs} (${formatPercent(sameColorPairs, totalRoutes)} of routes)`,
   ];
+  if (sameColorPairs > 0) {
+    lines.push(
+      'Fatal: Some routes use identical route_color and route_text_color and should be treated as data-quality issues.',
+    );
+    lines.push(`same-color values: ${formatTopCounts(sameColorPairCounts, 5)}`);
+  }
   if (colorOnly > 0 && textOnly === 0) {
     lines.push('Anomaly: Some sources provide route_color without route_text_color.');
   }
   lines.push('', '### Summary', '', summary);
+  if (sameColorPairs > 0) {
+    lines.push('', '### Same-color values', '', sameColorValuesTable);
+  }
   return lines.join('\n');
 }
 
@@ -817,8 +882,10 @@ export function analyzeGtfsRoutesCsv(input: AnalyzeGtfsRoutesCsvInput): GtfsRout
         textOnly: 0,
         both: 0,
         neither: 0,
+        sameColorPairs: 0,
         distinctRouteColors: 0,
         distinctRouteTextColors: 0,
+        sameColorPairCounts: {},
       },
       cemvSupport: {
         fieldPresent: false,
@@ -887,8 +954,10 @@ export function analyzeGtfsRoutesCsv(input: AnalyzeGtfsRoutesCsvInput): GtfsRout
     textOnly: 0,
     both: 0,
     neither: 0,
+    sameColorPairs: 0,
     distinctRouteColors: 0,
     distinctRouteTextColors: 0,
+    sameColorPairCounts: {},
   };
   const cemvSupport: CemvSupportStats = {
     fieldPresent: cemvSupportIndex >= 0,
@@ -982,6 +1051,13 @@ export function analyzeGtfsRoutesCsv(input: AnalyzeGtfsRoutesCsvInput): GtfsRout
 
     if (hasRouteColor && hasRouteTextColor) {
       colorFields.both += 1;
+      if (colorValue === textColorValue) {
+        colorFields.sameColorPairs += 1;
+        incrementRecordCount(
+          colorFields.sameColorPairCounts,
+          formatColorPairValue(colorValue, textColorValue),
+        );
+      }
     } else if (hasRouteColor) {
       colorFields.colorOnly += 1;
     } else if (hasRouteTextColor) {

@@ -103,27 +103,15 @@ describe('extractRoutesV2', () => {
     expect(result[0].c).toBe('FF0000');
   });
 
-  it('treats identical color/textColor as unset (e.g. 000000/000000)', () => {
+  it('preserves identical explicit color/textColor pairs (e.g. 000000/000000)', () => {
     db.exec(`
       INSERT INTO routes (route_id, route_short_name, route_long_name, route_type, route_color, route_text_color)
       VALUES ('R001', 'R1', 'Route 1', 3, '000000', '000000');
     `);
 
     const result = extractRoutesV2(db, 'test', { '*': '1565C0' });
-    expect(result[0].c).toBe('1565C0');
+    expect(result[0].c).toBe('000000');
     expect(result[0].tc).toBe('000000');
-  });
-
-  it('does NOT treat FFFFFF/FFFFFF as unset', () => {
-    db.exec(`
-      INSERT INTO routes (route_id, route_short_name, route_long_name, route_type, route_color, route_text_color)
-      VALUES ('R001', 'R1', 'Route 1', 3, 'FFFFFF', 'FFFFFF');
-    `);
-
-    const result = extractRoutesV2(db, 'test', { '*': '1565C0' });
-    // FFFFFF/FFFFFF is explicitly exempted from the "identical = unset" rule
-    expect(result[0].c).toBe('FFFFFF');
-    expect(result[0].tc).toBe('FFFFFF');
   });
 
   it('returns empty string for color when no fallback is provided and color is unset', () => {

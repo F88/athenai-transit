@@ -1,27 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isRouteColorUnset, resolvePipelineRouteColors } from '../route-colors';
-
-describe('isRouteColorUnset', () => {
-  it('treats empty route_color as unset', () => {
-    expect(isRouteColorUnset('', '')).toBe(true);
-    expect(isRouteColorUnset('', 'FFFFFF')).toBe(true);
-  });
-
-  it('treats identical non-white color pairs as unset', () => {
-    expect(isRouteColorUnset('000000', '000000')).toBe(true);
-    expect(isRouteColorUnset('CF3366', 'CF3366')).toBe(true);
-  });
-
-  it('preserves explicit white-on-white values', () => {
-    expect(isRouteColorUnset('FFFFFF', 'FFFFFF')).toBe(false);
-  });
-
-  it('preserves mixed non-empty pairs', () => {
-    expect(isRouteColorUnset('CF3366', '')).toBe(false);
-    expect(isRouteColorUnset('00377E', 'FFFFFF')).toBe(false);
-  });
-});
+import { resolvePipelineRouteColors } from '../route-colors';
 
 describe('resolvePipelineRouteColors', () => {
   it('returns raw values when no fallback is needed', () => {
@@ -88,7 +67,7 @@ describe('resolvePipelineRouteColors', () => {
     });
   });
 
-  it('treats identical non-white color pairs as unset and uses fallback when available', () => {
+  it('preserves identical non-empty color pairs without fallback', () => {
     expect(
       resolvePipelineRouteColors({
         routeId: 'R001',
@@ -97,26 +76,10 @@ describe('resolvePipelineRouteColors', () => {
         routeColorFallbacks: { '*': '1565C0' },
       }),
     ).toEqual({
-      color: '1565C0',
+      color: '000000',
       textColor: '000000',
-      colorUnset: true,
-      usedFallback: true,
-    });
-  });
-
-  it('drops identical non-white color pairs to empty color without fallback', () => {
-    expect(
-      resolvePipelineRouteColors({
-        routeId: 'R001',
-        rawColor: '000000',
-        rawTextColor: '000000',
-        routeColorFallbacks: {},
-      }),
-    ).toEqual({
-      color: '',
-      textColor: '000000',
-      colorUnset: true,
-      usedFallback: true,
+      colorUnset: false,
+      usedFallback: false,
     });
   });
 });
