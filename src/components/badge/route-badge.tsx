@@ -1,8 +1,8 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Route } from '../../types/app/transit';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
-import { convertGtfsColor } from '../../domain/transit/gtfs-color';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
+import { resolveRouteColors } from '../../domain/transit/route-colors';
 import { useIsLowContrastAgainstTheme } from '../../hooks/use-is-low-contrast-against-theme';
 import { cn } from '../../lib/utils';
 import { BaseLabel, type BaseLabelSize } from '../label/base-label';
@@ -70,8 +70,7 @@ export function RouteBadge({
   className,
 }: RouteBadgeProps) {
   const routeNames = getRouteDisplayNames(route, dataLang, agencyLangs, 'short');
-  const routeColor = convertGtfsColor(route.route_color, 'css-hex');
-  const routeTextColor = convertGtfsColor(route.route_text_color, 'css-hex');
+  const { routeColor, routeTextColor } = resolveRouteColors(route, 'css-hex');
   const routeColorIsLowContrast = useIsLowContrastAgainstTheme(routeColor);
   const frameColor =
     !showBorder || borderStyle !== 'context'

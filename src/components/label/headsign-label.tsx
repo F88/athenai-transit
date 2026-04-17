@@ -2,6 +2,7 @@ import type { InfoLevel } from '../../types/app/settings';
 import type { RouteDirection } from '../../types/app/transit-composed';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
+import { resolveRouteColors } from '../../domain/transit/route-colors';
 import { cn } from '../../lib/utils';
 import { BaseLabel, type BaseLabelSize } from './base-label';
 import { VerboseHeadsign } from '../verbose/verbose-headsign';
@@ -57,8 +58,7 @@ export function HeadsignLabel({
   const { route } = routeDirection;
   const headsignNames = getHeadsignDisplayNames(routeDirection, dataLang, agencyLang, 'stop');
 
-  const bg = route.route_color ? `#${route.route_color}` : undefined;
-  const fg = route.route_text_color ? `#${route.route_text_color}` : undefined;
+  const { routeColor, routeTextColor } = resolveRouteColors(route, 'css-hex');
   const label =
     maxLength != null && headsignNames.resolved.name.length > maxLength
       ? headsignNames.resolved.name.slice(0, maxLength)
@@ -78,7 +78,7 @@ export function HeadsignLabel({
             'border-app-neutral border',
             className,
           )}
-          style={bg ? { background: bg, color: fg } : undefined}
+          style={routeColor ? { background: routeColor, color: routeTextColor } : undefined}
         />
       </span>
       {showVerbose && (

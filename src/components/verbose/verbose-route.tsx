@@ -2,6 +2,7 @@ import type { InfoLevel } from '../../types/app/settings';
 import type { Route } from '../../types/app/transit';
 import type { RouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { formatRouteLabel } from '../../domain/transit/format-route-label';
+import { convertGtfsColor } from '../../domain/transit/gtfs-color';
 import { VerboseRouteDisplayNames } from './verbose-route-display-names';
 
 /**
@@ -22,11 +23,15 @@ export function VerboseRoute({
   defaultOpen?: boolean;
 }) {
   const label = formatRouteLabel(names, infoLevel);
+  const cssRouteColor = convertGtfsColor(route.route_color, 'css-hex') ?? '(none)';
+  const cssRouteTextColor = convertGtfsColor(route.route_text_color, 'css-hex') ?? '(none)';
+  const summaryName =
+    names.resolved.name || route.route_long_name || route.route_short_name || route.route_id;
 
   return (
     <details open={defaultOpen} className="text-[9px] font-normal text-[#999] dark:text-gray-500">
       <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-        [Route]
+        [Route {summaryName}]
       </summary>
       <div className="mt-0.5 space-y-0.5">
         <span className="border-app-neutral block overflow-x-auto rounded border border-dashed p-1 whitespace-nowrap">
@@ -38,6 +43,9 @@ export function VerboseRoute({
           </span>
           <span className="block">
             color={route.route_color || '(none)'} text={route.route_text_color || '(none)'}
+          </span>
+          <span className="block">
+            cssColor={cssRouteColor} cssText={cssRouteTextColor}
           </span>
           <span className="block">
             [shortNames]{' '}

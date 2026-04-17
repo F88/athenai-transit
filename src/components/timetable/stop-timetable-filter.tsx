@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { resolveAgencyLang } from '@/config/transit-defaults';
-import { convertGtfsColor } from '@/domain/transit/gtfs-color';
 import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
 import { getSelectedHeadsignDisplayName } from '@/domain/transit/get-headsign-display-names';
 import { groupByRouteHeadsign } from '@/domain/transit/group-timetable-entries';
+import { resolveRouteColors } from '@/domain/transit/route-colors';
 import {
   useThemeContrastBackgroundColor,
   useThemeNeutralBorderColor,
@@ -52,8 +52,7 @@ export function StopTimetableFilter({
           return null;
         }
 
-        const routeColor = convertGtfsColor(routeDirection.route.route_color, 'css-hex');
-        const routeTextColor = convertGtfsColor(routeDirection.route.route_text_color, 'css-hex');
+        const { routeColor, routeTextColor } = resolveRouteColors(routeDirection.route, 'css-hex');
         const routeColorIsLowContrast =
           routeColor != null && isLowContrast(routeColor, themeContrastBackgroundColor);
         // Keep the fill/text pair aligned with RouteBadge and use the paired

@@ -1,5 +1,6 @@
 import type { Route } from '@/types/app/transit';
 import { convertGtfsColor, type GtfsColorFormat } from './gtfs-color';
+import { suggestTextColor } from '../../utils/color-contrast';
 
 /** GTFS default route color when `route_color` is omitted. */
 const DEFAULT_ROUTE_COLOR = 'FFFFFF';
@@ -14,12 +15,76 @@ export interface AdjustedRouteColors {
   textColor: string;
 }
 
-function normalizeRouteColor(color: string, fallback: string): string {
-  return color || fallback;
+/** Route colors resolved for UI rendering before theme-specific adjustment. */
+export interface ResolvedRouteColors {
+  /** Resolved route fill color. Undefined when GTFS provides no usable route color. */
+  routeColor?: string;
+  /** Resolved route text color. Undefined when no usable text color can be resolved. */
+  routeTextColor?: string;
+}
+
+function normalizeRawGtfsColor(color: string | null | undefined): string | undefined {
+  if (!color || !/^[0-9A-Fa-f]{6}$/.test(color)) {
+    return undefined;
+  }
+  return color;
 }
 
 function formatRouteColor(color: string, format: GtfsColorFormat): string {
   return convertGtfsColor(color, format) ?? color;
+}
+
+function toRawTextFallback(routeColor: string): string {
+  return suggestTextColor(formatRouteColor(routeColor, 'css-hex')) === 'white'
+    ? 'FFFFFF'
+    : '000000';
+}
+
+function resolveRawRouteTextColor(
+  rawRouteColor: string | undefined,
+  explicitRawRouteTextColor: string | undefined,
+): string | undefined {
+  if (!rawRouteColor) {
+    return explicitRawRouteTextColor;
+  }
+
+  if (!explicitRawRouteTextColor) {
+    return toRawTextFallback(rawRouteColor);
+  }
+
+  if (explicitRawRouteTextColor === rawRouteColor) {
+    return toRawTextFallback(rawRouteColor);
+  }
+
+  return explicitRawRouteTextColor;
+}
+
+/**
+ * Resolve GTFS route colors into a usable semantic route/text pair.
+ *
+ * Invalid GTFS color values are treated as omitted. When `route_color`
+ * is usable but `route_text_color` is missing, the text color is
+ * derived by contrast only as either `FFFFFF` or `000000`. Explicit
+ * GTFS text colors are preserved as-is. Theme-aware fallback colors are
+ * deliberately out of scope.
+ */
+export function resolveRouteColors(
+  route: Pick<Route, 'route_color' | 'route_text_color'>,
+  format: GtfsColorFormat = 'raw',
+): ResolvedRouteColors {
+  const rawRouteColor = normalizeRawGtfsColor(route.route_color);
+  const explicitRawRouteTextColor = normalizeRawGtfsColor(route.route_text_color);
+
+  if (!rawRouteColor && !explicitRawRouteTextColor) {
+    return {};
+  }
+
+  const rawRouteTextColor = resolveRawRouteTextColor(rawRouteColor, explicitRawRouteTextColor);
+
+  return {
+    routeColor: rawRouteColor ? formatRouteColor(rawRouteColor, format) : undefined,
+    routeTextColor: rawRouteTextColor ? formatRouteColor(rawRouteTextColor, format) : undefined,
+  };
 }
 
 /**
@@ -43,18 +108,20 @@ export function getAdjustedRouteColors(
   isRouteColorLowContrast: boolean,
   format: GtfsColorFormat = 'raw',
 ): AdjustedRouteColors {
-  const routeColor = normalizeRouteColor(route.route_color, DEFAULT_ROUTE_COLOR);
-  const routeTextColor = normalizeRouteColor(route.route_text_color, DEFAULT_ROUTE_TEXT_COLOR);
+  const resolved = resolveRouteColors(route, format);
+  const routeColor = resolved.routeColor ?? formatRouteColor(DEFAULT_ROUTE_COLOR, format);
+  const routeTextColor =
+    resolved.routeTextColor ?? formatRouteColor(DEFAULT_ROUTE_TEXT_COLOR, format);
 
   if (isRouteColorLowContrast) {
     return {
-      color: formatRouteColor(routeTextColor, format),
-      textColor: formatRouteColor(routeColor, format),
+      color: routeTextColor,
+      textColor: routeColor,
     };
   }
 
   return {
-    color: formatRouteColor(routeColor, format),
-    textColor: formatRouteColor(routeTextColor, format),
+    color: routeColor,
+    textColor: routeTextColor,
   };
 }
