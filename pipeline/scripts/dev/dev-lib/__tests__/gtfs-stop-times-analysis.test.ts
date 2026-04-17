@@ -10,7 +10,11 @@
 import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { analyzeStopTimes, formatAnalysis } from '../gtfs-stop-times-analysis';
+import {
+  GTFS_STOP_TIMES_SECTION_NAMES,
+  analyzeStopTimes,
+  formatAnalysis,
+} from '../gtfs-stop-times-analysis';
 
 // ---------------------------------------------------------------------------
 // Test DB setup
@@ -501,6 +505,31 @@ describe('formatAnalysis', () => {
     expect(output).toContain('## Pickup/Drop-off Type Usage');
     expect(output).toContain('## Pass-Through Stops');
     expect(output).toContain('## Interpolation');
+    expect(output).toContain('## Headsign Coverage');
+  });
+
+  it('filters output to the requested sections', () => {
+    insertBasicTrip(db);
+
+    const result = analyzeStopTimes(db);
+    const output = formatAnalysis('test-source', result, {
+      sections: [GTFS_STOP_TIMES_SECTION_NAMES[0], GTFS_STOP_TIMES_SECTION_NAMES[8]],
+    });
+
+    expect(output).toContain('## Stop Position Summary');
+    expect(output).toContain('## Headsign Coverage');
+    expect(output).not.toContain('## Circular Routes');
+    expect(output).not.toContain('## Pickup/Drop-off Type Usage');
+  });
+
+  it('treats an empty sections array as all sections', () => {
+    insertBasicTrip(db);
+
+    const result = analyzeStopTimes(db);
+    const output = formatAnalysis('test-source', result, { sections: [] });
+
+    expect(output).toContain('## Stop Position Summary');
+    expect(output).toContain('## Circular Routes');
     expect(output).toContain('## Headsign Coverage');
   });
 });

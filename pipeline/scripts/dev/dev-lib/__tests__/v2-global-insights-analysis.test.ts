@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  V2_GLOBAL_INSIGHTS_SECTION_NAMES,
   analyzeGlobalInsightsBundle,
   formatGlobalInsightsAnalysis,
 } from '../v2-global-insights-analysis';
@@ -83,5 +84,30 @@ describe('formatGlobalInsightsAnalysis', () => {
       analyzedAt: new Date('2026-01-01T00:00:00Z'),
     });
     expect(output).toContain('No stopGeo data found');
+  });
+
+  it('filters output to the requested sections', () => {
+    const stats = analyzeGlobalInsightsBundle(createMinimalBundle());
+    const output = formatGlobalInsightsAnalysis(stats, {
+      analyzedAt: new Date('2026-01-01T00:00:00Z'),
+      sections: [V2_GLOBAL_INSIGHTS_SECTION_NAMES[0], V2_GLOBAL_INSIGHTS_SECTION_NAMES[7]],
+    });
+
+    expect(output).toContain('## Summary');
+    expect(output).toContain('## Top 10 most connected stops');
+    expect(output).not.toContain('## Distribution of nr (km)');
+    expect(output).not.toContain('## Top 10 most isolated stops');
+  });
+
+  it('treats an empty sections array as all sections', () => {
+    const stats = analyzeGlobalInsightsBundle(createMinimalBundle());
+    const output = formatGlobalInsightsAnalysis(stats, {
+      analyzedAt: new Date('2026-01-01T00:00:00Z'),
+      sections: [],
+    });
+
+    expect(output).toContain('## Summary');
+    expect(output).toContain('## Distribution of nr (km)');
+    expect(output).toContain('## Top 10 most isolated stops');
   });
 });

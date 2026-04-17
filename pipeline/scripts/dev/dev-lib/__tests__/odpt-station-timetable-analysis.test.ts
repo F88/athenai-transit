@@ -15,6 +15,7 @@ import type {
   OdptStationTimetableObject,
 } from '../../../../src/types/odpt-train';
 import {
+  ODPT_STATION_TIMETABLE_SECTION_NAMES,
   analyzeOdptStationTimetable,
   formatOdptAnalysis,
 } from '../odpt-station-timetable-analysis';
@@ -385,6 +386,33 @@ describe('formatOdptAnalysis', () => {
     expect(output).toContain('## Destination Distribution');
     expect(output).toContain('## Train Type Distribution');
     expect(output).toContain('## isLast / isOrigin Flags');
+    expect(output).toContain('## Unknown Keys');
+  });
+
+  it('filters output to the requested sections', () => {
+    const railway = makeRailway([STATION_A, STATION_B]);
+    const timetables = [makeTimetable(STATION_A, 'Outbound', 'Weekday', [makeObject()])];
+
+    const result = analyzeOdptStationTimetable(timetables, railway);
+    const output = formatOdptAnalysis('test-source', result, {
+      sections: [ODPT_STATION_TIMETABLE_SECTION_NAMES[0], ODPT_STATION_TIMETABLE_SECTION_NAMES[7]],
+    });
+
+    expect(output).toContain('## Time Field Availability');
+    expect(output).toContain('## Unknown Keys');
+    expect(output).not.toContain('## Station Coverage');
+    expect(output).not.toContain('## Train Type Distribution');
+  });
+
+  it('treats an empty sections array as all sections', () => {
+    const railway = makeRailway([STATION_A, STATION_B]);
+    const timetables = [makeTimetable(STATION_A, 'Outbound', 'Weekday', [makeObject()])];
+
+    const result = analyzeOdptStationTimetable(timetables, railway);
+    const output = formatOdptAnalysis('test-source', result, { sections: [] });
+
+    expect(output).toContain('## Time Field Availability');
+    expect(output).toContain('## Station Coverage');
     expect(output).toContain('## Unknown Keys');
   });
 });

@@ -43,6 +43,20 @@ import { sortedMedian, sortedPercentile } from './stats-utils';
  */
 export const TOP_N = 10;
 
+export const V2_GLOBAL_INSIGHTS_SECTION_NAMES = [
+  'summary',
+  'nr-distribution',
+  'isolation-buckets',
+  'connectivity',
+  'hub-counts',
+  'walkable-portal',
+  'most-isolated-stops',
+  'most-connected-stops',
+  'busiest-neighborhoods',
+] as const;
+
+export type V2GlobalInsightsSectionName = (typeof V2_GLOBAL_INSIGHTS_SECTION_NAMES)[number];
+
 /** Distribution summary for a numeric value array (unit-agnostic). */
 export interface DistributionStats {
   count: number;
@@ -582,7 +596,7 @@ const STOP_GEO_LEADERBOARD_BUSIEST_LEGEND = [
 /** Format a GlobalInsightsStats as a multi-section human-readable report. */
 export function formatGlobalInsightsAnalysis(
   stats: GlobalInsightsStats | null,
-  options: { analyzedAt?: Date } = {},
+  options: { analyzedAt?: Date; sections?: V2GlobalInsightsSectionName[] } = {},
 ): string {
   const analyzedAt = options.analyzedAt ?? new Date();
   const header = [
@@ -599,28 +613,58 @@ export function formatGlobalInsightsAnalysis(
     return `${header}\n\nNo stopGeo data found.`;
   }
 
+  const requestedSections =
+    options.sections === undefined || options.sections.length === 0
+      ? V2_GLOBAL_INSIGHTS_SECTION_NAMES
+      : options.sections;
+  const renderedSections: string[] = [];
+
+  for (const sectionName of requestedSections) {
+    if (sectionName === 'summary') {
+      renderedSections.push(formatSummaryTable(stats));
+      continue;
+    }
+    if (sectionName === 'nr-distribution') {
+      renderedSections.push(formatNrDistributionTable(stats.perSource));
+      continue;
+    }
+    if (sectionName === 'isolation-buckets') {
+      renderedSections.push(formatIsolationBucketsTable(stats.perSource));
+      continue;
+    }
+    if (sectionName === 'connectivity') {
+      renderedSections.push(formatConnectivityTable(stats.perSource));
+      continue;
+    }
+    if (sectionName === 'hub-counts') {
+      renderedSections.push(formatHubCountsTable(stats.perSource));
+      continue;
+    }
+    if (sectionName === 'walkable-portal') {
+      renderedSections.push(formatWalkablePortalTable(stats.perSource));
+      continue;
+    }
+    if (sectionName === 'most-isolated-stops') {
+      renderedSections.push(formatLeaderboardMostIsolated(stats.leaderboards.mostIsolated));
+      continue;
+    }
+    if (sectionName === 'most-connected-stops') {
+      renderedSections.push(formatLeaderboardMostConnected(stats.leaderboards.mostConnected));
+      continue;
+    }
+    if (sectionName === 'busiest-neighborhoods') {
+      renderedSections.push(
+        formatLeaderboardBusiestNeighborhood(stats.leaderboards.busiestNeighborhood),
+      );
+    }
+  }
+
   const sections = [
     header,
     '',
     '# stopGeo',
     '',
-    formatSummaryTable(stats),
-    '',
-    formatNrDistributionTable(stats.perSource),
-    '',
-    formatIsolationBucketsTable(stats.perSource),
-    '',
-    formatConnectivityTable(stats.perSource),
-    '',
-    formatHubCountsTable(stats.perSource),
-    '',
-    formatWalkablePortalTable(stats.perSource),
-    '',
-    formatLeaderboardMostIsolated(stats.leaderboards.mostIsolated),
-    '',
-    formatLeaderboardMostConnected(stats.leaderboards.mostConnected),
-    '',
-    formatLeaderboardBusiestNeighborhood(stats.leaderboards.busiestNeighborhood),
+    ...renderedSections.flatMap((section, index) => (index === 0 ? [section] : ['', section])),
   ];
   return sections.join('\n');
 }

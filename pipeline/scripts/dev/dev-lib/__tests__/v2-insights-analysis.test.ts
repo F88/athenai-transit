@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { analyzeInsightsBundle, formatInsightsAnalysis } from '../v2-insights-analysis';
+import {
+  V2_INSIGHTS_SECTION_NAMES,
+  analyzeInsightsBundle,
+  formatInsightsAnalysis,
+} from '../v2-insights-analysis';
 import type { InsightsBundle } from '../../../../../src/types/data/transit-v2-json';
 
 /**
@@ -81,5 +85,31 @@ describe('formatInsightsAnalysis', () => {
       analyzedAt: new Date('2026-01-01T00:00:00Z'),
     });
     expect(output.length).toBeGreaterThan(0);
+  });
+
+  it('filters output to the requested sections', () => {
+    const row = analyzeInsightsBundle('src', 'Src', createMinimalBundle());
+    expect(row).not.toBeNull();
+    const output = formatInsightsAnalysis(row === null ? [] : [row], {
+      analyzedAt: new Date('2026-01-01T00:00:00Z'),
+      sections: [V2_INSIGHTS_SECTION_NAMES[0], V2_INSIGHTS_SECTION_NAMES[3]],
+    });
+    expect(output).toContain('# serviceGroups');
+    expect(output).toContain('# stopStats');
+    expect(output).not.toContain('# tripPatternStats');
+    expect(output).not.toContain('# tripPatternGeo');
+  });
+
+  it('treats an empty sections array as all sections', () => {
+    const row = analyzeInsightsBundle('src', 'Src', createMinimalBundle());
+    expect(row).not.toBeNull();
+    const output = formatInsightsAnalysis(row === null ? [] : [row], {
+      analyzedAt: new Date('2026-01-01T00:00:00Z'),
+      sections: [],
+    });
+
+    expect(output).toContain('# serviceGroups');
+    expect(output).toContain('# tripPatternStats');
+    expect(output).toContain('# stopStats');
   });
 });

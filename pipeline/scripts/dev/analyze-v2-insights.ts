@@ -10,7 +10,8 @@
  * Usage:
  *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts              # all sources
  *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts <source>     # single source
- *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts --list       # list sources
+ *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts <a> <b>      # selected sources
+ *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts --list-sources
  *   npx tsx pipeline/scripts/dev/analyze-v2-insights.ts --help       # show usage
  */
 
@@ -21,6 +22,8 @@ import type { InsightsBundle } from '../../../src/types/data/transit-v2-json';
 import {
   analyzeInsightsBundle,
   formatInsightsAnalysis,
+  V2_INSIGHTS_SECTION_NAMES,
+  type V2InsightsSectionName,
   type InsightsSourceStats,
 } from './dev-lib/v2-insights-analysis';
 import {
@@ -35,14 +38,13 @@ import {
 } from '../../src/lib/resources/load-odpt-json-sources';
 import { PIPELINE_ROOT } from '../../src/lib/paths';
 import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import { parseArgsForMultiSources } from './dev-lib/parse-args';
 
 const PUBLIC_V2_DIR = join(PIPELINE_ROOT, '..', 'public', 'data-v2');
 
-type CliMode =
-  | { kind: 'help' }
-  | { kind: 'list' }
-  | { kind: 'all' }
-  | { kind: 'source'; name: string };
+function isV2InsightsSectionName(value: string): value is V2InsightsSectionName {
+  return (V2_INSIGHTS_SECTION_NAMES as readonly string[]).includes(value);
+}
 
 interface SourceName {
   nameEn: string;
@@ -117,70 +119,75 @@ async function resolveNameForPrefix(prefix: string): Promise<SourceName | null> 
   return null;
 }
 
-function parseArgs(args: string[]): CliMode {
-  if (args.length === 0) {
-    return { kind: 'all' };
-  }
-  if (args.length === 1) {
-    const [a] = args;
-    if (a === '--help' || a === '-h') {
-      return { kind: 'help' };
-    }
-    if (a === '--list') {
-      return { kind: 'list' };
-    }
-    if (!a.startsWith('-')) {
-      return { kind: 'source', name: a };
-    }
-  }
-  return { kind: 'help' };
-}
-
 function printHelp(): void {
-  console.log('Usage: analyze-v2-insights.ts [source-name]');
+  console.log('Usage: analyze-v2-insights.ts [source-name ...] [--section <name> ...]');
   console.log('  No args    Analyze all public/data-v2 sources (excluding global/)');
-  console.log('  <source>   Analyze a single source (by prefix)');
-  console.log('  --list     List available sources');
+  console.log('  <source>   Analyze one or more sources (by prefix)');
+  console.log('  --list-sources  List available sources');
+  console.log('  --list-sections List available section names');
+  console.log('  --section <name> Limit output to the selected section (repeatable)');
   console.log('  --help     Show this help');
 }
 
 async function main(): Promise<void> {
-  const mode = parseArgs(process.argv.slice(2));
+  const mode = parseArgsForMultiSources(process.argv.slice(2));
 
   if (mode.kind === 'help') {
     printHelp();
     return;
   }
 
+  const invalidSections = mode.sections.filter((section) => !isV2InsightsSectionName(section));
+  if (invalidSections.length > 0) {
+    console.error(`Unknown section name: ${invalidSections.join(', ')}`);
+    console.error('Run with --list-sections to see available section names.');
+    process.exitCode = 1;
+    return;
+  }
+  const sections = mode.sections as V2InsightsSectionName[];
+
   const prefixes = listSourcePrefixes();
 
   if (mode.kind === 'list') {
+    if (mode.target === 'sections') {
+      for (const sectionName of V2_INSIGHTS_SECTION_NAMES) {
+        console.log(sectionName);
+      }
+      return;
+    }
     for (const p of prefixes) {
       console.log(p);
     }
     return;
   }
 
-  if (mode.kind === 'source') {
-    if (!prefixes.includes(mode.name)) {
-      console.error(`Source not found: ${mode.name}`);
-      console.error('Run with --list to see available sources.');
+  if (mode.kind === 'sources') {
+    const missingSources = mode.names.filter((name) => !prefixes.includes(name));
+    if (missingSources.length > 0) {
+      console.error(`Source not found: ${missingSources.join(', ')}`);
+      console.error('Run with --list-sources to see available sources.');
       process.exitCode = 1;
       return;
     }
-    const name = await resolveNameForPrefix(mode.name);
-    if (name === null) {
-      console.warn(`Could not resolve resource name for source: ${mode.name}`);
+
+    const rows: InsightsSourceStats[] = [];
+    for (const sourceName of mode.names) {
+      const name = await resolveNameForPrefix(sourceName);
+      if (name === null) {
+        console.warn(`Could not resolve resource name for source: ${sourceName}`);
+      }
+      const nameEn = name?.nameEn ?? sourceName;
+      const bundle = readInsights(sourceName);
+      const row = analyzeInsightsBundle(sourceName, nameEn, bundle);
+      if (row === null) {
+        console.error(`No tripPatternStats data for source: ${sourceName}`);
+        process.exitCode = 1;
+        return;
+      }
+      rows.push(row);
     }
-    const nameEn = name?.nameEn ?? mode.name;
-    const bundle = readInsights(mode.name);
-    const row = analyzeInsightsBundle(mode.name, nameEn, bundle);
-    if (row === null) {
-      console.error(`No tripPatternStats data for source: ${mode.name}`);
-      process.exitCode = 1;
-      return;
-    }
-    console.log(formatInsightsAnalysis([row]));
+
+    console.log(formatInsightsAnalysis(rows, { sections }));
     return;
   }
 
@@ -197,7 +204,7 @@ async function main(): Promise<void> {
     }
     rows.push(row);
   }
-  console.log(formatInsightsAnalysis(rows));
+  console.log(formatInsightsAnalysis(rows, { sections }));
 }
 
 runMain(main);

@@ -118,6 +118,20 @@ export interface StopTimesAnalysis {
   headsignCoverage: HeadsignCoverage;
 }
 
+export const GTFS_STOP_TIMES_SECTION_NAMES = [
+  'stop-position-summary',
+  'terminal-only-stops',
+  'circular-routes',
+  'dwell-time-stops',
+  'terminal-time-pattern',
+  'pickup-drop-off-type-usage',
+  'pass-through-stops',
+  'interpolation',
+  'headsign-coverage',
+] as const;
+
+export type GtfsStopTimesSectionName = (typeof GTFS_STOP_TIMES_SECTION_NAMES)[number];
+
 // ---------------------------------------------------------------------------
 // Analysis
 // ---------------------------------------------------------------------------
@@ -441,7 +455,11 @@ function analyzeHeadsignCoverage(db: Database.Database): HeadsignCoverage {
  * @param analysis - Analysis result from {@link analyzeStopTimes}.
  * @returns Multi-line formatted string suitable for console output or file writing.
  */
-export function formatAnalysis(sourceName: string, analysis: StopTimesAnalysis): string {
+export function formatAnalysis(
+  sourceName: string,
+  analysis: StopTimesAnalysis,
+  options: { sections?: GtfsStopTimesSectionName[] } = {},
+): string {
   const lines: string[] = [];
   const {
     positionSummary,
@@ -454,111 +472,190 @@ export function formatAnalysis(sourceName: string, analysis: StopTimesAnalysis):
     interpolation,
     headsignCoverage,
   } = analysis;
+  const requestedSections = new Set(
+    options.sections === undefined || options.sections.length === 0
+      ? GTFS_STOP_TIMES_SECTION_NAMES
+      : options.sections,
+  );
+
+  const formatPercent = (count: number, total: number): string => {
+    if (total === 0) {
+      return '0.0%';
+    }
+    return `${((count / total) * 100).toFixed(1)}%`;
+  };
+
+  const pushExamples = (items: string[], emptyLabel = '  (none)'): void => {
+    lines.push('### Examples');
+    if (items.length === 0) {
+      lines.push(emptyLabel);
+      lines.push('');
+      return;
+    }
+
+    lines.push(...items);
+    lines.push('');
+  };
 
   lines.push(`=== ${sourceName} ===`);
   lines.push('');
 
   // Position summary
-  lines.push('## Stop Position Summary');
-  lines.push(`  Total stop_times: ${positionSummary.totalStopTimes}`);
-  lines.push(`  First (origin):   ${positionSummary.first}`);
-  lines.push(`  Last (terminal):  ${positionSummary.last}`);
-  lines.push(`  Middle:           ${positionSummary.middle}`);
-  lines.push('');
+  if (requestedSections.has('stop-position-summary')) {
+    lines.push('## Stop Position Summary');
+    lines.push('### Totals');
+    lines.push(`stop_times=${positionSummary.totalStopTimes}`);
+    lines.push(
+      `first=${positionSummary.first} (${formatPercent(positionSummary.first, positionSummary.totalStopTimes)})`,
+    );
+    lines.push(
+      `last=${positionSummary.last} (${formatPercent(positionSummary.last, positionSummary.totalStopTimes)})`,
+    );
+    lines.push(
+      `middle=${positionSummary.middle} (${formatPercent(positionSummary.middle, positionSummary.totalStopTimes)})`,
+    );
+    lines.push('');
+  }
 
   // Terminal-only stops
-  lines.push(`## Terminal-Only Stops (${terminalOnlyStops.length})`);
-  if (terminalOnlyStops.length > 0) {
-    for (const s of terminalOnlyStops.slice(0, 20)) {
-      lines.push(`  ${s.stopId} ${s.stopName} (${s.appearances} appearances)`);
-    }
+  if (requestedSections.has('terminal-only-stops')) {
+    lines.push(`## Terminal-Only Stops (${terminalOnlyStops.length})`);
+    lines.push('### Totals');
+    lines.push(`count=${terminalOnlyStops.length}`);
+    lines.push('');
+    const terminalOnlyExamples = terminalOnlyStops
+      .slice(0, 20)
+      .map((s) => `  ${s.stopId} ${s.stopName} (appearances=${s.appearances})`);
     if (terminalOnlyStops.length > 20) {
-      lines.push(`  ... and ${terminalOnlyStops.length - 20} more`);
+      terminalOnlyExamples.push(`  ... and ${terminalOnlyStops.length - 20} more`);
     }
-  } else {
-    lines.push('  (none)');
+    pushExamples(terminalOnlyExamples);
+    lines.push('');
   }
-  lines.push('');
 
   // Circular routes
-  lines.push(`## Circular Routes (${circularRoutes.length})`);
-  if (circularRoutes.length > 0) {
-    for (const r of circularRoutes.slice(0, 20)) {
-      lines.push(
-        `  ${r.routeId} [${r.routeShortName}] loop at ${r.loopStopId} ${r.loopStopName} (${r.tripCount} trips)`,
+  if (requestedSections.has('circular-routes')) {
+    lines.push(`## Circular Routes (${circularRoutes.length})`);
+    lines.push('### Totals');
+    lines.push(`count=${circularRoutes.length}`);
+    lines.push('');
+    const circularExamples = circularRoutes
+      .slice(0, 20)
+      .map(
+        (r) =>
+          `  ${r.routeId} [${r.routeShortName}] loopStop=${r.loopStopId} ${r.loopStopName} (tripCount=${r.tripCount})`,
       );
-    }
     if (circularRoutes.length > 20) {
-      lines.push(`  ... and ${circularRoutes.length - 20} more`);
+      circularExamples.push(`  ... and ${circularRoutes.length - 20} more`);
     }
-  } else {
-    lines.push('  (none)');
+    pushExamples(circularExamples);
+    lines.push('');
   }
-  lines.push('');
 
   // Dwell time
-  lines.push(`## Dwell Time Stops (arrival != departure) (${dwellTimeEntries.length})`);
-  if (dwellTimeEntries.length > 0) {
-    for (const d of dwellTimeEntries.slice(0, 10)) {
-      lines.push(`  ${d.stopId} ${d.stopName} (${d.count} entries)`);
-    }
+  if (requestedSections.has('dwell-time-stops')) {
+    lines.push(`## Dwell Time Stops (arrival != departure) (${dwellTimeEntries.length})`);
+    lines.push('### Totals');
+    lines.push(`count=${dwellTimeEntries.length}`);
+    lines.push('');
+    const dwellExamples = dwellTimeEntries
+      .slice(0, 10)
+      .map((d) => `  ${d.stopId} ${d.stopName} (entries=${d.count})`);
     if (dwellTimeEntries.length > 10) {
-      lines.push(`  ... and ${dwellTimeEntries.length - 10} more`);
+      dwellExamples.push(`  ... and ${dwellTimeEntries.length - 10} more`);
     }
-  } else {
-    lines.push('  (none)');
+    pushExamples(dwellExamples);
+    lines.push('');
   }
-  lines.push('');
 
   // Terminal time pattern
-  lines.push('## Terminal Time Pattern');
-  lines.push(`  Total terminal:         ${terminalTimePattern.totalTerminal}`);
-  lines.push(`  arrival = departure:    ${terminalTimePattern.arrivalEqualsDeparture}`);
-  lines.push(`  arrival != departure:   ${terminalTimePattern.arrivalDiffersDeparture}`);
-  lines.push(`  arrival NULL:           ${terminalTimePattern.arrivalNull}`);
-  lines.push(`  departure NULL:         ${terminalTimePattern.departureNull}`);
-  lines.push(`  both NULL:              ${terminalTimePattern.bothNull}`);
-  lines.push('');
+  if (requestedSections.has('terminal-time-pattern')) {
+    lines.push('## Terminal Time Pattern');
+    lines.push('### Totals');
+    lines.push(`terminalStopTimes=${terminalTimePattern.totalTerminal}`);
+    lines.push(
+      `arrivalEqualsDeparture=${terminalTimePattern.arrivalEqualsDeparture} (${formatPercent(terminalTimePattern.arrivalEqualsDeparture, terminalTimePattern.totalTerminal)})`,
+    );
+    lines.push(
+      `arrivalDiffersDeparture=${terminalTimePattern.arrivalDiffersDeparture} (${formatPercent(terminalTimePattern.arrivalDiffersDeparture, terminalTimePattern.totalTerminal)})`,
+    );
+    lines.push(
+      `arrivalNull=${terminalTimePattern.arrivalNull} (${formatPercent(terminalTimePattern.arrivalNull, terminalTimePattern.totalTerminal)})`,
+    );
+    lines.push(
+      `departureNull=${terminalTimePattern.departureNull} (${formatPercent(terminalTimePattern.departureNull, terminalTimePattern.totalTerminal)})`,
+    );
+    lines.push(
+      `bothNull=${terminalTimePattern.bothNull} (${formatPercent(terminalTimePattern.bothNull, terminalTimePattern.totalTerminal)})`,
+    );
+    lines.push('');
+  }
 
   // Pickup/Drop-off
-  lines.push('## Pickup/Drop-off Type Usage');
-  lines.push(
-    `  pickup_type=1 (no pickup):     ${pickupDropOff.pickupType1Count} / ${pickupDropOff.totalStopTimes}`,
-  );
-  lines.push(`    at terminal:                 ${pickupDropOff.pickupType1Terminal}`);
-  lines.push(`    at non-terminal:             ${pickupDropOff.pickupType1NonTerminal}`);
-  lines.push(
-    `  drop_off_type=1 (no drop-off): ${pickupDropOff.dropOffType1Count} / ${pickupDropOff.totalStopTimes}`,
-  );
-  lines.push(`    at first (origin):           ${pickupDropOff.dropOffType1First}`);
-  lines.push(`    at non-first:                ${pickupDropOff.dropOffType1NonFirst}`);
-  lines.push('');
+  if (requestedSections.has('pickup-drop-off-type-usage')) {
+    lines.push('## Pickup/Drop-off Type Usage');
+    lines.push('### Totals');
+    lines.push(
+      `pickup_type=1=${pickupDropOff.pickupType1Count} / ${pickupDropOff.totalStopTimes} (${formatPercent(pickupDropOff.pickupType1Count, pickupDropOff.totalStopTimes)})`,
+    );
+    lines.push(
+      `pickup_type=1 at terminal=${pickupDropOff.pickupType1Terminal} (${formatPercent(pickupDropOff.pickupType1Terminal, pickupDropOff.pickupType1Count)})`,
+    );
+    lines.push(
+      `pickup_type=1 at nonTerminal=${pickupDropOff.pickupType1NonTerminal} (${formatPercent(pickupDropOff.pickupType1NonTerminal, pickupDropOff.pickupType1Count)})`,
+    );
+    lines.push(
+      `drop_off_type=1=${pickupDropOff.dropOffType1Count} / ${pickupDropOff.totalStopTimes} (${formatPercent(pickupDropOff.dropOffType1Count, pickupDropOff.totalStopTimes)})`,
+    );
+    lines.push(
+      `drop_off_type=1 at first=${pickupDropOff.dropOffType1First} (${formatPercent(pickupDropOff.dropOffType1First, pickupDropOff.dropOffType1Count)})`,
+    );
+    lines.push(
+      `drop_off_type=1 at nonFirst=${pickupDropOff.dropOffType1NonFirst} (${formatPercent(pickupDropOff.dropOffType1NonFirst, pickupDropOff.dropOffType1Count)})`,
+    );
+    lines.push('');
+  }
 
   // Pass-through stops
-  lines.push(`## Pass-Through Stops (pickup=1 AND drop_off=1) (${passThroughStops.count})`);
-  if (passThroughStops.stops.length > 0) {
-    for (const s of passThroughStops.stops.slice(0, 10)) {
-      lines.push(`  ${s.stopId} ${s.stopName} (${s.count} entries)`);
-    }
+  if (requestedSections.has('pass-through-stops')) {
+    lines.push(`## Pass-Through Stops (pickup=1 AND drop_off=1) (${passThroughStops.count})`);
+    lines.push('### Totals');
+    lines.push(`count=${passThroughStops.count}`);
+    lines.push(`distinctStops=${passThroughStops.stops.length}`);
+    lines.push('');
+    const passThroughExamples = passThroughStops.stops
+      .slice(0, 10)
+      .map((s) => `  ${s.stopId} ${s.stopName} (entries=${s.count})`);
     if (passThroughStops.stops.length > 10) {
-      lines.push(`  ... and ${passThroughStops.stops.length - 10} more`);
+      passThroughExamples.push(`  ... and ${passThroughStops.stops.length - 10} more`);
     }
-  } else {
-    lines.push('  (none)');
+    pushExamples(passThroughExamples);
+    lines.push('');
   }
-  lines.push('');
 
   // Interpolation
-  lines.push('## Interpolation (both times NULL)');
-  lines.push(`  ${interpolation.count} / ${interpolation.totalStopTimes}`);
-  lines.push('');
+  if (requestedSections.has('interpolation')) {
+    lines.push('## Interpolation (both times NULL)');
+    lines.push('### Totals');
+    lines.push(
+      `count=${interpolation.count} / ${interpolation.totalStopTimes} (${formatPercent(interpolation.count, interpolation.totalStopTimes)})`,
+    );
+    lines.push('');
+  }
 
   // Headsign coverage
-  lines.push('## Headsign Coverage');
-  lines.push(`  Total trips:      ${headsignCoverage.totalTrips}`);
-  lines.push(`  With headsign:    ${headsignCoverage.withHeadsign}`);
-  lines.push(`  Without headsign: ${headsignCoverage.withoutHeadsign}`);
-  lines.push('');
+  if (requestedSections.has('headsign-coverage')) {
+    lines.push('## Headsign Coverage');
+    lines.push('### Totals');
+    lines.push(`trips=${headsignCoverage.totalTrips}`);
+    lines.push(
+      `withHeadsign=${headsignCoverage.withHeadsign} (${formatPercent(headsignCoverage.withHeadsign, headsignCoverage.totalTrips)})`,
+    );
+    lines.push(
+      `withoutHeadsign=${headsignCoverage.withoutHeadsign} (${formatPercent(headsignCoverage.withoutHeadsign, headsignCoverage.totalTrips)})`,
+    );
+    lines.push('');
+  }
 
   return lines.join('\n');
 }
