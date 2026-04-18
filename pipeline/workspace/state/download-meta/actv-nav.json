@@ -2,16 +2,16 @@
   "sourceName": "actv-nav",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-04-17T05:13:09.053Z",
+  "downloadedAt": "2026-04-18T04:55:17.295Z",
   "url": "https://actv.avmspa.it/sites/default/files/attachments/opendata/navigazione/actv_nav.zip",
-  "size": 4041823,
+  "size": 2200196,
   "contentType": "application/zip",
-  "durationMs": 1943,
-  "archivePath": "workspace/_archives/gtfs/actv-nav/actv_nav_20260417-051310.zip",
+  "durationMs": 1716,
+  "archivePath": "workspace/_archives/gtfs/actv-nav/actv_nav_20260418-045518.zip",
   "extractedFiles": [
     {
       "name": "routes.txt",
-      "size": 2010
+      "size": 2002
     },
     {
       "name": "calendar.txt",
@@ -19,11 +19,11 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 1829
+      "size": 611
     },
     {
       "name": "stop_times.txt",
-      "size": 33127883
+      "size": 16528229
     },
     {
       "name": "agency.txt",
@@ -31,7 +31,7 @@
     },
     {
       "name": "shapes.txt",
-      "size": 2214977
+      "size": 1878875
     },
     {
       "name": "feed_info.txt",
@@ -39,19 +39,19 @@
     },
     {
       "name": "trips.txt",
-      "size": 3212446
+      "size": 1595901
     },
     {
       "name": "stops.txt",
-      "size": 9756
+      "size": 9616
     }
   ],
   "feedInfo": {
     "publisherName": "ACTV S.p.a",
     "publisherUrl": "http://www.actv.it/",
     "lang": "IT",
-    "startDate": "20260320",
-    "endDate": "20260523",
+    "startDate": "20260421",
+    "endDate": "20260522",
     "version": ""
   }
 }
