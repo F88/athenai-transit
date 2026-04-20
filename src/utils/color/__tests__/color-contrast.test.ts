@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {
-  contrastRatio,
-  getContrastAssessment,
   LOW_CONTRAST_BADGE_MIN_RATIO,
   LOW_CONTRAST_TEXT_MIN_RATIO,
+} from '../../../domain/transit/color-resolver/contrast-thresholds';
+import {
+  contrastRatio,
+  getContrastAssessment,
   passesAA,
   suggestTextColor,
 } from '../color-contrast';
@@ -206,7 +208,7 @@ describe('passesAA', () => {
 describe('getContrastAssessment', () => {
   describe('logical threshold behavior', () => {
     it('returns true for identical colors at the default badge threshold of 1.2', () => {
-      const assessment = getContrastAssessment('#ffffff', '#ffffff');
+      const assessment = getContrastAssessment('#ffffff', '#ffffff', LOW_CONTRAST_BADGE_MIN_RATIO);
       expect(assessment.isLowContrast).toBe(true);
       expect(assessment.ratio).toBe(1);
     });
@@ -225,7 +227,7 @@ describe('getContrastAssessment', () => {
     ])(
       'returns false when contrast is comfortably above the default threshold: $color on $background ($note)',
       ({ color, background }) => {
-        const assessment = getContrastAssessment(color, background);
+        const assessment = getContrastAssessment(color, background, LOW_CONTRAST_BADGE_MIN_RATIO);
         expect(assessment.isLowContrast).toBe(false);
         expect(assessment.ratio).not.toBeNull();
       },
@@ -247,12 +249,14 @@ describe('getContrastAssessment', () => {
     });
 
     it('returns false when either color is invalid (cannot measure → no outline)', () => {
-      expect(getContrastAssessment('not-a-color', '#ffffff')).toEqual({
-        ratio: null,
-        minRatio: LOW_CONTRAST_BADGE_MIN_RATIO,
-        isLowContrast: false,
-      });
-      expect(getContrastAssessment('#ffffff', '')).toEqual({
+      expect(getContrastAssessment('not-a-color', '#ffffff', LOW_CONTRAST_BADGE_MIN_RATIO)).toEqual(
+        {
+          ratio: null,
+          minRatio: LOW_CONTRAST_BADGE_MIN_RATIO,
+          isLowContrast: false,
+        },
+      );
+      expect(getContrastAssessment('#ffffff', '', LOW_CONTRAST_BADGE_MIN_RATIO)).toEqual({
         ratio: null,
         minRatio: LOW_CONTRAST_BADGE_MIN_RATIO,
         isLowContrast: false,
@@ -275,7 +279,7 @@ describe('getContrastAssessment', () => {
     ])(
       'returns true for production route colors that still need an outline at 1.2: $color on $background ($note)',
       ({ color, background, note }) => {
-        const assessment = getContrastAssessment(color, background);
+        const assessment = getContrastAssessment(color, background, LOW_CONTRAST_BADGE_MIN_RATIO);
         console.debug('contrast assessment route-color fixture', {
           color,
           background,
@@ -317,7 +321,7 @@ describe('getContrastAssessment', () => {
     ])(
       'returns false for production route colors that no longer need an outline at 1.2: $color on $background ($note)',
       ({ color, background, note }) => {
-        const assessment = getContrastAssessment(color, background);
+        const assessment = getContrastAssessment(color, background, LOW_CONTRAST_BADGE_MIN_RATIO);
         console.debug('contrast assessment route-color fixture', {
           color,
           background,

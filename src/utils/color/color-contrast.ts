@@ -30,25 +30,6 @@ export interface ContrastAssessment {
   isLowContrast: boolean;
 }
 
-/**
- * Default threshold for colored fills such as route badges and pills.
- *
- * This is intentionally permissive: `1.2` protects colors that are
- * nearly indistinguishable from the surrounding surface, while still
- * allowing pale but still visible badge fills.
- */
-export const LOW_CONTRAST_BADGE_MIN_RATIO = 1.2;
-
-/**
- * Default threshold for using a color directly as text or as a thin
- * accent that must read clearly against the theme background.
- *
- * This is intentionally looser than WCAG AA because it is used for
- * route-colored time text and thin transit accents, where preserving
- * the operator color is still important.
- */
-export const LOW_CONTRAST_TEXT_MIN_RATIO = 1.7;
-
 function clamp255(v: number): number {
   return Math.max(0, Math.min(255, v));
 }
@@ -268,17 +249,14 @@ export function passesAA(foreground: string, background: string): boolean {
  * @param color - Foreground color (CSS hex, rgb, or hsl).
  * @param bg - Background color (CSS hex, rgb, or hsl).
  * @param minRatio - Contrast threshold below which the pair is
- *   considered low-contrast. Default
- *   {@link LOW_CONTRAST_BADGE_MIN_RATIO} — tuned for filled badges and
- *   pills that need an outline only when they nearly disappear into
- *   the surrounding surface.
+ *   considered low-contrast.
  * @returns An assessment object with both the raw ratio and the
  *   boolean low-contrast classification.
  */
 export function getContrastAssessment(
   color: string,
   bg: string,
-  minRatio: number = LOW_CONTRAST_BADGE_MIN_RATIO,
+  minRatio: number,
 ): ContrastAssessment {
   const ratio = contrastRatio(color, bg)?.ratio;
 

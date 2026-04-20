@@ -1,5 +1,8 @@
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
-import { LOW_CONTRAST_BADGE_MIN_RATIO, LOW_CONTRAST_TEXT_MIN_RATIO } from '@/utils/color-contrast';
+import {
+  LOW_CONTRAST_BADGE_MIN_RATIO,
+  LOW_CONTRAST_TEXT_MIN_RATIO,
+} from '@/domain/transit/color-resolver/contrast-thresholds';
 import { BaseLabel } from '../label/base-label';
 
 interface ColorPaletteProps {
@@ -61,6 +64,7 @@ export function ColorPaletteForBadge({
   minRatio = LOW_CONTRAST_BADGE_MIN_RATIO,
 }: ColorPaletteProps) {
   const assessment = useThemeContrastAssessment(color, minRatio);
+
   return (
     <PaletteFrame>
       <code className="font-mono">{color}</code>

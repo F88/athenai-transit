@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { contrastRatio } from '@/utils/color/color-contrast';
 import { ColorPaletteForBadge, ColorPaletteForText } from './color-palette';
 
 type PaletteStoryItem = {
@@ -11,6 +12,9 @@ type PaletteStoryItem = {
 const meta = {
   title: 'Dev/ColorPalette',
   component: ColorPaletteForBadge,
+  args: {
+    color: '#000000',
+  },
   argTypes: {
     color: { control: 'color' },
     text: { control: 'text' },
@@ -58,14 +62,145 @@ function renderPaletteComparison(items: readonly PaletteStoryItem[]) {
   );
 }
 
-/** Three baseline colors with badge/text comparison. */
-export const WhiteBlackBlueComparison: Story = {
-  args: { color: '#FFFFFF' },
+function renderRoutePairContrastComparison(items: readonly PaletteStoryItem[]) {
+  const rows = items
+    .map((item) => {
+      const ratio = item.textColor
+        ? (contrastRatio(item.textColor, item.color)?.ratio ?? null)
+        : null;
+
+      return {
+        ...item,
+        ratio,
+      };
+    })
+    .sort((a, b) => {
+      if (a.ratio == null && b.ratio == null) {
+        return a.id.localeCompare(b.id);
+      }
+      if (a.ratio == null) {
+        return 1;
+      }
+      if (b.ratio == null) {
+        return -1;
+      }
+      return a.ratio - b.ratio;
+    });
+
+  return (
+    <div className="flex flex-col gap-2">
+      {rows.map((item) => (
+        <div key={item.id} className="border-app-neutral/70 rounded-md border px-2 py-1">
+          <div className="flex min-w-0 flex-col gap-2 md:flex-row md:items-center">
+            <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs md:w-96">
+              <span className="font-mono">{item.id}</span>
+              <span className="font-mono">bg {item.color}</span>
+              <span className="font-mono">fg {item.textColor ?? 'n/a'}</span>
+              <span className="bg-muted rounded border px-1.5 py-0.5 font-mono">
+                pair ratio {item.ratio?.toFixed(2) ?? 'n/a'}
+              </span>
+            </div>
+            <div className="flex min-w-0 flex-1 items-center">
+              <ColorPaletteForBadge
+                color={item.color}
+                text={item.text}
+                textColor={item.textColor}
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Baseline colors plus the app default route/text pair for badge/text comparison. */
+export const BlackWhiteGrayComparison: Story = {
   render: () =>
     renderPaletteComparison([
-      { id: 'white', color: '#FFFFFF', text: 'White sample', textColor: '#000000' },
       { id: 'black', color: '#000000', text: 'Black sample', textColor: '#FFFFFF' },
-      { id: 'blue', color: '#1976D2', text: 'Blue sample', textColor: '#FFFFFF' },
+      { id: 'white', color: '#FFFFFF', text: 'White sample', textColor: '#000000' },
+      { id: 'gray', color: '#808080', text: 'Gray sample', textColor: '#FFFFFF' },
+      {
+        id: 'default',
+        color: '#333333',
+        text: 'Default pair',
+        textColor: '#F1F1F1',
+      },
+    ]),
+};
+
+/** Low-contrast candidates for checking light-theme edge cases around white-ish colors. */
+export const LowContrastOnLightThemeComparison: Story = {
+  render: () =>
+    renderPaletteComparison([
+      {
+        id: 'Default route text color reused as route color (#F1F1F1)',
+        color: '#F1F1F1',
+        text: 'Default route text color sample',
+        textColor: '#333333',
+      },
+      {
+        id: 'Pure white route color (#FFFFFF)',
+        color: '#FFFFFF',
+        text: 'Pure white route color sample',
+        textColor: '#333333',
+      },
+      {
+        id: 'Near-white route color (#FFFFFE)',
+        color: '#FFFFFE',
+        text: 'Near-white route color sample',
+        textColor: '#333333',
+      },
+      {
+        id: 'Off-white route color (#F8F8F8)',
+        color: '#F8F8F8',
+        text: 'Off-white route color sample',
+        textColor: '#333333',
+      },
+      {
+        id: 'Very light gray route color (#FAFAFA)',
+        color: '#FAFAFA',
+        text: 'Very light gray route color sample',
+        textColor: '#333333',
+      },
+    ]),
+};
+
+/** Low-contrast candidates for checking dark/light edge cases around the defaults. */
+export const LowContrastOnDarkThemeComparison: Story = {
+  render: () =>
+    renderPaletteComparison([
+      {
+        id: 'Default route color (#333333)',
+        color: '#333333',
+        text: 'Default route color sample',
+        textColor: '#F1F1F1',
+      },
+      {
+        id: 'Pure black route color (#000000)',
+        color: '#000000',
+        text: 'Pure black route color sample',
+        textColor: '#F1F1F1',
+      },
+      {
+        id: 'Dark route color (#222222)',
+        color: '#222222',
+        text: 'Dark route color sample',
+        textColor: '#F1F1F1',
+      },
+      {
+        id: 'Theme-near route color (#1F2937)',
+        color: '#1F2937',
+        text: 'Theme-near route color sample',
+        textColor: '#F1F1F1',
+      },
+      {
+        id: 'Theme-background route color (#111827)',
+        color: '#111827',
+        text: 'Theme-background route color sample',
+        textColor: '#F1F1F1',
+      },
     ]),
 };
 
@@ -227,6 +362,21 @@ const MINKURU_ROUTES = [
   { id: 'minkuru:289', color: '#EB6C78', textColor: '#FFFFFF', shortName: '梅７７丁' },
   { id: 'minkuru:291', color: '#7B6FAE', textColor: '#FFFFFF', shortName: '梅０１' },
 ] as const;
+/**
+ * Minkuru route color/textColor pairs with their direct pair contrast
+ * ratio, sorted from lowest ratio upward.
+ */
+export const MinkuruRoutePairContrastComparison: Story = {
+  render: () =>
+    renderRoutePairContrastComparison(
+      MINKURU_ROUTES.map((route) => ({
+        id: route.id,
+        color: route.color,
+        textColor: route.textColor,
+        text: route.shortName,
+      })),
+    ),
+};
 
 /**
  * All Toei Bus (都営バス) routes rendered as a column so the

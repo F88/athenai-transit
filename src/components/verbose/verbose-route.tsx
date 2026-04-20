@@ -2,7 +2,11 @@ import type { InfoLevel } from '../../types/app/settings';
 import type { Route } from '../../types/app/transit';
 import type { RouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { formatRouteLabel } from '../../domain/transit/format-route-label';
-import { resolveGtfsColor } from '../../domain/transit/color-resolver/resolve-colors';
+import {
+  DEFAULT_GTFS_COLOR,
+  normalizeGtfsColor,
+  resolveGtfsColor,
+} from '../../domain/transit/color-resolver/resolve-gtfs-color';
 import { VerboseRouteDisplayNames } from './verbose-route-display-names';
 import { VerboseRouteColors } from './verbose-route-colors';
 
@@ -24,8 +28,14 @@ export function VerboseRoute({
   defaultOpen?: boolean;
 }) {
   const label = formatRouteLabel(names, infoLevel);
-  const cssRouteColor = resolveGtfsColor(route.route_color, 'css-hex');
-  const cssRouteTextColor = resolveGtfsColor(route.route_text_color, 'css-hex');
+  const cssRouteColor = resolveGtfsColor(
+    normalizeGtfsColor(route.route_color, DEFAULT_GTFS_COLOR),
+    'css-hex',
+  );
+  const cssRouteTextColor = resolveGtfsColor(
+    normalizeGtfsColor(route.route_text_color, DEFAULT_GTFS_COLOR),
+    'css-hex',
+  );
   const summaryName =
     names.resolved.name || route.route_long_name || route.route_short_name || route.route_id;
 

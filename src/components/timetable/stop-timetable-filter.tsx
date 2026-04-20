@@ -4,6 +4,7 @@ import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direc
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
 import { getSelectedHeadsignDisplayName } from '@/domain/transit/get-headsign-display-names';
 import { groupByRouteHeadsign } from '@/domain/transit/group-timetable-entries';
+import { LOW_CONTRAST_BADGE_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
 import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import {
   useThemeContrastBackgroundColor,
@@ -11,7 +12,7 @@ import {
 } from '@/hooks/use-is-low-contrast-against-theme';
 import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
-import { getContrastAssessment, LOW_CONTRAST_BADGE_MIN_RATIO } from '@/utils/color-contrast';
+import { getContrastAssessment } from '@/utils/color/color-contrast';
 import { PillButton } from '../button/pill-button';
 
 interface StopTimetableFilterProps {

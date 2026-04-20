@@ -1,16 +1,18 @@
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
+import {
+  getAdjustedRouteColors,
+  normalizeResolvedRouteColors,
+} from '@/domain/transit/color-resolver/route-colors';
+import { LOW_CONTRAST_TEXT_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
 import { useTranslation } from 'react-i18next';
 import { minutesToDate } from '../domain/transit/calendar-utils';
-import { convertGtfsColor } from '../domain/transit/gtfs-color';
-import { getAdjustedRouteColors } from '../domain/transit/color-resolver/route-colors';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
 import { getDisplayMinutes } from '../domain/transit/timetable-utils';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
-import { LOW_CONTRAST_TEXT_MIN_RATIO } from '../utils/color-contrast';
 import { JourneyTimeBar } from './journey-time-bar';
 import { BaseLabel } from './label/base-label';
 import { TripPositionIndicator } from './label/trip-position-indicator';
@@ -101,7 +103,7 @@ export function StopTimeItem({
 
   // Route colors
   const { route } = entry.routeDirection;
-  const routeColor = convertGtfsColor(route.route_color, 'css-hex');
+  const { routeColor } = normalizeResolvedRouteColors(route, 'css-hex');
   const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_TEXT_MIN_RATIO);
   const adjustedRouteTextColors = getAdjustedRouteColors(
     route,

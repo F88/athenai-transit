@@ -1,9 +1,6 @@
 import { useSyncExternalStore } from 'react';
-import {
-  getContrastAssessment,
-  LOW_CONTRAST_BADGE_MIN_RATIO,
-  type ContrastAssessment,
-} from '../utils/color-contrast';
+import { LOW_CONTRAST_BADGE_MIN_RATIO } from '../domain/transit/color-resolver/contrast-thresholds';
+import { getContrastAssessment, type ContrastAssessment } from '../utils/color/color-contrast';
 
 /** Background color used as the reference when the user is on the light theme. */
 const LIGHT_BG = '#ffffff';
@@ -113,26 +110,17 @@ export function useThemeNeutralBorderColor(): string {
  * toggle happens in the component tree.
  *
  * @param color - Foreground color (CSS hex, rgb, or hsl). Typically
- *   a GTFS `route_color` prefixed with `#`. Passing `undefined`
- *   returns `false` (no color → nothing to protect against).
+ *   a GTFS `route_color` prefixed with `#`.
  * @param minRatio - WCAG contrast ratio threshold. Defaults to
  *   {@link DEFAULT_BADGE_MIN_RATIO}.
  * @returns An assessment object with both the raw ratio and the
  *   boolean low-contrast classification.
  */
 export function useThemeContrastAssessment(
-  color: string | undefined,
+  color: string,
   minRatio: number = DEFAULT_BADGE_MIN_RATIO,
 ): ContrastAssessment {
   const bg = useThemeContrastBackgroundColor();
-
-  if (!color) {
-    return {
-      ratio: null,
-      minRatio,
-      isLowContrast: false,
-    };
-  }
 
   return getContrastAssessment(color, bg, minRatio);
 }

@@ -2,10 +2,10 @@ import type { InfoLevel } from '../../types/app/settings';
 import type { Route } from '../../types/app/transit';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
+import { LOW_CONTRAST_BADGE_MIN_RATIO } from '../../domain/transit/color-resolver/contrast-thresholds';
 import { resolveRouteColors } from '../../domain/transit/color-resolver/route-colors';
 import { useThemeContrastAssessment } from '../../hooks/use-is-low-contrast-against-theme';
 import { cn } from '../../lib/utils';
-import { LOW_CONTRAST_BADGE_MIN_RATIO } from '../../utils/color-contrast';
 import { BaseLabel, type BaseLabelSize } from '../label/base-label';
 import { IdBadge } from './id-badge';
 import { VerboseRoute } from '../verbose/verbose-route';
@@ -72,7 +72,10 @@ export function RouteBadge({
 }: RouteBadgeProps) {
   const routeNames = getRouteDisplayNames(route, dataLang, agencyLangs, 'short');
   const { routeColor, routeTextColor } = resolveRouteColors(route, 'css-hex');
-  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
+  const routeColorAssessment = useThemeContrastAssessment(
+    routeColor ?? '',
+    LOW_CONTRAST_BADGE_MIN_RATIO,
+  );
   const frameColor =
     !showBorder || borderStyle !== 'context'
       ? undefined

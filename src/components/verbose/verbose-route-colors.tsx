@@ -1,10 +1,10 @@
 import {
   getAdjustedRouteColors,
-  normalizeRouteColors,
+  normalizeResolvedRouteColors,
 } from '@/domain/transit/color-resolver/route-colors';
+import { LOW_CONTRAST_TEXT_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import type { Route } from '@/types/app/transit';
-import { LOW_CONTRAST_TEXT_MIN_RATIO } from '@/utils/color-contrast';
 import { BaseLabel } from '../label/base-label';
 
 function ContrastFlagBadge({ isLowContrast }: { isLowContrast: boolean }) {
@@ -41,7 +41,7 @@ function AdjustedRouteTextColorDetails({
  */
 export function VerboseRouteColors({ route }: { route: Route }) {
   const minRatio = LOW_CONTRAST_TEXT_MIN_RATIO;
-  const { routeColor, routeTextColor } = normalizeRouteColors(route, 'css-hex');
+  const { routeColor, routeTextColor } = normalizeResolvedRouteColors(route, 'css-hex');
   // Assess contrast for original colors
   const routeColorAssessment = useThemeContrastAssessment(routeColor, minRatio);
   // const routeTextColorAssessment = useThemeContrastAssessment(routeTextColor, minRatio);

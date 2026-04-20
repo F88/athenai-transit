@@ -66,6 +66,7 @@ import {
 } from '../domain/transit/calendar-utils';
 import { injectOriginLang } from '../domain/transit/i18n/inject-origin-lang';
 import { AGENCY_ATTRIBUTES } from '../config/agency-attributes';
+import { normalizeRouteGtfsColors } from '@/domain/transit/color-resolver/route-colors';
 
 /** Set of valid AppRouteTypeValue integers. Values outside this set are normalized to -1. */
 const VALID_ROUTE_TYPE_VALUES = new Set<number>(APP_ROUTE_TYPES.map((rt) => rt.value));
@@ -324,23 +325,31 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
   for (const source of sources) {
     const feedLang = feedLangByPrefix.get(source.prefix);
     for (const r of source.data.routes.data) {
+      // route_color and route_text_color
+      const colors = normalizeRouteGtfsColors(r.c, r.tc);
+
+      // short_name
+      const routeShortNames = injectOriginLang(
+        translationsMap.route_short_names[r.i] ?? {},
+        r.s,
+        feedLang,
+      );
+      // long_name
+      const routeLongNames = injectOriginLang(
+        translationsMap.route_long_names[r.i] ?? {},
+        r.l,
+        feedLang,
+      );
+      // Add route to map with normalized route_type and injected translations.
       routeMap.set(r.i, {
         route_id: r.i,
         route_short_name: r.s,
-        route_short_names: injectOriginLang(
-          translationsMap.route_short_names[r.i] ?? {},
-          r.s,
-          feedLang,
-        ),
+        route_short_names: routeShortNames,
         route_long_name: r.l,
-        route_long_names: injectOriginLang(
-          translationsMap.route_long_names[r.i] ?? {},
-          r.l,
-          feedLang,
-        ),
+        route_long_names: routeLongNames,
         route_type: (VALID_ROUTE_TYPE_VALUES.has(r.t) ? r.t : -1) as AppRouteTypeValue,
-        route_color: r.c,
-        route_text_color: r.tc,
+        route_color: colors.routeColor,
+        route_text_color: colors.routeTextColor,
         agency_id: r.ai,
       });
     }

@@ -1,17 +1,17 @@
 import type { Agency } from '@/types/app/transit';
-import type { GtfsColorFormat } from '../gtfs-color';
-import { normalizeHexColor, type OptionalColorPair } from '../../../utils/color-pair';
-import { formatResolvedColorPair } from './resolve-colors';
+import type { CssColor, GtfsColor, GtfsColorFormat } from '../../../types/app/gtfs-color';
+import type { ColorPair } from '../../../utils/color/color-pair';
+import { formatResolvedColorPair, normalizeOptionalGtfsColor } from './resolve-gtfs-color';
 
 /** Agency colors resolved for UI rendering from curated app-side attributes. */
-export interface ResolvedAgencyColors {
+export interface ResolvedAgencyColors<TColor = string> {
   /** Resolved primary agency background color. */
-  agencyColor?: string;
+  agencyColor?: TColor;
   /** Resolved text color paired with the primary agency color. */
-  agencyTextColor?: string;
+  agencyTextColor?: TColor;
 }
 
-function toResolvedAgencyColors(colors: OptionalColorPair): ResolvedAgencyColors {
+function toResolvedAgencyColors<TColor>(colors: ColorPair<TColor>): ResolvedAgencyColors<TColor> {
   return {
     agencyColor: colors.primaryColor,
     agencyTextColor: colors.secondaryColor,
@@ -28,21 +28,22 @@ function toResolvedAgencyColors(colors: OptionalColorPair): ResolvedAgencyColors
 export function resolveAgencyColors(
   agency: Pick<Agency, 'agency_colors'>,
   format: GtfsColorFormat = 'raw',
-): ResolvedAgencyColors {
+): ResolvedAgencyColors<GtfsColor | CssColor> {
   const primary = agency.agency_colors[0];
   if (!primary) {
     return {};
   }
 
-  const rawAgencyColor = normalizeHexColor(primary.bg);
-  const rawAgencyTextColor = normalizeHexColor(primary.text);
-  const resolved = formatResolvedColorPair(
-    {
-      primaryColor: rawAgencyColor,
-      secondaryColor: rawAgencyTextColor,
-    },
-    format,
-  );
+  const rawAgencyColor = normalizeOptionalGtfsColor(primary.bg);
+  const rawAgencyTextColor = normalizeOptionalGtfsColor(primary.text);
+  const rawColors = {
+    primaryColor: rawAgencyColor,
+    secondaryColor: rawAgencyTextColor,
+  } satisfies ColorPair<GtfsColor>;
 
-  return toResolvedAgencyColors(resolved);
+  if (format === 'css-hex') {
+    return toResolvedAgencyColors(formatResolvedColorPair(rawColors, 'css-hex'));
+  }
+
+  return toResolvedAgencyColors(formatResolvedColorPair(rawColors, 'raw'));
 }
