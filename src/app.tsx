@@ -4,7 +4,7 @@ import i18n from './i18n';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { AppRouteTypeValue, Stop } from './types/app/transit';
 import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
-import type { LoadResult } from './repositories/athenai-repository-v2';
+import type { LoadResult } from './repositories/athenai-repository';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
 import { useDateTime } from './hooks/use-date-time';

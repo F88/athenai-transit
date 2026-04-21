@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
+import { getHeadsignDisplayNames } from '../../../domain/transit/get-headsign-display-names';
 import { MockRepository } from '../mock-repository';
 
 function assertSuccess<T>(result: {

@@ -17,14 +17,14 @@
 import type {
   TransitDataSourceV2,
   SourceDataV2,
-} from '../../../datasources/transit-data-source-v2';
+} from '../../../../datasources/transit-data-source-v2';
 import type {
   DataBundle,
   ShapesBundle,
   InsightsBundle,
   GlobalInsightsBundle,
   TimetableGroupV2Json,
-} from '../../../types/data/transit-v2-json';
+} from '../../../../types/data/transit-v2-json';
 
 /**
  * In-memory v2 data source for testing.

@@ -15,30 +15,30 @@
  * - `sta_south`: subway(1) + rail(2)
  */
 
-import type { Bounds, LatLng, RouteShape } from '../types/app/map';
-import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
+import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
+import type { Agency, Route, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type {
   ContextualTimetableEntry,
   SourceMeta,
   StopWithMeta,
   TimetableEntry,
   TranslatableText,
-} from '../types/app/transit-composed';
+} from '../../types/app/transit-composed';
 import type {
   CollectionResult,
   Result,
   TimetableQueryMeta,
   TimetableResult,
   UpcomingTimetableResult,
-} from '../types/app/repository';
-import { getTimetableEntriesState } from '../domain/transit/timetable-utils';
-import { getServiceDay, getServiceDayMinutes } from '../domain/transit/service-day';
+} from '../../types/app/repository';
+import { getTimetableEntriesState } from '../../domain/transit/timetable-utils';
+import { getServiceDay, getServiceDayMinutes } from '../../domain/transit/service-day';
 import {
   sortTimetableEntriesByDepartureTime,
   sortTimetableEntriesChronologically,
-} from '../domain/transit/sort-timetable-entries';
-import { MAX_STOPS_RESULT } from './transit-repository';
-import type { TransitRepository } from './transit-repository';
+} from '../../domain/transit/sort-timetable-entries';
+import { MAX_STOPS_RESULT } from '../transit-repository';
+import type { TransitRepository } from '../transit-repository';
 
 // --- Mock agencies ---
 const AGENCY: Agency = {

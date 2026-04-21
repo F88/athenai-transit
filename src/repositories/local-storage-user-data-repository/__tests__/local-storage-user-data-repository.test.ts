@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { LocalStorageUserDataRepository } from '../local-storage-user-data-repository';
-import type { AnchorEntry } from '../../domain/portal/anchor';
-import type { AppRouteTypeValue } from '../../types/app/transit';
+import { LocalStorageUserDataRepository } from '../../local-storage-user-data-repository';
+import type { AnchorEntry } from '../../../domain/portal/anchor';
+import type { AppRouteTypeValue } from '../../../types/app/transit';
 
 const STORAGE_KEY = 'portals';
 
@@ -350,9 +350,9 @@ describe('LocalStorageUserDataRepository', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data).toHaveLength(3);
-        expect(result.data.find((a) => a.stopId === 'A')?.stopName).toBe('Updated A');
-        expect(result.data.find((a) => a.stopId === 'B')?.stopName).toBe('Stop B');
-        expect(result.data.find((a) => a.stopId === 'C')?.stopName).toBe('Updated C');
+        expect(result.data.find((a: AnchorEntry) => a.stopId === 'A')?.stopName).toBe('Updated A');
+        expect(result.data.find((a: AnchorEntry) => a.stopId === 'B')?.stopName).toBe('Stop B');
+        expect(result.data.find((a: AnchorEntry) => a.stopId === 'C')?.stopName).toBe('Updated C');
       }
 
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as AnchorEntry[];
@@ -433,8 +433,8 @@ describe('LocalStorageUserDataRepository', () => {
 
       expect(result.success).toBe(true);
       if (result.success) {
-        expect(result.data.find((a) => a.stopId === 'A')?.portal).toBe('group-1');
-        expect(result.data.find((a) => a.stopId === 'B')?.portal).toBe('group-2');
+        expect(result.data.find((a: AnchorEntry) => a.stopId === 'A')?.portal).toBe('group-1');
+        expect(result.data.find((a: AnchorEntry) => a.stopId === 'B')?.portal).toBe('group-2');
       }
     });
   });

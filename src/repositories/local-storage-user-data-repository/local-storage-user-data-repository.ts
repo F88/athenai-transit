@@ -7,10 +7,15 @@
  * to a Web API backend without changing consumers.
  */
 
-import { addAnchor, removeAnchor, updateAnchor, type AnchorEntry } from '../domain/portal/anchor';
-import type { Result } from '../types/app/repository';
-import type { UserDataRepository } from './user-data-repository';
-import { createLogger } from '../lib/logger';
+import {
+  addAnchor,
+  removeAnchor,
+  updateAnchor,
+  type AnchorEntry,
+} from '../../domain/portal/anchor';
+import type { Result } from '../../types/app/repository';
+import type { UserDataRepository } from '../user-data-repository';
+import { createLogger } from '../../lib/logger';
 
 const ANCHORS_KEY = 'portals';
 
