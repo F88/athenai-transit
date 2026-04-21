@@ -17,23 +17,81 @@ import type {
 } from '../types/app/repository';
 
 /**
- * Maximum number of stops that any single query can return.
+ * Maximum number of stops that a capped stop query can return.
  *
- * This is an API-level cap. Even if the underlying dataset contains
- * more matching stops, implementations MUST NOT return more than
- * this number. When results are truncated to this limit, the
+ * This is an API-level cap for stop-query methods that normalize their
+ * `limit` with {@link normalizeStopQueryLimit}. Even if the underlying
+ * dataset contains more matching stops, those methods MUST NOT return
+ * more than this number. When results are truncated to this limit, the
  * {@link CollectionResult.truncated} flag MUST be set to `true`.
  */
-export const MAX_STOPS_RESULT = 50_000; // FOR TESTING WITH LARGE DATASETS
+export const MAX_STOP_QUERY_RESULT = 50_000; // FOR TESTING WITH LARGE DATASETS
+
+/**
+ * Normalizes a stop-query limit to a safe API-level value.
+ *
+ * The returned limit is a non-negative integer capped at
+ * {@link MAX_STOP_QUERY_RESULT}. Negative and non-finite inputs are treated as `0`.
+ * Fractional inputs are truncated toward zero.
+ *
+ * @param limit - Requested stop-query limit.
+ * @returns Safe non-negative integer limit for stop collections.
+ */
+export function normalizeStopQueryLimit(limit: number): number {
+  if (!Number.isFinite(limit)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(Math.trunc(limit), MAX_STOP_QUERY_RESULT));
+}
+
+/**
+ * Normalizes a generic truncation limit while preserving caller intent.
+ *
+ * The returned limit is a non-negative integer with no repository-level cap.
+ * Negative and non-finite inputs are treated as `0`, and fractional inputs
+ * are truncated toward zero.
+ *
+ * @param limit - Requested truncation limit.
+ * @returns Safe non-negative integer limit.
+ */
+export function normalizeResultLimit(limit: number): number {
+  if (!Number.isFinite(limit)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.trunc(limit));
+}
+
+/**
+ * Normalizes an optional truncation limit while preserving omission semantics.
+ *
+ * `undefined` means "no explicit caller limit" and is preserved so methods
+ * can still distinguish between omitted-limit and zero-limit behavior.
+ *
+ * @param limit - Requested truncation limit, if any.
+ * @returns Safe limit, or `undefined` when the caller omitted it.
+ */
+export function normalizeOptionalResultLimit(limit?: number): number | undefined {
+  if (limit === undefined) {
+    return undefined;
+  }
+
+  return normalizeResultLimit(limit);
+}
 
 /**
  * Repository interface for querying transit stops and stop times.
  *
- * All methods return `Promise` so that implementations can be
- * synchronous in-memory mocks or asynchronous data-store queries.
+ * The interface intentionally mixes async and sync methods.
+ * Data-loading and lookup APIs that may depend on external I/O expose
+ * `Promise`-wrapped return values, while cheap derived-value helpers may
+ * stay synchronous.
  *
- * Methods return {@link Result} or {@link CollectionResult} to
- * communicate domain-level errors without throwing.
+ * Return shapes are also intentionally mixed. Some methods use
+ * {@link Result} or {@link CollectionResult} to communicate domain-level
+ * errors without throwing, while others return plain collections or
+ * derived values directly.
  */
 export interface TransitRepository {
   /**
@@ -46,7 +104,7 @@ export interface TransitRepository {
    * deterministic ordering when `limit` truncates the result.
    *
    * ### Truncation
-   * The effective limit is `Math.min(limit, MAX_STOPS_RESULT)`.
+   * The effective limit is `normalizeStopQueryLimit(limit)`.
    * If the number of matching stops exceeds this effective limit,
    * only the nearest stops are returned and `truncated` is `true`.
    * If all matching stops fit within the limit, `truncated` is `false`.
@@ -57,7 +115,9 @@ export interface TransitRepository {
    *
    * @param bounds - Geographic bounding box to search within.
    * @param limit  - Maximum number of stops to return.
-   *                 Capped at {@link MAX_STOPS_RESULT}.
+   *                 Negative and non-finite values are treated as `0`.
+   *                 Fractional values are truncated toward zero and then
+   *                 capped at {@link MAX_STOP_QUERY_RESULT}.
    * @returns Stops within `bounds`, sorted by distance from center.
    */
   getStopsInBounds(bounds: Bounds, limit: number): Promise<CollectionResult<StopWithMeta>>;
@@ -91,14 +151,10 @@ export interface TransitRepository {
    *
    * ### Truncation
    * `truncated` is `true` when the total number of upcoming entries
-   * exceeds `limit`. When `limit` is omitted, all upcoming entries
+   * exceeds the normalized `limit`. When `limit` is omitted, all upcoming entries
    * are returned and `truncated` is `false`.
    *
-   * Note: `limit` only truncates the returned `data` array. The
-   * implementation still performs a full scan (for `meta`) and a
-   * full sort (for overnight interleave), so `limit` does not
-   * reduce computation cost. Callers that need all route+headsign
-   * groups (e.g. T4 view) should omit `limit`.
+   * `limit` controls only the number of returned entries.
    *
    * ### Error conditions
    * - No stop time data for `stopId`:
@@ -109,6 +165,8 @@ export interface TransitRepository {
    *                 determined internally (03:00 boundary).
    * @param limit  - Maximum number of entries to return.
    *                 When omitted, all upcoming entries are returned.
+   *                 Negative and non-finite values are treated as `0`.
+   *                 Fractional values are truncated toward zero.
    * @returns ContextualTimetableEntry items sorted chronologically.
    */
   getUpcomingTimetableEntries(
@@ -145,7 +203,7 @@ export interface TransitRepository {
    * `center` (nearest first).
    *
    * ### Truncation
-   * The effective limit is `Math.min(limit, MAX_STOPS_RESULT)`.
+   * The effective limit is `normalizeStopQueryLimit(limit)`.
    * If the number of matching stops exceeds this effective limit,
    * only the nearest stops are returned and `truncated` is `true`.
    *
@@ -156,7 +214,9 @@ export interface TransitRepository {
    * @param center  - Geographic center point.
    * @param radiusM - Search radius in meters. Must be >= 0.
    * @param limit   - Maximum number of stops to return.
-   *                  Capped at {@link MAX_STOPS_RESULT}.
+   *                  Negative and non-finite values are treated as `0`.
+   *                  Fractional values are truncated toward zero and then
+   *                  capped at {@link MAX_STOP_QUERY_RESULT}.
    * @returns Stops within the specified radius, sorted by distance.
    */
   getStopsNearby(
@@ -216,22 +276,12 @@ export interface TransitRepository {
    * Returns a single stop with metadata by its GTFS stop_id, against
    * the **full loaded dataset** (not just the current viewport).
    *
-   * Async single-id variant of {@link getStopMetaByIds}. Implemented
-   * as an O(1) indexed lookup over a pre-built id → StopWithMeta
-   * map; "full dataset" describes the search scope, not a per-call
-   * scan cost. Use this for one-off lookups where the stop_id is
-   * known but the stop may be anywhere in the dataset — typically
-   * URL-based stop selection (`?stop=<id>`) where the user can paste
-   * in a stop_id from any source.
+   * Async single-id variant of {@link getStopMetaByIds}. "Full dataset"
+   * describes the search scope, not the implementation strategy.
    *
-   * For batched lookups (anchor refresh, route stops, etc.) use
-   * {@link getStopMetaByIds} instead — it is synchronous and avoids
-   * one Promise per id.
+   * For batched lookups, use {@link getStopMetaByIds} instead.
    *
-   * Do **not** substitute the viewport-limited `findStopWithMeta`
-   * callback in `app.tsx` for this kind of persistent / arbitrary id
-   * lookup. See `DEVELOPMENT.md > Stop ID lookup の選び方` for the
-   * full rule.
+   * Use this for arbitrary-id lookups that must work outside the current view.
    *
    * ### Error conditions
    * - Unknown stop_id:
@@ -246,42 +296,16 @@ export interface TransitRepository {
    * Returns StopWithMeta for each of the given stop IDs against the
    * **full loaded dataset**, not just the current viewport.
    *
-   * "Full dataset" describes the search scope (any stop loaded into
-   * the repository, regardless of where it sits geographically), not
-   * a per-call scan cost. The v2 in-memory repository implements
-   * this as a series of indexed lookups against a pre-built
-   * `stop_id → StopWithMeta` map, so the actual cost is
-   * O(`stopIds.size`) — independent of how many stops are loaded.
-   *
-   * ### When to use this method (vs. local viewport helpers)
+   * "Full dataset" describes the search scope: any stop loaded into the
+   * repository, regardless of where it sits geographically.
    *
    * Use this method whenever the caller holds a set of stable stop IDs
-   * that may refer to stops anywhere in the dataset — including stops
-   * outside the current map viewport, outside the nearby radius, or
-   * loaded from another data source. Typical cases:
+   * that may refer to stops anywhere in the dataset, including stops
+   * outside the current map viewport or nearby radius.
    *
-   * - Anchor (bookmark) refresh on startup
-   * - Anchor display name resolution for the Portal dropdown
-   * - Stops belonging to a selected route (the route may extend far
-   *   beyond the current view)
-   * - Any feature that operates on persisted IDs from localStorage,
-   *   URL params, or other long-lived storage
-   *
-   * Do **not** substitute a viewport-limited helper like the
-   * `findStopWithMeta` callback in `app.tsx` for these cases — that
-   * callback only searches `radiusStops` / `inBoundStops` and will
-   * silently return null for anything outside the current view,
-   * causing display fallbacks and translation regressions. (This was
-   * the original motivation for adding this method in the first
-   * place; if you find yourself reaching for `findStopWithMeta` to
-   * resolve a stop ID that the user could have stored long ago,
-   * use `getStopMetaByIds` instead.)
+   * Do not substitute viewport-limited helpers for these cases.
    *
    * ### Behavior
-   *
-   * - Synchronous (the in-memory v2 repository keeps all stops
-   *   indexed by ID, so each lookup is O(1) and the whole call is
-   *   O(`stopIds.size`)).
    * - Unknown stop IDs are silently skipped — the result length may
    *   be smaller than `stopIds.size`.
    * - The returned array preserves no particular order; callers that
@@ -302,15 +326,13 @@ export interface TransitRepository {
    * No specific ordering is guaranteed.
    *
    * ### Truncation
-   * Subject to {@link MAX_STOPS_RESULT}. If the dataset contains more
-   * stops than MAX_STOPS_RESULT, only the first MAX_STOPS_RESULT stops
-   * are returned and `truncated` is `true`.
+   * Returns the full loaded stop set. `truncated` is always `false`.
    *
    * ### Error conditions
    * Always succeeds. An empty dataset returns
    * `{ success: true, data: [], truncated: false }`.
    *
-   * @returns All stops (up to {@link MAX_STOPS_RESULT}).
+   * @returns All stops in the dataset.
    */
   getAllStops(): Promise<CollectionResult<Stop>>;
 
@@ -356,13 +378,13 @@ export interface TransitRepository {
   /**
    * Resolves per-stop stats for the service group matching the given service day.
    *
-   * Uses active service IDs for the service day to select the best matching
-   * service group from InsightsBundle data. Returns undefined if insights
-   * are not loaded or no group matches.
+   * Uses active service IDs for the normalized service day to select the best
+   * matching service group from InsightsBundle data. Returns undefined if
+   * insights are not loaded or no group matches.
    *
    * @param stopId - GTFS stop_id.
-   * @param serviceDate - GTFS service day (Date at local 00:00) derived via
-   *   `getServiceDay(dateTime)`. Do not pass raw dateTime directly.
+   * @param serviceDate - Reference date/time or precomputed service day.
+   *   Implementations normalize this via `getServiceDay(serviceDate)` before lookup.
    * @returns Stats for the matched service group, or undefined.
    */
   resolveStopStats(stopId: string, serviceDate: Date): StopWithMeta['stats'] | undefined;
@@ -377,12 +399,11 @@ export interface TransitRepository {
    * trip pattern count: a route with 2 patterns running 10 + 1 trips
    * returns 11.
    *
-   * Used for frequency-based route shape line thickness. Returns undefined
-   * if insights are not loaded or no group matches.
+   * Returns undefined if insights are not loaded or no group matches.
    *
    * @param routeId - GTFS route_id.
-   * @param serviceDate - GTFS service day (Date at local 00:00) derived via
-   *   `getServiceDay(dateTime)`. Do not pass raw dateTime directly.
+   * @param serviceDate - Reference date/time or precomputed service day.
+   *   Implementations normalize this via `getServiceDay(serviceDate)` before lookup.
    * @returns Number of trips in the matched service day, or undefined.
    */
   resolveRouteFreq(routeId: string, serviceDate: Date): number | undefined;

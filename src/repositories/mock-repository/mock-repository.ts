@@ -37,7 +37,7 @@ import {
   sortTimetableEntriesByDepartureTime,
   sortTimetableEntriesChronologically,
 } from '../../domain/transit/sort-timetable-entries';
-import { MAX_STOPS_RESULT } from '../transit-repository';
+import { normalizeOptionalResultLimit, normalizeStopQueryLimit } from '../transit-repository';
 import type { TransitRepository } from '../transit-repository';
 
 // --- Mock agencies ---
@@ -2503,7 +2503,7 @@ function approxDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number
 export class MockRepository implements TransitRepository {
   /** {@inheritDoc TransitRepository.getStopsInBounds} */
   getStopsInBounds(bounds: Bounds, limit: number): Promise<CollectionResult<StopWithMeta>> {
-    const effectiveLimit = Math.min(limit, MAX_STOPS_RESULT);
+    const effectiveLimit = normalizeStopQueryLimit(limit);
     const centerLat = (bounds.north + bounds.south) / 2;
     const centerLng = (bounds.east + bounds.west) / 2;
 
@@ -2537,8 +2537,9 @@ export class MockRepository implements TransitRepository {
   getUpcomingTimetableEntries(
     stopId: string,
     now: Date,
-    limit = 3,
+    limit?: number,
   ): Promise<UpcomingTimetableResult> {
+    const normalizedLimit = normalizeOptionalResultLimit(limit);
     const stop = STOPS.find((s) => s.stop_id === stopId);
     if (!stop) {
       return Promise.resolve({ success: false, error: `No stop time data for stop: ${stopId}` });
@@ -2575,12 +2576,7 @@ export class MockRepository implements TransitRepository {
           hasBoardable = true;
         }
 
-        // Note: limit is applied per route+headsign (simplified mock behavior).
-        // Production repo collects all entries then applies limit globally.
-        const upcoming = allMinutes
-          .map((m) => m + occOffset)
-          .filter((m) => m >= nowMinutes)
-          .slice(0, limit);
+        const upcoming = allMinutes.map((m) => m + occOffset).filter((m) => m >= nowMinutes);
         for (const minutes of upcoming) {
           const arrivalMinutes = computeArrivalMinutes(routeId, occ, minutes);
           // Colorful Route fixtures need insights so JourneyTimeBar
@@ -2623,11 +2619,18 @@ export class MockRepository implements TransitRepository {
 
     sortTimetableEntriesChronologically(entries);
 
+    let truncated = false;
+    let result = entries;
+    if (normalizedLimit !== undefined && entries.length > normalizedLimit) {
+      result = entries.slice(0, normalizedLimit);
+      truncated = true;
+    }
+
     const meta: TimetableQueryMeta = {
       isBoardableOnServiceDay: hasBoardable,
       totalEntries: fullDayCount,
     };
-    return Promise.resolve({ success: true, data: entries, truncated: false, meta });
+    return Promise.resolve({ success: true, data: result, truncated, meta });
   }
 
   /** {@inheritDoc TransitRepository.getRouteTypesForStop} */
@@ -2649,7 +2652,7 @@ export class MockRepository implements TransitRepository {
       return Promise.resolve({ success: true, data: [], truncated: false });
     }
 
-    const effectiveLimit = Math.min(limit, MAX_STOPS_RESULT);
+    const effectiveLimit = normalizeStopQueryLimit(limit);
     const radiusKm = radiusM / 1000;
     const sorted = STOPS.map((stop) => {
       const distKm = approxDistanceKm(stop.stop_lat, stop.stop_lon, center.lat, center.lng);
@@ -2793,7 +2796,7 @@ export class MockRepository implements TransitRepository {
   resolveRouteFreq(routeId: string, serviceDate: Date): number | undefined {
     // Return exaggerated weekday/weekend freq difference for visual testing.
     // Weekday: high freq (thick lines), Weekend: low freq (thin lines).
-    const day = serviceDate.getDay(); // 0=Sun, 6=Sat
+    const day = getServiceDay(serviceDate).getDay(); // 0=Sun, 6=Sat
     const isWeekend = day === 0 || day === 6;
     const route = ROUTE_MAP.get(routeId);
     if (!route || route.route_type !== 3) {

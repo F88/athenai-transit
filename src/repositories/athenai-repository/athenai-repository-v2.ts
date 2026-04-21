@@ -42,7 +42,7 @@ import {
   sortTimetableEntriesByDepartureTime,
   sortTimetableEntriesChronologically,
 } from '../../domain/transit/sort-timetable-entries';
-import { MAX_STOPS_RESULT } from '../transit-repository';
+import { normalizeOptionalResultLimit, normalizeStopQueryLimit } from '../transit-repository';
 import type { TransitRepository } from '../transit-repository';
 import { FetchDataSourceV2 } from '../../datasources/fetch-data-source-v2';
 import { createLogger } from '../../lib/logger';
@@ -303,7 +303,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
   getStopsInBounds(bounds: Bounds, limit: number): Promise<CollectionResult<StopWithMeta>> {
     const t0 = performance.now();
-    const effectiveLimit = Math.min(limit, MAX_STOPS_RESULT);
+    const effectiveLimit = normalizeStopQueryLimit(limit);
     const centerLat = (bounds.north + bounds.south) / 2;
     const centerLng = (bounds.east + bounds.west) / 2;
 
@@ -345,7 +345,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     }
 
     const t0 = performance.now();
-    const effectiveLimit = Math.min(limit, MAX_STOPS_RESULT);
+    const effectiveLimit = normalizeStopQueryLimit(limit);
     const radiusKm = radiusM / 1000;
     const sorted: { meta: StopWithMeta; distKm: number }[] = [];
     for (const meta of this.stopsMetaMap.values()) {
@@ -378,6 +378,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     limit?: number,
   ): Promise<UpcomingTimetableResult> {
     const t0 = performance.now();
+    const normalizedLimit = normalizeOptionalResultLimit(limit);
     const timetableGroups = this.timetable[stopId];
     if (!timetableGroups) {
       return Promise.resolve({ success: false, error: `No stop time data for stop: ${stopId}` });
@@ -504,8 +505,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const totalAvailable = entries.length;
     let truncated = false;
     let result = entries;
-    if (limit !== undefined && entries.length > limit) {
-      result = entries.slice(0, limit);
+    if (normalizedLimit !== undefined && entries.length > normalizedLimit) {
+      result = entries.slice(0, normalizedLimit);
       truncated = true;
     }
 
@@ -660,13 +661,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
   getAllStops(): Promise<CollectionResult<Stop>> {
     const t0 = performance.now();
-    const truncated = this.stops.length > MAX_STOPS_RESULT;
-    const data = truncated ? this.stops.slice(0, MAX_STOPS_RESULT) : this.stops;
     const elapsed = Math.round(performance.now() - t0);
-    logger.debug(
-      `getAllStops: ${data.length}/${this.stops.length} stops in ${elapsed}ms (${truncated ? 'truncated' : 'all'})`,
-    );
-    return Promise.resolve({ success: true, data, truncated });
+    logger.debug(`getAllStops: ${this.stops.length} stops in ${elapsed}ms`);
+    return Promise.resolve({ success: true, data: this.stops, truncated: false });
   }
 
   async getRouteShapes(): Promise<CollectionResult<RouteShape>> {
@@ -696,7 +693,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     if (!entry) {
       return undefined;
     }
-    const activeIds = this.getActiveServiceIds(serviceDate);
+    const activeIds = this.getActiveServiceIds(getServiceDay(serviceDate));
     const groupKey = selectServiceGroup(entry.groups, activeIds);
     if (!groupKey) {
       return undefined;
@@ -709,7 +706,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     if (!entry) {
       return undefined;
     }
-    const activeIds = this.getActiveServiceIds(serviceDate);
+    const activeIds = this.getActiveServiceIds(getServiceDay(serviceDate));
     const groupKey = selectServiceGroup(entry.groups, activeIds);
     if (!groupKey) {
       return undefined;

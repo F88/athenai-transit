@@ -69,6 +69,49 @@ describe('MockRepository i18n data', () => {
   });
 });
 
+describe('MockRepository contract compatibility', () => {
+  it('returns all upcoming entries when limit is omitted', async () => {
+    const repository = new MockRepository();
+    const now = new Date('2026-04-07T05:00:00+09:00');
+
+    const omittedLimit = await repository.getUpcomingTimetableEntries('r8-3', now);
+    const explicitLargeLimit = await repository.getUpcomingTimetableEntries('r8-3', now, 1000);
+
+    assertSuccess(omittedLimit);
+    assertSuccess(explicitLargeLimit);
+
+    expect(omittedLimit.truncated).toBe(false);
+    expect(omittedLimit.data).toHaveLength(explicitLargeLimit.data.length);
+  });
+
+  it('applies upcoming limits globally after sorting and marks truncation', async () => {
+    const repository = new MockRepository();
+    const now = new Date('2026-04-07T05:00:00+09:00');
+
+    const allEntries = await repository.getUpcomingTimetableEntries('r8-3', now, 100);
+    const limitedEntries = await repository.getUpcomingTimetableEntries('r8-3', now, 2);
+
+    assertSuccess(allEntries);
+    assertSuccess(limitedEntries);
+
+    expect(limitedEntries.truncated).toBe(true);
+    expect(limitedEntries.data).toHaveLength(2);
+    expect(
+      limitedEntries.data.map((entry) => ({
+        routeId: entry.routeDirection.route.route_id,
+        departureMinutes: entry.schedule.departureMinutes,
+        stopIndex: entry.patternPosition.stopIndex,
+      })),
+    ).toEqual(
+      allEntries.data.slice(0, 2).map((entry) => ({
+        routeId: entry.routeDirection.route.route_id,
+        departureMinutes: entry.schedule.departureMinutes,
+        stopIndex: entry.patternPosition.stopIndex,
+      })),
+    );
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Issue #47: duplicate stop_id within pattern (mock fixtures)
 // ---------------------------------------------------------------------------
