@@ -9,9 +9,9 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
-### Changed
+## [2026.04.21]
 
-Changed
+### Changed
 
 - `JourneyTimeBar` の bar color props を `fillColor` / `unfilledColor` に明確化し、track 側の alpha を component 内で固定せず caller 指定に変更。`StopTimeItem` では route color の contrast 評価に基づいて subtle / emphasis accent color を導出して `TripPositionIndicator` と `JourneyTimeBar` に共有する形へ整理。`VerboseRouteColors` も adjusted pair の theme contrast diagnostics を表示するよう拡張。
 - `BottomSheet` の高さクラスを `COLLAPSED_HEIGHT_CLASS` / `EXPANDED_HEIGHT_CLASS` 定数に抽出し、root className を `cn(...)` で構成する形に整理。開発時に collapsed / expanded 高さを 1 か所で変更できるようにした。現行値は collapsed `40dvh`、expanded `70dvh`。
