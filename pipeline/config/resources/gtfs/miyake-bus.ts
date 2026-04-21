@@ -30,6 +30,9 @@ const miyakeBus: GtfsSourceDefinition = {
 
     /** GtfsResource */
     routeTypes: ['bus'],
+    routeColorFallbacks: {
+      '*': '2E81E1', // Miyake Village community bus
+    },
     downloadUrl:
       'https://api-public.odpt.org/api/v4/files/odpt/MiyakeVill/AllLine.zip?date=20250929',
   },
