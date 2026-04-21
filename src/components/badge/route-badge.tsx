@@ -1,17 +1,16 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Route } from '../../types/app/transit';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
+import { resolveContextBorderColor } from '../../domain/transit/color-resolver/context-border-color';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
-import { LOW_CONTRAST_BADGE_MIN_RATIO } from '../../domain/transit/color-resolver/contrast-thresholds';
 import { resolveRouteColors } from '../../domain/transit/color-resolver/route-colors';
-import { useThemeContrastAssessment } from '../../hooks/use-is-low-contrast-against-theme';
+import { useThemeContrastBackgroundColor } from '../../hooks/use-is-low-contrast-against-theme';
 import { cn } from '../../lib/utils';
 import { BaseLabel, type BaseLabelSize } from '../label/base-label';
 import { IdBadge } from './id-badge';
 import { VerboseRoute } from '../verbose/verbose-route';
 
 export type RouteBadgeSize = 'md' | 'sm' | 'xs';
-export type RouteBadgeBorderStyle = 'neutral' | 'context';
 
 const baseLabelSizes: Record<RouteBadgeSize, BaseLabelSize> = {
   md: 'md',
@@ -34,8 +33,6 @@ interface RouteBadgeProps {
   size: RouteBadgeSize;
   /** Whether to render a border around the badge. */
   showBorder: boolean;
-  /** Border color style when showBorder is enabled. */
-  borderStyle: RouteBadgeBorderStyle;
   /** Agency languages for subNames sort priority. @default DEFAULT_AGENCY_LANG */
   agencyLangs?: readonly string[];
   /** Suppress verbose-only rendering (IdBadge, details dump).
@@ -50,6 +47,11 @@ interface RouteBadgeProps {
  *
  * Background color uses the route's designated color (`route_color`),
  * falling back to `bg-muted-foreground` when no color is set.
+ * When `showBorder` is enabled, the outline uses the context cascade
+ * (`route_color` first, then `route_text_color` when the fill has
+ * low contrast against the theme) resolved by
+ * {@link resolveContextBorderColor}.
+ *
  * The badge always shows only the resolved primary route name.
  * Alternative subNames are not rendered in this compact badge, regardless of info level.
  * In verbose mode, an {@link IdBadge} with the route_id is shown after the label.
@@ -65,23 +67,16 @@ export function RouteBadge({
   infoLevel,
   size,
   showBorder,
-  borderStyle,
   agencyLangs = DEFAULT_AGENCY_LANG,
   disableVerbose = false,
   className,
 }: RouteBadgeProps) {
   const routeNames = getRouteDisplayNames(route, dataLang, agencyLangs, 'short');
   const { routeColor, routeTextColor } = resolveRouteColors(route, 'css-hex');
-  const routeColorAssessment = useThemeContrastAssessment(
-    routeColor ?? '',
-    LOW_CONTRAST_BADGE_MIN_RATIO,
-  );
-  const frameColor =
-    !showBorder || borderStyle !== 'context'
-      ? undefined
-      : routeColorAssessment.isLowContrast
-        ? routeTextColor
-        : routeColor;
+  const themeBackground = useThemeContrastBackgroundColor();
+  const frameColor = !showBorder
+    ? undefined
+    : resolveContextBorderColor(routeColor ?? '', routeTextColor ?? '', themeBackground);
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;
 
   return (
@@ -93,7 +88,6 @@ export function RouteBadge({
           className={cn(
             'bg-muted-foreground inline-flex items-center justify-center font-bold whitespace-nowrap text-white',
             showBorder && 'border',
-            showBorder && borderStyle === 'neutral' && 'border-app-neutral',
           )}
           style={
             routeColor

@@ -9,6 +9,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `RouteBadge` / `RouteCountBadge` の枠線色を domain 純粋関数 `resolveContextBorderColor` (`src/domain/transit/color-resolver/context-border-color.ts`) に集約。`route_color` が現テーマに対して十分な contrast を持てば `route_color`、そうでなければ `route_text_color` を使う cascade に統一。`RouteBadge` の legacy `borderStyle` prop と `border-app-neutral` Tailwind ブランチは撤去、`RouteCountBadge` も同じ cascade で theme 対応した。Vitest 契約テスト追加。`HeadsignLabel` は従来通り固定の `border-app-neutral` outline を維持。
+
 ## [2026.04.21]
 
 ### Changed

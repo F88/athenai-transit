@@ -162,7 +162,6 @@ export function StopSummary({
               size={resolvedRouteBadgeSize}
               disableVerbose
               showBorder={true}
-              borderStyle="context"
             />
           ))}
         </div>

@@ -186,7 +186,6 @@ export function TripInfo({
         size={size === 'sm' ? 'sm' : 'md'}
         disableVerbose={true}
         showBorder={true}
-        borderStyle="context"
       />
       {info.isDetailedEnabled && agency && showAgency && (
         <AgencyBadge
