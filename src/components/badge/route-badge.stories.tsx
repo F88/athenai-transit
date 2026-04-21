@@ -42,10 +42,12 @@ const meta = {
     infoLevel: 'normal',
     size: 'md',
     showBorder: false,
+    enableVerboseExtras: true,
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
+    enableVerboseExtras: { control: 'boolean' },
   },
 } satisfies Meta<typeof RouteBadge>;
 

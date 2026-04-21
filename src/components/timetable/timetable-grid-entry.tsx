@@ -3,7 +3,7 @@ import type { TimetableEntry } from '../../types/app/transit-composed';
 import { useTranslation } from 'react-i18next';
 import { getDisplayMinutes } from '../../domain/transit/timetable-utils';
 import { getTimetableEntryAttributes } from '../../domain/transit/timetable-entry-attributes';
-import { HeadsignLabel } from '../label/headsign-label';
+import { HeadsignBadge } from '../badge/headsign-badge';
 import { VerboseTimetableGridEntry as VerboseGridEntry } from '../verbose/verbose-timetable-grid-entry';
 import { TimetableEntryAttributesLabels } from '../label/timetable-entry-attributes-labels';
 
@@ -71,14 +71,15 @@ export function TimetableGridEntry({
         )}
       </span>
       {showHeadsign && (
-        <HeadsignLabel
+        <HeadsignBadge
           routeDirection={entry.routeDirection}
           infoLevel={infoLevel}
           dataLang={dataLang}
           agencyLang={agencyLang}
           maxLength={headsignMaxLength}
           size="xs"
-          disableVerbose={disableVerbose}
+          enableVerboseExtras={!disableVerbose}
+          showBorder={true}
         />
       )}
       <TimetableEntryAttributesLabels

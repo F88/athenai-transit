@@ -184,17 +184,16 @@ export function TripInfo({
         agencyLangs={agencyLang}
         infoLevel={infoLevel}
         size={size === 'sm' ? 'sm' : 'md'}
-        disableVerbose={true}
         showBorder={true}
       />
       {info.isDetailedEnabled && agency && showAgency && (
         <AgencyBadge
-          size="xs"
+          size="sm"
           agency={agency}
           dataLang={dataLang}
           agencyLangs={agencyLang}
           infoLevel={infoLevel}
-          disableVerbose={true}
+          showBorder={true}
         />
       )}
 

@@ -1,44 +1,23 @@
-import type { InfoLevel } from '../../types/app/settings';
-import type { Route } from '../../types/app/transit';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { resolveContextBorderColor } from '../../domain/transit/color-resolver/context-border-color';
-import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { resolveRouteColors } from '../../domain/transit/color-resolver/route-colors';
+import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { useThemeContrastBackgroundColor } from '../../hooks/use-is-low-contrast-against-theme';
-import { cn } from '../../lib/utils';
-import { BaseLabel, type BaseLabelSize } from '../label/base-label';
-import { IdBadge } from './id-badge';
+import type { InfoLevel } from '../../types/app/settings';
+import type { Route } from '../../types/app/transit';
 import { VerboseRoute } from '../verbose/verbose-route';
+import { BaseBadge, type BaseBadgeSize } from './base-badge';
 
-export type RouteBadgeSize = 'md' | 'sm' | 'xs';
-
-const baseLabelSizes: Record<RouteBadgeSize, BaseLabelSize> = {
-  md: 'md',
-  sm: 'sm',
-  xs: 'xs',
-};
+export type RouteBadgeSize = BaseBadgeSize;
 
 interface RouteBadgeProps {
-  /** The route to display. */
   route: Route;
-  /** Display language chain for translated GTFS/ODPT data names. */
-  dataLang: readonly string[];
-  /**
-   * Current info verbosity level.
-   * The compact badge label itself stays on the resolved primary name;
-   * only verbose-only extras such as debug details are gated by this prop.
-   */
-  infoLevel: InfoLevel;
-  /** Size variant. */
   size: RouteBadgeSize;
-  /** Whether to render a border around the badge. */
-  showBorder: boolean;
-  /** Agency languages for subNames sort priority. @default DEFAULT_AGENCY_LANG */
+  dataLang: readonly string[];
   agencyLangs?: readonly string[];
-  /** Suppress verbose-only rendering (IdBadge, details dump).
-   *  Use in non-interactive contexts like tooltips. */
-  disableVerbose?: boolean;
-  /** Additional CSS classes for further overrides. */
+  infoLevel: InfoLevel;
+  showBorder: boolean;
+  enableVerboseExtras?: boolean;
   className?: string;
 }
 
@@ -54,7 +33,8 @@ interface RouteBadgeProps {
  *
  * The badge always shows only the resolved primary route name.
  * Alternative subNames are not rendered in this compact badge, regardless of info level.
- * In verbose mode, an {@link IdBadge} with the route_id is shown after the label.
+ * In verbose mode, an IdBadge with the route_id is shown alongside
+ * the chip and a {@link VerboseRoute} panel is rendered below.
  *
  * @param route - The route to display.
  * @param infoLevel - Controls verbose-only extras; the badge text remains compact.
@@ -63,45 +43,39 @@ interface RouteBadgeProps {
  */
 export function RouteBadge({
   route,
-  dataLang,
-  infoLevel,
   size,
-  showBorder,
+  dataLang,
   agencyLangs = DEFAULT_AGENCY_LANG,
-  disableVerbose = false,
+  infoLevel,
+  showBorder = false,
+  enableVerboseExtras = false,
   className,
 }: RouteBadgeProps) {
   const routeNames = getRouteDisplayNames(route, dataLang, agencyLangs, 'short');
+
   const { routeColor, routeTextColor } = resolveRouteColors(route, 'css-hex');
   const themeBackground = useThemeContrastBackgroundColor();
-  const frameColor = !showBorder
-    ? undefined
-    : resolveContextBorderColor(routeColor ?? '', routeTextColor ?? '', themeBackground);
-  const showVerbose = infoLevel === 'verbose' && !disableVerbose;
+  const borderColor = resolveContextBorderColor(
+    routeColor ?? '',
+    routeTextColor ?? '',
+    themeBackground,
+  );
 
   return (
-    <div className={cn('inline-flex flex-col gap-0.5 font-normal', className)}>
-      <span className="inline-flex items-center gap-0.5">
-        <BaseLabel
-          value={routeNames.resolved.name || '?'}
-          size={baseLabelSizes[size]}
-          className={cn(
-            'bg-muted-foreground inline-flex items-center justify-center font-bold whitespace-nowrap text-white',
-            showBorder && 'border',
-          )}
-          style={
-            routeColor
-              ? {
-                  background: routeColor,
-                  color: routeTextColor,
-                  borderColor: frameColor,
-                }
-              : undefined
-          }
-        />
-        {showVerbose && <IdBadge>{route.route_id}</IdBadge>}
-      </span>
-      {showVerbose && <VerboseRoute route={route} names={routeNames} infoLevel={infoLevel} />}
-    </div>
+    <BaseBadge
+      label={routeNames.resolved.name || '?'}
+      size={size}
+      bgColor={routeColor}
+      fgColor={routeTextColor}
+      borderColor={borderColor}
+      showBorder={showBorder}
+      className={className}
+      infoLevel={infoLevel}
+      verboseExtras={{
+        enabled: enableVerboseExtras,
+        idLabel: route.route_id,
+        slot: <VerboseRoute route={route} names={routeNames} infoLevel={infoLevel} />,
+      }}
+    />
   );
 }

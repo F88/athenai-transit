@@ -88,7 +88,7 @@ export const LargeBadges: Story = {
     agencies: [agencyGx, agencyOretetsu],
     routes: [busRoute, tramRoute],
     routeTypes: [0, 3] as AppRouteTypeValue[],
-    agencyBadgeSize: 'default',
+    agencyBadgeSize: 'md',
     routeBadgeSize: 'md',
   },
 };
@@ -104,7 +104,7 @@ export const BadgeSizeComparison: Story = {
     <div className="flex flex-col gap-3">
       <StopSummary {...args} agencyBadgeSize="xs" routeBadgeSize="xs" />
       <StopSummary {...args} agencyBadgeSize="sm" routeBadgeSize="sm" />
-      <StopSummary {...args} agencyBadgeSize="default" routeBadgeSize="md" />
+      <StopSummary {...args} agencyBadgeSize="md" routeBadgeSize="md" />
     </div>
   ),
 };

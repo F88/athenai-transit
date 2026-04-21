@@ -67,11 +67,11 @@ export function StopSummary({
             <AgencyBadge
               key={a.agency_id}
               agency={a}
+              size="xs"
               dataLang={dataLang}
               agencyLangs={resolveAgencyLang(agencies, a.agency_id)}
               infoLevel={infoLevel}
-              size="xs"
-              disableVerbose
+              showBorder={true}
             />
           ))}
       </div>

@@ -17,10 +17,12 @@ const meta = {
     dataLang: ['ja'],
     infoLevel: 'normal',
     size: 'xs',
+    enableVerboseExtras: true,
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
-    size: { control: 'inline-radio', options: ['xs', 'sm', 'default'] },
+    size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
+    enableVerboseExtras: { control: 'boolean' },
   },
 } satisfies Meta<typeof AgencyBadge>;
 
@@ -37,8 +39,8 @@ export const SizeSm: Story = {
   args: { size: 'sm' },
 };
 
-export const SizeDefault: Story = {
-  args: { size: 'default' },
+export const SizeMd: Story = {
+  args: { size: 'md' },
 };
 
 // --- Agency variants ---
@@ -97,7 +99,7 @@ export const SizeComparison: Story = {
         agency={args.agency}
         dataLang={args.dataLang}
         infoLevel={args.infoLevel}
-        size="default"
+        size="md"
       />
     </div>
   ),
