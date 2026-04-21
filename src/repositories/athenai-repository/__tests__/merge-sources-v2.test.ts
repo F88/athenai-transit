@@ -55,6 +55,42 @@ describe('mergeSourcesV2', () => {
     expect(agency!.agency_colors[0]).toEqual({ bg: '009F40', text: 'FFFFFF' });
   });
 
+  it('replaces Kanto Bus black-on-black feed colors with the curated brand pair', () => {
+    const fixture = createFixtureV2();
+    fixture.data.agency.data[0].i = 'ktbus:8011201001183';
+
+    const route = fixture.data.routes.data.find((entry) => entry.i === 'route_bus');
+    expect(route).toBeDefined();
+    route!.ai = 'ktbus:8011201001183';
+    route!.c = '000000';
+    route!.tc = '000000';
+
+    const merged = mergeSourcesV2([fixture]);
+    const mergedRoute = merged.routeMap.get('route_bus');
+
+    expect(mergedRoute).toBeDefined();
+    expect(mergedRoute!.route_color).toBe('E60013');
+    expect(mergedRoute!.route_text_color).toBe('FFFFFF');
+  });
+
+  it('keeps Kanto Bus black routes when the feed already supplies readable white text', () => {
+    const fixture = createFixtureV2();
+    fixture.data.agency.data[0].i = 'ktbus:8011201001183';
+
+    const route = fixture.data.routes.data.find((entry) => entry.i === 'route_bus');
+    expect(route).toBeDefined();
+    route!.ai = 'ktbus:8011201001183';
+    route!.c = '000000';
+    route!.tc = 'FFFFFF';
+
+    const merged = mergeSourcesV2([fixture]);
+    const mergedRoute = merged.routeMap.get('route_bus');
+
+    expect(mergedRoute).toBeDefined();
+    expect(mergedRoute!.route_color).toBe('000000');
+    expect(mergedRoute!.route_text_color).toBe('FFFFFF');
+  });
+
   it('builds resolvedPatterns from tripPatterns', () => {
     const fixture = createFixtureV2();
     const merged = mergeSourcesV2([fixture]);

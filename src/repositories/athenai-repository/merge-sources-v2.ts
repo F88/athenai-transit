@@ -13,7 +13,10 @@ import { AGENCY_ATTRIBUTES, type AgencyAttributes } from '../../config/agency-at
 import { extractPrefix } from '../../domain/transit/calendar-utils';
 import { injectOriginLang } from '../../domain/transit/i18n/inject-origin-lang';
 import { normalizeAgencyColorPairs } from '@/domain/transit/color-resolver/agency-colors';
-import { normalizeRouteGtfsColors } from '@/domain/transit/color-resolver/route-colors';
+import {
+  normalizeRouteGtfsColors,
+  type NormalizedRouteGtfsColors,
+} from '@/domain/transit/color-resolver/route-colors';
 import type { HeadsignTranslationsByPrefix, MergedDataV2, ResolvedPattern } from './types';
 
 /** Set of valid AppRouteTypeValue integers. Values outside this set are normalized to -1. */
@@ -21,6 +24,47 @@ const VALID_ROUTE_TYPE_VALUES = new Set<number>(APP_ROUTE_TYPES.map((rt) => rt.v
 
 function normalizeAppRouteType(routeType: number): AppRouteTypeValue {
   return (VALID_ROUTE_TYPE_VALUES.has(routeType) ? routeType : -1) as AppRouteTypeValue;
+}
+
+/**
+ * Applies app-side overrides for known route color data-quality issues.
+ *
+ * This function is intentionally exception-based. It does not perform
+ * general GTFS color normalization; that is handled by
+ * `normalizeRouteGtfsColors`.
+ *
+ * Currently this is used only for known feed-specific cases where the
+ * raw route color pair is technically present but not suitable for UI
+ * display, such as Kanto Bus routes that provide `000000/000000`.
+ *
+ * The override policy is curated by the app and relies on stable
+ * agency-specific metadata in `AGENCY_ATTRIBUTES`.
+ *
+ * @param route Raw route JSON used to inspect feed-provided color fields.
+ * @param colors Already-normalized GTFS route colors.
+ * @returns Route colors after applying known app-side exception rules.
+ */
+function applyRouteColorDataQualityOverrides(
+  route: Pick<RouteV2Json, 'ai' | 'c' | 'tc'>,
+  colors: NormalizedRouteGtfsColors,
+): NormalizedRouteGtfsColors {
+  const rawRouteColor = route.c?.trim().toUpperCase() ?? '';
+  const rawRouteTextColor = route.tc?.trim().toUpperCase() ?? '';
+
+  const KANTO_BUS_AGENCY_ID = 'ktbus:8011201001183';
+
+  // Override rule for Kanto Bus (ktbus)
+  if (route.ai === KANTO_BUS_AGENCY_ID) {
+    // black on black is a common issue with Kanto Bus route colors.
+    if (rawRouteColor === '000000' && rawRouteTextColor === '000000') {
+      const primaryAgencyColor = AGENCY_ATTRIBUTES[route.ai]?.colors?.[0];
+      if (primaryAgencyColor) {
+        return normalizeRouteGtfsColors(primaryAgencyColor.bg, primaryAgencyColor.text);
+      }
+    }
+  }
+
+  return colors;
 }
 
 function buildAgencyRecord(
@@ -51,7 +95,11 @@ function buildRouteRecord(
   routeShortNameTranslations: Record<string, string>,
   routeLongNameTranslations: Record<string, string>,
 ): Route {
-  const colors = normalizeRouteGtfsColors(route.c, route.tc);
+  // Normalize route colors first so they can be used in the fallback logic when applying data-quality overrides.
+  const colors = applyRouteColorDataQualityOverrides(
+    route,
+    normalizeRouteGtfsColors(route.c, route.tc),
+  );
 
   return {
     route_id: route.i,
