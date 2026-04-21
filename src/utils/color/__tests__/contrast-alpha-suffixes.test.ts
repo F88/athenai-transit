@@ -9,30 +9,34 @@ describe('getContrastAwareAlphaSuffixes', () => {
     });
   });
 
-  it('returns the strongest subtle alpha for very low ratios', () => {
+  it('returns the strongest alpha pair below the 1.5 threshold', () => {
     expect(getContrastAwareAlphaSuffixes(1.1)).toEqual({
-      subtleAlphaSuffix: '',
-      emphasisAlphaSuffix: '',
+      subtleAlphaSuffix: '60',
+      emphasisAlphaSuffix: 'A0',
     });
   });
 
-  it('returns intermediate subtle alpha steps as ratio improves', () => {
+  it('steps through the configured threshold bands as ratio improves', () => {
     expect(getContrastAwareAlphaSuffixes(1.3)).toEqual({
-      subtleAlphaSuffix: '55',
-      emphasisAlphaSuffix: 'AA',
+      subtleAlphaSuffix: '60',
+      emphasisAlphaSuffix: 'A0',
     });
     expect(getContrastAwareAlphaSuffixes(1.76)).toEqual({
-      subtleAlphaSuffix: '44',
-      emphasisAlphaSuffix: '66',
+      subtleAlphaSuffix: '40',
+      emphasisAlphaSuffix: '70',
     });
     expect(getContrastAwareAlphaSuffixes(2.4)).toEqual({
-      subtleAlphaSuffix: '33',
-      emphasisAlphaSuffix: '50',
+      subtleAlphaSuffix: '30',
+      emphasisAlphaSuffix: '60',
     });
   });
 
-  it('returns the weakest subtle alpha when contrast is comfortably visible', () => {
+  it('returns the weakest alpha pair only at ratios of 3.0 and above', () => {
     expect(getContrastAwareAlphaSuffixes(2.6)).toEqual({
+      subtleAlphaSuffix: '30',
+      emphasisAlphaSuffix: '60',
+    });
+    expect(getContrastAwareAlphaSuffixes(3.0)).toEqual({
       subtleAlphaSuffix: '20',
       emphasisAlphaSuffix: '50',
     });
