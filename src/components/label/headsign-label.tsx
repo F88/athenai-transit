@@ -26,7 +26,7 @@ export interface HeadsignLabelProps {
   agencyLang?: readonly string[];
   /** Maximum characters to display. Truncated text is not suffixed. @default undefined (no limit) */
   maxLength?: number;
-  /** Size variant. @default 'default' */
+  /** Size variant. */
   size?: HeadsignLabelSize;
   /** Suppress verbose-only rendering (IdBadge, details dump).
    *  Use in non-interactive contexts like tooltips. */
@@ -51,7 +51,7 @@ export function HeadsignLabel({
   dataLang,
   agencyLang = DEFAULT_AGENCY_LANG,
   maxLength,
-  size = 'default',
+  size = 'md',
   disableVerbose = false,
   className,
 }: HeadsignLabelProps) {
