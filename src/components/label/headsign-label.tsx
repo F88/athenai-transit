@@ -7,7 +7,7 @@ import { cn } from '../../lib/utils';
 import { BaseLabel, type BaseLabelSize } from './base-label';
 import { VerboseHeadsign } from '../verbose/verbose-headsign';
 
-export type HeadsignLabelSize = 'default' | 'sm' | 'xs';
+export type HeadsignLabelSize = 'md' | 'sm' | 'xs';
 
 const baseLabelSizes: Record<HeadsignLabelSize, BaseLabelSize> = {
   md: 'md',
