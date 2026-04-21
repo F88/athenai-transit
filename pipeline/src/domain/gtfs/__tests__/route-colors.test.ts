@@ -19,7 +19,7 @@ describe('resolvePipelineRouteColors', () => {
     });
   });
 
-  it('applies wildcard fallback with white text', () => {
+  it('applies wildcard fallback without synthesizing textColor', () => {
     expect(
       resolvePipelineRouteColors({
         routeId: 'R001',
