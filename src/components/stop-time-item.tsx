@@ -193,7 +193,6 @@ export function StopTimeItem({
               size={info.isDetailedEnabled ? 'md' : 'sm'}
               showEmoji={info.isVerboseEnabled}
               fillColor={contrastAdjustedRouteColors.color}
-              // unfilledColor={subtleAccentColor}
               unfilledColor={emphasisAccentColor}
               showRMins={info.isVerboseEnabled}
               showTMins={info.isVerboseEnabled}
