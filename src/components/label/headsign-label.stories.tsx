@@ -31,11 +31,11 @@ const meta = {
     routeDirection: defaultRouteDirection,
     infoLevel: 'normal',
     dataLang: ['ja'],
-    size: 'default',
+    size: 'md',
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
-    size: { control: 'inline-radio', options: ['default', 'sm', 'xs'] },
+    size: { control: 'inline-radio', options: ['md', 'sm', 'xs'] },
   },
 } satisfies Meta<typeof HeadsignLabel>;
 
@@ -212,7 +212,7 @@ export const SizeComparison: Story = {
         routeDirection={args.routeDirection}
         infoLevel={args.infoLevel}
         dataLang={args.dataLang}
-        size="default"
+        size="md"
       />
     </div>
   ),
