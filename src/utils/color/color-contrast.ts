@@ -64,19 +64,18 @@ function parseColor(color: string): { r: number; g: number; b: number } | null {
     // CSS allows each channel to be an integer (0-255) or a percentage
     // (0%-100%). Tokens ending in '%' are scaled to the 0-255 range so
     // downstream luminance calculations can treat all channels uniformly.
-    const parts = color
-      .replace(/rgba?\(/, '')
-      .replace(/\)/, '')
-      .split(',')
-      .slice(0, 3)
-      .map((p) => {
-        const t = p.trim();
-        if (t.endsWith('%')) {
-          const v = parseFloat(t.slice(0, -1));
-          return Number.isNaN(v) ? NaN : (v * 255) / 100;
-        }
-        return parseFloat(t);
-      });
+    const body = color.substring(color.indexOf('(') + 1, color.lastIndexOf(')'));
+    const tokens = (body.includes(',') ? body.split(',') : body.replace(/\//g, ' ').split(/\s+/))
+      .map((token) => token.trim())
+      .filter(Boolean);
+    const parts = tokens.slice(0, 3).map((p) => {
+      const t = p.trim();
+      if (t.endsWith('%')) {
+        const v = parseFloat(t.slice(0, -1));
+        return Number.isNaN(v) ? NaN : (v * 255) / 100;
+      }
+      return parseFloat(t);
+    });
     if (parts.length === 3 && parts.every((v) => !Number.isNaN(v))) {
       const [r, g, b] = parts;
       // Clamp each channel to the CSS-valid [0, 255] range. Browsers

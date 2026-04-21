@@ -1,19 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isEmptyColorPair, mapColorPair } from '../color-pair';
-
-describe('isEmptyColorPair', () => {
-  it('returns true when both colors are missing', () => {
-    expect(isEmptyColorPair({})).toBe(true);
-  });
-
-  it('returns false when the primary color exists', () => {
-    expect(isEmptyColorPair({ primaryColor: '#000000' })).toBe(false);
-  });
-
-  it('returns false when the secondary color exists', () => {
-    expect(isEmptyColorPair({ secondaryColor: '#FFFFFF' })).toBe(false);
-  });
-});
+import { mapColorPair } from '../color-pair';
 
 describe('mapColorPair', () => {
   it('maps both colors when both are present', () => {

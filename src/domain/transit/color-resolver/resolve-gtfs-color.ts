@@ -1,5 +1,5 @@
 import type { CssColor, GtfsColor, GtfsColorFormat } from '../../../types/app/gtfs-color';
-import { isEmptyColorPair, mapColorPair, type ColorPair } from '../../../utils/color/color-pair';
+import { mapColorPair, type ColorPair } from '../../../utils/color/color-pair';
 import { getContrastAssessment } from '../../../utils/color/color-contrast';
 
 /** Default color used when a GTFS Color value is missing or invalid. */
@@ -119,7 +119,7 @@ export function formatResolvedColorPair(
   colors: ColorPair<GtfsColor>,
   format: GtfsColorFormat,
 ): ColorPair<GtfsColor | CssColor> {
-  if (isEmptyColorPair(colors)) {
+  if (colors.primaryColor === undefined && colors.secondaryColor === undefined) {
     return {};
   }
 

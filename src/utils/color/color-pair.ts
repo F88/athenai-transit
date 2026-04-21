@@ -9,11 +9,6 @@ export interface ColorPair<TColor = string> {
   secondaryColor?: TColor;
 }
 
-/** Return whether a color pair contains no values. */
-export function isEmptyColorPair<TColor>(colors: ColorPair<TColor>): boolean {
-  return !colors.primaryColor && !colors.secondaryColor;
-}
-
 /**
  * Map each present color in a pair while preserving missing members.
  *
