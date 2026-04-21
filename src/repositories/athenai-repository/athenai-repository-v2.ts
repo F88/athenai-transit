@@ -85,28 +85,28 @@ export interface CreateResult {
  * Use {@link AthenaiRepositoryV2.create} to instantiate.
  */
 export class AthenaiRepositoryV2 implements TransitRepository {
-  private activeServiceCache: { key: string; ids: Set<string> } | null = null;
-  private stops: Stop[];
-  private stopsMetaMap: Map<string, StopWithMeta>;
+  // Immutable data loaded from merged v2 bundles.
+  private readonly stops: Stop[];
+  private readonly stopsMetaMap: Map<string, StopWithMeta>;
   private readonly routeMap: Map<string, Route>;
-  private agencyMap: Map<string, Agency>;
-  private resolvedPatterns: Map<string, ResolvedPattern>;
-  private tripPatterns: Map<string, TripPattern>;
-  private stopRouteTypeMap: Map<string, AppRouteTypeValue[]>;
-  private calendarServices: CalendarServiceJson[];
-  private calendarExceptions: Map<string, CalendarExceptionJson[]>;
-  private timetable: Record<string, TimetableGroupV2Json[]>;
-  private headsignTranslations: HeadsignTranslationsByPrefix;
-  private sourceMetas: SourceMeta[];
+  private readonly agencyMap: Map<string, Agency>;
+  private readonly resolvedPatterns: Map<string, ResolvedPattern>;
+  private readonly tripPatterns: Map<string, TripPattern>;
+  private readonly stopRouteTypeMap: Map<string, AppRouteTypeValue[]>;
+  private readonly calendarServices: CalendarServiceJson[];
+  private readonly calendarExceptions: Map<string, CalendarExceptionJson[]>;
+  private readonly timetable: Record<string, TimetableGroupV2Json[]>;
+  private readonly headsignTranslations: HeadsignTranslationsByPrefix;
+  private readonly sourceMetas: SourceMeta[];
 
+  // Derived maps populated during initialization and lazy-load phases.
+  private readonly stopInsightsMap = new Map<string, StopInsightsEntry>();
+  private readonly routeFreqMap = new Map<string, RouteFreqEntry>();
+  private readonly patternStatsMap = new Map<string, PatternStatsEntry>();
+
+  // Mutable caches and lazy-load state.
+  private activeServiceCache: { key: string; ids: Set<string> } | null = null;
   private routeStopsCache: Map<string, Set<string>> | null = null;
-
-  private stopInsightsMap = new Map<string, StopInsightsEntry>();
-
-  private routeFreqMap = new Map<string, RouteFreqEntry>();
-
-  private patternStatsMap = new Map<string, PatternStatsEntry>();
-
   private shapesPromise: Promise<RouteShape[]> = Promise.resolve([]);
   private shapesCache: RouteShape[] | null = null;
 
