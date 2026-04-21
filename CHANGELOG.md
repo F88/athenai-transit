@@ -13,6 +13,9 @@ and this project adheres to [CalVer](https://calver.org/).
 
 Changed
 
+- `JourneyTimeBar` の bar color props を `fillColor` / `unfilledColor` に明確化し、track 側の alpha を component 内で固定せず caller 指定に変更。`StopTimeItem` では route color の contrast 評価に基づいて subtle / emphasis accent color を導出して `TripPositionIndicator` と `JourneyTimeBar` に共有する形へ整理。`VerboseRouteColors` も adjusted pair の theme contrast diagnostics を表示するよう拡張。
+- `BottomSheet` の高さクラスを `COLLAPSED_HEIGHT_CLASS` / `EXPANDED_HEIGHT_CLASS` 定数に抽出し、root className を `cn(...)` で構成する形に整理。開発時に collapsed / expanded 高さを 1 か所で変更できるようにした。現行値は collapsed `40dvh`、expanded `70dvh`。
+
 - pipeline dev analyzers の CLI を共通化。共通 parser (`pipeline/scripts/dev/dev-lib/parse-args.ts`) を導入し、multi-source 系は `--list-sources` / `--list-sections` / repeatable `--section <name>`、section-only 系は `--list-sections` / repeatable `--section <name>` に統一。`analyze-gtfs-stop-times.ts`、`analyze-odpt-station-timetable.ts`、`analyze-v2-insights.ts`、`analyze-v2-global-insights.ts` をこの体系へ移行し、`pipeline/scripts/dev/dev-tools.ts` と `pipeline/scripts/dev/README.md` も更新。
 - `analyze-odpt-station-timetable.ts` を source+section analyzer に拡張。section 名として `time-field-availability` / `station-coverage` / `direction-coverage` / `calendar-coverage` / `destination-distribution` / `train-type-distribution` / `flags` / `unknown-keys` を公開。
 - `analyze-v2-insights.ts` を source+section analyzer に拡張。section 名として `service-groups` / `trip-pattern-stats` / `trip-pattern-geo` / `stop-stats` を公開。
@@ -54,6 +57,8 @@ Changed
 - `FlatDepartureItem` の absolute time 直後にあった terminal marker `着` ハードコードを解消。専用 i18n key `departure.arrivingAbsolute` を新設し `useTranslation` 経由で解決 (ja `"着"` / en `"Arr"`)。`departure.arriving` (relative time 用、`<RelativeTime>` 経由、現在 ja/en とも意図的に空文字 opt-out) とは独立した経路で、2 つの terminal marker スロットを locale 側から独立制御できる。空文字を locale 値に設定することで任意の言語で opt-out 可能 — component は常に span を描画し、表示/非表示の判定は完全に i18n 側に委譲。component 側に両 key の使い分けを説明する TSDoc コメントを追加。
 
 ### Added
+
+- `getContrastAwareAlphaSuffixes` (`src/utils/color/contrast-alpha-suffixes.ts`) を追加。contrast ratio から UI accent 向けの subtle / emphasis alpha suffix を返す純粋関数で、Vitest による契約テストも追加。
 
 - 新しい pipeline dev tool `pipeline/scripts/dev/analyze-gtfs-routes.ts` を追加。GTFS `routes.txt` を source ごとに current-state 分析し、`identity-and-names` / `route-types` / `color-fields` / `cemv-support` / `continuous-service-fields` / `optional-presentation-fields` の section を text report として出力する。pure analysis helper `pipeline/scripts/dev/dev-lib/gtfs-routes-analysis.ts`、smoke test、README / dev-tools 登録も追加。
 
