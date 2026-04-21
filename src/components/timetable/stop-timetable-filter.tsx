@@ -6,10 +6,7 @@ import { getSelectedHeadsignDisplayName } from '@/domain/transit/get-headsign-di
 import { groupByRouteHeadsign } from '@/domain/transit/group-timetable-entries';
 import { LOW_CONTRAST_BADGE_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
 import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
-import {
-  useThemeContrastBackgroundColor,
-  useThemeNeutralBorderColor,
-} from '@/hooks/use-is-low-contrast-against-theme';
+import { useThemeContrastBackgroundColor } from '@/hooks/use-is-low-contrast-against-theme';
 import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
 import { getContrastAssessment } from '@/utils/color/color-contrast';
@@ -37,7 +34,6 @@ export function StopTimetableFilter({
   agencies,
 }: StopTimetableFilterProps) {
   const themeContrastBackgroundColor = useThemeContrastBackgroundColor();
-  const neutralBorderColor = useThemeNeutralBorderColor();
 
   const routeHeadsigns = useMemo(() => {
     return groupByRouteHeadsign(timetableEntries)
@@ -54,18 +50,16 @@ export function StopTimetableFilter({
         }
 
         const { routeColor, routeTextColor } = resolveRouteColors(routeDirection.route, 'css-hex');
-        const routeColorAssessment = routeColor
-          ? getContrastAssessment(
-              routeColor,
-              themeContrastBackgroundColor,
-              LOW_CONTRAST_BADGE_MIN_RATIO,
-            )
-          : null;
+        const routeColorAssessment = getContrastAssessment(
+          routeColor,
+          themeContrastBackgroundColor,
+          LOW_CONTRAST_BADGE_MIN_RATIO,
+        );
         // Keep the fill/text pair aligned with RouteBadge and use the paired
         // text color only as an inactive outline fallback when the route color
         // blends into the current theme background.
-        const inactiveBorderColor = routeColorAssessment?.isLowContrast
-          ? (routeTextColor ?? neutralBorderColor)
+        const inactiveBorderColor = routeColorAssessment.isLowContrast
+          ? routeTextColor
           : routeColor;
 
         return {
@@ -80,7 +74,7 @@ export function StopTimetableFilter({
       })
 
       .filter((entry) => entry !== null);
-  }, [neutralBorderColor, themeContrastBackgroundColor, timetableEntries]);
+  }, [themeContrastBackgroundColor, timetableEntries]);
 
   const noFilter = activeFilters.size === 0;
 
