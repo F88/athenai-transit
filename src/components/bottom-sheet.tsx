@@ -17,7 +17,6 @@ import { BottomSheetStops } from './bottom-sheet-stops';
 
 const DRAG_THRESHOLD = 50;
 const COLLAPSED_HEIGHT_CLASS = 'h-[40dvh]';
-// const COLLAPSED_HEIGHT_CLASS = 'h-[60dvh]';
 const EXPANDED_HEIGHT_CLASS = 'h-[70dvh]';
 
 /** Auto-enable "show operating stops only" filter at 22:00 in service day minutes. */
