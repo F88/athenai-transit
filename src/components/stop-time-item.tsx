@@ -69,6 +69,18 @@ function AbsoluteStopTime({ timeText, isTerminal, textColor }: AbsoluteStopTimeP
     >
       {timeText}
       {isTerminal && (
+        /*
+         * Terminal arrival marker attached to the absolute time (for example,
+         * "22:30着" / "22:30Arr"). `stopTimeView.arrivingAbsolute` stays
+         * separate from `stopTimeView.arriving` on purpose:
+         *
+         * - `stopTimeView.arriving` is used by <RelativeTime> next to the
+         *   relative time and can stay empty when that compact view should not
+         *   show a terminal marker.
+         * - `stopTimeView.arrivingAbsolute` is used only here next to the
+         *   absolute time, so locale owners can opt out independently by
+         *   setting this key to an empty string.
+         */
         <span className="text-[10px] font-normal opacity-70">
           {t('stopTimeView.arrivingAbsolute')}
         </span>

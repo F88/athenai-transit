@@ -32,7 +32,7 @@ const DEFAULT_BADGE_MIN_RATIO = LOW_CONTRAST_BADGE_MIN_RATIO;
 /**
  * Observe the `class` attribute of `<html>` and fire the callback on
  * every mutation. Used so every component tree that calls
- * {@link useIsLowContrastAgainstTheme} sees theme changes immediately.
+ * {@link useThemeContrastAssessment} sees theme changes immediately.
  *
  * Why not `useUserSettings`? That hook keeps its state in `useState`
  * at each call site, so two call sites end up with independent state
@@ -66,7 +66,7 @@ function getDarkClassServerSnapshot(): boolean {
  * contrast checks.
  *
  * The value tracks the `dark` class on `<html>` via the same
- * subscription mechanism as {@link useIsLowContrastAgainstTheme}, so
+ * subscription mechanism as {@link useThemeContrastAssessment}, so
  * callers can derive multiple contrast decisions from a single theme
  * read.
  *

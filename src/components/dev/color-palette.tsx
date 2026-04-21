@@ -49,7 +49,7 @@ function PaletteFrame({ children }: { children: React.ReactNode }) {
  *    with `text` and colored with `textColor` (so the
  *    route_color / route_text_color pair is shown in its production
  *    combination).
- * 3. The current result of {@link useIsLowContrastAgainstTheme}
+ * 3. The current result of {@link useThemeContrastAssessment}
  *    (`true` / `false`) rendered as a BaseLabel pill.
  *
  * Combine several of these to see at a glance which `route_color`
