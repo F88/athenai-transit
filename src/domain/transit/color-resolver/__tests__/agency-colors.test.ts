@@ -1,5 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { resolveAgencyColors } from '../agency-colors';
+import { normalizeAgencyColorPairs, resolveAgencyColors } from '../agency-colors';
+
+describe('normalizeAgencyColorPairs', () => {
+  it('uppercases valid GTFS Color values while preserving order', () => {
+    expect(
+      normalizeAgencyColorPairs([
+        { bg: '009f40', text: 'ffffff' },
+        { bg: 'e2001a', text: 'FFFFFF' },
+      ]),
+    ).toEqual([
+      { bg: '009F40', text: 'FFFFFF' },
+      { bg: 'E2001A', text: 'FFFFFF' },
+    ]);
+  });
+
+  it('preserves invalid values as-is instead of inventing fallbacks', () => {
+    expect(normalizeAgencyColorPairs([{ bg: 'zzzzzz', text: 'FFFFFF' }])).toEqual([
+      { bg: 'zzzzzz', text: 'FFFFFF' },
+    ]);
+  });
+});
 
 describe('resolveAgencyColors', () => {
   it('returns the primary agency colors unchanged', () => {
