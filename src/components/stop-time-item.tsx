@@ -4,7 +4,10 @@ import {
   getContrastAdjustedRouteColors,
   resolveRouteColors,
 } from '@/domain/transit/color-resolver/route-colors';
-import { LOW_CONTRAST_TEXT_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
+import {
+  LOW_CONTRAST_BADGE_MIN_RATIO,
+  LOW_CONTRAST_TEXT_MIN_RATIO,
+} from '@/domain/transit/color-resolver/contrast-thresholds';
 import { useTranslation } from 'react-i18next';
 import { minutesToDate } from '../domain/transit/calendar-utils';
 import { formatAbsoluteTime } from '../domain/transit/time';
@@ -13,6 +16,7 @@ import { getDisplayMinutes } from '../domain/transit/timetable-utils';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
+import { getContrastAwareAlphaSuffixes } from '@/utils/color/contrast-alpha-suffixes';
 import { JourneyTimeBar } from './journey-time-bar';
 import { BaseLabel } from './label/base-label';
 import { TripPositionIndicator } from './label/trip-position-indicator';
@@ -104,12 +108,25 @@ export function StopTimeItem({
   // Route colors
   const { route } = entry.routeDirection;
   const { routeColor } = resolveRouteColors(route, 'css-hex');
-  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_TEXT_MIN_RATIO);
+  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
+
+  // Adjust route colors for the position indicator and time bar based on contrast against the current theme.
   const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
     route,
     routeColorAssessment.isLowContrast,
     'css-hex',
   );
+  const adjustedColorAssessment = useThemeContrastAssessment(
+    contrastAdjustedRouteColors.color,
+    LOW_CONTRAST_TEXT_MIN_RATIO,
+  );
+
+  // Compute accent colors for the position indicator based on the route color's contrast ratio.
+  const { subtleAlphaSuffix, emphasisAlphaSuffix } = getContrastAwareAlphaSuffixes(
+    adjustedColorAssessment.ratio,
+  );
+  const emphasisAccentColor = `${contrastAdjustedRouteColors.color}${emphasisAlphaSuffix}`;
+  const subtleAccentColor = `${contrastAdjustedRouteColors.color}${subtleAlphaSuffix}`;
 
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
@@ -147,25 +164,27 @@ export function StopTimeItem({
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-          <div className="mb-0.5 flex min-w-0 items-center gap-1">
-            <div className="min-w-0 flex-1">
-              <TripPositionIndicator
-                stopIndex={entry.patternPosition.stopIndex}
-                totalStops={entry.patternPosition.totalStops}
-                size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
-                showEmoji={info.isVerboseEnabled}
-                showTrack={info.isNormalEnabled}
-                trackColor={`${contrastAdjustedRouteColors.color}20`}
-                dotColor={`${contrastAdjustedRouteColors.color}50`}
-                currentColor={contrastAdjustedRouteColors.color}
-                trackBorderColor={contrastAdjustedRouteColors.color}
-                showTrackBorder={false}
-                showPositionLabel={info.isVerboseEnabled}
-                labelTextColor={contrastAdjustedRouteColors.textColor}
-                labelBgColor={contrastAdjustedRouteColors.color}
-              />
+          {info.isNormalEnabled && (
+            <div className="mb-0.5 flex min-w-0 items-center gap-1">
+              <div className="min-w-0 flex-1">
+                <TripPositionIndicator
+                  stopIndex={entry.patternPosition.stopIndex}
+                  totalStops={entry.patternPosition.totalStops}
+                  size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
+                  showEmoji={info.isVerboseEnabled}
+                  showTrack={info.isNormalEnabled}
+                  trackColor={subtleAccentColor}
+                  dotColor={emphasisAccentColor}
+                  currentColor={contrastAdjustedRouteColors.color}
+                  trackBorderColor={contrastAdjustedRouteColors.color}
+                  showTrackBorder={false}
+                  showPositionLabel={info.isVerboseEnabled}
+                  labelTextColor={contrastAdjustedRouteColors.textColor}
+                  labelBgColor={contrastAdjustedRouteColors.color}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {info.isDetailedEnabled && (
             <JourneyTimeBar
@@ -173,7 +192,9 @@ export function StopTimeItem({
               totalMinutes={entry.insights?.totalMinutes}
               size={info.isDetailedEnabled ? 'md' : 'sm'}
               showEmoji={info.isVerboseEnabled}
-              color={contrastAdjustedRouteColors.color}
+              fillColor={contrastAdjustedRouteColors.color}
+              // unfilledColor={subtleAccentColor}
+              unfilledColor={emphasisAccentColor}
               showRMins={info.isVerboseEnabled}
               showTMins={info.isVerboseEnabled}
               minsPosition="right"

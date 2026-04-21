@@ -14,7 +14,8 @@ const meta = {
     remainingMinutes: { control: { type: 'number' } },
     totalMinutes: { control: { type: 'number' } },
     size: { control: 'select', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
-    color: { control: 'color' },
+    fillColor: { control: 'color' },
+    unfilledColor: { control: 'color' },
     showEmoji: { control: 'boolean' },
     showRMins: { control: 'boolean' },
     showTMins: { control: 'boolean' },
@@ -39,6 +40,7 @@ const meta = {
     remainingMinutes: 20,
     totalMinutes: 30,
     size: 'sm',
+    unfilledColor: 'rgba(148, 163, 184, 0.35)',
     showRMins: false,
     showTMins: false,
     minsPosition: 'bottom',
@@ -148,21 +150,21 @@ export const Sizes: Story = {
   },
 };
 
-/** Default + route color samples for the `color` prop. */
+/** Default + route color samples for the `fillColor` prop. */
 export const Colors: Story = {
   args: { remainingMinutes: 15, totalMinutes: 30 },
   render: ({ ...rest }) => {
-    const samples: { label: string; color?: string }[] = [
+    const samples: { label: string; fillColor?: string }[] = [
       { label: 'default (primary)' },
-      { label: 'Oedo #cf3366', color: '#cf3366' },
-      { label: 'Mita #0067b0', color: '#0067b0' },
-      { label: 'Asakusa #ff535f', color: '#ff535f' },
+      { label: 'Oedo #cf3366', fillColor: '#cf3366' },
+      { label: 'Mita #0067b0', fillColor: '#0067b0' },
+      { label: 'Asakusa #ff535f', fillColor: '#ff535f' },
     ];
     return (
       <div className="flex flex-col gap-4">
         {samples.map((s) => (
           <Row key={s.label} label={s.label}>
-            <JourneyTimeBar {...rest} color={s.color} />
+            <JourneyTimeBar {...rest} fillColor={s.fillColor} />
           </Row>
         ))}
       </div>
@@ -175,7 +177,8 @@ export const WithEmojiAndColoredLabel: Story = {
   args: {
     remainingMinutes: 15,
     totalMinutes: 30,
-    color: '#cf3366',
+    fillColor: '#cf3366',
+    unfilledColor: '#cf336650',
     showEmoji: true,
     showRMins: true,
     showTMins: true,
@@ -190,7 +193,8 @@ export const BorderShortcut: Story = {
   args: {
     remainingMinutes: 15,
     totalMinutes: 30,
-    color: '#cf3366',
+    fillColor: '#cf3366',
+    unfilledColor: '#cf336650',
     showRMins: true,
     showTMins: true,
     minsPosition: 'right',
@@ -203,7 +207,12 @@ export const BorderShortcut: Story = {
 
 /** `border` variants — off / default / custom width / dashed / colored. */
 export const Borders: Story = {
-  args: { remainingMinutes: 15, totalMinutes: 30, color: '#cf3366' },
+  args: {
+    remainingMinutes: 15,
+    totalMinutes: 30,
+    fillColor: '#cf3366',
+    unfilledColor: '#cf336650',
+  },
   render: ({ ...rest }) => {
     const samples: { label: string; border?: JourneyTimeBarBorder }[] = [
       { label: 'none (default)' },
@@ -227,7 +236,12 @@ export const Borders: Story = {
 
 /** `fillDirection` variants — ltr (default) vs rtl. */
 export const FillDirections: Story = {
-  args: { remainingMinutes: 15, totalMinutes: 30, color: '#cf3366' },
+  args: {
+    remainingMinutes: 15,
+    totalMinutes: 30,
+    fillColor: '#cf3366',
+    unfilledColor: '#cf336650',
+  },
   render: ({ ...rest }) => {
     const dirs: JourneyTimeBarFillDirection[] = ['ltr', 'rtl'];
     return (
@@ -364,7 +378,7 @@ interface DurationSample {
 
 interface ColorSample {
   label: string;
-  color?: string;
+  fillColor?: string;
 }
 
 const durationSamples: DurationSample[] = [
@@ -381,9 +395,9 @@ const durationSamples: DurationSample[] = [
 
 const colorSamples: ColorSample[] = [
   { label: 'default (primary)' },
-  { label: 'Oedo #cf3366', color: '#cf3366' },
-  { label: 'Mita #0067b0', color: '#0067b0' },
-  { label: 'Asakusa #ff535f', color: '#ff535f' },
+  { label: 'Oedo #cf3366', fillColor: '#cf3366' },
+  { label: 'Mita #0067b0', fillColor: '#0067b0' },
+  { label: 'Asakusa #ff535f', fillColor: '#ff535f' },
 ];
 
 /**
@@ -428,7 +442,8 @@ export const KitchenSink: Story = {
                 <div style={{ width: 240 }}>
                   <JourneyTimeBar
                     size={size}
-                    color={c.color}
+                    fillColor={c.fillColor}
+                    unfilledColor={c.fillColor ? `${c.fillColor}50` : 'rgba(148, 163, 184, 0.35)'}
                     remainingMinutes={d.remaining}
                     totalMinutes={d.total}
                     showRMins={showRMins}
@@ -438,9 +453,9 @@ export const KitchenSink: Story = {
                     border={border}
                     showEmoji={showEmoji}
                     minsTextColor={minsTextColor}
-                    minsBgColor={c.color ? minsBgColor : undefined}
+                    minsBgColor={c.fillColor ? minsBgColor : undefined}
                     showBorder={showBorder}
-                    borderColor={c.color ? borderColor : undefined}
+                    borderColor={c.fillColor ? borderColor : undefined}
                   />
                 </div>
               </div>

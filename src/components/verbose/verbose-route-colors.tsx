@@ -1,4 +1,7 @@
-import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';
+import {
+  getContrastAdjustedRouteColors,
+  resolveRouteColors,
+} from '@/domain/transit/color-resolver/route-colors';
 import {
   LOW_CONTRAST_BADGE_MIN_RATIO,
   LOW_CONTRAST_TEXT_MIN_RATIO,
@@ -20,9 +23,11 @@ function ContrastFlagBadge({ isLowContrast }: { isLowContrast: boolean }) {
 }
 
 function RouteColorPairContrastDetails({
+  label,
   routeColor,
   routeTextColor,
 }: {
+  label: string;
   routeColor: string;
   routeTextColor: string;
 }) {
@@ -31,7 +36,7 @@ function RouteColorPairContrastDetails({
 
   return (
     <>
-      [RouteColorPair] {routeColor} / {routeTextColor} |
+      [{label}] {routeColor} / {routeTextColor} |
       <ContrastFlagBadge isLowContrast={isLowContrast} /> | min:
       {NORMALIZED_COLOR_PAIR_MIN_RATIO.toFixed(2)} | ratio:
       {ratio === null ? '(null)' : ratio.toFixed(2)}
@@ -72,6 +77,7 @@ function ThemeContrastDetails({
  * Debug dump of route colors and their contrast metrics.
  */
 export function VerboseRouteColors({ route }: { route: Route }) {
+  // Route colors
   const { routeColor, routeTextColor } = resolveRouteColors(route, 'css-hex');
   const routeColorEvaluation = useThemeContrastEvaluation(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
   const routeTextColorEvaluation = useThemeContrastEvaluation(
@@ -79,10 +85,29 @@ export function VerboseRouteColors({ route }: { route: Route }) {
     LOW_CONTRAST_TEXT_MIN_RATIO,
   );
 
+  // Adjusted route colors
+  const { color: adjustedColor, textColor: adjustedTextColor } = getContrastAdjustedRouteColors(
+    route,
+    routeColorEvaluation.isLowContrast,
+    'css-hex',
+  );
+  const adjustedColorEvaluation = useThemeContrastEvaluation(
+    adjustedColor,
+    LOW_CONTRAST_BADGE_MIN_RATIO,
+  );
+  const adjustedTextColorEvaluation = useThemeContrastEvaluation(
+    adjustedTextColor,
+    LOW_CONTRAST_TEXT_MIN_RATIO,
+  );
+
   return (
     <span className="border-app-neutral block overflow-x-auto rounded border border-dashed p-1 text-[9px] whitespace-nowrap text-[#999] dark:text-gray-500">
       <span className="block">
-        <RouteColorPairContrastDetails routeColor={routeColor} routeTextColor={routeTextColor} />
+        <RouteColorPairContrastDetails
+          label="RouteColorPair"
+          routeColor={routeColor}
+          routeTextColor={routeTextColor}
+        />
       </span>
       <span className="block">
         <ThemeContrastDetails label="RouteColor vs Theme" evaluation={routeColorEvaluation} />
@@ -93,6 +118,29 @@ export function VerboseRouteColors({ route }: { route: Route }) {
           evaluation={routeTextColorEvaluation}
         />
       </span>
+      {routeColorEvaluation.isLowContrast && (
+        <>
+          <span className="block">
+            <RouteColorPairContrastDetails
+              label="AdjustedColorPair"
+              routeColor={adjustedColor}
+              routeTextColor={adjustedTextColor}
+            />
+          </span>
+          <span className="block">
+            <ThemeContrastDetails
+              label="AdjustedColors vs Theme"
+              evaluation={adjustedColorEvaluation}
+            />
+          </span>
+          <span className="block">
+            <ThemeContrastDetails
+              label="AdjustedTextColor vs Theme"
+              evaluation={adjustedTextColorEvaluation}
+            />
+          </span>
+        </>
+      )}
     </span>
   );
 }
