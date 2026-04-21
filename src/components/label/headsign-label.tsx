@@ -10,7 +10,7 @@ import { VerboseHeadsign } from '../verbose/verbose-headsign';
 export type HeadsignLabelSize = 'default' | 'sm' | 'xs';
 
 const baseLabelSizes: Record<HeadsignLabelSize, BaseLabelSize> = {
-  default: 'md',
+  md: 'md',
   sm: 'sm',
   xs: 'xs',
 };
