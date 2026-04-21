@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  getAdjustedRouteColors,
-  normalizeResolvedRouteColors,
+  getContrastAdjustedRouteColors,
   normalizeRouteGtfsColors,
   resolveRouteColors,
 } from '../route-colors';
@@ -23,15 +22,15 @@ describe('normalizeRouteGtfsColors', () => {
 
   it('applies defaults when both colors are omitted', () => {
     expect(normalizeRouteGtfsColors('', '')).toEqual({
-      routeColor: '333333',
-      routeTextColor: 'F1F1F1',
+      routeColor: '666666',
+      routeTextColor: 'EEEEEE',
     });
   });
 
   it('keeps the normalized default text color when the pair ratio is at least 1.2', () => {
     expect(normalizeRouteGtfsColors('FBD074', '')).toEqual({
       routeColor: 'FBD074',
-      routeTextColor: 'F1F1F1',
+      routeTextColor: 'EEEEEE',
     });
   });
 
@@ -50,10 +49,10 @@ describe('normalizeRouteGtfsColors', () => {
   });
 });
 
-describe('normalizeResolvedRouteColors', () => {
+describe('resolveRouteColors', () => {
   it('returns CSS-ready normalized values', () => {
     expect(
-      normalizeResolvedRouteColors(
+      resolveRouteColors(
         {
           route_color: '',
           route_text_color: '',
@@ -61,13 +60,11 @@ describe('normalizeResolvedRouteColors', () => {
         'css-hex',
       ),
     ).toEqual({
-      routeColor: '#333333',
-      routeTextColor: '#F1F1F1',
+      routeColor: '#666666',
+      routeTextColor: '#EEEEEE',
     });
   });
-});
 
-describe('resolveRouteColors', () => {
   it('keeps explicit route colors unchanged', () => {
     expect(
       resolveRouteColors({
@@ -88,28 +85,32 @@ describe('resolveRouteColors', () => {
       }),
     ).toEqual({
       routeColor: 'FBD074',
-      routeTextColor: '000000',
+      routeTextColor: 'EEEEEE',
     });
   });
 
-  it('returns route_text_color when route_color is missing', () => {
+  it('returns normalized defaults when route_color is missing', () => {
     expect(
       resolveRouteColors({
         route_color: '',
         route_text_color: 'FFFFFF',
       }),
     ).toEqual({
+      routeColor: '666666',
       routeTextColor: 'FFFFFF',
     });
   });
 
-  it('returns no colors when both route fields are missing', () => {
+  it('returns normalized defaults when both route fields are missing', () => {
     expect(
       resolveRouteColors({
         route_color: '',
         route_text_color: '',
       }),
-    ).toEqual({});
+    ).toEqual({
+      routeColor: '666666',
+      routeTextColor: 'EEEEEE',
+    });
   });
 
   it('preserves an explicit route_text_color even when contrast is low', () => {
@@ -120,11 +121,11 @@ describe('resolveRouteColors', () => {
       }),
     ).toEqual({
       routeColor: '000000',
-      routeTextColor: '000101',
+      routeTextColor: 'FFFFFF',
     });
   });
 
-  it('preserves an explicit near-black text color when it is not exactly the same', () => {
+  it('normalizes a severely low-contrast near-black text color to a readable fallback', () => {
     expect(
       resolveRouteColors({
         route_color: '000000',
@@ -132,7 +133,7 @@ describe('resolveRouteColors', () => {
       }),
     ).toEqual({
       routeColor: '000000',
-      routeTextColor: '000001',
+      routeTextColor: 'FFFFFF',
     });
   });
 
@@ -160,7 +161,7 @@ describe('resolveRouteColors', () => {
     });
   });
 
-  it('preserves an explicit near-white text color when it is not exactly the same', () => {
+  it('normalizes an explicit near-white text color when the pair stays below the repair threshold', () => {
     expect(
       resolveRouteColors({
         route_color: 'FFFFFF',
@@ -168,7 +169,7 @@ describe('resolveRouteColors', () => {
       }),
     ).toEqual({
       routeColor: 'FFFFFF',
-      routeTextColor: 'FFFFFE',
+      routeTextColor: '000000',
     });
   });
 
@@ -184,13 +185,14 @@ describe('resolveRouteColors', () => {
     });
   });
 
-  it('treats invalid GTFS colors as omitted', () => {
+  it('treats invalid GTFS colors as omitted and falls back to normalized defaults', () => {
     expect(
       resolveRouteColors({
         route_color: 'zzzzzz',
         route_text_color: 'FFFFFF',
       }),
     ).toEqual({
+      routeColor: '666666',
       routeTextColor: 'FFFFFF',
     });
   });
@@ -206,15 +208,15 @@ describe('resolveRouteColors', () => {
       ),
     ).toEqual({
       routeColor: '#1976D2',
-      routeTextColor: '#FFFFFF',
+      routeTextColor: '#EEEEEE',
     });
   });
 });
 
-describe('getAdjustedRouteColors', () => {
+describe('getContrastAdjustedRouteColors', () => {
   it('keeps the original route colors when contrast is sufficient', () => {
     expect(
-      getAdjustedRouteColors(
+      getContrastAdjustedRouteColors(
         {
           route_color: '1976D2',
           route_text_color: 'FFFFFF',
@@ -229,7 +231,7 @@ describe('getAdjustedRouteColors', () => {
 
   it('returns CSS-ready colors when format is css-hex', () => {
     expect(
-      getAdjustedRouteColors(
+      getContrastAdjustedRouteColors(
         {
           route_color: '1976D2',
           route_text_color: 'FFFFFF',
@@ -245,7 +247,7 @@ describe('getAdjustedRouteColors', () => {
 
   it('swaps route and text colors when the route color is low contrast', () => {
     expect(
-      getAdjustedRouteColors(
+      getContrastAdjustedRouteColors(
         {
           route_color: 'FFFFFF',
           route_text_color: '111827',
@@ -260,7 +262,7 @@ describe('getAdjustedRouteColors', () => {
 
   it('falls back to GTFS defaults when colors are omitted', () => {
     expect(
-      getAdjustedRouteColors(
+      getContrastAdjustedRouteColors(
         {
           route_color: '',
           route_text_color: '',
@@ -268,14 +270,14 @@ describe('getAdjustedRouteColors', () => {
         true,
       ),
     ).toEqual({
-      color: 'F1F1F1',
-      textColor: '333333',
+      color: 'EEEEEE',
+      textColor: '666666',
     });
   });
 
   it('applies GTFS defaults before CSS formatting', () => {
     expect(
-      getAdjustedRouteColors(
+      getContrastAdjustedRouteColors(
         {
           route_color: '',
           route_text_color: '',
@@ -284,8 +286,8 @@ describe('getAdjustedRouteColors', () => {
         'css-hex',
       ),
     ).toEqual({
-      color: '#333333',
-      textColor: '#F1F1F1',
+      color: '#666666',
+      textColor: '#EEEEEE',
     });
   });
 });

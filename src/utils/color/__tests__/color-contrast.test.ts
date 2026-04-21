@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   contrastRatio,
   getContrastAssessment,
+  getContrastEvaluation,
   passesAA,
   suggestTextColor,
 } from '../color-contrast';
@@ -340,5 +341,27 @@ describe('getContrastAssessment', () => {
         expect(assessment.isLowContrast).toBe(false);
       },
     );
+  });
+});
+
+describe('getContrastEvaluation', () => {
+  it('returns the evaluated foreground/background pair along with the assessment', () => {
+    expect(getContrastEvaluation('#ffffff', '#000000', BADGE_MIN_RATIO)).toEqual({
+      foreground: '#ffffff',
+      background: '#000000',
+      ratio: 21,
+      minRatio: BADGE_MIN_RATIO,
+      isLowContrast: false,
+    });
+  });
+
+  it('preserves the input colors even when the ratio cannot be computed', () => {
+    expect(getContrastEvaluation('not-a-color', '#ffffff', BADGE_MIN_RATIO)).toEqual({
+      foreground: 'not-a-color',
+      background: '#ffffff',
+      ratio: null,
+      minRatio: BADGE_MIN_RATIO,
+      isLowContrast: false,
+    });
   });
 });

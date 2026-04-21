@@ -30,6 +30,16 @@ export interface ContrastAssessment {
   isLowContrast: boolean;
 }
 
+/**
+ * Contrast assessment plus the evaluated foreground/background pair.
+ */
+export interface ContrastEvaluation extends ContrastAssessment {
+  /** Foreground color that was evaluated. */
+  foreground: string;
+  /** Background color that was evaluated. */
+  background: string;
+}
+
 function clamp255(v: number): number {
   return Math.max(0, Math.min(255, v));
 }
@@ -257,9 +267,39 @@ export function getContrastAssessment(
   bg: string,
   minRatio: number,
 ): ContrastAssessment {
-  const ratio = contrastRatio(color, bg)?.ratio;
+  const {
+    foreground: _foreground,
+    background: _background,
+    ...assessment
+  } = getContrastEvaluation(color, bg, minRatio);
+
+  return assessment;
+}
+
+/**
+ * Assess whether `foreground` has insufficient contrast against `background`.
+ *
+ * This is the explanation-friendly variant of {@link getContrastAssessment}:
+ * it includes both evaluated colors in the result so verbose UIs and logs can
+ * show exactly which pair produced the ratio.
+ *
+ * @param foreground - Foreground color (CSS hex, rgb, or hsl).
+ * @param background - Background color (CSS hex, rgb, or hsl).
+ * @param minRatio - Contrast threshold below which the pair is considered
+ *   low-contrast.
+ * @returns A {@link ContrastEvaluation} containing both input colors and the
+ *   computed classification.
+ */
+export function getContrastEvaluation(
+  foreground: string,
+  background: string,
+  minRatio: number,
+): ContrastEvaluation {
+  const ratio = contrastRatio(foreground, background)?.ratio;
 
   return {
+    foreground,
+    background,
     ratio: ratio ?? null,
     minRatio,
     isLowContrast: ratio != null && ratio < minRatio,

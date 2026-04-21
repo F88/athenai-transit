@@ -1,8 +1,8 @@
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import {
-  getAdjustedRouteColors,
-  normalizeResolvedRouteColors,
+  getContrastAdjustedRouteColors,
+  resolveRouteColors,
 } from '@/domain/transit/color-resolver/route-colors';
 import { LOW_CONTRAST_TEXT_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
 import { useTranslation } from 'react-i18next';
@@ -103,9 +103,9 @@ export function StopTimeItem({
 
   // Route colors
   const { route } = entry.routeDirection;
-  const { routeColor } = normalizeResolvedRouteColors(route, 'css-hex');
+  const { routeColor } = resolveRouteColors(route, 'css-hex');
   const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_TEXT_MIN_RATIO);
-  const adjustedRouteTextColors = getAdjustedRouteColors(
+  const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
     route,
     routeColorAssessment.isLowContrast,
     'css-hex',
@@ -142,7 +142,7 @@ export function StopTimeItem({
           <AbsoluteStopTime
             timeText={formatAbsoluteTime(time)}
             isTerminal={isTerminal}
-            textColor={adjustedRouteTextColors.color}
+            textColor={contrastAdjustedRouteColors.color}
           />
         </div>
 
@@ -155,14 +155,14 @@ export function StopTimeItem({
                 size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
                 showEmoji={info.isVerboseEnabled}
                 showTrack={info.isNormalEnabled}
-                trackColor={`${adjustedRouteTextColors.color}20`}
-                dotColor={`${adjustedRouteTextColors.color}50`}
-                currentColor={adjustedRouteTextColors.color}
-                trackBorderColor={adjustedRouteTextColors.color}
+                trackColor={`${contrastAdjustedRouteColors.color}20`}
+                dotColor={`${contrastAdjustedRouteColors.color}50`}
+                currentColor={contrastAdjustedRouteColors.color}
+                trackBorderColor={contrastAdjustedRouteColors.color}
                 showTrackBorder={false}
                 showPositionLabel={info.isVerboseEnabled}
-                labelTextColor={adjustedRouteTextColors.textColor}
-                labelBgColor={adjustedRouteTextColors.color}
+                labelTextColor={contrastAdjustedRouteColors.textColor}
+                labelBgColor={contrastAdjustedRouteColors.color}
               />
             </div>
           </div>
@@ -173,14 +173,14 @@ export function StopTimeItem({
               totalMinutes={entry.insights?.totalMinutes}
               size={info.isDetailedEnabled ? 'md' : 'sm'}
               showEmoji={info.isVerboseEnabled}
-              color={adjustedRouteTextColors.color}
+              color={contrastAdjustedRouteColors.color}
               showRMins={info.isVerboseEnabled}
               showTMins={info.isVerboseEnabled}
               minsPosition="right"
               fillDirection="rtl"
-              borderColor={adjustedRouteTextColors.color}
-              minsTextColor={adjustedRouteTextColors.textColor}
-              minsBgColor={adjustedRouteTextColors.color}
+              borderColor={contrastAdjustedRouteColors.color}
+              minsTextColor={contrastAdjustedRouteColors.textColor}
+              minsBgColor={contrastAdjustedRouteColors.color}
               showBorder={false}
             />
           )}

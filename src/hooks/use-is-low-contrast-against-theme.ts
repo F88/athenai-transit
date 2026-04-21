@@ -1,6 +1,11 @@
 import { useSyncExternalStore } from 'react';
 import { LOW_CONTRAST_BADGE_MIN_RATIO } from '../domain/transit/color-resolver/contrast-thresholds';
-import { getContrastAssessment, type ContrastAssessment } from '../utils/color/color-contrast';
+import {
+  getContrastAssessment,
+  getContrastEvaluation,
+  type ContrastAssessment,
+  type ContrastEvaluation,
+} from '../utils/color/color-contrast';
 
 /** Background color used as the reference when the user is on the light theme. */
 const LIGHT_BG = '#ffffff';
@@ -123,4 +128,28 @@ export function useThemeContrastAssessment(
   const bg = useThemeContrastBackgroundColor();
 
   return getContrastAssessment(color, bg, minRatio);
+}
+
+/**
+ * React hook: evaluates the given foreground `color` against the current
+ * theme's background and returns both the result and the evaluated pair.
+ *
+ * Unlike {@link useThemeContrastAssessment}, this hook includes the input
+ * `foreground` color and resolved theme `background` in the returned object,
+ * which is useful for verbose UI and diagnostics.
+ *
+ * @param color - Foreground color (CSS hex, rgb, or hsl). Typically a GTFS
+ *   `route_color` prefixed with `#`.
+ * @param minRatio - WCAG contrast ratio threshold. Defaults to
+ *   {@link DEFAULT_BADGE_MIN_RATIO}.
+ * @returns A {@link ContrastEvaluation} with both evaluated colors and the
+ *   computed classification.
+ */
+export function useThemeContrastEvaluation(
+  color: string,
+  minRatio: number = DEFAULT_BADGE_MIN_RATIO,
+): ContrastEvaluation {
+  const bg = useThemeContrastBackgroundColor();
+
+  return getContrastEvaluation(color, bg, minRatio);
 }

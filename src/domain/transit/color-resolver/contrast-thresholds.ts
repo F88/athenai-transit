@@ -16,3 +16,10 @@ export const LOW_CONTRAST_BADGE_MIN_RATIO = 1.2;
  * the operator color is still important.
  */
 export const LOW_CONTRAST_TEXT_MIN_RATIO = 1.7;
+
+/**
+ * Minimum direct contrast ratio allowed between a normalized color
+ * pair before it is treated as effectively indistinguishable and
+ * corrected during normalization.
+ */
+export const NORMALIZED_COLOR_PAIR_MIN_RATIO = 1.2;
