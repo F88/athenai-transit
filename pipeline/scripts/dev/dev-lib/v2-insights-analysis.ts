@@ -37,11 +37,57 @@
  */
 
 import type { InsightsBundle } from '../../../../src/types/data/transit-v2-json';
+import { type AnalysisSectionDefinition } from './analysis-sections';
 import { renderTable } from './render-utils';
 import { sortedMedian, sortedPercentile } from './stats-utils';
 
 /** Thresholds (minutes) for the "long trip share" columns. */
 export const OVER_THRESHOLDS_MINUTES = [30, 60, 90] as const;
+
+export const V2_INSIGHTS_SECTION_NAMES = [
+  'service-groups',
+  'trip-pattern-stats',
+  'trip-pattern-geo',
+  'stop-stats',
+] as const;
+
+export type V2InsightsSectionName = (typeof V2_INSIGHTS_SECTION_NAMES)[number];
+
+export type V2InsightsSectionDefinition = AnalysisSectionDefinition<
+  InsightsSourceStats[],
+  V2InsightsSectionName
+>;
+
+export const V2_INSIGHTS_SECTIONS = {
+  'service-groups': {
+    name: 'service-groups',
+    title: 'serviceGroups',
+    description: 'Summarizes service group keys and calendar segmentation for each source.',
+    render: (rows: InsightsSourceStats[]) =>
+      [formatServiceGroupsTable(rows), '', formatServiceGroupsKeysDetail(rows)].join('\n'),
+  },
+  'trip-pattern-stats': {
+    name: 'trip-pattern-stats',
+    title: 'tripPatternStats',
+    description: 'Shows trip duration distributions in per-pattern and per-trip views.',
+    render: (rows: InsightsSourceStats[]) =>
+      [formatOverviewTable(rows), '', formatDistributionTable(rows)].join('\n'),
+  },
+  'trip-pattern-geo': {
+    name: 'trip-pattern-geo',
+    title: 'tripPatternGeo',
+    description: 'Summarizes straight-line geometry metrics for trip patterns.',
+    render: (rows: InsightsSourceStats[]) =>
+      [formatTripPatternGeoTable(rows), '', formatPathDistDistributionTable(rows)].join('\n'),
+  },
+  'stop-stats': {
+    name: 'stop-stats',
+    title: 'stopStats',
+    description: 'Shows per-stop activity and coverage using the busiest service group view.',
+    render: (rows: InsightsSourceStats[]) =>
+      [formatStopStatsOverview(rows), '', formatStopStatsDistribution(rows)].join('\n'),
+  },
+} satisfies Record<V2InsightsSectionName, V2InsightsSectionDefinition>;
 
 /** Distribution summary for either a per-pattern or a per-trip view. */
 export interface DistributionStats {
@@ -471,13 +517,52 @@ function computeDistribution(values: number[]): DistributionStats {
  */
 export function formatInsightsAnalysis(
   rows: InsightsSourceStats[],
-  options: { analyzedAt?: Date } = {},
+  options: { analyzedAt?: Date; sections?: V2InsightsSectionName[] } = {},
 ): string {
   if (rows.length === 0) {
     return 'No insights data found.';
   }
   const sorted = [...rows].sort((a, b) => b.byTrip.meanMin - a.byTrip.meanMin);
   const analyzedAt = options.analyzedAt ?? new Date();
+  const requestedSections =
+    options.sections === undefined || options.sections.length === 0
+      ? V2_INSIGHTS_SECTION_NAMES
+      : options.sections;
+
+  const renderedSections: string[] = [];
+  for (const sectionName of requestedSections) {
+    if (sectionName === 'service-groups') {
+      renderedSections.push('# serviceGroups');
+      renderedSections.push('');
+      renderedSections.push(formatServiceGroupsTable(sorted));
+      renderedSections.push('');
+      renderedSections.push(formatServiceGroupsKeysDetail(sorted));
+      continue;
+    }
+    if (sectionName === 'trip-pattern-stats') {
+      renderedSections.push('# tripPatternStats');
+      renderedSections.push('');
+      renderedSections.push(formatOverviewTable(sorted));
+      renderedSections.push('');
+      renderedSections.push(formatDistributionTable(sorted));
+      continue;
+    }
+    if (sectionName === 'trip-pattern-geo') {
+      renderedSections.push('# tripPatternGeo');
+      renderedSections.push('');
+      renderedSections.push(formatTripPatternGeoTable(sorted));
+      renderedSections.push('');
+      renderedSections.push(formatPathDistDistributionTable(sorted));
+      continue;
+    }
+    if (sectionName === 'stop-stats') {
+      renderedSections.push('# stopStats');
+      renderedSections.push('');
+      renderedSections.push(formatStopStatsOverview(sorted));
+      renderedSections.push('');
+      renderedSections.push(formatStopStatsDistribution(sorted));
+    }
+  }
 
   const sections = [
     '# Athenai Transit — V2 InsightsBundle analysis',
@@ -491,29 +576,7 @@ export function formatInsightsAnalysis(
     '# follow the InsightsBundle type declaration order. Each',
     '# subsection has its own inline legend.',
     '',
-    '# serviceGroups',
-    '',
-    formatServiceGroupsTable(sorted),
-    '',
-    formatServiceGroupsKeysDetail(sorted),
-    '',
-    '# tripPatternStats',
-    '',
-    formatOverviewTable(sorted),
-    '',
-    formatDistributionTable(sorted),
-    '',
-    '# tripPatternGeo',
-    '',
-    formatTripPatternGeoTable(sorted),
-    '',
-    formatPathDistDistributionTable(sorted),
-    '',
-    '# stopStats',
-    '',
-    formatStopStatsOverview(sorted),
-    '',
-    formatStopStatsDistribution(sorted),
+    ...renderedSections.flatMap((section, index) => (index === 0 ? [section] : ['', section])),
   ];
 
   return sections.join('\n');

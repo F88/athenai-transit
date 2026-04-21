@@ -12,6 +12,10 @@
   }
 }
 
+@utility border-app-neutral {
+  @apply border-gray-300 dark:border-gray-600;
+}
+
 @layer base {
   html,
   body,

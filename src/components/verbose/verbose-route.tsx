@@ -2,7 +2,13 @@ import type { InfoLevel } from '../../types/app/settings';
 import type { Route } from '../../types/app/transit';
 import type { RouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { formatRouteLabel } from '../../domain/transit/format-route-label';
+import {
+  DEFAULT_GTFS_COLOR,
+  normalizeGtfsColor,
+  resolveGtfsColor,
+} from '../../domain/transit/color-resolver/resolve-gtfs-color';
 import { VerboseRouteDisplayNames } from './verbose-route-display-names';
+import { VerboseRouteColors } from './verbose-route-colors';
 
 /**
  * Debug dump of all Route fields, resolved display names, and label.
@@ -22,14 +28,24 @@ export function VerboseRoute({
   defaultOpen?: boolean;
 }) {
   const label = formatRouteLabel(names, infoLevel);
+  const cssRouteColor = resolveGtfsColor(
+    normalizeGtfsColor(route.route_color, DEFAULT_GTFS_COLOR),
+    'css-hex',
+  );
+  const cssRouteTextColor = resolveGtfsColor(
+    normalizeGtfsColor(route.route_text_color, DEFAULT_GTFS_COLOR),
+    'css-hex',
+  );
+  const summaryName =
+    names.resolved.name || route.route_long_name || route.route_short_name || route.route_id;
 
   return (
     <details open={defaultOpen} className="text-[9px] font-normal text-[#999] dark:text-gray-500">
       <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
-        [Route]
+        [Route {summaryName}]
       </summary>
       <div className="mt-0.5 space-y-0.5">
-        <span className="block overflow-x-auto rounded border border-dashed border-gray-300 p-1 whitespace-nowrap dark:border-gray-600">
+        <span className="border-app-neutral block overflow-x-auto rounded border border-dashed p-1 whitespace-nowrap">
           <span className="block">
             [route] id={route.route_id} type={route.route_type} agency={route.agency_id}
           </span>
@@ -38,6 +54,9 @@ export function VerboseRoute({
           </span>
           <span className="block">
             color={route.route_color || '(none)'} text={route.route_text_color || '(none)'}
+          </span>
+          <span className="block">
+            cssColor={cssRouteColor} cssText={cssRouteTextColor}
           </span>
           <span className="block">
             [shortNames]{' '}
@@ -60,6 +79,7 @@ export function VerboseRoute({
           </span>
         </span>
         <VerboseRouteDisplayNames names={names} />
+        <VerboseRouteColors route={route} />
       </div>
     </details>
   );

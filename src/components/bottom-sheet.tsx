@@ -11,10 +11,13 @@ import { getTimetableEntriesState } from '../domain/transit/timetable-utils';
 import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { APP_ROUTE_TYPES } from '../config/route-types';
+import { cn } from '../lib/utils';
 import { BottomSheetHeader } from './bottom-sheet-header';
 import { BottomSheetStops } from './bottom-sheet-stops';
 
 const DRAG_THRESHOLD = 50;
+const COLLAPSED_HEIGHT_CLASS = 'h-[40dvh]';
+const EXPANDED_HEIGHT_CLASS = 'h-[70dvh]';
 
 /** Auto-enable "show operating stops only" filter at 22:00 in service day minutes. */
 const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
@@ -237,7 +240,10 @@ export function BottomSheet({
 
   return (
     <div
-      className={`fixed right-0 bottom-0 left-0 z-1000 flex touch-none flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_-2px_12px_rgba(0,0,0,0.15)] transition-[height] duration-300 ease-in-out dark:bg-gray-900 ${expanded ? 'h-[70dvh]' : 'h-[40dvh]'}`}
+      className={cn(
+        'fixed right-0 bottom-0 left-0 z-1000 flex touch-none flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_-2px_12px_rgba(0,0,0,0.15)] transition-[height] duration-300 ease-in-out dark:bg-gray-900',
+        expanded ? EXPANDED_HEIGHT_CLASS : COLLAPSED_HEIGHT_CLASS,
+      )}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >

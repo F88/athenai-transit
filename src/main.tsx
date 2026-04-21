@@ -7,7 +7,7 @@ import App from './app';
 import { TransitRepositoryProvider } from './contexts/transit-repository-provider';
 import { DataSourceManager } from './config/data-source-manager';
 import type { TransitRepository } from './repositories/transit-repository';
-import { AthenaiRepositoryV2, type LoadResult } from './repositories/athenai-repository-v2';
+import { AthenaiRepositoryV2, type LoadResult } from './repositories/athenai-repository';
 import { cleanupInvalidQueryParams, getDiagParam, getRepoParam } from './lib/query-params';
 import { TILE_SOURCES } from './config/tile-sources';
 import { createLogger } from './lib/logger';

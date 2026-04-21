@@ -7,6 +7,7 @@
 import type Database from 'better-sqlite3';
 
 import type { RouteV2Json } from '../../../../../../src/types/data/transit-v2-json';
+import { resolvePipelineRouteColors } from '../../../../domain/gtfs/route-colors';
 
 /**
  * Extract all routes from the GTFS database as v2 JSON records.
@@ -39,15 +40,15 @@ export function extractRoutesV2(
     route_desc: string | null;
   }>;
 
-  const defaultColor = routeColorFallbacks['*'] ?? '';
-
   const result: RouteV2Json[] = rows.map((r) => {
-    const rawColor = r.route_color || '';
-    const rawTextColor = r.route_text_color || '';
-    // Treat identical color/textColor (e.g. 000000/000000) as unset
-    const colorUnset = !rawColor || (rawColor === rawTextColor && rawColor !== 'FFFFFF');
-    const color = colorUnset ? routeColorFallbacks[r.route_id] || defaultColor : rawColor;
-    const textColor = colorUnset && color !== rawColor ? 'FFFFFF' : rawTextColor;
+    const rawColor = r.route_color ?? '';
+    const rawTextColor = r.route_text_color ?? '';
+    const { color, textColor } = resolvePipelineRouteColors({
+      routeId: r.route_id,
+      rawColor,
+      rawTextColor,
+      routeColorFallbacks,
+    });
 
     const route: RouteV2Json = {
       v: 2,

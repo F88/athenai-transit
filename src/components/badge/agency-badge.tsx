@@ -1,6 +1,7 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency } from '../../types/app/transit';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
+import { resolveAgencyColors } from '../../domain/transit/color-resolver/agency-colors';
 import { getAgencyDisplayNames } from '../../domain/transit/get-agency-display-name';
 import { cn } from '../../lib/utils';
 import { IdBadge } from './id-badge';
@@ -53,9 +54,7 @@ export function AgencyBadge({
   const agencyNames = getAgencyDisplayNames(agency, dataLang, agencyLangs, 'short');
   const resolvedName = agencyNames.resolved.name || agency.agency_id;
 
-  const primary = agency.agency_colors[0];
-  const bg = primary ? `#${primary.bg}` : undefined;
-  const fg = primary ? `#${primary.text}` : undefined;
+  const { agencyColor: bg, agencyTextColor: fg } = resolveAgencyColors(agency, 'css-hex');
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;
 
   return (

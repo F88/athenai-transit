@@ -78,7 +78,7 @@ function buildSourceDataBundle(source: BuildSource): void {
   try {
     // Extract all sections
     const stops = extractStopsV2(db, source.prefix);
-    const routes = extractRoutesV2(db, source.prefix, source.routeColorFallbacks);
+    const routes = extractRoutesV2(db, source.prefix, source.routeColorFallbacks ?? {});
     const calendar = extractCalendarV2(db, source.prefix);
     const agencies = extractAgenciesV2(db, source.prefix);
     const feedInfo = extractFeedInfoV2(db, source.prefix);

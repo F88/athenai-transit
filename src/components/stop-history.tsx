@@ -26,12 +26,12 @@ interface StopHistoryProps {
 /**
  * Dropdown selector for recently selected stops.
  *
- * Shows the most recent selection in a compact trigger styled like
- * SelectionIndicator. When opened, displays the full history list.
+ * Shows the most recent selection in a compact trigger. When opened,
+ * displays the full history list.
  * When no stop is selected the trigger shows a dimmed placeholder.
  *
  * Visibility is controlled by infoLevel:
- * - simple: show stop name + emoji (same as SelectionIndicator)
+ * - simple: show stop name + emoji
  * - normal: show stop name + emoji
  * - verbose: also show stop_id in the dropdown items
  *

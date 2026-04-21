@@ -39,6 +39,11 @@ const SCRIPTS: AnalysisScript[] = [
     description: 'GTFS stop_times パターン分析 (terminal-only stops, circular routes 等)',
   },
   {
+    name: 'analyze-gtfs-routes',
+    file: './analyze-gtfs-routes.ts',
+    description: 'GTFS routes.txt の names / route_type / colors / cEMV / continuous fields 分析',
+  },
+  {
     name: 'analyze-odpt-station-timetable',
     file: './analyze-odpt-station-timetable.ts',
     description: 'ODPT StationTimetable データパターン分析',

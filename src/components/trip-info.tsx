@@ -1,7 +1,10 @@
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, TimetableEntryAttributes } from '../types/app/transit';
 import type { RouteDirection } from '../types/app/transit-composed';
-import { type ResolvedDisplayNames, hasDisplayContent } from '../domain/transit/get-display-names';
+import {
+  type ResolvedDisplayNames,
+  hasDisplayContent,
+} from '../domain/transit/name-resolver/get-display-names';
 import type { InfoLevelFlags } from '../utils/create-info-level';
 import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
 import { cn } from '../lib/utils';
@@ -180,8 +183,10 @@ export function TripInfo({
         dataLang={dataLang}
         agencyLangs={agencyLang}
         infoLevel={infoLevel}
-        size={size === 'sm' ? 'sm' : undefined}
+        size={size === 'sm' ? 'sm' : 'md'}
         disableVerbose={true}
+        showBorder={true}
+        borderStyle="context"
       />
       {info.isDetailedEnabled && agency && showAgency && (
         <AgencyBadge

@@ -12,6 +12,7 @@ import type {
   OdptStationTimetable,
   OdptStationTimetableObject,
 } from '../../../src/types/odpt-train';
+import { type AnalysisSectionDefinition } from './analysis-sections';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -119,6 +120,75 @@ export interface OdptStationTimetableAnalysis {
   flags: FlagSummary;
   unknownKeys: UnknownKeysSummary;
 }
+
+export const ODPT_STATION_TIMETABLE_SECTION_NAMES = [
+  'time-field-availability',
+  'station-coverage',
+  'direction-coverage',
+  'calendar-coverage',
+  'destination-distribution',
+  'train-type-distribution',
+  'flags',
+  'unknown-keys',
+] as const;
+
+export type OdptStationTimetableSectionName = (typeof ODPT_STATION_TIMETABLE_SECTION_NAMES)[number];
+
+export type OdptStationTimetableSectionDefinition = AnalysisSectionDefinition<
+  OdptStationTimetableAnalysis,
+  OdptStationTimetableSectionName
+>;
+
+export const ODPT_STATION_TIMETABLE_SECTIONS = {
+  'time-field-availability': {
+    name: 'time-field-availability',
+    title: 'Time Field Availability',
+    description: 'Checks how often arrivalTime and departureTime are present in timetable objects.',
+    render: () => '',
+  },
+  'station-coverage': {
+    name: 'station-coverage',
+    title: 'Station Coverage',
+    description: 'Compares stationOrder coverage against stations that actually have timetables.',
+    render: () => '',
+  },
+  'direction-coverage': {
+    name: 'direction-coverage',
+    title: 'Direction Coverage',
+    description: 'Checks whether stations have outbound and inbound timetable coverage.',
+    render: () => '',
+  },
+  'calendar-coverage': {
+    name: 'calendar-coverage',
+    title: 'Calendar Coverage',
+    description: 'Summarizes calendar type coverage and missing calendar variants per station.',
+    render: () => '',
+  },
+  'destination-distribution': {
+    name: 'destination-distribution',
+    title: 'Destination Distribution',
+    description: 'Shows destination availability and the most common destination values.',
+    render: () => '',
+  },
+  'train-type-distribution': {
+    name: 'train-type-distribution',
+    title: 'Train Type Distribution',
+    description: 'Shows train type availability and the most common train type values.',
+    render: () => '',
+  },
+  flags: {
+    name: 'flags',
+    title: 'isLast / isOrigin Flags',
+    description: 'Checks how often isLast and isOrigin flags are present in timetable objects.',
+    render: () => '',
+  },
+  'unknown-keys': {
+    name: 'unknown-keys',
+    title: 'Unknown Keys',
+    description: 'Detects keys outside the expected ODPT timetable schema.',
+    render: () => '',
+  },
+} satisfies Record<OdptStationTimetableSectionName, OdptStationTimetableSectionDefinition>;
 
 // ---------------------------------------------------------------------------
 // Known keys (ODPT API Spec v4.15 Section 3.3.6)
@@ -446,6 +516,7 @@ function detectUnknownKeys(timetables: OdptStationTimetable[]): UnknownKeysSumma
 export function formatOdptAnalysis(
   sourceName: string,
   analysis: OdptStationTimetableAnalysis,
+  options: { sections?: OdptStationTimetableSectionName[] } = {},
 ): string {
   const lines: string[] = [];
   const {
@@ -458,126 +529,147 @@ export function formatOdptAnalysis(
     flags,
     unknownKeys,
   } = analysis;
+  const requestedSections = new Set(
+    options.sections === undefined || options.sections.length === 0
+      ? ODPT_STATION_TIMETABLE_SECTION_NAMES
+      : options.sections,
+  );
 
   lines.push(`=== ${sourceName} ===`);
   lines.push('');
 
   // #1 Time Fields
-  lines.push('## Time Field Availability');
-  lines.push(`  Total objects:        ${timeFields.totalObjects}`);
-  lines.push(`  With arrivalTime:     ${timeFields.withArrivalTime}`);
-  lines.push(`  With departureTime:   ${timeFields.withDepartureTime}`);
-  lines.push(`  With both:            ${timeFields.withBoth}`);
-  lines.push(`  With neither:         ${timeFields.withNeither}`);
-  lines.push('');
+  if (requestedSections.has('time-field-availability')) {
+    lines.push('## Time Field Availability');
+    lines.push(`  Total objects:        ${timeFields.totalObjects}`);
+    lines.push(`  With arrivalTime:     ${timeFields.withArrivalTime}`);
+    lines.push(`  With departureTime:   ${timeFields.withDepartureTime}`);
+    lines.push(`  With both:            ${timeFields.withBoth}`);
+    lines.push(`  With neither:         ${timeFields.withNeither}`);
+    lines.push('');
+  }
 
   // #2 Station Coverage
-  lines.push('## Station Coverage');
-  lines.push(`  Station order count:      ${stationCoverage.stationOrderCount}`);
-  lines.push(`  Stations with timetable:  ${stationCoverage.stationsWithTimetable}`);
-  if (stationCoverage.missingStations.length > 0) {
-    lines.push(`  Missing stations (${stationCoverage.missingStations.length}):`);
-    for (const s of stationCoverage.missingStations) {
-      lines.push(`    ${s}`);
+  if (requestedSections.has('station-coverage')) {
+    lines.push('## Station Coverage');
+    lines.push(`  Station order count:      ${stationCoverage.stationOrderCount}`);
+    lines.push(`  Stations with timetable:  ${stationCoverage.stationsWithTimetable}`);
+    if (stationCoverage.missingStations.length > 0) {
+      lines.push(`  Missing stations (${stationCoverage.missingStations.length}):`);
+      for (const s of stationCoverage.missingStations) {
+        lines.push(`    ${s}`);
+      }
+    } else {
+      lines.push('  Missing stations: (none)');
     }
-  } else {
-    lines.push('  Missing stations: (none)');
+    lines.push('');
   }
-  lines.push('');
 
   // #3 Direction Coverage
-  lines.push('## Direction Coverage');
-  if (directionCoverage.outboundOnly.length > 0) {
-    lines.push(`  Outbound only (${directionCoverage.outboundOnly.length}):`);
-    for (const s of directionCoverage.outboundOnly) {
-      lines.push(`    ${s}`);
+  if (requestedSections.has('direction-coverage')) {
+    lines.push('## Direction Coverage');
+    if (directionCoverage.outboundOnly.length > 0) {
+      lines.push(`  Outbound only (${directionCoverage.outboundOnly.length}):`);
+      for (const s of directionCoverage.outboundOnly) {
+        lines.push(`    ${s}`);
+      }
     }
-  }
-  if (directionCoverage.inboundOnly.length > 0) {
-    lines.push(`  Inbound only (${directionCoverage.inboundOnly.length}):`);
-    for (const s of directionCoverage.inboundOnly) {
-      lines.push(`    ${s}`);
+    if (directionCoverage.inboundOnly.length > 0) {
+      lines.push(`  Inbound only (${directionCoverage.inboundOnly.length}):`);
+      for (const s of directionCoverage.inboundOnly) {
+        lines.push(`    ${s}`);
+      }
     }
+    if (directionCoverage.outboundOnly.length === 0 && directionCoverage.inboundOnly.length === 0) {
+      lines.push('  All stations have both directions');
+    }
+    lines.push('');
   }
-  if (directionCoverage.outboundOnly.length === 0 && directionCoverage.inboundOnly.length === 0) {
-    lines.push('  All stations have both directions');
-  }
-  lines.push('');
 
   // #4 Calendar Coverage
-  lines.push('## Calendar Coverage');
-  lines.push(`  Calendar types: ${calendarCoverage.calendarIds.join(', ')}`);
-  lines.push(`  Stations with all calendars: ${calendarCoverage.stationsWithAllCalendars}`);
-  if (calendarCoverage.stationsMissingCalendars.length > 0) {
-    lines.push(
-      `  Stations missing calendars (${calendarCoverage.stationsMissingCalendars.length}):`,
-    );
-    for (const entry of calendarCoverage.stationsMissingCalendars.slice(0, 20)) {
-      lines.push(`    ${entry.station}: missing ${entry.missing.join(', ')}`);
+  if (requestedSections.has('calendar-coverage')) {
+    lines.push('## Calendar Coverage');
+    lines.push(`  Calendar types: ${calendarCoverage.calendarIds.join(', ')}`);
+    lines.push(`  Stations with all calendars: ${calendarCoverage.stationsWithAllCalendars}`);
+    if (calendarCoverage.stationsMissingCalendars.length > 0) {
+      lines.push(
+        `  Stations missing calendars (${calendarCoverage.stationsMissingCalendars.length}):`,
+      );
+      for (const entry of calendarCoverage.stationsMissingCalendars.slice(0, 20)) {
+        lines.push(`    ${entry.station}: missing ${entry.missing.join(', ')}`);
+      }
+      if (calendarCoverage.stationsMissingCalendars.length > 20) {
+        lines.push(`    ... and ${calendarCoverage.stationsMissingCalendars.length - 20} more`);
+      }
     }
-    if (calendarCoverage.stationsMissingCalendars.length > 20) {
-      lines.push(`    ... and ${calendarCoverage.stationsMissingCalendars.length - 20} more`);
-    }
+    lines.push('');
   }
-  lines.push('');
 
   // #5 Destinations
-  lines.push('## Destination Distribution');
-  lines.push(`  With destination:    ${destinations.totalObjectsWithDestination}`);
-  lines.push(`  Without destination: ${destinations.totalObjectsWithoutDestination}`);
-  lines.push(`  Unique destinations: ${destinations.uniqueDestinations}`);
-  if (destinations.top.length > 0) {
-    lines.push('  Top destinations:');
-    for (const d of destinations.top.slice(0, 20)) {
-      lines.push(`    ${d.destination} (${d.count})`);
+  if (requestedSections.has('destination-distribution')) {
+    lines.push('## Destination Distribution');
+    lines.push(`  With destination:    ${destinations.totalObjectsWithDestination}`);
+    lines.push(`  Without destination: ${destinations.totalObjectsWithoutDestination}`);
+    lines.push(`  Unique destinations: ${destinations.uniqueDestinations}`);
+    if (destinations.top.length > 0) {
+      lines.push('  Top destinations:');
+      for (const d of destinations.top.slice(0, 20)) {
+        lines.push(`    ${d.destination} (${d.count})`);
+      }
+      if (destinations.top.length > 20) {
+        lines.push(`    ... and ${destinations.top.length - 20} more`);
+      }
     }
-    if (destinations.top.length > 20) {
-      lines.push(`    ... and ${destinations.top.length - 20} more`);
-    }
+    lines.push('');
   }
-  lines.push('');
 
   // #6 Train Types
-  lines.push('## Train Type Distribution');
-  lines.push(`  With trainType:    ${trainTypes.totalObjectsWithTrainType}`);
-  lines.push(`  Without trainType: ${trainTypes.totalObjectsWithoutTrainType}`);
-  lines.push(`  Unique types:      ${trainTypes.uniqueTrainTypes}`);
-  if (trainTypes.top.length > 0) {
-    lines.push('  Train types:');
-    for (const t of trainTypes.top.slice(0, 20)) {
-      lines.push(`    ${t.trainType} (${t.count})`);
+  if (requestedSections.has('train-type-distribution')) {
+    lines.push('## Train Type Distribution');
+    lines.push(`  With trainType:    ${trainTypes.totalObjectsWithTrainType}`);
+    lines.push(`  Without trainType: ${trainTypes.totalObjectsWithoutTrainType}`);
+    lines.push(`  Unique types:      ${trainTypes.uniqueTrainTypes}`);
+    if (trainTypes.top.length > 0) {
+      lines.push('  Train types:');
+      for (const t of trainTypes.top.slice(0, 20)) {
+        lines.push(`    ${t.trainType} (${t.count})`);
+      }
+      if (trainTypes.top.length > 20) {
+        lines.push(`    ... and ${trainTypes.top.length - 20} more`);
+      }
     }
-    if (trainTypes.top.length > 20) {
-      lines.push(`    ... and ${trainTypes.top.length - 20} more`);
-    }
+    lines.push('');
   }
-  lines.push('');
 
   // #7 Flags
-  lines.push('## isLast / isOrigin Flags');
-  lines.push(`  Total objects:   ${flags.totalObjects}`);
-  lines.push(`  With isLast:     ${flags.withIsLast}`);
-  lines.push(`  With isOrigin:   ${flags.withIsOrigin}`);
-  lines.push('');
+  if (requestedSections.has('flags')) {
+    lines.push('## isLast / isOrigin Flags');
+    lines.push(`  Total objects:   ${flags.totalObjects}`);
+    lines.push(`  With isLast:     ${flags.withIsLast}`);
+    lines.push(`  With isOrigin:   ${flags.withIsOrigin}`);
+    lines.push('');
+  }
 
   // #8 Unknown Keys
-  lines.push('## Unknown Keys');
-  if (unknownKeys.timetableKeys.length > 0) {
-    lines.push('  Timetable-level:');
-    for (const k of unknownKeys.timetableKeys) {
-      lines.push(`    ${k.key} (${k.count})`);
+  if (requestedSections.has('unknown-keys')) {
+    lines.push('## Unknown Keys');
+    if (unknownKeys.timetableKeys.length > 0) {
+      lines.push('  Timetable-level:');
+      for (const k of unknownKeys.timetableKeys) {
+        lines.push(`    ${k.key} (${k.count})`);
+      }
     }
-  }
-  if (unknownKeys.objectKeys.length > 0) {
-    lines.push('  Object-level:');
-    for (const k of unknownKeys.objectKeys) {
-      lines.push(`    ${k.key} (${k.count})`);
+    if (unknownKeys.objectKeys.length > 0) {
+      lines.push('  Object-level:');
+      for (const k of unknownKeys.objectKeys) {
+        lines.push(`    ${k.key} (${k.count})`);
+      }
     }
+    if (unknownKeys.timetableKeys.length === 0 && unknownKeys.objectKeys.length === 0) {
+      lines.push('  (none)');
+    }
+    lines.push('');
   }
-  if (unknownKeys.timetableKeys.length === 0 && unknownKeys.objectKeys.length === 0) {
-    lines.push('  (none)');
-  }
-  lines.push('');
 
   return lines.join('\n');
 }

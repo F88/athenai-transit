@@ -36,6 +36,9 @@ const mirTrain: GtfsSourceDefinition = {
 
     /** GtfsResource */
     routeTypes: ['rail'],
+    routeColorFallbacks: {
+      '*': '003B83', // Tsukuba Express corporate blue
+    },
     mlitShapeMapping: {
       operator: '首都圏新都市鉄道',
       lineToRouteId: {

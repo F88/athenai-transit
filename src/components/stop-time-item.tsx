@@ -1,18 +1,28 @@
+import { useInfoLevel } from '@/hooks/use-info-level';
+import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
+import {
+  getContrastAdjustedRouteColors,
+  resolveRouteColors,
+} from '@/domain/transit/color-resolver/route-colors';
+import {
+  LOW_CONTRAST_BADGE_MIN_RATIO,
+  LOW_CONTRAST_TEXT_MIN_RATIO,
+} from '@/domain/transit/color-resolver/contrast-thresholds';
+import { useTranslation } from 'react-i18next';
+import { minutesToDate } from '../domain/transit/calendar-utils';
+import { formatAbsoluteTime } from '../domain/transit/time';
+import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
+import { getDisplayMinutes } from '../domain/transit/timetable-utils';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
-import { useTranslation } from 'react-i18next';
-import { formatAbsoluteTime } from '../domain/transit/time';
-import { minutesToDate } from '../domain/transit/calendar-utils';
-import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
-import { getDisplayMinutes } from '../domain/transit/timetable-utils';
+import { getContrastAwareAlphaSuffixes } from '@/utils/color/contrast-alpha-suffixes';
+import { JourneyTimeBar } from './journey-time-bar';
+import { BaseLabel } from './label/base-label';
+import { TripPositionIndicator } from './label/trip-position-indicator';
 import { RelativeTime } from './relative-time';
 import { TripInfo } from './trip-info';
 import { VerboseContextualTimetableEntry } from './verbose/verbose-contextual-timetable-entry';
-import { BaseLabel } from './label/base-label';
-import { TripPositionIndicator } from './label/trip-position-indicator';
-import { JourneyTimeBar } from './journey-time-bar';
-import { useInfoLevel } from '@/hooks/use-info-level';
 
 interface StopTimeItemProps {
   /** The timetable entry to display. */
@@ -40,6 +50,45 @@ interface StopTimeItemProps {
   showAgency?: boolean;
 }
 
+interface AbsoluteStopTimeProps {
+  /** Formatted absolute time text. */
+  timeText: string;
+  /** Whether this timetable entry is terminal/arrival-only. */
+  isTerminal: boolean;
+  /** Text color derived from the route color. */
+  textColor: string;
+}
+
+function AbsoluteStopTime({ timeText, isTerminal, textColor }: AbsoluteStopTimeProps) {
+  const { t } = useTranslation();
+
+  return (
+    <div
+      className="text-base font-bold text-[#333] dark:text-gray-100"
+      style={{ color: textColor }}
+    >
+      {timeText}
+      {isTerminal && (
+        /*
+         * Terminal arrival marker attached to the absolute time (for example,
+         * "22:30着" / "22:30Arr"). `stopTimeView.arrivingAbsolute` stays
+         * separate from `stopTimeView.arriving` on purpose:
+         *
+         * - `stopTimeView.arriving` is used by <RelativeTime> next to the
+         *   relative time and can stay empty when that compact view should not
+         *   show a terminal marker.
+         * - `stopTimeView.arrivingAbsolute` is used only here next to the
+         *   absolute time, so locale owners can opt out independently by
+         *   setting this key to an empty string.
+         */
+        <span className="text-[10px] font-normal opacity-70">
+          {t('stopTimeView.arrivingAbsolute')}
+        </span>
+      )}
+    </div>
+  );
+}
+
 /**
  * A single row in the T1 (Stop) flat stop time list.
  *
@@ -57,11 +106,8 @@ export function StopTimeItem({
   agency,
   showAgency = false,
 }: StopTimeItemProps) {
-  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = info.isVerboseEnabled;
-  const { route } = entry.routeDirection;
-  const bgColor = route.route_color ? `#${route.route_color}` : undefined;
   const attributes = getTimetableEntryAttributes(entry);
   const isTerminal = attributes.isTerminal;
   const time = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
@@ -70,6 +116,29 @@ export function StopTimeItem({
 
   const dt = formatAbsoluteTime(minutesToDate(entry.serviceDate, entry.schedule.departureMinutes));
   const at = formatAbsoluteTime(minutesToDate(entry.serviceDate, entry.schedule.arrivalMinutes));
+
+  // Route colors
+  const { route } = entry.routeDirection;
+  const { routeColor } = resolveRouteColors(route, 'css-hex');
+  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
+
+  // Adjust route colors for the position indicator and time bar based on contrast against the current theme.
+  const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
+    route,
+    routeColorAssessment.isLowContrast,
+    'css-hex',
+  );
+  const adjustedColorAssessment = useThemeContrastAssessment(
+    contrastAdjustedRouteColors.color,
+    LOW_CONTRAST_TEXT_MIN_RATIO,
+  );
+
+  // Compute accent colors for the position indicator based on the route color's contrast ratio.
+  const { subtleAlphaSuffix, emphasisAlphaSuffix } = getContrastAwareAlphaSuffixes(
+    adjustedColorAssessment.ratio,
+  );
+  const emphasisAccentColor = `${contrastAdjustedRouteColors.color}${emphasisAlphaSuffix}`;
+  const subtleAccentColor = `${contrastAdjustedRouteColors.color}${subtleAlphaSuffix}`;
 
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
@@ -96,83 +165,58 @@ export function StopTimeItem({
               now={now}
               time={time}
               isTerminal={isTerminal}
-              // Hide prefix for time >90min to save space.
               hidePrefix={diffMs > 90 * 60 * 1000}
             />
           )}
-          {/* Absolute time — always shown alongside relative for precise reference */}
-          <div
-            className="text-base font-bold text-[#333] dark:text-gray-100"
-            style={bgColor ? { color: bgColor } : undefined}
-          >
-            {formatAbsoluteTime(time)}
-            {/*
-             * Terminal arrival marker attached to the absolute time (e.g. "22:30着" / "22:30Arr").
-             * Uses a dedicated `stopTimeView.arrivingAbsolute` key so the two terminal
-             * marker contexts in this row can be controlled independently:
-             *
-             *  - `stopTimeView.arriving` → used by `<RelativeTime>` next to the
-             *    relative time ("5分"). Currently empty in ja/en as an
-             *    intentional opt-out to keep the relative time visually quiet.
-             *  - `stopTimeView.arrivingAbsolute` → used here next to the absolute
-             *    time. Populated per locale (ja: "着", en: "Arr", etc.).
-             *    Locale owners can opt out for any language by setting the
-             *    value to an empty string — the component always renders
-             *    the span so i18n drives visibility.
-             */}
-            {isTerminal && (
-              <span className="text-[10px] font-normal opacity-70">
-                {t('stopTimeView.arrivingAbsolute')}
-              </span>
-            )}
-          </div>
+          <AbsoluteStopTime
+            timeText={formatAbsoluteTime(time)}
+            isTerminal={isTerminal}
+            textColor={contrastAdjustedRouteColors.color}
+          />
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-          {/* Trip Hint */}
-          <div className="mb-0.5 flex min-w-0 items-center gap-1">
-            <div className="min-w-0 flex-1">
-              <TripPositionIndicator
-                stopIndex={entry.patternPosition.stopIndex}
-                totalStops={entry.patternPosition.totalStops}
-                // size="md"
-                size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
-                // size="xs"
-                showTrack={info.isNormalEnabled}
-                infoLevel={infoLevel}
-                // route_color may be empty (e.g. mir/mykbus/sbbus). Pass undefined
-                // in that case so TripPositionIndicator falls back to its default
-                // Tailwind colors instead of producing invalid CSS like "#20".
-                trackColor={bgColor ? `${bgColor}20` : undefined}
-                dotColor={bgColor ? `${bgColor}50` : undefined}
-                currentColor={bgColor}
-              />
+          {info.isNormalEnabled && (
+            <div className="mb-0.5 flex min-w-0 items-center gap-1">
+              <div className="min-w-0 flex-1">
+                <TripPositionIndicator
+                  stopIndex={entry.patternPosition.stopIndex}
+                  totalStops={entry.patternPosition.totalStops}
+                  size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
+                  showEmoji={info.isVerboseEnabled}
+                  showTrack={info.isNormalEnabled}
+                  trackColor={subtleAccentColor}
+                  dotColor={emphasisAccentColor}
+                  currentColor={contrastAdjustedRouteColors.color}
+                  trackBorderColor={contrastAdjustedRouteColors.color}
+                  showTrackBorder={false}
+                  showPositionLabel={info.isVerboseEnabled}
+                  labelTextColor={contrastAdjustedRouteColors.textColor}
+                  labelBgColor={contrastAdjustedRouteColors.color}
+                />
+              </div>
             </div>
-            {info.isVerboseEnabled && (
-              <BaseLabel
-                size={'xs'}
-                value={`${entry.patternPosition.stopIndex + 1} / ${entry.patternPosition.totalStops}`}
-                className="shrink-0 bg-gray-500 whitespace-nowrap text-white"
-              />
-            )}
-          </div>
+          )}
 
           {info.isDetailedEnabled && (
             <JourneyTimeBar
               remainingMinutes={entry.insights?.remainingMinutes}
               totalMinutes={entry.insights?.totalMinutes}
               size={info.isDetailedEnabled ? 'md' : 'sm'}
-              color={bgColor}
+              showEmoji={info.isVerboseEnabled}
+              fillColor={contrastAdjustedRouteColors.color}
+              unfilledColor={emphasisAccentColor}
               showRMins={info.isVerboseEnabled}
               showTMins={info.isVerboseEnabled}
               minsPosition="right"
               fillDirection="rtl"
-              // fillDirection="ltr"
-              showEmoji={info.isVerboseEnabled}
+              borderColor={contrastAdjustedRouteColors.color}
+              minsTextColor={contrastAdjustedRouteColors.textColor}
+              minsBgColor={contrastAdjustedRouteColors.color}
+              showBorder={false}
             />
           )}
 
-          {/* Trip Info */}
           <div className="min-w-0">
             <TripInfo
               routeDirection={entry.routeDirection}
@@ -186,14 +230,7 @@ export function StopTimeItem({
           </div>
         </div>
       </div>
-      {/* Verbose data */}
-      {showVerbose && (
-        <VerboseContextualTimetableEntry
-          //
-          entry={entry}
-          // disableVerbose={true}
-        />
-      )}
+      {showVerbose && <VerboseContextualTimetableEntry entry={entry} />}
     </div>
   );
 }

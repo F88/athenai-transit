@@ -37,7 +37,7 @@ const meta = {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     stopServiceState: { control: 'radio', options: ['boardable', 'drop-off-only', 'no-service'] },
     agencyBadgeSize: { control: 'inline-radio', options: ['xs', 'sm', 'default'] },
-    routeBadgeSize: { control: 'inline-radio', options: ['xs', 'sm', 'default'] },
+    routeBadgeSize: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
   },
   decorators: [
     (Story) => (
@@ -115,7 +115,7 @@ export const LargeBadges: Story = {
     routes: [busRoute, tramRoute],
     routeTypes: [0, 3] as AppRouteTypeValue[],
     agencyBadgeSize: 'default',
-    routeBadgeSize: 'default',
+    routeBadgeSize: 'md',
   },
 };
 
@@ -130,7 +130,7 @@ export const BadgeSizeComparison: Story = {
     <div className="flex flex-col gap-3">
       <StopInfo {...args} agencyBadgeSize="xs" routeBadgeSize="xs" />
       <StopInfo {...args} agencyBadgeSize="sm" routeBadgeSize="sm" />
-      <StopInfo {...args} agencyBadgeSize="default" routeBadgeSize="default" />
+      <StopInfo {...args} agencyBadgeSize="default" routeBadgeSize="md" />
     </div>
   ),
 };

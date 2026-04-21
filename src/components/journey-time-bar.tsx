@@ -40,13 +40,38 @@ interface JourneyTimeBarProps {
    * GTFS `route_color` hex like `'#1976D2'`). When omitted, falls back to
    * the shadcn primary color.
    */
-  color?: string;
+  fillColor?: string;
+  /**
+   * Color for the unfilled portion, as a CSS color string.
+   * This is required so callers decide the correct translucency or
+   * alternate surface treatment instead of relying on a component-side
+   * hex-alpha convention.
+   */
+  unfilledColor: string;
+
   /**
    * Optional outline drawn around the bar. Omit for no border (default);
    * pass `{}` for the default subtle gray outline or provide any subset
    * of `width` / `color` / `style` to override individual fields.
    */
   border?: JourneyTimeBarBorder;
+  /**
+   * Simple alternative to {@link border} — when `true`, a 1px outline
+   * is drawn around the bar using {@link borderColor} (or the default
+   * subtle gray when `borderColor` is omitted). Ignored when
+   * {@link border} is explicitly specified. Default `false`.
+   */
+  showBorder?: boolean;
+  /**
+   * Border color used when {@link showBorder} is `true`, as a CSS
+   * color string. Typically a GTFS `route_color` so the outline
+   * carries the route's identity even when the bar fill is a
+   * translucent variant of the same hue. Ignored when
+   * {@link border} is specified (use
+   * {@link JourneyTimeBarBorder.color} instead). When omitted, falls
+   * back to {@link DEFAULT_BORDER_COLOR}.
+   */
+  borderColor?: string;
   /** Whether to render the remaining-minutes label. Default `false`. */
   showRMins?: boolean;
   /** Whether to render the total-minutes label. Default `false`. */
@@ -74,6 +99,14 @@ interface JourneyTimeBarProps {
    * the terminal end of the bar ("remaining until arrival").
    */
   fillDirection?: JourneyTimeBarFillDirection;
+  /**
+   * Text color for the minutes label pill, as a CSS color string.
+   * Typically a GTFS `route_text_color` so the label stays readable
+   * on top of {@link color}. When omitted, the label falls back to
+   * `text-white`.
+   */
+  minsTextColor?: string;
+  minsBgColor?: string;
 
   showEmoji?: boolean;
 }
@@ -107,30 +140,30 @@ type JourneyTimeBarStyle = CSSProperties & {
  * `showTMins` and where to place them via `minsPosition`. When both
  * flags are on, the combined form `"r / t"` is rendered.
  *
- * ## `color` prop format requirement
+ * ## `fillColor` prop format requirement
  *
- * When `color` is provided, the indicator uses it verbatim and the
- * track is derived as `${color}33` — i.e. the same color with a
- * `33` (≈ 20%) alpha hex suffix. **`color` therefore must be a
- * 6-digit hex string starting with `#` (`#RRGGBB`)** so the
- * concatenation produces a valid 8-hex CSS color (`#RRGGBBAA`).
- * Production callers (`FlatDepartureItem`) always pass
- * `#${route.route_color}`, which is guaranteed by the GTFS
- * `routes.txt` spec to be 6 hex chars. Named CSS colors, `rgb(...)`,
- * and `hsl(...)` strings are NOT supported.
+ * When `fillColor` is provided, the indicator uses it verbatim. The
+ * unfilled portion color is supplied separately via `unfilledColor`, so
+ * callers can choose the correct alpha or any other derived surface
+ * color explicitly.
  */
 export function JourneyTimeBar({
   remainingMinutes,
   totalMinutes,
   maxMinutes,
   size = 'sm',
-  color,
+  fillColor,
+  unfilledColor,
   border,
+  showBorder = false,
+  borderColor,
   showRMins = false,
   showTMins = false,
   rTimeLabel,
   tMinsLabel,
-  minsPosition: minutesPosition = 'bottom',
+  minsPosition = 'bottom',
+  minsTextColor,
+  minsBgColor,
   fillDirection = 'ltr',
   showEmoji = false,
 }: JourneyTimeBarProps) {
@@ -154,32 +187,36 @@ export function JourneyTimeBar({
       : DEFAULT_MAX_BAR_MINUTES;
   const widthPercent = Math.min((safeTotalMinutes / safeMaxMinutes) * 100, 100);
 
-  // When a color prop is provided, override both the track (lighter) and
-  // the indicator (solid) via CSS variables + arbitrary child selector, so
-  // the route color flows through without modifying shadcn upstream code.
-  const colorClass = color
-    ? 'bg-[var(--jtb-track-color)] [&>[data-slot=progress-indicator]]:bg-[var(--jtb-fill-color)]'
-    : '';
+  // When either custom bar color is provided, override the Progress track
+  // and/or indicator via CSS variables + arbitrary child selector, so the
+  // route colors flow through without modifying shadcn upstream code.
+  const colorClass = [
+    'bg-[var(--jtb-track-color)]',
+    fillColor ? '[&>[data-slot=progress-indicator]]:bg-[var(--jtb-fill-color)]' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
   // Right-aligned fill is implemented by mirroring the whole bar via
   // `scaleX(-1)`. Both track and indicator use `rounded-full`, so the
   // mirror is visually indistinguishable from a truly right-anchored
   // fill and avoids reimplementing shadcn Progress.
-  const borderStyle: CSSProperties = border
+  // `border` (rich object) takes precedence when specified. Otherwise
+  // `showBorder` toggles a simple 1px outline whose color defaults to
+  // `borderColor` if provided, falling through to the subtle gray.
+  const effectiveBorder: JourneyTimeBarBorder | undefined =
+    border ?? (showBorder ? { color: borderColor } : undefined);
+  const borderStyle: CSSProperties = effectiveBorder
     ? {
-        borderWidth: `${border.width ?? DEFAULT_BORDER_WIDTH}px`,
-        borderColor: border.color ?? DEFAULT_BORDER_COLOR,
-        borderStyle: border.style ?? DEFAULT_BORDER_STYLE,
+        borderWidth: `${effectiveBorder.width ?? DEFAULT_BORDER_WIDTH}px`,
+        borderColor: effectiveBorder.color ?? DEFAULT_BORDER_COLOR,
+        borderStyle: effectiveBorder.style ?? DEFAULT_BORDER_STYLE,
       }
     : {};
   const barStyle: JourneyTimeBarStyle = {
     width: `${widthPercent}%`,
     ...(fillDirection === 'rtl' ? { transform: 'scaleX(-1)' } : {}),
-    ...(color
-      ? {
-          '--jtb-fill-color': color,
-          '--jtb-track-color': `${color}33`,
-        }
-      : {}),
+    '--jtb-track-color': unfilledColor,
+    ...(fillColor ? { '--jtb-fill-color': fillColor } : {}),
     ...borderStyle,
   };
 
@@ -222,8 +259,11 @@ export function JourneyTimeBar({
     <BaseLabel
       size={labelSize}
       value={labelText}
-      className={`whitespace-nowrap text-white ${color ? '' : 'bg-gray-500'}`}
-      style={color ? { backgroundColor: color } : undefined}
+      className={`whitespace-nowrap ${minsTextColor ? '' : 'text-white'} ${minsBgColor ? '' : 'bg-gray-500'}`}
+      style={{
+        ...(minsBgColor ? { backgroundColor: minsBgColor } : {}),
+        ...(minsTextColor ? { color: minsTextColor } : {}),
+      }}
     />
   ) : null;
 
@@ -242,8 +282,8 @@ export function JourneyTimeBar({
     />
   );
 
-  const isHorizontal = minutesPosition === 'left' || minutesPosition === 'right';
-  const labelFirst = minutesPosition === 'left' || minutesPosition === 'top';
+  const isHorizontal = minsPosition === 'left' || minsPosition === 'right';
+  const labelFirst = minsPosition === 'left' || minsPosition === 'top';
   const wrapperClassName = isHorizontal
     ? 'flex w-full items-center gap-1'
     : 'flex w-full flex-col items-start gap-0.5';

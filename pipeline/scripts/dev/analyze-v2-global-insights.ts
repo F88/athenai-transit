@@ -9,6 +9,8 @@
  *
  * Usage:
  *   npx tsx pipeline/scripts/dev/analyze-v2-global-insights.ts
+ *   npx tsx pipeline/scripts/dev/analyze-v2-global-insights.ts --list-sections
+ *   npx tsx pipeline/scripts/dev/analyze-v2-global-insights.ts --section summary
  *   npx tsx pipeline/scripts/dev/analyze-v2-global-insights.ts --help
  */
 
@@ -19,38 +21,59 @@ import type { GlobalInsightsBundle } from '../../../src/types/data/transit-v2-js
 import {
   analyzeGlobalInsightsBundle,
   formatGlobalInsightsAnalysis,
+  V2_GLOBAL_INSIGHTS_SECTIONS,
+  V2_GLOBAL_INSIGHTS_SECTION_NAMES,
+  type V2GlobalInsightsSectionName,
 } from './dev-lib/v2-global-insights-analysis';
+import { formatAnalysisSectionList } from './dev-lib/analysis-sections';
+import { parseArgsForSectionsOnly } from './dev-lib/parse-args';
 import { PIPELINE_ROOT } from '../../src/lib/paths';
 import { runMain } from '../../src/lib/pipeline/pipeline-utils';
 
 const PUBLIC_V2_DIR = join(PIPELINE_ROOT, '..', 'public', 'data-v2');
 const GLOBAL_INSIGHTS_PATH = join(PUBLIC_V2_DIR, 'global', 'insights.json');
 
-type CliMode = { kind: 'help' } | { kind: 'run' };
-
-function parseArgs(args: string[]): CliMode {
-  if (args.length === 0) {
-    return { kind: 'run' };
-  }
-  if (args.length === 1 && (args[0] === '--help' || args[0] === '-h')) {
-    return { kind: 'help' };
-  }
-  return { kind: 'help' };
+function isV2GlobalInsightsSectionName(value: string): value is V2GlobalInsightsSectionName {
+  return (V2_GLOBAL_INSIGHTS_SECTION_NAMES as readonly string[]).includes(value);
 }
 
 function printHelp(): void {
-  console.log('Usage: analyze-v2-global-insights.ts');
+  console.log('Usage: analyze-v2-global-insights.ts [--section <name> ...]');
   console.log('  No args    Analyze public/data-v2/global/insights.json');
+  console.log('  --list-sections  List available section names with short descriptions');
+  console.log('  --section <name> Limit output to the selected section (repeatable)');
   console.log('  --help     Show this help');
 }
 
 function main(): void {
-  const mode = parseArgs(process.argv.slice(2));
+  const mode = parseArgsForSectionsOnly(process.argv.slice(2));
 
   if (mode.kind === 'help') {
     printHelp();
     return;
   }
+
+  const invalidSections = mode.sections.filter(
+    (section) => !isV2GlobalInsightsSectionName(section),
+  );
+  if (invalidSections.length > 0) {
+    console.error(`Unknown section name: ${invalidSections.join(', ')}`);
+    console.error('Run with --list-sections to see available section names.');
+    process.exitCode = 1;
+    return;
+  }
+
+  if (mode.kind === 'list') {
+    for (const line of formatAnalysisSectionList(
+      V2_GLOBAL_INSIGHTS_SECTION_NAMES,
+      V2_GLOBAL_INSIGHTS_SECTIONS,
+    )) {
+      console.log(line);
+    }
+    return;
+  }
+
+  const sections = mode.sections as V2GlobalInsightsSectionName[];
 
   if (!existsSync(GLOBAL_INSIGHTS_PATH)) {
     console.error(`Global insights bundle not found: ${GLOBAL_INSIGHTS_PATH}`);
@@ -67,7 +90,7 @@ function main(): void {
   }
 
   const stats = analyzeGlobalInsightsBundle(bundle);
-  console.log(formatGlobalInsightsAnalysis(stats));
+  console.log(formatGlobalInsightsAnalysis(stats, { sections }));
 }
 
 runMain(main);

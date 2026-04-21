@@ -4,6 +4,7 @@ import type { Agency } from '../types/app/transit';
 import type { StopTimeViewMeta } from '../types/app/transit-composed';
 import type { NearbyStopsCounts } from './bottom-sheet';
 import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
+import { resolveAgencyColors } from '../domain/transit/color-resolver/agency-colors';
 import { STOP_TIMES_VIEWS } from '../domain/transit/stop-time-views';
 import { getAgencyDisplayNames } from '../domain/transit/get-agency-display-name';
 import { createLogger } from '../lib/logger';
@@ -106,9 +107,10 @@ export function BottomSheetHeader({
         ))}
         {/* Agency filter */}
         {presentAgencies.map((agency) => {
-          const primary = agency.agency_colors[0];
-          const bgColor = primary ? `#${primary.bg}` : undefined;
-          const fgColor = primary ? `#${primary.text}` : undefined;
+          const { agencyColor: bgColor, agencyTextColor: fgColor } = resolveAgencyColors(
+            agency,
+            'css-hex',
+          );
           const names = getAgencyDisplayNames(agency, dataLang, DEFAULT_AGENCY_LANG, 'short');
           const label = names.shortName.name || names.resolved.name || agency.agency_id;
           const title = names.longName.name || names.resolved.name || agency.agency_id;
