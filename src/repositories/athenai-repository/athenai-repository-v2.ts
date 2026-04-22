@@ -100,6 +100,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private readonly calendarServices: CalendarServiceJson[];
   private readonly calendarExceptions: Map<string, CalendarExceptionJson[]>;
   private readonly timetable: Record<string, TimetableGroupV2Json[]>;
+  private readonly timetableByPattern: MergedDataV2['timetableByPattern'];
   private readonly headsignTranslations: HeadsignTranslationsByPrefix;
   private readonly sourceMetas: SourceMeta[];
 
@@ -125,6 +126,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     this.calendarServices = merged.calendarServices;
     this.calendarExceptions = merged.calendarExceptions;
     this.timetable = merged.timetable;
+    this.timetableByPattern = merged.timetableByPattern;
     this.headsignTranslations = merged.headsignTranslations;
     this.sourceMetas = merged.sourceMetas;
   }
@@ -607,36 +609,30 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     }
 
     const stops: TripStop[] = [];
-    for (const [stopId, groups] of Object.entries(this.timetable)) {
-      for (const group of groups) {
-        if (group.tp !== locator.patternId) {
-          continue;
-        }
-
-        const departures = group.d[locator.serviceId];
-        if (!departures || locator.tripIndex >= departures.length) {
-          continue;
-        }
-
-        const arrivals = group.a[locator.serviceId];
-        const pickupTypes = group.pt?.[locator.serviceId];
-        const dropOffTypes = group.dt?.[locator.serviceId];
-        const stopMeta = this.stopsMetaMap.get(stopId)?.stop;
-        const stopPosition = pattern.stops[group.si];
-
-        stops.push({
-          stopId,
-          stopName: stopMeta?.stop_name ?? stopId,
-          stopIndex: group.si,
-          departureMinutes: departures[locator.tripIndex],
-          arrivalMinutes: arrivals?.[locator.tripIndex] ?? departures[locator.tripIndex],
-          pickupType: (pickupTypes?.[locator.tripIndex] ?? 0) as StopServiceType,
-          dropOffType: (dropOffTypes?.[locator.tripIndex] ?? 0) as StopServiceType,
-          isOrigin: group.si === 0,
-          isTerminal: group.si === pattern.stops.length - 1,
-          ...(stopPosition?.headsign != null ? { stopHeadsign: stopPosition.headsign } : {}),
-        });
+    for (const { stopId, group } of this.timetableByPattern.get(locator.patternId) ?? []) {
+      const departures = group.d[locator.serviceId];
+      if (!departures || locator.tripIndex >= departures.length) {
+        continue;
       }
+
+      const arrivals = group.a[locator.serviceId];
+      const pickupTypes = group.pt?.[locator.serviceId];
+      const dropOffTypes = group.dt?.[locator.serviceId];
+      const stopMeta = this.stopsMetaMap.get(stopId)?.stop;
+      const stopPosition = pattern.stops[group.si];
+
+      stops.push({
+        stopId,
+        stopName: stopMeta?.stop_name ?? stopId,
+        stopIndex: group.si,
+        departureMinutes: departures[locator.tripIndex],
+        arrivalMinutes: arrivals?.[locator.tripIndex] ?? departures[locator.tripIndex],
+        pickupType: (pickupTypes?.[locator.tripIndex] ?? 0) as StopServiceType,
+        dropOffType: (dropOffTypes?.[locator.tripIndex] ?? 0) as StopServiceType,
+        isOrigin: group.si === 0,
+        isTerminal: group.si === pattern.stops.length - 1,
+        ...(stopPosition?.headsign != null ? { stopHeadsign: stopPosition.headsign } : {}),
+      });
     }
 
     stops.sort((a, b) => a.stopIndex - b.stopIndex);

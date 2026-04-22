@@ -101,6 +101,24 @@ describe('mergeSourcesV2', () => {
     expect(subN!.headsign).toBe('Nishi-takashimadaira');
   });
 
+  it('builds timetableByPattern during timetable merge', () => {
+    const fixture = createFixtureV2();
+    const merged = mergeSourcesV2([fixture]);
+
+    const entries = merged.timetableByPattern.get('tp_bus_c');
+    expect(entries).toBeDefined();
+    expect(
+      entries
+        ?.map(({ stopId, group }) => ({ stopId, stopIndex: group.si }))
+        .sort((a, b) => a.stopIndex - b.stopIndex),
+    ).toEqual([
+      { stopId: 'bus_01', stopIndex: 0 },
+      { stopId: 'bus_02', stopIndex: 1 },
+      { stopId: 'bus_03', stopIndex: 2 },
+      { stopId: 'bus_01', stopIndex: 3 },
+    ]);
+  });
+
   it('builds stopRouteTypeMap via tripPattern FK', () => {
     const fixture = createFixtureV2();
     const merged = mergeSourcesV2([fixture]);

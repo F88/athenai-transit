@@ -17,7 +17,12 @@ import {
   normalizeRouteGtfsColors,
   type NormalizedRouteGtfsColors,
 } from '@/domain/transit/color-resolver/route-colors';
-import type { HeadsignTranslationsByPrefix, MergedDataV2, ResolvedPattern } from './types';
+import type {
+  HeadsignTranslationsByPrefix,
+  MergedDataV2,
+  PatternTimetableEntry,
+  ResolvedPattern,
+} from './types';
 
 /** Set of valid AppRouteTypeValue integers. Values outside this set are normalized to -1. */
 const VALID_ROUTE_TYPE_VALUES = new Set<number>(APP_ROUTE_TYPES.map((rt) => rt.value));
@@ -285,12 +290,22 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
   }
 
   const timetable: Record<string, TimetableGroupV2Json[]> = {};
+  const timetableByPattern = new Map<string, PatternTimetableEntry[]>();
   for (const source of sources) {
     for (const [stopId, groups] of Object.entries(source.data.timetable.data)) {
       if (timetable[stopId]) {
         timetable[stopId].push(...groups);
       } else {
         timetable[stopId] = [...groups];
+      }
+
+      for (const group of groups) {
+        let patternEntries = timetableByPattern.get(group.tp);
+        if (!patternEntries) {
+          patternEntries = [];
+          timetableByPattern.set(group.tp, patternEntries);
+        }
+        patternEntries.push({ stopId, group });
       }
     }
   }
@@ -403,6 +418,7 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     tripPatterns,
     resolvedPatterns,
     timetable,
+    timetableByPattern,
     calendarServices,
     calendarExceptions,
     stopRouteTypeMap,
