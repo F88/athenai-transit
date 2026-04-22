@@ -44,6 +44,66 @@ export interface NearbyStopProps {
   onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
 }
 
+interface NearbyStopActionButtonsProps {
+  stopId: string;
+  routeTypes: AppRouteTypeValue[];
+  isAnchor: boolean;
+  layout?: 'horizontal' | 'vertical';
+  onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
+  onShowStopTimetable?: (stopId: string) => void;
+}
+
+function NearbyStopActionButtons({
+  stopId,
+  routeTypes,
+  isAnchor,
+  layout = 'vertical',
+  onToggleAnchor,
+  onShowStopTimetable,
+}: NearbyStopActionButtonsProps) {
+  const { t } = useTranslation();
+  const layoutClassName =
+    layout === 'horizontal'
+      ? 'ml-auto flex shrink-0 self-stretch flex-row items-start justify-end'
+      : 'ml-auto flex shrink-0 self-stretch flex-col items-end justify-start';
+
+  return (
+    <div className={`${layoutClassName} gap-1`}>
+      <button
+        type="button"
+        className="shrink-0 cursor-pointer rounded border border-amber-400 bg-transparent px-1.5 py-0.5 active:bg-amber-50 dark:border-amber-500 dark:active:bg-amber-950"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleAnchor(stopId, routeTypes);
+        }}
+        title={isAnchor ? t('anchor.remove') : t('anchor.add')}
+        aria-label={isAnchor ? t('anchor.remove') : t('anchor.add')}
+        aria-pressed={isAnchor}
+      >
+        <Signpost
+          size={16}
+          strokeWidth={2}
+          className={isAnchor ? 'text-amber-500' : 'text-gray-400'}
+        />
+      </button>
+      {onShowStopTimetable && (
+        <button
+          type="button"
+          className="shrink-0 cursor-pointer rounded border border-[#1976d2] bg-transparent px-1.5 py-0.5 text-[#1976d2] active:bg-[rgba(25,118,210,0.1)] dark:border-blue-400 dark:text-blue-400"
+          onClick={(e) => {
+            e.stopPropagation();
+            onShowStopTimetable(stopId);
+          }}
+          title={t('showTimetable')}
+          aria-label={t('showTimetable')}
+        >
+          <Clock size={16} strokeWidth={2} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function NearbyStop({
   data: { stop, routeTypes, stopTimes, stopServiceState, agencies, routes, distance, stats, geo },
   upcomingEntriesState,
@@ -120,7 +180,7 @@ export function NearbyStop({
           viewId={viewId}
         />
       )}
-      <div className="m-0 mb-1.5 flex items-start gap-1">
+      <div className="m-0 mb-1.5 flex items-stretch gap-1">
         <StopInfo
           stop={stop}
           routeTypes={routeTypes}
@@ -133,40 +193,18 @@ export function NearbyStop({
           routes={routes}
           stats={stats}
           geo={geo}
+          agencyBadgeSize={'sm'}
+          routeBadgeSize={'sm'}
         />
-        <div className="ml-auto flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            className="shrink-0 cursor-pointer rounded border border-amber-400 bg-transparent px-1.5 py-0.5 active:bg-amber-50 dark:border-amber-500 dark:active:bg-amber-950"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleAnchor(stop.stop_id, routeTypes);
-            }}
-            title={isAnchor ? t('anchor.remove') : t('anchor.add')}
-            aria-label={isAnchor ? t('anchor.remove') : t('anchor.add')}
-            aria-pressed={isAnchor ? 'true' : 'false'}
-          >
-            <Signpost
-              size={16}
-              strokeWidth={2}
-              className={isAnchor ? 'text-amber-500' : 'text-gray-400'}
-            />
-          </button>
-          {onShowStopTimetable && (
-            <button
-              type="button"
-              className="shrink-0 cursor-pointer rounded border border-[#1976d2] bg-transparent px-1.5 py-0.5 text-[#1976d2] active:bg-[rgba(25,118,210,0.1)] dark:border-blue-400 dark:text-blue-400"
-              onClick={(e) => {
-                e.stopPropagation();
-                onShowStopTimetable(stop.stop_id);
-              }}
-              title={t('showTimetable')}
-              aria-label={t('showTimetable')}
-            >
-              <Clock size={16} strokeWidth={2} />
-            </button>
-          )}
-        </div>
+        <NearbyStopActionButtons
+          stopId={stop.stop_id}
+          routeTypes={routeTypes}
+          isAnchor={isAnchor}
+          // layout={info.isNormalEnabled ? 'vertical' : 'horizontal'}
+          layout={'vertical'}
+          onToggleAnchor={onToggleAnchor}
+          onShowStopTimetable={onShowStopTimetable}
+        />
       </div>
 
       {hasUnknownHeadsign && (
