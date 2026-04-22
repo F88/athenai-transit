@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TimetableGrid } from '../timetable/timetable-grid';
 import { TimetableHeader } from '../timetable/timetable-header';
 import { TimetableMetadata } from '../timetable/timetable-metadata';
 import { StopTimetableFilter } from '../timetable/stop-timetable-filter';
+import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
+import { useScrollFades } from '@/hooks/use-scroll-fades';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route, Stop, StopServiceState } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
@@ -190,7 +192,9 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
           onScroll={headerScroll.handleScroll}
           className="border-border relative max-h-[40dvh] shrink-0 overflow-y-auto border-b"
         >
-          {headerScroll.showTop && <ScrollFadeEdge position="top" />}
+          {headerScroll.showTop && (
+            <ScrollFadeEdge position="top" className="via-background/90 -mb-5 h-5" />
+          )}
           <DialogHeader className="p-4 text-left">
             {info.isVerboseEnabled && (
               <VerboseTimetableSummary
@@ -247,14 +251,18 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
               </p>
             )}
           </DialogHeader>
-          {headerScroll.showBottom && <ScrollFadeEdge position="bottom" />}
+          {headerScroll.showBottom && (
+            <ScrollFadeEdge position="bottom" className="via-background/90 -mt-5 h-5" />
+          )}
         </div>
         <div
           ref={gridContainerRef}
           onScroll={gridScroll.handleScroll}
           className="relative min-h-0 flex-1 overflow-y-auto"
         >
-          {gridScroll.showTop && <ScrollFadeEdge position="top" />}
+          {gridScroll.showTop && (
+            <ScrollFadeEdge position="top" className="via-background/90 -mb-5 h-5" />
+          )}
           <div className="px-4 pt-3 pb-4">
             <TimetableGrid
               timetableEntries={filteredTimetableEntries}
@@ -273,69 +281,12 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
               omitted={data.omitted}
             />
           </div>
-          {gridScroll.showBottom && <ScrollFadeEdge position="bottom" />}
+          {gridScroll.showBottom && (
+            <ScrollFadeEdge position="bottom" className="via-background/90 -mt-5 h-5" />
+          )}
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function useScrollFades(ref: React.RefObject<HTMLDivElement | null>, resetKey: string) {
-  const [fadeState, setFadeState] = useState({ showTop: false, showBottom: false });
-
-  const updateFadeState = useCallback(() => {
-    const el = ref.current;
-    if (!el) {
-      return;
-    }
-
-    const showTop = el.scrollTop > 1;
-    const showBottom = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
-
-    setFadeState((prev) =>
-      prev.showTop === showTop && prev.showBottom === showBottom ? prev : { showTop, showBottom },
-    );
-  }, [ref]);
-
-  useEffect(() => {
-    updateFadeState();
-
-    const el = ref.current;
-    if (!el) {
-      return;
-    }
-
-    const resizeObserver = new ResizeObserver(() => {
-      updateFadeState();
-    });
-
-    resizeObserver.observe(el);
-    if (el.firstElementChild instanceof HTMLElement) {
-      resizeObserver.observe(el.firstElementChild);
-    }
-
-    window.addEventListener('resize', updateFadeState);
-    const frameId = requestAnimationFrame(updateFadeState);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-      window.removeEventListener('resize', updateFadeState);
-      resizeObserver.disconnect();
-    };
-  }, [ref, resetKey, updateFadeState]);
-
-  return {
-    handleScroll: updateFadeState,
-    showTop: fadeState.showTop,
-    showBottom: fadeState.showBottom,
-  };
-}
-
-function ScrollFadeEdge({ position }: { position: 'top' | 'bottom' }) {
-  return position === 'top' ? (
-    <div className="from-background via-background/90 pointer-events-none sticky top-0 z-10 -mb-5 h-5 bg-linear-to-b to-transparent" />
-  ) : (
-    <div className="from-background via-background/90 pointer-events-none sticky bottom-0 z-10 -mt-5 h-5 bg-linear-to-t to-transparent" />
   );
 }
 

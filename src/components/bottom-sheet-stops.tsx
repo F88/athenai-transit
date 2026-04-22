@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useScrollFades } from '@/hooks/use-scroll-fades';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
 import type { StopWithContext } from '../types/app/transit-composed';
+import { ScrollFadeEdge } from './shared/scroll-fade-edge';
 import { NearbyStop, type NearbyStopProps } from './nearby-stop';
 
 /** Number of stops to render immediately without lazy loading. */
@@ -56,13 +58,13 @@ export function BottomSheetStops({
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
 
   return (
-    <div className="relative min-h-0 flex-1">
+    <div
+      className="relative min-h-0 flex-1 overflow-y-auto"
+      ref={contentRef}
+      onScroll={scrollFade.handleScroll}
+    >
       {scrollFade.showTop && <ScrollFadeEdge position="top" />}
-      <div
-        className="grid h-full grid-cols-1 content-start gap-0 overflow-y-auto px-4 pb-0 sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-3"
-        ref={contentRef}
-        onScroll={scrollFade.handleScroll}
-      >
+      <div className="grid grid-cols-1 content-start gap-0 px-4 pb-0 sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-3">
         {stopTimes.map((swc, i) => {
           const props: NearbyStopProps = {
             data: swc,
@@ -93,62 +95,6 @@ export function BottomSheetStops({
       </div>
       {scrollFade.showBottom && <ScrollFadeEdge position="bottom" />}
     </div>
-  );
-}
-
-function useScrollFades(ref: RefObject<HTMLDivElement | null>, resetKey: string) {
-  const [fadeState, setFadeState] = useState({ showTop: false, showBottom: false });
-
-  const updateFadeState = useCallback(() => {
-    const el = ref.current;
-    if (!el) {
-      return;
-    }
-
-    const showTop = el.scrollTop > 1;
-    const showBottom = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
-
-    setFadeState((prev) =>
-      prev.showTop === showTop && prev.showBottom === showBottom ? prev : { showTop, showBottom },
-    );
-  }, [ref]);
-
-  useEffect(() => {
-    updateFadeState();
-
-    const el = ref.current;
-    if (!el) {
-      return;
-    }
-
-    const resizeObserver = new ResizeObserver(() => {
-      updateFadeState();
-    });
-
-    resizeObserver.observe(el);
-
-    window.addEventListener('resize', updateFadeState);
-    const frameId = requestAnimationFrame(updateFadeState);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-      window.removeEventListener('resize', updateFadeState);
-      resizeObserver.disconnect();
-    };
-  }, [ref, resetKey, updateFadeState]);
-
-  return {
-    handleScroll: updateFadeState,
-    showTop: fadeState.showTop,
-    showBottom: fadeState.showBottom,
-  };
-}
-
-function ScrollFadeEdge({ position }: { position: 'top' | 'bottom' }) {
-  return position === 'top' ? (
-    <div className="from-background via-background/50 pointer-events-none sticky top-0 z-10 -mb-10 h-10 bg-linear-to-b to-transparent" />
-  ) : (
-    <div className="from-background via-background/50 pointer-events-none sticky bottom-0 z-10 -mt-10 h-10 bg-linear-to-t to-transparent" />
   );
 }
 
