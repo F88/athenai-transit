@@ -87,7 +87,7 @@ export function StopSummary({
             <TripInfo
               size={'xs'}
               routeDirection={entry.routeDirection}
-              infoLevel={'simple'}
+              infoLevel={info.isVerboseEnabled ? 'verbose' : 'simple'}
               dataLang={dataLang}
               attributes={getTimetableEntryAttributes(entry)}
               ellipsisHeadsign={true}
