@@ -93,6 +93,11 @@ export function BaseBadge({
 }: BaseBadgeProps) {
   const { enabled = false, idLabel, slot } = verboseExtras ?? {};
   const showVerbose = infoLevel === 'verbose' && enabled;
+  const style = {
+    ...(bgColor ? { background: bgColor } : {}),
+    ...(fgColor ? { color: fgColor } : {}),
+    ...(borderColor ? { borderColor } : {}),
+  };
 
   return (
     <div className="inline-flex flex-col gap-0.5 font-normal">
@@ -107,7 +112,7 @@ export function BaseBadge({
             showBorder && 'border',
             className,
           )}
-          style={bgColor ? { background: bgColor, color: fgColor, borderColor } : undefined}
+          style={Object.keys(style).length > 0 ? style : undefined}
         />
         {showVerbose && idLabel && <IdBadge>{idLabel}</IdBadge>}
       </span>
