@@ -16,8 +16,6 @@ import { BottomSheetHeader } from './bottom-sheet-header';
 import { BottomSheetStops } from './bottom-sheet-stops';
 
 const DRAG_THRESHOLD = 50;
-const COLLAPSED_HEIGHT_CLASS = 'h-[40dvh]';
-const EXPANDED_HEIGHT_CLASS = 'h-[70dvh]';
 
 /** Auto-enable "show operating stops only" filter at 22:00 in service day minutes. */
 const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
@@ -51,7 +49,7 @@ export interface NearbyStopsCounts {
   filtered: number;
 }
 
-interface BottomSheetProps {
+export interface BottomSheetProps {
   stopTimes: StopWithContext[];
   selectedStopId: string | null;
   isNearbyLoading: boolean;
@@ -69,6 +67,14 @@ interface BottomSheetProps {
   onShowStopTimetable?: (stopId: string) => void;
   /** Toggle anchor (bookmark) status for a stop. */
   onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
+  /** Collapsed-state height class applied to the sheet root. */
+  collapsedHeightClassName?: string;
+  /** Expanded-state height class applied to the sheet root. */
+  expandedHeightClassName?: string;
+  /** Controlled expanded state. */
+  expanded?: boolean;
+  /** Controlled expanded state setter. */
+  onExpandedChange?: (expanded: boolean) => void;
 }
 
 export function BottomSheet({
@@ -86,8 +92,23 @@ export function BottomSheet({
   onShowTimetable,
   onShowStopTimetable,
   onToggleAnchor,
+  collapsedHeightClassName = 'h-[40dvh]',
+  expandedHeightClassName = 'h-[70dvh]',
+  expanded: expandedProp,
+  onExpandedChange,
 }: BottomSheetProps) {
-  const [expanded, setExpanded] = useState(false);
+  const [uncontrolledExpanded, setUncontrolledExpanded] = useState(false);
+  const expanded = expandedProp ?? uncontrolledExpanded;
+  const setExpanded = useCallback(
+    (nextExpanded: boolean) => {
+      if (onExpandedChange) {
+        onExpandedChange(nextExpanded);
+        return;
+      }
+      setUncontrolledExpanded(nextExpanded);
+    },
+    [onExpandedChange],
+  );
   const [viewId, setViewId] = useState(DEFAULT_VIEW_ID);
   const isLateNight = getServiceDayMinutes(now) >= LATE_NIGHT_THRESHOLD_MINUTES;
   // User can toggle manually; null means "use auto (isLateNight)".
@@ -197,19 +218,22 @@ export function BottomSheet({
     touchStartY.current = e.touches[0].clientY;
   }, []);
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const deltaY = e.changedTouches[0].clientY - touchStartY.current;
 
-    if (Math.abs(deltaY) < DRAG_THRESHOLD) {
-      return;
-    }
+      if (Math.abs(deltaY) < DRAG_THRESHOLD) {
+        return;
+      }
 
-    if (deltaY < 0) {
-      setExpanded(true);
-    } else {
-      setExpanded(false);
-    }
-  }, []);
+      if (deltaY < 0) {
+        setExpanded(true);
+      } else {
+        setExpanded(false);
+      }
+    },
+    [setExpanded],
+  );
 
   const stopIdsKey = useMemo(() => stopTimes.map((d) => d.stop.stop_id).join(','), [stopTimes]);
 
@@ -235,21 +259,21 @@ export function BottomSheet({
       setExpanded(false);
       onStopSelected(stopId);
     },
-    [onStopSelected],
+    [onStopSelected, setExpanded],
   );
 
   return (
     <div
       className={cn(
         'fixed right-0 bottom-0 left-0 z-1000 flex touch-none flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_-2px_12px_rgba(0,0,0,0.15)] transition-[height] duration-300 ease-in-out dark:bg-gray-900',
-        expanded ? EXPANDED_HEIGHT_CLASS : COLLAPSED_HEIGHT_CLASS,
+        expanded ? expandedHeightClassName : collapsedHeightClassName,
       )}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
       <div
         className="flex shrink-0 cursor-grab justify-center py-2 pb-1"
-        onClick={() => setExpanded((v) => !v)}
+        onClick={() => setExpanded(!expanded)}
       >
         <div className="h-1 w-9 rounded-sm bg-[#bdbdbd] dark:bg-gray-600" />
       </div>
