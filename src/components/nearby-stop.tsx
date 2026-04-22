@@ -200,7 +200,6 @@ export function NearbyStop({
           stopId={stop.stop_id}
           routeTypes={routeTypes}
           isAnchor={isAnchor}
-          // layout={info.isNormalEnabled ? 'vertical' : 'horizontal'}
           layout={'vertical'}
           onToggleAnchor={onToggleAnchor}
           onShowStopTimetable={onShowStopTimetable}
