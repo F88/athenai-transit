@@ -1,4 +1,4 @@
-import { resolveContextBorderColor } from '@/domain/transit/color-resolver/context-border-color';
+import { resolveContextBorderColor } from '../../domain/transit/color-resolver/context-border-color';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { resolveAgencyColors } from '../../domain/transit/color-resolver/agency-colors';
 import { getAgencyDisplayNames } from '../../domain/transit/get-agency-display-name';
