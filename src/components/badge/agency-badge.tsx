@@ -29,9 +29,10 @@ interface AgencyBadgeProps {
  * Label shows `agency_short_name` by default, falling back to
  * `agency_long_name`, then `agency_name`.
  *
- * The outline uses a theme-aware neutral gray resolved at runtime via
- * {@link useThemeNeutralBorderColor} so the badge stays distinguishable
- * from the surrounding surface regardless of the agency color palette.
+ * The outline color is resolved at runtime from the agency colors and the
+ * current theme background using {@link useThemeContrastBackgroundColor}
+ * and {@link resolveContextBorderColor}, so the badge stays distinguishable
+ * from the surrounding surface within the current visual context.
  *
  * Delegates chip + verbose layout to {@link BaseBadge}. In verbose mode
  * an IdBadge with the `agency_id` appears alongside the chip and a
