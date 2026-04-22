@@ -21,6 +21,11 @@ and this project adheres to [CalVer](https://calver.org/).
 - Rename the badge verbose gate prop `disableVerbose?: boolean` (default `false`, i.e. verbose on) to `enableVerboseExtras?: boolean` (default `false`, i.e. verbose off) with the semantic flipped. Production callers that used to pass `disableVerbose={true}` drop the prop, and the three badge Storybook meta args set `enableVerboseExtras: true` so dev inspection still shows the verbose panel.
 - Align the `AgencyBadge` size vocabulary with `BaseLabel` (`md | sm | xs`) and delete the legacy `'default'` (12px) size, which was unused in production. Callers move to the new vocabulary explicitly — `stop-summary.tsx` / `trip-info.tsx` / `marker/stop-summary.tsx` preserve their visual size, while `timetable-header.tsx` accepts a 12px → 10px downgrade. The hand-rolled `sizeVariants` map is removed in favor of BaseLabel's built-in sizes.
 - Add outlines to `AgencyBadge` and `HeadsignBadge`. `HeadsignBadge` always renders a theme-aware neutral gray resolved at runtime via `useThemeNeutralBorderColor`; `AgencyBadge` computes a context cascade via `resolveContextBorderColor` and leaves the border toggle to the caller (`showBorder`). Both use inline `borderColor` via `BaseBadge` so theme changes stay reactive.
+- Update the `AgencyBadge` TSDoc to match the shipped border behavior: the outline is derived from `useThemeContrastBackgroundColor` + `resolveContextBorderColor`, not `useThemeNeutralBorderColor`.
+
+### Fixed
+
+- `BaseBadge` now applies inline `fgColor` / `borderColor` independently of `bgColor`, so callers can use caller-resolved text or outline colors without also forcing an inline background. Add a focused component regression test for the `borderColor`-without-`bgColor` case.
 
 ## [2026.04.21]
 
