@@ -4,12 +4,12 @@
   },
   "view": {
     "stop": {
-      "label": "ALL",
-      "title": "All",
+      "label": "Stop",
+      "title": "By stop",
       "description": "Show all services in chronological order"
     },
     "routeHeadsign": {
-      "label": "Route",
+      "label": "Route/Dest",
       "title": "By route + destination",
       "description": "Group by route and destination"
     },
