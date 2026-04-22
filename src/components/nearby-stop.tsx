@@ -193,7 +193,7 @@ export function NearbyStop({
           routes={routes}
           stats={stats}
           geo={geo}
-          agencyBadgeSize={'sm'}
+          agencyBadgeSize={'md'}
           routeBadgeSize={'sm'}
         />
         <NearbyStopActionButtons
