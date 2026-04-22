@@ -40,7 +40,7 @@ export function BottomSheetHeader({
   dataLang,
   showOperatingStopsOnly,
   viewId,
-  selectedView,
+  selectedView: _selectedView,
   infoLevel,
   presentRouteTypes,
   hiddenRouteTypes,
@@ -131,7 +131,7 @@ export function BottomSheetHeader({
           );
         })}
       </div>
-      {selectedView && info.isVerboseEnabled && (
+      {/* {selectedView && info.isVerboseEnabled && (
         <div className="mt-1">
           <p className="text-[11px] text-[#888] dark:text-gray-400">{t(selectedView.titleKey)}</p>
           {info.isDetailedEnabled && (
@@ -140,7 +140,7 @@ export function BottomSheetHeader({
             </p>
           )}
         </div>
-      )}
+      )} */}
     </div>
   );
 }

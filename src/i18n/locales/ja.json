@@ -4,12 +4,12 @@
   },
   "view": {
     "stop": {
-      "label": "ALL",
-      "title": "すべて",
+      "label": "のりば",
+      "title": "のりば別",
       "description": "全ての時間を表示します"
     },
     "routeHeadsign": {
-      "label": "路線+行先",
+      "label": "路線 / 行先",
       "title": "路線+行先別",
       "description": "路線と行先の組み合わせでグループ化して表示します"
     },

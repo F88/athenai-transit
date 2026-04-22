@@ -43,8 +43,7 @@ import {
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
 } from './domain/transit/timetable-filter';
-import { MapView } from './components/map/map-view';
-import { BottomSheet } from './components/bottom-sheet';
+import { MapBottomSheetLayout } from './components/map-bottom-sheet-layout';
 import { TimeControls } from './components/time-controls';
 import { TimetableModal, type TimetableData } from './components/dialog/timetable-modal';
 import { StopSearchModal } from './components/dialog/stop-search-modal';
@@ -761,73 +760,74 @@ export default function App({ loadResult }: AppProps) {
 
   return (
     <>
-      <div className="relative">
-        <MapView
-          inBoundStops={inBoundStops}
-          radiusStops={radiusStops}
-          selectedStopId={selectedStopId}
-          focusPosition={focusPosition}
-          stopTimes={stopTimes}
-          routeTypeMap={routeTypeMap}
-          routeShapes={routeShapes}
-          selectionInfo={selectionInfo}
-          routeStops={routeStops}
-          // routeStops={[]}
-          visibleStopTypes={visibleStopTypes}
-          visibleRouteShapes={visibleRouteShapes}
-          tileIndex={settings.tileIndex}
-          renderMode={settings.renderMode}
-          perfMode={settings.perfMode}
-          infoLevel={settings.infoLevel}
-          dataLang={dataLang}
-          time={dateTime}
-          onBoundsChanged={handleBoundsChanged}
-          onStopSelected={handleSelectStop}
-          onFetchStopTimes={handleFetchStopTimes}
-          onToggleStopType={handleToggleStopType}
-          onToggleBusShapes={handleToggleBusShapes}
-          onToggleNonBusShapes={handleToggleNonBusShapes}
-          onCycleTile={handleCycleTile}
-          onToggleRenderMode={handleToggleRenderMode}
-          onTogglePerfMode={handleTogglePerfMode}
-          onCycleInfoLevel={handleCycleInfoLevel}
-          onDeselectStop={deselectStop}
-          onRouteShapeSelected={selectRouteShape}
-          resolveRouteFreq={resolveRouteFreq}
-          theme={settings.theme}
-          doubleTapDrag={settings.doubleTapDrag}
-          onToggleDarkMode={handleToggleDarkMode}
-          onCycleLang={handleCycleLang}
-          onSearchClick={() => setSearchModalOpen(true)}
-          onInfoClick={() => setInfoDialogOpen(true)}
-          stopHistory={history}
-          onHistorySelect={handleHistorySelect}
-          anchors={anchors}
-          onPortalSelect={handlePortalSelect}
-          lookupAnchorStopMeta={lookupAnchorStopMeta}
-        />
-        <TimeControls
-          time={dateTime}
-          isCustomTime={isCustomTime}
-          onResetToNow={resetToNow}
-          onCustomTimeSet={setCustomTime}
-        />
-      </div>
-      <BottomSheet
-        stopTimes={filteredStopTimes}
-        selectedStopId={selectedStopId}
-        isNearbyLoading={isNearbyLoading}
-        hasNearbyLoaded={hasNearbyLoaded}
-        dataConfig={perfProfile.data}
-        time={dateTime}
-        mapCenter={mapCenter}
-        infoLevel={settings.infoLevel}
-        dataLang={dataLang}
-        anchorIds={anchorIds}
-        onStopSelected={handleSelectStopById}
-        onShowTimetable={handleShowTimetable}
-        onShowStopTimetable={handleShowStopTimetable}
-        onToggleAnchor={handleToggleAnchor}
+      <MapBottomSheetLayout
+        mapViewProps={{
+          inBoundStops,
+          radiusStops,
+          selectedStopId,
+          focusPosition,
+          stopTimes,
+          routeTypeMap,
+          routeShapes,
+          selectionInfo,
+          routeStops,
+          visibleStopTypes,
+          visibleRouteShapes,
+          tileIndex: settings.tileIndex,
+          renderMode: settings.renderMode,
+          perfMode: settings.perfMode,
+          infoLevel: settings.infoLevel,
+          dataLang,
+          time: dateTime,
+          onBoundsChanged: handleBoundsChanged,
+          onStopSelected: handleSelectStop,
+          onFetchStopTimes: handleFetchStopTimes,
+          onToggleStopType: handleToggleStopType,
+          onToggleBusShapes: handleToggleBusShapes,
+          onToggleNonBusShapes: handleToggleNonBusShapes,
+          onCycleTile: handleCycleTile,
+          onToggleRenderMode: handleToggleRenderMode,
+          onTogglePerfMode: handleTogglePerfMode,
+          onCycleInfoLevel: handleCycleInfoLevel,
+          onDeselectStop: deselectStop,
+          onRouteShapeSelected: selectRouteShape,
+          resolveRouteFreq,
+          theme: settings.theme,
+          doubleTapDrag: settings.doubleTapDrag,
+          onToggleDarkMode: handleToggleDarkMode,
+          onCycleLang: handleCycleLang,
+          onSearchClick: () => setSearchModalOpen(true),
+          onInfoClick: () => setInfoDialogOpen(true),
+          stopHistory: history,
+          onHistorySelect: handleHistorySelect,
+          anchors,
+          onPortalSelect: handlePortalSelect,
+          lookupAnchorStopMeta,
+        }}
+        bottomSheetProps={{
+          stopTimes: filteredStopTimes,
+          selectedStopId,
+          isNearbyLoading,
+          hasNearbyLoaded,
+          dataConfig: perfProfile.data,
+          time: dateTime,
+          mapCenter,
+          infoLevel: settings.infoLevel,
+          dataLang,
+          anchorIds,
+          onStopSelected: handleSelectStopById,
+          onShowTimetable: handleShowTimetable,
+          onShowStopTimetable: handleShowStopTimetable,
+          onToggleAnchor: handleToggleAnchor,
+        }}
+        mapOverlay={
+          <TimeControls
+            time={dateTime}
+            isCustomTime={isCustomTime}
+            onResetToNow={resetToNow}
+            onCustomTimeSet={setCustomTime}
+          />
+        }
       />
       <StopSearchModal
         repo={repo}

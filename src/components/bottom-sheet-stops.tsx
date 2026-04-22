@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
@@ -52,39 +52,103 @@ export function BottomSheetStops({
   onShowStopTimetable,
   onToggleAnchor,
 }: BottomSheetStopsProps) {
+  const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
+  const scrollFade = useScrollFades(contentRef, stopIdsKey);
+
   return (
-    <div
-      className="grid flex-1 grid-cols-1 content-start gap-0 overflow-y-auto px-4 pb-0 sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-3"
-      ref={contentRef}
-    >
-      {stopTimes.map((swc, i) => {
-        const props: NearbyStopProps = {
-          data: swc,
-          // Fallback to 'no-service' if the Map is missing this stop_id
-          // (shouldn't happen — the Map and this `stopTimes` prop are
-          // both derived from the same upstream stops list — but stay
-          // defensive in case of race conditions during rerender).
-          upcomingEntriesState: upcomingEntriesStates.get(swc.stop.stop_id) ?? 'no-service',
-          isSelected: selectedStopId === swc.stop.stop_id,
-          now,
-          mapCenter,
-          infoLevel,
-          dataLang,
-          viewId,
-          isAnchor: anchorIds.has(swc.stop.stop_id),
-          onStopSelected,
-          onShowTimetable,
-          onShowStopTimetable,
-          onToggleAnchor,
-        };
-        // Eager render: first N stops, or the selected stop (so scroll-to-selected works)
-        return i < EAGER_RENDER_COUNT || props.isSelected ? (
-          <NearbyStop key={swc.stop.stop_id} {...props} />
-        ) : (
-          <LazyNearbyStop key={swc.stop.stop_id} scrollRoot={contentRef} {...props} />
-        );
-      })}
+    <div className="relative min-h-0 flex-1">
+      {scrollFade.showTop && <ScrollFadeEdge position="top" />}
+      <div
+        className="grid h-full grid-cols-1 content-start gap-0 overflow-y-auto px-4 pb-0 sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-3"
+        ref={contentRef}
+        onScroll={scrollFade.handleScroll}
+      >
+        {stopTimes.map((swc, i) => {
+          const props: NearbyStopProps = {
+            data: swc,
+            // Fallback to 'no-service' if the Map is missing this stop_id
+            // (shouldn't happen — the Map and this `stopTimes` prop are
+            // both derived from the same upstream stops list — but stay
+            // defensive in case of race conditions during rerender).
+            upcomingEntriesState: upcomingEntriesStates.get(swc.stop.stop_id) ?? 'no-service',
+            isSelected: selectedStopId === swc.stop.stop_id,
+            now,
+            mapCenter,
+            infoLevel,
+            dataLang,
+            viewId,
+            isAnchor: anchorIds.has(swc.stop.stop_id),
+            onStopSelected,
+            onShowTimetable,
+            onShowStopTimetable,
+            onToggleAnchor,
+          };
+          // Eager render: first N stops, or the selected stop (so scroll-to-selected works)
+          return i < EAGER_RENDER_COUNT || props.isSelected ? (
+            <NearbyStop key={swc.stop.stop_id} {...props} />
+          ) : (
+            <LazyNearbyStop key={swc.stop.stop_id} scrollRoot={contentRef} {...props} />
+          );
+        })}
+      </div>
+      {scrollFade.showBottom && <ScrollFadeEdge position="bottom" />}
     </div>
+  );
+}
+
+function useScrollFades(ref: RefObject<HTMLDivElement | null>, resetKey: string) {
+  const [fadeState, setFadeState] = useState({ showTop: false, showBottom: false });
+
+  const updateFadeState = useCallback(() => {
+    const el = ref.current;
+    if (!el) {
+      return;
+    }
+
+    const showTop = el.scrollTop > 1;
+    const showBottom = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+
+    setFadeState((prev) =>
+      prev.showTop === showTop && prev.showBottom === showBottom ? prev : { showTop, showBottom },
+    );
+  }, [ref]);
+
+  useEffect(() => {
+    updateFadeState();
+
+    const el = ref.current;
+    if (!el) {
+      return;
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateFadeState();
+    });
+
+    resizeObserver.observe(el);
+
+    window.addEventListener('resize', updateFadeState);
+    const frameId = requestAnimationFrame(updateFadeState);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', updateFadeState);
+      resizeObserver.disconnect();
+    };
+  }, [ref, resetKey, updateFadeState]);
+
+  return {
+    handleScroll: updateFadeState,
+    showTop: fadeState.showTop,
+    showBottom: fadeState.showBottom,
+  };
+}
+
+function ScrollFadeEdge({ position }: { position: 'top' | 'bottom' }) {
+  return position === 'top' ? (
+    <div className="from-background via-background/50 pointer-events-none sticky top-0 z-10 -mb-10 h-10 bg-linear-to-b to-transparent" />
+  ) : (
+    <div className="from-background via-background/50 pointer-events-none sticky bottom-0 z-10 -mt-10 h-10 bg-linear-to-t to-transparent" />
   );
 }
 

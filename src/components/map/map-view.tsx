@@ -197,7 +197,7 @@ function DistanceRings() {
   );
 }
 
-interface MapViewProps {
+export interface MapViewProps {
   /** Stops within the current viewport. Used for simplified marker rendering. */
   inBoundStops: StopWithMeta[];
   /** Stops within the nearby radius. Used for edge markers and detailed display. */
@@ -256,6 +256,8 @@ interface MapViewProps {
    * data at render time, regardless of viewport position.
    */
   lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
+  /** Height class applied to the outer map container. */
+  heightClassName?: string;
 }
 
 export function MapView({
@@ -300,10 +302,12 @@ export function MapView({
   onHistorySelect,
   anchors,
   onPortalSelect,
+  heightClassName,
 }: MapViewProps) {
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [zoom, setZoom] = useState(INITIAL_ZOOM);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { nearby: nearbyRenderMode, far: farRenderMode } = resolveRenderModes(renderMode, zoom);
 
@@ -342,8 +346,34 @@ export function MapView({
 
   const handleLocated = useCallback((location: UserLocation) => setUserLocation(location), []);
 
+  useEffect(() => {
+    if (!mapInstance || !wrapperRef.current) {
+      return;
+    }
+
+    let frameId = 0;
+    const invalidateMapSize = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        mapInstance.invalidateSize({ animate: false });
+      });
+    };
+
+    invalidateMapSize();
+
+    const resizeObserver = new ResizeObserver(() => {
+      invalidateMapSize();
+    });
+    resizeObserver.observe(wrapperRef.current);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      resizeObserver.disconnect();
+    };
+  }, [mapInstance]);
+
   return (
-    <div className="relative h-[60dvh] w-full">
+    <div ref={wrapperRef} className={`relative w-full ${heightClassName ?? 'h-[60dvh]'}`}>
       {/* Invert map tiles in dark mode via CSS filter on the tile pane */}
       {theme === 'dark' && (
         <style>{`.leaflet-tile-pane { filter: invert(1) hue-rotate(180deg); }`}</style>
