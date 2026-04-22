@@ -144,7 +144,6 @@ export function StopSummary({
               dataLang={dataLang}
               agencyLangs={resolveAgencyLang(agencies, agency.agency_id)}
               infoLevel={infoLevel}
-              // showBorder={false}
               showBorder={true}
             />
           ))}
