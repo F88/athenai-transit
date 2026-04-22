@@ -40,10 +40,10 @@ export interface StopSummaryCoreProps {
   dataLang: readonly string[];
   /** Service state of the stop on the current service day. */
   stopServiceState?: StopServiceState;
-  /** Badge size override for agency badges. */
-  agencyBadgeSize?: AgencyBadgeSize;
-  /** Badge size override for route badges. */
-  routeBadgeSize?: RouteBadgeSize;
+  /** Badge size for agency badges. */
+  agencyBadgeSize: AgencyBadgeSize;
+  /** Badge size for route badges. */
+  routeBadgeSize: RouteBadgeSize;
 }
 
 /**
@@ -95,8 +95,6 @@ export function StopSummary({
     'shrink-0 rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
   const inaccessibleClass =
     'shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-gray-700 opacity-30 dark:bg-gray-700 dark:text-gray-300';
-  const resolvedAgencyBadgeSize = agencyBadgeSize ?? 'md';
-  const resolvedRouteBadgeSize = routeBadgeSize ?? 'xs';
   const wheelchairAccessibleLabel = t('stop.accessibility.wheelchairAccessible');
   const wheelchairNotAccessibleLabel = t('stop.accessibility.wheelchairNotAccessible');
 
@@ -142,7 +140,7 @@ export function StopSummary({
             <AgencyBadge
               key={agency.agency_id}
               agency={agency}
-              size={resolvedAgencyBadgeSize}
+              size={agencyBadgeSize}
               dataLang={dataLang}
               agencyLangs={resolveAgencyLang(agencies, agency.agency_id)}
               infoLevel={infoLevel}
@@ -160,7 +158,7 @@ export function StopSummary({
               dataLang={dataLang}
               agencyLangs={resolveAgencyLang(agencies, route.agency_id)}
               infoLevel={infoLevel}
-              size={resolvedRouteBadgeSize}
+              size={routeBadgeSize}
               showBorder={true}
             />
           ))}

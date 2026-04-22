@@ -32,11 +32,13 @@ const meta = {
     dataLang: ['ja'],
     stopServiceState: 'boardable',
     routes: [busRoute],
+    agencyBadgeSize: 'sm',
+    routeBadgeSize: 'sm',
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     stopServiceState: { control: 'radio', options: ['boardable', 'drop-off-only', 'no-service'] },
-    agencyBadgeSize: { control: 'inline-radio', options: ['xs', 'sm', 'default'] },
+    agencyBadgeSize: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
     routeBadgeSize: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
   },
   decorators: [
