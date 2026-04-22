@@ -42,11 +42,12 @@ const meta = {
     infoLevel: 'normal',
     size: 'md',
     showBorder: false,
-    borderStyle: 'neutral',
+    enableVerboseExtras: true,
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
+    enableVerboseExtras: { control: 'boolean' },
   },
 } satisfies Meta<typeof RouteBadge>;
 
@@ -119,7 +120,6 @@ export const SizeComparison: Story = {
         infoLevel={args.infoLevel}
         size="xs"
         showBorder={args.showBorder}
-        borderStyle={args.borderStyle}
       />
       <RouteBadge
         route={args.route}
@@ -127,7 +127,6 @@ export const SizeComparison: Story = {
         infoLevel={args.infoLevel}
         size="sm"
         showBorder={args.showBorder}
-        borderStyle={args.borderStyle}
       />
       <RouteBadge
         route={args.route}
@@ -135,7 +134,6 @@ export const SizeComparison: Story = {
         infoLevel={args.infoLevel}
         size="md"
         showBorder={args.showBorder}
-        borderStyle={args.borderStyle}
       />
     </div>
   ),
@@ -164,7 +162,6 @@ export const LogicalLongInfoLevelComparison: Story = {
               infoLevel={level}
               size={args.size ?? 'md'}
               showBorder={args.showBorder}
-              borderStyle={args.borderStyle}
             />
           </div>
         ))}
@@ -192,7 +189,6 @@ export const LangComparison: Story = {
             infoLevel={args.infoLevel}
             size={args.size ?? 'md'}
             showBorder={args.showBorder}
-            borderStyle={args.borderStyle}
           />
         </div>
       ))}
@@ -225,7 +221,6 @@ export const VerboseResolvedSourceComparison: Story = {
           infoLevel="verbose"
           size={args.size ?? 'md'}
           showBorder={args.showBorder}
-          borderStyle={args.borderStyle}
         />
       </div>
       <div className="space-y-1">
@@ -241,7 +236,6 @@ export const VerboseResolvedSourceComparison: Story = {
           infoLevel="verbose"
           size={args.size ?? 'md'}
           showBorder={args.showBorder}
-          borderStyle={args.borderStyle}
         />
       </div>
     </div>

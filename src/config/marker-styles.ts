@@ -20,6 +20,6 @@ export const MARKER_STYLES = {
   /** Tooltip styling shared by DOM and Canvas modes. */
   tooltip: {
     /** CSS class applied to Leaflet tooltip containers. */
-    className: 'w-max max-w-80 whitespace-normal',
+    className: 'w-max max-w-60 whitespace-normal',
   },
 } as const;

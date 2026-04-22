@@ -9,6 +9,24 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Introduce `BaseBadge` (`src/components/badge/base-badge.tsx`), a domain-agnostic primitive that owns the chip rendering, optional border, and verbose layout (IdBadge alongside the chip plus a detail panel below). Verbose concerns are grouped into a single `verboseExtras?: { enabled?, idLabel?, slot? }` prop, gated by `infoLevel === 'verbose'` AND `enabled`. Storybook coverage ships size / color / border / verbose variants plus a dedicated `BorderComparison` matrix across eight fills (19 stories).
+
+### Changed
+
+- Centralize the context-cascade border color for `RouteBadge` and `RouteCountBadge` in a new pure domain helper `resolveContextBorderColor` (`src/domain/transit/color-resolver/context-border-color.ts`). The helper returns `route_color` when it has sufficient contrast against the current theme, otherwise falls through to `route_text_color`. Drop the legacy `borderStyle` prop and the `border-app-neutral` Tailwind branch from `RouteBadge`, and route `RouteCountBadge` through the same cascade. Vitest contract tests cover the cascade, dark-theme path, un-parseable inputs, and a custom `minRatio`.
+- Rename `HeadsignLabel` → `HeadsignBadge` and move it from `src/components/label/` to `src/components/badge/`. The inner shape (colored fill, outline, verbose dump) already matches the other domain badges, so the directory / name now reflect that. `src/components/timetable/timetable-grid-entry.tsx` (the sole caller) is updated accordingly.
+- Migrate `RouteBadge`, `AgencyBadge`, and `HeadsignBadge` to render through `BaseBadge`. Each domain badge now only resolves its own display names, color pair, and border color, and forwards already-resolved values to the primitive so chip, outer container, IdBadge, and verbose slots stay aligned across domains.
+- Rename the badge verbose gate prop `disableVerbose?: boolean` (default `false`, i.e. verbose on) to `enableVerboseExtras?: boolean` (default `false`, i.e. verbose off) with the semantic flipped. Production callers that used to pass `disableVerbose={true}` drop the prop, and the three badge Storybook meta args set `enableVerboseExtras: true` so dev inspection still shows the verbose panel.
+- Align the `AgencyBadge` size vocabulary with `BaseLabel` (`md | sm | xs`) and delete the legacy `'default'` (12px) size, which was unused in production. Callers move to the new vocabulary explicitly — `stop-summary.tsx` / `trip-info.tsx` / `marker/stop-summary.tsx` preserve their visual size, while `timetable-header.tsx` accepts a 12px → 10px downgrade. The hand-rolled `sizeVariants` map is removed in favor of BaseLabel's built-in sizes.
+- Add outlines to `AgencyBadge` and `HeadsignBadge`. `HeadsignBadge` always renders a theme-aware neutral gray resolved at runtime via `useThemeNeutralBorderColor`; `AgencyBadge` computes a context cascade via `resolveContextBorderColor` and leaves the border toggle to the caller (`showBorder`). Both use inline `borderColor` via `BaseBadge` so theme changes stay reactive.
+- Update the `AgencyBadge` TSDoc to match the shipped border behavior: the outline is derived from `useThemeContrastBackgroundColor` + `resolveContextBorderColor`, not `useThemeNeutralBorderColor`.
+
+### Fixed
+
+- `BaseBadge` now applies inline `fgColor` / `borderColor` independently of `bgColor`, so callers can use caller-resolved text or outline colors without also forcing an inline background. Add a focused component regression test for the `borderColor`-without-`bgColor` case.
+
 ## [2026.04.21]
 
 ### Changed

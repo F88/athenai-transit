@@ -52,6 +52,7 @@ export function StopSummary({
 
   return (
     <>
+      {/* Stop information */}
       {info.isVerboseEnabled && <IdBadge>{stop.stop_id}</IdBadge>}
       {info.isNormalEnabled && stopNames.subNames.length > 0 && (
         <div className="truncate text-[11px] font-normal text-[#888] dark:text-gray-400">
@@ -67,14 +68,15 @@ export function StopSummary({
             <AgencyBadge
               key={a.agency_id}
               agency={a}
+              size="xs"
               dataLang={dataLang}
               agencyLangs={resolveAgencyLang(agencies, a.agency_id)}
               infoLevel={infoLevel}
-              size="xs"
-              disableVerbose
+              showBorder={true}
             />
           ))}
       </div>
+      {/* StopTimes */}
       {items.map((entry, i) => {
         const depTime = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
         return (
@@ -83,15 +85,14 @@ export function StopSummary({
             className="mt-0.5 flex items-center gap-1 text-[11px] text-[#555] dark:text-gray-400"
           >
             <TripInfo
-              size={'sm'}
+              size={'xs'}
               routeDirection={entry.routeDirection}
-              infoLevel={infoLevel === 'verbose' ? infoLevel : 'simple'}
+              infoLevel={info.isVerboseEnabled ? 'verbose' : 'simple'}
               dataLang={dataLang}
-              showRouteTypeIcon={false}
               attributes={getTimetableEntryAttributes(entry)}
               ellipsisHeadsign={true}
+              showRouteTypeIcon={routeTypes.length > 1}
             />
-
             <RelativeTime
               time={depTime}
               now={now!}

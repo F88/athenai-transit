@@ -80,6 +80,7 @@ export function StopTimesItem({
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
       <div>
         <TripInfo
+          size="md"
           routeDirection={firstEntry.routeDirection}
           infoLevel={infoLevel}
           dataLang={dataLang}

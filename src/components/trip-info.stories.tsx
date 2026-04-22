@@ -136,13 +136,13 @@ const meta = {
     agency,
     showAgency: false,
     attributes: emptyAttributes,
-    size: 'default',
+    size: 'md',
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     showRouteTypeIcon: { control: 'boolean' },
     showAgency: { control: 'boolean' },
-    size: { control: 'inline-radio', options: ['sm', 'default'] },
+    size: { control: 'inline-radio', options: ['md', 'sm', 'xs'] },
     attributes: { control: 'object' },
   },
   decorators: [
@@ -262,7 +262,7 @@ export const TimetableEntryAttributesComparison: Story = {
               showRouteTypeIcon={args.showRouteTypeIcon}
               agency={args.agency}
               attributes={attributes}
-              size={args.size}
+              size={args.size ?? 'md'}
             />
           </div>
         ))}
@@ -272,8 +272,8 @@ export const TimetableEntryAttributesComparison: Story = {
 };
 
 /**
- * Size comparison — `sm` (compact, used in StopSummary popovers) vs
- * `default` (used in DepartureItem / FlatDepartureItem).
+ * Size comparison — `md` (default), `sm` (compact), and `xs`
+ * (extra compact).
  *
  * The route badge / headsign / agency badge scale with the parent
  * `size` prop. The `TimetableEntryAttributesLabels` row uses a
@@ -293,7 +293,7 @@ export const SizeComparison: Story = {
   },
   render: (args) => (
     <div className="flex flex-col gap-3">
-      {(['sm', 'default'] as const).map((size) => (
+      {(['md', 'sm', 'xs'] as const).map((size) => (
         <div key={size}>
           <span className="mb-0.5 block text-[10px] text-gray-400">size: {size}</span>
           <TripInfo
@@ -360,7 +360,7 @@ export const LogicalLongInfoLevelComparison: Story = {
               showRouteTypeIcon={args.showRouteTypeIcon}
               agency={args.agency}
               attributes={args.attributes}
-              size={args.size}
+              size={args.size ?? 'md'}
             />
           </div>
         ))}
@@ -393,6 +393,7 @@ export const LangComparison: Story = {
             dataLang={dataLang}
             showRouteTypeIcon={args.showRouteTypeIcon}
             agency={args.agency}
+            size={args.size ?? 'md'}
           />
         </div>
       ))}

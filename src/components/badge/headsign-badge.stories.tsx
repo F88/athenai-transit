@@ -16,7 +16,7 @@ import {
   tripHeadsignLong,
 } from '../../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../../stories/lang-comparison';
-import { HeadsignLabel } from './headsign-label';
+import { HeadsignBadge } from './headsign-badge';
 
 /** Default routeDirection fixture for stories. */
 const defaultRouteDirection = createRouteDirection({
@@ -25,19 +25,21 @@ const defaultRouteDirection = createRouteDirection({
 });
 
 const meta = {
-  title: 'Label/HeadsignLabel',
-  component: HeadsignLabel,
+  title: 'Badge/HeadsignBadge',
+  component: HeadsignBadge,
   args: {
     routeDirection: defaultRouteDirection,
     infoLevel: 'normal',
     dataLang: ['ja'],
     size: 'md',
+    enableVerboseExtras: true,
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     size: { control: 'inline-radio', options: ['md', 'sm', 'xs'] },
+    enableVerboseExtras: { control: 'boolean' },
   },
-} satisfies Meta<typeof HeadsignLabel>;
+} satisfies Meta<typeof HeadsignBadge>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -150,7 +152,7 @@ export const LogicalLongInfoLevelComparison: Story = {
         {levels.map((level) => (
           <div key={level} className="space-y-1">
             <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
-            <HeadsignLabel
+            <HeadsignBadge
               routeDirection={args.routeDirection}
               infoLevel={level}
               dataLang={args.dataLang}
@@ -169,7 +171,7 @@ export const LangComparison: Story = {
       {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
         <div key={label} className="flex items-center gap-2">
           <span className="w-20 text-[10px] text-gray-400">{label}</span>
-          <HeadsignLabel
+          <HeadsignBadge
             routeDirection={args.routeDirection}
             infoLevel={args.infoLevel}
             dataLang={dataLang}
@@ -196,19 +198,19 @@ export const LangEnStopOverride: Story = {
 export const SizeComparison: Story = {
   render: (args) => (
     <div className="flex items-center gap-2">
-      <HeadsignLabel
+      <HeadsignBadge
         routeDirection={args.routeDirection}
         infoLevel={args.infoLevel}
         dataLang={args.dataLang}
         size="xs"
       />
-      <HeadsignLabel
+      <HeadsignBadge
         routeDirection={args.routeDirection}
         infoLevel={args.infoLevel}
         dataLang={args.dataLang}
         size="sm"
       />
-      <HeadsignLabel
+      <HeadsignBadge
         routeDirection={args.routeDirection}
         infoLevel={args.infoLevel}
         dataLang={args.dataLang}

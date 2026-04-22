@@ -1,11 +1,8 @@
 import { resolveAgencyLang } from '../../config/transit-defaults';
-import { LOW_CONTRAST_BADGE_MIN_RATIO } from '../../domain/transit/color-resolver/contrast-thresholds';
+import { resolveContextBorderColor } from '../../domain/transit/color-resolver/context-border-color';
 import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
 import { resolveRouteColors } from '../../domain/transit/color-resolver/route-colors';
-import {
-  useThemeContrastAssessment,
-  useThemeNeutralBorderColor,
-} from '../../hooks/use-is-low-contrast-against-theme';
+import { useThemeContrastBackgroundColor } from '../../hooks/use-is-low-contrast-against-theme';
 import type { BaseLabelSize } from '../label/base-label';
 import type { Agency, Route } from '../../types/app/transit';
 import { LabelCountBadge } from './label-count-badge';
@@ -25,6 +22,9 @@ interface RouteCountBadgeProps {
  * Keeps GTFS-specific resolution (translations, agency language chain)
  * out of the presentation primitive so that `LabelCountBadge` can stay
  * reusable across other domain types (agency, stop, headsign, etc.).
+ * The outline uses the context cascade
+ * (`route_color` → `route_text_color`) resolved by
+ * {@link resolveContextBorderColor}.
  */
 export function RouteCountBadge({
   route,
@@ -41,14 +41,13 @@ export function RouteCountBadge({
   );
   const label = routeNames.resolved.name || route.route_id;
 
-  // Route color
   const { routeColor, routeTextColor } = resolveRouteColors(route, 'css-hex');
-  const routeColorAssessment = useThemeContrastAssessment(
+  const themeBackground = useThemeContrastBackgroundColor();
+  const frameColor = resolveContextBorderColor(
     routeColor ?? '',
-    LOW_CONTRAST_BADGE_MIN_RATIO,
+    routeTextColor ?? '',
+    themeBackground,
   );
-  const neutralBorderColor = useThemeNeutralBorderColor();
-  const frameColor = routeColorAssessment.isLowContrast ? neutralBorderColor : routeColor;
 
   return (
     <LabelCountBadge
