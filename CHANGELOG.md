@@ -28,6 +28,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - `BaseBadge` now applies inline `fgColor` / `borderColor` independently of `bgColor`, so callers can use caller-resolved text or outline colors without also forcing an inline background. Add a focused component regression test for the `borderColor`-without-`bgColor` case.
 - `MapView` に `heightClassName` 変更時の `invalidateSize()` を追加し、bottom sheet 展開や responsive layout 切り替え後も Leaflet が現在のコンテナサイズを再認識するようにした。
+- `BottomSheet` の nearby-stops scroll fade を iOS/WebKit でも安定して表示できるように修正。fade edge を scroll container 内側の sticky overlay に寄せ、`useScrollFades` / `ScrollFadeEdge` を共通化したうえで bottom edge の既定高さを `h-5` に調整した。
 
 ## [2026.04.21]
 
