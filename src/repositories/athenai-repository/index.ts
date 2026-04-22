@@ -8,7 +8,6 @@ export type {
   LoadResult,
   MergedDataV2,
   PatternStatsEntry,
-  ResolvedPattern,
   RouteFreqEntry,
   StopInsightsEntry,
 } from './types';

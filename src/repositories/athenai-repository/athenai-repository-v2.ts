@@ -57,6 +57,7 @@ import {
   computeActiveServiceIds,
   formatDateKey,
 } from '../../domain/transit/calendar-utils';
+import { extractPrefix } from '../../domain/transit/prefixed-id';
 import { mergeSourcesV2 } from './merge-sources-v2';
 import { fetchSourcesV2 } from './fetch-sources-v2';
 import { enrichStopInsights } from './enrich-stop-insights';
@@ -65,7 +66,6 @@ import type {
   LoadResult,
   MergedDataV2,
   PatternStatsEntry,
-  ResolvedPattern,
   RouteFreqEntry,
   StopInsightsEntry,
 } from './types';
@@ -94,7 +94,6 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private readonly stopsMetaMap: Map<string, StopWithMeta>;
   private readonly routeMap: Map<string, Route>;
   private readonly agencyMap: Map<string, Agency>;
-  private readonly resolvedPatterns: Map<string, ResolvedPattern>;
   private readonly tripPatterns: Map<string, TripPattern>;
   private readonly stopRouteTypeMap: Map<string, AppRouteTypeValue[]>;
   private readonly calendarServices: CalendarServiceJson[];
@@ -120,7 +119,6 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     this.stopsMetaMap = merged.stopsMetaMap;
     this.routeMap = merged.routeMap;
     this.agencyMap = merged.agencyMap;
-    this.resolvedPatterns = merged.resolvedPatterns;
     this.tripPatterns = merged.tripPatterns;
     this.stopRouteTypeMap = merged.stopRouteTypeMap;
     this.calendarServices = merged.calendarServices;
@@ -217,11 +215,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
       if (insights.tripPatternGeo) {
         for (const [patternId, geo] of Object.entries(insights.tripPatternGeo.data)) {
-          const resolved = this.resolvedPatterns.get(patternId);
-          if (!resolved) {
+          const route = this.resolveRouteByPatternId(patternId);
+          if (!route) {
             continue;
           }
-          const routeId = resolved.route.route_id;
+          const routeId = route.route_id;
           if (!routeGeo.has(routeId)) {
             routeGeo.set(routeId, { pathDist: geo.pathDist, isCircular: geo.cl });
           }
@@ -232,11 +230,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const serviceGroups = insights.serviceGroups.data;
         for (const [groupKey, groupStats] of Object.entries(insights.tripPatternStats.data)) {
           for (const [patternId, stats] of Object.entries(groupStats)) {
-            const resolved = this.resolvedPatterns.get(patternId);
-            if (!resolved) {
+            const route = this.resolveRouteByPatternId(patternId);
+            if (!route) {
               continue;
             }
-            const routeId = resolved.route.route_id;
+            const routeId = route.route_id;
 
             let entry = this.routeFreqMap.get(routeId);
             if (!entry) {
@@ -260,11 +258,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
           const statsForGroup = insights.tripPatternStats.data[firstGroupKey];
           if (statsForGroup) {
             for (const [patternId, stats] of Object.entries(statsForGroup)) {
-              const resolved = this.resolvedPatterns.get(patternId);
-              if (!resolved) {
+              const route = this.resolveRouteByPatternId(patternId);
+              if (!route) {
                 continue;
               }
-              const routeId = resolved.route.route_id;
+              const routeId = route.route_id;
               const current = routeFreq.get(routeId) ?? 0;
               routeFreq.set(routeId, current + stats.freq);
             }
@@ -405,13 +403,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const entries: ContextualTimetableEntry[] = [];
 
     for (const group of timetableGroups) {
-      const resolved = this.resolvedPatterns.get(group.tp);
-      if (!resolved) {
-        continue;
-      }
-
       const pattern = this.tripPatterns.get(group.tp);
       if (!pattern) {
+        continue;
+      }
+      const route = this.routeMap.get(pattern.route_id);
+      if (!route) {
         continue;
       }
       const totalStops = pattern.stops.length;
@@ -447,7 +444,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
             },
-            routeDirection: this.resolveRouteDirection(resolved, pattern, stopIndex),
+            routeDirection: this.resolveRouteDirection(route, pattern, stopIndex),
             boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
@@ -494,7 +491,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
             },
-            routeDirection: this.resolveRouteDirection(resolved, pattern, stopIndex),
+            routeDirection: this.resolveRouteDirection(route, pattern, stopIndex),
             boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
@@ -545,13 +542,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const entries: TimetableEntry[] = [];
 
     for (const group of timetableGroups) {
-      const resolved = this.resolvedPatterns.get(group.tp);
-      if (!resolved) {
-        continue;
-      }
-
       const pattern = this.tripPatterns.get(group.tp);
       if (!pattern) {
+        continue;
+      }
+      const route = this.routeMap.get(pattern.route_id);
+      if (!route) {
         continue;
       }
       const totalStops = pattern.stops.length;
@@ -574,7 +570,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
             },
-            routeDirection: this.resolveRouteDirection(resolved, pattern, stopIndex),
+            routeDirection: this.resolveRouteDirection(route, pattern, stopIndex),
             boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
@@ -603,9 +599,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
   getTripSnapshot(locator: TripLocator, serviceDate?: Date): TripSnapshotResult {
     const pattern = this.tripPatterns.get(locator.patternId);
-    const resolved = this.resolvedPatterns.get(locator.patternId);
-    if (!pattern || !resolved) {
+    if (!pattern) {
       return { success: false, error: `Unknown trip pattern: ${locator.patternId}` };
+    }
+    const route = this.routeMap.get(pattern.route_id);
+    if (!route) {
+      return { success: false, error: `Unknown route for trip pattern: ${locator.patternId}` };
     }
 
     const stops: TripStop[] = [];
@@ -645,8 +644,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
     const snapshot: TripSnapshot = {
       locator,
-      route: resolved.route,
-      headsign: resolved.headsign,
+      route,
+      headsign: pattern.headsign,
       direction: pattern.direction,
       totalStops: pattern.stops.length,
       stops,
@@ -806,18 +805,26 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return { remainingMinutes, totalMinutes: rd[0], freq };
   }
 
+  private resolveRouteByPatternId(patternId: string): Route | undefined {
+    const pattern = this.tripPatterns.get(patternId);
+    if (!pattern) {
+      return undefined;
+    }
+    return this.routeMap.get(pattern.route_id);
+  }
+
   private resolveRouteDirection(
-    resolved: ResolvedPattern,
+    route: Route,
     pattern: TripPattern,
     stopIndex: number,
   ): RouteDirection {
     const stop = pattern.stops[stopIndex];
-    const src = this.headsignTranslations.get(resolved.sourcePrefix);
+    const src = this.headsignTranslations.get(extractPrefix(route.agency_id));
     return {
-      route: resolved.route,
+      route,
       tripHeadsign: {
-        name: resolved.headsign,
-        names: src?.trip_headsigns[resolved.headsign] ?? {},
+        name: pattern.headsign,
+        names: src?.trip_headsigns[pattern.headsign] ?? {},
       },
       stopHeadsign:
         stop.headsign != null

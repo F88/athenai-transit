@@ -10,19 +10,14 @@ import type { SourceMeta, StopWithMeta, TripPattern } from '../../types/app/tran
 import type { SourceDataV2 } from '../../datasources/transit-data-source-v2';
 import { APP_ROUTE_TYPES } from '../../config/route-types';
 import { AGENCY_ATTRIBUTES, type AgencyAttributes } from '../../config/agency-attributes';
-import { extractPrefix } from '../../domain/transit/calendar-utils';
+import { extractPrefix } from '../../domain/transit/prefixed-id';
 import { injectOriginLang } from '../../domain/transit/i18n/inject-origin-lang';
 import { normalizeAgencyColorPairs } from '@/domain/transit/color-resolver/agency-colors';
 import {
   normalizeRouteGtfsColors,
   type NormalizedRouteGtfsColors,
 } from '@/domain/transit/color-resolver/route-colors';
-import type {
-  HeadsignTranslationsByPrefix,
-  MergedDataV2,
-  PatternTimetableEntry,
-  ResolvedPattern,
-} from './types';
+import type { HeadsignTranslationsByPrefix, MergedDataV2, PatternTimetableEntry } from './types';
 
 /** Set of valid AppRouteTypeValue integers. Values outside this set are normalized to -1. */
 const VALID_ROUTE_TYPE_VALUES = new Set<number>(APP_ROUTE_TYPES.map((rt) => rt.value));
@@ -276,19 +271,6 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     }
   }
 
-  const resolvedPatterns = new Map<string, ResolvedPattern>();
-  for (const [id, pattern] of tripPatterns) {
-    const route = routeMap.get(pattern.route_id);
-    if (route) {
-      resolvedPatterns.set(id, {
-        route,
-        headsign: pattern.headsign,
-        agencyId: route.agency_id,
-        sourcePrefix: extractPrefix(route.agency_id),
-      });
-    }
-  }
-
   const timetable: Record<string, TimetableGroupV2Json[]> = {};
   const timetableByPattern = new Map<string, PatternTimetableEntry[]>();
   for (const source of sources) {
@@ -320,12 +302,16 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     const uniqueRoutes = new Map<string, Route>();
 
     for (const group of groups) {
-      const resolved = resolvedPatterns.get(group.tp);
-      if (resolved) {
-        types.add(resolved.route.route_type);
-        uniqueRoutes.set(resolved.route.route_id, resolved.route);
-        if (resolved.agencyId) {
-          agencyIds.add(resolved.agencyId);
+      const pattern = tripPatterns.get(group.tp);
+      if (!pattern) {
+        continue;
+      }
+      const route = routeMap.get(pattern.route_id);
+      if (route) {
+        types.add(route.route_type);
+        uniqueRoutes.set(route.route_id, route);
+        if (route.agency_id) {
+          agencyIds.add(route.agency_id);
         }
       }
     }
@@ -416,7 +402,6 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
     routeMap,
     agencyMap,
     tripPatterns,
-    resolvedPatterns,
     timetable,
     timetableByPattern,
     calendarServices,
