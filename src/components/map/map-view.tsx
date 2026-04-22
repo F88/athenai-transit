@@ -345,6 +345,20 @@ export function MapView({
 
   const handleLocated = useCallback((location: UserLocation) => setUserLocation(location), []);
 
+  useEffect(() => {
+    if (!mapInstance) {
+      return;
+    }
+
+    const frameId = requestAnimationFrame(() => {
+      mapInstance.invalidateSize({ animate: false });
+    });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
+  }, [mapInstance, heightClassName]);
+
   return (
     <div className={`relative w-full ${heightClassName ?? 'h-[60dvh]'}`}>
       {/* Invert map tiles in dark mode via CSS filter on the tile pane */}
