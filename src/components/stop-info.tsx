@@ -41,23 +41,25 @@ export function StopInfo({
   const bearing = mapCenter ? bearingDeg(mapCenter, stop) : null;
 
   return (
-    <div className="min-w-0 flex-1">
-      <StopSummary
-        stop={stop}
-        routeTypes={routeTypes}
-        agencies={agencies}
-        infoLevel={infoLevel}
-        dataLang={dataLang}
-        stopServiceState={stopServiceState}
-        routes={routes}
-        agencyBadgeSize={agencyBadgeSize}
-        routeBadgeSize={routeBadgeSize}
-        distanceBadge={
-          distanceRounded != null && distanceRounded >= 10 ? (
-            <DistanceBadge meters={distanceRounded} bearingDeg={bearing} showDirection />
-          ) : undefined
-        }
-      />
+    <div className="flex min-w-0 flex-1 flex-col justify-center self-stretch">
+      <div className="min-w-0">
+        <StopSummary
+          stop={stop}
+          routeTypes={routeTypes}
+          agencies={agencies}
+          infoLevel={infoLevel}
+          dataLang={dataLang}
+          stopServiceState={stopServiceState}
+          routes={routes}
+          agencyBadgeSize={agencyBadgeSize}
+          routeBadgeSize={routeBadgeSize}
+          distanceBadge={
+            distanceRounded != null && distanceRounded >= 10 ? (
+              <DistanceBadge meters={distanceRounded} bearingDeg={bearing} showDirection />
+            ) : undefined
+          }
+        />
+      </div>
       <StopMetrics stats={stats} geo={geo} infoLevel={infoLevel} />
     </div>
   );
