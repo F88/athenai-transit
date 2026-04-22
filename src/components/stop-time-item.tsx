@@ -219,6 +219,7 @@ export function StopTimeItem({
 
           <div className="min-w-0">
             <TripInfo
+              size="md"
               routeDirection={entry.routeDirection}
               infoLevel={infoLevel}
               dataLang={dataLang}

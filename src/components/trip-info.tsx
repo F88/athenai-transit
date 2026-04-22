@@ -17,20 +17,26 @@ import { TimetableEntryAttributesLabels } from './label/timetable-entry-attribut
 import { headsignSourceEmoji } from '../domain/transit/headsign-source-emoji';
 
 const sizeVariants = {
+  // Standard variant for StopTimeItem / StopTimesItem.
+  md: {
+    emoji: 'text-[1.2rem]',
+    headsign: 'text-[1.0rem]',
+    headsignSub: 'text-[0.7rem]',
+    label: 'text-[0.7rem]',
+  },
   // Compact variant for StopSummary tooltips. Small text sizes are
   // intentional — secondary info must stay subordinate in limited space.
   sm: {
-    emoji: 'text-xs',
-    headsignSub: 'text-[8px]',
-    headsign: 'text-[11px]',
-    label: 'text-[8px]',
+    emoji: 'text-[1.0rem]',
+    headsign: 'text-[0.8rem]',
+    headsignSub: 'text-[0.6rem]',
+    label: 'text-[0.6rem]',
   },
-  // Standard variant for StopTimeItem / StopTimesItem.
-  default: {
-    emoji: 'text-base',
-    headsignSub: 'text-[10px]',
-    headsign: 'text-sm',
-    label: 'text-[10px]',
+  xs: {
+    emoji: 'text-[1.0rem]',
+    headsign: 'text-[0.7rem]',
+    headsignSub: 'text-[0.5rem]',
+    label: 'text-[0.5rem]',
   },
 } as const;
 
@@ -64,25 +70,10 @@ function HeadsignInfo({
 }
 
 interface TripInfoProps {
-  /** Route direction context for this trip. */
-  routeDirection: RouteDirection;
-  /** Current info verbosity level. */
-  infoLevel: InfoLevel;
-  /** Display language chain for translated GTFS/ODPT data names. */
-  dataLang: readonly string[];
-  /** Whether to show the route type emoji icon. */
-  showRouteTypeIcon?: boolean;
   /** Agency operating this trip. Rendered only when `showAgency` is true. */
   agency?: Agency;
-  /**
-   * Whether to render the agency badge. The badge is still gated by
-   * `infoLevel >= detailed` and the presence of `agency`, but this
-   * flag lets callers opt out entirely (e.g. in compact contexts
-   * where the agency would compete with the route badge for space).
-   *
-   * @default false
-   */
-  showAgency?: boolean;
+  /** Route direction context for this trip. */
+  routeDirection: RouteDirection;
   /**
    * Per-entry boolean attributes (terminal / origin / pickup-unavailable /
    * drop-off-unavailable). When provided, rendered via the shared
@@ -99,8 +90,23 @@ interface TripInfoProps {
    * group-level attributes would mis-represent some entries.
    */
   attributes?: TimetableEntryAttributes;
-  /** Size variant. @default 'default' */
-  size?: keyof typeof sizeVariants;
+  /** Size variant. */
+  size: keyof typeof sizeVariants;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLang: readonly string[];
+  /** Current info verbosity level. */
+  infoLevel: InfoLevel;
+  /** Whether to show the route type emoji icon. */
+  showRouteTypeIcon?: boolean;
+  /**
+   * Whether to render the agency badge. The badge is still gated by
+   * `infoLevel >= detailed` and the presence of `agency`, but this
+   * flag lets callers opt out entirely (e.g. in compact contexts
+   * where the agency would compete with the route badge for space).
+   *
+   * @default false
+   */
+  showAgency?: boolean;
   /** Apply CSS text-overflow ellipsis to headsign name and sub-names. */
   ellipsisHeadsign?: boolean;
 }
@@ -113,14 +119,14 @@ interface TripInfoProps {
  * Shared by {@link StopTimeItem} and {@link StopTimesItem}.
  */
 export function TripInfo({
-  routeDirection,
-  infoLevel,
-  dataLang,
-  showRouteTypeIcon = false,
   agency,
-  showAgency = false,
+  routeDirection,
   attributes,
-  size = 'default',
+  size,
+  dataLang,
+  infoLevel,
+  showRouteTypeIcon = false,
+  showAgency = false,
   ellipsisHeadsign = false,
 }: TripInfoProps) {
   const { route } = routeDirection;
@@ -179,16 +185,16 @@ export function TripInfo({
         <span className={`shrink-0 ${v.emoji}`}>{routeTypeEmoji(route.route_type)}</span>
       )}
       <RouteBadge
+        size={size}
         route={route}
         dataLang={dataLang}
         agencyLangs={agencyLang}
         infoLevel={infoLevel}
-        size={size === 'sm' ? 'sm' : 'md'}
         showBorder={true}
       />
       {info.isDetailedEnabled && agency && showAgency && (
         <AgencyBadge
-          size="sm"
+          size={size}
           agency={agency}
           dataLang={dataLang}
           agencyLangs={agencyLang}
@@ -202,9 +208,8 @@ export function TripInfo({
 
       {attributes && (
         <TimetableEntryAttributesLabels
+          size={size}
           attributes={attributes}
-          // size: fixed for design reasons — these labels are visually subordinate to the main route/headsign info and should not compete for attention by scaling up to the same size as the route badge.
-          size={'sm'}
           isDisplayTerminal={true}
           isDisplayOrigin={true}
           isDisplayPickupUnavailable={true}
