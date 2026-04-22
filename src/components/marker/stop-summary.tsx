@@ -92,8 +92,6 @@ export function StopSummary({
               attributes={getTimetableEntryAttributes(entry)}
               ellipsisHeadsign={true}
               showRouteTypeIcon={routeTypes.length > 1}
-              // showAgency={true}
-              // agency={agencies}
             />
             <RelativeTime
               time={depTime}
