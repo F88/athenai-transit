@@ -55,16 +55,14 @@ export function formatDurationClock(totalMinutes: number): string {
  * @returns One-line summary of the selected stop event and trip locator.
  */
 export function buildTripDebugLog1(snapshot: SelectedTripSnapshot): string {
-  const departureText = formatDebugMinutes(
-    snapshot.selectedStop.departureMinutes,
-    snapshot.serviceDate,
-  );
-  const arrivalText = formatDebugMinutes(
-    snapshot.selectedStop.arrivalMinutes,
-    snapshot.serviceDate,
-  );
+  const schedule = snapshot.selectedStop.timetableEntry.schedule;
+  const boarding = snapshot.selectedStop.timetableEntry.boarding;
+  const selectedStopId = snapshot.selectedStop.stopMeta?.stop.stop_id ?? '(unknown-stop)';
+  const selectedStopName = snapshot.selectedStop.stopMeta?.stop.stop_name ?? selectedStopId;
+  const departureText = formatDebugMinutes(schedule.departureMinutes, snapshot.serviceDate);
+  const arrivalText = formatDebugMinutes(schedule.arrivalMinutes, snapshot.serviceDate);
 
-  return `handleSelectTripDebug: pattern=${snapshot.locator.patternId} service=${snapshot.locator.serviceId} tripIndex=${snapshot.locator.tripIndex} selectedStop=${snapshot.selectedStop.stopId}(${snapshot.selectedStop.stopName}) stopIndex=${snapshot.currentStopIndex}/${snapshot.totalStops - 1} dep=${departureText} arr=${arrivalText} pickup=${snapshot.selectedStop.pickupType} dropOff=${snapshot.selectedStop.dropOffType}`;
+  return `handleSelectTripDebug: pattern=${snapshot.locator.patternId} service=${snapshot.locator.serviceId} tripIndex=${snapshot.locator.tripIndex} selectedStop=${selectedStopId}(${selectedStopName}) stopIndex=${snapshot.currentStopIndex}/${snapshot.stopTimes.length - 1} dep=${departureText} arr=${arrivalText} pickup=${boarding.pickupType} dropOff=${boarding.dropOffType}`;
 }
 
 /**
@@ -75,20 +73,27 @@ export function buildTripDebugLog1(snapshot: SelectedTripSnapshot): string {
  */
 export function buildTripDebugLog2(snapshot: SelectedTripSnapshot): string {
   const routeInfo = `[${snapshot.route.route_short_name || snapshot.route.route_long_name}]`;
-  const effectiveHeadsign = snapshot.selectedStop.stopHeadsign ?? snapshot.headsign;
+  const effectiveHeadsign =
+    snapshot.selectedStop.timetableEntry.routeDirection.stopHeadsign?.name ??
+    snapshot.tripHeadsign.name;
   const headsign = effectiveHeadsign === '' ? '""' : effectiveHeadsign;
-  const firstStop = snapshot.stops[0];
-  const lastStop = snapshot.stops[snapshot.stops.length - 1];
+  const firstStop = snapshot.stopTimes[0];
+  const lastStop = snapshot.stopTimes[snapshot.stopTimes.length - 1];
   const tripSpan =
     firstStop && lastStop
-      ? `${formatDebugClock(firstStop.departureMinutes, snapshot.serviceDate)}->${formatDebugClock(lastStop.arrivalMinutes, snapshot.serviceDate)}(${lastStop.arrivalMinutes - firstStop.departureMinutes})`
+      ? `${formatDebugClock(firstStop.timetableEntry.schedule.departureMinutes, snapshot.serviceDate)}->${formatDebugClock(lastStop.timetableEntry.schedule.arrivalMinutes, snapshot.serviceDate)}(${lastStop.timetableEntry.schedule.arrivalMinutes - firstStop.timetableEntry.schedule.departureMinutes})`
       : '';
-  const stops = snapshot.stops
+  const stops = snapshot.stopTimes
     .map((stop) => {
-      const stopText = `${stop.stopIndex}:${stop.stopName}(${formatDebugClock(stop.arrivalMinutes, snapshot.serviceDate)}|${formatDebugClock(stop.departureMinutes, snapshot.serviceDate)})`;
-      return stop.stopIndex === snapshot.currentStopIndex ? `[${stopText}]` : stopText;
+      const stopId = stop.stopMeta?.stop.stop_id ?? '(unknown-stop)';
+      const stopName = stop.stopMeta?.stop.stop_name ?? stopId;
+      const stopIndex = stop.timetableEntry.patternPosition.stopIndex;
+      const arrivalMinutes = stop.timetableEntry.schedule.arrivalMinutes;
+      const departureMinutes = stop.timetableEntry.schedule.departureMinutes;
+      const stopText = `${stopIndex}:${stopName}(${formatDebugClock(arrivalMinutes, snapshot.serviceDate)}|${formatDebugClock(departureMinutes, snapshot.serviceDate)})`;
+      return stopIndex === snapshot.currentStopIndex ? `[${stopText}]` : stopText;
     })
     .join(', ');
 
-  return `handleSelectTripDebug.stops: ${routeInfo} ${headsign} (${snapshot.totalStops} stops) ${tripSpan} ${stops}`;
+  return `handleSelectTripDebug.stops: ${routeInfo} ${headsign} (${snapshot.stopTimes.length} stops) ${tripSpan} ${stops}`;
 }

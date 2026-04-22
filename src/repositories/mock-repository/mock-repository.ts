@@ -23,7 +23,7 @@ import type {
   StopWithMeta,
   TimetableEntry,
   TripLocator,
-  TripStop,
+  TripStopTime,
   TripSnapshot,
   TranslatableText,
 } from '../../types/app/transit-composed';
@@ -2746,7 +2746,7 @@ export class MockRepository implements TransitRepository {
     return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }
 
-  getTripSnapshot(locator: TripLocator, serviceDate?: Date): TripSnapshotResult {
+  getTripSnapshot(locator: TripLocator, serviceDate: Date): TripSnapshotResult {
     const [routeId, headsign] = locator.patternId.split('__');
     if (!routeId || headsign === undefined) {
       return { success: false, error: `Invalid mock trip pattern id: ${locator.patternId}` };
@@ -2767,33 +2767,55 @@ export class MockRepository implements TransitRepository {
     }
 
     const occurrenceCount = new Map<string, number>();
-    const stops: TripStop[] = stopSequence.map((stopId, stopIndex) => {
+    const stopTimes: TripStopTime[] = stopSequence.map((stopId, stopIndex) => {
       const occ = occurrenceCount.get(stopId) ?? 0;
       occurrenceCount.set(stopId, occ + 1);
       const stop = STOPS.find((candidate) => candidate.stop_id === stopId);
       const departureMinutes = baseMinutes + computeOccOffset(routeId, occ);
       const arrivalMinutes = computeArrivalMinutes(routeId, occ, departureMinutes);
       const { pickupType, dropOffType } = getBoardingTypes(routeId, headsign, stopId, occ);
+      const stopMeta =
+        stop == null
+          ? undefined
+          : {
+              stop,
+              agencies: STOP_AGENCIES.get(stopId) ?? [],
+              routes: STOP_ROUTES_RESOLVED.get(stopId) ?? [],
+            };
       return {
-        stopId,
-        stopName: stop?.stop_name ?? stopId,
-        stopIndex,
-        departureMinutes,
-        arrivalMinutes,
-        pickupType,
-        dropOffType,
-        isOrigin: stopIndex === 0,
-        isTerminal: stopIndex === stopSequence.length - 1,
+        stopMeta,
+        routeTypes: stop == null ? [] : (STOP_ROUTE_TYPES.get(stopId) ?? []),
+        timetableEntry: {
+          tripLocator: locator,
+          schedule: {
+            departureMinutes,
+            arrivalMinutes,
+          },
+          routeDirection: {
+            route,
+            tripHeadsign: { name: headsign, names: {} },
+            stopHeadsign: headsign !== '' ? { name: headsign, names: {} } : undefined,
+          },
+          boarding: {
+            pickupType,
+            dropOffType,
+          },
+          patternPosition: {
+            stopIndex,
+            totalStops: stopSequence.length,
+            isTerminal: stopIndex === stopSequence.length - 1,
+            isOrigin: stopIndex === 0,
+          },
+        },
       };
     });
 
     const snapshot: TripSnapshot = {
       locator,
+      serviceDate,
       route,
-      headsign,
-      totalStops: stopSequence.length,
-      stops,
-      ...(serviceDate ? { serviceDate } : {}),
+      tripHeadsign: { name: headsign, names: {} },
+      stopTimes,
     };
     return { success: true, data: snapshot };
   }

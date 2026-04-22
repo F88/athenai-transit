@@ -533,8 +533,8 @@ export default function App({ loadResult }: AppProps) {
         return;
       }
 
-      const selectedStop = trip.data.stops.find(
-        (stop) => stop.stopIndex === entry.patternPosition.stopIndex,
+      const selectedStop = trip.data.stopTimes.find(
+        (stop) => stop.timetableEntry.patternPosition.stopIndex === entry.patternPosition.stopIndex,
       );
       if (!selectedStop) {
         logger.warn(

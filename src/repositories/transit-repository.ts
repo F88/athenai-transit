@@ -282,10 +282,10 @@ export interface TransitRepository {
    * their own selection context.
    *
    * @param locator - Repository-specific trip locator.
-   * @param serviceDate - Optional service day context for time formatting.
+   * @param serviceDate - Service day context for accurate time interpretation.
    * @returns Whole-trip payload, or an error when reconstruction is unavailable.
    */
-  getTripSnapshot(locator: TripLocator, serviceDate?: Date): TripSnapshotResult;
+  getTripSnapshot(locator: TripLocator, serviceDate: Date): TripSnapshotResult;
 
   /**
    * Returns a single stop with metadata by its GTFS stop_id, against
