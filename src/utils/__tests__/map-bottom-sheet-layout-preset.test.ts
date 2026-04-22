@@ -23,25 +23,25 @@ describe('resolveMapBottomSheetLayoutPreset', () => {
   it('returns the medium preset for medium-tall viewports', () => {
     expect(resolveMapBottomSheetLayoutPreset(900)).toEqual({
       collapsedMapHeightClassName: 'h-[50dvh]',
-      expandedMapHeightClassName: 'h-[50dvh]',
+      expandedMapHeightClassName: 'h-[40dvh]',
       collapsedSheetHeightClassName: 'h-[50dvh]',
-      expandedSheetHeightClassName: 'h-[70dvh]',
+      expandedSheetHeightClassName: 'h-[60dvh]',
     });
   });
 
   it('returns the desktop preset for very tall viewports', () => {
     expect(resolveMapBottomSheetLayoutPreset(1100)).toEqual({
       collapsedMapHeightClassName: 'h-[50dvh]',
-      expandedMapHeightClassName: 'h-[50dvh]',
+      expandedMapHeightClassName: 'h-[40dvh]',
       collapsedSheetHeightClassName: 'h-[50dvh]',
-      expandedSheetHeightClassName: 'h-[70dvh]',
+      expandedSheetHeightClassName: 'h-[60dvh]',
     });
   });
 
   it('returns the desktop preset after the tall threshold', () => {
     expect(resolveMapBottomSheetLayoutPreset(1300)).toEqual({
       collapsedMapHeightClassName: 'h-[40dvh]',
-      expandedMapHeightClassName: 'h-[40dvh]',
+      expandedMapHeightClassName: 'h-[30dvh]',
       collapsedSheetHeightClassName: 'h-[60dvh]',
       expandedSheetHeightClassName: 'h-[70dvh]',
     });

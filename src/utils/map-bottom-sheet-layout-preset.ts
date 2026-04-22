@@ -18,8 +18,8 @@ const REGULAR_LAYOUT_PRESET: MapBottomSheetLayoutPreset = {
 const MEDIUM_LAYOUT_PRESET: MapBottomSheetLayoutPreset = {
   collapsedMapHeightClassName: 'h-[50dvh]',
   collapsedSheetHeightClassName: 'h-[50dvh]',
-  expandedMapHeightClassName: 'h-[50dvh]',
-  expandedSheetHeightClassName: 'h-[70dvh]',
+  expandedMapHeightClassName: 'h-[40dvh]',
+  expandedSheetHeightClassName: 'h-[60dvh]',
 };
 
 const TALL_LAYOUT_PRESET: MapBottomSheetLayoutPreset = {
