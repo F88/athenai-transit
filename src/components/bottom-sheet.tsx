@@ -15,6 +15,8 @@ import { cn } from '../lib/utils';
 import { BottomSheetHeader } from './bottom-sheet-header';
 import { BottomSheetStops } from './bottom-sheet-stops';
 
+type ExpandedStateAction = boolean | ((prevExpanded: boolean) => boolean);
+
 const DRAG_THRESHOLD = 50;
 
 /** Auto-enable "show operating stops only" filter at 22:00 in service day minutes. */
@@ -74,7 +76,7 @@ export interface BottomSheetProps {
   /** Controlled expanded state. */
   expanded?: boolean;
   /** Controlled expanded state setter. */
-  onExpandedChange?: (expanded: boolean) => void;
+  onExpandedChange?: (expanded: ExpandedStateAction) => void;
 }
 
 export function BottomSheet({
@@ -100,7 +102,7 @@ export function BottomSheet({
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(false);
   const expanded = expandedProp ?? uncontrolledExpanded;
   const setExpanded = useCallback(
-    (nextExpanded: boolean) => {
+    (nextExpanded: ExpandedStateAction) => {
       if (onExpandedChange) {
         onExpandedChange(nextExpanded);
         return;
@@ -273,7 +275,7 @@ export function BottomSheet({
     >
       <div
         className="flex shrink-0 cursor-grab justify-center py-2 pb-1"
-        onClick={() => setExpanded(!expanded)}
+        onClick={() => setExpanded((prevExpanded) => !prevExpanded)}
       >
         <div className="h-1 w-9 rounded-sm bg-[#bdbdbd] dark:bg-gray-600" />
       </div>

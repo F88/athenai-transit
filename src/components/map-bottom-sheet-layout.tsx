@@ -8,8 +8,11 @@ import { createLogger } from '../lib/logger';
 const logger = createLogger('MapBottomSheetLayout');
 
 interface MapBottomSheetLayoutProps {
-  mapViewProps: MapViewProps;
-  bottomSheetProps: BottomSheetProps;
+  mapViewProps: Omit<MapViewProps, 'heightClassName'>;
+  bottomSheetProps: Omit<
+    BottomSheetProps,
+    'collapsedHeightClassName' | 'expandedHeightClassName' | 'expanded' | 'onExpandedChange'
+  >;
   mapOverlay?: ReactNode;
 }
 
