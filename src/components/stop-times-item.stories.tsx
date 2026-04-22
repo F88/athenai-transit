@@ -72,6 +72,11 @@ function createEntry(
       isTerminal: overrides.isTerminal ?? false,
       isOrigin: overrides.isOrigin ?? false,
     },
+    tripLocator: {
+      patternId: `${(overrides.route ?? baseRoute).route_id}__${overrides.headsign ?? '中野駅'}`,
+      serviceId: 'story:default',
+      tripIndex: 0,
+    },
     insights: {
       remainingMinutes,
       totalMinutes,

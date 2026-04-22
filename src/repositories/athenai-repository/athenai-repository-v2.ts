@@ -27,13 +27,17 @@ import type {
   StopServiceType,
   StopWithMeta,
   TimetableEntry,
+  TripLocator,
+  TripStop,
   TripPattern,
+  TripSnapshot,
 } from '../../types/app/transit-composed';
 import type {
   CollectionResult,
   Result,
   TimetableQueryMeta,
   TimetableResult,
+  TripSnapshotResult,
   UpcomingTimetableResult,
 } from '../../types/app/repository';
 import type { TransitDataSourceV2 } from '../../datasources/transit-data-source-v2';
@@ -436,6 +440,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
           const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
           const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
           entries.push({
+            tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
             schedule: {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
@@ -482,6 +487,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
           const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
           const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
           entries.push({
+            tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
             schedule: {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
@@ -574,6 +580,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               isTerminal: isTerminalPosition,
               isOrigin: stopIndex === 0,
             },
+            tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
             ...(tripInsights !== undefined ? { insights: tripInsights } : {}),
           });
         }
@@ -590,6 +597,66 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       totalEntries: entries.length,
     };
     return Promise.resolve({ success: true, data: entries, truncated: false, meta });
+  }
+
+  getTripSnapshot(locator: TripLocator, serviceDate?: Date): TripSnapshotResult {
+    const pattern = this.tripPatterns.get(locator.patternId);
+    const resolved = this.resolvedPatterns.get(locator.patternId);
+    if (!pattern || !resolved) {
+      return { success: false, error: `Unknown trip pattern: ${locator.patternId}` };
+    }
+
+    const stops: TripStop[] = [];
+    for (const [stopId, groups] of Object.entries(this.timetable)) {
+      for (const group of groups) {
+        if (group.tp !== locator.patternId) {
+          continue;
+        }
+
+        const departures = group.d[locator.serviceId];
+        if (!departures || locator.tripIndex >= departures.length) {
+          continue;
+        }
+
+        const arrivals = group.a[locator.serviceId];
+        const pickupTypes = group.pt?.[locator.serviceId];
+        const dropOffTypes = group.dt?.[locator.serviceId];
+        const stopMeta = this.stopsMetaMap.get(stopId)?.stop;
+        const stopPosition = pattern.stops[group.si];
+
+        stops.push({
+          stopId,
+          stopName: stopMeta?.stop_name ?? stopId,
+          stopIndex: group.si,
+          departureMinutes: departures[locator.tripIndex],
+          arrivalMinutes: arrivals?.[locator.tripIndex] ?? departures[locator.tripIndex],
+          pickupType: (pickupTypes?.[locator.tripIndex] ?? 0) as StopServiceType,
+          dropOffType: (dropOffTypes?.[locator.tripIndex] ?? 0) as StopServiceType,
+          isOrigin: group.si === 0,
+          isTerminal: group.si === pattern.stops.length - 1,
+          ...(stopPosition?.headsign != null ? { stopHeadsign: stopPosition.headsign } : {}),
+        });
+      }
+    }
+
+    stops.sort((a, b) => a.stopIndex - b.stopIndex);
+    if (stops.length === 0) {
+      return {
+        success: false,
+        error: `No trip snapshot rows for pattern=${locator.patternId} service=${locator.serviceId} index=${locator.tripIndex}`,
+      };
+    }
+
+    const snapshot: TripSnapshot = {
+      locator,
+      route: resolved.route,
+      headsign: resolved.headsign,
+      direction: pattern.direction,
+      totalStops: pattern.stops.length,
+      stops,
+      ...(serviceDate ? { serviceDate } : {}),
+    };
+    return { success: true, data: snapshot };
   }
 
   getRouteTypesForStop(stopId: string): Promise<Result<AppRouteTypeValue[]>> {

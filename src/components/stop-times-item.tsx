@@ -36,6 +36,8 @@ interface StopTimesItemProps {
   /** Maximum number of stop times to display. Defaults to 3. */
   maxDisplay?: number;
   onShowTimetable?: (routeId: string, headsign: string) => void;
+  /** Debug-only callback when one concrete trip is selected. */
+  onSelectTripDebug?: (entry: ContextualTimetableEntry) => void;
 }
 
 export function StopTimesItem({
@@ -48,6 +50,7 @@ export function StopTimesItem({
   showAgency = false,
   maxDisplay = 3,
   onShowTimetable,
+  onSelectTripDebug,
 }: StopTimesItemProps) {
   const { t } = useTranslation();
   const showVerbose = infoLevel === 'verbose';
@@ -117,7 +120,11 @@ export function StopTimesItem({
           {displayEntries.map((entry, i) => (
             <span
               key={i}
-              className="inline-flex items-center gap-0.5 text-sm font-bold whitespace-nowrap text-[#757575] dark:text-gray-400"
+              className="inline-flex cursor-pointer items-center gap-0.5 text-sm font-bold whitespace-nowrap text-[#757575] dark:text-gray-400"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectTripDebug?.(entry);
+              }}
             >
               {formatAbsoluteTime(displayTimes[i])}
               <TimetableEntryAttributesLabels

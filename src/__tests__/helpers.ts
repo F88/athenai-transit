@@ -77,6 +77,7 @@ export function makeStopWithContext(
     stop,
     routeTypes,
     stopTimes: routes.map((route) => ({
+      tripLocator: { patternId: `${route.route_id}__Test`, serviceId: 'test', tripIndex: 0 },
       schedule: { departureMinutes: 480, arrivalMinutes: 480 },
       routeDirection: { route, tripHeadsign: { name: 'Test', names: {} } },
       boarding: { pickupType: 0 as const, dropOffType: 0 as const },

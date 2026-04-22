@@ -28,14 +28,16 @@ function makeEntry(overrides: {
   routeId?: string;
   headsign?: string;
 }): TimetableEntry {
+  const route = makeRoute(overrides.routeId ?? 'test:R1');
+  const headsign = overrides.headsign ?? 'Terminal';
   return {
     schedule: {
       departureMinutes: overrides.departureMinutes,
       arrivalMinutes: overrides.departureMinutes,
     },
     routeDirection: {
-      route: makeRoute(overrides.routeId ?? 'test:R1'),
-      tripHeadsign: { name: overrides.headsign ?? 'Terminal', names: {} },
+      route,
+      tripHeadsign: { name: headsign, names: {} },
     },
     boarding: { pickupType: 0, dropOffType: 0 },
     patternPosition: {
@@ -44,6 +46,7 @@ function makeEntry(overrides: {
       isTerminal: false,
       isOrigin: false,
     },
+    tripLocator: { patternId: `${route.route_id}__${headsign}`, serviceId: 'test', tripIndex: 0 },
   };
 }
 

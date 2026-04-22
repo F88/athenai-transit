@@ -171,6 +171,11 @@ function createEntry(
       isTerminal: overrides.isTerminal ?? false,
       isOrigin: overrides.isOrigin ?? false,
     },
+    tripLocator: {
+      patternId: `${(overrides.route ?? busRoute).route_id}__${overrides.headsign ?? '大塚駅前'}`,
+      serviceId: 'story:default',
+      tripIndex: 0,
+    },
     serviceDate: new Date('2026-03-30T00:00:00'),
   };
 }

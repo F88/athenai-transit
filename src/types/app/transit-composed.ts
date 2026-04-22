@@ -303,6 +303,71 @@ export interface RouteDirection {
 }
 
 /**
+ * Internal locator for reconstructing a specific trip instance from runtime timetable data.
+ *
+ * The runtime app data does not currently expose GTFS `trip_id`, so repositories use this
+ * locator to identify one concrete run within a trip pattern.
+ */
+export interface TripLocator {
+  /** Repository-specific trip pattern identifier. */
+  patternId: string;
+  /** Service identifier used by the timetable arrays. */
+  serviceId: string;
+  /** Zero-based index into the aligned timetable arrays for this service. */
+  tripIndex: number;
+}
+
+/** One stop-level record inside a reconstructed trip debug snapshot. */
+export interface TripStop {
+  /** Stop ID for this position in the trip. */
+  stopId: string;
+  /** Human-readable stop name for debug output. */
+  stopName: string;
+  /** Zero-based index within the trip pattern. */
+  stopIndex: number;
+  /** Departure minutes from midnight of the service day. */
+  departureMinutes: number;
+  /** Arrival minutes from midnight of the service day. */
+  arrivalMinutes: number;
+  /** Boarding availability at this stop. */
+  pickupType: StopServiceType;
+  /** Alighting availability at this stop. */
+  dropOffType: StopServiceType;
+  /** Whether this stop is the origin of the trip. */
+  isOrigin: boolean;
+  /** Whether this stop is the terminal of the trip. */
+  isTerminal: boolean;
+  /** Per-stop headsign override when present. */
+  stopHeadsign?: string;
+}
+
+/** Reconstructed whole-trip debug payload for a selected timetable entry. */
+export interface TripSnapshot {
+  /** Locator used to reconstruct this trip instance. */
+  locator: TripLocator;
+  /** Service day context when available. */
+  serviceDate?: Date;
+  /** Route serving this trip. */
+  route: Route;
+  /** Trip-level headsign for this pattern. */
+  headsign: string;
+  /** Direction ID when the source provides one. */
+  direction?: 0 | 1;
+  /** Total number of stops in the reconstructed trip. */
+  totalStops: number;
+  /** Stop-level schedule and boarding records for the full trip. */
+  stops: TripStop[];
+}
+
+/** Reconstructed whole-trip payload enriched with the currently selected stop event. */
+export interface SelectedTripSnapshot extends TripSnapshot {
+  /** Current stop index of the selected entry. */
+  currentStopIndex: number;
+  /** Stop-level record corresponding to the clicked entry. */
+  selectedStop: TripStop;
+}
+
+/**
  * A single entry in a stop's timetable.
  *
  * A single entry in a stop's timetable with arrival time,
@@ -312,6 +377,9 @@ export interface RouteDirection {
  * {@link ContextualTimetableEntry} which extends this with serviceDate.
  */
 export interface TimetableEntry {
+  /** Minimal locator for reconstructing the concrete trip instance for this entry. */
+  readonly tripLocator: TripLocator;
+
   /** Schedule: departure and arrival times. */
   schedule: {
     /** Departure minutes from midnight of the service day. */

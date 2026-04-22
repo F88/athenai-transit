@@ -22,6 +22,9 @@ import type {
   SourceMeta,
   StopWithMeta,
   TimetableEntry,
+  TripLocator,
+  TripStop,
+  TripSnapshot,
   TranslatableText,
 } from '../../types/app/transit-composed';
 import type {
@@ -29,6 +32,7 @@ import type {
   Result,
   TimetableQueryMeta,
   TimetableResult,
+  TripSnapshotResult,
   UpcomingTimetableResult,
 } from '../../types/app/repository';
 import { getTimetableEntriesState } from '../../domain/transit/timetable-utils';
@@ -2195,6 +2199,10 @@ function getPatternPosition(
   };
 }
 
+function createMockTripPatternId(routeId: string, headsign: string): string {
+  return `${routeId}__${headsign}`;
+}
+
 /**
  * Pre-computed per-stop metadata: routeTypes, agencies, and routes.
  * Built in a single pass over STOP_ROUTES to avoid redundant iteration.
@@ -2552,7 +2560,6 @@ export class MockRepository implements TransitRepository {
 
     const serviceDate = getServiceDay(now);
     const nowMinutes = getServiceDayMinutes(now);
-
     for (const { routeId, headsign, stopHeadsign } of stopRoutes) {
       const route = ROUTES.find((r) => r.route_id === routeId);
       if (!route) {
@@ -2576,8 +2583,10 @@ export class MockRepository implements TransitRepository {
           hasBoardable = true;
         }
 
-        const upcoming = allMinutes.map((m) => m + occOffset).filter((m) => m >= nowMinutes);
-        for (const minutes of upcoming) {
+        const upcoming = allMinutes
+          .map((minutes, tripIndex) => ({ minutes: minutes + occOffset, tripIndex }))
+          .filter(({ minutes }) => minutes >= nowMinutes);
+        for (const { minutes, tripIndex } of upcoming) {
           const arrivalMinutes = computeArrivalMinutes(routeId, occ, minutes);
           // Colorful Route fixtures need insights so JourneyTimeBar
           // renders. Real insights come from InsightsBundle in production
@@ -2610,6 +2619,11 @@ export class MockRepository implements TransitRepository {
             },
             boarding: { pickupType, dropOffType },
             patternPosition: position,
+            tripLocator: {
+              patternId: createMockTripPatternId(routeId, headsign),
+              serviceId: 'mock:default',
+              tripIndex,
+            },
             serviceDate,
             ...(colorfulInsights ? { insights: colorfulInsights } : {}),
           });
@@ -2699,7 +2713,8 @@ export class MockRepository implements TransitRepository {
         const position = getPatternPosition(routeId, headsign, stopId, occ);
         const occOffset = computeOccOffset(routeId, occ);
         const { pickupType, dropOffType } = getBoardingTypes(routeId, headsign, stopId, occ);
-        for (const baseMinutes of generateFixedMinutes(routeId, headsign)) {
+        const baseSchedule = generateFixedMinutes(routeId, headsign);
+        for (const [tripIndex, baseMinutes] of baseSchedule.entries()) {
           const minutes = baseMinutes + occOffset;
           const arrivalMinutes = computeArrivalMinutes(routeId, occ, minutes);
           entries.push({
@@ -2713,6 +2728,11 @@ export class MockRepository implements TransitRepository {
             },
             boarding: { pickupType, dropOffType },
             patternPosition: position,
+            tripLocator: {
+              patternId: createMockTripPatternId(routeId, headsign),
+              serviceId: 'mock:default',
+              tripIndex,
+            },
           });
         }
       }
@@ -2724,6 +2744,58 @@ export class MockRepository implements TransitRepository {
       totalEntries: entries.length,
     };
     return Promise.resolve({ success: true, data: entries, truncated: false, meta });
+  }
+
+  getTripSnapshot(locator: TripLocator, serviceDate?: Date): TripSnapshotResult {
+    const [routeId, headsign] = locator.patternId.split('__');
+    if (!routeId || headsign === undefined) {
+      return { success: false, error: `Invalid mock trip pattern id: ${locator.patternId}` };
+    }
+
+    const route = ROUTES.find((candidate) => candidate.route_id === routeId);
+    const stopSequence = ROUTE_STOP_SEQUENCES.get(locator.patternId);
+    if (!route || !stopSequence) {
+      return { success: false, error: `Unknown mock trip pattern: ${locator.patternId}` };
+    }
+
+    const baseMinutes = generateFixedMinutes(routeId, headsign)[locator.tripIndex];
+    if (baseMinutes === undefined) {
+      return {
+        success: false,
+        error: `No mock trip instance for pattern=${locator.patternId} index=${locator.tripIndex}`,
+      };
+    }
+
+    const occurrenceCount = new Map<string, number>();
+    const stops: TripStop[] = stopSequence.map((stopId, stopIndex) => {
+      const occ = occurrenceCount.get(stopId) ?? 0;
+      occurrenceCount.set(stopId, occ + 1);
+      const stop = STOPS.find((candidate) => candidate.stop_id === stopId);
+      const departureMinutes = baseMinutes + computeOccOffset(routeId, occ);
+      const arrivalMinutes = computeArrivalMinutes(routeId, occ, departureMinutes);
+      const { pickupType, dropOffType } = getBoardingTypes(routeId, headsign, stopId, occ);
+      return {
+        stopId,
+        stopName: stop?.stop_name ?? stopId,
+        stopIndex,
+        departureMinutes,
+        arrivalMinutes,
+        pickupType,
+        dropOffType,
+        isOrigin: stopIndex === 0,
+        isTerminal: stopIndex === stopSequence.length - 1,
+      };
+    });
+
+    const snapshot: TripSnapshot = {
+      locator,
+      route,
+      headsign,
+      totalStops: stopSequence.length,
+      stops,
+      ...(serviceDate ? { serviceDate } : {}),
+    };
+    return { success: true, data: snapshot };
   }
 
   /** {@inheritDoc TransitRepository.getStopMetaById} */

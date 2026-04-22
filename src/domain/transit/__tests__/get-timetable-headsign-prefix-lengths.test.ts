@@ -31,9 +31,10 @@ function makeEntry(options: {
   stopHeadsign?: TranslatableText;
   departureMinutes?: number;
 }): TimetableEntry {
+  const route = makeRoute();
   return {
     routeDirection: {
-      route: makeRoute(),
+      route,
       tripHeadsign: options.tripHeadsign,
       ...(options.stopHeadsign ? { stopHeadsign: options.stopHeadsign } : {}),
     },
@@ -50,6 +51,11 @@ function makeEntry(options: {
       totalStops: 1,
       isOrigin: false,
       isTerminal: false,
+    },
+    tripLocator: {
+      patternId: `${route.route_id}__${options.tripHeadsign.name}`,
+      serviceId: 'test',
+      tripIndex: 0,
     },
   };
 }

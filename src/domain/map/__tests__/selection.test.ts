@@ -10,6 +10,7 @@ import { makeRoute, makeStop, makeStopWithContext } from '../../../__tests__/hel
 
 function makeEntries(routeIds: string[]): ContextualTimetableEntry[] {
   return routeIds.map((id) => ({
+    tripLocator: { patternId: `${id}__`, serviceId: 'test', tripIndex: 0 },
     schedule: { departureMinutes: 480, arrivalMinutes: 480 },
     routeDirection: {
       route: makeRoute(id),

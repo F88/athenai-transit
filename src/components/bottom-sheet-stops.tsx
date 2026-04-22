@@ -3,7 +3,7 @@ import { useScrollFades } from '@/hooks/use-scroll-fades';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
-import type { StopWithContext } from '../types/app/transit-composed';
+import type { ContextualTimetableEntry, StopWithContext } from '../types/app/transit-composed';
 import { ScrollFadeEdge } from './shared/scroll-fade-edge';
 import { NearbyStop, type NearbyStopProps } from './nearby-stop';
 
@@ -36,6 +36,8 @@ interface BottomSheetStopsProps {
   onShowStopTimetable?: (stopId: string) => void;
   /** Toggle anchor (bookmark) status for a stop. */
   onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
+  /** Debug-only callback when one concrete trip is selected. */
+  onSelectTripDebug?: (entry: ContextualTimetableEntry) => void;
 }
 
 export function BottomSheetStops({
@@ -53,6 +55,7 @@ export function BottomSheetStops({
   onShowTimetable,
   onShowStopTimetable,
   onToggleAnchor,
+  onSelectTripDebug,
 }: BottomSheetStopsProps) {
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
@@ -84,6 +87,7 @@ export function BottomSheetStops({
             onShowTimetable,
             onShowStopTimetable,
             onToggleAnchor,
+            onSelectTripDebug,
           };
           // Eager render: first N stops, or the selected stop (so scroll-to-selected works)
           return i < EAGER_RENDER_COUNT || props.isSelected ? (

@@ -3,7 +3,12 @@ import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { AppRouteTypeValue, Stop } from './types/app/transit';
-import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
+import type {
+  ContextualTimetableEntry,
+  SelectedTripSnapshot,
+  StopWithContext,
+  StopWithMeta,
+} from './types/app/transit-composed';
 import type { LoadResult } from './repositories/athenai-repository';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
@@ -33,6 +38,7 @@ import { SUPPORTED_LANGS } from './config/supported-langs';
 import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
 import { getStopDisplayNames } from './domain/transit/get-stop-display-names';
 import { formatDateParts } from './utils/datetime';
+import { buildTripDebugLog1, buildTripDebugLog2 } from './utils/debug-utils';
 import { resolveLangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
@@ -519,6 +525,38 @@ export default function App({ loadResult }: AppProps) {
     [showTimetable],
   );
 
+  const handleSelectTripDebug = useCallback(
+    (entry: ContextualTimetableEntry) => {
+      const trip = repo.getTripSnapshot(entry.tripLocator, entry.serviceDate);
+      if (!trip.success) {
+        logger.warn('handleSelectTripDebug: failed to resolve trip snapshot', trip.error);
+        return;
+      }
+
+      const selectedStop = trip.data.stops.find(
+        (stop) => stop.stopIndex === entry.patternPosition.stopIndex,
+      );
+      if (!selectedStop) {
+        logger.warn(
+          `handleSelectTripDebug: selected stop index ${entry.patternPosition.stopIndex} is missing from reconstructed trip snapshot`,
+        );
+        return;
+      }
+
+      const snapshot: SelectedTripSnapshot = {
+        ...trip.data,
+        currentStopIndex: entry.patternPosition.stopIndex,
+        selectedStop,
+      };
+
+      // Log-1
+      logger.debug(buildTripDebugLog1(snapshot), snapshot);
+      // Log-2
+      logger.debug(buildTripDebugLog2(snapshot));
+    },
+    [repo],
+  );
+
   // Select + pan to a stop from history. Uses focusStop to set
   // focus position directly from stop coordinates, ensuring the map pans
   // even when the stop is outside the current viewport.
@@ -819,6 +857,7 @@ export default function App({ loadResult }: AppProps) {
           onShowTimetable: handleShowTimetable,
           onShowStopTimetable: handleShowStopTimetable,
           onToggleAnchor: handleToggleAnchor,
+          onSelectTripDebug: handleSelectTripDebug,
         }}
         mapOverlay={
           <TimeControls

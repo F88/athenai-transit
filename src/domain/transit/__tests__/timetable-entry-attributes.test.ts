@@ -40,6 +40,7 @@ function makeEntry(overrides: {
       isTerminal: overrides.isTerminal ?? false,
       isOrigin: overrides.isOrigin ?? false,
     },
+    tripLocator: { patternId: 'r1__Dest', serviceId: 'test', tripIndex: 0 },
   };
 }
 
