@@ -69,8 +69,8 @@ export interface BottomSheetProps {
   onShowStopTimetable?: (stopId: string) => void;
   /** Toggle anchor (bookmark) status for a stop. */
   onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
-  /** Debug-only callback when one concrete trip is selected. */
-  onSelectTripDebug?: (entry: ContextualTimetableEntry) => void;
+  /** Optional callback for inspecting one concrete trip. */
+  onInspectTrip?: (entry: ContextualTimetableEntry) => void;
   /** Collapsed-state height class applied to the sheet root. */
   collapsedHeightClassName?: string;
   /** Expanded-state height class applied to the sheet root. */
@@ -96,7 +96,7 @@ export function BottomSheet({
   onShowTimetable,
   onShowStopTimetable,
   onToggleAnchor,
-  onSelectTripDebug,
+  onInspectTrip,
   collapsedHeightClassName = 'h-[40dvh]',
   expandedHeightClassName = 'h-[70dvh]',
   expanded: expandedProp,
@@ -318,7 +318,7 @@ export function BottomSheet({
         onShowTimetable={onShowTimetable}
         onShowStopTimetable={onShowStopTimetable}
         onToggleAnchor={onToggleAnchor}
-        onSelectTripDebug={onSelectTripDebug}
+        onInspectTrip={onInspectTrip}
       />
     </div>
   );

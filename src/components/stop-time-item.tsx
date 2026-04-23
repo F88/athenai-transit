@@ -48,8 +48,8 @@ interface StopTimeItemProps {
    * @default false
    */
   showAgency?: boolean;
-  /** Debug-only callback when this stop time row is selected. */
-  onSelectTripDebug?: (entry: ContextualTimetableEntry) => void;
+  /** Optional callback for inspecting this concrete trip entry. */
+  onInspectTrip?: (entry: ContextualTimetableEntry) => void;
 }
 
 interface AbsoluteStopTimeProps {
@@ -107,7 +107,7 @@ export function StopTimeItem({
   dataLang,
   agency,
   showAgency = false,
-  onSelectTripDebug,
+  onInspectTrip,
 }: StopTimeItemProps) {
   const info = useInfoLevel(infoLevel);
   const showVerbose = info.isVerboseEnabled;
@@ -146,11 +146,11 @@ export function StopTimeItem({
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
       <div className="flex gap-2">
-        {onSelectTripDebug ? (
+        {onInspectTrip ? (
           <button
             type="button"
             className="flex min-h-8 w-14 shrink-0 cursor-pointer flex-col justify-center text-right leading-none"
-            onClick={() => onSelectTripDebug(entry)}
+            onClick={() => onInspectTrip(entry)}
           >
             {showVerbose && (
               <>

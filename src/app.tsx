@@ -38,7 +38,10 @@ import { SUPPORTED_LANGS } from './config/supported-langs';
 import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
 import { getStopDisplayNames } from './domain/transit/get-stop-display-names';
 import { formatDateParts } from './utils/datetime';
-import { buildTripDebugLog1, buildTripDebugLog2 } from './utils/debug-utils';
+import {
+  buildTripInspectionStopsLog,
+  buildTripInspectionSummaryLog,
+} from './utils/trip-inspection-log';
 import { resolveLangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
@@ -525,11 +528,11 @@ export default function App({ loadResult }: AppProps) {
     [showTimetable],
   );
 
-  const handleSelectTripDebug = useCallback(
+  const handleInspectTrip = useCallback(
     (entry: ContextualTimetableEntry) => {
       const trip = repo.getTripSnapshot(entry.tripLocator, entry.serviceDate);
       if (!trip.success) {
-        logger.warn('handleSelectTripDebug: failed to resolve trip snapshot', trip.error);
+        logger.warn('handleInspectTrip: failed to resolve trip snapshot', trip.error);
         return;
       }
 
@@ -538,7 +541,7 @@ export default function App({ loadResult }: AppProps) {
       );
       if (!selectedStop) {
         logger.warn(
-          `handleSelectTripDebug: selected stop index ${entry.patternPosition.stopIndex} is missing from reconstructed trip snapshot`,
+          `handleInspectTrip: selected stop index ${entry.patternPosition.stopIndex} is missing from reconstructed trip snapshot`,
         );
         return;
       }
@@ -549,10 +552,8 @@ export default function App({ loadResult }: AppProps) {
         selectedStop,
       };
 
-      // Log-1
-      logger.debug(buildTripDebugLog1(snapshot), snapshot);
-      // Log-2
-      logger.debug(buildTripDebugLog2(snapshot));
+      logger.debug(buildTripInspectionSummaryLog(snapshot), snapshot);
+      logger.debug(buildTripInspectionStopsLog(snapshot));
     },
     [repo],
   );
@@ -857,7 +858,7 @@ export default function App({ loadResult }: AppProps) {
           onShowTimetable: handleShowTimetable,
           onShowStopTimetable: handleShowStopTimetable,
           onToggleAnchor: handleToggleAnchor,
-          onSelectTripDebug: handleSelectTripDebug,
+          onInspectTrip: handleInspectTrip,
         }}
         mapOverlay={
           <TimeControls
