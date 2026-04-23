@@ -11,4 +11,5 @@ export default [
   'toei-train',
   'yurikamome',
   'mir-train',
+  'tama-monorail',
 ];

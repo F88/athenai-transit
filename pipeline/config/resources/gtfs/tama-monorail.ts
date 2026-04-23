@@ -36,6 +36,12 @@ const tamaMonorail: GtfsSourceDefinition = {
 
     /** GtfsResource */
     routeTypes: ['monorail'],
+    mlitShapeMapping: {
+      operator: '多摩都市モノレール',
+      lineToRouteId: {
+        多摩都市モノレール線: 'tmm:1',
+      },
+    },
     downloadUrl: 'https://api.odpt.org/api/v4/files/TamaMonorail/data/TamaMonorail-Train-GTFS.zip',
   },
   pipeline: {
