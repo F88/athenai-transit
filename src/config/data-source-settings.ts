@@ -147,6 +147,17 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'twr-rinkai',
+    prefixes: ['twrr'],
+    routeTypes: [1, 2],
+    enabled: true,
+    name: {
+      name: 'TWR Rinkai Line',
+      names: { ja: 'りんかい線', en: 'TWR Rinkai Line' },
+    },
+    countries: ['JP'],
+  },
+  {
     id: 'actv-nav',
     prefixes: ['actvnav'],
     routeTypes: [4],
