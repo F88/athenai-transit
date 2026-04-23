@@ -2,12 +2,12 @@
   "sourceName": "nagoya-srt",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-04-21T05:08:19.132Z",
+  "downloadedAt": "2026-04-23T01:10:01.738Z",
   "url": "https://api-public.odpt.org/api/v4/files/odpt/NagoyaHousingCityPlanningBureau/NagoyaSRT_AllLines.zip?date=20260213",
   "size": 5399,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1385,
-  "archivePath": "workspace/_archives/gtfs/nagoya-srt/NagoyaSRT_AllLines_20260421-050820.zip",
+  "durationMs": 1012,
+  "archivePath": "workspace/_archives/gtfs/nagoya-srt/NagoyaSRT_AllLines_20260423-011002.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
