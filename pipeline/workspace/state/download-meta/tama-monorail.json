@@ -1,17 +1,17 @@
 {
-  "sourceName": "mir-train",
+  "sourceName": "tama-monorail",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-04-23T02:24:29.185Z",
-  "url": "https://api.odpt.org/api/v4/files/MIR/data/MIR-Train-GTFS.zip",
-  "size": 90039,
+  "downloadedAt": "2026-04-23T02:24:34.216Z",
+  "url": "https://api.odpt.org/api/v4/files/TamaMonorail/data/TamaMonorail-Train-GTFS.zip",
+  "size": 56419,
   "contentType": "application/octet-stream",
-  "durationMs": 1696,
-  "archivePath": "workspace/_archives/gtfs/mir-train/MIR-Train-GTFS_20260423-022430.zip",
+  "durationMs": 2191,
+  "archivePath": "workspace/_archives/gtfs/tama-monorail/TamaMonorail-Train-GTFS_20260423-022436.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
-      "size": 172
+      "size": 194
     },
     {
       "name": "calendar.txt",
@@ -23,40 +23,40 @@
     },
     {
       "name": "fare_attributes.txt",
-      "size": 529
+      "size": 255
     },
     {
       "name": "fare_rules.txt",
-      "size": 5402
+      "size": 4842
     },
     {
       "name": "feed_info.txt",
-      "size": 208
+      "size": 221
     },
     {
       "name": "routes.txt",
-      "size": 154
+      "size": 164
     },
     {
       "name": "stop_times.txt",
-      "size": 546221
+      "size": 352120
     },
     {
       "name": "stops.txt",
-      "size": 1179
+      "size": 1092
     },
     {
       "name": "translations.txt",
-      "size": 2490
+      "size": 2475
     },
     {
       "name": "trips.txt",
-      "size": 23079
+      "size": 15450
     }
   ],
   "feedInfo": {
-    "publisherName": "首都圏新都市鉄道",
-    "publisherUrl": "https://www.mir.co.jp/",
+    "publisherName": "多摩都市モノレール",
+    "publisherUrl": "https://www.tama-monorail.co.jp/",
     "lang": "ja",
     "startDate": "20250315",
     "endDate": "20261231",
