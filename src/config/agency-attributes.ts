@@ -163,6 +163,16 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '009B63', text: 'FFFFFF' }],
   },
 
+  // --- Tama Monorail ---
+  'tmm:tamamonorail': {
+    shortName: { ja: '多摩モノレール', en: 'Tama Monorail' },
+    longName: {
+      ja: '多摩都市モノレール株式会社',
+      en: 'Tokyo Tama Intercity Monorail Co., Ltd.',
+    },
+    colors: [{ bg: 'FF963F', text: 'FFFFFF' }],
+  },
+
   // --- Toei (train/tram) ---
   'toaran:toei': {
     shortName: { ja: '都営交通', en: 'Toei' },

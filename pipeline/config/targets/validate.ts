@@ -24,6 +24,7 @@ export default [
   'mir', // mir-train
   'yurimo', // yurikamome
   'nsrt', // nagoya-srt
+  'tmm', // tama-monorail
   'vagfr', // vag-freiburg
   'actvnav', // actv-nav
   // 'tkbus', // tokyu-bus (not built)

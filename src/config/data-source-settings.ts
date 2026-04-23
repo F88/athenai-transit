@@ -139,6 +139,14 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'tama-monorail',
+    prefixes: ['tmm'],
+    routeTypes: [12],
+    enabled: true,
+    name: { name: 'Tama Monorail', names: { ja: '多摩モノレール', en: 'Tama Monorail' } },
+    countries: ['JP'],
+  },
+  {
     id: 'actv-nav',
     prefixes: ['actvnav'],
     routeTypes: [4],
