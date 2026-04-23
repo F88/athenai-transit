@@ -150,7 +150,10 @@ export function StopTimeItem({
           <button
             type="button"
             className="flex min-h-8 w-14 shrink-0 cursor-pointer flex-col justify-center text-right leading-none"
-            onClick={() => onInspectTrip(entry)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onInspectTrip(entry);
+            }}
           >
             {showVerbose && (
               <>
