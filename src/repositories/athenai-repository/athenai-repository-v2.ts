@@ -614,7 +614,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         continue;
       }
 
-      const arrivals = group.a[locator.serviceId];
+      const arrivals = group.a?.[locator.serviceId];
       const pickupTypes = group.pt?.[locator.serviceId];
       const dropOffTypes = group.dt?.[locator.serviceId];
       stopTimes.push({

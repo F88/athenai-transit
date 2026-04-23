@@ -552,6 +552,92 @@ describe('getFullDayTimetableEntries', () => {
 });
 
 // ---------------------------------------------------------------------------
+// getTripSnapshot
+// ---------------------------------------------------------------------------
+
+describe('getTripSnapshot', () => {
+  it('reconstructs a trip snapshot with ordered stopTimes', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = repository.getTripSnapshot(
+      { patternId: 'tp_bus_c', serviceId: 'svc_weekday', tripIndex: 0 },
+      WEEKDAY,
+    );
+    assertSuccess(result);
+
+    expect(result.data.route.route_id).toBe('route_bus');
+    expect(result.data.tripHeadsign.name).toBe('Circular');
+    expect(result.data.stopTimes).toHaveLength(4);
+    expect(
+      result.data.stopTimes.map((stopTime) => stopTime.timetableEntry.patternPosition.stopIndex),
+    ).toEqual([0, 1, 2, 3]);
+    expect(result.data.stopTimes[0]?.stopMeta?.stop.stop_id).toBe('bus_01');
+    expect(result.data.stopTimes[3]?.stopMeta?.stop.stop_id).toBe('bus_01');
+  });
+
+  it('returns failure for unknown trip pattern', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = repository.getTripSnapshot(
+      { patternId: 'missing_pattern', serviceId: 'svc_weekday', tripIndex: 0 },
+      WEEKDAY,
+    );
+
+    expect(result.success).toBe(false);
+  });
+
+  it('returns failure when no rows match the requested service or trip index', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const missingService = repository.getTripSnapshot(
+      { patternId: 'tp_sub_n', serviceId: 'svc_missing', tripIndex: 0 },
+      WEEKDAY,
+    );
+    const missingTripIndex = repository.getTripSnapshot(
+      { patternId: 'tp_sub_n', serviceId: 'svc_weekday', tripIndex: 999 },
+      WEEKDAY,
+    );
+
+    expect(missingService.success).toBe(false);
+    expect(missingTripIndex.success).toBe(false);
+  });
+
+  it('falls back to departure time when arrivals are unavailable', async () => {
+    const fixture = createFixtureV2();
+    const timetableGroup = fixture.data.timetable.data['sub_01']?.[0] as
+      | { a?: Record<string, number[]> }
+      | undefined;
+    if (!timetableGroup) {
+      throw new Error('Expected sub_01 timetable fixture');
+    }
+    delete timetableGroup.a;
+
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = repository.getTripSnapshot(
+      { patternId: 'tp_sub_n', serviceId: 'svc_weekday', tripIndex: 0 },
+      WEEKDAY,
+    );
+    assertSuccess(result);
+
+    const firstStop = result.data.stopTimes.find(
+      (stopTime) => stopTime.timetableEntry.patternPosition.stopIndex === 0,
+    );
+    expect(firstStop).toBeDefined();
+    expect(firstStop?.timetableEntry.schedule.arrivalMinutes).toBe(
+      firstStop?.timetableEntry.schedule.departureMinutes,
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getRouteShapes (background loading)
 // ---------------------------------------------------------------------------
 

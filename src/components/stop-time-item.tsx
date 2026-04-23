@@ -146,40 +146,75 @@ export function StopTimeItem({
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
       <div className="flex gap-2">
-        <div
-          className="flex min-h-8 w-14 shrink-0 cursor-pointer flex-col justify-center text-right leading-none"
-          onClick={() => onSelectTripDebug?.(entry)}
-        >
-          {showVerbose && (
-            <>
-              <div className="mb-0.5 flex justify-end gap-0.5 whitespace-nowrap">
-                <BaseLabel
-                  size={'xs'}
-                  value={at}
-                  className="bg-gray-500 whitespace-nowrap text-white"
-                />
-                <BaseLabel
-                  size={'xs'}
-                  value={dt}
-                  className="bg-blue-500 whitespace-nowrap text-white"
-                />
-              </div>
-            </>
-          )}
-          {showRelativeTime && (
-            <RelativeTime
-              now={now}
-              time={time}
+        {onSelectTripDebug ? (
+          <button
+            type="button"
+            className="flex min-h-8 w-14 shrink-0 cursor-pointer flex-col justify-center text-right leading-none"
+            onClick={() => onSelectTripDebug(entry)}
+          >
+            {showVerbose && (
+              <>
+                <div className="mb-0.5 flex justify-end gap-0.5 whitespace-nowrap">
+                  <BaseLabel
+                    size={'xs'}
+                    value={at}
+                    className="bg-gray-500 whitespace-nowrap text-white"
+                  />
+                  <BaseLabel
+                    size={'xs'}
+                    value={dt}
+                    className="bg-blue-500 whitespace-nowrap text-white"
+                  />
+                </div>
+              </>
+            )}
+            {showRelativeTime && (
+              <RelativeTime
+                now={now}
+                time={time}
+                isTerminal={isTerminal}
+                hidePrefix={diffMs > 90 * 60 * 1000}
+              />
+            )}
+            <AbsoluteStopTime
+              timeText={formatAbsoluteTime(time)}
               isTerminal={isTerminal}
-              hidePrefix={diffMs > 90 * 60 * 1000}
+              textColor={contrastAdjustedRouteColors.color}
             />
-          )}
-          <AbsoluteStopTime
-            timeText={formatAbsoluteTime(time)}
-            isTerminal={isTerminal}
-            textColor={contrastAdjustedRouteColors.color}
-          />
-        </div>
+          </button>
+        ) : (
+          <div className="flex min-h-8 w-14 shrink-0 flex-col justify-center text-right leading-none">
+            {showVerbose && (
+              <>
+                <div className="mb-0.5 flex justify-end gap-0.5 whitespace-nowrap">
+                  <BaseLabel
+                    size={'xs'}
+                    value={at}
+                    className="bg-gray-500 whitespace-nowrap text-white"
+                  />
+                  <BaseLabel
+                    size={'xs'}
+                    value={dt}
+                    className="bg-blue-500 whitespace-nowrap text-white"
+                  />
+                </div>
+              </>
+            )}
+            {showRelativeTime && (
+              <RelativeTime
+                now={now}
+                time={time}
+                isTerminal={isTerminal}
+                hidePrefix={diffMs > 90 * 60 * 1000}
+              />
+            )}
+            <AbsoluteStopTime
+              timeText={formatAbsoluteTime(time)}
+              isTerminal={isTerminal}
+              textColor={contrastAdjustedRouteColors.color}
+            />
+          </div>
+        )}
 
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
           {info.isNormalEnabled && (
