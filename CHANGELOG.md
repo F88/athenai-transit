@@ -11,210 +11,186 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
-- Introduce `BaseBadge` (`src/components/badge/base-badge.tsx`), a domain-agnostic primitive that owns the chip rendering, optional border, and verbose layout (IdBadge alongside the chip plus a detail panel below). Verbose concerns are grouped into a single `verboseExtras?: { enabled?, idLabel?, slot? }` prop, gated by `infoLevel === 'verbose'` AND `enabled`. Storybook coverage ships size / color / border / verbose variants plus a dedicated `BorderComparison` matrix across eight fills (19 stories).
-- Pipeline: 多摩モノレール (多摩都市モノレール株式会社) の GTFS データソースを追加。prefix `tmm`、`route_type=12 (monorail)`。`?date=` パラメータ無しの常時最新版 URL 形式 (mir-train と同パターン)。19 stops / 1 route / 1 agency。`shapes.txt` は含まないが、国土数値情報 (MLIT N02-24) の鉄道路線データに収録されているため `mlitShapeMapping` 経由で KSJ から shape を生成 (37 segments / 290 points) し、路線図に対応。
-- About: 多摩モノレール のクレジット・データ情報を追加。
+- `BaseBadge` を追加 (`src/components/badge/base-badge.tsx`)。chip / border / verbose layout を持つ domain-agnostic primitive。Storybook 19 stories。
+- Pipeline: 多摩モノレール の GTFS データソースを追加 (prefix `tmm`, route_type 12 monorail)。19 駅 / 1 路線。`shapes.txt` は含まれないが MLIT 国土数値情報経由で路線図に対応。
+- About: 多摩モノレールのクレジット・データ情報を追加。
+- Repository に trip snapshot lookup を追加 (`getTripSnapshot`)。timetable entry から trip を再構成し、selected-trip の debug 表示に活用。
 
 ### Changed
 
-- Centralize the context-cascade border color for `RouteBadge` and `RouteCountBadge` in a new pure domain helper `resolveContextBorderColor` (`src/domain/transit/color-resolver/context-border-color.ts`). The helper returns `route_color` when it has sufficient contrast against the current theme, otherwise falls through to `route_text_color`. Drop the legacy `borderStyle` prop and the `border-app-neutral` Tailwind branch from `RouteBadge`, and route `RouteCountBadge` through the same cascade. Vitest contract tests cover the cascade, dark-theme path, un-parseable inputs, and a custom `minRatio`.
-- Rename `HeadsignLabel` → `HeadsignBadge` and move it from `src/components/label/` to `src/components/badge/`. The inner shape (colored fill, outline, verbose dump) already matches the other domain badges, so the directory / name now reflect that. `src/components/timetable/timetable-grid-entry.tsx` (the sole caller) is updated accordingly.
-- Migrate `RouteBadge`, `AgencyBadge`, and `HeadsignBadge` to render through `BaseBadge`. Each domain badge now only resolves its own display names, color pair, and border color, and forwards already-resolved values to the primitive so chip, outer container, IdBadge, and verbose slots stay aligned across domains.
-- Rename the badge verbose gate prop `disableVerbose?: boolean` (default `false`, i.e. verbose on) to `enableVerboseExtras?: boolean` (default `false`, i.e. verbose off) with the semantic flipped. Production callers that used to pass `disableVerbose={true}` drop the prop, and the three badge Storybook meta args set `enableVerboseExtras: true` so dev inspection still shows the verbose panel.
-- Align the `AgencyBadge` size vocabulary with `BaseLabel` (`md | sm | xs`) and delete the legacy `'default'` (12px) size, which was unused in production. Callers move to the new vocabulary explicitly — `stop-summary.tsx` / `trip-info.tsx` / `marker/stop-summary.tsx` preserve their visual size, while `timetable-header.tsx` accepts a 12px → 10px downgrade. The hand-rolled `sizeVariants` map is removed in favor of BaseLabel's built-in sizes.
-- Add outlines to `AgencyBadge` and `HeadsignBadge`. `HeadsignBadge` always renders a theme-aware neutral gray resolved at runtime via `useThemeNeutralBorderColor`; `AgencyBadge` computes a context cascade via `resolveContextBorderColor` and leaves the border toggle to the caller (`showBorder`). Both use inline `borderColor` via `BaseBadge` so theme changes stay reactive.
-- Update the `AgencyBadge` TSDoc to match the shipped border behavior: the outline is derived from `useThemeContrastBackgroundColor` + `resolveContextBorderColor`, not `useThemeNeutralBorderColor`.
-- nearby-stops の一覧に時刻表ダイアログと同系統の scroll fade edge を追加し、BottomSheet header の verbose view hint を一旦非表示にした。合わせて `view.routeHeadsign.label` を `Route/Dest` / `路線 / 行先` に更新し、map + bottom sheet の高さ制御を `MapBottomSheetLayout` と `resolveMapBottomSheetLayoutPreset` に集約した。viewport 高さに応じて map / sheet の比率を `60:40` → `50:50` → `40:60` で切り替える。
+- `RouteBadge` / `RouteCountBadge` の context-cascade border color を `resolveContextBorderColor` に集約。theme contrast に応じて `route_color` → `route_text_color` の順で解決。
+- `HeadsignLabel` を `HeadsignBadge` にリネーム + `src/components/badge/` へ移動。
+- `RouteBadge` / `AgencyBadge` / `HeadsignBadge` を `BaseBadge` 経由のレンダリングに統合。
+- Badge の verbose 制御 prop を `disableVerbose` → `enableVerboseExtras` (semantic 反転) に変更。
+- `AgencyBadge` の size vocabulary を `BaseLabel` 互換 (`md | sm | xs`) に統一し、legacy `default` (12px) を削除。
+- `AgencyBadge` / `HeadsignBadge` に theme 連動の outline を追加。
+- `AgencyBadge` の TSDoc を実装挙動 (`useThemeContrastBackgroundColor` + `resolveContextBorderColor`) に合わせて更新。
+- nearby-stops に scroll fade edge を追加。BottomSheet header の verbose view hint を非表示化。viewport 高さに応じて map / sheet 比率 (`60:40` / `50:50` / `40:60`) を切替。
+- `getTripSnapshot` の lookup を `mergeSourcesV2` 中の pattern-based timetable index で高速化。
 
 ### Fixed
 
-- `BaseBadge` now applies inline `fgColor` / `borderColor` independently of `bgColor`, so callers can use caller-resolved text or outline colors without also forcing an inline background. Add a focused component regression test for the `borderColor`-without-`bgColor` case.
-- `MapView` に `heightClassName` 変更時の `invalidateSize()` を追加し、bottom sheet 展開や responsive layout 切り替え後も Leaflet が現在のコンテナサイズを再認識するようにした。
-- `BottomSheet` の nearby-stops scroll fade を iOS/WebKit でも安定して表示できるように修正。fade edge を scroll container 内側の sticky overlay に寄せ、`useScrollFades` / `ScrollFadeEdge` を共通化したうえで bottom edge の既定高さを `h-5` に調整した。
+- `BaseBadge` の inline `fgColor` / `borderColor` を `bgColor` 非依存で適用可能に修正。
+- `MapView` に `heightClassName` 変更時の `invalidateSize()` を追加し、bottom sheet 展開後の Leaflet サイズずれを解消。
+- `BottomSheet` の nearby-stops scroll fade を iOS/WebKit で安定表示するよう修正。`useScrollFades` / `ScrollFadeEdge` を共通化。
+- Pipeline: `kyoto-city-bus` の adopted URL が ODPT 側差し替えで HTTP 404 になっていた問題を修正 (新リソース `?date=20260423`、有効期間 2027-03-31)。
+- Pipeline: `tama-monorail` を `build-global-insights` targets に追加 (per-source 側には登録済だったが global 側の追加漏れを補正)。
+- `StopTimeItem` の inspect ボタンクリックが親要素まで伝播していた問題を修正。
 
 ## [2026.04.21]
 
+### Added
+
+- `getContrastAwareAlphaSuffixes` (`src/utils/color/contrast-alpha-suffixes.ts`) 純粋関数を追加。contrast ratio から subtle / emphasis alpha suffix を返す。
+- pipeline dev tool `analyze-gtfs-routes.ts` を追加。GTFS `routes.txt` の current-state 解析 (identity / route-types / color / cEMV / continuous-service / optional-fields)。
+- `bottom-sheet-header.stories.tsx` を追加 (22 stories: Basic / Loading / Route type filters / Agency filters / View selection / LangComparison / InfoLevel / KitchenSink)。
+- `src/stories/fixtures.ts` 全 13 agencies の i18n data を拡充 (`agency_names` / `agency_short_names` / `agency_long_names` × `ja-Hrkt` / `de` / `es` / `fr`)。
+- `MockRepository` の i18n data を 9 言語に拡充 (HEADSIGN / STOP_NAME / agency long_names)。stop_headsign バリエーション 3 種を追加。
+- `MockRepository` に新規 agency `AGENCY_DRI` (English-primary, purple `#6A1B9A`) を追加。Issue #47 の duplicate-stop-in-pattern fixture routes 6 件を `mock:aoba` から DRI に移譲し責務分離。
+
 ### Changed
 
-- `JourneyTimeBar` の bar color props を `fillColor` / `unfilledColor` に明確化し、track 側の alpha を component 内で固定せず caller 指定に変更。`StopTimeItem` では route color の contrast 評価に基づいて subtle / emphasis accent color を導出して `TripPositionIndicator` と `JourneyTimeBar` に共有する形へ整理。`VerboseRouteColors` も adjusted pair の theme contrast diagnostics を表示するよう拡張。
-- `BottomSheet` の高さクラスを `COLLAPSED_HEIGHT_CLASS` / `EXPANDED_HEIGHT_CLASS` 定数に抽出し、root className を `cn(...)` で構成する形に整理。開発時に collapsed / expanded 高さを 1 か所で変更できるようにした。現行値は collapsed `40dvh`、expanded `70dvh`。
-
-- pipeline dev analyzers の CLI を共通化。共通 parser (`pipeline/scripts/dev/dev-lib/parse-args.ts`) を導入し、multi-source 系は `--list-sources` / `--list-sections` / repeatable `--section <name>`、section-only 系は `--list-sections` / repeatable `--section <name>` に統一。`analyze-gtfs-stop-times.ts`、`analyze-odpt-station-timetable.ts`、`analyze-v2-insights.ts`、`analyze-v2-global-insights.ts` をこの体系へ移行し、`pipeline/scripts/dev/dev-tools.ts` と `pipeline/scripts/dev/README.md` も更新。
-- `analyze-odpt-station-timetable.ts` を source+section analyzer に拡張。section 名として `time-field-availability` / `station-coverage` / `direction-coverage` / `calendar-coverage` / `destination-distribution` / `train-type-distribution` / `flags` / `unknown-keys` を公開。
-- `analyze-v2-insights.ts` を source+section analyzer に拡張。section 名として `service-groups` / `trip-pattern-stats` / `trip-pattern-geo` / `stop-stats` を公開。
-
-- Departure → StopTime naming refactor (PR #135): GTFS stop_times.txt は arrival_time と departure_time を対で持つため、event collection を "Departure"
-  と呼ぶのは不正確。webapp + pipeline 全体で naming と TSDoc を整理。主な rename:
-    - ファイル: use-nearby-departures._→ use-nearby-stop-times._、departure-views.ts → stop-time-views.ts、flat-departure-item は StopTimeItem (単数) に、departure-item は
-      StopTimesItem (複数) に再構成。
-    - 型: DepartureViewMeta → StopTimeViewMeta、UseNearbyDeparturesReturn → UseNearbyStopTimesReturn、StopWithContext.departures → stopTimes 等。
-    - i18n namespace: departure._→ stopTimeView._。
-    - pipeline: countDepartures → countStopTimes、getDepartures → getDepartureTimes、DepartureData type → StopTimeData。
-    - GTFS departure_time field、arr/dep 対比、origin-only trip count は意図的に keep。
-- resolveRouteFreq の意味を「number of trips in a service day (origin si=0 stop time count = trip count)」と明確化。UI 経路 (line thickness) も trip count 意味で整合。
-- StopStatsJson.freq は「stop time count (terminal arrival 含む)」、TripPatternStatsJson.freq は「trip count (origin-only)」、StopGeoJson.cn.freq は「operational density
-  (terminal 含む、boardable trip count ではない)」と TSDoc で区別。
-- bottom-sheet.tsx の filter 処理を 2 段に分割 (filteredStopTimes / trimmedStopTimes)。stage 順序は load-bearing と明記 (以前の逆転によるバグ再発防止)。
-- i18n UI wording 軽微更新: "departures" → "All" / "services" / "service" (view.stop.title/description、showOperatingStopsOnlyTitle)。
-- pipeline/docs/V2_APP_DATA.md を高レベル reference にスリム化、型仕様は src/types/data/transit-v2-json.ts の TSDoc を正本に。
-- Pipeline: 伊予鉄バス (`iyotetsu-bus`) の ODPT CKAN リソースを 20260415 版 (`resourceId: 4e0f3da7-04a3-4335-ae56-2f4a213d3631`) に更新し、GTFS を再取得して v2 app data を再生成。`routeColorFallbacks` は不要、`shapes.txt` はヘッダのみで実データなし、`translations.txt` には一部全角スペースが含まれることを確認。
-- `formatDistance(meters, unit?)` / `formatDistanceCompact(meters)` (`src/domain/transit/distance.ts`) に `lang: string` 引数を追加し locale 対応化。従来は `toLocaleString('en-US')` をハードコード + km 値を `.toFixed(1)` で locale 非対応に整形していたため、fr / de ユーザに対して decimal / thousands separator が正しく出力されない潜在バグがあった (例: `1500` → en では `1.5km`、de でも `1.5km` になるが正しくは `1,5km`)。新シグネチャ:
-    - `formatDistance(meters, lang, unit = true)`
-    - `formatDistanceCompact(meters, lang)`
-- 全 caller を `i18n.language` 渡しに更新: `distance-badge.tsx` / `edge-markers-dom.tsx` / `edge-markers-canvas.tsx` / `stop-metrics.tsx`。`edge-markers-canvas.tsx` では描画 `useEffect` の deps に `i18n.language` を追加して言語切替時に canvas label が再描画されるようにした。
-- `distance.test.ts` を新シグネチャに更新し、locale-specific 挙動 (`de` → `1,5km`、`ja` → `1,000m` 等) の assertion を 3 件追加。
-- `BottomSheetHeaderProps` に `dataLang: readonly string[]` を追加。`bottom-sheet.tsx` の `BottomSheetHeader` 呼び出しに `dataLang={dataLang}` を 1 行追加。
-- `src/config/transit-defaults.ts` に `CONNECTIVITY_RADIUS_M = 300` を新規追加。pipeline 側の `build-stop-geo.ts` (`CONNECTIVITY_RADIUS_M = 300`) を source of truth とし、pipeline/webapp shared-code policy に従って mirror として配置 (TSDoc に両者の同期が必要である旨を明記)。
+- `JourneyTimeBar` の bar color props を `fillColor` / `unfilledColor` に明確化。`StopTimeItem` で route color の contrast 評価から subtle / emphasis accent color を導出し、`TripPositionIndicator` / `JourneyTimeBar` で共有。
+- `BottomSheet` の高さクラス (`COLLAPSED_HEIGHT_CLASS` / `EXPANDED_HEIGHT_CLASS`) を定数化 (collapsed `40dvh` / expanded `70dvh`)。
+- pipeline dev analyzers の CLI を共通化 (共通 parser、`--list-sources` / `--list-sections` / `--section <name>`)。`analyze-gtfs-stop-times` / `analyze-odpt-station-timetable` / `analyze-v2-insights` / `analyze-v2-global-insights` を統一体系へ移行。
+- `analyze-odpt-station-timetable.ts` / `analyze-v2-insights.ts` を source+section analyzer に拡張。
+- Departure → StopTime naming refactor (PR #135): GTFS stop_times.txt が arrival/departure 対なので "Departure" 呼称を廃止。webapp + pipeline 全体の型名・ファイル名・i18n namespace を整理。
+- `resolveRouteFreq` の意味を「number of trips in a service day」と明確化。
+- `StopStats` / `TripPatternStats` / `StopGeo` の `freq` 意味を TSDoc で区別 (stop time count / trip count / operational density)。
+- `bottom-sheet.tsx` の filter 処理を 2 段に分割 (filteredStopTimes / trimmedStopTimes)。stage 順序は load-bearing と明記。
+- i18n UI wording 更新: "departures" → "All" / "services" / "service"。
+- `pipeline/docs/V2_APP_DATA.md` を高レベル reference にスリム化、型仕様は TSDoc を正本に。
+- Pipeline: 伊予鉄バス (`iyotetsu-bus`) の ODPT CKAN リソースを 20260415 版に更新。
+- `formatDistance` / `formatDistanceCompact` に `lang` 引数を追加し locale 対応化 (de は `1,5km`、ja は `1,000m` 等)。
+- 全 caller を `i18n.language` 渡しに更新。`edge-markers-canvas` では `useEffect` deps に `i18n.language` を追加。
+- `BottomSheetHeaderProps` に `dataLang: readonly string[]` prop を追加。
+- `CONNECTIVITY_RADIUS_M = 300` を `src/config/transit-defaults.ts` に追加 (pipeline `build-stop-geo.ts` を SSOT として mirror)。
 
 ### Fixed
 
-- pipeline dev analyzer formatter 群で、CLI から `No args` 実行時に `sections=[]` が「全 section」ではなく「0 件指定」と解釈され、ヘッダだけ出て本文が欠落する不具合を修正。`gtfs-routes` / `gtfs-stop-times` / `odpt-station-timetable` / `v2-insights` / `v2-global-insights` の formatter をそろえて、`sections` が `undefined` または空配列なら既定で全 section を出すようにした。対応する回帰 test も追加。
-- pipeline の `route_color` fallback 処理で `route_text_color` を固定 `FFFFFF` で補っていた挙動を見直し、`route_text_color` は raw GTFS 値のまま保持するように変更。`route_color` の fallback 判定・適用ロジックは `pipeline/src/domain/gtfs/route-colors.ts` に抽出し、`extract-routes.ts` から分離した。
-
-- extract-timetable.ts の出力順序を完全に deterministic 化。stopTimetable / patternMap / serviceMap を全て ID で sort。以前は service ID が Map insertion order (trip
-  traversal 順) 依存で、trip_id rename や DB 再生成で JSON property 順が揺れていた。
-- bottom-sheet.tsx の filteredStoptimes タイプミスを filteredStopTimes に修正 (他 4 ファイルは既に正しい naming で一貫)。
-- `BottomSheetHeader` の Agency filter PillButton が `agency.agency_short_name` / `agency.agency_long_name` の base 値を直接読んでおり、UI 言語切替に追従しない i18n 漏れを解消。canonical helper `getAgencyDisplayNames` 経由で `dataLang` chain を解決し、label (`agency_short_names`) と tooltip (`agency_long_names`) の両方を言語切替に追従させる。`BottomSheetHeader` に `dataLang: readonly string[]` prop を追加し、`BottomSheet` から透過。`AgencyBadge` / verbose 系と同じ `getAgencyDisplayNames(agency, dataLang, DEFAULT_AGENCY_LANG, 'short')` パターンに揃え、最終フォールバックは `agency.agency_id`。
-- `StopMetrics` の connectivity 表示 (`X路線 Y便 Zのりば (300m)`) がハードコード日本語で、UI 言語切替に追従しない i18n 漏れを解消。`useTranslation()` + `stop.metrics.connectivity` i18n key に移行し、`routeCount` / `freq` / `stopCount` / `radius` を interpolation に渡す。数値は既存の locale-aware 慣習 (`timetable-metadata` / `label-count-badge` 等) に倣い `toLocaleString(i18n.language)` で整形。`stats.freq` も同様に locale 対応。`300m` は `CONNECTIVITY_RADIUS_M` (新規 `src/config/transit-defaults.ts`) から取得し、`formatDistance` の en-US hardcode 問題を回避するため inline で locale-aware に整形する。
-- `TimetableGridEntry` の terminal marker `着` がハードコード日本語だった問題を修正。`timetable.entry.arriving` i18n key を新設 (ja `"着"` / en `"Arr"`) し、`useTranslation` 経由で解決。国際時刻表の業界標準 (Arr/Dep) に準拠。`timetable.entry.*` namespace に配置し、同居する `terminal` / `origin` / `noPickup` / `noDropOff` (これらは pill-style full-word labels) と区別するため component 側に TSDoc コメントを追加。
-- `FlatDepartureItem` の absolute time 直後にあった terminal marker `着` ハードコードを解消。専用 i18n key `departure.arrivingAbsolute` を新設し `useTranslation` 経由で解決 (ja `"着"` / en `"Arr"`)。`departure.arriving` (relative time 用、`<RelativeTime>` 経由、現在 ja/en とも意図的に空文字 opt-out) とは独立した経路で、2 つの terminal marker スロットを locale 側から独立制御できる。空文字を locale 値に設定することで任意の言語で opt-out 可能 — component は常に span を描画し、表示/非表示の判定は完全に i18n 側に委譲。component 側に両 key の使い分けを説明する TSDoc コメントを追加。
-
-### Added
-
-- `getContrastAwareAlphaSuffixes` (`src/utils/color/contrast-alpha-suffixes.ts`) を追加。contrast ratio から UI accent 向けの subtle / emphasis alpha suffix を返す純粋関数で、Vitest による契約テストも追加。
-
-- 新しい pipeline dev tool `pipeline/scripts/dev/analyze-gtfs-routes.ts` を追加。GTFS `routes.txt` を source ごとに current-state 分析し、`identity-and-names` / `route-types` / `color-fields` / `cemv-support` / `continuous-service-fields` / `optional-presentation-fields` の section を text report として出力する。pure analysis helper `pipeline/scripts/dev/dev-lib/gtfs-routes-analysis.ts`、smoke test、README / dev-tools 登録も追加。
-
-- `bottom-sheet-header.stories.tsx` 新規追加 (22 stories): Basic / Loading / NoStops / NoOperatingStops / Route type filters (SingleRouteType, MultiRouteTypes, AllRouteTypes, RouteTypeHidden, MultipleRouteTypesHidden) / Agency filters (SingleAgency, MultiAgencies, AgencyHidden, LongAgencyName, AgencyNoColor, InternationalAgencies) / View selection (ViewRouteHeadsignSelected, ViewVerboseDescription) / LangComparison / InfoLevel (Simple/Normal/Detailed/Verbose) / KitchenSink 4 レベル。`ALL_PRESENT_ROUTE_TYPES` を `APP_ROUTE_TYPES` から自動生成し、将来の route type 追加に追従する `AllRouteTypes` story を提供。
-- `src/stories/fixtures.ts` 全 13 agencies の i18n data 拡充。`agency_long_names` が全体で空 (`{}`) だった状態を解消し、`ja-Hrkt` (かな) / `de` / `es` / `fr` の追加も含めて `agency_names` / `agency_short_names` / `agency_long_names` の 3 map を埋める。これにより Agency filter fix の `longName` tooltip 経路が stories / KitchenSink で視覚確認できるようになる。
-- `MockRepository` (`src/repositories/mock-repository.ts`) i18n data 大幅拡充:
-    - agencies `AGENCY` / `AGENCY_SORA` に `ja-Hrkt` / `de` / `es` / `fr` 追加。既存 merge-map パターンに合わせて `AGENCY_LONG_NAME_TRANSLATIONS` を新設し、merge ループを `agency_long_names` 対応に拡張。
-    - 21 の `HEADSIGN_TRANSLATIONS` エントリすべてに `ja-Hrkt` / `de` / `es` / `fr` を追加 (9 言語完全網羅)。
-    - 18 の `STOP_NAME_TRANSLATIONS` エントリに `de` / `es` / `fr` を追加 (`sta_central` 以外はこれらが抜けていた)。
-    - 新規 stop_headsign バリエーション 3 種追加 (`ほし公園・にじ橋` at `bus_park`/`bus_aoba01`、`にじ橋・そらタワー` at `bus_library`/`bus_aoba02`、`図書館前・あおば中央駅` at `bus_tower`/`bus_aoba02`)。いずれも 9 言語の i18n 付き。従来は `bus_nohd01` の keio-bus pattern にしか stop_headsign override が無かったが、trip_headsign + stop_headsign 併存パターンも mock で確認できるようになる。
-- `MockRepository` に新規 agency `AGENCY_DRI` (`agency_id: 'dri'`, `Data Research Institute`) を追加。`agency_lang: 'en'` の English-primary operator で、fictional foundation / purple 配色 (#6A1B9A)。agency_names / long_names / short_names は 9 言語を literal で完全記載 (merge-map 不使用)。Issue #47 の duplicate-stop-in-pattern fixture routes 6 件 (`bus_stuck` / `bus_six` / `bus_eight` / `n92` / `kc10a` / `kc10b`) を `mock:aoba` から DRI に移譲し、shape-stress fixture 群を独立 operator として責務分離。
+- pipeline dev analyzer formatter 群で、`sections=[]` が「全 section」ではなく「0 件指定」と解釈され本文が欠落していた不具合を修正。
+- pipeline の `route_color` fallback 処理で `route_text_color` を強制 `FFFFFF` で補っていた挙動を修正、raw GTFS 値を保持。fallback 判定は `route-colors.ts` に分離。
+- `extract-timetable.ts` の出力順序を完全 deterministic 化 (stopTimetable / patternMap / serviceMap を ID で sort)。
+- `bottom-sheet.tsx` の `filteredStoptimes` typo を `filteredStopTimes` に修正。
+- `BottomSheetHeader` Agency filter PillButton が UI 言語切替に追従しない i18n 漏れを修正 (`getAgencyDisplayNames` 経由で `dataLang` chain を解決)。
+- `StopMetrics` の connectivity 表示 (`X路線 Y便 Zのりば (300m)`) のハードコード日本語を i18n 対応化 (`stop.metrics.connectivity` key、locale-aware 数値整形)。
+- `TimetableGridEntry` の terminal marker `着` のハードコードを `timetable.entry.arriving` i18n key に置換。
+- `FlatDepartureItem` absolute time 直後の terminal marker `着` を `departure.arrivingAbsolute` i18n key に置換。
 
 ## [2026.04.15]
 
 ### Added
 
-- `computeJourneyTime` 純粋関数 (`src/domain/transit/journey-time.ts`): trip の remaining / total minutes から bar 描画用の値 (sanitized minutes、progress ratio、display 用の rounded values) を計算する domain helper。Result-type API (`{ ok: true, value } | { ok: false, reason }`) で `no-total` / `invalid-total` の失敗を呼び出し側が単一 gate で扱える。sub-minute total の degenerate 表示 (`0 / 0`) を回避するため `displayTotalMinutes = Math.max(1, Math.round(...))` で clamp。pipeline 由来の小数 minutes に対する 100% fill 時のラベル整合性も担保。エッジケース 40 tests 追加。
-- `JourneyTimeBar` 新規コンポーネント (`src/components/journey-time-bar.tsx`): trip の remaining / total minutes を視覚化する progress bar。`size` (sm/md/lg/xl)、`color` (route_color hex)、`border`、`fillDirection` (ltr/rtl)、`minsPosition` (left/right/top/bottom)、`showRMins` / `showTMins`、`rTimeLabel` / `tMinsLabel` の柔軟な props。`maxMinutes` (default 120) で長距離 trip の bar 幅を clamp。`showEmoji` (⏳) prop 追加 — verbose info level での at-a-glance 識別用。`shadcn/ui` の `Progress` primitive を採用。Storybook stories に 12+ ケース (Sizes / Colors / Borders / FillDirections / LabelCombinations / KitchenSink 等)。
-- `FlatDepartureItem` の `infoLevel >= detailed` で `JourneyTimeBar` を表示。verbose 時は分数ラベル (現在 / 合計 mins) も併記し、route の bgColor を bar fill にも引き継ぐ。
-- `TripInfo` に `showAgency?: boolean` prop (default `false`) を追加。agency badge は `info.isDetailedEnabled && agency && showAgency` でレンダリング。`FlatDepartureItem` / `DepartureItem` にも同名 pass-through prop を追加し、`nearby-stop.tsx` で `showAgency = info.isVerboseEnabled || agencies.length > 1` を計算して渡す。current dataset では multi-operator stop が稀なため、single-operator stop (大半) では agency badge は冗長 noise として非表示になる。
-- `TripPositionIndicator` の verbose 時に 🚏 emoji prefix を追加 (at-a-glance 識別用)。
-- 論理的 (place-name-independent) な long/short fixtures を `src/stories/fixtures.ts` に追加: `routeLong` / `tripHeadsignLong` / `tripHeadsignShort` / `stopHeadsignLong` 等、9 言語の翻訳を持つ抽象 placeholder データ (Alpha Park / Bravo Station 等)。実在地名に依存せず wrap / truncation / multi-lang fallback の構造的検証を行うため。
-- `LogicalLongInfoLevelComparison` story を全主要コンポーネントに標準化追加 (DepartureItem / FlatDepartureItem / TripInfo / HeadsignBadge / RouteBadge / StopSummary / StopMarkersDom)。4 つの `infoLevel` (simple/normal/detailed/verbose) を縦並びで一覧表示し、論理的 long-form fixtures を使って full-data 状態での rendering を視覚的に確認できる。
-- `DepartureItem.LogicalLongInfoLevelComparison` を per-departure attribute label catalog として拡張: 5 entries で `TimetableEntryAttributesLabels` の全フラグ (plain / terminal / origin / pickup× / dropoff×) を網羅。
-- `StopMarkersDom.LangComparison` 新規追加 (9 言語の地図インスタンスを stack)。
-- `TripInfo.MultiAgenciesStop` story 追加 (`showAgency=true` 時の rendering 確認)。
-- pipeline dev tools 2 件を追加: `pipeline/scripts/dev/analyze-v2-insights.ts` (per-source `InsightsBundle` 解析: `tripPatternStats` / `serviceGroups` / `tripPatternGeo` / `stopStats` の overview + distribution)、`pipeline/scripts/dev/analyze-v2-global-insights.ts` (`GlobalInsightsBundle` の `stopGeo` 解析: nr / wp / cn 分布、isolation buckets、hub counts、Top-N leaderboards)。dev-lib pattern (pure analysis + formatter + thin CLI wrapper) に従い、`dev-tools.ts` / `README.md` も更新。smoke test 追加。
+- `computeJourneyTime` 純粋関数 (`src/domain/transit/journey-time.ts`) を追加。trip の remaining / total minutes から bar 描画値を計算 (Result-type API、エッジケース 40 tests)。
+- `JourneyTimeBar` コンポーネントを追加。trip の remaining / total を視覚化する progress bar (size / color / border / fillDirection / minsPosition / labels / maxMinutes / showEmoji)。
+- `FlatDepartureItem` の `infoLevel >= detailed` で `JourneyTimeBar` を表示。verbose 時は分数ラベル併記、route bgColor を bar fill に引き継ぎ。
+- `TripInfo` に `showAgency?: boolean` prop (default `false`) を追加。`nearby-stop.tsx` で multi-operator stop のみ表示するよう制御 (single-operator では agency badge を冗長 noise として非表示)。
+- `TripPositionIndicator` の verbose 時に 🚏 emoji prefix を追加。
+- 論理的 (place-name-independent) な long/short fixtures を `src/stories/fixtures.ts` に追加 (Alpha Park / Bravo Station 等の 9 言語翻訳付き abstract placeholder)。
+- `LogicalLongInfoLevelComparison` story を全主要コンポーネント (DepartureItem / FlatDepartureItem / TripInfo / HeadsignBadge / RouteBadge / StopSummary / StopMarkersDom) に標準化追加。
+- `StopMarkersDom.LangComparison` (9 言語) と `TripInfo.MultiAgenciesStop` story を追加。
+- pipeline dev tools 2 件を追加: `analyze-v2-insights.ts` (per-source InsightsBundle 解析)、`analyze-v2-global-insights.ts` (GlobalInsightsBundle stopGeo 解析: nr / wp / cn 分布、isolation buckets、hub counts、Top-N leaderboards)。
 
 ### Changed
 
-- `DepartureItem` の絶対時刻 row を `flex-wrap` 対応に変更。`RelativeTime` は単一 unit として非折り返しのまま、n 個の絶対時刻 entry 群を新規 `<div>` でラップして内側で wrap 可能に (`min-w-0 flex-1 flex-wrap`)。各時刻 span は `whitespace-nowrap` で「時刻 + attribute label」が分離しない。狭幅で時刻が右側に overflow して clip されていた問題を解消。
-- `DepartureItem` の各時刻 span を `items-baseline` から `items-center` に変更。attribute label pill が時刻テキストに対してベースラインではなく縦中央で揃うように調整。
-- `TimetableEntryAttributesLabels` の表示順を入れ替え: origin (始発) を terminal (終点) より先にレンダリング。両フラグが立つ場合に始発状態を先に読める自然な順序に。
-- `JourneyTimeBar` 内部の horizontal / vertical layout 分岐を統一 (`isHorizontal` フラグでクラス選択)。重複していた wrapper ロジックを 1 か所に集約。
+- `DepartureItem` の絶対時刻 row を `flex-wrap` 対応に変更し、狭幅 overflow を解消。
+- `DepartureItem` の各時刻 span を `items-baseline` → `items-center` に変更 (attribute label pill の縦中央揃え)。
+- `TimetableEntryAttributesLabels` の表示順を origin → terminal の自然な順序に変更。
+- `JourneyTimeBar` 内部の horizontal / vertical layout 分岐を `isHorizontal` フラグで統一。
 
 ### Fixed
 
-- `FlatDepartureItem` の verbose stop 位置ラベル (`stopIndex / totalStops`) のレイアウトを微調整。`TripPositionIndicator` の右隣に inline 配置するように変更し、専用 row を廃止。
+- `FlatDepartureItem` verbose stop 位置ラベル (`stopIndex / totalStops`) を `TripPositionIndicator` 右隣に inline 配置 (専用 row を廃止)。
 
 ## [2026.04.14]
 
+### Added
+
+- `validate-data.ts` に `si` 整合性検証を追加 (非負整数 / `si < pattern.stops.length` / `pattern.stops[si].id === stopId` / `(stop_id, tp, si)` 三つ組ユニーク性)。
+- `verbose-timetable-entries.tsx` の verbose dump に `si=N` 表示を追加。
+- `TripPositionIndicator` コンポーネントを追加 (`src/components/label/trip-position-indicator.tsx`)。trip pattern 内の現在位置を slider 風の dot + track で視覚化。`FlatDepartureItem` の verbose 表示で活用。Storybook 12+ stories。
+- データソース読込失敗時の error toast 表示 (#128, Phase 1)。bundle_version mismatch 等で起動時に sonner toast でユーザーに通知。
+
 ### Changed
 
-- BREAKING: `bundle_version` を 2 → 3 に bump (全 v2 bundle: data / shapes / insights / global-insights)。理由: `TimetableGroupV2Json` に required な `si: number` field を追加したため。旧 v2 データは fail fast で reject される。
-- `TimetableGroupV2Json` に **`si: number` (0-based stop index within `pattern.stops`)** field を required で追加 (#47)。同一 stop_id がパターン内の複数位置に現れる 6字形ルート/循環ルートで、各位置を別 group として表現できる (例: 都営大江戸線 都庁前 in `toaran:p72` は `si=0` と `si=28` の 2 group に分離)。GTFS 生 `stop_sequence` ではなく `pattern.stops` 配列の 0-based 位置で、WebApp の `patternPosition.stopIndex` と 1 対 1 対応。
-- `DepartureItem`: per-departure attribute 描画に移行 (Alt F)。各 departure 時刻の横で `TimetableEntryAttributesLabels` を個別レンダリング。group header の `TripInfo.attributes` prop 渡しを廃止 (TripInfo 側の prop は FlatDepartureItem / StopSummary 等 single-departure 消費者用に optional のまま維持)。
-
-### Fixed
-
-- `tripPatternStats.freq` の duplicate stop double-count 問題を解消 (#47)。例: `toaran:p72` 都庁前の `freq` が 380 → 190 (正しい trip 数)。
-- 6字形/循環パターンで `stop_headsign` が誤って最初の出現位置の値で表示されていた問題を修正 (kobus / kcbus / sbbus / minkuru / edobus 計 122 stop instances)。`pattern.stops[si].sh` を per-departure で正しく解決。例: `kobus:p67` で `kobus:1694_11` が position 11 では「調布駅南口（狛江駅北口経由）」、position 15 では「調布駅南口」と表示されるようになる。
-- `DepartureItem` の group-level attribute 表示が `firstEntry.patternPosition` の sort 順次第で不安定だった既存バグを Alt F で根治 (循環ルートで `[ORIG]` / `[TERM]` ラベルが時刻によってちらつく問題)。
-- `sortTimetableEntriesChronologically` の DST correctness を修正。リファクタ時に `serviceDate.getTime() + departureMinutes * 60_000` という直接 ms 加算に変えたが、これは DST transition 日 (Europe/Berlin, Europe/Rome 等) で `minutesToDate(...).getTime()` と 1 時間ずれる。`minutesToDate` 経由での pre-compute に戻し、O(n) の Date allocation は comparator 外に保持することで hot path の最適化も維持。JST (DST なし) のみ利用なら影響なし。
-- `TripPositionIndicator` に `route_color` が空文字列の route (mir / mykbus / sbbus 等 29 routes) で `#20` / `#50` / `#` といった不正な CSS color を渡していた問題を修正。L51 の既存の `bgColor` ガードに揃える形で `trackColor` / `dotColor` / `currentColor` も `undefined` fallback するようにした。
-- `TripPositionIndicator` を hardening: `totalStops` が NaN / Infinity / 負数 / 0 / 1 の場合は null を返すように (`totalStops <= 1` で一括早期 return)、`totalStops > 300` は 300 に clamp (MAX_STOPS)。Infinity での無限ループによるブラウザハングを防ぎ、data bug に強くなった。
-- `FlatDepartureItem` の verbose 行で `entry.insights` が未解決のとき `/` だけが表示されていた問題を修正。`?? '-'` で fallback して `- / -` と表示するようにした。発生パターンは 2 系統: (1) 起動直後の shapes+insights 背景ロード完了前の race window (数百 ms 〜 数秒、user が操作すると fresh entry で解決)、(2) `tripPatternStats` に出現しない pattern (freq=0 で pipeline から dropped / 祝日等で service group mismatch) で永続 undefined。どちらも同じ `- / -` 表示にすることで状態を統一し、将来の Issue #126 (UI consumption of insights) でも同じ graceful-degradation パターンを使える前提を作る。
+- BREAKING: `bundle_version` を 2 → 3 に bump (全 v2 bundle)。理由: `TimetableGroupV2Json` に required `si: number` field を追加。旧 v2 データは fail fast で reject。
+- `TimetableGroupV2Json` に `si: number` (0-based stop index within `pattern.stops`) を required で追加 (#47)。同一 stop_id がパターン内の複数位置に現れる 6字形/循環ルートで、各位置を別 group として表現可能 (例: 都営大江戸線 都庁前 in `toaran:p72` は `si=0` と `si=28` の 2 group)。
+- `DepartureItem`: per-departure attribute 描画に移行 (Alt F)。group header の `TripInfo.attributes` prop 渡しを廃止。
 
 ### Removed
 
-- `pickupType` ベースの circular workaround を撤去 (`athenai-repository-v2.ts` 計 7 箇所)。`group.si` から直接 `stopIndex` を取得する形に統一。
-- `build-trip-pattern-stats.ts` の `isCircularPattern` ヘルパー関数を削除。`si` 分離後は circular skip ロジックが不要になったため。
+- `pickupType` ベースの circular workaround を撤去 (`athenai-repository-v2.ts` 計 7 箇所)。`group.si` から直接 `stopIndex` を取得。
+- `build-trip-pattern-stats.ts` の `isCircularPattern` ヘルパーを削除 (`si` 分離後は不要)。
 
-### Added
+### Fixed
 
-- `validate-data.ts` に `si` 整合性検証を追加: 非負整数チェック、`si < pattern.stops.length`、`pattern.stops[si].id === stopId`、`(stop_id, tp, si)` 三つ組のユニーク性。
-- `verbose-timetable-entries.tsx` の verbose dump に `si=N` 表示を追加。デバッグ時に JSON 上の `si` 値と UI 表示が直接対応。
-- `TripPositionIndicator` 新規コンポーネント (`src/components/label/trip-position-indicator.tsx`): trip pattern 内の現在位置を slider 風の dot + track で視覚化する UI。`FlatDepartureItem` の verbose 表示で活用。xs / sm / md のサイズバリアント、`infoLevel` 連動表示、GTFS `route_color` 対応の custom color props。Storybook stories (`trip-position-indicator.stories.tsx`) に 12+ ケース (Origin / Terminal / LongPattern / 6-shape / edge cases / KitchenSink) を追加。
-- データソース読込失敗時の error toast 表示 (#128, Phase 1)。bundle_version mismatch などで全/一部のソースがロードできなかった場合、起動時に sonner toast でユーザーに通知.これまでは console warn のみで UI 上の通知がなく、空マップ状態を「データのない地域」と誤解する原因になっていた。
+- `tripPatternStats.freq` の duplicate stop double-count 問題を解消 (#47)。例: `toaran:p72` 都庁前 freq が 380 → 190。
+- 6字形/循環パターンで `stop_headsign` が最初の出現位置の値で表示されていた問題を修正 (kobus / kcbus / sbbus / minkuru / edobus 計 122 stop instances)。
+- `DepartureItem` の group-level attribute 表示が unstable だった既存バグを Alt F で根治 (循環ルートで `[ORIG]` / `[TERM]` ラベルがちらつく問題)。
+- `sortTimetableEntriesChronologically` の DST correctness 問題を修正 (Europe/Berlin / Europe/Rome 等の DST transition 日で 1 時間ずれる)。
+- `TripPositionIndicator` に `route_color` が空文字列の route で `#20` / `#50` / `#` といった不正な CSS color を渡していた問題を修正 (29 routes)。
+- `TripPositionIndicator` を hardening: `totalStops <= 1` で null return、`> 300` は 300 に clamp (Infinity 無限ループ防止)。
+- `FlatDepartureItem` verbose 行で `entry.insights` が未解決のとき `/` のみ表示されていた問題を修正 (`?? '-'` で fallback、`- / -` と表示)。
 
 ## [2026.04.13]
 
 ### Added
 
-- `RouteCountBadge` (新規、`src/components/badge/route-count-badge.tsx`): route の display name と `route_color` を `LabelCountBadge` に橋渡しする domain adapter。`TimetableMetadata` の route 内訳表示を PillButton から置き換え。
-- `BaseLabel` に `style` prop を追加。GTFS の `route_color` のようなランタイム hex 値を inline style で渡せるように (既存 `PillButton` / `RouteBadge` と同じパターン)。
-- `DEVELOPMENT.md` に「Stop ID lookup の選び方」セクションを追加。永続/長寿命の `stop_id` (anchor / route stops / `?stop=` 等) は `repo.getStopMetaByIds` を使い、viewport 制限のある `findStopWithMeta` を使わない判断ルールを記述。route stops と Portal の i18n 対応で同種の regression を起こした経緯も含む。
-- MockRepository の `sta_central` に `de` / `es` / `fr` の翻訳を追加し、`SUPPORTED_LANGS` 全 9 言語をカバー。anchor 翻訳の言語切替挙動を mock 上で検証可能に。
-
-### Fixed
-
-- StopHistory ドロップダウンが `stopWithMeta.stop.stop_name` (feed_lang 由来) を直接表示していた問題を修正。`getStopDisplayNames(stop, dataLang, resolveAgencyLang(agencies, stop.agency_id))` で現在表示言語に従って解決。履歴のスナップショットには既に `stop_names` 翻訳マップが含まれているため、表示層のみの修正。
-- Portal (アンカー) ドロップダウンの表示が常に保存時の `stopName` snapshot を使っていた問題を修正。`repo.getStopMetaByIds` で全データセットから fresh な `StopWithMeta` を取得し、`getStopDisplayNames` で現在表示言語に解決。viewport 外のアンカーも翻訳されるようになり、新たに追加された GTFS 翻訳にも自動追従する (anchor refresh 不要)。`AnchorEntry` のスキーマ変更なし。
-- アンカー追加/削除時の toast メッセージ (`anchor.added` / `anchor.removed`) も翻訳解決に切り替え。表示言語に応じた stop 名を表示。
-- pipeline (v2) が GTFS の `routes.route_short_name` 翻訳を抽出していなかった問題を修正 (#103)。`extract-translations.ts` に `route_short_name` 抽出ブロックを追加 (GTFS-JP の `record_id` 経由と標準 GTFS の `field_value` 経由の両方をサポート)。kyoto-city-bus (139 件) / keio-bus (31 件) などのフィードに含まれる短縮名翻訳が `data.json` の `translations.route_short_names` まで届き、`Route.route_short_names` を経由して `getRouteDisplayNames` が言語切替に追従するようになる (例: `市バス１` → `1 City Bus` を `lang=en` で表示)。
+- `RouteCountBadge` を追加 (`src/components/badge/route-count-badge.tsx`)。route の display name と `route_color` を `LabelCountBadge` に橋渡しする domain adapter。`TimetableMetadata` の route 内訳表示を PillButton から置き換え。
+- `BaseLabel` に `style` prop を追加 (GTFS `route_color` 等のランタイム hex 値を inline style で渡せる)。
+- `DEVELOPMENT.md` に「Stop ID lookup の選び方」セクションを追加。永続 / 長寿命の `stop_id` (anchor / route stops / `?stop=` 等) は `repo.getStopMetaByIds`、viewport 制限のある `findStopWithMeta` との使い分けルールを記述。
+- MockRepository の `sta_central` に `de` / `es` / `fr` 翻訳を追加し、`SUPPORTED_LANGS` 全 9 言語をカバー。
 
 ### Changed
 
-- `MapToggleButton` (地図上の全コントロールボタン) でテキスト選択不可に。`user-select: none` と `-webkit-touch-callout: none` を適用し、iPhone などタッチデバイスでボタン上の文字列が選択状態になる問題を抑止。
-- `PillButton` (BottomSheet の View/Operating/Route type/Agency フィルタ、stop 詳細の timetable フィルタ、route 内訳表示) でもテキスト選択不可に。同じく `user-select: none` と `-webkit-touch-callout: none` を適用。
-- `TransitRepository.getStopMetaByIds` / `getStopMetaById` の TSDoc を強化し、「いつ使うべきか」「viewport 制限のある `findStopWithMeta` との違い」「過去の regression の経緯」を明記。`use-route-stops.ts` と `app.tsx` の `findStopWithMeta` 定義箇所にも対応するコメントと DEVELOPMENT.md への参照を追加。
-- `TranslationsJson` (`src/types/data/transit-json.ts`) のスキーマをリネーム + 拡張し、各フィールドに TSDoc を追加 (#103):
-    - `route_names` → `route_long_names` (long であることを名前に明示)
-    - 新フィールド `route_short_names` を追加 (`route_short_name` / `route_long_name` を first-class な対等フィールドとして扱う)
-    - `headsigns` → `trip_headsigns` (`stop_headsigns` と対称にし、何の翻訳か曖昧な命名を解消)
-    - `public/data-v2/*/data.json` の再生成は別途データ更新フローで実施 (本 PR のスコープ外)
-    - pipeline ドキュメント (`pipeline/docs/V2_APP_DATA.md`, `pipeline/scripts/dev/README.md`) のフィールド名参照を新スキーマに追随。
-
-## [2026.04.12]
+- `MapToggleButton` (地図上の全コントロールボタン) を text-select 不可に (`user-select: none` + `-webkit-touch-callout: none`)。iPhone 等での選択状態を抑止。
+- `PillButton` (BottomSheet フィルタ群、route 内訳表示) も同様に text-select 不可に。
+- `TransitRepository.getStopMetaByIds` / `getStopMetaById` の TSDoc を強化 (`findStopWithMeta` との使い分けと regression 経緯を明記)。`use-route-stops.ts` と `app.tsx` にも対応コメント追加。
+- `TranslationsJson` スキーマをリネーム + 拡張 (#103): `route_names` → `route_long_names`、新フィールド `route_short_names` を追加 (`route_short_name` / `route_long_name` を first-class 対等に)、`headsigns` → `trip_headsigns` (`stop_headsigns` と対称)。pipeline ドキュメントのフィールド名参照も新スキーマに追随 (`public/data-v2/*/data.json` 再生成は別途データ更新フロー)。
 
 ### Fixed
 
-- i18n: GTFS base values (stop_name, trip_headsign 等) を `feed_lang` キーで translation names に注入し、`lang=ja` で英語 headsign が表示される問題を修正 (#107)。
-- Multi-agency GTFS フィード (西武バス 2 社、VAG Freiburg 2 社) で全 agency に同一の provider 由来 display name が適用されていた問題を修正 (#105)。agency-attributes.ts で per-agency の display name を保持する構造に変更。
-- departure-level filter (agency / route_type) で全 departures が非表示になった stop が「本日の運行は終了しました」(`serviceEnded`) と誤表示される regression を修正。`FilteredTimetableEntriesState` と `getFilteredTimetableEntriesState` で full-day / pre-filter upcoming / post-filter の 3 state から正しい fallback メッセージを導出し、`allFilteredOut` / `serviceEnded` / `noService` を区別。
-- ODPT `buildAgencyV2` の `agency_id` 生成が `provider.name.en.short`、`buildRoutesV2.ai` は `provider.name.en.long` を使用しており、long ≠ short な provider で referential integrity が崩れる latent bug を修正。両者を `en.long` に統一。
-- GTFS `extractAgenciesV2` で `cemv_support` が空文字列のとき `Number('')` で `0` に変換され、`cemv: 0` として誤出力されていた問題を修正。`parseInt` に変更し、空文字列・空白文字は `NaN` として range filter で自然に除外。
-- `bottom-sheet.tsx` の `showOperatingStopsOnly` 判定を departure-level filter の前に実行するよう順序変更。stop visibility 制御 (次便あり) と user filter (何を隠すか) を分離。
-- `nearby-stop.tsx` の empty-fallback 判定ロジックに関連する TSDoc の不一致 (`get-agency-display-name.ts` の `'long'` source 説明、`transit-v2-json.ts` の ODPT `n` 説明) を修正。
-- `verbose-agency.tsx` の `short="..."` 属性 dump が JSX 改行まわりで whitespace 扱いが compiler 依存だった箇所を明示的な `{' '}` セパレータに書き換え。
+- StopHistory ドロップダウンが `stopWithMeta.stop.stop_name` (feed_lang 由来) を直接表示していた問題を修正 (`getStopDisplayNames` で表示言語に解決)。
+- Portal (アンカー) ドロップダウンが常に保存時の `stopName` snapshot を使っていた問題を修正 (`repo.getStopMetaByIds` で fresh な `StopWithMeta` を取得し表示言語で解決)。viewport 外のアンカーも翻訳に追従し、追加された GTFS 翻訳にも自動追従する。
+- アンカー追加/削除時の toast (`anchor.added` / `anchor.removed`) も翻訳解決に切り替え。
+- pipeline (v2) が GTFS の `routes.route_short_name` 翻訳を抽出していなかった問題を修正 (#103)。`extract-translations.ts` に GTFS-JP `record_id` 経由と標準 GTFS `field_value` 経由の両抽出を追加。kyoto-city-bus (139 件) / keio-bus (31 件) 等の短縮名翻訳が `data.json` まで届き、`getRouteDisplayNames` が言語切替に追従。
+
+## [2026.04.12]
 
 ### Added
 
 - DEVELOPMENT.md: GTFS i18n 仕様 (`feed_lang` / `agency_lang` / `translations.txt`) のリファレンスセクションを追加。
-- `AgencyV2Json` 型 (agency section version 2) を追加。pipeline は data-source 由来フィールド (`n`, `u`, `tz`, `l?`, `ph?`, `fu?`, `em?`, `cemv?`) のみ出力。
-- `src/config/agency-attributes.ts` を新設。app 側で per-agency display name (long/short multilingual) と brand colors を一元管理。multi-agency (`sbbus:3013301006265` / `sbbus:6013301006270`, `vagfr:1` / `vagfr:3` 等) を区別。
-- GTFS schema (`pipeline/src/lib/pipeline/gtfs-schema.ts`) に `cemv_support` カラムを追加 (GTFS-JP v4)。`extractAgenciesV2` が `agency_phone`, `agency_email`, `agency_fare_url` も読み取るよう拡張。
+- `AgencyV2Json` 型 (agency section v2) を追加。pipeline は data-source 由来フィールドのみ出力。
+- `src/config/agency-attributes.ts` を新設し、per-agency display name (long/short multilingual) と brand colors を一元管理。multi-agency (`sbbus:3013301006265` / `sbbus:6013301006270`、`vagfr:1` / `vagfr:3` 等) を区別。
+- GTFS schema に `cemv_support` カラムを追加 (GTFS-JP v4)。`extractAgenciesV2` が `agency_phone` / `agency_email` / `agency_fare_url` も読み取るよう拡張。
 - `Agency` app 型に `agency_long_name` / `agency_long_names` フィールドを追加。
-- `FilteredTimetableEntriesState` 型と `getFilteredTimetableEntriesState` pure function を `src/domain/transit/timetable-utils.ts` に追加。full-day service state + pre-filter upcoming state + post-filter state の 3 入力から UI display state を派生。
-- `filterByAgency`, `filterByRouteType` を departure-level filter として `src/domain/transit/timetable-filter.ts` に追加。
-- `collectPresentAgencies`, `collectPresentRouteTypes` domain helper を独立ファイルとテストに抽出。
-- i18n key `stop.timetable.allFilteredOut`, `stop.timetable.filteredCount` を追加。UI-layer の timetable 表示状態を data-layer の `stop.serviceState.*` から namespace 分離。
+- `FilteredTimetableEntriesState` 型と `getFilteredTimetableEntriesState` pure function を `timetable-utils.ts` に追加 (full-day / pre-filter upcoming / post-filter の 3 state から UI display state を派生)。
+- `filterByAgency` / `filterByRouteType` を departure-level filter として `timetable-filter.ts` に追加。
+- `collectPresentAgencies` / `collectPresentRouteTypes` domain helper を独立ファイルとテストに抽出。
+- i18n key `stop.timetable.allFilteredOut` / `stop.timetable.filteredCount` を追加 (UI 層を data 層の `stop.serviceState.*` から namespace 分離)。
 
 ### Changed
 
-- Agency / route type フィルターを **stop-level から departure-level へ移行**。複数 route_type / 複数 agency を持つ stop で 1 種類を off にしても stop 自体は表示されたまま、該当 departures のみ非表示になる。
-- Filter pill を常時表示に変更。1 種類しか present していないソース (京王バス単独など) でも pill が見え、ユーザーが何を絞り込めるか常に把握できる。
-- `showOperatingStopsOnly` (旧 `activeOnly`) を departure-level filter より **前** に実行。post-filter の `departures.length` を見ることによる「stop visibility と user filter の conflation」を解消。
-- `activeOnly` → `showOperatingStopsOnly` rename。古い名前では何が active なのか (stops? departures? agency?) が曖昧だった。i18n key / pill label も揃えて更新。
+- Agency / route type フィルターを stop-level から departure-level へ移行。複数 route_type / 複数 agency を持つ stop で 1 種類を off にしても stop は表示されたまま該当 departures のみ非表示。
+- Filter pill を常時表示に変更 (1 種類しか present していないソースでも何を絞り込めるか常に把握できる)。
+- `showOperatingStopsOnly` (旧 `activeOnly`) を departure-level filter より前に実行し、stop visibility と user filter の conflation を解消。
+- `activeOnly` → `showOperatingStopsOnly` rename (i18n key / pill label も統一)。
 - i18n: `stop.serviceState.filterHidden` → `stop.timetable.allFilteredOut` に移行 (UI 層と data 層の namespace 分離)。
-- Pipeline: GTFS / ODPT の agency / translation builder から `provider` 依存を除去。display name injection を停止し、data-source 由来フィールドのみを出力。app 側は `agency-attributes.ts` を overlay する責務に分離。
-- `getAgencyDisplayNames` に `'original'` source を追加。agency-attributes に entry が無いとき canonical `agency_name` に fallback してから agency_id に落ちる。
-- `AgencyBadge`: hardcoded Seibu workaround (`AGENCY_BADGE_NAME_PREFERENCE_BY_ID`, `AGENCY_BADGE_USE_RAW_NAME_BY_ID`) を削除し、per-agency display name を `agency-attributes.ts` に集約。
-- `TranslationsJson.agency_short_names` を削除。per-agency の short name は App 側 `agency-attributes.ts` で管理。
+- Pipeline: GTFS / ODPT の agency / translation builder から `provider` 依存を除去。display name injection を停止し、app 側は `agency-attributes.ts` を overlay する責務に分離。
+- `getAgencyDisplayNames` に `'original'` source を追加 (canonical `agency_name` → `agency_id` の fallback)。
+- `AgencyBadge`: hardcoded Seibu workaround を削除し、per-agency display name を `agency-attributes.ts` に集約。
+- `TranslationsJson.agency_short_names` を削除 (App 側 `agency-attributes.ts` で管理)。
+
+### Fixed
+
+- i18n: GTFS base values (stop_name / trip_headsign 等) を `feed_lang` キーで translation names に注入し、`lang=ja` で英語 headsign が表示される問題を修正 (#107)。
+- Multi-agency GTFS フィード (西武バス 2 社、VAG Freiburg 2 社) で全 agency に同一の provider 由来 display name が適用されていた問題を修正 (#105)。
+- departure-level filter で全 departures が非表示になった stop が「本日の運行は終了しました」と誤表示される regression を修正 (`FilteredTimetableEntriesState` で 3 状態から正しい fallback メッセージを導出)。
+- ODPT `buildAgencyV2.agency_id` と `buildRoutesV2.ai` で異なる provider name (short / long) を使用しており referential integrity が崩れる latent bug を修正 (両者を `en.long` に統一)。
+- GTFS `extractAgenciesV2` で `cemv_support` が空文字列のとき `Number('')` で `0` に変換され誤出力されていた問題を修正 (`parseInt` で `NaN` 化し range filter で除外)。
+- `bottom-sheet.tsx` の `showOperatingStopsOnly` 判定を departure-level filter の前に実行する順序に変更。
+- TSDoc の不一致を修正 (`get-agency-display-name.ts` の `'long'` source 説明、`transit-v2-json.ts` の ODPT `n` 説明)。
+- `verbose-agency.tsx` の JSX whitespace 扱いを明示的な `{' '}` セパレータに書き換え。
 
 ## [2026.04.11]
 
