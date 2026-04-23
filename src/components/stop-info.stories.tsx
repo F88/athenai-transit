@@ -24,6 +24,8 @@ const meta = {
   component: StopInfo,
   args: {
     stop: baseStop,
+    showAgencies: true,
+    showRouteTypes: true,
     routeTypes: [3] as AppRouteTypeValue[],
     agencies: [agencyTobus],
     distance: 235,
@@ -32,6 +34,7 @@ const meta = {
     dataLang: ['ja'],
     stopServiceState: 'boardable',
     routes: [busRoute],
+    showRoutes: true,
     agencyBadgeSize: 'sm',
     routeBadgeSize: 'sm',
   },

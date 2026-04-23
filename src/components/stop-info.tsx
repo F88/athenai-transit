@@ -24,14 +24,17 @@ interface StopInfoProps extends StopSummaryCoreProps {
  */
 export function StopInfo({
   stop,
-  routeTypes,
   agencies,
+  showAgencies,
+  routeTypes,
+  showRouteTypes,
+  routes,
+  showRoutes,
   distance,
   mapCenter,
   infoLevel,
   dataLang,
   stopServiceState,
-  routes,
   agencyBadgeSize,
   routeBadgeSize,
   stats,
@@ -45,12 +48,15 @@ export function StopInfo({
       <div className="min-w-0">
         <StopSummary
           stop={stop}
-          routeTypes={routeTypes}
           agencies={agencies}
+          showAgencies={showAgencies}
+          routeTypes={routeTypes}
+          showRouteTypes={showRouteTypes}
+          routes={routes}
+          showRoutes={showRoutes}
           infoLevel={infoLevel}
           dataLang={dataLang}
           stopServiceState={stopServiceState}
-          routes={routes}
           agencyBadgeSize={agencyBadgeSize}
           routeBadgeSize={routeBadgeSize}
           distanceBadge={

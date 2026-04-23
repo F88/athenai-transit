@@ -38,8 +38,11 @@ export function TimetableHeader({
   return (
     <StopSummary
       stop={stop}
+      showAgencies={true}
+      showRouteTypes={true}
       routeTypes={routeTypes}
       agencies={displayAgencies}
+      showRoutes={true}
       infoLevel={infoLevel}
       dataLang={dataLang}
       stopServiceState={stopServiceState}

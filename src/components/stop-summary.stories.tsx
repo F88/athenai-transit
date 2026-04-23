@@ -22,12 +22,15 @@ const meta = {
   component: StopSummary,
   args: {
     stop: baseStop,
+    showAgencies: true,
+    showRouteTypes: true,
     routeTypes: [3] as AppRouteTypeValue[],
     agencies: [agencyTobus],
     infoLevel: 'normal',
     dataLang: ['ja'],
     stopServiceState: 'boardable',
     routes: [busRoute],
+    showRoutes: true,
     agencyBadgeSize: 'sm',
     routeBadgeSize: 'sm',
   },
@@ -217,8 +220,11 @@ export const LogicalLongInfoLevelComparison: Story = {
             <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
             <StopSummary
               stop={args.stop}
+              showAgencies={args.showAgencies}
+              showRouteTypes={args.showRouteTypes}
               routeTypes={args.routeTypes}
               agencies={args.agencies}
+              showRoutes={args.showRoutes}
               routes={args.routes}
               infoLevel={level}
               dataLang={args.dataLang}

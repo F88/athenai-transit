@@ -1,5 +1,6 @@
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
+import { AbsoluteStopTime } from '@/components/absolute-stop-time';
 import {
   getContrastAdjustedRouteColors,
   resolveRouteColors,
@@ -8,7 +9,6 @@ import {
   LOW_CONTRAST_BADGE_MIN_RATIO,
   LOW_CONTRAST_TEXT_MIN_RATIO,
 } from '@/domain/transit/color-resolver/contrast-thresholds';
-import { useTranslation } from 'react-i18next';
 import { minutesToDate } from '../domain/transit/calendar-utils';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
@@ -50,45 +50,6 @@ interface StopTimeItemProps {
   showAgency?: boolean;
   /** Optional callback for inspecting this concrete trip entry. */
   onInspectTrip?: (entry: ContextualTimetableEntry) => void;
-}
-
-interface AbsoluteStopTimeProps {
-  /** Formatted absolute time text. */
-  timeText: string;
-  /** Whether this timetable entry is terminal/arrival-only. */
-  isTerminal: boolean;
-  /** Text color derived from the route color. */
-  textColor: string;
-}
-
-function AbsoluteStopTime({ timeText, isTerminal, textColor }: AbsoluteStopTimeProps) {
-  const { t } = useTranslation();
-
-  return (
-    <div
-      className="text-base font-bold text-[#333] dark:text-gray-100"
-      style={{ color: textColor }}
-    >
-      {timeText}
-      {isTerminal && (
-        /*
-         * Terminal arrival marker attached to the absolute time (for example,
-         * "22:30着" / "22:30Arr"). `stopTimeView.arrivingAbsolute` stays
-         * separate from `stopTimeView.arriving` on purpose:
-         *
-         * - `stopTimeView.arriving` is used by <RelativeTime> next to the
-         *   relative time and can stay empty when that compact view should not
-         *   show a terminal marker.
-         * - `stopTimeView.arrivingAbsolute` is used only here next to the
-         *   absolute time, so locale owners can opt out independently by
-         *   setting this key to an empty string.
-         */
-        <span className="text-[10px] font-normal opacity-70">
-          {t('stopTimeView.arrivingAbsolute')}
-        </span>
-      )}
-    </div>
-  );
 }
 
 /**
@@ -181,8 +142,9 @@ export function StopTimeItem({
             )}
             <AbsoluteStopTime
               timeText={formatAbsoluteTime(time)}
-              isTerminal={isTerminal}
               textColor={contrastAdjustedRouteColors.color}
+              showDepartureMarker={false}
+              showArrivalMarker={isTerminal}
             />
           </button>
         ) : (
@@ -213,7 +175,8 @@ export function StopTimeItem({
             )}
             <AbsoluteStopTime
               timeText={formatAbsoluteTime(time)}
-              isTerminal={isTerminal}
+              showArrivalMarker={isTerminal}
+              showDepartureMarker={false}
               textColor={contrastAdjustedRouteColors.color}
             />
           </div>
