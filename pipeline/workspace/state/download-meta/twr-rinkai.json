@@ -1,17 +1,17 @@
 {
-  "sourceName": "tama-monorail",
+  "sourceName": "twr-rinkai",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-04-23T04:08:28.750Z",
-  "url": "https://api.odpt.org/api/v4/files/TamaMonorail/data/TamaMonorail-Train-GTFS.zip",
-  "size": 56419,
+  "downloadedAt": "2026-04-23T04:08:31.433Z",
+  "url": "https://api.odpt.org/api/v4/files/TWR/data/TWR-Train-GTFS.zip",
+  "size": 33113,
   "contentType": "application/octet-stream",
-  "durationMs": 1705,
-  "archivePath": "workspace/_archives/gtfs/tama-monorail/TamaMonorail-Train-GTFS_20260423-040830.zip",
+  "durationMs": 1744,
+  "archivePath": "workspace/_archives/gtfs/twr-rinkai/TWR-Train-GTFS_20260423-040833.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
-      "size": 194
+      "size": 172
     },
     {
       "name": "calendar.txt",
@@ -19,47 +19,47 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 837
+      "size": 369
     },
     {
       "name": "fare_attributes.txt",
-      "size": 255
+      "size": 161
     },
     {
       "name": "fare_rules.txt",
-      "size": 4842
+      "size": 838
     },
     {
       "name": "feed_info.txt",
-      "size": 221
+      "size": 208
     },
     {
       "name": "routes.txt",
-      "size": 164
+      "size": 148
     },
     {
       "name": "stop_times.txt",
-      "size": 352120
+      "size": 176688
     },
     {
       "name": "stops.txt",
-      "size": 1092
+      "size": 545
     },
     {
       "name": "translations.txt",
-      "size": 2475
+      "size": 1746
     },
     {
       "name": "trips.txt",
-      "size": 15450
+      "size": 15845
     }
   ],
   "feedInfo": {
-    "publisherName": "多摩都市モノレール",
-    "publisherUrl": "https://www.tama-monorail.co.jp/",
+    "publisherName": "東京臨海高速鉄道",
+    "publisherUrl": "https://www.twr.co.jp/",
     "lang": "ja",
-    "startDate": "20250315",
+    "startDate": "20260314",
     "endDate": "20261231",
-    "version": "20260223"
+    "version": "20260314"
   }
 }
