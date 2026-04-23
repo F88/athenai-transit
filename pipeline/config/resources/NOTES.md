@@ -162,3 +162,31 @@ stop_name の差異パターン (渋66 の調査結果):
 京都市バスの 139路線中 43路線が route_color=000000 (黒)。地図上で路線図が見づらい。routeColorFallbacks の設定、または黒を別の色に置き換える対応が必要。
 
 route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1), FFC0CB (1)
+
+## tama-monorail (多摩モノレール)
+
+- Resource definition: `pipeline/config/resources/gtfs/tama-monorail.ts`
+- CKAN: <https://ckan.odpt.org/dataset/train-tamamonorail>
+- Resource ID: `c72cc2a7-f1d5-41cf-9fac-5545237fd425`
+
+### downloadUrl
+
+- `https://api.odpt.org/api/v4/files/TamaMonorail/data/TamaMonorail-Train-GTFS.zip`
+- `?date=YYYYMMDD` パラメータ不要 (常に最新版を返す形式、mir-train と同パターン)
+- 認証必須 (`acl:consumerKey`)
+
+### route_color
+
+- 1路線のみ (`tmm:1` 多摩モノレール線) で `route_color=286460` (深緑) が設定済み
+- `route_text_color` は空。PR #137 の auto-contrast により表示色が決定される
+- 補足: theme background が白の場合、auto-contrast が選ぶ薄色とのコントラスト比が低くなることがある
+
+### shapes.txt / 路線図対応
+
+- GTFS ZIP に shapes.txt は含まれていない
+- 国土数値情報 (MLIT N02-24 RailroadSection) の鉄道路線データに `多摩都市モノレール` (operator) / `多摩都市モノレール線` (line) が収録されているため、`mlitShapeMapping` 経由で KSJ から shape を生成する (`pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts`)
+- mapping: `多摩都市モノレール線 → tmm:1` (37 segments, 290 points)
+
+### translations.txt
+
+- 翻訳あり (stop_names: 19, agency_names: 1, trip_headsigns: 4, route_long_names: 1)

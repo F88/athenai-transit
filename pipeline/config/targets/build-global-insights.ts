@@ -23,6 +23,7 @@ export default [
   'mir', // mir-train (nippori-toneri liner)
   'yurimo', // yurikamome
   'nsrt', // nagoya-srt
+  'tmm', // tama-monorail
   'vagfr', // vag-freiburg
   'actvnav', // actv-nav
 ];
