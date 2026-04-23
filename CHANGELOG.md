@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.04.23]
+
 ### Added
 
 - `BaseBadge` を追加 (`src/components/badge/base-badge.tsx`)。chip / border / verbose layout を持つ domain-agnostic primitive。Storybook 19 stories。
