@@ -14,8 +14,8 @@ import {
 const STOP_TYPE_CATEGORY_ENTRIES: ReadonlyArray<{ category: RouteTypeCategory; labelKey: string }> =
   [
     { category: 'bus', labelKey: 'panel.toggleBus' },
-    { category: 'subway', labelKey: 'panel.toggleSubway' },
     { category: 'train', labelKey: 'panel.toggleTrain' },
+    { category: 'subway', labelKey: 'panel.toggleSubway' },
     { category: 'others', labelKey: 'panel.toggleOthers' },
   ] as const;
 
