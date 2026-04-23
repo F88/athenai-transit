@@ -19,12 +19,10 @@ export interface LoadResult {
   failed: { prefix: string; error: Error }[];
 }
 
-/** Resolved trip pattern for efficient timetable queries. */
-export interface ResolvedPattern {
-  route: Route;
-  headsign: string;
-  agencyId: string;
-  sourcePrefix: string;
+/** Stop-keyed timetable rows regrouped by trip pattern for snapshot lookup. */
+export interface PatternTimetableEntry {
+  stopId: string;
+  group: TimetableGroupV2Json;
 }
 
 /** Per-source headsign translations, keyed by source prefix. */
@@ -43,8 +41,8 @@ export interface MergedDataV2 {
   routeMap: Map<string, Route>;
   agencyMap: Map<string, Agency>;
   tripPatterns: Map<string, TripPattern>;
-  resolvedPatterns: Map<string, ResolvedPattern>;
   timetable: Record<string, TimetableGroupV2Json[]>;
+  timetableByPattern: Map<string, PatternTimetableEntry[]>;
   calendarServices: CalendarServiceJson[];
   calendarExceptions: Map<string, CalendarExceptionJson[]>;
   stopRouteTypeMap: Map<string, AppRouteTypeValue[]>;

@@ -87,6 +87,11 @@ function createEntry(
       isTerminal: overrides.isTerminal ?? false,
       isOrigin: overrides.isOrigin ?? false,
     },
+    tripLocator: {
+      patternId: `${(overrides.route ?? baseRoute).route_id}__${overrides.headsign ?? tripHeadsignLong.name}`,
+      serviceId: 'story:default',
+      tripIndex: 0,
+    },
     insights: {
       remainingMinutes,
       totalMinutes,

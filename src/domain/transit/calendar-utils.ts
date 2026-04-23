@@ -33,17 +33,6 @@ export function binarySearchFirstGte(sorted: number[], target: number): number {
 }
 
 /**
- * Extract the source prefix from a prefixed ID.
- *
- * @param prefixedId - ID with prefix (e.g. "kobus:123").
- * @returns The prefix portion (e.g. "kobus"), or the full string if no colon.
- */
-export function extractPrefix(prefixedId: string): string {
-  const colonIdx = prefixedId.indexOf(':');
-  return colonIdx >= 0 ? prefixedId.substring(0, colonIdx) : prefixedId;
-}
-
-/**
  * Format a Date as "YYYYMMDD" string for GTFS calendar comparison.
  *
  * @param serviceDate - Date to format.

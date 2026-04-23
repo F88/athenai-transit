@@ -13,8 +13,10 @@ import type {
   CollectionResult,
   Result,
   TimetableResult,
+  TripSnapshotResult,
   UpcomingTimetableResult,
 } from '../types/app/repository';
+import type { TripLocator } from '../types/app/transit-composed';
 
 /**
  * Maximum number of stops that a capped stop query can return.
@@ -271,6 +273,19 @@ export interface TransitRepository {
    * @returns All timetable entries at the stop for the service day.
    */
   getFullDayTimetableEntries(stopId: string, dateTime: Date): Promise<TimetableResult>;
+
+  /**
+   * Reconstructs a whole trip from the minimal repository-side locator.
+   *
+   * This method returns only trip-level data and the full stop list.
+   * Callers that need a current stop can resolve it afterward using
+   * their own selection context.
+   *
+   * @param locator - Repository-specific trip locator.
+   * @param serviceDate - Service day context for accurate time interpretation.
+   * @returns Whole-trip payload, or an error when reconstruction is unavailable.
+   */
+  getTripSnapshot(locator: TripLocator, serviceDate: Date): TripSnapshotResult;
 
   /**
    * Returns a single stop with metadata by its GTFS stop_id, against

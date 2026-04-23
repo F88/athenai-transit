@@ -27,13 +27,17 @@ import type {
   StopServiceType,
   StopWithMeta,
   TimetableEntry,
+  TripLocator,
+  TripStopTime,
   TripPattern,
+  TripSnapshot,
 } from '../../types/app/transit-composed';
 import type {
   CollectionResult,
   Result,
   TimetableQueryMeta,
   TimetableResult,
+  TripSnapshotResult,
   UpcomingTimetableResult,
 } from '../../types/app/repository';
 import type { TransitDataSourceV2 } from '../../datasources/transit-data-source-v2';
@@ -53,6 +57,7 @@ import {
   computeActiveServiceIds,
   formatDateKey,
 } from '../../domain/transit/calendar-utils';
+import { extractPrefix } from '../../domain/transit/prefixed-id';
 import { mergeSourcesV2 } from './merge-sources-v2';
 import { fetchSourcesV2 } from './fetch-sources-v2';
 import { enrichStopInsights } from './enrich-stop-insights';
@@ -61,7 +66,6 @@ import type {
   LoadResult,
   MergedDataV2,
   PatternStatsEntry,
-  ResolvedPattern,
   RouteFreqEntry,
   StopInsightsEntry,
 } from './types';
@@ -90,12 +94,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private readonly stopsMetaMap: Map<string, StopWithMeta>;
   private readonly routeMap: Map<string, Route>;
   private readonly agencyMap: Map<string, Agency>;
-  private readonly resolvedPatterns: Map<string, ResolvedPattern>;
   private readonly tripPatterns: Map<string, TripPattern>;
   private readonly stopRouteTypeMap: Map<string, AppRouteTypeValue[]>;
   private readonly calendarServices: CalendarServiceJson[];
   private readonly calendarExceptions: Map<string, CalendarExceptionJson[]>;
   private readonly timetable: Record<string, TimetableGroupV2Json[]>;
+  private readonly timetableByPattern: MergedDataV2['timetableByPattern'];
   private readonly headsignTranslations: HeadsignTranslationsByPrefix;
   private readonly sourceMetas: SourceMeta[];
 
@@ -115,12 +119,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     this.stopsMetaMap = merged.stopsMetaMap;
     this.routeMap = merged.routeMap;
     this.agencyMap = merged.agencyMap;
-    this.resolvedPatterns = merged.resolvedPatterns;
     this.tripPatterns = merged.tripPatterns;
     this.stopRouteTypeMap = merged.stopRouteTypeMap;
     this.calendarServices = merged.calendarServices;
     this.calendarExceptions = merged.calendarExceptions;
     this.timetable = merged.timetable;
+    this.timetableByPattern = merged.timetableByPattern;
     this.headsignTranslations = merged.headsignTranslations;
     this.sourceMetas = merged.sourceMetas;
   }
@@ -211,11 +215,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
       if (insights.tripPatternGeo) {
         for (const [patternId, geo] of Object.entries(insights.tripPatternGeo.data)) {
-          const resolved = this.resolvedPatterns.get(patternId);
-          if (!resolved) {
+          const route = this.resolveRouteByPatternId(patternId);
+          if (!route) {
             continue;
           }
-          const routeId = resolved.route.route_id;
+          const routeId = route.route_id;
           if (!routeGeo.has(routeId)) {
             routeGeo.set(routeId, { pathDist: geo.pathDist, isCircular: geo.cl });
           }
@@ -226,11 +230,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const serviceGroups = insights.serviceGroups.data;
         for (const [groupKey, groupStats] of Object.entries(insights.tripPatternStats.data)) {
           for (const [patternId, stats] of Object.entries(groupStats)) {
-            const resolved = this.resolvedPatterns.get(patternId);
-            if (!resolved) {
+            const route = this.resolveRouteByPatternId(patternId);
+            if (!route) {
               continue;
             }
-            const routeId = resolved.route.route_id;
+            const routeId = route.route_id;
 
             let entry = this.routeFreqMap.get(routeId);
             if (!entry) {
@@ -254,11 +258,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
           const statsForGroup = insights.tripPatternStats.data[firstGroupKey];
           if (statsForGroup) {
             for (const [patternId, stats] of Object.entries(statsForGroup)) {
-              const resolved = this.resolvedPatterns.get(patternId);
-              if (!resolved) {
+              const route = this.resolveRouteByPatternId(patternId);
+              if (!route) {
                 continue;
               }
-              const routeId = resolved.route.route_id;
+              const routeId = route.route_id;
               const current = routeFreq.get(routeId) ?? 0;
               routeFreq.set(routeId, current + stats.freq);
             }
@@ -399,13 +403,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const entries: ContextualTimetableEntry[] = [];
 
     for (const group of timetableGroups) {
-      const resolved = this.resolvedPatterns.get(group.tp);
-      if (!resolved) {
-        continue;
-      }
-
       const pattern = this.tripPatterns.get(group.tp);
       if (!pattern) {
+        continue;
+      }
+      const route = this.routeMap.get(pattern.route_id);
+      if (!route) {
         continue;
       }
       const totalStops = pattern.stops.length;
@@ -436,11 +439,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
           const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
           const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
           entries.push({
+            tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
             schedule: {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
             },
-            routeDirection: this.resolveRouteDirection(resolved, pattern, stopIndex),
+            routeDirection: this.resolveRouteDirection(route, pattern, stopIndex),
             boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
@@ -482,11 +486,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
           const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
           const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
           entries.push({
+            tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
             schedule: {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
             },
-            routeDirection: this.resolveRouteDirection(resolved, pattern, stopIndex),
+            routeDirection: this.resolveRouteDirection(route, pattern, stopIndex),
             boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
@@ -537,13 +542,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const entries: TimetableEntry[] = [];
 
     for (const group of timetableGroups) {
-      const resolved = this.resolvedPatterns.get(group.tp);
-      if (!resolved) {
-        continue;
-      }
-
       const pattern = this.tripPatterns.get(group.tp);
       if (!pattern) {
+        continue;
+      }
+      const route = this.routeMap.get(pattern.route_id);
+      if (!route) {
         continue;
       }
       const totalStops = pattern.stops.length;
@@ -566,7 +570,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
             },
-            routeDirection: this.resolveRouteDirection(resolved, pattern, stopIndex),
+            routeDirection: this.resolveRouteDirection(route, pattern, stopIndex),
             boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
@@ -574,6 +578,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               isTerminal: isTerminalPosition,
               isOrigin: stopIndex === 0,
             },
+            tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
             ...(tripInsights !== undefined ? { insights: tripInsights } : {}),
           });
         }
@@ -590,6 +595,72 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       totalEntries: entries.length,
     };
     return Promise.resolve({ success: true, data: entries, truncated: false, meta });
+  }
+
+  getTripSnapshot(locator: TripLocator, serviceDate: Date): TripSnapshotResult {
+    const pattern = this.tripPatterns.get(locator.patternId);
+    if (!pattern) {
+      return { success: false, error: `Unknown trip pattern: ${locator.patternId}` };
+    }
+    const route = this.routeMap.get(pattern.route_id);
+    if (!route) {
+      return { success: false, error: `Unknown route for trip pattern: ${locator.patternId}` };
+    }
+
+    const stopTimes: TripStopTime[] = [];
+    for (const { stopId, group } of this.timetableByPattern.get(locator.patternId) ?? []) {
+      const departures = group.d[locator.serviceId];
+      if (!departures || locator.tripIndex >= departures.length) {
+        continue;
+      }
+
+      const arrivals = group.a?.[locator.serviceId];
+      const pickupTypes = group.pt?.[locator.serviceId];
+      const dropOffTypes = group.dt?.[locator.serviceId];
+      stopTimes.push({
+        stopMeta: this.stopsMetaMap.get(stopId),
+        routeTypes: this.stopRouteTypeMap.get(stopId) ?? [],
+        timetableEntry: {
+          tripLocator: locator,
+          schedule: {
+            departureMinutes: departures[locator.tripIndex],
+            arrivalMinutes: arrivals?.[locator.tripIndex] ?? departures[locator.tripIndex],
+          },
+          routeDirection: this.resolveRouteDirection(route, pattern, group.si),
+          boarding: {
+            pickupType: (pickupTypes?.[locator.tripIndex] ?? 0) as StopServiceType,
+            dropOffType: (dropOffTypes?.[locator.tripIndex] ?? 0) as StopServiceType,
+          },
+          patternPosition: {
+            stopIndex: group.si,
+            totalStops: pattern.stops.length,
+            isTerminal: group.si === pattern.stops.length - 1,
+            isOrigin: group.si === 0,
+          },
+        },
+      });
+    }
+
+    stopTimes.sort(
+      (a, b) =>
+        a.timetableEntry.patternPosition.stopIndex - b.timetableEntry.patternPosition.stopIndex,
+    );
+    if (stopTimes.length === 0) {
+      return {
+        success: false,
+        error: `No trip snapshot rows for pattern=${locator.patternId} service=${locator.serviceId} index=${locator.tripIndex}`,
+      };
+    }
+
+    const snapshot: TripSnapshot = {
+      locator,
+      serviceDate,
+      route,
+      tripHeadsign: this.resolveRouteDirection(route, pattern, 0).tripHeadsign,
+      direction: pattern.direction,
+      stopTimes,
+    };
+    return { success: true, data: snapshot };
   }
 
   getRouteTypesForStop(stopId: string): Promise<Result<AppRouteTypeValue[]>> {
@@ -743,18 +814,26 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return { remainingMinutes, totalMinutes: rd[0], freq };
   }
 
+  private resolveRouteByPatternId(patternId: string): Route | undefined {
+    const pattern = this.tripPatterns.get(patternId);
+    if (!pattern) {
+      return undefined;
+    }
+    return this.routeMap.get(pattern.route_id);
+  }
+
   private resolveRouteDirection(
-    resolved: ResolvedPattern,
+    route: Route,
     pattern: TripPattern,
     stopIndex: number,
   ): RouteDirection {
     const stop = pattern.stops[stopIndex];
-    const src = this.headsignTranslations.get(resolved.sourcePrefix);
+    const src = this.headsignTranslations.get(extractPrefix(route.agency_id));
     return {
-      route: resolved.route,
+      route,
       tripHeadsign: {
-        name: resolved.headsign,
-        names: src?.trip_headsigns[resolved.headsign] ?? {},
+        name: pattern.headsign,
+        names: src?.trip_headsigns[pattern.headsign] ?? {},
       },
       stopHeadsign:
         stop.headsign != null

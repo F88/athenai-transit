@@ -1416,13 +1416,20 @@ export function createEntry(
   }> = {},
 ): ContextualTimetableEntry {
   const depMin = overrides.departureMinutes ?? 870; // 14:30
+  const route = overrides.route ?? busRoute;
+  const headsign = overrides.tripHeadsign?.name ?? overrides.headsign ?? '中野駅';
   return {
+    tripLocator: {
+      patternId: `${route.route_id}__${headsign}`,
+      serviceId: 'story:default',
+      tripIndex: 0,
+    },
     schedule: {
       departureMinutes: depMin,
       arrivalMinutes: overrides.arrivalMinutes ?? depMin,
     },
     routeDirection: createRouteDirection({
-      route: overrides.route,
+      route,
       tripHeadsign:
         overrides.tripHeadsign ??
         (overrides.headsign != null ? { name: overrides.headsign, names: {} } : undefined),

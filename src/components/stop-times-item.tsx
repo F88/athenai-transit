@@ -36,6 +36,8 @@ interface StopTimesItemProps {
   /** Maximum number of stop times to display. Defaults to 3. */
   maxDisplay?: number;
   onShowTimetable?: (routeId: string, headsign: string) => void;
+  /** Optional callback for inspecting one concrete trip. */
+  onInspectTrip?: (entry: ContextualTimetableEntry) => void;
 }
 
 export function StopTimesItem({
@@ -48,6 +50,7 @@ export function StopTimesItem({
   showAgency = false,
   maxDisplay = 3,
   onShowTimetable,
+  onInspectTrip,
 }: StopTimesItemProps) {
   const { t } = useTranslation();
   const showVerbose = infoLevel === 'verbose';
@@ -114,22 +117,42 @@ export function StopTimesItem({
               because relative alone (e.g. "あと400分") is hard to interpret.
               Per Issue #47 / Alt F, each time renders its own per-stop-time
               attribute labels (TERM/ORIG/noPickup/noDropOff) inline. */}
-          {displayEntries.map((entry, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-0.5 text-sm font-bold whitespace-nowrap text-[#757575] dark:text-gray-400"
-            >
-              {formatAbsoluteTime(displayTimes[i])}
-              <TimetableEntryAttributesLabels
-                attributes={getTimetableEntryAttributes(entry)}
-                size="xs"
-                isDisplayTerminal
-                isDisplayOrigin
-                isDisplayPickupUnavailable
-                isDisplayDropOffUnavailable
-              />
-            </span>
-          ))}
+          {displayEntries.map((entry, i) => {
+            const content = (
+              <>
+                {formatAbsoluteTime(displayTimes[i])}
+                <TimetableEntryAttributesLabels
+                  attributes={getTimetableEntryAttributes(entry)}
+                  size="xs"
+                  isDisplayTerminal
+                  isDisplayOrigin
+                  isDisplayPickupUnavailable
+                  isDisplayDropOffUnavailable
+                />
+              </>
+            );
+
+            return onInspectTrip ? (
+              <button
+                key={i}
+                type="button"
+                className="inline-flex cursor-pointer items-center gap-0.5 text-sm font-bold whitespace-nowrap text-[#757575] dark:text-gray-400"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onInspectTrip(entry);
+                }}
+              >
+                {content}
+              </button>
+            ) : (
+              <span
+                key={i}
+                className="inline-flex items-center gap-0.5 text-sm font-bold whitespace-nowrap text-[#757575] dark:text-gray-400"
+              >
+                {content}
+              </span>
+            );
+          })}
         </div>
         {onShowTimetable && (
           <button

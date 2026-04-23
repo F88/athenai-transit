@@ -5,7 +5,7 @@
  * {@link TransitRepository} methods.
  */
 
-import type { ContextualTimetableEntry, TimetableEntry } from './transit-composed';
+import type { ContextualTimetableEntry, TimetableEntry, TripSnapshot } from './transit-composed';
 
 /**
  * Result for single-value queries.
@@ -95,3 +95,6 @@ export type UpcomingTimetableResult =
       meta: TimetableQueryMeta;
     }
   | { success: false; error: string };
+
+/** Result for repository-provided whole-trip reconstruction. */
+export type TripSnapshotResult = Result<TripSnapshot>;

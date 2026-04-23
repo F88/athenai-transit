@@ -23,9 +23,15 @@ function makeEntry(options: {
   stopHeadsign?: string;
   departureMinutes?: number;
 }): TimetableEntry {
+  const route = makeRoute();
   return {
+    tripLocator: {
+      patternId: `${route.route_id}__${options.tripHeadsign}`,
+      serviceId: 'test',
+      tripIndex: 0,
+    },
     routeDirection: {
-      route: makeRoute(),
+      route,
       tripHeadsign: { name: options.tripHeadsign, names: {} },
       ...(options.stopHeadsign !== undefined
         ? {

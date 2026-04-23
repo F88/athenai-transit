@@ -3,7 +3,7 @@ import type { LatLng } from '../types/app/map';
 import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
-import type { StopWithContext } from '../types/app/transit-composed';
+import type { ContextualTimetableEntry, StopWithContext } from '../types/app/transit-composed';
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
@@ -69,6 +69,8 @@ export interface BottomSheetProps {
   onShowStopTimetable?: (stopId: string) => void;
   /** Toggle anchor (bookmark) status for a stop. */
   onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
+  /** Optional callback for inspecting one concrete trip. */
+  onInspectTrip?: (entry: ContextualTimetableEntry) => void;
   /** Collapsed-state height class applied to the sheet root. */
   collapsedHeightClassName?: string;
   /** Expanded-state height class applied to the sheet root. */
@@ -94,6 +96,7 @@ export function BottomSheet({
   onShowTimetable,
   onShowStopTimetable,
   onToggleAnchor,
+  onInspectTrip,
   collapsedHeightClassName = 'h-[40dvh]',
   expandedHeightClassName = 'h-[70dvh]',
   expanded: expandedProp,
@@ -315,6 +318,7 @@ export function BottomSheet({
         onShowTimetable={onShowTimetable}
         onShowStopTimetable={onShowStopTimetable}
         onToggleAnchor={onToggleAnchor}
+        onInspectTrip={onInspectTrip}
       />
     </div>
   );

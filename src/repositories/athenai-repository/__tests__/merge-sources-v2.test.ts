@@ -91,14 +91,34 @@ describe('mergeSourcesV2', () => {
     expect(mergedRoute!.route_text_color).toBe('FFFFFF');
   });
 
-  it('builds resolvedPatterns from tripPatterns', () => {
+  it('keeps tripPatterns route ids resolvable via routeMap', () => {
     const fixture = createFixtureV2();
     const merged = mergeSourcesV2([fixture]);
-    expect(merged.resolvedPatterns.size).toBe(13);
-    const subN = merged.resolvedPatterns.get('tp_sub_n');
+    expect(merged.tripPatterns.size).toBe(13);
+    const subN = merged.tripPatterns.get('tp_sub_n');
     expect(subN).toBeDefined();
-    expect(subN!.route.route_id).toBe('route_subway');
-    expect(subN!.headsign).toBe('Nishi-takashimadaira');
+    const route = merged.routeMap.get(subN!.route_id);
+    expect(route).toBeDefined();
+    expect(route!.route_id).toBe('route_subway');
+    expect(route!.agency_id).toBe('test:agency');
+  });
+
+  it('builds timetableByPattern during timetable merge', () => {
+    const fixture = createFixtureV2();
+    const merged = mergeSourcesV2([fixture]);
+
+    const entries = merged.timetableByPattern.get('tp_bus_c');
+    expect(entries).toBeDefined();
+    expect(
+      entries
+        ?.map(({ stopId, group }) => ({ stopId, stopIndex: group.si }))
+        .sort((a, b) => a.stopIndex - b.stopIndex),
+    ).toEqual([
+      { stopId: 'bus_01', stopIndex: 0 },
+      { stopId: 'bus_02', stopIndex: 1 },
+      { stopId: 'bus_03', stopIndex: 2 },
+      { stopId: 'bus_01', stopIndex: 3 },
+    ]);
   });
 
   it('builds stopRouteTypeMap via tripPattern FK', () => {

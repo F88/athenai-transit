@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   binarySearchFirstGte,
   computeActiveServiceIds,
-  extractPrefix,
   formatDateKey,
   getDayIndex,
   minutesToDate,
@@ -42,28 +41,6 @@ describe('binarySearchFirstGte', () => {
     expect(binarySearchFirstGte([10], 10)).toBe(0);
     expect(binarySearchFirstGte([10], 5)).toBe(0);
     expect(binarySearchFirstGte([10], 15)).toBe(1);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// extractPrefix
-// ---------------------------------------------------------------------------
-
-describe('extractPrefix', () => {
-  it('extracts prefix before colon', () => {
-    expect(extractPrefix('kobus:123')).toBe('kobus');
-  });
-
-  it('returns full string when no colon', () => {
-    expect(extractPrefix('kobus')).toBe('kobus');
-  });
-
-  it('handles prefix with hyphen and underscore', () => {
-    expect(extractPrefix('keio-bus:route_1')).toBe('keio-bus');
-  });
-
-  it('handles empty prefix before colon', () => {
-    expect(extractPrefix(':123')).toBe('');
   });
 });
 

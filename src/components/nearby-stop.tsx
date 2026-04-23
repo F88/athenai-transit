@@ -42,6 +42,8 @@ export interface NearbyStopProps {
   onShowStopTimetable?: (stopId: string) => void;
   /** Toggle anchor (bookmark) status for this stop. */
   onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
+  /** Optional callback for inspecting one concrete trip. */
+  onInspectTrip?: (entry: StopWithContext['stopTimes'][number]) => void;
 }
 
 interface NearbyStopActionButtonsProps {
@@ -118,6 +120,7 @@ export function NearbyStop({
   onShowTimetable,
   onShowStopTimetable,
   onToggleAnchor,
+  onInspectTrip,
 }: NearbyStopProps) {
   const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
@@ -234,6 +237,7 @@ export function NearbyStop({
                       (a) => a.agency_id === entry.routeDirection.route.agency_id,
                     )}
                     showAgency={showAgency}
+                    onInspectTrip={onInspectTrip}
                   />
                 ))
             : grouped.map(([key, entries]) => (
@@ -253,6 +257,7 @@ export function NearbyStop({
                       ? (routeId, headsign) => onShowTimetable(stop.stop_id, routeId, headsign)
                       : undefined
                   }
+                  onInspectTrip={onInspectTrip}
                 />
               ));
         })()

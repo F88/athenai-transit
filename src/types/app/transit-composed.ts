@@ -303,6 +303,85 @@ export interface RouteDirection {
 }
 
 /**
+ * Internal locator for reconstructing a specific trip instance from runtime timetable data.
+ *
+ * The runtime app data does not currently expose GTFS `trip_id`, so repositories use this
+ * locator to identify one concrete run within a trip pattern.
+ */
+export interface TripLocator {
+  /** Repository-specific trip pattern identifier. */
+  patternId: string;
+  /** Service identifier used by the timetable arrays. */
+  serviceId: string;
+  /** Zero-based index into the aligned timetable arrays for this service. */
+  tripIndex: number;
+}
+
+/** One reconstructed stop-time record inside a trip snapshot. */
+export interface TripStopTime {
+  /**
+   * Enriched stop metadata for this stop-time position when it can be resolved.
+   *
+   * Optional because trip reconstruction may still succeed even when stop-level
+   * metadata cannot be resolved logically from the merged stop index.
+   * Consumers must treat this as an enrichment layer and fall back to
+   * `timetableEntry` when rendering required trip information.
+   */
+  stopMeta?: StopWithMeta;
+
+  /** Route types serving this stop, precomputed for UI convenience. */
+  routeTypes: AppRouteTypeValue[];
+
+  /**
+   * Core stop-time event reconstructed from timetable data.
+   *
+   * This is the canonical source for schedule, boarding, headsign, and
+   * pattern-position fields when `stopMeta` is unavailable.
+   */
+  timetableEntry: TimetableEntry;
+}
+
+/**
+ * Reconstructed whole-trip payload for a selected timetable entry.
+ *
+ * This is an app-level runtime snapshot, not a direct representation of one
+ * GTFS `trips.txt` row. The repository rebuilds it from multiple sources:
+ *
+ * - {@link TripLocator} identifies the concrete runtime trip instance.
+ * - {@link WithServiceDate} provides the GTFS service day needed to interpret
+ *   minutes-from-midnight values, including overnight trips.
+ * - `route`, `tripHeadsign`, and `direction` provide trip-level metadata
+ *   derived from the merged route/trip-pattern model.
+ * - `stopTimes` contains the full stop sequence reconstructed from timetable
+ *   rows and trip pattern positions, with optional stop metadata enrichment.
+ *
+ * Because this type is reconstructed for app use, it must not be treated as a
+ * mirror of GTFS `trips.txt`. Fields that exist in raw GTFS but are not
+ * emitted into app-data-v2 (for example `trip_short_name`) will not appear
+ * here unless the repository explicitly models them.
+ */
+export interface TripSnapshot extends WithServiceDate {
+  /** Locator used to reconstruct this trip instance. */
+  locator: TripLocator;
+  /** Route serving this trip. */
+  route: Route;
+  /** Trip-level headsign with translations. */
+  tripHeadsign: TranslatableText;
+  /** Direction ID when the source provides one. */
+  direction?: 0 | 1;
+
+  stopTimes: TripStopTime[];
+}
+
+/** Reconstructed whole-trip payload enriched with the currently selected stop event. */
+export interface SelectedTripSnapshot extends TripSnapshot {
+  /** Current stop index of the selected entry. */
+  currentStopIndex: number;
+  /** Stop-level record corresponding to the clicked entry. */
+  selectedStop: TripStopTime;
+}
+
+/**
  * A single entry in a stop's timetable.
  *
  * A single entry in a stop's timetable with arrival time,
@@ -312,6 +391,9 @@ export interface RouteDirection {
  * {@link ContextualTimetableEntry} which extends this with serviceDate.
  */
 export interface TimetableEntry {
+  /** Minimal locator for reconstructing the concrete trip instance for this entry. */
+  readonly tripLocator: TripLocator;
+
   /** Schedule: departure and arrival times. */
   schedule: {
     /** Departure minutes from midnight of the service day. */
