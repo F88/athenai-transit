@@ -88,6 +88,7 @@
     "minutes": "分",
     "arriving": "",
     "arrivingAbsolute": "着",
+    "departingAbsolute": "発",
     "terminal": "終点",
     "noBoarding": "乗車不可"
   },
@@ -165,6 +166,28 @@
       "search": "のりばを検索",
       "help": "ショートカット一覧を表示",
       "close": "ダイアログを閉じる"
+    }
+  },
+  "tripInspection": {
+    "title": "Trip info",
+    "description": "選択した便の停車順と時刻を表示します",
+    "sections": {
+      "summary": "概要",
+      "selectedStop": "選択中の stop",
+      "stops": "全 stop"
+    },
+    "fields": {
+      "route": "Route",
+      "headsign": "Headsign",
+      "position": "位置",
+      "tripSpan": "区間",
+      "stop": "Stop",
+      "stopId": "Stop ID",
+      "arrival": "Arrival",
+      "departure": "Departure"
+    },
+    "values": {
+      "none": "なし"
     }
   }
 }
