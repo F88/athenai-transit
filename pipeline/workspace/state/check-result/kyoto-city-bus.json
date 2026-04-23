@@ -1,14 +1,10 @@
 {
   "sourceName": "kyoto-city-bus",
-  "checkedAt": "2026-04-22T05:42:25.878Z",
+  "checkedAt": "2026-04-23T01:18:09.359Z",
   "resourceUrls": [
-    "https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20260422"
+    "https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20260423"
   ],
-  "result": "critical",
-  "warnings": [
-    "REMOTE_NEW_IN_PERIOD"
-  ],
-  "errors": [
-    "ADOPTED_MISSING"
-  ]
+  "result": "ok",
+  "warnings": [],
+  "errors": []
 }
