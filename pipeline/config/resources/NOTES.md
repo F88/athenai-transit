@@ -181,9 +181,11 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 - `route_text_color` は空。PR #137 の auto-contrast により表示色が決定される
 - 補足: theme background が白の場合、auto-contrast が選ぶ薄色とのコントラスト比が低くなることがある
 
-### shapes.txt
+### shapes.txt / 路線図対応
 
-- GTFS ZIP に shapes.txt が含まれていない (路線図非対応)
+- GTFS ZIP に shapes.txt は含まれていない
+- 国土数値情報 (MLIT N02-24 RailroadSection) の鉄道路線データに `多摩都市モノレール` (operator) / `多摩都市モノレール線` (line) が収録されているため、`mlitShapeMapping` 経由で KSJ から shape を生成する (`pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts`)
+- mapping: `多摩都市モノレール線 → tmm:1` (37 segments, 290 points)
 
 ### translations.txt
 
