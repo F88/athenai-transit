@@ -38,10 +38,6 @@ import { SUPPORTED_LANGS } from './config/supported-langs';
 import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
 import { getStopDisplayNames } from './domain/transit/get-stop-display-names';
 import { formatDateParts } from './utils/datetime';
-import {
-  buildTripInspectionStopsLog,
-  buildTripInspectionSummaryLog,
-} from './utils/trip-inspection-log';
 import { resolveLangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
@@ -561,8 +557,8 @@ export default function App({ loadResult }: AppProps) {
         selectedStop,
       };
 
-      logger.debug(buildTripInspectionSummaryLog(snapshot), snapshot);
-      logger.debug(buildTripInspectionStopsLog(snapshot));
+      // logger.debug(buildTripInspectionSummaryLog(snapshot), snapshot);
+      // logger.debug(buildTripInspectionStopsLog(snapshot));
       setTripInspectionSnapshot(snapshot);
     },
     [repo],
