@@ -12,6 +12,8 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Added
 
 - Introduce `BaseBadge` (`src/components/badge/base-badge.tsx`), a domain-agnostic primitive that owns the chip rendering, optional border, and verbose layout (IdBadge alongside the chip plus a detail panel below). Verbose concerns are grouped into a single `verboseExtras?: { enabled?, idLabel?, slot? }` prop, gated by `infoLevel === 'verbose'` AND `enabled`. Storybook coverage ships size / color / border / verbose variants plus a dedicated `BorderComparison` matrix across eight fills (19 stories).
+- Pipeline: 多摩モノレール (多摩都市モノレール株式会社) の GTFS データソースを追加。prefix `tmm`、`route_type=12 (monorail)`。`?date=` パラメータ無しの常時最新版 URL 形式 (mir-train と同パターン)。19 stops / 1 route / 1 agency。`shapes.txt` を含まないため路線図非対応。
+- About: 多摩モノレール のクレジット・データ情報を追加。
 
 ### Changed
 
