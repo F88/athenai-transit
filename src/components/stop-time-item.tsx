@@ -1,14 +1,11 @@
-import { useInfoLevel } from '@/hooks/use-info-level';
-import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import { AbsoluteStopTime } from '@/components/absolute-stop-time';
+import { LOW_CONTRAST_BADGE_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
 import {
   getContrastAdjustedRouteColors,
   resolveRouteColors,
 } from '@/domain/transit/color-resolver/route-colors';
-import {
-  LOW_CONTRAST_BADGE_MIN_RATIO,
-  LOW_CONTRAST_TEXT_MIN_RATIO,
-} from '@/domain/transit/color-resolver/contrast-thresholds';
+import { useInfoLevel } from '@/hooks/use-info-level';
+import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import { minutesToDate } from '../domain/transit/calendar-utils';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
@@ -16,12 +13,9 @@ import { getDisplayMinutes } from '../domain/transit/timetable-utils';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
-import { getContrastAwareAlphaSuffixes } from '@/utils/color/contrast-alpha-suffixes';
-import { JourneyTimeBar } from './journey-time-bar';
 import { BaseLabel } from './label/base-label';
-import { TripPositionIndicator } from './label/trip-position-indicator';
 import { RelativeTime } from './relative-time';
-import { TripInfo } from './trip-info';
+import { StopTimeItemRichInfo } from './stop-time-item-rich-info';
 import { VerboseContextualTimetableEntry } from './verbose/verbose-contextual-timetable-entry';
 
 interface StopTimeItemProps {
@@ -92,17 +86,6 @@ export function StopTimeItem({
     routeColorAssessment.isLowContrast,
     'css-hex',
   );
-  const adjustedColorAssessment = useThemeContrastAssessment(
-    contrastAdjustedRouteColors.color,
-    LOW_CONTRAST_TEXT_MIN_RATIO,
-  );
-
-  // Compute accent colors for the position indicator based on the route color's contrast ratio.
-  const { subtleAlphaSuffix, emphasisAlphaSuffix } = getContrastAwareAlphaSuffixes(
-    adjustedColorAssessment.ratio,
-  );
-  const emphasisAccentColor = `${contrastAdjustedRouteColors.color}${emphasisAlphaSuffix}`;
-  const subtleAccentColor = `${contrastAdjustedRouteColors.color}${subtleAlphaSuffix}`;
 
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
@@ -182,61 +165,15 @@ export function StopTimeItem({
           </div>
         )}
 
-        <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-          {info.isNormalEnabled && (
-            <div className="mb-0.5 flex min-w-0 items-center gap-1">
-              <div className="min-w-0 flex-1">
-                <TripPositionIndicator
-                  stopIndex={entry.patternPosition.stopIndex}
-                  totalStops={entry.patternPosition.totalStops}
-                  size={info.isDetailedEnabled ? 'md' : info.isNormalEnabled ? 'xs' : 'xs'}
-                  showEmoji={info.isVerboseEnabled}
-                  showTrack={info.isNormalEnabled}
-                  trackColor={subtleAccentColor}
-                  dotColor={emphasisAccentColor}
-                  currentColor={contrastAdjustedRouteColors.color}
-                  trackBorderColor={contrastAdjustedRouteColors.color}
-                  showTrackBorder={false}
-                  showPositionLabel={info.isVerboseEnabled}
-                  labelTextColor={contrastAdjustedRouteColors.textColor}
-                  labelBgColor={contrastAdjustedRouteColors.color}
-                />
-              </div>
-            </div>
-          )}
-
-          {info.isDetailedEnabled && (
-            <JourneyTimeBar
-              remainingMinutes={entry.insights?.remainingMinutes}
-              totalMinutes={entry.insights?.totalMinutes}
-              size={info.isDetailedEnabled ? 'md' : 'sm'}
-              showEmoji={info.isVerboseEnabled}
-              fillColor={contrastAdjustedRouteColors.color}
-              unfilledColor={emphasisAccentColor}
-              showRMins={info.isVerboseEnabled}
-              showTMins={info.isVerboseEnabled}
-              minsPosition="right"
-              fillDirection="rtl"
-              borderColor={contrastAdjustedRouteColors.color}
-              minsTextColor={contrastAdjustedRouteColors.textColor}
-              minsBgColor={contrastAdjustedRouteColors.color}
-              showBorder={false}
-            />
-          )}
-
-          <div className="min-w-0">
-            <TripInfo
-              size="md"
-              routeDirection={entry.routeDirection}
-              infoLevel={infoLevel}
-              dataLang={dataLang}
-              showRouteTypeIcon={showRouteTypeIcon}
-              agency={agency}
-              showAgency={showAgency}
-              attributes={attributes}
-            />
-          </div>
-        </div>
+        <StopTimeItemRichInfo
+          entry={entry}
+          infoLevel={infoLevel}
+          dataLang={dataLang}
+          showRouteTypeIcon={showRouteTypeIcon}
+          agency={agency}
+          showAgency={showAgency}
+          attributes={attributes}
+        />
       </div>
       {showVerbose && <VerboseContextualTimetableEntry entry={entry} />}
     </div>

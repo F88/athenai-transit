@@ -892,6 +892,7 @@ export default function App({ loadResult }: AppProps) {
       <TripInspectionDialog
         open={tripInspectionSnapshot !== null}
         snapshot={tripInspectionSnapshot}
+        now={dateTime}
         infoLevel={settings.infoLevel}
         dataLang={dataLang}
         onOpenChange={(open) => {
