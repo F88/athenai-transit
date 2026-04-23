@@ -24,6 +24,7 @@ export default [
   'mir-train',
   'nagoya-srt',
   'tama-monorail',
+  'twr-rinkai',
   'vag-freiburg',
   'actv-nav',
 ];

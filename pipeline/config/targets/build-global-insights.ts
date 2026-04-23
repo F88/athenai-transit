@@ -24,6 +24,7 @@ export default [
   'yurimo', // yurikamome
   'nsrt', // nagoya-srt
   'tmm', // tama-monorail
+  'twrr', // twr-rinkai
   'vagfr', // vag-freiburg
   'actvnav', // actv-nav
 ];

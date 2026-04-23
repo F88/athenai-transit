@@ -190,3 +190,44 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 ### translations.txt
 
 - 翻訳あり (stop_names: 19, agency_names: 1, trip_headsigns: 4, route_long_names: 1)
+
+## twr-rinkai (りんかい線 / 東京臨海高速鉄道)
+
+- Resource definition: `pipeline/config/resources/gtfs/twr-rinkai.ts`
+- CKAN: <https://ckan.odpt.org/dataset/train-twr>
+- Resource ID: `f1953807-47da-4540-94bd-26c391e5caef`
+
+### downloadUrl
+
+- `https://api.odpt.org/api/v4/files/TWR/data/TWR-Train-GTFS.zip`
+- `?date=YYYYMMDD` パラメータ不要 (常に最新版を返す形式、mir-train / tama-monorail と同パターン)
+- 認証必須 (`acl:consumerKey`)
+
+### route_color
+
+- 1 路線のみ (`twrr:1` りんかい線) で `route_color=222D65` (deep navy) が設定済み
+- `route_text_color` は空。PR #137 の auto-contrast により表示色が決定される
+- 補足: provider/agency のブランドカラー (`#00418E` cobalt blue) とは別。route_color は GTFS データに従い viewer 哲学のまま保持
+
+### shapes.txt / 路線図対応
+
+- GTFS ZIP に shapes.txt は含まれていない
+- 国土数値情報 (MLIT N02-24 RailroadSection) に `東京臨海高速鉄道` (operator) / `臨海副都心線` (line、GTFS の通称「りんかい線」と異なる正式路線名) が収録されているため、`mlitShapeMapping` 経由で KSJ から shape を生成
+- mapping: `臨海副都心線 → twrr:1` (15 segments, 109 points)
+
+### stop_headsign
+
+- 全 stop_times row で空 (8 駅 1 路線の単線往復で、中間駅で行先案内を切り替えるパターンが無いため)
+- `translations.txt` にも 0 entries
+
+### trip_headsign / JR 直通
+
+- trip_headsign は 8 種類: りんかい線内 (大崎 / 新木場 / 東京テレポート) と JR 埼京線・川越線直通先 (大宮 / 川越 / 武蔵浦和 / 池袋 / 赤羽)
+- GTFS の trip 自体は自社運行範囲 (新木場 〜 大崎) で完結するが、trip_headsign は実際の最終目的地を示す。データ上の terminal stop (大崎等) と headsign が一致しないことがある (例: stop=大崎 / headsign=川越)
+- これは事業者の運行実態 (相互直通運転) を反映した正常データ
+
+### route_type と地下鉄区間
+
+- GTFS の `route_type=2` (Rail) で 1 路線として扱われる
+- 実態は東京テレポート以南が地下区間 (= subway として認識する利用者もいる) だが、GTFS データは subway (=1) ではなく rail (=2)
+- App 側 `data-source-settings.ts` の `routeTypes: [1, 2]` でメタデータ的に地下鉄/普通鉄道両方として扱う (将来の Source 選択 UI で両方のフィルタに表示するため)。実フィルタは GTFS 由来の `route_type=2` のみ

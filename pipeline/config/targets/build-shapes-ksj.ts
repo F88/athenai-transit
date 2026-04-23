@@ -12,4 +12,5 @@ export default [
   'yurikamome',
   'mir-train',
   'tama-monorail',
+  'twr-rinkai',
 ];

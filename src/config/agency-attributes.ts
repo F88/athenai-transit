@@ -180,6 +180,21 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '009f40', text: 'FFFFFF' }],
   },
 
+  // --- TWR Rinkai Line ---
+  'twrr:twr': {
+    shortName: {
+      ja: 'りんかい線',
+      'ja-Hrkt': 'りんかいせん',
+      en: 'TWR Rinkai Line',
+    },
+    longName: {
+      ja: '東京臨海高速鉄道株式会社',
+      'ja-Hrkt': 'とうきょうりんかいこうそくてつどう かぶしきがいしゃ',
+      en: 'Tokyo Waterfront Area Rapid Transit Co., Ltd.',
+    },
+    colors: [{ bg: '00418E', text: 'FFFFFF' }],
+  },
+
   // --- VAG Freiburg ---
   'vagfr:1': {
     shortName: {
