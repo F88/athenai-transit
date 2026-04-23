@@ -310,14 +310,14 @@ function TripInspectionSummary({ snapshot, infoLevel, dataLang }: TripInspection
         stopIndex={selectedStop.timetableEntry.patternPosition.stopIndex}
         totalStops={selectedStop.timetableEntry.patternPosition.totalStops}
         size="md"
-        showEmoji={true}
+        showEmoji={infoLevelFlag.isNormalEnabled}
         showTrack={infoLevelFlag.isNormalEnabled}
         trackColor={subtleAccentColor}
         dotColor={emphasisAccentColor}
         currentColor={contrastAdjustedRouteColors.color}
         trackBorderColor={contrastAdjustedRouteColors.color}
         showTrackBorder={false}
-        showPositionLabel={true}
+        showPositionLabel={infoLevelFlag.isNormalEnabled}
         labelTextColor={contrastAdjustedRouteColors.textColor}
         labelBgColor={contrastAdjustedRouteColors.color}
       />
@@ -327,7 +327,7 @@ function TripInspectionSummary({ snapshot, infoLevel, dataLang }: TripInspection
         remainingMinutes={remainingMinutes}
         totalMinutes={totalMinutes}
         size="xl"
-        showEmoji={true}
+        showEmoji={infoLevelFlag.isNormalEnabled}
         fillColor={contrastAdjustedRouteColors.color}
         unfilledColor={emphasisAccentColor}
         showRMins={infoLevelFlag.isNormalEnabled}
