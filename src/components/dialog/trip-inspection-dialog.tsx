@@ -590,17 +590,15 @@ export function TripInspectionDialog({
                   const stopIndex = stop.timetableEntry.patternPosition.stopIndex;
 
                   return (
-                    <>
-                      <TripInspectionStopRow
-                        key={`${stopId}:${stopIndex}`}
-                        stop={stop}
-                        currentStopIndex={snapshot.currentStopIndex}
-                        infoLevel={infoLevel}
-                        dataLangs={dataLangs}
-                        serviceDate={snapshot.serviceDate}
-                        now={now}
-                      />
-                    </>
+                    <TripInspectionStopRow
+                      key={`${stopId}:${stopIndex}`}
+                      stop={stop}
+                      currentStopIndex={snapshot.currentStopIndex}
+                      infoLevel={infoLevel}
+                      dataLangs={dataLangs}
+                      serviceDate={snapshot.serviceDate}
+                      now={now}
+                    />
                   );
                 })}
               </div>
