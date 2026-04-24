@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { AppRouteTypeValue } from '../types/app/transit';
+import { bearingDeg } from '../domain/transit/distance';
 import {
   agencyGx,
   agencyOretetsu,
@@ -9,11 +9,11 @@ import {
   baseStop,
   busRoute,
   longNameStop,
-  tramRoute,
   storyMapCenter,
+  tramRoute,
 } from '../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
-import { bearingDeg } from '../domain/transit/distance';
+import type { AppRouteTypeValue } from '../types/app/transit';
 import { DistanceBadge } from './badge/distance-badge';
 import { StopSummary } from './stop-summary';
 
@@ -22,12 +22,15 @@ const meta = {
   component: StopSummary,
   args: {
     stop: baseStop,
+    showAgencies: true,
+    showRouteTypes: true,
     routeTypes: [3] as AppRouteTypeValue[],
     agencies: [agencyTobus],
     infoLevel: 'normal',
-    dataLang: ['ja'],
+    dataLangs: ['ja'],
     stopServiceState: 'boardable',
     routes: [busRoute],
+    showRoutes: true,
     agencyBadgeSize: 'sm',
     routeBadgeSize: 'sm',
   },
@@ -206,7 +209,7 @@ export const LogicalLongInfoLevelComparison: Story = {
     agencies: allAgencies,
     routes: allRoutes,
     stopServiceState: 'boardable',
-    dataLang: ['ja'],
+    dataLangs: ['ja'],
   },
   render: (args) => {
     const levels = ['simple', 'normal', 'detailed', 'verbose'] as const;
@@ -217,11 +220,14 @@ export const LogicalLongInfoLevelComparison: Story = {
             <span className="block text-[10px] text-gray-400">infoLevel: {level}</span>
             <StopSummary
               stop={args.stop}
+              showAgencies={args.showAgencies}
+              showRouteTypes={args.showRouteTypes}
               routeTypes={args.routeTypes}
               agencies={args.agencies}
+              showRoutes={args.showRoutes}
               routes={args.routes}
               infoLevel={level}
-              dataLang={args.dataLang}
+              dataLangs={args.dataLangs}
               stopServiceState={args.stopServiceState}
               agencyBadgeSize={args.agencyBadgeSize ?? 'sm'}
               routeBadgeSize={args.routeBadgeSize ?? 'sm'}
@@ -248,7 +254,7 @@ export const LangComparison: Story = {
       {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
         <div key={label} className="space-y-1">
           <span className="block text-[10px] text-gray-400">{label}</span>
-          <StopSummary {...args} dataLang={dataLang} />
+          <StopSummary {...args} dataLangs={dataLang} />
         </div>
       ))}
     </div>

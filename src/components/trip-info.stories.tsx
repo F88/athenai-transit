@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { Agency, Route, TimetableEntryAttributes } from '../types/app/transit';
 import {
   createRouteDirection,
   emptyHeadsign,
@@ -14,6 +13,7 @@ import {
   tripHeadsignLong,
 } from '../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
+import type { Agency, Route, TimetableEntryAttributes } from '../types/app/transit';
 import { TripInfo } from './trip-info';
 
 const busRoute: Route = {
@@ -131,7 +131,7 @@ const meta = {
   args: {
     routeDirection: shortRd,
     infoLevel: 'normal',
-    dataLang: ['ja'],
+    dataLangs: ['ja'],
     showRouteTypeIcon: true,
     agency,
     showAgency: false,
@@ -258,7 +258,7 @@ export const TimetableEntryAttributesComparison: Story = {
             <TripInfo
               routeDirection={args.routeDirection}
               infoLevel={args.infoLevel}
-              dataLang={args.dataLang}
+              dataLangs={args.dataLangs}
               showRouteTypeIcon={args.showRouteTypeIcon}
               agency={args.agency}
               attributes={attributes}
@@ -299,7 +299,7 @@ export const SizeComparison: Story = {
           <TripInfo
             routeDirection={args.routeDirection}
             infoLevel={args.infoLevel}
-            dataLang={args.dataLang}
+            dataLangs={args.dataLangs}
             showRouteTypeIcon={args.showRouteTypeIcon}
             agency={args.agency}
             attributes={args.attributes}
@@ -356,7 +356,7 @@ export const LogicalLongInfoLevelComparison: Story = {
             <TripInfo
               routeDirection={args.routeDirection}
               infoLevel={level}
-              dataLang={args.dataLang}
+              dataLangs={args.dataLangs}
               showRouteTypeIcon={args.showRouteTypeIcon}
               agency={args.agency}
               attributes={args.attributes}
@@ -390,7 +390,7 @@ export const LangComparison: Story = {
           <TripInfo
             routeDirection={args.routeDirection}
             infoLevel={args.infoLevel}
-            dataLang={dataLang}
+            dataLangs={dataLang}
             showRouteTypeIcon={args.showRouteTypeIcon}
             agency={args.agency}
             size={args.size ?? 'md'}

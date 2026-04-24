@@ -56,11 +56,11 @@ interface TimetableModalProps {
   time: Date;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
   onClose: () => void;
 }
 
-export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: TimetableModalProps) {
+export function TimetableModal({ data, time, infoLevel, dataLangs, onClose }: TimetableModalProps) {
   const { t, i18n } = useTranslation();
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
@@ -114,10 +114,10 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
     return getSelectedHeadsignDisplayName(
       routeDirection,
       data.headsign,
-      dataLang,
+      dataLangs,
       resolveAgencyLang(data.agencies, routeDirection.route.agency_id),
     );
-  }, [data, dataLang]);
+  }, [data, dataLangs]);
 
   const headerScroll = useScrollFades(
     headerContainerRef,
@@ -138,7 +138,7 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
 
   const descriptionStopName = getStopDisplayNames(
     data.stop,
-    dataLang,
+    dataLangs,
     resolveAgencyLang(data.agencies, data.stop.agency_id),
   ).name;
   let timetableDescription: string;
@@ -148,7 +148,7 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
     const descriptionRouteName = route
       ? getRouteDisplayNames(
           route,
-          dataLang,
+          dataLangs,
           resolveAgencyLang(data.agencies, route.agency_id),
           'short',
         ).resolved.name
@@ -218,24 +218,24 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
               agencies={data.agencies}
               stopServiceState={data.stopServiceState}
               infoLevel={infoLevel}
-              dataLang={dataLang}
+              dataLangs={dataLangs}
             />
 
             {info.isDetailedEnabled && filteredTimetableEntries.length > 0 && (
               <TimetableMetadata
                 timetableEntries={filteredTimetableEntries}
-                dataLang={dataLang}
+                dataLang={dataLangs}
                 agencies={data.agencies}
               />
             )}
 
-            <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLang[0]} />
+            <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLangs[0]} />
             {data.type === 'stop' && (
               <StopTimetableFilter
                 timetableEntries={data.timetableEntries}
                 activeFilters={activeFilters}
                 onToggleFilter={toggleFilter}
-                dataLang={dataLang}
+                dataLang={dataLangs}
                 agencies={data.agencies}
               />
             )}
@@ -276,7 +276,7 @@ export function TimetableModal({ data, time, infoLevel, dataLang, onClose }: Tim
               }
               currentHour={currentHour}
               infoLevel={infoLevel}
-              dataLang={dataLang}
+              dataLangs={dataLangs}
               agencies={data.agencies}
               omitted={data.omitted}
             />

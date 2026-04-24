@@ -1,9 +1,6 @@
+import { Clock, Signpost } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { LatLng } from '../types/app/map';
-import type { InfoLevel } from '../types/app/settings';
-import type { AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
-import type { StopWithContext } from '../types/app/transit-composed';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { groupByRouteHeadsign } from '../domain/transit/group-timetable-entries';
 import {
@@ -11,10 +8,13 @@ import {
   getTimetableEntriesState,
 } from '../domain/transit/timetable-utils';
 import { useInfoLevel } from '../hooks/use-info-level';
-import { Clock, Signpost } from 'lucide-react';
-import { StopTimesItem } from './stop-times-item';
-import { StopTimeItem } from './stop-time-item';
+import type { LatLng } from '../types/app/map';
+import type { InfoLevel } from '../types/app/settings';
+import type { AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
+import type { StopWithContext } from '../types/app/transit-composed';
 import { StopInfo } from './stop-info';
+import { StopTimeItem } from './stop-time-item';
+import { StopTimesItem } from './stop-times-item';
 import { VerboseNearbyStopSummary } from './verbose/verbose-nearby-stop-summary';
 
 export interface NearbyStopProps {
@@ -32,7 +32,7 @@ export interface NearbyStopProps {
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
   /** Active stop time view pattern ID. */
   viewId: string;
   /** Whether this stop is in the anchor (bookmark) list. */
@@ -113,7 +113,7 @@ export function NearbyStop({
   now,
   mapCenter,
   infoLevel,
-  dataLang,
+  dataLangs,
   viewId,
   isAnchor,
   onStopSelected,
@@ -186,14 +186,17 @@ export function NearbyStop({
       <div className="m-0 mb-1.5 flex items-stretch gap-1">
         <StopInfo
           stop={stop}
+          showAgencies={true}
+          showRouteTypes={true}
           routeTypes={routeTypes}
           agencies={agencies}
           distance={distance}
           mapCenter={mapCenter}
           infoLevel={infoLevel}
-          dataLang={dataLang}
+          dataLangs={dataLangs}
           stopServiceState={stopServiceState}
           routes={routes}
+          showRoutes={true}
           stats={stats}
           geo={geo}
           agencyBadgeSize={'md'}
@@ -222,31 +225,37 @@ export function NearbyStop({
         (() => {
           const showAgency = info.isVerboseEnabled || agencies.length > 1;
           return viewId === 'stop'
-            ? displayStopTimes
-                .slice(0, 5)
-                .map((entry, i) => (
+            ? displayStopTimes.slice(0, 5).map((entry, i) => {
+                const isTerminalStop = entry.patternPosition.isTerminal;
+                const isFirstStop = entry.patternPosition.isOrigin;
+
+                return (
                   <StopTimeItem
                     key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}__${i}`}
                     entry={entry}
                     now={now}
-                    isFirst={i === 0}
+                    showArrivalTime={isTerminalStop || !isFirstStop}
+                    showDepartureTime={!isTerminalStop}
+                    collapseArrivalWhenSameAsDeparture={true}
+                    forceShowRelativeTime={i === 0}
                     showRouteTypeIcon={showRouteTypeIconForAllStopTimes}
                     infoLevel={infoLevel}
-                    dataLang={dataLang}
+                    dataLangs={dataLangs}
                     agency={agencies.find(
                       (a) => a.agency_id === entry.routeDirection.route.agency_id,
                     )}
                     showAgency={showAgency}
                     onInspectTrip={onInspectTrip}
                   />
-                ))
+                );
+              })
             : grouped.map(([key, entries]) => (
                 <StopTimesItem
                   key={`${stop.stop_id}__${key}`}
                   entries={entries}
                   now={now}
                   infoLevel={infoLevel}
-                  dataLang={dataLang}
+                  dataLang={dataLangs}
                   showRouteTypeIcon={showRouteTypeIconForAllStopTimes}
                   agency={agencies.find(
                     (a) => a.agency_id === entries[0].routeDirection.route.agency_id,

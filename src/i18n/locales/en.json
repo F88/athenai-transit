@@ -88,6 +88,7 @@
     "minutes": "min",
     "arriving": "",
     "arrivingAbsolute": "Arr",
+    "departingAbsolute": "Dep",
     "terminal": "Terminal",
     "noBoarding": "No boarding"
   },
@@ -165,6 +166,28 @@
       "search": "Search stops",
       "help": "Show this help",
       "close": "Close dialog"
+    }
+  },
+  "tripInspection": {
+    "title": "Trip info",
+    "description": "Show the stop sequence and times for the selected trip",
+    "sections": {
+      "summary": "Summary",
+      "selectedStop": "Selected stop",
+      "stops": "All stops"
+    },
+    "fields": {
+      "route": "Route",
+      "headsign": "Headsign",
+      "position": "Position",
+      "tripSpan": "Trip span",
+      "stop": "Stop",
+      "stopId": "Stop ID",
+      "arrival": "Arrival",
+      "departure": "Departure"
+    },
+    "values": {
+      "none": "None"
     }
   }
 }

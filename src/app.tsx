@@ -3,12 +3,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { AppRouteTypeValue, Stop } from './types/app/transit';
-import type {
-  ContextualTimetableEntry,
-  SelectedTripSnapshot,
-  StopWithContext,
-  StopWithMeta,
-} from './types/app/transit-composed';
+import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
 import type { LoadResult } from './repositories/athenai-repository';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
@@ -38,11 +33,7 @@ import { SUPPORTED_LANGS } from './config/supported-langs';
 import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
 import { getStopDisplayNames } from './domain/transit/get-stop-display-names';
 import { formatDateParts } from './utils/datetime';
-import {
-  buildTripInspectionStopsLog,
-  buildTripInspectionSummaryLog,
-} from './utils/trip-inspection-log';
-import { resolveLangChain } from './domain/transit/i18n/resolve-lang-chain';
+import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
 import { formatDateKey } from './domain/transit/calendar-utils';
@@ -58,7 +49,9 @@ import { TimetableModal, type TimetableData } from './components/dialog/timetabl
 import { StopSearchModal } from './components/dialog/stop-search-modal';
 import { InfoDialog } from './components/dialog/info-dialog';
 import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
+import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
 import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
+import { useTripInspection } from './hooks/use-trip-inspection';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 
@@ -107,11 +100,14 @@ export default function App({ loadResult }: AppProps) {
   // Resolve language fallback chain once when lang changes.
   // Components receive this as dataLang (ordered priority list for
   // GTFS/ODPT data translation resolution).
-  const dataLang = useMemo(() => resolveLangChain(settings.lang, SUPPORTED_LANGS), [settings.lang]);
+  const langChain: LangChain = useMemo(
+    () => resolveLangChain(settings.lang, SUPPORTED_LANGS),
+    [settings.lang],
+  );
 
   useEffect(() => {
-    logger.debug(`LangChain: ${settings.lang} → [${dataLang.join(' → ')}]`);
-  }, [settings.lang, dataLang]);
+    logger.debug(`LangChain: ${settings.lang} → [${langChain.join(' → ')}]`);
+  }, [settings.lang, langChain]);
 
   const [inBoundStops, setInBoundStops] = useState<StopWithMeta[]>([]);
   const [radiusStops, setNearbyStops] = useState<StopWithMeta[]>([]);
@@ -122,6 +118,8 @@ export default function App({ loadResult }: AppProps) {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+  const { tripInspectionSnapshot, openTripInspection, closeTripInspection } =
+    useTripInspection(repo);
 
   // Global keyboard shortcuts. Suppressed while any of the four primary
   // modals owned by app.tsx is open (search / info / help / timetable),
@@ -133,7 +131,12 @@ export default function App({ loadResult }: AppProps) {
   // on top of one of those is acceptable. Add a new state to this list
   // only when a new modal becomes a primary entry point.
   useKeyboardShortcuts({
-    enabled: !searchModalOpen && !infoDialogOpen && !shortcutHelpOpen && timetableModal === null,
+    enabled:
+      !searchModalOpen &&
+      !infoDialogOpen &&
+      !shortcutHelpOpen &&
+      timetableModal === null &&
+      tripInspectionSnapshot === null,
     handlers: {
       onOpenSearch: () => setSearchModalOpen(true),
       onOpenHelp: () => setShortcutHelpOpen(true),
@@ -528,36 +531,6 @@ export default function App({ loadResult }: AppProps) {
     [showTimetable],
   );
 
-  const handleInspectTrip = useCallback(
-    (entry: ContextualTimetableEntry) => {
-      const trip = repo.getTripSnapshot(entry.tripLocator, entry.serviceDate);
-      if (!trip.success) {
-        logger.warn('handleInspectTrip: failed to resolve trip snapshot', trip.error);
-        return;
-      }
-
-      const selectedStop = trip.data.stopTimes.find(
-        (stop) => stop.timetableEntry.patternPosition.stopIndex === entry.patternPosition.stopIndex,
-      );
-      if (!selectedStop) {
-        logger.warn(
-          `handleInspectTrip: selected stop index ${entry.patternPosition.stopIndex} is missing from reconstructed trip snapshot`,
-        );
-        return;
-      }
-
-      const snapshot: SelectedTripSnapshot = {
-        ...trip.data,
-        currentStopIndex: entry.patternPosition.stopIndex,
-        selectedStop,
-      };
-
-      logger.debug(buildTripInspectionSummaryLog(snapshot), snapshot);
-      logger.debug(buildTripInspectionStopsLog(snapshot));
-    },
-    [repo],
-  );
-
   // Select + pan to a stop from history. Uses focusStop to set
   // focus position directly from stop coordinates, ensuring the map pans
   // even when the stop is outside the current viewport.
@@ -593,7 +566,7 @@ export default function App({ loadResult }: AppProps) {
         const stopName = meta
           ? getStopDisplayNames(
               meta.stop,
-              dataLang,
+              langChain,
               resolveAgencyLang(meta.agencies, meta.stop.agency_id),
             ).name ||
             anchor?.stopName ||
@@ -612,7 +585,7 @@ export default function App({ loadResult }: AppProps) {
           const displayName =
             getStopDisplayNames(
               meta.stop,
-              dataLang,
+              langChain,
               resolveAgencyLang(meta.agencies, meta.stop.agency_id),
             ).name || meta.stop.stop_name;
           logger.debug(`handleToggleAnchor: adding stopId=${stopId}, name=${displayName}`);
@@ -639,7 +612,7 @@ export default function App({ loadResult }: AppProps) {
       addAnchor,
       findStopWithMeta,
       lookupAnchorStopMeta,
-      dataLang,
+      langChain,
       t,
     ],
   );
@@ -816,7 +789,7 @@ export default function App({ loadResult }: AppProps) {
           renderMode: settings.renderMode,
           perfMode: settings.perfMode,
           infoLevel: settings.infoLevel,
-          dataLang,
+          dataLang: langChain,
           time: dateTime,
           onBoundsChanged: handleBoundsChanged,
           onStopSelected: handleSelectStop,
@@ -852,13 +825,13 @@ export default function App({ loadResult }: AppProps) {
           time: dateTime,
           mapCenter,
           infoLevel: settings.infoLevel,
-          dataLang,
+          dataLangs: langChain,
           anchorIds,
           onStopSelected: handleSelectStopById,
           onShowTimetable: handleShowTimetable,
           onShowStopTimetable: handleShowStopTimetable,
           onToggleAnchor: handleToggleAnchor,
-          onInspectTrip: handleInspectTrip,
+          onInspectTrip: openTripInspection,
         }}
         mapOverlay={
           <TimeControls
@@ -872,18 +845,30 @@ export default function App({ loadResult }: AppProps) {
       <StopSearchModal
         repo={repo}
         infoLevel={settings.infoLevel}
-        dataLang={dataLang}
+        dataLang={langChain}
         onSelectStop={handleSearchSelect}
         open={searchModalOpen}
         onOpenChange={setSearchModalOpen}
       />
       <InfoDialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen} />
       <ShortcutHelpDialog open={shortcutHelpOpen} onOpenChange={setShortcutHelpOpen} />
+      <TripInspectionDialog
+        open={tripInspectionSnapshot !== null}
+        snapshot={tripInspectionSnapshot}
+        now={dateTime}
+        infoLevel={settings.infoLevel}
+        dataLangs={langChain}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeTripInspection();
+          }
+        }}
+      />
       <TimetableModal
         data={timetableModal}
         time={dateTime}
         infoLevel={settings.infoLevel}
-        dataLang={dataLang}
+        dataLangs={langChain}
         onClose={() => setTimetableModal(null)}
       />
       <Toaster

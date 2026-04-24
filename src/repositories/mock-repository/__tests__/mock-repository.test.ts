@@ -110,6 +110,35 @@ describe('MockRepository contract compatibility', () => {
       })),
     );
   });
+
+  it('reconstructs trip stop times that progress across bus_yukkuri01 stops', () => {
+    const repository = new MockRepository();
+    const serviceDate = new Date('2026-04-07T12:00:00+09:00');
+
+    const snapshot = repository.getTripSnapshot(
+      {
+        patternId: 'bus_yukkuri01__もり公園前',
+        serviceId: 'mock:default',
+        tripIndex: 0,
+      },
+      serviceDate,
+    );
+
+    assertSuccess(snapshot);
+
+    const departures = snapshot.data.stopTimes.map(
+      (stop) => stop.timetableEntry.schedule.departureMinutes,
+    );
+    const arrivals = snapshot.data.stopTimes.map(
+      (stop) => stop.timetableEntry.schedule.arrivalMinutes,
+    );
+
+    expect(departures).toHaveLength(4);
+    expect(departures[0]).toBeLessThan(departures[1]);
+    expect(departures[1]).toBeLessThan(departures[2]);
+    expect(departures[2]).toBeLessThan(departures[3]);
+    expect(arrivals.map((minutes, index) => departures[index] - minutes)).toEqual([3, 3, 3, 3]);
+  });
 });
 
 // ---------------------------------------------------------------------------

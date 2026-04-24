@@ -9,7 +9,7 @@ interface TimetableHeaderProps {
   agencies: Agency[];
   stopServiceState: StopServiceState;
   infoLevel: InfoLevel;
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
 }
 
 /**
@@ -25,7 +25,7 @@ export function TimetableHeader({
   agencies,
   stopServiceState,
   infoLevel,
-  dataLang,
+  dataLangs,
 }: TimetableHeaderProps) {
   const routeTypes = [...new Set(routes.map((route) => route.route_type))];
   const route = routes[0];
@@ -38,10 +38,13 @@ export function TimetableHeader({
   return (
     <StopSummary
       stop={stop}
+      showAgencies={true}
+      showRouteTypes={true}
       routeTypes={routeTypes}
       agencies={displayAgencies}
+      showRoutes={true}
       infoLevel={infoLevel}
-      dataLang={dataLang}
+      dataLangs={dataLangs}
       stopServiceState={stopServiceState}
       routes={routes}
       agencyBadgeSize="md"

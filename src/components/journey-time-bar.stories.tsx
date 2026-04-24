@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ReactNode } from 'react';
 import {
   JourneyTimeBar,
   type JourneyTimeBarBorder,
@@ -48,7 +49,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div style={{ width: 320 }} className="rounded bg-[#f5f7fa] p-3 dark:bg-gray-800">
+      <div className="w-80 rounded bg-[#f5f7fa] p-3 dark:bg-gray-800">
         <Story />
       </div>
     ),
@@ -57,9 +58,29 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+interface JourneyTimeBarStoryArgs {
+  remainingMinutes: number | undefined;
+  totalMinutes: number | undefined;
+  maxMinutes?: number;
+  size?: JourneyTimeBarSize;
+  fillColor?: string;
+  unfilledColor: string;
+  border?: JourneyTimeBarBorder;
+  showBorder?: boolean;
+  borderColor?: string;
+  showRMins?: boolean;
+  showTMins?: boolean;
+  rTimeLabel?: string;
+  tMinsLabel?: string;
+  minsPosition?: JourneyTimeBarMinutesPosition;
+  fillDirection?: JourneyTimeBarFillDirection;
+  minsTextColor?: string;
+  minsBgColor?: string;
+  showEmoji?: boolean;
+}
 
 /** Small helper to label each row in a grouped story. */
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
       <div className="mb-1 text-xs font-semibold text-gray-500">{label}</div>
@@ -77,7 +98,7 @@ export const Default: Story = {};
  */
 export const ProgressValues: Story = {
   args: { totalMinutes: 30 },
-  render: ({ ...rest }) => {
+  render: (rest: JourneyTimeBarStoryArgs) => {
     const samples: { label: string; remaining: number }[] = [
       { label: 'origin (29/30)', remaining: 29 },
       { label: 'middle (15/30)', remaining: 15 },
@@ -102,7 +123,7 @@ export const ProgressValues: Story = {
  */
 export const Durations: Story = {
   args: {},
-  render: ({ ...rest }) => {
+  render: (rest: JourneyTimeBarStoryArgs) => {
     const samples: { label: string; remaining: number; total: number }[] = [
       { label: 'short 10min', remaining: 5, total: 10 },
       { label: 'median 29min', remaining: 14, total: 29 },
@@ -136,7 +157,7 @@ export const Sizes: Story = {
     showTMins: true,
     minsPosition: 'left',
   },
-  render: ({ ...rest }) => {
+  render: (rest: JourneyTimeBarStoryArgs) => {
     const sizes: JourneyTimeBarSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
     return (
       <div className="flex flex-col gap-4">
@@ -153,7 +174,7 @@ export const Sizes: Story = {
 /** Default + route color samples for the `fillColor` prop. */
 export const Colors: Story = {
   args: { remainingMinutes: 15, totalMinutes: 30 },
-  render: ({ ...rest }) => {
+  render: (rest: JourneyTimeBarStoryArgs) => {
     const samples: { label: string; fillColor?: string }[] = [
       { label: 'default (primary)' },
       { label: 'Oedo #cf3366', fillColor: '#cf3366' },
@@ -213,7 +234,7 @@ export const Borders: Story = {
     fillColor: '#cf3366',
     unfilledColor: '#cf336650',
   },
-  render: ({ ...rest }) => {
+  render: (rest: JourneyTimeBarStoryArgs) => {
     const samples: { label: string; border?: JourneyTimeBarBorder }[] = [
       { label: 'none (default)' },
       { label: 'default {}', border: {} },
@@ -242,7 +263,7 @@ export const FillDirections: Story = {
     fillColor: '#cf3366',
     unfilledColor: '#cf336650',
   },
-  render: ({ ...rest }) => {
+  render: (rest: JourneyTimeBarStoryArgs) => {
     const dirs: JourneyTimeBarFillDirection[] = ['ltr', 'rtl'];
     return (
       <div className="flex flex-col gap-4">
@@ -265,7 +286,7 @@ export const FillDirections: Story = {
  */
 export const LabelCombinations: Story = {
   args: { remainingMinutes: 15, totalMinutes: 30 },
-  render: ({ ...rest }) => {
+  render: (rest: JourneyTimeBarStoryArgs) => {
     const combos: { label: string; r: boolean; t: boolean }[] = [
       { label: 'none', r: false, t: false },
       { label: 'showRMins', r: true, t: false },
@@ -303,7 +324,7 @@ export const LabelCombinations: Story = {
 /** `rTimeLabel` / `tMinsLabel` prefix variants. */
 export const LabelPrefixes: Story = {
   args: { remainingMinutes: 15, totalMinutes: 30, showRMins: true, showTMins: true },
-  render: ({ ...rest }) => {
+  render: (rest: JourneyTimeBarStoryArgs) => {
     const samples: { label: string; r?: string; t?: string }[] = [
       { label: 'no prefix' },
       { label: 'Japanese 残り / 全体', r: '残り', t: '全体' },
@@ -330,7 +351,7 @@ export const MinutesPositions: Story = {
     showRMins: true,
     showTMins: true,
   },
-  render: ({ ...rest }) => {
+  render: (rest: JourneyTimeBarStoryArgs) => {
     const positions: JourneyTimeBarMinutesPosition[] = ['top', 'bottom', 'left', 'right'];
     return (
       <div className="flex flex-col gap-4">
@@ -347,7 +368,7 @@ export const MinutesPositions: Story = {
 /** Edge cases — missing / zero values. */
 export const MissingData: Story = {
   args: { showRMins: true, showTMins: true },
-  render: ({ ...rest }) => {
+  render: (rest: JourneyTimeBarStoryArgs) => {
     const samples: {
       label: string;
       remaining: number | undefined;
@@ -418,51 +439,55 @@ export const KitchenSink: Story = {
     showBorder: true,
     borderColor: '#cf3366',
   },
-  render: ({
-    size,
-    fillDirection,
-    minsPosition,
-    border,
-    showRMins,
-    showTMins,
-    showEmoji,
-    minsTextColor,
-    minsBgColor,
-    showBorder,
-    borderColor,
-  }) => (
-    <div className="flex flex-col gap-3">
-      {colorSamples.map((c) => (
-        <div key={c.label}>
-          <div className="text-[10px] text-gray-400">{c.label}</div>
-          <div className="flex flex-col gap-1">
-            {durationSamples.map((d) => (
-              <div key={d.label} className="flex items-center gap-2">
-                <span className="w-48 text-[10px] text-gray-500">{d.label}</span>
-                <div style={{ width: 240 }}>
-                  <JourneyTimeBar
-                    size={size}
-                    fillColor={c.fillColor}
-                    unfilledColor={c.fillColor ? `${c.fillColor}50` : 'rgba(148, 163, 184, 0.35)'}
-                    remainingMinutes={d.remaining}
-                    totalMinutes={d.total}
-                    showRMins={showRMins}
-                    showTMins={showTMins}
-                    minsPosition={minsPosition}
-                    fillDirection={fillDirection}
-                    border={border}
-                    showEmoji={showEmoji}
-                    minsTextColor={minsTextColor}
-                    minsBgColor={c.fillColor ? minsBgColor : undefined}
-                    showBorder={showBorder}
-                    borderColor={c.fillColor ? borderColor : undefined}
-                  />
+  render: (args: JourneyTimeBarStoryArgs) => {
+    const {
+      size,
+      fillDirection,
+      minsPosition,
+      border,
+      showRMins,
+      showTMins,
+      showEmoji,
+      minsTextColor,
+      minsBgColor,
+      showBorder,
+      borderColor,
+    } = args;
+
+    return (
+      <div className="flex flex-col gap-3">
+        {colorSamples.map((c) => (
+          <div key={c.label}>
+            <div className="text-[10px] text-gray-400">{c.label}</div>
+            <div className="flex flex-col gap-1">
+              {durationSamples.map((d) => (
+                <div key={d.label} className="flex items-center gap-2">
+                  <span className="w-48 text-[10px] text-gray-500">{d.label}</span>
+                  <div className="w-60">
+                    <JourneyTimeBar
+                      size={size}
+                      fillColor={c.fillColor}
+                      unfilledColor={c.fillColor ? `${c.fillColor}50` : 'rgba(148, 163, 184, 0.35)'}
+                      remainingMinutes={d.remaining}
+                      totalMinutes={d.total}
+                      showRMins={showRMins}
+                      showTMins={showTMins}
+                      minsPosition={minsPosition}
+                      fillDirection={fillDirection}
+                      border={border}
+                      showEmoji={showEmoji}
+                      minsTextColor={minsTextColor}
+                      minsBgColor={c.fillColor ? minsBgColor : undefined}
+                      showBorder={showBorder}
+                      borderColor={c.fillColor ? borderColor : undefined}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
-  ),
+        ))}
+      </div>
+    );
+  },
 };

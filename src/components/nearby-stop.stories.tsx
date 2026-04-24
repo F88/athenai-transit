@@ -1,19 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { fn } from 'storybook/test';
+import {
+  createRouteDirection,
+  busRoute as fixtureBusRoute,
+  busRoute2 as fixtureBusRoute2,
+  tramRoute as fixtureTramRoute,
+} from '../stories/fixtures';
+import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
+import type {
+  Agency,
+  AppRouteTypeValue,
+  Route,
+  Stop,
+  StopServiceState,
+} from '../types/app/transit';
 import type {
   ContextualTimetableEntry,
   StopServiceType,
   StopWithContext,
 } from '../types/app/transit-composed';
-import type { StopServiceState } from '../types/app/transit';
-import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
-import {
-  busRoute as fixtureBusRoute,
-  busRoute2 as fixtureBusRoute2,
-  createRouteDirection,
-  tramRoute as fixtureTramRoute,
-} from '../stories/fixtures';
-import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
-import { fn } from 'storybook/test';
 import { NearbyStop } from './nearby-stop';
 
 // --- Fixtures ---
@@ -270,7 +275,7 @@ const meta = {
     now,
     mapCenter,
     infoLevel: 'normal',
-    dataLang: ['ja'],
+    dataLangs: ['ja'],
     viewId: 'route-headsign',
     isAnchor: false,
     onStopSelected: fn(),
@@ -584,7 +589,7 @@ export const LangComparison: Story = {
             now={args.now}
             mapCenter={args.mapCenter}
             infoLevel={args.infoLevel}
-            dataLang={dataLang}
+            dataLangs={dataLang}
             viewId={args.viewId}
             isAnchor={args.isAnchor}
             onStopSelected={args.onStopSelected}

@@ -1,20 +1,20 @@
-import type { InfoLevel } from '../types/app/settings';
-import type { Agency, TimetableEntryAttributes } from '../types/app/transit';
-import type { RouteDirection } from '../types/app/transit-composed';
+import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
+import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
+import { headsignSourceEmoji } from '../domain/transit/headsign-source-emoji';
 import {
   type ResolvedDisplayNames,
   hasDisplayContent,
 } from '../domain/transit/name-resolver/get-display-names';
-import type { InfoLevelFlags } from '../utils/create-info-level';
-import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
-import { cn } from '../lib/utils';
 import { useInfoLevel } from '../hooks/use-info-level';
+import { cn } from '../lib/utils';
+import type { InfoLevel } from '../types/app/settings';
+import type { Agency, TimetableEntryAttributes } from '../types/app/transit';
+import type { RouteDirection } from '../types/app/transit-composed';
+import type { InfoLevelFlags } from '../utils/create-info-level';
 import { routeTypeEmoji } from '../utils/route-type-emoji';
-import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
 import { AgencyBadge } from './badge/agency-badge';
 import { RouteBadge } from './badge/route-badge';
 import { TimetableEntryAttributesLabels } from './label/timetable-entry-attributes-labels';
-import { headsignSourceEmoji } from '../domain/transit/headsign-source-emoji';
 
 const sizeVariants = {
   // Standard variant for StopTimeItem / StopTimesItem.
@@ -93,7 +93,7 @@ interface TripInfoProps {
   /** Size variant. */
   size: keyof typeof sizeVariants;
   /** Display language chain for translated GTFS/ODPT data names. */
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
   /** Current info verbosity level. */
   infoLevel: InfoLevel;
   /** Whether to show the route type emoji icon. */
@@ -123,7 +123,7 @@ export function TripInfo({
   routeDirection,
   attributes,
   size,
-  dataLang,
+  dataLangs,
   infoLevel,
   showRouteTypeIcon = false,
   showAgency = false,
@@ -133,7 +133,7 @@ export function TripInfo({
   const info = useInfoLevel(infoLevel);
   const v = sizeVariants[size];
   const agencyLang = agency?.agency_lang ? [agency.agency_lang] : DEFAULT_AGENCY_LANG;
-  const headsignNames = getHeadsignDisplayNames(routeDirection, dataLang, agencyLang, 'stop');
+  const headsignNames = getHeadsignDisplayNames(routeDirection, dataLangs, agencyLang, 'stop');
 
   const headsignClass = cn(v.headsign, 'font-medium text-[#333] dark:text-gray-200');
   const subClass = cn(v.headsignSub, 'font-normal text-[#888] dark:text-gray-400');
@@ -187,7 +187,7 @@ export function TripInfo({
       <RouteBadge
         size={size}
         route={route}
-        dataLang={dataLang}
+        dataLang={dataLangs}
         agencyLangs={agencyLang}
         infoLevel={infoLevel}
         showBorder={true}
@@ -196,7 +196,7 @@ export function TripInfo({
         <AgencyBadge
           size={size}
           agency={agency}
-          dataLang={dataLang}
+          dataLang={dataLangs}
           agencyLangs={agencyLang}
           infoLevel={infoLevel}
           showBorder={true}

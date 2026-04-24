@@ -381,6 +381,14 @@ export interface SelectedTripSnapshot extends TripSnapshot {
   selectedStop: TripStopTime;
 }
 
+/** Minimal payload required to open trip inspection for a specific stop event. */
+export interface TripInspectionTarget extends WithServiceDate {
+  /** Locator used to reconstruct the concrete trip instance. */
+  tripLocator: TripLocator;
+  /** Pattern position of the selected stop within the reconstructed trip. */
+  stopIndex: number;
+}
+
 /**
  * A single entry in a stop's timetable.
  *
@@ -474,12 +482,12 @@ export interface TimetableEntry {
 }
 
 /**
- * Service date context for accurate minutes-to-Date conversion.
+ * Base date context for converting minutes-from-midnight into concrete `Date` values.
  *
- * GTFS departure/arrival times are minutes from midnight (e.g., 1625 = 27:05).
- * To convert to a correct Date, the service date (not wall-clock date) is needed.
- * Without it, overnight entries (>= 1440 min) from the previous service day
- * produce dates 1 day ahead.
+ * Timetable values in this app are represented as minutes from the start of a
+ * service day, not as standalone wall-clock `Date` objects. This base date is
+ * needed to interpret those values correctly, especially for times that roll
+ * past midnight into the next calendar day.
  *
  * Defined as an independent interface for reuse across multiple types:
  * {@link ContextualTimetableEntry} (NearbyStop), and future types for
@@ -487,7 +495,7 @@ export interface TimetableEntry {
  */
 export interface WithServiceDate {
   /**
-   * GTFS service date this entry belongs to, as midnight (00:00) local time.
+   * Base service-day date for this entry, anchored at local midnight.
    *
    * Date type for consistency with getServiceDay() and minutesToDate(),
    * which both operate on Date. Minutes are added from midnight,
@@ -499,12 +507,12 @@ export interface WithServiceDate {
 }
 
 /**
- * TimetableEntry with service day context for accurate datetime computation.
+ * TimetableEntry with base-date context for accurate datetime computation.
  *
- * Extends {@link TimetableEntry} with {@link WithServiceDate} to enable
- * correct Date conversion via `minutesToDate(serviceDate, departureMinutes)`.
- * Without serviceDate, overnight entries from the previous service day
- * produce dates 1 day ahead.
+ * Extends {@link TimetableEntry} with {@link WithServiceDate} so consumers can
+ * turn timetable minutes into concrete `Date` values via
+ * `minutesToDate(serviceDate, departureMinutes)`. Without this context,
+ * overnight entries can be interpreted against the wrong calendar day.
  *
  * Returned by `getUpcomingTimetableEntries`. The timetable modal
  * (`getFullDayTimetableEntries`) continues to use plain {@link TimetableEntry}.

@@ -642,7 +642,7 @@ const STOPS: Stop[] = [
     stop_name: 'r6-1',
     stop_names: { ja: 'r6-1', en: 'r6-1' },
     stop_lat: 35.7475,
-    stop_lon: 139.772,
+    stop_lon: 139.7775,
     location_type: 0,
     agency_id: 'mock:aoba',
   },
@@ -651,7 +651,7 @@ const STOPS: Stop[] = [
     stop_name: 'r6-2',
     stop_names: { ja: 'r6-2', en: 'r6-2' },
     stop_lat: 35.7472,
-    stop_lon: 139.772,
+    stop_lon: 139.7775,
     location_type: 0,
     agency_id: 'mock:aoba',
   },
@@ -660,7 +660,7 @@ const STOPS: Stop[] = [
     stop_name: 'r6-3',
     stop_names: { ja: 'r6-3', en: 'r6-3' },
     stop_lat: 35.7469,
-    stop_lon: 139.772,
+    stop_lon: 139.7775,
     location_type: 0,
     agency_id: 'mock:aoba',
   },
@@ -669,7 +669,7 @@ const STOPS: Stop[] = [
     stop_name: 'r6-4',
     stop_names: { ja: 'r6-4', en: 'r6-4' },
     stop_lat: 35.7469,
-    stop_lon: 139.7724,
+    stop_lon: 139.7779,
     location_type: 0,
     agency_id: 'mock:aoba',
   },
@@ -678,7 +678,7 @@ const STOPS: Stop[] = [
     stop_name: 'r6-5',
     stop_names: { ja: 'r6-5', en: 'r6-5' },
     stop_lat: 35.7466,
-    stop_lon: 139.772,
+    stop_lon: 139.7775,
     location_type: 0,
     agency_id: 'mock:aoba',
   },
@@ -687,7 +687,7 @@ const STOPS: Stop[] = [
     stop_name: 'r6-6',
     stop_names: { ja: 'r6-6', en: 'r6-6' },
     stop_lat: 35.7466,
-    stop_lon: 139.7724,
+    stop_lon: 139.7779,
     location_type: 0,
     agency_id: 'mock:aoba',
   },
@@ -1955,6 +1955,12 @@ function getBoardingTypes(
 /** Routes with dwell time: arrival + N minutes = departure at every stop. */
 const DWELL_TIME_ROUTES = new Map<string, number>([['bus_yukkuri01', 3]]);
 
+/** Default per-segment travel time used to make reconstructed trips progress over stops. */
+const DEFAULT_SEGMENT_TRAVEL_MINUTES = 4;
+
+/** Route-specific per-segment travel time overrides. */
+const SEGMENT_TRAVEL_MINUTES_BY_ROUTE = new Map<string, number>([['bus_yukkuri01', 5]]);
+
 /**
  * Routes that use the "within-stop dwell" model for consecutive duplicate stops.
  * For these routes, multiple occurrences of the same stop_id share the same
@@ -1990,6 +1996,27 @@ function computeArrivalMinutes(routeId: string, occ: number, departureMinutes: n
   }
   const dwellTime = DWELL_TIME_ROUTES.get(routeId) ?? 0;
   return dwellTime > 0 ? departureMinutes - dwellTime : departureMinutes;
+}
+
+function computePatternTravelOffset(routeId: string, headsign: string, stopIndex: number): number {
+  const stopSequence = ROUTE_STOP_SEQUENCES.get(`${routeId}__${headsign}`);
+  if (!stopSequence || stopIndex <= 0) {
+    return 0;
+  }
+
+  const segmentMinutes =
+    SEGMENT_TRAVEL_MINUTES_BY_ROUTE.get(routeId) ?? DEFAULT_SEGMENT_TRAVEL_MINUTES;
+
+  let offset = 0;
+  for (let index = 1; index <= stopIndex; index++) {
+    // Consecutive duplicate stops represent staying at the same place.
+    if (stopSequence[index] === stopSequence[index - 1]) {
+      continue;
+    }
+    offset += segmentMinutes;
+  }
+
+  return offset;
 }
 
 /**
@@ -2479,6 +2506,7 @@ export {
   STOPS,
   approxDistanceKm,
   computeArrivalMinutes,
+  computePatternTravelOffset,
   computeOccOffset,
   countStopOccurrences,
   createMockTranslatableText,

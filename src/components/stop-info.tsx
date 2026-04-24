@@ -1,6 +1,6 @@
+import { bearingDeg } from '../domain/transit/distance';
 import type { LatLng } from '../types/app/map';
 import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
-import { bearingDeg } from '../domain/transit/distance';
 import { DistanceBadge } from './badge/distance-badge';
 import { StopMetrics } from './stop-metrics';
 import { StopSummary, type StopSummaryCoreProps } from './stop-summary';
@@ -24,14 +24,17 @@ interface StopInfoProps extends StopSummaryCoreProps {
  */
 export function StopInfo({
   stop,
-  routeTypes,
   agencies,
+  showAgencies,
+  routeTypes,
+  showRouteTypes,
+  routes,
+  showRoutes,
   distance,
   mapCenter,
   infoLevel,
-  dataLang,
+  dataLangs,
   stopServiceState,
-  routes,
   agencyBadgeSize,
   routeBadgeSize,
   stats,
@@ -45,12 +48,15 @@ export function StopInfo({
       <div className="min-w-0">
         <StopSummary
           stop={stop}
-          routeTypes={routeTypes}
           agencies={agencies}
-          infoLevel={infoLevel}
-          dataLang={dataLang}
-          stopServiceState={stopServiceState}
+          showAgencies={showAgencies}
+          routeTypes={routeTypes}
+          showRouteTypes={showRouteTypes}
           routes={routes}
+          showRoutes={showRoutes}
+          infoLevel={infoLevel}
+          dataLangs={dataLangs}
+          stopServiceState={stopServiceState}
           agencyBadgeSize={agencyBadgeSize}
           routeBadgeSize={routeBadgeSize}
           distanceBadge={

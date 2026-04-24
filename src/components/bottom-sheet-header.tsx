@@ -18,7 +18,7 @@ interface BottomSheetHeaderProps {
   hasNearbyLoaded: boolean;
   counts: NearbyStopsCounts;
   dataConfig: DataConfig;
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
   showOperatingStopsOnly: boolean;
   viewId: string;
   selectedView: StopTimeViewMeta | undefined;
@@ -37,7 +37,7 @@ export function BottomSheetHeader({
   hasNearbyLoaded,
   counts,
   dataConfig,
-  dataLang,
+  dataLangs,
   showOperatingStopsOnly,
   viewId,
   selectedView: _selectedView,
@@ -111,7 +111,7 @@ export function BottomSheetHeader({
             agency,
             'css-hex',
           );
-          const names = getAgencyDisplayNames(agency, dataLang, DEFAULT_AGENCY_LANG, 'short');
+          const names = getAgencyDisplayNames(agency, dataLangs, DEFAULT_AGENCY_LANG, 'short');
           const label = names.shortName.name || names.resolved.name || agency.agency_id;
           const title = names.longName.name || names.resolved.name || agency.agency_id;
           return (

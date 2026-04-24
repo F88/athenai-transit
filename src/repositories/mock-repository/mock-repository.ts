@@ -55,6 +55,7 @@ import {
   STOPS,
   approxDistanceKm,
   computeArrivalMinutes,
+  computePatternTravelOffset,
   computeOccOffset,
   countStopOccurrences,
   createMockTranslatableText,
@@ -132,6 +133,7 @@ export class MockRepository implements TransitRepository {
       for (let occ = 0; occ < occurrences; occ++) {
         const position = getPatternPosition(routeId, headsign, stopId, occ);
         const occOffset = computeOccOffset(routeId, occ);
+        const travelOffset = computePatternTravelOffset(routeId, headsign, position.stopIndex);
         const { pickupType, dropOffType } = getBoardingTypes(routeId, headsign, stopId, occ);
 
         // Count full-day entries and check boardability (per occurrence).
@@ -141,7 +143,7 @@ export class MockRepository implements TransitRepository {
         }
 
         const upcoming = allMinutes
-          .map((minutes, tripIndex) => ({ minutes: minutes + occOffset, tripIndex }))
+          .map((minutes, tripIndex) => ({ minutes: minutes + travelOffset + occOffset, tripIndex }))
           .filter(({ minutes }) => minutes >= nowMinutes);
         for (const { minutes, tripIndex } of upcoming) {
           const arrivalMinutes = computeArrivalMinutes(routeId, occ, minutes);
@@ -269,10 +271,11 @@ export class MockRepository implements TransitRepository {
       for (let occ = 0; occ < occurrences; occ++) {
         const position = getPatternPosition(routeId, headsign, stopId, occ);
         const occOffset = computeOccOffset(routeId, occ);
+        const travelOffset = computePatternTravelOffset(routeId, headsign, position.stopIndex);
         const { pickupType, dropOffType } = getBoardingTypes(routeId, headsign, stopId, occ);
         const baseSchedule = generateFixedMinutes(routeId, headsign);
         for (const [tripIndex, baseMinutes] of baseSchedule.entries()) {
-          const minutes = baseMinutes + occOffset;
+          const minutes = baseMinutes + travelOffset + occOffset;
           const arrivalMinutes = computeArrivalMinutes(routeId, occ, minutes);
           entries.push({
             schedule: { departureMinutes: minutes, arrivalMinutes },
@@ -328,7 +331,10 @@ export class MockRepository implements TransitRepository {
       const occ = occurrenceCount.get(stopId) ?? 0;
       occurrenceCount.set(stopId, occ + 1);
       const stop = STOPS.find((candidate) => candidate.stop_id === stopId);
-      const departureMinutes = baseMinutes + computeOccOffset(routeId, occ);
+      const departureMinutes =
+        baseMinutes +
+        computePatternTravelOffset(routeId, headsign, stopIndex) +
+        computeOccOffset(routeId, occ);
       const arrivalMinutes = computeArrivalMinutes(routeId, occ, departureMinutes);
       const { pickupType, dropOffType } = getBoardingTypes(routeId, headsign, stopId, occ);
       const stopMeta =

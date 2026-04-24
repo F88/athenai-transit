@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { AppRouteTypeValue } from '../types/app/transit';
 import {
   agencyGx,
   agencyOretetsu,
@@ -15,6 +14,7 @@ import {
   tramRoute,
 } from '../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
+import type { AppRouteTypeValue } from '../types/app/transit';
 import { StopInfo } from './stop-info';
 
 // --- Meta ---
@@ -24,14 +24,17 @@ const meta = {
   component: StopInfo,
   args: {
     stop: baseStop,
+    showAgencies: true,
+    showRouteTypes: true,
     routeTypes: [3] as AppRouteTypeValue[],
     agencies: [agencyTobus],
     distance: 235,
     mapCenter: storyMapCenter,
     infoLevel: 'normal',
-    dataLang: ['ja'],
+    dataLangs: ['ja'],
     stopServiceState: 'boardable',
     routes: [busRoute],
+    showRoutes: true,
     agencyBadgeSize: 'sm',
     routeBadgeSize: 'sm',
   },
@@ -206,7 +209,7 @@ export const LangComparison: Story = {
       {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
         <div key={label} className="space-y-1">
           <span className="block text-[10px] text-gray-400">{label}</span>
-          <StopInfo {...args} dataLang={dataLang} />
+          <StopInfo {...args} dataLangs={dataLang} />
         </div>
       ))}
     </div>

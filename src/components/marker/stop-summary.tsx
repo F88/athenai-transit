@@ -88,17 +88,12 @@ export function StopSummary({
               size={'xs'}
               routeDirection={entry.routeDirection}
               infoLevel={info.isVerboseEnabled ? 'verbose' : 'simple'}
-              dataLang={dataLang}
+              dataLangs={dataLang}
               attributes={getTimetableEntryAttributes(entry)}
               ellipsisHeadsign={true}
               showRouteTypeIcon={routeTypes.length > 1}
             />
-            <RelativeTime
-              time={depTime}
-              now={now!}
-              size="sm"
-              isTerminal={entry.patternPosition.isTerminal}
-            />
+            <RelativeTime time={depTime} now={now!} size="sm" />
           </div>
         );
       })}
