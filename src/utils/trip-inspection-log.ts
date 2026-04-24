@@ -1,6 +1,10 @@
-import { minutesToDate } from '../domain/transit/calendar-utils';
+import { formatDateKey, minutesToDate } from '../domain/transit/calendar-utils';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import type { SelectedTripSnapshot } from '../types/app/transit-composed';
+
+function formatInspectionServiceDate(serviceDate: Date): string {
+  return formatDateKey(serviceDate);
+}
 
 /**
  * Format inspection minutes as `minutes(HH:mm)` when serviceDate is available.
@@ -59,10 +63,11 @@ export function buildTripInspectionSummaryLog(snapshot: SelectedTripSnapshot): s
   const boarding = snapshot.selectedStop.timetableEntry.boarding;
   const selectedStopId = snapshot.selectedStop.stopMeta?.stop.stop_id ?? '(unknown-stop)';
   const selectedStopName = snapshot.selectedStop.stopMeta?.stop.stop_name ?? selectedStopId;
+  const serviceDateText = formatInspectionServiceDate(snapshot.serviceDate);
   const departureText = formatInspectionMinutes(schedule.departureMinutes, snapshot.serviceDate);
   const arrivalText = formatInspectionMinutes(schedule.arrivalMinutes, snapshot.serviceDate);
 
-  return `handleInspectTrip: pattern=${snapshot.locator.patternId} service=${snapshot.locator.serviceId} tripIndex=${snapshot.locator.tripIndex} selectedStop=${selectedStopId}(${selectedStopName}) stopIndex=${snapshot.currentStopIndex}/${snapshot.stopTimes.length - 1} dep=${departureText} arr=${arrivalText} pickup=${boarding.pickupType} dropOff=${boarding.dropOffType}`;
+  return `handleInspectTrip: serviceDate=${serviceDateText} pattern=${snapshot.locator.patternId} service=${snapshot.locator.serviceId} tripIndex=${snapshot.locator.tripIndex} selectedStop=${selectedStopId}(${selectedStopName}) stopIndex=${snapshot.currentStopIndex}/${snapshot.stopTimes.length - 1} dep=${departureText} arr=${arrivalText} pickup=${boarding.pickupType} dropOff=${boarding.dropOffType}`;
 }
 
 /**
@@ -72,6 +77,7 @@ export function buildTripInspectionSummaryLog(snapshot: SelectedTripSnapshot): s
  * @returns One-line listing of the route, headsign, span, and all stops.
  */
 export function buildTripInspectionStopsLog(snapshot: SelectedTripSnapshot): string {
+  const serviceDateText = formatInspectionServiceDate(snapshot.serviceDate);
   const routeInfo = `[${snapshot.route.route_short_name || snapshot.route.route_long_name}]`;
   const effectiveHeadsign =
     snapshot.selectedStop.timetableEntry.routeDirection.stopHeadsign?.name ??
@@ -95,5 +101,5 @@ export function buildTripInspectionStopsLog(snapshot: SelectedTripSnapshot): str
     })
     .join(', ');
 
-  return `handleInspectTrip.stops: ${routeInfo} ${headsign} (${snapshot.stopTimes.length} stops) ${tripSpan} ${stops}`;
+  return `handleInspectTrip.stops: serviceDate=${serviceDateText} ${routeInfo} ${headsign} (${snapshot.stopTimes.length} stops) ${tripSpan} ${stops}`;
 }

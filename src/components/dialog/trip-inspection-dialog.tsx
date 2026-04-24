@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { JourneyTimeBar } from '@/components/journey-time-bar';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { StopInfo } from '@/components/stop-info';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -20,9 +21,11 @@ import {
   getContrastAdjustedRouteColors,
   resolveRouteColors,
 } from '@/domain/transit/color-resolver/route-colors';
+import { minutesToDate } from '@/domain/transit/calendar-utils';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getTimetableEntryAttributes } from '@/domain/transit/timetable-entry-attributes';
+import { formatAbsoluteTime } from '@/domain/transit/time';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import { useScrollFades } from '@/hooks/use-scroll-fades';
@@ -31,6 +34,7 @@ import type { Agency, Route } from '@/types/app/transit';
 import type {
   ContextualTimetableEntry,
   SelectedTripSnapshot,
+  TripInspectionTarget,
   TripStopTime,
 } from '@/types/app/transit-composed';
 import { getContrastAwareAlphaSuffixes } from '@/utils/color/contrast-alpha-suffixes';
@@ -47,9 +51,13 @@ interface TripInspectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   snapshot: SelectedTripSnapshot | null;
+  tripInspectionTargets: TripInspectionTarget[];
+  currentTripInspectionTargetIndex: number;
   now: Date;
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
+  onOpenPreviousTrip: () => void;
+  onOpenNextTrip: () => void;
 }
 
 interface TripInspectionStopRowProps {
@@ -151,6 +159,14 @@ function RichStopSummary({ stop, infoLevel, dataLangs }: RichStopSummaryProps) {
       />
     </div>
   );
+}
+
+function formatTargetDepartureTime(target: TripInspectionTarget | undefined): string | null {
+  if (!target) {
+    return null;
+  }
+
+  return formatAbsoluteTime(minutesToDate(target.serviceDate, target.departureMinutes));
 }
 
 function TripInspectionStopRow({
@@ -373,7 +389,13 @@ function TripInspectionSummary({ snapshot, infoLevel, dataLangs }: TripInspectio
       /> */}
 
       {/* Last stop */}
-      <RichStopSummary stop={lastStop} infoLevel={infoLevel} dataLangs={dataLangs} />
+      {/* <RichStopSummary
+        //
+        stop={lastStop}
+        // infoLevel={infoLevel}
+        infoLevel={'simple'}
+        dataLangs={dataLangs}
+      /> */}
     </section>
   );
 }
@@ -402,9 +424,13 @@ export function TripInspectionDialog({
   open,
   onOpenChange,
   snapshot,
+  tripInspectionTargets,
+  currentTripInspectionTargetIndex,
   infoLevel,
   dataLangs,
   now,
+  onOpenPreviousTrip,
+  onOpenNextTrip,
 }: TripInspectionDialogProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
   const { t } = useTranslation();
@@ -497,6 +523,16 @@ export function TripInspectionDialog({
   const routeAgencyLangs =
     agencies !== undefined ? resolveAgencyLang(agencies, route.agency_id) : DEFAULT_AGENCY_LANG;
   const routeAgency = agencies?.find((agency) => agency.agency_id === route.agency_id);
+  const hasPreviousTrip = currentTripInspectionTargetIndex > 0;
+  const hasNextTrip = currentTripInspectionTargetIndex < tripInspectionTargets.length - 1;
+  const previousTarget = hasPreviousTrip
+    ? tripInspectionTargets[currentTripInspectionTargetIndex - 1]
+    : undefined;
+  const nextTarget = hasNextTrip
+    ? tripInspectionTargets[currentTripInspectionTargetIndex + 1]
+    : undefined;
+  const previousDepartureTime = formatTargetDepartureTime(previousTarget);
+  const nextDepartureTime = formatTargetDepartureTime(nextTarget);
 
   const headsignTitle = getHeadsignDisplayNames(
     snapshot.selectedStop.timetableEntry.routeDirection,
@@ -504,6 +540,9 @@ export function TripInspectionDialog({
     routeAgencyLangs,
     'stop',
   ).resolved.name;
+
+  // Selected TripStopTime
+  const selectedStop = tripStopTimes[snapshot.currentStopIndex];
 
   // First TripStopTime
   const firstStop = tripStopTimes[0];
@@ -524,8 +563,68 @@ export function TripInspectionDialog({
       <DialogContent className="flex max-h-[80dvh] max-w-120 flex-col gap-0 overflow-hidden">
         <DialogHeader className="border-border shrink-0 border-b pb-3 sm:text-center">
           {/* {now.toLocaleDateString()} */}
-          <DialogTitle className="flex items-center justify-center gap-2 text-base">
+          <DialogTitle className="flex flex-col items-center justify-center gap-2 text-base">
+            <div>
+              {/* Selected stop (RichStopSummary) */}
+              <RichStopSummary
+                //
+                stop={selectedStop}
+                // infoLevel={infoLevel}
+                infoLevel={'simple'}
+                // infoLevel={'normal'}
+                // infoLevel={'detailed'}
+                dataLangs={dataLangs}
+              />
+            </div>
+          </DialogTitle>
+
+          <div className="flex items-center justify-center gap-2 pb-2">
+            <Button
+              className={!hasPreviousTrip ? 'pointer-events-none invisible' : undefined}
+              size="sm"
+              variant="outline"
+              disabled={!hasPreviousTrip}
+              onClick={onOpenPreviousTrip}
+            >
+              {previousDepartureTime ? `${previousDepartureTime}` : 'Prev'}
+            </Button>
+            <div className="flex min-w-16 flex-col items-center justify-center gap-1">
+              {/* departure time of selected stop or (arrival time (terminal)) */}
+              <StopTimeTimeInfo
+                arrivalMinutes={selectedStop.timetableEntry.schedule.arrivalMinutes}
+                departureMinutes={selectedStop.timetableEntry.schedule.departureMinutes}
+                serviceDate={snapshot.serviceDate}
+                now={now}
+                size="sm"
+                showArrivalTime={true}
+                showDepartureTime={true}
+                collapseArrivalWhenSameAsDeparture={true}
+                forceShowRelativeTime={false}
+                showVerbose={false}
+                // textAppearance={{ color: 'var(--muted-foreground)' }}
+              />
+            </div>
+            <Button
+              className={!hasNextTrip ? 'pointer-events-none invisible' : undefined}
+              size="sm"
+              variant="outline"
+              disabled={!hasNextTrip}
+              onClick={onOpenNextTrip}
+            >
+              {nextDepartureTime ? `${nextDepartureTime}` : 'Next'}
+            </Button>
+
+            <span className="text-muted-foreground text-center text-xs">
+              {tripInspectionTargets.length > 0
+                ? `${currentTripInspectionTargetIndex + 1} / ${tripInspectionTargets.length}`
+                : '0 / 0'}
+            </span>
+          </div>
+
+          {/* Trip info (simple) */}
+          <div className="flex flex-wrap items-center justify-center gap-2 text-center">
             {routeTypesEmoji([route.route_type])}
+
             {routeAgency && (
               <>
                 <AgencyBadge
@@ -551,7 +650,8 @@ export function TripInspectionDialog({
             ) : (
               t('tripInspection.titleWithNoHeadsign')
             )}
-          </DialogTitle>
+          </div>
+
           <DialogDescription asChild className="text-center sm:text-center">
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
               <SimpleStopSummary stopNames={firstStopNames} stopName={firstStopName} />
@@ -590,15 +690,19 @@ export function TripInspectionDialog({
                   const stopIndex = stop.timetableEntry.patternPosition.stopIndex;
 
                   return (
-                    <TripInspectionStopRow
-                      key={`${stopId}:${stopIndex}`}
-                      stop={stop}
-                      currentStopIndex={snapshot.currentStopIndex}
-                      infoLevel={infoLevel}
-                      dataLangs={dataLangs}
-                      serviceDate={snapshot.serviceDate}
-                      now={now}
-                    />
+                    <>
+                      <TripInspectionStopRow
+                        key={`${stopId}:${stopIndex}`}
+                        stop={stop}
+                        currentStopIndex={snapshot.currentStopIndex}
+                        infoLevel={infoLevel}
+                        // infoLevel={'simple'}
+                        // infoLevel={'verbose'}
+                        dataLangs={dataLangs}
+                        serviceDate={snapshot.serviceDate}
+                        now={now}
+                      />
+                    </>
                   );
                 })}
               </div>
