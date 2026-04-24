@@ -100,23 +100,15 @@ function getSelectedRowScrollTop(container: HTMLDivElement, selectedRow: HTMLEle
   const containerRect = container.getBoundingClientRect();
   const rowRect = selectedRow.getBoundingClientRect();
   const rowTopWithinContainer = rowRect.top - containerRect.top + container.scrollTop;
-  const rowBottomWithinContainer = rowTopWithinContainer + selectedRow.clientHeight;
-  const visibleTop = container.scrollTop;
-  const visibleBottom = visibleTop + container.clientHeight;
 
   if (selectedRow.clientHeight >= container.clientHeight - edgePadding * 2) {
     return Math.max(0, rowTopWithinContainer - edgePadding);
   }
 
-  if (rowTopWithinContainer < visibleTop + edgePadding) {
-    return Math.max(0, rowTopWithinContainer - edgePadding);
-  }
-
-  if (rowBottomWithinContainer > visibleBottom - edgePadding) {
-    return Math.max(0, rowBottomWithinContainer - container.clientHeight + edgePadding);
-  }
-
-  return visibleTop;
+  return Math.max(
+    0,
+    rowTopWithinContainer - (container.clientHeight - selectedRow.clientHeight) / 2,
+  );
 }
 
 function SimpleStopSummary({
@@ -449,12 +441,16 @@ export function TripInspectionDialog({
 
       const nextScrollTop = getSelectedRowScrollTop(container, selectedRow);
 
+      if (container.scrollTop === nextScrollTop) {
+        return false;
+      }
+
       container.scrollTo({
         top: nextScrollTop,
         behavior,
       });
 
-      return nextScrollTop !== container.scrollTop;
+      return true;
     };
 
     const correctSelectedRowVisibility = (remainingPasses: number) => {
