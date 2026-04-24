@@ -243,8 +243,6 @@ function TripInspectionStopRow({
           serviceDate={serviceDate}
           now={now}
           size="md"
-          // size="lg"
-          // size="xl"
           showArrivalTime={showArrivalTime}
           showDepartureTime={showDepartureTime}
           collapseArrivalWhenSameAsDeparture={true}
