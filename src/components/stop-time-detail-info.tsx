@@ -67,9 +67,7 @@ export function StopTimeDetailInfo({
             <TripPositionIndicator
               stopIndex={entry.patternPosition.stopIndex}
               totalStops={entry.patternPosition.totalStops}
-              size={
-                infoLevelFlag.isDetailedEnabled ? 'md' : 'xs'
-              }
+              size={infoLevelFlag.isDetailedEnabled ? 'md' : 'xs'}
               showEmoji={infoLevelFlag.isVerboseEnabled}
               showTrack={infoLevelFlag.isNormalEnabled}
               trackColor={subtleAccentColor}
