@@ -30,7 +30,7 @@ import type { TripLocator } from '../types/app/transit-composed';
  * `limit` with {@link normalizeStopQueryLimit}. Even if the underlying
  * dataset contains more matching stops, those methods MUST NOT return
  * more than this number. When results are truncated to this limit, the
- * {@link CollectionResult.truncated} flag MUST be set to `true`.
+ * `truncated` flag on {@link CollectionResult} MUST be set to `true`.
  */
 export const MAX_STOP_QUERY_RESULT = 50_000; // FOR TESTING WITH LARGE DATASETS
 
@@ -100,6 +100,14 @@ export function normalizeOptionalResultLimit(limit?: number): number | undefined
  * errors without throwing, while others return plain collections or
  * derived values directly.
  *
+ * ### Error messages
+ * `error` strings on failure {@link Result} values are human-readable and
+ * implementation-specific. Consumers MUST NOT parse them or rely on their
+ * exact wording. Use the per-method `### Error conditions` documentation
+ * (and, where applicable, additional fields on the result) to distinguish
+ * error categories programmatically. The example strings shown in method
+ * TSDocs are illustrative only.
+ *
  * ### Date/time parameters
  * Methods that accept a `Date` may be called with any user-selected
  * date/time, not just the current wall-clock time. This includes real-time
@@ -163,14 +171,14 @@ export interface TransitRepository {
    * entries) and grouping (e.g. by route+headsign for display).
    *
    * ### Sorting
-   * Results are sorted by `sortTimetableEntriesChronologically`
+   * Results are sorted by {@link sortTimetableEntriesChronologically}
    * (defined in `src/domain/transit/sort-timetable-entries.ts`).
    * See that function's TSDoc for the canonical sort order spec.
    *
    * ### Service day boundary
    * The GTFS service day does not change at midnight but at 03:00.
    * Before 03:00, `referenceDateTime` is treated as part of the previous calendar
-   * day's service. This is handled internally via `getServiceDay()`.
+   * day's service. This is handled internally via {@link getServiceDay}.
    *
    * ### Overnight handling
    * Departures with times >= 24:00 (1440 minutes) on the current
@@ -200,7 +208,7 @@ export interface TransitRepository {
    *                 When omitted, all upcoming entries are returned.
    *                 Negative and non-finite values are treated as `0`.
    *                 Fractional values are truncated toward zero.
-   * @returns ContextualTimetableEntry items sorted chronologically.
+   * @returns {@link ContextualTimetableEntry} items sorted chronologically.
    */
   getUpcomingTimetableEntries(
     stopId: string,
@@ -287,7 +295,7 @@ export interface TransitRepository {
    * headsign, boarding availability, and pattern position.
    *
    * ### Sorting
-   * Results are sorted by `sortTimetableEntriesByDepartureTime`
+   * Results are sorted by {@link sortTimetableEntriesByDepartureTime}
    * (defined in `src/domain/transit/sort-timetable-entries.ts`).
    * See that function's TSDoc for the canonical sort order spec.
    *
@@ -340,7 +348,7 @@ export interface TransitRepository {
    *
    * ### Sorting
    * Results are sorted with the same ordering as
-   * `sortTimetableEntriesByDepartureTime`: `departureMinutes` ascending,
+   * {@link sortTimetableEntriesByDepartureTime}: `departureMinutes` ascending,
    * then `stopIndex` ascending, then route ID ascending.
    *
    * `query.serviceDate` must already be normalized to the GTFS service day.
@@ -372,12 +380,13 @@ export interface TransitRepository {
    *   `{ success: false, error: "Stop not found: {stopId}" }`
    *
    * @param stopId - GTFS `stop_id` to look up.
-   * @returns The StopWithMeta if found, or a failure Result if not found.
+   * @returns The {@link StopWithMeta} if found, or a failure {@link Result}
+   *   if not found.
    */
   getStopMetaById(stopId: string): Promise<Result<StopWithMeta>>;
 
   /**
-   * Returns StopWithMeta for each of the given stop IDs against the
+   * Returns {@link StopWithMeta} for each of the given stop IDs against the
    * **full loaded dataset**, not just the current viewport.
    *
    * "Full dataset" describes the search scope: any stop loaded into the
@@ -397,26 +406,32 @@ export interface TransitRepository {
    *
    * @param stopIds - Set of stop IDs to look up. Can include IDs
    *                  from any data source loaded into the repository.
-   * @returns Array of StopWithMeta for found stops, in unspecified order.
+   * @returns Array of {@link StopWithMeta} for found stops, in unspecified order.
    */
   getStopMetaByIds(stopIds: Set<string>): StopWithMeta[];
 
   /**
-   * Returns all stops in the dataset.
+   * Returns all stops that the repository treats as addressable stop entries.
    *
    * Used for stop name search functionality.
+   *
+   * This is not necessarily identical to every raw stop record present in the
+   * underlying dataset. Implementations may exclude stops that are not yet
+   * surfaced as user-selectable entries in the current UI. For example,
+   * parent stations (`location_type=1`) may be omitted until station-grouping
+   * support exists.
    *
    * ### Sorting
    * No specific ordering is guaranteed.
    *
    * ### Truncation
-   * Returns the full loaded stop set. `truncated` is always `false`.
+   * Returns the full loaded addressable stop set. `truncated` is always `false`.
    *
    * ### Error conditions
    * Always succeeds. An empty dataset returns
    * `{ success: true, data: [], truncated: false }`.
    *
-   * @returns All stops in the dataset.
+   * @returns All addressable stops exposed by the repository.
    */
   getAllStops(): Promise<CollectionResult<Stop>>;
 
@@ -440,7 +455,8 @@ export interface TransitRepository {
    *   `{ success: false, error: "Agency not found: {agencyId}" }`
    *
    * @param agencyId - The agency_id to look up.
-   * @returns The Agency if found, or a failure Result if not found.
+   * @returns The {@link Agency} if found, or a failure {@link Result}
+   *   if not found.
    */
   getAgency(agencyId: string): Promise<Result<Agency>>;
 
@@ -468,7 +484,7 @@ export interface TransitRepository {
    *
    * @param stopId - GTFS stop_id.
    * @param serviceDate - Pre-normalized GTFS service day.
-   *   Callers should pass the result of `getServiceDay(dateTime)` or an
+   *   Callers should pass the result of {@link getServiceDay} or an
    *   equivalent repository-provided `serviceDate` value.
    * @returns Stats for the matched service group, or undefined.
    */
@@ -488,7 +504,7 @@ export interface TransitRepository {
    *
    * @param routeId - GTFS route_id.
    * @param serviceDate - Pre-normalized GTFS service day.
-   *   Callers should pass the result of `getServiceDay(dateTime)` or an
+   *   Callers should pass the result of {@link getServiceDay} or an
    *   equivalent repository-provided `serviceDate` value.
    * @returns Number of trips in the matched service day, or undefined.
    */
