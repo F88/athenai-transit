@@ -2,9 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { relativeTimeColor, relativeTimeStyle, RELATIVE_TIME_BANDS } from '../time-style';
 
 describe('relativeTimeStyle', () => {
-  it('returns orange for imminent stop times (<=180s)', () => {
+  it('returns gray 0.8 for the explicit -10min..-1s past band', () => {
+    expect(relativeTimeStyle(-600).color).toBe('#757575');
+    expect(relativeTimeStyle(-60).color).toBe('#757575');
+    expect(relativeTimeStyle(-60).opacity).toBe(0.8);
+  });
+
+  it('returns orange for the current/imminent band (0-180s)', () => {
     expect(relativeTimeStyle(0).color).toBe('#fb8c00');
-    expect(relativeTimeStyle(-60).color).toBe('#fb8c00');
     expect(relativeTimeStyle(60).color).toBe('#fb8c00');
     expect(relativeTimeStyle(180).color).toBe('#fb8c00');
   });
@@ -27,13 +32,13 @@ describe('relativeTimeStyle', () => {
     expect(relativeTimeStyle(1800).color).toBe('#757575');
   });
 
-  it('returns gray 0.6 for 31-60 minutes (1801-3600s)', () => {
+  it('returns gray 0.5 for 31-60 minutes (1801-3600s)', () => {
     const style = relativeTimeStyle(1801);
     expect(style.color).toBe('#757575');
-    expect(style.opacity).toBe(0.6);
+    expect(style.opacity).toBe(0.5);
   });
 
-  it('returns fallback for >60 minutes', () => {
+  it('returns final band for >60 minutes', () => {
     const style = relativeTimeStyle(3601);
     expect(style.color).toBe('#757575');
     expect(style.opacity).toBe(0.3);
@@ -58,9 +63,11 @@ describe('relativeTimeColor', () => {
 });
 
 describe('RELATIVE_TIME_BANDS', () => {
-  it('is sorted by max ascending', () => {
+  it('is sorted by non-overlapping ascending min/max ranges', () => {
     for (let i = 1; i < RELATIVE_TIME_BANDS.length; i++) {
+      expect(RELATIVE_TIME_BANDS[i].min).toBeGreaterThan(RELATIVE_TIME_BANDS[i - 1].min);
       expect(RELATIVE_TIME_BANDS[i].max).toBeGreaterThan(RELATIVE_TIME_BANDS[i - 1].max);
+      expect(RELATIVE_TIME_BANDS[i].min).toBe(RELATIVE_TIME_BANDS[i - 1].max + 1);
     }
   });
 });
