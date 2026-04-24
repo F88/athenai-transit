@@ -28,6 +28,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - `StopSummary` に display flag 群 (agency / trip count / connectivity 等) を追加し、nearby-stop / marker context で切替可能に。
 - `dataLang` prop を `TripInfo` / `StopInfo` / `StopSummary` / `StopTimeItem` 等に rename/統一 (reader locale fallback chain を明示)。
 - `JourneyTimeBar` Storybook の args を実サイズ値に近づけて調整。
+- `VerboseTimetableEntries` / `VerboseTimetableGridEntry` / `VerboseContextualTimetableEntry` / `VerboseHeadsign` の構成を整理し、timetable entry の verbose 表示を共通の building block で組み立てるよう refactor。
+- verbose/debug 用 `<summary>` (stop-summary / timetable-grid / verbose-\* 全般) に `tabIndex={-1}` を付与し、キーボード tab 移動の焦点対象から除外。
 
 ### Fixed
 
@@ -37,6 +39,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - `TripInspectionDialog` summary の emoji / position label 表示を現在の info level 設定に揃え、情報レベル切替で冗長な indicator が残る問題を修正 (Refs: #147)。
 - `MockRepository` の再構成 trip で停車時刻が進行しない問題を修正 (pattern stops の travel offset を upcoming / full-day / trip snapshot の各経路で適用)。併せて `r6-*` モック停留所の配置を東側に移動。`bus_yukkuri01` trip の timing 回帰テストを追加。
 - `MockRepository` の日本語 headsign 定義が欠落していた問題を修正。
+- `StopTimeTimeInfo` / `StopTimesItem` の trip inspect トリガーボタンに `focus-visible` ring を追加し、キーボード操作時のフォーカス可視性を確保 (a11y)。
 
 ## [2026.04.23]
 
