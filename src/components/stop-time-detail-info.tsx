@@ -68,7 +68,7 @@ export function StopTimeDetailInfo({
               stopIndex={entry.patternPosition.stopIndex}
               totalStops={entry.patternPosition.totalStops}
               size={
-                infoLevelFlag.isDetailedEnabled ? 'md' : infoLevelFlag.isNormalEnabled ? 'xs' : 'xs'
+                infoLevelFlag.isDetailedEnabled ? 'md' : 'xs'
               }
               showEmoji={infoLevelFlag.isVerboseEnabled}
               showTrack={infoLevelFlag.isNormalEnabled}
