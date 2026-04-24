@@ -1,28 +1,17 @@
 import { AbsoluteStopTime } from '@/components/absolute-stop-time';
-import { LOW_CONTRAST_BADGE_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
-import {
-  getContrastAdjustedRouteColors,
-  resolveRouteColors,
-} from '@/domain/transit/color-resolver/route-colors';
-import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import { minutesToDate } from '../domain/transit/calendar-utils';
 import { formatAbsoluteTime } from '../domain/transit/time';
-import type {
-  ContextualTimetableEntry,
-  TripInspectionTarget,
-  WithServiceDate,
-} from '../types/app/transit-composed';
+import type { TripInspectionTarget, WithServiceDate } from '../types/app/transit-composed';
+import { cn } from '../lib/utils';
 import { BaseLabel } from './label/base-label';
 import { RelativeTime } from './relative-time';
 import type { ExtendedDisplaySize } from './shared/display-size';
 
 /**
- * Proposed future props for `StopTimeTimeInfo` after caller migration.
+ * Public display-size alias for stop-time rendering.
  *
- * The current component still accepts `StopTimeTimeInfoProps` so existing call
- * sites remain unchanged. This interface captures the slimmer API direction:
- * render from schedule + service date + text appearance, and keep trip
- * inspection wiring as an explicit optional feature.
+ * `StopTimeTimeInfo` now renders from explicit schedule + service-date props
+ * rather than a full timetable entry object.
  */
 export type StopTimeTimeTextSize = ExtendedDisplaySize;
 
@@ -42,7 +31,7 @@ export interface StopTimeTimeTextAppearance {
   className?: string;
 }
 
-export interface StopTimeTimeInfoNextProps extends WithServiceDate {
+export interface StopTimeTimeInfoProps extends WithServiceDate {
   /** Arrival minutes from midnight of the service day. */
   arrivalMinutes: number;
   /** Departure minutes from midnight of the service day. */
@@ -50,7 +39,7 @@ export interface StopTimeTimeInfoNextProps extends WithServiceDate {
   /** Current wall-clock reference time for relative display. */
   now: Date;
   /** Visual size preset for rendered time text. */
-  size?: StopTimeTimeTextSize;
+  size: StopTimeTimeTextSize;
   /** Optional appearance overrides for rendered time text. */
   textAppearance?: StopTimeTimeTextAppearance;
   /** Whether to render the arrival absolute time. */
@@ -69,51 +58,36 @@ export interface StopTimeTimeInfoNextProps extends WithServiceDate {
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
-interface StopTimeTimeInfoProps {
-  entry: ContextualTimetableEntry;
-  now: Date;
-  size?: StopTimeTimeTextSize;
-  showArrivalTime: boolean;
-  showDepartureTime: boolean;
-  collapseArrivalWhenSameAsDeparture: boolean;
-  forceShowRelativeTime: boolean;
-  showVerbose: boolean;
-  onInspectTrip?: (entry: ContextualTimetableEntry) => void;
-}
-
 export function StopTimeTimeInfo({
-  entry,
+  arrivalMinutes,
+  departureMinutes,
+  serviceDate,
   now,
-  size = 'md',
+  size,
+  textAppearance,
   showArrivalTime,
   showDepartureTime,
   collapseArrivalWhenSameAsDeparture,
   forceShowRelativeTime,
   showVerbose,
+  inspectTarget,
   onInspectTrip,
 }: StopTimeTimeInfoProps) {
-  const primaryMinutes = showDepartureTime
-    ? entry.schedule.departureMinutes
-    : entry.schedule.arrivalMinutes;
-  const time = minutesToDate(entry.serviceDate, primaryMinutes);
+  const primaryMinutes = showDepartureTime ? departureMinutes : arrivalMinutes;
+  const time = minutesToDate(serviceDate, primaryMinutes);
   const diffMs = time.getTime() - now.getTime();
   const showRelativeTime = forceShowRelativeTime || diffMs <= 60 * 60 * 1000;
-  const dt = formatAbsoluteTime(minutesToDate(entry.serviceDate, entry.schedule.departureMinutes));
-  const at = formatAbsoluteTime(minutesToDate(entry.serviceDate, entry.schedule.arrivalMinutes));
+  const dt = formatAbsoluteTime(minutesToDate(serviceDate, departureMinutes));
+  const at = formatAbsoluteTime(minutesToDate(serviceDate, arrivalMinutes));
   const shouldCollapseArrival =
     collapseArrivalWhenSameAsDeparture && showArrivalTime && showDepartureTime && at === dt;
   const shouldShowArrivalAbsolute = showArrivalTime && !shouldCollapseArrival;
   const shouldShowDepartureAbsolute = showDepartureTime;
   const shouldShowDepartureMarker = shouldShowArrivalAbsolute && shouldShowDepartureAbsolute;
   const timeSize: ExtendedDisplaySize = size;
-
-  const { route } = entry.routeDirection;
-  const { routeColor } = resolveRouteColors(route, 'css-hex');
-  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
-  const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
-    route,
-    routeColorAssessment.isLowContrast,
-    'css-hex',
+  const timeTextClassName = cn(
+    textAppearance?.weight === 'normal' ? 'font-normal' : 'font-bold',
+    textAppearance?.className,
   );
 
   const timeVariants = [
@@ -156,6 +130,7 @@ export function StopTimeTimeInfo({
           size={timeSize}
           showPastTime={true}
           hidePrefix={diffMs > 90 * 60 * 1000}
+          className={timeTextClassName}
         />
       )}
       {timeVariants.map((variant) => {
@@ -167,8 +142,10 @@ export function StopTimeTimeInfo({
           <AbsoluteStopTime
             key={variant.key}
             timeText={variant.timeText}
-            textColor={contrastAdjustedRouteColors.color}
+            textColor={textAppearance?.color}
             size={timeSize}
+            weight={textAppearance?.weight}
+            className={textAppearance?.className}
             showDepartureMarker={variant.showDepartureMarker}
             showArrivalMarker={variant.showArrivalMarker}
           />
@@ -177,7 +154,7 @@ export function StopTimeTimeInfo({
     </>
   );
 
-  if (onInspectTrip === undefined) {
+  if (onInspectTrip === undefined || inspectTarget === undefined) {
     return (
       <div className="flex min-h-8 w-14 shrink-0 flex-col justify-center text-right leading-none">
         {content}
@@ -191,7 +168,7 @@ export function StopTimeTimeInfo({
       className="flex min-h-8 w-14 shrink-0 cursor-pointer flex-col justify-center text-right leading-none"
       onClick={(e) => {
         e.stopPropagation();
-        onInspectTrip(entry);
+        onInspectTrip(inspectTarget);
       }}
     >
       {content}
