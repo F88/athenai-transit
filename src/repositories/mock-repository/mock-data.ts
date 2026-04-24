@@ -1684,7 +1684,13 @@ const HEADSIGN_TRANSLATIONS: Record<string, Record<string, string>> = {
 };
 
 function createMockTranslatableText(name: string): TranslatableText {
-  return { name, names: HEADSIGN_TRANSLATIONS[name] ?? {} };
+  return {
+    name,
+    names: {
+      ja: name,
+      ...(HEADSIGN_TRANSLATIONS[name] ?? {}),
+    },
+  };
 }
 
 /**

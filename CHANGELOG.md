@@ -11,8 +11,35 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- `TripInspectionDialog` (`src/components/dialog/trip-inspection-dialog.tsx`) を追加。trip の全停車駅を時刻・停車位置付きで一覧表示する modal。選択行 auto-scroll / 情報レベル連動表示に対応 (Refs: #147)。
+- `useTripInspection` hook (`src/hooks/use-trip-inspection.ts`) を追加。app 層から trip inspection dialog の open/close を扱う。
+- `TripInspectionTarget` 型を追加 (`src/types/app/transit-composed.ts`)。trip inspection の入口を stop-time entry 由来に限定せず一般化。
+- `StopTimeDetailInfo` / `StopTimeTimeInfo` / `AbsoluteStopTime` コンポーネントを追加。`StopTimeItem` から building block を分離し、TripInspectionDialog の row layout と共有。
+- `TimetableGridEntry` / `TimetableModal` から trip inspection を起動する動線を追加。
+- Display size primitive を共通化する alias を追加 (`src/components/shared/display-size.ts`)。
+- `time-style.ts` に explicit time band 定義を追加 (morning / daytime / evening / night band を明示)。
 - Pipeline: りんかい線 (東京臨海高速鉄道株式会社) の GTFS データソースを追加 (prefix `twrr`, route_type 2 rail)。8 駅 / 1 路線。`shapes.txt` は含まれないが MLIT 国土数値情報 (臨海副都心線) 経由で路線図に対応。`data-source-settings` の `routeTypes` は `[1, 2]` (subway + rail) — 実態として地下鉄区間を含むため将来の Source 選択 UI 用に両方を宣言。
 - About: りんかい線のクレジット・データ情報を追加。
+
+### Changed
+
+- `StopTimeItem` を building block (`StopTimeDetailInfo` / `StopTimeTimeInfo`) に分離し、`TripInspectionDialog` と共通化 (260 行 → 約 100 行 + 子コンポーネント)。
+- `StopTimeItem` の絶対/相対時刻受け渡しを explicit な time props に変更し、caller 側で表示ポリシーを制御可能に。
+- `StopSummary` に display flag 群 (agency / trip count / connectivity 等) を追加し、nearby-stop / marker context で切替可能に。
+- `dataLang` prop を `TripInfo` / `StopInfo` / `StopSummary` / `StopTimeItem` 等に rename/統一 (reader locale fallback chain を明示)。
+- `JourneyTimeBar` Storybook の args を実サイズ値に近づけて調整。
+- `VerboseTimetableEntries` / `VerboseTimetableGridEntry` / `VerboseContextualTimetableEntry` / `VerboseHeadsign` の構成を整理し、timetable entry の verbose 表示を共通の building block で組み立てるよう refactor。
+- verbose/debug 用 `<summary>` (stop-summary / timetable-grid / verbose-\* 全般) に `tabIndex={-1}` を付与し、キーボード tab 移動の焦点対象から除外。
+
+### Fixed
+
+- `verbose-timetable-entries` で headsign が未設定の場合の表示を専用ラベル (`— headsign なし` 等) に切替え、空文字レンダリングを解消。
+- `PillButton` の `cursor: pointer` が欠落していた問題を修正。
+- `TripInspectionDialog` を開いた直後の scroll 位置が安定しない問題を修正 (選択行 auto-scroll のタイミング調整)。
+- `TripInspectionDialog` summary の emoji / position label 表示を現在の info level 設定に揃え、情報レベル切替で冗長な indicator が残る問題を修正 (Refs: #147)。
+- `MockRepository` の再構成 trip で停車時刻が進行しない問題を修正 (pattern stops の travel offset を upcoming / full-day / trip snapshot の各経路で適用)。併せて `r6-*` モック停留所の配置を東側に移動。`bus_yukkuri01` trip の timing 回帰テストを追加。
+- `MockRepository` の日本語 headsign 定義が欠落していた問題を修正。
+- `StopTimeTimeInfo` / `StopTimesItem` の trip inspect トリガーボタンに `focus-visible` ring を追加し、キーボード操作時のフォーカス可視性を確保 (a11y)。
 
 ## [2026.04.23]
 

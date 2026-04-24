@@ -170,6 +170,7 @@
   },
   "tripInspection": {
     "title": "Trip info",
+    "titleWithNoHeadsign": "(行先情報なし)",
     "description": "選択した便の停車順と時刻を表示します",
     "sections": {
       "summary": "概要",

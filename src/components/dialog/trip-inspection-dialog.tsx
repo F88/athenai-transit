@@ -168,6 +168,14 @@ function TripInspectionStopRow({
   const stopAgency = stopMeta?.agencies.find(
     (agency) => agency.agency_id === stop.timetableEntry.routeDirection.route.agency_id,
   );
+  const stopRoute = stop.timetableEntry.routeDirection.route;
+  const { routeColor } = resolveRouteColors(stopRoute, 'css-hex');
+  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
+  const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
+    stopRoute,
+    routeColorAssessment.isLowContrast,
+    'css-hex',
+  );
   const stopAgencyLangs = stop.stopMeta
     ? resolveAgencyLang(stop.stopMeta.agencies, stop.stopMeta.stop.agency_id)
     : DEFAULT_AGENCY_LANG;
@@ -230,13 +238,17 @@ function TripInspectionStopRow({
           )}
         </div>
         <StopTimeTimeInfo
-          entry={contextualTimetableEntry}
+          arrivalMinutes={stop.timetableEntry.schedule.arrivalMinutes}
+          departureMinutes={stop.timetableEntry.schedule.departureMinutes}
+          serviceDate={serviceDate}
           now={now}
+          size="md"
           showArrivalTime={showArrivalTime}
           showDepartureTime={showDepartureTime}
           collapseArrivalWhenSameAsDeparture={true}
           forceShowRelativeTime={true}
           showVerbose={false}
+          textAppearance={{ color: contrastAdjustedRouteColors.color }}
         />
       </div>
       {/* StopTimeDetailInfo  */}
@@ -534,10 +546,10 @@ export function TripInspectionDialog({
               infoLevel={infoLevel}
               showBorder={true}
             />
-            {headsignTitle ? (
+            {headsignTitle.length > 0 ? (
               <span className="truncate">{headsignTitle}</span>
             ) : (
-              t('tripInspection.title')
+              t('tripInspection.titleWithNoHeadsign')
             )}
           </DialogTitle>
           <DialogDescription asChild className="text-center sm:text-center">

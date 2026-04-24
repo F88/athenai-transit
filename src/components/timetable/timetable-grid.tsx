@@ -8,17 +8,19 @@ import { useInfoLevel } from '@/hooks/use-info-level';
 import type { TimetableOmitted } from '@/types/app/repository';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency } from '@/types/app/transit';
-import type { TimetableEntry } from '@/types/app/transit-composed';
+import type { TimetableEntry, TripInspectionTarget } from '@/types/app/transit-composed';
 import { TimetableGridEntry } from './timetable-grid-entry';
 
 interface TimetableGridProps {
   timetableEntries: TimetableEntry[];
+  serviceDate: Date;
   showHeadsign: boolean;
   currentHour: number;
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
   agencies: Agency[];
   omitted: TimetableOmitted;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 function useCurrentHourScroll() {
@@ -39,12 +41,14 @@ function useCurrentHourScroll() {
  */
 export function TimetableGrid({
   timetableEntries,
+  serviceDate,
   showHeadsign,
   currentHour,
   infoLevel,
   dataLangs,
   agencies,
   omitted,
+  onInspectTrip,
 }: TimetableGridProps) {
   const scrollRef = useCurrentHourScroll();
   const { t, i18n } = useTranslation();
@@ -115,6 +119,7 @@ export function TimetableGrid({
                 <TimetableGridEntry
                   key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}_${index}`}
                   entry={entry}
+                  serviceDate={serviceDate}
                   showHeadsign={showHeadsign}
                   headsignMaxLength={headsignLengths.get(
                     getEffectiveHeadsign(entry.routeDirection),
@@ -127,7 +132,7 @@ export function TimetableGrid({
                   isDisplayPickupUnavailable={isDisplayPickupUnavailable}
                   isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
                   disableVerbose={true}
-                  defaultOpen={false}
+                  onInspectTrip={onInspectTrip}
                 />
               ))}
             </span>
@@ -135,6 +140,7 @@ export function TimetableGrid({
           {info.isVerboseEnabled && (
             <details className="mt-0.5 text-[9px] font-normal text-[#999] dark:text-gray-500">
               <summary
+                tabIndex={-1}
                 className="cursor-pointer select-none"
                 onClick={(event) => event.stopPropagation()}
               >
@@ -150,6 +156,7 @@ export function TimetableGrid({
                   <TimetableGridEntry
                     key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}_${entry.schedule.arrivalMinutes}_${index}`}
                     entry={entry}
+                    serviceDate={serviceDate}
                     showHeadsign={showHeadsign}
                     headsignMaxLength={headsignLengths.get(
                       getEffectiveHeadsign(entry.routeDirection),
@@ -161,7 +168,7 @@ export function TimetableGrid({
                     isDisplayOrigin={isDisplayOrigin}
                     isDisplayPickupUnavailable={isDisplayPickupUnavailable}
                     isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
-                    defaultOpen={false}
+                    onInspectTrip={onInspectTrip}
                   />
                 ))}
               </div>

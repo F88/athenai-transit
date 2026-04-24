@@ -1,8 +1,14 @@
+import { LOW_CONTRAST_BADGE_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
+import {
+  getContrastAdjustedRouteColors,
+  resolveRouteColors,
+} from '@/domain/transit/color-resolver/route-colors';
 import { useInfoLevel } from '@/hooks/use-info-level';
+import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
-import type { ContextualTimetableEntry } from '../types/app/transit-composed';
+import type { ContextualTimetableEntry, TripInspectionTarget } from '../types/app/transit-composed';
 import { StopTimeDetailInfo } from './stop-time-detail-info';
 import { StopTimeTimeInfo } from './stop-time-time-info';
 import { VerboseContextualTimetableEntry } from './verbose/verbose-contextual-timetable-entry';
@@ -38,7 +44,7 @@ interface StopTimeItemProps {
    */
   showAgency?: boolean;
   /** Optional callback for inspecting this concrete trip entry. */
-  onInspectTrip?: (entry: ContextualTimetableEntry) => void;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 /**
@@ -65,18 +71,35 @@ export function StopTimeItem({
   const info = useInfoLevel(infoLevel);
   const showVerbose = info.isVerboseEnabled;
   const attributes = getTimetableEntryAttributes(entry);
+  const { route } = entry.routeDirection;
+  const { routeColor } = resolveRouteColors(route, 'css-hex');
+  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
+  const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
+    route,
+    routeColorAssessment.isLowContrast,
+    'css-hex',
+  );
 
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
       <div className="flex gap-2">
         <StopTimeTimeInfo
-          entry={entry}
+          arrivalMinutes={entry.schedule.arrivalMinutes}
+          departureMinutes={entry.schedule.departureMinutes}
+          serviceDate={entry.serviceDate}
           now={now}
+          size="md"
           showArrivalTime={showArrivalTime}
           showDepartureTime={showDepartureTime}
           collapseArrivalWhenSameAsDeparture={collapseArrivalWhenSameAsDeparture}
           forceShowRelativeTime={forceShowRelativeTime}
           showVerbose={showVerbose}
+          textAppearance={{ color: contrastAdjustedRouteColors.color }}
+          inspectTarget={{
+            serviceDate: entry.serviceDate,
+            tripLocator: entry.tripLocator,
+            stopIndex: entry.patternPosition.stopIndex,
+          }}
           onInspectTrip={onInspectTrip}
         />
 

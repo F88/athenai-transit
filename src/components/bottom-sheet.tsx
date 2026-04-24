@@ -3,7 +3,7 @@ import type { LatLng } from '../types/app/map';
 import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
-import type { ContextualTimetableEntry, StopWithContext } from '../types/app/transit-composed';
+import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
@@ -70,7 +70,7 @@ export interface BottomSheetProps {
   /** Toggle anchor (bookmark) status for a stop. */
   onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
   /** Optional callback for inspecting one concrete trip. */
-  onInspectTrip?: (entry: ContextualTimetableEntry) => void;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
   /** Collapsed-state height class applied to the sheet root. */
   collapsedHeightClassName?: string;
   /** Expanded-state height class applied to the sheet root. */

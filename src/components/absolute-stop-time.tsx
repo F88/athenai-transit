@@ -14,9 +14,13 @@ export interface AbsoluteStopTimeProps {
   /** Formatted absolute time text. */
   timeText: string;
   /** Text color derived from the route color. */
-  textColor: string;
+  textColor?: string;
   /** Size variant. @default 'md' */
   size?: ExtendedDisplaySize;
+  /** Font weight override for the rendered time value. */
+  weight?: 'normal' | 'bold';
+  /** Additional utility classes for the rendered time value. */
+  className?: string;
   /** Whether to render the departure marker suffix next to the time. */
   showDepartureMarker: boolean;
   /** Whether to render the arrival marker suffix next to the time. */
@@ -29,14 +33,21 @@ export function AbsoluteStopTime({
   showDepartureMarker,
   textColor,
   size = 'md',
+  weight = 'bold',
+  className,
 }: AbsoluteStopTimeProps) {
   const { t } = useTranslation();
   const variant = absoluteTimeVariants[size];
 
   return (
     <div
-      className={cn('font-bold text-[#333] dark:text-gray-100', variant.time)}
-      style={{ color: textColor }}
+      className={cn(
+        weight === 'bold' ? 'font-bold' : 'font-normal',
+        'text-[#333] dark:text-gray-100',
+        variant.time,
+        className,
+      )}
+      style={textColor ? { color: textColor } : undefined}
     >
       {timeText}
       {showArrivalMarker && (

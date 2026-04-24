@@ -12,7 +12,7 @@ import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { useScrollFades } from '@/hooks/use-scroll-fades';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route, Stop, StopServiceState } from '@/types/app/transit';
-import type { TimetableEntry } from '@/types/app/transit-composed';
+import type { TimetableEntry, TripInspectionTarget } from '@/types/app/transit-composed';
 import type { TimetableOmitted } from '@/types/app/repository';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
@@ -57,10 +57,18 @@ interface TimetableModalProps {
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLangs: readonly string[];
+  onInspectTrip?: (target: TripInspectionTarget) => void;
   onClose: () => void;
 }
 
-export function TimetableModal({ data, time, infoLevel, dataLangs, onClose }: TimetableModalProps) {
+export function TimetableModal({
+  data,
+  time,
+  infoLevel,
+  dataLangs,
+  onInspectTrip,
+  onClose,
+}: TimetableModalProps) {
   const { t, i18n } = useTranslation();
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
@@ -266,6 +274,7 @@ export function TimetableModal({ data, time, infoLevel, dataLangs, onClose }: Ti
           <div className="px-4 pt-3 pb-4">
             <TimetableGrid
               timetableEntries={filteredTimetableEntries}
+              serviceDate={data.serviceDate}
               showHeadsign={
                 info.isVerboseEnabled ||
                 new Set(
@@ -279,6 +288,7 @@ export function TimetableModal({ data, time, infoLevel, dataLangs, onClose }: Ti
               dataLangs={dataLangs}
               agencies={data.agencies}
               omitted={data.omitted}
+              onInspectTrip={onInspectTrip}
             />
           </div>
           {gridScroll.showBottom && (

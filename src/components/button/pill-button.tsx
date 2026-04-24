@@ -91,6 +91,7 @@ export function PillButton({
       disabled={disabled}
       className={cn(
         'inline-flex shrink-0 items-center rounded-full font-medium whitespace-nowrap transition-colors select-none [-webkit-touch-callout:none]',
+        onClick && !disabled && 'cursor-pointer',
         sizeVariants[size] ?? sizeVariants.default,
         active
           ? activeBg

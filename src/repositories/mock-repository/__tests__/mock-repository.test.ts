@@ -67,6 +67,31 @@ describe('MockRepository i18n data', () => {
     );
     expect(tripDisplay.resolved.name).toBe('니지다리');
   });
+
+  it('prefers the raw Japanese headsign for ja before falling back to en', async () => {
+    const repository = new MockRepository();
+    const result = await repository.getFullDayTimetableEntries(
+      'sta_central',
+      new Date('2026-04-24T15:42:00+09:00'),
+    );
+
+    assertSuccess(result);
+
+    const tripHeadsignEntry = result.data.find(
+      (entry) =>
+        entry.routeDirection.route.route_id === 'subway_airport_sora' &&
+        entry.routeDirection.tripHeadsign.name === 'ホテル満月',
+    );
+    expect(tripHeadsignEntry).toBeDefined();
+
+    const tripDisplay = getHeadsignDisplayNames(
+      tripHeadsignEntry!.routeDirection,
+      ['ja', 'en'],
+      ['ja'],
+      'trip',
+    );
+    expect(tripDisplay.resolved.name).toBe('ホテル満月');
+  });
 });
 
 describe('MockRepository contract compatibility', () => {

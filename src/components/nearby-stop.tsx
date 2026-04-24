@@ -11,7 +11,7 @@ import { useInfoLevel } from '../hooks/use-info-level';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
-import type { StopWithContext } from '../types/app/transit-composed';
+import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { StopInfo } from './stop-info';
 import { StopTimeItem } from './stop-time-item';
 import { StopTimesItem } from './stop-times-item';
@@ -43,7 +43,7 @@ export interface NearbyStopProps {
   /** Toggle anchor (bookmark) status for this stop. */
   onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
   /** Optional callback for inspecting one concrete trip. */
-  onInspectTrip?: (entry: StopWithContext['stopTimes'][number]) => void;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 interface NearbyStopActionButtonsProps {

@@ -13,18 +13,25 @@ export function VerboseHeadsign({
   names,
   label,
   maxLength,
+  defaultOpen = false,
 }: {
   routeDirection: RouteDirection;
   names: HeadsignDisplayNames;
   label: string;
   maxLength?: number;
+  /** Start with details expanded. @default false */
+  defaultOpen?: boolean;
 }) {
   const { route, tripHeadsign, stopHeadsign, direction } = routeDirection;
   const isTruncated = label !== names.resolved.name;
 
   return (
-    <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
-      <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+    <details open={defaultOpen} className="text-[9px] font-normal text-[#999] dark:text-gray-500">
+      <summary
+        tabIndex={-1}
+        className="cursor-pointer select-none"
+        onClick={(e) => e.stopPropagation()}
+      >
         [Headsign]
       </summary>
       <div className="mt-0.5">

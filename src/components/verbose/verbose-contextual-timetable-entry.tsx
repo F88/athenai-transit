@@ -1,4 +1,6 @@
+import type { InfoLevel } from '../../types/app/settings';
 import type { ContextualTimetableEntry } from '../../types/app/transit-composed';
+import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { formatDateKey } from '../../domain/transit/calendar-utils';
 import { VerboseTimetableEntry } from './verbose-timetable-entries';
 
@@ -6,6 +8,8 @@ interface VerboseContextualTimetableEntryProps {
   entry: ContextualTimetableEntry;
   /** Suppress verbose rendering. Use in non-interactive contexts like tooltips. */
   disableVerbose?: boolean;
+  /** Info level used when formatting route labels. @default 'verbose' */
+  infoLevel?: InfoLevel;
   /** Start with details expanded. @default false */
   defaultOpen?: boolean;
 }
@@ -19,6 +23,7 @@ interface VerboseContextualTimetableEntryProps {
 export function VerboseContextualTimetableEntry({
   entry,
   disableVerbose = false,
+  infoLevel = 'verbose',
   defaultOpen = false,
 }: VerboseContextualTimetableEntryProps) {
   if (disableVerbose) {
@@ -27,13 +32,22 @@ export function VerboseContextualTimetableEntry({
 
   return (
     <details open={defaultOpen} className="text-[9px] font-normal text-[#999] dark:text-gray-500">
-      <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+      <summary
+        tabIndex={-1}
+        className="cursor-pointer select-none"
+        onClick={(e) => e.stopPropagation()}
+      >
         [Departure]
       </summary>
       <div className="mt-0.5">
         <span className="border-app-neutral block overflow-x-auto rounded border border-dashed p-1 text-[9px] whitespace-nowrap text-[#999] dark:text-gray-500">
           <span className="block">[serviceDate] {formatDateKey(entry.serviceDate)}</span>
-          <VerboseTimetableEntry entry={entry} />
+          <VerboseTimetableEntry
+            timetableEntry={entry}
+            dataLangs={DEFAULT_AGENCY_LANG}
+            infoLevel={infoLevel}
+            defaultOpen={true}
+          />
         </span>
       </div>
     </details>
@@ -60,7 +74,11 @@ export function VerboseContextualTimetableEntries({
 
   return (
     <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
-      <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+      <summary
+        tabIndex={-1}
+        className="cursor-pointer select-none"
+        onClick={(e) => e.stopPropagation()}
+      >
         [Departures ({entries.length})]
       </summary>
       <div className="mt-0.5 space-y-0.5">

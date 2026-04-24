@@ -1,5 +1,10 @@
+import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
+import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
+import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
+import type { InfoLevel } from '../../types/app/settings';
 import type { TimetableEntry } from '../../types/app/transit-composed';
-import { getEffectiveHeadsign } from '../../domain/transit/get-effective-headsign';
+import { VerboseHeadsign } from './verbose-headsign';
+import { VerboseRoute } from './verbose-route';
 
 /**
  * Render a one-line visual indicator of the current stop position within
@@ -24,9 +29,19 @@ function renderPatternBar(stopIndex: number, totalStops: number): string {
 
 interface VerboseTimetableEntryProps {
   /** The timetable entry to dump. */
-  entry: TimetableEntry;
+  timetableEntry: TimetableEntry;
+  /** Display language chain for translated GTFS/ODPT data names. */
+  dataLangs: readonly string[];
+  /** Agency languages for subNames sort priority. */
+  agencyLang?: readonly string[];
+  /** Maximum characters for headsign truncation. */
+  headsignMaxLength?: number;
+  /** Info level used when formatting route labels. */
+  infoLevel: InfoLevel;
   /** Suppress verbose rendering. Use in non-interactive contexts like tooltips. */
   disableVerbose?: boolean;
+  /** Start with details expanded. @default false */
+  defaultOpen?: boolean;
 }
 
 /**
@@ -35,60 +50,91 @@ interface VerboseTimetableEntryProps {
  * Used as a building block by {@link VerboseContextualTimetableEntry}.
  */
 export function VerboseTimetableEntry({
-  entry,
+  timetableEntry,
+  dataLangs,
+  agencyLang = DEFAULT_AGENCY_LANG,
+  headsignMaxLength,
+  infoLevel,
   disableVerbose = false,
+  defaultOpen = false,
 }: VerboseTimetableEntryProps) {
   if (disableVerbose) {
     return null;
   }
 
+  const routeNames = getRouteDisplayNames(
+    timetableEntry.routeDirection.route,
+    dataLangs,
+    agencyLang,
+  );
+
+  const headsignNames = getHeadsignDisplayNames(
+    timetableEntry.routeDirection,
+    dataLangs,
+    agencyLang,
+    'stop',
+  );
+  const headsignLabel =
+    headsignMaxLength != null && headsignNames.resolved.name.length > headsignMaxLength
+      ? headsignNames.resolved.name.slice(0, headsignMaxLength)
+      : headsignNames.resolved.name;
+
   return (
-    <>
-      <span className="block">
-        [schedule] d={entry.schedule.departureMinutes} a={entry.schedule.arrivalMinutes}
-      </span>
-      <span className="block">
-        [route] id={entry.routeDirection.route.route_id} type=
-        {entry.routeDirection.route.route_type}
-        {entry.routeDirection.direction !== undefined && ` dir=${entry.routeDirection.direction}`}
-      </span>
-      <span className="block">
-        [headsign] effective=&quot;{getEffectiveHeadsign(entry.routeDirection)}&quot; trip=&quot;
-        {entry.routeDirection.tripHeadsign.name}&quot;
-        {entry.routeDirection.stopHeadsign != null &&
-          ` stop="${entry.routeDirection.stopHeadsign.name}"`}
-      </span>
-      <span className="block">
-        [headsign-names] trip=
-        {Object.keys(entry.routeDirection.tripHeadsign.names).length > 0
-          ? Object.entries(entry.routeDirection.tripHeadsign.names)
-              .map(([k, v]) => `${k}=${v}`)
-              .join(' ')
-          : '(none)'}
-        {entry.routeDirection.stopHeadsign != null &&
-          ` stop=${
-            Object.keys(entry.routeDirection.stopHeadsign.names).length > 0
-              ? Object.entries(entry.routeDirection.stopHeadsign.names)
-                  .map(([k, v]) => `${k}=${v}`)
-                  .join(' ')
-              : '(none)'
-          }`}
-      </span>
-      <span className="block">
-        [boarding] pt={entry.boarding.pickupType} dt={entry.boarding.dropOffType}
-      </span>
-      <span className="block">
-        [pattern] si={entry.patternPosition.stopIndex} [{entry.patternPosition.stopIndex + 1}/
-        {entry.patternPosition.totalStops}]{entry.patternPosition.isTerminal && ' TERM'}
-        {entry.patternPosition.isOrigin && ' ORIG'}
-      </span>
-      <span className="block pl-2 font-mono text-xs">
-        {renderPatternBar(entry.patternPosition.stopIndex, entry.patternPosition.totalStops)}
-      </span>
-      <span className="block">
-        [insights]{' '}
-        {entry.insights ? `remainingMinutes=${entry.insights.remainingMinutes}` : '(none)'}
-      </span>
-    </>
+    <details open={defaultOpen} className="text-[9px] font-normal text-[#999] dark:text-gray-500">
+      <summary
+        tabIndex={-1}
+        className="cursor-pointer select-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        [TimetableEntry]
+      </summary>
+      <div className="border-app-neutral mt-0.5 rounded border border-dashed p-1">
+        <span className="border-app-neutral block overflow-x-auto rounded border border-dashed p-1 whitespace-nowrap">
+          <span className="block">
+            [schedule] d={timetableEntry.schedule.departureMinutes} a=
+            {timetableEntry.schedule.arrivalMinutes}
+          </span>
+          <span className="block">
+            [boarding] pt={timetableEntry.boarding.pickupType} dt=
+            {timetableEntry.boarding.dropOffType}
+          </span>
+          <span className="block">
+            [pattern] si={timetableEntry.patternPosition.stopIndex} [
+            {timetableEntry.patternPosition.stopIndex + 1}/
+            {timetableEntry.patternPosition.totalStops}]
+            {timetableEntry.patternPosition.isTerminal && ' TERM'}
+            {timetableEntry.patternPosition.isOrigin && ' ORIG'}
+          </span>
+          <span className="block pl-2 font-mono text-xs">
+            {renderPatternBar(
+              timetableEntry.patternPosition.stopIndex,
+              timetableEntry.patternPosition.totalStops,
+            )}
+          </span>
+          <span className="block">
+            [insights]{' '}
+            {timetableEntry.insights
+              ? `remainingMinutes=${timetableEntry.insights.remainingMinutes}`
+              : '(none)'}
+          </span>
+        </span>
+
+        <VerboseRoute
+          route={timetableEntry.routeDirection.route}
+          names={routeNames}
+          infoLevel={infoLevel}
+          defaultOpen={defaultOpen}
+        />
+
+        {/* Headsign  */}
+        <VerboseHeadsign
+          routeDirection={timetableEntry.routeDirection}
+          names={headsignNames}
+          label={headsignLabel}
+          maxLength={headsignMaxLength}
+          defaultOpen={defaultOpen}
+        />
+      </div>
+    </details>
   );
 }

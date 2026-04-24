@@ -7,7 +7,7 @@ import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-a
 import { getDisplayMinutes } from '../domain/transit/timetable-utils';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
-import type { ContextualTimetableEntry } from '../types/app/transit-composed';
+import type { ContextualTimetableEntry, TripInspectionTarget } from '../types/app/transit-composed';
 import { TimetableEntryAttributesLabels } from './label/timetable-entry-attributes-labels';
 import { RelativeTime } from './relative-time';
 import { TripInfo } from './trip-info';
@@ -37,7 +37,7 @@ interface StopTimesItemProps {
   maxDisplay?: number;
   onShowTimetable?: (routeId: string, headsign: string) => void;
   /** Optional callback for inspecting one concrete trip. */
-  onInspectTrip?: (entry: ContextualTimetableEntry) => void;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 export function StopTimesItem({
@@ -130,10 +130,14 @@ export function StopTimesItem({
               <button
                 key={i}
                 type="button"
-                className="inline-flex cursor-pointer items-center gap-0.5 text-sm font-bold whitespace-nowrap text-[#757575] dark:text-gray-400"
+                className="inline-flex cursor-pointer items-center gap-0.5 rounded-sm text-sm font-bold whitespace-nowrap text-[#757575] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none dark:text-gray-400"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onInspectTrip(entry);
+                  onInspectTrip({
+                    serviceDate: entry.serviceDate,
+                    tripLocator: entry.tripLocator,
+                    stopIndex: entry.patternPosition.stopIndex,
+                  });
                 }}
               >
                 {content}

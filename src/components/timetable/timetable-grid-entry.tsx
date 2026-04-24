@@ -1,5 +1,5 @@
 import type { InfoLevel } from '../../types/app/settings';
-import type { TimetableEntry } from '../../types/app/transit-composed';
+import type { TimetableEntry, TripInspectionTarget } from '../../types/app/transit-composed';
 import { useTranslation } from 'react-i18next';
 import { getDisplayMinutes } from '../../domain/transit/timetable-utils';
 import { getTimetableEntryAttributes } from '../../domain/transit/timetable-entry-attributes';
@@ -9,6 +9,7 @@ import { TimetableEntryAttributesLabels } from '../label/timetable-entry-attribu
 
 interface TimetableGridEntryProps {
   entry: TimetableEntry;
+  serviceDate: Date;
   /** Whether to show the headsign badge. */
   showHeadsign: boolean;
   /** Maximum characters for headsign truncation. */
@@ -29,8 +30,7 @@ interface TimetableGridEntryProps {
   /** Suppress verbose-only rendering (IdBadge, details dump).
    *  Use in non-interactive contexts like tooltips. */
   disableVerbose?: boolean;
-  /** Start with details expanded. @default false */
-  defaultOpen?: boolean;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 /**
@@ -39,6 +39,7 @@ interface TimetableGridEntryProps {
  */
 export function TimetableGridEntry({
   entry,
+  serviceDate,
   showHeadsign,
   headsignMaxLength,
   infoLevel,
@@ -49,23 +50,20 @@ export function TimetableGridEntry({
   isDisplayPickupUnavailable,
   isDisplayDropOffUnavailable,
   disableVerbose = false,
-  defaultOpen = false,
+  onInspectTrip,
 }: TimetableGridEntryProps) {
   const { t } = useTranslation();
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;
   const displayMinutes = getDisplayMinutes(entry);
-
-  return (
-    <span className="inline-flex items-baseline gap-0.5">
+  const inspectTarget: TripInspectionTarget = {
+    serviceDate,
+    tripLocator: entry.tripLocator,
+    stopIndex: entry.patternPosition.stopIndex,
+  };
+  const content = (
+    <>
       <span className="text-muted-foreground text-sm tabular-nums">
         {String(displayMinutes % 60).padStart(2, '0')}
-        {/*
-         * Compact inline arriving marker (e.g. "着" / "Arr") attached to the
-         * minute number for trips that terminate at this stop. This shares the
-         * `timetable.entry.*` namespace with the pill-style labels rendered by
-         * TimetableEntryAttributesLabels below, but serves a different purpose:
-         * the pill is a full-word label, whereas this is a short inline marker.
-         */}
         {entry.patternPosition.isTerminal && (
           <span className="text-[9px] opacity-70">{t('timetable.entry.arriving')}</span>
         )}
@@ -78,7 +76,7 @@ export function TimetableGridEntry({
           agencyLang={agencyLang}
           maxLength={headsignMaxLength}
           size="xs"
-          enableVerboseExtras={!disableVerbose}
+          enableVerboseExtras={false}
           showBorder={true}
         />
       )}
@@ -90,18 +88,36 @@ export function TimetableGridEntry({
         isDisplayPickupUnavailable={isDisplayPickupUnavailable}
         isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
       />
+    </>
+  );
+
+  return (
+    <span className="inline-flex items-baseline gap-0.5">
+      {onInspectTrip ? (
+        <button
+          type="button"
+          className="inline-flex cursor-pointer items-baseline gap-0.5 rounded-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          onClick={() => onInspectTrip(inspectTarget)}
+        >
+          {content}
+        </button>
+      ) : (
+        content
+      )}
       {showVerbose && (
         <VerboseGridEntry
           entry={entry}
           displayMinutes={displayMinutes}
           showHeadsign={showHeadsign}
           headsignMaxLength={headsignMaxLength}
+          dataLangs={dataLangs}
+          agencyLang={agencyLang}
           infoLevel={infoLevel}
           isDisplayTerminal={isDisplayTerminal}
           isDisplayOrigin={isDisplayOrigin}
           isDisplayPickupUnavailable={isDisplayPickupUnavailable}
           isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
-          defaultOpen={defaultOpen}
+          defaultOpen={false}
         />
       )}
     </span>
