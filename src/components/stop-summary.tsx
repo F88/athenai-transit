@@ -181,13 +181,21 @@ export function StopSummary({
 
       {showVerbose && (
         <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
-          <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+          <summary
+            tabIndex={-1}
+            className="cursor-pointer select-none"
+            onClick={(e) => e.stopPropagation()}
+          >
             [META]
           </summary>
           <div className="mt-1 ml-2 space-y-1">
             <VerboseAgencies agencies={agencies} infoLevel={infoLevel} dataLang={dataLangs} />
             <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
-              <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+              <summary
+                tabIndex={-1}
+                className="cursor-pointer select-none"
+                onClick={(e) => e.stopPropagation()}
+              >
                 [Stop]
               </summary>
               <div className="border-app-neutral mt-1 overflow-x-auto rounded border border-dashed p-1 whitespace-nowrap">

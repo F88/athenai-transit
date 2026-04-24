@@ -140,6 +140,7 @@ export function TimetableGrid({
           {info.isVerboseEnabled && (
             <details className="mt-0.5 text-[9px] font-normal text-[#999] dark:text-gray-500">
               <summary
+                tabIndex={-1}
                 className="cursor-pointer select-none"
                 onClick={(event) => event.stopPropagation()}
               >

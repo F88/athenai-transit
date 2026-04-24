@@ -81,7 +81,11 @@ export function VerboseTimetableEntry({
 
   return (
     <details open={defaultOpen} className="text-[9px] font-normal text-[#999] dark:text-gray-500">
-      <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+      <summary
+        tabIndex={-1}
+        className="cursor-pointer select-none"
+        onClick={(e) => e.stopPropagation()}
+      >
         [TimetableEntry]
       </summary>
       <div className="border-app-neutral mt-0.5 rounded border border-dashed p-1">

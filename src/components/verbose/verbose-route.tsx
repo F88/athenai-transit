@@ -41,7 +41,11 @@ export function VerboseRoute({
 
   return (
     <details open={defaultOpen} className="text-[9px] font-normal text-[#999] dark:text-gray-500">
-      <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+      <summary
+        tabIndex={-1}
+        className="cursor-pointer select-none"
+        onClick={(e) => e.stopPropagation()}
+      >
         [Route {summaryName}]
       </summary>
       <div className="mt-0.5 space-y-0.5">
