@@ -1,5 +1,5 @@
-import type { TimetableEntry } from '../../types/app/transit-composed';
 import { getEffectiveHeadsign } from '../../domain/transit/get-effective-headsign';
+import type { TimetableEntry } from '../../types/app/transit-composed';
 
 /**
  * Render a one-line visual indicator of the current stop position within
@@ -42,6 +42,9 @@ export function VerboseTimetableEntry({
     return null;
   }
 
+  const tripHeadsign = entry.routeDirection.tripHeadsign;
+  const stopHeadsign = entry.routeDirection.stopHeadsign;
+
   return (
     <>
       <span className="block">
@@ -53,27 +56,32 @@ export function VerboseTimetableEntry({
         {entry.routeDirection.direction !== undefined && ` dir=${entry.routeDirection.direction}`}
       </span>
       <span className="block">
-        [headsign] effective=&quot;{getEffectiveHeadsign(entry.routeDirection)}&quot; trip=&quot;
+        [Headsign] effective=&quot;{getEffectiveHeadsign(entry.routeDirection)}&quot; trip=&quot;
         {entry.routeDirection.tripHeadsign.name}&quot;
         {entry.routeDirection.stopHeadsign != null &&
           ` stop="${entry.routeDirection.stopHeadsign.name}"`}
       </span>
       <span className="block">
-        [headsign-names] trip=
-        {Object.keys(entry.routeDirection.tripHeadsign.names).length > 0
-          ? Object.entries(entry.routeDirection.tripHeadsign.names)
+        [TripHeadSign]{' '}
+        {Object.keys(tripHeadsign.names).length > 0
+          ? Object.entries(tripHeadsign.names)
               .map(([k, v]) => `${k}=${v}`)
               .join(' ')
           : '(none)'}
-        {entry.routeDirection.stopHeadsign != null &&
-          ` stop=${
-            Object.keys(entry.routeDirection.stopHeadsign.names).length > 0
-              ? Object.entries(entry.routeDirection.stopHeadsign.names)
-                  .map(([k, v]) => `${k}=${v}`)
-                  .join(' ')
-              : '(none)'
-          }`}
       </span>
+      <span className="block">
+        [StopHeadSign]{' '}
+        {stopHeadsign == null
+          ? '(undefined)'
+          : `${
+              Object.keys(stopHeadsign.names).length > 0
+                ? Object.entries(stopHeadsign.names)
+                    .map(([k, v]) => `${k}=${v}`)
+                    .join(' ')
+                : '(none)'
+            }`}
+      </span>
+
       <span className="block">
         [boarding] pt={entry.boarding.pickupType} dt={entry.boarding.dropOffType}
       </span>
