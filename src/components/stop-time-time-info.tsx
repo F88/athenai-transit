@@ -165,7 +165,7 @@ export function StopTimeTimeInfo({
   return (
     <button
       type="button"
-      className="flex min-h-8 w-14 shrink-0 cursor-pointer flex-col justify-center text-right leading-none"
+      className="flex min-h-8 w-14 shrink-0 cursor-pointer flex-col justify-center rounded-sm text-right leading-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       onClick={(e) => {
         e.stopPropagation();
         onInspectTrip(inspectTarget);

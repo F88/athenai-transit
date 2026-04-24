@@ -130,7 +130,7 @@ export function StopTimesItem({
               <button
                 key={i}
                 type="button"
-                className="inline-flex cursor-pointer items-center gap-0.5 text-sm font-bold whitespace-nowrap text-[#757575] dark:text-gray-400"
+                className="inline-flex cursor-pointer items-center gap-0.5 rounded-sm text-sm font-bold whitespace-nowrap text-[#757575] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none dark:text-gray-400"
                 onClick={(e) => {
                   e.stopPropagation();
                   onInspectTrip({
