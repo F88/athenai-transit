@@ -42,7 +42,7 @@ const meta = {
     hasNearbyLoaded: true,
     counts: { total: 12, active: 7, filtered: 7 },
     dataConfig: defaultDataConfig,
-    dataLang: ['ja'],
+    dataLangs: ['ja'],
     showOperatingStopsOnly: false,
     viewId: DEFAULT_VIEW_ID,
     selectedView: defaultSelectedView,
@@ -212,7 +212,7 @@ export const LangComparison: Story = {
       {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
         <div key={label} className="space-y-1">
           <span className="block px-4 text-[10px] text-gray-400">{label}</span>
-          <BottomSheetHeader {...args} dataLang={dataLang} />
+          <BottomSheetHeader {...args} dataLangs={dataLang} />
         </div>
       ))}
     </div>

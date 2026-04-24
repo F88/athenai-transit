@@ -16,7 +16,7 @@ interface TimetableGridProps {
   showHeadsign: boolean;
   currentHour: number;
   infoLevel: InfoLevel;
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
   agencies: Agency[];
   omitted: TimetableOmitted;
 }
@@ -42,7 +42,7 @@ export function TimetableGrid({
   showHeadsign,
   currentHour,
   infoLevel,
-  dataLang,
+  dataLangs,
   agencies,
   omitted,
 }: TimetableGridProps) {
@@ -53,11 +53,11 @@ export function TimetableGrid({
   const headsignLengths = useMemo(
     () =>
       showHeadsign
-        ? getTimetableHeadsignPrefixLengths(timetableEntries, dataLang, (agencyId) =>
+        ? getTimetableHeadsignPrefixLengths(timetableEntries, dataLangs, (agencyId) =>
             resolveAgencyLang(agencies, agencyId),
           )
         : new Map<string, number>(),
-    [timetableEntries, showHeadsign, dataLang, agencies],
+    [timetableEntries, showHeadsign, dataLangs, agencies],
   );
 
   const hourGroups = useMemo(() => {
@@ -120,7 +120,7 @@ export function TimetableGrid({
                     getEffectiveHeadsign(entry.routeDirection),
                   )}
                   infoLevel={infoLevel}
-                  dataLang={dataLang}
+                  dataLangs={dataLangs}
                   agencyLang={resolveAgencyLang(agencies, entry.routeDirection.route.agency_id)}
                   isDisplayTerminal={isDisplayTerminal}
                   isDisplayOrigin={isDisplayOrigin}
@@ -155,7 +155,7 @@ export function TimetableGrid({
                       getEffectiveHeadsign(entry.routeDirection),
                     )}
                     infoLevel={infoLevel}
-                    dataLang={dataLang}
+                    dataLangs={dataLangs}
                     agencyLang={resolveAgencyLang(agencies, entry.routeDirection.route.agency_id)}
                     isDisplayTerminal={isDisplayTerminal}
                     isDisplayOrigin={isDisplayOrigin}

@@ -33,7 +33,7 @@ import { SUPPORTED_LANGS } from './config/supported-langs';
 import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
 import { getStopDisplayNames } from './domain/transit/get-stop-display-names';
 import { formatDateParts } from './utils/datetime';
-import { resolveLangChain } from './domain/transit/i18n/resolve-lang-chain';
+import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
 import { formatDateKey } from './domain/transit/calendar-utils';
@@ -100,11 +100,14 @@ export default function App({ loadResult }: AppProps) {
   // Resolve language fallback chain once when lang changes.
   // Components receive this as dataLang (ordered priority list for
   // GTFS/ODPT data translation resolution).
-  const dataLang = useMemo(() => resolveLangChain(settings.lang, SUPPORTED_LANGS), [settings.lang]);
+  const langChain: LangChain = useMemo(
+    () => resolveLangChain(settings.lang, SUPPORTED_LANGS),
+    [settings.lang],
+  );
 
   useEffect(() => {
-    logger.debug(`LangChain: ${settings.lang} → [${dataLang.join(' → ')}]`);
-  }, [settings.lang, dataLang]);
+    logger.debug(`LangChain: ${settings.lang} → [${langChain.join(' → ')}]`);
+  }, [settings.lang, langChain]);
 
   const [inBoundStops, setInBoundStops] = useState<StopWithMeta[]>([]);
   const [radiusStops, setNearbyStops] = useState<StopWithMeta[]>([]);
@@ -563,7 +566,7 @@ export default function App({ loadResult }: AppProps) {
         const stopName = meta
           ? getStopDisplayNames(
               meta.stop,
-              dataLang,
+              langChain,
               resolveAgencyLang(meta.agencies, meta.stop.agency_id),
             ).name ||
             anchor?.stopName ||
@@ -582,7 +585,7 @@ export default function App({ loadResult }: AppProps) {
           const displayName =
             getStopDisplayNames(
               meta.stop,
-              dataLang,
+              langChain,
               resolveAgencyLang(meta.agencies, meta.stop.agency_id),
             ).name || meta.stop.stop_name;
           logger.debug(`handleToggleAnchor: adding stopId=${stopId}, name=${displayName}`);
@@ -609,7 +612,7 @@ export default function App({ loadResult }: AppProps) {
       addAnchor,
       findStopWithMeta,
       lookupAnchorStopMeta,
-      dataLang,
+      langChain,
       t,
     ],
   );
@@ -786,7 +789,7 @@ export default function App({ loadResult }: AppProps) {
           renderMode: settings.renderMode,
           perfMode: settings.perfMode,
           infoLevel: settings.infoLevel,
-          dataLang,
+          dataLang: langChain,
           time: dateTime,
           onBoundsChanged: handleBoundsChanged,
           onStopSelected: handleSelectStop,
@@ -822,7 +825,7 @@ export default function App({ loadResult }: AppProps) {
           time: dateTime,
           mapCenter,
           infoLevel: settings.infoLevel,
-          dataLang,
+          dataLangs: langChain,
           anchorIds,
           onStopSelected: handleSelectStopById,
           onShowTimetable: handleShowTimetable,
@@ -842,7 +845,7 @@ export default function App({ loadResult }: AppProps) {
       <StopSearchModal
         repo={repo}
         infoLevel={settings.infoLevel}
-        dataLang={dataLang}
+        dataLang={langChain}
         onSelectStop={handleSearchSelect}
         open={searchModalOpen}
         onOpenChange={setSearchModalOpen}
@@ -854,7 +857,7 @@ export default function App({ loadResult }: AppProps) {
         snapshot={tripInspectionSnapshot}
         now={dateTime}
         infoLevel={settings.infoLevel}
-        dataLangs={dataLang}
+        dataLangs={langChain}
         onOpenChange={(open) => {
           if (!open) {
             closeTripInspection();
@@ -865,7 +868,7 @@ export default function App({ loadResult }: AppProps) {
         data={timetableModal}
         time={dateTime}
         infoLevel={settings.infoLevel}
-        dataLang={dataLang}
+        dataLangs={langChain}
         onClose={() => setTimetableModal(null)}
       />
       <Toaster
