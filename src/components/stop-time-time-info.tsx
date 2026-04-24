@@ -149,7 +149,7 @@ export function StopTimeTimeInfo({
           ))}
         </div>
       )}
-      {(showRelativeTime || true) && (
+      {showRelativeTime && (
         <RelativeTime
           time={time}
           now={now}
