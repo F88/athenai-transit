@@ -3,12 +3,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { AppRouteTypeValue, Stop } from './types/app/transit';
-import type {
-  ContextualTimetableEntry,
-  SelectedTripSnapshot,
-  StopWithContext,
-  StopWithMeta,
-} from './types/app/transit-composed';
+import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
 import type { LoadResult } from './repositories/athenai-repository';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useUserSettings } from './hooks/use-user-settings';
@@ -56,6 +51,7 @@ import { InfoDialog } from './components/dialog/info-dialog';
 import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
 import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
 import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
+import { useTripInspection } from './hooks/use-trip-inspection';
 import { Toaster } from './components/ui/sonner';
 import { toast } from 'sonner';
 
@@ -119,9 +115,8 @@ export default function App({ loadResult }: AppProps) {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
-  const [tripInspectionSnapshot, setTripInspectionSnapshot] = useState<SelectedTripSnapshot | null>(
-    null,
-  );
+  const { tripInspectionSnapshot, openTripInspection, closeTripInspection } =
+    useTripInspection(repo);
 
   // Global keyboard shortcuts. Suppressed while any of the four primary
   // modals owned by app.tsx is open (search / info / help / timetable),
@@ -533,37 +528,6 @@ export default function App({ loadResult }: AppProps) {
     [showTimetable],
   );
 
-  const handleInspectTrip = useCallback(
-    (entry: ContextualTimetableEntry) => {
-      const trip = repo.getTripSnapshot(entry.tripLocator, entry.serviceDate);
-      if (!trip.success) {
-        logger.warn('handleInspectTrip: failed to resolve trip snapshot', trip.error);
-        return;
-      }
-
-      const selectedStop = trip.data.stopTimes.find(
-        (stop) => stop.timetableEntry.patternPosition.stopIndex === entry.patternPosition.stopIndex,
-      );
-      if (!selectedStop) {
-        logger.warn(
-          `handleInspectTrip: selected stop index ${entry.patternPosition.stopIndex} is missing from reconstructed trip snapshot`,
-        );
-        return;
-      }
-
-      const snapshot: SelectedTripSnapshot = {
-        ...trip.data,
-        currentStopIndex: entry.patternPosition.stopIndex,
-        selectedStop,
-      };
-
-      // logger.debug(buildTripInspectionSummaryLog(snapshot), snapshot);
-      // logger.debug(buildTripInspectionStopsLog(snapshot));
-      setTripInspectionSnapshot(snapshot);
-    },
-    [repo],
-  );
-
   // Select + pan to a stop from history. Uses focusStop to set
   // focus position directly from stop coordinates, ensuring the map pans
   // even when the stop is outside the current viewport.
@@ -864,7 +828,7 @@ export default function App({ loadResult }: AppProps) {
           onShowTimetable: handleShowTimetable,
           onShowStopTimetable: handleShowStopTimetable,
           onToggleAnchor: handleToggleAnchor,
-          onInspectTrip: handleInspectTrip,
+          onInspectTrip: openTripInspection,
         }}
         mapOverlay={
           <TimeControls
@@ -890,10 +854,10 @@ export default function App({ loadResult }: AppProps) {
         snapshot={tripInspectionSnapshot}
         now={dateTime}
         infoLevel={settings.infoLevel}
-        dataLang={dataLang}
+        dataLangs={dataLang}
         onOpenChange={(open) => {
           if (!open) {
-            setTripInspectionSnapshot(null);
+            closeTripInspection();
           }
         }}
       />
