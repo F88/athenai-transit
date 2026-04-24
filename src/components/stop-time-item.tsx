@@ -8,7 +8,7 @@ import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
-import type { ContextualTimetableEntry } from '../types/app/transit-composed';
+import type { ContextualTimetableEntry, TripInspectionTarget } from '../types/app/transit-composed';
 import { StopTimeDetailInfo } from './stop-time-detail-info';
 import { StopTimeTimeInfo } from './stop-time-time-info';
 import { VerboseContextualTimetableEntry } from './verbose/verbose-contextual-timetable-entry';
@@ -44,7 +44,7 @@ interface StopTimeItemProps {
    */
   showAgency?: boolean;
   /** Optional callback for inspecting this concrete trip entry. */
-  onInspectTrip?: (entry: ContextualTimetableEntry) => void;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 /**
@@ -100,7 +100,7 @@ export function StopTimeItem({
             tripLocator: entry.tripLocator,
             stopIndex: entry.patternPosition.stopIndex,
           }}
-          onInspectTrip={onInspectTrip ? () => onInspectTrip(entry) : undefined}
+          onInspectTrip={onInspectTrip}
         />
 
         <StopTimeDetailInfo

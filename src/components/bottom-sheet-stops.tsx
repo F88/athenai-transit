@@ -3,7 +3,7 @@ import { useScrollFades } from '@/hooks/use-scroll-fades';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
-import type { ContextualTimetableEntry, StopWithContext } from '../types/app/transit-composed';
+import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { ScrollFadeEdge } from './shared/scroll-fade-edge';
 import { NearbyStop, type NearbyStopProps } from './nearby-stop';
 
@@ -37,7 +37,7 @@ interface BottomSheetStopsProps {
   /** Toggle anchor (bookmark) status for a stop. */
   onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
   /** Optional callback for inspecting one concrete trip. */
-  onInspectTrip?: (entry: ContextualTimetableEntry) => void;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 export function BottomSheetStops({
