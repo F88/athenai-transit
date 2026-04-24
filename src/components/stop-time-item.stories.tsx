@@ -1,17 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { InfoLevel } from '../types/app/settings';
-import type {
-  ContextualTimetableEntry,
-  RouteDirection,
-  StopServiceType,
-} from '../types/app/transit-composed';
-import type { Agency, Route } from '../types/app/transit';
 import {
   agencyTobus as agency,
   busRoute as baseRoute,
-  busRoute2 as greenRoute,
   createRouteDirection,
   emptyHeadsign,
+  busRoute2 as greenRoute,
   headsignKyotoLong,
   headsignMinowabashi,
   headsignShimbashiEkimae,
@@ -31,6 +24,13 @@ import {
   tripHeadsignLong,
 } from '../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
+import type { InfoLevel } from '../types/app/settings';
+import type { Agency, Route } from '../types/app/transit';
+import type {
+  ContextualTimetableEntry,
+  RouteDirection,
+  StopServiceType,
+} from '../types/app/transit-composed';
 import { StopTimeItem } from './stop-time-item';
 
 /** Create a ContextualTimetableEntry for stories. */
@@ -101,6 +101,16 @@ function createEntry(
   };
 }
 
+function getStopTimeVisibility(entry: ContextualTimetableEntry) {
+  const isTerminalStop = entry.patternPosition.isTerminal;
+  const isFirstStop = entry.patternPosition.isOrigin;
+
+  return {
+    showArrivalTime: isTerminalStop || !isFirstStop,
+    showDepartureTime: !isTerminalStop,
+  };
+}
+
 /** now = 14:25 → 5 minutes before the default 14:30 departure. */
 const now = new Date('2026-03-30T14:25:00');
 
@@ -110,14 +120,20 @@ const meta = {
   args: {
     entry: createEntry(),
     now,
-    isFirst: true,
+    showArrivalTime: false,
+    showDepartureTime: true,
+    collapseArrivalWhenSameAsDeparture: false,
+    forceShowRelativeTime: true,
     showRouteTypeIcon: false,
     infoLevel: 'normal',
-    dataLang: ['ja'],
+    dataLangs: ['ja'],
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
-    isFirst: { control: 'boolean' },
+    showArrivalTime: { control: 'boolean' },
+    showDepartureTime: { control: 'boolean' },
+    collapseArrivalWhenSameAsDeparture: { control: 'boolean' },
+    forceShowRelativeTime: { control: 'boolean' },
     showRouteTypeIcon: { control: 'boolean' },
   },
   decorators: [
@@ -137,7 +153,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const NotFirst: Story = {
-  args: { isFirst: false },
+  args: { forceShowRelativeTime: false },
 };
 
 export const WithRouteTypeIcon: Story = {
@@ -165,6 +181,8 @@ export const NoRouteColor: Story = {
 
 export const Terminal: Story = {
   args: {
+    showArrivalTime: true,
+    showDepartureTime: false,
     entry: createEntry({
       isTerminal: true,
       arrivalMinutes: 870,
@@ -212,10 +230,12 @@ export const HeadsignPatterns: Story = {
               <StopTimeItem
                 entry={{ ...args.entry, routeDirection: p.routeDirection }}
                 now={args.now}
-                isFirst={args.isFirst}
+                {...getStopTimeVisibility(args.entry)}
+                collapseArrivalWhenSameAsDeparture={args.collapseArrivalWhenSameAsDeparture}
+                forceShowRelativeTime={args.forceShowRelativeTime}
                 showRouteTypeIcon={args.showRouteTypeIcon}
                 infoLevel={args.infoLevel}
-                dataLang={args.dataLang}
+                dataLangs={args.dataLangs}
                 agency={args.agency}
               />
             </div>
@@ -258,10 +278,12 @@ export const InfoLevelComparison: Story = {
               <StopTimeItem
                 entry={args.entry}
                 now={args.now}
-                isFirst={args.isFirst}
+                {...getStopTimeVisibility(args.entry)}
+                collapseArrivalWhenSameAsDeparture={args.collapseArrivalWhenSameAsDeparture}
+                forceShowRelativeTime={args.forceShowRelativeTime}
                 showRouteTypeIcon={args.showRouteTypeIcon}
                 infoLevel={level}
-                dataLang={args.dataLang}
+                dataLangs={args.dataLangs}
                 agency={args.agency}
               />
             </div>
@@ -315,10 +337,12 @@ export const MultipleItems: Story = {
             key={i}
             entry={entry}
             now={args.now}
-            isFirst={args.isFirst && i === 0}
+            {...getStopTimeVisibility(entry)}
+            collapseArrivalWhenSameAsDeparture={args.collapseArrivalWhenSameAsDeparture}
+            forceShowRelativeTime={args.forceShowRelativeTime && i === 0}
             showRouteTypeIcon={args.showRouteTypeIcon}
             infoLevel={args.infoLevel}
-            dataLang={args.dataLang}
+            dataLangs={args.dataLangs}
           />
         ))}
       </div>
@@ -369,10 +393,12 @@ export const MultipleItemsLangComparison: Story = {
                   key={i}
                   entry={entry}
                   now={args.now}
-                  isFirst={args.isFirst && i === 0}
+                  {...getStopTimeVisibility(entry)}
+                  collapseArrivalWhenSameAsDeparture={args.collapseArrivalWhenSameAsDeparture}
+                  forceShowRelativeTime={args.forceShowRelativeTime && i === 0}
                   showRouteTypeIcon={args.showRouteTypeIcon}
                   infoLevel={args.infoLevel}
-                  dataLang={dataLang}
+                  dataLangs={dataLang}
                 />
               ))}
             </div>
@@ -457,10 +483,12 @@ export const LogicalLongInfoLevelComparison: Story = {
             <StopTimeItem
               entry={args.entry}
               now={args.now}
-              isFirst={args.isFirst}
+              {...getStopTimeVisibility(args.entry)}
+              collapseArrivalWhenSameAsDeparture={args.collapseArrivalWhenSameAsDeparture}
+              forceShowRelativeTime={args.forceShowRelativeTime}
               showRouteTypeIcon={level === 'verbose'}
               infoLevel={level}
-              dataLang={args.dataLang}
+              dataLangs={args.dataLangs}
               agency={args.agency}
               showAgency={false}
             />
@@ -502,10 +530,12 @@ export const LangComparison: Story = {
           <StopTimeItem
             entry={args.entry}
             now={args.now}
-            isFirst={args.isFirst}
+            {...getStopTimeVisibility(args.entry)}
+            collapseArrivalWhenSameAsDeparture={args.collapseArrivalWhenSameAsDeparture}
+            forceShowRelativeTime={args.forceShowRelativeTime}
             showRouteTypeIcon={args.showRouteTypeIcon}
             infoLevel={args.infoLevel}
-            dataLang={dataLang}
+            dataLangs={dataLang}
             agency={args.agency}
           />
         </div>
@@ -636,10 +666,12 @@ export const KitchenSink: Story = {
           key={i}
           entry={entry}
           now={args.now}
-          isFirst={args.isFirst && i === 0}
+          {...getStopTimeVisibility(entry)}
+          collapseArrivalWhenSameAsDeparture={args.collapseArrivalWhenSameAsDeparture}
+          forceShowRelativeTime={args.forceShowRelativeTime && i === 0}
           showRouteTypeIcon={args.showRouteTypeIcon || (icon ?? false)}
           infoLevel={args.infoLevel}
-          dataLang={args.dataLang}
+          dataLangs={args.dataLangs}
           agency={a}
         />
       ))}

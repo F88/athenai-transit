@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { AbsoluteStopTime } from '@/components/absolute-stop-time';
 import { JourneyTimeBar } from '@/components/journey-time-bar';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { StopInfo } from '@/components/stop-info';
@@ -13,7 +12,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
-import { minutesToDate } from '@/domain/transit/calendar-utils';
 import {
   LOW_CONTRAST_BADGE_MIN_RATIO,
   LOW_CONTRAST_TEXT_MIN_RATIO,
@@ -24,21 +22,26 @@ import {
 } from '@/domain/transit/color-resolver/route-colors';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
-import { formatAbsoluteTime } from '@/domain/transit/time';
 import { getTimetableEntryAttributes } from '@/domain/transit/timetable-entry-attributes';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import { useScrollFades } from '@/hooks/use-scroll-fades';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route } from '@/types/app/transit';
-import type { SelectedTripSnapshot, TripStopTime } from '@/types/app/transit-composed';
+import type {
+  ContextualTimetableEntry,
+  SelectedTripSnapshot,
+  TripStopTime,
+} from '@/types/app/transit-composed';
 import { getContrastAwareAlphaSuffixes } from '@/utils/color/contrast-alpha-suffixes';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import { AgencyBadge } from '../badge/agency-badge';
 import { IdBadge } from '../badge/id-badge';
 import { RouteBadge } from '../badge/route-badge';
 import { TripPositionIndicator } from '../label/trip-position-indicator';
-import { StopTimeItemRichInfo } from '../stop-time-item-rich-info';
+import { StopTimeDetailInfo } from '../stop-time-detail-info';
+import { StopTimeTimeInfo } from '../stop-time-time-info';
+import { StopTimeItem } from '../stop-time-item';
 
 interface TripInspectionDialogProps {
   open: boolean;
@@ -46,7 +49,7 @@ interface TripInspectionDialogProps {
   snapshot: SelectedTripSnapshot | null;
   now: Date;
   infoLevel: InfoLevel;
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
 }
 
 interface TripInspectionStopRowProps {
@@ -54,13 +57,14 @@ interface TripInspectionStopRowProps {
   currentStopIndex: number;
   infoLevel: InfoLevel;
   serviceDate: Date;
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
+  now: Date;
 }
 
 interface TripInspectionSummaryProps {
   snapshot: SelectedTripSnapshot;
   infoLevel: InfoLevel;
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
 }
 
 interface TripInspectionCurrentStopProps {
@@ -73,20 +77,16 @@ interface StopSummaryProps {
   stopNames: ReturnType<typeof getStopDisplayNames> | null;
   stopName: string;
   infoLevel: InfoLevel;
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
 }
 
-function formatScheduleTime(minutes: number, serviceDate: Date): string {
-  return formatAbsoluteTime(minutesToDate(serviceDate, minutes));
-}
-
-function resolveTripStopDisplay(stop: TripStopTime | undefined, dataLang: readonly string[]) {
+function resolveTripStopDisplay(stop: TripStopTime | undefined, dataLangs: readonly string[]) {
   const stopId = stop?.stopMeta?.stop.stop_id || '(unknown-stop)';
   const stopAgencyLangs = stop?.stopMeta
     ? resolveAgencyLang(stop.stopMeta.agencies, stop.stopMeta.stop.agency_id)
     : DEFAULT_AGENCY_LANG;
   const stopNames = stop?.stopMeta
-    ? getStopDisplayNames(stop.stopMeta.stop, dataLang, stopAgencyLangs)
+    ? getStopDisplayNames(stop.stopMeta.stop, dataLangs, stopAgencyLangs)
     : null;
 
   return {
@@ -135,7 +135,7 @@ function SimpleStopSummary({
   );
 }
 
-function RichStopSummary({ stop, infoLevel, dataLang }: StopSummaryProps) {
+function RichStopSummary({ stop, infoLevel, dataLangs }: StopSummaryProps) {
   if (stop?.stopMeta === undefined) {
     return null;
   }
@@ -154,7 +154,7 @@ function RichStopSummary({ stop, infoLevel, dataLang }: StopSummaryProps) {
           geo={stop.stopMeta.geo}
           mapCenter={null}
           infoLevel={infoLevel}
-          dataLang={dataLang}
+          dataLangs={dataLangs}
           agencyBadgeSize="sm"
           routeBadgeSize="xs"
         />
@@ -167,9 +167,11 @@ function TripInspectionStopRow({
   stop,
   currentStopIndex,
   infoLevel,
-  dataLang,
+  dataLangs,
   serviceDate,
+  now,
 }: TripInspectionStopRowProps) {
+  const infoLevelFlag = useInfoLevel(infoLevel);
   const stopMeta = stop.stopMeta;
   const stopId = stop.stopMeta?.stop.stop_id || '(unknown-stop)';
   const stopAttributes = getTimetableEntryAttributes(stop.timetableEntry);
@@ -180,10 +182,19 @@ function TripInspectionStopRow({
     ? resolveAgencyLang(stop.stopMeta.agencies, stop.stopMeta.stop.agency_id)
     : DEFAULT_AGENCY_LANG;
   const stopNames = stop.stopMeta
-    ? getStopDisplayNames(stop.stopMeta.stop, dataLang, stopAgencyLangs)
+    ? getStopDisplayNames(stop.stopMeta.stop, dataLangs, stopAgencyLangs)
     : null;
   const stopIndex = stop.timetableEntry.patternPosition.stopIndex;
   const isCurrent = stopIndex === currentStopIndex;
+  const isTerminalStop = stop.timetableEntry.patternPosition.isTerminal;
+  const isFirstStop = stop.timetableEntry.patternPosition.isOrigin;
+  const showArrivalTime = isTerminalStop || !isFirstStop;
+  const showDepartureTime = !isTerminalStop;
+
+  const contextualTimetableEntry: ContextualTimetableEntry = {
+    serviceDate: serviceDate,
+    ...stop.timetableEntry,
+  };
 
   return (
     <div
@@ -209,7 +220,7 @@ function TripInspectionStopRow({
               geo={stopMeta.geo}
               mapCenter={null}
               infoLevel={infoLevel}
-              dataLang={dataLang}
+              dataLangs={dataLangs}
               agencyBadgeSize="sm"
               routeBadgeSize="xs"
             />
@@ -228,46 +239,52 @@ function TripInspectionStopRow({
             </div>
           )}
         </div>
-        <div className="shrink-0 text-right text-xs">
-          <div className="flex items-center justify-end gap-1">
-            <AbsoluteStopTime
-              timeText={formatScheduleTime(
-                stop.timetableEntry.schedule.arrivalMinutes,
-                serviceDate,
-              )}
-              textColor="currentColor"
-              showDepartureMarker={false}
-              showArrivalMarker={true}
-            />
-          </div>
-          <div className="flex items-center justify-end gap-1">
-            <AbsoluteStopTime
-              timeText={formatScheduleTime(
-                stop.timetableEntry.schedule.departureMinutes,
-                serviceDate,
-              )}
-              textColor="currentColor"
-              showDepartureMarker={true}
-              showArrivalMarker={false}
-            />
-          </div>
-        </div>
+        <StopTimeTimeInfo
+          entry={contextualTimetableEntry}
+          now={now}
+          showArrivalTime={showArrivalTime}
+          showDepartureTime={showDepartureTime}
+          collapseArrivalWhenSameAsDeparture={true}
+          forceShowRelativeTime={true}
+          showVerbose={false}
+        />
       </div>
-      {/* StopTimeItemRichInfo  */}
-      <StopTimeItemRichInfo
+      {/* StopTimeDetailInfo  */}
+      <StopTimeDetailInfo
         entry={stop.timetableEntry}
         infoLevel={infoLevel}
-        dataLang={dataLang}
+        dataLangs={dataLangs}
         showRouteTypeIcon={false}
         agency={stopAgency}
         showAgency={false}
         attributes={stopAttributes}
       />
+
+      {/* StopTimeItem */}
+      {infoLevelFlag.isVerboseEnabled && (
+        <>
+          <hr className="m-2" />
+
+          <StopTimeItem
+            entry={contextualTimetableEntry}
+            now={now}
+            showArrivalTime={showArrivalTime}
+            showDepartureTime={showDepartureTime}
+            collapseArrivalWhenSameAsDeparture={true}
+            forceShowRelativeTime={true}
+            showRouteTypeIcon={true}
+            infoLevel={infoLevel}
+            dataLangs={dataLangs}
+            agency={stopAgency}
+            showAgency={true}
+          />
+        </>
+      )}
     </div>
   );
 }
 
-function TripInspectionSummary({ snapshot, infoLevel, dataLang }: TripInspectionSummaryProps) {
+function TripInspectionSummary({ snapshot, infoLevel, dataLangs }: TripInspectionSummaryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
   const route = snapshot.route;
   const selectedStop = snapshot.selectedStop;
@@ -290,7 +307,7 @@ function TripInspectionSummary({ snapshot, infoLevel, dataLang }: TripInspection
   // const routeAgencyLangs = selectedStop.stopMeta
   //   ? resolveAgencyLang(selectedStop.stopMeta.agencies, route.agency_id)
   //   : DEFAULT_AGENCY_LANG;
-  // const routeNames = getRouteDisplayNames(route, dataLang, routeAgencyLangs, 'short');
+  // const routeNames = getRouteDisplayNames(route, dataLangs, routeAgencyLangs, 'short');
 
   // StopTimes
   const stopTimes = snapshot.stopTimes;
@@ -340,13 +357,13 @@ function TripInspectionSummary({ snapshot, infoLevel, dataLang }: TripInspection
         showBorder={false}
       />
 
-      {/* StopTimeItemRichInfo  */}
-      {/* <StopTimeItemRichInfo
+      {/* StopTimeDetailInfo  */}
+      {/* <StopTimeDetailInfo
         entry={selectedStop.timetableEntry}
         infoLevel="normal"
         // infoLevel="detailed"
         // infoLevel="verbose"
-        dataLang={dataLang}
+        dataLang={dataLangs}
         showRouteTypeIcon={true}
         agency={selectedAgency}
         showAgency={true}
@@ -357,7 +374,7 @@ function TripInspectionSummary({ snapshot, infoLevel, dataLang }: TripInspection
       <RichStopSummary
         stop={lastStop}
         infoLevel={infoLevel}
-        dataLang={dataLang}
+        dataLangs={dataLangs}
         stopNames={null}
         stopName={''}
       />
@@ -365,11 +382,7 @@ function TripInspectionSummary({ snapshot, infoLevel, dataLang }: TripInspection
   );
 }
 
-function TripInspectionCurrentStop({ snapshot, infoLevel }: TripInspectionCurrentStopProps) {
-  if (infoLevel !== 'verbose') {
-    return null;
-  }
-
+function TripInspectionCurrentStop({ snapshot }: TripInspectionCurrentStopProps) {
   const selectedStop: TripStopTime = snapshot.selectedStop;
   const selectedStopId = selectedStop.stopMeta?.stop.stop_id || '(unknown-stop)';
   const selectedStopName = selectedStop.stopMeta?.stop.stop_name || selectedStopId;
@@ -394,9 +407,10 @@ export function TripInspectionDialog({
   onOpenChange,
   snapshot,
   infoLevel,
-  dataLang,
-  now: _now,
+  dataLangs,
+  now,
 }: TripInspectionDialogProps) {
+  const infoLevelFlag = useInfoLevel(infoLevel);
   const { t } = useTranslation();
   const contentContainerRef = useRef<HTMLDivElement>(null);
   const [contentContainerEl, setContentContainerEl] = useState<HTMLDivElement | null>(null);
@@ -486,7 +500,7 @@ export function TripInspectionDialog({
 
   const headsignTitle = getHeadsignDisplayNames(
     snapshot.selectedStop.timetableEntry.routeDirection,
-    dataLang,
+    dataLangs,
     routeAgencyLangs,
     'stop',
   ).resolved.name;
@@ -495,14 +509,14 @@ export function TripInspectionDialog({
   const firstStop = tripStopTimes[0];
   const { stopName: firstStopName, stopNames: firstStopNames } = resolveTripStopDisplay(
     firstStop,
-    dataLang,
+    dataLangs,
   );
 
   // Last TripStopTime
   const lastStop = tripStopTimes[tripStopTimes.length - 1];
   const { stopName: lastStopName, stopNames: lastStopNames } = resolveTripStopDisplay(
     lastStop,
-    dataLang,
+    dataLangs,
   );
 
   return (
@@ -517,7 +531,7 @@ export function TripInspectionDialog({
                 <AgencyBadge
                   size="sm"
                   agency={routeAgency}
-                  dataLang={dataLang}
+                  dataLang={dataLangs}
                   agencyLangs={routeAgencyLangs}
                   infoLevel={infoLevel}
                   showBorder={true}
@@ -527,7 +541,7 @@ export function TripInspectionDialog({
             <RouteBadge
               route={snapshot.route}
               size="sm"
-              dataLang={dataLang}
+              dataLang={dataLangs}
               agencyLangs={routeAgencyLangs}
               infoLevel={infoLevel}
               showBorder={true}
@@ -551,8 +565,13 @@ export function TripInspectionDialog({
             </div>
           </DialogDescription>
 
-          <TripInspectionSummary snapshot={snapshot} infoLevel={infoLevel} dataLang={dataLang} />
-          <TripInspectionCurrentStop snapshot={snapshot} infoLevel={infoLevel} />
+          <TripInspectionSummary snapshot={snapshot} infoLevel={infoLevel} dataLangs={dataLangs} />
+          {infoLevelFlag.isVerboseEnabled && (
+            <>
+              {now.toISOString()}
+              <TripInspectionCurrentStop snapshot={snapshot} infoLevel={infoLevel} />
+            </>
+          )}
         </DialogHeader>
 
         <div
@@ -571,14 +590,17 @@ export function TripInspectionDialog({
                   const stopIndex = stop.timetableEntry.patternPosition.stopIndex;
 
                   return (
-                    <TripInspectionStopRow
-                      key={`${stopId}:${stopIndex}`}
-                      stop={stop}
-                      currentStopIndex={snapshot.currentStopIndex}
-                      infoLevel={infoLevel}
-                      dataLang={dataLang}
-                      serviceDate={snapshot.serviceDate}
-                    />
+                    <>
+                      <TripInspectionStopRow
+                        key={`${stopId}:${stopIndex}`}
+                        stop={stop}
+                        currentStopIndex={snapshot.currentStopIndex}
+                        infoLevel={infoLevel}
+                        dataLangs={dataLangs}
+                        serviceDate={snapshot.serviceDate}
+                        now={now}
+                      />
+                    </>
                   );
                 })}
               </div>

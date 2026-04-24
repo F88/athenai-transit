@@ -1,21 +1,26 @@
-import type { ReactNode } from 'react';
 import { Accessibility } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { resolveAgencyLang } from '../config/transit-defaults';
-import { useInfoLevel } from '../hooks/use-info-level';
-import type { StopServiceState } from '../types/app/transit';
-import { StopServiceStateLabel } from './label/stop-service-state-label';
-import type { InfoLevel } from '../types/app/settings';
-import type { Agency, Route, AppRouteTypeValue, Stop } from '../types/app/transit';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
+import { useInfoLevel } from '../hooks/use-info-level';
+import type { InfoLevel } from '../types/app/settings';
+import type {
+  Agency,
+  AppRouteTypeValue,
+  Route,
+  Stop,
+  StopServiceState,
+} from '../types/app/transit';
 import { routeTypesEmoji } from '../utils/route-type-emoji';
 import { AgencyBadge, type AgencyBadgeSize } from './badge/agency-badge';
 import { IdBadge } from './badge/id-badge';
 import { RouteBadge, type RouteBadgeSize } from './badge/route-badge';
-import { VerboseStop } from './verbose/verbose-stop';
-import { VerboseStopDisplayNames } from './verbose/verbose-stop-display-names';
+import { StopServiceStateLabel } from './label/stop-service-state-label';
 import { VerboseAgencies } from './verbose/verbose-agencies';
 import { VerboseRoutes } from './verbose/verbose-routes';
+import { VerboseStop } from './verbose/verbose-stop';
+import { VerboseStopDisplayNames } from './verbose/verbose-stop-display-names';
 
 export type StopSummaryVariant = 'default' | 'compact';
 
@@ -43,7 +48,7 @@ export interface StopSummaryCoreProps {
   /** Active information density level. */
   infoLevel: InfoLevel;
   /** Display language fallback chain for translated names. */
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
   /** Service state of the stop on the current service day. */
   stopServiceState?: StopServiceState;
   /** Badge size for agency badges. */
@@ -77,7 +82,7 @@ export function StopSummary({
   showRoutes,
   stop,
   infoLevel,
-  dataLang,
+  dataLangs,
   stopServiceState,
   agencyBadgeSize,
   routeBadgeSize,
@@ -88,7 +93,7 @@ export function StopSummary({
   const showVerbose = infoLevel === 'verbose';
   const stopNames = getStopDisplayNames(
     stop,
-    dataLang,
+    dataLangs,
     resolveAgencyLang(agencies, stop.agency_id),
   );
 
@@ -151,7 +156,7 @@ export function StopSummary({
               key={agency.agency_id}
               agency={agency}
               size={agencyBadgeSize}
-              dataLang={dataLang}
+              dataLang={dataLangs}
               agencyLangs={resolveAgencyLang(agencies, agency.agency_id)}
               infoLevel={infoLevel}
               showBorder={true}
@@ -164,7 +169,7 @@ export function StopSummary({
             <RouteBadge
               key={route.route_id}
               route={route}
-              dataLang={dataLang}
+              dataLang={dataLangs}
               agencyLangs={resolveAgencyLang(agencies, route.agency_id)}
               infoLevel={infoLevel}
               size={routeBadgeSize}
@@ -180,7 +185,7 @@ export function StopSummary({
             [META]
           </summary>
           <div className="mt-1 ml-2 space-y-1">
-            <VerboseAgencies agencies={agencies} infoLevel={infoLevel} dataLang={dataLang} />
+            <VerboseAgencies agencies={agencies} infoLevel={infoLevel} dataLang={dataLangs} />
             <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
               <summary className="cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
                 [Stop]
@@ -193,7 +198,7 @@ export function StopSummary({
             <VerboseRoutes
               routes={routes ?? []}
               infoLevel={infoLevel}
-              dataLang={dataLang}
+              dataLang={dataLangs}
               agencies={agencies}
             />
           </div>

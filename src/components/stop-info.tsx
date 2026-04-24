@@ -1,6 +1,6 @@
+import { bearingDeg } from '../domain/transit/distance';
 import type { LatLng } from '../types/app/map';
 import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
-import { bearingDeg } from '../domain/transit/distance';
 import { DistanceBadge } from './badge/distance-badge';
 import { StopMetrics } from './stop-metrics';
 import { StopSummary, type StopSummaryCoreProps } from './stop-summary';
@@ -33,7 +33,7 @@ export function StopInfo({
   distance,
   mapCenter,
   infoLevel,
-  dataLang,
+  dataLangs,
   stopServiceState,
   agencyBadgeSize,
   routeBadgeSize,
@@ -55,7 +55,7 @@ export function StopInfo({
           routes={routes}
           showRoutes={showRoutes}
           infoLevel={infoLevel}
-          dataLang={dataLang}
+          dataLangs={dataLangs}
           stopServiceState={stopServiceState}
           agencyBadgeSize={agencyBadgeSize}
           routeBadgeSize={routeBadgeSize}

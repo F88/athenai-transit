@@ -1,17 +1,17 @@
-import type { InfoLevel } from '../types/app/settings';
+import { Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Agency } from '../types/app/transit';
-import type { ContextualTimetableEntry } from '../types/app/transit-composed';
+import { minutesToDate } from '../domain/transit/calendar-utils';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { formatAbsoluteTime } from '../domain/transit/time';
-import { minutesToDate } from '../domain/transit/calendar-utils';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
 import { getDisplayMinutes } from '../domain/transit/timetable-utils';
+import type { InfoLevel } from '../types/app/settings';
+import type { Agency } from '../types/app/transit';
+import type { ContextualTimetableEntry } from '../types/app/transit-composed';
+import { TimetableEntryAttributesLabels } from './label/timetable-entry-attributes-labels';
 import { RelativeTime } from './relative-time';
 import { TripInfo } from './trip-info';
-import { TimetableEntryAttributesLabels } from './label/timetable-entry-attributes-labels';
 import { VerboseContextualTimetableEntries } from './verbose/verbose-contextual-timetable-entry';
-import { Clock } from 'lucide-react';
 
 interface StopTimesItemProps {
   /** Timetable entries for a single route+headsign group. */
@@ -86,7 +86,7 @@ export function StopTimesItem({
           size="md"
           routeDirection={firstEntry.routeDirection}
           infoLevel={infoLevel}
-          dataLang={dataLang}
+          dataLangs={dataLang}
           showRouteTypeIcon={showRouteTypeIcon}
           agency={agency}
           showAgency={showAgency}
@@ -97,13 +97,7 @@ export function StopTimesItem({
             Kept as a non-wrapping single unit so the prefix stays glued to
             the value even on narrow screens. */}
         {first && (
-          <RelativeTime
-            time={first}
-            now={now}
-            size="lg"
-            isTerminal={firstEntry.patternPosition.isTerminal}
-            hidePrefix={diffMs > 90 * 60 * 1000}
-          />
+          <RelativeTime time={first} now={now} size="lg" hidePrefix={diffMs > 90 * 60 * 1000} />
         )}
         {/* Absolute times wrapper — own flex-wrap container so the n
             absolute time entries can fold onto a second row when the

@@ -1,21 +1,10 @@
-import { AbsoluteStopTime } from '@/components/absolute-stop-time';
-import { LOW_CONTRAST_BADGE_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
-import {
-  getContrastAdjustedRouteColors,
-  resolveRouteColors,
-} from '@/domain/transit/color-resolver/route-colors';
 import { useInfoLevel } from '@/hooks/use-info-level';
-import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
-import { minutesToDate } from '../domain/transit/calendar-utils';
-import { formatAbsoluteTime } from '../domain/transit/time';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
-import { getDisplayMinutes } from '../domain/transit/timetable-utils';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry } from '../types/app/transit-composed';
-import { BaseLabel } from './label/base-label';
-import { RelativeTime } from './relative-time';
-import { StopTimeItemRichInfo } from './stop-time-item-rich-info';
+import { StopTimeDetailInfo } from './stop-time-detail-info';
+import { StopTimeTimeInfo } from './stop-time-time-info';
 import { VerboseContextualTimetableEntry } from './verbose/verbose-contextual-timetable-entry';
 
 interface StopTimeItemProps {
@@ -23,14 +12,20 @@ interface StopTimeItemProps {
   entry: ContextualTimetableEntry;
   /** Current time for relative time calculation. */
   now: Date;
-  /** Whether this is the first item in the list. */
-  isFirst: boolean;
+  /** Whether to render the arrival absolute time. */
+  showArrivalTime: boolean;
+  /** Whether to render the departure absolute time. */
+  showDepartureTime: boolean;
+  /** Whether to hide arrival when both times are shown and the formatted values match. */
+  collapseArrivalWhenSameAsDeparture: boolean;
+  /** Force relative-time display even when the entry is far in the future. */
+  forceShowRelativeTime: boolean;
   /** Whether to show route_type emoji (e.g. when stop serves multiple route types). */
   showRouteTypeIcon: boolean;
   /** Current info verbosity level for route label formatting. */
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
   /** Agency object for badge display at detailed+ info level. */
   agency?: Agency;
   /**
@@ -56,10 +51,13 @@ interface StopTimeItemProps {
 export function StopTimeItem({
   entry,
   now,
-  isFirst,
+  showArrivalTime,
+  showDepartureTime,
+  collapseArrivalWhenSameAsDeparture,
+  forceShowRelativeTime,
   showRouteTypeIcon,
   infoLevel,
-  dataLang,
+  dataLangs,
   agency,
   showAgency = false,
   onInspectTrip,
@@ -67,108 +65,25 @@ export function StopTimeItem({
   const info = useInfoLevel(infoLevel);
   const showVerbose = info.isVerboseEnabled;
   const attributes = getTimetableEntryAttributes(entry);
-  const isTerminal = attributes.isTerminal;
-  const time = minutesToDate(entry.serviceDate, getDisplayMinutes(entry));
-  const diffMs = time.getTime() - now.getTime();
-  const showRelativeTime = isFirst || diffMs <= 60 * 60 * 1000;
-
-  const dt = formatAbsoluteTime(minutesToDate(entry.serviceDate, entry.schedule.departureMinutes));
-  const at = formatAbsoluteTime(minutesToDate(entry.serviceDate, entry.schedule.arrivalMinutes));
-
-  // Route colors
-  const { route } = entry.routeDirection;
-  const { routeColor } = resolveRouteColors(route, 'css-hex');
-  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
-
-  // Adjust route colors for the position indicator and time bar based on contrast against the current theme.
-  const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
-    route,
-    routeColorAssessment.isLowContrast,
-    'css-hex',
-  );
 
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
       <div className="flex gap-2">
-        {onInspectTrip ? (
-          <button
-            type="button"
-            className="flex min-h-8 w-14 shrink-0 cursor-pointer flex-col justify-center text-right leading-none"
-            onClick={(e) => {
-              e.stopPropagation();
-              onInspectTrip(entry);
-            }}
-          >
-            {showVerbose && (
-              <>
-                <div className="mb-0.5 flex justify-end gap-0.5 whitespace-nowrap">
-                  <BaseLabel
-                    size={'xs'}
-                    value={at}
-                    className="bg-gray-500 whitespace-nowrap text-white"
-                  />
-                  <BaseLabel
-                    size={'xs'}
-                    value={dt}
-                    className="bg-blue-500 whitespace-nowrap text-white"
-                  />
-                </div>
-              </>
-            )}
-            {showRelativeTime && (
-              <RelativeTime
-                now={now}
-                time={time}
-                isTerminal={isTerminal}
-                hidePrefix={diffMs > 90 * 60 * 1000}
-              />
-            )}
-            <AbsoluteStopTime
-              timeText={formatAbsoluteTime(time)}
-              textColor={contrastAdjustedRouteColors.color}
-              showDepartureMarker={false}
-              showArrivalMarker={isTerminal}
-            />
-          </button>
-        ) : (
-          <div className="flex min-h-8 w-14 shrink-0 flex-col justify-center text-right leading-none">
-            {showVerbose && (
-              <>
-                <div className="mb-0.5 flex justify-end gap-0.5 whitespace-nowrap">
-                  <BaseLabel
-                    size={'xs'}
-                    value={at}
-                    className="bg-gray-500 whitespace-nowrap text-white"
-                  />
-                  <BaseLabel
-                    size={'xs'}
-                    value={dt}
-                    className="bg-blue-500 whitespace-nowrap text-white"
-                  />
-                </div>
-              </>
-            )}
-            {showRelativeTime && (
-              <RelativeTime
-                now={now}
-                time={time}
-                isTerminal={isTerminal}
-                hidePrefix={diffMs > 90 * 60 * 1000}
-              />
-            )}
-            <AbsoluteStopTime
-              timeText={formatAbsoluteTime(time)}
-              showArrivalMarker={isTerminal}
-              showDepartureMarker={false}
-              textColor={contrastAdjustedRouteColors.color}
-            />
-          </div>
-        )}
+        <StopTimeTimeInfo
+          entry={entry}
+          now={now}
+          showArrivalTime={showArrivalTime}
+          showDepartureTime={showDepartureTime}
+          collapseArrivalWhenSameAsDeparture={collapseArrivalWhenSameAsDeparture}
+          forceShowRelativeTime={forceShowRelativeTime}
+          showVerbose={showVerbose}
+          onInspectTrip={onInspectTrip}
+        />
 
-        <StopTimeItemRichInfo
+        <StopTimeDetailInfo
           entry={entry}
           infoLevel={infoLevel}
-          dataLang={dataLang}
+          dataLangs={dataLangs}
           showRouteTypeIcon={showRouteTypeIcon}
           agency={agency}
           showAgency={showAgency}
