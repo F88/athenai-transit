@@ -15,6 +15,13 @@ interface UseTripInspectionReturn {
   closeTripInspection: () => void;
 }
 
+/**
+ * Manage the currently selected trip inspection snapshot and expose handlers
+ * to open or close the dialog from a timetable entry.
+ *
+ * @param repo - Repository used to reconstruct a full trip snapshot for the selected entry.
+ * @returns Current trip inspection snapshot state and open/close handlers.
+ */
 export function useTripInspection(repo: TransitRepository): UseTripInspectionReturn {
   const [tripInspectionSnapshot, setTripInspectionSnapshot] = useState<SelectedTripSnapshot | null>(
     null,

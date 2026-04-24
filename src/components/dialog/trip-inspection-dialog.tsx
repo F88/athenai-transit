@@ -73,9 +73,12 @@ interface TripInspectionCurrentStopProps {
 }
 
 interface StopSummaryProps {
-  stop: TripStopTime | undefined;
   stopNames: ReturnType<typeof getStopDisplayNames> | null;
   stopName: string;
+}
+
+interface RichStopSummaryProps {
+  stop: TripStopTime | undefined;
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
 }
@@ -111,10 +114,7 @@ function getSelectedRowScrollTop(container: HTMLDivElement, selectedRow: HTMLEle
   );
 }
 
-function SimpleStopSummary({
-  stopNames,
-  stopName,
-}: Pick<StopSummaryProps, 'stopNames' | 'stopName'>) {
+function SimpleStopSummary({ stopNames, stopName }: StopSummaryProps) {
   return (
     <div className="min-w-0 rounded-md border p-2">
       {stopNames && stopNames.subNames.length > 0 && (
@@ -127,30 +127,28 @@ function SimpleStopSummary({
   );
 }
 
-function RichStopSummary({ stop, infoLevel, dataLangs }: StopSummaryProps) {
+function RichStopSummary({ stop, infoLevel, dataLangs }: RichStopSummaryProps) {
   if (stop?.stopMeta === undefined) {
     return null;
   }
   return (
     <div className="min-w-0 rounded-md p-2">
-      <>
-        <StopInfo
-          stop={stop.stopMeta.stop}
-          agencies={stop.stopMeta.agencies}
-          showAgencies={true}
-          routeTypes={stop.routeTypes}
-          showRouteTypes={true}
-          routes={stop.stopMeta.routes}
-          showRoutes={true}
-          stats={stop.stopMeta.stats}
-          geo={stop.stopMeta.geo}
-          mapCenter={null}
-          infoLevel={infoLevel}
-          dataLangs={dataLangs}
-          agencyBadgeSize="sm"
-          routeBadgeSize="xs"
-        />
-      </>
+      <StopInfo
+        stop={stop.stopMeta.stop}
+        agencies={stop.stopMeta.agencies}
+        showAgencies={true}
+        routeTypes={stop.routeTypes}
+        showRouteTypes={true}
+        routes={stop.stopMeta.routes}
+        showRoutes={true}
+        stats={stop.stopMeta.stats}
+        geo={stop.stopMeta.geo}
+        mapCenter={null}
+        infoLevel={infoLevel}
+        dataLangs={dataLangs}
+        agencyBadgeSize="sm"
+        routeBadgeSize="xs"
+      />
     </div>
   );
 }
@@ -363,13 +361,7 @@ function TripInspectionSummary({ snapshot, infoLevel, dataLangs }: TripInspectio
       /> */}
 
       {/* Last stop */}
-      <RichStopSummary
-        stop={lastStop}
-        infoLevel={infoLevel}
-        dataLangs={dataLangs}
-        stopNames={null}
-        stopName={''}
-      />
+      <RichStopSummary stop={lastStop} infoLevel={infoLevel} dataLangs={dataLangs} />
     </section>
   );
 }
