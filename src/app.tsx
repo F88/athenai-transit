@@ -869,6 +869,7 @@ export default function App({ loadResult }: AppProps) {
         time={dateTime}
         infoLevel={settings.infoLevel}
         dataLangs={langChain}
+        onInspectTrip={openTripInspection}
         onClose={() => setTimetableModal(null)}
       />
       <Toaster

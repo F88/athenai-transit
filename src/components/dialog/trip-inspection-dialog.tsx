@@ -548,10 +548,10 @@ export function TripInspectionDialog({
               infoLevel={infoLevel}
               showBorder={true}
             />
-            {headsignTitle ? (
+            {headsignTitle.length > 0 ? (
               <span className="truncate">{headsignTitle}</span>
             ) : (
-              t('tripInspection.title')
+              t('tripInspection.titleWithNoHeadsign')
             )}
           </DialogTitle>
           <DialogDescription asChild className="text-center sm:text-center">
