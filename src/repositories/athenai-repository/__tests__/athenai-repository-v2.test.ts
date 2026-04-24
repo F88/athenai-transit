@@ -638,6 +638,60 @@ describe('getTripSnapshot', () => {
 });
 
 // ---------------------------------------------------------------------------
+// getTripInspectionTargets
+// ---------------------------------------------------------------------------
+
+describe('getTripInspectionTargets', () => {
+  it('returns trip-inspection targets at the queried stop in timetable order', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getTripInspectionTargets({
+      tripLocator: { patternId: 'tp_bus_o', serviceId: 'svc_weekday', tripIndex: 0 },
+      serviceDate: WEEKDAY,
+      stopId: 'bus_01',
+    });
+    const timetable = await repository.getFullDayTimetableEntries('bus_01', WEEKDAY);
+
+    assertSuccess(result);
+    assertSuccess(timetable);
+    expect(result.data).toEqual(
+      timetable.data.map((entry) => ({
+        tripLocator: entry.tripLocator,
+        serviceDate: WEEKDAY,
+        stopIndex: entry.patternPosition.stopIndex,
+        departureMinutes: entry.schedule.departureMinutes,
+      })),
+    );
+  });
+
+  it('does not require the current trip pattern to exist', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getTripInspectionTargets({
+      tripLocator: { patternId: 'missing_pattern', serviceId: 'svc_weekday', tripIndex: 0 },
+      serviceDate: WEEKDAY,
+      stopId: 'bus_01',
+    });
+    const timetable = await repository.getFullDayTimetableEntries('bus_01', WEEKDAY);
+
+    assertSuccess(result);
+    assertSuccess(timetable);
+    expect(result.data).toEqual(
+      timetable.data.map((entry) => ({
+        tripLocator: entry.tripLocator,
+        serviceDate: WEEKDAY,
+        stopIndex: entry.patternPosition.stopIndex,
+        departureMinutes: entry.schedule.departureMinutes,
+      })),
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getRouteShapes (background loading)
 // ---------------------------------------------------------------------------
 

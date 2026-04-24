@@ -27,6 +27,8 @@ import type {
   StopServiceType,
   StopWithMeta,
   TimetableEntry,
+  TripInspectionGroupQuery,
+  TripInspectionTarget,
   TripLocator,
   TripStopTime,
   TripPattern,
@@ -661,6 +663,24 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       stopTimes,
     };
     return { success: true, data: snapshot };
+  }
+
+  async getTripInspectionTargets(
+    query: TripInspectionGroupQuery,
+  ): Promise<Result<TripInspectionTarget[]>> {
+    const timetable = await this.getFullDayTimetableEntries(query.stopId, query.serviceDate);
+    if (!timetable.success) {
+      return timetable;
+    }
+
+    const targets = timetable.data.map<TripInspectionTarget>((entry) => ({
+      tripLocator: entry.tripLocator,
+      serviceDate: query.serviceDate,
+      stopIndex: entry.patternPosition.stopIndex,
+      departureMinutes: entry.schedule.departureMinutes,
+    }));
+
+    return { success: true, data: targets };
   }
 
   getRouteTypesForStop(stopId: string): Promise<Result<AppRouteTypeValue[]>> {

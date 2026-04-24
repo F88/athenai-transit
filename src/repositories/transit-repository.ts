@@ -8,7 +8,12 @@
 
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
 import type { Agency, AppRouteTypeValue, Stop } from '../types/app/transit';
-import type { SourceMeta, StopWithMeta } from '../types/app/transit-composed';
+import type {
+  SourceMeta,
+  StopWithMeta,
+  TripInspectionGroupQuery,
+  TripInspectionTarget,
+} from '../types/app/transit-composed';
 import type {
   CollectionResult,
   Result,
@@ -286,6 +291,22 @@ export interface TransitRepository {
    * @returns Whole-trip payload, or an error when reconstruction is unavailable.
    */
   getTripSnapshot(locator: TripLocator, serviceDate: Date): TripSnapshotResult;
+
+  /**
+   * Returns trip-inspection targets for departures at the same stop on the
+   * current service day.
+   *
+   * Each target carries only the minimal fields needed for trip inspection and
+   * candidate comparison. In particular, `departureMinutes` is included so
+   * callers can compare or reorder candidates without reloading full timetable
+   * entries.
+   *
+   * @param query - Minimal trip + stop context for grouping neighboring departures.
+   * @returns Trip-inspection targets with lightweight comparison data.
+   */
+  getTripInspectionTargets(
+    query: TripInspectionGroupQuery,
+  ): Promise<Result<TripInspectionTarget[]>>;
 
   /**
    * Returns a single stop with metadata by its GTFS stop_id, against

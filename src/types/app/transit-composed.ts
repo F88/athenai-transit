@@ -387,6 +387,24 @@ export interface TripInspectionTarget extends WithServiceDate {
   tripLocator: TripLocator;
   /** Pattern position of the selected stop within the reconstructed trip. */
   stopIndex: number;
+  /**
+   * Departure minutes at the selected stop.
+   *
+   * Added so trip-inspection candidates can be compared and ordered without
+   * reloading the source timetable entries.
+   */
+  departureMinutes: number;
+}
+
+/**
+ * Minimal query required to list trip-inspection targets at the same stop on
+ * the current service day.
+ */
+export interface TripInspectionGroupQuery extends WithServiceDate {
+  /** Locator used to reconstruct the current concrete trip instance. */
+  tripLocator: TripLocator;
+  /** Physical stop where neighboring departures should be searched. */
+  stopId: string;
 }
 
 /**

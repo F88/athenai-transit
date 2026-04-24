@@ -22,6 +22,8 @@ import type {
   SourceMeta,
   StopWithMeta,
   TimetableEntry,
+  TripInspectionGroupQuery,
+  TripInspectionTarget,
   TripLocator,
   TripStopTime,
   TripSnapshot,
@@ -381,6 +383,26 @@ export class MockRepository implements TransitRepository {
       stopTimes,
     };
     return { success: true, data: snapshot };
+  }
+
+  getTripInspectionTargets(
+    query: TripInspectionGroupQuery,
+  ): Promise<Result<TripInspectionTarget[]>> {
+    return this.getFullDayTimetableEntries(query.stopId, query.serviceDate).then((result) => {
+      if (!result.success) {
+        return result;
+      }
+
+      return {
+        success: true,
+        data: result.data.map((entry) => ({
+          tripLocator: entry.tripLocator,
+          serviceDate: query.serviceDate,
+          stopIndex: entry.patternPosition.stopIndex,
+          departureMinutes: entry.schedule.departureMinutes,
+        })),
+      };
+    });
   }
 
   /** {@inheritDoc TransitRepository.getStopMetaById} */
