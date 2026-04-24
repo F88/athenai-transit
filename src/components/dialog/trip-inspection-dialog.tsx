@@ -91,6 +91,10 @@ interface RichStopSummaryProps {
   dataLangs: readonly string[];
 }
 
+// Initial frame renders the selected stop and +/- 5 neighbors so
+// long trips paint quickly before the full list is restored.
+const INITIAL_TRIP_STOP_RENDER_PADDING = 5;
+
 function resolveTripStopDisplay(stop: TripStopTime | undefined, dataLangs: readonly string[]) {
   const stopId = stop?.stopMeta?.stop.stop_id || '(unknown-stop)';
   const stopAgencyLangs = stop?.stopMeta
@@ -302,7 +306,11 @@ function TripInspectionStopRow({
   );
 }
 
-function TripInspectionSummary({ snapshot, infoLevel, dataLangs }: TripInspectionSummaryProps) {
+function TripInspectionSummary({
+  snapshot,
+  infoLevel,
+  dataLangs: _dataLangs,
+}: TripInspectionSummaryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
   const route = snapshot.route;
   const selectedStop = snapshot.selectedStop;
@@ -447,8 +455,23 @@ export function TripInspectionDialog({
       : 'empty',
   );
   const selectedStopRowKey = snapshot
-    ? `${snapshot.currentStopIndex}:${snapshot.stopTimes.length}`
+    ? `${snapshot.locator.patternId}:${snapshot.locator.serviceId}:${snapshot.locator.tripIndex}:${snapshot.currentStopIndex}:${snapshot.stopTimes.length}`
     : 'empty';
+  const [renderedSnapshot, setRenderedSnapshot] = useState<SelectedTripSnapshot | null>(null);
+
+  useEffect(() => {
+    if (!open || !snapshot) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      setRenderedSnapshot(snapshot);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [open, snapshot]);
 
   useEffect(() => {
     if (!open || !snapshot || !contentContainerEl) {
@@ -543,6 +566,20 @@ export function TripInspectionDialog({
 
   // Selected TripStopTime
   const selectedStop = tripStopTimes[snapshot.currentStopIndex];
+  // Progressive render: paint a small window first, then switch to
+  // the full stop list on the next animation frame.
+  const initialRenderStart = Math.max(
+    0,
+    snapshot.currentStopIndex - INITIAL_TRIP_STOP_RENDER_PADDING,
+  );
+  const initialRenderEnd = Math.min(
+    tripStopTimes.length,
+    snapshot.currentStopIndex + INITIAL_TRIP_STOP_RENDER_PADDING + 1,
+  );
+  const renderAllStops = renderedSnapshot === snapshot;
+  const renderedTripStopTimes = renderAllStops
+    ? tripStopTimes
+    : tripStopTimes.slice(initialRenderStart, initialRenderEnd);
 
   // First TripStopTime
   const firstStop = tripStopTimes[0];
@@ -685,24 +722,22 @@ export function TripInspectionDialog({
           <div className="flex flex-col gap-4 pt-3 pb-4">
             <section className="flex flex-col gap-2">
               <div className="flex flex-col gap-2">
-                {snapshot.stopTimes.map((stop) => {
+                {renderedTripStopTimes.map((stop) => {
                   const stopId = stop.stopMeta?.stop.stop_id || '(unknown-stop)';
                   const stopIndex = stop.timetableEntry.patternPosition.stopIndex;
 
                   return (
-                    <>
-                      <TripInspectionStopRow
-                        key={`${stopId}:${stopIndex}`}
-                        stop={stop}
-                        currentStopIndex={snapshot.currentStopIndex}
-                        infoLevel={infoLevel}
-                        // infoLevel={'simple'}
-                        // infoLevel={'verbose'}
-                        dataLangs={dataLangs}
-                        serviceDate={snapshot.serviceDate}
-                        now={now}
-                      />
-                    </>
+                    <TripInspectionStopRow
+                      key={`${stopId}:${stopIndex}`}
+                      stop={stop}
+                      currentStopIndex={snapshot.currentStopIndex}
+                      infoLevel={infoLevel}
+                      // infoLevel={'simple'}
+                      // infoLevel={'verbose'}
+                      dataLangs={dataLangs}
+                      serviceDate={snapshot.serviceDate}
+                      now={now}
+                    />
                   );
                 })}
               </div>
