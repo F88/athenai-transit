@@ -30,8 +30,6 @@ interface TimetableGridEntryProps {
   /** Suppress verbose-only rendering (IdBadge, details dump).
    *  Use in non-interactive contexts like tooltips. */
   disableVerbose?: boolean;
-  /** Start with details expanded. @default false */
-  defaultOpen?: boolean;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
@@ -52,7 +50,6 @@ export function TimetableGridEntry({
   isDisplayPickupUnavailable,
   isDisplayDropOffUnavailable,
   disableVerbose = false,
-  defaultOpen = false,
   onInspectTrip,
 }: TimetableGridEntryProps) {
   const { t } = useTranslation();
@@ -79,7 +76,7 @@ export function TimetableGridEntry({
           agencyLang={agencyLang}
           maxLength={headsignMaxLength}
           size="xs"
-          enableVerboseExtras={!disableVerbose}
+          enableVerboseExtras={false}
           showBorder={true}
         />
       )}
@@ -113,12 +110,14 @@ export function TimetableGridEntry({
           displayMinutes={displayMinutes}
           showHeadsign={showHeadsign}
           headsignMaxLength={headsignMaxLength}
+          dataLangs={dataLangs}
+          agencyLang={agencyLang}
           infoLevel={infoLevel}
           isDisplayTerminal={isDisplayTerminal}
           isDisplayOrigin={isDisplayOrigin}
           isDisplayPickupUnavailable={isDisplayPickupUnavailable}
           isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
-          defaultOpen={defaultOpen}
+          defaultOpen={false}
         />
       )}
     </span>

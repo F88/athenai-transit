@@ -132,7 +132,6 @@ export function TimetableGrid({
                   isDisplayPickupUnavailable={isDisplayPickupUnavailable}
                   isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
                   disableVerbose={true}
-                  defaultOpen={false}
                   onInspectTrip={onInspectTrip}
                 />
               ))}
@@ -168,7 +167,6 @@ export function TimetableGrid({
                     isDisplayOrigin={isDisplayOrigin}
                     isDisplayPickupUnavailable={isDisplayPickupUnavailable}
                     isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
-                    defaultOpen={false}
                     onInspectTrip={onInspectTrip}
                   />
                 ))}

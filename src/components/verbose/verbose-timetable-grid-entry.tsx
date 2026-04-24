@@ -12,6 +12,8 @@ export function VerboseTimetableGridEntry({
   displayMinutes,
   showHeadsign,
   headsignMaxLength,
+  dataLangs,
+  agencyLang,
   infoLevel,
   isDisplayTerminal,
   isDisplayOrigin,
@@ -23,6 +25,8 @@ export function VerboseTimetableGridEntry({
   displayMinutes: number;
   showHeadsign: boolean;
   headsignMaxLength?: number;
+  dataLangs: readonly string[];
+  agencyLang?: readonly string[];
   infoLevel: InfoLevel;
   isDisplayTerminal: boolean;
   isDisplayOrigin: boolean;
@@ -49,9 +53,14 @@ export function VerboseTimetableGridEntry({
             {` dropOffUnavail=${String(isDisplayDropOffUnavailable)}`}
           </span>
         </span>
-        <span className="border-app-neutral block overflow-x-auto rounded border border-dashed p-1 whitespace-nowrap">
-          <VerboseTimetableEntry entry={entry} />
-        </span>
+        <VerboseTimetableEntry
+          timetableEntry={entry}
+          dataLangs={dataLangs}
+          agencyLang={agencyLang}
+          headsignMaxLength={headsignMaxLength}
+          infoLevel={infoLevel}
+          defaultOpen={true}
+        />
       </div>
     </details>
   );
