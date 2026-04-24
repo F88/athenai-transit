@@ -99,6 +99,29 @@ export function normalizeOptionalResultLimit(limit?: number): number | undefined
  * {@link Result} or {@link CollectionResult} to communicate domain-level
  * errors without throwing, while others return plain collections or
  * derived values directly.
+ *
+ * ### Date/time parameters
+ * Methods that accept a `Date` may be called with any user-selected
+ * date/time, not just the current wall-clock time. This includes real-time
+ * values from `new Date()` as well as custom time values from `?time=` or
+ * the app's time-setting UI.
+ *
+ * There are two distinct contracts:
+ * - Reference datetime parameters such as `referenceDateTime` / `dateTime` accept an
+ *   arbitrary real-world date/time and are normalized internally to the
+ *   GTFS service day when needed.
+ * - `serviceDate` parameters are already normalized to the GTFS service day
+ *   by the caller and must not be treated as raw reference datetimes.
+ *
+ * Method classification:
+ * - Reference datetime (arbitrary date/time, normalized internally):
+ *   `getUpcomingTimetableEntries(referenceDateTime)`,
+ *   `getFullDayTimetableEntries(dateTime)`
+ * - Pre-normalized service day (caller passes `getServiceDay(...)` result):
+ *   `getTripSnapshot(serviceDate)`,
+ *   `getTripInspectionTargets(query.serviceDate)`,
+ *   `resolveStopStats(serviceDate)`,
+ *   `resolveRouteFreq(serviceDate)`
  */
 export interface TransitRepository {
   /**
@@ -146,7 +169,7 @@ export interface TransitRepository {
    *
    * ### Service day boundary
    * The GTFS service day does not change at midnight but at 03:00.
-   * Before 03:00, `now` is treated as part of the previous calendar
+   * Before 03:00, `referenceDateTime` is treated as part of the previous calendar
    * day's service. This is handled internally via `getServiceDay()`.
    *
    * ### Overnight handling
@@ -168,8 +191,11 @@ export interface TransitRepository {
    *   `{ success: false, error: "No stop time data for stop: {stopId}" }`
    *
    * @param stopId - GTFS `stop_id` of the target stop.
-   * @param now    - Real-world reference time. The service day is
-   *                 determined internally (03:00 boundary).
+   * @param referenceDateTime - Reference date/time for the query. This may be
+   *                            the live current time or an arbitrary custom
+   *                            time selected by the user. The repository
+   *                            determines the GTFS service day internally
+   *                            (03:00 boundary).
    * @param limit  - Maximum number of entries to return.
    *                 When omitted, all upcoming entries are returned.
    *                 Negative and non-finite values are treated as `0`.
@@ -178,7 +204,7 @@ export interface TransitRepository {
    */
   getUpcomingTimetableEntries(
     stopId: string,
-    now: Date,
+    referenceDateTime: Date,
     limit?: number,
   ): Promise<UpcomingTimetableResult>;
 
@@ -267,14 +293,18 @@ export interface TransitRepository {
    *
    * ### Calendar filtering
    * Only service IDs active on the GTFS service day are included.
+   * Implementations are expected to derive that service day from `dateTime`
+   * internally rather than requiring callers to pre-normalize it.
    *
    * ### Error conditions
    * - No stop time data for `stopId`:
    *   `{ success: true, data: [], truncated: false }` (not an error).
    *
    * @param stopId   - GTFS stop_id.
-   * @param dateTime - Reference real-world time. The repository converts
-   *                   this to the GTFS service day internally (03:00 boundary).
+   * @param dateTime - Reference date/time for the query. This may be the live
+   *                   current time or an arbitrary custom time selected by the
+   *                   user. The repository converts it to the GTFS service day
+   *                   internally (03:00 boundary).
    * @returns All timetable entries at the stop for the service day.
    */
   getFullDayTimetableEntries(stopId: string, dateTime: Date): Promise<TimetableResult>;
@@ -286,22 +316,40 @@ export interface TransitRepository {
    * Callers that need a current stop can resolve it afterward using
    * their own selection context.
    *
+   * `serviceDate` is attached to the returned snapshot as caller-owned context.
+   * Implementations do not re-derive a service day from it and do not use it
+   * to recompute departure or arrival minutes.
+   *
    * @param locator - Repository-specific trip locator.
-   * @param serviceDate - Service day context for accurate time interpretation.
+   * @param serviceDate - Pre-normalized GTFS service day to attach to the
+   *                      returned snapshot. Implementations treat this as
+   *                      caller-owned context and pass it through without
+   *                      additional normalization.
    * @returns Whole-trip payload, or an error when reconstruction is unavailable.
    */
   getTripSnapshot(locator: TripLocator, serviceDate: Date): TripSnapshotResult;
 
   /**
    * Returns trip-inspection targets for departures at the same stop on the
-   * current service day.
+   * provided service day.
    *
    * Each target carries only the minimal fields needed for trip inspection and
    * candidate comparison. In particular, `departureMinutes` is included so
    * callers can compare or reorder candidates without reloading full timetable
    * entries.
    *
+   * ### Sorting
+   * Results are sorted with the same ordering as
+   * `sortTimetableEntriesByDepartureTime`: `departureMinutes` ascending,
+   * then `stopIndex` ascending, then route ID ascending.
+   *
+   * `query.serviceDate` must already be normalized to the GTFS service day.
+   * Implementations use it as the service-day context for calendar filtering;
+   * callers should not pass a raw real-world datetime here.
+   *
    * @param query - Minimal trip + stop context for grouping neighboring departures.
+   *                `query.serviceDate` is a pre-normalized service day, not a
+   *                reference datetime.
    * @returns Trip-inspection targets with lightweight comparison data.
    */
   getTripInspectionTargets(
@@ -414,13 +462,14 @@ export interface TransitRepository {
   /**
    * Resolves per-stop stats for the service group matching the given service day.
    *
-   * Uses active service IDs for the normalized service day to select the best
+   * Uses active service IDs for the provided service day to select the best
    * matching service group from InsightsBundle data. Returns undefined if
    * insights are not loaded or no group matches.
    *
    * @param stopId - GTFS stop_id.
-   * @param serviceDate - Reference date/time or precomputed service day.
-   *   Implementations normalize this via `getServiceDay(serviceDate)` before lookup.
+   * @param serviceDate - Pre-normalized GTFS service day.
+   *   Callers should pass the result of `getServiceDay(dateTime)` or an
+   *   equivalent repository-provided `serviceDate` value.
    * @returns Stats for the matched service group, or undefined.
    */
   resolveStopStats(stopId: string, serviceDate: Date): StopWithMeta['stats'] | undefined;
@@ -438,8 +487,9 @@ export interface TransitRepository {
    * Returns undefined if insights are not loaded or no group matches.
    *
    * @param routeId - GTFS route_id.
-   * @param serviceDate - Reference date/time or precomputed service day.
-   *   Implementations normalize this via `getServiceDay(serviceDate)` before lookup.
+   * @param serviceDate - Pre-normalized GTFS service day.
+   *   Callers should pass the result of `getServiceDay(dateTime)` or an
+   *   equivalent repository-provided `serviceDate` value.
    * @returns Number of trips in the matched service day, or undefined.
    */
   resolveRouteFreq(routeId: string, serviceDate: Date): number | undefined;

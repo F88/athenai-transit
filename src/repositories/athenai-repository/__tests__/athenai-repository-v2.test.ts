@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { AthenaiRepositoryV2 } from '..';
 import { getEffectiveHeadsign } from '../../../domain/transit/get-effective-headsign';
+import { getServiceDay } from '../../../domain/transit/service-day';
 import {
   TestDataSourceV2,
   createFixtureV2,
@@ -635,6 +636,21 @@ describe('getTripSnapshot', () => {
       firstStop?.timetableEntry.schedule.departureMinutes,
     );
   });
+
+  it('passes through the provided serviceDate on trip snapshots', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+    const serviceDate = new Date('2026-03-11T00:00:00+09:00');
+
+    const result = repository.getTripSnapshot(
+      { patternId: 'tp_sub_n', serviceId: 'svc_weekday', tripIndex: 0 },
+      serviceDate,
+    );
+
+    assertSuccess(result);
+    expect(result.data.serviceDate).toBe(serviceDate);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -666,6 +682,39 @@ describe('getTripInspectionTargets', () => {
     );
   });
 
+  it('sorts same-minute duplicate-stop occurrences by stopIndex', async () => {
+    const fixture = createFixtureV2();
+    const circularTerminalGroup = fixture.data.timetable.data['bus_01']?.find(
+      (group) => group.tp === 'tp_bus_c' && group.si === 3,
+    );
+    if (!circularTerminalGroup) {
+      throw new Error('Expected bus_01 circular terminal timetable fixture');
+    }
+    circularTerminalGroup.d = { svc_weekday: [620] };
+    circularTerminalGroup.a = { svc_weekday: [620] };
+
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getTripInspectionTargets({
+      tripLocator: { patternId: 'tp_bus_c', serviceId: 'svc_weekday', tripIndex: 0 },
+      serviceDate: WEEKDAY,
+      stopId: 'bus_01',
+    });
+
+    assertSuccess(result);
+    expect(
+      result.data
+        .filter(
+          (target) =>
+            target.tripLocator.patternId === 'tp_bus_c' &&
+            target.tripLocator.tripIndex === 0 &&
+            target.departureMinutes === 620,
+        )
+        .map((target) => target.stopIndex),
+    ).toEqual([0, 3]);
+  });
+
   it('does not require the current trip pattern to exist', async () => {
     const fixture = createFixtureV2();
     const ds = new TestDataSourceV2({ test: fixture });
@@ -687,6 +736,34 @@ describe('getTripInspectionTargets', () => {
         stopIndex: entry.patternPosition.stopIndex,
         departureMinutes: entry.schedule.departureMinutes,
       })),
+    );
+  });
+
+  it('uses the provided service day without re-normalizing it again', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const serviceDate = getServiceDay(EXCEPTION_HOLIDAY);
+    const result = await repository.getTripInspectionTargets({
+      tripLocator: { patternId: 'tp_sub_n', serviceId: 'svc_holiday', tripIndex: 0 },
+      serviceDate,
+      stopId: 'sub_01',
+    });
+    const timetable = await repository.getFullDayTimetableEntries('sub_01', EXCEPTION_HOLIDAY);
+
+    assertSuccess(result);
+    assertSuccess(timetable);
+    expect(result.data).toEqual(
+      timetable.data.map((entry) => ({
+        tripLocator: entry.tripLocator,
+        serviceDate,
+        stopIndex: entry.patternPosition.stopIndex,
+        departureMinutes: entry.schedule.departureMinutes,
+      })),
+    );
+    expect(new Set(result.data.map((target) => target.tripLocator.serviceId))).toEqual(
+      new Set(['svc_holiday']),
     );
   });
 });

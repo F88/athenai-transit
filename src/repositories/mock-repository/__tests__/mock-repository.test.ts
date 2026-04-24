@@ -191,6 +191,23 @@ describe('MockRepository contract compatibility', () => {
     expect(departures[2]).toBeLessThan(departures[3]);
     expect(arrivals.map((minutes, index) => departures[index] - minutes)).toEqual([3, 3, 3, 3]);
   });
+
+  it('passes through the provided serviceDate on trip snapshots', () => {
+    const repository = new MockRepository();
+    const serviceDate = new Date('2026-04-07T00:00:00+09:00');
+
+    const snapshot = repository.getTripSnapshot(
+      {
+        patternId: 'bus_yukkuri01__もり公園前',
+        serviceId: 'mock:default',
+        tripIndex: 0,
+      },
+      serviceDate,
+    );
+
+    assertSuccess(snapshot);
+    expect(snapshot.data.serviceDate).toBe(serviceDate);
+  });
 });
 
 // ---------------------------------------------------------------------------
