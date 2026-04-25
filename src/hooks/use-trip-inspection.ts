@@ -259,6 +259,12 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
             `openTripInspection: serviceDate=${formatTripInspectionServiceDate(target.serviceDate)} trip-inspection targets=${result.data.length} currentIndex=${currentIndex} stopId=${selectedStopId}`,
             result.data,
           );
+        })
+        .catch((error: unknown) => {
+          if (lookupRequestIdRef.current !== lookupRequestId) {
+            return;
+          }
+          logger.warn('openTripInspection: trip-inspection target lookup threw', error, target);
         });
     },
     [repo, updateTripInspectionTargets],
