@@ -22,6 +22,8 @@ import type {
   SourceMeta,
   StopWithMeta,
   TimetableEntry,
+  TripInspectionGroupQuery,
+  TripInspectionTarget,
   TripLocator,
   TripStopTime,
   TripSnapshot,
@@ -66,7 +68,55 @@ import {
   simpleHash,
 } from './mock-data';
 
+const MOCK_DEFAULT_SERVICE_ID = 'mock:default';
+
 export class MockRepository implements TransitRepository {
+  private buildFullDayTimetableEntries(stopId: string): TimetableEntry[] {
+    const stopRoutes = STOP_ROUTES[stopId] ?? [];
+    const entries: TimetableEntry[] = [];
+
+    for (const { routeId, headsign, stopHeadsign } of stopRoutes) {
+      const route = ROUTES.find((r) => r.route_id === routeId);
+      if (!route) {
+        continue;
+      }
+      // Issue #47: emit one set of entries per occurrence (6-shape / circular).
+      const occurrences = Math.max(1, countStopOccurrences(routeId, headsign, stopId));
+
+      for (let occ = 0; occ < occurrences; occ++) {
+        const position = getPatternPosition(routeId, headsign, stopId, occ);
+        const occOffset = computeOccOffset(routeId, occ);
+        const travelOffset = computePatternTravelOffset(routeId, headsign, position.stopIndex);
+        const { pickupType, dropOffType } = getBoardingTypes(routeId, headsign, stopId, occ);
+        const baseSchedule = generateFixedMinutes(routeId, headsign);
+        for (const [tripIndex, baseMinutes] of baseSchedule.entries()) {
+          const minutes = baseMinutes + travelOffset + occOffset;
+          const arrivalMinutes = computeArrivalMinutes(routeId, occ, minutes);
+          entries.push({
+            schedule: { departureMinutes: minutes, arrivalMinutes },
+            routeDirection: {
+              route,
+              tripHeadsign: createMockTranslatableText(headsign),
+              ...(stopHeadsign != null
+                ? { stopHeadsign: createMockTranslatableText(stopHeadsign) }
+                : {}),
+            },
+            boarding: { pickupType, dropOffType },
+            patternPosition: position,
+            tripLocator: {
+              patternId: createMockTripPatternId(routeId, headsign),
+              serviceId: MOCK_DEFAULT_SERVICE_ID,
+              tripIndex,
+            },
+          });
+        }
+      }
+    }
+
+    sortTimetableEntriesByDepartureTime(entries);
+    return entries;
+  }
+
   /** {@inheritDoc TransitRepository.getStopsInBounds} */
   getStopsInBounds(bounds: Bounds, limit: number): Promise<CollectionResult<StopWithMeta>> {
     const effectiveLimit = normalizeStopQueryLimit(limit);
@@ -102,7 +152,7 @@ export class MockRepository implements TransitRepository {
   /** {@inheritDoc TransitRepository.getUpcomingTimetableEntries} */
   getUpcomingTimetableEntries(
     stopId: string,
-    now: Date,
+    referenceDateTime: Date,
     limit?: number,
   ): Promise<UpcomingTimetableResult> {
     const normalizedLimit = normalizeOptionalResultLimit(limit);
@@ -116,8 +166,8 @@ export class MockRepository implements TransitRepository {
     let fullDayCount = 0;
     let hasBoardable = false;
 
-    const serviceDate = getServiceDay(now);
-    const nowMinutes = getServiceDayMinutes(now);
+    const serviceDate = getServiceDay(referenceDateTime);
+    const nowMinutes = getServiceDayMinutes(referenceDateTime);
     for (const { routeId, headsign, stopHeadsign } of stopRoutes) {
       const route = ROUTES.find((r) => r.route_id === routeId);
       if (!route) {
@@ -180,7 +230,7 @@ export class MockRepository implements TransitRepository {
             patternPosition: position,
             tripLocator: {
               patternId: createMockTripPatternId(routeId, headsign),
-              serviceId: 'mock:default',
+              serviceId: MOCK_DEFAULT_SERVICE_ID,
               tripIndex,
             },
             serviceDate,
@@ -251,54 +301,8 @@ export class MockRepository implements TransitRepository {
   }
 
   /** {@inheritDoc TransitRepository.getFullDayTimetableEntries} */
-  getFullDayTimetableEntries(
-    stopId: string,
-    ...[
-      /* dateTime */
-    ]: [Date]
-  ): Promise<TimetableResult> {
-    const stopRoutes = STOP_ROUTES[stopId] ?? [];
-    const entries: TimetableEntry[] = [];
-
-    for (const { routeId, headsign, stopHeadsign } of stopRoutes) {
-      const route = ROUTES.find((r) => r.route_id === routeId);
-      if (!route) {
-        continue;
-      }
-      // Issue #47: emit one set of entries per occurrence (6-shape / circular).
-      const occurrences = Math.max(1, countStopOccurrences(routeId, headsign, stopId));
-
-      for (let occ = 0; occ < occurrences; occ++) {
-        const position = getPatternPosition(routeId, headsign, stopId, occ);
-        const occOffset = computeOccOffset(routeId, occ);
-        const travelOffset = computePatternTravelOffset(routeId, headsign, position.stopIndex);
-        const { pickupType, dropOffType } = getBoardingTypes(routeId, headsign, stopId, occ);
-        const baseSchedule = generateFixedMinutes(routeId, headsign);
-        for (const [tripIndex, baseMinutes] of baseSchedule.entries()) {
-          const minutes = baseMinutes + travelOffset + occOffset;
-          const arrivalMinutes = computeArrivalMinutes(routeId, occ, minutes);
-          entries.push({
-            schedule: { departureMinutes: minutes, arrivalMinutes },
-            routeDirection: {
-              route,
-              tripHeadsign: createMockTranslatableText(headsign),
-              ...(stopHeadsign != null
-                ? { stopHeadsign: createMockTranslatableText(stopHeadsign) }
-                : {}),
-            },
-            boarding: { pickupType, dropOffType },
-            patternPosition: position,
-            tripLocator: {
-              patternId: createMockTripPatternId(routeId, headsign),
-              serviceId: 'mock:default',
-              tripIndex,
-            },
-          });
-        }
-      }
-    }
-
-    sortTimetableEntriesByDepartureTime(entries);
+  getFullDayTimetableEntries(stopId: string, _dateTime: Date): Promise<TimetableResult> {
+    const entries = this.buildFullDayTimetableEntries(stopId);
     const meta: TimetableQueryMeta = {
       isBoardableOnServiceDay: getTimetableEntriesState(entries) === 'boardable',
       totalEntries: entries.length,
@@ -383,6 +387,22 @@ export class MockRepository implements TransitRepository {
     return { success: true, data: snapshot };
   }
 
+  getTripInspectionTargets(
+    query: TripInspectionGroupQuery,
+  ): Promise<Result<TripInspectionTarget[]>> {
+    const entries = this.buildFullDayTimetableEntries(query.stopId);
+
+    return Promise.resolve({
+      success: true,
+      data: entries.map((entry) => ({
+        tripLocator: entry.tripLocator,
+        serviceDate: query.serviceDate,
+        stopIndex: entry.patternPosition.stopIndex,
+        departureMinutes: entry.schedule.departureMinutes,
+      })),
+    });
+  }
+
   /** {@inheritDoc TransitRepository.getStopMetaById} */
   getStopMetaById(stopId: string): Promise<Result<StopWithMeta>> {
     const stop = STOPS.find((s) => s.stop_id === stopId);
@@ -453,7 +473,7 @@ export class MockRepository implements TransitRepository {
   resolveRouteFreq(routeId: string, serviceDate: Date): number | undefined {
     // Return exaggerated weekday/weekend freq difference for visual testing.
     // Weekday: high freq (thick lines), Weekend: low freq (thin lines).
-    const day = getServiceDay(serviceDate).getDay(); // 0=Sun, 6=Sat
+    const day = serviceDate.getDay(); // 0=Sun, 6=Sat
     const isWeekend = day === 0 || day === 6;
     const route = ROUTE_MAP.get(routeId);
     if (!route || route.route_type !== 3) {

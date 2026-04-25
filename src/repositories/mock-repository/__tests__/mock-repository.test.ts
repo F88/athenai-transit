@@ -95,6 +95,28 @@ describe('MockRepository i18n data', () => {
 });
 
 describe('MockRepository contract compatibility', () => {
+  it('returns trip-inspection targets derived from the stop timetable', async () => {
+    const repository = new MockRepository();
+    const serviceDate = new Date('2026-04-07T12:00:00+09:00');
+
+    const timetable = await repository.getFullDayTimetableEntries('bus_library', serviceDate);
+    const result = await repository.getTripInspectionTargets({
+      serviceDate,
+      stopId: 'bus_library',
+    });
+
+    assertSuccess(timetable);
+    assertSuccess(result);
+    expect(result.data).toEqual(
+      timetable.data.map((entry) => ({
+        tripLocator: entry.tripLocator,
+        serviceDate,
+        stopIndex: entry.patternPosition.stopIndex,
+        departureMinutes: entry.schedule.departureMinutes,
+      })),
+    );
+  });
+
   it('returns all upcoming entries when limit is omitted', async () => {
     const repository = new MockRepository();
     const now = new Date('2026-04-07T05:00:00+09:00');
@@ -163,6 +185,23 @@ describe('MockRepository contract compatibility', () => {
     expect(departures[1]).toBeLessThan(departures[2]);
     expect(departures[2]).toBeLessThan(departures[3]);
     expect(arrivals.map((minutes, index) => departures[index] - minutes)).toEqual([3, 3, 3, 3]);
+  });
+
+  it('passes through the provided serviceDate on trip snapshots', () => {
+    const repository = new MockRepository();
+    const serviceDate = new Date('2026-04-07T00:00:00+09:00');
+
+    const snapshot = repository.getTripSnapshot(
+      {
+        patternId: 'bus_yukkuri01__もり公園前',
+        serviceId: 'mock:default',
+        tripIndex: 0,
+      },
+      serviceDate,
+    );
+
+    assertSuccess(snapshot);
+    expect(snapshot.data.serviceDate).toBe(serviceDate);
   });
 });
 

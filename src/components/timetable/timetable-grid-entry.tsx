@@ -59,6 +59,7 @@ export function TimetableGridEntry({
     serviceDate,
     tripLocator: entry.tripLocator,
     stopIndex: entry.patternPosition.stopIndex,
+    departureMinutes: entry.schedule.departureMinutes,
   };
   const content = (
     <>

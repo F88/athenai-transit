@@ -16,6 +16,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - `TripInspectionTarget` 型を追加 (`src/types/app/transit-composed.ts`)。trip inspection の入口を stop-time entry 由来に限定せず一般化。
 - `StopTimeDetailInfo` / `StopTimeTimeInfo` / `AbsoluteStopTime` コンポーネントを追加。`StopTimeItem` から building block を分離し、TripInspectionDialog の row layout と共有。
 - `TimetableGridEntry` / `TimetableModal` から trip inspection を起動する動線を追加。
+- `TripInspectionDialog` に「前 / 次の trip」ナビゲーションを追加。同一停留所の隣接 trip を巡回でき、`tripInspectionTargets` / `currentTripInspectionTargetIndex` / `onOpenPreviousTrip` / `onOpenNextTrip` props で外部から候補リストと現在位置を渡す。
+- `TransitRepository.getTripInspectionTargets(query)` を追加。同一停留所・同一 service day に存在する候補 trip を `TripInspectionTarget[]` で返す lightweight API (trip navigation の候補生成に使用)。
 - Display size primitive を共通化する alias を追加 (`src/components/shared/display-size.ts`)。
 - `time-style.ts` に explicit time band 定義を追加 (morning / daytime / evening / night band を明示)。
 - Pipeline: りんかい線 (東京臨海高速鉄道株式会社) の GTFS データソースを追加 (prefix `twrr`, route_type 2 rail)。8 駅 / 1 路線。`shapes.txt` は含まれないが MLIT 国土数値情報 (臨海副都心線) 経由で路線図に対応。`data-source-settings` の `routeTypes` は `[1, 2]` (subway + rail) — 実態として地下鉄区間を含むため将来の Source 選択 UI 用に両方を宣言。
@@ -30,6 +32,12 @@ and this project adheres to [CalVer](https://calver.org/).
 - `JourneyTimeBar` Storybook の args を実サイズ値に近づけて調整。
 - `VerboseTimetableEntries` / `VerboseTimetableGridEntry` / `VerboseContextualTimetableEntry` / `VerboseHeadsign` の構成を整理し、timetable entry の verbose 表示を共通の building block で組み立てるよう refactor。
 - verbose/debug 用 `<summary>` (stop-summary / timetable-grid / verbose-\* 全般) に `tabIndex={-1}` を付与し、キーボード tab 移動の焦点対象から除外。
+- `TransitRepository` interface の TSDoc を整理。`referenceDateTime` (任意日時、内部正規化) と `serviceDate` (pre-normalized service day) の 2 契約を method classification 表で明示。エラー文字列の parse 非推奨ポリシー、`getTripInspectionTargets` の sort 契約 (`sortTimetableEntriesByDepartureTime` 同等) を明記。
+- `getUpcomingTimetableEntries` の引数 `now` を `referenceDateTime` にリネーム (両 repo 実装と test を追従)。`?time=` 等の custom time を含む任意の日時を受け取る契約を引数名でも明示。
+- `resolveStopStats` / `resolveRouteFreq` / `getTripSnapshot` / `getTripInspectionTargets` を pre-normalized serviceDate 前提に統一。caller 側で `getServiceDay()` 正規化する責務を契約として固定し、impl 内の重複正規化を削除。
+- `AthenaiRepositoryV2.timetableByPattern` の型を `Map<string, PatternTimetableEntry[]>` に更新し、pattern→stop 列挙の型情報を強化。
+- `TripInspectionDialog` の stop 行レンダリングを 2-stage progressive render に変更。初回フレームは選択行 ±5 のみ描画し、次の `requestAnimationFrame` で全件に展開することで長い trip の first paint を高速化。
+- `TripInspectionDialog` の trip stop row レイアウトを normalize し、不要な fragment 等を整理。
 
 ### Fixed
 
@@ -40,6 +48,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - `MockRepository` の再構成 trip で停車時刻が進行しない問題を修正 (pattern stops の travel offset を upcoming / full-day / trip snapshot の各経路で適用)。併せて `r6-*` モック停留所の配置を東側に移動。`bus_yukkuri01` trip の timing 回帰テストを追加。
 - `MockRepository` の日本語 headsign 定義が欠落していた問題を修正。
 - `StopTimeTimeInfo` / `StopTimesItem` の trip inspect トリガーボタンに `focus-visible` ring を追加し、キーボード操作時のフォーカス可視性を確保 (a11y)。
+- `TripInspectionDialog` で sparse な trip stop rows (一部停留所の `stopMeta` が欠落するケース) を含む trip でも row レイアウトが崩れないよう修正。
 
 ## [2026.04.23]
 

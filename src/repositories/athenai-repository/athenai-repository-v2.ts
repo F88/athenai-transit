@@ -27,8 +27,9 @@ import type {
   StopServiceType,
   StopWithMeta,
   TimetableEntry,
+  TripInspectionGroupQuery,
+  TripInspectionTarget,
   TripLocator,
-  TripStopTime,
   TripPattern,
   TripSnapshot,
 } from '../../types/app/transit-composed';
@@ -61,11 +62,15 @@ import { extractPrefix } from '../../domain/transit/prefixed-id';
 import { mergeSourcesV2 } from './merge-sources-v2';
 import { fetchSourcesV2 } from './fetch-sources-v2';
 import { enrichStopInsights } from './enrich-stop-insights';
+import { buildTripStopTimes } from './lib/build-trip-stop-times';
+import { buildTranslatableText } from './lib/build-translatable-text';
+import { sortTripStopTimesByStopIndex } from './lib/sort-trip-stop-times';
 import type {
   HeadsignTranslationsByPrefix,
   LoadResult,
   MergedDataV2,
   PatternStatsEntry,
+  PatternTimetableEntry,
   RouteFreqEntry,
   StopInsightsEntry,
 } from './types';
@@ -99,7 +104,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private readonly calendarServices: CalendarServiceJson[];
   private readonly calendarExceptions: Map<string, CalendarExceptionJson[]>;
   private readonly timetable: Record<string, TimetableGroupV2Json[]>;
-  private readonly timetableByPattern: MergedDataV2['timetableByPattern'];
+  private readonly timetableByPattern: Map<string, PatternTimetableEntry[]>;
   private readonly headsignTranslations: HeadsignTranslationsByPrefix;
   private readonly sourceMetas: SourceMeta[];
 
@@ -109,7 +114,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private readonly patternStatsMap = new Map<string, PatternStatsEntry>();
 
   // Mutable caches and lazy-load state.
-  private activeServiceCache: { key: string; ids: Set<string> } | null = null;
+  private activeServiceCache = new Map<string, Set<string>>();
   private routeStopsCache: Map<string, Set<string>> | null = null;
   private shapesPromise: Promise<RouteShape[]> = Promise.resolve([]);
   private shapesCache: RouteShape[] | null = null;
@@ -305,6 +310,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return shapes;
   }
 
+  /** {@inheritDoc TransitRepository.getStopsInBounds} */
   getStopsInBounds(bounds: Bounds, limit: number): Promise<CollectionResult<StopWithMeta>> {
     const t0 = performance.now();
     const effectiveLimit = normalizeStopQueryLimit(limit);
@@ -339,6 +345,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return Promise.resolve({ success: true, data, truncated });
   }
 
+  /** {@inheritDoc TransitRepository.getStopsNearby} */
   getStopsNearby(
     center: LatLng,
     radiusM: number,
@@ -376,9 +383,10 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return Promise.resolve({ success: true, data, truncated });
   }
 
+  /** {@inheritDoc TransitRepository.getUpcomingTimetableEntries} */
   getUpcomingTimetableEntries(
     stopId: string,
-    now: Date,
+    referenceDateTime: Date,
     limit?: number,
   ): Promise<UpcomingTimetableResult> {
     const t0 = performance.now();
@@ -388,7 +396,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       return Promise.resolve({ success: false, error: `No stop time data for stop: ${stopId}` });
     }
 
-    const serviceDay = getServiceDay(now);
+    const serviceDay = getServiceDay(referenceDateTime);
     const todayServiceIds = this.getActiveServiceIds(serviceDay);
 
     let fullDayCount = 0;
@@ -398,7 +406,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     prevServiceDay.setDate(prevServiceDay.getDate() - 1);
     const yesterdayServiceIds = this.getActiveServiceIds(prevServiceDay);
 
-    const nowMinutes = getServiceDayMinutes(now);
+    const nowMinutes = getServiceDayMinutes(referenceDateTime);
+    const overnightTarget = nowMinutes + 1440;
 
     const entries: ContextualTimetableEntry[] = [];
 
@@ -414,6 +423,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       const totalStops = pattern.stops.length;
       const stopIndex = group.si;
       const isTerminalPosition = stopIndex === totalStops - 1;
+      const routeDirection = this.resolveRouteDirection(route, pattern, stopIndex);
+      const todayTripInsights = this.resolveTripInsights(group.tp, stopIndex, serviceDay);
+      const yesterdayTripInsights = this.resolveTripInsights(group.tp, stopIndex, prevServiceDay);
 
       for (const [serviceId, times] of Object.entries(group.d)) {
         if (!todayServiceIds.has(serviceId)) {
@@ -434,7 +446,6 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         }
 
         const startIdx = binarySearchFirstGte(times, nowMinutes);
-        const tripInsights = this.resolveTripInsights(group.tp, stopIndex, serviceDay);
         for (let i = startIdx; i < times.length; i++) {
           const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
           const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
@@ -444,7 +455,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
             },
-            routeDirection: this.resolveRouteDirection(route, pattern, stopIndex),
+            routeDirection,
             boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
@@ -453,7 +464,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               isOrigin: stopIndex === 0,
             },
             serviceDate: serviceDay,
-            ...(tripInsights !== undefined ? { insights: tripInsights } : {}),
+            ...(todayTripInsights !== undefined ? { insights: todayTripInsights } : {}),
           });
         }
       }
@@ -478,10 +489,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
             }
           }
         }
-
-        const overnightTarget = nowMinutes + 1440;
         const startIdx = binarySearchFirstGte(times, overnightTarget);
-        const tripInsights = this.resolveTripInsights(group.tp, stopIndex, prevServiceDay);
         for (let i = startIdx; i < times.length; i++) {
           const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
           const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
@@ -491,7 +499,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
             },
-            routeDirection: this.resolveRouteDirection(route, pattern, stopIndex),
+            routeDirection,
             boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
@@ -500,7 +508,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               isOrigin: stopIndex === 0,
             },
             serviceDate: prevServiceDay,
-            ...(tripInsights !== undefined ? { insights: tripInsights } : {}),
+            ...(yesterdayTripInsights !== undefined ? { insights: yesterdayTripInsights } : {}),
           });
         }
       }
@@ -526,6 +534,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return Promise.resolve({ success: true, data: result, truncated, meta });
   }
 
+  /** {@inheritDoc TransitRepository.getFullDayTimetableEntries} */
   getFullDayTimetableEntries(stopId: string, dateTime: Date): Promise<TimetableResult> {
     const t0 = performance.now();
     const emptyMeta: TimetableQueryMeta = {
@@ -553,6 +562,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       const totalStops = pattern.stops.length;
       const stopIndex = group.si;
       const isTerminalPosition = stopIndex === totalStops - 1;
+      const routeDirection = this.resolveRouteDirection(route, pattern, stopIndex);
 
       const tripInsights = this.resolveTripInsights(group.tp, stopIndex, serviceDate);
       for (const [serviceId, times] of Object.entries(group.d)) {
@@ -570,7 +580,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
               departureMinutes: times[i],
               arrivalMinutes: arrivals?.[i] ?? times[i],
             },
-            routeDirection: this.resolveRouteDirection(route, pattern, stopIndex),
+            routeDirection,
             boarding: { pickupType, dropOffType },
             patternPosition: {
               stopIndex,
@@ -597,6 +607,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return Promise.resolve({ success: true, data: entries, truncated: false, meta });
   }
 
+  /** {@inheritDoc TransitRepository.getTripSnapshot} */
   getTripSnapshot(locator: TripLocator, serviceDate: Date): TripSnapshotResult {
     const pattern = this.tripPatterns.get(locator.patternId);
     if (!pattern) {
@@ -607,62 +618,92 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       return { success: false, error: `Unknown route for trip pattern: ${locator.patternId}` };
     }
 
-    const stopTimes: TripStopTime[] = [];
-    for (const { stopId, group } of this.timetableByPattern.get(locator.patternId) ?? []) {
-      const departures = group.d[locator.serviceId];
-      if (!departures || locator.tripIndex >= departures.length) {
-        continue;
-      }
+    const timetableEntries = this.timetableByPattern.get(locator.patternId);
+    const stopTimes = buildTripStopTimes(locator, pattern.stops.length, timetableEntries, {
+      getStopMeta: (stopId) => this.stopsMetaMap.get(stopId),
+      getStopRouteTypes: (stopId) => this.stopRouteTypeMap.get(stopId) ?? [],
+      resolveRouteDirection: (stopIndex) => this.resolveRouteDirection(route, pattern, stopIndex),
+    });
+    sortTripStopTimesByStopIndex(stopTimes);
 
-      const arrivals = group.a?.[locator.serviceId];
-      const pickupTypes = group.pt?.[locator.serviceId];
-      const dropOffTypes = group.dt?.[locator.serviceId];
-      stopTimes.push({
-        stopMeta: this.stopsMetaMap.get(stopId),
-        routeTypes: this.stopRouteTypeMap.get(stopId) ?? [],
-        timetableEntry: {
-          tripLocator: locator,
-          schedule: {
-            departureMinutes: departures[locator.tripIndex],
-            arrivalMinutes: arrivals?.[locator.tripIndex] ?? departures[locator.tripIndex],
-          },
-          routeDirection: this.resolveRouteDirection(route, pattern, group.si),
-          boarding: {
-            pickupType: (pickupTypes?.[locator.tripIndex] ?? 0) as StopServiceType,
-            dropOffType: (dropOffTypes?.[locator.tripIndex] ?? 0) as StopServiceType,
-          },
-          patternPosition: {
-            stopIndex: group.si,
-            totalStops: pattern.stops.length,
-            isTerminal: group.si === pattern.stops.length - 1,
-            isOrigin: group.si === 0,
-          },
-        },
-      });
-    }
-
-    stopTimes.sort(
-      (a, b) =>
-        a.timetableEntry.patternPosition.stopIndex - b.timetableEntry.patternPosition.stopIndex,
+    // Trip-level headsign as defined by the v2 contract (TripSnapshot
+    // exposes whatever the source provides for the entire trip). Some
+    // agencies — Keio Bus is one — do not provide trip_headsign at all
+    // and instead carry per-stop stop_headsigns; for those sources this
+    // value is intentionally an empty TranslatableText.
+    const headsignTranslations = this.headsignTranslations.get(extractPrefix(route.agency_id));
+    const tripHeadsign = buildTranslatableText(
+      pattern.headsign,
+      headsignTranslations?.trip_headsigns,
     );
-    if (stopTimes.length === 0) {
-      return {
-        success: false,
-        error: `No trip snapshot rows for pattern=${locator.patternId} service=${locator.serviceId} index=${locator.tripIndex}`,
-      };
-    }
 
     const snapshot: TripSnapshot = {
       locator,
       serviceDate,
       route,
-      tripHeadsign: this.resolveRouteDirection(route, pattern, 0).tripHeadsign,
+      tripHeadsign,
       direction: pattern.direction,
       stopTimes,
     };
     return { success: true, data: snapshot };
   }
 
+  /** {@inheritDoc TransitRepository.getTripInspectionTargets} */
+  getTripInspectionTargets(
+    query: TripInspectionGroupQuery,
+  ): Promise<Result<TripInspectionTarget[]>> {
+    const timetableGroups = this.timetable[query.stopId];
+    if (!timetableGroups) {
+      return Promise.resolve({ success: true, data: [] });
+    }
+
+    const activeServiceIds = this.getActiveServiceIds(query.serviceDate);
+    const targets: Array<TripInspectionTarget & { routeId: string }> = [];
+
+    for (const group of timetableGroups) {
+      const pattern = this.tripPatterns.get(group.tp);
+      if (!pattern) {
+        continue;
+      }
+
+      for (const [serviceId, times] of Object.entries(group.d)) {
+        if (!activeServiceIds.has(serviceId)) {
+          continue;
+        }
+
+        for (let i = 0; i < times.length; i++) {
+          targets.push({
+            tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
+            serviceDate: query.serviceDate,
+            stopIndex: group.si,
+            departureMinutes: times[i],
+            routeId: pattern.route_id,
+          });
+        }
+      }
+    }
+
+    targets.sort((left, right) => {
+      const departureDiff = left.departureMinutes - right.departureMinutes;
+      if (departureDiff !== 0) {
+        return departureDiff;
+      }
+
+      const stopIndexDiff = left.stopIndex - right.stopIndex;
+      if (stopIndexDiff !== 0) {
+        return stopIndexDiff;
+      }
+
+      return left.routeId.localeCompare(right.routeId);
+    });
+
+    return Promise.resolve({
+      success: true,
+      data: targets.map(({ routeId: _routeId, ...target }) => target),
+    });
+  }
+
+  /** {@inheritDoc TransitRepository.getRouteTypesForStop} */
   getRouteTypesForStop(stopId: string): Promise<Result<AppRouteTypeValue[]>> {
     const routeTypes = this.stopRouteTypeMap.get(stopId);
     if (routeTypes === undefined) {
@@ -673,6 +714,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return Promise.resolve({ success: true, data: routeTypes });
   }
 
+  /** {@inheritDoc TransitRepository.getStopMetaById} */
   getStopMetaById(stopId: string): Promise<Result<StopWithMeta>> {
     const meta = this.stopsMetaMap.get(stopId);
     if (meta) {
@@ -681,6 +723,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return Promise.resolve({ success: false, error: `Stop not found: ${stopId}` });
   }
 
+  /** {@inheritDoc TransitRepository.getStopMetaByIds} */
   getStopMetaByIds(stopIds: Set<string>): StopWithMeta[] {
     const result: StopWithMeta[] = [];
     for (const stopId of stopIds) {
@@ -692,6 +735,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return result;
   }
 
+  /** {@inheritDoc TransitRepository.getStopsForRoutes} */
   getStopsForRoutes(routeIds: Set<string>): Set<string> {
     const cache = this.getRouteStopsMap();
     const stopIds = new Set<string>();
@@ -730,13 +774,13 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return map;
   }
 
+  /** {@inheritDoc TransitRepository.getAllStops} */
   getAllStops(): Promise<CollectionResult<Stop>> {
-    const t0 = performance.now();
-    const elapsed = Math.round(performance.now() - t0);
-    logger.debug(`getAllStops: ${this.stops.length} stops in ${elapsed}ms`);
+    logger.debug(`getAllStops: ${this.stops.length} stops`);
     return Promise.resolve({ success: true, data: this.stops, truncated: false });
   }
 
+  /** {@inheritDoc TransitRepository.getRouteShapes} */
   async getRouteShapes(): Promise<CollectionResult<RouteShape>> {
     if (this.shapesCache) {
       logger.debug(`getRouteShapes: ${this.shapesCache.length} shapes (cached)`);
@@ -747,6 +791,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return { success: true, data: this.shapesCache, truncated: false };
   }
 
+  /** {@inheritDoc TransitRepository.getAgency} */
   getAgency(agencyId: string): Promise<Result<Agency>> {
     const agency = this.agencyMap.get(agencyId);
     if (!agency) {
@@ -755,16 +800,18 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return Promise.resolve({ success: true, data: agency });
   }
 
+  /** {@inheritDoc TransitRepository.getAllSourceMeta} */
   getAllSourceMeta(): Promise<CollectionResult<SourceMeta>> {
     return Promise.resolve({ success: true, data: this.sourceMetas, truncated: false });
   }
 
+  /** {@inheritDoc TransitRepository.resolveStopStats} */
   resolveStopStats(stopId: string, serviceDate: Date): StopWithMeta['stats'] | undefined {
     const entry = this.stopInsightsMap.get(stopId);
     if (!entry) {
       return undefined;
     }
-    const activeIds = this.getActiveServiceIds(getServiceDay(serviceDate));
+    const activeIds = this.getActiveServiceIds(serviceDate);
     const groupKey = selectServiceGroup(entry.groups, activeIds);
     if (!groupKey) {
       return undefined;
@@ -772,12 +819,13 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     return entry.stats[groupKey];
   }
 
+  /** {@inheritDoc TransitRepository.resolveRouteFreq} */
   resolveRouteFreq(routeId: string, serviceDate: Date): number | undefined {
     const entry = this.routeFreqMap.get(routeId);
     if (!entry) {
       return undefined;
     }
-    const activeIds = this.getActiveServiceIds(getServiceDay(serviceDate));
+    const activeIds = this.getActiveServiceIds(serviceDate);
     const groupKey = selectServiceGroup(entry.groups, activeIds);
     if (!groupKey) {
       return undefined;
@@ -831,26 +879,34 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const src = this.headsignTranslations.get(extractPrefix(route.agency_id));
     return {
       route,
-      tripHeadsign: {
-        name: pattern.headsign,
-        names: src?.trip_headsigns[pattern.headsign] ?? {},
-      },
+      tripHeadsign: buildTranslatableText(pattern.headsign, src?.trip_headsigns),
       stopHeadsign:
         stop.headsign != null
-          ? {
-              name: stop.headsign,
-              names: src?.stop_headsigns[stop.headsign] ?? {},
-            }
+          ? buildTranslatableText(stop.headsign, src?.stop_headsigns)
           : undefined,
       direction: pattern.direction,
     };
   }
 
+  /**
+   * Returns active GTFS service IDs for a pre-normalized service day.
+   *
+   * The input must already be normalized with `getServiceDay(...)` or come
+   * from another repository API that exposes a service-day value. Passing a
+   * raw reference datetime here produces silently wrong calendar matching,
+   * because `formatDateKey()` / `getDayIndex()` interpret the date as-is.
+   *
+   * Results are cached by `YYYYMMDD` key.
+   *
+   * @param serviceDate - Pre-normalized GTFS service day.
+   * @returns Active service IDs for that service day.
+   */
   private getActiveServiceIds(serviceDate: Date): Set<string> {
     const key = formatDateKey(serviceDate);
 
-    if (this.activeServiceCache?.key === key) {
-      return this.activeServiceCache.ids;
+    const cached = this.activeServiceCache.get(key);
+    if (cached) {
+      return cached;
     }
 
     const ids = computeActiveServiceIds(
@@ -859,7 +915,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       this.calendarExceptions,
     );
 
-    this.activeServiceCache = { key, ids };
+    this.activeServiceCache.set(key, ids);
     return ids;
   }
 }

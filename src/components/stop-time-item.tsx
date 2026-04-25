@@ -99,6 +99,7 @@ export function StopTimeItem({
             serviceDate: entry.serviceDate,
             tripLocator: entry.tripLocator,
             stopIndex: entry.patternPosition.stopIndex,
+            departureMinutes: entry.schedule.departureMinutes,
           }}
           onInspectTrip={onInspectTrip}
         />

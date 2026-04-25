@@ -118,8 +118,15 @@ export default function App({ loadResult }: AppProps) {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
-  const { tripInspectionSnapshot, openTripInspection, closeTripInspection } =
-    useTripInspection(repo);
+  const {
+    tripInspectionSnapshot,
+    tripInspectionTargets,
+    currentTripInspectionTargetIndex,
+    openTripInspection,
+    openPreviousTripInspection,
+    openNextTripInspection,
+    closeTripInspection,
+  } = useTripInspection(repo);
 
   // Global keyboard shortcuts. Suppressed while any of the four primary
   // modals owned by app.tsx is open (search / info / help / timetable),
@@ -855,9 +862,13 @@ export default function App({ loadResult }: AppProps) {
       <TripInspectionDialog
         open={tripInspectionSnapshot !== null}
         snapshot={tripInspectionSnapshot}
+        tripInspectionTargets={tripInspectionTargets}
+        currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
         now={dateTime}
         infoLevel={settings.infoLevel}
         dataLangs={langChain}
+        onOpenPreviousTrip={openPreviousTripInspection}
+        onOpenNextTrip={openNextTripInspection}
         onOpenChange={(open) => {
           if (!open) {
             closeTripInspection();
