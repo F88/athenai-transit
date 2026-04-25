@@ -77,7 +77,7 @@ interface TripInspectionPlaceholderRowProps {
 }
 
 type RenderedTripStopRow =
-  | { kind: 'stop'; stop: TripStopTime }
+  | { kind: 'stop'; stop: TripStopTime; stopIndex: number; totalStops: number }
   | { kind: 'placeholder'; stopIndex: number; totalStops: number };
 
 interface TripInspectionSummaryProps {
@@ -150,7 +150,7 @@ function buildRenderedTripStopRows(stopTimes: readonly TripStopTime[]): Rendered
   return Array.from({ length: totalStops }, (_, stopIndex) => {
     const stop = stopByIndex.get(stopIndex);
     if (stop) {
-      return { kind: 'stop', stop } satisfies RenderedTripStopRow;
+      return { kind: 'stop', stop, stopIndex, totalStops } satisfies RenderedTripStopRow;
     }
 
     return { kind: 'placeholder', stopIndex, totalStops } satisfies RenderedTripStopRow;
@@ -800,35 +800,20 @@ export function TripInspectionDialog({
             <section className="flex flex-col gap-2">
               <div className="flex flex-col gap-2">
                 {visibleTripStopRows.map((row) => {
-                  if (row.kind === 'placeholder') {
-                    return (
-                      <div key={`placeholder:${row.stopIndex}`} className="flex flex-col gap-1">
-                        {infoLevelFlag.isVerboseEnabled && (
-                          <div className="text-muted-foreground px-1 text-xs">
-                            {row.stopIndex + 1} / {row.totalStops}
-                          </div>
-                        )}
-                        <TripInspectionPlaceholderRow
-                          stopIndex={row.stopIndex}
-                          totalStops={row.totalStops}
-                          currentPatternStopIndex={selectedPatternStopIndex}
-                          infoLevel={infoLevel}
-                        />
-                      </div>
-                    );
-                  }
+                  const rowKey =
+                    row.kind === 'placeholder'
+                      ? `placeholder:${row.stopIndex}`
+                      : `${row.stop.stopMeta?.stop.stop_id || '(unknown-stop)'}:${row.stopIndex}`;
 
-                  const stopId = row.stop.stopMeta?.stop.stop_id || '(unknown-stop)';
-                  const patternPosition = row.stop.timetableEntry.patternPosition;
-                  const stopIndex = patternPosition.stopIndex;
-
-                  return (
-                    <div key={`${stopId}:${stopIndex}`} className="flex flex-col gap-1">
-                      {infoLevelFlag.isVerboseEnabled && (
-                        <div className="text-muted-foreground px-1 text-xs">
-                          {patternPosition.stopIndex + 1} / {patternPosition.totalStops}
-                        </div>
-                      )}
+                  const rowContent =
+                    row.kind === 'placeholder' ? (
+                      <TripInspectionPlaceholderRow
+                        stopIndex={row.stopIndex}
+                        totalStops={row.totalStops}
+                        currentPatternStopIndex={selectedPatternStopIndex}
+                        infoLevel={infoLevel}
+                      />
+                    ) : (
                       <TripInspectionStopRow
                         stop={row.stop}
                         currentPatternStopIndex={selectedPatternStopIndex}
@@ -837,6 +822,16 @@ export function TripInspectionDialog({
                         serviceDate={snapshot.serviceDate}
                         now={now}
                       />
+                    );
+
+                  return (
+                    <div key={rowKey} className="flex flex-col gap-1">
+                      {infoLevelFlag.isVerboseEnabled && (
+                        <div className="text-muted-foreground px-1 text-xs">
+                          {row.stopIndex + 1} / {row.totalStops}
+                        </div>
+                      )}
+                      {rowContent}
                     </div>
                   );
                 })}
