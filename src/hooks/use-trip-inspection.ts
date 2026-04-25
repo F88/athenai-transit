@@ -129,19 +129,27 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
         return;
       }
 
-      const selectedStop = trip.data.stopTimes.find(
+      const selectedStopIndex = trip.data.stopTimes.findIndex(
         (stop) => stop.timetableEntry.patternPosition.stopIndex === target.stopIndex,
       );
-      if (!selectedStop) {
+      if (selectedStopIndex < 0) {
         logger.warn(
           `openTripInspection: selected stop index ${target.stopIndex} is missing from reconstructed trip snapshot`,
         );
         return;
       }
 
+      const selectedStop = trip.data.stopTimes[selectedStopIndex];
+      if (!selectedStop) {
+        logger.warn(
+          `openTripInspection: selected stop array index ${selectedStopIndex} is missing from reconstructed trip snapshot`,
+        );
+        return;
+      }
+
       const snapshot: SelectedTripSnapshot = {
         ...trip.data,
-        currentStopIndex: target.stopIndex,
+        currentStopIndex: selectedStopIndex,
         selectedStop,
       };
 

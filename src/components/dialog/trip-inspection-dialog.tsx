@@ -62,12 +62,23 @@ interface TripInspectionDialogProps {
 
 interface TripInspectionStopRowProps {
   stop: TripStopTime;
-  currentStopIndex: number;
+  currentPatternStopIndex: number;
   infoLevel: InfoLevel;
   serviceDate: Date;
   dataLangs: readonly string[];
   now: Date;
 }
+
+interface TripInspectionPlaceholderRowProps {
+  stopIndex: number;
+  totalStops: number;
+  currentPatternStopIndex: number;
+  infoLevel: InfoLevel;
+}
+
+type RenderedTripStopRow =
+  | { kind: 'stop'; stop: TripStopTime }
+  | { kind: 'placeholder'; stopIndex: number; totalStops: number };
 
 interface TripInspectionSummaryProps {
   snapshot: SelectedTripSnapshot;
@@ -126,6 +137,26 @@ function getSelectedRowScrollTop(container: HTMLDivElement, selectedRow: HTMLEle
   );
 }
 
+function buildRenderedTripStopRows(stopTimes: readonly TripStopTime[]): RenderedTripStopRow[] {
+  if (stopTimes.length === 0) {
+    return [];
+  }
+
+  const totalStops = stopTimes[0]?.timetableEntry.patternPosition.totalStops ?? 0;
+  const stopByIndex = new Map(
+    stopTimes.map((stop) => [stop.timetableEntry.patternPosition.stopIndex, stop]),
+  );
+
+  return Array.from({ length: totalStops }, (_, stopIndex) => {
+    const stop = stopByIndex.get(stopIndex);
+    if (stop) {
+      return { kind: 'stop', stop } satisfies RenderedTripStopRow;
+    }
+
+    return { kind: 'placeholder', stopIndex, totalStops } satisfies RenderedTripStopRow;
+  });
+}
+
 function SimpleStopSummary({ stopNames, stopName }: StopSummaryProps) {
   return (
     <div className="min-w-0 rounded-md border p-2">
@@ -175,7 +206,7 @@ function formatTargetDepartureTime(target: TripInspectionTarget | undefined): st
 
 function TripInspectionStopRow({
   stop,
-  currentStopIndex,
+  currentPatternStopIndex,
   infoLevel,
   dataLangs,
   serviceDate,
@@ -203,7 +234,7 @@ function TripInspectionStopRow({
     ? getStopDisplayNames(stop.stopMeta.stop, dataLangs, stopAgencyLangs)
     : null;
   const stopIndex = stop.timetableEntry.patternPosition.stopIndex;
-  const isCurrent = stopIndex === currentStopIndex;
+  const isCurrent = stopIndex === currentPatternStopIndex;
   const isTerminalStop = stop.timetableEntry.patternPosition.isTerminal;
   const isFirstStop = stop.timetableEntry.patternPosition.isOrigin;
   const showArrivalTime = isTerminalStop || !isFirstStop;
@@ -302,6 +333,38 @@ function TripInspectionStopRow({
           />
         </>
       )}
+    </div>
+  );
+}
+
+function TripInspectionPlaceholderRow({
+  stopIndex,
+  totalStops,
+  currentPatternStopIndex,
+  infoLevel,
+}: TripInspectionPlaceholderRowProps) {
+  const infoLevelFlag = useInfoLevel(infoLevel);
+  const isCurrent = stopIndex === currentPatternStopIndex;
+
+  return (
+    <div
+      data-trip-stop-index={stopIndex}
+      className={[
+        'rounded-md border border-dashed px-3 py-2',
+        isCurrent ? 'border-primary bg-primary/5' : 'border-border bg-muted/20',
+      ].join(' ')}
+    >
+      <div className="flex min-w-0 flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-xs">#{stopIndex}</span>
+          <span className="text-muted-foreground truncate font-medium">Stop-time unavailable</span>
+        </div>
+        {infoLevelFlag.isVerboseEnabled && (
+          <div className="text-muted-foreground truncate text-xs">
+            Pattern stop {stopIndex + 1} / {totalStops}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -412,18 +475,20 @@ function TripInspectionCurrentStop({ snapshot }: TripInspectionCurrentStopProps)
   const selectedStop: TripStopTime = snapshot.selectedStop;
   const selectedStopId = selectedStop.stopMeta?.stop.stop_id || '(unknown-stop)';
   const selectedStopName = selectedStop.stopMeta?.stop.stop_name || selectedStopId;
+  const selectedPatternPosition = selectedStop.timetableEntry.patternPosition;
 
   return (
-    <section className="flex flex-col gap-2">
-      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-        <dt className="text-muted-foreground">Stop</dt>
-        <dd className="min-w-0">
-          <div className="truncate font-medium">
-            <IdBadge>{selectedStopId}</IdBadge>
-            {selectedStopName} ({snapshot.currentStopIndex + 1} / {snapshot.stopTimes.length})
-          </div>
-        </dd>
-      </dl>
+    <section className="flex items-center gap-3 overflow-x-auto text-xs whitespace-nowrap">
+      <div className="shrink-0 font-medium">
+        <IdBadge>{selectedStopId}</IdBadge>
+        {selectedStopName}
+      </div>
+      <div className="text-muted-foreground shrink-0">
+        Pattern stop {selectedPatternPosition.stopIndex + 1} / {selectedPatternPosition.totalStops}
+      </div>
+      <div className="text-muted-foreground shrink-0">
+        Reconstructed row {snapshot.currentStopIndex + 1} / {snapshot.stopTimes.length}
+      </div>
     </section>
   );
 }
@@ -448,14 +513,16 @@ export function TripInspectionDialog({
     contentContainerRef.current = node;
     setContentContainerEl(node);
   }, []);
+  const selectedPatternStopIndex =
+    snapshot?.selectedStop.timetableEntry.patternPosition.stopIndex ?? -1;
   const contentScroll = useScrollFades(
     contentContainerRef,
     snapshot
-      ? `${snapshot.locator.patternId}:${snapshot.locator.serviceId}:${snapshot.locator.tripIndex}:${snapshot.currentStopIndex}:${snapshot.stopTimes.length}`
+      ? `${snapshot.locator.patternId}:${snapshot.locator.serviceId}:${snapshot.locator.tripIndex}:${selectedPatternStopIndex}:${snapshot.stopTimes.length}`
       : 'empty',
   );
   const selectedStopRowKey = snapshot
-    ? `${snapshot.locator.patternId}:${snapshot.locator.serviceId}:${snapshot.locator.tripIndex}:${snapshot.currentStopIndex}:${snapshot.stopTimes.length}`
+    ? `${snapshot.locator.patternId}:${snapshot.locator.serviceId}:${snapshot.locator.tripIndex}:${selectedPatternStopIndex}:${snapshot.stopTimes.length}`
     : 'empty';
   const [renderedSnapshot, setRenderedSnapshot] = useState<SelectedTripSnapshot | null>(null);
 
@@ -485,7 +552,7 @@ export function TripInspectionDialog({
     const applyScrollToSelectedRow = (behavior: ScrollBehavior) => {
       const container = contentContainerEl;
       const selectedRow = container?.querySelector<HTMLElement>(
-        `[data-trip-stop-index="${snapshot.currentStopIndex}"]`,
+        `[data-trip-stop-index="${selectedPatternStopIndex}"]`,
       );
 
       if (!container || !selectedRow) {
@@ -532,7 +599,7 @@ export function TripInspectionDialog({
       window.cancelAnimationFrame(secondFrameId);
       window.cancelAnimationFrame(correctionFrameId);
     };
-  }, [contentContainerEl, open, selectedStopRowKey, snapshot]);
+  }, [contentContainerEl, open, selectedPatternStopIndex, selectedStopRowKey, snapshot]);
 
   if (!snapshot) {
     return <Dialog open={false} onOpenChange={onOpenChange} />;
@@ -564,22 +631,22 @@ export function TripInspectionDialog({
     'stop',
   ).resolved.name;
 
-  // Selected TripStopTime
-  const selectedStop = tripStopTimes[snapshot.currentStopIndex];
+  const selectedStop = snapshot.selectedStop;
+  const renderedTripStopRows = buildRenderedTripStopRows(tripStopTimes);
   // Progressive render: paint a small window first, then switch to
   // the full stop list on the next animation frame.
   const initialRenderStart = Math.max(
     0,
-    snapshot.currentStopIndex - INITIAL_TRIP_STOP_RENDER_PADDING,
+    selectedPatternStopIndex - INITIAL_TRIP_STOP_RENDER_PADDING,
   );
   const initialRenderEnd = Math.min(
-    tripStopTimes.length,
-    snapshot.currentStopIndex + INITIAL_TRIP_STOP_RENDER_PADDING + 1,
+    renderedTripStopRows.length,
+    selectedPatternStopIndex + INITIAL_TRIP_STOP_RENDER_PADDING + 1,
   );
   const renderAllStops = renderedSnapshot === snapshot;
-  const renderedTripStopTimes = renderAllStops
-    ? tripStopTimes
-    : tripStopTimes.slice(initialRenderStart, initialRenderEnd);
+  const visibleTripStopRows = renderAllStops
+    ? renderedTripStopRows
+    : renderedTripStopRows.slice(initialRenderStart, initialRenderEnd);
 
   // First TripStopTime
   const firstStop = tripStopTimes[0];
@@ -732,22 +799,45 @@ export function TripInspectionDialog({
           <div className="flex flex-col gap-4 pt-3 pb-4">
             <section className="flex flex-col gap-2">
               <div className="flex flex-col gap-2">
-                {renderedTripStopTimes.map((stop) => {
-                  const stopId = stop.stopMeta?.stop.stop_id || '(unknown-stop)';
-                  const stopIndex = stop.timetableEntry.patternPosition.stopIndex;
+                {visibleTripStopRows.map((row) => {
+                  if (row.kind === 'placeholder') {
+                    return (
+                      <div key={`placeholder:${row.stopIndex}`} className="flex flex-col gap-1">
+                        {infoLevelFlag.isVerboseEnabled && (
+                          <div className="text-muted-foreground px-1 text-xs">
+                            {row.stopIndex + 1} / {row.totalStops}
+                          </div>
+                        )}
+                        <TripInspectionPlaceholderRow
+                          stopIndex={row.stopIndex}
+                          totalStops={row.totalStops}
+                          currentPatternStopIndex={selectedPatternStopIndex}
+                          infoLevel={infoLevel}
+                        />
+                      </div>
+                    );
+                  }
+
+                  const stopId = row.stop.stopMeta?.stop.stop_id || '(unknown-stop)';
+                  const patternPosition = row.stop.timetableEntry.patternPosition;
+                  const stopIndex = patternPosition.stopIndex;
 
                   return (
-                    <TripInspectionStopRow
-                      key={`${stopId}:${stopIndex}`}
-                      stop={stop}
-                      currentStopIndex={snapshot.currentStopIndex}
-                      infoLevel={infoLevel}
-                      // infoLevel={'simple'}
-                      // infoLevel={'verbose'}
-                      dataLangs={dataLangs}
-                      serviceDate={snapshot.serviceDate}
-                      now={now}
-                    />
+                    <div key={`${stopId}:${stopIndex}`} className="flex flex-col gap-1">
+                      {infoLevelFlag.isVerboseEnabled && (
+                        <div className="text-muted-foreground px-1 text-xs">
+                          {patternPosition.stopIndex + 1} / {patternPosition.totalStops}
+                        </div>
+                      )}
+                      <TripInspectionStopRow
+                        stop={row.stop}
+                        currentPatternStopIndex={selectedPatternStopIndex}
+                        infoLevel={infoLevel}
+                        dataLangs={dataLangs}
+                        serviceDate={snapshot.serviceDate}
+                        now={now}
+                      />
+                    </div>
                   );
                 })}
               </div>

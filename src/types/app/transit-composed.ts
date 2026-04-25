@@ -390,7 +390,7 @@ export interface TripSnapshot extends WithServiceDate {
 
 /** Reconstructed whole-trip payload enriched with the currently selected stop event. */
 export interface SelectedTripSnapshot extends TripSnapshot {
-  /** Current stop index of the selected entry. */
+  /** Array index of the selected entry within `stopTimes`. */
   currentStopIndex: number;
   /** Stop-level record corresponding to the clicked entry. */
   selectedStop: TripStopTime;
