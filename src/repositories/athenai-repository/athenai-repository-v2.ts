@@ -68,6 +68,7 @@ import type {
   LoadResult,
   MergedDataV2,
   PatternStatsEntry,
+  PatternTimetableEntry,
   RouteFreqEntry,
   StopInsightsEntry,
 } from './types';
@@ -101,7 +102,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private readonly calendarServices: CalendarServiceJson[];
   private readonly calendarExceptions: Map<string, CalendarExceptionJson[]>;
   private readonly timetable: Record<string, TimetableGroupV2Json[]>;
-  private readonly timetableByPattern: MergedDataV2['timetableByPattern'];
+  private readonly timetableByPattern: Map<string, PatternTimetableEntry[]>;
   private readonly headsignTranslations: HeadsignTranslationsByPrefix;
   private readonly sourceMetas: SourceMeta[];
 
