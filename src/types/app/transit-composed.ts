@@ -352,8 +352,12 @@ export interface TripStopTime {
  *   minutes-from-midnight values, including overnight trips.
  * - `route`, `tripHeadsign`, and `direction` provide trip-level metadata
  *   derived from the merged route/trip-pattern model.
- * - `stopTimes` contains the full stop sequence reconstructed from timetable
- *   rows and trip pattern positions, with optional stop metadata enrichment.
+ * - `stopTimes` contains the per-stop schedule rows reconstructed from
+ *   timetable rows and trip pattern positions, with optional stop metadata
+ *   enrichment. Rows may be omitted when the repository cannot bind a
+ *   pattern entry to the requested `(serviceId, tripIndex)`, so the array
+ *   may be empty or sparse — see {@link TripStopTime.timetableEntry}'s
+ *   `patternPosition` for the originating stop index.
  *
  * Because this type is reconstructed for app use, it must not be treated as a
  * mirror of GTFS `trips.txt`. Fields that exist in raw GTFS but are not
@@ -370,6 +374,17 @@ export interface TripSnapshot extends WithServiceDate {
   /** Direction ID when the source provides one. */
   direction?: 0 | 1;
 
+  /**
+   * Per-stop schedule rows reconstructed for this trip.
+   *
+   * The array is sorted by `timetableEntry.patternPosition.stopIndex`,
+   * but it may be empty or sparse: when the repository cannot resolve a
+   * pattern entry against the requested `(serviceId, tripIndex)` (no
+   * matching service column, out-of-range trip index, etc.), that entry
+   * is dropped. Callers must therefore not treat `stopTimes.length` as
+   * the pattern's stop count, and should not assume `stopTimes[i]`
+   * corresponds to `stopIndex === i`.
+   */
   stopTimes: TripStopTime[];
 }
 
@@ -397,13 +412,13 @@ export interface TripInspectionTarget extends WithServiceDate {
 }
 
 /**
- * Minimal query required to list trip-inspection targets at the same stop on
- * the current service day.
+ * Minimal query required to list trip-inspection targets at a stop on
+ * the current service day. The result is unfiltered: every active trip
+ * stopping at `stopId` on `serviceDate` is returned, and the caller is
+ * expected to identify the currently selected trip.
  */
 export interface TripInspectionGroupQuery extends WithServiceDate {
-  /** Locator used to reconstruct the current concrete trip instance. */
-  tripLocator: TripLocator;
-  /** Physical stop where neighboring departures should be searched. */
+  /** Physical stop whose departures (across all trips) should be listed. */
   stopId: string;
 }
 

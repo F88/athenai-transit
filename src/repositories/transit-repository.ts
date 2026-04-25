@@ -320,9 +320,35 @@ export interface TransitRepository {
   /**
    * Reconstructs a whole trip from the minimal repository-side locator.
    *
-   * This method returns only trip-level data and the full stop list.
-   * Callers that need a current stop can resolve it afterward using
-   * their own selection context.
+   * This method returns only trip-level data and the per-stop schedule
+   * rows that could be reconstructed for `locator`. Callers that need a
+   * current stop can resolve it afterward using their own selection
+   * context.
+   *
+   * ### Outcome model
+   * - **Success** when `locator.patternId` resolves to a known
+   *   {@link TripPattern} and that pattern's route is also known. The
+   *   returned `data.stopTimes` may be empty: that signals the trip
+   *   simply has no schedulable rows for `locator` (e.g. the requested
+   *   `serviceId` is not active in any of the pattern's groups, or
+   *   `tripIndex` is out of range), not an error condition. It may
+   *   also be sparse — see "Sparse stopTimes" below.
+   * - **Failure** is reserved for cases where the locator cannot be
+   *   bound to repository state at all: the pattern is unknown, or the
+   *   pattern's route is unknown.
+   *
+   * Consumers should therefore branch on `result.success` first, and
+   * treat `result.data.stopTimes.length === 0` as a normal observable
+   * outcome rather than a separate error path.
+   *
+   * ### Sparse stopTimes
+   * `data.stopTimes` is the set of rows the implementation managed to
+   * reconstruct. When some pattern entries cannot be resolved against
+   * the requested `(serviceId, tripIndex)`, those positions are
+   * silently dropped. The remaining rows still carry their
+   * `patternPosition.stopIndex` and `patternPosition.totalStops`, so
+   * callers can detect missing positions by comparing the set of
+   * returned `stopIndex` values against `[0..totalStops - 1]`.
    *
    * `serviceDate` is attached to the returned snapshot as caller-owned context.
    * Implementations do not re-derive a service day from it and do not use it
@@ -333,13 +359,17 @@ export interface TransitRepository {
    *                      returned snapshot. Implementations treat this as
    *                      caller-owned context and pass it through without
    *                      additional normalization.
-   * @returns Whole-trip payload, or an error when reconstruction is unavailable.
+   * @returns Whole-trip payload — possibly with an empty or sparse
+   *          `stopTimes` — or an error when the locator cannot be
+   *          bound to a known pattern/route.
    */
   getTripSnapshot(locator: TripLocator, serviceDate: Date): TripSnapshotResult;
 
   /**
-   * Returns trip-inspection targets for departures at the same stop on the
-   * provided service day.
+   * Returns every trip-inspection target for departures at the queried
+   * stop on the provided service day. The result is not filtered by any
+   * particular trip: callers are expected to identify the currently
+   * selected target (and any neighbors of interest) themselves.
    *
    * Each target carries only the minimal fields needed for trip inspection and
    * candidate comparison. In particular, `departureMinutes` is included so
@@ -355,9 +385,8 @@ export interface TransitRepository {
    * Implementations use it as the service-day context for calendar filtering;
    * callers should not pass a raw real-world datetime here.
    *
-   * @param query - Minimal trip + stop context for grouping neighboring departures.
-   *                `query.serviceDate` is a pre-normalized service day, not a
-   *                reference datetime.
+   * @param query - Stop and service-day context. `query.serviceDate` is a
+   *                pre-normalized service day, not a reference datetime.
    * @returns Trip-inspection targets with lightweight comparison data.
    */
   getTripInspectionTargets(

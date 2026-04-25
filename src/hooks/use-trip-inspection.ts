@@ -178,7 +178,6 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
 
       void repo
         .getTripInspectionTargets({
-          tripLocator: target.tripLocator,
           serviceDate: target.serviceDate,
           stopId: selectedStopId,
         })

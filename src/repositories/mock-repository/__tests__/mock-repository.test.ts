@@ -101,11 +101,6 @@ describe('MockRepository contract compatibility', () => {
 
     const timetable = await repository.getFullDayTimetableEntries('bus_library', serviceDate);
     const result = await repository.getTripInspectionTargets({
-      tripLocator: {
-        patternId: 'bus_aoba01__にじ橋',
-        serviceId: 'mock:default',
-        tripIndex: 0,
-      },
       serviceDate,
       stopId: 'bus_library',
     });

@@ -30,7 +30,6 @@ import type {
   TripInspectionGroupQuery,
   TripInspectionTarget,
   TripLocator,
-  TripStopTime,
   TripPattern,
   TripSnapshot,
 } from '../../types/app/transit-composed';
@@ -63,6 +62,9 @@ import { extractPrefix } from '../../domain/transit/prefixed-id';
 import { mergeSourcesV2 } from './merge-sources-v2';
 import { fetchSourcesV2 } from './fetch-sources-v2';
 import { enrichStopInsights } from './enrich-stop-insights';
+import { buildTripStopTimes } from './lib/build-trip-stop-times';
+import { buildTranslatableText } from './lib/build-translatable-text';
+import { sortTripStopTimesByStopIndex } from './lib/sort-trip-stop-times';
 import type {
   HeadsignTranslationsByPrefix,
   LoadResult,
@@ -616,66 +618,30 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       return { success: false, error: `Unknown route for trip pattern: ${locator.patternId}` };
     }
 
-    const stopTimes: TripStopTime[] = [];
-    for (const { stopId, group } of this.timetableByPattern.get(locator.patternId) ?? []) {
-      const departures = group.d[locator.serviceId];
-      if (!departures) {
-        logger.warn(
-          `getTripSnapshot: missing departures for pattern=${locator.patternId} service=${locator.serviceId} stop=${stopId} stopIndex=${group.si}`,
-        );
-        continue;
-      }
-      if (locator.tripIndex >= departures.length) {
-        logger.warn(
-          `getTripSnapshot: missing trip index for pattern=${locator.patternId} service=${locator.serviceId} index=${locator.tripIndex} stop=${stopId} stopIndex=${group.si} departures=${departures.length}`,
-        );
-        continue;
-      }
+    const timetableEntries = this.timetableByPattern.get(locator.patternId);
+    const stopTimes = buildTripStopTimes(locator, pattern.stops.length, timetableEntries, {
+      getStopMeta: (stopId) => this.stopsMetaMap.get(stopId),
+      getStopRouteTypes: (stopId) => this.stopRouteTypeMap.get(stopId) ?? [],
+      resolveRouteDirection: (stopIndex) => this.resolveRouteDirection(route, pattern, stopIndex),
+    });
+    sortTripStopTimesByStopIndex(stopTimes);
 
-      const arrivals = group.a?.[locator.serviceId];
-      const pickupTypes = group.pt?.[locator.serviceId];
-      const dropOffTypes = group.dt?.[locator.serviceId];
-      const routeDirection = this.resolveRouteDirection(route, pattern, group.si);
-      stopTimes.push({
-        stopMeta: this.stopsMetaMap.get(stopId),
-        routeTypes: this.stopRouteTypeMap.get(stopId) ?? [],
-        timetableEntry: {
-          tripLocator: locator,
-          schedule: {
-            departureMinutes: departures[locator.tripIndex],
-            arrivalMinutes: arrivals?.[locator.tripIndex] ?? departures[locator.tripIndex],
-          },
-          routeDirection,
-          boarding: {
-            pickupType: (pickupTypes?.[locator.tripIndex] ?? 0) as StopServiceType,
-            dropOffType: (dropOffTypes?.[locator.tripIndex] ?? 0) as StopServiceType,
-          },
-          patternPosition: {
-            stopIndex: group.si,
-            totalStops: pattern.stops.length,
-            isTerminal: group.si === pattern.stops.length - 1,
-            isOrigin: group.si === 0,
-          },
-        },
-      });
-    }
-
-    stopTimes.sort(
-      (a, b) =>
-        a.timetableEntry.patternPosition.stopIndex - b.timetableEntry.patternPosition.stopIndex,
+    // Trip-level headsign as defined by the v2 contract (TripSnapshot
+    // exposes whatever the source provides for the entire trip). Some
+    // agencies — Keio Bus is one — do not provide trip_headsign at all
+    // and instead carry per-stop stop_headsigns; for those sources this
+    // value is intentionally an empty TranslatableText.
+    const headsignTranslations = this.headsignTranslations.get(extractPrefix(route.agency_id));
+    const tripHeadsign = buildTranslatableText(
+      pattern.headsign,
+      headsignTranslations?.trip_headsigns,
     );
-    if (stopTimes.length === 0) {
-      return {
-        success: false,
-        error: `No trip snapshot rows for pattern=${locator.patternId} service=${locator.serviceId} index=${locator.tripIndex}`,
-      };
-    }
 
     const snapshot: TripSnapshot = {
       locator,
       serviceDate,
       route,
-      tripHeadsign: this.resolveRouteDirection(route, pattern, 0).tripHeadsign,
+      tripHeadsign,
       direction: pattern.direction,
       stopTimes,
     };
@@ -913,16 +879,10 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const src = this.headsignTranslations.get(extractPrefix(route.agency_id));
     return {
       route,
-      tripHeadsign: {
-        name: pattern.headsign,
-        names: src?.trip_headsigns[pattern.headsign] ?? {},
-      },
+      tripHeadsign: buildTranslatableText(pattern.headsign, src?.trip_headsigns),
       stopHeadsign:
         stop.headsign != null
-          ? {
-              name: stop.headsign,
-              names: src?.stop_headsigns[stop.headsign] ?? {},
-            }
+          ? buildTranslatableText(stop.headsign, src?.stop_headsigns)
           : undefined,
       direction: pattern.direction,
     };

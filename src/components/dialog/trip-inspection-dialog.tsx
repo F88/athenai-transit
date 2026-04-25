@@ -600,6 +600,11 @@ export function TripInspectionDialog({
       <DialogContent className="flex max-h-[80dvh] max-w-120 flex-col gap-0 overflow-hidden">
         <DialogHeader className="border-border shrink-0 border-b pb-3 sm:text-center">
           {/* {now.toLocaleDateString()} */}
+          {/*
+            DialogTitle intentionally summarizes the selected stop.
+            The dialog content describes one concrete trip that passes
+            through that stop, including trip identity and stop sequence.
+          */}
           <DialogTitle className="flex flex-col items-center justify-center gap-2 text-base">
             <div>
               {/* Selected stop (RichStopSummary) */}
@@ -615,6 +620,11 @@ export function TripInspectionDialog({
             </div>
           </DialogTitle>
 
+          {/*
+            Trip identity stays below the title because the dialog is
+            centered on the selected stop, while the body renders the
+            matching trip that serves that stop.
+          */}
           <div className="flex items-center justify-center gap-2 pb-2">
             <Button
               className={!hasPreviousTrip ? 'pointer-events-none invisible' : undefined}
