@@ -15,9 +15,11 @@ import type {
   TripStopTime,
 } from '@/types/app/transit-composed';
 import { StopInfo } from '../stop-info';
+import { LabelCountBadge } from '../badge/label-count-badge';
 import { StopTimeDetailInfo } from '../stop-time-detail-info';
 import { StopTimeItem } from '../stop-time-item';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
+import { TripInspectionStopIndex } from './trip-inspection-stop-index';
 
 interface TripInspectionStopListProps {
   tripSnapshot: SelectedTripSnapshot;
@@ -30,6 +32,7 @@ interface TripInspectionStopListProps {
 
 interface TripInspectionStopRowProps {
   tripStopTime: TripStopTime;
+  totalStops: number;
   currentPatternStopIndex: number;
   infoLevel: InfoLevel;
   serviceDate: Date;
@@ -74,6 +77,7 @@ function buildRenderedTripStopRows(stopTimes: readonly TripStopTime[]): Rendered
 
 function TripInspectionStopRow({
   tripStopTime,
+  totalStops,
   currentPatternStopIndex,
   infoLevel,
   dataLangs,
@@ -122,7 +126,21 @@ function TripInspectionStopRow({
         isCurrent ? 'border-primary bg-primary/5' : 'border-border bg-background',
       ].join(' ')}
     >
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+      {/* StopTime / StopInfo / Index  */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3">
+        <StopTimeTimeInfo
+          arrivalMinutes={tripStopTime.timetableEntry.schedule.arrivalMinutes}
+          departureMinutes={tripStopTime.timetableEntry.schedule.departureMinutes}
+          serviceDate={serviceDate}
+          now={now}
+          size="md"
+          showArrivalTime={showArrivalTime}
+          showDepartureTime={showDepartureTime}
+          collapseArrivalWhenSameAsDeparture={true}
+          forceShowRelativeTime={true}
+          showVerbose={false}
+          textAppearance={{ color: contrastAdjustedRouteColors.color }}
+        />
         <div className="min-w-0">
           {stopMeta ? (
             <StopInfo
@@ -142,33 +160,37 @@ function TripInspectionStopRow({
               routeBadgeSize="xs"
             />
           ) : (
-            <div className="flex min-w-0 flex-col gap-1">
-              {stopNames && stopNames.subNames.length > 0 && (
-                <div className="text-muted-foreground truncate text-xs">
-                  {stopNames.subNames.join(' / ')}
+            <>
+              <div className="flex min-w-0 flex-col gap-1">
+                {stopNames && stopNames.subNames.length > 0 && (
+                  <div className="text-muted-foreground truncate text-xs">
+                    {stopNames.subNames.join(' / ')}
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground text-xs">#{stopIndex}</span>
+                  <span className="truncate font-medium">{stopNames?.name || stopId}</span>
                 </div>
-              )}
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-xs">#{stopIndex}</span>
-                <span className="truncate font-medium">{stopNames?.name || stopId}</span>
+                <div className="text-muted-foreground truncate text-xs">{stopId}</div>
               </div>
-              <div className="text-muted-foreground truncate text-xs">{stopId}</div>
-            </div>
+            </>
           )}
         </div>
-        <StopTimeTimeInfo
-          arrivalMinutes={tripStopTime.timetableEntry.schedule.arrivalMinutes}
-          departureMinutes={tripStopTime.timetableEntry.schedule.departureMinutes}
-          serviceDate={serviceDate}
-          now={now}
-          size="md"
-          showArrivalTime={showArrivalTime}
-          showDepartureTime={showDepartureTime}
-          collapseArrivalWhenSameAsDeparture={true}
-          forceShowRelativeTime={true}
-          showVerbose={false}
-          textAppearance={{ color: contrastAdjustedRouteColors.color }}
-        />
+        <div className="flex min-h-8 flex-col items-end gap-1">
+          <LabelCountBadge
+            label={`${stopIndex + 1}`}
+            count={totalStops}
+            size="sm"
+            labelBg={contrastAdjustedRouteColors.color}
+            labelFg={contrastAdjustedRouteColors.textColor}
+            frameColor={contrastAdjustedRouteColors.color}
+          />
+          <TripInspectionStopIndex
+            stopIndex={stopIndex}
+            totalStops={totalStops}
+            direction="vertical"
+          />
+        </div>
       </div>
       <StopTimeDetailInfo
         entry={tripStopTime.timetableEntry}
@@ -219,16 +241,28 @@ function TripInspectionPlaceholderRow({
         isCurrent ? 'border-primary bg-primary/5' : 'border-border bg-muted/20',
       ].join(' ')}
     >
-      <div className="flex min-w-0 flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-xs">#{stopIndex}</span>
-          <span className="text-muted-foreground truncate font-medium">Stop-time unavailable</span>
-        </div>
-        {infoLevelFlag.isVerboseEnabled && (
-          <div className="text-muted-foreground truncate text-xs">
-            Pattern stop {stopIndex + 1} / {totalStops}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-xs">#{stopIndex}</span>
+            <span className="text-muted-foreground truncate font-medium">
+              Stop-time unavailable
+            </span>
           </div>
-        )}
+          {infoLevelFlag.isVerboseEnabled && (
+            <div className="text-muted-foreground truncate text-xs">
+              Pattern stop {stopIndex + 1} / {totalStops}
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <LabelCountBadge label={`${stopIndex + 1}`} count={totalStops} size="sm" />
+          <TripInspectionStopIndex
+            stopIndex={stopIndex}
+            totalStops={totalStops}
+            direction="horizontal"
+          />
+        </div>
       </div>
     </div>
   );
@@ -242,7 +276,6 @@ export function TripInspectionStopList({
   dataLangs,
   now,
 }: TripInspectionStopListProps) {
-  const infoLevelFlag = useInfoLevel(infoLevel);
   const renderedTripStopRows = buildRenderedTripStopRows(tripSnapshot.stopTimes);
   const initialRenderStart = Math.max(
     0,
@@ -277,6 +310,7 @@ export function TripInspectionStopList({
             ) : (
               <TripInspectionStopRow
                 tripStopTime={row.stop}
+                totalStops={row.totalStops}
                 currentPatternStopIndex={selectedPatternStopIndex}
                 infoLevel={infoLevel}
                 dataLangs={dataLangs}
@@ -285,16 +319,7 @@ export function TripInspectionStopList({
               />
             );
 
-          return (
-            <div key={rowKey} className="flex flex-col gap-1">
-              {infoLevelFlag.isVerboseEnabled && (
-                <div className="text-muted-foreground px-1 text-xs">
-                  {row.stopIndex + 1} / {row.totalStops}
-                </div>
-              )}
-              {rowContent}
-            </div>
-          );
+          return <div key={rowKey}>{rowContent}</div>;
         })}
       </div>
     </section>

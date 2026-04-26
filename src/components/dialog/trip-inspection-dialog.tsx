@@ -303,6 +303,17 @@ export function TripInspectionDialog({
   }, []);
   const selectedPatternStopIndex =
     snapshot?.selectedStop.timetableEntry.patternPosition.stopIndex ?? -1;
+  const dialogRouteColorInput = snapshot?.route ?? { route_color: '', route_text_color: '' };
+  const { routeColor: dialogRouteColor } = resolveRouteColors(dialogRouteColorInput, 'css-hex');
+  const dialogRouteColorAssessment = useThemeContrastAssessment(
+    dialogRouteColor,
+    LOW_CONTRAST_BADGE_MIN_RATIO,
+  );
+  const dialogBorderColors = getContrastAdjustedRouteColors(
+    dialogRouteColorInput,
+    dialogRouteColorAssessment.isLowContrast,
+    'css-hex',
+  );
   const contentScroll = useScrollFades(
     contentContainerRef,
     snapshot
@@ -437,8 +448,14 @@ export function TripInspectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[80dvh] max-w-120 flex-col gap-0 overflow-hidden">
-        <DialogHeader className="border-border z-10 -mb-px shrink-0 border-b-2 pb-3 sm:text-center">
+      <DialogContent
+        className="flex max-h-[80dvh] max-w-[90vw] flex-col gap-0 overflow-hidden border-4"
+        style={{ borderColor: dialogBorderColors.color }}
+      >
+        <DialogHeader
+          className="z-10 -mb-px shrink-0 border-b-2 pb-3 sm:text-center"
+          style={{ borderBottomColor: dialogBorderColors.color }}
+        >
           {/* {now.toLocaleDateString()} */}
           {/*
             DialogTitle intentionally summarizes the selected stop.
