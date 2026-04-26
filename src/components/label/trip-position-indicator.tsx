@@ -149,7 +149,7 @@ export function TripPositionIndicator({
     dots.push(
       <span
         key={i}
-        className={`relative z-10 rounded-full ${
+        className={`rounded-full ${
           isCurrent ? `${sizeCls.current} ${currentBgCls}` : `${sizeCls.dot} ${dotBgCls}`
         }`}
         style={isCurrent ? currentStyle : dotStyle}
