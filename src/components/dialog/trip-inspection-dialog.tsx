@@ -438,7 +438,7 @@ export function TripInspectionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[80dvh] max-w-120 flex-col gap-0 overflow-hidden">
-        <DialogHeader className="border-border shrink-0 border-b pb-3 sm:text-center">
+        <DialogHeader className="border-border z-10 -mb-px shrink-0 border-b-2 pb-3 sm:text-center">
           {/* {now.toLocaleDateString()} */}
           {/*
             DialogTitle intentionally summarizes the selected stop.
@@ -569,7 +569,7 @@ export function TripInspectionDialog({
           {contentScroll.showTop && (
             <ScrollFadeEdge position="top" className="via-background/90 -mb-5 h-5" />
           )}
-          <div className="flex flex-col gap-4 pt-3 pb-4">
+          <div className="flex flex-col gap-4 pt-2 pb-2">
             <TripInspectionStopList
               tripSnapshot={snapshot}
               renderedSnapshot={renderedSnapshot}
