@@ -19,7 +19,6 @@ import { LabelCountBadge } from '../badge/label-count-badge';
 import { StopTimeDetailInfo } from '../stop-time-detail-info';
 import { StopTimeItem } from '../stop-time-item';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
-import { TripInspectionStopIndex } from './trip-inspection-stop-index';
 
 interface TripInspectionStopListProps {
   tripSnapshot: SelectedTripSnapshot;
@@ -45,6 +44,22 @@ interface TripInspectionPlaceholderRowProps {
   totalStops: number;
   currentPatternStopIndex: number;
   infoLevel: InfoLevel;
+}
+
+interface TripInspectionMetaInfoProps {
+  arrivalMinutes?: number;
+  departureMinutes?: number;
+  serviceDate?: Date;
+  now?: Date;
+  showArrivalTime?: boolean;
+  showDepartureTime?: boolean;
+  stopIndex: number;
+  totalStops: number;
+  timeTextColor?: string;
+  labelBg?: string;
+  labelFg?: string;
+  frameColor?: string;
+  className?: string;
 }
 
 type RenderedTripStopRow =
@@ -73,6 +88,60 @@ function buildRenderedTripStopRows(stopTimes: readonly TripStopTime[]): Rendered
 
     return { kind: 'placeholder', stopIndex, totalStops } satisfies RenderedTripStopRow;
   });
+}
+
+function TripInspectionMetaInfo({
+  arrivalMinutes,
+  departureMinutes,
+  serviceDate,
+  now,
+  showArrivalTime,
+  showDepartureTime,
+  stopIndex,
+  totalStops,
+  timeTextColor,
+  labelBg,
+  labelFg,
+  frameColor,
+  className,
+}: TripInspectionMetaInfoProps) {
+  const shouldRenderStopTimeTimeInfo =
+    arrivalMinutes !== undefined &&
+    departureMinutes !== undefined &&
+    serviceDate !== undefined &&
+    now !== undefined &&
+    showArrivalTime !== undefined &&
+    showDepartureTime !== undefined;
+
+  return (
+    <div className={className ?? 'flex flex-col items-end gap-1'}>
+      <div className="self-start">
+        <LabelCountBadge
+          label={`${stopIndex + 1}`}
+          count={totalStops}
+          size="md"
+          labelBg={labelBg}
+          labelFg={labelFg}
+          frameColor={frameColor}
+        />
+      </div>
+      {shouldRenderStopTimeTimeInfo && (
+        <StopTimeTimeInfo
+          arrivalMinutes={arrivalMinutes}
+          departureMinutes={departureMinutes}
+          serviceDate={serviceDate}
+          now={now}
+          size="md"
+          showArrivalTime={showArrivalTime}
+          showDepartureTime={showDepartureTime}
+          collapseArrivalWhenSameAsDeparture={true}
+          forceShowRelativeTime={true}
+          showVerbose={false}
+          textAppearance={{ color: timeTextColor }}
+        />
+      )}
+    </div>
+  );
 }
 
 function TripInspectionStopRow({
@@ -127,19 +196,21 @@ function TripInspectionStopRow({
       ].join(' ')}
     >
       {/* StopTime / StopInfo / Index  */}
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3">
-        <StopTimeTimeInfo
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
+        <TripInspectionMetaInfo
           arrivalMinutes={tripStopTime.timetableEntry.schedule.arrivalMinutes}
           departureMinutes={tripStopTime.timetableEntry.schedule.departureMinutes}
           serviceDate={serviceDate}
           now={now}
-          size="md"
           showArrivalTime={showArrivalTime}
           showDepartureTime={showDepartureTime}
-          collapseArrivalWhenSameAsDeparture={true}
-          forceShowRelativeTime={true}
-          showVerbose={false}
-          textAppearance={{ color: contrastAdjustedRouteColors.color }}
+          stopIndex={stopIndex}
+          totalStops={totalStops}
+          timeTextColor={contrastAdjustedRouteColors.color}
+          labelBg={contrastAdjustedRouteColors.color}
+          labelFg={contrastAdjustedRouteColors.textColor}
+          frameColor={contrastAdjustedRouteColors.color}
+          className="flex min-h-8 flex-col items-end gap-1"
         />
         <div className="min-w-0">
           {stopMeta ? (
@@ -175,21 +246,6 @@ function TripInspectionStopRow({
               </div>
             </>
           )}
-        </div>
-        <div className="flex min-h-8 flex-col items-end gap-1">
-          <LabelCountBadge
-            label={`${stopIndex + 1}`}
-            count={totalStops}
-            size="sm"
-            labelBg={contrastAdjustedRouteColors.color}
-            labelFg={contrastAdjustedRouteColors.textColor}
-            frameColor={contrastAdjustedRouteColors.color}
-          />
-          <TripInspectionStopIndex
-            stopIndex={stopIndex}
-            totalStops={totalStops}
-            direction="vertical"
-          />
         </div>
       </div>
       <StopTimeDetailInfo
@@ -255,14 +311,7 @@ function TripInspectionPlaceholderRow({
             </div>
           )}
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <LabelCountBadge label={`${stopIndex + 1}`} count={totalStops} size="sm" />
-          <TripInspectionStopIndex
-            stopIndex={stopIndex}
-            totalStops={totalStops}
-            direction="horizontal"
-          />
-        </div>
+        <TripInspectionMetaInfo stopIndex={stopIndex} totalStops={totalStops} />
       </div>
     </div>
   );
