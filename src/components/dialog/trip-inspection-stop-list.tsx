@@ -1,6 +1,7 @@
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
 import { LOW_CONTRAST_BADGE_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
 import {
+  type AdjustedRouteColors,
   getContrastAdjustedRouteColors,
   resolveRouteColors,
 } from '@/domain/transit/color-resolver/route-colors';
@@ -33,6 +34,7 @@ interface TripInspectionStopRowProps {
   tripStopTime: TripStopTime;
   totalStops: number;
   currentPatternStopIndex: number;
+  routeColors: AdjustedRouteColors<string>;
   infoLevel: InfoLevel;
   serviceDate: Date;
   dataLangs: readonly string[];
@@ -148,6 +150,7 @@ function TripInspectionStopRow({
   tripStopTime,
   totalStops,
   currentPatternStopIndex,
+  routeColors,
   infoLevel,
   dataLangs,
   serviceDate,
@@ -159,14 +162,6 @@ function TripInspectionStopRow({
   const stopAttributes = getTimetableEntryAttributes(tripStopTime.timetableEntry);
   const stopAgency = stopMeta?.agencies.find(
     (agency) => agency.agency_id === tripStopTime.timetableEntry.routeDirection.route.agency_id,
-  );
-  const stopRoute = tripStopTime.timetableEntry.routeDirection.route;
-  const { routeColor } = resolveRouteColors(stopRoute, 'css-hex');
-  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
-  const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
-    stopRoute,
-    routeColorAssessment.isLowContrast,
-    'css-hex',
   );
   const stopAgencyLangs = tripStopTime.stopMeta
     ? resolveAgencyLang(tripStopTime.stopMeta.agencies, tripStopTime.stopMeta.stop.agency_id)
@@ -188,7 +183,6 @@ function TripInspectionStopRow({
 
   return (
     <div
-      key={`${stopId}:${stopIndex}`}
       data-trip-stop-index={stopIndex}
       className={[
         'rounded-md border px-3 py-2',
@@ -206,10 +200,10 @@ function TripInspectionStopRow({
           showDepartureTime={showDepartureTime}
           stopIndex={stopIndex}
           totalStops={totalStops}
-          timeTextColor={contrastAdjustedRouteColors.color}
-          labelBg={contrastAdjustedRouteColors.color}
-          labelFg={contrastAdjustedRouteColors.textColor}
-          frameColor={contrastAdjustedRouteColors.color}
+          timeTextColor={routeColors.color}
+          labelBg={routeColors.color}
+          labelFg={routeColors.textColor}
+          frameColor={routeColors.color}
           className="flex min-h-8 flex-col items-end gap-1"
         />
         <div className="min-w-0">
@@ -325,6 +319,13 @@ export function TripInspectionStopList({
   dataLangs,
   now,
 }: TripInspectionStopListProps) {
+  const { routeColor } = resolveRouteColors(tripSnapshot.route, 'css-hex');
+  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
+  const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
+    tripSnapshot.route,
+    routeColorAssessment.isLowContrast,
+    'css-hex',
+  );
   const renderedTripStopRows = buildRenderedTripStopRows(tripSnapshot.stopTimes);
   const initialRenderStart = Math.max(
     0,
@@ -348,27 +349,27 @@ export function TripInspectionStopList({
               ? `placeholder:${row.stopIndex}`
               : `${row.stop.stopMeta?.stop.stop_id || '(unknown-stop)'}:${row.stopIndex}`;
 
-          const rowContent =
-            row.kind === 'placeholder' ? (
-              <TripInspectionPlaceholderRow
-                stopIndex={row.stopIndex}
-                totalStops={row.totalStops}
-                currentPatternStopIndex={selectedPatternStopIndex}
-                infoLevel={infoLevel}
-              />
-            ) : (
-              <TripInspectionStopRow
-                tripStopTime={row.stop}
-                totalStops={row.totalStops}
-                currentPatternStopIndex={selectedPatternStopIndex}
-                infoLevel={infoLevel}
-                dataLangs={dataLangs}
-                serviceDate={tripSnapshot.serviceDate}
-                now={now}
-              />
-            );
-
-          return <div key={rowKey}>{rowContent}</div>;
+          return row.kind === 'placeholder' ? (
+            <TripInspectionPlaceholderRow
+              key={rowKey}
+              stopIndex={row.stopIndex}
+              totalStops={row.totalStops}
+              currentPatternStopIndex={selectedPatternStopIndex}
+              infoLevel={infoLevel}
+            />
+          ) : (
+            <TripInspectionStopRow
+              key={rowKey}
+              tripStopTime={row.stop}
+              totalStops={row.totalStops}
+              currentPatternStopIndex={selectedPatternStopIndex}
+              routeColors={contrastAdjustedRouteColors}
+              infoLevel={infoLevel}
+              dataLangs={dataLangs}
+              serviceDate={tripSnapshot.serviceDate}
+              now={now}
+            />
+          );
         })}
       </div>
     </section>
