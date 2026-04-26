@@ -88,7 +88,7 @@ export function VerboseTripStopTime({
           dataLangs={dataLangs}
           agencyLang={stopAgencyLangs}
           infoLevel={infoLevel}
-          defaultOpen={true}
+          defaultOpen={false}
         />
       </div>
     </details>

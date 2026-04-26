@@ -281,6 +281,54 @@ function TripInspectionCurrentStop({ snapshot }: TripInspectionCurrentStopProps)
   );
 }
 
+function TripInspectionRowsSummary({ snapshot }: TripInspectionCurrentStopProps) {
+  const totalStops = snapshot.selectedStop.timetableEntry.patternPosition.totalStops;
+  const selectedStopIndex = snapshot.selectedStop.timetableEntry.patternPosition.stopIndex;
+  const stopByIndex = new Map(
+    snapshot.stopTimes.map((stop) => [stop.timetableEntry.patternPosition.stopIndex, stop]),
+  );
+  const { lines, missingPatternStops } = Array.from({ length: totalStops }).reduce<{
+    lines: string[];
+    missingPatternStops: number[];
+  }>(
+    (acc, _, index) => {
+      const stop = stopByIndex.get(index);
+      const selectedLabel = index === selectedStopIndex ? ' selected' : '';
+
+      if (!stop) {
+        acc.lines.push(`p${index + 1}/${totalStops}${selectedLabel} missing`);
+        acc.missingPatternStops.push(index + 1);
+        return acc;
+      }
+
+      const rowNumber = acc.lines.length - acc.missingPatternStops.length + 1;
+      acc.lines.push(
+        [
+          `r${rowNumber}`,
+          `p${index + 1}/${totalStops}${selectedLabel}`,
+          `stop=${stop.stopMeta?.stop.stop_id ?? '(unknown-stop)'}`,
+          `dep=${formatAbsoluteTime(minutesToDate(snapshot.serviceDate, stop.timetableEntry.schedule.departureMinutes))}`,
+          `arr=${formatAbsoluteTime(minutesToDate(snapshot.serviceDate, stop.timetableEntry.schedule.arrivalMinutes))}`,
+        ].join(' '),
+      );
+      return acc;
+    },
+    { lines: [], missingPatternStops: [] },
+  );
+
+  return (
+    <section className="space-y-1 rounded-md border px-2 py-2 font-mono text-[11px] leading-4">
+      <div>
+        [rows] reconstructed={snapshot.stopTimes.length} expected={totalStops} missingPatternStops=
+        {missingPatternStops.length > 0 ? `[${missingPatternStops.join(',')}]` : '[]'}
+      </div>
+      {lines.map((line: string, index: number) => (
+        <div key={index}>{line}</div>
+      ))}
+    </section>
+  );
+}
+
 export function TripInspectionDialog({
   open,
   onOpenChange,
@@ -584,6 +632,7 @@ export function TripInspectionDialog({
                   serviceDate={snapshot.serviceDate}
                   dataLangs={dataLangs}
                 />
+                <TripInspectionRowsSummary snapshot={snapshot} />
               </>
             )}
           </div>
