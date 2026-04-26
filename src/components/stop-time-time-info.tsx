@@ -85,6 +85,9 @@ export function StopTimeTimeInfo({
   const shouldShowDepartureAbsolute = showDepartureTime;
   const shouldShowDepartureMarker = shouldShowArrivalAbsolute && shouldShowDepartureAbsolute;
   const timeSize: ExtendedDisplaySize = size;
+
+  const rootClassName =
+    'flex min-h-8 w-14 shrink-0 flex-col justify-center text-right leading-none';
   const timeTextClassName = cn(
     textAppearance?.weight === 'normal' ? 'font-normal' : 'font-bold',
     textAppearance?.className,
@@ -155,17 +158,16 @@ export function StopTimeTimeInfo({
   );
 
   if (onInspectTrip === undefined || inspectTarget === undefined) {
-    return (
-      <div className="flex min-h-8 w-14 shrink-0 flex-col justify-center text-right leading-none">
-        {content}
-      </div>
-    );
+    return <div className={rootClassName}>{content}</div>;
   }
 
   return (
     <button
       type="button"
-      className="flex min-h-8 w-14 shrink-0 cursor-pointer flex-col justify-center rounded-sm text-right leading-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      className={cn(
+        rootClassName,
+        'cursor-pointer rounded-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+      )}
       onClick={(e) => {
         e.stopPropagation();
         onInspectTrip(inspectTarget);

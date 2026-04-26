@@ -212,6 +212,23 @@ Changes take effect immediately without page reload.
 
 Leaflet のカスタム pane を使い、描画レイヤーの前後関係を制御する。数値が大きいほど前面に描画される。
 
+このルールは CSS `z-index` を対象とする。Leaflet の `zIndexOffset` (marker pane 内 ordering) や Leaflet pane 自体の z-index 設定は別系統であり、本ルールの対象外。
+
+まず「どの stacking context の中で競合する値か」を決めてから `z-index` を置く。アプリ全体で比較する global layer と、コンポーネント内部でだけ比較される local layer を混ぜない。
+
+### 予約レンジ
+
+- `100-999`: global layer。MapView / Leaflet pane / map 上のオーバーレイ
+- `1000-1999`: global layer。BottomSheet とその上に重なる app chrome (floating controls, dropdown trigger/content など)
+- `2000-2999`: global layer。Dialog / Modal
+- `0-99`: local layer guide。任意の surface 内部で使う補助値。親の stacking context の中だけで意味を持つ値であり、上の global range とは別の話
+
+MapView 内でも component local な layering には `z-0` や `z-10` を使ってよい。ただしそれは map 全体の global layer を表す値ではない。
+
+以下の「現在の主な割り当て」はこの予約レンジに沿っている。global layer と local layer を同じ土俵で比較しないこと。
+
+### 現在の主な割り当て
+
 | z-index | 用途                                                                |
 | ------- | ------------------------------------------------------------------- |
 | 200     | `tilePane` — ベースマップタイル (地理院地図)                        |
@@ -227,6 +244,17 @@ Leaflet のカスタム pane を使い、描画レイヤーの前後関係を制
 | 2000    | モーダルダイアログ (shadcn Dialog, StopSearchModal, TimetableModal) |
 
 > **Note**: outline pane は fill pane より低い z-index を持つ必要がある。react-leaflet の Polyline は Leaflet の `addTo()` を通じて pane 末尾に append されるため、同一 pane 内では mount 順に依存した描画順になる。pane を分離することで mount 順に関係なく正しい前後関係を保証する。
+
+### コンポーネント内 z-index の扱い
+
+- local stacking が成立している箇所では `z-0` や `z-10` を使ってよい。ただし装飾だけのために `z-index` を増やさない
+- 同じ `z-index` 値でも親の stacking context が違うと直感どおりに重ならない。`relative` / `sticky` / `transform` と組み合わさると Safari で境界 bleed が起きやすい
+- `ScrollFadeEdge` は local overlay であり、scroll container 内の `z-10` は global な「10番レイヤー」を意味しない
+- `ScrollFadeEdge` のような overlay を使う箇所では、下層 content の装飾要素に不要な `z-index` を持たせない。`TripPositionIndicator` の dot に付いていた `z-10` は commit `835ea49` (2026-04-26 15:08:43 +0900) で除去した
+- `src/components/ui/` の shadcn primitive は upstream default の `z-index` を持つことがある。global layer に出す必要がある場合は wrapper を一括変更するのではなく、まず caller 側 `className` で予約レンジへ override する
+- 現在の `SelectContent` は caller override を公式パターンとして使っている。例: `StopHistory` と `Portals` は `className="z-1002 ..."` を渡して app chrome layer に載せている
+- `Select` / `Popover` のような shared primitive 自体には surface 固有の global `z-index` を持たせない。BottomSheet 上に出すのか Dialog 内に出すのかは呼び出し側の責務として決める
+- つまり shared primitive の default `z-index` は upstream 値のままでよく、app 固有の layer policy が必要な場合だけ caller 側で `z-1002` や `z-2001` のように明示する
 
 ## マップのパン/ズーム制御
 
@@ -562,6 +590,14 @@ pipeline で .json.gz を生成
 - `@/` パスエイリアスを使用 (shadcn の規約)
 - 地図オーバーレイ用ボタン (MapOverlayButton, MapToggleButton) は shadcn Button を使わない (配置・スタイルが特殊)
 - shadcn Dialog の z-index はデフォルト `z-50` から `z-2000` に変更済み (上記 z-index 階層を参照)
+
+### Dialog / ScrollFadeEdge の注意点
+
+- `ScrollFadeEdge` は scroll content の一部ではなく、`sticky top-0` / `bottom-0` で viewport edge に張り付く overlay として動く。content 側の `pt` / `mt` を変えても fade 自体の表示位置は変わらない
+- fade の濃さを調整したい場合は caller 側の `className` で `via-background/*` を上書きする。位置や重なり量を変えたい場合は `ScrollFadeEdge` 側の `top-0` / `h-*` / `-mb-*` を調整する
+- `ScrollFadeEdge` と同じ or より高い `z-index` を持つ子要素は fade より前面に見えることがある。装飾目的の child component には不要な `z-index` を付けない
+- Safari (macOS / iOS) では `DialogHeader` と scroll container の sibling 境界で 1px 前後の translucent bleed が出ることがある。現在の `TripInspectionDialog` 実装では `DialogHeader` に `border-border z-10 -mb-px shrink-0 border-b-2` を付け、scroll container は `relative min-h-0 flex-1 overflow-y-auto` のまま使っている
+- 上記 Safari workaround では `border-b` では再発し、`border-b-2` で安定した。`-mb-px` で 1px 重ねると 1px border は境界で潰れて見えやすく、2px あれば重なり後も線が残る
 
 ## 日時指定 (`?time=`)
 

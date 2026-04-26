@@ -68,7 +68,7 @@ export function TimeSettingDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="top-[10dvh] w-[calc(100%-48px)] max-w-sm translate-y-0 gap-3 overflow-hidden rounded-xl"
+        className="top-[10dvh] w-full max-w-xs translate-y-0 gap-3 overflow-hidden rounded-xl border-4 sm:max-w-xs"
         showCloseButton={false}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
