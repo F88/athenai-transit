@@ -43,6 +43,7 @@ import { RouteBadge } from '../badge/route-badge';
 import { TripPositionIndicator } from '../label/trip-position-indicator';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
 import { TripInspectionStopList } from './trip-inspection-stop-list';
+import { VerboseTripStopTime } from '../verbose/verbose-trip-stop-time';
 
 interface TripInspectionDialogProps {
   open: boolean;
@@ -65,7 +66,6 @@ interface TripInspectionSummaryProps {
 
 interface TripInspectionCurrentStopProps {
   snapshot: SelectedTripSnapshot;
-  infoLevel: InfoLevel;
 }
 
 interface StopSummaryProps {
@@ -530,7 +530,7 @@ export function TripInspectionDialog({
             {routeTypesEmoji([route.route_type])}
 
             {routeAgency && (
-              <>
+              <div>
                 <AgencyBadge
                   size="sm"
                   agency={routeAgency}
@@ -539,7 +539,7 @@ export function TripInspectionDialog({
                   infoLevel={infoLevel}
                   showBorder={true}
                 />
-              </>
+              </div>
             )}
             <RouteBadge
               route={snapshot.route}
@@ -569,13 +569,24 @@ export function TripInspectionDialog({
             </div>
           </DialogDescription>
 
-          <TripInspectionSummary snapshot={snapshot} infoLevel={infoLevel} dataLangs={dataLangs} />
-          {infoLevelFlag.isVerboseEnabled && (
-            <>
-              {now.toISOString()}
-              <TripInspectionCurrentStop snapshot={snapshot} infoLevel={infoLevel} />
-            </>
-          )}
+          <div className="max-h-[24dvh] overflow-y-auto pr-1">
+            <TripInspectionSummary
+              snapshot={snapshot}
+              infoLevel={infoLevel}
+              dataLangs={dataLangs}
+            />
+            {infoLevelFlag.isVerboseEnabled && (
+              <>
+                {/* {now.toISOString()} */}
+                <TripInspectionCurrentStop snapshot={snapshot} />
+                <VerboseTripStopTime
+                  tripStopTime={snapshot.selectedStop}
+                  serviceDate={snapshot.serviceDate}
+                  dataLangs={dataLangs}
+                />
+              </>
+            )}
+          </div>
         </DialogHeader>
 
         <div
