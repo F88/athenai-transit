@@ -357,10 +357,25 @@ export interface TripPatternJson {
    * Derived from GTFS stop_times (ORDER BY stop_sequence) or
    * ODPT stationOrder truncated at destinationStation.
    *
-   * **Note**: Some stops in this array may have no corresponding
-   * timetable entry (e.g. GTFS stops with NULL departure_time —
-   * intermediate timepoints without scheduled stop times). Consumers
-   * MUST NOT assume every stop has stop times in the timetable.
+   * **Note**: how `stops` is constructed is source-dependent:
+   *
+   * - **GTFS-derived patterns** (pipeline `gtfs/extract-timetable.ts`):
+   *   `stops` lists only the stops where the trips of this pattern
+   *   actually stop, i.e. stop_times rows whose `departure_time` is
+   *   non-null. Pass-through stations (NULL `departure_time`) are
+   *   excluded. The timetable group's `si` is the 0-based index into
+   *   `stops`, so `pattern.stops[si]` and the timetable entry for that
+   *   `si` are in 1:1 correspondence.
+   * - **ODPT-derived patterns** (pipeline `odpt/build-timetable.ts`):
+   *   `stops` is built from the railway's `stationOrder` truncated at
+   *   the destination, independently of whether each station has actual
+   *   timetable data. A stop in `stops` may therefore have no
+   *   corresponding timetable group (e.g. terminal stations with no
+   *   StationTimetable in the source).
+   *
+   * Across sources, consumers MUST NOT assume every stop has stop
+   * times in the timetable. When a (patternId, si) lookup yields no
+   * group, treat it as "no scheduled stop time" rather than an error.
    */
   stops: {
     /** Stop ID (prefixed). FK -> stops section in DataBundle. */

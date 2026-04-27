@@ -5,7 +5,7 @@
  */
 
 import Database from 'better-sqlite3';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { extractTripPatternsAndTimetable } from '../extract-timetable';
 
@@ -244,7 +244,10 @@ describe('extractTripPatternsAndTimetable', () => {
     expect(g.dt!['test:WD']).toEqual([0]);
   });
 
-  it('NULL departure stop is in pattern.stops but not in timetable', () => {
+  it('pure pass-through stop (NULL dep AND NULL arr) is excluded from pattern.stops and timetable', () => {
+    // Pre-#154 behavior kept S002 in pattern.stops but skipped it from
+    // timetable, leaving the two arrays misaligned. Post-#154 the pattern
+    // key is built from served stops only, so S002 is excluded from both.
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
@@ -253,17 +256,17 @@ describe('extractTripPatternsAndTimetable', () => {
     `);
 
     const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
-    // Pattern includes all 3 stops (including pass-through)
-    expect(tripPatterns['test:p1'].stops).toEqual([
-      { id: 'test:S001' },
-      { id: 'test:S002' },
-      { id: 'test:S003' },
-    ]);
-    // But timetable has no entry for S002
+    expect(tripPatterns['test:p1'].stops).toEqual([{ id: 'test:S001' }, { id: 'test:S003' }]);
     expect(timetable['test:S002']).toBeUndefined();
+    // si values reflect the served-only positions: S001=0, S003=1.
+    expect(timetable['test:S001'][0].si).toBe(0);
+    expect(timetable['test:S003'][0].si).toBe(1);
   });
 
-  it('skips stop_times with NULL departure_time', () => {
+  it('NULL departure_time stop is excluded from both pattern.stops and timetable', () => {
+    // Same shape as the pure pass-through case, but S002 keeps an arrival_time.
+    // Per Issue #154 we use `departure_time != null` as the served signal,
+    // so S002 is still excluded (pattern.stops index must match timetable.si).
     db.exec(`
       INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
@@ -271,12 +274,36 @@ describe('extractTripPatternsAndTimetable', () => {
       INSERT INTO stop_times VALUES ('T001', 'S003', 3, '08:10:00', '08:10:00', 0, 0, NULL);
     `);
 
-    const { timetable } = extractTripPatternsAndTimetable(db, 'test');
-    // S002 should have no timetable entry (departure is NULL)
+    const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
+    expect(tripPatterns['test:p1'].stops).toEqual([{ id: 'test:S001' }, { id: 'test:S003' }]);
     expect(timetable['test:S002']).toBeUndefined();
-    // S001 and S003 should have entries
     expect(timetable['test:S001']).toHaveLength(1);
     expect(timetable['test:S003']).toHaveLength(1);
+  });
+
+  it('terminal arr-only stop (last stop has NULL dep but valid arr) is excluded from pattern.stops', () => {
+    // Edge case noted in the Issue #154 plan: when the *terminal* stop has
+    // departure_time = NULL but arrival_time set (drop-off only), the served
+    // filter (`departure_time != null`) excludes it from pattern.stops, so
+    // the trip's nominal terminus does not appear in the trip stops list.
+    // Real GTFS feeds usually populate dep == arr at terminals, so this
+    // should be rare; this test pins the contract anyway to catch regressions.
+    db.exec(`
+      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:05:00', '08:05:00', 0, 0, NULL);
+      INSERT INTO stop_times VALUES ('T001', 'S003', 3, NULL, '08:10:00', 0, 0, NULL);
+    `);
+
+    const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
+    expect(tripPatterns['test:p1'].stops).toEqual([{ id: 'test:S001' }, { id: 'test:S002' }]);
+    expect(timetable['test:S003']).toBeUndefined();
+    expect(timetable['test:S001']).toHaveLength(1);
+    expect(timetable['test:S002']).toHaveLength(1);
+    // The included stops sit at si=0 and si=1 — the served-only sequence,
+    // not the raw stop_sequence (which would have made S002 si=1, S003 si=2).
+    expect(timetable['test:S001'][0].si).toBe(0);
+    expect(timetable['test:S002'][0].si).toBe(1);
   });
 
   it('d/a/pt/dt array lengths are equal for each service_id', () => {
@@ -735,5 +762,183 @@ describe('extractTripPatternsAndTimetable', () => {
     const p = tripPatterns[patternIds[0]];
     expect(p.stops[0].sh).toBe('渋谷駅');
     expect(p.stops[1].sh).toBeUndefined();
+  });
+
+  // -------------------------------------------------------------------------
+  // Issue #154: served-only pattern key tests
+  // -------------------------------------------------------------------------
+
+  describe('served-only pattern key (Issue #154)', () => {
+    it('splits express vs local trips with same raw stop sequence into separate patterns', () => {
+      // Both trips list S1..S5 in stop_times, but the express trip skips S2
+      // and S4 (NULL departure_time). Pre-#154 they shared a pattern and the
+      // per-stop d[serviceId] arrays became inconsistent across stops.
+      // Post-#154 they form two patterns with served stops [S1,S3,S5] and
+      // [S1,S2,S3,S4,S5] respectively.
+      db.exec(`
+        INSERT INTO trips VALUES ('EXP', 'R001', 'WD', '快速', 0);
+        INSERT INTO trips VALUES ('LOC', 'R001', 'WD', '快速', 0);
+        INSERT INTO stop_times VALUES ('EXP', 'S1', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('EXP', 'S2', 2, NULL, NULL, 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('EXP', 'S3', 3, '08:05:00', '08:05:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('EXP', 'S4', 4, NULL, NULL, 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('EXP', 'S5', 5, '08:10:00', '08:10:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('LOC', 'S1', 1, '09:00:00', '09:00:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('LOC', 'S2', 2, '09:02:00', '09:02:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('LOC', 'S3', 3, '09:04:00', '09:04:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('LOC', 'S4', 4, '09:06:00', '09:06:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('LOC', 'S5', 5, '09:08:00', '09:08:00', 0, 0, NULL);
+      `);
+
+      const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
+
+      expect(Object.keys(tripPatterns)).toHaveLength(2);
+      const patterns = Object.values(tripPatterns);
+      const expressPattern = patterns.find((p) => p.stops.length === 3)!;
+      const localPattern = patterns.find((p) => p.stops.length === 5)!;
+      expect(expressPattern).toBeDefined();
+      expect(localPattern).toBeDefined();
+      expect(expressPattern.stops.map((s) => s.id)).toEqual(['test:S1', 'test:S3', 'test:S5']);
+      expect(localPattern.stops.map((s) => s.id)).toEqual([
+        'test:S1',
+        'test:S2',
+        'test:S3',
+        'test:S4',
+        'test:S5',
+      ]);
+
+      // S1 sits in both patterns -> 2 timetable groups, each with 1 trip.
+      const s1Groups = timetable['test:S1'];
+      expect(s1Groups).toHaveLength(2);
+      for (const g of s1Groups) {
+        expect(g.d['test:WD']).toHaveLength(1);
+      }
+      // S2 only sits in the local pattern.
+      expect(timetable['test:S2']).toHaveLength(1);
+      expect(timetable['test:S2'][0].d['test:WD']).toHaveLength(1);
+    });
+
+    it('through-running mid-pattern skip splits into separate patterns', () => {
+      // Same route/headsign/direction; trip B skips S3. Approximates the
+      // toaran case where express services through-run and skip Asakusa-line
+      // stations that local services serve.
+      db.exec(`
+        INSERT INTO trips VALUES ('TA', 'R001', 'WD', '成田空港', 0);
+        INSERT INTO trips VALUES ('TB', 'R001', 'WD', '成田空港', 0);
+        INSERT INTO stop_times VALUES ('TA', 'S1', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('TA', 'S2', 2, '08:05:00', '08:05:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('TA', 'S3', 3, '08:10:00', '08:10:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('TA', 'S4', 4, '08:15:00', '08:15:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('TB', 'S1', 1, '09:00:00', '09:00:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('TB', 'S2', 2, '09:05:00', '09:05:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('TB', 'S3', 3, NULL, NULL, 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('TB', 'S4', 4, '09:13:00', '09:13:00', 0, 0, NULL);
+      `);
+
+      const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
+      expect(Object.keys(tripPatterns)).toHaveLength(2);
+      // Within each (patId, serviceId), every stop in the pattern has the
+      // same d[serviceId].length.
+      for (const [patId, pattern] of Object.entries(tripPatterns)) {
+        const lengths: number[] = [];
+        for (const stop of pattern.stops) {
+          const groups = timetable[stop.id];
+          const group = groups.find((g) => g.tp === patId);
+          expect(group).toBeDefined();
+          lengths.push(group!.d['test:WD'].length);
+        }
+        const unique = [...new Set(lengths)];
+        expect(unique).toHaveLength(1);
+      }
+    });
+
+    it('cross-stop d/a length consistency within (patternId, serviceId)', () => {
+      // Re-use the express + local fixture from the first test and assert
+      // that for each pattern, every stop has the same d/a length. This is
+      // the structural invariant Issue #154 directly targets.
+      db.exec(`
+        INSERT INTO trips VALUES ('EXP', 'R001', 'WD', '快速', 0);
+        INSERT INTO trips VALUES ('LOC', 'R001', 'WD', '快速', 0);
+        INSERT INTO stop_times VALUES ('EXP', 'S1', 1, '08:00:00', '08:00:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('EXP', 'S2', 2, NULL, NULL, 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('EXP', 'S3', 3, '08:05:00', '08:05:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('EXP', 'S4', 4, NULL, NULL, 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('EXP', 'S5', 5, '08:10:00', '08:10:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('LOC', 'S1', 1, '09:00:00', '09:00:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('LOC', 'S2', 2, '09:02:00', '09:02:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('LOC', 'S3', 3, '09:04:00', '09:04:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('LOC', 'S4', 4, '09:06:00', '09:06:00', 0, 0, NULL);
+        INSERT INTO stop_times VALUES ('LOC', 'S5', 5, '09:08:00', '09:08:00', 0, 0, NULL);
+      `);
+
+      const { tripPatterns, timetable } = extractTripPatternsAndTimetable(db, 'test');
+      for (const [patId, pattern] of Object.entries(tripPatterns)) {
+        const dLengths: number[] = [];
+        const aLengths: number[] = [];
+        for (const stop of pattern.stops) {
+          const group = timetable[stop.id].find((g) => g.tp === patId)!;
+          dLengths.push(group.d['test:WD'].length);
+          aLengths.push(group.a['test:WD'].length);
+        }
+        expect([...new Set(dLengths)]).toHaveLength(1);
+        expect([...new Set(aLengths)]).toHaveLength(1);
+        expect(dLengths[0]).toBe(aLengths[0]);
+      }
+    });
+
+    it('served-only filter keeps stop_headsign attached to the correct stop (regression guard)', () => {
+      // The pre-#154 code read sh from refTrip.stopHeadsigns indexed by raw
+      // position. Once pattern.stops becomes served-only, that raw index
+      // misaligns and sh would attach to the wrong stop. This test pins the
+      // fix that step 5 reads sh from the served-only group field instead.
+      db.exec(`
+        INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
+        INSERT INTO stop_times VALUES ('T001', 'S1', 1, '08:00:00', '08:00:00', 0, 0, 'A');
+        INSERT INTO stop_times VALUES ('T001', 'S2', 2, NULL, NULL, 0, 0, 'X');
+        INSERT INTO stop_times VALUES ('T001', 'S3', 3, '08:10:00', '08:10:00', 0, 0, 'C');
+      `);
+
+      const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+      const p = tripPatterns['test:p1'];
+      expect(p.stops).toEqual([
+        { id: 'test:S1', sh: 'A' },
+        { id: 'test:S3', sh: 'C' },
+      ]);
+      // Specifically: S3's sh must be 'C' (its own value), not 'X' (the
+      // pass-through stop's value that would leak in if raw index was used).
+      expect(p.stops[1].sh).toBe('C');
+    });
+
+    it('skips trips where all stops have NULL departure_time and emits a warning', () => {
+      // A trip with no served stops would otherwise produce a zero-length
+      // pattern.stops, which downstream consumers cannot meaningfully use.
+      // Check both behaviors: the trip is dropped and the warning is emitted.
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      try {
+        db.exec(`
+          INSERT INTO trips VALUES ('EMPTY', 'R001', 'WD', '回送', 0);
+          INSERT INTO trips VALUES ('NORMAL', 'R001', 'WD', '渋谷', 0);
+          INSERT INTO stop_times VALUES ('EMPTY', 'S1', 1, NULL, NULL, 0, 0, NULL);
+          INSERT INTO stop_times VALUES ('EMPTY', 'S2', 2, NULL, NULL, 0, 0, NULL);
+          INSERT INTO stop_times VALUES ('EMPTY', 'S3', 3, NULL, NULL, 0, 0, NULL);
+          INSERT INTO stop_times VALUES ('NORMAL', 'S1', 1, '09:00:00', '09:00:00', 0, 0, NULL);
+          INSERT INTO stop_times VALUES ('NORMAL', 'S2', 2, '09:05:00', '09:05:00', 0, 0, NULL);
+        `);
+
+        const { tripPatterns } = extractTripPatternsAndTimetable(db, 'test');
+        // Only the normal trip's pattern is emitted.
+        expect(Object.keys(tripPatterns)).toHaveLength(1);
+        expect(tripPatterns['test:p1'].stops).toEqual([{ id: 'test:S1' }, { id: 'test:S2' }]);
+
+        // Warning fires once with the skipped count.
+        const warnings = warnSpy.mock.calls
+          .map((args) => String(args[0]))
+          .filter((msg) => msg.includes('trips skipped (all stops have NULL departure_time)'));
+        expect(warnings).toHaveLength(1);
+        expect(warnings[0]).toContain('1 trips skipped');
+      } finally {
+        warnSpy.mockRestore();
+      }
+    });
   });
 });

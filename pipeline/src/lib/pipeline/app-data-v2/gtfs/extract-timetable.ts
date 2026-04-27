@@ -174,11 +174,31 @@ export function extractTripPatternsAndTimetable(
     console.warn(`  [${prefix}] WARN: ${skipped} stop_times skipped (trip not found)`);
   }
 
-  // 4. Group trips by pattern (route + headsign + direction + stop sequence + stop headsigns)
-  // stop_headsign is included in the key so that trips with the same stop
-  // sequence but different stop_headsign values form separate patterns.
-  const patternKey = (t: TripStopTimes): string =>
-    `${t.routeId}\0${t.headsign}\0${t.directionId ?? ''}\0${JSON.stringify(t.stops)}\0${JSON.stringify(t.stopHeadsigns)}`;
+  // 4. Group trips by pattern.
+  //
+  // Pattern key = (route, headsign, direction, served stop sequence, served stop headsigns).
+  // "Served" means the trip has a non-null departure_time at that stop_times row.
+  //
+  // Pass-through stops (NULL departure_time, e.g. express trains skipping a
+  // station while local trains stop there) MUST NOT participate in the key.
+  // Including them would merge express and local trips into a single pattern
+  // even though they actually stop at different sets of stations, and the
+  // per-stop d[serviceId] arrays would then have inconsistent lengths across
+  // stops within one (patternId, serviceId) — see Issue #154.
+  //
+  // The set of stops emitted in pattern.stops, the set walked in step 6 to
+  // build the timetable, and the timetable inclusion rule (`dep != null`)
+  // must all agree. Otherwise pattern.stops[si] and the timetable's si lose
+  // alignment.
+  //
+  // stop_headsign is also part of the key so that trips with the same served
+  // stop sequence but different stop_headsign values form separate patterns
+  // (see #92).
+  const patternKey = (t: TripStopTimes, servedIdx: number[]): string => {
+    const servedStops = servedIdx.map((i) => t.stops[i]);
+    const servedHeadsigns = servedIdx.map((i) => t.stopHeadsigns[i]);
+    return `${t.routeId}\0${t.headsign}\0${t.directionId ?? ''}\0${JSON.stringify(servedStops)}\0${JSON.stringify(servedHeadsigns)}`;
+  };
 
   const patternGroups = new Map<
     string,
@@ -188,31 +208,57 @@ export function extractTripPatternsAndTimetable(
       directionId: number | null;
       stops: string[];
       stopHeadsigns: (string | null)[];
-      trips: TripStopTimes[];
+      trips: { trip: TripStopTimes; servedIdx: number[] }[];
     }
   >();
 
+  let skippedEmptyTrips = 0;
+
   for (const [, trip] of tripStopTimesMap) {
-    const key = patternKey(trip);
+    const servedIdx: number[] = [];
+    for (let i = 0; i < trip.departures.length; i++) {
+      if (trip.departures[i] != null) {
+        servedIdx.push(i);
+      }
+    }
+    if (servedIdx.length === 0) {
+      // A trip with no served stops cannot be located on a pattern and would
+      // produce a zero-length pattern.stops. Downstream consumers
+      // (build-trip-pattern-stats, build-trip-pattern-geo) defensively handle
+      // stops.length === 0 but would emit invalid placeholders. Skip the trip
+      // entirely instead.
+      skippedEmptyTrips++;
+      continue;
+    }
+
+    const servedStops = servedIdx.map((i) => trip.stops[i]);
+    const servedHeadsigns = servedIdx.map((i) => trip.stopHeadsigns[i]);
+    const key = patternKey(trip, servedIdx);
     let group = patternGroups.get(key);
     if (!group) {
       group = {
         routeId: trip.routeId,
         headsign: trip.headsign,
         directionId: trip.directionId,
-        stops: trip.stops,
-        stopHeadsigns: trip.stopHeadsigns,
+        stops: servedStops,
+        stopHeadsigns: servedHeadsigns,
         trips: [],
       };
       patternGroups.set(key, group);
     }
-    group.trips.push(trip);
+    group.trips.push({ trip, servedIdx });
+  }
+
+  if (skippedEmptyTrips > 0) {
+    console.warn(
+      `  [${prefix}] WARN: ${skippedEmptyTrips} trips skipped (all stops have NULL departure_time)`,
+    );
   }
 
   // 5. Sort patterns deterministically and assign IDs
   // Use code-unit comparison (< / >) instead of localeCompare to avoid
   // locale-dependent collation differences across environments.
-  const sortedPatterns = [...patternGroups.values()].sort((a, b) => {
+  const patternEntries = [...patternGroups.entries()].sort(([, a], [, b]) => {
     const ka = patternSortKey(a);
     const kb = patternSortKey(b);
     return ka < kb ? -1 : ka > kb ? 1 : 0;
@@ -222,17 +268,16 @@ export function extractTripPatternsAndTimetable(
   // Map from pattern key -> pattern ID for timetable building
   const patternIdByKey = new Map<string, string>();
 
-  for (let i = 0; i < sortedPatterns.length; i++) {
-    const p = sortedPatterns[i];
+  for (let i = 0; i < patternEntries.length; i++) {
+    const [key, p] = patternEntries[i];
     const patternId = `${prefix}:p${i + 1}`;
-    const key = patternKey(p.trips[0]);
     patternIdByKey.set(key, patternId);
 
-    // Use the first trip's stopHeadsigns as the representative values.
-    // All trips in the same pattern share the same stop_headsign at each
-    // stop — guaranteed by patternKey including stopHeadsigns.
-    const refTrip = p.trips[0];
-
+    // p.stops and p.stopHeadsigns are both already served-only (built in step
+    // 4 from the same servedIdx), so they are positionally aligned. Reading
+    // sh from p.stopHeadsigns[idx] — NOT from refTrip.stopHeadsigns[idx] —
+    // is required: refTrip.stopHeadsigns is the raw (full) stop list, which
+    // would misalign once pass-through stops are excluded.
     const pattern: TripPatternJson = {
       v: 2,
       r: `${prefix}:${p.routeId}`,
@@ -241,7 +286,7 @@ export function extractTripPatternsAndTimetable(
         const stop: TripPatternJson['stops'][number] = {
           id: `${prefix}:${s}`,
         };
-        const sh = refTrip.stopHeadsigns[idx];
+        const sh = p.stopHeadsigns[idx];
         // NULL = stop_headsign not specified → omit sh (consumer falls back to h).
         // In practice, the CSV→DB import converts empty CSV fields to NULL,
         // so sh is either a non-empty string or null here.
@@ -259,7 +304,7 @@ export function extractTripPatternsAndTimetable(
     tripPatterns[patternId] = pattern;
   }
 
-  console.log(`  [${prefix}] ${sortedPatterns.length} trip patterns`);
+  console.log(`  [${prefix}] ${patternEntries.length} trip patterns`);
 
   // 6. Build per-stop timetable
   // stopId -> patternId -> si (stop position within pattern) -> serviceId -> entries
@@ -276,53 +321,55 @@ export function extractTripPatternsAndTimetable(
   };
   const stopTimetable = new Map<string, Map<string, Map<number, Map<string, StopTimeData[]>>>>();
 
-  for (const [, trip] of tripStopTimesMap) {
-    const key = patternKey(trip);
+  // Iterate patterns instead of trips so we have direct access to (patId, key)
+  // and the per-trip servedIdx cached during step 4.
+  for (const [key, p] of patternGroups) {
     const patId = patternIdByKey.get(key)!;
-    const prefixedServiceId = `${prefix}:${trip.serviceId}`;
+    for (const { trip, servedIdx } of p.trips) {
+      const prefixedServiceId = `${prefix}:${trip.serviceId}`;
 
-    for (let stopIdx = 0; stopIdx < trip.stops.length; stopIdx++) {
-      const dep = trip.departures[stopIdx];
-      if (dep == null) {
-        continue;
+      // Walk the served indices only. By construction servedIdx[pos] points
+      // at a row whose departure_time is non-null, so dep is never null here.
+      // pos = 0-based position within pattern.stops (which is the served list)
+      // — this becomes the timetable group's `si`, ensuring pattern.stops[si]
+      // and timetable.si stay in 1:1 alignment.
+      for (let pos = 0; pos < servedIdx.length; pos++) {
+        const stopIdx = servedIdx[pos];
+        const dep = trip.departures[stopIdx]!;
+        const arr = trip.arrivals[stopIdx] ?? dep;
+        const pt = trip.pickupTypes[stopIdx] ?? 0;
+        const dt = trip.dropOffTypes[stopIdx] ?? 0;
+
+        // stop_id is not yet prefixed in the internal TripStopTimes
+        const prefixedStopId = `${prefix}:${trip.stops[stopIdx]}`;
+        const si = pos;
+
+        let patternMap = stopTimetable.get(prefixedStopId);
+        if (!patternMap) {
+          patternMap = new Map();
+          stopTimetable.set(prefixedStopId, patternMap);
+        }
+
+        let siMap = patternMap.get(patId);
+        if (!siMap) {
+          siMap = new Map();
+          patternMap.set(patId, siMap);
+        }
+
+        let serviceMap = siMap.get(si);
+        if (!serviceMap) {
+          serviceMap = new Map();
+          siMap.set(si, serviceMap);
+        }
+
+        let entries = serviceMap.get(prefixedServiceId);
+        if (!entries) {
+          entries = [];
+          serviceMap.set(prefixedServiceId, entries);
+        }
+
+        entries.push({ d: dep, a: arr, pt, dt });
       }
-
-      // stop_id is not yet prefixed in the internal TripStopTimes
-      const prefixedStopId = `${prefix}:${trip.stops[stopIdx]}`;
-      const arr = trip.arrivals[stopIdx] ?? dep;
-      const pt = trip.pickupTypes[stopIdx] ?? 0;
-      const dt = trip.dropOffTypes[stopIdx] ?? 0;
-
-      // si = 0-based position within pattern.stops. Same value across all trips
-      // of the same pattern (pattern key includes JSON.stringify(t.stops), so
-      // trip.stops and pattern.stops are aligned by index).
-      const si = stopIdx;
-
-      let patternMap = stopTimetable.get(prefixedStopId);
-      if (!patternMap) {
-        patternMap = new Map();
-        stopTimetable.set(prefixedStopId, patternMap);
-      }
-
-      let siMap = patternMap.get(patId);
-      if (!siMap) {
-        siMap = new Map();
-        patternMap.set(patId, siMap);
-      }
-
-      let serviceMap = siMap.get(si);
-      if (!serviceMap) {
-        serviceMap = new Map();
-        siMap.set(si, serviceMap);
-      }
-
-      let entries = serviceMap.get(prefixedServiceId);
-      if (!entries) {
-        entries = [];
-        serviceMap.set(prefixedServiceId, entries);
-      }
-
-      entries.push({ d: dep, a: arr, pt, dt });
     }
   }
 
