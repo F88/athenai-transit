@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { JourneyTimeBar } from '@/components/journey-time-bar';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { StopInfo } from '@/components/stop-info';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -18,12 +17,14 @@ import {
   LOW_CONTRAST_TEXT_MIN_RATIO,
 } from '@/domain/transit/color-resolver/contrast-thresholds';
 import {
+  type AdjustedRouteColors,
   getContrastAdjustedRouteColors,
   resolveRouteColors,
 } from '@/domain/transit/color-resolver/route-colors';
 import { minutesToDate } from '@/domain/transit/calendar-utils';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { deriveJourneyTimeFromTrip } from '@/domain/transit/journey-time';
 import { formatAbsoluteTime } from '@/domain/transit/time';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
@@ -36,13 +37,13 @@ import type {
   TripStopTime,
 } from '@/types/app/transit-composed';
 import { getContrastAwareAlphaSuffixes } from '@/utils/color/contrast-alpha-suffixes';
-import { routeTypesEmoji } from '@/utils/route-type-emoji';
-import { AgencyBadge } from '../badge/agency-badge';
 import { IdBadge } from '../badge/id-badge';
-import { RouteBadge } from '../badge/route-badge';
 import { TripPositionIndicator } from '../label/trip-position-indicator';
-import { StopTimeTimeInfo } from '../stop-time-time-info';
-import { TripInspectionStopList } from './trip-inspection-stop-list';
+import { TripBasicInfo } from '../trip/trip-basic-info';
+import { findTripStopRow } from '../trip/trip-stop-row-dom';
+import { computeScrolledStopIndex, getSelectedRowScrollTop } from '../trip/trip-stop-scroll';
+import { TripStops } from '../trip/trip-stops';
+import { TripPager } from '../trip/trip-pager';
 import { VerboseTripStopTime } from '../verbose/verbose-trip-stop-time';
 
 interface TripInspectionDialogProps {
@@ -60,6 +61,9 @@ interface TripInspectionDialogProps {
 
 interface TripInspectionSummaryProps {
   snapshot: SelectedTripSnapshot;
+  focusedStopIndex: number;
+  numberOfStops: number;
+  routeColors: AdjustedRouteColors<string>;
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
 }
@@ -71,6 +75,7 @@ interface TripInspectionCurrentStopProps {
 interface StopSummaryProps {
   stopNames: ReturnType<typeof getStopDisplayNames> | null;
   stopName: string;
+  infoLevel: InfoLevel;
 }
 
 interface RichStopSummaryProps {
@@ -94,26 +99,11 @@ function resolveTripStopDisplay(stop: TripStopTime | undefined, dataLangs: reado
   };
 }
 
-function getSelectedRowScrollTop(container: HTMLDivElement, selectedRow: HTMLElement): number {
-  const edgePadding = 12;
-  const containerRect = container.getBoundingClientRect();
-  const rowRect = selectedRow.getBoundingClientRect();
-  const rowTopWithinContainer = rowRect.top - containerRect.top + container.scrollTop;
-
-  if (selectedRow.clientHeight >= container.clientHeight - edgePadding * 2) {
-    return Math.max(0, rowTopWithinContainer - edgePadding);
-  }
-
-  return Math.max(
-    0,
-    rowTopWithinContainer - (container.clientHeight - selectedRow.clientHeight) / 2,
-  );
-}
-
-function SimpleStopSummary({ stopNames, stopName }: StopSummaryProps) {
+function SimpleStopSummary({ stopNames, stopName, infoLevel }: StopSummaryProps) {
+  const infoLevelFlag = useInfoLevel(infoLevel);
   return (
     <div className="min-w-0 rounded-md border p-2">
-      {stopNames && stopNames.subNames.length > 0 && (
+      {infoLevelFlag.isNormalEnabled && stopNames && stopNames.subNames.length > 0 && (
         <div className="text-muted-foreground truncate text-center text-xs">
           {stopNames.subNames.join(' / ')}
         </div>
@@ -149,71 +139,52 @@ function RichStopSummary({ stop, infoLevel, dataLangs }: RichStopSummaryProps) {
   );
 }
 
-function formatTargetDepartureTime(target: TripInspectionTarget | undefined): string | null {
-  if (!target) {
-    return null;
-  }
-
-  return formatAbsoluteTime(minutesToDate(target.serviceDate, target.departureMinutes));
-}
-
-function TripInspectionSummary({
+const TripInspectionSummary = memo(function TripInspectionSummary({
   snapshot,
+  focusedStopIndex,
+  numberOfStops,
+  routeColors,
   infoLevel,
   dataLangs: _dataLangs,
 }: TripInspectionSummaryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
-  const route = snapshot.route;
-  const selectedStop = snapshot.selectedStop;
-  const { routeColor } = resolveRouteColors(route, 'css-hex');
-  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
-  const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
-    route,
-    routeColorAssessment.isLowContrast,
-    'css-hex',
-  );
+
   const adjustedColorAssessment = useThemeContrastAssessment(
-    contrastAdjustedRouteColors.color,
+    routeColors.color,
     LOW_CONTRAST_TEXT_MIN_RATIO,
   );
   const { subtleAlphaSuffix, emphasisAlphaSuffix } = getContrastAwareAlphaSuffixes(
     adjustedColorAssessment.ratio,
   );
-  const emphasisAccentColor = `${contrastAdjustedRouteColors.color}${emphasisAlphaSuffix}`;
-  const subtleAccentColor = `${contrastAdjustedRouteColors.color}${subtleAlphaSuffix}`;
-  // const routeAgencyLangs = selectedStop.stopMeta
-  //   ? resolveAgencyLang(selectedStop.stopMeta.agencies, route.agency_id)
-  //   : DEFAULT_AGENCY_LANG;
-  // const routeNames = getRouteDisplayNames(route, dataLangs, routeAgencyLangs, 'short');
+  const emphasisAccentColor = `${routeColors.color}${emphasisAlphaSuffix}`;
+  const subtleAccentColor = `${routeColors.color}${subtleAlphaSuffix}`;
 
-  // StopTimes
-  const stopTimes = snapshot.stopTimes;
-  const firstStop = stopTimes[0];
-  const lastStop = stopTimes[stopTimes.length - 1];
-  const totalMinutes =
-    lastStop.timetableEntry.schedule.arrivalMinutes -
-    firstStop.timetableEntry.schedule.departureMinutes;
-  const remainingMinutes =
-    lastStop.timetableEntry.schedule.arrivalMinutes -
-    selectedStop.timetableEntry.schedule.departureMinutes;
+  const { totalMinutes, remainingMinutes } = useMemo(
+    () =>
+      deriveJourneyTimeFromTrip(
+        snapshot.stopTimes.map((s) => s.timetableEntry),
+        focusedStopIndex,
+      ),
+    [snapshot.stopTimes, focusedStopIndex],
+  );
 
   return (
     <section className="flex flex-col gap-2 pt-3 text-left">
       {/* TripPositionIndicator */}
       <TripPositionIndicator
-        stopIndex={selectedStop.timetableEntry.patternPosition.stopIndex}
-        totalStops={selectedStop.timetableEntry.patternPosition.totalStops}
+        stopIndex={focusedStopIndex}
+        totalStops={numberOfStops}
         size="md"
         showEmoji={infoLevelFlag.isNormalEnabled}
         showTrack={infoLevelFlag.isNormalEnabled}
         trackColor={subtleAccentColor}
         dotColor={emphasisAccentColor}
-        currentColor={contrastAdjustedRouteColors.color}
-        trackBorderColor={contrastAdjustedRouteColors.color}
+        currentColor={routeColors.color}
+        trackBorderColor={routeColors.color}
         showTrackBorder={false}
         showPositionLabel={infoLevelFlag.isNormalEnabled}
-        labelTextColor={contrastAdjustedRouteColors.textColor}
-        labelBgColor={contrastAdjustedRouteColors.color}
+        labelTextColor={routeColors.textColor}
+        labelBgColor={routeColors.color}
       />
 
       {/* JourneyTimeBar */}
@@ -222,15 +193,15 @@ function TripInspectionSummary({
         totalMinutes={totalMinutes}
         size="xl"
         showEmoji={infoLevelFlag.isNormalEnabled}
-        fillColor={contrastAdjustedRouteColors.color}
+        fillColor={routeColors.color}
         unfilledColor={emphasisAccentColor}
         showRMins={infoLevelFlag.isNormalEnabled}
         showTMins={infoLevelFlag.isNormalEnabled}
         minsPosition="right"
         fillDirection="rtl"
-        borderColor={contrastAdjustedRouteColors.color}
-        minsTextColor={contrastAdjustedRouteColors.textColor}
-        minsBgColor={contrastAdjustedRouteColors.color}
+        borderColor={routeColors.color}
+        minsTextColor={routeColors.textColor}
+        minsBgColor={routeColors.color}
         showBorder={false}
       />
 
@@ -257,7 +228,7 @@ function TripInspectionSummary({
       /> */}
     </section>
   );
-}
+});
 
 function TripInspectionCurrentStop({ snapshot }: TripInspectionCurrentStopProps) {
   const selectedStop: TripStopTime = snapshot.selectedStop;
@@ -317,15 +288,25 @@ function TripInspectionRowsSummary({ snapshot }: TripInspectionCurrentStopProps)
   );
 
   return (
-    <section className="space-y-1 rounded-md border px-2 py-2 font-mono text-[11px] leading-4">
-      <div>
-        [rows] reconstructed={snapshot.stopTimes.length} expected={totalStops} missingPatternStops=
-        {missingPatternStops.length > 0 ? `[${missingPatternStops.join(',')}]` : '[]'}
-      </div>
-      {lines.map((line: string, index: number) => (
-        <div key={index}>{line}</div>
-      ))}
-    </section>
+    <details className="mt-1 text-[9px] font-normal text-[#999] dark:text-gray-500">
+      <summary
+        tabIndex={-1}
+        className="cursor-pointer select-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        [RowsSummary]
+      </summary>
+      <section className="mt-0.5 space-y-1 rounded-md border px-2 py-2 font-mono text-[11px] leading-4">
+        <div>
+          [rows] reconstructed={snapshot.stopTimes.length} expected={totalStops}{' '}
+          missingPatternStops=
+          {missingPatternStops.length > 0 ? `[${missingPatternStops.join(',')}]` : '[]'}
+        </div>
+        {lines.map((line: string, index: number) => (
+          <div key={index}>{line}</div>
+        ))}
+      </section>
+    </details>
   );
 }
 
@@ -351,17 +332,27 @@ export function TripInspectionDialog({
   }, []);
   const selectedPatternStopIndex =
     snapshot?.selectedStop.timetableEntry.patternPosition.stopIndex ?? -1;
-  const dialogRouteColorInput = snapshot?.route ?? { route_color: '', route_text_color: '' };
-  const { routeColor: dialogRouteColor } = resolveRouteColors(dialogRouteColorInput, 'css-hex');
+
+  // Route colors
+  const dialogRouteColorInput = useMemo(
+    () => snapshot?.route ?? { route_color: '', route_text_color: '' },
+    [snapshot?.route],
+  );
+  const { routeColor } = resolveRouteColors(dialogRouteColorInput, 'css-hex');
   const dialogRouteColorAssessment = useThemeContrastAssessment(
-    dialogRouteColor,
+    routeColor,
     LOW_CONTRAST_BADGE_MIN_RATIO,
   );
-  const dialogBorderColors = getContrastAdjustedRouteColors(
-    dialogRouteColorInput,
-    dialogRouteColorAssessment.isLowContrast,
-    'css-hex',
+  const adjustedRouteColors = useMemo(
+    () =>
+      getContrastAdjustedRouteColors(
+        dialogRouteColorInput,
+        dialogRouteColorAssessment.isLowContrast,
+        'css-hex',
+      ),
+    [dialogRouteColorInput, dialogRouteColorAssessment.isLowContrast],
   );
+
   const contentScroll = useScrollFades(
     contentContainerRef,
     snapshot
@@ -372,6 +363,21 @@ export function TripInspectionDialog({
     ? `${snapshot.locator.patternId}:${snapshot.locator.serviceId}:${snapshot.locator.tripIndex}:${selectedPatternStopIndex}:${snapshot.stopTimes.length}`
     : 'empty';
   const [renderedSnapshot, setRenderedSnapshot] = useState<SelectedTripSnapshot | null>(null);
+  const [focusedStopIndex, setFocusedStopIndex] = useState<number>(selectedPatternStopIndex);
+  // Reset the focused stop whenever the selected stop / snapshot identity
+  // changes, by tracking the row key during render. This is the React-
+  // recommended pattern for resetting state from props without an extra
+  // effect-driven render pass.
+  const [trackedSelectedStopRowKey, setTrackedSelectedStopRowKey] = useState(selectedStopRowKey);
+  if (trackedSelectedStopRowKey !== selectedStopRowKey) {
+    setTrackedSelectedStopRowKey(selectedStopRowKey);
+    setFocusedStopIndex(selectedPatternStopIndex);
+  }
+  // Programmatic scroll triggered by snapshot/selected-stop change leaves the
+  // body in a scrolling state where intermediate scrollTop values would map to
+  // arbitrary stop indices. Suppress scroll-driven focus updates until the
+  // smooth scroll has had time to settle.
+  const programmaticScrollSettleRef = useRef<number>(0);
 
   useEffect(() => {
     if (!open || !snapshot) {
@@ -392,15 +398,17 @@ export function TripInspectionDialog({
       return;
     }
 
+    // Cover the smooth-scroll animation plus the rAF correction passes; user
+    // scroll events fired during this window must not redirect focus.
+    programmaticScrollSettleRef.current = Date.now() + 800;
+
     let firstFrameId = 0;
     let secondFrameId = 0;
     let correctionFrameId = 0;
 
     const applyScrollToSelectedRow = (behavior: ScrollBehavior) => {
       const container = contentContainerEl;
-      const selectedRow = container?.querySelector<HTMLElement>(
-        `[data-trip-stop-index="${selectedPatternStopIndex}"]`,
-      );
+      const selectedRow = container ? findTripStopRow(container, selectedPatternStopIndex) : null;
 
       if (!container || !selectedRow) {
         return false;
@@ -448,6 +456,26 @@ export function TripInspectionDialog({
     };
   }, [contentContainerEl, open, selectedPatternStopIndex, selectedStopRowKey, snapshot]);
 
+  const handleBodyScroll = useCallback(() => {
+    contentScroll.handleScroll();
+
+    if (Date.now() < programmaticScrollSettleRef.current) {
+      return;
+    }
+    if (!snapshot || renderedSnapshot !== snapshot) {
+      return;
+    }
+    const container = contentContainerRef.current;
+    if (!container) {
+      return;
+    }
+    const newIndex = computeScrolledStopIndex(container);
+    if (newIndex === null) {
+      return;
+    }
+    setFocusedStopIndex((prev) => (prev === newIndex ? prev : newIndex));
+  }, [contentScroll, snapshot, renderedSnapshot]);
+
   if (!snapshot) {
     return <Dialog open={false} onOpenChange={onOpenChange} />;
   }
@@ -460,16 +488,6 @@ export function TripInspectionDialog({
   const routeAgencyLangs =
     agencies !== undefined ? resolveAgencyLang(agencies, route.agency_id) : DEFAULT_AGENCY_LANG;
   const routeAgency = agencies?.find((agency) => agency.agency_id === route.agency_id);
-  const hasPreviousTrip = currentTripInspectionTargetIndex > 0;
-  const hasNextTrip = currentTripInspectionTargetIndex < tripInspectionTargets.length - 1;
-  const previousTarget = hasPreviousTrip
-    ? tripInspectionTargets[currentTripInspectionTargetIndex - 1]
-    : undefined;
-  const nextTarget = hasNextTrip
-    ? tripInspectionTargets[currentTripInspectionTargetIndex + 1]
-    : undefined;
-  const previousDepartureTime = formatTargetDepartureTime(previousTarget);
-  const nextDepartureTime = formatTargetDepartureTime(nextTarget);
 
   const headsignTitle = getHeadsignDisplayNames(
     snapshot.selectedStop.timetableEntry.routeDirection,
@@ -479,6 +497,7 @@ export function TripInspectionDialog({
   ).resolved.name;
 
   const selectedStop = snapshot.selectedStop;
+  const numberOfStops = selectedStop.timetableEntry.patternPosition.totalStops;
 
   // First TripStopTime
   const firstStop = tripStopTimes[0];
@@ -498,11 +517,11 @@ export function TripInspectionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex max-h-[80dvh] max-w-[90vw] flex-col gap-0 overflow-hidden border-4"
-        style={{ borderColor: dialogBorderColors.color }}
+        style={{ borderColor: adjustedRouteColors.color }}
       >
         <DialogHeader
-          className="z-10 -mb-px shrink-0 border-b-2 pb-3 sm:text-center"
-          style={{ borderBottomColor: dialogBorderColors.color }}
+          className="z-10 -mb-px shrink-0 pb-3 sm:text-center"
+          style={{ borderBottomColor: adjustedRouteColors.color }}
         >
           {/* {now.toLocaleDateString()} */}
           {/*
@@ -530,96 +549,53 @@ export function TripInspectionDialog({
             centered on the selected stop, while the body renders the
             matching trip that serves that stop.
           */}
-          <div className="flex items-center justify-center gap-2 pb-2">
-            <Button
-              className={!hasPreviousTrip ? 'pointer-events-none invisible' : undefined}
-              size="sm"
-              variant="outline"
-              disabled={!hasPreviousTrip}
-              onClick={onOpenPreviousTrip}
-            >
-              {previousDepartureTime ? `${previousDepartureTime}` : 'Prev'}
-            </Button>
-            <div className="flex min-w-16 flex-col items-center justify-center gap-1">
-              {/* departure time of selected stop or (arrival time (terminal)) */}
-              <StopTimeTimeInfo
-                arrivalMinutes={selectedStop.timetableEntry.schedule.arrivalMinutes}
-                departureMinutes={selectedStop.timetableEntry.schedule.departureMinutes}
-                serviceDate={snapshot.serviceDate}
-                now={now}
-                size="sm"
-                showArrivalTime={true}
-                showDepartureTime={true}
-                collapseArrivalWhenSameAsDeparture={true}
-                forceShowRelativeTime={false}
-                showVerbose={false}
-                // textAppearance={{ color: 'var(--muted-foreground)' }}
-              />
-            </div>
-            <Button
-              className={!hasNextTrip ? 'pointer-events-none invisible' : undefined}
-              size="sm"
-              variant="outline"
-              disabled={!hasNextTrip}
-              onClick={onOpenNextTrip}
-            >
-              {nextDepartureTime ? `${nextDepartureTime}` : 'Next'}
-            </Button>
+          <TripPager
+            selectedStop={selectedStop}
+            serviceDate={snapshot.serviceDate}
+            now={now}
+            tripInspectionTargets={tripInspectionTargets}
+            currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
+            onOpenPreviousTrip={onOpenPreviousTrip}
+            onOpenNextTrip={onOpenNextTrip}
+          />
 
-            <span className="text-muted-foreground text-center text-xs">
-              {tripInspectionTargets.length > 0
-                ? `${currentTripInspectionTargetIndex + 1} / ${tripInspectionTargets.length}`
-                : '0 / 0'}
-            </span>
-          </div>
-
-          {/* Trip info (simple) */}
-          <div className="flex flex-wrap items-center justify-center gap-2 text-center">
-            {routeTypesEmoji([route.route_type])}
-
-            {routeAgency && (
-              <div>
-                <AgencyBadge
-                  size="sm"
-                  agency={routeAgency}
-                  dataLang={dataLangs}
-                  agencyLangs={routeAgencyLangs}
-                  infoLevel={infoLevel}
-                  showBorder={true}
-                />
-              </div>
-            )}
-            <RouteBadge
-              route={snapshot.route}
-              size="sm"
-              dataLang={dataLangs}
-              agencyLangs={routeAgencyLangs}
-              infoLevel={infoLevel}
-              showBorder={true}
-            />
-            {headsignTitle.length > 0 ? (
-              <span className="truncate">{headsignTitle}</span>
-            ) : (
-              t('tripInspection.titleWithNoHeadsign')
-            )}
-          </div>
+          <TripBasicInfo
+            route={route}
+            routeAgency={routeAgency}
+            routeAgencyLangs={routeAgencyLangs}
+            infoLevel={infoLevel}
+            dataLangs={dataLangs}
+            headsignTitle={headsignTitle}
+            titleWithNoHeadsign={t('tripInspection.titleWithNoHeadsign')}
+          />
 
           <DialogDescription asChild className="text-center sm:text-center">
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
-              <SimpleStopSummary stopNames={firstStopNames} stopName={firstStopName} />
+              <SimpleStopSummary
+                stopNames={firstStopNames}
+                stopName={firstStopName}
+                infoLevel={infoLevel}
+              />
               <div className="flex items-center justify-center">
                 <span
                   aria-hidden="true"
                   className="border-l-muted-foreground h-0 w-0 border-y-[6px] border-l-10 border-y-transparent"
                 />
               </div>
-              <SimpleStopSummary stopNames={lastStopNames} stopName={lastStopName} />
+              <SimpleStopSummary
+                stopNames={lastStopNames}
+                stopName={lastStopName}
+                infoLevel={infoLevel}
+              />
             </div>
           </DialogDescription>
 
           <div className="max-h-[24dvh] overflow-y-auto pr-1">
             <TripInspectionSummary
               snapshot={snapshot}
+              focusedStopIndex={focusedStopIndex}
+              numberOfStops={numberOfStops}
+              routeColors={adjustedRouteColors}
               infoLevel={infoLevel}
               dataLangs={dataLangs}
             />
@@ -640,17 +616,18 @@ export function TripInspectionDialog({
 
         <div
           ref={setContentContainerNode}
-          onScroll={contentScroll.handleScroll}
+          onScroll={handleBodyScroll}
           className="relative min-h-0 flex-1 overflow-y-auto text-sm"
         >
           {contentScroll.showTop && (
             <ScrollFadeEdge position="top" className="via-background/90 -mb-5 h-5" />
           )}
           <div className="flex flex-col gap-4 pt-2 pb-2">
-            <TripInspectionStopList
+            <TripStops
               tripSnapshot={snapshot}
               renderedSnapshot={renderedSnapshot}
               selectedPatternStopIndex={selectedPatternStopIndex}
+              routeColors={adjustedRouteColors}
               infoLevel={infoLevel}
               dataLangs={dataLangs}
               now={now}

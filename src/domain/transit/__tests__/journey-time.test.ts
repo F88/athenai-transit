@@ -1,6 +1,30 @@
 import { describe, expect, it } from 'vitest';
 
-import { computeJourneyTime } from '../journey-time';
+import type { TimetableEntry } from '@/types/app/transit-composed';
+import { computeJourneyTime, deriveJourneyTimeFromTrip } from '../journey-time';
+
+/**
+ * Build a minimal `TimetableEntry` stub exposing only the fields read
+ * by `deriveJourneyTimeFromTrip` (`schedule` and `patternPosition`).
+ * Other required fields are bypassed via a narrow cast since the
+ * function under test never touches them.
+ */
+function makeStub(
+  stopIndex: number,
+  totalStops: number,
+  departureMinutes: number,
+  arrivalMinutes: number,
+): TimetableEntry {
+  return {
+    schedule: { departureMinutes, arrivalMinutes },
+    patternPosition: {
+      stopIndex,
+      totalStops,
+      isOrigin: stopIndex === 0,
+      isTerminal: stopIndex === totalStops - 1,
+    },
+  } as unknown as TimetableEntry;
+}
 
 describe('computeJourneyTime', () => {
   describe('failure reasons', () => {
@@ -522,5 +546,179 @@ describe('computeJourneyTime', () => {
       expect(r.value.displayTotalMinutes).toBe(730);
       expect(r.value.displayRemainingMinutes).toBe(730);
     });
+  });
+});
+
+describe('deriveJourneyTimeFromTrip', () => {
+  it('returns both fields undefined for an empty entry list', () => {
+    expect(deriveJourneyTimeFromTrip([], 0)).toEqual({
+      totalMinutes: undefined,
+      remainingMinutes: undefined,
+    });
+  });
+
+  it('computes total and remaining when target is the origin', () => {
+    // 3-stop pattern at 8:00 / 8:10 / 8:25; target = origin (stopIndex 0).
+    const entries = [makeStub(0, 3, 480, 480), makeStub(1, 3, 490, 490), makeStub(2, 3, 505, 505)];
+    const result = deriveJourneyTimeFromTrip(entries, 0);
+    expect(result.totalMinutes).toBe(25); // 505 - 480
+    expect(result.remainingMinutes).toBe(25); // 505 - 480, target at origin
+  });
+
+  it('returns remaining=0 when target is the terminal', () => {
+    const entries = [makeStub(0, 3, 480, 480), makeStub(1, 3, 490, 490), makeStub(2, 3, 505, 505)];
+    const result = deriveJourneyTimeFromTrip(entries, 2);
+    expect(result.totalMinutes).toBe(25);
+    expect(result.remainingMinutes).toBe(0); // 505 - 505
+  });
+
+  it('computes remaining as terminal.arr - target.dep for a middle stop', () => {
+    const entries = [makeStub(0, 3, 480, 480), makeStub(1, 3, 490, 490), makeStub(2, 3, 505, 505)];
+    const result = deriveJourneyTimeFromTrip(entries, 1);
+    expect(result.totalMinutes).toBe(25);
+    expect(result.remainingMinutes).toBe(15); // 505 - 490
+  });
+
+  it('returns (0, 0) for a single-stop pattern when target === that stop', () => {
+    const entries = [makeStub(0, 1, 600, 600)];
+    const result = deriveJourneyTimeFromTrip(entries, 0);
+    expect(result.totalMinutes).toBe(0);
+    expect(result.remainingMinutes).toBe(0);
+  });
+
+  it('reorders unsorted entries internally via stopIndex', () => {
+    // Caller passes entries in reverse order; helper indexes by stopIndex
+    // so the result is identical to the sorted case.
+    const entries = [makeStub(2, 3, 505, 505), makeStub(0, 3, 480, 480), makeStub(1, 3, 490, 490)];
+    const result = deriveJourneyTimeFromTrip(entries, 1);
+    expect(result.totalMinutes).toBe(25);
+    expect(result.remainingMinutes).toBe(15);
+  });
+
+  it('handles middle-stop placeholders by indexing only by stopIndex', () => {
+    // 5-stop pattern with stopIndex 2 absent (placeholder). Origin and
+    // terminal are both present, so the helper still computes the full
+    // pattern total — the missing middle row only affects intermediate
+    // remaining values, not the endpoints.
+    const entries = [
+      makeStub(0, 5, 480, 480),
+      makeStub(1, 5, 490, 490),
+      // stopIndex 2 placeholder — absent
+      makeStub(3, 5, 510, 510),
+      makeStub(4, 5, 520, 520),
+    ];
+    const result = deriveJourneyTimeFromTrip(entries, 1);
+    expect(result.totalMinutes).toBe(40); // 520 - 480
+    expect(result.remainingMinutes).toBe(30); // 520 - 490
+  });
+
+  it('falls back to the nearest forward stop when the origin is a placeholder', () => {
+    // Pattern says 3 stops, but stopIndex 0 was not reconstructed.
+    // origin search forward → stopIndex 1; terminal stays at 2.
+    const entries = [makeStub(1, 3, 490, 490), makeStub(2, 3, 505, 505)];
+    const result = deriveJourneyTimeFromTrip(entries, 1);
+    expect(result.totalMinutes).toBe(15); // 505 - 490
+    expect(result.remainingMinutes).toBe(15); // target=stopIndex 1
+  });
+
+  it('falls back to the nearest backward stop when the terminal is a placeholder', () => {
+    // Mirrors the yurikamome production case (in shape, not anomaly):
+    // pattern has 3 stops, terminal absent. terminal search backward
+    // → stopIndex 1. Underestimates the true trip duration but still
+    // returns a numeric result.
+    const entries = [
+      makeStub(0, 3, 480, 480),
+      makeStub(1, 3, 490, 490),
+      // stopIndex 2 (terminal) absent
+    ];
+    const result = deriveJourneyTimeFromTrip(entries, 0);
+    expect(result.totalMinutes).toBe(10); // 490 - 480 (terminal fell back to stopIndex 1)
+    expect(result.remainingMinutes).toBe(10); // 490 - 480
+  });
+
+  it('falls back to the only present entry as both endpoints when most stops are placeholders', () => {
+    // Single present entry at stopIndex 1; both endpoint searches
+    // converge on it.
+    const entries = [makeStub(1, 3, 490, 490)];
+    const result = deriveJourneyTimeFromTrip(entries, 1);
+    expect(result.totalMinutes).toBe(0); // 490 - 490
+    expect(result.remainingMinutes).toBe(0);
+  });
+
+  it('falls back to the nearest backward stop when the target is a placeholder', () => {
+    // Origin and terminal present; target lands on a middle placeholder.
+    // target search backward → stopIndex 0 (origin).
+    const entries = [
+      makeStub(0, 3, 480, 480),
+      // stopIndex 1 placeholder — absent
+      makeStub(2, 3, 505, 505),
+    ];
+    const result = deriveJourneyTimeFromTrip(entries, 1);
+    expect(result.totalMinutes).toBe(25); // 505 - 480
+    expect(result.remainingMinutes).toBe(25); // target fell back to stopIndex 0
+  });
+
+  it('clamps a targetStopIndex above the pattern to the largest present stopIndex', () => {
+    const entries = [makeStub(0, 3, 480, 480), makeStub(1, 3, 490, 490), makeStub(2, 3, 505, 505)];
+    // targetStopIndex 99 → backward search lands on stopIndex 2 (terminal).
+    const result = deriveJourneyTimeFromTrip(entries, 99);
+    expect(result.totalMinutes).toBe(25);
+    expect(result.remainingMinutes).toBe(0); // target = terminal
+  });
+
+  it('falls forward when targetStopIndex is below all present stops', () => {
+    // entries only at stopIndex 5..7. targetStopIndex 3 → backward
+    // search finds nothing (no stopIndex ≤ 3 present), forward fallback
+    // picks stopIndex 5 (smallest present).
+    const entries = [makeStub(5, 8, 500, 500), makeStub(6, 8, 510, 510), makeStub(7, 8, 520, 520)];
+    const result = deriveJourneyTimeFromTrip(entries, 3);
+    expect(result.totalMinutes).toBe(20); // terminal=stopIndex 7 → 520 - 500 (origin fell back to stopIndex 5)
+    expect(result.remainingMinutes).toBe(20); // target fell forward to stopIndex 5
+  });
+
+  it('passes raw negative totals through for non-monotonic data without sanitising', () => {
+    // Origin and terminal are both present, but the source data has
+    // terminal.arr < origin.dep. The helper performs raw arithmetic;
+    // downstream computeJourneyTime is responsible for rejecting
+    // negatives. (Out-of-scope data anomaly, documented for contract
+    // stability.)
+    const entries = [makeStub(0, 3, 510, 510), makeStub(1, 3, 478, 478), makeStub(2, 3, 502, 502)];
+    const result = deriveJourneyTimeFromTrip(entries, 0);
+    expect(result.totalMinutes).toBe(-8); // 502 - 510
+    expect(result.remainingMinutes).toBe(-8);
+  });
+
+  it('returns undefined when targetStopIndex is NaN (no comparison succeeds)', () => {
+    // NaN never compares as <=/> with any number, so neither the
+    // backward nor the forward target search finds a candidate.
+    // This is the only non-empty case that produces an undefined
+    // result.
+    const entries = [makeStub(0, 3, 480, 480), makeStub(1, 3, 490, 490), makeStub(2, 3, 505, 505)];
+    expect(deriveJourneyTimeFromTrip(entries, Number.NaN)).toEqual({
+      totalMinutes: undefined,
+      remainingMinutes: undefined,
+    });
+  });
+
+  it('clamps targetStopIndex Infinity to the terminal without looping forever', () => {
+    // All present stopIndex values satisfy `stopIndex <= Infinity`,
+    // so the backward search picks the largest present stopIndex
+    // (i.e. the terminal). This documents that loops over `sorted`
+    // are bounded by entries.length and are safe with non-finite
+    // targetStopIndex.
+    const entries = [makeStub(0, 3, 480, 480), makeStub(1, 3, 490, 490), makeStub(2, 3, 505, 505)];
+    const result = deriveJourneyTimeFromTrip(entries, Number.POSITIVE_INFINITY);
+    expect(result.totalMinutes).toBe(25);
+    expect(result.remainingMinutes).toBe(0); // target = terminal
+  });
+
+  it('clamps targetStopIndex -Infinity to the origin via forward fallback', () => {
+    // No present stopIndex satisfies `<= -Infinity`, so the forward
+    // fallback picks the smallest present stopIndex (i.e. the
+    // origin).
+    const entries = [makeStub(0, 3, 480, 480), makeStub(1, 3, 490, 490), makeStub(2, 3, 505, 505)];
+    const result = deriveJourneyTimeFromTrip(entries, Number.NEGATIVE_INFINITY);
+    expect(result.totalMinutes).toBe(25);
+    expect(result.remainingMinutes).toBe(25); // target = origin
   });
 });

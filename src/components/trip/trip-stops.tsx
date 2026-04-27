@@ -1,14 +1,11 @@
+import { memo } from 'react';
+
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
-import { LOW_CONTRAST_BADGE_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
-import {
-  type AdjustedRouteColors,
-  getContrastAdjustedRouteColors,
-  resolveRouteColors,
-} from '@/domain/transit/color-resolver/route-colors';
+import { type AdjustedRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getTimetableEntryAttributes } from '@/domain/transit/timetable-entry-attributes';
 import { useInfoLevel } from '@/hooks/use-info-level';
-import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
+import { cn } from '@/lib/utils';
 import type { InfoLevel } from '@/types/app/settings';
 import type {
   ContextualTimetableEntry,
@@ -17,20 +14,22 @@ import type {
 } from '@/types/app/transit-composed';
 import { StopInfo } from '../stop-info';
 import { LabelCountBadge } from '../badge/label-count-badge';
-import { StopTimeDetailInfo } from '../stop-time-detail-info';
+import { TripInfo } from '../trip-info';
 import { StopTimeItem } from '../stop-time-item';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
+import { tripStopRowDataAttrs } from './trip-stop-row-dom';
 
-interface TripInspectionStopListProps {
+interface TripStopsProps {
   tripSnapshot: SelectedTripSnapshot;
   renderedSnapshot: SelectedTripSnapshot | null;
   selectedPatternStopIndex: number;
+  routeColors: AdjustedRouteColors<string>;
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
   now: Date;
 }
 
-interface TripInspectionStopRowProps {
+interface TripStopRowProps {
   tripStopTime: TripStopTime;
   totalStops: number;
   currentPatternStopIndex: number;
@@ -41,14 +40,15 @@ interface TripInspectionStopRowProps {
   now: Date;
 }
 
-interface TripInspectionPlaceholderRowProps {
+interface TripStopPlaceholderRowProps {
   stopIndex: number;
   totalStops: number;
   currentPatternStopIndex: number;
+  routeColors: AdjustedRouteColors<string>;
   infoLevel: InfoLevel;
 }
 
-interface TripInspectionMetaInfoProps {
+interface TripStopMetaInfoProps {
   arrivalMinutes?: number;
   departureMinutes?: number;
   serviceDate?: Date;
@@ -92,7 +92,7 @@ function buildRenderedTripStopRows(stopTimes: readonly TripStopTime[]): Rendered
   });
 }
 
-function TripInspectionMetaInfo({
+function TripStopMetaInfo({
   arrivalMinutes,
   departureMinutes,
   serviceDate,
@@ -106,7 +106,7 @@ function TripInspectionMetaInfo({
   labelFg,
   frameColor,
   className,
-}: TripInspectionMetaInfoProps) {
+}: TripStopMetaInfoProps) {
   const shouldRenderStopTimeTimeInfo =
     arrivalMinutes !== undefined &&
     departureMinutes !== undefined &&
@@ -146,7 +146,7 @@ function TripInspectionMetaInfo({
   );
 }
 
-function TripInspectionStopRow({
+function TripStopRow({
   tripStopTime,
   totalStops,
   currentPatternStopIndex,
@@ -155,7 +155,7 @@ function TripInspectionStopRow({
   dataLangs,
   serviceDate,
   now,
-}: TripInspectionStopRowProps) {
+}: TripStopRowProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
   const stopMeta = tripStopTime.stopMeta;
   const stopId = tripStopTime.stopMeta?.stop.stop_id || '(unknown-stop)';
@@ -183,15 +183,13 @@ function TripInspectionStopRow({
 
   return (
     <div
-      data-trip-stop-index={stopIndex}
-      className={[
-        'rounded-md border px-3 py-2',
-        isCurrent ? 'border-primary bg-primary/5' : 'border-border bg-background',
-      ].join(' ')}
+      {...tripStopRowDataAttrs(stopIndex)}
+      className={cn('bg-background rounded-md border-2 px-3 py-2')}
+      style={isCurrent ? { borderColor: routeColors.color } : undefined}
     >
       {/* StopTime / StopInfo / Index  */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
-        <TripInspectionMetaInfo
+        <TripStopMetaInfo
           arrivalMinutes={tripStopTime.timetableEntry.schedule.arrivalMinutes}
           departureMinutes={tripStopTime.timetableEntry.schedule.departureMinutes}
           serviceDate={serviceDate}
@@ -242,8 +240,9 @@ function TripInspectionStopRow({
           )}
         </div>
       </div>
-      <StopTimeDetailInfo
-        entry={tripStopTime.timetableEntry}
+      <TripInfo
+        size="md"
+        routeDirection={tripStopTime.timetableEntry.routeDirection}
         infoLevel={infoLevel}
         dataLangs={dataLangs}
         showRouteTypeIcon={false}
@@ -274,22 +273,25 @@ function TripInspectionStopRow({
   );
 }
 
-function TripInspectionPlaceholderRow({
+function TripStopPlaceholderRow({
   stopIndex,
   totalStops,
   currentPatternStopIndex,
+  routeColors,
   infoLevel,
-}: TripInspectionPlaceholderRowProps) {
+}: TripStopPlaceholderRowProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
   const isCurrent = stopIndex === currentPatternStopIndex;
 
   return (
     <div
-      data-trip-stop-index={stopIndex}
+      {...tripStopRowDataAttrs(stopIndex)}
       className={[
-        'rounded-md border border-dashed px-3 py-2',
-        isCurrent ? 'border-primary bg-primary/5' : 'border-border bg-muted/20',
+        'rounded-md border-dashed px-3 py-2',
+        isCurrent ? 'border-2' : 'border',
+        'border-border bg-muted/20',
       ].join(' ')}
+      style={isCurrent ? { borderColor: routeColors.color } : undefined}
     >
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="flex min-w-0 flex-col gap-1">
@@ -305,27 +307,21 @@ function TripInspectionPlaceholderRow({
             </div>
           )}
         </div>
-        <TripInspectionMetaInfo stopIndex={stopIndex} totalStops={totalStops} />
+        <TripStopMetaInfo stopIndex={stopIndex} totalStops={totalStops} />
       </div>
     </div>
   );
 }
 
-export function TripInspectionStopList({
+export const TripStops = memo(function TripStops({
   tripSnapshot,
   renderedSnapshot,
   selectedPatternStopIndex,
+  routeColors,
   infoLevel,
   dataLangs,
   now,
-}: TripInspectionStopListProps) {
-  const { routeColor } = resolveRouteColors(tripSnapshot.route, 'css-hex');
-  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
-  const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
-    tripSnapshot.route,
-    routeColorAssessment.isLowContrast,
-    'css-hex',
-  );
+}: TripStopsProps) {
   const renderedTripStopRows = buildRenderedTripStopRows(tripSnapshot.stopTimes);
   const initialRenderStart = Math.max(
     0,
@@ -350,20 +346,21 @@ export function TripInspectionStopList({
               : `${row.stop.stopMeta?.stop.stop_id || '(unknown-stop)'}:${row.stopIndex}`;
 
           return row.kind === 'placeholder' ? (
-            <TripInspectionPlaceholderRow
+            <TripStopPlaceholderRow
               key={rowKey}
               stopIndex={row.stopIndex}
               totalStops={row.totalStops}
               currentPatternStopIndex={selectedPatternStopIndex}
+              routeColors={routeColors}
               infoLevel={infoLevel}
             />
           ) : (
-            <TripInspectionStopRow
+            <TripStopRow
               key={rowKey}
               tripStopTime={row.stop}
               totalStops={row.totalStops}
               currentPatternStopIndex={selectedPatternStopIndex}
-              routeColors={contrastAdjustedRouteColors}
+              routeColors={routeColors}
               infoLevel={infoLevel}
               dataLangs={dataLangs}
               serviceDate={tripSnapshot.serviceDate}
@@ -374,4 +371,4 @@ export function TripInspectionStopList({
       </div>
     </section>
   );
-}
+});
