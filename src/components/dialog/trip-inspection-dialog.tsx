@@ -654,7 +654,7 @@ export function TripInspectionDialog({
             {/* Verbose info for debug */}
             {infoLevelFlag.isVerboseEnabled && (
               <>
-                <details className="mt-1 text-[10px] font-normal text-[#999] dark:text-gray-500">
+                <details className="mt-1 text-[9px] font-normal text-[#999] dark:text-gray-500">
                   <summary
                     tabIndex={-1}
                     className="cursor-pointer select-none"
