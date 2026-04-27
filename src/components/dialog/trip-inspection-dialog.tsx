@@ -38,9 +38,9 @@ import type {
 import { getContrastAwareAlphaSuffixes } from '@/utils/color/contrast-alpha-suffixes';
 import { IdBadge } from '../badge/id-badge';
 import { TripPositionIndicator } from '../label/trip-position-indicator';
-import { TripBasicInfo } from './trip-basic-info';
-import { TripInspectionStopList } from './trip-inspection-stop-list';
-import { TripInspectionTripPager } from './trip-inspection-trip-pager';
+import { TripBasicInfo } from '../trip/trip-basic-info';
+import { TripStops } from '../trip/trip-stops';
+import { TripPager } from '../trip/trip-pager';
 import { VerboseTripStopTime } from '../verbose/verbose-trip-stop-time';
 
 interface TripInspectionDialogProps {
@@ -618,7 +618,7 @@ export function TripInspectionDialog({
             centered on the selected stop, while the body renders the
             matching trip that serves that stop.
           */}
-          <TripInspectionTripPager
+          <TripPager
             selectedStop={selectedStop}
             serviceDate={snapshot.serviceDate}
             now={now}
@@ -683,7 +683,7 @@ export function TripInspectionDialog({
             <ScrollFadeEdge position="top" className="via-background/90 -mb-5 h-5" />
           )}
           <div className="flex flex-col gap-4 pt-2 pb-2">
-            <TripInspectionStopList
+            <TripStops
               tripSnapshot={snapshot}
               renderedSnapshot={renderedSnapshot}
               selectedPatternStopIndex={selectedPatternStopIndex}

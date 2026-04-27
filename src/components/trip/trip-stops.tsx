@@ -11,11 +11,11 @@ import type {
 } from '@/types/app/transit-composed';
 import { StopInfo } from '../stop-info';
 import { LabelCountBadge } from '../badge/label-count-badge';
-import { StopTimeDetailInfo } from '../stop-time-detail-info';
+import { TripInfo } from '../trip-info';
 import { StopTimeItem } from '../stop-time-item';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
 
-interface TripInspectionStopListProps {
+interface TripStopsProps {
   tripSnapshot: SelectedTripSnapshot;
   renderedSnapshot: SelectedTripSnapshot | null;
   selectedPatternStopIndex: number;
@@ -25,7 +25,7 @@ interface TripInspectionStopListProps {
   now: Date;
 }
 
-interface TripInspectionStopRowProps {
+interface TripStopRowProps {
   tripStopTime: TripStopTime;
   totalStops: number;
   currentPatternStopIndex: number;
@@ -36,7 +36,7 @@ interface TripInspectionStopRowProps {
   now: Date;
 }
 
-interface TripInspectionPlaceholderRowProps {
+interface TripStopPlaceholderRowProps {
   stopIndex: number;
   totalStops: number;
   currentPatternStopIndex: number;
@@ -44,7 +44,7 @@ interface TripInspectionPlaceholderRowProps {
   infoLevel: InfoLevel;
 }
 
-interface TripInspectionMetaInfoProps {
+interface TripStopMetaInfoProps {
   arrivalMinutes?: number;
   departureMinutes?: number;
   serviceDate?: Date;
@@ -88,7 +88,7 @@ function buildRenderedTripStopRows(stopTimes: readonly TripStopTime[]): Rendered
   });
 }
 
-function TripInspectionMetaInfo({
+function TripStopMetaInfo({
   arrivalMinutes,
   departureMinutes,
   serviceDate,
@@ -102,7 +102,7 @@ function TripInspectionMetaInfo({
   labelFg,
   frameColor,
   className,
-}: TripInspectionMetaInfoProps) {
+}: TripStopMetaInfoProps) {
   const shouldRenderStopTimeTimeInfo =
     arrivalMinutes !== undefined &&
     departureMinutes !== undefined &&
@@ -142,7 +142,7 @@ function TripInspectionMetaInfo({
   );
 }
 
-function TripInspectionStopRow({
+function TripStopRow({
   tripStopTime,
   totalStops,
   currentPatternStopIndex,
@@ -151,7 +151,7 @@ function TripInspectionStopRow({
   dataLangs,
   serviceDate,
   now,
-}: TripInspectionStopRowProps) {
+}: TripStopRowProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
   const stopMeta = tripStopTime.stopMeta;
   const stopId = tripStopTime.stopMeta?.stop.stop_id || '(unknown-stop)';
@@ -189,7 +189,7 @@ function TripInspectionStopRow({
     >
       {/* StopTime / StopInfo / Index  */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
-        <TripInspectionMetaInfo
+        <TripStopMetaInfo
           arrivalMinutes={tripStopTime.timetableEntry.schedule.arrivalMinutes}
           departureMinutes={tripStopTime.timetableEntry.schedule.departureMinutes}
           serviceDate={serviceDate}
@@ -240,8 +240,9 @@ function TripInspectionStopRow({
           )}
         </div>
       </div>
-      <StopTimeDetailInfo
-        entry={tripStopTime.timetableEntry}
+      <TripInfo
+        size="md"
+        routeDirection={tripStopTime.timetableEntry.routeDirection}
         infoLevel={infoLevel}
         dataLangs={dataLangs}
         showRouteTypeIcon={false}
@@ -272,13 +273,13 @@ function TripInspectionStopRow({
   );
 }
 
-function TripInspectionPlaceholderRow({
+function TripStopPlaceholderRow({
   stopIndex,
   totalStops,
   currentPatternStopIndex,
   routeColors,
   infoLevel,
-}: TripInspectionPlaceholderRowProps) {
+}: TripStopPlaceholderRowProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
   const isCurrent = stopIndex === currentPatternStopIndex;
 
@@ -306,13 +307,13 @@ function TripInspectionPlaceholderRow({
             </div>
           )}
         </div>
-        <TripInspectionMetaInfo stopIndex={stopIndex} totalStops={totalStops} />
+        <TripStopMetaInfo stopIndex={stopIndex} totalStops={totalStops} />
       </div>
     </div>
   );
 }
 
-export function TripInspectionStopList({
+export function TripStops({
   tripSnapshot,
   renderedSnapshot,
   selectedPatternStopIndex,
@@ -320,7 +321,7 @@ export function TripInspectionStopList({
   infoLevel,
   dataLangs,
   now,
-}: TripInspectionStopListProps) {
+}: TripStopsProps) {
   const renderedTripStopRows = buildRenderedTripStopRows(tripSnapshot.stopTimes);
   const initialRenderStart = Math.max(
     0,
@@ -345,7 +346,7 @@ export function TripInspectionStopList({
               : `${row.stop.stopMeta?.stop.stop_id || '(unknown-stop)'}:${row.stopIndex}`;
 
           return row.kind === 'placeholder' ? (
-            <TripInspectionPlaceholderRow
+            <TripStopPlaceholderRow
               key={rowKey}
               stopIndex={row.stopIndex}
               totalStops={row.totalStops}
@@ -354,7 +355,7 @@ export function TripInspectionStopList({
               infoLevel={infoLevel}
             />
           ) : (
-            <TripInspectionStopRow
+            <TripStopRow
               key={rowKey}
               tripStopTime={row.stop}
               totalStops={row.totalStops}

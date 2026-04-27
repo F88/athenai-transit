@@ -4,7 +4,7 @@ import { formatAbsoluteTime } from '@/domain/transit/time';
 import type { TripInspectionTarget, TripStopTime } from '@/types/app/transit-composed';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
 
-interface TripInspectionTripPagerProps {
+interface TripPagerProps {
   selectedStop: TripStopTime;
   serviceDate: Date;
   now: Date;
@@ -22,7 +22,7 @@ function formatTargetDepartureTime(target: TripInspectionTarget | undefined): st
   return formatAbsoluteTime(minutesToDate(target.serviceDate, target.departureMinutes));
 }
 
-export function TripInspectionTripPager({
+export function TripPager({
   selectedStop,
   serviceDate,
   now,
@@ -30,7 +30,7 @@ export function TripInspectionTripPager({
   currentTripInspectionTargetIndex,
   onOpenPreviousTrip,
   onOpenNextTrip,
-}: TripInspectionTripPagerProps) {
+}: TripPagerProps) {
   const hasPreviousTrip = currentTripInspectionTargetIndex > 0;
   const hasNextTrip = currentTripInspectionTargetIndex < tripInspectionTargets.length - 1;
   const previousTarget = hasPreviousTrip
