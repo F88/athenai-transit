@@ -44,8 +44,8 @@ export function getTripStopRows(container: HTMLElement): NodeListOf<HTMLElement>
  * number, so callers can `continue` past unrecognised elements.
  */
 export function getTripStopIndexFromRow(row: HTMLElement): number | null {
-  const value = row.dataset.tripStopIndex;
-  if (value === undefined) {
+  const value = row.getAttribute(TRIP_STOP_INDEX_ATTR);
+  if (value === null) {
     return null;
   }
   const parsed = Number(value);
