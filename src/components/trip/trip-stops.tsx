@@ -3,6 +3,7 @@ import { type AdjustedRouteColors } from '@/domain/transit/color-resolver/route-
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getTimetableEntryAttributes } from '@/domain/transit/timetable-entry-attributes';
 import { useInfoLevel } from '@/hooks/use-info-level';
+import { cn } from '@/lib/utils';
 import type { InfoLevel } from '@/types/app/settings';
 import type {
   ContextualTimetableEntry,
@@ -181,11 +182,7 @@ function TripStopRow({
   return (
     <div
       {...tripStopRowDataAttrs(stopIndex)}
-      className={[
-        'rounded-md px-3 py-2',
-        isCurrent ? 'border-2' : 'border',
-        'border-border bg-background',
-      ].join(' ')}
+      className={cn('bg-background rounded-md border-2 px-3 py-2')}
       style={isCurrent ? { borderColor: routeColors.color } : undefined}
     >
       {/* StopTime / StopInfo / Index  */}
