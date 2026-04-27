@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { JourneyTimeBar } from '@/components/journey-time-bar';
@@ -24,6 +24,7 @@ import {
 import { minutesToDate } from '@/domain/transit/calendar-utils';
 import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { deriveJourneyTimeFromTrip } from '@/domain/transit/journey-time';
 import { formatAbsoluteTime } from '@/domain/transit/time';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
@@ -60,7 +61,8 @@ interface TripInspectionDialogProps {
 
 interface TripInspectionSummaryProps {
   snapshot: SelectedTripSnapshot;
-  focusedStop: TripStopTime;
+  focusedStopIndex: number;
+  numberOfStops: number;
   routeColors: AdjustedRouteColors<string>;
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
@@ -73,6 +75,7 @@ interface TripInspectionCurrentStopProps {
 interface StopSummaryProps {
   stopNames: ReturnType<typeof getStopDisplayNames> | null;
   stopName: string;
+  infoLevel: InfoLevel;
 }
 
 interface RichStopSummaryProps {
@@ -96,10 +99,11 @@ function resolveTripStopDisplay(stop: TripStopTime | undefined, dataLangs: reado
   };
 }
 
-function SimpleStopSummary({ stopNames, stopName }: StopSummaryProps) {
+function SimpleStopSummary({ stopNames, stopName, infoLevel }: StopSummaryProps) {
+  const infoLevelFlag = useInfoLevel(infoLevel);
   return (
     <div className="min-w-0 rounded-md border p-2">
-      {stopNames && stopNames.subNames.length > 0 && (
+      {infoLevelFlag.isNormalEnabled && stopNames && stopNames.subNames.length > 0 && (
         <div className="text-muted-foreground truncate text-center text-xs">
           {stopNames.subNames.join(' / ')}
         </div>
@@ -135,15 +139,16 @@ function RichStopSummary({ stop, infoLevel, dataLangs }: RichStopSummaryProps) {
   );
 }
 
-function TripInspectionSummary({
+const TripInspectionSummary = memo(function TripInspectionSummary({
   snapshot,
-  focusedStop,
-
+  focusedStopIndex,
+  numberOfStops,
   routeColors,
   infoLevel,
   dataLangs: _dataLangs,
 }: TripInspectionSummaryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
+
   const adjustedColorAssessment = useThemeContrastAssessment(
     routeColors.color,
     LOW_CONTRAST_TEXT_MIN_RATIO,
@@ -153,28 +158,22 @@ function TripInspectionSummary({
   );
   const emphasisAccentColor = `${routeColors.color}${emphasisAlphaSuffix}`;
   const subtleAccentColor = `${routeColors.color}${subtleAlphaSuffix}`;
-  // const routeAgencyLangs = focusedStop.stopMeta
-  //   ? resolveAgencyLang(focusedStop.stopMeta.agencies, route.agency_id)
-  //   : DEFAULT_AGENCY_LANG;
-  // const routeNames = getRouteDisplayNames(route, dataLangs, routeAgencyLangs, 'short');
 
-  // StopTimes
-  const stopTimes = snapshot.stopTimes;
-  const firstStop = stopTimes[0];
-  const lastStop = stopTimes[stopTimes.length - 1];
-  const totalMinutes =
-    lastStop.timetableEntry.schedule.arrivalMinutes -
-    firstStop.timetableEntry.schedule.departureMinutes;
-  const remainingMinutes =
-    lastStop.timetableEntry.schedule.arrivalMinutes -
-    focusedStop.timetableEntry.schedule.departureMinutes;
+  const { totalMinutes, remainingMinutes } = useMemo(
+    () =>
+      deriveJourneyTimeFromTrip(
+        snapshot.stopTimes.map((s) => s.timetableEntry),
+        focusedStopIndex,
+      ),
+    [snapshot.stopTimes, focusedStopIndex],
+  );
 
   return (
     <section className="flex flex-col gap-2 pt-3 text-left">
       {/* TripPositionIndicator */}
       <TripPositionIndicator
-        stopIndex={focusedStop.timetableEntry.patternPosition.stopIndex}
-        totalStops={focusedStop.timetableEntry.patternPosition.totalStops}
+        stopIndex={focusedStopIndex}
+        totalStops={numberOfStops}
         size="md"
         showEmoji={infoLevelFlag.isNormalEnabled}
         showTrack={infoLevelFlag.isNormalEnabled}
@@ -183,7 +182,8 @@ function TripInspectionSummary({
         currentColor={routeColors.color}
         trackBorderColor={routeColors.color}
         showTrackBorder={false}
-        showPositionLabel={infoLevelFlag.isNormalEnabled}
+        // showPositionLabel={infoLevelFlag.isNormalEnabled}
+        showPositionLabel={true}
         labelTextColor={routeColors.textColor}
         labelBgColor={routeColors.color}
       />
@@ -196,8 +196,10 @@ function TripInspectionSummary({
         showEmoji={infoLevelFlag.isNormalEnabled}
         fillColor={routeColors.color}
         unfilledColor={emphasisAccentColor}
-        showRMins={infoLevelFlag.isNormalEnabled}
-        showTMins={infoLevelFlag.isNormalEnabled}
+        // showRMins={infoLevelFlag.isNormalEnabled}
+        // showTMins={infoLevelFlag.isNormalEnabled}
+        showRMins={true}
+        showTMins={true}
         minsPosition="right"
         fillDirection="rtl"
         borderColor={routeColors.color}
@@ -229,7 +231,7 @@ function TripInspectionSummary({
       /> */}
     </section>
   );
-}
+});
 
 function TripInspectionCurrentStop({ snapshot }: TripInspectionCurrentStopProps) {
   const selectedStop: TripStopTime = snapshot.selectedStop;
@@ -335,16 +337,23 @@ export function TripInspectionDialog({
     snapshot?.selectedStop.timetableEntry.patternPosition.stopIndex ?? -1;
 
   // Route colors
-  const dialogRouteColorInput = snapshot?.route ?? { route_color: '', route_text_color: '' };
+  const dialogRouteColorInput = useMemo(
+    () => snapshot?.route ?? { route_color: '', route_text_color: '' },
+    [snapshot?.route],
+  );
   const { routeColor } = resolveRouteColors(dialogRouteColorInput, 'css-hex');
   const dialogRouteColorAssessment = useThemeContrastAssessment(
     routeColor,
     LOW_CONTRAST_BADGE_MIN_RATIO,
   );
-  const adjustedRouteColors = getContrastAdjustedRouteColors(
-    dialogRouteColorInput,
-    dialogRouteColorAssessment.isLowContrast,
-    'css-hex',
+  const adjustedRouteColors = useMemo(
+    () =>
+      getContrastAdjustedRouteColors(
+        dialogRouteColorInput,
+        dialogRouteColorAssessment.isLowContrast,
+        'css-hex',
+      ),
+    [dialogRouteColorInput, dialogRouteColorAssessment.isLowContrast],
   );
 
   const contentScroll = useScrollFades(
@@ -491,14 +500,7 @@ export function TripInspectionDialog({
   ).resolved.name;
 
   const selectedStop = snapshot.selectedStop;
-  // Resolve the scroll-driven focused stop from the snapshot. Falls back to
-  // the selected stop when the focused index lands on a placeholder row
-  // (no underlying TripStopTime), so the indicator/JourneyTimeBar always
-  // have a valid reference even mid-scroll.
-  const focusedStop: TripStopTime =
-    tripStopTimes.find(
-      (stop) => stop.timetableEntry.patternPosition.stopIndex === focusedStopIndex,
-    ) ?? selectedStop;
+  const numberOfStops = selectedStop.timetableEntry.patternPosition.totalStops;
 
   // First TripStopTime
   const firstStop = tripStopTimes[0];
@@ -572,21 +574,30 @@ export function TripInspectionDialog({
 
           <DialogDescription asChild className="text-center sm:text-center">
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
-              <SimpleStopSummary stopNames={firstStopNames} stopName={firstStopName} />
+              <SimpleStopSummary
+                stopNames={firstStopNames}
+                stopName={firstStopName}
+                infoLevel={infoLevel}
+              />
               <div className="flex items-center justify-center">
                 <span
                   aria-hidden="true"
                   className="border-l-muted-foreground h-0 w-0 border-y-[6px] border-l-10 border-y-transparent"
                 />
               </div>
-              <SimpleStopSummary stopNames={lastStopNames} stopName={lastStopName} />
+              <SimpleStopSummary
+                stopNames={lastStopNames}
+                stopName={lastStopName}
+                infoLevel={infoLevel}
+              />
             </div>
           </DialogDescription>
 
           <div className="max-h-[24dvh] overflow-y-auto pr-1">
             <TripInspectionSummary
               snapshot={snapshot}
-              focusedStop={focusedStop}
+              focusedStopIndex={focusedStopIndex}
+              numberOfStops={numberOfStops}
               routeColors={adjustedRouteColors}
               infoLevel={infoLevel}
               dataLangs={dataLangs}

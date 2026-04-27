@@ -1,5 +1,4 @@
 import { useCallback, useRef, useState } from 'react';
-import { formatDateKey } from '../domain/transit/calendar-utils';
 import { createLogger } from '../lib/logger';
 import type { TransitRepository } from '../repositories/transit-repository';
 import type { SelectedTripSnapshot, TripInspectionTarget } from '../types/app/transit-composed';
@@ -38,10 +37,6 @@ function summarizeTripInspectionTarget(target: TripInspectionTarget) {
     departureMinutes: target.departureMinutes,
     serviceDate: target.serviceDate.toISOString(),
   };
-}
-
-function formatTripInspectionServiceDate(serviceDate: Date): string {
-  return formatDateKey(serviceDate);
 }
 
 function buildTripInspectionMatchDiagnostics(
@@ -194,10 +189,10 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
             return;
           }
 
-          logger.debug(
-            `openTripInspection: getTripInspectionTargets result serviceDate=${formatTripInspectionServiceDate(target.serviceDate)} stopId=${selectedStopId}`,
-            result,
-          );
+          // logger.debug(
+          //   `openTripInspection: getTripInspectionTargets result serviceDate=${formatTripInspectionServiceDate(target.serviceDate)} stopId=${selectedStopId}`,
+          //   result,
+          // );
 
           if (!result.success) {
             logger.warn(
@@ -211,7 +206,7 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
           if (result.data.length === 0) {
             updateTripInspectionTargets([target]);
             setCurrentTripInspectionTargetIndex(0);
-            logger.debug('openTripInspection: trip-inspection target lookup returned no targets');
+            // logger.debug('openTripInspection: trip-inspection target lookup returned no targets');
             return;
           }
 
@@ -220,16 +215,16 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
           );
           if (currentIndex < 0) {
             const diagnostics = buildTripInspectionMatchDiagnostics(target, result.data);
-            logger.debug('openTripInspection: target lookup mismatch', {
-              requestedStopId: selectedStopId,
-              target: summarizeTripInspectionTarget(target),
-              sampleCandidates: result.data.slice(0, 10).map(summarizeTripInspectionTarget),
-            });
-            logger.debug('openTripInspection: target lookup mismatch counts', diagnostics.counts);
-            logger.debug(
-              'openTripInspection: target lookup mismatch sampleSamePattern',
-              diagnostics.sampleSamePattern,
-            );
+            // logger.debug('openTripInspection: target lookup mismatch', {
+            //   requestedStopId: selectedStopId,
+            //   target: summarizeTripInspectionTarget(target),
+            //   sampleCandidates: result.data.slice(0, 10).map(summarizeTripInspectionTarget),
+            // });
+            // logger.debug('openTripInspection: target lookup mismatch counts', diagnostics.counts);
+            // logger.debug(
+            //   'openTripInspection: target lookup mismatch sampleSamePattern',
+            //   diagnostics.sampleSamePattern,
+            // );
             logger.debug(
               'openTripInspection: target lookup mismatch sampleSameService',
               diagnostics.sampleSameService,
@@ -255,10 +250,10 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
           updateTripInspectionTargets(result.data);
           setCurrentTripInspectionTargetIndex(currentIndex);
 
-          logger.debug(
-            `openTripInspection: serviceDate=${formatTripInspectionServiceDate(target.serviceDate)} trip-inspection targets=${result.data.length} currentIndex=${currentIndex} stopId=${selectedStopId}`,
-            result.data,
-          );
+          // logger.debug(
+          //   `openTripInspection: serviceDate=${formatTripInspectionServiceDate(target.serviceDate)} trip-inspection targets=${result.data.length} currentIndex=${currentIndex} stopId=${selectedStopId}`,
+          //   result.data,
+          // );
         })
         .catch((error: unknown) => {
           if (lookupRequestIdRef.current !== lookupRequestId) {

@@ -1,3 +1,5 @@
+import type { TimetableEntry } from '@/types/app/transit-composed';
+
 /**
  * Pure numeric calculations for journey-time visualization.
  *
@@ -152,5 +154,92 @@ export function computeJourneyTime(input: JourneyTimeInput): JourneyTimeResult {
       displayTotalMinutes,
       displayRemainingMinutes,
     },
+  };
+}
+
+/**
+ * Derive raw {@link JourneyTimeInput} values from a trip's
+ * reconstructed timetable entries and the focused stop's pattern
+ * stop index.
+ *
+ * The helper takes the pipeline-reconstructed `entries` as-is, sorts
+ * a copy by `patternPosition.stopIndex`, and resolves origin /
+ * terminal / target with placeholder-tolerant fallbacks:
+ *
+ * - **origin**:   `sorted[0]` (smallest stopIndex present).
+ * - **terminal**: `sorted[sorted.length - 1]` (largest stopIndex present).
+ * - **target**:   the entry whose stopIndex is the largest one
+ *   `<= targetStopIndex`; if none qualifies (target is below all
+ *   present stops), fall back forward to the smallest stopIndex
+ *   `> targetStopIndex`.
+ *
+ * Computation:
+ * - `totalMinutes`     = resolved-terminal `arrivalMinutes` minus
+ *   resolved-origin `departureMinutes`.
+ * - `remainingMinutes` = resolved-terminal `arrivalMinutes` minus
+ *   resolved-target `departureMinutes`.
+ *
+ * All loops are bounded by `entries.length`, so the helper is safe
+ * against bizarre `targetStopIndex` or `patternPosition.totalStops`
+ * values (NaN / Infinity / negative) without dedicated guards. Such
+ * inputs simply cause the search predicates to fail and the helper
+ * returns `(undefined, undefined)`.
+ *
+ * Returns `(undefined, undefined)` when `entries` is empty, or when
+ * the searches cannot resolve a target (e.g. `targetStopIndex` is
+ * `NaN`). Otherwise the helper always returns numeric values; some
+ * may be off (e.g. underestimated total when the terminal is a
+ * placeholder, or negative when source data is non-monotonic) but a
+ * result is always produced.
+ *
+ * The result is raw arithmetic — the helper deliberately does not
+ * sanitise, clamp, or reject negative values. Validation belongs to
+ * {@link computeJourneyTime}, which this result feeds into.
+ */
+export function deriveJourneyTimeFromTrip(
+  entries: readonly TimetableEntry[],
+  targetStopIndex: number,
+): JourneyTimeInput {
+  if (entries.length === 0) {
+    return { totalMinutes: undefined, remainingMinutes: undefined };
+  }
+
+  // Sort a copy by stopIndex. All subsequent processing iterates this
+  // bounded array, so loop counts stay tied to entries.length and
+  // can never depend on potentially-bogus pattern numbers.
+  const sorted = [...entries].sort(
+    (a, b) => a.patternPosition.stopIndex - b.patternPosition.stopIndex,
+  );
+
+  const origin = sorted[0];
+  const terminal = sorted[sorted.length - 1];
+
+  // target: the largest present stopIndex <= targetStopIndex.
+  let target: TimetableEntry | undefined;
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    if (sorted[i].patternPosition.stopIndex <= targetStopIndex) {
+      target = sorted[i];
+      break;
+    }
+  }
+  // If the backward search found nothing (targetStopIndex is below
+  // the smallest present stopIndex, or NaN against a number), fall
+  // back to the smallest stopIndex > targetStopIndex.
+  if (target === undefined) {
+    for (const entry of sorted) {
+      if (entry.patternPosition.stopIndex > targetStopIndex) {
+        target = entry;
+        break;
+      }
+    }
+  }
+
+  if (target === undefined) {
+    return { totalMinutes: undefined, remainingMinutes: undefined };
+  }
+
+  return {
+    totalMinutes: terminal.schedule.arrivalMinutes - origin.schedule.departureMinutes,
+    remainingMinutes: terminal.schedule.arrivalMinutes - target.schedule.departureMinutes,
   };
 }
