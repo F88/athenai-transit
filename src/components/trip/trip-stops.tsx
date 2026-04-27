@@ -14,6 +14,7 @@ import { LabelCountBadge } from '../badge/label-count-badge';
 import { TripInfo } from '../trip-info';
 import { StopTimeItem } from '../stop-time-item';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
+import { tripStopRowDataAttrs } from './trip-stop-row-dom';
 
 interface TripStopsProps {
   tripSnapshot: SelectedTripSnapshot;
@@ -179,7 +180,7 @@ function TripStopRow({
 
   return (
     <div
-      data-trip-stop-index={stopIndex}
+      {...tripStopRowDataAttrs(stopIndex)}
       className={[
         'rounded-md px-3 py-2',
         isCurrent ? 'border-2' : 'border',
@@ -285,7 +286,7 @@ function TripStopPlaceholderRow({
 
   return (
     <div
-      data-trip-stop-index={stopIndex}
+      {...tripStopRowDataAttrs(stopIndex)}
       className={[
         'rounded-md border-dashed px-3 py-2',
         isCurrent ? 'border-2' : 'border',

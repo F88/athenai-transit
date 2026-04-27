@@ -39,6 +39,11 @@ import { getContrastAwareAlphaSuffixes } from '@/utils/color/contrast-alpha-suff
 import { IdBadge } from '../badge/id-badge';
 import { TripPositionIndicator } from '../label/trip-position-indicator';
 import { TripBasicInfo } from '../trip/trip-basic-info';
+import {
+  findTripStopRow,
+  getTripStopIndexFromRow,
+  getTripStopRows,
+} from '../trip/trip-stop-row-dom';
 import { TripStops } from '../trip/trip-stops';
 import { TripPager } from '../trip/trip-pager';
 import { VerboseTripStopTime } from '../verbose/verbose-trip-stop-time';
@@ -127,7 +132,7 @@ function computeScrolledStopIndex(container: HTMLDivElement): number | null {
     return null;
   }
 
-  const rows = container.querySelectorAll<HTMLElement>('[data-trip-stop-index]');
+  const rows = getTripStopRows(container);
   if (rows.length === 0) {
     return null;
   }
@@ -140,12 +145,8 @@ function computeScrolledStopIndex(container: HTMLDivElement): number | null {
   let bestDistance = Infinity;
 
   for (const row of rows) {
-    const indexAttr = row.dataset.tripStopIndex;
-    if (indexAttr === undefined) {
-      continue;
-    }
-    const parsed = Number(indexAttr);
-    if (!Number.isFinite(parsed)) {
+    const stopIndex = getTripStopIndexFromRow(row);
+    if (stopIndex === null) {
       continue;
     }
 
@@ -155,7 +156,7 @@ function computeScrolledStopIndex(container: HTMLDivElement): number | null {
     const distance = Math.abs(rowCenterY - anchorY);
     if (distance < bestDistance) {
       bestDistance = distance;
-      bestIndex = parsed;
+      bestIndex = stopIndex;
     }
   }
 
@@ -468,9 +469,7 @@ export function TripInspectionDialog({
 
     const applyScrollToSelectedRow = (behavior: ScrollBehavior) => {
       const container = contentContainerEl;
-      const selectedRow = container?.querySelector<HTMLElement>(
-        `[data-trip-stop-index="${selectedPatternStopIndex}"]`,
-      );
+      const selectedRow = container ? findTripStopRow(container, selectedPatternStopIndex) : null;
 
       if (!container || !selectedRow) {
         return false;
