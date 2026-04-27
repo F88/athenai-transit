@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { JourneyTimeBar } from '@/components/journey-time-bar';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { StopInfo } from '@/components/stop-info';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -37,13 +36,11 @@ import type {
   TripStopTime,
 } from '@/types/app/transit-composed';
 import { getContrastAwareAlphaSuffixes } from '@/utils/color/contrast-alpha-suffixes';
-import { routeTypesEmoji } from '@/utils/route-type-emoji';
-import { AgencyBadge } from '../badge/agency-badge';
 import { IdBadge } from '../badge/id-badge';
-import { RouteBadge } from '../badge/route-badge';
 import { TripPositionIndicator } from '../label/trip-position-indicator';
-import { StopTimeTimeInfo } from '../stop-time-time-info';
+import { TripBasicInfo } from './trip-basic-info';
 import { TripInspectionStopList } from './trip-inspection-stop-list';
+import { TripInspectionTripPager } from './trip-inspection-trip-pager';
 import { VerboseTripStopTime } from '../verbose/verbose-trip-stop-time';
 
 interface TripInspectionDialogProps {
@@ -202,14 +199,6 @@ function RichStopSummary({ stop, infoLevel, dataLangs }: RichStopSummaryProps) {
       />
     </div>
   );
-}
-
-function formatTargetDepartureTime(target: TripInspectionTarget | undefined): string | null {
-  if (!target) {
-    return null;
-  }
-
-  return formatAbsoluteTime(minutesToDate(target.serviceDate, target.departureMinutes));
 }
 
 function TripInspectionSummary({
@@ -561,16 +550,6 @@ export function TripInspectionDialog({
   const routeAgencyLangs =
     agencies !== undefined ? resolveAgencyLang(agencies, route.agency_id) : DEFAULT_AGENCY_LANG;
   const routeAgency = agencies?.find((agency) => agency.agency_id === route.agency_id);
-  const hasPreviousTrip = currentTripInspectionTargetIndex > 0;
-  const hasNextTrip = currentTripInspectionTargetIndex < tripInspectionTargets.length - 1;
-  const previousTarget = hasPreviousTrip
-    ? tripInspectionTargets[currentTripInspectionTargetIndex - 1]
-    : undefined;
-  const nextTarget = hasNextTrip
-    ? tripInspectionTargets[currentTripInspectionTargetIndex + 1]
-    : undefined;
-  const previousDepartureTime = formatTargetDepartureTime(previousTarget);
-  const nextDepartureTime = formatTargetDepartureTime(nextTarget);
 
   const headsignTitle = getHeadsignDisplayNames(
     snapshot.selectedStop.timetableEntry.routeDirection,
@@ -639,79 +618,25 @@ export function TripInspectionDialog({
             centered on the selected stop, while the body renders the
             matching trip that serves that stop.
           */}
-          <div className="flex items-center justify-center gap-2 pb-2">
-            <Button
-              className={!hasPreviousTrip ? 'pointer-events-none invisible' : undefined}
-              size="sm"
-              variant="outline"
-              disabled={!hasPreviousTrip}
-              onClick={onOpenPreviousTrip}
-            >
-              {previousDepartureTime ? `${previousDepartureTime}` : 'Prev'}
-            </Button>
-            <div className="flex min-w-16 flex-col items-center justify-center gap-1">
-              {/* departure time of selected stop or (arrival time (terminal)) */}
-              <StopTimeTimeInfo
-                arrivalMinutes={selectedStop.timetableEntry.schedule.arrivalMinutes}
-                departureMinutes={selectedStop.timetableEntry.schedule.departureMinutes}
-                serviceDate={snapshot.serviceDate}
-                now={now}
-                size="sm"
-                showArrivalTime={true}
-                showDepartureTime={true}
-                collapseArrivalWhenSameAsDeparture={true}
-                forceShowRelativeTime={false}
-                showVerbose={false}
-                // textAppearance={{ color: 'var(--muted-foreground)' }}
-              />
-            </div>
-            <Button
-              className={!hasNextTrip ? 'pointer-events-none invisible' : undefined}
-              size="sm"
-              variant="outline"
-              disabled={!hasNextTrip}
-              onClick={onOpenNextTrip}
-            >
-              {nextDepartureTime ? `${nextDepartureTime}` : 'Next'}
-            </Button>
+          <TripInspectionTripPager
+            selectedStop={selectedStop}
+            serviceDate={snapshot.serviceDate}
+            now={now}
+            tripInspectionTargets={tripInspectionTargets}
+            currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
+            onOpenPreviousTrip={onOpenPreviousTrip}
+            onOpenNextTrip={onOpenNextTrip}
+          />
 
-            <span className="text-muted-foreground text-center text-xs">
-              {tripInspectionTargets.length > 0
-                ? `${currentTripInspectionTargetIndex + 1} / ${tripInspectionTargets.length}`
-                : '0 / 0'}
-            </span>
-          </div>
-
-          {/* Trip info (simple) */}
-          <div className="flex flex-wrap items-center justify-center gap-2 text-center">
-            {routeTypesEmoji([route.route_type])}
-
-            {routeAgency && (
-              <div>
-                <AgencyBadge
-                  size="sm"
-                  agency={routeAgency}
-                  dataLang={dataLangs}
-                  agencyLangs={routeAgencyLangs}
-                  infoLevel={infoLevel}
-                  showBorder={true}
-                />
-              </div>
-            )}
-            <RouteBadge
-              route={snapshot.route}
-              size="sm"
-              dataLang={dataLangs}
-              agencyLangs={routeAgencyLangs}
-              infoLevel={infoLevel}
-              showBorder={true}
-            />
-            {headsignTitle.length > 0 ? (
-              <span className="truncate">{headsignTitle}</span>
-            ) : (
-              t('tripInspection.titleWithNoHeadsign')
-            )}
-          </div>
+          <TripBasicInfo
+            route={route}
+            routeAgency={routeAgency}
+            routeAgencyLangs={routeAgencyLangs}
+            infoLevel={infoLevel}
+            dataLangs={dataLangs}
+            headsignTitle={headsignTitle}
+            titleWithNoHeadsign={t('tripInspection.titleWithNoHeadsign')}
+          />
 
           <DialogDescription asChild className="text-center sm:text-center">
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
