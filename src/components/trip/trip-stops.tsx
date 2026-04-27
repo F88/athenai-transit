@@ -240,16 +240,18 @@ function TripStopRow({
           )}
         </div>
       </div>
-      <TripInfo
-        size="md"
-        routeDirection={tripStopTime.timetableEntry.routeDirection}
-        infoLevel={infoLevel}
-        dataLangs={dataLangs}
-        showRouteTypeIcon={false}
-        agency={stopAgency}
-        showAgency={false}
-        attributes={stopAttributes}
-      />
+      {infoLevelFlag.isDetailedEnabled && (
+        <TripInfo
+          size="md"
+          routeDirection={tripStopTime.timetableEntry.routeDirection}
+          infoLevel={infoLevel}
+          dataLangs={dataLangs}
+          showRouteTypeIcon={false}
+          agency={stopAgency}
+          showAgency={false}
+          attributes={stopAttributes}
+        />
+      )}
 
       {infoLevelFlag.isVerboseEnabled && (
         <>
