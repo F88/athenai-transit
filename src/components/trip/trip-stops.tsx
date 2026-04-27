@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
 import { type AdjustedRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
@@ -311,7 +313,7 @@ function TripStopPlaceholderRow({
   );
 }
 
-export function TripStops({
+export const TripStops = memo(function TripStops({
   tripSnapshot,
   renderedSnapshot,
   selectedPatternStopIndex,
@@ -369,4 +371,4 @@ export function TripStops({
       </div>
     </section>
   );
-}
+});
