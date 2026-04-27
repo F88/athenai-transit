@@ -349,13 +349,21 @@ export interface TripPatternJson {
    * consolidated into a single object array so that related fields
    * cannot fall out of sync.
    *
-   * - `stops[0]` is the first stop (origin).
-   * - `stops[stops.length - 1]` is the terminal.
+   * - `stops[0]` is the **pattern origin** (= the first stop in this
+   *   pattern's sequence). Consumers may treat `si === 0` as "origin"
+   *   for display purposes (e.g. the `isOrigin` flag in
+   *   `athenai-repository-v2.ts`). For GTFS-derived patterns this is
+   *   always the actual trip origin. For ODPT-derived patterns this is
+   *   the canonical / inferred origin when available, or the line
+   *   endpoint in trip direction when inference is unavailable
+   *   (legacy fallback — see "ODPT-derived patterns" below).
+   * - `stops[stops.length - 1]` is the terminal (destinationStation).
    * - The order represents the actual stop sequence of the trip.
    * - Consumers MUST NOT re-sort this array.
    *
    * Derived from GTFS stop_times (ORDER BY stop_sequence) or
-   * ODPT stationOrder truncated at destinationStation.
+   * ODPT stationOrder sliced between the pattern's origin and
+   * destinationStation.
    *
    * **Note**: how `stops` is constructed is source-dependent:
    *
@@ -367,11 +375,30 @@ export interface TripPatternJson {
    *   `stops`, so `pattern.stops[si]` and the timetable entry for that
    *   `si` are in 1:1 correspondence.
    * - **ODPT-derived patterns** (pipeline `odpt/build-timetable.ts`):
-   *   `stops` is built from the railway's `stationOrder` truncated at
-   *   the destination, independently of whether each station has actual
-   *   timetable data. A stop in `stops` may therefore have no
-   *   corresponding timetable group (e.g. terminal stations with no
-   *   StationTimetable in the source).
+   *   `stops` is built from the railway's `stationOrder` sliced between
+   *   the pattern's origin and its destinationStation. The origin is
+   *   resolved in the following precedence:
+   *   1. `odpt:StationTimetableObject.odpt:originStation` when this
+   *      canonical signal is populated for every entry of the
+   *      `(railway, direction, destinationStation, calendar)` group
+   *      (and each entry's array has length === 1);
+   *   2. otherwise inferred per-trip from the per-station ODPT
+   *      timetables (see Issue #153);
+   *   3. otherwise the line endpoint in trip direction (legacy
+   *      fallback, used when inference is unavailable — for example
+   *      when per-station entry counts are non-monotonic due to
+   *      skip-stop / express service).
+   *
+   *   In case 3, `stops[0]` represents the line-end origin used by
+   *   legacy grouping rather than a canonical or inferred origin
+   *   signal. Consumers using `si === 0` as "origin" remain
+   *   well-defined in all three cases (= pattern-relative origin, not
+   *   strictly canonical).
+   *
+   *   A stop in `stops` may still have no corresponding timetable
+   *   group (e.g. terminal stations whose StationTimetable is absent
+   *   in the source); consumers must treat such gaps as "no scheduled
+   *   stop time" rather than an error.
    *
    * Across sources, consumers MUST NOT assume every stop has stop
    * times in the timetable. When a (patternId, si) lookup yields no
