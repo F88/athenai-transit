@@ -194,11 +194,12 @@ export function extractTripPatternsAndTimetable(
   // stop_headsign is also part of the key so that trips with the same served
   // stop sequence but different stop_headsign values form separate patterns
   // (see #92).
-  const patternKey = (t: TripStopTimes, servedIdx: number[]): string => {
-    const servedStops = servedIdx.map((i) => t.stops[i]);
-    const servedHeadsigns = servedIdx.map((i) => t.stopHeadsigns[i]);
-    return `${t.routeId}\0${t.headsign}\0${t.directionId ?? ''}\0${JSON.stringify(servedStops)}\0${JSON.stringify(servedHeadsigns)}`;
-  };
+  const patternKey = (
+    t: TripStopTimes,
+    servedStops: string[],
+    servedHeadsigns: (string | null)[],
+  ): string =>
+    `${t.routeId}\0${t.headsign}\0${t.directionId ?? ''}\0${JSON.stringify(servedStops)}\0${JSON.stringify(servedHeadsigns)}`;
 
   const patternGroups = new Map<
     string,
@@ -233,7 +234,7 @@ export function extractTripPatternsAndTimetable(
 
     const servedStops = servedIdx.map((i) => trip.stops[i]);
     const servedHeadsigns = servedIdx.map((i) => trip.stopHeadsigns[i]);
-    const key = patternKey(trip, servedIdx);
+    const key = patternKey(trip, servedStops, servedHeadsigns);
     let group = patternGroups.get(key);
     if (!group) {
       group = {
