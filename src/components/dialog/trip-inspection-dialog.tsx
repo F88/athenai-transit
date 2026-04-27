@@ -39,11 +39,8 @@ import { getContrastAwareAlphaSuffixes } from '@/utils/color/contrast-alpha-suff
 import { IdBadge } from '../badge/id-badge';
 import { TripPositionIndicator } from '../label/trip-position-indicator';
 import { TripBasicInfo } from '../trip/trip-basic-info';
-import {
-  findTripStopRow,
-  getTripStopIndexFromRow,
-  getTripStopRows,
-} from '../trip/trip-stop-row-dom';
+import { findTripStopRow } from '../trip/trip-stop-row-dom';
+import { computeScrolledStopIndex, getSelectedRowScrollTop } from '../trip/trip-stop-scroll';
 import { TripStops } from '../trip/trip-stops';
 import { TripPager } from '../trip/trip-pager';
 import { VerboseTripStopTime } from '../verbose/verbose-trip-stop-time';
@@ -97,70 +94,6 @@ function resolveTripStopDisplay(stop: TripStopTime | undefined, dataLangs: reado
     stopNames,
     stopName: stopNames?.name || stopId,
   };
-}
-
-function getSelectedRowScrollTop(container: HTMLDivElement, selectedRow: HTMLElement): number {
-  const edgePadding = 12;
-  const containerRect = container.getBoundingClientRect();
-  const rowRect = selectedRow.getBoundingClientRect();
-  const rowTopWithinContainer = rowRect.top - containerRect.top + container.scrollTop;
-
-  if (selectedRow.clientHeight >= container.clientHeight - edgePadding * 2) {
-    return Math.max(0, rowTopWithinContainer - edgePadding);
-  }
-
-  return Math.max(
-    0,
-    rowTopWithinContainer - (container.clientHeight - selectedRow.clientHeight) / 2,
-  );
-}
-
-/**
- * Compute the pattern `stopIndex` whose row best represents the current
- * scroll position. Uses a "moving trigger line" anchored at
- * `ratio * scrollHeight`, where `ratio = scrollTop / maxScroll`. The
- * anchor sweeps the entire scrollable content as the user scrolls
- * end-to-end, so every row gets a turn at being current regardless of
- * how variable the row heights are. Falls back to the closest row by
- * center distance to absorb gaps between rows. Returns `null` when the
- * container is not scrollable or has no rows yet (the caller should
- * keep the previously focused stop in that case).
- */
-function computeScrolledStopIndex(container: HTMLDivElement): number | null {
-  const maxScroll = container.scrollHeight - container.clientHeight;
-  if (maxScroll <= 0) {
-    return null;
-  }
-
-  const rows = getTripStopRows(container);
-  if (rows.length === 0) {
-    return null;
-  }
-
-  const ratio = Math.min(1, Math.max(0, container.scrollTop / maxScroll));
-  const anchorY = ratio * container.scrollHeight;
-  const containerTop = container.getBoundingClientRect().top;
-
-  let bestIndex: number | null = null;
-  let bestDistance = Infinity;
-
-  for (const row of rows) {
-    const stopIndex = getTripStopIndexFromRow(row);
-    if (stopIndex === null) {
-      continue;
-    }
-
-    const rect = row.getBoundingClientRect();
-    const rowTopInContainer = rect.top - containerTop + container.scrollTop;
-    const rowCenterY = rowTopInContainer + rect.height / 2;
-    const distance = Math.abs(rowCenterY - anchorY);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestIndex = stopIndex;
-    }
-  }
-
-  return bestIndex;
 }
 
 function SimpleStopSummary({ stopNames, stopName }: StopSummaryProps) {
