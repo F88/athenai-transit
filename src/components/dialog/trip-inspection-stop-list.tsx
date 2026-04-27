@@ -1,14 +1,8 @@
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
-import { LOW_CONTRAST_BADGE_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
-import {
-  type AdjustedRouteColors,
-  getContrastAdjustedRouteColors,
-  resolveRouteColors,
-} from '@/domain/transit/color-resolver/route-colors';
+import { type AdjustedRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getTimetableEntryAttributes } from '@/domain/transit/timetable-entry-attributes';
 import { useInfoLevel } from '@/hooks/use-info-level';
-import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import type { InfoLevel } from '@/types/app/settings';
 import type {
   ContextualTimetableEntry,
@@ -25,6 +19,7 @@ interface TripInspectionStopListProps {
   tripSnapshot: SelectedTripSnapshot;
   renderedSnapshot: SelectedTripSnapshot | null;
   selectedPatternStopIndex: number;
+  routeColors: AdjustedRouteColors<string>;
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
   now: Date;
@@ -45,6 +40,7 @@ interface TripInspectionPlaceholderRowProps {
   stopIndex: number;
   totalStops: number;
   currentPatternStopIndex: number;
+  routeColors: AdjustedRouteColors<string>;
   infoLevel: InfoLevel;
 }
 
@@ -185,9 +181,11 @@ function TripInspectionStopRow({
     <div
       data-trip-stop-index={stopIndex}
       className={[
-        'rounded-md border px-3 py-2',
-        isCurrent ? 'border-primary bg-primary/5' : 'border-border bg-background',
+        'rounded-md px-3 py-2',
+        isCurrent ? 'border-2' : 'border',
+        'border-border bg-background',
       ].join(' ')}
+      style={isCurrent ? { borderColor: routeColors.color } : undefined}
     >
       {/* StopTime / StopInfo / Index  */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
@@ -278,6 +276,7 @@ function TripInspectionPlaceholderRow({
   stopIndex,
   totalStops,
   currentPatternStopIndex,
+  routeColors,
   infoLevel,
 }: TripInspectionPlaceholderRowProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
@@ -287,9 +286,11 @@ function TripInspectionPlaceholderRow({
     <div
       data-trip-stop-index={stopIndex}
       className={[
-        'rounded-md border border-dashed px-3 py-2',
-        isCurrent ? 'border-primary bg-primary/5' : 'border-border bg-muted/20',
+        'rounded-md border-dashed px-3 py-2',
+        isCurrent ? 'border-2' : 'border',
+        'border-border bg-muted/20',
       ].join(' ')}
+      style={isCurrent ? { borderColor: routeColors.color } : undefined}
     >
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="flex min-w-0 flex-col gap-1">
@@ -315,17 +316,11 @@ export function TripInspectionStopList({
   tripSnapshot,
   renderedSnapshot,
   selectedPatternStopIndex,
+  routeColors,
   infoLevel,
   dataLangs,
   now,
 }: TripInspectionStopListProps) {
-  const { routeColor } = resolveRouteColors(tripSnapshot.route, 'css-hex');
-  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
-  const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
-    tripSnapshot.route,
-    routeColorAssessment.isLowContrast,
-    'css-hex',
-  );
   const renderedTripStopRows = buildRenderedTripStopRows(tripSnapshot.stopTimes);
   const initialRenderStart = Math.max(
     0,
@@ -355,6 +350,7 @@ export function TripInspectionStopList({
               stopIndex={row.stopIndex}
               totalStops={row.totalStops}
               currentPatternStopIndex={selectedPatternStopIndex}
+              routeColors={routeColors}
               infoLevel={infoLevel}
             />
           ) : (
@@ -363,7 +359,7 @@ export function TripInspectionStopList({
               tripStopTime={row.stop}
               totalStops={row.totalStops}
               currentPatternStopIndex={selectedPatternStopIndex}
-              routeColors={contrastAdjustedRouteColors}
+              routeColors={routeColors}
               infoLevel={infoLevel}
               dataLangs={dataLangs}
               serviceDate={tripSnapshot.serviceDate}

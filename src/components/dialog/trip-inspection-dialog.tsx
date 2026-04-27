@@ -18,6 +18,7 @@ import {
   LOW_CONTRAST_TEXT_MIN_RATIO,
 } from '@/domain/transit/color-resolver/contrast-thresholds';
 import {
+  type AdjustedRouteColors,
   getContrastAdjustedRouteColors,
   resolveRouteColors,
 } from '@/domain/transit/color-resolver/route-colors';
@@ -60,6 +61,8 @@ interface TripInspectionDialogProps {
 
 interface TripInspectionSummaryProps {
   snapshot: SelectedTripSnapshot;
+  focusedStop: TripStopTime;
+  routeColors: AdjustedRouteColors<string>;
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
 }
@@ -108,6 +111,58 @@ function getSelectedRowScrollTop(container: HTMLDivElement, selectedRow: HTMLEle
     0,
     rowTopWithinContainer - (container.clientHeight - selectedRow.clientHeight) / 2,
   );
+}
+
+/**
+ * Compute the pattern `stopIndex` whose row best represents the current
+ * scroll position. Uses a "moving trigger line" anchored at
+ * `ratio * scrollHeight`, where `ratio = scrollTop / maxScroll`. The
+ * anchor sweeps the entire scrollable content as the user scrolls
+ * end-to-end, so every row gets a turn at being current regardless of
+ * how variable the row heights are. Falls back to the closest row by
+ * center distance to absorb gaps between rows. Returns `null` when the
+ * container is not scrollable or has no rows yet (the caller should
+ * keep the previously focused stop in that case).
+ */
+function computeScrolledStopIndex(container: HTMLDivElement): number | null {
+  const maxScroll = container.scrollHeight - container.clientHeight;
+  if (maxScroll <= 0) {
+    return null;
+  }
+
+  const rows = container.querySelectorAll<HTMLElement>('[data-trip-stop-index]');
+  if (rows.length === 0) {
+    return null;
+  }
+
+  const ratio = Math.min(1, Math.max(0, container.scrollTop / maxScroll));
+  const anchorY = ratio * container.scrollHeight;
+  const containerTop = container.getBoundingClientRect().top;
+
+  let bestIndex: number | null = null;
+  let bestDistance = Infinity;
+
+  for (const row of rows) {
+    const indexAttr = row.dataset.tripStopIndex;
+    if (indexAttr === undefined) {
+      continue;
+    }
+    const parsed = Number(indexAttr);
+    if (!Number.isFinite(parsed)) {
+      continue;
+    }
+
+    const rect = row.getBoundingClientRect();
+    const rowTopInContainer = rect.top - containerTop + container.scrollTop;
+    const rowCenterY = rowTopInContainer + rect.height / 2;
+    const distance = Math.abs(rowCenterY - anchorY);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestIndex = parsed;
+    }
+  }
+
+  return bestIndex;
 }
 
 function SimpleStopSummary({ stopNames, stopName }: StopSummaryProps) {
@@ -159,30 +214,24 @@ function formatTargetDepartureTime(target: TripInspectionTarget | undefined): st
 
 function TripInspectionSummary({
   snapshot,
+  focusedStop,
+
+  routeColors,
   infoLevel,
   dataLangs: _dataLangs,
 }: TripInspectionSummaryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
-  const route = snapshot.route;
-  const selectedStop = snapshot.selectedStop;
-  const { routeColor } = resolveRouteColors(route, 'css-hex');
-  const routeColorAssessment = useThemeContrastAssessment(routeColor, LOW_CONTRAST_BADGE_MIN_RATIO);
-  const contrastAdjustedRouteColors = getContrastAdjustedRouteColors(
-    route,
-    routeColorAssessment.isLowContrast,
-    'css-hex',
-  );
   const adjustedColorAssessment = useThemeContrastAssessment(
-    contrastAdjustedRouteColors.color,
+    routeColors.color,
     LOW_CONTRAST_TEXT_MIN_RATIO,
   );
   const { subtleAlphaSuffix, emphasisAlphaSuffix } = getContrastAwareAlphaSuffixes(
     adjustedColorAssessment.ratio,
   );
-  const emphasisAccentColor = `${contrastAdjustedRouteColors.color}${emphasisAlphaSuffix}`;
-  const subtleAccentColor = `${contrastAdjustedRouteColors.color}${subtleAlphaSuffix}`;
-  // const routeAgencyLangs = selectedStop.stopMeta
-  //   ? resolveAgencyLang(selectedStop.stopMeta.agencies, route.agency_id)
+  const emphasisAccentColor = `${routeColors.color}${emphasisAlphaSuffix}`;
+  const subtleAccentColor = `${routeColors.color}${subtleAlphaSuffix}`;
+  // const routeAgencyLangs = focusedStop.stopMeta
+  //   ? resolveAgencyLang(focusedStop.stopMeta.agencies, route.agency_id)
   //   : DEFAULT_AGENCY_LANG;
   // const routeNames = getRouteDisplayNames(route, dataLangs, routeAgencyLangs, 'short');
 
@@ -195,25 +244,25 @@ function TripInspectionSummary({
     firstStop.timetableEntry.schedule.departureMinutes;
   const remainingMinutes =
     lastStop.timetableEntry.schedule.arrivalMinutes -
-    selectedStop.timetableEntry.schedule.departureMinutes;
+    focusedStop.timetableEntry.schedule.departureMinutes;
 
   return (
     <section className="flex flex-col gap-2 pt-3 text-left">
       {/* TripPositionIndicator */}
       <TripPositionIndicator
-        stopIndex={selectedStop.timetableEntry.patternPosition.stopIndex}
-        totalStops={selectedStop.timetableEntry.patternPosition.totalStops}
+        stopIndex={focusedStop.timetableEntry.patternPosition.stopIndex}
+        totalStops={focusedStop.timetableEntry.patternPosition.totalStops}
         size="md"
         showEmoji={infoLevelFlag.isNormalEnabled}
         showTrack={infoLevelFlag.isNormalEnabled}
         trackColor={subtleAccentColor}
         dotColor={emphasisAccentColor}
-        currentColor={contrastAdjustedRouteColors.color}
-        trackBorderColor={contrastAdjustedRouteColors.color}
+        currentColor={routeColors.color}
+        trackBorderColor={routeColors.color}
         showTrackBorder={false}
         showPositionLabel={infoLevelFlag.isNormalEnabled}
-        labelTextColor={contrastAdjustedRouteColors.textColor}
-        labelBgColor={contrastAdjustedRouteColors.color}
+        labelTextColor={routeColors.textColor}
+        labelBgColor={routeColors.color}
       />
 
       {/* JourneyTimeBar */}
@@ -222,15 +271,15 @@ function TripInspectionSummary({
         totalMinutes={totalMinutes}
         size="xl"
         showEmoji={infoLevelFlag.isNormalEnabled}
-        fillColor={contrastAdjustedRouteColors.color}
+        fillColor={routeColors.color}
         unfilledColor={emphasisAccentColor}
         showRMins={infoLevelFlag.isNormalEnabled}
         showTMins={infoLevelFlag.isNormalEnabled}
         minsPosition="right"
         fillDirection="rtl"
-        borderColor={contrastAdjustedRouteColors.color}
-        minsTextColor={contrastAdjustedRouteColors.textColor}
-        minsBgColor={contrastAdjustedRouteColors.color}
+        borderColor={routeColors.color}
+        minsTextColor={routeColors.textColor}
+        minsBgColor={routeColors.color}
         showBorder={false}
       />
 
@@ -317,15 +366,25 @@ function TripInspectionRowsSummary({ snapshot }: TripInspectionCurrentStopProps)
   );
 
   return (
-    <section className="space-y-1 rounded-md border px-2 py-2 font-mono text-[11px] leading-4">
-      <div>
-        [rows] reconstructed={snapshot.stopTimes.length} expected={totalStops} missingPatternStops=
-        {missingPatternStops.length > 0 ? `[${missingPatternStops.join(',')}]` : '[]'}
-      </div>
-      {lines.map((line: string, index: number) => (
-        <div key={index}>{line}</div>
-      ))}
-    </section>
+    <details className="mt-1 text-[9px] font-normal text-[#999] dark:text-gray-500">
+      <summary
+        tabIndex={-1}
+        className="cursor-pointer select-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        [RowsSummary]
+      </summary>
+      <section className="mt-0.5 space-y-1 rounded-md border px-2 py-2 font-mono text-[11px] leading-4">
+        <div>
+          [rows] reconstructed={snapshot.stopTimes.length} expected={totalStops}{' '}
+          missingPatternStops=
+          {missingPatternStops.length > 0 ? `[${missingPatternStops.join(',')}]` : '[]'}
+        </div>
+        {lines.map((line: string, index: number) => (
+          <div key={index}>{line}</div>
+        ))}
+      </section>
+    </details>
   );
 }
 
@@ -351,17 +410,20 @@ export function TripInspectionDialog({
   }, []);
   const selectedPatternStopIndex =
     snapshot?.selectedStop.timetableEntry.patternPosition.stopIndex ?? -1;
+
+  // Route colors
   const dialogRouteColorInput = snapshot?.route ?? { route_color: '', route_text_color: '' };
-  const { routeColor: dialogRouteColor } = resolveRouteColors(dialogRouteColorInput, 'css-hex');
+  const { routeColor } = resolveRouteColors(dialogRouteColorInput, 'css-hex');
   const dialogRouteColorAssessment = useThemeContrastAssessment(
-    dialogRouteColor,
+    routeColor,
     LOW_CONTRAST_BADGE_MIN_RATIO,
   );
-  const dialogBorderColors = getContrastAdjustedRouteColors(
+  const adjustedRouteColors = getContrastAdjustedRouteColors(
     dialogRouteColorInput,
     dialogRouteColorAssessment.isLowContrast,
     'css-hex',
   );
+
   const contentScroll = useScrollFades(
     contentContainerRef,
     snapshot
@@ -372,6 +434,21 @@ export function TripInspectionDialog({
     ? `${snapshot.locator.patternId}:${snapshot.locator.serviceId}:${snapshot.locator.tripIndex}:${selectedPatternStopIndex}:${snapshot.stopTimes.length}`
     : 'empty';
   const [renderedSnapshot, setRenderedSnapshot] = useState<SelectedTripSnapshot | null>(null);
+  const [focusedStopIndex, setFocusedStopIndex] = useState<number>(selectedPatternStopIndex);
+  // Reset the focused stop whenever the selected stop / snapshot identity
+  // changes, by tracking the row key during render. This is the React-
+  // recommended pattern for resetting state from props without an extra
+  // effect-driven render pass.
+  const [trackedSelectedStopRowKey, setTrackedSelectedStopRowKey] = useState(selectedStopRowKey);
+  if (trackedSelectedStopRowKey !== selectedStopRowKey) {
+    setTrackedSelectedStopRowKey(selectedStopRowKey);
+    setFocusedStopIndex(selectedPatternStopIndex);
+  }
+  // Programmatic scroll triggered by snapshot/selected-stop change leaves the
+  // body in a scrolling state where intermediate scrollTop values would map to
+  // arbitrary stop indices. Suppress scroll-driven focus updates until the
+  // smooth scroll has had time to settle.
+  const programmaticScrollSettleRef = useRef<number>(0);
 
   useEffect(() => {
     if (!open || !snapshot) {
@@ -391,6 +468,10 @@ export function TripInspectionDialog({
     if (!open || !snapshot || !contentContainerEl) {
       return;
     }
+
+    // Cover the smooth-scroll animation plus the rAF correction passes; user
+    // scroll events fired during this window must not redirect focus.
+    programmaticScrollSettleRef.current = Date.now() + 800;
 
     let firstFrameId = 0;
     let secondFrameId = 0;
@@ -448,6 +529,26 @@ export function TripInspectionDialog({
     };
   }, [contentContainerEl, open, selectedPatternStopIndex, selectedStopRowKey, snapshot]);
 
+  const handleBodyScroll = useCallback(() => {
+    contentScroll.handleScroll();
+
+    if (Date.now() < programmaticScrollSettleRef.current) {
+      return;
+    }
+    if (!snapshot || renderedSnapshot !== snapshot) {
+      return;
+    }
+    const container = contentContainerRef.current;
+    if (!container) {
+      return;
+    }
+    const newIndex = computeScrolledStopIndex(container);
+    if (newIndex === null) {
+      return;
+    }
+    setFocusedStopIndex((prev) => (prev === newIndex ? prev : newIndex));
+  }, [contentScroll, snapshot, renderedSnapshot]);
+
   if (!snapshot) {
     return <Dialog open={false} onOpenChange={onOpenChange} />;
   }
@@ -479,6 +580,14 @@ export function TripInspectionDialog({
   ).resolved.name;
 
   const selectedStop = snapshot.selectedStop;
+  // Resolve the scroll-driven focused stop from the snapshot. Falls back to
+  // the selected stop when the focused index lands on a placeholder row
+  // (no underlying TripStopTime), so the indicator/JourneyTimeBar always
+  // have a valid reference even mid-scroll.
+  const focusedStop: TripStopTime =
+    tripStopTimes.find(
+      (stop) => stop.timetableEntry.patternPosition.stopIndex === focusedStopIndex,
+    ) ?? selectedStop;
 
   // First TripStopTime
   const firstStop = tripStopTimes[0];
@@ -498,11 +607,11 @@ export function TripInspectionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="flex max-h-[80dvh] max-w-[90vw] flex-col gap-0 overflow-hidden border-4"
-        style={{ borderColor: dialogBorderColors.color }}
+        style={{ borderColor: adjustedRouteColors.color }}
       >
         <DialogHeader
           className="z-10 -mb-px shrink-0 border-b-2 pb-3 sm:text-center"
-          style={{ borderBottomColor: dialogBorderColors.color }}
+          style={{ borderBottomColor: adjustedRouteColors.color }}
         >
           {/* {now.toLocaleDateString()} */}
           {/*
@@ -620,6 +729,8 @@ export function TripInspectionDialog({
           <div className="max-h-[24dvh] overflow-y-auto pr-1">
             <TripInspectionSummary
               snapshot={snapshot}
+              focusedStop={focusedStop}
+              routeColors={adjustedRouteColors}
               infoLevel={infoLevel}
               dataLangs={dataLangs}
             />
@@ -640,7 +751,7 @@ export function TripInspectionDialog({
 
         <div
           ref={setContentContainerNode}
-          onScroll={contentScroll.handleScroll}
+          onScroll={handleBodyScroll}
           className="relative min-h-0 flex-1 overflow-y-auto text-sm"
         >
           {contentScroll.showTop && (
@@ -651,6 +762,7 @@ export function TripInspectionDialog({
               tripSnapshot={snapshot}
               renderedSnapshot={renderedSnapshot}
               selectedPatternStopIndex={selectedPatternStopIndex}
+              routeColors={adjustedRouteColors}
               infoLevel={infoLevel}
               dataLangs={dataLangs}
               now={now}
