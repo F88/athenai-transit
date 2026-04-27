@@ -1464,6 +1464,143 @@ describe('Issue #153: mid-pattern origin inference (Plan Tests #1-#19)', () => {
     expect(debugCount).toBe(0);
   });
 
+  // ---- Asymmetric tolerance regression guard (#20) ----
+
+  it('#20: same-minute coincidence between upstream dep and downstream origin → asymmetric guard prevents 0-min match (Issue #153 follow-up)', () => {
+    // Fixture mirroring the real Yurikamome morning-rush bug: an upstream
+    // station's dep time happens to coincide minute-wise with a downstream
+    // station's mid-pattern origin. Without an asymmetric travel constraint
+    // (= require strictly positive travel from upstream to downstream),
+    // greedy time-matching consumes the same-minute downstream entry as
+    // a 0-min "passing trip" — leaving the legitimate later entry unmatched
+    // and falsely classified as origin.
+    //
+    // Configuration:
+    //   3 stations Outbound: A → B → C  (A is line-start, dest = C terminal)
+    //   Median travel A→B = 2 min, B→C = 2 min (computed from full trips)
+    //   Special case: one A trip with B→C travel of 3 min (= the bug case)
+    //   Mid-origin trip: starts at C at the same minute as the special
+    //                    upstream B trip's dep (= same-minute coincidence)
+    //
+    // Pre-fix behavior (no asymmetric guard):
+    //   At C 7:52 (same minute as B 7:52): greedy matches B 7:52 → C 7:52
+    //   (= 0-min anomaly), leaving C 7:55 (the real continuation) unmatched
+    //   → C 7:55 wrongly classified as Ariake-style mid-pattern origin.
+    //
+    // Post-fix behavior (asymmetric guard):
+    //   At C 7:52: B 7:52 trip excluded by guard (e.eventTime <= lastEventTime).
+    //   No candidate. C 7:52 → mid-pattern origin (correct).
+    //   At C 7:55: B 7:52 trip pending. Match (3-min travel, valid).
+    //   C 7:55 → passing (correct).
+    const direction = 'odpt.RailDirection:Outbound';
+    const cal = 'odpt.Calendar:Weekday';
+    const dest = 'odpt.Station:T.C';
+    const stationOrder3: OdptStationOrder[] = FIVE_STATIONS.slice(0, 3);
+    const railway = makeRailway({ 'odpt:lineCode': 'X', 'odpt:stationOrder': stationOrder3 });
+
+    // 9 normal full trips with consistent 2-min travel A→B→C, plus 1 special
+    // trip at 7:50/7:52/7:55 (= 3-min B→C travel). Median B→C travel = 2 min
+    // (9 trips at 2 min vs 1 trip at 3 min).
+    const aTimes = [
+      '07:00',
+      '07:10',
+      '07:20',
+      '07:30',
+      '07:40',
+      '07:50',
+      '08:00',
+      '08:10',
+      '08:20',
+      '08:30',
+    ];
+    const bTimes = [
+      '07:02',
+      '07:12',
+      '07:22',
+      '07:32',
+      '07:42',
+      '07:52',
+      '08:02',
+      '08:12',
+      '08:22',
+      '08:32',
+    ];
+    // C entries are listed inline below; the 6th (= 7:52 trip) has C 7:55
+    // instead of the standard +2 min (= 7:54), giving a 3-min B→C travel
+    // for that one special trip.
+    // Mid-origin trip: starts at C at 7:52 (same minute as B 7:52).
+
+    const timetables: OdptStationTimetable[] = [
+      makeRichTimetable(
+        'odpt.Station:T.A',
+        cal,
+        direction,
+        aTimes.map((t) => ({ t, dest })),
+      ),
+      makeRichTimetable(
+        'odpt.Station:T.B',
+        cal,
+        direction,
+        bTimes.map((t) => ({ t, dest })),
+      ),
+      makeRichTimetable(
+        'odpt.Station:T.C',
+        cal,
+        direction,
+        // Sorted: 7:04, 7:14, 7:24, 7:34, 7:44, 7:52 (mid-origin), 7:55 (real
+        // continuation of B 7:52), 8:04, 8:14, 8:24, 8:34.
+        [
+          { t: '07:04', dest, arrOnly: true },
+          { t: '07:14', dest, arrOnly: true },
+          { t: '07:24', dest, arrOnly: true },
+          { t: '07:34', dest, arrOnly: true },
+          { t: '07:44', dest, arrOnly: true },
+          { t: '07:52', dest }, // mid-origin (depTime present so it can become origin)
+          { t: '07:55', dest, arrOnly: true }, // real continuation of B 7:52
+          { t: '08:04', dest, arrOnly: true },
+          { t: '08:14', dest, arrOnly: true },
+          { t: '08:24', dest, arrOnly: true },
+          { t: '08:34', dest, arrOnly: true },
+        ],
+      ),
+    ];
+
+    const { tripPatterns, timetable } = buildTripPatternsAndTimetableFromOdpt('test', timetables, [
+      railway,
+    ]);
+
+    // Expect 2 patterns: one full-route (A→C, 3 stops) + one mid-origin (C→C,
+    // a degenerate 1-stop pattern? actually C-origin with destination C
+    // collapses to '__full__' because dest === terminal of Outbound, so the
+    // mid-origin trip ends up as origin = C, destination = __full__. Pattern
+    // key: (routeId, Outbound, C, __full__) which is distinct from
+    // (routeId, Outbound, __start__, __full__).
+    const ids = Object.keys(tripPatterns);
+    expect(ids.length).toBeGreaterThanOrEqual(2);
+    const fullRoute = Object.values(tripPatterns).find(
+      (p) => p.stops[0].id === 'test:A' && p.stops.length === 3,
+    );
+    const midOrigin = Object.values(tripPatterns).find((p) => p.stops[0].id === 'test:C');
+    expect(fullRoute).toBeDefined();
+    expect(midOrigin).toBeDefined();
+
+    // The mid-origin pattern should have exactly 1 trip (= C 7:52).
+    const midPatId = Object.entries(tripPatterns).find(([, p]) => p === midOrigin)![0];
+    const midOriginCDeps =
+      (timetable['test:C'] ?? []).find((g) => g.tp === midPatId)?.d['test:weekday'] ?? [];
+    expect(midOriginCDeps).toEqual([7 * 60 + 52]);
+
+    // The full-route pattern should NOT include 7:52 in its C dep (= the
+    // mid-origin trip is correctly separated, not absorbed via 0-min match).
+    const fullPatId = Object.entries(tripPatterns).find(([, p]) => p === fullRoute)![0];
+    const fullCDeps =
+      (timetable['test:C'] ?? []).find((g) => g.tp === fullPatId)?.d['test:weekday'] ?? [];
+    expect(fullCDeps).not.toContain(7 * 60 + 52);
+    // The full-route pattern's C dep should include 7:55 (= real continuation
+    // of B 7:52 via 3-min travel) as the 6th entry.
+    expect(fullCDeps).toContain(7 * 60 + 55);
+  });
+
   // ---- Determinism (#19) ----
 
   it('#19: input order does not affect Trip[] output (Determinism)', () => {

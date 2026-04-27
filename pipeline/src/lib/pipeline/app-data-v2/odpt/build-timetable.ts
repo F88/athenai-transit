@@ -579,12 +579,26 @@ export function inferTripsForDestination(
     for (const e of entries) {
       // Find candidate pending trips whose expected_event_at_z is
       // within tolerance of e.eventTime.
+      //
+      // Asymmetric constraint: a candidate match requires strictly
+      // positive travel (actual > lastEventTime). Zero-or-negative
+      // travel is physically impossible (a train cannot depart the
+      // downstream station at the same minute as the upstream station,
+      // let alone earlier), so we exclude it from candidacy. Without
+      // this, greedy time-only matching can pair an upstream trip with
+      // a same-minute downstream entry — leaving the legitimate later
+      // entry unmatched and falsely classified as an Ariake-style
+      // mid-pattern origin.
       const candidates: { trip: PendingTrip; diff: number }[] = [];
       for (const trip of pending) {
         const travel = travelTimes.get(`${trip.lastStation}\0${z}`);
         if (travel === undefined) {
           // Pair missing -> caller (wrapper) will fall back to legacy
           // (D16). Still, no candidate match here.
+          continue;
+        }
+        if (e.eventTime <= trip.lastEventTime) {
+          // Reject zero-or-negative travel (physically impossible).
           continue;
         }
         const expected = trip.lastEventTime + travel;
