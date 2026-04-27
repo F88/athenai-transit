@@ -44,6 +44,7 @@ import { findTripStopRow } from '../trip/trip-stop-row-dom';
 import { computeScrolledStopIndex, getSelectedRowScrollTop } from '../trip/trip-stop-scroll';
 import { TripStops } from '../trip/trip-stops';
 import { TripPager } from '../trip/trip-pager';
+import { VerboseTripLocator } from '../verbose/verbose-trip-locator';
 import { VerboseTripStopTime } from '../verbose/verbose-trip-stop-time';
 
 interface TripInspectionDialogProps {
@@ -76,6 +77,14 @@ interface StopSummaryProps {
   stopNames: ReturnType<typeof getStopDisplayNames> | null;
   stopName: string;
   infoLevel: InfoLevel;
+  /** Pre-formatted departure time for this stop (e.g. "16:10"). */
+  departureTime?: string;
+  /** Pre-formatted arrival time for this stop (e.g. "16:35"). */
+  arrivalTime?: string;
+  /** Render the departure time row when {@link departureTime} is provided. */
+  showDepartureTime?: boolean;
+  /** Render the arrival time row when {@link arrivalTime} is provided. */
+  showArrivalTime?: boolean;
 }
 
 interface RichStopSummaryProps {
@@ -99,7 +108,15 @@ function resolveTripStopDisplay(stop: TripStopTime | undefined, dataLangs: reado
   };
 }
 
-function SimpleStopSummary({ stopNames, stopName, infoLevel }: StopSummaryProps) {
+function SimpleStopSummary({
+  stopNames,
+  stopName,
+  infoLevel,
+  departureTime,
+  arrivalTime,
+  showDepartureTime = false,
+  showArrivalTime = false,
+}: StopSummaryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
   return (
     <div className="min-w-0 rounded-md border p-2">
@@ -109,6 +126,16 @@ function SimpleStopSummary({ stopNames, stopName, infoLevel }: StopSummaryProps)
         </div>
       )}
       <div className="truncate text-center text-sm font-medium">{stopName}</div>
+      {showArrivalTime && arrivalTime != null && (
+        <div className="text-muted-foreground truncate text-center text-xs tabular-nums">
+          {arrivalTime}
+        </div>
+      )}
+      {showDepartureTime && departureTime != null && (
+        <div className="text-muted-foreground truncate text-center text-xs tabular-nums">
+          {departureTime}
+        </div>
+      )}
     </div>
   );
 }
@@ -252,7 +279,10 @@ function TripInspectionCurrentStop({ snapshot }: TripInspectionCurrentStopProps)
   );
 }
 
-function TripInspectionRowsSummary({ snapshot }: TripInspectionCurrentStopProps) {
+function TripInspectionRowsSummary({
+  snapshot,
+  defaultOpen = false,
+}: TripInspectionCurrentStopProps & { defaultOpen?: boolean }) {
   const totalStops = snapshot.selectedStop.timetableEntry.patternPosition.totalStops;
   const selectedStopIndex = snapshot.selectedStop.timetableEntry.patternPosition.stopIndex;
   const stopByIndex = new Map(
@@ -288,7 +318,10 @@ function TripInspectionRowsSummary({ snapshot }: TripInspectionCurrentStopProps)
   );
 
   return (
-    <details className="mt-1 text-[9px] font-normal text-[#999] dark:text-gray-500">
+    <details
+      open={defaultOpen}
+      className="mt-1 text-[9px] font-normal text-[#999] dark:text-gray-500"
+    >
       <summary
         tabIndex={-1}
         className="cursor-pointer select-none"
@@ -296,16 +329,20 @@ function TripInspectionRowsSummary({ snapshot }: TripInspectionCurrentStopProps)
       >
         [RowsSummary]
       </summary>
-      <section className="mt-0.5 space-y-1 rounded-md border px-2 py-2 font-mono text-[11px] leading-4">
-        <div>
-          [rows] reconstructed={snapshot.stopTimes.length} expected={totalStops}{' '}
-          missingPatternStops=
-          {missingPatternStops.length > 0 ? `[${missingPatternStops.join(',')}]` : '[]'}
+      <div className="mt-0.5 space-y-0.5">
+        <div className="border-app-neutral overflow-x-auto rounded border border-dashed p-1.5 whitespace-nowrap">
+          <p className="m-0">
+            [rows] reconstructed={snapshot.stopTimes.length} expected={totalStops}{' '}
+            missingPatternStops=
+            {missingPatternStops.length > 0 ? `[${missingPatternStops.join(',')}]` : '[]'}
+          </p>
+          {lines.map((line: string, index: number) => (
+            <div key={index} className="m-0">
+              {line}
+            </div>
+          ))}
         </div>
-        {lines.map((line: string, index: number) => (
-          <div key={index}>{line}</div>
-        ))}
-      </section>
+      </div>
     </details>
   );
 }
@@ -505,6 +542,11 @@ export function TripInspectionDialog({
     firstStop,
     dataLangs,
   );
+  const firstStopDepartureTime = firstStop
+    ? formatAbsoluteTime(
+        minutesToDate(snapshot.serviceDate, firstStop.timetableEntry.schedule.departureMinutes),
+      )
+    : undefined;
 
   // Last TripStopTime
   const lastStop = tripStopTimes[tripStopTimes.length - 1];
@@ -512,6 +554,11 @@ export function TripInspectionDialog({
     lastStop,
     dataLangs,
   );
+  const lastStopArrivalTime = lastStop
+    ? formatAbsoluteTime(
+        minutesToDate(snapshot.serviceDate, lastStop.timetableEntry.schedule.arrivalMinutes),
+      )
+    : undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -575,6 +622,8 @@ export function TripInspectionDialog({
                 stopNames={firstStopNames}
                 stopName={firstStopName}
                 infoLevel={infoLevel}
+                departureTime={firstStopDepartureTime}
+                showDepartureTime
               />
               <div className="flex items-center justify-center">
                 <span
@@ -586,6 +635,8 @@ export function TripInspectionDialog({
                 stopNames={lastStopNames}
                 stopName={lastStopName}
                 infoLevel={infoLevel}
+                arrivalTime={lastStopArrivalTime}
+                showArrivalTime
               />
             </div>
           </DialogDescription>
@@ -599,16 +650,32 @@ export function TripInspectionDialog({
               infoLevel={infoLevel}
               dataLangs={dataLangs}
             />
+
+            {/* Verbose info for debug */}
             {infoLevelFlag.isVerboseEnabled && (
               <>
-                {/* {now.toISOString()} */}
-                <TripInspectionCurrentStop snapshot={snapshot} />
-                <VerboseTripStopTime
-                  tripStopTime={snapshot.selectedStop}
-                  serviceDate={snapshot.serviceDate}
-                  dataLangs={dataLangs}
-                />
-                <TripInspectionRowsSummary snapshot={snapshot} />
+                <details className="mt-1 text-[10px] font-normal text-[#999] dark:text-gray-500">
+                  <summary
+                    tabIndex={-1}
+                    className="cursor-pointer select-none"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    [Verbose]
+                  </summary>
+
+                  <div className="mt-1 space-y-1">
+                    {now.toISOString()}
+                    <TripInspectionCurrentStop snapshot={snapshot} />
+                    <VerboseTripLocator locator={snapshot.locator} defaultOpen={true} />
+                    <VerboseTripStopTime
+                      tripStopTime={snapshot.selectedStop}
+                      serviceDate={snapshot.serviceDate}
+                      dataLangs={dataLangs}
+                      defaultOpen={true}
+                    />
+                    <TripInspectionRowsSummary snapshot={snapshot} defaultOpen={true} />
+                  </div>
+                </details>
               </>
             )}
           </div>
