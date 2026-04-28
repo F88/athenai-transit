@@ -121,6 +121,10 @@
       "routeDescription": "{{stop}}: {{route}} 時刻表 {{count}}本",
       "stopDescription": "{{stop}}: 全路線時刻表 {{count}}本",
       "noDestination": "行先が表示されない路線があります"
+    },
+    "filter": {
+      "boardableOnly": "🚏 乗車可能",
+      "boardableOnlyTitle": "乗車できる便のみ表示 (終点や乗車不可便を除外)"
     }
   },
   "panel": {

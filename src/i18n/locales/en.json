@@ -121,6 +121,10 @@
       "routeDescription": "Timetable at {{stop}}: {{route}} ({{count}})",
       "stopDescription": "Timetable at {{stop}}: all routes ({{count}})",
       "noDestination": "Some routes have no destination"
+    },
+    "filter": {
+      "boardableOnly": "🚏 Boardable only",
+      "boardableOnlyTitle": "Show only boardable trips (exclude terminals and pickup-unavailable)"
     }
   },
   "panel": {
