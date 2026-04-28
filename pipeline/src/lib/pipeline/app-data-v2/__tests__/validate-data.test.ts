@@ -987,13 +987,14 @@ describe('validateDataBundle', () => {
         (i) => i.message.includes('d.length differs across emitted groups') && i.level === 'error',
       );
       expect(dErrors).toHaveLength(1);
-      // Message must identify pattern, service, both differing lengths, and example stops.
+      // Message must identify pattern, service, both differing lengths, and example labels.
       const m = dErrors[0].message;
       expect(m).toContain('test:P1');
       expect(m).toContain('test:SVC1');
       expect(m).toContain('2');
       expect(m).toContain('3');
-      expect(m).toMatch(/test:S[ABC]/);
+      // Example labels combine stopId and si (= disambiguates circular patterns).
+      expect(m).toMatch(/test:S[ABC]@si=\d+/);
     });
 
     it('#3: flags a.length mismatch independently of d', () => {
@@ -1194,6 +1195,95 @@ describe('validateDataBundle', () => {
       expect(aErrors).toHaveLength(1);
       expect(aErrors[0].message).toContain('test:P1');
       expect(aErrors[0].message).toContain('test:SVC1');
+    });
+
+    it('#7: disambiguates circular pattern via si in example labels', () => {
+      // Circular / 6-shape pattern: same stopId at two si positions in
+      // pattern.stops. The two emitted groups for that stopId can have
+      // different lengths (different visits of a loop). Without si, the
+      // error message would list `test:SLoop` under both lengths and be
+      // ambiguous. The label `${stopId}@si=N` disambiguates them.
+      const bundle = makeValidBundle({
+        stops: {
+          v: 2,
+          data: [
+            { v: 2, i: 'test:SA', n: 'Stop A (start)', a: 35.68, o: 139.76, l: 0 },
+            { v: 2, i: 'test:SLoop', n: 'Stop Loop (visited twice)', a: 35.69, o: 139.77, l: 0 },
+            { v: 2, i: 'test:SC', n: 'Stop C (terminal)', a: 35.7, o: 139.78, l: 0 },
+          ],
+        },
+        tripPatterns: {
+          v: 2,
+          data: {
+            'test:P1': {
+              v: 2,
+              r: 'test:R1',
+              h: 'Terminal',
+              // SA -> SLoop -> SC -> SLoop (= circular: SLoop visited at si=1 and si=3)
+              stops: [
+                { id: 'test:SA' },
+                { id: 'test:SLoop' },
+                { id: 'test:SC' },
+                { id: 'test:SLoop' },
+              ],
+            },
+          },
+        },
+        timetable: {
+          v: 2,
+          data: {
+            'test:SA': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 0,
+                d: { 'test:SVC1': [480, 540, 600] },
+                a: { 'test:SVC1': [480, 540, 600] },
+              },
+            ],
+            'test:SLoop': [
+              // First visit (si=1) emits 3 entries.
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 1,
+                d: { 'test:SVC1': [482, 542, 602] },
+                a: { 'test:SVC1': [482, 542, 602] },
+              },
+              // Second visit (si=3) emits only 2 entries — length mismatch.
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 3,
+                d: { 'test:SVC1': [486, 546] },
+                a: { 'test:SVC1': [486, 546] },
+              },
+            ],
+            'test:SC': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 2,
+                d: { 'test:SVC1': [484, 544, 604] },
+                a: { 'test:SVC1': [484, 544, 604] },
+              },
+            ],
+          },
+        },
+      });
+      writeBundle('cgl-circular', bundle);
+      const result = validateDataBundle('cgl-circular', TMP_DIR);
+      const dErrors = result.issues.filter(
+        (i) => i.message.includes('d.length differs across emitted groups') && i.level === 'error',
+      );
+      expect(dErrors).toHaveLength(1);
+      const m = dErrors[0].message;
+      // Both si positions of test:SLoop must be unambiguously identifiable.
+      expect(m).toContain('test:SLoop@si=1');
+      expect(m).toContain('test:SLoop@si=3');
+      // Both differing lengths (3 and 2) appear.
+      expect(m).toContain('2');
+      expect(m).toContain('3');
     });
   });
 });

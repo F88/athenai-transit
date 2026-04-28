@@ -474,18 +474,25 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
     }
 
     for (const sid of serviceIds) {
-      // length -> example stopIds. Cap example list at 3 entries per length
+      // length -> example labels. Cap example list at 3 entries per length
       // so that pathological cases produce compact, readable failure reports.
+      //
+      // Each label includes both stopId and si because v2 schema allows
+      // circular / 6-shape patterns where the same stopId appears at
+      // multiple si positions within one pattern (transit-v2-json.ts).
+      // Without si, the report could list `stopA` under both lengths and
+      // become ambiguous.
       const dByLen = new Map<number, string[]>();
       const aByLen = new Map<number, string[]>();
       for (const { stopId, group } of records) {
+        const label = `${stopId}@si=${group.si}`;
         const dArr = group.d[sid];
         const aArr = group.a[sid];
         if (dArr) {
-          recordExample(dByLen, dArr.length, stopId);
+          recordExample(dByLen, dArr.length, label);
         }
         if (aArr) {
-          recordExample(aByLen, aArr.length, stopId);
+          recordExample(aByLen, aArr.length, label);
         }
       }
       if (dByLen.size > 1) {
@@ -527,22 +534,31 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Record an example stopId for a given array length, capped at 3 entries. */
-function recordExample(byLen: Map<number, string[]>, length: number, stopId: string): void {
+/**
+ * Record an example label (e.g. `stopId@si=N`) for a given array length,
+ * capped at 3 entries per length.
+ */
+function recordExample(byLen: Map<number, string[]>, length: number, label: string): void {
   const examples = byLen.get(length);
   if (examples) {
     if (examples.length < 3) {
-      examples.push(stopId);
+      examples.push(label);
     }
     return;
   }
-  byLen.set(length, [stopId]);
+  byLen.set(length, [label]);
 }
 
-/** Format a length -> example-stopIds map as `"3 (e.g. s1, s2), 2 (e.g. s3)"`. */
+/**
+ * Format a length -> example-labels map as
+ * `"2 (e.g. test:S1@si=0), 3 (e.g. test:S2@si=1, test:S3@si=2)"`.
+ *
+ * Lengths are sorted ascending so the output order is stable across runs
+ * (= same fixture always produces the same string).
+ */
 function formatLengthExamples(byLen: Map<number, string[]>): string {
   return [...byLen]
     .sort(([a], [b]) => a - b)
-    .map(([length, stops]) => `${length} (e.g. ${stops.join(', ')})`)
+    .map(([length, labels]) => `${length} (e.g. ${labels.join(', ')})`)
     .join(', ');
 }
