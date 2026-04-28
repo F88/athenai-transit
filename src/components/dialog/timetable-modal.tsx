@@ -3,11 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { TimetableGrid } from '../timetable/timetable-grid';
 import { TimetableHeader } from '../timetable/timetable-header';
 import { TimetableMetadata } from '../timetable/timetable-metadata';
-import { StopTimetableFilter } from '../timetable/stop-timetable-filter';
+import { TimetableHeadsignFilter } from '../timetable/timetable-headsign-filter';
+import { TimetableBoardabilityFilter } from '../timetable/timetable-boardability-filter';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
+import { filterBoardable } from '@/domain/transit/timetable-filter';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { useScrollFades } from '@/hooks/use-scroll-fades';
 import type { InfoLevel } from '@/types/app/settings';
@@ -80,6 +82,10 @@ export function TimetableModal({
   // Empty set = show all timetable (no filter active).
   const [activeFilters, setActiveFilters] = useState<Set<string>>(() => new Set());
 
+  // Boardable-only filter toggle. OFF by default (preserves existing behavior).
+  // When ON, applies filterBoardable on top of any other active filters.
+  const [showBoardableOnly, setShowBoardableOnly] = useState(false);
+
   const toggleFilter = useCallback((key: string) => {
     setActiveFilters((prev) => {
       const next = new Set(prev);
@@ -92,6 +98,10 @@ export function TimetableModal({
     });
   }, []);
 
+  const toggleBoardableOnly = useCallback(() => {
+    setShowBoardableOnly((prev) => !prev);
+  }, []);
+
   // Both timetable types now use TimetableEntry[] directly.
   const allTimetableEntries: TimetableEntry[] = useMemo(() => {
     if (!data) {
@@ -101,13 +111,23 @@ export function TimetableModal({
   }, [data]);
 
   const filteredTimetableEntries = useMemo(() => {
-    if (!data || data.type !== 'stop' || activeFilters.size === 0) {
+    if (!data) {
       return allTimetableEntries;
     }
-    return allTimetableEntries.filter((entry) =>
-      activeFilters.has(getRouteHeadsignKey(entry.routeDirection)),
-    );
-  }, [data, allTimetableEntries, activeFilters]);
+    let entries = allTimetableEntries;
+    // Route+headsign filter (stop type only, when active).
+    if (data.type === 'stop' && activeFilters.size > 0) {
+      entries = entries.filter((entry) =>
+        activeFilters.has(getRouteHeadsignKey(entry.routeDirection)),
+      );
+    }
+    // Boardable-only filter (both types). Applied last so that the
+    // route+headsign filter narrows the candidate set first.
+    if (showBoardableOnly) {
+      entries = filterBoardable(entries);
+    }
+    return entries;
+  }, [data, allTimetableEntries, activeFilters, showBoardableOnly]);
 
   const descriptionHeadsign = useMemo(() => {
     if (!data?.headsign || data.type !== 'route-headsign') {
@@ -238,8 +258,14 @@ export function TimetableModal({
             )}
 
             <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLangs[0]} />
+            {/* Boardability filter */}
+            <TimetableBoardabilityFilter
+              boardable={showBoardableOnly}
+              onToggleBoardable={toggleBoardableOnly}
+            />
+            {/* Headsign filter */}
             {data.type === 'stop' && (
-              <StopTimetableFilter
+              <TimetableHeadsignFilter
                 timetableEntries={data.timetableEntries}
                 activeFilters={activeFilters}
                 onToggleFilter={toggleFilter}
@@ -247,6 +273,7 @@ export function TimetableModal({
                 agencies={data.agencies}
               />
             )}
+            {/* Unknown destination warning */}
             {((data.type === 'route-headsign' && data.headsign === '') ||
               (data.type === 'stop' &&
                 hasUnknownDestination(

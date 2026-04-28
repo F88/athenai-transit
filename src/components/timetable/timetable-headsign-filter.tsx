@@ -12,7 +12,7 @@ import type { TimetableEntry } from '@/types/app/transit-composed';
 import { getContrastAssessment } from '@/utils/color/color-contrast';
 import { PillButton } from '../button/pill-button';
 
-interface StopTimetableFilterProps {
+interface TimetableHeadsignFilterProps {
   timetableEntries: TimetableEntry[];
   activeFilters: Set<string>;
   onToggleFilter: (key: string) => void;
@@ -21,18 +21,23 @@ interface StopTimetableFilterProps {
 }
 
 /**
- * Render route+headsign filter pills for the stop timetable view.
+ * Render route+headsign filter pills for a timetable view.
+ *
+ * Pills are derived from the route+headsign combinations present in
+ * `timetableEntries`. Toggling a pill includes / excludes that
+ * route+headsign from the displayed timetable. The filter axis is
+ * route+headsign even though the user-facing label centers on headsign.
  *
  * @param props - Filter rendering inputs.
- * @returns The rendered stop timetable filter controls.
+ * @returns The rendered headsign filter controls.
  */
-export function StopTimetableFilter({
+export function TimetableHeadsignFilter({
   timetableEntries,
   activeFilters,
   onToggleFilter,
   dataLang,
   agencies,
-}: StopTimetableFilterProps) {
+}: TimetableHeadsignFilterProps) {
   const themeContrastBackgroundColor = useThemeContrastBackgroundColor();
 
   const routeHeadsigns = useMemo(() => {
