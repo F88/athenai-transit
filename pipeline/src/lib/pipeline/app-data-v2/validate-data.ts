@@ -12,7 +12,8 @@
  * - Non-empty stops, routes, calendar services
  * - Calendar expiration (warn if earliest end_date <= 30 days)
  * - Referential integrity: timetable → tripPatterns → routes/stops
- * - Timetable d/a array length consistency
+ * - Timetable d/a array length consistency (per-group)
+ * - Cross-group d/a array length consistency per (patternId, serviceId) (Issue #156)
  * - Stop coordinate range (lat: -90..90, lon: -180..180)
  *
  * @module
@@ -21,7 +22,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
+import type {
+  DataBundle,
+  TimetableGroupV2Json,
+} from '../../../../../src/types/data/transit-v2-json';
 import { parseGtfsDate } from '../../gtfs-date-utils';
 import type { ValidationIssue } from './validate-shapes';
 
@@ -411,6 +415,81 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Cross-group d/a length consistency per (patternId, serviceId) (Issue #156)
+  //
+  // For each (patternId, serviceId) pair, all emitted timetable groups
+  // belonging to that pattern must report the same `d[serviceId].length`
+  // and `a[serviceId].length`. WebApp's `buildTripStopTimes` walks a single
+  // tripIndex across emitted groups; if the lengths disagree, that index
+  // becomes ambiguous and reconstructed trips show phantom values.
+  //
+  // Stops in `pattern.stops` that have no emitted timetable group are
+  // intentionally excluded (= "across emitted groups", not "across all
+  // pattern.stops"). ODPT-derived patterns may legitimately list stops in
+  // `pattern.stops` that have no corresponding StationTimetable entry.
+  // ---------------------------------------------------------------------------
+
+  const groupsByPattern = new Map<string, { stopId: string; group: TimetableGroupV2Json }[]>();
+  for (const [stopId, groups] of Object.entries(bundle.timetable.data)) {
+    for (const group of groups) {
+      let arr = groupsByPattern.get(group.tp);
+      if (!arr) {
+        arr = [];
+        groupsByPattern.set(group.tp, arr);
+      }
+      arr.push({ stopId, group });
+    }
+  }
+
+  for (const [patternId, records] of groupsByPattern) {
+    // serviceIds = union of d and a keysets across all groups for this pattern.
+    // Both sides are checked independently; iterating only `d` would miss
+    // a serviceId that appears solely in `a`.
+    const serviceIds = new Set<string>();
+    for (const { group } of records) {
+      for (const sid of Object.keys(group.d)) {
+        serviceIds.add(sid);
+      }
+      for (const sid of Object.keys(group.a)) {
+        serviceIds.add(sid);
+      }
+    }
+
+    for (const sid of serviceIds) {
+      // length -> example stopIds. Cap example list at 3 entries per length
+      // so that pathological cases produce compact, readable failure reports.
+      const dByLen = new Map<number, string[]>();
+      const aByLen = new Map<number, string[]>();
+      for (const { stopId, group } of records) {
+        const dArr = group.d[sid];
+        const aArr = group.a[sid];
+        if (dArr) {
+          recordExample(dByLen, dArr.length, stopId);
+        }
+        if (aArr) {
+          recordExample(aByLen, aArr.length, stopId);
+        }
+      }
+      if (dByLen.size > 1) {
+        issues.push({
+          prefix,
+          level: 'error',
+          category: 'integrity',
+          message: `pattern "${patternId}" service "${sid}": d.length differs across emitted groups (${formatLengthExamples(dByLen)})`,
+        });
+      }
+      if (aByLen.size > 1) {
+        issues.push({
+          prefix,
+          level: 'error',
+          category: 'integrity',
+          message: `pattern "${patternId}" service "${sid}": a.length differs across emitted groups (${formatLengthExamples(aByLen)})`,
+        });
+      }
+    }
+  }
+
   const calendarServices: CalendarServiceMeta[] = bundle.calendar.data.services.map((svc) => ({
     serviceId: svc.i,
     endDate: svc.e,
@@ -425,4 +504,28 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
     timetableStopCount,
     calendarServices,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Record an example stopId for a given array length, capped at 3 entries. */
+function recordExample(byLen: Map<number, string[]>, length: number, stopId: string): void {
+  const examples = byLen.get(length);
+  if (examples) {
+    if (examples.length < 3) {
+      examples.push(stopId);
+    }
+    return;
+  }
+  byLen.set(length, [stopId]);
+}
+
+/** Format a length -> example-stopIds map as `"3 (e.g. s1, s2), 2 (e.g. s3)"`. */
+function formatLengthExamples(byLen: Map<number, string[]>): string {
+  return [...byLen]
+    .sort(([a], [b]) => a - b)
+    .map(([length, stops]) => `${length} (e.g. ${stops.join(', ')})`)
+    .join(', ');
 }

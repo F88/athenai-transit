@@ -864,4 +864,306 @@ describe('validateDataBundle', () => {
       expect(siErrors).toHaveLength(0);
     });
   });
+
+  describe('cross-group d/a length consistency (Issue #156)', () => {
+    /**
+     * Build a 3-stop pattern with one timetable group per stop, one
+     * service. Defaults give a uniform-length bundle; overrides per stop
+     * let each test inject specific d/a arrays for the mismatch fixtures.
+     */
+    function buildBundleWithThreeStops(perStop: {
+      A: { d: number[]; a: number[] };
+      B: { d: number[]; a: number[] };
+      C: { d: number[]; a: number[] };
+    }): DataBundle {
+      return makeValidBundle({
+        stops: {
+          v: 2,
+          data: [
+            { v: 2, i: 'test:SA', n: 'Stop A', a: 35.68, o: 139.76, l: 0 },
+            { v: 2, i: 'test:SB', n: 'Stop B', a: 35.69, o: 139.77, l: 0 },
+            { v: 2, i: 'test:SC', n: 'Stop C', a: 35.7, o: 139.78, l: 0 },
+          ],
+        },
+        tripPatterns: {
+          v: 2,
+          data: {
+            'test:P1': {
+              v: 2,
+              r: 'test:R1',
+              h: 'Terminal',
+              stops: [{ id: 'test:SA' }, { id: 'test:SB' }, { id: 'test:SC' }],
+            },
+          },
+        },
+        timetable: {
+          v: 2,
+          data: {
+            'test:SA': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 0,
+                d: { 'test:SVC1': perStop.A.d },
+                a: { 'test:SVC1': perStop.A.a },
+              },
+            ],
+            'test:SB': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 1,
+                d: { 'test:SVC1': perStop.B.d },
+                a: { 'test:SVC1': perStop.B.a },
+              },
+            ],
+            'test:SC': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 2,
+                d: { 'test:SVC1': perStop.C.d },
+                a: { 'test:SVC1': perStop.C.a },
+              },
+            ],
+          },
+        },
+      });
+    }
+
+    it('#1: accepts uniform d.length / a.length across emitted groups', () => {
+      const bundle = buildBundleWithThreeStops({
+        A: { d: [480, 540, 600], a: [480, 540, 600] },
+        B: { d: [482, 542, 602], a: [482, 542, 602] },
+        C: { d: [484, 544, 604], a: [484, 544, 604] },
+      });
+      writeBundle('cgl-uniform', bundle);
+      const result = validateDataBundle('cgl-uniform', TMP_DIR);
+      const crossGroupIssues = result.issues.filter((i) =>
+        i.message.includes('differs across emitted groups'),
+      );
+      expect(crossGroupIssues).toHaveLength(0);
+    });
+
+    it('#2: flags d.length mismatch with patternId / serviceId / example stops', () => {
+      const bundle = buildBundleWithThreeStops({
+        A: { d: [480, 540, 600], a: [480, 540, 600] },
+        B: { d: [482, 542], a: [482, 542] }, // shorter
+        C: { d: [484, 544, 604], a: [484, 544, 604] },
+      });
+      writeBundle('cgl-d-mismatch', bundle);
+      const result = validateDataBundle('cgl-d-mismatch', TMP_DIR);
+      const dErrors = result.issues.filter(
+        (i) => i.message.includes('d.length differs across emitted groups') && i.level === 'error',
+      );
+      expect(dErrors).toHaveLength(1);
+      // Message must identify pattern, service, both differing lengths, and example stops.
+      const m = dErrors[0].message;
+      expect(m).toContain('test:P1');
+      expect(m).toContain('test:SVC1');
+      expect(m).toContain('2');
+      expect(m).toContain('3');
+      expect(m).toMatch(/test:S[ABC]/);
+    });
+
+    it('#3: flags a.length mismatch independently of d', () => {
+      const bundle = buildBundleWithThreeStops({
+        // d is uniform across all stops; only a differs at stop B.
+        A: { d: [480, 540, 600], a: [480, 540, 600] },
+        B: { d: [482, 542, 602], a: [482, 542] },
+        C: { d: [484, 544, 604], a: [484, 544, 604] },
+      });
+      writeBundle('cgl-a-mismatch', bundle);
+      const result = validateDataBundle('cgl-a-mismatch', TMP_DIR);
+      const aErrors = result.issues.filter(
+        (i) => i.message.includes('a.length differs across emitted groups') && i.level === 'error',
+      );
+      const dErrors = result.issues.filter((i) =>
+        i.message.includes('d.length differs across emitted groups'),
+      );
+      expect(aErrors).toHaveLength(1);
+      expect(dErrors).toHaveLength(0);
+      expect(aErrors[0].message).toContain('test:P1');
+      expect(aErrors[0].message).toContain('test:SVC1');
+    });
+
+    it('#4: accepts pattern with stops missing a timetable group', () => {
+      // Pattern has 3 stops in `pattern.stops`, but only 2 of them have an
+      // emitted timetable group. The two emitted groups agree on length;
+      // the missing third stop must NOT trigger any cross-group issue.
+      const bundle = makeValidBundle({
+        stops: {
+          v: 2,
+          data: [
+            { v: 2, i: 'test:SA', n: 'Stop A', a: 35.68, o: 139.76, l: 0 },
+            { v: 2, i: 'test:SB', n: 'Stop B', a: 35.69, o: 139.77, l: 0 },
+            { v: 2, i: 'test:SC', n: 'Stop C', a: 35.7, o: 139.78, l: 0 },
+          ],
+        },
+        tripPatterns: {
+          v: 2,
+          data: {
+            'test:P1': {
+              v: 2,
+              r: 'test:R1',
+              h: 'Terminal',
+              stops: [{ id: 'test:SA' }, { id: 'test:SB' }, { id: 'test:SC' }],
+            },
+          },
+        },
+        timetable: {
+          v: 2,
+          data: {
+            'test:SA': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 0,
+                d: { 'test:SVC1': [480, 540] },
+                a: { 'test:SVC1': [480, 540] },
+              },
+            ],
+            // test:SB omitted on purpose (= ODPT-style sparse pattern).
+            'test:SC': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 2,
+                d: { 'test:SVC1': [484, 544] },
+                a: { 'test:SVC1': [484, 544] },
+              },
+            ],
+          },
+        },
+      });
+      writeBundle('cgl-missing-group', bundle);
+      const result = validateDataBundle('cgl-missing-group', TMP_DIR);
+      const crossGroupIssues = result.issues.filter((i) =>
+        i.message.includes('differs across emitted groups'),
+      );
+      expect(crossGroupIssues).toHaveLength(0);
+    });
+
+    it('#5: does not require all groups to share the same set of serviceIds', () => {
+      // Stop A has both svc1 and svc2; stop B has only svc1. svc1 length
+      // matches between A and B. The validator must NOT fail on the svc2
+      // partial coverage — that is a different invariant (out of scope).
+      const bundle = makeValidBundle({
+        calendar: {
+          v: 1,
+          data: {
+            services: [
+              { i: 'test:SVC1', d: [1, 1, 1, 1, 1, 0, 0], s: '20260101', e: '20261231' },
+              { i: 'test:SVC2', d: [0, 0, 0, 0, 0, 1, 1], s: '20260101', e: '20261231' },
+            ],
+            exceptions: [],
+          },
+        },
+        stops: {
+          v: 2,
+          data: [
+            { v: 2, i: 'test:SA', n: 'Stop A', a: 35.68, o: 139.76, l: 0 },
+            { v: 2, i: 'test:SB', n: 'Stop B', a: 35.69, o: 139.77, l: 0 },
+          ],
+        },
+        tripPatterns: {
+          v: 2,
+          data: {
+            'test:P1': {
+              v: 2,
+              r: 'test:R1',
+              h: 'Terminal',
+              stops: [{ id: 'test:SA' }, { id: 'test:SB' }],
+            },
+          },
+        },
+        timetable: {
+          v: 2,
+          data: {
+            'test:SA': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 0,
+                d: { 'test:SVC1': [480, 540], 'test:SVC2': [600] },
+                a: { 'test:SVC1': [480, 540], 'test:SVC2': [600] },
+              },
+            ],
+            'test:SB': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 1,
+                d: { 'test:SVC1': [482, 542] },
+                a: { 'test:SVC1': [482, 542] },
+              },
+            ],
+          },
+        },
+      });
+      writeBundle('cgl-partial-svc', bundle);
+      const result = validateDataBundle('cgl-partial-svc', TMP_DIR);
+      const crossGroupIssues = result.issues.filter((i) =>
+        i.message.includes('differs across emitted groups'),
+      );
+      expect(crossGroupIssues).toHaveLength(0);
+    });
+
+    it('#6: flags mismatch on a-only serviceId (= union keyset behavior)', () => {
+      // sidA appears only in `a`, never in `d`. The cross-group validator
+      // must still examine sidA for `a.length` consistency: stop A has 3
+      // arrivals, stop B has 2 — that is a mismatch.
+      const bundle = makeValidBundle({
+        stops: {
+          v: 2,
+          data: [
+            { v: 2, i: 'test:SA', n: 'Stop A', a: 35.68, o: 139.76, l: 0 },
+            { v: 2, i: 'test:SB', n: 'Stop B', a: 35.69, o: 139.77, l: 0 },
+          ],
+        },
+        tripPatterns: {
+          v: 2,
+          data: {
+            'test:P1': {
+              v: 2,
+              r: 'test:R1',
+              h: 'Terminal',
+              stops: [{ id: 'test:SA' }, { id: 'test:SB' }],
+            },
+          },
+        },
+        timetable: {
+          v: 2,
+          data: {
+            'test:SA': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 0,
+                d: {},
+                a: { 'test:SVC1': [480, 540, 600] },
+              },
+            ],
+            'test:SB': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 1,
+                d: {},
+                a: { 'test:SVC1': [482, 542] },
+              },
+            ],
+          },
+        },
+      });
+      writeBundle('cgl-a-only-svc', bundle);
+      const result = validateDataBundle('cgl-a-only-svc', TMP_DIR);
+      const aErrors = result.issues.filter(
+        (i) => i.message.includes('a.length differs across emitted groups') && i.level === 'error',
+      );
+      expect(aErrors).toHaveLength(1);
+      expect(aErrors[0].message).toContain('test:P1');
+      expect(aErrors[0].message).toContain('test:SVC1');
+    });
+  });
 });

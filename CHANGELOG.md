@@ -22,6 +22,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - `time-style.ts` に explicit time band 定義を追加 (morning / daytime / evening / night band を明示)。
 - Pipeline: りんかい線 (東京臨海高速鉄道株式会社) の GTFS データソースを追加 (prefix `twrr`, route_type 2 rail)。8 駅 / 1 路線。`shapes.txt` は含まれないが MLIT 国土数値情報 (臨海副都心線) 経由で路線図に対応。`data-source-settings` の `routeTypes` は `[1, 2]` (subway + rail) — 実態として地下鉄区間を含むため将来の Source 選択 UI 用に両方を宣言。
 - About: りんかい線のクレジット・データ情報を追加。
+- Pipeline: `validate-data.ts` に bundle-level cross-group d/a length consistency 検証を追加 (Refs: #156)。各 `(patternId, serviceId)` ペアについて、当該 pattern の全 emitted timetable groups で `d[serviceId].length` および `a[serviceId].length` が一致することを assert。WebApp の `buildTripStopTimes` における `tripIndex` alignment が前提とする invariant を、最終出力 `data.json` 段階で fail-fast に検知。`pattern.stops` のうち emitted group を持たない stop は対象外 (= ODPT 由来の sparse pattern を許容)。`a` 単独で出現する serviceId も union keyset で正しく検査される。
 
 ### Changed
 
