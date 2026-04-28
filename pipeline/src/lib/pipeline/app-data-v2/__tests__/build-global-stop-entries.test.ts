@@ -16,11 +16,15 @@ import { extractStopEntries, findSundayServiceIds } from '../build-global-stop-e
 /** Create a minimal DataBundle with the given configuration. */
 function makeDataBundle(opts: {
   services?: { id: string; d: number[] }[];
+  exceptions?: { i: string; d: string; t: 1 | 2 }[];
+  serviceDateRange?: { start: string; end: string };
   stops?: { i: string; a: number; o: number; l: number; ps?: string }[];
   routes?: { i: string }[];
   patterns?: Record<string, { r: string; stops: { id: string }[] }>;
   timetable?: Record<string, { tp: string; si?: number; d: Record<string, number[]> }[]>;
 }): DataBundle {
+  const serviceDateRange = opts.serviceDateRange ?? { start: '20260101', end: '20261231' };
+
   return {
     bundle_version: 3,
     kind: 'data',
@@ -56,10 +60,10 @@ function makeDataBundle(opts: {
         services: (opts.services ?? []).map((s) => ({
           i: s.id,
           d: s.d,
-          s: '20260101',
-          e: '20261231',
+          s: serviceDateRange.start,
+          e: serviceDateRange.end,
         })),
-        exceptions: [],
+        exceptions: opts.exceptions ?? [],
       },
     },
     feedInfo: { v: 1, data: { pn: '', pu: '', l: '', s: '', e: '', v: '' } },
@@ -101,19 +105,21 @@ function makeDataBundle(opts: {
 // ---------------------------------------------------------------------------
 
 describe('findSundayServiceIds', () => {
-  it('returns service IDs with d[6] === 1', () => {
+  it('returns service IDs with weekly Sunday service', () => {
     const bundle = makeDataBundle({
       services: [
         { id: 'wd', d: [1, 1, 1, 1, 1, 0, 0] },
+        { id: 'wk', d: [0, 0, 0, 0, 0, 1, 1] },
         { id: 'sa', d: [0, 0, 0, 0, 0, 1, 0] },
         { id: 'su', d: [0, 0, 0, 0, 0, 0, 1] },
         { id: 'all', d: [1, 1, 1, 1, 1, 1, 1] },
+        { id: 'custom', d: [1, 0, 1, 0, 1, 0, 1] },
       ],
     });
 
     const result = findSundayServiceIds(bundle);
 
-    expect(result).toEqual(new Set(['su', 'all']));
+    expect(result).toEqual(new Set(['wk', 'su', 'all', 'custom']));
   });
 
   it('returns empty set when no Sunday services exist', () => {
@@ -128,6 +134,40 @@ describe('findSundayServiceIds', () => {
 
   it('returns empty set when no services exist', () => {
     const bundle = makeDataBundle({ services: [] });
+
+    const result = findSundayServiceIds(bundle);
+
+    expect(result.size).toBe(0);
+  });
+
+  it('includes calendar_dates-only services added on Sunday', () => {
+    const bundle = makeDataBundle({
+      services: [],
+      exceptions: [{ i: 'svc-ex-su', d: '20260104', t: 1 }],
+    });
+
+    const result = findSundayServiceIds(bundle);
+
+    expect(result).toEqual(new Set(['svc-ex-su']));
+  });
+
+  it('includes weekday services with Sunday add exceptions', () => {
+    const bundle = makeDataBundle({
+      services: [{ id: 'wd', d: [1, 1, 1, 1, 1, 0, 0] }],
+      exceptions: [{ i: 'wd', d: '20260104', t: 1 }],
+    });
+
+    const result = findSundayServiceIds(bundle);
+
+    expect(result).toEqual(new Set(['wd']));
+  });
+
+  it('excludes Sunday services removed on every Sunday in range', () => {
+    const bundle = makeDataBundle({
+      serviceDateRange: { start: '20260101', end: '20260104' },
+      services: [{ id: 'su', d: [0, 0, 0, 0, 0, 0, 1] }],
+      exceptions: [{ i: 'su', d: '20260104', t: 2 }],
+    });
 
     const result = findSundayServiceIds(bundle);
 

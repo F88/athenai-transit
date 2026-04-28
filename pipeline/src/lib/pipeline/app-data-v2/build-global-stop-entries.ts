@@ -2,11 +2,12 @@
  * Extract StopEntry data from a DataBundle for GlobalInsightsBundle.
  *
  * Provides two functions used by build-global-insights.ts:
- * - findSundayServiceIds: identify Sunday-pattern services
+ * - findSundayServiceIds: identify services active on at least one Sunday
  * - extractStopEntries: build StopEntry[] with routeIds and routeFreqs
  */
 
 import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
+import { findServicesActiveOnWeekday } from './build-service-groups';
 import type { StopEntry } from './build-stop-geo';
 
 // ---------------------------------------------------------------------------
@@ -14,19 +15,13 @@ import type { StopEntry } from './build-stop-geo';
 // ---------------------------------------------------------------------------
 
 /**
- * Find service IDs that cover Sunday (d[6] === 1) from a DataBundle's calendar.
+ * Find service IDs that are active on at least one Sunday in the bundle's
+ * calendar range.
  *
- * Uses the weekly calendar pattern only; calendar_dates holiday
- * exceptions are not considered.
+ * Weekly calendar bits and calendar_dates exceptions are both considered.
  */
 export function findSundayServiceIds(bundle: DataBundle): Set<string> {
-  const ids = new Set<string>();
-  for (const svc of bundle.calendar.data.services) {
-    if (svc.d[6] === 1) {
-      ids.add(svc.i);
-    }
-  }
-  return ids;
+  return findServicesActiveOnWeekday(bundle.calendar.data, 6);
 }
 
 /**
