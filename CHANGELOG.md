@@ -22,9 +22,11 @@ and this project adheres to [CalVer](https://calver.org/).
 - `time-style.ts` に explicit time band 定義を追加 (morning / daytime / evening / night band を明示)。
 - Pipeline: りんかい線 (東京臨海高速鉄道株式会社) の GTFS データソースを追加 (prefix `twrr`, route_type 2 rail)。8 駅 / 1 路線。`shapes.txt` は含まれないが MLIT 国土数値情報 (臨海副都心線) 経由で路線図に対応。`data-source-settings` の `routeTypes` は `[1, 2]` (subway + rail) — 実態として地下鉄区間を含むため将来の Source 選択 UI 用に両方を宣言。
 - About: りんかい線のクレジット・データ情報を追加。
+- Pipeline: `validate-data.ts` に bundle-level cross-group d/a length consistency 検証を追加 (Refs: #156)。各 `(patternId, serviceId)` ペアについて、当該 pattern の全 emitted timetable groups で `d[serviceId].length` および `a[serviceId].length` が一致することを assert。WebApp の `buildTripStopTimes` における `tripIndex` alignment が前提とする invariant を、最終出力 `data.json` 段階で fail-fast に検知。`pattern.stops` のうち emitted group を持たない stop は対象外 (= ODPT 由来の sparse pattern を許容)。`a` 単独で出現する serviceId も union keyset で正しく検査される。
 
 ### Changed
 
+- Pipeline: `validate-data.ts` の per-group d/a presence check を symmetric 化。`d[sid]` / `a[sid]` の片側欠落をいずれの方向でも error として検知 (= 既存は d-only side のみ flag、a-only side は silent だった)。`d` と `a` は同 trip / 同 stop の positional pair なので、片側欠落は builder regression のサイン。現 data には影響なし (= GTFS / ODPT builder は常に両方 populate)。
 - `StopTimeItem` を building block (`StopTimeDetailInfo` / `StopTimeTimeInfo`) に分離し、`TripInspectionDialog` と共通化 (260 行 → 約 100 行 + 子コンポーネント)。
 - `StopTimeItem` の絶対/相対時刻受け渡しを explicit な time props に変更し、caller 側で表示ポリシーを制御可能に。
 - `StopSummary` に display flag 群 (agency / trip count / connectivity 等) を追加し、nearby-stop / marker context で切替可能に。

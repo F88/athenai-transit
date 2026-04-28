@@ -12,7 +12,9 @@
  * - Non-empty stops, routes, calendar services
  * - Calendar expiration (warn if earliest end_date <= 30 days)
  * - Referential integrity: timetable → tripPatterns → routes/stops
- * - Timetable d/a array length consistency
+ * - Timetable d/a array length consistency (per-group, symmetric: d-only and
+ *   a-only serviceIds are both flagged; length mismatch when both present is flagged)
+ * - Cross-group d/a array length consistency per (patternId, serviceId) (Issue #156)
  * - Stop coordinate range (lat: -90..90, lon: -180..180)
  *
  * @module
@@ -21,7 +23,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
+import type {
+  DataBundle,
+  TimetableGroupV2Json,
+} from '../../../../../src/types/data/transit-v2-json';
 import { parseGtfsDate } from '../../gtfs-date-utils';
 import type { ValidationIssue } from './validate-shapes';
 
@@ -386,11 +391,18 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
         }
       }
 
-      // d/a array length consistency per service_id
-      for (const sid of Object.keys(group.d)) {
-        const dLen = group.d[sid]?.length ?? 0;
+      // d/a array length consistency per service_id.
+      //
+      // Iterate the union of d and a keysets so that a serviceId present in
+      // only one side is also examined. Both directions are anomalies: at
+      // the data semantic level, d[sid][n] and a[sid][n] are positionally
+      // paired (= same trip's same stop), so one without the other indicates
+      // a builder regression rather than a legitimate data shape.
+      const sids = new Set<string>([...Object.keys(group.d), ...Object.keys(group.a)]);
+      for (const sid of sids) {
+        const dArr = group.d[sid];
         const aArr = group.a[sid];
-        if (!aArr) {
+        if (dArr && !aArr) {
           issues.push({
             prefix,
             level: 'error',
@@ -399,14 +411,105 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
           });
           continue;
         }
-        if (dLen !== aArr.length) {
+        if (aArr && !dArr) {
           issues.push({
             prefix,
             level: 'error',
             category: 'integrity',
-            message: `timetable[${stopId}][${gi}]: service "${sid}" d.length (${dLen}) !== a.length (${aArr.length})`,
+            message: `timetable[${stopId}][${gi}]: service "${sid}" has arrivals but no departures`,
+          });
+          continue;
+        }
+        if (dArr && aArr && dArr.length !== aArr.length) {
+          issues.push({
+            prefix,
+            level: 'error',
+            category: 'integrity',
+            message: `timetable[${stopId}][${gi}]: service "${sid}" d.length (${dArr.length}) !== a.length (${aArr.length})`,
           });
         }
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Cross-group d/a length consistency per (patternId, serviceId) (Issue #156)
+  //
+  // For each (patternId, serviceId) pair, all emitted timetable groups
+  // belonging to that pattern must report the same `d[serviceId].length`
+  // and `a[serviceId].length`. WebApp's `buildTripStopTimes` walks a single
+  // tripIndex across emitted groups; if the lengths disagree, that index
+  // becomes ambiguous and reconstructed trips show phantom values.
+  //
+  // Stops in `pattern.stops` that have no emitted timetable group are
+  // intentionally excluded (= "across emitted groups", not "across all
+  // pattern.stops"). ODPT-derived patterns may legitimately list stops in
+  // `pattern.stops` that have no corresponding StationTimetable entry.
+  // ---------------------------------------------------------------------------
+
+  const groupsByPattern = new Map<string, { stopId: string; group: TimetableGroupV2Json }[]>();
+  for (const [stopId, groups] of Object.entries(bundle.timetable.data)) {
+    for (const group of groups) {
+      let arr = groupsByPattern.get(group.tp);
+      if (!arr) {
+        arr = [];
+        groupsByPattern.set(group.tp, arr);
+      }
+      arr.push({ stopId, group });
+    }
+  }
+
+  for (const [patternId, records] of groupsByPattern) {
+    // serviceIds = union of d and a keysets across all groups for this pattern.
+    // Both sides are checked independently; iterating only `d` would miss
+    // a serviceId that appears solely in `a`.
+    const serviceIds = new Set<string>();
+    for (const { group } of records) {
+      for (const sid of Object.keys(group.d)) {
+        serviceIds.add(sid);
+      }
+      for (const sid of Object.keys(group.a)) {
+        serviceIds.add(sid);
+      }
+    }
+
+    for (const sid of serviceIds) {
+      // length -> example labels. Cap example list at 3 entries per length
+      // so that pathological cases produce compact, readable failure reports.
+      //
+      // Each label includes both stopId and si because v2 schema allows
+      // circular / 6-shape patterns where the same stopId appears at
+      // multiple si positions within one pattern (transit-v2-json.ts).
+      // Without si, the report could list `stopA` under both lengths and
+      // become ambiguous.
+      const dByLen = new Map<number, string[]>();
+      const aByLen = new Map<number, string[]>();
+      for (const { stopId, group } of records) {
+        const label = `${stopId}@si=${group.si}`;
+        const dArr = group.d[sid];
+        const aArr = group.a[sid];
+        if (dArr) {
+          recordExample(dByLen, dArr.length, label);
+        }
+        if (aArr) {
+          recordExample(aByLen, aArr.length, label);
+        }
+      }
+      if (dByLen.size > 1) {
+        issues.push({
+          prefix,
+          level: 'error',
+          category: 'integrity',
+          message: `pattern "${patternId}" service "${sid}": d.length differs across emitted groups (${formatLengthExamples(dByLen)})`,
+        });
+      }
+      if (aByLen.size > 1) {
+        issues.push({
+          prefix,
+          level: 'error',
+          category: 'integrity',
+          message: `pattern "${patternId}" service "${sid}": a.length differs across emitted groups (${formatLengthExamples(aByLen)})`,
+        });
       }
     }
   }
@@ -425,4 +528,37 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
     timetableStopCount,
     calendarServices,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Record an example label (e.g. `stopId@si=N`) for a given array length,
+ * capped at 3 entries per length.
+ */
+function recordExample(byLen: Map<number, string[]>, length: number, label: string): void {
+  const examples = byLen.get(length);
+  if (examples) {
+    if (examples.length < 3) {
+      examples.push(label);
+    }
+    return;
+  }
+  byLen.set(length, [label]);
+}
+
+/**
+ * Format a length -> example-labels map as
+ * `"2 (e.g. test:S1@si=0), 3 (e.g. test:S2@si=1, test:S3@si=2)"`.
+ *
+ * Lengths are sorted ascending so the output order is stable across runs
+ * (= same fixture always produces the same string).
+ */
+function formatLengthExamples(byLen: Map<number, string[]>): string {
+  return [...byLen]
+    .sort(([a], [b]) => a - b)
+    .map(([length, labels]) => `${length} (e.g. ${labels.join(', ')})`)
+    .join(', ');
 }
