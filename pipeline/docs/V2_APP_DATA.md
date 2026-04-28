@@ -35,15 +35,16 @@ ODPT JSON → buildStopsV2
 
 ## 実装構成
 
-| ファイル                                                         | 役割                                                  |
-| ---------------------------------------------------------------- | ----------------------------------------------------- |
-| `pipeline/scripts/pipeline/app-data-v2/build-from-gtfs.ts`       | GTFS CLI スクリプト                                   |
-| `pipeline/scripts/pipeline/app-data-v2/build-from-odpt-train.ts` | ODPT Train CLI スクリプト                             |
-| `pipeline/src/lib/pipeline/app-data-v2/gtfs/extract-*.ts`        | GTFS セクション抽出 (8ファイル)                       |
-| `pipeline/src/lib/pipeline/app-data-v2/odpt-common/build-*.ts`   | ODPT 共通セクション (Operator / FeedInfo、2 ファイル) |
-| `pipeline/src/lib/pipeline/app-data-v2/odpt-train/build-*.ts`    | ODPT Train セクション (5 builders + 推論 heuristic)   |
-| `pipeline/src/lib/pipeline/app-data-v2/bundle-writer.ts`         | DataBundle 書き込み                                   |
-| `src/types/data/transit-v2-json.ts`                              | 型定義                                                |
+| ファイル                                                                         | 役割                                                          |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `pipeline/scripts/pipeline/app-data-v2/build-from-gtfs.ts`                       | GTFS CLI スクリプト                                           |
+| `pipeline/scripts/pipeline/app-data-v2/build-from-odpt-train.ts`                 | ODPT Train CLI スクリプト                                     |
+| `pipeline/src/lib/pipeline/app-data-v2/gtfs/extract-*.ts`                        | GTFS セクション抽出 (8ファイル)                               |
+| `pipeline/src/lib/pipeline/app-data-v2/odpt-common/build-*.ts`                   | ODPT 共通セクション (Operator / FeedInfo、2 ファイル)         |
+| `pipeline/src/lib/pipeline/app-data-v2/odpt-train/build-*.ts`                    | ODPT Train builders (5 ファイル)                              |
+| `pipeline/src/lib/pipeline/app-data-v2/odpt-train/infer-odpt-trips-heuristic.ts` | ODPT Train 用 trip-identity 推論 heuristic (Yurikamome-tuned) |
+| `pipeline/src/lib/pipeline/app-data-v2/bundle-writer.ts`                         | DataBundle 書き込み                                           |
+| `src/types/data/transit-v2-json.ts`                                              | 型定義                                                        |
 
 ## Exit Code
 
