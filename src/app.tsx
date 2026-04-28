@@ -503,7 +503,7 @@ export default function App({ loadResult }: AppProps) {
       const headsign = filter.type === 'route-headsign' ? filter.headsign : undefined;
 
       logger.debug(
-        `timetable(${filter.type}) [${settings.infoLevel}]: ${stopId}${filter.type === 'route-headsign' ? ` ${filter.routeId} "${headsign}"` : ''} → entries=${entries.length} omitted.terminal=${omitted.terminal} total=${allEntries.length}`,
+        `timetable(${filter.type}) [${settings.infoLevel}]: ${stopId}${filter.type === 'route-headsign' ? ` ${filter.routeId} "${headsign}"` : ''} → entries=${entries.length} omitted.nonBoardable=${omitted.nonBoardable} total=${allEntries.length}`,
       );
 
       setTimetableModal({

@@ -16,54 +16,56 @@ import { isDropOffOnly } from './timetable-utils';
 /**
  * Filter and compute omitted stats for a stop timetable.
  *
- * When `includeTerminals` is false (simple/normal), terminal entries are
- * removed and their count is reported in `omitted.terminal`.
+ * When `includeNonBoardable` is false (simple/normal), non-boardable
+ * entries (= terminal arrivals and `pickup_type === 1` mid-route stops,
+ * see {@link isDropOffOnly}) are removed and their count is reported in
+ * `omitted.nonBoardable`.
  *
  * @param allEntries - All entries from getFullDayTimetableEntries (unfiltered).
- * @param includeTerminals - true at detailed+, false at simple/normal.
- * @returns Filtered entries and omitted terminal count.
+ * @param includeNonBoardable - true at detailed+, false at simple/normal.
+ * @returns Filtered entries and omitted non-boardable count.
  */
 export function prepareStopTimetable(
   allEntries: TimetableEntry[],
-  includeTerminals: boolean,
+  includeNonBoardable: boolean,
 ): { entries: TimetableEntry[]; omitted: TimetableOmitted } {
-  if (includeTerminals) {
-    return { entries: allEntries, omitted: { terminal: 0 } };
+  if (includeNonBoardable) {
+    return { entries: allEntries, omitted: { nonBoardable: 0 } };
   }
-  const entries = allEntries.filter((e) => !e.patternPosition.isTerminal);
-  return { entries, omitted: { terminal: allEntries.length - entries.length } };
+  const entries = filterBoardable(allEntries);
+  return { entries, omitted: { nonBoardable: allEntries.length - entries.length } };
 }
 
 /**
  * Filter and compute omitted stats for a route+headsign timetable.
  *
  * Unlike {@link prepareStopTimetable}, this first narrows to a specific
- * route+headsign, then applies terminal filtering. The resulting
- * `omitted.terminal` is scoped to that route+headsign — it does not
- * include terminal counts from other routes at the same stop.
+ * route+headsign, then applies the boardability filter. The resulting
+ * `omitted.nonBoardable` is scoped to that route+headsign — it does
+ * not include non-boardable counts from other routes at the same stop.
  *
  * @param allEntries - All entries from getFullDayTimetableEntries (unfiltered).
  * @param routeId - Target route ID.
  * @param headsign - Target headsign.
- * @param includeTerminals - true at detailed+, false at simple/normal.
- * @returns Filtered entries and omitted terminal count for this route+headsign.
+ * @param includeNonBoardable - true at detailed+, false at simple/normal.
+ * @returns Filtered entries and omitted non-boardable count for this route+headsign.
  */
 export function prepareRouteHeadsignTimetable(
   allEntries: TimetableEntry[],
   routeId: string,
   headsign: string,
-  includeTerminals: boolean,
+  includeNonBoardable: boolean,
 ): { entries: TimetableEntry[]; omitted: TimetableOmitted } {
   const routeEntries = allEntries.filter(
     (e) =>
       e.routeDirection.route.route_id === routeId &&
       getEffectiveHeadsign(e.routeDirection) === headsign,
   );
-  if (includeTerminals) {
-    return { entries: routeEntries, omitted: { terminal: 0 } };
+  if (includeNonBoardable) {
+    return { entries: routeEntries, omitted: { nonBoardable: 0 } };
   }
-  const entries = routeEntries.filter((e) => !e.patternPosition.isTerminal);
-  return { entries, omitted: { terminal: routeEntries.length - entries.length } };
+  const entries = filterBoardable(routeEntries);
+  return { entries, omitted: { nonBoardable: routeEntries.length - entries.length } };
 }
 
 /**
