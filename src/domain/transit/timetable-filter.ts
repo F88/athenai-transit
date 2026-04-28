@@ -11,6 +11,7 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
 import type { TimetableOmitted } from '../../types/app/repository';
 import { getEffectiveHeadsign } from './get-effective-headsign';
+import { isDropOffOnly } from './timetable-utils';
 
 /**
  * Filter and compute omitted stats for a stop timetable.
@@ -113,4 +114,14 @@ export function filterByRouteType<T extends TimetableEntry>(
     return entries as T[];
   }
   return entries.filter((e) => !hiddenRouteTypes.has(e.routeDirection.route.route_type));
+}
+
+/**
+ * Filter out drop-off-only entries, returning only boardable stop times.
+ *
+ * Each entry's boardability is determined by {@link isDropOffOnly}
+ * (pickupType === 1 OR isTerminal).
+ */
+export function filterBoardable(entries: TimetableEntry[]): TimetableEntry[] {
+  return entries.filter((entry) => !isDropOffOnly(entry));
 }
