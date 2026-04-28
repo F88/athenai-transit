@@ -257,6 +257,15 @@ function determinismCompare(a: EntryEvent, b: EntryEvent): number {
  * (originStation length-1 normalization per D7), unit grouping with
  * effectiveDestination (D14), per-unit Determinism sort.
  *
+ * Returns `{ unitGroups, diagnostics }` for consistency with the D15
+ * helper contract (every helper that can encounter anomalies returns a
+ * `Diagnostic[]` so the wrapper can decide warn / fallback). For the
+ * currently-supported sources (Yurikamome) all skip paths below are
+ * silent and `diagnostics` is empty; the field is kept so that future
+ * additions of structural anomaly detection (e.g. unmapped station,
+ * malformed entry without time) can emit diagnostics without changing
+ * the helper signature.
+ *
  * @internal
  */
 export function preprocessTimetables(
@@ -264,6 +273,8 @@ export function preprocessTimetables(
   stationToRailways: Map<string, RailwayInfo[]>,
 ): { unitGroups: Map<UnitKey, EntryEvent[]>; diagnostics: OdptDiagnostic[] } {
   const unitGroups = new Map<UnitKey, EntryEvent[]>();
+  // Reserved for future structural-anomaly diagnostics; see function
+  // docstring. Currently always returns empty for supported sources.
   const diagnostics: OdptDiagnostic[] = [];
 
   for (const tt of timetables) {
@@ -271,6 +282,10 @@ export function preprocessTimetables(
     const candidates = stationToRailways.get(station);
     const rw = candidates?.[0];
     if (!rw) {
+      // Station not mapped to any railway. Possible for through-running
+      // entries from outside the source's railway set; silently skipped
+      // here per design (line-internal origin only — Out of scope of
+      // Issue #153). If needed in the future, push a diagnostic here.
       continue;
     }
 
@@ -288,6 +303,12 @@ export function preprocessTimetables(
       const depTimeStr = obj['odpt:departureTime'];
       const arrTimeStr = obj['odpt:arrivalTime'];
       if (!depTimeStr && !arrTimeStr) {
+        // Malformed entry: ODPT spec allows optional fields, but an
+        // entry with neither dep nor arr time has no usable signal and
+        // would break eventTime computation downstream. Silently skipped
+        // for currently-supported sources (Yurikamome has 0 such cases).
+        // If future sources show meaningful counts here, emit a
+        // diagnostic instead of continuing silently.
         continue;
       }
 
