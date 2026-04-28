@@ -38,6 +38,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - `AthenaiRepositoryV2.timetableByPattern` の型を `Map<string, PatternTimetableEntry[]>` に更新し、pattern→stop 列挙の型情報を強化。
 - `TripInspectionDialog` の stop 行レンダリングを 2-stage progressive render に変更。初回フレームは選択行 ±5 のみ描画し、次の `requestAnimationFrame` で全件に展開することで長い trip の first paint を高速化。
 - `TripInspectionDialog` の trip stop row レイアウトを normalize し、不要な fragment 等を整理。
+- Pipeline: ODPT trip-identity inference の Yurikamome-tuned heuristic core を `infer-odpt-trips-heuristic.ts` に切り出し、`build-timetable.ts` を facade (canonical fast path / heuristic / legacy fallback の dispatch、pattern aggregation、stopTimetable enrollment) に整理 (#158, Refs: #153)。
+- Pipeline: `pipeline/src/lib/pipeline/app-data-v2/odpt/` を `odpt-train/` に rename し、TRAIN 型に依存しない builder (`build-agency.ts`、`build-feed-info.ts`) を `odpt-common/` に分離 (#159)。ODPT API spec v4.15 の class 種別 (共通 / 鉄道 / バス / 航空機) と repo-wide の `odpt-train` scope 命名規約に整合。
 
 ### Fixed
 
@@ -49,6 +51,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - `MockRepository` の日本語 headsign 定義が欠落していた問題を修正。
 - `StopTimeTimeInfo` / `StopTimesItem` の trip inspect トリガーボタンに `focus-visible` ring を追加し、キーボード操作時のフォーカス可視性を確保 (a11y)。
 - `TripInspectionDialog` で sparse な trip stop rows (一部停留所の `stopMeta` が欠落するケース) を含む trip でも row レイアウトが崩れないよう修正。
+- Pipeline: ODPT pipeline で mid-pattern origin を持つ trip (例: ゆりかもめ 有明始発便) が full-route trip と同 `TripPattern` に merged され、cross-stop `d_len` 不整合 / `TripInspectionDialog` 上の phantom 時刻が発生する問題を修正 (#158, Refs: #153)。pattern key に origin を追加し `(routeId, direction, origin, destinationStation)` で集約。canonical fast path (`odpt:originStation`) → count-delta + time-matching heuristic → legacy fallback の 3 段で trip 帰属を決定する 2 層推論を導入。
 
 ## [2026.04.23]
 
