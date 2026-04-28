@@ -1,67 +1,25 @@
 /**
- * Tests for build-timetable.ts (ODPT v2).
+ * Tests for build-timetable.ts (ODPT v2 facade).
+ *
+ * Covers the facade-level public surface: `getHeadsignFromDestination`
+ * and the `buildTripPatternsAndTimetableFromOdpt` orchestration on its
+ * basic / regression-guard scenarios.
+ *
+ * Heuristic-specific tests (Issue #153 mid-pattern origin inference,
+ * `effectiveDestination`, `makeUnitKey`) live in
+ * `infer-odpt-trips-heuristic.test.ts`.
  *
  * @vitest-environment node
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type {
-  OdptRailway,
-  OdptStationOrder,
-  OdptStationTimetable,
-} from '../../../../../types/odpt-train';
+import type { OdptStationOrder, OdptStationTimetable } from '../../../../../types/odpt-train';
 import {
   buildTripPatternsAndTimetableFromOdpt,
   getHeadsignFromDestination,
 } from '../build-timetable';
-
-function makeOrder(
-  index: number,
-  station: string,
-  nameJa: string,
-  nameEn: string,
-): OdptStationOrder {
-  return {
-    'odpt:index': index,
-    'odpt:station': station,
-    'odpt:stationTitle': { ja: nameJa, en: nameEn },
-  };
-}
-
-function makeRailway(
-  overrides: Partial<OdptRailway> & Pick<OdptRailway, 'odpt:lineCode' | 'odpt:stationOrder'>,
-): OdptRailway {
-  return {
-    'dc:date': '2025-01-01',
-    'dc:title': 'Test Railway',
-    'odpt:color': '#00B2E5',
-    'odpt:railwayTitle': { ja: 'テスト線', en: 'Test Line' },
-    ...overrides,
-  };
-}
-
-/** Create a timetable with destinationStation on each departure. */
-function makeTimetable(
-  station: string,
-  calendar: string,
-  direction: string,
-  departures: string[],
-  destination?: string,
-): OdptStationTimetable {
-  const stationShort = station.split('.').pop()!;
-  return {
-    'owl:sameAs': `odpt.StationTimetable:Test.${stationShort}.${calendar.split(':')[1]}`,
-    'dct:issued': '2025-04-01',
-    'odpt:station': station,
-    'odpt:calendar': calendar,
-    'odpt:railDirection': direction,
-    'odpt:stationTimetableObject': departures.map((t) => ({
-      'odpt:departureTime': t,
-      ...(destination ? { 'odpt:destinationStation': [destination] } : {}),
-    })),
-  };
-}
+import { makeOrder, makeRailway, makeTimetable } from './__fixtures__/odpt-timetable-fixtures';
 
 // ---------------------------------------------------------------------------
 // getHeadsignFromDestination
@@ -672,5 +630,22 @@ describe('buildTripPatternsAndTimetableFromOdpt', () => {
     );
     expect(tripPatterns).toEqual({});
     expect(timetable).toEqual({});
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Test suite hygiene
+// ---------------------------------------------------------------------------
+
+describe('test suite hygiene', () => {
+  let originalWarn: typeof console.warn;
+  beforeEach(() => {
+    originalWarn = console.warn;
+  });
+  afterEach(() => {
+    console.warn = originalWarn;
+  });
+  it('console.warn restoration sanity', () => {
+    expect(console.warn).toBe(originalWarn);
   });
 });
