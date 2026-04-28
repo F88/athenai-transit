@@ -553,6 +553,36 @@ describe('validateDataBundle', () => {
       ).toBe(true);
     });
 
+    it('reports error when a has service_id but d does not (= symmetric to d-only)', () => {
+      // a[sid] without d[sid] is the same kind of anomaly as the inverse.
+      // Builders always populate d and a together; a single-sided entry
+      // is a regression sign and must be flagged.
+      const bundle = makeValidBundle({
+        timetable: {
+          v: 2,
+          data: {
+            'test:S1': [
+              {
+                v: 2,
+                tp: 'test:P1',
+                si: 0,
+                d: { 'test:SVC1': [480] },
+                a: { 'test:SVC1': [480], 'test:SVC2': [600] },
+              },
+            ],
+          },
+        },
+      });
+      writeBundle('missing-d-sid', bundle);
+
+      const result = validateDataBundle('missing-d-sid', TMP_DIR);
+      expect(
+        result.issues.some(
+          (i) => i.level === 'error' && i.message.includes('has arrivals but no departures'),
+        ),
+      ).toBe(true);
+    });
+
     it('passes when d and a have matching lengths', () => {
       writeBundle('da-ok', makeValidBundle());
 

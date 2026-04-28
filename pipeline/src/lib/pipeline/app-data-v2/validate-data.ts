@@ -12,7 +12,8 @@
  * - Non-empty stops, routes, calendar services
  * - Calendar expiration (warn if earliest end_date <= 30 days)
  * - Referential integrity: timetable → tripPatterns → routes/stops
- * - Timetable d/a array length consistency (per-group)
+ * - Timetable d/a array length consistency (per-group, symmetric: d-only and
+ *   a-only serviceIds are both flagged; length mismatch when both present is flagged)
  * - Cross-group d/a array length consistency per (patternId, serviceId) (Issue #156)
  * - Stop coordinate range (lat: -90..90, lon: -180..180)
  *
@@ -390,11 +391,18 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
         }
       }
 
-      // d/a array length consistency per service_id
-      for (const sid of Object.keys(group.d)) {
-        const dLen = group.d[sid]?.length ?? 0;
+      // d/a array length consistency per service_id.
+      //
+      // Iterate the union of d and a keysets so that a serviceId present in
+      // only one side is also examined. Both directions are anomalies: at
+      // the data semantic level, d[sid][n] and a[sid][n] are positionally
+      // paired (= same trip's same stop), so one without the other indicates
+      // a builder regression rather than a legitimate data shape.
+      const sids = new Set<string>([...Object.keys(group.d), ...Object.keys(group.a)]);
+      for (const sid of sids) {
+        const dArr = group.d[sid];
         const aArr = group.a[sid];
-        if (!aArr) {
+        if (dArr && !aArr) {
           issues.push({
             prefix,
             level: 'error',
@@ -403,12 +411,21 @@ export function validateDataBundle(prefix: string, baseDir: string): DataValidat
           });
           continue;
         }
-        if (dLen !== aArr.length) {
+        if (aArr && !dArr) {
           issues.push({
             prefix,
             level: 'error',
             category: 'integrity',
-            message: `timetable[${stopId}][${gi}]: service "${sid}" d.length (${dLen}) !== a.length (${aArr.length})`,
+            message: `timetable[${stopId}][${gi}]: service "${sid}" has arrivals but no departures`,
+          });
+          continue;
+        }
+        if (dArr && aArr && dArr.length !== aArr.length) {
+          issues.push({
+            prefix,
+            level: 'error',
+            category: 'integrity',
+            message: `timetable[${stopId}][${gi}]: service "${sid}" d.length (${dArr.length}) !== a.length (${aArr.length})`,
           });
         }
       }

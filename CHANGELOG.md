@@ -26,6 +26,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- Pipeline: `validate-data.ts` の per-group d/a presence check を symmetric 化。`d[sid]` / `a[sid]` の片側欠落をいずれの方向でも error として検知 (= 既存は d-only side のみ flag、a-only side は silent だった)。`d` と `a` は同 trip / 同 stop の positional pair なので、片側欠落は builder regression のサイン。現 data には影響なし (= GTFS / ODPT builder は常に両方 populate)。
 - `StopTimeItem` を building block (`StopTimeDetailInfo` / `StopTimeTimeInfo`) に分離し、`TripInspectionDialog` と共通化 (260 行 → 約 100 行 + 子コンポーネント)。
 - `StopTimeItem` の絶対/相対時刻受け渡しを explicit な time props に変更し、caller 側で表示ポリシーを制御可能に。
 - `StopSummary` に display flag 群 (agency / trip count / connectivity 等) を追加し、nearby-stop / marker context で切替可能に。
