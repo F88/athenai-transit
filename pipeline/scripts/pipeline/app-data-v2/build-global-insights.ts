@@ -41,11 +41,11 @@ const OUTPUT_DIR = V2_OUTPUT_DIR;
 const GLOBAL_DIR = join(OUTPUT_DIR, 'global');
 
 /**
- * Service group key for Sunday-pattern services.
+ * Service group key for Sunday-active services.
  *
  * Uses 'ho' (holiday/Sunday) as the cn key. The selection logic picks
- * services where d[6] === 1 (Sunday in weekly calendar patterns);
- * date-based holiday exceptions (calendar_dates) are not considered.
+ * service IDs active on at least one Sunday in the source calendar range,
+ * including calendar_dates exceptions.
  */
 const GROUP_KEY = 'ho';
 
@@ -89,7 +89,7 @@ async function main(): Promise<void> {
   console.log(`=== global-insights [START] ===\n`);
   console.log(`  Targets: ${targetPrefixes.length} sources (${targetPrefixes.join(', ')})`);
   console.log(`  Output:  ${GLOBAL_DIR}/insights.json`);
-  console.log(`  Group:   ${GROUP_KEY} (Sunday-pattern)`);
+  console.log(`  Group:   ${GROUP_KEY} (Sunday-active services)`);
   console.log('');
 
   const t0 = performance.now();

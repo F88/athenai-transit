@@ -40,6 +40,7 @@ const GROUP_KEY = 'ho';
 /** Create a minimal DataBundle with stops, routes, patterns, and timetable. */
 function makeDataBundle(opts: {
   services: { id: string; d: number[] }[];
+  exceptions?: { i: string; d: string; t: 1 | 2 }[];
   stops: { i: string; a: number; o: number; l: number; ps?: string }[];
   patterns?: Record<string, { r: string; stops: { id: string }[] }>;
   timetable?: Record<string, { tp: string; si?: number; d: Record<string, number[]> }[]>;
@@ -84,7 +85,7 @@ function makeDataBundle(opts: {
           s: '20260101',
           e: '20261231',
         })),
-        exceptions: [],
+        exceptions: opts.exceptions ?? [],
       },
     },
     feedInfo: { v: 1, data: { pn: '', pu: '', l: '', s: '', e: '', v: '' } },
@@ -391,5 +392,53 @@ describe('GlobalInsightsBundle assembly', () => {
     // Stop exists but has no Sunday freq → routeFreqs empty → cn empty
     expect(result.stopGeo!.data['s1']).toBeDefined();
     expect(result.stopGeo!.data['s1'].nr).toBe(0);
+  });
+
+  it('keeps cn data for calendar_dates-only Sunday service', () => {
+    const srcDir = join(TMP_DIR, 'sources');
+    const outDir = join(TMP_DIR, 'global');
+
+    const bundle = makeDataBundle({
+      services: [],
+      exceptions: [{ i: 'svc-ex-su', d: '20260104', t: 1 }],
+      stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
+      patterns: { p1: { r: 'r1', stops: [{ id: 's1' }] } },
+      timetable: { s1: [{ tp: 'p1', d: { 'svc-ex-su': [480] } }] },
+    });
+    writeDataBundle(join(srcDir, 'src'), bundle);
+
+    runGlobalInsightsFlow(['src'], srcDir, outDir);
+
+    const result = JSON.parse(
+      readFileSync(join(outDir, 'insights.json'), 'utf-8'),
+    ) as GlobalInsightsBundle;
+    expect(result.stopGeo!.data['s1']).toBeDefined();
+    expect(result.stopGeo!.data['s1'].cn).toEqual({
+      ho: { rc: 1, freq: 1, sc: 0 },
+    });
+  });
+
+  it('keeps cn data for weekday service added on Sunday by exception', () => {
+    const srcDir = join(TMP_DIR, 'sources');
+    const outDir = join(TMP_DIR, 'global');
+
+    const bundle = makeDataBundle({
+      services: [{ id: 'wd', d: [1, 1, 1, 1, 1, 0, 0] }],
+      exceptions: [{ i: 'wd', d: '20260104', t: 1 }],
+      stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
+      patterns: { p1: { r: 'r1', stops: [{ id: 's1' }] } },
+      timetable: { s1: [{ tp: 'p1', d: { wd: [480, 540] } }] },
+    });
+    writeDataBundle(join(srcDir, 'src'), bundle);
+
+    runGlobalInsightsFlow(['src'], srcDir, outDir);
+
+    const result = JSON.parse(
+      readFileSync(join(outDir, 'insights.json'), 'utf-8'),
+    ) as GlobalInsightsBundle;
+    expect(result.stopGeo!.data['s1']).toBeDefined();
+    expect(result.stopGeo!.data['s1'].cn).toEqual({
+      ho: { rc: 1, freq: 2, sc: 0 },
+    });
   });
 });

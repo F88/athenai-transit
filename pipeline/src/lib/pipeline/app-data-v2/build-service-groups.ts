@@ -108,6 +108,43 @@ export function buildServiceGroups(
   return buildGroupsFromPatternMap(patternMap);
 }
 
+/**
+ * Find all service IDs that are active on at least one occurrence of the
+ * given weekday within the calendar date range.
+ *
+ * Weekly calendar bits and calendar_dates exceptions are both considered.
+ * The result is the union across every matching weekday date.
+ *
+ * @param calendar - The `calendar` section from a DataBundle.
+ * @param weekdayIndex - Monday-first weekday index (0=Mon, ..., 6=Sun).
+ * @returns Service IDs active on at least one matching weekday.
+ */
+export function findServicesActiveOnWeekday(
+  calendar: CalendarJson,
+  weekdayIndex: number,
+): Set<string> {
+  const range = getCalendarDateRange(calendar);
+  if (!range) {
+    return new Set();
+  }
+
+  const exceptionsByServiceId = buildExceptionMap(calendar.exceptions);
+  const activeIds = new Set<string>();
+
+  for (let date = range.min; date <= range.max; date = addUtcDays(date, 1)) {
+    if (getMondayFirstDayIndex(date) !== weekdayIndex) {
+      continue;
+    }
+
+    const activeOnDate = computeActiveServiceIds(date, calendar.services, exceptionsByServiceId);
+    for (const serviceId of activeOnDate) {
+      activeIds.add(serviceId);
+    }
+  }
+
+  return activeIds;
+}
+
 function buildGroupsFromPatternMap(patternMap: Map<string, string[]>): ServiceGroupEntry[] {
   if (patternMap.size === 0) {
     return [];
