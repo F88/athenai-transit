@@ -36,13 +36,13 @@ import {
 } from '../../../src/lib/pipeline/pipeline-utils';
 import type { OdptRailway, OdptStation, OdptStationTimetable } from '../../../src/types/odpt-train';
 import { writeDataBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
-import { buildAgencyV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-agency';
-import { buildCalendarV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-calendar';
-import { buildFeedInfoV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-feed-info';
-import { buildRoutesV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-routes';
-import { buildStopsV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-stops';
-import { buildTripPatternsAndTimetableFromOdpt } from '../../../src/lib/pipeline/app-data-v2/odpt/build-timetable';
-import { buildTranslationsV2 } from '../../../src/lib/pipeline/app-data-v2/odpt/build-translations';
+import { buildAgencyV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-common/build-agency';
+import { buildFeedInfoV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-common/build-feed-info';
+import { buildCalendarV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-calendar';
+import { buildRoutesV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-routes';
+import { buildStopsV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-stops';
+import { buildTripPatternsAndTimetableFromOdpt } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-timetable';
+import { buildTranslationsV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-translations';
 
 // ---------------------------------------------------------------------------
 // Paths
