@@ -114,7 +114,9 @@
     },
     "metadata": {
       "count": "{{count}}本",
-      "avgInterval": "平均{{interval}}分間隔"
+      "avgInterval": "平均{{interval}}分間隔",
+      "boardableCount": "乗車可 {{count}}本",
+      "originCount": "始発 {{count}}本"
     },
     "header": {
       "routeHeadsignDescription": "{{stop}}: {{route}} -> {{headsign}} 方面 時刻表 {{count}}本",
@@ -124,7 +126,9 @@
     },
     "filter": {
       "boardableOnly": "🚏 乗車可能",
-      "boardableOnlyTitle": "乗車できる便のみ表示 (終点や乗車不可便を除外)"
+      "boardableOnlyTitle": "乗車できる便のみ表示 (終点や乗車不可便を除外)",
+      "originOnly": "🚩 始発",
+      "originOnlyTitle": "ここを始発とする便のみ表示 (出庫便など乗車不可な始発も含む)"
     }
   },
   "panel": {

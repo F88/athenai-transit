@@ -4,6 +4,8 @@ import { PillButton } from '../button/pill-button';
 interface TimetableBoardabilityFilterProps {
   boardable: boolean;
   onToggleBoardable: () => void;
+  /** Number of boardable entries (= count to display on the pill). */
+  count?: number;
 }
 
 /**
@@ -15,12 +17,18 @@ interface TimetableBoardabilityFilterProps {
  * this filter; if added in the future, expose them as a separate filter
  * component to keep dimensions distinct.
  *
+ * The `count` is owned by the caller so the same predicate is not
+ * computed twice (= once for filter, once for count). Caller decides
+ * which scope the count reflects (= total at stop, post-other-filters,
+ * etc.).
+ *
  * @param props - Filter rendering inputs.
  * @returns The rendered filter toggle.
  */
 export function TimetableBoardabilityFilter({
   boardable,
   onToggleBoardable,
+  count,
 }: TimetableBoardabilityFilterProps) {
   const { t } = useTranslation();
 
@@ -31,6 +39,7 @@ export function TimetableBoardabilityFilter({
         active={boardable}
         onClick={onToggleBoardable}
         title={t('timetable.filter.boardableOnlyTitle')}
+        count={count}
       >
         {t('timetable.filter.boardableOnly')}
       </PillButton>

@@ -9,6 +9,10 @@ interface TimetableMetadataProps {
   timetableEntries: TimetableEntry[];
   dataLang: readonly string[];
   agencies: Agency[];
+  /** Number of boardable entries (= computed by caller for shared scope). */
+  boardableCount: number;
+  /** Number of origin entries (= computed by caller for shared scope). */
+  originCount: number;
 }
 
 function formatMinutes(minutes: number): string {
@@ -36,6 +40,8 @@ export function TimetableMetadata({
   timetableEntries,
   dataLang,
   agencies,
+  boardableCount,
+  originCount,
 }: TimetableMetadataProps) {
   const { t, i18n } = useTranslation();
   const allMinutes = timetableEntries.map((entry) => getDisplayMinutes(entry));
@@ -81,6 +87,20 @@ export function TimetableMetadata({
             })}
           </span>
         )}
+        <span>
+          {' '}
+          /{' '}
+          {t('timetable.metadata.boardableCount', {
+            count: boardableCount.toLocaleString(i18n.language),
+          })}
+        </span>
+        <span>
+          {' '}
+          /{' '}
+          {t('timetable.metadata.originCount', {
+            count: originCount.toLocaleString(i18n.language),
+          })}
+        </span>
       </p>
 
       {/* Routes with their counts.

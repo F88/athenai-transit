@@ -127,3 +127,21 @@ export function filterByRouteType<T extends TimetableEntry>(
 export function filterBoardable(entries: TimetableEntry[]): TimetableEntry[] {
   return entries.filter((entry) => !isDropOffOnly(entry));
 }
+
+/**
+ * Filter to entries where this stop is the trip's origin (= 始発).
+ *
+ * Keeps every entry with `entry.patternPosition.isOrigin === true`,
+ * including ones that are also non-boardable (= the bus departs from a
+ * depot or yard with `pickup_type === 1` / `drop_off_type === 1`). Those
+ * entries are visually distinguished by `乗×` / `降×` markers in the
+ * grid, so hiding them at the filter layer would suppress legitimate
+ * GTFS-described "起点運用" data the viewer is meant to surface.
+ *
+ * Callers that want only boardable origins should compose this with
+ * {@link filterBoardable} (= apply both filters) rather than baking a
+ * combined predicate into a single function.
+ */
+export function filterOrigin(entries: TimetableEntry[]): TimetableEntry[] {
+  return entries.filter((entry) => entry.patternPosition.isOrigin);
+}

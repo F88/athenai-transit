@@ -114,7 +114,9 @@
     },
     "metadata": {
       "count": "{{count}} trips",
-      "avgInterval": "avg. {{interval}} min interval"
+      "avgInterval": "avg. {{interval}} min interval",
+      "boardableCount": "{{count}} boardable",
+      "originCount": "{{count}} origin"
     },
     "header": {
       "routeHeadsignDescription": "Timetable at {{stop}}: {{route}} -> {{headsign}} ({{count}})",
@@ -123,8 +125,10 @@
       "noDestination": "Some routes have no destination"
     },
     "filter": {
-      "boardableOnly": "🚏 Boardable only",
-      "boardableOnlyTitle": "Show only boardable trips (exclude terminals and pickup-unavailable)"
+      "boardableOnly": "🚏 Boardable",
+      "boardableOnlyTitle": "Show only boardable trips (exclude terminals and pickup-unavailable)",
+      "originOnly": "🚩 Origin",
+      "originOnlyTitle": "Show only trips originating at this stop (includes non-boardable origins like depot departures)"
     }
   },
   "panel": {

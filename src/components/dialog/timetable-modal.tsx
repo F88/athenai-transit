@@ -5,11 +5,12 @@ import { TimetableHeader } from '../timetable/timetable-header';
 import { TimetableMetadata } from '../timetable/timetable-metadata';
 import { TimetableHeadsignFilter } from '../timetable/timetable-headsign-filter';
 import { TimetableBoardabilityFilter } from '../timetable/timetable-boardability-filter';
+import { TimetableOriginFilter } from '../timetable/timetable-origin-filter';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
-import { filterBoardable } from '@/domain/transit/timetable-filter';
+import { filterBoardable, filterOrigin } from '@/domain/transit/timetable-filter';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { useScrollFades } from '@/hooks/use-scroll-fades';
 import type { InfoLevel } from '@/types/app/settings';
@@ -86,6 +87,10 @@ export function TimetableModal({
   // When ON, applies filterBoardable on top of any other active filters.
   const [showBoardableOnly, setShowBoardableOnly] = useState(false);
 
+  // Origin-only filter toggle (= 始発のみ). OFF by default.
+  // When ON, applies filterOrigin on top of any other active filters.
+  const [showOriginOnly, setShowOriginOnly] = useState(false);
+
   const toggleFilter = useCallback((key: string) => {
     setActiveFilters((prev) => {
       const next = new Set(prev);
@@ -100,6 +105,10 @@ export function TimetableModal({
 
   const toggleBoardableOnly = useCallback(() => {
     setShowBoardableOnly((prev) => !prev);
+  }, []);
+
+  const toggleOriginOnly = useCallback(() => {
+    setShowOriginOnly((prev) => !prev);
   }, []);
 
   // Both timetable types now use TimetableEntry[] directly.
@@ -121,13 +130,30 @@ export function TimetableModal({
         activeFilters.has(getRouteHeadsignKey(entry.routeDirection)),
       );
     }
-    // Boardable-only filter (both types). Applied last so that the
-    // route+headsign filter narrows the candidate set first.
+    // Origin-only filter (both types). Applied before boardability so
+    // the boardability check operates on origin entries when both are on.
+    if (showOriginOnly) {
+      entries = filterOrigin(entries);
+    }
+    // Boardable-only filter (both types). Applied last; combined with
+    // origin-only this yields "boardable origins only" (= intersection).
     if (showBoardableOnly) {
       entries = filterBoardable(entries);
     }
     return entries;
-  }, [data, allTimetableEntries, activeFilters, showBoardableOnly]);
+  }, [data, allTimetableEntries, activeFilters, showOriginOnly, showBoardableOnly]);
+
+  // Counts shown on each filter pill. Computed against the unfiltered
+  // entries so the count is stable regardless of other filter state
+  // (= "total entries matching this dimension at this stop").
+  const boardableCount = useMemo(
+    () => filterBoardable(allTimetableEntries).length,
+    [allTimetableEntries],
+  );
+  const originCount = useMemo(
+    () => filterOrigin(allTimetableEntries).length,
+    [allTimetableEntries],
+  );
 
   const descriptionHeadsign = useMemo(() => {
     if (!data?.headsign || data.type !== 'route-headsign') {
@@ -254,13 +280,24 @@ export function TimetableModal({
                 timetableEntries={filteredTimetableEntries}
                 dataLang={dataLangs}
                 agencies={data.agencies}
+                boardableCount={boardableCount}
+                originCount={originCount}
               />
             )}
 
             <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLangs[0]} />
+            {/* Origin filter (始発のみ) — hidden when no origin entries exist at this stop */}
+            {/* {originCount > 0 && ( */}
+            <TimetableOriginFilter
+              origin={showOriginOnly}
+              onToggleOrigin={toggleOriginOnly}
+              count={originCount}
+            />
+            {/* )} */}
             {/* Boardability filter */}
             <TimetableBoardabilityFilter
               boardable={showBoardableOnly}
+              count={boardableCount}
               onToggleBoardable={toggleBoardableOnly}
             />
             {/* Headsign filter */}
