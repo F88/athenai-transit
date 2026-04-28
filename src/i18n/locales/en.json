@@ -115,8 +115,18 @@
     "metadata": {
       "count": "{{count}} trips",
       "avgInterval": "avg. {{interval}} min interval",
+      "originCount": "{{count}} origin",
+      "terminalCount": "{{count}} terminal",
+      "passingCount": "{{count}} passing",
       "boardableCount": "{{count}} boardable",
-      "originCount": "{{count}} origin"
+      "nonBoardableCount": "{{count}} non-boardable",
+      "dropOffOnlyCount": "{{count}} drop-off only",
+      "noDropOffCount": "{{count}} no drop-off",
+      "routeCount": "{{count}} routes",
+      "headsignCount": "{{count}} headsigns",
+      "routeHeadsignCount": "{{count}} route×headsign",
+      "stopHeadsignOverrideCount": "{{count}} stop_headsign override",
+      "directionCount": "{{count}} directions"
     },
     "header": {
       "routeHeadsignDescription": "Timetable at {{stop}}: {{route}} -> {{headsign}} ({{count}})",

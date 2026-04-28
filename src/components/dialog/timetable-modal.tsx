@@ -11,6 +11,8 @@ import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direc
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
 import { filterBoardable, filterOrigin } from '@/domain/transit/timetable-filter';
+import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
+import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { useScrollFades } from '@/hooks/use-scroll-fades';
 import type { InfoLevel } from '@/types/app/settings';
@@ -62,6 +64,82 @@ interface TimetableModalProps {
   dataLangs: readonly string[];
   onInspectTrip?: (target: TripInspectionTarget) => void;
   onClose: () => void;
+}
+
+interface EntriesPanelProps {
+  timetableEntries: TimetableEntry[];
+  entryStats: TimetableEntryStats;
+  type: TimetableData['type'];
+  agencies: Agency[];
+  dataLangs: readonly string[];
+  filteredCount: number;
+  activeFilters: Set<string>;
+  onToggleFilter: (key: string) => void;
+  showOriginOnly: boolean;
+  onToggleOriginOnly: () => void;
+  showBoardableOnly: boolean;
+  onToggleBoardableOnly: () => void;
+}
+
+/**
+ * The "all entries" overview block: stats summary for the unfiltered
+ * entry set plus the filter toggles that operate on it (headsign /
+ * origin-only / boardability).
+ */
+function EntriesPanel({
+  timetableEntries,
+  entryStats,
+  type,
+  dataLangs,
+  agencies,
+  filteredCount,
+  activeFilters,
+  onToggleFilter,
+  showOriginOnly,
+  onToggleOriginOnly,
+  showBoardableOnly,
+  onToggleBoardableOnly,
+}: EntriesPanelProps) {
+  return (
+    <>
+      {filteredCount > 0 && (
+        <TimetableMetadata
+          timetableEntries={timetableEntries}
+          dataLang={dataLangs}
+          agencies={agencies}
+          stats={entryStats}
+        />
+      )}
+
+      {/* Origin filter (始発のみ) — hidden when no origin entries exist at this stop */}
+      {/* {originCount > 0 && ( */}
+      <TimetableOriginFilter
+        origin={showOriginOnly}
+        onToggleOrigin={onToggleOriginOnly}
+        count={entryStats.originCount}
+      />
+      {/* )} */}
+      {/* Boardability filter */}
+      <TimetableBoardabilityFilter
+        boardable={showBoardableOnly}
+        count={entryStats.boardableCount}
+        onToggleBoardable={onToggleBoardableOnly}
+      />
+
+      {/* Headsign filter */}
+      {type === 'stop' && (
+        <>
+          <TimetableHeadsignFilter
+            timetableEntries={timetableEntries}
+            activeFilters={activeFilters}
+            onToggleFilter={onToggleFilter}
+            dataLang={dataLangs}
+            agencies={agencies}
+          />
+        </>
+      )}
+    </>
+  );
 }
 
 export function TimetableModal({
@@ -143,17 +221,11 @@ export function TimetableModal({
     return entries;
   }, [data, allTimetableEntries, activeFilters, showOriginOnly, showBoardableOnly]);
 
-  // Counts shown on each filter pill. Computed against the unfiltered
-  // entries so the count is stable regardless of other filter state
-  // (= "total entries matching this dimension at this stop").
-  const boardableCount = useMemo(
-    () => filterBoardable(allTimetableEntries).length,
-    [allTimetableEntries],
-  );
-  const originCount = useMemo(
-    () => filterOrigin(allTimetableEntries).length,
-    [allTimetableEntries],
-  );
+  // Aggregated stats. `allEntriesStats` is the stable count for filter
+  // pills and the "all data" metadata block; `filteredEntriesStats`
+  // reflects the currently-displayed entries.
+  const allEntriesStats = computeTimetableEntryStats(allTimetableEntries);
+  const filteredEntriesStats = computeTimetableEntryStats(filteredTimetableEntries);
 
   const descriptionHeadsign = useMemo(() => {
     if (!data?.headsign || data.type !== 'route-headsign') {
@@ -275,40 +347,55 @@ export function TimetableModal({
               dataLangs={dataLangs}
             />
 
-            {info.isDetailedEnabled && filteredTimetableEntries.length > 0 && (
-              <TimetableMetadata
-                timetableEntries={filteredTimetableEntries}
-                dataLang={dataLangs}
+            {/* All entries */}
+            {info.isVerboseEnabled && (
+              <EntriesPanel
+                timetableEntries={allTimetableEntries}
+                type={data.type}
+                entryStats={allEntriesStats}
                 agencies={data.agencies}
-                boardableCount={boardableCount}
-                originCount={originCount}
+                dataLangs={dataLangs}
+                filteredCount={allTimetableEntries.length}
+                activeFilters={activeFilters}
+                onToggleFilter={toggleFilter}
+                showOriginOnly={showOriginOnly}
+                onToggleOriginOnly={toggleOriginOnly}
+                showBoardableOnly={showBoardableOnly}
+                onToggleBoardableOnly={toggleBoardableOnly}
+              />
+            )}
+
+            {/* Filtered entries */}
+            {info.isDetailedEnabled && (
+              <EntriesPanel
+                timetableEntries={filteredTimetableEntries}
+                type={data.type}
+                entryStats={filteredEntriesStats}
+                agencies={data.agencies}
+                dataLangs={dataLangs}
+                filteredCount={filteredTimetableEntries.length}
+                activeFilters={activeFilters}
+                onToggleFilter={toggleFilter}
+                showOriginOnly={showOriginOnly}
+                onToggleOriginOnly={toggleOriginOnly}
+                showBoardableOnly={showBoardableOnly}
+                onToggleBoardableOnly={toggleBoardableOnly}
               />
             )}
 
             <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLangs[0]} />
-            {/* Origin filter (始発のみ) — hidden when no origin entries exist at this stop */}
-            {/* {originCount > 0 && ( */}
-            <TimetableOriginFilter
-              origin={showOriginOnly}
-              onToggleOrigin={toggleOriginOnly}
-              count={originCount}
-            />
-            {/* )} */}
-            {/* Boardability filter */}
-            <TimetableBoardabilityFilter
-              boardable={showBoardableOnly}
-              count={boardableCount}
-              onToggleBoardable={toggleBoardableOnly}
-            />
+
             {/* Headsign filter */}
             {data.type === 'stop' && (
-              <TimetableHeadsignFilter
-                timetableEntries={data.timetableEntries}
-                activeFilters={activeFilters}
-                onToggleFilter={toggleFilter}
-                dataLang={dataLangs}
-                agencies={data.agencies}
-              />
+              <>
+                <TimetableHeadsignFilter
+                  timetableEntries={filteredTimetableEntries}
+                  activeFilters={activeFilters}
+                  onToggleFilter={toggleFilter}
+                  dataLang={dataLangs}
+                  agencies={data.agencies}
+                />
+              </>
             )}
             {/* Unknown destination warning */}
             {((data.type === 'route-headsign' && data.headsign === '') ||

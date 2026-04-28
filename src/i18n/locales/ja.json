@@ -115,8 +115,18 @@
     "metadata": {
       "count": "{{count}}本",
       "avgInterval": "平均{{interval}}分間隔",
+      "originCount": "始発 {{count}}本",
+      "terminalCount": "終点 {{count}}本",
+      "passingCount": "途中 {{count}}本",
       "boardableCount": "乗車可 {{count}}本",
-      "originCount": "始発 {{count}}本"
+      "nonBoardableCount": "乗車不可 {{count}}本",
+      "dropOffOnlyCount": "降車専用 {{count}}本",
+      "noDropOffCount": "降車不可 {{count}}本",
+      "routeCount": "路線 {{count}}",
+      "headsignCount": "行先 {{count}}",
+      "routeHeadsignCount": "路線×行先 {{count}}",
+      "stopHeadsignOverrideCount": "stopHeadsign指定 {{count}}本",
+      "directionCount": "direction {{count}}"
     },
     "header": {
       "routeHeadsignDescription": "{{stop}}: {{route}} -> {{headsign}} 方面 時刻表 {{count}}本",
