@@ -97,7 +97,8 @@ export interface EntryEvent {
 export type UnitKey = string;
 
 /**
- * Trip object produced by inference (Step 2 / D15) or canonical fast path (D2/D7).
+ * Trip object produced by inference (Step 2 / D15), canonical fast path
+ * (D2/D7), or legacy fallback (D3/D16/D1).
  *
  * @internal
  */
@@ -107,7 +108,25 @@ export interface Trip {
   /** Raw destination URI (used to derive effective destination for pattern key). */
   destination: string;
   calendar: string;
-  /** Per-station entries in trip-direction order; one entry per station observed. */
+  /**
+   * Observed timetable entries associated with this trip.
+   *
+   * Semantics depend on the producer:
+   * - `inferTripsForDestination` (Step 2): one entry per station observed,
+   *   sequenced in trip-direction order (Toyosu→...→Shimbashi for Inbound,
+   *   etc.). Reflects a single physical trip's per-station progression.
+   * - `buildCanonicalTrips` (D2/D7 fast path): all entries belonging to one
+   *   `originStation` group from the unit; may contain multiple entries per
+   *   station, and order follows the Determinism sort (eventTime asc), not
+   *   trip-direction.
+   * - `buildLegacyTrips` (D3/D16/D1 fallback): all entries from the unit
+   *   (multiple per station), Determinism-sorted, treated as a single
+   *   collective trip with origin = line-start.
+   *
+   * Phase 2(b) enrollment iterates `entries` and writes each to its
+   * station's stopTimetable, so multi-entry-per-station is structurally
+   * compatible across all producers.
+   */
   entries: EntryEvent[];
 }
 
@@ -1082,8 +1101,12 @@ export function buildTripPatternsAndTimetableFromOdpt(
 /**
  * Build trips from the canonical fast path (D2/D7): every entry has
  * `originStation` populated with a single value. Trips are formed by
- * grouping entries by `originStation`, then ordering within each group
- * by trip-direction station walk.
+ * grouping entries by `originStation`. Within each group, entries
+ * keep the existing Determinism sort (eventTime ascending) established
+ * by `preprocessTimetables`; this helper does not reorder them by
+ * trip-direction station walk and does not split same-origin entries
+ * into separate per-trip arrays (canonical signal alone does not carry
+ * trip identity — see body comment).
  */
 function buildCanonicalTrips(
   unitEntries: EntryEvent[],

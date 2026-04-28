@@ -822,6 +822,13 @@ function buildAriakeStyleFixture(): {
 }
 
 describe('Issue #153: mid-pattern origin inference (Plan Tests #1-#19)', () => {
+  // Guarantee spy cleanup even if a test body throws before its inline
+  // mockRestore() — without this, a leaked spy on console.warn / log /
+  // info / debug can pollute later tests' output assertions.
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   // ---- Algorithm core (#1-#6) ----
 
   it('#1: mid-pattern-origin produces a separate pattern', () => {
