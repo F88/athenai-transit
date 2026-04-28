@@ -488,12 +488,16 @@ export function estimateTravelTimes(
 
     // Greedy 1:1 nearest-neighbor matching by eventTime.
     // Both arrays are Determinism-sorted; we walk them together.
+    //
+    // Skip downstream entries whose eventTime <= upstream eventTime (= no
+    // time progression). This keeps the median calculation consistent
+    // with the asymmetric travel-time guard in inferTripsForDestination,
+    // which rejects zero-or-negative travel as physically impossible.
+    // Including 0-min pairs in the median would be self-inconsistent.
     const diffs: number[] = [];
     let toIdx = 0;
     for (const fe of fromEntries) {
-      // Advance toIdx to the next downstream entry not yet matched.
-      // Skip downstream entries whose eventTime < upstream eventTime.
-      while (toIdx < toEntries.length && toEntries[toIdx].eventTime < fe.eventTime) {
+      while (toIdx < toEntries.length && toEntries[toIdx].eventTime <= fe.eventTime) {
         toIdx++;
       }
       if (toIdx >= toEntries.length) {
