@@ -174,10 +174,15 @@ function TripEndpointsSummary({
 }: TripEndpointsSummaryProps) {
   // Override Button's inherent fixed height / horizontal padding so the
   // wrapped SimpleStopSummary controls sizing, while keeping the design
-  // system's focus ring, hover accent, and disabled handling.
-  const buttonClassName = 'block h-auto w-full cursor-pointer p-0';
+  // system's focus ring, hover accent, and disabled handling. `min-w-0`
+  // lets the button shrink below its intrinsic content width so the inner
+  // truncate utility can ellipsize long stop names.
+  const buttonClassName = 'block h-auto w-full min-w-0 cursor-pointer p-0';
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 select-none">
+    // `minmax(0,1fr)` (instead of plain `1fr`) lets the side tracks shrink
+    // below their content's min-content width, which is required for the
+    // truncate utility inside the buttons to ellipsize long stop names.
+    <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-2 select-none">
       {/* First Stop Button */}
       <Button
         variant="ghost"
