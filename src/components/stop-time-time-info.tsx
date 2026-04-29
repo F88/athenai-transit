@@ -31,6 +31,9 @@ export interface StopTimeTimeTextAppearance {
   className?: string;
 }
 
+/** Horizontal alignment of rendered time text and verbose badges. */
+export type StopTimeTimeInfoAlign = 'left' | 'center' | 'right';
+
 export interface StopTimeTimeInfoProps extends WithServiceDate {
   /** Arrival minutes from midnight of the service day. */
   arrivalMinutes: number;
@@ -40,6 +43,8 @@ export interface StopTimeTimeInfoProps extends WithServiceDate {
   now: Date;
   /** Visual size preset for rendered time text. */
   size: StopTimeTimeTextSize;
+  /** Horizontal alignment for the time text and verbose badges. @default 'right' */
+  align?: StopTimeTimeInfoAlign;
   /** Optional appearance overrides for rendered time text. */
   textAppearance?: StopTimeTimeTextAppearance;
   /** Whether to render the arrival absolute time. */
@@ -64,6 +69,7 @@ export function StopTimeTimeInfo({
   serviceDate,
   now,
   size,
+  align = 'right',
   textAppearance,
   showArrivalTime,
   showDepartureTime,
@@ -86,8 +92,12 @@ export function StopTimeTimeInfo({
   const shouldShowDepartureMarker = shouldShowArrivalAbsolute && shouldShowDepartureAbsolute;
   const timeSize: ExtendedDisplaySize = size;
 
-  const rootClassName =
-    'flex min-h-8 w-14 shrink-0 flex-col justify-center text-right leading-none';
+  const textAlignClassName =
+    align === 'left' ? 'text-left' : align === 'center' ? 'text-center' : 'text-right';
+  const rootClassName = cn(
+    'flex min-h-8 w-14 shrink-0 flex-col justify-center leading-none',
+    textAlignClassName,
+  );
   const timeTextClassName = cn(
     textAppearance?.weight === 'normal' ? 'font-normal' : 'font-bold',
     textAppearance?.className,
@@ -131,6 +141,7 @@ export function StopTimeTimeInfo({
           time={time}
           now={now}
           size={timeSize}
+          align={align}
           showPastTime={true}
           hidePrefix={diffMs > 90 * 60 * 1000}
           className={timeTextClassName}

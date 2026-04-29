@@ -213,7 +213,7 @@ export function TripPositionIndicator({
         <BaseLabel
           size={'xs'}
           value={`${stopIndex + 1} / ${safeTotalStops}`}
-          className="shrink-0 bg-gray-500 whitespace-nowrap text-white"
+          className="shrink-0 bg-gray-500 px-1 whitespace-nowrap text-white"
           style={positionLabelStyle}
         />
       )}

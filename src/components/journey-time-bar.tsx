@@ -259,7 +259,7 @@ export function JourneyTimeBar({
     <BaseLabel
       size={labelSize}
       value={labelText}
-      className={`whitespace-nowrap ${minsTextColor ? '' : 'text-white'} ${minsBgColor ? '' : 'bg-gray-500'}`}
+      className={`px-1 whitespace-nowrap ${minsTextColor ? '' : 'text-white'} ${minsBgColor ? '' : 'bg-gray-500'}`}
       style={{
         ...(minsBgColor ? { backgroundColor: minsBgColor } : {}),
         ...(minsTextColor ? { color: minsTextColor } : {}),

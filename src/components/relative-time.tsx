@@ -14,6 +14,9 @@ const variants = {
   xl: { number: 'text-2xl', label: 'text-sm', imminent: 'text-base' },
 } as const;
 
+/** Horizontal alignment of the rendered relative-time content. */
+export type RelativeTimeAlign = 'left' | 'center' | 'right';
+
 interface RelativeTimeProps {
   /** Departure (or arrival) time. */
   time: Date;
@@ -21,6 +24,8 @@ interface RelativeTimeProps {
   now: Date;
   /** Size variant. @default 'md' */
   size?: ExtendedDisplaySize;
+  /** Horizontal alignment of the rendered content. @default 'right' */
+  align?: RelativeTimeAlign;
   /** Whether past times should still be rendered as negative minutes. */
   showPastTime?: boolean;
   /** Hide the localized prefix (e.g. "あと" in ja) to save horizontal space. */
@@ -63,6 +68,7 @@ export function RelativeTime({
   time,
   now,
   size = 'md',
+  align = 'right',
   showPastTime = false,
   hidePrefix = false,
   className,
@@ -77,9 +83,16 @@ export function RelativeTime({
     return null;
   }
 
+  const justifyClassName =
+    align === 'left' ? 'justify-start' : align === 'center' ? 'justify-center' : 'justify-end';
+
   return (
     <span
-      className={cn('flex flex-wrap items-baseline justify-end leading-none font-bold', className)}
+      className={cn(
+        'flex flex-wrap items-baseline leading-none font-bold',
+        justifyClassName,
+        className,
+      )}
       style={{ color: style.color, opacity: style.opacity }}
     >
       {display.kind === 'imminent' ? (
