@@ -178,6 +178,7 @@ function TripEndpointsSummary({
   const buttonClassName = 'block h-auto w-full cursor-pointer p-0';
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 select-none">
+      {/* First Stop Button */}
       <Button
         variant="ghost"
         onClick={onSelectFirst}
@@ -192,12 +193,14 @@ function TripEndpointsSummary({
           showDepartureTime
         />
       </Button>
+      {/* Divider */}
       <div className="flex items-center justify-center">
         <span
           aria-hidden="true"
           className="border-l-muted-foreground h-0 w-0 border-y-[6px] border-l-10 border-y-transparent"
         />
       </div>
+      {/* Last Stop Button */}
       <Button
         variant="ghost"
         onClick={onSelectLast}
