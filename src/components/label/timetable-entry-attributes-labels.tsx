@@ -43,14 +43,14 @@ export function TimetableEntryAttributesLabels({
         <BaseLabel
           size={size}
           value={t('timetable.entry.origin')}
-          className="bg-blue-500 text-white"
+          className="border-foreground/30 border bg-blue-500 text-white"
         />
       )}
       {showTerminal && (
         <BaseLabel
           size={size}
           value={t('timetable.entry.terminal')}
-          className="bg-gray-500 text-white"
+          className="border-foreground/30 border bg-gray-500 text-white"
         />
       )}
       {showPickupUnavailable && (

@@ -98,11 +98,10 @@ export function StopSummary({
   );
 
   const idRowClass = 'mb-1 flex gap-1';
-  const subNameClass = 'm-0 mb-0.5 text-xs font-normal text-[#888] dark:text-gray-400';
-  const mainRowClass =
-    'm-0 flex flex-wrap items-center gap-1 text-xl font-semibold text-[#1565c0] dark:text-blue-400';
+  const mainRowClass = 'm-0 flex flex-wrap items-center gap-1 text-xl font-semibold';
   const routeTypeClass = 'mr-1';
-  const nameClass = undefined;
+  const stopNameClass = 'text-info';
+  const stopSubNamesClass = 'm-0 mb-0.5 text-xs font-normal text-[#888] dark:text-gray-400';
   const platformCodeClass =
     'shrink-0 rounded border border-amber-400 bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-600 dark:bg-amber-900 dark:text-amber-300';
   const accessibilityClass =
@@ -120,14 +119,23 @@ export function StopSummary({
           {stop.parent_station && <IdBadge>p:{stop.parent_station}</IdBadge>}
         </div>
       )}
+
+      {/* Stop sub names */}
       {info.isNormalEnabled && stopNames.subNames.length > 0 && (
-        <p className={subNameClass}>{stopNames.subNames.join(' / ')}</p>
+        <p className={stopSubNamesClass}>{stopNames.subNames.join(' / ')}</p>
       )}
+
       <div className={mainRowClass}>
+        {/* Route types */}
         {showRouteTypes && <span className={routeTypeClass}>{routeTypesEmoji(routeTypes)}</span>}
-        <span className={nameClass}>{stopNames.name}</span>
+        {/* Stop name */}
+        <span className={stopNameClass}>{stopNames.name}</span>
+        {/* <span>{stopNames.name}</span> */}
+        {/* Platform code */}
         {stop.platform_code && <span className={platformCodeClass}>{stop.platform_code}</span>}
+        {/* Distance badge */}
         {distanceBadge}
+        {/* Accessibility */}
         {stop.wheelchair_boarding === 1 && (
           <span
             className={accessibilityClass}

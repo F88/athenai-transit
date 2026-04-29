@@ -62,7 +62,9 @@ export function BottomSheetHeader({
         nearbyRadius={dataConfig.stops.nearbyRadius}
         showOperatingStopsOnly={showOperatingStopsOnly}
       />
+
       <div className="no-scrollbar mt-1.5 flex gap-1 overflow-x-auto">
+        {/* Views */}
         {STOP_TIMES_VIEWS.filter((v) => v.visible).map((view) => (
           <PillButton
             key={view.id}
@@ -77,13 +79,15 @@ export function BottomSheetHeader({
           </PillButton>
         ))}
       </div>
+      {/* Filters */}
       <div className="no-scrollbar mt-1 flex gap-1 overflow-x-auto">
+        {/* Operating stops filter */}
         <PillButton
           size={'sm'}
           active={showOperatingStopsOnly}
-          activeBg={'#1565c0'}
-          activeBorder={'#1565c0'}
-          inactiveBorder={'#1565c0'}
+          activeBg={'var(--info)'}
+          activeBorder={'var(--info)'}
+          inactiveBorder={'var(--info)'}
           onClick={onToggleShowOperatingStopsOnly}
           title={t('nearbyStops.showOperatingStopsOnlyTitle')}
           count={counts.active}

@@ -96,7 +96,7 @@ export function PillButton({
         active
           ? activeBg
             ? 'text-white'
-            : 'bg-[#1565c0] text-white dark:bg-blue-600'
+            : 'bg-info text-info-foreground'
           : disabled
             ? 'cursor-not-allowed bg-[#f0f0f0] text-[#bbb] dark:bg-gray-800 dark:text-gray-600'
             : 'bg-[#e8eaf0] text-[#555] active:bg-[#d0d3da] dark:bg-gray-700 dark:text-gray-300',
@@ -108,6 +108,7 @@ export function PillButton({
       title={title}
     >
       {children}
+      {/* Count badge  */}
       {count != null && (
         <span
           className="ml-1 inline-flex min-h-[1.4em] min-w-[1.4em] items-center justify-center rounded-full px-1 text-[0.85em] leading-none font-bold"
@@ -115,9 +116,9 @@ export function PillButton({
             disabled
               ? { background: '#bbb', color: '#f0f0f0' }
               : active
-                ? { background: activeFg ?? 'white', color: activeBg ?? '#1565c0' }
+                ? { background: activeFg ?? 'white', color: activeBg ?? 'var(--info)' }
                 : {
-                    background: activeBg ?? inactiveBorder ?? '#1565c0',
+                    background: activeBg ?? inactiveBorder ?? 'var(--info)',
                     color: activeFg ?? 'white',
                   }
           }

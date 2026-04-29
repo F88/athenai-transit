@@ -32,6 +32,9 @@ and this project adheres to [CalVer](https://calver.org/).
 - `LabelCountBadge` に共通 class variants を追加 (`src/components/badge/label-count-badge.tsx`)。filter pill / metadata のカウント表示を統一。
 - i18n: TimetableModal の boardable-only / origin-only filter ラベルを en / ja に追加。
 - `isDropOffOnly` のエッジケーステストを追加 (terminal arrival / mid-route `pickup_type === 1` / boarding-allowed)。
+- `info` セマンティック theme color token を追加 (`--info` / `--info-foreground`、`src/index.css`) (#164)。Material Blue 800 (`#1565c0`、`TimetableBoardabilityFilter` の active pill と同色) を anchor とし、light / dark 両モードで `bg-info` / `text-info` / `text-info-foreground` / `border-info` の Tailwind utility を提供。route 色とは独立した semantic accent として、status / navigation indicator に利用 (e.g., `TripPager` の trip-index badge)。dark mode は dark bg 上での視認性確保のため Material Blue 500 系の明るめ tone を使用、foreground は両モードとも白で標準的 info-badge 慣例に沿う。
+- `TripPager` に trip-index `LabelCountBadge` を追加 (#164)。同一停留所を経由する候補 trip の中で現在何便目かを `displayedTripIndex / totalTripCount` 形式で leading edge に表示。`info` token で color 化 (caller の `tripInspectionTargets` は複数 route を集約するため route color はミスリーディング)。
+- `TripPager` の Prev / Next buttons に `ChevronLeftIcon` / `ChevronRightIcon` (lucide) を追加 (#164)。時刻表示だけに依存せず方向性が一目で読み取れるよう改善。
 
 ### Changed
 
@@ -57,6 +60,12 @@ and this project adheres to [CalVer](https://calver.org/).
 - `TimetableModal` を per-axis stats span (`PatternPositionAxisStats` / `BoardingAxisStats` / `RouteDirectionAxisStats`) と `EntriesPanel` container に分離して整理 (240 行台の単一 component から sub-component 群へ)。
 - `TripInspectionDialog` の header 配下に `TripEndpointsSummary` ファイル内 component を追加。始発 (departure 時刻) → 三角矢印 → 終着 (arrival 時刻) の grid 3 列レイアウトを単一の subcomponent に集約し、`DialogDescription asChild` から explicit な props 渡しで呼び出す形に整理。
 - `TripPager` / `TripEndpointsSummary` / `TripInspectionSummary` のルートに `select-none` を付与し、TripInspectionDialog header の status indicator 群 (pager 時刻ラベル / 始発・終着 summary / position indicator・journey time bar 系) のテキスト選択を抑止。pager ボタン周辺タップ時の意図しないテキスト選択を回避。
+- `TripInspectionDialog` の `TripEndpointsSummary` 始発 / 終着 cell をクリック可能化 (#164)。クリック時、trip stops list の対応行へ smooth scroll し、`TripInspectionSummary` の position / journey-time bar が反映する `focusedStopIndex` を同期更新 (smooth scroll 完了前に scroll event が止まるため `handleBodyScroll` に頼らず `handleSelectStopRow` 内で `setFocusedStopIndex` を同期実行)。`SimpleStopSummary` cells を shadcn `<Button variant="ghost">` でラップ (override: `block h-auto w-full p-0`) し、focus-visible ring + `cursor-pointer` + disabled handling を design system に統一。
+- `TripInspectionDialog` の inline `applyScrollToSelectedRow` を component-level の `scrollToStopRow(index, behavior)` `useCallback` に lift (#164)。auto-scroll `useEffect` (open / selected stop 変更時) と click-driven jump (origin / destination cell click) で同じ scroll helper を共有する構造に整理。
+- shadcn `Button` の app callsite (`time-setting-dialog` / `trip-pager` / `TripEndpointsSummary`) に `cursor-pointer` を統一付与 (#164)。shadcn `Button` の base class は `cursor: pointer` を含まないため、過去の `PillButton` 修正と同じ精神で hover カーソルの一貫性を確保。shadcn upstream files (`ui/calendar`, `ui/dialog`) は不変方針のため非対応。
+- `info` token を filter pills と selected accents 全般に展開 (#165)。`PillButton` 内部 default を `bg-info text-info-foreground` 化 (Views pill が自動連動)、`BottomSheetHeader` operating-stops / `TimetableBoardabilityFilter` / `TimetableOriginFilter` の 3 props を `'var(--info)'` に統一、`NearbyStop` selected card を `border-info/40 bg-info/10` に、`StopSummary` の stop name span を `text-info` に変更。light は視覚同等、dark のみ token の lighter blue に自動切替。
+- Show timetable buttons は意図的に info ではなく独自色に変更 (#165)。`NearbyStop` (stop card レベル) は teal-600 / dark:teal-400、`StopTimesItem` (route + headsign 行レベル) は slate-600 / dark:slate-300。filter pill (info blue) との視覚階層を分けつつ、2 つの「Show timetable」アクションもコンテキストごとに別色で区別。
+- `TimetableEntryAttributesLabels` の Origin / Terminal label に `border-foreground/30 border` を追加 (#165)。Pickup / DropOff unavailable label との box height ずれを解消。Pickup / DropOff の solid / dashed yellow border は boarding-availability の視覚的区別として意図的に維持。
 
 ### Fixed
 
