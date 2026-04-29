@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { cn } from '../../lib/utils';
 import { BaseLabel, type BaseLabelSize } from '../label/base-label';
 
 interface LabelCountBadgeProps {
@@ -18,6 +19,12 @@ interface LabelCountBadgeProps {
   countFg?: string;
   /** Outer frame border color. @default labelBg */
   frameColor?: string;
+  /** Optional utility classes for the outer frame wrapper. */
+  frameClassName?: string;
+  /** Optional utility classes for the label half. */
+  labelClassName?: string;
+  /** Optional utility classes for the count half. */
+  countClassName?: string;
 }
 
 /**
@@ -55,18 +62,29 @@ export function LabelCountBadge({
   countBg = labelFg,
   countFg = labelBg,
   frameColor = labelBg,
+  frameClassName,
+  labelClassName,
+  countClassName,
 }: LabelCountBadgeProps) {
   const { i18n } = useTranslation();
   const labelStyle = labelBg ? { background: labelBg, color: labelFg } : undefined;
   const countStyle = countBg ? { background: countBg, color: countFg } : undefined;
   const frameStyle = frameColor ? { borderColor: frameColor } : undefined;
   return (
-    <span className="inline-flex items-stretch overflow-hidden rounded border" style={frameStyle}>
-      <BaseLabel size={size} value={label} className="rounded-none" style={labelStyle} />
+    <span
+      className={cn('inline-flex items-stretch overflow-hidden rounded border', frameClassName)}
+      style={frameStyle}
+    >
+      <BaseLabel
+        size={size}
+        value={label}
+        className={cn('rounded-none', labelClassName)}
+        style={labelStyle}
+      />
       <BaseLabel
         size={size}
         value={count.toLocaleString(i18n.language)}
-        className="rounded-none"
+        className={cn('rounded-none', countClassName)}
         style={countStyle}
       />
     </span>
