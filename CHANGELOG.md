@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.04.29]
+
 ### Added
 
 - `src/domain/transit/trip-stop-times.ts` を追加。`TripSnapshot.stopTimes` (sparse な `TripStopTime[]`) に対する sparse-safe アクセス helpers (`getPatternTotalStops` / `buildStopByPatternIndex` / `getStopAtPatternIndex` / `getOriginStop` / `getTerminalStop`) を提供。empty / 完全 reconstructed / origin / terminal / interior missing / single-stop pattern 等のエッジケースを 19 vitest cases でカバー。
