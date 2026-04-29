@@ -23,6 +23,15 @@ and this project adheres to [CalVer](https://calver.org/).
 - Pipeline: りんかい線 (東京臨海高速鉄道株式会社) の GTFS データソースを追加 (prefix `twrr`, route_type 2 rail)。8 駅 / 1 路線。`shapes.txt` は含まれないが MLIT 国土数値情報 (臨海副都心線) 経由で路線図に対応。`data-source-settings` の `routeTypes` は `[1, 2]` (subway + rail) — 実態として地下鉄区間を含むため将来の Source 選択 UI 用に両方を宣言。
 - About: りんかい線のクレジット・データ情報を追加。
 - Pipeline: `validate-data.ts` に bundle-level cross-group d/a length consistency 検証を追加 (Refs: #156)。各 `(patternId, serviceId)` ペアについて、当該 pattern の全 emitted timetable groups で `d[serviceId].length` および `a[serviceId].length` が一致することを assert。WebApp の `buildTripStopTimes` における `tripIndex` alignment が前提とする invariant を、最終出力 `data.json` 段階で fail-fast に検知。`pattern.stops` のうち emitted group を持たない stop は対象外 (= ODPT 由来の sparse pattern を許容)。`a` 単独で出現する serviceId も union keyset で正しく検査される。
+- `TimetableBoardabilityFilter` を追加 (`src/components/timetable/timetable-boardability-filter.tsx`)。`TimetableModal` で stop / route-headsign 両 timetable type に対して「boardable only」pill を表示し、active 時は `filterBoardable` (= drop-off-only entries: `pickup_type === 1` および pattern-inferred `isTerminal` を除外) を適用。default off で既存挙動は不変。
+- `TimetableOriginFilter` を追加 (`src/components/timetable/timetable-origin-filter.tsx`)。「始発のみ」pill。`filterOrigin` (= pattern position が `origin` の entries) を適用。
+- `filterOrigin` を `timetable-filter.ts` に追加 (始発軸の filter wrapper)。
+- `computeTimetableEntryStats` を追加 (`src/domain/transit/timetable-stats.ts`)。`TimetableEntry[]` から 4 軸 (pattern position / boarding availability / route direction / trip locator) を single-pass で集計。`uniqueTripCount` は 6-shape / circular pattern (同一 trip が同一 stop を 2 回通過するケース) の可視化に使用。
+- `TimetableMetadata` に entries stats 表示を追加。pattern position (origin / terminal / passing) と boarding availability (boardable / non-boardable / drop-off-only / no-drop-off) の breakdown を inline 表示。
+- Filter pill (`TimetableBoardabilityFilter` / `TimetableOriginFilter`) 上に該当軸の matched count を表示 (caller 側で `TimetableEntryStats` から渡し、pill 内で predicate を再適用しない構造)。
+- `LabelCountBadge` に共通 class variants を追加 (`src/components/badge/label-count-badge.tsx`)。filter pill / metadata のカウント表示を統一。
+- i18n: TimetableModal の boardable-only / origin-only filter ラベルを en / ja に追加。
+- `isDropOffOnly` のエッジケーステストを追加 (terminal arrival / mid-route `pickup_type === 1` / boarding-allowed)。
 
 ### Changed
 
@@ -42,6 +51,10 @@ and this project adheres to [CalVer](https://calver.org/).
 - `TripInspectionDialog` の trip stop row レイアウトを normalize し、不要な fragment 等を整理。
 - Pipeline: ODPT trip-identity inference の Yurikamome-tuned heuristic core を `infer-odpt-trips-heuristic.ts` に切り出し、`build-timetable.ts` を facade (canonical fast path / heuristic / legacy fallback の dispatch、pattern aggregation、stopTimetable enrollment) に整理 (#158, Refs: #153)。
 - Pipeline: `pipeline/src/lib/pipeline/app-data-v2/odpt/` を `odpt-train/` に rename し、TRAIN 型に依存しない builder (`build-agency.ts`、`build-feed-info.ts`) を `odpt-common/` に分離 (#159)。ODPT API spec v4.15 の class 種別 (共通 / 鉄道 / バス / 航空機) と repo-wide の `odpt-train` scope 命名規約に整合。
+- `StopTimetableFilter` を `TimetableHeadsignFilter` にリネームし、`src/components/timetable/timetable-headsign-filter.tsx` へ移動。filter component family を一貫した `Timetable<axis>Filter` 命名に統一 (`TimetableHeadsignFilter` / `TimetableBoardabilityFilter` / `TimetableOriginFilter`)。旧名は generic 過ぎ、実態は route + headsign 軸専用だった。
+- `filterBoardable` を `timetable-utils.ts` から `timetable-filter.ts` に移動。`(TimetableEntry[]) → TimetableEntry[]` の shape は他の filter wrapper (`prepareStopTimetable` / `prepareRouteHeadsignTimetable` / `filterByAgency` / `filterByRouteType`) と同居が自然。boolean 返しの `hasBoardable` および entry-level predicate の `isDropOffOnly` は `timetable-utils.ts` に残置。
+- `prepareStopTimetable` / `prepareRouteHeadsignTimetable` の 4 番目の引数を `includeTerminals` → `includeNonBoardable` にリネームし、internal filter を `!isTerminal` から `filterBoardable` (= `!isDropOffOnly`) に置換。これにより info-level 駆動の default filter と TimetableModal の boardability toggle が同一 predicate を共有。**Behavior change**: simple / normal info level で `pickup_type === 1` の mid-route entries も filter out されるようになった (= GTFS spec の `pickup_type === 1 = boarding not available` semantics に整合)。`TimetableOmitted.terminal` → `TimetableOmitted.nonBoardable` も併せて改名。
+- `TimetableModal` を per-axis stats span (`PatternPositionAxisStats` / `BoardingAxisStats` / `RouteDirectionAxisStats`) と `EntriesPanel` container に分離して整理 (240 行台の単一 component から sub-component 群へ)。
 
 ### Fixed
 
@@ -54,6 +67,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - `StopTimeTimeInfo` / `StopTimesItem` の trip inspect トリガーボタンに `focus-visible` ring を追加し、キーボード操作時のフォーカス可視性を確保 (a11y)。
 - `TripInspectionDialog` で sparse な trip stop rows (一部停留所の `stopMeta` が欠落するケース) を含む trip でも row レイアウトが崩れないよう修正。
 - Pipeline: ODPT pipeline で mid-pattern origin を持つ trip (例: ゆりかもめ 有明始発便) が full-route trip と同 `TripPattern` に merged され、cross-stop `d_len` 不整合 / `TripInspectionDialog` 上の phantom 時刻が発生する問題を修正 (#158, Refs: #153)。pattern key に origin を追加し `(routeId, direction, origin, destinationStation)` で集約。canonical fast path (`odpt:originStation`) → count-delta + time-matching heuristic → legacy fallback の 3 段で trip 帰属を決定する 2 層推論を導入。
+- Pipeline: `findSundayServiceIds` が `calendar_dates.txt` の ADD exception を見逃していた問題を修正 (#161, Refs: #133)。`build-service-groups.ts` に `findServicesActiveOnWeekday` helper を追加し、calendar_dates-only の services および「平日 calendar + Sunday の ADD exception」(= GW 等の holiday-only 特別便) も Sunday service として検出するよう変更。`global/insights.json` の `cn["ho"]` が spec 通りの broader な「service usable on Sunday」定義に整合 (検出件数が 15 件増加 = holiday 特別便由来)。
 
 ## [2026.04.23]
 
