@@ -681,6 +681,7 @@ export function TripInspectionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        showCloseButton={false}
         className="flex max-h-[80dvh] max-w-[90vw] flex-col gap-0 overflow-hidden border-4 p-2"
         style={{ borderColor: adjustedRouteColors.color }}
       >

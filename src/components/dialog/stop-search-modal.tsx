@@ -328,7 +328,10 @@ export function StopSearchModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="top-12 flex max-h-[80dvh] max-w-[90vw] translate-y-0 flex-col gap-0 overflow-hidden border-4 p-0">
+      <DialogContent
+        showCloseButton={false}
+        className="top-12 flex max-h-[80dvh] max-w-[90vw] translate-y-0 flex-col gap-0 overflow-hidden border-4 p-0"
+      >
         <DialogHeader className="border-border shrink-0 border-b p-4">
           <DialogTitle className="text-[15px]">{t('search.title')}</DialogTitle>
           <DialogDescription className="sr-only">{t('search.description')}</DialogDescription>

@@ -46,7 +46,10 @@ export function ShortcutHelpDialog({ open, onOpenChange }: ShortcutHelpDialogPro
   const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[80dvh] max-w-[90vw] flex-col gap-0 overflow-hidden border-4">
+      <DialogContent
+        showCloseButton={false}
+        className="flex max-h-[80dvh] max-w-[90vw] flex-col gap-0 overflow-hidden border-4"
+      >
         <DialogHeader className="border-border shrink-0 border-b pb-3 sm:text-center">
           <DialogTitle className="text-base">{t('shortcut.title')}</DialogTitle>
           <DialogDescription className="sr-only">{t('shortcut.description')}</DialogDescription>

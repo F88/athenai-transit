@@ -9,6 +9,12 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+### Changed
+
+- `DialogContent` に `showCloseButton={false}` を渡してデフォルト X を無効化 (Esc / 外側クリックで close 可能なため UX 維持)。
+
 ## [2026.04.29]
 
 ### Added
