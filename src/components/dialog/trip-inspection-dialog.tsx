@@ -685,8 +685,8 @@ export function TripInspectionDialog({
         style={{ borderColor: adjustedRouteColors.color }}
       >
         <DialogHeader
-          className="z-10 -mb-px shrink-0 gap-0 pb-3 sm:text-center"
-          style={{ borderBottomColor: adjustedRouteColors.color }}
+          className="z-10 -mb-px shrink-0 gap-0 border-b-2 pb-3 sm:text-center"
+          style={{ borderBottomColor: 'var(--background)' }}
         >
           {/* {now.toLocaleDateString()} */}
           {/*
