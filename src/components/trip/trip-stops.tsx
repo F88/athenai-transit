@@ -1,22 +1,19 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
 import { type AdjustedRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getTimetableEntryAttributes } from '@/domain/transit/timetable-entry-attributes';
+import { buildStopByPatternIndex, getPatternTotalStops } from '@/domain/transit/trip-stop-times';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { cn } from '@/lib/utils';
 import type { InfoLevel } from '@/types/app/settings';
-import type {
-  ContextualTimetableEntry,
-  SelectedTripSnapshot,
-  TripStopTime,
-} from '@/types/app/transit-composed';
-import { StopInfo } from '../stop-info';
+import type { SelectedTripSnapshot, TripStopTime } from '@/types/app/transit-composed';
 import { LabelCountBadge } from '../badge/label-count-badge';
-import { TripInfo } from '../trip-info';
-import { StopTimeItem } from '../stop-time-item';
+import { StopInfo } from '../stop-info';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
+import { TripInfo } from '../trip-info';
 import { tripStopRowDataAttrs } from './trip-stop-row-dom';
 
 interface TripStopsProps {
@@ -73,14 +70,12 @@ type RenderedTripStopRow =
 const INITIAL_TRIP_STOP_RENDER_PADDING = 5;
 
 function buildRenderedTripStopRows(stopTimes: readonly TripStopTime[]): RenderedTripStopRow[] {
-  if (stopTimes.length === 0) {
+  const totalStops = getPatternTotalStops(stopTimes);
+  if (totalStops === 0) {
     return [];
   }
 
-  const totalStops = stopTimes[0]?.timetableEntry.patternPosition.totalStops ?? 0;
-  const stopByIndex = new Map(
-    stopTimes.map((stop) => [stop.timetableEntry.patternPosition.stopIndex, stop]),
-  );
+  const stopByIndex = buildStopByPatternIndex(stopTimes);
 
   return Array.from({ length: totalStops }, (_, stopIndex) => {
     const stop = stopByIndex.get(stopIndex);
@@ -156,9 +151,10 @@ function TripStopRow({
   serviceDate,
   now,
 }: TripStopRowProps) {
+  const { t } = useTranslation();
   const infoLevelFlag = useInfoLevel(infoLevel);
   const stopMeta = tripStopTime.stopMeta;
-  const stopId = tripStopTime.stopMeta?.stop.stop_id || '(unknown-stop)';
+  const stopId = tripStopTime.stopMeta?.stop.stop_id;
   const stopAttributes = getTimetableEntryAttributes(tripStopTime.timetableEntry);
   const stopAgency = stopMeta?.agencies.find(
     (agency) => agency.agency_id === tripStopTime.timetableEntry.routeDirection.route.agency_id,
@@ -175,11 +171,6 @@ function TripStopRow({
   const isFirstStop = tripStopTime.timetableEntry.patternPosition.isOrigin;
   const showArrivalTime = isTerminalStop || !isFirstStop;
   const showDepartureTime = !isTerminalStop;
-
-  const contextualTimetableEntry: ContextualTimetableEntry = {
-    serviceDate: serviceDate,
-    ...tripStopTime.timetableEntry,
-  };
 
   return (
     <div
@@ -232,9 +223,13 @@ function TripStopRow({
                 )}
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground text-xs">#{stopIndex}</span>
-                  <span className="truncate font-medium">{stopNames?.name || stopId}</span>
+                  <span className="truncate font-medium">
+                    {stopNames?.name || stopId || t('tripInspection.unknownStop')}
+                  </span>
                 </div>
-                <div className="text-muted-foreground truncate text-xs">{stopId}</div>
+                {stopId !== undefined && (
+                  <div className="text-muted-foreground truncate text-xs">{stopId}</div>
+                )}
               </div>
             </>
           )}
@@ -252,25 +247,6 @@ function TripStopRow({
           attributes={stopAttributes}
         />
       )}
-
-      {infoLevelFlag.isVerboseEnabled && (
-        <>
-          <hr className="m-2" />
-          <StopTimeItem
-            entry={contextualTimetableEntry}
-            now={now}
-            showArrivalTime={showArrivalTime}
-            showDepartureTime={showDepartureTime}
-            collapseArrivalWhenSameAsDeparture={true}
-            forceShowRelativeTime={true}
-            showRouteTypeIcon={true}
-            infoLevel={infoLevel}
-            dataLangs={dataLangs}
-            agency={stopAgency}
-            showAgency={true}
-          />
-        </>
-      )}
     </div>
   );
 }
@@ -280,36 +256,35 @@ function TripStopPlaceholderRow({
   totalStops,
   currentPatternStopIndex,
   routeColors,
-  infoLevel,
+  infoLevel: _infoLevel,
 }: TripStopPlaceholderRowProps) {
-  const infoLevelFlag = useInfoLevel(infoLevel);
+  const { t } = useTranslation();
   const isCurrent = stopIndex === currentPatternStopIndex;
 
   return (
     <div
       {...tripStopRowDataAttrs(stopIndex)}
-      className={[
-        'rounded-md border-dashed px-3 py-2',
-        isCurrent ? 'border-2' : 'border',
-        'border-border bg-muted/20',
-      ].join(' ')}
+      className={['rounded-md border-2 border-dashed px-3 py-2', 'border-border bg-muted/20'].join(
+        ' ',
+      )}
       style={isCurrent ? { borderColor: routeColors.color } : undefined}
     >
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
+        <TripStopMetaInfo
+          stopIndex={stopIndex}
+          totalStops={totalStops}
+          labelBg={routeColors.color}
+          labelFg={routeColors.textColor}
+          frameColor={routeColors.color}
+          className="flex min-h-8 flex-col items-end gap-1"
+        />
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-xs">#{stopIndex}</span>
             <span className="text-muted-foreground truncate font-medium">
-              Stop-time unavailable
+              {t('tripInspection.unknownStop')} ({stopIndex + 1}/{totalStops})
             </span>
           </div>
-          {infoLevelFlag.isVerboseEnabled && (
-            <div className="text-muted-foreground truncate text-xs">
-              Pattern stop {stopIndex + 1} / {totalStops}
-            </div>
-          )}
         </div>
-        <TripStopMetaInfo stopIndex={stopIndex} totalStops={totalStops} />
       </div>
     </div>
   );

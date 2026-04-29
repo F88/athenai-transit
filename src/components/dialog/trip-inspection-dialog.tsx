@@ -27,6 +27,7 @@ import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-n
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { deriveJourneyTimeFromTrip } from '@/domain/transit/journey-time';
 import { formatAbsoluteTime } from '@/domain/transit/time';
+import { getOriginStop, getTerminalStop } from '@/domain/transit/trip-stop-times';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import { useScrollFades } from '@/hooks/use-scroll-fades';
@@ -120,8 +121,12 @@ interface TripEndpointsSummaryProps {
   onSelectLast?: () => void;
 }
 
-function resolveTripStopDisplay(stop: TripStopTime | undefined, dataLangs: readonly string[]) {
-  const stopId = stop?.stopMeta?.stop.stop_id || '(unknown-stop)';
+function resolveTripStopDisplay(
+  stop: TripStopTime | undefined,
+  dataLangs: readonly string[],
+  unknownStopFallback: string,
+) {
+  const stopId = stop?.stopMeta?.stop.stop_id;
   const stopAgencyLangs = stop?.stopMeta
     ? resolveAgencyLang(stop.stopMeta.agencies, stop.stopMeta.stop.agency_id)
     : DEFAULT_AGENCY_LANG;
@@ -129,9 +134,13 @@ function resolveTripStopDisplay(stop: TripStopTime | undefined, dataLangs: reado
     ? getStopDisplayNames(stop.stopMeta.stop, dataLangs, stopAgencyLangs)
     : null;
 
+  // Display fallback chain: localized name → stop_id → translated
+  // "unknown stop" placeholder. The translated placeholder is sourced
+  // from the caller because this helper runs outside React's hook
+  // context.
   return {
     stopNames,
-    stopName: stopNames?.name || stopId,
+    stopName: stopNames?.name || stopId || unknownStopFallback,
   };
 }
 
@@ -146,7 +155,6 @@ function SimpleStopSummary({
 }: StopSummaryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
   return (
-
     <div className="min-w-0 rounded-md border p-2">
       {infoLevelFlag.isNormalEnabled && stopNames && stopNames.subNames.length > 0 && (
         <div className="text-muted-foreground truncate text-center text-xs">
@@ -639,11 +647,18 @@ export function TripInspectionDialog({
   const selectedStop = snapshot.selectedStop;
   const numberOfStops = selectedStop.timetableEntry.patternPosition.totalStops;
 
-  // First TripStopTime
-  const firstStop = tripStopTimes[0];
+  // Pattern origin / terminal — sourced via patternPosition flags rather
+  // than array-index access. The reconstructed `stopTimes` array is sparse
+  // (rows for pattern positions the repository could not bind are dropped),
+  // so `stopTimes[0]` and `stopTimes[length-1]` would silently misreport
+  // origin / terminal whenever those positions are missing — e.g. yurikamome
+  // short-turn trips that stop one station before the pattern's terminal.
+  const unknownStopFallback = t('tripInspection.unknownStop');
+  const firstStop = getOriginStop(tripStopTimes);
   const { stopName: firstStopName, stopNames: firstStopNames } = resolveTripStopDisplay(
     firstStop,
     dataLangs,
+    unknownStopFallback,
   );
   const firstStopDepartureTime = firstStop
     ? formatAbsoluteTime(
@@ -651,11 +666,11 @@ export function TripInspectionDialog({
       )
     : undefined;
 
-  // Last TripStopTime
-  const lastStop = tripStopTimes[tripStopTimes.length - 1];
+  const lastStop = getTerminalStop(tripStopTimes);
   const { stopName: lastStopName, stopNames: lastStopNames } = resolveTripStopDisplay(
     lastStop,
     dataLangs,
+    unknownStopFallback,
   );
   const lastStopArrivalTime = lastStop
     ? formatAbsoluteTime(

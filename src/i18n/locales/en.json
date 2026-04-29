@@ -189,6 +189,7 @@
   "tripInspection": {
     "title": "Trip info",
     "titleWithNoHeadsign": "(No headsign)",
+    "unknownStop": "(Unknown stop)",
     "description": "Show the stop sequence and times for the selected trip",
     "sections": {
       "summary": "Summary",
