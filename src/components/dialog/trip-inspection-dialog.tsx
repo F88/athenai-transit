@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { JourneyTimeBar } from '@/components/journey-time-bar';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { StopInfo } from '@/components/stop-info';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -101,6 +102,16 @@ interface TripEndpointsSummaryProps {
   lastStopName: string;
   lastStopArrivalTime: string | undefined;
   infoLevel: InfoLevel;
+  /**
+   * Invoked when the first-stop summary cell is activated. Disabled when omitted.
+   * The handler should scroll the trip stops list to the corresponding row.
+   */
+  onSelectFirst?: () => void;
+  /**
+   * Invoked when the last-stop summary cell is activated. Disabled when omitted.
+   * The handler should scroll the trip stops list to the corresponding row.
+   */
+  onSelectLast?: () => void;
 }
 
 function resolveTripStopDisplay(stop: TripStopTime | undefined, dataLangs: readonly string[]) {
@@ -158,29 +169,49 @@ function TripEndpointsSummary({
   lastStopName,
   lastStopArrivalTime,
   infoLevel,
+  onSelectFirst,
+  onSelectLast,
 }: TripEndpointsSummaryProps) {
+  // Override Button's inherent fixed height / horizontal padding so the
+  // wrapped SimpleStopSummary controls sizing, while keeping the design
+  // system's focus ring, hover accent, and disabled handling.
+  const buttonClassName = 'block h-auto w-full cursor-pointer p-0';
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 select-none">
-      <SimpleStopSummary
-        stopNames={firstStopNames}
-        stopName={firstStopName}
-        infoLevel={infoLevel}
-        departureTime={firstStopDepartureTime}
-        showDepartureTime
-      />
+      <Button
+        variant="ghost"
+        onClick={onSelectFirst}
+        disabled={!onSelectFirst}
+        className={buttonClassName}
+      >
+        <SimpleStopSummary
+          stopNames={firstStopNames}
+          stopName={firstStopName}
+          infoLevel={infoLevel}
+          departureTime={firstStopDepartureTime}
+          showDepartureTime
+        />
+      </Button>
       <div className="flex items-center justify-center">
         <span
           aria-hidden="true"
           className="border-l-muted-foreground h-0 w-0 border-y-[6px] border-l-10 border-y-transparent"
         />
       </div>
-      <SimpleStopSummary
-        stopNames={lastStopNames}
-        stopName={lastStopName}
-        infoLevel={infoLevel}
-        arrivalTime={lastStopArrivalTime}
-        showArrivalTime
-      />
+      <Button
+        variant="ghost"
+        onClick={onSelectLast}
+        disabled={!onSelectLast}
+        className={buttonClassName}
+      >
+        <SimpleStopSummary
+          stopNames={lastStopNames}
+          stopName={lastStopName}
+          infoLevel={infoLevel}
+          arrivalTime={lastStopArrivalTime}
+          showArrivalTime
+        />
+      </Button>
     </div>
   );
 }
@@ -475,6 +506,44 @@ export function TripInspectionDialog({
     };
   }, [open, snapshot]);
 
+  const scrollToStopRow = useCallback((stopIndex: number, behavior: ScrollBehavior): boolean => {
+    const container = contentContainerRef.current;
+    const row = container ? findTripStopRow(container, stopIndex) : null;
+
+    if (!container || !row) {
+      return false;
+    }
+
+    const nextScrollTop = getSelectedRowScrollTop(container, row);
+
+    if (container.scrollTop === nextScrollTop) {
+      return false;
+    }
+
+    container.scrollTo({
+      top: nextScrollTop,
+      behavior,
+    });
+
+    return true;
+  }, []);
+
+  // Imperative scroll triggered by user actions (= origin/destination click).
+  // Sets focus synchronously to the target so the journey-time / position
+  // indicators reflect the click intent immediately. The suppress timer keeps
+  // scroll-driven focus updates quiet while the smooth scroll is settling
+  // (smooth-scroll typically completes before the timer expires, after which
+  // no further scroll events fire — so we cannot rely on `handleBodyScroll`
+  // to set focus for a click-driven jump).
+  const handleSelectStopRow = useCallback(
+    (stopIndex: number) => {
+      programmaticScrollSettleRef.current = Date.now() + 800;
+      setFocusedStopIndex(stopIndex);
+      scrollToStopRow(stopIndex, 'smooth');
+    },
+    [scrollToStopRow],
+  );
+
   useEffect(() => {
     if (!open || !snapshot || !contentContainerEl) {
       return;
@@ -488,35 +557,13 @@ export function TripInspectionDialog({
     let secondFrameId = 0;
     let correctionFrameId = 0;
 
-    const applyScrollToSelectedRow = (behavior: ScrollBehavior) => {
-      const container = contentContainerEl;
-      const selectedRow = container ? findTripStopRow(container, selectedPatternStopIndex) : null;
-
-      if (!container || !selectedRow) {
-        return false;
-      }
-
-      const nextScrollTop = getSelectedRowScrollTop(container, selectedRow);
-
-      if (container.scrollTop === nextScrollTop) {
-        return false;
-      }
-
-      container.scrollTo({
-        top: nextScrollTop,
-        behavior,
-      });
-
-      return true;
-    };
-
     const correctSelectedRowVisibility = (remainingPasses: number) => {
       if (remainingPasses <= 0) {
         return;
       }
 
       correctionFrameId = window.requestAnimationFrame(() => {
-        const didScroll = applyScrollToSelectedRow('auto');
+        const didScroll = scrollToStopRow(selectedPatternStopIndex, 'auto');
 
         if (didScroll) {
           correctSelectedRowVisibility(remainingPasses - 1);
@@ -526,7 +573,7 @@ export function TripInspectionDialog({
 
     firstFrameId = window.requestAnimationFrame(() => {
       secondFrameId = window.requestAnimationFrame(() => {
-        applyScrollToSelectedRow('smooth');
+        scrollToStopRow(selectedPatternStopIndex, 'smooth');
         correctSelectedRowVisibility(3);
       });
     });
@@ -536,7 +583,14 @@ export function TripInspectionDialog({
       window.cancelAnimationFrame(secondFrameId);
       window.cancelAnimationFrame(correctionFrameId);
     };
-  }, [contentContainerEl, open, selectedPatternStopIndex, selectedStopRowKey, snapshot]);
+  }, [
+    contentContainerEl,
+    open,
+    selectedPatternStopIndex,
+    selectedStopRowKey,
+    snapshot,
+    scrollToStopRow,
+  ]);
 
   const handleBodyScroll = useCallback(() => {
     contentScroll.handleScroll();
@@ -670,6 +724,16 @@ export function TripInspectionDialog({
               lastStopName={lastStopName}
               lastStopArrivalTime={lastStopArrivalTime}
               infoLevel={infoLevel}
+              onSelectFirst={
+                firstStop
+                  ? () => handleSelectStopRow(firstStop.timetableEntry.patternPosition.stopIndex)
+                  : undefined
+              }
+              onSelectLast={
+                lastStop
+                  ? () => handleSelectStopRow(lastStop.timetableEntry.patternPosition.stopIndex)
+                  : undefined
+              }
             />
           </DialogDescription>
 
