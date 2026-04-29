@@ -4,7 +4,6 @@ import { formatAbsoluteTime } from '@/domain/transit/time';
 import { cn } from '@/lib/utils';
 import type { TripInspectionTarget, TripStopTime } from '@/types/app/transit-composed';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import { LabelCountBadge } from '../badge/label-count-badge';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
 
 interface TripPagerProps {
@@ -34,9 +33,6 @@ export function TripPager({
   onOpenPreviousTrip,
   onOpenNextTrip,
 }: TripPagerProps) {
-  const displayedTripIndex =
-    tripInspectionTargets.length > 0 ? currentTripInspectionTargetIndex + 1 : 0;
-  const totalTripCount = tripInspectionTargets.length;
   const hasPreviousTrip = currentTripInspectionTargetIndex > 0;
   const hasNextTrip = currentTripInspectionTargetIndex < tripInspectionTargets.length - 1;
   const previousTarget = hasPreviousTrip
@@ -49,15 +45,7 @@ export function TripPager({
   const nextDepartureTime = formatTargetDepartureTime(nextTarget);
 
   return (
-    <div className="flex items-center justify-center gap-2 pb-2 select-none">
-      <LabelCountBadge
-        label={`${displayedTripIndex}`}
-        count={totalTripCount}
-        size="md"
-        labelClassName="bg-info text-info-foreground"
-        countClassName="bg-background text-info"
-        frameClassName="border-info"
-      />
+    <div className="flex items-center justify-center gap-2 select-none">
       {/* Previous Trip Button */}
       <Button
         className={cn('cursor-pointer', !hasPreviousTrip && 'pointer-events-none invisible')}
@@ -77,6 +65,7 @@ export function TripPager({
           serviceDate={serviceDate}
           now={now}
           size="sm"
+          align="center"
           showArrivalTime={true}
           showDepartureTime={true}
           collapseArrivalWhenSameAsDeparture={true}

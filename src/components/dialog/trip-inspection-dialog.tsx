@@ -92,6 +92,12 @@ interface RichStopSummaryProps {
   stop: TripStopTime | undefined;
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
+  /**
+   * Invoked when the summary is activated. When omitted, renders as a
+   * non-interactive container. The handler should scroll the trip stops
+   * list to the corresponding row.
+   */
+  onSelect?: () => void;
 }
 
 interface TripEndpointsSummaryProps {
@@ -140,6 +146,7 @@ function SimpleStopSummary({
 }: StopSummaryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
   return (
+
     <div className="min-w-0 rounded-md border p-2">
       {infoLevelFlag.isNormalEnabled && stopNames && stopNames.subNames.length > 0 && (
         <div className="text-muted-foreground truncate text-center text-xs">
@@ -224,29 +231,40 @@ function TripEndpointsSummary({
   );
 }
 
-function RichStopSummary({ stop, infoLevel, dataLangs }: RichStopSummaryProps) {
+function RichStopSummary({ stop, infoLevel, dataLangs, onSelect }: RichStopSummaryProps) {
   if (stop?.stopMeta === undefined) {
     return null;
   }
+  // Override Button's inherent fixed height / horizontal padding so the
+  // wrapped content controls sizing, while keeping the design system's
+  // focus ring, hover accent, and disabled handling. `min-w-0` lets the
+  // button shrink below its intrinsic content width.
   return (
-    <div className="min-w-0 rounded-md p-2">
-      <StopInfo
-        stop={stop.stopMeta.stop}
-        agencies={stop.stopMeta.agencies}
-        showAgencies={true}
-        routeTypes={stop.routeTypes}
-        showRouteTypes={true}
-        routes={stop.stopMeta.routes}
-        showRoutes={true}
-        stats={stop.stopMeta.stats}
-        geo={stop.stopMeta.geo}
-        mapCenter={null}
-        infoLevel={infoLevel}
-        dataLangs={dataLangs}
-        agencyBadgeSize="sm"
-        routeBadgeSize="xs"
-      />
-    </div>
+    <Button
+      variant="ghost"
+      onClick={onSelect}
+      disabled={!onSelect}
+      className="block h-auto w-full min-w-0 cursor-pointer rounded-md p-0"
+    >
+      <div className="min-w-0 rounded-md px-2">
+        <StopInfo
+          stop={stop.stopMeta.stop}
+          agencies={stop.stopMeta.agencies}
+          showAgencies={true}
+          routeTypes={stop.routeTypes}
+          showRouteTypes={true}
+          routes={stop.stopMeta.routes}
+          showRoutes={true}
+          stats={stop.stopMeta.stats}
+          geo={stop.stopMeta.geo}
+          mapCenter={null}
+          infoLevel={infoLevel}
+          dataLangs={dataLangs}
+          agencyBadgeSize="sm"
+          routeBadgeSize="xs"
+        />
+      </div>
+    </Button>
   );
 }
 
@@ -280,13 +298,13 @@ const TripInspectionSummary = memo(function TripInspectionSummary({
   );
 
   return (
-    <section className="flex flex-col gap-2 pt-3 text-left">
+    <section className="flex flex-col gap-2 pt-0 text-left">
       {/* TripPositionIndicator */}
       <TripPositionIndicator
         stopIndex={focusedStopIndex}
         totalStops={numberOfStops}
         size="md"
-        showEmoji={infoLevelFlag.isNormalEnabled}
+        showEmoji={false}
         showTrack={infoLevelFlag.isNormalEnabled}
         trackColor={subtleAccentColor}
         dotColor={emphasisAccentColor}
@@ -303,7 +321,7 @@ const TripInspectionSummary = memo(function TripInspectionSummary({
         remainingMinutes={remainingMinutes}
         totalMinutes={totalMinutes}
         size="xl"
-        showEmoji={infoLevelFlag.isNormalEnabled}
+        showEmoji={false}
         fillColor={routeColors.color}
         unfilledColor={emphasisAccentColor}
         showRMins={infoLevelFlag.isNormalEnabled}
@@ -315,28 +333,6 @@ const TripInspectionSummary = memo(function TripInspectionSummary({
         minsBgColor={routeColors.color}
         showBorder={false}
       />
-
-      {/* StopTimeDetailInfo  */}
-      {/* <StopTimeDetailInfo
-        entry={selectedStop.timetableEntry}
-        infoLevel="normal"
-        // infoLevel="detailed"
-        // infoLevel="verbose"
-        dataLang={dataLangs}
-        showRouteTypeIcon={true}
-        agency={selectedAgency}
-        showAgency={true}
-        attributes={selectedStopAttributes}
-      /> */}
-
-      {/* Last stop */}
-      {/* <RichStopSummary
-        //
-        stop={lastStop}
-        // infoLevel={infoLevel}
-        infoLevel={'simple'}
-        dataLangs={dataLangs}
-      /> */}
     </section>
   );
 });
@@ -670,11 +666,11 @@ export function TripInspectionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex max-h-[80dvh] max-w-[90vw] flex-col gap-0 overflow-hidden border-4"
+        className="flex max-h-[80dvh] max-w-[90vw] flex-col gap-0 overflow-hidden border-4 p-2"
         style={{ borderColor: adjustedRouteColors.color }}
       >
         <DialogHeader
-          className="z-10 -mb-px shrink-0 pb-3 sm:text-center"
+          className="z-10 -mb-px shrink-0 gap-0 pb-3 sm:text-center"
           style={{ borderBottomColor: adjustedRouteColors.color }}
         >
           {/* {now.toLocaleDateString()} */}
@@ -684,7 +680,7 @@ export function TripInspectionDialog({
             through that stop, including trip identity and stop sequence.
           */}
           <DialogTitle className="flex flex-col items-center justify-center gap-2 text-base">
-            <div>
+            <div className="px-2">
               {/* Selected stop (RichStopSummary) */}
               <RichStopSummary
                 //
@@ -694,58 +690,69 @@ export function TripInspectionDialog({
                 // infoLevel={'normal'}
                 // infoLevel={'detailed'}
                 dataLangs={dataLangs}
+                onSelect={() => handleSelectStopRow(selectedPatternStopIndex)}
               />
             </div>
           </DialogTitle>
 
-          {/*
+          <div className="px-2">
+            {/*
             Trip identity stays below the title because the dialog is
             centered on the selected stop, while the body renders the
             matching trip that serves that stop.
           */}
-          <TripPager
-            selectedStop={selectedStop}
-            serviceDate={snapshot.serviceDate}
-            now={now}
-            tripInspectionTargets={tripInspectionTargets}
-            currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
-            onOpenPreviousTrip={onOpenPreviousTrip}
-            onOpenNextTrip={onOpenNextTrip}
-          />
+            <TripPager
+              selectedStop={selectedStop}
+              serviceDate={snapshot.serviceDate}
+              now={now}
+              tripInspectionTargets={tripInspectionTargets}
+              currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
+              onOpenPreviousTrip={onOpenPreviousTrip}
+              onOpenNextTrip={onOpenNextTrip}
+            />
+          </div>
 
-          <TripBasicInfo
-            route={route}
-            routeAgency={routeAgency}
-            routeAgencyLangs={routeAgencyLangs}
-            infoLevel={infoLevel}
-            dataLangs={dataLangs}
-            headsignTitle={headsignTitle}
-            titleWithNoHeadsign={t('tripInspection.titleWithNoHeadsign')}
-          />
+          <div className="p-2">
+            <TripBasicInfo
+              route={route}
+              routeAgency={routeAgency}
+              routeAgencyLangs={routeAgencyLangs}
+              infoLevel={infoLevel}
+              dataLangs={dataLangs}
+              headsignTitle={headsignTitle}
+              titleWithNoHeadsign={t('tripInspection.titleWithNoHeadsign')}
+              currentIndex={
+                tripInspectionTargets.length > 0 ? currentTripInspectionTargetIndex + 1 : 0
+              }
+              totalCount={tripInspectionTargets.length}
+            />
+          </div>
 
           <DialogDescription asChild className="text-center sm:text-center">
-            <TripEndpointsSummary
-              firstStopNames={firstStopNames}
-              firstStopName={firstStopName}
-              firstStopDepartureTime={firstStopDepartureTime}
-              lastStopNames={lastStopNames}
-              lastStopName={lastStopName}
-              lastStopArrivalTime={lastStopArrivalTime}
-              infoLevel={infoLevel}
-              onSelectFirst={
-                firstStop
-                  ? () => handleSelectStopRow(firstStop.timetableEntry.patternPosition.stopIndex)
-                  : undefined
-              }
-              onSelectLast={
-                lastStop
-                  ? () => handleSelectStopRow(lastStop.timetableEntry.patternPosition.stopIndex)
-                  : undefined
-              }
-            />
+            <div className="px-2">
+              <TripEndpointsSummary
+                firstStopNames={firstStopNames}
+                firstStopName={firstStopName}
+                firstStopDepartureTime={firstStopDepartureTime}
+                lastStopNames={lastStopNames}
+                lastStopName={lastStopName}
+                lastStopArrivalTime={lastStopArrivalTime}
+                infoLevel={infoLevel}
+                onSelectFirst={
+                  firstStop
+                    ? () => handleSelectStopRow(firstStop.timetableEntry.patternPosition.stopIndex)
+                    : undefined
+                }
+                onSelectLast={
+                  lastStop
+                    ? () => handleSelectStopRow(lastStop.timetableEntry.patternPosition.stopIndex)
+                    : undefined
+                }
+              />
+            </div>
           </DialogDescription>
 
-          <div className="max-h-[24dvh] overflow-y-auto pr-1">
+          <div className="p-2">
             <TripInspectionSummary
               snapshot={snapshot}
               focusedStopIndex={focusedStopIndex}
@@ -754,9 +761,11 @@ export function TripInspectionDialog({
               infoLevel={infoLevel}
               dataLangs={dataLangs}
             />
+          </div>
 
-            {/* Verbose info for debug */}
-            {infoLevelFlag.isVerboseEnabled && (
+          {/* Verbose info for debug */}
+          {infoLevelFlag.isVerboseEnabled && (
+            <div className="max-h-[24dvh] overflow-y-auto pr-1">
               <>
                 <details className="mt-1 text-[9px] font-normal text-[#999] dark:text-gray-500">
                   <summary
@@ -781,8 +790,8 @@ export function TripInspectionDialog({
                   </div>
                 </details>
               </>
-            )}
-          </div>
+            </div>
+          )}
         </DialogHeader>
 
         <div
