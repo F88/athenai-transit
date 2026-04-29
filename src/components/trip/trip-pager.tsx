@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { minutesToDate } from '@/domain/transit/calendar-utils';
 import { formatAbsoluteTime } from '@/domain/transit/time';
+import { cn } from '@/lib/utils';
 import type { TripInspectionTarget, TripStopTime } from '@/types/app/transit-composed';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
 
@@ -45,7 +46,7 @@ export function TripPager({
   return (
     <div className="flex items-center justify-center gap-2 pb-2 select-none">
       <Button
-        className={!hasPreviousTrip ? 'pointer-events-none invisible' : undefined}
+        className={cn('cursor-pointer', !hasPreviousTrip && 'pointer-events-none invisible')}
         size="sm"
         variant="outline"
         disabled={!hasPreviousTrip}
@@ -68,7 +69,7 @@ export function TripPager({
         />
       </div>
       <Button
-        className={!hasNextTrip ? 'pointer-events-none invisible' : undefined}
+        className={cn('cursor-pointer', !hasNextTrip && 'pointer-events-none invisible')}
         size="sm"
         variant="outline"
         disabled={!hasNextTrip}
