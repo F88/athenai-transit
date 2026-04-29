@@ -156,7 +156,9 @@ export function StopTimesItem({
         {onShowTimetable && (
           <button
             type="button"
-            className="ml-auto shrink-0 cursor-pointer rounded border border-[#1976d2] bg-transparent px-1.5 py-0.5 text-[#1976d2] active:bg-[rgba(25,118,210,0.1)] dark:border-blue-400 dark:text-blue-400"
+            // className="ml-auto shrink-0 cursor-pointer rounded border border-blue-700 bg-transparent px-1.5 py-0.5 text-blue-700 active:bg-blue-700/10 dark:border-blue-400 dark:text-blue-400 dark:active:bg-blue-400/10"
+            // className="shrink-0 cursor-pointer rounded border border-teal-600 bg-transparent px-1.5 py-0.5 text-teal-600 active:bg-teal-600/10 dark:border-teal-400 dark:text-teal-400 dark:active:bg-teal-400/10"
+            className="shrink-0 cursor-pointer rounded border border-slate-600 bg-transparent px-1.5 py-0.5 text-slate-600 active:bg-slate-600/10 dark:border-slate-300 dark:text-slate-300 dark:active:bg-slate-300/10"
             onClick={(e) => {
               e.stopPropagation();
               onShowTimetable(route.route_id, getEffectiveHeadsign(firstEntry.routeDirection));

@@ -37,9 +37,9 @@ export function TimetableOriginFilter({
       <PillButton
         size="sm"
         active={origin}
-        activeBg={'#1565c0'}
-        activeBorder={'#1565c0'}
-        inactiveBorder={'#1565c0'}
+        activeBg={'var(--info)'}
+        activeBorder={'var(--info)'}
+        inactiveBorder={'var(--info)'}
         onClick={onToggleOrigin}
         title={t('timetable.filter.originOnlyTitle')}
         count={count}

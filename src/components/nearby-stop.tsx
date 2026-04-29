@@ -89,18 +89,21 @@ function NearbyStopActionButtons({
         />
       </button>
       {onShowStopTimetable && (
-        <button
-          type="button"
-          className="shrink-0 cursor-pointer rounded border border-[#1976d2] bg-transparent px-1.5 py-0.5 text-[#1976d2] active:bg-[rgba(25,118,210,0.1)] dark:border-blue-400 dark:text-blue-400"
-          onClick={(e) => {
-            e.stopPropagation();
-            onShowStopTimetable(stopId);
-          }}
-          title={t('showTimetable')}
-          aria-label={t('showTimetable')}
-        >
-          <Clock size={16} strokeWidth={2} />
-        </button>
+        <>
+          <button
+            type="button"
+            className="shrink-0 cursor-pointer rounded border border-teal-600 bg-transparent px-1.5 py-0.5 text-teal-600 active:bg-teal-600/10 dark:border-teal-400 dark:text-teal-400 dark:active:bg-teal-400/10"
+            // className="shrink-0 cursor-pointer rounded border border-slate-600 bg-transparent px-1.5 py-0.5 text-slate-600 active:bg-slate-600/10 dark:border-slate-300 dark:text-slate-300 dark:active:bg-slate-300/10"
+            onClick={(e) => {
+              e.stopPropagation();
+              onShowStopTimetable(stopId);
+            }}
+            title={t('showTimetable')}
+            aria-label={t('showTimetable')}
+          >
+            <Clock size={16} strokeWidth={2} />
+          </button>
+        </>
       )}
     </div>
   );
@@ -171,7 +174,7 @@ export function NearbyStop({
   return (
     <div
       data-stop-id={stop.stop_id}
-      className={`mb-2 cursor-pointer rounded-lg px-3 pt-2.5 pb-3 last:mb-0 ${isSelected ? 'border border-[#90caf9] bg-[#e3f2fd] dark:border-blue-700 dark:bg-blue-950' : 'bg-[#f5f7fa] dark:bg-gray-800'}`}
+      className={`mb-2 cursor-pointer rounded-lg px-3 pt-2.5 pb-3 last:mb-0 ${isSelected ? 'border-info/40 bg-info/10 border' : 'bg-[#f5f7fa] dark:bg-gray-800'}`}
       onClick={() => onStopSelected(stop.stop_id)}
     >
       {showVerbose && (
