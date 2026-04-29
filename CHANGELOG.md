@@ -55,6 +55,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - `filterBoardable` を `timetable-utils.ts` から `timetable-filter.ts` に移動。`(TimetableEntry[]) → TimetableEntry[]` の shape は他の filter wrapper (`prepareStopTimetable` / `prepareRouteHeadsignTimetable` / `filterByAgency` / `filterByRouteType`) と同居が自然。boolean 返しの `hasBoardable` および entry-level predicate の `isDropOffOnly` は `timetable-utils.ts` に残置。
 - `prepareStopTimetable` / `prepareRouteHeadsignTimetable` の 4 番目の引数を `includeTerminals` → `includeNonBoardable` にリネームし、internal filter を `!isTerminal` から `filterBoardable` (= `!isDropOffOnly`) に置換。これにより info-level 駆動の default filter と TimetableModal の boardability toggle が同一 predicate を共有。**Behavior change**: simple / normal info level で `pickup_type === 1` の mid-route entries も filter out されるようになった (= GTFS spec の `pickup_type === 1 = boarding not available` semantics に整合)。`TimetableOmitted.terminal` → `TimetableOmitted.nonBoardable` も併せて改名。
 - `TimetableModal` を per-axis stats span (`PatternPositionAxisStats` / `BoardingAxisStats` / `RouteDirectionAxisStats`) と `EntriesPanel` container に分離して整理 (240 行台の単一 component から sub-component 群へ)。
+- `TripInspectionDialog` の header 配下に `TripEndpointsSummary` ファイル内 component を追加。始発 (departure 時刻) → 三角矢印 → 終着 (arrival 時刻) の grid 3 列レイアウトを単一の subcomponent に集約し、`DialogDescription asChild` から explicit な props 渡しで呼び出す形に整理。
+- `TripPager` / `TripEndpointsSummary` / `TripInspectionSummary` のルートに `select-none` を付与し、TripInspectionDialog header の status indicator 群 (pager 時刻ラベル / 始発・終着 summary / position indicator・journey time bar 系) のテキスト選択を抑止。pager ボタン周辺タップ時の意図しないテキスト選択を回避。
 
 ### Fixed
 
