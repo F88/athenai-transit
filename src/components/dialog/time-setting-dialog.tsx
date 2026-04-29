@@ -95,7 +95,7 @@ export function TimeSettingDialog({
         <div className="flex justify-end gap-2">
           <Button
             size="lg"
-            className="mr-auto border-2 border-emerald-500 bg-emerald-200 text-emerald-900 hover:bg-emerald-300 disabled:opacity-40"
+            className="mr-auto cursor-pointer border-2 border-emerald-500 bg-emerald-200 text-emerald-900 hover:bg-emerald-300 disabled:opacity-40"
             disabled={!isCustomTime}
             onClick={handleResetToNowAndClose}
           >
@@ -103,7 +103,7 @@ export function TimeSettingDialog({
           </Button>
           <Button
             size="lg"
-            className="border-2 border-blue-500 bg-blue-200 text-blue-900 hover:bg-blue-300"
+            className="cursor-pointer border-2 border-blue-500 bg-blue-200 text-blue-900 hover:bg-blue-300"
             onClick={handleSubmit}
           >
             {t('time.set')}
