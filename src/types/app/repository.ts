@@ -28,10 +28,14 @@ export type CollectionResult<T> =
   | { success: true; data: T[]; truncated: boolean }
   | { success: false; error: string };
 
-/** Entries omitted by pre-filter (e.g. terminal arrivals hidden in simple/normal). */
+/** Entries omitted by pre-filter (e.g. drop-off-only entries hidden in simple/normal). */
 export interface TimetableOmitted {
-  /** Number of terminal arrival entries omitted. */
-  terminal: number;
+  /**
+   * Number of non-boardable entries omitted (= entries where
+   * `isDropOffOnly` returns true: `pickup_type === 1` or
+   * pattern-inferred `isTerminal`).
+   */
+  nonBoardable: number;
 }
 
 /**

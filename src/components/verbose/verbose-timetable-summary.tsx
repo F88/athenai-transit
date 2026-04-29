@@ -84,8 +84,8 @@ export function VerboseTimetableSummary({
           </span>
           {dwellCount > 0 && <span className="block">[dwell] count={dwellCount}</span>}
           <span className="block">
-            [state] stopServiceState={stopServiceState} omitted.terminal=
-            {omitted.terminal}
+            [state] stopServiceState={stopServiceState} omitted.nonBoardable=
+            {omitted.nonBoardable}
           </span>
         </span>
       </div>

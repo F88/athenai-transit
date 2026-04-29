@@ -15,6 +15,19 @@ import type {
 } from '../../types/app/transit';
 
 /**
+ * Get the display time in minutes for a timetable entry.
+ *
+ * Terminal entries show arrival time; all others show departure time.
+ * This is a key domain rule: the time shown to the user depends on
+ * whether the stop is the last stop in the pattern.
+ */
+export function getDisplayMinutes(entry: TimetableEntry): number {
+  return entry.patternPosition.isTerminal
+    ? entry.schedule.arrivalMinutes
+    : entry.schedule.departureMinutes;
+}
+
+/**
  * Derive the stop service state from service day signals.
  *
  * Signals are passed as a narrow structural object (see
@@ -205,30 +218,4 @@ export function isPassThrough(entry: TimetableEntry): boolean {
  */
 export function hasBoardable(entries: TimetableEntry[]): boolean {
   return entries.some((entry) => !isDropOffOnly(entry));
-}
-
-/**
- * Filter out drop-off-only entries, returning only boardable stop times.
- *
- * Used to exclude terminal arrivals and pickup-unavailable stops
- * from the NearbyStop display in non-verbose mode.
- *
- * Each entry's boardability is determined by {@link isDropOffOnly}
- * (pickupType === 1 OR isTerminal).
- */
-export function filterBoardable(entries: TimetableEntry[]): TimetableEntry[] {
-  return entries.filter((entry) => !isDropOffOnly(entry));
-}
-
-/**
- * Get the display time in minutes for a timetable entry.
- *
- * Terminal entries show arrival time; all others show departure time.
- * This is a key domain rule: the time shown to the user depends on
- * whether the stop is the last stop in the pattern.
- */
-export function getDisplayMinutes(entry: TimetableEntry): number {
-  return entry.patternPosition.isTerminal
-    ? entry.schedule.arrivalMinutes
-    : entry.schedule.departureMinutes;
 }

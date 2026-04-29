@@ -3,11 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { TimetableGrid } from '../timetable/timetable-grid';
 import { TimetableHeader } from '../timetable/timetable-header';
 import { TimetableMetadata } from '../timetable/timetable-metadata';
-import { StopTimetableFilter } from '../timetable/stop-timetable-filter';
+import { TimetableHeadsignFilter } from '../timetable/timetable-headsign-filter';
+import { TimetableBoardabilityFilter } from '../timetable/timetable-boardability-filter';
+import { TimetableOriginFilter } from '../timetable/timetable-origin-filter';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
+import { filterBoardable, filterOrigin } from '@/domain/transit/timetable-filter';
+import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
+import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { useScrollFades } from '@/hooks/use-scroll-fades';
 import type { InfoLevel } from '@/types/app/settings';
@@ -57,8 +62,80 @@ interface TimetableModalProps {
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLangs: readonly string[];
+  /**
+   * Initial value of the boardable-only filter toggle. When true, the
+   * dialog opens with the filter ON (= the user can still toggle it
+   * off via the filter pill). The value is read once at mount; pair
+   * with a stable `key` on `<TimetableModal>` so the dialog re-mounts
+   * (= re-evaluates the initial value) per stop.
+   */
+  boardableOnly: boolean;
   onInspectTrip?: (target: TripInspectionTarget) => void;
   onClose: () => void;
+}
+
+interface EntriesPanelProps {
+  timetableEntries: TimetableEntry[];
+  entryStats: TimetableEntryStats;
+  agencies: Agency[];
+  dataLangs: readonly string[];
+  filteredCount: number;
+}
+
+/**
+ * The "all entries" overview block: stats summary for the unfiltered
+ * entry set plus the filter toggles that operate on it (headsign /
+ * origin-only / boardability).
+ */
+function EntriesPanel({
+  timetableEntries,
+  entryStats,
+  dataLangs,
+  agencies,
+  filteredCount,
+}: EntriesPanelProps) {
+  return (
+    <>
+      {filteredCount > 0 && (
+        <TimetableMetadata
+          timetableEntries={timetableEntries}
+          dataLang={dataLangs}
+          agencies={agencies}
+          stats={entryStats}
+        />
+      )}
+    </>
+  );
+}
+
+/** Date and time label shown at the bottom of the dialog header. */
+function TimetableDateLabel({
+  serviceDate,
+  time,
+  lang,
+}: {
+  serviceDate: Date;
+  time: Date;
+  lang: string;
+}) {
+  const { dateText, dayLabel, dayColorCategory } = formatDateParts(
+    serviceDate,
+    lang,
+    DEFAULT_TIMEZONE,
+    { showYear: true },
+  );
+  const { time: currentTimeText } = formatDateParts(time, lang, DEFAULT_TIMEZONE, {
+    showTime: true,
+  });
+  // Weekday inherits the parent's muted color; only sat/sun/holiday get color override.
+  const dayLabelClass =
+    dayColorCategory === 'weekday' ? undefined : DAY_COLOR_CATEGORY_CLASSES[dayColorCategory];
+
+  return (
+    <p className="text-muted-foreground m-0 text-center font-normal">
+      {dateText} <span className={dayLabelClass}>({dayLabel})</span> {currentTimeText}
+    </p>
+  );
 }
 
 export function TimetableModal({
@@ -66,6 +143,7 @@ export function TimetableModal({
   time,
   infoLevel,
   dataLangs,
+  boardableOnly,
   onInspectTrip,
   onClose,
 }: TimetableModalProps) {
@@ -80,6 +158,15 @@ export function TimetableModal({
   // Empty set = show all timetable (no filter active).
   const [activeFilters, setActiveFilters] = useState<Set<string>>(() => new Set());
 
+  // Boardable-only filter toggle. Initial value comes from the
+  // `boardableOnly` prop (read once at mount; the caller should use a
+  // `key` on <TimetableModal> to re-mount per stop).
+  const [showBoardableOnly, setShowBoardableOnly] = useState(boardableOnly);
+
+  // Origin-only filter toggle (= 始発のみ). OFF by default.
+  // When ON, applies filterOrigin on top of any other active filters.
+  const [showOriginOnly, setShowOriginOnly] = useState(false);
+
   const toggleFilter = useCallback((key: string) => {
     setActiveFilters((prev) => {
       const next = new Set(prev);
@@ -92,6 +179,14 @@ export function TimetableModal({
     });
   }, []);
 
+  const toggleBoardableOnly = useCallback(() => {
+    setShowBoardableOnly((prev) => !prev);
+  }, []);
+
+  const toggleOriginOnly = useCallback(() => {
+    setShowOriginOnly((prev) => !prev);
+  }, []);
+
   // Both timetable types now use TimetableEntry[] directly.
   const allTimetableEntries: TimetableEntry[] = useMemo(() => {
     if (!data) {
@@ -99,15 +194,38 @@ export function TimetableModal({
     }
     return data.timetableEntries;
   }, [data]);
+  // const allEntriesStats = computeTimetableEntryStats( allTimetableEntries, data?.agencies ?? [], dataLangs,);
 
-  const filteredTimetableEntries = useMemo(() => {
-    if (!data || data.type !== 'stop' || activeFilters.size === 0) {
-      return allTimetableEntries;
+  const entriesBeforeRouteHeadsignFilter = useMemo(() => {
+    let entries = allTimetableEntries;
+    if (showOriginOnly) {
+      entries = filterOrigin(entries);
     }
-    return allTimetableEntries.filter((entry) =>
-      activeFilters.has(getRouteHeadsignKey(entry.routeDirection)),
-    );
-  }, [data, allTimetableEntries, activeFilters]);
+    if (showBoardableOnly) {
+      entries = filterBoardable(entries);
+    }
+    return entries;
+  }, [allTimetableEntries, showOriginOnly, showBoardableOnly]);
+  const entriesBeforeRouteHeadsignFilterStats = computeTimetableEntryStats(
+    entriesBeforeRouteHeadsignFilter,
+    data?.agencies ?? [],
+    dataLangs,
+  );
+
+  const routeHeadsignFilteredEntries = useMemo(() => {
+    let entries = entriesBeforeRouteHeadsignFilter;
+    if (activeFilters.size > 0) {
+      entries = entries.filter((entry) =>
+        activeFilters.has(getRouteHeadsignKey(entry.routeDirection)),
+      );
+    }
+    return entries;
+  }, [entriesBeforeRouteHeadsignFilter, activeFilters]);
+  const routeHeadsignFilteredEntriesStats = computeTimetableEntryStats(
+    routeHeadsignFilteredEntries,
+    data?.agencies ?? [],
+    dataLangs,
+  );
 
   const descriptionHeadsign = useMemo(() => {
     if (!data?.headsign || data.type !== 'route-headsign') {
@@ -129,11 +247,11 @@ export function TimetableModal({
 
   const headerScroll = useScrollFades(
     headerContainerRef,
-    `${data?.type ?? 'closed'}:${data?.headsign ?? ''}:${filteredTimetableEntries.length}:${infoLevel}`,
+    `${data?.type ?? 'closed'}:${data?.headsign ?? ''}:${entriesBeforeRouteHeadsignFilter.length}:${infoLevel}`,
   );
   const gridScroll = useScrollFades(
     gridContainerRef,
-    `${data?.type ?? 'closed'}:${filteredTimetableEntries.length}:${infoLevel}:${currentHour}`,
+    `${data?.type ?? 'closed'}:${entriesBeforeRouteHeadsignFilter.length}:${infoLevel}:${currentHour}`,
   );
 
   if (!data) {
@@ -170,13 +288,13 @@ export function TimetableModal({
         stop: descriptionStopName,
         route: descriptionRouteName,
         headsign: descriptionHeadsign,
-        count: filteredTimetableEntries.length.toLocaleString(i18n.language),
+        count: entriesBeforeRouteHeadsignFilter.length.toLocaleString(i18n.language),
       },
     );
   } else {
     timetableDescription = t('timetable.header.stopDescription', {
       stop: descriptionStopName,
-      count: filteredTimetableEntries.length.toLocaleString(i18n.language),
+      count: entriesBeforeRouteHeadsignFilter.length.toLocaleString(i18n.language),
     });
   }
 
@@ -209,7 +327,7 @@ export function TimetableModal({
                 type={data.type}
                 headsign={data.headsign}
                 serviceDate={data.serviceDate}
-                timetableEntries={filteredTimetableEntries}
+                timetableEntries={entriesBeforeRouteHeadsignFilter}
                 omitted={data.omitted}
                 stopServiceState={data.stopServiceState}
               />
@@ -229,24 +347,71 @@ export function TimetableModal({
               dataLangs={dataLangs}
             />
 
-            {info.isDetailedEnabled && filteredTimetableEntries.length > 0 && (
-              <TimetableMetadata
-                timetableEntries={filteredTimetableEntries}
-                dataLang={dataLangs}
+            {/* All entries */}
+            {/* {info.isVerboseEnabled && (
+              <EntriesPanel
+                timetableEntries={allTimetableEntries}
+                entryStats={allEntriesStats}
                 agencies={data.agencies}
+                dataLangs={dataLangs}
+                filteredCount={allTimetableEntries.length}
+              />
+            )} */}
+
+            {/* entriesBeforeRouteHeadsignFilter */}
+            {/* {info.isVerboseEnabled && (
+              <EntriesPanel
+                timetableEntries={entriesBeforeRouteHeadsignFilter}
+                entryStats={entriesBeforeRouteHeadsignFilterStats}
+                agencies={data.agencies}
+                dataLangs={dataLangs}
+                filteredCount={entriesBeforeRouteHeadsignFilter.length}
+              />
+            )} */}
+
+            {/* routeHeadsignFilteredEntriesStats */}
+            {info.isDetailedEnabled && (
+              <EntriesPanel
+                timetableEntries={routeHeadsignFilteredEntries}
+                entryStats={routeHeadsignFilteredEntriesStats}
+                agencies={data.agencies}
+                dataLangs={dataLangs}
+                filteredCount={routeHeadsignFilteredEntries.length}
               />
             )}
 
+            {/* Date time */}
             <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLangs[0]} />
-            {data.type === 'stop' && (
-              <StopTimetableFilter
-                timetableEntries={data.timetableEntries}
-                activeFilters={activeFilters}
-                onToggleFilter={toggleFilter}
-                dataLang={dataLangs}
-                agencies={data.agencies}
+
+            <div className="flex flex-wrap gap-1">
+              {/* Origin filter — hidden when no origin entries exist at this stop */}
+              {entriesBeforeRouteHeadsignFilterStats.originCount > 0 && (
+                <TimetableOriginFilter
+                  origin={showOriginOnly}
+                  count={entriesBeforeRouteHeadsignFilterStats.originCount}
+                  onToggleOrigin={toggleOriginOnly}
+                />
+              )}
+              {/* Boardability filter */}
+              {/* {filteredEntriesStats.nonBoardableCount > 0 && ( */}
+              <TimetableBoardabilityFilter
+                boardable={showBoardableOnly}
+                count={entriesBeforeRouteHeadsignFilterStats.boardableCount}
+                onToggleBoardable={toggleBoardableOnly}
               />
-            )}
+              {/* )} */}
+              {/* Headsign filter */}
+              {data.type === 'stop' && (
+                <TimetableHeadsignFilter
+                  timetableEntries={entriesBeforeRouteHeadsignFilter}
+                  activeFilters={activeFilters}
+                  onToggleFilter={toggleFilter}
+                  dataLang={dataLangs}
+                  agencies={data.agencies}
+                />
+              )}
+            </div>
+            {/* Unknown destination warning */}
             {((data.type === 'route-headsign' && data.headsign === '') ||
               (data.type === 'stop' &&
                 hasUnknownDestination(
@@ -273,12 +438,12 @@ export function TimetableModal({
           )}
           <div className="px-4 pt-3 pb-4">
             <TimetableGrid
-              timetableEntries={filteredTimetableEntries}
+              timetableEntries={routeHeadsignFilteredEntries}
               serviceDate={data.serviceDate}
               showHeadsign={
                 info.isVerboseEnabled ||
                 new Set(
-                  filteredTimetableEntries.map((entry) =>
+                  routeHeadsignFilteredEntries.map((entry) =>
                     getRouteHeadsignKey(entry.routeDirection),
                   ),
                 ).size > 1
@@ -299,35 +464,3 @@ export function TimetableModal({
     </Dialog>
   );
 }
-
-/** Date and time label shown at the bottom of the dialog header. */
-function TimetableDateLabel({
-  serviceDate,
-  time,
-  lang,
-}: {
-  serviceDate: Date;
-  time: Date;
-  lang: string;
-}) {
-  const { dateText, dayLabel, dayColorCategory } = formatDateParts(
-    serviceDate,
-    lang,
-    DEFAULT_TIMEZONE,
-    { showYear: true },
-  );
-  const { time: currentTimeText } = formatDateParts(time, lang, DEFAULT_TIMEZONE, {
-    showTime: true,
-  });
-  // Weekday inherits the parent's muted color; only sat/sun/holiday get color override.
-  const dayLabelClass =
-    dayColorCategory === 'weekday' ? undefined : DAY_COLOR_CATEGORY_CLASSES[dayColorCategory];
-
-  return (
-    <p className="text-muted-foreground m-0 text-center font-normal">
-      {dateText} <span className={dayLabelClass}>({dayLabel})</span> {currentTimeText}
-    </p>
-  );
-}
-
-/** Verbose-only metadata dump: boarding stats, direction, pattern breakdown. */

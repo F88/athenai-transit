@@ -114,13 +114,31 @@
     },
     "metadata": {
       "count": "{{count}}本",
-      "avgInterval": "平均{{interval}}分間隔"
+      "avgInterval": "平均{{interval}}分間隔",
+      "originCount": "始発 {{count}}本",
+      "terminalCount": "終点 {{count}}本",
+      "passingCount": "途中 {{count}}本",
+      "boardableCount": "乗車可 {{count}}本",
+      "nonBoardableCount": "乗車不可 {{count}}本",
+      "dropOffOnlyCount": "降車専用 {{count}}本",
+      "noDropOffCount": "降車不可 {{count}}本",
+      "routeCount": "路線 {{count}}",
+      "headsignCount": "行先 {{count}}",
+      "routeHeadsignCount": "路線×行先 {{count}}",
+      "stopHeadsignOverrideCount": "stopHeadsign指定 {{count}}本",
+      "directionCount": "direction {{count}}"
     },
     "header": {
       "routeHeadsignDescription": "{{stop}}: {{route}} -> {{headsign}} 方面 時刻表 {{count}}本",
       "routeDescription": "{{stop}}: {{route}} 時刻表 {{count}}本",
       "stopDescription": "{{stop}}: 全路線時刻表 {{count}}本",
       "noDestination": "行先が表示されない路線があります"
+    },
+    "filter": {
+      "boardableOnly": "🚏 乗車可",
+      "boardableOnlyTitle": "乗車できる便のみ表示 (終点や乗車不可便を除外)",
+      "originOnly": "🚩 始発",
+      "originOnlyTitle": "ここを始発とする便のみ表示 (出庫便など乗車不可な始発も含む)"
     }
   },
   "panel": {

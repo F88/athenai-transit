@@ -114,13 +114,31 @@
     },
     "metadata": {
       "count": "{{count}} trips",
-      "avgInterval": "avg. {{interval}} min interval"
+      "avgInterval": "avg. {{interval}} min interval",
+      "originCount": "{{count}} origin",
+      "terminalCount": "{{count}} terminal",
+      "passingCount": "{{count}} passing",
+      "boardableCount": "{{count}} boardable",
+      "nonBoardableCount": "{{count}} non-boardable",
+      "dropOffOnlyCount": "{{count}} drop-off only",
+      "noDropOffCount": "{{count}} no drop-off",
+      "routeCount": "{{count}} routes",
+      "headsignCount": "{{count}} headsigns",
+      "routeHeadsignCount": "{{count}} route×headsign",
+      "stopHeadsignOverrideCount": "{{count}} stop_headsign override",
+      "directionCount": "{{count}} directions"
     },
     "header": {
       "routeHeadsignDescription": "Timetable at {{stop}}: {{route}} -> {{headsign}} ({{count}})",
       "routeDescription": "Timetable at {{stop}}: {{route}} ({{count}})",
       "stopDescription": "Timetable at {{stop}}: all routes ({{count}})",
       "noDestination": "Some routes have no destination"
+    },
+    "filter": {
+      "boardableOnly": "🚏 Boardable",
+      "boardableOnlyTitle": "Show only boardable trips (exclude terminals and pickup-unavailable)",
+      "originOnly": "🚩 Origin",
+      "originOnlyTitle": "Show only trips originating at this stop (includes non-boardable origins like depot departures)"
     }
   },
   "panel": {

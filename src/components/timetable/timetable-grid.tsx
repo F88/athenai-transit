@@ -81,7 +81,7 @@ export function TimetableGrid({
   if (hourGroups.size === 0) {
     return (
       <p className="text-muted-foreground p-4 text-center">
-        {omitted.terminal > 0
+        {omitted.nonBoardable > 0
           ? t('timetable.grid.empty.dropOffOnly')
           : t('timetable.grid.empty.noService')}
       </p>
