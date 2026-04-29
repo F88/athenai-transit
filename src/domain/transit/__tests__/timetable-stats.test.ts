@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { Route } from '../../../types/app/transit';
+import type { Agency, Route } from '../../../types/app/transit';
 import type { TimetableEntry, TranslatableText } from '../../../types/app/transit-composed';
 import { computeTimetableEntryStats } from '../timetable-stats';
+
+const TEST_AGENCIES: readonly Agency[] = [];
+const TEST_LANGS = ['ja'] as const;
 
 // --- Test fixtures ---
 
@@ -66,7 +69,7 @@ function makeEntry(
 
 describe('computeTimetableEntryStats', () => {
   it('returns all-zero stats for an empty input', () => {
-    const stats = computeTimetableEntryStats([]);
+    const stats = computeTimetableEntryStats([], TEST_AGENCIES, TEST_LANGS);
     expect(stats).toEqual({
       totalCount: 0,
       originCount: 0,
@@ -77,10 +80,9 @@ describe('computeTimetableEntryStats', () => {
       dropOffOnlyCount: 0,
       noDropOffCount: 0,
       routeCount: 0,
-      headsignCount: 0,
-      routeHeadsignCount: 0,
-      stopHeadsignOverrideCount: 0,
       directionCount: 0,
+      tripHeadsignCount: 0,
+      stopHeadsignCount: 0,
       patternCount: 0,
       serviceCount: 0,
       uniqueTripCount: 0,
@@ -95,7 +97,7 @@ describe('computeTimetableEntryStats', () => {
         makeEntry({ stopIndex: 2 }),
         makeEntry({ stopIndex: 3 }),
       ];
-      const stats = computeTimetableEntryStats(entries);
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.totalCount).toBe(4);
       expect(stats.originCount).toBe(1);
       expect(stats.terminalCount).toBe(1);
@@ -106,7 +108,7 @@ describe('computeTimetableEntryStats', () => {
       const entries = [
         makeEntry({ isOrigin: true, isTerminal: true, stopIndex: 0, totalStops: 1 }),
       ];
-      const stats = computeTimetableEntryStats(entries);
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.totalCount).toBe(1);
       expect(stats.originCount).toBe(1);
       expect(stats.terminalCount).toBe(1);
@@ -117,7 +119,7 @@ describe('computeTimetableEntryStats', () => {
   describe('B axis (boarding)', () => {
     it('partitions boardable vs non-boardable', () => {
       const entries = [makeEntry(), makeEntry({ isTerminal: true }), makeEntry({ pickupType: 1 })];
-      const stats = computeTimetableEntryStats(entries);
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.totalCount).toBe(3);
       expect(stats.boardableCount).toBe(1);
       expect(stats.nonBoardableCount).toBe(2);
@@ -131,7 +133,7 @@ describe('computeTimetableEntryStats', () => {
         makeEntry({ isTerminal: true }),
         makeEntry(),
       ];
-      const stats = computeTimetableEntryStats(entries);
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.dropOffOnlyCount).toBe(2);
       expect(stats.nonBoardableCount).toBe(3);
     });
@@ -142,7 +144,7 @@ describe('computeTimetableEntryStats', () => {
         makeEntry({ dropOffType: 1 }),
         makeEntry(),
       ];
-      const stats = computeTimetableEntryStats(entries);
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.noDropOffCount).toBe(2);
     });
   });
@@ -155,20 +157,20 @@ describe('computeTimetableEntryStats', () => {
         makeEntry({ routeId: 'rB', headsign: 'X' }),
         makeEntry({ routeId: 'rB', headsign: 'X' }),
       ];
-      const stats = computeTimetableEntryStats(entries);
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.routeCount).toBe(2);
-      expect(stats.headsignCount).toBe(2);
-      expect(stats.routeHeadsignCount).toBe(3);
+      expect(stats.stopHeadsignCount).toBe(2);
+      expect(stats.tripHeadsignCount).toBe(2);
     });
 
-    it('counts entries with stopHeadsign set', () => {
+    it('counts unique resolved stop headsigns', () => {
       const entries = [
         makeEntry({ stopHeadsign: { name: 'override', names: {} } }),
         makeEntry({ stopHeadsign: { name: 'override2', names: {} } }),
         makeEntry(),
       ];
-      const stats = computeTimetableEntryStats(entries);
-      expect(stats.stopHeadsignOverrideCount).toBe(2);
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
+      expect(stats.stopHeadsignCount).toBe(3);
     });
 
     it('counts unique direction values (undefined is one value)', () => {
@@ -178,7 +180,7 @@ describe('computeTimetableEntryStats', () => {
         makeEntry({ direction: 1 }),
         makeEntry(),
       ];
-      const stats = computeTimetableEntryStats(entries);
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.directionCount).toBe(3);
     });
   });
@@ -190,7 +192,7 @@ describe('computeTimetableEntryStats', () => {
         makeEntry({ patternId: 'p1', serviceId: 's2', tripIndex: 1 }),
         makeEntry({ patternId: 'p2', serviceId: 's1', tripIndex: 2 }),
       ];
-      const stats = computeTimetableEntryStats(entries);
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.patternCount).toBe(2);
       expect(stats.serviceCount).toBe(2);
     });
@@ -201,7 +203,7 @@ describe('computeTimetableEntryStats', () => {
         makeEntry({ patternId: 'p1', serviceId: 's1', tripIndex: 1 }),
         makeEntry({ patternId: 'p1', serviceId: 's1', tripIndex: 2 }),
       ];
-      const stats = computeTimetableEntryStats(entries);
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.uniqueTripCount).toBe(3);
       expect(stats.uniqueTripCount).toBe(stats.totalCount);
     });
@@ -215,7 +217,7 @@ describe('computeTimetableEntryStats', () => {
         makeEntry({ patternId: 'p1', serviceId: 's1', tripIndex: 1, stopIndex: 0 }),
         makeEntry({ patternId: 'p1', serviceId: 's1', tripIndex: 1, stopIndex: 28 }),
       ];
-      const stats = computeTimetableEntryStats(entries);
+      const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
       expect(stats.totalCount).toBe(4);
       expect(stats.uniqueTripCount).toBe(2);
     });
@@ -265,7 +267,7 @@ describe('computeTimetableEntryStats', () => {
         tripIndex: 0,
       }),
     ];
-    const stats = computeTimetableEntryStats(entries);
+    const stats = computeTimetableEntryStats(entries, TEST_AGENCIES, TEST_LANGS);
 
     expect(stats.totalCount).toBe(4);
 
@@ -280,11 +282,11 @@ describe('computeTimetableEntryStats', () => {
     expect(stats.dropOffOnlyCount).toBe(1);
     expect(stats.noDropOffCount).toBe(0);
 
-    // C axis
+    // C axis: resolver picks stopHeadsign when present (entry 2 -> 'X-via'),
+    // so headsign and routeHeadsign uniqueness reflects that override.
     expect(stats.routeCount).toBe(2);
-    expect(stats.headsignCount).toBe(2);
-    expect(stats.routeHeadsignCount).toBe(2);
-    expect(stats.stopHeadsignOverrideCount).toBe(1);
+    expect(stats.stopHeadsignCount).toBe(3); // X, X-via, Y
+    expect(stats.tripHeadsignCount).toBe(2); // X, Y
     expect(stats.directionCount).toBe(2);
 
     // D axis

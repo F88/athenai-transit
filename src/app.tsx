@@ -113,7 +113,7 @@ export default function App({ loadResult }: AppProps) {
   const [radiusStops, setNearbyStops] = useState<StopWithMeta[]>([]);
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
   const [routeShapes, setRouteShapes] = useState<RouteShape[]>([]);
-  const [timetableModal, setTimetableModal] = useState<TimetableData | null>(null);
+  const [timetableData, setTimetableData] = useState<TimetableData | null>(null);
   const [hasNearbyLoaded, setHasNearbyLoaded] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
@@ -142,7 +142,7 @@ export default function App({ loadResult }: AppProps) {
       !searchModalOpen &&
       !infoDialogOpen &&
       !shortcutHelpOpen &&
-      timetableModal === null &&
+      timetableData === null &&
       tripInspectionSnapshot === null,
     handlers: {
       onOpenSearch: () => setSearchModalOpen(true),
@@ -492,13 +492,8 @@ export default function App({ loadResult }: AppProps) {
       const { allEntries, isBoardableOnServiceDay } = await fetchTimetableEntries(stopId);
       const { entries, omitted } =
         filter.type === 'route-headsign'
-          ? prepareRouteHeadsignTimetable(
-              allEntries,
-              filter.routeId,
-              filter.headsign,
-              infoLevelFlags.isDetailedEnabled,
-            )
-          : prepareStopTimetable(allEntries, infoLevelFlags.isDetailedEnabled);
+          ? prepareRouteHeadsignTimetable(allEntries, filter.routeId, filter.headsign, true)
+          : prepareStopTimetable(allEntries, true);
 
       const headsign = filter.type === 'route-headsign' ? filter.headsign : undefined;
 
@@ -506,7 +501,7 @@ export default function App({ loadResult }: AppProps) {
         `timetable(${filter.type}) [${settings.infoLevel}]: ${stopId}${filter.type === 'route-headsign' ? ` ${filter.routeId} "${headsign}"` : ''} → entries=${entries.length} omitted.nonBoardable=${omitted.nonBoardable} total=${allEntries.length}`,
       );
 
-      setTimetableModal({
+      setTimetableData({
         type: filter.type,
         stop: meta.stop,
         routes,
@@ -521,7 +516,7 @@ export default function App({ loadResult }: AppProps) {
         agencies: meta.agencies,
       });
     },
-    [dateTime, radiusStops, infoLevelFlags, fetchTimetableEntries, settings.infoLevel],
+    [dateTime, radiusStops, fetchTimetableEntries, settings.infoLevel],
   );
 
   const handleShowTimetable = useCallback(
@@ -876,12 +871,14 @@ export default function App({ loadResult }: AppProps) {
         }}
       />
       <TimetableModal
-        data={timetableModal}
+        key={timetableData?.stop.stop_id ?? 'closed'}
+        data={timetableData}
         time={dateTime}
         infoLevel={settings.infoLevel}
+        boardableOnly={!infoLevelFlags.isDetailedEnabled}
         dataLangs={langChain}
         onInspectTrip={openTripInspection}
-        onClose={() => setTimetableModal(null)}
+        onClose={() => setTimetableData(null)}
       />
       <Toaster
         theme={settings.theme}

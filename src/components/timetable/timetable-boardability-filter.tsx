@@ -37,6 +37,9 @@ export function TimetableBoardabilityFilter({
       <PillButton
         size="sm"
         active={boardable}
+        activeBg={'#1565c0'}
+        activeBorder={'#1565c0'}
+        inactiveBorder={'#1565c0'}
         onClick={onToggleBoardable}
         title={t('timetable.filter.boardableOnlyTitle')}
         count={count}

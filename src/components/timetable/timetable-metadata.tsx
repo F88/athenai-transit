@@ -4,6 +4,7 @@ import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
 import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
 import type { Agency, Route } from '@/types/app/transit';
 import type { TimetableEntry } from '@/types/app/transit-composed';
+import { LabelCountBadge } from '../badge/label-count-badge';
 import { RouteCountBadge } from '../badge/route-count-badge';
 
 interface TimetableMetadataProps {
@@ -58,6 +59,33 @@ function PatternPositionAxisStats({ stats }: { stats: TimetableEntryStats }) {
   );
 }
 
+function PatternPositionAxisBadges({ stats }: { stats: TimetableEntryStats }) {
+  const { t } = useTranslation();
+  const originLabelBadgeClassName = 'bg-blue-500 text-white';
+  const originCountBadgeClassName = 'border-l border-blue-500 bg-background text-foreground';
+  const terminalLabelBadgeClassName = 'bg-gray-500 text-white';
+  const terminalCountBadgeClassName = 'border-l border-gray-500 bg-background text-foreground';
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      <LabelCountBadge
+        label={t('timetable.entry.origin')}
+        count={stats.originCount}
+        frameClassName="border-blue-500"
+        labelClassName={originLabelBadgeClassName}
+        countClassName={originCountBadgeClassName}
+      />
+      <LabelCountBadge
+        label={t('timetable.entry.terminal')}
+        count={stats.terminalCount}
+        frameClassName="border-gray-500"
+        labelClassName={terminalLabelBadgeClassName}
+        countClassName={terminalCountBadgeClassName}
+      />
+    </div>
+  );
+}
+
 /**
  * Render the B-axis (boarding availability) stats span:
  * `[boardable / non-boardable / drop-off-only / no-drop-off]`.
@@ -91,6 +119,40 @@ function BoardingAxisStats({ stats }: { stats: TimetableEntryStats }) {
   );
 }
 
+function BoardingAxisBadges({ stats }: { stats: TimetableEntryStats }) {
+  const { t } = useTranslation();
+  const noPickupLabelBadgeClassName =
+    'border-yellow-600 bg-yellow-100 text-yellow-900 dark:border-yellow-600 dark:bg-yellow-950 dark:text-yellow-200';
+  const noPickupCountBadgeClassName = 'border-l border-yellow-600 bg-background text-foreground';
+  const noDropOffLabelBadgeClassName =
+    'bg-yellow-100 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-200';
+  const noDropOffCountBadgeClassName =
+    'border-l border-dashed border-yellow-600 bg-background text-foreground';
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      <LabelCountBadge label={t('stop.serviceState.boardable')} count={stats.boardableCount} />
+      {/* <LabelCountBadge label={t('timetable.entry.noPickup')} count={stats.nonBoardableCount} /> */}
+      <LabelCountBadge
+        label={t('timetable.entry.noPickup')}
+        count={stats.nonBoardableCount}
+        frameClassName="border-yellow-600"
+        labelClassName={noPickupLabelBadgeClassName}
+        countClassName={noPickupCountBadgeClassName}
+      />
+      {/* <LabelCountBadge label={t('timetable.entry.noDropOff')} count={stats.noDropOffCount} /> */}
+      <LabelCountBadge
+        label={t('timetable.entry.noDropOff')}
+        count={stats.noDropOffCount}
+        frameClassName="border-dashed border-yellow-600"
+        labelClassName={noDropOffLabelBadgeClassName}
+        countClassName={noDropOffCountBadgeClassName}
+      />
+      <LabelCountBadge label={t('stop.serviceState.dropOffOnly')} count={stats.dropOffOnlyCount} />
+    </div>
+  );
+}
+
 /**
  * Render the C-axis (route direction) stats span. Split into two
  * bracket groups: `[route / headsign]` for unique-name signals and
@@ -105,29 +167,25 @@ function RouteDirectionAxisStats({ stats }: { stats: TimetableEntryStats }) {
   const { t, i18n } = useTranslation();
   return (
     <>
-    <span>
-      {'['}
-      {t('timetable.metadata.routeCount', {
-        count: stats.routeCount.toLocaleString(i18n.language),
-      })}
-      {' / '}
-      {t('timetable.metadata.headsignCount', {
-        count: stats.headsignCount.toLocaleString(i18n.language),
-      })}
-      {'] / ['}
-      {t('timetable.metadata.routeHeadsignCount', {
-        count: stats.routeHeadsignCount.toLocaleString(i18n.language),
-      })}
-      {' / '}
-      {t('timetable.metadata.stopHeadsignOverrideCount', {
-        count: stats.stopHeadsignOverrideCount.toLocaleString(i18n.language),
-      })}
-      {' / '}
-      {t('timetable.metadata.directionCount', {
-        count: stats.directionCount.toLocaleString(i18n.language),
-      })}
-      {']'}
-    </span>
+      <span>
+        {'['}
+        {t('timetable.metadata.routeCount', {
+          count: stats.routeCount.toLocaleString(i18n.language),
+        })}
+        {' / '}
+        {t('timetable.metadata.headsignCount', {
+          count: stats.stopHeadsignCount.toLocaleString(i18n.language),
+        })}
+        {'] / ['}
+        {t('timetable.metadata.routeHeadsignCount', {
+          count: stats.tripHeadsignCount.toLocaleString(i18n.language),
+        })}
+        {' / '}
+        {t('timetable.metadata.directionCount', {
+          count: stats.directionCount.toLocaleString(i18n.language),
+        })}
+        {']'}
+      </span>
     </>
   );
 }
@@ -188,16 +246,30 @@ export function TimetableMetadata({
             })}
           </span>
         )}
-        {/* A axis: pattern position */}
-        {' / '}
-        <PatternPositionAxisStats stats={stats} />
-        {/* B axis: boarding availability */}
-        {' / '}
-        <BoardingAxisStats stats={stats} />
-        {/* C axis: route direction */}
-        {/* {' / '} */}
-        <RouteDirectionAxisStats stats={stats} />
+        {false && (
+          <>
+            {' / '}
+            <PatternPositionAxisStats stats={stats} />
+          </>
+        )}
+        {false && (
+          <>
+            {' / '}
+            <BoardingAxisStats stats={stats} />
+          </>
+        )}
+        {false && (
+          <>
+            {' / '}
+            <RouteDirectionAxisStats stats={stats} />
+          </>
+        )}
       </p>
+
+      <div className="flex flex-wrap items-start gap-1">
+        <PatternPositionAxisBadges stats={stats} />
+        <BoardingAxisBadges stats={stats} />
+      </div>
 
       {/* Routes with their counts.
        *

@@ -1,5 +1,11 @@
 import type { TimetableEntry } from '@/types/app/transit-composed';
+import { getHeadsignDisplayNames } from './name-resolver/get-headsign-display-names';
 import { isDropOffOnly } from './timetable-utils';
+import type { Agency } from '@/types/app/transit';
+import { resolveAgencyLang } from '@/config/transit-defaults';
+import { createLogger } from '../../lib/logger';
+
+const logger = createLogger('TimetableStats');
 
 /**
  * Aggregated statistics computed from a list of {@link TimetableEntry}.
@@ -19,7 +25,8 @@ import { isDropOffOnly } from './timetable-utils';
  *   pair partitions all entries (sum equals `totalCount`).
  *   `dropOffOnlyCount` (= explicit `pickup_type === 1`) and `noDropOffCount`
  *   (= explicit `drop_off_type === 1`) are independent GTFS signals.
- * - **C (route direction)**: unique counts of `route_id`, headsign,
+ * - **C (route direction)**: unique counts of `route_id`, resolved
+ *   headsign (= the user-facing string from {@link getHeadsignDisplayNames}),
  *   `(route, headsign)` pairs, observed `direction` values, plus the
  *   number of entries whose `stopHeadsign` is set.
  * - **D (trip locator)**: unique counts of `patternId`, `serviceId`,
@@ -54,14 +61,10 @@ export interface TimetableEntryStats {
   // C axis: route direction
   /** Number of unique `route_id` values across the entries. */
   routeCount: number;
-  /** Number of unique `tripHeadsign.name` values (empty string is one value). */
-  headsignCount: number;
-  /** Number of unique `(route_id, headsign)` combinations. */
-  routeHeadsignCount: number;
-  /** Entries where `stopHeadsign` is set (= GTFS stop_headsign override). */
-  stopHeadsignOverrideCount: number;
   /** Number of unique `direction` values observed (`undefined` is one value). */
   directionCount: number;
+  tripHeadsignCount: number;
+  stopHeadsignCount: number;
 
   // D axis: trip locator
   /** Number of unique `patternId` values. */
@@ -84,10 +87,21 @@ export interface TimetableEntryStats {
  *
  * Returns all-zero stats for an empty input.
  *
+ * `headsignCount` and `routeHeadsignCount` are aggregated from the
+ * resolved (= user-facing) headsign string produced by
+ * {@link getHeadsignDisplayNames}, so the same `preferredDisplayLangs`,
+ * `agencyLangs`, and `prefer` arguments are forwarded.
+ *
  * @param entries - The entries to analyze.
+ * @param agencies - Agency languages used for sub-name priority within the resolver.
+ * @param preferredDisplayLangs - Ordered language fallback chain for the resolved headsign.
  * @returns Aggregated stats. See {@link TimetableEntryStats} for axis details.
  */
-export function computeTimetableEntryStats(entries: TimetableEntry[]): TimetableEntryStats {
+export function computeTimetableEntryStats(
+  entries: TimetableEntry[],
+  agencies: readonly Agency[],
+  preferredDisplayLangs: readonly string[],
+): TimetableEntryStats {
   let originCount = 0;
   let terminalCount = 0;
   let passingCount = 0;
@@ -95,17 +109,18 @@ export function computeTimetableEntryStats(entries: TimetableEntry[]): Timetable
   let nonBoardableCount = 0;
   let dropOffOnlyCount = 0;
   let noDropOffCount = 0;
-  let stopHeadsignOverrideCount = 0;
 
   const routeIds = new Set<string>();
-  const headsigns = new Set<string>();
-  const routeHeadsigns = new Set<string>();
+  const tripsHeadsigns = new Set<string>();
+  const stopHeadsigns = new Set<string>();
   const directions = new Set<string>();
   const patternIds = new Set<string>();
   const serviceIds = new Set<string>();
   const trips = new Set<string>();
 
   for (const entry of entries) {
+    const agencyLangs = resolveAgencyLang(agencies, entry.routeDirection.route.agency_id);
+
     if (entry.patternPosition.isOrigin) {
       originCount++;
     }
@@ -129,20 +144,36 @@ export function computeTimetableEntryStats(entries: TimetableEntry[]): Timetable
     }
 
     const routeId = entry.routeDirection.route.route_id;
-    const headsign = entry.routeDirection.tripHeadsign.name;
     routeIds.add(routeId);
-    headsigns.add(headsign);
-    routeHeadsigns.add(`${routeId}|${headsign}`);
+
+    const tripHeadsign = getHeadsignDisplayNames(
+      entry.routeDirection,
+      preferredDisplayLangs,
+      agencyLangs,
+      'trip',
+    ).resolved.name;
+    tripsHeadsigns.add(tripHeadsign);
+
+    const stopHeadsign = getHeadsignDisplayNames(
+      entry.routeDirection,
+      preferredDisplayLangs,
+      agencyLangs,
+      'stop',
+    ).resolved.name;
+    stopHeadsigns.add(stopHeadsign);
+
+    // console.debug({ stopHeadsign, tripHeadsign });
+
     directions.add(String(entry.routeDirection.direction));
-    if (entry.routeDirection.stopHeadsign !== undefined) {
-      stopHeadsignOverrideCount++;
-    }
 
     const tl = entry.tripLocator;
     patternIds.add(tl.patternId);
     serviceIds.add(tl.serviceId);
     trips.add(`${tl.patternId}|${tl.serviceId}|${tl.tripIndex}`);
   }
+
+  logger.debug('tripsHeadsigns', [...tripsHeadsigns]);
+  logger.debug('stopHeadsigns', [...stopHeadsigns]);
 
   return {
     totalCount: entries.length,
@@ -154,10 +185,9 @@ export function computeTimetableEntryStats(entries: TimetableEntry[]): Timetable
     dropOffOnlyCount,
     noDropOffCount,
     routeCount: routeIds.size,
-    headsignCount: headsigns.size,
-    routeHeadsignCount: routeHeadsigns.size,
-    stopHeadsignOverrideCount,
     directionCount: directions.size,
+    tripHeadsignCount: tripsHeadsigns.size,
+    stopHeadsignCount: stopHeadsigns.size,
     patternCount: patternIds.size,
     serviceCount: serviceIds.size,
     uniqueTripCount: trips.size,
