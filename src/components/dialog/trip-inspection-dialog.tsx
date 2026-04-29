@@ -93,6 +93,16 @@ interface RichStopSummaryProps {
   dataLangs: readonly string[];
 }
 
+interface TripEndpointsSummaryProps {
+  firstStopNames: ReturnType<typeof getStopDisplayNames> | null;
+  firstStopName: string;
+  firstStopDepartureTime: string | undefined;
+  lastStopNames: ReturnType<typeof getStopDisplayNames> | null;
+  lastStopName: string;
+  lastStopArrivalTime: string | undefined;
+  infoLevel: InfoLevel;
+}
+
 function resolveTripStopDisplay(stop: TripStopTime | undefined, dataLangs: readonly string[]) {
   const stopId = stop?.stopMeta?.stop.stop_id || '(unknown-stop)';
   const stopAgencyLangs = stop?.stopMeta
@@ -136,6 +146,41 @@ function SimpleStopSummary({
           {departureTime}
         </div>
       )}
+    </div>
+  );
+}
+
+function TripEndpointsSummary({
+  firstStopNames,
+  firstStopName,
+  firstStopDepartureTime,
+  lastStopNames,
+  lastStopName,
+  lastStopArrivalTime,
+  infoLevel,
+}: TripEndpointsSummaryProps) {
+  return (
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2 select-none">
+      <SimpleStopSummary
+        stopNames={firstStopNames}
+        stopName={firstStopName}
+        infoLevel={infoLevel}
+        departureTime={firstStopDepartureTime}
+        showDepartureTime
+      />
+      <div className="flex items-center justify-center">
+        <span
+          aria-hidden="true"
+          className="border-l-muted-foreground h-0 w-0 border-y-[6px] border-l-10 border-y-transparent"
+        />
+      </div>
+      <SimpleStopSummary
+        stopNames={lastStopNames}
+        stopName={lastStopName}
+        infoLevel={infoLevel}
+        arrivalTime={lastStopArrivalTime}
+        showArrivalTime
+      />
     </div>
   );
 }
@@ -617,28 +662,15 @@ export function TripInspectionDialog({
           />
 
           <DialogDescription asChild className="text-center sm:text-center">
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-2">
-              <SimpleStopSummary
-                stopNames={firstStopNames}
-                stopName={firstStopName}
-                infoLevel={infoLevel}
-                departureTime={firstStopDepartureTime}
-                showDepartureTime
-              />
-              <div className="flex items-center justify-center">
-                <span
-                  aria-hidden="true"
-                  className="border-l-muted-foreground h-0 w-0 border-y-[6px] border-l-10 border-y-transparent"
-                />
-              </div>
-              <SimpleStopSummary
-                stopNames={lastStopNames}
-                stopName={lastStopName}
-                infoLevel={infoLevel}
-                arrivalTime={lastStopArrivalTime}
-                showArrivalTime
-              />
-            </div>
+            <TripEndpointsSummary
+              firstStopNames={firstStopNames}
+              firstStopName={firstStopName}
+              firstStopDepartureTime={firstStopDepartureTime}
+              lastStopNames={lastStopNames}
+              lastStopName={lastStopName}
+              lastStopArrivalTime={lastStopArrivalTime}
+              infoLevel={infoLevel}
+            />
           </DialogDescription>
 
           <div className="max-h-[24dvh] overflow-y-auto pr-1">

@@ -43,7 +43,7 @@ export function TripPager({
   const nextDepartureTime = formatTargetDepartureTime(nextTarget);
 
   return (
-    <div className="flex items-center justify-center gap-2 pb-2">
+    <div className="flex items-center justify-center gap-2 pb-2 select-none">
       <Button
         className={!hasPreviousTrip ? 'pointer-events-none invisible' : undefined}
         size="sm"
