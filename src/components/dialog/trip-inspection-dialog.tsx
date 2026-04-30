@@ -721,6 +721,7 @@ export function TripInspectionDialog({
               selectedStop={selectedStop}
               serviceDate={snapshot.serviceDate}
               now={now}
+              infoLevel={infoLevel}
               tripInspectionTargets={tripInspectionTargets}
               currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
               onOpenPreviousTrip={onOpenPreviousTrip}

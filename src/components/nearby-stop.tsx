@@ -228,18 +228,13 @@ export function NearbyStop({
         (() => {
           const showAgency = info.isVerboseEnabled || agencies.length > 1;
           return viewId === 'stop'
-            ? displayStopTimes.slice(0, 5).map((entry, i) => {
-                const isTerminalStop = entry.patternPosition.isTerminal;
-                const isFirstStop = entry.patternPosition.isOrigin;
-
-                return (
+            ? displayStopTimes
+                .slice(0, 5)
+                .map((entry, i) => (
                   <StopTimeItem
                     key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}__${i}`}
                     entry={entry}
                     now={now}
-                    showArrivalTime={isTerminalStop || !isFirstStop}
-                    showDepartureTime={!isTerminalStop}
-                    collapseArrivalWhenSameAsDeparture={true}
                     forceShowRelativeTime={i === 0}
                     showRouteTypeIcon={showRouteTypeIconForAllStopTimes}
                     infoLevel={infoLevel}
@@ -250,8 +245,7 @@ export function NearbyStop({
                     showAgency={showAgency}
                     onInspectTrip={onInspectTrip}
                   />
-                );
-              })
+                ))
             : grouped.map(([key, entries]) => (
                 <StopTimesItem
                   key={`${stop.stop_id}__${key}`}

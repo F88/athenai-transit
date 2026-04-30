@@ -1,5 +1,6 @@
 import { AbsoluteStopTime } from '@/components/absolute-stop-time';
 import { minutesToDate } from '../domain/transit/calendar-utils';
+import { shouldCollapseArrival } from '../domain/transit/stop-time-display';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import type { TripInspectionTarget, WithServiceDate } from '../types/app/transit-composed';
 import { cn } from '../lib/utils';
@@ -51,8 +52,17 @@ export interface StopTimeTimeInfoProps extends WithServiceDate {
   showArrivalTime: boolean;
   /** Whether to render the departure absolute time. */
   showDepartureTime: boolean;
-  /** Whether to hide arrival when arrival and departure render the same value. */
-  collapseArrivalWhenSameAsDeparture: boolean;
+  /**
+   * Tolerance for collapsing the arrival row when it would render
+   * redundantly next to departure.
+   *
+   * - `null`: never collapse (always show both rows when scheduled).
+   * - `0`: collapse only when arrival and departure are at the
+   *   exact same minute (most common UI default).
+   * - `n` (positive integer): collapse when
+   *   `|departure - arrival| <= n` minutes.
+   */
+  collapseToleranceMinutes: number | null;
   /** Force relative-time display even when the entry is far in the future. */
   forceShowRelativeTime: boolean;
   /** Whether to render verbose arrival/departure badges above the time. */
@@ -73,7 +83,7 @@ export function StopTimeTimeInfo({
   textAppearance,
   showArrivalTime,
   showDepartureTime,
-  collapseArrivalWhenSameAsDeparture,
+  collapseToleranceMinutes,
   forceShowRelativeTime,
   showVerbose,
   inspectTarget,
@@ -85,9 +95,14 @@ export function StopTimeTimeInfo({
   const showRelativeTime = forceShowRelativeTime || diffMs <= 60 * 60 * 1000;
   const dt = formatAbsoluteTime(minutesToDate(serviceDate, departureMinutes));
   const at = formatAbsoluteTime(minutesToDate(serviceDate, arrivalMinutes));
-  const shouldCollapseArrival =
-    collapseArrivalWhenSameAsDeparture && showArrivalTime && showDepartureTime && at === dt;
-  const shouldShowArrivalAbsolute = showArrivalTime && !shouldCollapseArrival;
+  const arrivalCollapsed = shouldCollapseArrival({
+    arrivalMinutes,
+    departureMinutes,
+    collapseToleranceMinutes,
+    showArrivalTime,
+    showDepartureTime,
+  });
+  const shouldShowArrivalAbsolute = showArrivalTime && !arrivalCollapsed;
   const shouldShowDepartureAbsolute = showDepartureTime;
   const shouldShowDepartureMarker = shouldShowArrivalAbsolute && shouldShowDepartureAbsolute;
   const timeSize: ExtendedDisplaySize = size;
