@@ -17,7 +17,6 @@ import { LocalStorageUserDataRepository } from './repositories/local-storage-use
 import { useRouteStops } from './hooks/use-route-stops';
 import { PERF_PROFILES } from './config/perf-profiles';
 import { TILE_SOURCES } from './config/tile-sources';
-import { createInfoLevel } from './utils/create-info-level';
 import { toggleGroupInList } from './utils/list-toggle';
 import { routeTypeGroup } from './utils/route-type-category';
 import { routeTypesEmoji } from './utils/route-type-emoji';
@@ -457,8 +456,6 @@ export default function App({ loadResult }: AppProps) {
     [repo, dateTime, inBoundStops, radiusStops],
   );
 
-  const infoLevelFlags = useMemo(() => createInfoLevel(settings.infoLevel), [settings.infoLevel]);
-
   /** Fetch full-day timetable entries for a stop (no filtering). */
   const fetchTimetableEntries = useCallback(
     async (stopId: string) => {
@@ -654,6 +651,37 @@ export default function App({ loadResult }: AppProps) {
     [focusStop, pushStop, findStopWithMeta],
   );
 
+  // --- App-wide filter state (shared across surfaces) ---
+
+  // Stop-event-level filter toggles. Lifted to app.tsx so MapView,
+  // BottomSheet, TripInspectionDialog, and TimetableModal can share the
+  // same data state (= "what kind of trips the user is currently
+  // interested in"). The toggles control entry-level filtering through
+  // `applyStopEventAttributeToggles`; each surface decides how to apply
+  // it given its own data shape.
+  const [showOriginOnly, setShowOriginOnly] = useState(false);
+  const [showBoardableOnly, setShowBoardableOnly] = useState(false);
+
+  const toggleShowOriginOnly = useCallback(() => {
+    setShowOriginOnly((prev) => !prev);
+  }, []);
+  const toggleShowBoardableOnly = useCallback(() => {
+    setShowBoardableOnly((prev) => !prev);
+  }, []);
+
+  // Bundle the app-wide filter state + toggle handlers into a single
+  // memoized object so consumers (BottomSheet / TimetableModal /
+  // future MapView etc.) receive a stable reference between toggles.
+  const globalFilter = useMemo(
+    () => ({
+      showOriginOnly,
+      showBoardableOnly,
+      onToggleShowOriginOnly: toggleShowOriginOnly,
+      onToggleShowBoardableOnly: toggleShowBoardableOnly,
+    }),
+    [showOriginOnly, showBoardableOnly, toggleShowOriginOnly, toggleShowBoardableOnly],
+  );
+
   // --- Settings handlers ---
 
   const enabledRouteTypes = useMemo(
@@ -835,6 +863,7 @@ export default function App({ loadResult }: AppProps) {
           onToggleAnchor: handleToggleAnchor,
           onInspectTrip: openTripInspection,
         }}
+        globalFilter={globalFilter}
         mapOverlay={
           <TimeControls
             time={dateTime}
@@ -875,8 +904,8 @@ export default function App({ loadResult }: AppProps) {
         data={timetableData}
         time={dateTime}
         infoLevel={settings.infoLevel}
-        boardableOnly={!infoLevelFlags.isDetailedEnabled}
         dataLangs={langChain}
+        globalFilter={globalFilter}
         onInspectTrip={openTripInspection}
         onClose={() => setTimetableData(null)}
       />

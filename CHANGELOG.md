@@ -11,6 +11,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- `GlobalFilter` 型 (`src/types/app/global-filter.ts`) を追加。app-wide で共有する filter state (`showOriginOnly` / `showBoardableOnly`) と toggle handler を 1 つの interface に集約。BottomSheet / TimetableModal / MapBottomSheetLayout で `globalFilter: GlobalFilter` 1 props として nest 渡し (= 名前空間明確、将来 MapView / TripInspectionDialog にも展開可能)。
 - `filterByStopEventAttributes` helper (`src/domain/transit/timetable-filter.ts`) を追加。`TimetableEntry[]` に対して per-stop-event 属性 (schedule range / `pickUpState` / patternPosition) を hybrid Set / range API で single-pass 合成 filter する。trip-level 属性 (route / headsign / agency) は対象外で `filterByAgency` / `filterByRouteType` と責務分離。empty filter bundle は input reference をそのまま返す fast-path 付き。
 - `PickUpState` 型 (`'boardable' | 'nonBoardable' | 'phoneArrangement' | 'driverArrangement'`) を追加。GTFS `pickup_type` 0/1/2/3 と 1:1 mapping。`isTerminal` は判定に混入させず position 軸の責務に分離。
 - `applyStopEventAttributeToggles` helper を追加。`showOriginOnly` / `showBoardableOnly` の boolean toggle を受けて `filterByStopEventAttributes` を AND 合成する wrapper。BottomSheet と TimetableModal で同じ toggle semantics を共有。
@@ -24,6 +25,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- `showOriginOnly` / `showBoardableOnly` の state を BottomSheet / TimetableModal の internal `useState` から app.tsx に lift。両 component を controlled component 化し、`globalFilter: GlobalFilter` 経由で受け取る。BottomSheet と TimetableModal 間で filter 状態が同期 (= 一方で boardable ON にすると他方でも反映)。`MapBottomSheetLayout` にも `globalFilter` を中継するための props を追加 (`app.tsx → MapBottomSheetLayout → BottomSheet`)。
+- TimetableModal の `boardableOnly` prop (= 初期値) と infoLevel-based 初期値 logic (`!isDetailedEnabled` で boardable filter を初期 ON する自動化) を廃止。filter 状態は app-wide `globalFilter` を完全に反映 (= simple/normal でも boardable filter は user の手動 toggle で ON)。
 - `TimetableModal` の filter pipeline を `applyStopEventAttributeToggles` 経由に統一。旧 `filterBoardable` / `filterOrigin` 直接呼び出しを廃し、BottomSheet と同一の toggle semantics を共有。中間変数 `entriesBeforeRouteHeadsignFilter` を `stopEventAttributesFilteredEntries` にリネーム (= 軸の責務を反映)。
 - BottomSheet の filter pipeline を 3-stage 構成に再編。Stage 1 (`showOperatingStopsOnly`、stop drop) → Stage 2 (`showOriginOnly` / `showBoardableOnly`、stop drop) → Stage 3 (`hiddenAgencyIds` / `hiddenRouteTypes`、entry trim only)。集合属性 trim (Stage 3) は `'allFilteredOut'` fallback 維持、user 操作の presence toggle (Stage 1/2) は stop drop。
 - BottomSheet の `counts` を全て final `trimmedStopTimes` (Stage 3 出力) base に統一。`active` の semantic を旧 "pre-filter で entries が 1 件以上の stop 数" (= filter 状態無関係の固定値) から "現在表示中で entries が 1 件以上の stop 数" (= 全 filter 操作で変動) に変更。Operating pill の count は user の filter 操作で変動するようになる。

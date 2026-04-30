@@ -3,6 +3,7 @@ import type { LatLng } from '../types/app/map';
 import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
+import type { GlobalFilter } from '../types/app/global-filter';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
@@ -74,6 +75,8 @@ export interface BottomSheetProps {
   dataLangs: readonly string[];
   /** Set of stop IDs currently in the anchor list. */
   anchorIds: Set<string>;
+  /** App-wide filter state shared across surfaces. */
+  globalFilter: GlobalFilter;
   onStopSelected: (stopId: string) => void;
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
@@ -102,6 +105,7 @@ export function BottomSheet({
   infoLevel,
   dataLangs,
   anchorIds,
+  globalFilter,
   onStopSelected,
   onShowTimetable,
   onShowStopTimetable,
@@ -112,6 +116,8 @@ export function BottomSheet({
   expanded: expandedProp,
   onExpandedChange,
 }: BottomSheetProps) {
+  const { showOriginOnly, showBoardableOnly, onToggleShowOriginOnly, onToggleShowBoardableOnly } =
+    globalFilter;
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(false);
   const expanded = expandedProp ?? uncontrolledExpanded;
   const setExpanded = useCallback(
@@ -133,9 +139,6 @@ export function BottomSheet({
   const showOperatingStopsOnly = showOperatingStopsOnlyOverride ?? isLateNight;
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
   const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
-  // Stop-event-level filters (per-entry attributes). Default OFF.
-  const [showOriginOnly, setShowOriginOnly] = useState(false);
-  const [showBoardableOnly, setShowBoardableOnly] = useState(false);
   const selectedView = STOP_TIMES_VIEWS.find((v) => v.id === viewId);
   const touchStartY = useRef(0);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -184,14 +187,6 @@ export function BottomSheet({
       }
       return next;
     });
-  }, []);
-
-  const toggleShowOriginOnly = useCallback(() => {
-    setShowOriginOnly((prev) => !prev);
-  }, []);
-
-  const toggleShowBoardableOnly = useCallback(() => {
-    setShowBoardableOnly((prev) => !prev);
   }, []);
 
   // Three-stage filter pipeline. Each stage has a distinct nature, so
@@ -356,8 +351,8 @@ export function BottomSheet({
         onToggleShowOperatingStopsOnly={() =>
           setShowOperatingStopsOnlyOverride((v) => !(v ?? isLateNight))
         }
-        onToggleShowOriginOnly={toggleShowOriginOnly}
-        onToggleShowBoardableOnly={toggleShowBoardableOnly}
+        onToggleShowOriginOnly={onToggleShowOriginOnly}
+        onToggleShowBoardableOnly={onToggleShowBoardableOnly}
         onViewChange={setViewId}
         onToggleRouteType={toggleRouteType}
         onToggleAgency={toggleAgency}

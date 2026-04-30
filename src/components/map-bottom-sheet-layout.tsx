@@ -4,6 +4,7 @@ import { MapView, type MapViewProps } from './map/map-view';
 import { useViewportHeight } from '../hooks/use-viewport-height';
 import { resolveMapBottomSheetLayoutPreset } from '../utils/map-bottom-sheet-layout-preset';
 import { createLogger } from '../lib/logger';
+import type { GlobalFilter } from '../types/app/global-filter';
 
 const logger = createLogger('MapBottomSheetLayout');
 
@@ -11,14 +12,21 @@ interface MapBottomSheetLayoutProps {
   mapViewProps: Omit<MapViewProps, 'heightClassName'>;
   bottomSheetProps: Omit<
     BottomSheetProps,
-    'collapsedHeightClassName' | 'expandedHeightClassName' | 'expanded' | 'onExpandedChange'
+    | 'collapsedHeightClassName'
+    | 'expandedHeightClassName'
+    | 'expanded'
+    | 'onExpandedChange'
+    | 'globalFilter'
   >;
+  /** App-wide filter state shared with BottomSheet (and forthcoming MapView etc.). */
+  globalFilter: GlobalFilter;
   mapOverlay?: ReactNode;
 }
 
 export function MapBottomSheetLayout({
   mapViewProps,
   bottomSheetProps,
+  globalFilter,
   mapOverlay,
 }: MapBottomSheetLayoutProps) {
   const [expanded, setExpanded] = useState(false);
@@ -46,6 +54,7 @@ export function MapBottomSheetLayout({
       </div>
       <BottomSheet
         {...bottomSheetProps}
+        globalFilter={globalFilter}
         expanded={expanded}
         onExpandedChange={setExpanded}
         collapsedHeightClassName={layoutPreset.collapsedSheetHeightClassName}
