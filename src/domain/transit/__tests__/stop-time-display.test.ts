@@ -210,7 +210,7 @@ describe('deriveStopTimeRoleDisplayProps', () => {
       // showArr  = isTerminal || !isOrigin || isVerbose = true.
       // showDep  = !isTerminal || isVerbose || isOrigin = true.
       // The two rows render at the same minute in practice; the
-      // collapse-tolerance rule (=1 for non-verbose) then folds
+      // collapse-tolerance rule (=2 for non-verbose) then folds
       // them into a single visual row downstream.
       expect(
         deriveStopTimeRoleDisplayProps({
