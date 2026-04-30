@@ -19,7 +19,7 @@ interface StopTimesItemProps {
   now: Date;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
-  dataLang: readonly string[];
+  dataLangs: readonly string[];
   /** Whether to show route_type emoji (e.g. when stop serves multiple route types). */
   showRouteTypeIcon: boolean;
   /** Agency object for badge display at detailed+ info level. */
@@ -44,7 +44,7 @@ export function StopTimesItem({
   entries,
   now,
   infoLevel,
-  dataLang,
+  dataLangs,
   showRouteTypeIcon,
   agency,
   showAgency = false,
@@ -86,7 +86,7 @@ export function StopTimesItem({
           size="md"
           routeDirection={firstEntry.routeDirection}
           infoLevel={infoLevel}
-          dataLangs={dataLang}
+          dataLangs={dataLangs}
           showRouteTypeIcon={showRouteTypeIcon}
           agency={agency}
           showAgency={showAgency}
@@ -112,6 +112,11 @@ export function StopTimesItem({
               Per Issue #47 / Alt F, each time renders its own per-stop-time
               attribute labels (TERM/ORIG/noPickup/noDropOff) inline. */}
           {displayEntries.map((entry, i) => {
+            // Issue #47: 6-shape / circular routes can place the same trip
+            // at multiple `stopIndex` values within one route+headsign
+            // bucket, so include `stopIndex` in the key alongside the
+            // tripLocator triple to keep keys unique per stop event.
+            const entryKey = `${entry.tripLocator.patternId}__${entry.tripLocator.serviceId}__${entry.tripLocator.tripIndex}__${entry.patternPosition.stopIndex}`;
             const content = (
               <>
                 {formatAbsoluteTime(displayTimes[i])}
@@ -128,7 +133,7 @@ export function StopTimesItem({
 
             return onInspectTrip ? (
               <button
-                key={i}
+                key={entryKey}
                 type="button"
                 className="inline-flex cursor-pointer items-center gap-0.5 rounded-sm text-sm font-bold whitespace-nowrap text-[#757575] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none dark:text-gray-400"
                 onClick={(e) => {
@@ -145,7 +150,7 @@ export function StopTimesItem({
               </button>
             ) : (
               <span
-                key={i}
+                key={entryKey}
                 className="inline-flex items-center gap-0.5 text-sm font-bold whitespace-nowrap text-[#757575] dark:text-gray-400"
               >
                 {content}
