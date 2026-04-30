@@ -47,12 +47,18 @@ const ROUTE_TYPE_ORDER: AppRouteTypeValue[] = [...APP_ROUTE_TYPES.map(({ value }
 );
 
 export interface NearbyStopsCounts {
-  /** Total number of nearby stops before any filtering. */
+  /** Total number of nearby stops before any filtering (= input `stopTimes`). */
   total: number;
-  /** Stops with at least one upcoming entry. */
+  /** Stops with at least one upcoming entry, computed against the final
+   *  `trimmedStopTimes`. Reflects the user's current filter state. */
   active: number;
-  /** Stops remaining after all filters (showOperatingStopsOnly, routeType, agency). */
+  /** Stops remaining after all filters (= `trimmedStopTimes.length`). */
   filtered: number;
+  /** Stops in `trimmedStopTimes` that contain at least one origin entry. */
+  originCount: number;
+  /** Stops in `trimmedStopTimes` that contain at least one boardable
+   *  entry (= `pickup_type === 0` at a non-pure-terminal position). */
+  boardableCount: number;
 }
 
 export interface BottomSheetProps {
@@ -248,8 +254,22 @@ export function BottomSheet({
   const counts: NearbyStopsCounts = useMemo(
     () => ({
       total: stopTimes.length,
-      active: stopTimes.filter((swc) => swc.stopTimes.length > 0).length,
+      active: trimmedStopTimes.filter((swc) => swc.stopTimes.length > 0).length,
       filtered: trimmedStopTimes.length,
+      originCount: trimmedStopTimes.filter(
+        (swc) =>
+          applyStopEventAttributeToggles(swc.stopTimes, {
+            showOriginOnly: true,
+            showBoardableOnly: false,
+          }).length > 0,
+      ).length,
+      boardableCount: trimmedStopTimes.filter(
+        (swc) =>
+          applyStopEventAttributeToggles(swc.stopTimes, {
+            showOriginOnly: false,
+            showBoardableOnly: true,
+          }).length > 0,
+      ).length,
     }),
     [stopTimes, trimmedStopTimes],
   );

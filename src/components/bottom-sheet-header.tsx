@@ -92,12 +92,17 @@ export function BottomSheetHeader({
       {/* Filters */}
       <div className="no-scrollbar mt-1 flex gap-1 overflow-x-auto">
         {/* Origin filter (entry-level: patternPosition.isOrigin) */}
-        <OriginFilter origin={showOriginOnly} onToggleOrigin={onToggleShowOriginOnly} />
+        <OriginFilter
+          origin={showOriginOnly}
+          onToggleOrigin={onToggleShowOriginOnly}
+          count={counts.originCount}
+        />
 
         {/* Boardable filter (entry-level: pickup_type === 0) */}
         <BoardabilityFilter
           boardable={showBoardableOnly}
           onToggleBoardable={onToggleShowBoardableOnly}
+          count={counts.boardableCount}
         />
 
         {/* Operating stops filter */}
