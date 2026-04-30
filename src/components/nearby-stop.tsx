@@ -252,7 +252,7 @@ export function NearbyStop({
                   entries={entries}
                   now={now}
                   infoLevel={infoLevel}
-                  dataLang={dataLangs}
+                  dataLangs={dataLangs}
                   showRouteTypeIcon={showRouteTypeIconForAllStopTimes}
                   agency={agencies.find(
                     (a) => a.agency_id === entries[0].routeDirection.route.agency_id,

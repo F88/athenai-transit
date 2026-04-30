@@ -169,7 +169,7 @@ const meta = {
     entries: threeEntries,
     now,
     infoLevel: 'normal',
-    dataLang: ['ja'],
+    dataLangs: ['ja'],
     showRouteTypeIcon: false,
   },
   argTypes: {
@@ -347,7 +347,7 @@ export const MultipleGroups: Story = {
             entries={group.entries}
             now={now}
             infoLevel="normal"
-            dataLang={['ja']}
+            dataLangs={['ja']}
             showRouteTypeIcon
             onShowTimetable={fn()}
           />
@@ -448,7 +448,7 @@ export const LangComparison: Story = {
             entries={args.entries}
             now={args.now}
             infoLevel={args.infoLevel}
-            dataLang={dataLang}
+            dataLangs={dataLang}
             showRouteTypeIcon={args.showRouteTypeIcon}
             agency={args.agency}
             maxDisplay={args.maxDisplay}
@@ -642,7 +642,7 @@ export const LogicalLongInfoLevelComparison: Story = {
               entries={args.entries}
               now={now}
               infoLevel={level}
-              dataLang={['ja']}
+              dataLangs={['ja']}
               showRouteTypeIcon
               agency={args.agency}
               showAgency={false}
@@ -702,7 +702,7 @@ export const LogicalKitchenSink: Story = {
             entries={group.entries}
             now={now}
             infoLevel="detailed"
-            dataLang={['ja']}
+            dataLangs={['ja']}
             showRouteTypeIcon
             agency={group.agency}
             onShowTimetable={fn()}
@@ -723,7 +723,7 @@ export const KitchenSink: Story = {
           entries={group.entries}
           now={now}
           infoLevel="detailed"
-          dataLang={['ja']}
+          dataLangs={['ja']}
           showRouteTypeIcon
           agency={group.agency}
           onShowTimetable={fn()}
