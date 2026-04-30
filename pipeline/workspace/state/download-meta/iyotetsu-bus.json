@@ -2,12 +2,12 @@
   "sourceName": "iyotetsu-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-04-29T05:14:27.692Z",
+  "downloadedAt": "2026-04-30T05:16:49.946Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260415",
   "size": 854913,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 2050,
-  "archivePath": "workspace/_archives/gtfs/iyotetsu-bus/AllLines_20260429-051429.zip",
+  "durationMs": 2691,
+  "archivePath": "workspace/_archives/gtfs/iyotetsu-bus/AllLines_20260430-051652.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
