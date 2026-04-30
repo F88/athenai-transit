@@ -1,3 +1,4 @@
+import { filterByStopEventAttributes } from '../../domain/transit/timetable-filter';
 import type { ContextualTimetableEntry } from '../../types/app/transit-composed';
 import type { StopServiceState } from '../../types/app/transit';
 
@@ -27,10 +28,11 @@ export function VerboseNearbyStopSummary({
   isAnchor: boolean;
   viewId: string;
 }) {
-  const boardable = stopTimes.filter(
-    (e) => e.boarding.pickupType !== 1 && !e.patternPosition.isTerminal,
-  ).length;
-  const dropOffOnly = stopTimes.length - boardable;
+  const boardable = filterByStopEventAttributes(stopTimes, {
+    pickUpState: new Set(['boardable']),
+    position: new Set(['origin', 'middle']),
+  }).length;
+  const nonBoardable = stopTimes.length - boardable;
 
   return (
     <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
@@ -48,7 +50,8 @@ export function VerboseNearbyStopSummary({
           </span>
           <span className="block">[service] stopServiceState={stopServiceState}</span>
           <span className="block">
-            [stop times] entries={stopTimes.length} boardable={boardable} dropOffOnly={dropOffOnly}
+            [stop times] entries={stopTimes.length} boardable={boardable} nonBoardable=
+            {nonBoardable}
             {stopTimes.length === 0
               ? ' (NO SERVICE)'
               : stopServiceState === 'drop-off-only'

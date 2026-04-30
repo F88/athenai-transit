@@ -133,13 +133,13 @@
       "routeDescription": "Timetable at {{stop}}: {{route}} ({{count}})",
       "stopDescription": "Timetable at {{stop}}: all routes ({{count}})",
       "noDestination": "Some routes have no destination"
-    },
-    "filter": {
-      "boardableOnly": "🚏 Boardable",
-      "boardableOnlyTitle": "Show only boardable trips (exclude terminals and pickup-unavailable)",
-      "originOnly": "🚩 Origin",
-      "originOnlyTitle": "Show only trips originating at this stop (includes non-boardable origins like depot departures)"
     }
+  },
+  "filter": {
+    "boardableOnly": "🚏 Boardable",
+    "boardableOnlyTitle": "Show only boardable trips (exclude terminals and pickup-unavailable)",
+    "originOnly": "🚩 Origin",
+    "originOnlyTitle": "Show only trips originating at this stop (includes non-boardable origins like depot departures)"
   },
   "panel": {
     "appInfo": "App info",

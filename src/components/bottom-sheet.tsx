@@ -6,7 +6,11 @@ import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
-import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
+import {
+  applyStopEventAttributeToggles,
+  filterByAgency,
+  filterByRouteType,
+} from '../domain/transit/timetable-filter';
 import { getTimetableEntriesState } from '../domain/transit/timetable-utils';
 import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
@@ -43,12 +47,18 @@ const ROUTE_TYPE_ORDER: AppRouteTypeValue[] = [...APP_ROUTE_TYPES.map(({ value }
 );
 
 export interface NearbyStopsCounts {
-  /** Total number of nearby stops before any filtering. */
+  /** Total number of nearby stops before any filtering (= input `stopTimes`). */
   total: number;
-  /** Stops with at least one upcoming entry. */
+  /** Stops with at least one upcoming entry, computed against the final
+   *  `trimmedStopTimes`. Reflects the user's current filter state. */
   active: number;
-  /** Stops remaining after all filters (showOperatingStopsOnly, routeType, agency). */
+  /** Stops remaining after all filters (= `trimmedStopTimes.length`). */
   filtered: number;
+  /** Stops in `trimmedStopTimes` that contain at least one origin entry. */
+  originCount: number;
+  /** Stops in `trimmedStopTimes` that contain at least one boardable
+   *  entry (= `pickup_type === 0` at a non-pure-terminal position). */
+  boardableCount: number;
 }
 
 export interface BottomSheetProps {
@@ -123,6 +133,9 @@ export function BottomSheet({
   const showOperatingStopsOnly = showOperatingStopsOnlyOverride ?? isLateNight;
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
   const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
+  // Stop-event-level filters (per-entry attributes). Default OFF.
+  const [showOriginOnly, setShowOriginOnly] = useState(false);
+  const [showBoardableOnly, setShowBoardableOnly] = useState(false);
   const selectedView = STOP_TIMES_VIEWS.find((v) => v.id === viewId);
   const touchStartY = useRef(0);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -173,11 +186,16 @@ export function BottomSheet({
     });
   }, []);
 
-  // Split into two stages so the distinct natures of the operations are
-  // visible. The stage order is load-bearing — reversing it produces a
-  // regression where showOperatingStopsOnly checks against post-inner-filter
-  // stopTimes.length, conflating stop visibility with the user's agency /
-  // route_type filters. Do not swap these stages.
+  const toggleShowOriginOnly = useCallback(() => {
+    setShowOriginOnly((prev) => !prev);
+  }, []);
+
+  const toggleShowBoardableOnly = useCallback(() => {
+    setShowBoardableOnly((prev) => !prev);
+  }, []);
+
+  // Three-stage filter pipeline. Each stage has a distinct nature, so
+  // they are kept separate and the stage order is load-bearing.
   //
   // Stage 1 — drop stops that have no upcoming entries today.
   // `showOperatingStopsOnly` is a property of the stop itself and MUST be
@@ -189,16 +207,39 @@ export function BottomSheet({
     return stopTimes.filter((swc) => swc.stopTimes.length > 0);
   }, [stopTimes, showOperatingStopsOnly]);
 
-  // Stage 2 — trim each surviving stop's inner stopTimes by agency /
+  // Stage 2 — trim each surviving stop's inner stopTimes by stop-event
+  // attributes (origin / boardable), and drop stops whose stopTimes
+  // become empty after the trim. This is a user-facing presence toggle
+  // (same nature as Stage 1's `showOperatingStopsOnly`): when the user
+  // enables an entry-level pill, stops with no matching entry are
+  // removed from the list. Runs before the agency / route_type trim so
+  // those non-removing filters operate on entries that have already
+  // passed the user's primary intent (= what kind of trips to see).
+  const stopEventAttributesFilteredStopTimes = useMemo(() => {
+    if (!showOriginOnly && !showBoardableOnly) {
+      return filteredStopTimes;
+    }
+    return filteredStopTimes
+      .map((swc) => {
+        const filtered = applyStopEventAttributeToggles(swc.stopTimes, {
+          showOriginOnly,
+          showBoardableOnly,
+        });
+        return filtered === swc.stopTimes ? swc : { ...swc, stopTimes: filtered };
+      })
+      .filter((swc) => swc.stopTimes.length > 0);
+  }, [filteredStopTimes, showOriginOnly, showBoardableOnly]);
+
+  // Stage 3 — trim each surviving stop's inner stopTimes by agency /
   // route_type filters. This never drops stops: a stop whose stopTimes
   // are all removed stays visible and shows the "allFilteredOut"
   // fallback message. This decouples "which stops are in the list"
   // from "what is shown inside each stop".
   const trimmedStopTimes = useMemo(() => {
     if (hiddenAgencyIds.size === 0 && hiddenRouteTypes.size === 0) {
-      return filteredStopTimes;
+      return stopEventAttributesFilteredStopTimes;
     }
-    return filteredStopTimes.map((swc) => {
+    return stopEventAttributesFilteredStopTimes.map((swc) => {
       let trimmed = swc.stopTimes;
       if (hiddenAgencyIds.size > 0) {
         trimmed = filterByAgency(trimmed, hiddenAgencyIds);
@@ -208,13 +249,27 @@ export function BottomSheet({
       }
       return trimmed === swc.stopTimes ? swc : { ...swc, stopTimes: trimmed };
     });
-  }, [filteredStopTimes, hiddenAgencyIds, hiddenRouteTypes]);
+  }, [stopEventAttributesFilteredStopTimes, hiddenAgencyIds, hiddenRouteTypes]);
 
   const counts: NearbyStopsCounts = useMemo(
     () => ({
       total: stopTimes.length,
-      active: stopTimes.filter((swc) => swc.stopTimes.length > 0).length,
+      active: trimmedStopTimes.filter((swc) => swc.stopTimes.length > 0).length,
       filtered: trimmedStopTimes.length,
+      // Existence-only `.some(...)` predicates — semantic-equivalent to
+      // applyStopEventAttributeToggles({ showOriginOnly: true }).length > 0
+      // and applyStopEventAttributeToggles({ showBoardableOnly: true }).length > 0
+      // respectively, but without allocating a per-stop filtered array.
+      originCount: trimmedStopTimes.filter((swc) =>
+        swc.stopTimes.some((entry) => entry.patternPosition.isOrigin),
+      ).length,
+      boardableCount: trimmedStopTimes.filter((swc) =>
+        swc.stopTimes.some(
+          (entry) =>
+            entry.boarding.pickupType === 0 &&
+            (entry.patternPosition.isOrigin || !entry.patternPosition.isTerminal),
+        ),
+      ).length,
     }),
     [stopTimes, trimmedStopTimes],
   );
@@ -289,6 +344,8 @@ export function BottomSheet({
         dataConfig={dataConfig}
         dataLangs={dataLangs}
         showOperatingStopsOnly={showOperatingStopsOnly}
+        showOriginOnly={showOriginOnly}
+        showBoardableOnly={showBoardableOnly}
         viewId={viewId}
         selectedView={selectedView}
         infoLevel={infoLevel}
@@ -299,6 +356,8 @@ export function BottomSheet({
         onToggleShowOperatingStopsOnly={() =>
           setShowOperatingStopsOnlyOverride((v) => !(v ?? isLateNight))
         }
+        onToggleShowOriginOnly={toggleShowOriginOnly}
+        onToggleShowBoardableOnly={toggleShowBoardableOnly}
         onViewChange={setViewId}
         onToggleRouteType={toggleRouteType}
         onToggleAgency={toggleAgency}

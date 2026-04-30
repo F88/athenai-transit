@@ -40,10 +40,12 @@ const meta = {
   component: BottomSheetHeader,
   args: {
     hasNearbyLoaded: true,
-    counts: { total: 12, active: 7, filtered: 7 },
+    counts: { total: 12, active: 7, filtered: 7, originCount: 3, boardableCount: 5 },
     dataConfig: defaultDataConfig,
     dataLangs: ['ja'],
     showOperatingStopsOnly: false,
+    showOriginOnly: false,
+    showBoardableOnly: false,
     viewId: DEFAULT_VIEW_ID,
     selectedView: defaultSelectedView,
     infoLevel: 'normal',
@@ -52,6 +54,8 @@ const meta = {
     presentAgencies: [agencyTobus],
     hiddenAgencyIds: new Set<string>(),
     onToggleShowOperatingStopsOnly: fn(),
+    onToggleShowOriginOnly: fn(),
+    onToggleShowBoardableOnly: fn(),
     onViewChange: fn(),
     onToggleRouteType: fn(),
     onToggleAgency: fn(),
@@ -59,6 +63,8 @@ const meta = {
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     showOperatingStopsOnly: { control: 'boolean' },
+    showOriginOnly: { control: 'boolean' },
+    showBoardableOnly: { control: 'boolean' },
     hasNearbyLoaded: { control: 'boolean' },
   },
   decorators: [
@@ -80,13 +86,13 @@ export const Default: Story = {};
 export const Loading: Story = {
   args: {
     hasNearbyLoaded: false,
-    counts: { total: 0, active: 0, filtered: 0 },
+    counts: { total: 0, active: 0, filtered: 0, originCount: 0, boardableCount: 0 },
   },
 };
 
 export const NoStops: Story = {
   args: {
-    counts: { total: 0, active: 0, filtered: 0 },
+    counts: { total: 0, active: 0, filtered: 0, originCount: 0, boardableCount: 0 },
     presentRouteTypes: [],
     presentAgencies: [],
   },
@@ -94,7 +100,7 @@ export const NoStops: Story = {
 
 export const NoOperatingStops: Story = {
   args: {
-    counts: { total: 8, active: 0, filtered: 0 },
+    counts: { total: 8, active: 0, filtered: 0, originCount: 0, boardableCount: 0 },
     showOperatingStopsOnly: true,
     presentRouteTypes: [3],
     presentAgencies: [agencyTobus],
@@ -103,7 +109,7 @@ export const NoOperatingStops: Story = {
 
 export const OperatingOnlyActive: Story = {
   args: {
-    counts: { total: 15, active: 9, filtered: 9 },
+    counts: { total: 15, active: 9, filtered: 9, originCount: 4, boardableCount: 7 },
     showOperatingStopsOnly: true,
   },
 };
@@ -241,9 +247,9 @@ export const InfoLevelVerbose: Story = {
 
 const kitchenSinkArgs = {
   hasNearbyLoaded: true,
-  counts: { total: 42, active: 28, filtered: 21 },
+  counts: { total: 42, active: 28, filtered: 21, originCount: 6, boardableCount: 15 },
   dataConfig: defaultDataConfig,
-  dataLang: ['ja'],
+  dataLangs: ['ja'],
   showOperatingStopsOnly: true,
   viewId: 'route-headsign',
   selectedView: selectView('route-headsign'),

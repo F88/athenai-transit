@@ -13,6 +13,8 @@ import { routeTypeEmoji } from '../utils/route-type-emoji';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { useTranslation } from 'react-i18next';
 import { PillButton } from './button/pill-button';
+import { BoardabilityFilter } from './filter/boardability-filter';
+import { OriginFilter } from './filter/origin-filter';
 
 interface BottomSheetHeaderProps {
   hasNearbyLoaded: boolean;
@@ -20,6 +22,8 @@ interface BottomSheetHeaderProps {
   dataConfig: DataConfig;
   dataLangs: readonly string[];
   showOperatingStopsOnly: boolean;
+  showOriginOnly: boolean;
+  showBoardableOnly: boolean;
   viewId: string;
   selectedView: StopTimeViewMeta | undefined;
   infoLevel: InfoLevel;
@@ -28,6 +32,8 @@ interface BottomSheetHeaderProps {
   presentAgencies: Agency[];
   hiddenAgencyIds: Set<string>;
   onToggleShowOperatingStopsOnly: () => void;
+  onToggleShowOriginOnly: () => void;
+  onToggleShowBoardableOnly: () => void;
   onViewChange: (viewId: string) => void;
   onToggleRouteType: (rt: number) => void;
   onToggleAgency: (agency: Agency) => void;
@@ -39,6 +45,8 @@ export function BottomSheetHeader({
   dataConfig,
   dataLangs,
   showOperatingStopsOnly,
+  showOriginOnly,
+  showBoardableOnly,
   viewId,
   selectedView: _selectedView,
   infoLevel,
@@ -47,6 +55,8 @@ export function BottomSheetHeader({
   presentAgencies,
   hiddenAgencyIds,
   onToggleShowOperatingStopsOnly,
+  onToggleShowOriginOnly,
+  onToggleShowBoardableOnly,
   onViewChange,
   onToggleRouteType,
   onToggleAgency,
@@ -81,6 +91,22 @@ export function BottomSheetHeader({
       </div>
       {/* Filters */}
       <div className="no-scrollbar mt-1 flex gap-1 overflow-x-auto">
+        {/* Origin filter (entry-level: patternPosition.isOrigin) */}
+        {counts.originCount > 0 && (
+          <OriginFilter
+            origin={showOriginOnly}
+            onToggleOrigin={onToggleShowOriginOnly}
+            count={counts.originCount}
+          />
+        )}
+
+        {/* Boardable filter (entry-level: pickup_type === 0) */}
+        <BoardabilityFilter
+          boardable={showBoardableOnly}
+          onToggleBoardable={onToggleShowBoardableOnly}
+          count={counts.boardableCount}
+        />
+
         {/* Operating stops filter */}
         <PillButton
           size={'sm'}
@@ -109,6 +135,7 @@ export function BottomSheetHeader({
             {routeTypeEmoji(rt)}
           </PillButton>
         ))}
+
         {/* Agency filter */}
         {presentAgencies.map((agency) => {
           const { agencyColor: bgColor, agencyTextColor: fgColor } = resolveAgencyColors(

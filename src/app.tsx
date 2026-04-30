@@ -656,14 +656,14 @@ export default function App({ loadResult }: AppProps) {
 
   // --- Settings handlers ---
 
-  const visibleStopTypes = useMemo(
+  const enabledRouteTypes = useMemo(
     () => new Set(settings.visibleStopTypes),
     [settings.visibleStopTypes],
   );
 
-  const filteredStopTimes = useMemo(
-    () => stopTimes.filter((d) => d.routeTypes.some((rt) => visibleStopTypes.has(rt))),
-    [stopTimes, visibleStopTypes],
+  const routeTypesFilteredStopTimes = useMemo(
+    () => stopTimes.filter((d) => d.routeTypes.some((rt) => enabledRouteTypes.has(rt))),
+    [stopTimes, enabledRouteTypes],
   );
 
   const handleToggleStopType = useCallback(
@@ -785,7 +785,7 @@ export default function App({ loadResult }: AppProps) {
           routeShapes,
           selectionInfo,
           routeStops,
-          visibleStopTypes,
+          visibleStopTypes: enabledRouteTypes,
           visibleRouteShapes,
           tileIndex: settings.tileIndex,
           renderMode: settings.renderMode,
@@ -819,7 +819,7 @@ export default function App({ loadResult }: AppProps) {
           lookupAnchorStopMeta,
         }}
         bottomSheetProps={{
-          stopTimes: filteredStopTimes,
+          stopTimes: routeTypesFilteredStopTimes,
           selectedStopId,
           isNearbyLoading,
           hasNearbyLoaded,
