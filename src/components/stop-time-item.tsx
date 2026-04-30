@@ -90,7 +90,6 @@ export function StopTimeItem({
           showDepartureTime={display.showDepartureTime}
           collapseToleranceMinutes={display.collapseToleranceMinutes}
           forceShowRelativeTime={forceShowRelativeTime}
-          showVerbose={showVerbose}
           textAppearance={{ color: contrastAdjustedRouteColors.color }}
           inspectTarget={{
             serviceDate: entry.serviceDate,

@@ -18,11 +18,12 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Changed
 
 - `DialogContent` に `showCloseButton={false}` を渡してデフォルト X を無効化 (Esc / 外側クリックで close 可能なため UX 維持)。
-- `StopTimeTimeInfo` の `shouldCollapseArrival` 判定を `at === dt` (整形文字列比較) から `arrivalMinutes === departureMinutes` (整数比較) に変更し、後段の domain helper にロジック抽出。
+- `shouldCollapseArrival` 判定ロジックを domain helper (`src/domain/transit/stop-time-display.ts`) に抽出。比較を `at === dt` (整形文字列比較) から `Math.abs(departureMinutes - arrivalMinutes) <= collapseToleranceMinutes` の tolerance-based 整数比較に変更し、`null` で collapse 無効化を表現可能に。
 - `StopTimeItem` の API を簡素化: `showArrivalTime` / `showDepartureTime` / `collapseToleranceMinutes` の 3 props を削除し、`entry.patternPosition` (isOrigin / isTerminal) と `infoLevel` から内部で `deriveStopTimeRoleDisplayProps` を呼んで導出する形に。caller (`nearby-stop.tsx`) はこれら 3 props を渡さなくなる。
 - `TripStopRow` (`trip-stops.tsx`) と `TripPager` の `StopTimeTimeInfo` 呼び出しを `deriveStopTimeRoleDisplayProps` 経由に統一。`TripPager` には新たに `infoLevel: InfoLevel` prop を追加し、`TripInspectionDialog` から渡すよう更新。
 - `deriveStopTimeRoleDisplayProps` の tolerance default を `verbose ? null : 2` に設定。GTFS / ODPT 全 20 source の中間 stop dwell 分布 (d=1: 2.34% = 鉄道発車待ち、d=2: 0.082% = 軽 hub dwell、d>=3: 0.078% = 通過待ち / 折返し / 高速バス起点) から、d=1+d=2 を collapse 対象とし d>=3 を 2 行展開する設計。
 - 動作仕様: 非 verbose では origin = dep のみ / terminal = arr のみ / middle = 両方 (tolerance=2) / single-stop = 両方 (tolerance=2) を表示。verbose では全 role で両方表示し tolerance は null (= 全 dwell 開示)。terminal の operator-recorded `departure_time` (例: 京成 妙典駅 d=8 の折返し時間、京都市バス 松尾橋 d=6) も verbose で可視化。
+- `StopTimeTimeInfo` から `showVerbose` prop と verbose 用 `着` / `発` badge ブロックを削除。badge は collapse 判定 (`shouldCollapseArrival`) と独立に render されており、`着` badge と arrival 行の表示が連動しない不整合があったため、機能ごと撤去。caller (`stop-time-item.tsx` / `trip-pager.tsx` / `trip-stops.tsx`) も `showVerbose` の引き渡しを削除。
 
 ## [2026.04.29]
 

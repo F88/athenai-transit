@@ -31,7 +31,6 @@ const meta = {
     showDepartureTime: true,
     collapseToleranceMinutes: 0,
     forceShowRelativeTime: false,
-    showVerbose: false,
   },
   argTypes: {
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
@@ -43,7 +42,6 @@ const meta = {
       options: [null, 0, 1, 2, 5],
     },
     forceShowRelativeTime: { control: 'boolean' },
-    showVerbose: { control: 'boolean' },
   },
   decorators: [
     (Story) => (
@@ -163,7 +161,7 @@ export const ArrivalCloseToDepartureCollapsedWithTolerance: Story = {
 
 // --- Align variants ---
 export const AlignComparison: Story = {
-  args: { showVerbose: true, showArrivalTime: true },
+  args: { showArrivalTime: true },
   render: (args) => (
     <div className="flex flex-col gap-3">
       {(['left', 'center', 'right'] as const).map((align) => (
@@ -192,27 +190,30 @@ export const SizeComparison: Story = {
   ),
 };
 
-// --- Verbose ---
+// --- Dwell / collapse ---
 
-export const Verbose: Story = {
+/** Both arrival and departure rows visible with a 2-minute dwell. */
+export const ArrivalAndDepartureDwell: Story = {
   args: {
     showArrivalTime: true,
     showDepartureTime: true,
     arrivalMinutes: offset(5),
     departureMinutes: offset(7),
-    showVerbose: true,
   },
 };
 
-/** Verbose with collapsed arrival (same time) — only departure badge above. */
-export const VerboseCollapsedArrival: Story = {
+/**
+ * arr === dep with `collapseToleranceMinutes=0`: the arrival absolute-time
+ * row is hidden by `shouldCollapseArrival`, leaving only the departure
+ * row.
+ */
+export const CollapsedArrivalAtSameMinute: Story = {
   args: {
     showArrivalTime: true,
     showDepartureTime: true,
     arrivalMinutes: offset(5),
     departureMinutes: offset(5),
     collapseToleranceMinutes: 0,
-    showVerbose: true,
   },
 };
 
@@ -260,7 +261,6 @@ const kitchenSinkArgs = {
   showDepartureTime: true,
   collapseToleranceMinutes: 0,
   forceShowRelativeTime: true,
-  showVerbose: true,
   textAppearance: { color: '#0d9488', weight: 'bold' as const },
 };
 

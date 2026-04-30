@@ -78,7 +78,6 @@ export function TripPager({
           showDepartureTime={display.showDepartureTime}
           collapseToleranceMinutes={display.collapseToleranceMinutes}
           forceShowRelativeTime={false}
-          showVerbose={false}
         />
       </div>
       {/* Next Trip Button */}

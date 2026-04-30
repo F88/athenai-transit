@@ -137,7 +137,6 @@ function TripStopMetaInfo({
           showDepartureTime={showDepartureTime}
           collapseToleranceMinutes={collapseToleranceMinutes}
           forceShowRelativeTime={true}
-          showVerbose={false}
           textAppearance={{ color: timeTextColor }}
         />
       )}
@@ -286,7 +285,11 @@ function TripStopPlaceholderRow({
     >
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
         <TripStopMetaInfo
-          collapseToleranceMinutes={0}
+          // No schedule → `StopTimeTimeInfo` is not rendered inside
+          // `TripStopMetaInfo`; the value is effectively dead. Use `null`
+          // (= "collapse disabled") to make the inert intent explicit
+          // rather than picking a tolerance that would imply a policy.
+          collapseToleranceMinutes={null}
           stopIndex={stopIndex}
           totalStops={totalStops}
           labelBg={routeColors.color}
