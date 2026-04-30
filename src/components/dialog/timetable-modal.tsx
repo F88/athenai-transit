@@ -10,7 +10,7 @@ import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
-import { filterByStopEventAttributes } from '@/domain/transit/timetable-filter';
+import { applyStopEventAttributeToggles } from '@/domain/transit/timetable-filter';
 import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
 import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
@@ -197,21 +197,14 @@ export function TimetableModal({
   }, [data]);
   // const allEntriesStats = computeTimetableEntryStats( allTimetableEntries, data?.agencies ?? [], dataLangs,);
 
-  const stopEventAttributesFilteredEntries = useMemo(() => {
-    let entries = allTimetableEntries;
-    if (showOriginOnly) {
-      entries = filterByStopEventAttributes(entries, {
-        position: new Set(['origin']),
-      });
-    }
-    if (showBoardableOnly) {
-      entries = filterByStopEventAttributes(entries, {
-        pickUpState: new Set(['boardable']),
-        position: new Set(['origin', 'middle']),
-      });
-    }
-    return entries;
-  }, [allTimetableEntries, showOriginOnly, showBoardableOnly]);
+  const stopEventAttributesFilteredEntries = useMemo(
+    () =>
+      applyStopEventAttributeToggles(allTimetableEntries, {
+        showOriginOnly,
+        showBoardableOnly,
+      }),
+    [allTimetableEntries, showOriginOnly, showBoardableOnly],
+  );
   const stopEventAttributesFilteredEntriesStats = computeTimetableEntryStats(
     stopEventAttributesFilteredEntries,
     data?.agencies ?? [],

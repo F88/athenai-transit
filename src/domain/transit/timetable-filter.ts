@@ -260,3 +260,51 @@ export function filterByStopEventAttributes<T extends TimetableEntry>(
     return true;
   });
 }
+
+/** Toggle bundle for {@link applyStopEventAttributeToggles}. */
+export interface StopEventAttributeToggles {
+  /**
+   * When true, narrows to entries where this stop is the trip's origin
+   * (= `entry.patternPosition.isOrigin === true`). Includes
+   * non-boardable origins; combine with `showBoardableOnly` to
+   * intersect.
+   */
+  showOriginOnly: boolean;
+  /**
+   * When true, narrows to entries with `pickup_type === 0` whose
+   * `patternPosition` is `'origin'` or `'middle'` (i.e. not a pure
+   * terminal). Composes with `showOriginOnly` (AND) when both are on.
+   */
+  showBoardableOnly: boolean;
+}
+
+/**
+ * Apply the user-facing entry-attribute toggles
+ * (`showOriginOnly` / `showBoardableOnly`) to a list of entries.
+ *
+ * Each enabled toggle narrows the result via
+ * {@link filterByStopEventAttributes} (AND across toggles). When both
+ * toggles are false, the input reference is returned unchanged.
+ *
+ * Used by both BottomSheet (per-stop entries) and TimetableModal (the
+ * stop's full timetable) so the toggle semantics stay aligned across
+ * surfaces.
+ */
+export function applyStopEventAttributeToggles<T extends TimetableEntry>(
+  entries: readonly T[],
+  toggles: StopEventAttributeToggles,
+): T[] {
+  let result = entries as T[];
+  if (toggles.showOriginOnly) {
+    result = filterByStopEventAttributes(result, {
+      position: new Set(['origin']),
+    });
+  }
+  if (toggles.showBoardableOnly) {
+    result = filterByStopEventAttributes(result, {
+      pickUpState: new Set(['boardable']),
+      position: new Set(['origin', 'middle']),
+    });
+  }
+  return result;
+}

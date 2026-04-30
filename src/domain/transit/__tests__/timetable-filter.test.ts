@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Route } from '../../../types/app/transit';
 import type { ContextualTimetableEntry, TimetableEntry } from '../../../types/app/transit-composed';
 import {
+  applyStopEventAttributeToggles,
   filterByAgency,
   filterByRouteType,
   filterByStopEventAttributes,
@@ -992,6 +993,80 @@ describe('filterByStopEventAttributes', () => {
         pickUpState: new Set(['boardable']),
       });
 
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].serviceDate.getTime()).toBe(contextual[0].serviceDate.getTime());
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applyStopEventAttributeToggles
+// ---------------------------------------------------------------------------
+
+describe('applyStopEventAttributeToggles', () => {
+  const originPt0 = makeEntry({ isOrigin: true, pickupType: 0, departureMinutes: 480 });
+  const originPt1 = makeEntry({ isOrigin: true, pickupType: 1, departureMinutes: 540 });
+  const middlePt0 = makeEntry({ pickupType: 0, departureMinutes: 600 });
+  const middlePt2 = makeEntry({ pickupType: 2, departureMinutes: 660 });
+  const terminalPt0 = makeEntry({ isTerminal: true, pickupType: 0, departureMinutes: 720 });
+  const entries = [originPt0, originPt1, middlePt0, middlePt2, terminalPt0];
+
+  describe('identity / fast-path', () => {
+    it('returns the input reference unchanged when both toggles are false', () => {
+      const result = applyStopEventAttributeToggles(entries, {
+        showOriginOnly: false,
+        showBoardableOnly: false,
+      });
+      expect(result).toBe(entries);
+    });
+  });
+
+  describe('showOriginOnly only', () => {
+    it('keeps origin entries (boardable AND non-boardable origins)', () => {
+      const result = applyStopEventAttributeToggles(entries, {
+        showOriginOnly: true,
+        showBoardableOnly: false,
+      });
+      expect(result).toEqual([originPt0, originPt1]);
+    });
+  });
+
+  describe('showBoardableOnly only', () => {
+    it('keeps pickup_type=0 entries at non-pure-terminal positions', () => {
+      const result = applyStopEventAttributeToggles(entries, {
+        showOriginOnly: false,
+        showBoardableOnly: true,
+      });
+      // originPt0 (origin, pt=0): kept
+      // originPt1 (origin, pt=1): excluded by pickUpState
+      // middlePt0 (middle, pt=0): kept
+      // middlePt2 (middle, pt=2): excluded by pickUpState
+      // terminalPt0 (pure terminal, pt=0): excluded by position
+      expect(result).toEqual([originPt0, middlePt0]);
+    });
+  });
+
+  describe('both toggles on (AND composition)', () => {
+    it('keeps only origin AND boardable entries', () => {
+      const result = applyStopEventAttributeToggles(entries, {
+        showOriginOnly: true,
+        showBoardableOnly: true,
+      });
+      // originPt0 alone matches: isOrigin=true AND pickup_type=0
+      expect(result).toEqual([originPt0]);
+    });
+  });
+
+  describe('generic preservation', () => {
+    it('preserves the input element type at the type level', () => {
+      const contextual: ContextualTimetableEntry[] = [
+        { ...makeEntry({ isOrigin: true, pickupType: 0 }), serviceDate: new Date(2026, 3, 30) },
+        { ...makeEntry({ pickupType: 1 }), serviceDate: new Date(2026, 3, 30) },
+      ];
+      const filtered: ContextualTimetableEntry[] = applyStopEventAttributeToggles(contextual, {
+        showOriginOnly: true,
+        showBoardableOnly: false,
+      });
       expect(filtered).toHaveLength(1);
       expect(filtered[0].serviceDate.getTime()).toBe(contextual[0].serviceDate.getTime());
     });

@@ -44,6 +44,8 @@ const meta = {
     dataConfig: defaultDataConfig,
     dataLangs: ['ja'],
     showOperatingStopsOnly: false,
+    showOriginOnly: false,
+    showBoardableOnly: false,
     viewId: DEFAULT_VIEW_ID,
     selectedView: defaultSelectedView,
     infoLevel: 'normal',
@@ -52,6 +54,8 @@ const meta = {
     presentAgencies: [agencyTobus],
     hiddenAgencyIds: new Set<string>(),
     onToggleShowOperatingStopsOnly: fn(),
+    onToggleShowOriginOnly: fn(),
+    onToggleShowBoardableOnly: fn(),
     onViewChange: fn(),
     onToggleRouteType: fn(),
     onToggleAgency: fn(),
@@ -59,6 +63,8 @@ const meta = {
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     showOperatingStopsOnly: { control: 'boolean' },
+    showOriginOnly: { control: 'boolean' },
+    showBoardableOnly: { control: 'boolean' },
     hasNearbyLoaded: { control: 'boolean' },
   },
   decorators: [
