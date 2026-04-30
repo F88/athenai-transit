@@ -10,7 +10,7 @@ import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
-import { filterBoardable, filterOrigin } from '@/domain/transit/timetable-filter';
+import { filterByStopEventAttributes } from '@/domain/transit/timetable-filter';
 import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
 import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
@@ -164,7 +164,8 @@ export function TimetableModal({
   const [showBoardableOnly, setShowBoardableOnly] = useState(boardableOnly);
 
   // Origin-only filter toggle (= 始発のみ). OFF by default.
-  // When ON, applies filterOrigin on top of any other active filters.
+  // When ON, narrows to entries whose patternPosition.isOrigin is true,
+  // applied on top of any other active filters.
   const [showOriginOnly, setShowOriginOnly] = useState(false);
 
   const toggleFilter = useCallback((key: string) => {
@@ -199,10 +200,15 @@ export function TimetableModal({
   const entriesBeforeRouteHeadsignFilter = useMemo(() => {
     let entries = allTimetableEntries;
     if (showOriginOnly) {
-      entries = filterOrigin(entries);
+      entries = filterByStopEventAttributes(entries, {
+        position: new Set(['origin']),
+      });
     }
     if (showBoardableOnly) {
-      entries = filterBoardable(entries);
+      entries = filterByStopEventAttributes(entries, {
+        pickUpState: new Set(['boardable']),
+        position: new Set(['origin', 'middle']),
+      });
     }
     return entries;
   }, [allTimetableEntries, showOriginOnly, showBoardableOnly]);

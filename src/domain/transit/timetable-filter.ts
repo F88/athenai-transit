@@ -11,15 +11,13 @@
 import type { TimetableEntry } from '../../types/app/transit-composed';
 import type { TimetableOmitted } from '../../types/app/repository';
 import { getEffectiveHeadsign } from './get-effective-headsign';
-import { isDropOffOnly } from './timetable-utils';
 
 /**
  * Filter and compute omitted stats for a stop timetable.
  *
  * When `includeNonBoardable` is false (simple/normal), non-boardable
- * entries (= terminal arrivals and `pickup_type === 1` mid-route stops,
- * see {@link isDropOffOnly}) are removed and their count is reported in
- * `omitted.nonBoardable`.
+ * entries (= entries with `pickup_type !== 0` or `isTerminal`) are
+ * removed and their count is reported in `omitted.nonBoardable`.
  *
  * @param allEntries - All entries from getFullDayTimetableEntries (unfiltered).
  * @param includeNonBoardable - true at detailed+, false at simple/normal.
@@ -32,7 +30,10 @@ export function prepareStopTimetable(
   if (includeNonBoardable) {
     return { entries: allEntries, omitted: { nonBoardable: 0 } };
   }
-  const entries = filterBoardable(allEntries);
+  const entries = filterByStopEventAttributes(allEntries, {
+    pickUpState: new Set(['boardable']),
+    position: new Set(['origin', 'middle']),
+  });
   return { entries, omitted: { nonBoardable: allEntries.length - entries.length } };
 }
 
@@ -64,7 +65,10 @@ export function prepareRouteHeadsignTimetable(
   if (includeNonBoardable) {
     return { entries: routeEntries, omitted: { nonBoardable: 0 } };
   }
-  const entries = filterBoardable(routeEntries);
+  const entries = filterByStopEventAttributes(routeEntries, {
+    pickUpState: new Set(['boardable']),
+    position: new Set(['origin', 'middle']),
+  });
   return { entries, omitted: { nonBoardable: routeEntries.length - entries.length } };
 }
 
@@ -118,34 +122,6 @@ export function filterByRouteType<T extends TimetableEntry>(
   return entries.filter((e) => !hiddenRouteTypes.has(e.routeDirection.route.route_type));
 }
 
-/**
- * Filter out drop-off-only entries, returning only boardable stop times.
- *
- * Each entry's boardability is determined by {@link isDropOffOnly}
- * (pickupType === 1 OR isTerminal).
- */
-export function filterBoardable(entries: TimetableEntry[]): TimetableEntry[] {
-  return entries.filter((entry) => !isDropOffOnly(entry));
-}
-
-/**
- * Filter to entries where this stop is the trip's origin (= 始発).
- *
- * Keeps every entry with `entry.patternPosition.isOrigin === true`,
- * including ones that are also non-boardable (= the bus departs from a
- * depot or yard with `pickup_type === 1` / `drop_off_type === 1`). Those
- * entries are visually distinguished by `乗×` / `降×` markers in the
- * grid, so hiding them at the filter layer would suppress legitimate
- * GTFS-described "起点運用" data the viewer is meant to surface.
- *
- * Callers that want only boardable origins should compose this with
- * {@link filterBoardable} (= apply both filters) rather than baking a
- * combined predicate into a single function.
- */
-export function filterOrigin(entries: TimetableEntry[]): TimetableEntry[] {
-  return entries.filter((entry) => entry.patternPosition.isOrigin);
-}
-
 // ---------------------------------------------------------------------------
 // filterByStopEventAttributes
 // ---------------------------------------------------------------------------
@@ -153,8 +129,16 @@ export function filterOrigin(entries: TimetableEntry[]): TimetableEntry[] {
 /** Pattern position values an entry can match. */
 export type PatternPosition = 'origin' | 'terminal' | 'middle';
 
-/** Boarding state values an entry can match. */
-export type BoardingState = 'boardable' | 'nonBoardable';
+/**
+ * Pick-up state values an entry can match. Maps 1:1 to GTFS
+ * `pickup_type` values (= boarding side, no `drop_off_type` involvement):
+ *
+ * - `'boardable'` — `pickup_type === 0` (regular pickup).
+ * - `'nonBoardable'` — `pickup_type === 1` (no pickup available).
+ * - `'phoneArrangement'` — `pickup_type === 2` (phone agency to arrange).
+ * - `'driverArrangement'` — `pickup_type === 3` (coordinate with driver).
+ */
+export type PickUpState = 'boardable' | 'nonBoardable' | 'phoneArrangement' | 'driverArrangement';
 
 /**
  * Schedule range filter for departure / arrival times.
@@ -184,12 +168,14 @@ export interface ScheduleRangeFilter {
  * (AND semantics across axes); an undefined field disables that axis.
  * An empty Set yields no matches (literal interpretation).
  *
+
  * Semantics:
  * - 'origin' / 'terminal' map to `patternPosition.isOrigin` /
  *   `.isTerminal`; 'middle' = neither. Single-stop trips
  *   (isOrigin AND isTerminal) match both 'origin' and 'terminal'.
- * - 'boardable' / 'nonBoardable' invert {@link isDropOffOnly}
- *   (`pickup_type === 1` OR `isTerminal`).
+ * - 'boardable' / 'nonBoardable' / 'phoneArrangement' /
+ *   'driverArrangement' map 1:1 to `boarding.pickupType` (0 / 1 / 2 / 3).
+ *   `isTerminal` is NOT mixed in (use the position axis if needed).
  * - Schedule range is inclusive on both ends. `field` selects
  *   `entry.schedule.departureMinutes` (default) or
  *   `entry.schedule.arrivalMinutes`.
@@ -197,8 +183,8 @@ export interface ScheduleRangeFilter {
 export interface StopEventAttributeFilters {
   /** Schedule time range to keep. Omit to disable. */
   schedule?: ScheduleRangeFilter;
-  /** Boarding states to keep. Omit to disable. */
-  boardingState?: ReadonlySet<BoardingState>;
+  /** Pick-up states to keep. Omit to disable. */
+  pickUpState?: ReadonlySet<PickUpState>;
   /** Pattern positions to keep. Omit to disable. */
   position?: ReadonlySet<PatternPosition>;
 }
@@ -217,8 +203,17 @@ function matchesPosition(entry: TimetableEntry, allowed: ReadonlySet<PatternPosi
   return false;
 }
 
-function matchesBoardingState(entry: TimetableEntry, allowed: ReadonlySet<BoardingState>): boolean {
-  return allowed.has(isDropOffOnly(entry) ? 'nonBoardable' : 'boardable');
+function matchesPickUpState(entry: TimetableEntry, allowed: ReadonlySet<PickUpState>): boolean {
+  switch (entry.boarding.pickupType) {
+    case 0:
+      return allowed.has('boardable');
+    case 1:
+      return allowed.has('nonBoardable');
+    case 2:
+      return allowed.has('phoneArrangement');
+    case 3:
+      return allowed.has('driverArrangement');
+  }
 }
 
 function matchesSchedule(entry: TimetableEntry, range: ScheduleRangeFilter): boolean {
@@ -234,8 +229,8 @@ function matchesSchedule(entry: TimetableEntry, range: ScheduleRangeFilter): boo
 }
 
 /**
- * Filter entries by stop-event-level attributes (schedule / boarding /
- * pattern position) in a single array pass.
+ * Filter entries by stop-event-level attributes (schedule / pick-up
+ * state / pattern position) in a single array pass.
  *
  * Trip-level attributes (route, headsign, agency) are NOT considered —
  * use {@link filterByAgency} / {@link filterByRouteType} for those.
@@ -248,15 +243,15 @@ export function filterByStopEventAttributes<T extends TimetableEntry>(
   entries: readonly T[],
   filters: StopEventAttributeFilters,
 ): T[] {
-  const { position, boardingState, schedule } = filters;
-  if (!position && !boardingState && !schedule) {
+  const { position, pickUpState, schedule } = filters;
+  if (!position && !pickUpState && !schedule) {
     return entries as T[];
   }
   return entries.filter((entry) => {
     if (position && !matchesPosition(entry, position)) {
       return false;
     }
-    if (boardingState && !matchesBoardingState(entry, boardingState)) {
+    if (pickUpState && !matchesPickUpState(entry, pickUpState)) {
       return false;
     }
     if (schedule && !matchesSchedule(entry, schedule)) {
