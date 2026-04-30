@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { PillButton } from '../button/pill-button';
 
-interface TimetableOriginFilterProps {
+interface OriginFilterProps {
   origin: boolean;
   onToggleOrigin: () => void;
   /** Number of origin entries (= count to display on the pill). */
@@ -9,7 +9,7 @@ interface TimetableOriginFilterProps {
 }
 
 /**
- * Render the origin (始発) filter toggle for a timetable view.
+ * Render the origin (始発) filter toggle.
  *
  * Filters to entries where this stop is the trip's origin
  * (= `entry.patternPosition.isOrigin === true`). Includes non-boardable
@@ -19,17 +19,13 @@ interface TimetableOriginFilterProps {
  * viewer is meant to surface.
  *
  * If the caller wants only "boardable origins", combine this with
- * `TimetableBoardabilityFilter` (= toggle both on); the result is the
+ * {@link BoardabilityFilter} (= toggle both on); the result is the
  * intersection.
  *
  * @param props - Filter rendering inputs.
  * @returns The rendered filter toggle.
  */
-export function TimetableOriginFilter({
-  origin,
-  onToggleOrigin,
-  count,
-}: TimetableOriginFilterProps) {
+export function OriginFilter({ origin, onToggleOrigin, count }: OriginFilterProps) {
   const { t } = useTranslation();
 
   return (
@@ -41,10 +37,10 @@ export function TimetableOriginFilter({
         activeBorder={'var(--info)'}
         inactiveBorder={'var(--info)'}
         onClick={onToggleOrigin}
-        title={t('timetable.filter.originOnlyTitle')}
+        title={t('filter.originOnlyTitle')}
         count={count}
       >
-        {t('timetable.filter.originOnly')}
+        {t('filter.originOnly')}
       </PillButton>
     </div>
   );

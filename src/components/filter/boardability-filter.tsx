@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { PillButton } from '../button/pill-button';
 
-interface TimetableBoardabilityFilterProps {
+interface BoardabilityFilterProps {
   boardable: boolean;
   onToggleBoardable: () => void;
   /** Number of boardable entries (= count to display on the pill). */
@@ -9,13 +9,13 @@ interface TimetableBoardabilityFilterProps {
 }
 
 /**
- * Render the stop-level boardability filter toggle for a timetable view.
+ * Render the stop-level boardability filter toggle.
  *
- * Currently filters by stop-level boardability (= GTFS `pickup_type` and
- * pattern-inferred `isTerminal`). Segment-level boardability signals
- * (`continuous_pickup` / `continuous_drop_off`) are out of scope for
- * this filter; if added in the future, expose them as a separate filter
- * component to keep dimensions distinct.
+ * Currently filters by stop-level boardability (= GTFS `pickup_type`).
+ * Segment-level boardability signals (`continuous_pickup` /
+ * `continuous_drop_off`) are out of scope for this filter; if added in
+ * the future, expose them as a separate filter component to keep
+ * dimensions distinct.
  *
  * The `count` is owned by the caller so the same predicate is not
  * computed twice (= once for filter, once for count). Caller decides
@@ -25,11 +25,11 @@ interface TimetableBoardabilityFilterProps {
  * @param props - Filter rendering inputs.
  * @returns The rendered filter toggle.
  */
-export function TimetableBoardabilityFilter({
+export function BoardabilityFilter({
   boardable,
   onToggleBoardable,
   count,
-}: TimetableBoardabilityFilterProps) {
+}: BoardabilityFilterProps) {
   const { t } = useTranslation();
 
   return (
@@ -41,10 +41,10 @@ export function TimetableBoardabilityFilter({
         activeBorder={'var(--info)'}
         inactiveBorder={'var(--info)'}
         onClick={onToggleBoardable}
-        title={t('timetable.filter.boardableOnlyTitle')}
+        title={t('filter.boardableOnlyTitle')}
         count={count}
       >
-        {t('timetable.filter.boardableOnly')}
+        {t('filter.boardableOnly')}
       </PillButton>
     </div>
   );

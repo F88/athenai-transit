@@ -4,8 +4,8 @@ import { TimetableGrid } from '../timetable/timetable-grid';
 import { TimetableHeader } from '../timetable/timetable-header';
 import { TimetableMetadata } from '../timetable/timetable-metadata';
 import { TimetableHeadsignFilter } from '../timetable/timetable-headsign-filter';
-import { TimetableBoardabilityFilter } from '../timetable/timetable-boardability-filter';
-import { TimetableOriginFilter } from '../timetable/timetable-origin-filter';
+import { BoardabilityFilter } from '../filter/boardability-filter';
+import { OriginFilter } from '../filter/origin-filter';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
@@ -392,14 +392,14 @@ export function TimetableModal({
             <div className="flex flex-wrap gap-1">
               {/* Origin filter — hidden when no origin entries exist at this stop */}
               {stopEventAttributesFilteredEntriesStats.originCount > 0 && (
-                <TimetableOriginFilter
+                <OriginFilter
                   origin={showOriginOnly}
                   count={stopEventAttributesFilteredEntriesStats.originCount}
                   onToggleOrigin={toggleOriginOnly}
                 />
               )}
               {/* Boardability filter */}
-              <TimetableBoardabilityFilter
+              <BoardabilityFilter
                 boardable={showBoardableOnly}
                 count={stopEventAttributesFilteredEntriesStats.boardableCount}
                 onToggleBoardable={toggleBoardableOnly}
