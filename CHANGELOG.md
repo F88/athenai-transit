@@ -21,7 +21,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - `StopTimeTimeInfo` の `shouldCollapseArrival` 判定を `at === dt` (整形文字列比較) から `arrivalMinutes === departureMinutes` (整数比較) に変更し、後段の domain helper にロジック抽出。
 - `StopTimeItem` の API を簡素化: `showArrivalTime` / `showDepartureTime` / `collapseToleranceMinutes` の 3 props を削除し、`entry.patternPosition` (isOrigin / isTerminal) と `infoLevel` から内部で `deriveStopTimeRoleDisplayProps` を呼んで導出する形に。caller (`nearby-stop.tsx`) はこれら 3 props を渡さなくなる。
 - `TripStopRow` (`trip-stops.tsx`) と `TripPager` の `StopTimeTimeInfo` 呼び出しを `deriveStopTimeRoleDisplayProps` 経由に統一。`TripPager` には新たに `infoLevel: InfoLevel` prop を追加し、`TripInspectionDialog` から渡すよう更新。
-- `RelativeTime` のフォーマット文字列比較ロジックを minute 整数比較に変更したのに伴い、tolerance を `verbose ? null : 2` に設定。GTFS / ODPT 全 20 source の中間 stop dwell 分布 (d=1: 2.34% = 鉄道発車待ち、d=2: 0.082% = 軽 hub dwell、d>=3: 0.078% = 通過待ち / 折返し / 高速バス起点) から、d=1+d=2 を collapse 対象とし d>=3 を 2 行展開する設計。
+- `deriveStopTimeRoleDisplayProps` の tolerance default を `verbose ? null : 2` に設定。GTFS / ODPT 全 20 source の中間 stop dwell 分布 (d=1: 2.34% = 鉄道発車待ち、d=2: 0.082% = 軽 hub dwell、d>=3: 0.078% = 通過待ち / 折返し / 高速バス起点) から、d=1+d=2 を collapse 対象とし d>=3 を 2 行展開する設計。
 - 動作仕様: 非 verbose では origin = dep のみ / terminal = arr のみ / middle = 両方 (tolerance=2) / single-stop = 両方 (tolerance=2) を表示。verbose では全 role で両方表示し tolerance は null (= 全 dwell 開示)。terminal の operator-recorded `departure_time` (例: 京成 妙典駅 d=8 の折返し時間、京都市バス 松尾橋 d=6) も verbose で可視化。
 
 ## [2026.04.29]
