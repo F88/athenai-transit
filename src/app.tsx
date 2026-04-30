@@ -669,6 +669,19 @@ export default function App({ loadResult }: AppProps) {
     setShowBoardableOnly((prev) => !prev);
   }, []);
 
+  // Bundle the app-wide filter state + toggle handlers into a single
+  // memoized object so consumers (BottomSheet / TimetableModal /
+  // future MapView etc.) receive a stable reference between toggles.
+  const globalFilter = useMemo(
+    () => ({
+      showOriginOnly,
+      showBoardableOnly,
+      onToggleShowOriginOnly: toggleShowOriginOnly,
+      onToggleShowBoardableOnly: toggleShowBoardableOnly,
+    }),
+    [showOriginOnly, showBoardableOnly, toggleShowOriginOnly, toggleShowBoardableOnly],
+  );
+
   // --- Settings handlers ---
 
   const enabledRouteTypes = useMemo(
@@ -850,12 +863,7 @@ export default function App({ loadResult }: AppProps) {
           onToggleAnchor: handleToggleAnchor,
           onInspectTrip: openTripInspection,
         }}
-        globalFilter={{
-          showOriginOnly,
-          showBoardableOnly,
-          onToggleShowOriginOnly: toggleShowOriginOnly,
-          onToggleShowBoardableOnly: toggleShowBoardableOnly,
-        }}
+        globalFilter={globalFilter}
         mapOverlay={
           <TimeControls
             time={dateTime}
@@ -897,12 +905,7 @@ export default function App({ loadResult }: AppProps) {
         time={dateTime}
         infoLevel={settings.infoLevel}
         dataLangs={langChain}
-        globalFilter={{
-          showOriginOnly,
-          showBoardableOnly,
-          onToggleShowOriginOnly: toggleShowOriginOnly,
-          onToggleShowBoardableOnly: toggleShowBoardableOnly,
-        }}
+        globalFilter={globalFilter}
         onInspectTrip={openTripInspection}
         onClose={() => setTimetableData(null)}
       />
