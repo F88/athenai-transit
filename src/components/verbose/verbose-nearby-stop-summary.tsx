@@ -32,7 +32,7 @@ export function VerboseNearbyStopSummary({
     pickUpState: new Set(['boardable']),
     position: new Set(['origin', 'middle']),
   }).length;
-  const dropOffOnly = stopTimes.length - boardable;
+  const nonBoardable = stopTimes.length - boardable;
 
   return (
     <details className="text-[9px] font-normal text-[#999] dark:text-gray-500">
@@ -50,7 +50,8 @@ export function VerboseNearbyStopSummary({
           </span>
           <span className="block">[service] stopServiceState={stopServiceState}</span>
           <span className="block">
-            [stop times] entries={stopTimes.length} boardable={boardable} dropOffOnly={dropOffOnly}
+            [stop times] entries={stopTimes.length} boardable={boardable} nonBoardable=
+            {nonBoardable}
             {stopTimes.length === 0
               ? ' (NO SERVICE)'
               : stopServiceState === 'drop-off-only'

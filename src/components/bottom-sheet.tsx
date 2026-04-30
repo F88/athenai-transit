@@ -256,19 +256,19 @@ export function BottomSheet({
       total: stopTimes.length,
       active: trimmedStopTimes.filter((swc) => swc.stopTimes.length > 0).length,
       filtered: trimmedStopTimes.length,
-      originCount: trimmedStopTimes.filter(
-        (swc) =>
-          applyStopEventAttributeToggles(swc.stopTimes, {
-            showOriginOnly: true,
-            showBoardableOnly: false,
-          }).length > 0,
+      // Existence-only `.some(...)` predicates — semantic-equivalent to
+      // applyStopEventAttributeToggles({ showOriginOnly: true }).length > 0
+      // and applyStopEventAttributeToggles({ showBoardableOnly: true }).length > 0
+      // respectively, but without allocating a per-stop filtered array.
+      originCount: trimmedStopTimes.filter((swc) =>
+        swc.stopTimes.some((entry) => entry.patternPosition.isOrigin),
       ).length,
-      boardableCount: trimmedStopTimes.filter(
-        (swc) =>
-          applyStopEventAttributeToggles(swc.stopTimes, {
-            showOriginOnly: false,
-            showBoardableOnly: true,
-          }).length > 0,
+      boardableCount: trimmedStopTimes.filter((swc) =>
+        swc.stopTimes.some(
+          (entry) =>
+            entry.boarding.pickupType === 0 &&
+            (entry.patternPosition.isOrigin || !entry.patternPosition.isTerminal),
+        ),
       ).length,
     }),
     [stopTimes, trimmedStopTimes],

@@ -249,7 +249,7 @@ const kitchenSinkArgs = {
   hasNearbyLoaded: true,
   counts: { total: 42, active: 28, filtered: 21, originCount: 6, boardableCount: 15 },
   dataConfig: defaultDataConfig,
-  dataLang: ['ja'],
+  dataLangs: ['ja'],
   showOperatingStopsOnly: true,
   viewId: 'route-headsign',
   selectedView: selectView('route-headsign'),

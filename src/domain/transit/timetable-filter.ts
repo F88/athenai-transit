@@ -16,8 +16,11 @@ import { getEffectiveHeadsign } from './get-effective-headsign';
  * Filter and compute omitted stats for a stop timetable.
  *
  * When `includeNonBoardable` is false (simple/normal), non-boardable
- * entries (= entries with `pickup_type !== 0` or `isTerminal`) are
- * removed and their count is reported in `omitted.nonBoardable`.
+ * entries are removed and their count is reported in
+ * `omitted.nonBoardable`. An entry is considered non-boardable when
+ * `pickup_type !== 0`, or when it is a pure terminal stop
+ * (`isTerminal && !isOrigin`); 1-stop trips (`isOrigin && isTerminal`)
+ * are kept as origin.
  *
  * @param allEntries - All entries from getFullDayTimetableEntries (unfiltered).
  * @param includeNonBoardable - true at detailed+, false at simple/normal.
