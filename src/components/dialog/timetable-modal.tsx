@@ -15,6 +15,7 @@ import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
 import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { useScrollFades } from '@/hooks/use-scroll-fades';
+import type { GlobalFilter } from '@/types/app/global-filter';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, Route, Stop, StopServiceState } from '@/types/app/transit';
 import type { TimetableEntry, TripInspectionTarget } from '@/types/app/transit-composed';
@@ -62,14 +63,8 @@ interface TimetableModalProps {
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLangs: readonly string[];
-  /**
-   * Initial value of the boardable-only filter toggle. When true, the
-   * dialog opens with the filter ON (= the user can still toggle it
-   * off via the filter pill). The value is read once at mount; pair
-   * with a stable `key` on `<TimetableModal>` so the dialog re-mounts
-   * (= re-evaluates the initial value) per stop.
-   */
-  boardableOnly: boolean;
+  /** App-wide filter state shared across surfaces. */
+  globalFilter: GlobalFilter;
   onInspectTrip?: (target: TripInspectionTarget) => void;
   onClose: () => void;
 }
@@ -143,10 +138,12 @@ export function TimetableModal({
   time,
   infoLevel,
   dataLangs,
-  boardableOnly,
+  globalFilter,
   onInspectTrip,
   onClose,
 }: TimetableModalProps) {
+  const { showOriginOnly, showBoardableOnly, onToggleShowOriginOnly, onToggleShowBoardableOnly } =
+    globalFilter;
   const { t, i18n } = useTranslation();
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
@@ -158,16 +155,6 @@ export function TimetableModal({
   // Empty set = show all timetable (no filter active).
   const [activeFilters, setActiveFilters] = useState<Set<string>>(() => new Set());
 
-  // Boardable-only filter toggle. Initial value comes from the
-  // `boardableOnly` prop (read once at mount; the caller should use a
-  // `key` on <TimetableModal> to re-mount per stop).
-  const [showBoardableOnly, setShowBoardableOnly] = useState(boardableOnly);
-
-  // Origin-only filter toggle (= 始発のみ). OFF by default.
-  // When ON, narrows to entries whose patternPosition.isOrigin is true,
-  // applied on top of any other active filters.
-  const [showOriginOnly, setShowOriginOnly] = useState(false);
-
   const toggleFilter = useCallback((key: string) => {
     setActiveFilters((prev) => {
       const next = new Set(prev);
@@ -178,14 +165,6 @@ export function TimetableModal({
       }
       return next;
     });
-  }, []);
-
-  const toggleBoardableOnly = useCallback(() => {
-    setShowBoardableOnly((prev) => !prev);
-  }, []);
-
-  const toggleOriginOnly = useCallback(() => {
-    setShowOriginOnly((prev) => !prev);
   }, []);
 
   // Both timetable types now use TimetableEntry[] directly.
@@ -388,14 +367,14 @@ export function TimetableModal({
                 <OriginFilter
                   origin={showOriginOnly}
                   count={stopEventAttributesFilteredEntriesStats.originCount}
-                  onToggleOrigin={toggleOriginOnly}
+                  onToggleOrigin={onToggleShowOriginOnly}
                 />
               )}
               {/* Boardability filter */}
               <BoardabilityFilter
                 boardable={showBoardableOnly}
                 count={stopEventAttributesFilteredEntriesStats.boardableCount}
-                onToggleBoardable={toggleBoardableOnly}
+                onToggleBoardable={onToggleShowBoardableOnly}
               />
               {/* Headsign filter */}
               {data.type === 'stop' && (
