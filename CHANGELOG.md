@@ -24,6 +24,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - `deriveStopTimeRoleDisplayProps` の tolerance default を `verbose ? null : 2` に設定。GTFS / ODPT 全 20 source の中間 stop dwell 分布 (d=1: 2.34% = 鉄道発車待ち、d=2: 0.082% = 軽 hub dwell、d>=3: 0.078% = 通過待ち / 折返し / 高速バス起点) から、d=1+d=2 を collapse 対象とし d>=3 を 2 行展開する設計。
 - 動作仕様: 非 verbose では origin = dep のみ / terminal = arr のみ / middle = 両方 (tolerance=2) / single-stop = 両方 (tolerance=2) を表示。verbose では全 role で両方表示し tolerance は null (= 全 dwell 開示)。terminal の operator-recorded `departure_time` (例: 京成 妙典駅 d=8 の折返し時間、京都市バス 松尾橋 d=6) も verbose で可視化。
 - `StopTimeTimeInfo` から `showVerbose` prop と verbose 用 `着` / `発` badge ブロックを削除。badge は collapse 判定 (`shouldCollapseArrival`) と独立に render されており、`着` badge と arrival 行の表示が連動しない不整合があったため、機能ごと撤去。caller (`stop-time-item.tsx` / `trip-pager.tsx` / `trip-stops.tsx`) も `showVerbose` の引き渡しを削除。
+- `StopTimesItem` の `dataLang` prop を `dataLangs` にリネーム (project-wide 命名規約整合)。caller (`nearby-stop.tsx`) と stories の引き渡しも併せて更新。React key を loop index (`i`) から `${patternId}__${serviceId}__${tripIndex}__${stopIndex}` ベースの安定 ID に変更し、Issue #47 の 6-shape / circular pattern (同 trip が異なる stopIndex で登場) でも一意性を保つ。
+- `StopTimesItem` の絶対時刻表示を `formatAbsoluteTime` 直書きから `AbsoluteStopTime` コンポーネントに置換。terminal entry に `着` suffix が `showArrivalMarker={isTerminal}` 経由で表示され、TERM badge と併せて到着便を一目で識別可能に (`発` suffix は compact 性維持のため非表示)。各 entry wrapper の hardcoded `text-[#757575] dark:text-gray-400` も theme token `text-muted-foreground` に統一。
 
 ## [2026.04.29]
 

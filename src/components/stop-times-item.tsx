@@ -1,5 +1,6 @@
 import { Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { AbsoluteStopTime } from './absolute-stop-time';
 import { minutesToDate } from '../domain/transit/calendar-utils';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { formatAbsoluteTime } from '../domain/transit/time';
@@ -119,7 +120,13 @@ export function StopTimesItem({
             const entryKey = `${entry.tripLocator.patternId}__${entry.tripLocator.serviceId}__${entry.tripLocator.tripIndex}__${entry.patternPosition.stopIndex}`;
             const content = (
               <>
-                {formatAbsoluteTime(displayTimes[i])}
+                <AbsoluteStopTime
+                  timeText={formatAbsoluteTime(displayTimes[i])}
+                  size="md"
+                  showArrivalMarker={entry.patternPosition.isTerminal}
+                  showDepartureMarker={false}
+                  className="text-muted-foreground"
+                />
                 <TimetableEntryAttributesLabels
                   attributes={getTimetableEntryAttributes(entry)}
                   size="xs"
@@ -135,7 +142,7 @@ export function StopTimesItem({
               <button
                 key={entryKey}
                 type="button"
-                className="inline-flex cursor-pointer items-center gap-0.5 rounded-sm text-sm font-bold whitespace-nowrap text-[#757575] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none dark:text-gray-400"
+                className="text-muted-foreground inline-flex cursor-pointer items-center gap-0.5 rounded-sm text-sm font-bold whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 onClick={(e) => {
                   e.stopPropagation();
                   onInspectTrip({
@@ -151,7 +158,7 @@ export function StopTimesItem({
             ) : (
               <span
                 key={entryKey}
-                className="inline-flex items-center gap-0.5 text-sm font-bold whitespace-nowrap text-[#757575] dark:text-gray-400"
+                className="text-muted-foreground inline-flex items-center gap-0.5 text-sm font-bold whitespace-nowrap"
               >
                 {content}
               </span>
