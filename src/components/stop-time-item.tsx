@@ -3,6 +3,7 @@ import {
   getContrastAdjustedRouteColors,
   resolveRouteColors,
 } from '@/domain/transit/color-resolver/route-colors';
+import { deriveStopTimeRoleDisplayProps } from '@/domain/transit/stop-time-display';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
@@ -18,12 +19,6 @@ interface StopTimeItemProps {
   entry: ContextualTimetableEntry;
   /** Current time for relative time calculation. */
   now: Date;
-  /** Whether to render the arrival absolute time. */
-  showArrivalTime: boolean;
-  /** Whether to render the departure absolute time. */
-  showDepartureTime: boolean;
-  /** Whether to hide arrival when both times are shown and the formatted values match. */
-  collapseArrivalWhenSameAsDeparture: boolean;
   /** Force relative-time display even when the entry is far in the future. */
   forceShowRelativeTime: boolean;
   /** Whether to show route_type emoji (e.g. when stop serves multiple route types). */
@@ -57,9 +52,6 @@ interface StopTimeItemProps {
 export function StopTimeItem({
   entry,
   now,
-  showArrivalTime,
-  showDepartureTime,
-  collapseArrivalWhenSameAsDeparture,
   forceShowRelativeTime,
   showRouteTypeIcon,
   infoLevel,
@@ -79,6 +71,11 @@ export function StopTimeItem({
     routeColorAssessment.isLowContrast,
     'css-hex',
   );
+  const display = deriveStopTimeRoleDisplayProps({
+    isOrigin: entry.patternPosition.isOrigin,
+    isTerminal: entry.patternPosition.isTerminal,
+    infoLevel,
+  });
 
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
@@ -89,11 +86,10 @@ export function StopTimeItem({
           serviceDate={entry.serviceDate}
           now={now}
           size="md"
-          showArrivalTime={showArrivalTime}
-          showDepartureTime={showDepartureTime}
-          collapseArrivalWhenSameAsDeparture={collapseArrivalWhenSameAsDeparture}
+          showArrivalTime={display.showArrivalTime}
+          showDepartureTime={display.showDepartureTime}
+          collapseToleranceMinutes={display.collapseToleranceMinutes}
           forceShowRelativeTime={forceShowRelativeTime}
-          showVerbose={showVerbose}
           textAppearance={{ color: contrastAdjustedRouteColors.color }}
           inspectTarget={{
             serviceDate: entry.serviceDate,

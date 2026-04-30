@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
 import { type AdjustedRouteColors } from '@/domain/transit/color-resolver/route-colors';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { deriveStopTimeRoleDisplayProps } from '@/domain/transit/stop-time-display';
 import { getTimetableEntryAttributes } from '@/domain/transit/timetable-entry-attributes';
 import { buildStopByPatternIndex, getPatternTotalStops } from '@/domain/transit/trip-stop-times';
 import { useInfoLevel } from '@/hooks/use-info-level';
@@ -14,6 +15,7 @@ import { LabelCountBadge } from '../badge/label-count-badge';
 import { StopInfo } from '../stop-info';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
 import { TripInfo } from '../trip-info';
+import { VerboseTripStopTime } from '../verbose/verbose-trip-stop-time';
 import { tripStopRowDataAttrs } from './trip-stop-row-dom';
 
 interface TripStopsProps {
@@ -46,12 +48,13 @@ interface TripStopPlaceholderRowProps {
 }
 
 interface TripStopMetaInfoProps {
-  arrivalMinutes?: number;
-  departureMinutes?: number;
   serviceDate?: Date;
   now?: Date;
+  arrivalMinutes?: number;
+  departureMinutes?: number;
   showArrivalTime?: boolean;
   showDepartureTime?: boolean;
+  collapseToleranceMinutes: null | number;
   stopIndex: number;
   totalStops: number;
   timeTextColor?: string;
@@ -88,12 +91,13 @@ function buildRenderedTripStopRows(stopTimes: readonly TripStopTime[]): Rendered
 }
 
 function TripStopMetaInfo({
-  arrivalMinutes,
-  departureMinutes,
   serviceDate,
   now,
+  arrivalMinutes,
+  departureMinutes,
   showArrivalTime,
   showDepartureTime,
+  collapseToleranceMinutes,
   stopIndex,
   totalStops,
   timeTextColor,
@@ -131,9 +135,8 @@ function TripStopMetaInfo({
           size="md"
           showArrivalTime={showArrivalTime}
           showDepartureTime={showDepartureTime}
-          collapseArrivalWhenSameAsDeparture={true}
+          collapseToleranceMinutes={collapseToleranceMinutes}
           forceShowRelativeTime={true}
-          showVerbose={false}
           textAppearance={{ color: timeTextColor }}
         />
       )}
@@ -169,8 +172,11 @@ function TripStopRow({
   const isCurrent = stopIndex === currentPatternStopIndex;
   const isTerminalStop = tripStopTime.timetableEntry.patternPosition.isTerminal;
   const isFirstStop = tripStopTime.timetableEntry.patternPosition.isOrigin;
-  const showArrivalTime = isTerminalStop || !isFirstStop;
-  const showDepartureTime = !isTerminalStop;
+  const display = deriveStopTimeRoleDisplayProps({
+    isOrigin: isFirstStop,
+    isTerminal: isTerminalStop,
+    infoLevel,
+  });
 
   return (
     <div
@@ -181,12 +187,13 @@ function TripStopRow({
       {/* StopTime / StopInfo / Index  */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
         <TripStopMetaInfo
-          arrivalMinutes={tripStopTime.timetableEntry.schedule.arrivalMinutes}
-          departureMinutes={tripStopTime.timetableEntry.schedule.departureMinutes}
           serviceDate={serviceDate}
           now={now}
-          showArrivalTime={showArrivalTime}
-          showDepartureTime={showDepartureTime}
+          arrivalMinutes={tripStopTime.timetableEntry.schedule.arrivalMinutes}
+          departureMinutes={tripStopTime.timetableEntry.schedule.departureMinutes}
+          collapseToleranceMinutes={display.collapseToleranceMinutes}
+          showArrivalTime={display.showArrivalTime}
+          showDepartureTime={display.showDepartureTime}
           stopIndex={stopIndex}
           totalStops={totalStops}
           timeTextColor={routeColors.color}
@@ -247,6 +254,13 @@ function TripStopRow({
           attributes={stopAttributes}
         />
       )}
+      {infoLevelFlag.isVerboseEnabled && (
+        <VerboseTripStopTime
+          tripStopTime={tripStopTime}
+          serviceDate={serviceDate}
+          dataLangs={dataLangs}
+        />
+      )}
     </div>
   );
 }
@@ -271,6 +285,11 @@ function TripStopPlaceholderRow({
     >
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
         <TripStopMetaInfo
+          // No schedule → `StopTimeTimeInfo` is not rendered inside
+          // `TripStopMetaInfo`; the value is effectively dead. Use `null`
+          // (= "collapse disabled") to make the inert intent explicit
+          // rather than picking a tolerance that would imply a policy.
+          collapseToleranceMinutes={null}
           stopIndex={stopIndex}
           totalStops={totalStops}
           labelBg={routeColors.color}

@@ -1,9 +1,9 @@
 import { AbsoluteStopTime } from '@/components/absolute-stop-time';
 import { minutesToDate } from '../domain/transit/calendar-utils';
+import { shouldCollapseArrival } from '../domain/transit/stop-time-display';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import type { TripInspectionTarget, WithServiceDate } from '../types/app/transit-composed';
 import { cn } from '../lib/utils';
-import { BaseLabel } from './label/base-label';
 import { RelativeTime } from './relative-time';
 import type { ExtendedDisplaySize } from './shared/display-size';
 
@@ -31,7 +31,7 @@ export interface StopTimeTimeTextAppearance {
   className?: string;
 }
 
-/** Horizontal alignment of rendered time text and verbose badges. */
+/** Horizontal alignment of rendered time text. */
 export type StopTimeTimeInfoAlign = 'left' | 'center' | 'right';
 
 export interface StopTimeTimeInfoProps extends WithServiceDate {
@@ -43,7 +43,7 @@ export interface StopTimeTimeInfoProps extends WithServiceDate {
   now: Date;
   /** Visual size preset for rendered time text. */
   size: StopTimeTimeTextSize;
-  /** Horizontal alignment for the time text and verbose badges. @default 'right' */
+  /** Horizontal alignment for the time text. @default 'right' */
   align?: StopTimeTimeInfoAlign;
   /** Optional appearance overrides for rendered time text. */
   textAppearance?: StopTimeTimeTextAppearance;
@@ -51,12 +51,19 @@ export interface StopTimeTimeInfoProps extends WithServiceDate {
   showArrivalTime: boolean;
   /** Whether to render the departure absolute time. */
   showDepartureTime: boolean;
-  /** Whether to hide arrival when arrival and departure render the same value. */
-  collapseArrivalWhenSameAsDeparture: boolean;
+  /**
+   * Tolerance for collapsing the arrival row when it would render
+   * redundantly next to departure.
+   *
+   * - `null`: never collapse (always show both rows when scheduled).
+   * - `0`: collapse only when arrival and departure are at the
+   *   exact same minute (most common UI default).
+   * - `n` (positive integer): collapse when
+   *   `|departure - arrival| <= n` minutes.
+   */
+  collapseToleranceMinutes: number | null;
   /** Force relative-time display even when the entry is far in the future. */
   forceShowRelativeTime: boolean;
-  /** Whether to render verbose arrival/departure badges above the time. */
-  showVerbose: boolean;
   /** Optional payload describing which trip inspection target should open. */
   inspectTarget?: TripInspectionTarget;
   /** Optional callback that opens trip inspection for the provided target. */
@@ -73,9 +80,8 @@ export function StopTimeTimeInfo({
   textAppearance,
   showArrivalTime,
   showDepartureTime,
-  collapseArrivalWhenSameAsDeparture,
+  collapseToleranceMinutes,
   forceShowRelativeTime,
-  showVerbose,
   inspectTarget,
   onInspectTrip,
 }: StopTimeTimeInfoProps) {
@@ -85,9 +91,14 @@ export function StopTimeTimeInfo({
   const showRelativeTime = forceShowRelativeTime || diffMs <= 60 * 60 * 1000;
   const dt = formatAbsoluteTime(minutesToDate(serviceDate, departureMinutes));
   const at = formatAbsoluteTime(minutesToDate(serviceDate, arrivalMinutes));
-  const shouldCollapseArrival =
-    collapseArrivalWhenSameAsDeparture && showArrivalTime && showDepartureTime && at === dt;
-  const shouldShowArrivalAbsolute = showArrivalTime && !shouldCollapseArrival;
+  const arrivalCollapsed = shouldCollapseArrival({
+    arrivalMinutes,
+    departureMinutes,
+    collapseToleranceMinutes,
+    showArrivalTime,
+    showDepartureTime,
+  });
+  const shouldShowArrivalAbsolute = showArrivalTime && !arrivalCollapsed;
   const shouldShowDepartureAbsolute = showDepartureTime;
   const shouldShowDepartureMarker = shouldShowArrivalAbsolute && shouldShowDepartureAbsolute;
   const timeSize: ExtendedDisplaySize = size;
@@ -124,18 +135,6 @@ export function StopTimeTimeInfo({
 
   const content = (
     <>
-      {showVerbose && (
-        <div className="mb-0.5 flex justify-end gap-0.5 whitespace-nowrap">
-          {timeVariants.map((variant) => (
-            <BaseLabel
-              key={variant.key}
-              size={'xs'}
-              value={variant.timeText}
-              className={variant.badgeClassName}
-            />
-          ))}
-        </div>
-      )}
       {showRelativeTime && (
         <RelativeTime
           time={time}

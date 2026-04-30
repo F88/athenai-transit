@@ -9,11 +9,21 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
-### Fixed
+### Added
+
+- `src/domain/transit/stop-time-display.ts` を追加。`shouldCollapseArrival` (= 表示済み arr 行を dep と冗長な場合に hide するか) と `deriveStopTimeRoleDisplayProps` (= 役割 / infoLevel から `StopTimeTimeInfo` 用の `showArrivalTime` / `showDepartureTime` / `collapseToleranceMinutes` を一括導出) を提供。26 vitest cases で 8 セル真理値表 (verbose × isOrigin × isTerminal) と各種 tolerance 入力をカバー。
+- `StopTimeTimeInfo` に `align` prop に続く `collapseToleranceMinutes` (`number | null`) を導入し、旧 `collapseArrivalWhenSameAsDeparture` (boolean) を置換。`null` で collapse 無効、`0` で厳密一致のみ collapse、`n` で `|dep - arr| <= n` 分以内なら collapse という単一軸の閾値表現に。
+- `src/components/stop-time-time-info.stories.tsx` を新設。Default / Imminent / Past / FarFuture / 各 Show 軸 / Align / Size / Verbose / TextAppearance / InspectTrip 等のストーリーと、tolerance 動作確認用の `ArrivalCloseToDepartureCollapsedWithTolerance` を含む。
 
 ### Changed
 
 - `DialogContent` に `showCloseButton={false}` を渡してデフォルト X を無効化 (Esc / 外側クリックで close 可能なため UX 維持)。
+- `shouldCollapseArrival` 判定ロジックを domain helper (`src/domain/transit/stop-time-display.ts`) に抽出。比較を `at === dt` (整形文字列比較) から `Math.abs(departureMinutes - arrivalMinutes) <= collapseToleranceMinutes` の tolerance-based 整数比較に変更し、`null` で collapse 無効化を表現可能に。
+- `StopTimeItem` の API を簡素化: `showArrivalTime` / `showDepartureTime` / `collapseToleranceMinutes` の 3 props を削除し、`entry.patternPosition` (isOrigin / isTerminal) と `infoLevel` から内部で `deriveStopTimeRoleDisplayProps` を呼んで導出する形に。caller (`nearby-stop.tsx`) はこれら 3 props を渡さなくなる。
+- `TripStopRow` (`trip-stops.tsx`) と `TripPager` の `StopTimeTimeInfo` 呼び出しを `deriveStopTimeRoleDisplayProps` 経由に統一。`TripPager` には新たに `infoLevel: InfoLevel` prop を追加し、`TripInspectionDialog` から渡すよう更新。
+- `deriveStopTimeRoleDisplayProps` の tolerance default を `verbose ? null : 2` に設定。GTFS / ODPT 全 20 source の中間 stop dwell 分布 (d=1: 2.34% = 鉄道発車待ち、d=2: 0.082% = 軽 hub dwell、d>=3: 0.078% = 通過待ち / 折返し / 高速バス起点) から、d=1+d=2 を collapse 対象とし d>=3 を 2 行展開する設計。
+- 動作仕様: 非 verbose では origin = dep のみ / terminal = arr のみ / middle = 両方 (tolerance=2) / single-stop = 両方 (tolerance=2) を表示。verbose では全 role で両方表示し tolerance は null (= 全 dwell 開示)。terminal の operator-recorded `departure_time` (例: 京成 妙典駅 d=8 の折返し時間、京都市バス 松尾橋 d=6) も verbose で可視化。
+- `StopTimeTimeInfo` から `showVerbose` prop と verbose 用 `着` / `発` badge ブロックを削除。badge は collapse 判定 (`shouldCollapseArrival`) と独立に render されており、`着` badge と arrival 行の表示が連動しない不整合があったため、機能ごと撤去。caller (`stop-time-item.tsx` / `trip-pager.tsx` / `trip-stops.tsx`) も `showVerbose` の引き渡しを削除。
 
 ## [2026.04.29]
 
