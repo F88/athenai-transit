@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Route } from '../../../types/app/transit';
-import type { TimetableEntry } from '../../../types/app/transit-composed';
+import type { ContextualTimetableEntry, TimetableEntry } from '../../../types/app/transit-composed';
 import {
   filterBoardable,
   filterByAgency,
   filterByRouteType,
+  filterByStopEventAttributes,
+  filterOrigin,
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
 } from '../timetable-filter';
@@ -895,6 +897,344 @@ describe('filterBoardable', () => {
       // pt=0 is ambiguous (available OR not set). isTerminal takes precedence.
       const entry = makeEntry({ isTerminal: true, isOrigin: true, pickupType: 0 });
       expect(filterBoardable([entry])).toHaveLength(0);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// filterByStopEventAttributes
+// ---------------------------------------------------------------------------
+
+/** Build an entry with explicit arrivalMinutes (makeEntry mirrors departure to arrival). */
+function makeEntryWithArrival(
+  departureMinutes: number,
+  arrivalMinutes: number,
+  overrides: Parameters<typeof makeEntry>[0] = {},
+): TimetableEntry {
+  const base = makeEntry({ ...overrides, departureMinutes });
+  return { ...base, schedule: { departureMinutes, arrivalMinutes } };
+}
+
+describe('filterByStopEventAttributes', () => {
+  describe('identity / fast-path', () => {
+    it('returns the input reference unchanged when all axes are undefined', () => {
+      const entries = [makeEntry(), makeEntry({ isTerminal: true })];
+      const result = filterByStopEventAttributes(entries, {});
+      expect(result).toBe(entries);
+    });
+
+    it('returns an empty array when active axes are provided for empty input', () => {
+      const result = filterByStopEventAttributes([], {
+        position: new Set(['origin']),
+        boardingState: new Set(['boardable']),
+      });
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('position axis', () => {
+    const origin = makeEntry({ isOrigin: true, departureMinutes: 480 });
+    const terminal = makeEntry({ isTerminal: true, departureMinutes: 540 });
+    const middle = makeEntry({ departureMinutes: 600 });
+    const entries = [origin, terminal, middle];
+
+    it('keeps only origin entries', () => {
+      const result = filterByStopEventAttributes(entries, {
+        position: new Set(['origin']),
+      });
+      expect(result).toEqual([origin]);
+    });
+
+    it('keeps only terminal entries', () => {
+      const result = filterByStopEventAttributes(entries, {
+        position: new Set(['terminal']),
+      });
+      expect(result).toEqual([terminal]);
+    });
+
+    it('keeps only middle entries (= neither origin nor terminal)', () => {
+      const result = filterByStopEventAttributes(entries, {
+        position: new Set(['middle']),
+      });
+      expect(result).toEqual([middle]);
+    });
+
+    it('keeps origin OR terminal when both are listed', () => {
+      const result = filterByStopEventAttributes(entries, {
+        position: new Set(['origin', 'terminal']),
+      });
+      expect(result).toEqual([origin, terminal]);
+    });
+
+    it('returns empty array for an empty Set (literal "match nothing")', () => {
+      const result = filterByStopEventAttributes(entries, {
+        position: new Set(),
+      });
+      expect(result).toEqual([]);
+    });
+
+    describe('single-stop trip (isOrigin AND isTerminal)', () => {
+      const oneStop = makeEntry({ isOrigin: true, isTerminal: true });
+
+      it('matches "origin"', () => {
+        const result = filterByStopEventAttributes([oneStop], {
+          position: new Set(['origin']),
+        });
+        expect(result).toEqual([oneStop]);
+      });
+
+      it('matches "terminal"', () => {
+        const result = filterByStopEventAttributes([oneStop], {
+          position: new Set(['terminal']),
+        });
+        expect(result).toEqual([oneStop]);
+      });
+
+      it('does NOT match "middle"', () => {
+        const result = filterByStopEventAttributes([oneStop], {
+          position: new Set(['middle']),
+        });
+        expect(result).toEqual([]);
+      });
+    });
+  });
+
+  describe('boardingState axis', () => {
+    const boardablePlain = makeEntry({ departureMinutes: 480 });
+    const dropOffByPickup1 = makeEntry({ pickupType: 1, departureMinutes: 540 });
+    const dropOffByTerminal = makeEntry({ isTerminal: true, departureMinutes: 600 });
+    const entries = [boardablePlain, dropOffByPickup1, dropOffByTerminal];
+
+    it('keeps only boardable entries (excludes drop-off-only)', () => {
+      const result = filterByStopEventAttributes(entries, {
+        boardingState: new Set(['boardable']),
+      });
+      expect(result).toEqual([boardablePlain]);
+    });
+
+    it('keeps only nonBoardable entries (= drop-off-only)', () => {
+      const result = filterByStopEventAttributes(entries, {
+        boardingState: new Set(['nonBoardable']),
+      });
+      expect(result).toEqual([dropOffByPickup1, dropOffByTerminal]);
+    });
+
+    it('keeps everything when both states are listed', () => {
+      const result = filterByStopEventAttributes(entries, {
+        boardingState: new Set(['boardable', 'nonBoardable']),
+      });
+      expect(result).toEqual(entries);
+    });
+
+    it('returns empty array for an empty Set', () => {
+      const result = filterByStopEventAttributes(entries, {
+        boardingState: new Set(),
+      });
+      expect(result).toEqual([]);
+    });
+
+    it('treats a single-stop trip as nonBoardable because terminal takes precedence', () => {
+      const circular = makeEntry({ isOrigin: true, isTerminal: true, pickupType: 0 });
+      const result = filterByStopEventAttributes([circular], {
+        boardingState: new Set(['nonBoardable']),
+      });
+      expect(result).toEqual([circular]);
+    });
+  });
+
+  describe('schedule axis', () => {
+    const at0800 = makeEntry({ departureMinutes: 480 });
+    const at0900 = makeEntry({ departureMinutes: 540 });
+    const at1200 = makeEntry({ departureMinutes: 720 });
+    const at1500 = makeEntry({ departureMinutes: 900 });
+    const entries = [at0800, at0900, at1200, at1500];
+
+    it('keeps entries at or after fromMinutes (lower bound, inclusive)', () => {
+      const result = filterByStopEventAttributes(entries, {
+        schedule: { fromMinutes: 540 },
+      });
+      expect(result).toEqual([at0900, at1200, at1500]);
+    });
+
+    it('keeps entries at or before toMinutes (upper bound, inclusive)', () => {
+      const result = filterByStopEventAttributes(entries, {
+        schedule: { toMinutes: 720 },
+      });
+      expect(result).toEqual([at0800, at0900, at1200]);
+    });
+
+    it('applies both bounds inclusively', () => {
+      const result = filterByStopEventAttributes(entries, {
+        schedule: { fromMinutes: 540, toMinutes: 720 },
+      });
+      expect(result).toEqual([at0900, at1200]);
+    });
+
+    it('keeps everything when neither bound is given', () => {
+      const result = filterByStopEventAttributes(entries, {
+        schedule: { field: 'departure' },
+      });
+      expect(result).toEqual(entries);
+    });
+
+    it('uses arrivalMinutes when field === "arrival"', () => {
+      const arr0800 = makeEntryWithArrival(900, 480);
+      const arr0900 = makeEntryWithArrival(900, 540);
+      const arr1000 = makeEntryWithArrival(900, 600);
+      const result = filterByStopEventAttributes([arr0800, arr0900, arr1000], {
+        schedule: { field: 'arrival', fromMinutes: 540 },
+      });
+      expect(result).toEqual([arr0900, arr1000]);
+    });
+
+    it('handles overnight times (>= 1440) as plain numbers', () => {
+      const at2330 = makeEntry({ departureMinutes: 1410 });
+      const at2500 = makeEntry({ departureMinutes: 1500 });
+      const at2630 = makeEntry({ departureMinutes: 1590 });
+      const result = filterByStopEventAttributes([at2330, at2500, at2630], {
+        schedule: { fromMinutes: 1440, toMinutes: 1560 },
+      });
+      expect(result).toEqual([at2500]);
+    });
+
+    describe('boundary values are inclusive', () => {
+      it('keeps an entry equal to fromMinutes', () => {
+        const exact = makeEntry({ departureMinutes: 540 });
+        const result = filterByStopEventAttributes([exact], {
+          schedule: { fromMinutes: 540 },
+        });
+        expect(result).toEqual([exact]);
+      });
+
+      it('keeps an entry equal to toMinutes', () => {
+        const exact = makeEntry({ departureMinutes: 720 });
+        const result = filterByStopEventAttributes([exact], {
+          schedule: { toMinutes: 720 },
+        });
+        expect(result).toEqual([exact]);
+      });
+    });
+  });
+
+  describe('multi-axis composition (AND across axes)', () => {
+    const originBoardable = makeEntry({ isOrigin: true, departureMinutes: 540 });
+    const originDropOff = makeEntry({ isOrigin: true, pickupType: 1, departureMinutes: 600 });
+    const middleBoardable = makeEntry({ departureMinutes: 660 });
+    const terminalDropOff = makeEntry({ isTerminal: true, departureMinutes: 720 });
+    const entries = [originBoardable, originDropOff, middleBoardable, terminalDropOff];
+
+    it('combines position and boardingState (origin AND boardable)', () => {
+      const result = filterByStopEventAttributes(entries, {
+        position: new Set(['origin']),
+        boardingState: new Set(['boardable']),
+      });
+      expect(result).toEqual([originBoardable]);
+    });
+
+    it('combines all three axes', () => {
+      const result = filterByStopEventAttributes(entries, {
+        position: new Set(['origin', 'middle']),
+        boardingState: new Set(['boardable']),
+        schedule: { fromMinutes: 600, toMinutes: 720 },
+      });
+      expect(result).toEqual([middleBoardable]);
+    });
+
+    it('combines arrival-based schedule filtering with position and boardingState', () => {
+      const originEarlyArrival = makeEntryWithArrival(900, 500, { isOrigin: true });
+      const originLateArrival = makeEntryWithArrival(900, 560, { isOrigin: true });
+      const middleLateArrival = makeEntryWithArrival(900, 580);
+      const originLateDropOff = makeEntryWithArrival(900, 600, {
+        isOrigin: true,
+        pickupType: 1,
+      });
+
+      const result = filterByStopEventAttributes(
+        [originEarlyArrival, originLateArrival, middleLateArrival, originLateDropOff],
+        {
+          position: new Set(['origin']),
+          boardingState: new Set(['boardable']),
+          schedule: { field: 'arrival', fromMinutes: 540 },
+        },
+      );
+
+      expect(result).toEqual([originLateArrival]);
+    });
+
+    describe('relation to legacy helpers', () => {
+      it('does not change filterOrigin semantics for non-boardable origins', () => {
+        const nonBoardableOrigin = makeEntry({
+          isOrigin: true,
+          pickupType: 1,
+          departureMinutes: 540,
+        });
+
+        expect(filterOrigin([nonBoardableOrigin])).toEqual([nonBoardableOrigin]);
+        expect(
+          filterByStopEventAttributes([nonBoardableOrigin], {
+            position: new Set(['origin']),
+            boardingState: new Set(['boardable']),
+          }),
+        ).toEqual([]);
+        expect(
+          filterByStopEventAttributes([nonBoardableOrigin], {
+            position: new Set(['origin']),
+            boardingState: new Set(['nonBoardable']),
+          }),
+        ).toEqual([nonBoardableOrigin]);
+      });
+    });
+    it('keeps a single-stop trip when terminal/origin and nonBoardable both match', () => {
+      const oneStop = makeEntry({
+        isOrigin: true,
+        isTerminal: true,
+        pickupType: 0,
+        departureMinutes: 540,
+      });
+      const result = filterByStopEventAttributes([oneStop], {
+        position: new Set(['origin', 'terminal']),
+        boardingState: new Set(['nonBoardable']),
+      });
+      expect(result).toEqual([oneStop]);
+    });
+  });
+
+  describe('generic preservation', () => {
+    it('preserves the input element type at the type level', () => {
+      // Type-level check: `tsc --noEmit` will fail if the function ever
+      // narrows the result back to `TimetableEntry[]`. Runtime is just a
+      // sanity smoke test that the call works.
+      const branded: (TimetableEntry & { _brand: 'sample' })[] = [
+        Object.assign(makeEntry(), { _brand: 'sample' as const }),
+        Object.assign(makeEntry({ isTerminal: true }), { _brand: 'sample' as const }),
+      ];
+      const filtered: (TimetableEntry & { _brand: 'sample' })[] = filterByStopEventAttributes(
+        branded,
+        { boardingState: new Set(['boardable']) },
+      );
+      expect(filtered).toHaveLength(1);
+      // Element type is preserved, so accessing the brand compiles.
+      expect(filtered[0]._brand).toBe('sample');
+    });
+
+    it('preserves ContextualTimetableEntry without dropping serviceDate', () => {
+      const contextual: ContextualTimetableEntry[] = [
+        {
+          ...makeEntry({ departureMinutes: 480 }),
+          serviceDate: new Date(2026, 3, 30),
+        },
+        {
+          ...makeEntry({ isTerminal: true, departureMinutes: 540 }),
+          serviceDate: new Date(2026, 3, 30),
+        },
+      ];
+
+      const filtered: ContextualTimetableEntry[] = filterByStopEventAttributes(contextual, {
+        boardingState: new Set(['boardable']),
+      });
+
+      expect(filtered).toHaveLength(1);
+      expect(filtered[0].serviceDate.getTime()).toBe(contextual[0].serviceDate.getTime());
     });
   });
 });

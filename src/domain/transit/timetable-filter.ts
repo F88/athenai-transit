@@ -145,3 +145,123 @@ export function filterBoardable(entries: TimetableEntry[]): TimetableEntry[] {
 export function filterOrigin(entries: TimetableEntry[]): TimetableEntry[] {
   return entries.filter((entry) => entry.patternPosition.isOrigin);
 }
+
+// ---------------------------------------------------------------------------
+// filterByStopEventAttributes
+// ---------------------------------------------------------------------------
+
+/** Pattern position values an entry can match. */
+export type PatternPosition = 'origin' | 'terminal' | 'middle';
+
+/** Boarding state values an entry can match. */
+export type BoardingState = 'boardable' | 'nonBoardable';
+
+/**
+ * Schedule range filter for departure / arrival times.
+ *
+ * Both bounds are inclusive and expressed in minutes from midnight of
+ * the service day (so values >= 1440 represent overnight times, which
+ * compare correctly as numbers). Omit a bound to leave that side open.
+ */
+export interface ScheduleRangeFilter {
+  /** Time field to apply the range to. @default 'departure' */
+  field?: 'departure' | 'arrival';
+  /** Inclusive lower bound. Omit for no lower bound. */
+  fromMinutes?: number;
+  /** Inclusive upper bound. Omit for no upper bound. */
+  toMinutes?: number;
+}
+
+/**
+ * Bundle of stop-event attribute axes for {@link filterByStopEventAttributes}.
+ *
+ * "Stop event" = a single occurrence of a trip visiting a stop. Trip
+ * identity (route, headsign, agency, service_id) is intentionally NOT
+ * part of this filter; use {@link filterByAgency} / {@link filterByRouteType}
+ * for those.
+ *
+ * Each field is independent and additively narrows the result set
+ * (AND semantics across axes); an undefined field disables that axis.
+ * An empty Set yields no matches (literal interpretation).
+ *
+ * Semantics:
+ * - 'origin' / 'terminal' map to `patternPosition.isOrigin` /
+ *   `.isTerminal`; 'middle' = neither. Single-stop trips
+ *   (isOrigin AND isTerminal) match both 'origin' and 'terminal'.
+ * - 'boardable' / 'nonBoardable' invert {@link isDropOffOnly}
+ *   (`pickup_type === 1` OR `isTerminal`).
+ * - Schedule range is inclusive on both ends. `field` selects
+ *   `entry.schedule.departureMinutes` (default) or
+ *   `entry.schedule.arrivalMinutes`.
+ */
+export interface StopEventAttributeFilters {
+  /** Schedule time range to keep. Omit to disable. */
+  schedule?: ScheduleRangeFilter;
+  /** Boarding states to keep. Omit to disable. */
+  boardingState?: ReadonlySet<BoardingState>;
+  /** Pattern positions to keep. Omit to disable. */
+  position?: ReadonlySet<PatternPosition>;
+}
+
+function matchesPosition(entry: TimetableEntry, allowed: ReadonlySet<PatternPosition>): boolean {
+  const { isOrigin, isTerminal } = entry.patternPosition;
+  if (isOrigin && allowed.has('origin')) {
+    return true;
+  }
+  if (isTerminal && allowed.has('terminal')) {
+    return true;
+  }
+  if (!isOrigin && !isTerminal && allowed.has('middle')) {
+    return true;
+  }
+  return false;
+}
+
+function matchesBoardingState(entry: TimetableEntry, allowed: ReadonlySet<BoardingState>): boolean {
+  return allowed.has(isDropOffOnly(entry) ? 'nonBoardable' : 'boardable');
+}
+
+function matchesSchedule(entry: TimetableEntry, range: ScheduleRangeFilter): boolean {
+  const value =
+    range.field === 'arrival' ? entry.schedule.arrivalMinutes : entry.schedule.departureMinutes;
+  if (range.fromMinutes !== undefined && value < range.fromMinutes) {
+    return false;
+  }
+  if (range.toMinutes !== undefined && value > range.toMinutes) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Filter entries by stop-event-level attributes (schedule / boarding /
+ * pattern position) in a single array pass.
+ *
+ * Trip-level attributes (route, headsign, agency) are NOT considered —
+ * use {@link filterByAgency} / {@link filterByRouteType} for those.
+ *
+ * When all axes are undefined, the input reference is returned
+ * unchanged (no allocation), so this is safe to call with an empty
+ * filter bundle from `useMemo` etc.
+ */
+export function filterByStopEventAttributes<T extends TimetableEntry>(
+  entries: readonly T[],
+  filters: StopEventAttributeFilters,
+): T[] {
+  const { position, boardingState, schedule } = filters;
+  if (!position && !boardingState && !schedule) {
+    return entries as T[];
+  }
+  return entries.filter((entry) => {
+    if (position && !matchesPosition(entry, position)) {
+      return false;
+    }
+    if (boardingState && !matchesBoardingState(entry, boardingState)) {
+      return false;
+    }
+    if (schedule && !matchesSchedule(entry, schedule)) {
+      return false;
+    }
+    return true;
+  });
+}
