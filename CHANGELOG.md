@@ -11,12 +11,25 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- `filterByStopEventAttributes` helper (`src/domain/transit/timetable-filter.ts`) を追加。`TimetableEntry[]` に対して per-stop-event 属性 (schedule range / `pickUpState` / patternPosition) を hybrid Set / range API で single-pass 合成 filter する。trip-level 属性 (route / headsign / agency) は対象外で `filterByAgency` / `filterByRouteType` と責務分離。empty filter bundle は input reference をそのまま返す fast-path 付き。
+- `PickUpState` 型 (`'boardable' | 'nonBoardable' | 'phoneArrangement' | 'driverArrangement'`) を追加。GTFS `pickup_type` 0/1/2/3 と 1:1 mapping。`isTerminal` は判定に混入させず position 軸の責務に分離。
+- `applyStopEventAttributeToggles` helper を追加。`showOriginOnly` / `showBoardableOnly` の boolean toggle を受けて `filterByStopEventAttributes` を AND 合成する wrapper。BottomSheet と TimetableModal で同じ toggle semantics を共有。
+- BottomSheet に origin / boardable filter pill (`OriginFilter` / `BoardabilityFilter`) を追加。Stage 1 (`showOperatingStopsOnly`) と同性質の "operative presence toggle" として stop drop を行い、filter で entries が空になった stop は list から除外。
+- `NearbyStopsCounts` に `originCount` / `boardableCount` を追加。final `trimmedStopTimes` に対して仮想的に各 toggle を適用した stop 数を計算し、各 filter pill の count として表示。
+- `src/components/filter/origin-filter.tsx` / `boardability-filter.tsx` を追加 (`TimetableOriginFilter` / `TimetableBoardabilityFilter` から rename + 移動)。TimetableModal と BottomSheet 両方で再利用可能な共通 filter pill。
+- i18n key `filter.originOnly` / `filter.originOnlyTitle` / `filter.boardableOnly` / `filter.boardableOnlyTitle` を top-level `filter.*` namespace に追加 (旧 `timetable.filter.*` から re-namespace)。
 - `src/domain/transit/stop-time-display.ts` を追加。`shouldCollapseArrival` (= 表示済み arr 行を dep と冗長な場合に hide するか) と `deriveStopTimeRoleDisplayProps` (= 役割 / infoLevel から `StopTimeTimeInfo` 用の `showArrivalTime` / `showDepartureTime` / `collapseToleranceMinutes` を一括導出) を提供。26 vitest cases で 8 セル真理値表 (verbose × isOrigin × isTerminal) と各種 tolerance 入力をカバー。
 - `StopTimeTimeInfo` に `align` prop に続く `collapseToleranceMinutes` (`number | null`) を導入し、旧 `collapseArrivalWhenSameAsDeparture` (boolean) を置換。`null` で collapse 無効、`0` で厳密一致のみ collapse、`n` で `|dep - arr| <= n` 分以内なら collapse という単一軸の閾値表現に。
 - `src/components/stop-time-time-info.stories.tsx` を新設。Default / Imminent / Past / FarFuture / 各 Show 軸 / Align / Size / Verbose / TextAppearance / InspectTrip 等のストーリーと、tolerance 動作確認用の `ArrivalCloseToDepartureCollapsedWithTolerance` を含む。
 
 ### Changed
 
+- `TimetableModal` の filter pipeline を `applyStopEventAttributeToggles` 経由に統一。旧 `filterBoardable` / `filterOrigin` 直接呼び出しを廃し、BottomSheet と同一の toggle semantics を共有。中間変数 `entriesBeforeRouteHeadsignFilter` を `stopEventAttributesFilteredEntries` にリネーム (= 軸の責務を反映)。
+- BottomSheet の filter pipeline を 3-stage 構成に再編。Stage 1 (`showOperatingStopsOnly`、stop drop) → Stage 2 (`showOriginOnly` / `showBoardableOnly`、stop drop) → Stage 3 (`hiddenAgencyIds` / `hiddenRouteTypes`、entry trim only)。集合属性 trim (Stage 3) は `'allFilteredOut'` fallback 維持、user 操作の presence toggle (Stage 1/2) は stop drop。
+- BottomSheet の `counts` を全て final `trimmedStopTimes` (Stage 3 出力) base に統一。`active` の semantic を旧 "pre-filter で entries が 1 件以上の stop 数" (= filter 状態無関係の固定値) から "現在表示中で entries が 1 件以上の stop 数" (= 全 filter 操作で変動) に変更。Operating pill の count は user の filter 操作で変動するようになる。
+- 4-state `PickUpState` 設計に伴い、`matchesPickUpState` を `isDropOffOnly` 依存から純粋な `pickup_type` 値判定に変更 (`isTerminal` 混入を解消、軸の責務分離を厳密化)。`pickup_type === 1` のみ `'nonBoardable'`、`2`/`3` は `'phoneArrangement'`/`'driverArrangement'` に独立分類。
+- `prepareStopTimetable` / `prepareRouteHeadsignTimetable` の boardable filter 呼び出しを `filterByStopEventAttributes(..., { pickUpState: ['boardable'], position: ['origin', 'middle'] })` に置換。旧 `filterBoardable` (= `pickup_type === 1 || isTerminal` で除外) と挙動差: pure terminal (= `!isOrigin && isTerminal`) は除外 / 1-stop trip (= `isOrigin && isTerminal`) は keep / `pickup_type=2/3` は除外。
+- `verbose-nearby-stop-summary.tsx` の inline `boardable` filter (`pickupType !== 1 && !isTerminal`) を `filterByStopEventAttributes` 合成呼び出しに置換 (count 計算経路を新 helper に統一)。
 - `DialogContent` に `showCloseButton={false}` を渡してデフォルト X を無効化 (Esc / 外側クリックで close 可能なため UX 維持)。
 - `shouldCollapseArrival` 判定ロジックを domain helper (`src/domain/transit/stop-time-display.ts`) に抽出。比較を `at === dt` (整形文字列比較) から `Math.abs(departureMinutes - arrivalMinutes) <= collapseToleranceMinutes` の tolerance-based 整数比較に変更し、`null` で collapse 無効化を表現可能に。
 - `StopTimeItem` の API を簡素化: `showArrivalTime` / `showDepartureTime` / `collapseToleranceMinutes` の 3 props を削除し、`entry.patternPosition` (isOrigin / isTerminal) と `infoLevel` から内部で `deriveStopTimeRoleDisplayProps` を呼んで導出する形に。caller (`nearby-stop.tsx`) はこれら 3 props を渡さなくなる。
@@ -26,6 +39,12 @@ and this project adheres to [CalVer](https://calver.org/).
 - `StopTimeTimeInfo` から `showVerbose` prop と verbose 用 `着` / `発` badge ブロックを削除。badge は collapse 判定 (`shouldCollapseArrival`) と独立に render されており、`着` badge と arrival 行の表示が連動しない不整合があったため、機能ごと撤去。caller (`stop-time-item.tsx` / `trip-pager.tsx` / `trip-stops.tsx`) も `showVerbose` の引き渡しを削除。
 - `StopTimesItem` の `dataLang` prop を `dataLangs` にリネーム (project-wide 命名規約整合)。caller (`nearby-stop.tsx`) と stories の引き渡しも併せて更新。React key を loop index (`i`) から `${patternId}__${serviceId}__${tripIndex}__${stopIndex}` ベースの安定 ID に変更し、Issue #47 の 6-shape / circular pattern (同 trip が異なる stopIndex で登場) でも一意性を保つ。
 - `StopTimesItem` の絶対時刻表示を `formatAbsoluteTime` 直書きから `AbsoluteStopTime` コンポーネントに置換。terminal entry に `着` suffix が `showArrivalMarker={isTerminal}` 経由で表示され、TERM badge と併せて到着便を一目で識別可能に (`発` suffix は compact 性維持のため非表示)。各 entry wrapper の hardcoded `text-[#757575] dark:text-gray-400` も theme token `text-muted-foreground` に統一。
+
+### Removed
+
+- `filterBoardable` / `filterOrigin` 関数を削除 (`src/domain/transit/timetable-filter.ts`)。新 helper `filterByStopEventAttributes` (criteria 受け) と `applyStopEventAttributeToggles` (toggle 受け wrapper) で代替。両者の唯一の caller (`prepareStopTimetable` / `prepareRouteHeadsignTimetable` / `TimetableModal` / `verbose-nearby-stop-summary`) を全て新 helper 経由に置換済み。
+- `TimetableOriginFilter` / `TimetableBoardabilityFilter` を削除 (= `OriginFilter` / `BoardabilityFilter` に rename + `src/components/filter/` に移動)。
+- 旧 i18n key `timetable.filter.originOnly` / `timetable.filter.originOnlyTitle` / `timetable.filter.boardableOnly` / `timetable.filter.boardableOnlyTitle` を削除 (top-level `filter.*` namespace に移行)。
 
 ## [2026.04.29]
 
