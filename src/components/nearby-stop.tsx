@@ -20,11 +20,13 @@ import { VerboseNearbyStopSummary } from './verbose/verbose-nearby-stop-summary'
 export interface NearbyStopProps {
   data: StopWithContext;
   /**
-   * State of the pre-filter upcoming entries for this stop, computed
-   * once by {@link BottomSheet} from the unfiltered `nearbyStopTimes`.
-   * Combined with the repo's full-day `stopServiceState` and the
-   * filtered `stopTimes` state to pick the correct empty-fallback
-   * message (no-service / service-ended / filter-hidden).
+   * Per-stop pre-`globalFilter` `TimetableEntriesState`. Computed once
+   * in `app.tsx` from `routeTypesFilteredNearbyStopTimes` (= settings
+   * filter applied, `globalFilter` not yet) and threaded down through
+   * `BottomSheet` / `BottomSheetStops`. Combined with the repo's
+   * full-day `stopServiceState` and the filtered `stopTimes` state to
+   * pick the correct empty-fallback message (no-service / service-ended
+   * / filter-hidden).
    */
   timetableEntriesState: TimetableEntriesState;
   isSelected: boolean;
