@@ -305,7 +305,6 @@ function StopsSummary({
 
   return (
     <p className="m-0 flex items-center gap-1 text-base font-bold text-[#212121] dark:text-gray-100">
-      {/* {infoLevel === 'verbose' && totalCount.total !== filteredCount && ( */}
       {infoLevel === 'verbose' && (
         <LabelCountBadge
           label={`${totalCount.total}`}
