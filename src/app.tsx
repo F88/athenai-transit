@@ -773,10 +773,10 @@ export default function App({ loadResult }: AppProps) {
   const serviceDayKey = formatDateKey(serviceDay);
   const stableServiceDay = useMemo(() => {
     // `serviceDayKey` is `YYYYMMDD` (no separators) per `formatDateKey`,
-    // so use fixed-position substring slicing instead of `split('-')`.
-    const year = parseInt(serviceDayKey.substring(0, 4), 10);
-    const month = parseInt(serviceDayKey.substring(4, 6), 10);
-    const day = parseInt(serviceDayKey.substring(6, 8), 10);
+    // so use fixed-position slicing instead of `split('-')`.
+    const year = parseInt(serviceDayKey.slice(0, 4), 10);
+    const month = parseInt(serviceDayKey.slice(4, 6), 10);
+    const day = parseInt(serviceDayKey.slice(6, 8), 10);
     return new Date(year, month - 1, day);
   }, [serviceDayKey]);
   const serviceDayWeekday = useMemo(() => {
