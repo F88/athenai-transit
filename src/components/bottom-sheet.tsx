@@ -7,12 +7,7 @@ import type { GlobalFilter } from '../types/app/global-filter';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
-import {
-  applyStopEventAttributeToggles,
-  filterByAgency,
-  filterByRouteType,
-} from '../domain/transit/timetable-filter';
-import { getTimetableEntriesState } from '../domain/transit/timetable-utils';
+import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { APP_ROUTE_TYPES } from '../config/route-types';
@@ -63,7 +58,18 @@ export interface NearbyStopsCounts {
 }
 
 export interface BottomSheetProps {
+  /**
+   * Stops to render. Already narrowed by the app-wide filters
+   * (`globalFilter` + `enabledRouteTypes`); BottomSheet only applies
+   * its own surface-local filters (operating-only / agency / route_type).
+   */
   stopTimes: StopWithContext[];
+  /**
+   * Pre-filter `TimetableEntriesState` per stop, keyed by `stop_id`.
+   * Computed in `app.tsx` against the `globalFilter`-pre-trim base so
+   * NearbyStop can distinguish `'filter-hidden'` from `'no-service'`.
+   */
+  stopServiceState: ReadonlyMap<string, TimetableEntriesState>;
   selectedStopId: string | null;
   isNearbyLoading: boolean;
   hasNearbyLoaded: boolean;
@@ -96,6 +102,7 @@ export interface BottomSheetProps {
 
 export function BottomSheet({
   stopTimes,
+  stopServiceState,
   selectedStopId,
   isNearbyLoading: _isNearbyLoading,
   hasNearbyLoaded,
@@ -151,20 +158,6 @@ export function BottomSheet({
 
   const presentAgencies = useMemo(() => collectPresentAgencies(stopTimes), [stopTimes]);
 
-  // Per-stop state of the upcoming entries as returned by the repo,
-  // BEFORE any UI-level filter. Used by NearbyStop to distinguish
-  // "late-night / service ended" (upcoming already empty pre-filter)
-  // from "filter-hidden" (upcoming had entries but the user's active
-  // filters removed them all). Depends only on `stopTimes` so
-  // it is not recomputed when the user toggles filter pills.
-  const upcomingEntriesStates = useMemo(() => {
-    const map = new Map<string, TimetableEntriesState>();
-    for (const swc of stopTimes) {
-      map.set(swc.stop.stop_id, getTimetableEntriesState([...swc.stopTimes]));
-    }
-    return map;
-  }, [stopTimes]);
-
   const toggleRouteType = useCallback((rt: number) => {
     setHiddenRouteTypes((prev) => {
       const next = new Set(prev);
@@ -189,12 +182,16 @@ export function BottomSheet({
     });
   }, []);
 
-  // Three-stage filter pipeline. Each stage has a distinct nature, so
-  // they are kept separate and the stage order is load-bearing.
+  // Two-stage local filter pipeline. The app-wide origin / boardable
+  // filter (= `globalFilter`) is already applied upstream in `app.tsx`
+  // — by the time `stopTimes` arrives here, those entries have already
+  // been narrowed and empty stops dropped. BottomSheet only applies its
+  // own surface-local filters below.
   //
-  // Stage 1 — drop stops that have no upcoming entries today.
-  // `showOperatingStopsOnly` is a property of the stop itself and MUST be
-  // evaluated against pre-filter `stopTimes.length`.
+  // Stage 1 — drop stops with no upcoming entries (operating-only
+  // toggle). Acts on the upstream-filtered `stopTimes`, so when entry
+  // pills are active the operating filter narrows "what is left after
+  // the user's intent narrowing".
   const filteredStopTimes = useMemo(() => {
     if (!showOperatingStopsOnly) {
       return stopTimes;
@@ -202,39 +199,16 @@ export function BottomSheet({
     return stopTimes.filter((swc) => swc.stopTimes.length > 0);
   }, [stopTimes, showOperatingStopsOnly]);
 
-  // Stage 2 — trim each surviving stop's inner stopTimes by stop-event
-  // attributes (origin / boardable), and drop stops whose stopTimes
-  // become empty after the trim. This is a user-facing presence toggle
-  // (same nature as Stage 1's `showOperatingStopsOnly`): when the user
-  // enables an entry-level pill, stops with no matching entry are
-  // removed from the list. Runs before the agency / route_type trim so
-  // those non-removing filters operate on entries that have already
-  // passed the user's primary intent (= what kind of trips to see).
-  const stopEventAttributesFilteredStopTimes = useMemo(() => {
-    if (!showOriginOnly && !showBoardableOnly) {
-      return filteredStopTimes;
-    }
-    return filteredStopTimes
-      .map((swc) => {
-        const filtered = applyStopEventAttributeToggles(swc.stopTimes, {
-          showOriginOnly,
-          showBoardableOnly,
-        });
-        return filtered === swc.stopTimes ? swc : { ...swc, stopTimes: filtered };
-      })
-      .filter((swc) => swc.stopTimes.length > 0);
-  }, [filteredStopTimes, showOriginOnly, showBoardableOnly]);
-
-  // Stage 3 — trim each surviving stop's inner stopTimes by agency /
+  // Stage 2 — trim each surviving stop's inner stopTimes by agency /
   // route_type filters. This never drops stops: a stop whose stopTimes
   // are all removed stays visible and shows the "allFilteredOut"
   // fallback message. This decouples "which stops are in the list"
   // from "what is shown inside each stop".
   const trimmedStopTimes = useMemo(() => {
     if (hiddenAgencyIds.size === 0 && hiddenRouteTypes.size === 0) {
-      return stopEventAttributesFilteredStopTimes;
+      return filteredStopTimes;
     }
-    return stopEventAttributesFilteredStopTimes.map((swc) => {
+    return filteredStopTimes.map((swc) => {
       let trimmed = swc.stopTimes;
       if (hiddenAgencyIds.size > 0) {
         trimmed = filterByAgency(trimmed, hiddenAgencyIds);
@@ -244,7 +218,7 @@ export function BottomSheet({
       }
       return trimmed === swc.stopTimes ? swc : { ...swc, stopTimes: trimmed };
     });
-  }, [stopEventAttributesFilteredStopTimes, hiddenAgencyIds, hiddenRouteTypes]);
+  }, [filteredStopTimes, hiddenAgencyIds, hiddenRouteTypes]);
 
   const counts: NearbyStopsCounts = useMemo(
     () => ({
@@ -359,7 +333,7 @@ export function BottomSheet({
       />
       <BottomSheetStops
         stopTimes={trimmedStopTimes}
-        upcomingEntriesStates={upcomingEntriesStates}
+        stopServiceState={stopServiceState}
         selectedStopId={selectedStopId}
         now={now}
         mapCenter={mapCenter}

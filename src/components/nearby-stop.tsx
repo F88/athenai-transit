@@ -26,7 +26,7 @@ export interface NearbyStopProps {
    * filtered `stopTimes` state to pick the correct empty-fallback
    * message (no-service / service-ended / filter-hidden).
    */
-  upcomingEntriesState: TimetableEntriesState;
+  timetableEntriesState: TimetableEntriesState;
   isSelected: boolean;
   now: Date;
   mapCenter: LatLng | null;
@@ -111,7 +111,7 @@ function NearbyStopActionButtons({
 
 export function NearbyStop({
   data: { stop, routeTypes, stopTimes, stopServiceState, agencies, routes, distance, stats, geo },
-  upcomingEntriesState,
+  timetableEntriesState,
   isSelected,
   now,
   mapCenter,
@@ -165,10 +165,10 @@ export function NearbyStop({
     () =>
       getFilteredTimetableEntriesState(
         stopServiceState,
-        upcomingEntriesState,
+        timetableEntriesState,
         getTimetableEntriesState([...stopTimes]),
       ),
-    [stopServiceState, upcomingEntriesState, stopTimes],
+    [stopServiceState, timetableEntriesState, stopTimes],
   );
 
   return (
