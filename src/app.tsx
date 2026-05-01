@@ -15,6 +15,7 @@ import { TILE_SOURCES } from './config/tile-sources';
 import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
 import { buildAnchorRefreshUpdates, type AnchorEntry } from './domain/portal/anchor';
 import { formatDateKey } from './domain/transit/calendar-utils';
+import { computeStopsCounts } from './domain/transit/compute-stops-counts';
 import { getStopDisplayNames } from './domain/transit/get-stop-display-names';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
@@ -41,6 +42,7 @@ import { getStopParam } from './lib/query-params';
 import type { LoadResult } from './repositories/athenai-repository';
 import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
+import type { StopsCounts } from './types/app/stop';
 import type { AppRouteTypeValue, Stop, TimetableEntriesState } from './types/app/transit';
 import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
 import { formatDateParts } from './utils/datetime';
@@ -746,6 +748,16 @@ export default function App({ loadResult }: AppProps) {
     return map;
   }, [routeTypesFilteredNearbyStopTimes]);
 
+  const nearbyStopsCounts: StopsCounts = useMemo(
+    () => computeStopsCounts(routeTypesFilteredNearbyStopTimes),
+    [routeTypesFilteredNearbyStopTimes],
+  );
+
+  const filteredNearbyStopsCounts: StopsCounts = useMemo(
+    () => computeStopsCounts(stopEventAttributesFilteredNearbyStopTimes),
+    [stopEventAttributesFilteredNearbyStopTimes],
+  );
+
   const handleToggleStopType = useCallback(
     (rt: number) => {
       updateSetting(
@@ -925,6 +937,8 @@ export default function App({ loadResult }: AppProps) {
           onInspectTrip: openTripInspection,
         }}
         globalFilter={globalFilter}
+        nearbyStopsCounts={nearbyStopsCounts}
+        filteredNearbyStopsCounts={filteredNearbyStopsCounts}
         mapOverlay={
           <TimeControls
             time={dateTime}

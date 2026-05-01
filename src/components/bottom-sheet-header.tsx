@@ -2,7 +2,7 @@ import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { StopTimeViewMeta } from '../types/app/transit-composed';
-import type { NearbyStopsCounts } from './bottom-sheet';
+import type { StopsCounts } from '../types/app/stop';
 import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
 import { resolveAgencyColors } from '../domain/transit/color-resolver/agency-colors';
 import { STOP_TIMES_VIEWS } from '../domain/transit/stop-time-views';
@@ -18,7 +18,17 @@ import { OriginFilter } from './filter/origin-filter';
 
 interface BottomSheetHeaderProps {
   hasNearbyLoaded: boolean;
-  counts: NearbyStopsCounts;
+  /**
+   * Pre-`globalFilter` counts (= settings filter applied, `globalFilter`
+   * not yet, no BottomSheet-local Stage 1/2 trim). Used to drive filter
+   * pill displays that should not fluctuate when the user toggles
+   * `globalFilter` pills. The post-`globalFilter` `counts` above remains
+   * the source of truth for "what is currently visible".
+   */
+  nearbyStopsCounts: StopsCounts;
+  /** App-filtered counts before BottomSheet-local filters. */
+  filteredNearbyStopsCounts: StopsCounts;
+  counts: StopsCounts;
   dataConfig: DataConfig;
   dataLangs: readonly string[];
   showOperatingStopsOnly: boolean;
@@ -41,6 +51,8 @@ interface BottomSheetHeaderProps {
 
 export function BottomSheetHeader({
   hasNearbyLoaded,
+  nearbyStopsCounts,
+  filteredNearbyStopsCounts,
   counts,
   dataConfig,
   dataLangs,
@@ -64,11 +76,32 @@ export function BottomSheetHeader({
   const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
 
+  console.debug({ nearbyStopsCounts });
+  console.debug({ counts });
+
   return (
     <div className="shrink-0 px-4 pb-2">
-      <NearbyStopsSummary
+      <StopsSummary
+        label={'nearbyStops -> filterd nearbyStops'}
         hasLoaded={hasNearbyLoaded}
-        counts={counts}
+        totalCount={nearbyStopsCounts}
+        filteredCount={filteredNearbyStopsCounts.total}
+        nearbyRadius={dataConfig.stops.nearbyRadius}
+        showOperatingStopsOnly={showOperatingStopsOnly}
+      />
+      <StopsSummary
+        label={'filterd nearbyStops -> operating stops only'}
+        hasLoaded={hasNearbyLoaded}
+        totalCount={nearbyStopsCounts}
+        filteredCount={filteredNearbyStopsCounts.total}
+        nearbyRadius={dataConfig.stops.nearbyRadius}
+        showOperatingStopsOnly={showOperatingStopsOnly}
+      />
+      <StopsSummary
+        label={'operating stops only'}
+        hasLoaded={hasNearbyLoaded}
+        totalCount={nearbyStopsCounts}
+        filteredCount={counts.total}
         nearbyRadius={dataConfig.stops.nearbyRadius}
         showOperatingStopsOnly={showOperatingStopsOnly}
       />
@@ -92,13 +125,13 @@ export function BottomSheetHeader({
       {/* Filters */}
       <div className="no-scrollbar mt-1 flex gap-1 overflow-x-auto">
         {/* Origin filter (entry-level: patternPosition.isOrigin) */}
-        {counts.originCount > 0 && (
-          <OriginFilter
-            origin={showOriginOnly}
-            onToggleOrigin={onToggleShowOriginOnly}
-            count={counts.originCount}
-          />
-        )}
+        {/* {counts.total > 0 && counts.originCount > 0 && ( */}
+        <OriginFilter
+          origin={showOriginOnly}
+          onToggleOrigin={onToggleShowOriginOnly}
+          count={counts.originCount}
+        />
+        {/* )} */}
 
         {/* Boardable filter (entry-level: pickup_type === 0) */}
         <BoardabilityFilter
@@ -120,6 +153,37 @@ export function BottomSheetHeader({
         >
           {t('nearbyStops.showOperatingStopsOnly')}
         </PillButton>
+
+        {/* Operating stops filter */}
+        <PillButton
+          size={'sm'}
+          active={showOperatingStopsOnly}
+          activeBg={'var(--info)'}
+          activeBorder={'var(--info)'}
+          inactiveBorder={'var(--info)'}
+          onClick={onToggleShowOperatingStopsOnly}
+          title={t('nearbyStops.showOperatingStopsOnlyTitle')}
+          count={nearbyStopsCounts.active}
+        >
+          {t('nearbyStops.showOperatingStopsOnly')}
+        </PillButton>
+
+        {/* Boardable filter (entry-level: pickup_type === 0) */}
+        {/* {(showBoardableOnly || nearbyStopsCounts.boardableCount > 0) && ( */}
+        <BoardabilityFilter
+          boardable={showBoardableOnly}
+          onToggleBoardable={onToggleShowBoardableOnly}
+          count={nearbyStopsCounts.boardableCount}
+        />
+        {/* )} */}
+
+        {/* {(showOriginOnly || nearbyStopsCounts.originCount > 0) && ( */}
+        <OriginFilter
+          origin={showOriginOnly}
+          onToggleOrigin={onToggleShowOriginOnly}
+          count={nearbyStopsCounts.originCount}
+        />
+        {/* )} */}
 
         {/* Route types filter */}
         {presentRouteTypes.map((rt) => (
@@ -185,7 +249,8 @@ function formatRadius(meters: number): string {
 
 function getNearbyStopsSummaryText(
   hasLoaded: boolean,
-  counts: NearbyStopsCounts,
+  totalCounts: StopsCounts,
+  filteredCount: number,
   showOperatingStopsOnly: boolean,
   radius: string,
   lang: string,
@@ -194,10 +259,13 @@ function getNearbyStopsSummaryText(
   if (!hasLoaded) {
     return t('common.loading');
   }
-  if (counts.filtered > 0) {
-    return t('nearbyStops.summary', { count: counts.filtered.toLocaleString(lang), radius });
+  if (filteredCount > 0) {
+    return t('nearbyStops.summary', {
+      count: filteredCount.toLocaleString(lang) + '/' + totalCounts.total.toLocaleString(lang),
+      radius,
+    });
   }
-  if (showOperatingStopsOnly && counts.total > 0) {
+  if (showOperatingStopsOnly && totalCounts.total > 0) {
     return t('nearbyStops.noOperating', { radius });
   }
   return t('nearbyStops.noStops', { radius });
@@ -206,27 +274,32 @@ function getNearbyStopsSummaryText(
 const summaryLogger = createLogger('NearbyStopsSummary');
 
 interface NearbyStopsSummaryProps {
-  counts: NearbyStopsCounts;
+  label: string;
+  totalCount: StopsCounts;
+  filteredCount: number;
   nearbyRadius: number;
   showOperatingStopsOnly: boolean;
   hasLoaded: boolean;
 }
 
-function NearbyStopsSummary({
-  counts,
+function StopsSummary({
+  label,
+  totalCount,
+  filteredCount,
   nearbyRadius,
   showOperatingStopsOnly,
   hasLoaded,
 }: NearbyStopsSummaryProps) {
   const { t, i18n } = useTranslation();
-  summaryLogger.verbose(
+  summaryLogger.debug(
     hasLoaded
-      ? `found ${counts.total} nearby stops (${counts.active} active, ${counts.filtered} after filter)`
+      ? `[${label}] total=${totalCount.total} active=${totalCount.active} boardable=${totalCount.boardableCount} origin=${totalCount.originCount} -> filtered=${filteredCount}`
       : 'not loaded yet',
   );
   const text = getNearbyStopsSummaryText(
     hasLoaded,
-    counts,
+    totalCount,
+    filteredCount,
     showOperatingStopsOnly,
     formatRadius(nearbyRadius),
     i18n.language,

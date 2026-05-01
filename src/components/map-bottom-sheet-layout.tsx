@@ -5,6 +5,7 @@ import { useViewportHeight } from '../hooks/use-viewport-height';
 import { resolveMapBottomSheetLayoutPreset } from '../utils/map-bottom-sheet-layout-preset';
 import { createLogger } from '../lib/logger';
 import type { GlobalFilter } from '../types/app/global-filter';
+import type { StopsCounts } from '../types/app/stop';
 
 const logger = createLogger('MapBottomSheetLayout');
 
@@ -17,9 +18,20 @@ interface MapBottomSheetLayoutProps {
     | 'expanded'
     | 'onExpandedChange'
     | 'globalFilter'
+    | 'nearbyStopsCounts'
+    | 'filteredNearbyStopsCounts'
   >;
   /** App-wide filter state shared with BottomSheet (and forthcoming MapView etc.). */
   globalFilter: GlobalFilter;
+  /**
+   * Pre-`globalFilter` `NearbyStopsCounts` computed in `app.tsx` from the
+   * settings-filter-applied stop list. Threaded through to BottomSheet /
+   * BottomSheetHeader so filter pills can read counts that don't fluctuate
+   * with `globalFilter` toggles.
+   */
+  nearbyStopsCounts: StopsCounts;
+  /** Post-`globalFilter`, pre-BottomSheet-local-filter counts from `app.tsx`. */
+  filteredNearbyStopsCounts: StopsCounts;
   mapOverlay?: ReactNode;
 }
 
@@ -27,6 +39,8 @@ export function MapBottomSheetLayout({
   mapViewProps,
   bottomSheetProps,
   globalFilter,
+  nearbyStopsCounts,
+  filteredNearbyStopsCounts,
   mapOverlay,
 }: MapBottomSheetLayoutProps) {
   const [expanded, setExpanded] = useState(false);
@@ -55,6 +69,8 @@ export function MapBottomSheetLayout({
       <BottomSheet
         {...bottomSheetProps}
         globalFilter={globalFilter}
+        nearbyStopsCounts={nearbyStopsCounts}
+        filteredNearbyStopsCounts={filteredNearbyStopsCounts}
         expanded={expanded}
         onExpandedChange={setExpanded}
         collapsedHeightClassName={layoutPreset.collapsedSheetHeightClassName}

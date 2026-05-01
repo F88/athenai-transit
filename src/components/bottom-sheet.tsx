@@ -4,9 +4,11 @@ import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
 import type { GlobalFilter } from '../types/app/global-filter';
+import type { StopsCounts } from '../types/app/stop';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
+import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
@@ -42,21 +44,6 @@ const ROUTE_TYPE_ORDER: AppRouteTypeValue[] = [...APP_ROUTE_TYPES.map(({ value }
     (ROUTE_TYPE_PRIORITY[b] ?? Number.POSITIVE_INFINITY),
 );
 
-export interface NearbyStopsCounts {
-  /** Total number of nearby stops before any filtering (= input `stopTimes`). */
-  total: number;
-  /** Stops with at least one upcoming entry, computed against the final
-   *  `trimmedStopTimes`. Reflects the user's current filter state. */
-  active: number;
-  /** Stops remaining after all filters (= `trimmedStopTimes.length`). */
-  filtered: number;
-  /** Stops in `trimmedStopTimes` that contain at least one origin entry. */
-  originCount: number;
-  /** Stops in `trimmedStopTimes` that contain at least one boardable
-   *  entry (= `pickup_type === 0` at a non-pure-terminal position). */
-  boardableCount: number;
-}
-
 export interface BottomSheetProps {
   /**
    * Stops to render. Already narrowed by the app-wide filters
@@ -83,6 +70,18 @@ export interface BottomSheetProps {
   anchorIds: Set<string>;
   /** App-wide filter state shared across surfaces. */
   globalFilter: GlobalFilter;
+  /**
+   * Pre-`globalFilter` `NearbyStopsCounts` computed in `app.tsx` from the
+   * settings-filter-applied stop list. Used by BottomSheetHeader to display
+   * counts that stay stable as the user toggles `globalFilter` pills.
+   */
+  nearbyStopsCounts: StopsCounts;
+  /**
+   * Post-`globalFilter`, pre-BottomSheet-local-filter counts computed in
+   * `app.tsx`. Threaded to BottomSheetHeader for UI that needs the
+   * app-filtered base before operating/agency/route_type trimming.
+   */
+  filteredNearbyStopsCounts: StopsCounts;
   onStopSelected: (stopId: string) => void;
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
@@ -113,6 +112,8 @@ export function BottomSheet({
   dataLangs,
   anchorIds,
   globalFilter,
+  nearbyStopsCounts,
+  filteredNearbyStopsCounts,
   onStopSelected,
   onShowTimetable,
   onShowStopTimetable,
@@ -220,27 +221,9 @@ export function BottomSheet({
     });
   }, [filteredStopTimes, hiddenAgencyIds, hiddenRouteTypes]);
 
-  const counts: NearbyStopsCounts = useMemo(
-    () => ({
-      total: stopTimes.length,
-      active: trimmedStopTimes.filter((swc) => swc.stopTimes.length > 0).length,
-      filtered: trimmedStopTimes.length,
-      // Existence-only `.some(...)` predicates — semantic-equivalent to
-      // applyStopEventAttributeToggles({ showOriginOnly: true }).length > 0
-      // and applyStopEventAttributeToggles({ showBoardableOnly: true }).length > 0
-      // respectively, but without allocating a per-stop filtered array.
-      originCount: trimmedStopTimes.filter((swc) =>
-        swc.stopTimes.some((entry) => entry.patternPosition.isOrigin),
-      ).length,
-      boardableCount: trimmedStopTimes.filter((swc) =>
-        swc.stopTimes.some(
-          (entry) =>
-            entry.boarding.pickupType === 0 &&
-            (entry.patternPosition.isOrigin || !entry.patternPosition.isTerminal),
-        ),
-      ).length,
-    }),
-    [stopTimes, trimmedStopTimes],
+  const trimmedStopTimesCounts: StopsCounts = useMemo(
+    () => computeStopsCounts(trimmedStopTimes),
+    [trimmedStopTimes],
   );
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -309,7 +292,9 @@ export function BottomSheet({
 
       <BottomSheetHeader
         hasNearbyLoaded={hasNearbyLoaded}
-        counts={counts}
+        nearbyStopsCounts={nearbyStopsCounts}
+        filteredNearbyStopsCounts={filteredNearbyStopsCounts}
+        counts={trimmedStopTimesCounts}
         dataConfig={dataConfig}
         dataLangs={dataLangs}
         showOperatingStopsOnly={showOperatingStopsOnly}
