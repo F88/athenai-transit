@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agency, Route, Stop } from '@/types/app/transit';
+import type { TransitRepository } from '@/repositories/transit-repository';
 import type {
   SelectedTripSnapshot,
   TimetableEntry,
@@ -8,16 +9,16 @@ import type {
   TripStopTime,
 } from '@/types/app/transit-composed';
 
-const { computeTimetableEntryStatsMock, tripStopsRenderMock } = vi.hoisted(() => ({
-  computeTimetableEntryStatsMock: vi.fn(),
-  tripStopsRenderMock: vi.fn(),
-}));
+const { computeTimetableEntryStatsMock, tripStopsRenderMock, useTranslationMock } = vi.hoisted(
+  () => ({
+    computeTimetableEntryStatsMock: vi.fn(),
+    tripStopsRenderMock: vi.fn(),
+    useTranslationMock: vi.fn(),
+  }),
+);
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: { language: 'en' },
-  }),
+  useTranslation: useTranslationMock,
 }));
 
 vi.mock('@/hooks/use-info-level', () => ({
@@ -176,6 +177,7 @@ vi.mock('../verbose/verbose-trip-stop-time', () => ({
 }));
 
 import { TimetableModal, type TimetableData } from './timetable-modal';
+import { StopSearchModal } from './stop-search-modal';
 import { TripInspectionDialog } from './trip-inspection-dialog';
 
 function makeRoute(id: string): Route {
@@ -274,7 +276,19 @@ function makeTripSnapshot(): SelectedTripSnapshot {
   };
 }
 
+function makeRepo(): TransitRepository {
+  return {
+    getAllStops: vi.fn().mockResolvedValue({ success: true, data: [] }),
+    getRouteTypesForStop: vi.fn().mockResolvedValue({ success: true, data: [3] }),
+  } as unknown as TransitRepository;
+}
+
 beforeEach(() => {
+  useTranslationMock.mockReset();
+  useTranslationMock.mockReturnValue({
+    t: (key: string) => key,
+    i18n: { language: 'en' },
+  });
   computeTimetableEntryStatsMock.mockReset();
   computeTimetableEntryStatsMock.mockReturnValue({
     totalCount: 1,
@@ -301,8 +315,12 @@ beforeEach(() => {
   vi.stubGlobal('cancelAnimationFrame', vi.fn());
 });
 
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe('dialog memoization regressions', () => {
-  it('TimetableModal skips stats recomputation on rerender with identical props', () => {
+  it('TimetableModal skips stats recomputation when only time changes', () => {
     const data = makeTimetableData();
     const globalFilter = {
       showOriginOnly: false,
@@ -325,6 +343,10 @@ describe('dialog memoization regressions', () => {
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
 
     rerender(<TimetableModal {...props} />);
+
+    expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
+
+    rerender(<TimetableModal {...props} time={new Date(2026, 3, 1, 8, 1)} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
 
@@ -372,5 +394,30 @@ describe('dialog memoization regressions', () => {
     rerender(<TripInspectionDialog {...props} now={new Date(2026, 3, 1, 8, 1)} />);
 
     expect(tripStopsRenderMock).toHaveBeenCalledTimes(initialRenderCount + 1);
+  });
+
+  it('StopSearchModal skips rerender when props are identical', () => {
+    const repo = makeRepo();
+    const props = {
+      repo,
+      infoLevel: 'normal' as const,
+      dataLang: ['ja'] as const,
+      onSelectStop: vi.fn(),
+      open: false,
+      onOpenChange: vi.fn(),
+    };
+
+    const { rerender } = render(<StopSearchModal {...props} />);
+    const initialRenderCount = useTranslationMock.mock.calls.length;
+
+    expect(initialRenderCount).toBeGreaterThan(0);
+
+    rerender(<StopSearchModal {...props} />);
+
+    expect(useTranslationMock).toHaveBeenCalledTimes(initialRenderCount);
+
+    rerender(<StopSearchModal {...props} infoLevel={'detailed'} />);
+
+    expect(useTranslationMock).toHaveBeenCalledTimes(initialRenderCount + 1);
   });
 });
