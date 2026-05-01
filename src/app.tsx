@@ -15,12 +15,14 @@ import { TILE_SOURCES } from './config/tile-sources';
 import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
 import { buildAnchorRefreshUpdates, type AnchorEntry } from './domain/portal/anchor';
 import { formatDateKey } from './domain/transit/calendar-utils';
+import { computeStopsCounts } from './domain/transit/compute-stops-counts';
 import { getStopDisplayNames } from './domain/transit/get-stop-display-names';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
-import { getServiceDay } from './domain/transit/service-day';
+import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-day';
 import {
-  applyStopEventAttributeToggles,
+  applyStopEventAttributeTogglesToStops,
+  omitStopsWithoutStopTimes,
   prepareRouteHeadsignTimetable,
   prepareStopTimetable,
 } from './domain/transit/timetable-filter';
@@ -41,6 +43,7 @@ import { getStopParam } from './lib/query-params';
 import type { LoadResult } from './repositories/athenai-repository';
 import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
+import type { StopsCounts } from './types/app/stop';
 import type { AppRouteTypeValue, Stop, TimetableEntriesState } from './types/app/transit';
 import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
 import { formatDateParts } from './utils/datetime';
@@ -54,9 +57,9 @@ import {
   nextRenderMode,
   nextTileIndex,
 } from './utils/settings-cycle';
-
 const logger = createLogger('App');
 const DEBOUNCE_MS = 300;
+const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
 
 interface AppProps {
   /**
@@ -677,6 +680,11 @@ export default function App({ loadResult }: AppProps) {
   // it given its own data shape.
   const [showOriginOnly, setShowOriginOnly] = useState(false);
   const [showBoardableOnly, setShowBoardableOnly] = useState(false);
+  const isLateNight = getServiceDayMinutes(dateTime) >= LATE_NIGHT_THRESHOLD_MINUTES;
+  const [omitEmptyStopsOverride, setOmitEmptyStopsOverride] = useState<boolean | null>(null);
+  const omitEmptyStops = omitEmptyStopsOverride ?? isLateNight;
+  const isOmitEmptyStopsForced = showOriginOnly || showBoardableOnly;
+  const effectiveOmitEmptyStops = omitEmptyStops || isOmitEmptyStopsForced;
 
   const toggleShowOriginOnly = useCallback(() => {
     setShowOriginOnly((prev) => !prev);
@@ -684,6 +692,12 @@ export default function App({ loadResult }: AppProps) {
   const toggleShowBoardableOnly = useCallback(() => {
     setShowBoardableOnly((prev) => !prev);
   }, []);
+  const toggleOmitEmptyStops = useCallback(() => {
+    if (isOmitEmptyStopsForced) {
+      return;
+    }
+    setOmitEmptyStopsOverride((prev) => !(prev ?? isLateNight));
+  }, [isLateNight, isOmitEmptyStopsForced]);
 
   // Bundle the app-wide filter state + toggle handlers into a single
   // memoized object so consumers (BottomSheet / TimetableModal /
@@ -692,11 +706,24 @@ export default function App({ loadResult }: AppProps) {
     () => ({
       showOriginOnly,
       showBoardableOnly,
+      omitEmptyStops: effectiveOmitEmptyStops,
+      isOmitEmptyStopsForced,
       onToggleShowOriginOnly: toggleShowOriginOnly,
       onToggleShowBoardableOnly: toggleShowBoardableOnly,
+      onToggleOmitEmptyStops: toggleOmitEmptyStops,
     }),
-    [showOriginOnly, showBoardableOnly, toggleShowOriginOnly, toggleShowBoardableOnly],
+    [
+      showOriginOnly,
+      showBoardableOnly,
+      effectiveOmitEmptyStops,
+      isOmitEmptyStopsForced,
+      toggleShowOriginOnly,
+      toggleShowBoardableOnly,
+      toggleOmitEmptyStops,
+    ],
   );
+
+  // logger.debug('GlobalFilter', globalFilter);
 
   // --- Settings handlers ---
 
@@ -711,24 +738,25 @@ export default function App({ loadResult }: AppProps) {
   );
 
   // Apply origin / boardable filter (= app-wide `globalFilter` toggles)
-  // per-stop and drop stops whose entries become empty. The result is
-  // the stop list that BottomSheet (and forthcoming MapView etc.)
-  // should render; computing it here keeps the same filter outcome
-  // available to multiple surfaces from one place.
-  const stopEventAttributesFilteredNearbyStopTimes = useMemo(() => {
-    if (!showOriginOnly && !showBoardableOnly) {
-      return routeTypesFilteredNearbyStopTimes;
-    }
-    return routeTypesFilteredNearbyStopTimes
-      .map((swc) => {
-        const filtered = applyStopEventAttributeToggles(swc.stopTimes, {
-          showOriginOnly,
-          showBoardableOnly,
-        });
-        return filtered === swc.stopTimes ? swc : { ...swc, stopTimes: filtered };
-      })
-      .filter((swc) => swc.stopTimes.length > 0);
-  }, [routeTypesFilteredNearbyStopTimes, showOriginOnly, showBoardableOnly]);
+  // per-stop while preserving the outer stop list. Empty-stop omission
+  // happens in the next memo so the two responsibilities stay distinct.
+  const stopEventAttributesAppliedNearbyStopTimes = useMemo(
+    () =>
+      applyStopEventAttributeTogglesToStops(routeTypesFilteredNearbyStopTimes, {
+        showOriginOnly,
+        showBoardableOnly,
+      }),
+    [routeTypesFilteredNearbyStopTimes, showOriginOnly, showBoardableOnly],
+  );
+
+  // Apply the app-wide empty-stop visibility policy on top of the
+  // entry-level filter result. When omitted, only non-empty stops are
+  // rendered; when disabled, empty stops remain visible for placeholder UI.
+  const stopEventAttributesNonEmptyNearbyStopTimes = useMemo(() => {
+    return effectiveOmitEmptyStops
+      ? omitStopsWithoutStopTimes(stopEventAttributesAppliedNearbyStopTimes)
+      : stopEventAttributesAppliedNearbyStopTimes;
+  }, [effectiveOmitEmptyStops, stopEventAttributesAppliedNearbyStopTimes]);
 
   // Per-stop pre-`globalFilter` `TimetableEntriesState` map. The base
   // is intentionally `routeTypesFilteredNearbyStopTimes` (= settings
@@ -745,6 +773,16 @@ export default function App({ loadResult }: AppProps) {
     }
     return map;
   }, [routeTypesFilteredNearbyStopTimes]);
+
+  const nearbyStopsCounts: StopsCounts = useMemo(
+    () => computeStopsCounts(routeTypesFilteredNearbyStopTimes),
+    [routeTypesFilteredNearbyStopTimes],
+  );
+
+  const filteredNearbyStopsCounts: StopsCounts = useMemo(
+    () => computeStopsCounts(stopEventAttributesNonEmptyNearbyStopTimes),
+    [stopEventAttributesNonEmptyNearbyStopTimes],
+  );
 
   const handleToggleStopType = useCallback(
     (rt: number) => {
@@ -868,7 +906,7 @@ export default function App({ loadResult }: AppProps) {
           radiusStops,
           selectedStopId,
           focusPosition,
-          stopTimes: stopEventAttributesFilteredNearbyStopTimes,
+          stopTimes: stopEventAttributesNonEmptyNearbyStopTimes,
           routeTypeMap,
           routeShapes,
           selectionInfo,
@@ -907,7 +945,7 @@ export default function App({ loadResult }: AppProps) {
           lookupAnchorStopMeta,
         }}
         bottomSheetProps={{
-          stopTimes: stopEventAttributesFilteredNearbyStopTimes,
+          stopTimes: stopEventAttributesNonEmptyNearbyStopTimes,
           timetableEntriesStateByStopId,
           selectedStopId,
           isNearbyLoading,
@@ -925,6 +963,8 @@ export default function App({ loadResult }: AppProps) {
           onInspectTrip: openTripInspection,
         }}
         globalFilter={globalFilter}
+        nearbyStopsCounts={nearbyStopsCounts}
+        filteredNearbyStopsCounts={filteredNearbyStopsCounts}
         mapOverlay={
           <TimeControls
             time={dateTime}

@@ -325,8 +325,11 @@ describe('dialog memoization regressions', () => {
     const globalFilter = {
       showOriginOnly: false,
       showBoardableOnly: false,
+      omitEmptyStops: false,
+      isOmitEmptyStopsForced: false,
       onToggleShowOriginOnly: vi.fn(),
       onToggleShowBoardableOnly: vi.fn(),
+      onToggleOmitEmptyStops: vi.fn(),
     };
     const props = {
       data,

@@ -4,12 +4,13 @@ import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
 import type { GlobalFilter } from '../types/app/global-filter';
+import type { StopsCounts } from '../types/app/stop';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
+import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
-import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { APP_ROUTE_TYPES } from '../config/route-types';
 import { cn } from '../lib/utils';
 import { BottomSheetHeader } from './bottom-sheet-header';
@@ -18,9 +19,6 @@ import { BottomSheetStops } from './bottom-sheet-stops';
 type ExpandedStateAction = boolean | ((prevExpanded: boolean) => boolean);
 
 const DRAG_THRESHOLD = 50;
-
-/** Auto-enable "show operating stops only" filter at 22:00 in service day minutes. */
-const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
 
 /** Route type display order matching StopTypeFilterPanel. */
 const ROUTE_TYPE_PRIORITY: Readonly<Record<number, number>> = {
@@ -42,26 +40,11 @@ const ROUTE_TYPE_ORDER: AppRouteTypeValue[] = [...APP_ROUTE_TYPES.map(({ value }
     (ROUTE_TYPE_PRIORITY[b] ?? Number.POSITIVE_INFINITY),
 );
 
-export interface NearbyStopsCounts {
-  /** Total number of nearby stops before any filtering (= input `stopTimes`). */
-  total: number;
-  /** Stops with at least one upcoming entry, computed against the final
-   *  `trimmedStopTimes`. Reflects the user's current filter state. */
-  active: number;
-  /** Stops remaining after all filters (= `trimmedStopTimes.length`). */
-  filtered: number;
-  /** Stops in `trimmedStopTimes` that contain at least one origin entry. */
-  originCount: number;
-  /** Stops in `trimmedStopTimes` that contain at least one boardable
-   *  entry (= `pickup_type === 0` at a non-pure-terminal position). */
-  boardableCount: number;
-}
-
 export interface BottomSheetProps {
   /**
    * Stops to render. Already narrowed by the app-wide filters
    * (`globalFilter` + `enabledRouteTypes`); BottomSheet only applies
-   * its own surface-local filters (operating-only / agency / route_type).
+   * its own surface-local filters (agency / route_type).
    */
   stopTimes: StopWithContext[];
   /**
@@ -83,6 +66,18 @@ export interface BottomSheetProps {
   anchorIds: Set<string>;
   /** App-wide filter state shared across surfaces. */
   globalFilter: GlobalFilter;
+  /**
+   * Pre-`globalFilter` `NearbyStopsCounts` computed in `app.tsx` from the
+   * settings-filter-applied stop list. Used by BottomSheetHeader to display
+   * counts that stay stable as the user toggles `globalFilter` pills.
+   */
+  nearbyStopsCounts: StopsCounts;
+  /**
+   * Post-`globalFilter`, pre-BottomSheet-local-filter counts computed in
+   * `app.tsx`. Threaded to BottomSheetHeader for UI that needs the
+   * app-filtered base before operating/agency/route_type trimming.
+   */
+  filteredNearbyStopsCounts: StopsCounts;
   onStopSelected: (stopId: string) => void;
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
@@ -113,6 +108,8 @@ export function BottomSheet({
   dataLangs,
   anchorIds,
   globalFilter,
+  nearbyStopsCounts,
+  filteredNearbyStopsCounts,
   onStopSelected,
   onShowTimetable,
   onShowStopTimetable,
@@ -123,8 +120,15 @@ export function BottomSheet({
   expanded: expandedProp,
   onExpandedChange,
 }: BottomSheetProps) {
-  const { showOriginOnly, showBoardableOnly, onToggleShowOriginOnly, onToggleShowBoardableOnly } =
-    globalFilter;
+  const {
+    showOriginOnly,
+    showBoardableOnly,
+    omitEmptyStops,
+    isOmitEmptyStopsForced,
+    onToggleShowOriginOnly,
+    onToggleShowBoardableOnly,
+    onToggleOmitEmptyStops,
+  } = globalFilter;
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(false);
   const expanded = expandedProp ?? uncontrolledExpanded;
   const setExpanded = useCallback(
@@ -138,12 +142,6 @@ export function BottomSheet({
     [onExpandedChange],
   );
   const [viewId, setViewId] = useState(DEFAULT_VIEW_ID);
-  const isLateNight = getServiceDayMinutes(now) >= LATE_NIGHT_THRESHOLD_MINUTES;
-  // User can toggle manually; null means "use auto (isLateNight)".
-  const [showOperatingStopsOnlyOverride, setShowOperatingStopsOnlyOverride] = useState<
-    boolean | null
-  >(null);
-  const showOperatingStopsOnly = showOperatingStopsOnlyOverride ?? isLateNight;
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
   const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
   const selectedView = STOP_TIMES_VIEWS.find((v) => v.id === viewId);
@@ -182,33 +180,22 @@ export function BottomSheet({
     });
   }, []);
 
-  // Two-stage local filter pipeline. The app-wide origin / boardable
+  // The app-wide origin / boardable
   // filter (= `globalFilter`) is already applied upstream in `app.tsx`
-  // — by the time `stopTimes` arrives here, those entries have already
-  // been narrowed and empty stops dropped. BottomSheet only applies its
-  // own surface-local filters below.
+  // — and the app-wide empty-stop omission policy — are already applied
+  // upstream in `app.tsx`. BottomSheet only applies its own surface-local
+  // filters below.
   //
-  // Stage 1 — drop stops with no upcoming entries (operating-only
-  // toggle). Acts on the upstream-filtered `stopTimes`, so when entry
-  // pills are active the operating filter narrows "what is left after
-  // the user's intent narrowing".
-  const filteredStopTimes = useMemo(() => {
-    if (!showOperatingStopsOnly) {
-      return stopTimes;
-    }
-    return stopTimes.filter((swc) => swc.stopTimes.length > 0);
-  }, [stopTimes, showOperatingStopsOnly]);
-
-  // Stage 2 — trim each surviving stop's inner stopTimes by agency /
+  // Trim each surviving stop's inner stopTimes by agency /
   // route_type filters. This never drops stops: a stop whose stopTimes
   // are all removed stays visible and shows the "allFilteredOut"
   // fallback message. This decouples "which stops are in the list"
   // from "what is shown inside each stop".
   const trimmedStopTimes = useMemo(() => {
     if (hiddenAgencyIds.size === 0 && hiddenRouteTypes.size === 0) {
-      return filteredStopTimes;
+      return stopTimes;
     }
-    return filteredStopTimes.map((swc) => {
+    return stopTimes.map((swc) => {
       let trimmed = swc.stopTimes;
       if (hiddenAgencyIds.size > 0) {
         trimmed = filterByAgency(trimmed, hiddenAgencyIds);
@@ -218,29 +205,11 @@ export function BottomSheet({
       }
       return trimmed === swc.stopTimes ? swc : { ...swc, stopTimes: trimmed };
     });
-  }, [filteredStopTimes, hiddenAgencyIds, hiddenRouteTypes]);
+  }, [stopTimes, hiddenAgencyIds, hiddenRouteTypes]);
 
-  const counts: NearbyStopsCounts = useMemo(
-    () => ({
-      total: stopTimes.length,
-      active: trimmedStopTimes.filter((swc) => swc.stopTimes.length > 0).length,
-      filtered: trimmedStopTimes.length,
-      // Existence-only `.some(...)` predicates — semantic-equivalent to
-      // applyStopEventAttributeToggles({ showOriginOnly: true }).length > 0
-      // and applyStopEventAttributeToggles({ showBoardableOnly: true }).length > 0
-      // respectively, but without allocating a per-stop filtered array.
-      originCount: trimmedStopTimes.filter((swc) =>
-        swc.stopTimes.some((entry) => entry.patternPosition.isOrigin),
-      ).length,
-      boardableCount: trimmedStopTimes.filter((swc) =>
-        swc.stopTimes.some(
-          (entry) =>
-            entry.boarding.pickupType === 0 &&
-            (entry.patternPosition.isOrigin || !entry.patternPosition.isTerminal),
-        ),
-      ).length,
-    }),
-    [stopTimes, trimmedStopTimes],
+  const trimmedStopTimesCounts: StopsCounts = useMemo(
+    () => computeStopsCounts(trimmedStopTimes),
+    [trimmedStopTimes],
   );
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -309,10 +278,13 @@ export function BottomSheet({
 
       <BottomSheetHeader
         hasNearbyLoaded={hasNearbyLoaded}
-        counts={counts}
+        nearbyStopsCounts={nearbyStopsCounts}
+        filteredNearbyStopsCounts={filteredNearbyStopsCounts}
+        counts={trimmedStopTimesCounts}
         dataConfig={dataConfig}
         dataLangs={dataLangs}
-        showOperatingStopsOnly={showOperatingStopsOnly}
+        omitEmptyStops={omitEmptyStops}
+        isOmitEmptyStopsForced={isOmitEmptyStopsForced}
         showOriginOnly={showOriginOnly}
         showBoardableOnly={showBoardableOnly}
         viewId={viewId}
@@ -322,9 +294,7 @@ export function BottomSheet({
         hiddenRouteTypes={hiddenRouteTypes}
         presentAgencies={presentAgencies}
         hiddenAgencyIds={hiddenAgencyIds}
-        onToggleShowOperatingStopsOnly={() =>
-          setShowOperatingStopsOnlyOverride((v) => !(v ?? isLateNight))
-        }
+        onToggleOmitEmptyStops={onToggleOmitEmptyStops}
         onToggleShowOriginOnly={onToggleShowOriginOnly}
         onToggleShowBoardableOnly={onToggleShowBoardableOnly}
         onViewChange={setViewId}

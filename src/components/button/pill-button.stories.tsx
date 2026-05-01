@@ -272,6 +272,70 @@ export const WithCountCustomColor: Story = {
   },
 };
 
+export const WithCountDisabledComparison: Story = {
+  args: { active: true },
+  render: (args) => (
+    <div className="space-y-2">
+      <p className="text-muted-foreground text-xs">Enabled / active branch</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <PillButton {...args} active count={22}>
+          Active default
+        </PillButton>
+        <PillButton {...args} active activeBg={TOEI_GREEN} activeFg="#fff" count={42}>
+          Active custom bg
+        </PillButton>
+        <PillButton
+          {...args}
+          active
+          activeBg={TOEI_GREEN}
+          activeFg="#fff"
+          activeBorder="#0b6b38"
+          count={42}
+        >
+          Active custom border
+        </PillButton>
+      </div>
+
+      <p className="text-muted-foreground text-xs">Enabled / inactive branch</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <PillButton {...args} active={false} count={22}>
+          Inactive default
+        </PillButton>
+        <PillButton {...args} active={false} inactiveBorder={TOEI_GREEN} count={42}>
+          Inactive green border
+        </PillButton>
+        <PillButton {...args} active={false} inactiveBorder="#e60012" count={42}>
+          Inactive red border
+        </PillButton>
+      </div>
+
+      <p className="text-muted-foreground text-xs">Disabled branch</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <PillButton {...args} active disabled count={22}>
+          Disabled active default
+        </PillButton>
+        <PillButton
+          {...args}
+          active
+          activeBg={TOEI_GREEN}
+          activeFg="#fff"
+          activeBorder="#0b6b38"
+          disabled
+          count={42}
+        >
+          Disabled active custom border
+        </PillButton>
+        <PillButton {...args} active={false} disabled count={22}>
+          Disabled inactive default
+        </PillButton>
+        <PillButton {...args} active={false} inactiveBorder={TOEI_GREEN} disabled count={42}>
+          Disabled inactive green border
+        </PillButton>
+      </div>
+    </div>
+  ),
+};
+
 export const WithCountNoCount: Story = {
   args: { active: true, children: 'カウントなし' },
 };

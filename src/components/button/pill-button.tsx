@@ -69,21 +69,70 @@ export function PillButton({
   children,
 }: PillButtonProps) {
   const { i18n } = useTranslation();
+  const resolvedActiveBg = activeBg ?? 'var(--info)';
+  const resolvedActiveFg = activeFg ?? 'var(--info-foreground)';
+  const resolvedDisabledBorder = active ? activeBorder : inactiveBorder;
+  const resolvedInactiveBadgeBg = inactiveBorder ?? 'var(--info)';
+  const resolvedInactiveBadgeFg = activeFg ?? 'white';
+
   // All buttons get a 2px transparent border for consistent sizing.
   // Border color is overridden per state as needed.
   const style: CSSProperties = {
     borderWidth: 2,
     borderStyle: 'solid',
     borderColor: 'transparent',
-    ...(active
-      ? {
-          ...(activeBg ? { background: activeBg, color: activeFg } : {}),
-          ...(activeBorder ? { borderColor: activeBorder } : {}),
-        }
-      : {
-          ...(inactiveBorder ? { borderColor: inactiveBorder } : {}),
-        }),
   };
+
+  if (disabled) {
+    if (resolvedDisabledBorder) {
+      style.borderColor = resolvedDisabledBorder;
+    }
+  } else {
+    if (active) {
+      if (activeBg) {
+        style.background = activeBg;
+        style.color = activeFg;
+      }
+      if (activeBorder) {
+        style.borderColor = activeBorder;
+      }
+    } else if (inactiveBorder) {
+      style.borderColor = inactiveBorder;
+    }
+  }
+
+  let toneClassName: string;
+  if (disabled) {
+    toneClassName = 'bg-[#e8eaf0] text-gray-400 dark:bg-gray-700 dark:text-gray-500';
+  } else {
+    if (active) {
+      if (activeBg) {
+        toneClassName = 'text-white';
+      } else {
+        toneClassName = 'bg-info text-info-foreground';
+      }
+    } else {
+      toneClassName =
+        'bg-[#e8eaf0] text-[#555] active:bg-[#d0d3da] dark:bg-gray-700 dark:text-gray-300';
+    }
+  }
+
+  let countBadgeStyle: CSSProperties;
+  if (disabled) {
+    countBadgeStyle = {
+      color: 'var(--muted)',
+      background: 'var(--muted-foreground)',
+    };
+  } else {
+    if (active) {
+      countBadgeStyle = { background: resolvedActiveFg, color: resolvedActiveBg };
+    } else {
+      countBadgeStyle = {
+        background: resolvedInactiveBadgeBg,
+        color: resolvedInactiveBadgeFg,
+      };
+    }
+  }
 
   return (
     <button
@@ -92,14 +141,9 @@ export function PillButton({
       className={cn(
         'inline-flex shrink-0 items-center rounded-full font-medium whitespace-nowrap transition-colors select-none [-webkit-touch-callout:none]',
         onClick && !disabled && 'cursor-pointer',
+        disabled && 'cursor-not-allowed',
         sizeVariants[size] ?? sizeVariants.default,
-        active
-          ? activeBg
-            ? 'text-white'
-            : 'bg-info text-info-foreground'
-          : disabled
-            ? 'cursor-not-allowed bg-[#f0f0f0] text-[#bbb] dark:bg-gray-800 dark:text-gray-600'
-            : 'bg-[#e8eaf0] text-[#555] active:bg-[#d0d3da] dark:bg-gray-700 dark:text-gray-300',
+        toneClassName,
         className,
       )}
       style={style}
@@ -112,16 +156,7 @@ export function PillButton({
       {count != null && (
         <span
           className="ml-1 inline-flex min-h-[1.4em] min-w-[1.4em] items-center justify-center rounded-full px-1 text-[0.85em] leading-none font-bold"
-          style={
-            disabled
-              ? { background: '#bbb', color: '#f0f0f0' }
-              : active
-                ? { background: activeFg ?? 'white', color: activeBg ?? 'var(--info)' }
-                : {
-                    background: activeBg ?? inactiveBorder ?? 'var(--info)',
-                    color: activeFg ?? 'white',
-                  }
-          }
+          style={countBadgeStyle}
         >
           {count.toLocaleString(i18n.language)}
         </span>
