@@ -727,7 +727,7 @@ export default function App({ loadResult }: AppProps) {
   const nearbyStopTimesServiceState = useMemo(() => {
     const map = new Map<string, TimetableEntriesState>();
     for (const swc of routeTypesFilteredNearbyStopTimes) {
-      map.set(swc.stop.stop_id, getTimetableEntriesState([...swc.stopTimes]));
+      map.set(swc.stop.stop_id, getTimetableEntriesState(swc.stopTimes));
     }
     return map;
   }, [routeTypesFilteredNearbyStopTimes]);
@@ -769,7 +769,11 @@ export default function App({ loadResult }: AppProps) {
   const serviceDay = useMemo(() => getServiceDay(dateTime), [dateTime]);
   const serviceDayKey = formatDateKey(serviceDay);
   const stableServiceDay = useMemo(() => {
-    const [year, month, day] = serviceDayKey.split('-').map(Number);
+    // `serviceDayKey` is `YYYYMMDD` (no separators) per `formatDateKey`,
+    // so use fixed-position substring slicing instead of `split('-')`.
+    const year = parseInt(serviceDayKey.substring(0, 4), 10);
+    const month = parseInt(serviceDayKey.substring(4, 6), 10);
+    const day = parseInt(serviceDayKey.substring(6, 8), 10);
     return new Date(year, month - 1, day);
   }, [serviceDayKey]);
   const serviceDayWeekday = useMemo(() => {
