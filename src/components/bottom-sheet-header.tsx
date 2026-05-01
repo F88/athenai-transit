@@ -270,7 +270,7 @@ function formatStopsCountsDebugLog(counts: StopsCounts): string {
 
 const summaryLogger = createLogger('NearbyStopsSummary');
 
-interface NearbyStopsSummaryProps {
+interface StopsSummaryProps {
   label: string;
   totalCount: StopsCounts;
   filteredCount: number;
@@ -288,7 +288,7 @@ function StopsSummary({
   omitEmptyStops,
   hasLoaded,
   infoLevel,
-}: NearbyStopsSummaryProps) {
+}: StopsSummaryProps) {
   const { t, i18n } = useTranslation();
 
   summaryLogger.debug(
