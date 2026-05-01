@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.01]
+
 ### Added
 
 - `GlobalFilter` 型 (`src/types/app/global-filter.ts`) を導入。app-wide で共有する filter state (`showOriginOnly` / `showBoardableOnly` / `omitEmptyStops` / `isOmitEmptyStopsForced`) と toggle handler を 1 つの interface に集約し、BottomSheet / TimetableModal / MapBottomSheetLayout に `globalFilter: GlobalFilter` 1 props として nest 渡し。
