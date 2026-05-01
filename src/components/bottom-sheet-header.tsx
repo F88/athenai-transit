@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { PillButton } from './button/pill-button';
 import { BoardabilityFilter } from './filter/boardability-filter';
 import { OriginFilter } from './filter/origin-filter';
+import { LabelCountBadge } from './badge/label-count-badge';
 
 interface BottomSheetHeaderProps {
   hasNearbyLoaded: boolean;
@@ -53,7 +54,7 @@ interface BottomSheetHeaderProps {
 export function BottomSheetHeader({
   hasNearbyLoaded,
   nearbyStopsCounts,
-  filteredNearbyStopsCounts,
+  filteredNearbyStopsCounts: _filteredNearbyStopsCounts,
   counts,
   dataConfig,
   dataLangs,
@@ -84,28 +85,13 @@ export function BottomSheetHeader({
   return (
     <div className="shrink-0 px-4 pb-2">
       <StopsSummary
-        label={'nearbyStops -> filterd nearbyStops'}
-        hasLoaded={hasNearbyLoaded}
-        totalCount={nearbyStopsCounts}
-        filteredCount={counts.total}
-        nearbyRadius={dataConfig.stops.nearbyRadius}
-        omitEmptyStops={omitEmptyStops}
-      />
-      <StopsSummary
-        label={'filterd nearbyStops -> operating stops only'}
-        hasLoaded={hasNearbyLoaded}
-        totalCount={nearbyStopsCounts}
-        filteredCount={filteredNearbyStopsCounts.total}
-        nearbyRadius={dataConfig.stops.nearbyRadius}
-        omitEmptyStops={omitEmptyStops}
-      />
-      <StopsSummary
         label={'operating stops only'}
         hasLoaded={hasNearbyLoaded}
         totalCount={nearbyStopsCounts}
         filteredCount={counts.total}
         nearbyRadius={dataConfig.stops.nearbyRadius}
         omitEmptyStops={omitEmptyStops}
+        infoLevel={infoLevel}
       />
 
       <div className="no-scrollbar mt-1.5 flex gap-1 overflow-x-auto">
@@ -154,38 +140,6 @@ export function BottomSheetHeader({
           origin={showOriginOnly}
           onToggleOrigin={onToggleShowOriginOnly}
           count={counts.originCount}
-        />
-        {/* )} */}
-
-        {/* Operating stops filter */}
-        <PillButton
-          size={'sm'}
-          active={omitEmptyStops}
-          disabled={isOmitEmptyStopsForced}
-          activeBg={'var(--info)'}
-          activeBorder={'var(--info)'}
-          inactiveBorder={'var(--info)'}
-          onClick={onToggleOmitEmptyStops}
-          title={t('nearbyStops.showOperatingStopsOnlyTitle')}
-          count={nearbyStopsCounts.nonEmpty}
-        >
-          {t('nearbyStops.showOperatingStopsOnly')}
-        </PillButton>
-
-        {/* Boardable filter (entry-level: pickup_type === 0) */}
-        {/* {(showBoardableOnly || nearbyStopsCounts.boardableCount > 0) && ( */}
-        <BoardabilityFilter
-          boardable={showBoardableOnly}
-          onToggleBoardable={onToggleShowBoardableOnly}
-          count={nearbyStopsCounts.boardableCount}
-        />
-        {/* )} */}
-
-        {/* {(showOriginOnly || nearbyStopsCounts.originCount > 0) && ( */}
-        <OriginFilter
-          origin={showOriginOnly}
-          onToggleOrigin={onToggleShowOriginOnly}
-          count={nearbyStopsCounts.originCount}
         />
         {/* )} */}
 
@@ -256,6 +210,7 @@ function getNearbyStopsSummaryText(
   totalCounts: StopsCounts,
   filteredCount: number,
   omitEmptyStops: boolean,
+  _infoLevel: InfoLevel,
   radius: string,
   lang: string,
   t: (key: string, options?: Record<string, unknown>) => string,
@@ -263,9 +218,10 @@ function getNearbyStopsSummaryText(
   if (!hasLoaded) {
     return t('common.loading');
   }
+
   if (filteredCount > 0) {
     return t('nearbyStops.summary', {
-      count: filteredCount.toLocaleString(lang) + '/' + totalCounts.total.toLocaleString(lang),
+      count: filteredCount.toLocaleString(lang),
       radius,
     });
   }
@@ -284,6 +240,7 @@ interface NearbyStopsSummaryProps {
   nearbyRadius: number;
   omitEmptyStops: boolean;
   hasLoaded: boolean;
+  infoLevel: InfoLevel;
 }
 
 function StopsSummary({
@@ -293,6 +250,7 @@ function StopsSummary({
   nearbyRadius,
   omitEmptyStops,
   hasLoaded,
+  infoLevel,
 }: NearbyStopsSummaryProps) {
   const { t, i18n } = useTranslation();
   summaryLogger.debug(
@@ -305,6 +263,7 @@ function StopsSummary({
     totalCount,
     filteredCount,
     omitEmptyStops,
+    infoLevel,
     formatRadius(nearbyRadius),
     i18n.language,
     t,
@@ -312,6 +271,16 @@ function StopsSummary({
 
   return (
     <p className="m-0 flex items-center gap-1 text-base font-bold text-[#212121] dark:text-gray-100">
+      {infoLevel === 'verbose' && totalCount.total !== filteredCount && (
+        <LabelCountBadge
+          label={`${totalCount.total}`}
+          count={filteredCount}
+          size="sm"
+          labelClassName="bg-info text-info-foreground"
+          countClassName="bg-background text-info"
+          frameClassName="border-info"
+        />
+      )}
       {text}
     </p>
   );
