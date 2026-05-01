@@ -65,11 +65,11 @@ export interface BottomSheetProps {
    */
   stopTimes: StopWithContext[];
   /**
-   * Pre-filter `TimetableEntriesState` per stop, keyed by `stop_id`.
+   * Pre-filtered `TimetableEntriesState` per stop, keyed by `stop_id`.
    * Computed in `app.tsx` against the `globalFilter`-pre-trim base so
    * NearbyStop can distinguish `'filter-hidden'` from `'no-service'`.
    */
-  stopServiceState: ReadonlyMap<string, TimetableEntriesState>;
+  timetableEntriesStateByStopId: ReadonlyMap<string, TimetableEntriesState>;
   selectedStopId: string | null;
   isNearbyLoading: boolean;
   hasNearbyLoaded: boolean;
@@ -102,7 +102,7 @@ export interface BottomSheetProps {
 
 export function BottomSheet({
   stopTimes,
-  stopServiceState,
+  timetableEntriesStateByStopId,
   selectedStopId,
   isNearbyLoading: _isNearbyLoading,
   hasNearbyLoaded,
@@ -333,7 +333,7 @@ export function BottomSheet({
       />
       <BottomSheetStops
         stopTimes={trimmedStopTimes}
-        stopServiceState={stopServiceState}
+        stopServiceState={timetableEntriesStateByStopId}
         selectedStopId={selectedStopId}
         now={now}
         mapCenter={mapCenter}

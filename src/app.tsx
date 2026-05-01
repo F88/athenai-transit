@@ -724,7 +724,7 @@ export default function App({ loadResult }: AppProps) {
   // applied *before*), so consumers can distinguish `'filter-hidden'`
   // (entries existed pre-filter, removed by user toggles) from
   // `'no-service'` (no entries at all).
-  const nearbyStopTimesServiceState = useMemo(() => {
+  const timetableEntriesStateByStopId = useMemo(() => {
     const map = new Map<string, TimetableEntriesState>();
     for (const swc of routeTypesFilteredNearbyStopTimes) {
       map.set(swc.stop.stop_id, getTimetableEntriesState(swc.stopTimes));
@@ -894,7 +894,7 @@ export default function App({ loadResult }: AppProps) {
         }}
         bottomSheetProps={{
           stopTimes: stopEventAttributesFilteredNearbyStopTimes,
-          stopServiceState: nearbyStopTimesServiceState,
+          timetableEntriesStateByStopId,
           selectedStopId,
           isNearbyLoading,
           hasNearbyLoaded,
