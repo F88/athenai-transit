@@ -11,7 +11,7 @@ import { createLogger } from '../lib/logger';
 import { routeTypeColor } from '../utils/route-type-color';
 import { routeTypeEmoji } from '../utils/route-type-emoji';
 import { useInfoLevel } from '../hooks/use-info-level';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PillButton } from './button/pill-button';
 import { BoardabilityFilter } from './filter/boardability-filter';
@@ -53,7 +53,6 @@ interface BottomSheetHeaderProps {
 }
 
 const logger = createLogger('BottomSheetHeader');
-let lastBottomSheetHeaderDebugSnapshot: string | undefined;
 
 export function BottomSheetHeader({
   hasNearbyLoaded,
@@ -90,22 +89,27 @@ export function BottomSheetHeader({
   const nearbyStopsCountsDebugLog = formatStopsCountsDebugLog(nearbyStopsCounts);
   const filteredNearbyStopsCountsDebugLog = formatStopsCountsDebugLog(filteredNearbyStopsCounts);
   const countsDebugLog = formatStopsCountsDebugLog(counts);
+  const lastDebugSnapshotRef = useRef<string | undefined>(undefined);
 
   // const countsForFilterLabel = counts;
   const countsForFilterLabel = filteredNearbyStopsCounts;
 
   useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
     const snapshot = [
       `[nearbyStopsCounts] ${nearbyStopsCountsDebugLog}`,
       `[filteredNearbyStopsCounts] ${filteredNearbyStopsCountsDebugLog}`,
       `[counts] ${countsDebugLog}`,
     ].join(' | ');
 
-    if (snapshot === lastBottomSheetHeaderDebugSnapshot) {
+    if (snapshot === lastDebugSnapshotRef.current) {
       return;
     }
 
-    lastBottomSheetHeaderDebugSnapshot = snapshot;
+    lastDebugSnapshotRef.current = snapshot;
     logger.debug(snapshot);
   }, [countsDebugLog, filteredNearbyStopsCountsDebugLog, nearbyStopsCountsDebugLog]);
 
