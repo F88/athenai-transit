@@ -32,6 +32,7 @@ interface BottomSheetHeaderProps {
   dataConfig: DataConfig;
   dataLangs: readonly string[];
   omitEmptyStops: boolean;
+  isOmitEmptyStopsForced: boolean;
   showOriginOnly: boolean;
   showBoardableOnly: boolean;
   viewId: string;
@@ -57,6 +58,7 @@ export function BottomSheetHeader({
   dataConfig,
   dataLangs,
   omitEmptyStops,
+  isOmitEmptyStopsForced,
   showOriginOnly,
   showBoardableOnly,
   viewId,
@@ -124,26 +126,11 @@ export function BottomSheetHeader({
       </div>
       {/* Filters */}
       <div className="no-scrollbar mt-1 flex gap-1 overflow-x-auto">
-        {/* Origin filter (entry-level: patternPosition.isOrigin) */}
-        {/* {counts.total > 0 && counts.originCount > 0 && ( */}
-        <OriginFilter
-          origin={showOriginOnly}
-          onToggleOrigin={onToggleShowOriginOnly}
-          count={counts.originCount}
-        />
-        {/* )} */}
-
-        {/* Boardable filter (entry-level: pickup_type === 0) */}
-        <BoardabilityFilter
-          boardable={showBoardableOnly}
-          onToggleBoardable={onToggleShowBoardableOnly}
-          count={counts.boardableCount}
-        />
-
         {/* Operating stops filter */}
         <PillButton
           size={'sm'}
           active={omitEmptyStops}
+          disabled={isOmitEmptyStopsForced}
           activeBg={'var(--info)'}
           activeBorder={'var(--info)'}
           inactiveBorder={'var(--info)'}
@@ -154,10 +141,27 @@ export function BottomSheetHeader({
           {t('nearbyStops.showOperatingStopsOnly')}
         </PillButton>
 
+        {/* Boardable filter (entry-level: pickup_type === 0) */}
+        <BoardabilityFilter
+          boardable={showBoardableOnly}
+          onToggleBoardable={onToggleShowBoardableOnly}
+          count={counts.boardableCount}
+        />
+
+        {/* Origin filter (entry-level: patternPosition.isOrigin) */}
+        {/* {counts.total > 0 && counts.originCount > 0 && ( */}
+        <OriginFilter
+          origin={showOriginOnly}
+          onToggleOrigin={onToggleShowOriginOnly}
+          count={counts.originCount}
+        />
+        {/* )} */}
+
         {/* Operating stops filter */}
         <PillButton
           size={'sm'}
           active={omitEmptyStops}
+          disabled={isOmitEmptyStopsForced}
           activeBg={'var(--info)'}
           activeBorder={'var(--info)'}
           inactiveBorder={'var(--info)'}

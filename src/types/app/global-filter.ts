@@ -12,8 +12,10 @@ export interface GlobalFilter {
   showOriginOnly: boolean;
   /** When true, narrow to entries with `pickup_type === 0` at non-pure-terminal positions. */
   showBoardableOnly: boolean;
-  /** When true, omit stops whose filtered `stopTimes` collection is empty. */
+  /** Effective empty-stop visibility policy after forced-on conditions are applied. */
   omitEmptyStops: boolean;
+  /** Whether empty-stop omission is currently forced by another app-wide toggle. */
+  isOmitEmptyStopsForced: boolean;
   /** Toggle `showOriginOnly`. */
   onToggleShowOriginOnly: () => void;
   /** Toggle `showBoardableOnly`. */

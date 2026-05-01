@@ -53,6 +53,7 @@ const meta = {
     dataConfig: defaultDataConfig,
     dataLangs: ['ja'],
     omitEmptyStops: false,
+    isOmitEmptyStopsForced: false,
     showOriginOnly: false,
     showBoardableOnly: false,
     viewId: DEFAULT_VIEW_ID,
@@ -72,6 +73,7 @@ const meta = {
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     omitEmptyStops: { control: 'boolean' },
+    isOmitEmptyStopsForced: { control: 'boolean' },
     showOriginOnly: { control: 'boolean' },
     showBoardableOnly: { control: 'boolean' },
     hasNearbyLoaded: { control: 'boolean' },

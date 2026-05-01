@@ -124,6 +124,7 @@ export function BottomSheet({
     showOriginOnly,
     showBoardableOnly,
     omitEmptyStops,
+    isOmitEmptyStopsForced,
     onToggleShowOriginOnly,
     onToggleShowBoardableOnly,
     onToggleOmitEmptyStops,
@@ -283,6 +284,7 @@ export function BottomSheet({
         dataConfig={dataConfig}
         dataLangs={dataLangs}
         omitEmptyStops={omitEmptyStops}
+        isOmitEmptyStopsForced={isOmitEmptyStopsForced}
         showOriginOnly={showOriginOnly}
         showBoardableOnly={showBoardableOnly}
         viewId={viewId}

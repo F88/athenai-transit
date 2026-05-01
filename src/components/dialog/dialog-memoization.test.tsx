@@ -326,6 +326,7 @@ describe('dialog memoization regressions', () => {
       showOriginOnly: false,
       showBoardableOnly: false,
       omitEmptyStops: false,
+      isOmitEmptyStopsForced: false,
       onToggleShowOriginOnly: vi.fn(),
       onToggleShowBoardableOnly: vi.fn(),
       onToggleOmitEmptyStops: vi.fn(),
