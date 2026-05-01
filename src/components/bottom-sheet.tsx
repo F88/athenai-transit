@@ -333,7 +333,7 @@ export function BottomSheet({
       />
       <BottomSheetStops
         stopTimes={trimmedStopTimes}
-        stopServiceState={timetableEntriesStateByStopId}
+        timetableEntriesStateByStopId={timetableEntriesStateByStopId}
         selectedStopId={selectedStopId}
         now={now}
         mapCenter={mapCenter}
