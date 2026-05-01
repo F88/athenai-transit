@@ -719,11 +719,14 @@ export default function App({ loadResult }: AppProps) {
       .filter((swc) => swc.stopTimes.length > 0);
   }, [routeTypesFilteredNearbyStopTimes, showOriginOnly, showBoardableOnly]);
 
-  // Per-stop pre-filter `TimetableEntriesState` map. The base is
-  // `routeTypesFilteredNearbyStopTimes` (= origin/boardable filter
-  // applied *before*), so consumers can distinguish `'filter-hidden'`
-  // (entries existed pre-filter, removed by user toggles) from
-  // `'no-service'` (no entries at all).
+  // Per-stop pre-`globalFilter` `TimetableEntriesState` map. The base
+  // is intentionally `routeTypesFilteredNearbyStopTimes` (= settings
+  // filter applied, origin/boardable toggles NOT yet applied), so
+  // consumers can distinguish `'filter-hidden'` (entries existed
+  // pre-`globalFilter`, removed by user toggles) from `'no-service'`
+  // (no entries at all). Computing this against the post-`globalFilter`
+  // `stopEventAttributesFilteredNearbyStopTimes` would collapse those
+  // two states.
   const timetableEntriesStateByStopId = useMemo(() => {
     const map = new Map<string, TimetableEntriesState>();
     for (const swc of routeTypesFilteredNearbyStopTimes) {
