@@ -2,12 +2,12 @@
   "sourceName": "suginami-gsm",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-04-30T05:16:37.607Z",
+  "downloadedAt": "2026-05-01T05:25:33.175Z",
   "url": "https://api-public.odpt.org/api/v4/files/odpt/TokyoSuginamiCity/GreenSlowMobility.zip?date=20250524",
   "size": 4555,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1432,
-  "archivePath": "workspace/_archives/gtfs/suginami-gsm/GreenSlowMobility_20260430-051639.zip",
+  "durationMs": 1385,
+  "archivePath": "workspace/_archives/gtfs/suginami-gsm/GreenSlowMobility_20260501-052534.zip",
   "extractedFiles": [
     {
       "name": "routes.txt",
