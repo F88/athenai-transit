@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
 import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
@@ -146,7 +146,7 @@ interface StopSearchModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function StopSearchModal({
+export const StopSearchModal = memo(function StopSearchModal({
   repo,
   infoLevel,
   dataLang,
@@ -379,4 +379,4 @@ export function StopSearchModal({
       </DialogContent>
     </Dialog>
   );
-}
+});

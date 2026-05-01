@@ -435,7 +435,7 @@ function TripInspectionRowsSummary({
   );
 }
 
-export function TripInspectionDialog({
+export const TripInspectionDialog = memo(function TripInspectionDialog({
   open,
   onOpenChange,
   snapshot,
@@ -835,4 +835,4 @@ export function TripInspectionDialog({
       </DialogContent>
     </Dialog>
   );
-}
+});

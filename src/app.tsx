@@ -537,6 +537,15 @@ export default function App({ loadResult }: AppProps) {
 
   const closeTimetableModal = useCallback(() => setTimetableData(null), []);
 
+  const handleTripInspectionOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        closeTripInspection();
+      }
+    },
+    [closeTripInspection],
+  );
+
   // Select + pan to a stop from history. Uses focusStop to set
   // focus position directly from stop coordinates, ensuring the map pans
   // even when the stop is outside the current viewport.
@@ -945,11 +954,7 @@ export default function App({ loadResult }: AppProps) {
         dataLangs={langChain}
         onOpenPreviousTrip={openPreviousTripInspection}
         onOpenNextTrip={openNextTripInspection}
-        onOpenChange={(open) => {
-          if (!open) {
-            closeTripInspection();
-          }
-        }}
+        onOpenChange={handleTripInspectionOpenChange}
       />
       <TimetableModal
         key={timetableData?.stop.stop_id ?? 'closed'}
