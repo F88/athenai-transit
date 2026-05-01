@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   sanitizeUrl,
   formatRemoteResourceLine,
@@ -272,7 +272,17 @@ describe('formatLocalFeedLine', () => {
 // ---------------------------------------------------------------------------
 
 describe('printRemoteResources', () => {
+  // `getPeriodStatus()` defaults to `new Date()`, so the "currently
+  // valid" count depends on the wall clock. Pin time to a date that
+  // sits between the fixture `start_at`s used in the suite below
+  // (2026-03-01 / 2026-04-01 / 2026-05-01) so the assertion stays
+  // stable regardless of when the suite runs.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-15T00:00:00Z'));
+  });
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 

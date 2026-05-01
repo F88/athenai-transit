@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
-import type { AppRouteTypeValue, Stop } from './types/app/transit';
+import type { AppRouteTypeValue, Stop, TimetableEntriesState } from './types/app/transit';
 import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
 import type { LoadResult } from './repositories/athenai-repository';
 import { useTransitRepository } from './hooks/use-transit-repository';
@@ -37,8 +37,9 @@ import { getStopParam } from './lib/query-params';
 import { getServiceDay } from './domain/transit/service-day';
 import { formatDateKey } from './domain/transit/calendar-utils';
 import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
-import { getStopServiceState } from './domain/transit/timetable-utils';
+import { getStopServiceState, getTimetableEntriesState } from './domain/transit/timetable-utils';
 import {
+  applyStopEventAttributeToggles,
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
 } from './domain/transit/timetable-filter';
@@ -153,7 +154,11 @@ export default function App({ loadResult }: AppProps) {
 
   const { dateTime, isCustomTime, resetToNow, setCustomTime } = useDateTime();
 
-  const { stopTimes, isNearbyLoading } = useNearbyStopTimes(radiusStops, dateTime, repo);
+  const { stopTimes: nearbyStopTimes, isNearbyLoading } = useNearbyStopTimes(
+    radiusStops,
+    dateTime,
+    repo,
+  );
 
   // Build routeTypes lookup covering all visible stops (in-bound + nearby)
   const [routeTypeMap, setRouteTypeMap] = useState<Map<string, AppRouteTypeValue[]>>(
@@ -190,7 +195,7 @@ export default function App({ loadResult }: AppProps) {
     clearFocus,
   } = useSelection({
     routeTypeMap,
-    stopTimes: stopTimes,
+    stopTimes: nearbyStopTimes,
     routeShapes,
     radiusStops,
     inBoundStops,
@@ -689,10 +694,43 @@ export default function App({ loadResult }: AppProps) {
     [settings.visibleStopTypes],
   );
 
-  const routeTypesFilteredStopTimes = useMemo(
-    () => stopTimes.filter((d) => d.routeTypes.some((rt) => enabledRouteTypes.has(rt))),
-    [stopTimes, enabledRouteTypes],
+  const routeTypesFilteredNearbyStopTimes = useMemo(
+    () => nearbyStopTimes.filter((d) => d.routeTypes.some((rt) => enabledRouteTypes.has(rt))),
+    [nearbyStopTimes, enabledRouteTypes],
   );
+
+  // Apply origin / boardable filter (= app-wide `globalFilter` toggles)
+  // per-stop and drop stops whose entries become empty. The result is
+  // the stop list that BottomSheet (and forthcoming MapView etc.)
+  // should render; computing it here keeps the same filter outcome
+  // available to multiple surfaces from one place.
+  const stopEventAttributesFilteredNearbyStopTimes = useMemo(() => {
+    if (!showOriginOnly && !showBoardableOnly) {
+      return routeTypesFilteredNearbyStopTimes;
+    }
+    return routeTypesFilteredNearbyStopTimes
+      .map((swc) => {
+        const filtered = applyStopEventAttributeToggles(swc.stopTimes, {
+          showOriginOnly,
+          showBoardableOnly,
+        });
+        return filtered === swc.stopTimes ? swc : { ...swc, stopTimes: filtered };
+      })
+      .filter((swc) => swc.stopTimes.length > 0);
+  }, [routeTypesFilteredNearbyStopTimes, showOriginOnly, showBoardableOnly]);
+
+  // Per-stop pre-filter `TimetableEntriesState` map. The base is
+  // `routeTypesFilteredNearbyStopTimes` (= origin/boardable filter
+  // applied *before*), so consumers can distinguish `'filter-hidden'`
+  // (entries existed pre-filter, removed by user toggles) from
+  // `'no-service'` (no entries at all).
+  const nearbyStopTimesServiceState = useMemo(() => {
+    const map = new Map<string, TimetableEntriesState>();
+    for (const swc of routeTypesFilteredNearbyStopTimes) {
+      map.set(swc.stop.stop_id, getTimetableEntriesState([...swc.stopTimes]));
+    }
+    return map;
+  }, [routeTypesFilteredNearbyStopTimes]);
 
   const handleToggleStopType = useCallback(
     (rt: number) => {
@@ -730,20 +768,24 @@ export default function App({ loadResult }: AppProps) {
   // shapes re-render is skipped for the vast majority of ticks.
   const serviceDay = useMemo(() => getServiceDay(dateTime), [dateTime]);
   const serviceDayKey = formatDateKey(serviceDay);
+  const stableServiceDay = useMemo(() => {
+    const [year, month, day] = serviceDayKey.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }, [serviceDayKey]);
+  const serviceDayWeekday = useMemo(() => {
+    return stableServiceDay.getDay();
+  }, [stableServiceDay]);
 
   useEffect(() => {
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    // Use serviceDay.getDay() for timezone-safe day-of-week.
-    // Do NOT reparse serviceDayKey via new Date('YYYY-MM-DD') — JS parses
+    // Do NOT parse serviceDayKey via new Date('YYYY-MM-DD') here — JS parses
     // date-only strings as UTC, which yields wrong getDay() in non-UTC timezones.
-    logger.info(`Service day: ${serviceDayKey} (${dayNames[serviceDay.getDay()]})`);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- serviceDayKey is the stable identity; serviceDay is a new Date each tick but getDay() is deterministic for the same serviceDayKey
-  }, [serviceDayKey]);
+    logger.info(`Service day: ${serviceDayKey} (${dayNames[serviceDayWeekday]})`);
+  }, [serviceDayKey, serviceDayWeekday]);
 
   const resolveRouteFreq = useCallback(
-    (routeId: string) => repo.resolveRouteFreq(routeId, serviceDay),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- serviceDay is a new Date each tick; use serviceDayKey for stable identity
-    [repo, serviceDayKey],
+    (routeId: string) => repo.resolveRouteFreq(routeId, stableServiceDay),
+    [repo, stableServiceDay],
   );
 
   const handleToggleBusShapes = useCallback(() => {
@@ -808,7 +850,7 @@ export default function App({ loadResult }: AppProps) {
           radiusStops,
           selectedStopId,
           focusPosition,
-          stopTimes,
+          stopTimes: stopEventAttributesFilteredNearbyStopTimes,
           routeTypeMap,
           routeShapes,
           selectionInfo,
@@ -847,7 +889,8 @@ export default function App({ loadResult }: AppProps) {
           lookupAnchorStopMeta,
         }}
         bottomSheetProps={{
-          stopTimes: routeTypesFilteredStopTimes,
+          stopTimes: stopEventAttributesFilteredNearbyStopTimes,
+          stopServiceState: nearbyStopTimesServiceState,
           selectedStopId,
           isNearbyLoading,
           hasNearbyLoaded,

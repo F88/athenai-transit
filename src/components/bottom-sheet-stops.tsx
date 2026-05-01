@@ -20,7 +20,7 @@ interface BottomSheetStopsProps {
    * ended" apart from "filter-hidden" when its filtered stop times are
    * empty.
    */
-  upcomingEntriesStates: ReadonlyMap<string, TimetableEntriesState>;
+  stopServiceState: ReadonlyMap<string, TimetableEntriesState>;
   selectedStopId: string | null;
   now: Date;
   mapCenter: LatLng | null;
@@ -42,7 +42,7 @@ interface BottomSheetStopsProps {
 
 export function BottomSheetStops({
   stopTimes,
-  upcomingEntriesStates,
+  stopServiceState,
   selectedStopId,
   now,
   mapCenter,
@@ -75,7 +75,7 @@ export function BottomSheetStops({
             // (shouldn't happen — the Map and this `stopTimes` prop are
             // both derived from the same upstream stops list — but stay
             // defensive in case of race conditions during rerender).
-            upcomingEntriesState: upcomingEntriesStates.get(swc.stop.stop_id) ?? 'no-service',
+            timetableEntriesState: stopServiceState.get(swc.stop.stop_id) ?? 'no-service',
             isSelected: selectedStopId === swc.stop.stop_id,
             now,
             mapCenter,
