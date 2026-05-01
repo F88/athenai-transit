@@ -281,6 +281,10 @@ export interface StopEventAttributeToggles {
   showBoardableOnly: boolean;
 }
 
+interface StopTimesCarrier<T extends TimetableEntry = TimetableEntry> {
+  stopTimes: readonly T[];
+}
+
 /**
  * Apply the user-facing entry-attribute toggles
  * (`showOriginOnly` / `showBoardableOnly`) to a list of entries.
@@ -310,4 +314,32 @@ export function applyStopEventAttributeToggles<T extends TimetableEntry>(
     });
   }
   return result;
+}
+
+/**
+ * Apply stop-event attribute toggles to each stop's inner `stopTimes`
+ * collection while preserving the outer stop list.
+ *
+ * Stops whose entries become empty are intentionally retained; callers
+ * can decide in a separate step whether empty stops should remain for
+ * placeholder rendering or be omitted from the list entirely.
+ */
+export function applyStopEventAttributeTogglesToStops<T extends StopTimesCarrier>(
+  stops: readonly T[],
+  toggles: StopEventAttributeToggles,
+): T[] {
+  if (!toggles.showOriginOnly && !toggles.showBoardableOnly) {
+    return stops as T[];
+  }
+  return stops.map((stop) => {
+    const filtered = applyStopEventAttributeToggles(stop.stopTimes, toggles);
+    return filtered === stop.stopTimes ? stop : { ...stop, stopTimes: filtered };
+  });
+}
+
+/**
+ * Omit stops whose inner `stopTimes` collection is empty.
+ */
+export function omitStopsWithoutStopTimes<T extends StopTimesCarrier>(stops: readonly T[]): T[] {
+  return stops.filter((stop) => stop.stopTimes.length > 0);
 }

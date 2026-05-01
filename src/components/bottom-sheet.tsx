@@ -11,7 +11,6 @@ import { collectPresentRouteTypes } from '../domain/transit/collect-present-rout
 import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
-import { getServiceDayMinutes } from '../domain/transit/service-day';
 import { APP_ROUTE_TYPES } from '../config/route-types';
 import { cn } from '../lib/utils';
 import { BottomSheetHeader } from './bottom-sheet-header';
@@ -20,9 +19,6 @@ import { BottomSheetStops } from './bottom-sheet-stops';
 type ExpandedStateAction = boolean | ((prevExpanded: boolean) => boolean);
 
 const DRAG_THRESHOLD = 50;
-
-/** Auto-enable "show operating stops only" filter at 22:00 in service day minutes. */
-const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
 
 /** Route type display order matching StopTypeFilterPanel. */
 const ROUTE_TYPE_PRIORITY: Readonly<Record<number, number>> = {
@@ -48,7 +44,7 @@ export interface BottomSheetProps {
   /**
    * Stops to render. Already narrowed by the app-wide filters
    * (`globalFilter` + `enabledRouteTypes`); BottomSheet only applies
-   * its own surface-local filters (operating-only / agency / route_type).
+   * its own surface-local filters (agency / route_type).
    */
   stopTimes: StopWithContext[];
   /**
@@ -124,8 +120,14 @@ export function BottomSheet({
   expanded: expandedProp,
   onExpandedChange,
 }: BottomSheetProps) {
-  const { showOriginOnly, showBoardableOnly, onToggleShowOriginOnly, onToggleShowBoardableOnly } =
-    globalFilter;
+  const {
+    showOriginOnly,
+    showBoardableOnly,
+    omitEmptyStops,
+    onToggleShowOriginOnly,
+    onToggleShowBoardableOnly,
+    onToggleOmitEmptyStops,
+  } = globalFilter;
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(false);
   const expanded = expandedProp ?? uncontrolledExpanded;
   const setExpanded = useCallback(
@@ -139,12 +141,6 @@ export function BottomSheet({
     [onExpandedChange],
   );
   const [viewId, setViewId] = useState(DEFAULT_VIEW_ID);
-  const isLateNight = getServiceDayMinutes(now) >= LATE_NIGHT_THRESHOLD_MINUTES;
-  // User can toggle manually; null means "use auto (isLateNight)".
-  const [showOperatingStopsOnlyOverride, setShowOperatingStopsOnlyOverride] = useState<
-    boolean | null
-  >(null);
-  const showOperatingStopsOnly = showOperatingStopsOnlyOverride ?? isLateNight;
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
   const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
   const selectedView = STOP_TIMES_VIEWS.find((v) => v.id === viewId);
@@ -183,33 +179,22 @@ export function BottomSheet({
     });
   }, []);
 
-  // Two-stage local filter pipeline. The app-wide origin / boardable
+  // The app-wide origin / boardable
   // filter (= `globalFilter`) is already applied upstream in `app.tsx`
-  // — by the time `stopTimes` arrives here, those entries have already
-  // been narrowed and empty stops dropped. BottomSheet only applies its
-  // own surface-local filters below.
+  // — and the app-wide empty-stop omission policy — are already applied
+  // upstream in `app.tsx`. BottomSheet only applies its own surface-local
+  // filters below.
   //
-  // Stage 1 — drop stops with no upcoming entries (operating-only
-  // toggle). Acts on the upstream-filtered `stopTimes`, so when entry
-  // pills are active the operating filter narrows "what is left after
-  // the user's intent narrowing".
-  const filteredStopTimes = useMemo(() => {
-    if (!showOperatingStopsOnly) {
-      return stopTimes;
-    }
-    return stopTimes.filter((swc) => swc.stopTimes.length > 0);
-  }, [stopTimes, showOperatingStopsOnly]);
-
-  // Stage 2 — trim each surviving stop's inner stopTimes by agency /
+  // Trim each surviving stop's inner stopTimes by agency /
   // route_type filters. This never drops stops: a stop whose stopTimes
   // are all removed stays visible and shows the "allFilteredOut"
   // fallback message. This decouples "which stops are in the list"
   // from "what is shown inside each stop".
   const trimmedStopTimes = useMemo(() => {
     if (hiddenAgencyIds.size === 0 && hiddenRouteTypes.size === 0) {
-      return filteredStopTimes;
+      return stopTimes;
     }
-    return filteredStopTimes.map((swc) => {
+    return stopTimes.map((swc) => {
       let trimmed = swc.stopTimes;
       if (hiddenAgencyIds.size > 0) {
         trimmed = filterByAgency(trimmed, hiddenAgencyIds);
@@ -219,7 +204,7 @@ export function BottomSheet({
       }
       return trimmed === swc.stopTimes ? swc : { ...swc, stopTimes: trimmed };
     });
-  }, [filteredStopTimes, hiddenAgencyIds, hiddenRouteTypes]);
+  }, [stopTimes, hiddenAgencyIds, hiddenRouteTypes]);
 
   const trimmedStopTimesCounts: StopsCounts = useMemo(
     () => computeStopsCounts(trimmedStopTimes),
@@ -297,7 +282,7 @@ export function BottomSheet({
         counts={trimmedStopTimesCounts}
         dataConfig={dataConfig}
         dataLangs={dataLangs}
-        showOperatingStopsOnly={showOperatingStopsOnly}
+        omitEmptyStops={omitEmptyStops}
         showOriginOnly={showOriginOnly}
         showBoardableOnly={showBoardableOnly}
         viewId={viewId}
@@ -307,9 +292,7 @@ export function BottomSheet({
         hiddenRouteTypes={hiddenRouteTypes}
         presentAgencies={presentAgencies}
         hiddenAgencyIds={hiddenAgencyIds}
-        onToggleShowOperatingStopsOnly={() =>
-          setShowOperatingStopsOnlyOverride((v) => !(v ?? isLateNight))
-        }
+        onToggleOmitEmptyStops={onToggleOmitEmptyStops}
         onToggleShowOriginOnly={onToggleShowOriginOnly}
         onToggleShowBoardableOnly={onToggleShowBoardableOnly}
         onViewChange={setViewId}

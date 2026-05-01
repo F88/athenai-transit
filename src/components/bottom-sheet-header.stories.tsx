@@ -27,8 +27,13 @@ import { BottomSheetHeader } from './bottom-sheet-header';
 const defaultDataConfig = PERF_PROFILES.normal.data;
 const selectView = (id: string) => STOP_TIMES_VIEWS.find((v) => v.id === id);
 const defaultSelectedView = selectView(DEFAULT_VIEW_ID);
-const defaultCounts = { total: 12, active: 7, originCount: 3, boardableCount: 5 };
-const defaultFilteredNearbyStopsCounts = { total: 7, active: 7, originCount: 3, boardableCount: 5 };
+const defaultCounts = { total: 12, nonEmpty: 7, originCount: 3, boardableCount: 5 };
+const defaultFilteredNearbyStopsCounts = {
+  total: 7,
+  nonEmpty: 7,
+  originCount: 3,
+  boardableCount: 5,
+};
 
 /** All route type values defined in APP_ROUTE_TYPES except the `-1` unknown placeholder. */
 const ALL_PRESENT_ROUTE_TYPES: readonly number[] = APP_ROUTE_TYPES.map((rt) => rt.value).filter(
@@ -47,7 +52,7 @@ const meta = {
     filteredNearbyStopsCounts: defaultFilteredNearbyStopsCounts,
     dataConfig: defaultDataConfig,
     dataLangs: ['ja'],
-    showOperatingStopsOnly: false,
+    omitEmptyStops: false,
     showOriginOnly: false,
     showBoardableOnly: false,
     viewId: DEFAULT_VIEW_ID,
@@ -57,7 +62,7 @@ const meta = {
     hiddenRouteTypes: new Set<number>(),
     presentAgencies: [agencyTobus],
     hiddenAgencyIds: new Set<string>(),
-    onToggleShowOperatingStopsOnly: fn(),
+    onToggleOmitEmptyStops: fn(),
     onToggleShowOriginOnly: fn(),
     onToggleShowBoardableOnly: fn(),
     onViewChange: fn(),
@@ -66,7 +71,7 @@ const meta = {
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
-    showOperatingStopsOnly: { control: 'boolean' },
+    omitEmptyStops: { control: 'boolean' },
     showOriginOnly: { control: 'boolean' },
     showBoardableOnly: { control: 'boolean' },
     hasNearbyLoaded: { control: 'boolean' },
@@ -90,17 +95,17 @@ export const Default: Story = {};
 export const Loading: Story = {
   args: {
     hasNearbyLoaded: false,
-    counts: { total: 0, active: 0, originCount: 0, boardableCount: 0 },
-    nearbyStopsCounts: { total: 0, active: 0, originCount: 0, boardableCount: 0 },
-    filteredNearbyStopsCounts: { total: 0, active: 0, originCount: 0, boardableCount: 0 },
+    counts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
+    nearbyStopsCounts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
+    filteredNearbyStopsCounts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
   },
 };
 
 export const NoStops: Story = {
   args: {
-    counts: { total: 0, active: 0, originCount: 0, boardableCount: 0 },
-    nearbyStopsCounts: { total: 0, active: 0, originCount: 0, boardableCount: 0 },
-    filteredNearbyStopsCounts: { total: 0, active: 0, originCount: 0, boardableCount: 0 },
+    counts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
+    nearbyStopsCounts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
+    filteredNearbyStopsCounts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
     presentRouteTypes: [],
     presentAgencies: [],
   },
@@ -108,10 +113,10 @@ export const NoStops: Story = {
 
 export const NoOperatingStops: Story = {
   args: {
-    counts: { total: 8, active: 0, originCount: 0, boardableCount: 0 },
-    nearbyStopsCounts: { total: 8, active: 0, originCount: 0, boardableCount: 0 },
-    filteredNearbyStopsCounts: { total: 0, active: 0, originCount: 0, boardableCount: 0 },
-    showOperatingStopsOnly: true,
+    counts: { total: 8, nonEmpty: 0, originCount: 0, boardableCount: 0 },
+    nearbyStopsCounts: { total: 8, nonEmpty: 0, originCount: 0, boardableCount: 0 },
+    filteredNearbyStopsCounts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
+    omitEmptyStops: true,
     presentRouteTypes: [3],
     presentAgencies: [agencyTobus],
   },
@@ -119,10 +124,10 @@ export const NoOperatingStops: Story = {
 
 export const OperatingOnlyActive: Story = {
   args: {
-    counts: { total: 15, active: 9, originCount: 4, boardableCount: 7 },
-    nearbyStopsCounts: { total: 15, active: 9, originCount: 4, boardableCount: 7 },
-    filteredNearbyStopsCounts: { total: 9, active: 9, originCount: 4, boardableCount: 7 },
-    showOperatingStopsOnly: true,
+    counts: { total: 15, nonEmpty: 9, originCount: 4, boardableCount: 7 },
+    nearbyStopsCounts: { total: 15, nonEmpty: 9, originCount: 4, boardableCount: 7 },
+    filteredNearbyStopsCounts: { total: 9, nonEmpty: 9, originCount: 4, boardableCount: 7 },
+    omitEmptyStops: true,
   },
 };
 
@@ -259,10 +264,12 @@ export const InfoLevelVerbose: Story = {
 
 const kitchenSinkArgs = {
   hasNearbyLoaded: true,
-  counts: { total: 42, active: 28, filtered: 21, originCount: 6, boardableCount: 15 },
+  counts: { total: 42, nonEmpty: 28, originCount: 6, boardableCount: 15 },
+  nearbyStopsCounts: { total: 42, nonEmpty: 28, originCount: 6, boardableCount: 15 },
+  filteredNearbyStopsCounts: { total: 21, nonEmpty: 21, originCount: 6, boardableCount: 15 },
   dataConfig: defaultDataConfig,
   dataLangs: ['ja'],
-  showOperatingStopsOnly: true,
+  omitEmptyStops: true,
   viewId: 'route-headsign',
   selectedView: selectView('route-headsign'),
   presentRouteTypes: ALL_PRESENT_ROUTE_TYPES,

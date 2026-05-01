@@ -1,5 +1,5 @@
 /**
- * App-wide filter state shared across surfaces (BottomSheet,
+ * App-wide display filter state shared across surfaces (BottomSheet,
  * TimetableModal, MapView, TripInspectionDialog, etc.).
  *
  * Owned by `app.tsx` and threaded through props as a single
@@ -12,8 +12,12 @@ export interface GlobalFilter {
   showOriginOnly: boolean;
   /** When true, narrow to entries with `pickup_type === 0` at non-pure-terminal positions. */
   showBoardableOnly: boolean;
+  /** When true, omit stops whose filtered `stopTimes` collection is empty. */
+  omitEmptyStops: boolean;
   /** Toggle `showOriginOnly`. */
   onToggleShowOriginOnly: () => void;
   /** Toggle `showBoardableOnly`. */
   onToggleShowBoardableOnly: () => void;
+  /** Toggle `omitEmptyStops`. */
+  onToggleOmitEmptyStops: () => void;
 }

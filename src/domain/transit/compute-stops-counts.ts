@@ -19,7 +19,7 @@ export function computeStopsCounts<T extends StopTimesCarrier>(items: readonly T
       counts.total += 1;
 
       if (item.stopTimes.length > 0) {
-        counts.active += 1;
+        counts.nonEmpty += 1;
       }
       if (item.stopTimes.some((entry) => entry.patternPosition.isOrigin)) {
         counts.originCount += 1;
@@ -32,7 +32,7 @@ export function computeStopsCounts<T extends StopTimesCarrier>(items: readonly T
     },
     {
       total: 0,
-      active: 0,
+      nonEmpty: 0,
       originCount: 0,
       boardableCount: 0,
     },

@@ -1,6 +1,6 @@
 export interface StopsCounts {
   total: number;
-  active: number;
+  nonEmpty: number;
   originCount: number;
   boardableCount: number;
 }

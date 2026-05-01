@@ -31,7 +31,7 @@ interface BottomSheetHeaderProps {
   counts: StopsCounts;
   dataConfig: DataConfig;
   dataLangs: readonly string[];
-  showOperatingStopsOnly: boolean;
+  omitEmptyStops: boolean;
   showOriginOnly: boolean;
   showBoardableOnly: boolean;
   viewId: string;
@@ -41,7 +41,7 @@ interface BottomSheetHeaderProps {
   hiddenRouteTypes: Set<number>;
   presentAgencies: Agency[];
   hiddenAgencyIds: Set<string>;
-  onToggleShowOperatingStopsOnly: () => void;
+  onToggleOmitEmptyStops: () => void;
   onToggleShowOriginOnly: () => void;
   onToggleShowBoardableOnly: () => void;
   onViewChange: (viewId: string) => void;
@@ -56,7 +56,7 @@ export function BottomSheetHeader({
   counts,
   dataConfig,
   dataLangs,
-  showOperatingStopsOnly,
+  omitEmptyStops,
   showOriginOnly,
   showBoardableOnly,
   viewId,
@@ -66,7 +66,7 @@ export function BottomSheetHeader({
   hiddenRouteTypes,
   presentAgencies,
   hiddenAgencyIds,
-  onToggleShowOperatingStopsOnly,
+  onToggleOmitEmptyStops,
   onToggleShowOriginOnly,
   onToggleShowBoardableOnly,
   onViewChange,
@@ -85,9 +85,9 @@ export function BottomSheetHeader({
         label={'nearbyStops -> filterd nearbyStops'}
         hasLoaded={hasNearbyLoaded}
         totalCount={nearbyStopsCounts}
-        filteredCount={filteredNearbyStopsCounts.total}
+        filteredCount={counts.total}
         nearbyRadius={dataConfig.stops.nearbyRadius}
-        showOperatingStopsOnly={showOperatingStopsOnly}
+        omitEmptyStops={omitEmptyStops}
       />
       <StopsSummary
         label={'filterd nearbyStops -> operating stops only'}
@@ -95,7 +95,7 @@ export function BottomSheetHeader({
         totalCount={nearbyStopsCounts}
         filteredCount={filteredNearbyStopsCounts.total}
         nearbyRadius={dataConfig.stops.nearbyRadius}
-        showOperatingStopsOnly={showOperatingStopsOnly}
+        omitEmptyStops={omitEmptyStops}
       />
       <StopsSummary
         label={'operating stops only'}
@@ -103,7 +103,7 @@ export function BottomSheetHeader({
         totalCount={nearbyStopsCounts}
         filteredCount={counts.total}
         nearbyRadius={dataConfig.stops.nearbyRadius}
-        showOperatingStopsOnly={showOperatingStopsOnly}
+        omitEmptyStops={omitEmptyStops}
       />
 
       <div className="no-scrollbar mt-1.5 flex gap-1 overflow-x-auto">
@@ -143,13 +143,13 @@ export function BottomSheetHeader({
         {/* Operating stops filter */}
         <PillButton
           size={'sm'}
-          active={showOperatingStopsOnly}
+          active={omitEmptyStops}
           activeBg={'var(--info)'}
           activeBorder={'var(--info)'}
           inactiveBorder={'var(--info)'}
-          onClick={onToggleShowOperatingStopsOnly}
+          onClick={onToggleOmitEmptyStops}
           title={t('nearbyStops.showOperatingStopsOnlyTitle')}
-          count={counts.active}
+          count={counts.nonEmpty}
         >
           {t('nearbyStops.showOperatingStopsOnly')}
         </PillButton>
@@ -157,13 +157,13 @@ export function BottomSheetHeader({
         {/* Operating stops filter */}
         <PillButton
           size={'sm'}
-          active={showOperatingStopsOnly}
+          active={omitEmptyStops}
           activeBg={'var(--info)'}
           activeBorder={'var(--info)'}
           inactiveBorder={'var(--info)'}
-          onClick={onToggleShowOperatingStopsOnly}
+          onClick={onToggleOmitEmptyStops}
           title={t('nearbyStops.showOperatingStopsOnlyTitle')}
-          count={nearbyStopsCounts.active}
+          count={nearbyStopsCounts.nonEmpty}
         >
           {t('nearbyStops.showOperatingStopsOnly')}
         </PillButton>
@@ -251,7 +251,7 @@ function getNearbyStopsSummaryText(
   hasLoaded: boolean,
   totalCounts: StopsCounts,
   filteredCount: number,
-  showOperatingStopsOnly: boolean,
+  omitEmptyStops: boolean,
   radius: string,
   lang: string,
   t: (key: string, options?: Record<string, unknown>) => string,
@@ -265,7 +265,7 @@ function getNearbyStopsSummaryText(
       radius,
     });
   }
-  if (showOperatingStopsOnly && totalCounts.total > 0) {
+  if (omitEmptyStops && totalCounts.total > 0) {
     return t('nearbyStops.noOperating', { radius });
   }
   return t('nearbyStops.noStops', { radius });
@@ -278,7 +278,7 @@ interface NearbyStopsSummaryProps {
   totalCount: StopsCounts;
   filteredCount: number;
   nearbyRadius: number;
-  showOperatingStopsOnly: boolean;
+  omitEmptyStops: boolean;
   hasLoaded: boolean;
 }
 
@@ -287,20 +287,20 @@ function StopsSummary({
   totalCount,
   filteredCount,
   nearbyRadius,
-  showOperatingStopsOnly,
+  omitEmptyStops,
   hasLoaded,
 }: NearbyStopsSummaryProps) {
   const { t, i18n } = useTranslation();
   summaryLogger.debug(
     hasLoaded
-      ? `[${label}] total=${totalCount.total} active=${totalCount.active} boardable=${totalCount.boardableCount} origin=${totalCount.originCount} -> filtered=${filteredCount}`
+      ? `[${label}] total=${totalCount.total} nonEmpty=${totalCount.nonEmpty} boardable=${totalCount.boardableCount} origin=${totalCount.originCount} -> filtered=${filteredCount}`
       : 'not loaded yet',
   );
   const text = getNearbyStopsSummaryText(
     hasLoaded,
     totalCount,
     filteredCount,
-    showOperatingStopsOnly,
+    omitEmptyStops,
     formatRadius(nearbyRadius),
     i18n.language,
     t,
