@@ -362,6 +362,42 @@ describe('dialog memoization regressions', () => {
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(4);
   });
 
+  it('TimetableModal skips stats recomputation when only omitEmptyStops changes', () => {
+    const data = makeTimetableData();
+    const globalFilter = {
+      showOriginOnly: false,
+      showBoardableOnly: false,
+      omitEmptyStops: false,
+      isOmitEmptyStopsForced: false,
+      onToggleShowOriginOnly: vi.fn(),
+      onToggleShowBoardableOnly: vi.fn(),
+      onToggleOmitEmptyStops: vi.fn(),
+    };
+    const props = {
+      data,
+      time: new Date(2026, 3, 1, 8, 0),
+      infoLevel: 'detailed' as const,
+      dataLangs: ['ja'] as const,
+      globalFilter,
+      onClose: vi.fn(),
+      onInspectTrip: vi.fn(),
+    };
+
+    const { rerender } = render(<TimetableModal {...props} />);
+
+    expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
+
+    const nextGlobalFilter = {
+      ...globalFilter,
+      omitEmptyStops: true,
+      isOmitEmptyStopsForced: true,
+      onToggleOmitEmptyStops: vi.fn(),
+    };
+    rerender(<TimetableModal {...props} globalFilter={nextGlobalFilter} />);
+
+    expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
+  });
+
   it('TripInspectionDialog skips TripStops rerender when props are identical', () => {
     const snapshot = makeTripSnapshot();
     const tripInspectionTargets: TripInspectionTarget[] = [

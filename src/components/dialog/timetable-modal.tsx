@@ -133,6 +133,30 @@ function TimetableDateLabel({
   );
 }
 
+function hasSameRelevantGlobalFilter(prev: GlobalFilter, next: GlobalFilter): boolean {
+  return (
+    prev.showOriginOnly === next.showOriginOnly &&
+    prev.showBoardableOnly === next.showBoardableOnly &&
+    prev.onToggleShowOriginOnly === next.onToggleShowOriginOnly &&
+    prev.onToggleShowBoardableOnly === next.onToggleShowBoardableOnly
+  );
+}
+
+function areTimetableModalPropsEqual(
+  prev: Readonly<TimetableModalProps>,
+  next: Readonly<TimetableModalProps>,
+): boolean {
+  return (
+    prev.data === next.data &&
+    prev.time === next.time &&
+    prev.infoLevel === next.infoLevel &&
+    prev.dataLangs === next.dataLangs &&
+    prev.onInspectTrip === next.onInspectTrip &&
+    prev.onClose === next.onClose &&
+    hasSameRelevantGlobalFilter(prev.globalFilter, next.globalFilter)
+  );
+}
+
 export const TimetableModal = memo(function TimetableModal({
   data,
   time,
@@ -365,6 +389,12 @@ export const TimetableModal = memo(function TimetableModal({
             <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLangs[0]} />
 
             <div className="flex flex-wrap gap-1">
+              {/* Boardability filter */}
+              <BoardabilityFilter
+                boardable={showBoardableOnly}
+                count={stopEventAttributesFilteredEntriesStats.boardableCount}
+                onToggleBoardable={onToggleShowBoardableOnly}
+              />
               {/* Origin filter — hidden when no origin entries exist at this stop */}
               {stopEventAttributesFilteredEntriesStats.originCount > 0 && (
                 <OriginFilter
@@ -373,12 +403,6 @@ export const TimetableModal = memo(function TimetableModal({
                   onToggleOrigin={onToggleShowOriginOnly}
                 />
               )}
-              {/* Boardability filter */}
-              <BoardabilityFilter
-                boardable={showBoardableOnly}
-                count={stopEventAttributesFilteredEntriesStats.boardableCount}
-                onToggleBoardable={onToggleShowBoardableOnly}
-              />
               {/* Headsign filter */}
               {data.type === 'stop' && (
                 <TimetableHeadsignFilter
@@ -442,4 +466,4 @@ export const TimetableModal = memo(function TimetableModal({
       </DialogContent>
     </Dialog>
   );
-});
+}, areTimetableModalPropsEqual);
