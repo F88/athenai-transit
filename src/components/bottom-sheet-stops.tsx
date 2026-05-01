@@ -13,12 +13,12 @@ const EAGER_RENDER_COUNT = 6;
 interface BottomSheetStopsProps {
   stopTimes: StopWithContext[];
   /**
-   * Map from stop_id to the service state of the stop's upcoming entries
-   * as returned by the repo, BEFORE any UI-level filter. Computed once
-   * by {@link BottomSheet} from the unfiltered `stopTimes` and
-   * passed down so each {@link NearbyStop} can tell "late-night service
-   * ended" apart from "filter-hidden" when its filtered stop times are
-   * empty.
+   * Map from stop_id to the per-stop pre-`globalFilter`
+   * `TimetableEntriesState`. Computed once in `app.tsx` from
+   * `routeTypesFilteredNearbyStopTimes` (= settings filter applied,
+   * `globalFilter` not yet) and threaded down so each {@link NearbyStop}
+   * can tell "late-night service ended" apart from "filter-hidden" when
+   * its filtered stop times are empty.
    */
   stopServiceState: ReadonlyMap<string, TimetableEntriesState>;
   selectedStopId: string | null;
