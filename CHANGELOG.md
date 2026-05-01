@@ -58,6 +58,12 @@ and this project adheres to [CalVer](https://calver.org/).
 - `TimetableOriginFilter` / `TimetableBoardabilityFilter` を削除 (= `OriginFilter` / `BoardabilityFilter` に rename + `src/components/filter/` に移動)。
 - 旧 i18n key `timetable.filter.originOnly` / `timetable.filter.originOnlyTitle` / `timetable.filter.boardableOnly` / `timetable.filter.boardableOnlyTitle` を削除 (top-level `filter.*` namespace に移行)。
 
+### Performance
+
+- `TimetableModal` / `TripInspectionDialog` / `StopSearchModal` を `React.memo` で wrap。3 dialog はいずれも `App` に常時マウントされ (closed 時は `data: null` / `snapshot: null` / `open: false` を渡す設計)、`mapCenter` 等の親 state 変更ごとに body が再実行されていた。`React.memo` のデフォルト shallow compare により、`time={dateTime}` (15 秒 tick) や `data` / `snapshot` などの props が実際に変わった場合のみ再レンダーされるようになり、親の map pan などで props が同一のときの不要な再レンダーをスキップ。
+- `TimetableModal` の inline `computeTimetableEntryStats(...)` 呼び出し 2 箇所を `useMemo` 化。memo 後も `time` tick で body が走った際に stats 計算 (= entries 全走査 + `Set` aggregation + debug log 出力) が毎回再実行されていた問題を解消。modal 閉時の `DEBUG [TimetableStats] stopHeadsigns []` console noise も停止。
+- `app.tsx` の `onClose` / `onOpenChange` inline arrow を `closeTimetableModal` / `handleTripInspectionOpenChange` の `useCallback` 化。inline arrow は親レンダーごとに新規生成されるため `React.memo` の shallow 比較を defeat していた (= memo 単体では効果ゼロ)。各 dialog の memo 化に必要な前提条件として lift。
+
 ## [2026.04.29]
 
 ### Added

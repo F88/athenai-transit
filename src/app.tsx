@@ -1,26 +1,52 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { InfoDialog } from './components/dialog/info-dialog';
+import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
+import { StopSearchModal } from './components/dialog/stop-search-modal';
+import { TimetableModal, type TimetableData } from './components/dialog/timetable-modal';
+import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
+import { MapBottomSheetLayout } from './components/map-bottom-sheet-layout';
+import { TimeControls } from './components/time-controls';
+import { Toaster } from './components/ui/sonner';
+import { PERF_PROFILES } from './config/perf-profiles';
+import { SUPPORTED_LANGS } from './config/supported-langs';
+import { TILE_SOURCES } from './config/tile-sources';
+import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
+import { buildAnchorRefreshUpdates, type AnchorEntry } from './domain/portal/anchor';
+import { formatDateKey } from './domain/transit/calendar-utils';
+import { getStopDisplayNames } from './domain/transit/get-stop-display-names';
+import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
+import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
+import { getServiceDay } from './domain/transit/service-day';
+import {
+  applyStopEventAttributeToggles,
+  prepareRouteHeadsignTimetable,
+  prepareStopTimetable,
+} from './domain/transit/timetable-filter';
+import { getStopServiceState, getTimetableEntriesState } from './domain/transit/timetable-utils';
+import { useAnchors } from './hooks/use-anchors';
+import { useDateTime } from './hooks/use-date-time';
+import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
+import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
+import { useRouteStops } from './hooks/use-route-stops';
+import { useSelection } from './hooks/use-selection';
+import { useStopHistory } from './hooks/use-stop-history';
+import { useTransitRepository } from './hooks/use-transit-repository';
+import { useTripInspection } from './hooks/use-trip-inspection';
+import { useUserSettings } from './hooks/use-user-settings';
 import i18n from './i18n';
+import { createLogger } from './lib/logger';
+import { getStopParam } from './lib/query-params';
+import type { LoadResult } from './repositories/athenai-repository';
+import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { AppRouteTypeValue, Stop, TimetableEntriesState } from './types/app/transit';
 import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
-import type { LoadResult } from './repositories/athenai-repository';
-import { useTransitRepository } from './hooks/use-transit-repository';
-import { useUserSettings } from './hooks/use-user-settings';
-import { useDateTime } from './hooks/use-date-time';
-import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
-import { useSelection } from './hooks/use-selection';
-import { useStopHistory } from './hooks/use-stop-history';
-import { useAnchors } from './hooks/use-anchors';
-import { buildAnchorRefreshUpdates, type AnchorEntry } from './domain/portal/anchor';
-import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
-import { useRouteStops } from './hooks/use-route-stops';
-import { PERF_PROFILES } from './config/perf-profiles';
-import { TILE_SOURCES } from './config/tile-sources';
+import { formatDateParts } from './utils/datetime';
 import { toggleGroupInList } from './utils/list-toggle';
 import { routeTypeGroup } from './utils/route-type-category';
 import { routeTypesEmoji } from './utils/route-type-emoji';
-import { createLogger } from './lib/logger';
 import {
   nextInfoLevel,
   nextLang,
@@ -28,32 +54,6 @@ import {
   nextRenderMode,
   nextTileIndex,
 } from './utils/settings-cycle';
-import { SUPPORTED_LANGS } from './config/supported-langs';
-import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
-import { getStopDisplayNames } from './domain/transit/get-stop-display-names';
-import { formatDateParts } from './utils/datetime';
-import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
-import { getStopParam } from './lib/query-params';
-import { getServiceDay } from './domain/transit/service-day';
-import { formatDateKey } from './domain/transit/calendar-utils';
-import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
-import { getStopServiceState, getTimetableEntriesState } from './domain/transit/timetable-utils';
-import {
-  applyStopEventAttributeToggles,
-  prepareStopTimetable,
-  prepareRouteHeadsignTimetable,
-} from './domain/transit/timetable-filter';
-import { MapBottomSheetLayout } from './components/map-bottom-sheet-layout';
-import { TimeControls } from './components/time-controls';
-import { TimetableModal, type TimetableData } from './components/dialog/timetable-modal';
-import { StopSearchModal } from './components/dialog/stop-search-modal';
-import { InfoDialog } from './components/dialog/info-dialog';
-import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
-import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
-import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
-import { useTripInspection } from './hooks/use-trip-inspection';
-import { Toaster } from './components/ui/sonner';
-import { toast } from 'sonner';
 
 const logger = createLogger('App');
 const DEBOUNCE_MS = 300;
@@ -535,6 +535,17 @@ export default function App({ loadResult }: AppProps) {
     [showTimetable],
   );
 
+  const closeTimetableModal = useCallback(() => setTimetableData(null), []);
+
+  const handleTripInspectionOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        closeTripInspection();
+      }
+    },
+    [closeTripInspection],
+  );
+
   // Select + pan to a stop from history. Uses focusStop to set
   // focus position directly from stop coordinates, ensuring the map pans
   // even when the stop is outside the current viewport.
@@ -943,11 +954,7 @@ export default function App({ loadResult }: AppProps) {
         dataLangs={langChain}
         onOpenPreviousTrip={openPreviousTripInspection}
         onOpenNextTrip={openNextTripInspection}
-        onOpenChange={(open) => {
-          if (!open) {
-            closeTripInspection();
-          }
-        }}
+        onOpenChange={handleTripInspectionOpenChange}
       />
       <TimetableModal
         key={timetableData?.stop.stop_id ?? 'closed'}
@@ -957,7 +964,7 @@ export default function App({ loadResult }: AppProps) {
         dataLangs={langChain}
         globalFilter={globalFilter}
         onInspectTrip={openTripInspection}
-        onClose={() => setTimetableData(null)}
+        onClose={closeTimetableModal}
       />
       <Toaster
         theme={settings.theme}

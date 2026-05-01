@@ -1,34 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { TimetableGrid } from '../timetable/timetable-grid';
-import { TimetableHeader } from '../timetable/timetable-header';
-import { TimetableMetadata } from '../timetable/timetable-metadata';
-import { TimetableHeadsignFilter } from '../timetable/timetable-headsign-filter';
-import { BoardabilityFilter } from '../filter/boardability-filter';
-import { OriginFilter } from '../filter/origin-filter';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
-import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
-import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
-import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
-import { applyStopEventAttributeToggles } from '@/domain/transit/timetable-filter';
-import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
-import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
-import { getServiceDayMinutes } from '@/domain/transit/service-day';
-import { useScrollFades } from '@/hooks/use-scroll-fades';
-import type { GlobalFilter } from '@/types/app/global-filter';
-import type { InfoLevel } from '@/types/app/settings';
-import type { Agency, Route, Stop, StopServiceState } from '@/types/app/transit';
-import type { TimetableEntry, TripInspectionTarget } from '@/types/app/transit-composed';
-import type { TimetableOmitted } from '@/types/app/repository';
-import { useInfoLevel } from '@/hooks/use-info-level';
-import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
-import { formatDateParts } from '@/utils/datetime';
-import { DEFAULT_TIMEZONE, resolveAgencyLang } from '@/config/transit-defaults';
-import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
-import { getSelectedHeadsignDisplayName } from '@/domain/transit/get-headsign-display-names';
-import { getRouteDisplayNames } from '@/domain/transit/get-route-display-names';
-import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
-import { VerboseTimetableSummary } from '@/components/verbose/verbose-timetable-summary';
 import {
   Dialog,
   DialogContent,
@@ -36,6 +6,36 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { VerboseTimetableSummary } from '@/components/verbose/verbose-timetable-summary';
+import { DEFAULT_TIMEZONE, resolveAgencyLang } from '@/config/transit-defaults';
+import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
+import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
+import { getSelectedHeadsignDisplayName } from '@/domain/transit/get-headsign-display-names';
+import { getRouteDisplayNames } from '@/domain/transit/get-route-display-names';
+import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
+import { getServiceDayMinutes } from '@/domain/transit/service-day';
+import { applyStopEventAttributeToggles } from '@/domain/transit/timetable-filter';
+import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
+import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
+import { useInfoLevel } from '@/hooks/use-info-level';
+import { useScrollFades } from '@/hooks/use-scroll-fades';
+import type { GlobalFilter } from '@/types/app/global-filter';
+import type { TimetableOmitted } from '@/types/app/repository';
+import type { InfoLevel } from '@/types/app/settings';
+import type { Agency, Route, Stop, StopServiceState } from '@/types/app/transit';
+import type { TimetableEntry, TripInspectionTarget } from '@/types/app/transit-composed';
+import { formatDateParts } from '@/utils/datetime';
+import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
+import { BoardabilityFilter } from '../filter/boardability-filter';
+import { OriginFilter } from '../filter/origin-filter';
+import { TimetableGrid } from '../timetable/timetable-grid';
+import { TimetableHeader } from '../timetable/timetable-header';
+import { TimetableHeadsignFilter } from '../timetable/timetable-headsign-filter';
+import { TimetableMetadata } from '../timetable/timetable-metadata';
 
 /** Data needed to render the timetable modal. */
 export interface TimetableData {
@@ -133,7 +133,7 @@ function TimetableDateLabel({
   );
 }
 
-export function TimetableModal({
+export const TimetableModal = memo(function TimetableModal({
   data,
   time,
   infoLevel,
@@ -184,10 +184,14 @@ export function TimetableModal({
       }),
     [allTimetableEntries, showOriginOnly, showBoardableOnly],
   );
-  const stopEventAttributesFilteredEntriesStats = computeTimetableEntryStats(
-    stopEventAttributesFilteredEntries,
-    data?.agencies ?? [],
-    dataLangs,
+  const stopEventAttributesFilteredEntriesStats = useMemo(
+    () =>
+      computeTimetableEntryStats(
+        stopEventAttributesFilteredEntries,
+        data?.agencies ?? [],
+        dataLangs,
+      ),
+    [stopEventAttributesFilteredEntries, data?.agencies, dataLangs],
   );
 
   const routeHeadsignFilteredEntries = useMemo(() => {
@@ -199,10 +203,9 @@ export function TimetableModal({
     }
     return entries;
   }, [stopEventAttributesFilteredEntries, activeFilters]);
-  const routeHeadsignFilteredEntriesStats = computeTimetableEntryStats(
-    routeHeadsignFilteredEntries,
-    data?.agencies ?? [],
-    dataLangs,
+  const routeHeadsignFilteredEntriesStats = useMemo(
+    () => computeTimetableEntryStats(routeHeadsignFilteredEntries, data?.agencies ?? [], dataLangs),
+    [routeHeadsignFilteredEntries, data?.agencies, dataLangs],
   );
 
   const descriptionHeadsign = useMemo(() => {
@@ -439,4 +442,4 @@ export function TimetableModal({
       </DialogContent>
     </Dialog>
   );
-}
+});
