@@ -76,8 +76,13 @@ export function BottomSheetHeader({
   onToggleRouteType,
   onToggleAgency,
 }: BottomSheetHeaderProps) {
-  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
+
+  const { t } = useTranslation();
+
+  const operatingStopsActiveBg = 'var(--info)';
+  const operatingStopsBorder = 'var(--info)';
+  const shouldShowOriginFilter = showOriginOnly || nearbyStopsCounts.originCount > 0;
 
   console.debug({ nearbyStopsCounts });
   console.debug({ counts });
@@ -117,12 +122,14 @@ export function BottomSheetHeader({
           size={'sm'}
           active={omitEmptyStops}
           disabled={isOmitEmptyStopsForced}
-          activeBg={'var(--info)'}
-          activeBorder={'var(--info)'}
-          inactiveBorder={'var(--info)'}
+          activeBg={operatingStopsActiveBg}
+          activeFg={'#fff'}
+          activeBorder={operatingStopsBorder}
+          inactiveBorder={operatingStopsBorder}
           onClick={onToggleOmitEmptyStops}
           title={t('nearbyStops.showOperatingStopsOnlyTitle')}
           count={counts.nonEmpty}
+          className={isOmitEmptyStopsForced ? 'cursor-not-allowed' : undefined}
         >
           {t('nearbyStops.showOperatingStopsOnly')}
         </PillButton>
@@ -134,14 +141,14 @@ export function BottomSheetHeader({
           count={counts.boardableCount}
         />
 
-        {/* Origin filter (entry-level: patternPosition.isOrigin) */}
-        {/* {counts.total > 0 && counts.originCount > 0 && ( */}
-        <OriginFilter
-          origin={showOriginOnly}
-          onToggleOrigin={onToggleShowOriginOnly}
-          count={counts.originCount}
-        />
-        {/* )} */}
+        {/* Origin filter: keep visibility stable against global-filter toggles. */}
+        {shouldShowOriginFilter && (
+          <OriginFilter
+            origin={showOriginOnly}
+            onToggleOrigin={onToggleShowOriginOnly}
+            count={counts.originCount}
+          />
+        )}
 
         {/* Route types filter */}
         {presentRouteTypes.map((rt) => (
@@ -271,7 +278,8 @@ function StopsSummary({
 
   return (
     <p className="m-0 flex items-center gap-1 text-base font-bold text-[#212121] dark:text-gray-100">
-      {infoLevel === 'verbose' && totalCount.total !== filteredCount && (
+      {/* {infoLevel === 'verbose' && totalCount.total !== filteredCount && ( */}
+      {infoLevel === 'verbose' && (
         <LabelCountBadge
           label={`${totalCount.total}`}
           count={filteredCount}

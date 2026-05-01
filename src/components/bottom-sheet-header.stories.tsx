@@ -133,6 +133,23 @@ export const OperatingOnlyActive: Story = {
   },
 };
 
+export const OriginFilterHidden: Story = {
+  args: {
+    counts: { total: 12, nonEmpty: 7, originCount: 0, boardableCount: 5 },
+    nearbyStopsCounts: { total: 12, nonEmpty: 7, originCount: 0, boardableCount: 5 },
+    filteredNearbyStopsCounts: { total: 7, nonEmpty: 7, originCount: 0, boardableCount: 5 },
+  },
+};
+
+export const OriginFilterActiveWithoutNearbyOrigins: Story = {
+  args: {
+    counts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
+    nearbyStopsCounts: { total: 12, nonEmpty: 7, originCount: 0, boardableCount: 5 },
+    filteredNearbyStopsCounts: { total: 0, nonEmpty: 0, originCount: 0, boardableCount: 0 },
+    showOriginOnly: true,
+  },
+};
+
 // --- Route type filters ---
 
 export const SingleRouteType: Story = {
