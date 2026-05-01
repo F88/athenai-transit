@@ -3,9 +3,11 @@ import type { Route } from '../../../types/app/transit';
 import type { ContextualTimetableEntry, TimetableEntry } from '../../../types/app/transit-composed';
 import {
   applyStopEventAttributeToggles,
+  applyStopEventAttributeTogglesToStops,
   filterByAgency,
   filterByRouteType,
   filterByStopEventAttributes,
+  omitStopsWithoutStopTimes,
   prepareStopTimetable,
   prepareRouteHeadsignTimetable,
 } from '../timetable-filter';
@@ -645,6 +647,63 @@ describe('filterByRouteType', () => {
     const original = [...entries];
     filterByRouteType(entries, new Set([0]));
     expect(entries).toEqual(original);
+  });
+});
+
+describe('applyStopEventAttributeTogglesToStops', () => {
+  it('returns the input reference unchanged when both toggles are false', () => {
+    const stops = [{ stopTimes: [makeEntry({ isOrigin: true })] }, { stopTimes: [makeEntry()] }];
+
+    const result = applyStopEventAttributeTogglesToStops(stops, {
+      showOriginOnly: false,
+      showBoardableOnly: false,
+    });
+
+    expect(result).toBe(stops);
+  });
+
+  it('keeps unchanged entry content and empties only the stops that do not match', () => {
+    const untouched = { stopTimes: [makeEntry({ isOrigin: true })] };
+    const changed = { stopTimes: [makeEntry({ isOrigin: false })] };
+
+    const result = applyStopEventAttributeTogglesToStops([untouched, changed], {
+      showOriginOnly: true,
+      showBoardableOnly: false,
+    });
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).not.toBe(untouched);
+    expect(result[0]?.stopTimes).toEqual(untouched.stopTimes);
+    expect(result[0]?.stopTimes[0]).toBe(untouched.stopTimes[0]);
+    expect(result[1]).not.toBe(changed);
+    expect(result[1]?.stopTimes).toEqual([]);
+  });
+
+  it('handles empty input', () => {
+    expect(
+      applyStopEventAttributeTogglesToStops([], {
+        showOriginOnly: true,
+        showBoardableOnly: true,
+      }),
+    ).toEqual([]);
+  });
+});
+
+describe('omitStopsWithoutStopTimes', () => {
+  it('removes only empty stops and preserves surviving stop references', () => {
+    const nonEmptyA = { stopTimes: [makeEntry()] };
+    const empty = { stopTimes: [] };
+    const nonEmptyB = { stopTimes: [makeEntry({ isOrigin: true })] };
+
+    const result = omitStopsWithoutStopTimes([nonEmptyA, empty, nonEmptyB]);
+
+    expect(result).toEqual([nonEmptyA, nonEmptyB]);
+    expect(result[0]).toBe(nonEmptyA);
+    expect(result[1]).toBe(nonEmptyB);
+  });
+
+  it('returns empty when all stops are empty', () => {
+    expect(omitStopsWithoutStopTimes([{ stopTimes: [] }, { stopTimes: [] }])).toEqual([]);
   });
 });
 
