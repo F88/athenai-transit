@@ -11,6 +11,7 @@ import { createLogger } from '../lib/logger';
 import { routeTypeColor } from '../utils/route-type-color';
 import { routeTypeEmoji } from '../utils/route-type-emoji';
 import { useInfoLevel } from '../hooks/use-info-level';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PillButton } from './button/pill-button';
 import { BoardabilityFilter } from './filter/boardability-filter';
@@ -51,10 +52,13 @@ interface BottomSheetHeaderProps {
   onToggleAgency: (agency: Agency) => void;
 }
 
+const logger = createLogger('BottomSheetHeader');
+let lastBottomSheetHeaderDebugSnapshot: string | undefined;
+
 export function BottomSheetHeader({
   hasNearbyLoaded,
   nearbyStopsCounts,
-  filteredNearbyStopsCounts: _filteredNearbyStopsCounts,
+  filteredNearbyStopsCounts,
   counts,
   dataConfig,
   dataLangs,
@@ -83,9 +87,27 @@ export function BottomSheetHeader({
   const operatingStopsActiveBg = 'var(--info)';
   const operatingStopsBorder = 'var(--info)';
   const shouldShowOriginFilter = showOriginOnly || nearbyStopsCounts.originCount > 0;
+  const nearbyStopsCountsDebugLog = formatStopsCountsDebugLog(nearbyStopsCounts);
+  const filteredNearbyStopsCountsDebugLog = formatStopsCountsDebugLog(filteredNearbyStopsCounts);
+  const countsDebugLog = formatStopsCountsDebugLog(counts);
 
-  console.debug({ nearbyStopsCounts });
-  console.debug({ counts });
+  // const countsForFilterLabel = counts;
+  const countsForFilterLabel = filteredNearbyStopsCounts;
+
+  useEffect(() => {
+    const snapshot = [
+      `[nearbyStopsCounts] ${nearbyStopsCountsDebugLog}`,
+      `[filteredNearbyStopsCounts] ${filteredNearbyStopsCountsDebugLog}`,
+      `[counts] ${countsDebugLog}`,
+    ].join(' | ');
+
+    if (snapshot === lastBottomSheetHeaderDebugSnapshot) {
+      return;
+    }
+
+    lastBottomSheetHeaderDebugSnapshot = snapshot;
+    logger.debug(snapshot);
+  }, [countsDebugLog, filteredNearbyStopsCountsDebugLog, nearbyStopsCountsDebugLog]);
 
   return (
     <div className="shrink-0 px-4 pb-2">
@@ -128,7 +150,7 @@ export function BottomSheetHeader({
           inactiveBorder={operatingStopsBorder}
           onClick={onToggleOmitEmptyStops}
           title={t('nearbyStops.showOperatingStopsOnlyTitle')}
-          count={counts.nonEmpty}
+          count={countsForFilterLabel.nonEmpty}
           className={isOmitEmptyStopsForced ? 'cursor-not-allowed' : undefined}
         >
           {t('nearbyStops.showOperatingStopsOnly')}
@@ -138,7 +160,7 @@ export function BottomSheetHeader({
         <BoardabilityFilter
           boardable={showBoardableOnly}
           onToggleBoardable={onToggleShowBoardableOnly}
-          count={counts.boardableCount}
+          count={countsForFilterLabel.boardableCount}
         />
 
         {/* Origin filter: keep visibility stable against global-filter toggles. */}
@@ -146,7 +168,7 @@ export function BottomSheetHeader({
           <OriginFilter
             origin={showOriginOnly}
             onToggleOrigin={onToggleShowOriginOnly}
-            count={counts.originCount}
+            count={countsForFilterLabel.originCount}
           />
         )}
 
@@ -238,6 +260,10 @@ function getNearbyStopsSummaryText(
   return t('nearbyStops.noStops', { radius });
 }
 
+function formatStopsCountsDebugLog(counts: StopsCounts): string {
+  return `total=${counts.total} nonEmpty=${counts.nonEmpty} boardable=${counts.boardableCount} origin=${counts.originCount}`;
+}
+
 const summaryLogger = createLogger('NearbyStopsSummary');
 
 interface NearbyStopsSummaryProps {
@@ -260,9 +286,10 @@ function StopsSummary({
   infoLevel,
 }: NearbyStopsSummaryProps) {
   const { t, i18n } = useTranslation();
+
   summaryLogger.debug(
     hasLoaded
-      ? `[${label}] total=${totalCount.total} nonEmpty=${totalCount.nonEmpty} boardable=${totalCount.boardableCount} origin=${totalCount.originCount} -> filtered=${filteredCount}`
+      ? `[${label}] ${formatStopsCountsDebugLog(totalCount)} -> filtered=${filteredCount}`
       : 'not loaded yet',
   );
   const text = getNearbyStopsSummaryText(

@@ -723,7 +723,7 @@ export default function App({ loadResult }: AppProps) {
     ],
   );
 
-  console.debug('GlobalFilter', globalFilter);
+  logger.debug('GlobalFilter', globalFilter);
 
   // --- Settings handlers ---
 
