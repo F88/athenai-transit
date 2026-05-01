@@ -719,15 +719,18 @@ export default function App({ loadResult }: AppProps) {
       .filter((swc) => swc.stopTimes.length > 0);
   }, [routeTypesFilteredNearbyStopTimes, showOriginOnly, showBoardableOnly]);
 
-  // Per-stop pre-filter `TimetableEntriesState` map. The base is
-  // `routeTypesFilteredNearbyStopTimes` (= origin/boardable filter
-  // applied *before*), so consumers can distinguish `'filter-hidden'`
-  // (entries existed pre-filter, removed by user toggles) from
-  // `'no-service'` (no entries at all).
-  const nearbyStopTimesServiceState = useMemo(() => {
+  // Per-stop pre-`globalFilter` `TimetableEntriesState` map. The base
+  // is intentionally `routeTypesFilteredNearbyStopTimes` (= settings
+  // filter applied, origin/boardable toggles NOT yet applied), so
+  // consumers can distinguish `'filter-hidden'` (entries existed
+  // pre-`globalFilter`, removed by user toggles) from `'no-service'`
+  // (no entries at all). Computing this against the post-`globalFilter`
+  // `stopEventAttributesFilteredNearbyStopTimes` would collapse those
+  // two states.
+  const timetableEntriesStateByStopId = useMemo(() => {
     const map = new Map<string, TimetableEntriesState>();
     for (const swc of routeTypesFilteredNearbyStopTimes) {
-      map.set(swc.stop.stop_id, getTimetableEntriesState([...swc.stopTimes]));
+      map.set(swc.stop.stop_id, getTimetableEntriesState(swc.stopTimes));
     }
     return map;
   }, [routeTypesFilteredNearbyStopTimes]);
@@ -769,7 +772,11 @@ export default function App({ loadResult }: AppProps) {
   const serviceDay = useMemo(() => getServiceDay(dateTime), [dateTime]);
   const serviceDayKey = formatDateKey(serviceDay);
   const stableServiceDay = useMemo(() => {
-    const [year, month, day] = serviceDayKey.split('-').map(Number);
+    // `serviceDayKey` is `YYYYMMDD` (no separators) per `formatDateKey`,
+    // so use fixed-position slicing instead of `split('-')`.
+    const year = parseInt(serviceDayKey.slice(0, 4), 10);
+    const month = parseInt(serviceDayKey.slice(4, 6), 10);
+    const day = parseInt(serviceDayKey.slice(6, 8), 10);
     return new Date(year, month - 1, day);
   }, [serviceDayKey]);
   const serviceDayWeekday = useMemo(() => {
@@ -890,7 +897,7 @@ export default function App({ loadResult }: AppProps) {
         }}
         bottomSheetProps={{
           stopTimes: stopEventAttributesFilteredNearbyStopTimes,
-          stopServiceState: nearbyStopTimesServiceState,
+          timetableEntriesStateByStopId,
           selectedStopId,
           isNearbyLoading,
           hasNearbyLoaded,
