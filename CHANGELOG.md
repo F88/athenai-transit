@@ -9,6 +9,15 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `globalFilter` (`showOriginOnly` / `showBoardableOnly`) 適用後の stop list と、per-stop の `TimetableEntriesState` map を、BottomSheet 内部から `app.tsx` に lift。`stopEventAttributesFilteredNearbyStopTimes` (= filter 適用後 stop 配列) と `nearbyStopTimesServiceState` (= 各 stop の state map、`'filter-hidden'` を `'no-service'` から区別するため pre-`globalFilter` base で計算) を `app.tsx` で `useMemo` 化し、BottomSheet と MapView 双方に渡す。MapView の `stopTimes` prop も生 `nearbyStopTimes` から filter 適用後の値に切替、marker と BottomSheet list の filter 状態が同期。
+- BottomSheet 内の filter pipeline を 2 stage (`showOperatingStopsOnly` の stop drop + agency / route_type の entry trim) に縮小。origin / boardable 由来の Stage 1 は app.tsx 側に吸収。`upcomingEntriesStates` の局所 `useMemo` を削除し、`stopServiceState` props (= `ReadonlyMap<stop_id, TimetableEntriesState>`) を parent から受け取る形に変更 (`BottomSheetStops` / `NearbyStop` も同 prop 名で透過)。
+
+### Fixed
+
+- `pipeline/scripts/pipeline/lib/check-odpt-report.test.ts` の `printRemoteResources` describe を `vi.useFakeTimers()` + `vi.setSystemTime(new Date('2026-04-15'))` で時刻 pin。`getPeriodStatus()` の default `new Date()` がテスト実行日を境に "currently valid" 判定を変えていた (= fixture `start_at: 2026-05-01` を境に 2 → 3 へ drift) のを解消。
+
 ### Added
 
 - `GlobalFilter` 型 (`src/types/app/global-filter.ts`) を追加。app-wide で共有する filter state (`showOriginOnly` / `showBoardableOnly`) と toggle handler を 1 つの interface に集約。BottomSheet / TimetableModal / MapBottomSheetLayout で `globalFilter: GlobalFilter` 1 props として nest 渡し (= 名前空間明確、将来 MapView / TripInspectionDialog にも展開可能)。
