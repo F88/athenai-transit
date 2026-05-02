@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.02]
+
 ### Added
 
 - Stop ID から直接 trip inspection を開く動線 (`openTripInspectionFromStopId`) を BottomSheet / Map marker / StopSearchDialog で共通化。

@@ -1,7 +1,7 @@
 {
   "name": "athenai-transit",
   "private": true,
-  "version": "2026.05.01",
+  "version": "2026.05.02",
   "description": "'Athenai Transit' is a web application that helps users explore transit options without specifying a destination.",
   "engines": {
     "node": ">=22"
