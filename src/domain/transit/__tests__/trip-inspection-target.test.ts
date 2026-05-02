@@ -31,7 +31,11 @@ function makeLocator(overrides: Partial<TripLocator> = {}): TripLocator {
   return { patternId: 'pattern-a', serviceId: 'weekday', tripIndex: 0, ...overrides };
 }
 
-function makeTarget(overrides: Partial<TripInspectionTarget> = {}): TripInspectionTarget {
+type TripInspectionTargetOverrides = Omit<Partial<TripInspectionTarget>, 'tripLocator'> & {
+  tripLocator?: Partial<TripLocator>;
+};
+
+function makeTarget(overrides: TripInspectionTargetOverrides = {}): TripInspectionTarget {
   const { tripLocator, ...rest } = overrides;
   return {
     tripLocator: makeLocator(tripLocator),
@@ -82,7 +86,7 @@ describe('isSameTripInspectionTarget', () => {
     expect(isSameTripInspectionTarget(left, right)).toBe(false);
   });
 
-  it.each<[string, Partial<TripInspectionTarget>]>([
+  it.each<[string, TripInspectionTargetOverrides]>([
     ['patternId', { tripLocator: { patternId: 'pattern-b' } }],
     ['serviceId', { tripLocator: { serviceId: 'saturday' } }],
     ['tripIndex', { tripLocator: { tripIndex: 1 } }],

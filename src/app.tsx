@@ -45,7 +45,11 @@ import { LocalStorageUserDataRepository } from './repositories/local-storage-use
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { StopsCounts } from './types/app/stop';
 import type { AppRouteTypeValue, Stop, TimetableEntriesState } from './types/app/transit';
-import type { StopWithContext, StopWithMeta } from './types/app/transit-composed';
+import type {
+  StopWithContext,
+  StopWithMeta,
+  TripInspectionTarget,
+} from './types/app/transit-composed';
 import { formatDateParts } from './utils/datetime';
 import { toggleGroupInList } from './utils/list-toggle';
 import { routeTypeGroup } from './utils/route-type-category';
@@ -125,7 +129,8 @@ export default function App({ loadResult }: AppProps) {
     tripInspectionSnapshot,
     tripInspectionTargets,
     currentTripInspectionTargetIndex,
-    openTripInspection,
+    openTripInspectionFromTarget,
+    openTripInspectionFromStopId,
     openPreviousTripInspection,
     openNextTripInspection,
     closeTripInspection,
@@ -538,6 +543,44 @@ export default function App({ loadResult }: AppProps) {
     [showTimetable],
   );
 
+  const handleOpenTripInspectionByStopId = useCallback(
+    (stopId: string) => {
+      const serviceDate = getServiceDay(dateTime);
+
+      void openTripInspectionFromStopId({
+        stopId,
+        now: dateTime,
+        serviceDate,
+      }).then((status) => {
+        if (status === 'no-data') {
+          toast.warning(t('tripInspection.noData'));
+          return;
+        }
+
+        if (status === 'error') {
+          toast.error(t('tripInspection.openFailed'));
+        }
+      });
+    },
+    [dateTime, openTripInspectionFromStopId, t],
+  );
+
+  const handleInspectTrip = useCallback(
+    (target: TripInspectionTarget) => {
+      void openTripInspectionFromTarget(target).then((status) => {
+        if (status === 'no-data') {
+          toast.warning(t('tripInspection.noData'));
+          return;
+        }
+
+        if (status === 'error') {
+          toast.error(t('tripInspection.openFailed'));
+        }
+      });
+    },
+    [openTripInspectionFromTarget, t],
+  );
+
   const closeTimetableModal = useCallback(() => setTimetableData(null), []);
 
   const handleTripInspectionOpenChange = useCallback(
@@ -566,8 +609,8 @@ export default function App({ loadResult }: AppProps) {
   const anchorIds = useMemo(() => new Set(anchors.map((a) => a.stopId)), [anchors]);
 
   // Toggle anchor (bookmark) status for a stop
-  const handleToggleAnchor = useCallback(
-    (stopId: string, routeTypes: AppRouteTypeValue[]) => {
+  const handleToggleAnchorByStopId = useCallback(
+    (stopId: string) => {
       if (isStopAnchor(stopId)) {
         // Capture anchor data before removal (entry won't exist after removeAnchor).
         // Resolve display name from current GTFS so the toast follows
@@ -598,41 +641,45 @@ export default function App({ loadResult }: AppProps) {
           }
         });
       } else {
-        const meta = findStopWithMeta(stopId);
-        if (meta) {
-          const displayName =
-            getStopDisplayNames(
-              meta.stop,
-              langChain,
-              resolveAgencyLang(meta.agencies, meta.stop.agency_id),
-            ).name || meta.stop.stop_name;
-          logger.debug(`handleToggleAnchor: adding stopId=${stopId}, name=${displayName}`);
-          void addAnchor({
-            stopId: meta.stop.stop_id,
-            stopName: meta.stop.stop_name,
-            stopLat: meta.stop.stop_lat,
-            stopLon: meta.stop.stop_lon,
-            routeTypes,
-          }).then((result) => {
-            if (result.success) {
-              toast.success(t('anchor.added'), {
-                description: `${routeTypesEmoji(routeTypes)} ${displayName}`,
+        void Promise.all([repo.getStopMetaById(stopId), repo.getRouteTypesForStop(stopId)]).then(
+          ([metaResult, routeTypesResult]) => {
+            if (!metaResult.success) {
+              logger.warn('handleToggleAnchorByStopId: stop metadata lookup failed', {
+                stopId,
+                error: metaResult.error,
               });
+              return;
             }
-          });
-        }
+
+            const meta = metaResult.data;
+            const routeTypes = routeTypesResult.success ? routeTypesResult.data : [-1 as const];
+            const displayName =
+              getStopDisplayNames(
+                meta.stop,
+                langChain,
+                resolveAgencyLang(meta.agencies, meta.stop.agency_id),
+              ).name || meta.stop.stop_name;
+            logger.debug(
+              `handleToggleAnchorByStopId: adding stopId=${stopId}, name=${displayName}`,
+            );
+            void addAnchor({
+              stopId: meta.stop.stop_id,
+              stopName: meta.stop.stop_name,
+              stopLat: meta.stop.stop_lat,
+              stopLon: meta.stop.stop_lon,
+              routeTypes,
+            }).then((result) => {
+              if (result.success) {
+                toast.success(t('anchor.added'), {
+                  description: `${routeTypesEmoji(routeTypes)} ${displayName}`,
+                });
+              }
+            });
+          },
+        );
       }
     },
-    [
-      isStopAnchor,
-      anchors,
-      removeAnchor,
-      addAnchor,
-      findStopWithMeta,
-      lookupAnchorStopMeta,
-      langChain,
-      t,
-    ],
+    [isStopAnchor, anchors, removeAnchor, addAnchor, repo, lookupAnchorStopMeta, langChain, t],
   );
 
   // Select + pan to a stop from Portal dropdown
@@ -959,8 +1006,9 @@ export default function App({ loadResult }: AppProps) {
           onStopSelected: handleSelectStopById,
           onShowTimetable: handleShowTimetable,
           onShowStopTimetable: handleShowStopTimetable,
-          onToggleAnchor: handleToggleAnchor,
-          onInspectTrip: openTripInspection,
+          onToggleAnchor: handleToggleAnchorByStopId,
+          onOpenTripInspectionByStopId: handleOpenTripInspectionByStopId,
+          onInspectTrip: handleInspectTrip,
         }}
         globalFilter={globalFilter}
         nearbyStopsCounts={nearbyStopsCounts}
@@ -979,6 +1027,7 @@ export default function App({ loadResult }: AppProps) {
         infoLevel={settings.infoLevel}
         dataLang={langChain}
         onSelectStop={handleSearchSelect}
+        onOpenTripInspectionByStopId={handleOpenTripInspectionByStopId}
         open={searchModalOpen}
         onOpenChange={setSearchModalOpen}
       />
@@ -1003,7 +1052,7 @@ export default function App({ loadResult }: AppProps) {
         infoLevel={settings.infoLevel}
         dataLangs={langChain}
         globalFilter={globalFilter}
-        onInspectTrip={openTripInspection}
+        onInspectTrip={handleInspectTrip}
         onClose={closeTimetableModal}
       />
       <Toaster

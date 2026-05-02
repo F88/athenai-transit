@@ -316,7 +316,7 @@ export const TimetableModal = memo(function TimetableModal({
       {/* border-4: intentional thick border to visually distinguish the timetable modal from the map background */}
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[80dvh] max-w-[90dvw] flex-col gap-0 overflow-hidden border-4 p-0 sm:max-w-[90dvw]"
+        className="flex max-h-[80dvh] w-[90dvw] max-w-5xl flex-col gap-0 overflow-hidden border-4 p-2 sm:max-w-3xl"
       >
         <div
           ref={headerContainerRef}

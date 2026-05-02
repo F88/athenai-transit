@@ -682,7 +682,7 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[80dvh] max-w-[90vw] flex-col gap-0 overflow-hidden border-4 p-2"
+        className="flex max-h-[80dvh] w-[90dvw] max-w-5xl flex-col gap-0 overflow-hidden border-4 p-2 sm:max-w-2xl"
         style={{ borderColor: adjustedRouteColors.color }}
       >
         <DialogHeader

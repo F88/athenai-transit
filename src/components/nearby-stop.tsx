@@ -1,4 +1,3 @@
-import { Clock, Signpost } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
@@ -10,9 +9,10 @@ import {
 import { useInfoLevel } from '../hooks/use-info-level';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
-import type { AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
+import type { TimetableEntriesState } from '../types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { StopInfo } from './stop-info';
+import { StopActionButtons } from './stop-action-buttons';
 import { StopTimeItem } from './stop-time-item';
 import { StopTimesItem } from './stop-times-item';
 import { VerboseNearbyStopSummary } from './verbose/verbose-nearby-stop-summary';
@@ -43,72 +43,11 @@ export interface NearbyStopProps {
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
   /** Toggle anchor (bookmark) status for this stop. */
-  onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
+  onToggleAnchor: (stopId: string) => void;
+  /** Optional callback for opening trip inspection from a stop ID. */
+  onOpenTripInspectionByStopId?: (stopId: string) => void;
   /** Optional callback for inspecting one concrete trip. */
   onInspectTrip?: (target: TripInspectionTarget) => void;
-}
-
-interface NearbyStopActionButtonsProps {
-  stopId: string;
-  routeTypes: AppRouteTypeValue[];
-  isAnchor: boolean;
-  layout?: 'horizontal' | 'vertical';
-  onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
-  onShowStopTimetable?: (stopId: string) => void;
-}
-
-function NearbyStopActionButtons({
-  stopId,
-  routeTypes,
-  isAnchor,
-  layout = 'vertical',
-  onToggleAnchor,
-  onShowStopTimetable,
-}: NearbyStopActionButtonsProps) {
-  const { t } = useTranslation();
-  const layoutClassName =
-    layout === 'horizontal'
-      ? 'ml-auto flex shrink-0 self-stretch flex-row items-start justify-end'
-      : 'ml-auto flex shrink-0 self-stretch flex-col items-end justify-start';
-
-  return (
-    <div className={`${layoutClassName} gap-1`}>
-      <button
-        type="button"
-        className="shrink-0 cursor-pointer rounded border border-amber-400 bg-transparent px-1.5 py-0.5 active:bg-amber-50 dark:border-amber-500 dark:active:bg-amber-950"
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleAnchor(stopId, routeTypes);
-        }}
-        title={isAnchor ? t('anchor.remove') : t('anchor.add')}
-        aria-label={isAnchor ? t('anchor.remove') : t('anchor.add')}
-        aria-pressed={isAnchor}
-      >
-        <Signpost
-          size={16}
-          strokeWidth={2}
-          className={isAnchor ? 'text-amber-500' : 'text-gray-400'}
-        />
-      </button>
-      {onShowStopTimetable && (
-        <>
-          <button
-            type="button"
-            className="shrink-0 cursor-pointer rounded border border-teal-600 bg-transparent px-1.5 py-0.5 text-teal-600 active:bg-teal-600/10 dark:border-teal-400 dark:text-teal-400 dark:active:bg-teal-400/10"
-            // className="shrink-0 cursor-pointer rounded border border-slate-600 bg-transparent px-1.5 py-0.5 text-slate-600 active:bg-slate-600/10 dark:border-slate-300 dark:text-slate-300 dark:active:bg-slate-300/10"
-            onClick={(e) => {
-              e.stopPropagation();
-              onShowStopTimetable(stopId);
-            }}
-            title={t('showTimetable')}
-            aria-label={t('showTimetable')}
-          >
-            <Clock size={16} strokeWidth={2} />
-          </button>
-        </>
-      )}
-    </div>
-  );
 }
 
 export function NearbyStop({
@@ -125,6 +64,7 @@ export function NearbyStop({
   onShowTimetable,
   onShowStopTimetable,
   onToggleAnchor,
+  onOpenTripInspectionByStopId,
   onInspectTrip,
 }: NearbyStopProps) {
   const { t } = useTranslation();
@@ -207,13 +147,13 @@ export function NearbyStop({
           agencyBadgeSize={'md'}
           routeBadgeSize={'sm'}
         />
-        <NearbyStopActionButtons
+        <StopActionButtons
           stopId={stop.stop_id}
-          routeTypes={routeTypes}
           isAnchor={isAnchor}
           layout={'vertical'}
           onToggleAnchor={onToggleAnchor}
           onShowStopTimetable={onShowStopTimetable}
+          onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
         />
       </div>
 

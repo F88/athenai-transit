@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { IdBadge } from '../badge/id-badge';
+import { StopActionButtons } from '../stop-action-buttons';
 
 const logger = createLogger('StopSearch');
 
@@ -36,6 +37,7 @@ interface StopSearchResultItemProps {
   /** Ref forwarded to the underlying button so the parent can scroll it into view. */
   buttonRef: (el: HTMLButtonElement | null) => void;
   onSelect: (stop: Stop) => void;
+  onOpenTripInspectionByStopId?: (stopId: string) => void;
 }
 
 function StopSearchResultItem({
@@ -48,6 +50,7 @@ function StopSearchResultItem({
   isSelected,
   buttonRef,
   onSelect,
+  onOpenTripInspectionByStopId,
 }: StopSearchResultItemProps) {
   const info = useInfoLevel(infoLevel);
   // Always show subNames in search results for discoverability.
@@ -64,31 +67,44 @@ function StopSearchResultItem({
   const stopNames = getStopDisplayNames(stop, dataLang, DEFAULT_AGENCY_LANG);
 
   return (
-    <button
-      ref={buttonRef}
-      className={`border-border active:bg-accent flex w-full cursor-pointer items-center gap-2.5 border-t-0 border-r-0 border-b border-l-0 px-4 py-3 text-left font-[inherit] last:border-b-0 ${
+    <div
+      className={`border-border flex items-stretch gap-2 border-t-0 border-r-0 border-b border-l-0 px-4 py-3 last:border-b-0 ${
         isSelected ? 'bg-accent' : 'bg-transparent'
       }`}
-      onClick={() => onSelect(stop)}
     >
-      <div className="flex min-w-0 flex-col gap-0.5">
-        {info.isVerboseEnabled && <IdBadge>{stop.stop_id}</IdBadge>}
-        <span className="text-foreground text-[15px]">
-          {routeTypesEmoji(routeTypes)}{' '}
-          <HighlightedName name={stopNames.name} query={query} normalizedQuery={normalizedQuery} />
-        </span>
-        {stopNames.subNames.length > 0 && (
-          <span className="text-muted-foreground text-xs leading-snug">
-            {stopNames.subNames.map((name, i) => (
-              <span key={`${i}-${name}`}>
-                {i > 0 && ' / '}
-                <HighlightedName name={name} query={query} normalizedQuery={normalizedQuery} />
-              </span>
-            ))}
+      <button
+        ref={buttonRef}
+        className="active:bg-accent flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 text-left font-[inherit]"
+        onClick={() => onSelect(stop)}
+      >
+        <div className="flex min-w-0 flex-col gap-0.5">
+          {info.isVerboseEnabled && <IdBadge>{stop.stop_id}</IdBadge>}
+          <span className="text-foreground text-[15px]">
+            {routeTypesEmoji(routeTypes)}{' '}
+            <HighlightedName
+              name={stopNames.name}
+              query={query}
+              normalizedQuery={normalizedQuery}
+            />
           </span>
-        )}
-      </div>
-    </button>
+          {stopNames.subNames.length > 0 && (
+            <span className="text-muted-foreground text-xs leading-snug">
+              {stopNames.subNames.map((name, i) => (
+                <span key={`${i}-${name}`}>
+                  {i > 0 && ' / '}
+                  <HighlightedName name={name} query={query} normalizedQuery={normalizedQuery} />
+                </span>
+              ))}
+            </span>
+          )}
+        </div>
+      </button>
+      <StopActionButtons
+        stopId={stop.stop_id}
+        layout="horizontal"
+        onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
+      />
+    </div>
   );
 }
 
@@ -142,6 +158,7 @@ interface StopSearchModalProps {
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
   onSelectStop: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
+  onOpenTripInspectionByStopId?: (stopId: string) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -151,6 +168,7 @@ export const StopSearchModal = memo(function StopSearchModal({
   infoLevel,
   dataLang,
   onSelectStop,
+  onOpenTripInspectionByStopId,
   open,
   onOpenChange,
 }: StopSearchModalProps) {
@@ -330,7 +348,7 @@ export const StopSearchModal = memo(function StopSearchModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="top-12 flex max-h-[80dvh] max-w-[90vw] translate-y-0 flex-col gap-0 overflow-hidden border-4 p-0"
+        className="top-12 flex max-h-[80dvh] max-w-[80vw] translate-y-0 flex-col gap-0 overflow-hidden border-4 p-0"
       >
         <DialogHeader className="border-border shrink-0 border-b p-4">
           <DialogTitle className="text-[15px]">{t('search.title')}</DialogTitle>
@@ -368,6 +386,7 @@ export const StopSearchModal = memo(function StopSearchModal({
                     itemRefs.current[index] = el;
                   }}
                   onSelect={handleSelect}
+                  onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
                 />
               ))
             : query.trim() !== '' && (

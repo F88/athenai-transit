@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useScrollFades } from '@/hooks/use-scroll-fades';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
-import type { AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
+import type { TimetableEntriesState } from '../types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { ScrollFadeEdge } from './shared/scroll-fade-edge';
 import { NearbyStop, type NearbyStopProps } from './nearby-stop';
@@ -35,7 +35,9 @@ interface BottomSheetStopsProps {
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
   /** Toggle anchor (bookmark) status for a stop. */
-  onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
+  onToggleAnchor: (stopId: string) => void;
+  /** Optional callback for opening trip inspection from a stop ID. */
+  onOpenTripInspectionByStopId?: (stopId: string) => void;
   /** Optional callback for inspecting one concrete trip. */
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
@@ -55,6 +57,7 @@ export function BottomSheetStops({
   onShowTimetable,
   onShowStopTimetable,
   onToggleAnchor,
+  onOpenTripInspectionByStopId,
   onInspectTrip,
 }: BottomSheetStopsProps) {
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
@@ -88,6 +91,7 @@ export function BottomSheetStops({
             onShowTimetable,
             onShowStopTimetable,
             onToggleAnchor,
+            onOpenTripInspectionByStopId,
             onInspectTrip,
           };
           // Eager render: first N stops, or the selected stop (so scroll-to-selected works)

@@ -191,6 +191,9 @@
     "titleWithNoHeadsign": "(行先情報なし)",
     "unknownStop": "(情報なし)",
     "description": "選択した便の停車順と時刻を表示します",
+    "noData": "データがありません",
+    "openFailed": "便情報を取得できませんでした",
+    "noUpcomingTrips": "現在時刻以降の便がありません",
     "sections": {
       "summary": "概要",
       "selectedStop": "選択中の stop",
