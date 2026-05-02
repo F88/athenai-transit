@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { formatDateKey } from '../domain/transit/calendar-utils';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import {
   isSameTripInspectionTarget,
@@ -8,6 +9,7 @@ import {
 } from '../domain/transit/trip-inspection-target';
 import { createLogger, type Logger } from '../lib/logger';
 import type { TransitRepository } from '../repositories/transit-repository';
+import type { TripInspectionTargetsResult } from '../types/app/repository';
 import type {
   SelectedTripSnapshot,
   TripInspectionTarget,
@@ -337,7 +339,10 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
       const currentServiceDayMinutes = getServiceDayMinutes(now);
 
       try {
-        const result = await repo.getTripInspectionTargets({ stopId, serviceDate });
+        const result: TripInspectionTargetsResult = await repo.getTripInspectionTargets({
+          stopId,
+          serviceDate,
+        });
 
         if (lookupRequestIdRef.current !== lookupRequestId) {
           return 'cancelled' satisfies TripInspectionOpenResult;
@@ -352,17 +357,41 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
           return 'error' satisfies TripInspectionOpenResult;
         }
 
+        if (result.data.length === 0) {
+          const emptyReason = result.meta.emptyReason;
+          logger.warn('openTripInspectionFromStopId: empty trip inspection target result', {
+            stopId,
+            now: now.toISOString(),
+            serviceDate: serviceDate.toISOString(),
+            serviceDayKey: formatDateKey(serviceDate),
+            currentServiceDayMinutes,
+            emptyReason,
+            note:
+              emptyReason === 'no-stop-data'
+                ? 'The stop has no trip-inspection stop data.'
+                : 'The stop has trip-inspection data, but no services on the selected service day.',
+          });
+          return 'no-data' satisfies TripInspectionOpenResult;
+        }
+
         const selectedTarget = selectTripInspectionTargetByReferenceTime(
           result.data,
           currentServiceDayMinutes,
         );
 
         if (selectedTarget === null) {
-          logger.warn('openTripInspectionFromStopId: no trip inspection targets', {
-            stopId,
-            serviceDate: serviceDate.toISOString(),
-          });
-          return 'no-data' satisfies TripInspectionOpenResult;
+          logger.warn(
+            'openTripInspectionFromStopId: failed to resolve target from non-empty candidate list',
+            {
+              stopId,
+              now: now.toISOString(),
+              serviceDate: serviceDate.toISOString(),
+              serviceDayKey: formatDateKey(serviceDate),
+              currentServiceDayMinutes,
+              candidateCount: result.data.length,
+            },
+          );
+          return 'error' satisfies TripInspectionOpenResult;
         }
 
         return openTripInspectionInternal(selectedTarget.target, false);

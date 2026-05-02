@@ -12,12 +12,12 @@ import type {
   SourceMeta,
   StopWithMeta,
   TripInspectionGroupQuery,
-  TripInspectionTarget,
 } from '../types/app/transit-composed';
 import type {
   CollectionResult,
   Result,
   TimetableResult,
+  TripInspectionTargetsResult,
   TripSnapshotResult,
   UpcomingTimetableResult,
 } from '../types/app/repository';
@@ -385,13 +385,13 @@ export interface TransitRepository {
    * Implementations use it as the service-day context for calendar filtering;
    * callers should not pass a raw real-world datetime here.
    *
+   * On empty success results, `meta.emptyReason` is always defined.
+   *
    * @param query - Stop and service-day context. `query.serviceDate` is a
    *                pre-normalized service day, not a reference datetime.
    * @returns Trip-inspection targets with lightweight comparison data.
    */
-  getTripInspectionTargets(
-    query: TripInspectionGroupQuery,
-  ): Promise<Result<TripInspectionTarget[]>>;
+  getTripInspectionTargets(query: TripInspectionGroupQuery): Promise<TripInspectionTargetsResult>;
 
   /**
    * Returns a single stop with metadata by its GTFS stop_id, against

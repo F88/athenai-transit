@@ -708,6 +708,7 @@ describe('getTripInspectionTargets', () => {
 
     assertSuccess(result);
     assertSuccess(timetable);
+    expect(result.truncated).toBe(false);
     expect(result.data).toEqual(
       timetable.data.map((entry) => ({
         tripLocator: entry.tripLocator,
@@ -738,6 +739,7 @@ describe('getTripInspectionTargets', () => {
     });
 
     assertSuccess(result);
+    expect(result.truncated).toBe(false);
     expect(
       result.data
         .filter(
@@ -763,6 +765,7 @@ describe('getTripInspectionTargets', () => {
 
     assertSuccess(result);
     assertSuccess(timetable);
+    expect(result.truncated).toBe(false);
     expect(result.data).toEqual(
       timetable.data.map((entry) => ({
         tripLocator: entry.tripLocator,
@@ -787,6 +790,7 @@ describe('getTripInspectionTargets', () => {
 
     assertSuccess(result);
     assertSuccess(timetable);
+    expect(result.truncated).toBe(false);
     expect(result.data).toEqual(
       timetable.data.map((entry) => ({
         tripLocator: entry.tripLocator,
@@ -798,6 +802,100 @@ describe('getTripInspectionTargets', () => {
     expect(new Set(result.data.map((target) => target.tripLocator.serviceId))).toEqual(
       new Set(['svc_holiday']),
     );
+    expect(result.meta).toEqual({});
+  });
+
+  it('reports no-stop-data when the stop has no trip-inspection stop data', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getTripInspectionTargets({
+      serviceDate: WEEKDAY,
+      stopId: 'missing_stop',
+    });
+
+    assertSuccess(result);
+    expect(result.truncated).toBe(false);
+    expect(result.data).toEqual([]);
+    expect(result.meta).toEqual({ emptyReason: 'no-stop-data' });
+  });
+
+  it('reports no-service-on-this-day when a stop has trip-inspection data but none run on the service day', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getTripInspectionTargets({
+      serviceDate: SATURDAY,
+      stopId: 'bus_01',
+    });
+
+    assertSuccess(result);
+    expect(result.truncated).toBe(false);
+    expect(result.data).toEqual([]);
+    expect(result.meta).toEqual({ emptyReason: 'no-service-on-this-day' });
+  });
+
+  it('fails when all active timetable groups reference missing patterns', async () => {
+    const fixture = createFixtureV2();
+    const groups = fixture.data.timetable.data['bus_01'];
+    if (!groups) {
+      throw new Error('Expected bus_01 timetable fixture');
+    }
+
+    for (const group of groups) {
+      group.tp = `missing:${group.tp}`;
+    }
+
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getTripInspectionTargets({
+      serviceDate: WEEKDAY,
+      stopId: 'bus_01',
+    });
+
+    expect(result.success).toBe(false);
+    if (result.success) {
+      throw new Error(
+        'Expected failure when all active timetable groups reference missing patterns',
+      );
+    }
+
+    expect(result.error).toContain('all active timetable groups reference missing patterns');
+    expect(result.error).toContain('bus_01');
+  });
+
+  it('returns resolved targets when active timetable groups mix resolved and missing patterns', async () => {
+    const fixture = createFixtureV2();
+    const groups = fixture.data.timetable.data['bus_01'];
+    if (!groups || groups.length < 2) {
+      throw new Error('Expected bus_01 timetable fixture with multiple groups');
+    }
+
+    const firstGroup = groups[0];
+    if (!firstGroup) {
+      throw new Error('Expected first bus_01 timetable group');
+    }
+
+    firstGroup.tp = `missing:${firstGroup.tp}`;
+
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    const result = await repository.getTripInspectionTargets({
+      serviceDate: WEEKDAY,
+      stopId: 'bus_01',
+    });
+
+    assertSuccess(result);
+    expect(result.truncated).toBe(false);
+    expect(result.meta).toEqual({});
+    expect(result.data.length).toBeGreaterThan(0);
+    expect(
+      result.data.every((target) => !target.tripLocator.patternId.startsWith('missing:')),
+    ).toBe(true);
   });
 });
 

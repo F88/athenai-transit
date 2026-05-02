@@ -38,6 +38,7 @@ import type {
   Result,
   TimetableQueryMeta,
   TimetableResult,
+  TripInspectionTargetsResult,
   TripSnapshotResult,
   UpcomingTimetableResult,
 } from '../../types/app/repository';
@@ -649,27 +650,42 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   }
 
   /** {@inheritDoc TransitRepository.getTripInspectionTargets} */
-  getTripInspectionTargets(
-    query: TripInspectionGroupQuery,
-  ): Promise<Result<TripInspectionTarget[]>> {
+  getTripInspectionTargets(query: TripInspectionGroupQuery): Promise<TripInspectionTargetsResult> {
     const timetableGroups = this.timetable[query.stopId];
     if (!timetableGroups) {
-      return Promise.resolve({ success: true, data: [] });
+      return Promise.resolve({
+        success: true,
+        data: [],
+        truncated: false,
+        meta: { emptyReason: 'no-stop-data' },
+      });
     }
 
     const activeServiceIds = this.getActiveServiceIds(query.serviceDate);
     const targets: Array<TripInspectionTarget & { routeId: string }> = [];
+    const missingPatternIds = new Set<string>();
+    let sawActiveDeparturesForResolvedPattern = false;
+    let sawActiveDeparturesForMissingPattern = false;
 
     for (const group of timetableGroups) {
       const pattern = this.tripPatterns.get(group.tp);
-      if (!pattern) {
-        continue;
-      }
 
       for (const [serviceId, times] of Object.entries(group.d)) {
         if (!activeServiceIds.has(serviceId)) {
           continue;
         }
+
+        if (times.length === 0) {
+          continue;
+        }
+
+        if (!pattern) {
+          missingPatternIds.add(group.tp);
+          sawActiveDeparturesForMissingPattern = true;
+          continue;
+        }
+
+        sawActiveDeparturesForResolvedPattern = true;
 
         for (let i = 0; i < times.length; i++) {
           targets.push({
@@ -697,9 +713,42 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       return left.routeId.localeCompare(right.routeId);
     });
 
+    if (
+      targets.length === 0 &&
+      sawActiveDeparturesForMissingPattern &&
+      !sawActiveDeparturesForResolvedPattern
+    ) {
+      return Promise.resolve({
+        success: false,
+        error: `Trip inspection targets unavailable: all active timetable groups reference missing patterns for stop ${query.stopId} (${[...missingPatternIds].join(', ')})`,
+      });
+    }
+
+    if (targets.length === 0) {
+      return Promise.resolve({
+        success: true,
+        data: [],
+        truncated: false,
+        meta: { emptyReason: 'no-service-on-this-day' },
+      });
+    }
+
+    const [firstTarget, ...remainingTargets] = targets;
+    if (!firstTarget) {
+      return Promise.resolve({
+        success: false,
+        error: `Trip inspection targets unavailable: failed to resolve non-empty candidate list for stop ${query.stopId}`,
+      });
+    }
+
     return Promise.resolve({
       success: true,
-      data: targets.map(({ routeId: _routeId, ...target }) => target),
+      data: [
+        (({ routeId: _routeId, ...target }) => target)(firstTarget),
+        ...remainingTargets.map(({ routeId: _routeId, ...target }) => target),
+      ],
+      truncated: false,
+      meta: {},
     });
   }
 

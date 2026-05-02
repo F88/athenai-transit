@@ -107,6 +107,7 @@ describe('MockRepository contract compatibility', () => {
 
     assertSuccess(timetable);
     assertSuccess(result);
+    expect(result.truncated).toBe(false);
     expect(result.data).toEqual(
       timetable.data.map((entry) => ({
         tripLocator: entry.tripLocator,
@@ -115,6 +116,22 @@ describe('MockRepository contract compatibility', () => {
         departureMinutes: entry.schedule.departureMinutes,
       })),
     );
+    expect(result.meta).toEqual({});
+  });
+
+  it('reports no-stop-data when no trip-inspection targets exist for the stop', async () => {
+    const repository = new MockRepository();
+    const serviceDate = new Date('2026-04-07T12:00:00+09:00');
+
+    const result = await repository.getTripInspectionTargets({
+      serviceDate,
+      stopId: 'missing_stop',
+    });
+
+    assertSuccess(result);
+    expect(result.truncated).toBe(false);
+    expect(result.data).toEqual([]);
+    expect(result.meta).toEqual({ emptyReason: 'no-stop-data' });
   });
 
   it('returns all upcoming entries when limit is omitted', async () => {

@@ -23,7 +23,6 @@ import type {
   StopWithMeta,
   TimetableEntry,
   TripInspectionGroupQuery,
-  TripInspectionTarget,
   TripLocator,
   TripStopTime,
   TripSnapshot,
@@ -33,6 +32,7 @@ import type {
   Result,
   TimetableQueryMeta,
   TimetableResult,
+  TripInspectionTargetsResult,
   TripSnapshotResult,
   UpcomingTimetableResult,
 } from '../../types/app/repository';
@@ -387,19 +387,37 @@ export class MockRepository implements TransitRepository {
     return { success: true, data: snapshot };
   }
 
-  getTripInspectionTargets(
-    query: TripInspectionGroupQuery,
-  ): Promise<Result<TripInspectionTarget[]>> {
+  getTripInspectionTargets(query: TripInspectionGroupQuery): Promise<TripInspectionTargetsResult> {
     const entries = this.buildFullDayTimetableEntries(query.stopId);
+    const data = entries.map((entry) => ({
+      tripLocator: entry.tripLocator,
+      serviceDate: query.serviceDate,
+      stopIndex: entry.patternPosition.stopIndex,
+      departureMinutes: entry.schedule.departureMinutes,
+    }));
+
+    if (data.length === 0) {
+      return Promise.resolve({
+        success: true,
+        data: [],
+        truncated: false,
+        meta: { emptyReason: 'no-stop-data' },
+      });
+    }
+
+    const [firstTarget, ...remainingTargets] = data;
+    if (!firstTarget) {
+      return Promise.resolve({
+        success: false,
+        error: `Trip inspection targets unavailable: failed to resolve non-empty mock candidate list for stop ${query.stopId}`,
+      });
+    }
 
     return Promise.resolve({
       success: true,
-      data: entries.map((entry) => ({
-        tripLocator: entry.tripLocator,
-        serviceDate: query.serviceDate,
-        stopIndex: entry.patternPosition.stopIndex,
-        departureMinutes: entry.schedule.departureMinutes,
-      })),
+      data: [firstTarget, ...remainingTargets],
+      truncated: false,
+      meta: {},
     });
   }
 
