@@ -9,6 +9,16 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `useTimetable` hook を新設し、timetable open/close orchestration を `App` から `src/hooks/use-timetable.ts` に分離。`requestIdRef` で stale lookup をキャンセル。
+- `useTimetable` の failure outcome (`not-found` / `route-not-found` / `error`) を `App` で toast 通知 (warning / error)。i18n key `timetable.messages.{stopNotFound,routeNotFound,openFailed}` を en / ja に追加。
+- 共有 type `TimetableData` (`src/types/app/timetable.ts`) を切り出し。
+
+### Changed
+
+- `useTripInspection` の inline empty-targets note ternary を named helper に抽出 (挙動変化なし)。
+
 ## [2026.05.02]
 
 ### Added
