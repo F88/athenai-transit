@@ -136,8 +136,8 @@ vi.mock('../components/dialog/timetable-modal', () => ({
   TimetableModal: () => null,
 }));
 
-vi.mock('../components/dialog/stop-search-modal', () => ({
-  StopSearchModal: () => null,
+vi.mock('../components/dialog/stop-search-dialog', () => ({
+  StopSearchDialog: () => null,
 }));
 
 vi.mock('../components/dialog/info-dialog', () => ({

@@ -191,6 +191,13 @@
     "titleWithNoHeadsign": "(No headsign)",
     "unknownStop": "(Unknown stop)",
     "description": "Show the stop sequence and times for the selected trip",
+    "messages": {
+      "noData": "Trip information is unavailable for this selection.",
+      "noStopData": "No trip information is available for this stop",
+      "noServiceOnThisDay": "No services run on the selected day",
+      "openFailed": "Could not load trip information",
+      "noUpcomingTrips": "No departures are available after the current time"
+    },
     "sections": {
       "summary": "Summary",
       "selectedStop": "Selected stop",

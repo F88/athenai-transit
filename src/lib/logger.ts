@@ -13,6 +13,7 @@ export type LogLevel = 'verbose' | 'debug' | 'info' | 'warn' | 'error';
 
 /** Logger instance bound to a specific tag. */
 export interface Logger {
+  isEnabled: (level: LogLevel) => boolean;
   verbose: (...args: unknown[]) => void;
   debug: (...args: unknown[]) => void;
   info: (...args: unknown[]) => void;
@@ -160,6 +161,7 @@ export function createLogger(tag: string): Logger {
   }
 
   return {
+    isEnabled: (level: LogLevel) => shouldLog(level, tag),
     verbose: (...args: unknown[]) => emit('verbose', args),
     debug: (...args: unknown[]) => emit('debug', args),
     info: (...args: unknown[]) => emit('info', args),

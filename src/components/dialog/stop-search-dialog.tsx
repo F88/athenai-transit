@@ -1,15 +1,3 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { useTranslation } from 'react-i18next';
-import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
-import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
-import type { TransitRepository } from '@/repositories/transit-repository';
-import type { InfoLevel } from '@/types/app/settings';
-import { useInfoLevel } from '@/hooks/use-info-level';
-import { katakanaToHiragana } from '@/utils/kana-normalize';
-import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
-import { resolveStopRouteTypes } from '@/domain/transit/resolve-stop-route-types';
-import { routeTypesEmoji } from '@/utils/route-type-emoji';
-import { createLogger } from '@/lib/logger';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +5,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
+import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { resolveStopRouteTypes } from '@/domain/transit/resolve-stop-route-types';
+import { useInfoLevel } from '@/hooks/use-info-level';
+import { createLogger } from '@/lib/logger';
+import type { TransitRepository } from '@/repositories/transit-repository';
+import type { InfoLevel } from '@/types/app/settings';
+import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
+import { katakanaToHiragana } from '@/utils/kana-normalize';
+import { routeTypesEmoji } from '@/utils/route-type-emoji';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IdBadge } from '../badge/id-badge';
+import { StopActionButtons } from '../stop-action-buttons';
 
 const logger = createLogger('StopSearch');
 
@@ -26,6 +27,7 @@ const MAX_RESULTS = 20;
 interface StopSearchResultItemProps {
   stop: Stop;
   routeTypes: AppRouteTypeValue[];
+  isAnchor: boolean;
   query: string;
   normalizedQuery: string;
   infoLevel: InfoLevel;
@@ -36,11 +38,15 @@ interface StopSearchResultItemProps {
   /** Ref forwarded to the underlying button so the parent can scroll it into view. */
   buttonRef: (el: HTMLButtonElement | null) => void;
   onSelect: (stop: Stop) => void;
+  onToggleAnchor?: (stopId: string) => void;
+  onShowStopTimetable?: (stopId: string) => void;
+  onOpenTripInspectionByStopId?: (stopId: string) => void;
 }
 
 function StopSearchResultItem({
   stop,
   routeTypes,
+  isAnchor,
   query,
   normalizedQuery,
   infoLevel,
@@ -48,6 +54,9 @@ function StopSearchResultItem({
   isSelected,
   buttonRef,
   onSelect,
+  onToggleAnchor,
+  onShowStopTimetable,
+  onOpenTripInspectionByStopId,
 }: StopSearchResultItemProps) {
   const info = useInfoLevel(infoLevel);
   // Always show subNames in search results for discoverability.
@@ -64,31 +73,50 @@ function StopSearchResultItem({
   const stopNames = getStopDisplayNames(stop, dataLang, DEFAULT_AGENCY_LANG);
 
   return (
-    <button
-      ref={buttonRef}
-      className={`border-border active:bg-accent flex w-full cursor-pointer items-center gap-2.5 border-t-0 border-r-0 border-b border-l-0 px-4 py-3 text-left font-[inherit] last:border-b-0 ${
+    <div
+      className={`border-border flex items-stretch gap-2 border-t-0 border-r-0 border-b border-l-0 px-4 py-3 last:border-b-0 ${
         isSelected ? 'bg-accent' : 'bg-transparent'
       }`}
-      onClick={() => onSelect(stop)}
     >
-      <div className="flex min-w-0 flex-col gap-0.5">
-        {info.isVerboseEnabled && <IdBadge>{stop.stop_id}</IdBadge>}
-        <span className="text-foreground text-[15px]">
-          {routeTypesEmoji(routeTypes)}{' '}
-          <HighlightedName name={stopNames.name} query={query} normalizedQuery={normalizedQuery} />
-        </span>
-        {stopNames.subNames.length > 0 && (
-          <span className="text-muted-foreground text-xs leading-snug">
-            {stopNames.subNames.map((name, i) => (
-              <span key={`${i}-${name}`}>
-                {i > 0 && ' / '}
-                <HighlightedName name={name} query={query} normalizedQuery={normalizedQuery} />
-              </span>
-            ))}
+      <button
+        ref={buttonRef}
+        className="active:bg-accent flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 text-left font-[inherit]"
+        onClick={() => onSelect(stop)}
+      >
+        <div className="flex min-w-0 flex-col gap-0.5">
+          {info.isVerboseEnabled && <IdBadge>{stop.stop_id}</IdBadge>}
+          <span className="text-foreground text-[15px]">
+            {routeTypesEmoji(routeTypes)}{' '}
+            <HighlightedName
+              name={stopNames.name}
+              query={query}
+              normalizedQuery={normalizedQuery}
+            />
           </span>
-        )}
-      </div>
-    </button>
+          {stopNames.subNames.length > 0 && (
+            <span className="text-muted-foreground text-xs leading-snug">
+              {stopNames.subNames.map((name, i) => (
+                <span key={`${i}-${name}`}>
+                  {i > 0 && ' / '}
+                  <HighlightedName name={name} query={query} normalizedQuery={normalizedQuery} />
+                </span>
+              ))}
+            </span>
+          )}
+        </div>
+      </button>
+      <StopActionButtons
+        stopId={stop.stop_id}
+        isAnchor={isAnchor}
+        layout="horizontal"
+        onToggleAnchor={onToggleAnchor}
+        onShowStopTimetable={onShowStopTimetable}
+        onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
+        showAnchorButton
+        showStopTimetableButton
+        showTripInspectionButton
+      />
+    </div>
   );
 }
 
@@ -136,24 +164,62 @@ function HighlightedName({
   );
 }
 
-interface StopSearchModalProps {
+interface StopSearchInputSectionProps {
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  placeholder: string;
+  query: string;
+  onQueryChange: (query: string) => void;
+  onInputKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
+}
+
+function StopSearchInputSection({
+  inputRef,
+  placeholder,
+  query,
+  onQueryChange,
+  onInputKeyDown,
+}: StopSearchInputSectionProps) {
+  return (
+    <div className="border-border shrink-0 border-b px-4 py-3">
+      <input
+        ref={inputRef}
+        type="text"
+        className="border-input bg-background focus:border-ring focus:ring-ring/20 w-full rounded-lg border px-3 py-2.5 text-base outline-none focus:ring-2"
+        placeholder={placeholder}
+        value={query}
+        onChange={(event) => onQueryChange(event.target.value)}
+        onKeyDown={onInputKeyDown}
+      />
+    </div>
+  );
+}
+
+interface StopSearchDialogProps {
   repo: TransitRepository;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
+  isStopAnchor?: (stopId: string) => boolean;
   onSelectStop: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
+  onToggleAnchor?: (stopId: string) => void;
+  onShowStopTimetable?: (stopId: string) => void;
+  onOpenTripInspectionByStopId?: (stopId: string) => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export const StopSearchModal = memo(function StopSearchModal({
+export const StopSearchDialog = memo(function StopSearchDialog({
   repo,
   infoLevel,
   dataLang,
+  isStopAnchor,
   onSelectStop,
+  onToggleAnchor,
+  onShowStopTimetable,
+  onOpenTripInspectionByStopId,
   open,
   onOpenChange,
-}: StopSearchModalProps) {
+}: StopSearchDialogProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [allStops, setAllStops] = useState<Stop[]>([]);
@@ -330,23 +396,19 @@ export const StopSearchModal = memo(function StopSearchModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="top-12 flex max-h-[80dvh] max-w-[90vw] translate-y-0 flex-col gap-0 overflow-hidden border-4 p-0"
+        className="top-12 flex max-h-[80dvh] max-w-[80vw] translate-y-0 flex-col gap-0 overflow-hidden border-4 p-0"
       >
         <DialogHeader className="border-border shrink-0 border-b p-4">
           <DialogTitle className="text-[15px]">{t('search.title')}</DialogTitle>
           <DialogDescription className="sr-only">{t('search.description')}</DialogDescription>
         </DialogHeader>
-        <div className="border-border shrink-0 border-b px-4 py-3">
-          <input
-            ref={inputRef}
-            type="text"
-            className="border-input bg-background focus:border-ring focus:ring-ring/20 w-full rounded-lg border px-3 py-2.5 text-base outline-none focus:ring-2"
-            placeholder={t('search.placeholder')}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleInputKeyDown}
-          />
-        </div>
+        <StopSearchInputSection
+          inputRef={inputRef}
+          placeholder={t('search.placeholder')}
+          query={query}
+          onQueryChange={setQuery}
+          onInputKeyDown={handleInputKeyDown}
+        />
         <div className="flex-1 overflow-y-auto">
           {filteredStops.length > 0
             ? filteredStops.map((stop, index) => (
@@ -359,6 +421,7 @@ export const StopSearchModal = memo(function StopSearchModal({
                     routes: null,
                     unknownPolicy: 'include-unknown',
                   })}
+                  isAnchor={isStopAnchor?.(stop.stop_id) ?? false}
                   query={trimmedQuery}
                   normalizedQuery={normalizedQuery}
                   infoLevel={infoLevel}
@@ -368,6 +431,9 @@ export const StopSearchModal = memo(function StopSearchModal({
                     itemRefs.current[index] = el;
                   }}
                   onSelect={handleSelect}
+                  onToggleAnchor={onToggleAnchor}
+                  onShowStopTimetable={onShowStopTimetable}
+                  onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
                 />
               ))
             : query.trim() !== '' && (

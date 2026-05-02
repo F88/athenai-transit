@@ -177,7 +177,7 @@ vi.mock('../verbose/verbose-trip-stop-time', () => ({
 }));
 
 import { TimetableModal, type TimetableData } from './timetable-modal';
-import { StopSearchModal } from './stop-search-modal';
+import { StopSearchDialog } from './stop-search-dialog';
 import { TripInspectionDialog } from './trip-inspection-dialog';
 
 function makeRoute(id: string): Route {
@@ -435,7 +435,7 @@ describe('dialog memoization regressions', () => {
     expect(tripStopsRenderMock).toHaveBeenCalledTimes(initialRenderCount + 1);
   });
 
-  it('StopSearchModal skips rerender when props are identical', () => {
+  it('StopSearchDialog skips rerender when props are identical', () => {
     const repo = makeRepo();
     const props = {
       repo,
@@ -446,16 +446,16 @@ describe('dialog memoization regressions', () => {
       onOpenChange: vi.fn(),
     };
 
-    const { rerender } = render(<StopSearchModal {...props} />);
+    const { rerender } = render(<StopSearchDialog {...props} />);
     const initialRenderCount = useTranslationMock.mock.calls.length;
 
     expect(initialRenderCount).toBeGreaterThan(0);
 
-    rerender(<StopSearchModal {...props} />);
+    rerender(<StopSearchDialog {...props} />);
 
     expect(useTranslationMock).toHaveBeenCalledTimes(initialRenderCount);
 
-    rerender(<StopSearchModal {...props} infoLevel={'detailed'} />);
+    rerender(<StopSearchDialog {...props} infoLevel={'detailed'} />);
 
     expect(useTranslationMock).toHaveBeenCalledTimes(initialRenderCount + 1);
   });

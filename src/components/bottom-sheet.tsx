@@ -82,7 +82,9 @@ export interface BottomSheetProps {
   onShowTimetable?: (stopId: string, routeId: string, headsign: string) => void;
   onShowStopTimetable?: (stopId: string) => void;
   /** Toggle anchor (bookmark) status for a stop. */
-  onToggleAnchor: (stopId: string, routeTypes: AppRouteTypeValue[]) => void;
+  onToggleAnchor: (stopId: string) => void;
+  /** Optional callback for opening trip inspection from a stop ID. */
+  onOpenTripInspectionByStopId?: (stopId: string) => void;
   /** Optional callback for inspecting one concrete trip. */
   onInspectTrip?: (target: TripInspectionTarget) => void;
   /** Collapsed-state height class applied to the sheet root. */
@@ -114,6 +116,7 @@ export function BottomSheet({
   onShowTimetable,
   onShowStopTimetable,
   onToggleAnchor,
+  onOpenTripInspectionByStopId,
   onInspectTrip,
   collapsedHeightClassName = 'h-[40dvh]',
   expandedHeightClassName = 'h-[70dvh]',
@@ -316,6 +319,7 @@ export function BottomSheet({
         onShowTimetable={onShowTimetable}
         onShowStopTimetable={onShowStopTimetable}
         onToggleAnchor={onToggleAnchor}
+        onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
         onInspectTrip={onInspectTrip}
       />
     </div>
