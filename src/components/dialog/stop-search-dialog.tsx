@@ -15,6 +15,11 @@ import type { InfoLevel } from '@/types/app/settings';
 import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
 import { katakanaToHiragana } from '@/utils/kana-normalize';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
+import {
+  buildSearchIndexEntry,
+  filterStopsByQuery,
+  type SearchIndexEntry,
+} from '@/utils/stop-search-index';
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IdBadge } from '../badge/id-badge';
@@ -23,28 +28,6 @@ import { StopActionButtons } from '../stop-action-buttons';
 const logger = createLogger('StopSearch');
 
 const MAX_RESULTS = 20;
-
-// Separator used in pre-built search blobs so concatenated names cannot
-// produce spurious cross-name substring matches. Queries can never contain
-// this character.
-const NAME_SEP = '\x01';
-
-interface SearchIndexEntry {
-  stop: Stop;
-  /** stop_names values joined verbatim — used for the case-sensitive fallback. */
-  rawNamesBlob: string;
-  /** stop_names values lower-cased and katakana→hiragana normalized — used for the kana-normalized fallback. */
-  normalizedNamesBlob: string;
-}
-
-function buildSearchIndexEntry(stop: Stop): SearchIndexEntry {
-  const names = Object.values(stop.stop_names);
-  return {
-    stop,
-    rawNamesBlob: names.join(NAME_SEP),
-    normalizedNamesBlob: names.map((n) => katakanaToHiragana(n.toLowerCase())).join(NAME_SEP),
-  };
-}
 
 interface StopSearchResultItemProps {
   stop: Stop;
@@ -319,39 +302,10 @@ export const StopSearchDialog = memo(function StopSearchDialog({
     [onOpenChange],
   );
 
-  const filteredStops = useMemo(() => {
-    const trimmed = query.trim();
-    if (trimmed === '') {
-      return [];
-    }
-    const lowerTrimmed = trimmed.toLowerCase();
-    const normalizedQuery = katakanaToHiragana(lowerTrimmed);
-    const matches: Stop[] = [];
-    for (const entry of searchIndex) {
-      const s = entry.stop;
-      if (
-        s.stop_name.includes(trimmed) ||
-        entry.rawNamesBlob.includes(trimmed) ||
-        (normalizedQuery !== '' && entry.normalizedNamesBlob.includes(normalizedQuery))
-      ) {
-        matches.push(s);
-      }
-    }
-    // Sort: prefix matches first, then by name length (shorter = more relevant),
-    // then by ja-Hrkt reading for correct gojuon order
-    matches.sort((a, b) => {
-      const aPrefix = a.stop_name.startsWith(trimmed) ? 0 : 1;
-      const bPrefix = b.stop_name.startsWith(trimmed) ? 0 : 1;
-      if (aPrefix !== bPrefix) {
-        return aPrefix - bPrefix;
-      }
-      if (a.stop_name.length !== b.stop_name.length) {
-        return a.stop_name.length - b.stop_name.length;
-      }
-      return (a.stop_names['ja-Hrkt'] ?? '').localeCompare(b.stop_names['ja-Hrkt'] ?? '', 'ja');
-    });
-    return matches.slice(0, MAX_RESULTS);
-  }, [query, searchIndex]);
+  const filteredStops = useMemo(
+    () => filterStopsByQuery(searchIndex, query, MAX_RESULTS),
+    [query, searchIndex],
+  );
 
   const trimmedQuery = query.trim();
   const normalizedQuery = katakanaToHiragana(trimmedQuery.toLowerCase());
