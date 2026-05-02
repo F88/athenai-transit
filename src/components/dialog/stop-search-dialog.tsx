@@ -24,6 +24,28 @@ const logger = createLogger('StopSearch');
 
 const MAX_RESULTS = 20;
 
+// Separator used in pre-built search blobs so concatenated names cannot
+// produce spurious cross-name substring matches. Queries can never contain
+// this character.
+const NAME_SEP = '\x01';
+
+interface SearchIndexEntry {
+  stop: Stop;
+  /** stop_names values joined verbatim — used for the case-sensitive fallback. */
+  rawNamesBlob: string;
+  /** stop_names values lower-cased and katakana→hiragana normalized — used for the kana-normalized fallback. */
+  normalizedNamesBlob: string;
+}
+
+function buildSearchIndexEntry(stop: Stop): SearchIndexEntry {
+  const names = Object.values(stop.stop_names);
+  return {
+    stop,
+    rawNamesBlob: names.join(NAME_SEP),
+    normalizedNamesBlob: names.map((n) => katakanaToHiragana(n.toLowerCase())).join(NAME_SEP),
+  };
+}
+
 interface StopSearchResultItemProps {
   stop: Stop;
   routeTypes: AppRouteTypeValue[];
@@ -222,16 +244,24 @@ export const StopSearchDialog = memo(function StopSearchDialog({
 }: StopSearchDialogProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
-  const [allStops, setAllStops] = useState<Stop[]>([]);
+  const [searchIndex, setSearchIndex] = useState<SearchIndexEntry[]>([]);
   const [routeTypeMap, setRouteTypeMap] = useState<Map<string, AppRouteTypeValue[]>>(
     () => new Map(),
   );
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  // Tracks which repo instance the searchIndex / routeTypeMap were built for.
+  // Lets us skip the rebuild when the dialog is reopened against the same repo.
+  // Updated only after both async loads finish so we never short-circuit on
+  // partially-loaded state from a cancelled run.
+  const builtForRepoRef = useRef<TransitRepository | null>(null);
 
   useEffect(() => {
     if (!open) {
+      return;
+    }
+    if (builtForRepoRef.current === repo) {
       return;
     }
     let cancelled = false;
@@ -242,7 +272,11 @@ export const StopSearchDialog = memo(function StopSearchDialog({
         if (cancelled || !result.success) {
           return;
         }
-        setAllStops(result.data);
+        // Pre-build the search index so the per-keystroke filter only does
+        // single-string `includes` calls, not repeated `katakanaToHiragana`
+        // normalization in the hot loop.
+        const index = result.data.map(buildSearchIndexEntry);
+        setSearchIndex(index);
 
         // Batch-fetch route types for all stops
         return Promise.all(
@@ -254,6 +288,7 @@ export const StopSearchDialog = memo(function StopSearchDialog({
         ).then((entries) => {
           if (!cancelled) {
             setRouteTypeMap(new Map(entries));
+            builtForRepoRef.current = repo;
           }
         });
       })
@@ -291,17 +326,17 @@ export const StopSearchDialog = memo(function StopSearchDialog({
     }
     const lowerTrimmed = trimmed.toLowerCase();
     const normalizedQuery = katakanaToHiragana(lowerTrimmed);
-    const matches = allStops.filter((s) => {
-      if (s.stop_name.includes(trimmed)) {
-        return true;
+    const matches: Stop[] = [];
+    for (const entry of searchIndex) {
+      const s = entry.stop;
+      if (
+        s.stop_name.includes(trimmed) ||
+        entry.rawNamesBlob.includes(trimmed) ||
+        (normalizedQuery !== '' && entry.normalizedNamesBlob.includes(normalizedQuery))
+      ) {
+        matches.push(s);
       }
-      return Object.values(s.stop_names).some((name) => {
-        if (name.includes(trimmed)) {
-          return true;
-        }
-        return katakanaToHiragana(name.toLowerCase()).includes(normalizedQuery);
-      });
-    });
+    }
     // Sort: prefix matches first, then by name length (shorter = more relevant),
     // then by ja-Hrkt reading for correct gojuon order
     matches.sort((a, b) => {
@@ -316,7 +351,7 @@ export const StopSearchDialog = memo(function StopSearchDialog({
       return (a.stop_names['ja-Hrkt'] ?? '').localeCompare(b.stop_names['ja-Hrkt'] ?? '', 'ja');
     });
     return matches.slice(0, MAX_RESULTS);
-  }, [query, allStops]);
+  }, [query, searchIndex]);
 
   const trimmedQuery = query.trim();
   const normalizedQuery = katakanaToHiragana(trimmedQuery.toLowerCase());
