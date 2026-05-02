@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { InfoDialog } from './components/dialog/info-dialog';
 import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
-import { StopSearchModal } from './components/dialog/stop-search-modal';
+import { StopSearchDialog } from './components/dialog/stop-search-dialog';
 import { TimetableModal, type TimetableData } from './components/dialog/timetable-modal';
 import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
 import { MapBottomSheetLayout } from './components/map-bottom-sheet-layout';
@@ -1034,11 +1034,14 @@ export default function App({ loadResult }: AppProps) {
           />
         }
       />
-      <StopSearchModal
+      <StopSearchDialog
         repo={repo}
         infoLevel={settings.infoLevel}
         dataLang={langChain}
+        isStopAnchor={isStopAnchor}
         onSelectStop={handleSearchSelect}
+        onToggleAnchor={handleToggleAnchorByStopId}
+        onShowStopTimetable={handleShowStopTimetable}
         onOpenTripInspectionByStopId={handleOpenTripInspectionByStopId}
         open={searchModalOpen}
         onOpenChange={setSearchModalOpen}

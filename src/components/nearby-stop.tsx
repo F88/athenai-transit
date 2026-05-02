@@ -154,6 +154,9 @@ export function NearbyStop({
           onToggleAnchor={onToggleAnchor}
           onShowStopTimetable={onShowStopTimetable}
           onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
+          showAnchorButton
+          showStopTimetableButton
+          showTripInspectionButton={false}
         />
       </div>
 
