@@ -552,13 +552,19 @@ export default function App({ loadResult }: AppProps) {
         now: dateTime,
         serviceDate,
       }).then((status) => {
-        if (status === 'no-data') {
-          toast.warning(t('tripInspection.noData'));
+        if (status.status === 'no-data') {
+          const messageKey =
+            status.reason === 'no-stop-data'
+              ? 'tripInspection.messages.noStopData'
+              : status.reason === 'no-service-on-this-day'
+                ? 'tripInspection.messages.noServiceOnThisDay'
+                : 'tripInspection.messages.noData';
+          toast.warning(t(messageKey));
           return;
         }
 
-        if (status === 'error') {
-          toast.error(t('tripInspection.openFailed'));
+        if (status.status === 'error') {
+          toast.error(t('tripInspection.messages.openFailed'));
         }
       });
     },
@@ -568,13 +574,19 @@ export default function App({ loadResult }: AppProps) {
   const handleInspectTrip = useCallback(
     (target: TripInspectionTarget) => {
       void openTripInspectionFromTarget(target).then((status) => {
-        if (status === 'no-data') {
-          toast.warning(t('tripInspection.noData'));
+        if (status.status === 'no-data') {
+          const messageKey =
+            status.reason === 'no-stop-data'
+              ? 'tripInspection.messages.noStopData'
+              : status.reason === 'no-service-on-this-day'
+                ? 'tripInspection.messages.noServiceOnThisDay'
+                : 'tripInspection.messages.noData';
+          toast.warning(t(messageKey));
           return;
         }
 
-        if (status === 'error') {
-          toast.error(t('tripInspection.openFailed'));
+        if (status.status === 'error') {
+          toast.error(t('tripInspection.messages.openFailed'));
         }
       });
     },

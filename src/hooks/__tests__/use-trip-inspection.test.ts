@@ -47,7 +47,10 @@ describe('useTripInspection', () => {
       });
     });
 
-    expect(status!).toBe('no-data');
+    expect(status!).toEqual({
+      status: 'no-data',
+      reason: 'no-service-on-this-day',
+    });
     expect(mockWarn).toHaveBeenCalledWith(
       'openTripInspectionFromStopId: empty trip inspection target result',
       expect.objectContaining({
@@ -80,7 +83,10 @@ describe('useTripInspection', () => {
       });
     });
 
-    expect(status!).toBe('no-data');
+    expect(status!).toEqual({
+      status: 'no-data',
+      reason: 'no-stop-data',
+    });
     expect(mockWarn).toHaveBeenCalledWith(
       'openTripInspectionFromStopId: empty trip inspection target result',
       expect.objectContaining({

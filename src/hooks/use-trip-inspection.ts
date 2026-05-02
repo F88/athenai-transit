@@ -9,7 +9,10 @@ import {
 } from '../domain/transit/trip-inspection-target';
 import { createLogger, type Logger } from '../lib/logger';
 import type { TransitRepository } from '../repositories/transit-repository';
-import type { TripInspectionTargetsResult } from '../types/app/repository';
+import type {
+  TripInspectionTargetsEmptyReason,
+  TripInspectionTargetsResult,
+} from '../types/app/repository';
 import type {
   SelectedTripSnapshot,
   TripInspectionTarget,
@@ -25,6 +28,20 @@ interface OpenTripInspectionByStopIdParams {
 }
 
 type TripInspectionOpenResult = 'opened' | 'no-data' | 'error' | 'cancelled';
+
+export type TripInspectionNoDataReason =
+  | TripInspectionTargetsEmptyReason
+  | 'snapshot-unavailable'
+  | 'target-missing';
+
+type TripInspectionOpenOutcome =
+  | { status: 'opened' }
+  | { status: 'cancelled' }
+  | { status: 'error' }
+  | {
+      status: 'no-data';
+      reason: TripInspectionNoDataReason;
+    };
 
 type TripInspectionLoadResult = Extract<TripInspectionOpenResult, 'error' | 'no-data'>;
 type RefineFailureStatus = Extract<TripInspectionOpenResult, 'no-data' | 'error' | 'cancelled'>;
@@ -64,10 +81,12 @@ interface UseTripInspectionReturn {
   tripInspectionSnapshot: SelectedTripSnapshot | null;
   tripInspectionTargets: TripInspectionTarget[];
   currentTripInspectionTargetIndex: number;
-  openTripInspectionFromTarget: (target: TripInspectionTarget) => Promise<TripInspectionOpenResult>;
+  openTripInspectionFromTarget: (
+    target: TripInspectionTarget,
+  ) => Promise<TripInspectionOpenOutcome>;
   openTripInspectionFromStopId: (
     params: OpenTripInspectionByStopIdParams,
-  ) => Promise<TripInspectionOpenResult>;
+  ) => Promise<TripInspectionOpenOutcome>;
   openPreviousTripInspection: () => void;
   openNextTripInspection: () => void;
   closeTripInspection: () => void;
@@ -270,19 +289,21 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
     async (
       target: TripInspectionTarget,
       preferCachedTargets: boolean,
-    ): Promise<TripInspectionOpenResult> => {
+    ): Promise<TripInspectionOpenOutcome> => {
       const lookupRequestId = lookupRequestIdRef.current + 1;
       lookupRequestIdRef.current = lookupRequestId;
 
       const trip = repo.getTripSnapshot(target.tripLocator, target.serviceDate);
       if (!trip.success) {
         logger.warn('openTripInspection: failed to resolve trip snapshot', trip.error);
-        return 'error';
+        return { status: 'error' };
       }
 
       const loadedSnapshot = loadTripInspectionSnapshot(trip.data, target);
       if (!loadedSnapshot.ok) {
-        return loadedSnapshot.status;
+        return loadedSnapshot.status === 'no-data'
+          ? { status: 'no-data', reason: 'snapshot-unavailable' }
+          : { status: loadedSnapshot.status };
       }
 
       const { snapshot, selectedStopId } = loadedSnapshot.data;
@@ -297,7 +318,7 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
         if (currentIndex >= 0) {
           setTripInspectionSnapshot(snapshot);
           setCurrentTripInspectionTargetIndex(currentIndex);
-          return 'opened';
+          return { status: 'opened' };
         }
 
         logger.warn('openTripInspection: target missing from cached trip-inspection targets', {
@@ -314,13 +335,15 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
         () => lookupRequestIdRef.current !== lookupRequestId,
       );
       if (!refinedState.ok) {
-        return refinedState.status;
+        return refinedState.status === 'no-data'
+          ? { status: 'no-data', reason: 'target-missing' }
+          : { status: refinedState.status };
       }
 
       updateTripInspectionTargets(refinedState.data.targets);
       setCurrentTripInspectionTargetIndex(refinedState.data.targetIndex);
       setTripInspectionSnapshot(refinedState.data.snapshot);
-      return 'opened';
+      return { status: 'opened' };
     },
     [repo, updateTripInspectionTargets],
   );
@@ -345,7 +368,7 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
         });
 
         if (lookupRequestIdRef.current !== lookupRequestId) {
-          return 'cancelled' satisfies TripInspectionOpenResult;
+          return { status: 'cancelled' } satisfies TripInspectionOpenOutcome;
         }
 
         if (!result.success) {
@@ -354,11 +377,19 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
             serviceDate: serviceDate.toISOString(),
             error: result.error,
           });
-          return 'error' satisfies TripInspectionOpenResult;
+          return { status: 'error' } satisfies TripInspectionOpenOutcome;
         }
 
         if (result.data.length === 0) {
           const emptyReason = result.meta.emptyReason;
+          if (emptyReason === undefined) {
+            logger.warn('openTripInspectionFromStopId: empty result missing emptyReason metadata', {
+              stopId,
+              serviceDate: serviceDate.toISOString(),
+            });
+            return { status: 'error' } satisfies TripInspectionOpenOutcome;
+          }
+
           logger.warn('openTripInspectionFromStopId: empty trip inspection target result', {
             stopId,
             now: now.toISOString(),
@@ -371,7 +402,10 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
                 ? 'The stop has no trip-inspection stop data.'
                 : 'The stop has trip-inspection data, but no services on the selected service day.',
           });
-          return 'no-data' satisfies TripInspectionOpenResult;
+          return {
+            status: 'no-data',
+            reason: emptyReason,
+          } satisfies TripInspectionOpenOutcome;
         }
 
         const selectedTarget = selectTripInspectionTargetByReferenceTime(
@@ -391,13 +425,13 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
               candidateCount: result.data.length,
             },
           );
-          return 'error' satisfies TripInspectionOpenResult;
+          return { status: 'error' } satisfies TripInspectionOpenOutcome;
         }
 
         return openTripInspectionInternal(selectedTarget.target, false);
       } catch (error: unknown) {
         if (lookupRequestIdRef.current !== lookupRequestId) {
-          return 'cancelled' satisfies TripInspectionOpenResult;
+          return { status: 'cancelled' } satisfies TripInspectionOpenOutcome;
         }
 
         logger.warn('openTripInspectionFromStopId: unexpected error', {
@@ -405,7 +439,7 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
           serviceDate: serviceDate.toISOString(),
           error,
         });
-        return 'error' satisfies TripInspectionOpenResult;
+        return { status: 'error' } satisfies TripInspectionOpenOutcome;
       }
     },
     [openTripInspectionInternal, repo],
@@ -419,7 +453,10 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
     const previousTarget = tripInspectionTargets[currentTripInspectionTargetIndex - 1];
     if (previousTarget) {
       void openTripInspectionInternal(previousTarget, true).then((status) => {
-        if ((status === 'no-data' || status === 'error') && logger.isEnabled('debug')) {
+        if (
+          (status.status === 'no-data' || status.status === 'error') &&
+          logger.isEnabled('debug')
+        ) {
           logger.debug('openTripInspection: previous target open failed after inner warning', {
             status,
             target: previousTarget,
@@ -437,7 +474,10 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
     const nextTarget = tripInspectionTargets[currentTripInspectionTargetIndex + 1];
     if (nextTarget) {
       void openTripInspectionInternal(nextTarget, true).then((status) => {
-        if ((status === 'no-data' || status === 'error') && logger.isEnabled('debug')) {
+        if (
+          (status.status === 'no-data' || status.status === 'error') &&
+          logger.isEnabled('debug')
+        ) {
           logger.debug('openTripInspection: next target open failed after inner warning', {
             status,
             target: nextTarget,
