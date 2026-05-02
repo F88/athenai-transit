@@ -9,6 +9,26 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Stop ID から直接 trip inspection を開く動線 (`openTripInspectionFromStopId`) を BottomSheet / Map marker / StopSearchDialog で共通化。
+- `StopActionButtons` (anchor / timetable / trip-inspection の 3 アクション) を共通コンポーネントとして抽出 + Storybook stories。
+- Trip-inspection target 解決ロジックを `src/domain/transit/trip-inspection-target.ts` の純関数として切り出し、単体テストでカバー。
+- `logger.isEnabled('debug')` を追加し debug-only diagnostic を gate 可能に。
+
+### Changed
+
+- `useTripInspection` を `loadTripInspectionSnapshot` / `refineTripInspectionState` / orchestration に分割。cancellation を `isCancelled: () => boolean` opaque token 経由に切替し、helper を React ref から解放。
+- `TripInspectionTargetsResult` を discriminated tuple union (`data: [] | NonEmptyTripInspectionTargets` + 必須 `emptyReason`) に tighten し、空結果の理由 (`'no-stop-data'` / `'no-service-on-this-day'`) を型で表明。
+- `getTripInspectionTargets` で「全 active groups の pattern 参照切れ」を検出して `success: false` に分類 (旧: silent に `'no-active-service'` 扱い)。
+- Anchor button を chip 化 (active 時 amber 塗り + white icon)。color / border を button element 側に集約し icon は `currentColor` 継承で paint timing を同期。
+- StopActionButtons の inactive bg を theme token (`bg-background`) に統一。
+- `StopSearchModal` → `StopSearchDialog` に rename。
+
+### Fixed
+
+- `TimetableModal` の `React.memo` 比較対象を narrow し、不要な再レンダーをさらに抑止。
+
 ## [2026.05.01]
 
 ### Added
