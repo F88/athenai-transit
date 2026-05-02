@@ -56,7 +56,7 @@ export function InfoDialog({ open, onOpenChange }: InfoDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[80dvh] max-w-[90vw] flex-col gap-0 overflow-hidden border-4"
+        className="flex max-h-[80dvh] w-[90dvw] max-w-5xl flex-col gap-0 overflow-hidden border-4 p-2 sm:max-w-3xl"
       >
         <DialogHeader className="border-border shrink-0 border-b pb-3 sm:text-center">
           <DialogTitle className="text-base">Where to Next?</DialogTitle>
