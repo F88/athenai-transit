@@ -95,6 +95,11 @@
   "showTimetable": "Show timetable",
   "timetable": {
     "title": "Timetable",
+    "messages": {
+      "stopNotFound": "No timetable data is available",
+      "routeNotFound": "This route timetable is not available",
+      "openFailed": "Could not load timetable"
+    },
     "entry": {
       "terminal": "Terminal",
       "origin": "Origin",
