@@ -475,9 +475,23 @@ export default function App({ loadResult }: AppProps) {
         routeId,
         headsign,
         dateTime,
+      }).then((status) => {
+        if (status.status === 'not-found') {
+          toast.warning(t('timetable.messages.stopNotFound'));
+          return;
+        }
+
+        if (status.status === 'route-not-found') {
+          toast.warning(t('timetable.messages.routeNotFound'));
+          return;
+        }
+
+        if (status.status === 'error') {
+          toast.error(t('timetable.messages.openFailed'));
+        }
       });
     },
-    [dateTime, openRouteHeadsignTimetable],
+    [dateTime, openRouteHeadsignTimetable, t],
   );
 
   const handleShowStopTimetable = useCallback(
@@ -485,9 +499,18 @@ export default function App({ loadResult }: AppProps) {
       void openStopTimetable({
         stopId,
         dateTime,
+      }).then((status) => {
+        if (status.status === 'not-found') {
+          toast.warning(t('timetable.messages.stopNotFound'));
+          return;
+        }
+
+        if (status.status === 'error') {
+          toast.error(t('timetable.messages.openFailed'));
+        }
       });
     },
-    [dateTime, openStopTimetable],
+    [dateTime, openStopTimetable, t],
   );
 
   const handleOpenTripInspectionByStopId = useCallback(
