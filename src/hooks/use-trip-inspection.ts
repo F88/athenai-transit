@@ -92,6 +92,14 @@ interface UseTripInspectionReturn {
   closeTripInspection: () => void;
 }
 
+function getEmptyTripInspectionTargetsNote(emptyReason: TripInspectionTargetsEmptyReason): string {
+  if (emptyReason === 'no-stop-data') {
+    return 'The stop has no trip-inspection stop data.';
+  }
+
+  return 'The stop has trip-inspection data, but no services on the selected service day.';
+}
+
 function buildTripInspectionMatchDiagnostics(
   target: TripInspectionTarget,
   candidates: TripInspectionTarget[],
@@ -397,10 +405,7 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
             serviceDayKey: formatDateKey(serviceDate),
             currentServiceDayMinutes,
             emptyReason,
-            note:
-              emptyReason === 'no-stop-data'
-                ? 'The stop has no trip-inspection stop data.'
-                : 'The stop has trip-inspection data, but no services on the selected service day.',
+            note: getEmptyTripInspectionTargetsNote(emptyReason),
           });
           return {
             status: 'no-data',
