@@ -15,6 +15,11 @@ import type { InfoLevel } from '@/types/app/settings';
 import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
 import { katakanaToHiragana } from '@/utils/kana-normalize';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
+import {
+  buildSearchIndexEntry,
+  filterStopsByQuery,
+  type SearchIndexEntry,
+} from '@/utils/stop-search-index';
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IdBadge } from '../badge/id-badge';
@@ -222,16 +227,24 @@ export const StopSearchDialog = memo(function StopSearchDialog({
 }: StopSearchDialogProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
-  const [allStops, setAllStops] = useState<Stop[]>([]);
+  const [searchIndex, setSearchIndex] = useState<SearchIndexEntry[]>([]);
   const [routeTypeMap, setRouteTypeMap] = useState<Map<string, AppRouteTypeValue[]>>(
     () => new Map(),
   );
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  // Tracks which repo instance the searchIndex / routeTypeMap were built for.
+  // Lets us skip the rebuild when the dialog is reopened against the same repo.
+  // Updated only after both async loads finish so we never short-circuit on
+  // partially-loaded state from a cancelled run.
+  const builtForRepoRef = useRef<TransitRepository | null>(null);
 
   useEffect(() => {
     if (!open) {
+      return;
+    }
+    if (builtForRepoRef.current === repo) {
       return;
     }
     let cancelled = false;
@@ -242,7 +255,11 @@ export const StopSearchDialog = memo(function StopSearchDialog({
         if (cancelled || !result.success) {
           return;
         }
-        setAllStops(result.data);
+        // Pre-build the search index so the per-keystroke filter only does
+        // single-string `includes` calls, not repeated `katakanaToHiragana`
+        // normalization in the hot loop.
+        const index = result.data.map(buildSearchIndexEntry);
+        setSearchIndex(index);
 
         // Batch-fetch route types for all stops
         return Promise.all(
@@ -254,6 +271,7 @@ export const StopSearchDialog = memo(function StopSearchDialog({
         ).then((entries) => {
           if (!cancelled) {
             setRouteTypeMap(new Map(entries));
+            builtForRepoRef.current = repo;
           }
         });
       })
@@ -284,39 +302,10 @@ export const StopSearchDialog = memo(function StopSearchDialog({
     [onOpenChange],
   );
 
-  const filteredStops = useMemo(() => {
-    const trimmed = query.trim();
-    if (trimmed === '') {
-      return [];
-    }
-    const lowerTrimmed = trimmed.toLowerCase();
-    const normalizedQuery = katakanaToHiragana(lowerTrimmed);
-    const matches = allStops.filter((s) => {
-      if (s.stop_name.includes(trimmed)) {
-        return true;
-      }
-      return Object.values(s.stop_names).some((name) => {
-        if (name.includes(trimmed)) {
-          return true;
-        }
-        return katakanaToHiragana(name.toLowerCase()).includes(normalizedQuery);
-      });
-    });
-    // Sort: prefix matches first, then by name length (shorter = more relevant),
-    // then by ja-Hrkt reading for correct gojuon order
-    matches.sort((a, b) => {
-      const aPrefix = a.stop_name.startsWith(trimmed) ? 0 : 1;
-      const bPrefix = b.stop_name.startsWith(trimmed) ? 0 : 1;
-      if (aPrefix !== bPrefix) {
-        return aPrefix - bPrefix;
-      }
-      if (a.stop_name.length !== b.stop_name.length) {
-        return a.stop_name.length - b.stop_name.length;
-      }
-      return (a.stop_names['ja-Hrkt'] ?? '').localeCompare(b.stop_names['ja-Hrkt'] ?? '', 'ja');
-    });
-    return matches.slice(0, MAX_RESULTS);
-  }, [query, allStops]);
+  const filteredStops = useMemo(
+    () => filterStopsByQuery(searchIndex, query, MAX_RESULTS),
+    [query, searchIndex],
+  );
 
   const trimmedQuery = query.trim();
   const normalizedQuery = katakanaToHiragana(trimmedQuery.toLowerCase());
