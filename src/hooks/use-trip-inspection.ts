@@ -2,15 +2,19 @@ import { useCallback, useRef, useState } from 'react';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import {
   isSameTripInspectionTarget,
-  resolveSnapshotStopIndex,
-  resolveTripInspectionTarget,
+  resolveSelectedTripInspectionSnapshot,
+  resolveTripInspectionDisplayState,
   selectTripInspectionTargetByReferenceTime,
 } from '../domain/transit/trip-inspection-target';
-import { createLogger } from '../lib/logger';
+import { createLogger, type Logger } from '../lib/logger';
 import type { TransitRepository } from '../repositories/transit-repository';
-import type { SelectedTripSnapshot, TripInspectionTarget } from '../types/app/transit-composed';
+import type {
+  SelectedTripSnapshot,
+  TripInspectionTarget,
+  TripSnapshot,
+} from '../types/app/transit-composed';
 
-const logger = createLogger('TripInspection');
+const logger: Logger = createLogger('TripInspection');
 
 interface OpenTripInspectionByStopIdParams {
   stopId: string;
@@ -19,6 +23,40 @@ interface OpenTripInspectionByStopIdParams {
 }
 
 type TripInspectionOpenResult = 'opened' | 'no-data' | 'error' | 'cancelled';
+
+type TripInspectionLoadResult = Extract<TripInspectionOpenResult, 'error' | 'no-data'>;
+type RefineFailureStatus = Extract<TripInspectionOpenResult, 'no-data' | 'error' | 'cancelled'>;
+
+interface LoadedTripInspectionSnapshot {
+  snapshot: SelectedTripSnapshot;
+  selectedStopId: string;
+}
+
+type LoadedTripInspectionSnapshotResult =
+  | {
+      ok: true;
+      data: LoadedTripInspectionSnapshot;
+    }
+  | {
+      ok: false;
+      status: TripInspectionLoadResult;
+    };
+
+interface RefinedTripInspectionState {
+  snapshot: SelectedTripSnapshot;
+  targets: TripInspectionTarget[];
+  targetIndex: number;
+}
+
+type RefinedTripInspectionStateResult =
+  | {
+      ok: true;
+      data: RefinedTripInspectionState;
+    }
+  | {
+      ok: false;
+      status: RefineFailureStatus;
+    };
 
 interface UseTripInspectionReturn {
   tripInspectionSnapshot: SelectedTripSnapshot | null;
@@ -33,26 +71,23 @@ interface UseTripInspectionReturn {
   closeTripInspection: () => void;
 }
 
-function summarizeTripInspectionTarget(target: TripInspectionTarget) {
-  return {
-    patternId: target.tripLocator.patternId,
-    serviceId: target.tripLocator.serviceId,
-    tripIndex: target.tripLocator.tripIndex,
-    stopIndex: target.stopIndex,
-    departureMinutes: target.departureMinutes,
-    serviceDate: target.serviceDate.toISOString(),
-  };
-}
-
 function buildTripInspectionMatchDiagnostics(
   target: TripInspectionTarget,
   candidates: TripInspectionTarget[],
 ) {
-  const samePattern = candidates.filter(
-    (candidate) => candidate.tripLocator.patternId === target.tripLocator.patternId,
-  );
-  const sameService = samePattern.filter(
-    (candidate) => candidate.tripLocator.serviceId === target.tripLocator.serviceId,
+  const summarizeTarget = (candidate: TripInspectionTarget) => ({
+    patternId: candidate.tripLocator.patternId,
+    serviceId: candidate.tripLocator.serviceId,
+    tripIndex: candidate.tripLocator.tripIndex,
+    stopIndex: candidate.stopIndex,
+    departureMinutes: candidate.departureMinutes,
+    serviceDate: candidate.serviceDate.toISOString(),
+  });
+
+  const sameService = candidates.filter(
+    (candidate) =>
+      candidate.tripLocator.patternId === target.tripLocator.patternId &&
+      candidate.tripLocator.serviceId === target.tripLocator.serviceId,
   );
   const sameTripIndex = sameService.filter(
     (candidate) => candidate.tripLocator.tripIndex === target.tripLocator.tripIndex,
@@ -60,12 +95,6 @@ function buildTripInspectionMatchDiagnostics(
   const sameStopIndex = sameTripIndex.filter(
     (candidate) => candidate.stopIndex === target.stopIndex,
   );
-  const sameServiceDate = sameStopIndex.filter(
-    (candidate) => candidate.serviceDate.getTime() === target.serviceDate.getTime(),
-  );
-  const sameDepartureMinutes = sameStopIndex.filter(
-    (candidate) => candidate.departureMinutes === target.departureMinutes,
-  );
 
   return {
     patternId: target.tripLocator.patternId,
@@ -74,20 +103,137 @@ function buildTripInspectionMatchDiagnostics(
     stopIndex: target.stopIndex,
     departureMinutes: target.departureMinutes,
     serviceDate: target.serviceDate.toISOString(),
-    counts: {
-      total: candidates.length,
-      samePattern: samePattern.length,
-      sameService: sameService.length,
-      sameTripIndex: sameTripIndex.length,
-      sameStopIndex: sameStopIndex.length,
-      sameServiceDate: sameServiceDate.length,
-      sameDepartureMinutesAfterStopIndex: sameDepartureMinutes.length,
-    },
-    sampleSamePattern: samePattern.slice(0, 5).map(summarizeTripInspectionTarget),
-    sampleSameService: sameService.slice(0, 5).map(summarizeTripInspectionTarget),
-    sampleSameTripIndex: sameTripIndex.slice(0, 5).map(summarizeTripInspectionTarget),
-    sampleSameStopIndex: sameStopIndex.slice(0, 5).map(summarizeTripInspectionTarget),
+    sampleSameService: sameService.slice(0, 5).map(summarizeTarget),
+    sampleSameTripIndex: sameTripIndex.slice(0, 5).map(summarizeTarget),
+    sampleSameStopIndex: sameStopIndex.slice(0, 5).map(summarizeTarget),
   };
+}
+
+function loadTripInspectionSnapshot(
+  trip: TripSnapshot,
+  target: TripInspectionTarget,
+): LoadedTripInspectionSnapshotResult {
+  const resolvedSnapshot = resolveSelectedTripInspectionSnapshot(trip, target);
+  if (!resolvedSnapshot.ok) {
+    switch (resolvedSnapshot.reason) {
+      case 'pattern-position-missing':
+        logger.warn(
+          `openTripInspection: selected stop index ${target.stopIndex} is missing from reconstructed trip snapshot`,
+        );
+        break;
+      case 'stop-row-missing':
+        logger.warn(
+          'openTripInspection: selected stop row is missing from reconstructed trip snapshot',
+          {
+            target,
+          },
+        );
+        break;
+      default: {
+        const exhaustiveReason: never = resolvedSnapshot.reason;
+        logger.warn('openTripInspection: unexpected snapshot resolution failure', {
+          target,
+          reason: exhaustiveReason,
+        });
+      }
+    }
+
+    return { ok: false, status: 'no-data' };
+  }
+
+  if (resolvedSnapshot.data.selectedStopId === undefined) {
+    logger.warn(
+      'openTripInspection: selected stop metadata missing; skip trip-inspection target lookup',
+    );
+    return { ok: false, status: 'no-data' };
+  }
+
+  return {
+    ok: true,
+    data: {
+      snapshot: resolvedSnapshot.data.snapshot,
+      selectedStopId: resolvedSnapshot.data.selectedStopId,
+    },
+  };
+}
+
+async function refineTripInspectionState(
+  repo: TransitRepository,
+  target: TripInspectionTarget,
+  snapshot: SelectedTripSnapshot,
+  selectedStopId: string,
+  isCancelled: () => boolean,
+): Promise<RefinedTripInspectionStateResult> {
+  try {
+    const result = await repo.getTripInspectionTargets({
+      serviceDate: target.serviceDate,
+      stopId: selectedStopId,
+    });
+
+    if (isCancelled()) {
+      return { ok: false, status: 'cancelled' };
+    }
+
+    if (!result.success) {
+      logger.warn('openTripInspection: trip-inspection target lookup failed', result.error, target);
+      return { ok: false, status: 'error' };
+    }
+
+    if (result.data.length === 0) {
+      return { ok: false, status: 'no-data' };
+    }
+
+    const resolvedState = resolveTripInspectionDisplayState(snapshot, result.data, target);
+    if (!resolvedState.ok) {
+      if (logger.isEnabled('debug')) {
+        const diagnostics = buildTripInspectionMatchDiagnostics(target, result.data);
+        logger.debug(
+          'openTripInspection: target lookup mismatch sampleSameService',
+          diagnostics.sampleSameService,
+        );
+        logger.debug(
+          'openTripInspection: target lookup mismatch sampleSameTripIndex',
+          diagnostics.sampleSameTripIndex,
+        );
+        logger.debug(
+          'openTripInspection: target lookup mismatch sampleSameStopIndex',
+          diagnostics.sampleSameStopIndex,
+        );
+        logger.debug('openTripInspection: target lookup mismatch diagnostics', diagnostics);
+      }
+      logger.warn('openTripInspection: current target missing from trip-inspection targets', {
+        target,
+        targets: result.data,
+      });
+      return { ok: false, status: 'no-data' };
+    }
+
+    if (
+      resolvedState.data.snapshot.currentStopIndex !== snapshot.currentStopIndex ||
+      resolvedState.data.snapshot.selectedStop !== snapshot.selectedStop
+    ) {
+      logger.warn('openTripInspection: using fallback trip-inspection target', {
+        requestedTarget: target,
+        resolvedTarget: resolvedState.data.targets[resolvedState.data.targetIndex],
+      });
+    }
+
+    return {
+      ok: true,
+      data: {
+        snapshot: resolvedState.data.snapshot,
+        targets: resolvedState.data.targets,
+        targetIndex: resolvedState.data.targetIndex,
+      },
+    };
+  } catch (error: unknown) {
+    if (isCancelled()) {
+      return { ok: false, status: 'cancelled' };
+    }
+
+    logger.warn('openTripInspection: trip-inspection target lookup threw', error, target);
+    return { ok: false, status: 'error' };
+  }
 }
 
 /**
@@ -121,7 +267,7 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
   const openTripInspectionInternal = useCallback(
     async (
       target: TripInspectionTarget,
-      refreshTargets: boolean,
+      preferCachedTargets: boolean,
     ): Promise<TripInspectionOpenResult> => {
       const lookupRequestId = lookupRequestIdRef.current + 1;
       lookupRequestIdRef.current = lookupRequestId;
@@ -132,32 +278,17 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
         return 'error';
       }
 
-      const selectedStopIndex = resolveSnapshotStopIndex(trip.data.stopTimes, target);
-      if (selectedStopIndex < 0) {
-        logger.warn(
-          `openTripInspection: selected stop index ${target.stopIndex} is missing from reconstructed trip snapshot`,
-        );
-        return 'no-data';
+      const loadedSnapshot = loadTripInspectionSnapshot(trip.data, target);
+      if (!loadedSnapshot.ok) {
+        return loadedSnapshot.status;
       }
 
-      const selectedStop = trip.data.stopTimes[selectedStopIndex];
-      if (!selectedStop) {
-        logger.warn(
-          `openTripInspection: selected stop array index ${selectedStopIndex} is missing from reconstructed trip snapshot`,
-        );
-        return 'no-data';
-      }
+      const { snapshot, selectedStopId } = loadedSnapshot.data;
 
-      const snapshot: SelectedTripSnapshot = {
-        ...trip.data,
-        currentStopIndex: selectedStopIndex,
-        selectedStop,
-      };
-
-      // logger.debug(buildTripInspectionSummaryLog(snapshot), snapshot);
-      // logger.debug(buildTripInspectionStopsLog(snapshot));
-
-      if (!refreshTargets) {
+      if (preferCachedTargets) {
+        // Prev/next navigation prefers the cached target list for a fast local
+        // move, but it intentionally falls through to a fresh lookup when the
+        // requested target is missing from that cache.
         const currentIndex = tripInspectionTargetsRef.current.findIndex((candidate) =>
           isSameTripInspectionTarget(candidate, target),
         );
@@ -169,136 +300,32 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
 
         logger.warn('openTripInspection: target missing from cached trip-inspection targets', {
           target,
-          tripInspectionTargets: tripInspectionTargetsRef.current,
+          cachedTargets: tripInspectionTargetsRef.current,
         });
       }
 
-      const selectedStopId = selectedStop.stopMeta?.stop.stop_id;
-      if (selectedStopId === undefined) {
-        logger.warn(
-          'openTripInspection: selected stop metadata missing; skip trip-inspection target lookup',
-        );
-        return 'no-data';
+      const refinedState = await refineTripInspectionState(
+        repo,
+        target,
+        snapshot,
+        selectedStopId,
+        () => lookupRequestIdRef.current !== lookupRequestId,
+      );
+      if (!refinedState.ok) {
+        return refinedState.status;
       }
 
-      try {
-        const result = await repo.getTripInspectionTargets({
-          serviceDate: target.serviceDate,
-          stopId: selectedStopId,
-        });
-
-        if (lookupRequestIdRef.current !== lookupRequestId) {
-          return 'cancelled';
-        }
-
-        // logger.debug(
-        //   `openTripInspection: getTripInspectionTargets result serviceDate=${formatTripInspectionServiceDate(target.serviceDate)} stopId=${selectedStopId}`,
-        //   result,
-        // );
-
-        if (!result.success) {
-          logger.warn(
-            'openTripInspection: trip-inspection target lookup failed',
-            result.error,
-            target,
-          );
-          return 'error';
-        }
-
-        if (result.data.length === 0) {
-          // logger.debug('openTripInspection: trip-inspection target lookup returned no targets');
-          return 'no-data';
-        }
-
-        const resolvedTarget = resolveTripInspectionTarget(result.data, target);
-        if (resolvedTarget === null) {
-          const diagnostics = buildTripInspectionMatchDiagnostics(target, result.data);
-          // logger.debug('openTripInspection: target lookup mismatch', {
-          //   requestedStopId: selectedStopId,
-          //   target: summarizeTripInspectionTarget(target),
-          //   sampleCandidates: result.data.slice(0, 10).map(summarizeTripInspectionTarget),
-          // });
-          // logger.debug('openTripInspection: target lookup mismatch counts', diagnostics.counts);
-          // logger.debug(
-          //   'openTripInspection: target lookup mismatch sampleSamePattern',
-          //   diagnostics.sampleSamePattern,
-          // );
-          logger.debug(
-            'openTripInspection: target lookup mismatch sampleSameService',
-            diagnostics.sampleSameService,
-          );
-          logger.debug(
-            'openTripInspection: target lookup mismatch sampleSameTripIndex',
-            diagnostics.sampleSameTripIndex,
-          );
-          logger.debug(
-            'openTripInspection: target lookup mismatch sampleSameStopIndex',
-            diagnostics.sampleSameStopIndex,
-          );
-          logger.debug('openTripInspection: target lookup mismatch diagnostics', diagnostics);
-          logger.warn('openTripInspection: current target missing from trip-inspection targets', {
-            target,
-            targets: result.data,
-          });
-          return 'no-data';
-        }
-
-        let resolvedSnapshot = snapshot;
-
-        if (resolvedTarget.matchType === 'fallback') {
-          const fallbackStopIndex = resolveSnapshotStopIndex(
-            trip.data.stopTimes,
-            resolvedTarget.target,
-          );
-          let fallbackSelectedStop;
-          if (fallbackStopIndex >= 0) {
-            fallbackSelectedStop = trip.data.stopTimes[fallbackStopIndex];
-          }
-          if (!fallbackSelectedStop) {
-            logger.warn(
-              'openTripInspection: fallback target resolved but snapshot stop is missing',
-              {
-                requestedTarget: target,
-                resolvedTarget: resolvedTarget.target,
-              },
-            );
-            return 'no-data';
-          }
-
-          resolvedSnapshot = {
-            ...trip.data,
-            currentStopIndex: fallbackStopIndex,
-            selectedStop: fallbackSelectedStop,
-          };
-          logger.warn('openTripInspection: using fallback trip-inspection target', {
-            requestedTarget: target,
-            resolvedTarget: resolvedTarget.target,
-          });
-        }
-
-        updateTripInspectionTargets(result.data);
-        setCurrentTripInspectionTargetIndex(resolvedTarget.index);
-        setTripInspectionSnapshot(resolvedSnapshot);
-
-        // logger.debug(
-        //   `openTripInspection: serviceDate=${formatTripInspectionServiceDate(target.serviceDate)} trip-inspection targets=${result.data.length} currentIndex=${resolvedTarget.index} stopId=${selectedStopId}`,
-        //   result.data,
-        // );
-        return 'opened';
-      } catch (error: unknown) {
-        if (lookupRequestIdRef.current !== lookupRequestId) {
-          return 'cancelled';
-        }
-        logger.warn('openTripInspection: trip-inspection target lookup threw', error, target);
-        return 'error';
-      }
+      updateTripInspectionTargets(refinedState.data.targets);
+      setCurrentTripInspectionTargetIndex(refinedState.data.targetIndex);
+      setTripInspectionSnapshot(refinedState.data.snapshot);
+      return 'opened';
     },
     [repo, updateTripInspectionTargets],
   );
 
   const openTripInspectionFromTarget = useCallback(
     (target: TripInspectionTarget) => {
-      return openTripInspectionInternal(target, true);
+      return openTripInspectionInternal(target, false);
     },
     [openTripInspectionInternal],
   );
@@ -317,7 +344,7 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
         }
 
         if (!result.success) {
-          logger.warn('openTripInspectionByStopId: failed to load trip inspection targets', {
+          logger.warn('openTripInspectionFromStopId: failed to load trip inspection targets', {
             stopId,
             serviceDate: serviceDate.toISOString(),
             error: result.error,
@@ -331,20 +358,20 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
         );
 
         if (selectedTarget === null) {
-          logger.warn('openTripInspectionByStopId: no trip inspection targets', {
+          logger.warn('openTripInspectionFromStopId: no trip inspection targets', {
             stopId,
             serviceDate: serviceDate.toISOString(),
           });
           return 'no-data' satisfies TripInspectionOpenResult;
         }
 
-        return openTripInspectionInternal(selectedTarget.target, true);
+        return openTripInspectionInternal(selectedTarget.target, false);
       } catch (error: unknown) {
         if (lookupRequestIdRef.current !== lookupRequestId) {
           return 'cancelled' satisfies TripInspectionOpenResult;
         }
 
-        logger.warn('openTripInspectionByStopId: unexpected error', {
+        logger.warn('openTripInspectionFromStopId: unexpected error', {
           stopId,
           serviceDate: serviceDate.toISOString(),
           error,
@@ -362,9 +389,9 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
 
     const previousTarget = tripInspectionTargets[currentTripInspectionTargetIndex - 1];
     if (previousTarget) {
-      void openTripInspectionInternal(previousTarget, false).then((status) => {
-        if (status === 'no-data' || status === 'error') {
-          logger.warn('openTripInspection: failed to open previous target', {
+      void openTripInspectionInternal(previousTarget, true).then((status) => {
+        if ((status === 'no-data' || status === 'error') && logger.isEnabled('debug')) {
+          logger.debug('openTripInspection: previous target open failed after inner warning', {
             status,
             target: previousTarget,
           });
@@ -380,9 +407,9 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
 
     const nextTarget = tripInspectionTargets[currentTripInspectionTargetIndex + 1];
     if (nextTarget) {
-      void openTripInspectionInternal(nextTarget, false).then((status) => {
-        if (status === 'no-data' || status === 'error') {
-          logger.warn('openTripInspection: failed to open next target', {
+      void openTripInspectionInternal(nextTarget, true).then((status) => {
+        if ((status === 'no-data' || status === 'error') && logger.isEnabled('debug')) {
+          logger.debug('openTripInspection: next target open failed after inner warning', {
             status,
             target: nextTarget,
           });

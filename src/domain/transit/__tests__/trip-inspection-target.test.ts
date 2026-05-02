@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import {
   isSameTripInspectionTarget,
+  resolveSelectedTripInspectionSnapshot,
   resolveSnapshotStopIndex,
+  resolveTripInspectionDisplayState,
   resolveTripInspectionTarget,
   selectTripInspectionTargetByReferenceTime,
 } from '../trip-inspection-target';
 import type {
+  TripSnapshot,
   TripInspectionTarget,
   TripLocator,
   TripStopTime,
@@ -68,6 +71,16 @@ function makeStopTime(
         isOrigin: false,
       },
     },
+  };
+}
+
+function makeTripSnapshot(stopTimes: TripStopTime[]): TripSnapshot {
+  return {
+    locator: makeLocator(),
+    route: makeRoute(),
+    tripHeadsign: { name: 'Terminal', names: {} },
+    serviceDate: new Date(2026, 4, 2),
+    stopTimes,
   };
 }
 
@@ -315,5 +328,124 @@ describe('resolveSnapshotStopIndex', () => {
     expect(
       resolveSnapshotStopIndex(stopTimes, makeTarget({ stopIndex: 3, departureMinutes: 590 })),
     ).toBe(0);
+  });
+});
+
+describe('resolveSelectedTripInspectionSnapshot', () => {
+  it('returns a selected snapshot and stopId when the target stop row exists', () => {
+    const stopTimes = [
+      makeStopTime(1, 540),
+      {
+        ...makeStopTime(3, 600),
+        stopMeta: {
+          stop: {
+            stop_id: 'test:stop-3',
+            stop_name: 'Stop 3',
+            stop_names: {},
+            stop_lat: 35,
+            stop_lon: 139,
+            location_type: 0,
+            agency_id: 'test:agency',
+          },
+          agencies: [],
+          routes: [],
+        },
+      },
+    ];
+
+    expect(
+      resolveSelectedTripInspectionSnapshot(
+        makeTripSnapshot(stopTimes),
+        makeTarget({ stopIndex: 3, departureMinutes: 601 }),
+      ),
+    ).toEqual({
+      ok: true,
+      data: {
+        snapshot: {
+          ...makeTripSnapshot(stopTimes),
+          currentStopIndex: 1,
+          selectedStop: stopTimes[1],
+        },
+        selectedStopId: 'test:stop-3',
+      },
+    });
+  });
+
+  it('returns a missing-pattern-position reason when the snapshot has no matching stop row', () => {
+    expect(resolveSelectedTripInspectionSnapshot(makeTripSnapshot([]), makeTarget())).toEqual({
+      ok: false,
+      reason: 'pattern-position-missing',
+    });
+  });
+});
+
+describe('resolveTripInspectionDisplayState', () => {
+  it('returns the snapshot unchanged when the target resolves exactly', () => {
+    const stopTimes = [makeStopTime(1, 540), makeStopTime(3, 600), makeStopTime(5, 660)];
+    const snapshot = {
+      ...makeTripSnapshot(stopTimes),
+      currentStopIndex: 1,
+      selectedStop: stopTimes[1],
+    };
+    const candidates = [makeTarget({ stopIndex: 1, departureMinutes: 540 }), makeTarget()];
+
+    expect(resolveTripInspectionDisplayState(snapshot, candidates, makeTarget())).toEqual({
+      ok: true,
+      data: {
+        snapshot,
+        targets: candidates,
+        targetIndex: 1,
+      },
+    });
+  });
+
+  it('rebuilds the snapshot around the fallback target when only a same-trip fallback exists', () => {
+    const stopTimes = [makeStopTime(1, 540), makeStopTime(4, 618), makeStopTime(8, 700)];
+    const snapshot = {
+      ...makeTripSnapshot(stopTimes),
+      currentStopIndex: 0,
+      selectedStop: stopTimes[0],
+    };
+    const candidates = [makeTarget({ stopIndex: 4, departureMinutes: 620 })];
+
+    expect(
+      resolveTripInspectionDisplayState(
+        snapshot,
+        candidates,
+        makeTarget({ stopIndex: 5, departureMinutes: 620 }),
+      ),
+    ).toEqual({
+      ok: true,
+      data: {
+        snapshot: {
+          ...snapshot,
+          currentStopIndex: 1,
+          selectedStop: stopTimes[1],
+        },
+        targets: candidates,
+        targetIndex: 0,
+      },
+    });
+  });
+
+  it('returns a target-not-found reason when no candidate can be resolved', () => {
+    const stopTimes = [makeStopTime(1, 540)];
+    const snapshot = {
+      ...makeTripSnapshot(stopTimes),
+      currentStopIndex: 0,
+      selectedStop: stopTimes[0],
+    };
+
+    expect(
+      resolveTripInspectionDisplayState(
+        snapshot,
+        [
+          makeTarget({
+            tripLocator: { patternId: 'pattern-b' },
+          }),
+        ],
+        makeTarget(),
+      ),
+    ).toEqual({ ok: false, reason: 'target-not-found' });
   });
 });

@@ -1,10 +1,46 @@
-import type { TripInspectionTarget, TripStopTime } from '../../types/app/transit-composed';
+import type {
+  SelectedTripSnapshot,
+  TripInspectionTarget,
+  TripSnapshot,
+  TripStopTime,
+} from '../../types/app/transit-composed';
 
 export interface ResolvedTripInspectionTarget {
   target: TripInspectionTarget;
   index: number;
   matchType: 'exact' | 'fallback' | 'reference-time';
 }
+
+export interface ResolvedSelectedTripInspectionSnapshot {
+  snapshot: SelectedTripSnapshot;
+  selectedStopId?: string;
+}
+
+export type ResolveSelectedTripInspectionSnapshotResult =
+  | {
+      ok: true;
+      data: ResolvedSelectedTripInspectionSnapshot;
+    }
+  | {
+      ok: false;
+      reason: 'pattern-position-missing' | 'stop-row-missing';
+    };
+
+export interface ResolvedTripInspectionDisplayState {
+  snapshot: SelectedTripSnapshot;
+  targets: TripInspectionTarget[];
+  targetIndex: number;
+}
+
+export type ResolveTripInspectionDisplayStateResult =
+  | {
+      ok: true;
+      data: ResolvedTripInspectionDisplayState;
+    }
+  | {
+      ok: false;
+      reason: 'target-not-found';
+    };
 
 /**
  * Returns whether two trip-inspection targets refer to the same stop event.
@@ -226,4 +262,92 @@ export function resolveSnapshotStopIndex(
   }
 
   return bestArrayIndex;
+}
+
+/**
+ * Rebuilds the selected stop row inside one reconstructed trip snapshot.
+ *
+ * This helper applies the same sparse-safe stop-index resolution used by trip
+ * inspection, then returns a {@link SelectedTripSnapshot} enriched with the
+ * resolved stop row and its `stop_id` when available.
+ *
+ * @param trip - Reconstructed trip snapshot returned by the repository.
+ * @param target - Target whose selected stop should be located.
+ * @returns The selected snapshot plus optional `stop_id`, or `null` when no
+ *          suitable stop row can be resolved from the snapshot.
+ */
+export function resolveSelectedTripInspectionSnapshot(
+  trip: TripSnapshot,
+  target: TripInspectionTarget,
+): ResolveSelectedTripInspectionSnapshotResult {
+  const selectedStopIndex = resolveSnapshotStopIndex(trip.stopTimes, target);
+  if (selectedStopIndex < 0) {
+    return { ok: false, reason: 'pattern-position-missing' };
+  }
+
+  const selectedStop = trip.stopTimes[selectedStopIndex];
+  if (!selectedStop) {
+    return { ok: false, reason: 'stop-row-missing' };
+  }
+
+  return {
+    ok: true,
+    data: {
+      snapshot: {
+        ...trip,
+        currentStopIndex: selectedStopIndex,
+        selectedStop,
+      },
+      selectedStopId: selectedStop.stopMeta?.stop.stop_id,
+    },
+  };
+}
+
+/**
+ * Resolves the final trip-inspection display state from one snapshot and a set
+ * of stop-level trip-inspection candidates.
+ *
+ * The helper resolves the requested target against the candidate list and, when
+ * needed, rebuilds the snapshot around the fallback target's stop row.
+ *
+ * @param snapshot - Initial selected snapshot reconstructed for the requested target.
+ * @param candidates - Ordered trip-inspection candidates for the selected stop.
+ * @param target - Requested target that should be matched or approximated.
+ * @returns The final snapshot, candidate list, and selected index, or `null`
+ *          when no candidate or fallback snapshot can be resolved.
+ */
+export function resolveTripInspectionDisplayState(
+  snapshot: SelectedTripSnapshot,
+  candidates: TripInspectionTarget[],
+  target: TripInspectionTarget,
+): ResolveTripInspectionDisplayStateResult {
+  const resolvedTarget = resolveTripInspectionTarget(candidates, target);
+  if (!resolvedTarget) {
+    return { ok: false, reason: 'target-not-found' };
+  }
+
+  let resolvedSnapshot = snapshot;
+  if (resolvedTarget.matchType === 'fallback') {
+    const fallbackStopIndex = resolveSnapshotStopIndex(snapshot.stopTimes, resolvedTarget.target);
+    const fallbackSelectedStop =
+      fallbackStopIndex >= 0 ? snapshot.stopTimes[fallbackStopIndex] : undefined;
+    if (!fallbackSelectedStop) {
+      return { ok: false, reason: 'target-not-found' };
+    }
+
+    resolvedSnapshot = {
+      ...snapshot,
+      currentStopIndex: fallbackStopIndex,
+      selectedStop: fallbackSelectedStop,
+    };
+  }
+
+  return {
+    ok: true,
+    data: {
+      snapshot: resolvedSnapshot,
+      targets: candidates,
+      targetIndex: resolvedTarget.index,
+    },
+  };
 }
