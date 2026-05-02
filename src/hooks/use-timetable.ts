@@ -8,7 +8,7 @@ import {
 import { getStopServiceState } from '@/domain/transit/timetable-utils';
 import { createLogger } from '@/lib/logger';
 import type { TransitRepository } from '@/repositories/transit-repository';
-import type { TimetableResult } from '@/types/app/repository';
+import type { Result, TimetableResult } from '@/types/app/repository';
 import type { Route } from '@/types/app/transit';
 import type { StopWithMeta } from '@/types/app/transit-composed';
 import type { TimetableData } from '@/types/app/timetable';
@@ -36,7 +36,7 @@ export type TimetableOpenOutcome =
   | { status: 'route-not-found' }
   | { status: 'error' };
 
-interface UseTimetableReturn {
+export interface UseTimetableReturn {
   timetableData: TimetableData | null;
   openStopTimetable: (params: OpenStopTimetableParams) => Promise<TimetableOpenOutcome>;
   openRouteHeadsignTimetable: (
@@ -48,13 +48,8 @@ interface UseTimetableReturn {
 async function loadTimetableStopMeta(
   repo: TransitRepository,
   stopId: string,
-): Promise<StopWithMeta | null> {
-  const result = await repo.getStopMetaById(stopId);
-  if (!result.success) {
-    return null;
-  }
-
-  return result.data;
+): Promise<Result<StopWithMeta>> {
+  return repo.getStopMetaById(stopId);
 }
 
 function resolveTimetableRoutes(filter: TimetableFilter, meta: StopWithMeta): Route[] {
@@ -65,22 +60,46 @@ function resolveTimetableRoutes(filter: TimetableFilter, meta: StopWithMeta): Ro
   return meta.routes.filter((route) => route.route_id === filter.routeId);
 }
 
-function normalizeTimetableResult(result: TimetableResult) {
-  if (!result.success) {
+function resolveTimetableRoutesResult(
+  filter: TimetableFilter,
+  meta: StopWithMeta,
+):
+  | { ok: true; routes: Route[] }
+  | {
+      ok: false;
+      routeId: string;
+      headsign: string;
+    } {
+  const routes = resolveTimetableRoutes(filter, meta);
+
+  if (filter.type !== 'route-headsign') {
+    return { ok: true, routes };
+  }
+
+  if (routes.length === 0) {
     return {
-      allEntries: [],
-      isBoardableOnServiceDay: false,
+      ok: false,
+      routeId: filter.routeId,
+      headsign: filter.headsign,
     };
   }
 
+  return { ok: true, routes };
+}
+
+function normalizeTimetableResult(result: Extract<TimetableResult, { success: true }>) {
   return {
     allEntries: result.data,
     isBoardableOnServiceDay: result.meta.isBoardableOnServiceDay,
+    totalEntries: result.meta.totalEntries,
   };
 }
 
-function buildTimetableEntries(filter: TimetableFilter, result: TimetableResult) {
-  const { allEntries, isBoardableOnServiceDay } = normalizeTimetableResult(result);
+function buildTimetableEntries(
+  filter: TimetableFilter,
+  result: Extract<TimetableResult, { success: true }>,
+) {
+  const { allEntries, isBoardableOnServiceDay, totalEntries } = normalizeTimetableResult(result);
 
   if (filter.type === 'route-headsign') {
     const prepared = prepareRouteHeadsignTimetable(
@@ -90,38 +109,48 @@ function buildTimetableEntries(filter: TimetableFilter, result: TimetableResult)
       true,
     );
     return {
-      allEntries,
       isBoardableOnServiceDay,
+      totalEntries,
       entries: prepared.entries,
       omitted: prepared.omitted,
-      headsign: filter.headsign,
     };
   }
 
   const prepared = prepareStopTimetable(allEntries, true);
   return {
-    allEntries,
     isBoardableOnServiceDay,
+    totalEntries,
     entries: prepared.entries,
     omitted: prepared.omitted,
-    headsign: undefined,
   };
 }
 
 function formatTimetableDebugMessage(params: {
   filter: TimetableFilter;
   stopId: string;
-  headsign?: string;
   entriesCount: number;
   omittedNonBoardable: number;
   totalEntries: number;
 }): string {
   let routeSuffix = '';
   if (params.filter.type === 'route-headsign') {
-    routeSuffix = ` ${params.filter.routeId} "${params.headsign}"`;
+    routeSuffix = ` ${params.filter.routeId} "${params.filter.headsign}"`;
   }
 
   return `timetable(${params.filter.type}): ${params.stopId}${routeSuffix} → entries=${params.entriesCount} omitted.nonBoardable=${params.omittedNonBoardable} total=${params.totalEntries}`;
+}
+
+function formatUnknownError(error: unknown) {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      stack: error.stack,
+    };
+  }
+
+  return {
+    message: String(error),
+  };
 }
 
 export function useTimetable(repo: TransitRepository): UseTimetableReturn {
@@ -138,44 +167,65 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
       requestIdRef.current = requestId;
 
       try {
-        const meta = await loadTimetableStopMeta(repo, stopId);
+        // Resolve stop metadata first so unknown stops short-circuit before the
+        // full timetable scan for that stop/service day runs.
+        const stopMetaResult = await loadTimetableStopMeta(repo, stopId);
         if (requestIdRef.current !== requestId) {
           return { status: 'cancelled' };
         }
 
-        if (!meta) {
-          logger.warn('openTimetable: stop metadata not found', { stopId, filter });
+        if (!stopMetaResult.success) {
+          logger.warn('openTimetable: stop metadata not found', {
+            stopId,
+            filter,
+            error: stopMetaResult.error,
+          });
           return { status: 'not-found' };
         }
+        const meta = stopMetaResult.data;
 
-        const routes = resolveTimetableRoutes(filter, meta);
-        if (filter.type === 'route-headsign' && routes.length === 0) {
+        const routesResult = resolveTimetableRoutesResult(filter, meta);
+        if (!routesResult.ok) {
           logger.warn('openTimetable: route metadata not found for stop', {
             stopId,
-            routeId: filter.routeId,
-            headsign: filter.headsign,
+            routeId: routesResult.routeId,
+            headsign: routesResult.headsign,
           });
           return { status: 'route-not-found' };
         }
+        const { routes } = routesResult;
 
-        const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
+        const timetableResult = await repo.getFullDayTimetableEntries(stopId, dateTime);
         if (requestIdRef.current !== requestId) {
           return { status: 'cancelled' };
         }
 
-        const { allEntries, isBoardableOnServiceDay, entries, omitted, headsign } =
-          buildTimetableEntries(filter, result);
-
-        logger.debug(
-          formatTimetableDebugMessage({
-            filter,
+        if (!timetableResult.success) {
+          logger.warn('openTimetable: timetable lookup failed', {
             stopId,
-            headsign,
-            entriesCount: entries.length,
-            omittedNonBoardable: omitted.nonBoardable,
-            totalEntries: allEntries.length,
-          }),
+            filter,
+            error: timetableResult.error,
+          });
+          return { status: 'error' };
+        }
+
+        const { isBoardableOnServiceDay, totalEntries, entries, omitted } = buildTimetableEntries(
+          filter,
+          timetableResult,
         );
+        const headsign = filter.type === 'route-headsign' ? filter.headsign : undefined;
+
+        if (logger.isEnabled('debug')) {
+          logger.debug(
+            formatTimetableDebugMessage({
+              filter,
+              stopId,
+              entriesCount: entries.length,
+              omittedNonBoardable: omitted.nonBoardable,
+              totalEntries,
+            }),
+          );
+        }
 
         setTimetableData({
           type: filter.type,
@@ -186,7 +236,7 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
           timetableEntries: entries,
           omitted,
           stopServiceState: getStopServiceState({
-            totalEntries: allEntries.length,
+            totalEntries,
             isBoardableOnServiceDay,
           }),
           agencies: meta.agencies,
@@ -198,7 +248,11 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
           return { status: 'cancelled' };
         }
 
-        logger.warn('openTimetable: unexpected error', { stopId, filter, error });
+        logger.warn('openTimetable: unexpected error', {
+          stopId,
+          filter,
+          error: formatUnknownError(error),
+        });
         return { status: 'error' };
       }
     },
