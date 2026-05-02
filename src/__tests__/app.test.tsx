@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n';
 import App from '../app';
 import type { UseAnchorsReturn } from '../hooks/use-anchors';
+import type { UseTimetableReturn } from '../hooks/use-timetable';
 import type { ContextualTimetableEntry, StopWithContext } from '../types/app/transit-composed';
 
 type UseDateTimeReturn = ReturnType<typeof import('../hooks/use-date-time').useDateTime>;
@@ -13,6 +14,7 @@ type GetServiceDayMinutes = typeof import('../domain/transit/service-day').getSe
 
 const {
   mockToastError,
+  mockToastWarning,
   mockUseAnchors,
   mockGetRouteShapes,
   mockClearAnchorError,
@@ -20,8 +22,12 @@ const {
   mockUseDateTime,
   mockUseNearbyStopTimes,
   mockMapBottomSheetLayout,
+  mockUseTimetable,
+  mockOpenStopTimetable,
+  mockOpenRouteHeadsignTimetable,
 } = vi.hoisted(() => ({
   mockToastError: vi.fn(),
+  mockToastWarning: vi.fn(),
   mockUseAnchors: vi.fn<(...args: unknown[]) => UseAnchorsReturn>(),
   mockGetRouteShapes: vi.fn(),
   mockClearAnchorError: vi.fn(),
@@ -29,11 +35,15 @@ const {
   mockUseDateTime: vi.fn<() => UseDateTimeReturn>(),
   mockUseNearbyStopTimes: vi.fn<() => UseNearbyStopTimesReturn>(),
   mockMapBottomSheetLayout: vi.fn(),
+  mockUseTimetable: vi.fn<() => UseTimetableReturn>(),
+  mockOpenStopTimetable: vi.fn(),
+  mockOpenRouteHeadsignTimetable: vi.fn(),
 }));
 
 vi.mock('sonner', () => ({
   toast: {
     error: mockToastError,
+    warning: mockToastWarning,
   },
 }));
 
@@ -78,6 +88,10 @@ vi.mock('../domain/transit/service-day', async (importOriginal) => {
 
 vi.mock('../hooks/use-nearby-stop-times', () => ({
   useNearbyStopTimes: () => mockUseNearbyStopTimes(),
+}));
+
+vi.mock('../hooks/use-timetable', () => ({
+  useTimetable: () => mockUseTimetable(),
 }));
 
 vi.mock('../hooks/use-selection', () => ({
@@ -221,6 +235,7 @@ describe('App anchor error toast', () => {
     // Fix i18n language to 'ja' so toast message assertions are deterministic.
     await i18n.changeLanguage('ja');
     mockToastError.mockReset();
+    mockToastWarning.mockReset();
     mockUseAnchors.mockReset();
     mockGetRouteShapes.mockReset();
     mockClearAnchorError.mockReset();
@@ -228,6 +243,9 @@ describe('App anchor error toast', () => {
     mockUseDateTime.mockReset();
     mockUseNearbyStopTimes.mockReset();
     mockMapBottomSheetLayout.mockReset();
+    mockUseTimetable.mockReset();
+    mockOpenStopTimetable.mockReset();
+    mockOpenRouteHeadsignTimetable.mockReset();
 
     mockGetRouteShapes.mockResolvedValue({ success: true, data: [] });
     mockUseAnchors.mockReturnValue({
@@ -251,6 +269,14 @@ describe('App anchor error toast', () => {
       stopTimes: [],
       isNearbyLoading: false,
     });
+    mockUseTimetable.mockReturnValue({
+      timetableData: null,
+      openStopTimetable: mockOpenStopTimetable,
+      openRouteHeadsignTimetable: mockOpenRouteHeadsignTimetable,
+      closeTimetable: vi.fn(),
+    });
+    mockOpenStopTimetable.mockResolvedValue({ status: 'opened' });
+    mockOpenRouteHeadsignTimetable.mockResolvedValue({ status: 'opened' });
   });
 
   it('does not show toast when lastError is null', async () => {
@@ -366,6 +392,56 @@ describe('App anchor error toast', () => {
       expect(props.globalFilter.omitEmptyStops).toBe(false);
       expect(props.globalFilter.isOmitEmptyStopsForced).toBe(false);
       expect(props.filteredNearbyStopsCounts.total).toBe(2);
+    });
+  });
+
+  it('shows an error toast when stop timetable loading fails', async () => {
+    mockOpenStopTimetable.mockResolvedValue({ status: 'error' });
+
+    render(<App loadResult={{ loaded: [], failed: [] }} />);
+
+    await waitFor(() => {
+      expect(mockMapBottomSheetLayout).toHaveBeenCalled();
+    });
+
+    const lastCall = mockMapBottomSheetLayout.mock.lastCall;
+    const props = lastCall?.[0] as {
+      bottomSheetProps: {
+        onShowStopTimetable: (stopId: string) => void;
+      };
+    };
+
+    act(() => {
+      props.bottomSheetProps.onShowStopTimetable('stop-error');
+    });
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('時刻表を取得できませんでした');
+    });
+  });
+
+  it('shows a warning toast when route timetable is unavailable at a stop', async () => {
+    mockOpenRouteHeadsignTimetable.mockResolvedValue({ status: 'route-not-found' });
+
+    render(<App loadResult={{ loaded: [], failed: [] }} />);
+
+    await waitFor(() => {
+      expect(mockMapBottomSheetLayout).toHaveBeenCalled();
+    });
+
+    const lastCall = mockMapBottomSheetLayout.mock.lastCall;
+    const props = lastCall?.[0] as {
+      bottomSheetProps: {
+        onShowTimetable: (stopId: string, routeId: string, headsign: string) => void;
+      };
+    };
+
+    act(() => {
+      props.bottomSheetProps.onShowTimetable('stop-1', 'route-1', 'Headsign');
+    });
+
+    await waitFor(() => {
+      expect(mockToastWarning).toHaveBeenCalledWith('この路線の時刻表を表示できません');
     });
   });
 });

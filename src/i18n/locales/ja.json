@@ -95,6 +95,11 @@
   "showTimetable": "時刻表を表示",
   "timetable": {
     "title": "時刻表",
+    "messages": {
+      "stopNotFound": "時刻表データがありません",
+      "routeNotFound": "この路線の時刻表を表示できません",
+      "openFailed": "時刻表を取得できませんでした"
+    },
     "entry": {
       "terminal": "終点",
       "origin": "始発",

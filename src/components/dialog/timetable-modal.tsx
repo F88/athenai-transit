@@ -21,9 +21,9 @@ import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useScrollFades } from '@/hooks/use-scroll-fades';
 import type { GlobalFilter } from '@/types/app/global-filter';
-import type { TimetableOmitted } from '@/types/app/repository';
 import type { InfoLevel } from '@/types/app/settings';
-import type { Agency, Route, Stop, StopServiceState } from '@/types/app/transit';
+import type { TimetableData } from '@/types/app/timetable';
+import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry, TripInspectionTarget } from '@/types/app/transit-composed';
 import { formatDateParts } from '@/utils/datetime';
 import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
@@ -36,24 +36,6 @@ import { TimetableGrid } from '../timetable/timetable-grid';
 import { TimetableHeader } from '../timetable/timetable-header';
 import { TimetableHeadsignFilter } from '../timetable/timetable-headsign-filter';
 import { TimetableMetadata } from '../timetable/timetable-metadata';
-
-/** Data needed to render the timetable modal. */
-export interface TimetableData {
-  type: 'route-headsign' | 'stop';
-  stop: Stop;
-  /** Routes serving this stop in this timetable context.
-   *  For route-headsign: single route. For stop: all routes. */
-  routes: Route[];
-  /** Headsign filter. Present only for route-headsign type. */
-  headsign?: string;
-  /** GTFS service date for this timetable (not real-world time). */
-  serviceDate: Date;
-  timetableEntries: TimetableEntry[];
-  omitted: TimetableOmitted;
-  /** Service state derived from the full service day before filtering. */
-  stopServiceState: StopServiceState;
-  agencies: Agency[];
-}
 
 interface TimetableModalProps {
   /** Pass null when the modal should be closed. */
