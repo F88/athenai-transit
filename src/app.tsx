@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { InfoDialog } from './components/dialog/info-dialog';
 import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
 import { StopSearchDialog } from './components/dialog/stop-search-dialog';
-import { TimetableModal, type TimetableData } from './components/dialog/timetable-modal';
+import { TimetableModal } from './components/dialog/timetable-modal';
 import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
 import { MapBottomSheetLayout } from './components/map-bottom-sheet-layout';
 import { TimeControls } from './components/time-controls';
@@ -23,8 +23,6 @@ import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-da
 import {
   applyStopEventAttributeTogglesToStops,
   omitStopsWithoutStopTimes,
-  prepareRouteHeadsignTimetable,
-  prepareStopTimetable,
 } from './domain/transit/timetable-filter';
 import { getStopServiceState, getTimetableEntriesState } from './domain/transit/timetable-utils';
 import { useAnchors } from './hooks/use-anchors';
@@ -34,6 +32,7 @@ import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
 import { useRouteStops } from './hooks/use-route-stops';
 import { useSelection } from './hooks/use-selection';
 import { useStopHistory } from './hooks/use-stop-history';
+import { useTimetable } from './hooks/use-timetable';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useTripInspection } from './hooks/use-trip-inspection';
 import { useUserSettings } from './hooks/use-user-settings';
@@ -79,6 +78,7 @@ export default function App({ loadResult }: AppProps) {
   const repo = useTransitRepository();
   const [userDataRepo] = useState(() => new LocalStorageUserDataRepository());
   const { settings, updateSetting, updateSettings } = useUserSettings();
+  const { dateTime, isCustomTime, resetToNow, setCustomTime } = useDateTime();
 
   // Sync i18next language with user setting.
   useEffect(() => {
@@ -120,7 +120,6 @@ export default function App({ loadResult }: AppProps) {
   const [radiusStops, setNearbyStops] = useState<StopWithMeta[]>([]);
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
   const [routeShapes, setRouteShapes] = useState<RouteShape[]>([]);
-  const [timetableData, setTimetableData] = useState<TimetableData | null>(null);
   const [hasNearbyLoaded, setHasNearbyLoaded] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
@@ -135,6 +134,8 @@ export default function App({ loadResult }: AppProps) {
     openNextTripInspection,
     closeTripInspection,
   } = useTripInspection(repo);
+  const { timetableData, openRouteHeadsignTimetable, openStopTimetable, closeTimetable } =
+    useTimetable(repo);
 
   // Global keyboard shortcuts. Suppressed while any of the four primary
   // modals owned by app.tsx is open (search / info / help / timetable),
@@ -159,8 +160,6 @@ export default function App({ loadResult }: AppProps) {
   });
 
   // --- Custom Hooks ---
-
-  const { dateTime, isCustomTime, resetToNow, setCustomTime } = useDateTime();
 
   const { stopTimes: nearbyStopTimes, isNearbyLoading } = useNearbyStopTimes(
     radiusStops,
@@ -469,78 +468,26 @@ export default function App({ loadResult }: AppProps) {
     [repo, dateTime, inBoundStops, radiusStops],
   );
 
-  /** Fetch full-day timetable entries for a stop (no filtering). */
-  const fetchTimetableEntries = useCallback(
-    async (stopId: string) => {
-      const result = await repo.getFullDayTimetableEntries(stopId, dateTime);
-      const allEntries = result.success ? result.data : [];
-      const isBoardableOnServiceDay = result.success ? result.meta.isBoardableOnServiceDay : false;
-      return { allEntries, isBoardableOnServiceDay };
-    },
-    [repo, dateTime],
-  );
-
-  const showTimetable = useCallback(
-    async (
-      stopId: string,
-      filter: { type: 'route-headsign'; routeId: string; headsign: string } | { type: 'stop' },
-    ) => {
-      const meta = radiusStops.find((s) => s.stop.stop_id === stopId);
-      if (!meta) {
-        return;
-      }
-
-      // Resolve routes: single matched route for route-headsign, all for stop.
-      const routes =
-        filter.type === 'route-headsign'
-          ? meta.routes.filter((r) => r.route_id === filter.routeId)
-          : meta.routes;
-      if (filter.type === 'route-headsign' && routes.length === 0) {
-        return;
-      }
-
-      const { allEntries, isBoardableOnServiceDay } = await fetchTimetableEntries(stopId);
-      const { entries, omitted } =
-        filter.type === 'route-headsign'
-          ? prepareRouteHeadsignTimetable(allEntries, filter.routeId, filter.headsign, true)
-          : prepareStopTimetable(allEntries, true);
-
-      const headsign = filter.type === 'route-headsign' ? filter.headsign : undefined;
-
-      logger.debug(
-        `timetable(${filter.type}) [${settings.infoLevel}]: ${stopId}${filter.type === 'route-headsign' ? ` ${filter.routeId} "${headsign}"` : ''} → entries=${entries.length} omitted.nonBoardable=${omitted.nonBoardable} total=${allEntries.length}`,
-      );
-
-      setTimetableData({
-        type: filter.type,
-        stop: meta.stop,
-        routes,
-        headsign,
-        serviceDate: getServiceDay(dateTime),
-        timetableEntries: entries,
-        omitted,
-        stopServiceState: getStopServiceState({
-          totalEntries: allEntries.length,
-          isBoardableOnServiceDay,
-        }),
-        agencies: meta.agencies,
-      });
-    },
-    [dateTime, radiusStops, fetchTimetableEntries, settings.infoLevel],
-  );
-
   const handleShowTimetable = useCallback(
     (stopId: string, routeId: string, headsign: string) => {
-      void showTimetable(stopId, { type: 'route-headsign', routeId, headsign });
+      void openRouteHeadsignTimetable({
+        stopId,
+        routeId,
+        headsign,
+        dateTime,
+      });
     },
-    [showTimetable],
+    [dateTime, openRouteHeadsignTimetable],
   );
 
   const handleShowStopTimetable = useCallback(
     (stopId: string) => {
-      void showTimetable(stopId, { type: 'stop' });
+      void openStopTimetable({
+        stopId,
+        dateTime,
+      });
     },
-    [showTimetable],
+    [dateTime, openStopTimetable],
   );
 
   const handleOpenTripInspectionByStopId = useCallback(
@@ -592,8 +539,6 @@ export default function App({ loadResult }: AppProps) {
     },
     [openTripInspectionFromTarget, t],
   );
-
-  const closeTimetableModal = useCallback(() => setTimetableData(null), []);
 
   const handleTripInspectionOpenChange = useCallback(
     (open: boolean) => {
@@ -1068,7 +1013,7 @@ export default function App({ loadResult }: AppProps) {
         dataLangs={langChain}
         globalFilter={globalFilter}
         onInspectTrip={handleInspectTrip}
-        onClose={closeTimetableModal}
+        onClose={closeTimetable}
       />
       <Toaster
         theme={settings.theme}

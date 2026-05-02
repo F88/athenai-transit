@@ -2,6 +2,7 @@ import { render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agency, Route, Stop } from '@/types/app/transit';
 import type { TransitRepository } from '@/repositories/transit-repository';
+import type { TimetableData } from '@/types/app/timetable';
 import type {
   SelectedTripSnapshot,
   TimetableEntry,
@@ -176,7 +177,7 @@ vi.mock('../verbose/verbose-trip-stop-time', () => ({
   VerboseTripStopTime: () => null,
 }));
 
-import { TimetableModal, type TimetableData } from './timetable-modal';
+import { TimetableModal } from './timetable-modal';
 import { StopSearchDialog } from './stop-search-dialog';
 import { TripInspectionDialog } from './trip-inspection-dialog';
 
