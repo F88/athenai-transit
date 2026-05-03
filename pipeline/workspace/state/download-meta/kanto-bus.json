@@ -2,12 +2,12 @@
   "sourceName": "kanto-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-02T05:10:04.966Z",
+  "downloadedAt": "2026-05-03T05:16:34.385Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/KantoBus/AllLines.zip?date=20260401",
   "size": 2360606,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 3280,
-  "archivePath": "workspace/_archives/gtfs/kanto-bus/AllLines_20260502-051008.zip",
+  "durationMs": 2941,
+  "archivePath": "workspace/_archives/gtfs/kanto-bus/AllLines_20260503-051637.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
