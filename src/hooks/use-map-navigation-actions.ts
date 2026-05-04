@@ -12,6 +12,9 @@ interface UseMapNavigationActionsOptions {
    * of moving the map.
    */
   onNearMapCenter?: () => void;
+  /** Forwarded from {@link useMapLocate} — fires when the manual
+   *  `getCurrentPosition` request returns an error. */
+  onError?: (error: GeolocationPositionError) => void;
 }
 
 interface UseMapNavigationActionsResult {
@@ -35,6 +38,7 @@ export function useMapNavigationActions(
 ): UseMapNavigationActionsResult {
   const { locating, handleLocate } = useMapLocate(map, onLocated, {
     onNearMapCenter: options?.onNearMapCenter,
+    onError: options?.onError,
   });
 
   const handleRandomJump = useCallback(() => {

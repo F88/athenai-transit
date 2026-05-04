@@ -1,12 +1,16 @@
 import type L from 'leaflet';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import type { UserLocation } from '../../types/app/map';
 import type { InfoLevel } from '../../types/app/settings';
 import { useMapNavigationActions } from '../../hooks/use-map-navigation-actions';
+import { createLogger } from '../../lib/logger';
 import { MapMultiStateButton } from '../button/map-multi-state-button';
 import { MapToggleButton } from '../button/map-toggle-button';
 import { ControlPanel } from '../shared/control-panel';
+
+const logger = createLogger('MapNavigationPanel');
 
 interface MapNavigationPanelProps {
   map: L.Map;
@@ -57,11 +61,28 @@ export function MapNavigationPanel({
   const handleNearMapCenter = useCallback(() => {
     onAutoLocateChange(true);
   }, [onAutoLocateChange]);
+  // The user actively tapped the locate button and is waiting for a
+  // result, so any failure (PERMISSION_DENIED / POSITION_UNAVAILABLE
+  // / TIMEOUT alike) deserves an immediate toast — silence after a
+  // tap reads as "the button is broken". The toast intentionally
+  // shows the same generic copy for every code; the underlying
+  // GeolocationPositionError details land in the error log for
+  // diagnostics.
+  const handleLocateError = useCallback(
+    (error: GeolocationPositionError) => {
+      logger.error(`manual locate failed: code=${String(error.code)}, message=${error.message}`);
+      toast.error(t('geolocation.locateFailed'));
+    },
+    [t],
+  );
   const { locating, handleLocate, handleRandomJump } = useMapNavigationActions(
     map,
     onLocated,
     onDeselectStop,
-    { onNearMapCenter: handleNearMapCenter },
+    {
+      onNearMapCenter: handleNearMapCenter,
+      onError: handleLocateError,
+    },
   );
 
   const handleLocateClick = useCallback(() => {
