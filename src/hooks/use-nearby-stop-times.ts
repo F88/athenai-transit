@@ -6,7 +6,7 @@ import { getStopServiceState } from '../domain/transit/timetable-utils';
 import { formatDateKey } from '../domain/transit/calendar-utils';
 import { createLogger } from '../lib/logger';
 
-const logger = createLogger('Nearby StopTimes');
+const logger = createLogger('NearbyStopTimes');
 
 /**
  * Identify which dependency changes triggered the effect run, for

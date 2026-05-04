@@ -420,10 +420,13 @@ export function MapView({
   // and on the transition that turns tracking on so the map re-centers
   // immediately. Zoom is preserved — only the center is moved.
   //
-  // Note: panning triggers `moveend` → `handleBoundsChanged`, but that
-  // handler short-circuits while `autoLocateEnabled` is true, so the
-  // pan does not cause repeated nearby/in-bounds fetches. Fetches resume
-  // after tracking is disabled (see the next effect for the catch-up).
+  // Each pan fires `moveend` → `handleBoundsChanged` and a real fetch
+  // (no skip path during tracking). Two natural guards keep the fetch
+  // count sane: `resolveLocateAction`'s 10 m threshold (used by the
+  // manual locate flow and the pinch-zoom yield) and Leaflet's own
+  // `panTo` equality check, which suppresses the moveend when the
+  // destination is essentially the current center. Together they
+  // mean "fetch only when the user has actually moved".
   useEffect(() => {
     if (!autoLocateEnabled || !mapInstance || !userLocation) {
       return;
@@ -461,13 +464,15 @@ export function MapView({
     };
   }, [mapInstance, autoLocateEnabled, userLocation, onAutoLocateChange]);
 
-  // Catch-up fetch on the auto-tracking ON → OFF transition. While
-  // tracking was on, `handleBoundsChanged` skipped every `moveend`, so
-  // `inBoundStops` / `radiusStops` reflect the location where tracking
-  // was enabled rather than wherever the user has walked since. As soon
-  // as tracking is turned off (manually or via an error fallback),
-  // request a fresh fetch using the current map state so the bottom
-  // sheet and markers immediately catch up.
+  // Refresh stops at the current map state on the auto-tracking
+  // ON → OFF transition. Most of the time the latest auto-pan has
+  // already pulled in fresh stops, so this fires a same-center fetch
+  // that the debounce coalesces with any subsequent moveend (e.g.
+  // when the disable was caused by selecting a stop, which also
+  // pans). The case it covers is the watchPosition-error path: if
+  // tracking ends because of `PERMISSION_DENIED`, no further moveend
+  // is coming, and we still want the bottom sheet to reflect the
+  // last-known map center.
   const prevAutoLocateEnabledRef = useRef(autoLocateEnabled);
   useEffect(() => {
     const wasEnabled = prevAutoLocateEnabledRef.current;

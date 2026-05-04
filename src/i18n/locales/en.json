@@ -178,7 +178,7 @@
     "failed": "Failed to load data"
   },
   "geolocation": {
-    "trackingFailed": "Stopped auto tracking: location unavailable"
+    "trackingFailed": "Stopped auto tracking: location permission denied"
   },
   "search": {
     "title": "Search stops",

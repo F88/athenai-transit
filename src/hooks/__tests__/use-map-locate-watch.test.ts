@@ -29,12 +29,10 @@ function stubGeolocation(): GeolocationStub {
   let initialError: PositionErrorCallback | undefined;
   let watchSuccess: PositionCallback | undefined;
   let watchError: PositionErrorCallback | undefined;
-  const getCurrentPosition = vi.fn(
-    (onSuccess: PositionCallback, onErr?: PositionErrorCallback) => {
-      initialSuccess = onSuccess;
-      initialError = onErr;
-    },
-  );
+  const getCurrentPosition = vi.fn((onSuccess: PositionCallback, onErr?: PositionErrorCallback) => {
+    initialSuccess = onSuccess;
+    initialError = onErr;
+  });
   const watchPosition = vi.fn((onSuccess: PositionCallback, onErr?: PositionErrorCallback) => {
     watchSuccess = onSuccess;
     watchError = onErr;
@@ -90,6 +88,21 @@ describe('useMapLocateWatch', () => {
 
     act(() => {
       stub.triggerWatchSuccess(SAMPLE_POSITION);
+    });
+
+    expect(mockToUserLocation).toHaveBeenCalledWith(SAMPLE_POSITION);
+    expect(onLocated).toHaveBeenCalledWith(SAMPLE_LOCATION);
+  });
+
+  it('forwards the initial getCurrentPosition success to onLocated through toUserLocation', () => {
+    const stub = stubGeolocation();
+    const onLocated = vi.fn();
+    mockToUserLocation.mockReturnValue(SAMPLE_LOCATION);
+
+    renderHook(() => useMapLocateWatch({ enabled: true, onLocated }));
+
+    act(() => {
+      stub.triggerInitialSuccess(SAMPLE_POSITION);
     });
 
     expect(mockToUserLocation).toHaveBeenCalledWith(SAMPLE_POSITION);
@@ -167,8 +180,7 @@ describe('useMapLocateWatch', () => {
     const onError = vi.fn();
 
     const { rerender } = renderHook(
-      ({ enabled }: { enabled: boolean }) =>
-        useMapLocateWatch({ enabled, onLocated, onError }),
+      ({ enabled }: { enabled: boolean }) => useMapLocateWatch({ enabled, onLocated, onError }),
       { initialProps: { enabled: true } },
     );
 

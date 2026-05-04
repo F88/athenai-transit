@@ -178,7 +178,7 @@
     "failed": "データの取得に失敗しました"
   },
   "geolocation": {
-    "trackingFailed": "現在地を取得できないため、自動追跡を停止しました"
+    "trackingFailed": "位置情報の使用が許可されていないため、自動追跡を停止しました"
   },
   "search": {
     "title": "のりばを検索",
