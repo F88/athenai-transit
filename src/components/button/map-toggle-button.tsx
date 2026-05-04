@@ -1,6 +1,7 @@
-/** Visual-only Tailwind classes for map overlay buttons (no positioning). */
-const MAP_OVERLAY_BUTTON_STYLE =
-  'flex h-10 w-10 items-center justify-center rounded-lg border-2 border-black/60 bg-white text-lg leading-none cursor-pointer select-none [-webkit-touch-callout:none] active:bg-[#e0e0e0] disabled:cursor-not-allowed disabled:active:bg-white dark:border-white/40 dark:bg-gray-800 dark:text-white dark:active:bg-gray-700 dark:disabled:active:bg-gray-800';
+import {
+  MAP_OVERLAY_BUTTON_BASE_STYLE,
+  MAP_OVERLAY_BUTTON_NEUTRAL_BG_STYLE,
+} from './map-overlay-button.styles';
 
 interface MapToggleButtonProps {
   active: boolean;
@@ -29,7 +30,7 @@ export function MapToggleButton({
   return (
     <button
       type="button"
-      className={`${MAP_OVERLAY_BUTTON_STYLE} ${opacityClass}`}
+      className={`${MAP_OVERLAY_BUTTON_BASE_STYLE} ${MAP_OVERLAY_BUTTON_NEUTRAL_BG_STYLE} ${opacityClass}`}
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
