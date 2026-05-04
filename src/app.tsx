@@ -41,6 +41,7 @@ import { createLogger } from './lib/logger';
 import { getStopParam } from './lib/query-params';
 import type { LoadResult } from './repositories/athenai-repository';
 import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
+import type { AutoLocateOffReason } from './types/app/auto-locate';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { StopsCounts } from './types/app/stop';
 import type { AppRouteTypeValue, Stop, TimetableEntriesState } from './types/app/transit';
@@ -127,6 +128,34 @@ export default function App({ loadResult }: AppProps) {
   // (rather than MapView) so `handleBoundsChanged` can gate its fetch
   // on the same flag without an extra signal channel.
   const [autoLocateEnabled, setAutoLocateEnabled] = useState(false);
+  // Auto-locate state changes funnel through these helpers so every
+  // real ON / OFF transition produces exactly one reason-tagged log
+  // line. Each `disableAutoLocate` call site supplies a typed `reason`
+  // from `AutoLocateOffReason`, which makes "why did tracking stop?"
+  // a one-grep query in field traces.
+  //
+  // The setState updater form reads the latest `autoLocateEnabled`
+  // value without listing it in deps (= helpers stay stable), and lets
+  // us suppress the log when the call would have been a no-op anyway.
+  // Many call sites (drag, marker selection, random jump etc.) fire
+  // unconditionally regardless of the current flag, so without this
+  // guard the log would be noisy whenever tracking was already off.
+  const enableAutoLocate = useCallback(() => {
+    setAutoLocateEnabled((prev) => {
+      if (!prev) {
+        logger.info('auto-locate enabled');
+      }
+      return true;
+    });
+  }, []);
+  const disableAutoLocate = useCallback((reason: AutoLocateOffReason) => {
+    setAutoLocateEnabled((prev) => {
+      if (prev) {
+        logger.info(`auto-locate disabled: reason=${reason}`);
+      }
+      return false;
+    });
+  }, []);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
@@ -328,7 +357,7 @@ export default function App({ loadResult }: AppProps) {
   const handleSelectStop = useCallback(
     (stop: Stop) => {
       logger.debug(`handleSelectStop [Marker]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
-      setAutoLocateEnabled(false);
+      disableAutoLocate('select-marker');
       selectStop(stop);
       const meta = findStopWithMeta(stop.stop_id);
       if (meta) {
@@ -343,7 +372,7 @@ export default function App({ loadResult }: AppProps) {
         );
       }
     },
-    [selectStop, pushStop, findStopWithMeta, routeTypeMap, setAutoLocateEnabled],
+    [selectStop, pushStop, findStopWithMeta, routeTypeMap, disableAutoLocate],
   );
 
   // Wrap selectStopById to also record in history.
@@ -351,7 +380,7 @@ export default function App({ loadResult }: AppProps) {
   const handleSelectStopById = useCallback(
     (stopId: string) => {
       logger.debug(`handleSelectStopById [BottomSheet]: stopId=${stopId}`);
-      setAutoLocateEnabled(false);
+      disableAutoLocate('select-bottom-sheet');
       selectStopById(stopId);
       const meta = findStopWithMeta(stopId);
       if (meta) {
@@ -366,7 +395,7 @@ export default function App({ loadResult }: AppProps) {
         );
       }
     },
-    [selectStopById, pushStop, findStopWithMeta, routeTypeMap, setAutoLocateEnabled],
+    [selectStopById, pushStop, findStopWithMeta, routeTypeMap, disableAutoLocate],
   );
 
   // Apply ?stop= query param: select and pan to the stop after data loads.
@@ -611,12 +640,12 @@ export default function App({ loadResult }: AppProps) {
   const handleHistorySelect = useCallback(
     (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleHistorySelect [History]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
-      setAutoLocateEnabled(false);
+      disableAutoLocate('select-history');
       focusStop(stop);
       const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
       pushStop(meta, routeTypes);
     },
-    [focusStop, pushStop, findStopWithMeta, setAutoLocateEnabled],
+    [focusStop, pushStop, findStopWithMeta, disableAutoLocate],
   );
 
   // Anchor stop_id set for efficient lookup in BottomSheet
@@ -702,7 +731,7 @@ export default function App({ loadResult }: AppProps) {
   const handlePortalSelect = useCallback(
     (entry: AnchorEntry) => {
       logger.debug(`handlePortalSelect [Portal]: stopId=${entry.stopId}, name=${entry.stopName}`);
-      setAutoLocateEnabled(false);
+      disableAutoLocate('select-portal');
       // Build a minimal Stop from AnchorEntry for map pan
       const stop: Stop = {
         stop_id: entry.stopId,
@@ -718,7 +747,7 @@ export default function App({ loadResult }: AppProps) {
       const meta = findStopWithMeta(entry.stopId) ?? { stop, agencies: [], routes: [] };
       pushStop(meta, entry.routeTypes);
     },
-    [focusStop, findStopWithMeta, pushStop, setAutoLocateEnabled],
+    [focusStop, findStopWithMeta, pushStop, disableAutoLocate],
   );
 
   // Select + pan to a stop chosen from the search dialog.
@@ -727,7 +756,7 @@ export default function App({ loadResult }: AppProps) {
   const handleSearchSelect = useCallback(
     (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleSearchSelect [Search]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
-      setAutoLocateEnabled(false);
+      disableAutoLocate('select-search');
       focusStop(stop);
       setSearchModalOpen(false);
       // SearchDialog already resolved routeTypes from its own routeTypeMap,
@@ -735,7 +764,7 @@ export default function App({ loadResult }: AppProps) {
       const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
       pushStop(meta, routeTypes);
     },
-    [focusStop, pushStop, findStopWithMeta, setAutoLocateEnabled],
+    [focusStop, pushStop, findStopWithMeta, disableAutoLocate],
   );
 
   // --- App-wide filter state (shared across surfaces) ---
@@ -1012,7 +1041,8 @@ export default function App({ loadResult }: AppProps) {
           onPortalSelect: handlePortalSelect,
           lookupAnchorStopMeta,
           autoLocateEnabled,
-          onAutoLocateChange: setAutoLocateEnabled,
+          onEnableAutoLocate: enableAutoLocate,
+          onDisableAutoLocate: disableAutoLocate,
         }}
         bottomSheetProps={{
           stopTimes: stopEventAttributesNonEmptyNearbyStopTimes,

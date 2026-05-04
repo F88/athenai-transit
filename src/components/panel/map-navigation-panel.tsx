@@ -2,6 +2,7 @@ import type L from 'leaflet';
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import type { AutoLocateOffReason } from '../../types/app/auto-locate';
 import type { UserLocation } from '../../types/app/map';
 import type { InfoLevel } from '../../types/app/settings';
 import { useMapNavigationActions } from '../../hooks/use-map-navigation-actions';
@@ -17,8 +18,11 @@ interface MapNavigationPanelProps {
   infoLevel: InfoLevel;
   /** Whether continuous current-location tracking is currently enabled. */
   autoLocateEnabled: boolean;
-  /** Setter for the auto-locate flag. */
-  onAutoLocateChange: (enabled: boolean) => void;
+  /** Turn auto-locate on (= called from the locate button's near-center
+   *  branch). */
+  onEnableAutoLocate: () => void;
+  /** Turn auto-locate off, tagged with a typed reason for diagnostics. */
+  onDisableAutoLocate: (reason: AutoLocateOffReason) => void;
   /** Counter that bumps on every successful geolocation fix; replays
    *  a ripple animation on the locate button to acknowledge the event. */
   locatePulseKey: number;
@@ -49,7 +53,8 @@ export function MapNavigationPanel({
   map,
   infoLevel,
   autoLocateEnabled,
-  onAutoLocateChange,
+  onEnableAutoLocate,
+  onDisableAutoLocate,
   locatePulseKey,
   onLocated,
   onDeselectStop,
@@ -59,8 +64,8 @@ export function MapNavigationPanel({
   // near the map center, treat it as a request to enable auto tracking
   // (replaces the previous "zoom in" behavior).
   const handleNearMapCenter = useCallback(() => {
-    onAutoLocateChange(true);
-  }, [onAutoLocateChange]);
+    onEnableAutoLocate();
+  }, [onEnableAutoLocate]);
   // The user actively tapped the locate button and is waiting for a
   // result, so any failure (PERMISSION_DENIED / POSITION_UNAVAILABLE
   // / TIMEOUT alike) deserves an immediate toast — silence after a
@@ -88,20 +93,20 @@ export function MapNavigationPanel({
   const handleLocateClick = useCallback(() => {
     if (autoLocateEnabled) {
       // Tracking is on: tap toggles it off without re-fetching.
-      onAutoLocateChange(false);
+      onDisableAutoLocate('user-toggle');
       return;
     }
     handleLocate();
-  }, [autoLocateEnabled, handleLocate, onAutoLocateChange]);
+  }, [autoLocateEnabled, handleLocate, onDisableAutoLocate]);
 
   // Random jump intentionally moves the map far from the user's
   // current location, so we turn off auto-tracking first. Otherwise
   // `handleBoundsChanged` would skip the post-jump fetch and stops
   // would not appear at the new location.
   const handleRandomJumpClick = useCallback(() => {
-    onAutoLocateChange(false);
+    onDisableAutoLocate('random-jump');
     handleRandomJump();
-  }, [handleRandomJump, onAutoLocateChange]);
+  }, [handleRandomJump, onDisableAutoLocate]);
 
   return (
     <ControlPanel side="right" edge="bottom" offset="2rem" infoLevel={infoLevel}>

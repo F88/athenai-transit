@@ -1,4 +1,5 @@
 import type L from 'leaflet';
+import type { AutoLocateOffReason } from '../../types/app/auto-locate';
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
 import type { AnchorEntry } from '../../domain/portal/anchor';
 import type { StopHistoryEntry } from '../../domain/transit/stop-history';
@@ -42,8 +43,10 @@ interface MapOverlayPanelsProps {
   onLocated: (location: UserLocation) => void;
   /** Whether continuous current-location tracking is currently enabled. */
   autoLocateEnabled: boolean;
-  /** Setter for the auto-locate flag. */
-  onAutoLocateChange: (enabled: boolean) => void;
+  /** Turn auto-locate on. */
+  onEnableAutoLocate: () => void;
+  /** Turn auto-locate off, tagged with a typed reason for diagnostics. */
+  onDisableAutoLocate: (reason: AutoLocateOffReason) => void;
   /** Counter that bumps on every successful geolocation fix; forwarded
    *  to the locate button to replay its ripple animation. */
   locatePulseKey: number;
@@ -85,7 +88,8 @@ export function MapOverlayPanels({
   onInfoClick,
   onLocated,
   autoLocateEnabled,
-  onAutoLocateChange,
+  onEnableAutoLocate,
+  onDisableAutoLocate,
   locatePulseKey,
   onDeselectStop,
   onHistorySelect,
@@ -101,7 +105,8 @@ export function MapOverlayPanels({
           map={map}
           infoLevel={infoLevel}
           autoLocateEnabled={autoLocateEnabled}
-          onAutoLocateChange={onAutoLocateChange}
+          onEnableAutoLocate={onEnableAutoLocate}
+          onDisableAutoLocate={onDisableAutoLocate}
           locatePulseKey={locatePulseKey}
           onLocated={onLocated}
           onDeselectStop={onDeselectStop}

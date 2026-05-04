@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { toast } from 'sonner';
+import type { AutoLocateOffReason } from '../../types/app/auto-locate';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
 import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
@@ -280,8 +281,12 @@ export interface MapViewProps {
    * on the same flag without an extra signal channel.
    */
   autoLocateEnabled: boolean;
-  /** Setter for the auto-locate flag. */
-  onAutoLocateChange: (enabled: boolean) => void;
+  /** Turn auto-locate on (= called from the locate button's near-center
+   *  branch). */
+  onEnableAutoLocate: () => void;
+  /** Turn auto-locate off, tagging the call site with a typed reason
+   *  for diagnostics. */
+  onDisableAutoLocate: (reason: AutoLocateOffReason) => void;
 }
 
 export function MapView({
@@ -328,7 +333,8 @@ export function MapView({
   onPortalSelect,
   heightClassName,
   autoLocateEnabled,
-  onAutoLocateChange,
+  onEnableAutoLocate,
+  onDisableAutoLocate,
 }: MapViewProps) {
   const { t } = useTranslation();
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
@@ -391,8 +397,8 @@ export function MapView({
   // pure user-gesture signal in Leaflet (programmatic moves never
   // fire it), making this a strict, race-free disable trigger.
   const handleUserDragStart = useCallback(() => {
-    onAutoLocateChange(false);
-  }, [onAutoLocateChange]);
+    onDisableAutoLocate('manual-drag');
+  }, [onDisableAutoLocate]);
 
   // Continuous geolocation tracking. The classification (= what to do
   // for each error code) lives in `classifyAutoLocateError`; this
@@ -413,11 +419,11 @@ export function MapView({
       const action = classifyAutoLocateError(error);
       logger.warn(action.logMessage);
       if (action.kind === 'disable') {
-        onAutoLocateChange(false);
+        onDisableAutoLocate('permission-denied');
         toast.error(tRef.current('geolocation.trackingFailed'));
       }
     },
-    [onAutoLocateChange],
+    [onDisableAutoLocate],
   );
   useMapLocateWatch({
     enabled: autoLocateEnabled,
@@ -476,14 +482,14 @@ export function MapView({
       }
       const action = resolveLocateAction(mapInstance, loc);
       if (action.kind === 'move') {
-        onAutoLocateChange(false);
+        onDisableAutoLocate('pinch-zoom-shift');
       }
     };
     mapInstance.on('zoomend', handleZoomEnd);
     return () => {
       mapInstance.off('zoomend', handleZoomEnd);
     };
-  }, [mapInstance, autoLocateEnabled, onAutoLocateChange]);
+  }, [mapInstance, autoLocateEnabled, onDisableAutoLocate]);
 
   // Refresh stops at the current map state on the auto-tracking
   // ON → OFF transition. Most of the time the latest auto-pan has
@@ -682,7 +688,8 @@ export function MapView({
         onInfoClick={onInfoClick}
         onLocated={handleLocated}
         autoLocateEnabled={autoLocateEnabled}
-        onAutoLocateChange={onAutoLocateChange}
+        onEnableAutoLocate={onEnableAutoLocate}
+        onDisableAutoLocate={onDisableAutoLocate}
         locatePulseKey={locateUpdateCount}
         onDeselectStop={onDeselectStop}
         onHistorySelect={onHistorySelect}
