@@ -455,15 +455,26 @@ export function MapView({
   // so the same `LOCATE_NEAR_THRESHOLD_METERS` (10 m) that decides
   // "near" for the manual locate also decides whether the post-zoom
   // center is still "on" the user.
+  //
+  // `userLocation` is read through a ref so the Leaflet zoomend
+  // listener is registered once per tracking session — putting
+  // `userLocation` in the effect deps would re-subscribe on every
+  // watchPosition tick (i.e. potentially every few seconds while
+  // tracking), churning the listener unnecessarily.
+  const userLocationRef = useRef(userLocation);
+  useEffect(() => {
+    userLocationRef.current = userLocation;
+  }, [userLocation]);
   useEffect(() => {
     if (!mapInstance || !autoLocateEnabled) {
       return;
     }
     const handleZoomEnd = () => {
-      if (!userLocation) {
+      const loc = userLocationRef.current;
+      if (!loc) {
         return;
       }
-      const action = resolveLocateAction(mapInstance, userLocation);
+      const action = resolveLocateAction(mapInstance, loc);
       if (action.kind === 'move') {
         onAutoLocateChange(false);
       }
@@ -472,7 +483,7 @@ export function MapView({
     return () => {
       mapInstance.off('zoomend', handleZoomEnd);
     };
-  }, [mapInstance, autoLocateEnabled, userLocation, onAutoLocateChange]);
+  }, [mapInstance, autoLocateEnabled, onAutoLocateChange]);
 
   // Refresh stops at the current map state on the auto-tracking
   // ON → OFF transition. Most of the time the latest auto-pan has

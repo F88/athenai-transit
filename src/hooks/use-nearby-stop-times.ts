@@ -94,16 +94,14 @@ export function useNearbyStopTimes(
     prevDateTimeRef.current = dateTime;
     prevRepoRef.current = repo;
 
-    // Log the trigger synchronously at effect start. The companion
-    // `stop times: ...` log fires only after the fetch promise resolves
-    // and would be skipped when StrictMode's cleanup cancels the run,
-    // which would silently hide the very first invocation
-    // (`trigger=initial`) from the trace.
-    //
-    // Wrapped in `isEnabled('debug')` so the template literal allocation
-    // is skipped when debug logging is off — this hook re-runs on every
-    // 15 s tick, so the cumulative cost of evaluating the message in
-    // production would otherwise add up.
+    // Optional effect-start trigger log, currently disabled. The
+    // companion `stop times: ...` log fires only after the fetch
+    // promise resolves and is skipped when StrictMode's cleanup
+    // cancels the run, hiding the very first `trigger=initial`
+    // invocation from the trace. Uncomment to bring it back when
+    // analyzing effect-firing patterns; the `isEnabled('debug')`
+    // gate avoids template-literal allocation in production since
+    // this hook re-runs on every 15 s tick.
     // if (logger.isEnabled('debug')) {
     //   logger.debug(`effect run (trigger=${trigger}, stops=${String(radiusStops.length)})`);
     // }

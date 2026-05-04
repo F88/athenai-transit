@@ -125,7 +125,7 @@ describe('useMapLocateWatch', () => {
     expect(onLocated).not.toHaveBeenCalled();
   });
 
-  it('reports onError only once when both initial and watch fail in the same session', () => {
+  it('reports onError only once when both initial and watch fail with the same code', () => {
     // PERMISSION_DENIED typically reaches both the one-shot and the
     // watch error callbacks while neither has been cancelled yet.
     // Without the per-session error gate this would surface two
@@ -144,6 +144,36 @@ describe('useMapLocateWatch', () => {
 
     expect(onError).toHaveBeenCalledTimes(1);
     expect(onError).toHaveBeenCalledWith(err);
+  });
+
+  it('reports a later error with a different code even after one was already reported', () => {
+    // Edge case: a transient `POSITION_UNAVAILABLE` (code 2) reported
+    // first must not mask a later `PERMISSION_DENIED` (code 1) — the
+    // consumer needs the second event to disable tracking.
+    const stub = stubGeolocation();
+    const onLocated = vi.fn();
+    const onError = vi.fn();
+    const transient = {
+      code: 2,
+      message: 'unavailable',
+      POSITION_UNAVAILABLE: 2,
+    } as GeolocationPositionError;
+    const denied = {
+      code: 1,
+      message: 'denied',
+      PERMISSION_DENIED: 1,
+    } as GeolocationPositionError;
+
+    renderHook(() => useMapLocateWatch({ enabled: true, onLocated, onError }));
+
+    act(() => {
+      stub.triggerWatchError(transient);
+      stub.triggerWatchError(denied);
+    });
+
+    expect(onError).toHaveBeenCalledTimes(2);
+    expect(onError).toHaveBeenNthCalledWith(1, transient);
+    expect(onError).toHaveBeenNthCalledWith(2, denied);
   });
 
   it('clears the watch when enabled flips to false', () => {

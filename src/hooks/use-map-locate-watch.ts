@@ -56,14 +56,18 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
     // mode. The `cancelled` flag closes over every callback so any
     // post-cleanup invocation becomes a no-op.
     let cancelled = false;
-    // Per-session error gate. `getCurrentPosition` (one-shot) and
-    // `watchPosition` are dispatched simultaneously, so a permission
-    // denial typically reaches both error callbacks while neither has
-    // been cancelled yet — without this flag the consumer would
-    // observe two `onError` calls (and, in MapView, two toasts) for a
-    // single PERMISSION_DENIED. Reset implicitly per effect run since
-    // the closure is recreated.
-    let errorReported = false;
+    // Per-session error de-duplication keyed by error code.
+    // `getCurrentPosition` (one-shot) and `watchPosition` are dispatched
+    // simultaneously, so a permission denial typically reaches both
+    // error callbacks while neither has been cancelled yet — without
+    // de-dup the consumer would observe two `onError` calls (and, in
+    // MapView, two toasts) for a single PERMISSION_DENIED. Tracking by
+    // code (rather than a single boolean) keeps a later, distinct error
+    // observable: e.g. a transient `POSITION_UNAVAILABLE` (code 2)
+    // reported first must not mask a subsequent `PERMISSION_DENIED`
+    // (code 1) that fires when the user revokes the permission later
+    // in the session. The Set is recreated per effect run.
+    const reportedCodes = new Set<number>();
     const enableTime = Date.now();
     let watchUpdates = 0;
     logger.debug('auto-tracking: enabled');
@@ -98,11 +102,12 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
         logger.debug(
           `auto-tracking: ${kind} failed (since-enable=${Date.now() - enableTime}ms, code=${String(error.code)}, message=${error.message})`,
         );
-        if (errorReported) {
-          // The other request already surfaced an error this session.
+        if (reportedCodes.has(error.code)) {
+          // Same error code already surfaced this session (e.g. the
+          // sibling request also failed with the same code).
           return;
         }
-        errorReported = true;
+        reportedCodes.add(error.code);
         onError?.(error);
       };
 
@@ -114,7 +119,7 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
     const watchId = navigator.geolocation.watchPosition(handleWatchSuccess, handleErr('watch'), {
       enableHighAccuracy: true,
       timeout: 10_000,
-      maximumAge: 5_000,
+      maximumAge: 3_000,
     });
 
     return () => {
