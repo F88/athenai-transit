@@ -100,7 +100,7 @@ export function BottomSheetHeader({
     }
 
     const snapshot = [
-      `[nearbyStopsCounts] ${nearbyStopsCountsDebugLog}`,
+      `${nearbyStopsCountsDebugLog}`,
       `[filteredNearbyStopsCounts] ${filteredNearbyStopsCountsDebugLog}`,
       `[counts] ${countsDebugLog}`,
     ].join(' | ');
