@@ -277,8 +277,10 @@ export interface MapViewProps {
   heightClassName?: string;
   /**
    * Whether continuous current-location tracking is currently enabled.
-   * Owned by `app.tsx` so the bounds-change handler can gate its fetch
-   * on the same flag without an extra signal channel.
+   * Owned by `app.tsx` so every consumer (the locate button's
+   * highlighted state, `useMapLocateWatch`'s `enabled`, the auto-pan
+   * effect, the pinch-zoom yield, the ON → OFF catch-up effect, and
+   * each disable trigger) reads from the same source of truth.
    */
   autoLocateEnabled: boolean;
   /** Turn auto-locate on (= called from the locate button's near-center
@@ -417,10 +419,18 @@ export function MapView({
   const handleTrackingError = useCallback(
     (error: GeolocationPositionError) => {
       const action = classifyAutoLocateError(error);
-      logger.warn(action.logMessage);
+      // 'disable' is actionable (= the user has to grant permission to
+      // recover) so warn-level is appropriate; the logger lets warn
+      // bypass tag filters so the message lands in any environment.
+      // 'transient' (POSITION_UNAVAILABLE / TIMEOUT) is recoverable
+      // by the watch itself — surfacing it at warn would spam logs in
+      // weak-GPS or DevTools-override conditions, so demote to debug.
       if (action.kind === 'disable') {
+        logger.warn(action.logMessage);
         onDisableAutoLocate('permission-denied');
         toast.error(tRef.current('geolocation.trackingFailed'));
+      } else {
+        logger.debug(action.logMessage);
       }
     },
     [onDisableAutoLocate],
