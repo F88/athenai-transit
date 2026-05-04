@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
 import type { TransitRepository } from '../repositories/transit-repository';
 import { getServiceDay } from '../domain/transit/service-day';
@@ -6,7 +6,41 @@ import { getStopServiceState } from '../domain/transit/timetable-utils';
 import { formatDateKey } from '../domain/transit/calendar-utils';
 import { createLogger } from '../lib/logger';
 
-const logger = createLogger('StopTimes');
+const logger = createLogger('Nearby StopTimes');
+
+/**
+ * Identify which dependency changes triggered the effect run, for
+ * the debug log. Returns a `+`-joined token list so a single fire
+ * caused by multiple simultaneous changes (rare, e.g. bounds change
+ * and time tick landing in the same React batch) is still legible.
+ *
+ * Returns `strict-mode-rerun` when none of the tracked deps changed
+ * — that branch is hit by React StrictMode's `setup → cleanup →
+ * setup` double invocation in development. The first setup updates
+ * the prev-value refs to current; the second setup observes equal
+ * references and detects no real change.
+ */
+function describeTrigger(
+  isFirstRun: boolean,
+  dateTimeChanged: boolean,
+  radiusStopsChanged: boolean,
+  repoChanged: boolean,
+): string {
+  if (isFirstRun) {
+    return 'initial';
+  }
+  const parts: string[] = [];
+  if (repoChanged) {
+    parts.push('repo');
+  }
+  if (radiusStopsChanged) {
+    parts.push('radiusStops');
+  }
+  if (dateTimeChanged) {
+    parts.push('dateTime');
+  }
+  return parts.length > 0 ? parts.join('+') : 'strict-mode-rerun';
+}
 
 /**
  * Return type for the useNearbyStopTimes hook.
@@ -41,7 +75,39 @@ export function useNearbyStopTimes(
   const [nearbyStopTimes, setNearbyStopTimes] = useState<StopWithContext[]>([]);
   const [isNearbyLoading, setIsNearbyLoading] = useState(false);
 
+  // Refs that snapshot the previous dependency values so we can identify
+  // which one triggered the effect. Used purely for diagnostics (the
+  // debug log below); the effect itself still re-runs on any dep change.
+  const isFirstRunRef = useRef(true);
+  const prevRadiusStopsRef = useRef(radiusStops);
+  const prevDateTimeRef = useRef(dateTime);
+  const prevRepoRef = useRef(repo);
+
   useEffect(() => {
+    const isFirstRun = isFirstRunRef.current;
+    const radiusStopsChanged = prevRadiusStopsRef.current !== radiusStops;
+    const dateTimeChanged = prevDateTimeRef.current !== dateTime;
+    const repoChanged = prevRepoRef.current !== repo;
+    const trigger = describeTrigger(isFirstRun, dateTimeChanged, radiusStopsChanged, repoChanged);
+    isFirstRunRef.current = false;
+    prevRadiusStopsRef.current = radiusStops;
+    prevDateTimeRef.current = dateTime;
+    prevRepoRef.current = repo;
+
+    // Log the trigger synchronously at effect start. The companion
+    // `stop times: ...` log fires only after the fetch promise resolves
+    // and would be skipped when StrictMode's cleanup cancels the run,
+    // which would silently hide the very first invocation
+    // (`trigger=initial`) from the trace.
+    //
+    // Wrapped in `isEnabled('debug')` so the template literal allocation
+    // is skipped when debug logging is off — this hook re-runs on every
+    // 15 s tick, so the cumulative cost of evaluating the message in
+    // production would otherwise add up.
+    // if (logger.isEnabled('debug')) {
+    //   logger.debug(`effect run (trigger=${trigger}, stops=${String(radiusStops.length)})`);
+    // }
+
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Loading must be set synchronously when deps change
     setIsNearbyLoading(true);
@@ -93,11 +159,18 @@ export function useNearbyStopTimes(
         if (cancelled) {
           return;
         }
-        const withStopTimes = results.filter((r) => r.stopTimes.length > 0);
-        const totalFreq = results.reduce((sum, r) => sum + (r.stats?.freq ?? 0), 0);
-        logger.debug(
-          `stop times: ${withStopTimes.length}/${results.length} stops with stop times (serviceDay=${formatDateKey(sd)} totalFreq=${totalFreq})`,
-        );
+        // Compute the log-only aggregates inside the gate so neither
+        // `filter` nor `reduce` runs when debug logging is disabled.
+        // Both pass over `results` (= radiusStops, typically 10–50
+        // entries) every 15 s tick, so skipping them in production
+        // pays off cumulatively.
+        if (logger.isEnabled('debug')) {
+          const withStopTimes = results.filter((r) => r.stopTimes.length > 0);
+          const totalFreq = results.reduce((sum, r) => sum + (r.stats?.freq ?? 0), 0);
+          logger.debug(
+            `stop times: ${withStopTimes.length}/${results.length} stops with stop times (serviceDay=${formatDateKey(sd)} totalFreq=${totalFreq} trigger=${trigger})`,
+          );
+        }
         setNearbyStopTimes(results);
       })
       .catch((error) => {
