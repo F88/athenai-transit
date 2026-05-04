@@ -46,11 +46,24 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
       return;
     }
 
+    // The browser Geolocation API has `clearWatch` for `watchPosition`
+    // but no equivalent for `getCurrentPosition` — once dispatched, its
+    // success/error callback will fire whenever the device responds,
+    // even after this effect has been torn down. Without a guard a fix
+    // arriving after the user disables tracking would still update
+    // `userLocation`, replay the locate button's pulse, and (on a
+    // PERMISSION_DENIED race) flash a toast for an already-disabled
+    // mode. The `cancelled` flag closes over every callback so any
+    // post-cleanup invocation becomes a no-op.
+    let cancelled = false;
     const enableTime = Date.now();
     let watchUpdates = 0;
     logger.debug('auto-tracking: enabled');
 
     const handleInitialSuccess: PositionCallback = (pos) => {
+      if (cancelled) {
+        return;
+      }
       const loc = toUserLocation(pos);
       logger.debug(
         `auto-tracking: initial position (elapsed=${Date.now() - enableTime}ms, ${formatLoc(loc)})`,
@@ -58,6 +71,9 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
       onLocated(loc);
     };
     const handleWatchSuccess: PositionCallback = (pos) => {
+      if (cancelled) {
+        return;
+      }
       watchUpdates += 1;
       const loc = toUserLocation(pos);
       logger.debug(
@@ -68,6 +84,9 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
     const handleErr =
       (kind: 'initial' | 'watch') =>
       (error: GeolocationPositionError): void => {
+        if (cancelled) {
+          return;
+        }
         logger.debug(
           `auto-tracking: ${kind} failed (since-enable=${Date.now() - enableTime}ms, code=${String(error.code)}, message=${error.message})`,
         );
@@ -86,6 +105,7 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
     });
 
     return () => {
+      cancelled = true;
       logger.debug(
         `auto-tracking: disabled (duration=${Date.now() - enableTime}ms, watch updates=${String(watchUpdates)})`,
       );

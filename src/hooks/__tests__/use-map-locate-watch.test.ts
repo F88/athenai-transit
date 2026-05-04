@@ -18,14 +18,23 @@ interface GeolocationStub {
   getCurrentPosition: ReturnType<typeof vi.fn>;
   watchPosition: ReturnType<typeof vi.fn>;
   clearWatch: ReturnType<typeof vi.fn>;
+  triggerInitialSuccess: (pos: GeolocationPosition) => void;
+  triggerInitialError: (error: GeolocationPositionError) => void;
   triggerWatchSuccess: (pos: GeolocationPosition) => void;
   triggerWatchError: (error: GeolocationPositionError) => void;
 }
 
 function stubGeolocation(): GeolocationStub {
+  let initialSuccess: PositionCallback | undefined;
+  let initialError: PositionErrorCallback | undefined;
   let watchSuccess: PositionCallback | undefined;
   let watchError: PositionErrorCallback | undefined;
-  const getCurrentPosition = vi.fn();
+  const getCurrentPosition = vi.fn(
+    (onSuccess: PositionCallback, onErr?: PositionErrorCallback) => {
+      initialSuccess = onSuccess;
+      initialError = onErr;
+    },
+  );
   const watchPosition = vi.fn((onSuccess: PositionCallback, onErr?: PositionErrorCallback) => {
     watchSuccess = onSuccess;
     watchError = onErr;
@@ -39,6 +48,8 @@ function stubGeolocation(): GeolocationStub {
     getCurrentPosition,
     watchPosition,
     clearWatch,
+    triggerInitialSuccess: (pos) => initialSuccess?.(pos),
+    triggerInitialError: (error) => initialError?.(error),
     triggerWatchSuccess: (pos) => watchSuccess?.(pos),
     triggerWatchError: (error) => watchError?.(error),
   };
@@ -124,5 +135,50 @@ describe('useMapLocateWatch', () => {
 
     expect(() => renderHook(() => useMapLocateWatch({ enabled: true, onLocated }))).not.toThrow();
     expect(onLocated).not.toHaveBeenCalled();
+  });
+
+  it('ignores a late-arriving initial fix that resolves after disable', () => {
+    const stub = stubGeolocation();
+    const onLocated = vi.fn();
+    mockToUserLocation.mockReturnValue(SAMPLE_LOCATION);
+
+    const { rerender } = renderHook(
+      ({ enabled }: { enabled: boolean }) => useMapLocateWatch({ enabled, onLocated }),
+      { initialProps: { enabled: true } },
+    );
+
+    // User toggles tracking off before getCurrentPosition resolves.
+    rerender({ enabled: false });
+    expect(stub.clearWatch).toHaveBeenCalledWith(42);
+
+    // The browser eventually responds to the long-since-discarded
+    // one-shot request. The hook must swallow it: callbacks are
+    // gated by the cancelled flag set in the cleanup.
+    act(() => {
+      stub.triggerInitialSuccess(SAMPLE_POSITION);
+    });
+
+    expect(onLocated).not.toHaveBeenCalled();
+  });
+
+  it('ignores a late-arriving initial error that resolves after disable', () => {
+    const stub = stubGeolocation();
+    const onLocated = vi.fn();
+    const onError = vi.fn();
+
+    const { rerender } = renderHook(
+      ({ enabled }: { enabled: boolean }) =>
+        useMapLocateWatch({ enabled, onLocated, onError }),
+      { initialProps: { enabled: true } },
+    );
+
+    rerender({ enabled: false });
+
+    const err = { code: 1, message: 'denied', PERMISSION_DENIED: 1 } as GeolocationPositionError;
+    act(() => {
+      stub.triggerInitialError(err);
+    });
+
+    expect(onError).not.toHaveBeenCalled();
   });
 });
