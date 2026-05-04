@@ -125,6 +125,27 @@ describe('useMapLocateWatch', () => {
     expect(onLocated).not.toHaveBeenCalled();
   });
 
+  it('reports onError only once when both initial and watch fail in the same session', () => {
+    // PERMISSION_DENIED typically reaches both the one-shot and the
+    // watch error callbacks while neither has been cancelled yet.
+    // Without the per-session error gate this would surface two
+    // duplicate errors (and two duplicate toasts in MapView).
+    const stub = stubGeolocation();
+    const onLocated = vi.fn();
+    const onError = vi.fn();
+    const err = { code: 1, message: 'denied', PERMISSION_DENIED: 1 } as GeolocationPositionError;
+
+    renderHook(() => useMapLocateWatch({ enabled: true, onLocated, onError }));
+
+    act(() => {
+      stub.triggerInitialError(err);
+      stub.triggerWatchError(err);
+    });
+
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onError).toHaveBeenCalledWith(err);
+  });
+
   it('clears the watch when enabled flips to false', () => {
     const stub = stubGeolocation();
     const onLocated = vi.fn();

@@ -56,6 +56,14 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
     // mode. The `cancelled` flag closes over every callback so any
     // post-cleanup invocation becomes a no-op.
     let cancelled = false;
+    // Per-session error gate. `getCurrentPosition` (one-shot) and
+    // `watchPosition` are dispatched simultaneously, so a permission
+    // denial typically reaches both error callbacks while neither has
+    // been cancelled yet — without this flag the consumer would
+    // observe two `onError` calls (and, in MapView, two toasts) for a
+    // single PERMISSION_DENIED. Reset implicitly per effect run since
+    // the closure is recreated.
+    let errorReported = false;
     const enableTime = Date.now();
     let watchUpdates = 0;
     logger.debug('auto-tracking: enabled');
@@ -90,6 +98,11 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
         logger.debug(
           `auto-tracking: ${kind} failed (since-enable=${Date.now() - enableTime}ms, code=${String(error.code)}, message=${error.message})`,
         );
+        if (errorReported) {
+          // The other request already surfaced an error this session.
+          return;
+        }
+        errorReported = true;
         onError?.(error);
       };
 

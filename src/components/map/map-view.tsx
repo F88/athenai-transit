@@ -398,16 +398,26 @@ export function MapView({
   // for each error code) lives in `classifyAutoLocateError`; this
   // handler is the side-effect side of that decision (log + toggle off
   // + toast for `'disable'`, log only for `'transient'`).
+  //
+  // `t` is read through a ref so a language switch does not change
+  // `handleTrackingError`'s identity. Otherwise `useMapLocateWatch`'s
+  // effect — which has `onError` in its dependency array — would tear
+  // down the watch and re-issue `getCurrentPosition` every time the
+  // user toggled the language.
+  const tRef = useRef(t);
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
   const handleTrackingError = useCallback(
     (error: GeolocationPositionError) => {
       const action = classifyAutoLocateError(error);
       logger.warn(action.logMessage);
       if (action.kind === 'disable') {
         onAutoLocateChange(false);
-        toast.error(t('geolocation.trackingFailed'));
+        toast.error(tRef.current('geolocation.trackingFailed'));
       }
     },
-    [onAutoLocateChange, t],
+    [onAutoLocateChange],
   );
   useMapLocateWatch({
     enabled: autoLocateEnabled,
