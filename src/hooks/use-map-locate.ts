@@ -42,6 +42,22 @@ export function useMapLocate(
   const handleLocate = useCallback(() => {
     if (!navigator.geolocation) {
       logger.debug('manual locate: geolocation unavailable');
+      // Synthesize a `POSITION_UNAVAILABLE` event so the caller's
+      // `onError` runs uniformly: tapping the locate button in an
+      // insecure context or on a browser that doesn't expose
+      // `navigator.geolocation` would otherwise be silently a no-op
+      // and look like a broken button. POSITION_UNAVAILABLE is the
+      // semantically closest existing code (the API is unavailable,
+      // hence no position can be determined) and stays out of the
+      // PERMISSION_DENIED fast-path that would also disable
+      // auto-tracking — there is no permission to revoke here.
+      onError?.({
+        code: 2,
+        message: 'Geolocation API not available in this browser context',
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+      } satisfies GeolocationPositionError);
       return;
     }
 

@@ -167,7 +167,33 @@ describe('useMapLocate', () => {
     expect(result.current.locating).toBe(false);
   });
 
-  it('does nothing when geolocation is unavailable', () => {
+  it('synthesizes a POSITION_UNAVAILABLE error when navigator.geolocation is missing', () => {
+    // Insecure contexts and unsupported browsers leave
+    // `navigator.geolocation` undefined. The hook used to silently
+    // return, which made the locate button look broken. It now
+    // fires `onError` with a code-2 synthetic event so the caller's
+    // toast/log path runs uniformly.
+    const map = {} as L.Map;
+    const onLocated = vi.fn();
+    const onError = vi.fn();
+
+    vi.stubGlobal('navigator', {});
+
+    const { result } = renderHook(() => useMapLocate(map, onLocated, { onError }));
+
+    act(() => {
+      result.current.handleLocate();
+    });
+
+    expect(result.current.locating).toBe(false);
+    expect(onLocated).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledTimes(1);
+    const synthesizedError = onError.mock.calls[0]?.[0] as GeolocationPositionError;
+    expect(synthesizedError.code).toBe(2);
+    expect(synthesizedError.message).toContain('not available');
+  });
+
+  it('does not throw when navigator.geolocation is missing and no onError is provided', () => {
     const map = {} as L.Map;
     const onLocated = vi.fn();
 
@@ -175,10 +201,11 @@ describe('useMapLocate', () => {
 
     const { result } = renderHook(() => useMapLocate(map, onLocated));
 
-    act(() => {
-      result.current.handleLocate();
-    });
-
+    expect(() => {
+      act(() => {
+        result.current.handleLocate();
+      });
+    }).not.toThrow();
     expect(result.current.locating).toBe(false);
     expect(onLocated).not.toHaveBeenCalled();
   });
