@@ -40,6 +40,13 @@ interface MapOverlayPanelsProps {
   onSearchClick: () => void;
   onInfoClick: () => void;
   onLocated: (location: UserLocation) => void;
+  /** Whether continuous current-location tracking is currently enabled. */
+  autoLocateEnabled: boolean;
+  /** Setter for the auto-locate flag. */
+  onAutoLocateChange: (enabled: boolean) => void;
+  /** Counter that bumps on every successful geolocation fix; forwarded
+   *  to the locate button to replay its ripple animation. */
+  locatePulseKey: number;
   onDeselectStop: () => void;
   onHistorySelect: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
   onPortalSelect: (entry: AnchorEntry) => void;
@@ -77,6 +84,9 @@ export function MapOverlayPanels({
   onSearchClick,
   onInfoClick,
   onLocated,
+  autoLocateEnabled,
+  onAutoLocateChange,
+  locatePulseKey,
   onDeselectStop,
   onHistorySelect,
   onPortalSelect,
@@ -90,6 +100,9 @@ export function MapOverlayPanels({
         <MapNavigationPanel
           map={map}
           infoLevel={infoLevel}
+          autoLocateEnabled={autoLocateEnabled}
+          onAutoLocateChange={onAutoLocateChange}
+          locatePulseKey={locatePulseKey}
           onLocated={onLocated}
           onDeselectStop={onDeselectStop}
         />

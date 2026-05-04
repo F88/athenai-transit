@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import { toast } from 'sonner';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
 import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../../types/app/transit-composed';
 import { DEFAULT_MAX_ZOOM } from '../../config/map-constants';
+import { classifyAutoLocateError } from '../../lib/auto-locate-error';
 import { enableDoubleTapZoom } from '../../lib/double-tap-zoom';
 import { smoothMoveTo, toBounds, toCenter } from '../../lib/leaflet-helpers';
 import { StopMarkers } from '../marker/stop-markers';
@@ -29,6 +32,7 @@ import { EdgeMarkersSwitch } from '../marker/edge-markers';
 
 import { INITIAL_CENTER, INITIAL_ZOOM } from '../../config/map-defaults';
 import { DISTANCE_BANDS } from '../../utils/distance-style';
+import { useMapLocateWatch } from '../../hooks/use-map-locate-watch';
 import { useMapSelectionLayers } from '../../hooks/use-map-selection-layers';
 
 const USER_LOCATION_ICON = L.divIcon({
@@ -44,11 +48,18 @@ function MapEventHandler({
   onBoundsChanged,
   onZoomChanged,
   onMapClicked,
+  onUserDragStart,
   doubleTapDrag,
 }: {
   onBoundsChanged: (bounds: Bounds, center: LatLng) => void;
   onZoomChanged: (zoom: number) => void;
   onMapClicked: () => void;
+  /**
+   * Fires when the user starts a manual drag gesture. Programmatic
+   * moves (`panTo`, `flyTo`, `setView`) do NOT fire `dragstart`, so
+   * this is a 100% reliable signal of user-initiated movement.
+   */
+  onUserDragStart: () => void;
   doubleTapDrag: 'zoom-in' | 'zoom-out';
 }) {
   const map = useMap();
@@ -63,6 +74,10 @@ function MapEventHandler({
       lastZoomTimeRef.current = Date.now();
       logger.verbose('zoomend detected, timestamp:', lastZoomTimeRef.current);
       onZoomChanged(map.getZoom());
+    },
+    dragstart: () => {
+      logger.verbose('dragstart detected (user gesture)');
+      onUserDragStart();
     },
     click: () => {
       if (shouldSuppressMapClick(lastZoomTimeRef.current, Date.now(), CLICK_SUPPRESSION_MS)) {
@@ -258,6 +273,14 @@ export interface MapViewProps {
   lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
   /** Height class applied to the outer map container. */
   heightClassName?: string;
+  /**
+   * Whether continuous current-location tracking is currently enabled.
+   * Owned by `app.tsx` so the bounds-change handler can gate its fetch
+   * on the same flag without an extra signal channel.
+   */
+  autoLocateEnabled: boolean;
+  /** Setter for the auto-locate flag. */
+  onAutoLocateChange: (enabled: boolean) => void;
 }
 
 export function MapView({
@@ -303,10 +326,19 @@ export function MapView({
   anchors,
   onPortalSelect,
   heightClassName,
+  autoLocateEnabled,
+  onAutoLocateChange,
 }: MapViewProps) {
+  const { t } = useTranslation();
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [zoom, setZoom] = useState(INITIAL_ZOOM);
+  // Counter that increments every time a fresh geolocation fix arrives
+  // (manual locate or auto-tracking watchPosition update). Forwarded
+  // to the locate button as `pulseKey` so the button replays a brief
+  // ripple animation to acknowledge the event without altering its
+  // persistent state.
+  const [locateUpdateCount, setLocateUpdateCount] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { nearby: nearbyRenderMode, far: farRenderMode } = resolveRenderModes(renderMode, zoom);
@@ -344,7 +376,77 @@ export function MapView({
     selectionInfo,
   });
 
-  const handleLocated = useCallback((location: UserLocation) => setUserLocation(location), []);
+  const handleLocated = useCallback((location: UserLocation) => {
+    setUserLocation(location);
+    // Bump the counter so the locate button replays its ripple
+    // animation. Both manual (`useMapLocate`) and auto (`useMapLocateWatch`)
+    // paths end up here, so the button reacts uniformly to any
+    // successful position fix.
+    setLocateUpdateCount((n) => n + 1);
+  }, []);
+
+  // A user-initiated map drag implies the user wants to look at a
+  // different area, so auto-tracking should yield. `dragstart` is a
+  // pure user-gesture signal in Leaflet (programmatic moves never
+  // fire it), making this a strict, race-free disable trigger.
+  const handleUserDragStart = useCallback(() => {
+    onAutoLocateChange(false);
+  }, [onAutoLocateChange]);
+
+  // Continuous geolocation tracking. The classification (= what to do
+  // for each error code) lives in `classifyAutoLocateError`; this
+  // handler is the side-effect side of that decision (log + toggle off
+  // + toast for `'disable'`, log only for `'transient'`).
+  const handleTrackingError = useCallback(
+    (error: GeolocationPositionError) => {
+      const action = classifyAutoLocateError(error);
+      logger.warn(action.logMessage);
+      if (action.kind === 'disable') {
+        onAutoLocateChange(false);
+        toast.error(t('geolocation.trackingFailed'));
+      }
+    },
+    [onAutoLocateChange, t],
+  );
+  useMapLocateWatch({
+    enabled: autoLocateEnabled,
+    onLocated: handleLocated,
+    onError: handleTrackingError,
+  });
+
+  // Auto-pan the map to follow the user's location while tracking is on.
+  // Runs whenever `userLocation` updates (i.e. on each watchPosition tick)
+  // and on the transition that turns tracking on so the map re-centers
+  // immediately. Zoom is preserved — only the center is moved.
+  //
+  // Note: panning triggers `moveend` → `handleBoundsChanged`, but that
+  // handler short-circuits while `autoLocateEnabled` is true, so the
+  // pan does not cause repeated nearby/in-bounds fetches. Fetches resume
+  // after tracking is disabled (see the next effect for the catch-up).
+  useEffect(() => {
+    if (!autoLocateEnabled || !mapInstance || !userLocation) {
+      return;
+    }
+    mapInstance.panTo([userLocation.lat, userLocation.lng]);
+  }, [autoLocateEnabled, mapInstance, userLocation]);
+
+  // Catch-up fetch on the auto-tracking ON → OFF transition. While
+  // tracking was on, `handleBoundsChanged` skipped every `moveend`, so
+  // `inBoundStops` / `radiusStops` reflect the location where tracking
+  // was enabled rather than wherever the user has walked since. As soon
+  // as tracking is turned off (manually or via an error fallback),
+  // request a fresh fetch using the current map state so the bottom
+  // sheet and markers immediately catch up.
+  const prevAutoLocateEnabledRef = useRef(autoLocateEnabled);
+  useEffect(() => {
+    const wasEnabled = prevAutoLocateEnabledRef.current;
+    prevAutoLocateEnabledRef.current = autoLocateEnabled;
+    if (!wasEnabled || autoLocateEnabled || !mapInstance) {
+      return;
+    }
+    logger.debug('auto-locate disabled: refetching stops at current map state');
+    onBoundsChanged(toBounds(mapInstance), toCenter(mapInstance));
+  }, [autoLocateEnabled, mapInstance, onBoundsChanged]);
 
   useEffect(() => {
     if (!mapInstance || !wrapperRef.current) {
@@ -400,6 +502,7 @@ export function MapView({
           onBoundsChanged={onBoundsChanged}
           onZoomChanged={setZoom}
           onMapClicked={onDeselectStop}
+          onUserDragStart={handleUserDragStart}
           doubleTapDrag={doubleTapDrag}
         />
         <RouteShapePanes />
@@ -521,6 +624,9 @@ export function MapView({
         onSearchClick={onSearchClick}
         onInfoClick={onInfoClick}
         onLocated={handleLocated}
+        autoLocateEnabled={autoLocateEnabled}
+        onAutoLocateChange={onAutoLocateChange}
+        locatePulseKey={locateUpdateCount}
         onDeselectStop={onDeselectStop}
         onHistorySelect={onHistorySelect}
         onPortalSelect={onPortalSelect}

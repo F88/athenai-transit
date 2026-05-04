@@ -121,6 +121,12 @@ export default function App({ loadResult }: AppProps) {
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
   const [routeShapes, setRouteShapes] = useState<RouteShape[]>([]);
   const [hasNearbyLoaded, setHasNearbyLoaded] = useState(false);
+  // Auto-tracking flag is intentionally not persisted: a tracking
+  // permission/intent shouldn't silently survive a reload, so it always
+  // starts off and the user must opt in each session. Lives in app.tsx
+  // (rather than MapView) so `handleBoundsChanged` can gate its fetch
+  // on the same flag without an extra signal channel.
+  const [autoLocateEnabled, setAutoLocateEnabled] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
@@ -313,10 +319,16 @@ export default function App({ loadResult }: AppProps) {
     [anchorStopMetaMap],
   );
 
-  // Wrap selectStop to also record in history
+  // Wrap selectStop to also record in history.
+  //
+  // Disables auto-tracking because selecting a stop pans the map to
+  // the stop's coordinates (via `PanToFocus` reading `focusPosition`),
+  // which would fight the auto-pan effect and make subsequent
+  // `moveend` events ineligible for nearby/in-bounds refetch.
   const handleSelectStop = useCallback(
     (stop: Stop) => {
       logger.debug(`handleSelectStop [Marker]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
+      setAutoLocateEnabled(false);
       selectStop(stop);
       const meta = findStopWithMeta(stop.stop_id);
       if (meta) {
@@ -331,13 +343,15 @@ export default function App({ loadResult }: AppProps) {
         );
       }
     },
-    [selectStop, pushStop, findStopWithMeta, routeTypeMap],
+    [selectStop, pushStop, findStopWithMeta, routeTypeMap, setAutoLocateEnabled],
   );
 
-  // Wrap selectStopById to also record in history
+  // Wrap selectStopById to also record in history.
+  // See `handleSelectStop` for the rationale of disabling auto-tracking.
   const handleSelectStopById = useCallback(
     (stopId: string) => {
       logger.debug(`handleSelectStopById [BottomSheet]: stopId=${stopId}`);
+      setAutoLocateEnabled(false);
       selectStopById(stopId);
       const meta = findStopWithMeta(stopId);
       if (meta) {
@@ -352,7 +366,7 @@ export default function App({ loadResult }: AppProps) {
         );
       }
     },
-    [selectStopById, pushStop, findStopWithMeta, routeTypeMap],
+    [selectStopById, pushStop, findStopWithMeta, routeTypeMap, setAutoLocateEnabled],
   );
 
   // Apply ?stop= query param: select and pan to the stop after data loads.
@@ -408,12 +422,28 @@ export default function App({ loadResult }: AppProps) {
 
   const perfProfile = PERF_PROFILES[settings.perfMode];
 
-  // Fetch stops when map bounds change (debounced)
+  // Fetch stops when map bounds change (debounced). Auto-pan-driven
+  // moveends (= the locate watch) are treated identically to manual
+  // pans; the natural "near" guards (resolveLocateAction's 10 m
+  // threshold for manual locate, Leaflet's `panTo` equality check for
+  // the tracking auto-pan) prevent fetches when the position has not
+  // actually changed.
   const handleBoundsChanged = useCallback(
     (bounds: Bounds, center: LatLng) => {
+      // Keep `mapCenter` in sync with the latest map center; the bottom
+      // sheet computes per-stop distance from it.
+      setMapCenter(center);
       clearTimeout(debounceTimer.current);
       debounceTimer.current = setTimeout(() => {
         const { nearbyRadius, maxResults } = perfProfile.data.stops;
+        if (logger.isEnabled('debug')) {
+          logger.debug(
+            'bounds changed: fetching stops via repo',
+            `radius=${nearbyRadius}`,
+            `maxResults=${maxResults}`,
+            `center=(${center.lat.toFixed(4)}, ${center.lng.toFixed(4)})`,
+          );
+        }
         void Promise.all([
           repo.getStopsInBounds(bounds, maxResults),
           repo.getStopsNearby(center, nearbyRadius, maxResults),
@@ -430,7 +460,6 @@ export default function App({ loadResult }: AppProps) {
           setInBoundStops(inBounds);
           setNearbyStops(nearby);
           setHasNearbyLoaded(true);
-          setMapCenter(center);
           clearFocus();
         });
       }, DEBOUNCE_MS);
@@ -575,14 +604,19 @@ export default function App({ loadResult }: AppProps) {
   // Select + pan to a stop from history. Uses focusStop to set
   // focus position directly from stop coordinates, ensuring the map pans
   // even when the stop is outside the current viewport.
+  //
+  // Disables auto-tracking first because the user is intentionally
+  // navigating away from their current location; without this, the
+  // bounds-change handler would skip the post-pan stops fetch.
   const handleHistorySelect = useCallback(
     (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleHistorySelect [History]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
+      setAutoLocateEnabled(false);
       focusStop(stop);
       const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
       pushStop(meta, routeTypes);
     },
-    [focusStop, pushStop, findStopWithMeta],
+    [focusStop, pushStop, findStopWithMeta, setAutoLocateEnabled],
   );
 
   // Anchor stop_id set for efficient lookup in BottomSheet
@@ -662,10 +696,13 @@ export default function App({ loadResult }: AppProps) {
     [isStopAnchor, anchors, removeAnchor, addAnchor, repo, lookupAnchorStopMeta, langChain, t],
   );
 
-  // Select + pan to a stop from Portal dropdown
+  // Select + pan to a stop from Portal dropdown.
+  // See `handleHistorySelect` for the rationale of disabling
+  // auto-tracking before panning.
   const handlePortalSelect = useCallback(
     (entry: AnchorEntry) => {
       logger.debug(`handlePortalSelect [Portal]: stopId=${entry.stopId}, name=${entry.stopName}`);
+      setAutoLocateEnabled(false);
       // Build a minimal Stop from AnchorEntry for map pan
       const stop: Stop = {
         stop_id: entry.stopId,
@@ -681,12 +718,16 @@ export default function App({ loadResult }: AppProps) {
       const meta = findStopWithMeta(entry.stopId) ?? { stop, agencies: [], routes: [] };
       pushStop(meta, entry.routeTypes);
     },
-    [focusStop, findStopWithMeta, pushStop],
+    [focusStop, findStopWithMeta, pushStop, setAutoLocateEnabled],
   );
 
+  // Select + pan to a stop chosen from the search dialog.
+  // See `handleHistorySelect` for the rationale of disabling
+  // auto-tracking before panning.
   const handleSearchSelect = useCallback(
     (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleSearchSelect [Search]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
+      setAutoLocateEnabled(false);
       focusStop(stop);
       setSearchModalOpen(false);
       // SearchDialog already resolved routeTypes from its own routeTypeMap,
@@ -694,7 +735,7 @@ export default function App({ loadResult }: AppProps) {
       const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
       pushStop(meta, routeTypes);
     },
-    [focusStop, pushStop, findStopWithMeta],
+    [focusStop, pushStop, findStopWithMeta, setAutoLocateEnabled],
   );
 
   // --- App-wide filter state (shared across surfaces) ---
@@ -970,6 +1011,8 @@ export default function App({ loadResult }: AppProps) {
           anchors,
           onPortalSelect: handlePortalSelect,
           lookupAnchorStopMeta,
+          autoLocateEnabled,
+          onAutoLocateChange: setAutoLocateEnabled,
         }}
         bottomSheetProps={{
           stopTimes: stopEventAttributesNonEmptyNearbyStopTimes,
