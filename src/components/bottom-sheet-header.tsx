@@ -268,7 +268,7 @@ function formatStopsCountsDebugLog(counts: StopsCounts): string {
   return `total=${counts.total} nonEmpty=${counts.nonEmpty} boardable=${counts.boardableCount} origin=${counts.originCount}`;
 }
 
-// const summaryLogger = createLogger('NearbyStopsSummary');
+const summaryLogger = createLogger('NearbyStopsSummary');
 
 interface StopsSummaryProps {
   label: string;
@@ -291,11 +291,14 @@ function StopsSummary({
 }: StopsSummaryProps) {
   const { t, i18n } = useTranslation();
 
-  // summaryLogger.debug(
-  //   hasLoaded
-  //     ? `[${label}] ${formatStopsCountsDebugLog(totalCount)} -> filtered=${filteredCount}`
-  //     : 'not loaded yet',
-  // );
+  if (summaryLogger.isEnabled('debug')) {
+    summaryLogger.debug(
+      hasLoaded
+        ? `[${label}] ${formatStopsCountsDebugLog(totalCount)} -> filtered=${filteredCount}`
+        : 'not loaded yet',
+    );
+  }
+
   const text = getNearbyStopsSummaryText(
     hasLoaded,
     totalCount,
@@ -319,7 +322,7 @@ function StopsSummary({
           frameClassName="border-info"
         />
       )}
-      [{label}] {text}
+      {text}
     </p>
   );
 }
