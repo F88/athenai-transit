@@ -10,6 +10,7 @@ import type { StopWithContext, StopWithMeta } from '../../types/app/transit-comp
 import { DEFAULT_MAX_ZOOM } from '../../config/map-constants';
 import { classifyAutoLocateError } from '../../lib/auto-locate-error';
 import { enableDoubleTapZoom } from '../../lib/double-tap-zoom';
+import { resolveLocateAction } from '../../lib/map-locate';
 import { smoothMoveTo, toBounds, toCenter } from '../../lib/leaflet-helpers';
 import { StopMarkers } from '../marker/stop-markers';
 import type { UserLocation } from '../../types/app/map';
@@ -429,6 +430,36 @@ export function MapView({
     }
     mapInstance.panTo([userLocation.lat, userLocation.lng]);
   }, [autoLocateEnabled, mapInstance, userLocation]);
+
+  // Pinch-zoom-aware tracking yield. A pinch centered on the map
+  // changes only zoom level (= "I want a different scale at the same
+  // place") and should keep tracking on. A pinch off-center shifts
+  // the map center away from the user (= "I want to look elsewhere")
+  // and should release tracking; without this, the next watchPosition
+  // tick would auto-pan back and undo the user's gesture.
+  //
+  // We reuse `resolveLocateAction` against the current `userLocation`
+  // so the same `LOCATE_NEAR_THRESHOLD_METERS` (10 m) that decides
+  // "near" for the manual locate also decides whether the post-zoom
+  // center is still "on" the user.
+  useEffect(() => {
+    if (!mapInstance || !autoLocateEnabled) {
+      return;
+    }
+    const handleZoomEnd = () => {
+      if (!userLocation) {
+        return;
+      }
+      const action = resolveLocateAction(mapInstance, userLocation);
+      if (action.kind === 'move') {
+        onAutoLocateChange(false);
+      }
+    };
+    mapInstance.on('zoomend', handleZoomEnd);
+    return () => {
+      mapInstance.off('zoomend', handleZoomEnd);
+    };
+  }, [mapInstance, autoLocateEnabled, userLocation, onAutoLocateChange]);
 
   // Catch-up fetch on the auto-tracking ON → OFF transition. While
   // tracking was on, `handleBoundsChanged` skipped every `moveend`, so
