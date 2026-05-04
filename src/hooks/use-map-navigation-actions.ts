@@ -5,6 +5,18 @@ import { smoothMoveTo } from '../lib/leaflet-helpers';
 import { pickRandomHome } from '../config/map-defaults';
 import { useMapLocate } from './use-map-locate';
 
+interface UseMapNavigationActionsOptions {
+  /**
+   * When the resolved location is near the map center, the locate button
+   * enables this callback so the caller can flip auto-tracking on instead
+   * of moving the map.
+   */
+  onNearMapCenter?: () => void;
+  /** Forwarded from {@link useMapLocate} — fires when the manual
+   *  `getCurrentPosition` request returns an error. */
+  onError?: (error: GeolocationPositionError) => void;
+}
+
 interface UseMapNavigationActionsResult {
   locating: boolean;
   handleLocate: () => void;
@@ -22,8 +34,12 @@ export function useMapNavigationActions(
   map: L.Map,
   onLocated: (location: UserLocation) => void,
   onDeselectStop: () => void,
+  options?: UseMapNavigationActionsOptions,
 ): UseMapNavigationActionsResult {
-  const { locating, handleLocate } = useMapLocate(map, onLocated);
+  const { locating, handleLocate } = useMapLocate(map, onLocated, {
+    onNearMapCenter: options?.onNearMapCenter,
+    onError: options?.onError,
+  });
 
   const handleRandomJump = useCallback(() => {
     onDeselectStop();

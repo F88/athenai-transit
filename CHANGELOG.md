@@ -11,12 +11,26 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- 現在地自動追跡 (auto-locate) モードを追加。地図右下の 🎯 ボタンを「遠い時 = 現在地へ pan / 近い時 = 追跡 ON / 追跡中 = OFF」の 3 状態トグルとして再設計。追跡 ON 中は `watchPosition` で位置更新ごとにマーカー追従 (= auto-pan)、ボタンに blue ripple アニメーションでイベント可視化。手動 drag・ピンチ zoom (中心ズレ時)・🎲 ランダムジャンプ・検索/履歴/Portal/マップマーカー/BottomSheet からのバス停選択は追跡を解除し、ユーザーの「別の場所を見たい」意図に従う。
+- `useMapLocateWatch` (`src/hooks/use-map-locate-watch.ts`) を新設。`enabled` flag が立っている間 `getCurrentPosition` (初回 fix 即マーカー化) + `watchPosition` (継続更新) の lifecycle を管理。`enableHighAccuracy: true` で歩行追従精度を担保。`cancelled` flag で disable 後に届いた late-arriving fix を確実に廃棄。
+- `MapMultiStateButton` (`src/components/button/map-multi-state-button.tsx`) を追加。`active` (opacity) と `highlighted` (accent background) の独立 2 軸に加え `pulseKey` 経由で 1-shot ripple アニメを再生。共通スタイルを `map-overlay-button.styles.ts` に切り出し、`MapToggleButton` と base / neutral background を共有。
+- `classifyAutoLocateError` (`src/lib/auto-locate-error.ts`) を追加。`GeolocationPositionError` を `'disable'` (PERMISSION_DENIED) と `'transient'` (POSITION_UNAVAILABLE / TIMEOUT) の discriminated action に分類。`error.PERMISSION_DENIED` instance constant を使って Node/jsdom テスト環境でも動作。
+- 手動 locate (= 🎯 ボタンタップ) 失敗時に error log + toast を出力。`useMapNavigationActions` 経由で `onError` を `MapNavigationPanel.handleLocateError` に届け、code を問わず `geolocation.locateFailed` (= 「現在地を取得できませんでした」) を表示。code / message の詳細は `[MapNavigationPanel] error: manual locate failed: code=..., message=...` で診断ログに残す。自動追跡側のポリシー (= PERMISSION_DENIED のみ toast、transient は silent) は維持。
+- i18n key を en / ja に追加: `panel.stopAutoLocate` (= 追跡 ON 時のボタン aria-label) / `geolocation.trackingFailed` (= 自動追跡の permission denied トースト) / `geolocation.locateFailed` (= 手動 locate 失敗時の汎用トースト)。
+- `useNearbyStopTimes` の debug log に `trigger=initial|dateTime|radiusStops|repo|strict-mode-rerun` を付与し effect 駆動源を可視化。`logger.isEnabled('debug')` で gate して production の filter / reduce 計算を skip。logger tag を `NearbyStopTimes` (空白なし) に統一。
+- Storybook stories を `MapToggleButton` / `MapMultiStateButton` 双方に追加 (state matrix / locate lifecycle / pulse manual / pulse auto / pulse state matrix / kitchen sink)。
 - `useTimetable` hook を新設し、timetable open/close orchestration を `App` から `src/hooks/use-timetable.ts` に分離。`requestIdRef` で stale lookup をキャンセル。
 - `useTimetable` の failure outcome (`not-found` / `route-not-found` / `error`) を `App` で toast 通知 (warning / error)。i18n key `timetable.messages.{stopNotFound,routeNotFound,openFailed}` を en / ja に追加。
 - 共有 type `TimetableData` (`src/types/app/timetable.ts`) を切り出し。
 
 ### Changed
 
+- `LocateAction` を `move | near` の 2 種類に簡素化 (旧: `move | zoom-in | noop`)。`applyLocateAction` のシグネチャを `MoveLocateAction = Extract<LocateAction, { kind: 'move' }>` に絞り、`'near'` を渡すと型エラーになるよう narrowing。near は呼び出し側 (`useMapLocate.onNearMapCenter`) で別経路処理。
+- `useMapLocate` に `onNearMapCenter` (= 取得結果が地図中心 ≤10m の時に発火) と `onError` の 2 オプションを追加。`useMapNavigationActions` 経由で `MapNavigationPanel` に伝播し、locate ボタン 2 度押しで追跡 ON 切替を実現。
+- `app.tsx` の各選択 handler (`handleSelectStop` / `handleSelectStopById` / `handleHistorySelect` / `handlePortalSelect` / `handleSearchSelect`) と `handleRandomJumpClick` の冒頭で `setAutoLocateEnabled(false)`。これにより selection に伴う pan の moveend が通常 fetch path を通って nearby stops を更新できる。
+- `MapEventHandler` に `dragstart` listener を追加し、ユーザー操作 (programmatic move では発火しない) を厳密検知して追跡解除。
+- `MapView` に pinch zoom 後の center 検査 effect を追加。`zoomend` 時に `resolveLocateAction(map, userLocation)` を再利用し、center が `LOCATE_NEAR_THRESHOLD_METERS` (10m) 以上ズレていれば追跡を解除 (中心キープのピンチは追跡継続)。
+- `handleBoundsChanged` の `setMapCenter(center)` を post-fetch `.then()` 内から先頭に移動。auto-pan 中も `mapCenter` が即時反映され、BottomSheet の距離表示が古い位置で固定される問題を解消。
 - `useTripInspection` の inline empty-targets note ternary を named helper に抽出 (挙動変化なし)。
 
 ## [2026.05.02]

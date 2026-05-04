@@ -154,6 +154,7 @@
     "toggleBusRoutes": "バス路線図の表示切替",
     "toggleNonBusRoutes": "バス以外の路線図の表示切替",
     "currentLocation": "現在位置へ移動",
+    "stopAutoLocate": "現在位置の自動追跡を停止",
     "randomLocation": "ランダムな場所へ移動",
     "toggleRenderMode": "描画モードの切替",
     "togglePerfMode": "パフォーマンスモードの切替",
@@ -175,6 +176,10 @@
   },
   "dataLoad": {
     "failed": "データの取得に失敗しました"
+  },
+  "geolocation": {
+    "locateFailed": "現在地を取得できませんでした",
+    "trackingFailed": "位置情報の使用が許可されていないため、自動追跡を停止しました"
   },
   "search": {
     "title": "のりばを検索",

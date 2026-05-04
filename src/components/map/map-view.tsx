@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer, Marker, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
+import { toast } from 'sonner';
+import type { AutoLocateOffReason } from '../../types/app/auto-locate';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
 import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
 import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../../types/app/transit-composed';
 import { DEFAULT_MAX_ZOOM } from '../../config/map-constants';
+import { classifyAutoLocateError } from '../../lib/auto-locate-error';
 import { enableDoubleTapZoom } from '../../lib/double-tap-zoom';
+import { resolveLocateAction } from '../../lib/map-locate';
 import { smoothMoveTo, toBounds, toCenter } from '../../lib/leaflet-helpers';
 import { StopMarkers } from '../marker/stop-markers';
 import type { UserLocation } from '../../types/app/map';
@@ -29,6 +34,7 @@ import { EdgeMarkersSwitch } from '../marker/edge-markers';
 
 import { INITIAL_CENTER, INITIAL_ZOOM } from '../../config/map-defaults';
 import { DISTANCE_BANDS } from '../../utils/distance-style';
+import { useMapLocateWatch } from '../../hooks/use-map-locate-watch';
 import { useMapSelectionLayers } from '../../hooks/use-map-selection-layers';
 
 const USER_LOCATION_ICON = L.divIcon({
@@ -44,11 +50,18 @@ function MapEventHandler({
   onBoundsChanged,
   onZoomChanged,
   onMapClicked,
+  onUserDragStart,
   doubleTapDrag,
 }: {
   onBoundsChanged: (bounds: Bounds, center: LatLng) => void;
   onZoomChanged: (zoom: number) => void;
   onMapClicked: () => void;
+  /**
+   * Fires when the user starts a manual drag gesture. Programmatic
+   * moves (`panTo`, `flyTo`, `setView`) do NOT fire `dragstart`, so
+   * this is a 100% reliable signal of user-initiated movement.
+   */
+  onUserDragStart: () => void;
   doubleTapDrag: 'zoom-in' | 'zoom-out';
 }) {
   const map = useMap();
@@ -63,6 +76,10 @@ function MapEventHandler({
       lastZoomTimeRef.current = Date.now();
       logger.verbose('zoomend detected, timestamp:', lastZoomTimeRef.current);
       onZoomChanged(map.getZoom());
+    },
+    dragstart: () => {
+      logger.verbose('dragstart detected (user gesture)');
+      onUserDragStart();
     },
     click: () => {
       if (shouldSuppressMapClick(lastZoomTimeRef.current, Date.now(), CLICK_SUPPRESSION_MS)) {
@@ -258,6 +275,20 @@ export interface MapViewProps {
   lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
   /** Height class applied to the outer map container. */
   heightClassName?: string;
+  /**
+   * Whether continuous current-location tracking is currently enabled.
+   * Owned by `app.tsx` so every consumer (the locate button's
+   * highlighted state, `useMapLocateWatch`'s `enabled`, the auto-pan
+   * effect, the pinch-zoom yield, the ON → OFF catch-up effect, and
+   * each disable trigger) reads from the same source of truth.
+   */
+  autoLocateEnabled: boolean;
+  /** Turn auto-locate on (= called from the locate button's near-center
+   *  branch). */
+  onEnableAutoLocate: () => void;
+  /** Turn auto-locate off, tagging the call site with a typed reason
+   *  for diagnostics. */
+  onDisableAutoLocate: (reason: AutoLocateOffReason) => void;
 }
 
 export function MapView({
@@ -303,10 +334,20 @@ export function MapView({
   anchors,
   onPortalSelect,
   heightClassName,
+  autoLocateEnabled,
+  onEnableAutoLocate,
+  onDisableAutoLocate,
 }: MapViewProps) {
+  const { t } = useTranslation();
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [zoom, setZoom] = useState(INITIAL_ZOOM);
+  // Counter that increments every time a fresh geolocation fix arrives
+  // (manual locate or auto-tracking watchPosition update). Forwarded
+  // to the locate button as `pulseKey` so the button replays a brief
+  // ripple animation to acknowledge the event without altering its
+  // persistent state.
+  const [locateUpdateCount, setLocateUpdateCount] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   const { nearby: nearbyRenderMode, far: farRenderMode } = resolveRenderModes(renderMode, zoom);
@@ -344,7 +385,141 @@ export function MapView({
     selectionInfo,
   });
 
-  const handleLocated = useCallback((location: UserLocation) => setUserLocation(location), []);
+  const handleLocated = useCallback((location: UserLocation) => {
+    setUserLocation(location);
+    // Bump the counter so the locate button replays its ripple
+    // animation. Both manual (`useMapLocate`) and auto (`useMapLocateWatch`)
+    // paths end up here, so the button reacts uniformly to any
+    // successful position fix.
+    setLocateUpdateCount((n) => n + 1);
+  }, []);
+
+  // A user-initiated map drag implies the user wants to look at a
+  // different area, so auto-tracking should yield. `dragstart` is a
+  // pure user-gesture signal in Leaflet (programmatic moves never
+  // fire it), making this a strict, race-free disable trigger.
+  const handleUserDragStart = useCallback(() => {
+    onDisableAutoLocate('manual-drag');
+  }, [onDisableAutoLocate]);
+
+  // Continuous geolocation tracking. The classification (= what to do
+  // for each error code) lives in `classifyAutoLocateError`; this
+  // handler is the side-effect side of that decision (log + toggle off
+  // + toast for `'disable'`, log only for `'transient'`).
+  //
+  // `t` is read through a ref so a language switch does not change
+  // `handleTrackingError`'s identity. Otherwise `useMapLocateWatch`'s
+  // effect — which has `onError` in its dependency array — would tear
+  // down the watch and re-issue `getCurrentPosition` every time the
+  // user toggled the language.
+  const tRef = useRef(t);
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
+  const handleTrackingError = useCallback(
+    (error: GeolocationPositionError) => {
+      const action = classifyAutoLocateError(error);
+      // 'disable' is actionable (= the user has to grant permission to
+      // recover) so warn-level is appropriate; the logger lets warn
+      // bypass tag filters so the message lands in any environment.
+      // 'transient' (POSITION_UNAVAILABLE / TIMEOUT) is recoverable
+      // by the watch itself — surfacing it at warn would spam logs in
+      // weak-GPS or DevTools-override conditions, so demote to debug.
+      if (action.kind === 'disable') {
+        logger.warn(action.logMessage);
+        onDisableAutoLocate('permission-denied');
+        toast.error(tRef.current('geolocation.trackingFailed'));
+      } else {
+        logger.debug(action.logMessage);
+      }
+    },
+    [onDisableAutoLocate],
+  );
+  useMapLocateWatch({
+    enabled: autoLocateEnabled,
+    onLocated: handleLocated,
+    onError: handleTrackingError,
+  });
+
+  // Auto-pan the map to follow the user's location while tracking is on.
+  // Runs whenever `userLocation` updates (i.e. on each watchPosition tick)
+  // and on the transition that turns tracking on so the map re-centers
+  // immediately. Zoom is preserved — only the center is moved.
+  //
+  // Each pan fires `moveend` → `handleBoundsChanged` and a real fetch
+  // (no skip path during tracking). Two natural guards keep the fetch
+  // count sane: `resolveLocateAction`'s 10 m threshold (used by the
+  // manual locate flow and the pinch-zoom yield) and Leaflet's own
+  // `panTo` equality check, which suppresses the moveend when the
+  // destination is essentially the current center. Together they
+  // mean "fetch only when the user has actually moved".
+  useEffect(() => {
+    if (!autoLocateEnabled || !mapInstance || !userLocation) {
+      return;
+    }
+    mapInstance.panTo([userLocation.lat, userLocation.lng]);
+  }, [autoLocateEnabled, mapInstance, userLocation]);
+
+  // Pinch-zoom-aware tracking yield. A pinch centered on the map
+  // changes only zoom level (= "I want a different scale at the same
+  // place") and should keep tracking on. A pinch off-center shifts
+  // the map center away from the user (= "I want to look elsewhere")
+  // and should release tracking; without this, the next watchPosition
+  // tick would auto-pan back and undo the user's gesture.
+  //
+  // We reuse `resolveLocateAction` against the current `userLocation`
+  // so the same `LOCATE_NEAR_THRESHOLD_METERS` (10 m) that decides
+  // "near" for the manual locate also decides whether the post-zoom
+  // center is still "on" the user.
+  //
+  // `userLocation` is read through a ref so the Leaflet zoomend
+  // listener is registered once per tracking session — putting
+  // `userLocation` in the effect deps would re-subscribe on every
+  // watchPosition tick (i.e. potentially every few seconds while
+  // tracking), churning the listener unnecessarily.
+  const userLocationRef = useRef(userLocation);
+  useEffect(() => {
+    userLocationRef.current = userLocation;
+  }, [userLocation]);
+  useEffect(() => {
+    if (!mapInstance || !autoLocateEnabled) {
+      return;
+    }
+    const handleZoomEnd = () => {
+      const loc = userLocationRef.current;
+      if (!loc) {
+        return;
+      }
+      const action = resolveLocateAction(mapInstance, loc);
+      if (action.kind === 'move') {
+        onDisableAutoLocate('pinch-zoom-shift');
+      }
+    };
+    mapInstance.on('zoomend', handleZoomEnd);
+    return () => {
+      mapInstance.off('zoomend', handleZoomEnd);
+    };
+  }, [mapInstance, autoLocateEnabled, onDisableAutoLocate]);
+
+  // Refresh stops at the current map state on the auto-tracking
+  // ON → OFF transition. Most of the time the latest auto-pan has
+  // already pulled in fresh stops, so this fires a same-center fetch
+  // that the debounce coalesces with any subsequent moveend (e.g.
+  // when the disable was caused by selecting a stop, which also
+  // pans). The case it covers is the watchPosition-error path: if
+  // tracking ends because of `PERMISSION_DENIED`, no further moveend
+  // is coming, and we still want the bottom sheet to reflect the
+  // last-known map center.
+  const prevAutoLocateEnabledRef = useRef(autoLocateEnabled);
+  useEffect(() => {
+    const wasEnabled = prevAutoLocateEnabledRef.current;
+    prevAutoLocateEnabledRef.current = autoLocateEnabled;
+    if (!wasEnabled || autoLocateEnabled || !mapInstance) {
+      return;
+    }
+    logger.debug('auto-locate disabled: refetching stops at current map state');
+    onBoundsChanged(toBounds(mapInstance), toCenter(mapInstance));
+  }, [autoLocateEnabled, mapInstance, onBoundsChanged]);
 
   useEffect(() => {
     if (!mapInstance || !wrapperRef.current) {
@@ -400,6 +575,7 @@ export function MapView({
           onBoundsChanged={onBoundsChanged}
           onZoomChanged={setZoom}
           onMapClicked={onDeselectStop}
+          onUserDragStart={handleUserDragStart}
           doubleTapDrag={doubleTapDrag}
         />
         <RouteShapePanes />
@@ -521,6 +697,10 @@ export function MapView({
         onSearchClick={onSearchClick}
         onInfoClick={onInfoClick}
         onLocated={handleLocated}
+        autoLocateEnabled={autoLocateEnabled}
+        onEnableAutoLocate={onEnableAutoLocate}
+        onDisableAutoLocate={onDisableAutoLocate}
+        locatePulseKey={locateUpdateCount}
         onDeselectStop={onDeselectStop}
         onHistorySelect={onHistorySelect}
         onPortalSelect={onPortalSelect}

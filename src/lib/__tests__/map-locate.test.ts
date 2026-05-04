@@ -5,7 +5,7 @@ import {
   toUserLocation,
   resolveLocateAction,
   applyLocateAction,
-  type LocateAction,
+  type MoveLocateAction,
 } from '../map-locate';
 
 const mockSmoothMoveTo = vi.fn();
@@ -14,11 +14,9 @@ vi.mock('../leaflet-helpers', () => ({
   smoothMoveTo: (...args: unknown[]): unknown => mockSmoothMoveTo(...args),
 }));
 
-function createMockMap(center: { lat: number; lng: number }, zoom: number, maxZoom: number): L.Map {
+function createMockMap(center: { lat: number; lng: number }): L.Map {
   return {
     getCenter: () => center,
-    getZoom: () => zoom,
-    getMaxZoom: () => maxZoom,
     distance: (_latlng: unknown, other: [number, number]) => {
       // Simple Euclidean approximation in meters (1 degree ≈ 111,000 m)
       const dlat = (center.lat - other[0]) * 111_000;
@@ -45,29 +43,25 @@ describe('resolveLocateAction', () => {
 
   it('should return "move" when center is far from location', () => {
     // Center at ~1 km away
-    const map = createMockMap({ lat: 35.69, lng: 139.7671 }, 14, 18);
+    const map = createMockMap({ lat: 35.69, lng: 139.7671 });
     const action = resolveLocateAction(map, loc);
 
     expect(action.kind).toBe('move');
   });
 
-  it('should return "zoom-in" when center is near and can zoom further', () => {
-    // Center at the same position
-    const map = createMockMap({ lat: 35.6812, lng: 139.7671 }, 14, 18);
+  it('should return "near" when center is essentially at the location', () => {
+    const map = createMockMap({ lat: 35.6812, lng: 139.7671 });
     const action = resolveLocateAction(map, loc);
 
-    expect(action.kind).toBe('zoom-in');
-    if (action.kind === 'zoom-in') {
-      expect(action.currentZoom).toBe(14);
-      expect(action.nextZoom).toBe(15);
-    }
+    expect(action.kind).toBe('near');
   });
 
-  it('should return "noop" when center is near and at max zoom', () => {
-    const map = createMockMap({ lat: 35.6812, lng: 139.7671 }, 18, 18);
+  it('should return "near" when center is just inside the threshold', () => {
+    // ~5 m offset (under the 10 m threshold)
+    const map = createMockMap({ lat: 35.6812 + 5 / 111_000, lng: 139.7671 });
     const action = resolveLocateAction(map, loc);
 
-    expect(action.kind).toBe('noop');
+    expect(action.kind).toBe('near');
   });
 });
 
@@ -84,38 +78,13 @@ describe('applyLocateAction', () => {
     mockSmoothMoveTo.mockReset();
   });
 
-  it('should call smoothMoveTo for "move" action', () => {
+  it('should call smoothMoveTo for the move action', () => {
     const map = createMockMapWithSetZoom();
-    const action: LocateAction = { kind: 'move', distanceToLocation: 500 };
+    const action: MoveLocateAction = { kind: 'move', distanceToLocation: 500 };
 
     applyLocateAction(map, loc, action);
 
     expect(mockSmoothMoveTo).toHaveBeenCalledWith(map, [loc.lat, loc.lng], 16);
-    expect(map.setZoom).not.toHaveBeenCalled();
-  });
-
-  it('should call map.setZoom for "zoom-in" action', () => {
-    const map = createMockMapWithSetZoom();
-    const action: LocateAction = {
-      kind: 'zoom-in',
-      distanceToLocation: 5,
-      currentZoom: 14,
-      nextZoom: 15,
-    };
-
-    applyLocateAction(map, loc, action);
-
-    expect(map.setZoom).toHaveBeenCalledWith(15, { animate: true });
-    expect(mockSmoothMoveTo).not.toHaveBeenCalled();
-  });
-
-  it('should not call smoothMoveTo or setZoom for "noop" action', () => {
-    const map = createMockMapWithSetZoom();
-    const action: LocateAction = { kind: 'noop', distanceToLocation: 3, currentZoom: 18 };
-
-    applyLocateAction(map, loc, action);
-
-    expect(mockSmoothMoveTo).not.toHaveBeenCalled();
     expect(map.setZoom).not.toHaveBeenCalled();
   });
 });

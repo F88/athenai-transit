@@ -22,7 +22,7 @@ describe('useMapLocate', () => {
     mockToUserLocation.mockReset();
   });
 
-  it('resolves geolocation, applies the action, and resets locating', () => {
+  it('applies the move action when the location resolves far from center', () => {
     const map = {} as L.Map;
     const onLocated = vi.fn();
     const loc: UserLocation = { lat: 35.0, lng: 139.0, accuracy: 10 };
@@ -62,18 +62,62 @@ describe('useMapLocate', () => {
     expect(result.current.locating).toBe(false);
   });
 
-  it('resets locating when geolocation fails', () => {
+  it('invokes onNearMapCenter without applying a map action when the result is near', () => {
     const map = {} as L.Map;
     const onLocated = vi.fn();
-    let failure: PositionErrorCallback | undefined;
+    const onNearMapCenter = vi.fn();
+    const loc: UserLocation = { lat: 35.0, lng: 139.0, accuracy: 10 };
+    const action = { kind: 'near', distanceToLocation: 5 } as const;
+    const pos = {
+      coords: { latitude: 35.0, longitude: 139.0, accuracy: 10 },
+    } as GeolocationPosition;
+    let success: PositionCallback | undefined;
+
+    mockToUserLocation.mockReturnValue(loc);
+    mockResolveLocateAction.mockReturnValue(action);
 
     vi.stubGlobal('navigator', {
       geolocation: {
-        getCurrentPosition: vi.fn(
-          (_onSuccess: PositionCallback, onError?: PositionErrorCallback) => {
-            failure = onError;
-          },
-        ),
+        getCurrentPosition: vi.fn((onSuccess: PositionCallback) => {
+          success = onSuccess;
+        }),
+      },
+    });
+
+    const { result } = renderHook(() => useMapLocate(map, onLocated, { onNearMapCenter }));
+
+    act(() => {
+      result.current.handleLocate();
+    });
+
+    act(() => {
+      success?.(pos);
+    });
+
+    expect(mockApplyLocateAction).not.toHaveBeenCalled();
+    expect(onNearMapCenter).toHaveBeenCalledTimes(1);
+    expect(onLocated).toHaveBeenCalledWith(loc);
+    expect(result.current.locating).toBe(false);
+  });
+
+  it('does nothing visible when near and no onNearMapCenter is provided', () => {
+    const map = {} as L.Map;
+    const onLocated = vi.fn();
+    const loc: UserLocation = { lat: 35.0, lng: 139.0, accuracy: 10 };
+    const action = { kind: 'near', distanceToLocation: 5 } as const;
+    const pos = {
+      coords: { latitude: 35.0, longitude: 139.0, accuracy: 10 },
+    } as GeolocationPosition;
+    let success: PositionCallback | undefined;
+
+    mockToUserLocation.mockReturnValue(loc);
+    mockResolveLocateAction.mockReturnValue(action);
+
+    vi.stubGlobal('navigator', {
+      geolocation: {
+        getCurrentPosition: vi.fn((onSuccess: PositionCallback) => {
+          success = onSuccess;
+        }),
       },
     });
 
@@ -83,17 +127,73 @@ describe('useMapLocate', () => {
       result.current.handleLocate();
     });
 
-    expect(result.current.locating).toBe(true);
+    act(() => {
+      success?.(pos);
+    });
+
+    expect(mockApplyLocateAction).not.toHaveBeenCalled();
+    expect(onLocated).toHaveBeenCalledWith(loc);
+  });
+
+  it('forwards geolocation errors to onError and resets locating', () => {
+    const map = {} as L.Map;
+    const onLocated = vi.fn();
+    const onError = vi.fn();
+    let failure: PositionErrorCallback | undefined;
+
+    vi.stubGlobal('navigator', {
+      geolocation: {
+        getCurrentPosition: vi.fn((_onSuccess: PositionCallback, onErr?: PositionErrorCallback) => {
+          failure = onErr;
+        }),
+      },
+    });
+
+    const { result } = renderHook(() => useMapLocate(map, onLocated, { onError }));
 
     act(() => {
-      failure?.({ code: 1, message: 'denied', PERMISSION_DENIED: 1 } as GeolocationPositionError);
+      result.current.handleLocate();
+    });
+
+    expect(result.current.locating).toBe(true);
+
+    const error = { code: 1, message: 'denied', PERMISSION_DENIED: 1 } as GeolocationPositionError;
+    act(() => {
+      failure?.(error);
     });
 
     expect(onLocated).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledWith(error);
     expect(result.current.locating).toBe(false);
   });
 
-  it('does nothing when geolocation is unavailable', () => {
+  it('synthesizes a POSITION_UNAVAILABLE error when navigator.geolocation is missing', () => {
+    // Insecure contexts and unsupported browsers leave
+    // `navigator.geolocation` undefined. The hook used to silently
+    // return, which made the locate button look broken. It now
+    // fires `onError` with a code-2 synthetic event so the caller's
+    // toast/log path runs uniformly.
+    const map = {} as L.Map;
+    const onLocated = vi.fn();
+    const onError = vi.fn();
+
+    vi.stubGlobal('navigator', {});
+
+    const { result } = renderHook(() => useMapLocate(map, onLocated, { onError }));
+
+    act(() => {
+      result.current.handleLocate();
+    });
+
+    expect(result.current.locating).toBe(false);
+    expect(onLocated).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledTimes(1);
+    const synthesizedError = onError.mock.calls[0]?.[0] as GeolocationPositionError;
+    expect(synthesizedError.code).toBe(2);
+    expect(synthesizedError.message).toContain('not available');
+  });
+
+  it('does not throw when navigator.geolocation is missing and no onError is provided', () => {
     const map = {} as L.Map;
     const onLocated = vi.fn();
 
@@ -101,10 +201,11 @@ describe('useMapLocate', () => {
 
     const { result } = renderHook(() => useMapLocate(map, onLocated));
 
-    act(() => {
-      result.current.handleLocate();
-    });
-
+    expect(() => {
+      act(() => {
+        result.current.handleLocate();
+      });
+    }).not.toThrow();
     expect(result.current.locating).toBe(false);
     expect(onLocated).not.toHaveBeenCalled();
   });

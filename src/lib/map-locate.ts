@@ -10,13 +10,16 @@ const logger = createLogger('map-locate');
 
 export type LocateAction =
   | { kind: 'move'; distanceToLocation: number }
-  | {
-      kind: 'zoom-in';
-      distanceToLocation: number;
-      currentZoom: number;
-      nextZoom: number;
-    }
-  | { kind: 'noop'; distanceToLocation: number; currentZoom: number };
+  | { kind: 'near'; distanceToLocation: number };
+
+/**
+ * Subset of {@link LocateAction} that requests an actual map move.
+ * Used as the input type of {@link applyLocateAction} so the function
+ * cannot be invoked for the `'near'` case at compile time — that case
+ * is handled by the caller (e.g. toggling auto-tracking) and does not
+ * touch the map.
+ */
+export type MoveLocateAction = Extract<LocateAction, { kind: 'move' }>;
 
 /**
  * Convert a browser {@link GeolocationPosition} to a {@link UserLocation}.
@@ -35,9 +38,11 @@ export function toUserLocation(pos: GeolocationPosition): UserLocation {
 /**
  * Determine what action to take when the user taps "locate me".
  *
- * - If the map center is far from the user's location, move there.
- * - If the map center is already near, zoom in one level.
- * - If already near and at max zoom, do nothing.
+ * - If the map center is far from the user's location, the action is `move`
+ *   and the caller should pan/zoom the map to the location.
+ * - If the map center is already near, the action is `near` and the caller
+ *   may use it as a signal for an alternative behavior (e.g. toggling auto
+ *   tracking) instead of moving the map.
  *
  * @param map - Leaflet map instance.
  * @param loc - User's current location.
@@ -45,51 +50,26 @@ export function toUserLocation(pos: GeolocationPosition): UserLocation {
  */
 export function resolveLocateAction(map: L.Map, loc: UserLocation): LocateAction {
   const center = map.getCenter();
-  const currentZoom = map.getZoom();
   const distanceToLocation = map.distance(center, [loc.lat, loc.lng]);
 
   if (distanceToLocation > LOCATE_NEAR_THRESHOLD_METERS) {
     return { kind: 'move', distanceToLocation };
   }
-
-  const nextZoom = Math.min(currentZoom + 1, map.getMaxZoom());
-  if (nextZoom > currentZoom) {
-    return {
-      kind: 'zoom-in',
-      distanceToLocation,
-      currentZoom,
-      nextZoom,
-    };
-  }
-
-  return { kind: 'noop', distanceToLocation, currentZoom };
+  return { kind: 'near', distanceToLocation };
 }
 
 /**
- * Execute a {@link LocateAction} on the map.
+ * Pan and zoom the map to the user's location. Call only after
+ * {@link resolveLocateAction} returns a `'move'` kind — passing a
+ * `'near'` kind is a type error.
  *
  * @param map - Leaflet map instance.
  * @param loc - User's current location.
- * @param action - The action to apply (from {@link resolveLocateAction}).
+ * @param action - The move action returned by {@link resolveLocateAction}.
  */
-export function applyLocateAction(map: L.Map, loc: UserLocation, action: LocateAction): void {
-  switch (action.kind) {
-    case 'move':
-      logger.debug(
-        `handleLocate: center far from current location (${action.distanceToLocation.toFixed(1)}m > ${String(LOCATE_NEAR_THRESHOLD_METERS)}m), moving to zoom ${String(CURRENT_LOCATION_TARGET_ZOOM)}`,
-      );
-      smoothMoveTo(map, [loc.lat, loc.lng], CURRENT_LOCATION_TARGET_ZOOM);
-      return;
-    case 'zoom-in':
-      logger.debug(
-        `handleLocate: center near current location (${action.distanceToLocation.toFixed(1)}m <= ${String(LOCATE_NEAR_THRESHOLD_METERS)}m), zooming in ${String(action.currentZoom)} -> ${String(action.nextZoom)}`,
-      );
-      map.setZoom(action.nextZoom, { animate: true });
-      return;
-    case 'noop':
-      logger.debug(
-        `handleLocate: center near current location (${action.distanceToLocation.toFixed(1)}m <= ${String(LOCATE_NEAR_THRESHOLD_METERS)}m) and zoom already at max (${String(action.currentZoom)})`,
-      );
-      return;
-  }
+export function applyLocateAction(map: L.Map, loc: UserLocation, action: MoveLocateAction): void {
+  logger.debug(
+    `applyLocateAction: center far from current location (${action.distanceToLocation.toFixed(1)}m > ${LOCATE_NEAR_THRESHOLD_METERS}m), moving to zoom ${CURRENT_LOCATION_TARGET_ZOOM}`,
+  );
+  smoothMoveTo(map, [loc.lat, loc.lng], CURRENT_LOCATION_TARGET_ZOOM);
 }

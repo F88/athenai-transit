@@ -100,7 +100,7 @@ export function BottomSheetHeader({
     }
 
     const snapshot = [
-      `[nearbyStopsCounts] ${nearbyStopsCountsDebugLog}`,
+      `${nearbyStopsCountsDebugLog}`,
       `[filteredNearbyStopsCounts] ${filteredNearbyStopsCountsDebugLog}`,
       `[counts] ${countsDebugLog}`,
     ].join(' | ');
@@ -291,11 +291,14 @@ function StopsSummary({
 }: StopsSummaryProps) {
   const { t, i18n } = useTranslation();
 
-  summaryLogger.debug(
-    hasLoaded
-      ? `[${label}] ${formatStopsCountsDebugLog(totalCount)} -> filtered=${filteredCount}`
-      : 'not loaded yet',
-  );
+  if (summaryLogger.isEnabled('debug')) {
+    summaryLogger.debug(
+      hasLoaded
+        ? `[${label}] ${formatStopsCountsDebugLog(totalCount)} -> filtered=${filteredCount}`
+        : 'not loaded yet',
+    );
+  }
+
   const text = getNearbyStopsSummaryText(
     hasLoaded,
     totalCount,

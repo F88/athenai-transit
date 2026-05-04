@@ -154,6 +154,7 @@
     "toggleBusRoutes": "Toggle bus route shapes",
     "toggleNonBusRoutes": "Toggle non-bus route shapes",
     "currentLocation": "Go to current location",
+    "stopAutoLocate": "Stop tracking current location",
     "randomLocation": "Jump to random place",
     "toggleRenderMode": "Toggle render mode",
     "togglePerfMode": "Toggle performance mode",
@@ -175,6 +176,10 @@
   },
   "dataLoad": {
     "failed": "Failed to load data"
+  },
+  "geolocation": {
+    "locateFailed": "Could not get current location",
+    "trackingFailed": "Stopped auto tracking: location permission denied"
   },
   "search": {
     "title": "Search stops",
