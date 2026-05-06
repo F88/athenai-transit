@@ -1,8 +1,11 @@
+import { DistanceBadge } from '@/components/badge/distance-badge';
 import { IdBadge } from '@/components/badge/id-badge';
 import { StopActionButtons } from '@/components/stop-action-buttons';
 import { DEFAULT_AGENCY_LANG } from '@/config/transit-defaults';
+import { bearingDeg, distanceM } from '@/domain/transit/distance';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
 import { useInfoLevel } from '@/hooks/use-info-level';
+import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
 import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
 import { katakanaToHiragana } from '@/utils/kana-normalize';
@@ -65,6 +68,11 @@ export interface StopSearchResultItemProps {
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
+  /**
+   * Reference point for distance / direction display (typically the current
+   * map center). When null, the {@link DistanceBadge} is suppressed.
+   */
+  mapCenter: LatLng | null;
   /** Whether this item is currently highlighted via keyboard navigation. */
   isSelected: boolean;
   /** Ref forwarded to the underlying button so the parent can scroll it into view. */
@@ -89,6 +97,7 @@ export function StopSearchResultItem({
   normalizedQuery,
   infoLevel,
   dataLang,
+  mapCenter,
   isSelected,
   buttonRef,
   onSelect,
@@ -97,6 +106,12 @@ export function StopSearchResultItem({
   onOpenTripInspectionByStopId,
 }: StopSearchResultItemProps) {
   const info = useInfoLevel(infoLevel);
+  // Suppress sub-10m noise to match the StopInfo / StopSummary convention:
+  // a "0m" / "3m" badge is just visual jitter when the user is effectively
+  // standing on the stop already.
+  const distanceRounded = mapCenter ? Math.round(distanceM(mapCenter, stop)) : null;
+  const showDistance = distanceRounded != null && distanceRounded >= 10;
+  const bearing = mapCenter ? bearingDeg(mapCenter, stop) : null;
   // Always show subNames in search results for discoverability.
   //
   // We pass DEFAULT_AGENCY_LANG (not the agency-specific lang) on purpose.
@@ -123,14 +138,7 @@ export function StopSearchResultItem({
       >
         <div className="flex min-w-0 flex-col gap-0.5">
           {info.isVerboseEnabled && <IdBadge>{stop.stop_id}</IdBadge>}
-          <span className="text-foreground text-[15px]">
-            {routeTypesEmoji(routeTypes)}{' '}
-            <HighlightedName
-              name={stopNames.name}
-              query={query}
-              normalizedQuery={normalizedQuery}
-            />
-          </span>
+
           {stopNames.subNames.length > 0 && (
             <span className="text-muted-foreground text-xs leading-snug">
               {stopNames.subNames.map((name, i) => (
@@ -141,6 +149,19 @@ export function StopSearchResultItem({
               ))}
             </span>
           )}
+          <span className="text-foreground flex flex-wrap items-center gap-x-1 text-[15px]">
+            <span>
+              {routeTypesEmoji(routeTypes)}{' '}
+              <HighlightedName
+                name={stopNames.name}
+                query={query}
+                normalizedQuery={normalizedQuery}
+              />
+            </span>
+            {showDistance && (
+              <DistanceBadge meters={distanceRounded} bearingDeg={bearing} showDirection />
+            )}
+          </span>
         </div>
       </button>
       <StopActionButtons

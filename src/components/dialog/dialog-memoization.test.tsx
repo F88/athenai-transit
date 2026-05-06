@@ -442,6 +442,7 @@ describe('dialog memoization regressions', () => {
       repo,
       infoLevel: 'normal' as const,
       dataLang: ['ja'] as const,
+      mapCenter: null,
       onSelectStop: vi.fn(),
       open: false,
       onOpenChange: vi.fn(),

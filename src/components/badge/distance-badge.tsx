@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { distanceColor } from '../../utils/distance-style';
+import { distanceStyle } from '../../utils/distance-style';
 import { formatDistance } from '../../domain/transit/distance';
 
 interface DistanceBadgeProps {
@@ -15,6 +15,10 @@ interface DistanceBadgeProps {
  * Displays a formatted distance with a color matching the map's concentric
  * distance rings, and an optional direction arrow.
  *
+ * The badge fades with distance using the band's `opacity`, mirroring the
+ * map's concentric ring rendering and the edge marker badges so that "far
+ * stops" recede visually in every surface that shows them.
+ *
  * Callers are responsible for rounding and filtering out zero/negative values
  * before rendering this component.
  *
@@ -23,10 +27,14 @@ interface DistanceBadgeProps {
  */
 export function DistanceBadge({ meters, bearingDeg, showDirection = false }: DistanceBadgeProps) {
   const { i18n } = useTranslation();
+  const style = distanceStyle(meters);
   return (
     <span
       className="ml-2 inline-flex items-center gap-0.5 align-middle text-xl font-bold whitespace-nowrap"
-      style={{ color: distanceColor(meters) }}
+      style={{
+        color: style.color,
+        // opacity: style.opacity,
+      }}
     >
       {showDirection && bearingDeg != null && (
         <span

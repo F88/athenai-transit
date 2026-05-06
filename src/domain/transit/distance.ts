@@ -31,6 +31,8 @@ export function distanceM(a: LatLng, b: { stop_lat: number; stop_lon: number }):
  * - 1 km and above: always one decimal place, formatted via
  *   `toLocaleString(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 })`
  *   so the decimal separator follows the locale (`"1.5km"` / `"1,5km"`).
+ * - 100 km and above: truncate the decimal part and format as an integer
+ *   kilometer value via `toLocaleString(lang)` (`"100km"`, `"101km"`).
  *   The `"km"` unit suffix is also concatenated without spacing.
  *
  * Callers should pass `i18n.language` (react-i18next) as `lang`.
@@ -52,6 +54,10 @@ export function formatDistance(meters: number, lang: string, unit = true): strin
   if (meters < 1000) {
     const rounded = Math.round(meters).toLocaleString(lang);
     return unit ? `${rounded}m` : rounded;
+  }
+  if (meters >= 100_000) {
+    const km = Math.floor(meters / 1000).toLocaleString(lang);
+    return `${km}km`;
   }
   const km = (meters / 1000).toLocaleString(lang, {
     minimumFractionDigits: 1,

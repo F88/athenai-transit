@@ -32,6 +32,28 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /*
+   * Distance band tokens for the long-range gray fade in DISTANCE_BANDS
+   * (utils/distance-style.ts). Each value progressively dissolves into the
+   * theme background as the distance grows, so "very far" stops read as
+   * less prominent without relying on the badge's own opacity.
+   *
+   * Light theme: white background → grays get LIGHTER with distance.
+   * Dark theme:  near-black background → grays get DARKER with distance.
+   */
+  :root {
+    --distance-band-100km: #374151; /* gray-700 — most visible on white */
+    --distance-band-500km: #4b5563; /* gray-600 */
+    --distance-band-1000km: #6b7280; /* gray-500 */
+    --distance-band-fallback: #9ca3af; /* gray-400 — legible without colliding with 1000km gray-500 */
+  }
+  .dark {
+    --distance-band-100km: #d1d5db; /* gray-300 — most visible on near-black */
+    --distance-band-500km: #9ca3af; /* gray-400 */
+    --distance-band-1000km: #6b7280; /* gray-500 */
+    --distance-band-fallback: #4b5563; /* gray-600 — legible without colliding with 1000km gray-500 */
+  }
 }
 
 /*

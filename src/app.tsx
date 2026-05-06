@@ -1079,6 +1079,7 @@ export default function App({ loadResult }: AppProps) {
         repo={repo}
         infoLevel={settings.infoLevel}
         dataLang={langChain}
+        mapCenter={mapCenter}
         isStopAnchor={isStopAnchor}
         onSelectStop={handleSearchSelect}
         onToggleAnchor={handleToggleAnchorByStopId}

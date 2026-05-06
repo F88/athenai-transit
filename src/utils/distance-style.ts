@@ -11,6 +11,17 @@ export interface DistanceBandStyle {
  *
  * Shared by concentric rings on the map, edge marker distance badges,
  * and canvas arrow rendering.
+ *
+ * Beyond 3 km, the palette switches to neutral grays expressed as CSS
+ * variables (`--distance-band-*` in `src/index.css`) so the long-range
+ * fade reads correctly in both light and dark themes — light mode picks
+ * progressively lighter grays that dissolve into the white background,
+ * dark mode picks progressively darker grays that dissolve into the
+ * near-black background. Consumers that pass `color` to a stylesheet
+ * (`style={{ color }}`, `style={{ backgroundColor }}`) get theme-aware
+ * resolution for free; consumers that need an opaque hex (Canvas
+ * `fillStyle`, hex math) only deal with the visible-range bands so the
+ * `var(...)` form never reaches them.
  */
 export const DISTANCE_BANDS: DistanceBandStyle[] = [
   { max: 100, color: '#1e88e5', textColor: '#ffffff', opacity: 1.0 },
@@ -18,12 +29,20 @@ export const DISTANCE_BANDS: DistanceBandStyle[] = [
   { max: 500, color: '#c0ca33', textColor: '#333333', opacity: 0.75 },
   { max: 1000, color: '#fb8c00', textColor: '#ffffff', opacity: 0.6 },
   { max: 2000, color: '#e53935', textColor: '#ffffff', opacity: 0.4 },
-  { max: 3000, color: '#7b1fa2', textColor: '#ffffff', opacity: 0.25 },
+  { max: 3000, color: '#7b1fa2', textColor: '#ffffff', opacity: 0.95 },
+  // Rainbow extension past the locally-walkable range. Continues the hue
+  // progression after purple into magenta / wine before the palette drops
+  // into the neutral gray fade at >50 km.
+  { max: 10_000, color: '#c2185b', textColor: '#ffffff', opacity: 0.7 },
+  { max: 50_000, color: '#880e4f', textColor: '#ffffff', opacity: 0.4 },
+  { max: 100_000, color: 'var(--distance-band-100km)', textColor: '#ffffff', opacity: 0.2 },
+  { max: 500_000, color: 'var(--distance-band-500km)', textColor: '#ffffff', opacity: 0.15 },
+  { max: 1_000_000, color: 'var(--distance-band-1000km)', textColor: '#ffffff', opacity: 0.1 },
 ];
 
-const FALLBACK_COLOR = '#616161';
+const FALLBACK_COLOR = 'var(--distance-band-fallback)';
 const FALLBACK_TEXT_COLOR = '#ffffff';
-const FALLBACK_OPACITY = 0.15;
+const FALLBACK_OPACITY = 0.5;
 
 /**
  * Returns the distance band style (color and opacity) for the given distance.

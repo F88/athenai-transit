@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 
-import { baseStop, longNameStop } from '../../stories/fixtures';
+import { baseStop, longNameStop, storyMapCenter } from '../../stories/fixtures';
 import type { AppRouteTypeValue } from '../../types/app/transit';
 import { StopSearchResultItem } from './stop-search-result-item';
 
@@ -16,6 +16,7 @@ const meta = {
     normalizedQuery: '',
     infoLevel: 'normal',
     dataLang: ['ja'],
+    mapCenter: null,
     isSelected: false,
     buttonRef: () => {},
     onSelect: fn(),
@@ -123,6 +124,27 @@ export const LongName: Story = {
   args: { stop: longNameStop },
 };
 
+// --- Distance ---
+
+/** Distance + direction badge appears when `mapCenter` is provided and the stop is >= 10m away. */
+export const WithDistance: Story = {
+  args: { mapCenter: storyMapCenter },
+};
+
+/** A stop within ~5m of the map center suppresses the distance badge to avoid jitter. */
+export const NearMapCenter: Story = {
+  args: {
+    mapCenter: { lat: baseStop.stop_lat, lng: baseStop.stop_lon },
+  },
+};
+
+/** Far stop — exercises the km-rounded variant and direction arrow. */
+export const FarFromMapCenter: Story = {
+  args: {
+    mapCenter: { lat: 35.5, lng: 139.5 },
+  },
+};
+
 // --- Info levels ---
 
 export const Simple: Story = {
@@ -148,6 +170,7 @@ const kitchenSinkArgs = {
   query: '東京',
   normalizedQuery: '東京',
   dataLang: ['ja'] as readonly string[],
+  mapCenter: storyMapCenter,
 };
 
 export const KitchenSinkInfoLevelSimple: Story = {

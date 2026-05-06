@@ -60,9 +60,9 @@ export function StopInfo({
           agencyBadgeSize={agencyBadgeSize}
           routeBadgeSize={routeBadgeSize}
           distanceBadge={
-            distanceRounded != null && distanceRounded >= 10 ? (
+            distanceRounded != null && (
               <DistanceBadge meters={distanceRounded} bearingDeg={bearing} showDirection />
-            ) : undefined
+            )
           }
         />
       </div>

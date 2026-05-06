@@ -9,6 +9,7 @@ import { resolveStopRouteTypes } from '@/domain/transit/resolve-stop-route-types
 import { useListKeyboardNavigation } from '@/hooks/use-list-keyboard-navigation';
 import { useStopSearchIndex } from '@/hooks/use-stop-search-index';
 import type { TransitRepository } from '@/repositories/transit-repository';
+import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
 import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
 import { katakanaToHiragana } from '@/utils/kana-normalize';
@@ -25,6 +26,11 @@ interface StopSearchDialogProps {
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
+  /**
+   * Reference point for distance / direction display in result rows. Pass
+   * the current map center; null suppresses the distance badge.
+   */
+  mapCenter: LatLng | null;
   isStopAnchor?: (stopId: string) => boolean;
   onSelectStop: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
   onToggleAnchor?: (stopId: string) => void;
@@ -38,6 +44,7 @@ export const StopSearchDialog = memo(function StopSearchDialog({
   repo,
   infoLevel,
   dataLang,
+  mapCenter,
   isStopAnchor,
   onSelectStop,
   onToggleAnchor,
@@ -145,6 +152,7 @@ export const StopSearchDialog = memo(function StopSearchDialog({
                   normalizedQuery={normalizedQuery}
                   infoLevel={infoLevel}
                   dataLang={dataLang}
+                  mapCenter={mapCenter}
                   isSelected={index === selectedIndex}
                   buttonRef={registerItemRef(index)}
                   onSelect={handleSelect}
