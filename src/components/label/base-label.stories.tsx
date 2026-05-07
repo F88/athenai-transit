@@ -35,22 +35,22 @@ export const Subtle: Story = {
 
 // --- Size variants ---
 
-/** Size `lg` — wider padding (`px-2`) and 12px font (`text-xs`). */
+/** Size `lg` — `px-2 py-1` padding and 12px font (`text-[12px]`). */
 export const SizeLg: Story = {
   args: { value: 'Lg', size: 'lg', className: 'bg-blue-500 text-white' },
 };
 
-/** Size `xl` — taller padding (`px-3 py-1`) and 14px font (`text-sm`). */
+/** Size `xl` — `px-2 py-1` padding and 14px font (`text-[14px]`). */
 export const SizeXl: Story = {
   args: { value: 'Xl', size: 'xl', className: 'bg-blue-500 text-white' },
 };
 
 const SIZE_SPECS = [
-  { size: 'xs', padding: 'px-0.5', font: 'text-[8px]' },
-  { size: 'sm', padding: 'px-1 py-0.5', font: 'text-[9px]' },
-  { size: 'md', padding: 'px-1.5 py-0.5', font: 'text-[10px]' },
-  { size: 'lg', padding: 'px-2 py-0.5', font: 'text-xs (12px)' },
-  { size: 'xl', padding: 'px-3 py-1', font: 'text-sm (14px)' },
+  { size: 'xs' },
+  { size: 'sm' },
+  { size: 'md' },
+  { size: 'lg' },
+  { size: 'xl' },
 ] as const;
 
 /**
@@ -62,7 +62,7 @@ export const SizeComparison: Story = {
   render: ({ value = 'Label' }) => (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        {SIZE_SPECS.map(({ size, padding, font }) => (
+        {SIZE_SPECS.map(({ size }) => (
           <div key={size} className="flex items-center gap-3">
             <div className="flex w-24 justify-end">
               <BaseLabel value={value} size={size} className="bg-blue-500 text-white" />
@@ -70,8 +70,6 @@ export const SizeComparison: Story = {
             <span className="w-6 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">
               {size}
             </span>
-            <span className="w-32 text-right font-mono text-[10px] text-gray-500">{padding}</span>
-            <span className="w-24 text-right font-mono text-[10px] text-gray-500">{font}</span>
           </div>
         ))}
       </div>

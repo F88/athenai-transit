@@ -111,12 +111,13 @@ describe('distanceStyle', () => {
     expect(new Set(colors).size).toBe(4);
   });
 
-  it('returns fallback for 0m (within first band)', () => {
+  it('returns the first band for 0m (within first band)', () => {
     expect(distanceStyle(0).color).toBe('#1e88e5');
   });
 
-  it('returns fallback for negative distance (no band matches)', () => {
-    // Negative values won't match any band (meters <= band.max is true for first band)
+  it('returns the first band for negative distance (matches via meters <= band.max)', () => {
+    // Negative values <= 100 satisfy the first band's predicate, so the lookup
+    // resolves to the same blue color rather than to the gray fallback.
     expect(distanceStyle(-10).color).toBe('#1e88e5');
   });
 

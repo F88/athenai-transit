@@ -163,13 +163,7 @@ export function StopSearchResultItem({
 
           {/* Distance badge */}
           {info.isNormalEnabled && showDistance && (
-            <DistanceBadge
-              meters={distanceRounded}
-              bearingDeg={bearing}
-              showDirection
-              size="md"
-              // size="xl"
-            />
+            <DistanceBadge meters={distanceRounded} bearingDeg={bearing} showDirection size="md" />
           )}
 
           {stopNames.subNames.length > 0 && (
@@ -227,7 +221,8 @@ export function StopSearchResultItem({
               ))}
             </div>
           )}
-          {/* Insights metrics (normal+) */}
+
+          {/* Insights metrics */}
           {info.isDetailedEnabled && (stats || geo) && (
             <StopMetrics stats={stats} geo={geo} infoLevel={infoLevel} />
           )}

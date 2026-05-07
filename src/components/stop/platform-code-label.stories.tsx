@@ -62,28 +62,14 @@ export const Multiple: Story = {
 
 // --- Size variants ---
 
-const SIZE_SPECS = [
-  { size: 'xs', padding: 'px-0.5', font: '8px' },
-  { size: 'sm', padding: 'px-1 py-0.5', font: '9px' },
-  { size: 'md', padding: 'px-1.5 py-0.5', font: '10px' },
-  { size: 'lg', padding: 'px-2 py-0.5', font: '12px' },
-  { size: 'xl', padding: 'px-3 py-1', font: '14px' },
-] as const;
+const SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 
-/**
- * All five {@link ExtendedDisplaySize} steps in one table — chip alongside
- * the resolved padding / font so close-by sizes (e.g. `md` vs `lg`, which
- * share padding and differ only by 2px of font) can be told apart at a
- * glance.
- */
 export const SizeComparison: Story = {
   render: () => (
     <div className="flex flex-col gap-2">
-      {SIZE_SPECS.map(({ size, padding, font }) => (
+      {SIZES.map((size) => (
         <div key={size} className="flex items-center gap-3">
           <span className="w-6 text-xs font-semibold text-gray-700 dark:text-gray-300">{size}</span>
-          <span className="w-32 font-mono text-[10px] text-gray-500">{padding}</span>
-          <span className="w-12 font-mono text-[10px] text-gray-500">{font}</span>
           <PlatformCodeLabel code="2A" size={size} />
         </div>
       ))}
@@ -91,26 +77,15 @@ export const SizeComparison: Story = {
   ),
 };
 
-/**
- * `md` vs `lg` head-to-head — `lg` bumps padding (`px-1.5` → `px-2`) and
- * font (10px → 12px). This story makes the gap explicit.
- */
 export const MdVsLg: Story = {
   render: () => (
     <div className="flex flex-col gap-3">
-      {(['md', 'lg'] as const).map((size) => {
-        const spec = SIZE_SPECS.find((s) => s.size === size);
-        return (
-          <div key={size} className="flex items-center gap-3">
-            <span className="w-6 text-xs font-semibold text-gray-700 dark:text-gray-300">
-              {size}
-            </span>
-            <span className="w-32 font-mono text-[10px] text-gray-500">{spec?.padding}</span>
-            <span className="w-12 font-mono text-[10px] text-gray-500">{spec?.font}</span>
-            <PlatformCodeLabel code="2A" size={size} />
-          </div>
-        );
-      })}
+      {(['md', 'lg'] as const).map((size) => (
+        <div key={size} className="flex items-center gap-3">
+          <span className="w-6 text-xs font-semibold text-gray-700 dark:text-gray-300">{size}</span>
+          <PlatformCodeLabel code="2A" size={size} />
+        </div>
+      ))}
     </div>
   ),
 };

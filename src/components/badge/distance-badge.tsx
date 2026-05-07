@@ -37,10 +37,6 @@ const SIZE_TO_TEXT_CLASS: Record<ExtendedDisplaySize, string> = {
  * Displays a formatted distance with a color matching the map's concentric
  * distance rings, and an optional direction arrow.
  *
- * The badge fades with distance using the band's `opacity`, mirroring the
- * map's concentric ring rendering and the edge marker badges so that "far
- * stops" recede visually in every surface that shows them.
- *
  * Callers are responsible for rounding and filtering out zero/negative values
  * before rendering this component.
  *
@@ -60,7 +56,6 @@ export function DistanceBadge({
       className={`inline-flex items-center gap-0.5 align-middle ${SIZE_TO_TEXT_CLASS[size]} font-bold whitespace-nowrap`}
       style={{
         color: style.color,
-        // opacity: style.opacity,
       }}
     >
       {showDirection && bearingDeg != null && (
