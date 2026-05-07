@@ -28,6 +28,28 @@ export function normalizeForSearch(s: string): string {
     .normalize('NFC');
 }
 
+/**
+ * Resolve the `ja-Hrkt` (Hiragana / Katakana script) translation from
+ * `stop.stop_names` with case-insensitive key matching.
+ *
+ * Some upstream feeds use non-canonical casing (e.g. kseiw stores the key
+ * as `ja-HrKt` with a capital K) so the literal `stop_names['ja-Hrkt']`
+ * lookup misses them. BCP-47 language tags are case-insensitive by
+ * specification, so treating `ja-HrKt` and `ja-Hrkt` as the same key is
+ * correct, not lenient.
+ *
+ * Returns `''` when no matching key exists, which is the same neutral
+ * value the legacy code defaulted to.
+ */
+function findHrktName(stop_names: Record<string, string>): string {
+  for (const key of Object.keys(stop_names)) {
+    if (key.toLowerCase() === 'ja-hrkt') {
+      return stop_names[key] ?? '';
+    }
+  }
+  return '';
+}
+
 export interface SearchIndexEntry {
   stop: Stop;
   /**
@@ -38,6 +60,12 @@ export interface SearchIndexEntry {
    * absorbed once and for all.
    */
   normalizedNames: string[];
+  /**
+   * `stop_names['ja-Hrkt']` resolved with case-insensitive key lookup,
+   * pre-computed for the final sort tiebreaker. Empty string when the
+   * stop has no kana translation at all.
+   */
+  hrktSortKey: string;
 }
 
 /**
@@ -51,6 +79,7 @@ export function buildSearchIndexEntry(stop: Stop): SearchIndexEntry {
   return {
     stop,
     normalizedNames: Object.values(stop.stop_names).map(normalizeForSearch),
+    hrktSortKey: findHrktName(stop.stop_names),
   };
 }
 
@@ -79,7 +108,7 @@ export interface FilterStopsByQueryResult {
  * Ranking (each step is a tiebreaker for the previous):
  *   1. Prefix bonus — any normalized name starts with the normalized query.
  *   2. Shortest matched normalized name length.
- *   3. `stop_names['ja-Hrkt']` gojuon (locale-aware) order.
+ *   3. `hrktSortKey` (case-insensitive `ja-Hrkt` lookup) gojuon order.
  *
  * The decoration loop runs in the same single pass that does the matching,
  * so the sort comparator only reads precomputed scalars.
@@ -123,10 +152,7 @@ export function filterStopsByQuery(
     if (a.minMatchedLen !== b.minMatchedLen) {
       return a.minMatchedLen - b.minMatchedLen;
     }
-    return (a.entry.stop.stop_names['ja-Hrkt'] ?? '').localeCompare(
-      b.entry.stop.stop_names['ja-Hrkt'] ?? '',
-      'ja',
-    );
+    return a.entry.hrktSortKey.localeCompare(b.entry.hrktSortKey, 'ja');
   });
 
   return {

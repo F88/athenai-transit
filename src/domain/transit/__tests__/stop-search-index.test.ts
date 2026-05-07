@@ -74,11 +74,47 @@ describe('buildSearchIndexEntry', () => {
     expect(entry.normalizedNames).toEqual(['大柳', 'おおやな', 'oyana']);
   });
 
+  it('resolves hrktSortKey from a canonical `ja-Hrkt` key', () => {
+    const entry = buildSearchIndexEntry(
+      makeStop({
+        stop_id: 's1',
+        stop_name: '新宿',
+        stop_names: { ja: '新宿', 'ja-Hrkt': 'シンジュク', en: 'Shinjuku' },
+      }),
+    );
+    expect(entry.hrktSortKey).toBe('シンジュク');
+  });
+
+  it('resolves hrktSortKey from a non-canonical key casing (e.g. `ja-HrKt`)', () => {
+    // BCP-47 language tags are case-insensitive; some upstream feeds (e.g.
+    // kseiw) store the key with non-standard casing. Treat them as a hit.
+    const entry = buildSearchIndexEntry(
+      makeStop({
+        stop_id: 's1',
+        stop_name: '中宿',
+        stop_names: { ja: '中宿', 'ja-HrKt': 'なかじゅく', en: 'Nakajyuku' },
+      }),
+    );
+    expect(entry.hrktSortKey).toBe('なかじゅく');
+  });
+
+  it('returns empty hrktSortKey when no kana translation exists', () => {
+    const entry = buildSearchIndexEntry(
+      makeStop({
+        stop_id: 's1',
+        stop_name: '中延',
+        stop_names: { ja: '中延', en: 'Nakanobu' },
+      }),
+    );
+    expect(entry.hrktSortKey).toBe('');
+  });
+
   it('produces an empty list when stop_names is empty', () => {
     const entry = buildSearchIndexEntry(
       makeStop({ stop_id: 's1', stop_name: '無名', stop_names: {} }),
     );
     expect(entry.normalizedNames).toEqual([]);
+    expect(entry.hrktSortKey).toBe('');
   });
 });
 
@@ -201,6 +237,29 @@ describe('filterStopsByQuery', () => {
     ];
     const result = filterStopsByQuery(stops2.map(buildSearchIndexEntry), 'NAKA', 10);
     expect(result.stops.map((s) => s.stop_id)).toEqual(['nakai', 'nakanobu']);
+  });
+
+  it('falls back to gojuon order via hrktSortKey for tied length and prefix matches', () => {
+    // Two stops with non-canonical `ja-HrKt` (capital K) keys — both match
+    // the query at the same matched-name length, so the final tiebreaker
+    // (case-insensitive `ja-Hrkt` lookup) decides. Without the
+    // case-insensitive resolution they would tie at empty-string and fall
+    // back to input order.
+    const stops2: Stop[] = [
+      makeStop({
+        stop_id: 'fu',
+        stop_name: 'ふなのまち',
+        stop_names: { ja: 'ふなのまち', 'ja-HrKt': 'ふなのまち' },
+      }),
+      makeStop({
+        stop_id: 'na',
+        stop_name: 'なかのうら',
+        stop_names: { ja: 'なかのうら', 'ja-HrKt': 'なかのうら' },
+      }),
+    ];
+    // Input order is fu, na. Gojuon order is na (な) < fu (ふ).
+    const result = filterStopsByQuery(stops2.map(buildSearchIndexEntry), 'の', 10);
+    expect(result.stops.map((s) => s.stop_id)).toEqual(['na', 'fu']);
   });
 
   it('does not match across name boundaries', () => {
