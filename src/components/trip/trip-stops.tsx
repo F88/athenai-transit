@@ -217,7 +217,7 @@ function TripStopRow({
               mapCenter={null}
               infoLevel={infoLevel}
               dataLangs={dataLangs}
-              agencyBadgeSize="sm"
+              agencyBadgeSize="xs"
               routeBadgeSize="xs"
             />
           ) : (

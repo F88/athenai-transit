@@ -4,6 +4,10 @@ import { StopServiceStateLabel } from './stop-service-state-label';
 const meta = {
   title: 'Label/StopServiceStateLabel',
   component: StopServiceStateLabel,
+  args: {
+    stopServiceState: 'drop-off-only',
+    size: 'sm',
+  },
   argTypes: {
     stopServiceState: {
       control: 'radio',
@@ -11,7 +15,7 @@ const meta = {
     },
     size: {
       control: 'radio',
-      options: ['xs', 'sm', 'md'],
+      options: ['xs', 'sm', 'md', 'lg', 'xl'],
     },
   },
 } satisfies Meta<typeof StopServiceStateLabel>;

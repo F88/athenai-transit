@@ -75,6 +75,16 @@ describe('formatDistance', () => {
     expect(formatDistance(2000, 'en')).toBe('2.0km');
   });
 
+  it('keeps one decimal place below 100 km', () => {
+    expect(formatDistance(99_900, 'en')).toBe('99.9km');
+  });
+
+  it('truncates decimal places at 100 km and above', () => {
+    expect(formatDistance(100_000, 'en')).toBe('100km');
+    expect(formatDistance(100_900, 'en')).toBe('100km');
+    expect(formatDistance(101_999, 'en')).toBe('101km');
+  });
+
   it('formats boundary value just below 1 km as meters', () => {
     expect(formatDistance(999, 'en')).toBe('999m');
   });

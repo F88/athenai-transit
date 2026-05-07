@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { InfoDialog } from './components/dialog/info-dialog';
 import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
-import { StopSearchDialog } from './components/dialog/stop-search-dialog';
+import { StopSearchDialog } from './components/search/stop-search-dialog';
 import { TimetableModal } from './components/dialog/timetable-modal';
 import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
 import { MapBottomSheetLayout } from './components/map-bottom-sheet-layout';
@@ -1079,6 +1079,7 @@ export default function App({ loadResult }: AppProps) {
         repo={repo}
         infoLevel={settings.infoLevel}
         dataLang={langChain}
+        mapCenter={mapCenter}
         isStopAnchor={isStopAnchor}
         onSelectStop={handleSearchSelect}
         onToggleAnchor={handleToggleAnchorByStopId}

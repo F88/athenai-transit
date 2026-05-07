@@ -178,7 +178,7 @@ vi.mock('../verbose/verbose-trip-stop-time', () => ({
 }));
 
 import { TimetableModal } from './timetable-modal';
-import { StopSearchDialog } from './stop-search-dialog';
+import { StopSearchDialog } from '../search/stop-search-dialog';
 import { TripInspectionDialog } from './trip-inspection-dialog';
 
 function makeRoute(id: string): Route {
@@ -442,6 +442,7 @@ describe('dialog memoization regressions', () => {
       repo,
       infoLevel: 'normal' as const,
       dataLang: ['ja'] as const,
+      mapCenter: null,
       onSelectStop: vi.fn(),
       open: false,
       onOpenChange: vi.fn(),
