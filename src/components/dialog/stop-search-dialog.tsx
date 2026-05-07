@@ -15,7 +15,7 @@ import type { InfoLevel } from '@/types/app/settings';
 import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
 import { katakanaToHiragana } from '@/utils/kana-normalize';
 import { filterStopsByQuery } from '@/domain/transit/stop-search-index';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StopSearchInputSection } from '../search/stop-search-input-section';
 import { StopSearchResultItem } from '../search/stop-search-result-item';
@@ -56,6 +56,11 @@ export const StopSearchDialog = memo(function StopSearchDialog({
 }: StopSearchDialogProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
+  // Decouple input echo from the heavier filter / highlight / meta-lookup
+  // pipeline. The input updates synchronously while filtering runs at a
+  // lower priority — under bursty typing React drops intermediate pipeline
+  // runs and only commits the latest one.
+  const deferredQuery = useDeferredValue(query);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { searchIndex, routeTypeMap } = useStopSearchIndex(repo, open);
@@ -78,8 +83,8 @@ export const StopSearchDialog = memo(function StopSearchDialog({
   );
 
   const filterResult = useMemo(
-    () => filterStopsByQuery(searchIndex, query, MAX_RESULTS),
-    [query, searchIndex],
+    () => filterStopsByQuery(searchIndex, deferredQuery, MAX_RESULTS),
+    [deferredQuery, searchIndex],
   );
   const filteredStops = filterResult.stops;
   const totalMatches = filterResult.total;
@@ -88,7 +93,9 @@ export const StopSearchDialog = memo(function StopSearchDialog({
   // via a single batched lookup. Synchronous and cheap at ≤ MAX_RESULTS.
   const stopMetaMap = useStopSearchMeta(repo, filteredStops);
 
-  const trimmedQuery = query.trim();
+  // Highlight / no-results use the deferred value so the rendered list and
+  // the marks inside it always describe the same query.
+  const trimmedQuery = deferredQuery.trim();
   const normalizedQuery = katakanaToHiragana(trimmedQuery.toLowerCase());
 
   // Resolve route types once per result set so the row render and the Enter /
@@ -188,7 +195,7 @@ export const StopSearchDialog = memo(function StopSearchDialog({
                   />
                 );
               })
-            : query.trim() !== '' && (
+            : trimmedQuery !== '' && (
                 <p className="text-muted-foreground px-4 py-6 text-center text-sm">
                   {t('search.noResults')}
                 </p>
