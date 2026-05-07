@@ -144,8 +144,8 @@ export function NearbyStop({
           showRoutes={true}
           stats={stats}
           geo={geo}
-          agencyBadgeSize={'md'}
-          routeBadgeSize={'sm'}
+          agencyBadgeSize={'sm'}
+          routeBadgeSize={'xs'}
         />
         <StopActionButtons
           stopId={stop.stop_id}
