@@ -35,14 +35,18 @@ describe('useListKeyboardNavigation', () => {
 
   it('starts the selection at the first item', () => {
     const items = ['a', 'b', 'c'];
-    const { result } = renderHook(() => useListKeyboardNavigation({ items, onActivate: vi.fn() }));
+    const { result } = renderHook(() =>
+      useListKeyboardNavigation({ items, resetKey: 'k', onActivate: vi.fn() }),
+    );
 
     expect(result.current.selectedIndex).toBe(0);
   });
 
   it('advances and clamps to the last item on ArrowDown', () => {
     const items = ['a', 'b', 'c'];
-    const { result } = renderHook(() => useListKeyboardNavigation({ items, onActivate: vi.fn() }));
+    const { result } = renderHook(() =>
+      useListKeyboardNavigation({ items, resetKey: 'k', onActivate: vi.fn() }),
+    );
 
     act(() => {
       const { event, preventDefault } = makeKeyEvent('ArrowDown');
@@ -60,7 +64,9 @@ describe('useListKeyboardNavigation', () => {
 
   it('moves and clamps to the first item on ArrowUp', () => {
     const items = ['a', 'b', 'c'];
-    const { result } = renderHook(() => useListKeyboardNavigation({ items, onActivate: vi.fn() }));
+    const { result } = renderHook(() =>
+      useListKeyboardNavigation({ items, resetKey: 'k', onActivate: vi.fn() }),
+    );
 
     act(() => {
       result.current.handleInputKeyDown(makeKeyEvent('ArrowDown').event);
@@ -79,7 +85,9 @@ describe('useListKeyboardNavigation', () => {
   it('activates the selected item on Enter', () => {
     const items = ['a', 'b', 'c'];
     const onActivate = vi.fn();
-    const { result } = renderHook(() => useListKeyboardNavigation({ items, onActivate }));
+    const { result } = renderHook(() =>
+      useListKeyboardNavigation({ items, resetKey: 'k', onActivate }),
+    );
 
     act(() => {
       result.current.handleInputKeyDown(makeKeyEvent('ArrowDown').event);
@@ -96,7 +104,9 @@ describe('useListKeyboardNavigation', () => {
   it('ignores key events while IME composition is active', () => {
     const items = ['a', 'b'];
     const onActivate = vi.fn();
-    const { result } = renderHook(() => useListKeyboardNavigation({ items, onActivate }));
+    const { result } = renderHook(() =>
+      useListKeyboardNavigation({ items, resetKey: 'k', onActivate }),
+    );
 
     act(() => {
       result.current.handleInputKeyDown(makeKeyEvent('Enter', { isComposing: true }).event);
@@ -110,7 +120,7 @@ describe('useListKeyboardNavigation', () => {
   it('does nothing when the list is empty', () => {
     const onActivate = vi.fn();
     const { result } = renderHook(() =>
-      useListKeyboardNavigation({ items: [] as string[], onActivate }),
+      useListKeyboardNavigation({ items: [] as string[], resetKey: 'k', onActivate }),
     );
 
     act(() => {
@@ -122,14 +132,14 @@ describe('useListKeyboardNavigation', () => {
     expect(onActivate).not.toHaveBeenCalled();
   });
 
-  it('resets the selection when the items reference changes', () => {
+  it('resets the selection when the resetKey changes', () => {
     const itemsA = ['a', 'b', 'c'];
     const itemsB = ['x', 'y'];
 
     const { result, rerender } = renderHook(
-      ({ items }: { items: readonly string[] }) =>
-        useListKeyboardNavigation({ items, onActivate: vi.fn() }),
-      { initialProps: { items: itemsA } },
+      ({ items, resetKey }: { items: readonly string[]; resetKey: string }) =>
+        useListKeyboardNavigation({ items, resetKey, onActivate: vi.fn() }),
+      { initialProps: { items: itemsA, resetKey: 'q1' } },
     );
 
     act(() => {
@@ -138,8 +148,31 @@ describe('useListKeyboardNavigation', () => {
     });
     expect(result.current.selectedIndex).toBe(2);
 
-    rerender({ items: itemsB });
+    rerender({ items: itemsB, resetKey: 'q2' });
     expect(result.current.selectedIndex).toBe(0);
+  });
+
+  it('preserves the selection when only items grow (pagination) and resetKey is stable', () => {
+    const page1 = ['a', 'b', 'c'];
+    const page2 = ['a', 'b', 'c', 'd', 'e'];
+
+    const { result, rerender } = renderHook(
+      ({ items, resetKey }: { items: readonly string[]; resetKey: string }) =>
+        useListKeyboardNavigation({ items, resetKey, onActivate: vi.fn() }),
+      { initialProps: { items: page1, resetKey: 'q1' } },
+    );
+
+    act(() => {
+      result.current.handleInputKeyDown(makeKeyEvent('ArrowDown').event);
+      result.current.handleInputKeyDown(makeKeyEvent('ArrowDown').event);
+    });
+    expect(result.current.selectedIndex).toBe(2);
+
+    // Pagination: items reference changes but resetKey is the same. The
+    // highlighted index must stay put so the user's scroll position and
+    // selection are not yanked back to the top.
+    rerender({ items: page2, resetKey: 'q1' });
+    expect(result.current.selectedIndex).toBe(2);
   });
 
   it('falls back to the first item when selectedIndex is out of range on Enter', () => {
@@ -147,9 +180,9 @@ describe('useListKeyboardNavigation', () => {
     const items = ['a', 'b', 'c'];
 
     const { result, rerender } = renderHook(
-      ({ items: list }: { items: readonly string[] }) =>
-        useListKeyboardNavigation({ items: list, onActivate }),
-      { initialProps: { items } },
+      ({ items: list, resetKey }: { items: readonly string[]; resetKey: string }) =>
+        useListKeyboardNavigation({ items: list, resetKey, onActivate }),
+      { initialProps: { items, resetKey: 'q1' } },
     );
 
     act(() => {
@@ -158,9 +191,9 @@ describe('useListKeyboardNavigation', () => {
     });
     expect(result.current.selectedIndex).toBe(2);
 
-    // Same-render shrink: the reset to 0 hasn't been applied yet when the next
-    // Enter handler reads its closure. The hook must clamp.
-    rerender({ items: ['only'] });
+    // Same-render shrink + new resetKey: the reset to 0 hasn't been applied
+    // yet when the next Enter handler reads its closure. The hook must clamp.
+    rerender({ items: ['only'], resetKey: 'q2' });
 
     act(() => {
       result.current.handleInputKeyDown(makeKeyEvent('Enter').event);
@@ -171,7 +204,9 @@ describe('useListKeyboardNavigation', () => {
 
   it('scrolls the registered item into view when the selection changes', () => {
     const items = ['a', 'b', 'c'];
-    const { result } = renderHook(() => useListKeyboardNavigation({ items, onActivate: vi.fn() }));
+    const { result } = renderHook(() =>
+      useListKeyboardNavigation({ items, resetKey: 'k', onActivate: vi.fn() }),
+    );
 
     const elements: HTMLElement[] = items.map(() => document.createElement('button'));
 

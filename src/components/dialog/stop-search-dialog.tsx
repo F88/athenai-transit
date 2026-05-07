@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { StopSearchInputSection } from '../search/stop-search-input-section';
 import { StopSearchResultItem } from '../search/stop-search-result-item';
 
-const MAX_RESULTS = 30;
+const PAGE_SIZE = 30;
 
 interface StopSearchDialogProps {
   repo: TransitRepository;
@@ -61,6 +61,21 @@ export const StopSearchDialog = memo(function StopSearchDialog({
   // runs and only commits the latest one.
   const deferredQuery = useDeferredValue(query);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  // How many ranked matches to surface. Starts at PAGE_SIZE; the bottom
+  // sentinel below grows it by another PAGE_SIZE whenever it scrolls into
+  // view, so the result list pages itself in. Resets to PAGE_SIZE whenever
+  // the deferred query changes — a new search always starts on the first
+  // page. The reset uses the React-recommended "adjusting state on prop
+  // change" pattern (compare with previous value during render) so we do
+  // not commit a render with stale paging.
+  const [displayLimit, setDisplayLimit] = useState(PAGE_SIZE);
+  const [prevDeferredQuery, setPrevDeferredQuery] = useState(deferredQuery);
+  if (deferredQuery !== prevDeferredQuery) {
+    setPrevDeferredQuery(deferredQuery);
+    setDisplayLimit(PAGE_SIZE);
+  }
 
   const { searchIndex, routeTypeMap } = useStopSearchIndex(repo, open);
 
@@ -81,12 +96,52 @@ export const StopSearchDialog = memo(function StopSearchDialog({
     [onOpenChange],
   );
 
+  // Pin the scroll position back to the top whenever the deferred query
+  // changes, so the bottom sentinel does not immediately re-fire from a
+  // residual scroll offset left over from the previous (longer) result
+  // list. State (`displayLimit`) reset is handled via the during-render
+  // compare above; this effect only handles DOM mutation.
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [deferredQuery]);
+
   const filterResult = useMemo(
-    () => filterStopsByQuery(searchIndex, deferredQuery, MAX_RESULTS),
-    [deferredQuery, searchIndex],
+    () => filterStopsByQuery(searchIndex, deferredQuery, displayLimit),
+    [deferredQuery, searchIndex, displayLimit],
   );
   const filteredStops = filterResult.stops;
   const totalMatches = filterResult.total;
+  const canLoadMore = totalMatches > filteredStops.length;
+
+  // Auto-load the next page when the bottom sentinel scrolls into view.
+  // Using the scroll container itself as the IntersectionObserver `root`
+  // (instead of the document viewport) is necessary because the result
+  // list scrolls inside the dialog — the document viewport would always
+  // see the sentinel as "not clipped" and never report it intersecting.
+  useEffect(() => {
+    if (!canLoadMore) {
+      return;
+    }
+    const sentinel = sentinelRef.current;
+    const root = scrollContainerRef.current;
+    if (!sentinel || !root) {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setDisplayLimit((prev) => prev + PAGE_SIZE);
+          }
+        }
+      },
+      { root, rootMargin: '200px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [canLoadMore]);
 
   // Resolve agencies / routes / stats / geo for the current page of results
   // via a single batched lookup. Synchronous and cheap at ≤ MAX_RESULTS.
@@ -99,7 +154,7 @@ export const StopSearchDialog = memo(function StopSearchDialog({
 
   // Resolve route types once per result set so the row render and the Enter /
   // click activation share the same lookup. `filteredStops` is capped at
-  // `MAX_RESULTS`, so building this map per render is cheap.
+  // the current `displayLimit`, so building this map per render is cheap.
   const resolvedRouteTypesByStop = useMemo(() => {
     const map = new Map<string, AppRouteTypeValue[]>();
     for (const stop of filteredStops) {
@@ -133,6 +188,10 @@ export const StopSearchDialog = memo(function StopSearchDialog({
 
   const { selectedIndex, handleInputKeyDown, registerItemRef } = useListKeyboardNavigation({
     items: filteredStops,
+    // Stable identity for the current logical search. Reset selection only
+    // when the actual query changes — pagination growing `filteredStops`
+    // must not yank the highlight (and the scroll) back to the first row.
+    resetKey: deferredQuery,
     onActivate: handleSelect,
   });
 
@@ -168,7 +227,7 @@ export const StopSearchDialog = memo(function StopSearchDialog({
                 })}
           </div>
         )}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
           {filteredStops.length > 0
             ? filteredStops.map((stop, index) => {
                 const meta = stopMetaMap.get(stop.stop_id);
@@ -201,6 +260,7 @@ export const StopSearchDialog = memo(function StopSearchDialog({
                   {t('search.noResults')}
                 </p>
               )}
+          {canLoadMore && <div ref={sentinelRef} aria-hidden="true" className="h-4" />}
         </div>
       </DialogContent>
     </Dialog>
