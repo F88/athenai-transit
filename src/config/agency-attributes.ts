@@ -180,6 +180,21 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '009f40', text: 'FFFFFF' }],
   },
 
+  // --- Tokyo Cruise Ship ---
+  'tcship:3010501009370': {
+    shortName: {
+      ja: '水上バス',
+      'ja-Hrkt': 'すいじょうバス',
+      en: 'Tokyo Cruise',
+    },
+    longName: {
+      ja: '東京都観光汽船株式会社',
+      'ja-Hrkt': 'とうきょうとかんこうきせん かぶしきがいしゃ',
+      en: 'Tokyo Cruise Ship Co., Ltd.',
+    },
+    colors: [{ bg: '0072CF', text: 'FFFFFF' } /* Primary */],
+  },
+
   // --- TWR Rinkai Line ---
   'twrr:twr': {
     shortName: {

@@ -27,4 +27,5 @@ export default [
   'twr-rinkai',
   'vag-freiburg',
   'actv-nav',
+  'tokyo-cruise-ship',
 ];

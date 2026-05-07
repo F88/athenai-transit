@@ -166,6 +166,17 @@ const settings: SourceGroup[] = [
     countries: ['IT'],
   },
   {
+    id: 'tokyo-cruise-ship',
+    prefixes: ['tcship'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Tokyo Cruise',
+      names: { ja: '水上バス', en: 'Tokyo Cruise' },
+    },
+    countries: ['JP'],
+  },
+  {
     id: 'vag-freiburg',
     prefixes: ['vagfr'],
     routeTypes: [0, 3],
