@@ -256,7 +256,11 @@ export const StopSearchDialog = memo(function StopSearchDialog({
                 );
               })
             : trimmedQuery !== '' && (
-                <p className="text-muted-foreground px-4 py-6 text-center text-sm">
+                <p
+                  className="text-muted-foreground px-4 py-6 text-center text-sm"
+                  role="status"
+                  aria-live="polite"
+                >
                   {t('search.noResults')}
                 </p>
               )}
