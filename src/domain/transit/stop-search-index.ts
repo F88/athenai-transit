@@ -38,6 +38,20 @@ export function buildSearchIndexEntry(stop: Stop): SearchIndexEntry {
 }
 
 /**
+ * Result of {@link filterStopsByQuery}.
+ *
+ * `stops` is capped at the caller's `maxResults`; `total` is the full match
+ * count before truncation, so the UI can report `shown / total` and decide
+ * whether to surface a "truncated" hint.
+ */
+export interface FilterStopsByQueryResult {
+  /** Matched stops, capped at the caller's `maxResults`. */
+  stops: Stop[];
+  /** Total match count before truncation. `total >= stops.length` always. */
+  total: number;
+}
+
+/**
  * Filter and rank a search index for a free-text query.
  *
  * Match precedence (any of):
@@ -47,22 +61,24 @@ export function buildSearchIndexEntry(stop: Stop): SearchIndexEntry {
  *      contains the lower-cased + kana-normalized query.
  *
  * Sorted by: prefix match first → shorter `stop_name` first → ja-Hrkt
- * gojuon order. Truncated to `maxResults`.
+ * gojuon order. The returned `stops` array is truncated to `maxResults`
+ * but `total` reports the full pre-truncation match count.
  *
- * Queries containing `NAME_SEP` are rejected (returns []) so they cannot
- * match the join character that separates names inside the pre-built blobs.
+ * Queries containing `NAME_SEP` are rejected (returns an empty result with
+ * `total: 0`) so they cannot match the join character that separates names
+ * inside the pre-built blobs.
  */
 export function filterStopsByQuery(
   searchIndex: readonly SearchIndexEntry[],
   query: string,
   maxResults: number,
-): Stop[] {
+): FilterStopsByQueryResult {
   const trimmed = query.trim();
   if (trimmed === '') {
-    return [];
+    return { stops: [], total: 0 };
   }
   if (trimmed.includes(NAME_SEP)) {
-    return [];
+    return { stops: [], total: 0 };
   }
   const lowerTrimmed = trimmed.toLowerCase();
   const normalizedQuery = katakanaToHiragana(lowerTrimmed);
@@ -88,5 +104,5 @@ export function filterStopsByQuery(
     }
     return (a.stop_names['ja-Hrkt'] ?? '').localeCompare(b.stop_names['ja-Hrkt'] ?? '', 'ja');
   });
-  return matches.slice(0, maxResults);
+  return { stops: matches.slice(0, maxResults), total: matches.length };
 }

@@ -66,35 +66,35 @@ describe('filterStopsByQuery', () => {
   ];
   const index = stops.map(buildSearchIndexEntry);
 
-  it('returns [] for empty / whitespace-only query', () => {
-    expect(filterStopsByQuery(index, '', 10)).toEqual([]);
-    expect(filterStopsByQuery(index, '   ', 10)).toEqual([]);
+  it('returns an empty result for empty / whitespace-only query', () => {
+    expect(filterStopsByQuery(index, '', 10)).toEqual({ stops: [], total: 0 });
+    expect(filterStopsByQuery(index, '   ', 10)).toEqual({ stops: [], total: 0 });
   });
 
   it('matches by direct stop_name', () => {
-    expect(filterStopsByQuery(index, '新宿', 10).map((s) => s.stop_id)).toEqual(['s1']);
+    expect(filterStopsByQuery(index, '新宿', 10).stops.map((s) => s.stop_id)).toEqual(['s1']);
   });
 
   it('matches via raw stop_names entries (e.g., en)', () => {
-    expect(filterStopsByQuery(index, 'Shibuya', 10).map((s) => s.stop_id)).toEqual(['s2']);
+    expect(filterStopsByQuery(index, 'Shibuya', 10).stops.map((s) => s.stop_id)).toEqual(['s2']);
   });
 
   it('falls back to kana-normalized matching (hiragana query → katakana name)', () => {
-    expect(filterStopsByQuery(index, 'しんじゅく', 10).map((s) => s.stop_id)).toEqual(['s1']);
+    expect(filterStopsByQuery(index, 'しんじゅく', 10).stops.map((s) => s.stop_id)).toEqual(['s1']);
   });
 
   it('matches case-insensitively via the normalized blob', () => {
-    expect(filterStopsByQuery(index, 'shibuya', 10).map((s) => s.stop_id)).toEqual(['s2']);
+    expect(filterStopsByQuery(index, 'shibuya', 10).stops.map((s) => s.stop_id)).toEqual(['s2']);
   });
 
   it('rejects queries containing the NAME_SEP character (regression guard)', () => {
     // Without this guard, the U+0001 join character inside the blobs would
     // make every multi-name stop match — see PR #177 review.
-    expect(filterStopsByQuery(index, '\x01', 10)).toEqual([]);
-    expect(filterStopsByQuery(index, 'ab\x01cd', 10)).toEqual([]);
+    expect(filterStopsByQuery(index, '\x01', 10)).toEqual({ stops: [], total: 0 });
+    expect(filterStopsByQuery(index, 'ab\x01cd', 10)).toEqual({ stops: [], total: 0 });
   });
 
-  it('respects maxResults', () => {
+  it('respects maxResults but reports the full pre-truncation count via total', () => {
     const many = Array.from({ length: 5 }, (_, i) =>
       makeStop({
         stop_id: `m${i}`,
@@ -102,7 +102,15 @@ describe('filterStopsByQuery', () => {
         stop_names: { ja: `Match${i}` },
       }),
     );
-    expect(filterStopsByQuery(many.map(buildSearchIndexEntry), 'Match', 3)).toHaveLength(3);
+    const result = filterStopsByQuery(many.map(buildSearchIndexEntry), 'Match', 3);
+    expect(result.stops).toHaveLength(3);
+    expect(result.total).toBe(5);
+  });
+
+  it('reports total === stops.length when the result set is not truncated', () => {
+    const result = filterStopsByQuery(index, '新宿', 10);
+    expect(result.stops).toHaveLength(1);
+    expect(result.total).toBe(1);
   });
 
   it('orders prefix matches before substring matches, then by name length', () => {
@@ -124,7 +132,7 @@ describe('filterStopsByQuery', () => {
       }),
     ];
     const result = filterStopsByQuery(stops2.map(buildSearchIndexEntry), '新宿', 10);
-    expect(result.map((s) => s.stop_id)).toEqual(['short', 'long', 'sub']);
+    expect(result.stops.map((s) => s.stop_id)).toEqual(['short', 'long', 'sub']);
   });
 
   it('does not match across name boundaries (NAME_SEP integrity)', () => {
@@ -136,6 +144,6 @@ describe('filterStopsByQuery', () => {
       stop_names: { ja: 'ab', en: 'cd' },
     });
     const idx = [buildSearchIndexEntry(stop)];
-    expect(filterStopsByQuery(idx, 'bc', 10)).toEqual([]);
+    expect(filterStopsByQuery(idx, 'bc', 10)).toEqual({ stops: [], total: 0 });
   });
 });

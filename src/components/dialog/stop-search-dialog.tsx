@@ -77,10 +77,12 @@ export const StopSearchDialog = memo(function StopSearchDialog({
     [onOpenChange],
   );
 
-  const filteredStops = useMemo(
+  const filterResult = useMemo(
     () => filterStopsByQuery(searchIndex, query, MAX_RESULTS),
     [query, searchIndex],
   );
+  const filteredStops = filterResult.stops;
+  const totalMatches = filterResult.total;
 
   // Resolve agencies / routes / stats / geo for the current page of results
   // via a single batched lookup. Synchronous and cheap at ≤ MAX_RESULTS.
@@ -145,6 +147,19 @@ export const StopSearchDialog = memo(function StopSearchDialog({
           onQueryChange={setQuery}
           onInputKeyDown={handleInputKeyDown}
         />
+        {filteredStops.length > 0 && (
+          <div
+            className="border-border text-muted-foreground shrink-0 border-b px-4 py-1.5 text-right text-xs"
+            aria-live="polite"
+          >
+            {totalMatches > filteredStops.length
+              ? t('search.resultCountTruncated', {
+                  shown: filteredStops.length,
+                  total: totalMatches,
+                })
+              : t('search.resultCount', { count: filteredStops.length })}
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto">
           {filteredStops.length > 0
             ? filteredStops.map((stop, index) => {
