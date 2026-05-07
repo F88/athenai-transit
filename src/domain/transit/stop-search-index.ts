@@ -1,5 +1,5 @@
 import type { Stop } from '@/types/app/transit';
-import { katakanaToHiragana } from './kana-normalize';
+import { katakanaToHiragana } from '@/utils/kana-normalize';
 
 /**
  * Separator used to join `stop_names` values into a single search blob.

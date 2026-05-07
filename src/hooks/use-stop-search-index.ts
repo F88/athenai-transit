@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createLogger } from '@/lib/logger';
 import type { TransitRepository } from '@/repositories/transit-repository';
 import type { AppRouteTypeValue } from '@/types/app/transit';
-import { buildSearchIndexEntry, type SearchIndexEntry } from '@/utils/stop-search-index';
+import { buildSearchIndexEntry, type SearchIndexEntry } from '@/domain/transit/stop-search-index';
 
 const logger = createLogger('StopSearch');
 

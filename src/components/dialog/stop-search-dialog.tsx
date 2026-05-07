@@ -14,7 +14,7 @@ import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
 import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
 import { katakanaToHiragana } from '@/utils/kana-normalize';
-import { filterStopsByQuery } from '@/utils/stop-search-index';
+import { filterStopsByQuery } from '@/domain/transit/stop-search-index';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StopSearchInputSection } from '../search/stop-search-input-section';

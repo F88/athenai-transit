@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Stop } from '@/types/app/transit';
-import { buildSearchIndexEntry, filterStopsByQuery } from './stop-search-index';
+import { buildSearchIndexEntry, filterStopsByQuery } from '../stop-search-index';
 
 function makeStop(
   partial: Pick<Stop, 'stop_id' | 'stop_name' | 'stop_names'> & Partial<Stop>,
