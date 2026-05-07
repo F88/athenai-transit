@@ -11,7 +11,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
-- 検索ダイアログに件数ストリップを追加。 `n件 / 上位 m件 / N件` (英: `m / N matches`) 形式で「絞り込み済件数 / 全マッチ件数」 を input 直下に表示。 件数は `Number.toLocaleString(i18n.language)` で千区切り対応 (例: `1,234`)。 `filterStopsByQuery` の戻り値を `{ stops: Stop[]; total: number }` に変更し、 truncation 前の総件数を UI に伝播。
+- 検索ダイアログに件数ストリップを追加。 全件表示時は `{count}件` (英: `{count} matches`)、 上限に達した truncate 表示時は `{shown} / {total}件` (英: `{shown} / {total}`) を input 直下に表示。 件数は `Number.toLocaleString(i18n.language)` で千区切り対応 (例: `1,234`)。 `filterStopsByQuery` の戻り値を `{ stops: Stop[]; total: number }` に変更し、 truncation 前の総件数を UI に伝播。
 - `normalizeForSearch` を `src/domain/transit/stop-search-index.ts` に export として新設。 `toLowerCase` → `katakanaToHiragana` → NFD → strip `[\u0300-\u036f]` (Latin combining diacritical marks) → NFC のパイプライン。 `oyana` で `Ōyana`、 `cafe` で `Café`、 `nino` で `Niño` 等が一律マッチ。 strip 範囲を U+0300–U+036F に絞ることで kana の濁点・半濁点 (U+3099 / U+309A) は保護され、 `が → か` のような誤動作を回避。 `HighlightedName` (検索結果行のクエリハイライト) も同パイプラインを共有し、 `<mark>` 範囲が match と一致。
 - `SearchIndexEntry` に `hrktSortKey` フィールドを追加。 sort fallback で `stop_names['ja-Hrkt']` を case-insensitive にキー解決し (kseiw の `ja-HrKt` 等の non-canonical casing を吸収、 BCP 47 RFC 5646 §2.1.1 準拠)、 build 時に 1 度だけ計算。 sort comparator は scalar lookup のみ。
 - `filterStopsByQuery` の sort ranking を 5 段に拡張: (1) prefix bonus、 (2) 最短マッチ name 長、 (3) `hrktSortKey` gojuon 順、 (4) **マッチした name 自体の locale-aware compare** (toaran 系のように ja-Hrkt 自体が無いケースの fallback)、 (5) **`platform_code` の数値考慮 (numeric: true) compare** (王子駅前 1〜14 のような同名 stop の platform 番号順 disambiguation、 null は末尾)。 これまで「入力順依存」だった末端の dead drop が仕様化された並び順に。
