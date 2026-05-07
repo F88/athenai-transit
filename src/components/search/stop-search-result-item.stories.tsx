@@ -1,7 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 
-import { baseStop, longNameStop, storyMapCenter } from '../../stories/fixtures';
+import {
+  agencyGx,
+  agencyOretetsu,
+  agencyTobus,
+  allAgencies,
+  allRoutes,
+  baseStop,
+  busRoute,
+  longNameStop,
+  sampleGeo,
+  sampleStats,
+  storyMapCenter,
+  tramRoute,
+} from '../../stories/fixtures';
 import type { AppRouteTypeValue } from '../../types/app/transit';
 import { StopSearchResultItem } from './stop-search-result-item';
 
@@ -145,6 +158,52 @@ export const FarFromMapCenter: Story = {
   },
 };
 
+// --- Agency / Route badges ---
+
+/** Single agency badge in the main row. */
+export const WithAgency: Story = {
+  args: {
+    agencies: [agencyTobus],
+  },
+};
+
+/** Multiple agencies — common at major interchange stops. */
+export const WithMultipleAgencies: Story = {
+  args: {
+    routeTypes: [0, 1, 2, 3] as AppRouteTypeValue[],
+    agencies: [agencyGx, agencyOretetsu, agencyTobus],
+  },
+};
+
+/** Routes row — visible only at `detailed+` info level. */
+export const WithRoutesDetailed: Story = {
+  args: {
+    infoLevel: 'detailed',
+    agencies: [agencyTobus, agencyOretetsu],
+    routes: [busRoute, tramRoute],
+  },
+};
+
+// --- Insights metrics ---
+
+/** Insights stats badges (freq) appear at `normal+`. */
+export const WithStats: Story = {
+  args: {
+    agencies: [agencyTobus],
+    stats: sampleStats,
+  },
+};
+
+/** geo + stats together — connectivity and nearestRoute show at `normal+` / `detailed+`. */
+export const WithStatsAndGeo: Story = {
+  args: {
+    infoLevel: 'detailed',
+    agencies: [agencyTobus],
+    stats: sampleStats,
+    geo: sampleGeo,
+  },
+};
+
 // --- Info levels ---
 
 export const Simple: Story = {
@@ -171,6 +230,10 @@ const kitchenSinkArgs = {
   normalizedQuery: '東京',
   dataLang: ['ja'] as readonly string[],
   mapCenter: storyMapCenter,
+  agencies: allAgencies,
+  routes: allRoutes,
+  stats: sampleStats,
+  geo: sampleGeo,
 };
 
 export const KitchenSinkInfoLevelSimple: Story = {

@@ -62,7 +62,12 @@ export function StopInfo({
           distanceBadge={
             distanceRounded != null &&
             distanceRounded >= 10 && (
-              <DistanceBadge meters={distanceRounded} bearingDeg={bearing} showDirection />
+              <DistanceBadge
+                meters={distanceRounded}
+                bearingDeg={bearing}
+                showDirection
+                size="xl"
+              />
             )
           }
         />

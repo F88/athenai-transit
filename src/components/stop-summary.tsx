@@ -125,7 +125,7 @@ export function StopSummary({
         {/* Platform code */}
         {stop.platform_code && <PlatformCodeLabel code={stop.platform_code} size="sm" />}
         {/* Distance badge */}
-        {distanceBadge}
+        <span className="ml-2">{distanceBadge}</span>
         {/* Accessibility */}
         <AccessibilityLabel wheelchairBoarding={stop.wheelchair_boarding} size="sm" />
         {stopServiceState && (

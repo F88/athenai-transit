@@ -188,6 +188,7 @@ export const WithDistanceBadge: Story = {
           meters={235}
           bearingDeg={bearingDeg(storyMapCenter, args.stop)}
           showDirection
+          size="xl"
         />
       }
     />

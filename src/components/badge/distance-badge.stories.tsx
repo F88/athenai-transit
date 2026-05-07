@@ -10,11 +10,13 @@ const meta = {
     meters: 250,
     bearingDeg: 45,
     showDirection: false,
+    size: 'xl',
   },
   argTypes: {
     meters: { control: { type: 'number', min: 0, max: 5_000_000, step: 10 } },
     bearingDeg: { control: { type: 'number', min: 0, max: 359, step: 1 } },
     showDirection: { control: 'boolean' },
+    size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
   },
   decorators: [
     (Story) => (
@@ -146,6 +148,7 @@ export const AllDirections: Story = {
               meters={args.meters}
               bearingDeg={d.deg}
               showDirection={args.showDirection}
+              size="xl"
             />
           </div>
         ))}
@@ -168,12 +171,12 @@ export const BandColors: Story = {
       {DISTANCE_BANDS.map((band) => (
         <div key={band.max} className="flex items-center gap-2">
           <span className="w-20 text-xs text-gray-500">≤ {formatBandMax(band.max)}</span>
-          <DistanceBadge meters={band.max} bearingDeg={45} showDirection />
+          <DistanceBadge meters={band.max} bearingDeg={45} showDirection size="xl" />
         </div>
       ))}
       <div className="flex items-center gap-2">
         <span className="w-20 text-xs text-gray-500">fallback</span>
-        <DistanceBadge meters={5_000_000} bearingDeg={45} showDirection />
+        <DistanceBadge meters={5_000_000} bearingDeg={45} showDirection size="xl" />
       </div>
     </div>
   ),
@@ -200,11 +203,40 @@ export const DistanceColors: Story = {
     return (
       <div className="flex flex-col gap-2">
         {distances.map((m) => (
-          <DistanceBadge key={m} meters={m} bearingDeg={45} showDirection />
+          <DistanceBadge key={m} meters={m} bearingDeg={45} showDirection size="xl" />
         ))}
       </div>
     );
   },
+};
+
+// --- Size variants ---
+
+const SIZE_SPECS = [
+  { size: 'xs', textClass: 'text-xs', fontPx: '12px' },
+  { size: 'sm', textClass: 'text-sm', fontPx: '14px' },
+  { size: 'md', textClass: 'text-base', fontPx: '16px' },
+  { size: 'lg', textClass: 'text-lg', fontPx: '18px' },
+  { size: 'xl', textClass: 'text-xl', fontPx: '20px' },
+] as const;
+
+/**
+ * All five sizes — chip alongside the resolved Tailwind class / font px.
+ * Direction arrow is em-relative so it scales together with the font.
+ */
+export const SizeComparison: Story = {
+  render: () => (
+    <div className="flex flex-col gap-2">
+      {SIZE_SPECS.map(({ size, textClass, fontPx }) => (
+        <div key={size} className="flex items-center gap-3">
+          <span className="w-6 text-xs font-semibold text-gray-700 dark:text-gray-300">{size}</span>
+          <span className="w-20 font-mono text-[10px] text-gray-500">{textClass}</span>
+          <span className="w-12 font-mono text-[10px] text-gray-500">{fontPx}</span>
+          <DistanceBadge meters={250} bearingDeg={45} showDirection size={size} />
+        </div>
+      ))}
+    </div>
+  ),
 };
 
 // --- Kitchen sink ---
@@ -215,5 +247,6 @@ export const KitchenSink: Story = {
     meters: 2750,
     bearingDeg: 135,
     showDirection: true,
+    size: 'xl',
   },
 };

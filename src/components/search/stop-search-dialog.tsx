@@ -8,6 +8,7 @@ import {
 import { resolveStopRouteTypes } from '@/domain/transit/resolve-stop-route-types';
 import { useListKeyboardNavigation } from '@/hooks/use-list-keyboard-navigation';
 import { useStopSearchIndex } from '@/hooks/use-stop-search-index';
+import { useStopSearchMeta } from '@/hooks/use-stop-search-meta';
 import type { TransitRepository } from '@/repositories/transit-repository';
 import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
@@ -81,6 +82,10 @@ export const StopSearchDialog = memo(function StopSearchDialog({
     [query, searchIndex],
   );
 
+  // Resolve agencies / routes / stats / geo for the current page of results
+  // via a single batched lookup. Synchronous and cheap at ≤ MAX_RESULTS.
+  const stopMetaMap = useStopSearchMeta(repo, filteredStops);
+
   const trimmedQuery = query.trim();
   const normalizedQuery = katakanaToHiragana(trimmedQuery.toLowerCase());
 
@@ -142,25 +147,32 @@ export const StopSearchDialog = memo(function StopSearchDialog({
         />
         <div className="flex-1 overflow-y-auto">
           {filteredStops.length > 0
-            ? filteredStops.map((stop, index) => (
-                <StopSearchResultItem
-                  key={stop.stop_id}
-                  stop={stop}
-                  routeTypes={resolvedRouteTypesByStop.get(stop.stop_id) ?? [-1]}
-                  isAnchor={isStopAnchor?.(stop.stop_id) ?? false}
-                  query={trimmedQuery}
-                  normalizedQuery={normalizedQuery}
-                  infoLevel={infoLevel}
-                  dataLang={dataLang}
-                  mapCenter={mapCenter}
-                  isSelected={index === selectedIndex}
-                  buttonRef={registerItemRef(index)}
-                  onSelect={handleSelect}
-                  onToggleAnchor={onToggleAnchor}
-                  onShowStopTimetable={onShowStopTimetable}
-                  onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
-                />
-              ))
+            ? filteredStops.map((stop, index) => {
+                const meta = stopMetaMap.get(stop.stop_id);
+                return (
+                  <StopSearchResultItem
+                    key={stop.stop_id}
+                    stop={stop}
+                    routeTypes={resolvedRouteTypesByStop.get(stop.stop_id) ?? [-1]}
+                    isAnchor={isStopAnchor?.(stop.stop_id) ?? false}
+                    query={trimmedQuery}
+                    normalizedQuery={normalizedQuery}
+                    infoLevel={infoLevel}
+                    dataLang={dataLang}
+                    mapCenter={mapCenter}
+                    agencies={meta?.agencies}
+                    routes={meta?.routes}
+                    stats={meta?.stats}
+                    geo={meta?.geo}
+                    isSelected={index === selectedIndex}
+                    buttonRef={registerItemRef(index)}
+                    onSelect={handleSelect}
+                    onToggleAnchor={onToggleAnchor}
+                    onShowStopTimetable={onShowStopTimetable}
+                    onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
+                  />
+                );
+              })
             : query.trim() !== '' && (
                 <p className="text-muted-foreground px-4 py-6 text-center text-sm">
                   {t('search.noResults')}
