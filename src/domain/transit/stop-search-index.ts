@@ -1,14 +1,41 @@
 import type { Stop } from '@/types/app/transit';
 import { katakanaToHiragana } from '@/utils/kana-normalize';
 
+/**
+ * Normalize a string for stop search.
+ *
+ * Pipeline:
+ *   1. `toLowerCase` — collapse case (`NAKA` / `Naka` / `naka` → `naka`).
+ *   2. `katakanaToHiragana` — collapse kana script (`ナカ` → `なか`).
+ *   3. NFD → strip Latin combining marks (U+0300–U+036F) → NFC —
+ *      collapse Latin diacritics (`Ōyana` → `oyana`, `café` → `cafe`).
+ *
+ * Why the strip range is narrowed to U+0300–U+036F: kana voicing marks
+ * live in U+3099 / U+309A. Stripping `\p{Diacritic}` wholesale would
+ * mangle `が` (= `か` + U+3099) into `か`, which is unacceptable for
+ * stop-name search. Limiting the replace to the Combining Diacritical
+ * Marks block keeps kana voicing intact while still catching macron,
+ * acute, grave, circumflex, tilde, diaeresis, caron, cedilla, etc.
+ *
+ * The trailing NFC re-composes any kana that NFD decomposed in step 3
+ * (e.g. `が` → `か` + U+3099 → recomposed back to `が`), so callers can
+ * rely on the output being canonical (NFC) regardless of input form.
+ */
+export function normalizeForSearch(s: string): string {
+  return katakanaToHiragana(s.toLowerCase())
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .normalize('NFC');
+}
+
 export interface SearchIndexEntry {
   stop: Stop;
   /**
-   * Each value of `stop.stop_names`, lower-cased and katakana→hiragana
-   * normalized at build time. The matcher and the sort tiebreakers all read
-   * from this single representation so case / kana / language differences
-   * across the GTFS / ODPT translations.txt entries are absorbed once and
-   * for all.
+   * Each value of `stop.stop_names`, run through {@link normalizeForSearch}
+   * at build time. The matcher and the sort tiebreakers all read from this
+   * single representation so case / kana / Latin-diacritic / language
+   * differences across the GTFS / ODPT translations.txt entries are
+   * absorbed once and for all.
    */
   normalizedNames: string[];
 }
@@ -16,14 +43,14 @@ export interface SearchIndexEntry {
 /**
  * Pre-build a search index entry for one stop.
  *
- * `katakanaToHiragana` and `String.toLowerCase` run once per name here, so
- * the per-keystroke matcher only does plain `String.includes` /
- * `String.startsWith` calls on already-normalized strings.
+ * The normalize pipeline runs once per name here, so the per-keystroke
+ * matcher only does plain `String.includes` / `String.startsWith` calls on
+ * already-normalized strings.
  */
 export function buildSearchIndexEntry(stop: Stop): SearchIndexEntry {
   return {
     stop,
-    normalizedNames: Object.values(stop.stop_names).map((n) => katakanaToHiragana(n.toLowerCase())),
+    normalizedNames: Object.values(stop.stop_names).map(normalizeForSearch),
   };
 }
 
@@ -66,7 +93,7 @@ export function filterStopsByQuery(
   if (trimmed === '') {
     return { stops: [], total: 0 };
   }
-  const normalizedQuery = katakanaToHiragana(trimmed.toLowerCase());
+  const normalizedQuery = normalizeForSearch(trimmed);
 
   type Decorated = { entry: SearchIndexEntry; prefix: 0 | 1; minMatchedLen: number };
   const decorated: Decorated[] = [];

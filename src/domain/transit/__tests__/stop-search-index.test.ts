@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { Stop } from '@/types/app/transit';
-import { buildSearchIndexEntry, filterStopsByQuery } from '../stop-search-index';
+import {
+  buildSearchIndexEntry,
+  filterStopsByQuery,
+  normalizeForSearch,
+} from '../stop-search-index';
 
 function makeStop(
   partial: Pick<Stop, 'stop_id' | 'stop_name' | 'stop_names'> & Partial<Stop>,
@@ -14,8 +18,41 @@ function makeStop(
   };
 }
 
+describe('normalizeForSearch', () => {
+  it('lower-cases ASCII', () => {
+    expect(normalizeForSearch('Shibuya')).toBe('shibuya');
+    expect(normalizeForSearch('SHIBUYA')).toBe('shibuya');
+  });
+
+  it('converts katakana to hiragana', () => {
+    expect(normalizeForSearch('シンジュク')).toBe('しんじゅく');
+  });
+
+  it('strips Latin combining diacritics (macron, acute, tilde, etc.)', () => {
+    expect(normalizeForSearch('Ōyana')).toBe('oyana');
+    expect(normalizeForSearch('Café')).toBe('cafe');
+    expect(normalizeForSearch('Niño')).toBe('nino');
+    expect(normalizeForSearch('Über')).toBe('uber');
+    expect(normalizeForSearch('façade')).toBe('facade');
+  });
+
+  it('preserves kana voicing marks (dakuten / handakuten)', () => {
+    // Critical guard: stripping `\p{Diacritic}` wholesale would mangle
+    // these (が → か, ぱ → は). The U+0300–U+036F bound prevents that.
+    expect(normalizeForSearch('がっこう')).toBe('がっこう');
+    expect(normalizeForSearch('パーク')).toBe('ぱーく');
+    expect(normalizeForSearch('ガンダム')).toBe('がんだむ');
+  });
+
+  it('returns canonical NFC form even when input is decomposed', () => {
+    // Pre-decomposed input should still come out NFC-recomposed.
+    const decomposed = 'Ōyana'; // O + combining macron
+    expect(normalizeForSearch(decomposed)).toBe('oyana');
+  });
+});
+
 describe('buildSearchIndexEntry', () => {
-  it('lower-cases and applies katakanaToHiragana to each stop_names value', () => {
+  it('normalizes each stop_names value via normalizeForSearch', () => {
     const entry = buildSearchIndexEntry(
       makeStop({
         stop_id: 's1',
@@ -24,6 +61,17 @@ describe('buildSearchIndexEntry', () => {
       }),
     );
     expect(entry.normalizedNames).toEqual(['新宿', 'しんじゅく', 'shinjuku']);
+  });
+
+  it('strips Latin diacritics from stop_names values', () => {
+    const entry = buildSearchIndexEntry(
+      makeStop({
+        stop_id: 's1',
+        stop_name: '大柳',
+        stop_names: { ja: '大柳', 'ja-Hrkt': 'オオヤナ', en: 'Ōyana' },
+      }),
+    );
+    expect(entry.normalizedNames).toEqual(['大柳', 'おおやな', 'oyana']);
   });
 
   it('produces an empty list when stop_names is empty', () => {
@@ -118,6 +166,21 @@ describe('filterStopsByQuery', () => {
     ];
     const result = filterStopsByQuery(stops2.map(buildSearchIndexEntry), '新宿', 10);
     expect(result.stops.map((s) => s.stop_id)).toEqual(['short', 'long', 'sub']);
+  });
+
+  it('matches Latin-diacritic names via the diacritic-stripped query', () => {
+    // Regression for "oyana" → "Ōyana" (toei bus stop 大柳).
+    const stops2: Stop[] = [
+      makeStop({
+        stop_id: 'oyana',
+        stop_name: '大柳',
+        stop_names: { ja: '大柳', 'ja-Hrkt': 'オオヤナ', en: 'Ōyana' },
+      }),
+    ];
+    const idx = stops2.map(buildSearchIndexEntry);
+    expect(filterStopsByQuery(idx, 'oyana', 10).stops.map((s) => s.stop_id)).toEqual(['oyana']);
+    expect(filterStopsByQuery(idx, 'OYANA', 10).stops.map((s) => s.stop_id)).toEqual(['oyana']);
+    expect(filterStopsByQuery(idx, 'Oyana', 10).stops.map((s) => s.stop_id)).toEqual(['oyana']);
   });
 
   it('case-insensitive prefix bonus across language fields (regression for romaji query)', () => {

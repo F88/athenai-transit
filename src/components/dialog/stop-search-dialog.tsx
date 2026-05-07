@@ -13,8 +13,7 @@ import type { TransitRepository } from '@/repositories/transit-repository';
 import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
 import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
-import { katakanaToHiragana } from '@/utils/kana-normalize';
-import { filterStopsByQuery } from '@/domain/transit/stop-search-index';
+import { filterStopsByQuery, normalizeForSearch } from '@/domain/transit/stop-search-index';
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StopSearchInputSection } from '../search/stop-search-input-section';
@@ -96,7 +95,7 @@ export const StopSearchDialog = memo(function StopSearchDialog({
   // Highlight / no-results use the deferred value so the rendered list and
   // the marks inside it always describe the same query.
   const trimmedQuery = deferredQuery.trim();
-  const normalizedQuery = katakanaToHiragana(trimmedQuery.toLowerCase());
+  const normalizedQuery = normalizeForSearch(trimmedQuery);
 
   // Resolve route types once per result set so the row render and the Enter /
   // click activation share the same lookup. `filteredStops` is capped at
