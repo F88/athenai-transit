@@ -1039,6 +1039,7 @@ export default function App({ loadResult }: AppProps) {
           onHistorySelect: handleHistorySelect,
           anchors,
           onPortalSelect: handlePortalSelect,
+          onPortalRemove: (entry) => handleToggleAnchorByStopId(entry.stopId),
           lookupAnchorStopMeta,
           autoLocateEnabled,
           onEnableAutoLocate: enableAutoLocate,
