@@ -17,8 +17,8 @@ import { katakanaToHiragana } from '@/utils/kana-normalize';
 import { filterStopsByQuery } from '@/utils/stop-search-index';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StopSearchInputSection } from './stop-search-input-section';
-import { StopSearchResultItem } from './stop-search-result-item';
+import { StopSearchInputSection } from '../search/stop-search-input-section';
+import { StopSearchResultItem } from '../search/stop-search-result-item';
 
 const MAX_RESULTS = 20;
 
