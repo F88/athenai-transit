@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { resolveStopRouteTypes } from '@/domain/transit/resolve-stop-route-types';
+import { filterStopsByQuery, normalizeForSearch } from '@/domain/transit/stop-search-index';
 import { useListKeyboardNavigation } from '@/hooks/use-list-keyboard-navigation';
 import { useStopSearchIndex } from '@/hooks/use-stop-search-index';
 import { useStopSearchMeta } from '@/hooks/use-stop-search-meta';
@@ -13,13 +14,12 @@ import type { TransitRepository } from '@/repositories/transit-repository';
 import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
 import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
-import { filterStopsByQuery, normalizeForSearch } from '@/domain/transit/stop-search-index';
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StopSearchInputSection } from '../search/stop-search-input-section';
 import { StopSearchResultItem } from '../search/stop-search-result-item';
 
-const MAX_RESULTS = 20;
+const MAX_RESULTS = 30;
 
 interface StopSearchDialogProps {
   repo: TransitRepository;
