@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.07]
+
 ### Added
 
 - 現在地自動追跡 (auto-locate) モードを追加。地図右下の 🎯 ボタンを「遠い時 = 現在地へ pan / 近い時 = 追跡 ON / 追跡中 = OFF」の 3 状態トグルとして再設計。追跡 ON 中は `watchPosition` で位置更新ごとにマーカー追従 (= auto-pan)、ボタンに blue ripple アニメーションでイベント可視化。手動 drag・ピンチ zoom (中心ズレ時)・🎲 ランダムジャンプ・検索/履歴/Portal/マップマーカー/BottomSheet からのバス停選択は追跡を解除し、ユーザーの「別の場所を見たい」意図に従う。
@@ -22,6 +24,15 @@ and this project adheres to [CalVer](https://calver.org/).
 - `useTimetable` hook を新設し、timetable open/close orchestration を `App` から `src/hooks/use-timetable.ts` に分離。`requestIdRef` で stale lookup をキャンセル。
 - `useTimetable` の failure outcome (`not-found` / `route-not-found` / `error`) を `App` で toast 通知 (warning / error)。i18n key `timetable.messages.{stopNotFound,routeNotFound,openFailed}` を en / ja に追加。
 - 共有 type `TimetableData` (`src/types/app/timetable.ts`) を切り出し。
+- 検索ダイアログ (`StopSearchDialog`、437 行) の中身を 3 コンポーネントに分割。entry component の `StopSearchDialog` は `src/components/dialog/` 据え置き、新規抽出した `StopSearchInputSection` / `StopSearchResultItem` (および検索クエリ `<mark>` ハイライトを担う `HighlightedName`) を `src/components/search/` 配下に配置。
+- 検索ダイアログ用の 3 つの custom hook を抽出: `useStopSearchIndex` (`getAllStops` + `getRouteTypesForStop` を遅延ロード、repo 同一なら再構築せず)、`useListKeyboardNavigation` (ArrowUp/Down + Enter + IME 合成ガード + scrollIntoView を汎用化)、`useStopSearchMeta` (絞り込み後 stop に対する `getStopMetaByIds` 同期 batch lookup)。
+- `PlatformCodeLabel` (`src/components/stop/platform-code-label.tsx`) と `AccessibilityLabel` (`src/components/stop/accessibility-label.tsx`) を `StopSummary` の inline 描画から抽出。`size: ExtendedDisplaySize` (xs/sm/md/lg/xl) を受け取り、`StopSummary` と検索行の双方で再利用。
+- 検索結果行に検索クエリの `<mark>` ハイライト、距離 + 方角バッジ、agency badges、route badges (detailed+)、`StopMetrics` (freq / connectivity / nearestRoute / walkablePortal、detailed+) を追加。`useStopSearchMeta` 経由で 1 回の同期 lookup でまとめて取得し、bottom sheet `StopInfo` と同等の情報密度。
+- `DistanceBadge` に `size: ExtendedDisplaySize` (required) を追加。Tailwind text class 階段 (xs:text-xs … xl:text-xl) で font-size をマッピング、direction arrow も em 連動で自動拡縮。`StopInfo` は `'xl'`、検索行は `'md'` で隣接チップとの比率調整。
+- `DISTANCE_BANDS` に 3km 以上の階段を追加: 10km (Material Pink 700)、50km (Material Pink 900) のレインボー延長、続いて 100km / 500km / 1000km / fallback (>1000km) の theme-aware gray fade。グレー帯は `--distance-band-{100km,500km,1000km,fallback}` CSS 変数で light / dark テーマに合わせて選択。
+- `BaseLabel` の `sizeClasses` に `lg` (`px-2 py-1 text-[12px]`) と `xl` (`px-2 py-1 text-[14px]`) を追加。`ExtendedDisplaySize` を `src/components/shared/display-size.ts` から共有し、`BaseLabelSize` は backward-compatible alias。
+- `formatDistance` で 100 km 以上を整数キロメートル表記 (`100km`, `101km`) に切替。
+- 検索結果行 / `PlatformCodeLabel` / `AccessibilityLabel` / `DistanceBadge` の Storybook stories を新設または拡張 (size 比較、ハイライト、agency / route 表示、insights、長距離 distance、kitchen sink × InfoLevel 4 段)。
 
 ### Changed
 
@@ -32,6 +43,11 @@ and this project adheres to [CalVer](https://calver.org/).
 - `MapView` に pinch zoom 後の center 検査 effect を追加。`zoomend` 時に `resolveLocateAction(map, userLocation)` を再利用し、center が `LOCATE_NEAR_THRESHOLD_METERS` (10m) 以上ズレていれば追跡を解除 (中心キープのピンチは追跡継続)。
 - `handleBoundsChanged` の `setMapCenter(center)` を post-fetch `.then()` 内から先頭に移動。auto-pan 中も `mapCenter` が即時反映され、BottomSheet の距離表示が古い位置で固定される問題を解消。
 - `useTripInspection` の inline empty-targets note ternary を named helper に抽出 (挙動変化なし)。
+- `StopSummary` の inline `<span>` で描画していた platform code / wheelchair_boarding accessibility icon を抽出済みの `PlatformCodeLabel` / `AccessibilityLabel` に置換。`useTranslation` と lucide `Accessibility` 直 import を `StopSummary` から削除。
+- `StopSummary` の distance badge wrapper (`<span className="ml-2">`) を `distanceBadge` 存在時のみ条件付きで描画するよう変更し、distance なし caller での 8px 余白漏れを解消。
+- `StopServiceStateLabel` の `size` prop を required 化 (旧: optional, default `'sm'`)。caller に明示的 size を要求。
+- NearbyStop と TripStopRow の `agencyBadgeSize` / `routeBadgeSize` を一段引き締め (NearbyStop: agency md→sm / route sm→xs、TripStopRow: agency sm→xs)。
+- `BaseLabelSize` を `ExtendedDisplaySize` の alias に再定義 (旧: 独自 `'xs' | 'sm' | 'md'`)。既存 caller (AgencyBadge / RouteBadge / TimetableEntryAttributesLabels / RouteCountBadge / JourneyTimeBar 等) は変更なしで lg / xl も選択可能に。
 
 ## [2026.05.02]
 
