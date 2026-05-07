@@ -4,25 +4,12 @@ import { useTranslation } from 'react-i18next';
 import type { ExtendedDisplaySize } from '../shared/display-size';
 
 interface AccessibilityLabelProps {
-  /**
-   * GTFS `stop.wheelchair_boarding` value:
-   * - `1` → wheelchair accessible (blue chip)
-   * - `2` → not wheelchair accessible (dimmed gray chip)
-   * - `0` / `undefined` → renders nothing
-   */
   wheelchairBoarding: number | undefined;
-  /**
-   * Chip size. Drives both the surrounding padding (matching the
-   * {@link BaseLabel} `sizeClasses` scale) and the rendered icon dimensions
-   * so the chip stays visually aligned with adjacent {@link BaseLabel}-based
-   * chips at the same `size`.
-   */
   size: ExtendedDisplaySize;
 }
 
 const ICON_STROKE = 2;
 
-/** Padding classes that mirror BaseLabel's `sizeClasses` per size. */
 const PADDING_BY_SIZE: Record<ExtendedDisplaySize, string> = {
   xs: 'px-0.5',
   sm: 'px-1 py-0.5',
@@ -31,10 +18,6 @@ const PADDING_BY_SIZE: Record<ExtendedDisplaySize, string> = {
   xl: 'px-3 py-1',
 };
 
-/**
- * Icon size in pixels per chip size. Tuned to read at the same visual
- * weight as a BaseLabel chip's text at the same size.
- */
 const ICON_PX_BY_SIZE: Record<ExtendedDisplaySize, number> = {
   xs: 10,
   sm: 12,
