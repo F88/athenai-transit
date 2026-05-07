@@ -285,6 +285,40 @@ describe('filterStopsByQuery', () => {
     expect(result.stops.map((s) => s.stop_id)).toEqual(['ginza', 'kanda']);
   });
 
+  it('falls back to platform_code numeric order for same-name stops, with null last', () => {
+    // Mirrors the toei bus 王子駅前 case: one stop_name shared across
+    // many platform poles. Same prefix / length / hrktSortKey /
+    // matchedName for every entry, so platform_code is the only
+    // discriminator. `null` / undefined platform_code sorts last.
+    const stops2: Stop[] = [
+      makeStop({
+        stop_id: 'p10',
+        stop_name: '王子駅前',
+        stop_names: { ja: '王子駅前', 'ja-Hrkt': 'おうじえきまえ', en: 'Ōji Sta.' },
+        platform_code: '10',
+      }),
+      makeStop({
+        stop_id: 'p2',
+        stop_name: '王子駅前',
+        stop_names: { ja: '王子駅前', 'ja-Hrkt': 'おうじえきまえ', en: 'Ōji Sta.' },
+        platform_code: '2',
+      }),
+      makeStop({
+        stop_id: 'pNone',
+        stop_name: '王子駅前',
+        stop_names: { ja: '王子駅前', 'ja-Hrkt': 'おうじえきまえ', en: 'Ōji Sta.' },
+      }),
+      makeStop({
+        stop_id: 'p1',
+        stop_name: '王子駅前',
+        stop_names: { ja: '王子駅前', 'ja-Hrkt': 'おうじえきまえ', en: 'Ōji Sta.' },
+        platform_code: '1',
+      }),
+    ];
+    const result = filterStopsByQuery(stops2.map(buildSearchIndexEntry), 'sta.', 10);
+    expect(result.stops.map((s) => s.stop_id)).toEqual(['p1', 'p2', 'p10', 'pNone']);
+  });
+
   it('does not match across name boundaries', () => {
     // Stop has names "ab" and "cd" — query "bc" must not match because
     // each name is checked independently, never concatenated.

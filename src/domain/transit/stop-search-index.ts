@@ -115,6 +115,11 @@ export interface FilterStopsByQueryResult {
  *      ordering with the language the user is actually searching in,
  *      since `matchedName` is the normalized form of whichever name
  *      hit the query.
+ *   5. `platform_code` numeric-aware compare in `ja`. Disambiguates
+ *      same-name stops by platform number (e.g. the 14 王子駅前 poles
+ *      Toei bus shares under one stop_name) so they sort 1, 2, …, 14
+ *      instead of falling through to input order. `null` /
+ *      undefined `platform_code` is sorted last.
  *
  * The decoration loop runs in the same single pass that does the matching,
  * so the sort comparator only reads precomputed scalars.
@@ -169,7 +174,22 @@ export function filterStopsByQuery(
     if (hrktCmp !== 0) {
       return hrktCmp;
     }
-    return a.matchedName.localeCompare(b.matchedName, 'ja');
+    const matchedCmp = a.matchedName.localeCompare(b.matchedName, 'ja');
+    if (matchedCmp !== 0) {
+      return matchedCmp;
+    }
+    const aCode = a.entry.stop.platform_code;
+    const bCode = b.entry.stop.platform_code;
+    if (aCode == null && bCode == null) {
+      return 0;
+    }
+    if (aCode == null) {
+      return 1;
+    }
+    if (bCode == null) {
+      return -1;
+    }
+    return aCode.localeCompare(bCode, 'ja', { numeric: true });
   });
 
   return {
