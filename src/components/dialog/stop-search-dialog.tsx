@@ -54,7 +54,7 @@ export const StopSearchDialog = memo(function StopSearchDialog({
   open,
   onOpenChange,
 }: StopSearchDialogProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [query, setQuery] = useState('');
   // Decouple input echo from the heavier filter / highlight / meta-lookup
   // pipeline. The input updates synchronously while filtering runs at a
@@ -161,10 +161,12 @@ export const StopSearchDialog = memo(function StopSearchDialog({
           >
             {totalMatches > filteredStops.length
               ? t('search.resultCountTruncated', {
-                  shown: filteredStops.length,
-                  total: totalMatches,
+                  shown: filteredStops.length.toLocaleString(i18n.language),
+                  total: totalMatches.toLocaleString(i18n.language),
                 })
-              : t('search.resultCount', { count: filteredStops.length })}
+              : t('search.resultCount', {
+                  count: filteredStops.length.toLocaleString(i18n.language),
+                })}
           </div>
         )}
         <div className="flex-1 overflow-y-auto">
