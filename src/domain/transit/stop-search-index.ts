@@ -109,6 +109,12 @@ export interface FilterStopsByQueryResult {
  *   1. Prefix bonus — any normalized name starts with the normalized query.
  *   2. Shortest matched normalized name length.
  *   3. `hrktSortKey` (case-insensitive `ja-Hrkt` lookup) gojuon order.
+ *   4. Shortest matched name itself, locale-aware compared in `ja` —
+ *      kicks in only when the previous tiers tie (e.g. both stops lack
+ *      a `ja-Hrkt` translation entirely, like toaran feeds). Aligns the
+ *      ordering with the language the user is actually searching in,
+ *      since `matchedName` is the normalized form of whichever name
+ *      hit the query.
  *
  * The decoration loop runs in the same single pass that does the matching,
  * so the sort comparator only reads precomputed scalars.
@@ -124,11 +130,17 @@ export function filterStopsByQuery(
   }
   const normalizedQuery = normalizeForSearch(trimmed);
 
-  type Decorated = { entry: SearchIndexEntry; prefix: 0 | 1; minMatchedLen: number };
+  type Decorated = {
+    entry: SearchIndexEntry;
+    prefix: 0 | 1;
+    minMatchedLen: number;
+    matchedName: string;
+  };
   const decorated: Decorated[] = [];
   for (const entry of searchIndex) {
     let prefix: 0 | 1 = 1;
     let minMatchedLen = Infinity;
+    let matchedName = '';
     for (const n of entry.normalizedNames) {
       if (!n.includes(normalizedQuery)) {
         continue;
@@ -138,10 +150,11 @@ export function filterStopsByQuery(
       }
       if (n.length < minMatchedLen) {
         minMatchedLen = n.length;
+        matchedName = n;
       }
     }
     if (Number.isFinite(minMatchedLen)) {
-      decorated.push({ entry, prefix, minMatchedLen });
+      decorated.push({ entry, prefix, minMatchedLen, matchedName });
     }
   }
 
@@ -152,7 +165,11 @@ export function filterStopsByQuery(
     if (a.minMatchedLen !== b.minMatchedLen) {
       return a.minMatchedLen - b.minMatchedLen;
     }
-    return a.entry.hrktSortKey.localeCompare(b.entry.hrktSortKey, 'ja');
+    const hrktCmp = a.entry.hrktSortKey.localeCompare(b.entry.hrktSortKey, 'ja');
+    if (hrktCmp !== 0) {
+      return hrktCmp;
+    }
+    return a.matchedName.localeCompare(b.matchedName, 'ja');
   });
 
   return {

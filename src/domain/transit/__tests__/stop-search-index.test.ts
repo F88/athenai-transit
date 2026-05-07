@@ -262,6 +262,29 @@ describe('filterStopsByQuery', () => {
     expect(result.stops.map((s) => s.stop_id)).toEqual(['na', 'fu']);
   });
 
+  it('falls back to matchedName order when ja-Hrkt is absent and lengths tie', () => {
+    // Toaran-style: no `ja-Hrkt` entry at all, en names tie at the same
+    // length. Without the matchedName tiebreaker the order would depend
+    // on input order from the search index.
+    const stops2: Stop[] = [
+      makeStop({
+        stop_id: 'kanda',
+        stop_name: '東神田',
+        stop_names: { ja: '東神田', en: 'Higashi-Kanda' },
+      }),
+      makeStop({
+        stop_id: 'ginza',
+        stop_name: '東銀座',
+        stop_names: { ja: '東銀座', en: 'Higashi-Ginza' },
+      }),
+    ];
+    // Input order is kanda, ginza. Both 'higashi-kanda' / 'higashi-ginza'
+    // are 13 chars and prefix-match 'higashi'. The matchedName tiebreaker
+    // (locale ja) should put `higashi-ginza` before `higashi-kanda`.
+    const result = filterStopsByQuery(stops2.map(buildSearchIndexEntry), 'higashi', 10);
+    expect(result.stops.map((s) => s.stop_id)).toEqual(['ginza', 'kanda']);
+  });
+
   it('does not match across name boundaries', () => {
     // Stop has names "ab" and "cd" — query "bc" must not match because
     // each name is checked independently, never concatenated.
