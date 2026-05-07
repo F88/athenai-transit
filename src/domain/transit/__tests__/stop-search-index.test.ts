@@ -109,12 +109,36 @@ describe('buildSearchIndexEntry', () => {
     expect(entry.hrktSortKey).toBe('');
   });
 
-  it('produces an empty list when stop_names is empty', () => {
+  it('falls back to stop_name when stop_names is empty (vagfr regression guard)', () => {
+    // Real-world case: VAG Freiburg ships `feed_lang=""` and no
+    // translations.txt entries, so injectOriginLang skips synthesizing a
+    // language-keyed name and `stop_names` ends up `{}`. Every vagfr stop
+    // would silently fall out of the search index without this fallback.
     const entry = buildSearchIndexEntry(
-      makeStop({ stop_id: 's1', stop_name: '無名', stop_names: {} }),
+      makeStop({
+        stop_id: 'vagfr:1',
+        stop_name: 'Freiburg',
+        stop_names: {},
+      }),
     );
+    expect(entry.normalizedNames).toEqual(['freiburg']);
+  });
+
+  it('produces an empty list when both stop_name and stop_names are empty', () => {
+    const entry = buildSearchIndexEntry(makeStop({ stop_id: 's1', stop_name: '', stop_names: {} }));
     expect(entry.normalizedNames).toEqual([]);
     expect(entry.hrktSortKey).toBe('');
+  });
+
+  it('does not duplicate stop_name when it already appears in stop_names', () => {
+    const entry = buildSearchIndexEntry(
+      makeStop({
+        stop_id: 's1',
+        stop_name: '新宿',
+        stop_names: { ja: '新宿', en: 'Shinjuku' },
+      }),
+    );
+    expect(entry.normalizedNames).toEqual(['新宿', 'shinjuku']);
   });
 });
 

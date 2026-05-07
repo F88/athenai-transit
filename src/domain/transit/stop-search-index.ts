@@ -74,11 +74,31 @@ export interface SearchIndexEntry {
  * The normalize pipeline runs once per name here, so the per-keystroke
  * matcher only does plain `String.includes` / `String.startsWith` calls on
  * already-normalized strings.
+ *
+ * `stop.stop_name` is folded into the candidate names alongside
+ * `stop_names` values to keep stops searchable when no translations.txt
+ * entries exist AND the feed's `feed_lang` is missing/empty (so
+ * `injectOriginLang` did not synthesize a language-keyed entry from the
+ * primary name). Real example: vagfr (VAG Freiburg) ships with
+ * `feed_lang=""` and no translations, leaving every `stop_names` empty —
+ * without this fallback all 986 stops would silently disappear from
+ * search results.
  */
 export function buildSearchIndexEntry(stop: Stop): SearchIndexEntry {
+  const seen = new Set<string>();
+  const names: string[] = [];
+  for (const value of Object.values(stop.stop_names)) {
+    if (!seen.has(value)) {
+      seen.add(value);
+      names.push(value);
+    }
+  }
+  if (stop.stop_name && !seen.has(stop.stop_name)) {
+    names.push(stop.stop_name);
+  }
   return {
     stop,
-    normalizedNames: Object.values(stop.stop_names).map(normalizeForSearch),
+    normalizedNames: names.map(normalizeForSearch),
     hrktSortKey: findHrktName(stop.stop_names),
   };
 }
