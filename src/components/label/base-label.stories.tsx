@@ -6,7 +6,7 @@ const meta = {
   title: 'Label/BaseLabel',
   component: BaseLabel,
   argTypes: {
-    size: { control: 'select', options: ['xs', 'sm', 'md'] },
+    size: { control: 'select', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     value: { control: 'text' },
     maxLength: { control: 'number' },
     ellipsis: { control: 'boolean' },
@@ -31,6 +31,60 @@ export const Solid: Story = {
 /** Subtle style via className. */
 export const Subtle: Story = {
   args: { value: 'Subtle', className: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' },
+};
+
+// --- Size variants ---
+
+/** Size `lg` — wider padding (`px-2`) and 12px font (`text-xs`). */
+export const SizeLg: Story = {
+  args: { value: 'Lg', size: 'lg', className: 'bg-blue-500 text-white' },
+};
+
+/** Size `xl` — taller padding (`px-3 py-1`) and 14px font (`text-sm`). */
+export const SizeXl: Story = {
+  args: { value: 'Xl', size: 'xl', className: 'bg-blue-500 text-white' },
+};
+
+const SIZE_SPECS = [
+  { size: 'xs', padding: 'px-0.5', font: 'text-[8px]' },
+  { size: 'sm', padding: 'px-1 py-0.5', font: 'text-[9px]' },
+  { size: 'md', padding: 'px-1.5 py-0.5', font: 'text-[10px]' },
+  { size: 'lg', padding: 'px-2 py-0.5', font: 'text-xs (12px)' },
+  { size: 'xl', padding: 'px-3 py-1', font: 'text-sm (14px)' },
+] as const;
+
+/**
+ * All five sizes in a single table — chip alongside the resolved padding /
+ * font so adjacent steps can be told apart at a glance.
+ */
+export const SizeComparison: Story = {
+  args: { value: 'Label' },
+  render: ({ value = 'Label' }) => (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-2">
+        {SIZE_SPECS.map(({ size, padding, font }) => (
+          <div key={size} className="flex items-center gap-3">
+            <div className="flex w-24 justify-end">
+              <BaseLabel value={value} size={size} className="bg-blue-500 text-white" />
+            </div>
+            <span className="w-6 text-right text-xs font-semibold text-gray-700 dark:text-gray-300">
+              {size}
+            </span>
+            <span className="w-32 text-right font-mono text-[10px] text-gray-500">{padding}</span>
+            <span className="w-24 text-right font-mono text-[10px] text-gray-500">{font}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3">
+        {SIZE_SPECS.map(({ size }) => (
+          <div key={`${size}-horizontal`} className="flex flex-col items-center gap-1">
+            <BaseLabel value={value} size={size} className="bg-blue-500 text-white" />
+          </div>
+        ))}
+      </div>
+    </div>
+  ),
 };
 
 /** Truncated — long text cut at maxLength with ellipsis. */
@@ -117,7 +171,7 @@ const styleSamples: SampleStyle[] = [
 export const KitchenSink: Story = {
   args: { value: 'Label' },
   render: ({ value = 'Label', maxLength, ellipsis }) => {
-    const sizes: BaseLabelSize[] = ['xs', 'sm', 'md'];
+    const sizes: BaseLabelSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
     const renderGroup = (title: string, samples: SampleStyle[]) => (
       <div>
         <div className="mb-2 text-sm font-bold text-gray-700 dark:text-gray-300">{title}</div>

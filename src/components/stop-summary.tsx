@@ -1,6 +1,4 @@
-import { Accessibility } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 import { resolveAgencyLang } from '../config/transit-defaults';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
 import { useInfoLevel } from '../hooks/use-info-level';
@@ -17,6 +15,8 @@ import { AgencyBadge, type AgencyBadgeSize } from './badge/agency-badge';
 import { IdBadge } from './badge/id-badge';
 import { RouteBadge, type RouteBadgeSize } from './badge/route-badge';
 import { StopServiceStateLabel } from './label/stop-service-state-label';
+import { AccessibilityLabel } from './stop/accessibility-label';
+import { PlatformCodeLabel } from './stop/platform-code-label';
 import { VerboseAgencies } from './verbose/verbose-agencies';
 import { VerboseRoutes } from './verbose/verbose-routes';
 import { VerboseStop } from './verbose/verbose-stop';
@@ -88,7 +88,6 @@ export function StopSummary({
   routeBadgeSize,
   distanceBadge,
 }: StopSummaryProps) {
-  const { t } = useTranslation();
   const info = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
   const stopNames = getStopDisplayNames(
@@ -102,14 +101,6 @@ export function StopSummary({
   const routeTypeClass = 'mr-1';
   const stopNameClass = 'text-info';
   const stopSubNamesClass = 'm-0 mb-0.5 text-xs font-normal text-[#888] dark:text-gray-400';
-  const platformCodeClass =
-    'shrink-0 rounded border border-amber-400 bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-600 dark:bg-amber-900 dark:text-amber-300';
-  const accessibilityClass =
-    'shrink-0 rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900 dark:text-blue-300';
-  const inaccessibleClass =
-    'shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-gray-700 opacity-30 dark:bg-gray-700 dark:text-gray-300';
-  const wheelchairAccessibleLabel = t('stop.accessibility.wheelchairAccessible');
-  const wheelchairNotAccessibleLabel = t('stop.accessibility.wheelchairNotAccessible');
 
   return (
     <div className="min-w-0 flex-1">
@@ -132,31 +123,14 @@ export function StopSummary({
         <span className={stopNameClass}>{stopNames.name}</span>
         {/* <span>{stopNames.name}</span> */}
         {/* Platform code */}
-        {stop.platform_code && <span className={platformCodeClass}>{stop.platform_code}</span>}
+        {stop.platform_code && <PlatformCodeLabel code={stop.platform_code} size="sm" />}
         {/* Distance badge */}
         {distanceBadge}
         {/* Accessibility */}
-        {stop.wheelchair_boarding === 1 && (
-          <span
-            className={accessibilityClass}
-            role="img"
-            aria-label={wheelchairAccessibleLabel}
-            title={wheelchairAccessibleLabel}
-          >
-            <Accessibility size={14} strokeWidth={2} aria-hidden="true" focusable="false" />
-          </span>
+        <AccessibilityLabel wheelchairBoarding={stop.wheelchair_boarding} size="sm" />
+        {stopServiceState && (
+          <StopServiceStateLabel stopServiceState={stopServiceState} size="sm" />
         )}
-        {stop.wheelchair_boarding === 2 && (
-          <span
-            className={inaccessibleClass}
-            role="img"
-            aria-label={wheelchairNotAccessibleLabel}
-            title={wheelchairNotAccessibleLabel}
-          >
-            <Accessibility size={14} strokeWidth={2} aria-hidden="true" focusable="false" />
-          </span>
-        )}
-        {stopServiceState && <StopServiceStateLabel stopServiceState={stopServiceState} />}
         {showAgencies &&
           agencies.length > 0 &&
           agencies.map((agency) => (

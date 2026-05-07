@@ -1,11 +1,12 @@
 import type { CSSProperties } from 'react';
 import { cn } from '../../lib/utils';
+import type { ExtendedDisplaySize } from '../shared/display-size';
 
-export type BaseLabelSize = 'xs' | 'sm' | 'md';
+export type BaseLabelSize = ExtendedDisplaySize;
 
 interface BaseLabelProps {
   value: string;
-  size?: BaseLabelSize;
+  size?: ExtendedDisplaySize;
   /** Truncate value to this many characters when exceeded. */
   maxLength?: number;
   /** Append "…" when truncated. Only effective with maxLength. @default true */
@@ -15,10 +16,12 @@ interface BaseLabelProps {
   style?: CSSProperties;
 }
 
-const sizeClasses: Record<BaseLabelSize, string> = {
-  xs: 'px-0.5 text-[8px]',
+const sizeClasses: Record<ExtendedDisplaySize, string> = {
+  xs: 'px-0.5 py-0 text-[8px]',
   sm: 'px-1 py-0.5 text-[9px]',
-  md: 'px-1.5 py-0.5 text-[10px]',
+  md: 'px-1.5 py-1 text-[10px]',
+  lg: 'px-2 py-1 text-[12px]',
+  xl: 'px-2 py-1 text-[14px]',
 };
 
 /** Compact inline text label primitive. Color is controlled via className or style. */

@@ -10,6 +10,8 @@ import type { InfoLevel } from '@/types/app/settings';
 import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
 import { katakanaToHiragana } from '@/utils/kana-normalize';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
+import { AccessibilityLabel } from '../stop/accessibility-label';
+import { PlatformCodeLabel } from '../stop/platform-code-label';
 
 interface HighlightedNameProps {
   name: string;
@@ -140,7 +142,7 @@ export function StopSearchResultItem({
           {info.isVerboseEnabled && <IdBadge>{stop.stop_id}</IdBadge>}
 
           {stopNames.subNames.length > 0 && (
-            <span className="text-muted-foreground text-xs leading-snug">
+            <span className="text-muted-foreground text-[10px] leading-snug">
               {stopNames.subNames.map((name, i) => (
                 <span key={`${i}-${name}`}>
                   {i > 0 && ' / '}
@@ -149,7 +151,7 @@ export function StopSearchResultItem({
               ))}
             </span>
           )}
-          <span className="text-foreground flex flex-wrap items-center gap-x-1 text-[15px]">
+          <span className="text-foreground flex flex-wrap items-center gap-x-1 text-[16px]">
             <span>
               {routeTypesEmoji(routeTypes)}{' '}
               <HighlightedName
@@ -158,6 +160,10 @@ export function StopSearchResultItem({
                 normalizedQuery={normalizedQuery}
               />
             </span>
+            {/* Platform code */}
+            {stop.platform_code && <PlatformCodeLabel code={stop.platform_code} size={'sm'} />}
+            {/* Wheelchair accessibility */}
+            <AccessibilityLabel wheelchairBoarding={stop.wheelchair_boarding} size="sm" />
             {showDistance && (
               <DistanceBadge meters={distanceRounded} bearingDeg={bearing} showDirection />
             )}

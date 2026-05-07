@@ -18,10 +18,10 @@ const stateStyles: Record<Exclude<StopServiceState, 'boardable'>, string> = {
  */
 export function StopServiceStateLabel({
   stopServiceState,
-  size = 'sm',
+  size,
 }: {
   stopServiceState: StopServiceState;
-  size?: BaseLabelSize;
+  size: BaseLabelSize;
 }) {
   const { t } = useTranslation();
 
