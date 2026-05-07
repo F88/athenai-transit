@@ -273,6 +273,32 @@ describe('filterStopsByQuery', () => {
     expect(result.stops.map((s) => s.stop_id)).toEqual(['nakai', 'nakanobu']);
   });
 
+  it('sorts stops with a populated hrktSortKey before stops without one', () => {
+    // Real-world impact: kanji queries like `駅` previously surfaced
+    // partial-data feeds (toaran / minkuru — no ja-Hrkt) above
+    // fully-translated feeds simply because empty strings localeCompare
+    // less than any non-empty string. The empty-key stop must rank
+    // *after* the populated-key stop so feeds with complete
+    // translations are favored.
+    const stops2: Stop[] = [
+      makeStop({
+        stop_id: 'no-hrkt',
+        stop_name: '四谷駅',
+        stop_names: { ja: '四谷駅', en: 'Yotsuya Sta.' },
+      }),
+      makeStop({
+        stop_id: 'has-hrkt',
+        stop_name: '赤羽駅',
+        stop_names: { ja: '赤羽駅', 'ja-Hrkt': 'あかばねえき', en: 'Akabane Sta.' },
+      }),
+    ];
+    // Both share length 3 on the ja kanji match for '駅'. Without the
+    // empty-key-last rule the toaran-style stop (no-hrkt) would win
+    // because '' < 'あかばねえき' in locale order.
+    const result = filterStopsByQuery(stops2.map(buildSearchIndexEntry), '駅', 10);
+    expect(result.stops.map((s) => s.stop_id)).toEqual(['has-hrkt', 'no-hrkt']);
+  });
+
   it('falls back to gojuon order via hrktSortKey for tied length and prefix matches', () => {
     // Two stops with non-canonical `ja-HrKt` (capital K) keys — both match
     // the query at the same matched-name length, so the final tiebreaker

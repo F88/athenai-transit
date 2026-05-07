@@ -129,6 +129,10 @@ export interface FilterStopsByQueryResult {
  *   1. Prefix bonus — any normalized name starts with the normalized query.
  *   2. Shortest matched normalized name length.
  *   3. `hrktSortKey` (case-insensitive `ja-Hrkt` lookup) gojuon order.
+ *      Stops with an empty `hrktSortKey` (= no ja-Hrkt translation)
+ *      always sort after stops that have one, so that fully-translated
+ *      feeds float to the top for kanji queries instead of being
+ *      pushed below partial-data feeds.
  *   4. Shortest matched name itself, locale-aware compared in `ja` —
  *      kicks in only when the previous tiers tie (e.g. both stops lack
  *      a `ja-Hrkt` translation entirely, like toaran feeds). Aligns the
@@ -196,6 +200,18 @@ export function filterStopsByQuery(
     }
     if (a.minMatchedLen !== b.minMatchedLen) {
       return a.minMatchedLen - b.minMatchedLen;
+    }
+    // Stops with a populated `ja-Hrkt` translation sort before stops
+    // without one. Otherwise the default `localeCompare` would put
+    // empty-string sort keys ahead of every non-empty key, which made
+    // partial-data feeds (toaran / minkuru / kazag — no ja-Hrkt at all)
+    // surface above fully-translated feeds for kanji queries like `駅`
+    // / `口`. Empty-key stops still resolve their relative order in the
+    // matchedName tiebreaker below.
+    const aHasHrkt = a.entry.hrktSortKey !== '';
+    const bHasHrkt = b.entry.hrktSortKey !== '';
+    if (aHasHrkt !== bHasHrkt) {
+      return aHasHrkt ? -1 : 1;
     }
     const hrktCmp = a.entry.hrktSortKey.localeCompare(b.entry.hrktSortKey, 'ja');
     if (hrktCmp !== 0) {
