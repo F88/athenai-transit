@@ -143,6 +143,16 @@ describe('filterStopsByQuery', () => {
     expect(filterStopsByQuery(index, '   ', 10)).toEqual({ stops: [], total: 0 });
   });
 
+  it('returns an empty result when the query collapses to an empty normalized form', () => {
+    // Latin combining marks (U+0300–U+036F) are stripped by
+    // normalizeForSearch. A query consisting only of combining marks
+    // therefore normalizes to ''; without the empty-query guard
+    // `String.includes('')` would match every stop and the truncated
+    // top-N would surface as a meaningless dump of the entire index.
+    expect(filterStopsByQuery(index, '̄', 10)).toEqual({ stops: [], total: 0 });
+    expect(filterStopsByQuery(index, '́̀', 10)).toEqual({ stops: [], total: 0 });
+  });
+
   it('matches by direct stop_name', () => {
     expect(filterStopsByQuery(index, '新宿', 10).stops.map((s) => s.stop_id)).toEqual(['s1']);
   });

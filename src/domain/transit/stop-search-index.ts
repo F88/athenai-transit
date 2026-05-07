@@ -134,6 +134,13 @@ export function filterStopsByQuery(
     return { stops: [], total: 0 };
   }
   const normalizedQuery = normalizeForSearch(trimmed);
+  // Reject queries that collapse to an empty string under the normalize
+  // pipeline (e.g. only Latin combining marks like U+0304). Without this
+  // guard `String.includes('')` would be true for every entry, so every
+  // stop would match and propagate through to sort + slice.
+  if (normalizedQuery === '') {
+    return { stops: [], total: 0 };
+  }
 
   type Decorated = {
     entry: SearchIndexEntry;
