@@ -53,6 +53,9 @@ interface MapOverlayPanelsProps {
   onDeselectStop: () => void;
   onHistorySelect: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
   onPortalSelect: (entry: AnchorEntry) => void;
+  /** Removes the anchor for a Portal entry whose stop_id is no longer
+   *  resolvable in the current GTFS dataset. */
+  onPortalRemove: (entry: AnchorEntry) => void;
   /**
    * Looks up an anchored stop's current `StopWithMeta` from the
    * repository's full dataset. Forwarded to `Portals` so anchor
@@ -94,6 +97,7 @@ export function MapOverlayPanels({
   onDeselectStop,
   onHistorySelect,
   onPortalSelect,
+  onPortalRemove,
   lookupAnchorStopMeta,
   tileIndex,
 }: MapOverlayPanelsProps) {
@@ -153,6 +157,7 @@ export function MapOverlayPanels({
           dataLang={dataLang}
           lookupAnchorStopMeta={lookupAnchorStopMeta}
           onSelect={onPortalSelect}
+          onRemove={onPortalRemove}
         />
       </div>
     </>

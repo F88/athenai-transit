@@ -5,12 +5,11 @@ import type { Stop } from '../types/app/transit';
 import type { StopHistoryEntry } from '../domain/transit/stop-history';
 import { resolveAgencyLang } from '../config/transit-defaults';
 import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
-import { useInfoLevel } from '../hooks/use-info-level';
 import { routeTypesEmoji } from '../utils/route-type-emoji';
 import { History } from 'lucide-react';
 import { createLogger } from '../lib/logger';
-import { Badge } from './ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select';
+import { StopDropdownItem } from './stop/stop-dropdown-item';
+import { Select, SelectContent, SelectTrigger } from './ui/select';
 
 const logger = createLogger('StopHistory');
 
@@ -48,7 +47,6 @@ export function StopHistory({
   onSelect,
 }: StopHistoryProps) {
   const { t } = useTranslation();
-  const il = useInfoLevel(infoLevel);
   const [open, setOpen] = useState(false);
 
   if (history.length === 0) {
@@ -115,27 +113,17 @@ export function StopHistory({
           position="popper"
           className="z-1002 max-h-[40dvh] min-w-48 border-none bg-white/80 text-black backdrop-blur-sm dark:bg-black/80 dark:text-white"
         >
-          {history.map((entry) => {
-            const { stop, agencies } = entry.stopWithMeta;
-            const displayName =
-              getStopDisplayNames(stop, dataLang, resolveAgencyLang(agencies, stop.agency_id))
-                .name || stop.stop_name;
-            return (
-              <SelectItem
-                key={stop.stop_id}
-                value={stop.stop_id}
-                className="overflow-hidden focus:bg-black/10 focus:text-black dark:focus:bg-white/20 dark:focus:text-white"
-              >
-                <span className="shrink-0 text-base">{routeTypesEmoji(entry.routeTypes)}</span>
-                <span className="max-w-[60dvw] truncate">{displayName}</span>
-                {il.isVerboseEnabled && (
-                  <Badge variant="secondary" className="ml-1 text-[10px]">
-                    {stop.stop_id}
-                  </Badge>
-                )}
-              </SelectItem>
-            );
-          })}
+          {history.map((entry) => (
+            <StopDropdownItem
+              key={entry.stopWithMeta.stop.stop_id}
+              stopId={entry.stopWithMeta.stop.stop_id}
+              routeTypes={entry.routeTypes}
+              meta={entry.stopWithMeta}
+              fallbackName={entry.stopWithMeta.stop.stop_name}
+              infoLevel={infoLevel}
+              dataLang={dataLang}
+            />
+          ))}
         </SelectContent>
       </Select>
     </div>

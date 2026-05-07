@@ -2,14 +2,10 @@ import { useState } from 'react';
 import type { InfoLevel } from '../types/app/settings';
 import type { AnchorEntry } from '../domain/portal/anchor';
 import type { StopWithMeta } from '../types/app/transit-composed';
-import { resolveAgencyLang } from '../config/transit-defaults';
-import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
-import { useInfoLevel } from '../hooks/use-info-level';
-import { routeTypesEmoji } from '../utils/route-type-emoji';
 import { DoorOpen } from 'lucide-react';
 import { createLogger } from '../lib/logger';
-import { Badge } from './ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger } from './ui/select';
+import { StopDropdownItem } from './stop/stop-dropdown-item';
+import { Select, SelectContent, SelectTrigger } from './ui/select';
 
 const logger = createLogger('Portals');
 
@@ -28,6 +24,17 @@ interface PortalsProps {
    */
   lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
   onSelect: (entry: AnchorEntry) => void;
+  /**
+   * Removes the anchor for an entry whose stop_id is no longer
+   * resolvable in the current GTFS dataset (`lookupAnchorStopMeta`
+   * returned `null`). The trash button is rendered inline on the
+   * orphan row and only those rows; rows with valid `meta` do not
+   * surface a delete affordance.
+   *
+   * Caller decides the appropriate UX (toast, undo, confirm step) —
+   * this prop just forwards the click.
+   */
+  onRemove: (entry: AnchorEntry) => void;
 }
 
 /**
@@ -47,8 +54,8 @@ export function Portals({
   dataLang,
   lookupAnchorStopMeta,
   onSelect,
+  onRemove,
 }: PortalsProps) {
-  const il = useInfoLevel(infoLevel);
   const [open, setOpen] = useState(false);
 
   if (anchors.length === 0) {
@@ -83,31 +90,18 @@ export function Portals({
           position="popper"
           className="z-1002 max-h-[40dvh] min-w-48 border-none bg-white/80 text-black backdrop-blur-sm dark:bg-black/80 dark:text-white"
         >
-          {anchors.map((entry) => {
-            const meta = lookupAnchorStopMeta(entry.stopId);
-            const displayName = meta
-              ? getStopDisplayNames(
-                  meta.stop,
-                  dataLang,
-                  resolveAgencyLang(meta.agencies, meta.stop.agency_id),
-                ).name || entry.stopName
-              : entry.stopName;
-            return (
-              <SelectItem
-                key={entry.stopId}
-                value={entry.stopId}
-                className="overflow-hidden focus:bg-black/10 focus:text-black dark:focus:bg-white/20 dark:focus:text-white"
-              >
-                <span className="shrink-0 text-base">{routeTypesEmoji(entry.routeTypes)}</span>
-                <span className="max-w-[60dvw] truncate">{displayName}</span>
-                {il.isVerboseEnabled && (
-                  <Badge variant="secondary" className="ml-1 text-[10px]">
-                    {entry.stopId}
-                  </Badge>
-                )}
-              </SelectItem>
-            );
-          })}
+          {anchors.map((entry) => (
+            <StopDropdownItem
+              key={entry.stopId}
+              stopId={entry.stopId}
+              routeTypes={entry.routeTypes}
+              meta={lookupAnchorStopMeta(entry.stopId)}
+              fallbackName={entry.stopName}
+              infoLevel={infoLevel}
+              dataLang={dataLang}
+              onRemove={() => onRemove(entry)}
+            />
+          ))}
         </SelectContent>
       </Select>
     </div>
