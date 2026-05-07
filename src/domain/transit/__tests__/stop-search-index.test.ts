@@ -15,7 +15,7 @@ function makeStop(
 }
 
 describe('buildSearchIndexEntry', () => {
-  it('joins stop_names values with U+0001 in the raw blob', () => {
+  it('lower-cases and applies katakanaToHiragana to each stop_names value', () => {
     const entry = buildSearchIndexEntry(
       makeStop({
         stop_id: 's1',
@@ -23,26 +23,14 @@ describe('buildSearchIndexEntry', () => {
         stop_names: { ja: '新宿', 'ja-Hrkt': 'シンジュク', en: 'Shinjuku' },
       }),
     );
-    expect(entry.rawNamesBlob).toBe('新宿\x01シンジュク\x01Shinjuku');
+    expect(entry.normalizedNames).toEqual(['新宿', 'しんじゅく', 'shinjuku']);
   });
 
-  it('lower-cases and applies katakanaToHiragana for the normalized blob', () => {
-    const entry = buildSearchIndexEntry(
-      makeStop({
-        stop_id: 's1',
-        stop_name: '新宿',
-        stop_names: { ja: '新宿', 'ja-Hrkt': 'シンジュク', en: 'Shinjuku' },
-      }),
-    );
-    expect(entry.normalizedNamesBlob).toBe('新宿\x01しんじゅく\x01shinjuku');
-  });
-
-  it('produces empty blobs when stop_names is empty', () => {
+  it('produces an empty list when stop_names is empty', () => {
     const entry = buildSearchIndexEntry(
       makeStop({ stop_id: 's1', stop_name: '無名', stop_names: {} }),
     );
-    expect(entry.rawNamesBlob).toBe('');
-    expect(entry.normalizedNamesBlob).toBe('');
+    expect(entry.normalizedNames).toEqual([]);
   });
 });
 
@@ -75,7 +63,7 @@ describe('filterStopsByQuery', () => {
     expect(filterStopsByQuery(index, '新宿', 10).stops.map((s) => s.stop_id)).toEqual(['s1']);
   });
 
-  it('matches via raw stop_names entries (e.g., en)', () => {
+  it('matches via any stop_names entry (e.g., en)', () => {
     expect(filterStopsByQuery(index, 'Shibuya', 10).stops.map((s) => s.stop_id)).toEqual(['s2']);
   });
 
@@ -83,15 +71,12 @@ describe('filterStopsByQuery', () => {
     expect(filterStopsByQuery(index, 'しんじゅく', 10).stops.map((s) => s.stop_id)).toEqual(['s1']);
   });
 
-  it('matches case-insensitively via the normalized blob', () => {
+  it('matches case-insensitively (lowercase query)', () => {
     expect(filterStopsByQuery(index, 'shibuya', 10).stops.map((s) => s.stop_id)).toEqual(['s2']);
   });
 
-  it('rejects queries containing the NAME_SEP character (regression guard)', () => {
-    // Without this guard, the U+0001 join character inside the blobs would
-    // make every multi-name stop match — see PR #177 review.
-    expect(filterStopsByQuery(index, '\x01', 10)).toEqual({ stops: [], total: 0 });
-    expect(filterStopsByQuery(index, 'ab\x01cd', 10)).toEqual({ stops: [], total: 0 });
+  it('matches case-insensitively (uppercase query)', () => {
+    expect(filterStopsByQuery(index, 'SHIBUYA', 10).stops.map((s) => s.stop_id)).toEqual(['s2']);
   });
 
   it('respects maxResults but reports the full pre-truncation count via total', () => {
@@ -113,7 +98,7 @@ describe('filterStopsByQuery', () => {
     expect(result.total).toBe(1);
   });
 
-  it('orders prefix matches before substring matches, then by name length', () => {
+  it('orders prefix matches before substring matches, then by shortest matched name length', () => {
     const stops2: Stop[] = [
       makeStop({
         stop_id: 'long',
@@ -135,9 +120,29 @@ describe('filterStopsByQuery', () => {
     expect(result.stops.map((s) => s.stop_id)).toEqual(['short', 'long', 'sub']);
   });
 
-  it('does not match across name boundaries (NAME_SEP integrity)', () => {
+  it('case-insensitive prefix bonus across language fields (regression for romaji query)', () => {
+    // The Japanese stop_name (中井 / 中延) does not start with "naka", so the
+    // prefix bonus must come from the en field. The shorter en name should
+    // rank first via the matched-name length tiebreaker.
+    const stops2: Stop[] = [
+      makeStop({
+        stop_id: 'nakanobu',
+        stop_name: '中延',
+        stop_names: { ja: '中延', en: 'Nakanobu' },
+      }),
+      makeStop({
+        stop_id: 'nakai',
+        stop_name: '中井',
+        stop_names: { ja: '中井', en: 'Nakai' },
+      }),
+    ];
+    const result = filterStopsByQuery(stops2.map(buildSearchIndexEntry), 'NAKA', 10);
+    expect(result.stops.map((s) => s.stop_id)).toEqual(['nakai', 'nakanobu']);
+  });
+
+  it('does not match across name boundaries', () => {
     // Stop has names "ab" and "cd" — query "bc" must not match because
-    // "ab" + SEP + "cd" should never look like a contiguous "bc" substring.
+    // each name is checked independently, never concatenated.
     const stop = makeStop({
       stop_id: 'edge',
       stop_name: 'ab',
