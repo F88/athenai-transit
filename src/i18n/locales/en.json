@@ -185,7 +185,9 @@
     "title": "Search stops",
     "description": "Search for stops and stations by name",
     "placeholder": "Enter stop name...",
-    "noResults": "No matching stops found"
+    "noResults": "No matching stops found",
+    "resultCount": "{{count}} matches",
+    "resultCountTruncated": "{{shown}} / {{total}}"
   },
   "shortcut": {
     "title": "Keyboard shortcuts",

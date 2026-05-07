@@ -185,7 +185,9 @@
     "title": "のりばを検索",
     "description": "のりば名で停留所や駅を検索します",
     "placeholder": "のりば名を入力...",
-    "noResults": "該当するのりばが見つかりません"
+    "noResults": "該当するのりばが見つかりません",
+    "resultCount": "{{count}}件",
+    "resultCountTruncated": "{{shown}} / {{total}}件"
   },
   "shortcut": {
     "title": "キーボードショートカット",

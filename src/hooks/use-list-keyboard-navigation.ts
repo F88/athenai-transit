@@ -4,8 +4,19 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 're
  * Options for {@link useListKeyboardNavigation}.
  */
 export interface UseListKeyboardNavigationOptions<T> {
-  /** Items shown in the list. The selection resets to 0 when this reference changes. */
+  /** Items shown in the list. */
   items: readonly T[];
+  /**
+   * Stable identity for the current "logical" list. The selection resets
+   * to 0 — and the highlighted row is re-scrolled into view — only when
+   * this value changes (compared with `Object.is`). Items growing in place
+   * (e.g. infinite-scroll pagination appending another page) does NOT
+   * reset selection because `resetKey` does not change with them.
+   *
+   * Typical value: the search query string, or any token that uniquely
+   * identifies the user's current search intent.
+   */
+  resetKey: unknown;
   /** Invoked when Enter is pressed on the currently selected item. */
   onActivate: (item: T, index: number) => void;
 }
@@ -28,45 +39,45 @@ export interface UseListKeyboardNavigationReturn {
  *
  * - ArrowDown / ArrowUp move the selection within `items`.
  * - Enter activates the selected item via `onActivate`.
- * - The selection resets to 0 whenever the `items` reference changes — using
- *   the React 19 "store info from previous renders" pattern (no useEffect-driven
- *   setState).
+ * - The selection resets to 0 whenever `resetKey` changes — using the React
+ *   "store info from previous renders" pattern (no useEffect-driven setState).
+ *   Items growing in place (paginated suffix-append) does NOT reset selection
+ *   because `resetKey` is independent of `items` identity.
  * - The currently selected item is scrolled into view via
- *   `scrollIntoView({ block: 'nearest' })` whenever the selection or the items
- *   change. `block: 'nearest'` keeps the row visible without jumping the list
- *   when it is already on screen.
+ *   `scrollIntoView({ block: 'nearest' })` whenever the selection changes or
+ *   `resetKey` changes. `block: 'nearest'` keeps the row visible without
+ *   jumping the list when it is already on screen.
  * - IME composition is honored: the Enter that confirms a kana conversion is
  *   ignored so it does not double as activation.
  *
- * @param options - List items and the activation callback.
+ * @param options - List items, reset key, and activation callback.
  * @returns Selected index, key handler, and per-item ref registrar.
  */
 export function useListKeyboardNavigation<T>(
   options: UseListKeyboardNavigationOptions<T>,
 ): UseListKeyboardNavigationReturn {
-  const { items, onActivate } = options;
+  const { items, resetKey, onActivate } = options;
   const [selectedIndex, setSelectedIndex] = useState(0);
   const itemRefs = useRef<Array<HTMLElement | null>>([]);
 
-  // Reset highlight to the first row whenever the result set changes so the
-  // user can press Enter immediately after typing. Stale entries in
-  // itemRefs.current are cleared automatically: callback refs of unmounted
-  // rows are invoked with null on the next commit.
-  const [lastItems, setLastItems] = useState(items);
-  if (lastItems !== items) {
-    setLastItems(items);
+  // Reset highlight to the first row whenever resetKey changes (= the user
+  // moved on to a different logical search). Stale entries in itemRefs.current
+  // are cleared automatically: callback refs of unmounted rows are invoked
+  // with null on the next commit.
+  const [lastResetKey, setLastResetKey] = useState(resetKey);
+  if (lastResetKey !== resetKey) {
+    setLastResetKey(resetKey);
     setSelectedIndex(0);
   }
 
-  // Scroll the highlighted row into view whenever the selection changes or
-  // the result set is replaced. The `items` dep covers the case where the
-  // user has manually scrolled the list away from the highlighted row and
-  // then types more — `selectedIndex` may already be 0 (so React's setState
-  // bailout suppresses the selection effect on its own), but we still want
-  // the new top row to be visible.
+  // Scroll the highlighted row into view when selection changes or the list
+  // is logically replaced (resetKey changed). Pagination (items growing) is
+  // intentionally NOT a dependency: re-firing scrollIntoView on every page
+  // load would yank the user back to the top while they are scrolling
+  // through a long result list.
   useEffect(() => {
     itemRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest' });
-  }, [selectedIndex, items]);
+  }, [selectedIndex, resetKey]);
 
   const handleInputKeyDown = useCallback(
     (event: KeyboardEvent<HTMLInputElement>) => {

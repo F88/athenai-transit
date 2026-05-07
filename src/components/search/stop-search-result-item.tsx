@@ -12,7 +12,7 @@ import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, AppRouteTypeValue, Route, Stop } from '@/types/app/transit';
 import type { StopWithMeta } from '@/types/app/transit-composed';
-import { katakanaToHiragana } from '@/utils/kana-normalize';
+import { normalizeForSearch } from '@/domain/transit/stop-search-index';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import { AccessibilityLabel } from '../stop/accessibility-label';
 import { PlatformCodeLabel } from '../stop/platform-code-label';
@@ -29,8 +29,10 @@ interface HighlightedNameProps {
  * Match precedence mirrors {@link filterStopsByQuery}:
  *   1. direct substring,
  *   2. case-insensitive substring,
- *   3. lower-cased + katakana→hiragana normalized substring (1:1 char mapping
- *      preserves indices, so the highlight aligns with the original `name`).
+ *   3. {@link normalizeForSearch} substring — same pipeline as the search
+ *      index (case + kana + Latin-diacritic collapsed). The pipeline is a
+ *      1:1 character mapping in NFC, so the index found in the normalized
+ *      string aligns with the original `name` for the slice below.
  */
 function HighlightedName({ name, query, normalizedQuery }: HighlightedNameProps) {
   if (!query) {
@@ -46,7 +48,7 @@ function HighlightedName({ name, query, normalizedQuery }: HighlightedNameProps)
   }
 
   if (idx === -1 && normalizedQuery) {
-    idx = katakanaToHiragana(name.toLowerCase()).indexOf(normalizedQuery);
+    idx = normalizeForSearch(name).indexOf(normalizedQuery);
     matchLen = normalizedQuery.length;
   }
 
