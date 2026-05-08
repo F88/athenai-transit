@@ -359,7 +359,13 @@ Comparison with previous (2026-03-30 enrichStopInsights After median):
     - `getTripSnapshot` — first 3 targets per `getTripInspectionTargets` success (real work)
 - Added a `Dataset:` summary log emitting `sources / stops / routes / tripPatterns` after `getAllSourceMeta` so future reports can populate the Environment table without manually summing per-source repo init logs.
 - Extended `SourceMeta.stats` with `tripPatternCount` (no production caller — `getAllSourceMeta` is benchmark-only).
-- Dataset has grown since 2026-03-31: +3 GTFS sources (`tcship` / `tome` / `ntbus`) + updates to existing feeds.
+- Dataset has grown since 2026-03-31: **+7 GTFS sources** (17 → 24), broken down by addition date:
+    - 2026-04-08: `vagfr` (VAG Freiburg), `actvnav` (ACTV Navigazione)
+    - 2026-04-23: `tmm` (Tama Monorail), `twrr` (TWR Rinkai Line)
+    - 2026-05-07: `tcship` (Tokyo Cruise Ship)
+    - 2026-05-08: `tome` (Tokyo Metro), `ntbus` (Nishi Tokyo Bus)
+
+  Existing-feed updates (e.g. seasonal GTFS revisions) account for the rest of the stop / route / pattern delta.
 
 ### Extend repo-bench: Source download summary (deterministic)
 
