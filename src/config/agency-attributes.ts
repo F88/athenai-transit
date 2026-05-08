@@ -41,6 +41,13 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '1A3282', text: 'FFFFFF' }],
   },
 
+  // --- Itsukishima Kisen ---
+  'itkfry:8240001027151': {
+    shortName: { ja: '斎島汽船', en: 'Itsukishima Kisen' },
+    longName: { ja: '斎島汽船株式会社', en: 'Itsukishima Kisen Co., Ltd.' },
+    colors: [{ bg: '000000', text: 'FFFFFF' } /* Primary */],
+  },
+
   // --- Iyotetsu Bus ---
   'iyt2:9500001020509': {
     shortName: { ja: '伊予鉄バス', en: 'Iyotetsu Bus' },
@@ -67,6 +74,13 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     shortName: { ja: '京都市バス', en: 'Kyoto City Bus' },
     longName: { ja: '京都市交通局', en: 'Kyoto Municipal Transportation' },
     colors: [{ bg: '138060', text: 'FFFFFF' }],
+  },
+
+  // --- Kagoshima City Maritime Bureau (Sakurajima Ferry) ---
+  'kcmb:1000020462012': {
+    shortName: { ja: '鹿児島市船舶局', en: 'Kagoshima City Maritime Bureau' },
+    longName: { ja: '鹿児島市船舶局', en: 'Kagoshima City Maritime Bureau' },
+    colors: [{ bg: 'C21B7E', text: 'FFFFFF' } /* Primary */],
   },
 
   // --- Keio Bus ---
@@ -111,6 +125,13 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     shortName: { ja: 'TX', en: 'Tsukuba Express' },
     longName: { ja: '首都圏新都市鉄道株式会社', en: 'Metropolitan Intercity Railway Company' },
     colors: [{ bg: '003B83', text: 'FFFFFF' }],
+  },
+
+  // --- Meimon Taiyo Ferry ---
+  'mtfry:6120001047907': {
+    shortName: { ja: '名門大洋フェリー', en: 'Meimon Taiyo Ferry' },
+    longName: { ja: '株式会社名門大洋フェリー', en: 'Meimon Taiyo Ferry Co., Ltd.' },
+    colors: [{ bg: '011B6A', text: 'FFFFFF' } /* Primary */],
   },
 
   // --- Miyake Village Bus ---
@@ -160,6 +181,26 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     shortName: { ja: 'ぐるりーんひのでちゃん', en: 'Gurureen Hinode-chan' },
     longName: { ja: '日の出町', en: 'Hinode Town' },
     colors: [{ bg: '039748', text: 'FFFFFF' }],
+  },
+
+  // --- Okushiri Island Ferry ---
+  'oksrif:6440001009445': {
+    shortName: { ja: 'オクシリアイランドフェリー', en: 'Okushiri Island Ferry' },
+    longName: {
+      ja: 'オクシリアイランドフェリー株式会社',
+      en: 'Okushiri Island Ferry Co., Ltd.',
+    },
+    colors: [{ bg: '00AFCC', text: 'FFFFFF' } /* Primary */],
+  },
+
+  // --- Orange Ferry (Shikoku Kaihatsu Ferry) ---
+  'orgfry:6500001011650': {
+    shortName: { ja: 'オレンジフェリー', en: 'Orange Ferry' },
+    longName: {
+      ja: '四国開発フェリー株式会社',
+      en: 'Shikoku Kaihatsu Ferry Co., Ltd.',
+    },
+    colors: [{ bg: 'EC5B24', text: 'FFFFFF' } /* Primary */],
   },
 
   // --- Oshima Bus ---
@@ -220,6 +261,16 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     shortName: { ja: '都営交通', en: 'Toei' },
     longName: { ja: '東京都交通局', en: 'Bureau of Transportation, Tokyo Metropolitan Government' },
     colors: [{ bg: '009f40', text: 'FFFFFF' }],
+  },
+
+  // --- Tokai Kisen ---
+  'tkksn:3010401020097': {
+    shortName: { ja: '東海汽船', en: 'Tokai Kisen' },
+    longName: { ja: '東海汽船株式会社', en: 'Tokai Kisen Co.,Ltd.' },
+    colors: [
+      { bg: '294DA5', text: 'FFFFFF' } /* Primary */,
+      { bg: 'E60013', text: 'FFFFFF' } /* Secondary */,
+    ],
   },
 
   // --- Tokyo Cruise Ship ---
@@ -304,6 +355,13 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
       { bg: 'E2001A', text: 'FFFFFF' } /* VAG Red (primary) */,
       { bg: '78B833', text: 'FFFFFF' } /* Eco Green (secondary) */,
     ],
+  },
+
+  // --- Uwajima Unyu Ferries ---
+  'uwjmfry:9500001015293': {
+    shortName: { ja: '宇和島運輸フェリー', en: 'Uwajima Unyu Ferries' },
+    longName: { ja: '宇和島運輸株式会社', en: 'Uwajima Unyu Co., Ltd.' },
+    colors: [{ bg: '534436', text: 'FFFFFF' } /* Primary */],
   },
 
   // --- Yurikamome ---

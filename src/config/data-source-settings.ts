@@ -204,6 +204,83 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'tokai-kisen',
+    prefixes: ['tkksn'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Tokai Kisen',
+      names: { ja: '東海汽船', en: 'Tokai Kisen' },
+    },
+    countries: ['JP'],
+  },
+  {
+    id: 'kagoshima-maritime-bureau',
+    prefixes: ['kcmb'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Sakurajima Ferry',
+      names: { ja: '桜島フェリー', en: 'Sakurajima Ferry' },
+    },
+    countries: ['JP'],
+  },
+  {
+    id: 'okushiri-ferry',
+    prefixes: ['oksrif'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Okushiri Island Ferry',
+      names: { ja: '奥尻島フェリー', en: 'Okushiri Island Ferry' },
+    },
+    countries: ['JP'],
+  },
+  {
+    id: 'orange-ferry',
+    prefixes: ['orgfry'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Orange Ferry',
+      names: { ja: 'オレンジフェリー', en: 'Orange Ferry' },
+    },
+    countries: ['JP'],
+  },
+  {
+    id: 'uwajima-unyu',
+    prefixes: ['uwjmfry'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Uwajima Unyu Ferries',
+      names: { ja: '宇和島運輸フェリー', en: 'Uwajima Unyu Ferries' },
+    },
+    countries: ['JP'],
+  },
+  {
+    id: 'meimon-taiyo-ferry',
+    prefixes: ['mtfry'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Meimon Taiyo Ferry',
+      names: { ja: '名門大洋フェリー', en: 'Meimon Taiyo Ferry' },
+    },
+    countries: ['JP'],
+  },
+  {
+    id: 'itsukishima-kisen',
+    prefixes: ['itkfry'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Itsukishima Kisen',
+      names: { ja: '斎島汽船', en: 'Itsukishima Kisen' },
+    },
+    countries: ['JP'],
+  },
+  {
     id: 'vag-freiburg',
     prefixes: ['vagfr'],
     routeTypes: [0, 3],

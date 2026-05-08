@@ -424,3 +424,355 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20260105版
+
+## tokai-kisen (東海汽船 / Tokai Kisen Co.,Ltd.)
+
+- Resource definition: `pipeline/config/resources/gtfs/tokai-kisen.ts`
+- CKAN: <https://ckan.odpt.org/dataset/tokai_kisen_all_lines>
+- Resource ID (使用中): `30516ce5-9fcc-4bc3-ac9b-baa3e6f531ee` (20260401版)
+
+### route_type
+
+- 全 15 路線が GTFS の `route_type=4` (Ferry)
+- 伊豆諸島 (大島・利島・新島・式根島・神津島・三宅島・御蔵島・八丈島・青ヶ島) と小笠原諸島 (父島・母島) を結ぶ航路、関東側 stop は東京・竹芝、横浜・大さん橋、久里浜、館山、下田、伊東、稲取、熱海
+- 19 stops, 132 trips, 407 stop_times, 54 trip patterns
+
+### 有効期間
+
+- 有効期間: 2026/04/01 - 2026/06/30
+- 短期間更新型のため `date=YYYYMMDD` 値を更新サイクルごとに差し替える必要がある
+
+### route_color
+
+- 全 15 路線で `route_color` / `route_text_color` が空
+- `routeColorFallbacks: { '*': '294DA5' }` (Tokai Kisen primary navy) でフォールバック適用
+- App 側ブランドカラーは primary `#294DA5` + secondary `#E60013` の 2 色構成
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt は含まれていない (海路のため一般的な GeoJSON ベースの代替も存在しない)
+
+### translations.txt (旧 GTFS-JP 3 列形式)
+
+- ヘッダが `trans_id, lang, translation` の旧 GTFS-JP v1 形式で、標準 GTFS の 6 列形式 (`table_name, field_name, language, translation, record_id, field_value`) ではない
+- CKAN 側の GTFS validation でも `missing_required_column` エラーとして報告される
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` の dispatch でヘッダを peek し、`isGtfsJpLegacyTranslationsHeader` 一致時のみ `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` の純変換関数経由で標準形式に変換しながら DB に投入する
+- 全行が stops.stop_name の翻訳である前提で `table_name='stops'`, `field_name='stop_name'`, `field_value=trans_id` を補完
+- `lang` 列の `ja-HrKt` (script subtag が非 BCP 47 形) は `ja-Hrkt` に正規化
+- 将来 Tokai Kisen が標準 6 列形式に upgrade した場合は dispatch が自動的に標準 importer にフォールバック (peek で legacy 不一致になるため)、誤検知ログや誤適用は起きない設計
+
+### GTFS-JP 拡張ファイル
+
+- ZIP には GTFS 標準外の `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる (船舶情報 / トラック・自動車積載スペック / 運賃詳細用の事業者拡張)
+- `ships.txt` の `ships_id` 列は値ありだが他のスペック列はすべて空 (Sanwa Shosen のように埋まってはいない)
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### その他のスキーマゆれ
+
+- `fare_attributes.txt` に `cabin_name` 列が追加されている (schema 外のため import 時に warning で無視)
+- `payload.txt` のヘッダに typo `paylaod_id` (※ payload_id ではない) が含まれるが、payload テーブル自体が schema 外で skip されるため影響なし
+- `trips.txt` に `payload_id`, `ships_id` 列があるが schema 外のため warning で無視
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260401版
+
+## kagoshima-maritime-bureau (鹿児島市船舶局 / 桜島フェリー)
+
+- Resource definition: `pipeline/config/resources/gtfs/kagoshima-maritime-bureau.ts`
+- CKAN: <https://ckan.odpt.org/dataset/kagoshima_city_maritime_bureau_all_lines>
+- Resource ID (使用中): `2cf53e9c-e2e3-40e4-bf6f-bef08b33fa4c` (20251010版)
+
+### route_type / 概要
+
+- 1 路線、`route_type=4` (Ferry)、鹿児島港 ↔ 桜島港の生活航路
+- 2 stops, 123 trips, 246 stop_times, 2 trip patterns
+
+### 有効期間
+
+- 有効期間: 2025/10/01 - 2027/03/31 (期限長め)
+
+### route_color / route_text_color
+
+- 1 路線で `route_color=FFFFFF` / `route_text_color=000000` がソース側で設定済
+- `route_color=FFFFFF` は GTFS 上「set」扱いだが、白い地図背景に対しては polyline が見えない
+- pipeline 側の routeColorFallbacks は **空欄判定でのみ発動する** ため、`FFFFFF` 値はそのまま data.json に出力される (data viewer philosophy)
+- 結果: 地図上の polyline は白色 (= 視認不能) のまま。AgencyBadge / RouteBadge は WebApp 側のコントラスト補正で読める形で表示される
+- 当面この挙動を許容 (`routeColorFallbacks: { '*': 'C21B7E' }` は将来 polyline 修復方針が決まった際の備えとして残してある)
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt が含まれている (1 route, 2 polylines, 9 points、`shape_id` は `桜島港→鹿児島港` / `鹿児島港→桜島港` の日本語)
+
+### translations.txt
+
+- 標準 6 列形式 (table_name, field_name, language, translation, record_id, field_value)
+- ja-Hrkt 読みのみ (en 翻訳なし) — `かごしまこう` / `さくらじまこう`
+
+### GTFS-JP 拡張ファイル
+
+- ZIP に `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる
+- `ships.txt` は `ships_id` 1 行のみで他スペック列は空
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20251010版
+
+## okushiri-ferry (オクシリアイランドフェリー / Okushiri Island Ferry)
+
+- Resource definition: `pipeline/config/resources/gtfs/okushiri-ferry.ts`
+- CKAN: <https://ckan.odpt.org/dataset/okushiri_island_ferry_okushiri_esashi_ferry_route>
+- Resource ID (使用中): `f96ce088-80f8-4124-985c-08799ccd3490` (20260101版)
+
+### route_type / 概要
+
+- 1 路線、`route_type=4` (Ferry)、江差港 (北海道本土) ↔ 奥尻港 (奥尻島) を結ぶ航路
+- 2 stops, 36 trips (各方向 18 便), 72 stop_times, 2 trip patterns
+- 運航事業者は北海道のフェリー事業者「オクシリアイランドフェリー株式会社」(ハートランドフェリー系列、URL は heartlandferry.jp)
+
+### 有効期間
+
+- 有効期間: 2026/01/01 - 2026/12/31
+
+### route_color
+
+- `route_color=0000FF` (青) / `route_text_color=FFFFFF` (白) がソース側で正しく設定されている
+- `routeColorFallbacks` 不要
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt が含まれている (1 route, 2 polylines, 84 points)
+- shape_id は日本語: `奥尻→江差` (47 points) / `江差→奥尻` (37 points)
+
+### translations.txt
+
+- 標準 6 列形式 (table_name, field_name, language, translation, record_id, field_value)
+- **5 言語充実翻訳**: en (46) / ja-Hrkt (2) / ko (40) / zh-Hans (44) / zh-Hant (44) — ODPT フェリーソースの中で翻訳が最も充実
+- 内訳: agency_name(1) / stops.stop_name(8) / routes.route_long_name(4) / routes.route_url(4) / trips.trip_headsign(6) / trips.trip_short_name(144) / fare_attributes.cabin_name(8) / feed_info.feed_publisher_name(1)
+- なお `routes.route_url` の翻訳 (= 言語別 URL) は GTFS spec 上は valid だが、現 pipeline の `extract-translations.ts` は `route_url` を翻訳テーブルから抽出していない (URL ローカライズは未対応)
+
+### CSV format quirks
+
+- `payload.txt` のヘッダに typo `paylaod_id` が含まれる (Tokai Kisen と同じパターン)。payload テーブル自体が schema 外のため影響なし
+- `trips.txt` に `payload_id`, `ships_id` 列あり (schema 外、warning で無視)
+- `fare_attributes.txt` に `cabin_name` 列あり (schema 外、warning で無視)
+
+### ダウンロード URL の形式
+
+- 他の ODPT ソースと異なり `Okushiri_Esashi_Ferry_Route.zip` (路線名スコープ) という命名
+- `AllLines.zip` 形式ではないので URL パスを resource 定義で固定指定する必要がある
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260101版
+
+## orange-ferry (オレンジフェリー / Orange Ferry — 四国開発フェリー株式会社)
+
+- Resource definition: `pipeline/config/resources/gtfs/orange-ferry.ts`
+- CKAN: <https://ckan.odpt.org/dataset/orange_ferry_all_lines>
+- Resource ID (使用中): `2115e2d4-dc0e-4dbf-b825-14f1da5bd841` (20250517版)
+
+### route_type / 概要
+
+- 3 路線、`route_type=4` (Ferry)、瀬戸内・関西を結ぶ航路
+    - `[01]東予～大阪` (route_color=`008000` 緑)
+    - `[02]八幡浜～臼杵` (route_color=`FFA500` オレンジ)
+    - `[03]新居浜～神戸` (route_color=`0000FF` 青)
+- 6 stops (東予港 / 大阪南港 / 八幡浜港 / 臼杵港 / 新居浜港 / 神戸港)
+- 21 trips, 42 stop_times, 6 trip patterns
+
+### 有効期間
+
+- 有効期間: 2022/04/01 - **2028/03/31** (ODPT フェリー中で期限最長)
+
+### route_color
+
+- 全 3 路線で `route_color` / `route_text_color` がソース側で正しく設定済 (有効な可視色)
+- `routeColorFallbacks` 不要
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt は含まれていない (海路、代替なし)
+
+### translations.txt (旧 GTFS-JP 3 列形式)
+
+- ヘッダが `trans_id, lang, translation` の旧 GTFS-JP v1 形式 (Tokai Kisen と同パターン)
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` のヘッダ peek dispatch で legacy 検出 → `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` の純変換関数経由で標準形式に変換しながら DB 投入
+- 30 行: 6 stops × ja / ja-HrKt / en / zh-Hans / zh-Hant の 5 言語 (一部欠ける言語あり)
+- `lang=ja-HrKt` → `language=ja-Hrkt` に正規化される
+- 全行 stops.stop_name の翻訳
+
+### GTFS-JP 拡張ファイル
+
+- ZIP には `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### fare_attributes.txt
+
+- ヘッダのみで **データ行 0 件** (運賃情報なし)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20250517版 (CKAN 上の最新で feed_end_date まで余裕あり)
+
+## uwajima-unyu (宇和島運輸 / 宇和島運輸フェリー / Uwajima Unyu Ferries)
+
+- Resource definition: `pipeline/config/resources/gtfs/uwajima-unyu.ts`
+- CKAN: <https://ckan.odpt.org/dataset/uwajima_unyu_all_lines>
+- Resource ID (使用中): `55e14d2f-0f14-41a2-80c7-de1c343ec94a` (20260401版)
+
+### route_type / 概要
+
+- 2 路線、`route_type=4` (Ferry)、豊予海峡を渡る四国↔九州航路
+    - `[01]八幡浜～別府` (route_color=`FF0000` 赤)
+    - `[02]八幡浜～臼杵` (route_color=`FF0000` 赤)
+- 3 stops (八幡浜港 / 別府港 / 臼杵港、stop_id は `[03]` 欠番で `[01]` `[02]` `[04]`)
+- 90 trips, 180 stop_times, 4 trip patterns
+
+### 有効期間
+
+- 有効期間: 2026/04/01 - 2026/06/30 (3 ヶ月のみ、頻繁な date 値更新が必要)
+
+### route_color
+
+- 両 route で `route_color=FF0000` / `route_text_color=FFFFFF` が有効値で設定済
+- `routeColorFallbacks` 不要
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt は含まれていない (海路、代替なし)
+
+### translations.txt (旧 GTFS-JP 3 列形式)
+
+- ヘッダが `trans_id, lang, translation` の旧 GTFS-JP v1 形式 (Tokai Kisen / Orange Ferry と同パターン)
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` のヘッダ peek dispatch で legacy 検出 → `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` 経由で標準形式に変換しながら DB 投入
+- 6 行 = 3 stops × (`ja`, `ja-HrKt`) のみ。**en 翻訳なし** (Okushiri / Orange Ferry と比較すると言語カバレッジは限定的)
+- `lang=ja-HrKt` → `language=ja-Hrkt` に正規化される
+
+### calendar.txt 空 / calendar_dates.txt のみ
+
+- `calendar.txt` はヘッダのみで data 行 0 件
+- 全運航日を `calendar_dates.txt` (182 行) で表現する calendar_dates-only feed
+- GTFS spec 上 valid (`calendar.txt` は conditionally required)、pipeline 既対応 (PR #160)
+- DataBundle validation で `calendar.data.services is empty` warning が出るが想定内
+
+### stop_name の長さ
+
+- stop_name に「フェリーのりば」サフィックスが含まれる長文 (例: `八幡浜港 宇和島運輸フェリーのりば`)
+- 半角スペース込みで 17 文字程度
+- UI の行幅で詰まる可能性 — browser 表示確認推奨
+
+### GTFS-JP 拡張ファイル
+
+- ZIP に `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる
+- `payload.txt` のヘッダに typo `paylaod_id` (Tokai Kisen / Okushiri と同パターン)、payload テーブル自体が schema 外で skip されるため影響なし
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260401版
+
+## meimon-taiyo-ferry (名門大洋フェリー / Meimon Taiyo Ferry)
+
+- Resource definition: `pipeline/config/resources/gtfs/meimon-taiyo-ferry.ts`
+- CKAN: <https://ckan.odpt.org/dataset/meimon_taiyo_ferry_all_lines>
+- Resource ID (使用中): `af0e0550-8e8e-48da-8fca-274b091cccb7` (20260401版)
+
+### route_type / 概要
+
+- 1 路線、`route_type=4` (Ferry)、関西と九州を結ぶ夜行フェリー
+    - `[01]大阪南港～新門司港` (route_color=`0000FF` 青)
+- 2 stops (大阪南港 / 新門司港)
+- 4 trips, 8 stop_times, 2 trip patterns
+- agency 名は「名門大洋フェリー」、サービスブランドは「シティライン」(agency_url が `cityline.co.jp`)
+
+### 有効期間
+
+- 有効期間: 2026/04/01 - 2026/06/30 (3 ヶ月のみ、頻繁な date 値更新が必要)
+
+### route_color
+
+- `route_color=0000FF` (青) / `route_text_color=FFFFFF` がソース側で有効値で設定済
+- `routeColorFallbacks` 不要
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt は含まれていない (海路、代替なし)
+
+### translations.txt (旧 GTFS-JP 3 列形式)
+
+- ヘッダが `trans_id, lang, translation` の旧 GTFS-JP v1 形式 (Tokai Kisen / Orange Ferry / Uwajima Unyu と同パターン)
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` のヘッダ peek dispatch で legacy 検出 → `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` 経由で標準形式に変換
+- 4 行 = 2 stops × (`ja`, `ja-HrKt`) のみ。**en 翻訳なし**
+
+### GTFS-JP 拡張ファイル
+
+- ZIP に `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる
+- `payload.txt` のヘッダに typo `paylaod_id` (他 ODPT フェリーと同パターン)、payload テーブル自体が schema 外で skip
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260401版
+
+## itsukishima-kisen (斎島汽船 / Itsukishima Kisen)
+
+- Resource definition: `pipeline/config/resources/gtfs/itsukishima-kisen.ts`
+- CKAN: <https://ckan.odpt.org/dataset/itsukishima_kisen_all_lines>
+- Resource ID (使用中): `4c61a823-c0b9-4262-8226-9ddf6b77d886` (20251001版)
+
+### route_type / 概要
+
+- 2 路線、`route_type=4` (Ferry)、広島県呉市の離島群を結ぶ生活フェリー
+    - `[01]斎島～久比`
+    - `[02]三角島～久比`
+- 4 stops (三角港 / 久比港 / 斎島港 / 豊島港)
+- 22 trips, 54 stop_times, 6 trip patterns
+- agency_url が `city.kure.lg.jp/soshiki/28/koutu.html` (呉市の交通課ページ) — 事業者独自サイトを持っていない
+
+### 有効期間
+
+- 有効期間: 2025/10/01 - 2026/09/30 (1 年、ODPT フェリーの中では長め)
+
+### route_color
+
+- 両 route で `route_color=FFFFFF` (白) / `route_text_color=000000` (黒)
+- `route_color=FFFFFF` は GTFS 上「set」扱いだが、白い地図背景に対しては polyline が透明同等になる
+- 当該ソースに shapes.txt が無いため、polyline 描画は発生せず可視化問題は表面化しない
+- `routeColorFallbacks` 設定なし (data viewer philosophy で source 値尊重)
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt は含まれていない (海路、代替なし)
+
+### translations.txt
+
+- 標準 6 列形式 (table_name, field_name, language, translation, record_id, field_value) ✅ legacy ではない
+- 14 行 = stops.stop_name(4 stops × 2 言語) + trips.trip_headsign(6 行) の翻訳
+- 言語: `ja-Hrkt` + `en`
+- en 翻訳に注目: source data は `Itukishima Port` (訓令式)、CKAN / 本リソース定義の display name は `Itsukishima Kisen` (ヘボン式) を採用。ローマ字方式の不一致はアプリ表示で混在し得るが、data viewer philosophy に従い source 値はそのまま保持
+
+### 斎島の英訳
+
+- 漢字「斎島」の ja-Hrkt 読み: いつきしま (`itsukishima`)
+- 一般表記 (Hepburn): `Itsukishima`
+- source data 内 (translations.txt の en): `Itukishima` (訓令式)
+- 本ソースの display 表記は **`Itsukishima`** (Hepburn) に統一
+
+### GTFS-JP 拡張ファイル
+
+- ZIP に `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる
+- `payload.txt` のヘッダに typo `paylaod_id` (他 ODPT フェリー多数と同パターン)、payload テーブル自体が schema 外で skip
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20251001版

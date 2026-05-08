@@ -32,5 +32,12 @@ export default [
   'tome', // tokyometro
   'ntbus', // nishi-tokyo-bus
   'snws', // sanwa-shosen
+  'tkksn', // tokai-kisen
+  'kcmb', // kagoshima-maritime-bureau
+  'oksrif', // okushiri-ferry
+  'orgfry', // orange-ferry
+  'uwjmfry', // uwajima-unyu
+  'mtfry', // meimon-taiyo-ferry
+  'itkfry', // itsukishima-kisen
   // 'tkbus', // tokyu-bus (not built)
 ];

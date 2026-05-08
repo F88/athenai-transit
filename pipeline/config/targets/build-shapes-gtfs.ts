@@ -23,4 +23,6 @@ export default [
   'vag-freiburg',
   'actv-nav',
   'sanwa-shosen',
+  'kagoshima-maritime-bureau',
+  'okushiri-ferry',
 ];

@@ -31,4 +31,11 @@ export default [
   'tokyometro',
   'nishi-tokyo-bus',
   'sanwa-shosen',
+  'tokai-kisen',
+  'kagoshima-maritime-bureau',
+  'okushiri-ferry',
+  'orange-ferry',
+  'uwajima-unyu',
+  'meimon-taiyo-ferry',
+  'itsukishima-kisen',
 ];
