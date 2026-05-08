@@ -61,15 +61,15 @@ Example: `pipeline/config/resources/gtfs/kanto-bus.ts`
 
 **Lock-in values** — once any of these is used downstream, changing it forces a full redo:
 
-| Field                  | Used by                                                                                       |
-| ---------------------- | --------------------------------------------------------------------------------------------- |
+| Field                  | Used by                                                                                                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pipeline.prefix`      | All `*-insights.ts` / `validate.ts` target lists, `data-source-settings.ts`, `agency-attributes.ts` keys, output paths under `_build/data-v2/{prefix}/` |
-| `pipeline.outDir`      | Workspace dirs under `pipeline/workspace/data/gtfs/{outDir}/` and archives                    |
-| Source-name (filename) | All `download-gtfs.ts` / `build-db.ts` / `build-json.ts` / `build-shapes-*.ts` target lists   |
-| `nameEn` / `nameJa`    | `pipeline:describe` output, web app display                                                   |
-| `provider.name.*`      | Web app display (long/short, multilingual)                                                    |
-| `provider.colors`      | App-side brand colors; copy must match `agency-attributes.ts` colors                          |
-| `routeTypes`           | `data-source-settings.ts` `routeTypes` mapping (must match)                                   |
+| `pipeline.outDir`      | Workspace dirs under `pipeline/workspace/data/gtfs/{outDir}/` and archives                                                                              |
+| Source-name (filename) | All `download-gtfs.ts` / `build-db.ts` / `build-json.ts` / `build-shapes-*.ts` target lists                                                             |
+| `nameEn` / `nameJa`    | `pipeline:describe` output, web app display                                                                                                             |
+| `provider.name.*`      | Web app display (long/short, multilingual)                                                                                                              |
+| `provider.colors`      | App-side brand colors; copy must match `agency-attributes.ts` colors                                                                                    |
+| `routeTypes`           | `data-source-settings.ts` `routeTypes` mapping (must match)                                                                                             |
 
 **How to confirm.** After writing the file, present a short summary of the lock-in values to the user (use `AskUserQuestion` or a plain bullet list) and wait for explicit approval. Do NOT run the pipeline, do NOT touch target lists, do NOT touch `data-source-settings.ts` until the user says OK. If the user changes any value, edit the resource definition first, present the updated summary again, and re-confirm.
 
