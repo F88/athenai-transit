@@ -27,6 +27,8 @@ Benchmarks run across 12 fixed locations (`BENCH_LOCATIONS` in `src/diagnostics/
 | Browser | Chrome                                                     |
 | Data    | 17 sources, 15,805 stops, 1,333 routes, 3,139 tripPatterns |
 
+`Data` 行は最初の baseline (2026-03-27) を取得した時点のデータセット規模を示す **歴史的な参照値**。各エントリ(`## YYYY-MM-DD: ...`)はそれぞれ自身のデータセット状態を `Source download summary` または benchmark 出力の `Dataset:` 行で記録する。直近の規模を参照したい場合は最新エントリを見ること。
+
 ## Benchmark Conditions
 
 | Parameter      | Value                      | Notes                                                  |

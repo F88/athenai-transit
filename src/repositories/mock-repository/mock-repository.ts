@@ -515,7 +515,7 @@ export class MockRepository implements TransitRepository {
       stats: {
         stopCount: STOPS.length,
         routeCount: ROUTES.length,
-        tripPatternCount: 0,
+        tripPatternCount: ROUTE_STOP_SEQUENCES.size,
       },
     };
     return Promise.resolve({ success: true, data: [meta], truncated: false });
