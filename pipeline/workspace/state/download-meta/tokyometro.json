@@ -1,0 +1,65 @@
+{
+  "sourceName": "tokyometro",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-05-08T01:37:16.214Z",
+  "url": "https://api.odpt.org/api/v4/files/TokyoMetro/data/TokyoMetro-Train-GTFS.zip",
+  "size": 1107350,
+  "contentType": "application/octet-stream",
+  "durationMs": 2842,
+  "archivePath": "workspace/_archives/gtfs/tokyometro/TokyoMetro-Train-GTFS_20260508-013719.zip",
+  "extractedFiles": [
+    {
+      "name": "agency.txt",
+      "size": 174
+    },
+    {
+      "name": "calendar.txt",
+      "size": 156
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 369
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 293
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 475074
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 203
+    },
+    {
+      "name": "routes.txt",
+      "size": 455
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 7380190
+    },
+    {
+      "name": "stops.txt",
+      "size": 9428
+    },
+    {
+      "name": "translations.txt",
+      "size": 21050
+    },
+    {
+      "name": "trips.txt",
+      "size": 305686
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "東京メトロ",
+    "publisherUrl": "https://www.tokyometro.jp/",
+    "lang": "ja",
+    "startDate": "20260314",
+    "endDate": "20261231",
+    "version": "20260314"
+  }
+}

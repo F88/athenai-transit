@@ -1,0 +1,81 @@
+{
+  "sourceName": "tokyo-cruise-ship",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-05-08T01:37:13.642Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/TokyoCruiseShip/AllLines.zip?date=20250402",
+  "size": 8158,
+  "contentType": "text/plain; charset=ASCII-8BIT",
+  "durationMs": 1571,
+  "archivePath": "workspace/_archives/gtfs/tokyo-cruise-ship/AllLines_20260508-013715.zip",
+  "extractedFiles": [
+    {
+      "name": "agency.txt",
+      "size": 247
+    },
+    {
+      "name": "calendar.txt",
+      "size": 989
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 6015
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 1615
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 4086
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 217
+    },
+    {
+      "name": "payload.txt",
+      "size": 466
+    },
+    {
+      "name": "payload_fare_attributes.txt",
+      "size": 833
+    },
+    {
+      "name": "payload_fare_rules.txt",
+      "size": 1052
+    },
+    {
+      "name": "routes.txt",
+      "size": 762
+    },
+    {
+      "name": "ships.txt",
+      "size": 377
+    },
+    {
+      "name": "stops.txt",
+      "size": 803
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 8758
+    },
+    {
+      "name": "translations.txt",
+      "size": 3251
+    },
+    {
+      "name": "trips.txt",
+      "size": 8148
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "東京都観光汽船株式会社",
+    "publisherUrl": "https://www.suijobus.co.jp/",
+    "lang": "ja",
+    "startDate": "20250701",
+    "endDate": "20260630",
+    "version": "2.0"
+  }
+}
