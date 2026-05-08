@@ -120,6 +120,13 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '003B83', text: 'FFFFFF' }],
   },
 
+  // --- Meimon Taiyo Ferry ---
+  'mtfry:6120001047907': {
+    shortName: { ja: '名門大洋フェリー', en: 'Meimon Taiyo Ferry' },
+    longName: { ja: '株式会社名門大洋フェリー', en: 'Meimon Taiyo Ferry Co., Ltd.' },
+    colors: [{ bg: '011B6A', text: 'FFFFFF' } /* Primary */],
+  },
+
   // --- Miyake Village Bus ---
   'mykbus:4000020133817': {
     shortName: { ja: '三宅村営バス', en: 'Miyake Village Bus' },

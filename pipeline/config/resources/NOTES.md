@@ -677,3 +677,47 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20260401版
+
+## meimon-taiyo-ferry (名門大洋フェリー / Meimon Taiyo Ferry)
+
+- Resource definition: `pipeline/config/resources/gtfs/meimon-taiyo-ferry.ts`
+- CKAN: <https://ckan.odpt.org/dataset/meimon_taiyo_ferry_all_lines>
+- Resource ID (使用中): `af0e0550-8e8e-48da-8fca-274b091cccb7` (20260401版)
+
+### route_type / 概要
+
+- 1 路線、`route_type=4` (Ferry)、関西と九州を結ぶ夜行フェリー
+    - `[01]大阪南港～新門司港` (route_color=`0000FF` 青)
+- 2 stops (大阪南港 / 新門司港)
+- 4 trips, 8 stop_times, 2 trip patterns
+- agency 名は「名門大洋フェリー」、サービスブランドは「シティライン」(agency_url が `cityline.co.jp`)
+
+### 有効期間
+
+- 有効期間: 2026/04/01 - 2026/06/30 (3 ヶ月のみ、頻繁な date 値更新が必要)
+
+### route_color
+
+- `route_color=0000FF` (青) / `route_text_color=FFFFFF` がソース側で有効値で設定済
+- `routeColorFallbacks` 不要
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt は含まれていない (海路、代替なし)
+
+### translations.txt (旧 GTFS-JP 3 列形式)
+
+- ヘッダが `trans_id, lang, translation` の旧 GTFS-JP v1 形式 (Tokai Kisen / Orange Ferry / Uwajima Unyu と同パターン)
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` のヘッダ peek dispatch で legacy 検出 → `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` 経由で標準形式に変換
+- 4 行 = 2 stops × (`ja`, `ja-HrKt`) のみ。**en 翻訳なし**
+
+### GTFS-JP 拡張ファイル
+
+- ZIP に `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる
+- `payload.txt` のヘッダに typo `paylaod_id` (他 ODPT フェリーと同パターン)、payload テーブル自体が schema 外で skip
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260401版

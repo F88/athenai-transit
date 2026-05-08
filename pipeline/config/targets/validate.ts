@@ -37,5 +37,6 @@ export default [
   'oksrif', // okushiri-ferry
   'orgfry', // orange-ferry
   'uwjmfry', // uwajima-unyu
+  'mtfry', // meimon-taiyo-ferry
   // 'tkbus', // tokyu-bus (not built)
 ];

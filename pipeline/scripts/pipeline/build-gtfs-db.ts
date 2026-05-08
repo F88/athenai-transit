@@ -534,18 +534,20 @@ async function buildSourceDb(
       if (
         (source.directory === 'tokai-kisen' ||
           source.directory === 'orange-ferry' ||
-          source.directory === 'uwajima-unyu') &&
+          source.directory === 'uwajima-unyu' ||
+          source.directory === 'meimon-taiyo-ferry') &&
         tableName === 'translations' &&
         isGtfsJpLegacyTranslationsHeader((await peekCsvHeaders(filePath)) ?? [])
       ) {
-        // Tokai Kisen, Orange Ferry, and Uwajima Unyu historically ship
-        // translations.txt in the legacy GTFS-JP 3-column format
-        // (`trans_id, lang, translation`), which the standard 6-column
-        // schema cannot ingest directly. Detect by header (not by source
-        // name alone) so that when a source eventually upgrades to the
-        // standard format, the dispatch quietly falls back to the standard
-        // importer instead of misreporting a legacy detect and throwing on
-        // the strict header check.
+        // Tokai Kisen, Orange Ferry, Uwajima Unyu, and Meimon Taiyo Ferry
+        // historically ship translations.txt in the legacy GTFS-JP
+        // 3-column format (`trans_id, lang, translation`), which the
+        // standard 6-column schema cannot ingest directly. Detect by
+        // header (not by source name alone) so that when a source
+        // eventually upgrades to the standard format, the dispatch
+        // quietly falls back to the standard importer instead of
+        // misreporting a legacy detect and throwing on the strict
+        // header check.
         //
         // The conversion in gtfs-csv-converter assumes every legacy row is
         // a stops.stop_name translation, which holds for these sources.

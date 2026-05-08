@@ -259,6 +259,17 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'meimon-taiyo-ferry',
+    prefixes: ['mtfry'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Meimon Taiyo Ferry',
+      names: { ja: '名門大洋フェリー', en: 'Meimon Taiyo Ferry' },
+    },
+    countries: ['JP'],
+  },
+  {
     id: 'vag-freiburg',
     prefixes: ['vagfr'],
     routeTypes: [0, 3],
