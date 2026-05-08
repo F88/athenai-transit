@@ -127,6 +127,41 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: 'B7A66D', text: 'FFFFFF' }],
   },
 
+  // --- Nishi Tokyo Bus (main) ---
+  'ntbus:1010101003032': {
+    shortName: { ja: '西東京バス', en: 'Nishi Tokyo Bus' },
+    longName: { ja: '西東京バス株式会社', en: 'Nishi Tokyo Bus Co., Ltd.' },
+    colors: [{ bg: 'F01812', text: 'FFFFFF' } /* Primary */],
+  },
+
+  // --- Hachi Bus (Hachioji City community bus operated by Nishi Tokyo Bus) ---
+  'ntbus:1000020132012': {
+    shortName: { ja: 'はちバス', en: 'Hachi Bus' },
+    longName: { ja: '八王子市', en: 'Hachioji City' },
+    colors: [{ bg: '128543', text: 'FFFFFF' }],
+  },
+
+  // --- Hamuran (Hamura City community bus operated by Nishi Tokyo Bus) ---
+  'ntbus:1000020132276': {
+    shortName: { ja: 'はむらん', en: 'Hamuran' },
+    longName: { ja: '羽村市', en: 'Hamura City' },
+    colors: [{ bg: '618FA7', text: 'FFFFFF' }],
+  },
+
+  // --- Runo Bus (Akiruno City community bus operated by Nishi Tokyo Bus) ---
+  'ntbus:1000020132284': {
+    shortName: { ja: 'るのバス', en: 'Runo Bus' },
+    longName: { ja: 'あきる野市', en: 'Akiruno City' },
+    colors: [{ bg: 'FFFFE3', text: '000000' }],
+  },
+
+  // --- Gurureen Hinode-chan (Hinode Town community bus operated by Nishi Tokyo Bus) ---
+  'ntbus:1000020133051': {
+    shortName: { ja: 'ぐるりーんひのでちゃん', en: 'Gurureen Hinode-chan' },
+    longName: { ja: '日の出町', en: 'Hinode Town' },
+    colors: [{ bg: '039748', text: 'FFFFFF' }],
+  },
+
   // --- Oshima Bus ---
   'osmbus:1010001131230': {
     shortName: { ja: '大島バス', en: 'Oshima Bus' },

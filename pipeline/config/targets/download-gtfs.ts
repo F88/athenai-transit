@@ -29,4 +29,5 @@ export default [
   'actv-nav',
   'tokyo-cruise-ship',
   'tokyometro',
+  'nishi-tokyo-bus',
 ];

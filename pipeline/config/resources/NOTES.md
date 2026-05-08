@@ -191,6 +191,57 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - 翻訳あり (stop_names: 19, agency_names: 1, trip_headsigns: 4, route_long_names: 1)
 
+## nishi-tokyo-bus (西東京バス)
+
+- Resource definition: `pipeline/config/resources/gtfs/nishi-tokyo-bus.ts`
+- CKAN: <https://ckan.odpt.org/dataset/nishi_tokyo_bus_nt_bus>
+- Resource ID (使用中): `557cfca7-c73b-4dd4-9858-488808bff051` (20260324版)
+
+### 有効期間
+
+- 有効期間: 2026/04/13 - 2026/07/31
+- feed_info.feed_version: `20260413_20260731`
+
+### 路線
+
+- 167 routes, 2,909 stops, 8,715 trips, 171,842 stop_times, 314 trip patterns
+
+### route_color
+
+- 全 167 路線で `route_color` / `route_text_color` が空
+- `routeColorFallbacks: { '*': 'F01812' }` (Nishi Tokyo Bus corporate red) でフォールバック適用
+
+### agency
+
+- 5 agencies が同梱されている (西東京バス本体 + 4 自治体コミュニティバス):
+    - `ntbus:1010101003032` 西東京バス株式会社 (本体)
+    - `ntbus:1000020132012` 八王子市(はちバス) — 西東京バスが運行受託
+    - `ntbus:1000020132276` 羽村市(はむらん) — 西東京バスが運行受託
+    - `ntbus:1000020132284` あきる野市(るのバス) — 西東京バスが運行受託
+    - `ntbus:1000020133051` 日の出町(ぐるりーんひのでちゃん) — 西東京バスが運行受託
+- 関東バス + ムーバス/すぎ丸 と同じ「事業者+自治体コミュニティバス同梱」パターン
+- AgencyBadge では各自治体のシンボルカラー(はちバス=緑、はむらん=スレートブルー、るのバス=クリーム、ひのでちゃん=緑) が個別に設定されている
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt は含まれているがヘッダのみ (データ行 0 件)
+- 列名に `shape_dist_traveleded` という非標準スペル混入。データなしのため実害なし
+- iyt2 と同パターン
+
+### translations.txt
+
+- 翻訳あり (stop_names: 2,909, stop_headsigns: 320, route_long_names: 167, agency_names: 5)
+- trip_headsigns 翻訳は 0 件
+
+### route_short_name
+
+- `route_short_name` は系統番号(例: `16号01`, `い11`, `戸52`)、`route_long_name` は経路概要
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260324版
+
 ## tokyo-cruise-ship (東京都観光汽船 / 水上バス)
 
 - Resource definition: `pipeline/config/resources/gtfs/tokyo-cruise-ship.ts`
