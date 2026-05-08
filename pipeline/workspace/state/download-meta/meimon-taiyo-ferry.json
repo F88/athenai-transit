@@ -1,85 +1,81 @@
 {
-  "sourceName": "sanwa-shosen",
+  "sourceName": "meimon-taiyo-ferry",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-08T15:34:19.893Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/SanwaMerchantVessel/AllLines.zip?date=20260105",
-  "size": 5296,
+  "downloadedAt": "2026-05-08T15:34:34.216Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/MeimonTaiyoFerry/AllLines.zip?date=20260401",
+  "size": 4233,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1416,
-  "archivePath": "workspace/_archives/gtfs/sanwa-shosen/AllLines_20260508-153421.zip",
+  "durationMs": 1414,
+  "archivePath": "workspace/_archives/gtfs/meimon-taiyo-ferry/AllLines_20260508-153435.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
-      "size": 215
+      "size": 250
     },
     {
       "name": "calendar.txt",
-      "size": 127
+      "size": 496
     },
     {
       "name": "calendar_dates.txt",
-      "size": 211
+      "size": 1165
     },
     {
       "name": "fare_attributes.txt",
-      "size": 227
+      "size": 193
     },
     {
       "name": "fare_rules.txt",
-      "size": 354
+      "size": 276
     },
     {
       "name": "feed_info.txt",
-      "size": 224
+      "size": 208
     },
     {
       "name": "payload.txt",
-      "size": 225
+      "size": 165
     },
     {
       "name": "payload_fare_attributes.txt",
-      "size": 2365
+      "size": 126
     },
     {
       "name": "payload_fare_rules.txt",
-      "size": 3104
+      "size": 62
     },
     {
       "name": "routes.txt",
-      "size": 225
-    },
-    {
-      "name": "shapes.txt",
-      "size": 845
+      "size": 249
     },
     {
       "name": "ships.txt",
-      "size": 187
+      "size": 228
     },
     {
       "name": "stops.txt",
-      "size": 398
+      "size": 429
     },
     {
       "name": "stop_times.txt",
-      "size": 3440
+      "size": 1552
     },
     {
       "name": "translations.txt",
-      "size": 187
+      "size": 170
     },
     {
       "name": "trips.txt",
-      "size": 3277
+      "size": 1753
     }
   ],
   "feedInfo": {
-    "publisherName": "三和商船株式会社",
-    "publisherUrl": "https://ezax.co.jp/",
+    "publisherName": "名門大洋フェリー",
+    "publisherUrl": "https://www.cityline.co.jp/",
     "lang": "ja",
-    "startDate": "20260105",
-    "endDate": "20261231",
+    "startDate": "20260401",
+    "endDate": "20260630",
     "version": "2.0"
   }
 }

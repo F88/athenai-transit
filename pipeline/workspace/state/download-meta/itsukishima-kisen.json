@@ -1,85 +1,81 @@
 {
-  "sourceName": "sanwa-shosen",
+  "sourceName": "itsukishima-kisen",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-08T15:34:19.893Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/SanwaMerchantVessel/AllLines.zip?date=20260105",
-  "size": 5296,
+  "downloadedAt": "2026-05-08T15:34:36.591Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/ItsukishimaKisen/AllLines.zip?date=20251001",
+  "size": 5653,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1416,
-  "archivePath": "workspace/_archives/gtfs/sanwa-shosen/AllLines_20260508-153421.zip",
+  "durationMs": 1376,
+  "archivePath": "workspace/_archives/gtfs/itsukishima-kisen/AllLines_20260508-153437.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
-      "size": 215
+      "size": 221
     },
     {
       "name": "calendar.txt",
-      "size": 127
+      "size": 250
     },
     {
       "name": "calendar_dates.txt",
-      "size": 211
+      "size": 163
     },
     {
       "name": "fare_attributes.txt",
-      "size": 227
+      "size": 539
     },
     {
       "name": "fare_rules.txt",
-      "size": 354
+      "size": 1026
     },
     {
       "name": "feed_info.txt",
-      "size": 224
+      "size": 230
     },
     {
       "name": "payload.txt",
-      "size": 225
+      "size": 198
     },
     {
       "name": "payload_fare_attributes.txt",
-      "size": 2365
+      "size": 2385
     },
     {
       "name": "payload_fare_rules.txt",
-      "size": 3104
+      "size": 3936
     },
     {
       "name": "routes.txt",
-      "size": 225
-    },
-    {
-      "name": "shapes.txt",
-      "size": 845
+      "size": 367
     },
     {
       "name": "ships.txt",
-      "size": 187
+      "size": 213
     },
     {
       "name": "stops.txt",
-      "size": 398
+      "size": 479
     },
     {
       "name": "stop_times.txt",
-      "size": 3440
+      "size": 5042
     },
     {
       "name": "translations.txt",
-      "size": 187
+      "size": 823
     },
     {
       "name": "trips.txt",
-      "size": 3277
+      "size": 3597
     }
   ],
   "feedInfo": {
-    "publisherName": "三和商船株式会社",
-    "publisherUrl": "https://ezax.co.jp/",
+    "publisherName": "斎島汽船株式会社",
+    "publisherUrl": "https://www.city.kure.lg.jp/soshiki/28/koutu.html",
     "lang": "ja",
-    "startDate": "20260105",
-    "endDate": "20261231",
+    "startDate": "20251001",
+    "endDate": "20260930",
     "version": "2.0"
   }
 }

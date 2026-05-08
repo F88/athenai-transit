@@ -1,85 +1,81 @@
 {
-  "sourceName": "sanwa-shosen",
+  "sourceName": "uwajima-unyu",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-08T15:34:19.893Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/SanwaMerchantVessel/AllLines.zip?date=20260105",
-  "size": 5296,
+  "downloadedAt": "2026-05-08T15:34:31.857Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/UwajimaUnyu/AllLines.zip?date=20260401",
+  "size": 6915,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1416,
-  "archivePath": "workspace/_archives/gtfs/sanwa-shosen/AllLines_20260508-153421.zip",
+  "durationMs": 1385,
+  "archivePath": "workspace/_archives/gtfs/uwajima-unyu/AllLines_20260508-153433.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
-      "size": 215
+      "size": 235
     },
     {
       "name": "calendar.txt",
-      "size": 127
+      "size": 88
     },
     {
       "name": "calendar_dates.txt",
-      "size": 211
+      "size": 5338
     },
     {
       "name": "fare_attributes.txt",
-      "size": 227
+      "size": 380
     },
     {
       "name": "fare_rules.txt",
-      "size": 354
+      "size": 1030
     },
     {
       "name": "feed_info.txt",
-      "size": 224
+      "size": 202
     },
     {
       "name": "payload.txt",
-      "size": 225
+      "size": 198
     },
     {
       "name": "payload_fare_attributes.txt",
-      "size": 2365
+      "size": 126
     },
     {
       "name": "payload_fare_rules.txt",
-      "size": 3104
+      "size": 62
     },
     {
       "name": "routes.txt",
-      "size": 225
-    },
-    {
-      "name": "shapes.txt",
-      "size": 845
+      "size": 263
     },
     {
       "name": "ships.txt",
-      "size": 187
+      "size": 139
     },
     {
       "name": "stops.txt",
-      "size": 398
+      "size": 740
     },
     {
       "name": "stop_times.txt",
-      "size": 3440
+      "size": 22036
     },
     {
       "name": "translations.txt",
-      "size": 187
+      "size": 671
     },
     {
       "name": "trips.txt",
-      "size": 3277
+      "size": 18318
     }
   ],
   "feedInfo": {
-    "publisherName": "三和商船株式会社",
-    "publisherUrl": "https://ezax.co.jp/",
+    "publisherName": "宇和島運輸",
+    "publisherUrl": "https://www.uwajimaunyu.co.jp/",
     "lang": "ja",
-    "startDate": "20260105",
-    "endDate": "20261231",
+    "startDate": "20260401",
+    "endDate": "20260630",
     "version": "2.0"
   }
 }
