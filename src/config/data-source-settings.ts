@@ -248,6 +248,17 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'uwajima-unyu',
+    prefixes: ['uwjmfry'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Uwajima Unyu Ferries',
+      names: { ja: '宇和島運輸フェリー', en: 'Uwajima Unyu Ferries' },
+    },
+    countries: ['JP'],
+  },
+  {
     id: 'vag-freiburg',
     prefixes: ['vagfr'],
     routeTypes: [0, 3],

@@ -36,5 +36,6 @@ export default [
   'kcmb', // kagoshima-maritime-bureau
   'oksrif', // okushiri-ferry
   'orgfry', // orange-ferry
+  'uwjmfry', // uwajima-unyu
   // 'tkbus', // tokyu-bus (not built)
 ];

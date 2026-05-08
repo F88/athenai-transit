@@ -343,6 +343,13 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     ],
   },
 
+  // --- Uwajima Unyu Ferries ---
+  'uwjmfry:9500001015293': {
+    shortName: { ja: '宇和島運輸フェリー', en: 'Uwajima Unyu Ferries' },
+    longName: { ja: '宇和島運輸株式会社', en: 'Uwajima Unyu Co., Ltd.' },
+    colors: [{ bg: '534436', text: 'FFFFFF' } /* Primary */],
+  },
+
   // --- Yurikamome ---
   'yurimo:Yurikamome': {
     shortName: { ja: 'ゆりかもめ', en: 'Yurikamome' },

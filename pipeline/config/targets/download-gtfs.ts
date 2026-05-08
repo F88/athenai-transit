@@ -35,4 +35,5 @@ export default [
   'kagoshima-maritime-bureau',
   'okushiri-ferry',
   'orange-ferry',
+  'uwajima-unyu',
 ];

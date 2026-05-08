@@ -619,3 +619,61 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20250517版 (CKAN 上の最新で feed_end_date まで余裕あり)
+
+## uwajima-unyu (宇和島運輸 / 宇和島運輸フェリー / Uwajima Unyu Ferries)
+
+- Resource definition: `pipeline/config/resources/gtfs/uwajima-unyu.ts`
+- CKAN: <https://ckan.odpt.org/dataset/uwajima_unyu_all_lines>
+- Resource ID (使用中): `55e14d2f-0f14-41a2-80c7-de1c343ec94a` (20260401版)
+
+### route_type / 概要
+
+- 2 路線、`route_type=4` (Ferry)、豊予海峡を渡る四国↔九州航路
+    - `[01]八幡浜～別府` (route_color=`FF0000` 赤)
+    - `[02]八幡浜～臼杵` (route_color=`FF0000` 赤)
+- 3 stops (八幡浜港 / 別府港 / 臼杵港、stop_id は `[03]` 欠番で `[01]` `[02]` `[04]`)
+- 90 trips, 180 stop_times, 4 trip patterns
+
+### 有効期間
+
+- 有効期間: 2026/04/01 - 2026/06/30 (3 ヶ月のみ、頻繁な date 値更新が必要)
+
+### route_color
+
+- 両 route で `route_color=FF0000` / `route_text_color=FFFFFF` が有効値で設定済
+- `routeColorFallbacks` 不要
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt は含まれていない (海路、代替なし)
+
+### translations.txt (旧 GTFS-JP 3 列形式)
+
+- ヘッダが `trans_id, lang, translation` の旧 GTFS-JP v1 形式 (Tokai Kisen / Orange Ferry と同パターン)
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` のヘッダ peek dispatch で legacy 検出 → `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` 経由で標準形式に変換しながら DB 投入
+- 6 行 = 3 stops × (`ja`, `ja-HrKt`) のみ。**en 翻訳なし** (Okushiri / Orange Ferry と比較すると言語カバレッジは限定的)
+- `lang=ja-HrKt` → `language=ja-Hrkt` に正規化される
+
+### calendar.txt 空 / calendar_dates.txt のみ
+
+- `calendar.txt` はヘッダのみで data 行 0 件
+- 全運航日を `calendar_dates.txt` (182 行) で表現する calendar_dates-only feed
+- GTFS spec 上 valid (`calendar.txt` は conditionally required)、pipeline 既対応 (PR #160)
+- DataBundle validation で `calendar.data.services is empty` warning が出るが想定内
+
+### stop_name の長さ
+
+- stop_name に「フェリーのりば」サフィックスが含まれる長文 (例: `八幡浜港 宇和島運輸フェリーのりば`)
+- 半角スペース込みで 17 文字程度
+- UI の行幅で詰まる可能性 — browser 表示確認推奨
+
+### GTFS-JP 拡張ファイル
+
+- ZIP に `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる
+- `payload.txt` のヘッダに typo `paylaod_id` (Tokai Kisen / Okushiri と同パターン)、payload テーブル自体が schema 外で skip されるため影響なし
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260401版
