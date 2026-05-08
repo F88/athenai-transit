@@ -383,6 +383,7 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
       stats: {
         stopCount: source.data.stops.data.filter((s) => s.l === 0).length,
         routeCount: source.data.routes.data.length,
+        tripPatternCount: Object.keys(source.data.tripPatterns.data).length,
       },
     });
   }

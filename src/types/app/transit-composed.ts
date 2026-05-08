@@ -48,6 +48,8 @@ export interface SourceMeta {
     stopCount: number;
     /** Number of routes. */
     routeCount: number;
+    /** Number of trip patterns. */
+    tripPatternCount: number;
   };
 }
 
