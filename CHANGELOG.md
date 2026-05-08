@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.08]
+
 ### Added
 
 - Pipeline: 東海汽船 (Tokai Kisen Co.,Ltd.) の GTFS-JP データソースを追加 (prefix `tkksn`, route_type 4 ferry)。伊豆諸島 (大島・利島・新島・式根島・神津島・三宅島・御蔵島・八丈島・青ヶ島) と小笠原諸島 (父島・母島) を結ぶ 19 stops / 15 routes / 132 trips。`shapes.txt` なし、`route_color` 全空のため `routeColorFallbacks: { '*': '294DA5' }` でフォールバック適用。
