@@ -1,0 +1,13 @@
+{
+  "sourceName": "nishi-tokyo-bus",
+  "checkedAt": "2026-05-08T02:22:25.647Z",
+  "resourceUrls": [
+    "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20251225",
+    "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20260128",
+    "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20260301",
+    "https://api.odpt.org/api/v4/files/odpt/NishiTokyoBus/NTBus.zip?date=20260324"
+  ],
+  "result": "ok",
+  "warnings": [],
+  "errors": []
+}
