@@ -35,5 +35,6 @@ export default [
   'tkksn', // tokai-kisen
   'kcmb', // kagoshima-maritime-bureau
   'oksrif', // okushiri-ferry
+  'orgfry', // orange-ferry
   // 'tkbus', // tokyu-bus (not built)
 ];

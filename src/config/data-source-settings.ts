@@ -237,6 +237,17 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'orange-ferry',
+    prefixes: ['orgfry'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Orange Ferry',
+      names: { ja: 'オレンジフェリー', en: 'Orange Ferry' },
+    },
+    countries: ['JP'],
+  },
+  {
     id: 'vag-freiburg',
     prefixes: ['vagfr'],
     routeTypes: [0, 3],

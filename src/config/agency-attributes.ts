@@ -179,6 +179,16 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '00AFCC', text: 'FFFFFF' } /* Primary */],
   },
 
+  // --- Orange Ferry (Shikoku Kaihatsu Ferry) ---
+  'orgfry:6500001011650': {
+    shortName: { ja: 'オレンジフェリー', en: 'Orange Ferry' },
+    longName: {
+      ja: '四国開発フェリー株式会社',
+      en: 'Shikoku Kaihatsu Ferry Co., Ltd.',
+    },
+    colors: [{ bg: 'EC5B24', text: 'FFFFFF' } /* Primary */],
+  },
+
   // --- Oshima Bus ---
   'osmbus:1010001131230': {
     shortName: { ja: '大島バス', en: 'Oshima Bus' },

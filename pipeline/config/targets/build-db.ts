@@ -34,4 +34,5 @@ export default [
   'tokai-kisen',
   'kagoshima-maritime-bureau',
   'okushiri-ferry',
+  'orange-ferry',
 ];

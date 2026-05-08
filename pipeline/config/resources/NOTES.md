@@ -569,3 +569,53 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20260101版
+
+## orange-ferry (オレンジフェリー / Orange Ferry — 四国開発フェリー株式会社)
+
+- Resource definition: `pipeline/config/resources/gtfs/orange-ferry.ts`
+- CKAN: <https://ckan.odpt.org/dataset/orange_ferry_all_lines>
+- Resource ID (使用中): `2115e2d4-dc0e-4dbf-b825-14f1da5bd841` (20250517版)
+
+### route_type / 概要
+
+- 3 路線、`route_type=4` (Ferry)、瀬戸内・関西を結ぶ航路
+    - `[01]東予～大阪` (route_color=`008000` 緑)
+    - `[02]八幡浜～臼杵` (route_color=`FFA500` オレンジ)
+    - `[03]新居浜～神戸` (route_color=`0000FF` 青)
+- 6 stops (東予港 / 大阪南港 / 八幡浜港 / 臼杵港 / 新居浜港 / 神戸港)
+- 21 trips, 42 stop_times, 6 trip patterns
+
+### 有効期間
+
+- 有効期間: 2022/04/01 - **2028/03/31** (ODPT フェリー中で期限最長)
+
+### route_color
+
+- 全 3 路線で `route_color` / `route_text_color` がソース側で正しく設定済 (有効な可視色)
+- `routeColorFallbacks` 不要
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt は含まれていない (海路、代替なし)
+
+### translations.txt (旧 GTFS-JP 3 列形式)
+
+- ヘッダが `trans_id, lang, translation` の旧 GTFS-JP v1 形式 (Tokai Kisen と同パターン)
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` のヘッダ peek dispatch で legacy 検出 → `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` の純変換関数経由で標準形式に変換しながら DB 投入
+- 30 行: 6 stops × ja / ja-HrKt / en / zh-Hans / zh-Hant の 5 言語 (一部欠ける言語あり)
+- `lang=ja-HrKt` → `language=ja-Hrkt` に正規化される
+- 全行 stops.stop_name の翻訳
+
+### GTFS-JP 拡張ファイル
+
+- ZIP には `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### fare_attributes.txt
+
+- ヘッダのみで **データ行 0 件** (運賃情報なし)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20250517版 (CKAN 上の最新で feed_end_date まで余裕あり)

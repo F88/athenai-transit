@@ -532,20 +532,20 @@ async function buildSourceDb(
     try {
       let rowCount: number;
       if (
-        source.directory === 'tokai-kisen' &&
+        (source.directory === 'tokai-kisen' || source.directory === 'orange-ferry') &&
         tableName === 'translations' &&
         isGtfsJpLegacyTranslationsHeader((await peekCsvHeaders(filePath)) ?? [])
       ) {
-        // Tokai Kisen historically ships translations.txt in the legacy
-        // GTFS-JP 3-column format (`trans_id, lang, translation`), which the
-        // standard 6-column schema cannot ingest directly. Detect by header
-        // (not by source name alone) so that when the source eventually
-        // upgrades to the standard format, the dispatch quietly falls back
-        // to the standard importer instead of misreporting a legacy detect
-        // and throwing on the strict header check.
+        // Tokai Kisen and Orange Ferry historically ship translations.txt in
+        // the legacy GTFS-JP 3-column format (`trans_id, lang, translation`),
+        // which the standard 6-column schema cannot ingest directly. Detect
+        // by header (not by source name alone) so that when the source
+        // eventually upgrades to the standard format, the dispatch quietly
+        // falls back to the standard importer instead of misreporting a
+        // legacy detect and throwing on the strict header check.
         //
         // The conversion in gtfs-csv-converter assumes every legacy row is
-        // a stops.stop_name translation, which holds for this source.
+        // a stops.stop_name translation, which holds for both sources.
         console.log(
           `  WARN [translations] (${source.directory}): legacy GTFS-JP 3-column format detected — auto-converting to standard 6-column (stops.stop_name)`,
         );
