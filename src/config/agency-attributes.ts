@@ -195,6 +195,24 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '0072CF', text: 'FFFFFF' } /* Primary */],
   },
 
+  // --- Tokyo Metro ---
+  'tome:tokyometro': {
+    shortName: {
+      ja: '東京メトロ',
+      'ja-Hrkt': 'とうきょうメトロ',
+      en: 'Tokyo Metro',
+    },
+    longName: {
+      ja: '東京地下鉄株式会社',
+      'ja-Hrkt': 'とうきょうちかてつかぶしきがいしゃ',
+      en: 'Tokyo Metro Co., Ltd.',
+    },
+    colors: [
+      { bg: '00A3D9', text: 'FFFFFF' } /* Primary */,
+      { bg: '00467E', text: 'FFFFFF' } /* Secondary */,
+    ],
+  },
+
   // --- TWR Rinkai Line ---
   'twrr:twr': {
     shortName: {

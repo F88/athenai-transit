@@ -28,4 +28,5 @@ export default [
   'vag-freiburg',
   'actv-nav',
   'tokyo-cruise-ship',
+  'tokyometro',
 ];
