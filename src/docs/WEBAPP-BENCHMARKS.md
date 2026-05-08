@@ -347,3 +347,172 @@ Comparison with previous (2026-03-30 enrichStopInsights After median):
   Called ~50 times per NearbyDepartures update, total cost is sub-millisecond.
 - shapes re-render on dateTime change is avoided by stabilizing
   `resolveRouteFreq` identity on `serviceDayKey` (changes only at 03:00).
+
+## 2026-05-08: Extend repo-bench (4 missing methods + dataset summary)
+
+### Extend repo-bench: Change
+
+- Added 4 previously-uncovered TransitRepository methods to `runRepoBenchmark`:
+    - `getStopMetaById` — 5 calls per location (Map.get sanity check)
+    - `getStopMetaByIds` — 1 batch per location (full nearby IDs per batch)
+    - `getTripInspectionTargets` — every nearby stop (real work)
+    - `getTripSnapshot` — first 3 targets per `getTripInspectionTargets` success (real work)
+- Added a `Dataset:` summary log emitting `sources / stops / routes / tripPatterns` after `getAllSourceMeta` so future reports can populate the Environment table without manually summing per-source repo init logs.
+- Extended `SourceMeta.stats` with `tripPatternCount` (no production caller — `getAllSourceMeta` is benchmark-only).
+- Dataset has grown since 2026-03-31: +3 GTFS sources (`tcship` / `tome` / `ntbus`) + updates to existing feeds.
+
+### Extend repo-bench: Source download summary (deterministic)
+
+| File type     |               Count | Total size | Largest source                                   |
+| ------------- | ------------------: | ---------: | ------------------------------------------------ |
+| data.json     |                  24 |     75.6MB | minkuru (17.5MB), kcbus (11.4MB), sbbus (10.8MB) |
+| insights.json |       24 + 1 global |      6.0MB | global (1.6MB), sbbus (902KB), minkuru (869KB)   |
+| shapes.json   | 17 (7 sources skip) |      8.9MB | vagfr (4.4MB), kcbus (1.6MB), actvnav (1.2MB)    |
+| **Total**     |            65 files | **90.5MB** | —                                                |
+
+network 時間は環境依存のため記録対象外。再現性のあるサイズのみ。
+
+### Extend repo-bench: Results (5 runs, median)
+
+Initialization:
+
+| Metric |                                   Result |
+| ------ | ---------------------------------------: |
+| fetch  | 683ms (range 578-692, network-dependent) |
+| merge  |                                     67ms |
+| enrich |                                     88ms |
+| shapes |                                    100ms |
+
+Benchmark results:
+
+| Method                                           | Result                                                      |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| getAllStops                                      | 0.10ms (18,648 stops)                                       |
+| getRouteShapes                                   | 0.10ms (2,819 shapes)                                       |
+| getAllSourceMeta                                 | 0.00ms (24 sources)                                         |
+| Dataset                                          | 24 sources, 18,648 stops, 1,551 routes, 4,593 trip patterns |
+| getStopsInBounds (12 locations)                  | 4.80ms (range 4.70-5.50)                                    |
+| getStopsNearby (12 locations)                    | 5.80ms (range 5.40-6.90), 687 stops                         |
+| getUpcomingTimetableEntries limit=3 (687 stops)  | 20.90ms, 0.03ms/stop, 1,855 entries                         |
+| getUpcomingTimetableEntries no-limit (687 stops) | 13.70ms, 0.02ms/stop, 45,805-46,120 entries                 |
+| getRouteTypesForStop (687 stops)                 | 1.10ms                                                      |
+| getFullDayTimetableEntries (24 stops)            | 2.50ms, 4,187 stop times                                    |
+| getStopsForRoutes (12 calls)                     | 6.70ms, 0.55-0.63ms/call, 727 stops                         |
+| resolveStopStats (687 stops)                     | 0.60ms, 0.00ms/stop, 652 resolved                           |
+| resolveRouteFreq (220 routes, 203 resolved)      | 0.20ms                                                      |
+| **getStopMetaById (60 calls)**                   | **0.30ms, 0.00ms/call, 60 resolved** (new)                  |
+| **getStopMetaByIds (12 batches, 687 ids)**       | **0.10ms, 0.01ms/batch, 687 resolved** (new)                |
+| **getTripInspectionTargets (687 calls)**         | **15.40ms, 0.02ms/call, 83,370 targets** (new)              |
+| **getTripSnapshot (1,914 calls)**                | **13.50ms, 0.01ms/call, 1,914 snapshots** (new)             |
+| **Benchmark total**                              | **88.30ms (range 84.80-97.00)**                             |
+
+### Comparison with previous (2026-03-31 service group selection median)
+
+Initialization:
+
+| Metric | Before (median) | After (median) | Change        |
+| ------ | --------------: | -------------: | ------------- |
+| merge  |            42ms |           67ms | +25ms (+60%)  |
+| enrich |            65ms |           88ms | +23ms (+35%)  |
+| shapes |            48ms |          100ms | +52ms (+108%) |
+
+Benchmark (existing methods):
+
+| Metric                              | Before (median) | After (median) | Change                              |
+| ----------------------------------- | --------------: | -------------: | ----------------------------------- |
+| getAllStops                         |            0.10 |           0.10 | (floor)                             |
+| getRouteShapes                      |            0.00 |           0.10 | (floor)                             |
+| getAllSourceMeta                    |            0.00 |           0.00 | (floor)                             |
+| getStopsInBounds                    |            3.80 |           4.80 | +1.0ms (+26%)                       |
+| getStopsNearby                      |            4.10 |           5.80 | +1.7ms (+41%)                       |
+| Upcoming lim=3                      |            38ms |          20.90 | **-17ms (-45%)**                    |
+| Upcoming no-lim                     |            31ms |          13.70 | **-17ms (-56%)**                    |
+| getRouteTypesForStop                |            1.20 |           1.10 | -0.1ms (within range)               |
+| getFullDay                          |            2.50 |           2.50 | 0%                                  |
+| getStopsForRoutes                   |            5.50 |           6.70 | +1.2ms (+22%)                       |
+| resolveStopStats                    |            0.80 |           0.60 | -0.2ms (within range)               |
+| resolveRouteFreq                    |            0.30 |           0.20 | -0.1ms (within range)               |
+| Benchmark total (existing only)     |             ~89 |            ~58 | -31ms (existing methods got faster) |
+| Benchmark total (incl. new methods) |               — |          88.30 | new methods add ~29ms               |
+
+Dataset growth since 2026-03-31:
+
+| Item                       | Before |  After | Change |
+| -------------------------- | -----: | -----: | ------ |
+| sources                    |     17 |     24 | +41%   |
+| stops                      | 15,805 | 18,648 | +18%   |
+| routes                     |  1,333 |  1,551 | +16%   |
+| trip patterns              |  3,139 |  4,593 | +46%   |
+| shapes                     |  1,623 |  2,819 | +74%   |
+| nearby stops (12 locs sum) |    653 |    687 | +5%    |
+
+#### Raw data: Initialization (5 runs, extend repo-bench)
+
+| Run | fetch | merge | enrich |   shapes |
+| --- | ----: | ----: | -----: | -------: |
+| 1\* | 617ms |  64ms |   76ms |    100ms |
+| 2   | 578ms |  67ms |   88ms | (missed) |
+| 3   | 690ms |  68ms |  108ms |     93ms |
+| 4   | 692ms |  72ms |  160ms |    105ms |
+| 5   | 683ms |  62ms |   87ms |    100ms |
+
+\*Run 1 partly affected by JIT warmup, but `merge` / `enrich` are CPU-bound and reproducible.
+
+#### Raw data: Repo API benchmark (5 runs, extend repo-bench)
+
+| Run | InBounds | Nearby |  Up=3 | Up nolim | RouteTypes | FullDay | ForRoutes | StopStats | RouteFreq | MetaById | MetaByIds | TripInsp | TripSnap | Total |
+| --- | -------: | -----: | ----: | -------: | ---------: | ------: | --------: | --------: | --------: | -------: | --------: | -------: | -------: | ----: |
+| 1   |     4.80 |   5.60 | 19.00 |    14.00 |       1.10 |    2.40 |      6.70 |      0.40 |      0.20 |     0.10 |      0.40 |    12.70 |    14.50 | 84.80 |
+| 2   |     4.70 |   6.20 | 20.90 |    13.70 |       0.90 |    2.50 |      6.60 |      0.80 |      0.40 |     0.30 |      0.10 |    15.30 |    12.00 | 87.20 |
+| 3   |     4.80 |   5.80 | 20.40 |    13.70 |       1.40 |    2.70 |      6.60 |      0.40 |      0.10 |     0.60 |      0.10 |    15.80 |    13.40 | 88.40 |
+| 4   |     4.90 |   6.90 | 21.40 |    16.60 |       1.60 |    3.00 |      7.60 |      0.60 |      0.20 |     0.10 |      0.30 |    15.40 |    15.60 | 97.00 |
+| 5   |     5.50 |   5.40 | 21.40 |    13.30 |       0.90 |    2.50 |      6.80 |      0.60 |      0.30 |     0.30 |      0.10 |    15.40 |    13.50 | 88.30 |
+
+Run 4 has higher enrich (160ms) and slightly elevated benchmark times across the board (likely a GC pause or transient system load); not excluded from median because the elevation is consistent across multiple methods, not a single-method outlier.
+
+### Extend repo-bench: Observations
+
+#### Extend repo-bench: Initialization
+
+- `merge` +60% (42→67ms) and `enrich` +35% (65→88ms) are consistent with sources +41% / stops +18%. Per-source assembly cost in `mergeSourcesV2` and per-source insights map building scale roughly with source count, not stop count.
+- `shapes` +108% (48→100ms) is the largest jump and the only super-linear scaling — shape polyline count +74% (1,623 → 2,819) but runtime more than doubled.
+- Per-source polyline counts for the current dataset (verified): minkuru 748, vagfr 617, kcbus 386, **tome 373** (4th), toaran 318, actvnav 173, others ≤40.
+- `tome` ships 373 polylines / 3,007 points (8.1 points/polyline avg). This is consistent with other MLIT-mapped rail sources where each KSJ railway feature becomes its own `RouteShape` — `mir` 40 polylines / 1 route, `tmm` 37 / 1, `twrr` 15 / 1, all giving ~15-40 polylines per route. Tome's 9 routes therefore contribute 373 polylines, which is comparable on a per-route basis but large in absolute terms.
+- The dominant cost in `loadAllShapesWithInsights` scales with **polyline count**, not point count: per-polyline `RouteShape` construction + Map registration runs once per polyline regardless of how many points each polyline holds. JSON parse cost (which would scale with points) is paid in the earlier fetch stage.
+- **Watch list**: `shapes` 100ms is the closest section to a future bottleneck. The next MLIT-mapped train source (multiple routes × ~40 polylines/route) would amplify this fastest. If/when this section approaches user-perceptible (~300ms+), candidates for investigation:
+    - Subdivide the stage in benchmark to isolate per-polyline construction vs pattern enrichment.
+    - Consider whether MLIT polylines for the same route can be merged into a single `RouteShape` per route (would change the data model, not just the build code).
+- `fetch` median 683ms is network-dependent and not directly comparable to historical 387-475ms ranges. Total payload is now 90.5MB (vs ~50MB previously estimated), so the absolute increase makes sense regardless of network state.
+
+#### Extend repo-bench: Benchmark methods
+
+- **`getStopsNearby` +41% / `getStopsInBounds` +26%** — both scale with stops (+18%), but the runtime grew faster than data. These methods iterate the full stops set per query (no spatial index), so behavior is super-linear when combined with cache effects from a larger working set.
+- **`getUpcomingTimetableEntries` -45 to -56%** — significant improvement despite +18% stops. Likely cumulative effect of refactors landing between 2026-03-31 and 2026-05-08:
+    - `useTimetable` hook extraction (PR #176)
+    - service group selection refinements
+    - DepartureGroup → TimetableEntry migration completion (in-memory structure simplified)
+
+    This is the single largest user-facing improvement in the timetable hot path.
+
+- **`getStopsForRoutes` +22%** scales with route count +16% (full route enumeration cost).
+- **Floor-near methods** (`getAllStops` / `getRouteShapes` / `getAllSourceMeta` / `resolveStopStats` / `resolveRouteFreq` / `getStopMetaById` / `getStopMetaByIds`): all stay within `performance.now()` resolution noise. Treat resolved/total counts as the signal, not ms.
+
+#### Extend repo-bench: New methods
+
+- `getTripInspectionTargets` — 15.40ms over 687 calls returning 83,370 targets means **~121 targets/stop avg**, **0.02ms/call**. The Trip Inspection feature is well within UX budget for stop selection.
+- `getTripSnapshot` — 13.50ms over 1,914 calls (3 snapshots per stop with successful targets) means **0.01ms/call** for full snapshot reconstruction. Negligible per-snapshot cost.
+- Combined +29ms in benchmark total. Future regression analysis on these methods should compare against this baseline (range 12.70-15.80 / 12.00-15.60 individually).
+
+#### Extend repo-bench: Measurement stability
+
+- Total range 84.80-97.00ms (span 14% of median). Run 4 alone accounts for the upper bound; Runs 1-3 / 5 sit in 84.80-88.40ms.
+- 5 consecutive reloads (no other tasks between) eliminated the 145.70ms outlier seen earlier in non-consecutive runs (~58% spike was attributed to background activity).
+- Median over 5 consecutive runs is the appropriate representative value for both regression detection and forward-looking baselines.
+
+#### Extend repo-bench: Trade-off
+
+- The +29ms cost of measuring 4 new methods raises Benchmark total from ~58ms (existing only) to 88.30ms (incl. new). This is acceptable because:
+    - The 4 new methods are real production hot paths (trip inspection, portal/anchor, `?stop=` URL).
+    - Without measuring them, regressions in those paths would be invisible.
+    - Total still completes in <100ms for a 5-run cycle of <2 minutes.
+- Floor-near methods are kept in the report for sanity-check purposes and historical continuity, even though their ms values are below `performance.now()` resolution.
