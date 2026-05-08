@@ -367,7 +367,7 @@ Comparison with previous (2026-03-30 enrichStopInsights After median):
     - 2026-05-07: `tcship` (Tokyo Cruise Ship)
     - 2026-05-08: `tome` (Tokyo Metro), `ntbus` (Nishi Tokyo Bus)
 
-  Existing-feed updates (e.g. seasonal GTFS revisions) account for the rest of the stop / route / pattern delta.
+Existing-feed updates (e.g. seasonal GTFS revisions) account for the rest of the stop / route / pattern delta.
 
 ### Extend repo-bench: Source download summary (deterministic)
 
@@ -486,16 +486,17 @@ Run 4 has higher enrich (160ms) and slightly elevated benchmark times across the
 - `shapes` +108% (48→100ms) is the largest jump and the only super-linear scaling — shape polyline count +74% (1,623 → 2,819) but runtime more than doubled.
 - The +1,196 polyline delta is almost entirely accounted for by the 5 new shape-bearing sources added since 2026-03-31:
 
-  | source | polylines | points | KB | added |
-  | --- | ---: | ---: | ---: | --- |
-  | **vagfr** | **617** | **169,745** | **4,414** | 2026-04-08 |
-  | tome | 373 | 3,007 | 62 | 2026-05-08 |
-  | actvnav | 173 | 32,239 | 1,198 | 2026-04-08 |
-  | tmm | 37 | 290 | 6 | 2026-04-23 |
-  | twrr | 15 | 109 | 2 | 2026-04-23 |
-  | new total | **1,215** | | **5,682** | |
+    | source    | polylines |      points |        KB | added      |
+    | --------- | --------: | ----------: | --------: | ---------- |
+    | **vagfr** |   **617** | **169,745** | **4,414** | 2026-04-08 |
+    | tome      |       373 |       3,007 |        62 | 2026-05-08 |
+    | actvnav   |       173 |      32,239 |     1,198 | 2026-04-08 |
+    | tmm       |        37 |         290 |         6 | 2026-04-23 |
+    | twrr      |        15 |         109 |         2 | 2026-04-23 |
+    | new total | **1,215** |             | **5,682** |            |
 
-  Existing-source updates between 2026-03-31 and 2026-05-08 contribute roughly the remaining (-19 polylines net), so essentially all of the runtime growth comes from these new sources.
+    Existing-source updates between 2026-03-31 and 2026-05-08 contribute roughly the remaining (-19 polylines net), so essentially all of the runtime growth comes from these new sources.
+
 - `vagfr` is the dominant single contributor: **617 polylines / 169,745 points / 4.4MB** is comparable in scale to `minkuru` (748 polylines, the previous largest). Adding it alone would have moved the shapes step substantially.
 - `tome` and other MLIT-mapped train sources have a different cost profile: many short polylines (e.g. tome 373 polylines / 3,007 points, ~8 points/polyline). Each KSJ railway feature becomes its own `RouteShape` — `mir` 40 / 1 route, `tmm` 37 / 1, `twrr` 15 / 1, `tome` 373 / 9 routes (~40 polylines/route consistently).
 - The dominant cost in `loadAllShapesWithInsights` scales with **polyline count**, not point count: per-polyline `RouteShape` construction + Map registration runs once per polyline regardless of how many points each polyline holds. JSON parse cost (which would scale with points) is paid in the earlier fetch stage.
@@ -503,9 +504,10 @@ Run 4 has higher enrich (160ms) and slightly elevated benchmark times across the
     - **Bus / dense-shape sources** like vagfr (high polyline count + many points). Adding another vagfr-scale source would push the stage past 150ms.
     - **MLIT-mapped train sources** producing many short polylines per route. Each new train operator adds ~40 polylines/route in benchmark cost.
 
-  If/when this section approaches user-perceptible (~300ms+), candidates for investigation:
+    If/when this section approaches user-perceptible (~300ms+), candidates for investigation:
     - Subdivide the stage in benchmark to isolate per-polyline construction vs pattern enrichment.
     - For MLIT sources, consider merging polylines for the same route into a single `RouteShape` (would change the data model, not just the build code).
+
 - `fetch` median 683ms is network-dependent and not directly comparable to historical 387-475ms ranges. Total payload is now 90.5MB (vs ~50MB previously estimated), so the absolute increase makes sense regardless of network state.
 
 #### Extend repo-bench: Benchmark methods
