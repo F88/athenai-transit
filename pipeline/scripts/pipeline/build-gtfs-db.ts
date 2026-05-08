@@ -185,17 +185,34 @@ async function openCsvStream(filePath: string): Promise<CsvStream | null> {
 }
 
 /**
- * Open a CSV file just to read its header row. Returns `null` for an
- * empty file. Used by callers that need to dispatch on file format
- * before deciding which importer to invoke.
+ * Read just the CSV header row of a file and close the underlying
+ * resources before returning. Used by callers that need to dispatch on
+ * file format before deciding which importer to invoke.
  *
- * The underlying readline iterator is not advanced beyond the header
- * line, and the read stream is left to be cleaned up by the runtime
- * when the iterator is no longer referenced.
+ * Done as a dedicated reader (rather than reusing {@link openCsvStream}
+ * and discarding the iterator) so the readline interface and file
+ * stream are released deterministically — relying on GC would leak file
+ * descriptors when this is called once per source in a batch run.
+ *
+ * @returns the parsed header columns, or `null` if the file has no
+ *   non-empty lines.
  */
 async function peekCsvHeaders(filePath: string): Promise<string[] | null> {
-  const csv = await openCsvStream(filePath);
-  return csv ? csv.headers : null;
+  const stream = createReadStream(filePath, { encoding: 'utf-8' });
+  const rl = createInterface({ input: stream, crlfDelay: Infinity });
+  try {
+    for await (const line of rl) {
+      const trimmed = line.trim();
+      if (trimmed.length === 0) {
+        continue;
+      }
+      return splitCsvLine(trimmed.replace(/^\uFEFF/, '')).map((h) => h.trim());
+    }
+    return null;
+  } finally {
+    rl.close();
+    stream.destroy();
+  }
 }
 
 // ---------------------------------------------------------------------------
