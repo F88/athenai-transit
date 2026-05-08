@@ -154,6 +154,89 @@ function benchResolveRouteFreq(
   return { ms: performance.now() - t0, resolved, total: seen.size };
 }
 
+async function benchStopMetaById(
+  repo: TransitRepository,
+  stops: StopWithMeta[],
+  sampleSize: number,
+): Promise<{ ms: number; resolved: number; calls: number }> {
+  const n = Math.min(sampleSize, stops.length);
+  const t0 = performance.now();
+  let resolved = 0;
+  for (let i = 0; i < n; i++) {
+    const result = await repo.getStopMetaById(stops[i].stop.stop_id);
+    if (result.success) {
+      resolved++;
+    }
+  }
+  return { ms: performance.now() - t0, resolved, calls: n };
+}
+
+function benchStopMetaByIds(
+  repo: TransitRepository,
+  stops: StopWithMeta[],
+): { ms: number; resolved: number; requested: number } {
+  const ids = new Set(stops.map((s) => s.stop.stop_id));
+  const t0 = performance.now();
+  const metas = repo.getStopMetaByIds(ids);
+  return { ms: performance.now() - t0, resolved: metas.length, requested: ids.size };
+}
+
+async function benchTripInspection(
+  repo: TransitRepository,
+  stops: StopWithMeta[],
+  serviceDate: Date,
+  snapshotsPerStop: number,
+): Promise<{
+  targetsMs: number;
+  targetsCount: number;
+  targetsCalls: number;
+  snapshotMs: number;
+  snapshotsCount: number;
+  snapshotCalls: number;
+}> {
+  let targetsMs = 0;
+  let targetsCount = 0;
+  let targetsCalls = 0;
+  let snapshotMs = 0;
+  let snapshotsCount = 0;
+  let snapshotCalls = 0;
+  for (const stop of stops) {
+    const t0 = performance.now();
+    const result = await repo.getTripInspectionTargets({
+      stopId: stop.stop.stop_id,
+      serviceDate,
+    });
+    targetsMs += performance.now() - t0;
+    targetsCalls++;
+    if (!result.success || result.data.length === 0) {
+      continue;
+    }
+    targetsCount += result.data.length;
+    const sampleN = Math.min(snapshotsPerStop, result.data.length);
+    for (let i = 0; i < sampleN; i++) {
+      const target = result.data[i];
+      if (!target) {
+        continue;
+      }
+      const s0 = performance.now();
+      const snap = repo.getTripSnapshot(target.tripLocator, target.serviceDate);
+      snapshotMs += performance.now() - s0;
+      snapshotCalls++;
+      if (snap.success) {
+        snapshotsCount++;
+      }
+    }
+  }
+  return {
+    targetsMs,
+    targetsCount,
+    targetsCalls,
+    snapshotMs,
+    snapshotsCount,
+    snapshotCalls,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Summary formatting
 // ---------------------------------------------------------------------------
@@ -195,6 +278,15 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
   const meta = await timedAsync(() => repository.getAllSourceMeta());
   if (meta.value.success) {
     logger.info(`getAllSourceMeta: ${meta.ms.toFixed(2)}ms (${meta.value.data.length} sources)`);
+    let totalRoutes = 0;
+    let totalTripPatterns = 0;
+    for (const sm of meta.value.data) {
+      totalRoutes += sm.stats.routeCount;
+      totalTripPatterns += sm.stats.tripPatternCount;
+    }
+    logger.info(
+      `Dataset: ${meta.value.data.length} sources, ${allStops.value.data.length} stops, ${totalRoutes} routes, ${totalTripPatterns} trip patterns`,
+    );
   }
 
   // --- Per-location accumulators ---
@@ -209,6 +301,10 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
   const stopsForRoutes = { ms: 0, stopCount: 0, calls: 0 };
   const resolveStats = { ms: 0, resolved: 0, total: 0 };
   const resolveFreq = { ms: 0, resolved: 0, total: 0 };
+  const stopMetaById = { ms: 0, resolved: 0, calls: 0 };
+  const stopMetaByIds = { ms: 0, resolved: 0, requested: 0, calls: 0 };
+  const tripTargets = { ms: 0, count: 0, calls: 0 };
+  const tripSnapshot = { ms: 0, count: 0, calls: 0 };
   const serviceDate = getServiceDay(now);
 
   for (const loc of BENCH_LOCATIONS) {
@@ -262,6 +358,25 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
       resolveFreq.ms += rf.ms;
       resolveFreq.resolved += rf.resolved;
       resolveFreq.total += rf.total;
+
+      const sm = await benchStopMetaById(repository, nearbyStops, 5);
+      stopMetaById.ms += sm.ms;
+      stopMetaById.resolved += sm.resolved;
+      stopMetaById.calls += sm.calls;
+
+      const sms = benchStopMetaByIds(repository, nearbyStops);
+      stopMetaByIds.ms += sms.ms;
+      stopMetaByIds.resolved += sms.resolved;
+      stopMetaByIds.requested += sms.requested;
+      stopMetaByIds.calls++;
+
+      const ti = await benchTripInspection(repository, nearbyStops, serviceDate, 3);
+      tripTargets.ms += ti.targetsMs;
+      tripTargets.count += ti.targetsCount;
+      tripTargets.calls += ti.targetsCalls;
+      tripSnapshot.ms += ti.snapshotMs;
+      tripSnapshot.count += ti.snapshotsCount;
+      tripSnapshot.calls += ti.snapshotCalls;
     }
 
     const inBound = boundsResult.value.success ? boundsResult.value.data.length : 0;
@@ -293,6 +408,18 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
   );
   logger.info(
     `resolveRouteFreq (${resolveFreq.total} routes, ${resolveFreq.resolved} resolved): ${resolveFreq.ms.toFixed(2)}ms total`,
+  );
+  logger.info(
+    `getStopMetaById (${stopMetaById.calls} calls): ${stopMetaById.ms.toFixed(2)}ms total, ${avg(stopMetaById.ms, stopMetaById.calls)}ms/call, ${stopMetaById.resolved} resolved`,
+  );
+  logger.info(
+    `getStopMetaByIds (${stopMetaByIds.calls} batches, ${stopMetaByIds.requested} ids): ${stopMetaByIds.ms.toFixed(2)}ms total, ${avg(stopMetaByIds.ms, stopMetaByIds.calls)}ms/batch, ${stopMetaByIds.resolved} resolved`,
+  );
+  logger.info(
+    `getTripInspectionTargets (${tripTargets.calls} calls): ${tripTargets.ms.toFixed(2)}ms total, ${avg(tripTargets.ms, tripTargets.calls)}ms/call, ${tripTargets.count} targets`,
+  );
+  logger.info(
+    `getTripSnapshot (${tripSnapshot.calls} calls): ${tripSnapshot.ms.toFixed(2)}ms total, ${avg(tripSnapshot.ms, tripSnapshot.calls)}ms/call, ${tripSnapshot.count} snapshots`,
   );
 
   logger.info(`Benchmark complete: ${(performance.now() - t0).toFixed(2)}ms`);
