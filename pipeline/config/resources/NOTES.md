@@ -234,6 +234,58 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 - ZIP には GTFS 標準外の `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる (船舶情報・運賃詳細用の事業者拡張)
 - パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
 
+## tokyometro (東京メトロ)
+
+- Resource definition: `pipeline/config/resources/gtfs/tokyometro.ts`
+- CKAN: <https://ckan.odpt.org/dataset/train-tokyometro>
+- Resource ID: `d4f11962-1c5a-4316-9a16-7fb229c227ea`
+
+### downloadUrl
+
+- `https://api.odpt.org/api/v4/files/TokyoMetro/data/TokyoMetro-Train-GTFS.zip`
+- `?date=YYYYMMDD` パラメータ不要 (常に最新版を返す形式、mir-train / tama-monorail / twr-rinkai と同パターン)
+- 認証必須 (`acl:consumerKey`)
+
+### 有効期間
+
+- 有効期間: 2026/03/14 - 2026/12/31
+- feed_info.feed_version: `20260314`
+
+### 路線
+
+- 9 路線すべて収録 (銀座線、丸ノ内線、日比谷線、東西線、千代田線、有楽町線、半蔵門線、南北線、副都心線)
+- 185 stops, 9486 trips, 171,069 stop_times, 251 trip patterns
+
+### route_color
+
+- 全 9 路線で line color が設定済み (例: 銀座線=`FF9500`, 丸ノ内線=`F62E36`, 日比谷線=`B5B5AC`)
+- `route_text_color` は空。PR #137 の auto-contrast により表示色が決定される
+- `routeColorFallbacks` は不要
+
+### shapes.txt / 路線図対応
+
+- GTFS ZIP に shapes.txt は含まれていない
+- 国土数値情報 (MLIT N02-24 RailroadSection) に `東京地下鉄` (operator) として 9 路線 + 1 分岐線 (10 ライン名) が収録されているため、`mlitShapeMapping` 経由で KSJ から shape を生成
+- mapping (10 line → 9 routes、丸ノ内線本線と分岐線をまとめて `tome:2` へ):
+    - `3号線銀座線 → tome:1` (38 segments, 266 points)
+    - `4号線丸ノ内線` + `4号線丸ノ内線分岐線 → tome:2` (61 segments, 421 points、方南町支線含む)
+    - `2号線日比谷線 → tome:3` (45 segments, 362 points)
+    - `5号線東西線 → tome:4` (48 segments, 435 points)
+    - `9号線千代田線 → tome:5` (43 segments, 405 points)
+    - `8号線有楽町線 → tome:6` (50 segments, 394 points)
+    - `11号線半蔵門線 → tome:7` (28 segments, 238 points)
+    - `7号線南北線 → tome:8` (38 segments, 383 points)
+    - `13号線副都心線 → tome:9` (22 segments, 103 points)
+- TOTAL: 373 segments / 3,007 points / shapes.json 約 62KB
+
+### translations.txt
+
+- 翻訳あり (stop_names: 185, trip_headsigns: 93, route_long_names: 9, agency_names: 1)
+
+### route_short_name
+
+- 全路線で空。`route_long_name` のみ提供 (例: `銀座線`)
+
 ## twr-rinkai (りんかい線 / 東京臨海高速鉄道)
 
 - Resource definition: `pipeline/config/resources/gtfs/twr-rinkai.ts`
