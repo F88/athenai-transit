@@ -11,6 +11,12 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- Pipeline: 東京都観光汽船 (TOKYO CRUISE / 水上バス) の GTFS データソースを追加 (prefix `tcship`, route_type 4 ferry)。隅田川・東京湾を航行する 5 stops / 5 routes (浅草・お台場海浜公園・豊洲・日の出桟橋・浜離宮)。`shapes.txt` は水路のため非対応。GTFS-JP 拡張の `ships.txt` / `payload*.txt` が同梱されているがパイプラインは標準テーブルのみ使用。
+- About: 東京都観光汽船のクレジット・データ情報を追加。
+- Pipeline: 東京メトロ (東京地下鉄株式会社) の GTFS データソースを追加 (prefix `tome`, route_type 1 subway)。9 路線すべて (銀座線・丸ノ内線・日比谷線・東西線・千代田線・有楽町線・半蔵門線・南北線・副都心線) で 185 駅 / 9 routes。各路線で公式 line color が設定済み。`shapes.txt` は含まれないが MLIT 国土数値情報経由で全 9 路線の shape を生成 (10 line names → 9 routes、丸ノ内線分岐線は本線へ統合)。
+- About: 東京メトロのクレジット・データ情報を追加。
+- Pipeline: 西東京バス (西東京バス株式会社) の GTFS データソースを追加 (prefix `ntbus`, route_type 3 bus)。多摩・八王子エリアの 2,909 stops / 167 routes。フィードには本体 + 4 自治体コミュニティバス (はちバス・はむらん・るのバス・ぐるりーんひのでちゃん) の 5 agency が同梱され、`agency-attributes` で各自治体のシンボルカラーを個別設定。`route_color` 全空のため `routeColorFallbacks` で本体カラー (`F01812`) を全 167 路線に適用。`shapes.txt` はヘッダのみ (iyt2 と同パターン)。
+- About: 西東京バスのクレジット・データ情報を追加。
 - 検索ダイアログに件数ストリップを追加。 全件表示時は `{count}件` (英: `{count} matches`)、 上限に達した truncate 表示時は `{shown} / {total}件` (英: `{shown} / {total}`) を input 直下に表示。 件数は `Number.toLocaleString(i18n.language)` で千区切り対応 (例: `1,234`)。 `filterStopsByQuery` の戻り値を `{ stops: Stop[]; total: number }` に変更し、 truncation 前の総件数を UI に伝播。
 - `normalizeForSearch` を `src/domain/transit/stop-search-index.ts` に export として新設。 `toLowerCase` → `katakanaToHiragana` → NFD → strip `[\u0300-\u036f]` (Latin combining diacritical marks) → NFC のパイプライン。 `oyana` で `Ōyana`、 `cafe` で `Café`、 `nino` で `Niño` 等が一律マッチ。 strip 範囲を U+0300–U+036F に絞ることで kana の濁点・半濁点 (U+3099 / U+309A) は保護され、 `が → か` のような誤動作を回避。 `HighlightedName` (検索結果行のクエリハイライト) も同パイプラインを共有し、 `<mark>` 範囲が match と一致。
 - `SearchIndexEntry` に `hrktSortKey` フィールドを追加。 sort fallback で `stop_names['ja-Hrkt']` を case-insensitive にキー解決し (kseiw の `ja-HrKt` 等の non-canonical casing を吸収、 BCP 47 RFC 5646 §2.1.1 準拠)、 build 時に 1 度だけ計算。 sort comparator は scalar lookup のみ。
@@ -25,6 +31,11 @@ and this project adheres to [CalVer](https://calver.org/).
 - 検索ダイアログのタイプ中の体感を改善: `useDeferredValue(query)` で input echo (raw `query`) と filter / highlight / no-results pipeline (`deferredQuery`) を分離。 連続入力 / Backspace 連打時に React が中間値の filter / re-render を破棄し、 最終クエリのみ commit。 `<mark>` ハイライトと結果リストは常に同じ query 由来で整合。
 - `filterStopsByQuery` を 3 段の matching path (raw / blob / normalized) から 1 path に集約。 `SearchIndexEntry` の `rawNamesBlob` / `normalizedNamesBlob` を撤去し `normalizedNames: string[]` 1 本に。 prefix bonus も `stop.stop_name` 限定だったのを `normalizedNames` ベースに切り替え、 romaji クエリでの prefix 評価が機能 (e.g., `naka` → `Nakai` / `Nakanobu` が prefix 扱い)。 length tiebreaker も raw `stop_name` length から「マッチした name のうち最短長」 に揃え、 多言語 stops の比較粒度を統一。 NAME_SEP injection guard は撤去 (blob を使わないため不要)。
 - `src/utils/stop-search-index.ts` を `src/domain/transit/stop-search-index.ts` へ移設。 GTFS 固有の判断 (stop.stop_names の言語キー前提、 `ja-Hrkt` ソート等) を含むため、 generic utils ではなく domain/transit 配下が適切。 既存 caller の import path を更新。
+
+### Fixed
+
+- Pipeline: `tcship` / `tome` を `pipeline/config/targets/build-insights.ts` に追加。新規ソース追加時にこの target list だけ漏れていたため、CI の `Update Transit Data` ワークフローが `pipeline:validate:v2` で `❌ MISSING (required) insights.json` で停止していた問題を解消 (run #25531240339)。
+- Skill (`add-gtfs-source`): step 3 のターゲットリスト表に `build-insights.ts` / `build-global-insights.ts` / `validate.ts` / `build-shapes-ksj.ts` の 4 ファイルを追記し、source-name と prefix の使い分けを明示。step 4 の `data-source-settings` スニペットを現行の `SourceGroup` schema (`routeTypes` / `name` / `countries`) に修正。step 5 にローカル `pipeline:validate:v2` を必須手順として追加し、CI でのみ発覚する登録漏れを事前検知できるよう改訂。
 
 ## [2026.05.07]
 
