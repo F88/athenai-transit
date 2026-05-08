@@ -721,3 +721,58 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20260401版
+
+## itsukishima-kisen (斎島汽船 / Itsukishima Kisen)
+
+- Resource definition: `pipeline/config/resources/gtfs/itsukishima-kisen.ts`
+- CKAN: <https://ckan.odpt.org/dataset/itsukishima_kisen_all_lines>
+- Resource ID (使用中): `4c61a823-c0b9-4262-8226-9ddf6b77d886` (20251001版)
+
+### route_type / 概要
+
+- 2 路線、`route_type=4` (Ferry)、広島県呉市の離島群を結ぶ生活フェリー
+    - `[01]斎島～久比`
+    - `[02]三角島～久比`
+- 4 stops (三角港 / 久比港 / 斎島港 / 豊島港)
+- 22 trips, 54 stop_times, 6 trip patterns
+- agency_url が `city.kure.lg.jp/soshiki/28/koutu.html` (呉市の交通課ページ) — 事業者独自サイトを持っていない
+
+### 有効期間
+
+- 有効期間: 2025/10/01 - 2026/09/30 (1 年、ODPT フェリーの中では長め)
+
+### route_color
+
+- 両 route で `route_color=FFFFFF` (白) / `route_text_color=000000` (黒)
+- `route_color=FFFFFF` は GTFS 上「set」扱いだが、白い地図背景に対しては polyline が透明同等になる
+- 当該ソースに shapes.txt が無いため、polyline 描画は発生せず可視化問題は表面化しない
+- `routeColorFallbacks` 設定なし (data viewer philosophy で source 値尊重)
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt は含まれていない (海路、代替なし)
+
+### translations.txt
+
+- 標準 6 列形式 (table_name, field_name, language, translation, record_id, field_value) ✅ legacy ではない
+- 14 行 = stops.stop_name(4 stops × 2 言語) + trips.trip_headsign(6 行) の翻訳
+- 言語: `ja-Hrkt` + `en`
+- en 翻訳に注目: source data は `Itukishima Port` (訓令式)、CKAN / 本リソース定義の display name は `Itsukishima Kisen` (ヘボン式) を採用。ローマ字方式の不一致はアプリ表示で混在し得るが、data viewer philosophy に従い source 値はそのまま保持
+
+### 斎島の英訳
+
+- 漢字「斎島」の ja-Hrkt 読み: いつきしま (`itsukishima`)
+- 一般表記 (Hepburn): `Itsukishima`
+- source data 内 (translations.txt の en): `Itukishima` (訓令式)
+- 本ソースの display 表記は **`Itsukishima`** (Hepburn) に統一
+
+### GTFS-JP 拡張ファイル
+
+- ZIP に `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる
+- `payload.txt` のヘッダに typo `paylaod_id` (他 ODPT フェリー多数と同パターン)、payload テーブル自体が schema 外で skip
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20251001版

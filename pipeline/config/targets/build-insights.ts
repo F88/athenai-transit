@@ -40,4 +40,5 @@ export default [
   'orgfry', // orange-ferry
   'uwjmfry', // uwajima-unyu
   'mtfry', // meimon-taiyo-ferry
+  'itkfry', // itsukishima-kisen
 ];

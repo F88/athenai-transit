@@ -37,4 +37,5 @@ export default [
   'orange-ferry',
   'uwajima-unyu',
   'meimon-taiyo-ferry',
+  'itsukishima-kisen',
 ];

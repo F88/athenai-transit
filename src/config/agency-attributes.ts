@@ -41,6 +41,13 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '1A3282', text: 'FFFFFF' }],
   },
 
+  // --- Itsukishima Kisen ---
+  'itkfry:8240001027151': {
+    shortName: { ja: '斎島汽船', en: 'Itsukishima Kisen' },
+    longName: { ja: '斎島汽船株式会社', en: 'Itsukishima Kisen Co., Ltd.' },
+    colors: [{ bg: '000000', text: 'FFFFFF' } /* Primary */],
+  },
+
   // --- Iyotetsu Bus ---
   'iyt2:9500001020509': {
     shortName: { ja: '伊予鉄バス', en: 'Iyotetsu Bus' },

@@ -270,6 +270,17 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'itsukishima-kisen',
+    prefixes: ['itkfry'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Itsukishima Kisen',
+      names: { ja: '斎島汽船', en: 'Itsukishima Kisen' },
+    },
+    countries: ['JP'],
+  },
+  {
     id: 'vag-freiburg',
     prefixes: ['vagfr'],
     routeTypes: [0, 3],
