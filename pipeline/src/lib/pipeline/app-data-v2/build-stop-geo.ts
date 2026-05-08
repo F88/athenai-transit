@@ -30,7 +30,7 @@
  */
 
 import type { StopGeoJson } from '../../../../../src/types/data/transit-v2-json';
-import { haversineKm } from '../../geo-utils';
+import { getDistanceKm } from '../../geo-utils';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -106,7 +106,10 @@ function computeConnectivity(target: StopEntry, allStops: StopEntry[]): Connecti
     if (s.id === target.id) {
       continue;
     }
-    const d = haversineKm(target.lat, target.lon, s.lat, s.lon);
+    const d = getDistanceKm(
+      { lat: target.lat, lng: target.lon },
+      { stop_lat: s.lat, stop_lon: s.lon },
+    );
     if (d > CONNECTIVITY_RADIUS_KM) {
       continue;
     }
@@ -150,7 +153,10 @@ function computeAllMetrics(
       continue;
     }
 
-    const d = haversineKm(target.lat, target.lon, s.lat, s.lon);
+    const d = getDistanceKm(
+      { lat: target.lat, lng: target.lon },
+      { stop_lat: s.lat, stop_lon: s.lon },
+    );
 
     // nr: nearest stop with a route not in target's route set
     if (bestNr === undefined || d < bestNr) {

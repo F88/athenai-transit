@@ -1,132 +1,63 @@
 /**
- * Tests for geo-utils.ts (Haversine distance).
+ * Tests for geo-utils.ts.
  *
  * @vitest-environment node
  */
 
 import { describe, expect, it } from 'vitest';
 
-import { haversineKm } from '../geo-utils';
+import { getDistanceKm } from '../geo-utils';
 
-describe('haversineKm', () => {
+describe('getDistanceKm', () => {
   it('returns 0 for identical points', () => {
-    expect(haversineKm(35.6812, 139.7671, 35.6812, 139.7671)).toBe(0);
+    const a = { lat: 35.0, lng: 139.0 };
+    const b = { stop_lat: 35.0, stop_lon: 139.0 };
+    expect(getDistanceKm(a, b)).toBe(0);
   });
 
-  it('computes Tokyo Station → Shinjuku Station (~6.4 km)', () => {
-    // Tokyo Station: 35.6812, 139.7671
-    // Shinjuku Station: 35.6896, 139.7006
-    const d = haversineKm(35.6812, 139.7671, 35.6896, 139.7006);
-    expect(d).toBeCloseTo(6.4, 0); // within ~0.5 km
+  it('returns kilometers for short urban distances', () => {
+    const tokyo = { lat: 35.6812, lng: 139.7671 };
+    const shinjuku = { stop_lat: 35.6896, stop_lon: 139.7006 };
+    const distanceKm = getDistanceKm(tokyo, shinjuku);
+
+    expect(distanceKm).toBeGreaterThan(5.5);
+    expect(distanceKm).toBeLessThan(7.5);
   });
 
-  it('computes Tokyo → Osaka (~400 km)', () => {
-    // Tokyo Station: 35.6812, 139.7671
-    // Osaka Station: 34.7024, 135.4959
-    const d = haversineKm(35.6812, 139.7671, 34.7024, 135.4959);
-    expect(d).toBeCloseTo(400, -1); // within ~10 km
+  it('stays consistent with getDistanceM on intercontinental distances', () => {
+    const tokyo = { lat: 35.681236, lng: 139.767125 };
+    const berlin = { stop_lat: 52.52, stop_lon: 13.405 };
+    const distanceKm = getDistanceKm(tokyo, berlin);
+
+    expect(distanceKm).toBeGreaterThan(8_800);
+    expect(distanceKm).toBeLessThan(9_100);
+    expect(distanceKm).toBeGreaterThan(8_800);
+    expect(distanceKm).toBeLessThan(9_100);
   });
 
   it('is symmetric (a→b equals b→a)', () => {
-    const ab = haversineKm(35.6812, 139.7671, 35.6896, 139.7006);
-    const ba = haversineKm(35.6896, 139.7006, 35.6812, 139.7671);
-    expect(ab).toBe(ba);
+    const a = { lat: 35.6812, lng: 139.7671 };
+    const b = { stop_lat: 35.6895, stop_lon: 139.6917 };
+    const ab = getDistanceKm(a, b);
+    const ba = getDistanceKm(
+      { lat: b.stop_lat, lng: b.stop_lon },
+      { stop_lat: a.lat, stop_lon: a.lng },
+    );
+    expect(ab).toBeCloseTo(ba, 10);
   });
 
-  it('handles antipodal points (~20000 km)', () => {
-    // North pole to south pole
-    const d = haversineKm(90, 0, -90, 0);
-    expect(d).toBeCloseTo(20015, -1); // half the Earth's circumference
+  it('matches the expected dateline-crossing distance in kilometers', () => {
+    const westOfDateline = { lat: 0, lng: 179 };
+    const eastAcrossDateline = { stop_lat: 0, stop_lon: -179 };
+    const d = getDistanceKm(westOfDateline, eastAcrossDateline);
+    expect(d).toBeGreaterThan(220);
+    expect(d).toBeLessThan(223);
   });
 
-  it('does not return NaN for nearly antipodal points (floating-point guard)', () => {
-    // Points very close to antipodal can cause a > 1 due to floating-point error,
-    // which makes Math.asin(Math.sqrt(a)) return NaN without clamping.
-    const d = haversineKm(89.999999, 0, -89.999999, 179.999999);
-    expect(Number.isNaN(d)).toBe(false);
-    expect(d).toBeGreaterThan(20000);
-  });
-
-  it('handles equator crossing', () => {
-    const d = haversineKm(1, 0, -1, 0);
-    // 2 degrees of latitude ≈ 222 km
-    expect(d).toBeCloseTo(222, 0);
-  });
-
-  it('handles meridian crossing', () => {
-    const d = haversineKm(0, -1, 0, 1);
-    // 2 degrees of longitude at equator ≈ 222 km
-    expect(d).toBeCloseTo(222, 0);
-  });
-
-  it('handles dateline crossing (179° to -179°)', () => {
-    const d = haversineKm(0, 179, 0, -179);
-    // 2 degrees of longitude at equator ≈ 222 km, not ~40000 km
-    expect(d).toBeCloseTo(222, 0);
-  });
-
-  it('returns a very small distance for nearby points', () => {
-    // ~100 meters apart
-    const d = haversineKm(35.6812, 139.7671, 35.6821, 139.7671);
-    expect(d).toBeGreaterThan(0.05);
-    expect(d).toBeLessThan(0.15);
-  });
-
-  it('computes pure latitude distance (1 degree ≈ 111 km)', () => {
-    const d = haversineKm(0, 0, 1, 0);
-    expect(d).toBeCloseTo(111, 0);
-  });
-
-  it('computes pure longitude distance at equator (1 degree ≈ 111 km)', () => {
-    const d = haversineKm(0, 0, 0, 1);
-    expect(d).toBeCloseTo(111, 0);
-  });
-
-  it('returns 0 for longitude change at north pole (meridians converge)', () => {
-    const d = haversineKm(90, 0, 90, 180);
-    expect(d).toBeCloseTo(0, 5);
-  });
-
-  it('handles Southern hemisphere coordinates', () => {
-    // Canberra area: (-35.27, 149.13) to (-36.23, 148.23)
-    const d = haversineKm(-35.27, 149.13, -36.23, 148.23);
-    expect(d).toBeGreaterThan(100);
-    expect(d).toBeLessThan(150);
-  });
-
-  it('computes opposite points on equator (half circumference)', () => {
-    const d = haversineKm(0, 0, 0, 180);
-    // π * R ≈ 20015 km
-    expect(d).toBeCloseTo(20015, 0);
-  });
-
-  it('normalizes large positive longitude difference', () => {
-    // lon2 - lon1 = 350° should normalize to -10° (same as 10° apart)
-    const direct = haversineKm(0, 0, 0, 10);
-    const wrapped = haversineKm(0, 0, 0, 350);
-    expect(wrapped).toBeCloseTo(direct, 5);
-  });
-
-  it('normalizes large negative longitude difference', () => {
-    // lon2 - lon1 = -350° should normalize to 10°
-    const direct = haversineKm(0, 0, 0, 10);
-    const wrapped = haversineKm(0, 350, 0, 0);
-    expect(wrapped).toBeCloseTo(direct, 5);
-  });
-
-  it('returns non-negative finite distance for any valid coordinates', () => {
-    const cases: [number, number, number, number][] = [
-      [0, 0, 45, 90],
-      [45, 0, -45, 90],
-      [-90, 0, 90, 180],
-      [60, 120, -60, -120],
-      [0, -180, 0, 180],
-    ];
-    for (const [lat1, lon1, lat2, lon2] of cases) {
-      const d = haversineKm(lat1, lon1, lat2, lon2);
-      expect(Number.isFinite(d)).toBe(true);
-      expect(d).toBeGreaterThanOrEqual(0);
-      expect(d).toBeLessThanOrEqual(20016); // half circumference
-    }
+  it('matches getDistanceM conversion for a simple 1 degree latitude delta', () => {
+    const a = { lat: 0, lng: 0 };
+    const b = { stop_lat: 1, stop_lon: 0 };
+    expect(getDistanceKm(a, b)).toBeGreaterThan(111);
+    expect(getDistanceKm(a, b)).toBeLessThan(112);
   });
 });

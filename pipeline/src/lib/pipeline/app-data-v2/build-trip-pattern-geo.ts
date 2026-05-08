@@ -14,7 +14,7 @@ import type {
   TripPatternGeoJson,
   TripPatternJson,
 } from '../../../../../src/types/data/transit-v2-json';
-import { haversineKm } from '../../geo-utils';
+import { getDistanceKm } from '../../geo-utils';
 
 /**
  * Build per-pattern geographic metrics from trip patterns and stop coordinates.
@@ -56,7 +56,10 @@ export function buildTripPatternGeo(
       const first = stopCoords.get(stops[0].id);
       const last = stopCoords.get(stops[stops.length - 1].id);
       if (first && last) {
-        dist = haversineKm(first.lat, first.lon, last.lat, last.lon);
+        dist = getDistanceKm(
+          { lat: first.lat, lng: first.lon },
+          { stop_lat: last.lat, stop_lon: last.lon },
+        );
       }
     }
 
@@ -66,7 +69,7 @@ export function buildTripPatternGeo(
       const a = stopCoords.get(stops[i].id);
       const b = stopCoords.get(stops[i + 1].id);
       if (a && b) {
-        pathDist += haversineKm(a.lat, a.lon, b.lat, b.lon);
+        pathDist += getDistanceKm({ lat: a.lat, lng: a.lon }, { stop_lat: b.lat, stop_lon: b.lon });
       }
     }
 

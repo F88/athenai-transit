@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { bearingDeg } from '../domain/transit/distance';
+import { getBearingDeg } from '../domain/transit/distance';
 import {
   agencyGx,
   agencyOretetsu,
@@ -186,7 +186,7 @@ export const WithDistanceBadge: Story = {
       distanceBadge={
         <DistanceBadge
           meters={235}
-          bearingDeg={bearingDeg(storyMapCenter, args.stop)}
+          bearingDeg={getBearingDeg(storyMapCenter, args.stop)}
           showDirection
           size="xl"
         />

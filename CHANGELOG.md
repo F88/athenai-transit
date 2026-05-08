@@ -29,8 +29,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- 距離・方角 utility を整理。webapp 側で使う `getDistanceM` / `getBearingDeg` を `src/domain/transit/distance.ts` に戻し、`src` から `pipeline` を直接 import しない構成に修正。`src/components/search/stop-search-result-item.tsx`、`src/components/stop-info.tsx`、`src/components/stop-summary.stories.tsx` の参照先を更新し、`src/domain/transit/__tests__/distance.test.ts` に geolib ベースの距離・dateline crossing・方角テストを追加。
+- Pipeline の距離 utility を `pipeline/src/lib/geo-utils.ts` の `getDistanceKm` 1 本に整理。旧 Haversine 実装と比較用 helper、未使用の meter / bearing API を削除し、`build-trip-pattern-geo.ts` と `build-stop-geo.ts` は `getDistanceKm` を使う構成に統一。`pipeline/src/lib/__tests__/geo-utils.test.ts` も km API 中心のテストへ更新。
+- 距離計算ライブラリとして `geolib` を導入。webapp (`src/domain/transit/distance.ts`) と pipeline (`pipeline/src/lib/geo-utils.ts`) の距離・方角計算で同じ実装基盤を使うようにした。
 - `useListKeyboardNavigation` の reset 駆動を `items` reference 変化から **明示 `resetKey`** に切り替え。 ページネーションで `items` が伸びても resetKey が同じなら selectedIndex を保持、 scrollIntoView も再発火しないため scroll 位置が先頭に巻き戻る不具合を回避。 resetKey が変わったとき (= 新クエリ) のみ selectedIndex を 0 にリセット + 1 件目を `block: 'nearest'` で表示。 caller (`StopSearchDialog`) は `resetKey: deferredQuery` を渡す。 既存テストを resetKey ベースに更新、 「pagination 中は selection を保持する」 regression test を追加。
-
 - 検索ダイアログのタイプ中の体感を改善: `useDeferredValue(query)` で input echo (raw `query`) と filter / highlight / no-results pipeline (`deferredQuery`) を分離。 連続入力 / Backspace 連打時に React が中間値の filter / re-render を破棄し、 最終クエリのみ commit。 `<mark>` ハイライトと結果リストは常に同じ query 由来で整合。
 - `filterStopsByQuery` を 3 段の matching path (raw / blob / normalized) から 1 path に集約。 `SearchIndexEntry` の `rawNamesBlob` / `normalizedNamesBlob` を撤去し `normalizedNames: string[]` 1 本に。 prefix bonus も `stop.stop_name` 限定だったのを `normalizedNames` ベースに切り替え、 romaji クエリでの prefix 評価が機能 (e.g., `naka` → `Nakai` / `Nakanobu` が prefix 扱い)。 length tiebreaker も raw `stop_name` length から「マッチした name のうち最短長」 に揃え、 多言語 stops の比較粒度を統一。 NAME_SEP injection guard は撤去 (blob を使わないため不要)。
 - `src/utils/stop-search-index.ts` を `src/domain/transit/stop-search-index.ts` へ移設。 GTFS 固有の判断 (stop.stop_names の言語キー前提、 `ja-Hrkt` ソート等) を含むため、 generic utils ではなく domain/transit 配下が適切。 既存 caller の import path を更新。
