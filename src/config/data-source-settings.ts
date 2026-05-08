@@ -204,6 +204,17 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'tokai-kisen',
+    prefixes: ['tkksn'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Tokai Kisen',
+      names: { ja: '東海汽船', en: 'Tokai Kisen' },
+    },
+    countries: ['JP'],
+  },
+  {
     id: 'vag-freiburg',
     prefixes: ['vagfr'],
     routeTypes: [0, 3],

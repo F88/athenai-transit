@@ -34,4 +34,5 @@ export default [
   'tome', // tokyometro
   'ntbus', // nishi-tokyo-bus
   'snws', // sanwa-shosen
+  'tkksn', // tokai-kisen
 ];

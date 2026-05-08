@@ -31,6 +31,11 @@ import { createInterface } from 'node:readline';
 import { join, resolve } from 'node:path';
 
 import { splitCsvLine } from '../../src/lib/pipeline/gtfs-csv-parser';
+import {
+  GTFS_JP_LEGACY_TRANSLATION_HEADERS,
+  convertGtfsJpLegacyTranslationRow,
+  isGtfsJpLegacyTranslationsHeader,
+} from './lib/gtfs-csv-converter';
 import { INDEXES, SCHEMA } from '../../src/lib/pipeline/gtfs-schema';
 import {
   determineBatchExitCode,
@@ -179,6 +184,20 @@ async function openCsvStream(filePath: string): Promise<CsvStream | null> {
   return { headers, rows };
 }
 
+/**
+ * Open a CSV file just to read its header row. Returns `null` for an
+ * empty file. Used by callers that need to dispatch on file format
+ * before deciding which importer to invoke.
+ *
+ * The underlying readline iterator is not advanced beyond the header
+ * line, and the read stream is left to be cleaned up by the runtime
+ * when the iterator is no longer referenced.
+ */
+async function peekCsvHeaders(filePath: string): Promise<string[] | null> {
+  const csv = await openCsvStream(filePath);
+  return csv ? csv.headers : null;
+}
+
 // ---------------------------------------------------------------------------
 // Header validation
 // ---------------------------------------------------------------------------
@@ -288,6 +307,73 @@ async function importCsvFile(
   }
 
   // Flush remaining rows
+  if (batch.length > 0) {
+    insertBatch(batch);
+    totalRows += batch.length;
+  }
+
+  return totalRows;
+}
+
+/**
+ * Import a translations.txt file shipped in the GTFS-JP legacy
+ * 3-column format (`trans_id, lang, translation`).
+ *
+ * The pure CSV-row → standard-row conversion lives in
+ * {@link convertGtfsJpLegacyTranslationRow}; this function adds CSV
+ * streaming, header validation, and batched DB inserts on top.
+ *
+ * Throws if the header is not exactly the expected 3-column legacy
+ * form, so any drift in the source feed surfaces as a loud failure
+ * rather than silent data loss.
+ */
+async function importGtfsJpLegacyTranslations(
+  db: Database.Database,
+  filePath: string,
+): Promise<number> {
+  const csv = await openCsvStream(filePath);
+  if (!csv) {
+    return 0;
+  }
+
+  if (!isGtfsJpLegacyTranslationsHeader(csv.headers)) {
+    throw new Error(
+      `Unexpected translations.txt headers: [${csv.headers.join(', ')}] (expected [${GTFS_JP_LEGACY_TRANSLATION_HEADERS.join(', ')}])`,
+    );
+  }
+
+  const stmt = db.prepare(
+    'INSERT INTO translations (table_name, field_name, language, translation, field_value) VALUES (?, ?, ?, ?, ?)',
+  );
+
+  const insertBatch = db.transaction((rows: unknown[][]) => {
+    for (const values of rows) {
+      stmt.run(...values);
+    }
+  });
+
+  let batch: unknown[][] = [];
+  let totalRows = 0;
+
+  for await (const row of csv.rows) {
+    const std = convertGtfsJpLegacyTranslationRow({
+      trans_id: row[0] ?? '',
+      lang: row[1] ?? '',
+      translation: row[2] ?? '',
+    });
+    if (std === null) {
+      continue;
+    }
+
+    batch.push([std.table_name, std.field_name, std.language, std.translation, std.field_value]);
+
+    if (batch.length >= BATCH_SIZE) {
+      insertBatch(batch);
+      totalRows += batch.length;
+      batch = [];
+    }
+  }
+
   if (batch.length > 0) {
     insertBatch(batch);
     totalRows += batch.length;
@@ -444,7 +530,29 @@ async function buildSourceDb(
     const columns = schemaMap.get(tableName)!;
 
     try {
-      const rowCount = await importCsvFile(db, filePath, tableName, columns);
+      let rowCount: number;
+      if (
+        source.directory === 'tokai-kisen' &&
+        tableName === 'translations' &&
+        isGtfsJpLegacyTranslationsHeader((await peekCsvHeaders(filePath)) ?? [])
+      ) {
+        // Tokai Kisen historically ships translations.txt in the legacy
+        // GTFS-JP 3-column format (`trans_id, lang, translation`), which the
+        // standard 6-column schema cannot ingest directly. Detect by header
+        // (not by source name alone) so that when the source eventually
+        // upgrades to the standard format, the dispatch quietly falls back
+        // to the standard importer instead of misreporting a legacy detect
+        // and throwing on the strict header check.
+        //
+        // The conversion in gtfs-csv-converter assumes every legacy row is
+        // a stops.stop_name translation, which holds for this source.
+        console.log(
+          `  WARN [translations] (${source.directory}): legacy GTFS-JP 3-column format detected — auto-converting to standard 6-column (stops.stop_name)`,
+        );
+        rowCount = await importGtfsJpLegacyTranslations(db, filePath);
+      } else {
+        rowCount = await importCsvFile(db, filePath, tableName, columns);
+      }
 
       if (rowCount === 0) {
         console.log(`  SKIP: ${file} (no data rows)`);

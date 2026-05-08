@@ -222,6 +222,16 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '009f40', text: 'FFFFFF' }],
   },
 
+  // --- Tokai Kisen ---
+  'tkksn:3010401020097': {
+    shortName: { ja: '東海汽船', en: 'Tokai Kisen' },
+    longName: { ja: '東海汽船株式会社', en: 'Tokai Kisen Co.,Ltd.' },
+    colors: [
+      { bg: '294DA5', text: 'FFFFFF' } /* Primary */,
+      { bg: 'E60013', text: 'FFFFFF' } /* Secondary */,
+    ],
+  },
+
   // --- Tokyo Cruise Ship ---
   'tcship:3010501009370': {
     shortName: {

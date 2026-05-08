@@ -31,4 +31,5 @@ export default [
   'tokyometro',
   'nishi-tokyo-bus',
   'sanwa-shosen',
+  'tokai-kisen',
 ];

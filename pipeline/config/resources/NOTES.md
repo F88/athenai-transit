@@ -424,3 +424,56 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20260105版
+
+## tokai-kisen (東海汽船 / Tokai Kisen Co.,Ltd.)
+
+- Resource definition: `pipeline/config/resources/gtfs/tokai-kisen.ts`
+- CKAN: <https://ckan.odpt.org/dataset/tokai_kisen_all_lines>
+- Resource ID (使用中): `30516ce5-9fcc-4bc3-ac9b-baa3e6f531ee` (20260401版)
+
+### route_type
+
+- 全 15 路線が GTFS の `route_type=4` (Ferry)
+- 伊豆諸島 (大島・利島・新島・式根島・神津島・三宅島・御蔵島・八丈島・青ヶ島) と小笠原諸島 (父島・母島) を結ぶ航路、関東側 stop は東京・竹芝、横浜・大さん橋、久里浜、館山、下田、伊東、稲取、熱海
+- 19 stops, 132 trips, 407 stop_times, 54 trip patterns
+
+### 有効期間
+
+- 有効期間: 2026/04/01 - 2026/06/30
+- 短期間更新型のため `date=YYYYMMDD` 値を更新サイクルごとに差し替える必要がある
+
+### route_color
+
+- 全 15 路線で `route_color` / `route_text_color` が空
+- `routeColorFallbacks: { '*': '294DA5' }` (Tokai Kisen primary navy) でフォールバック適用
+- App 側ブランドカラーは primary `#294DA5` + secondary `#E60013` の 2 色構成
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt は含まれていない (海路のため一般的な GeoJSON ベースの代替も存在しない)
+
+### translations.txt (旧 GTFS-JP 3 列形式)
+
+- ヘッダが `trans_id, lang, translation` の旧 GTFS-JP v1 形式で、標準 GTFS の 6 列形式 (`table_name, field_name, language, translation, record_id, field_value`) ではない
+- CKAN 側の GTFS validation でも `missing_required_column` エラーとして報告される
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` の dispatch でヘッダを peek し、`isGtfsJpLegacyTranslationsHeader` 一致時のみ `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` の純変換関数経由で標準形式に変換しながら DB に投入する
+- 全行が stops.stop_name の翻訳である前提で `table_name='stops'`, `field_name='stop_name'`, `field_value=trans_id` を補完
+- `lang` 列の `ja-HrKt` (script subtag が非 BCP 47 形) は `ja-Hrkt` に正規化
+- 将来 Tokai Kisen が標準 6 列形式に upgrade した場合は dispatch が自動的に標準 importer にフォールバック (peek で legacy 不一致になるため)、誤検知ログや誤適用は起きない設計
+
+### GTFS-JP 拡張ファイル
+
+- ZIP には GTFS 標準外の `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる (船舶情報 / トラック・自動車積載スペック / 運賃詳細用の事業者拡張)
+- `ships.txt` の `ships_id` 列は値ありだが他のスペック列はすべて空 (Sanwa Shosen のように埋まってはいない)
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### その他のスキーマゆれ
+
+- `fare_attributes.txt` に `cabin_name` 列が追加されている (schema 外のため import 時に warning で無視)
+- `payload.txt` のヘッダに typo `paylaod_id` (※ payload_id ではない) が含まれるが、payload テーブル自体が schema 外で skip されるため影響なし
+- `trips.txt` に `payload_id`, `ships_id` 列があるが schema 外のため warning で無視
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260401版
