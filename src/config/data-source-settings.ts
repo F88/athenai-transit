@@ -158,6 +158,14 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'tokyometro',
+    prefixes: ['tome'],
+    routeTypes: [1],
+    enabled: true,
+    name: { name: 'Tokyo Metro', names: { ja: '東京メトロ', en: 'Tokyo Metro' } },
+    countries: ['JP'],
+  },
+  {
     id: 'actv-nav',
     prefixes: ['actvnav'],
     routeTypes: [4],

@@ -29,5 +29,6 @@ export default [
   'vagfr', // vag-freiburg
   'actvnav', // actv-nav
   'tcship', // tokyo-cruise-ship
+  'tome', // tokyometro
   // 'tkbus', // tokyu-bus (not built)
 ];

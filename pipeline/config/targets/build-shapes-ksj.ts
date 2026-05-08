@@ -13,4 +13,5 @@ export default [
   'mir-train',
   'tama-monorail',
   'twr-rinkai',
+  'tokyometro',
 ];
