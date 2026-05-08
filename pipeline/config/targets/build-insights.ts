@@ -33,4 +33,5 @@ export default [
   'tcship', // tokyo-cruise-ship
   'tome', // tokyometro
   'ntbus', // nishi-tokyo-bus
+  'snws', // sanwa-shosen
 ];

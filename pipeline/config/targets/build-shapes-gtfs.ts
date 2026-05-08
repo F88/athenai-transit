@@ -22,4 +22,5 @@ export default [
   'nagoya-srt',
   'vag-freiburg',
   'actv-nav',
+  'sanwa-shosen',
 ];
