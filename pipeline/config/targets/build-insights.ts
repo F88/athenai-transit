@@ -35,4 +35,5 @@ export default [
   'ntbus', // nishi-tokyo-bus
   'snws', // sanwa-shosen
   'tkksn', // tokai-kisen
+  'kcmb', // kagoshima-maritime-bureau
 ];

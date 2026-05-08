@@ -215,6 +215,17 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'kagoshima-maritime-bureau',
+    prefixes: ['kcmb'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Sakurajima Ferry',
+      names: { ja: '桜島フェリー', en: 'Sakurajima Ferry' },
+    },
+    countries: ['JP'],
+  },
+  {
     id: 'vag-freiburg',
     prefixes: ['vagfr'],
     routeTypes: [0, 3],

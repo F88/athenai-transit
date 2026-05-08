@@ -32,4 +32,5 @@ export default [
   'nishi-tokyo-bus',
   'sanwa-shosen',
   'tokai-kisen',
+  'kagoshima-maritime-bureau',
 ];

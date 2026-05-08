@@ -69,6 +69,13 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '138060', text: 'FFFFFF' }],
   },
 
+  // --- Kagoshima City Maritime Bureau (Sakurajima Ferry) ---
+  'kcmb:1000020462012': {
+    shortName: { ja: '鹿児島市船舶局', en: 'Kagoshima City Maritime Bureau' },
+    longName: { ja: '鹿児島市船舶局', en: 'Kagoshima City Maritime Bureau' },
+    colors: [{ bg: 'C21B7E', text: 'FFFFFF' } /* Primary */],
+  },
+
   // --- Keio Bus ---
   'kobus:9013401002381': {
     shortName: { ja: '京王バス', en: 'Keio Bus' },

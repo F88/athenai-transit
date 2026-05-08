@@ -477,3 +477,46 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20260401版
+
+## kagoshima-maritime-bureau (鹿児島市船舶局 / 桜島フェリー)
+
+- Resource definition: `pipeline/config/resources/gtfs/kagoshima-maritime-bureau.ts`
+- CKAN: <https://ckan.odpt.org/dataset/kagoshima_city_maritime_bureau_all_lines>
+- Resource ID (使用中): `2cf53e9c-e2e3-40e4-bf6f-bef08b33fa4c` (20251010版)
+
+### route_type / 概要
+
+- 1 路線、`route_type=4` (Ferry)、鹿児島港 ↔ 桜島港の生活航路
+- 2 stops, 123 trips, 246 stop_times, 2 trip patterns
+
+### 有効期間
+
+- 有効期間: 2025/10/01 - 2027/03/31 (期限長め)
+
+### route_color / route_text_color
+
+- 1 路線で `route_color=FFFFFF` / `route_text_color=000000` がソース側で設定済
+- `route_color=FFFFFF` は GTFS 上「set」扱いだが、白い地図背景に対しては polyline が見えない
+- pipeline 側の routeColorFallbacks は **空欄判定でのみ発動する** ため、`FFFFFF` 値はそのまま data.json に出力される (data viewer philosophy)
+- 結果: 地図上の polyline は白色 (= 視認不能) のまま。AgencyBadge / RouteBadge は WebApp 側のコントラスト補正で読める形で表示される
+- 当面この挙動を許容 (`routeColorFallbacks: { '*': 'C21B7E' }` は将来 polyline 修復方針が決まった際の備えとして残してある)
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt が含まれている (1 route, 2 polylines, 9 points、`shape_id` は `桜島港→鹿児島港` / `鹿児島港→桜島港` の日本語)
+
+### translations.txt
+
+- 標準 6 列形式 (table_name, field_name, language, translation, record_id, field_value)
+- ja-Hrkt 読みのみ (en 翻訳なし) — `かごしまこう` / `さくらじまこう`
+
+### GTFS-JP 拡張ファイル
+
+- ZIP に `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる
+- `ships.txt` は `ships_id` 1 行のみで他スペック列は空
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20251010版
