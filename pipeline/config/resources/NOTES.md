@@ -520,3 +520,52 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20251010版
+
+## okushiri-ferry (オクシリアイランドフェリー / Okushiri Island Ferry)
+
+- Resource definition: `pipeline/config/resources/gtfs/okushiri-ferry.ts`
+- CKAN: <https://ckan.odpt.org/dataset/okushiri_island_ferry_okushiri_esashi_ferry_route>
+- Resource ID (使用中): `f96ce088-80f8-4124-985c-08799ccd3490` (20260101版)
+
+### route_type / 概要
+
+- 1 路線、`route_type=4` (Ferry)、江差港 (北海道本土) ↔ 奥尻港 (奥尻島) を結ぶ航路
+- 2 stops, 36 trips (各方向 18 便), 72 stop_times, 2 trip patterns
+- 運航事業者は北海道のフェリー事業者「オクシリアイランドフェリー株式会社」(ハートランドフェリー系列、URL は heartlandferry.jp)
+
+### 有効期間
+
+- 有効期間: 2026/01/01 - 2026/12/31
+
+### route_color
+
+- `route_color=0000FF` (青) / `route_text_color=FFFFFF` (白) がソース側で正しく設定されている
+- `routeColorFallbacks` 不要
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt が含まれている (1 route, 2 polylines, 84 points)
+- shape_id は日本語: `奥尻→江差` (47 points) / `江差→奥尻` (37 points)
+
+### translations.txt
+
+- 標準 6 列形式 (table_name, field_name, language, translation, record_id, field_value)
+- **5 言語充実翻訳**: en (46) / ja-Hrkt (2) / ko (40) / zh-Hans (44) / zh-Hant (44) — ODPT フェリーソースの中で翻訳が最も充実
+- 内訳: agency_name(1) / stops.stop_name(8) / routes.route_long_name(4) / routes.route_url(4) / trips.trip_headsign(6) / trips.trip_short_name(144) / fare_attributes.cabin_name(8) / feed_info.feed_publisher_name(1)
+- なお `routes.route_url` の翻訳 (= 言語別 URL) は GTFS spec 上は valid だが、現 pipeline の `extract-translations.ts` は `route_url` を翻訳テーブルから抽出していない (URL ローカライズは未対応)
+
+### CSV format quirks
+
+- `payload.txt` のヘッダに typo `paylaod_id` が含まれる (Tokai Kisen と同じパターン)。payload テーブル自体が schema 外のため影響なし
+- `trips.txt` に `payload_id`, `ships_id` 列あり (schema 外、warning で無視)
+- `fare_attributes.txt` に `cabin_name` 列あり (schema 外、warning で無視)
+
+### ダウンロード URL の形式
+
+- 他の ODPT ソースと異なり `Okushiri_Esashi_Ferry_Route.zip` (路線名スコープ) という命名
+- `AllLines.zip` 形式ではないので URL パスを resource 定義で固定指定する必要がある
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260101版

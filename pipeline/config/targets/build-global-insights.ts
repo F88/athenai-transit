@@ -33,4 +33,5 @@ export default [
   'snws', // sanwa-shosen
   'tkksn', // tokai-kisen
   'kcmb', // kagoshima-maritime-bureau
+  'oksrif', // okushiri-ferry
 ];

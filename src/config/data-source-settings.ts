@@ -226,6 +226,17 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'okushiri-ferry',
+    prefixes: ['oksrif'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Okushiri Island Ferry',
+      names: { ja: '奥尻島フェリー', en: 'Okushiri Island Ferry' },
+    },
+    countries: ['JP'],
+  },
+  {
     id: 'vag-freiburg',
     prefixes: ['vagfr'],
     routeTypes: [0, 3],

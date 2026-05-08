@@ -33,4 +33,5 @@ export default [
   'sanwa-shosen',
   'tokai-kisen',
   'kagoshima-maritime-bureau',
+  'okushiri-ferry',
 ];

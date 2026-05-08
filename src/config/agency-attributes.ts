@@ -169,6 +169,16 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '039748', text: 'FFFFFF' }],
   },
 
+  // --- Okushiri Island Ferry ---
+  'oksrif:6440001009445': {
+    shortName: { ja: 'オクシリアイランドフェリー', en: 'Okushiri Island Ferry' },
+    longName: {
+      ja: 'オクシリアイランドフェリー株式会社',
+      en: 'Okushiri Island Ferry Co., Ltd.',
+    },
+    colors: [{ bg: '00AFCC', text: 'FFFFFF' } /* Primary */],
+  },
+
   // --- Oshima Bus ---
   'osmbus:1010001131230': {
     shortName: { ja: '大島バス', en: 'Oshima Bus' },

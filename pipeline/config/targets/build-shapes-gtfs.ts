@@ -24,4 +24,5 @@ export default [
   'actv-nav',
   'sanwa-shosen',
   'kagoshima-maritime-bureau',
+  'okushiri-ferry',
 ];
