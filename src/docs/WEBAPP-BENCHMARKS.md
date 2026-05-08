@@ -4,6 +4,21 @@ Repository API benchmark results measured via `?diag=repo-bench`.
 
 Benchmarks run across 12 fixed locations (`BENCH_LOCATIONS` in `src/diagnostics/repo-benchmark.ts`).
 
+## Purpose
+
+**計測と記録が主目的**。変更前後のスナップショットを残し、後から比較・参照できる状態を保つ。計測結果として遅い処理や肥大化が見えれば最適化する判断もありうるが、それは結果論であって、「遅い処理を探す」ことが目的ではない。
+
+主な計測タイミング:
+
+- **リファクタリングの前後**: 既存実装の構造を変える PR で Before/After を比較する(過去例: `stopsMetaMap` 導入)。
+- **新機能追加の前後**: 新しい初期化処理・hook・hot path を追加する PR で、追加分のコストを可視化する(過去例: `enrichStopInsights` 導入、service group 切替)。
+- **データセット拡張の前後**: ソース追加やデータ詳細化により bundle / 初期化 / 描画 にかかる時間・容量がどう変わったかを記録する。
+
+### 注意点
+
+- 計測下限以下のメソッドは ms 値で議論せず、成功カウント等で sanity check するに留める。
+- 環境メタデータが揃っていないため、別マシン / 別ブラウザ間の絶対値比較は行わない(同一環境内の Before/After 比較が前提)。
+
 ## Environment
 
 | Item    | Value                                                      |
@@ -26,7 +41,8 @@ Benchmarks run across 12 fixed locations (`BENCH_LOCATIONS` in `src/diagnostics/
 3. 各回は前回のベンチマークが完全に完了してからページをリロードして開始する。
 4. Run 1 は JIT warmup の影響で外れ値になりやすい。外れ値は `*` で注記する。
 5. 代表値は median を採用する。
-6. レポートには以下の3点を含める:
+6. レポートには以下を含める:
+    - **ソースダウンロード概況** (deterministic): 各ソースの `data.json` / `insights.json` / `shapes.json` ファイルサイズ、総ダウンロードサイズ、各カテゴリ最大ソース。`FetchDataSourceV2` のログから取得するが、network 時間は環境依存のため記録対象外。データセット拡張(ソース追加・データ詳細化)が bundle 全体へ与える影響を可視化する用途。
     - **全メトリクス記録** (raw data): 初期化 (fetch, merge, enrich, shapes) と repo API (全メソッド) を分離した2テーブル。次回比較のベースライン。
     - **前回との比較**: 前回計測の median との差分テーブル。
     - **考察 (Observations)**: 変化の原因分析、トレードオフの評価。
