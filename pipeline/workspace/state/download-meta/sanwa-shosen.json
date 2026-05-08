@@ -1,81 +1,85 @@
 {
-  "sourceName": "tokyo-cruise-ship",
+  "sourceName": "sanwa-shosen",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-08T09:47:13.719Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/TokyoCruiseShip/AllLines.zip?date=20250402",
-  "size": 8158,
+  "downloadedAt": "2026-05-08T09:47:22.947Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/SanwaMerchantVessel/AllLines.zip?date=20260105",
+  "size": 5296,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1134,
-  "archivePath": "workspace/_archives/gtfs/tokyo-cruise-ship/AllLines_20260508-094714.zip",
+  "durationMs": 1108,
+  "archivePath": "workspace/_archives/gtfs/sanwa-shosen/AllLines_20260508-094724.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
-      "size": 247
+      "size": 215
     },
     {
       "name": "calendar.txt",
-      "size": 989
+      "size": 127
     },
     {
       "name": "calendar_dates.txt",
-      "size": 6015
+      "size": 211
     },
     {
       "name": "fare_attributes.txt",
-      "size": 1615
+      "size": 227
     },
     {
       "name": "fare_rules.txt",
-      "size": 4086
+      "size": 354
     },
     {
       "name": "feed_info.txt",
-      "size": 217
+      "size": 224
     },
     {
       "name": "payload.txt",
-      "size": 466
+      "size": 225
     },
     {
       "name": "payload_fare_attributes.txt",
-      "size": 833
+      "size": 2365
     },
     {
       "name": "payload_fare_rules.txt",
-      "size": 1052
+      "size": 3104
     },
     {
       "name": "routes.txt",
-      "size": 762
+      "size": 225
+    },
+    {
+      "name": "shapes.txt",
+      "size": 845
     },
     {
       "name": "ships.txt",
-      "size": 377
+      "size": 187
     },
     {
       "name": "stops.txt",
-      "size": 803
+      "size": 398
     },
     {
       "name": "stop_times.txt",
-      "size": 8758
+      "size": 3440
     },
     {
       "name": "translations.txt",
-      "size": 3251
+      "size": 187
     },
     {
       "name": "trips.txt",
-      "size": 8148
+      "size": 3277
     }
   ],
   "feedInfo": {
-    "publisherName": "東京都観光汽船株式会社",
-    "publisherUrl": "https://www.suijobus.co.jp/",
+    "publisherName": "三和商船株式会社",
+    "publisherUrl": "https://ezax.co.jp/",
     "lang": "ja",
-    "startDate": "20250701",
-    "endDate": "20260630",
+    "startDate": "20260105",
+    "endDate": "20261231",
     "version": "2.0"
   }
 }
