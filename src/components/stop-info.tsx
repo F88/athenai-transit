@@ -1,4 +1,4 @@
-import { bearingDeg } from '../domain/transit/distance';
+import { getBearingDeg } from '../domain/transit/distance';
 import type { LatLng } from '../types/app/map';
 import type { StopWithContext, StopWithMeta } from '../types/app/transit-composed';
 import { DistanceBadge } from './badge/distance-badge';
@@ -41,7 +41,7 @@ export function StopInfo({
   geo,
 }: StopInfoProps) {
   const distanceRounded = distance != null ? Math.round(distance) : null;
-  const bearing = mapCenter ? bearingDeg(mapCenter, stop) : null;
+  const bearing = mapCenter ? getBearingDeg(mapCenter, stop) : null;
 
   return (
     <div className="flex min-w-0 flex-1 flex-col justify-center self-stretch">

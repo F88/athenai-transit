@@ -5,15 +5,15 @@ import { RouteBadge } from '@/components/badge/route-badge';
 import { StopActionButtons } from '@/components/stop-action-buttons';
 import { StopMetrics } from '@/components/stop-metrics';
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
-import { bearingDeg, distanceM } from '@/domain/transit/distance';
 import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { normalizeForSearch } from '@/domain/transit/stop-search-index';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import type { LatLng } from '@/types/app/map';
 import type { InfoLevel } from '@/types/app/settings';
 import type { Agency, AppRouteTypeValue, Route, Stop } from '@/types/app/transit';
 import type { StopWithMeta } from '@/types/app/transit-composed';
-import { normalizeForSearch } from '@/domain/transit/stop-search-index';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
+import { getBearingDeg, getDistanceM } from '@/domain/transit/distance';
 import { AccessibilityLabel } from '../stop/accessibility-label';
 import { PlatformCodeLabel } from '../stop/platform-code-label';
 
@@ -136,9 +136,9 @@ export function StopSearchResultItem({
   // Suppress sub-10m noise to match the StopInfo / StopSummary convention:
   // a "0m" / "3m" badge is just visual jitter when the user is effectively
   // standing on the stop already.
-  const distanceRounded = mapCenter ? Math.round(distanceM(mapCenter, stop)) : null;
+  const distanceRounded = mapCenter ? Math.round(getDistanceM(mapCenter, stop)) : null;
   const showDistance = distanceRounded != null && distanceRounded >= 10;
-  const bearing = mapCenter ? bearingDeg(mapCenter, stop) : null;
+  const bearing = mapCenter ? getBearingDeg(mapCenter, stop) : null;
   // Display-name resolution. When agencies (from useStopSearchMeta) are
   // available we use the matching agency's lang to bias subName ordering,
   // matching StopSummary's behavior. Otherwise we fall back to the default

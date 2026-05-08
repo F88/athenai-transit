@@ -1,22 +1,48 @@
-import type { LatLng } from '../../types/app/map';
-
-/** Meters per degree of latitude (constant worldwide). */
-const METERS_PER_DEGREE_LAT = 111_000;
+import { getDistance, getGreatCircleBearing } from 'geolib';
 
 /**
- * Calculate the approximate distance in meters between two points
- * using a flat-earth approximation with latitude-adjusted longitude.
+ * Compute the distance between two points in meters.
  *
- * @param a - First point as {@link LatLng}.
+ * This is the src-side distance helper used by UI code. It intentionally
+ * accepts the app's common `LatLng`-like shapes used around stop rendering.
+ *
+ * @param a - First point with `lat` / `lng` fields.
  * @param b - Second point with `stop_lat` / `stop_lon` fields.
- * @returns Distance in meters (may include decimals).
+ * @returns Distance in meters.
  */
-export function distanceM(a: LatLng, b: { stop_lat: number; stop_lon: number }): number {
-  const midLat = ((a.lat + b.stop_lat) / 2) * (Math.PI / 180);
-  const metersPerDegreeLng = METERS_PER_DEGREE_LAT * Math.cos(midLat);
-  const dlat = b.stop_lat - a.lat;
-  const dlng = b.stop_lon - a.lng;
-  return Math.sqrt((dlat * METERS_PER_DEGREE_LAT) ** 2 + (dlng * metersPerDegreeLng) ** 2);
+export function getDistanceM(
+  a: { lat: number; lng: number },
+  b: { stop_lat: number; stop_lon: number },
+): number {
+  if (a.lat === b.stop_lat && a.lng === b.stop_lon) {
+    return 0;
+  }
+
+  return getDistance(
+    { latitude: a.lat, longitude: a.lng },
+    { latitude: b.stop_lat, longitude: b.stop_lon },
+    0.01,
+  );
+}
+
+/**
+ * Calculate the geographic initial bearing (azimuth) from point `a` to point `b`.
+ *
+ * Returns degrees clockwise from north: 0 = north, 90 = east,
+ * 180 = south, 270 = west.
+ *
+ * @param a - Origin point with `lat` / `lng` fields.
+ * @param b - Destination point with `stop_lat` / `stop_lon` fields.
+ * @returns Bearing in degrees [0, 360).
+ */
+export function getBearingDeg(
+  a: { lat: number; lng: number },
+  b: { stop_lat: number; stop_lon: number },
+): number {
+  return getGreatCircleBearing(
+    { latitude: a.lat, longitude: a.lng },
+    { latitude: b.stop_lat, longitude: b.stop_lon },
+  );
 }
 
 /**
@@ -64,26 +90,6 @@ export function formatDistance(meters: number, lang: string, unit = true): strin
     maximumFractionDigits: 1,
   });
   return `${km}km`;
-}
-
-/**
- * Calculate the geographic bearing (azimuth) from point `a` to point `b`
- * using a flat-earth approximation with latitude-adjusted longitude.
- *
- * Returns degrees clockwise from north: 0 = north, 90 = east, 180 = south, 270 = west.
- *
- * @param a - Origin point as {@link LatLng}.
- * @param b - Destination point with `stop_lat` / `stop_lon` fields.
- * @returns Bearing in degrees [0, 360).
- */
-export function bearingDeg(a: LatLng, b: { stop_lat: number; stop_lon: number }): number {
-  const midLat = ((a.lat + b.stop_lat) / 2) * (Math.PI / 180);
-  const metersPerDegreeLng = METERS_PER_DEGREE_LAT * Math.cos(midLat);
-  const dy = (b.stop_lat - a.lat) * METERS_PER_DEGREE_LAT;
-  const dx = (b.stop_lon - a.lng) * metersPerDegreeLng;
-  // atan2(dx, dy) gives angle from north (Y-axis), clockwise positive
-  const rad = Math.atan2(dx, dy);
-  return ((rad * 180) / Math.PI + 360) % 360;
 }
 
 /**
