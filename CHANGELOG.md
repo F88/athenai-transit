@@ -11,6 +11,12 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- Pipeline: 東海汽船 (Tokai Kisen Co.,Ltd.) の GTFS-JP データソースを追加 (prefix `tkksn`, route_type 4 ferry)。伊豆諸島 (大島・利島・新島・式根島・神津島・三宅島・御蔵島・八丈島・青ヶ島) と小笠原諸島 (父島・母島) を結ぶ 19 stops / 15 routes / 132 trips。`shapes.txt` なし、`route_color` 全空のため `routeColorFallbacks: { '*': '294DA5' }` でフォールバック適用。
+- Pipeline: legacy GTFS-JP 3 列 `translations.txt` (`trans_id, lang, translation`) の auto-conversion を実装。`pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` (純関数 + 単体テスト 20 件) を新設し、`build-gtfs-db.ts` の import dispatch でヘッダ peek 一致時のみ起動。標準 6 列形式 (`table_name='stops'`, `field_name='stop_name'`, `field_value=trans_id`) へ変換、言語コードは BCP 47 標準形に正規化 (`ja-HrKt` → `ja-Hrkt`)。将来ソースが標準形式に upgrade した時はヘッダ不一致で自動的に standard importer にフォールバック。
+- Pipeline: 桜島フェリー (Sakurajima Ferry / 鹿児島市船舶局) の GTFS-JP データソースを追加 (prefix `kcmb`, route_type 4 ferry)。鹿児島港 ↔ 桜島港の生活航路、2 stops / 123 trips / shapes.txt あり (1 route 2 polylines 9 points)。`route_color=FFFFFF` がソース側で「set」扱いされ polyline 描画は白 (= 地図上で透明同等) のまま許容。data-viewer philosophy に従いソース値を尊重 (`routeColorFallbacks` は staged だが pipeline 側の空欄判定のみのため未発動)。
+- Pipeline: 奥尻島フェリー (Okushiri Island Ferry Co., Ltd. / オクシリアイランドフェリー) の GTFS-JP データソースを追加 (prefix `oksrif`, route_type 4 ferry)。北海道江差港 ↔ 奥尻港、2 stops / 36 trips / shapes.txt あり (84 points)、5 言語 (en / ja-Hrkt / ko / zh-Hans / zh-Hant) の充実翻訳。`routes.route_url` の言語別翻訳は GTFS spec 上 valid だが pipeline 側は未対応 (URL ローカライズは将来の拡張)。
+- Pipeline: オレンジフェリー (Orange Ferry / 四国開発フェリー株式会社) の GTFS-JP データソースを追加 (prefix `orgfry`, route_type 4 ferry)。3 路線 (東予〜大阪 / 八幡浜〜臼杵 / 新居浜〜神戸) / 6 stops / 21 trips、有効期間 2022-04-01〜2028-03-31 (ODPT フェリー中で期限最長)。`shapes.txt` なし、`route_color` 全 3 路線で有効値設定済み。`translations.txt` は東海汽船と同じ legacy 3 列形式で 5 言語 30 行、auto-conversion 経由で取り込み。
+- About: 東海汽船・桜島フェリー・奥尻島フェリー・オレンジフェリーのクレジット・データ情報を追加。
 - Pipeline: 東京都観光汽船 (TOKYO CRUISE / 水上バス) の GTFS データソースを追加 (prefix `tcship`, route_type 4 ferry)。隅田川・東京湾を航行する 5 stops / 5 routes (浅草・お台場海浜公園・豊洲・日の出桟橋・浜離宮)。`shapes.txt` は水路のため非対応。GTFS-JP 拡張の `ships.txt` / `payload*.txt` が同梱されているがパイプラインは標準テーブルのみ使用。
 - About: 東京都観光汽船のクレジット・データ情報を追加。
 - Pipeline: 東京メトロ (東京地下鉄株式会社) の GTFS データソースを追加 (prefix `tome`, route_type 1 subway)。9 路線すべて (銀座線・丸ノ内線・日比谷線・東西線・千代田線・有楽町線・半蔵門線・南北線・副都心線) で 185 駅 / 9 routes。各路線で公式 line color が設定済み。`shapes.txt` は含まれないが MLIT 国土数値情報経由で全 9 路線の shape を生成 (10 line names → 9 routes、丸ノ内線分岐線は本線へ統合)。
