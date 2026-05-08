@@ -123,6 +123,14 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'nishi-tokyo-bus',
+    prefixes: ['ntbus'],
+    routeTypes: [3],
+    enabled: true,
+    name: { name: 'Nishi Tokyo Bus', names: { ja: '西東京バス', en: 'Nishi Tokyo Bus' } },
+    countries: ['JP'],
+  },
+  {
     id: 'mir-train',
     prefixes: ['mir'],
     routeTypes: [2],
