@@ -377,3 +377,50 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 - GTFS の `route_type=2` (Rail) で 1 路線として扱われる
 - 実態は東京テレポート以南が地下区間 (= subway として認識する利用者もいる) だが、GTFS データは subway (=1) ではなく rail (=2)
 - App 側 `data-source-settings.ts` の `routeTypes: [1, 2]` でメタデータ的に地下鉄/普通鉄道両方として扱う (将来の Source 選択 UI で両方のフィルタに表示するため)。実フィルタは GTFS 由来の `route_type=2` のみ
+
+## sanwa-shosen (三和商船 / SANWASHOSEN)
+
+- Resource definition: `pipeline/config/resources/gtfs/sanwa-shosen.ts`
+- CKAN: <https://ckan.odpt.org/dataset/sanwa_merchant_vessel_all_lines>
+- Resource ID (使用中): `099eb941-9f04-40b2-9a3a-0b4808cc30b1` (20260105版)
+
+### route_type
+
+- 1 路線が GTFS の `route_type=4` (Ferry) で 1 事業者として扱われる
+- 牛深港 (熊本県天草市) と蔵之元港 (鹿児島県長島町) を結ぶ航路 (2 stop)
+
+### 有効期間
+
+- 有効期間: 2026/01/05 - 2026/12/31
+- feed_info.feed_version: `2.0`
+
+### route_color
+
+- 1 路線で `route_color=0000FF` / `route_text_color=FFFFFF` が設定済み
+- `routeColorFallbacks` は不要
+- App 側ブランドカラーは `0844A6` (provider 指定) を別途使用
+
+### route_id / stop_id
+
+- route_id, stop_id, shape_id がすべて日本語 + 角括弧プレフィックス形式 (例: `[01]牛深港～蔵之元港`, `[01]牛深港`, `牛深→蔵之元`)
+- GTFS spec 上は ID に Unicode 文字列を使用しても合法
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt が含まれている (1 route, 2 polylines, 18 points)
+- shape_id は日本語 (`牛深→蔵之元`, `蔵之元→牛深`)
+
+### translations.txt
+
+- 翻訳あり (stop_names: 2 / ja-Hrkt のみ)
+- trip_headsigns / route_long_names / agency_names は 0 件
+
+### GTFS-JP 拡張ファイル
+
+- ZIP には `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる (フェリー・運賃詳細用の事業者拡張)
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260105版
