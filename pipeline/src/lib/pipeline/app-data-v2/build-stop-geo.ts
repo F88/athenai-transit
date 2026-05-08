@@ -30,7 +30,7 @@
  */
 
 import type { StopGeoJson } from '../../../../../src/types/data/transit-v2-json';
-import { getDistanceKm } from '../../geo-utils';
+import { getDistanceKmLight } from '../../geo-utils';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -106,10 +106,13 @@ function computeConnectivity(target: StopEntry, allStops: StopEntry[]): Connecti
     if (s.id === target.id) {
       continue;
     }
-    const d = getDistanceKm(
-      { lat: target.lat, lng: target.lon },
-      { stop_lat: s.lat, stop_lon: s.lon },
-    );
+    // Only the 300m radius decision is needed here, so the slightly less
+    // accurate but allocation-free getDistanceKmLight (Haversine) is used
+    // instead of getDistanceKm (geolib/Vincenty). This inner body runs
+    // O(parents × allStops) ≈ 67M iterations on the production dataset, so
+    // the per-call cost difference (~22×) accounts for minutes of total
+    // wall-clock time across the build.
+    const d = getDistanceKmLight(target.lat, target.lon, s.lat, s.lon);
     if (d > CONNECTIVITY_RADIUS_KM) {
       continue;
     }
@@ -153,10 +156,15 @@ function computeAllMetrics(
       continue;
     }
 
-    const d = getDistanceKm(
-      { lat: target.lat, lng: target.lon },
-      { stop_lat: s.lat, stop_lon: s.lon },
-    );
+    // Distance is consumed only for: a 300m threshold check (cn) and
+    // min comparisons that pick the nearest stop (nr, wp). None of these
+    // require sub-meter accuracy, so the slightly less accurate but
+    // allocation-free getDistanceKmLight (Haversine) is used instead of
+    // getDistanceKm (geolib/Vincenty). This inner body runs
+    // O(allL0Stops × allL0Stops) ≈ 348M iterations on the production
+    // dataset, so the per-call cost difference (~22×) accounts for
+    // minutes of total wall-clock time across the build.
+    const d = getDistanceKmLight(target.lat, target.lon, s.lat, s.lon);
 
     // nr: nearest stop with a route not in target's route set
     if (bestNr === undefined || d < bestNr) {

@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { getDistanceKm } from '../geo-utils';
+import { getDistanceKm, getDistanceKmLight } from '../geo-utils';
 
 describe('getDistanceKm', () => {
   it('returns 0 for identical points', () => {
@@ -59,5 +59,52 @@ describe('getDistanceKm', () => {
     const b = { stop_lat: 1, stop_lon: 0 };
     expect(getDistanceKm(a, b)).toBeGreaterThan(111);
     expect(getDistanceKm(a, b)).toBeLessThan(112);
+  });
+});
+
+describe('getDistanceKmLight', () => {
+  it('returns 0 for identical points', () => {
+    expect(getDistanceKmLight(35.0, 139.0, 35.0, 139.0)).toBe(0);
+  });
+
+  it('returns kilometers for short urban distances', () => {
+    const distanceKm = getDistanceKmLight(35.6812, 139.7671, 35.6896, 139.7006);
+    expect(distanceKm).toBeGreaterThan(5.5);
+    expect(distanceKm).toBeLessThan(7.5);
+  });
+
+  it('returns the expected order of magnitude for intercontinental distances', () => {
+    const distanceKm = getDistanceKmLight(35.681236, 139.767125, 52.52, 13.405);
+    expect(distanceKm).toBeGreaterThan(8_800);
+    expect(distanceKm).toBeLessThan(9_100);
+  });
+
+  it('is symmetric (a→b equals b→a)', () => {
+    const ab = getDistanceKmLight(35.6812, 139.7671, 35.6895, 139.6917);
+    const ba = getDistanceKmLight(35.6895, 139.6917, 35.6812, 139.7671);
+    expect(ab).toBeCloseTo(ba, 10);
+  });
+
+  it('handles dateline-crossing without sign error', () => {
+    const d = getDistanceKmLight(0, 179, 0, -179);
+    expect(d).toBeGreaterThan(220);
+    expect(d).toBeLessThan(223);
+  });
+
+  it('matches haversine conversion for a simple 1 degree latitude delta', () => {
+    const d = getDistanceKmLight(0, 0, 1, 0);
+    expect(d).toBeGreaterThan(111);
+    expect(d).toBeLessThan(112);
+  });
+
+  it('produces values within ~0.5% of getDistanceKm for short urban distances', () => {
+    const tokyo: [number, number] = [35.6812, 139.7671];
+    const shinjuku: [number, number] = [35.6896, 139.7006];
+    const hav = getDistanceKmLight(...tokyo, ...shinjuku);
+    const geo = getDistanceKm(
+      { lat: tokyo[0], lng: tokyo[1] },
+      { stop_lat: shinjuku[0], stop_lon: shinjuku[1] },
+    );
+    expect(Math.abs(hav - geo) / geo).toBeLessThan(0.005);
   });
 });
