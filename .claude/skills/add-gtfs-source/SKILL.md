@@ -57,16 +57,22 @@ Example: `pipeline/config/resources/gtfs/kanto-bus.ts`
 
 ### 3. Add to pipeline target lists
 
-Add the source-name to all three target list files (and `build-shapes-gtfs.ts` if shapes.txt is present):
+The CI workflow runs each pipeline stage against its own target list, and missing any entry will cause CI failure even if the local single-source run succeeds. Register the source in **every** applicable list:
 
-| File                                           | Purpose             | Always                    |
-| ---------------------------------------------- | ------------------- | ------------------------- |
-| `pipeline/config/targets/download-gtfs.ts`     | GTFS ZIP download   | yes                       |
-| `pipeline/config/targets/build-db.ts`          | CSV to SQLite       | yes                       |
-| `pipeline/config/targets/build-json.ts`        | DB to app JSON      | yes                       |
-| `pipeline/config/targets/build-shapes-gtfs.ts` | Route shapes (GTFS) | only if shapes.txt exists |
+| File                                                    | Key      | Purpose                              | Always                            |
+| ------------------------------------------------------- | -------- | ------------------------------------ | --------------------------------- |
+| `pipeline/config/targets/download-gtfs.ts`              | source-name | GTFS ZIP download                 | yes                               |
+| `pipeline/config/targets/build-db.ts`                   | source-name | CSV to SQLite                     | yes                               |
+| `pipeline/config/targets/build-json.ts`                 | source-name | DB to app JSON (data.json)        | yes                               |
+| `pipeline/config/targets/build-insights.ts`             | **prefix**  | DataBundle to InsightsBundle      | yes                               |
+| `pipeline/config/targets/build-global-insights.ts`      | **prefix**  | Cross-source spatial metrics      | yes                               |
+| `pipeline/config/targets/validate.ts`                   | **prefix**  | v2 bundle validation              | yes                               |
+| `pipeline/config/targets/build-shapes-gtfs.ts`          | source-name | Route shapes from `shapes.txt`    | only if `shapes.txt` is present   |
+| `pipeline/config/targets/build-shapes-ksj.ts`           | source-name | Route shapes from MLIT KSJ        | only if `mlitShapeMapping` is set |
 
-Each file exports a string array. Entries can be commented out to temporarily skip a source during batch runs — this is useful for debugging or when a source is temporarily unavailable.
+Each file exports a string array. **Watch the key column carefully** — `download-gtfs.ts` / `build-db.ts` / `build-json.ts` / `build-shapes-*.ts` use the source-name (filename), while `build-insights.ts` / `build-global-insights.ts` / `validate.ts` use the prefix. Mixing them up silently skips the source in CI.
+
+Entries can be commented out to temporarily skip a source during batch runs — this is useful for debugging or when a source is temporarily unavailable.
 
 Note: `pipeline/scripts/dev/describe-resources.ts` auto-discovers all resource definitions in `pipeline/config/resources/gtfs/`, so no manual registration is needed there.
 
@@ -74,12 +80,16 @@ Note: `pipeline/scripts/dev/describe-resources.ts` auto-discovers all resource d
 
 Add an entry to `src/config/data-source-settings.ts`. This registers the source in the web app so the frontend knows to load and display its data. Users can toggle individual sources on/off in the app's settings UI, so each source needs its own entry here.
 
+The actual schema is `SourceGroup` (see `src/types/app/source-group.ts`). The `routeTypes` array uses GTFS numeric route_type values (0=tram, 1=subway, 2=rail, 3=bus, 4=ferry, 12=monorail) and may contain multiple values for sources covering more than one mode.
+
 ```typescript
 {
   id: '{source-name}',
-  name_ja: '{日本語名}',
-  category: 'bus', // or 'train'
   prefixes: ['{prefix}'],
+  routeTypes: [3], // numeric GTFS route_type values
+  enabled: true,
+  name: { name: 'Display Name', names: { ja: '日本語名', en: 'English Name' } },
+  countries: ['JP'],
 },
 ```
 
@@ -101,15 +111,26 @@ Register every agency that appears in the pipeline output (one entry per `agency
 
 ### 5. Run the pipeline and check data quality
 
-Run the full pipeline for the new source.
-Use the script directly (not `npm run`) to run for a single source:
+Run each stage for the new source. Note that some scripts take **source-name** while others take **prefix** — see step 3.
 
 ```bash
+# 5.1 Download / build / extract for this source only (source-name)
 npx tsx --env-file-if-exists=pipeline/.env.pipeline.local pipeline/scripts/pipeline/download-gtfs.ts {source-name}
 npx tsx pipeline/scripts/pipeline/build-gtfs-db.ts {source-name}
 npx tsx pipeline/scripts/pipeline/app-data-v2/build-from-gtfs.ts {source-name}
+
+# 5.2 Per-source insights (prefix)
+npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts {prefix}
+
+# 5.3 Cross-source insights — must rerun across the full target list
+npm run pipeline:build:v2-global-insights
+
+# 5.4 Sync to public/ and validate
 npm run data:sync
+npm run pipeline:validate:v2
 ```
+
+`pipeline:validate:v2` is the same check CI runs. **Do not skip it locally** — it catches missing target-list registrations (e.g. a forgotten `build-insights.ts` entry) before they break CI. Treat any `❌ MISSING (required)` line as a blocker.
 
 After JSON generation, check the following:
 
@@ -183,11 +204,10 @@ Keep factual and neutral — this is in a public repository.
 
 ### 9. Commit
 
-Split into logical commits following Conventional Commits:
+Split into logical commits following Conventional Commits. **Do not commit generated app data** (`public/next-dev/{prefix}/*.json`) — the `Update Transit Data` GitHub Action regenerates and pushes those after merge:
 
-1. `feat(pipeline): add {operator} data source` — resource definition + targets + data-source-settings
-2. `data: add {operator} app data` — generated JSON files in `public/data/`
-3. `docs: add {operator} to ABOUT.md credits` — license/credit updates
+1. `feat(pipeline): add {operator} data source` — resource definition + every applicable target list + `data-source-settings.ts` + `agency-attributes.ts`
+2. `docs: add {operator} credits and notes` — `ABOUT.md` license/credit updates + `pipeline/config/resources/NOTES.md` data-quality notes
 
 ## Naming Conventions
 
@@ -202,3 +222,5 @@ Split into logical commits following Conventional Commits:
 - **CKAN date/resourceId coupling**: ODPT CKAN has separate resources per date version. The `downloadUrl` date param and `catalog.resourceId` must match the same version.
 - **Authentication**: ODPT API sources need `acl:consumerKey`. Use `npm run` scripts (not `npx` directly) to pick up the env file.
 - **route_color black-on-black**: Some sources set both `route_color` and `route_text_color` to `000000`. The build script treats this as "unset" and applies fallbacks.
+- **source-name vs prefix in target lists**: Half the target files use the source-name (e.g. `tokyometro`) and half use the prefix (e.g. `tome`). Forgetting either side passes local single-source runs but fails CI's batch validation with `❌ MISSING (required)`. Always run `npm run pipeline:validate:v2` locally before pushing.
+- **Workspace state files**: `pipeline/workspace/state/download-meta/*.json` is generated by the download step and must not be committed.
