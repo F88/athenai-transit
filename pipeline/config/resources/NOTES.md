@@ -191,6 +191,49 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - 翻訳あり (stop_names: 19, agency_names: 1, trip_headsigns: 4, route_long_names: 1)
 
+## tokyo-cruise-ship (東京都観光汽船 / 水上バス)
+
+- Resource definition: `pipeline/config/resources/gtfs/tokyo-cruise-ship.ts`
+- CKAN: <https://ckan.odpt.org/dataset/tokyo_cruise_ship_all_lines>
+- Resource ID (使用中): `c96fa688-113d-4681-bcd9-43b21cad0cc3` (20250402版)
+
+### route_type
+
+- 全 5 路線が GTFS の `route_type=4` (Ferry) で 1 事業者として扱われる
+- 隅田川・東京湾を航行する水上バス (浅草・お台場海浜公園・豊洲・日の出桟橋・浜離宮の 5 stop)
+
+### 有効期間
+
+- 有効期間: 2025/07/01 - 2026/06/30
+
+### route_color
+
+- 全 5 路線で `route_color` / `route_text_color` が設定済み (008000, A9A9A9 x2, FFFF00 x2)
+- `routeColorFallbacks` は不要
+
+### route_short_name
+
+- 全路線で `route_short_name` が空 (`route_long_name` のみ提供される)
+- route_id 自体が `[01]浅草～お台場海浜公園` 形式で系統番号を含む
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt が含まれていない (水路のため一般的な GeoJSON ベースの代替も存在しない)
+
+### translations.txt
+
+- 翻訳あり (stop_names: 5, trip_headsigns: 7)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20250402版
+
+### GTFS-JP 拡張ファイル
+
+- ZIP には GTFS 標準外の `ships.txt` / `payload.txt` / `payload_fare_attributes.txt` / `payload_fare_rules.txt` が含まれる (船舶情報・運賃詳細用の事業者拡張)
+- パイプラインでは未使用 (標準テーブルのみで時刻表は再現可能)
+
 ## twr-rinkai (りんかい線 / 東京臨海高速鉄道)
 
 - Resource definition: `pipeline/config/resources/gtfs/twr-rinkai.ts`
