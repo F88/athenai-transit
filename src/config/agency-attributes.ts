@@ -191,6 +191,13 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     ],
   },
 
+  // --- Sanwa Shosen ---
+  'snws:9330001015195': {
+    shortName: { ja: '三和商船', en: 'Sanwa Shosen' },
+    longName: { ja: '三和商船株式会社', en: 'SANWASHOSEN Co.,Ltd.' },
+    colors: [{ bg: '0844A6', text: 'FFFFFF' } /* Primary */],
+  },
+
   // --- Sugimaru (Suginami City) ---
   'sggsm:8000020131156': {
     shortName: { ja: 'すぎ丸', en: 'Sugimaru' },

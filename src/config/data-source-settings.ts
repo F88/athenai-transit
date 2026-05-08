@@ -193,6 +193,17 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'sanwa-shosen',
+    prefixes: ['snws'],
+    routeTypes: [4],
+    enabled: true,
+    name: {
+      name: 'Sanwa Shosen',
+      names: { ja: '三和商船', en: 'Sanwa Shosen' },
+    },
+    countries: ['JP'],
+  },
+  {
     id: 'vag-freiburg',
     prefixes: ['vagfr'],
     routeTypes: [0, 3],

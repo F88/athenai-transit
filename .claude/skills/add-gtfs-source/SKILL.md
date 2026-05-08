@@ -55,20 +55,38 @@ Do NOT set `routeColorFallbacks` yet — check the data first (step 5).
 
 Example: `pipeline/config/resources/gtfs/kanto-bus.ts`
 
+### 2.5. STOP — confirm resource definition with user before proceeding
+
+**This is a hard gate.** The next steps (target list registration, web app config, pipeline run, agency-attributes key) all depend on values defined here. Changing any of them later means redoing every subsequent step. Do not proceed past this point until the user has explicitly approved the resource definition.
+
+**Lock-in values** — once any of these is used downstream, changing it forces a full redo:
+
+| Field                  | Used by                                                                                                                                                 |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pipeline.prefix`      | All `*-insights.ts` / `validate.ts` target lists, `data-source-settings.ts`, `agency-attributes.ts` keys, output paths under `_build/data-v2/{prefix}/` |
+| `pipeline.outDir`      | Workspace dirs under `pipeline/workspace/data/gtfs/{outDir}/` and archives                                                                              |
+| Source-name (filename) | All `download-gtfs.ts` / `build-db.ts` / `build-json.ts` / `build-shapes-*.ts` target lists                                                             |
+| `nameEn` / `nameJa`    | `pipeline:describe` output, web app display                                                                                                             |
+| `provider.name.*`      | Web app display (long/short, multilingual)                                                                                                              |
+| `provider.colors`      | App-side brand colors; copy must match `agency-attributes.ts` colors                                                                                    |
+| `routeTypes`           | `data-source-settings.ts` `routeTypes` mapping (must match)                                                                                             |
+
+**How to confirm.** After writing the file, present a short summary of the lock-in values to the user (use `AskUserQuestion` or a plain bullet list) and wait for explicit approval. Do NOT run the pipeline, do NOT touch target lists, do NOT touch `data-source-settings.ts` until the user says OK. If the user changes any value, edit the resource definition first, present the updated summary again, and re-confirm.
+
 ### 3. Add to pipeline target lists
 
 The CI workflow runs each pipeline stage against its own target list, and missing any entry will cause CI failure even if the local single-source run succeeds. Register the source in **every** applicable list:
 
-| File                                                    | Key      | Purpose                              | Always                            |
-| ------------------------------------------------------- | -------- | ------------------------------------ | --------------------------------- |
-| `pipeline/config/targets/download-gtfs.ts`              | source-name | GTFS ZIP download                 | yes                               |
-| `pipeline/config/targets/build-db.ts`                   | source-name | CSV to SQLite                     | yes                               |
-| `pipeline/config/targets/build-json.ts`                 | source-name | DB to app JSON (data.json)        | yes                               |
-| `pipeline/config/targets/build-insights.ts`             | **prefix**  | DataBundle to InsightsBundle      | yes                               |
-| `pipeline/config/targets/build-global-insights.ts`      | **prefix**  | Cross-source spatial metrics      | yes                               |
-| `pipeline/config/targets/validate.ts`                   | **prefix**  | v2 bundle validation              | yes                               |
-| `pipeline/config/targets/build-shapes-gtfs.ts`          | source-name | Route shapes from `shapes.txt`    | only if `shapes.txt` is present   |
-| `pipeline/config/targets/build-shapes-ksj.ts`           | source-name | Route shapes from MLIT KSJ        | only if `mlitShapeMapping` is set |
+| File                                               | Key         | Purpose                        | Always                            |
+| -------------------------------------------------- | ----------- | ------------------------------ | --------------------------------- |
+| `pipeline/config/targets/download-gtfs.ts`         | source-name | GTFS ZIP download              | yes                               |
+| `pipeline/config/targets/build-db.ts`              | source-name | CSV to SQLite                  | yes                               |
+| `pipeline/config/targets/build-json.ts`            | source-name | DB to app JSON (data.json)     | yes                               |
+| `pipeline/config/targets/build-insights.ts`        | **prefix**  | DataBundle to InsightsBundle   | yes                               |
+| `pipeline/config/targets/build-global-insights.ts` | **prefix**  | Cross-source spatial metrics   | yes                               |
+| `pipeline/config/targets/validate.ts`              | **prefix**  | v2 bundle validation           | yes                               |
+| `pipeline/config/targets/build-shapes-gtfs.ts`     | source-name | Route shapes from `shapes.txt` | only if `shapes.txt` is present   |
+| `pipeline/config/targets/build-shapes-ksj.ts`      | source-name | Route shapes from MLIT KSJ     | only if `mlitShapeMapping` is set |
 
 Each file exports a string array. **Watch the key column carefully** — `download-gtfs.ts` / `build-db.ts` / `build-json.ts` / `build-shapes-*.ts` use the source-name (filename), while `build-insights.ts` / `build-global-insights.ts` / `validate.ts` use the prefix. Mixing them up silently skips the source in CI.
 
@@ -219,6 +237,7 @@ Split into logical commits following Conventional Commits. **Do not commit gener
 
 ## Common Pitfalls
 
+- **Skipping the Step 2.5 confirmation gate**: Picking a `prefix` / `outDir` / source-name without user approval, then registering target lists and running the pipeline, will cost you everything if the user wants a different value. Wait at the gate.
 - **CKAN date/resourceId coupling**: ODPT CKAN has separate resources per date version. The `downloadUrl` date param and `catalog.resourceId` must match the same version.
 - **Authentication**: ODPT API sources need `acl:consumerKey`. Use `npm run` scripts (not `npx` directly) to pick up the env file.
 - **route_color black-on-black**: Some sources set both `route_color` and `route_text_color` to `000000`. The build script treats this as "unset" and applies fallbacks.
