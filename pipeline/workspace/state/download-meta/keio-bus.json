@@ -2,12 +2,12 @@
   "sourceName": "keio-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-08T15:33:12.177Z",
+  "downloadedAt": "2026-05-09T05:13:13.806Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/KeioBus/AllLines.zip?date=20260401",
   "size": 5828269,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 4311,
-  "archivePath": "workspace/_archives/gtfs/keio-bus/AllLines_20260508-153316.zip",
+  "durationMs": 2795,
+  "archivePath": "workspace/_archives/gtfs/keio-bus/AllLines_20260509-051316.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
