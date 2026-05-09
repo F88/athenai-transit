@@ -777,7 +777,7 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20251001版
 
-## kyoto-bus (京都バス / KyotoBus Co., Ltd.)
+## kyoto-bus (京都バス / Kyoto Bus Co., Ltd.)
 
 - Resource definition: `pipeline/config/resources/gtfs/kyoto-bus.ts`
 - CKAN: <https://ckan.odpt.org/dataset/kyoto_bus_all_lines>
