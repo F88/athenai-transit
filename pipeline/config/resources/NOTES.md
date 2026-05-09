@@ -776,3 +776,47 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20251001版
+
+## kyoto-bus (京都バス / Kyoto Bus Co., Ltd.)
+
+- Resource definition: `pipeline/config/resources/gtfs/kyoto-bus.ts`
+- CKAN: <https://ckan.odpt.org/dataset/kyoto_bus_all_lines>
+- Resource ID (使用中): `de92909b-8d02-4007-b89d-d9a0d9e78650` (20260507版)
+- Provider URL: <https://www.kyotobus.jp/>
+
+### 概要
+
+- 51 routes (route_type=3 bus)、940 stops、4,306 trips、89,230 stop_times、111 trip patterns
+- 京都市バス (kcbus) ではカバーされない京都市郊外路線 (大原・嵐山・岩倉・高野方面等) を補完する私鉄系バス
+- 営業所 2 つ (高野営業所 / 嵐山営業所、`office_jp.txt` に記録)
+
+### 有効期間
+
+- 有効期間: 2026/05/07 - 2026/09/30 (約 5 ヶ月)
+
+### route_color
+
+- 全 51 routes で `route_color` / `route_text_color` が有効値で設定済 (`106346`/`38BA99`/`00BBCE` 等の多彩な色設定)
+- `routeColorFallbacks` 不要
+
+### shapes.txt
+
+- ZIP に shapes.txt は含まれるが **ヘッダのみ、データ行 0** (`shape_dist_traveleded` という非標準スペル混入、iyt2/ntbus と同パターン)
+- polyline 描画なし
+
+### translations.txt
+
+- **標準 6 列形式**で legacy auto-conversion 不要 (4,192 行)
+- 言語: en / ja / ja-Hrkt / ko / **`zh-cn`** / **`zh-tw`** の 6 言語
+- 内訳: stops.stop_name (315 stops × 6 lang) + stop_times.stop_headsign (281 × 5 lang) + agency.agency_name (1) + routes.route_long_name (51) など、stop_headsign 翻訳まで充実
+- ⚠️ `zh-cn` / `zh-tw` は BCP 47 region tag 表記 (canonical script tag は `zh-Hans` / `zh-Hant`)。WebApp の i18n 層 (`langKeysEquivalent`、PR #191) で `zh-Hans` / `zh-Hant` の lookup と自動マッチするので user 表示には影響なし
+
+### GTFS-JP 拡張ファイル
+
+- `pattern_jp.txt` 154 行 (jp_pattern_id 別の経由 stop 概要)、`office_jp.txt` 2 行 (高野・嵐山)
+- pipeline では未使用 (標準テーブルのみで時刻表は再現可能)
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260507版

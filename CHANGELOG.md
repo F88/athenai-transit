@@ -9,6 +9,11 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Pipeline: 京都バス (KyotoBus Co., Ltd. / 京都バス株式会社) の GTFS-JP データソースを追加 (prefix `kytbus`, route_type 3 bus)。京都市バス (`kcbus`) がカバーしない京都市郊外路線 (大原・嵐山・岩倉・高野方面) を補完する私鉄系バス、51 routes / 940 stops / 4,306 trips / 89,230 stop_times / 111 trip patterns。有効期間 2026-05-07〜2026-09-30。`shapes.txt` はヘッダのみ (iyt2 / ntbus と同パターン、`shape_dist_traveleded` 非標準スペル混入) のため shape build には未登録。`translations.txt` は標準 6 列形式で 6 言語 4,192 行 (`en` / `ja` / `ja-Hrkt` / `ko` / `zh-cn` / `zh-tw`)、`zh-cn` / `zh-tw` は BCP 47 region tag 表記だが PR #191 の `langKeysEquivalent` で `zh-Hans` / `zh-Hant` に自動マッチするため display への影響なし。Brand color `99211F` (deep red)。
+- About: 京都バスのクレジット・データ情報を追加。
+
 ## [2026.05.08]
 
 ### Added

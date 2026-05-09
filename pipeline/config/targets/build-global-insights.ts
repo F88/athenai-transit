@@ -38,4 +38,5 @@ export default [
   'uwjmfry', // uwajima-unyu
   'mtfry', // meimon-taiyo-ferry
   'itkfry', // itsukishima-kisen
+  'kytbus', // kyoto-bus
 ];

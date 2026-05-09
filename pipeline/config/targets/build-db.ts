@@ -38,4 +38,5 @@ export default [
   'uwajima-unyu',
   'meimon-taiyo-ferry',
   'itsukishima-kisen',
+  'kyoto-bus',
 ];
