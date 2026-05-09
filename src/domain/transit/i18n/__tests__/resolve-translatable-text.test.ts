@@ -282,6 +282,35 @@ describe('resolveTranslatableText', () => {
     });
   });
 
+  describe('supports zh region/script alias lookup', () => {
+    it('matches a zh-cn key when the request is zh-Hans', () => {
+      expect(
+        resolveTranslatableText({ name: '渋谷駅', names: { 'zh-cn': '涩谷站' } }, ['zh-Hans']),
+      ).toEqual({
+        resolved: { lang: 'zh-Hans', value: '涩谷站' },
+        others: { origin: '渋谷駅' },
+      });
+    });
+
+    it('matches a zh-tw key when the request is zh-Hant', () => {
+      expect(
+        resolveTranslatableText({ name: '渋谷駅', names: { 'zh-tw': '澀谷站' } }, ['zh-Hant']),
+      ).toEqual({
+        resolved: { lang: 'zh-Hant', value: '澀谷站' },
+        others: { origin: '渋谷駅' },
+      });
+    });
+
+    it('does not match zh-cn when requesting zh-Hant (different scripts)', () => {
+      expect(
+        resolveTranslatableText({ name: '渋谷駅', names: { 'zh-cn': '涩谷站' } }, ['zh-Hant']),
+      ).toEqual({
+        resolved: { lang: 'origin', value: '渋谷駅' },
+        others: { 'zh-cn': '涩谷站' },
+      });
+    });
+  });
+
   describe('deduplicates case-variant keys with first-wins semantics', () => {
     it('excludes duplicate case variants from others after a direct match', () => {
       expect(

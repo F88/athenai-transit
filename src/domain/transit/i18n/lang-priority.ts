@@ -1,3 +1,5 @@
+import { langKeysEquivalent } from './lang-key-equivalence';
+
 /**
  * International language priority order for display purposes.
  *
@@ -54,7 +56,11 @@ function langPrefix(key: string): string {
  * 3. Keys not in any list (original relative order preserved)
  *
  * Comparison rules:
- * - Matching is case-insensitive per BCP 47.
+ * - Matching uses {@link langKeysEquivalent}: case-insensitive per
+ *   BCP 47 **plus** zh region/script aliasing (`zh-cn` clusters with
+ *   `zh-Hans`, `zh-tw` with `zh-Hant`, etc.). A `preferred` of
+ *   `['zh-Hans']` therefore treats a key of `'zh-cn'` as an exact
+ *   match in the same precedence slot.
  * - `preferred` is treated as an ordered precedence list, not an
  *   unordered set.
  * - Even when `preferred` is empty, keys in {@link LANG_PRIORITY}
@@ -80,24 +86,24 @@ function langPrefix(key: string): string {
  * ```
  */
 export function sortLangKeysByPriority(keys: string[], preferred: readonly string[]): string[] {
-  // Case-insensitive comparisons per BCP 47 (RFC 5646 §2.1.1).
-  const preferredLower = preferred.map((p) => p.toLowerCase());
-  const preferredPrefixes = new Set(preferredLower.map(langPrefix));
-  const priorityLower = LANG_PRIORITY.map((p) => p.toLowerCase());
+  // Case-insensitive + region-alias comparisons via langKeysEquivalent
+  // (BCP 47 §2.1.1 + zh region/script equivalence so that source keys
+  // like `zh-cn` cluster with `preferred` of `zh-Hans`).
+  const preferredPrefixes = new Set(preferred.map((p) => langPrefix(p.toLowerCase())));
 
   function sortKey(key: string): number {
     const keyLower = key.toLowerCase();
     const prefix = langPrefix(keyLower);
     const isAgencyVariant = preferredPrefixes.has(prefix);
-    const priorityIndex = priorityLower.indexOf(keyLower);
+    const priorityIndex = LANG_PRIORITY.findIndex((p) => langKeysEquivalent(p, key));
 
     if (isAgencyVariant) {
-      // Agency lang exact match → top priority in preferred order
-      const preferredIndex = preferredLower.indexOf(keyLower);
+      // Agency lang exact match (or alias) → top priority in preferred order
+      const preferredIndex = preferred.findIndex((p) => langKeysEquivalent(p, key));
       if (preferredIndex !== -1) {
         return -3000 + preferredIndex;
       }
-      // Agency variant defined in LANG_PRIORITY
+      // Agency variant defined in LANG_PRIORITY (or alias)
       if (priorityIndex !== -1) {
         return -2000 + priorityIndex;
       }
@@ -105,7 +111,7 @@ export function sortLangKeysByPriority(keys: string[], preferred: readonly strin
       return -1000;
     }
 
-    // LANG_PRIORITY order
+    // LANG_PRIORITY order (or alias)
     if (priorityIndex !== -1) {
       return priorityIndex;
     }

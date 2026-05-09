@@ -1,3 +1,5 @@
+import { langKeysEquivalent } from './lang-key-equivalence';
+
 /**
  * Inject the base value into a translation names record under its
  * feed language key.
@@ -10,12 +12,17 @@
  * (e.g. English shown when Japanese is expected).
  *
  * This function bridges the gap: if `originLang` is a concrete
- * language code and `names` does not already contain that key, the
- * base value is injected so the resolver treats it as a candidate
- * for that language.
+ * language code and `names` does not already contain an equivalent
+ * key, the base value is injected so the resolver treats it as a
+ * candidate for that language.
+ *
+ * Equivalence is checked via {@link langKeysEquivalent}: case-
+ * insensitive per BCP 47, **plus** zh region/script aliases. So a
+ * `names` entry under `"zh-cn"` already covers an `originLang` of
+ * `"zh-Hans"`, and the record is returned unchanged in that case.
  *
  * Explicit translations (from `translations.txt`) always take
- * priority — if `names` already has a matching key, the record is
+ * priority — if `names` already has an equivalent key, the record is
  * returned unchanged.
  *
  * ### `"mul"` (multilingual) handling
@@ -60,11 +67,12 @@ export function injectOriginLang(
     return names;
   }
 
-  // Case-insensitive check: do not overwrite an explicit translation.
-  // BCP 47 language tags are case-insensitive (RFC 5646 §2.1.1).
-  const originLangLower = originLang.toLowerCase();
+  // Case-insensitive + region-alias check: do not overwrite an explicit
+  // translation, including aliases such as `zh-cn` for an `originLang`
+  // of `zh-Hans`. BCP 47 §2.1.1 case-insensitivity is handled inside
+  // langKeysEquivalent.
   for (const key of Object.keys(names)) {
-    if (key.toLowerCase() === originLangLower) {
+    if (langKeysEquivalent(key, originLang)) {
       return names;
     }
   }
