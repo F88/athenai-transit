@@ -99,6 +99,14 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'kyoto-bus',
+    prefixes: ['kytbus'],
+    routeTypes: [3],
+    enabled: true,
+    name: { name: 'Kyoto Bus', names: { ja: '京都バス', en: 'Kyoto Bus' } },
+    countries: ['JP'],
+  },
+  {
     id: 'oshima-bus',
     prefixes: ['osmbus'],
     routeTypes: [3],
