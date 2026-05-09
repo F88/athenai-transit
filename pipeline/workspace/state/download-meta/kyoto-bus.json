@@ -1,65 +1,65 @@
 {
-  "sourceName": "iyotetsu-bus",
+  "sourceName": "kyoto-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-09T09:17:20.011Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260415",
-  "size": 854913,
+  "downloadedAt": "2026-05-09T09:18:29.298Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260507",
+  "size": 1005942,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 2992,
-  "archivePath": "workspace/_archives/gtfs/iyotetsu-bus/AllLines_20260509-091722.zip",
+  "durationMs": 2906,
+  "archivePath": "workspace/_archives/gtfs/kyoto-bus/AllLines_20260509-091832.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
-      "size": 192
+      "size": 198
     },
     {
       "name": "stops.txt",
-      "size": 64529
+      "size": 55734
     },
     {
       "name": "routes.txt",
-      "size": 5122
+      "size": 9517
     },
     {
       "name": "trips.txt",
-      "size": 252991
+      "size": 554260
     },
     {
       "name": "pattern_jp.txt",
-      "size": 7667
+      "size": 17095
     },
     {
       "name": "stop_times.txt",
-      "size": 5937876
+      "size": 10264898
     },
     {
       "name": "fare_attributes.txt",
-      "size": 4062
+      "size": 1542
     },
     {
       "name": "fare_rules.txt",
-      "size": 830398
+      "size": 807922
     },
     {
       "name": "calendar.txt",
-      "size": 719
+      "size": 509
     },
     {
       "name": "calendar_dates.txt",
-      "size": 32
+      "size": 4316
     },
     {
       "name": "feed_info.txt",
-      "size": 189
+      "size": 171
     },
     {
       "name": "translations.txt",
-      "size": 141798
+      "size": 476255
     },
     {
       "name": "office_jp.txt",
-      "size": 191
+      "size": 95
     },
     {
       "name": "shapes.txt",
@@ -67,11 +67,11 @@
     }
   ],
   "feedInfo": {
-    "publisherName": "伊予鉄バス株式会社",
-    "publisherUrl": "https://www.iyotetsu.co.jp/",
+    "publisherName": "京都バス",
+    "publisherUrl": "https://www.kyotobus.jp/",
     "lang": "ja",
-    "startDate": "20260415",
-    "endDate": "20260531",
-    "version": "20260415_20260518"
+    "startDate": "20260507",
+    "endDate": "20260930",
+    "version": "20260507_20260930"
   }
 }
