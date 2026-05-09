@@ -101,4 +101,26 @@ describe('resolveLangChain (custom langs)', () => {
     ];
     expect(resolveLangChain('x', circular)).toEqual(['x', 'y']);
   });
+
+  // --- Region/script alias (zh-cn ↔ zh-Hans, zh-tw ↔ zh-Hant) ---
+
+  it('region alias: zh-cn input resolves to zh-Hans canonical chain', () => {
+    const langs: SupportedLang[] = [
+      { code: 'zh-Hans', label: '', shortLabel: '', fallback: 'en' },
+      { code: 'en', label: '', shortLabel: '' },
+    ];
+    // Starting from `zh-cn` (a region tag), resolveLangChain should
+    // canonicalize to the script-tag entry `zh-Hans` and follow its
+    // fallback chain.
+    expect(resolveLangChain('zh-cn', langs)).toEqual(['zh-Hans', 'zh', 'en']);
+  });
+
+  it('region alias: zh-tw input resolves to zh-Hant canonical chain', () => {
+    const langs: SupportedLang[] = [
+      { code: 'zh-Hant', label: '', shortLabel: '', fallback: 'zh-Hans' },
+      { code: 'zh-Hans', label: '', shortLabel: '', fallback: 'en' },
+      { code: 'en', label: '', shortLabel: '' },
+    ];
+    expect(resolveLangChain('zh-tw', langs)).toEqual(['zh-Hant', 'zh-Hans', 'zh', 'en']);
+  });
 });

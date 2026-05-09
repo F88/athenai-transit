@@ -1,3 +1,5 @@
+import { langKeysEquivalent } from './lang-key-equivalence';
+
 /**
  * Inject the base value into a translation names record under its
  * feed language key.
@@ -60,11 +62,12 @@ export function injectOriginLang(
     return names;
   }
 
-  // Case-insensitive check: do not overwrite an explicit translation.
-  // BCP 47 language tags are case-insensitive (RFC 5646 §2.1.1).
-  const originLangLower = originLang.toLowerCase();
+  // Case-insensitive + region-alias check: do not overwrite an explicit
+  // translation, including aliases such as `zh-cn` for an `originLang`
+  // of `zh-Hans`. BCP 47 §2.1.1 case-insensitivity is handled inside
+  // langKeysEquivalent.
   for (const key of Object.keys(names)) {
-    if (key.toLowerCase() === originLangLower) {
+    if (langKeysEquivalent(key, originLang)) {
       return names;
     }
   }

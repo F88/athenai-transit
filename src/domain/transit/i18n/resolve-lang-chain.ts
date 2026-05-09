@@ -1,4 +1,5 @@
 import type { SupportedLang } from '../../../config/supported-langs';
+import { langKeysEquivalent } from './lang-key-equivalence';
 
 /** Ordered language fallback chain (e.g. `['zh-Hant', 'zh-Hans', 'en']`). */
 export type LangChain = readonly string[];
@@ -31,14 +32,15 @@ export function resolveLangChain(lang: string, langs: readonly SupportedLang[]):
   const seen = new Set<string>();
   let current: string | undefined = lang;
 
-  // Case-insensitive comparison per BCP 47 (RFC 5646 §2.1.1).
-  // All entries use canonical codes from langs (not raw input casing).
+  // Case-insensitive + region-alias comparison via langKeysEquivalent
+  // (BCP 47 §2.1.1 + zh region/script equivalence). All entries use
+  // canonical codes from langs (not raw input casing).
   while (current != null) {
     const lower: string = current.toLowerCase();
     if (seen.has(lower)) {
       break;
     }
-    const match: SupportedLang | undefined = langs.find((l) => l.code.toLowerCase() === lower);
+    const match: SupportedLang | undefined = langs.find((l) => langKeysEquivalent(l.code, lower));
     chain.push(match?.code ?? current);
     seen.add(lower);
     current = match?.fallback;

@@ -77,4 +77,27 @@ describe('translateStopName', () => {
   it('case-insensitive in chain', () => {
     expect(translateStopName(makeStop(), ['KO', 'EN'])).toBe('Akebonobashi');
   });
+
+  // --- Region/script alias (zh-cn ↔ zh-Hans, zh-tw ↔ zh-Hant) ---
+
+  it('region alias: requesting zh-Hans matches zh-cn key in stop_names', () => {
+    const stop = makeStop({
+      stop_names: { ja: '曙橋', 'zh-cn': '曙桥' },
+    });
+    expect(translateStopName(stop, 'zh-Hans')).toBe('曙桥');
+  });
+
+  it('region alias: requesting zh-Hant matches zh-tw key in stop_names', () => {
+    const stop = makeStop({
+      stop_names: { ja: '曙橋', 'zh-tw': '曙橋' },
+    });
+    expect(translateStopName(stop, 'zh-Hant')).toBe('曙橋');
+  });
+
+  it('region alias: zh-Hans request does NOT match zh-tw (different script)', () => {
+    const stop = makeStop({
+      stop_names: { ja: '曙橋', 'zh-tw': '曙橋' },
+    });
+    expect(translateStopName(stop, 'zh-Hans')).toBe('曙橋'); // falls back to stop_name
+  });
 });

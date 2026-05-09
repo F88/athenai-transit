@@ -1,4 +1,5 @@
 import type { TranslatableText } from '../../../types/app/transit-composed';
+import { langKeysEquivalent } from './lang-key-equivalence';
 
 const RESERVED_ORIGIN_KEY = 'origin';
 
@@ -10,9 +11,8 @@ function findMatchingTranslation(
   names: Record<string, string>,
   preferredLang: string,
 ): { key: string; value: string } | undefined {
-  const preferredLangLower = preferredLang.toLowerCase();
   for (const [key, value] of Object.entries(names)) {
-    if (!isOriginKey(key) && key.toLowerCase() === preferredLangLower) {
+    if (!isOriginKey(key) && langKeysEquivalent(key, preferredLang)) {
       return { key, value };
     }
   }
@@ -128,7 +128,8 @@ export function resolveTranslatableText(
       ? { lang: matchedLang!, value: translation }
       : { lang: 'origin', value: data.name };
 
-  // Build others: all translations except the resolved language key.
+  // Build others: all translations except the resolved language key
+  // (and its aliases — see langKeysEquivalent).
   // Deduplicate by lowercase key to prevent case-variant duplicates
   // (e.g. "ja-Hrkt" and "ja-HrKt") from appearing twice.
   // Values are never compared — value deduplication is the caller's
@@ -136,16 +137,21 @@ export function resolveTranslatableText(
   // 'origin' always maps to text.name, overwriting any 'origin' in text.names.
   const others: Record<string, string> = {};
   const seen = new Set<string>();
-  if (matchedLang) {
-    seen.add(matchedLang.toLowerCase());
-  }
   seen.add(RESERVED_ORIGIN_KEY);
   for (const [key, value] of Object.entries(data.names)) {
     const keyLower = key.toLowerCase();
-    if (!seen.has(keyLower)) {
-      others[key] = value;
-      seen.add(keyLower);
+    if (seen.has(keyLower)) {
+      continue;
     }
+    // Skip the resolved language key — including aliases such as
+    // `zh-cn` when `matchedLang === 'zh-Hans'` — so the same value is
+    // not duplicated as both `resolved` and an `others` entry.
+    if (matchedLang && langKeysEquivalent(key, matchedLang)) {
+      seen.add(keyLower);
+      continue;
+    }
+    others[key] = value;
+    seen.add(keyLower);
   }
   // Add origin (data.name) only when resolved is NOT origin.
   // When resolved is origin, data.name is already the resolved value.

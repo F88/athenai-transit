@@ -60,10 +60,17 @@ export const SUPPORTED_LANG_CODES: readonly string[] = SUPPORTED_LANGS.map((l) =
 
 /**
  * Region-to-script mapping for Chinese locale variants.
+ *
  * navigator.language returns region-based codes (zh-CN, zh-TW, zh-HK)
- * but SUPPORTED_LANGS uses script-based codes (zh-Hans, zh-Hant).
+ * but SUPPORTED_LANGS uses script-based codes (zh-Hans, zh-Hant). This
+ * map is also reused by the i18n layer (`lang-key-equivalence.ts`) so
+ * that translations.txt entries shipped under region tags (e.g. Kyoto
+ * Bus's `zh-cn` / `zh-tw`) are matched against user-selected canonical
+ * script codes.
+ *
+ * Keys are lowercase per BCP 47 §2.1.1 case-insensitive comparison.
  */
-const REGION_TO_LANG: Record<string, string> = {
+export const REGION_TO_LANG: Record<string, string> = {
   'zh-cn': 'zh-Hans',
   'zh-sg': 'zh-Hans',
   'zh-tw': 'zh-Hant',

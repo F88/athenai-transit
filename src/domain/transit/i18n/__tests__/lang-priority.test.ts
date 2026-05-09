@@ -198,4 +198,31 @@ describe('sortLangKeysByPriority', () => {
       });
     });
   });
+
+  describe('region/script alias (zh-cn ↔ zh-Hans, zh-tw ↔ zh-Hant)', () => {
+    it('treats zh-cn as an exact match when preferred contains zh-Hans', () => {
+      // Without alias awareness, zh-cn would land in "agency variant
+      // not in LANG_PRIORITY" (-1000); with alias it gets exact-match
+      // priority (-3000+0).
+      expect(sortLangKeysByPriority(['zh-cn', 'en', 'ja'], ['zh-Hans'])).toEqual([
+        'zh-cn',
+        'en',
+        'ja',
+      ]);
+    });
+
+    it('treats zh-tw as an exact match when preferred contains zh-Hant', () => {
+      expect(sortLangKeysByPriority(['zh-tw', 'en', 'ja'], ['zh-Hant'])).toEqual([
+        'zh-tw',
+        'en',
+        'ja',
+      ]);
+    });
+
+    it('treats zh-cn as a LANG_PRIORITY variant of zh-Hans even without preferred', () => {
+      // zh-Hans is listed in LANG_PRIORITY; zh-cn should sort in the
+      // same family slot.
+      expect(sortLangKeysByPriority(['zh-cn', 'en', 'ja'], [])).toEqual(['en', 'zh-cn', 'ja']);
+    });
+  });
 });

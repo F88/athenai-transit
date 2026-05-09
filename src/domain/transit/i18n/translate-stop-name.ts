@@ -1,4 +1,5 @@
 import type { Stop } from '../../../types/app/transit';
+import { langKeysEquivalent } from './lang-key-equivalence';
 
 /**
  * Translate the display name of a stop for a given language.
@@ -21,9 +22,9 @@ export function translateStopName(stop: Stop, lang?: string | readonly string[])
     const langs = typeof lang === 'string' ? [lang] : lang;
     const keys = Object.keys(stop.stop_names);
     for (const l of langs) {
-      // Case-insensitive match per BCP 47 (RFC 5646 §2.1.1).
-      const lLower = l.toLowerCase();
-      const key = keys.find((k) => k.toLowerCase() === lLower);
+      // Case-insensitive + region-alias match per BCP 47 (RFC 5646 §2.1.1)
+      // and zh region/script equivalence (zh-cn ≡ zh-Hans, zh-tw ≡ zh-Hant).
+      const key = keys.find((k) => langKeysEquivalent(k, l));
       if (key != null && stop.stop_names[key]) {
         return stop.stop_names[key];
       }

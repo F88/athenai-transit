@@ -147,4 +147,23 @@ describe('injectOriginLang', () => {
       expect(result).toEqual({ DE: 'Bertoldsbrunnen' });
     });
   });
+
+  describe('region/script alias (zh-cn ↔ zh-Hans, zh-tw ↔ zh-Hant)', () => {
+    // Hypothetical scenarios — current ferry feeds use feed_lang="ja",
+    // so this corner-case primarily guards against future Chinese-feed
+    // ingestion where translations.txt uses one alias form and the
+    // feed_lang declares the other.
+
+    it('does not inject zh-Hans when names already has zh-cn (alias coverage)', () => {
+      const names = { 'zh-cn': '北京站' };
+      const result = injectOriginLang(names, '北京站', 'zh-Hans');
+      expect(result).toBe(names);
+    });
+
+    it('does not inject zh-Hant when names already has zh-tw', () => {
+      const names = { 'zh-tw': '臺北車站' };
+      const result = injectOriginLang(names, '臺北車站', 'zh-Hant');
+      expect(result).toBe(names);
+    });
+  });
 });
