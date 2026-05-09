@@ -12,12 +12,17 @@ import { langKeysEquivalent } from './lang-key-equivalence';
  * (e.g. English shown when Japanese is expected).
  *
  * This function bridges the gap: if `originLang` is a concrete
- * language code and `names` does not already contain that key, the
- * base value is injected so the resolver treats it as a candidate
- * for that language.
+ * language code and `names` does not already contain an equivalent
+ * key, the base value is injected so the resolver treats it as a
+ * candidate for that language.
+ *
+ * Equivalence is checked via {@link langKeysEquivalent}: case-
+ * insensitive per BCP 47, **plus** zh region/script aliases. So a
+ * `names` entry under `"zh-cn"` already covers an `originLang` of
+ * `"zh-Hans"`, and the record is returned unchanged in that case.
  *
  * Explicit translations (from `translations.txt`) always take
- * priority — if `names` already has a matching key, the record is
+ * priority — if `names` already has an equivalent key, the record is
  * returned unchanged.
  *
  * ### `"mul"` (multilingual) handling

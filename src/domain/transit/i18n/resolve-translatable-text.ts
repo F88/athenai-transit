@@ -67,8 +67,15 @@ export interface ResolvedTranslatableText {
  * If `data.names` contains an `'origin'` key, `data.name` takes priority.
  * The reserved keyword is the exact lowercase string `'origin'`.
  *
- * Language lookup is **case-insensitive** per BCP 47 (RFC 5646 §2.1.1).
- * `"ja-Hrkt"` matches a key `"ja-HrKt"` in `data.names`.
+ * Language lookup uses {@link langKeysEquivalent}: case-insensitive
+ * per BCP 47 (RFC 5646 §2.1.1) **plus** zh region/script aliasing
+ * (`zh-cn` ≡ `zh-Hans`, `zh-tw` ≡ `zh-Hant`, etc.). For example,
+ * `"ja-Hrkt"` matches a key `"ja-HrKt"`, and `"zh-Hans"` matches a
+ * key `"zh-cn"`. When a match is found, `resolved.lang` echoes the
+ * requested preferred-lang value (not the actual key in
+ * `data.names`); the matched source key is excluded from `others`
+ * via the same equivalence check so the alias does not appear twice.
+ *
  * If `data.names` contains duplicate keys that differ only in case
  * (e.g. both `"ja-Hrkt"` and `"ja-HrKt"`), the first match is used
  * and the duplicate is ignored.

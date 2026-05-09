@@ -56,7 +56,11 @@ function langPrefix(key: string): string {
  * 3. Keys not in any list (original relative order preserved)
  *
  * Comparison rules:
- * - Matching is case-insensitive per BCP 47.
+ * - Matching uses {@link langKeysEquivalent}: case-insensitive per
+ *   BCP 47 **plus** zh region/script aliasing (`zh-cn` clusters with
+ *   `zh-Hans`, `zh-tw` with `zh-Hant`, etc.). A `preferred` of
+ *   `['zh-Hans']` therefore treats a key of `'zh-cn'` as an exact
+ *   match in the same precedence slot.
  * - `preferred` is treated as an ordered precedence list, not an
  *   unordered set.
  * - Even when `preferred` is empty, keys in {@link LANG_PRIORITY}
