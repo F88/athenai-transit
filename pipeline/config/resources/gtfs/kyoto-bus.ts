@@ -23,7 +23,7 @@ const kyotoBus: GtfsSourceDefinition = {
     provider: {
       name: {
         ja: { long: '京都バス株式会社', short: '京都バス' },
-        en: { long: 'KyotoBus Co., Ltd.', short: 'Kyoto Bus' },
+        en: { long: 'Kyoto Bus Co., Ltd.', short: 'Kyoto Bus' },
       },
       url: 'https://www.kyotobus.jp/',
       colors: [{ bg: '99211F', text: 'FFFFFF' } /* Primary */],
