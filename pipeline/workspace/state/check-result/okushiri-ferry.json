@@ -1,0 +1,10 @@
+{
+  "sourceName": "okushiri-ferry",
+  "checkedAt": "2026-05-09T05:54:49.493Z",
+  "resourceUrls": [
+    "https://api.odpt.org/api/v4/files/odpt/OkushiriIslandFerry/Okushiri_Esashi_Ferry_Route.zip?date=20260101"
+  ],
+  "result": "ok",
+  "warnings": [],
+  "errors": []
+}

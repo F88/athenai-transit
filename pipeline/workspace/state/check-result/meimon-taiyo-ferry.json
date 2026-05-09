@@ -1,0 +1,10 @@
+{
+  "sourceName": "meimon-taiyo-ferry",
+  "checkedAt": "2026-05-09T05:54:49.495Z",
+  "resourceUrls": [
+    "https://api.odpt.org/api/v4/files/odpt/MeimonTaiyoFerry/AllLines.zip?date=20260401"
+  ],
+  "result": "ok",
+  "warnings": [],
+  "errors": []
+}

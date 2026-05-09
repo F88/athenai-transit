@@ -1,0 +1,13 @@
+{
+  "sourceName": "kagoshima-maritime-bureau",
+  "checkedAt": "2026-05-09T05:54:49.489Z",
+  "resourceUrls": [
+    "https://api.odpt.org/api/v4/files/odpt/KagoshimaCityMaritimeBureau/AllLines.zip?date=20240701",
+    "https://api.odpt.org/api/v4/files/odpt/KagoshimaCityMaritimeBureau/AllLines.zip?date=20251010"
+  ],
+  "result": "attention",
+  "warnings": [
+    "REMOTE_NEW_IN_PERIOD"
+  ],
+  "errors": []
+}
