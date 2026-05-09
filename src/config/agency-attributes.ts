@@ -72,7 +72,7 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
   // --- Kyoto Bus ---
   'kytbus:8130001002355': {
     shortName: { ja: '京都バス', en: 'Kyoto Bus' },
-    longName: { ja: '京都バス株式会社', en: 'KyotoBus Co., Ltd.' },
+    longName: { ja: '京都バス株式会社', en: 'Kyoto Bus Co., Ltd.' },
     colors: [{ bg: '99211F', text: 'FFFFFF' } /* Primary */],
   },
 
