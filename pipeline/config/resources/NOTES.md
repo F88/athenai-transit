@@ -456,10 +456,11 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - ヘッダが `trans_id, lang, translation` の旧 GTFS-JP v1 形式で、標準 GTFS の 6 列形式 (`table_name, field_name, language, translation, record_id, field_value`) ではない
 - CKAN 側の GTFS validation でも `missing_required_column` エラーとして報告される
-- `pipeline/scripts/pipeline/build-gtfs-db.ts` の dispatch でヘッダを peek し、`isGtfsJpLegacyTranslationsHeader` 一致時のみ `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` の純変換関数経由で標準形式に変換しながら DB に投入する
-- 全行が stops.stop_name の翻訳である前提で `table_name='stops'`, `field_name='stop_name'`, `field_value=trans_id` を補完
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` の dispatch でヘッダを peek し、 `isGtfsJpLegacyTranslationsHeader` 一致時かつ allowlist (`LEGACY_TRANSLATION_ALLOWLIST`) 入りの場合のみ `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` の純変換関数 `convertGtfsJpLegacyTranslationRow` 経由で標準形式に変換しながら DB に投入する。 allowlist 外で 3 列ヘッダを検知した場合は明示的 error で fail (= 誤適用防止)
+- value-based 統合 converter は `trans_id` を GTFS spec の 28 個の text-translatable column と照合し、 マッチした全 (table, field) で 1 row ずつ emit。 例えば stop_name が trip_headsign と被るケースでは両 (table, field) に翻訳が登録され、 WebApp lookup が両方で成立する
+- Tokai Kisen の trans_id 19 件のうち 8 件は **`stops.stop_name` と `trips.trip_headsign` の両方にマッチ** = 旧固定マッピング時代は trip_headsign 翻訳が落ちていた (`(stops, stop_name, ...)` のみ登録) が、 統合 converter で `(trips, trip_headsign, ...)` も emit されるようになり ja / ja-Hrkt / en の trip_headsign 多言語表示が機能するようになった (取り込み 57 → 81 行)
 - `lang` 列の `ja-HrKt` (script subtag が非 BCP 47 形) は `ja-Hrkt` に正規化
-- 将来 Tokai Kisen が標準 6 列形式に upgrade した場合は dispatch が自動的に標準 importer にフォールバック (peek で legacy 不一致になるため)、誤検知ログや誤適用は起きない設計
+- 将来 Tokai Kisen が標準 6 列形式に upgrade した場合は dispatch が自動的に標準 importer にフォールバック (peek で legacy 不一致になるため)、 誤検知ログや誤適用は起きない設計
 
 ### GTFS-JP 拡張ファイル
 
@@ -601,10 +602,10 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 ### translations.txt (旧 GTFS-JP 3 列形式)
 
 - ヘッダが `trans_id, lang, translation` の旧 GTFS-JP v1 形式 (Tokai Kisen と同パターン)
-- `pipeline/scripts/pipeline/build-gtfs-db.ts` のヘッダ peek dispatch で legacy 検出 → `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` の純変換関数経由で標準形式に変換しながら DB 投入
-- 30 行: 6 stops × ja / ja-HrKt / en / zh-Hans / zh-Hant の 5 言語 (一部欠ける言語あり)
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` のヘッダ peek dispatch (allowlist 必須) で legacy 検出 → `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` の value-based 統合 converter で標準形式に変換しながら DB 投入
+- 30 行: 6 stops × ja / ja-HrKt / en / zh-Hans / zh-Hant の 5 言語
 - `lang=ja-HrKt` → `language=ja-Hrkt` に正規化される
-- 全行 stops.stop_name の翻訳
+- 全 6 件の trans_id が **`stops.stop_name` と `trips.trip_headsign` の両方にマッチ**。 旧固定マッピング時代は trip_headsign 翻訳が落ちていたが、 統合 converter で `(trips, trip_headsign, ...)` も emit されるようになり 5 言語の trip_headsign 多言語表示が機能 (取り込み 30 → 60 行)
 
 ### GTFS-JP 拡張ファイル
 
@@ -650,9 +651,10 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 ### translations.txt (旧 GTFS-JP 3 列形式)
 
 - ヘッダが `trans_id, lang, translation` の旧 GTFS-JP v1 形式 (Tokai Kisen / Orange Ferry と同パターン)
-- `pipeline/scripts/pipeline/build-gtfs-db.ts` のヘッダ peek dispatch で legacy 検出 → `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` 経由で標準形式に変換しながら DB 投入
-- 6 行 = 3 stops × (`ja`, `ja-HrKt`) のみ。**en 翻訳なし** (Okushiri / Orange Ferry と比較すると言語カバレッジは限定的)
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` のヘッダ peek dispatch (allowlist 必須) で legacy 検出 → `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` の value-based 統合 converter で標準形式に変換しながら DB 投入
+- 6 行 = 3 stops × (`ja`, `ja-HrKt`) のみ。 **en 翻訳なし** (Okushiri / Orange Ferry と比較すると言語カバレッジは限定的)
 - `lang=ja-HrKt` → `language=ja-Hrkt` に正規化される
+- 全 3 件の trans_id が **`stops.stop_name` と `trips.trip_headsign` の両方にマッチ**。 統合 converter で trip_headsign 側にも emit されるようになり ja / ja-Hrkt の trip_headsign 多言語表示が機能 (取り込み 6 → 12 行)
 
 ### calendar.txt 空 / calendar_dates.txt のみ
 
@@ -708,8 +710,9 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 ### translations.txt (旧 GTFS-JP 3 列形式)
 
 - ヘッダが `trans_id, lang, translation` の旧 GTFS-JP v1 形式 (Tokai Kisen / Orange Ferry / Uwajima Unyu と同パターン)
-- `pipeline/scripts/pipeline/build-gtfs-db.ts` のヘッダ peek dispatch で legacy 検出 → `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` 経由で標準形式に変換
-- 4 行 = 2 stops × (`ja`, `ja-HrKt`) のみ。**en 翻訳なし**
+- `pipeline/scripts/pipeline/build-gtfs-db.ts` のヘッダ peek dispatch (allowlist 必須) で legacy 検出 → `pipeline/scripts/pipeline/lib/gtfs-csv-converter.ts` の value-based 統合 converter で標準形式に変換
+- 4 行 = 2 stops × (`ja`, `ja-HrKt`) のみ。 **en 翻訳なし**
+- 全 2 件の trans_id が **`stops.stop_name` と `trips.trip_headsign` の両方にマッチ**。 統合 converter で trip_headsign 側にも emit されるようになり ja / ja-Hrkt の trip_headsign 多言語表示が機能 (取り込み 4 → 8 行)
 
 ### GTFS-JP 拡張ファイル
 
@@ -820,3 +823,76 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20260507版
+
+## odakyu-bus (小田急バス / Odakyu Bus Co., Ltd.)
+
+- Resource definition: `pipeline/config/resources/gtfs/odakyu-bus.ts`
+- CKAN: <https://ckan.odpt.org/dataset/odakyu_bus_aii_lines> (※ dataset slug が `aii_lines` (ll でなく ii)、ZIP 名も `AIILines.zip` ← ODPT 表記そのまま使用)
+- Resource ID (使用中): `e9018a39-8339-4e07-ad96-2fce988dac7b` (20260319版)
+- Provider URL: <https://www.odakyubus.co.jp/>
+- Feed publisher: NEC ネクサソリューションズ株式会社
+
+### 概要
+
+- 545 routes (route_type=3 bus)、3,274 stops、82,682 trips、1,287,012 stop_times、486 trip patterns
+- これまでで最大級の単一 GTFS source (kytbus の約 14×、minkuru の約 1.5×)
+- 多摩・武蔵野・神奈川北部の 1 都 1 県跨ぎ路線網 (新宿・吉祥寺・調布・三鷹・成城・あざみ野・新百合ヶ丘・町田等)
+
+### 有効期間
+
+- 有効期間: 2026/04/01 - (`feed_end_date` 空欄、version string は `20260401_20260430`)
+
+### route_color
+
+- 全 545 routes で `route_color` / `route_text_color` が空欄
+- `routeColorFallbacks: { '*': '009BE1' }` で primary blue を全 routes に適用
+
+### shapes.txt
+
+- ファイル自体不存在 (ヘッダのみではなく完全に欠落)
+- trips の `shape_id` も全空
+- polyline 描画なし
+
+### translations.txt: legacy 3 列形式 + value-based 統合変換
+
+- legacy GTFS-JP 3 列形式 (`trans_id, lang, translation`、8,389 行)
+- 5 言語 (en / ja / ja-Hrkt / ko / `zh-cn`)、`zh-tw` なし
+- Odakyu Bus 発見の本質: **stops.stop_name + routes.route_short_name + routes.route_long_name + stop_times.stop_headsign の翻訳が単一 `translations.txt` に混在**しており、 4 ferry source の前提 (= 全 trans_id が `stops.stop_name`) では成立しない
+- value-based 統合 converter (`convertGtfsJpLegacyTranslationRow`) で対応:
+    - `build-gtfs-db.ts` 側で GTFS spec の 28 個の text-translatable column (`agency.agency_name` / `stops.stop_name` / `routes.route_short_name` / `routes.route_long_name` / `trips.trip_headsign` / `stop_times.stop_headsign` / `pathways.signposted_as` 等) を pre-scan して `Map<table.field, Set<string>>` を構築
+    - `trans_id` をマッチした全 (table, field) で 1 row ずつ emit。 例: trans_id 「あざみ野駅」が `stops.stop_name` と `stop_times.stop_headsign` 両方に存在する場合、 `(stops, stop_name, ...)` と `(stop_times, stop_headsign, ...)` の 2 行が emit される (終点 stop は headsign としても使われるため、 翻訳が両方の lookup で必要)
+    - どこにもマッチしない trans_id は orphan として skip + warn
+- 取り込み結果: **8,403 件** (`stops.stop_name` 5,366 + `routes.route_long_name` 2,029 + `routes.route_short_name` 553 + `stop_times.stop_headsign` 455)
+- `routes.route_short_name` 553 件は 139 distinct × 平均 3.98 lang。 系統番号 (例: 「鶴11」) の en / ko / zh-cn 翻訳がここに含まれる
+- `stop_times.stop_headsign` 455 件は 91 distinct × 5 lang。 すべて `stops.stop_name` と field_value が被るケース (= 終点 stop の name = headsign)
+- orphan **269 件** は **source data の不整合** (translations.txt にあるが対応する stop/route 等が存在しない、 例: 「センター南駅」 / 「成田空港待機場」 / 「多摩営業所（南観光）」)。 data viewer philosophy に従い skip + log
+- 副次効果: 同 PR で旧固定マッピングを撤廃したため、 既存 4 ferry source (Tokai Kisen / Orange Ferry / Uwajima Unyu / Meimon Taiyo Ferry) の data loss も解消された (詳細は当該 source のセクションを参照)
+
+### calendar.txt なし
+
+- `calendar.txt` 不在、`calendar_dates.txt` 240 行のみ (28 service、`exception_type=1` のみ)
+- calendar_dates-only feed として処理 (PR #160 既対応)
+- validate で「`calendar.data.services is empty (0 services)`」warning が出るが既知パターン
+
+### trip_headsign の扱い
+
+- `trips.trip_headsign` 全空、`stop_times.stop_headsign` ほぼ全埋まり (1,287,012 / 1,287,013)
+- Keio Bus (`kobus`) と同パターン (memory: `project_kobus_headsign_convention`)
+- 行先表示は stop_headsign 経由
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260319 版
+
+### GTFS-JP 拡張カラム / 未使用ファイル
+
+- `routes.jp_parent_route_id` (全空)、`trips.jp_trip_desc` / `jp_trip_desc_symbol` / `jp_office_id` (pipeline 未使用)
+- `fare_attributes.txt` / `fare_rules.txt` ヘッダのみ (空、pipeline スキップ)
+
+### 規模インパクト
+
+- DB サイズ 192 MB (kytbus 18 MB の約 11×)
+- build-from-gtfs 処理時間 14.3s
+- global-insights は 940 stop の追加で 26→28s (+2s)
+- WebApp 側 data.json も大きくなる (kytbus の約 11× 想定)

@@ -190,6 +190,16 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '039748', text: 'FFFFFF' }],
   },
 
+  // --- Odakyu Bus ---
+  'od9bus:1012401021275': {
+    shortName: { ja: '小田急バス', en: 'Odakyu Bus' },
+    longName: { ja: '小田急バス株式会社', en: 'Odakyu Bus Co., Ltd.' },
+    colors: [
+      { bg: '009BE1', text: 'FFFFFF' } /* Primary */,
+      { bg: '0082CD', text: 'FFFFFF' } /* Secondary */,
+    ],
+  },
+
   // --- Okushiri Island Ferry ---
   'oksrif:6440001009445': {
     shortName: { ja: 'オクシリアイランドフェリー', en: 'Okushiri Island Ferry' },

@@ -39,4 +39,5 @@ export default [
   'meimon-taiyo-ferry',
   'itsukishima-kisen',
   'kyoto-bus',
+  'odakyu-bus',
 ];
