@@ -24,7 +24,7 @@ Do not remove, rename, or modify code that the user did not explicitly ask to ch
 | Map         | Leaflet.js + react-leaflet + GSI (Geospatial Information Authority of Japan) tile |
 | Linting     | ESLint (typescript-eslint, type-checked) + Prettier (prettier-plugin-tailwindcss) |
 | Testing     | Vitest + Storybook 10 (react-vite + Playwright)                                   |
-| Data Source | GTFS open data (static)                                                           |
+| Data Source | GTFS / GTFS-JP open data (static, v4 baseline + legacy v3 feed compat)            |
 
 ## Architecture
 
