@@ -28,9 +28,6 @@ and this project adheres to [CalVer](https://calver.org/).
     - GTFS-JP 拡張 `agency_jp.txt` / `office_jp.txt` (10 営業所) / `pattern_jp.txt` 同梱。
     - agency_id (`3000020141003`) は横浜市営地下鉄と完全一致 (同一 agency「横浜市」)。 brand color も共有 (横浜紺 + 補色)。
 - About: 横浜市営地下鉄・横浜市営バスのクレジット・データ情報を追加。
-
-### Added
-
 - Pipeline: 京都バス (KyotoBus Co., Ltd. / 京都バス株式会社) の GTFS-JP データソースを追加 (prefix `kytbus`, route_type 3 bus)。
     - 京都市バス (`kcbus`) がカバーしない京都市郊外路線 (大原・嵐山・岩倉・高野方面) を補完する私鉄系バス、 51 routes / 940 stops / 4,306 trips / 89,230 stop_times / 111 trip patterns。
     - 有効期間 2026-05-07〜2026-09-30。
