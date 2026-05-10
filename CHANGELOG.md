@@ -9,6 +9,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Pipeline: 伊予鉄バスの ODPT resource を最新版にリフレッシュ (`4e0f3da7-04a3-4335-ae56-2f4a213d3631` 20260415版 → `1c786fb7-532d-4052-9de4-e51340555b64` 20260430版、 valid 2026-05-01〜2026-05-31)。 1.5 ヶ月単位で更新される短期 schedule のため定期的なリフレッシュが必要。
+
 ### Added
 
 - Pipeline: 横浜市営地下鉄 (Yokohama Municipal Subway / 横浜市交通局) の GTFS-JP データソースを追加 (prefix `yht`, route_type 1 subway)。

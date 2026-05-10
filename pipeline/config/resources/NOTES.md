@@ -132,7 +132,7 @@ stop_name の差異パターン (渋66 の調査結果):
 
 - Resource definition: `pipeline/config/resources/gtfs/iyotetsu-bus.ts`
 - CKAN: <https://ckan.odpt.org/dataset/iyotetsu_bus_all_lines>
-- Resource ID (使用中): `4e0f3da7-04a3-4335-ae56-2f4a213d3631` (20260415版)
+- Resource ID (使用中): `1c786fb7-532d-4052-9de4-e51340555b64` (20260430版、 valid 2026-05-01〜2026-05-31)
 
 ### iyotetsu-bus route_color
 
@@ -153,7 +153,8 @@ stop_name の差異パターン (渋66 の調査結果):
 ### iyotetsu-bus CKAN リソースの date パラメータ
 
 - downloadUrl に `?date=YYYYMMDD` が必須
-- CKAN の 20260415 版リソースと対応
+- CKAN の 20260430版リソースと対応 (前回 20260415版から refresh)
+- 1.5 ヶ月単位で短期 schedule を更新する事業者 (memory `project_new_gtfs_data_update`)、 5 月末頃に再 refresh 必要
 
 ## kyoto-city-bus
 
