@@ -896,3 +896,92 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 - build-from-gtfs 処理時間 14.3s
 - global-insights は 940 stop の追加で 26→28s (+2s)
 - WebApp 側 data.json も大きくなる (kytbus の約 11× 想定)
+
+## yokohama-municipal-subway (横浜市営地下鉄 / Yokohama Municipal Subway)
+
+- Resource definition: `pipeline/config/resources/gtfs/yokohama-municipal-subway.ts`
+- CKAN: <https://ckan.odpt.org/dataset/yokohama_municipal_train>
+- Resource ID (使用中): `27ed8a34-c89f-4c5c-98af-5950f04183e2` (20251226 版)
+- Provider URL: <https://www.city.yokohama.lg.jp/kotsu/>
+
+### 概要
+
+- 25 routes (route_type=1 subway)、 42 stops、 1,901 trips、 38,805 stop_times
+- ブルーライン (BL、 湘南台〜あざみ野、 20 routes) + グリーンライン (GL、 中山〜日吉、 5 routes)
+- routes 数 25 は subway 系単一事業者として最多 (tome 9 / toaran subway 6 と比較して多い) — 1 路線が方向 / 起終点パターン別に複数 route として配信される構造のため
+
+### 有効期間
+
+- 2025-12-26 〜 2026-12-31 (1 年安定)
+- 同 agency 横浜市営バスと連動した更新サイクル
+
+### route_color
+
+- 全 25 routes で設定済 (BL `0068b7`、 GL `00a968`)
+- routeColorFallbacks 不要
+
+### route_short_name
+
+- 全 25 routes で空。 RouteBadge 表示は route_long_name (例: 「【BL】上永谷　→　湘南台」) に依存
+- BL/GL は long_name の prefix 「【BL】」「【GL】」で識別可
+
+### shapes.txt
+
+- ZIP に同梱 (745 points / 25 distinct shape_id)
+- 全 1,901 trips に shape_id 設定済 (100% カバー)
+
+### translations.txt
+
+- 標準 6 列形式 (`table_name, field_name, language, translation, record_id, record_sub_id, field_value`)
+- 5 言語 (en / ja / ja-Hrkt / ko / **`zh`**) × 4 tables = 810 行
+- ⚠️ `zh` は bare (`zh-Hans` / `zh-Hant` ではない)。 `langKeysEquivalent` 単独では alias 対象外だが、 `resolveLangChain` の chain expansion で zh-Hans / zh-Hant ユーザにも fallback で hit するため WebApp 表示は問題なし
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20251226 版
+
+## yokohama-municipal-bus (横浜市営バス / Yokohama Municipal Bus)
+
+- Resource definition: `pipeline/config/resources/gtfs/yokohama-municipal-bus.ts`
+- CKAN: <https://ckan.odpt.org/dataset/yokohama_municipal_bus>
+- Resource ID (使用中): `dcef4dad-fa17-48cc-a789-a7fc708b49e4` (20260328 版)
+- Provider URL: <https://www.city.yokohama.lg.jp/kotsu/>
+
+### 概要
+
+- 149 routes (route_type=3 bus)、 2,516 stops、 21,682 trips、 437,408 stop_times、 588 trip patterns
+- 横浜市全域、 規模としては toei-bus (150 routes) と同等の bus 規模 6-7 番手
+- agency_id は subway と同じ `3000020141003` (= 同一 entity 「横浜市」)
+
+### 有効期間
+
+- 2026-03-28 〜 2027-03-27 (1 年安定)
+
+### route_color
+
+- 全 149 routes で設定済 (148 routes は `0000ff`、 1 route は `ff0000`)
+- routeColorFallbacks 不要
+
+### shapes.txt
+
+- ZIP に同梱 (86,515 points / 588 distinct shape_id)
+- 全 21,682 trips に shape_id 設定済 (100% カバー)
+
+### translations.txt
+
+- 標準 6 列形式 + 5 言語 (en / ja / ja-Hrkt / ko / **`zh`**)
+- カバー範囲: stops.stop_name 1,250 distinct + stop_times.stop_headsign 440 + routes.route_short_name 131 + routes.route_long_name 14 + trips.trip_headsign 135 = 計 9,850 行
+- bare `zh` の WebApp 挙動は subway と同様 (chain expansion で hit)
+
+### GTFS-JP 拡張
+
+- `agency_jp.txt` あり (横浜市交通局、 三村庄一)
+- `office_jp.txt` あり (10 営業所: 保土ケ谷 / 若葉台 / 浅間町 / 滝頭 / 本牧 / 港南 / 港北 / 鶴見 / TD磯子 / TD緑)
+- `pattern_jp.txt` あり (jp_pattern_id 別の経由 stop)、 pipeline では未使用
+
+### Subway との関係
+
+- subway (yht) と同 agency_id (`3000020141003`)、 brand color も同じ `1B1464` (横浜紺) / `0166B2` を共有
+- agency-attributes は prefix 別 entry (`yht:...` と `yhb:...`) で同 color を独立に登録
+- toei-bus (minkuru) と toei-train (toaran) と同様の「同 1 都市の bus + train を別 source として扱う」 pattern

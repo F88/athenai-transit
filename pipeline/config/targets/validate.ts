@@ -41,5 +41,7 @@ export default [
   'itkfry', // itsukishima-kisen
   'kytbus', // kyoto-bus
   'od9bus', // odakyu-bus
+  'yht', // yokohama-municipal-subway
+  'yhb', // yokohama-municipal-bus
   // 'tkbus', // tokyu-bus (not built)
 ];
