@@ -74,13 +74,13 @@ toei-bus.ts → { pipeline: { outDir: "toei-bus", ... } }
 
 GTFS 仕様が複合 PK を定義するテーブルのうち、以下は PK を設定していない。
 
-| テーブル            | 仕様上の PK                                                                                          | 省略理由                                                                                        |
-| ------------------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| frequencies         | (trip_id, start_time)                                                                                | 重複行の可能性                                                                                  |
-| fare_products       | (fare_product_id, rider_category_id, fare_media_id)                                                  | nullable カラムを含む複合 PK は SQLite で意図通り動作しない (NULL は UNIQUE チェックをスキップ) |
-| fare_leg_rules      | (leg_group_id, network_id, from_area_id, to_area_id, from_timeframe_group_id, to_timeframe_group_id) | 同上                                                                                            |
-| fare_leg_join_rules | (from_leg_group_id, to_leg_group_id)                                                                 | 重複行の可能性                                                                                  |
-| fare_transfer_rules | (from_leg_group_id, to_leg_group_id, fare_transfer_type)                                             | 同上                                                                                            |
+| テーブル            | 仕様上の PK                                                                                             | 省略理由                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| frequencies         | (trip_id, start_time)                                                                                   | 重複行の可能性                                                                                  |
+| fare_products       | (fare_product_id, rider_category_id, fare_media_id)                                                     | nullable カラムを含む複合 PK は SQLite で意図通り動作しない (NULL は UNIQUE チェックをスキップ) |
+| fare_leg_rules      | (network_id, from_area_id, to_area_id, from_timeframe_group_id, to_timeframe_group_id, fare_product_id) | 同上                                                                                            |
+| fare_leg_join_rules | (from_network_id, to_network_id, from_stop_id, to_stop_id)                                              | 重複行の可能性                                                                                  |
+| fare_transfer_rules | (from_leg_group_id, to_leg_group_id, fare_product_id, transfer_count, duration_limit)                   | 同上                                                                                            |
 
 **理由**: PK は SQLite で NOT NULL + UNIQUE を暗黙的に課す。実データに重複や NULL がある場合、INSERT が失敗しインポート全体が中断する。このスクリプトの目的は GTFS データの忠実な格納であり、データ品質の強制ではない。
 
