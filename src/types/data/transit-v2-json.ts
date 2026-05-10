@@ -264,9 +264,14 @@ export interface StopV2Json {
 // - Travel distance calculation for a trip pattern
 // - Disambiguation of overlapping segments on looping/inlining routes
 //
-// Currently no GTFS sources in this project provide shape_dist_traveled,
-// so all points use the [lat, lon] form. The type supports both forms
-// so the pipeline can populate distance data when sources provide it.
+// Many GTFS sources in this project define the shape_dist_traveled column
+// on shapes.txt, but no rows currently carry a non-null value, so every
+// point is emitted in the [lat, lon] form. The shapes extractor selects
+// shape_dist_traveled unconditionally and switches a point to
+// [lat, lon, dist] as soon as a non-null value appears — feeds that start
+// populating it will not be silently dropped on the shapes side.
+// (Note: stop_times.shape_dist_traveled is a separate column, currently
+// not read by extractTripPatternsAndTimetable() — see Issue #80 audit.)
 //
 // See: GTFS spec shapes.txt — shape_dist_traveled field
 /**
