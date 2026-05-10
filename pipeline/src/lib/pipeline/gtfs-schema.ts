@@ -1,7 +1,9 @@
 /**
  * GTFS database schema definitions.
  *
- * Covers GTFS Static (gtfs.org) + GTFS-JP v3 — 34 tables total.
+ * Covers GTFS Static (gtfs.org) plus the GTFS-JP extension tables and
+ * compatibility behavior currently implemented in this repository — 34 tables
+ * total.
  * Tables are listed in FK dependency order (independent → dependent).
  *
  * ## Design decisions (intentional deviations from the GTFS spec)
@@ -17,13 +19,13 @@
  * Affected: frequencies, fare_products, fare_leg_rules,
  * fare_leg_join_rules, fare_transfer_rules.
  *
- * ### 2. nullable over NOT NULL for GTFS-JP v3 compatibility
+ * ### 2. nullable over NOT NULL for legacy GTFS-JP / existing feed compatibility
  *
- * Columns that are Required in the latest GTFS spec but absent in
- * GTFS-JP v3 are kept nullable. If a column is NOT NULL and the CSV
- * lacks it entirely, the import aborts (see GTFS_TO_RDB.md). Making
- * new GTFS columns nullable ensures older GTFS-JP feeds import
- * without error.
+ * Columns that are Required in the latest GTFS spec but may be absent in
+ * legacy GTFS-JP or other existing feeds are kept nullable. If a column is
+ * NOT NULL and the CSV lacks it entirely, the import aborts (see
+ * GTFS_TO_RDB.md). Keeping such columns nullable preserves backward
+ * compatibility with feeds this repository already ingests.
  *
  * ### 3. Forward-reference FKs (table creation order)
  *
