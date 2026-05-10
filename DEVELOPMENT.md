@@ -189,6 +189,34 @@ Tags are comma-separated patterns set via `VITE_LOG_TAGS`.
 
 **Note:** `warn` and `error` logs always bypass tag filtering.
 
+### Performance: gating expensive arguments
+
+`logger.debug(...)` / `logger.verbose(...)` short-circuit internally when their level is filtered out, but **arguments are evaluated before the call**. Template literals, array iterations, function calls, and `.toFixed()` formatting all run even when the log is suppressed.
+
+For non-trivial argument evaluation, gate the call with `logger.isEnabled(level)`:
+
+```typescript
+if (logger.isEnabled('debug')) {
+    const elapsed = Math.round(performance.now() - t0);
+    logger.debug(`getStopsNearby: ${data.length}/${sorted.length} in ${elapsed}ms`);
+}
+```
+
+When to gate:
+
+- Function calls (`.toFixed()`, `.join()`, helper builders like `formatLoc()`)
+- Array iteration (`.map`, `.filter`, `.reduce`, spread `[...x]`)
+- Multi-variable template interpolation, especially with `.length` / `.size` aggregates
+- Any computation that exists only to feed the log
+
+When NOT to gate (cold paths):
+
+- Single-variable interpolation, e.g. `` `stopId=${stopId}` `` only
+- String literals, e.g. `'cancelled'`
+- `info` / `warn` / `error` — always emitted, gating provides no benefit
+
+Group consecutive `debug` calls under one `if` block so the gate cost is paid once.
+
 ### DevTools Helper (development only)
 
 In development builds, `window.__log` is available in the browser console:
