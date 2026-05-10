@@ -48,9 +48,11 @@ export function MapBottomSheetLayout({
   const layoutPreset = resolveMapBottomSheetLayoutPreset(viewportHeight);
 
   useEffect(() => {
-    logger.debug(
-      `viewportHeight=${viewportHeight}, collapsedMap=${layoutPreset.collapsedMapHeightClassName}, expandedMap=${layoutPreset.expandedMapHeightClassName}, collapsedSheet=${layoutPreset.collapsedSheetHeightClassName}, expandedSheet=${layoutPreset.expandedSheetHeightClassName}`,
-    );
+    if (logger.isEnabled('debug')) {
+      logger.debug(
+        `viewportHeight=${viewportHeight}, collapsedMap=${layoutPreset.collapsedMapHeightClassName}, expandedMap=${layoutPreset.expandedMapHeightClassName}, collapsedSheet=${layoutPreset.collapsedSheetHeightClassName}, expandedSheet=${layoutPreset.expandedSheetHeightClassName}`,
+      );
+    }
   }, [layoutPreset, viewportHeight]);
 
   return (

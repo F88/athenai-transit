@@ -172,8 +172,10 @@ export function computeTimetableEntryStats(
     trips.add(`${tl.patternId}|${tl.serviceId}|${tl.tripIndex}`);
   }
 
-  logger.debug('tripsHeadsigns', [...tripsHeadsigns]);
-  logger.debug('stopHeadsigns', [...stopHeadsigns]);
+  if (logger.isEnabled('debug')) {
+    logger.debug('tripsHeadsigns', [...tripsHeadsigns]);
+    logger.debug('stopHeadsigns', [...stopHeadsigns]);
+  }
 
   return {
     totalCount: entries.length,

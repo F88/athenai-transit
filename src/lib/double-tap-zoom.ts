@@ -95,7 +95,9 @@ export function enableDoubleTapZoom(map: L.Map, options: DoubleTapZoomOptions = 
     map.options.zoomSnap = 1;
     map.setZoom(Math.round(map.getZoom()), { animate: true });
     map.dragging.enable();
-    logger.verbose('slide-zoom ended at zoom:', map.getZoom());
+    if (logger.isEnabled('verbose')) {
+      logger.verbose('slide-zoom ended at zoom:', map.getZoom());
+    }
   }
 
   function zoomInAt(latlng: L.LatLng) {
@@ -104,7 +106,9 @@ export function enableDoubleTapZoom(map: L.Map, options: DoubleTapZoomOptions = 
       return;
     }
     map.setZoomAround(latlng, currentZoom + 1, { animate: true });
-    logger.verbose('zoom in to:', currentZoom + 1, 'at', latlng);
+    if (logger.isEnabled('verbose')) {
+      logger.verbose('zoom in to:', currentZoom + 1, 'at', latlng);
+    }
   }
 
   // -- Touch slide handlers --------------------------------------------

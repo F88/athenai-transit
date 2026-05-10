@@ -93,10 +93,12 @@ export function buildEdgeMarkers(
     return [{ stop, routeTypes, x, y, angle, hAlign, distance }];
   });
 
-  logger.verbose(
-    `total=${edgeStops.length} inView=${inViewCount.value} edge=${result.length}`,
-    result.map((m) => `${m.stop.stop_name}(${m.hAlign},${Math.round(m.x)},${Math.round(m.y)})`),
-  );
+  if (logger.isEnabled('verbose')) {
+    logger.verbose(
+      `total=${edgeStops.length} inView=${inViewCount.value} edge=${result.length}`,
+      result.map((m) => `${m.stop.stop_name}(${m.hAlign},${Math.round(m.x)},${Math.round(m.y)})`),
+    );
+  }
 
   // Sort by distance descending so that closer markers are rendered last
   // (appearing on top in both DOM z-order and Canvas paint order).

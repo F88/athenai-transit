@@ -157,7 +157,9 @@ function PanToFocus({ position }: { position: LatLng | null }) {
       logger.debug('position is null, skipping');
       return;
     }
-    logger.debug(`panning to lat=${position.lat}, lng=${position.lng}`);
+    if (logger.isEnabled('debug')) {
+      logger.debug(`panning to lat=${position.lat}, lng=${position.lng}`);
+    }
     smoothMoveTo(map, [position.lat, position.lng], map.getZoom());
   }, [map, position]);
 

@@ -68,8 +68,10 @@ export function resolveLocateAction(map: L.Map, loc: UserLocation): LocateAction
  * @param action - The move action returned by {@link resolveLocateAction}.
  */
 export function applyLocateAction(map: L.Map, loc: UserLocation, action: MoveLocateAction): void {
-  logger.debug(
-    `applyLocateAction: center far from current location (${action.distanceToLocation.toFixed(1)}m > ${LOCATE_NEAR_THRESHOLD_METERS}m), moving to zoom ${CURRENT_LOCATION_TARGET_ZOOM}`,
-  );
+  if (logger.isEnabled('debug')) {
+    logger.debug(
+      `applyLocateAction: center far from current location (${action.distanceToLocation.toFixed(1)}m > ${LOCATE_NEAR_THRESHOLD_METERS}m), moving to zoom ${CURRENT_LOCATION_TARGET_ZOOM}`,
+    );
+  }
   smoothMoveTo(map, [loc.lat, loc.lng], CURRENT_LOCATION_TARGET_ZOOM);
 }

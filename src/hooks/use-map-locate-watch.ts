@@ -77,9 +77,11 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
         return;
       }
       const loc = toUserLocation(pos);
-      logger.debug(
-        `auto-tracking: initial position (elapsed=${Date.now() - enableTime}ms, ${formatLoc(loc)})`,
-      );
+      if (logger.isEnabled('debug')) {
+        logger.debug(
+          `auto-tracking: initial position (elapsed=${Date.now() - enableTime}ms, ${formatLoc(loc)})`,
+        );
+      }
       onLocated(loc);
     };
     const handleWatchSuccess: PositionCallback = (pos) => {
@@ -88,9 +90,11 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
       }
       watchUpdates += 1;
       const loc = toUserLocation(pos);
-      logger.debug(
-        `auto-tracking: watch update #${String(watchUpdates)} (since-enable=${Date.now() - enableTime}ms, ${formatLoc(loc)})`,
-      );
+      if (logger.isEnabled('debug')) {
+        logger.debug(
+          `auto-tracking: watch update #${String(watchUpdates)} (since-enable=${Date.now() - enableTime}ms, ${formatLoc(loc)})`,
+        );
+      }
       onLocated(loc);
     };
     const handleErr =
@@ -99,9 +103,11 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
         if (cancelled) {
           return;
         }
-        logger.debug(
-          `auto-tracking: ${kind} failed (since-enable=${Date.now() - enableTime}ms, code=${String(error.code)}, message=${error.message})`,
-        );
+        if (logger.isEnabled('debug')) {
+          logger.debug(
+            `auto-tracking: ${kind} failed (since-enable=${Date.now() - enableTime}ms, code=${String(error.code)}, message=${error.message})`,
+          );
+        }
         if (reportedCodes.has(error.code)) {
           // Same error code already surfaced this session (e.g. the
           // sibling request also failed with the same code).
@@ -124,9 +130,11 @@ export function useMapLocateWatch({ enabled, onLocated, onError }: UseMapLocateW
 
     return () => {
       cancelled = true;
-      logger.debug(
-        `auto-tracking: disabled (duration=${Date.now() - enableTime}ms, watch updates=${String(watchUpdates)})`,
-      );
+      if (logger.isEnabled('debug')) {
+        logger.debug(
+          `auto-tracking: disabled (duration=${Date.now() - enableTime}ms, watch updates=${String(watchUpdates)})`,
+        );
+      }
       navigator.geolocation.clearWatch(watchId);
     };
   }, [enabled, onLocated, onError]);

@@ -160,7 +160,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const { sources, loadResult } = await fetchSourcesV2(prefixes, dataSource);
     const tFetch = performance.now();
     const fetchMs = Math.round(tFetch - t0);
-    logger.debug(`fetchSources: ${fetchMs}ms (${sources.length} sources)`);
+    if (logger.isEnabled('debug')) {
+      logger.debug(`fetchSources: ${fetchMs}ms (${sources.length} sources)`);
+    }
 
     for (const source of sources) {
       logger.info(
@@ -171,9 +173,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const merged = mergeSourcesV2(sources);
     const tMerge = performance.now();
     const mergeMs = Math.round(tMerge - tFetch);
-    logger.debug(
-      `mergeSources: ${mergeMs}ms (stops=${merged.stops.length} routes=${merged.routeMap.size} stopsMetaMap=${merged.stopsMetaMap.size})`,
-    );
+    if (logger.isEnabled('debug')) {
+      logger.debug(
+        `mergeSources: ${mergeMs}ms (stops=${merged.stops.length} routes=${merged.routeMap.size} stopsMetaMap=${merged.stopsMetaMap.size})`,
+      );
+    }
 
     for (const meta of merged.sourceMetas) {
       logger.info(
@@ -339,10 +343,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const truncated = matching.length > effectiveLimit;
     const data = matching.slice(0, effectiveLimit).map((m) => m.meta);
 
-    const elapsed = Math.round(performance.now() - t0);
-    logger.debug(
-      `getStopsInBounds: ${data.length}/${matching.length} stops in ${elapsed}ms (${truncated ? 'truncated' : 'all'}) center=(${centerLat.toFixed(4)}, ${centerLng.toFixed(4)})`,
-    );
+    if (logger.isEnabled('debug')) {
+      const elapsed = Math.round(performance.now() - t0);
+      logger.debug(
+        `getStopsInBounds: ${data.length}/${matching.length} stops in ${elapsed}ms (${truncated ? 'truncated' : 'all'}) center=(${centerLat.toFixed(4)}, ${centerLng.toFixed(4)})`,
+      );
+    }
     return Promise.resolve({ success: true, data, truncated });
   }
 
@@ -377,10 +383,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       distance: distKm * 1000,
     }));
 
-    const elapsed = Math.round(performance.now() - t0);
-    logger.debug(
-      `getStopsNearby: ${data.length}/${sorted.length} stops within ${radiusM}m in ${elapsed}ms (${truncated ? 'truncated' : 'all'}) center=(${center.lat.toFixed(4)}, ${center.lng.toFixed(4)})`,
-    );
+    if (logger.isEnabled('debug')) {
+      const elapsed = Math.round(performance.now() - t0);
+      logger.debug(
+        `getStopsNearby: ${data.length}/${sorted.length} stops within ${radiusM}m in ${elapsed}ms (${truncated ? 'truncated' : 'all'}) center=(${center.lat.toFixed(4)}, ${center.lng.toFixed(4)})`,
+      );
+    }
     return Promise.resolve({ success: true, data, truncated });
   }
 
@@ -524,10 +532,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       truncated = true;
     }
 
-    const elapsed = Math.round(performance.now() - t0);
-    logger.verbose(
-      `getUpcomingTimetableEntries: ${stopId} → ${result.length}/${totalAvailable} entries in ${elapsed}ms (${truncated ? 'truncated' : 'all'}) serviceDay=${formatDateKey(serviceDay)} prev=${formatDateKey(prevServiceDay)}`,
-    );
+    if (logger.isEnabled('verbose')) {
+      const elapsed = Math.round(performance.now() - t0);
+      logger.verbose(
+        `getUpcomingTimetableEntries: ${stopId} → ${result.length}/${totalAvailable} entries in ${elapsed}ms (${truncated ? 'truncated' : 'all'}) serviceDay=${formatDateKey(serviceDay)} prev=${formatDateKey(prevServiceDay)}`,
+      );
+    }
     const meta: TimetableQueryMeta = {
       isBoardableOnServiceDay: hasBoardable,
       totalEntries: fullDayCount,
@@ -597,10 +607,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     }
 
     sortTimetableEntriesByDepartureTime(entries);
-    const elapsed = Math.round(performance.now() - t0);
-    logger.debug(
-      `getFullDayTimetableEntries: ${stopId} → ${entries.length} entries in ${elapsed}ms`,
-    );
+    if (logger.isEnabled('debug')) {
+      const elapsed = Math.round(performance.now() - t0);
+      logger.debug(
+        `getFullDayTimetableEntries: ${stopId} → ${entries.length} entries in ${elapsed}ms`,
+      );
+    }
     const meta: TimetableQueryMeta = {
       isBoardableOnServiceDay: getTimetableEntriesState(entries) === 'boardable',
       totalEntries: entries.length,
@@ -759,7 +771,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       logger.verbose(`getRouteTypesForStop: ${stopId} → not found`);
       return Promise.resolve({ success: false, error: `No route types for stop: ${stopId}` });
     }
-    logger.verbose(`getRouteTypesForStop: ${stopId} → [${routeTypes.join(', ')}]`);
+    if (logger.isEnabled('verbose')) {
+      logger.verbose(`getRouteTypesForStop: ${stopId} → [${routeTypes.join(', ')}]`);
+    }
     return Promise.resolve({ success: true, data: routeTypes });
   }
 
@@ -796,7 +810,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         }
       }
     }
-    logger.debug(`getStopsForRoutes: ${routeIds.size} routes → ${stopIds.size} stops`);
+    if (logger.isEnabled('debug')) {
+      logger.debug(`getStopsForRoutes: ${routeIds.size} routes → ${stopIds.size} stops`);
+    }
     return stopIds;
   }
 
@@ -817,26 +833,34 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       }
     }
     this.routeStopsCache = map;
-    logger.debug(
-      `routeStopsCache built: ${map.size} routes in ${(performance.now() - t0).toFixed(2)}ms`,
-    );
+    if (logger.isEnabled('debug')) {
+      logger.debug(
+        `routeStopsCache built: ${map.size} routes in ${(performance.now() - t0).toFixed(2)}ms`,
+      );
+    }
     return map;
   }
 
   /** {@inheritDoc TransitRepository.getAllStops} */
   getAllStops(): Promise<CollectionResult<Stop>> {
-    logger.debug(`getAllStops: ${this.stops.length} stops`);
+    if (logger.isEnabled('debug')) {
+      logger.debug(`getAllStops: ${this.stops.length} stops`);
+    }
     return Promise.resolve({ success: true, data: this.stops, truncated: false });
   }
 
   /** {@inheritDoc TransitRepository.getRouteShapes} */
   async getRouteShapes(): Promise<CollectionResult<RouteShape>> {
     if (this.shapesCache) {
-      logger.debug(`getRouteShapes: ${this.shapesCache.length} shapes (cached)`);
+      if (logger.isEnabled('debug')) {
+        logger.debug(`getRouteShapes: ${this.shapesCache.length} shapes (cached)`);
+      }
       return { success: true, data: this.shapesCache, truncated: false };
     }
     this.shapesCache = await this.shapesPromise;
-    logger.debug(`getRouteShapes: ${this.shapesCache.length} shapes`);
+    if (logger.isEnabled('debug')) {
+      logger.debug(`getRouteShapes: ${this.shapesCache.length} shapes`);
+    }
     return { success: true, data: this.shapesCache, truncated: false };
   }
 

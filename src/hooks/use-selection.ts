@@ -179,9 +179,11 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
   const focusStop = useCallback(
     (stop: Stop) => {
       const routeIds = extractRouteIdsForStop(stopTimes, stop.stop_id);
-      logger.debug(
-        `focusStop: stopId=${stop.stop_id}, name=${stop.stop_name}, routeIds=${routeIds.size}`,
-      );
+      if (logger.isEnabled('debug')) {
+        logger.debug(
+          `focusStop: stopId=${stop.stop_id}, name=${stop.stop_name}, routeIds=${routeIds.size}`,
+        );
+      }
       setDirectFocusPosition({ lat: stop.stop_lat, lng: stop.stop_lon });
       setSelectedStopId(stop.stop_id);
       setSelectionInfo({
