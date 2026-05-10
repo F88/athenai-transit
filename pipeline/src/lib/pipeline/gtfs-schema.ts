@@ -459,9 +459,8 @@ export const SCHEMA: string[] = [
   )`,
 
   // fare_leg_rules.txt
-  // Spec PK: (leg_group_id, network_id, from_area_id, to_area_id,
-  //   from_timeframe_group_id, to_timeframe_group_id) — omitted
-  // (see design decision 1)
+  // Spec PK: (network_id, from_area_id, to_area_id, from_timeframe_group_id,
+  //   to_timeframe_group_id, fare_product_id) — omitted (see design decision 1)
   `CREATE TABLE IF NOT EXISTS fare_leg_rules (
     leg_group_id             TEXT,
     network_id               TEXT,
@@ -477,25 +476,29 @@ export const SCHEMA: string[] = [
   )`,
 
   // fare_leg_join_rules.txt
-  // Spec PK: (from_leg_group_id, to_leg_group_id) — omitted
-  // (see design decision 1)
+  // Spec PK: (from_network_id, to_network_id, from_stop_id, to_stop_id) —
+  // omitted (see design decision 1)
   `CREATE TABLE IF NOT EXISTS fare_leg_join_rules (
-    from_leg_group_id TEXT,
-    to_leg_group_id   TEXT,
-    fare_product_id   TEXT,
-    rule_priority     INTEGER
+    from_network_id TEXT NOT NULL,
+    to_network_id   TEXT NOT NULL,
+    from_stop_id    TEXT,
+    to_stop_id      TEXT,
+    FOREIGN KEY (from_stop_id) REFERENCES stops(stop_id),
+    FOREIGN KEY (to_stop_id) REFERENCES stops(stop_id)
   )`,
 
   // fare_transfer_rules.txt
-  // Spec PK: (from_leg_group_id, to_leg_group_id, fare_transfer_type) —
-  // omitted (see design decision 1)
+  // Spec PK: (from_leg_group_id, to_leg_group_id, fare_product_id,
+  // transfer_count, duration_limit) — omitted (see design decision 1)
   `CREATE TABLE IF NOT EXISTS fare_transfer_rules (
-    from_leg_group_id        TEXT,
-    to_leg_group_id          TEXT,
-    transfer_fare_product_id TEXT,
-    duration_limit           INTEGER,
-    duration_limit_type      INTEGER,
-    fare_transfer_type       INTEGER
+    from_leg_group_id   TEXT,
+    to_leg_group_id     TEXT,
+    transfer_count      INTEGER,
+    duration_limit      INTEGER,
+    duration_limit_type INTEGER,
+    fare_transfer_type  INTEGER NOT NULL,
+    fare_product_id     TEXT
+    -- FK for fare_product_id omitted (see design decision 4)
   )`,
 ];
 
