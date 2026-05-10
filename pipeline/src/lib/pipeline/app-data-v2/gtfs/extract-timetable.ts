@@ -32,6 +32,10 @@ interface TripRow {
   service_id: string;
   trip_headsign: string | null;
   direction_id: number | null;
+  /** GTFS spec Optional, on-demand trip estimate. Read into the row type for future use; not yet emitted to TripPatternJson. */
+  safe_duration_factor: number | null;
+  /** GTFS spec Optional, on-demand trip estimate (seconds). Read into the row type for future use; not yet emitted to TripPatternJson. */
+  safe_duration_offset: number | null;
 }
 
 interface StopTimeRow {
@@ -106,7 +110,8 @@ export function extractTripPatternsAndTimetable(
   // 1. Load trips
   const tripRows = db
     .prepare(
-      `SELECT trip_id, route_id, service_id, trip_headsign, direction_id
+      `SELECT trip_id, route_id, service_id, trip_headsign, direction_id,
+              safe_duration_factor, safe_duration_offset
        FROM trips`,
     )
     .all() as TripRow[];
