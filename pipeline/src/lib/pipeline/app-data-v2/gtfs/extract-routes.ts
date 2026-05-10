@@ -25,7 +25,7 @@ export function extractRoutesV2(
   const rows = db
     .prepare(
       `SELECT route_id, route_short_name, route_long_name, route_type,
-              route_color, route_text_color, agency_id, route_desc
+              route_color, route_text_color, agency_id, route_desc, cemv_support
        FROM routes
        ORDER BY route_id`,
     )
@@ -38,6 +38,8 @@ export function extractRoutesV2(
     route_text_color: string | null;
     agency_id: string | null;
     route_desc: string | null;
+    /** GTFS spec Optional. Read into the row type for future use; not yet emitted to RouteV2Json. */
+    cemv_support: string | null;
   }>;
 
   const result: RouteV2Json[] = rows.map((r) => {

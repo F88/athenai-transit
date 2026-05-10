@@ -153,6 +153,7 @@ export const SCHEMA: string[] = [
     continuous_pickup  INTEGER,
     continuous_drop_off INTEGER,
     network_id         TEXT,
+    cemv_support       TEXT,
     jp_parent_route_id TEXT,
     FOREIGN KEY (agency_id) REFERENCES agency(agency_id),
     FOREIGN KEY (network_id) REFERENCES networks(network_id)
@@ -175,6 +176,8 @@ export const SCHEMA: string[] = [
     wheelchair_accessible INTEGER,
     bikes_allowed         INTEGER,
     cars_allowed          INTEGER,
+    safe_duration_factor  REAL,
+    safe_duration_offset  REAL,
     jp_trip_desc          TEXT,
     jp_trip_desc_symbol   TEXT,
     jp_office_id          TEXT,

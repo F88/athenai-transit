@@ -18,7 +18,9 @@ function createSchema(database: Database.Database): void {
       route_id TEXT,
       service_id TEXT,
       trip_headsign TEXT,
-      direction_id INTEGER
+      direction_id INTEGER,
+      safe_duration_factor REAL,
+      safe_duration_offset REAL
     );
     CREATE TABLE stop_times (
       trip_id TEXT NOT NULL,
@@ -52,8 +54,8 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('groups trips with identical stop sequences into the same pattern', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
@@ -68,8 +70,8 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('creates separate patterns for different stop sequences', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
@@ -82,7 +84,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('assigns deterministic pattern IDs: {prefix}:p{1-indexed}', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
@@ -94,7 +96,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('pattern includes route, headsign, direction, stops', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 1);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 1);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
     `);
@@ -110,7 +112,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('omits dir when direction_id is NULL', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', NULL);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', NULL);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
@@ -120,7 +122,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('timetable d/a/pt/dt are positionally aligned', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '07:59:00', 0, 1, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:09:00', 2, 3, NULL);
     `);
@@ -143,7 +145,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('copies departure to arrival when arrival_time is NULL', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', NULL, 0, 0, NULL);
     `);
 
@@ -155,7 +157,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('handles overnight departures (25:00 etc.)', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '25:30:00', '25:30:00', 0, 0, NULL);
     `);
 
@@ -165,8 +167,8 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('multiple service_ids share the same pattern', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'HD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'HD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
     `);
@@ -181,8 +183,8 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('departures are sorted in ascending order', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
@@ -193,7 +195,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('GTFS always includes pt/dt (even when all values are 0)', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
@@ -208,8 +210,8 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('creates separate patterns for different headsigns on the same route', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '新宿', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '新宿', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
     `);
@@ -224,7 +226,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('includes direction_id=0 in pattern (not omitted)', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
@@ -234,7 +236,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('handles pickup_type/drop_off_type NULL as 0', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', NULL, NULL, NULL);
     `);
 
@@ -249,7 +251,7 @@ describe('extractTripPatternsAndTimetable', () => {
     // timetable, leaving the two arrays misaligned. Post-#154 the pattern
     // key is built from served stops only, so S002 is excluded from both.
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, NULL, NULL, 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S003', 3, '08:10:00', '08:10:00', 0, 0, NULL);
@@ -268,7 +270,7 @@ describe('extractTripPatternsAndTimetable', () => {
     // Per Issue #154 we use `departure_time != null` as the served signal,
     // so S002 is still excluded (pattern.stops index must match timetable.si).
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, NULL, '08:05:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S003', 3, '08:10:00', '08:10:00', 0, 0, NULL);
@@ -289,7 +291,7 @@ describe('extractTripPatternsAndTimetable', () => {
     // Real GTFS feeds usually populate dep == arr at terminals, so this
     // should be rare; this test pins the contract anyway to catch regressions.
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:05:00', '08:05:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S003', 3, NULL, '08:10:00', 0, 0, NULL);
@@ -308,8 +310,8 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('d/a/pt/dt array lengths are equal for each service_id', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '07:59:00', 1, 2, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '08:59:00', 0, 0, NULL);
     `);
@@ -326,8 +328,8 @@ describe('extractTripPatternsAndTimetable', () => {
   it('produces multiple timetable groups when different patterns serve the same stop', () => {
     // Two trips with different stop sequences both pass through S002
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S003', 1, '09:00:00', '09:00:00', 0, 0, NULL);
@@ -344,7 +346,7 @@ describe('extractTripPatternsAndTimetable', () => {
   describe('duplicate stop_id within pattern (Issue #47)', () => {
     it('pure circular: origin and terminal share stop_id — splits by si', () => {
       db.exec(`
-        INSERT INTO trips VALUES ('T001', 'R001', 'WD', '都庁前', 0);
+        INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '都庁前', 0);
         INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
         INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
         INSERT INTO stop_times VALUES ('T001', 'S001', 3, '08:20:00', '08:20:00', 0, 0, NULL);
@@ -369,7 +371,7 @@ describe('extractTripPatternsAndTimetable', () => {
     it('6-shape: stop at non-terminal middle position emits 2 groups', () => {
       // S001 at index 0 (origin) and index 2 (mid-trip), S003 at terminal (index 3)
       db.exec(`
-        INSERT INTO trips VALUES ('T001', 'R001', 'WD', '光が丘', 0);
+        INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '光が丘', 0);
         INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
         INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:05:00', '08:05:00', 0, 0, NULL);
         INSERT INTO stop_times VALUES ('T001', 'S001', 3, '08:10:00', '08:10:00', 0, 0, NULL);
@@ -397,7 +399,7 @@ describe('extractTripPatternsAndTimetable', () => {
       // Pattern: S001 → S002 → S003 → S001 → S002 → S004
       // S001 at [0, 3], S002 at [1, 4]
       db.exec(`
-        INSERT INTO trips VALUES ('T001', 'R001', 'WD', 'S004', 0);
+        INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', 'S004', 0);
         INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
         INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:02:00', '08:02:00', 0, 0, NULL);
         INSERT INTO stop_times VALUES ('T001', 'S003', 3, '08:04:00', '08:04:00', 0, 0, NULL);
@@ -424,7 +426,7 @@ describe('extractTripPatternsAndTimetable', () => {
     it('consecutive duplicate (dwell): same stop_id at adjacent positions', () => {
       // dwell representation: S002 appears consecutively at positions 1 and 2
       db.exec(`
-        INSERT INTO trips VALUES ('T001', 'R001', 'WD', 'S003', 0);
+        INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', 'S003', 0);
         INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
         INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:05:00', '08:05:00', 0, 0, NULL);
         INSERT INTO stop_times VALUES ('T001', 'S002', 3, '08:05:00', '08:05:00', 0, 0, NULL);
@@ -444,7 +446,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('route_url is NOT included in route output (moved to lookup)', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
@@ -457,8 +459,8 @@ describe('extractTripPatternsAndTimetable', () => {
   it('pattern sort is deterministic: route_id -> headsign -> direction -> stops', () => {
     // R002/新宿/0 should come after R001/渋谷/0
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R002', 'WD', '新宿', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R002', 'WD', '新宿', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
     `);
@@ -475,8 +477,8 @@ describe('extractTripPatternsAndTimetable', () => {
   it('a/d/pt/dt remain positionally aligned after sorting by departure time', () => {
     // Two departures in reverse time order to verify sort preserves alignment
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '10:00:00', '09:58:00', 1, 2, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '08:00:00', '07:55:00', 0, 3, NULL);
     `);
@@ -492,8 +494,8 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('creates separate patterns for same route+headsign+stops but different direction_id', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '都庁前', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '都庁前', 1);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '都庁前', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '都庁前', 1);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
@@ -510,7 +512,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('skips stop_times whose trip_id is not in trips table', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('ORPHAN', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
     `);
@@ -521,7 +523,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('empty headsign is preserved (not converted to undefined)', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
@@ -531,7 +533,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('NULL trip_headsign is converted to empty string', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', NULL, 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', NULL, 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     `);
 
@@ -541,7 +543,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('ignores orphan stop_times across multiple rows and keeps valid patterns intact', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('ORPHAN', 'SX01', 1, '07:00:00', '07:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('ORPHAN', 'SX02', 2, '07:10:00', '07:10:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
@@ -559,8 +561,8 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('sorts NULL direction_id before 0 when assigning pattern IDs', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', NULL);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', NULL);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, NULL);
     `);
@@ -583,7 +585,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('omits sh when stop_headsign is NULL', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
     `);
@@ -601,7 +603,7 @@ describe('extractTripPatternsAndTimetable', () => {
     // so empty strings rarely appear. This test verifies the pipeline
     // does not silently drop them if they do exist in the DB.
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '');
     `);
 
@@ -614,8 +616,8 @@ describe('extractTripPatternsAndTimetable', () => {
     // In practice empty strings do not appear (CSV import normalizes to NULL),
     // but if they did, they must not be conflated.
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, '');
     `);
@@ -631,7 +633,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('includes sh when stop_headsign equals trip_headsign (no omission)', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '渋谷', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '渋谷', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '渋谷');
     `);
 
@@ -642,7 +644,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('includes sh when stop_headsign differs from trip_headsign', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '豊洲市場', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '豊洲市場', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '豊洲市場（急行）');
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, '豊洲市場');
     `);
@@ -656,7 +658,7 @@ describe('extractTripPatternsAndTimetable', () => {
 
   it('includes sh when trip_headsign is empty but stop_headsign is provided', () => {
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '中野駅');
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
     `);
@@ -672,7 +674,7 @@ describe('extractTripPatternsAndTimetable', () => {
   it('stores different sh per stop within the same trip (mid-trip headsign change)', () => {
     // Simulates kyoto-city-bus pattern: headsign changes as bus passes intermediate stops
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '北大路BT・出町柳駅', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '北大路BT・出町柳駅', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '北大路BT・出町柳駅');
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, '出町柳駅');
       INSERT INTO stop_times VALUES ('T001', 'S003', 3, '08:20:00', '08:20:00', 0, 0, '西賀茂車庫');
@@ -688,8 +690,8 @@ describe('extractTripPatternsAndTimetable', () => {
   it('creates separate patterns when stop_headsign differs but stop sequence is the same', () => {
     // Same route, same stops, but different stop_headsign at S001
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '永福町');
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, '峰');
@@ -709,8 +711,8 @@ describe('extractTripPatternsAndTimetable', () => {
     // Pattern key must use delimiter-safe encoding (JSON.stringify)
     // so that ["A,B", "C"] and ["A", "B,C"] produce different keys.
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, 'A,B');
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, 'C');
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, 'A');
@@ -732,8 +734,8 @@ describe('extractTripPatternsAndTimetable', () => {
     // Pattern key must use delimiter-safe encoding (JSON.stringify)
     // so that ["S,1","2"] and ["S","1,2"] produce different keys.
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', 'X', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', 'X', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', 'X', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', 'X', 0);
       INSERT INTO stop_times VALUES ('T001', 'S,1', 1, '08:00:00', '08:00:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T001', '2', 2, '08:10:00', '08:10:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S', 1, '09:00:00', '09:00:00', 0, 0, NULL);
@@ -748,8 +750,8 @@ describe('extractTripPatternsAndTimetable', () => {
   it('uses first trip stop_headsign as representative for same-pattern trips', () => {
     // All trips in the same pattern should have the same stop_headsign at each stop
     db.exec(`
-      INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
-      INSERT INTO trips VALUES ('T002', 'R001', 'WD', '', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '', 0);
+      INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T002', 'R001', 'WD', '', 0);
       INSERT INTO stop_times VALUES ('T001', 'S001', 1, '08:00:00', '08:00:00', 0, 0, '渋谷駅');
       INSERT INTO stop_times VALUES ('T001', 'S002', 2, '08:10:00', '08:10:00', 0, 0, NULL);
       INSERT INTO stop_times VALUES ('T002', 'S001', 1, '09:00:00', '09:00:00', 0, 0, '渋谷駅');
@@ -776,8 +778,8 @@ describe('extractTripPatternsAndTimetable', () => {
       // Post-#154 they form two patterns with served stops [S1,S3,S5] and
       // [S1,S2,S3,S4,S5] respectively.
       db.exec(`
-        INSERT INTO trips VALUES ('EXP', 'R001', 'WD', '快速', 0);
-        INSERT INTO trips VALUES ('LOC', 'R001', 'WD', '快速', 0);
+        INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('EXP', 'R001', 'WD', '快速', 0);
+        INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('LOC', 'R001', 'WD', '快速', 0);
         INSERT INTO stop_times VALUES ('EXP', 'S1', 1, '08:00:00', '08:00:00', 0, 0, NULL);
         INSERT INTO stop_times VALUES ('EXP', 'S2', 2, NULL, NULL, 0, 0, NULL);
         INSERT INTO stop_times VALUES ('EXP', 'S3', 3, '08:05:00', '08:05:00', 0, 0, NULL);
@@ -823,8 +825,8 @@ describe('extractTripPatternsAndTimetable', () => {
       // toaran case where express services through-run and skip Asakusa-line
       // stations that local services serve.
       db.exec(`
-        INSERT INTO trips VALUES ('TA', 'R001', 'WD', '成田空港', 0);
-        INSERT INTO trips VALUES ('TB', 'R001', 'WD', '成田空港', 0);
+        INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('TA', 'R001', 'WD', '成田空港', 0);
+        INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('TB', 'R001', 'WD', '成田空港', 0);
         INSERT INTO stop_times VALUES ('TA', 'S1', 1, '08:00:00', '08:00:00', 0, 0, NULL);
         INSERT INTO stop_times VALUES ('TA', 'S2', 2, '08:05:00', '08:05:00', 0, 0, NULL);
         INSERT INTO stop_times VALUES ('TA', 'S3', 3, '08:10:00', '08:10:00', 0, 0, NULL);
@@ -857,8 +859,8 @@ describe('extractTripPatternsAndTimetable', () => {
       // that for each pattern, every stop has the same d/a length. This is
       // the structural invariant Issue #154 directly targets.
       db.exec(`
-        INSERT INTO trips VALUES ('EXP', 'R001', 'WD', '快速', 0);
-        INSERT INTO trips VALUES ('LOC', 'R001', 'WD', '快速', 0);
+        INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('EXP', 'R001', 'WD', '快速', 0);
+        INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('LOC', 'R001', 'WD', '快速', 0);
         INSERT INTO stop_times VALUES ('EXP', 'S1', 1, '08:00:00', '08:00:00', 0, 0, NULL);
         INSERT INTO stop_times VALUES ('EXP', 'S2', 2, NULL, NULL, 0, 0, NULL);
         INSERT INTO stop_times VALUES ('EXP', 'S3', 3, '08:05:00', '08:05:00', 0, 0, NULL);
@@ -892,7 +894,7 @@ describe('extractTripPatternsAndTimetable', () => {
       // misaligns and sh would attach to the wrong stop. This test pins the
       // fix that step 5 reads sh from the served-only group field instead.
       db.exec(`
-        INSERT INTO trips VALUES ('T001', 'R001', 'WD', '', 0);
+        INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T001', 'R001', 'WD', '', 0);
         INSERT INTO stop_times VALUES ('T001', 'S1', 1, '08:00:00', '08:00:00', 0, 0, 'A');
         INSERT INTO stop_times VALUES ('T001', 'S2', 2, NULL, NULL, 0, 0, 'X');
         INSERT INTO stop_times VALUES ('T001', 'S3', 3, '08:10:00', '08:10:00', 0, 0, 'C');
@@ -916,8 +918,8 @@ describe('extractTripPatternsAndTimetable', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       try {
         db.exec(`
-          INSERT INTO trips VALUES ('EMPTY', 'R001', 'WD', '回送', 0);
-          INSERT INTO trips VALUES ('NORMAL', 'R001', 'WD', '渋谷', 0);
+          INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('EMPTY', 'R001', 'WD', '回送', 0);
+          INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('NORMAL', 'R001', 'WD', '渋谷', 0);
           INSERT INTO stop_times VALUES ('EMPTY', 'S1', 1, NULL, NULL, 0, 0, NULL);
           INSERT INTO stop_times VALUES ('EMPTY', 'S2', 2, NULL, NULL, 0, 0, NULL);
           INSERT INTO stop_times VALUES ('EMPTY', 'S3', 3, NULL, NULL, 0, 0, NULL);

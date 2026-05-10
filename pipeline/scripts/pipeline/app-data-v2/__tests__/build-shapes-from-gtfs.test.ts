@@ -26,13 +26,16 @@ function createMinimalShapesDb(): Database.Database {
     CREATE TABLE routes (
       route_id TEXT PRIMARY KEY, agency_id TEXT, route_short_name TEXT,
       route_long_name TEXT, route_type INTEGER NOT NULL,
-      route_color TEXT, route_text_color TEXT, route_desc TEXT, route_url TEXT
+      route_color TEXT, route_text_color TEXT, route_desc TEXT, route_url TEXT,
+      cemv_support TEXT
     );
     CREATE TABLE trips (
       trip_id TEXT PRIMARY KEY,
       route_id TEXT NOT NULL,
       service_id TEXT NOT NULL,
-      shape_id TEXT
+      shape_id TEXT,
+      safe_duration_factor REAL,
+      safe_duration_offset REAL
     );
     CREATE TABLE shapes (
       shape_id TEXT NOT NULL,
@@ -42,12 +45,12 @@ function createMinimalShapesDb(): Database.Database {
       shape_dist_traveled REAL
     );
 
-    INSERT INTO routes VALUES ('R1', 'A1', '01', 'Route One', 3, NULL, NULL, NULL, NULL);
-    INSERT INTO routes VALUES ('R2', 'A1', '02', 'Route Two', 3, NULL, NULL, NULL, NULL);
+    INSERT INTO routes (route_id, agency_id, route_short_name, route_long_name, route_type, route_color, route_text_color, route_desc, route_url) VALUES ('R1', 'A1', '01', 'Route One', 3, NULL, NULL, NULL, NULL);
+    INSERT INTO routes (route_id, agency_id, route_short_name, route_long_name, route_type, route_color, route_text_color, route_desc, route_url) VALUES ('R2', 'A1', '02', 'Route Two', 3, NULL, NULL, NULL, NULL);
 
-    INSERT INTO trips VALUES ('T1', 'R1', 'WD', 'S1');
-    INSERT INTO trips VALUES ('T2', 'R1', 'WD', 'S2');
-    INSERT INTO trips VALUES ('T3', 'R2', 'WD', 'S3');
+    INSERT INTO trips (trip_id, route_id, service_id, shape_id) VALUES ('T1', 'R1', 'WD', 'S1');
+    INSERT INTO trips (trip_id, route_id, service_id, shape_id) VALUES ('T2', 'R1', 'WD', 'S2');
+    INSERT INTO trips (trip_id, route_id, service_id, shape_id) VALUES ('T3', 'R2', 'WD', 'S3');
 
     INSERT INTO shapes VALUES ('S1', 35.68, 139.76, 1, NULL);
     INSERT INTO shapes VALUES ('S1', 35.69, 139.77, 2, NULL);
@@ -98,7 +101,8 @@ describe('GTFS ShapesBundle assembly', () => {
     db.exec(`
       CREATE TABLE trips (
         trip_id TEXT PRIMARY KEY, route_id TEXT NOT NULL,
-        service_id TEXT NOT NULL, shape_id TEXT
+        service_id TEXT NOT NULL, shape_id TEXT,
+        safe_duration_factor REAL, safe_duration_offset REAL
       );
       CREATE TABLE shapes (
         shape_id TEXT NOT NULL, shape_pt_lat REAL NOT NULL,
@@ -106,7 +110,7 @@ describe('GTFS ShapesBundle assembly', () => {
         shape_dist_traveled REAL
       );
 
-      INSERT INTO trips VALUES ('T1', 'R1', 'WD', 'S1');
+      INSERT INTO trips (trip_id, route_id, service_id, shape_id) VALUES ('T1', 'R1', 'WD', 'S1');
       INSERT INTO shapes VALUES ('S1', 35.68, 139.76, 1, 0);
       INSERT INTO shapes VALUES ('S1', 35.69, 139.77, 2, 150.5);
     `);
@@ -129,7 +133,8 @@ describe('GTFS ShapesBundle assembly', () => {
     db.exec(`
       CREATE TABLE trips (
         trip_id TEXT PRIMARY KEY, route_id TEXT NOT NULL,
-        service_id TEXT NOT NULL, shape_id TEXT
+        service_id TEXT NOT NULL, shape_id TEXT,
+        safe_duration_factor REAL, safe_duration_offset REAL
       );
       CREATE TABLE shapes (
         shape_id TEXT NOT NULL, shape_pt_lat REAL NOT NULL,
@@ -181,7 +186,8 @@ describe('GTFS ShapesBundle assembly', () => {
     db.exec(`
       CREATE TABLE trips (
         trip_id TEXT PRIMARY KEY, route_id TEXT NOT NULL,
-        service_id TEXT NOT NULL, shape_id TEXT
+        service_id TEXT NOT NULL, shape_id TEXT,
+        safe_duration_factor REAL, safe_duration_offset REAL
       );
       CREATE TABLE shapes (
         shape_id TEXT NOT NULL, shape_pt_lat REAL NOT NULL,
@@ -189,7 +195,7 @@ describe('GTFS ShapesBundle assembly', () => {
         shape_dist_traveled REAL
       );
 
-      INSERT INTO trips VALUES ('T1', 'R1', 'WD', 'S1');
+      INSERT INTO trips (trip_id, route_id, service_id, shape_id) VALUES ('T1', 'R1', 'WD', 'S1');
       INSERT INTO shapes VALUES ('S1', 35.68, 139.76, 1, 0);
       INSERT INTO shapes VALUES ('S1', 35.69, 139.77, 2, 100.5);
       INSERT INTO shapes VALUES ('S1', 35.70, 139.78, 3, 250.0);
@@ -214,7 +220,8 @@ describe('GTFS ShapesBundle assembly', () => {
     db.exec(`
       CREATE TABLE trips (
         trip_id TEXT PRIMARY KEY, route_id TEXT NOT NULL,
-        service_id TEXT NOT NULL, shape_id TEXT
+        service_id TEXT NOT NULL, shape_id TEXT,
+        safe_duration_factor REAL, safe_duration_offset REAL
       );
       CREATE TABLE shapes (
         shape_id TEXT NOT NULL, shape_pt_lat REAL NOT NULL,
@@ -222,7 +229,7 @@ describe('GTFS ShapesBundle assembly', () => {
         shape_dist_traveled REAL
       );
 
-      INSERT INTO trips VALUES ('T1', 'R1', 'WD', 'S1');
+      INSERT INTO trips (trip_id, route_id, service_id, shape_id) VALUES ('T1', 'R1', 'WD', 'S1');
       INSERT INTO shapes VALUES ('S1', 35.68, 139.76, 1, 0);
       INSERT INTO shapes VALUES ('S1', 35.69, 139.77, 2, 100.0);
       INSERT INTO shapes VALUES ('S1', 35.70, 139.78, 3, 100.0);

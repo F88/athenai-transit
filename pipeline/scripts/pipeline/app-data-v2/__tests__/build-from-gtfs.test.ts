@@ -36,7 +36,8 @@ function createMinimalGtfsDb(dbPath: string): void {
     CREATE TABLE routes (
       route_id TEXT PRIMARY KEY, agency_id TEXT, route_short_name TEXT,
       route_long_name TEXT, route_type INTEGER NOT NULL,
-      route_color TEXT, route_text_color TEXT, route_desc TEXT, route_url TEXT
+      route_color TEXT, route_text_color TEXT, route_desc TEXT, route_url TEXT,
+      cemv_support TEXT
     );
     CREATE TABLE stops (
       stop_id TEXT PRIMARY KEY, stop_name TEXT NOT NULL,
@@ -54,7 +55,8 @@ function createMinimalGtfsDb(dbPath: string): void {
     );
     CREATE TABLE trips (
       trip_id TEXT PRIMARY KEY, route_id TEXT, service_id TEXT,
-      trip_headsign TEXT, direction_id INTEGER
+      trip_headsign TEXT, direction_id INTEGER,
+      safe_duration_factor REAL, safe_duration_offset REAL
     );
     CREATE TABLE stop_times (
       trip_id TEXT NOT NULL, stop_id TEXT NOT NULL,
@@ -75,11 +77,11 @@ function createMinimalGtfsDb(dbPath: string): void {
 
     INSERT INTO agency (agency_id, agency_name, agency_url, agency_timezone, agency_lang, agency_fare_url)
     VALUES ('A1', 'Test Bus', 'https://example.com', 'Asia/Tokyo', 'ja', '');
-    INSERT INTO routes VALUES ('R1', 'A1', '01', 'Route One', 3, 'FF0000', 'FFFFFF', NULL, NULL);
+    INSERT INTO routes (route_id, agency_id, route_short_name, route_long_name, route_type, route_color, route_text_color, route_desc, route_url) VALUES ('R1', 'A1', '01', 'Route One', 3, 'FF0000', 'FFFFFF', NULL, NULL);
     INSERT INTO stops VALUES ('S1', 'Stop A', 35.66, 139.76, 0, NULL, NULL, NULL, NULL, NULL);
     INSERT INTO stops VALUES ('S2', 'Stop B', 35.67, 139.77, 0, NULL, NULL, NULL, NULL, NULL);
     INSERT INTO calendar VALUES ('WD', 1, 1, 1, 1, 1, 0, 0, '20260101', '20260331');
-    INSERT INTO trips VALUES ('T1', 'R1', 'WD', 'Stop B', 0);
+    INSERT INTO trips (trip_id, route_id, service_id, trip_headsign, direction_id) VALUES ('T1', 'R1', 'WD', 'Stop B', 0);
     INSERT INTO stop_times VALUES ('T1', 'S1', 1, '08:00:00', '08:00:00', 0, 0, NULL);
     INSERT INTO stop_times VALUES ('T1', 'S2', 2, '08:10:00', '08:10:00', 0, 0, NULL);
     INSERT INTO feed_info VALUES ('Test Publisher', 'https://example.com', 'ja', '20260101', '20260331', '1.0');

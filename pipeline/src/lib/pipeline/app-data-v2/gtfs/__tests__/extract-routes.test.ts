@@ -22,7 +22,8 @@ function createSchema(database: Database.Database): void {
       route_color TEXT,
       route_text_color TEXT,
       route_desc TEXT,
-      route_url TEXT
+      route_url TEXT,
+      cemv_support TEXT
     );
   `);
 }
