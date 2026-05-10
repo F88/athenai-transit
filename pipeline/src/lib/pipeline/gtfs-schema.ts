@@ -498,6 +498,7 @@ export const SCHEMA: string[] = [
     duration_limit_type INTEGER,
     fare_transfer_type  INTEGER NOT NULL,
     fare_product_id     TEXT
+    -- FK for fare_product_id omitted (see design decision 4)
   )`,
 ];
 
