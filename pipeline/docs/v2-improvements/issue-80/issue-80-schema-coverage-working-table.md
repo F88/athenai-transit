@@ -58,43 +58,70 @@ Issue: #80 `Audit GTFS/GTFS-JP Schema Coverage In V2 Output`
 既存 raw GTFS source における実値有無の確認結果は、重複を避けるため
 [high-priority-schema-audit.md](./high-priority-schema-audit.md) の `Raw GTFS Source Check` section を正本とする。
 
-| field                            | schema_table | schema_defined | pipeline_reads | v2_location                                                                                               | classification                            | silent_loss_risk | notes                                                                                                                                                    | evidence                                                                         |
-| -------------------------------- | ------------ | -------------- | -------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `routes.route_desc`              | `routes`     | `yes`          | `yes`          | `routes[].desc`                                                                                           | `emitted-primary`                         | `low`            | 既に primary field として出力されている。                                                                                                                | `gtfs-schema.ts`; `extract-routes.ts`; `transit-v2-json.ts`                      |
-| `stops.stop_desc`                | `stops`      | `yes`          | `yes`          | `lookup.stopDescs`                                                                                        | `emitted-lookup`                          | `low`            | main record ではなく lookup へ移動済み。                                                                                                                 | `gtfs-schema.ts`; `extract-lookup.ts`; `transit-v2-json.ts`                      |
-| `stop_times.stop_headsign`       | `stop_times` | `yes`          | `yes`          | `tripPatterns.stops[].sh`, `translations.stop_headsigns`                                                  | `emitted-primary`, `emitted-translations` | `low`            | 一次データとして `tripPatterns.stops[].sh` に格納 (Issue #92)。翻訳は `translations.stop_headsigns`。                                                    | `gtfs-schema.ts`; `extract-timetable.ts`; `extract-translations.ts`              |
-| `agency.agency_short_name`       | `agency`     | `no`           | `no`           | App-side のみ (`Agency.agency_short_name` / `Agency.agency_short_names`)。V2 bundle JSON には存在しない。 | `derived-not-direct`                      | `medium`         | raw GTFS field ではなく provider metadata 由来。`merge-sources-v2.ts` が `AgencyAttributes` から `Agency` に注入。schema coverage 本体とは別扱いが必要。 | `merge-sources-v2.ts`; `agency-attributes.ts`                                    |
-| `trips.trip_short_name`          | `trips`      | `yes`          | `no`           | `not present`                                                                                             | `not-emitted`                             | `high`           | 表示用途の可能性が高く、現行 raw GTFS でも一部フェリー source に非空値があるが、現行 extractor と V2 型のどちらにも載っていない。                        | `gtfs-schema.ts`; `extract-timetable.ts`; `transit-v2-json.ts`                   |
-| `stops.tts_stop_name`            | `stops`      | `yes`          | `no`           | `not present`                                                                                             | `not-emitted`                             | `high`           | 読み上げ用途で意味を持ちうるが、現行 V2 では未読かつ未出力。                                                                                             | `gtfs-schema.ts`; `extract-stops.ts`; `transit-v2-json.ts`                       |
-| `stop_times.shape_dist_traveled` | `stop_times` | `yes`          | `no`           | `TripPatternJson.stops[].sd` is defined in type/docs, but not emitted                                     | `not-emitted`                             | `high`           | 型・docs・実装がずれている。単なる未読 field ではなく schema/design drift とみなすべき。                                                                 | `gtfs-schema.ts`; `extract-timetable.ts`; `transit-v2-json.ts`; `V2_APP_DATA.md` |
-| `agency_jp.agency_official_name` | `agency_jp`  | `yes`          | `no`           | `not present`                                                                                             | `intentionally-excluded`                  | `low`            | `agency_jp` extension 全体の除外方針と整合。                                                                                                             | `gtfs-schema.ts`; `transit-v2-json.ts`                                           |
-| `trips.block_id`                 | `trips`      | `yes`          | `no`           | `not present`                                                                                             | `intentionally-excluded`                  | `low`            | vehicle continuity info として app scope 外。                                                                                                            | `gtfs-schema.ts`; `transit-v2-json.ts`                                           |
-| `stops.zone_id`                  | `stops`      | `yes`          | `no`           | `not present`                                                                                             | `intentionally-excluded`                  | `low`            | fare calculation only として除外意図が明示されている。                                                                                                   | `gtfs-schema.ts`; `transit-v2-json.ts`                                           |
+| field                            | schema_table | schema_defined | pipeline_reads | v2_location                                                                                               | classification                            | silent_loss_risk  | notes                                                                                                                                                              | evidence                                                                         |
+| -------------------------------- | ------------ | -------------- | -------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| `routes.route_desc`              | `routes`     | `yes`          | `yes`          | `routes[].desc`                                                                                           | `emitted-primary`                         | `low`             | 既に primary field として出力されている。                                                                                                                          | `gtfs-schema.ts`; `extract-routes.ts`; `transit-v2-json.ts`                      |
+| `stops.stop_desc`                | `stops`      | `yes`          | `yes`          | `lookup.stopDescs`                                                                                        | `emitted-lookup`                          | `low`             | main record ではなく lookup へ移動済み。                                                                                                                           | `gtfs-schema.ts`; `extract-lookup.ts`; `transit-v2-json.ts`                      |
+| `stop_times.stop_headsign`       | `stop_times` | `yes`          | `yes`          | `tripPatterns.stops[].sh`, `translations.stop_headsigns`                                                  | `emitted-primary`, `emitted-translations` | `low`             | 一次データとして `tripPatterns.stops[].sh` に格納 (Issue #92)。翻訳は `translations.stop_headsigns`。                                                              | `gtfs-schema.ts`; `extract-timetable.ts`; `extract-translations.ts`              |
+| `agency.agency_short_name`       | `agency`     | `no`           | `no`           | App-side のみ (`Agency.agency_short_name` / `Agency.agency_short_names`)。V2 bundle JSON には存在しない。 | `derived-not-direct`                      | `medium`          | raw GTFS field ではなく provider metadata 由来。`merge-sources-v2.ts` が `AgencyAttributes` から `Agency` に注入。schema coverage 本体とは別扱いが必要。           | `merge-sources-v2.ts`; `agency-attributes.ts`                                    |
+| `stop_times.timepoint`           | `stop_times` | `yes`          | `no`           | `not present`                                                                                             | `not-emitted`                             | `high (active)`   | 19 source 計 2,690,000+ 行が現に silent loss している。`0` = approximate / `1` = exact のフラグで、表示精度に直結。扱いを保持か除外か決める必要あり。              | `gtfs-schema.ts`; `extract-timetable.ts`; `transit-v2-json.ts`                   |
+| `trips.bikes_allowed`            | `trips`      | `yes`          | `no`           | `not present`                                                                                             | `not-emitted`                             | `high (active)`   | 14 source 計 100,995 行が現に silent loss。`wheelchair_accessible` (= intentionally-excluded) と並ぶ accessibility 系。intentionally-excluded か実装か決定が必要。 | `gtfs-schema.ts`; `extract-timetable.ts`; `transit-v2-json.ts`                   |
+| `stop_times.shape_dist_traveled` | `stop_times` | `yes`          | `no`           | `TripPatternJson.stops[].sd` is defined in type/docs, but not emitted                                     | `not-emitted`                             | `high (active)`   | 型・docs・実装がずれている。vag-freiburg で 260,406 行 (100% カバレッジ) が現に silent loss している。                                                             | `gtfs-schema.ts`; `extract-timetable.ts`; `transit-v2-json.ts`; `V2_APP_DATA.md` |
+| `trips.trip_short_name`          | `trips`      | `yes`          | `no`           | `not present`                                                                                             | `not-emitted`                             | `high (active)`   | フェリー系 5 source 計 283 行 (= 100% カバレッジ) が現に silent loss。GTFS Best Practices "Branches" 準拠の優良 source。                                           | `gtfs-schema.ts`; `extract-timetable.ts`; `transit-v2-json.ts`                   |
+| `stops.stop_access`              | `stops`      | `yes`          | `no`           | `not present`                                                                                             | `not-emitted`                             | `medium (active)` | toei-bus で 3,691 / 5,367 行 (= 約 69%) が現に silent loss。                                                                                                       | `gtfs-schema.ts`; `extract-stops.ts`; `transit-v2-json.ts`                       |
+| `stops.stop_code`                | `stops`      | `yes`          | `no`           | `not present`                                                                                             | `not-emitted`                             | `medium (active)` | 鉄道系 7 source 計 571 行が現に silent loss。                                                                                                                      | `gtfs-schema.ts`; `extract-stops.ts`; `transit-v2-json.ts`                       |
+| `stops.stop_timezone`            | `stops`      | `yes`          | `no`           | `not present`                                                                                             | `not-emitted`                             | `medium (active)` | 10 source 計 47 行 (フェリー系中心、長距離航路で別 timezone) が現に silent loss。                                                                                  | `gtfs-schema.ts`; `extract-stops.ts`; `transit-v2-json.ts`                       |
+| `feed_info.feed_contact_email`   | `feed_info`  | `yes`          | `no`           | `not present`                                                                                             | `not-emitted`                             | `medium (active)` | 5 source 各 1 行が現に silent loss。provider 連絡先として価値あり。                                                                                                | `gtfs-schema.ts`; `extract-feed-info.ts`; `transit-v2-json.ts`                   |
+| `feed_info.feed_contact_url`     | `feed_info`  | `yes`          | `no`           | `not present`                                                                                             | `not-emitted`                             | `medium (active)` | 4 source 各 1 行が現に silent loss。                                                                                                                               | `gtfs-schema.ts`; `extract-feed-info.ts`; `transit-v2-json.ts`                   |
+| `stops.tts_stop_name`            | `stops`      | `yes`          | `no`           | `not present`                                                                                             | `not-emitted`                             | `low`             | 現行 source で値ゼロ。読み上げ用途で意味を持ちうるが、現状 silent loss は無い。                                                                                    | `gtfs-schema.ts`; `extract-stops.ts`; `transit-v2-json.ts`                       |
+| `agency_jp.agency_official_name` | `agency_jp`  | `yes`          | `no`           | `not present`                                                                                             | `intentionally-excluded`                  | `low`             | `agency_jp` extension 全体の除外方針と整合。                                                                                                                       | `gtfs-schema.ts`; `transit-v2-json.ts`                                           |
+| `trips.block_id`                 | `trips`      | `yes`          | `no`           | `not present`                                                                                             | `intentionally-excluded`                  | `low`             | vehicle continuity info として app scope 外。                                                                                                                      | `gtfs-schema.ts`; `transit-v2-json.ts`                                           |
+| `stops.zone_id`                  | `stops`      | `yes`          | `no`           | `not present`                                                                                             | `intentionally-excluded`                  | `low`             | fare calculation only として除外意図が明示されている。                                                                                                             | `gtfs-schema.ts`; `transit-v2-json.ts`                                           |
 
 ## Silent Loss Risk Summary
 
-### High
+2026-05-10 の最新 Raw Source Check (詳細は [high-priority-schema-audit.md](./high-priority-schema-audit.md))
+に基づき、以下の 3 段階で整理する。
 
-- `trips.trip_short_name`
-- `stops.tts_stop_name`
-- `stop_times.shape_dist_traveled`
+- **active** = 現に silent loss している (= 現行 source に non-empty 値があるが V2 出力に乗っていない)
+- **risk** = 将来 source が値を入れたら silent loss し得る
+- **resolved** = 意図的除外として説明済み、または既に出力されている
 
-### Medium
+### High (active)
 
-- `agency.agency_short_name`
+- `stop_times.timepoint` (= 19 source 2,690,000+ 行)
+- `trips.bikes_allowed` (= 14 source 100,995 行)
+- `stop_times.shape_dist_traveled` (= vag-freiburg 260,406 行)
+- `trips.trip_short_name` (= フェリー系 5 source 283 行)
 
-### Low
+### Medium (active)
 
-- `stop_times.stop_headsign` (Issue #92 で `emitted-primary` に昇格、risk low に変更)
+- `stops.stop_access` (= toei-bus 3,691 行)
+- `stops.stop_code` (= 鉄道系 7 source 571 行)
+- `stops.stop_timezone` (= 10 source 47 行)
+- `feed_info.feed_contact_email` (= 5 source 5 行)
+- `feed_info.feed_contact_url` (= 4 source 4 行)
 
+### Medium (= 別枠整理が必要)
+
+- `agency.agency_short_name` (= raw GTFS field ではなく provider metadata 由来)
+
+### Low (risk only, = 値ゼロ)
+
+- `stops.tts_stop_name` (現行 source で列・値とも観測なし)
+
+### Low (resolved)
+
+- `stop_times.stop_headsign` (Issue #92 で `emitted-primary` に昇格)
 - `agency_jp.*`
 - `trips.block_id`
 - `trips.wheelchair_accessible`
 - `stops.zone_id`
 
-High は「将来 source が値を入れた場合に、表示や機能設計に効きやすいのに現行 V2 では失われる」もの、
-Medium は「データは保持されるが限定経路のみ、または schema coverage と別枠整理が必要」なもの、
-Low は「少なくとも現時点では意図的除外として説明可能」なものとする。
+監査本体時点 (2026-03-29) の整理は、その後追加されたフェリー系・海外 source (vag-freiburg) を反映していなかった。
+当時 "high (= 将来 risk)" としていた 3 項目のうち 2 項目 (`trip_short_name`, `shape_dist_traveled`) は実際には
+"high (active)" であったことが今回の再確認で判明した。`stop_times.timepoint` と `trips.bikes_allowed` は監査本体の
+監視対象外だったが、規模で見ると最大の active silent loss である。
 
 ## Table Inventory
 

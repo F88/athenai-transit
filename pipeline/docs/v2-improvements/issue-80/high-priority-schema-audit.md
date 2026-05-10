@@ -41,15 +41,36 @@ follow-up 候補の整理を主目的とする。
 
 ## 高影響 gap 要約
 
-### 実装ギャップとして優先度が高いもの
+### 実装ギャップとして優先度が高いもの (= 現に silent loss している)
 
-- `trips.trip_short_name`
-  schema に存在し、表示用途の可能性が高いが、現行 V2 では未読かつ未出力。
-- `stops.tts_stop_name`
-  schema に存在し、読み上げや音声用途で意味を持ちうるが、現行 V2 では未読かつ未出力。
+2026-05-10 の最新 Raw Source Check で確認した実 silent loss 規模順:
+
+- `stop_times.timepoint`
+  19 source、合計 2,690,000+ 行の non-empty 値。SELECT も mapping も無し。
+  approximate / exact のフラグで、表示精度に直結する。
+- `trips.bikes_allowed`
+  14 source、合計 100,995 行の non-empty 値。`wheelchair_accessible` (= intentionally-excluded) と並ぶ accessibility 系 field。
+  扱いを intentionally-excluded か実装かで決める必要あり。
 - `stop_times.shape_dist_traveled`
-  型と docs では `TripPatternJson.stops[].sd` を想定している一方、現行 GTFS DataBundle extractor は未読。
-  これは単なる未実装に加えて、型・docs・実装がずれている点で優先度が高い。
+  vag-freiburg で 260,406 行 (= 100% カバレッジ) の non-null 値。型と docs では `TripPatternJson.stops[].sd` を想定している一方、
+  現行 GTFS DataBundle extractor は未読。型・docs・実装がずれており、現行データも落としている。
+- `trips.trip_short_name`
+  フェリー系 5 source、合計 283 行 (= 100% カバレッジ) の非空値。GTFS Best Practices "Branches" 準拠の優良 source。
+  schema に存在し、表示用途の意義が明確だが、現行 V2 では未読かつ未出力。
+
+### 中規模ギャップ
+
+- `stops.stop_access` (toei-bus 3,691 行)
+- `stops.stop_code` (鉄道系 7 source 計 571 行)
+- `stops.stop_timezone` (10 source 計 47 行)
+- `feed_info.feed_contact_email` / `feed_info.feed_contact_url` (各 5 / 4 source)
+
+これらは規模は小さいが、扱い決定 (intentionally-excluded か実装か) の価値はある。
+
+### 値ゼロ・将来 risk のみ
+
+- `stops.tts_stop_name`
+  schema に存在し、読み上げや音声用途で意味を持ちうるが、現行 source で値ゼロ。silent loss は現状なし。
 
 ### 今回は gap ではなく、意図的除外として扱えるもの
 
@@ -77,32 +98,99 @@ follow-up 候補の整理を主目的とする。
 
 ## Raw GTFS Source Check
 
-2026-03-29 時点で、`pipeline/workspace/data/gtfs/` 配下の展開済み GTFS テキストを直接確認した。
+2026-05-10 時点で、`pipeline/workspace/data/gtfs/` 配下の展開済み GTFS テキストを直接確認した。
+当初の 4 項目の枠を超えて、現状 `not-emitted` / 関心 field を網羅する形に対象を拡大した
+(= 監査本体時点で対象外だった field にも silent loss が観測されたため、調査範囲を増やした)。
+
+### 高優先度 4 項目 (= 監査本体時点で挙げていた field)
 
 - `trips.trip_short_name`
-  列は複数 source に存在し、現時点でも非空値が確認できる。2026-05-10 の再確認では、少なくとも
+  列は複数 source に存在し、現時点でも非空値が確認できる。少なくとも
   `tokai-kisen`, `uwajima-unyu`, `okushiri-ferry`, `orange-ferry`, `meimon-taiyo-ferry`
-  の 5 source で合計 `283` 件の非空値があった。値は主にフェリー便の便名 / 便番号 / 船名を表していた。
+  の 5 source で合計 `283` 件の非空値があった (= いずれも 100% カバレッジ)。
+  値は主にフェリー便の便名 / 便番号 / 船名を表していた (例: `フェリーきょうと/ふくおか：下り2便`、
+  `おれんじ九州／おれんじ四国：101便`、`あおがしま丸/くろしお丸：1便`)。
+  GTFS Best Practices の "Branches" ガイダンス (= trip 単位の区別に `trip_short_name` を使う)
+  に沿った優良 source であり、現状は SELECT 対象にも mapping にも入っておらず、現に silent loss している。
+  列自体が無い source は `chiyoda-bus`, `chuo-bus`, `kita-bus`, `suginami-gsm`, `vag-freiburg`。
 - `stops.tts_stop_name`
-  現行の展開済み GTFS source では、列自体が 1 件も存在しなかった。非空値は確認されていない。
+  現行の展開済み GTFS source では、列自体が 1 件も存在しなかった。非空値も確認されていない。
+  silent loss は現状なし。優先度は低い。
 - `stop_times.shape_dist_traveled`
-  列を持つ source は複数あるが、現時点では non-null 値を観測していない。合計 `2,503,058` stop_times rows 中 `0` 件。
-  列自体が無い source は `chiyoda-bus`, `chuo-bus`, `kita-bus`, `kyoto-city-bus`, `miyake-bus`, `nagoya-srt`, `oshima-bus`, `suginami-gsm`。
+  **`vag-freiburg` で `260,406 / 260,406` (= 100% カバレッジ) の non-null 値が存在する**。
+  `extractTripPatternsAndTimetable()` は SELECT も mapping も未実装のため、現に silent loss している。
+  vag-freiburg 以外の国内 source では列を持つものがあるが、現時点では non-null 値ゼロ。
+  shapes 側 (= `extract-shapes-from-gtfs.ts`) は schema 上常に存在する `shape_dist_traveled` 列を SELECT し、
+  non-null 値があれば `[lat, lon, dist]` 形式で出力する実装になっている。silent loss は extract-timetable 側のみ。
 - `agency.agency_short_name`
   raw GTFS field ではないため、この raw source check の対象外。現行 V2 では provider metadata 由来として扱っている。
 
-この結果から、`trip_short_name` については少なくとも「既存 source に有効値が存在するのに落としている可能性がある」状態になった。
-一方で、`tts_stop_name` と `stop_times.shape_dist_traveled` は、今回確認した範囲では「列や値の存在は限定的 / 未観測」であり、
-引き続き将来値流入時の silent loss 監視対象として整理するのが妥当である。
+### 追加で発見した silent loss (= 監査本体時点では対象外だった field)
 
-ただし `stop_times.shape_dist_traveled` は extract-timetable 側 (= `extractTripPatternsAndTimetable()`) では SELECT 対象に含まれず、型と docs に定義された `TripPatternJson.stops[].sd` への mapping も未実装である。よって将来 source が non-null 値を入れ始めた場合に silent loss 化するリスクは引き続き残る。
-一方、shapes 側 (= `extract-shapes-from-gtfs.ts`) は schema 上常に存在する `shape_dist_traveled` 列を SELECT し、non-null 値があれば `[lat, lon, dist]` 形式で出力する実装になっている。こちらは「現時点で non-null 値を観測していない」だけで、silent loss にはならない。
-`trip_short_name` は、現時点で既に非空値を持つ source が存在し、しかも `extractTripPatternsAndTimetable()` の SELECT 対象にも含まれていない。
-したがって単なる将来 risk ではなく、「現行データを V2 へ落としていない可能性がある field」として follow-up 優先度を上げて扱うのが妥当である。
+- `stop_times.timepoint`
+  **19 source、合計 2,690,000+ 行の non-empty 値が存在する**。SELECT も mapping も無いため、現に大規模に silent loss している。
+  実績例: `toei-bus` 902,364、`kyoto-city-bus` 607,249、`kanto-bus` 303,100、`nishi-tokyo-bus` 171,842、`tokyometro` 171,069 (いずれも 100% カバレッジ)。
+  GTFS spec での意味: `0` = approximate / `1` = exact (省略時 exact)。Approximate の表示は app の精度感に直結するため、
+  保持するか / 落とすかは設計判断が必要。
+- `trips.bikes_allowed`
+  **14 source、合計 100,995 行の non-empty 値が存在する**。`trips.wheelchair_accessible` (= intentionally-excluded) と並ぶ accessibility 系 field。
+  実績例: `toei-bus` 47,082、`seibu-bus` 29,009、`kyoto-city-bus` 17,913、フェリー系全 5 source 100% カバレッジ。
+  扱い決定が必要: `wheelchair_accessible` と同様に intentionally-excluded か、accessibility 表示の文脈で実装に進めるか。
+- `stops.stop_access`
+  `toei-bus` のみ、`3,691 / 5,367` (= 約 69%) で値が入っている。GTFS spec の Optional field。
+- `stops.stop_code`
+  鉄道系 7 source、計 `571` 行で値が入っている (`tokyometro` 185、`toei-train` 149、`actv-nav` 148、`yokohama-municipal-subway` 42、`mir-train` 20、`tama-monorail` 19、`twr-rinkai` 8)。
+- `stops.stop_timezone`
+  10 source、計 `47` 行 (フェリー系中心、長距離航路で別 timezone を持つケース)。
+- `feed_info.feed_contact_email` / `feed_info.feed_contact_url`
+  各 5 / 4 source (1 source あたり 1 行のため絶対量は小さいが、provider 連絡先として価値がある)。
+
+### 値ゼロ field (= 現行 `not-emitted` 維持で問題なし)
+
+`stops.level_id`, `routes.route_sort_order`, `routes.continuous_pickup`, `routes.continuous_drop_off`, `routes.network_id`,
+`stop_times.continuous_pickup`, `stop_times.continuous_drop_off`, `stop_times.location_group_id`, `stop_times.location_id`,
+`stop_times.start_pickup_drop_off_window`, `stop_times.end_pickup_drop_off_window`,
+`stop_times.pickup_booking_rule_id`, `stop_times.drop_off_booking_rule_id`,
+`trips.cars_allowed`, `feed_info.default_lang`。
+
+これらは現行 source で non-empty 値が観測されないため、現時点では silent loss していない。将来 source が値を入れ始めたら監視対象になる。
+
+### 総括
+
+監査本体 (2026-03-29) 時点の Raw Source Check は、その後追加されたフェリー系・海外 source (vag-freiburg) の
+登場前のものであり、数値・結論ともに古い。少なくとも以下は「将来 risk」ではなく「現行データを V2 へ落としている silent loss」として
+即時 follow-up 対象である。
+
+1. `stop_times.timepoint` (約 2.69M 行)
+2. `trips.bikes_allowed` (約 101K 行)
+3. `stop_times.shape_dist_traveled` (260K 行 / vag-freiburg)
+4. `trips.trip_short_name` (283 行 / フェリー系 5 source)
+
+`stops.stop_code` / `stops.stop_access` / `stops.stop_timezone` / `feed_info.feed_contact_*` は規模は小さいが、
+扱いを `intentionally-excluded` か `not-emitted` (実装漏れ) かを決める価値はある。
 
 ## Follow-up issue 候補
 
-1. `stop_times.shape_dist_traveled` を `TripPatternJson.stops[].sd` に実装するか、型と docs から落として整合させるか決める。
-2. `trip_short_name` を V2 に持つべきかを、UI 表示要件と source 実データの両面から評価する。
-3. `tts_stop_name` を読み上げ用途として保持するかを検討する。
-4. `agency.agency_short_name` のような provider-derived 値を、schema coverage 本体と別枠で整理する方針を決める。
+2026-05-10 の最新 Raw Source Check 結果に基づく優先度付け。
+
+### High (= 現行データを silent loss している、即時着手対象)
+
+1. `stop_times.timepoint` を保持するか落とすか決める (= 19 source 2.69M 行が現に silent loss)。
+2. `trips.bikes_allowed` を `wheelchair_accessible` と同様に intentionally-excluded とするか、accessibility info として実装するか決める (= 14 source 101K 行)。
+3. `stop_times.shape_dist_traveled` を `TripPatternJson.stops[].sd` に実装するか、型と docs から落として整合させるか決める (= vag-freiburg 260K 行)。
+4. `trip_short_name` を V2 に持つべきかを、GTFS Best Practices "Branches" と source 実データ (= フェリー系 100% カバレッジ) を踏まえて評価する。
+
+### Medium (= 規模は小さいが扱い決定の価値あり)
+
+1. `stops.stop_code` (鉄道系 7 source) の扱いを決める。
+2. `stops.stop_access` (toei-bus 3,691 行) の扱いを決める。
+3. `stops.stop_timezone` (10 source 47 行) の扱いを決める。
+4. `feed_info.feed_contact_email` / `feed_info.feed_contact_url` の扱いを決める。
+
+### Low (= 値ゼロ、将来 risk のみ)
+
+1. `tts_stop_name` を読み上げ用途として保持するかを検討する。
+
+### Meta
+
+1. `agency.agency_short_name` のような provider-derived 値を、schema coverage 本体と別枠で整理する方針を決める (= ODPT schema coverage 監査の前提条件)。
