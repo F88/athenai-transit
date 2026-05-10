@@ -2,12 +2,12 @@
   "sourceName": "sanwa-shosen",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-09T09:18:09.021Z",
+  "downloadedAt": "2026-05-10T04:55:01.388Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/SanwaMerchantVessel/AllLines.zip?date=20260105",
   "size": 5296,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1435,
-  "archivePath": "workspace/_archives/gtfs/sanwa-shosen/AllLines_20260509-091810.zip",
+  "durationMs": 2115,
+  "archivePath": "workspace/_archives/gtfs/sanwa-shosen/AllLines_20260510-045503.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
