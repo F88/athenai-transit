@@ -66,6 +66,30 @@ const OUTPUT_DIR = DB_DIR;
 
 const BATCH_SIZE = 5000;
 
+/**
+ * Sources known to ship `translations.txt` in the GTFS-JP legacy
+ * 3-column format (`trans_id, lang, translation`). Used by the
+ * dispatch in {@link buildSourceDb}: a source not on this list whose
+ * `translations.txt` also has the 3-column header is rejected with a
+ * loud error so a developer must verify the source's translation
+ * convention before opting in.
+ *
+ * Adding to this list implies the source's `trans_id` values genuinely
+ * line up with the value-based interpretation — i.e. each `trans_id`
+ * is the literal value of some translatable column elsewhere in the
+ * same feed (e.g. `stops.stop_name`, `routes.route_long_name`,
+ * `trips.trip_headsign`). If a candidate source uses the same header
+ * for a non-spec convention (e.g. translation column carries free-form
+ * notes), do NOT add it here.
+ */
+const LEGACY_TRANSLATION_ALLOWLIST = new Set<string>([
+  'odakyu-bus',
+  'tokai-kisen',
+  'orange-ferry',
+  'uwajima-unyu',
+  'meimon-taiyo-ferry',
+]);
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -722,28 +746,42 @@ async function buildSourceDbInner(
 
     try {
       let rowCount: number;
-      if (
-        (source.directory === 'odakyu-bus' ||
-          source.directory === 'tokai-kisen' ||
-          source.directory === 'orange-ferry' ||
-          source.directory === 'uwajima-unyu' ||
-          source.directory === 'meimon-taiyo-ferry') &&
+      // Detect legacy GTFS-JP 3-column translations.txt by header,
+      // independent of the source allowlist. This way:
+      //
+      //   - If the header is the legacy 3-column form AND the source
+      //     is on LEGACY_TRANSLATION_ALLOWLIST, run the value-based
+      //     legacy importer.
+      //   - If the header is the legacy form but the source is NOT
+      //     on the allowlist, throw a loud, descriptive error rather
+      //     than letting the standard importer fail later with a
+      //     confusing "Required columns missing" message. This forces
+      //     a human to verify the source's translation convention
+      //     before opting in.
+      //   - If the header is the standard 6-column form (e.g. a
+      //     source has been upgraded from legacy to standard), fall
+      //     through to the standard importer with no fanfare.
+      //
+      // The legacy form carries no table/field identifier; the
+      // converter pre-scans every translatable column in the feed and
+      // emits one standard row per matching (table, field). A single
+      // trans_id may produce multiple rows (e.g. a stop name that
+      // also appears as a trip_headsign).
+      const isLegacyTranslations =
         tableName === 'translations' &&
-        isGtfsJpLegacyTranslationsHeader((await peekCsvHeaders(filePath)) ?? [])
-      ) {
-        // These sources ship translations.txt in the legacy GTFS-JP
-        // 3-column format (`trans_id, lang, translation`), which the
-        // standard 6-column schema cannot ingest directly. The detect
-        // is `allowlist + header peek` so that if a source later
-        // upgrades to the standard 6-column form, the header check
-        // fails and the dispatch quietly falls back to the standard
-        // importer rather than misreporting and throwing.
-        //
-        // The legacy form carries no table/field identifier; the
-        // converter pre-scans every translatable column in the feed
-        // and emits one standard row per matching (table, field). A
-        // single trans_id may produce multiple rows (e.g. a stop name
-        // that also appears as a trip_headsign).
+        isGtfsJpLegacyTranslationsHeader((await peekCsvHeaders(filePath)) ?? []);
+      if (isLegacyTranslations && !LEGACY_TRANSLATION_ALLOWLIST.has(source.directory)) {
+        throw new Error(
+          `[${source.directory}] translations.txt uses the GTFS-JP legacy 3-column format ` +
+            `(trans_id, lang, translation), but '${source.directory}' is not in ` +
+            `LEGACY_TRANSLATION_ALLOWLIST. Verify that the source's trans_id values ` +
+            `line up with the value-based GTFS-JP convention (each trans_id is the ` +
+            `literal value of some translatable column in the same feed: stops.stop_name, ` +
+            `routes.route_long_name, trip_headsign, etc.), then add '${source.directory}' ` +
+            `to LEGACY_TRANSLATION_ALLOWLIST in pipeline/scripts/pipeline/build-gtfs-db.ts.`,
+        );
+      }
+      if (isLegacyTranslations) {
         console.log(
           `  WARN [translations] (${source.directory}): legacy GTFS-JP 3-column format detected — auto-converting to standard 6-column (value-based classification)`,
         );
