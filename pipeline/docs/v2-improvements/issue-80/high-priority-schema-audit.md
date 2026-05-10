@@ -80,8 +80,9 @@ follow-up 候補の整理を主目的とする。
 2026-03-29 時点で、`pipeline/workspace/data/gtfs/` 配下の展開済み GTFS テキストを直接確認した。
 
 - `trips.trip_short_name`
-  列が存在する source では、非空値は 0 件だった。合計 `157,930` trip rows 中 `0` 件。
-  列自体が無い source は `chiyoda-bus`, `chuo-bus`, `kita-bus`, `suginami-gsm`。
+  列は複数 source に存在し、現時点でも非空値が確認できる。2026-05-10 の再確認では、少なくとも
+  `tokai-kisen`, `uwajima-unyu`, `okushiri-ferry`, `orange-ferry`, `meimon-taiyo-ferry`
+  の 5 source で合計 `283` 件の非空値があった。値は主にフェリー便の便名 / 便番号 / 船名を表していた。
 - `stops.tts_stop_name`
   現行の展開済み GTFS source では、列自体が 1 件も存在しなかった。非空値は確認されていない。
 - `stop_times.shape_dist_traveled`
@@ -90,11 +91,14 @@ follow-up 候補の整理を主目的とする。
 - `agency.agency_short_name`
   raw GTFS field ではないため、この raw source check の対象外。現行 V2 では provider metadata 由来として扱っている。
 
-この結果から、今回の 4 項目は「既存 source に有効値が存在するのに落としている」とまでは言えない。
+この結果から、`trip_short_name` については少なくとも「既存 source に有効値が存在するのに落としている可能性がある」状態になった。
+一方で、`tts_stop_name` と `stop_times.shape_dist_traveled` は、今回確認した範囲では「列や値の存在は限定的 / 未観測」であり、
+引き続き将来値流入時の silent loss 監視対象として整理するのが妥当である。
 
 ただし `stop_times.shape_dist_traveled` は extract-timetable 側 (= `extractTripPatternsAndTimetable()`) では SELECT 対象に含まれず、型と docs に定義された `TripPatternJson.stops[].sd` への mapping も未実装である。よって将来 source が non-null 値を入れ始めた場合に silent loss 化するリスクは引き続き残る。
 一方、shapes 側 (= `extract-shapes-from-gtfs.ts`) は schema 上常に存在する `shape_dist_traveled` 列を SELECT し、non-null 値があれば `[lat, lon, dist]` 形式で出力する実装になっている。こちらは「現時点で non-null 値を観測していない」だけで、silent loss にはならない。
-`trip_short_name` についても、列を持つ source は複数あるが現時点で non-null 値は観測されておらず、SELECT 対象にも含まれていないため、`stop_times.shape_dist_traveled` と同様の silent loss 監視対象として残す。
+`trip_short_name` は、現時点で既に非空値を持つ source が存在し、しかも `extractTripPatternsAndTimetable()` の SELECT 対象にも含まれていない。
+したがって単なる将来 risk ではなく、「現行データを V2 へ落としていない可能性がある field」として follow-up 優先度を上げて扱うのが妥当である。
 
 ## Follow-up issue 候補
 
