@@ -11,6 +11,26 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- Pipeline: 横浜市営地下鉄 (Yokohama Municipal Subway / 横浜市交通局) の GTFS-JP データソースを追加 (prefix `yht`, route_type 1 subway)。
+    - ブルーライン (湘南台〜あざみ野) + グリーンライン (中山〜日吉) で 25 routes / 42 stops / 1,901 trips / 38,805 stop_times。
+    - 有効期間 2025-12-26〜2026-12-31 (1 年安定)。
+    - `shapes.txt` 同梱 (745 points / 25 distinct)、 全 trips に shape_id 設定済。
+    - 全 25 routes で `route_color` 設定済 (BL `#0068b7` × 20 + GL `#00a968` × 5)。 routeColorFallbacks 不要。
+    - `route_short_name` は全空欄、 RouteBadge 表示は `route_long_name` (例: 「【BL】上永谷　→　湘南台」) の prefix `【BL】`/`【GL】` で識別する形。
+    - `translations.txt` 標準 6 列形式、 5 言語 (en / ja / ja-Hrkt / ko / `zh`) × 4 tables = 810 行。 bare `zh` は `langKeysEquivalent` 単独では alias 対象外だが `resolveLangChain` の chain expansion で zh-Hans / zh-Hant ユーザにも fallback で hit。
+    - Brand colors (agency badge): `1B1464` (corporate navy) / `0166B2` (secondary)、 横浜市営バスと共通。
+- Pipeline: 横浜市営バス (Yokohama Municipal Bus / 横浜市交通局) の GTFS-JP データソースを追加 (prefix `yhb`, route_type 3 bus)。
+    - 横浜市全域 149 routes / 2,516 stops / 21,682 trips / 437,408 stop_times / 588 trip patterns。 bus 規模 6-7 番手 (toei-bus 150 と同等)。
+    - 有効期間 2026-03-28〜2027-03-27 (1 年安定)。
+    - `shapes.txt` 同梱 (86,515 points / 588 distinct)、 全 trips に shape_id 設定済。
+    - 全 149 routes で `route_color` 設定済 (148 routes は `0000ff`、 1 route は `ff0000`)。
+    - `translations.txt` 標準 6 列、 5 言語完備 (stops.stop_name 1,250 / stop_headsign 440 / route_short_name 131 / route_long_name 14 / trip_headsign 135)。
+    - GTFS-JP 拡張 `agency_jp.txt` / `office_jp.txt` (10 営業所) / `pattern_jp.txt` 同梱。
+    - agency_id (`3000020141003`) は横浜市営地下鉄と完全一致 (同一 agency「横浜市」)。 brand color も共有 (横浜紺 + 補色)。
+- About: 横浜市営地下鉄・横浜市営バスのクレジット・データ情報を追加。
+
+### Added
+
 - Pipeline: 京都バス (KyotoBus Co., Ltd. / 京都バス株式会社) の GTFS-JP データソースを追加 (prefix `kytbus`, route_type 3 bus)。
     - 京都市バス (`kcbus`) がカバーしない京都市郊外路線 (大原・嵐山・岩倉・高野方面) を補完する私鉄系バス、 51 routes / 940 stops / 4,306 trips / 89,230 stop_times / 111 trip patterns。
     - 有効期間 2026-05-07〜2026-09-30。
