@@ -25,4 +25,6 @@ export default [
   'sanwa-shosen',
   'kagoshima-maritime-bureau',
   'okushiri-ferry',
+  'yokohama-municipal-subway',
+  'yokohama-municipal-bus',
 ];

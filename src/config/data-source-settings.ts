@@ -190,6 +190,28 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'yokohama-municipal-subway',
+    prefixes: ['yht'],
+    routeTypes: [1],
+    enabled: true,
+    name: {
+      name: 'Yokohama Municipal Subway',
+      names: { ja: '横浜市営地下鉄', en: 'Yokohama Municipal Subway' },
+    },
+    countries: ['JP'],
+  },
+  {
+    id: 'yokohama-municipal-bus',
+    prefixes: ['yhb'],
+    routeTypes: [3],
+    enabled: true,
+    name: {
+      name: 'Yokohama Municipal Bus',
+      names: { ja: '横浜市営バス', en: 'Yokohama Municipal Bus' },
+    },
+    countries: ['JP'],
+  },
+  {
     id: 'actv-nav',
     prefixes: ['actvnav'],
     routeTypes: [4],

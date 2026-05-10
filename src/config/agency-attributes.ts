@@ -381,6 +381,26 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '534436', text: 'FFFFFF' } /* Primary */],
   },
 
+  // --- Yokohama Municipal Subway ---
+  'yht:3000020141003': {
+    shortName: { ja: '横浜市営地下鉄', en: 'Yokohama Municipal Subway' },
+    longName: { ja: '横浜市交通局', en: 'Yokohama City Transportation Bureau' },
+    colors: [
+      { bg: '1B1464', text: 'FFFFFF' } /* Primary (corporate navy) */,
+      { bg: '0166B2', text: 'FFFFFF' } /* Secondary */,
+    ],
+  },
+
+  // --- Yokohama Municipal Bus ---
+  'yhb:3000020141003': {
+    shortName: { ja: '横浜市営バス', en: 'Yokohama Municipal Bus' },
+    longName: { ja: '横浜市交通局', en: 'Yokohama City Transportation Bureau' },
+    colors: [
+      { bg: '1B1464', text: 'FFFFFF' } /* Primary (corporate navy) */,
+      { bg: '0166B2', text: 'FFFFFF' } /* Secondary */,
+    ],
+  },
+
   // --- Yurikamome ---
   'yurimo:Yurikamome': {
     shortName: { ja: 'ゆりかもめ', en: 'Yurikamome' },

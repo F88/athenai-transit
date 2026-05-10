@@ -40,4 +40,6 @@ export default [
   'itsukishima-kisen',
   'kyoto-bus',
   'odakyu-bus',
+  'yokohama-municipal-subway',
+  'yokohama-municipal-bus',
 ];
