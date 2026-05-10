@@ -114,7 +114,9 @@ export default function App({ loadResult }: AppProps) {
   );
 
   useEffect(() => {
-    logger.debug(`LangChain: ${settings.lang} → [${langChain.join(' → ')}]`);
+    if (logger.isEnabled('debug')) {
+      logger.debug(`LangChain: ${settings.lang} → [${langChain.join(' → ')}]`);
+    }
   }, [settings.lang, langChain]);
 
   const [inBoundStops, setInBoundStops] = useState<StopWithMeta[]>([]);
@@ -702,9 +704,11 @@ export default function App({ loadResult }: AppProps) {
                 langChain,
                 resolveAgencyLang(meta.agencies, meta.stop.agency_id),
               ).name || meta.stop.stop_name;
-            logger.debug(
-              `handleToggleAnchorByStopId: adding stopId=${stopId}, name=${displayName}`,
-            );
+            if (logger.isEnabled('debug')) {
+              logger.debug(
+                `handleToggleAnchorByStopId: adding stopId=${stopId}, name=${displayName}`,
+              );
+            }
             void addAnchor({
               stopId: meta.stop.stop_id,
               stopName: meta.stop.stop_name,
@@ -961,15 +965,19 @@ export default function App({ loadResult }: AppProps) {
   const handleCycleTile = useCallback(() => {
     const prevTileIndex = settings.tileIndex;
     const nextTile = nextTileIndex(prevTileIndex, TILE_SOURCES.length);
-    const prevTileLabel =
-      prevTileIndex == null
-        ? 'none'
-        : (TILE_SOURCES[prevTileIndex]?.label ?? `unknown(${String(prevTileIndex)})`);
-    const nextTileLabel =
-      nextTile == null ? 'none' : (TILE_SOURCES[nextTile]?.label ?? `unknown(${String(nextTile)})`);
-    logger.debug(
-      `tile: ${prevTileLabel} (${String(prevTileIndex)}) -> ${nextTileLabel} (${String(nextTile)})`,
-    );
+    if (logger.isEnabled('debug')) {
+      const prevTileLabel =
+        prevTileIndex == null
+          ? 'none'
+          : (TILE_SOURCES[prevTileIndex]?.label ?? `unknown(${String(prevTileIndex)})`);
+      const nextTileLabel =
+        nextTile == null
+          ? 'none'
+          : (TILE_SOURCES[nextTile]?.label ?? `unknown(${String(nextTile)})`);
+      logger.debug(
+        `tile: ${prevTileLabel} (${String(prevTileIndex)}) -> ${nextTileLabel} (${String(nextTile)})`,
+      );
+    }
     updateSetting('tileIndex', nextTile);
   }, [settings.tileIndex, updateSetting]);
 

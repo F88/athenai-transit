@@ -13,6 +13,17 @@ export type LogLevel = 'verbose' | 'debug' | 'info' | 'warn' | 'error';
 
 /** Logger instance bound to a specific tag. */
 export interface Logger {
+  /**
+   * Check whether a given level would currently emit for this tag.
+   *
+   * Use this to gate `debug` / `verbose` call sites whose arguments
+   * involve non-trivial work (function calls, array iteration,
+   * multi-variable template interpolation). Arguments are always
+   * evaluated before `debug` / `verbose` runs, so the gate avoids
+   * paying that cost when the level is filtered out.
+   *
+   * See `DEVELOPMENT.md` § Logger / Performance for the full pattern.
+   */
   isEnabled: (level: LogLevel) => boolean;
   verbose: (...args: unknown[]) => void;
   debug: (...args: unknown[]) => void;

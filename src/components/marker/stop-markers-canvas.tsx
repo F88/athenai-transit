@@ -200,8 +200,10 @@ export function StopMarkersCanvas({
         }
       }
 
-      const elapsed = Math.round(performance.now() - t0);
-      logger.debug(`incremental: ${stops.length} stops in ${elapsed}ms`);
+      if (logger.isEnabled('debug')) {
+        const elapsed = Math.round(performance.now() - t0);
+        logger.debug(`incremental: ${stops.length} stops in ${elapsed}ms`);
+      }
     } else {
       // Full rebuild: clear all and recreate
       group.clearLayers();
@@ -213,8 +215,10 @@ export function StopMarkersCanvas({
         markersRef.current.set(stop.stop_id, marker);
       }
 
-      const elapsed = Math.round(performance.now() - t0);
-      logger.debug(`rebuild: ${stops.length} stops in ${elapsed}ms`);
+      if (logger.isEnabled('debug')) {
+        const elapsed = Math.round(performance.now() - t0);
+        logger.debug(`rebuild: ${stops.length} stops in ${elapsed}ms`);
+      }
     }
 
     // Show permanent tooltip for selected stop when tooltip display is enabled.

@@ -67,9 +67,11 @@ export function useMapLocate(
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const loc = toUserLocation(pos);
-        logger.debug(
-          `manual locate: acquired (elapsed=${Date.now() - startTime}ms, lat=${loc.lat.toFixed(5)}, lng=${loc.lng.toFixed(5)}, accuracy=${loc.accuracy.toFixed(0)}m)`,
-        );
+        if (logger.isEnabled('debug')) {
+          logger.debug(
+            `manual locate: acquired (elapsed=${Date.now() - startTime}ms, lat=${loc.lat.toFixed(5)}, lng=${loc.lng.toFixed(5)}, accuracy=${loc.accuracy.toFixed(0)}m)`,
+          );
+        }
         const action = resolveLocateAction(map, loc);
         if (action.kind === 'move') {
           applyLocateAction(map, loc, action);
@@ -80,9 +82,11 @@ export function useMapLocate(
         setLocating(false);
       },
       (error) => {
-        logger.debug(
-          `manual locate: failed (elapsed=${Date.now() - startTime}ms, code=${String(error.code)}, message=${error.message})`,
-        );
+        if (logger.isEnabled('debug')) {
+          logger.debug(
+            `manual locate: failed (elapsed=${Date.now() - startTime}ms, code=${String(error.code)}, message=${error.message})`,
+          );
+        }
         setLocating(false);
         onError?.(error);
       },

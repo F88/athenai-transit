@@ -34,7 +34,9 @@ export function useRouteStops(
     }
     const stopIds = repo.getStopsForRoutes(routeIds);
     const stops = repo.getStopMetaByIds(stopIds);
-    logger.debug(`${routeIds.size} routes → ${stops.length} route stop markers`);
+    if (logger.isEnabled('debug')) {
+      logger.debug(`${routeIds.size} routes → ${stops.length} route stop markers`);
+    }
     return stops;
   }, [routeIds, repo]);
 }

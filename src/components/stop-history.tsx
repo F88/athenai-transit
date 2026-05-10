@@ -60,9 +60,11 @@ export function StopHistory({
     const entry = stopMap.get(stopId);
     if (entry) {
       const isCurrent = stopId === selectedStopId;
-      logger.debug(
-        `select: stopId=${stopId}, name=${entry.stopWithMeta.stop.stop_name}, isCurrent=${isCurrent}`,
-      );
+      if (logger.isEnabled('debug')) {
+        logger.debug(
+          `select: stopId=${stopId}, name=${entry.stopWithMeta.stop.stop_name}, isCurrent=${isCurrent}`,
+        );
+      }
       onSelect(entry.stopWithMeta.stop, entry.routeTypes);
     }
   };
