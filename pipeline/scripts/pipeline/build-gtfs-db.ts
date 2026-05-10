@@ -33,8 +33,10 @@ import { join, resolve } from 'node:path';
 import { splitCsvLine } from '../../src/lib/pipeline/gtfs-csv-parser';
 import {
   GTFS_JP_LEGACY_TRANSLATION_HEADERS,
+  GTFS_TRANSLATABLE_FIELDS,
   convertGtfsJpLegacyTranslationRow,
   isGtfsJpLegacyTranslationsHeader,
+  type GtfsJpLegacyTranslationSets,
 } from './lib/gtfs-csv-converter';
 import { INDEXES, SCHEMA } from '../../src/lib/pipeline/gtfs-schema';
 import {
@@ -215,6 +217,41 @@ async function peekCsvHeaders(filePath: string): Promise<string[] | null> {
   }
 }
 
+/**
+ * Stream a CSV file and collect the distinct values of a single column
+ * into an in-memory `Set<string>`. Used for pre-scanning standard GTFS
+ * CSVs (stops.txt, routes.txt, stop_times.txt) to build lookup sets
+ * before importing a legacy translations.txt that mixes translations
+ * across multiple tables/fields.
+ *
+ * Empty/whitespace-only values are skipped. Values are trimmed.
+ *
+ * @returns the set of distinct non-empty trimmed values, or an empty
+ *   set if the file does not exist, has no rows, or the column is not
+ *   present in the header.
+ */
+async function peekDistinctColumn(filePath: string, columnName: string): Promise<Set<string>> {
+  const result = new Set<string>();
+  if (!existsSync(filePath)) {
+    return result;
+  }
+  const csv = await openCsvStream(filePath);
+  if (!csv) {
+    return result;
+  }
+  const colIndex = csv.headers.indexOf(columnName);
+  if (colIndex === -1) {
+    return result;
+  }
+  for await (const row of csv.rows) {
+    const value = (row[colIndex] ?? '').trim();
+    if (value !== '') {
+      result.add(value);
+    }
+  }
+  return result;
+}
+
 // ---------------------------------------------------------------------------
 // Header validation
 // ---------------------------------------------------------------------------
@@ -333,12 +370,56 @@ async function importCsvFile(
 }
 
 /**
+ * Pre-scan every translatable (table, field) listed in
+ * {@link GTFS_TRANSLATABLE_FIELDS} from the source CSVs and build the
+ * value-based classification sets used by
+ * {@link convertGtfsJpLegacyTranslationRow}.
+ *
+ * Files / columns that are absent in the feed contribute an empty set
+ * — the converter still works because every column is optional in the
+ * 3-column form (a `trans_id` only emits rows for sets it actually
+ * matches).
+ */
+async function buildLegacyTranslationSets(sourceDir: string): Promise<GtfsJpLegacyTranslationSets> {
+  const byTableField = new Map<string, Set<string>>();
+  // Group fields by table to scan each file only once.
+  const fieldsByTable = new Map<string, string[]>();
+  for (const { table, field } of GTFS_TRANSLATABLE_FIELDS) {
+    const list = fieldsByTable.get(table) ?? [];
+    list.push(field);
+    fieldsByTable.set(table, list);
+  }
+  for (const [table, fields] of fieldsByTable) {
+    const filePath = join(sourceDir, `${table}.txt`);
+    if (!existsSync(filePath)) {
+      continue;
+    }
+    for (const field of fields) {
+      const set = await peekDistinctColumn(filePath, field);
+      if (set.size > 0) {
+        byTableField.set(`${table}.${field}`, set);
+      }
+    }
+  }
+  return { byTableField };
+}
+
+/**
  * Import a translations.txt file shipped in the GTFS-JP legacy
  * 3-column format (`trans_id, lang, translation`).
  *
- * The pure CSV-row → standard-row conversion lives in
+ * The pure CSV-row → standard-rows conversion lives in
  * {@link convertGtfsJpLegacyTranslationRow}; this function adds CSV
- * streaming, header validation, and batched DB inserts on top.
+ * streaming, header validation, pre-scan of the source CSVs to build
+ * classification sets, and batched DB inserts on top.
+ *
+ * The 3-column form has no table/field identifier — each `trans_id`
+ * value is matched against every translatable column in the feed and
+ * one standard row is emitted for every match (including the case of a
+ * single value matching multiple tables, e.g. a stop name that also
+ * appears verbatim as a `trip_headsign`). Rows whose `trans_id` does
+ * not match any column are counted as orphans and skipped with a
+ * summary warn log.
  *
  * Throws if the header is not exactly the expected 3-column legacy
  * form, so any drift in the source feed surfaces as a loud failure
@@ -347,6 +428,7 @@ async function importCsvFile(
 async function importGtfsJpLegacyTranslations(
   db: Database.Database,
   filePath: string,
+  sourceDir: string,
 ): Promise<number> {
   const csv = await openCsvStream(filePath);
   if (!csv) {
@@ -358,6 +440,15 @@ async function importGtfsJpLegacyTranslations(
       `Unexpected translations.txt headers: [${csv.headers.join(', ')}] (expected [${GTFS_JP_LEGACY_TRANSLATION_HEADERS.join(', ')}])`,
     );
   }
+
+  // Pre-scan source CSVs to build the value-based classification sets.
+  // The pure converter takes them as input so it stays I/O-free and
+  // the test suite can exercise classification without touching disk.
+  const sets = await buildLegacyTranslationSets(sourceDir);
+  const setSummary = Array.from(sets.byTableField.entries())
+    .map(([k, v]) => `${k}=${v.size}`)
+    .join(', ');
+  console.log(`  [translations] classifier sets: ${setSummary || '(none)'}`);
 
   const stmt = db.prepare(
     'INSERT INTO translations (table_name, field_name, language, translation, field_value) VALUES (?, ?, ?, ?, ?)',
@@ -371,29 +462,54 @@ async function importGtfsJpLegacyTranslations(
 
   let batch: unknown[][] = [];
   let totalRows = 0;
+  let orphanCount = 0;
+  const orphanSamples: string[] = [];
 
   for await (const row of csv.rows) {
-    const std = convertGtfsJpLegacyTranslationRow({
-      trans_id: row[0] ?? '',
-      lang: row[1] ?? '',
-      translation: row[2] ?? '',
-    });
-    if (std === null) {
+    const stds = convertGtfsJpLegacyTranslationRow(
+      {
+        trans_id: row[0] ?? '',
+        lang: row[1] ?? '',
+        translation: row[2] ?? '',
+      },
+      sets,
+    );
+    if (stds.length === 0) {
+      const transId = (row[0] ?? '').trim();
+      const lang = (row[1] ?? '').trim();
+      const translation = (row[2] ?? '').trim();
+      // Only count rows that had all three fields populated as orphans
+      // — an empty-field row is a malformed input, not an unmatched
+      // trans_id.
+      if (transId !== '' && lang !== '' && translation !== '') {
+        orphanCount++;
+        if (orphanSamples.length < 5) {
+          orphanSamples.push(transId);
+        }
+      }
       continue;
     }
 
-    batch.push([std.table_name, std.field_name, std.language, std.translation, std.field_value]);
+    for (const std of stds) {
+      batch.push([std.table_name, std.field_name, std.language, std.translation, std.field_value]);
 
-    if (batch.length >= BATCH_SIZE) {
-      insertBatch(batch);
-      totalRows += batch.length;
-      batch = [];
+      if (batch.length >= BATCH_SIZE) {
+        insertBatch(batch);
+        totalRows += batch.length;
+        batch = [];
+      }
     }
   }
 
   if (batch.length > 0) {
     insertBatch(batch);
     totalRows += batch.length;
+  }
+
+  if (orphanCount > 0) {
+    console.warn(
+      `  WARN [translations]: ${orphanCount} orphan rows skipped (trans_id not in any translatable column). Samples: ${orphanSamples.map((s) => `"${s}"`).join(', ')}`,
+    );
   }
 
   return totalRows;
@@ -494,6 +610,30 @@ function printStatistics(db: Database.Database, dbPath: string): void {
 // Build one source DB
 // ---------------------------------------------------------------------------
 
+/**
+ * Remove the temp DB file plus its WAL sidecars (`-wal`, `-shm`).
+ *
+ * `journal_mode = WAL` produces sidecar files alongside the main DB
+ * file; if the temp build aborts before {@link Database#close}, those
+ * sidecars are left on disk. The next run's stale cleanup must remove
+ * them too — otherwise SQLite's WAL recovery on reopen can revive
+ * partially-written transactions and produce inconsistent state.
+ *
+ * Reports any files that were actually removed (an empty list returns
+ * an empty string).
+ */
+function cleanupTempDbArtifacts(tmpDbPath: string): string[] {
+  const removed: string[] = [];
+  for (const suffix of ['', '-wal', '-shm']) {
+    const p = `${tmpDbPath}${suffix}`;
+    if (existsSync(p)) {
+      rmSync(p, { force: true });
+      removed.push(p);
+    }
+  }
+  return removed;
+}
+
 async function buildSourceDb(
   source: BuildSource,
   schemaMap: Map<string, { name: string; nullable: boolean }[]>,
@@ -504,9 +644,11 @@ async function buildSourceDb(
 
   // Build into a temporary file so the existing DB remains intact on failure.
   // On success, the temp file is renamed to the final path.
-  if (existsSync(tmpDbPath)) {
-    rmSync(tmpDbPath);
-    console.log(`Removed stale temp file: ${tmpDbPath}`);
+  // Clean up any leftover temp artifacts (main file + WAL sidecars)
+  // from a previous failed run before opening a fresh DB.
+  const staleRemoved = cleanupTempDbArtifacts(tmpDbPath);
+  if (staleRemoved.length > 0) {
+    console.log(`Removed stale temp files: ${staleRemoved.join(', ')}`);
   }
 
   console.log(`Creating temp DB: ${tmpDbPath}`);
@@ -514,6 +656,38 @@ async function buildSourceDb(
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = OFF'); // Keep OFF: bulk import performance; no FK check is run post-import
 
+  // Wrap the entire build in try/catch so a failure during import,
+  // index creation, VACUUM, or rename always closes the DB handle and
+  // removes the temp file plus its WAL sidecars. Without this, a
+  // partial run would leak `.db.tmp`, `.db.tmp-wal`, and `.db.tmp-shm`
+  // onto disk, and the next run's stale cleanup could miss the
+  // sidecars (causing WAL recovery to revive partial state).
+  try {
+    await buildSourceDbInner(db, source, sourceDir, dbPath, tmpDbPath, schemaMap);
+  } catch (err) {
+    try {
+      db.close();
+    } catch {
+      // Already closed (e.g. by the rename path that ran before
+      // throwing). Ignore — the goal here is to release the handle so
+      // the rmSync below can succeed on Windows-style file locks.
+    }
+    const removed = cleanupTempDbArtifacts(tmpDbPath);
+    if (removed.length > 0) {
+      console.error(`Cleaned up failed temp DB artifacts: ${removed.join(', ')}`);
+    }
+    throw err;
+  }
+}
+
+async function buildSourceDbInner(
+  db: Database.Database,
+  source: BuildSource,
+  sourceDir: string,
+  dbPath: string,
+  tmpDbPath: string,
+  schemaMap: Map<string, { name: string; nullable: boolean }[]>,
+): Promise<void> {
   for (const ddl of SCHEMA) {
     db.exec(ddl);
   }
@@ -529,7 +703,7 @@ async function buildSourceDb(
   if (csvFiles.length === 0) {
     console.warn(`  WARN: No .txt files found in ${sourceDir}`);
     db.close();
-    rmSync(tmpDbPath, { force: true });
+    cleanupTempDbArtifacts(tmpDbPath);
     return;
   }
 
@@ -549,29 +723,31 @@ async function buildSourceDb(
     try {
       let rowCount: number;
       if (
-        (source.directory === 'tokai-kisen' ||
+        (source.directory === 'odakyu-bus' ||
+          source.directory === 'tokai-kisen' ||
           source.directory === 'orange-ferry' ||
           source.directory === 'uwajima-unyu' ||
           source.directory === 'meimon-taiyo-ferry') &&
         tableName === 'translations' &&
         isGtfsJpLegacyTranslationsHeader((await peekCsvHeaders(filePath)) ?? [])
       ) {
-        // Tokai Kisen, Orange Ferry, Uwajima Unyu, and Meimon Taiyo Ferry
-        // historically ship translations.txt in the legacy GTFS-JP
+        // These sources ship translations.txt in the legacy GTFS-JP
         // 3-column format (`trans_id, lang, translation`), which the
-        // standard 6-column schema cannot ingest directly. Detect by
-        // header (not by source name alone) so that when a source
-        // eventually upgrades to the standard format, the dispatch
-        // quietly falls back to the standard importer instead of
-        // misreporting a legacy detect and throwing on the strict
-        // header check.
+        // standard 6-column schema cannot ingest directly. The detect
+        // is `allowlist + header peek` so that if a source later
+        // upgrades to the standard 6-column form, the header check
+        // fails and the dispatch quietly falls back to the standard
+        // importer rather than misreporting and throwing.
         //
-        // The conversion in gtfs-csv-converter assumes every legacy row is
-        // a stops.stop_name translation, which holds for these sources.
+        // The legacy form carries no table/field identifier; the
+        // converter pre-scans every translatable column in the feed
+        // and emits one standard row per matching (table, field). A
+        // single trans_id may produce multiple rows (e.g. a stop name
+        // that also appears as a trip_headsign).
         console.log(
-          `  WARN [translations] (${source.directory}): legacy GTFS-JP 3-column format detected — auto-converting to standard 6-column (stops.stop_name)`,
+          `  WARN [translations] (${source.directory}): legacy GTFS-JP 3-column format detected — auto-converting to standard 6-column (value-based classification)`,
         );
-        rowCount = await importGtfsJpLegacyTranslations(db, filePath);
+        rowCount = await importGtfsJpLegacyTranslations(db, filePath, sourceDir);
       } else {
         rowCount = await importCsvFile(db, filePath, tableName, columns);
       }
