@@ -1,0 +1,35 @@
+{
+  "sourceName": "yokohama-municipal-bus",
+  "checkedAt": "2026-05-10T06:34:44.317Z",
+  "resourceUrls": [
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20230801",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20231001",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20231216",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20231223",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20231229",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20240401",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20240422",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20240601",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20240722",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20241001",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20241228",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20250106",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20250315",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20250501",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20250616",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20250722",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20250808",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20251101",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20251227",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20260328"
+  ],
+  "result": "attention",
+  "warnings": [
+    "REMOTE_NEW_IN_PERIOD",
+    "REMOTE_NEW_IN_PERIOD",
+    "REMOTE_NEW_IN_PERIOD",
+    "REMOTE_NEW_IN_PERIOD",
+    "REMOTE_NEW_IN_PERIOD"
+  ],
+  "errors": []
+}

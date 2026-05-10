@@ -1,0 +1,15 @@
+{
+  "sourceName": "yokohama-municipal-subway",
+  "checkedAt": "2026-05-10T06:34:44.315Z",
+  "resourceUrls": [
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Train.zip?date=20220101",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Train.zip?date=20230318",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Train.zip?date=20240101",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Train.zip?date=20241227",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Train.zip?date=20251101",
+    "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Train.zip?date=20251226"
+  ],
+  "result": "ok",
+  "warnings": [],
+  "errors": []
+}
