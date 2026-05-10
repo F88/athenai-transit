@@ -406,7 +406,14 @@ async function importCsvFile(
  */
 async function buildLegacyTranslationSets(sourceDir: string): Promise<GtfsJpLegacyTranslationSets> {
   const byTableField = new Map<string, Set<string>>();
-  // Group fields by table to scan each file only once.
+  // Group fields by table so the file-existence check happens once per
+  // table; the per-field scans below still re-open the same `.txt` for
+  // each column, but the only large file in the set (stop_times.txt)
+  // happens to have a single translatable column (stop_headsign), so
+  // the redundant work is bounded to small CSVs (agency / stops /
+  // routes / trips / feed_info — collectively a few MB at the
+  // upper end). If a future contributor adds multiple translatable
+  // columns to stop_times, switch to a single multi-column scan.
   const fieldsByTable = new Map<string, string[]>();
   for (const { table, field } of GTFS_TRANSLATABLE_FIELDS) {
     const list = fieldsByTable.get(table) ?? [];
@@ -643,8 +650,8 @@ function printStatistics(db: Database.Database, dbPath: string): void {
  * them too — otherwise SQLite's WAL recovery on reopen can revive
  * partially-written transactions and produce inconsistent state.
  *
- * Reports any files that were actually removed (an empty list returns
- * an empty string).
+ * Returns the list of paths actually removed (empty array when there
+ * was nothing to clean up).
  */
 function cleanupTempDbArtifacts(tmpDbPath: string): string[] {
   const removed: string[] = [];

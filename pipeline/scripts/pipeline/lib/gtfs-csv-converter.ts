@@ -114,7 +114,10 @@ export interface GtfsJpLegacyTranslationSets {
 
 /**
  * Convert a single GTFS-JP legacy 3-column translation row into zero or
- * more standard 6-column rows.
+ * more {@link StandardTranslationRow}s — the 5-field subset of the
+ * GTFS spec's translations.txt schema (record_id / record_sub_id are
+ * intentionally omitted because the legacy 3-column form does not
+ * carry them; field_value matching is used instead).
  *
  * The legacy 3-column form (`trans_id, lang, translation`) carries no
  * table/field identifier of its own; the only information about which
