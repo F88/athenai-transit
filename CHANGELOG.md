@@ -11,8 +11,33 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
-- Pipeline: 京都バス (KyotoBus Co., Ltd. / 京都バス株式会社) の GTFS-JP データソースを追加 (prefix `kytbus`, route_type 3 bus)。京都市バス (`kcbus`) がカバーしない京都市郊外路線 (大原・嵐山・岩倉・高野方面) を補完する私鉄系バス、51 routes / 940 stops / 4,306 trips / 89,230 stop_times / 111 trip patterns。有効期間 2026-05-07〜2026-09-30。`shapes.txt` はヘッダのみ (iyt2 / ntbus と同パターン、`shape_dist_traveleded` 非標準スペル混入) のため shape build には未登録。`translations.txt` は標準 6 列形式で 6 言語 4,192 行 (`en` / `ja` / `ja-Hrkt` / `ko` / `zh-cn` / `zh-tw`)、`zh-cn` / `zh-tw` は BCP 47 region tag 表記だが PR #191 の `langKeysEquivalent` で `zh-Hans` / `zh-Hant` に自動マッチするため display への影響なし。Brand color `99211F` (deep red)。
+- Pipeline: 京都バス (KyotoBus Co., Ltd. / 京都バス株式会社) の GTFS-JP データソースを追加 (prefix `kytbus`, route_type 3 bus)。
+    - 京都市バス (`kcbus`) がカバーしない京都市郊外路線 (大原・嵐山・岩倉・高野方面) を補完する私鉄系バス、 51 routes / 940 stops / 4,306 trips / 89,230 stop_times / 111 trip patterns。
+    - 有効期間 2026-05-07〜2026-09-30。
+    - `shapes.txt` はヘッダのみ (iyt2 / ntbus と同パターン、 `shape_dist_traveleded` 非標準スペル混入) のため shape build には未登録。
+    - `translations.txt` は標準 6 列形式で 6 言語 4,192 行 (`en` / `ja` / `ja-Hrkt` / `ko` / `zh-cn` / `zh-tw`)、 `zh-cn` / `zh-tw` は BCP 47 region tag 表記だが PR #191 の `langKeysEquivalent` で `zh-Hans` / `zh-Hant` に自動マッチするため display への影響なし。
+    - Brand color `99211F` (deep red)。
 - About: 京都バスのクレジット・データ情報を追加。
+- Pipeline: 小田急バス (Odakyu Bus Co., Ltd. / 小田急バス株式会社) の GTFS-JP データソースを追加 (prefix `od9bus`, route_type 3 bus)。
+    - 多摩・武蔵野・神奈川北部 (新宿・吉祥寺・調布・三鷹・成城・あざみ野・新百合ヶ丘等) の 545 routes / 3,274 stops / 82,682 trips / 1,287,012 stop_times / 486 trip patterns。
+    - これまでで最大級の単一 GTFS source (kytbus の約 14×)。有効期間 2026-04-01〜 (`feed_end_date` 空欄)。
+    - `shapes.txt` 不在のため polyline 描画なし。`route_color` 全 545 routes で空のため `routeColorFallbacks: { '*': '009BE1' }` で primary blue を適用。
+    - `calendar.txt` 不在で `calendar_dates.txt` のみ (calendar_dates-only feed)。
+    - `trip_headsign` 全空で `stop_headsign` ほぼ全埋まり (kobus と同パターン)。
+    - Brand colors: `009BE1` (primary) / `0082CD` (secondary)。
+- Pipeline: legacy GTFS-JP 3 列 `translations.txt` の変換を **value-based** 設計に再実装。
+    - 旧 `convertGtfsJpLegacyTranslationRow` は「全行 `stops.stop_name` と仮定」する固定マッピングだったため、 4 ferry source (Tokai Kisen / Orange Ferry / Uwajima Unyu / Meimon Taiyo Ferry) で **`trips.trip_headsign` 翻訳が data loss していた** ことが Odakyu Bus PR の調査で判明。
+    - 例: orange-ferry の stop_name 「東予」は trip_headsign としても使われるが、 翻訳が `(stops, stop_name)` のみ登録されて `(trips, trip_headsign)` 側は欠落していた。
+    - 新実装は GTFS spec で定義された 28 個の text-translatable column (`agency.agency_name` / `stops.stop_name` / `routes.route_short_name` / `routes.route_long_name` / `trips.trip_headsign` / `stop_times.stop_headsign` / `pathways.signposted_as` 等) を `build-gtfs-db.ts` 側で pre-scan し、 各 `trans_id` をマッチした全 (table, field) で 1 row ずつ emit する。
+    - `convertOdakyuBusLegacyTranslationRow` は撤廃して全 5 source 共通の 1 関数に集約。
+    - 取り込み行数 (= data loss 解消): tkksn 57→81 (+24 trip_headsign)、 orgfry 30→60 (+30 trip_headsign)、 uwjmfry 6→12 (+6)、 mtfry 4→8 (+4)、 od9bus 7,850→8,403 (+553 route_short_name)。 既存翻訳行は 1 行も改変なし。
+    - Odakyu Bus の 269 件は真の orphan (source 側の不整合、 例: 「センター南駅」が stops/routes に存在しない)、 data viewer philosophy に従い skip + warn。
+    - dispatch は header peek + allowlist の AND で、 allowlist 外の source が 3 列ヘッダを持つ場合は明示的 error で fail (= 誤適用防止)。
+    - 副次的な信頼性改善: 例外時の temp DB cleanup を WAL sidecar (`-wal` / `-shm`) まで拡張し、 失敗時の DB ハンドル close + tmp 全削除を try/catch で保証。
+- About: 小田急バスのクレジット・データ情報を追加。
+- Pipeline: schema typo fix (`pathways.reverse_signposted_as` → `reversed_signposted_as`)。
+    - GTFS spec の正規表記 (d 付き) に揃えた。
+    - 該当 column は schema 定義 1 箇所のみで参照されており他に依存なし、 現存 source に `pathways.txt` を含むものがないため挙動への影響はゼロ。 Issue #193 で他の schema 整合性チェックを継続。
 
 ## [2026.05.08]
 
@@ -25,7 +50,12 @@ and this project adheres to [CalVer](https://calver.org/).
 - Pipeline: オレンジフェリー (Orange Ferry / 四国開発フェリー株式会社) の GTFS-JP データソースを追加 (prefix `orgfry`, route_type 4 ferry)。3 路線 (東予〜大阪 / 八幡浜〜臼杵 / 新居浜〜神戸) / 6 stops / 21 trips、有効期間 2022-04-01〜2028-03-31 (ODPT フェリー中で期限最長)。`shapes.txt` なし、`route_color` 全 3 路線で有効値設定済み。`translations.txt` は東海汽船と同じ legacy 3 列形式で 5 言語 30 行、auto-conversion 経由で取り込み。
 - Pipeline: 宇和島運輸 (Uwajima Unyu Co., Ltd. / 宇和島運輸フェリー) の GTFS-JP データソースを追加 (prefix `uwjmfry`, route_type 4 ferry)。豊予海峡を渡る四国↔九州 2 路線 (八幡浜〜別府 / 八幡浜〜臼杵) / 3 stops / 90 trips。`shapes.txt` なし、`route_color=FF0000` 有効値。`translations.txt` は東海汽船と同じ legacy 3 列形式 (6 行 / ja-Hrkt のみ)、auto-conversion 経由で取り込み。`calendar.txt` は data 行 0 件で `calendar_dates.txt` のみで運航日を表現する calendar_dates-only feed (PR #160 既対応)。
 - Pipeline: 名門大洋フェリー (Meimon Taiyo Ferry Co., Ltd. / シティライン) の GTFS-JP データソースを追加 (prefix `mtfry`, route_type 4 ferry)。関西〜九州を結ぶ夜行フェリー (大阪南港〜新門司港) / 1 route / 2 stops / 4 trips。`shapes.txt` なし、`route_color=0000FF` 有効値。`translations.txt` は legacy 3 列形式 (4 行 / ja-Hrkt のみ)、auto-conversion 経由で取り込み。
-- Pipeline: 斎島汽船 (Itsukishima Kisen Co., Ltd.) の GTFS-JP データソースを追加 (prefix `itkfry`, route_type 4 ferry)。広島県呉市の離島フェリー 2 路線 (斎島〜久比 / 三角島〜久比) / 4 stops / 22 trips、agency_url は呉市の交通課ページ (事業者独自サイトなし)。有効期間 2025-10-01〜2026-09-30。`shapes.txt` なし、両 route で `route_color=FFFFFF`/`route_text_color=000000` (白背景・黒文字、polyline は shapes.txt 無いため非表示)。`translations.txt` は **標準 6 列形式** (auto-conversion 不要)、ja-Hrkt + en の翻訳 14 行付き。source data 内の en は訓令式 (`Itukishima`) を採用するが、display 名は CKAN 表記の Hepburn 式 (`Itsukishima`) を採用。
+- Pipeline: 斎島汽船 (Itsukishima Kisen Co., Ltd.) の GTFS-JP データソースを追加 (prefix `itkfry`, route_type 4 ferry)。
+    - 広島県呉市の離島フェリー 2 路線 (斎島〜久比 / 三角島〜久比) / 4 stops / 22 trips、 agency_url は呉市の交通課ページ (事業者独自サイトなし)。
+    - 有効期間 2025-10-01〜2026-09-30。
+    - `shapes.txt` なし、 両 route で `route_color=FFFFFF`/`route_text_color=000000` (白背景・黒文字、 polyline は shapes.txt 無いため非表示)。
+    - `translations.txt` は **標準 6 列形式** (auto-conversion 不要)、 ja-Hrkt + en の翻訳 14 行付き。
+    - source data 内の en は訓令式 (`Itukishima`) を採用するが、 display 名は CKAN 表記の Hepburn 式 (`Itsukishima`) を採用。
 - About: 東海汽船・桜島フェリー・奥尻島フェリー・オレンジフェリー・宇和島運輸・名門大洋フェリー・斎島汽船のクレジット・データ情報を追加。
 - Pipeline: 東京都観光汽船 (TOKYO CRUISE / 水上バス) の GTFS データソースを追加 (prefix `tcship`, route_type 4 ferry)。隅田川・東京湾を航行する 5 stops / 5 routes (浅草・お台場海浜公園・豊洲・日の出桟橋・浜離宮)。`shapes.txt` は水路のため非対応。GTFS-JP 拡張の `ships.txt` / `payload*.txt` が同梱されているがパイプラインは標準テーブルのみ使用。
 - About: 東京都観光汽船のクレジット・データ情報を追加。

@@ -310,7 +310,7 @@ export const SCHEMA: string[] = [
     max_slope          REAL,
     min_width          REAL,
     signposted_as      TEXT,
-    reverse_signposted_as TEXT,
+    reversed_signposted_as TEXT,
     FOREIGN KEY (from_stop_id) REFERENCES stops(stop_id),
     FOREIGN KEY (to_stop_id) REFERENCES stops(stop_id)
   )`,

@@ -107,6 +107,14 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
+    id: 'odakyu-bus',
+    prefixes: ['od9bus'],
+    routeTypes: [3],
+    enabled: false,
+    name: { name: 'Odakyu Bus', names: { ja: '小田急バス', en: 'Odakyu Bus' } },
+    countries: ['JP'],
+  },
+  {
     id: 'oshima-bus',
     prefixes: ['osmbus'],
     routeTypes: [3],

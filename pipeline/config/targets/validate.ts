@@ -40,5 +40,6 @@ export default [
   'mtfry', // meimon-taiyo-ferry
   'itkfry', // itsukishima-kisen
   'kytbus', // kyoto-bus
+  'od9bus', // odakyu-bus
   // 'tkbus', // tokyu-bus (not built)
 ];
