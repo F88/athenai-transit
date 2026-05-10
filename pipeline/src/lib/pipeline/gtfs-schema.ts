@@ -459,9 +459,8 @@ export const SCHEMA: string[] = [
   )`,
 
   // fare_leg_rules.txt
-  // Spec PK: (leg_group_id, network_id, from_area_id, to_area_id,
-  //   from_timeframe_group_id, to_timeframe_group_id) — omitted
-  // (see design decision 1)
+  // Spec PK: (network_id, from_area_id, to_area_id, from_timeframe_group_id,
+  //   to_timeframe_group_id, fare_product_id) — omitted (see design decision 1)
   `CREATE TABLE IF NOT EXISTS fare_leg_rules (
     leg_group_id             TEXT,
     network_id               TEXT,
