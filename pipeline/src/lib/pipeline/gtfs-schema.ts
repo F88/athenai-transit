@@ -74,7 +74,7 @@ export const SCHEMA: string[] = [
     cemv_support TEXT
   )`,
 
-  // agency_jp.txt (GTFS-JP)
+  // agency_jp.txt (GTFS-JP v3)
   `CREATE TABLE IF NOT EXISTS agency_jp (
     agency_id              TEXT PRIMARY KEY,
     agency_official_name   TEXT,
@@ -291,7 +291,7 @@ export const SCHEMA: string[] = [
     FOREIGN KEY (trip_id) REFERENCES trips(trip_id)
   )`,
 
-  // office_jp.txt (GTFS-JP)
+  // office_jp.txt (GTFS-JP v3)
   `CREATE TABLE IF NOT EXISTS office_jp (
     office_id    TEXT PRIMARY KEY,
     office_name  TEXT,
