@@ -480,8 +480,8 @@ export const SCHEMA: string[] = [
   // Spec PK: (from_network_id, to_network_id, from_stop_id, to_stop_id) —
   // omitted (see design decision 1)
   `CREATE TABLE IF NOT EXISTS fare_leg_join_rules (
-    from_network_id TEXT,
-    to_network_id   TEXT,
+    from_network_id TEXT NOT NULL,
+    to_network_id   TEXT NOT NULL,
     from_stop_id    TEXT,
     to_stop_id      TEXT,
     FOREIGN KEY (from_stop_id) REFERENCES stops(stop_id),
@@ -497,7 +497,7 @@ export const SCHEMA: string[] = [
     transfer_count      INTEGER,
     duration_limit      INTEGER,
     duration_limit_type INTEGER,
-    fare_transfer_type  INTEGER,
+    fare_transfer_type  INTEGER NOT NULL,
     fare_product_id     TEXT
   )`,
 ];
