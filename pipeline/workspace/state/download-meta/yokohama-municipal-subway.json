@@ -1,0 +1,73 @@
+{
+  "sourceName": "yokohama-municipal-subway",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-05-10T06:24:53.730Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Train.zip?date=20251226",
+  "size": 263477,
+  "contentType": "text/plain; charset=ASCII-8BIT",
+  "durationMs": 2012,
+  "archivePath": "workspace/_archives/gtfs/yokohama-municipal-subway/Train_20260510-062455.zip",
+  "extractedFiles": [
+    {
+      "name": "agency.txt",
+      "size": 221
+    },
+    {
+      "name": "calendar.txt",
+      "size": 189
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 576
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 349
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 34509
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 179
+    },
+    {
+      "name": "routes.txt",
+      "size": 2091
+    },
+    {
+      "name": "shapes.txt",
+      "size": 23575
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 1902517
+    },
+    {
+      "name": "stops.txt",
+      "size": 2374
+    },
+    {
+      "name": "transfers.txt",
+      "size": 111
+    },
+    {
+      "name": "translations.txt",
+      "size": 55555
+    },
+    {
+      "name": "trips.txt",
+      "size": 85905
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "横浜市交通局",
+    "publisherUrl": "https://www.city.yokohama.lg.jp/kotsu/",
+    "lang": "ja",
+    "startDate": "20251226",
+    "endDate": "20261231",
+    "version": "20251226"
+  }
+}
