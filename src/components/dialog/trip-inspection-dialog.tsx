@@ -5,6 +5,7 @@ import { JourneyTimeBar } from '@/components/journey-time-bar';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { StopInfo } from '@/components/stop-info';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ import type {
   TripStopTime,
 } from '@/types/app/transit-composed';
 import { getContrastAwareAlphaSuffixes } from '@/utils/color/contrast-alpha-suffixes';
+import { ArrowRightLeftIcon } from 'lucide-react';
 import { IdBadge } from '../badge/id-badge';
 import { TripPositionIndicator } from '../label/trip-position-indicator';
 import { TripBasicInfo } from '../trip/trip-basic-info';
@@ -55,6 +57,7 @@ interface TripInspectionDialogProps {
   snapshot: SelectedTripSnapshot | null;
   tripInspectionTargets: TripInspectionTarget[];
   currentTripInspectionTargetIndex: number;
+  showNoticeNonce: number;
   now: Date;
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
@@ -121,6 +124,13 @@ interface TripEndpointsSummaryProps {
    */
   onSelectLast?: () => void;
 }
+
+interface TripInspectionUpdateNoticeProps {
+  kind: TripInspectionUpdateNoticeKind;
+  visible: boolean;
+}
+
+type TripInspectionUpdateNoticeKind = 'stop-changed';
 
 function resolveTripStopDisplay(
   stop: TripStopTime | undefined,
@@ -274,6 +284,42 @@ function RichStopSummary({ stop, infoLevel, dataLangs, onSelect }: RichStopSumma
         />
       </div>
     </Button>
+  );
+}
+
+function TripInspectionUpdateNotice({ kind, visible }: TripInspectionUpdateNoticeProps) {
+  const { t } = useTranslation();
+
+  if (!visible) {
+    return null;
+  }
+
+  const messageByKind: Record<
+    TripInspectionUpdateNoticeKind,
+    { titleKey: string; descriptionKey?: string }
+  > = {
+    'stop-changed': {
+      titleKey: 'tripInspection.messages.stopChangedTitle',
+      descriptionKey: undefined,
+    },
+  };
+  const message = messageByKind[kind];
+
+  return (
+    <Alert
+      aria-live="polite"
+      className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-1 border-emerald-300 bg-emerald-50 px-3 py-2 text-left shadow-sm dark:border-emerald-800 dark:bg-emerald-950/40"
+    >
+      <ArrowRightLeftIcon className="mt-0.5 text-emerald-700 dark:text-emerald-300" />
+      <AlertTitle className="text-xs font-semibold text-emerald-900 dark:text-emerald-200">
+        {t(message.titleKey)}
+      </AlertTitle>
+      {message.descriptionKey && (
+        <AlertDescription className="text-[11px] text-emerald-800 dark:text-emerald-300">
+          {t(message.descriptionKey)}
+        </AlertDescription>
+      )}
+    </Alert>
   );
 }
 
@@ -442,6 +488,7 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
   snapshot,
   tripInspectionTargets,
   currentTripInspectionTargetIndex,
+  showNoticeNonce,
   infoLevel,
   dataLangs,
   now,
@@ -452,7 +499,9 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
   const infoLevelFlag = useInfoLevel(infoLevel);
   const { t } = useTranslation();
   const contentContainerRef = useRef<HTMLDivElement>(null);
+  const [inactiveShowNoticeNonce, setInactiveShowNoticeNonce] = useState(showNoticeNonce);
   const [contentContainerEl, setContentContainerEl] = useState<HTMLDivElement | null>(null);
+  const [dismissedShowNoticeNonce, setDismissedShowNoticeNonce] = useState(showNoticeNonce);
   const setContentContainerNode = useCallback((node: HTMLDivElement | null) => {
     contentContainerRef.current = node;
     setContentContainerEl(node);
@@ -506,6 +555,10 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
   // smooth scroll has had time to settle.
   const programmaticScrollSettleRef = useRef<number>(0);
 
+  if ((!open || !snapshot) && inactiveShowNoticeNonce !== showNoticeNonce) {
+    setInactiveShowNoticeNonce(showNoticeNonce);
+  }
+
   useEffect(() => {
     if (!open || !snapshot) {
       return;
@@ -519,6 +572,26 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
       window.cancelAnimationFrame(frameId);
     };
   }, [open, snapshot]);
+
+  const isTripSwitchNoticeVisible =
+    open &&
+    !!snapshot &&
+    showNoticeNonce !== inactiveShowNoticeNonce &&
+    showNoticeNonce !== dismissedShowNoticeNonce;
+
+  useEffect(() => {
+    if (!isTripSwitchNoticeVisible) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setDismissedShowNoticeNonce(showNoticeNonce);
+    }, 2_000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [isTripSwitchNoticeVisible, showNoticeNonce]);
 
   const scrollToStopRow = useCallback((stopIndex: number, behavior: ScrollBehavior): boolean => {
     const container = contentContainerRef.current;
@@ -712,6 +785,12 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
               />
             </div>
           </DialogTitle>
+
+          <div className="px-0 py-1">
+            <div className="flex items-center justify-center">
+              <TripInspectionUpdateNotice kind="stop-changed" visible={isTripSwitchNoticeVisible} />
+            </div>
+          </div>
 
           <div className="px-2">
             {/*

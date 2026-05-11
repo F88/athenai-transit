@@ -415,6 +415,7 @@ describe('dialog memoization regressions', () => {
       snapshot,
       tripInspectionTargets,
       currentTripInspectionTargetIndex: 0,
+      showNoticeNonce: 0,
       now: new Date(2026, 3, 1, 8, 0),
       infoLevel: 'normal' as const,
       dataLangs: ['ja'] as const,

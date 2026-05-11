@@ -165,6 +165,7 @@ export default function App({ loadResult }: AppProps) {
     tripInspectionSnapshot,
     tripInspectionTargets,
     currentTripInspectionTargetIndex,
+    showNoticeNonce,
     openTripInspectionFromTarget,
     openTripInspectionFromStopId,
     openPreviousTripInspection,
@@ -603,7 +604,29 @@ export default function App({ loadResult }: AppProps) {
 
   const handleInspectTrip = useCallback(
     (target: TripInspectionTarget) => {
-      void openTripInspectionFromTarget(target).then((status) => {
+      void openTripInspectionFromTarget(target, 'direct-open').then((status) => {
+        if (status.status === 'no-data') {
+          const messageKey =
+            status.reason === 'no-stop-data'
+              ? 'tripInspection.messages.noStopData'
+              : status.reason === 'no-service-on-this-day'
+                ? 'tripInspection.messages.noServiceOnThisDay'
+                : 'tripInspection.messages.noData';
+          toast.warning(t(messageKey));
+          return;
+        }
+
+        if (status.status === 'error') {
+          toast.error(t('tripInspection.messages.openFailed'));
+        }
+      });
+    },
+    [openTripInspectionFromTarget, t],
+  );
+
+  const handleInspectTripFromDialog = useCallback(
+    (target: TripInspectionTarget) => {
+      void openTripInspectionFromTarget(target, 'trip-stops-time-select').then((status) => {
         if (status.status === 'no-data') {
           const messageKey =
             status.reason === 'no-stop-data'
@@ -1104,12 +1127,13 @@ export default function App({ loadResult }: AppProps) {
         snapshot={tripInspectionSnapshot}
         tripInspectionTargets={tripInspectionTargets}
         currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
+        showNoticeNonce={showNoticeNonce}
         now={dateTime}
         infoLevel={settings.infoLevel}
         dataLangs={langChain}
         onOpenPreviousTrip={openPreviousTripInspection}
         onOpenNextTrip={openNextTripInspection}
-        onInspectTrip={handleInspectTrip}
+        onInspectTrip={handleInspectTripFromDialog}
         onOpenChange={handleTripInspectionOpenChange}
       />
       <TimetableModal
