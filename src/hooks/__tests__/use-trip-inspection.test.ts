@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { makeRepo } from '../../__tests__/helpers';
 import { getServiceDay } from '../../domain/transit/service-day';
@@ -339,6 +339,197 @@ describe('useTripInspection', () => {
     expect(mockWarn).toHaveBeenCalledWith(
       'openTripInspection: current target missing from trip-inspection targets',
       { target },
+    );
+  });
+
+  it('uses cached targets for previous navigation without refetching full-day entries', async () => {
+    const serviceDate = new Date(2026, 4, 11);
+    const firstTarget = makeTarget({
+      tripLocator: makeLocator({ tripIndex: 1 }),
+      serviceDate,
+      stopIndex: 3,
+      departureMinutes: 9 * 60 + 5,
+    });
+    const secondTarget = makeTarget({
+      tripLocator: makeLocator({ tripIndex: 2 }),
+      serviceDate,
+      stopIndex: 3,
+      departureMinutes: 9 * 60 + 6,
+    });
+    const getTripSnapshot = vi.fn().mockImplementation((tripLocator: TripLocator) => ({
+      success: true,
+      data: makeTripSnapshot([
+        makeStopTime(
+          3,
+          tripLocator.tripIndex === 1
+            ? firstTarget.departureMinutes
+            : secondTarget.departureMinutes,
+        ),
+      ]),
+    }));
+    const getFullDayTimetableEntries = vi.fn().mockResolvedValue({
+      success: true,
+      data: [
+        makeEntry({ tripIndex: 1, stopIndex: 3, departureMinutes: firstTarget.departureMinutes }),
+        makeEntry({ tripIndex: 2, stopIndex: 3, departureMinutes: secondTarget.departureMinutes }),
+      ],
+      truncated: false,
+      meta: { isBoardableOnServiceDay: true, totalEntries: 2 },
+    });
+    const repo = makeRepo({
+      getTripSnapshot,
+      getFullDayTimetableEntries,
+    });
+
+    const { result } = renderHook(() => useTripInspection(repo));
+
+    await act(async () => {
+      await result.current.openTripInspectionFromTarget(secondTarget);
+    });
+
+    expect(result.current.currentTripInspectionTargetIndex).toBe(1);
+    expect(getFullDayTimetableEntries).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      result.current.openPreviousTripInspection();
+    });
+
+    await waitFor(() => {
+      expect(result.current.currentTripInspectionTargetIndex).toBe(0);
+    });
+    expect(getFullDayTimetableEntries).toHaveBeenCalledTimes(1);
+    expect(getTripSnapshot).toHaveBeenCalledTimes(2);
+    expect(getTripSnapshot.mock.calls[1]?.[0]).toEqual(firstTarget.tripLocator);
+  });
+
+  it('refetches full-day entries when stale pager targets miss the cache', async () => {
+    const serviceDate = new Date(2026, 4, 11);
+    const firstList = {
+      first: makeTarget({
+        tripLocator: makeLocator({ tripIndex: 1 }),
+        serviceDate,
+        stopIndex: 3,
+        departureMinutes: 9 * 60 + 5,
+      }),
+      second: makeTarget({
+        tripLocator: makeLocator({ tripIndex: 2 }),
+        serviceDate,
+        stopIndex: 3,
+        departureMinutes: 9 * 60 + 6,
+      }),
+    };
+    const secondList = {
+      first: makeTarget({
+        tripLocator: makeLocator({ patternId: 'pattern-b', tripIndex: 5 }),
+        serviceDate,
+        stopIndex: 8,
+        departureMinutes: 10 * 60 + 1,
+      }),
+      second: makeTarget({
+        tripLocator: makeLocator({ patternId: 'pattern-b', tripIndex: 6 }),
+        serviceDate,
+        stopIndex: 8,
+        departureMinutes: 10 * 60 + 2,
+      }),
+    };
+
+    const getTripSnapshot = vi.fn().mockImplementation((tripLocator: TripLocator) => ({
+      success: true,
+      data: makeTripSnapshot([
+        makeStopTime(
+          tripLocator.patternId === 'pattern-b' ? 8 : 3,
+          tripLocator.tripIndex === 1
+            ? firstList.first.departureMinutes
+            : tripLocator.tripIndex === 2
+              ? firstList.second.departureMinutes
+              : tripLocator.tripIndex === 5
+                ? secondList.first.departureMinutes
+                : secondList.second.departureMinutes,
+        ),
+      ]),
+    }));
+    const getFullDayTimetableEntries = vi.fn().mockImplementation((stopId: string) => {
+      if (stopId === 'stop-3') {
+        return Promise.resolve({
+          success: true,
+          data: [
+            makeEntry({
+              tripIndex: 1,
+              stopIndex: 3,
+              departureMinutes: firstList.first.departureMinutes,
+            }),
+            makeEntry({
+              tripIndex: 2,
+              stopIndex: 3,
+              departureMinutes: firstList.second.departureMinutes,
+            }),
+          ],
+          truncated: false,
+          meta: { isBoardableOnServiceDay: true, totalEntries: 2 },
+        });
+      }
+
+      return Promise.resolve({
+        success: true,
+        data: [
+          makeEntry({
+            patternId: 'pattern-b',
+            tripIndex: 5,
+            stopIndex: 8,
+            departureMinutes: secondList.first.departureMinutes,
+          }),
+          makeEntry({
+            patternId: 'pattern-b',
+            tripIndex: 6,
+            stopIndex: 8,
+            departureMinutes: secondList.second.departureMinutes,
+          }),
+        ],
+        truncated: false,
+        meta: { isBoardableOnServiceDay: true, totalEntries: 2 },
+      });
+    });
+    const repo = makeRepo({
+      getTripSnapshot,
+      getFullDayTimetableEntries,
+    });
+
+    const { result } = renderHook(() => useTripInspection(repo));
+
+    await act(async () => {
+      await result.current.openTripInspectionFromTarget(firstList.second);
+    });
+
+    const staleOpenPreviousTripInspection = result.current.openPreviousTripInspection;
+
+    await act(async () => {
+      await result.current.openTripInspectionFromTarget(secondList.second);
+    });
+
+    expect(
+      result.current.tripInspectionTargets.map((target) => target.tripLocator.tripIndex),
+    ).toEqual([5, 6]);
+    expect(getFullDayTimetableEntries).toHaveBeenCalledTimes(2);
+
+    act(() => {
+      staleOpenPreviousTripInspection();
+    });
+
+    await waitFor(() => {
+      expect(
+        result.current.tripInspectionTargets.map((target) => target.tripLocator.tripIndex),
+      ).toEqual([1, 2]);
+    });
+    expect(result.current.currentTripInspectionTargetIndex).toBe(0);
+    expect(result.current.tripInspectionSnapshot?.selectedStop.stopMeta?.stop.stop_id).toBe(
+      'stop-3',
+    );
+    expect(getFullDayTimetableEntries).toHaveBeenCalledTimes(3);
+    expect(mockWarn).toHaveBeenCalledWith(
+      'openTripInspection: target missing from cached trip-inspection targets',
+      expect.objectContaining({
+        target: firstList.first,
+      }),
     );
   });
 });
