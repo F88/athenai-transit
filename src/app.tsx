@@ -646,6 +646,30 @@ export default function App({ loadResult }: AppProps) {
     [openTripInspectionFromTarget, t],
   );
 
+  const handleSelectStopFromTripInspection = useCallback(
+    (stopId: string) => {
+      disableAutoLocate('select-trip-inspection');
+      void repo.getStopMetaById(stopId).then((result) => {
+        if (!result.success) {
+          toast.error(t('tripInspection.messages.openFailed'));
+          return;
+        }
+
+        focusStop(result.data.stop);
+        pushStop(
+          result.data,
+          resolveStopRouteTypes({
+            stopId,
+            routeTypeMap,
+            routes: result.data.routes,
+            unknownPolicy: 'include-unknown',
+          }),
+        );
+      });
+    },
+    [disableAutoLocate, focusStop, pushStop, repo, routeTypeMap, t],
+  );
+
   const handleTripInspectionOpenChange = useCallback(
     (open: boolean) => {
       if (!open) {
@@ -1134,6 +1158,7 @@ export default function App({ loadResult }: AppProps) {
         onOpenPreviousTrip={openPreviousTripInspection}
         onOpenNextTrip={openNextTripInspection}
         onInspectTrip={handleInspectTripFromDialog}
+        onSelectStopById={handleSelectStopFromTripInspection}
         onOpenChange={handleTripInspectionOpenChange}
       />
       <TimetableModal

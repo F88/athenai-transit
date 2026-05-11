@@ -13,6 +13,8 @@ export type AutoLocateOffReason =
   | 'select-marker'
   /** BottomSheet stop list click. */
   | 'select-bottom-sheet'
+  /** TripInspection stop list click. */
+  | 'select-trip-inspection'
   /** Search dialog selection. */
   | 'select-search'
   /** History dropdown selection. */

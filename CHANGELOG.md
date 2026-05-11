@@ -9,6 +9,11 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Trip inspection: stop list から stop を選択状態に切り替えられるようにした。選択に合わせて map も移動し、ダイアログは開いたまま維持される。
+- Trip inspection: 異なる stop の trip inspection に切り替えられるようにした。各 stop の時刻タップから、対応する のりば と時刻の trip inspection を直接開ける。
+
 ## [2026.05.10]
 
 ### Changed

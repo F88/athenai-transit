@@ -31,6 +31,7 @@ interface TripStopsProps {
   dataLangs: readonly string[];
   now: Date;
   onInspectTrip?: (target: TripInspectionTarget) => void;
+  onSelectStopById?: (stopId: string) => void;
 }
 
 interface TripStopRowProps {
@@ -44,6 +45,7 @@ interface TripStopRowProps {
   dataLangs: readonly string[];
   now: Date;
   onInspectTrip?: (target: TripInspectionTarget) => void;
+  onSelectStopById?: (stopId: string) => void;
 }
 
 interface TripStopPlaceholderRowProps {
@@ -69,7 +71,9 @@ interface TripStopMetaInfoProps {
   labelFg?: string;
   frameColor?: string;
   className?: string;
+  stopId?: string;
   inspectTarget?: TripInspectionTarget;
+  onSelectStopById?: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
@@ -114,7 +118,9 @@ function TripStopMetaInfo({
   labelFg,
   frameColor,
   className,
+  stopId,
   inspectTarget,
+  onSelectStopById,
   onInspectTrip,
 }: TripStopMetaInfoProps) {
   const shouldRenderStopTimeTimeInfo =
@@ -149,7 +155,9 @@ function TripStopMetaInfo({
           collapseToleranceMinutes={collapseToleranceMinutes}
           forceShowRelativeTime={true}
           textAppearance={{ color: timeTextColor }}
+          stopId={stopId}
           inspectTarget={inspectTarget}
+          onSelectStopById={onSelectStopById}
           onInspectTrip={onInspectTrip}
         />
       )}
@@ -168,6 +176,7 @@ function TripStopRow({
   serviceDate,
   now,
   onInspectTrip,
+  onSelectStopById,
 }: TripStopRowProps) {
   const { t } = useTranslation();
   const infoLevelFlag = useInfoLevel(infoLevel);
@@ -198,11 +207,65 @@ function TripStopRow({
     stopIndex,
     departureMinutes: tripStopTime.timetableEntry.schedule.departureMinutes,
   };
+  const handleSelectStop = stopId ? () => onSelectStopById?.(stopId) : undefined;
+  const handleRowKeyDown =
+    handleSelectStop === undefined
+      ? undefined
+      : (e: React.KeyboardEvent<HTMLDivElement>) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleSelectStop();
+          }
+        };
+  const stopContent = stopMeta ? (
+    <StopInfo
+      stop={stopMeta.stop}
+      agencies={stopMeta.agencies}
+      showAgencies={true}
+      routeTypes={tripStopTime.routeTypes}
+      showRouteTypes={true}
+      routes={stopMeta.routes}
+      showRoutes={true}
+      stats={stopMeta.stats}
+      geo={stopMeta.geo}
+      mapCenter={null}
+      infoLevel={infoLevel}
+      dataLangs={dataLangs}
+      agencyBadgeSize="xs"
+      routeBadgeSize="xs"
+    />
+  ) : (
+    <>
+      <div className="flex min-w-0 flex-col gap-1">
+        {stopNames && stopNames.subNames.length > 0 && (
+          <div className="text-muted-foreground truncate text-xs">
+            {stopNames.subNames.join(' / ')}
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-xs">#{stopIndex}</span>
+          <span className="truncate font-medium">
+            {stopNames?.name || stopId || t('tripInspection.unknownStop')}
+          </span>
+        </div>
+        {stopId !== undefined && (
+          <div className="text-muted-foreground truncate text-xs">{stopId}</div>
+        )}
+      </div>
+    </>
+  );
 
   return (
     <div
       {...tripStopRowDataAttrs(stopIndex)}
-      className={cn('bg-background rounded-md border-2 px-3 py-2')}
+      {...(handleSelectStop ? { role: 'button' as const, tabIndex: 0 } : {})}
+      onClick={handleSelectStop}
+      onKeyDown={handleRowKeyDown}
+      className={cn(
+        'bg-background rounded-md border-2 px-3 py-2',
+        handleSelectStop &&
+          'cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+      )}
       style={isCurrent ? { borderColor: routeColors.color } : undefined}
     >
       {/* StopTime / StopInfo / Index  */}
@@ -222,48 +285,12 @@ function TripStopRow({
           labelFg={routeColors.textColor}
           frameColor={routeColors.color}
           className="flex min-h-8 flex-col items-end gap-1"
+          stopId={stopId}
           inspectTarget={inspectTarget}
+          onSelectStopById={onSelectStopById}
           onInspectTrip={onInspectTrip}
         />
-        <div className="min-w-0">
-          {stopMeta ? (
-            <StopInfo
-              stop={stopMeta.stop}
-              agencies={stopMeta.agencies}
-              showAgencies={true}
-              routeTypes={tripStopTime.routeTypes}
-              showRouteTypes={true}
-              routes={stopMeta.routes}
-              showRoutes={true}
-              stats={stopMeta.stats}
-              geo={stopMeta.geo}
-              mapCenter={null}
-              infoLevel={infoLevel}
-              dataLangs={dataLangs}
-              agencyBadgeSize="xs"
-              routeBadgeSize="xs"
-            />
-          ) : (
-            <>
-              <div className="flex min-w-0 flex-col gap-1">
-                {stopNames && stopNames.subNames.length > 0 && (
-                  <div className="text-muted-foreground truncate text-xs">
-                    {stopNames.subNames.join(' / ')}
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-xs">#{stopIndex}</span>
-                  <span className="truncate font-medium">
-                    {stopNames?.name || stopId || t('tripInspection.unknownStop')}
-                  </span>
-                </div>
-                {stopId !== undefined && (
-                  <div className="text-muted-foreground truncate text-xs">{stopId}</div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+        <div className="min-w-0">{stopContent}</div>
       </div>
       {infoLevelFlag.isDetailedEnabled && (
         <TripInfo
@@ -341,6 +368,7 @@ export const TripStops = memo(function TripStops({
   dataLangs,
   now,
   onInspectTrip,
+  onSelectStopById,
 }: TripStopsProps) {
   const renderedTripStopRows = buildRenderedTripStopRows(tripSnapshot.stopTimes);
   const initialRenderStart = Math.max(
@@ -387,6 +415,7 @@ export const TripStops = memo(function TripStops({
               serviceDate={tripSnapshot.serviceDate}
               now={now}
               onInspectTrip={onInspectTrip}
+              onSelectStopById={onSelectStopById}
             />
           );
         })}
