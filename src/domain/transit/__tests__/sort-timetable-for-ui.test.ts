@@ -271,7 +271,7 @@ describe('sortTimetableEntriesByDisplayTime', () => {
 
 describe('sortTimetableEntriesByDisplayTimeChronologically', () => {
   describe('1. primary key: absolute display time across service days', () => {
-    it('places an earlier display minute later in absolute time AFTER an earlier-absolute entry', () => {
+    it('orders cross-service-day entries by absolute time, not raw display minute', () => {
       // Reproduces the iyt2 Tokyo-Matsuyama overnight bus case:
       //   - A: serviceDate = day1, terminal arr = 1900 (= 31:40 from
       //     day1 midnight = day2 07:40 absolute)
