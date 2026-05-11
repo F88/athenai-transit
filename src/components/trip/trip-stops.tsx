@@ -10,7 +10,11 @@ import { buildStopByPatternIndex, getPatternTotalStops } from '@/domain/transit/
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { cn } from '@/lib/utils';
 import type { InfoLevel } from '@/types/app/settings';
-import type { SelectedTripSnapshot, TripStopTime } from '@/types/app/transit-composed';
+import type {
+  SelectedTripSnapshot,
+  TripInspectionTarget,
+  TripStopTime,
+} from '@/types/app/transit-composed';
 import { LabelCountBadge } from '../badge/label-count-badge';
 import { StopInfo } from '../stop-info';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
@@ -26,10 +30,13 @@ interface TripStopsProps {
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
   now: Date;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
+  onSelectStopById?: (stopId: string) => void;
 }
 
 interface TripStopRowProps {
   tripStopTime: TripStopTime;
+  tripLocator: SelectedTripSnapshot['locator'];
   totalStops: number;
   currentPatternStopIndex: number;
   routeColors: AdjustedRouteColors<string>;
@@ -37,6 +44,8 @@ interface TripStopRowProps {
   serviceDate: Date;
   dataLangs: readonly string[];
   now: Date;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
+  onSelectStopById?: (stopId: string) => void;
 }
 
 interface TripStopPlaceholderRowProps {
@@ -62,6 +71,10 @@ interface TripStopMetaInfoProps {
   labelFg?: string;
   frameColor?: string;
   className?: string;
+  stopId?: string;
+  inspectTarget?: TripInspectionTarget;
+  onSelectStopById?: (stopId: string) => void;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 type RenderedTripStopRow =
@@ -105,6 +118,10 @@ function TripStopMetaInfo({
   labelFg,
   frameColor,
   className,
+  stopId,
+  inspectTarget,
+  onSelectStopById,
+  onInspectTrip,
 }: TripStopMetaInfoProps) {
   const shouldRenderStopTimeTimeInfo =
     arrivalMinutes !== undefined &&
@@ -138,6 +155,10 @@ function TripStopMetaInfo({
           collapseToleranceMinutes={collapseToleranceMinutes}
           forceShowRelativeTime={true}
           textAppearance={{ color: timeTextColor }}
+          stopId={stopId}
+          inspectTarget={inspectTarget}
+          onSelectStopById={onSelectStopById}
+          onInspectTrip={onInspectTrip}
         />
       )}
     </div>
@@ -146,6 +167,7 @@ function TripStopMetaInfo({
 
 function TripStopRow({
   tripStopTime,
+  tripLocator,
   totalStops,
   currentPatternStopIndex,
   routeColors,
@@ -153,6 +175,8 @@ function TripStopRow({
   dataLangs,
   serviceDate,
   now,
+  onInspectTrip,
+  onSelectStopById,
 }: TripStopRowProps) {
   const { t } = useTranslation();
   const infoLevelFlag = useInfoLevel(infoLevel);
@@ -177,11 +201,71 @@ function TripStopRow({
     isTerminal: isTerminalStop,
     infoLevel,
   });
+  const inspectTarget: TripInspectionTarget = {
+    serviceDate,
+    tripLocator,
+    stopIndex,
+    departureMinutes: tripStopTime.timetableEntry.schedule.departureMinutes,
+  };
+  const handleSelectStop = stopId && onSelectStopById ? () => onSelectStopById(stopId) : undefined;
+  const handleRowKeyDown =
+    handleSelectStop === undefined
+      ? undefined
+      : (e: React.KeyboardEvent<HTMLDivElement>) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleSelectStop();
+          }
+        };
+  const stopContent = stopMeta ? (
+    <StopInfo
+      stop={stopMeta.stop}
+      agencies={stopMeta.agencies}
+      showAgencies={true}
+      routeTypes={tripStopTime.routeTypes}
+      showRouteTypes={true}
+      routes={stopMeta.routes}
+      showRoutes={true}
+      stats={stopMeta.stats}
+      geo={stopMeta.geo}
+      mapCenter={null}
+      infoLevel={infoLevel}
+      dataLangs={dataLangs}
+      agencyBadgeSize="xs"
+      routeBadgeSize="xs"
+    />
+  ) : (
+    <>
+      <div className="flex min-w-0 flex-col gap-1">
+        {stopNames && stopNames.subNames.length > 0 && (
+          <div className="text-muted-foreground truncate text-xs">
+            {stopNames.subNames.join(' / ')}
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-xs">#{stopIndex}</span>
+          <span className="truncate font-medium">
+            {stopNames?.name || stopId || t('tripInspection.unknownStop')}
+          </span>
+        </div>
+        {stopId !== undefined && (
+          <div className="text-muted-foreground truncate text-xs">{stopId}</div>
+        )}
+      </div>
+    </>
+  );
 
   return (
     <div
       {...tripStopRowDataAttrs(stopIndex)}
-      className={cn('bg-background rounded-md border-2 px-3 py-2')}
+      {...(handleSelectStop ? { role: 'button' as const, tabIndex: 0 } : {})}
+      onClick={handleSelectStop}
+      onKeyDown={handleRowKeyDown}
+      className={cn(
+        'bg-background rounded-md border-2 px-3 py-2',
+        handleSelectStop &&
+          'cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+      )}
       style={isCurrent ? { borderColor: routeColors.color } : undefined}
     >
       {/* StopTime / StopInfo / Index  */}
@@ -201,46 +285,12 @@ function TripStopRow({
           labelFg={routeColors.textColor}
           frameColor={routeColors.color}
           className="flex min-h-8 flex-col items-end gap-1"
+          stopId={stopId}
+          inspectTarget={inspectTarget}
+          onSelectStopById={onSelectStopById}
+          onInspectTrip={onInspectTrip}
         />
-        <div className="min-w-0">
-          {stopMeta ? (
-            <StopInfo
-              stop={stopMeta.stop}
-              agencies={stopMeta.agencies}
-              showAgencies={true}
-              routeTypes={tripStopTime.routeTypes}
-              showRouteTypes={true}
-              routes={stopMeta.routes}
-              showRoutes={true}
-              stats={stopMeta.stats}
-              geo={stopMeta.geo}
-              mapCenter={null}
-              infoLevel={infoLevel}
-              dataLangs={dataLangs}
-              agencyBadgeSize="xs"
-              routeBadgeSize="xs"
-            />
-          ) : (
-            <>
-              <div className="flex min-w-0 flex-col gap-1">
-                {stopNames && stopNames.subNames.length > 0 && (
-                  <div className="text-muted-foreground truncate text-xs">
-                    {stopNames.subNames.join(' / ')}
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-xs">#{stopIndex}</span>
-                  <span className="truncate font-medium">
-                    {stopNames?.name || stopId || t('tripInspection.unknownStop')}
-                  </span>
-                </div>
-                {stopId !== undefined && (
-                  <div className="text-muted-foreground truncate text-xs">{stopId}</div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+        <div className="min-w-0">{stopContent}</div>
       </div>
       {infoLevelFlag.isDetailedEnabled && (
         <TripInfo
@@ -317,6 +367,8 @@ export const TripStops = memo(function TripStops({
   infoLevel,
   dataLangs,
   now,
+  onInspectTrip,
+  onSelectStopById,
 }: TripStopsProps) {
   const renderedTripStopRows = buildRenderedTripStopRows(tripSnapshot.stopTimes);
   const initialRenderStart = Math.max(
@@ -354,6 +406,7 @@ export const TripStops = memo(function TripStops({
             <TripStopRow
               key={rowKey}
               tripStopTime={row.stop}
+              tripLocator={tripSnapshot.locator}
               totalStops={row.totalStops}
               currentPatternStopIndex={selectedPatternStopIndex}
               routeColors={routeColors}
@@ -361,6 +414,8 @@ export const TripStops = memo(function TripStops({
               dataLangs={dataLangs}
               serviceDate={tripSnapshot.serviceDate}
               now={now}
+              onInspectTrip={onInspectTrip}
+              onSelectStopById={onSelectStopById}
             />
           );
         })}

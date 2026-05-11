@@ -205,10 +205,11 @@
     "description": "選択した便の停車順と時刻を表示します",
     "messages": {
       "noData": "便情報がありません",
-      "noStopData": "この停留所の便情報データがありません",
+      "noStopData": "この乗り場の便情報データがありません",
       "noServiceOnThisDay": "この運行日には便がありません",
       "openFailed": "便情報を取得できませんでした",
-      "noUpcomingTrips": "現在時刻以降の便がありません"
+      "noUpcomingTrips": "現在時刻以降の便がありません",
+      "stopChangedTitle": "表示中の乗り場を切り替えました"
     },
     "sections": {
       "summary": "概要",

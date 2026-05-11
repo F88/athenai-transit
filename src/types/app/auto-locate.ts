@@ -9,10 +9,14 @@ export type AutoLocateOffReason =
   | 'user-toggle'
   /** GeolocationPositionError code 1 (PERMISSION_DENIED). */
   | 'permission-denied'
+  /** Initial ?stop= query parameter application. */
+  | 'apply-stop-param'
   /** Map stop marker click. */
   | 'select-marker'
   /** BottomSheet stop list click. */
   | 'select-bottom-sheet'
+  /** TripInspection stop list click. */
+  | 'select-trip-inspection'
   /** Search dialog selection. */
   | 'select-search'
   /** History dropdown selection. */

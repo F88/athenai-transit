@@ -66,6 +66,10 @@ export interface StopTimeTimeInfoProps extends WithServiceDate {
   forceShowRelativeTime: boolean;
   /** Optional payload describing which trip inspection target should open. */
   inspectTarget?: TripInspectionTarget;
+  /** Optional stop ID selected together with the trip change. */
+  stopId?: string;
+  /** Optional stop selection callback used by TripStops time taps. */
+  onSelectStopById?: (stopId: string) => void;
   /** Optional callback that opens trip inspection for the provided target. */
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
@@ -83,6 +87,8 @@ export function StopTimeTimeInfo({
   collapseToleranceMinutes,
   forceShowRelativeTime,
   inspectTarget,
+  stopId,
+  onSelectStopById,
   onInspectTrip,
 }: StopTimeTimeInfoProps) {
   const primaryMinutes = showDepartureTime ? departureMinutes : arrivalMinutes;
@@ -180,6 +186,9 @@ export function StopTimeTimeInfo({
       )}
       onClick={(e) => {
         e.stopPropagation();
+        if (stopId !== undefined) {
+          onSelectStopById?.(stopId);
+        }
         onInspectTrip(inspectTarget);
       }}
     >

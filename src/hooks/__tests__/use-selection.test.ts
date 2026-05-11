@@ -324,6 +324,23 @@ describe('useSelection', () => {
       expect(result.current.selectionInfo).toBeNull();
     });
 
+    it('uses fallback stop when stop is not in stop times', () => {
+      const stop = makeStop('A');
+      const routeTypeMap = new Map<string, AppRouteTypeValue[]>([['A', [3]]]);
+      const { result } = renderHook(() => useSelection(makeParams({ routeTypeMap })));
+
+      act(() => {
+        result.current.selectStopById('A', stop);
+      });
+
+      expect(result.current.selectedStopId).toBe('A');
+      expect(result.current.selectionInfo?.type).toBe('stop');
+      if (result.current.selectionInfo?.type === 'stop') {
+        expect(result.current.selectionInfo.stop).toEqual(stop);
+        expect(result.current.selectionInfo.routeTypes).toEqual([3]);
+      }
+    });
+
     it('uses routeTypes from stop time context', () => {
       const stop = makeStop('A');
       const ctx = makeStopWithContext(stop, ['R1'], [1]);

@@ -40,8 +40,8 @@ export interface UseSelectionReturn {
   focusPosition: LatLng | null;
   /** Select a stop by its object. */
   selectStop: (stop: Stop) => void;
-  /** Select a stop by its ID. */
-  selectStopById: (stopId: string) => void;
+  /** Select a stop by its ID, optionally falling back to a provided stop object. */
+  selectStopById: (stopId: string, fallbackStop?: Stop) => void;
   /** Clear the current selection. */
   deselectStop: () => void;
   /** Select a route shape by route ID. */
@@ -112,43 +112,57 @@ export function useSelection(params: UseSelectionParams): UseSelectionReturn {
   // jitter from radiusStops / inBoundStops re-renders.
   const focusPosition = directFocusPosition ? rawFocusPosition : stableFocusPosition;
 
-  const selectStop = useCallback(
-    (stop: Stop) => {
+  const applyStopSelection = useCallback(
+    (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       setSelectedStopId(stop.stop_id);
       setSelectionInfo({
         type: 'stop',
         stop,
-        routeTypes: resolveStopRouteTypes({
+        routeTypes,
+        routeIds: extractRouteIdsForStop(stopTimes, stop.stop_id),
+      });
+      setDirectFocusPosition(null);
+    },
+    [stopTimes],
+  );
+
+  const selectStop = useCallback(
+    (stop: Stop) => {
+      applyStopSelection(
+        stop,
+        resolveStopRouteTypes({
           stopId: stop.stop_id,
           routeTypeMap,
           routes: null,
           unknownPolicy: 'include-unknown',
         }),
-        routeIds: extractRouteIdsForStop(stopTimes, stop.stop_id),
-      });
-      setDirectFocusPosition(null);
+      );
     },
-    [routeTypeMap, stopTimes],
+    [applyStopSelection, routeTypeMap],
   );
 
   const selectStopById = useCallback(
-    (stopId: string) => {
+    (stopId: string, fallbackStop?: Stop) => {
       const ctx = stopTimes.find((d) => d.stop.stop_id === stopId);
       if (ctx) {
-        setSelectedStopId(stopId);
-        setSelectionInfo({
-          type: 'stop',
-          stop: ctx.stop,
-          routeTypes: ctx.routeTypes,
-          routeIds: extractRouteIdsForStop(stopTimes, stopId),
-        });
+        applyStopSelection(ctx.stop, ctx.routeTypes);
+      } else if (fallbackStop) {
+        applyStopSelection(
+          fallbackStop,
+          resolveStopRouteTypes({
+            stopId,
+            routeTypeMap,
+            routes: null,
+            unknownPolicy: 'include-unknown',
+          }),
+        );
       } else {
         setSelectedStopId(null);
         setSelectionInfo(null);
+        setDirectFocusPosition(null);
       }
-      setDirectFocusPosition(null);
     },
-    [stopTimes],
+    [applyStopSelection, routeTypeMap, stopTimes],
   );
 
   const deselectStop = useCallback(() => {

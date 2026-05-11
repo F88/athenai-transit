@@ -18,7 +18,6 @@ import { formatDateKey } from './domain/transit/calendar-utils';
 import { computeStopsCounts } from './domain/transit/compute-stops-counts';
 import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
-import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
 import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-day';
 import {
   applyStopEventAttributeTogglesToStops,
@@ -31,6 +30,7 @@ import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
 import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
 import { useRouteStops } from './hooks/use-route-stops';
 import { useSelection } from './hooks/use-selection';
+import { useStopNavigation } from './hooks/use-stop-navigation';
 import { useStopHistory } from './hooks/use-stop-history';
 import { useTimetable } from './hooks/use-timetable';
 import { useTransitRepository } from './hooks/use-transit-repository';
@@ -165,6 +165,7 @@ export default function App({ loadResult }: AppProps) {
     tripInspectionSnapshot,
     tripInspectionTargets,
     currentTripInspectionTargetIndex,
+    showNoticeNonce,
     openTripInspectionFromTarget,
     openTripInspectionFromStopId,
     openPreviousTripInspection,
@@ -231,7 +232,6 @@ export default function App({ loadResult }: AppProps) {
     selectedStopId,
     selectionInfo,
     focusPosition,
-    selectStop,
     selectStopById,
     deselectStop,
     selectRouteShape,
@@ -292,42 +292,6 @@ export default function App({ loadResult }: AppProps) {
     }
   }, [anchors, repo, batchUpdateAnchors]);
 
-  // Viewport-limited StopWithMeta lookup.
-  //
-  // ⚠️ This callback only searches `radiusStops` (~1 km from the user)
-  // and `inBoundStops` (current map viewport). It is intentionally
-  // narrow because it sits on the hot path of map interaction and is
-  // re-created whenever those collections change.
-  //
-  // Use this ONLY for stops that are by definition near the user at
-  // the moment of the call:
-  //   - the just-clicked map marker (radiusStops by construction)
-  //   - the currently selected stop being re-resolved during pan
-  //   - any other case where the caller already has the stop on screen
-  //
-  // Do NOT use this for persistent / long-lived / arbitrary stop IDs
-  // such as anchors (bookmarks), history entries, stops belonging to
-  // a selected route, or a `stop_id` from the URL `?stop=` parameter
-  // — `?stop=` is resolved via `repo.getStopMetaById(stopId)` in the
-  // effect below precisely because it can target a stop anywhere in
-  // the dataset, not just inside the viewport. Those IDs may point
-  // to stops far outside the viewport, so this lookup will silently
-  // return null and the caller will fall back to a stale snapshot.
-  // For those cases call `repo.getStopMetaByIds(...)` (full-dataset
-  // indexed lookup) instead — the anchor display lookup below
-  // (`anchorStopMetaMap`) is the canonical example.
-  //
-  // See `DEVELOPMENT.md > Stop ID lookup の選び方` for the rule and
-  // historical context (route stops and anchor i18n both regressed
-  // by reaching for this helper instead of `getStopMetaByIds`).
-  const findStopWithMeta = useCallback(
-    (stopId: string) =>
-      radiusStops.find((s) => s.stop.stop_id === stopId) ??
-      inBoundStops.find((s) => s.stop.stop_id === stopId) ??
-      null,
-    [radiusStops, inBoundStops],
-  );
-
   // Pre-resolved StopWithMeta map for every anchored stop_id.
   // Built from the repository's full dataset (not just the visible
   // viewport) so that `Portals` can look up the latest translated
@@ -350,6 +314,18 @@ export default function App({ loadResult }: AppProps) {
     [anchorStopMetaMap],
   );
 
+  const { selectStopWithFallback, navigateAndFocusStop, navigateAndFocusStopById } =
+    useStopNavigation({
+      repo,
+      routeTypeMap,
+      radiusStops,
+      inBoundStops,
+      disableAutoLocate,
+      selectStopById,
+      focusStop,
+      pushStop,
+    });
+
   // Wrap selectStop to also record in history.
   //
   // Disables auto-tracking because selecting a stop pans the map to
@@ -358,46 +334,18 @@ export default function App({ loadResult }: AppProps) {
   // `moveend` events ineligible for nearby/in-bounds refetch.
   const handleSelectStop = useCallback(
     (stop: Stop) => {
-      logger.debug(`handleSelectStop [Marker]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
-      disableAutoLocate('select-marker');
-      selectStop(stop);
-      const meta = findStopWithMeta(stop.stop_id);
-      if (meta) {
-        pushStop(
-          meta,
-          resolveStopRouteTypes({
-            stopId: stop.stop_id,
-            routeTypeMap,
-            routes: meta.routes,
-            unknownPolicy: 'include-unknown',
-          }),
-        );
-      }
+      selectStopWithFallback(stop.stop_id, 'select-marker', stop);
     },
-    [selectStop, pushStop, findStopWithMeta, routeTypeMap, disableAutoLocate],
+    [selectStopWithFallback],
   );
 
   // Wrap selectStopById to also record in history.
   // See `handleSelectStop` for the rationale of disabling auto-tracking.
   const handleSelectStopById = useCallback(
     (stopId: string) => {
-      logger.debug(`handleSelectStopById [BottomSheet]: stopId=${stopId}`);
-      disableAutoLocate('select-bottom-sheet');
-      selectStopById(stopId);
-      const meta = findStopWithMeta(stopId);
-      if (meta) {
-        pushStop(
-          meta,
-          resolveStopRouteTypes({
-            stopId,
-            routeTypeMap,
-            routes: meta.routes,
-            unknownPolicy: 'include-unknown',
-          }),
-        );
-      }
+      selectStopWithFallback(stopId, 'select-bottom-sheet');
     },
-    [selectStopById, pushStop, findStopWithMeta, routeTypeMap, disableAutoLocate],
+    [selectStopWithFallback],
   );
 
   // Apply ?stop= query param: select and pan to the stop after data loads.
@@ -415,30 +363,19 @@ export default function App({ loadResult }: AppProps) {
       stopParamApplied.current = true;
       return;
     }
-    void repo.getStopMetaById(stopId).then((result) => {
+    void navigateAndFocusStopById(stopId, 'apply-stop-param').then((result) => {
       if (stopParamApplied.current) {
         return;
       }
       if (result.success) {
-        const stop = result.data;
-        logger.info(`Applying ?stop=${stopId}: ${stop.stop.stop_name}`);
-        focusStop(stop.stop);
-        pushStop(
-          stop,
-          resolveStopRouteTypes({
-            stopId,
-            routeTypeMap,
-            routes: stop.routes,
-            unknownPolicy: 'include-unknown',
-          }),
-        );
+        logger.info(`Applying ?stop=${stopId}: ${result.data.stop.stop_name}`);
         stopParamApplied.current = true;
       } else {
         logger.warn(`?stop=${stopId}: not found`);
         stopParamApplied.current = true;
       }
     });
-  }, [repo, focusStop, pushStop, routeTypeMap]);
+  }, [navigateAndFocusStopById]);
 
   // Load route shapes once on mount
   useEffect(() => {
@@ -603,7 +540,7 @@ export default function App({ loadResult }: AppProps) {
 
   const handleInspectTrip = useCallback(
     (target: TripInspectionTarget) => {
-      void openTripInspectionFromTarget(target).then((status) => {
+      void openTripInspectionFromTarget(target, 'direct-open').then((status) => {
         if (status.status === 'no-data') {
           const messageKey =
             status.reason === 'no-stop-data'
@@ -621,6 +558,39 @@ export default function App({ loadResult }: AppProps) {
       });
     },
     [openTripInspectionFromTarget, t],
+  );
+
+  const handleInspectTripFromDialog = useCallback(
+    (target: TripInspectionTarget) => {
+      void openTripInspectionFromTarget(target, 'trip-stops-time-select').then((status) => {
+        if (status.status === 'no-data') {
+          const messageKey =
+            status.reason === 'no-stop-data'
+              ? 'tripInspection.messages.noStopData'
+              : status.reason === 'no-service-on-this-day'
+                ? 'tripInspection.messages.noServiceOnThisDay'
+                : 'tripInspection.messages.noData';
+          toast.warning(t(messageKey));
+          return;
+        }
+
+        if (status.status === 'error') {
+          toast.error(t('tripInspection.messages.openFailed'));
+        }
+      });
+    },
+    [openTripInspectionFromTarget, t],
+  );
+
+  const handleSelectStopFromTripInspection = useCallback(
+    (stopId: string) => {
+      void navigateAndFocusStopById(stopId, 'select-trip-inspection').then((result) => {
+        if (!result.success) {
+          toast.error(t('tripInspection.messages.openFailed'));
+        }
+      });
+    },
+    [navigateAndFocusStopById, t],
   );
 
   const handleTripInspectionOpenChange = useCallback(
@@ -642,12 +612,9 @@ export default function App({ loadResult }: AppProps) {
   const handleHistorySelect = useCallback(
     (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleHistorySelect [History]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
-      disableAutoLocate('select-history');
-      focusStop(stop);
-      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
-      pushStop(meta, routeTypes);
+      navigateAndFocusStop(stop, 'select-history', routeTypes);
     },
-    [focusStop, pushStop, findStopWithMeta, disableAutoLocate],
+    [navigateAndFocusStop],
   );
 
   // Anchor stop_id set for efficient lookup in BottomSheet
@@ -662,7 +629,7 @@ export default function App({ loadResult }: AppProps) {
         // the user's current language even though the stored entry
         // only has a snapshot stopName. We use `lookupAnchorStopMeta`
         // (full-dataset scan over the anchor set) rather than
-        // `findStopWithMeta` (viewport-only) here because the stop_id
+        // the stop-navigation viewport lookup here because the stop_id
         // is a persistent anchor reference and may, in some future UI
         // path, be triggered for an anchor that is not currently in
         // radiusStops / inBoundStops. See `DEVELOPMENT.md > Stop ID
@@ -735,7 +702,6 @@ export default function App({ loadResult }: AppProps) {
   const handlePortalSelect = useCallback(
     (entry: AnchorEntry) => {
       logger.debug(`handlePortalSelect [Portal]: stopId=${entry.stopId}, name=${entry.stopName}`);
-      disableAutoLocate('select-portal');
       // Build a minimal Stop from AnchorEntry for map pan
       const stop: Stop = {
         stop_id: entry.stopId,
@@ -746,12 +712,9 @@ export default function App({ loadResult }: AppProps) {
         location_type: 0,
         agency_id: '',
       };
-      focusStop(stop);
-      // Also record in history
-      const meta = findStopWithMeta(entry.stopId) ?? { stop, agencies: [], routes: [] };
-      pushStop(meta, entry.routeTypes);
+      navigateAndFocusStop(stop, 'select-portal', entry.routeTypes);
     },
-    [focusStop, findStopWithMeta, pushStop, disableAutoLocate],
+    [navigateAndFocusStop],
   );
 
   // Select + pan to a stop chosen from the search dialog.
@@ -760,15 +723,12 @@ export default function App({ loadResult }: AppProps) {
   const handleSearchSelect = useCallback(
     (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleSearchSelect [Search]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
-      disableAutoLocate('select-search');
-      focusStop(stop);
+      navigateAndFocusStop(stop, 'select-search', routeTypes);
       setSearchModalOpen(false);
       // SearchDialog already resolved routeTypes from its own routeTypeMap,
       // so we can use them directly without re-resolving.
-      const meta = findStopWithMeta(stop.stop_id) ?? { stop, agencies: [], routes: [] };
-      pushStop(meta, routeTypes);
     },
-    [focusStop, pushStop, findStopWithMeta, disableAutoLocate],
+    [navigateAndFocusStop],
   );
 
   // --- App-wide filter state (shared across surfaces) ---
@@ -1104,11 +1064,14 @@ export default function App({ loadResult }: AppProps) {
         snapshot={tripInspectionSnapshot}
         tripInspectionTargets={tripInspectionTargets}
         currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
+        showNoticeNonce={showNoticeNonce}
         now={dateTime}
         infoLevel={settings.infoLevel}
         dataLangs={langChain}
         onOpenPreviousTrip={openPreviousTripInspection}
         onOpenNextTrip={openNextTripInspection}
+        onInspectTrip={handleInspectTripFromDialog}
+        onSelectStopById={handleSelectStopFromTripInspection}
         onOpenChange={handleTripInspectionOpenChange}
       />
       <TimetableModal

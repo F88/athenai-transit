@@ -208,7 +208,8 @@
       "noStopData": "No trip information is available for this stop",
       "noServiceOnThisDay": "No services run on the selected day",
       "openFailed": "Could not load trip information",
-      "noUpcomingTrips": "No departures are available after the current time"
+      "noUpcomingTrips": "No departures are available after the current time",
+      "stopChangedTitle": "Updated the displayed stop"
     },
     "sections": {
       "summary": "Summary",
