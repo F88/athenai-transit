@@ -135,7 +135,7 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
       // `repo.getTripInspectionTargets` because
       // `selectTripInspectionTargetByReferenceTime` assumes
       // `departureMinutes`-ascending input (see its TSDoc).
-      let entriesResult;
+      let entriesResult: Awaited<ReturnType<TransitRepository['getFullDayTimetableEntries']>>;
       try {
         entriesResult = await repo.getFullDayTimetableEntries(
           selectedStopId,
