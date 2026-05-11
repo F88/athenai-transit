@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
-import { groupByRouteHeadsign } from '../domain/transit/group-timetable-entries';
 import {
   getFilteredTimetableEntriesState,
   getTimetableEntriesState,
@@ -11,10 +10,10 @@ import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { TimetableEntriesState } from '../types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
+import { NearbyStopFlatView } from './nearby-stop-flat-view';
+import { NearbyStopGroupedView } from './nearby-stop-grouped-view';
 import { StopInfo } from './stop-info';
 import { StopActionButtons } from './stop-action-buttons';
-import { StopTimeItem } from './stop-time-item';
-import { StopTimesItem } from './stop-times-item';
 import { VerboseNearbyStopSummary } from './verbose/verbose-nearby-stop-summary';
 
 export interface NearbyStopProps {
@@ -76,18 +75,11 @@ export function NearbyStop({
   const hasMultipleRouteTypes = routeTypes.length > 1;
   const showRouteTypeIconForAllStopTimes = info.isVerboseEnabled || hasMultipleRouteTypes;
 
-  // detailed: show all entries (including terminal/drop-off-only with labels)
-  // non-detailed: show only boardable stop times
-  // const displayStopTimes = useMemo(
-  //   () => (info.isDetailedEnabled ? stopTimes : filterBoardable(stopTimes)),
-  //   [info.isDetailedEnabled, stopTimes],
-  // );
-  const displayStopTimes = stopTimes;
-
-  const grouped = useMemo(
-    () => (viewId !== 'stop' ? groupByRouteHeadsign(displayStopTimes) : []),
-    [viewId, displayStopTimes],
-  );
+  // Multi-operator stops are rare in the current dataset, so the agency
+  // badge would be redundant noise on single-operator stops (the operator
+  // is implied by the stop itself). Only surface the agency badge when
+  // there is something to disambiguate.
+  const showAgency = info.isVerboseEnabled || agencies.length > 1;
 
   const hasUnknownHeadsign = useMemo(
     () => stopTimes.some((e) => getEffectiveHeadsign(e.routeDirection) === ''),
@@ -113,12 +105,8 @@ export function NearbyStop({
     [stopServiceState, timetableEntriesState, stopTimes],
   );
 
-  return (
-    <div
-      data-stop-id={stop.stop_id}
-      className={`mb-2 cursor-pointer rounded-lg px-3 pt-2.5 pb-3 last:mb-0 ${isSelected ? 'border-info/40 bg-info/10 border' : 'bg-[#f5f7fa] dark:bg-gray-800'}`}
-      onClick={() => onStopSelected(stop.stop_id)}
-    >
+  const stopHeader = (
+    <>
       {showVerbose && (
         <VerboseNearbyStopSummary
           stopTimes={stopTimes}
@@ -165,65 +153,24 @@ export function NearbyStop({
           {t('stop.dataQuality.noDestination')}
         </p>
       )}
-      {displayStopTimes.length > 0 ? (
-        // Multi-operator stops are rare in the current dataset, so the
-        // agency badge would be redundant noise on single-operator stops
-        // (the operator is implied by the stop itself). Only surface the
-        // agency badge when there is something to disambiguate.
-        (() => {
-          const showAgency = info.isVerboseEnabled || agencies.length > 1;
-          return viewId === 'stop'
-            ? displayStopTimes
-                .slice(0, 5)
-                .map((entry, i) => (
-                  <StopTimeItem
-                    key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}__${i}`}
-                    entry={entry}
-                    now={now}
-                    forceShowRelativeTime={i === 0}
-                    showRouteTypeIcon={showRouteTypeIconForAllStopTimes}
-                    infoLevel={infoLevel}
-                    dataLangs={dataLangs}
-                    agency={agencies.find(
-                      (a) => a.agency_id === entry.routeDirection.route.agency_id,
-                    )}
-                    showAgency={showAgency}
-                    onInspectTrip={onInspectTrip}
-                  />
-                ))
-            : grouped.map(([key, entries]) => (
-                <StopTimesItem
-                  key={`${stop.stop_id}__${key}`}
-                  entries={entries}
-                  now={now}
-                  infoLevel={infoLevel}
-                  dataLangs={dataLangs}
-                  showRouteTypeIcon={showRouteTypeIconForAllStopTimes}
-                  agency={agencies.find(
-                    (a) => a.agency_id === entries[0].routeDirection.route.agency_id,
-                  )}
-                  showAgency={showAgency}
-                  onShowTimetable={
-                    onShowTimetable
-                      ? (routeId, headsign) => onShowTimetable(stop.stop_id, routeId, headsign)
-                      : undefined
-                  }
-                  onInspectTrip={onInspectTrip}
-                />
-              ));
-        })()
-      ) : (
-        // Show the fallback message in the stop times area whenever there
-        // are no upcoming entries. When `displayStopTimes.length === 0`,
-        // `filteredState` is one of:
-        //   - `'no-service'`: repo has no timetable data for this stop at all.
-        //   - `'service-ended'`: repo has data but the upcoming window is
-        //     already empty pre-filter — late-night / service ended for today.
-        //   - `'filter-hidden'`: pre-filter upcoming had entries but the
-        //     user's UI filters removed everything visible. The service has
-        //     NOT ended; we must not say it has.
-        // ('boardable' / 'drop-off-only' only occur with non-empty stop times
-        // and are handled by the render branch above.)
+    </>
+  );
+
+  // Render the stop times area. Each view (`'stop'` / grouped / future)
+  // owns its own preprocessing (sort, group, slice), so only the active
+  // view's work runs per render. Adding a new view = one new case here
+  // plus a dedicated view component.
+  const renderStopTimes = () => {
+    if (stopTimes.length < 1) {
+      // Empty fallback picks the right message for the three empty states:
+      //   - 'no-service': repo has no timetable data for this stop at all.
+      //   - 'service-ended': repo has data but the upcoming window is
+      //     already empty pre-filter — late-night / service ended for today.
+      //   - 'filter-hidden': pre-filter upcoming had entries but the user's
+      //     UI filters removed everything visible. The service has NOT
+      //     ended; we must not say it has.
+      // ('boardable' / 'drop-off-only' only occur with non-empty stop times.)
+      return (
         <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">
           {t(
             filteredState === 'no-service'
@@ -233,7 +180,52 @@ export function NearbyStop({
                 : 'stop.timetable.allFilteredOut',
           )}
         </p>
-      )}
+      );
+    }
+    if (viewId === 'stop') {
+      return (
+        <NearbyStopFlatView
+          stopTimes={stopTimes}
+          now={now}
+          infoLevel={infoLevel}
+          dataLangs={dataLangs}
+          agencies={agencies}
+          showRouteTypeIcon={showRouteTypeIconForAllStopTimes}
+          showAgency={showAgency}
+          onInspectTrip={onInspectTrip}
+        />
+      );
+    }
+    if (viewId === 'route-headsign') {
+      return (
+        <NearbyStopGroupedView
+          stopId={stop.stop_id}
+          stopTimes={stopTimes}
+          now={now}
+          infoLevel={infoLevel}
+          dataLangs={dataLangs}
+          agencies={agencies}
+          showRouteTypeIcon={showRouteTypeIconForAllStopTimes}
+          showAgency={showAgency}
+          onShowTimetable={onShowTimetable}
+          onInspectTrip={onInspectTrip}
+        />
+      );
+    }
+    // Unrecognised viewId — the bottom-sheet header disables every view
+    // not handled here, so reaching this branch indicates an upstream
+    // configuration bug rather than a state the user can normally hit.
+    return null;
+  };
+
+  return (
+    <div
+      data-stop-id={stop.stop_id}
+      className={`mb-2 cursor-pointer rounded-lg px-3 pt-2.5 pb-3 last:mb-0 ${isSelected ? 'border-info/40 bg-info/10 border' : 'bg-[#f5f7fa] dark:bg-gray-800'}`}
+      onClick={() => onStopSelected(stop.stop_id)}
+    >
+      {stopHeader}
+      {renderStopTimes()}
     </div>
   );
 }
