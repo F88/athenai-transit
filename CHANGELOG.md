@@ -9,12 +9,21 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.11]
+
 ### Changed
 
 - Trip inspection: dialog 内で別の trip や stop に切り替えたとき、更新 notice と文言を見直し、内容だけが切り替わって気づきにくい UX を改善した。
 - Trip inspection: stop list から stop を選択状態に切り替えられるようにした。選択に合わせて map も移動し、ダイアログは開いたまま維持される。
 - Trip inspection: 異なる stop の trip inspection に切り替えられるようにした。各 stop の時刻タップから、対応する のりば と時刻の trip inspection を直接開ける。
 - Stop navigation: `app.tsx` 内に散っていた stop 選択・map 移動・history 追加の処理を `useStopNavigation` に集約し、viewport/fallback 解決の純関数を `src/domain/transit/stop-navigation.ts` へ分離。`useSelection.selectStopById` は fallback stop を受け取れるようにし、関連 hook/domain test を追加した。
+- Logger: `logger.debug` / `logger.verbose` の非自明な引数 (関数呼び出し、配列の反復、複数変数を含むテンプレート補間など) を `logger.isEnabled()` ガードで包む sweep を実施 (14 ファイル / 約 34 か所)。production では debug / verbose は emit 段で filter 済みのため挙動は不変だが、引数評価コスト (テンプレ生成、 `.toFixed()`、配列スプレッドなど) を省略できるようになり、`athenai-repository-v2` / `stop-markers-canvas` / 位置情報 hook などのホットパスで効果が大きい (#178)。
+
+### Fixed
+
+- Timetable grid: 同一時刻 row 内の便を「表示時刻順」 (terminal は arrival、それ以外は departure) で並べ替え。 dwell time のある terminal 便が見た目上で後の便より遅く見えていた違和感を解消 (#63)。`sortTimetableEntriesByDisplayTime` を新設し、純粋な `groupTimetableEntriesByHour` と組み合わせて `TimetableGrid` 描画前に `sort -> group` する構成に。
+- NearbyStop bottom sheet: per-stop の stoptime を上流 `departureMinutes` 順ではなく表示時刻順で描画するように修正。前日からの夜行便など cross-service-day (`ContextualTimetableEntry`) を含むケースは `sortTimetableEntriesByDisplayTimeChronologically` で絶対時刻ベースに sort。`<NearbyStopFlatView>` / `<NearbyStopGroupedView>` を per-view component に分離し、非アクティブ view の sort / group コストを省略。 per-view cap (`FLAT_VIEW_MAX_ENTRIES = 5` / `PER_GROUP_MAX_ENTRIES = 3`) も view 層に集約 (#63)。
+- TripInspection の TripPager Prev / Next を表示時刻順に修正 (#63)。`useTripInspection` から純粋な helper (`refineTripInspectionState` / `loadTripInspectionSnapshot` / `serviceDayReferenceDateTime` 他) を `src/domain/transit/trip-inspection-state.ts` に切り出し、 `getFullDayTimetableEntries` を呼ぶ際の reference datetime は noon-anchor (= `getServiceDay` の 03:00 境界を回避) で渡すようにした。ドメイン層に 19 件、 hook 層に 3 件のテストを追加。
 
 ## [2026.05.10]
 
