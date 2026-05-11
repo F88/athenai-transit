@@ -64,7 +64,8 @@ export function sortTimetableEntriesByDisplayTime<T extends TimetableEntry>(entr
  * interleaves the previous service day's overnight tail with today's
  * entries (typical for `getUpcomingTimetableEntries`) reads in true
  * chronological order. `minutesToDate` is DST-aware, matching the
- * behaviour of {@link ./sort-timetable-entries.sortTimetableEntriesChronologically}.
+ * behaviour of `sortTimetableEntriesChronologically` in
+ * `./sort-timetable-entries`.
  *
  * Sort keys mirror the within-day variant but operate on absolute time:
  * display → arrival → departure → isOrigin (true first) → isTerminal
