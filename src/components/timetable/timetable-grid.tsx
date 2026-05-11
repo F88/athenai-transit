@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { resolveAgencyLang } from '@/config/transit-defaults';
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
 import { getTimetableHeadsignPrefixLengths } from '@/domain/transit/get-timetable-headsign-prefix-lengths';
-import { getDisplayMinutes } from '@/domain/transit/timetable-utils';
+import { groupTimetableEntriesByHour } from '@/domain/transit/group-timetable-entries-by-hour';
+import { sortTimetableEntriesByDisplayTime } from '@/domain/transit/sort-timetable-for-ui';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import type { TimetableOmitted } from '@/types/app/repository';
 import type { InfoLevel } from '@/types/app/settings';
@@ -64,19 +65,10 @@ export function TimetableGrid({
     [timetableEntries, showHeadsign, dataLangs, agencies],
   );
 
-  const hourGroups = useMemo(() => {
-    const groups = new Map<number, TimetableEntry[]>();
-    for (const entry of timetableEntries) {
-      const hour = Math.floor(getDisplayMinutes(entry) / 60);
-      const list = groups.get(hour);
-      if (list) {
-        list.push(entry);
-      } else {
-        groups.set(hour, [entry]);
-      }
-    }
-    return groups;
-  }, [timetableEntries]);
+  const hourGroups = useMemo(
+    () => groupTimetableEntriesByHour(sortTimetableEntriesByDisplayTime([...timetableEntries])),
+    [timetableEntries],
+  );
 
   if (hourGroups.size === 0) {
     return (
