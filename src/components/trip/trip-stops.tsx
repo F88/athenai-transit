@@ -10,7 +10,11 @@ import { buildStopByPatternIndex, getPatternTotalStops } from '@/domain/transit/
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { cn } from '@/lib/utils';
 import type { InfoLevel } from '@/types/app/settings';
-import type { SelectedTripSnapshot, TripStopTime } from '@/types/app/transit-composed';
+import type {
+  SelectedTripSnapshot,
+  TripInspectionTarget,
+  TripStopTime,
+} from '@/types/app/transit-composed';
 import { LabelCountBadge } from '../badge/label-count-badge';
 import { StopInfo } from '../stop-info';
 import { StopTimeTimeInfo } from '../stop-time-time-info';
@@ -26,10 +30,12 @@ interface TripStopsProps {
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
   now: Date;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 interface TripStopRowProps {
   tripStopTime: TripStopTime;
+  tripLocator: SelectedTripSnapshot['locator'];
   totalStops: number;
   currentPatternStopIndex: number;
   routeColors: AdjustedRouteColors<string>;
@@ -37,6 +43,7 @@ interface TripStopRowProps {
   serviceDate: Date;
   dataLangs: readonly string[];
   now: Date;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 interface TripStopPlaceholderRowProps {
@@ -62,6 +69,8 @@ interface TripStopMetaInfoProps {
   labelFg?: string;
   frameColor?: string;
   className?: string;
+  inspectTarget?: TripInspectionTarget;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 type RenderedTripStopRow =
@@ -105,6 +114,8 @@ function TripStopMetaInfo({
   labelFg,
   frameColor,
   className,
+  inspectTarget,
+  onInspectTrip,
 }: TripStopMetaInfoProps) {
   const shouldRenderStopTimeTimeInfo =
     arrivalMinutes !== undefined &&
@@ -138,6 +149,8 @@ function TripStopMetaInfo({
           collapseToleranceMinutes={collapseToleranceMinutes}
           forceShowRelativeTime={true}
           textAppearance={{ color: timeTextColor }}
+          inspectTarget={inspectTarget}
+          onInspectTrip={onInspectTrip}
         />
       )}
     </div>
@@ -146,6 +159,7 @@ function TripStopMetaInfo({
 
 function TripStopRow({
   tripStopTime,
+  tripLocator,
   totalStops,
   currentPatternStopIndex,
   routeColors,
@@ -153,6 +167,7 @@ function TripStopRow({
   dataLangs,
   serviceDate,
   now,
+  onInspectTrip,
 }: TripStopRowProps) {
   const { t } = useTranslation();
   const infoLevelFlag = useInfoLevel(infoLevel);
@@ -177,6 +192,12 @@ function TripStopRow({
     isTerminal: isTerminalStop,
     infoLevel,
   });
+  const inspectTarget: TripInspectionTarget = {
+    serviceDate,
+    tripLocator,
+    stopIndex,
+    departureMinutes: tripStopTime.timetableEntry.schedule.departureMinutes,
+  };
 
   return (
     <div
@@ -201,6 +222,8 @@ function TripStopRow({
           labelFg={routeColors.textColor}
           frameColor={routeColors.color}
           className="flex min-h-8 flex-col items-end gap-1"
+          inspectTarget={inspectTarget}
+          onInspectTrip={onInspectTrip}
         />
         <div className="min-w-0">
           {stopMeta ? (
@@ -317,6 +340,7 @@ export const TripStops = memo(function TripStops({
   infoLevel,
   dataLangs,
   now,
+  onInspectTrip,
 }: TripStopsProps) {
   const renderedTripStopRows = buildRenderedTripStopRows(tripSnapshot.stopTimes);
   const initialRenderStart = Math.max(
@@ -354,6 +378,7 @@ export const TripStops = memo(function TripStops({
             <TripStopRow
               key={rowKey}
               tripStopTime={row.stop}
+              tripLocator={tripSnapshot.locator}
               totalStops={row.totalStops}
               currentPatternStopIndex={selectedPatternStopIndex}
               routeColors={routeColors}
@@ -361,6 +386,7 @@ export const TripStops = memo(function TripStops({
               dataLangs={dataLangs}
               serviceDate={tripSnapshot.serviceDate}
               now={now}
+              onInspectTrip={onInspectTrip}
             />
           );
         })}

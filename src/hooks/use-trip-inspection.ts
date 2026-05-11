@@ -162,10 +162,7 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
         return { status: 'error' };
       }
 
-      const candidates = deriveTripInspectionCandidates(
-        entriesResult.data,
-        target.serviceDate,
-      );
+      const candidates = deriveTripInspectionCandidates(entriesResult.data, target.serviceDate);
       const refinedState = refineTripInspectionState(candidates, snapshot, target);
       if (!refinedState.ok) {
         if (logger.isEnabled('debug')) {

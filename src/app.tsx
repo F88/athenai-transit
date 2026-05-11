@@ -1109,6 +1109,7 @@ export default function App({ loadResult }: AppProps) {
         dataLangs={langChain}
         onOpenPreviousTrip={openPreviousTripInspection}
         onOpenNextTrip={openNextTripInspection}
+        onInspectTrip={handleInspectTrip}
         onOpenChange={handleTripInspectionOpenChange}
       />
       <TimetableModal

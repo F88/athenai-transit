@@ -60,6 +60,7 @@ interface TripInspectionDialogProps {
   dataLangs: readonly string[];
   onOpenPreviousTrip: () => void;
   onOpenNextTrip: () => void;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 interface TripInspectionSummaryProps {
@@ -446,6 +447,7 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
   now,
   onOpenPreviousTrip,
   onOpenNextTrip,
+  onInspectTrip,
 }: TripInspectionDialogProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
   const { t } = useTranslation();
@@ -828,6 +830,7 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
               infoLevel={infoLevel}
               dataLangs={dataLangs}
               now={now}
+              onInspectTrip={onInspectTrip}
             />
           </div>
           {contentScroll.showBottom && <ScrollFadeEdge position="bottom" />}
