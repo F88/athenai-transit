@@ -163,14 +163,21 @@ export function selectTripInspectionTargetByReferenceTime(
 }
 
 /**
- * Resolves one trip-inspection target from an ordered candidate list using an
- * existing target as the reference.
+ * Resolves one trip-inspection target from a candidate list using an existing
+ * target as the reference.
  *
- * The input is expected to preserve repository ordering (`departureMinutes`
- * ascending, then `stopIndex`, then route ordering). This helper does not sort
- * the full input itself; it only sorts the narrowed same-trip fallback subset.
+ * Order-agnostic for the exact-match path: the helper scans `candidates`
+ * linearly via {@link isSameTripInspectionTarget} so the caller may sort the
+ * input in `departureMinutes`-ascending order (repository canonical), in
+ * display-time order (UI surfaces such as `<TripPager>` after Issue #63),
+ * or any other deterministic order. The returned `index` is the index inside
+ * the supplied `candidates` array as-is.
  *
- * @param candidates - Ordered trip-inspection candidates to choose from.
+ * When no exact match is found, the helper narrows to the same-trip subset
+ * and self-sorts it by closeness to the reference target before picking the
+ * fallback — the caller does not need to pre-sort for this path either.
+ *
+ * @param candidates - Trip-inspection candidates to choose from.
  * @param target - Reference target that should be matched or approximated.
  * @returns The resolved candidate and its original index, or `null` when no
  *          candidate can be selected from the input.

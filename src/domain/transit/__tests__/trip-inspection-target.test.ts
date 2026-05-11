@@ -287,6 +287,60 @@ describe('resolveTripInspectionTarget', () => {
 
     expect(resolveTripInspectionTarget(candidates, requestedTarget)).toBeNull();
   });
+
+  it('finds the exact match when candidates are supplied in descending departure-time order', () => {
+    // The TSDoc on `resolveTripInspectionTarget` claims the exact-match
+    // path is order-agnostic. Verify by reversing the canonical
+    // `departureMinutes`-ascending order: descending input must still
+    // locate the exact candidate, and the returned `index` must refer to
+    // its position in the **input** array as-is.
+    const requestedTarget = makeTarget({ stopIndex: 4, departureMinutes: 620 });
+    const candidates = [
+      makeTarget({ stopIndex: 7, departureMinutes: 700 }),
+      makeTarget({ stopIndex: 4, departureMinutes: 620 }),
+      makeTarget({ stopIndex: 1, departureMinutes: 500 }),
+    ];
+
+    expect(resolveTripInspectionTarget(candidates, requestedTarget)).toEqual({
+      target: candidates[1],
+      index: 1,
+      matchType: 'exact',
+    });
+  });
+
+  it('finds the exact match when candidates are supplied in display-time order with a terminal arrival before a later departure', () => {
+    // Display-time ordering surfaces a terminal arrival (display = arr =
+    // 09:05) ahead of a later non-terminal departure (display = dep =
+    // 09:06) even though their raw `departureMinutes` (9*60+8 vs 9*60+6)
+    // disagree with their display order. The exact-match path must
+    // return the requested candidate regardless of this ordering.
+    const requestedTarget = makeTarget({
+      tripLocator: makeLocator({ tripIndex: 2 }),
+      stopIndex: 3,
+      departureMinutes: 9 * 60 + 6,
+    });
+    const candidates = [
+      // Terminal arrival sorted first by display time despite later
+      // raw departure (`departureMinutes = 548`).
+      makeTarget({
+        tripLocator: { patternId: 'pattern-a', serviceId: 'weekday', tripIndex: 1 },
+        stopIndex: 3,
+        departureMinutes: 9 * 60 + 8,
+      }),
+      // The requested non-terminal departure sorted after the terminal.
+      makeTarget({
+        tripLocator: makeLocator({ tripIndex: 2 }),
+        stopIndex: 3,
+        departureMinutes: 9 * 60 + 6,
+      }),
+    ];
+
+    expect(resolveTripInspectionTarget(candidates, requestedTarget)).toEqual({
+      target: candidates[1],
+      index: 1,
+      matchType: 'exact',
+    });
+  });
 });
 
 describe('resolveSnapshotStopIndex', () => {
