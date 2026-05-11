@@ -13,6 +13,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - Trip inspection: stop list から stop を選択状態に切り替えられるようにした。選択に合わせて map も移動し、ダイアログは開いたまま維持される。
 - Trip inspection: 異なる stop の trip inspection に切り替えられるようにした。各 stop の時刻タップから、対応する のりば と時刻の trip inspection を直接開ける。
+- Stop navigation: `app.tsx` 内に散っていた stop 選択・map 移動・history 追加の処理を `useStopNavigation` に集約し、viewport/fallback 解決の純関数を `src/domain/transit/stop-navigation.ts` へ分離。`useSelection.selectStopById` は fallback stop を受け取れるようにし、関連 hook/domain test を追加した。
 
 ## [2026.05.10]
 
