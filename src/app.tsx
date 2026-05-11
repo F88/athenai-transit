@@ -16,7 +16,7 @@ import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
 import { buildAnchorRefreshUpdates, type AnchorEntry } from './domain/portal/anchor';
 import { formatDateKey } from './domain/transit/calendar-utils';
 import { computeStopsCounts } from './domain/transit/compute-stops-counts';
-import { getStopDisplayNames } from './domain/transit/get-stop-display-names';
+import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
 import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-day';

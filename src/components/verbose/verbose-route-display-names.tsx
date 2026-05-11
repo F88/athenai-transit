@@ -1,4 +1,4 @@
-import type { RouteDisplayNames } from '../../domain/transit/get-route-display-names';
+import type { RouteDisplayNames } from '../../domain/transit/name-resolver/get-route-display-names';
 
 /**
  * Debug dump of resolved {@link RouteDisplayNames}.

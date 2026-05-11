@@ -10,9 +10,9 @@ import { VerboseTimetableSummary } from '@/components/verbose/verbose-timetable-
 import { DEFAULT_TIMEZONE, resolveAgencyLang } from '@/config/transit-defaults';
 import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
-import { getSelectedHeadsignDisplayName } from '@/domain/transit/get-headsign-display-names';
-import { getRouteDisplayNames } from '@/domain/transit/get-route-display-names';
-import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { getSelectedHeadsignDisplayName } from '@/domain/transit/name-resolver/get-headsign-display-names';
+import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
+import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { applyStopEventAttributeToggles } from '@/domain/transit/timetable-filter';

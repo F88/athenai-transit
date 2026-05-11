@@ -1,7 +1,7 @@
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { resolveContextBorderColor } from '../../domain/transit/color-resolver/context-border-color';
 import { resolveRouteColors } from '../../domain/transit/color-resolver/route-colors';
-import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
+import { getRouteDisplayNames } from '../../domain/transit/name-resolver/get-route-display-names';
 import { useThemeContrastBackgroundColor } from '../../hooks/use-is-low-contrast-against-theme';
 import type { InfoLevel } from '../../types/app/settings';
 import type { Route } from '../../types/app/transit';

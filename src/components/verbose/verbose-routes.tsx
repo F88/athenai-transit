@@ -1,7 +1,7 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency, Route } from '../../types/app/transit';
 import { resolveAgencyLang } from '../../config/transit-defaults';
-import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
+import { getRouteDisplayNames } from '../../domain/transit/name-resolver/get-route-display-names';
 import { VerboseRoute } from './verbose-route';
 
 /**

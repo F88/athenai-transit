@@ -1,6 +1,6 @@
 import { resolveAgencyLang } from '../../config/transit-defaults';
 import { resolveContextBorderColor } from '../../domain/transit/color-resolver/context-border-color';
-import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
+import { getRouteDisplayNames } from '../../domain/transit/name-resolver/get-route-display-names';
 import { resolveRouteColors } from '../../domain/transit/color-resolver/route-colors';
 import { useThemeContrastBackgroundColor } from '../../hooks/use-is-low-contrast-against-theme';
 import type { BaseLabelSize } from '../label/base-label';

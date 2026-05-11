@@ -3,7 +3,7 @@ import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { ContextualTimetableEntry } from '../../types/app/transit-composed';
 import { resolveAgencyLang } from '../../config/transit-defaults';
 import { createInfoLevel } from '../../utils/create-info-level';
-import { getStopDisplayNames } from '../../domain/transit/get-stop-display-names';
+import { getStopDisplayNames } from '../../domain/transit/name-resolver/get-stop-display-names';
 import { minutesToDate } from '../../domain/transit/calendar-utils';
 import { getTimetableEntryAttributes } from '../../domain/transit/timetable-entry-attributes';
 import { getDisplayMinutes } from '../../domain/transit/timetable-utils';

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
 import { type AdjustedRouteColors } from '@/domain/transit/color-resolver/route-colors';
-import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import { deriveStopTimeRoleDisplayProps } from '@/domain/transit/stop-time-display';
 import { getTimetableEntryAttributes } from '@/domain/transit/timetable-entry-attributes';
 import { buildStopByPatternIndex, getPatternTotalStops } from '@/domain/transit/trip-stop-times';

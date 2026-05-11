@@ -1,4 +1,4 @@
-import type { AgencyDisplayNames } from '../../domain/transit/get-agency-display-name';
+import type { AgencyDisplayNames } from '../../domain/transit/name-resolver/get-agency-display-name';
 
 /**
  * Debug dump of resolved {@link AgencyDisplayNames}.

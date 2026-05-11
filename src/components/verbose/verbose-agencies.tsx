@@ -1,7 +1,7 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency } from '../../types/app/transit';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
-import { getAgencyDisplayNames } from '../../domain/transit/get-agency-display-name';
+import { getAgencyDisplayNames } from '../../domain/transit/name-resolver/get-agency-display-name';
 import { VerboseAgency } from './verbose-agency';
 
 /**

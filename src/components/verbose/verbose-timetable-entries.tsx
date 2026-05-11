@@ -1,6 +1,6 @@
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
-import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
-import { getRouteDisplayNames } from '../../domain/transit/get-route-display-names';
+import { getHeadsignDisplayNames } from '../../domain/transit/name-resolver/get-headsign-display-names';
+import { getRouteDisplayNames } from '../../domain/transit/name-resolver/get-route-display-names';
 import type { InfoLevel } from '../../types/app/settings';
 import type { TimetableEntry } from '../../types/app/transit-composed';
 import { VerboseHeadsign } from './verbose-headsign';

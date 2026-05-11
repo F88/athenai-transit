@@ -6,7 +6,7 @@ import type { StopsCounts } from '../types/app/stop';
 import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
 import { resolveAgencyColors } from '../domain/transit/color-resolver/agency-colors';
 import { STOP_TIMES_VIEWS } from '../domain/transit/stop-time-views';
-import { getAgencyDisplayNames } from '../domain/transit/get-agency-display-name';
+import { getAgencyDisplayNames } from '../domain/transit/name-resolver/get-agency-display-name';
 import { createLogger } from '../lib/logger';
 import { routeTypeColor } from '../utils/route-type-color';
 import { routeTypeEmoji } from '../utils/route-type-emoji';

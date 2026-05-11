@@ -1,7 +1,7 @@
 import { resolveMinPrefixLengths } from '../../utils/resolve-min-prefix-lengths';
 import type { TimetableEntry } from '../../types/app/transit-composed';
 import { getEffectiveHeadsign } from './get-effective-headsign';
-import { getSelectedHeadsignDisplayName } from './get-headsign-display-names';
+import { getSelectedHeadsignDisplayName } from './name-resolver/get-headsign-display-names';
 
 /**
  * Compute truncation lengths for timetable headsign badges using rendered labels.

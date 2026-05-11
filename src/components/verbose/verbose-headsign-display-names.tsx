@@ -1,4 +1,4 @@
-import type { HeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
+import type { HeadsignDisplayNames } from '../../domain/transit/name-resolver/get-headsign-display-names';
 
 /**
  * Debug dump of resolved {@link HeadsignDisplayNames}.
