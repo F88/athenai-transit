@@ -3,6 +3,7 @@ import { formatDateKey } from '../domain/transit/calendar-utils';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
 import {
   buildTripInspectionMatchDiagnostics,
+  deriveTripInspectionCandidates,
   getEmptyTripInspectionTargetsNote,
   loadTripInspectionSnapshot,
   refineTripInspectionState,
@@ -161,18 +162,14 @@ export function useTripInspection(repo: TransitRepository): UseTripInspectionRet
         return { status: 'error' };
       }
 
-      const refinedState = refineTripInspectionState(
+      const candidates = deriveTripInspectionCandidates(
         entriesResult.data,
         target.serviceDate,
-        snapshot,
-        target,
       );
+      const refinedState = refineTripInspectionState(candidates, snapshot, target);
       if (!refinedState.ok) {
         if (logger.isEnabled('debug')) {
-          const diagnostics = buildTripInspectionMatchDiagnostics(
-            target,
-            tripInspectionTargetsRef.current,
-          );
+          const diagnostics = buildTripInspectionMatchDiagnostics(target, candidates);
           logger.debug(
             'openTripInspection: target lookup mismatch sampleSameService',
             diagnostics.sampleSameService,

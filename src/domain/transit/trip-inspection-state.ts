@@ -183,38 +183,55 @@ export function loadTripInspectionSnapshot(
 }
 
 /**
- * Derive the trip-inspection navigation state from a stop's full-day
- * timetable entries. Pure: takes the entry list and pure context as
- * input and returns the refined state without any I/O.
+ * Build the trip-inspection candidate list from a stop's full-day
+ * timetable entries.
  *
  * The entries are sorted with {@link sortTimetableEntriesByDisplayTime}
- * (display-minute order) before being mapped to
- * {@link TripInspectionTarget}, so the resulting navigation list reads
- * chronologically in the UI (Issue #63). The requested target is then
- * located within the candidate list via
- * {@link resolveTripInspectionDisplayState}; if it cannot be resolved
- * (and the helper has no fallback either) the function returns
- * `{ ok: false, reason: 'no-data' }`.
+ * (display-minute order) and then mapped to {@link TripInspectionTarget},
+ * so the resulting navigation list reads chronologically in the UI
+ * (Issue #63). The input array is never mutated -- the helper sorts a
+ * defensive copy.
  *
- * Failure-path logging is intentionally NOT performed here so the function
- * stays trivially testable. Callers that want diagnostics on failure can
- * invoke {@link buildTripInspectionMatchDiagnostics} and log the result
- * themselves.
+ * The candidate list is exposed as its own value (rather than hidden
+ * inside {@link refineTripInspectionState}) so callers can pass the same
+ * list both to the resolver and to
+ * {@link buildTripInspectionMatchDiagnostics} on failure.
  */
-export function refineTripInspectionState(
+export function deriveTripInspectionCandidates(
   entries: TimetableEntry[],
   serviceDate: Date,
-  snapshot: SelectedTripSnapshot,
-  target: TripInspectionTarget,
-): RefinedTripInspectionStateResult {
+): TripInspectionTarget[] {
   const sorted = sortTimetableEntriesByDisplayTime([...entries]);
-  const candidates: TripInspectionTarget[] = sorted.map((entry) => ({
+  return sorted.map((entry) => ({
     tripLocator: entry.tripLocator,
     stopIndex: entry.patternPosition.stopIndex,
     departureMinutes: entry.schedule.departureMinutes,
     serviceDate,
   }));
+}
 
+/**
+ * Resolve the trip-inspection navigation state for a requested target
+ * against an already-derived candidate list. Pure: takes the candidate
+ * list and pure context as input and returns the refined state without
+ * any I/O.
+ *
+ * The requested target is located within `candidates` via
+ * {@link resolveTripInspectionDisplayState}; if it cannot be resolved
+ * (and the helper has no fallback either) the function returns
+ * `{ ok: false, reason: 'no-data' }`. The same outcome is also produced
+ * for an empty `candidates` array.
+ *
+ * Failure-path logging is intentionally NOT performed here so the function
+ * stays trivially testable. Callers that want diagnostics on failure can
+ * invoke {@link buildTripInspectionMatchDiagnostics} with the same
+ * `candidates` list they passed in.
+ */
+export function refineTripInspectionState(
+  candidates: TripInspectionTarget[],
+  snapshot: SelectedTripSnapshot,
+  target: TripInspectionTarget,
+): RefinedTripInspectionStateResult {
   if (candidates.length === 0) {
     return { ok: false, reason: 'no-data' };
   }

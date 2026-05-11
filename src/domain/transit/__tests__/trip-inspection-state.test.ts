@@ -10,6 +10,7 @@ import type {
 } from '../../../types/app/transit-composed';
 import {
   buildTripInspectionMatchDiagnostics,
+  deriveTripInspectionCandidates,
   getEmptyTripInspectionTargetsNote,
   loadTripInspectionSnapshot,
   refineTripInspectionState,
@@ -311,15 +312,9 @@ describe('loadTripInspectionSnapshot', () => {
   });
 });
 
-describe('refineTripInspectionState', () => {
-  it('returns no-data when the entry list is empty', () => {
-    const stopTimes = [makeStopTime(3, 600)];
-    const snapshot = makeSelectedSnapshot(stopTimes, 0);
-    const target = makeTarget({ stopIndex: 3, departureMinutes: 600 });
-
-    const result = refineTripInspectionState([], target.serviceDate, snapshot, target);
-
-    expect(result).toEqual({ ok: false, reason: 'no-data' });
+describe('deriveTripInspectionCandidates', () => {
+  it('returns an empty array when no entries are provided', () => {
+    expect(deriveTripInspectionCandidates([], new Date(2026, 4, 11))).toEqual([]);
   });
 
   it('orders candidates by displayed minute (terminal arrival comes before non-terminal departure)', () => {
@@ -338,36 +333,83 @@ describe('refineTripInspectionState', () => {
       stopIndex: 3,
       departureMinutes: 9 * 60 + 6,
     });
-
-    const stopTimes = [makeStopTime(3, 9 * 60 + 6)];
-    const snapshot = makeSelectedSnapshot(stopTimes, 0);
-    const target = makeTarget({
-      tripLocator: makeLocator({ tripIndex: 2 }),
-      stopIndex: 3,
-      departureMinutes: 9 * 60 + 6,
-    });
+    const serviceDate = new Date(2026, 4, 11);
 
     // Pass entries in departure order (the canonical repo order). The
-    // pure function must re-sort them into display order.
-    const result = refineTripInspectionState(
+    // helper must re-sort them into display order.
+    const candidates = deriveTripInspectionCandidates(
       [nonTerminalEntry, terminalEntry],
-      target.serviceDate,
-      snapshot,
-      target,
+      serviceDate,
     );
 
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.targets[0]?.tripLocator.tripIndex).toBe(1);
-      expect(result.data.targets[1]?.tripLocator.tripIndex).toBe(2);
-      expect(result.data.targetIndex).toBe(1);
-    }
+    expect(candidates.map((candidate) => candidate.tripLocator.tripIndex)).toEqual([1, 2]);
   });
 
-  it('resolves the requested target via exact match on the sorted candidate list', () => {
-    const first = makeEntry({ tripIndex: 1, departureMinutes: 500 });
-    const second = makeEntry({ tripIndex: 2, departureMinutes: 600 });
-    const third = makeEntry({ tripIndex: 3, departureMinutes: 700 });
+  it('maps the entry fields onto the TripInspectionTarget shape', () => {
+    const entry = makeEntry({
+      patternId: 'pattern-a',
+      serviceId: 'weekday',
+      tripIndex: 7,
+      stopIndex: 4,
+      departureMinutes: 615,
+    });
+    const serviceDate = new Date(2026, 4, 11);
+
+    const [candidate] = deriveTripInspectionCandidates([entry], serviceDate);
+
+    expect(candidate).toEqual({
+      tripLocator: { patternId: 'pattern-a', serviceId: 'weekday', tripIndex: 7 },
+      stopIndex: 4,
+      departureMinutes: 615,
+      serviceDate,
+    });
+  });
+
+  it('attaches the supplied serviceDate to each derived candidate by reference', () => {
+    const entries = [
+      makeEntry({ tripIndex: 1, departureMinutes: 500 }),
+      makeEntry({ tripIndex: 2, departureMinutes: 600 }),
+    ];
+    const serviceDate = new Date(2026, 4, 11);
+
+    const candidates = deriveTripInspectionCandidates(entries, serviceDate);
+
+    expect(candidates).toHaveLength(2);
+    expect(candidates[0]?.serviceDate).toBe(serviceDate);
+    expect(candidates[1]?.serviceDate).toBe(serviceDate);
+  });
+
+  it('does not mutate the input entries array', () => {
+    const entries = [
+      makeEntry({ tripIndex: 2, departureMinutes: 9 * 60 + 6 }),
+      makeEntry({
+        tripIndex: 1,
+        stopIndex: 3,
+        arrivalMinutes: 9 * 60 + 5,
+        departureMinutes: 9 * 60 + 8,
+        isTerminal: true,
+      }),
+    ];
+    const originalOrder = entries.map((entry) => entry.tripLocator.tripIndex);
+
+    deriveTripInspectionCandidates(entries, new Date(2026, 4, 11));
+
+    expect(entries.map((entry) => entry.tripLocator.tripIndex)).toEqual(originalOrder);
+  });
+});
+
+describe('refineTripInspectionState', () => {
+  it('returns no-data when the candidate list is empty', () => {
+    const stopTimes = [makeStopTime(3, 600)];
+    const snapshot = makeSelectedSnapshot(stopTimes, 0);
+    const target = makeTarget({ stopIndex: 3, departureMinutes: 600 });
+
+    const result = refineTripInspectionState([], snapshot, target);
+
+    expect(result).toEqual({ ok: false, reason: 'no-data' });
+  });
+
+  it('resolves the requested target via exact match on the candidate list', () => {
     const stopTimes = [makeStopTime(3, 600)];
     const snapshot = makeSelectedSnapshot(stopTimes, 0);
     const target = makeTarget({
@@ -375,16 +417,29 @@ describe('refineTripInspectionState', () => {
       stopIndex: 3,
       departureMinutes: 600,
     });
+    const candidates = [
+      makeTarget({
+        tripLocator: makeLocator({ tripIndex: 1 }),
+        stopIndex: 3,
+        departureMinutes: 500,
+      }),
+      makeTarget({
+        tripLocator: makeLocator({ tripIndex: 2 }),
+        stopIndex: 3,
+        departureMinutes: 600,
+      }),
+      makeTarget({
+        tripLocator: makeLocator({ tripIndex: 3 }),
+        stopIndex: 3,
+        departureMinutes: 700,
+      }),
+    ];
 
-    const result = refineTripInspectionState(
-      [first, second, third],
-      target.serviceDate,
-      snapshot,
-      target,
-    );
+    const result = refineTripInspectionState(candidates, snapshot, target);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
+      expect(result.data.targets).toBe(candidates);
       expect(result.data.targets).toHaveLength(3);
       expect(result.data.targetIndex).toBe(1);
     }
@@ -394,12 +449,6 @@ describe('refineTripInspectionState', () => {
     // Verify that the `resolveTripInspectionDisplayState`
     // `target-not-found` outcome is collapsed into the
     // `RefinedTripInspectionStateResult` `no-data` reason variant.
-    const unrelatedEntry = makeEntry({
-      patternId: 'pattern-b',
-      tripIndex: 0,
-      stopIndex: 3,
-      departureMinutes: 600,
-    });
     const stopTimes = [makeStopTime(3, 600)];
     const snapshot = makeSelectedSnapshot(stopTimes, 0);
     const target = makeTarget({
@@ -407,29 +456,26 @@ describe('refineTripInspectionState', () => {
       stopIndex: 3,
       departureMinutes: 600,
     });
+    const candidates = [
+      makeTarget({
+        tripLocator: makeLocator({ patternId: 'pattern-b', tripIndex: 0 }),
+        stopIndex: 3,
+        departureMinutes: 600,
+      }),
+    ];
 
-    const result = refineTripInspectionState(
-      [unrelatedEntry],
-      target.serviceDate,
-      snapshot,
-      target,
-    );
+    const result = refineTripInspectionState(candidates, snapshot, target);
 
     expect(result).toEqual({ ok: false, reason: 'no-data' });
   });
 
   it('rewrites the snapshot to the fallback stop row when no exact-match candidate exists', () => {
     // The requested target points at stopIndex=5 / depMin=620, but the
-    // entries only contain a single same-trip candidate at stopIndex=4.
-    // `resolveTripInspectionDisplayState` therefore returns `matchType:
-    // 'fallback'` and `refineTripInspectionState` is expected to surface
-    // the rewritten snapshot whose `currentStopIndex` points at the
-    // fallback stop row.
-    const fallbackEntry = makeEntry({
-      tripIndex: 1,
-      stopIndex: 4,
-      departureMinutes: 615,
-    });
+    // candidate list only contains a single same-trip candidate at
+    // stopIndex=4. `resolveTripInspectionDisplayState` therefore returns
+    // `matchType: 'fallback'` and `refineTripInspectionState` is expected
+    // to surface the rewritten snapshot whose `currentStopIndex` points
+    // at the fallback stop row.
     const requestedStop = makeStopTime(5, 620);
     const fallbackStop = makeStopTime(4, 615);
     const snapshot = makeSelectedSnapshot([requestedStop, fallbackStop], 0);
@@ -438,8 +484,15 @@ describe('refineTripInspectionState', () => {
       stopIndex: 5,
       departureMinutes: 620,
     });
+    const candidates = [
+      makeTarget({
+        tripLocator: makeLocator({ tripIndex: 1 }),
+        stopIndex: 4,
+        departureMinutes: 615,
+      }),
+    ];
 
-    const result = refineTripInspectionState([fallbackEntry], target.serviceDate, snapshot, target);
+    const result = refineTripInspectionState(candidates, snapshot, target);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -450,25 +503,6 @@ describe('refineTripInspectionState', () => {
       // originally requested (and missing) stopIndex=5 row.
       expect(result.data.snapshot.currentStopIndex).toBe(1);
       expect(result.data.snapshot.selectedStop).toBe(fallbackStop);
-    }
-  });
-
-  it('attaches the supplied serviceDate to each derived candidate', () => {
-    const entry = makeEntry({ tripIndex: 1, departureMinutes: 500 });
-    const stopTimes = [makeStopTime(3, 500)];
-    const snapshot = makeSelectedSnapshot(stopTimes, 0);
-    const target = makeTarget({
-      tripLocator: makeLocator({ tripIndex: 1 }),
-      stopIndex: 3,
-      departureMinutes: 500,
-    });
-    const serviceDate = new Date(2026, 4, 11);
-
-    const result = refineTripInspectionState([entry], serviceDate, snapshot, target);
-
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.targets[0]?.serviceDate).toBe(serviceDate);
     }
   });
 });
