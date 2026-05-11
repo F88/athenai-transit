@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { formatDateKey } from '../domain/transit/calendar-utils';
 import { getServiceDayMinutes } from '../domain/transit/service-day';
+import { sortTimetableEntriesByDisplayTime } from '../domain/transit/sort-timetable-for-ui';
 import {
   isSameTripInspectionTarget,
   resolveSelectedTripInspectionSnapshot,
@@ -194,28 +195,48 @@ async function refineTripInspectionState(
   isCancelled: () => boolean,
 ): Promise<RefinedTripInspectionStateResult> {
   try {
-    const result = await repo.getTripInspectionTargets({
-      serviceDate: target.serviceDate,
-      stopId: selectedStopId,
-    });
+    // Build the trip-inspection navigation list from the stop's full-day
+    // timetable entries so prev/next steps follow display-time order
+    // (Issue #63). Reusing the repo's canonical TimetableEntry list lets
+    // us share the same sort + (future) filter helpers used by the
+    // timetable grid and the NearbyStop bottom sheet.
+    //
+    // The companion entry point `openTripInspectionFromStopId` still calls
+    // `getTripInspectionTargets` because `selectTripInspectionTargetByReferenceTime`
+    // assumes `departureMinutes`-ascending input (see its TSDoc).
+    const entriesResult = await repo.getFullDayTimetableEntries(selectedStopId, target.serviceDate);
 
     if (isCancelled()) {
       return { ok: false, status: 'cancelled' };
     }
 
-    if (!result.success) {
-      logger.warn('openTripInspection: trip-inspection target lookup failed', result.error, target);
+    if (!entriesResult.success) {
+      logger.warn(
+        'openTripInspection: trip-inspection entry lookup failed',
+        entriesResult.error,
+        target,
+      );
       return { ok: false, status: 'error' };
     }
 
-    if (result.data.length === 0) {
+    // `entriesResult.data` (TimetableEntry[]) is passed directly into the
+    // sort below. No filter is applied here.
+    const sorted = sortTimetableEntriesByDisplayTime([...entriesResult.data]);
+    const candidates: TripInspectionTarget[] = sorted.map((entry) => ({
+      tripLocator: entry.tripLocator,
+      stopIndex: entry.patternPosition.stopIndex,
+      departureMinutes: entry.schedule.departureMinutes,
+      serviceDate: target.serviceDate,
+    }));
+
+    if (candidates.length === 0) {
       return { ok: false, status: 'no-data' };
     }
 
-    const resolvedState = resolveTripInspectionDisplayState(snapshot, result.data, target);
+    const resolvedState = resolveTripInspectionDisplayState(snapshot, candidates, target);
     if (!resolvedState.ok) {
       if (logger.isEnabled('debug')) {
-        const diagnostics = buildTripInspectionMatchDiagnostics(target, result.data);
+        const diagnostics = buildTripInspectionMatchDiagnostics(target, candidates);
         logger.debug(
           'openTripInspection: target lookup mismatch sampleSameService',
           diagnostics.sampleSameService,
@@ -232,7 +253,7 @@ async function refineTripInspectionState(
       }
       logger.warn('openTripInspection: current target missing from trip-inspection targets', {
         target,
-        targets: result.data,
+        targets: candidates,
       });
       return { ok: false, status: 'no-data' };
     }
