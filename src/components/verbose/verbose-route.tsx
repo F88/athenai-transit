@@ -1,6 +1,6 @@
 import type { InfoLevel } from '../../types/app/settings';
 import type { Route } from '../../types/app/transit';
-import type { RouteDisplayNames } from '../../domain/transit/get-route-display-names';
+import type { RouteDisplayNames } from '../../domain/transit/name-resolver/get-route-display-names';
 import { formatRouteLabel } from '../../domain/transit/format-route-label';
 import {
   DEFAULT_GTFS_COLOR,

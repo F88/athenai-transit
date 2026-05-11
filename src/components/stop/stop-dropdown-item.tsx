@@ -1,6 +1,6 @@
 import { Trash2 } from 'lucide-react';
 import { resolveAgencyLang } from '../../config/transit-defaults';
-import { getStopDisplayNames } from '../../domain/transit/get-stop-display-names';
+import { getStopDisplayNames } from '../../domain/transit/name-resolver/get-stop-display-names';
 import { useInfoLevel } from '../../hooks/use-info-level';
 import type { InfoLevel } from '../../types/app/settings';
 import type { AppRouteTypeValue } from '../../types/app/transit';

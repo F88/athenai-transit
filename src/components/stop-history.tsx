@@ -4,7 +4,7 @@ import type { InfoLevel } from '../types/app/settings';
 import type { Stop } from '../types/app/transit';
 import type { StopHistoryEntry } from '../domain/transit/stop-history';
 import { resolveAgencyLang } from '../config/transit-defaults';
-import { getStopDisplayNames } from '../domain/transit/get-stop-display-names';
+import { getStopDisplayNames } from '../domain/transit/name-resolver/get-stop-display-names';
 import { routeTypesEmoji } from '../utils/route-type-emoji';
 import { History } from 'lucide-react';
 import { createLogger } from '../lib/logger';

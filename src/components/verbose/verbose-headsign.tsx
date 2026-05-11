@@ -1,4 +1,4 @@
-import type { HeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
+import type { HeadsignDisplayNames } from '../../domain/transit/name-resolver/get-headsign-display-names';
 import type { RouteDirection } from '../../types/app/transit-composed';
 import { getEffectiveHeadsign } from '../../domain/transit/get-effective-headsign';
 import { VerboseHeadsignDisplayNames } from './verbose-headsign-display-names';

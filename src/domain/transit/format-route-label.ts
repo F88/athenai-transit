@@ -1,5 +1,5 @@
 import { createInfoLevel } from '@/utils/create-info-level';
-import type { RouteDisplayNames } from './get-route-display-names';
+import type { RouteDisplayNames } from './name-resolver/get-route-display-names';
 import type { InfoLevel } from '@/types/app/settings';
 
 /**

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatRouteLabel } from '../format-route-label';
-import type { RouteDisplayNames } from '../get-route-display-names';
+import type { RouteDisplayNames } from '../name-resolver/get-route-display-names';
 import type { InfoLevel } from '../../../types/app/settings';
 
 function resolved(name: string, subNames: string[] = []) {

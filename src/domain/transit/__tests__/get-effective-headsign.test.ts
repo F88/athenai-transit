@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { RouteDirection } from '../../../types/app/transit-composed';
 import { getEffectiveHeadsign } from '../get-effective-headsign';
-import { getHeadsignDisplayNames } from '../get-headsign-display-names';
+import { getHeadsignDisplayNames } from '../name-resolver/get-headsign-display-names';
 
 function makeRD(tripName: string, stopName?: string): RouteDirection {
   return {

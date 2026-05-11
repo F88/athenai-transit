@@ -109,11 +109,11 @@ vi.mock('@/domain/transit/color-resolver/route-colors', () => ({
   getContrastAdjustedRouteColors: () => ({ color: '#112233', textColor: '#ffffff' }),
 }));
 
-vi.mock('@/domain/transit/get-headsign-display-names', () => ({
+vi.mock('@/domain/transit/name-resolver/get-headsign-display-names', () => ({
   getHeadsignDisplayNames: () => ({ resolved: { name: 'Headsign' } }),
 }));
 
-vi.mock('@/domain/transit/get-stop-display-names', () => ({
+vi.mock('@/domain/transit/name-resolver/get-stop-display-names', () => ({
   getStopDisplayNames: () => ({ name: 'Stop Name', subNames: [] }),
 }));
 

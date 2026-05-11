@@ -5,7 +5,7 @@ import { RouteBadge } from '@/components/badge/route-badge';
 import { StopActionButtons } from '@/components/stop-action-buttons';
 import { StopMetrics } from '@/components/stop-metrics';
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
-import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import { normalizeForSearch } from '@/domain/transit/stop-search-index';
 import { useInfoLevel } from '@/hooks/use-info-level';
 import type { LatLng } from '@/types/app/map';

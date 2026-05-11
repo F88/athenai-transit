@@ -1,6 +1,6 @@
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
 import { formatDateKey } from '@/domain/transit/calendar-utils';
-import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import type { InfoLevel } from '@/types/app/settings';
 import type { TripStopTime } from '@/types/app/transit-composed';
 

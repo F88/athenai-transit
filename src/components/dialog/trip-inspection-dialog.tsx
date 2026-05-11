@@ -23,8 +23,8 @@ import {
   resolveRouteColors,
 } from '@/domain/transit/color-resolver/route-colors';
 import { minutesToDate } from '@/domain/transit/calendar-utils';
-import { getHeadsignDisplayNames } from '@/domain/transit/get-headsign-display-names';
-import { getStopDisplayNames } from '@/domain/transit/get-stop-display-names';
+import { getHeadsignDisplayNames } from '@/domain/transit/name-resolver/get-headsign-display-names';
+import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import { deriveJourneyTimeFromTrip } from '@/domain/transit/journey-time';
 import { formatAbsoluteTime } from '@/domain/transit/time';
 import { getOriginStop, getTerminalStop } from '@/domain/transit/trip-stop-times';

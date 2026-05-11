@@ -1,6 +1,6 @@
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { resolveRouteColors } from '../../domain/transit/color-resolver/route-colors';
-import { getHeadsignDisplayNames } from '../../domain/transit/get-headsign-display-names';
+import { getHeadsignDisplayNames } from '../../domain/transit/name-resolver/get-headsign-display-names';
 import { useThemeNeutralBorderColor } from '../../hooks/use-is-low-contrast-against-theme';
 import type { InfoLevel } from '../../types/app/settings';
 import type { RouteDirection } from '../../types/app/transit-composed';

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { resolveAgencyLang } from '@/config/transit-defaults';
 import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
-import { getSelectedHeadsignDisplayName } from '@/domain/transit/get-headsign-display-names';
+import { getSelectedHeadsignDisplayName } from '@/domain/transit/name-resolver/get-headsign-display-names';
 import { groupByRouteHeadsign } from '@/domain/transit/group-timetable-entries';
 import { LOW_CONTRAST_BADGE_MIN_RATIO } from '@/domain/transit/color-resolver/contrast-thresholds';
 import { resolveRouteColors } from '@/domain/transit/color-resolver/route-colors';

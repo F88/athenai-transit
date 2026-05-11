@@ -1,5 +1,5 @@
 import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
-import { getHeadsignDisplayNames } from '../domain/transit/get-headsign-display-names';
+import { getHeadsignDisplayNames } from '../domain/transit/name-resolver/get-headsign-display-names';
 import { headsignSourceEmoji } from '../domain/transit/headsign-source-emoji';
 import {
   type ResolvedDisplayNames,
