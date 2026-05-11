@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { sortTimetableEntriesByDisplayTimeChronologically } from '../domain/transit/sort-timetable-for-ui';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
@@ -53,7 +52,7 @@ export function NearbyStopFlatView({
     <>
       {entries.map((entry, i) => (
         <StopTimeItem
-          key={`${entry.routeDirection.route.route_id}__${getEffectiveHeadsign(entry.routeDirection)}__${entry.schedule.departureMinutes}__${i}`}
+          key={`${entry.tripLocator.patternId}__${entry.tripLocator.serviceId}__${entry.tripLocator.tripIndex}__${entry.patternPosition.stopIndex}`}
           entry={entry}
           now={now}
           forceShowRelativeTime={i === 0}
