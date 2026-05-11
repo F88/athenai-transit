@@ -207,7 +207,7 @@ function TripStopRow({
     stopIndex,
     departureMinutes: tripStopTime.timetableEntry.schedule.departureMinutes,
   };
-  const handleSelectStop = stopId ? () => onSelectStopById?.(stopId) : undefined;
+  const handleSelectStop = stopId && onSelectStopById ? () => onSelectStopById(stopId) : undefined;
   const handleRowKeyDown =
     handleSelectStop === undefined
       ? undefined

@@ -209,8 +209,7 @@
       "noServiceOnThisDay": "この運行日には便がありません",
       "openFailed": "便情報を取得できませんでした",
       "noUpcomingTrips": "現在時刻以降の便がありません",
-      "stopChangedTitle": "表示中の乗り場を切り替えました",
-      "stopChangedDescription": "選択した時刻に対応する乗り場の内容を表示しています"
+      "stopChangedTitle": "表示中の乗り場を切り替えました"
     },
     "sections": {
       "summary": "概要",

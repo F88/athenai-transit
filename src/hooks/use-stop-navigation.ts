@@ -67,6 +67,11 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
     [pushStop, routeTypeMap],
   );
 
+  // Viewport-limited lookup: this only searches `radiusStops` and `inBoundStops`.
+  // Use it for already-visible / user-picked stops (marker, bottom sheet, search,
+  // history, portal fallback) where a stale-free fallback Stop is available.
+  // Do not use it for arbitrary persistent stop IDs such as URL params or other
+  // long-lived references; those must go through `repo.getStopMetaById`.
   const selectStopWithFallback = useCallback(
     (stopId: string, reason: AutoLocateOffReason, fallbackStop?: Stop) => {
       if (logger.isEnabled('debug')) {

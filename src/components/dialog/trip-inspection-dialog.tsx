@@ -311,7 +311,11 @@ function TripInspectionUpdateNotice({ kind, visible }: TripInspectionUpdateNotic
       aria-live="polite"
       className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-1 border-emerald-300 bg-emerald-50 px-3 py-2 text-left shadow-sm dark:border-emerald-800 dark:bg-emerald-950/40"
     >
-      <ArrowRightLeftIcon className="mt-0.5 text-emerald-700 dark:text-emerald-300" />
+      <ArrowRightLeftIcon
+        aria-hidden="true"
+        focusable="false"
+        className="mt-0.5 text-emerald-700 dark:text-emerald-300"
+      />
       <AlertTitle className="text-xs font-semibold text-emerald-900 dark:text-emerald-200">
         {t(message.titleKey)}
       </AlertTitle>
