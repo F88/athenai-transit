@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { Route } from '../../../types/app/transit';
-import type { TimetableEntry } from '../../../types/app/transit-composed';
-import { sortTimetableEntriesByDisplayTime } from '../sort-timetable-for-ui';
+import type { ContextualTimetableEntry, TimetableEntry } from '../../../types/app/transit-composed';
+import {
+  sortTimetableEntriesByDisplayTime,
+  sortTimetableEntriesByDisplayTimeChronologically,
+} from '../sort-timetable-for-ui';
 
 function makeRoute(routeId: string): Route {
   return {
@@ -45,6 +48,29 @@ function makeEntry(overrides: {
     tripLocator: { patternId: `${route.route_id}__test`, serviceId: 'test', tripIndex: 0 },
   };
 }
+
+function makeContextualEntry(overrides: {
+  serviceDate: Date;
+  departureMinutes: number;
+  arrivalMinutes?: number;
+  isTerminal?: boolean;
+  isOrigin?: boolean;
+  routeId?: string;
+}): ContextualTimetableEntry {
+  return {
+    ...makeEntry({
+      departureMinutes: overrides.departureMinutes,
+      arrivalMinutes: overrides.arrivalMinutes,
+      isTerminal: overrides.isTerminal,
+      isOrigin: overrides.isOrigin,
+      routeId: overrides.routeId,
+    }),
+    serviceDate: overrides.serviceDate,
+  };
+}
+
+const SERVICE_DAY_1 = new Date('2026-05-11T00:00:00+09:00');
+const SERVICE_DAY_2 = new Date('2026-05-12T00:00:00+09:00');
 
 describe('sortTimetableEntriesByDisplayTime', () => {
   describe('1. primary key: getDisplayMinutes', () => {
@@ -239,6 +265,167 @@ describe('sortTimetableEntriesByDisplayTime', () => {
       // Don't assert a specific order — just that both survive.
       expect(new Set(entries)).toEqual(new Set([a, b]));
       expect(entries.length).toBe(2);
+    });
+  });
+});
+
+describe('sortTimetableEntriesByDisplayTimeChronologically', () => {
+  describe('1. primary key: absolute display time across service days', () => {
+    it('orders cross-service-day entries by absolute time, not raw display minute', () => {
+      // Reproduces the iyt2 Tokyo-Matsuyama overnight bus case:
+      //   - A: serviceDate = day1, terminal arr = 1900 (= 31:40 from
+      //     day1 midnight = day2 07:40 absolute)
+      //   - B: serviceDate = day2, dep = 600 (= day2 10:00 absolute)
+      // Raw minute compare would order B before A (600 < 1900), but the
+      // visible absolute time is A (07:40) < B (10:00).
+      const overnightArrival = makeContextualEntry({
+        serviceDate: SERVICE_DAY_1,
+        departureMinutes: 1900,
+        arrivalMinutes: 1900,
+        isTerminal: true,
+      });
+      const nextMorningDeparture = makeContextualEntry({
+        serviceDate: SERVICE_DAY_2,
+        departureMinutes: 600,
+      });
+      const entries = [nextMorningDeparture, overnightArrival];
+      sortTimetableEntriesByDisplayTimeChronologically(entries);
+      expect(entries[0]).toBe(overnightArrival);
+      expect(entries[1]).toBe(nextMorningDeparture);
+    });
+
+    it('interleaves yesterday-overnight, today-early, today-late correctly', () => {
+      // Three entries spanning a 24-hour boundary, given in shuffled
+      // input order. Expected absolute order: y2 < t1 < t2.
+      const yesterdayOvernight = makeContextualEntry({
+        serviceDate: SERVICE_DAY_1,
+        departureMinutes: 24 * 60 + 30, // 24:30 = day2 00:30 absolute
+      });
+      const todayMorning = makeContextualEntry({
+        serviceDate: SERVICE_DAY_2,
+        departureMinutes: 400, // day2 06:40 absolute
+      });
+      const todayLate = makeContextualEntry({
+        serviceDate: SERVICE_DAY_2,
+        departureMinutes: 22 * 60, // day2 22:00 absolute
+      });
+      const entries = [todayLate, yesterdayOvernight, todayMorning];
+      sortTimetableEntriesByDisplayTimeChronologically(entries);
+      expect(entries[0]).toBe(yesterdayOvernight);
+      expect(entries[1]).toBe(todayMorning);
+      expect(entries[2]).toBe(todayLate);
+    });
+
+    it('uses arrivalMinutes (not departure) as display for terminals across days', () => {
+      // Terminal A: serviceDate=day1, arr 1850 / dep 1900 → display = arr
+      //   → absolute display = day2 06:50
+      // Non-terminal B: serviceDate=day2, dep 410 → display = dep
+      //   → absolute display = day2 06:50 (same)
+      // Tie on absolute display. Tie-break (key 2 absolute arrival):
+      //   A.arr abs = day2 06:50; B.arr abs = day2 06:50 (we make them tie).
+      // Tie-break (key 3 absolute departure):
+      //   A.dep abs = day2 07:00; B.dep abs = day2 06:50 → B first.
+      const terminalOvernight = makeContextualEntry({
+        serviceDate: SERVICE_DAY_1,
+        arrivalMinutes: 24 * 60 + 6 * 60 + 50, // day2 06:50
+        departureMinutes: 24 * 60 + 7 * 60, // day2 07:00
+        isTerminal: true,
+      });
+      const todayEarly = makeContextualEntry({
+        serviceDate: SERVICE_DAY_2,
+        arrivalMinutes: 6 * 60 + 50, // day2 06:50
+        departureMinutes: 6 * 60 + 50, // day2 06:50
+      });
+      const entries = [terminalOvernight, todayEarly];
+      sortTimetableEntriesByDisplayTimeChronologically(entries);
+      // Display tied. Arrival tied. Departure: B(06:50) < A(07:00) → B first.
+      expect(entries[0]).toBe(todayEarly);
+      expect(entries[1]).toBe(terminalOvernight);
+    });
+  });
+
+  describe('2. tie-break: absolute arrivalMinutes', () => {
+    it('orders entries with equal absolute display by absolute arrival ascending', () => {
+      // Both non-terminal with display = departure. Same absolute display
+      // but different absolute arrival (dwell at the stop differs).
+      // Use same serviceDate so the absolute-vs-raw distinction is moot.
+      const laterArrival = makeContextualEntry({
+        serviceDate: SERVICE_DAY_2,
+        departureMinutes: 10 * 60 + 30,
+        arrivalMinutes: 10 * 60 + 28,
+      });
+      const earlierArrival = makeContextualEntry({
+        serviceDate: SERVICE_DAY_2,
+        departureMinutes: 10 * 60 + 30,
+        arrivalMinutes: 10 * 60 + 25,
+      });
+      const entries = [laterArrival, earlierArrival];
+      sortTimetableEntriesByDisplayTimeChronologically(entries);
+      expect(entries[0]).toBe(earlierArrival);
+      expect(entries[1]).toBe(laterArrival);
+    });
+  });
+
+  describe('3. tie-break: isOrigin / isTerminal flags', () => {
+    it('prefers origin entries when all time keys (abs display/arr/dep) tie', () => {
+      const nonOrigin = makeContextualEntry({
+        serviceDate: SERVICE_DAY_2,
+        departureMinutes: 600,
+      });
+      const origin = makeContextualEntry({
+        serviceDate: SERVICE_DAY_2,
+        departureMinutes: 600,
+        isOrigin: true,
+      });
+      const entries = [nonOrigin, origin];
+      sortTimetableEntriesByDisplayTimeChronologically(entries);
+      expect(entries[0]).toBe(origin);
+      expect(entries[1]).toBe(nonOrigin);
+    });
+
+    it('prefers terminal entries when isOrigin status also ties', () => {
+      const middle = makeContextualEntry({
+        serviceDate: SERVICE_DAY_2,
+        departureMinutes: 600,
+        arrivalMinutes: 600,
+      });
+      const terminal = makeContextualEntry({
+        serviceDate: SERVICE_DAY_2,
+        departureMinutes: 600,
+        arrivalMinutes: 600,
+        isTerminal: true,
+      });
+      const entries = [middle, terminal];
+      sortTimetableEntriesByDisplayTimeChronologically(entries);
+      expect(entries[0]).toBe(terminal);
+      expect(entries[1]).toBe(middle);
+    });
+  });
+
+  describe('mutation contract', () => {
+    it('mutates the input array in place', () => {
+      const entries = [
+        makeContextualEntry({ serviceDate: SERVICE_DAY_2, departureMinutes: 600 }),
+        makeContextualEntry({ serviceDate: SERVICE_DAY_2, departureMinutes: 400 }),
+      ];
+      const before = entries;
+      sortTimetableEntriesByDisplayTimeChronologically(entries);
+      expect(entries).toBe(before);
+      expect(entries.map((e) => e.schedule.departureMinutes)).toEqual([400, 600]);
+    });
+
+    it('returns the input array (for chaining)', () => {
+      const entries = [makeContextualEntry({ serviceDate: SERVICE_DAY_2, departureMinutes: 600 })];
+      const returned = sortTimetableEntriesByDisplayTimeChronologically(entries);
+      expect(returned).toBe(entries);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('handles an empty input', () => {
+      const entries: ContextualTimetableEntry[] = [];
+      sortTimetableEntriesByDisplayTimeChronologically(entries);
+      expect(entries).toEqual([]);
     });
   });
 });

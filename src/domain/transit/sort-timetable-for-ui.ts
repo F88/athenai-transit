@@ -11,7 +11,8 @@
  * the visible `:MM` labels read chronologically (Issue #63).
  */
 
-import type { TimetableEntry } from '../../types/app/transit-composed';
+import type { ContextualTimetableEntry, TimetableEntry } from '../../types/app/transit-composed';
+import { minutesToDate } from './calendar-utils';
 import { getDisplayMinutes } from './timetable-utils';
 
 /**
@@ -52,5 +53,68 @@ export function sortTimetableEntriesByDisplayTime<T extends TimetableEntry>(entr
     // When all five keys tie, the order is unspecified.
     return 0;
   });
+  return entries;
+}
+
+/**
+ * Cross-service-day variant of {@link sortTimetableEntriesByDisplayTime}.
+ *
+ * Each entry is projected to absolute time via
+ * `minutesToDate(serviceDate, ...)` before comparison, so a list that
+ * interleaves the previous service day's overnight tail with today's
+ * entries (typical for `getUpcomingTimetableEntries`) reads in true
+ * chronological order. `minutesToDate` is DST-aware, matching the
+ * behaviour of `sortTimetableEntriesChronologically` in
+ * `./sort-timetable-entries`.
+ *
+ * Sort keys mirror the within-day variant but operate on absolute time:
+ * display → arrival → departure → isOrigin (true first) → isTerminal
+ * (true first). When all five keys tie, the order is unspecified.
+ *
+ * Mutates the input array in place AND returns it (for chaining).
+ */
+export function sortTimetableEntriesByDisplayTimeChronologically<
+  T extends ContextualTimetableEntry,
+>(entries: T[]): T[] {
+  // Pre-compute each entry's absolute display / arrival / departure times
+  // once (O(n)) and sort by the cached numbers, mirroring the allocation
+  // discipline of `sortTimetableEntriesChronologically`.
+  const decorated = entries.map((entry) => ({
+    entry,
+    displayMs: minutesToDate(entry.serviceDate, getDisplayMinutes(entry)).getTime(),
+    arrivalMs: minutesToDate(entry.serviceDate, entry.schedule.arrivalMinutes).getTime(),
+    departureMs: minutesToDate(entry.serviceDate, entry.schedule.departureMinutes).getTime(),
+  }));
+  decorated.sort((a, b) => {
+    // 1. absolute display time ascending
+    const displayDiff = a.displayMs - b.displayMs;
+    if (displayDiff !== 0) {
+      return displayDiff;
+    }
+    // 2. absolute arrival time ascending
+    const arrivalDiff = a.arrivalMs - b.arrivalMs;
+    if (arrivalDiff !== 0) {
+      return arrivalDiff;
+    }
+    // 3. absolute departure time ascending
+    const departureDiff = a.departureMs - b.departureMs;
+    if (departureDiff !== 0) {
+      return departureDiff;
+    }
+    // 4. isOrigin first — true (origin) sorts before false
+    if (a.entry.patternPosition.isOrigin !== b.entry.patternPosition.isOrigin) {
+      return a.entry.patternPosition.isOrigin ? -1 : 1;
+    }
+    // 5. isTerminal first — true (terminal) sorts before false
+    if (a.entry.patternPosition.isTerminal !== b.entry.patternPosition.isTerminal) {
+      return a.entry.patternPosition.isTerminal ? -1 : 1;
+    }
+    // When all five keys tie, the order is unspecified.
+    return 0;
+  });
+  // Mutate the input array to reflect the sorted order.
+  for (let i = 0; i < entries.length; i++) {
+    entries[i] = decorated[i].entry;
+  }
   return entries;
 }
