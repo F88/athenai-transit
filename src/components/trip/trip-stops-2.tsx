@@ -14,6 +14,12 @@ import { TripInfo } from '../trip-info';
 import { VerboseTripStopTime } from '../verbose/verbose-trip-stop-time';
 import { tripStopRowDataAttrs } from './trip-stop-row-dom';
 import { getRenderedTripStopRowKey, getVisibleTripStopRows } from './trip-stop-rows';
+import {
+  TripStopMetaInfo,
+  type TripStopPlaceholderRowProps,
+  type TripStopRowProps,
+  type TripStopsProps,
+} from './trip-stops';
 
 interface TripStopTimelineGutterProps {
   routeColor: string;
@@ -22,12 +28,6 @@ interface TripStopTimelineGutterProps {
   infoLevel: InfoLevel;
 }
 
-import {
-  TripStopMetaInfo,
-  type TripStopPlaceholderRowProps,
-  type TripStopRowProps,
-  type TripStopsProps,
-} from './trip-stops';
 const TRIP_STOP_TIMELINE_GUTTER_CLASS = 'grid grid-cols-[4rem_minmax(0,1fr)] items-start gap-2';
 
 function TripStopTimelineGutter({
