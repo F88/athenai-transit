@@ -96,8 +96,8 @@ function StopMarkerDomItem({
         >
           <StopSummary
             stop={stop}
-            routeTypes={routeTypes}
             agencies={hoverAgencies ?? agencies}
+            routeTypes={routeTypes}
             entries={hasEntries ? entries : undefined}
             now={now}
             infoLevel={infoLevel}

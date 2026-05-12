@@ -252,9 +252,13 @@ function TripEndpointsSummary({
 }
 
 function RichStopSummary({ stop, infoLevel, dataLangs, onSelect }: RichStopSummaryProps) {
-  if (stop?.stopMeta === undefined) {
+  const stopMeta = stop?.stopMeta;
+  const routeTypes = stop?.routeTypes;
+
+  if (stopMeta === undefined || routeTypes === undefined) {
     return null;
   }
+
   // Override Button's inherent fixed height / horizontal padding so the
   // wrapped content controls sizing, while keeping the design system's
   // focus ring, hover accent, and disabled handling. `min-w-0` lets the
@@ -268,20 +272,24 @@ function RichStopSummary({ stop, infoLevel, dataLangs, onSelect }: RichStopSumma
     >
       <div className="min-w-0 px-2">
         <StopInfo
-          stop={stop.stopMeta.stop}
-          agencies={stop.stopMeta.agencies}
+          stop={stopMeta.stop}
+          agencies={stopMeta.agencies}
           showAgencies={true}
-          routeTypes={stop.routeTypes}
+          routeTypes={routeTypes}
           showRouteTypes={true}
-          routes={stop.stopMeta.routes}
+          routes={stopMeta.routes}
           showRoutes={true}
-          stats={stop.stopMeta.stats}
-          geo={stop.stopMeta.geo}
+          distance={undefined}
           mapCenter={null}
           infoLevel={infoLevel}
           dataLangs={dataLangs}
+          stopServiceState={undefined}
+          textSize="md"
+          labelSize="md"
           agencyBadgeSize="sm"
           routeBadgeSize="xs"
+          stats={stopMeta.stats}
+          geo={stopMeta.geo}
         />
       </div>
     </Button>

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { resolveAgencyLang } from '../config/transit-defaults';
 import { getStopDisplayNames } from '../domain/transit/name-resolver/get-stop-display-names';
 import { useInfoLevel } from '../hooks/use-info-level';
+import { cn } from '../lib/utils';
 import type { InfoLevel } from '../types/app/settings';
 import type {
   Agency,
@@ -15,14 +16,17 @@ import { AgencyBadge, type AgencyBadgeSize } from './badge/agency-badge';
 import { IdBadge } from './badge/id-badge';
 import { RouteBadge, type RouteBadgeSize } from './badge/route-badge';
 import { StopServiceStateLabel } from './label/stop-service-state-label';
+import type { BaseDisplaySize } from './shared/display-size';
 import { AccessibilityLabel } from './stop/accessibility-label';
 import { PlatformCodeLabel } from './stop/platform-code-label';
 import { VerboseAgencies } from './verbose/verbose-agencies';
 import { VerboseRoutes } from './verbose/verbose-routes';
 import { VerboseStop } from './verbose/verbose-stop';
 import { VerboseStopDisplayNames } from './verbose/verbose-stop-display-names';
+import type { BaseLabelSize } from './label/base-label';
 
-export type StopSummaryVariant = 'default' | 'compact';
+export type StopSummaryTextSize = BaseDisplaySize;
+export type StopSummaryLabelSize = BaseLabelSize;
 
 /**
  * Shared core props for stop summary presentation.
@@ -51,6 +55,10 @@ export interface StopSummaryCoreProps {
   dataLangs: readonly string[];
   /** Service state of the stop on the current service day. */
   stopServiceState?: StopServiceState;
+  /** Headline text size for stop name, route-type emoji, and related row typography. */
+  textSize?: StopSummaryTextSize;
+  /** Label size for sub names and inline auxiliary labels. */
+  labelSize?: StopSummaryLabelSize;
   /** Badge size for agency badges. */
   agencyBadgeSize: AgencyBadgeSize;
   /** Badge size for route badges. */
@@ -84,11 +92,13 @@ export function StopSummary({
   infoLevel,
   dataLangs,
   stopServiceState,
+  textSize = 'md',
+  labelSize = 'md',
   agencyBadgeSize,
   routeBadgeSize,
   distanceBadge,
 }: StopSummaryProps) {
-  const info = useInfoLevel(infoLevel);
+  const infoLevelFlag = useInfoLevel(infoLevel);
   const showVerbose = infoLevel === 'verbose';
   const stopNames = getStopDisplayNames(
     stop,
@@ -97,10 +107,24 @@ export function StopSummary({
   );
 
   const idRowClass = 'mb-1 flex gap-1';
-  const mainRowClass = 'm-0 flex flex-wrap items-center gap-1 text-xl font-semibold';
+  const mainRowBaseClass = 'm-0 flex flex-wrap items-center gap-1 font-semibold';
+  const mainRowTextClassBySize: Record<StopSummaryTextSize, string> = {
+    sm: 'text-base',
+    md: 'text-xl',
+    lg: 'text-2xl',
+  };
   const routeTypeClass = 'mr-1';
   const stopNameClass = 'text-info';
-  const stopSubNamesClass = 'm-0 mb-0.5 text-xs font-normal text-[#888] dark:text-gray-400';
+  const stopSubNamesBaseClass = 'm-0 mb-0.5 font-normal text-[#888] dark:text-gray-400';
+  const stopSubNamesTextClassBySize: Record<StopSummaryTextSize, string> = {
+    sm: 'text-[10px]',
+    md: 'text-xs',
+    lg: 'text-sm',
+  };
+  const metaLabelSize = labelSize;
+
+  const mainRowClass = cn(mainRowBaseClass, mainRowTextClassBySize[textSize]);
+  const stopSubNamesClass = cn(stopSubNamesBaseClass, stopSubNamesTextClassBySize[textSize]);
 
   return (
     <div className="min-w-0 flex-1">
@@ -112,7 +136,7 @@ export function StopSummary({
       )}
 
       {/* Stop sub names */}
-      {info.isNormalEnabled && stopNames.subNames.length > 0 && (
+      {infoLevelFlag.isNormalEnabled && stopNames.subNames.length > 0 && (
         <p className={stopSubNamesClass}>{stopNames.subNames.join(' / ')}</p>
       )}
 
@@ -123,13 +147,13 @@ export function StopSummary({
         <span className={stopNameClass}>{stopNames.name}</span>
         {/* <span>{stopNames.name}</span> */}
         {/* Platform code */}
-        {stop.platform_code && <PlatformCodeLabel code={stop.platform_code} size="sm" />}
+        {stop.platform_code && <PlatformCodeLabel code={stop.platform_code} size={metaLabelSize} />}
         {/* Distance badge */}
         {distanceBadge && <span className="ml-2">{distanceBadge}</span>}
         {/* Accessibility */}
-        <AccessibilityLabel wheelchairBoarding={stop.wheelchair_boarding} size="sm" />
+        <AccessibilityLabel wheelchairBoarding={stop.wheelchair_boarding} size={metaLabelSize} />
         {stopServiceState && (
-          <StopServiceStateLabel stopServiceState={stopServiceState} size="sm" />
+          <StopServiceStateLabel stopServiceState={stopServiceState} size={metaLabelSize} />
         )}
         {showAgencies &&
           agencies.length > 0 &&
@@ -145,7 +169,7 @@ export function StopSummary({
             />
           ))}
       </div>
-      {showRoutes && info.isDetailedEnabled && routes && routes.length > 0 && (
+      {showRoutes && routes && routes.length > 0 && (
         <div className="mt-0.5 flex flex-wrap items-center gap-1">
           {routes.map((route) => (
             <RouteBadge

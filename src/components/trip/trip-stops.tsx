@@ -226,13 +226,17 @@ function TripStopRow({
       showRouteTypes={true}
       routes={stopMeta.routes}
       showRoutes={true}
-      stats={stopMeta.stats}
-      geo={stopMeta.geo}
+      distance={undefined}
       mapCenter={null}
       infoLevel={infoLevel}
       dataLangs={dataLangs}
+      stopServiceState={undefined}
+      textSize="sm"
+      labelSize="sm"
       agencyBadgeSize="xs"
       routeBadgeSize="xs"
+      stats={stopMeta.stats}
+      geo={stopMeta.geo}
     />
   ) : (
     <>

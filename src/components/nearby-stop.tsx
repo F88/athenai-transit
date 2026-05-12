@@ -119,21 +119,23 @@ export function NearbyStop({
       <div className="m-0 mb-1.5 flex items-stretch gap-1">
         <StopInfo
           stop={stop}
-          showAgencies={true}
-          showRouteTypes={true}
-          routeTypes={routeTypes}
           agencies={agencies}
+          showAgencies={true}
+          routeTypes={routeTypes}
+          showRouteTypes={true}
+          routes={routes}
+          showRoutes={info.isDetailedEnabled}
           distance={distance}
           mapCenter={mapCenter}
           infoLevel={infoLevel}
           dataLangs={dataLangs}
           stopServiceState={stopServiceState}
-          routes={routes}
-          showRoutes={true}
-          stats={stats}
-          geo={geo}
+          textSize="md"
+          labelSize="sm"
           agencyBadgeSize={'sm'}
           routeBadgeSize={'xs'}
+          stats={stats}
+          geo={geo}
         />
         <StopActionButtons
           stopId={stop.stop_id}
