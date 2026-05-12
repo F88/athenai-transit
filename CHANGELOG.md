@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.12]
+
 ### Added
 
 - Trip inspection: trip 内の stop list を timeline 形式の design に切り替え (`TripStops2` を既定)。 1 行ごとに gutter を独立させて stop 時刻 label を中央寄せ、 stop 間はコネクター線で接続する layout に。 facade `TripStops` 経由で旧 design (`TripStops1`) と比較できる暫定 query parameter `?tripStops=v1` / `?tripStops=v2` を追加し、 row 構築の共通 helper を `src/components/trip/trip-stop-rows.ts` に切り出した (design レビュー用、 一本化後に撤去予定)。
