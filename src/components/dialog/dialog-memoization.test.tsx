@@ -126,6 +126,10 @@ vi.mock('@/domain/transit/time', () => ({
 }));
 
 vi.mock('@/domain/transit/trip-stop-times', () => ({
+  buildStopByPatternIndex: (stopTimes: TripStopTime[]) =>
+    new Map(stopTimes.map((stop) => [stop.timetableEntry.patternPosition.stopIndex, stop])),
+  getPatternTotalStops: (stopTimes: TripStopTime[]) =>
+    stopTimes[0]?.timetableEntry.patternPosition.totalStops ?? 0,
   getOriginStop: (stopTimes: TripStopTime[]) => stopTimes[0],
   getTerminalStop: (stopTimes: TripStopTime[]) => stopTimes[stopTimes.length - 1],
 }));
@@ -151,6 +155,7 @@ vi.mock('../trip/trip-basic-info', () => ({
 
 vi.mock('../trip/trip-stop-row-dom', () => ({
   findTripStopRow: () => null,
+  tripStopRowDataAttrs: (stopIndex: number) => ({ 'data-trip-stop-index': String(stopIndex) }),
 }));
 
 vi.mock('../trip/trip-stop-scroll', () => ({

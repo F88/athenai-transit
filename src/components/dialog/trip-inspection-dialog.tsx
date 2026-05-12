@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { JourneyTimeBar } from '@/components/journey-time-bar';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { StopInfo } from '@/components/stop-info';
-import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
+import { minutesToDate } from '@/domain/transit/calendar-utils';
 import {
   LOW_CONTRAST_BADGE_MIN_RATIO,
   LOW_CONTRAST_TEXT_MIN_RATIO,
@@ -23,10 +24,9 @@ import {
   getContrastAdjustedRouteColors,
   resolveRouteColors,
 } from '@/domain/transit/color-resolver/route-colors';
-import { minutesToDate } from '@/domain/transit/calendar-utils';
+import { deriveJourneyTimeFromTrip } from '@/domain/transit/journey-time';
 import { getHeadsignDisplayNames } from '@/domain/transit/name-resolver/get-headsign-display-names';
 import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
-import { deriveJourneyTimeFromTrip } from '@/domain/transit/journey-time';
 import { formatAbsoluteTime } from '@/domain/transit/time';
 import { getOriginStop, getTerminalStop } from '@/domain/transit/trip-stop-times';
 import { useInfoLevel } from '@/hooks/use-info-level';
@@ -44,10 +44,10 @@ import { ArrowRightLeftIcon } from 'lucide-react';
 import { IdBadge } from '../badge/id-badge';
 import { TripPositionIndicator } from '../label/trip-position-indicator';
 import { TripBasicInfo } from '../trip/trip-basic-info';
+import { TripPager } from '../trip/trip-pager';
 import { findTripStopRow } from '../trip/trip-stop-row-dom';
 import { computeScrolledStopIndex, getSelectedRowScrollTop } from '../trip/trip-stop-scroll';
 import { TripStops } from '../trip/trip-stops';
-import { TripPager } from '../trip/trip-pager';
 import { VerboseTripLocator } from '../verbose/verbose-trip-locator';
 import { VerboseTripStopTime } from '../verbose/verbose-trip-stop-time';
 
@@ -927,20 +927,6 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
               onSelectStopById={onSelectStopById}
             />
           </div>
-          {/* WIP  */}
-          {/* <div className="flex flex-col gap-4 pt-2 pb-2">
-            <TripStops2
-              tripSnapshot={snapshot}
-              renderedSnapshot={renderedSnapshot}
-              selectedPatternStopIndex={selectedPatternStopIndex}
-              routeColors={adjustedRouteColors}
-              infoLevel={infoLevel}
-              dataLangs={dataLangs}
-              now={now}
-              onInspectTrip={onInspectTrip}
-              onSelectStopById={onSelectStopById}
-            />
-          </div> */}
           {contentScroll.showBottom && <ScrollFadeEdge position="bottom" />}
         </div>
       </DialogContent>

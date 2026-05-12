@@ -1,14 +1,6 @@
 import { memo } from 'react';
-import { useTranslation } from 'react-i18next';
 
-import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
 import { type AdjustedRouteColors } from '@/domain/transit/color-resolver/route-colors';
-import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
-import { deriveStopTimeRoleDisplayProps } from '@/domain/transit/stop-time-display';
-import { getTimetableEntryAttributes } from '@/domain/transit/timetable-entry-attributes';
-import { buildStopByPatternIndex, getPatternTotalStops } from '@/domain/transit/trip-stop-times';
-import { useInfoLevel } from '@/hooks/use-info-level';
-import { cn } from '@/lib/utils';
 import type { InfoLevel } from '@/types/app/settings';
 import type {
   SelectedTripSnapshot,
@@ -16,13 +8,12 @@ import type {
   TripStopTime,
 } from '@/types/app/transit-composed';
 import { LabelCountBadge } from '../badge/label-count-badge';
-import { StopInfo } from '../stop-info';
-import { StopTimeTimeInfo } from '../stop-time-time-info';
-import { TripInfo } from '../trip-info';
-import { VerboseTripStopTime } from '../verbose/verbose-trip-stop-time';
-import { tripStopRowDataAttrs } from './trip-stop-row-dom';
+import { StopTimeTimeInfo, type StopTimeTimeInfoAlign } from '../stop-time-time-info';
+import { TripStops1 } from './trip-stops-1';
+import { TripStops2 } from './trip-stops-2';
 
-interface TripStopsProps {
+/** Shared props forwarded to the active TripStops implementation. */
+export interface TripStopsProps {
   tripSnapshot: SelectedTripSnapshot;
   renderedSnapshot: SelectedTripSnapshot | null;
   selectedPatternStopIndex: number;
@@ -34,7 +25,8 @@ interface TripStopsProps {
   onSelectStopById?: (stopId: string) => void;
 }
 
-interface TripStopRowProps {
+/** Shared props for a concrete reconstructed stop row in the trip stops list. */
+export interface TripStopRowProps {
   tripStopTime: TripStopTime;
   tripLocator: SelectedTripSnapshot['locator'];
   totalStops: number;
@@ -48,7 +40,8 @@ interface TripStopRowProps {
   onSelectStopById?: (stopId: string) => void;
 }
 
-interface TripStopPlaceholderRowProps {
+/** Shared props for placeholder rows rendered for missing pattern positions. */
+export interface TripStopPlaceholderRowProps {
   stopIndex: number;
   totalStops: number;
   currentPatternStopIndex: number;
@@ -70,6 +63,7 @@ interface TripStopMetaInfoProps {
   labelBg?: string;
   labelFg?: string;
   frameColor?: string;
+  align: StopTimeTimeInfoAlign;
   className?: string;
   stopId?: string;
   inspectTarget?: TripInspectionTarget;
@@ -77,33 +71,16 @@ interface TripStopMetaInfoProps {
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
-type RenderedTripStopRow =
-  | { kind: 'stop'; stop: TripStopTime; stopIndex: number; totalStops: number }
-  | { kind: 'placeholder'; stopIndex: number; totalStops: number };
-
-// Initial frame renders the selected stop and +/- 5 neighbors so
-// long trips paint quickly before the full list is restored.
-const INITIAL_TRIP_STOP_RENDER_PADDING = 5;
-
-function buildRenderedTripStopRows(stopTimes: readonly TripStopTime[]): RenderedTripStopRow[] {
-  const totalStops = getPatternTotalStops(stopTimes);
-  if (totalStops === 0) {
-    return [];
-  }
-
-  const stopByIndex = buildStopByPatternIndex(stopTimes);
-
-  return Array.from({ length: totalStops }, (_, stopIndex) => {
-    const stop = stopByIndex.get(stopIndex);
-    if (stop) {
-      return { kind: 'stop', stop, stopIndex, totalStops } satisfies RenderedTripStopRow;
-    }
-
-    return { kind: 'placeholder', stopIndex, totalStops } satisfies RenderedTripStopRow;
-  });
-}
-
-function TripStopMetaInfo({
+/**
+ * Compact meta block rendered beside each trip stop row.
+ *
+ * Displays the stop index badge and, when schedule inputs are complete, the
+ * corresponding arrival / departure time summary.
+ *
+ * @param props - Display and interaction data for the stop meta block.
+ * @returns The stop badge and optional time summary for a trip stop row.
+ */
+export function TripStopMetaInfo({
   serviceDate,
   now,
   arrivalMinutes,
@@ -117,6 +94,7 @@ function TripStopMetaInfo({
   labelBg,
   labelFg,
   frameColor,
+  align,
   className,
   stopId,
   inspectTarget,
@@ -150,6 +128,7 @@ function TripStopMetaInfo({
           serviceDate={serviceDate}
           now={now}
           size="md"
+          align={align}
           showArrivalTime={showArrivalTime}
           showDepartureTime={showDepartureTime}
           collapseToleranceMinutes={collapseToleranceMinutes}
@@ -165,269 +144,76 @@ function TripStopMetaInfo({
   );
 }
 
-function TripStopRow({
-  tripStopTime,
-  tripLocator,
-  totalStops,
-  currentPatternStopIndex,
-  routeColors,
-  infoLevel,
-  dataLangs,
-  serviceDate,
-  now,
-  onInspectTrip,
-  onSelectStopById,
-}: TripStopRowProps) {
-  const { t } = useTranslation();
-  const infoLevelFlag = useInfoLevel(infoLevel);
-  const stopMeta = tripStopTime.stopMeta;
-  const stopId = tripStopTime.stopMeta?.stop.stop_id;
-  const stopAttributes = getTimetableEntryAttributes(tripStopTime.timetableEntry);
-  const stopAgency = stopMeta?.agencies.find(
-    (agency) => agency.agency_id === tripStopTime.timetableEntry.routeDirection.route.agency_id,
-  );
-  const stopAgencyLangs = tripStopTime.stopMeta
-    ? resolveAgencyLang(tripStopTime.stopMeta.agencies, tripStopTime.stopMeta.stop.agency_id)
-    : DEFAULT_AGENCY_LANG;
-  const stopNames = tripStopTime.stopMeta
-    ? getStopDisplayNames(tripStopTime.stopMeta.stop, dataLangs, stopAgencyLangs)
-    : null;
-  const stopIndex = tripStopTime.timetableEntry.patternPosition.stopIndex;
-  const isCurrent = stopIndex === currentPatternStopIndex;
-  const isTerminalStop = tripStopTime.timetableEntry.patternPosition.isTerminal;
-  const isFirstStop = tripStopTime.timetableEntry.patternPosition.isOrigin;
-  const display = deriveStopTimeRoleDisplayProps({
-    isOrigin: isFirstStop,
-    isTerminal: isTerminalStop,
-    infoLevel,
-  });
-  const inspectTarget: TripInspectionTarget = {
-    serviceDate,
-    tripLocator,
-    stopIndex,
-    departureMinutes: tripStopTime.timetableEntry.schedule.departureMinutes,
-  };
-  const handleSelectStop = stopId && onSelectStopById ? () => onSelectStopById(stopId) : undefined;
-  const handleRowKeyDown =
-    handleSelectStop === undefined
-      ? undefined
-      : (e: React.KeyboardEvent<HTMLDivElement>) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleSelectStop();
-          }
-        };
-  const stopContent = stopMeta ? (
-    <StopInfo
-      stop={stopMeta.stop}
-      agencies={stopMeta.agencies}
-      showAgencies={true}
-      routeTypes={tripStopTime.routeTypes}
-      showRouteTypes={true}
-      routes={stopMeta.routes}
-      showRoutes={true}
-      distance={undefined}
-      mapCenter={null}
-      infoLevel={infoLevel}
-      dataLangs={dataLangs}
-      stopServiceState={undefined}
-      textSize="sm"
-      labelSize="sm"
-      agencyBadgeSize="xs"
-      routeBadgeSize="xs"
-      stats={stopMeta.stats}
-      geo={stopMeta.geo}
-    />
-  ) : (
-    <>
-      <div className="flex min-w-0 flex-col gap-1">
-        {stopNames && stopNames.subNames.length > 0 && (
-          <div className="text-muted-foreground truncate text-xs">
-            {stopNames.subNames.join(' / ')}
-          </div>
-        )}
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-xs">#{stopIndex}</span>
-          <span className="truncate font-medium">
-            {stopNames?.name || stopId || t('tripInspection.unknownStop')}
-          </span>
-        </div>
-        {stopId !== undefined && (
-          <div className="text-muted-foreground truncate text-xs">{stopId}</div>
-        )}
-      </div>
-    </>
+/** Supported temporary variants for the TripStops design comparison. */
+type TripStopsVariant = 'v1' | 'v2';
+
+/** Query parameter name for the temporary TripStops design comparison switch. */
+const TRIP_STOPS_VARIANT_QUERY_PARAM = 'tripStops';
+
+/**
+ * Default temporary variant used when the query parameter is absent or invalid.
+ *
+ * Keep this value explicit so the preferred design under review is obvious in
+ * both the implementation and the tests.
+ */
+const TRIP_STOPS_VARIANT_DEFAULT_VALUE: TripStopsVariant = 'v2';
+
+/** Component implementation used for each temporary TripStops variant. */
+const TRIP_STOPS_COMPONENT_BY_VARIANT: Record<TripStopsVariant, typeof TripStops1> = {
+  v1: TripStops1,
+  v2: TripStops2,
+};
+
+/** Default TripStops implementation used when no temporary variant is selected. */
+const DEFAULT_TRIP_STOPS_COMPONENT =
+  TRIP_STOPS_COMPONENT_BY_VARIANT[TRIP_STOPS_VARIANT_DEFAULT_VALUE];
+
+/**
+ * Resolve the temporary TripStops design variant from the query string.
+ *
+ * The comparison switch is intentionally local to the TripStops facade so the
+ * rest of the UI does not need to know about the temporary `TripStops1` /
+ * `TripStops2` split during design review.
+ *
+ * @returns The requested temporary variant, or the configured default when the
+ * query parameter is absent or invalid.
+ */
+function getTripStopsVariantFromQuery(): TripStopsVariant {
+  if (typeof window === 'undefined') {
+    return TRIP_STOPS_VARIANT_DEFAULT_VALUE;
+  }
+
+  const requestedVariant = new URLSearchParams(window.location.search).get(
+    TRIP_STOPS_VARIANT_QUERY_PARAM,
   );
 
-  return (
-    <div
-      {...tripStopRowDataAttrs(stopIndex)}
-      {...(handleSelectStop ? { role: 'button' as const, tabIndex: 0 } : {})}
-      onClick={handleSelectStop}
-      onKeyDown={handleRowKeyDown}
-      className={cn(
-        'bg-background rounded-md border-2 px-3 py-2',
-        handleSelectStop &&
-          'cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-      )}
-      style={isCurrent ? { borderColor: routeColors.color } : undefined}
-    >
-      {/* StopTime / StopInfo / Index  */}
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
-        <TripStopMetaInfo
-          serviceDate={serviceDate}
-          now={now}
-          arrivalMinutes={tripStopTime.timetableEntry.schedule.arrivalMinutes}
-          departureMinutes={tripStopTime.timetableEntry.schedule.departureMinutes}
-          collapseToleranceMinutes={display.collapseToleranceMinutes}
-          showArrivalTime={display.showArrivalTime}
-          showDepartureTime={display.showDepartureTime}
-          stopIndex={stopIndex}
-          totalStops={totalStops}
-          timeTextColor={routeColors.color}
-          labelBg={routeColors.color}
-          labelFg={routeColors.textColor}
-          frameColor={routeColors.color}
-          className="flex min-h-8 flex-col items-end gap-1"
-          stopId={stopId}
-          inspectTarget={inspectTarget}
-          onSelectStopById={onSelectStopById}
-          onInspectTrip={onInspectTrip}
-        />
-        <div className="min-w-0">
-          {stopContent}
-          {infoLevelFlag.isDetailedEnabled && (
-            <div className="border-border/70 mt-1 border-t border-dashed pt-1">
-              <TripInfo
-                size="sm"
-                routeDirection={tripStopTime.timetableEntry.routeDirection}
-                infoLevel={infoLevel}
-                dataLangs={dataLangs}
-                showRouteTypeIcon={false}
-                agency={stopAgency}
-                showAgency={false}
-                attributes={stopAttributes}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-      {infoLevelFlag.isVerboseEnabled && (
-        <VerboseTripStopTime
-          tripStopTime={tripStopTime}
-          serviceDate={serviceDate}
-          dataLangs={dataLangs}
-        />
-      )}
-    </div>
-  );
+  if (requestedVariant == null) {
+    return TRIP_STOPS_VARIANT_DEFAULT_VALUE;
+  }
+
+  return requestedVariant in TRIP_STOPS_COMPONENT_BY_VARIANT
+    ? (requestedVariant as TripStopsVariant)
+    : TRIP_STOPS_VARIANT_DEFAULT_VALUE;
 }
 
-function TripStopPlaceholderRow({
-  stopIndex,
-  totalStops,
-  currentPatternStopIndex,
-  routeColors,
-  infoLevel: _infoLevel,
-}: TripStopPlaceholderRowProps) {
-  const { t } = useTranslation();
-  const isCurrent = stopIndex === currentPatternStopIndex;
+/**
+ * Public TripStops facade used by dialogs and other callers.
+ *
+ * TEMPORARY DESIGN COMPARISON SWITCH:
+ * This query-param based branch exists only to switch between the TripStops1
+ * and TripStops2 UI designs during review. Keep the branching logic isolated
+ * here, and remove it once the design comparison ends and a single
+ * implementation is chosen.
+ *
+ * @param props - Shared props forwarded unchanged to the active TripStops variant.
+ * @returns The active TripStops implementation for the current temporary variant.
+ */
+export const TripStops = memo(function TripStops(props: TripStopsProps) {
+  const activeVariant = getTripStopsVariantFromQuery();
+  const ActiveTripStops =
+    activeVariant === TRIP_STOPS_VARIANT_DEFAULT_VALUE
+      ? DEFAULT_TRIP_STOPS_COMPONENT
+      : TRIP_STOPS_COMPONENT_BY_VARIANT[activeVariant];
 
-  return (
-    <div
-      {...tripStopRowDataAttrs(stopIndex)}
-      className={['rounded-md border-2 border-dashed px-3 py-2', 'border-border bg-muted/20'].join(
-        ' ',
-      )}
-      style={isCurrent ? { borderColor: routeColors.color } : undefined}
-    >
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
-        <TripStopMetaInfo
-          // No schedule → `StopTimeTimeInfo` is not rendered inside
-          // `TripStopMetaInfo`; the value is effectively dead. Use `null`
-          // (= "collapse disabled") to make the inert intent explicit
-          // rather than picking a tolerance that would imply a policy.
-          collapseToleranceMinutes={null}
-          stopIndex={stopIndex}
-          totalStops={totalStops}
-          labelBg={routeColors.color}
-          labelFg={routeColors.textColor}
-          frameColor={routeColors.color}
-          className="flex min-h-8 flex-col items-end gap-1"
-        />
-        <div className="flex min-w-0 flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground truncate font-medium">
-              {t('tripInspection.unknownStop')} ({stopIndex + 1}/{totalStops})
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export const TripStops = memo(function TripStops({
-  tripSnapshot,
-  renderedSnapshot,
-  selectedPatternStopIndex,
-  routeColors,
-  infoLevel,
-  dataLangs,
-  now,
-  onInspectTrip,
-  onSelectStopById,
-}: TripStopsProps) {
-  const renderedTripStopRows = buildRenderedTripStopRows(tripSnapshot.stopTimes);
-  const initialRenderStart = Math.max(
-    0,
-    selectedPatternStopIndex - INITIAL_TRIP_STOP_RENDER_PADDING,
-  );
-  const initialRenderEnd = Math.min(
-    renderedTripStopRows.length,
-    selectedPatternStopIndex + INITIAL_TRIP_STOP_RENDER_PADDING + 1,
-  );
-  const renderAllStops = renderedSnapshot === tripSnapshot;
-  const visibleTripStopRows = renderAllStops
-    ? renderedTripStopRows
-    : renderedTripStopRows.slice(initialRenderStart, initialRenderEnd);
-
-  return (
-    <section className="flex flex-col gap-2">
-      <div className="flex flex-col gap-2">
-        {visibleTripStopRows.map((row) => {
-          const rowKey =
-            row.kind === 'placeholder'
-              ? `placeholder:${row.stopIndex}`
-              : `${row.stop.stopMeta?.stop.stop_id || '(unknown-stop)'}:${row.stopIndex}`;
-
-          return row.kind === 'placeholder' ? (
-            <TripStopPlaceholderRow
-              key={rowKey}
-              stopIndex={row.stopIndex}
-              totalStops={row.totalStops}
-              currentPatternStopIndex={selectedPatternStopIndex}
-              routeColors={routeColors}
-              infoLevel={infoLevel}
-            />
-          ) : (
-            <TripStopRow
-              key={rowKey}
-              tripStopTime={row.stop}
-              tripLocator={tripSnapshot.locator}
-              totalStops={row.totalStops}
-              currentPatternStopIndex={selectedPatternStopIndex}
-              routeColors={routeColors}
-              infoLevel={infoLevel}
-              dataLangs={dataLangs}
-              serviceDate={tripSnapshot.serviceDate}
-              now={now}
-              onInspectTrip={onInspectTrip}
-              onSelectStopById={onSelectStopById}
-            />
-          );
-        })}
-      </div>
-    </section>
-  );
+  return <ActiveTripStops {...props} />;
 });
