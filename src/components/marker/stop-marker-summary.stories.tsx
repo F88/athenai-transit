@@ -12,7 +12,7 @@ import {
   tramRoute,
 } from '../../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../../stories/lang-comparison';
-import { StopSummary } from './stop-summary';
+import { StopMarkerSummary } from './stop-marker-summary';
 
 const defaultEntries = [
   createEntry({ departureMinutes: 870, route: busRoute, headsign: '大塚駅前' }),
@@ -46,8 +46,8 @@ const kitchenSinkEntries = [
 ];
 
 const meta = {
-  title: 'Map/MarkerStopSummary',
-  component: StopSummary,
+  title: 'Map/StopMarkerSummary',
+  component: StopMarkerSummary,
   args: {
     stop: baseStop,
     routeTypes: [3] as AppRouteTypeValue[],
@@ -67,7 +67,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof StopSummary>;
+} satisfies Meta<typeof StopMarkerSummary>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -112,7 +112,7 @@ export const LangComparison: Story = {
       {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
         <div key={label} className="space-y-1">
           <span className="block text-[10px] text-gray-400">{label}</span>
-          <StopSummary {...args} dataLang={dataLang} />
+          <StopMarkerSummary {...args} dataLang={dataLang} />
         </div>
       ))}
     </div>

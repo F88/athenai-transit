@@ -13,7 +13,7 @@ import { IdBadge } from '../badge/id-badge';
 import { RelativeTime } from '../relative-time';
 import { TripInfo } from '../trip-info';
 
-interface StopSummaryProps {
+interface StopMarkerSummaryProps {
   stop: Stop;
   routeTypes: AppRouteTypeValue[];
   agencies: Agency[];
@@ -32,7 +32,7 @@ interface StopSummaryProps {
  *
  * Shared by both standard-mode Tooltip and lightweight-mode Popup.
  */
-export function StopSummary({
+export function StopMarkerSummary({
   stop,
   routeTypes,
   agencies,
@@ -40,7 +40,7 @@ export function StopSummary({
   now,
   infoLevel,
   dataLang,
-}: StopSummaryProps) {
+}: StopMarkerSummaryProps) {
   const info = createInfoLevel(infoLevel);
   const stopNames = getStopDisplayNames(
     stop,
