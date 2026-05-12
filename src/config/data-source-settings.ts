@@ -7,6 +7,22 @@ import type { SourceGroup } from '../types/app/source-group';
  * groups) and a worked bundling example.
  */
 const settings: SourceGroup[] = [
+  // {
+  //   id: 'test-all-x',
+  //   prefixes: ['none1', 'none2', 'none3'],
+  //   routeTypes: [3],
+  //   enabled: true,
+  //   name: { name: 'test-all-x', names: { ja: 'test-all-x', en: 'test-all-x' } },
+  //   countries: ['JP'],
+  // },
+  // {
+  //   id: 'test-partial-x',
+  //   prefixes: ['none1', 'kazag'],
+  //   routeTypes: [3],
+  //   enabled: true,
+  //   name: { name: 'test-partial-x', names: { ja: 'test-partial-x', en: 'test-partial-x' } },
+  //   countries: ['JP'],
+  // },
   {
     id: 'toei-bus',
     prefixes: ['minkuru'],
