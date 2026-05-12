@@ -20,23 +20,40 @@ import { createLogger } from '../lib/logger';
  * immediate sense of "where can I go from here?".
  */
 const HOME_LOCATIONS = [
-  /** Japan */
-  { name: 'Tokyo Station', lat: 35.6812, lng: 139.7671, zoom: 15 },
+  /** Tokyo, Japan */
+  { name: 'Tokyo Station', lat: 35.6814, lng: 139.7674, zoom: 15 },
   { name: 'Kumano-mae', lat: 35.7485, lng: 139.7699, zoom: 15 },
-  { name: 'Kinshicho Station', lat: 35.6967, lng: 139.8139, zoom: 17 },
+  { name: 'Kinshicho Station', lat: 35.6967, lng: 139.814, zoom: 17 },
   { name: 'Tokyo Big Sight', lat: 35.6302, lng: 139.793, zoom: 18 },
-  { name: 'Shibuya Station', lat: 35.6591, lng: 139.7026, zoom: 16 },
+  { name: 'Shibuya Station', lat: 35.6588, lng: 139.7012, zoom: 17 },
   { name: 'Otsuka Station', lat: 35.731, lng: 139.7291, zoom: 18 },
-  { name: 'Nerima Station', lat: 35.7379, lng: 139.6542, zoom: 18 },
+  { name: 'Nerima Station', lat: 35.7384, lng: 139.654, zoom: 18 },
   { name: 'Chiyoda City Hall', lat: 35.6948, lng: 139.7533, zoom: 16 },
-  { name: 'Ikebukuro Station', lat: 35.7299, lng: 139.7108, zoom: 16 },
-  { name: 'Shinjuku Station West', lat: 35.6913, lng: 139.6985, zoom: 17 },
+  { name: 'Ikebukuro Station', lat: 35.73, lng: 139.7127, zoom: 16 },
+  { name: 'Shinjuku Station West (North)', lat: 35.6919, lng: 139.6987, zoom: 18 },
+  { name: 'Shinjuku Station West (South)', lat: 35.691, lng: 139.6985, zoom: 15 },
+  { name: 'Shinagawa Seaside', lat: 35.6103, lng: 139.7483, zoom: 15 },
+  { name: 'Shimbashi Station', lat: 35.6663, lng: 139.7596, zoom: 16 },
+  { name: 'Ome Station', lat: 35.7879, lng: 139.258, zoom: 16 },
+  /** Oshima, Tokyo, Japan */
+  { name: 'Motomachi Port', lat: 34.7512, lng: 139.3546, zoom: 12 },
+  /** Kanagawa, Japan */
+  { name: 'Kannai Sta, Kanagawa, Japan', lat: 35.4444, lng: 139.6407, zoom: 15 },
+  /** Nagoya, Japan */
   { name: 'Nagoya', lat: 35.1697, lng: 136.8954, zoom: 13 },
-  { name: 'Matsuyama (Okaido crossing)', lat: 33.8412, lng: 132.7701, zoom: 16 },
+  /** Kyoto, Japan */
+  { name: 'Kyoto Station', lat: 34.9868, lng: 135.7586, zoom: 19 },
+  { name: 'Kinkakuji Temple', lat: 35.0392, lng: 135.7319, zoom: 17 },
+  { name: 'Nishigamo Shako', lat: 35.06443711972482, lng: 135.74506404084843, zoom: 16 },
+  /** Ehime, Japan */
+  { name: 'Matsuyama (Okaido crossing)', lat: 33.8417, lng: 132.7703, zoom: 16 },
+  { name: 'Matsuyama City Station', lat: 33.8361, lng: 132.7632, zoom: 18 },
+  { name: 'Yawatahama Port', lat: 33.4605585, lng: 132.41714, zoom: 14 },
   /** Germany */
   { name: 'Freiburg Hauptbahnhof', lat: 47.99610302520502, lng: 7.840770083827948, zoom: 16 },
   /** Italy */
   { name: 'Venice Piazzale Roma', lat: 45.43391655307844, lng: 12.343352744453911, zoom: 16 },
+  { name: 'Venezia Santa Lucia', lat: 45.441, lng: 12.321, zoom: 15 },
 ] as const;
 
 const logger = createLogger('MapDefaults');
