@@ -12,7 +12,7 @@ import { routeTypeColor } from '../../utils/route-type-color';
 import { createInfoLevel } from '../../utils/create-info-level';
 import { createLogger } from '../../lib/logger';
 import { MARKER_STYLES } from '../../config/marker-styles';
-import { StopSummary } from './stop-summary';
+import { StopMarkerSummary } from './stop-marker-summary';
 
 const logger = createLogger('EdgeMarkersDom');
 
@@ -179,7 +179,7 @@ function EdgeMarkerItem({
         <div
           className={`pointer-events-none absolute z-10 rounded-md bg-white px-2 py-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.25)] dark:bg-gray-800 ${MARKER_STYLES.tooltip.className} ${tooltipVClass} ${tooltipHClass}`}
         >
-          <StopSummary
+          <StopMarkerSummary
             stop={marker.stop}
             routeTypes={marker.routeTypes}
             agencies={stopTimes?.agencies ?? agencies}

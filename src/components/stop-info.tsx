@@ -35,6 +35,8 @@ export function StopInfo({
   infoLevel,
   dataLangs,
   stopServiceState,
+  textSize,
+  labelSize,
   agencyBadgeSize,
   routeBadgeSize,
   stats,
@@ -57,6 +59,8 @@ export function StopInfo({
           infoLevel={infoLevel}
           dataLangs={dataLangs}
           stopServiceState={stopServiceState}
+          textSize={textSize}
+          labelSize={labelSize}
           agencyBadgeSize={agencyBadgeSize}
           routeBadgeSize={routeBadgeSize}
           distanceBadge={

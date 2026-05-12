@@ -7,7 +7,7 @@ import { primaryRouteType } from '../../domain/transit/route-type-priority';
 import { createStopIcon } from '../../lib/leaflet-helpers';
 import { createLogger } from '../../lib/logger';
 import { MARKER_STYLES } from '../../config/marker-styles';
-import { StopSummary } from './stop-summary';
+import { StopMarkerSummary } from './stop-marker-summary';
 
 const logger = createLogger('StopMarkerDom');
 
@@ -94,10 +94,10 @@ function StopMarkerDomItem({
           permanent={isSelected}
           className={MARKER_STYLES.tooltip.className}
         >
-          <StopSummary
+          <StopMarkerSummary
             stop={stop}
-            routeTypes={routeTypes}
             agencies={hoverAgencies ?? agencies}
+            routeTypes={routeTypes}
             entries={hasEntries ? entries : undefined}
             now={now}
             infoLevel={infoLevel}

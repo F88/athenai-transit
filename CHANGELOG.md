@@ -9,6 +9,17 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Trip inspection: trip 内の stop list を timeline 形式の design に切り替え (`TripStops2` を既定)。 1 行ごとに gutter を独立させて stop 時刻 label を中央寄せ、 stop 間はコネクター線で接続する layout に。 facade `TripStops` 経由で旧 design (`TripStops1`) と比較できる暫定 query parameter `?tripStops=v1` / `?tripStops=v2` を追加し、 row 構築の共通 helper を `src/components/trip/trip-stop-rows.ts` に切り出した (design レビュー用、 一本化後に撤去予定)。
+
+### Changed
+
+- Stop summary: sizing API を `textSize` (本体テキスト) と `labelSize` (badge 類) に分割し、 `StopInfo` 経由の呼び出し箇所と stories を新 API に追従。 route badge 描画を制御していた detailed mode gate を撤廃し、 `showRoutes` のみで可否を決める形に整理。
+- Marker: marker 専用の `StopSummary` component / stories / 参照箇所を `StopMarkerSummary` に rename。 右ペイン等で使う汎用 `StopSummary` と区別。
+- Trip inspection: stop summary のテキスト wrap と `TripBasicInfo` の左寄せを許可し、 1 行に収まらない長い stop 名・ trip 情報の表示崩れを解消。
+- Trip inspection: detailed mode の trip stop row 内 `TripInfo` 表示サイズを `md` → `sm` に縮小し、 stop 情報主・ route 情報従の主従関係を整理。
+
 ## [2026.05.11]
 
 ### Changed

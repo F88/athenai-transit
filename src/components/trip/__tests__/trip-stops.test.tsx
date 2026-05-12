@@ -3,7 +3,7 @@ import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { AppRouteTypeValue } from '@/types/app/transit';
-import { TripStops } from '../trip-stops';
+import { TripStops1 } from '../trip-stops-1';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -40,7 +40,7 @@ vi.mock('../../badge/label-count-badge', () => ({
   LabelCountBadge: ({ label }: { label: string }) => <div>{label}</div>,
 }));
 
-function makeTripStopsProps(): ComponentProps<typeof TripStops> {
+function makeTripStopsProps(): ComponentProps<typeof TripStops1> {
   const serviceDate = new Date(2026, 4, 11);
   const routeTypes: AppRouteTypeValue[] = [3];
 
@@ -158,10 +158,10 @@ function makeTripStopsProps(): ComponentProps<typeof TripStops> {
   };
 }
 
-describe('TripStops', () => {
+describe('TripStops1', () => {
   it('does not mark rows interactive when onSelectStopById is absent', () => {
     const props = makeTripStopsProps();
-    const { container } = render(<TripStops {...props} />);
+    const { container } = render(<TripStops1 {...props} />);
 
     const row = container.querySelector('[data-trip-stop-index="0"]');
 
@@ -173,7 +173,7 @@ describe('TripStops', () => {
   it('marks rows interactive and selects the stop when onSelectStopById exists', () => {
     const onSelectStopById = vi.fn();
     const props = makeTripStopsProps();
-    const { container } = render(<TripStops {...props} onSelectStopById={onSelectStopById} />);
+    const { container } = render(<TripStops1 {...props} onSelectStopById={onSelectStopById} />);
 
     const row = container.querySelector('[data-trip-stop-index="0"]');
 

@@ -47,8 +47,10 @@ export function TimetableHeader({
       dataLangs={dataLangs}
       stopServiceState={stopServiceState}
       routes={routes}
-      agencyBadgeSize="md"
-      routeBadgeSize="md"
+      textSize="sm"
+      labelSize="sm"
+      agencyBadgeSize="sm"
+      routeBadgeSize="sm"
     />
   );
 }

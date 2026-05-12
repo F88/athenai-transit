@@ -12,7 +12,7 @@ import { createLogger } from '../../lib/logger';
 
 const logger = createLogger('StopMarkersCanvas');
 import { MARKER_STYLES } from '../../config/marker-styles';
-import { StopSummary } from './stop-summary';
+import { StopMarkerSummary } from './stop-marker-summary';
 
 /**
  * Track markers with lazy tooltip binding to prevent duplicate listeners during incremental updates.
@@ -52,7 +52,7 @@ interface StopMarkersCanvasProps {
 /**
  * Build HTML content for a stop summary (used by both tooltip and popup).
  *
- * Uses {@link StopSummary} via `renderToStaticMarkup` so the
+ * Uses {@link StopMarkerSummary} via `renderToStaticMarkup` so the
  * display logic is shared with standard-mode tooltips.
  *
  * @param stop - The stop to display.
@@ -70,7 +70,7 @@ function buildSummaryHtml(
   dataLang: readonly string[],
 ): string {
   return renderToStaticMarkup(
-    <StopSummary
+    <StopMarkerSummary
       stop={stop}
       routeTypes={routeTypes}
       agencies={agencies}
@@ -222,7 +222,7 @@ export function StopMarkersCanvas({
     }
 
     // Show permanent tooltip for selected stop when tooltip display is enabled.
-    // Unlike hover tooltips, this does not require `now` — StopSummary renders
+    // Unlike hover tooltips, this does not require `now` — StopMarkerSummary renders
     // stop name and agencies even without time data (matching DOM mode behavior).
     if (showTooltip && selectedStopId) {
       const selectedStop = stops.find((s) => s.stop_id === selectedStopId);

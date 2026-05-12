@@ -8,7 +8,7 @@ import { getRouteTypeColor } from '../../lib/leaflet-helpers';
 import { formatDistance } from '../../domain/transit/distance';
 import { distanceStyle } from '../../utils/distance-style';
 import { MARKER_STYLES } from '../../config/marker-styles';
-import { StopSummary } from './stop-summary';
+import { StopMarkerSummary } from './stop-marker-summary';
 import { createLogger } from '../../lib/logger';
 
 const logger = createLogger('EdgeMarkersCanvas');
@@ -272,7 +272,7 @@ export function EdgeMarkersCanvas({
           <div
             className={`pointer-events-none absolute z-10 rounded-md bg-white px-2 py-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.25)] dark:bg-gray-800 ${MARKER_STYLES.tooltip.className} ${tooltipVClass} ${tooltipHClass}`}
           >
-            <StopSummary
+            <StopMarkerSummary
               stop={hoveredMarker.stop}
               routeTypes={hoveredMarker.routeTypes}
               agencies={agenciesMap?.get(hoveredMarker.stop.stop_id) ?? []}
