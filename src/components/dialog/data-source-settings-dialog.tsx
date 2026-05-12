@@ -11,6 +11,7 @@ import {
   aggregateGroupLoadStatus,
   type GroupLoadStatus,
 } from '../../domain/datasource/aggregate-group-status';
+import { getSourceGroupDisplayName } from '../../domain/datasource/get-source-group-display-name';
 import { sortSourceGroupsForDisplay } from '../../domain/datasource/sort-source-groups';
 import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
 import type { SourceGroup } from '../../types/app/source-group';
@@ -51,10 +52,6 @@ interface Section {
   rows: GroupRow[];
 }
 
-function resolveGroupName(group: SourceGroup, lang: string): string {
-  return group.name.names[lang] ?? group.name.name;
-}
-
 function buildGroupRow(
   group: SourceGroup,
   loadStatusByPrefix: ReturnType<typeof useSourceLoadStatus>,
@@ -62,7 +59,7 @@ function buildGroupRow(
 ): GroupRow {
   return {
     key: group.id,
-    groupName: resolveGroupName(group, lang),
+    groupName: getSourceGroupDisplayName(group, lang),
     routeTypeEmoji: routeTypesEmoji(group.routeTypes),
     countryEmoji: countriesFlagEmoji(group.countries),
     loadStatus: aggregateGroupLoadStatus(group.prefixes, loadStatusByPrefix),

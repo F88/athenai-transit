@@ -1,16 +1,5 @@
 import type { SourceGroup } from '../../types/app/source-group';
-
-/**
- * Resolve the canonical display name for a {@link SourceGroup} against a
- * given UI language.
- *
- * Single-step lookup: `names[lang]` first, then the canonical `name`. This
- * matches the resolver used in `DataSourceSettingsDialog`. Lang-chain
- * fallback is intentionally NOT applied.
- */
-function resolveName(group: SourceGroup, lang: string): string {
-  return group.name.names[lang] ?? group.name.name;
-}
+import { getSourceGroupDisplayName } from './get-source-group-display-name';
 
 /**
  * Return a new array of source groups sorted for display in the data-source
@@ -50,8 +39,8 @@ export function sortSourceGroupsForDisplay(
     if (countryDiff !== 0) {
       return countryDiff;
     }
-    const nameA = resolveName(a, lang);
-    const nameB = resolveName(b, lang);
+    const nameA = getSourceGroupDisplayName(a, lang);
+    const nameB = getSourceGroupDisplayName(b, lang);
     return nameA.localeCompare(nameB, lang);
   });
 }
