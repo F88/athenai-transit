@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
@@ -77,6 +77,13 @@ interface TripStopMetaInfoProps {
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
+interface TripStopTimelineGutterProps {
+  routeColor: string;
+  isLast: boolean;
+  children: ReactNode;
+  infoLevel: InfoLevel;
+}
+
 type RenderedTripStopRow =
   | { kind: 'stop'; stop: TripStopTime; stopIndex: number; totalStops: number }
   | { kind: 'placeholder'; stopIndex: number; totalStops: number };
@@ -146,6 +153,7 @@ function TripStopMetaInfo({
       </div>
       {shouldRenderStopTimeTimeInfo && (
         <StopTimeTimeInfo
+          align="center"
           arrivalMinutes={arrivalMinutes}
           departureMinutes={departureMinutes}
           serviceDate={serviceDate}
@@ -160,6 +168,32 @@ function TripStopMetaInfo({
           inspectTarget={inspectTarget}
           onSelectStopById={onSelectStopById}
           onInspectTrip={onInspectTrip}
+        />
+      )}
+    </div>
+  );
+}
+
+function TripStopTimelineGutter({
+  routeColor,
+  isLast,
+  children,
+  infoLevel,
+}: TripStopTimelineGutterProps) {
+  const connectorClassByInfoLevel: Record<InfoLevel, string> = {
+    simple: 'w-1 rounded',
+    normal: 'w-1 rounded',
+    detailed: 'w-1 rounded',
+    verbose: 'w-1 rounded',
+  };
+
+  return (
+    <div className="flex h-full min-h-8 flex-col items-center self-stretch">
+      <div className="bg-background rounded-md px-1 py-1">{children}</div>
+      {!isLast && (
+        <div
+          className={cn('mt-0 h-full min-h-0 flex-80', connectorClassByInfoLevel[infoLevel])}
+          style={{ backgroundColor: routeColor }}
         />
       )}
     </div>
@@ -194,6 +228,7 @@ function TripStopRow({
     ? getStopDisplayNames(tripStopTime.stopMeta.stop, dataLangs, stopAgencyLangs)
     : null;
   const stopIndex = tripStopTime.timetableEntry.patternPosition.stopIndex;
+  const isLastStop = stopIndex === totalStops - 1;
   const isCurrent = stopIndex === currentPatternStopIndex;
   const isTerminalStop = tripStopTime.timetableEntry.patternPosition.isTerminal;
   const isFirstStop = tripStopTime.timetableEntry.patternPosition.isOrigin;
@@ -266,35 +301,41 @@ function TripStopRow({
       {...(handleSelectStop ? { role: 'button' as const, tabIndex: 0 } : {})}
       onClick={handleSelectStop}
       onKeyDown={handleRowKeyDown}
-      className={cn(TRIP_STOP_TIMELINE_GUTTER_CLASS, handleSelectStop && 'cursor-pointer')}
+      className={cn(
+        TRIP_STOP_TIMELINE_GUTTER_CLASS,
+        handleSelectStop && 'cursor-pointer',
+        !isLastStop && 'pb-2',
+      )}
     >
-      <div className="relative flex justify-center">
-        <div className="bg-background relative z-10 rounded-md px-1 py-1">
-          <TripStopMetaInfo
-            serviceDate={serviceDate}
-            now={now}
-            arrivalMinutes={tripStopTime.timetableEntry.schedule.arrivalMinutes}
-            departureMinutes={tripStopTime.timetableEntry.schedule.departureMinutes}
-            collapseToleranceMinutes={display.collapseToleranceMinutes}
-            showArrivalTime={display.showArrivalTime}
-            showDepartureTime={display.showDepartureTime}
-            stopIndex={stopIndex}
-            totalStops={totalStops}
-            timeTextColor={routeColors.color}
-            labelBg={routeColors.color}
-            labelFg={routeColors.textColor}
-            frameColor={routeColors.color}
-            className="flex min-h-8 flex-col items-end gap-1"
-            stopId={stopId}
-            inspectTarget={inspectTarget}
-            onSelectStopById={onSelectStopById}
-            onInspectTrip={onInspectTrip}
-          />
-        </div>
-      </div>
+      <TripStopTimelineGutter
+        routeColor={routeColors.color}
+        isLast={isLastStop}
+        infoLevel={infoLevel}
+      >
+        <TripStopMetaInfo
+          serviceDate={serviceDate}
+          now={now}
+          arrivalMinutes={tripStopTime.timetableEntry.schedule.arrivalMinutes}
+          departureMinutes={tripStopTime.timetableEntry.schedule.departureMinutes}
+          collapseToleranceMinutes={display.collapseToleranceMinutes}
+          showArrivalTime={display.showArrivalTime}
+          showDepartureTime={display.showDepartureTime}
+          stopIndex={stopIndex}
+          totalStops={totalStops}
+          timeTextColor={routeColors.color}
+          labelBg={routeColors.color}
+          labelFg={routeColors.textColor}
+          frameColor={routeColors.color}
+          className="m-0 flex min-h-8 flex-col items-end gap-1 p-0"
+          stopId={stopId}
+          inspectTarget={inspectTarget}
+          onSelectStopById={onSelectStopById}
+          onInspectTrip={onInspectTrip}
+        />
+      </TripStopTimelineGutter>
       <div
         className={cn(
-          'bg-background rounded-md border-2 px-3 py-2',
+          'bg-background self-stretch rounded-md border-2 px-3 py-2',
           handleSelectStop &&
             'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
         )}
@@ -335,33 +376,39 @@ function TripStopPlaceholderRow({
   totalStops,
   currentPatternStopIndex,
   routeColors,
-  infoLevel: _infoLevel,
+  infoLevel: infoLevel,
 }: TripStopPlaceholderRowProps) {
   const { t } = useTranslation();
+  const isLastStop = stopIndex === totalStops - 1;
   const isCurrent = stopIndex === currentPatternStopIndex;
 
   return (
-    <div {...tripStopRowDataAttrs(stopIndex)} className={TRIP_STOP_TIMELINE_GUTTER_CLASS}>
-      <div className="relative flex justify-center">
-        <div className="bg-background relative z-10 rounded-md px-1 py-1">
-          <TripStopMetaInfo
-            // No schedule → `StopTimeTimeInfo` is not rendered inside
-            // `TripStopMetaInfo`; the value is effectively dead. Use `null`
-            // (= "collapse disabled") to make the inert intent explicit
-            // rather than picking a tolerance that would imply a policy.
-            collapseToleranceMinutes={null}
-            stopIndex={stopIndex}
-            totalStops={totalStops}
-            labelBg={routeColors.color}
-            labelFg={routeColors.textColor}
-            frameColor={routeColors.color}
-            className="flex min-h-8 flex-col items-end gap-1"
-          />
-        </div>
-      </div>
+    <div
+      {...tripStopRowDataAttrs(stopIndex)}
+      className={cn(TRIP_STOP_TIMELINE_GUTTER_CLASS, !isLastStop && 'pb-2')}
+    >
+      <TripStopTimelineGutter
+        routeColor={routeColors.color}
+        isLast={isLastStop}
+        infoLevel={infoLevel}
+      >
+        <TripStopMetaInfo
+          // No schedule → `StopTimeTimeInfo` is not rendered inside
+          // `TripStopMetaInfo`; the value is effectively dead. Use `null`
+          // (= "collapse disabled") to make the inert intent explicit
+          // rather than picking a tolerance that would imply a policy.
+          collapseToleranceMinutes={null}
+          stopIndex={stopIndex}
+          totalStops={totalStops}
+          labelBg={routeColors.color}
+          labelFg={routeColors.textColor}
+          frameColor={routeColors.color}
+          className="flex min-h-8 flex-col items-end gap-1"
+        />
+      </TripStopTimelineGutter>
       <div
         className={[
-          'rounded-md border-2 border-dashed px-3 py-2',
+          'self-stretch rounded-md border-2 border-dashed px-3 py-2',
           'border-border bg-muted/20',
         ].join(' ')}
         style={isCurrent ? { borderColor: routeColors.color } : undefined}
@@ -405,12 +452,7 @@ export const TripStops2 = memo(function TripStops2({
 
   return (
     <section className="flex flex-col gap-2">
-      <div className="relative flex flex-col gap-2">
-        <div
-          aria-hidden="true"
-          className="absolute top-0 bottom-0 left-8 w-4"
-          style={{ backgroundColor: routeColors.color }}
-        />
+      <div className="flex flex-col">
         {visibleTripStopRows.map((row) => {
           const rowKey =
             row.kind === 'placeholder'
