@@ -38,7 +38,7 @@ export function TripBasicInfo({
         countClassName="bg-background text-info"
         frameClassName="border-info"
       />
-      <div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-2 text-center">
+      <div className="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2 text-left">
         {routeTypesEmoji([route.route_type])}
 
         {routeAgency && (
