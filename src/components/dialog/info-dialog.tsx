@@ -42,6 +42,12 @@ const markdownComponents: Components = {
 interface InfoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Opens the data-source settings dialog. Surfaced as a small button in the
+   * header so the user can drill down from "app info" into "what data is
+   * currently loaded" without leaving the info-style modal flow.
+   */
+  onOpenDataSourceSettings: () => void;
 }
 
 /**
@@ -49,8 +55,10 @@ interface InfoDialogProps {
  *
  * @param open - Whether the dialog is open.
  * @param onOpenChange - Called when the open state changes.
+ * @param onOpenDataSourceSettings - Called when the user clicks the
+ *   data-source settings button in the header.
  */
-export function InfoDialog({ open, onOpenChange }: InfoDialogProps) {
+export function InfoDialog({ open, onOpenChange, onOpenDataSourceSettings }: InfoDialogProps) {
   const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -58,7 +66,16 @@ export function InfoDialog({ open, onOpenChange }: InfoDialogProps) {
         showCloseButton={false}
         className="flex max-h-[80dvh] w-[90dvw] max-w-5xl flex-col gap-0 overflow-hidden border-4 p-2 sm:max-w-3xl"
       >
-        <DialogHeader className="border-border shrink-0 border-b pb-3 sm:text-center">
+        <DialogHeader className="border-border relative shrink-0 border-b pb-3 sm:text-center">
+          <button
+            type="button"
+            onClick={onOpenDataSourceSettings}
+            aria-label={t('dataSourceSettings.title')}
+            title={t('dataSourceSettings.title')}
+            className="hover:bg-muted absolute top-0 right-0 inline-flex h-8 w-8 items-center justify-center rounded text-base leading-none"
+          >
+            📦
+          </button>
           <DialogTitle className="text-base">Where to Next?</DialogTitle>
           {`${__APP_VERSION__}`}
           <DialogDescription className="text-center sm:text-center">

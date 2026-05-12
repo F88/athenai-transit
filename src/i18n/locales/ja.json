@@ -177,6 +177,16 @@
   "dataLoad": {
     "failed": "データの取得に失敗しました"
   },
+  "dataSourceSettings": {
+    "title": "データソース設定",
+    "description": "起動時にどのデータソースをロード対象とし、どれが成功・失敗したかを表示します",
+    "summary": "✅ {{loaded}} 件読込済 / ❌ {{failed}} 件失敗 / — {{notAttempted}} 件未読込",
+    "status": {
+      "loaded": "読込済",
+      "failed": "失敗",
+      "notAttempted": "未読込"
+    }
+  },
   "geolocation": {
     "locateFailed": "現在地を取得できませんでした",
     "trackingFailed": "位置情報の使用が許可されていないため、自動追跡を停止しました"

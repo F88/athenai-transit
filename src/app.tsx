@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { InfoDialog } from './components/dialog/info-dialog';
 import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
+import { DataSourceSettingsDialog } from './components/dialog/data-source-settings-dialog';
 import { StopSearchDialog } from './components/dialog/stop-search-dialog';
 import { TimetableModal } from './components/dialog/timetable-modal';
 import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
@@ -152,6 +153,7 @@ export default function App() {
   }, []);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
+  const [dataSourceSettingsDialogOpen, setDataSourceSettingsDialogOpen] = useState(false);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const {
     tripInspectionSnapshot,
@@ -180,6 +182,7 @@ export default function App() {
     enabled:
       !searchModalOpen &&
       !infoDialogOpen &&
+      !dataSourceSettingsDialogOpen &&
       !shortcutHelpOpen &&
       timetableData === null &&
       tripInspectionSnapshot === null,
@@ -1049,7 +1052,15 @@ export default function App() {
         open={searchModalOpen}
         onOpenChange={setSearchModalOpen}
       />
-      <InfoDialog open={infoDialogOpen} onOpenChange={setInfoDialogOpen} />
+      <InfoDialog
+        open={infoDialogOpen}
+        onOpenChange={setInfoDialogOpen}
+        onOpenDataSourceSettings={() => setDataSourceSettingsDialogOpen(true)}
+      />
+      <DataSourceSettingsDialog
+        open={dataSourceSettingsDialogOpen}
+        onOpenChange={setDataSourceSettingsDialogOpen}
+      />
       <ShortcutHelpDialog open={shortcutHelpOpen} onOpenChange={setShortcutHelpOpen} />
       <TripInspectionDialog
         open={tripInspectionSnapshot !== null}

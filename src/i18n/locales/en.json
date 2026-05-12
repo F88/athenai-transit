@@ -177,6 +177,16 @@
   "dataLoad": {
     "failed": "Failed to load data"
   },
+  "dataSourceSettings": {
+    "title": "Data source settings",
+    "description": "Which data sources were targeted at startup and which loaded / failed",
+    "summary": "✅ {{loaded}} loaded / ❌ {{failed}} failed / — {{notAttempted}} not loaded",
+    "status": {
+      "loaded": "Loaded",
+      "failed": "Failed",
+      "notAttempted": "Not loaded"
+    }
+  },
   "geolocation": {
     "locateFailed": "Could not get current location",
     "trackingFailed": "Stopped auto tracking: location permission denied"

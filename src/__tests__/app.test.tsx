@@ -166,6 +166,10 @@ vi.mock('../components/dialog/info-dialog', () => ({
   InfoDialog: () => null,
 }));
 
+vi.mock('../components/dialog/data-source-settings-dialog', () => ({
+  DataSourceSettingsDialog: () => null,
+}));
+
 describe('App anchor error toast', () => {
   const makeEntry = (
     overrides: { isOrigin?: boolean; isTerminal?: boolean; pickupType?: 0 | 1 | 2 | 3 } = {},
