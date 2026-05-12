@@ -84,6 +84,7 @@ type RenderedTripStopRow =
 // Initial frame renders the selected stop and +/- 5 neighbors so
 // long trips paint quickly before the full list is restored.
 const INITIAL_TRIP_STOP_RENDER_PADDING = 5;
+const TRIP_STOP_TIMELINE_GUTTER_CLASS = 'grid grid-cols-[4rem_minmax(0,1fr)] items-start gap-2';
 
 function buildRenderedTripStopRows(stopTimes: readonly TripStopTime[]): RenderedTripStopRow[] {
   const totalStops = getPatternTotalStops(stopTimes);
@@ -133,7 +134,7 @@ function TripStopMetaInfo({
 
   return (
     <div className={className ?? 'flex flex-col items-end gap-1'}>
-      <div className="self-start">
+      <div className="self-center">
         <LabelCountBadge
           label={`${stopIndex + 1}`}
           count={totalStops}
@@ -265,60 +266,66 @@ function TripStopRow({
       {...(handleSelectStop ? { role: 'button' as const, tabIndex: 0 } : {})}
       onClick={handleSelectStop}
       onKeyDown={handleRowKeyDown}
-      className={cn(
-        'bg-background rounded-md border-2 px-3 py-2',
-        handleSelectStop &&
-          'cursor-pointer focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-      )}
-      style={isCurrent ? { borderColor: routeColors.color } : undefined}
+      className={cn(TRIP_STOP_TIMELINE_GUTTER_CLASS, handleSelectStop && 'cursor-pointer')}
     >
-      {/* StopTime / StopInfo / Index  */}
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
-        <TripStopMetaInfo
-          serviceDate={serviceDate}
-          now={now}
-          arrivalMinutes={tripStopTime.timetableEntry.schedule.arrivalMinutes}
-          departureMinutes={tripStopTime.timetableEntry.schedule.departureMinutes}
-          collapseToleranceMinutes={display.collapseToleranceMinutes}
-          showArrivalTime={display.showArrivalTime}
-          showDepartureTime={display.showDepartureTime}
-          stopIndex={stopIndex}
-          totalStops={totalStops}
-          timeTextColor={routeColors.color}
-          labelBg={routeColors.color}
-          labelFg={routeColors.textColor}
-          frameColor={routeColors.color}
-          className="flex min-h-8 flex-col items-end gap-1"
-          stopId={stopId}
-          inspectTarget={inspectTarget}
-          onSelectStopById={onSelectStopById}
-          onInspectTrip={onInspectTrip}
-        />
-        <div className="min-w-0">
-          {stopContent}
-          {infoLevelFlag.isDetailedEnabled && (
-            <div className="border-border/70 mt-1 border-t border-dashed pt-1">
-              <TripInfo
-                size="sm"
-                routeDirection={tripStopTime.timetableEntry.routeDirection}
-                infoLevel={infoLevel}
-                dataLangs={dataLangs}
-                showRouteTypeIcon={false}
-                agency={stopAgency}
-                showAgency={false}
-                attributes={stopAttributes}
-              />
-            </div>
-          )}
+      <div className="relative flex justify-center">
+        <div className="bg-background relative z-10 rounded-md px-1 py-1">
+          <TripStopMetaInfo
+            serviceDate={serviceDate}
+            now={now}
+            arrivalMinutes={tripStopTime.timetableEntry.schedule.arrivalMinutes}
+            departureMinutes={tripStopTime.timetableEntry.schedule.departureMinutes}
+            collapseToleranceMinutes={display.collapseToleranceMinutes}
+            showArrivalTime={display.showArrivalTime}
+            showDepartureTime={display.showDepartureTime}
+            stopIndex={stopIndex}
+            totalStops={totalStops}
+            timeTextColor={routeColors.color}
+            labelBg={routeColors.color}
+            labelFg={routeColors.textColor}
+            frameColor={routeColors.color}
+            className="flex min-h-8 flex-col items-end gap-1"
+            stopId={stopId}
+            inspectTarget={inspectTarget}
+            onSelectStopById={onSelectStopById}
+            onInspectTrip={onInspectTrip}
+          />
         </div>
       </div>
-      {infoLevelFlag.isVerboseEnabled && (
-        <VerboseTripStopTime
-          tripStopTime={tripStopTime}
-          serviceDate={serviceDate}
-          dataLangs={dataLangs}
-        />
-      )}
+      <div
+        className={cn(
+          'bg-background rounded-md border-2 px-3 py-2',
+          handleSelectStop &&
+            'focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+        )}
+        style={isCurrent ? { borderColor: routeColors.color } : undefined}
+      >
+        {/* StopTime / StopInfo / Index  */}
+        <div className="min-w-0">{stopContent}</div>
+        {infoLevelFlag.isDetailedEnabled && (
+          <div className="border-border/70 mt-1 border-t border-dashed pt-1">
+            <TripInfo
+              size="sm"
+              routeDirection={tripStopTime.timetableEntry.routeDirection}
+              infoLevel={infoLevel}
+              dataLangs={dataLangs}
+              showRouteTypeIcon={false}
+              agency={stopAgency}
+              showAgency={false}
+              attributes={stopAttributes}
+            />
+          </div>
+        )}
+        {infoLevelFlag.isVerboseEnabled && (
+          <div className="border-border/70 mt-2 border-t border-dashed pt-2">
+            <VerboseTripStopTime
+              tripStopTime={tripStopTime}
+              serviceDate={serviceDate}
+              dataLangs={dataLangs}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -334,27 +341,31 @@ function TripStopPlaceholderRow({
   const isCurrent = stopIndex === currentPatternStopIndex;
 
   return (
-    <div
-      {...tripStopRowDataAttrs(stopIndex)}
-      className={['rounded-md border-2 border-dashed px-3 py-2', 'border-border bg-muted/20'].join(
-        ' ',
-      )}
-      style={isCurrent ? { borderColor: routeColors.color } : undefined}
-    >
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3">
-        <TripStopMetaInfo
-          // No schedule → `StopTimeTimeInfo` is not rendered inside
-          // `TripStopMetaInfo`; the value is effectively dead. Use `null`
-          // (= "collapse disabled") to make the inert intent explicit
-          // rather than picking a tolerance that would imply a policy.
-          collapseToleranceMinutes={null}
-          stopIndex={stopIndex}
-          totalStops={totalStops}
-          labelBg={routeColors.color}
-          labelFg={routeColors.textColor}
-          frameColor={routeColors.color}
-          className="flex min-h-8 flex-col items-end gap-1"
-        />
+    <div {...tripStopRowDataAttrs(stopIndex)} className={TRIP_STOP_TIMELINE_GUTTER_CLASS}>
+      <div className="relative flex justify-center">
+        <div className="bg-background relative z-10 rounded-md px-1 py-1">
+          <TripStopMetaInfo
+            // No schedule → `StopTimeTimeInfo` is not rendered inside
+            // `TripStopMetaInfo`; the value is effectively dead. Use `null`
+            // (= "collapse disabled") to make the inert intent explicit
+            // rather than picking a tolerance that would imply a policy.
+            collapseToleranceMinutes={null}
+            stopIndex={stopIndex}
+            totalStops={totalStops}
+            labelBg={routeColors.color}
+            labelFg={routeColors.textColor}
+            frameColor={routeColors.color}
+            className="flex min-h-8 flex-col items-end gap-1"
+          />
+        </div>
+      </div>
+      <div
+        className={[
+          'rounded-md border-2 border-dashed px-3 py-2',
+          'border-border bg-muted/20',
+        ].join(' ')}
+        style={isCurrent ? { borderColor: routeColors.color } : undefined}
+      >
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground truncate font-medium">
@@ -367,7 +378,7 @@ function TripStopPlaceholderRow({
   );
 }
 
-export const TripStops = memo(function TripStops({
+export const TripStops2 = memo(function TripStops2({
   tripSnapshot,
   renderedSnapshot,
   selectedPatternStopIndex,
@@ -394,7 +405,12 @@ export const TripStops = memo(function TripStops({
 
   return (
     <section className="flex flex-col gap-2">
-      <div className="flex flex-col gap-2">
+      <div className="relative flex flex-col gap-2">
+        <div
+          aria-hidden="true"
+          className="absolute top-0 bottom-0 left-8 w-4"
+          style={{ backgroundColor: routeColors.color }}
+        />
         {visibleTripStopRows.map((row) => {
           const rowKey =
             row.kind === 'placeholder'

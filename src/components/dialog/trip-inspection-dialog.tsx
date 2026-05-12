@@ -927,6 +927,20 @@ export const TripInspectionDialog = memo(function TripInspectionDialog({
               onSelectStopById={onSelectStopById}
             />
           </div>
+          {/* WIP  */}
+          {/* <div className="flex flex-col gap-4 pt-2 pb-2">
+            <TripStops2
+              tripSnapshot={snapshot}
+              renderedSnapshot={renderedSnapshot}
+              selectedPatternStopIndex={selectedPatternStopIndex}
+              routeColors={adjustedRouteColors}
+              infoLevel={infoLevel}
+              dataLangs={dataLangs}
+              now={now}
+              onInspectTrip={onInspectTrip}
+              onSelectStopById={onSelectStopById}
+            />
+          </div> */}
           {contentScroll.showBottom && <ScrollFadeEdge position="bottom" />}
         </div>
       </DialogContent>
