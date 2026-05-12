@@ -2,12 +2,12 @@
   "sourceName": "kyoto-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-11T05:31:12.580Z",
+  "downloadedAt": "2026-05-12T05:24:42.398Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260507",
   "size": 1005942,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 2703,
-  "archivePath": "workspace/_archives/gtfs/kyoto-bus/AllLines_20260511-053115.zip",
+  "durationMs": 3257,
+  "archivePath": "workspace/_archives/gtfs/kyoto-bus/AllLines_20260512-052445.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
