@@ -9,6 +9,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Map defaults: `HOME_LOCATIONS` を更新し、初期表示候補の座標・ズームを見直した。東京圏・伊豆大島・神奈川・京都・愛媛の地点を整理し、`Shinagawa Seaside` / `Shimbashi Station` / `Ome Station` などユーザー指定の候補を追加。
+
 ## [2026.05.12]
 
 ### Added
