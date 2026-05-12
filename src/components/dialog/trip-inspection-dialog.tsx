@@ -264,9 +264,9 @@ function RichStopSummary({ stop, infoLevel, dataLangs, onSelect }: RichStopSumma
       variant="ghost"
       onClick={onSelect}
       disabled={!onSelect}
-      className="block h-auto w-full min-w-0 cursor-pointer rounded-md p-0"
+      className="block h-auto w-full min-w-0 cursor-pointer rounded-md p-0 wrap-break-word whitespace-normal"
     >
-      <div className="min-w-0 rounded-md px-2">
+      <div className="min-w-0 px-2">
         <StopInfo
           stop={stop.stopMeta.stop}
           agencies={stop.stopMeta.agencies}
