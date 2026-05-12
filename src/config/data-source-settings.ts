@@ -1,5 +1,11 @@
 import type { SourceGroup } from '../types/app/source-group';
 
+/**
+ * Configured source groups for the webapp.
+ *
+ * See {@link SourceGroup} for the design (multi-prefix, overlapping
+ * groups) and a worked bundling example.
+ */
 const settings: SourceGroup[] = [
   {
     id: 'toei-bus',
@@ -14,7 +20,15 @@ const settings: SourceGroup[] = [
     prefixes: ['toaran'],
     routeTypes: [0, 1, 2],
     enabled: true,
-    name: { name: 'Toei', names: { ja: '都営交通', en: 'Toei' } },
+    name: { name: 'Toei Train', names: { ja: '都営交通(鉄道)', en: 'Toei Train' } },
+    countries: ['JP'],
+  },
+  {
+    id: 'toko',
+    prefixes: ['minkuru', 'toaran'],
+    routeTypes: [0, 1, 2, 3],
+    enabled: true,
+    name: { name: 'Toei Transport', names: { ja: '東京都交通局', en: 'Toei Transport' } },
     countries: ['JP'],
   },
   {
