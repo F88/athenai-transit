@@ -250,6 +250,17 @@ function GroupRowView({ row, t }: { row: GroupRow; t: (key: string) => string })
  * aggregated status is the same in every section because it is derived
  * from `prefixes`, not from the section's route_type.
  *
+ * Groups where `SourceGroup.enabled === false` are app-level intentional
+ * disables and are hidden from the user — except when their data has
+ * actually been loaded via the `?sources=all` debug override. The
+ * effective visibility rule is therefore:
+ *
+ *     enabled === true  ∪  any prefix is in the load-status map
+ *
+ * so `?sources=all` (which loads every group including the disabled
+ * ones) reveals those groups in the dialog, while default and
+ * normal-URL flows continue to hide them.
+ *
  * Named with "Settings" in anticipation of Phase N, when users will be
  * able to toggle individual sources on/off here.
  *
@@ -260,8 +271,18 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
   const { t, i18n } = useTranslation();
   const loadStatusByPrefix = useSourceLoadStatus();
 
-  const sections = buildSections(settings, loadStatusByPrefix, i18n.language, t);
-  const counts = countDistinctGroupStatuses(settings, loadStatusByPrefix);
+  // Visibility: app-enabled groups are always shown. App-disabled groups
+  // (`enabled: false`) are hidden by default, but reappear here when
+  // their data has actually been loaded — currently only reachable via
+  // `?sources=all`, the debug override that bypasses the enabled flag.
+  // This keeps the dialog honest: if the data is in the repository, the
+  // user can see that fact; otherwise the disabled group stays invisible.
+  const visibleGroups = settings.filter(
+    (g) => g.enabled || g.prefixes.some((prefix) => loadStatusByPrefix.has(prefix)),
+  );
+
+  const sections = buildSections(visibleGroups, loadStatusByPrefix, i18n.language, t);
+  const counts = countDistinctGroupStatuses(visibleGroups, loadStatusByPrefix);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
