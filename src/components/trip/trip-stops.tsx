@@ -298,7 +298,7 @@ function TripStopRow({
       </div>
       {infoLevelFlag.isDetailedEnabled && (
         <TripInfo
-          size="md"
+          size="sm"
           routeDirection={tripStopTime.timetableEntry.routeDirection}
           infoLevel={infoLevel}
           dataLangs={dataLangs}
