@@ -191,7 +191,7 @@ function getTripStopsVariantFromQuery(): TripStopsVariant {
     return TRIP_STOPS_VARIANT_DEFAULT_VALUE;
   }
 
-  return requestedVariant in TRIP_STOPS_COMPONENT_BY_VARIANT
+  return Object.hasOwn(TRIP_STOPS_COMPONENT_BY_VARIANT, requestedVariant)
     ? (requestedVariant as TripStopsVariant)
     : TRIP_STOPS_VARIANT_DEFAULT_VALUE;
 }

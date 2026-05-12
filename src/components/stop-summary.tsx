@@ -55,9 +55,15 @@ export interface StopSummaryCoreProps {
   dataLangs: readonly string[];
   /** Service state of the stop on the current service day. */
   stopServiceState?: StopServiceState;
-  /** Headline text size for stop name, route-type emoji, and related row typography. */
+  /**
+   * Text size for stop name, route-type emoji, sub names, and related summary
+   * typography.
+   */
   textSize?: StopSummaryTextSize;
-  /** Label size for sub names and inline auxiliary labels. */
+  /**
+   * Label size for inline auxiliary labels such as platform, accessibility, and
+   * service-state badges.
+   */
   labelSize?: StopSummaryLabelSize;
   /** Badge size for agency badges. */
   agencyBadgeSize: AgencyBadgeSize;
