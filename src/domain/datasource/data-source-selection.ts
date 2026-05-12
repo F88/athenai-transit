@@ -39,6 +39,38 @@ export function getEnabledIdsFromSourcesParam(
 }
 
 /**
+ * Returns prefixes from `sourcesParam` that did not match any group's prefix list.
+ *
+ * Used to surface a warning when a user passes an unknown / mistyped /
+ * since-removed prefix in `?sources=`. The unknowns are silently dropped by
+ * {@link getEnabledIdsFromSourcesParam}; this function exposes them so the
+ * caller can decide how to surface the fact.
+ *
+ * @param groups - Source groups to inspect.
+ * @param sourcesParam - Raw `sources` query parameter value.
+ * @returns Array of requested prefixes that did not match any group, in the
+ *   order they appeared in the parameter. Empty when `sourcesParam === 'all'`
+ *   or when every requested prefix matched.
+ */
+export function findUnknownPrefixesInSourcesParam(
+  groups: SourceGroup[],
+  sourcesParam: string,
+): string[] {
+  if (sourcesParam === 'all') {
+    return [];
+  }
+
+  const requestedPrefixes = sourcesParam
+    .split(',')
+    .map((prefix) => prefix.trim())
+    .filter((prefix) => prefix.length > 0);
+
+  const knownPrefixes = new Set(groups.flatMap((group) => group.prefixes));
+
+  return requestedPrefixes.filter((prefix) => !knownPrefixes.has(prefix));
+}
+
+/**
  * Parse a localStorage snapshot of enabled group IDs.
  *
  * This function preserves current behavior: any truthy JSON value is accepted

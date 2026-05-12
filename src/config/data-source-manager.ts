@@ -2,6 +2,7 @@ import settings from './data-source-settings';
 import { getSourcesParam } from '../lib/query-params';
 import { createLogger } from '../lib/logger';
 import {
+  findUnknownPrefixesInSourcesParam,
   getDefaultEnabledIds,
   getEnabledIdsFromSourcesParam,
   getEnabledPrefixesFromGroups,
@@ -25,6 +26,13 @@ function resolveEnabledIdsFromQueryParams(groups: SourceGroup[]): Set<string> | 
     logger.info('Data sources from query params: all');
   } else {
     logger.info(`Data sources from query params: ${sourcesParam}`);
+    // Surface unknown prefixes that were silently dropped. Without this,
+    // a typo or removed source in the URL leaves the user with no signal
+    // about why their requested sources are missing.
+    const unknownPrefixes = findUnknownPrefixesInSourcesParam(groups, sourcesParam);
+    if (unknownPrefixes.length > 0) {
+      logger.warn(`Ignored unknown prefixes in ?sources= param: [${unknownPrefixes.join(', ')}]`);
+    }
   }
 
   return getEnabledIdsFromSourcesParam(groups, sourcesParam);

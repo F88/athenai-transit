@@ -320,6 +320,78 @@ describe('DataSourceManager', () => {
     });
   });
 
+  describe('?sources= unknown-prefix warning', () => {
+    // The logger maps `warn` level to `console.warn` (`src/lib/logger.ts:60`)
+    // and `warn` always bypasses tag filtering. Spying on `console.warn`
+    // therefore observes the logger output without coupling to the
+    // logger module's internals.
+    //
+    // The spy type is derived via a helper to keep generic information
+    // (tsconfig.app.json and the test typecheck disagree on how to spell
+    // `ReturnType<typeof vi.spyOn<...>>` directly).
+    const makeWarnSpy = () =>
+      vi.spyOn(console, 'warn').mockImplementation(() => {
+        // Suppress noise in test output; assertions read from mock.calls.
+      });
+    let warnSpy: ReturnType<typeof makeWarnSpy>;
+
+    beforeEach(() => {
+      warnSpy = makeWarnSpy();
+    });
+
+    afterEach(() => {
+      warnSpy.mockRestore();
+    });
+
+    function findUnknownPrefixWarn(): string | undefined {
+      return warnSpy.mock.calls
+        .map((call: unknown[]) => call.map((arg) => String(arg)).join(' '))
+        .find((msg) => msg.includes('Ignored unknown prefixes'));
+    }
+
+    it('emits a warn log listing the unknown prefix from `?sources=`', () => {
+      setSearch('sources=minkuru,definitely-not-a-real-prefix');
+      new DataSourceManager();
+
+      const warnMessage = findUnknownPrefixWarn();
+      expect(warnMessage).toBeDefined();
+      expect(warnMessage).toContain('definitely-not-a-real-prefix');
+      // The known prefix should not be flagged as unknown.
+      expect(warnMessage).not.toContain('[minkuru');
+    });
+
+    it('lists every unknown prefix when multiple are present', () => {
+      setSearch('sources=foo,bar,minkuru');
+      new DataSourceManager();
+
+      const warnMessage = findUnknownPrefixWarn();
+      expect(warnMessage).toBeDefined();
+      expect(warnMessage).toContain('foo');
+      expect(warnMessage).toContain('bar');
+    });
+
+    it('does not emit the unknown-prefix warning when `?sources=all`', () => {
+      setSearch('sources=all');
+      new DataSourceManager();
+
+      expect(findUnknownPrefixWarn()).toBeUndefined();
+    });
+
+    it('does not emit the unknown-prefix warning when every requested prefix matches a group', () => {
+      setSearch('sources=minkuru,toaran');
+      new DataSourceManager();
+
+      expect(findUnknownPrefixWarn()).toBeUndefined();
+    });
+
+    it('does not emit the unknown-prefix warning when `?sources=` is absent', () => {
+      // No ?sources= param → DSM does not even reach the warning path.
+      new DataSourceManager();
+
+      expect(findUnknownPrefixWarn()).toBeUndefined();
+    });
+  });
+
   describe('getGroups', () => {
     it('returns every configured source group in definition order', async () => {
       const groups = createMultiPrefixSettings();

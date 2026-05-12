@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import './index.css';
 import './i18n';
 import App from './app';
+import { SourceLoadStateProvider } from './contexts/source-load-state-provider';
 import { TransitRepositoryProvider } from './contexts/transit-repository-provider';
 import { DataSourceManager } from './config/data-source-manager';
 import type { TransitRepository } from './repositories/transit-repository';
@@ -60,7 +61,9 @@ async function init() {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <TransitRepositoryProvider repository={repository}>
-        <App loadResult={loadResult} />
+        <SourceLoadStateProvider initialLoadResult={loadResult}>
+          <App />
+        </SourceLoadStateProvider>
       </TransitRepositoryProvider>
     </StrictMode>,
   );

@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  findUnknownPrefixesInSourcesParam,
   getDefaultEnabledIds,
   getEnabledIdsFromSourcesParam,
   getEnabledPrefixesFromGroups,
@@ -74,6 +75,41 @@ describe('getEnabledIdsFromSourcesParam', () => {
 
   it('returns an empty set when no requested prefix matches any group', () => {
     expect([...getEnabledIdsFromSourcesParam(createGroups(), 'missing')]).toEqual([]);
+  });
+});
+
+describe('findUnknownPrefixesInSourcesParam', () => {
+  it('returns an empty array when every requested prefix matches a group', () => {
+    expect(findUnknownPrefixesInSourcesParam(createGroups(), 'alpha-local,beta-main')).toEqual([]);
+  });
+
+  it('returns the unknown prefixes in the order they appeared', () => {
+    expect(
+      findUnknownPrefixesInSourcesParam(createGroups(), 'alpha-local,nope,beta-main,zzz'),
+    ).toEqual(['nope', 'zzz']);
+  });
+
+  it('returns every requested prefix when none match', () => {
+    expect(findUnknownPrefixesInSourcesParam(createGroups(), 'missing,absent')).toEqual([
+      'missing',
+      'absent',
+    ]);
+  });
+
+  it('trims whitespace around requested prefixes before comparing', () => {
+    expect(findUnknownPrefixesInSourcesParam(createGroups(), ' alpha-local , nope ')).toEqual([
+      'nope',
+    ]);
+  });
+
+  it('returns an empty array for sourcesParam === "all"', () => {
+    expect(findUnknownPrefixesInSourcesParam(createGroups(), 'all')).toEqual([]);
+  });
+
+  it('ignores empty entries from leading/trailing/double commas', () => {
+    expect(findUnknownPrefixesInSourcesParam(createGroups(), ',alpha-local,,nope,')).toEqual([
+      'nope',
+    ]);
   });
 });
 

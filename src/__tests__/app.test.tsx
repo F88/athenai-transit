@@ -25,6 +25,7 @@ const {
   mockUseTimetable,
   mockOpenStopTimetable,
   mockOpenRouteHeadsignTimetable,
+  mockUseLoadResult,
 } = vi.hoisted(() => ({
   mockToastError: vi.fn(),
   mockToastWarning: vi.fn(),
@@ -38,6 +39,9 @@ const {
   mockUseTimetable: vi.fn<() => UseTimetableReturn>(),
   mockOpenStopTimetable: vi.fn(),
   mockOpenRouteHeadsignTimetable: vi.fn(),
+  mockUseLoadResult: vi.fn<() => { loaded: string[]; failed: { prefix: string; error: Error }[] }>(
+    () => ({ loaded: [], failed: [] }),
+  ),
 }));
 
 vi.mock('sonner', () => ({
@@ -55,6 +59,10 @@ vi.mock('../hooks/use-transit-repository', () => ({
   useTransitRepository: () => ({
     getRouteShapes: mockGetRouteShapes,
   }),
+}));
+
+vi.mock('../hooks/use-load-result', () => ({
+  useLoadResult: () => mockUseLoadResult(),
 }));
 
 vi.mock('../hooks/use-user-settings', () => ({
@@ -291,7 +299,7 @@ describe('App anchor error toast', () => {
       isStopAnchor: vi.fn(() => false),
     });
 
-    render(<App loadResult={{ loaded: [], failed: [] }} />);
+    render(<App />);
 
     // Give effects time to run
     await waitFor(() => {
@@ -312,7 +320,7 @@ describe('App anchor error toast', () => {
       isStopAnchor: vi.fn(() => false),
     });
 
-    render(<App loadResult={{ loaded: [], failed: [] }} />);
+    render(<App />);
 
     await waitFor(() => {
       expect(mockToastError).toHaveBeenCalledWith('アンカー更新に失敗しました', {
@@ -332,7 +340,7 @@ describe('App anchor error toast', () => {
       isNearbyLoading: false,
     });
 
-    render(<App loadResult={{ loaded: [], failed: [] }} />);
+    render(<App />);
 
     await waitFor(() => {
       const props = getLastLayoutProps();
@@ -374,7 +382,7 @@ describe('App anchor error toast', () => {
       isNearbyLoading: false,
     });
 
-    render(<App loadResult={{ loaded: [], failed: [] }} />);
+    render(<App />);
 
     await waitFor(() => {
       const props = getLastLayoutProps();
@@ -398,7 +406,7 @@ describe('App anchor error toast', () => {
   it('shows an error toast when stop timetable loading fails', async () => {
     mockOpenStopTimetable.mockResolvedValue({ status: 'error' });
 
-    render(<App loadResult={{ loaded: [], failed: [] }} />);
+    render(<App />);
 
     await waitFor(() => {
       expect(mockMapBottomSheetLayout).toHaveBeenCalled();
@@ -423,7 +431,7 @@ describe('App anchor error toast', () => {
   it('shows a warning toast when route timetable is unavailable at a stop', async () => {
     mockOpenRouteHeadsignTimetable.mockResolvedValue({ status: 'route-not-found' });
 
-    render(<App loadResult={{ loaded: [], failed: [] }} />);
+    render(<App />);
 
     await waitFor(() => {
       expect(mockMapBottomSheetLayout).toHaveBeenCalled();

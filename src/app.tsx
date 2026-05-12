@@ -33,13 +33,13 @@ import { useSelection } from './hooks/use-selection';
 import { useStopNavigation } from './hooks/use-stop-navigation';
 import { useStopHistory } from './hooks/use-stop-history';
 import { useTimetable } from './hooks/use-timetable';
+import { useLoadResult } from './hooks/use-load-result';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useTripInspection } from './hooks/use-trip-inspection';
 import { useUserSettings } from './hooks/use-user-settings';
 import i18n from './i18n';
 import { createLogger } from './lib/logger';
 import { getStopParam } from './lib/query-params';
-import type { LoadResult } from './repositories/athenai-repository';
 import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
 import type { AutoLocateOffReason } from './types/app/auto-locate';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
@@ -65,18 +65,10 @@ const logger = createLogger('App');
 const DEBOUNCE_MS = 300;
 const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
 
-interface AppProps {
-  /**
-   * Source loading result from startup. Used to surface a toast when
-   * one or more data sources failed to load (e.g. bundle_version
-   * mismatch during a deploy window). See Issue #128.
-   */
-  loadResult: LoadResult;
-}
-
-export default function App({ loadResult }: AppProps) {
+export default function App() {
   const { t } = useTranslation();
   const repo = useTransitRepository();
+  const loadResult = useLoadResult();
   const [userDataRepo] = useState(() => new LocalStorageUserDataRepository());
   const { settings, updateSetting, updateSettings } = useUserSettings();
   const { dateTime, isCustomTime, resetToNow, setCustomTime } = useDateTime();
