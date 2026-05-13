@@ -191,11 +191,26 @@
       "fraction": "{{loaded}}/{{total}} 読込済"
     },
     "toggle": {
-      "aria": "{{group}} の有効化状態"
+      "aria": "{{group}} を有効化"
     },
     "forcedMode": {
       "title": "対象データ指定モード",
       "description": "このモードでは対象データを変更することは出来ません。"
+    },
+    "developmentNotice": {
+      "title": "リロード後に反映",
+      "description": "設定変更は即座に反映されません。アプリ再起動後に反映されます。"
+    },
+    "resetToDefaults": "初期値に戻す",
+    "bulkAction": {
+      "enableAll": {
+        "label": "全て ON",
+        "aria": "{{section}} 内の全 group を有効化"
+      },
+      "disableAll": {
+        "label": "全て OFF",
+        "aria": "{{section}} 内の全 group を無効化"
+      }
     },
     "section": {
       "0": "路面電車",
