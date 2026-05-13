@@ -205,11 +205,11 @@
     "bulkAction": {
       "enableAll": {
         "label": "全て ON",
-        "aria": "{{section}} 内の全 group を有効化"
+        "aria": "{{section}} 内の全グループを有効化"
       },
       "disableAll": {
         "label": "全て OFF",
-        "aria": "{{section}} 内の全 group を無効化"
+        "aria": "{{section}} 内の全グループを無効化"
       }
     },
     "section": {
