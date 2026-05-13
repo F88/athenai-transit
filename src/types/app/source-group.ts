@@ -55,14 +55,16 @@ export interface SourceGroup {
    * Default value of the user preference for whether this group is
    * enabled.
    *
-   * Populated for every group but **not read by any production code in
-   * Phase 0**. A future phase will wire this into the user-settings
+   * Surfaced **read-only** in the Data Source Settings dialog (each
+   * group row reflects this value via a `disabled` `<Switch>`); it is
+   * not yet used for source selection, mutation, or `localStorage`
+   * persistence. A future phase will wire this into the user-settings
    * layer (`useUserDataSourceSettings`-style hook) so that user choices
    * persisted in `localStorage` can override this default.
    *
    * Phase 0 migration rule: each group's value mirrors
    * {@link systemEnabledByDefault} 1:1, so behavior is unchanged until a later
-   * phase begins reading this field.
+   * phase begins reading this field for source-selection purposes.
    */
   userEnabledByDefault: boolean;
 

@@ -350,7 +350,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
         </DialogHeader>
         {isForcedSourcesMode && (
           <Alert
-            aria-live="polite"
+            role="status"
             className="mt-3 border-sky-300 bg-sky-50 px-3 py-2 text-left shadow-sm dark:border-sky-800 dark:bg-sky-950/40"
           >
             <InfoIcon
