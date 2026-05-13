@@ -413,16 +413,21 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
         <div className="overflow-y-auto pt-3 text-sm">
           {sections.map((section) => {
             const sectionGroupIds = section.rows.map((row) => row.groupId);
+            const sectionEnabledCount = section.rows.filter((row) =>
+              effectiveEnabledIds.has(row.groupId),
+            ).length;
             return (
               <section key={String(section.key)} className="mb-4 last:mb-0">
                 <h3 className="text-muted-foreground bg-muted/40 sticky top-0 z-10 flex items-center gap-2 px-2 py-1 text-xs font-semibold">
                   <span aria-hidden>{section.emoji}</span>
                   <span>{section.label}</span>
-                  <span className="opacity-60">({section.rows.length})</span>
+                  <span className="opacity-60">
+                    ({sectionEnabledCount}/{section.rows.length})
+                  </span>
                   <div className="ml-auto flex gap-1">
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="outline"
                       onClick={() => {
                         setGroupsEnabled(sectionGroupIds, true);
                       }}
@@ -430,13 +435,13 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
                       aria-label={t('dataSourceSettings.bulkAction.enableAll.aria', {
                         section: section.label,
                       })}
-                      className="h-6 px-2 text-[11px]"
+                      className="h-6 cursor-pointer px-2 text-[11px]"
                     >
                       {t('dataSourceSettings.bulkAction.enableAll.label')}
                     </Button>
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="outline"
                       onClick={() => {
                         setGroupsEnabled(sectionGroupIds, false);
                       }}
@@ -444,7 +449,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
                       aria-label={t('dataSourceSettings.bulkAction.disableAll.aria', {
                         section: section.label,
                       })}
-                      className="h-6 px-2 text-[11px]"
+                      className="h-6 cursor-pointer px-2 text-[11px]"
                     >
                       {t('dataSourceSettings.bulkAction.disableAll.label')}
                     </Button>
@@ -467,14 +472,27 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
             );
           })}
         </div>
-        <DialogFooter className="shrink-0 border-t pt-3 sm:justify-end">
+        <DialogFooter className="shrink-0 gap-2 border-t pt-3 sm:justify-end">
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
             onClick={resetToDefaults}
             disabled={isForcedSourcesMode}
+            className="cursor-pointer"
           >
             {t('dataSourceSettings.resetToDefaults')}
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => {
+              window.location.reload();
+            }}
+            disabled={isForcedSourcesMode}
+            aria-label={t('dataSourceSettings.restart.aria')}
+            className="cursor-pointer"
+          >
+            {t('dataSourceSettings.restart.label')}
           </Button>
         </DialogFooter>
       </DialogContent>

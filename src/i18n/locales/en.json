@@ -198,10 +198,14 @@
       "description": "In this mode, the target data cannot be changed."
     },
     "developmentNotice": {
-      "title": "Applied on reload",
-      "description": "Changes are not applied immediately. They take effect after reload."
+      "title": "Restart to apply",
+      "description": "Changes take effect after the app is restarted. Click Restart below, or refresh the browser."
     },
     "resetToDefaults": "Reset to defaults",
+    "restart": {
+      "label": "Restart",
+      "aria": "Restart to apply settings"
+    },
     "bulkAction": {
       "enableAll": {
         "label": "All on",

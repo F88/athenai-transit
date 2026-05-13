@@ -171,6 +171,33 @@ describe('DataSourceSettingsDialog — normal mode', () => {
     expect(resetButton).not.toBeDisabled();
   });
 
+  it('enables the Restart button', () => {
+    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    const applyButton = screen.getByRole('button', {
+      name: 'dataSourceSettings.restart.aria',
+    });
+    expect(applyButton).not.toBeDisabled();
+  });
+
+  it('clicking Restart calls `window.location.reload`', () => {
+    // jsdom defines `location.reload` as non-configurable, so we replace
+    // the whole `location` global (preserving the other fields the
+    // component might read like `href`) via `vi.stubGlobal`.
+    const reloadSpy = vi.fn();
+    vi.stubGlobal('location', { ...window.location, reload: reloadSpy });
+
+    try {
+      render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+      const applyButton = screen.getByRole('button', {
+        name: 'dataSourceSettings.restart.aria',
+      });
+      fireEvent.click(applyButton);
+      expect(reloadSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('renders a Switch checked = enabledGroupIds.has(groupId)', () => {
     // Pick a default-enabled group (Toei Bus) and one that's NOT in the
     // user's selection (Odakyu Bus is systemEnabledByDefault: false so
@@ -345,6 +372,14 @@ describe('DataSourceSettingsDialog — forced-sources mode', () => {
       name: 'dataSourceSettings.resetToDefaults',
     });
     expect(resetButton).toBeDisabled();
+  });
+
+  it('disables the Restart button', () => {
+    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    const applyButton = screen.getByRole('button', {
+      name: 'dataSourceSettings.restart.aria',
+    });
+    expect(applyButton).toBeDisabled();
   });
 
   it('disables every bulk-action button', () => {

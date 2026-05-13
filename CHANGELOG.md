@@ -9,6 +9,16 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Data source settings dialog: footer に **再起動 (Restart) ボタン** を追加。設定変更後 1 click でアプリを再起動して反映できるようにした (実体は `location.reload()`)。 forced-sources mode (`?sources=`) では disabled。 開発中 notice の文言も 「再起動で反映」 に更新し、 ユーザーが手動で browser refresh するか再起動ボタンを押すかの 2 通りを案内する。
+
+### Changed
+
+- Data source settings dialog: section header の件数表示を **`(enabled/total)` 形式** に変更 (例: `バス (5/19)`)。 toggle / Reset / bulk action で即座に enabled 件数が更新される。
+- Info dialog: data source settings dialog を開く 📦 ボタンを素の `<button>` から shadcn `<Button variant="outline" size="icon-sm">` に refactor。 他の dialog 内 button と styling / focus / hover の挙動が一貫するようにした。
+- Dialog 内の全 button (Restart / Reset / 全 On / 全 Off / 📦 opener) に `cursor-pointer` を use site で追加。 Tailwind v4 の Preflight が `<button>` から `cursor: pointer` を除去している影響で desktop で hover 時にカーソルが pointer に変わらなかった点を修正。
+
 ## [2026.05.13]
 
 ### Added

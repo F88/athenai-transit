@@ -198,10 +198,14 @@
       "description": "このモードでは対象データを変更することは出来ません。"
     },
     "developmentNotice": {
-      "title": "リロード後に反映",
-      "description": "設定変更は即座に反映されません。アプリ再起動後に反映されます。"
+      "title": "再起動で反映",
+      "description": "設定変更は再起動後に反映されます。下の再起動ボタンを押すか、 ブラウザで再読み込みしてください。"
     },
     "resetToDefaults": "初期値に戻す",
+    "restart": {
+      "label": "再起動",
+      "aria": "再起動して設定を反映"
+    },
     "bulkAction": {
       "enableAll": {
         "label": "全て ON",
