@@ -173,10 +173,10 @@ describe('DataSourceSettingsDialog — normal mode', () => {
 
   it('enables the Restart button', () => {
     render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
-    const applyButton = screen.getByRole('button', {
+    const restartButton = screen.getByRole('button', {
       name: 'dataSourceSettings.restart.aria',
     });
-    expect(applyButton).not.toBeDisabled();
+    expect(restartButton).not.toBeDisabled();
   });
 
   it('clicking Restart calls `window.location.reload`', () => {
@@ -188,10 +188,10 @@ describe('DataSourceSettingsDialog — normal mode', () => {
 
     try {
       render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
-      const applyButton = screen.getByRole('button', {
+      const restartButton = screen.getByRole('button', {
         name: 'dataSourceSettings.restart.aria',
       });
-      fireEvent.click(applyButton);
+      fireEvent.click(restartButton);
       expect(reloadSpy).toHaveBeenCalledTimes(1);
     } finally {
       vi.unstubAllGlobals();
@@ -376,10 +376,10 @@ describe('DataSourceSettingsDialog — forced-sources mode', () => {
 
   it('disables the Restart button', () => {
     render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
-    const applyButton = screen.getByRole('button', {
+    const restartButton = screen.getByRole('button', {
       name: 'dataSourceSettings.restart.aria',
     });
-    expect(applyButton).toBeDisabled();
+    expect(restartButton).toBeDisabled();
   });
 
   it('disables every bulk-action button', () => {
