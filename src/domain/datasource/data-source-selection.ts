@@ -39,6 +39,49 @@ export function getEnabledIdsFromSourcesParam(
 }
 
 /**
+ * Resolve the load-target data sources (= GTFS prefixes) from a raw
+ * `sources` query parameter value.
+ *
+ * "Data source" in Athenai is a single GTFS prefix (e.g. `minkuru`).
+ * `?sources=<prefixes>` is therefore a list of *data sources* to load,
+ * not a list of group IDs. The returned array is intended to be passed
+ * directly to {@link import('../../repositories/athenai-repository').AthenaiRepositoryV2.create}
+ * as the load target.
+ *
+ * - `'all'` returns every prefix configured across all groups (including
+ *   groups whose `enabled` flag is `false`).
+ * - Any other value is parsed as a comma-separated list of prefixes.
+ *   Unknown / empty entries are silently dropped here (callers use
+ *   {@link findUnknownPrefixesInSourcesParam} to surface them).
+ *
+ * Unlike {@link getEnabledIdsFromSourcesParam}, this function does NOT
+ * expand a requested prefix into its group's full prefix list — so when
+ * a group bundles multiple prefixes (e.g. `toko` covering both
+ * `minkuru` and `toaran`), `?sources=minkuru` returns only `['minkuru']`
+ * and never drags `toaran` into the load target. That is what
+ * `PRD.md:118` ("指定した prefix のデータソースのみ有効") prescribes.
+ *
+ * @param groups - Source groups to inspect.
+ * @param sourcesParam - Raw `sources` query parameter value.
+ * @returns Array of prefixes to load, in the order the user listed them
+ *   (with duplicates retained per-request, but each prefix appears at most
+ *   once when `'all'` is used).
+ */
+export function getEnabledDataSourcesFromSourcesParam(
+  groups: SourceGroup[],
+  sourcesParam: string,
+): string[] {
+  if (sourcesParam === 'all') {
+    return [...new Set(groups.flatMap((group) => group.prefixes))];
+  }
+  const knownPrefixes = new Set(groups.flatMap((group) => group.prefixes));
+  return sourcesParam
+    .split(',')
+    .map((prefix) => prefix.trim())
+    .filter((prefix) => prefix.length > 0 && knownPrefixes.has(prefix));
+}
+
+/**
  * Returns prefixes from `sourcesParam` that did not match any group's prefix list.
  *
  * Used to surface a warning when a user passes an unknown / mistyped /

@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import {
   findUnknownPrefixesInSourcesParam,
   getDefaultEnabledIds,
+  getEnabledDataSourcesFromSourcesParam,
   getEnabledIdsFromSourcesParam,
   getEnabledPrefixesFromGroups,
   parseStoredEnabledIds,
@@ -75,6 +76,96 @@ describe('getEnabledIdsFromSourcesParam', () => {
 
   it('returns an empty set when no requested prefix matches any group', () => {
     expect([...getEnabledIdsFromSourcesParam(createGroups(), 'missing')]).toEqual([]);
+  });
+});
+
+describe('getEnabledDataSourcesFromSourcesParam', () => {
+  function createOverlappingGroups(): SourceGroup[] {
+    return [
+      {
+        id: 'toei-bus',
+        prefixes: ['minkuru'],
+        routeTypes: [3],
+        enabled: true,
+        name: { name: 'Toei Bus', names: { en: 'Toei Bus' } },
+        countries: ['JP'],
+      },
+      {
+        id: 'toei-train',
+        prefixes: ['toaran'],
+        routeTypes: [0, 1, 2],
+        enabled: true,
+        name: { name: 'Toei Train', names: { en: 'Toei Train' } },
+        countries: ['JP'],
+      },
+      {
+        id: 'toko',
+        prefixes: ['minkuru', 'toaran'],
+        routeTypes: [0, 1, 2, 3],
+        enabled: true,
+        name: { name: 'Toei Transport', names: { en: 'Toei Transport' } },
+        countries: ['JP'],
+      },
+    ];
+  }
+
+  it('returns the exact prefixes the user requested when they are known', () => {
+    expect(getEnabledDataSourcesFromSourcesParam(createGroups(), 'alpha-local,beta-main')).toEqual([
+      'alpha-local',
+      'beta-main',
+    ]);
+  });
+
+  it('preserves the input order of the requested prefixes', () => {
+    expect(getEnabledDataSourcesFromSourcesParam(createGroups(), 'beta-main,alpha-local')).toEqual([
+      'beta-main',
+      'alpha-local',
+    ]);
+  });
+
+  it('drops unknown prefixes silently (callers use findUnknownPrefixesInSourcesParam to surface them)', () => {
+    expect(
+      getEnabledDataSourcesFromSourcesParam(createGroups(), 'alpha-local,nope,beta-main'),
+    ).toEqual(['alpha-local', 'beta-main']);
+  });
+
+  it('trims whitespace around comma-separated prefixes', () => {
+    expect(
+      getEnabledDataSourcesFromSourcesParam(createGroups(), ' alpha-local , beta-main '),
+    ).toEqual(['alpha-local', 'beta-main']);
+  });
+
+  it('returns an empty array when every requested prefix is unknown', () => {
+    expect(getEnabledDataSourcesFromSourcesParam(createGroups(), 'foo,bar')).toEqual([]);
+  });
+
+  it('"all" expands to every prefix configured across all groups (deduped)', () => {
+    expect([...getEnabledDataSourcesFromSourcesParam(createGroups(), 'all')].sort()).toEqual([
+      'alpha-express',
+      'alpha-local',
+      'beta-main',
+      'gamma-main',
+    ]);
+  });
+
+  it('does NOT inflate the load target by walking into other prefixes of bundling groups (regression for PRD.md:118)', () => {
+    // toko bundles ['minkuru', 'toaran']. With the older group-id-based
+    // path, ?sources=minkuru would enable both toei-bus and toko, and
+    // expand back into ['minkuru', 'toaran'] — silently loading toaran
+    // even though the user only asked for minkuru. The prefix-centric
+    // resolver must return exactly the requested prefix.
+    expect(getEnabledDataSourcesFromSourcesParam(createOverlappingGroups(), 'minkuru')).toEqual([
+      'minkuru',
+    ]);
+    expect(getEnabledDataSourcesFromSourcesParam(createOverlappingGroups(), 'toaran')).toEqual([
+      'toaran',
+    ]);
+  });
+
+  it('with the "all" keyword, deduplicates prefixes that overlap across groups', () => {
+    // toko shares minkuru with toei-bus and toaran with toei-train.
+    const result = getEnabledDataSourcesFromSourcesParam(createOverlappingGroups(), 'all');
+    expect([...result].sort()).toEqual(['minkuru', 'toaran']);
   });
 });
 
