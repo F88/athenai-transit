@@ -190,6 +190,9 @@
     "partial": {
       "fraction": "{{loaded}}/{{total}} loaded"
     },
+    "userEnabledByDefault": {
+      "aria": "Default enabled state for {{group}}"
+    },
     "section": {
       "0": "Tram",
       "1": "Subway",

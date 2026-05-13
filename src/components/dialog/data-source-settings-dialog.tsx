@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import settings from '../../config/data-source-settings';
 import {
   aggregateGroupLoadStatus,
@@ -39,6 +40,15 @@ interface GroupRow {
   countryEmoji: string;
   /** Aggregated load status (4-state). */
   loadStatus: GroupLoadStatus;
+  /**
+   * Default value of the user preference for this group.
+   *
+   * Read directly from {@link SourceGroup.userEnabledByDefault}; in a
+   * later phase this will be overridable by a persisted user-settings
+   * layer. Phase 0 surfaces the value via a disabled toggle so the
+   * dialog already reflects the field without yet being interactive.
+   */
+  userEnabledByDefault: boolean;
 }
 
 interface Section {
@@ -63,6 +73,7 @@ function buildGroupRow(
     routeTypeEmoji: routeTypesEmoji(group.routeTypes),
     countryEmoji: countriesFlagEmoji(group.countries),
     loadStatus: aggregateGroupLoadStatus(group.prefixes, loadStatusByPrefix),
+    userEnabledByDefault: group.userEnabledByDefault,
   };
 }
 
@@ -209,9 +220,18 @@ function FailureList({ row }: { row: GroupRow }) {
   );
 }
 
-function GroupRowView({ row, t }: { row: GroupRow; t: (key: string) => string }) {
+function GroupRowView({ row }: { row: GroupRow }) {
+  const { t } = useTranslation();
   return (
     <li className="border-border/40 flex items-start gap-2 border-b px-2 py-2 last:border-b-0">
+      <Switch
+        checked={row.userEnabledByDefault}
+        disabled
+        aria-label={t('dataSourceSettings.userEnabledByDefault.aria', {
+          group: row.groupName,
+        })}
+        className="shrink-0"
+      />
       <span
         aria-label={t(`dataSourceSettings.status.${row.loadStatus.status}`)}
         className="w-5 shrink-0 text-center"
@@ -316,7 +336,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
               </h3>
               <ul>
                 {section.rows.map((row) => (
-                  <GroupRowView key={`${String(section.key)}::${row.key}`} row={row} t={t} />
+                  <GroupRowView key={`${String(section.key)}::${row.key}`} row={row} />
                 ))}
               </ul>
             </section>
