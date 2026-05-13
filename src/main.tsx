@@ -7,7 +7,7 @@ import App from './app';
 import { SourceLoadStateProvider } from './contexts/source-load-state-provider';
 import { TransitRepositoryProvider } from './contexts/transit-repository-provider';
 import { DataSourceManager } from './config/data-source-manager';
-import { resolveFetchPrefixes } from './domain/datasource/resolve-fetch-prefixes';
+import { resolveFetchDataSources } from './domain/datasource/resolve-fetch-data-sources';
 import type { TransitRepository } from './repositories/transit-repository';
 import { AthenaiRepositoryV2, type LoadResult } from './repositories/athenai-repository';
 import {
@@ -34,11 +34,7 @@ async function createRepository(): Promise<{
   }
 
   const dsm = new DataSourceManager();
-  // `?sources=<prefixes>` is the original prefix-level load contract; the
-  // group/DSM layer was added later as a wrapper. `resolveFetchPrefixes`
-  // honours the URL contract first and falls back to the group-driven
-  // view for the no-URL / `?sources=all` / localStorage / default paths.
-  const prefixes = resolveFetchPrefixes(
+  const prefixes = resolveFetchDataSources(
     dsm.getGroups(),
     dsm.getEnabledPrefixes(),
     getSourcesParam(),

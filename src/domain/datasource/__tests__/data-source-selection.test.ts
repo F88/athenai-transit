@@ -167,6 +167,67 @@ describe('getEnabledDataSourcesFromSourcesParam', () => {
     const result = getEnabledDataSourcesFromSourcesParam(createOverlappingGroups(), 'all');
     expect([...result].sort()).toEqual(['minkuru', 'toaran']);
   });
+
+  it('deduplicates a prefix that the user repeats in the URL (regression: double-fetch + duplicated timetable/sourceMeta)', () => {
+    // Without dedupe, ?sources=minkuru,minkuru reaches fetchSourcesV2
+    // as ['minkuru', 'minkuru'], which fetches the same JSON twice,
+    // then mergeSourcesV2 push(...groups) duplicates every timetable
+    // entry and sourceMetas.push(...) duplicates the source meta row.
+    // The group-driven path always deduped via getEnabledPrefixes;
+    // the direct prefix path must match that contract.
+    expect(
+      getEnabledDataSourcesFromSourcesParam(createGroups(), 'alpha-local,alpha-local'),
+    ).toEqual(['alpha-local']);
+    expect(
+      getEnabledDataSourcesFromSourcesParam(
+        createGroups(),
+        'alpha-local,beta-main,alpha-local,beta-main',
+      ),
+    ).toEqual(['alpha-local', 'beta-main']);
+  });
+
+  it('keeps the first occurrence when a prefix is repeated (preserves input order)', () => {
+    expect(
+      getEnabledDataSourcesFromSourcesParam(createGroups(), 'beta-main,alpha-local,beta-main'),
+    ).toEqual(['beta-main', 'alpha-local']);
+  });
+
+  it('treats whitespace-only differences as the same prefix when deduping', () => {
+    // After trim, ' alpha-local ' and 'alpha-local' are the same prefix
+    // and must collapse — otherwise a URL like
+    // `?sources=alpha-local, alpha-local` would still double-fetch.
+    expect(
+      getEnabledDataSourcesFromSourcesParam(createGroups(), 'alpha-local, alpha-local'),
+    ).toEqual(['alpha-local']);
+  });
+
+  it('handles empty segments without inflating the result', () => {
+    // Empty segments from `,,` / leading / trailing commas must not
+    // count toward the result, and must not interfere with dedupe of
+    // adjacent valid prefixes.
+    expect(
+      getEnabledDataSourcesFromSourcesParam(createGroups(), ',alpha-local,,alpha-local,'),
+    ).toEqual(['alpha-local']);
+  });
+
+  it('collapses a prefix repeated more than twice (3+ duplicates)', () => {
+    expect(
+      getEnabledDataSourcesFromSourcesParam(createGroups(), 'alpha-local,alpha-local,alpha-local'),
+    ).toEqual(['alpha-local']);
+  });
+
+  it('deduplicates around interleaved unknown prefixes', () => {
+    // unknown entries are silently dropped (callers use
+    // findUnknownPrefixesInSourcesParam to surface them) — the dropped
+    // entries must not interfere with dedupe of the known prefix.
+    expect(
+      getEnabledDataSourcesFromSourcesParam(createGroups(), 'alpha-local,nope,alpha-local'),
+    ).toEqual(['alpha-local']);
+  });
+
+  it('returns an empty array (not [""]) for an empty sources param', () => {
+    expect(getEnabledDataSourcesFromSourcesParam(createGroups(), '')).toEqual([]);
+  });
 });
 
 describe('findUnknownPrefixesInSourcesParam', () => {

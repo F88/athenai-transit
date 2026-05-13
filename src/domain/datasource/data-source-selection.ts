@@ -61,11 +61,18 @@ export function getEnabledIdsFromSourcesParam(
  * and never drags `toaran` into the load target. That is what
  * `PRD.md:118` ("指定した prefix のデータソースのみ有効") prescribes.
  *
+ * Duplicate prefixes in the URL (`?sources=minkuru,minkuru`) are
+ * collapsed to a single entry, mirroring the dedupe that the
+ * group-driven path performs via {@link DataSourceManager.getEnabledPrefixes}.
+ * Without this, the same source would be fetched twice and would push
+ * duplicate timetable groups / `sourceMetas` through the merge step
+ * (see `merge-sources-v2.ts` `timetable[stopId].push(...groups)` and
+ * `sourceMetas.push(...)`).
+ *
  * @param groups - Source groups to inspect.
  * @param sourcesParam - Raw `sources` query parameter value.
- * @returns Array of prefixes to load, in the order the user listed them
- *   (with duplicates retained per-request, but each prefix appears at most
- *   once when `'all'` is used).
+ * @returns Array of prefixes to load, in the order the user first
+ *   listed them. Each prefix appears at most once.
  */
 export function getEnabledDataSourcesFromSourcesParam(
   groups: SourceGroup[],
@@ -75,10 +82,17 @@ export function getEnabledDataSourcesFromSourcesParam(
     return [...new Set(groups.flatMap((group) => group.prefixes))];
   }
   const knownPrefixes = new Set(groups.flatMap((group) => group.prefixes));
-  return sourcesParam
-    .split(',')
-    .map((prefix) => prefix.trim())
-    .filter((prefix) => prefix.length > 0 && knownPrefixes.has(prefix));
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const raw of sourcesParam.split(',')) {
+    const prefix = raw.trim();
+    if (prefix.length === 0 || !knownPrefixes.has(prefix) || seen.has(prefix)) {
+      continue;
+    }
+    seen.add(prefix);
+    result.push(prefix);
+  }
+  return result;
 }
 
 /**

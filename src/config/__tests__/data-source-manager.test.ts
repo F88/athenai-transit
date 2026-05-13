@@ -318,8 +318,8 @@ describe('DataSourceManager', () => {
       expect(manager.isEnabled('shared')).toBe(true);
       // DSM is the *group-driven* view, so the prefix list here is the
       // group expansion (not the URL-level prefix narrowing — that
-      // narrowing is `resolveFetchPrefixes`'s job, exercised in its own
-      // test).
+      // narrowing is `resolveFetchDataSources`'s job, exercised in its
+      // own test).
       expect(manager.getEnabledPrefixes()).toEqual(['c', 'a', 'b']);
     });
   });
@@ -539,7 +539,7 @@ describe('DataSourceManager', () => {
       // DSM exposes the *group-driven* view: enabling a group via
       // `?sources=` includes every prefix in that group. The
       // narrower prefix-only contract from PRD.md:118 is enforced by
-      // `resolveFetchPrefixes`, not by DSM directly — see its tests.
+      // `resolveFetchDataSources`, not by DSM directly — see its tests.
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
       setSearch('sources=alpha-express,beta-main');
       const manager = new DataSourceManager();

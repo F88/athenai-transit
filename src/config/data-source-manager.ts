@@ -69,7 +69,7 @@ const STORAGE_KEY = 'enabled-sources';
  * are currently active and persists user preferences to `localStorage`.
  * It deliberately does NOT decide the final fetch-target prefix list
  * when a `?sources=<prefixes>` URL is in play; that resolution lives in
- * {@link import('../domain/datasource/resolve-fetch-prefixes').resolveFetchPrefixes}
+ * {@link import('../domain/datasource/resolve-fetch-data-sources').resolveFetchDataSources}
  * so the original prefix-level URL contract is not subsumed by the
  * (newer) group abstraction.
  */
@@ -132,7 +132,7 @@ export class DataSourceManager {
    * need the final fetch target (and therefore have to honour the
    * prefix-level `?sources=<prefixes>` URL contract from PRD.md:118)
    * should pass this through
-   * {@link import('../domain/datasource/resolve-fetch-prefixes').resolveFetchPrefixes}
+   * {@link import('../domain/datasource/resolve-fetch-data-sources').resolveFetchDataSources}
    * instead of using it directly.
    *
    * @returns Flat array of prefixes from all enabled groups.
