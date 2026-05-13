@@ -84,11 +84,13 @@ export function loadEnabledGroupIdsFromStorage(): Set<string> | null {
   }
 
   // Cleanup write-back: persist the cleaned set so storage reflects what
-  // we returned. Includes the case where non-string elements were
-  // filtered out.
+  // we returned. The pruned count covers three reasons (non-string
+  // elements filtered, stale IDs not in config, and duplicate string
+  // IDs collapsed by the Set), so the log enumerates all three to stay
+  // accurate regardless of which one(s) actually applied this run.
   if (cleaned.size !== stringIds.length || stringIds.length !== parsed.length) {
     logger.info(
-      `Pruned ${(parsed.length - cleaned.size).toString()} invalid/stale entries from '${STORAGE_KEY}'.`,
+      `Pruned ${(parsed.length - cleaned.size).toString()} entries (invalid, stale, or duplicate) from '${STORAGE_KEY}'.`,
     );
     safeWrite(cleaned);
   }
