@@ -155,6 +155,11 @@ describe('DataSourceManager', () => {
     });
 
     it('enables a config-default-disabled group when query params explicitly target it', async () => {
+      // URL `?sources=` is the operator/debug escape hatch — it
+      // bypasses the system gate that the stored-selection path above
+      // enforces. Force-loading a `systemEnabledByDefault: false`
+      // group via URL is intended behavior (test fixtures, debugging
+      // a retired source).
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
       setSearch('sources=beta-main');
       const manager = new DataSourceManager(null);
@@ -172,14 +177,33 @@ describe('DataSourceManager', () => {
       expect(manager.isEnabled('keio-bus')).toBe(false);
     });
 
-    it('enables a config-default-disabled group when the stored selection explicitly includes it', async () => {
+    it('drops stored IDs that point to system-disabled groups on boot (system gate)', async () => {
+      // A group flipped off in config (`systemEnabledByDefault: false`)
+      // must NOT load just because the user's localStorage still has its
+      // ID — otherwise retiring a source becomes a no-op for returning
+      // users with stale storage. The URL `?sources=` override (see the
+      // dedicated test below) is the intentional debug/operator escape
+      // hatch and is exempt from this gate.
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
       const manager = new DataSourceManager(new Set(['beta']));
 
       expect(manager.isEnabled('alpha')).toBe(false);
-      expect(manager.isEnabled('beta')).toBe(true);
+      expect(manager.isEnabled('beta')).toBe(false);
       expect(manager.isEnabled('gamma')).toBe(false);
-      expect(manager.getEnabledPrefixes()).toEqual(['beta-main']);
+      expect(manager.getEnabledPrefixes()).toEqual([]);
+    });
+
+    it('keeps system-enabled stored IDs while dropping system-disabled ones', async () => {
+      // Mixed case: the system gate is a per-ID filter, not all-or-
+      // nothing. `alpha` (systemEnabledByDefault: true) survives,
+      // `beta` (false) is dropped.
+      const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
+      const manager = new DataSourceManager(new Set(['alpha', 'beta']));
+
+      expect(manager.isEnabled('alpha')).toBe(true);
+      expect(manager.isEnabled('beta')).toBe(false);
+      expect(manager.isEnabled('gamma')).toBe(false);
+      expect(manager.getEnabledPrefixes()).toEqual(['alpha-local', 'alpha-express']);
     });
 
     it('replaces the stored selection instead of unioning with it when URL params are present', async () => {
@@ -283,9 +307,13 @@ describe('DataSourceManager', () => {
     });
 
     it('treats all groups with the same id as enabled when the stored selection includes that id', async () => {
+      // Test target: duplicate-id semantic on the stored-selection path.
+      // Fixture keeps `systemEnabledByDefault: true` (so the system gate
+      // doesn't filter `'shared'` out) but sets `userEnabledByDefault:
+      // false` (so the stored path — NOT defaults — is what's exercised
+      // here).
       const groups = createDuplicateIdSettings().map((group) => ({
         ...group,
-        systemEnabledByDefault: false,
         userEnabledByDefault: false,
       }));
       const DataSourceManager = await importFreshDataSourceManager(groups);

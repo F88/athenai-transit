@@ -43,6 +43,35 @@ function resolveEnabledIdsFromQueryParams(groups: SourceGroup[]): Set<string> | 
   return getEnabledIdsFromSourcesParam(groups, sourcesParam);
 }
 
+/**
+ * Drop any stored IDs whose group is `systemEnabledByDefault: false`.
+ *
+ * The system-disabled flag is an app-level retirement / hide mechanism
+ * for sources the maintainer no longer wants loaded by default. A user's
+ * stored selection (from before the maintainer flipped the flag) must
+ * not resurrect those sources on a normal boot — otherwise retiring a
+ * source becomes a no-op for returning users with stale localStorage.
+ *
+ * The URL `?sources=` override path is intentionally NOT routed through
+ * this filter — it remains the operator/debug escape hatch for
+ * force-loading any group, including system-disabled ones.
+ */
+function filterStoredEnabledIdsBySystemGate(
+  groups: readonly SourceGroup[],
+  ids: Set<string>,
+): Set<string> {
+  const systemEnabledGroupIds = new Set(
+    groups.filter((g) => g.systemEnabledByDefault).map((g) => g.id),
+  );
+  const filtered = new Set<string>();
+  for (const id of ids) {
+    if (systemEnabledGroupIds.has(id)) {
+      filtered.add(id);
+    }
+  }
+  return filtered;
+}
+
 function resolveInitialEnabledIds(
   groups: SourceGroup[],
   storedEnabledIds: Set<string> | null,
@@ -54,11 +83,13 @@ function resolveInitialEnabledIds(
   // obvious: only `null` falls through.
   const enabledIdsFromQueryParams = resolveEnabledIdsFromQueryParams(groups);
   if (enabledIdsFromQueryParams !== null) {
+    // URL override deliberately bypasses the system gate — see
+    // `filterStoredEnabledIdsBySystemGate` for the rationale.
     return enabledIdsFromQueryParams;
   }
 
   if (storedEnabledIds !== null) {
-    return storedEnabledIds;
+    return filterStoredEnabledIdsBySystemGate(groups, storedEnabledIds);
   }
 
   return getDefaultEnabledIds(groups);
@@ -87,9 +118,14 @@ export class DataSourceManager {
    * Creates a new manager.
    *
    * Source selection priority:
-   * 1. URL `?sources=prefix1,prefix2` or `?sources=all` — transient override (localStorage not consulted)
-   * 2. `storedEnabledIds` if provided — the caller's parsed `localStorage` snapshot
-   * 3. Default — only groups with `userEnabledByDefault: true`
+   * 1. URL `?sources=prefix1,prefix2` or `?sources=all` — transient
+   *    override (localStorage not consulted; bypasses the system gate
+   *    so debug/operator URLs can force-load system-disabled groups).
+   * 2. `storedEnabledIds` if provided — the caller's parsed
+   *    `localStorage` snapshot, **filtered by `systemEnabledByDefault`**
+   *    so a group retired at the config level cannot be resurrected by
+   *    a stale localStorage entry.
+   * 3. Default — only groups with `userEnabledByDefault: true`.
    *
    * @param storedEnabledIds - The user's persisted preference (typically
    *   from
