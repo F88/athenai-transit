@@ -191,7 +191,11 @@
       "fraction": "{{loaded}}/{{total}} 読込済"
     },
     "toggle": {
-      "aria": "{{group}} を有効化"
+      "aria": "{{group}} の有効化状態"
+    },
+    "forcedMode": {
+      "title": "対象データ指定モード",
+      "description": "このモードでは対象データを変更することは出来ません。"
     },
     "section": {
       "0": "路面電車",

@@ -191,7 +191,11 @@
       "fraction": "{{loaded}}/{{total}} loaded"
     },
     "toggle": {
-      "aria": "Enable {{group}}"
+      "aria": "Enabled state of {{group}}"
+    },
+    "forcedMode": {
+      "title": "Specified data mode",
+      "description": "In this mode, the target data cannot be changed."
     },
     "section": {
       "0": "Tram",

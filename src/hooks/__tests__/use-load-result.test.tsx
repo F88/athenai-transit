@@ -5,9 +5,11 @@ import { SourceLoadStateProvider } from '../../contexts/source-load-state-provid
 import { useLoadResult } from '../use-load-result';
 import type { LoadResult } from '../../repositories/athenai-repository';
 
-function wrapper(loadResult: LoadResult) {
+function wrapper(loadResult: LoadResult, sourcesParam: string | null = null) {
   return ({ children }: { children: ReactNode }) => (
-    <SourceLoadStateProvider initialLoadResult={loadResult}>{children}</SourceLoadStateProvider>
+    <SourceLoadStateProvider initialLoadResult={loadResult} sourcesParam={sourcesParam}>
+      {children}
+    </SourceLoadStateProvider>
   );
 }
 

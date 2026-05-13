@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next';
+import { InfoIcon } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +16,7 @@ import {
 } from '../../domain/datasource/aggregate-group-status';
 import { getSourceGroupDisplayName } from '../../domain/datasource/get-source-group-display-name';
 import { sortSourceGroupsForDisplay } from '../../domain/datasource/sort-source-groups';
+import { useIsForcedSourcesMode } from '../../hooks/use-is-forced-sources-mode';
 import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
 import type { SourceGroup } from '../../types/app/source-group';
 import { countriesFlagEmoji } from '../../utils/country-flag';
@@ -220,12 +223,25 @@ function FailureList({ row }: { row: GroupRow }) {
   );
 }
 
-function GroupRowView({ row }: { row: GroupRow }) {
+function GroupRowView({
+  row,
+  isForcedSourcesMode,
+}: {
+  row: GroupRow;
+  isForcedSourcesMode: boolean;
+}) {
   const { t } = useTranslation();
+  // In forced-sources mode, the visible row is only here because at least one
+  // of its prefixes was attempted by the URL override, so reflecting
+  // `userEnabledByDefault` would mislead (e.g. system-disabled groups
+  // surfaced via `?sources=<list>` would show OFF despite being loaded).
+  // Forcing `checked` to `true` keeps the Switch consistent with the load
+  // status icon adjacent to it.
+  const switchChecked = isForcedSourcesMode ? true : row.userEnabledByDefault;
   return (
     <li className="border-border/40 flex items-start gap-2 border-b px-2 py-2 last:border-b-0">
       <Switch
-        checked={row.userEnabledByDefault}
+        checked={switchChecked}
         disabled
         aria-label={t('dataSourceSettings.toggle.aria', {
           group: row.groupName,
@@ -290,17 +306,23 @@ function GroupRowView({ row }: { row: GroupRow }) {
 export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSettingsDialogProps) {
   const { t, i18n } = useTranslation();
   const loadStatusByPrefix = useSourceLoadStatus();
+  const isForcedSourcesMode = useIsForcedSourcesMode();
 
-  // Visibility: app-enabled groups are always shown. App-disabled groups
-  // (`systemEnabledByDefault: false`) are hidden by default, but reappear
-  // here when their data has actually been loaded — currently only
-  // reachable via `?sources=all`, the debug override that bypasses the
-  // systemEnabledByDefault flag. This keeps the dialog honest: if the
-  // data is in the repository, the user can see that fact; otherwise the
-  // disabled group stays invisible.
-  const visibleGroups = settings.filter(
-    (g) => g.systemEnabledByDefault || g.prefixes.some((prefix) => loadStatusByPrefix.has(prefix)),
-  );
+  // Visibility:
+  //  - Normal mode: app-enabled groups are always shown. App-disabled groups
+  //    (`systemEnabledByDefault: false`) are hidden, but reappear when their
+  //    data has actually been loaded (currently only via `?sources=all`).
+  //  - Forced-sources mode (`?sources=<list>` or `?sources=all` set): user
+  //    settings are bypassed entirely, so showing app-enabled-by-default
+  //    groups that the URL didn't request would be misleading. Restrict the
+  //    list to groups whose prefixes are actually in the load-status map.
+  const visibleGroups = settings.filter((g) => {
+    const anyAttempted = g.prefixes.some((prefix) => loadStatusByPrefix.has(prefix));
+    if (isForcedSourcesMode) {
+      return anyAttempted;
+    }
+    return g.systemEnabledByDefault || anyAttempted;
+  });
 
   const sections = buildSections(visibleGroups, loadStatusByPrefix, i18n.language, t);
   const counts = countDistinctGroupStatuses(visibleGroups, loadStatusByPrefix);
@@ -326,6 +348,24 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
             })}
           </div>
         </DialogHeader>
+        {isForcedSourcesMode && (
+          <Alert
+            aria-live="polite"
+            className="mt-3 border-sky-300 bg-sky-50 px-3 py-2 text-left shadow-sm dark:border-sky-800 dark:bg-sky-950/40"
+          >
+            <InfoIcon
+              aria-hidden="true"
+              focusable="false"
+              className="mt-0.5 text-sky-700 dark:text-sky-300"
+            />
+            <AlertTitle className="text-xs font-semibold text-sky-900 dark:text-sky-200">
+              {t('dataSourceSettings.forcedMode.title')}
+            </AlertTitle>
+            <AlertDescription className="text-[11px] text-sky-800 dark:text-sky-300">
+              {t('dataSourceSettings.forcedMode.description')}
+            </AlertDescription>
+          </Alert>
+        )}
         <div className="overflow-y-auto pt-3 text-sm">
           {sections.map((section) => (
             <section key={String(section.key)} className="mb-4 last:mb-0">
@@ -336,7 +376,11 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
               </h3>
               <ul>
                 {section.rows.map((row) => (
-                  <GroupRowView key={`${String(section.key)}::${row.key}`} row={row} />
+                  <GroupRowView
+                    key={`${String(section.key)}::${row.key}`}
+                    row={row}
+                    isForcedSourcesMode={isForcedSourcesMode}
+                  />
                 ))}
               </ul>
             </section>
