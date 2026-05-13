@@ -199,7 +199,7 @@
     },
     "developmentNotice": {
       "title": "再起動で反映",
-      "description": "設定は再起動後に反映されます。再起動ボタンを押すかブラウザで再読み込みしてください。"
+      "description": "設定は再起動後に反映されます"
     },
     "resetToDefaults": "初期値に戻す",
     "restart": {

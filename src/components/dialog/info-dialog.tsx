@@ -65,7 +65,7 @@ export function InfoDialog({ open, onOpenChange, onOpenDataSourceSettings }: Inf
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[80dvh] w-[90dvw] max-w-5xl flex-col gap-0 overflow-hidden border-4 p-2 sm:max-w-3xl"
+        className="border-info flex max-h-[80dvh] w-[90dvw] max-w-5xl flex-col gap-0 overflow-hidden border-4 p-2 sm:max-w-3xl"
       >
         <DialogHeader className="border-border relative shrink-0 border-b pb-3 sm:text-center">
           <Button
