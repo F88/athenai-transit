@@ -8,6 +8,7 @@ import { SourceLoadStateProvider } from './contexts/source-load-state-provider';
 import { TransitRepositoryProvider } from './contexts/transit-repository-provider';
 import { DataSourceManager } from './config/data-source-manager';
 import { resolveFetchDataSources } from './domain/datasource/resolve-fetch-data-sources';
+import { loadEnabledGroupIdsFromStorage } from './domain/datasource/data-source-selection-storage';
 import type { TransitRepository } from './repositories/transit-repository';
 import { AthenaiRepositoryV2, type LoadResult } from './repositories/athenai-repository';
 import {
@@ -33,7 +34,7 @@ async function createRepository(): Promise<{
     return { repository: new MockRepository(), loadResult: { loaded: [], failed: [] } };
   }
 
-  const dsm = new DataSourceManager();
+  const dsm = new DataSourceManager(loadEnabledGroupIdsFromStorage());
   const prefixes = resolveFetchDataSources(
     dsm.getGroups(),
     dsm.getEnabledPrefixes(),

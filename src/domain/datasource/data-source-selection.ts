@@ -1,13 +1,19 @@
 import type { SourceGroup } from '../../types/app/source-group';
 
 /**
- * Return the IDs of all groups that are enabled by default.
+ * Return the IDs of all groups whose user-default is "on".
+ *
+ * Used when the user has no explicit preference recorded (e.g.,
+ * `localStorage` empty, `?sources=` absent). The result represents
+ * "what the user would see as enabled by default" and is therefore
+ * driven by `userEnabledByDefault`, NOT by `systemEnabledByDefault`
+ * (the latter is a separate app-level availability flag).
  *
  * @param groups - Source groups to inspect.
- * @returns Set of group IDs whose `systemEnabledByDefault` flag is `true`.
+ * @returns Set of group IDs whose `userEnabledByDefault` flag is `true`.
  */
 export function getDefaultEnabledIds(groups: readonly SourceGroup[]): Set<string> {
-  return new Set(groups.filter((group) => group.systemEnabledByDefault).map((group) => group.id));
+  return new Set(groups.filter((group) => group.userEnabledByDefault).map((group) => group.id));
 }
 
 /**
@@ -125,23 +131,6 @@ export function findUnknownPrefixesInSourcesParam(
   const knownPrefixes = new Set(groups.flatMap((group) => group.prefixes));
 
   return requestedPrefixes.filter((prefix) => !knownPrefixes.has(prefix));
-}
-
-/**
- * Parse a localStorage snapshot of enabled group IDs.
- *
- * This function preserves current behavior: any truthy JSON value is accepted
- * and passed to `Set`, while JSON parse errors are handled by the caller.
- *
- * @param stored - Raw localStorage value.
- * @returns Parsed enabled IDs, or `null` when storage is empty.
- */
-export function parseStoredEnabledIds(stored: string | null): Set<string> | null {
-  if (!stored) {
-    return null;
-  }
-
-  return new Set(JSON.parse(stored) as string[]);
 }
 
 /**

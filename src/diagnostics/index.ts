@@ -8,6 +8,7 @@
  */
 
 import { DataSourceManager } from '../config/data-source-manager';
+import { loadEnabledGroupIdsFromStorage } from '../domain/datasource/data-source-selection-storage';
 import { createLogger } from '../lib/logger';
 import type { TransitRepository } from '../repositories/transit-repository';
 
@@ -20,7 +21,7 @@ const logger = createLogger('diagnostics');
  * @param repository - The active TransitRepository instance (for repo-bench).
  */
 export async function runDiagnostics(name: string, repository?: TransitRepository): Promise<void> {
-  const prefixes = new DataSourceManager().getEnabledPrefixes();
+  const prefixes = new DataSourceManager(loadEnabledGroupIdsFromStorage()).getEnabledPrefixes();
 
   switch (name) {
     case 'v2-load': {

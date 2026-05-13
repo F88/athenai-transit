@@ -6,7 +6,6 @@ import {
   getDefaultEnabledIds,
   getEnabledIdsFromSourcesParam,
   getEnabledPrefixesFromGroups,
-  parseStoredEnabledIds,
 } from '../domain/datasource/data-source-selection';
 import type { SourceGroup } from '../types/app/source-group';
 
@@ -18,7 +17,13 @@ function dedupePrefixes(prefixes: string[]): string[] {
 
 function resolveEnabledIdsFromQueryParams(groups: SourceGroup[]): Set<string> | null {
   const sourcesParam = getSourcesParam();
-  if (!sourcesParam) {
+  // Strict null check — DO NOT use `!sourcesParam`. `?sources=` (empty
+  // value) reaches us as `''` and MUST be treated as a force-load-empty
+  // override (returning a non-null empty Set below), not collapsed with
+  // "param absent" (`null`). The load layer in
+  // `resolveFetchDataSources` already treats `''` as force-empty, so
+  // DSM must agree or the UI / load layers disagree.
+  if (sourcesParam === null) {
     return null;
   }
 
@@ -38,35 +43,67 @@ function resolveEnabledIdsFromQueryParams(groups: SourceGroup[]): Set<string> | 
   return getEnabledIdsFromSourcesParam(groups, sourcesParam);
 }
 
-function resolveEnabledIdsFromStorage(): Set<string> | null {
-  return parseStoredEnabledIds(localStorage.getItem(STORAGE_KEY));
+/**
+ * Drop any stored IDs whose group is `systemEnabledByDefault: false`.
+ *
+ * The system-disabled flag is an app-level retirement / hide mechanism
+ * for sources the maintainer no longer wants loaded by default. A user's
+ * stored selection (from before the maintainer flipped the flag) must
+ * not resurrect those sources on a normal boot — otherwise retiring a
+ * source becomes a no-op for returning users with stale localStorage.
+ *
+ * The URL `?sources=` override path is intentionally NOT routed through
+ * this filter — it remains the operator/debug escape hatch for
+ * force-loading any group, including system-disabled ones.
+ */
+function filterStoredEnabledIdsBySystemGate(
+  groups: readonly SourceGroup[],
+  ids: Set<string>,
+): Set<string> {
+  const systemEnabledGroupIds = new Set(
+    groups.filter((g) => g.systemEnabledByDefault).map((g) => g.id),
+  );
+  const filtered = new Set<string>();
+  for (const id of ids) {
+    if (systemEnabledGroupIds.has(id)) {
+      filtered.add(id);
+    }
+  }
+  return filtered;
 }
 
-function resolveInitialEnabledIds(groups: SourceGroup[]): Set<string> {
+function resolveInitialEnabledIds(
+  groups: SourceGroup[],
+  storedEnabledIds: Set<string> | null,
+): Set<string> {
+  // Strict null checks — an empty `Set` is a *valid* user-explicit value
+  // ("nothing enabled", β semantic). Using truthy checks (`if (set)` is
+  // always true for Sets, but `if (enabledIdsFromQueryParams)` could
+  // mislead a future reader). Keep `=== null` to make the contract
+  // obvious: only `null` falls through.
   const enabledIdsFromQueryParams = resolveEnabledIdsFromQueryParams(groups);
-  if (enabledIdsFromQueryParams) {
+  if (enabledIdsFromQueryParams !== null) {
+    // URL override deliberately bypasses the system gate — see
+    // `filterStoredEnabledIdsBySystemGate` for the rationale.
     return enabledIdsFromQueryParams;
   }
 
-  try {
-    const enabledIdsFromStorage = resolveEnabledIdsFromStorage();
-    if (enabledIdsFromStorage) {
-      return enabledIdsFromStorage;
-    }
-  } catch {
-    // fall through to default
+  if (storedEnabledIds !== null) {
+    return filterStoredEnabledIdsBySystemGate(groups, storedEnabledIds);
   }
 
   return getDefaultEnabledIds(groups);
 }
 
-const STORAGE_KEY = 'enabled-sources';
-
 /**
  * Manages which source groups are enabled/disabled.
  *
  * The manager owns the SourceGroup-level state — it tracks which groups
- * are currently active and persists user preferences to `localStorage`.
+ * are currently active. localStorage I/O lives in the
+ * {@link import('../domain/datasource/data-source-selection-storage')}
+ * utility; this class only consumes the **already-parsed** value at
+ * construction time via the `storedEnabledIds` constructor parameter.
+ *
  * It deliberately does NOT decide the final fetch-target prefix list
  * when a `?sources=<prefixes>` URL is in play; that resolution lives in
  * {@link import('../domain/datasource/resolve-fetch-data-sources').resolveFetchDataSources}
@@ -81,13 +118,24 @@ export class DataSourceManager {
    * Creates a new manager.
    *
    * Source selection priority:
-   * 1. URL `?sources=prefix1,prefix2` or `?sources=all` — transient override (localStorage not updated)
-   * 2. localStorage — persisted user preferences
-   * 3. Default — only groups with `systemEnabledByDefault: true`
+   * 1. URL `?sources=prefix1,prefix2` or `?sources=all` — transient
+   *    override (localStorage not consulted; bypasses the system gate
+   *    so debug/operator URLs can force-load system-disabled groups).
+   * 2. `storedEnabledIds` if provided — the caller's parsed
+   *    `localStorage` snapshot, **filtered by `systemEnabledByDefault`**
+   *    so a group retired at the config level cannot be resurrected by
+   *    a stale localStorage entry.
+   * 3. Default — only groups with `userEnabledByDefault: true`.
+   *
+   * @param storedEnabledIds - The user's persisted preference (typically
+   *   from
+   *   {@link import('../domain/datasource/data-source-selection-storage').loadEnabledGroupIdsFromStorage}),
+   *   or `null` when no preference is recorded. An empty `Set` is
+   *   treated as a user-explicit "nothing enabled" choice.
    */
-  constructor() {
+  constructor(storedEnabledIds: Set<string> | null) {
     this.groups = settings;
-    this.enabledIds = resolveInitialEnabledIds(this.groups);
+    this.enabledIds = resolveInitialEnabledIds(this.groups, storedEnabledIds);
   }
 
   /**
@@ -107,21 +155,6 @@ export class DataSourceManager {
    */
   isEnabled(groupId: string): boolean {
     return this.enabledIds.has(groupId);
-  }
-
-  /**
-   * Enable or disable a source group and persist the change.
-   *
-   * @param groupId - The source group ID to update.
-   * @param enabled - Whether to enable (`true`) or disable (`false`).
-   */
-  setEnabled(groupId: string, enabled: boolean): void {
-    if (enabled) {
-      this.enabledIds.add(groupId);
-    } else {
-      this.enabledIds.delete(groupId);
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...this.enabledIds]));
   }
 
   /**

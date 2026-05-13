@@ -7,8 +7,6 @@ import type { SourceGroup } from '../../types/app/source-group';
 import settings from '../data-source-settings';
 import { resetParamsCache } from '../../lib/query-params';
 
-const STORAGE_KEY = 'enabled-sources';
-
 /**
  * Replace the current URL (path + query) and reset the cached
  * URLSearchParams instance so the next call to `getSourcesParam()`
@@ -113,6 +111,9 @@ function createDuplicateIdSettings(): SourceGroup[] {
 }
 
 beforeEach(() => {
+  // DSM no longer touches localStorage directly (since Phase 1) but tests
+  // run in jsdom and may inherit state from earlier suites — clear to be
+  // safe.
   localStorage.clear();
   setSearch('');
 });
@@ -124,9 +125,9 @@ afterEach(() => {
 
 describe('DataSourceManager', () => {
   describe('Constructor', () => {
-    it('uses only default-enabled groups when neither URL param nor localStorage is present', async () => {
+    it('uses only default-enabled groups when neither URL param nor stored selection is present', async () => {
       const DataSourceManager = await importFreshDataSourceManager(createCustomSettings());
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
 
       expect(manager.isEnabled('default-on')).toBe(true);
       expect(manager.isEnabled('default-off')).toBe(false);
@@ -136,7 +137,7 @@ describe('DataSourceManager', () => {
     it('enables every group including config-default-disabled ones when URL param is `?sources=all`', async () => {
       const DataSourceManager = await importFreshDataSourceManager(createCustomSettings());
       setSearch('sources=all');
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
 
       expect(manager.isEnabled('default-on')).toBe(true);
       expect(manager.isEnabled('default-off')).toBe(true);
@@ -146,7 +147,7 @@ describe('DataSourceManager', () => {
     it('enables only groups containing the requested prefix when URL param lists prefixes', () => {
       // `minkuru` belongs to the `toei-bus` group only.
       setSearch('sources=minkuru');
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
       expect(manager.isEnabled('toei-bus')).toBe(true);
       expect(manager.isEnabled('toei-train')).toBe(false);
       expect(manager.isEnabled('yurikamome')).toBe(false);
@@ -154,9 +155,14 @@ describe('DataSourceManager', () => {
     });
 
     it('enables a config-default-disabled group when query params explicitly target it', async () => {
+      // URL `?sources=` is the operator/debug escape hatch — it
+      // bypasses the system gate that the stored-selection path above
+      // enforces. Force-loading a `systemEnabledByDefault: false`
+      // group via URL is intended behavior (test fixtures, debugging
+      // a retired source).
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
       setSearch('sources=beta-main');
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
 
       expect(manager.isEnabled('alpha')).toBe(false);
       expect(manager.isEnabled('beta')).toBe(true);
@@ -164,39 +170,22 @@ describe('DataSourceManager', () => {
       expect(manager.getEnabledPrefixes()).toEqual(['beta-main']);
     });
 
-    it('hydrates the enabled set from localStorage when no URL param is present', () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(['toei-bus', 'yurikamome']));
-      const manager = new DataSourceManager();
+    it('hydrates the enabled set from the stored selection when no URL param is present', () => {
+      const manager = new DataSourceManager(new Set(['toei-bus', 'yurikamome']));
       expect(manager.isEnabled('toei-bus')).toBe(true);
       expect(manager.isEnabled('yurikamome')).toBe(true);
       expect(manager.isEnabled('keio-bus')).toBe(false);
     });
 
-    it('enables a config-default-disabled group when localStorage explicitly includes it', async () => {
+    it('drops stored IDs that point to system-disabled groups on boot (system gate)', async () => {
+      // A group flipped off in config (`systemEnabledByDefault: false`)
+      // must NOT load just because the user's localStorage still has its
+      // ID — otherwise retiring a source becomes a no-op for returning
+      // users with stale storage. The URL `?sources=` override (see the
+      // dedicated test below) is the intentional debug/operator escape
+      // hatch and is exempt from this gate.
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(['beta']));
-      const manager = new DataSourceManager();
-
-      expect(manager.isEnabled('alpha')).toBe(false);
-      expect(manager.isEnabled('beta')).toBe(true);
-      expect(manager.isEnabled('gamma')).toBe(false);
-      expect(manager.getEnabledPrefixes()).toEqual(['beta-main']);
-    });
-
-    it('falls back to default-enabled groups when localStorage contains invalid JSON', async () => {
-      localStorage.setItem(STORAGE_KEY, 'not-valid-json{{');
-      const DataSourceManager = await importFreshDataSourceManager(createCustomSettings());
-      const manager = new DataSourceManager();
-
-      expect(manager.isEnabled('default-on')).toBe(true);
-      expect(manager.isEnabled('default-off')).toBe(false);
-      expect(manager.getEnabledPrefixes()).toEqual(['on']);
-    });
-
-    it('treats a JSON string in localStorage as a malformed persisted selection and enables no known groups', async () => {
-      const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
-      localStorage.setItem(STORAGE_KEY, JSON.stringify('beta'));
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(new Set(['beta']));
 
       expect(manager.isEnabled('alpha')).toBe(false);
       expect(manager.isEnabled('beta')).toBe(false);
@@ -204,11 +193,23 @@ describe('DataSourceManager', () => {
       expect(manager.getEnabledPrefixes()).toEqual([]);
     });
 
-    it('replaces localStorage entries instead of unioning with them when URL params are present', async () => {
+    it('keeps system-enabled stored IDs while dropping system-disabled ones', async () => {
+      // Mixed case: the system gate is a per-ID filter, not all-or-
+      // nothing. `alpha` (systemEnabledByDefault: true) survives,
+      // `beta` (false) is dropped.
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(['alpha']));
+      const manager = new DataSourceManager(new Set(['alpha', 'beta']));
+
+      expect(manager.isEnabled('alpha')).toBe(true);
+      expect(manager.isEnabled('beta')).toBe(false);
+      expect(manager.isEnabled('gamma')).toBe(false);
+      expect(manager.getEnabledPrefixes()).toEqual(['alpha-local', 'alpha-express']);
+    });
+
+    it('replaces the stored selection instead of unioning with it when URL params are present', async () => {
+      const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
       setSearch('sources=beta-main');
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(new Set(['alpha']));
 
       expect(manager.isEnabled('alpha')).toBe(false);
       expect(manager.isEnabled('beta')).toBe(true);
@@ -216,10 +217,9 @@ describe('DataSourceManager', () => {
       expect(manager.getEnabledPrefixes()).toEqual(['beta-main']);
     });
 
-    it('treats a no-match URL param as an explicit empty override even when localStorage has enabled groups', () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(['toei-bus', 'yurikamome']));
+    it('treats a no-match URL param as an explicit empty override even when the stored selection has enabled groups', () => {
       setSearch('sources=nonexistent-prefix');
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(new Set(['toei-bus', 'yurikamome']));
 
       for (const group of settings) {
         expect(manager.isEnabled(group.id)).toBe(false);
@@ -227,29 +227,38 @@ describe('DataSourceManager', () => {
       expect(manager.getEnabledPrefixes()).toEqual([]);
     });
 
-    it('falls through to localStorage when `?sources=` has an empty value', () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(['toei-bus']));
+    it('treats `?sources=` (empty value) as a force-load-empty override and ignores the stored selection', () => {
+      // `?sources=` (empty value) is a URL-level explicit "force-load
+      // zero sources". DSM must NOT collapse this with "param absent"
+      // (= null) via truthy/falsy checks — the load layer in
+      // `resolveFetchDataSources` already treats empty as force-empty,
+      // and the UI's `isForcedSourcesMode` is true for empty too.
       setSearch('sources=');
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(new Set(['toei-bus']));
 
-      expect(manager.isEnabled('toei-bus')).toBe(true);
-      expect(manager.isEnabled('yurikamome')).toBe(false);
+      for (const group of settings) {
+        expect(manager.isEnabled(group.id)).toBe(false);
+      }
+      expect(manager.getEnabledPrefixes()).toEqual([]);
     });
 
     it('does not treat an empty `?sources=` value as `all`', async () => {
+      // Empty `?sources=` is force-empty, NOT a fallback to defaults.
+      // (Pre-Phase-1 DSM collapsed empty into null via `!sourcesParam`
+      // and fell through to defaults; that was the bug.)
       const DataSourceManager = await importFreshDataSourceManager(createCustomSettings());
       setSearch('sources=');
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
 
-      expect(manager.isEnabled('default-on')).toBe(true);
+      expect(manager.isEnabled('default-on')).toBe(false);
       expect(manager.isEnabled('default-off')).toBe(false);
-      expect(manager.getEnabledPrefixes()).toEqual(['on']);
+      expect(manager.getEnabledPrefixes()).toEqual([]);
     });
 
     it('enables every group whose prefixes match a comma-separated list', () => {
       // `minkuru` → toei-bus, `toaran` → toei-train
       setSearch('sources=minkuru,toaran');
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
       expect(manager.isEnabled('toei-bus')).toBe(true);
       expect(manager.isEnabled('toei-train')).toBe(true);
       expect(manager.isEnabled('yurikamome')).toBe(false);
@@ -257,7 +266,7 @@ describe('DataSourceManager', () => {
 
     it('trims whitespace around comma-separated prefixes', () => {
       setSearch('sources=minkuru%2C%20toaran'); // "minkuru, toaran"
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
       expect(manager.isEnabled('toei-bus')).toBe(true);
       expect(manager.isEnabled('toei-train')).toBe(true);
       expect(manager.isEnabled('yurikamome')).toBe(false);
@@ -265,7 +274,7 @@ describe('DataSourceManager', () => {
 
     it('enables nothing when the requested prefix matches no group', () => {
       setSearch('sources=nonexistent-prefix');
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
       for (const group of settings) {
         expect(manager.isEnabled(group.id)).toBe(false);
       }
@@ -276,46 +285,39 @@ describe('DataSourceManager', () => {
       // Anything else is split on commas and looked up as prefixes, where
       // `all` itself never matches a real GTFS prefix.
       setSearch('sources=all,minkuru');
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
       expect(manager.isEnabled('toei-bus')).toBe(true);
       expect(manager.isEnabled('toei-train')).toBe(false);
       expect(manager.isEnabled('yurikamome')).toBe(false);
     });
 
-    it('treats an empty array in localStorage as "everything disabled"', () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-      const manager = new DataSourceManager();
+    it('treats an empty stored Set as "everything disabled" (user-explicit empty, β semantic)', () => {
+      const manager = new DataSourceManager(new Set());
       for (const group of settings) {
         expect(manager.isEnabled(group.id)).toBe(false);
       }
-    });
-
-    it('enables no known groups when localStorage contains only unknown ids', () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(['unknown-id']));
-      const manager = new DataSourceManager();
-      for (const group of settings) {
-        expect(manager.isEnabled(group.id)).toBe(false);
-      }
-      expect(manager.getEnabledPrefixes()).toEqual([]);
     });
 
     it('treats all groups with the same id as enabled when defaults include that id', async () => {
       const DataSourceManager = await importFreshDataSourceManager(createDuplicateIdSettings());
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
 
       expect(manager.isEnabled('shared')).toBe(true);
       expect(manager.getEnabledPrefixes()).toEqual(['c', 'a', 'b']);
     });
 
-    it('treats all groups with the same id as enabled when localStorage includes that id', async () => {
+    it('treats all groups with the same id as enabled when the stored selection includes that id', async () => {
+      // Test target: duplicate-id semantic on the stored-selection path.
+      // Fixture keeps `systemEnabledByDefault: true` (so the system gate
+      // doesn't filter `'shared'` out) but sets `userEnabledByDefault:
+      // false` (so the stored path — NOT defaults — is what's exercised
+      // here).
       const groups = createDuplicateIdSettings().map((group) => ({
         ...group,
-        systemEnabledByDefault: false,
         userEnabledByDefault: false,
       }));
       const DataSourceManager = await importFreshDataSourceManager(groups);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(['shared']));
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(new Set(['shared']));
 
       expect(manager.isEnabled('shared')).toBe(true);
       expect(manager.getEnabledPrefixes()).toEqual(['c', 'a', 'b']);
@@ -324,7 +326,7 @@ describe('DataSourceManager', () => {
     it('treats all groups with the same id as enabled when query param matches one of them', async () => {
       const DataSourceManager = await importFreshDataSourceManager(createDuplicateIdSettings());
       setSearch('sources=b');
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
 
       expect(manager.isEnabled('shared')).toBe(true);
       // DSM is the *group-driven* view, so the prefix list here is the
@@ -366,7 +368,7 @@ describe('DataSourceManager', () => {
 
     it('emits a warn log listing the unknown prefix from `?sources=`', () => {
       setSearch('sources=minkuru,definitely-not-a-real-prefix');
-      new DataSourceManager();
+      new DataSourceManager(null);
 
       const warnMessage = findUnknownPrefixWarn();
       expect(warnMessage).toBeDefined();
@@ -377,7 +379,7 @@ describe('DataSourceManager', () => {
 
     it('lists every unknown prefix when multiple are present', () => {
       setSearch('sources=foo,bar,minkuru');
-      new DataSourceManager();
+      new DataSourceManager(null);
 
       const warnMessage = findUnknownPrefixWarn();
       expect(warnMessage).toBeDefined();
@@ -387,21 +389,21 @@ describe('DataSourceManager', () => {
 
     it('does not emit the unknown-prefix warning when `?sources=all`', () => {
       setSearch('sources=all');
-      new DataSourceManager();
+      new DataSourceManager(null);
 
       expect(findUnknownPrefixWarn()).toBeUndefined();
     });
 
     it('does not emit the unknown-prefix warning when every requested prefix matches a group', () => {
       setSearch('sources=minkuru,toaran');
-      new DataSourceManager();
+      new DataSourceManager(null);
 
       expect(findUnknownPrefixWarn()).toBeUndefined();
     });
 
     it('does not emit the unknown-prefix warning when `?sources=` is absent', () => {
       // No ?sources= param → DSM does not even reach the warning path.
-      new DataSourceManager();
+      new DataSourceManager(null);
 
       expect(findUnknownPrefixWarn()).toBeUndefined();
     });
@@ -411,7 +413,7 @@ describe('DataSourceManager', () => {
     it('returns every configured source group in definition order', async () => {
       const groups = createMultiPrefixSettings();
       const DataSourceManager = await importFreshDataSourceManager(groups);
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
 
       expect(manager.getGroups()).toEqual(groups);
     });
@@ -419,8 +421,7 @@ describe('DataSourceManager', () => {
     it('returns groups regardless of their enabled state', async () => {
       const groups = createMultiPrefixSettings();
       const DataSourceManager = await importFreshDataSourceManager(groups);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(new Set());
 
       expect(manager.getGroups()).toEqual(groups);
       for (const group of manager.getGroups()) {
@@ -431,119 +432,35 @@ describe('DataSourceManager', () => {
 
   describe('isEnabled', () => {
     it('returns true for a default-enabled group', () => {
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
       expect(manager.isEnabled('toei-bus')).toBe(true);
-    });
-
-    it('returns false for a group that has been disabled via setEnabled', () => {
-      const manager = new DataSourceManager();
-      manager.setEnabled('toei-bus', false);
-      expect(manager.isEnabled('toei-bus')).toBe(false);
     });
 
     it('returns false for an unknown group id', () => {
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
       expect(manager.isEnabled('this-group-does-not-exist')).toBe(false);
     });
 
-    it('reflects re-enabling a previously disabled group', () => {
-      const manager = new DataSourceManager();
-      manager.setEnabled('toei-bus', false);
+    it('reflects the stored selection passed to the constructor', () => {
+      const manager = new DataSourceManager(new Set(['toei-train']));
+      expect(manager.isEnabled('toei-train')).toBe(true);
       expect(manager.isEnabled('toei-bus')).toBe(false);
-      manager.setEnabled('toei-bus', true);
-      expect(manager.isEnabled('toei-bus')).toBe(true);
-    });
-  });
-
-  describe('setEnabled', () => {
-    it('disables a previously enabled group', () => {
-      const manager = new DataSourceManager();
-      expect(manager.isEnabled('toei-bus')).toBe(true);
-      manager.setEnabled('toei-bus', false);
-      expect(manager.isEnabled('toei-bus')).toBe(false);
-    });
-
-    it('enables a previously disabled group', () => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-      const manager = new DataSourceManager();
-      expect(manager.isEnabled('toei-bus')).toBe(false);
-      manager.setEnabled('toei-bus', true);
-      expect(manager.isEnabled('toei-bus')).toBe(true);
-    });
-
-    it('is idempotent: enabling an already-enabled group is a no-op', () => {
-      const manager = new DataSourceManager();
-      manager.setEnabled('toei-bus', true);
-      manager.setEnabled('toei-bus', true);
-      expect(manager.isEnabled('toei-bus')).toBe(true);
-      // The persisted set must not contain duplicate entries.
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]') as string[];
-      const occurrences = stored.filter((id) => id === 'toei-bus').length;
-      expect(occurrences).toBe(1);
-    });
-
-    it('disabling an unknown id does not throw', () => {
-      const manager = new DataSourceManager();
-      expect(() => manager.setEnabled('unknown-id', false)).not.toThrow();
-    });
-
-    it('persists the resulting enabled set to localStorage', async () => {
-      const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
-      const manager = new DataSourceManager();
-      manager.setEnabled('gamma', false);
-
-      const stored = localStorage.getItem(STORAGE_KEY);
-      expect(stored).not.toBeNull();
-      const parsed = JSON.parse(stored ?? '[]') as string[];
-      expect(parsed).toEqual(['alpha']);
-    });
-
-    it('changes are visible to a freshly constructed manager (round-trip via localStorage)', async () => {
-      const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
-      const manager1 = new DataSourceManager();
-      manager1.setEnabled('alpha', false);
-      manager1.setEnabled('beta', true);
-
-      const manager2 = new DataSourceManager();
-      expect(manager2.isEnabled('alpha')).toBe(false);
-      expect(manager2.isEnabled('beta')).toBe(true);
-      expect(manager2.isEnabled('gamma')).toBe(true);
-    });
-
-    it('disables all groups that share the same id', async () => {
-      const DataSourceManager = await importFreshDataSourceManager(createDuplicateIdSettings());
-      const manager = new DataSourceManager();
-
-      manager.setEnabled('shared', false);
-
-      expect(manager.isEnabled('shared')).toBe(false);
-      expect(manager.getEnabledPrefixes()).toEqual([]);
-      expect(localStorage.getItem(STORAGE_KEY)).toBe('[]');
     });
   });
 
   describe('getEnabledPrefixes', () => {
     it('returns prefixes from default-enabled groups in group order', async () => {
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
 
       expect(manager.getEnabledPrefixes()).toEqual(['alpha-local', 'alpha-express', 'gamma-main']);
     });
 
     it('returns an empty array when nothing is enabled', async () => {
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(new Set());
 
       expect(manager.getEnabledPrefixes()).toEqual([]);
-    });
-
-    it('excludes prefixes from groups that were disabled after construction', async () => {
-      const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
-      const manager = new DataSourceManager();
-      manager.setEnabled('alpha', false);
-
-      expect(manager.getEnabledPrefixes()).toEqual(['gamma-main']);
     });
 
     it('returns prefixes only from explicitly enabled groups when URL param is used', async () => {
@@ -553,15 +470,14 @@ describe('DataSourceManager', () => {
       // `resolveFetchDataSources`, not by DSM directly — see its tests.
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
       setSearch('sources=alpha-express,beta-main');
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
 
       expect(manager.getEnabledPrefixes()).toEqual(['alpha-local', 'alpha-express', 'beta-main']);
     });
 
-    it('preserves group definition order instead of localStorage insertion order', async () => {
+    it('preserves group definition order instead of stored-selection insertion order', async () => {
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(['gamma', 'alpha']));
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(new Set(['gamma', 'alpha']));
 
       expect(manager.getEnabledPrefixes()).toEqual(['alpha-local', 'alpha-express', 'gamma-main']);
     });
@@ -588,7 +504,7 @@ describe('DataSourceManager', () => {
         },
       ];
       const DataSourceManager = await importFreshDataSourceManager(groups);
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
 
       expect(manager.getEnabledPrefixes()).toEqual(['on', 'off']);
     });
@@ -615,7 +531,7 @@ describe('DataSourceManager', () => {
         },
       ];
       const DataSourceManager = await importFreshDataSourceManager(groups);
-      const manager = new DataSourceManager();
+      const manager = new DataSourceManager(null);
 
       expect(manager.getEnabledPrefixes()).toEqual(['c', 'a', 'b']);
     });

@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import { InfoIcon } from 'lucide-react';
+import { InfoIcon, WrenchIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -14,10 +16,12 @@ import {
   aggregateGroupLoadStatus,
   type GroupLoadStatus,
 } from '../../domain/datasource/aggregate-group-status';
+import { computeDialogDisplay } from '../../domain/datasource/dialog-display';
 import { getSourceGroupDisplayName } from '../../domain/datasource/get-source-group-display-name';
 import { sortSourceGroupsForDisplay } from '../../domain/datasource/sort-source-groups';
 import { useIsForcedSourcesMode } from '../../hooks/use-is-forced-sources-mode';
 import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
+import { useUserDataSourceSettings } from '../../hooks/use-user-data-source-settings';
 import type { SourceGroup } from '../../types/app/source-group';
 import { countriesFlagEmoji } from '../../utils/country-flag';
 import { routeTypeEmoji, routeTypesEmoji } from '../../utils/route-type-emoji';
@@ -27,6 +31,8 @@ import {
   type RouteTypeSectionKey,
 } from '../../domain/datasource/route-type-priority';
 
+type NoticeVariant = 'forced' | 'development';
+
 interface DataSourceSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -35,6 +41,8 @@ interface DataSourceSettingsDialogProps {
 interface GroupRow {
   /** Stable key for React reconciliation within a section. */
   key: string;
+  /** Group id, used to look up the Switch state in `enabledGroupIds`. */
+  groupId: string;
   /** Display name for the group, resolved against the current UI language. */
   groupName: string;
   /** Concatenated route_type emoji for the *group's whole* coverage. */
@@ -43,15 +51,6 @@ interface GroupRow {
   countryEmoji: string;
   /** Aggregated load status (4-state). */
   loadStatus: GroupLoadStatus;
-  /**
-   * Default value of the user preference for this group.
-   *
-   * Read directly from {@link SourceGroup.userEnabledByDefault}; in a
-   * later phase this will be overridable by a persisted user-settings
-   * layer. Phase 0 surfaces the value via a disabled toggle so the
-   * dialog already reflects the field without yet being interactive.
-   */
-  userEnabledByDefault: boolean;
 }
 
 interface Section {
@@ -72,11 +71,11 @@ function buildGroupRow(
 ): GroupRow {
   return {
     key: group.id,
+    groupId: group.id,
     groupName: getSourceGroupDisplayName(group, lang),
     routeTypeEmoji: routeTypesEmoji(group.routeTypes),
     countryEmoji: countriesFlagEmoji(group.countries),
     loadStatus: aggregateGroupLoadStatus(group.prefixes, loadStatusByPrefix),
-    userEnabledByDefault: group.userEnabledByDefault,
   };
 }
 
@@ -223,26 +222,70 @@ function FailureList({ row }: { row: GroupRow }) {
   );
 }
 
+function DialogNotice({ variant }: { variant: NoticeVariant }) {
+  const { t } = useTranslation();
+
+  if (variant === 'forced') {
+    return (
+      <Alert
+        role="status"
+        className="mt-3 border-sky-300 bg-sky-50 px-3 py-2 text-left shadow-sm dark:border-sky-800 dark:bg-sky-950/40"
+      >
+        <InfoIcon
+          aria-hidden="true"
+          focusable="false"
+          className="mt-0.5 text-sky-700 dark:text-sky-300"
+        />
+        <AlertTitle className="text-xs font-semibold text-sky-900 dark:text-sky-200">
+          {t('dataSourceSettings.forcedMode.title')}
+        </AlertTitle>
+        <AlertDescription className="text-[11px] text-sky-800 dark:text-sky-300">
+          {t('dataSourceSettings.forcedMode.description')}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <Alert
+      role="status"
+      className="mt-3 border-amber-300 bg-amber-50 px-3 py-2 text-left shadow-sm dark:border-amber-800 dark:bg-amber-950/40"
+    >
+      <WrenchIcon
+        aria-hidden="true"
+        focusable="false"
+        className="mt-0.5 text-amber-700 dark:text-amber-300"
+      />
+      <AlertTitle className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+        {t('dataSourceSettings.developmentNotice.title')}
+      </AlertTitle>
+      <AlertDescription className="text-[11px] text-amber-800 dark:text-amber-300">
+        {t('dataSourceSettings.developmentNotice.description')}
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 function GroupRowView({
   row,
-  isForcedSourcesMode,
+  checked,
+  disabled,
+  onCheckedChange,
 }: {
   row: GroupRow;
-  isForcedSourcesMode: boolean;
+  /** Switch checked state (caller resolves forced-mode override). */
+  checked: boolean;
+  /** Whether the Switch is non-interactive. */
+  disabled: boolean;
+  onCheckedChange: (next: boolean) => void;
 }) {
   const { t } = useTranslation();
-  // In forced-sources mode, the visible row is only here because at least one
-  // of its prefixes was attempted by the URL override, so reflecting
-  // `userEnabledByDefault` would mislead (e.g. system-disabled groups
-  // surfaced via `?sources=<list>` would show OFF despite being loaded).
-  // Forcing `checked` to `true` keeps the Switch consistent with the load
-  // status icon adjacent to it.
-  const switchChecked = isForcedSourcesMode ? true : row.userEnabledByDefault;
   return (
     <li className="border-border/40 flex items-start gap-2 border-b px-2 py-2 last:border-b-0">
       <Switch
-        checked={switchChecked}
-        disabled
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onCheckedChange}
         aria-label={t('dataSourceSettings.toggle.aria', {
           group: row.groupName,
         })}
@@ -307,22 +350,19 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
   const { t, i18n } = useTranslation();
   const loadStatusByPrefix = useSourceLoadStatus();
   const isForcedSourcesMode = useIsForcedSourcesMode();
+  const { enabledGroupIds, setGroupEnabled, setGroupsEnabled, resetToDefaults } =
+    useUserDataSourceSettings();
 
-  // Visibility:
-  //  - Normal mode: app-enabled groups are always shown. App-disabled groups
-  //    (`systemEnabledByDefault: false`) are hidden, but reappear when their
-  //    data has actually been loaded (currently only via `?sources=all`).
-  //  - Forced-sources mode (`?sources=<list>` or `?sources=all` set): user
-  //    settings are bypassed entirely, so showing app-enabled-by-default
-  //    groups that the URL didn't request would be misleading. Restrict the
-  //    list to groups whose prefixes are actually in the load-status map.
-  const visibleGroups = settings.filter((g) => {
-    const anyAttempted = g.prefixes.some((prefix) => loadStatusByPrefix.has(prefix));
-    if (isForcedSourcesMode) {
-      return anyAttempted;
-    }
-    return g.systemEnabledByDefault || anyAttempted;
-  });
+  // Normalize the two operating modes (forced / normal) into one shape
+  // so the body below never branches on `isForcedSourcesMode`. The
+  // pure-function call returns the visible groups + the Set used for
+  // both per-row Switch state and per-section enabled counts.
+  const { visibleGroups, effectiveEnabledIds } = computeDialogDisplay(
+    settings,
+    loadStatusByPrefix,
+    isForcedSourcesMode,
+    enabledGroupIds,
+  );
 
   const sections = buildSections(visibleGroups, loadStatusByPrefix, i18n.language, t);
   const counts = countDistinctGroupStatuses(visibleGroups, loadStatusByPrefix);
@@ -347,45 +387,96 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
               notAttempted: counts.notAttempted,
             })}
           </div>
+          {/*
+            Per-section enabled count, driven from the same
+            `effectiveEnabledIds` Set as each row's Switch. A
+            multi-routeType group is counted once per section it
+            appears in, so the sum across sections can exceed the
+            distinct-group total in the summary line above.
+          */}
+          <div className="text-muted-foreground text-center text-xs">
+            {sections.map((section) => {
+              const enabledCount = section.rows.filter((row) =>
+                effectiveEnabledIds.has(row.groupId),
+              ).length;
+              return (
+                <span key={String(section.key)}>
+                  <span aria-hidden className="mx-1">
+                    {section.emoji}: {enabledCount}
+                  </span>
+                </span>
+              );
+            })}
+          </div>
         </DialogHeader>
-        {isForcedSourcesMode && (
-          <Alert
-            role="status"
-            className="mt-3 border-sky-300 bg-sky-50 px-3 py-2 text-left shadow-sm dark:border-sky-800 dark:bg-sky-950/40"
-          >
-            <InfoIcon
-              aria-hidden="true"
-              focusable="false"
-              className="mt-0.5 text-sky-700 dark:text-sky-300"
-            />
-            <AlertTitle className="text-xs font-semibold text-sky-900 dark:text-sky-200">
-              {t('dataSourceSettings.forcedMode.title')}
-            </AlertTitle>
-            <AlertDescription className="text-[11px] text-sky-800 dark:text-sky-300">
-              {t('dataSourceSettings.forcedMode.description')}
-            </AlertDescription>
-          </Alert>
-        )}
+        <DialogNotice variant={isForcedSourcesMode ? 'forced' : 'development'} />
         <div className="overflow-y-auto pt-3 text-sm">
-          {sections.map((section) => (
-            <section key={String(section.key)} className="mb-4 last:mb-0">
-              <h3 className="text-muted-foreground bg-muted/40 sticky top-0 z-10 flex items-baseline gap-2 px-2 py-1 text-xs font-semibold">
-                <span aria-hidden>{section.emoji}</span>
-                <span>{section.label}</span>
-                <span className="opacity-60">({section.rows.length})</span>
-              </h3>
-              <ul>
-                {section.rows.map((row) => (
-                  <GroupRowView
-                    key={`${String(section.key)}::${row.key}`}
-                    row={row}
-                    isForcedSourcesMode={isForcedSourcesMode}
-                  />
-                ))}
-              </ul>
-            </section>
-          ))}
+          {sections.map((section) => {
+            const sectionGroupIds = section.rows.map((row) => row.groupId);
+            return (
+              <section key={String(section.key)} className="mb-4 last:mb-0">
+                <h3 className="text-muted-foreground bg-muted/40 sticky top-0 z-10 flex items-center gap-2 px-2 py-1 text-xs font-semibold">
+                  <span aria-hidden>{section.emoji}</span>
+                  <span>{section.label}</span>
+                  <span className="opacity-60">({section.rows.length})</span>
+                  <div className="ml-auto flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setGroupsEnabled(sectionGroupIds, true);
+                      }}
+                      disabled={isForcedSourcesMode}
+                      aria-label={t('dataSourceSettings.bulkAction.enableAll.aria', {
+                        section: section.label,
+                      })}
+                      className="h-6 px-2 text-[11px]"
+                    >
+                      {t('dataSourceSettings.bulkAction.enableAll.label')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setGroupsEnabled(sectionGroupIds, false);
+                      }}
+                      disabled={isForcedSourcesMode}
+                      aria-label={t('dataSourceSettings.bulkAction.disableAll.aria', {
+                        section: section.label,
+                      })}
+                      className="h-6 px-2 text-[11px]"
+                    >
+                      {t('dataSourceSettings.bulkAction.disableAll.label')}
+                    </Button>
+                  </div>
+                </h3>
+                <ul>
+                  {section.rows.map((row) => (
+                    <GroupRowView
+                      key={`${String(section.key)}::${row.key}`}
+                      row={row}
+                      checked={effectiveEnabledIds.has(row.groupId)}
+                      disabled={isForcedSourcesMode}
+                      onCheckedChange={(next) => {
+                        setGroupEnabled(row.groupId, next);
+                      }}
+                    />
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
         </div>
+        <DialogFooter className="shrink-0 border-t pt-3 sm:justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={resetToDefaults}
+            disabled={isForcedSourcesMode}
+          >
+            {t('dataSourceSettings.resetToDefaults')}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

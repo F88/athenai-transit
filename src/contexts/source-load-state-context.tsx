@@ -13,12 +13,11 @@ import type { SourceLoadState } from '../domain/datasource/source-load-state';
  *   without calling `useMemo` after a null guard (which the
  *   `react-hooks` lint rule flags as a conditional hook).
  * - `isForcedSourcesMode` is `true` when the URL `?sources=` query parameter
- *   was present at boot **with a non-empty value**. In this mode the URL
- *   overrides the user-settings layer entirely, so UI controls that mutate
- *   user preferences should be non-interactive until the URL override is
- *   cleared. The check intentionally treats `?sources=` (empty value) the
- *   same as the parameter being absent, matching the load-layer contract
- *   in `data-source-manager.ts`.
+ *   was present at boot — including the empty form `?sources=`, which the
+ *   load layer (`resolveFetchDataSources`) treats as "force-load zero
+ *   sources". The dialog therefore enters forced-mode for both
+ *   `?sources=<list>` and the bare `?sources=`, so the UI matches the
+ *   load layer's behavior.
  */
 export type SourceLoadStateContextValue = {
   startupLoadResult: LoadResult;
