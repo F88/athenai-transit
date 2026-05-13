@@ -164,10 +164,12 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       logger.info(`fetchSources: ${fetchMs}ms (${sources.length} sources)`);
     }
 
-    for (const source of sources) {
-      logger.info(
-        `[${source.prefix}] stops=${source.data.stops.data.length} routes=${source.data.routes.data.length} tripPatterns=${Object.keys(source.data.tripPatterns.data).length}`,
-      );
+    if (logger.isEnabled('debug')) {
+      for (const source of sources) {
+        logger.debug(
+          `[${source.prefix}] stops=${source.data.stops.data.length} routes=${source.data.routes.data.length} tripPatterns=${Object.keys(source.data.tripPatterns.data).length}`,
+        );
+      }
     }
 
     const merged = mergeSourcesV2(sources);

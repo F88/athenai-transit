@@ -336,7 +336,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     const networkMs = Math.round(tNetwork - t0);
     const parseMs = Math.round(tParse - tNetwork);
     const sizeKB = (text.length / 1024).toFixed(1);
-    logger.info(`${path}: ${sizeKB}KB (network=${networkMs}ms, parse=${parseMs}ms)`);
+    logger.debug(`${path}: ${sizeKB}KB (network=${networkMs}ms, parse=${parseMs}ms)`);
 
     return { json, sizeApprox: text.length, networkMs, parseMs };
   }
