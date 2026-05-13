@@ -179,7 +179,7 @@
   },
   "dataSourceSettings": {
     "title": "Data source settings",
-    "description": "Which data sources were targeted at startup and which loaded / failed",
+    "description": "Data sources in use and their state",
     "summary": "✅ {{loaded}} / ⚠️ {{partial}} / ❌ {{failed}} / — {{notAttempted}}",
     "status": {
       "loaded": "Loaded",

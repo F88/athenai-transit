@@ -27,7 +27,10 @@ export type SourceLoadStateAction = never;
  *
  * @param loadResult - The result of source loading from
  *   `AthenaiRepositoryV2.create()`.
- * @returns A frozen map of per-prefix status.
+ * @returns A per-prefix status map typed as {@link ReadonlyMap}. The
+ *   read-only contract is enforced by the type system only; the underlying
+ *   value is a regular `Map` and is not runtime-frozen. Callers should not
+ *   mutate it.
  */
 export function buildInitialSourceLoadState(loadResult: LoadResult): SourceLoadState {
   const m = new Map<string, SourceLoadStatusEntry>();

@@ -6,7 +6,7 @@ import type { AppRouteTypeValue } from '../../types/app/transit';
  *
  * Lower index = higher priority. The dialog renders one section per entry
  * (in the order given here), listing every source group whose
- * {@link import('../types/app/source-group').SourceGroup.routeTypes routeTypes}
+ * {@link import('../../types/app/source-group').SourceGroup.routeTypes routeTypes}
  * field contains that value. Groups with multiple route_types therefore
  * appear in every matching section.
  *

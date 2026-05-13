@@ -179,7 +179,7 @@
   },
   "dataSourceSettings": {
     "title": "データソース設定",
-    "description": "起動時にどのデータソースをロード対象とし、どれが成功・失敗したかを表示します",
+    "description": "利用するデータソースと状態",
     "summary": "✅ {{loaded}} / ⚠️ {{partial}} / ❌ {{failed}} / — {{notAttempted}}",
     "status": {
       "loaded": "読込済",
