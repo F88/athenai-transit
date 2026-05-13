@@ -227,7 +227,7 @@ function GroupRowView({ row }: { row: GroupRow }) {
       <Switch
         checked={row.userEnabledByDefault}
         disabled
-        aria-label={t('dataSourceSettings.userEnabledByDefault.aria', {
+        aria-label={t('dataSourceSettings.toggle.aria', {
           group: row.groupName,
         })}
         className="shrink-0"

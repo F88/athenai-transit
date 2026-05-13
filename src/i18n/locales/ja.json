@@ -190,8 +190,8 @@
     "partial": {
       "fraction": "{{loaded}}/{{total}} 読込済"
     },
-    "userEnabledByDefault": {
-      "aria": "{{group}} の初期 ON/OFF 状態"
+    "toggle": {
+      "aria": "{{group}} を有効化"
     },
     "section": {
       "0": "路面電車",
