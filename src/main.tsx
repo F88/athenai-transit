@@ -37,7 +37,7 @@ async function createRepository(): Promise<{
   const dsm = new DataSourceManager(loadEnabledGroupIdsFromStorage());
   const prefixes = resolveFetchDataSources(
     dsm.getGroups(),
-    dsm.getEnabledPrefixes(),
+    dsm.getEnabledDataSources(),
     getSourcesParam(),
   );
 

@@ -131,7 +131,7 @@ describe('DataSourceManager', () => {
 
       expect(manager.isEnabled('default-on')).toBe(true);
       expect(manager.isEnabled('default-off')).toBe(false);
-      expect(manager.getEnabledPrefixes()).toEqual(['on']);
+      expect(manager.getEnabledDataSources()).toEqual(['on']);
     });
 
     it('enables every group including config-default-disabled ones when URL param is `?sources=all`', async () => {
@@ -141,7 +141,7 @@ describe('DataSourceManager', () => {
 
       expect(manager.isEnabled('default-on')).toBe(true);
       expect(manager.isEnabled('default-off')).toBe(true);
-      expect(manager.getEnabledPrefixes()).toEqual(['on', 'off']);
+      expect(manager.getEnabledDataSources()).toEqual(['on', 'off']);
     });
 
     it('enables only groups containing the requested prefix when URL param lists prefixes', () => {
@@ -167,7 +167,7 @@ describe('DataSourceManager', () => {
       expect(manager.isEnabled('alpha')).toBe(false);
       expect(manager.isEnabled('beta')).toBe(true);
       expect(manager.isEnabled('gamma')).toBe(false);
-      expect(manager.getEnabledPrefixes()).toEqual(['beta-main']);
+      expect(manager.getEnabledDataSources()).toEqual(['beta-main']);
     });
 
     it('hydrates the enabled set from the stored selection when no URL param is present', () => {
@@ -190,7 +190,7 @@ describe('DataSourceManager', () => {
       expect(manager.isEnabled('alpha')).toBe(false);
       expect(manager.isEnabled('beta')).toBe(false);
       expect(manager.isEnabled('gamma')).toBe(false);
-      expect(manager.getEnabledPrefixes()).toEqual([]);
+      expect(manager.getEnabledDataSources()).toEqual([]);
     });
 
     it('keeps system-enabled stored IDs while dropping system-disabled ones', async () => {
@@ -203,7 +203,7 @@ describe('DataSourceManager', () => {
       expect(manager.isEnabled('alpha')).toBe(true);
       expect(manager.isEnabled('beta')).toBe(false);
       expect(manager.isEnabled('gamma')).toBe(false);
-      expect(manager.getEnabledPrefixes()).toEqual(['alpha-local', 'alpha-express']);
+      expect(manager.getEnabledDataSources()).toEqual(['alpha-local', 'alpha-express']);
     });
 
     it('replaces the stored selection instead of unioning with it when URL params are present', async () => {
@@ -214,7 +214,7 @@ describe('DataSourceManager', () => {
       expect(manager.isEnabled('alpha')).toBe(false);
       expect(manager.isEnabled('beta')).toBe(true);
       expect(manager.isEnabled('gamma')).toBe(false);
-      expect(manager.getEnabledPrefixes()).toEqual(['beta-main']);
+      expect(manager.getEnabledDataSources()).toEqual(['beta-main']);
     });
 
     it('treats a no-match URL param as an explicit empty override even when the stored selection has enabled groups', () => {
@@ -224,7 +224,7 @@ describe('DataSourceManager', () => {
       for (const group of settings) {
         expect(manager.isEnabled(group.id)).toBe(false);
       }
-      expect(manager.getEnabledPrefixes()).toEqual([]);
+      expect(manager.getEnabledDataSources()).toEqual([]);
     });
 
     it('treats `?sources=` (empty value) as a force-load-empty override and ignores the stored selection', () => {
@@ -239,7 +239,7 @@ describe('DataSourceManager', () => {
       for (const group of settings) {
         expect(manager.isEnabled(group.id)).toBe(false);
       }
-      expect(manager.getEnabledPrefixes()).toEqual([]);
+      expect(manager.getEnabledDataSources()).toEqual([]);
     });
 
     it('does not treat an empty `?sources=` value as `all`', async () => {
@@ -252,7 +252,7 @@ describe('DataSourceManager', () => {
 
       expect(manager.isEnabled('default-on')).toBe(false);
       expect(manager.isEnabled('default-off')).toBe(false);
-      expect(manager.getEnabledPrefixes()).toEqual([]);
+      expect(manager.getEnabledDataSources()).toEqual([]);
     });
 
     it('enables every group whose prefixes match a comma-separated list', () => {
@@ -303,7 +303,7 @@ describe('DataSourceManager', () => {
       const manager = new DataSourceManager(null);
 
       expect(manager.isEnabled('shared')).toBe(true);
-      expect(manager.getEnabledPrefixes()).toEqual(['c', 'a', 'b']);
+      expect(manager.getEnabledDataSources()).toEqual(['c', 'a', 'b']);
     });
 
     it('treats all groups with the same id as enabled when the stored selection includes that id', async () => {
@@ -320,7 +320,7 @@ describe('DataSourceManager', () => {
       const manager = new DataSourceManager(new Set(['shared']));
 
       expect(manager.isEnabled('shared')).toBe(true);
-      expect(manager.getEnabledPrefixes()).toEqual(['c', 'a', 'b']);
+      expect(manager.getEnabledDataSources()).toEqual(['c', 'a', 'b']);
     });
 
     it('treats all groups with the same id as enabled when query param matches one of them', async () => {
@@ -333,7 +333,7 @@ describe('DataSourceManager', () => {
       // group expansion (not the URL-level prefix narrowing — that
       // narrowing is `resolveFetchDataSources`'s job, exercised in its
       // own test).
-      expect(manager.getEnabledPrefixes()).toEqual(['c', 'a', 'b']);
+      expect(manager.getEnabledDataSources()).toEqual(['c', 'a', 'b']);
     });
   });
 
@@ -448,19 +448,23 @@ describe('DataSourceManager', () => {
     });
   });
 
-  describe('getEnabledPrefixes', () => {
+  describe('getEnabledDataSources', () => {
     it('returns prefixes from default-enabled groups in group order', async () => {
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
       const manager = new DataSourceManager(null);
 
-      expect(manager.getEnabledPrefixes()).toEqual(['alpha-local', 'alpha-express', 'gamma-main']);
+      expect(manager.getEnabledDataSources()).toEqual([
+        'alpha-local',
+        'alpha-express',
+        'gamma-main',
+      ]);
     });
 
     it('returns an empty array when nothing is enabled', async () => {
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
       const manager = new DataSourceManager(new Set());
 
-      expect(manager.getEnabledPrefixes()).toEqual([]);
+      expect(manager.getEnabledDataSources()).toEqual([]);
     });
 
     it('returns prefixes only from explicitly enabled groups when URL param is used', async () => {
@@ -472,14 +476,22 @@ describe('DataSourceManager', () => {
       setSearch('sources=alpha-express,beta-main');
       const manager = new DataSourceManager(null);
 
-      expect(manager.getEnabledPrefixes()).toEqual(['alpha-local', 'alpha-express', 'beta-main']);
+      expect(manager.getEnabledDataSources()).toEqual([
+        'alpha-local',
+        'alpha-express',
+        'beta-main',
+      ]);
     });
 
     it('preserves group definition order instead of stored-selection insertion order', async () => {
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
       const manager = new DataSourceManager(new Set(['gamma', 'alpha']));
 
-      expect(manager.getEnabledPrefixes()).toEqual(['alpha-local', 'alpha-express', 'gamma-main']);
+      expect(manager.getEnabledDataSources()).toEqual([
+        'alpha-local',
+        'alpha-express',
+        'gamma-main',
+      ]);
     });
 
     it('deduplicates repeated prefixes before returning load targets', async () => {
@@ -506,7 +518,7 @@ describe('DataSourceManager', () => {
       const DataSourceManager = await importFreshDataSourceManager(groups);
       const manager = new DataSourceManager(null);
 
-      expect(manager.getEnabledPrefixes()).toEqual(['on', 'off']);
+      expect(manager.getEnabledDataSources()).toEqual(['on', 'off']);
     });
 
     it('deduplicates repeated prefixes within and across enabled groups', async () => {
@@ -533,7 +545,7 @@ describe('DataSourceManager', () => {
       const DataSourceManager = await importFreshDataSourceManager(groups);
       const manager = new DataSourceManager(null);
 
-      expect(manager.getEnabledPrefixes()).toEqual(['c', 'a', 'b']);
+      expect(manager.getEnabledDataSources()).toEqual(['c', 'a', 'b']);
     });
   });
 });
