@@ -3,10 +3,11 @@ import { SourceLoadStateContext } from '../contexts/source-load-state-context';
 
 /**
  * Returns `true` when the URL `?sources=` query parameter was present at
- * boot **with a non-empty value**, meaning the URL overrides the
- * user-settings layer for source selection. An empty `?sources=` is
- * treated as no override (matching the load-layer contract in
- * `data-source-manager.ts`).
+ * boot in any form (including the empty `?sources=`), meaning the URL is
+ * overriding the user-settings layer for source selection. Even the
+ * empty form is treated as forced because the load layer
+ * (`resolveFetchDataSources`) interprets it as "force-load zero
+ * sources" — the dialog matches that.
  *
  * UI controls that mutate user preferences (toggle Switches, reset
  * buttons, etc.) must be non-interactive in this mode — letting users

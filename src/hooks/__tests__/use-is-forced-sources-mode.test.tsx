@@ -37,16 +37,16 @@ describe('useIsForcedSourcesMode', () => {
     expect(result.current).toBe(true);
   });
 
-  it('returns `false` for an empty-string sourcesParam (matches load-layer contract)', () => {
-    // `?sources=` with no value reaches the boot path as `''`, but
-    // `data-source-manager.ts` treats it as "no URL override" via
-    // `if (!sourcesParam) return null;`. The dialog must agree —
-    // otherwise the load layer is in normal mode while the UI claims
-    // forced mode, and the two layers visibly disagree.
+  it('returns `true` for an empty-string sourcesParam (matches load-layer contract)', () => {
+    // `?sources=` with an empty value reaches the boot path as `''`.
+    // `resolveFetchDataSources` interprets that as a force-load-empty
+    // override (returns `[]`), so the dialog must also enter forced
+    // mode to match — otherwise the user would see "Switch ON" rows
+    // alongside a "0 sources loaded" status icons line.
     const { result } = renderHook(() => useIsForcedSourcesMode(), {
       wrapper: wrapper(emptyLoadResult, ''),
     });
-    expect(result.current).toBe(false);
+    expect(result.current).toBe(true);
   });
 
   it('throws when used outside a SourceLoadStateProvider', () => {

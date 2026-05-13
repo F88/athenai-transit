@@ -203,22 +203,32 @@ describe('DataSourceManager', () => {
       expect(manager.getEnabledPrefixes()).toEqual([]);
     });
 
-    it('falls through to the stored selection when `?sources=` has an empty value', () => {
+    it('treats `?sources=` (empty value) as a force-load-empty override and ignores the stored selection', () => {
+      // `?sources=` (empty value) is a URL-level explicit "force-load
+      // zero sources". DSM must NOT collapse this with "param absent"
+      // (= null) via truthy/falsy checks — the load layer in
+      // `resolveFetchDataSources` already treats empty as force-empty,
+      // and the UI's `isForcedSourcesMode` is true for empty too.
       setSearch('sources=');
       const manager = new DataSourceManager(new Set(['toei-bus']));
 
-      expect(manager.isEnabled('toei-bus')).toBe(true);
-      expect(manager.isEnabled('yurikamome')).toBe(false);
+      for (const group of settings) {
+        expect(manager.isEnabled(group.id)).toBe(false);
+      }
+      expect(manager.getEnabledPrefixes()).toEqual([]);
     });
 
     it('does not treat an empty `?sources=` value as `all`', async () => {
+      // Empty `?sources=` is force-empty, NOT a fallback to defaults.
+      // (Pre-Phase-1 DSM collapsed empty into null via `!sourcesParam`
+      // and fell through to defaults; that was the bug.)
       const DataSourceManager = await importFreshDataSourceManager(createCustomSettings());
       setSearch('sources=');
       const manager = new DataSourceManager(null);
 
-      expect(manager.isEnabled('default-on')).toBe(true);
+      expect(manager.isEnabled('default-on')).toBe(false);
       expect(manager.isEnabled('default-off')).toBe(false);
-      expect(manager.getEnabledPrefixes()).toEqual(['on']);
+      expect(manager.getEnabledPrefixes()).toEqual([]);
     });
 
     it('enables every group whose prefixes match a comma-separated list', () => {

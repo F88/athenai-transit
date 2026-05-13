@@ -17,7 +17,13 @@ function dedupePrefixes(prefixes: string[]): string[] {
 
 function resolveEnabledIdsFromQueryParams(groups: SourceGroup[]): Set<string> | null {
   const sourcesParam = getSourcesParam();
-  if (!sourcesParam) {
+  // Strict null check — DO NOT use `!sourcesParam`. `?sources=` (empty
+  // value) reaches us as `''` and MUST be treated as a force-load-empty
+  // override (returning a non-null empty Set below), not collapsed with
+  // "param absent" (`null`). The load layer in
+  // `resolveFetchDataSources` already treats `''` as force-empty, so
+  // DSM must agree or the UI / load layers disagree.
+  if (sourcesParam === null) {
     return null;
   }
 
@@ -41,12 +47,17 @@ function resolveInitialEnabledIds(
   groups: SourceGroup[],
   storedEnabledIds: Set<string> | null,
 ): Set<string> {
+  // Strict null checks — an empty `Set` is a *valid* user-explicit value
+  // ("nothing enabled", β semantic). Using truthy checks (`if (set)` is
+  // always true for Sets, but `if (enabledIdsFromQueryParams)` could
+  // mislead a future reader). Keep `=== null` to make the contract
+  // obvious: only `null` falls through.
   const enabledIdsFromQueryParams = resolveEnabledIdsFromQueryParams(groups);
-  if (enabledIdsFromQueryParams) {
+  if (enabledIdsFromQueryParams !== null) {
     return enabledIdsFromQueryParams;
   }
 
-  if (storedEnabledIds) {
+  if (storedEnabledIds !== null) {
     return storedEnabledIds;
   }
 

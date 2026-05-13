@@ -47,12 +47,16 @@ export function SourceLoadStateProvider({
     return set;
   }, [loadStatusByPrefix]);
 
-  // Treat null OR empty string as "no override", matching the
-  // data-source-manager contract (`if (!sourcesParam) return null;`).
-  // `?sources=` with an empty value reaches us as `''` from
-  // `URLSearchParams.get`, but the load layer ignores it; the dialog must
-  // not enter forced mode in that case or the two layers would disagree.
-  const isForcedSourcesMode = sourcesParam !== null && sourcesParam !== '';
+  // Any presence of the `?sources=` parameter means the URL is overriding
+  // source selection — including the empty value `?sources=`, which
+  // `resolveFetchDataSources` treats as "force-load no sources" (returns
+  // `[]`). The dialog must match the load layer's interpretation, so an
+  // empty value is forced-mode true. (Earlier we excluded empty here to
+  // match `data-source-manager.ts`'s `if (!sourcesParam) return null`,
+  // but that DSM check was itself out of step with the load layer; the
+  // user-observable behavior is driven by the load layer, so the UI
+  // aligns to it.)
+  const isForcedSourcesMode = sourcesParam !== null;
 
   const value = useMemo(
     () => ({
