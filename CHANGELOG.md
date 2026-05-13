@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.13]
+
 ### Added
 
 - Data source settings: Info dialog header から開ける Data Source Settings dialog を追加。source group を route_type ごとに section 表示し、group ごとの load 状態を `loaded` / `partial` / `failed` / `notAttempted` の 4 状態で集約表示する。forced-sources mode (`?sources=`) では attempted prefixes を含む group のみを表示し、URL override 中であることを notice する。
