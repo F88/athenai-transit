@@ -177,6 +177,33 @@
   "dataLoad": {
     "failed": "Failed to load data"
   },
+  "dataSourceSettings": {
+    "title": "Data source settings",
+    "description": "Data sources in use and their state",
+    "summary": "✅ {{loaded}} / ⚠️ {{partial}} / ❌ {{failed}} / — {{notAttempted}}",
+    "status": {
+      "loaded": "Loaded",
+      "partial": "Partial",
+      "failed": "Failed",
+      "notAttempted": "Not loaded"
+    },
+    "partial": {
+      "fraction": "{{loaded}}/{{total}} loaded"
+    },
+    "section": {
+      "0": "Tram",
+      "1": "Subway",
+      "2": "Rail",
+      "3": "Bus",
+      "4": "Ferry",
+      "5": "Cable tram",
+      "6": "Gondola",
+      "7": "Funicular",
+      "11": "Trolleybus",
+      "12": "Monorail",
+      "other": "Other"
+    }
+  },
   "geolocation": {
     "locateFailed": "Could not get current location",
     "trackingFailed": "Stopped auto tracking: location permission denied"

@@ -177,6 +177,33 @@
   "dataLoad": {
     "failed": "データの取得に失敗しました"
   },
+  "dataSourceSettings": {
+    "title": "データソース設定",
+    "description": "利用するデータソースと状態",
+    "summary": "✅ {{loaded}} / ⚠️ {{partial}} / ❌ {{failed}} / — {{notAttempted}}",
+    "status": {
+      "loaded": "読込済",
+      "partial": "部分読込",
+      "failed": "失敗",
+      "notAttempted": "未読込"
+    },
+    "partial": {
+      "fraction": "{{loaded}}/{{total}} 読込済"
+    },
+    "section": {
+      "0": "路面電車",
+      "1": "地下鉄",
+      "2": "鉄道",
+      "3": "バス",
+      "4": "船・フェリー",
+      "5": "ケーブルカー",
+      "6": "ロープウェイ",
+      "7": "登山鉄道",
+      "11": "トロリーバス",
+      "12": "モノレール",
+      "other": "その他"
+    }
+  },
   "geolocation": {
     "locateFailed": "現在地を取得できませんでした",
     "trackingFailed": "位置情報の使用が許可されていないため、自動追跡を停止しました"

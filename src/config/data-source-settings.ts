@@ -1,6 +1,28 @@
 import type { SourceGroup } from '../types/app/source-group';
 
+/**
+ * Configured source groups for the webapp.
+ *
+ * See {@link SourceGroup} for the design (multi-prefix, overlapping
+ * groups) and a worked bundling example.
+ */
 const settings: SourceGroup[] = [
+  // {
+  //   id: 'test-all-x',
+  //   prefixes: ['none1', 'none2', 'none3'],
+  //   routeTypes: [3],
+  //   enabled: true,
+  //   name: { name: 'test-all-x', names: { ja: 'test-all-x', en: 'test-all-x' } },
+  //   countries: ['JP'],
+  // },
+  // {
+  //   id: 'test-partial-x',
+  //   prefixes: ['none1', 'kazag'],
+  //   routeTypes: [3],
+  //   enabled: true,
+  //   name: { name: 'test-partial-x', names: { ja: 'test-partial-x', en: 'test-partial-x' } },
+  //   countries: ['JP'],
+  // },
   {
     id: 'toei-bus',
     prefixes: ['minkuru'],
@@ -14,7 +36,15 @@ const settings: SourceGroup[] = [
     prefixes: ['toaran'],
     routeTypes: [0, 1, 2],
     enabled: true,
-    name: { name: 'Toei', names: { ja: '都営交通', en: 'Toei' } },
+    name: { name: 'Toei Train', names: { ja: '都営交通(鉄道)', en: 'Toei Train' } },
+    countries: ['JP'],
+  },
+  {
+    id: 'toko',
+    prefixes: ['minkuru', 'toaran'],
+    routeTypes: [0, 1, 2, 3],
+    enabled: true,
+    name: { name: 'Toei Transport', names: { ja: '東京都交通局', en: 'Toei Transport' } },
     countries: ['JP'],
   },
   {

@@ -4,11 +4,18 @@ import 'leaflet/dist/leaflet.css';
 import './index.css';
 import './i18n';
 import App from './app';
+import { SourceLoadStateProvider } from './contexts/source-load-state-provider';
 import { TransitRepositoryProvider } from './contexts/transit-repository-provider';
 import { DataSourceManager } from './config/data-source-manager';
+import { resolveFetchDataSources } from './domain/datasource/resolve-fetch-data-sources';
 import type { TransitRepository } from './repositories/transit-repository';
 import { AthenaiRepositoryV2, type LoadResult } from './repositories/athenai-repository';
-import { cleanupInvalidQueryParams, getDiagParam, getRepoParam } from './lib/query-params';
+import {
+  cleanupInvalidQueryParams,
+  getDiagParam,
+  getRepoParam,
+  getSourcesParam,
+} from './lib/query-params';
 import { TILE_SOURCES } from './config/tile-sources';
 import { createLogger } from './lib/logger';
 
@@ -27,7 +34,11 @@ async function createRepository(): Promise<{
   }
 
   const dsm = new DataSourceManager();
-  const prefixes = dsm.getEnabledPrefixes();
+  const prefixes = resolveFetchDataSources(
+    dsm.getGroups(),
+    dsm.getEnabledPrefixes(),
+    getSourcesParam(),
+  );
 
   logger.info(`Using AthenaiRepositoryV2: [${prefixes.join(', ')}]`);
   const { repository, loadResult } = await AthenaiRepositoryV2.create(prefixes);
@@ -60,7 +71,9 @@ async function init() {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <TransitRepositoryProvider repository={repository}>
-        <App loadResult={loadResult} />
+        <SourceLoadStateProvider initialLoadResult={loadResult}>
+          <App />
+        </SourceLoadStateProvider>
       </TransitRepositoryProvider>
     </StrictMode>,
   );

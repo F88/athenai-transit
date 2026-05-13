@@ -316,7 +316,83 @@ describe('DataSourceManager', () => {
       const manager = new DataSourceManager();
 
       expect(manager.isEnabled('shared')).toBe(true);
+      // DSM is the *group-driven* view, so the prefix list here is the
+      // group expansion (not the URL-level prefix narrowing — that
+      // narrowing is `resolveFetchDataSources`'s job, exercised in its
+      // own test).
       expect(manager.getEnabledPrefixes()).toEqual(['c', 'a', 'b']);
+    });
+  });
+
+  describe('?sources= unknown-prefix warning', () => {
+    // The logger maps `warn` level to `console.warn` (`src/lib/logger.ts:60`)
+    // and `warn` always bypasses tag filtering. Spying on `console.warn`
+    // therefore observes the logger output without coupling to the
+    // logger module's internals.
+    //
+    // The spy type is derived via a helper to keep generic information
+    // (tsconfig.app.json and the test typecheck disagree on how to spell
+    // `ReturnType<typeof vi.spyOn<...>>` directly).
+    const makeWarnSpy = () =>
+      vi.spyOn(console, 'warn').mockImplementation(() => {
+        // Suppress noise in test output; assertions read from mock.calls.
+      });
+    let warnSpy: ReturnType<typeof makeWarnSpy>;
+
+    beforeEach(() => {
+      warnSpy = makeWarnSpy();
+    });
+
+    afterEach(() => {
+      warnSpy.mockRestore();
+    });
+
+    function findUnknownPrefixWarn(): string | undefined {
+      return warnSpy.mock.calls
+        .map((call: unknown[]) => call.map((arg) => String(arg)).join(' '))
+        .find((msg) => msg.includes('Ignored unknown prefixes'));
+    }
+
+    it('emits a warn log listing the unknown prefix from `?sources=`', () => {
+      setSearch('sources=minkuru,definitely-not-a-real-prefix');
+      new DataSourceManager();
+
+      const warnMessage = findUnknownPrefixWarn();
+      expect(warnMessage).toBeDefined();
+      expect(warnMessage).toContain('definitely-not-a-real-prefix');
+      // The known prefix should not be flagged as unknown.
+      expect(warnMessage).not.toContain('[minkuru');
+    });
+
+    it('lists every unknown prefix when multiple are present', () => {
+      setSearch('sources=foo,bar,minkuru');
+      new DataSourceManager();
+
+      const warnMessage = findUnknownPrefixWarn();
+      expect(warnMessage).toBeDefined();
+      expect(warnMessage).toContain('foo');
+      expect(warnMessage).toContain('bar');
+    });
+
+    it('does not emit the unknown-prefix warning when `?sources=all`', () => {
+      setSearch('sources=all');
+      new DataSourceManager();
+
+      expect(findUnknownPrefixWarn()).toBeUndefined();
+    });
+
+    it('does not emit the unknown-prefix warning when every requested prefix matches a group', () => {
+      setSearch('sources=minkuru,toaran');
+      new DataSourceManager();
+
+      expect(findUnknownPrefixWarn()).toBeUndefined();
+    });
+
+    it('does not emit the unknown-prefix warning when `?sources=` is absent', () => {
+      // No ?sources= param → DSM does not even reach the warning path.
+      new DataSourceManager();
+
+      expect(findUnknownPrefixWarn()).toBeUndefined();
     });
   });
 
@@ -460,6 +536,10 @@ describe('DataSourceManager', () => {
     });
 
     it('returns prefixes only from explicitly enabled groups when URL param is used', async () => {
+      // DSM exposes the *group-driven* view: enabling a group via
+      // `?sources=` includes every prefix in that group. The
+      // narrower prefix-only contract from PRD.md:118 is enforced by
+      // `resolveFetchDataSources`, not by DSM directly — see its tests.
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
       setSearch('sources=alpha-express,beta-main');
       const manager = new DataSourceManager();
