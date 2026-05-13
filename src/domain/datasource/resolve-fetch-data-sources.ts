@@ -48,7 +48,7 @@ export function resolveFetchDataSources(
 ): string[] {
   if (sourcesParam !== null && sourcesParam !== 'all') {
     // Direct data-source-list path: trust the user's request verbatim.
-    return getEnabledDataSourcesFromSourcesParam([...groups], sourcesParam);
+    return getEnabledDataSourcesFromSourcesParam(groups, sourcesParam);
   }
   // Group-driven fallback: '?sources=all', no param, localStorage, default.
   return [...fallbackDataSources];

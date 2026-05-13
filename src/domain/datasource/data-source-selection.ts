@@ -6,7 +6,7 @@ import type { SourceGroup } from '../../types/app/source-group';
  * @param groups - Source groups to inspect.
  * @returns Set of group IDs whose `enabled` flag is `true`.
  */
-export function getDefaultEnabledIds(groups: SourceGroup[]): Set<string> {
+export function getDefaultEnabledIds(groups: readonly SourceGroup[]): Set<string> {
   return new Set(groups.filter((group) => group.enabled).map((group) => group.id));
 }
 
@@ -22,7 +22,7 @@ export function getDefaultEnabledIds(groups: SourceGroup[]): Set<string> {
  * @returns Set of enabled group IDs.
  */
 export function getEnabledIdsFromSourcesParam(
-  groups: SourceGroup[],
+  groups: readonly SourceGroup[],
   sourcesParam: string,
 ): Set<string> {
   if (sourcesParam === 'all') {
@@ -75,7 +75,7 @@ export function getEnabledIdsFromSourcesParam(
  *   listed them. Each prefix appears at most once.
  */
 export function getEnabledDataSourcesFromSourcesParam(
-  groups: SourceGroup[],
+  groups: readonly SourceGroup[],
   sourcesParam: string,
 ): string[] {
   if (sourcesParam === 'all') {
@@ -110,7 +110,7 @@ export function getEnabledDataSourcesFromSourcesParam(
  *   or when every requested prefix matched.
  */
 export function findUnknownPrefixesInSourcesParam(
-  groups: SourceGroup[],
+  groups: readonly SourceGroup[],
   sourcesParam: string,
 ): string[] {
   if (sourcesParam === 'all') {
@@ -155,7 +155,7 @@ export function parseStoredEnabledIds(stored: string | null): Set<string> | null
  * @returns Flat array of prefixes in group definition order.
  */
 export function getEnabledPrefixesFromGroups(
-  groups: SourceGroup[],
+  groups: readonly SourceGroup[],
   enabledIds: Set<string>,
 ): string[] {
   return groups.filter((group) => enabledIds.has(group.id)).flatMap((group) => group.prefixes);
