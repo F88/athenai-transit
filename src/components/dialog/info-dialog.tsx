@@ -4,6 +4,7 @@ import { remarkAlert } from 'remark-github-blockquote-alert';
 import remarkGfm from 'remark-gfm';
 
 import aboutMarkdown from '../../../ABOUT.md?raw';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -64,18 +65,20 @@ export function InfoDialog({ open, onOpenChange, onOpenDataSourceSettings }: Inf
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[80dvh] w-[90dvw] max-w-5xl flex-col gap-0 overflow-hidden border-4 p-2 sm:max-w-3xl"
+        className="border-info flex max-h-[80dvh] w-[90dvw] max-w-5xl flex-col gap-0 overflow-hidden border-4 p-2 sm:max-w-3xl"
       >
         <DialogHeader className="border-border relative shrink-0 border-b pb-3 sm:text-center">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon-sm"
             onClick={onOpenDataSourceSettings}
             aria-label={t('dataSourceSettings.title')}
             title={t('dataSourceSettings.title')}
-            className="hover:bg-muted absolute top-0 right-0 inline-flex h-8 w-8 items-center justify-center rounded text-base leading-none"
+            className="absolute top-0 right-0 cursor-pointer text-base leading-none"
           >
             📦
-          </button>
+          </Button>
           <DialogTitle className="text-base">Where to Next?</DialogTitle>
           {`${__APP_VERSION__}`}
           <DialogDescription className="text-center sm:text-center">

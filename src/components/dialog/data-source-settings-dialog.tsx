@@ -225,42 +225,29 @@ function FailureList({ row }: { row: GroupRow }) {
 function DialogNotice({ variant }: { variant: NoticeVariant }) {
   const { t } = useTranslation();
 
-  if (variant === 'forced') {
-    return (
-      <Alert
-        role="status"
-        className="mt-3 border-sky-300 bg-sky-50 px-3 py-2 text-left shadow-sm dark:border-sky-800 dark:bg-sky-950/40"
-      >
-        <InfoIcon
-          aria-hidden="true"
-          focusable="false"
-          className="mt-0.5 text-sky-700 dark:text-sky-300"
-        />
-        <AlertTitle className="text-xs font-semibold text-sky-900 dark:text-sky-200">
-          {t('dataSourceSettings.forcedMode.title')}
-        </AlertTitle>
-        <AlertDescription className="text-[11px] text-sky-800 dark:text-sky-300">
-          {t('dataSourceSettings.forcedMode.description')}
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  // Both notices share the sky (info) color scheme so they read as
+  // status messages rather than warnings. Variants differ only in icon
+  // (WrenchIcon = development context, InfoIcon = URL override info)
+  // and i18n content; the wrapper styling is shared.
+  const Icon = variant === 'forced' ? InfoIcon : WrenchIcon;
+  const title =
+    variant === 'forced'
+      ? t('dataSourceSettings.forcedMode.title')
+      : t('dataSourceSettings.developmentNotice.title');
+  const description =
+    variant === 'forced'
+      ? t('dataSourceSettings.forcedMode.description')
+      : t('dataSourceSettings.developmentNotice.description');
 
   return (
     <Alert
       role="status"
-      className="mt-3 border-amber-300 bg-amber-50 px-3 py-2 text-left shadow-sm dark:border-amber-800 dark:bg-amber-950/40"
+      className="border-info/40 bg-info/10 mt-3 mb-3 border-2 px-3 py-2 text-left shadow-sm"
     >
-      <WrenchIcon
-        aria-hidden="true"
-        focusable="false"
-        className="mt-0.5 text-amber-700 dark:text-amber-300"
-      />
-      <AlertTitle className="text-xs font-semibold text-amber-900 dark:text-amber-200">
-        {t('dataSourceSettings.developmentNotice.title')}
-      </AlertTitle>
-      <AlertDescription className="text-[11px] text-amber-800 dark:text-amber-300">
-        {t('dataSourceSettings.developmentNotice.description')}
+      <Icon aria-hidden="true" focusable="false" className="text-info mt-0.5" />
+      <AlertTitle className="text-foreground text-xs font-semibold">{title}</AlertTitle>
+      <AlertDescription className="text-muted-foreground text-[11px]">
+        {description}
       </AlertDescription>
     </Alert>
   );
@@ -371,7 +358,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="flex max-h-[80dvh] w-[90dvw] max-w-2xl flex-col gap-0 overflow-hidden border-4 p-2"
+        className="border-foreground/60 flex max-h-[80dvh] w-[90dvw] max-w-2xl flex-col gap-0 overflow-hidden border-4 p-2"
       >
         <DialogHeader className="border-border shrink-0 border-b pb-3 sm:text-center">
           <DialogTitle className="text-base">{t('dataSourceSettings.title')}</DialogTitle>
@@ -413,16 +400,21 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
         <div className="overflow-y-auto pt-3 text-sm">
           {sections.map((section) => {
             const sectionGroupIds = section.rows.map((row) => row.groupId);
+            const sectionEnabledCount = section.rows.filter((row) =>
+              effectiveEnabledIds.has(row.groupId),
+            ).length;
             return (
               <section key={String(section.key)} className="mb-4 last:mb-0">
-                <h3 className="text-muted-foreground bg-muted/40 sticky top-0 z-10 flex items-center gap-2 px-2 py-1 text-xs font-semibold">
+                <h3 className="border-info text-foreground bg-background sticky top-0 z-10 flex items-center gap-2 rounded-md border border-2 px-2 py-1 text-xs font-semibold">
                   <span aria-hidden>{section.emoji}</span>
                   <span>{section.label}</span>
-                  <span className="opacity-60">({section.rows.length})</span>
+                  <span className="opacity-60">
+                    ({sectionEnabledCount}/{section.rows.length})
+                  </span>
                   <div className="ml-auto flex gap-1">
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="outline"
                       onClick={() => {
                         setGroupsEnabled(sectionGroupIds, true);
                       }}
@@ -430,13 +422,13 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
                       aria-label={t('dataSourceSettings.bulkAction.enableAll.aria', {
                         section: section.label,
                       })}
-                      className="h-6 px-2 text-[11px]"
+                      className="h-6 cursor-pointer px-2 text-[11px]"
                     >
                       {t('dataSourceSettings.bulkAction.enableAll.label')}
                     </Button>
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="outline"
                       onClick={() => {
                         setGroupsEnabled(sectionGroupIds, false);
                       }}
@@ -444,7 +436,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
                       aria-label={t('dataSourceSettings.bulkAction.disableAll.aria', {
                         section: section.label,
                       })}
-                      className="h-6 px-2 text-[11px]"
+                      className="h-6 cursor-pointer px-2 text-[11px]"
                     >
                       {t('dataSourceSettings.bulkAction.disableAll.label')}
                     </Button>
@@ -467,14 +459,27 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
             );
           })}
         </div>
-        <DialogFooter className="shrink-0 border-t pt-3 sm:justify-end">
+        <DialogFooter className="shrink-0 gap-2 border-t pt-3 sm:justify-end">
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
             onClick={resetToDefaults}
             disabled={isForcedSourcesMode}
+            className="cursor-pointer"
           >
             {t('dataSourceSettings.resetToDefaults')}
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => {
+              window.location.reload();
+            }}
+            disabled={isForcedSourcesMode}
+            aria-label={t('dataSourceSettings.restart.aria')}
+            className="border-info bg-info text-info-foreground hover:bg-info cursor-pointer"
+          >
+            {t('dataSourceSettings.restart.label')}
           </Button>
         </DialogFooter>
       </DialogContent>
