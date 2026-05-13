@@ -292,15 +292,6 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
       >
         <DialogHeader className="border-border shrink-0 border-b pb-3 sm:text-center">
           <DialogTitle className="text-base">{t('dataSourceSettings.title')}</DialogTitle>
-          {/*
-            DialogDescription carries the dialog's *purpose* for screen
-            readers. The visible summary (group status counts) is rendered
-            separately below since it is dynamic state, not a description
-            of what this dialog is for.
-          */}
-          {/* <DialogDescription className="sr-only">
-            {t('dataSourceSettings.description')}
-          </DialogDescription> */}
           <DialogDescription className="text-center text-xs">
             {t('dataSourceSettings.description')}
           </DialogDescription>
