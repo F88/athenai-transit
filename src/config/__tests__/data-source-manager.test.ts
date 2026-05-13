@@ -448,7 +448,7 @@ describe('DataSourceManager', () => {
     });
   });
 
-  describe('getEnabledPrefixes', () => {
+  describe('getEnabledDataSources', () => {
     it('returns prefixes from default-enabled groups in group order', async () => {
       const DataSourceManager = await importFreshDataSourceManager(createMultiPrefixSettings());
       const manager = new DataSourceManager(null);

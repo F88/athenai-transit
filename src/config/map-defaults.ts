@@ -247,8 +247,11 @@ function parseEnvZoom(value: string | undefined): number | null {
  * always gets a place — better than returning null and leaving the
  * caller to handle the empty case.
  *
- * @param loadedDataSources - GTFS prefixes that are currently loaded.
- * @returns A random location's center coords and zoom.
+ * @param loadedDataSources - GTFS data sources (prefixes) that are
+ *   currently loaded.
+ * @returns The picked location's center coords, zoom, and name. The
+ *   `name` is included so callers can log which curated location was
+ *   chosen (it is not displayed to end users).
  */
 export function pickRandomHome(loadedDataSources: ReadonlySet<string>): {
   center: [number, number];

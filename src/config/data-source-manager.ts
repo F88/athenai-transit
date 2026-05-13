@@ -158,17 +158,17 @@ export class DataSourceManager {
   }
 
   /**
-   * Returns the GTFS prefixes implied by the currently enabled group
-   * set (deduped).
+   * Returns the GTFS data sources implied by the currently enabled
+   * group set (deduped).
    *
-   * This is the *group-driven* view of the active prefixes. Callers that
-   * need the final fetch target (and therefore have to honour the
-   * prefix-level `?sources=<prefixes>` URL contract from PRD.md:118)
-   * should pass this through
+   * This is the *group-driven* view of the active data sources.
+   * Callers that need the final fetch target (and therefore have to
+   * honour the data-source-level `?sources=<data-sources>` URL
+   * contract from PRD.md:118) should pass this through
    * {@link import('../domain/datasource/resolve-fetch-data-sources').resolveFetchDataSources}
    * instead of using it directly.
    *
-   * @returns Flat array of prefixes from all enabled groups.
+   * @returns Flat array of data sources from all enabled groups.
    */
   getEnabledDataSources(): string[] {
     return dedupePrefixes(getEnabledPrefixesFromGroups(this.groups, this.enabledIds));
