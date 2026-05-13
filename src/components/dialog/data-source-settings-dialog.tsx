@@ -250,12 +250,12 @@ function GroupRowView({ row, t }: { row: GroupRow; t: (key: string) => string })
  * aggregated status is the same in every section because it is derived
  * from `prefixes`, not from the section's route_type.
  *
- * Groups where `SourceGroup.enabled === false` are app-level intentional
- * disables and are hidden from the user — except when their data has
- * actually been loaded via the `?sources=all` debug override. The
- * effective visibility rule is therefore:
+ * Groups where `SourceGroup.systemEnabledByDefault === false` are
+ * app-level intentional disables and are hidden from the user — except
+ * when their data has actually been loaded via the `?sources=all` debug
+ * override. The effective visibility rule is therefore:
  *
- *     enabled === true  ∪  any prefix is in the load-status map
+ *     systemEnabledByDefault === true  ∪  any prefix is in the load-status map
  *
  * so `?sources=all` (which loads every group including the disabled
  * ones) reveals those groups in the dialog, while default and
@@ -272,13 +272,14 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
   const loadStatusByPrefix = useSourceLoadStatus();
 
   // Visibility: app-enabled groups are always shown. App-disabled groups
-  // (`enabled: false`) are hidden by default, but reappear here when
-  // their data has actually been loaded — currently only reachable via
-  // `?sources=all`, the debug override that bypasses the enabled flag.
-  // This keeps the dialog honest: if the data is in the repository, the
-  // user can see that fact; otherwise the disabled group stays invisible.
+  // (`systemEnabledByDefault: false`) are hidden by default, but reappear
+  // here when their data has actually been loaded — currently only
+  // reachable via `?sources=all`, the debug override that bypasses the
+  // systemEnabledByDefault flag. This keeps the dialog honest: if the
+  // data is in the repository, the user can see that fact; otherwise the
+  // disabled group stays invisible.
   const visibleGroups = settings.filter(
-    (g) => g.enabled || g.prefixes.some((prefix) => loadStatusByPrefix.has(prefix)),
+    (g) => g.systemEnabledByDefault || g.prefixes.some((prefix) => loadStatusByPrefix.has(prefix)),
   );
 
   const sections = buildSections(visibleGroups, loadStatusByPrefix, i18n.language, t);

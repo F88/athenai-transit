@@ -83,7 +83,7 @@ export class DataSourceManager {
    * Source selection priority:
    * 1. URL `?sources=prefix1,prefix2` or `?sources=all` — transient override (localStorage not updated)
    * 2. localStorage — persisted user preferences
-   * 3. Default — only groups with `enabled: true`
+   * 3. Default — only groups with `systemEnabledByDefault: true`
    */
   constructor() {
     this.groups = settings;

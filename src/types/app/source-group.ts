@@ -38,8 +38,33 @@ export interface SourceGroup {
   /** GTFS route_type values represented by this source group. */
   routeTypes: AppRouteTypeValue[];
 
-  /** Whether this source group is enabled by default. */
-  enabled: boolean;
+  /**
+   * System-level availability of this source group.
+   *
+   * Currently equivalent in semantic to the previous `enabled` field —
+   * Phase 0 only renames it and does not yet enforce stricter gating.
+   * The intent is to evolve this into an absolute gate (defaults
+   * resolution, localStorage restoration, UI visibility) in a future
+   * phase, with the URL `?sources=all` escape hatch being the sole
+   * bypass. Until then it continues to drive default loading and the
+   * data-source settings dialog visibility filter.
+   */
+  systemEnabledByDefault: boolean;
+
+  /**
+   * Default value of the user preference for whether this group is
+   * enabled.
+   *
+   * Populated for every group but **not read by any production code in
+   * Phase 0**. A future phase will wire this into the user-settings
+   * layer (`useUserDataSourceSettings`-style hook) so that user choices
+   * persisted in `localStorage` can override this default.
+   *
+   * Phase 0 migration rule: each group's value mirrors
+   * {@link systemEnabledByDefault} 1:1, so behavior is unchanged until a later
+   * phase begins reading this field.
+   */
+  userEnabledByDefault: boolean;
 
   /** Localized display names keyed by language (for example `ja`, `en`). */
   name: TranslatableText;

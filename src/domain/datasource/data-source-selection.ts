@@ -4,10 +4,10 @@ import type { SourceGroup } from '../../types/app/source-group';
  * Return the IDs of all groups that are enabled by default.
  *
  * @param groups - Source groups to inspect.
- * @returns Set of group IDs whose `enabled` flag is `true`.
+ * @returns Set of group IDs whose `systemEnabledByDefault` flag is `true`.
  */
 export function getDefaultEnabledIds(groups: readonly SourceGroup[]): Set<string> {
-  return new Set(groups.filter((group) => group.enabled).map((group) => group.id));
+  return new Set(groups.filter((group) => group.systemEnabledByDefault).map((group) => group.id));
 }
 
 /**
@@ -49,7 +49,7 @@ export function getEnabledIdsFromSourcesParam(
  * as the load target.
  *
  * - `'all'` returns every prefix configured across all groups (including
- *   groups whose `enabled` flag is `false`).
+ *   groups whose `systemEnabledByDefault` flag is `false`).
  * - Any other value is parsed as a comma-separated list of prefixes.
  *   Unknown / empty entries are silently dropped here (callers use
  *   {@link findUnknownPrefixesInSourcesParam} to surface them).
