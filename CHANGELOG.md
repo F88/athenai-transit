@@ -9,9 +9,25 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Data source settings: Info dialog header から開ける Data Source Settings dialog を追加。source group を route_type ごとに section 表示し、group ごとの load 状態を `loaded` / `partial` / `failed` / `notAttempted` の 4 状態で集約表示する。forced-sources mode (`?sources=`) では attempted prefixes を含む group のみを表示し、URL override 中であることを notice する。
+- Source load state: startup の load result を per-prefix state として扱う `SourceLoadStateProvider` / context / consumer hooks (`useLoadResult`, `useLoadedSources`, `useSourceLoadStatus`, `useIsForcedSourcesMode`) を追加。dialog や今後の UI から「何が loaded / failed / not attempted だったか」を hook 経由で参照できるようにした。
+- Data source settings Phase 1: source group selection を user setting として保持する persistence layer を追加。`enabled-sources` localStorage utility (`data-source-selection-storage.ts`) と `useUserDataSourceSettings` hook を導入し、dialog から group 単位の ON/OFF、section 単位の `All on` / `All off`、`Reset to defaults` を操作できるようにした。設定変更は即時に永続化されるが、実際の読込対象への反映は reload 時点で行う。
+
 ### Changed
 
 - Map defaults: `HOME_LOCATIONS` を更新し、初期表示候補の座標・ズームを見直した。東京圏・伊豆大島・神奈川・京都・愛媛の地点を整理し、`Shinagawa Seaside` / `Shimbashi Station` / `Ome Station` などユーザー指定の候補を追加。
+- Data source settings: source group definitions を見直し、`enabled` を `systemEnabledByDefault` に rename した上で `userEnabledByDefault` を追加。group display name の言語解決 helper、route_type priority / sectioning helper、sort helper を整備し、dialog 表示の責務を domain 側に整理した。
+- Data source settings dialog: Phase 0 の disabled Switch placeholder から、Phase 1 の interactive UI に拡張。normal mode では user setting に基づいて Switch / bulk action / reset が操作可能、forced mode では非操作にする。header には section ごとの enabled count を表示し、normal mode では amber notice 「リロード後に反映」、forced mode では sky notice 「対象データ指定モード」を出す構成に変更した。
+- Data source selection: `DataSourceManager` は localStorage を直接読まず、事前に parse 済みの stored selection を constructor で受け取る構成に変更。default 選択の意味も `systemEnabledByDefault` ではなく `userEnabledByDefault` 基準に切り替えた。あわせて、config 上で app-level に disable された group は stale localStorage から resurrect しないよう system gate を追加した。
+- Logging: repository source fetch の aggregate summary (`fetchSources: Xms (N sources)`) は INFO に維持しつつ、per-source / per-file の詳細ログは DEBUG に整理して production log のノイズを抑えた。
+
+### Fixed
+
+- `?sources=` の prefix contract を整理し、overlapping bundling groups がある場合でも load layer は URL で指定された prefix 群だけを fetch するよう修正した。prefix list の dedupe も同時に行う。
+- `?sources=` (empty value) の扱いを UI / `DataSourceManager` / load layer で統一。これまでは empty string が「override なし」と「force-load zero sources」で食い違っていたが、現在は `?sources=` を forced mode として扱い、0 sources 読込・dialog 非操作・visible groups 0 の挙動で一致する。
+- Data source settings dialog: app-level に disabled な group は通常時には隠しつつ、実際に load 済みのときだけ表示するようにして、debug / forced path と通常 path の見え方の不整合を解消した。
 
 ## [2026.05.12]
 
