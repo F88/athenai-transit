@@ -21,7 +21,7 @@ const logger = createLogger('diagnostics');
  * @param repository - The active TransitRepository instance (for repo-bench).
  */
 export async function runDiagnostics(name: string, repository?: TransitRepository): Promise<void> {
-  const prefixes = new DataSourceManager(loadEnabledGroupIdsFromStorage()).getEnabledPrefixes();
+  const prefixes = new DataSourceManager(loadEnabledGroupIdsFromStorage()).getEnabledDataSources();
 
   switch (name) {
     case 'v2-load': {

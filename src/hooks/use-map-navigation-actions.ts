@@ -3,6 +3,7 @@ import type L from 'leaflet';
 import type { UserLocation } from '../types/app/map';
 import { smoothMoveTo } from '../lib/leaflet-helpers';
 import { pickRandomHome } from '../config/map-defaults';
+import { useLoadedSources } from './use-loaded-sources';
 import { useMapLocate } from './use-map-locate';
 
 interface UseMapNavigationActionsOptions {
@@ -41,11 +42,13 @@ export function useMapNavigationActions(
     onError: options?.onError,
   });
 
+  const loadedDataSources = useLoadedSources();
+
   const handleRandomJump = useCallback(() => {
     onDeselectStop();
-    const { center, zoom } = pickRandomHome();
+    const { center, zoom } = pickRandomHome(loadedDataSources);
     smoothMoveTo(map, center, zoom);
-  }, [map, onDeselectStop]);
+  }, [map, onDeselectStop, loadedDataSources]);
 
   return {
     locating,

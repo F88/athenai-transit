@@ -170,7 +170,7 @@ export class DataSourceManager {
    *
    * @returns Flat array of prefixes from all enabled groups.
    */
-  getEnabledPrefixes(): string[] {
+  getEnabledDataSources(): string[] {
     return dedupePrefixes(getEnabledPrefixesFromGroups(this.groups, this.enabledIds));
   }
 }
