@@ -13,7 +13,8 @@ function makeGroup(overrides: Partial<SourceGroup> & { id: string }): SourceGrou
     id: overrides.id,
     prefixes: overrides.prefixes ?? [overrides.id],
     routeTypes: overrides.routeTypes ?? [3],
-    enabled: overrides.enabled ?? true,
+    systemEnabledByDefault: overrides.systemEnabledByDefault ?? true,
+    userEnabledByDefault: overrides.userEnabledByDefault ?? true,
     name: overrides.name ?? { name: overrides.id, names: { en: overrides.id } },
     countries: overrides.countries ?? ['JP'],
   };

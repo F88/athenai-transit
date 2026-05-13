@@ -13,7 +13,8 @@ function makeGroup(name: SourceGroup['name']): SourceGroup {
     id: 'g',
     prefixes: ['p'],
     routeTypes: [3],
-    enabled: true,
+    systemEnabledByDefault: true,
+    userEnabledByDefault: true,
     name,
     countries: ['JP'],
   };

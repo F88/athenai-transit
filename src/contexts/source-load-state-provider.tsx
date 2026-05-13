@@ -15,13 +15,18 @@ import { SourceLoadStateContext } from './source-load-state-context';
  * trivial and avoid `useMemo` after a null guard.
  *
  * @param initialLoadResult - Startup load result snapshot.
+ * @param sourcesParam - Raw value of the URL `?sources=` query parameter at
+ *   boot, or `null` when absent. Used to derive {@link
+ *   SourceLoadStateContextValue.isForcedSourcesMode}.
  * @param children - Subtree that can access the context.
  */
 export function SourceLoadStateProvider({
   initialLoadResult,
+  sourcesParam,
   children,
 }: {
   initialLoadResult: LoadResult;
+  sourcesParam: string | null;
   children: ReactNode;
 }) {
   // Phase 1: dispatch is intentionally not exposed. Phase N will publish
@@ -42,13 +47,21 @@ export function SourceLoadStateProvider({
     return set;
   }, [loadStatusByPrefix]);
 
+  // Treat null OR empty string as "no override", matching the
+  // data-source-manager contract (`if (!sourcesParam) return null;`).
+  // `?sources=` with an empty value reaches us as `''` from
+  // `URLSearchParams.get`, but the load layer ignores it; the dialog must
+  // not enter forced mode in that case or the two layers would disagree.
+  const isForcedSourcesMode = sourcesParam !== null && sourcesParam !== '';
+
   const value = useMemo(
     () => ({
       startupLoadResult: initialLoadResult,
       loadStatusByPrefix,
       loadedSources,
+      isForcedSourcesMode,
     }),
-    [initialLoadResult, loadStatusByPrefix, loadedSources],
+    [initialLoadResult, loadStatusByPrefix, loadedSources, isForcedSourcesMode],
   );
 
   return (

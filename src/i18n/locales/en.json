@@ -190,6 +190,13 @@
     "partial": {
       "fraction": "{{loaded}}/{{total}} loaded"
     },
+    "toggle": {
+      "aria": "Enabled state of {{group}}"
+    },
+    "forcedMode": {
+      "title": "Specified data mode",
+      "description": "In this mode, the target data cannot be changed."
+    },
     "section": {
       "0": "Tram",
       "1": "Subway",

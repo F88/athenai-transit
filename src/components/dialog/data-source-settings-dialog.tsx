@@ -1,4 +1,6 @@
 import { useTranslation } from 'react-i18next';
+import { InfoIcon } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
@@ -6,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import settings from '../../config/data-source-settings';
 import {
   aggregateGroupLoadStatus,
@@ -13,6 +16,7 @@ import {
 } from '../../domain/datasource/aggregate-group-status';
 import { getSourceGroupDisplayName } from '../../domain/datasource/get-source-group-display-name';
 import { sortSourceGroupsForDisplay } from '../../domain/datasource/sort-source-groups';
+import { useIsForcedSourcesMode } from '../../hooks/use-is-forced-sources-mode';
 import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
 import type { SourceGroup } from '../../types/app/source-group';
 import { countriesFlagEmoji } from '../../utils/country-flag';
@@ -39,6 +43,15 @@ interface GroupRow {
   countryEmoji: string;
   /** Aggregated load status (4-state). */
   loadStatus: GroupLoadStatus;
+  /**
+   * Default value of the user preference for this group.
+   *
+   * Read directly from {@link SourceGroup.userEnabledByDefault}; in a
+   * later phase this will be overridable by a persisted user-settings
+   * layer. Phase 0 surfaces the value via a disabled toggle so the
+   * dialog already reflects the field without yet being interactive.
+   */
+  userEnabledByDefault: boolean;
 }
 
 interface Section {
@@ -63,6 +76,7 @@ function buildGroupRow(
     routeTypeEmoji: routeTypesEmoji(group.routeTypes),
     countryEmoji: countriesFlagEmoji(group.countries),
     loadStatus: aggregateGroupLoadStatus(group.prefixes, loadStatusByPrefix),
+    userEnabledByDefault: group.userEnabledByDefault,
   };
 }
 
@@ -209,9 +223,31 @@ function FailureList({ row }: { row: GroupRow }) {
   );
 }
 
-function GroupRowView({ row, t }: { row: GroupRow; t: (key: string) => string }) {
+function GroupRowView({
+  row,
+  isForcedSourcesMode,
+}: {
+  row: GroupRow;
+  isForcedSourcesMode: boolean;
+}) {
+  const { t } = useTranslation();
+  // In forced-sources mode, the visible row is only here because at least one
+  // of its prefixes was attempted by the URL override, so reflecting
+  // `userEnabledByDefault` would mislead (e.g. system-disabled groups
+  // surfaced via `?sources=<list>` would show OFF despite being loaded).
+  // Forcing `checked` to `true` keeps the Switch consistent with the load
+  // status icon adjacent to it.
+  const switchChecked = isForcedSourcesMode ? true : row.userEnabledByDefault;
   return (
     <li className="border-border/40 flex items-start gap-2 border-b px-2 py-2 last:border-b-0">
+      <Switch
+        checked={switchChecked}
+        disabled
+        aria-label={t('dataSourceSettings.toggle.aria', {
+          group: row.groupName,
+        })}
+        className="shrink-0"
+      />
       <span
         aria-label={t(`dataSourceSettings.status.${row.loadStatus.status}`)}
         className="w-5 shrink-0 text-center"
@@ -250,12 +286,12 @@ function GroupRowView({ row, t }: { row: GroupRow; t: (key: string) => string })
  * aggregated status is the same in every section because it is derived
  * from `prefixes`, not from the section's route_type.
  *
- * Groups where `SourceGroup.enabled === false` are app-level intentional
- * disables and are hidden from the user — except when their data has
- * actually been loaded via the `?sources=all` debug override. The
- * effective visibility rule is therefore:
+ * Groups where `SourceGroup.systemEnabledByDefault === false` are
+ * app-level intentional disables and are hidden from the user — except
+ * when their data has actually been loaded via the `?sources=all` debug
+ * override. The effective visibility rule is therefore:
  *
- *     enabled === true  ∪  any prefix is in the load-status map
+ *     systemEnabledByDefault === true  ∪  any prefix is in the load-status map
  *
  * so `?sources=all` (which loads every group including the disabled
  * ones) reveals those groups in the dialog, while default and
@@ -270,16 +306,23 @@ function GroupRowView({ row, t }: { row: GroupRow; t: (key: string) => string })
 export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSettingsDialogProps) {
   const { t, i18n } = useTranslation();
   const loadStatusByPrefix = useSourceLoadStatus();
+  const isForcedSourcesMode = useIsForcedSourcesMode();
 
-  // Visibility: app-enabled groups are always shown. App-disabled groups
-  // (`enabled: false`) are hidden by default, but reappear here when
-  // their data has actually been loaded — currently only reachable via
-  // `?sources=all`, the debug override that bypasses the enabled flag.
-  // This keeps the dialog honest: if the data is in the repository, the
-  // user can see that fact; otherwise the disabled group stays invisible.
-  const visibleGroups = settings.filter(
-    (g) => g.enabled || g.prefixes.some((prefix) => loadStatusByPrefix.has(prefix)),
-  );
+  // Visibility:
+  //  - Normal mode: app-enabled groups are always shown. App-disabled groups
+  //    (`systemEnabledByDefault: false`) are hidden, but reappear when their
+  //    data has actually been loaded (currently only via `?sources=all`).
+  //  - Forced-sources mode (`?sources=<list>` or `?sources=all` set): user
+  //    settings are bypassed entirely, so showing app-enabled-by-default
+  //    groups that the URL didn't request would be misleading. Restrict the
+  //    list to groups whose prefixes are actually in the load-status map.
+  const visibleGroups = settings.filter((g) => {
+    const anyAttempted = g.prefixes.some((prefix) => loadStatusByPrefix.has(prefix));
+    if (isForcedSourcesMode) {
+      return anyAttempted;
+    }
+    return g.systemEnabledByDefault || anyAttempted;
+  });
 
   const sections = buildSections(visibleGroups, loadStatusByPrefix, i18n.language, t);
   const counts = countDistinctGroupStatuses(visibleGroups, loadStatusByPrefix);
@@ -305,6 +348,24 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
             })}
           </div>
         </DialogHeader>
+        {isForcedSourcesMode && (
+          <Alert
+            aria-live="polite"
+            className="mt-3 border-sky-300 bg-sky-50 px-3 py-2 text-left shadow-sm dark:border-sky-800 dark:bg-sky-950/40"
+          >
+            <InfoIcon
+              aria-hidden="true"
+              focusable="false"
+              className="mt-0.5 text-sky-700 dark:text-sky-300"
+            />
+            <AlertTitle className="text-xs font-semibold text-sky-900 dark:text-sky-200">
+              {t('dataSourceSettings.forcedMode.title')}
+            </AlertTitle>
+            <AlertDescription className="text-[11px] text-sky-800 dark:text-sky-300">
+              {t('dataSourceSettings.forcedMode.description')}
+            </AlertDescription>
+          </Alert>
+        )}
         <div className="overflow-y-auto pt-3 text-sm">
           {sections.map((section) => (
             <section key={String(section.key)} className="mb-4 last:mb-0">
@@ -315,7 +376,11 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
               </h3>
               <ul>
                 {section.rows.map((row) => (
-                  <GroupRowView key={`${String(section.key)}::${row.key}`} row={row} t={t} />
+                  <GroupRowView
+                    key={`${String(section.key)}::${row.key}`}
+                    row={row}
+                    isForcedSourcesMode={isForcedSourcesMode}
+                  />
                 ))}
               </ul>
             </section>

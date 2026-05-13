@@ -71,7 +71,7 @@ async function init() {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <TransitRepositoryProvider repository={repository}>
-        <SourceLoadStateProvider initialLoadResult={loadResult}>
+        <SourceLoadStateProvider initialLoadResult={loadResult} sourcesParam={getSourcesParam()}>
           <App />
         </SourceLoadStateProvider>
       </TransitRepositoryProvider>
