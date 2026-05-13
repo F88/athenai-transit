@@ -160,8 +160,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const { sources, loadResult } = await fetchSourcesV2(prefixes, dataSource);
     const tFetch = performance.now();
     const fetchMs = Math.round(tFetch - t0);
-    if (logger.isEnabled('debug')) {
-      logger.debug(`fetchSources: ${fetchMs}ms (${sources.length} sources)`);
+    if (logger.isEnabled('info')) {
+      logger.info(`fetchSources: ${fetchMs}ms (${sources.length} sources)`);
     }
 
     for (const source of sources) {

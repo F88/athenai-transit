@@ -12,7 +12,6 @@ import {
   getEnabledDataSourcesFromSourcesParam,
   getEnabledIdsFromSourcesParam,
   getEnabledPrefixesFromGroups,
-  parseStoredEnabledIds,
 } from '../data-source-selection';
 import type { SourceGroup } from '../../../types/app/source-group';
 
@@ -48,9 +47,69 @@ function createGroups(): SourceGroup[] {
   ];
 }
 
+function createOverlappingGroups(): SourceGroup[] {
+  return [
+    {
+      id: 'toei-bus',
+      prefixes: ['minkuru'],
+      routeTypes: [3],
+      systemEnabledByDefault: true,
+      userEnabledByDefault: true,
+      name: { name: 'Toei Bus', names: { en: 'Toei Bus' } },
+      countries: ['JP'],
+    },
+    {
+      id: 'toei-train',
+      prefixes: ['toaran'],
+      routeTypes: [0, 1, 2],
+      systemEnabledByDefault: true,
+      userEnabledByDefault: true,
+      name: { name: 'Toei Train', names: { en: 'Toei Train' } },
+      countries: ['JP'],
+    },
+    {
+      id: 'toko',
+      prefixes: ['minkuru', 'toaran'],
+      routeTypes: [0, 1, 2, 3],
+      systemEnabledByDefault: true,
+      userEnabledByDefault: true,
+      name: { name: 'Toei Transport', names: { en: 'Toei Transport' } },
+      countries: ['JP'],
+    },
+  ];
+}
+
 describe('getDefaultEnabledIds', () => {
   it('returns only groups marked enabled by default', () => {
     expect([...getDefaultEnabledIds(createGroups())]).toEqual(['alpha', 'gamma']);
+  });
+
+  it('drives defaults from userEnabledByDefault, not systemEnabledByDefault', () => {
+    // Phase 1 semantic split: a group whose system-availability is on but
+    // whose user-default is off must NOT appear in the defaults set, and
+    // vice versa. The fixtures elsewhere in this file align both fields,
+    // so this case has its own fixture to pin the independent semantic.
+    const groups: SourceGroup[] = [
+      {
+        id: 'system-on-user-off',
+        prefixes: ['p1'],
+        routeTypes: [3],
+        systemEnabledByDefault: true,
+        userEnabledByDefault: false,
+        name: { name: 'X', names: { en: 'X' } },
+        countries: ['JP'],
+      },
+      {
+        id: 'system-off-user-on',
+        prefixes: ['p2'],
+        routeTypes: [3],
+        systemEnabledByDefault: false,
+        userEnabledByDefault: true,
+        name: { name: 'Y', names: { en: 'Y' } },
+        countries: ['JP'],
+      },
+    ];
+    expect([...getDefaultEnabledIds(groups)]).toEqual(['system-off-user-on']);
   });
 });
 
@@ -70,11 +129,25 @@ describe('getEnabledIdsFromSourcesParam', () => {
     ]);
   });
 
+  it('enables every matching group when a requested prefix belongs to multiple groups', () => {
+    expect([...getEnabledIdsFromSourcesParam(createOverlappingGroups(), 'minkuru')]).toEqual([
+      'toei-bus',
+      'toko',
+    ]);
+  });
+
   it('trims whitespace around comma-separated prefixes', () => {
     expect([...getEnabledIdsFromSourcesParam(createGroups(), 'alpha-express, beta-main')]).toEqual([
       'alpha',
       'beta',
     ]);
+  });
+
+  it('treats all as a special keyword only on exact match', () => {
+    expect([...getEnabledIdsFromSourcesParam(createGroups(), 'all,alpha-local')]).toEqual([
+      'alpha',
+    ]);
+    expect([...getEnabledIdsFromSourcesParam(createGroups(), ' all ')]).toEqual([]);
   });
 
   it('returns an empty set when no requested prefix matches any group', () => {
@@ -83,38 +156,6 @@ describe('getEnabledIdsFromSourcesParam', () => {
 });
 
 describe('getEnabledDataSourcesFromSourcesParam', () => {
-  function createOverlappingGroups(): SourceGroup[] {
-    return [
-      {
-        id: 'toei-bus',
-        prefixes: ['minkuru'],
-        routeTypes: [3],
-        systemEnabledByDefault: true,
-        userEnabledByDefault: true,
-        name: { name: 'Toei Bus', names: { en: 'Toei Bus' } },
-        countries: ['JP'],
-      },
-      {
-        id: 'toei-train',
-        prefixes: ['toaran'],
-        routeTypes: [0, 1, 2],
-        systemEnabledByDefault: true,
-        userEnabledByDefault: true,
-        name: { name: 'Toei Train', names: { en: 'Toei Train' } },
-        countries: ['JP'],
-      },
-      {
-        id: 'toko',
-        prefixes: ['minkuru', 'toaran'],
-        routeTypes: [0, 1, 2, 3],
-        systemEnabledByDefault: true,
-        userEnabledByDefault: true,
-        name: { name: 'Toei Transport', names: { en: 'Toei Transport' } },
-        countries: ['JP'],
-      },
-    ];
-  }
-
   it('returns the exact prefixes the user requested when they are known', () => {
     expect(getEnabledDataSourcesFromSourcesParam(createGroups(), 'alpha-local,beta-main')).toEqual([
       'alpha-local',
@@ -268,16 +309,6 @@ describe('findUnknownPrefixesInSourcesParam', () => {
     expect(findUnknownPrefixesInSourcesParam(createGroups(), ',alpha-local,,nope,')).toEqual([
       'nope',
     ]);
-  });
-});
-
-describe('parseStoredEnabledIds', () => {
-  it('returns null when storage is empty', () => {
-    expect(parseStoredEnabledIds(null)).toBeNull();
-  });
-
-  it('parses stored group IDs into a set', () => {
-    expect([...parseStoredEnabledIds('["alpha","gamma"]')!]).toEqual(['alpha', 'gamma']);
   });
 });
 

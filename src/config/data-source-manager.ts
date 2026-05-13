@@ -6,7 +6,6 @@ import {
   getDefaultEnabledIds,
   getEnabledIdsFromSourcesParam,
   getEnabledPrefixesFromGroups,
-  parseStoredEnabledIds,
 } from '../domain/datasource/data-source-selection';
 import type { SourceGroup } from '../types/app/source-group';
 
@@ -38,35 +37,31 @@ function resolveEnabledIdsFromQueryParams(groups: SourceGroup[]): Set<string> | 
   return getEnabledIdsFromSourcesParam(groups, sourcesParam);
 }
 
-function resolveEnabledIdsFromStorage(): Set<string> | null {
-  return parseStoredEnabledIds(localStorage.getItem(STORAGE_KEY));
-}
-
-function resolveInitialEnabledIds(groups: SourceGroup[]): Set<string> {
+function resolveInitialEnabledIds(
+  groups: SourceGroup[],
+  storedEnabledIds: Set<string> | null,
+): Set<string> {
   const enabledIdsFromQueryParams = resolveEnabledIdsFromQueryParams(groups);
   if (enabledIdsFromQueryParams) {
     return enabledIdsFromQueryParams;
   }
 
-  try {
-    const enabledIdsFromStorage = resolveEnabledIdsFromStorage();
-    if (enabledIdsFromStorage) {
-      return enabledIdsFromStorage;
-    }
-  } catch {
-    // fall through to default
+  if (storedEnabledIds) {
+    return storedEnabledIds;
   }
 
   return getDefaultEnabledIds(groups);
 }
 
-const STORAGE_KEY = 'enabled-sources';
-
 /**
  * Manages which source groups are enabled/disabled.
  *
  * The manager owns the SourceGroup-level state — it tracks which groups
- * are currently active and persists user preferences to `localStorage`.
+ * are currently active. localStorage I/O lives in the
+ * {@link import('../domain/datasource/data-source-selection-storage')}
+ * utility; this class only consumes the **already-parsed** value at
+ * construction time via the `storedEnabledIds` constructor parameter.
+ *
  * It deliberately does NOT decide the final fetch-target prefix list
  * when a `?sources=<prefixes>` URL is in play; that resolution lives in
  * {@link import('../domain/datasource/resolve-fetch-data-sources').resolveFetchDataSources}
@@ -81,13 +76,19 @@ export class DataSourceManager {
    * Creates a new manager.
    *
    * Source selection priority:
-   * 1. URL `?sources=prefix1,prefix2` or `?sources=all` — transient override (localStorage not updated)
-   * 2. localStorage — persisted user preferences
-   * 3. Default — only groups with `systemEnabledByDefault: true`
+   * 1. URL `?sources=prefix1,prefix2` or `?sources=all` — transient override (localStorage not consulted)
+   * 2. `storedEnabledIds` if provided — the caller's parsed `localStorage` snapshot
+   * 3. Default — only groups with `userEnabledByDefault: true`
+   *
+   * @param storedEnabledIds - The user's persisted preference (typically
+   *   from
+   *   {@link import('../domain/datasource/data-source-selection-storage').loadEnabledGroupIdsFromStorage}),
+   *   or `null` when no preference is recorded. An empty `Set` is
+   *   treated as a user-explicit "nothing enabled" choice.
    */
-  constructor() {
+  constructor(storedEnabledIds: Set<string> | null) {
     this.groups = settings;
-    this.enabledIds = resolveInitialEnabledIds(this.groups);
+    this.enabledIds = resolveInitialEnabledIds(this.groups, storedEnabledIds);
   }
 
   /**
@@ -107,21 +108,6 @@ export class DataSourceManager {
    */
   isEnabled(groupId: string): boolean {
     return this.enabledIds.has(groupId);
-  }
-
-  /**
-   * Enable or disable a source group and persist the change.
-   *
-   * @param groupId - The source group ID to update.
-   * @param enabled - Whether to enable (`true`) or disable (`false`).
-   */
-  setEnabled(groupId: string, enabled: boolean): void {
-    if (enabled) {
-      this.enabledIds.add(groupId);
-    } else {
-      this.enabledIds.delete(groupId);
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...this.enabledIds]));
   }
 
   /**
