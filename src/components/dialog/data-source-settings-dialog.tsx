@@ -201,7 +201,7 @@ function FailureList({ row }: { row: GroupRow }) {
   return (
     <ul className="text-destructive mt-1 space-y-0.5 text-xs">
       {row.loadStatus.failedPrefixes.map((f) => (
-        <li key={f.prefix} className="break-words">
+        <li key={f.prefix} className="wrap-break-word">
           <span className="font-mono">{f.prefix}</span>: {f.error.message}
         </li>
       ))}
