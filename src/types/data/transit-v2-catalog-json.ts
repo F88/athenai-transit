@@ -120,7 +120,7 @@ export interface DataSourceCatalogSourceSummary {
     /** Agency name as published in the source data. */
     name: string;
     /** Agency language code when available in the source data. */
-    lang: string;
+    lang?: string;
     /** Agency timezone from the source data. */
     timezone: string;
   }[];
