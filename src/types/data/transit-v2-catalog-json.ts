@@ -75,6 +75,63 @@ export interface DataSourceCatalogInsightsBundleCounts {
   stopStats: number;
 }
 
+/** Translation languages summary derived from one source's TranslationsJson. */
+export interface DataSourceCatalogI18nSummary {
+  /** Sorted union of language codes observed across all translation maps. */
+  languages: string[];
+}
+
+/** Route summary derived from one source's DataBundle routes data. */
+export interface DataSourceCatalogRoutesSummary {
+  /** Counts keyed by the stringified GTFS `route_type` value. */
+  typeCounts: Record<string, number>;
+}
+
+/** Stops summary derived from one source's DataBundle stops data. */
+export interface DataSourceCatalogStopsSummary {
+  /** Per-`location_type` stop counts and parent-station coverage. */
+  locationTypes: Record<string, DataSourceCatalogStopLocationTypeSummary>;
+  /** Stop geographic summary derived from stop coordinates. */
+  geo: DataSourceCatalogStopsGeoSummary;
+}
+
+/** Per-`location_type` stop counts and parent-station coverage. */
+export interface DataSourceCatalogStopLocationTypeSummary {
+  /** Number of stops with this GTFS `location_type` value. */
+  count: number;
+  /** Number of those stops carrying a GTFS `parent_station` reference. */
+  hasParentCount: number;
+}
+
+/** Bounding box summary derived from one source's stop coordinates. */
+export interface DataSourceCatalogBoundingBox {
+  latMin: number;
+  latMax: number;
+  lonMin: number;
+  lonMax: number;
+}
+
+/** Stop geographic summary derived from one source's DataBundle stops data. */
+export interface DataSourceCatalogStopsGeoSummary {
+  /** Bounding box of all stops, or null when the source has no stops. */
+  bbox: DataSourceCatalogBoundingBox | null;
+}
+
+/** One agency summary derived from `agency.txt` / DataBundle agency data. */
+export interface DataSourceCatalogAgencySummary {
+  /** Agency name as published in the source data. */
+  name: string;
+  /** Agency language code when available in the source data. */
+  lang: string;
+  /** Agency timezone from the source data. */
+  timezone: string;
+}
+
+/** Agency summaries derived from one source's `agency.txt` / DataBundle agency data. */
+export interface DataSourceCatalogAgenciesSummary {
+  items: DataSourceCatalogAgencySummary[];
+}
+
 /** Summary derived from one source's DataBundle file and contents. */
 export interface DataSourceCatalogDataBundleSummary extends DataSourceCatalogFileBackedSummary {
   /** Entity counts derived from this source's data.json bundle. */
@@ -102,6 +159,14 @@ export interface DataSourceCatalogInsightsBundleSummary extends DataSourceCatalo
  * license copy intentionally remain outside this schema.
  */
 export interface DataSourceCatalogSource {
+  /** Agency summaries derived from this source's data.json bundle. */
+  agencies: DataSourceCatalogAgenciesSummary;
+  /** Translation languages summary derived from this source's data.json bundle. */
+  i18n: DataSourceCatalogI18nSummary;
+  /** Route summary derived from this source's data.json bundle. */
+  routes: DataSourceCatalogRoutesSummary;
+  /** Stops summary derived from this source's data.json bundle. */
+  stops: DataSourceCatalogStopsSummary;
   /** Summary derived from this source's data.json bundle. */
   data: DataSourceCatalogDataBundleSummary;
   /** Summary derived from this source's shapes.json bundle, when present. */
