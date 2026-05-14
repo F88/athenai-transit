@@ -4,17 +4,17 @@
 
 ## スクリプト一覧
 
-| スクリプト                          | 対象データ                                                   | 概要                                                                                                                        |
-| ----------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| `describe-resources.ts`             | `pipeline/config/resources/` (リソース定義)                  | リソース定義の一覧表示 (`npm run pipeline:describe`)                                                                        |
-| `find-joint-routes.ts`              | `public/data/` (生成済み JSON)                               | 共同運行路線の検出。ソース間で route_short_name が一致する路線を検出し、停留所名の突き合わせと座標による近接分析を行う      |
-| `analyze-gtfs-stop-times.ts`        | `pipeline/workspace/_build/db/` (SQLite DB)                  | GTFS stop_times パターン分析 (terminal-only stops, circular routes, pickup/drop-off types 等)                               |
-| `analyze-gtfs-routes.ts`            | `pipeline/workspace/data/gtfs/` (`routes.txt`)               | GTFS `routes.txt` の names / route_type / colors / cEMV / continuous fields 等を source ごとに集計する                      |
-| `analyze-odpt-station-timetable.ts` | `pipeline/workspace/data/odpt-json/` (ODPT JSON)             | ODPT StationTimetable データパターン分析 (time field availability, station/direction/calendar coverage 等)                  |
-| `analyze-v2-name-fields.ts`         | `public/data-v2/` (生成済み V2 DataBundle)                   | 定義済みの名称系調査対象について、V2 JSON 上の `nonEmpty` / `empty` 件数を source ごとに集計する                            |
-| `analyze-v2-insights.ts`            | `public/data-v2/<source>/insights.json` (InsightsBundle)     | InsightsBundle の 4 セクション (serviceGroups / tripPatternStats / tripPatternGeo / stopStats) を source 別に集計する       |
-| `analyze-v2-global-insights.ts`     | `public/data-v2/global/insights.json` (GlobalInsightsBundle) | GlobalInsightsBundle の `stopGeo` を source 別に集計する (stop 件数、`wp`/`cn` カバレッジ、`nr` 分布)                       |
-| `summarize-v2-outputs.ts`           | `public/data-v2/<source>/{data,insights,shapes}.json`        | V2 pipeline 出力を bundle 横断で source 別に要約する (file size / gzip size / DataBundle 件数 / InsightsBundle tripsMedian) |
+| スクリプト                          | 対象データ                                                   | 概要                                                                                                                                  |
+| ----------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `describe-resources.ts`             | `pipeline/config/resources/` (リソース定義)                  | リソース定義の一覧表示 (`npm run pipeline:describe`)                                                                                  |
+| `find-joint-routes.ts`              | `public/data/` (生成済み JSON)                               | 共同運行路線の検出。ソース間で route_short_name が一致する路線を検出し、停留所名の突き合わせと座標による近接分析を行う                |
+| `analyze-gtfs-stop-times.ts`        | `pipeline/workspace/_build/db/` (SQLite DB)                  | GTFS stop_times パターン分析 (terminal-only stops, circular routes, pickup/drop-off types 等)                                         |
+| `analyze-gtfs-routes.ts`            | `pipeline/workspace/data/gtfs/` (`routes.txt`)               | GTFS `routes.txt` の names / route_type / colors / cEMV / continuous fields 等を source ごとに集計する                                |
+| `analyze-odpt-station-timetable.ts` | `pipeline/workspace/data/odpt-json/` (ODPT JSON)             | ODPT StationTimetable データパターン分析 (time field availability, station/direction/calendar coverage 等)                            |
+| `analyze-v2-name-fields.ts`         | `public/data-v2/` (生成済み V2 DataBundle)                   | 定義済みの名称系調査対象について、V2 JSON 上の `nonEmpty` / `empty` 件数を source ごとに集計する                                      |
+| `analyze-v2-insights.ts`            | `public/data-v2/<source>/insights.json` (InsightsBundle)     | InsightsBundle の 4 セクション (serviceGroups / tripPatternStats / tripPatternGeo / stopStats) を source 別に集計する                 |
+| `analyze-v2-global-insights.ts`     | `public/data-v2/global/insights.json` (GlobalInsightsBundle) | GlobalInsightsBundle の `stopGeo` を source 別に集計する (stop 件数、`wp`/`cn` カバレッジ、`nr` 分布)                                 |
+| `summarize-v2-outputs.ts`           | `public/data-v2/<source>/{data,insights,shapes}.json`        | V2 pipeline 出力を bundle 横断で source 別に要約する (file size / gzip size / DataBundle 件数 / InsightsBundle tripsTotal / tripsMax) |
 
 ## `analyze-v2-name-fields.ts`
 
@@ -113,11 +113,10 @@ ODPT Train source ごとの `StationTimetable` JSON を読み、時刻 field / c
     - `periods` ・・・ 期間に関する情報を統合 (feedValidity / servicePeriod / exceptionRange)。 feedInfo + calendar.services + calendar.exceptions の 3 軸を 1 行で横並びにし、 「feedInfo は空でも calendar が補う」等の対応関係が見える
     - `trip-volume` ・・・ InsightsBundle 由来の trip 量 2 値: `tripsTotal` (= 全 sg × pattern の freq 合算 = trips.txt 行数、 day-agnostic) と `tripsMax` (= 最も賑わう sg の便数 = peak day)。 sg 分布が heavy-tailed な source (vagfr 等) で median が破綻していた問題を解消した max 寄り 2 値
     - `shapes-counts` ・・・ ShapesBundle 由来の routes / polylines / points / totalLengthKm (allocation-free Haversine 合計)
-    - `global-insights` ・・・ GlobalInsightsBundle (`global/insights.json`) の raw / gzip サイズと stopGeo entry count (per-source ではない単一行ブロック)
+    - `global-insights` ・・・ GlobalInsightsBundle (`global/insights.json`) の stopGeo カバレッジ ── `wp` (parent_station 距離) / `cn` (300m connectivity、 service group 別) を持つ stop の割合。 per-source ではない単一ブロック。 stopGeo の entry 数自体は `global-insights-counts` に出す
 - `shapes.json` / `insights.json` / `global/insights.json` が存在しない場合は対応欄を `-` で表示する (`0` は空ファイルを意味する別状態)
 - `global-insights` セクションは datasource-id 指定の有無に関わらず常時処理される (single artifact のため source 軸でフィルタする概念がない)
 - byte 表記は 1024 進数 (>=1 MiB は MB、 >=1 KiB は KB、 それ未満は B)
-- median を採るのは、 source によってはサービス日種別が多数 (年末年始臨時便等) 存在しうるため。 中央値は外れ値耐性があり、 列数を膨らませずに「典型値」を出せる
 
 ## 実行方法
 

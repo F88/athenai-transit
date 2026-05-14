@@ -263,13 +263,18 @@ async function main(): Promise<void> {
   }
   const sections = mode.sections as V2OutputsSectionName[];
 
+  // `--list-sections` needs no output files — handle it before any
+  // filesystem access so it works even when public/data-v2 has not
+  // been generated yet.
+  if (mode.kind === 'list' && mode.target === 'sections') {
+    printSectionList();
+    return;
+  }
+
   const prefixes = listSourcePrefixes();
 
   if (mode.kind === 'list') {
-    if (mode.target === 'sections') {
-      printSectionList();
-      return;
-    }
+    // mode.target === 'sources'
     for (const p of prefixes) {
       console.log(p);
     }

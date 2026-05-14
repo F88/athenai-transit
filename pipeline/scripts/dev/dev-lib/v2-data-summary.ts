@@ -387,14 +387,6 @@ function extractTranslationLanguages(translations: DataBundle['translations']['d
 }
 
 /**
- * Build an I18nCoverageSummary from a DataBundle.
- *
- * Counts are raw entry counts of each TranslationsJson map (= number
- * of primary keys, not number of translated languages). Sources
- * with no translations still produce a structurally valid summary
- * (all-zero counts, empty languages array).
- */
-/**
  * Build a StopsSummary from a DataBundle.
  *
  * One pass through the stops array collects every aggregate to keep
@@ -542,6 +534,14 @@ function buildTripPatternsSummary(bundle: DataBundle): TripPatternsSummary {
   };
 }
 
+/**
+ * Build an I18nCoverageSummary from a DataBundle.
+ *
+ * Counts are raw entry counts of each TranslationsJson map (= number
+ * of primary keys, not number of translated languages). Sources
+ * with no translations still produce a structurally valid summary
+ * (all-zero counts, empty languages array).
+ */
 function buildI18nCoverageSummary(bundle: DataBundle): I18nCoverageSummary {
   const t = bundle.translations.data;
   return {

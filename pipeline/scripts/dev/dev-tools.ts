@@ -68,7 +68,7 @@ const SCRIPTS: AnalysisScript[] = [
     name: 'summarize-v2-outputs',
     file: './summarize-v2-outputs.ts',
     description:
-      'V2 出力 (data / insights / shapes) を source 別に横断要約 (file size / gzip / DataBundle 件数 / tripsMedian)',
+      'V2 出力 (data / insights / shapes) を source 別に横断要約 (file size / gzip / DataBundle 件数 / tripsTotal / tripsMax)',
   },
 ];
 
