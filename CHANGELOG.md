@@ -11,6 +11,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
+- Data source catalog: pipeline-generated `data-source-catalog.json` 用の wire-format 型定義を `src/types/data/transit-v2-catalog-json.ts` に追加。Issue #212 の第1段階として、source-level の curated summary と bundle-backed summary を `summary` / `bundles` に整理し、`shapesBundle` を optional、`dataBundle` / `insightsBundle` を required とする catalog schema を導入した。
 - Data source settings dialog: footer に **再起動 (Restart) ボタン** を追加。設定変更後 1 click でアプリを再起動して反映できるようにした (実体は `location.reload()`)。 forced-sources mode (`?sources=`) では disabled。 開発中 notice の文言も 「再起動で反映」 に更新し、 ユーザーが手動で browser refresh するか再起動ボタンを押すかの 2 通りを案内する。
 
 ### Changed
