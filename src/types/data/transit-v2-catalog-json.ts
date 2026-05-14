@@ -26,6 +26,24 @@ export interface DataSourceCatalogMetadata {
   createdAt: string;
 }
 
+/** Metadata for one emitted v2 JSON file. */
+export interface DataSourceCatalogFileMetadata {
+  /** File size in raw bytes on disk. */
+  sizeBytes: number;
+}
+
+/** File-related metadata for one source's emitted bundle files. */
+export interface DataSourceCatalogFilesMetadata {
+  /** Required startup payload: `{prefix}/data.json`. */
+  data: DataSourceCatalogFileMetadata;
+  /** Optional geometry payload: `{prefix}/shapes.json`. */
+  shapes?: DataSourceCatalogFileMetadata;
+  /** Sum of all present file sizes in raw bytes. */
+  /** Optional analytics payload: `{prefix}/insights.json`. */
+  insights?: DataSourceCatalogFileMetadata;
+  totalSizeBytes: number;
+}
+
 /**
  * Pipeline-generated catalog payload for a single source prefix.
  *
@@ -35,8 +53,8 @@ export interface DataSourceCatalogMetadata {
  * license copy intentionally remain outside this schema.
  */
 export interface DataSourceCatalogSource {
-  /** Placeholder to keep the outline type object-shaped until sections are added. */
-  _reserved?: never;
+  /** File-related metadata for this source's emitted v2 bundle files. */
+  files: DataSourceCatalogFilesMetadata;
 }
 
 /**
