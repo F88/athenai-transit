@@ -24,15 +24,19 @@ import { renderTable } from './render-utils';
 /**
  * Sizes of the three v2 bundle files for one source.
  *
- * `shapes` is nullable because some sources do not emit a shapes file
- * (no GTFS shapes.txt and no KSJ railway fallback). Treating a missing
- * file as `null` keeps `0` reserved for "file exists but is empty" —
- * the two states are not equivalent for the data-licensing or
- * pipeline-output audit perspective.
+ * `insights` and `shapes` are nullable because both files are
+ * optional per-source: a source may emit no shapes file (no GTFS
+ * shapes.txt and no KSJ railway fallback), and `insights.json` is an
+ * optional precomputed-analytics bundle. Treating a missing file as
+ * `null` keeps `0` reserved for "file exists but is empty" — the two
+ * states are not equivalent for the data-licensing or pipeline-output
+ * audit perspective. `data` is always present (the only required
+ * bundle file). `total` sums the present files, counting absent ones
+ * as 0.
  */
 export interface FileSizeStats {
   data: number;
-  insights: number;
+  insights: number | null;
   shapes: number | null;
   total: number;
 }
@@ -705,7 +709,7 @@ function renderFileSizeRows(
     ];
   });
   const totalData = sumNumber(results, (result) => pick(result).data);
-  const totalInsights = sumNumber(results, (result) => pick(result).insights);
+  const totalInsights = sumNullableNumber(results, (result) => pick(result).insights);
   const totalShapes = sumNullableNumber(results, (result) => pick(result).shapes);
   const totalAll = sumNumber(results, (result) => pick(result).total);
   rows.push([

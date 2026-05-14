@@ -23,7 +23,7 @@
  *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts --section file-sizes
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
@@ -91,13 +91,6 @@ function readFileIfExists(path: string): Buffer | null {
   return readFileSync(path);
 }
 
-function statSizeIfExists(path: string): number | null {
-  if (!existsSync(path)) {
-    return null;
-  }
-  return statSync(path).size;
-}
-
 interface MeasuredSource {
   dataBundle: DataBundle;
   insights: InsightsBundle | null;
@@ -119,25 +112,29 @@ function measureSource(prefix: string): MeasuredSource {
   const insightsBuffer = readFileIfExists(insightsPath);
   const shapesBuffer = readFileIfExists(shapesPath);
 
+  // Optional files (insights.json / shapes.json) measure as `null`
+  // when absent — `0` is reserved for a file that exists but is
+  // empty. The buffers are already in memory, so `.length` is the
+  // size with no extra filesystem stat.
   const dataSize = dataBuffer.length;
-  const insightsSize = insightsBuffer?.length ?? 0;
-  const shapesSize = statSizeIfExists(shapesPath);
+  const insightsSize = insightsBuffer === null ? null : insightsBuffer.length;
+  const shapesSize = shapesBuffer === null ? null : shapesBuffer.length;
 
   const gzipData = gzipSync(dataBuffer).length;
-  const gzipInsights = insightsBuffer === null ? 0 : gzipSync(insightsBuffer).length;
+  const gzipInsights = insightsBuffer === null ? null : gzipSync(insightsBuffer).length;
   const gzipShapes = shapesBuffer === null ? null : gzipSync(shapesBuffer).length;
 
   const fileSizes: FileSizeStats = {
     data: dataSize,
     insights: insightsSize,
     shapes: shapesSize,
-    total: dataSize + insightsSize + (shapesSize ?? 0),
+    total: dataSize + (insightsSize ?? 0) + (shapesSize ?? 0),
   };
   const gzipSizes: FileSizeStats = {
     data: gzipData,
     insights: gzipInsights,
     shapes: gzipShapes,
-    total: gzipData + gzipInsights + (gzipShapes ?? 0),
+    total: gzipData + (gzipInsights ?? 0) + (gzipShapes ?? 0),
   };
 
   const dataBundle = JSON.parse(dataBuffer.toString('utf-8')) as DataBundle;

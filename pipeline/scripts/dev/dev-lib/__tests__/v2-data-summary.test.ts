@@ -716,4 +716,26 @@ describe('V2_DATA_VOLUME_SECTIONS', () => {
       expect(body).toContain('totals');
     }
   });
+
+  it('file-sizes treats a missing insights.json as null without breaking the totals row', () => {
+    const missing = analyzeV2DataVolume({
+      prefix: 'miss',
+      nameEn: 'Missing Insights',
+      dataBundle: createDataBundle(),
+      fileSizes: { data: 1000, insights: null, shapes: null, total: 1000 },
+      gzipSizes: { data: 400, insights: null, shapes: null, total: 400 },
+    });
+    const present = analyzeV2DataVolume({
+      prefix: 'pres',
+      nameEn: 'Present Insights',
+      dataBundle: createDataBundle(),
+      fileSizes: { data: 1000, insights: 500, shapes: null, total: 1500 },
+      gzipSizes: { data: 400, insights: 200, shapes: null, total: 600 },
+    });
+    const body = V2_DATA_VOLUME_SECTIONS['file-sizes'].render([missing, present]);
+    expect(body).toContain('Missing Insights');
+    // Nullable insights sizes sum cleanly in the totals row: only the
+    // present source's 500 B counts (the missing one contributes 0).
+    expect(body).toContain('500 B');
+  });
 });

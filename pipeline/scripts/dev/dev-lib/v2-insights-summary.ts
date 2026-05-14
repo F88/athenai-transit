@@ -61,6 +61,12 @@ export type InsightsBundleCounts = Record<string, number>;
 export interface V2InsightsSummary {
   prefix: string;
   nameEn: string;
+  /**
+   * Whether `insights.json` was present on disk for this source.
+   * Distinct from "has trip volume": a bundle can be present yet
+   * carry no `tripPatternStats` section, leaving `tripsTotal` null.
+   */
+  bundlePresent: boolean;
   counts: InsightsBundleCounts;
   tripVolume: TripVolumeSummary;
 }
@@ -163,11 +169,16 @@ export function analyzeV2InsightsSummary(input: AnalyzeV2InsightsSummaryInput): 
   return {
     prefix: input.prefix,
     nameEn: input.nameEn,
+    bundlePresent: input.insights !== null,
     counts: buildInsightsBundleCounts(input.insights),
     tripVolume: {
       tripsTotal,
       tripsMax,
-      serviceGroupCount: perGroupTrips.length,
+      // `serviceGroups` is a required InsightsBundle section, so its
+      // length is the authoritative count of groups defined for the
+      // source — distinct from the number of groups that happen to
+      // appear in the optional `tripPatternStats` section.
+      serviceGroupCount: input.insights === null ? 0 : input.insights.serviceGroups.data.length,
     },
   };
 }
@@ -249,7 +260,7 @@ function formatTripVolumeSectionBody(results: V2InsightsSummary[]): string {
     '-',
     String(sumNumber(results, (r) => r.tripVolume.serviceGroupCount)),
   ]);
-  const missing = results.filter((result) => result.tripVolume.tripsTotal === null).length;
+  const missing = results.filter((result) => !result.bundlePresent).length;
   const lines = [
     '### Totals',
     '',

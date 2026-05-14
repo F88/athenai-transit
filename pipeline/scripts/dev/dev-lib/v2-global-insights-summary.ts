@@ -22,9 +22,12 @@ import { type AnalysisSectionDefinition } from './analysis-sections';
 /**
  * Summary for a single GlobalInsightsBundle artifact.
  *
- * All fields are `null` when `global/insights.json` is missing, which
- * is informative on its own (the bundle may not have been generated
- * for the current dataset).
+ * When `global/insights.json` is missing, the nullable scalar fields
+ * (`fileSize`, `gzipSize`, `stopGeoEntries`, `stopsWithWp`) are
+ * `null`, and the collection fields (`counts`, `stopsWithCnByGroup`)
+ * are empty objects — distinct from a present-but-empty bundle. The
+ * absence is informative on its own (the bundle may not have been
+ * generated for the current dataset).
  */
 export interface GlobalInsightsBundleSummary {
   /** Raw byte size of global/insights.json (or null when missing). */
@@ -88,10 +91,13 @@ function countSection(section: unknown): number {
 export function buildGlobalInsightsBundleCounts(
   bundle: GlobalInsightsBundle | null,
 ): GlobalInsightsBundleCounts {
-  const result: GlobalInsightsBundleCounts = { stopGeo: 0 };
+  // A missing bundle yields an empty count set, distinct from a
+  // present-but-empty bundle (which still reports its section keys,
+  // e.g. `stopGeo: 0`).
   if (bundle === null) {
-    return result;
+    return {};
   }
+  const result: GlobalInsightsBundleCounts = {};
   for (const [key, value] of Object.entries(bundle)) {
     if (GLOBAL_INSIGHTS_EXCLUDED_KEYS.has(key)) {
       continue;

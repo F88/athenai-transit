@@ -69,6 +69,7 @@ describe('analyzeV2InsightsSummary', () => {
     expect(result.tripVolume.tripsTotal).toBe(280);
     expect(result.tripVolume.tripsMax).toBe(180);
     expect(result.tripVolume.serviceGroupCount).toBe(3);
+    expect(result.bundlePresent).toBe(true);
   });
 
   it('returns nulls when tripPatternStats is missing', () => {
@@ -79,7 +80,12 @@ describe('analyzeV2InsightsSummary', () => {
     });
     expect(result.tripVolume.tripsTotal).toBeNull();
     expect(result.tripVolume.tripsMax).toBeNull();
-    expect(result.tripVolume.serviceGroupCount).toBe(0);
+    // serviceGroupCount comes from the required `serviceGroups`
+    // section, so it stays accurate even when the optional
+    // `tripPatternStats` section is absent. bundlePresent is still
+    // true — the bundle exists, it just carries no trip stats.
+    expect(result.tripVolume.serviceGroupCount).toBe(3);
+    expect(result.bundlePresent).toBe(true);
   });
 
   it('returns nulls when insights is null', () => {
@@ -90,16 +96,31 @@ describe('analyzeV2InsightsSummary', () => {
     });
     expect(result.tripVolume.tripsTotal).toBeNull();
     expect(result.tripVolume.tripsMax).toBeNull();
+    expect(result.tripVolume.serviceGroupCount).toBe(0);
+    expect(result.bundlePresent).toBe(false);
   });
 
   it('survives a heavy-tailed sg distribution where median would mislead', () => {
     // Simulate vagfr-style: many tiny sg + few large sg. Median across
     // sg sums would collapse toward the tail; tripsMax surfaces the
     // actual peak day, tripsTotal aggregates the whole feed.
+    // serviceGroups must enumerate every group keyed in
+    // tripPatternStats — a valid InsightsBundle keeps the two in sync.
     const result = analyzeV2InsightsSummary({
       prefix: 'src',
       nameEn: 'Src Transit',
       insights: createInsightsBundle({
+        serviceGroups: {
+          v: 1,
+          data: [
+            { key: 'wd', serviceIds: ['svc:wd'] },
+            { key: 'sa', serviceIds: ['svc:sa'] },
+            { key: 'su', serviceIds: ['svc:su'] },
+            { key: 'sp1', serviceIds: ['svc:sp1'] },
+            { key: 'sp2', serviceIds: ['svc:sp2'] },
+            { key: 'sp3', serviceIds: ['svc:sp3'] },
+          ],
+        },
         tripPatternStats: {
           v: 1,
           data: {
@@ -123,6 +144,10 @@ describe('analyzeV2InsightsSummary', () => {
       prefix: 'src',
       nameEn: 'Src Transit',
       insights: createInsightsBundle({
+        serviceGroups: {
+          v: 1,
+          data: [{ key: 'd1000111', serviceIds: ['svc:d1000111'] }],
+        },
         tripPatternStats: {
           v: 1,
           data: { d1000111: { 'src:p1': { freq: 12, rd: [10, 0] } } },

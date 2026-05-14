@@ -41,6 +41,8 @@ describe('analyzeV2GlobalInsightsSummary', () => {
     expect(summary.stopsWithWp).toBe(2);
     // Only s1 has cn[ho].
     expect(summary.stopsWithCnByGroup).toEqual({ ho: 1 });
+    // counts reflects the present stopGeo section (3 entries).
+    expect(summary.counts).toEqual({ stopGeo: 3 });
   });
 
   it('returns null entries and empty coverage when the bundle is missing', () => {
@@ -54,6 +56,9 @@ describe('analyzeV2GlobalInsightsSummary', () => {
     expect(summary.stopGeoEntries).toBeNull();
     expect(summary.stopsWithWp).toBeNull();
     expect(summary.stopsWithCnByGroup).toEqual({});
+    // A missing bundle yields an empty count set — not { stopGeo: 0 },
+    // which would be indistinguishable from a present-but-empty bundle.
+    expect(summary.counts).toEqual({});
   });
 
   it('returns null stopGeoEntries when bundle exists but stopGeo section is omitted', () => {
@@ -86,6 +91,19 @@ describe('V2_GLOBAL_INSIGHTS_SUMMARY_SECTIONS', () => {
     const body = V2_GLOBAL_INSIGHTS_SUMMARY_SECTIONS['global-insights'].render(summary);
     expect(body).toContain('not found');
     expect(body).toContain('-');
+  });
+
+  it('global-insights-counts reports sections=0 when the bundle is absent', () => {
+    const summary = analyzeV2GlobalInsightsSummary({
+      bundle: null,
+      fileSize: null,
+      gzipSize: null,
+    });
+    const body = V2_GLOBAL_INSIGHTS_SUMMARY_SECTIONS['global-insights-counts'].render(summary);
+    // Empty count set → sections=0, with no `stopGeo: 0` line that
+    // would otherwise look like a present-but-empty bundle.
+    expect(body).toContain('sections=0');
+    expect(body).not.toContain('stopGeo');
   });
 
   it("the section's render reports wp and cn[group] coverage with percentages", () => {

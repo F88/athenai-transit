@@ -274,7 +274,10 @@ function formatOverallSummary(rows: V2OutputsRow[], global: GlobalInsightsBundle
     totalStops += row.data.counts.stops ?? 0;
     totalRoutes += row.data.counts.routes ?? 0;
     totalTripPatterns += row.data.counts.tripPatterns ?? 0;
-    if (row.insights.tripVolume.tripsTotal !== null) {
+    // Count actual InsightsBundle presence — not `tripsTotal !== null`,
+    // which would also exclude a present bundle that simply has no
+    // `tripPatternStats` section.
+    if (row.insights.bundlePresent) {
       withInsights += 1;
     }
     if (row.shapes.shapes.routes !== null) {
