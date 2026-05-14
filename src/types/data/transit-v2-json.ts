@@ -37,7 +37,7 @@
  * | ------------------------ | ---------------------------------------------- |
  * | `{prefix}/data.json`     | All data needed at startup (DataBundle)         |
  * | `{prefix}/shapes.json`   | Route shapes, lazy-loaded (ShapesBundle)        |
- * | `{prefix}/insights.json` | Precomputed analytics, optional (InsightsBundle) |
+ * | `{prefix}/insights.json` | Precomputed analytics, lazy-loaded (InsightsBundle) |
  *
  * Global bundle (cross-source):
  *

@@ -26,22 +26,71 @@ export interface DataSourceCatalogMetadata {
   createdAt: string;
 }
 
+/** Entity counts derived from the GlobalInsightsBundle. */
+export interface DataSourceCatalogGlobalInsightsBundleCounts {
+  stopGeo: number;
+}
+
+/** Cross-source summary derived from `global/insights.json`. */
+export interface DataSourceCatalogGlobalInsights extends DataSourceCatalogFileBackedSummary {
+  /** Entity counts derived from the GlobalInsightsBundle. */
+  counts: DataSourceCatalogGlobalInsightsBundleCounts;
+}
+
 /** Metadata for one emitted v2 JSON file. */
 export interface DataSourceCatalogFileMetadata {
   /** File size in raw bytes on disk. */
   sizeBytes: number;
 }
 
-/** File-related metadata for one source's emitted bundle files. */
-export interface DataSourceCatalogFilesMetadata {
-  /** Required startup payload: `{prefix}/data.json`. */
-  data: DataSourceCatalogFileMetadata;
-  /** Optional geometry payload: `{prefix}/shapes.json`. */
-  shapes?: DataSourceCatalogFileMetadata;
-  /** Sum of all present file sizes in raw bytes. */
-  /** Optional analytics payload: `{prefix}/insights.json`. */
-  insights?: DataSourceCatalogFileMetadata;
-  totalSizeBytes: number;
+/** Shared file metadata for one emitted bundle-backed summary. */
+export interface DataSourceCatalogFileBackedSummary {
+  /** File metadata for the emitted JSON bundle. */
+  file: DataSourceCatalogFileMetadata;
+}
+
+/** Entity counts derived from one source's DataBundle. */
+export interface DataSourceCatalogDataBundleCounts {
+  stops: number;
+  routes: number;
+  agency: number;
+  calendar: number;
+  feedInfo: number;
+  timetable: number;
+  tripPatterns: number;
+  translations: number;
+  lookup: number;
+}
+
+/** Entity counts derived from one source's ShapesBundle. */
+export interface DataSourceCatalogShapesBundleCounts {
+  shapes: number;
+}
+
+/** Entity counts derived from one source's InsightsBundle. */
+export interface DataSourceCatalogInsightsBundleCounts {
+  serviceGroups: number;
+  tripPatternStats: number;
+  tripPatternGeo: number;
+  stopStats: number;
+}
+
+/** Summary derived from one source's DataBundle file and contents. */
+export interface DataSourceCatalogDataBundleSummary extends DataSourceCatalogFileBackedSummary {
+  /** Entity counts derived from this source's data.json bundle. */
+  counts: DataSourceCatalogDataBundleCounts;
+}
+
+/** Summary derived from one source's ShapesBundle file and contents. */
+export interface DataSourceCatalogShapesBundleSummary extends DataSourceCatalogFileBackedSummary {
+  /** Entity counts derived from this source's shapes.json bundle. */
+  counts: DataSourceCatalogShapesBundleCounts;
+}
+
+/** Summary derived from one source's InsightsBundle file and contents. */
+export interface DataSourceCatalogInsightsBundleSummary extends DataSourceCatalogFileBackedSummary {
+  /** Entity counts derived from this source's insights.json bundle. */
+  counts: DataSourceCatalogInsightsBundleCounts;
 }
 
 /**
@@ -53,8 +102,12 @@ export interface DataSourceCatalogFilesMetadata {
  * license copy intentionally remain outside this schema.
  */
 export interface DataSourceCatalogSource {
-  /** File-related metadata for this source's emitted v2 bundle files. */
-  files: DataSourceCatalogFilesMetadata;
+  /** Summary derived from this source's data.json bundle. */
+  data: DataSourceCatalogDataBundleSummary;
+  /** Summary derived from this source's shapes.json bundle, when present. */
+  shapes?: DataSourceCatalogShapesBundleSummary;
+  /** Summary derived from this source's insights.json bundle. */
+  insights: DataSourceCatalogInsightsBundleSummary;
 }
 
 /**
@@ -77,8 +130,10 @@ export interface DataSourceCatalogBundle {
   /** Discriminated union tag. */
   kind: 'data-source-catalog';
 
-  /** Whole-bundle metadata such as build timestamp. */
+  /** Whole-bundle artifact metadata such as build timestamp. */
   metadata: BundleSection<1, DataSourceCatalogMetadata>;
   /** Per-source metadata and summary payloads keyed by source prefix. */
   sources: BundleSection<1, Record<string, DataSourceCatalogSource>>;
+  /** Cross-source summary derived from `global/insights.json`. */
+  globalInsights: BundleSection<1, DataSourceCatalogGlobalInsights>;
 }

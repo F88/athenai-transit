@@ -4,7 +4,7 @@
  * Summarise v2 pipeline outputs across all bundle files.
  *
  * Reads `public/data-v2/<source>/data.json`, `insights.json`, and
- * (optionally) `shapes.json` for each source under `public/data-v2/`,
+ * optionally `shapes.json` for each source under `public/data-v2/`,
  * measures raw and gzip-compressed sizes, and emits a per-source
  * text report combining DataBundle entity counts with InsightsBundle
  * trip-volume figures.
@@ -72,8 +72,8 @@ function isV2OutputsSectionName(value: string): value is V2OutputsSectionName {
 /**
  * List source prefixes under public/data-v2 that have a data.json.
  *
- * `insights.json` and `shapes.json` are optional per-source — their
- * absence is informative and surfaces in the report rather than
+ * `insights.json` is required per-source. `shapes.json` remains
+ * optional and its absence surfaces in the report rather than
  * filtering the source out.
  */
 function listSourcePrefixes(): string[] {
@@ -93,7 +93,7 @@ function readFileIfExists(path: string): Buffer | null {
 
 interface MeasuredSource {
   dataBundle: DataBundle;
-  insights: InsightsBundle | null;
+  insights: InsightsBundle;
   shapesBundle: ShapesBundle | null;
   fileSizes: FileSizeStats;
   gzipSizes: FileSizeStats;
@@ -110,18 +110,21 @@ function measureSource(prefix: string): MeasuredSource {
     throw new Error(`data.json not found for prefix: ${prefix} (${dataPath})`);
   }
   const insightsBuffer = readFileIfExists(insightsPath);
+  if (insightsBuffer === null) {
+    throw new Error(`insights.json not found for prefix: ${prefix} (${insightsPath})`);
+  }
   const shapesBuffer = readFileIfExists(shapesPath);
 
-  // Optional files (insights.json / shapes.json) measure as `null`
-  // when absent — `0` is reserved for a file that exists but is
-  // empty. The buffers are already in memory, so `.length` is the
-  // size with no extra filesystem stat.
+  // Optional files (shapes.json) measure as `null` when absent —
+  // `0` is reserved for a file that exists but is empty. The buffers
+  // are already in memory, so `.length` is the size with no extra
+  // filesystem stat.
   const dataSize = dataBuffer.length;
-  const insightsSize = insightsBuffer === null ? null : insightsBuffer.length;
+  const insightsSize = insightsBuffer.length;
   const shapesSize = shapesBuffer === null ? null : shapesBuffer.length;
 
   const gzipData = gzipSync(dataBuffer).length;
-  const gzipInsights = insightsBuffer === null ? null : gzipSync(insightsBuffer).length;
+  const gzipInsights = gzipSync(insightsBuffer).length;
   const gzipShapes = shapesBuffer === null ? null : gzipSync(shapesBuffer).length;
 
   const fileSizes: FileSizeStats = {
@@ -141,15 +144,11 @@ function measureSource(prefix: string): MeasuredSource {
   if (dataBundle.kind !== 'data') {
     throw new Error(`Expected data bundle at ${dataPath} but got kind=${String(dataBundle.kind)}`);
   }
-  let insights: InsightsBundle | null = null;
-  if (insightsBuffer !== null) {
-    const parsed = JSON.parse(insightsBuffer.toString('utf-8')) as InsightsBundle;
-    if (parsed.kind !== 'insights') {
-      throw new Error(
-        `Expected insights bundle at ${insightsPath} but got kind=${String(parsed.kind)}`,
-      );
-    }
-    insights = parsed;
+  const insights = JSON.parse(insightsBuffer.toString('utf-8')) as InsightsBundle;
+  if (insights.kind !== 'insights') {
+    throw new Error(
+      `Expected insights bundle at ${insightsPath} but got kind=${String(insights.kind)}`,
+    );
   }
   let shapesBundle: ShapesBundle | null = null;
   if (shapesBuffer !== null) {
