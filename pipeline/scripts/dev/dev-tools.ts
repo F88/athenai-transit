@@ -64,6 +64,12 @@ const SCRIPTS: AnalysisScript[] = [
     file: './analyze-v2-global-insights.ts',
     description: 'V2 GlobalInsightsBundle 集計 (stopGeo の source 別カバレッジと nr 分布)',
   },
+  {
+    name: 'summarize-v2-outputs',
+    file: './summarize-v2-outputs.ts',
+    description:
+      'V2 出力 (data / insights / shapes) を source 別に横断要約 (file size / gzip / DataBundle 件数 / tripsTotal / tripsMax)',
+  },
 ];
 
 const SCRIPT_DIR = import.meta.dirname;

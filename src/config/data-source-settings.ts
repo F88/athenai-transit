@@ -37,7 +37,7 @@ const settings: SourceGroup[] = [
   {
     id: 'toei-train',
     prefixes: ['toaran'],
-    routeTypes: [0, 1, 2],
+    routeTypes: [0, 2, 1],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
     name: { name: 'Toei Train', names: { ja: '都営交通(鉄道)', en: 'Toei Train' } },
@@ -46,7 +46,7 @@ const settings: SourceGroup[] = [
   {
     id: 'toko',
     prefixes: ['minkuru', 'toaran'],
-    routeTypes: [0, 1, 2, 3],
+    routeTypes: [3, 0, 2, 1],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
     name: { name: 'Toei Transport', names: { ja: '東京都交通局', en: 'Toei Transport' } },
@@ -389,7 +389,7 @@ const settings: SourceGroup[] = [
   {
     id: 'vag-freiburg',
     prefixes: ['vagfr'],
-    routeTypes: [0, 3],
+    routeTypes: [3, 0],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
     name: {
