@@ -1,13 +1,9 @@
 #!/usr/bin/env -S npx tsx
 
 /**
- * Build v2 DataSourceCatalogBundle from targeted sources.
+ * Build v2 DataSourceCatalogBundle from targeted prefixes.
  *
- * This is a placeholder implementation that only writes an empty but
- * schema-valid catalog bundle. It establishes the CLI shape, output path,
- * and atomic-write behavior before the real summary extraction is added.
- *
- * Input:  target list file (`--targets <file>`)
+ * Input:  target list file (`--targets <file>`) containing prefixes
  * Output: pipeline/workspace/_build/data-v2/global/data-source-catalog.json
  *
  * Usage:
@@ -18,9 +14,8 @@
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
-
 import { V2_OUTPUT_DIR } from '../../../src/lib/paths';
+import { buildDataSourceCatalogBundle } from '../../../src/lib/pipeline/app-data-v2/build-data-source-catalog';
 import { writeDataSourceCatalogBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
 import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/pipeline-utils';
 
@@ -36,11 +31,11 @@ function printUsage(): void {
   );
   console.log('');
   console.log('Options:');
-  console.log('  --targets <file>  Target list file (.ts) specifying source names to include');
+  console.log('  --targets <file>  Target list file (.ts) specifying prefixes to include');
   console.log('  --help            Show this help message');
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const arg = parseCliArg({ allowList: false, allowSourceName: false });
 
   if (arg.kind === 'help') {
@@ -54,45 +49,21 @@ async function main(): Promise<void> {
     return;
   }
 
-  const targetSourceNames = await loadTargetFile(arg.path);
+  const targetPrefixes = await loadTargetFile(arg.path);
 
   console.log('=== data-source-catalog [START] ===\n');
-  console.log(`  Targets: ${targetSourceNames.length} sources (${targetSourceNames.join(', ')})`);
+  console.log(`  Targets: ${targetPrefixes.length} prefixes (${targetPrefixes.join(', ')})`);
   console.log(`  Output:  ${GLOBAL_DIR}/data-source-catalog.json`);
   console.log('');
 
   const t0 = performance.now();
 
   try {
-    const bundle: DataSourceCatalogBundle = {
-      bundle_version: 3,
-      kind: 'data-source-catalog',
-      metadata: {
-        v: 1,
-        data: {
-          createdAt: new Date().toISOString(),
-        },
-      },
-      sources: {
-        v: 1,
-        data: {},
-      },
-      globalInsights: {
-        v: 1,
-        data: {
-          file: {
-            sizeBytes: 0,
-          },
-          counts: {
-            stopGeo: 0,
-          },
-        },
-      },
-    };
+    const bundle = await buildDataSourceCatalogBundle(targetPrefixes);
 
     writeDataSourceCatalogBundle(GLOBAL_DIR, bundle);
 
-    console.log('  Placeholder implementation wrote an empty catalog bundle.');
+    console.log(`  Built catalog entries: ${Object.keys(bundle.sources.data).length}`);
     console.log(`  Written: ${GLOBAL_DIR}/data-source-catalog.json`);
   } catch (err) {
     console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
