@@ -25,6 +25,9 @@ function createDataSource(
     loadGlobalInsights() {
       return Promise.resolve(globalInsights);
     },
+    loadDataSourceCatalog() {
+      return Promise.resolve(null);
+    },
   };
 }
 
@@ -114,6 +117,9 @@ describe('enrichStopInsights', () => {
         return Promise.reject(new Error('failed insight load'));
       },
       loadGlobalInsights() {
+        return Promise.resolve(null);
+      },
+      loadDataSourceCatalog() {
         return Promise.resolve(null);
       },
     };

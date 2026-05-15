@@ -49,6 +49,9 @@ describe('fetchSourcesV2', () => {
       loadGlobalInsights() {
         return Promise.resolve(null);
       },
+      loadDataSourceCatalog() {
+        return Promise.resolve(null);
+      },
     };
 
     const result = await fetchSourcesV2(['alpha', 'beta'], dataSource);

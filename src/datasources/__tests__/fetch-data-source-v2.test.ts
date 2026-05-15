@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FetchDataSourceV2, validateBasePath } from '../fetch-data-source-v2';
 
 // ---------------------------------------------------------------------------
@@ -48,6 +48,17 @@ function makeInsightsBundle() {
 /** Create a minimal valid GlobalInsightsBundle JSON. */
 function makeGlobalInsightsBundle() {
   return { bundle_version: 3, kind: 'global-insights' };
+}
+
+/** Create a minimal valid DataSourceCatalogBundle JSON. */
+function makeDataSourceCatalogBundle() {
+  return {
+    bundle_version: 3,
+    kind: 'data-source-catalog',
+    metadata: { v: 1, data: { createdAt: '2026-05-15T00:00:00Z' } },
+    sources: { v: 1, data: {} },
+    globalInsights: { v: 1, data: { file: { sizeBytes: 0 }, counts: { stopGeo: 0 } } },
+  };
 }
 
 /** Create a mock Response with JSON body and application/json content-type. */
@@ -280,6 +291,49 @@ describe('FetchDataSourceV2', () => {
       await expect(ds.loadGlobalInsights()).resolves.not.toBeNull();
       expect(fetchMock).toHaveBeenCalledWith(
         '/data-v2/global/insights.json',
+        expect.objectContaining({ signal: expect.any(AbortSignal) as AbortSignal }),
+      );
+    });
+  });
+
+  // --- loadDataSourceCatalog (optional) ---
+
+  describe('loadDataSourceCatalog', () => {
+    it('returns DataSourceCatalogBundle for a valid response', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(makeDataSourceCatalogBundle()));
+      const ds = new FetchDataSourceV2();
+      const result = await ds.loadDataSourceCatalog();
+
+      expect(result).not.toBeNull();
+      expect(result!.kind).toBe('data-source-catalog');
+    });
+
+    it('returns null on 404', async () => {
+      fetchMock.mockResolvedValueOnce(notFoundResponse());
+      const ds = new FetchDataSourceV2();
+      expect(await ds.loadDataSourceCatalog()).toBeNull();
+    });
+
+    it('throws on invalid bundle_version', async () => {
+      const bad = { ...makeDataSourceCatalogBundle(), bundle_version: 2 };
+      fetchMock.mockResolvedValueOnce(jsonResponse(bad));
+      const ds = new FetchDataSourceV2();
+      await expect(ds.loadDataSourceCatalog()).rejects.toThrow('invalid bundle_version');
+    });
+
+    it('throws on invalid bundle kind', async () => {
+      const bad = { ...makeDataSourceCatalogBundle(), kind: 'data' };
+      fetchMock.mockResolvedValueOnce(jsonResponse(bad));
+      const ds = new FetchDataSourceV2();
+      await expect(ds.loadDataSourceCatalog()).rejects.toThrow('invalid bundle kind');
+    });
+
+    it('fetches from global/data-source-catalog.json', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse(makeDataSourceCatalogBundle()));
+      const ds = new FetchDataSourceV2();
+      await expect(ds.loadDataSourceCatalog()).resolves.not.toBeNull();
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/data-v2/global/data-source-catalog.json',
         expect.objectContaining({ signal: expect.any(AbortSignal) as AbortSignal }),
       );
     });

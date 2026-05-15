@@ -4,10 +4,11 @@
  * Loads v2 bundle JSON data via HTTP fetch.
  *
  * Bundle file layout (relative to {@link BASE_PATH}):
- * - `{prefix}/data.json`     — required at startup
- * - `{prefix}/shapes.json`   — lazy-loaded
- * - `{prefix}/insights.json` — lazy-loaded
- * - `global/insights.json`   — lazy-loaded, cross-source
+ * - `{prefix}/data.json`              — required at startup
+ * - `{prefix}/shapes.json`            — lazy-loaded
+ * - `{prefix}/insights.json`          — lazy-loaded
+ * - `global/insights.json`            — lazy-loaded, cross-source
+ * - `global/data-source-catalog.json` — derived per-source metadata, optional
  *
  * Each bundle is validated for `bundle_version` and `kind` after parsing.
  * Required bundles throw on failure; optional bundles return `null`.
@@ -16,6 +17,7 @@
  * (e.g. Vercel returning 200 + HTML for missing static files).
  */
 
+import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
 import type {
   DataBundle,
   GlobalInsightsBundle,
@@ -200,6 +202,18 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
 
     validateBundleEnvelope(result.json, 'global-insights', path);
     return result.json as GlobalInsightsBundle;
+  }
+
+  /** {@inheritDoc TransitDataSourceV2.loadDataSourceCatalog} */
+  async loadDataSourceCatalog(): Promise<DataSourceCatalogBundle | null> {
+    const path = 'global/data-source-catalog.json';
+    const result = await this.fetchBundle(path, true);
+    if (!result) {
+      return null;
+    }
+
+    validateBundleEnvelope(result.json, 'data-source-catalog', path);
+    return result.json as DataSourceCatalogBundle;
   }
 
   /**

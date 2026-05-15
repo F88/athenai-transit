@@ -6,13 +6,9 @@
  * swappable by providing different {@link TransitRepository} implementations.
  */
 
+import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
+
 import type { Bounds, LatLng, RouteShape } from '../types/app/map';
-import type { Agency, AppRouteTypeValue, Stop } from '../types/app/transit';
-import type {
-  SourceMeta,
-  StopWithMeta,
-  TripInspectionGroupQuery,
-} from '../types/app/transit-composed';
 import type {
   CollectionResult,
   Result,
@@ -21,7 +17,13 @@ import type {
   TripSnapshotResult,
   UpcomingTimetableResult,
 } from '../types/app/repository';
-import type { TripLocator } from '../types/app/transit-composed';
+import type { Agency, AppRouteTypeValue, Stop } from '../types/app/transit';
+import type {
+  SourceMeta,
+  StopWithMeta,
+  TripInspectionGroupQuery,
+  TripLocator,
+} from '../types/app/transit-composed';
 
 /**
  * Maximum number of stops that a capped stop query can return.
@@ -538,4 +540,38 @@ export interface TransitRepository {
    * @returns Number of trips in the matched service day, or undefined.
    */
   resolveRouteFreq(routeId: string, serviceDate: Date): number | undefined;
+
+  /**
+   * Returns the data-source catalog bundle, or `null` when unavailable.
+   *
+   * The catalog is a pipeline-derived global artifact (built from the
+   * per-source v2 bundles) keyed by source prefix. It carries summary
+   * facts such as feed validity, agencies, route-type counts, stop
+   * location-type counts, max trips per day, and shape coverage.
+   *
+   * ### Scope vs `getAllSourceMeta()`
+   * The catalog's `sources.data` is keyed by source prefix as of the
+   * pipeline build time, and is independent of which sources are loaded
+   * into this repository instance. As a result, its key set may differ
+   * from {@link getAllSourceMeta} (which describes loaded sources only).
+   * Consumers that need to filter to loaded sources should intersect
+   * the catalog key set with their own context (e.g. `loadResult.loaded`).
+   *
+   * ### Future direction (Phase 2)
+   * {@link getAllSourceMeta} is expected to be deprecated and removed
+   * in a follow-up phase once consumers migrate to the catalog as the
+   * single source of per-source metadata.
+   *
+   * ### Error conditions
+   * `null` is returned when the catalog bundle is unavailable, including:
+   * - fetch error (404, network, timeout, non-JSON, parse error)
+   * - bundle envelope mismatch (wrong bundle_version or kind), caught at
+   *   the repository factory layer and normalized to `null`
+   *
+   * Catalog absence does not affect transit query — only catalog-related
+   * UI degrades.
+   *
+   * @returns The catalog bundle when available, otherwise `null`.
+   */
+  getDataSourceCatalog(): DataSourceCatalogBundle | null;
 }

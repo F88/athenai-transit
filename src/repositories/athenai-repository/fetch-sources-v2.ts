@@ -4,11 +4,21 @@ import type { LoadResult } from './types';
 
 const logger = createLogger('AthenaiRepositoryV2');
 
+export interface FetchSourcesV2Result {
+  /** Successfully loaded source data, in input prefix order. */
+  sources: SourceDataV2[];
+  /** Per-prefix success/failure breakdown. */
+  loadResult: LoadResult;
+  /** Elapsed time in milliseconds for the parallel fetch. */
+  ms: number;
+}
+
 /** Fetch all v2 data bundles in parallel, tracking successes and failures. */
 export async function fetchSourcesV2(
   prefixes: string[],
   dataSource: TransitDataSourceV2,
-): Promise<{ sources: SourceDataV2[]; loadResult: LoadResult }> {
+): Promise<FetchSourcesV2Result> {
+  const start = performance.now();
   const results = await Promise.allSettled(prefixes.map((prefix) => dataSource.loadData(prefix)));
 
   const sources: SourceDataV2[] = [];
@@ -28,5 +38,5 @@ export async function fetchSourcesV2(
     }
   }
 
-  return { sources, loadResult: { loaded, failed } };
+  return { sources, loadResult: { loaded, failed }, ms: performance.now() - start };
 }
