@@ -35,27 +35,6 @@ export interface DataSourceCatalogFileBackedSummary {
   };
 }
 
-/** Summary derived from one source's InsightsBundle file and contents. */
-export interface DataSourceCatalogInsightsBundleSummary extends DataSourceCatalogFileBackedSummary {
-  /** Entity counts derived from one source's InsightsBundle. */
-  counts: {
-    serviceGroups: number;
-    tripPatternStats: number;
-    tripPatternGeo: number;
-    stopStats: number;
-  };
-}
-
-/** Emitted bundle-backed summaries grouped by bundle type for one source. */
-export interface DataSourceCatalogSourceBundles {
-  /** Summary derived from this source's data.json bundle. */
-  dataBundle: DataSourceCatalogDataBundleSummary;
-  /** Summary derived from this source's insights.json bundle. */
-  insightsBundle: DataSourceCatalogInsightsBundleSummary;
-  /** Summary derived from this source's shapes.json bundle, when present. */
-  shapesBundle?: DataSourceCatalogShapesBundleSummary;
-}
-
 /** Summary derived from one source's DataBundle file and contents. */
 export interface DataSourceCatalogDataBundleSummary extends DataSourceCatalogFileBackedSummary {
   /** Entity counts derived from one source's DataBundle. */
@@ -69,6 +48,17 @@ export interface DataSourceCatalogDataBundleSummary extends DataSourceCatalogFil
     tripPatterns: number;
     translations: number;
     lookup: number;
+  };
+}
+
+/** Summary derived from one source's InsightsBundle file and contents. */
+export interface DataSourceCatalogInsightsBundleSummary extends DataSourceCatalogFileBackedSummary {
+  /** Entity counts derived from one source's InsightsBundle. */
+  counts: {
+    serviceGroups: number;
+    tripPatternStats: number;
+    tripPatternGeo: number;
+    stopStats: number;
   };
 }
 
@@ -88,6 +78,16 @@ export interface DataSourceCatalogShapesBundleSummary extends DataSourceCatalogF
     /** Sum of segment lengths in km across every polyline. */
     totalLengthKm: number;
   };
+}
+
+/** Emitted bundle-backed summaries grouped by bundle type for one source. */
+export interface DataSourceCatalogSourceBundles {
+  /** Summary derived from this source's data.json bundle. */
+  dataBundle: DataSourceCatalogDataBundleSummary;
+  /** Summary derived from this source's insights.json bundle. */
+  insightsBundle: DataSourceCatalogInsightsBundleSummary;
+  /** Summary derived from this source's shapes.json bundle, when present. */
+  shapesBundle?: DataSourceCatalogShapesBundleSummary;
 }
 
 /** Nullable date range derived from feedInfo or calendar data. */
@@ -151,7 +151,7 @@ export interface DataSourceCatalogSourceSummary {
   };
 }
 
-export interface DataSourceCatalogGlobalInsights extends DataSourceCatalogFileBackedSummary {
+export interface DataSourceCatalogGlobalInsightsSummary extends DataSourceCatalogFileBackedSummary {
   /** Entity counts derived from the GlobalInsightsBundle. */
   counts: {
     /** Cross-source summary derived from `global/insights.json`. */
@@ -199,5 +199,5 @@ export interface DataSourceCatalogBundle {
   /** Per-source metadata and summary payloads keyed by source prefix. */
   sources: BundleSection<1, Record<string, DataSourceCatalogSource>>;
   /** Cross-source summary derived from `global/insights.json`. */
-  globalInsights: BundleSection<1, DataSourceCatalogGlobalInsights>;
+  globalInsights: BundleSection<1, DataSourceCatalogGlobalInsightsSummary>;
 }
