@@ -16,7 +16,8 @@
  * this module does not perform I/O.
  */
 
-import type { GlobalInsightsBundle } from '../../../../src/types/data/transit-v2-json';
+import type { GlobalInsightsBundle } from '@contracts/data/transit-v2-json';
+
 import { type AnalysisSectionDefinition } from './analysis-sections';
 
 /**

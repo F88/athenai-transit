@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { DataBundle } from '../../../../../../src/types/data/transit-v2-json';
+import type { DataBundle } from '@contracts/data/transit-v2-json';
 import { extractStopEntries, findSundayServiceIds } from '../build-global-stop-entries';
 
 // ---------------------------------------------------------------------------

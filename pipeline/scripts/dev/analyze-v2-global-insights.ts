@@ -17,18 +17,19 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { GlobalInsightsBundle } from '../../../src/types/data/transit-v2-json';
+import type { GlobalInsightsBundle } from '@contracts/data/transit-v2-json';
+
+import { PIPELINE_ROOT } from '../../src/lib/paths';
+import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import { formatAnalysisSectionList } from './dev-lib/analysis-sections';
+import { parseArgsForSectionsOnly } from './dev-lib/parse-args';
 import {
   analyzeGlobalInsightsBundle,
   formatGlobalInsightsAnalysis,
-  V2_GLOBAL_INSIGHTS_SECTIONS,
   V2_GLOBAL_INSIGHTS_SECTION_NAMES,
+  V2_GLOBAL_INSIGHTS_SECTIONS,
   type V2GlobalInsightsSectionName,
 } from './dev-lib/v2-global-insights-analysis';
-import { formatAnalysisSectionList } from './dev-lib/analysis-sections';
-import { parseArgsForSectionsOnly } from './dev-lib/parse-args';
-import { PIPELINE_ROOT } from '../../src/lib/paths';
-import { runMain } from '../../src/lib/pipeline/pipeline-utils';
 
 const PUBLIC_V2_DIR = join(PIPELINE_ROOT, '..', 'public', 'data-v2');
 const GLOBAL_INSIGHTS_PATH = join(PUBLIC_V2_DIR, 'global', 'insights.json');

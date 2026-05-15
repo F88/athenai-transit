@@ -13,9 +13,9 @@ import type {
   CalendarExceptionJson,
   CalendarJson,
   CalendarServiceJson,
-} from '../../../../../src/types/data/transit-json';
-import type { ServiceGroupEntry } from '../../../../../src/types/data/transit-v2-json';
-import type { TimetableGroupV2Json } from '../../../../../src/types/data/transit-v2-json';
+} from '@contracts/data/transit-json';
+import type { ServiceGroupEntry } from '@contracts/data/transit-v2-json';
+import type { TimetableGroupV2Json } from '@contracts/data/transit-v2-json';
 import { parseGtfsDate } from '../../gtfs-date-utils';
 
 // ---------------------------------------------------------------------------

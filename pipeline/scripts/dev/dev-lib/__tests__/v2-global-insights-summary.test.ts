@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import type { GlobalInsightsBundle } from '@contracts/data/transit-v2-json';
+
 import {
+  analyzeV2GlobalInsightsSummary,
   V2_GLOBAL_INSIGHTS_SUMMARY_SECTION_NAMES,
   V2_GLOBAL_INSIGHTS_SUMMARY_SECTIONS,
-  analyzeV2GlobalInsightsSummary,
 } from '../v2-global-insights-summary';
-import type { GlobalInsightsBundle } from '../../../../../src/types/data/transit-v2-json';
 
 /**
  * Smoke tests for the GlobalInsightsBundle sub lib.

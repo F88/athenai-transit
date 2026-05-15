@@ -19,7 +19,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
+import type { DataBundle } from '@contracts/data/transit-v2-json';
+
 import { V2_OUTPUT_DIR } from '../../../src/lib/paths';
 import {
   extractStopEntries,
@@ -27,8 +28,8 @@ import {
 } from '../../../src/lib/pipeline/app-data-v2/build-global-stop-entries';
 import type { StopEntry } from '../../../src/lib/pipeline/app-data-v2/build-stop-geo';
 import {
-  buildStopGeo,
   buildParentStopGeo,
+  buildStopGeo,
 } from '../../../src/lib/pipeline/app-data-v2/build-stop-geo';
 import { writeGlobalInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
 import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/pipeline-utils';

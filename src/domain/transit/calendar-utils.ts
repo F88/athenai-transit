@@ -7,7 +7,7 @@
  * All functions are stateless and side-effect free.
  */
 
-import type { CalendarExceptionJson, CalendarServiceJson } from '../../types/data/transit-json';
+import type { CalendarExceptionJson, CalendarServiceJson } from '@contracts/data/transit-json';
 
 /**
  * Find the index of the first element >= target in a sorted number array.

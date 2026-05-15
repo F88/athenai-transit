@@ -6,7 +6,7 @@
 
 import type Database from 'better-sqlite3';
 
-import type { CalendarJson } from '../../../../../../src/types/data/transit-json';
+import type { CalendarJson } from '@contracts/data/transit-json';
 
 /**
  * Extract calendar services and exceptions from the GTFS database.

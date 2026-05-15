@@ -2,7 +2,7 @@
  * Build RouteV2Json[] from ODPT Railway data.
  */
 
-import type { RouteV2Json } from '../../../../../../src/types/data/transit-v2-json';
+import type { RouteV2Json } from '@contracts/data/transit-v2-json';
 import type { OdptRailway } from '../../../../types/odpt-train';
 import type { Provider } from '../../../../types/resource-common';
 

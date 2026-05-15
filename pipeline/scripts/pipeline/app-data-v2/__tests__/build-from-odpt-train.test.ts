@@ -9,14 +9,8 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
-import type {
-  OdptRailway,
-  OdptStation,
-  OdptStationOrder,
-  OdptStationTimetable,
-} from '../../../../src/types/odpt-train';
-import type { Provider } from '../../../../src/types/resource-common';
+import type { DataBundle } from '@contracts/data/transit-v2-json';
+
 import { buildAgencyV2 } from '../../../../src/lib/pipeline/app-data-v2/odpt-common/build-agency';
 import { buildFeedInfoV2 } from '../../../../src/lib/pipeline/app-data-v2/odpt-common/build-feed-info';
 import { buildCalendarV2 } from '../../../../src/lib/pipeline/app-data-v2/odpt-train/build-calendar';
@@ -24,6 +18,13 @@ import { buildRoutesV2 } from '../../../../src/lib/pipeline/app-data-v2/odpt-tra
 import { buildStopsV2 } from '../../../../src/lib/pipeline/app-data-v2/odpt-train/build-stops';
 import { buildTripPatternsAndTimetableFromOdpt } from '../../../../src/lib/pipeline/app-data-v2/odpt-train/build-timetable';
 import { buildTranslationsV2 } from '../../../../src/lib/pipeline/app-data-v2/odpt-train/build-translations';
+import type {
+  OdptRailway,
+  OdptStation,
+  OdptStationOrder,
+  OdptStationTimetable,
+} from '../../../../src/types/odpt-train';
+import type { Provider } from '../../../../src/types/resource-common';
 
 const TEST_PROVIDER: Provider = {
   name: {

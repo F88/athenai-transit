@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { TransitDataSourceV2 } from '../../../datasources/transit-data-source-v2';
-import type { GlobalInsightsBundle, InsightsBundle } from '../../../types/data/transit-v2-json';
+
+import type { GlobalInsightsBundle, InsightsBundle } from '@contracts/data/transit-v2-json';
+
 import { mergeSourcesV2 } from '..';
+import type { TransitDataSourceV2 } from '../../../datasources/transit-data-source-v2';
 import { enrichStopInsights } from '../enrich-stop-insights';
 import type { StopInsightsEntry } from '../types';
 import { createFixtureV2, createInsightsFixtureV2 } from './fixtures/test-data-source-v2';

@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { StopGeoJson } from '../../../../../../src/types/data/transit-v2-json';
+import type { StopGeoJson } from '@contracts/data/transit-v2-json';
 import type { StopEntry } from '../build-stop-geo';
 import { buildStopGeo, buildParentStopGeo } from '../build-stop-geo';
 

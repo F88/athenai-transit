@@ -6,7 +6,7 @@
  * logic as GTFS sources (weekday + calendar_dates).
  */
 
-import type { CalendarJson } from '../../../../../../src/types/data/transit-json';
+import type { CalendarJson } from '@contracts/data/transit-json';
 import type { OdptStationTimetable } from '../../../../types/odpt-train';
 import {
   buildHolidayExceptions,

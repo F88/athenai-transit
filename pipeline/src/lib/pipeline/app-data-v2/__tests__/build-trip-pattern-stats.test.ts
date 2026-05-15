@@ -10,7 +10,7 @@ import type {
   ServiceGroupEntry,
   TimetableGroupV2Json,
   TripPatternJson,
-} from '../../../../../../src/types/data/transit-v2-json';
+} from '@contracts/data/transit-v2-json';
 import { buildTripPatternStats } from '../build-trip-pattern-stats';
 
 // ---------------------------------------------------------------------------

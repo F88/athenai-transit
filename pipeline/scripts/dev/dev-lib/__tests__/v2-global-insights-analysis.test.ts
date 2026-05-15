@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import type { GlobalInsightsBundle } from '@contracts/data/transit-v2-json';
+
 import {
   V2_GLOBAL_INSIGHTS_SECTION_NAMES,
   analyzeGlobalInsightsBundle,
   formatGlobalInsightsAnalysis,
 } from '../v2-global-insights-analysis';
-import type { GlobalInsightsBundle } from '../../../../../src/types/data/transit-v2-json';
 
 /**
  * Smoke tests only. See the TSDoc at the top of the source module for

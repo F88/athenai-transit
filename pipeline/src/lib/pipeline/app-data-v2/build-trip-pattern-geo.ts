@@ -13,7 +13,7 @@ import type {
   StopV2Json,
   TripPatternGeoJson,
   TripPatternJson,
-} from '../../../../../src/types/data/transit-v2-json';
+} from '@contracts/data/transit-v2-json';
 import { getDistanceKmLight } from '../../geo-utils';
 
 /**

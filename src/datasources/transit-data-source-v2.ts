@@ -18,7 +18,7 @@ import type {
   GlobalInsightsBundle,
   InsightsBundle,
   ShapesBundle,
-} from '../types/data/transit-v2-json';
+} from '@contracts/data/transit-v2-json';
 
 /**
  * Raw data for a single v2 source, as loaded from the data bundle.

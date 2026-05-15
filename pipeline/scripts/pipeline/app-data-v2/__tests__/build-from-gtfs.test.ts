@@ -12,7 +12,8 @@ import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
+import type { DataBundle } from '@contracts/data/transit-v2-json';
+
 import { writeDataBundle } from '../../../../src/lib/pipeline/app-data-v2/bundle-writer';
 import { extractAgenciesV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-agencies';
 import { extractCalendarV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-calendar';

@@ -17,7 +17,8 @@
  * are pure and deterministic.
  */
 
-import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
+import type { DataBundle } from '@contracts/data/transit-v2-json';
+
 import { type AnalysisSectionDefinition } from './analysis-sections';
 import { renderTable } from './render-utils';
 

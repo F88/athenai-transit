@@ -7,7 +7,7 @@
 
 import type Database from 'better-sqlite3';
 
-import type { TranslationsJson } from '../../../../../../src/types/data/transit-json';
+import type { TranslationsJson } from '@contracts/data/transit-json';
 
 // ---------------------------------------------------------------------------
 // Helpers

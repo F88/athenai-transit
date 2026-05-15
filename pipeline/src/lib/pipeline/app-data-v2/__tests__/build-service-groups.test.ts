@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import type { CalendarJson } from '../../../../../../src/types/data/transit-json';
+import type { CalendarJson } from '@contracts/data/transit-json';
 import { buildServiceGroups } from '../build-service-groups';
 
 // ---------------------------------------------------------------------------

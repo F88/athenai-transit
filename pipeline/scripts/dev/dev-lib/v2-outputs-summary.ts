@@ -37,38 +37,39 @@ import type {
   GlobalInsightsBundle,
   InsightsBundle,
   ShapesBundle,
-} from '../../../../src/types/data/transit-v2-json';
+} from '@contracts/data/transit-v2-json';
+
 import {
   analyzeV2DataVolume,
   formatBytes,
   formatCompressionRatio,
-  V2_DATA_VOLUME_SECTIONS,
   V2_DATA_VOLUME_SECTION_NAMES,
+  V2_DATA_VOLUME_SECTIONS,
   type FileSizeStats,
   type V2DataVolumeSectionName,
   type V2DataVolumeStats,
 } from './v2-data-summary';
 import {
+  analyzeV2GlobalInsightsSummary,
+  V2_GLOBAL_INSIGHTS_SUMMARY_SECTION_NAMES,
+  V2_GLOBAL_INSIGHTS_SUMMARY_SECTIONS,
+  type GlobalInsightsBundleSummary,
+  type V2GlobalInsightsSummarySectionName,
+} from './v2-global-insights-summary';
+import {
   analyzeV2InsightsSummary,
-  V2_INSIGHTS_SUMMARY_SECTIONS,
   V2_INSIGHTS_SUMMARY_SECTION_NAMES,
+  V2_INSIGHTS_SUMMARY_SECTIONS,
   type V2InsightsSummary,
   type V2InsightsSummarySectionName,
 } from './v2-insights-summary';
 import {
   analyzeV2ShapesSummary,
-  V2_SHAPES_SUMMARY_SECTIONS,
   V2_SHAPES_SUMMARY_SECTION_NAMES,
+  V2_SHAPES_SUMMARY_SECTIONS,
   type V2ShapesSummary,
   type V2ShapesSummarySectionName,
 } from './v2-shapes-summary';
-import {
-  analyzeV2GlobalInsightsSummary,
-  V2_GLOBAL_INSIGHTS_SUMMARY_SECTIONS,
-  V2_GLOBAL_INSIGHTS_SUMMARY_SECTION_NAMES,
-  type GlobalInsightsBundleSummary,
-  type V2GlobalInsightsSummarySectionName,
-} from './v2-global-insights-summary';
 
 /** Union of section names contributed by every sub lib. */
 export type V2OutputsSectionName =

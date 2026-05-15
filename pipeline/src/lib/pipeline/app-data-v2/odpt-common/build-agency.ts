@@ -7,7 +7,7 @@
  * on the App side via agency-attributes.ts.
  */
 
-import type { AgencyV2Json } from '../../../../../../src/types/data/transit-v2-json';
+import type { AgencyV2Json } from '@contracts/data/transit-v2-json';
 import type { Provider } from '../../../../types/resource-common';
 
 /**

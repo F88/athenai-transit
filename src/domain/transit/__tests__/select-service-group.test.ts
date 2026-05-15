@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import type { ServiceGroupEntry } from '@contracts/data/transit-v2-json';
+
+import { describe, expect, it } from 'vitest';
 import { selectServiceGroup } from '../select-service-group';
-import type { ServiceGroupEntry } from '../../../types/data/transit-v2-json';
 
 // Typical minkuru service groups: weekday, saturday, sunday
 const groups: ServiceGroupEntry[] = [

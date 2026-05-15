@@ -16,14 +16,15 @@
  * (e.g. Vercel returning 200 + HTML for missing static files).
  */
 
-import { createLogger } from '../lib/logger';
-import { sanitizeDirName } from '../utils/sanitize-dir-name';
 import type {
   DataBundle,
   GlobalInsightsBundle,
   InsightsBundle,
   ShapesBundle,
-} from '../types/data/transit-v2-json';
+} from '@contracts/data/transit-v2-json';
+
+import { createLogger } from '../lib/logger';
+import { sanitizeDirName } from '../utils/sanitize-dir-name';
 import type { SourceDataV2, TransitDataSourceV2 } from './transit-data-source-v2';
 
 const logger = createLogger('FetchDataSourceV2');

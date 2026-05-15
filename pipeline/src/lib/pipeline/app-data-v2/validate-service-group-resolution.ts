@@ -8,15 +8,12 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type {
-  CalendarExceptionJson,
-  CalendarServiceJson,
-} from '../../../../../src/types/data/transit-json';
+import type { CalendarExceptionJson, CalendarServiceJson } from '@contracts/data/transit-json';
 import type {
   DataBundle,
   InsightsBundle,
   ServiceGroupEntry,
-} from '../../../../../src/types/data/transit-v2-json';
+} from '@contracts/data/transit-v2-json';
 import { parseGtfsDate } from '../../gtfs-date-utils';
 import type { ValidationIssue } from './validate-shapes';
 

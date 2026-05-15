@@ -10,7 +10,7 @@
 
 import type Database from 'better-sqlite3';
 
-import type { ShapePointV2 } from '../../../../src/types/data/transit-v2-json';
+import type { ShapePointV2 } from '@contracts/data/transit-v2-json';
 
 /**
  * Extract route shapes from GTFS shapes.txt data.

@@ -2,7 +2,7 @@
  * Build StopV2Json[] from ODPT Station data.
  */
 
-import type { StopV2Json } from '../../../../../../src/types/data/transit-v2-json';
+import type { StopV2Json } from '@contracts/data/transit-v2-json';
 import type { OdptStation, OdptStationOrder } from '../../../../types/odpt-train';
 
 /**

@@ -15,7 +15,7 @@ import type {
   StopStatsJson,
   TimetableGroupV2Json,
   TripPatternJson,
-} from '../../../../../src/types/data/transit-v2-json';
+} from '@contracts/data/transit-v2-json';
 
 // ---------------------------------------------------------------------------
 // Public API

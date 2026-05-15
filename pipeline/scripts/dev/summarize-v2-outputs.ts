@@ -23,7 +23,7 @@
  *   npx tsx pipeline/scripts/dev/summarize-v2-outputs.ts --section file-sizes
  */
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
@@ -32,19 +32,9 @@ import type {
   GlobalInsightsBundle,
   InsightsBundle,
   ShapesBundle,
-} from '../../../src/types/data/transit-v2-json';
-import {
-  analyzeV2GlobalSummary,
-  analyzeV2Outputs,
-  formatV2OutputsAnalysis,
-  V2_OUTPUTS_SECTION_DESCRIPTIONS,
-  V2_OUTPUTS_SECTION_NAMES,
-  type V2OutputsRow,
-  type V2OutputsSectionName,
-} from './dev-lib/v2-outputs-summary';
-import type { FileSizeStats } from './dev-lib/v2-data-summary';
-import type { GlobalInsightsBundleSummary } from './dev-lib/v2-global-insights-summary';
-import { truncateSectionDescription } from './dev-lib/analysis-sections';
+} from '@contracts/data/transit-v2-json';
+import { PIPELINE_ROOT } from '../../src/lib/paths';
+import { runMain } from '../../src/lib/pipeline/pipeline-utils';
 import {
   listGtfsSourceNames,
   loadAllGtfsSources,
@@ -55,9 +45,19 @@ import {
   loadAllOdptJsonSources,
   loadOdptJsonSource,
 } from '../../src/lib/resources/load-odpt-json-sources';
-import { PIPELINE_ROOT } from '../../src/lib/paths';
-import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import { truncateSectionDescription } from './dev-lib/analysis-sections';
 import { parseArgsForMultiSources } from './dev-lib/parse-args';
+import type { FileSizeStats } from './dev-lib/v2-data-summary';
+import type { GlobalInsightsBundleSummary } from './dev-lib/v2-global-insights-summary';
+import {
+  analyzeV2GlobalSummary,
+  analyzeV2Outputs,
+  formatV2OutputsAnalysis,
+  V2_OUTPUTS_SECTION_DESCRIPTIONS,
+  V2_OUTPUTS_SECTION_NAMES,
+  type V2OutputsRow,
+  type V2OutputsSectionName,
+} from './dev-lib/v2-outputs-summary';
 
 const PUBLIC_V2_DIR = join(PIPELINE_ROOT, '..', 'public', 'data-v2');
 

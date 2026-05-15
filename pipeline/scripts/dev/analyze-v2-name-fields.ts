@@ -18,11 +18,12 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { DataBundle } from '../../../src/types/data/transit-v2-json';
-import type { NameFieldAnalysisReport, SourceAnalysis } from './dev-lib/v2-name-fields-analysis';
-import * as nameFieldAnalysisModule from './dev-lib/v2-name-fields-analysis';
+import type { DataBundle } from '@contracts/data/transit-v2-json';
+
 import { PIPELINE_ROOT, V2_OUTPUT_DIR } from '../../src/lib/paths';
 import { runMain } from '../../src/lib/pipeline/pipeline-utils';
+import type { NameFieldAnalysisReport, SourceAnalysis } from './dev-lib/v2-name-fields-analysis';
+import * as nameFieldAnalysisModule from './dev-lib/v2-name-fields-analysis';
 
 const PUBLIC_V2_DIR = join(PIPELINE_ROOT, '..', 'public', 'data-v2');
 

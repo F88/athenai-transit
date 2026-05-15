@@ -6,7 +6,7 @@
  * - extractStopEntries: build StopEntry[] with routeIds and routeFreqs
  */
 
-import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
+import type { DataBundle } from '@contracts/data/transit-v2-json';
 import { findServicesActiveOnWeekday } from './build-service-groups';
 import type { StopEntry } from './build-stop-geo';
 

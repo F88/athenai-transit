@@ -2,7 +2,7 @@
  * Build FeedInfoJson from ODPT metadata.
  */
 
-import type { FeedInfoJson } from '../../../../../../src/types/data/transit-json';
+import type { FeedInfoJson } from '@contracts/data/transit-json';
 import type { Provider } from '../../../../types/resource-common';
 import { computeDateRange } from '../../../odpt-calendar-utils';
 

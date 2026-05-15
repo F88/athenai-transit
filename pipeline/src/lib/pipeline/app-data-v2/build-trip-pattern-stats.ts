@@ -26,7 +26,7 @@ import type {
   TimetableGroupV2Json,
   TripPatternJson,
   TripPatternStatsJson,
-} from '../../../../../src/types/data/transit-v2-json';
+} from '@contracts/data/transit-v2-json';
 
 // ---------------------------------------------------------------------------
 // Internal helpers

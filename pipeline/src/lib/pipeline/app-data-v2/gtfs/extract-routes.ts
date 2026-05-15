@@ -6,7 +6,7 @@
 
 import type Database from 'better-sqlite3';
 
-import type { RouteV2Json } from '../../../../../../src/types/data/transit-v2-json';
+import type { RouteV2Json } from '@contracts/data/transit-v2-json';
 import { resolvePipelineRouteColors } from '../../../../domain/gtfs/route-colors';
 
 /**

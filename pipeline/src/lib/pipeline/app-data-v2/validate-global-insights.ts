@@ -16,7 +16,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { GlobalInsightsBundle } from '../../../../../src/types/data/transit-v2-json';
+import type { GlobalInsightsBundle } from '@contracts/data/transit-v2-json';
 import type { ValidationIssue } from './validate-shapes';
 
 // ---------------------------------------------------------------------------

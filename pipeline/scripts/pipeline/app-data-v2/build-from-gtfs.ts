@@ -20,18 +20,8 @@ import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
-import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/load-gtfs-sources';
-import {
-  determineBatchExitCode,
-  formatExitCode,
-  loadTargetFile,
-  parseCliArg,
-  printBatchSummary,
-  runBatch,
-  runMain,
-} from '../../../src/lib/pipeline/pipeline-utils';
-import type { Provider } from '../../../src/types/resource-common';
+import type { DataBundle } from '@contracts/data/transit-v2-json';
+
 import { writeDataBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
 import { extractAgenciesV2 } from '../../../src/lib/pipeline/app-data-v2/gtfs/extract-agencies';
 import { extractCalendarV2 } from '../../../src/lib/pipeline/app-data-v2/gtfs/extract-calendar';
@@ -41,6 +31,17 @@ import { extractRoutesV2 } from '../../../src/lib/pipeline/app-data-v2/gtfs/extr
 import { extractStopsV2 } from '../../../src/lib/pipeline/app-data-v2/gtfs/extract-stops';
 import { extractTripPatternsAndTimetable } from '../../../src/lib/pipeline/app-data-v2/gtfs/extract-timetable';
 import { extractTranslationsV2 } from '../../../src/lib/pipeline/app-data-v2/gtfs/extract-translations';
+import {
+  determineBatchExitCode,
+  formatExitCode,
+  loadTargetFile,
+  parseCliArg,
+  printBatchSummary,
+  runBatch,
+  runMain,
+} from '../../../src/lib/pipeline/pipeline-utils';
+import { listGtfsSourceNames, loadGtfsSource } from '../../../src/lib/resources/load-gtfs-sources';
+import type { Provider } from '../../../src/types/resource-common';
 
 // ---------------------------------------------------------------------------
 // Paths

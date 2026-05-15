@@ -7,7 +7,7 @@
 
 import type Database from 'better-sqlite3';
 
-import type { LookupV2Json } from '../../../../../../src/types/data/transit-v2-json';
+import type { LookupV2Json } from '@contracts/data/transit-v2-json';
 
 /**
  * Extract lookup data (URLs, descriptions) from the GTFS database.

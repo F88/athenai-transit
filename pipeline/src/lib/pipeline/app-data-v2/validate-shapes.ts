@@ -20,7 +20,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { ShapePointV2, ShapesBundle } from '../../../../../src/types/data/transit-v2-json';
+import type { ShapePointV2, ShapesBundle } from '@contracts/data/transit-v2-json';
 
 // ---------------------------------------------------------------------------
 // Types
