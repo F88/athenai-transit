@@ -2,13 +2,21 @@
  * Build stopStats section of InsightsBundle.
  *
  * Computes per-stop operational statistics segmented by service group:
- * - `freq`: total stop times per day across all patterns serving this stop
- * - `rc`: number of distinct routes
- * - `rtc`: number of distinct route types (bus, subway, tram, etc.)
- * - `ed`: earliest departure time (minutes from midnight)
- * - `ld`: latest departure time (minutes from midnight, >= 1440 for overnight)
+ * - `freq`: maximum stop-time count on any single calendar date for this
+ *   service group (Issue #219 — see {@link buildStopStats} for the precise
+ *   definition).
+ * - `rc`: number of distinct routes that have any stop time at this stop
+ *   in this service group (calendar-agnostic across the group).
+ * - `rtc`: number of distinct route types (calendar-agnostic across the
+ *   group).
+ * - `ed`: earliest departure time (minutes from midnight) observed across
+ *   all services in this group (calendar-agnostic).
+ * - `ld`: latest departure time (minutes from midnight, >= 1440 for
+ *   overnight) observed across all services in this group
+ *   (calendar-agnostic).
  */
 
+import type { CalendarJson } from '@contracts/data/transit-json';
 import type {
   RouteV2Json,
   ServiceGroupEntry,
@@ -17,6 +25,13 @@ import type {
   TripPatternJson,
 } from '@contracts/data/transit-v2-json';
 
+import {
+  addUtcDays,
+  buildExceptionMap,
+  computeActiveServiceIds,
+  getCalendarDateRange,
+} from './calendar-walk';
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -24,10 +39,25 @@ import type {
 /**
  * Build per-stop operational statistics segmented by service group.
  *
+ * `freq` is computed by walking every UTC date in the calendar's range:
+ * for each date the active `service_id` set is intersected with the
+ * service group's members, the per-stop stop-time count contributed by
+ * those active-in-group services is summed across every timetable group
+ * referencing this stop, and `freq` is the maximum of these per-day
+ * counts across all dates (Issue #219). This avoids overcounting when
+ * the service group bundles services that operate on disjoint dates.
+ *
+ * `rc`, `rtc`, `ed`, and `ld` are calendar-agnostic across the service
+ * group — they describe what is ever observed at this stop with any
+ * service in the group, regardless of which actual calendar date that
+ * service is active.
+ *
  * @param timetable - Timetable data keyed by stop ID.
  * @param patterns - Trip patterns keyed by pattern ID.
  * @param routes - Route records (used for route_type lookup).
  * @param serviceGroups - Service group definitions.
+ * @param calendar - Calendar data (services + exceptions) used to walk
+ *   actual operating dates per service group.
  * @returns Nested map: service group key → stop ID → stats.
  */
 export function buildStopStats(
@@ -35,6 +65,7 @@ export function buildStopStats(
   patterns: Record<string, TripPatternJson>,
   routes: RouteV2Json[],
   serviceGroups: ServiceGroupEntry[],
+  calendar: CalendarJson,
 ): Record<string, Record<string, StopStatsJson>> {
   // Build route lookup: route_id → route_type
   const routeTypeMap = new Map<string, number>();
@@ -42,13 +73,25 @@ export function buildStopStats(
     routeTypeMap.set(route.i, route.t);
   }
 
+  // Precompute active service IDs per date once across all groups.
+  const dateRange = getCalendarDateRange(calendar.services, calendar.exceptions);
+  const exceptionsByServiceId = buildExceptionMap(calendar.exceptions);
+  const activesByDate: Set<string>[] = [];
+  if (dateRange) {
+    for (let date = dateRange.min; date <= dateRange.max; date = addUtcDays(date, 1)) {
+      activesByDate.push(computeActiveServiceIds(date, calendar.services, exceptionsByServiceId));
+    }
+  }
+
   const result: Record<string, Record<string, StopStatsJson>> = {};
 
   for (const group of serviceGroups) {
     const groupStats: Record<string, StopStatsJson> = {};
-
     for (const [stopId, groups] of Object.entries(timetable)) {
-      let freq = 0;
+      // Aggregate per-service stop-time counts at this stop, restricted to
+      // services that are in the current service group. Also collect the
+      // calendar-agnostic facts (rc, rtc, ed, ld).
+      const stopTimesByService = new Map<string, number>();
       const routeIds = new Set<string>();
       const routeTypes = new Set<number>();
       let ed = Infinity;
@@ -62,14 +105,14 @@ export function buildStopStats(
 
         let hasAnyStopTime = false;
 
-        for (const svcId of group.serviceIds) {
-          const deps = tg.d[svcId];
+        for (const serviceId of group.serviceIds) {
+          const deps = tg.d[serviceId];
           if (!deps || deps.length === 0) {
             continue;
           }
 
           hasAnyStopTime = true;
-          freq += deps.length;
+          stopTimesByService.set(serviceId, (stopTimesByService.get(serviceId) ?? 0) + deps.length);
 
           // deps are sorted ascending
           if (deps[0] < ed) {
@@ -89,16 +132,37 @@ export function buildStopStats(
         }
       }
 
-      // Only include stops that have at least one stop time in this group
-      if (freq > 0) {
-        groupStats[stopId] = {
-          freq,
-          rc: routeIds.size,
-          rtc: routeTypes.size,
-          ed,
-          ld,
-        };
+      if (stopTimesByService.size === 0) {
+        continue;
       }
+
+      // Compute freq as the per-day maximum. `stopTimesByService` was
+      // populated exclusively from services in `group.serviceIds`
+      // (loop above), so we only need to gate by per-date active status.
+      let maxFreq = 0;
+      for (const active of activesByDate) {
+        let dayCount = 0;
+        for (const [serviceId, count] of stopTimesByService) {
+          if (active.has(serviceId)) {
+            dayCount += count;
+          }
+        }
+        if (dayCount > maxFreq) {
+          maxFreq = dayCount;
+        }
+      }
+
+      if (maxFreq === 0) {
+        continue;
+      }
+
+      groupStats[stopId] = {
+        freq: maxFreq,
+        rc: routeIds.size,
+        rtc: routeTypes.size,
+        ed,
+        ld,
+      };
     }
 
     result[group.key] = groupStats;

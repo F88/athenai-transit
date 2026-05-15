@@ -81,6 +81,7 @@ function buildSourceInsights(prefix: string): boolean {
     bundle.tripPatterns.data,
     bundle.timetable.data,
     serviceGroups,
+    bundle.calendar.data,
   );
   console.log(`  Trip pattern stats: ${Object.keys(tripPatternStats).length} groups`);
 
@@ -90,6 +91,7 @@ function buildSourceInsights(prefix: string): boolean {
     bundle.tripPatterns.data,
     bundle.routes.data,
     serviceGroups,
+    bundle.calendar.data,
   );
   for (const [key, stats] of Object.entries(stopStats)) {
     console.log(`  Stop stats [${key}]: ${String(Object.keys(stats).length)} stops`);

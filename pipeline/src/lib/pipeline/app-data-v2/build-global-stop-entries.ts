@@ -4,9 +4,25 @@
  * Provides two functions used by build-global-insights.ts:
  * - findSundayServiceIds: identify services active on at least one Sunday
  * - extractStopEntries: build StopEntry[] with routeIds and routeFreqs
+ *
+ * ### `routeFreqs` definition (Issue #220)
+ *
+ * `routeFreqs` reports the maximum, over the calendar's date range, of
+ * the per-day stop-time count contributed by services that are both
+ * (a) members of the input `serviceIds` set and (b) active on that date
+ * per the GTFS `calendar` / `calendar_dates` semantics. This avoids the
+ * overcount where services with disjoint actual dates would otherwise
+ * be summed as if they all ran simultaneously — see Issue #219 for the
+ * same pattern in `tripPatternStats` / `stopStats`.
  */
 
 import type { DataBundle } from '@contracts/data/transit-v2-json';
+import {
+  addUtcDays,
+  buildExceptionMap,
+  computeActiveServiceIds,
+  getCalendarDateRange,
+} from './calendar-walk';
 import { findServicesActiveOnWeekday } from './build-service-groups';
 import type { StopEntry } from './build-stop-geo';
 
@@ -55,29 +71,97 @@ export function extractStopEntries(bundle: DataBundle, serviceIds: Set<string>):
     }
   }
 
-  // stopRouteFreqs: stop time counts filtered to serviceIds (day-dependent).
-  // Used for cn (connectivity) where actual service frequency matters.
+  // stopRouteFreqs: per-day max stop-time count per (stop, route) filtered
+  // to services in `serviceIds`. We walk every UTC date in the calendar
+  // range and, for each date, sum the stop-time count contributions from
+  // services that are both in `serviceIds` AND active on that date. The
+  // final value per (stop, route) is the maximum across all dates. This
+  // avoids the overcount that would arise from summing stop times across
+  // services with disjoint date footprints (see Issue #220).
+
+  // First, precompute per-(stop, route, service) stop-time counts. Each
+  // (stop, route) accumulates across all timetable groups for that stop
+  // and patterns that map to that route.
+  type RouteServiceCounts = Map<string, Map<string, number>>; // route -> service -> count
+  const stopRouteServiceCounts = new Map<string, RouteServiceCounts>();
   for (const [stopId, groups] of Object.entries(bundle.timetable.data)) {
     for (const g of groups) {
       const pattern = patterns[g.tp];
       if (!pattern) {
         continue;
       }
-
-      let freq = 0;
       for (const svcId of serviceIds) {
         const deps = g.d[svcId];
-        if (deps) {
-          freq += deps.length;
+        if (!deps || deps.length === 0) {
+          continue;
+        }
+        let routeMap = stopRouteServiceCounts.get(stopId);
+        if (!routeMap) {
+          routeMap = new Map();
+          stopRouteServiceCounts.set(stopId, routeMap);
+        }
+        let serviceMap = routeMap.get(pattern.r);
+        if (!serviceMap) {
+          serviceMap = new Map();
+          routeMap.set(pattern.r, serviceMap);
+        }
+        serviceMap.set(svcId, (serviceMap.get(svcId) ?? 0) + deps.length);
+      }
+    }
+  }
+
+  // Then walk the calendar and pick the per-(stop, route) max-day count.
+  const dateRange = getCalendarDateRange(
+    bundle.calendar.data.services,
+    bundle.calendar.data.exceptions,
+  );
+  if (dateRange) {
+    const exceptionsByServiceId = buildExceptionMap(bundle.calendar.data.exceptions);
+    for (let date = dateRange.min; date <= dateRange.max; date = addUtcDays(date, 1)) {
+      const activeAll = computeActiveServiceIds(
+        date,
+        bundle.calendar.data.services,
+        exceptionsByServiceId,
+      );
+      // Early skip when no service from the input set is active today.
+      // `stopRouteServiceCounts` keys are a subset of `serviceIds` (see
+      // populator above), so iterating it later effectively answers
+      // "intersect with input serviceIds" for free.
+      let anyInputServiceActive = false;
+      for (const sid of serviceIds) {
+        if (activeAll.has(sid)) {
+          anyInputServiceActive = true;
+          break;
         }
       }
-
-      if (freq > 0) {
-        if (!stopRouteFreqs.has(stopId)) {
-          stopRouteFreqs.set(stopId, new Map());
+      if (!anyInputServiceActive) {
+        continue;
+      }
+      for (const [stopId, routeMap] of stopRouteServiceCounts) {
+        for (const [routeId, serviceMap] of routeMap) {
+          // serviceMap is small (services that have stop times at this
+          // (stop, route) and are in `serviceIds`). Iterating it is much
+          // cheaper than iterating `activeInSet` for global bundles where
+          // hundreds of services may be active today.
+          let dayCount = 0;
+          for (const [sid, count] of serviceMap) {
+            if (activeAll.has(sid)) {
+              dayCount += count;
+            }
+          }
+          if (dayCount === 0) {
+            continue;
+          }
+          let outerRouteMap = stopRouteFreqs.get(stopId);
+          if (!outerRouteMap) {
+            outerRouteMap = new Map();
+            stopRouteFreqs.set(stopId, outerRouteMap);
+          }
+          const prev = outerRouteMap.get(routeId) ?? 0;
+          if (dayCount > prev) {
+            outerRouteMap.set(routeId, dayCount);
+          }
         }
-        const routeMap = stopRouteFreqs.get(stopId)!;
-        routeMap.set(pattern.r, (routeMap.get(pattern.r) ?? 0) + freq);
       }
     }
   }

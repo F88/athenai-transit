@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import type { CalendarJson } from '@contracts/data/transit-json';
 import type {
   ServiceGroupEntry,
   TimetableGroupV2Json,
@@ -32,6 +33,31 @@ function makeTimetableGroup(
   };
 }
 
+/**
+ * Build a calendar where every service in `groups` is active on a single
+ * shared day. With every grouped service co-active, the new date-walking
+ * `freq` calculation produces the same result the old "sum across all
+ * services" implementation would — so existing freq expectations remain
+ * valid.
+ */
+function calendarFromGroups(groups: ServiceGroupEntry[]): CalendarJson {
+  const ids = new Set<string>();
+  for (const group of groups) {
+    for (const id of group.serviceIds) {
+      ids.add(id);
+    }
+  }
+  return {
+    services: [...ids].map((i) => ({
+      i,
+      s: '20260501',
+      e: '20260501',
+      d: [1, 1, 1, 1, 1, 1, 1],
+    })),
+    exceptions: [],
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -51,7 +77,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1'].freq).toBe(3);
     });
@@ -68,7 +94,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1', 'svc2'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1'].freq).toBe(3); // 2 + 1
     });
@@ -88,7 +114,7 @@ describe('buildTripPatternStats', () => {
         { key: 'sa', serviceIds: ['svc_sa'] },
       ];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1'].freq).toBe(3);
       expect(result['sa']['p1'].freq).toBe(2);
@@ -117,7 +143,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       // freq = origin (si=0) departures = 3 — no longer needs interior stop workaround
       expect(result['wd']['p1'].freq).toBe(3);
@@ -132,7 +158,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1']).toBeUndefined();
     });
@@ -153,7 +179,7 @@ describe('buildTripPatternStats', () => {
         { key: 'sa', serviceIds: ['svc_sa'] },
       ];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       // Weekday: has departures
       expect(result['wd']['p1'].freq).toBe(2);
@@ -170,7 +196,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, {}, groups);
+      const result = buildTripPatternStats(patterns, {}, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1']).toBeUndefined();
     });
@@ -184,7 +210,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1']).toBeUndefined();
     });
@@ -194,7 +220,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, {}, groups);
+      const result = buildTripPatternStats(patterns, {}, groups, calendarFromGroups(groups));
 
       expect(result['wd']).toEqual({});
     });
@@ -204,7 +230,7 @@ describe('buildTripPatternStats', () => {
         p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
       };
 
-      const result = buildTripPatternStats(patterns, {}, []);
+      const result = buildTripPatternStats(patterns, {}, [], { services: [], exceptions: [] });
 
       expect(result).toEqual({});
     });
@@ -225,7 +251,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
       const rd = result['wd']['p1'].rd;
 
       expect(rd).toHaveLength(3);
@@ -253,7 +279,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
       const rd = result['wd']['p1'].rd;
 
       expect(rd).toHaveLength(4);
@@ -275,7 +301,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1'].rd[result['wd']['p1'].rd.length - 1]).toBe(0);
     });
@@ -291,7 +317,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1'].rd).toEqual([0]);
     });
@@ -318,7 +344,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
       const rd = result['wd']['p1'].rd;
 
       expect(rd).toHaveLength(4);
@@ -351,7 +377,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
       const rd = result['wd']['p1'].rd;
 
       expect(rd).toHaveLength(4);
@@ -383,7 +409,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1'].rd[0]).toBe(12);
       expect(result['wd']['p1'].rd[1]).toBe(0);
@@ -402,7 +428,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1'].rd[0]).toBe(7.5);
       expect(result['wd']['p1'].rd[1]).toBe(0);
@@ -421,7 +447,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1'].rd[0]).toBe(11);
     });
@@ -439,7 +465,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1'].rd[0]).toBe(10);
     });
@@ -462,7 +488,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       // freq = 2 (origin trips per day)
       expect(result['wd']['p1'].freq).toBe(2);
@@ -488,7 +514,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       // freq = 2 (origin trips per day) — no longer 4 (2x merged)
       expect(result['wd']['p1'].freq).toBe(2);
@@ -516,7 +542,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
       const rd = result['wd']['p1'].rd;
 
       // Total: s1→s2 = 10, s2→s3 = 0, s3→s4 = 10 → total = 20
@@ -541,7 +567,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1'].freq).toBe(2);
       expect(result['wd']['p1'].rd).toEqual([10, 0]);
@@ -563,7 +589,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
       const rd = result['wd']['p1'].rd;
 
       expect(rd).toHaveLength(3);
@@ -589,7 +615,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
       const rd = result['wd']['p1'].rd;
 
       expect(rd).toHaveLength(3);
@@ -615,7 +641,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
       const rd = result['wd']['p1'].rd;
 
       expect(rd).toHaveLength(3);
@@ -641,7 +667,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
       const rd = result['wd']['p1'].rd;
 
       expect(rd).toHaveLength(3);
@@ -674,7 +700,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
       const rd = result['wd']['p1'].rd;
 
       expect(rd).toHaveLength(5);
@@ -703,7 +729,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1']).toBeUndefined();
     });
@@ -738,7 +764,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       // freq = origin (si=0) trip count = 3, NOT 6 (would be the broken merged value)
       expect(result['wd']['p1'].freq).toBe(3);
@@ -780,7 +806,7 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       // freq = trip count from origin (si=0) = 2, NOT 4 (would be naive sum)
       expect(result['wd']['p1'].freq).toBe(2);
@@ -809,11 +835,130 @@ describe('buildTripPatternStats', () => {
 
       const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-      const result = buildTripPatternStats(patterns, timetable, groups);
+      const result = buildTripPatternStats(patterns, timetable, groups, calendarFromGroups(groups));
 
       expect(result['wd']['p1'].freq).toBe(2);
       // s1→s2(si=1) = 5, s2(si=1)→s2(si=2) = 0 (dwell), s2(si=2)→s3 = 5 → rd = [10, 5, 5, 0]
       expect(result['wd']['p1'].rd).toEqual([10, 5, 5, 0]);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Issue #219 regression: freq must reflect per-day max, not service sum
+  // -------------------------------------------------------------------------
+  describe('disjoint-date services in same group (Issue #219)', () => {
+    it('returns max one-day freq, not the sum across services that never co-occur', () => {
+      const patterns: Record<string, TripPatternJson> = {
+        p1: {
+          v: 2,
+          r: 'r1',
+          h: 'Terminal',
+          stops: [{ id: 's1' }, { id: 's2' }],
+        },
+      };
+
+      // svc_a and svc_b both contribute 3 trips at origin but are active
+      // on disjoint dates within the same service group `g`.
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [
+          makeTimetableGroup('p1', 0, {
+            svc_a: [480, 540, 600],
+            svc_b: [481, 541, 601],
+          }),
+        ],
+        s2: [
+          makeTimetableGroup('p1', 1, {
+            svc_a: [485, 545, 605],
+            svc_b: [486, 546, 606],
+          }),
+        ],
+      };
+
+      const groups: ServiceGroupEntry[] = [{ key: 'g', serviceIds: ['svc_a', 'svc_b'] }];
+
+      // svc_a active on 2026-05-01 only; svc_b active on 2026-05-02 only.
+      // They never share an active day.
+      const calendar: CalendarJson = {
+        services: [
+          { i: 'svc_a', s: '20260501', e: '20260501', d: [1, 1, 1, 1, 1, 1, 1] },
+          { i: 'svc_b', s: '20260502', e: '20260502', d: [1, 1, 1, 1, 1, 1, 1] },
+        ],
+        exceptions: [],
+      };
+
+      const result = buildTripPatternStats(patterns, timetable, groups, calendar);
+
+      // Each service contributes 3 trips on its single active day.
+      // Old (buggy) implementation would have produced 6 (= 3 + 3).
+      expect(result['g']['p1'].freq).toBe(3);
+    });
+
+    it('includes calendar_dates-only services in the per-day max', () => {
+      const patterns: Record<string, TripPatternJson> = {
+        p1: {
+          v: 2,
+          r: 'r1',
+          h: 'Terminal',
+          stops: [{ id: 's1' }, { id: 's2' }],
+        },
+      };
+
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [
+          makeTimetableGroup('p1', 0, {
+            wd_svc: [480, 540],
+            hol_svc: [481],
+          }),
+        ],
+        s2: [
+          makeTimetableGroup('p1', 1, {
+            wd_svc: [485, 545],
+            hol_svc: [486],
+          }),
+        ],
+      };
+
+      const groups: ServiceGroupEntry[] = [
+        { key: 'wd', serviceIds: ['wd_svc', 'hol_svc'] },
+      ];
+
+      // wd_svc runs weekdays 2026-05-04..2026-05-08 (Mon..Fri).
+      // hol_svc has no calendar.services row — it is calendar_dates-only,
+      // added by exception on 2026-05-05 (Tue, when wd_svc is also active).
+      const calendar: CalendarJson = {
+        services: [
+          { i: 'wd_svc', s: '20260504', e: '20260508', d: [1, 1, 1, 1, 1, 0, 0] },
+        ],
+        exceptions: [{ i: 'hol_svc', d: '20260505', t: 1 }],
+      };
+
+      const result = buildTripPatternStats(patterns, timetable, groups, calendar);
+
+      // On 2026-05-05 both services are active: 2 (wd_svc) + 1 (hol_svc) = 3.
+      // On other weekdays only wd_svc is active: 2.
+      // Max one-day freq = 3.
+      expect(result['wd']['p1'].freq).toBe(3);
+    });
+
+    it('returns empty groupStats when the calendar has no parseable dates', () => {
+      const patterns: Record<string, TripPatternJson> = {
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }, { id: 's2' }] },
+      };
+
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540] })],
+        s2: [makeTimetableGroup('p1', 1, { svc1: [485, 545] })],
+      };
+
+      const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
+
+      const result = buildTripPatternStats(patterns, timetable, groups, {
+        services: [],
+        exceptions: [],
+      });
+
+      // No calendar dates ⇒ no day to attribute freq to.
+      expect(result['wd']).toEqual({});
     });
   });
 });

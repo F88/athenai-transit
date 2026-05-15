@@ -203,6 +203,10 @@ describe('extractStopEntries', () => {
 
   it('builds routeFreqs filtered by serviceIds', () => {
     const bundle = makeDataBundle({
+      services: [
+        { id: 'svc-wd', d: [1, 1, 1, 1, 1, 0, 0] },
+        { id: 'svc-su', d: [0, 0, 0, 0, 0, 0, 1] },
+      ],
       stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
       patterns: {
         p1: { r: 'r1', stops: [{ id: 's1' }] },
@@ -224,7 +228,7 @@ describe('extractStopEntries', () => {
     const entries = extractStopEntries(bundle, new Set(['svc-su']));
 
     const s1 = entries.find((e) => e.id === 's1')!;
-    expect(s1.routeFreqs.get('r1')).toBe(2); // svc-su has 2 stop times
+    expect(s1.routeFreqs.get('r1')).toBe(2); // svc-su has 2 stop times on any Sunday
   });
 
   it('sets empty routeIds for stops not in any pattern', () => {
@@ -276,6 +280,12 @@ describe('extractStopEntries', () => {
 
   it('aggregates freqs across multiple service IDs', () => {
     const bundle = makeDataBundle({
+      // Two Sunday services co-active in the same date range so both
+      // count toward the per-day total on every Sunday.
+      services: [
+        { id: 'su-1', d: [0, 0, 0, 0, 0, 0, 1] },
+        { id: 'su-2', d: [0, 0, 0, 0, 0, 0, 1] },
+      ],
       stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
       patterns: {
         p1: { r: 'r1', stops: [{ id: 's1' }] },
@@ -295,7 +305,7 @@ describe('extractStopEntries', () => {
 
     const entries = extractStopEntries(bundle, new Set(['su-1', 'su-2']));
 
-    expect(entries[0].routeFreqs.get('r1')).toBe(3); // 2 + 1
+    expect(entries[0].routeFreqs.get('r1')).toBe(3); // co-active Sunday: 2 + 1
   });
 
   it('skips timetable entries with unknown pattern', () => {
@@ -314,6 +324,7 @@ describe('extractStopEntries', () => {
 
   it('aggregates routeFreqs across multiple timetable groups for same stop', () => {
     const bundle = makeDataBundle({
+      services: [{ id: 'su', d: [0, 0, 0, 0, 0, 0, 1] }],
       stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
       patterns: {
         p1: { r: 'r1', stops: [{ id: 's1' }] },
@@ -338,6 +349,10 @@ describe('extractStopEntries', () => {
     // routeIds is day-agnostic (all patterns), routeFreqs is day-dependent.
     // A weekday-only route should appear in routeIds but NOT in routeFreqs.
     const bundle = makeDataBundle({
+      services: [
+        { id: 'wd', d: [1, 1, 1, 1, 1, 0, 0] },
+        { id: 'su', d: [0, 0, 0, 0, 0, 0, 1] },
+      ],
       stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
       patterns: {
         p1: { r: 'r-weekday', stops: [{ id: 's1' }] },

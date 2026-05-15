@@ -154,7 +154,9 @@ cn?: {
 
 単一スコアに圧縮せず、アプリ側で用途に応じて使い分ける。
 
-group key `ho` の算出: 各ソースの calendar 範囲内で、少なくとも 1 回の日曜に active になる service を抽出し、その service の stop time 数 (「運行密度」、terminal arrival 含む) を freq とする。weekly `d` bits に加えて `calendar_dates` add/remove exceptions も考慮する。平日の祝日にも参考値として使える。
+group key `ho` の算出: 各ソースの calendar 範囲内で、少なくとも 1 回の日曜に active になる service を抽出する (`findSundayServiceIds`)。 `freq` は **calendar の各日で active な対象 service の stop time 数を合算し、 calendar 範囲全体の最大日** とする (Issue #220、 旧実装は対象 service の stop time 数を calendar に無関係に合算していたが、 disjoint date range の service が同一 set に取り込まれると過大評価になるため 1 暦日最大値へ変更)。 weekly `d` bits に加えて `calendar_dates` add/remove exceptions も考慮する。 各 route は最大 freq の stop で 1 回だけカウントする (cn 表現の `freq` 部分の重複排除)。
+
+注意: `findSundayServiceIds` は「少なくとも 1 回の日曜に active になる service」 集合を返すため、 全 service が `d=[1,1,1,1,1,1,1]` (= 毎日運行) の source では全 service がこの集合に含まれ、 結果として `ho` は実質「全暦の peak day」 の意味になる。 weekday/weekend を区別しない small source (例: ferry seasonal) ではこの集合の semantic が日曜限定では無くなる点に留意する。
 
 - 入力: 各ソースの DataBundle から、日曜 active service 判定は per-source insights と同じ calendar + `calendar_dates` ロジックで行い、freq 自体は global 用の routeFreq 集計として直接算出
 - 全ソース横断で 300m 圏内を空間検索
@@ -297,10 +299,12 @@ Python 比で約 16 倍速。全ソースでも 10秒以下で完了するため
 
 ## 実装構成
 
-| ファイル                                                         | 役割                                            |
-| ---------------------------------------------------------------- | ----------------------------------------------- |
-| `pipeline/src/lib/pipeline/app-data-v2/build-stop-geo.ts`        | stopGeo 導出 (buildStopGeo, buildParentStopGeo) |
-| `pipeline/src/lib/pipeline/app-data-v2/bundle-writer.ts`         | writeGlobalInsightsBundle                       |
-| `pipeline/scripts/pipeline/app-data-v2/build-global-insights.ts` | CLI スクリプト (--targets, --help)              |
-| `pipeline/config/targets/build-global-insights.ts`               | target prefix リスト                            |
-| `pipeline/src/lib/geo-utils.ts`                                  | Haversine 距離計算 (共有)                       |
+| ファイル                                                             | 役割                                                                    |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `pipeline/src/lib/pipeline/app-data-v2/calendar-walk.ts`             | calendar/calendar_dates 走査ヘルパ (per-source insights と共有)         |
+| `pipeline/src/lib/pipeline/app-data-v2/build-global-stop-entries.ts` | findSundayServiceIds, extractStopEntries (routeFreqs は per-day 最大値) |
+| `pipeline/src/lib/pipeline/app-data-v2/build-stop-geo.ts`            | stopGeo 導出 (buildStopGeo, buildParentStopGeo)                         |
+| `pipeline/src/lib/pipeline/app-data-v2/bundle-writer.ts`             | writeGlobalInsightsBundle                                               |
+| `pipeline/scripts/pipeline/app-data-v2/build-global-insights.ts`     | CLI スクリプト (--targets, --help)                                      |
+| `pipeline/config/targets/build-global-insights.ts`                   | target prefix リスト                                                    |
+| `pipeline/src/lib/geo-utils.ts`                                      | Haversine 距離計算 (共有)                                               |
