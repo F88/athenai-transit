@@ -59,6 +59,18 @@ const EXPECTED_BUNDLE_VERSION = 3;
  */
 const DEFAULT_TIMEOUT_MS = 30_000;
 
+/**
+ * Per-call timeout for the data-source catalog fetch.
+ *
+ * Catalog is derived metadata: its absence degrades catalog-related UI
+ * only and does not affect transit query. To avoid blocking app boot on
+ * a slow or stuck catalog request (e.g. partial outage where only the
+ * catalog URL is unreachable), we use a much shorter timeout than the
+ * default. 5s is comfortably above normal RTT-bound response times for
+ * the ~36KB catalog file.
+ */
+const CATALOG_TIMEOUT_MS = 5_000;
+
 /** Pattern for valid source prefixes. */
 const PREFIX_PATTERN = /^[a-z0-9_-]+$/;
 
@@ -112,9 +124,9 @@ function validatePrefix(prefix: string): void {
 /**
  * Result of fetching a bundle file.
  *
- * For optional bundles, `fetchBundle` returns `null` when the data
- * is unavailable (404, HTTP error, timeout, network error, non-JSON
- * content-type, or JSON parse error). See {@link FetchDataSourceV2.fetchBundle}.
+ * For optional bundles, {@link FetchDataSourceV2.fetchOptionalBundle}
+ * returns `null` when the data is unavailable (404, HTTP error, timeout,
+ * network error, non-JSON content-type, or JSON parse error).
  */
 interface FetchBundleResult {
   /** Parsed JSON content. */
@@ -129,6 +141,15 @@ interface FetchBundleResult {
   networkMs: number;
   /** Time spent on JSON.parse (ms). */
   parseMs: number;
+}
+
+/** Per-call options for bundle fetch helpers. */
+interface FetchBundleOptions {
+  /**
+   * Override the instance default timeout for this call (milliseconds).
+   * When omitted, the instance's {@link FetchDataSourceV2.timeoutMs} is used.
+   */
+  timeoutMs?: number;
 }
 
 /**
@@ -160,7 +181,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     validatePrefix(prefix);
 
     const path = `${prefix}/data.json`;
-    const result = await this.fetchBundle(path, false);
+    const result = await this.fetchRequiredBundle(path);
 
     validateBundleEnvelope(result.json, 'data', path);
     return { prefix, data: result.json as DataBundle };
@@ -170,7 +191,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
   async loadShapes(prefix: string): Promise<ShapesBundle | null> {
     validatePrefix(prefix);
 
-    const result = await this.fetchBundle(`${prefix}/shapes.json`, true);
+    const result = await this.fetchOptionalBundle(`${prefix}/shapes.json`);
     if (!result) {
       return null;
     }
@@ -183,7 +204,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
   async loadInsights(prefix: string): Promise<InsightsBundle | null> {
     validatePrefix(prefix);
 
-    const result = await this.fetchBundle(`${prefix}/insights.json`, true);
+    const result = await this.fetchOptionalBundle(`${prefix}/insights.json`);
     if (!result) {
       return null;
     }
@@ -195,7 +216,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
   /** {@inheritDoc TransitDataSourceV2.loadGlobalInsights} */
   async loadGlobalInsights(): Promise<GlobalInsightsBundle | null> {
     const path = 'global/insights.json';
-    const result = await this.fetchBundle(path, true);
+    const result = await this.fetchOptionalBundle(path);
     if (!result) {
       return null;
     }
@@ -207,7 +228,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
   /** {@inheritDoc TransitDataSourceV2.loadDataSourceCatalog} */
   async loadDataSourceCatalog(): Promise<DataSourceCatalogBundle | null> {
     const path = 'global/data-source-catalog.json';
-    const result = await this.fetchBundle(path, true);
+    const result = await this.fetchOptionalBundle(path, { timeoutMs: CATALOG_TIMEOUT_MS });
     if (!result) {
       return null;
     }
@@ -217,33 +238,66 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
   }
 
   /**
+   * Fetch a required bundle.
+   *
+   * @param path - Relative path under base (e.g. "tobus/data.json").
+   * @param options - Per-call options. `timeoutMs` overrides the instance default.
+   * @returns Parsed result with timing metrics.
+   * @throws On network error, timeout, HTTP error, non-JSON content-type
+   *         (possible SPA fallback), or JSON parse error.
+   */
+  private async fetchRequiredBundle(
+    path: string,
+    options: FetchBundleOptions = {},
+  ): Promise<FetchBundleResult> {
+    const result = await this.doFetch(path, false, options);
+    if (result === null) {
+      // Required fetch never returns null from doFetch — either succeeds or
+      // throws. Guard kept as a defensive invariant assertion.
+      throw new Error(`${path}: unexpected null from required fetch`);
+    }
+    return result;
+  }
+
+  /**
+   * Fetch an optional bundle.
+   *
+   * @param path - Relative path under base (e.g. "tobus/shapes.json").
+   * @param options - Per-call options. `timeoutMs` overrides the instance default.
+   * @returns Parsed result with timing metrics, or `null` when unavailable
+   *          (404, HTTP error, timeout, network error, non-JSON content-type,
+   *          or JSON parse error). Bundle envelope validation is the caller's
+   *          responsibility and still throws on mismatch.
+   */
+  private async fetchOptionalBundle(
+    path: string,
+    options: FetchBundleOptions = {},
+  ): Promise<FetchBundleResult | null> {
+    return this.doFetch(path, true, options);
+  }
+
+  /**
    * Fetch, validate content-type, and parse a JSON bundle file.
    *
    * All outcomes are logged at the appropriate level:
-   * - Success: info (path, size, network/parse timing)
+   * - Success: debug (path, size, network/parse timing)
    * - Timeout: error (always, regardless of optional flag)
    * - Other failures: warn for required, debug for optional
-   *
-   * @param path - Relative path under base (e.g. "tobus/data.json").
-   * @param optional - When true, returns `null` on any non-OK HTTP status,
-   *                   non-JSON content-type, network error, timeout, or
-   *                   JSON parse error.
-   * @returns Parsed result with timing metrics, or `null` for unavailable optional files.
-   * @throws On network error, timeout, or HTTP error for required files.
-   * @throws On non-JSON content-type for required files (SPA fallback detection).
-   * @throws On JSON parse error for required files.
    */
-  private async fetchBundle(path: string, optional: true): Promise<FetchBundleResult | null>;
-  private async fetchBundle(path: string, optional: false): Promise<FetchBundleResult>;
-  private async fetchBundle(path: string, optional: boolean): Promise<FetchBundleResult | null> {
+  private async doFetch(
+    path: string,
+    optional: boolean,
+    options: FetchBundleOptions,
+  ): Promise<FetchBundleResult | null> {
     const url = `${this.basePath}/${path}`;
+    const timeoutMs = options.timeoutMs ?? this.timeoutMs;
     const t0 = performance.now();
 
     // --- Network request with timeout ---
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
-    }, this.timeoutMs);
+    }, timeoutMs);
 
     let response: Response;
     try {
@@ -253,11 +307,11 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       const isTimeout = e instanceof DOMException && e.name === 'AbortError';
       if (isTimeout) {
         // Timeout is always logged as error regardless of optional flag
-        logger.error(`${path}: timeout after ${this.timeoutMs}ms`);
+        logger.error(`${path}: timeout after ${timeoutMs}ms`);
         if (optional) {
           return null;
         }
-        throw new Error(`${path}: timeout after ${this.timeoutMs}ms`);
+        throw new Error(`${path}: timeout after ${timeoutMs}ms`);
       }
       if (optional) {
         logger.debug(`${path}: network error (optional, skipping)`);
@@ -319,11 +373,11 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       clearTimeout(timeoutId);
       const isTimeout = e instanceof DOMException && e.name === 'AbortError';
       if (isTimeout) {
-        logger.error(`${path}: timeout after ${this.timeoutMs}ms (during body download)`);
+        logger.error(`${path}: timeout after ${timeoutMs}ms (during body download)`);
         if (optional) {
           return null;
         }
-        throw new Error(`${path}: timeout after ${this.timeoutMs}ms (during body download)`);
+        throw new Error(`${path}: timeout after ${timeoutMs}ms (during body download)`);
       }
       if (optional) {
         logger.debug(`${path}: body read error (optional, skipping)`);
