@@ -165,7 +165,34 @@ export interface DataSourceCatalogSourceSummary {
   };
   /** Stop and station facts for this source. */
   stops: {
-    /** Per-`location_type` stop counts and parent-station coverage. */
+    /**
+     * Per-`location_type` stop counts and parent-station coverage.
+     *
+     * Keys are stringified GTFS `location_type` values. Per the GTFS
+     * Schedule reference (snapshot taken 2026-05-15, source
+     * https://gtfs.org/documentation/schedule/reference/#stopstxt), the
+     * defined values are:
+     * - `"0"`: stop / platform (location where passengers board)
+     * - `"1"`: station (parent of platforms)
+     * - `"2"`: entrance / exit
+     * - `"3"`: generic node
+     * - `"4"`: boarding area
+     *
+     * The catalog does not validate against this enum; consumers should
+     * re-check the GTFS spec if the value space evolves.
+     *
+     * For UI purposes, `locationTypes["0"].count` is the recommended
+     * single-number proxy for the number of physical boarding stops
+     * (乗り場) that this source declares. It excludes parent stations
+     * (`"1"`) and entrances (`"2"`), and remains meaningful regardless
+     * of which operating-day calendars the source publishes.
+     *
+     * The match between `locationTypes["0"].count` and "stops actually
+     * served by at least one trip" is approximate. Some sources register
+     * `location_type=0` stops that no trip references; these are still
+     * counted here. For "stops referenced by at least one stop_time"
+     * semantics, see `bundles.dataBundle.counts.timetable`.
+     */
     locationTypes: Record<string, DataSourceCatalogStopLocationTypeSummary>;
     /** Geographic extent of the stops represented by this source. */
     geo: {
