@@ -271,7 +271,6 @@ function buildCatalogSource(
         typeCounts: routeTypeCounts,
       },
       stops: {
-        total: dataBundle.stops.data.length,
         locationTypes: stopLocationTypes,
         geo: {
           bbox: buildStopBbox(dataBundle.stops.data),

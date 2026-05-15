@@ -297,7 +297,6 @@ describe('buildDataSourceCatalogBundle', () => {
       '0': { count: 2, hasParentCount: 1 },
       '1': { count: 1, hasParentCount: 0 },
     });
-    expect(source.summary.stops.total).toBe(3);
     expect(source.summary.stops.geo.bbox).toEqual({
       latMin: 35.1,
       latMax: 35.3,
@@ -418,7 +417,6 @@ describe('buildDataSourceCatalogBundle', () => {
     expect(source.summary.agencies).toEqual([{ name: 'Test Agency', timezone: 'Asia/Tokyo' }]);
     expect(source.summary.i18n.languages).toEqual(['de', 'en', 'ja']);
     expect(source.summary.stops.locationTypes).toEqual({});
-    expect(source.summary.stops.total).toBe(0);
     expect(source.summary.stops.geo.bbox).toBeNull();
   });
 

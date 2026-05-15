@@ -157,8 +157,6 @@ key は output directory 名ではなく prefix とする。これは既存 v2 b
     - `routes.data[].t` の集計
 - `stops.locationTypes`
     - `stops.data[].l` と `ps` の集計
-- `stops.total`
-    - stop 総数
 - `stops.geo.bbox`
     - stop 座標の bbox
 - `service.maxTripsPerDay`

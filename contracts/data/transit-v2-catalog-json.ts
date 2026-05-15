@@ -165,8 +165,6 @@ export interface DataSourceCatalogSourceSummary {
   };
   /** Stop and station facts for this source. */
   stops: {
-    /** Total stop entry count, including parent stations and entrances. */
-    total: number;
     /** Per-`location_type` stop counts and parent-station coverage. */
     locationTypes: Record<string, DataSourceCatalogStopLocationTypeSummary>;
     /** Geographic extent of the stops represented by this source. */
