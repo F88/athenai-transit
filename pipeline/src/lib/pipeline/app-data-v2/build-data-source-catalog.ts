@@ -6,7 +6,6 @@ import type {
   DataSourceCatalogDateRange,
   DataSourceCatalogSource,
 } from '@contracts/data/transit-v2-catalog-json';
-import type { CalendarExceptionJson, CalendarServiceJson } from '@contracts/data/transit-json';
 import type {
   DataBundle,
   GlobalInsightsBundle,
@@ -16,12 +15,17 @@ import type {
   TimetableGroupV2Json,
 } from '@contracts/data/transit-v2-json';
 
-import { parseGtfsDate } from '../../gtfs-date-utils';
 import { getDistanceKmLight } from '../../geo-utils';
 import { V2_OUTPUT_DIR } from '../../paths';
 import { uniqueInOrder } from '../pipeline-utils';
 import { loadAllGtfsSources } from '../../resources/load-gtfs-sources';
 import { discoverOdptTrainSources } from '../../resources/load-odpt-train-sources';
+import {
+  addUtcDays,
+  buildExceptionMap,
+  computeActiveServiceIds,
+  getCalendarDateRange,
+} from './calendar-walk';
 
 interface ResolvedCatalogTarget {
   prefix: string;
@@ -110,109 +114,6 @@ function buildRouteTypeCounts(bundle: DataBundle): Record<string, number> {
     counts[key] = (counts[key] ?? 0) + 1;
   }
   return counts;
-}
-
-function buildExceptionMap(
-  exceptions: CalendarExceptionJson[],
-): Map<string, CalendarExceptionJson[]> {
-  const map = new Map<string, CalendarExceptionJson[]>();
-  for (const exception of exceptions) {
-    const list = map.get(exception.i) ?? [];
-    list.push(exception);
-    map.set(exception.i, list);
-  }
-  return map;
-}
-
-function formatGtfsDateKey(date: Date): string {
-  const year = String(date.getUTCFullYear());
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  return `${year}${month}${day}`;
-}
-
-function getMondayFirstDayIndex(date: Date): number {
-  const day = date.getUTCDay();
-  return day === 0 ? 6 : day - 1;
-}
-
-function addUtcDays(date: Date, deltaDays: number): Date {
-  const next = new Date(date.getTime());
-  next.setUTCDate(next.getUTCDate() + deltaDays);
-  return next;
-}
-
-function getCalendarDateRange(
-  services: CalendarServiceJson[],
-  exceptions: CalendarExceptionJson[],
-): { min: Date; max: Date } | null {
-  const parsedDates: Date[] = [];
-
-  for (const service of services) {
-    const start = parseGtfsDate(service.s);
-    const end = parseGtfsDate(service.e);
-    if (start) {
-      parsedDates.push(start);
-    }
-    if (end) {
-      parsedDates.push(end);
-    }
-  }
-
-  for (const exception of exceptions) {
-    const date = parseGtfsDate(exception.d);
-    if (date) {
-      parsedDates.push(date);
-    }
-  }
-
-  if (parsedDates.length === 0) {
-    return null;
-  }
-
-  let min = parsedDates[0];
-  let max = parsedDates[0];
-  for (const date of parsedDates) {
-    if (date < min) {
-      min = date;
-    }
-    if (date > max) {
-      max = date;
-    }
-  }
-
-  return { min, max };
-}
-
-function computeActiveServiceIds(
-  date: Date,
-  services: CalendarServiceJson[],
-  exceptionsByServiceId: Map<string, CalendarExceptionJson[]>,
-): Set<string> {
-  const key = formatGtfsDateKey(date);
-  const dayIndex = getMondayFirstDayIndex(date);
-  const active = new Set<string>();
-
-  for (const service of services) {
-    if (key >= service.s && key <= service.e && service.d[dayIndex] === 1) {
-      active.add(service.i);
-    }
-  }
-
-  for (const [serviceId, exceptions] of exceptionsByServiceId) {
-    for (const exception of exceptions) {
-      if (exception.d !== key) {
-        continue;
-      }
-      if (exception.t === 1) {
-        active.add(serviceId);
-      } else if (exception.t === 2) {
-        active.delete(serviceId);
-      }
-    }
-  }
-
-  return active;
 }
 
 function buildTripsByServiceId(
