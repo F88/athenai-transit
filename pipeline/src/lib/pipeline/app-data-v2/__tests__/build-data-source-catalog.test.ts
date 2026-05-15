@@ -132,7 +132,29 @@ function makeDataBundle(): DataBundle {
     timetable: {
       v: 2,
       data: {
-        'testpfx:jp:weekday': [],
+        'testpfx:S1': [
+          {
+            v: 2,
+            tp: 'testpfx:TP1',
+            si: 0,
+            d: {
+              'svc:1': [480, 540],
+              'svc:2': [600],
+            },
+            a: {
+              'svc:1': [480, 540],
+              'svc:2': [600],
+            },
+            pt: {
+              'svc:1': [0, 0],
+              'svc:2': [0],
+            },
+            dt: {
+              'svc:1': [0, 0],
+              'svc:2': [0],
+            },
+          },
+        ],
       },
     },
     tripPatterns: {
@@ -218,29 +240,44 @@ function makeInsightsBundle(): InsightsBundle {
   };
 }
 
-function makeInsightsBundleWithNonWeekdayMax(): InsightsBundle {
-  const bundle = structuredClone(makeInsightsBundle());
+function makeDataBundleWithExceptionOnlyPeak(): DataBundle {
+  const bundle = structuredClone(makeDataBundle());
 
-  if (!bundle.tripPatternStats || !bundle.stopStats) {
-    throw new Error('Expected tripPatternStats and stopStats to be present');
-  }
-
-  bundle.tripPatternStats.data.weekend = {
-    'testpfx:TP1': {
-      freq: 5,
-      rd: [30, 0],
+  bundle.calendar.data.exceptions.push({ i: 'svc:3', d: '20260506', t: 1 });
+  bundle.timetable.data['testpfx:S1']?.push({
+    v: 2,
+    tp: 'testpfx:TP1',
+    si: 1,
+    d: {
+      'svc:3': [701, 711, 721],
     },
-  };
-
-  bundle.stopStats.data.weekend = {
-    'testpfx:S1': {
-      freq: 5,
-      rc: 1,
-      rtc: 1,
-      ed: 480,
-      ld: 540,
+    a: {
+      'svc:3': [702, 712, 722],
     },
-  };
+    pt: {
+      'svc:3': [0, 0, 0],
+    },
+    dt: {
+      'svc:3': [0, 0, 0],
+    },
+  });
+  bundle.timetable.data['testpfx:S1']?.push({
+    v: 2,
+    tp: 'testpfx:TP1',
+    si: 0,
+    d: {
+      'svc:3': [700, 710, 720],
+    },
+    a: {
+      'svc:3': [700, 710, 720],
+    },
+    pt: {
+      'svc:3': [0, 0, 0],
+    },
+    dt: {
+      'svc:3': [0, 0, 0],
+    },
+  });
 
   return bundle;
 }
@@ -468,13 +505,13 @@ describe('buildDataSourceCatalogBundle', () => {
       stopStats: 0,
     });
     expect(bundle.sources.data.testpfx.summary.service).toEqual({
-      maxTripsPerDay: 0,
+      maxTripsPerDay: 2,
     });
   });
 
-  it('uses the maximum trip total across service groups, not weekday-specific groups', async () => {
-    writeJson('testpfx/data.json', makeDataBundle());
-    writeJson('testpfx/insights.json', makeInsightsBundleWithNonWeekdayMax());
+  it('computes maxTripsPerDay from source data including exception-only services', async () => {
+    writeJson('testpfx/data.json', makeDataBundleWithExceptionOnlyPeak());
+    writeJson('testpfx/insights.json', makeInsightsBundle());
     writeJson('global/insights.json', makeGlobalInsightsBundle());
 
     const bundle = await buildDataSourceCatalogBundle(['testpfx']);

@@ -160,7 +160,7 @@ key は output directory 名ではなく prefix とする。これは既存 v2 b
 - `stops.geo.bbox`
     - stop 座標の bbox
 - `service.maxTripsPerDay`
-    - service group ごとの trip 合計の最大値
+    - `timetable` と `calendar` から直接復元した日次 trip 総数の最大値
 - `shapes.available`, `shapes.routeCount`
     - route shape 利用可否と shape 付き route 数
 

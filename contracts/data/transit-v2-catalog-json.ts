@@ -208,12 +208,10 @@ export interface DataSourceCatalogSourceSummary {
   /** Service-volume facts suitable for rough scale comparison. */
   service: {
     /**
-     * Highest one-day trip total across the operating-day categories
-     * represented by this source.
+     * Highest one-day trip total represented by this source.
      *
-     * Real sources do not consistently peak in a `wd` group, so this
-     * value is intentionally defined as the maximum across the groups
-     * the source publishes.
+     * Includes services introduced only through exception dates, not
+     * just recurring weekly calendars.
      */
     maxTripsPerDay: number;
   };
