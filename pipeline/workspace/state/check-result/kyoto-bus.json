@@ -1,6 +1,6 @@
 {
   "sourceName": "kyoto-bus",
-  "checkedAt": "2026-05-14T06:06:01.048Z",
+  "checkedAt": "2026-05-15T06:12:16.731Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20230331",
     "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20230825",
@@ -56,7 +56,8 @@
     "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260408",
     "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260502",
     "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260506",
-    "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260507"
+    "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260507",
+    "https://api.odpt.org/api/v4/files/odpt/KyotoBus/AllLines.zip?date=20260516"
   ],
   "result": "attention",
   "warnings": [
@@ -64,7 +65,8 @@
     "REMOTE_KNOWN_IN_PERIOD",
     "REMOTE_KNOWN_IN_PERIOD",
     "REMOTE_KNOWN_IN_PERIOD",
-    "REMOTE_KNOWN_IN_PERIOD"
+    "REMOTE_KNOWN_IN_PERIOD",
+    "REMOTE_NEW_BEFORE_PERIOD"
   ],
   "errors": []
 }
