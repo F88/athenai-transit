@@ -111,27 +111,43 @@ export function extractStopEntries(bundle: DataBundle, serviceIds: Set<string>):
   }
 
   // Then walk the calendar and pick the per-(stop, route) max-day count.
-  const dateRange = getCalendarDateRange(bundle.calendar.data.services, bundle.calendar.data.exceptions);
+  const dateRange = getCalendarDateRange(
+    bundle.calendar.data.services,
+    bundle.calendar.data.exceptions,
+  );
   if (dateRange) {
     const exceptionsByServiceId = buildExceptionMap(bundle.calendar.data.exceptions);
     for (let date = dateRange.min; date <= dateRange.max; date = addUtcDays(date, 1)) {
-      const activeAll = computeActiveServiceIds(date, bundle.calendar.data.services, exceptionsByServiceId);
-      // Intersect once with the input serviceIds — no point counting
-      // services that aren't in the requested set.
-      const activeInSet: string[] = [];
+      const activeAll = computeActiveServiceIds(
+        date,
+        bundle.calendar.data.services,
+        exceptionsByServiceId,
+      );
+      // Early skip when no service from the input set is active today.
+      // `stopRouteServiceCounts` keys are a subset of `serviceIds` (see
+      // populator above), so iterating it later effectively answers
+      // "intersect with input serviceIds" for free.
+      let anyInputServiceActive = false;
       for (const sid of serviceIds) {
         if (activeAll.has(sid)) {
-          activeInSet.push(sid);
+          anyInputServiceActive = true;
+          break;
         }
       }
-      if (activeInSet.length === 0) {
+      if (!anyInputServiceActive) {
         continue;
       }
       for (const [stopId, routeMap] of stopRouteServiceCounts) {
         for (const [routeId, serviceMap] of routeMap) {
+          // serviceMap is small (services that have stop times at this
+          // (stop, route) and are in `serviceIds`). Iterating it is much
+          // cheaper than iterating `activeInSet` for global bundles where
+          // hundreds of services may be active today.
           let dayCount = 0;
-          for (const sid of activeInSet) {
-            dayCount += serviceMap.get(sid) ?? 0;
+          for (const [sid, count] of serviceMap) {
+            if (activeAll.has(sid)) {
+              dayCount += count;
+            }
           }
           if (dayCount === 0) {
             continue;

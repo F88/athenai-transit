@@ -87,8 +87,6 @@ export function buildStopStats(
 
   for (const group of serviceGroups) {
     const groupStats: Record<string, StopStatsJson> = {};
-    const groupServiceIds = new Set(group.serviceIds);
-
     for (const [stopId, groups] of Object.entries(timetable)) {
       // Aggregate per-service stop-time counts at this stop, restricted to
       // services that are in the current service group. Also collect the
@@ -114,10 +112,7 @@ export function buildStopStats(
           }
 
           hasAnyStopTime = true;
-          stopTimesByService.set(
-            serviceId,
-            (stopTimesByService.get(serviceId) ?? 0) + deps.length,
-          );
+          stopTimesByService.set(serviceId, (stopTimesByService.get(serviceId) ?? 0) + deps.length);
 
           // deps are sorted ascending
           if (deps[0] < ed) {
@@ -141,14 +136,14 @@ export function buildStopStats(
         continue;
       }
 
-      // Compute freq as the per-day maximum, restricting active services
-      // to those that are both in the group and have any stop time at
-      // this stop.
+      // Compute freq as the per-day maximum. `stopTimesByService` was
+      // populated exclusively from services in `group.serviceIds`
+      // (loop above), so we only need to gate by per-date active status.
       let maxFreq = 0;
       for (const active of activesByDate) {
         let dayCount = 0;
         for (const [serviceId, count] of stopTimesByService) {
-          if (active.has(serviceId) && groupServiceIds.has(serviceId)) {
+          if (active.has(serviceId)) {
             dayCount += count;
           }
         }
