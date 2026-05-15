@@ -64,6 +64,13 @@ function makeCatalogBundle(): DataSourceCatalogBundle {
               locationTypes: {},
               geo: { bbox: null },
             },
+            service: {
+              maxTripsPerDay: 0,
+            },
+            shapes: {
+              available: false,
+              routeCount: 0,
+            },
           },
           bundles: {
             dataBundle: {
