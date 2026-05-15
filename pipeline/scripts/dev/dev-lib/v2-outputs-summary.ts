@@ -304,7 +304,11 @@ function formatOverallSummary(rows: V2OutputsRow[], global: GlobalInsightsBundle
 export function formatV2OutputsAnalysis(
   rows: V2OutputsRow[],
   global: GlobalInsightsBundleSummary,
-  options: { analyzedAt?: Date; sections?: V2OutputsSectionName[] } = {},
+  options: {
+    analyzedAt?: Date;
+    sections?: V2OutputsSectionName[];
+    sourceRootLabel?: string;
+  } = {},
 ): string {
   if (rows.length === 0 && global.fileSize === null) {
     return 'No v2 outputs found.';
@@ -319,6 +323,7 @@ export function formatV2OutputsAnalysis(
     options.sections === undefined || options.sections.length === 0
       ? V2_OUTPUTS_SECTION_NAMES
       : options.sections;
+  const sourceRootLabel = options.sourceRootLabel ?? 'public/data-v2';
   const renderedSections = requestedSections.map((sectionName) =>
     renderSection(sorted, global, sectionName),
   );
@@ -326,7 +331,7 @@ export function formatV2OutputsAnalysis(
     '# Athenai Transit — V2 outputs summary',
     '',
     `# Analyzed at: ${analyzedAt.toISOString()}`,
-    '# Reads public/data-v2/{prefix}/{data,insights,shapes}.json and public/data-v2/global/insights.json',
+    `# Reads ${sourceRootLabel}/{prefix}/{data,insights,shapes}.json and ${sourceRootLabel}/global/insights.json`,
     '# Sizes are in KB (1024 B) and MB (1024 KB); shapes "-" means no shapes.json on disk.',
     "# 'tripsTotal' = Σ tripPatternStats[sg][p].freq (= trips.txt row count, day-agnostic); 'tripsMax' = busiest sg's total.",
     '',

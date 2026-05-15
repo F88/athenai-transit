@@ -301,7 +301,12 @@ async function main(): Promise<void> {
       const measured = measureSource(prefix);
       rows.push(analyzeV2Outputs({ prefix, nameEn, ...measured }));
     }
-    console.log(formatV2OutputsAnalysis(rows, global, { sections }));
+    console.log(
+      formatV2OutputsAnalysis(rows, global, {
+        sections,
+        sourceRootLabel: 'public/data-v2',
+      }),
+    );
     return;
   }
 
@@ -313,7 +318,12 @@ async function main(): Promise<void> {
     const measured = measureSource(prefix);
     rows.push(analyzeV2Outputs({ prefix, nameEn, ...measured }));
   }
-  console.log(formatV2OutputsAnalysis(rows, global, { sections }));
+  console.log(
+    formatV2OutputsAnalysis(rows, global, {
+      sections,
+      sourceRootLabel: 'public/data-v2',
+    }),
+  );
 }
 
 runMain(main);

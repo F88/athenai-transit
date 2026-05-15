@@ -156,6 +156,26 @@ export async function loadTargetFile(filePath: string): Promise<string[]> {
   return mod.default;
 }
 
+/**
+ * Remove duplicate values while preserving the first-seen order.
+ *
+ * Aggregate target lists may be reused across scripts that build a single
+ * global artifact. Re-processing the same prefix can waste work or skew
+ * cross-source metrics, so those callers normalize target lists with this
+ * helper before iterating.
+ */
+export function uniqueInOrder(values: string[]): string[] {
+  const seen = new Set<string>();
+
+  return values.filter((value) => {
+    if (seen.has(value)) {
+      return false;
+    }
+    seen.add(value);
+    return true;
+  });
+}
+
 /** Result of a single source operation in a batch run. */
 export interface BatchResult {
   sourceName: string;

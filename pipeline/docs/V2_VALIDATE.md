@@ -241,7 +241,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
 --- [5/5] Validate DataSourceCatalogBundle ---
 
-  global/data-source-catalog.json: OK (0 sources)
+  global/data-source-catalog.json: OK (2 sources)
 
 ## V2 Bundle Validation
 

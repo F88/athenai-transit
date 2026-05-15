@@ -27,6 +27,7 @@ import {
   writeDataBundle,
   writeGlobalInsightsBundle,
 } from '../../../../src/lib/pipeline/app-data-v2/bundle-writer';
+import { uniqueInOrder } from '../../../../src/lib/pipeline/pipeline-utils';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-build-global-insights-test');
 const GROUP_KEY = 'ho';
@@ -128,7 +129,7 @@ function makeDataBundle(opts: {
 function runGlobalInsightsFlow(prefixes: string[], baseDir: string, outDir: string): void {
   const allStopEntries: StopEntry[] = [];
 
-  for (const prefix of prefixes) {
+  for (const prefix of uniqueInOrder(prefixes)) {
     const dataPath = join(baseDir, prefix, 'data.json');
     if (!existsSync(dataPath)) {
       continue;
@@ -309,6 +310,37 @@ describe('GlobalInsightsBundle assembly', () => {
     expect(s1Geo.cn!['ho'].rc).toBe(2); // r1 + r2
     expect(s1Geo.cn!['ho'].freq).toBe(5); // 3 + 2
     expect(s1Geo.cn!['ho'].sc).toBe(1); // 1 nearby stop
+  });
+
+  it('dedupes duplicate prefixes so nearby stop counts are not inflated', () => {
+    const srcDir = join(TMP_DIR, 'sources');
+    const outDir = join(TMP_DIR, 'global');
+
+    const bundle = makeDataBundle({
+      services: [{ id: 'su', d: [0, 0, 0, 0, 0, 0, 1] }],
+      stops: [
+        { i: 's1', a: 35.68, o: 139.76, l: 0 },
+        { i: 's2', a: 35.6801, o: 139.76, l: 0 },
+      ],
+      patterns: {
+        p1: { r: 'r1', stops: [{ id: 's1' }] },
+        p2: { r: 'r2', stops: [{ id: 's2' }] },
+      },
+      timetable: {
+        s1: [{ tp: 'p1', d: { su: [480] } }],
+        s2: [{ tp: 'p2', d: { su: [490] } }],
+      },
+    });
+    writeDataBundle(join(srcDir, 'src'), bundle);
+
+    runGlobalInsightsFlow(['src', 'src'], srcDir, outDir);
+
+    const result = JSON.parse(
+      readFileSync(join(outDir, 'insights.json'), 'utf-8'),
+    ) as GlobalInsightsBundle;
+
+    expect(result.stopGeo!.data['s1'].cn?.ho?.sc).toBe(1);
+    expect(result.stopGeo!.data['s2'].cn?.ho?.sc).toBe(1);
   });
 
   it('handles l=1 parent stops with children', () => {

@@ -11,11 +11,13 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
-- Data source catalog: pipeline-generated `data-source-catalog.json` 用の wire-format 型定義を `src/types/data/transit-v2-catalog-json.ts` に追加。Issue #212 の第1段階として、source-level の curated summary と bundle-backed summary を `summary` / `bundles` に整理し、`shapesBundle` を optional、`dataBundle` / `insightsBundle` を required とする catalog schema を導入した。
+- Data source catalog: pipeline-generated `DataSourceCatalogBundle` (`global/data-source-catalog.json`) を導入した。wire-format 型定義を shared contract として追加し、catalog entry を source-level facts を持つ `summary` と emitted bundle の structural metadata を持つ `bundles` に分離した。
 - Data source settings dialog: footer に **再起動 (Restart) ボタン** を追加。設定変更後 1 click でアプリを再起動して反映できるようにした (実体は `location.reload()`)。 forced-sources mode (`?sources=`) では disabled。 開発中 notice の文言も 「再起動で反映」 に更新し、 ユーザーが手動で browser refresh するか再起動ボタンを押すかの 2 通りを案内する。
 
 ### Changed
 
+- Data source catalog: `DataSourceCatalogSourceSummary` を source-level semantics に寄せて整理した。`routes.total` / `stops.withTimetable` / `stops.total` / `service.tripCountsByGroup` を削除し、`service.maxTripsPerDay` を source の最大日次運行量の代表値として維持した。`stops` は `locationTypes` と `geo.bbox` を中心に見直し、`locationTypes["0"].count` を UI 向けの rough な 乗り場 数 proxy として扱う前提を TSDoc に明記した。
+- Data source catalog: `summary` / `bundles` の責務分離に合わせて、builder・テスト・ドキュメントも更新した。`bundles.dataBundle.counts.*` / `bundles.insightsBundle.counts.*` の counting unit を明示し、最新 contract に追随して `npx tsc -b` が通るよう fixture も更新した。
 - Shared data contracts: pipeline と webapp が共有する wire-format 型定義 (`transit-json.ts` / `transit-v2-json.ts` / `transit-v2-catalog-json.ts`) を `src/types/data/` から `contracts/data/` へ移設し、参照 import と TypeScript path alias を更新した。
 - Data source settings dialog: section header の件数表示を **`(enabled/total)` 形式** に変更 (例: `バス (5/19)`)。 toggle / Reset / bulk action で即座に enabled 件数が更新される。
 - Info dialog: data source settings dialog を開く 📦 ボタンを素の `<button>` から shadcn `<Button variant="outline" size="icon-sm">` に refactor。 他の dialog 内 button と styling / focus / hover の挙動が一貫するようにした。

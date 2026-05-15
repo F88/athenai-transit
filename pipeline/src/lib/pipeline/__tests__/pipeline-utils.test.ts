@@ -9,6 +9,7 @@ import {
   formatExitCode,
   parseCliArg,
   runMain,
+  uniqueInOrder,
 } from '../pipeline-utils';
 
 // ---------------------------------------------------------------------------
@@ -259,6 +260,24 @@ describe('parseCliArg', () => {
         parseCliArg({ allowList: false, allowTargets: false, allowSourceName: false }),
       ).toEqual({ kind: 'help' });
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// uniqueInOrder
+// ---------------------------------------------------------------------------
+
+describe('uniqueInOrder', () => {
+  it('removes duplicates while preserving first-seen order', () => {
+    expect(uniqueInOrder(['minkuru', 'kobus', 'minkuru', 'toaran'])).toEqual([
+      'minkuru',
+      'kobus',
+      'toaran',
+    ]);
+  });
+
+  it('returns the original list when no duplicates exist', () => {
+    expect(uniqueInOrder(['minkuru', 'kobus'])).toEqual(['minkuru', 'kobus']);
   });
 });
 

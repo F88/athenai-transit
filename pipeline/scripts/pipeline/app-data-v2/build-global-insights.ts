@@ -32,7 +32,12 @@ import {
   buildStopGeo,
 } from '../../../src/lib/pipeline/app-data-v2/build-stop-geo';
 import { writeGlobalInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
-import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/pipeline-utils';
+import {
+  loadTargetFile,
+  parseCliArg,
+  runMain,
+  uniqueInOrder,
+} from '../../../src/lib/pipeline/pipeline-utils';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -85,7 +90,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const targetPrefixes = await loadTargetFile(arg.path);
+  const targetPrefixes = uniqueInOrder(await loadTargetFile(arg.path));
 
   console.log(`=== global-insights [START] ===\n`);
   console.log(`  Targets: ${targetPrefixes.length} sources (${targetPrefixes.join(', ')})`);

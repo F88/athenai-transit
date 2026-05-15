@@ -26,6 +26,8 @@ Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-global-insights.ts --
 
 per-source の build-insights と異なり `<prefix>` 単体モードはない。全ソースの data.json を横断して分析するため、常に targets リストで対象を指定する。
 
+`--targets` 内の prefix 重複は許容するが、global-insights build では first-seen order を保ったまま dedupe する。同じ source の stop entries を重複投入しないことで、connectivity などの横断集計が多重計上されるのを防ぐ。
+
 ## GlobalInsightsBundle 構成
 
 per-source InsightsBundle とは異なり、全ソースを横断した空間分析を提供する。
