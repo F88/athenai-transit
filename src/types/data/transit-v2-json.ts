@@ -29,21 +29,21 @@
  * | tripPatterns   | Route + headsign + direction + ordered per-stop records |
  * | lookup         | Normalized lookup tables (URLs, descriptions, etc.) |
  *
- * ### Bundle structure
+ * ### File layout
  *
- * Per-source bundles (`{prefix}/` directory):
+ * Per-source files (`{prefix}/` directory):
  *
- * | File                     | Contents                                       |
- * | ------------------------ | ---------------------------------------------- |
- * | `{prefix}/data.json`     | All data needed at startup (DataBundle)         |
- * | `{prefix}/shapes.json`   | Route shapes, lazy-loaded (ShapesBundle)        |
- * | `{prefix}/insights.json` | Precomputed analytics, optional (InsightsBundle) |
+ * | File                     | Bundle type            | Contents                      |
+ * | ------------------------ | ---------------------- | ----------------------------- |
+ * | `{prefix}/data.json`     | `DataBundle`           | Core per-source transit data  |
+ * | `{prefix}/shapes.json`   | `ShapesBundle`         | Route shape geometry          |
+ * | `{prefix}/insights.json` | `InsightsBundle`       | Precomputed per-source analytics |
  *
- * Global bundle (cross-source):
+ * Global files:
  *
- * | File                     | Contents                                       |
- * | ------------------------ | ---------------------------------------------- |
- * | `global/insights.json`   | Cross-source spatial analytics (GlobalInsightsBundle) |
+ * | File                   | Bundle type              | Contents                      |
+ * | ---------------------- | ------------------------ | ----------------------------- |
+ * | `global/insights.json` | `GlobalInsightsBundle`   | Cross-source spatial analytics |
  *
  * InsightsBundle sections (per-source, all optional except serviceGroups):
  *
