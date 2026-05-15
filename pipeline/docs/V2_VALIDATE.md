@@ -191,11 +191,11 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
 
   Validating 2 sources: minkuru, kobus
 
---- [1/3] Unvalidated directory check ---
+--- [1/5] Unvalidated directory check ---
 
   Result: All directories are covered by targets.
 
---- [2/3] File existence check ---
+--- [2/5] File existence check ---
 
   minkuru:
     data.json ......... OK
@@ -207,7 +207,7 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
     shapes.json ....... not found (optional, skipped)
   Result: 5/6 files present (1 optional skipped).
 
---- [3/3] Validate each bundle ---
+--- [3/5] Validate each bundle ---
 
   minkuru:
     [DataBundle]
@@ -235,6 +235,14 @@ V1 と同じ。`--targets` モードでのみ実行。`data-v2/` 内にターゲ
     [InsightsBundle]
       Structure:     OK (3 service groups)
 
+--- [4/5] Validate GlobalInsightsBundle ---
+
+  global/insights.json: OK (29078 stopGeo entries)
+
+--- [5/5] Validate DataSourceCatalogBundle ---
+
+  global/data-source-catalog.json: OK (0 sources)
+
 ## V2 Bundle Validation
 
 Checked on: 2026-03-22
@@ -258,12 +266,12 @@ Done in 42ms. (exit code: 1)
 
   Validating 3 sources: minkuru, kobus, unknown
 
---- [1/3] Unvalidated directory check ---
+--- [1/5] Unvalidated directory check ---
 
   ❌ ERROR: Unvalidated directory: broken/
   Result: 1 unvalidated directory found.
 
---- [2/3] File existence check ---
+--- [2/5] File existence check ---
 
   minkuru:
     data.json ......... OK
