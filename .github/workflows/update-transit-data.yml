@@ -189,8 +189,8 @@ jobs:
       - name: Build v2 global insights
         run: npm run pipeline:build:v2-global-insights
 
-      - name: Sync to public/
-        run: npm run data:sync
+      - name: Build v2 data source catalog
+        run: npm run pipeline:build:v2-data-source-catalog
 
       # ── Validate ───────────────────────────────────────────
       - name: Validate v2 bundles
@@ -206,6 +206,9 @@ jobs:
         run: |
           echo "::error::V2 bundle validation failed. See Job Summary for details."
           exit 1
+
+      - name: Sync to public/
+        run: npm run data:sync
 
       # ── Report & Deploy ────────────────────────────────────
       - name: Detect changes

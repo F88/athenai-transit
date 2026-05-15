@@ -1,13 +1,14 @@
 #!/usr/bin/env -S npx tsx
 
 /**
- * Validate v2 bundle files (DataBundle, ShapesBundle, InsightsBundle, GlobalInsightsBundle).
+ * Validate v2 bundle files and global v2 artifacts.
  *
- * Runs validation in up to four steps:
+ * Runs validation in up to five steps:
  *   Step 1 — Unvalidated directory check (--targets mode only)
  *   Step 2 — File existence check (required bundles must exist)
  *   Step 3 — Validate each bundle (structure, data quality, referential integrity)
  *   Step 4 — Validate GlobalInsightsBundle (global/insights.json)
+ *   Step 5 — Validate DataSourceCatalogBundle (global/data-source-catalog.json)
  *
  * Target: pipeline/workspace/_build/data-v2/{prefix}/
  *
@@ -30,6 +31,7 @@ import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/
 import { parseGtfsDate } from '../../../src/lib/gtfs-date-utils';
 import type { CalendarServiceMeta } from '../../../src/lib/pipeline/app-data-v2/validate-data';
 import { validateDataBundle } from '../../../src/lib/pipeline/app-data-v2/validate-data';
+import { validateDataSourceCatalogBundle } from '../../../src/lib/pipeline/app-data-v2/validate-data-source-catalog';
 import { validateGlobalInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-global-insights';
 import { validateInsightsBundle } from '../../../src/lib/pipeline/app-data-v2/validate-insights';
 import { validateServiceGroupResolution } from '../../../src/lib/pipeline/app-data-v2/validate-service-group-resolution';
@@ -575,7 +577,7 @@ async function main(): Promise<void> {
   const missingFiles: Array<{ prefix: string; filename: string }> = [];
   const calendarByPrefix = new Map<string, CalendarServiceMeta[]>();
   const isTargetsMode = arg.kind === 'targets';
-  const totalSteps = isTargetsMode ? 4 : 3;
+  const totalSteps = isTargetsMode ? 5 : 4;
   let stepNum = 0;
   const t0 = performance.now();
   const rawDate = new Date();
@@ -699,6 +701,30 @@ async function main(): Promise<void> {
     }
   } else {
     for (const issue of globalResult.issues) {
+      if (issue.level === 'error') {
+        console.log(`  ❌ ERROR: ${issue.message}`);
+      } else {
+        console.log(`  ⚠️ WARN:  ${issue.message}`);
+      }
+    }
+  }
+  console.log('');
+
+  // -------------------------------------------------------------------------
+  // Step 5 (or 4): Validate DataSourceCatalogBundle
+  // -------------------------------------------------------------------------
+
+  stepNum++;
+  console.log(`--- [${stepNum}/${totalSteps}] Validate DataSourceCatalogBundle ---\n`);
+
+  const catalogResult = validateDataSourceCatalogBundle(V2_OUTPUT_DIR);
+  trackIssues(catalogResult.issues, state);
+  allIssues.push(...catalogResult.issues);
+
+  if (catalogResult.issues.length === 0) {
+    console.log(`  global/data-source-catalog.json: OK (${catalogResult.sourceCount} sources)`);
+  } else {
+    for (const issue of catalogResult.issues) {
       if (issue.level === 'error') {
         console.log(`  ❌ ERROR: ${issue.message}`);
       } else {
