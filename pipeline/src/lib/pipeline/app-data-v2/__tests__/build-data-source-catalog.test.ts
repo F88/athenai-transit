@@ -218,6 +218,33 @@ function makeInsightsBundle(): InsightsBundle {
   };
 }
 
+function makeInsightsBundleWithNonWeekdayMax(): InsightsBundle {
+  const bundle = structuredClone(makeInsightsBundle());
+
+  if (!bundle.tripPatternStats || !bundle.stopStats) {
+    throw new Error('Expected tripPatternStats and stopStats to be present');
+  }
+
+  bundle.tripPatternStats.data.weekend = {
+    'testpfx:TP1': {
+      freq: 5,
+      rd: [30, 0],
+    },
+  };
+
+  bundle.stopStats.data.weekend = {
+    'testpfx:S1': {
+      freq: 5,
+      rc: 1,
+      rtc: 1,
+      ed: 480,
+      ld: 540,
+    },
+  };
+
+  return bundle;
+}
+
 function makeShapesBundle(): ShapesBundle {
   return {
     bundle_version: 3,
@@ -442,6 +469,18 @@ describe('buildDataSourceCatalogBundle', () => {
     });
     expect(bundle.sources.data.testpfx.summary.service).toEqual({
       maxTripsPerDay: 0,
+    });
+  });
+
+  it('uses the maximum trip total across service groups, not weekday-specific groups', async () => {
+    writeJson('testpfx/data.json', makeDataBundle());
+    writeJson('testpfx/insights.json', makeInsightsBundleWithNonWeekdayMax());
+    writeJson('global/insights.json', makeGlobalInsightsBundle());
+
+    const bundle = await buildDataSourceCatalogBundle(['testpfx']);
+
+    expect(bundle.sources.data.testpfx.summary.service).toEqual({
+      maxTripsPerDay: 5,
     });
   });
 
