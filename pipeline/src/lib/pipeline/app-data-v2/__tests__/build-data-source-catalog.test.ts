@@ -297,11 +297,19 @@ describe('buildDataSourceCatalogBundle', () => {
       '0': { count: 2, hasParentCount: 1 },
       '1': { count: 1, hasParentCount: 0 },
     });
+    expect(source.summary.stops.total).toBe(3);
     expect(source.summary.stops.geo.bbox).toEqual({
       latMin: 35.1,
       latMax: 35.3,
       lonMin: 139.1,
       lonMax: 139.4,
+    });
+    expect(source.summary.service).toEqual({
+      maxTripsPerDay: 2,
+    });
+    expect(source.summary.shapes).toEqual({
+      available: true,
+      routeCount: 1,
     });
 
     expect(source.bundles.dataBundle.counts).toEqual({
@@ -343,6 +351,10 @@ describe('buildDataSourceCatalogBundle', () => {
     const bundle = await buildDataSourceCatalogBundle(['testpfx']);
 
     expect(bundle.sources.data.testpfx.bundles.shapesBundle).toBeUndefined();
+    expect(bundle.sources.data.testpfx.summary.shapes).toEqual({
+      available: false,
+      routeCount: 0,
+    });
   });
 
   it('handles empty stops and nullable summary edge cases', async () => {
@@ -406,6 +418,7 @@ describe('buildDataSourceCatalogBundle', () => {
     expect(source.summary.agencies).toEqual([{ name: 'Test Agency', timezone: 'Asia/Tokyo' }]);
     expect(source.summary.i18n.languages).toEqual(['de', 'en', 'ja']);
     expect(source.summary.stops.locationTypes).toEqual({});
+    expect(source.summary.stops.total).toBe(0);
     expect(source.summary.stops.geo.bbox).toBeNull();
   });
 
@@ -428,6 +441,9 @@ describe('buildDataSourceCatalogBundle', () => {
       tripPatternStats: 0,
       tripPatternGeo: 1,
       stopStats: 0,
+    });
+    expect(bundle.sources.data.testpfx.summary.service).toEqual({
+      maxTripsPerDay: 0,
     });
   });
 

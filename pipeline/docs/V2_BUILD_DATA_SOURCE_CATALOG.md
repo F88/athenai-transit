@@ -139,7 +139,9 @@ key は output directory 名ではなく prefix とする。これは既存 v2 b
 
 ### source.summary
 
-`summary` は source-level facts を保持する。現在の実装では `data.json` 由来の値を格納する。
+`summary` は source-level semantic facts を保持する。UI や source comparison で使う場合は、可能な限りこちらを優先する。
+
+`bundles` が emitted bundle の構造や storage shape に結びついた metadata を持つのに対し、`summary` は underlying bundle layout に依存しすぎない意味的な値を持つことを意図する。
 
 初期実装では少なくとも次を含める。
 
@@ -155,12 +157,18 @@ key は output directory 名ではなく prefix とする。これは既存 v2 b
     - `routes.data[].t` の集計
 - `stops.locationTypes`
     - `stops.data[].l` と `ps` の集計
+- `stops.total`
+    - stop 総数
 - `stops.geo.bbox`
     - stop 座標の bbox
+- `service.maxTripsPerDay`
+    - service group ごとの trip 合計の最大値
+- `shapes.available`, `shapes.routeCount`
+    - route shape 利用可否と shape 付き route 数
 
 ### source.bundles
 
-`bundles` は file-backed facts のみを保持する。
+`bundles` は emitted bundle に対する structural metadata を保持する。diagnostics や validation には有用だが、値の単位が bundle 構造に依存する項目も含まれるため、UI 向き指標としては `summary` を優先する。
 
 - `dataBundle`
     - `file.sizeBytes`
@@ -173,6 +181,33 @@ key は output directory 名ではなく prefix とする。これは既存 v2 b
     - route count, polyline count, point count, totalLengthKm
 
 `shapes.json` が存在しない source では `shapesBundle` 自体を省略する。
+
+#### `bundles.dataBundle.counts.*` の counting unit
+
+`bundles.dataBundle.counts.*` は UI 向きの意味評価ではなく、`data.json` bundle をどう数えるかを固定した structural counts として扱う。
+
+| field          | 実際に数えるもの                                                  | 備考                                                   |
+| -------------- | ----------------------------------------------------------------- | ------------------------------------------------------ |
+| `stops`        | `stops.data.length`                                               | parent station / entrance を含む stop entry 総数       |
+| `routes`       | `routes.data.length`                                              | route entry 数                                         |
+| `agency`       | `agency.data.length`                                              | agency entry 数                                        |
+| `calendar`     | `calendar.data.services.length + calendar.data.exceptions.length` | service と exception の合算                            |
+| `feedInfo`     | `1`                                                               | valid bundle では常に 1                                |
+| `timetable`    | `Object.keys(timetable.data).length`                              | timetable stop key 数。group 数や stop-time 数ではない |
+| `tripPatterns` | `Object.keys(tripPatterns.data).length`                           | trip pattern ID 数                                     |
+| `translations` | translation 各 map の top-level entry 数の総和                    | semantic UI 値ではなく structural aggregate            |
+| `lookup`       | lookup 各 map の top-level entry 数の総和                         | semantic UI 値ではなく structural aggregate            |
+
+#### `bundles.insightsBundle.counts.*` の counting unit
+
+| field              | 実際に数えるもの                            | 備考                    |
+| ------------------ | ------------------------------------------- | ----------------------- |
+| `serviceGroups`    | `serviceGroups.data.length`                 | service group entry 数  |
+| `tripPatternStats` | `Object.keys(tripPatternStats.data).length` | service-group bucket 数 |
+| `tripPatternGeo`   | `Object.keys(tripPatternGeo.data).length`   | trip pattern ID 数      |
+| `stopStats`        | `Object.keys(stopStats.data).length`        | service-group bucket 数 |
+
+このため、`bundles.*.counts` を source comparison や UI 指標へ直接流用するのではなく、意味的な比較値は `summary` で別に持つ方針を採る。
 
 ### globalInsights
 

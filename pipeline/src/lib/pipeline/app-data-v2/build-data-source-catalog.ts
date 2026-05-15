@@ -109,6 +109,16 @@ function buildRouteTypeCounts(bundle: DataBundle): Record<string, number> {
   return counts;
 }
 
+function maxValue(values: Iterable<number>): number {
+  let max = 0;
+  for (const value of values) {
+    if (value > max) {
+      max = value;
+    }
+  }
+  return max;
+}
+
 function buildStopLocationTypes(
   stops: StopV2Json[],
 ): Record<string, { count: number; hasParentCount: number }> {
@@ -232,6 +242,9 @@ function buildCatalogSource(
   shapesBundle: ShapesBundle | null,
   shapesFilePath: string,
 ): DataSourceCatalogSource {
+  const routeTypeCounts = buildRouteTypeCounts(dataBundle);
+  const stopLocationTypes = buildStopLocationTypes(dataBundle.stops.data);
+
   return {
     summary: {
       periods: {
@@ -255,13 +268,27 @@ function buildCatalogSource(
         languages: extractTranslationLanguages(dataBundle),
       },
       routes: {
-        typeCounts: buildRouteTypeCounts(dataBundle),
+        typeCounts: routeTypeCounts,
       },
       stops: {
-        locationTypes: buildStopLocationTypes(dataBundle.stops.data),
+        total: dataBundle.stops.data.length,
+        locationTypes: stopLocationTypes,
         geo: {
           bbox: buildStopBbox(dataBundle.stops.data),
         },
+      },
+      service: {
+        maxTripsPerDay: maxValue(
+          insightsBundle.tripPatternStats
+            ? Object.values(insightsBundle.tripPatternStats.data).map((groupStats) =>
+                Object.values(groupStats).reduce((tripCount, stats) => tripCount + stats.freq, 0),
+              )
+            : [],
+        ),
+      },
+      shapes: {
+        available: shapesBundle !== null,
+        routeCount: shapesBundle ? Object.keys(shapesBundle.shapes.data).length : 0,
       },
     },
     bundles: {

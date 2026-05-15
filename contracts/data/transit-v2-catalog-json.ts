@@ -37,25 +37,40 @@ export interface DataSourceCatalogFileBackedSummary {
 
 /** Summary derived from one source's DataBundle file and contents. */
 export interface DataSourceCatalogDataBundleSummary extends DataSourceCatalogFileBackedSummary {
-  /** Entity counts derived from one source's DataBundle. */
+  /**
+   * Structural counts derived from one source's DataBundle.
+   *
+   * These describe emitted bundle shape and storage structure. They are
+   * appropriate for diagnostics and low-level analysis, but they should
+   * not be assumed to be ideal direct UI metrics.
+   */
   counts: {
+    /** Number of entries in `stops.data` (all stop entries, including parent stations). */
     stops: number;
+    /** Number of entries in `routes.data`. */
     routes: number;
+    /** Number of entries in `agency.data`. */
     agency: number;
-    /** Total calendar entries: `services.length + exceptions.length`. */
+    /** Total calendar entries: `calendar.data.services.length + calendar.data.exceptions.length`. */
     calendar: number;
+    /** Presence count for `feedInfo`; currently always `1` for a valid bundle. */
     feedInfo: number;
+    /** Number of stop keys in `timetable.data`, not timetable groups or stop-times. */
     timetable: number;
+    /** Number of trip pattern IDs in `tripPatterns.data`. */
     tripPatterns: number;
+    /** Sum of top-level translation entry counts across translation maps. */
     translations: number;
+    /** Sum of top-level lookup entry counts across lookup maps. */
     lookup: number;
   };
 }
 
 /** Summary derived from one source's InsightsBundle file and contents. */
 export interface DataSourceCatalogInsightsBundleSummary extends DataSourceCatalogFileBackedSummary {
-  /** Entity counts derived from one source's InsightsBundle. */
+  /** Structural counts derived from one source's InsightsBundle. */
   counts: {
+    /** Number of entries in `serviceGroups.data`. */
     serviceGroups: number;
     /**
      * `tripPatternGeo` is flat by trip pattern ID, while `tripPatternStats` and `stopStats`
@@ -72,7 +87,7 @@ export interface DataSourceCatalogInsightsBundleSummary extends DataSourceCatalo
 
 /** Summary derived from one source's ShapesBundle file and contents. */
 export interface DataSourceCatalogShapesBundleSummary extends DataSourceCatalogFileBackedSummary {
-  /** Counts derived from this source's shapes.json bundle. */
+  /** Structural counts derived from this source's shapes.json bundle. */
   counts: {
     /** Number of routes that carry shape geometry. */
     routes: number;
@@ -90,11 +105,11 @@ export interface DataSourceCatalogShapesBundleSummary extends DataSourceCatalogF
 
 /** Emitted bundle-backed summaries grouped by bundle type for one source. */
 export interface DataSourceCatalogSourceBundles {
-  /** Summary derived from this source's data.json bundle. */
+  /** Structural metadata derived from this source's data.json bundle. */
   dataBundle: DataSourceCatalogDataBundleSummary;
-  /** Summary derived from this source's insights.json bundle. */
+  /** Structural metadata derived from this source's insights.json bundle. */
   insightsBundle: DataSourceCatalogInsightsBundleSummary;
-  /** Summary derived from this source's shapes.json bundle, when present. */
+  /** Structural metadata derived from this source's shapes.json bundle, when present. */
   shapesBundle?: DataSourceCatalogShapesBundleSummary;
 }
 
@@ -112,18 +127,24 @@ export interface DataSourceCatalogStopLocationTypeSummary {
   hasParentCount: number;
 }
 
-/** Curated source-level summaries derived from one source's data.json bundle. */
+/**
+ * Curated source-level facts for discovery, comparison, and UI.
+ *
+ * This section describes the source itself rather than the current
+ * storage layout used to build it. Its fields should remain meaningful
+ * even if the underlying bundle structure evolves.
+ */
 export interface DataSourceCatalogSourceSummary {
-  /** Period summary derived from this source's data.json bundle. */
+  /** Date-range facts describing this source's published service period. */
   periods: {
-    /** Declared feed validity derived from `feedInfo`. */
+    /** Declared validity window for this source, when published. */
     feedValidity: DataSourceCatalogDateRange;
-    /** Min/max service dates derived from `calendar.services`. */
+    /** Earliest and latest regular service dates represented by this source. */
     servicePeriod: DataSourceCatalogDateRange;
-    /** Min/max exception dates derived from `calendar.exceptions`. */
+    /** Earliest and latest exception dates represented by this source. */
     exceptionRange: DataSourceCatalogDateRange;
   };
-  /** Agencies derived from this source's data.json bundle. */
+  /** Agencies represented by this source. */
   agencies: {
     /** Agency name as published in the source data. */
     name: string;
@@ -132,21 +153,23 @@ export interface DataSourceCatalogSourceSummary {
     /** Agency timezone from the source data. */
     timezone: string;
   }[];
-  /** Translation languages summary derived from this source's data.json bundle. */
+  /** Languages supported by this source's published passenger-facing text. */
   i18n: {
-    /** Sorted union of language codes observed across all translation maps. */
+    /** Sorted list of language codes available in this source. */
     languages: string[];
   };
-  /** Route summary derived from this source's data.json bundle. */
+  /** Route composition facts for this source. */
   routes: {
     /** Counts keyed by the stringified GTFS `route_type` value. */
     typeCounts: Record<string, number>;
   };
-  /** Stops summary derived from this source's data.json bundle. */
+  /** Stop and station facts for this source. */
   stops: {
+    /** Total stop entry count, including parent stations and entrances. */
+    total: number;
     /** Per-`location_type` stop counts and parent-station coverage. */
     locationTypes: Record<string, DataSourceCatalogStopLocationTypeSummary>;
-    /** Stop geographic summary derived from stop coordinates. */
+    /** Geographic extent of the stops represented by this source. */
     geo: {
       /** Bounding box of all stops, or null when the source has no stops. */
       bbox: null | {
@@ -157,12 +180,24 @@ export interface DataSourceCatalogSourceSummary {
       };
     };
   };
+  /** Service-volume facts suitable for rough scale comparison. */
+  service: {
+    /** Highest one-day trip total across the operating-day categories represented by this source. */
+    maxTripsPerDay: number;
+  };
+  /** Route shape coverage facts for this source. */
+  shapes: {
+    /** Whether route shape geometry is available for this source. */
+    available: boolean;
+    /** Number of routes in this source that include shape geometry. */
+    routeCount: number;
+  };
 }
 
 export interface DataSourceCatalogGlobalInsightsSummary extends DataSourceCatalogFileBackedSummary {
-  /** Entity counts derived from the GlobalInsightsBundle. */
+  /** Structural counts derived from the GlobalInsightsBundle. */
   counts: {
-    /** Cross-source summary derived from `global/insights.json`. */
+    /** Number of stop IDs present in `global/insights.json` `stopGeo.data`. */
     stopGeo: number;
   };
 }
@@ -176,10 +211,10 @@ export interface DataSourceCatalogGlobalInsightsSummary extends DataSourceCatalo
  * license copy intentionally remain outside this schema.
  */
 export interface DataSourceCatalogSource {
-  /** Curated source-level summaries derived from this source's data.json bundle. */
-  summary: DataSourceCatalogSourceSummary;
-  /** Emitted bundle-backed summaries grouped by bundle type. */
+  /** Emitted bundle-backed structural metadata grouped by bundle type. */
   bundles: DataSourceCatalogSourceBundles;
+  /** Curated source-level semantic facts intended for discovery and comparison. */
+  summary: DataSourceCatalogSourceSummary;
 }
 
 /**
