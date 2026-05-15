@@ -42,6 +42,7 @@ export interface DataSourceCatalogDataBundleSummary extends DataSourceCatalogFil
     stops: number;
     routes: number;
     agency: number;
+    /** Total calendar entries: `services.length + exceptions.length`. */
     calendar: number;
     feedInfo: number;
     timetable: number;
@@ -56,8 +57,11 @@ export interface DataSourceCatalogInsightsBundleSummary extends DataSourceCatalo
   /** Entity counts derived from one source's InsightsBundle. */
   counts: {
     serviceGroups: number;
+    /** Number of service-group buckets present in `tripPatternStats.data`. */
     tripPatternStats: number;
+    /** Number of trip pattern IDs present in `tripPatternGeo.data`. */
     tripPatternGeo: number;
+    /** Number of service-group buckets present in `stopStats.data`. */
     stopStats: number;
   };
 }

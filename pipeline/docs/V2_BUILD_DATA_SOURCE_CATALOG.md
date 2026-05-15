@@ -97,6 +97,8 @@ Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-data-source-catalog.t
 
 各 source prefix について、次の bundle を読む。
 
+prefix 妥当性検証では `loadAllGtfsSources()` / `discoverOdptTrainSources()` を通じて resource 定義も間接参照する。ただし、catalog 内の curated metadata を抽出する用途では使わず、あくまで target prefix の検証に限る。
+
 | ファイル        | 状態     | 用途                                  |
 | --------------- | -------- | ------------------------------------- |
 | `data.json`     | required | source-level summary と counts の構築 |

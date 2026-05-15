@@ -308,7 +308,7 @@ describe('buildDataSourceCatalogBundle', () => {
       stops: 3,
       routes: 3,
       agency: 1,
-      calendar: 2,
+      calendar: 4,
       feedInfo: 1,
       timetable: 1,
       tripPatterns: 1,
@@ -343,6 +343,92 @@ describe('buildDataSourceCatalogBundle', () => {
     const bundle = await buildDataSourceCatalogBundle(['testpfx']);
 
     expect(bundle.sources.data.testpfx.bundles.shapesBundle).toBeUndefined();
+  });
+
+  it('handles empty stops and nullable summary edge cases', async () => {
+    const dataBundle = structuredClone(makeDataBundle()) as unknown as Record<string, unknown>;
+    const stopsSection = dataBundle.stops as { data: unknown[] };
+    stopsSection.data = [];
+
+    const agencySection = dataBundle.agency as {
+      data: Array<{
+        v: 2;
+        i: string;
+        n: string;
+        u: string;
+        tz: string;
+        l?: string;
+      }>;
+    };
+    agencySection.data = [
+      {
+        v: 2,
+        i: 'testpfx:A1',
+        n: 'Test Agency',
+        u: 'https://example.com',
+        tz: 'Asia/Tokyo',
+      },
+    ];
+
+    const calendarSection = dataBundle.calendar as {
+      data: {
+        services: Array<{ i: string; s: string; e: string; d: number[] }>;
+        exceptions: Array<{ i: string; d: string; t: number }>;
+      };
+    };
+    calendarSection.data.exceptions = [];
+
+    const feedInfoSection = dataBundle.feedInfo as {
+      data: Record<string, string>;
+    };
+    feedInfoSection.data.s = '';
+    delete feedInfoSection.data.e;
+
+    const translationsSection = dataBundle.translations as {
+      data: {
+        agency_names: Record<string, Record<string, string>>;
+        route_long_names: Record<string, Record<string, string>>;
+      };
+    };
+    translationsSection.data.route_long_names = {
+      'testpfx:R1': { ja: 'ルート1', de: 'Linie 1', en: 'Route 1' },
+    };
+
+    writeJson('testpfx/data.json', dataBundle);
+    writeJson('testpfx/insights.json', makeInsightsBundle());
+    writeJson('global/insights.json', makeGlobalInsightsBundle());
+
+    const bundle = await buildDataSourceCatalogBundle(['testpfx']);
+    const source = bundle.sources.data.testpfx;
+
+    expect(source.summary.periods.feedValidity).toEqual({ start: null, end: null });
+    expect(source.summary.periods.exceptionRange).toEqual({ start: null, end: null });
+    expect(source.summary.agencies).toEqual([{ name: 'Test Agency', timezone: 'Asia/Tokyo' }]);
+    expect(source.summary.i18n.languages).toEqual(['de', 'en', 'ja']);
+    expect(source.summary.stops.locationTypes).toEqual({});
+    expect(source.summary.stops.geo.bbox).toBeNull();
+  });
+
+  it('returns zero counts for missing optional insights sections', async () => {
+    const insightsBundle = structuredClone(makeInsightsBundle()) as unknown as Record<
+      string,
+      unknown
+    >;
+    delete insightsBundle.tripPatternStats;
+    delete insightsBundle.stopStats;
+
+    writeJson('testpfx/data.json', makeDataBundle());
+    writeJson('testpfx/insights.json', insightsBundle);
+    writeJson('global/insights.json', makeGlobalInsightsBundle());
+
+    const bundle = await buildDataSourceCatalogBundle(['testpfx']);
+
+    expect(bundle.sources.data.testpfx.bundles.insightsBundle.counts).toEqual({
+      serviceGroups: 2,
+      tripPatternStats: 0,
+      tripPatternGeo: 1,
+      stopStats: 0,
+    });
   });
 
   it('throws for unknown target prefixes', async () => {

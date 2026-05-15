@@ -165,7 +165,7 @@ function buildDataBundleSummary(bundle: DataBundle, filePath: string) {
       stops: bundle.stops.data.length,
       routes: bundle.routes.data.length,
       agency: bundle.agency.data.length,
-      calendar: countSection(bundle.calendar),
+      calendar: bundle.calendar.data.services.length + bundle.calendar.data.exceptions.length,
       feedInfo: 1,
       timetable: countSection(bundle.timetable),
       tripPatterns: countSection(bundle.tripPatterns),
