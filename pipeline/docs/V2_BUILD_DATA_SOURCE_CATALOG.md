@@ -85,6 +85,8 @@ Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-data-source-catalog.t
 
 `<prefix>` 単体モードは持たない。
 
+`--targets` 内の prefix 重複は許容するが、catalog build では first-seen order を保ったまま dedupe する。同じ source を複数回読み込まず、最終的な `sources.data` も各 prefix 1 entry に正規化される。
+
 理由:
 
 - 出力は単一の global artifact である

@@ -431,6 +431,17 @@ describe('buildDataSourceCatalogBundle', () => {
     });
   });
 
+  it('dedupes duplicate target prefixes before reading source bundles', async () => {
+    writeJson('testpfx/data.json', makeDataBundle());
+    writeJson('testpfx/insights.json', makeInsightsBundle());
+    writeJson('global/insights.json', makeGlobalInsightsBundle());
+
+    const bundle = await buildDataSourceCatalogBundle(['testpfx', 'testpfx']);
+
+    expect(Object.keys(bundle.sources.data)).toEqual(['testpfx']);
+    expect(bundle.sources.data.testpfx.bundles.dataBundle.counts.stops).toBe(3);
+  });
+
   it('throws for unknown target prefixes', async () => {
     writeJson('global/insights.json', makeGlobalInsightsBundle());
 

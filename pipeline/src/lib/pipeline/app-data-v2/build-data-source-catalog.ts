@@ -16,6 +16,7 @@ import type {
 
 import { getDistanceKmLight } from '../../geo-utils';
 import { V2_OUTPUT_DIR } from '../../paths';
+import { uniqueInOrder } from '../pipeline-utils';
 import { loadAllGtfsSources } from '../../resources/load-gtfs-sources';
 import { discoverOdptTrainSources } from '../../resources/load-odpt-train-sources';
 
@@ -309,7 +310,7 @@ function buildGlobalInsightsSummary(filePath: string): {
 export async function buildDataSourceCatalogBundle(
   targetPrefixes: string[],
 ): Promise<DataSourceCatalogBundle> {
-  const resolvedTargets = await resolveCatalogTargets(targetPrefixes);
+  const resolvedTargets = await resolveCatalogTargets(uniqueInOrder(targetPrefixes));
   const sources: Record<string, DataSourceCatalogSource> = {};
 
   for (const target of resolvedTargets) {
