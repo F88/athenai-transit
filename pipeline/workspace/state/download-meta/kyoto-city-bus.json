@@ -2,12 +2,12 @@
   "sourceName": "kyoto-city-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-15T05:28:10.910Z",
+  "downloadedAt": "2026-05-15T08:36:58.527Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20260423",
   "size": 5509210,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 3889,
-  "archivePath": "workspace/_archives/gtfs/kyoto-city-bus/Kyoto_City_Bus_GTFS_20260515-052814.zip",
+  "durationMs": 3283,
+  "archivePath": "workspace/_archives/gtfs/kyoto-city-bus/Kyoto_City_Bus_GTFS_20260515-083701.zip",
   "extractedFiles": [
     {
       "name": "stops.txt",
