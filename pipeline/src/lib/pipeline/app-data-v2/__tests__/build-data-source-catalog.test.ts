@@ -109,12 +109,12 @@ function makeDataBundle(): DataBundle {
       v: 1,
       data: {
         services: [
-          { i: 'svc:1', s: '2026-05-01', e: '2026-05-31', d: [1, 1, 1, 1, 1, 0, 0] },
-          { i: 'svc:2', s: '2026-04-01', e: '2026-06-30', d: [0, 0, 0, 0, 0, 1, 1] },
+          { i: 'svc:1', s: '20260501', e: '20260531', d: [1, 1, 1, 1, 1, 0, 0] },
+          { i: 'svc:2', s: '20260401', e: '20260630', d: [0, 0, 0, 0, 0, 1, 1] },
         ],
         exceptions: [
-          { i: 'svc:1', d: '2026-04-29', t: 1 },
-          { i: 'svc:1', d: '2026-05-03', t: 2 },
+          { i: 'svc:1', d: '20260429', t: 1 },
+          { i: 'svc:1', d: '20260503', t: 2 },
         ],
       },
     },
@@ -124,8 +124,8 @@ function makeDataBundle(): DataBundle {
         pn: 'Publisher',
         pu: 'https://publisher.example.com',
         l: 'ja',
-        s: '2026-04-01',
-        e: '2026-06-30',
+        s: '20260401',
+        e: '20260630',
         v: '2026.05',
       },
     },
@@ -274,16 +274,16 @@ describe('buildDataSourceCatalogBundle', () => {
     expect(Number.isNaN(Date.parse(bundle.metadata.data.createdAt))).toBe(false);
 
     expect(source.summary.periods.feedValidity).toEqual({
-      start: '2026-04-01',
-      end: '2026-06-30',
+      start: '20260401',
+      end: '20260630',
     });
     expect(source.summary.periods.servicePeriod).toEqual({
-      start: '2026-04-01',
-      end: '2026-06-30',
+      start: '20260401',
+      end: '20260630',
     });
     expect(source.summary.periods.exceptionRange).toEqual({
-      start: '2026-04-29',
-      end: '2026-05-03',
+      start: '20260429',
+      end: '20260503',
     });
     expect(source.summary.agencies).toEqual([
       { name: 'Test Agency', lang: 'ja', timezone: 'Asia/Tokyo' },
