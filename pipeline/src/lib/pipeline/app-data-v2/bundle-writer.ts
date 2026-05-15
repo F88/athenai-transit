@@ -11,6 +11,7 @@
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
 import type {
   DataBundle,
   GlobalInsightsBundle,
@@ -140,4 +141,17 @@ export function writeGlobalInsightsBundle(dir: string, stopGeo: Record<string, S
     stopGeo: { v: 1, data: stopGeo },
   };
   writeAtomicJson(dir, 'insights.json', bundle);
+}
+
+/**
+ * Write a DataSourceCatalogBundle to `{dir}/data-source-catalog.json` atomically.
+ *
+ * Output path is typically
+ * `pipeline/workspace/_build/data-v2/global/data-source-catalog.json`.
+ *
+ * @param dir - Output directory (e.g. `pipeline/workspace/_build/data-v2/global`).
+ * @param catalog - The catalog bundle to serialize.
+ */
+export function writeDataSourceCatalogBundle(dir: string, catalog: DataSourceCatalogBundle): void {
+  writeAtomicJson(dir, 'data-source-catalog.json', catalog);
 }

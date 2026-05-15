@@ -47,6 +47,7 @@
     "pipeline:build:v2-shapes:ksj": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts --targets pipeline/config/targets/build-shapes-ksj.ts",
     "pipeline:build:v2-insights": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts --targets pipeline/config/targets/build-insights.ts",
     "pipeline:build:v2-global-insights": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-global-insights.ts --targets pipeline/config/targets/build-global-insights.ts",
+    "pipeline:build:v2-data-source-catalog": "npx tsx pipeline/scripts/pipeline/app-data-v2/build-data-source-catalog.ts --targets pipeline/config/targets/build-data-source-catalog.ts",
     "pipeline:validate:v2": "npx tsx pipeline/scripts/pipeline/app-data-v2/validate-v2-bundles.ts --targets pipeline/config/targets/validate.ts",
     "pipeline:check:odpt-resources": "npx tsx pipeline/scripts/pipeline/check-odpt-resources.ts",
     "pipeline:describe": "npx tsx pipeline/scripts/dev/describe-resources.ts",

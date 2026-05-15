@@ -8,8 +8,17 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import type {
+  DataSourceCatalogBundle,
+  DataSourceCatalogSource,
+} from '@contracts/data/transit-v2-catalog-json';
 import type { DataBundle, InsightsBundle, ShapesBundle } from '@contracts/data/transit-v2-json';
-import { writeDataBundle, writeInsightsBundle, writeShapesBundle } from '../bundle-writer';
+import {
+  writeDataBundle,
+  writeDataSourceCatalogBundle,
+  writeInsightsBundle,
+  writeShapesBundle,
+} from '../bundle-writer';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-bundle-writer-test');
 
@@ -37,6 +46,81 @@ function makeBundle(): DataBundle {
       },
     },
     lookup: { v: 2, data: {} },
+  };
+}
+
+/** Minimal DataSourceCatalogBundle for testing. */
+function makeCatalogBundle(
+  sources: Record<string, DataSourceCatalogSource> = {},
+): DataSourceCatalogBundle {
+  return {
+    bundle_version: 3,
+    kind: 'data-source-catalog',
+    metadata: {
+      v: 1,
+      data: {
+        createdAt: '2026-05-15T00:00:00.000Z',
+      },
+    },
+    sources: {
+      v: 1,
+      data: sources,
+    },
+    globalInsights: {
+      v: 1,
+      data: {
+        file: {
+          sizeBytes: 0,
+        },
+        counts: {
+          stopGeo: 0,
+        },
+      },
+    },
+  };
+}
+
+function makeCatalogSource(): DataSourceCatalogSource {
+  return {
+    summary: {
+      periods: {
+        feedValidity: { start: null, end: null },
+        servicePeriod: { start: null, end: null },
+        exceptionRange: { start: null, end: null },
+      },
+      agencies: [],
+      i18n: { languages: [] },
+      routes: { typeCounts: {} },
+      stops: {
+        locationTypes: {},
+        geo: { bbox: null },
+      },
+    },
+    bundles: {
+      dataBundle: {
+        file: { sizeBytes: 0 },
+        counts: {
+          stops: 0,
+          routes: 0,
+          agency: 0,
+          calendar: 0,
+          feedInfo: 0,
+          timetable: 0,
+          tripPatterns: 0,
+          translations: 0,
+          lookup: 0,
+        },
+      },
+      insightsBundle: {
+        file: { sizeBytes: 0 },
+        counts: {
+          serviceGroups: 0,
+          tripPatternStats: 0,
+          tripPatternGeo: 0,
+          stopStats: 0,
+        },
+      },
+    },
   };
 }
 
@@ -225,5 +309,42 @@ describe('writeInsightsBundle', () => {
     expect(written.tripPatternGeo).toBeDefined();
     expect(written).not.toHaveProperty('tripPatternStats');
     expect(written).not.toHaveProperty('stopStats');
+  });
+});
+
+describe('writeDataSourceCatalogBundle', () => {
+  it('creates directory and writes data-source-catalog.json', () => {
+    const dir = join(TMP_DIR, 'global');
+    const bundle = makeCatalogBundle({});
+
+    writeDataSourceCatalogBundle(dir, bundle);
+
+    const filePath = join(dir, 'data-source-catalog.json');
+    expect(existsSync(filePath)).toBe(true);
+
+    const written = JSON.parse(readFileSync(filePath, 'utf-8')) as DataSourceCatalogBundle;
+    expect(written.bundle_version).toBe(3);
+    expect(written.kind).toBe('data-source-catalog');
+    expect(written.metadata.data.createdAt).toBe('2026-05-15T00:00:00.000Z');
+  });
+
+  it('does not leave a temp file after successful write', () => {
+    const dir = join(TMP_DIR, 'global');
+    writeDataSourceCatalogBundle(dir, makeCatalogBundle());
+
+    expect(existsSync(join(dir, 'data-source-catalog.json.tmp'))).toBe(false);
+  });
+
+  it('overwrites existing data-source-catalog.json', () => {
+    const dir = join(TMP_DIR, 'global');
+
+    writeDataSourceCatalogBundle(dir, makeCatalogBundle({ minkuru: makeCatalogSource() }));
+    writeDataSourceCatalogBundle(dir, makeCatalogBundle({ toaran: makeCatalogSource() }));
+
+    const written = JSON.parse(
+      readFileSync(join(dir, 'data-source-catalog.json'), 'utf-8'),
+    ) as DataSourceCatalogBundle;
+    expect(written.sources.data).not.toHaveProperty('minkuru');
+    expect(written.sources.data).toHaveProperty('toaran');
   });
 });
