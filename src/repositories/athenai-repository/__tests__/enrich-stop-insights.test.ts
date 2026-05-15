@@ -128,4 +128,38 @@ describe('enrichStopInsights', () => {
 
     expect(stopInsightsMap.get('bus_01')?.stats.ho?.freq).toBe(80);
   });
+
+  it('absorbs synchronous throws from a non-async loadGlobalInsights impl', async () => {
+    // The TransitDataSourceV2 contract returns a Promise but does not
+    // preclude implementations from throwing synchronously before the
+    // Promise is constructed. enrichStopInsights must still complete
+    // and treat global insights as unavailable in that case.
+    const merged = mergeSourcesV2([createFixtureV2()]);
+    const stopInsightsMap = new Map<string, StopInsightsEntry>();
+    const insights = createInsightsFixtureV2();
+    const dataSource: TransitDataSourceV2 = {
+      loadData() {
+        return Promise.reject(new Error('loadData is not used in this test'));
+      },
+      loadShapes() {
+        return Promise.resolve(null);
+      },
+      loadInsights() {
+        return Promise.resolve(insights);
+      },
+      loadGlobalInsights() {
+        throw new Error('sync throw before Promise construction');
+      },
+      loadDataSourceCatalog() {
+        return Promise.resolve(null);
+      },
+    };
+
+    await enrichStopInsights(merged.stopsMetaMap, ['test'], dataSource, stopInsightsMap);
+
+    // per-source stats still applied because per-source loadInsights succeeded
+    expect(stopInsightsMap.get('bus_01')?.stats.wd?.freq).toBe(200);
+    // stop.geo not populated because global insights threw — but no crash
+    expect(merged.stopsMetaMap.get('bus_01')?.geo).toBeUndefined();
+  });
 });

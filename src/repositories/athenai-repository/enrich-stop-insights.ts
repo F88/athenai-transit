@@ -1,9 +1,32 @@
+import type { GlobalInsightsBundle } from '@contracts/data/transit-v2-json';
+
 import type { StopWithMeta } from '../../types/app/transit-composed';
 import type { TransitDataSourceV2 } from '../../datasources/transit-data-source-v2';
 import { createLogger } from '../../lib/logger';
 import type { StopInsightsEntry } from './types';
 
 const logger = createLogger('AthenaiRepositoryV2');
+
+/**
+ * Fetch the global insights bundle, normalizing all failures (including
+ * a non-`async` implementation that throws synchronously) to `null`.
+ *
+ * Uses `try/catch` rather than `.catch(...)` because the
+ * {@link TransitDataSourceV2.loadGlobalInsights} contract returns a
+ * `Promise` but does not preclude implementations from throwing before
+ * the promise is constructed; `.catch(...)` would not absorb such a
+ * synchronous throw.
+ */
+async function loadGlobalInsightsSafe(
+  dataSource: TransitDataSourceV2,
+): Promise<GlobalInsightsBundle | null> {
+  try {
+    return await dataSource.loadGlobalInsights();
+  } catch (error) {
+    logger.warn('Failed to load global insights:', error);
+    return null;
+  }
+}
 
 /**
  * Enrich stopsMetaMap with per-stop stats and geo data from insights bundles.
@@ -26,10 +49,7 @@ export async function enrichStopInsights(
 
   const [insightsResults, globalResult] = await Promise.all([
     Promise.allSettled(prefixes.map((prefix) => dataSource.loadInsights(prefix))),
-    dataSource.loadGlobalInsights().catch((error) => {
-      logger.warn('Failed to load global insights:', error);
-      return null;
-    }),
+    loadGlobalInsightsSafe(dataSource),
   ]);
 
   let statsCount = 0;

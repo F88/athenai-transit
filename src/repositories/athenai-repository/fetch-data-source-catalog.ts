@@ -16,17 +16,25 @@ export interface FetchDataSourceCatalogResult {
  * Fetch the global data-source catalog bundle, normalizing all failures
  * (including bundle envelope mismatch) to `null`.
  *
- * Mirrors how `enrichStopInsights` handles `loadGlobalInsights`: catalog
- * absence degrades catalog UI only and does not affect transit query, so
- * any error is logged as a warning and converted to `null`.
+ * Catalog absence degrades catalog UI only and does not affect transit
+ * query, so any error is logged as a warning and converted to `null`.
+ *
+ * The `await` is wrapped in `try/catch` rather than chained with
+ * `.catch(...)` so that a synchronous throw from a non-`async`
+ * {@link TransitDataSourceV2.loadDataSourceCatalog} implementation is
+ * also normalized. The interface contract returns a `Promise` but does
+ * not preclude callers throwing before the promise is constructed.
  */
 export async function fetchDataSourceCatalog(
   dataSource: TransitDataSourceV2,
 ): Promise<FetchDataSourceCatalogResult> {
   const start = performance.now();
-  const catalog = await dataSource.loadDataSourceCatalog().catch((err: unknown) => {
+  let catalog: DataSourceCatalogBundle | null;
+  try {
+    catalog = await dataSource.loadDataSourceCatalog();
+  } catch (err: unknown) {
     logger.warn('Failed to load data source catalog:', err);
-    return null;
-  });
+    catalog = null;
+  }
   return { catalog, ms: performance.now() - start };
 }

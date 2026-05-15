@@ -1,5 +1,6 @@
 import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
 import { describe, expect, it } from 'vitest';
+import type { TransitDataSourceV2 } from '../../../datasources/transit-data-source-v2';
 import { fetchDataSourceCatalog } from '../fetch-data-source-catalog';
 import { createFixtureV2, TestDataSourceV2 } from './fixtures/test-data-source-v2';
 
@@ -44,6 +45,27 @@ describe('fetchDataSourceCatalog', () => {
     );
     const fixture = createFixtureV2();
     const dataSource = new TestDataSourceV2({ test: fixture }, {}, {}, null, envelopeError);
+
+    const result = await fetchDataSourceCatalog(dataSource);
+
+    expect(result.catalog).toBeNull();
+    expect(result.ms).toBeGreaterThanOrEqual(0);
+  });
+
+  it('normalizes synchronous throws from non-async impls to null catalog', async () => {
+    // The TransitDataSourceV2 contract only requires a Promise return type;
+    // an implementation that omits the `async` keyword and throws before
+    // constructing a Promise would bypass a chained `.catch(...)`. The
+    // try/catch wrapper in fetchDataSourceCatalog must still absorb it.
+    const dataSource: TransitDataSourceV2 = {
+      loadData: () => Promise.reject(new Error('not used in this test')),
+      loadShapes: () => Promise.resolve(null),
+      loadInsights: () => Promise.resolve(null),
+      loadGlobalInsights: () => Promise.resolve(null),
+      loadDataSourceCatalog() {
+        throw new Error('sync throw before Promise construction');
+      },
+    };
 
     const result = await fetchDataSourceCatalog(dataSource);
 
