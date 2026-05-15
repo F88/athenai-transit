@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import type {
+  DataBundle,
+  GlobalInsightsBundle,
+  InsightsBundle,
+  ShapesBundle,
+} from '@contracts/data/transit-v2-json';
+
+import type { GlobalInsightsBundleSummary } from '../v2-global-insights-summary';
 import {
   V2_OUTPUTS_SECTION_DESCRIPTIONS,
   V2_OUTPUTS_SECTION_NAMES,
@@ -8,13 +16,6 @@ import {
   formatV2OutputsAnalysis,
   type V2OutputsRow,
 } from '../v2-outputs-summary';
-import type {
-  DataBundle,
-  GlobalInsightsBundle,
-  InsightsBundle,
-  ShapesBundle,
-} from '../../../../../src/types/data/transit-v2-json';
-import type { GlobalInsightsBundleSummary } from '../v2-global-insights-summary';
 
 /**
  * Smoke tests for the main lib. Coordinates four sub libs (data /

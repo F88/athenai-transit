@@ -16,6 +16,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- Shared data contracts: pipeline と webapp が共有する wire-format 型定義 (`transit-json.ts` / `transit-v2-json.ts` / `transit-v2-catalog-json.ts`) を `src/types/data/` から `contracts/data/` へ移設し、参照 import と TypeScript path alias を更新した。
 - Data source settings dialog: section header の件数表示を **`(enabled/total)` 形式** に変更 (例: `バス (5/19)`)。 toggle / Reset / bulk action で即座に enabled 件数が更新される。
 - Info dialog: data source settings dialog を開く 📦 ボタンを素の `<button>` から shadcn `<Button variant="outline" size="icon-sm">` に refactor。 他の dialog 内 button と styling / focus / hover の挙動が一貫するようにした。
 - Dialog 内の全 button (Restart / Reset / 全 On / 全 Off / 📦 opener) に `cursor-pointer` を use site で追加。 Tailwind v4 の Preflight が `<button>` から `cursor: pointer` を除去している影響で desktop で hover 時にカーソルが pointer に変わらなかった点を修正。

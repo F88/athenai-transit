@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import type { DataBundle } from '@contracts/data/transit-v2-json';
+
 import {
-  V2_DATA_VOLUME_SECTION_NAMES,
-  V2_DATA_VOLUME_SECTIONS,
   analyzeV2DataVolume,
   formatBytes,
+  V2_DATA_VOLUME_SECTION_NAMES,
+  V2_DATA_VOLUME_SECTIONS,
 } from '../v2-data-summary';
-import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
 
 /**
  * Smoke tests for the DataBundle sub lib. The combined formatter

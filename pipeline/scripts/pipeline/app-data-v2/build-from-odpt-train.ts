@@ -19,12 +19,16 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
-import {
-  listOdptTrainSourceNames,
-  loadOdptTrainSource,
-} from '../../../src/lib/resources/load-odpt-train-sources';
-import type { OdptTrainSource } from '../../../src/lib/resources/load-odpt-train-sources';
+import type { DataBundle } from '@contracts/data/transit-v2-json';
+
+import { writeDataBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
+import { buildAgencyV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-common/build-agency';
+import { buildFeedInfoV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-common/build-feed-info';
+import { buildCalendarV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-calendar';
+import { buildRoutesV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-routes';
+import { buildStopsV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-stops';
+import { buildTripPatternsAndTimetableFromOdpt } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-timetable';
+import { buildTranslationsV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-translations';
 import {
   determineBatchExitCode,
   formatExitCode,
@@ -34,15 +38,12 @@ import {
   runBatch,
   runMain,
 } from '../../../src/lib/pipeline/pipeline-utils';
+import type { OdptTrainSource } from '../../../src/lib/resources/load-odpt-train-sources';
+import {
+  listOdptTrainSourceNames,
+  loadOdptTrainSource,
+} from '../../../src/lib/resources/load-odpt-train-sources';
 import type { OdptRailway, OdptStation, OdptStationTimetable } from '../../../src/types/odpt-train';
-import { writeDataBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
-import { buildAgencyV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-common/build-agency';
-import { buildFeedInfoV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-common/build-feed-info';
-import { buildCalendarV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-calendar';
-import { buildRoutesV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-routes';
-import { buildStopsV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-stops';
-import { buildTripPatternsAndTimetableFromOdpt } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-timetable';
-import { buildTranslationsV2 } from '../../../src/lib/pipeline/app-data-v2/odpt-train/build-translations';
 
 // ---------------------------------------------------------------------------
 // Paths

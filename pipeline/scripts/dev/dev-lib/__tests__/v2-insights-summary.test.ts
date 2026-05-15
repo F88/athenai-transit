@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import type { InsightsBundle } from '@contracts/data/transit-v2-json';
+
 import {
-  V2_INSIGHTS_SUMMARY_SECTION_NAMES,
-  V2_INSIGHTS_SUMMARY_SECTIONS,
   analyzeV2InsightsSummary,
   computeTripCountsPerServiceGroup,
+  V2_INSIGHTS_SUMMARY_SECTION_NAMES,
+  V2_INSIGHTS_SUMMARY_SECTIONS,
 } from '../v2-insights-summary';
-import type { InsightsBundle } from '../../../../../src/types/data/transit-v2-json';
 
 /**
  * Smoke tests for the InsightsBundle sub lib. Asserts the two

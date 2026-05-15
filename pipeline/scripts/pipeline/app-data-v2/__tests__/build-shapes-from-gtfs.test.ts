@@ -12,10 +12,11 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { ShapesBundle } from '../../../../../src/types/data/transit-v2-json';
-import { extractShapes } from '../../../../src/lib/pipeline/extract-shapes-from-gtfs';
-import { extractRoutesV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-routes';
+import type { ShapesBundle } from '@contracts/data/transit-v2-json';
+
 import { writeShapesBundle } from '../../../../src/lib/pipeline/app-data-v2/bundle-writer';
+import { extractRoutesV2 } from '../../../../src/lib/pipeline/app-data-v2/gtfs/extract-routes';
+import { extractShapes } from '../../../../src/lib/pipeline/extract-shapes-from-gtfs';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-build-shapes-gtfs-test');
 

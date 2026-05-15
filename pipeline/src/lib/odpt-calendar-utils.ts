@@ -7,7 +7,7 @@
 
 import holiday_jp from '@holiday-jp/holiday_jp';
 
-import type { CalendarExceptionJson } from '../../../src/types/data/transit-json';
+import type { CalendarExceptionJson } from '@contracts/data/transit-json';
 
 /**
  * Map ODPT calendar to service ID.

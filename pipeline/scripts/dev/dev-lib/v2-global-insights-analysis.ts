@@ -26,7 +26,8 @@
  * breakage during refactor, not against algorithm bugs.
  */
 
-import type { GlobalInsightsBundle } from '../../../../src/types/data/transit-v2-json';
+import type { GlobalInsightsBundle } from '@contracts/data/transit-v2-json';
+
 import { type AnalysisSectionDefinition } from './analysis-sections';
 import { renderTable } from './render-utils';
 import { sortedMedian, sortedPercentile } from './stats-utils';

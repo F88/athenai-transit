@@ -16,10 +16,7 @@
 
 import type Database from 'better-sqlite3';
 
-import type {
-  TimetableGroupV2Json,
-  TripPatternJson,
-} from '../../../../../../src/types/data/transit-v2-json';
+import type { TimetableGroupV2Json, TripPatternJson } from '@contracts/data/transit-v2-json';
 import { timeToMinutes } from '../../../transit-time-utils';
 
 // ---------------------------------------------------------------------------

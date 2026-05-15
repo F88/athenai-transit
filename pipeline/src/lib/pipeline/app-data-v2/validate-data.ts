@@ -23,10 +23,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type {
-  DataBundle,
-  TimetableGroupV2Json,
-} from '../../../../../src/types/data/transit-v2-json';
+import type { DataBundle, TimetableGroupV2Json } from '@contracts/data/transit-v2-json';
 import { parseGtfsDate } from '../../gtfs-date-utils';
 import type { ValidationIssue } from './validate-shapes';
 

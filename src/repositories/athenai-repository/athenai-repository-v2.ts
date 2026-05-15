@@ -16,9 +16,35 @@
  * - create() returns CreateResult with loadResult for error tracking
  */
 
-import type { CalendarExceptionJson, CalendarServiceJson } from '../../types/data/transit-json';
-import type { TimetableGroupV2Json } from '../../types/data/transit-v2-json';
+import type { CalendarExceptionJson, CalendarServiceJson } from '@contracts/data/transit-json';
+import type { TimetableGroupV2Json } from '@contracts/data/transit-v2-json';
+
+import { FetchDataSourceV2 } from '../../datasources/fetch-data-source-v2';
+import type { TransitDataSourceV2 } from '../../datasources/transit-data-source-v2';
+import {
+  binarySearchFirstGte,
+  computeActiveServiceIds,
+  formatDateKey,
+} from '../../domain/transit/calendar-utils';
+import { extractPrefix } from '../../domain/transit/prefixed-id';
+import { selectServiceGroup } from '../../domain/transit/select-service-group';
+import { getServiceDay, getServiceDayMinutes } from '../../domain/transit/service-day';
+import {
+  sortTimetableEntriesByDepartureTime,
+  sortTimetableEntriesChronologically,
+} from '../../domain/transit/sort-timetable-entries';
+import { getTimetableEntriesState } from '../../domain/transit/timetable-utils';
+import { createLogger } from '../../lib/logger';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
+import type {
+  CollectionResult,
+  Result,
+  TimetableQueryMeta,
+  TimetableResult,
+  TripInspectionTargetsResult,
+  TripSnapshotResult,
+  UpcomingTimetableResult,
+} from '../../types/app/repository';
 import type { Agency, AppRouteTypeValue, Route, Stop } from '../../types/app/transit';
 import type {
   ContextualTimetableEntry,
@@ -33,39 +59,14 @@ import type {
   TripPattern,
   TripSnapshot,
 } from '../../types/app/transit-composed';
-import type {
-  CollectionResult,
-  Result,
-  TimetableQueryMeta,
-  TimetableResult,
-  TripInspectionTargetsResult,
-  TripSnapshotResult,
-  UpcomingTimetableResult,
-} from '../../types/app/repository';
-import type { TransitDataSourceV2 } from '../../datasources/transit-data-source-v2';
-import { getTimetableEntriesState } from '../../domain/transit/timetable-utils';
-import {
-  sortTimetableEntriesByDepartureTime,
-  sortTimetableEntriesChronologically,
-} from '../../domain/transit/sort-timetable-entries';
-import { normalizeOptionalResultLimit, normalizeStopQueryLimit } from '../transit-repository';
 import type { TransitRepository } from '../transit-repository';
-import { FetchDataSourceV2 } from '../../datasources/fetch-data-source-v2';
-import { createLogger } from '../../lib/logger';
-import { getServiceDay, getServiceDayMinutes } from '../../domain/transit/service-day';
-import { selectServiceGroup } from '../../domain/transit/select-service-group';
-import {
-  binarySearchFirstGte,
-  computeActiveServiceIds,
-  formatDateKey,
-} from '../../domain/transit/calendar-utils';
-import { extractPrefix } from '../../domain/transit/prefixed-id';
-import { mergeSourcesV2 } from './merge-sources-v2';
-import { fetchSourcesV2 } from './fetch-sources-v2';
+import { normalizeOptionalResultLimit, normalizeStopQueryLimit } from '../transit-repository';
 import { enrichStopInsights } from './enrich-stop-insights';
-import { buildTripStopTimes } from './lib/build-trip-stop-times';
+import { fetchSourcesV2 } from './fetch-sources-v2';
 import { buildTranslatableText } from './lib/build-translatable-text';
+import { buildTripStopTimes } from './lib/build-trip-stop-times';
 import { sortTripStopTimesByStopIndex } from './lib/sort-trip-stop-times';
+import { mergeSourcesV2 } from './merge-sources-v2';
 import type {
   HeadsignTranslationsByPrefix,
   LoadResult,

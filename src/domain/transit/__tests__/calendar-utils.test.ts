@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
+import type { CalendarExceptionJson, CalendarServiceJson } from '@contracts/data/transit-json';
+
 import {
   binarySearchFirstGte,
   computeActiveServiceIds,
@@ -6,7 +9,6 @@ import {
   getDayIndex,
   minutesToDate,
 } from '../calendar-utils';
-import type { CalendarExceptionJson, CalendarServiceJson } from '../../../types/data/transit-json';
 
 // ---------------------------------------------------------------------------
 // binarySearchFirstGte

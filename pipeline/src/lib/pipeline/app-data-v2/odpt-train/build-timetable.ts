@@ -41,10 +41,7 @@
  * decision log (D1〜D16) that this module implements.
  */
 
-import type {
-  TimetableGroupV2Json,
-  TripPatternJson,
-} from '../../../../../../src/types/data/transit-v2-json';
+import type { TimetableGroupV2Json, TripPatternJson } from '@contracts/data/transit-v2-json';
 import type {
   OdptRailway,
   OdptStationOrder,

@@ -14,7 +14,8 @@
  * files. The functions here are pure and deterministic.
  */
 
-import type { ShapesBundle } from '../../../../src/types/data/transit-v2-json';
+import type { ShapesBundle } from '@contracts/data/transit-v2-json';
+
 import { getDistanceKmLight } from '../../../src/lib/geo-utils';
 import { type AnalysisSectionDefinition } from './analysis-sections';
 import { renderTable } from './render-utils';

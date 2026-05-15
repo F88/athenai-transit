@@ -1,22 +1,23 @@
-import type { CalendarExceptionJson, TranslationsJson } from '../../types/data/transit-json';
+import {
+  normalizeRouteGtfsColors,
+  type NormalizedRouteGtfsColors,
+} from '@/domain/transit/color-resolver/route-colors';
+import type { CalendarExceptionJson, TranslationsJson } from '@contracts/data/transit-json';
 import type {
   AgencyV2Json,
   LookupV2Json,
   RouteV2Json,
   TimetableGroupV2Json,
-} from '../../types/data/transit-v2-json';
+} from '@contracts/data/transit-v2-json';
+
+import { normalizeAgencyColorPairs } from '@/domain/transit/color-resolver/agency-colors';
+import { AGENCY_ATTRIBUTES, type AgencyAttributes } from '../../config/agency-attributes';
+import { APP_ROUTE_TYPES } from '../../config/route-types';
+import type { SourceDataV2 } from '../../datasources/transit-data-source-v2';
+import { injectOriginLang } from '../../domain/transit/i18n/inject-origin-lang';
+import { extractPrefix } from '../../domain/transit/prefixed-id';
 import type { Agency, AppRouteTypeValue, Route, Stop } from '../../types/app/transit';
 import type { SourceMeta, StopWithMeta, TripPattern } from '../../types/app/transit-composed';
-import type { SourceDataV2 } from '../../datasources/transit-data-source-v2';
-import { APP_ROUTE_TYPES } from '../../config/route-types';
-import { AGENCY_ATTRIBUTES, type AgencyAttributes } from '../../config/agency-attributes';
-import { extractPrefix } from '../../domain/transit/prefixed-id';
-import { injectOriginLang } from '../../domain/transit/i18n/inject-origin-lang';
-import { normalizeAgencyColorPairs } from '@/domain/transit/color-resolver/agency-colors';
-import {
-  normalizeRouteGtfsColors,
-  type NormalizedRouteGtfsColors,
-} from '@/domain/transit/color-resolver/route-colors';
 import type { HeadsignTranslationsByPrefix, MergedDataV2, PatternTimetableEntry } from './types';
 
 /** Set of valid AppRouteTypeValue integers. Values outside this set are normalized to -1. */

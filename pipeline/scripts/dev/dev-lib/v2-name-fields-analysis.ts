@@ -1,4 +1,4 @@
-import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
+import type { DataBundle } from '@contracts/data/transit-v2-json';
 
 type FieldCounter = (bundle: DataBundle) => FieldCount;
 

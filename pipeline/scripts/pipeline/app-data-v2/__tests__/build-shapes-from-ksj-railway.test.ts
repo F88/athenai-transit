@@ -11,14 +11,15 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ShapesBundle } from '../../../../../src/types/data/transit-v2-json';
-import { buildShapesForTarget } from '../../../../src/lib/pipeline/extract-shapes-from-ksj';
+import type { ShapesBundle } from '@contracts/data/transit-v2-json';
+
+import { writeShapesBundle } from '../../../../src/lib/pipeline/app-data-v2/bundle-writer';
 import type {
   GeoJsonCollection,
   GeoJsonFeature,
   ShapeTarget,
 } from '../../../../src/lib/pipeline/extract-shapes-from-ksj';
-import { writeShapesBundle } from '../../../../src/lib/pipeline/app-data-v2/bundle-writer';
+import { buildShapesForTarget } from '../../../../src/lib/pipeline/extract-shapes-from-ksj';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-build-shapes-ksj-test');
 

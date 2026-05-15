@@ -2,12 +2,13 @@ import type {
   CalendarExceptionJson,
   CalendarServiceJson,
   TranslationsJson,
-} from '../../types/data/transit-json';
+} from '@contracts/data/transit-json';
 import type {
   LookupV2Json,
   ServiceGroupEntry,
   TimetableGroupV2Json,
-} from '../../types/data/transit-v2-json';
+} from '@contracts/data/transit-v2-json';
+
 import type { Agency, AppRouteTypeValue, Route, Stop } from '../../types/app/transit';
 import type { SourceMeta, StopWithMeta, TripPattern } from '../../types/app/transit-composed';
 

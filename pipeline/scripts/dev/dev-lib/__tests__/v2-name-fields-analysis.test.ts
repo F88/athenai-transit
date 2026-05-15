@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import type { DataBundle } from '@contracts/data/transit-v2-json';
+
 import {
   analyzeDataBundleSource,
   analyzeFieldCounts,
@@ -8,7 +10,6 @@ import {
   formatFieldCountsTsv,
   formatSourceAnalysis,
 } from '../v2-name-fields-analysis';
-import type { DataBundle } from '../../../../../src/types/data/transit-v2-json';
 
 function createTestBundle(overrides?: Partial<DataBundle>): DataBundle {
   return {

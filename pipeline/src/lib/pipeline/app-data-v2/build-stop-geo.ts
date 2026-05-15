@@ -29,7 +29,7 @@
  * - l=2-4: excluded from output.
  */
 
-import type { StopGeoJson } from '../../../../../src/types/data/transit-v2-json';
+import type { StopGeoJson } from '@contracts/data/transit-v2-json';
 import { getDistanceKmLight } from '../../geo-utils';
 
 // ---------------------------------------------------------------------------

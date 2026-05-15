@@ -6,7 +6,7 @@
 
 import type Database from 'better-sqlite3';
 
-import type { FeedInfoJson } from '../../../../../../src/types/data/transit-json';
+import type { FeedInfoJson } from '@contracts/data/transit-json';
 
 /**
  * Extract feed_info from the GTFS database.

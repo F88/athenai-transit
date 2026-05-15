@@ -2,7 +2,7 @@
 
 GTFS / ODPT JSON データを取得し、WebApp 向けの JSON ファイルに変換するデータパイプライン。
 
-WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`src/types/data/transit-json.ts`, `src/types/data/transit-v2-json.ts`) が両者の契約となる。
+WebApp (`src/`) とは独立しており、出力 JSON の型定義 (`contracts/data/transit-json.ts`, `contracts/data/transit-v2-json.ts`) が両者の契約となる。
 
 ## GTFS-JP の version 状況
 

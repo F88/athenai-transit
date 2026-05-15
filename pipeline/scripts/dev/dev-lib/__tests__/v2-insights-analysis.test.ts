@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import type { InsightsBundle } from '@contracts/data/transit-v2-json';
+
 import {
   V2_INSIGHTS_SECTION_NAMES,
   analyzeInsightsBundle,
   formatInsightsAnalysis,
 } from '../v2-insights-analysis';
-import type { InsightsBundle } from '../../../../../src/types/data/transit-v2-json';
 
 /**
  * Smoke tests only. Statistical correctness of the numeric output is

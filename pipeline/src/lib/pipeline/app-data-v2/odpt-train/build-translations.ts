@@ -2,7 +2,7 @@
  * Build TranslationsJson from ODPT data.
  */
 
-import type { TranslationsJson } from '../../../../../../src/types/data/transit-json';
+import type { TranslationsJson } from '@contracts/data/transit-json';
 import type {
   OdptRailway,
   OdptStation,

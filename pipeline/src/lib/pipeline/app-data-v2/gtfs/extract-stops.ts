@@ -8,7 +8,7 @@
 
 import type Database from 'better-sqlite3';
 
-import type { StopV2Json } from '../../../../../../src/types/data/transit-v2-json';
+import type { StopV2Json } from '@contracts/data/transit-v2-json';
 
 /**
  * Extract all stops from the GTFS database as v2 JSON records.

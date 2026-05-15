@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
+import type { ShapesBundle } from '@contracts/data/transit-v2-json';
+
 import {
+  analyzeV2ShapesSummary,
   V2_SHAPES_SUMMARY_SECTION_NAMES,
   V2_SHAPES_SUMMARY_SECTIONS,
-  analyzeV2ShapesSummary,
 } from '../v2-shapes-summary';
-import type { ShapesBundle } from '../../../../../src/types/data/transit-v2-json';
 
 /**
  * Smoke tests for the ShapesBundle sub lib.

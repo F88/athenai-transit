@@ -1,3 +1,5 @@
+import type { TimetableGroupV2Json } from '@contracts/data/transit-v2-json';
+
 import type { AppRouteTypeValue } from '@/types/app/transit';
 import type {
   RouteDirection,
@@ -6,8 +8,6 @@ import type {
   TripLocator,
   TripStopTime,
 } from '@/types/app/transit-composed';
-import type { TimetableGroupV2Json } from '@/types/data/transit-v2-json';
-
 import type { PatternTimetableEntry } from '../types';
 
 /** Lookups supplied by the repository. */

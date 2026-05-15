@@ -2,7 +2,7 @@
 
 v2 パイプラインの DataBundle (`data.json`) ビルドに関する処理フローと実装リファレンス。
 
-型仕様は `src/types/data/transit-v2-json.ts` を参照 (TSDoc で各セクション・フィールドを詳述)。
+型仕様は `contracts/data/transit-v2-json.ts` を参照 (TSDoc で各セクション・フィールドを詳述)。
 
 ## 処理フロー
 
@@ -44,7 +44,7 @@ ODPT JSON → buildStopsV2
 | `pipeline/src/lib/pipeline/app-data-v2/odpt-train/build-*.ts`                    | ODPT Train builders (5 ファイル)                              |
 | `pipeline/src/lib/pipeline/app-data-v2/odpt-train/infer-odpt-trips-heuristic.ts` | ODPT Train 用 trip-identity 推論 heuristic (Yurikamome-tuned) |
 | `pipeline/src/lib/pipeline/app-data-v2/bundle-writer.ts`                         | DataBundle 書き込み                                           |
-| `src/types/data/transit-v2-json.ts`                                              | 型定義                                                        |
+| `contracts/data/transit-v2-json.ts`                                              | 型定義                                                        |
 
 ## Exit Code
 

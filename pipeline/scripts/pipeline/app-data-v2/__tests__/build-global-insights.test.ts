@@ -12,10 +12,8 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type {
-  DataBundle,
-  GlobalInsightsBundle,
-} from '../../../../../src/types/data/transit-v2-json';
+import type { DataBundle, GlobalInsightsBundle } from '@contracts/data/transit-v2-json';
+
 import {
   extractStopEntries,
   findSundayServiceIds,

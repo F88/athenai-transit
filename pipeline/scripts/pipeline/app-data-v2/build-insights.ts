@@ -19,7 +19,8 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { DataBundle } from '../../../../src/types/data/transit-v2-json';
+import type { DataBundle } from '@contracts/data/transit-v2-json';
+
 import { V2_OUTPUT_DIR } from '../../../src/lib/paths';
 import { buildServiceGroups } from '../../../src/lib/pipeline/app-data-v2/build-service-groups';
 import { buildStopStats } from '../../../src/lib/pipeline/app-data-v2/build-stop-stats';

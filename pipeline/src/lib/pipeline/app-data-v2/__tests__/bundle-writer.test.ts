@@ -8,11 +8,7 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type {
-  DataBundle,
-  InsightsBundle,
-  ShapesBundle,
-} from '../../../../../../src/types/data/transit-v2-json';
+import type { DataBundle, InsightsBundle, ShapesBundle } from '@contracts/data/transit-v2-json';
 import { writeDataBundle, writeInsightsBundle, writeShapesBundle } from '../bundle-writer';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-bundle-writer-test');

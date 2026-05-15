@@ -1,4 +1,4 @@
-import type { ServiceGroupEntry } from '../../types/data/transit-v2-json';
+import type { ServiceGroupEntry } from '@contracts/data/transit-v2-json';
 
 /**
  * Select the best matching service group for a set of active service IDs.

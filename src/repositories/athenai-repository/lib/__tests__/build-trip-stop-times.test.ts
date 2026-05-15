@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { TimetableGroupV2Json } from '@contracts/data/transit-v2-json';
+
 import type { AppRouteTypeValue } from '@/types/app/transit';
 import type { RouteDirection, StopWithMeta, TripLocator } from '@/types/app/transit-composed';
-import type { TimetableGroupV2Json } from '@/types/data/transit-v2-json';
 
-import { buildTripStopTimeFromGroup, buildTripStopTimes } from '../build-trip-stop-times';
-import type { BuildTripStopTimesLookups } from '../build-trip-stop-times';
 import type { PatternTimetableEntry } from '../../types';
+import type { BuildTripStopTimesLookups } from '../build-trip-stop-times';
+import { buildTripStopTimeFromGroup, buildTripStopTimes } from '../build-trip-stop-times';
 
 interface CreateEntryArgs {
   stopId: string;

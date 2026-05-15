@@ -18,7 +18,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { InsightsBundle } from '../../../src/types/data/transit-v2-json';
+import type { InsightsBundle } from '@contracts/data/transit-v2-json';
 import {
   analyzeInsightsBundle,
   formatInsightsAnalysis,

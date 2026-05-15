@@ -159,7 +159,7 @@ interface GeoJsonFeature {
 | `pipeline/src/lib/pipeline/extract-shapes-from-gtfs.ts`                  | GTFS 抽出ロジック (v1/v2 共有) |
 | `pipeline/src/lib/pipeline/extract-shapes-from-ksj.ts`                   | KSJ 抽出ロジック (v1/v2 共有)  |
 | `pipeline/src/lib/pipeline/app-data-v2/bundle-writer.ts`                 | ShapesBundle 書き込み          |
-| `src/types/data/transit-v2-json.ts`                                      | 型定義                         |
+| `contracts/data/transit-v2-json.ts`                                      | 型定義                         |
 
 ## Exit Code
 

@@ -12,7 +12,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { DataBundle } from '../../../../../../src/types/data/transit-v2-json';
+import type { DataBundle } from '@contracts/data/transit-v2-json';
 import { validateDataBundle } from '../validate-data';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-validate-data-test');

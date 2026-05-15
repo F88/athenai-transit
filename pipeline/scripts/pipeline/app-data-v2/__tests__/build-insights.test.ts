@@ -11,7 +11,8 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { DataBundle, InsightsBundle } from '../../../../../src/types/data/transit-v2-json';
+import type { DataBundle, InsightsBundle } from '@contracts/data/transit-v2-json';
+
 import { buildServiceGroups } from '../../../../src/lib/pipeline/app-data-v2/build-service-groups';
 import { buildStopStats } from '../../../../src/lib/pipeline/app-data-v2/build-stop-stats';
 import { buildTripPatternGeo } from '../../../../src/lib/pipeline/app-data-v2/build-trip-pattern-geo';

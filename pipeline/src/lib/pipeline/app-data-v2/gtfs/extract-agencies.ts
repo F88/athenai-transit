@@ -7,7 +7,7 @@
 
 import type Database from 'better-sqlite3';
 
-import type { AgencyV2Json } from '../../../../../../src/types/data/transit-v2-json';
+import type { AgencyV2Json } from '@contracts/data/transit-v2-json';
 
 /**
  * Extract all agencies from the GTFS database.
