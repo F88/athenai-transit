@@ -1,4 +1,4 @@
-import type { GlobalInsightsBundle } from '@contracts/data/transit-v2-json';
+import type { GlobalInsightsBundle, InsightsBundle } from '@contracts/data/transit-v2-json';
 
 import type { StopWithMeta } from '../../types/app/transit-composed';
 import type { TransitDataSourceV2 } from '../../datasources/transit-data-source-v2';
@@ -29,6 +29,21 @@ async function loadGlobalInsightsSafe(
 }
 
 /**
+ * Call {@link TransitDataSourceV2.loadInsights} inside an `async`
+ * wrapper so that a synchronous throw from a non-`async` implementation
+ * is normalized to a rejected Promise. Without this guard, a sync throw
+ * inside `prefixes.map(...)` would escape the callback before
+ * `Promise.allSettled` could observe it, killing the whole enrichment
+ * phase.
+ */
+async function loadInsightsSafe(
+  dataSource: TransitDataSourceV2,
+  prefix: string,
+): Promise<InsightsBundle | null> {
+  return dataSource.loadInsights(prefix);
+}
+
+/**
  * Enrich stopsMetaMap with per-stop stats and geo data from insights bundles.
  *
  * - stopStats: from per-source InsightsBundle (all service groups stored
@@ -48,7 +63,7 @@ export async function enrichStopInsights(
   const t0 = performance.now();
 
   const [insightsResults, globalResult] = await Promise.all([
-    Promise.allSettled(prefixes.map((prefix) => dataSource.loadInsights(prefix))),
+    Promise.allSettled(prefixes.map((prefix) => loadInsightsSafe(dataSource, prefix))),
     loadGlobalInsightsSafe(dataSource),
   ]);
 

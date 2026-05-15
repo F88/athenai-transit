@@ -13,13 +13,31 @@ export interface FetchSourcesV2Result {
   ms: number;
 }
 
+/**
+ * Call {@link TransitDataSourceV2.loadData} inside an `async` wrapper so
+ * that a synchronous throw from a non-`async` implementation is
+ * normalized to a rejected Promise. Without this guard, a sync throw
+ * inside `prefixes.map(...)` would escape the callback before
+ * `Promise.allSettled` could observe it, turning a per-source failure
+ * into a whole-batch failure that bypasses the `loadResult.failed`
+ * accounting below.
+ */
+async function loadDataSafe(
+  dataSource: TransitDataSourceV2,
+  prefix: string,
+): Promise<SourceDataV2> {
+  return dataSource.loadData(prefix);
+}
+
 /** Fetch all v2 data bundles in parallel, tracking successes and failures. */
 export async function fetchSourcesV2(
   prefixes: string[],
   dataSource: TransitDataSourceV2,
 ): Promise<FetchSourcesV2Result> {
   const start = performance.now();
-  const results = await Promise.allSettled(prefixes.map((prefix) => dataSource.loadData(prefix)));
+  const results = await Promise.allSettled(
+    prefixes.map((prefix) => loadDataSafe(dataSource, prefix)),
+  );
 
   const sources: SourceDataV2[] = [];
   const loaded: string[] = [];

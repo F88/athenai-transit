@@ -129,6 +129,42 @@ describe('enrichStopInsights', () => {
     expect(stopInsightsMap.get('bus_01')?.stats.ho?.freq).toBe(80);
   });
 
+  it('absorbs synchronous throws from a non-async loadInsights impl (per-prefix)', async () => {
+    // A non-async impl that throws synchronously inside the
+    // `prefixes.map(...)` callback would bypass `Promise.allSettled`
+    // unless the map callback wraps the call. enrichStopInsights must
+    // continue with the surviving prefix and treat the thrown one as a
+    // per-prefix failure.
+    const merged = mergeSourcesV2([createFixtureV2()]);
+    const stopInsightsMap = new Map<string, StopInsightsEntry>();
+    const insights = createInsightsFixtureV2();
+    const dataSource: TransitDataSourceV2 = {
+      loadData() {
+        return Promise.reject(new Error('loadData is not used in this test'));
+      },
+      loadShapes() {
+        return Promise.resolve(null);
+      },
+      loadInsights(prefix) {
+        if (prefix === 'test') {
+          return Promise.resolve(insights);
+        }
+        throw new Error('sync throw before Promise construction');
+      },
+      loadGlobalInsights() {
+        return Promise.resolve(null);
+      },
+      loadDataSourceCatalog() {
+        return Promise.resolve(null);
+      },
+    };
+
+    await enrichStopInsights(merged.stopsMetaMap, ['test', 'bad'], dataSource, stopInsightsMap);
+
+    // Surviving prefix's stats applied
+    expect(stopInsightsMap.get('bus_01')?.stats.wd?.freq).toBe(200);
+  });
+
   it('absorbs synchronous throws from a non-async loadGlobalInsights impl', async () => {
     // The TransitDataSourceV2 contract returns a Promise but does not
     // preclude implementations from throwing synchronously before the
