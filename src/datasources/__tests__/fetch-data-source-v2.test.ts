@@ -337,6 +337,26 @@ describe('FetchDataSourceV2', () => {
         expect.objectContaining({ signal: expect.any(AbortSignal) as AbortSignal }),
       );
     });
+
+    it('uses the catalog-specific 5s timeout, not the instance default', async () => {
+      // The PR keeps catalog-related boot delay bounded by passing
+      // { timeoutMs: CATALOG_TIMEOUT_MS } (5_000) to fetchOptionalBundle.
+      // This regression test asserts the override actually flows to the
+      // abort timer; without it, removing the override would silently fall
+      // back to the (much longer) instance default and no test would notice.
+      const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
+      fetchMock.mockResolvedValueOnce(jsonResponse(makeDataSourceCatalogBundle()));
+      // Use a non-default instance timeout so the assertion is not satisfied
+      // by accident (e.g. if CATALOG_TIMEOUT_MS happened to equal the default).
+      const ds = new FetchDataSourceV2('/data-v2', 60_000);
+      await ds.loadDataSourceCatalog();
+
+      const timeoutValues = setTimeoutSpy.mock.calls
+        .map(([, ms]) => ms)
+        .filter((v): v is number => typeof v === 'number');
+      expect(timeoutValues).toContain(5_000);
+      expect(timeoutValues).not.toContain(60_000);
+    });
   });
 });
 
