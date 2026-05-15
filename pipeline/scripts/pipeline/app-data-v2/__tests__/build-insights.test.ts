@@ -223,12 +223,14 @@ describe('InsightsBundle assembly', () => {
       parsed.tripPatterns.data,
       parsed.timetable.data,
       serviceGroups,
+      parsed.calendar.data,
     );
     const stopStats = buildStopStats(
       parsed.timetable.data,
       parsed.tripPatterns.data,
       parsed.routes.data,
       serviceGroups,
+      parsed.calendar.data,
     );
     writeInsightsBundle(outDir, serviceGroups, { tripPatternGeo, tripPatternStats, stopStats });
 

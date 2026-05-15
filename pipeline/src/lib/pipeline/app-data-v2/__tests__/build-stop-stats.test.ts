@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
+import type { CalendarJson } from '@contracts/data/transit-json';
 import type {
   RouteV2Json,
   ServiceGroupEntry,
@@ -30,6 +31,29 @@ function makeTimetableGroup(
   return { v: 2, tp: patternId, si, d: deps, a: deps };
 }
 
+/**
+ * Build a calendar where every service in `groups` is active on a single
+ * shared day. Existing freq expectations (sums across in-group services)
+ * remain valid because every grouped service co-occurs on that day.
+ */
+function calendarFromGroups(groups: ServiceGroupEntry[]): CalendarJson {
+  const ids = new Set<string>();
+  for (const group of groups) {
+    for (const id of group.serviceIds) {
+      ids.add(id);
+    }
+  }
+  return {
+    services: [...ids].map((i) => ({
+      i,
+      s: '20260501',
+      e: '20260501',
+      d: [1, 1, 1, 1, 1, 1, 1],
+    })),
+    exceptions: [],
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -48,7 +72,7 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']['s1']).toEqual({
       freq: 4,
@@ -76,7 +100,7 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']['s1'].freq).toBe(5); // 2 + 3
     expect(result['wd']['s1'].rc).toBe(2); // r1, r2
@@ -105,7 +129,7 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']['s1'].rtc).toBe(2); // bus + subway
   });
@@ -123,7 +147,7 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']['s1'].ed).toBe(360);
     expect(result['wd']['s1'].ld).toBe(1500);
@@ -145,7 +169,7 @@ describe('buildStopStats', () => {
       { key: 'sa', serviceIds: ['svc_sa'] },
     ];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']['s1'].freq).toBe(3);
     expect(result['sa']['s1'].freq).toBe(2);
@@ -168,7 +192,7 @@ describe('buildStopStats', () => {
       { key: 'sa', serviceIds: ['svc_sa'] },
     ];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']['s1']).toBeDefined();
     expect(result['sa']['s1']).toBeUndefined();
@@ -179,7 +203,7 @@ describe('buildStopStats', () => {
     const routes: RouteV2Json[] = [];
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-    const result = buildStopStats({}, patterns, routes, groups);
+    const result = buildStopStats({}, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']).toEqual({});
   });
@@ -200,7 +224,7 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     // Only p1's stop time is counted, p_unknown is skipped
     expect(result['wd']['s1'].freq).toBe(1);
@@ -224,7 +248,7 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']['s1'].freq).toBe(2);
     expect(result['wd']['s1'].rc).toBe(1); // same route
@@ -244,7 +268,7 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']['s1'].freq).toBe(1);
     expect(result['wd']['s1'].rc).toBe(1);
@@ -260,7 +284,7 @@ describe('buildStopStats', () => {
       s1: [makeTimetableGroup('p1', 0, { svc1: [480] })],
     };
 
-    const result = buildStopStats(timetable, patterns, routes, []);
+    const result = buildStopStats(timetable, patterns, routes, [], { services: [], exceptions: [] });
 
     expect(result).toEqual({});
   });
@@ -287,7 +311,7 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     // Origin/terminal stop has 2x stop times — this is correct for stopStats
     // because the bus physically passes through this stop twice per trip
@@ -314,7 +338,7 @@ describe('buildStopStats', () => {
       { key: 'sa', serviceIds: ['svc_sa'] },
     ];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']['s1'].freq).toBe(3);
     expect(result['wd']['s1'].rc).toBe(1);
@@ -336,7 +360,7 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1', 'svc2'] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']['s1'].freq).toBe(3);
     expect(result['wd']['s1'].ed).toBe(480);
@@ -356,7 +380,7 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']['s1'].freq).toBe(1);
     expect(result['wd']['s1'].ed).toBe(720);
@@ -380,7 +404,7 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     expect(result['wd']['s1'].freq).toBe(4);
     expect(result['wd']['s1'].ed).toBe(360); // min across groups
@@ -400,7 +424,7 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'empty', serviceIds: [] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     // No service IDs → no stop times → all stops excluded
     expect(Object.keys(result['empty'])).toHaveLength(0);
@@ -422,12 +446,111 @@ describe('buildStopStats', () => {
 
     const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
 
-    const result = buildStopStats(timetable, patterns, routes, groups);
+    const result = buildStopStats(timetable, patterns, routes, groups, calendarFromGroups(groups));
 
     // Only p1 counted, unknown patterns skipped
     expect(result['wd']['s1'].freq).toBe(1);
     expect(result['wd']['s1'].rc).toBe(1);
     expect(result['wd']['s1'].ed).toBe(600);
     expect(result['wd']['s1'].ld).toBe(600);
+  });
+
+  // -------------------------------------------------------------------------
+  // Issue #219 regression: freq must reflect per-day max, not service sum
+  // -------------------------------------------------------------------------
+  describe('disjoint-date services in same group (Issue #219)', () => {
+    it('returns max one-day freq, not the sum across services that never co-occur', () => {
+      const patterns: Record<string, TripPatternJson> = {
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }] },
+      };
+
+      const routes = [makeRoute('r1', 3)];
+
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [
+          makeTimetableGroup('p1', 0, {
+            svc_a: [480, 540, 600],
+            svc_b: [481, 541, 601],
+          }),
+        ],
+      };
+
+      const groups: ServiceGroupEntry[] = [{ key: 'g', serviceIds: ['svc_a', 'svc_b'] }];
+
+      // svc_a active 2026-05-01 only; svc_b active 2026-05-02 only.
+      const calendar: CalendarJson = {
+        services: [
+          { i: 'svc_a', s: '20260501', e: '20260501', d: [1, 1, 1, 1, 1, 1, 1] },
+          { i: 'svc_b', s: '20260502', e: '20260502', d: [1, 1, 1, 1, 1, 1, 1] },
+        ],
+        exceptions: [],
+      };
+
+      const result = buildStopStats(timetable, patterns, routes, groups, calendar);
+
+      // Each service contributes 3 stop times on its single active day.
+      // Old (buggy) implementation produced 6 (= 3 + 3); fixed value is 3.
+      expect(result['g']['s1'].freq).toBe(3);
+      // rc / rtc / ed / ld remain calendar-agnostic (any service in the group).
+      expect(result['g']['s1'].rc).toBe(1);
+      expect(result['g']['s1'].rtc).toBe(1);
+      expect(result['g']['s1'].ed).toBe(480);
+      expect(result['g']['s1'].ld).toBe(601);
+    });
+
+    it('includes calendar_dates-only services in the per-day max', () => {
+      const patterns: Record<string, TripPatternJson> = {
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }] },
+      };
+
+      const routes = [makeRoute('r1', 3)];
+
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [
+          makeTimetableGroup('p1', 0, {
+            wd_svc: [480, 540],
+            hol_svc: [481],
+          }),
+        ],
+      };
+
+      const groups: ServiceGroupEntry[] = [
+        { key: 'wd', serviceIds: ['wd_svc', 'hol_svc'] },
+      ];
+
+      // wd_svc weekdays 2026-05-04..2026-05-08; hol_svc added on 2026-05-05 only.
+      const calendar: CalendarJson = {
+        services: [
+          { i: 'wd_svc', s: '20260504', e: '20260508', d: [1, 1, 1, 1, 1, 0, 0] },
+        ],
+        exceptions: [{ i: 'hol_svc', d: '20260505', t: 1 }],
+      };
+
+      const result = buildStopStats(timetable, patterns, routes, groups, calendar);
+
+      // On 2026-05-05 both services active: 2 + 1 = 3. Other weekdays: 2 only.
+      expect(result['wd']['s1'].freq).toBe(3);
+    });
+
+    it('returns empty groupStats when the calendar has no parseable dates', () => {
+      const patterns: Record<string, TripPatternJson> = {
+        p1: { v: 2, r: 'r1', h: 'Terminal', stops: [{ id: 's1' }] },
+      };
+
+      const routes = [makeRoute('r1', 3)];
+
+      const timetable: Record<string, TimetableGroupV2Json[]> = {
+        s1: [makeTimetableGroup('p1', 0, { svc1: [480, 540] })],
+      };
+
+      const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['svc1'] }];
+
+      const result = buildStopStats(timetable, patterns, routes, groups, {
+        services: [],
+        exceptions: [],
+      });
+
+      expect(result['wd']).toEqual({});
+    });
   });
 });

@@ -2,8 +2,20 @@
  * Build tripPatternStats section of InsightsBundle.
  *
  * Computes per-pattern operational statistics segmented by service group:
- * - `freq`: number of trips per day for this service group (counted at origin si=0)
+ * - `freq`: maximum number of trips on any single calendar date for this
+ *   service group (counted at origin si=0). See {@link buildTripPatternStats}
+ *   for the precise definition.
  * - `rd`: remaining minutes from each stop to the terminal (median-based)
+ *
+ * ### `freq` definition (Issue #219)
+ *
+ * `freq` is the maximum, over all dates within the calendar's range,
+ * of the per-day trip count contributed by services that are both
+ * (a) members of this service group and (b) active on that date per the
+ * GTFS `calendar` / `calendar_dates` semantics. This avoids overcounting
+ * when distinct services bucketed into the same group operate on
+ * disjoint actual dates (e.g. calendar_dates-only services that the
+ * service-group builder merges via conservative inclusion).
  *
  * ### Duplicate stop_id handling (Issue #47)
  *
@@ -21,6 +33,7 @@
  * known segments, not via proportional linear interpolation.
  */
 
+import type { CalendarJson } from '@contracts/data/transit-json';
 import type {
   ServiceGroupEntry,
   TimetableGroupV2Json,
@@ -28,43 +41,51 @@ import type {
   TripPatternStatsJson,
 } from '@contracts/data/transit-v2-json';
 
+import {
+  addUtcDays,
+  buildExceptionMap,
+  computeActiveServiceIds,
+  getCalendarDateRange,
+} from './calendar-walk';
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
 
 /**
- * Count stop times for a pattern at a given stop position,
- * summing across all service IDs in the service group.
+ * Count origin-position trips per `service_id` for one pattern.
  *
- * Reads from the `d` array but the count equals `a` array length —
- * each entry represents one stop_time event regardless of field.
+ * Returns a map of `service_id -> trip count at origin (si=0)` for the
+ * given `patternId`. Only `service_id` values with at least one trip are
+ * included.
  *
- * Filters by `(patternId, si)` to select the correct group when the same
- * stop_id appears at multiple positions in the pattern (Issue #47).
+ * The trip count for each service equals `d[serviceId].length` summed
+ * across timetable groups that match `(patternId, si=0)`. Multiple
+ * groups can match when the source emits separate origin entries for
+ * the same pattern (e.g. duplicate stop_id at origin in 6-shape routes,
+ * Issue #47); the values are summed across all such groups.
  */
-function countStopTimes(
+function countTripsByServiceAtOrigin(
   timetableGroups: TimetableGroupV2Json[] | undefined,
   patternId: string,
-  si: number,
-  serviceIds: string[],
-): number {
+): Map<string, number> {
+  const counts = new Map<string, number>();
   if (!timetableGroups) {
-    return 0;
+    return counts;
   }
 
-  let count = 0;
   for (const group of timetableGroups) {
-    if (group.tp !== patternId || group.si !== si) {
+    if (group.tp !== patternId || group.si !== 0) {
       continue;
     }
-    for (const svcId of serviceIds) {
-      const deps = group.d[svcId];
-      if (deps) {
-        count += deps.length;
+    for (const [serviceId, deps] of Object.entries(group.d)) {
+      if (deps.length === 0) {
+        continue;
       }
+      counts.set(serviceId, (counts.get(serviceId) ?? 0) + deps.length);
     }
   }
-  return count;
+  return counts;
 }
 
 /**
@@ -289,39 +310,103 @@ function computeSegmentTimes(
 /**
  * Build per-pattern operational statistics segmented by service group.
  *
+ * `freq` is computed by walking every UTC date in the calendar's range:
+ * for each date the active `service_id` set is intersected with the
+ * service group's members, and the per-pattern trip count contributed
+ * by those active-in-group services is computed at the origin. `freq`
+ * is the maximum of those per-day values across all dates. This avoids
+ * the overcount described in Issue #219, where the previous "sum across
+ * all services in group" implementation overstated `freq` whenever the
+ * grouped services ran on disjoint actual dates.
+ *
+ * `rd` (segment travel times) is calendar-agnostic and still uses
+ * departure-time medians across all services in the group.
+ *
  * @param patterns - Trip patterns keyed by pattern ID.
  * @param timetable - Timetable data keyed by stop ID.
  * @param serviceGroups - Service group definitions.
+ * @param calendar - Calendar data (services + exceptions) used to walk
+ *   actual operating dates per service group.
  * @returns Nested map: service group key → pattern ID → stats.
  */
 export function buildTripPatternStats(
   patterns: Record<string, TripPatternJson>,
   timetable: Record<string, TimetableGroupV2Json[]>,
   serviceGroups: ServiceGroupEntry[],
+  calendar: CalendarJson,
 ): Record<string, Record<string, TripPatternStatsJson>> {
   const result: Record<string, Record<string, TripPatternStatsJson>> = {};
 
+  // Precompute active service IDs per date once. Empty when the calendar
+  // has no parseable dates — in that case every group's max freq stays 0
+  // and the resulting groupStats are empty (no patterns emitted).
+  const dateRange = getCalendarDateRange(calendar.services, calendar.exceptions);
+  const exceptionsByServiceId = buildExceptionMap(calendar.exceptions);
+  const activesByDate: Set<string>[] = [];
+  if (dateRange) {
+    for (let date = dateRange.min; date <= dateRange.max; date = addUtcDays(date, 1)) {
+      activesByDate.push(computeActiveServiceIds(date, calendar.services, exceptionsByServiceId));
+    }
+  }
+
+  // Precompute per-pattern (service -> origin trip count) map, used by
+  // every service group. Patterns with no origin trips are skipped.
+  const tripsByPatternAndService = new Map<string, Map<string, number>>();
+  for (const [patternId, pattern] of Object.entries(patterns)) {
+    if (pattern.stops.length === 0) {
+      continue;
+    }
+    const perService = countTripsByServiceAtOrigin(timetable[pattern.stops[0].id], patternId);
+    if (perService.size > 0) {
+      tripsByPatternAndService.set(patternId, perService);
+    }
+  }
+
   for (const group of serviceGroups) {
     const groupStats: Record<string, TripPatternStatsJson> = {};
+    const groupServiceIds = new Set(group.serviceIds);
+
+    // For each pattern compute the max per-day trip count across all
+    // calendar dates, considering only services that are both in this
+    // group and active on the date being walked.
+    const maxFreqByPattern = new Map<string, number>();
+    for (const [patternId, perService] of tripsByPatternAndService) {
+      // Trim per-service trip counts to services that belong to this group.
+      // Patterns with no in-group services contribute freq=0 for this group.
+      const inGroupCounts: { serviceId: string; count: number }[] = [];
+      for (const [serviceId, count] of perService) {
+        if (groupServiceIds.has(serviceId)) {
+          inGroupCounts.push({ serviceId, count });
+        }
+      }
+      if (inGroupCounts.length === 0) {
+        continue;
+      }
+
+      let maxFreq = 0;
+      for (const active of activesByDate) {
+        let dayTrips = 0;
+        for (const { serviceId, count } of inGroupCounts) {
+          if (active.has(serviceId)) {
+            dayTrips += count;
+          }
+        }
+        if (dayTrips > maxFreq) {
+          maxFreq = dayTrips;
+        }
+      }
+      if (maxFreq > 0) {
+        maxFreqByPattern.set(patternId, maxFreq);
+      }
+    }
 
     for (const [patternId, pattern] of Object.entries(patterns)) {
+      const freq = maxFreqByPattern.get(patternId);
+      if (freq === undefined) {
+        continue;
+      }
+
       const { stops } = pattern;
-
-      if (stops.length === 0) {
-        continue;
-      }
-
-      // freq: count stop times at origin (si=0) = trip departure count.
-      // With Issue #47's si-based grouping, the origin's group contains
-      // exactly the trip count, so no circular workaround is needed
-      // (previously we used interior stop[1] to dodge the 2x merged count).
-      const freq = countStopTimes(timetable[stops[0].id], patternId, 0, group.serviceIds);
-
-      // Omit patterns with no trips in this service group.
-      // Consistent with stopStats, which also excludes freq=0 entries.
-      if (freq === 0) {
-        continue;
-      }
 
       // rd: compute remaining minutes from each stop to terminal
       if (stops.length === 1) {
