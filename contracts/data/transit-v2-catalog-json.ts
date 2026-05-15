@@ -57,6 +57,10 @@ export interface DataSourceCatalogInsightsBundleSummary extends DataSourceCatalo
   /** Entity counts derived from one source's InsightsBundle. */
   counts: {
     serviceGroups: number;
+    /**
+     * `tripPatternGeo` is flat by trip pattern ID, while `tripPatternStats` and `stopStats`
+     * are nested as service-group bucket -> entity in the underlying bundle schema.
+     */
     /** Number of service-group buckets present in `tripPatternStats.data`. */
     tripPatternStats: number;
     /** Number of trip pattern IDs present in `tripPatternGeo.data`. */
