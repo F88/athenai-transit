@@ -14,6 +14,7 @@
  * - Stop.agency_id is empty (v2 GTFS compliance)
  */
 
+import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
 import type {
   DataBundle,
   GlobalInsightsBundle,
@@ -37,15 +38,26 @@ export class TestDataSourceV2 implements TransitDataSourceV2 {
   private fixtures: Record<string, SourceDataV2>;
   private shapesFixtures: Record<string, ShapesBundle>;
   private insightsFixtures: Record<string, InsightsBundle>;
+  private dataSourceCatalog: DataSourceCatalogBundle | null;
+  /**
+   * When set, {@link loadDataSourceCatalog} rejects with this error.
+   * Used to verify that {@link AthenaiRepositoryV2.create} normalizes
+   * load failures (including bundle envelope mismatches) to `null`.
+   */
+  private dataSourceCatalogError: Error | null;
 
   constructor(
     fixtures: Record<string, SourceDataV2>,
     shapesFixtures: Record<string, ShapesBundle> = {},
     insightsFixtures: Record<string, InsightsBundle> = {},
+    dataSourceCatalog: DataSourceCatalogBundle | null = null,
+    dataSourceCatalogError: Error | null = null,
   ) {
     this.fixtures = fixtures;
     this.shapesFixtures = shapesFixtures;
     this.insightsFixtures = insightsFixtures;
+    this.dataSourceCatalog = dataSourceCatalog;
+    this.dataSourceCatalogError = dataSourceCatalogError;
   }
 
   loadData(prefix: string): Promise<SourceDataV2> {
@@ -66,6 +78,13 @@ export class TestDataSourceV2 implements TransitDataSourceV2 {
 
   loadGlobalInsights(): Promise<GlobalInsightsBundle | null> {
     return Promise.resolve(null);
+  }
+
+  loadDataSourceCatalog(): Promise<DataSourceCatalogBundle | null> {
+    if (this.dataSourceCatalogError) {
+      return Promise.reject(this.dataSourceCatalogError);
+    }
+    return Promise.resolve(this.dataSourceCatalog);
   }
 }
 

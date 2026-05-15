@@ -15,18 +15,15 @@
  * - `sta_south`: subway(1) + rail(2)
  */
 
+import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
+
+import { getServiceDay, getServiceDayMinutes } from '../../domain/transit/service-day';
+import {
+  sortTimetableEntriesByDepartureTime,
+  sortTimetableEntriesChronologically,
+} from '../../domain/transit/sort-timetable-entries';
+import { getTimetableEntriesState } from '../../domain/transit/timetable-utils';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
-import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
-import type {
-  ContextualTimetableEntry,
-  SourceMeta,
-  StopWithMeta,
-  TimetableEntry,
-  TripInspectionGroupQuery,
-  TripLocator,
-  TripStopTime,
-  TripSnapshot,
-} from '../../types/app/transit-composed';
 import type {
   CollectionResult,
   Result,
@@ -36,29 +33,34 @@ import type {
   TripSnapshotResult,
   UpcomingTimetableResult,
 } from '../../types/app/repository';
-import { getTimetableEntriesState } from '../../domain/transit/timetable-utils';
-import { getServiceDay, getServiceDayMinutes } from '../../domain/transit/service-day';
-import {
-  sortTimetableEntriesByDepartureTime,
-  sortTimetableEntriesChronologically,
-} from '../../domain/transit/sort-timetable-entries';
-import { normalizeOptionalResultLimit, normalizeStopQueryLimit } from '../transit-repository';
+import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
+import type {
+  ContextualTimetableEntry,
+  SourceMeta,
+  StopWithMeta,
+  TimetableEntry,
+  TripInspectionGroupQuery,
+  TripLocator,
+  TripSnapshot,
+  TripStopTime,
+} from '../../types/app/transit-composed';
 import type { TransitRepository } from '../transit-repository';
+import { normalizeOptionalResultLimit, normalizeStopQueryLimit } from '../transit-repository';
 import {
   AGENCY_MAP,
+  ROUTES,
   ROUTE_MAP,
   ROUTE_SHAPES,
-  ROUTES,
   ROUTE_STOP_SEQUENCES,
+  STOPS,
   STOP_AGENCIES,
   STOP_ROUTES,
   STOP_ROUTES_RESOLVED,
   STOP_ROUTE_TYPES,
-  STOPS,
   approxDistanceKm,
   computeArrivalMinutes,
-  computePatternTravelOffset,
   computeOccOffset,
+  computePatternTravelOffset,
   countStopOccurrences,
   createMockTranslatableText,
   createMockTripPatternId,
@@ -519,5 +521,10 @@ export class MockRepository implements TransitRepository {
       },
     };
     return Promise.resolve({ success: true, data: [meta], truncated: false });
+  }
+
+  /** {@inheritDoc TransitRepository.getDataSourceCatalog} */
+  getDataSourceCatalog(): DataSourceCatalogBundle | null {
+    return null;
   }
 }

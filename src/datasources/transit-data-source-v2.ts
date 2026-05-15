@@ -11,8 +11,10 @@
  * - shapes.json: lazy-loaded when the shapes layer is toggled on
  * - insights.json: lazy-loaded when analytics views are accessed
  * - global/insights.json: lazy-loaded, cross-source spatial analytics
+ * - global/data-source-catalog.json: derived per-source metadata, optional
  */
 
+import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
 import type {
   DataBundle,
   GlobalInsightsBundle,
@@ -100,4 +102,19 @@ export interface TransitDataSourceV2 {
    * @throws When bundle envelope is invalid (wrong bundle_version or kind).
    */
   loadGlobalInsights(): Promise<GlobalInsightsBundle | null>;
+
+  /**
+   * Load the data-source catalog bundle (global, source-prefix-independent).
+   *
+   * Contains pipeline-derived per-source summary metadata (bundle sizes,
+   * counts, agency/period/route-type/locationType/shapes facts) keyed by
+   * source prefix. The catalog is treated as an optional derived bundle:
+   * its absence degrades catalog-related UI only and does not affect
+   * transit query.
+   *
+   * @returns The parsed catalog bundle, or `null` if unavailable
+   *          (not found, network error, timeout, non-JSON, or parse error).
+   * @throws When bundle envelope is invalid (wrong bundle_version or kind).
+   */
+  loadDataSourceCatalog(): Promise<DataSourceCatalogBundle | null>;
 }

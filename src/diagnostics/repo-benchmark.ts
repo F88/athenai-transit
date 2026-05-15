@@ -15,10 +15,10 @@
  *   ?diag=repo-bench&repo=v2   → benchmark v2 repo
  */
 
+import { getServiceDay } from '../domain/transit/service-day';
 import { createLogger } from '../lib/logger';
 import type { TransitRepository } from '../repositories/transit-repository';
 import type { StopWithMeta } from '../types/app/transit-composed';
-import { getServiceDay } from '../domain/transit/service-day';
 
 const logger = createLogger('diag:repo-bench');
 
@@ -287,6 +287,16 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
     logger.info(
       `Dataset: ${meta.value.data.length} sources, ${allStops.value.data.length} stops, ${totalRoutes} routes, ${totalTripPatterns} trip patterns`,
     );
+  }
+
+  const catalog = timed(() => repository.getDataSourceCatalog());
+  if (catalog.value) {
+    const sourceCount = Object.keys(catalog.value.sources.data).length;
+    logger.info(
+      `getDataSourceCatalog: ${catalog.ms.toFixed(2)}ms (${sourceCount} sources, createdAt=${catalog.value.metadata.data.createdAt})`,
+    );
+  } else {
+    logger.info(`getDataSourceCatalog: ${catalog.ms.toFixed(2)}ms (unavailable)`);
   }
 
   // --- Per-location accumulators ---

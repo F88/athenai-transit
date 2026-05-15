@@ -151,6 +151,7 @@ export function makeRepo(overrides: Partial<TransitRepository> = {}): TransitRep
     }),
     resolveStopStats: vi.fn().mockReturnValue(undefined),
     resolveRouteFreq: vi.fn().mockReturnValue(undefined),
+    getDataSourceCatalog: vi.fn().mockReturnValue(null),
     ...overrides,
   } as TransitRepository;
 }

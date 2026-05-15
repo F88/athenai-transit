@@ -1,20 +1,23 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
+import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
+
 import { AthenaiRepositoryV2 } from '..';
+import { minutesToDate } from '../../../domain/transit/calendar-utils';
 import { getEffectiveHeadsign } from '../../../domain/transit/get-effective-headsign';
 import { getServiceDay } from '../../../domain/transit/service-day';
 import {
-  TestDataSourceV2,
-  createFixtureV2,
-  createShapesFixtureV2,
-  createInsightsFixtureV2,
-  WEEKDAY,
-  SATURDAY,
-  WEEKDAY_OVERNIGHT,
   AFTER_BOUNDARY,
   AFTER_BOUNDARY_PAST,
+  createFixtureV2,
+  createInsightsFixtureV2,
+  createShapesFixtureV2,
   EXCEPTION_HOLIDAY,
+  SATURDAY,
+  TestDataSourceV2,
+  WEEKDAY,
+  WEEKDAY_OVERNIGHT,
 } from './fixtures/test-data-source-v2';
-import { minutesToDate } from '../../../domain/transit/calendar-utils';
 
 /** Assert result is successful and preserve the successful result shape. */
 function assertSuccess<T extends { success: boolean }>(
@@ -1228,5 +1231,101 @@ describe('resolveStopStats service group selection', () => {
     const stats = repository.resolveStopStats('bus_01', EXCEPTION_HOLIDAY);
     expect(stats).toBeDefined();
     expect(stats!.freq).toBe(80); // ho group freq, not wd (200)
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getDataSourceCatalog
+// ---------------------------------------------------------------------------
+
+function makeCatalogFixture(): DataSourceCatalogBundle {
+  return {
+    bundle_version: 3,
+    kind: 'data-source-catalog',
+    metadata: { v: 1, data: { createdAt: '2026-05-15T00:00:00Z' } },
+    sources: {
+      v: 1,
+      data: {
+        test: {
+          bundles: {
+            dataBundle: {
+              file: { sizeBytes: 1024 },
+              counts: {
+                stops: 12,
+                routes: 5,
+                agency: 2,
+                calendar: 4,
+                feedInfo: 1,
+                timetable: 12,
+                tripPatterns: 13,
+                translations: 0,
+                lookup: 0,
+              },
+            },
+            insightsBundle: {
+              file: { sizeBytes: 256 },
+              counts: { serviceGroups: 2, tripPatternStats: 2, tripPatternGeo: 0, stopStats: 2 },
+            },
+          },
+          summary: {
+            periods: {
+              feedValidity: { start: '20260101', end: '20261231' },
+              servicePeriod: { start: '20260101', end: '20261231' },
+              exceptionRange: { start: '20260304', end: '20260304' },
+            },
+            agencies: [{ name: 'Test Agency', lang: 'ja', timezone: 'Asia/Tokyo' }],
+            i18n: { languages: ['ja', 'en'] },
+            routes: { typeCounts: { '0': 1, '1': 1, '2': 1, '3': 2 } },
+            stops: {
+              locationTypes: {
+                '0': { count: 8, hasParentCount: 1 },
+                '1': { count: 4, hasParentCount: 0 },
+              },
+              geo: { bbox: { latMin: 35.7, latMax: 35.8, lonMin: 139.7, lonMax: 139.8 } },
+            },
+            service: { maxTripsPerDay: 100 },
+            shapes: { available: false, routeCount: 0 },
+          },
+        },
+      },
+    },
+    globalInsights: {
+      v: 1,
+      data: { file: { sizeBytes: 0 }, counts: { stopGeo: 0 } },
+    },
+  };
+}
+
+describe('getDataSourceCatalog', () => {
+  it('returns the catalog when the data source provides one', async () => {
+    const fixture = createFixtureV2();
+    const catalog = makeCatalogFixture();
+    const ds = new TestDataSourceV2({ test: fixture }, {}, {}, catalog);
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    expect(repository.getDataSourceCatalog()).toBe(catalog);
+  });
+
+  it('returns null when the data source has no catalog', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    expect(repository.getDataSourceCatalog()).toBeNull();
+  });
+
+  it('returns null when loadDataSourceCatalog throws (e.g. envelope mismatch)', async () => {
+    const fixture = createFixtureV2();
+    const envelopeError = new Error(
+      'global/data-source-catalog.json: invalid bundle_version (expected 3, got 2)',
+    );
+    const ds = new TestDataSourceV2({ test: fixture }, {}, {}, null, envelopeError);
+    const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    // Repository must still be usable; catalog is treated as unavailable.
+    expect(repository.getDataSourceCatalog()).toBeNull();
+    const sourceMeta = await repository.getAllSourceMeta();
+    assertSuccess(sourceMeta);
+    expect(sourceMeta.data).toHaveLength(1);
   });
 });

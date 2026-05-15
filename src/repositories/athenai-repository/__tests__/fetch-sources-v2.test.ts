@@ -49,6 +49,9 @@ describe('fetchSourcesV2', () => {
       loadGlobalInsights() {
         return Promise.resolve(null);
       },
+      loadDataSourceCatalog() {
+        return Promise.resolve(null);
+      },
     };
 
     const result = await fetchSourcesV2(['alpha', 'beta'], dataSource);
@@ -56,5 +59,43 @@ describe('fetchSourcesV2', () => {
     expect(result.loadResult.failed).toHaveLength(1);
     expect(result.loadResult.failed[0].error).toBeInstanceOf(Error);
     expect(result.loadResult.failed[0].error.message).toBe('boom');
+  });
+
+  it('reports synchronous throws from non-async loadData as per-prefix failures', async () => {
+    // A non-async impl that throws synchronously before constructing a
+    // Promise would bypass `Promise.allSettled` if the map callback did
+    // not wrap the call. fetchSourcesV2 must still classify the throw
+    // as a per-prefix failure rather than crashing the whole fetch.
+    const fixture = createFixtureV2();
+    const dataSource: TransitDataSourceV2 = {
+      loadData(prefix) {
+        if (prefix === 'alpha') {
+          return Promise.resolve({ ...fixture, prefix });
+        }
+        throw new Error('sync throw before Promise construction');
+      },
+      loadShapes() {
+        return Promise.resolve(null);
+      },
+      loadInsights() {
+        return Promise.resolve(null);
+      },
+      loadGlobalInsights() {
+        return Promise.resolve(null);
+      },
+      loadDataSourceCatalog() {
+        return Promise.resolve(null);
+      },
+    };
+
+    const result = await fetchSourcesV2(['alpha', 'beta'], dataSource);
+
+    expect(result.sources.map((s) => s.prefix)).toEqual(['alpha']);
+    expect(result.loadResult.loaded).toEqual(['alpha']);
+    expect(result.loadResult.failed).toHaveLength(1);
+    expect(result.loadResult.failed[0].prefix).toBe('beta');
+    expect(result.loadResult.failed[0].error.message).toBe(
+      'sync throw before Promise construction',
+    );
   });
 });

@@ -17,6 +17,7 @@
  */
 
 import type { CalendarExceptionJson, CalendarServiceJson } from '@contracts/data/transit-json';
+import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
 import type { TimetableGroupV2Json } from '@contracts/data/transit-v2-json';
 
 import { FetchDataSourceV2 } from '../../datasources/fetch-data-source-v2';
@@ -62,6 +63,7 @@ import type {
 import type { TransitRepository } from '../transit-repository';
 import { normalizeOptionalResultLimit, normalizeStopQueryLimit } from '../transit-repository';
 import { enrichStopInsights } from './enrich-stop-insights';
+import { fetchDataSourceCatalog } from './fetch-data-source-catalog';
 import { fetchSourcesV2 } from './fetch-sources-v2';
 import { buildTranslatableText } from './lib/build-translatable-text';
 import { buildTripStopTimes } from './lib/build-trip-stop-times';
@@ -109,6 +111,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private readonly timetableByPattern: Map<string, PatternTimetableEntry[]>;
   private readonly headsignTranslations: HeadsignTranslationsByPrefix;
   private readonly sourceMetas: SourceMeta[];
+  private readonly dataSourceCatalog: DataSourceCatalogBundle | null;
 
   // Derived maps populated during initialization and lazy-load phases.
   private readonly stopInsightsMap = new Map<string, StopInsightsEntry>();
@@ -121,7 +124,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   private shapesPromise: Promise<RouteShape[]> = Promise.resolve([]);
   private shapesCache: RouteShape[] | null = null;
 
-  private constructor(merged: MergedDataV2) {
+  private constructor(merged: MergedDataV2, dataSourceCatalog: DataSourceCatalogBundle | null) {
     this.stops = merged.stops;
     this.stopsMetaMap = merged.stopsMetaMap;
     this.routeMap = merged.routeMap;
@@ -134,6 +137,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     this.timetableByPattern = merged.timetableByPattern;
     this.headsignTranslations = merged.headsignTranslations;
     this.sourceMetas = merged.sourceMetas;
+    this.dataSourceCatalog = dataSourceCatalog;
   }
 
   private startShapesLoad(prefixes: string[], dataSource: TransitDataSourceV2): void {
@@ -158,11 +162,18 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     const t0 = performance.now();
     logger.info(`Loading sources: [${prefixes.join(', ')}]`);
 
-    const { sources, loadResult } = await fetchSourcesV2(prefixes, dataSource);
+    const [sourcesResult, catalogResult] = await Promise.all([
+      fetchSourcesV2(prefixes, dataSource),
+      fetchDataSourceCatalog(dataSource),
+    ]);
+    const { sources, loadResult, ms: sourcesMs } = sourcesResult;
+    const { catalog: dataSourceCatalog, ms: catalogMs } = catalogResult;
     const tFetch = performance.now();
     const fetchMs = Math.round(tFetch - t0);
     if (logger.isEnabled('info')) {
-      logger.info(`fetchSources: ${fetchMs}ms (${sources.length} sources)`);
+      logger.info(
+        `Fetched in ${fetchMs}ms (${sources.length} sources in ${Math.round(sourcesMs)}ms, catalog=${dataSourceCatalog ? 'loaded' : 'unavailable'} in ${Math.round(catalogMs)}ms)`,
+      );
     }
 
     if (logger.isEnabled('debug')) {
@@ -188,7 +199,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
       );
     }
 
-    const repository = new AthenaiRepositoryV2(merged);
+    const repository = new AthenaiRepositoryV2(merged, dataSourceCatalog);
 
     const tEnrich = performance.now();
     await enrichStopInsights(
@@ -879,6 +890,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   /** {@inheritDoc TransitRepository.getAllSourceMeta} */
   getAllSourceMeta(): Promise<CollectionResult<SourceMeta>> {
     return Promise.resolve({ success: true, data: this.sourceMetas, truncated: false });
+  }
+
+  /** {@inheritDoc TransitRepository.getDataSourceCatalog} */
+  getDataSourceCatalog(): DataSourceCatalogBundle | null {
+    return this.dataSourceCatalog;
   }
 
   /** {@inheritDoc TransitRepository.resolveStopStats} */
