@@ -10,15 +10,14 @@ import {
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { InfoIcon, WrenchIcon } from 'lucide-react';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import settings from '../../config/data-source-settings';
 import {
   aggregateGroupLoadStatus,
   type GroupLoadStatus,
 } from '../../domain/datasource/aggregate-group-status';
-import { formatBytes } from '../../domain/datasource/aggregate-source-size';
 import { computeDialogDisplay } from '../../domain/datasource/dialog-display';
+import { DataSourceGroupSummary } from '../datasource/data-source-group-summary';
 import { getSourceGroupDisplayName } from '../../domain/datasource/get-source-group-display-name';
 import {
   ROUTE_TYPE_OTHER,
@@ -33,12 +32,9 @@ import {
 import { useIsForcedSourcesMode } from '../../hooks/use-is-forced-sources-mode';
 import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
 import { useUserDataSourceSettings } from '../../hooks/use-user-data-source-settings';
-import { createLogger } from '../../lib/logger';
 import type { SourceGroup } from '../../types/app/source-group';
 import { countriesFlagEmoji } from '../../utils/country-flag';
 import { routeTypeEmoji, routeTypesEmoji } from '../../utils/route-type-emoji';
-
-const logger = createLogger('DataSourceSettingsDialog');
 
 type NoticeVariant = 'forced' | 'development';
 
@@ -227,66 +223,6 @@ function PartialFraction({ loadStatus }: { loadStatus: GroupLoadStatus }) {
   );
 }
 
-/**
- * Per-group decision-making metrics, rendered as a muted subtitle line
- * underneath the group name.
- *
- * Each metric is independently `null`-checked so partial catalog
- * coverage still surfaces the metrics it has. When every metric is
- * absent (e.g. catalog unavailable) the entire subtitle is omitted to
- * avoid an empty row.
- */
-function GroupRowMetrics({ groupInfo }: { groupInfo: DataSourceGroupInfo | null }) {
-  const { t } = useTranslation();
-  if (groupInfo === null) {
-    return null;
-  }
-  const hasAnyMetric =
-    groupInfo.size !== null ||
-    groupInfo.languages.size > 0 ||
-    groupInfo.boardingStopsCount !== null ||
-    groupInfo.maxTripsPerDay !== null;
-  if (!hasAnyMetric) {
-    return null;
-  }
-  return (
-    <div className="text-muted-foreground mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
-      {groupInfo.size !== null && <span>{formatBytes(groupInfo.size.totalBytes)}</span>}
-      {groupInfo.languages.size > 0 && (
-        <span
-          aria-label={t('dataSourceSettings.languages.aria', {
-            count: groupInfo.languages.size,
-          })}
-        >
-          <span aria-hidden>🌐 </span>
-          {groupInfo.languages.size}
-        </span>
-      )}
-      {groupInfo.boardingStopsCount !== null && (
-        <span
-          aria-label={t('dataSourceSettings.boardingStops.aria', {
-            count: groupInfo.boardingStopsCount,
-          })}
-        >
-          <span aria-hidden>🚏 </span>
-          {groupInfo.boardingStopsCount.toLocaleString()}
-        </span>
-      )}
-      {groupInfo.maxTripsPerDay !== null && (
-        <span
-          aria-label={t('dataSourceSettings.maxTripsPerDay.aria', {
-            count: groupInfo.maxTripsPerDay,
-          })}
-        >
-          <span aria-hidden>🚍 </span>
-          {groupInfo.maxTripsPerDay.toLocaleString()}
-          /d
-        </span>
-      )}
-    </div>
-  );
-}
-
 function FailureList({ loadStatus }: { loadStatus: GroupLoadStatus }) {
   // Shown for both pure `failed` (no loaded) and `partial` (some loaded +
   // some failed), since the error messages are equally useful in either
@@ -385,7 +321,7 @@ function GroupRowView({
             </span>
           )}
         </div>
-        <GroupRowMetrics groupInfo={row.groupInfo} />
+        <DataSourceGroupSummary groupInfo={row.groupInfo} />
         <PartialFraction loadStatus={row.loadStatus} />
         <FailureList loadStatus={row.loadStatus} />
       </div>
@@ -449,45 +385,6 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
     t,
   );
   const counts = countDistinctGroupStatuses(visibleGroups, loadStatusByPrefix);
-
-  // Emit a debug summary each time the dialog opens, surfacing the
-  // per-group aggregated info and per-prefix raw facts so future UI
-  // work can decide which fields are worth rendering. Designed for
-  // exploration via DevTools — the structured second argument expands
-  // inline in the browser console.
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    if (!logger.isEnabled('debug')) {
-      return;
-    }
-
-    logger.debug(
-      `groupInfoById=${String(groupInfoById.size)}, visibleGroups=${String(visibleGroups.length)}`,
-    );
-    for (const section of sections) {
-      for (const row of section.rows) {
-        const size = row.groupInfo?.size ?? null;
-        const sizeText = size !== null ? formatBytes(size.totalBytes) : '(no catalog)';
-        logger.debug(`[${String(section.key)}] ${row.groupId} (${row.groupName}): ${sizeText}`);
-      }
-    }
-
-    for (const group of visibleGroups) {
-      const groupInfo = groupInfoById.get(group.id);
-      if (!groupInfo) {
-        continue;
-      }
-      for (const info of groupInfo.infos) {
-        const sizeText = info.totalSizeBytes !== null ? formatBytes(info.totalSizeBytes) : '(none)';
-        logger.debug(
-          `[${info.prefix}] info: size=${sizeText} maxTripsPerDay=${String(info.maxTripsPerDay)} feedValidity=${String(info.feedValidity?.start)}-${String(info.feedValidity?.end)} shapes=${String(info.shapesAvailable)} langs=[${info.translationLanguages.join(',')}]`,
-          info,
-        );
-      }
-    }
-  }, [open, groupInfoById, sections, visibleGroups]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
