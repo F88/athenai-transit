@@ -1003,7 +1003,7 @@ describe('StopWithMeta.stats after enrichment', () => {
 // ---------------------------------------------------------------------------
 
 describe('getAllSourceMeta', () => {
-  it('returns source metadata', async () => {
+  it('exposes the loaded feed_info subset for each source', async () => {
     const fixture = createFixtureV2();
     const ds = new TestDataSourceV2({ test: fixture });
     const { repository } = await AthenaiRepositoryV2.create(['test'], ds);
@@ -1012,9 +1012,12 @@ describe('getAllSourceMeta', () => {
     assertSuccess(result);
     expect(result.data).toHaveLength(1);
     expect(result.data[0].id).toBe('test');
-    // agency-attributes.ts has no entry for test:agency, so name
-    // falls back to prefix
-    expect(result.data[0].name).toBe('test');
+    expect(result.data[0].feedInfo).toEqual({
+      publisherName: 'Test Agency',
+      publisherUrl: 'https://example.com',
+      version: '20260101_001',
+      lang: 'ja',
+    });
   });
 });
 

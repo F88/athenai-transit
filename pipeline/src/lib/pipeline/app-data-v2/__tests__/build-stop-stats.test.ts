@@ -284,7 +284,10 @@ describe('buildStopStats', () => {
       s1: [makeTimetableGroup('p1', 0, { svc1: [480] })],
     };
 
-    const result = buildStopStats(timetable, patterns, routes, [], { services: [], exceptions: [] });
+    const result = buildStopStats(timetable, patterns, routes, [], {
+      services: [],
+      exceptions: [],
+    });
 
     expect(result).toEqual({});
   });
@@ -514,15 +517,11 @@ describe('buildStopStats', () => {
         ],
       };
 
-      const groups: ServiceGroupEntry[] = [
-        { key: 'wd', serviceIds: ['wd_svc', 'hol_svc'] },
-      ];
+      const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['wd_svc', 'hol_svc'] }];
 
       // wd_svc weekdays 2026-05-04..2026-05-08; hol_svc added on 2026-05-05 only.
       const calendar: CalendarJson = {
-        services: [
-          { i: 'wd_svc', s: '20260504', e: '20260508', d: [1, 1, 1, 1, 1, 0, 0] },
-        ],
+        services: [{ i: 'wd_svc', s: '20260504', e: '20260508', d: [1, 1, 1, 1, 1, 0, 0] }],
         exceptions: [{ i: 'hol_svc', d: '20260505', t: 1 }],
       };
 

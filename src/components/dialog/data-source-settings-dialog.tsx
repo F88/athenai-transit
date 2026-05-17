@@ -1,5 +1,3 @@
-import { useTranslation } from 'react-i18next';
-import { InfoIcon, WrenchIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,25 +9,36 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
+import { InfoIcon, WrenchIcon } from 'lucide-react';
+import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import settings from '../../config/data-source-settings';
 import {
   aggregateGroupLoadStatus,
   type GroupLoadStatus,
 } from '../../domain/datasource/aggregate-group-status';
+import { formatBytes } from '../../domain/datasource/aggregate-source-size';
 import { computeDialogDisplay } from '../../domain/datasource/dialog-display';
 import { getSourceGroupDisplayName } from '../../domain/datasource/get-source-group-display-name';
-import { sortSourceGroupsForDisplay } from '../../domain/datasource/sort-source-groups';
-import { useIsForcedSourcesMode } from '../../hooks/use-is-forced-sources-mode';
-import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
-import { useUserDataSourceSettings } from '../../hooks/use-user-data-source-settings';
-import type { SourceGroup } from '../../types/app/source-group';
-import { countriesFlagEmoji } from '../../utils/country-flag';
-import { routeTypeEmoji, routeTypesEmoji } from '../../utils/route-type-emoji';
 import {
   ROUTE_TYPE_OTHER,
   ROUTE_TYPE_PRIORITY,
   type RouteTypeSectionKey,
 } from '../../domain/datasource/route-type-priority';
+import { sortSourceGroupsForDisplay } from '../../domain/datasource/sort-source-groups';
+import {
+  useDataSourceGroupInfo,
+  type DataSourceGroupInfo,
+} from '../../hooks/use-data-source-group-info';
+import { useIsForcedSourcesMode } from '../../hooks/use-is-forced-sources-mode';
+import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
+import { useUserDataSourceSettings } from '../../hooks/use-user-data-source-settings';
+import { createLogger } from '../../lib/logger';
+import type { SourceGroup } from '../../types/app/source-group';
+import { countriesFlagEmoji } from '../../utils/country-flag';
+import { routeTypeEmoji, routeTypesEmoji } from '../../utils/route-type-emoji';
+
+const logger = createLogger('DataSourceSettingsDialog');
 
 type NoticeVariant = 'forced' | 'development';
 
@@ -51,6 +60,21 @@ interface GroupRow {
   countryEmoji: string;
   /** Aggregated load status (4-state). */
   loadStatus: GroupLoadStatus;
+  /**
+   * Catalog / SourceMeta-derived summary for the row's SourceGroup —
+   * the user-facing decision-making material (total size, languages,
+   * boarding stops, peak daily trips, …). Bundled as a single
+   * sub-object so the rest of GroupRow stays focused on group identity
+   * and load state.
+   *
+   * `null` when {@link useDataSourceGroupInfo} has no entry for the
+   * group (defensive: in practice the hook returns an entry for every
+   * input group, but the lookup is kept nullable so a contract drift
+   * surfaces as a missing subtitle rather than a runtime crash).
+   * Individual fields inside the bundle (e.g. `size`) may also be
+   * `null` when catalog data is unavailable for a given prefix.
+   */
+  groupInfo: DataSourceGroupInfo | null;
 }
 
 interface Section {
@@ -67,6 +91,7 @@ interface Section {
 function buildGroupRow(
   group: SourceGroup,
   loadStatusByPrefix: ReturnType<typeof useSourceLoadStatus>,
+  groupInfoById: ReadonlyMap<string, DataSourceGroupInfo>,
   lang: string,
 ): GroupRow {
   return {
@@ -76,6 +101,7 @@ function buildGroupRow(
     routeTypeEmoji: routeTypesEmoji(group.routeTypes),
     countryEmoji: countriesFlagEmoji(group.countries),
     loadStatus: aggregateGroupLoadStatus(group.prefixes, loadStatusByPrefix),
+    groupInfo: groupInfoById.get(group.id) ?? null,
   };
 }
 
@@ -123,6 +149,7 @@ function statusIcon(status: GroupLoadStatus['status']): string {
 function buildSections(
   groups: readonly SourceGroup[],
   loadStatusByPrefix: ReturnType<typeof useSourceLoadStatus>,
+  groupInfoById: ReadonlyMap<string, DataSourceGroupInfo>,
   lang: string,
   t: (key: string) => string,
 ): Section[] {
@@ -138,7 +165,7 @@ function buildSections(
       key: rt,
       label: t(sectionLabelKey(rt)),
       emoji: sectionEmoji(rt),
-      rows: matched.map((g) => buildGroupRow(g, loadStatusByPrefix, lang)),
+      rows: matched.map((g) => buildGroupRow(g, loadStatusByPrefix, groupInfoById, lang)),
     });
   }
 
@@ -150,7 +177,7 @@ function buildSections(
       key: ROUTE_TYPE_OTHER,
       label: t(sectionLabelKey(ROUTE_TYPE_OTHER)),
       emoji: sectionEmoji(ROUTE_TYPE_OTHER),
-      rows: otherGroups.map((g) => buildGroupRow(g, loadStatusByPrefix, lang)),
+      rows: otherGroups.map((g) => buildGroupRow(g, loadStatusByPrefix, groupInfoById, lang)),
     });
   }
 
@@ -186,14 +213,13 @@ function countDistinctGroupStatuses(
   return counts;
 }
 
-function PartialFraction({ row }: { row: GroupRow }) {
+function PartialFraction({ loadStatus }: { loadStatus: GroupLoadStatus }) {
   const { t } = useTranslation();
-  if (row.loadStatus.status !== 'partial') {
+  if (loadStatus.status !== 'partial') {
     return null;
   }
-  const loaded = row.loadStatus.loadedPrefixes.length;
-  const total =
-    loaded + row.loadStatus.failedPrefixes.length + row.loadStatus.notAttemptedPrefixes.length;
+  const loaded = loadStatus.loadedPrefixes.length;
+  const total = loaded + loadStatus.failedPrefixes.length + loadStatus.notAttemptedPrefixes.length;
   return (
     <div className="text-muted-foreground mt-1 text-xs">
       {t('dataSourceSettings.partial.fraction', { loaded, total })}
@@ -201,19 +227,79 @@ function PartialFraction({ row }: { row: GroupRow }) {
   );
 }
 
-function FailureList({ row }: { row: GroupRow }) {
+/**
+ * Per-group decision-making metrics, rendered as a muted subtitle line
+ * underneath the group name.
+ *
+ * Each metric is independently `null`-checked so partial catalog
+ * coverage still surfaces the metrics it has. When every metric is
+ * absent (e.g. catalog unavailable) the entire subtitle is omitted to
+ * avoid an empty row.
+ */
+function GroupRowMetrics({ groupInfo }: { groupInfo: DataSourceGroupInfo | null }) {
+  const { t } = useTranslation();
+  if (groupInfo === null) {
+    return null;
+  }
+  const hasAnyMetric =
+    groupInfo.size !== null ||
+    groupInfo.languages.size > 0 ||
+    groupInfo.boardingStopsCount !== null ||
+    groupInfo.maxTripsPerDay !== null;
+  if (!hasAnyMetric) {
+    return null;
+  }
+  return (
+    <div className="text-muted-foreground mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
+      {groupInfo.size !== null && <span>{formatBytes(groupInfo.size.totalBytes)}</span>}
+      {groupInfo.languages.size > 0 && (
+        <span
+          aria-label={t('dataSourceSettings.languages.aria', {
+            count: groupInfo.languages.size,
+          })}
+        >
+          <span aria-hidden>🌐 </span>
+          {groupInfo.languages.size}
+        </span>
+      )}
+      {groupInfo.boardingStopsCount !== null && (
+        <span
+          aria-label={t('dataSourceSettings.boardingStops.aria', {
+            count: groupInfo.boardingStopsCount,
+          })}
+        >
+          <span aria-hidden>🚏 </span>
+          {groupInfo.boardingStopsCount.toLocaleString()}
+        </span>
+      )}
+      {groupInfo.maxTripsPerDay !== null && (
+        <span
+          aria-label={t('dataSourceSettings.maxTripsPerDay.aria', {
+            count: groupInfo.maxTripsPerDay,
+          })}
+        >
+          <span aria-hidden>🚍 </span>
+          {groupInfo.maxTripsPerDay.toLocaleString()}
+          /d
+        </span>
+      )}
+    </div>
+  );
+}
+
+function FailureList({ loadStatus }: { loadStatus: GroupLoadStatus }) {
   // Shown for both pure `failed` (no loaded) and `partial` (some loaded +
   // some failed), since the error messages are equally useful in either
   // case.
-  if (row.loadStatus.status !== 'failed' && row.loadStatus.status !== 'partial') {
+  if (loadStatus.status !== 'failed' && loadStatus.status !== 'partial') {
     return null;
   }
-  if (row.loadStatus.failedPrefixes.length === 0) {
+  if (loadStatus.failedPrefixes.length === 0) {
     return null;
   }
   return (
     <ul className="text-destructive mt-1 space-y-0.5 text-xs">
-      {row.loadStatus.failedPrefixes.map((f) => (
+      {loadStatus.failedPrefixes.map((f) => (
         <li key={f.prefix} className="wrap-break-word">
           <span className="font-mono">{f.prefix}</span>: {f.error.message}
         </li>
@@ -268,7 +354,7 @@ function GroupRowView({
 }) {
   const { t } = useTranslation();
   return (
-    <li className="border-border/40 flex items-start gap-2 border-b px-2 py-2 last:border-b-0">
+    <li className="border-border/40 flex items-center gap-2 border-b px-2 py-2 last:border-b-0">
       <Switch
         checked={checked}
         disabled={disabled}
@@ -284,6 +370,7 @@ function GroupRowView({
       >
         {statusIcon(row.loadStatus.status)}
       </span>
+      {/* Datasource attributes */}
       <div className="min-w-0 flex-1">
         <div className="text-foreground flex flex-wrap items-baseline gap-2 font-medium">
           <span>{row.groupName}</span>
@@ -298,8 +385,9 @@ function GroupRowView({
             </span>
           )}
         </div>
-        <PartialFraction row={row} />
-        <FailureList row={row} />
+        <GroupRowMetrics groupInfo={row.groupInfo} />
+        <PartialFraction loadStatus={row.loadStatus} />
+        <FailureList loadStatus={row.loadStatus} />
       </div>
     </li>
   );
@@ -351,8 +439,55 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
     enabledGroupIds,
   );
 
-  const sections = buildSections(visibleGroups, loadStatusByPrefix, i18n.language, t);
+  const groupInfoById = useDataSourceGroupInfo(visibleGroups);
+
+  const sections = buildSections(
+    visibleGroups,
+    loadStatusByPrefix,
+    groupInfoById,
+    i18n.language,
+    t,
+  );
   const counts = countDistinctGroupStatuses(visibleGroups, loadStatusByPrefix);
+
+  // Emit a debug summary each time the dialog opens, surfacing the
+  // per-group aggregated info and per-prefix raw facts so future UI
+  // work can decide which fields are worth rendering. Designed for
+  // exploration via DevTools — the structured second argument expands
+  // inline in the browser console.
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    if (!logger.isEnabled('debug')) {
+      return;
+    }
+
+    logger.debug(
+      `groupInfoById=${String(groupInfoById.size)}, visibleGroups=${String(visibleGroups.length)}`,
+    );
+    for (const section of sections) {
+      for (const row of section.rows) {
+        const size = row.groupInfo?.size ?? null;
+        const sizeText = size !== null ? formatBytes(size.totalBytes) : '(no catalog)';
+        logger.debug(`[${String(section.key)}] ${row.groupId} (${row.groupName}): ${sizeText}`);
+      }
+    }
+
+    for (const group of visibleGroups) {
+      const groupInfo = groupInfoById.get(group.id);
+      if (!groupInfo) {
+        continue;
+      }
+      for (const info of groupInfo.infos) {
+        const sizeText = info.totalSizeBytes !== null ? formatBytes(info.totalSizeBytes) : '(none)';
+        logger.debug(
+          `[${info.prefix}] info: size=${sizeText} maxTripsPerDay=${String(info.maxTripsPerDay)} feedValidity=${String(info.feedValidity?.start)}-${String(info.feedValidity?.end)} shapes=${String(info.shapesAvailable)} langs=[${info.translationLanguages.join(',')}]`,
+          info,
+        );
+      }
+    }
+  }, [open, groupInfoById, sections, visibleGroups]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

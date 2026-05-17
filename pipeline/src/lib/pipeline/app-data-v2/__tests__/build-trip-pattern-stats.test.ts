@@ -918,17 +918,13 @@ describe('buildTripPatternStats', () => {
         ],
       };
 
-      const groups: ServiceGroupEntry[] = [
-        { key: 'wd', serviceIds: ['wd_svc', 'hol_svc'] },
-      ];
+      const groups: ServiceGroupEntry[] = [{ key: 'wd', serviceIds: ['wd_svc', 'hol_svc'] }];
 
       // wd_svc runs weekdays 2026-05-04..2026-05-08 (Mon..Fri).
       // hol_svc has no calendar.services row — it is calendar_dates-only,
       // added by exception on 2026-05-05 (Tue, when wd_svc is also active).
       const calendar: CalendarJson = {
-        services: [
-          { i: 'wd_svc', s: '20260504', e: '20260508', d: [1, 1, 1, 1, 1, 0, 0] },
-        ],
+        services: [{ i: 'wd_svc', s: '20260504', e: '20260508', d: [1, 1, 1, 1, 1, 0, 0] }],
         exceptions: [{ i: 'hol_svc', d: '20260505', t: 1 }],
       };
 

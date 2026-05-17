@@ -62,6 +62,23 @@ vi.mock('../../../hooks/use-user-data-source-settings', () => ({
   useUserDataSourceSettings: () => mockUseUserDataSourceSettings(),
 }));
 
+// Minimal TransitRepository stub: only `getDataSourceCatalog` and
+// `getAllSourceMeta` are touched by the dialog (other repository
+// methods are unused in this test). Defaults: catalog is `null` and
+// source meta resolves to an empty collection — the dialog must remain
+// functional when no catalog is available, and per-group size captions
+// are simply hidden.
+const mockGetDataSourceCatalog = vi.fn<() => null>(() => null);
+const mockGetAllSourceMeta = vi.fn(() =>
+  Promise.resolve({ success: true as const, data: [], truncated: false }),
+);
+vi.mock('../../../hooks/use-transit-repository', () => ({
+  useTransitRepository: () => ({
+    getDataSourceCatalog: mockGetDataSourceCatalog,
+    getAllSourceMeta: mockGetAllSourceMeta,
+  }),
+}));
+
 vi.mock('../../../domain/datasource/dialog-display', async () => {
   const actual = await vi.importActual<typeof import('../../../domain/datasource/dialog-display')>(
     '../../../domain/datasource/dialog-display',

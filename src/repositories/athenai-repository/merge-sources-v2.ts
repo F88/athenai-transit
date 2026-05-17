@@ -27,6 +27,11 @@ function normalizeAppRouteType(routeType: number): AppRouteTypeValue {
   return (VALID_ROUTE_TYPE_VALUES.has(routeType) ? routeType : -1) as AppRouteTypeValue;
 }
 
+/** Convert empty strings (raw wire format default) to `null`. */
+function nonEmpty(value: string): string | null {
+  return value === '' ? null : value;
+}
+
 /**
  * Applies app-side overrides for known route color data-quality issues.
  *
@@ -364,27 +369,13 @@ export function mergeSourcesV2(sources: SourceDataV2[]): MergedDataV2 {
   const sourceMetas: SourceMeta[] = [];
   for (const source of sources) {
     const fi = source.data.feedInfo.data;
-    const firstAgencyId = source.data.agency.data[0]?.i;
-    const agency = firstAgencyId ? agencyMap.get(firstAgencyId) : undefined;
-    const sourceRouteTypes = [
-      ...new Set(
-        source.data.routes.data.map((r) =>
-          VALID_ROUTE_TYPE_VALUES.has(r.t) ? (r.t as AppRouteTypeValue) : (-1 as AppRouteTypeValue),
-        ),
-      ),
-    ].sort((a, b) => a - b);
-
     sourceMetas.push({
       id: source.prefix,
-      name: agency?.agency_short_name || source.prefix,
-      version: fi.v,
-      validity: { startDate: fi.s, endDate: fi.e },
-      routeTypes: sourceRouteTypes,
-      keywords: [],
-      stats: {
-        stopCount: source.data.stops.data.filter((s) => s.l === 0).length,
-        routeCount: source.data.routes.data.length,
-        tripPatternCount: Object.keys(source.data.tripPatterns.data).length,
+      feedInfo: {
+        publisherName: nonEmpty(fi.pn),
+        publisherUrl: nonEmpty(fi.pu),
+        version: nonEmpty(fi.v),
+        lang: nonEmpty(fi.l),
       },
     });
   }

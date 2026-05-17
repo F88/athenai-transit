@@ -190,6 +190,15 @@
     "partial": {
       "fraction": "{{loaded}}/{{total}} loaded"
     },
+    "languages": {
+      "aria": "{{count}} languages"
+    },
+    "boardingStops": {
+      "aria": "{{count}} boarding stops"
+    },
+    "maxTripsPerDay": {
+      "aria": "{{count}} trips on the busiest day"
+    },
     "toggle": {
       "aria": "Enable {{group}}"
     },

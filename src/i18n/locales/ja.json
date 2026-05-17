@@ -190,6 +190,15 @@
     "partial": {
       "fraction": "{{loaded}}/{{total}} 読込済"
     },
+    "languages": {
+      "aria": "{{count}} 言語対応"
+    },
+    "boardingStops": {
+      "aria": "停留所 {{count}} 箇所"
+    },
+    "maxTripsPerDay": {
+      "aria": "ピーク日 {{count}} 便"
+    },
     "toggle": {
       "aria": "{{group}} を有効化"
     },
