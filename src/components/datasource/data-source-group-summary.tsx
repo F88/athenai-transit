@@ -34,7 +34,11 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
   return (
     <div className="text-muted-foreground mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
       {groupInfo.size !== null && (
-        <span>
+        <span
+          aria-label={t('dataSourceSettings.size.aria', {
+            size: formatBytes(groupInfo.size.totalBytes),
+          })}
+        >
           <span aria-hidden>💾 </span>
           {formatBytes(groupInfo.size.totalBytes)}
         </span>

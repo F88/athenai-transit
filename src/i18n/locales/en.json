@@ -190,6 +190,9 @@
     "partial": {
       "fraction": "{{loaded}}/{{total}} loaded"
     },
+    "size": {
+      "aria": "Total bundle size: {{size}}"
+    },
     "languages": {
       "aria": "{{count}} languages"
     },

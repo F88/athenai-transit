@@ -190,6 +190,9 @@
     "partial": {
       "fraction": "{{loaded}}/{{total}} 読込済"
     },
+    "size": {
+      "aria": "データサイズ {{size}}"
+    },
     "languages": {
       "aria": "{{count}} 言語対応"
     },

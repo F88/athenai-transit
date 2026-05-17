@@ -94,16 +94,24 @@ export function useDataSourceGroupInfo(
   );
   useEffect(() => {
     let cancelled = false;
-    void repo.getAllSourceMeta().then((result) => {
-      if (cancelled) {
-        return;
-      }
-      if (result.success) {
-        setSourceMetaByPrefix(new Map(result.data.map((m) => [m.id, m])));
-      } else {
-        logger.warn('failed to load source meta:', result.error);
-      }
-    });
+    void repo
+      .getAllSourceMeta()
+      .then((result) => {
+        if (cancelled) {
+          return;
+        }
+        if (result.success) {
+          setSourceMetaByPrefix(new Map(result.data.map((m) => [m.id, m])));
+        } else {
+          logger.warn('failed to load source meta:', result.error);
+        }
+      })
+      .catch((error: unknown) => {
+        if (cancelled) {
+          return;
+        }
+        logger.error('failed to load source meta:', error);
+      });
     return () => {
       cancelled = true;
     };
