@@ -40,11 +40,12 @@ export interface DataSourceGroupInfo {
    * Union of {@link DataSourceInfo.translationLanguages} across the
    * group's prefixes.
    *
-   * `null` when no prefix in the group has catalog data (so the
-   * translation status is unknown). An empty Set when at least one
-   * prefix has catalog data but no prefix declares any translations —
-   * a distinct state that should render as "0 translations" rather
-   * than be hidden.
+   * `null` when no prefix in the group has catalog data (translation
+   * status unknown). An empty Set when at least one prefix has catalog
+   * data but no prefix declares any translations — data-semantically
+   * distinct from `null` (catalog explicitly says zero, vs. unknown).
+   * Whether to surface the distinction in the UI is a per-consumer
+   * decision.
    */
   languages: ReadonlySet<string> | null;
   /**

@@ -10,12 +10,18 @@ import type { DataSourceInfo } from './data-source-info';
  *
  * Return value:
  *   - `null` — **every** input's `translationLanguages` is `null` (i.e.
- *     no prefix in the group has catalog data). Treat this as "no
- *     information available" and hide the metric.
+ *     no prefix in the group has catalog data). Translation status is
+ *     unknown.
  *   - `Set<...>` — at least one prefix has catalog data. The Set may
  *     still be empty when every catalog-covered prefix declares zero
- *     translations; that case is *not* the same as the `null` above
- *     and should render as "0 translations" rather than being hidden.
+ *     translations; that case is data-semantically distinct from
+ *     `null` (catalog explicitly says zero vs. unknown). Whether a
+ *     consumer surfaces the distinction (e.g. by rendering "0
+ *     translations" instead of hiding) is a UI decision left to each
+ *     caller — {@link DataSourceGroupSummary} hides both for
+ *     backward compatibility, while
+ *     {@link DataSourceGroupSummary2} renders the empty-Set case
+ *     explicitly.
  *
  * The returned set preserves no specific iteration order; callers that
  * need a stable display order should sort the contents themselves.
