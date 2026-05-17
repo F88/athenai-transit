@@ -29,8 +29,12 @@ interface WrapperArgs {
   groupInfoNull: boolean;
   /** Total bundle size in bytes. `null` to omit the size metric. */
   sizeBytes: number | null;
-  /** Translation language count (sliced from {@link LANGUAGE_POOL}). */
-  languageCount: number;
+  /**
+   * Languages knob. `null` means catalog has no language info for the
+   * group (metric hidden); a non-negative number means catalog is
+   * present and declares that many translations (0 = explicitly zero).
+   */
+  languageCount: number | null;
   /** Physical boarding-stops count. `null` to omit. */
   boardingStopsCount: number | null;
   /** Peak single-day trip count. `null` to omit. */
@@ -44,7 +48,10 @@ function Wrapper(args: WrapperArgs) {
         groupId: 'story',
         infos: [],
         size: args.sizeBytes !== null ? { totalBytes: args.sizeBytes } : null,
-        languages: new Set(LANGUAGE_POOL.slice(0, Math.max(0, args.languageCount))),
+        languages:
+          args.languageCount === null
+            ? null
+            : new Set(LANGUAGE_POOL.slice(0, Math.max(0, args.languageCount))),
         boardingStopsCount: args.boardingStopsCount,
         maxTripsPerDay: args.maxTripsPerDay,
       };
@@ -232,6 +239,200 @@ export const Comparison: Story = {
               maxTripsPerDay={scenario.maxTripsPerDay}
             />
           </div>
+        ))}
+      </div>
+    );
+  },
+};
+
+// --- Kitchen sink ---
+
+/**
+ * Comprehensive matrix of states for visual regression review.
+ * Organized by axis: scale variation, single-metric isolation,
+ * missing-one combinations, and edge cases (zero, fully empty,
+ * null groupInfo).
+ */
+export const KitchenSink: Story = {
+  render: () => {
+    const sections: ReadonlyArray<{
+      heading: string;
+      scenarios: ReadonlyArray<WrapperArgs & { label: string }>;
+    }> = [
+      {
+        heading: 'By scale (all 4 metrics)',
+        scenarios: [
+          {
+            label: 'Tiny',
+            groupInfoNull: false,
+            sizeBytes: 1024,
+            languageCount: 1,
+            boardingStopsCount: 1,
+            maxTripsPerDay: 1,
+          },
+          {
+            label: 'Small',
+            groupInfoNull: false,
+            sizeBytes: 12_000,
+            languageCount: 1,
+            boardingStopsCount: 10,
+            maxTripsPerDay: 20,
+          },
+          {
+            label: 'Medium',
+            groupInfoNull: false,
+            sizeBytes: 3_400_000,
+            languageCount: 2,
+            boardingStopsCount: 1500,
+            maxTripsPerDay: 8000,
+          },
+          {
+            label: 'Large',
+            groupInfoNull: false,
+            sizeBytes: 48_000_000,
+            languageCount: 4,
+            boardingStopsCount: 12_345,
+            maxTripsPerDay: 87_500,
+          },
+          {
+            label: 'Huge',
+            groupInfoNull: false,
+            sizeBytes: 1_200_000_000,
+            languageCount: LANGUAGE_POOL.length,
+            boardingStopsCount: 999_999,
+            maxTripsPerDay: 999_999,
+          },
+        ],
+      },
+      {
+        heading: 'Single metric only',
+        scenarios: [
+          {
+            label: 'Size only',
+            groupInfoNull: false,
+            sizeBytes: 3_400_000,
+            languageCount: 0,
+            boardingStopsCount: null,
+            maxTripsPerDay: null,
+          },
+          {
+            label: 'Languages only',
+            groupInfoNull: false,
+            sizeBytes: null,
+            languageCount: 3,
+            boardingStopsCount: null,
+            maxTripsPerDay: null,
+          },
+          {
+            label: 'Stops only',
+            groupInfoNull: false,
+            sizeBytes: null,
+            languageCount: 0,
+            boardingStopsCount: 1500,
+            maxTripsPerDay: null,
+          },
+          {
+            label: 'Trips only',
+            groupInfoNull: false,
+            sizeBytes: null,
+            languageCount: 0,
+            boardingStopsCount: null,
+            maxTripsPerDay: 8000,
+          },
+        ],
+      },
+      {
+        heading: 'Three of four (one missing)',
+        scenarios: [
+          {
+            label: 'No size',
+            groupInfoNull: false,
+            sizeBytes: null,
+            languageCount: 2,
+            boardingStopsCount: 1500,
+            maxTripsPerDay: 8000,
+          },
+          {
+            label: 'No languages',
+            groupInfoNull: false,
+            sizeBytes: 3_400_000,
+            languageCount: 0,
+            boardingStopsCount: 1500,
+            maxTripsPerDay: 8000,
+          },
+          {
+            label: 'No stops',
+            groupInfoNull: false,
+            sizeBytes: 3_400_000,
+            languageCount: 2,
+            boardingStopsCount: null,
+            maxTripsPerDay: 8000,
+          },
+          {
+            label: 'No trips',
+            groupInfoNull: false,
+            sizeBytes: 3_400_000,
+            languageCount: 2,
+            boardingStopsCount: 1500,
+            maxTripsPerDay: null,
+          },
+        ],
+      },
+      {
+        heading: 'Edge cases',
+        scenarios: [
+          {
+            label: 'Zero stops & trips',
+            groupInfoNull: false,
+            sizeBytes: 3_400_000,
+            languageCount: 1,
+            boardingStopsCount: 0,
+            maxTripsPerDay: 0,
+          },
+          {
+            label: 'All metrics absent (renders nothing)',
+            groupInfoNull: false,
+            sizeBytes: null,
+            languageCount: 0,
+            boardingStopsCount: null,
+            maxTripsPerDay: null,
+          },
+          {
+            label: 'groupInfo is null (renders nothing)',
+            groupInfoNull: true,
+            sizeBytes: 0,
+            languageCount: 0,
+            boardingStopsCount: 0,
+            maxTripsPerDay: 0,
+          },
+        ],
+      },
+    ];
+    return (
+      <div className="flex flex-col gap-6">
+        {sections.map((section) => (
+          <section key={section.heading}>
+            <h3 className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400">
+              {section.heading}
+            </h3>
+            <div className="flex flex-col gap-2">
+              {section.scenarios.map((scenario) => (
+                <div key={scenario.label} className="bg-background rounded border p-3">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm font-medium">京王バス 🚍 🇯🇵</span>
+                    <span className="text-[10px] text-gray-400">{scenario.label}</span>
+                  </div>
+                  <Wrapper
+                    groupInfoNull={scenario.groupInfoNull}
+                    sizeBytes={scenario.sizeBytes}
+                    languageCount={scenario.languageCount}
+                    boardingStopsCount={scenario.boardingStopsCount}
+                    maxTripsPerDay={scenario.maxTripsPerDay}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     );

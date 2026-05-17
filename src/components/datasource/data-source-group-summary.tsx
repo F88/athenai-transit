@@ -25,7 +25,7 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
   }
   const hasAnyMetric =
     groupInfo.size !== null ||
-    groupInfo.languages.size > 0 ||
+    (groupInfo.languages !== null && groupInfo.languages.size > 0) ||
     groupInfo.boardingStopsCount !== null ||
     groupInfo.maxTripsPerDay !== null;
   if (!hasAnyMetric) {
@@ -33,8 +33,13 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
   }
   return (
     <div className="text-muted-foreground mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
-      {groupInfo.size !== null && <span>{formatBytes(groupInfo.size.totalBytes)}</span>}
-      {groupInfo.languages.size > 0 && (
+      {groupInfo.size !== null && (
+        <span>
+          <span aria-hidden>💾 </span>
+          {formatBytes(groupInfo.size.totalBytes)}
+        </span>
+      )}
+      {groupInfo.languages !== null && groupInfo.languages.size > 0 && (
         <span
           aria-label={t('dataSourceSettings.languages.aria', {
             count: groupInfo.languages.size,
@@ -61,8 +66,7 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
           })}
         >
           <span aria-hidden>🚍 </span>
-          {groupInfo.maxTripsPerDay.toLocaleString()}
-          /d
+          {groupInfo.maxTripsPerDay.toLocaleString()}/d
         </span>
       )}
     </div>

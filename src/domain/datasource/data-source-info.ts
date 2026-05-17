@@ -74,14 +74,19 @@ export interface DataSourceInfo {
    * Languages for which translations are published in this source
    * (catalog-only, from `summary.i18n.languages`). BCP 47 codes as
    * they appear in the upstream data (`ja`, `en`, `ja-Hrkt`,
-   * `zh-Hans`, etc.). Empty array when catalog is unavailable or the
-   * source has no published translations.
+   * `zh-Hans`, etc.).
+   *
+   * `null` when catalog data is unavailable for this prefix; an empty
+   * array when the catalog *is* present and explicitly declares zero
+   * translations. The two states are deliberately distinguished so
+   * downstream consumers can tell "no information" from "information
+   * says zero".
    *
    * Distinct from the primary feed language declaration
    * (`feed_info.feed_lang`); this set reflects translation
    * availability rather than the feed's default language.
    */
-  translationLanguages: readonly string[];
+  translationLanguages: readonly string[] | null;
 }
 
 /**
@@ -164,6 +169,6 @@ export function composeDataSourceInfo(
     maxTripsPerDay: catalogSource?.summary.service.maxTripsPerDay ?? null,
     boardingStopsCount: countBoardingStops(catalogSource),
     shapesAvailable: catalogSource?.summary.shapes.available ?? false,
-    translationLanguages: catalogSource?.summary.i18n.languages ?? [],
+    translationLanguages: catalogSource?.summary.i18n.languages ?? null,
   };
 }

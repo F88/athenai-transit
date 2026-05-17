@@ -38,10 +38,15 @@ export interface DataSourceGroupInfo {
   size: AggregatedSourceSize | null;
   /**
    * Union of {@link DataSourceInfo.translationLanguages} across the
-   * group's prefixes. Empty set when no language information is
-   * available.
+   * group's prefixes.
+   *
+   * `null` when no prefix in the group has catalog data (so the
+   * translation status is unknown). An empty Set when at least one
+   * prefix has catalog data but no prefix declares any translations —
+   * a distinct state that should render as "0 translations" rather
+   * than be hidden.
    */
-  languages: ReadonlySet<string>;
+  languages: ReadonlySet<string> | null;
   /**
    * Sum of {@link DataSourceInfo.boardingStopsCount} across the
    * group's prefixes. `null` when no prefix has catalog data.

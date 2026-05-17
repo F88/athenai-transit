@@ -194,8 +194,16 @@ describe('composeDataSourceInfo', () => {
     expect(info.translationLanguages).toEqual(['ja', 'en']);
   });
 
-  it('defaults translationLanguages to an empty array when catalog is missing', () => {
+  it('returns null translationLanguages when catalog is missing', () => {
     const info = composeDataSourceInfo('kobus', makeSourceMeta(), undefined);
+    expect(info.translationLanguages).toBeNull();
+  });
+
+  it('preserves an empty translationLanguages array when catalog declares zero translations', () => {
+    const catalogSource = makeCatalogSource({
+      summary: { ...makeCatalogSource().summary, i18n: { languages: [] } },
+    });
+    const info = composeDataSourceInfo('kobus', makeSourceMeta(), catalogSource);
     expect(info.translationLanguages).toEqual([]);
   });
 });

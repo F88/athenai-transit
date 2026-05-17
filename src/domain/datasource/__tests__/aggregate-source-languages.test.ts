@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { aggregateLanguages } from '../aggregate-source-languages';
 import type { DataSourceInfo } from '../data-source-info';
 
-function makeInfo(prefix: string, translationLanguages: readonly string[]): DataSourceInfo {
+function makeInfo(prefix: string, translationLanguages: readonly string[] | null): DataSourceInfo {
   return {
     prefix,
     feedVersion: null,
@@ -17,11 +17,16 @@ function makeInfo(prefix: string, translationLanguages: readonly string[]): Data
 }
 
 describe('aggregateLanguages', () => {
-  it('returns an empty set for empty input', () => {
-    expect(aggregateLanguages([])).toEqual(new Set());
+  it('returns null for empty input (no prefix has catalog data)', () => {
+    expect(aggregateLanguages([])).toBeNull();
   });
 
-  it('returns an empty set when every entry has no languages', () => {
+  it('returns null when every entry has translationLanguages === null', () => {
+    const result = aggregateLanguages([makeInfo('a', null), makeInfo('b', null)]);
+    expect(result).toBeNull();
+  });
+
+  it('returns an empty set when every entry has catalog but no languages', () => {
     const result = aggregateLanguages([makeInfo('a', []), makeInfo('b', [])]);
     expect(result).toEqual(new Set());
   });
@@ -46,5 +51,15 @@ describe('aggregateLanguages', () => {
   it('treats BCP 47 variants as distinct (e.g. ja vs ja-Hrkt)', () => {
     const result = aggregateLanguages([makeInfo('a', ['ja']), makeInfo('b', ['ja-Hrkt'])]);
     expect(result).toEqual(new Set(['ja', 'ja-Hrkt']));
+  });
+
+  it('treats a single null-catalog entry mixed with a catalog-present entry as catalog-present', () => {
+    const result = aggregateLanguages([makeInfo('a', null), makeInfo('b', ['ja'])]);
+    expect(result).toEqual(new Set(['ja']));
+  });
+
+  it('returns an empty set (not null) when at least one entry has catalog but empty languages', () => {
+    const result = aggregateLanguages([makeInfo('a', null), makeInfo('b', [])]);
+    expect(result).toEqual(new Set());
   });
 });
