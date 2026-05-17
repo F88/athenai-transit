@@ -1,4 +1,4 @@
-import type { DataSourceInfo } from './data-source-info';
+import type { DataSourceInfo } from '../../types/app/data-source-info';
 
 /**
  * Sum the `maxTripsPerDay` of every {@link DataSourceInfo} that

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { DataSourceGroupInfo } from '../../hooks/use-data-source-group-info';
+import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
 import { DataSourceGroupSummary } from './data-source-group-summary';
 import { DataSourceGroupSummary2 } from './data-source-group-summary-2';
 
@@ -35,7 +35,7 @@ function buildGroupInfo(args: WrapperArgs): DataSourceGroupInfo | null {
     groupId: 'story',
     infos: [],
     size: args.sizeBytes !== null ? { totalBytes: args.sizeBytes } : null,
-    languages:
+    translationLanguages:
       args.languageCount === null
         ? null
         : new Set(LANGUAGE_POOL.slice(0, Math.max(0, args.languageCount))),

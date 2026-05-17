@@ -1,12 +1,18 @@
-import type { DataSourceInfo } from './data-source-info';
+import type { DataSourceInfo } from '../../types/app/data-source-info';
 
 /**
- * Aggregate the languages supported across a set of {@link DataSourceInfo}
- * entries (e.g. every prefix in a {@link SourceGroup}).
+ * Aggregate the translation languages published across a set of
+ * {@link DataSourceInfo} entries (e.g. every prefix in a
+ * {@link SourceGroup}).
+ *
+ * This describes **translation data availability** (the languages a
+ * source's `translations.txt` declares), not the feed's base language
+ * — a source with zero translations still has a base `feed_lang`.
  *
  * Returns the **union** of `translationLanguages` arrays — a code
  * appearing in any single source is included exactly once. Use `.size`
- * for "how many languages does this group offer" or iterate for display.
+ * for "how many translation languages does this group offer" or
+ * iterate for display.
  *
  * Return value:
  *   - `null` — **every** input's `translationLanguages` is `null` (i.e.
@@ -26,7 +32,9 @@ import type { DataSourceInfo } from './data-source-info';
  * The returned set preserves no specific iteration order; callers that
  * need a stable display order should sort the contents themselves.
  */
-export function aggregateLanguages(infos: readonly DataSourceInfo[]): ReadonlySet<string> | null {
+export function aggregateTranslationLanguages(
+  infos: readonly DataSourceInfo[],
+): ReadonlySet<string> | null {
   const set = new Set<string>();
   let anyCatalogPresent = false;
   for (const info of infos) {

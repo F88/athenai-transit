@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { formatBytes } from '../../domain/datasource/aggregate-source-size';
-import type { DataSourceGroupInfo } from '../../hooks/use-data-source-group-info';
+import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
 
 /**
  * 5-level threshold buckets calibrated against actual catalog data
@@ -89,7 +89,7 @@ export function DataSourceGroupSummary2({ groupInfo }: { groupInfo: DataSourceGr
   }
   const hasAnyMetric =
     groupInfo.size !== null ||
-    groupInfo.languages !== null ||
+    groupInfo.translationLanguages !== null ||
     groupInfo.boardingStopsCount !== null ||
     groupInfo.maxTripsPerDay !== null;
   if (!hasAnyMetric) {
@@ -110,15 +110,15 @@ export function DataSourceGroupSummary2({ groupInfo }: { groupInfo: DataSourceGr
           />
         </span>
       )}
-      {groupInfo.languages !== null && (
+      {groupInfo.translationLanguages !== null && (
         <span
-          aria-label={t('dataSourceSettings.languages.aria', {
-            count: groupInfo.languages.size,
+          aria-label={t('dataSourceSettings.translations.aria', {
+            count: groupInfo.translationLanguages.size,
           })}
         >
           <span aria-hidden>🌐 </span>
           <Stars
-            level={toStarLevel(groupInfo.languages.size, LANGUAGES_THRESHOLDS)}
+            level={toStarLevel(groupInfo.translationLanguages.size, LANGUAGES_THRESHOLDS)}
             total={LANGUAGES_THRESHOLDS.length}
           />
         </span>

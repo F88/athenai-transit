@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { formatBytes } from '../../domain/datasource/aggregate-source-size';
-import type { DataSourceGroupInfo } from '../../hooks/use-data-source-group-info';
+import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
 
 /**
  * Renders the user-facing summary line for one data source group —
@@ -25,7 +25,7 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
   }
   const hasAnyMetric =
     groupInfo.size !== null ||
-    (groupInfo.languages !== null && groupInfo.languages.size > 0) ||
+    (groupInfo.translationLanguages !== null && groupInfo.translationLanguages.size > 0) ||
     groupInfo.boardingStopsCount !== null ||
     groupInfo.maxTripsPerDay !== null;
   if (!hasAnyMetric) {
@@ -43,14 +43,14 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
           {formatBytes(groupInfo.size.totalBytes)}
         </span>
       )}
-      {groupInfo.languages !== null && groupInfo.languages.size > 0 && (
+      {groupInfo.translationLanguages !== null && groupInfo.translationLanguages.size > 0 && (
         <span
-          aria-label={t('dataSourceSettings.languages.aria', {
-            count: groupInfo.languages.size,
+          aria-label={t('dataSourceSettings.translations.aria', {
+            count: groupInfo.translationLanguages.size,
           })}
         >
           <span aria-hidden>🌐 </span>
-          {groupInfo.languages.size}
+          {groupInfo.translationLanguages.size}
         </span>
       )}
       {groupInfo.boardingStopsCount !== null && (

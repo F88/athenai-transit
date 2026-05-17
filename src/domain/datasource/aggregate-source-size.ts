@@ -1,17 +1,5 @@
-import type { DataSourceInfo } from './data-source-info';
-
-/**
- * Aggregated disk size for a set of {@link DataSourceInfo} entries
- * (e.g. all prefixes belonging to a {@link SourceGroup}).
- *
- * Sums the `totalSizeBytes` of each input that has a non-null catalog
- * total. Intended as a coarse decision-making signal for "how heavy is
- * enabling this group" — not for accurate budgeting.
- */
-export interface AggregatedSourceSize {
-  /** Total bytes summed across all inputs with a known catalog total. */
-  totalBytes: number;
-}
+import type { AggregatedSourceSize } from '../../types/app/data-source-group-info';
+import type { DataSourceInfo } from '../../types/app/data-source-info';
 
 /**
  * Aggregate {@link DataSourceInfo.totalSizeBytes} across the supplied

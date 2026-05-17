@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { aggregateBoardingStopsCount, aggregateMaxTripsPerDay } from '../aggregate-source-counts';
-import type { DataSourceInfo } from '../data-source-info';
+import type { DataSourceInfo } from '../../../types/app/data-source-info';
 
 function makeInfo(
   prefix: string,

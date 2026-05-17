@@ -25,10 +25,8 @@ import {
   type RouteTypeSectionKey,
 } from '../../domain/datasource/route-type-priority';
 import { sortSourceGroupsForDisplay } from '../../domain/datasource/sort-source-groups';
-import {
-  useDataSourceGroupInfo,
-  type DataSourceGroupInfo,
-} from '../../hooks/use-data-source-group-info';
+import { useDataSourceGroupInfo } from '../../hooks/use-data-source-group-info';
+import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
 import { useIsForcedSourcesMode } from '../../hooks/use-is-forced-sources-mode';
 import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
 import { useUserDataSourceSettings } from '../../hooks/use-user-data-source-settings';

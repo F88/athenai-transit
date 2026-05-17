@@ -193,8 +193,8 @@
     "size": {
       "aria": "データサイズ {{size}}"
     },
-    "languages": {
-      "aria": "{{count}} 言語対応"
+    "translations": {
+      "aria": "{{count}} 言語に翻訳"
     },
     "boardingStops": {
       "aria": "停留所 {{count}} 箇所"
