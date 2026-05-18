@@ -90,7 +90,11 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
         </span>
       )}
       {groupInfo.routeShapesCount !== null && (
-        <span aria-label={`Route shapes: ${groupInfo.routeShapesCount.toLocaleString()}`}>
+        <span
+          aria-label={t('dataSourceSettings.routeShapes.aria', {
+            count: groupInfo.routeShapesCount.toLocaleString(),
+          })}
+        >
           <span aria-hidden>🗺️ </span>
           {groupInfo.routeShapesCount.toLocaleString()}
         </span>

@@ -20,7 +20,8 @@ interface WrapperArgs {
   /**
    * Languages knob: `null` = catalog absent for languages (metric
    * hidden); a non-negative number = catalog present with that many
-   * languages (0 renders as the neutral lowest tone).
+   * languages (0 still renders the lowest non-null level, not the
+   * neutral hidden state).
    */
   languageCount: number | null;
   routeCount?: number | null;

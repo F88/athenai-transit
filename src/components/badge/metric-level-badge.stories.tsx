@@ -176,10 +176,6 @@ export const SizeComparison: Story = {
   ),
 };
 
-export const SizeCompasision: Story = {
-  ...SizeComparison,
-};
-
 // --- Level behavior ---
 
 export const LevelComparison: Story = {
@@ -199,10 +195,6 @@ export const LevelComparison: Story = {
       ))}
     </div>
   ),
-};
-
-export const LevelComparision: Story = {
-  ...LevelComparison,
 };
 
 export const ThresholdExamples: Story = {

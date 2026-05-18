@@ -148,7 +148,9 @@ export function DataSourceGroupSummary2({ groupInfo }: { groupInfo: DataSourceGr
           icon={<Spline />}
           text={groupInfo.routeShapesCount.toLocaleString(i18n.language)}
           level={toMetricLevel(groupInfo.routeShapesCount, ROUTE_SHAPES_THRESHOLDS)}
-          aria-label={`Route shapes: ${groupInfo.routeShapesCount.toLocaleString(i18n.language)}`}
+          aria-label={t('dataSourceSettings.routeShapes.aria', {
+            count: groupInfo.routeShapesCount.toLocaleString(i18n.language),
+          })}
         />
       )}
     </div>
