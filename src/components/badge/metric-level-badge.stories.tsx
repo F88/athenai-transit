@@ -1,23 +1,23 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { CalendarDays, Globe, HardDrive, Route, Signpost, Spline } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { toMetricLevel } from '../../utils/to-metric-level';
 import type { BaseLabelSize } from '../label/base-label';
 import {
-  BLUE_METRIC_TONE_SCALE,
-  AQUA_METRIC_TONE_SCALE,
-  FIVE_LEVEL_METRIC_TONE_SCALE,
-  GOLD_METRIC_TONE_SCALE,
-  GRAY_METRIC_TONE_SCALE,
-  GREEN_METRIC_TONE_SCALE,
-  ORANGE_METRIC_TONE_SCALE,
-  PURPLE_METRIC_TONE_SCALE,
-  RED_METRIC_TONE_SCALE,
-  SILVER_METRIC_TONE_SCALE,
-  TEAL_METRIC_TONE_SCALE,
-  type MetricLevelTone,
-  type MetricTonePalette,
-  toMetricLevel,
-} from './metric-level-badge-scale';
+  AQUA_METRIC_BADGE_TONE_SCALE,
+  BLUE_METRIC_BADGE_TONE_SCALE,
+  FIVE_LEVEL_METRIC_BADGE_TONE_SCALE,
+  GOLD_METRIC_BADGE_TONE_SCALE,
+  GRAY_METRIC_BADGE_TONE_SCALE,
+  GREEN_METRIC_BADGE_TONE_SCALE,
+  ORANGE_METRIC_BADGE_TONE_SCALE,
+  PURPLE_METRIC_BADGE_TONE_SCALE,
+  RED_METRIC_BADGE_TONE_SCALE,
+  SILVER_METRIC_BADGE_TONE_SCALE,
+  TEAL_METRIC_BADGE_TONE_SCALE,
+  type MetricBadgeTone,
+  type MetricBadgeTonePalette,
+} from './metric-badge-tone-scale';
 import { MetricLevelBadge } from './metric-level-badge';
 
 const ICON_MAP = {
@@ -37,8 +37,8 @@ interface WrapperArgs {
   level: number;
   size: BaseLabelSize;
   ariaLabel?: string;
-  palette?: MetricTonePalette;
-  toneScale?: ReadonlyArray<MetricLevelTone>;
+  badgeTonePalette?: MetricBadgeTonePalette;
+  badgeToneScale?: ReadonlyArray<MetricBadgeTone>;
 }
 
 function Wrapper(args: WrapperArgs) {
@@ -49,8 +49,8 @@ function Wrapper(args: WrapperArgs) {
       level={args.level}
       size={args.size}
       aria-label={args.ariaLabel}
-      palette={args.palette}
-      toneScale={args.toneScale}
+      badgeTonePalette={args.badgeTonePalette}
+      badgeToneScale={args.badgeToneScale}
     />
   );
 }
@@ -65,7 +65,7 @@ const ICON_OPTIONS: ReadonlyArray<IconName> = [
   'Spline',
 ];
 
-const WARM_TONE_SCALE: ReadonlyArray<MetricLevelTone> = [
+const WARM_TONE_SCALE: ReadonlyArray<MetricBadgeTone> = [
   {
     iconBg: '#E5E7EB',
     iconFg: '#4B5563',
@@ -119,7 +119,7 @@ const meta = {
     level: 3,
     size: 'sm',
     ariaLabel: 'Bundle size: 3.4 MB',
-    palette: 'default',
+    badgeTonePalette: 'default',
   },
   argTypes: {
     iconName: { control: 'select', options: ICON_OPTIONS },
@@ -127,7 +127,7 @@ const meta = {
     level: { control: 'number' },
     size: { control: 'inline-radio', options: SIZE_OPTIONS },
     ariaLabel: { control: 'text' },
-    palette: {
+    badgeTonePalette: {
       control: 'inline-radio',
       options: [
         'default',
@@ -143,7 +143,7 @@ const meta = {
         'silver',
       ],
     },
-    toneScale: { control: false },
+    badgeToneScale: { control: false },
   },
 } satisfies Meta<typeof Wrapper>;
 
@@ -247,6 +247,85 @@ export const ThresholdExamples: Story = {
   },
 };
 
+export const ThresholdDirectionComparison: Story = {
+  args: {
+    iconName: 'Route',
+    text: '24',
+    size: 'sm',
+    badgeTonePalette: 'blue',
+    ariaLabel: 'Routes: 24',
+  },
+  render: (args) => {
+    const samples = [
+      {
+        label: 'Routes',
+        iconName: 'Route' as const,
+        value: 24,
+        text: '24',
+        thresholds: [0, 5, 20, 100, 300],
+      },
+      {
+        label: 'Stops',
+        iconName: 'Signpost' as const,
+        value: 142,
+        text: '142',
+        thresholds: [0, 20, 100, 500, 2000],
+      },
+      {
+        label: 'Trips/day',
+        iconName: 'CalendarDays' as const,
+        value: 687,
+        text: '687/d',
+        thresholds: [0, 100, 500, 2000, 8000],
+      },
+    ];
+
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3 text-xs text-gray-500">
+          <span className="w-24 shrink-0">metric</span>
+          <span className="w-32 shrink-0">ascending</span>
+          <span className="w-32 shrink-0">descending</span>
+        </div>
+        {samples.map((sample) => {
+          const ascendingLevel = toMetricLevel(sample.value, sample.thresholds, {
+            direction: 'ascending',
+          });
+          const descendingLevel = toMetricLevel(sample.value, sample.thresholds, {
+            direction: 'descending',
+          });
+
+          return (
+            <div key={sample.label} className="flex items-center gap-3">
+              <span className="w-24 shrink-0 text-xs text-gray-500">{sample.label}</span>
+              <div className="flex w-32 shrink-0 items-center gap-2">
+                <Wrapper
+                  {...args}
+                  iconName={sample.iconName}
+                  text={sample.text}
+                  level={ascendingLevel}
+                  ariaLabel={`${sample.label}: ${sample.text}, ascending, level ${ascendingLevel}`}
+                />
+                <span className="text-xs text-gray-400">L{ascendingLevel}</span>
+              </div>
+              <div className="flex w-32 shrink-0 items-center gap-2">
+                <Wrapper
+                  {...args}
+                  iconName={sample.iconName}
+                  text={sample.text}
+                  level={descendingLevel}
+                  ariaLabel={`${sample.label}: ${sample.text}, descending, level ${descendingLevel}`}
+                />
+                <span className="text-xs text-gray-400">L{descendingLevel}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  },
+};
+
 // --- Tone scale variants ---
 
 export const PaletteComparison: Story = {
@@ -276,7 +355,7 @@ export const PaletteComparison: Story = {
       ).map((palette) => (
         <div key={palette} className="flex items-center gap-2">
           <span className="w-24 text-xs text-gray-500">{palette}</span>
-          <Wrapper {...args} palette={palette} toneScale={undefined} />
+          <Wrapper {...args} badgeTonePalette={palette} badgeToneScale={undefined} />
         </div>
       ))}
     </div>
@@ -291,7 +370,7 @@ export const PresetPaletteLevelMatrix: Story = {
     ariaLabel: 'Stops: 142',
   },
   render: (args) => {
-    const palettes: ReadonlyArray<MetricTonePalette> = [
+    const palettes: ReadonlyArray<MetricBadgeTonePalette> = [
       'default',
       'red',
       'orange',
@@ -324,8 +403,8 @@ export const PresetPaletteLevelMatrix: Story = {
                 <Wrapper
                   key={`${palette}-${level}`}
                   {...args}
-                  palette={palette}
-                  toneScale={undefined}
+                  badgeTonePalette={palette}
+                  badgeToneScale={undefined}
                   level={level}
                   ariaLabel={`Stops: 142, ${palette} palette, level ${level}`}
                 />
@@ -344,8 +423,8 @@ export const CustomToneScale: Story = {
     text: '687/d',
     level: 3,
     ariaLabel: 'Trips per day: 687',
-    palette: 'default',
-    toneScale: WARM_TONE_SCALE,
+    badgeTonePalette: 'default',
+    badgeToneScale: WARM_TONE_SCALE,
   },
 };
 
@@ -361,51 +440,51 @@ export const ToneScaleComparison: Story = {
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <span className="w-24 text-xs text-gray-500">Default</span>
-        <Wrapper {...args} toneScale={FIVE_LEVEL_METRIC_TONE_SCALE} />
+        <Wrapper {...args} badgeToneScale={FIVE_LEVEL_METRIC_BADGE_TONE_SCALE} />
       </div>
       <div className="flex items-center gap-2">
         <span className="w-24 text-xs text-gray-500">Red</span>
-        <Wrapper {...args} toneScale={RED_METRIC_TONE_SCALE} />
+        <Wrapper {...args} badgeToneScale={RED_METRIC_BADGE_TONE_SCALE} />
       </div>
       <div className="flex items-center gap-2">
         <span className="w-24 text-xs text-gray-500">Blue</span>
-        <Wrapper {...args} toneScale={BLUE_METRIC_TONE_SCALE} />
+        <Wrapper {...args} badgeToneScale={BLUE_METRIC_BADGE_TONE_SCALE} />
       </div>
       <div className="flex items-center gap-2">
         <span className="w-24 text-xs text-gray-500">Teal</span>
-        <Wrapper {...args} toneScale={TEAL_METRIC_TONE_SCALE} />
+        <Wrapper {...args} badgeToneScale={TEAL_METRIC_BADGE_TONE_SCALE} />
       </div>
       <div className="flex items-center gap-2">
         <span className="w-24 text-xs text-gray-500">Green</span>
-        <Wrapper {...args} toneScale={GREEN_METRIC_TONE_SCALE} />
+        <Wrapper {...args} badgeToneScale={GREEN_METRIC_BADGE_TONE_SCALE} />
       </div>
       <div className="flex items-center gap-2">
         <span className="w-24 text-xs text-gray-500">Aqua</span>
-        <Wrapper {...args} toneScale={AQUA_METRIC_TONE_SCALE} />
+        <Wrapper {...args} badgeToneScale={AQUA_METRIC_BADGE_TONE_SCALE} />
       </div>
       <div className="flex items-center gap-2">
         <span className="w-24 text-xs text-gray-500">Orange</span>
-        <Wrapper {...args} toneScale={ORANGE_METRIC_TONE_SCALE} />
+        <Wrapper {...args} badgeToneScale={ORANGE_METRIC_BADGE_TONE_SCALE} />
       </div>
       <div className="flex items-center gap-2">
         <span className="w-24 text-xs text-gray-500">Purple</span>
-        <Wrapper {...args} toneScale={PURPLE_METRIC_TONE_SCALE} />
+        <Wrapper {...args} badgeToneScale={PURPLE_METRIC_BADGE_TONE_SCALE} />
       </div>
       <div className="flex items-center gap-2">
         <span className="w-24 text-xs text-gray-500">Gray</span>
-        <Wrapper {...args} toneScale={GRAY_METRIC_TONE_SCALE} />
+        <Wrapper {...args} badgeToneScale={GRAY_METRIC_BADGE_TONE_SCALE} />
       </div>
       <div className="flex items-center gap-2">
         <span className="w-24 text-xs text-gray-500">Gold</span>
-        <Wrapper {...args} toneScale={GOLD_METRIC_TONE_SCALE} />
+        <Wrapper {...args} badgeToneScale={GOLD_METRIC_BADGE_TONE_SCALE} />
       </div>
       <div className="flex items-center gap-2">
         <span className="w-24 text-xs text-gray-500">Silver</span>
-        <Wrapper {...args} toneScale={SILVER_METRIC_TONE_SCALE} />
+        <Wrapper {...args} badgeToneScale={SILVER_METRIC_BADGE_TONE_SCALE} />
       </div>
       <div className="flex items-center gap-2">
         <span className="w-24 text-xs text-gray-500">Custom</span>
-        <Wrapper {...args} toneScale={WARM_TONE_SCALE} />
+        <Wrapper {...args} badgeToneScale={WARM_TONE_SCALE} />
       </div>
     </div>
   ),

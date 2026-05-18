@@ -1,4 +1,4 @@
-export interface MetricLevelTone {
+export interface MetricBadgeTone {
   iconBg: string;
   iconFg: string;
   textBg: string;
@@ -6,7 +6,7 @@ export interface MetricLevelTone {
   frameColor: string;
 }
 
-export type MetricTonePalette =
+export type MetricBadgeTonePalette =
   | 'default'
   | 'red'
   | 'blue'
@@ -19,7 +19,7 @@ export type MetricTonePalette =
   | 'gold'
   | 'silver';
 
-const NEUTRAL_LEVEL_TONE: MetricLevelTone = {
+const NEUTRAL_LEVEL_BADGE_TONE: MetricBadgeTone = {
   iconBg: 'var(--metric-tone-0-icon-bg)',
   iconFg: 'var(--metric-tone-0-icon-fg)',
   textBg: 'var(--metric-tone-0-text-bg)',
@@ -27,7 +27,7 @@ const NEUTRAL_LEVEL_TONE: MetricLevelTone = {
   frameColor: 'var(--metric-tone-0-frame)',
 };
 
-function createSingleHueMetricToneScale(accent: string): ReadonlyArray<MetricLevelTone> {
+function createSingleHueMetricBadgeToneScale(accent: string): ReadonlyArray<MetricBadgeTone> {
   const frameSteps = [20, 40, 60, 80, 100];
   const textBgSteps = [5, 10, 15, 20, 25];
   const iconBgSteps = [10, 20, 40, 60, 80];
@@ -35,7 +35,7 @@ function createSingleHueMetricToneScale(accent: string): ReadonlyArray<MetricLev
   const textFgSteps = [90, 80, 70, 60, 50];
 
   return [
-    NEUTRAL_LEVEL_TONE,
+    NEUTRAL_LEVEL_BADGE_TONE,
     ...iconBgSteps.map((iconBgMix, index) => ({
       iconBg: `color-mix(in oklab, ${accent} ${iconBgMix}%, var(--background))`,
       iconFg: `color-mix(in oklab, ${accent} ${iconFgSteps[index]}%, var(--foreground))`,
@@ -46,8 +46,8 @@ function createSingleHueMetricToneScale(accent: string): ReadonlyArray<MetricLev
   ];
 }
 
-export const FIVE_LEVEL_METRIC_TONE_SCALE: ReadonlyArray<MetricLevelTone> = [
-  NEUTRAL_LEVEL_TONE,
+export const FIVE_LEVEL_METRIC_BADGE_TONE_SCALE: ReadonlyArray<MetricBadgeTone> = [
+  NEUTRAL_LEVEL_BADGE_TONE,
   {
     iconBg: 'var(--metric-tone-1-icon-bg)',
     iconFg: 'var(--metric-tone-1-icon-fg)',
@@ -85,50 +85,47 @@ export const FIVE_LEVEL_METRIC_TONE_SCALE: ReadonlyArray<MetricLevelTone> = [
   },
 ];
 
-export const RED_METRIC_TONE_SCALE = createSingleHueMetricToneScale('oklch(0.62 0.2 24)');
-export const ORANGE_METRIC_TONE_SCALE = createSingleHueMetricToneScale('oklch(0.72 0.18 58)');
+export const RED_METRIC_BADGE_TONE_SCALE =
+  createSingleHueMetricBadgeToneScale('oklch(0.62 0.2 24)');
+export const ORANGE_METRIC_BADGE_TONE_SCALE =
+  createSingleHueMetricBadgeToneScale('oklch(0.72 0.18 58)');
 
-export const TEAL_METRIC_TONE_SCALE = createSingleHueMetricToneScale('oklch(0.64 0.13 205)');
-export const GREEN_METRIC_TONE_SCALE = createSingleHueMetricToneScale('oklch(0.64 0.18 145)');
+export const TEAL_METRIC_BADGE_TONE_SCALE =
+  createSingleHueMetricBadgeToneScale('oklch(0.64 0.13 205)');
+export const GREEN_METRIC_BADGE_TONE_SCALE =
+  createSingleHueMetricBadgeToneScale('oklch(0.64 0.18 145)');
 
-export const BLUE_METRIC_TONE_SCALE = createSingleHueMetricToneScale('oklch(0.58 0.19 255)');
-export const AQUA_METRIC_TONE_SCALE = createSingleHueMetricToneScale('oklch(0.84 0.1 220)');
+export const BLUE_METRIC_BADGE_TONE_SCALE =
+  createSingleHueMetricBadgeToneScale('oklch(0.58 0.19 255)');
+export const AQUA_METRIC_BADGE_TONE_SCALE =
+  createSingleHueMetricBadgeToneScale('oklch(0.84 0.1 220)');
 
-export const PURPLE_METRIC_TONE_SCALE = createSingleHueMetricToneScale('oklch(0.58 0.19 315)');
+export const PURPLE_METRIC_BADGE_TONE_SCALE =
+  createSingleHueMetricBadgeToneScale('oklch(0.58 0.19 315)');
 
-export const GRAY_METRIC_TONE_SCALE = createSingleHueMetricToneScale('oklch(0.62 0 0)');
+export const GRAY_METRIC_BADGE_TONE_SCALE = createSingleHueMetricBadgeToneScale('oklch(0.62 0 0)');
 
-export const GOLD_METRIC_TONE_SCALE = createSingleHueMetricToneScale('oklch(0.78 0.14 92)');
-export const SILVER_METRIC_TONE_SCALE = createSingleHueMetricToneScale('oklch(0.74 0.02 250)');
+export const GOLD_METRIC_BADGE_TONE_SCALE =
+  createSingleHueMetricBadgeToneScale('oklch(0.78 0.14 92)');
+export const SILVER_METRIC_BADGE_TONE_SCALE =
+  createSingleHueMetricBadgeToneScale('oklch(0.74 0.02 250)');
 
-export const METRIC_TONE_SCALES: Readonly<
-  Record<MetricTonePalette, ReadonlyArray<MetricLevelTone>>
+export const METRIC_BADGE_TONE_SCALES: Readonly<
+  Record<MetricBadgeTonePalette, ReadonlyArray<MetricBadgeTone>>
 > = {
-  default: FIVE_LEVEL_METRIC_TONE_SCALE,
-  red: RED_METRIC_TONE_SCALE,
-  blue: BLUE_METRIC_TONE_SCALE,
-  teal: TEAL_METRIC_TONE_SCALE,
-  green: GREEN_METRIC_TONE_SCALE,
-  aqua: AQUA_METRIC_TONE_SCALE,
-  orange: ORANGE_METRIC_TONE_SCALE,
-  purple: PURPLE_METRIC_TONE_SCALE,
-  gray: GRAY_METRIC_TONE_SCALE,
-  gold: GOLD_METRIC_TONE_SCALE,
-  silver: SILVER_METRIC_TONE_SCALE,
+  default: FIVE_LEVEL_METRIC_BADGE_TONE_SCALE,
+  red: RED_METRIC_BADGE_TONE_SCALE,
+  blue: BLUE_METRIC_BADGE_TONE_SCALE,
+  teal: TEAL_METRIC_BADGE_TONE_SCALE,
+  green: GREEN_METRIC_BADGE_TONE_SCALE,
+  aqua: AQUA_METRIC_BADGE_TONE_SCALE,
+  orange: ORANGE_METRIC_BADGE_TONE_SCALE,
+  purple: PURPLE_METRIC_BADGE_TONE_SCALE,
+  gray: GRAY_METRIC_BADGE_TONE_SCALE,
+  gold: GOLD_METRIC_BADGE_TONE_SCALE,
+  silver: SILVER_METRIC_BADGE_TONE_SCALE,
 };
 
-export function getMetricToneScale(palette: MetricTonePalette = 'default') {
-  return METRIC_TONE_SCALES[palette];
-}
-
-export function toMetricLevel(value: number, thresholds: ReadonlyArray<number>): number {
-  let level = 0;
-  for (const threshold of thresholds) {
-    if (value >= threshold) {
-      level++;
-      continue;
-    }
-    break;
-  }
-  return Math.min(level, thresholds.length);
+export function getMetricBadgeToneScale(palette: MetricBadgeTonePalette = 'default') {
+  return METRIC_BADGE_TONE_SCALES[palette];
 }

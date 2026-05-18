@@ -2,8 +2,8 @@ import { CalendarDays, Globe, HardDrive, Route, Signpost, Spline } from 'lucide-
 import { useTranslation } from 'react-i18next';
 import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
 import { formatBytesForDisplay } from '../../utils/format-bytes';
+import { toMetricLevel } from '../../utils/to-metric-level';
 import { MetricLevelBadge } from '../badge/metric-level-badge';
-import { toMetricLevel } from '../badge/metric-level-badge-scale';
 
 /**
  * 5-level threshold buckets calibrated against actual catalog data
