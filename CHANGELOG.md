@@ -20,8 +20,14 @@ and this project adheres to [CalVer](https://calver.org/).
 - Data source catalog: `summary` / `bundles` の責務分離に合わせて、builder・テスト・ドキュメントも更新した。`bundles.dataBundle.counts.*` / `bundles.insightsBundle.counts.*` の counting unit を明示し、最新 contract に追随して `npx tsc -b` が通るよう fixture も更新した。
 - Shared data contracts: pipeline と webapp が共有する wire-format 型定義 (`transit-json.ts` / `transit-v2-json.ts` / `transit-v2-catalog-json.ts`) を `src/types/data/` から `contracts/data/` へ移設し、参照 import と TypeScript path alias を更新した。
 - Data source settings dialog: section header の件数表示を **`(enabled/total)` 形式** に変更 (例: `バス (5/19)`)。 toggle / Reset / bulk action で即座に enabled 件数が更新される。
+- Data source settings dialog: group row を `DataSourceGroupItem` として抽出し、Storybook stories を追加した。dialog 側の row markup も `ul/li` 前提を外し、汎用 block row として扱う構成に整理した。
 - Info dialog: data source settings dialog を開く 📦 ボタンを素の `<button>` から shadcn `<Button variant="outline" size="icon-sm">` に refactor。 他の dialog 内 button と styling / focus / hover の挙動が一貫するようにした。
 - Dialog 内の全 button (Restart / Reset / 全 On / 全 Off / 📦 opener) に `cursor-pointer` を use site で追加。 Tailwind v4 の Preflight が `<button>` から `cursor: pointer` を除去している影響で desktop で hover 時にカーソルが pointer に変わらなかった点を修正。
+- Data source settings dialog: `maxTripsPerDay` は source ごとのピーク値を合算した上限寄りの代表値であり、実際の「最繁忙日便数」ではないため、UI 文言と aria-label を estimate ベースの表現に修正した。
+
+### Fixed
+
+- Data source settings dialog: 翻訳数・乗り場数・最大便数の aria-label でも、画面表示と同じ locale-aware な桁区切り (`toLocaleString`) を使うようにし、screen reader が `1500` ではなく `1,500` 相当として読めるようにした。
 
 ## [2026.05.13]
 
