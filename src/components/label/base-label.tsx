@@ -6,7 +6,7 @@ export type BaseLabelSize = ExtendedDisplaySize;
 
 interface BaseLabelProps {
   value: string;
-  size?: ExtendedDisplaySize;
+  size: ExtendedDisplaySize;
   /** Truncate value to this many characters when exceeded. */
   maxLength?: number;
   /** Append "…" when truncated. Only effective with maxLength. @default true */
@@ -27,7 +27,7 @@ const sizeClasses: Record<ExtendedDisplaySize, string> = {
 /** Compact inline text label primitive. Color is controlled via className or style. */
 export function BaseLabel({
   value,
-  size = 'sm',
+  size,
   maxLength,
   ellipsis = true,
   className,

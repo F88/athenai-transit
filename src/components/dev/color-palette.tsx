@@ -25,6 +25,7 @@ function ContrastStateChip({ isLowContrast }: { isLowContrast: boolean }) {
   return (
     <BaseLabel
       value={isLowContrast ? 'low' : 'ok'}
+      size="sm"
       className={`inline-block min-w-10 rounded px-1.5 py-0.5 text-center font-semibold text-white ${
         isLowContrast ? 'bg-red-500' : 'bg-green-600'
       }`}
