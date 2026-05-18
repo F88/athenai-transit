@@ -2,7 +2,6 @@ import { Switch } from '@/components/ui/switch';
 import { useTranslation } from 'react-i18next';
 import { type GroupLoadStatus } from '../../domain/datasource/aggregate-group-status';
 import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
-import { DataSourceGroupSummary } from './data-source-group-summary';
 import { DataSourceGroupSummary2 } from './data-source-group-summary-2';
 
 function statusIcon(status: GroupLoadStatus['status']): string {
@@ -104,7 +103,7 @@ export function DataSourceGroupItem({
             </span>
           )}
         </div>
-        <DataSourceGroupSummary groupInfo={groupInfo} />
+        {/* <DataSourceGroupSummary groupInfo={groupInfo} /> */}
         <DataSourceGroupSummary2 groupInfo={groupInfo} />
         <PartialFraction loadStatus={loadStatus} />
         <FailureList loadStatus={loadStatus} />
