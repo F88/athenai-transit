@@ -9,10 +9,13 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.18]
+
 ### Added
 
 - Data source catalog: pipeline-generated `DataSourceCatalogBundle` (`global/data-source-catalog.json`) を導入した。wire-format 型定義を shared contract として追加し、catalog entry を source-level facts を持つ `summary` と emitted bundle の structural metadata を持つ `bundles` に分離した。
 - Data source settings dialog: footer に **再起動 (Restart) ボタン** を追加。設定変更後 1 click でアプリを再起動して反映できるようにした (実体は `location.reload()`)。 forced-sources mode (`?sources=`) では disabled。 開発中 notice の文言も 「再起動で反映」 に更新し、 ユーザーが手動で browser refresh するか再起動ボタンを押すかの 2 通りを案内する。
+- Data source settings dialog: per-group の指標表示用に `IconTextBadge` と集約サマリー UI を追加した。翻訳対応件数、乗り場数、運行規模の目安を icon 付き badge で比較できるようにした。
 
 ### Changed
 
@@ -24,10 +27,14 @@ and this project adheres to [CalVer](https://calver.org/).
 - Info dialog: data source settings dialog を開く 📦 ボタンを素の `<button>` から shadcn `<Button variant="outline" size="icon-sm">` に refactor。 他の dialog 内 button と styling / focus / hover の挙動が一貫するようにした。
 - Dialog 内の全 button (Restart / Reset / 全 On / 全 Off / 📦 opener) に `cursor-pointer` を use site で追加。 Tailwind v4 の Preflight が `<button>` から `cursor: pointer` を除去している影響で desktop で hover 時にカーソルが pointer に変わらなかった点を修正。
 - Data source settings dialog: `maxTripsPerDay` は source ごとのピーク値を合算した上限寄りの代表値であり、実際の「最繁忙日便数」ではないため、UI 文言と aria-label を estimate ベースの表現に修正した。
+- Data source settings dialog: group summary の tone と byte/count 表示を整理し、情報量が多い source group でも badge 幅とラベル折り返しが崩れにくい見た目に調整した。
+- About: travel experience の説明文を更新し、アプリの使い方と体験価値が伝わりやすい表現に見直した。
+- Data: transit dataset と pipeline resource check snapshot を更新した。
 
 ### Fixed
 
 - Data source settings dialog: 翻訳数・乗り場数・最大便数の aria-label でも、画面表示と同じ locale-aware な桁区切り (`toLocaleString`) を使うようにし、screen reader が `1500` ではなく `1,500` 相当として読めるようにした。
+- Data source catalog / settings load path: per-source loader や optional bundle loader が同期 throw した場合でも全体の読込が落ちないよう吸収し、catalog fetch の堅牢性を上げた。
 
 ## [2026.05.13]
 
