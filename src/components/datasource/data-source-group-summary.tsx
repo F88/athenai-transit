@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { formatBytes } from '../../domain/datasource/aggregate-source-size';
 import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
+import { formatBytesForDisplay } from '../../utils/format-bytes';
 
 /**
  * Renders the user-facing summary line for one data source group —
@@ -36,11 +36,11 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
       {groupInfo.size !== null && (
         <span
           aria-label={t('dataSourceSettings.size.aria', {
-            size: formatBytes(groupInfo.size.totalBytes),
+            size: formatBytesForDisplay(groupInfo.size.totalBytes, { fractionDigits: 0 }),
           })}
         >
           <span aria-hidden>💾 </span>
-          {formatBytes(groupInfo.size.totalBytes)}
+          {formatBytesForDisplay(groupInfo.size.totalBytes, { fractionDigits: 0 })}
         </span>
       )}
       {groupInfo.translationLanguages !== null && groupInfo.translationLanguages.size > 0 && (
