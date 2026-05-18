@@ -71,6 +71,7 @@ function PatternPositionAxisBadges({ stats }: { stats: TimetableEntryStats }) {
       <LabelCountBadge
         label={t('timetable.entry.origin')}
         count={stats.originCount}
+        size="sm"
         frameClassName="border-blue-500"
         labelClassName={originLabelBadgeClassName}
         countClassName={originCountBadgeClassName}
@@ -78,6 +79,7 @@ function PatternPositionAxisBadges({ stats }: { stats: TimetableEntryStats }) {
       <LabelCountBadge
         label={t('timetable.entry.terminal')}
         count={stats.terminalCount}
+        size="sm"
         frameClassName="border-gray-500"
         labelClassName={terminalLabelBadgeClassName}
         countClassName={terminalCountBadgeClassName}
@@ -131,11 +133,16 @@ function BoardingAxisBadges({ stats }: { stats: TimetableEntryStats }) {
 
   return (
     <div className="flex flex-wrap gap-1">
-      <LabelCountBadge label={t('stop.serviceState.boardable')} count={stats.boardableCount} />
+      <LabelCountBadge
+        label={t('stop.serviceState.boardable')}
+        count={stats.boardableCount}
+        size="sm"
+      />
       {/* <LabelCountBadge label={t('timetable.entry.noPickup')} count={stats.nonBoardableCount} /> */}
       <LabelCountBadge
         label={t('timetable.entry.noPickup')}
         count={stats.nonBoardableCount}
+        size="sm"
         frameClassName="border-yellow-600"
         labelClassName={noPickupLabelBadgeClassName}
         countClassName={noPickupCountBadgeClassName}
@@ -144,11 +151,16 @@ function BoardingAxisBadges({ stats }: { stats: TimetableEntryStats }) {
       <LabelCountBadge
         label={t('timetable.entry.noDropOff')}
         count={stats.noDropOffCount}
+        size="sm"
         frameClassName="border-dashed border-yellow-600"
         labelClassName={noDropOffLabelBadgeClassName}
         countClassName={noDropOffCountBadgeClassName}
       />
-      <LabelCountBadge label={t('stop.serviceState.dropOffOnly')} count={stats.dropOffOnlyCount} />
+      <LabelCountBadge
+        label={t('stop.serviceState.dropOffOnly')}
+        count={stats.dropOffOnlyCount}
+        size="sm"
+      />
     </div>
   );
 }

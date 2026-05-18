@@ -15,7 +15,7 @@ const meta = {
   argTypes: {
     label: { control: 'text' },
     count: { control: 'number' },
-    size: { control: 'inline-radio', options: ['xs', 'sm', 'md'] },
+    size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     labelBg: { control: 'color' },
     labelFg: { control: 'color' },
     countBg: { control: 'color' },
@@ -39,6 +39,14 @@ export const SizeSm: Story = {
 
 export const SizeMd: Story = {
   args: { size: 'md' },
+};
+
+export const SizeLg: Story = {
+  args: { size: 'lg' },
+};
+
+export const SizeXl: Story = {
+  args: { size: 'xl' },
 };
 
 // --- Color behavior ---
@@ -122,6 +130,8 @@ export const SizeComparison: Story = {
       <LabelCountBadge {...args} size="xs" />
       <LabelCountBadge {...args} size="sm" />
       <LabelCountBadge {...args} size="md" />
+      <LabelCountBadge {...args} size="lg" />
+      <LabelCountBadge {...args} size="xl" />
     </div>
   ),
 };
@@ -139,7 +149,7 @@ export const FrameColorComparison: Story = {
       ].map(({ label, frameColor }) => (
         <div key={label} className="flex items-center gap-2">
           <span className="w-52 text-xs text-gray-500">{label}</span>
-          <LabelCountBadge {...args} frameColor={frameColor} />
+          <LabelCountBadge {...args} size="sm" frameColor={frameColor} />
         </div>
       ))}
     </div>
@@ -172,7 +182,7 @@ const sampleBadges: SampleBadge[] = [
 export const KitchenSink: Story = {
   args: { size: 'md' },
   render: (args) => {
-    const sizes: BaseLabelSize[] = ['xs', 'sm', 'md'];
+    const sizes: BaseLabelSize[] = ['xs', 'sm', 'md', 'lg', 'xl'];
     return (
       <div className="flex flex-col gap-6">
         {sizes.map((size) => (
