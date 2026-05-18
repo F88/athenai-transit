@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Bus, Globe, HardDrive, MapPin, Train } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { BaseLabelSize } from '../label/base-label';
-import { IconCountBadge } from './icon-count-badge';
+import { IconTextBadge } from './icon-text-badge';
 
 const ICON_MAP = {
   HardDrive: <HardDrive />,
@@ -16,26 +16,26 @@ type IconName = keyof typeof ICON_MAP;
 
 interface WrapperArgs {
   iconName: IconName;
-  count: number;
+  text: string;
   size: BaseLabelSize;
   iconBg?: string;
   iconFg?: string;
-  countBg?: string;
-  countFg?: string;
+  textBg?: string;
+  textFg?: string;
   frameColor?: string;
   ariaLabel?: string;
 }
 
 function Wrapper(args: WrapperArgs) {
   return (
-    <IconCountBadge
+    <IconTextBadge
       icon={ICON_MAP[args.iconName]}
-      count={args.count}
+      text={args.text}
       size={args.size}
       iconBg={args.iconBg}
       iconFg={args.iconFg}
-      countBg={args.countBg}
-      countFg={args.countFg}
+      textBg={args.textBg}
+      textFg={args.textFg}
       frameColor={args.frameColor}
       aria-label={args.ariaLabel}
     />
@@ -46,24 +46,24 @@ const SIZE_OPTIONS: ReadonlyArray<BaseLabelSize> = ['xs', 'sm', 'md', 'lg', 'xl'
 const ICON_OPTIONS: ReadonlyArray<IconName> = ['HardDrive', 'Globe', 'MapPin', 'Bus', 'Train'];
 
 const meta = {
-  title: 'Badge/IconCountBadge',
+  title: 'Badge/IconTextBadge',
   component: Wrapper,
   args: {
     iconName: 'HardDrive',
-    count: 348,
+    text: '3.4 MB',
     size: 'sm',
     iconBg: '#1976D2',
     iconFg: '#FFFFFF',
-    ariaLabel: 'Bundle size: 348',
+    ariaLabel: 'Bundle size: 3.4 MB',
   },
   argTypes: {
     iconName: { control: 'select', options: ICON_OPTIONS },
-    count: { control: 'number' },
+    text: { control: 'text' },
     size: { control: 'inline-radio', options: SIZE_OPTIONS },
     iconBg: { control: 'color' },
     iconFg: { control: 'color' },
-    countBg: { control: 'color' },
-    countFg: { control: 'color' },
+    textBg: { control: 'color' },
+    textFg: { control: 'color' },
     frameColor: { control: 'color' },
     ariaLabel: { control: 'text' },
   },
@@ -74,7 +74,7 @@ type Story = StoryObj<typeof meta>;
 
 // --- Default ---
 
-/** Default rendering: count half uses inverted colors, frame matches iconBg. */
+/** Default rendering: text half uses inverted colors, frame matches iconBg. */
 export const Default: Story = {};
 
 // --- Size variants ---
@@ -99,11 +99,11 @@ export const BlackFrame: Story = {
 
 // --- Color variants ---
 
-/** Explicit count colors (not inverted from the icon side). */
-export const ExplicitCountColors: Story = {
+/** Explicit text colors (not inverted from the icon side). */
+export const ExplicitTextColors: Story = {
   args: {
-    countBg: '#E3F2FD',
-    countFg: '#1976D2',
+    textBg: '#E3F2FD',
+    textFg: '#1976D2',
   },
 };
 
@@ -116,8 +116,8 @@ export const NoColors: Story = {
   args: {
     iconBg: undefined,
     iconFg: undefined,
-    countBg: undefined,
-    countFg: undefined,
+    textBg: undefined,
+    textFg: undefined,
     frameColor: undefined,
   },
 };
@@ -125,14 +125,19 @@ export const NoColors: Story = {
 // --- Icon variants ---
 
 export const GlobeIcon: Story = {
-  args: { iconName: 'Globe', iconBg: '#7C3AED', count: 5, ariaLabel: 'Languages: 5' },
+  args: {
+    iconName: 'Globe',
+    iconBg: '#7C3AED',
+    text: '5 langs',
+    ariaLabel: 'Languages: 5',
+  },
 };
 
 export const MapPinIcon: Story = {
   args: {
     iconName: 'MapPin',
     iconBg: '#16A34A',
-    count: 142,
+    text: '142 stops',
     ariaLabel: 'Boarding stops: 142',
   },
 };
@@ -141,7 +146,7 @@ export const BusIcon: Story = {
   args: {
     iconName: 'Bus',
     iconBg: '#F59E0B',
-    count: 87,
+    text: '87/d',
     ariaLabel: 'Peak daily trips: 87',
   },
 };
@@ -150,33 +155,50 @@ export const TrainIcon: Story = {
   args: {
     iconName: 'Train',
     iconBg: '#0EA5E9',
-    count: 24,
+    text: '24 lines',
     ariaLabel: 'Train lines: 24',
   },
 };
 
-// --- Count variants ---
+// --- Text content variants ---
 
-export const CountSmall: Story = { args: { count: 3 } };
-export const CountLarge: Story = { args: { count: 348 } };
-export const CountThousands: Story = { args: { count: 1234 } };
+/** Short numeric text (caller-formatted). */
+export const TextShortNumber: Story = { args: { text: '3' } };
+
+/** Locale-formatted thousands (caller-supplied). */
+export const TextLocaleNumber: Story = { args: { text: '1,234' } };
+
+/** Caller-formatted size with unit. */
+export const TextWithUnit: Story = {
+  args: { text: '3.4 MB', ariaLabel: 'Bundle size: 3.4 MB' },
+};
+
+/** Star-rating string as text (one of the use cases that justified this badge). */
+export const TextStarRating: Story = {
+  args: { text: '★★★☆☆', ariaLabel: 'Rating: 3 of 5' },
+};
+
+/** Status string. */
+export const TextStatus: Story = {
+  args: { text: 'ON', iconBg: '#16A34A', ariaLabel: 'Status: on' },
+};
 
 // --- Comparisons ---
 
-/** All sizes side by side for the same icon/count/colors. */
+/** All sizes stacked vertically for the same icon/text/colors. */
 export const SizeComparison: Story = {
   render: (args) => (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col items-start gap-2">
       {SIZE_OPTIONS.map((size) => (
         <Wrapper
           key={size}
           iconName={args.iconName}
-          count={args.count}
+          text={args.text}
           size={size}
           iconBg={args.iconBg}
           iconFg={args.iconFg}
-          countBg={args.countBg}
-          countFg={args.countFg}
+          textBg={args.textBg}
+          textFg={args.textFg}
           frameColor={args.frameColor}
           ariaLabel={args.ariaLabel}
         />
@@ -201,12 +223,12 @@ export const FrameColorComparison: Story = {
             <span className="w-52 text-xs text-gray-500">{label}</span>
             <Wrapper
               iconName={args.iconName}
-              count={args.count}
+              text={args.text}
               size={args.size}
               iconBg={args.iconBg}
               iconFg={args.iconFg}
-              countBg={args.countBg}
-              countFg={args.countFg}
+              textBg={args.textBg}
+              textFg={args.textFg}
               frameColor={frameColor}
               ariaLabel={args.ariaLabel}
             />
@@ -220,7 +242,7 @@ export const FrameColorComparison: Story = {
 interface SampleBadge {
   name: string;
   iconName: IconName;
-  count: number;
+  text: string;
   iconBg: string;
   iconFg: string;
   ariaLabel: string;
@@ -230,7 +252,7 @@ const sampleBadges: ReadonlyArray<SampleBadge> = [
   {
     name: 'Bundle size',
     iconName: 'HardDrive',
-    count: 12,
+    text: '12 MB',
     iconBg: '#1976D2',
     iconFg: '#FFFFFF',
     ariaLabel: 'Bundle size: 12 MB',
@@ -238,7 +260,7 @@ const sampleBadges: ReadonlyArray<SampleBadge> = [
   {
     name: 'Languages',
     iconName: 'Globe',
-    count: 5,
+    text: '5',
     iconBg: '#7C3AED',
     iconFg: '#FFFFFF',
     ariaLabel: 'Languages: 5',
@@ -246,7 +268,7 @@ const sampleBadges: ReadonlyArray<SampleBadge> = [
   {
     name: 'Boarding stops',
     iconName: 'MapPin',
-    count: 1500,
+    text: '1,500',
     iconBg: '#16A34A',
     iconFg: '#FFFFFF',
     ariaLabel: 'Boarding stops: 1,500',
@@ -254,23 +276,23 @@ const sampleBadges: ReadonlyArray<SampleBadge> = [
   {
     name: 'Peak daily trips',
     iconName: 'Bus',
-    count: 8000,
+    text: '8,000/d',
     iconBg: '#F59E0B',
     iconFg: '#FFFFFF',
     ariaLabel: 'Peak daily trips: 8,000',
   },
   {
-    name: 'Train lines',
+    name: 'Rating',
     iconName: 'Train',
-    count: 24,
+    text: '★★★☆☆',
     iconBg: '#0EA5E9',
     iconFg: '#FFFFFF',
-    ariaLabel: 'Train lines: 24',
+    ariaLabel: 'Rating: 3 of 5',
   },
 ];
 
 /**
- * Matrix of icon/count combinations at every supported size. Useful for
+ * Matrix of icon/text combinations at every supported size. Useful for
  * spotting alignment regressions when tweaking the per-size padding or
  * the `[&>svg]:h-*` icon sizing.
  */
@@ -288,7 +310,7 @@ export const KitchenSink: Story = {
                 <span className="w-36 text-xs text-gray-500">{badge.name}</span>
                 <Wrapper
                   iconName={badge.iconName}
-                  count={badge.count}
+                  text={badge.text}
                   size={size}
                   iconBg={badge.iconBg}
                   iconFg={badge.iconFg}
