@@ -1,3 +1,4 @@
+import { DataSourceGroupItem } from '@/components/datasource/data-source-group-item';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
 import { InfoIcon, WrenchIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import settings from '../../config/data-source-settings';
@@ -17,7 +17,6 @@ import {
   type GroupLoadStatus,
 } from '../../domain/datasource/aggregate-group-status';
 import { computeDialogDisplay } from '../../domain/datasource/dialog-display';
-import { DataSourceGroupSummary } from '../datasource/data-source-group-summary';
 import { getSourceGroupDisplayName } from '../../domain/datasource/get-source-group-display-name';
 import {
   ROUTE_TYPE_OTHER,
@@ -26,10 +25,10 @@ import {
 } from '../../domain/datasource/route-type-priority';
 import { sortSourceGroupsForDisplay } from '../../domain/datasource/sort-source-groups';
 import { useDataSourceGroupInfo } from '../../hooks/use-data-source-group-info';
-import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
 import { useIsForcedSourcesMode } from '../../hooks/use-is-forced-sources-mode';
 import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
 import { useUserDataSourceSettings } from '../../hooks/use-user-data-source-settings';
+import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
 import type { SourceGroup } from '../../types/app/source-group';
 import { countriesFlagEmoji } from '../../utils/country-flag';
 import { routeTypeEmoji, routeTypesEmoji } from '../../utils/route-type-emoji';
@@ -110,19 +109,6 @@ function sectionEmoji(key: RouteTypeSectionKey): string {
     return '🛸';
   }
   return routeTypeEmoji(key);
-}
-
-function statusIcon(status: GroupLoadStatus['status']): string {
-  switch (status) {
-    case 'loaded':
-      return '✅';
-    case 'failed':
-      return '❌';
-    case 'partial':
-      return '⚠️';
-    case 'notAttempted':
-      return '—';
-  }
 }
 
 /**
@@ -207,41 +193,6 @@ function countDistinctGroupStatuses(
   return counts;
 }
 
-function PartialFraction({ loadStatus }: { loadStatus: GroupLoadStatus }) {
-  const { t } = useTranslation();
-  if (loadStatus.status !== 'partial') {
-    return null;
-  }
-  const loaded = loadStatus.loadedPrefixes.length;
-  const total = loaded + loadStatus.failedPrefixes.length + loadStatus.notAttemptedPrefixes.length;
-  return (
-    <div className="text-muted-foreground mt-1 text-xs">
-      {t('dataSourceSettings.partial.fraction', { loaded, total })}
-    </div>
-  );
-}
-
-function FailureList({ loadStatus }: { loadStatus: GroupLoadStatus }) {
-  // Shown for both pure `failed` (no loaded) and `partial` (some loaded +
-  // some failed), since the error messages are equally useful in either
-  // case.
-  if (loadStatus.status !== 'failed' && loadStatus.status !== 'partial') {
-    return null;
-  }
-  if (loadStatus.failedPrefixes.length === 0) {
-    return null;
-  }
-  return (
-    <ul className="text-destructive mt-1 space-y-0.5 text-xs">
-      {loadStatus.failedPrefixes.map((f) => (
-        <li key={f.prefix} className="wrap-break-word">
-          <span className="font-mono">{f.prefix}</span>: {f.error.message}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 function DialogNotice({ variant }: { variant: NoticeVariant }) {
   const { t } = useTranslation();
 
@@ -270,60 +221,6 @@ function DialogNotice({ variant }: { variant: NoticeVariant }) {
         {description}
       </AlertDescription>
     </Alert>
-  );
-}
-
-function GroupRowView({
-  row,
-  checked,
-  disabled,
-  onCheckedChange,
-}: {
-  row: GroupRow;
-  /** Switch checked state (caller resolves forced-mode override). */
-  checked: boolean;
-  /** Whether the Switch is non-interactive. */
-  disabled: boolean;
-  onCheckedChange: (next: boolean) => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <li className="border-border/40 flex items-center gap-2 border-b px-2 py-2 last:border-b-0">
-      <Switch
-        checked={checked}
-        disabled={disabled}
-        onCheckedChange={onCheckedChange}
-        aria-label={t('dataSourceSettings.toggle.aria', {
-          group: row.groupName,
-        })}
-        className="shrink-0"
-      />
-      <span
-        aria-label={t(`dataSourceSettings.status.${row.loadStatus.status}`)}
-        className="w-5 shrink-0 text-center"
-      >
-        {statusIcon(row.loadStatus.status)}
-      </span>
-      {/* Datasource attributes */}
-      <div className="min-w-0 flex-1">
-        <div className="text-foreground flex flex-wrap items-baseline gap-2 font-medium">
-          <span>{row.groupName}</span>
-          {row.routeTypeEmoji !== '' && (
-            <span aria-hidden className="text-sm">
-              {row.routeTypeEmoji}
-            </span>
-          )}
-          {row.countryEmoji !== '' && (
-            <span aria-hidden className="text-sm">
-              {row.countryEmoji}
-            </span>
-          )}
-        </div>
-        <DataSourceGroupSummary groupInfo={row.groupInfo} />
-        <PartialFraction loadStatus={row.loadStatus} />
-        <FailureList loadStatus={row.loadStatus} />
-      </div>
-    </li>
   );
 }
 
@@ -472,11 +369,15 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
                     </Button>
                   </div>
                 </h3>
-                <ul>
+                <div>
                   {section.rows.map((row) => (
-                    <GroupRowView
+                    <DataSourceGroupItem
                       key={`${String(section.key)}::${row.key}`}
-                      row={row}
+                      groupName={row.groupName}
+                      routeTypeEmoji={row.routeTypeEmoji}
+                      countryEmoji={row.countryEmoji}
+                      loadStatus={row.loadStatus}
+                      groupInfo={row.groupInfo}
                       checked={effectiveEnabledIds.has(row.groupId)}
                       disabled={isForcedSourcesMode}
                       onCheckedChange={(next) => {
@@ -484,7 +385,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
                       }}
                     />
                   ))}
-                </ul>
+                </div>
               </section>
             );
           })}
