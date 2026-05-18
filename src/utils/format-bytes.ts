@@ -14,19 +14,29 @@ export function formatBytesForDisplay(
   options: FormatBytesForDisplayOptions = {},
 ): string {
   const fractionDigits = Math.max(0, options.fractionDigits ?? 1);
+  const units = ['B', 'KB', 'MB', 'GB'] as const;
   if (bytes < 1024) {
     return `${bytes} B`;
   }
 
-  const formatUnit = (value: number, unit: 'KB' | 'MB' | 'GB'): string => {
-    return `${value.toFixed(fractionDigits)} ${unit}`;
+  const roundToFractionDigits = (value: number): number => {
+    return Number(value.toFixed(fractionDigits));
   };
 
-  if (bytes < 1024 * 1024) {
-    return formatUnit(bytes / 1024, 'KB');
+  let unitIndex = 1;
+  let value = bytes / 1024;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex++;
   }
-  if (bytes < 1024 * 1024 * 1024) {
-    return formatUnit(bytes / (1024 * 1024), 'MB');
+
+  let roundedValue = roundToFractionDigits(value);
+  if (roundedValue >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex++;
+    roundedValue = roundToFractionDigits(value);
   }
-  return formatUnit(bytes / (1024 * 1024 * 1024), 'GB');
+
+  return `${roundedValue.toFixed(fractionDigits)} ${units[unitIndex]}`;
 }

@@ -33,4 +33,11 @@ describe('formatBytesForDisplay', () => {
     expect(formatBytesForDisplay(1996, { fractionDigits: 0 })).toBe('2 KB');
     expect(formatBytesForDisplay(1024 * 1024 * 3 + 1024 * 900)).toBe('3.9 MB');
   });
+
+  it('promotes to the next unit when rounding reaches 1024', () => {
+    expect(formatBytesForDisplay(1024 * 1024 - 1, { fractionDigits: 0 })).toBe('1 MB');
+    expect(formatBytesForDisplay(1024 * 1024 - 1, { fractionDigits: 1 })).toBe('1.0 MB');
+    expect(formatBytesForDisplay(1024 * 1024 * 1024 - 1, { fractionDigits: 0 })).toBe('1 GB');
+    expect(formatBytesForDisplay(1024 * 1024 * 1024 - 1, { fractionDigits: 1 })).toBe('1.0 GB');
+  });
 });
