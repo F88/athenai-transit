@@ -200,7 +200,7 @@
       "aria": "{{count}} boarding stops"
     },
     "maxTripsPerDay": {
-      "aria": "{{count}} trips on the busiest day"
+      "aria": "estimated max daily trips: {{count}}"
     },
     "toggle": {
       "aria": "Enable {{group}}"

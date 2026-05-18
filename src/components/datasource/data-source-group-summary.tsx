@@ -11,7 +11,7 @@ import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info
  *   - total bundle disk size
  *   - translation language count
  *   - physical boarding-stop count
- *   - peak single-day trip count
+ *   - estimated upper-bound daily trip count
  *
  * Each metric is independently null-checked so partial catalog coverage
  * still surfaces what it has. When every metric is absent (or

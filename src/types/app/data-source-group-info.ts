@@ -58,8 +58,9 @@ export interface DataSourceGroupInfo {
   boardingStopsCount: number | null;
   /**
    * Sum of {@link DataSourceInfo.maxTripsPerDay} across the group's
-   * prefixes — treats the union of per-source peak service days as
-   * the group peak. `null` when no prefix has catalog data.
+   * prefixes — an upper-bound estimate of the group's daily trip
+   * volume, formed by treating the union of per-source peak service
+   * days as one day. `null` when no prefix has catalog data.
    */
   maxTripsPerDay: number | null;
 }

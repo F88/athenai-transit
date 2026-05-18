@@ -200,7 +200,7 @@
       "aria": "停留所 {{count}} 箇所"
     },
     "maxTripsPerDay": {
-      "aria": "ピーク日 {{count}} 便"
+      "aria": "最大便数の目安 {{count}} 便"
     },
     "toggle": {
       "aria": "{{group}} を有効化"
