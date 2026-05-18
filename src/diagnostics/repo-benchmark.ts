@@ -278,22 +278,23 @@ export async function runRepoBenchmark(repository: TransitRepository): Promise<v
   const meta = await timedAsync(() => repository.getAllSourceMeta());
   if (meta.value.success) {
     logger.info(`getAllSourceMeta: ${meta.ms.toFixed(2)}ms (${meta.value.data.length} sources)`);
-    let totalRoutes = 0;
-    let totalTripPatterns = 0;
-    for (const sm of meta.value.data) {
-      totalRoutes += sm.stats.routeCount;
-      totalTripPatterns += sm.stats.tripPatternCount;
-    }
-    logger.info(
-      `Dataset: ${meta.value.data.length} sources, ${allStops.value.data.length} stops, ${totalRoutes} routes, ${totalTripPatterns} trip patterns`,
-    );
   }
 
   const catalog = timed(() => repository.getDataSourceCatalog());
   if (catalog.value) {
-    const sourceCount = Object.keys(catalog.value.sources.data).length;
+    const sources = catalog.value.sources.data;
+    const sourceCount = Object.keys(sources).length;
+    let totalRoutes = 0;
+    let totalTripPatterns = 0;
+    for (const src of Object.values(sources)) {
+      totalRoutes += src.bundles.dataBundle.counts.routes;
+      totalTripPatterns += src.bundles.dataBundle.counts.tripPatterns;
+    }
     logger.info(
       `getDataSourceCatalog: ${catalog.ms.toFixed(2)}ms (${sourceCount} sources, createdAt=${catalog.value.metadata.data.createdAt})`,
+    );
+    logger.info(
+      `Dataset: ${sourceCount} sources, ${allStops.value.data.length} stops, ${totalRoutes} routes, ${totalTripPatterns} trip patterns`,
     );
   } else {
     logger.info(`getDataSourceCatalog: ${catalog.ms.toFixed(2)}ms (unavailable)`);

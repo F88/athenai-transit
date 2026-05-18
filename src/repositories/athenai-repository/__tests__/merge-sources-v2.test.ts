@@ -142,7 +142,10 @@ describe('mergeSourcesV2', () => {
     const merged = mergeSourcesV2([fixture]);
     expect(merged.sourceMetas).toHaveLength(1);
     expect(merged.sourceMetas[0].id).toBe('test');
-    expect(merged.sourceMetas[0].validity.startDate).toBe('20260101');
+    // Fixture's feedInfo has v='20260101_001' but no publisher fields, so
+    // those normalize to null. Validity dates (s, e) intentionally moved
+    // to catalog and are no longer part of SourceMeta.
+    expect(merged.sourceMetas[0].feedInfo.version).toBe('20260101_001');
   });
 
   it('merges lookup data', () => {

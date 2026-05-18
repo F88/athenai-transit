@@ -195,7 +195,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
     for (const meta of merged.sourceMetas) {
       logger.info(
-        `[${meta.id}] ${meta.name}: validity=${meta.validity.startDate}-${meta.validity.endDate} stops=${meta.stats.stopCount} routes=${meta.stats.routeCount} types=[${meta.routeTypes.join(',')}]`,
+        `[${meta.id}] publisher=${meta.feedInfo.publisherName ?? '(none)'} version=${meta.feedInfo.version ?? '(none)'} lang=${meta.feedInfo.lang ?? '(none)'}`,
       );
     }
 

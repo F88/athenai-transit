@@ -1,5 +1,4 @@
-import { useTranslation } from 'react-i18next';
-import { InfoIcon, WrenchIcon } from 'lucide-react';
+import { DataSourceGroupItem } from '@/components/datasource/data-source-group-item';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,7 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
+import { InfoIcon, WrenchIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import settings from '../../config/data-source-settings';
 import {
   aggregateGroupLoadStatus,
@@ -18,18 +18,20 @@ import {
 } from '../../domain/datasource/aggregate-group-status';
 import { computeDialogDisplay } from '../../domain/datasource/dialog-display';
 import { getSourceGroupDisplayName } from '../../domain/datasource/get-source-group-display-name';
-import { sortSourceGroupsForDisplay } from '../../domain/datasource/sort-source-groups';
-import { useIsForcedSourcesMode } from '../../hooks/use-is-forced-sources-mode';
-import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
-import { useUserDataSourceSettings } from '../../hooks/use-user-data-source-settings';
-import type { SourceGroup } from '../../types/app/source-group';
-import { countriesFlagEmoji } from '../../utils/country-flag';
-import { routeTypeEmoji, routeTypesEmoji } from '../../utils/route-type-emoji';
 import {
   ROUTE_TYPE_OTHER,
   ROUTE_TYPE_PRIORITY,
   type RouteTypeSectionKey,
 } from '../../domain/datasource/route-type-priority';
+import { sortSourceGroupsForDisplay } from '../../domain/datasource/sort-source-groups';
+import { useDataSourceGroupInfo } from '../../hooks/use-data-source-group-info';
+import { useIsForcedSourcesMode } from '../../hooks/use-is-forced-sources-mode';
+import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
+import { useUserDataSourceSettings } from '../../hooks/use-user-data-source-settings';
+import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
+import type { SourceGroup } from '../../types/app/source-group';
+import { countriesFlagEmoji } from '../../utils/country-flag';
+import { routeTypeEmoji, routeTypesEmoji } from '../../utils/route-type-emoji';
 
 type NoticeVariant = 'forced' | 'development';
 
@@ -51,6 +53,21 @@ interface GroupRow {
   countryEmoji: string;
   /** Aggregated load status (4-state). */
   loadStatus: GroupLoadStatus;
+  /**
+   * Catalog / SourceMeta-derived summary for the row's SourceGroup —
+   * the user-facing decision-making material (total size, languages,
+   * boarding stops, peak daily trips, …). Bundled as a single
+   * sub-object so the rest of GroupRow stays focused on group identity
+   * and load state.
+   *
+   * `null` when {@link useDataSourceGroupInfo} has no entry for the
+   * group (defensive: in practice the hook returns an entry for every
+   * input group, but the lookup is kept nullable so a contract drift
+   * surfaces as a missing subtitle rather than a runtime crash).
+   * Individual fields inside the bundle (e.g. `size`) may also be
+   * `null` when catalog data is unavailable for a given prefix.
+   */
+  groupInfo: DataSourceGroupInfo | null;
 }
 
 interface Section {
@@ -67,6 +84,7 @@ interface Section {
 function buildGroupRow(
   group: SourceGroup,
   loadStatusByPrefix: ReturnType<typeof useSourceLoadStatus>,
+  groupInfoById: ReadonlyMap<string, DataSourceGroupInfo>,
   lang: string,
 ): GroupRow {
   return {
@@ -76,6 +94,7 @@ function buildGroupRow(
     routeTypeEmoji: routeTypesEmoji(group.routeTypes),
     countryEmoji: countriesFlagEmoji(group.countries),
     loadStatus: aggregateGroupLoadStatus(group.prefixes, loadStatusByPrefix),
+    groupInfo: groupInfoById.get(group.id) ?? null,
   };
 }
 
@@ -90,19 +109,6 @@ function sectionEmoji(key: RouteTypeSectionKey): string {
     return '🛸';
   }
   return routeTypeEmoji(key);
-}
-
-function statusIcon(status: GroupLoadStatus['status']): string {
-  switch (status) {
-    case 'loaded':
-      return '✅';
-    case 'failed':
-      return '❌';
-    case 'partial':
-      return '⚠️';
-    case 'notAttempted':
-      return '—';
-  }
 }
 
 /**
@@ -123,6 +129,7 @@ function statusIcon(status: GroupLoadStatus['status']): string {
 function buildSections(
   groups: readonly SourceGroup[],
   loadStatusByPrefix: ReturnType<typeof useSourceLoadStatus>,
+  groupInfoById: ReadonlyMap<string, DataSourceGroupInfo>,
   lang: string,
   t: (key: string) => string,
 ): Section[] {
@@ -138,7 +145,7 @@ function buildSections(
       key: rt,
       label: t(sectionLabelKey(rt)),
       emoji: sectionEmoji(rt),
-      rows: matched.map((g) => buildGroupRow(g, loadStatusByPrefix, lang)),
+      rows: matched.map((g) => buildGroupRow(g, loadStatusByPrefix, groupInfoById, lang)),
     });
   }
 
@@ -150,7 +157,7 @@ function buildSections(
       key: ROUTE_TYPE_OTHER,
       label: t(sectionLabelKey(ROUTE_TYPE_OTHER)),
       emoji: sectionEmoji(ROUTE_TYPE_OTHER),
-      rows: otherGroups.map((g) => buildGroupRow(g, loadStatusByPrefix, lang)),
+      rows: otherGroups.map((g) => buildGroupRow(g, loadStatusByPrefix, groupInfoById, lang)),
     });
   }
 
@@ -186,42 +193,6 @@ function countDistinctGroupStatuses(
   return counts;
 }
 
-function PartialFraction({ row }: { row: GroupRow }) {
-  const { t } = useTranslation();
-  if (row.loadStatus.status !== 'partial') {
-    return null;
-  }
-  const loaded = row.loadStatus.loadedPrefixes.length;
-  const total =
-    loaded + row.loadStatus.failedPrefixes.length + row.loadStatus.notAttemptedPrefixes.length;
-  return (
-    <div className="text-muted-foreground mt-1 text-xs">
-      {t('dataSourceSettings.partial.fraction', { loaded, total })}
-    </div>
-  );
-}
-
-function FailureList({ row }: { row: GroupRow }) {
-  // Shown for both pure `failed` (no loaded) and `partial` (some loaded +
-  // some failed), since the error messages are equally useful in either
-  // case.
-  if (row.loadStatus.status !== 'failed' && row.loadStatus.status !== 'partial') {
-    return null;
-  }
-  if (row.loadStatus.failedPrefixes.length === 0) {
-    return null;
-  }
-  return (
-    <ul className="text-destructive mt-1 space-y-0.5 text-xs">
-      {row.loadStatus.failedPrefixes.map((f) => (
-        <li key={f.prefix} className="wrap-break-word">
-          <span className="font-mono">{f.prefix}</span>: {f.error.message}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 function DialogNotice({ variant }: { variant: NoticeVariant }) {
   const { t } = useTranslation();
 
@@ -250,58 +221,6 @@ function DialogNotice({ variant }: { variant: NoticeVariant }) {
         {description}
       </AlertDescription>
     </Alert>
-  );
-}
-
-function GroupRowView({
-  row,
-  checked,
-  disabled,
-  onCheckedChange,
-}: {
-  row: GroupRow;
-  /** Switch checked state (caller resolves forced-mode override). */
-  checked: boolean;
-  /** Whether the Switch is non-interactive. */
-  disabled: boolean;
-  onCheckedChange: (next: boolean) => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <li className="border-border/40 flex items-start gap-2 border-b px-2 py-2 last:border-b-0">
-      <Switch
-        checked={checked}
-        disabled={disabled}
-        onCheckedChange={onCheckedChange}
-        aria-label={t('dataSourceSettings.toggle.aria', {
-          group: row.groupName,
-        })}
-        className="shrink-0"
-      />
-      <span
-        aria-label={t(`dataSourceSettings.status.${row.loadStatus.status}`)}
-        className="w-5 shrink-0 text-center"
-      >
-        {statusIcon(row.loadStatus.status)}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="text-foreground flex flex-wrap items-baseline gap-2 font-medium">
-          <span>{row.groupName}</span>
-          {row.routeTypeEmoji !== '' && (
-            <span aria-hidden className="text-sm">
-              {row.routeTypeEmoji}
-            </span>
-          )}
-          {row.countryEmoji !== '' && (
-            <span aria-hidden className="text-sm">
-              {row.countryEmoji}
-            </span>
-          )}
-        </div>
-        <PartialFraction row={row} />
-        <FailureList row={row} />
-      </div>
-    </li>
   );
 }
 
@@ -351,7 +270,15 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
     enabledGroupIds,
   );
 
-  const sections = buildSections(visibleGroups, loadStatusByPrefix, i18n.language, t);
+  const groupInfoById = useDataSourceGroupInfo(visibleGroups);
+
+  const sections = buildSections(
+    visibleGroups,
+    loadStatusByPrefix,
+    groupInfoById,
+    i18n.language,
+    t,
+  );
   const counts = countDistinctGroupStatuses(visibleGroups, loadStatusByPrefix);
 
   return (
@@ -405,7 +332,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
             ).length;
             return (
               <section key={String(section.key)} className="mb-4 last:mb-0">
-                <h3 className="border-info text-foreground bg-background sticky top-0 z-10 flex items-center gap-2 rounded-md border border-2 px-2 py-1 text-xs font-semibold">
+                <h3 className="border-info text-foreground bg-background sticky top-0 z-10 flex items-center gap-2 rounded-md border-2 px-2 py-1 text-xs font-semibold">
                   <span aria-hidden>{section.emoji}</span>
                   <span>{section.label}</span>
                   <span className="opacity-60">
@@ -442,11 +369,15 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
                     </Button>
                   </div>
                 </h3>
-                <ul>
+                <div>
                   {section.rows.map((row) => (
-                    <GroupRowView
+                    <DataSourceGroupItem
                       key={`${String(section.key)}::${row.key}`}
-                      row={row}
+                      groupName={row.groupName}
+                      routeTypeEmoji={row.routeTypeEmoji}
+                      countryEmoji={row.countryEmoji}
+                      loadStatus={row.loadStatus}
+                      groupInfo={row.groupInfo}
                       checked={effectiveEnabledIds.has(row.groupId)}
                       disabled={isForcedSourcesMode}
                       onCheckedChange={(next) => {
@@ -454,7 +385,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
                       }}
                     />
                   ))}
-                </ul>
+                </div>
               </section>
             );
           })}

@@ -506,18 +506,11 @@ export class MockRepository implements TransitRepository {
   getAllSourceMeta(): Promise<CollectionResult<SourceMeta>> {
     const meta: SourceMeta = {
       id: 'mock',
-      name: 'あおバス',
-      version: 'mock-1.0',
-      validity: {
-        startDate: '20260101',
-        endDate: '20261231',
-      },
-      routeTypes: [0, 1, 2, 3, 6],
-      keywords: [],
-      stats: {
-        stopCount: STOPS.length,
-        routeCount: ROUTES.length,
-        tripPatternCount: ROUTE_STOP_SEQUENCES.size,
+      feedInfo: {
+        publisherName: 'あおバス',
+        publisherUrl: 'https://example.com/aobus',
+        version: 'mock-1.0',
+        lang: 'ja',
       },
     };
     return Promise.resolve({ success: true, data: [meta], truncated: false });

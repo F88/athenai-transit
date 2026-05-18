@@ -12,44 +12,41 @@
  */
 
 import type { StopServiceState } from './transit';
-import type { Agency, Route, AppRouteTypeValue, Stop } from './transit';
+import type { Agency, AppRouteTypeValue, Route, Stop } from './transit';
 
 /**
- * Metadata about a transit data source identified by its prefix.
+ * Facts about a data source as it is currently loaded into the
+ * repository.
  *
- * Aggregates validity and version information from the pipeline output
- * (e.g. feed-info.json for GTFS, dct:issued for ODPT) into a
- * source-type-agnostic structure. The pipeline normalizes these
- * differences so the webapp can treat all sources uniformly.
+ * Exposes the subset of the loaded `feed_info` that the app surfaces
+ * as "loaded data facts". Field selection is intentionally narrow:
+ * fields that {@link DataSourceCatalogBundle} already carries
+ * (validity dates, agency/language/stop/route summaries, etc.) are
+ * deliberately omitted so the catalog stays the single source of
+ * truth for those values and selection-time decision-making material.
+ *
+ * Empty raw strings from the wire format are normalized to `null` so
+ * callers can distinguish "not published" from a real value.
  */
 export interface SourceMeta {
-  /** Source identifier (e.g. "minkuru", "kobus"). Corresponds to the data prefix. */
+  /** Source identifier (e.g. `"minkuru"`, `"kobus"`); the data prefix. */
   id: string;
-  /** Human-readable source name (e.g. "都バス", "京王バス"). Derived from agency_short_name. */
-  name: string;
-  /** Data version string (format varies by source). */
-  version: string;
-  /** Data validity period from feed-info. */
-  validity: {
-    /** Start date (YYYYMMDD). */
-    startDate: string;
-    /** End date (YYYYMMDD). */
-    endDate: string;
-  };
-  /** GTFS route_type values present in this source (deduplicated, sorted ascending). */
-  routeTypes: AppRouteTypeValue[];
-  /** Keywords for search and categorization (e.g. ["コミュニティバス", "深夜バス"]). */
-  keywords: string[];
-  // /** Operating regions (e.g. ["東京都", "杉並区"]). Requires pipeline region support. */
-  // regions: string[];
-  /** Summary statistics for this source. */
-  stats: {
-    /** Number of stops. */
-    stopCount: number;
-    /** Number of routes. */
-    routeCount: number;
-    /** Number of trip patterns. */
-    tripPatternCount: number;
+
+  /**
+   * Subset of the loaded `feed_info` (GTFS `feed_info.txt`) for this
+   * source. Validity dates (`feed_start_date` / `feed_end_date`) are
+   * intentionally excluded — see {@link DataSourceCatalogSource}
+   * `summary.periods.feedValidity` for those in a nullable form.
+   */
+  feedInfo: {
+    /** `feed_publisher_name` from the loaded `feed_info`. */
+    publisherName: string | null;
+    /** `feed_publisher_url` from the loaded `feed_info`. */
+    publisherUrl: string | null;
+    /** `feed_version` from the loaded `feed_info`. */
+    version: string | null;
+    /** `feed_lang` (primary language declaration) from the loaded `feed_info`. */
+    lang: string | null;
   };
 }
 

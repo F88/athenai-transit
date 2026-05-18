@@ -18,12 +18,7 @@ import {
   walkCalendarDates,
 } from '../calendar-walk';
 
-function svc(
-  id: string,
-  start: string,
-  end: string,
-  d: number[],
-): CalendarServiceJson {
+function svc(id: string, start: string, end: string, d: number[]): CalendarServiceJson {
   return { i: id, s: start, e: end, d };
 }
 
@@ -81,10 +76,7 @@ describe('buildExceptionMap', () => {
       exc('svc:1', '20260503', 1),
     ]);
     expect(map.size).toBe(2);
-    expect(map.get('svc:1')).toEqual([
-      exc('svc:1', '20260501', 1),
-      exc('svc:1', '20260503', 1),
-    ]);
+    expect(map.get('svc:1')).toEqual([exc('svc:1', '20260501', 1), exc('svc:1', '20260503', 1)]);
     expect(map.get('svc:2')).toEqual([exc('svc:2', '20260502', 2)]);
   });
 
@@ -110,10 +102,7 @@ describe('getCalendarDateRange', () => {
 
   it('returns null when no entry has a parseable date', () => {
     expect(
-      getCalendarDateRange(
-        [svc('svc:1', '', '', [1, 0, 0, 0, 0, 0, 0])],
-        [exc('svc:1', '', 1)],
-      ),
+      getCalendarDateRange([svc('svc:1', '', '', [1, 0, 0, 0, 0, 0, 0])], [exc('svc:1', '', 1)]),
     ).toBeNull();
   });
 
@@ -210,10 +199,7 @@ describe('walkCalendarDates', () => {
 
   it('does not invoke the callback when the calendar has no parseable dates', () => {
     const calls: unknown[] = [];
-    walkCalendarDates(
-      { services: [], exceptions: [] },
-      () => calls.push(null),
-    );
+    walkCalendarDates({ services: [], exceptions: [] }, () => calls.push(null));
     expect(calls).toHaveLength(0);
   });
 });

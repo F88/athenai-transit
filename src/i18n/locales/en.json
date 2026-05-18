@@ -190,6 +190,18 @@
     "partial": {
       "fraction": "{{loaded}}/{{total}} loaded"
     },
+    "size": {
+      "aria": "Total bundle size: {{size}}"
+    },
+    "translations": {
+      "aria": "translated into {{count}} languages"
+    },
+    "boardingStops": {
+      "aria": "{{count}} boarding stops"
+    },
+    "maxTripsPerDay": {
+      "aria": "estimated max daily trips: {{count}}"
+    },
     "toggle": {
       "aria": "Enable {{group}}"
     },
