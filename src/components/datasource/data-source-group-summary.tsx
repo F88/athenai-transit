@@ -46,7 +46,7 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
       {groupInfo.translationLanguages !== null && groupInfo.translationLanguages.size > 0 && (
         <span
           aria-label={t('dataSourceSettings.translations.aria', {
-            count: groupInfo.translationLanguages.size,
+            count: groupInfo.translationLanguages.size.toLocaleString(),
           })}
         >
           <span aria-hidden>🌐 </span>
@@ -56,7 +56,7 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
       {groupInfo.boardingStopsCount !== null && (
         <span
           aria-label={t('dataSourceSettings.boardingStops.aria', {
-            count: groupInfo.boardingStopsCount,
+            count: groupInfo.boardingStopsCount.toLocaleString(),
           })}
         >
           <span aria-hidden>🚏 </span>
@@ -66,7 +66,7 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
       {groupInfo.maxTripsPerDay !== null && (
         <span
           aria-label={t('dataSourceSettings.maxTripsPerDay.aria', {
-            count: groupInfo.maxTripsPerDay,
+            count: groupInfo.maxTripsPerDay.toLocaleString(),
           })}
         >
           <span aria-hidden>🚍 </span>
