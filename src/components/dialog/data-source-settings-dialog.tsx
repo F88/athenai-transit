@@ -435,7 +435,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
             ).length;
             return (
               <section key={String(section.key)} className="mb-4 last:mb-0">
-                <h3 className="border-info text-foreground bg-background sticky top-0 z-10 flex items-center gap-2 rounded-md border border-2 px-2 py-1 text-xs font-semibold">
+                <h3 className="border-info text-foreground bg-background sticky top-0 z-10 flex items-center gap-2 rounded-md border-2 px-2 py-1 text-xs font-semibold">
                   <span aria-hidden>{section.emoji}</span>
                   <span>{section.label}</span>
                   <span className="opacity-60">
