@@ -1,3 +1,4 @@
+import type { AppRouteTypeValue } from './transit';
 import type { DataSourceInfo } from './data-source-info';
 
 /**
@@ -63,4 +64,14 @@ export interface DataSourceGroupInfo {
    * days as one day. `null` when no prefix has catalog data.
    */
   maxTripsPerDay: number | null;
+  /**
+   * Sum of per-prefix route counts keyed by normalized app route type.
+   * `null` when no prefix has catalog-backed route metadata.
+   */
+  routeTypeCounts: Partial<Record<AppRouteTypeValue, number>> | null;
+  /**
+   * Sum of per-prefix route-shape counts across the group's prefixes.
+   * `null` when no prefix has catalog-backed route-shape metadata.
+   */
+  routeShapesCount: number | null;
 }

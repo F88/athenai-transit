@@ -156,7 +156,7 @@ const settings: SourceGroup[] = [
     id: 'odakyu-bus',
     prefixes: ['od9bus'],
     routeTypes: [3],
-    systemEnabledByDefault: false,
+    systemEnabledByDefault: true,
     userEnabledByDefault: false,
     name: { name: 'Odakyu Bus', names: { ja: '小田急バス', en: 'Odakyu Bus' } },
     countries: ['JP'],
@@ -250,7 +250,7 @@ const settings: SourceGroup[] = [
     prefixes: ['yht'],
     routeTypes: [1],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Yokohama Municipal Subway',
       names: { ja: '横浜市営地下鉄', en: 'Yokohama Municipal Subway' },
@@ -262,7 +262,7 @@ const settings: SourceGroup[] = [
     prefixes: ['yhb'],
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Yokohama Municipal Bus',
       names: { ja: '横浜市営バス', en: 'Yokohama Municipal Bus' },

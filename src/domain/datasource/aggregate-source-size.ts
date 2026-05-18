@@ -28,22 +28,3 @@ export function aggregateSourceSize(infos: readonly DataSourceInfo[]): Aggregate
   }
   return { totalBytes };
 }
-
-/**
- * Format a byte count as a short human-readable string (e.g. `"3.4 MB"`).
- *
- * Uses 1024-based units. Intended for dense UI captions where exact byte
- * accuracy is not required.
- */
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  if (bytes < 1024 * 1024 * 1024) {
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-}

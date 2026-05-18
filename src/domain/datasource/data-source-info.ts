@@ -2,7 +2,9 @@ import type {
   DataSourceCatalogFileBackedSummary,
   DataSourceCatalogSource,
 } from '@contracts/data/transit-v2-catalog-json';
+import { APP_ROUTE_TYPES } from '../../config/route-types';
 import type { DataSourceInfo } from '../../types/app/data-source-info';
+import type { AppRouteTypeValue } from '../../types/app/transit';
 import type { SourceMeta } from '../../types/app/transit-composed';
 
 /**
@@ -18,6 +20,41 @@ import type { SourceMeta } from '../../types/app/transit-composed';
  * https://gtfs.org/documentation/schedule/reference/#stopstxt
  */
 const GTFS_LOCATION_TYPE_BOARDING_STOP = '0' as const;
+const VALID_ROUTE_TYPE_VALUES = new Set<number>(
+  APP_ROUTE_TYPES.map((routeType) => routeType.value),
+);
+
+function normalizeAppRouteType(routeType: number): AppRouteTypeValue {
+  return (VALID_ROUTE_TYPE_VALUES.has(routeType) ? routeType : -1) as AppRouteTypeValue;
+}
+
+function normalizeRouteTypeCounts(
+  catalogSource: DataSourceCatalogSource | undefined,
+): { typeCounts: Partial<Record<AppRouteTypeValue, number>> } | null {
+  if (!catalogSource) {
+    return null;
+  }
+
+  const typeCounts: Partial<Record<AppRouteTypeValue, number>> = {};
+  for (const [rawRouteType, count] of Object.entries(catalogSource.summary.routes.typeCounts)) {
+    const normalizedRouteType = normalizeAppRouteType(Number(rawRouteType));
+    typeCounts[normalizedRouteType] = (typeCounts[normalizedRouteType] ?? 0) + count;
+  }
+
+  return { typeCounts };
+}
+
+function composeRouteShapes(
+  catalogSource: DataSourceCatalogSource | undefined,
+): { count: number } | null {
+  if (!catalogSource) {
+    return null;
+  }
+  if (!catalogSource.summary.shapes.available) {
+    return null;
+  }
+  return { count: catalogSource.summary.shapes.routeCount };
+}
 
 /**
  * Count of physical boarding stops for one catalog source entry.
@@ -82,9 +119,10 @@ export function composeDataSourceInfo(
     feedValidity: catalogSource?.summary.periods.feedValidity ?? null,
     servicePeriod: catalogSource?.summary.periods.servicePeriod ?? null,
     totalSizeBytes: sumBundleSizes(catalogSource),
+    translationLanguages: catalogSource?.summary.i18n.languages ?? null,
     maxTripsPerDay: catalogSource?.summary.service.maxTripsPerDay ?? null,
     boardingStopsCount: countBoardingStops(catalogSource),
-    shapesAvailable: catalogSource?.summary.shapes.available ?? false,
-    translationLanguages: catalogSource?.summary.i18n.languages ?? null,
+    routes: normalizeRouteTypeCounts(catalogSource),
+    routeShapes: composeRouteShapes(catalogSource),
   };
 }

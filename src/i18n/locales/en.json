@@ -199,6 +199,9 @@
     "boardingStops": {
       "aria": "{{count}} boarding stops"
     },
+    "routeShapes": {
+      "aria": "{{count}} route shapes"
+    },
     "maxTripsPerDay": {
       "aria": "estimated max daily trips: {{count}}"
     },

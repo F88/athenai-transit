@@ -6,7 +6,7 @@ export type BaseLabelSize = ExtendedDisplaySize;
 
 interface BaseLabelProps {
   value: string;
-  size?: ExtendedDisplaySize;
+  size: ExtendedDisplaySize;
   /** Truncate value to this many characters when exceeded. */
   maxLength?: number;
   /** Append "…" when truncated. Only effective with maxLength. @default true */
@@ -27,7 +27,7 @@ const sizeClasses: Record<ExtendedDisplaySize, string> = {
 /** Compact inline text label primitive. Color is controlled via className or style. */
 export function BaseLabel({
   value,
-  size = 'sm',
+  size,
   maxLength,
   ellipsis = true,
   className,
@@ -35,11 +35,13 @@ export function BaseLabel({
 }: BaseLabelProps) {
   const truncated = maxLength != null && value.length > maxLength;
   const display = truncated ? value.slice(0, maxLength) + (ellipsis ? '\u2026' : '') : value;
+  // Dynamic colors are part of this component's runtime API.
+  const styleProps = style ? { style } : undefined;
   return (
     <span
       className={cn('shrink-0 rounded font-medium', sizeClasses[size], className)}
-      style={style}
       title={truncated ? value : undefined}
+      {...styleProps}
     >
       {display}
     </span>

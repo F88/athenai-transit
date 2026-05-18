@@ -5,6 +5,9 @@ import { BaseLabel, type BaseLabelSize } from './base-label';
 const meta = {
   title: 'Label/BaseLabel',
   component: BaseLabel,
+  args: {
+    size: 'sm',
+  },
   argTypes: {
     size: { control: 'select', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     value: { control: 'text' },
@@ -25,15 +28,34 @@ export const Default: Story = {
 
 /** Solid style via className. */
 export const Solid: Story = {
-  args: { value: 'Solid', className: 'bg-blue-500 text-white' },
+  args: { value: 'Solid', size: 'sm', className: 'bg-blue-500 text-white' },
 };
 
 /** Subtle style via className. */
 export const Subtle: Story = {
-  args: { value: 'Subtle', className: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' },
+  args: {
+    value: 'Subtle',
+    size: 'sm',
+    className: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+  },
 };
 
 // --- Size variants ---
+
+/** Size `xs` — `px-0.5 py-0` padding and 8px font (`text-[8px]`). */
+export const SizeXs: Story = {
+  args: { value: 'Xs', size: 'xs', className: 'bg-blue-500 text-white' },
+};
+
+/** Size `sm` (default) — `px-1 py-0.5` padding and 9px font (`text-[9px]`). */
+export const SizeSm: Story = {
+  args: { value: 'Sm', size: 'sm', className: 'bg-blue-500 text-white' },
+};
+
+/** Size `md` — `px-1.5 py-1` padding and 10px font (`text-[10px]`). */
+export const SizeMd: Story = {
+  args: { value: 'Md', size: 'md', className: 'bg-blue-500 text-white' },
+};
 
 /** Size `lg` — `px-2 py-1` padding and 12px font (`text-[12px]`). */
 export const SizeLg: Story = {

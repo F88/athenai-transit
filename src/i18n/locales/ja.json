@@ -199,6 +199,9 @@
     "boardingStops": {
       "aria": "停留所 {{count}} 箇所"
     },
+    "routeShapes": {
+      "aria": "経路形状 {{count}} 件"
+    },
     "maxTripsPerDay": {
       "aria": "最大便数の目安 {{count}} 便"
     },

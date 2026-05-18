@@ -48,6 +48,8 @@ function buildGroupInfo(args: WrapperArgs): DataSourceGroupInfo | null {
         : new Set(LANGUAGE_POOL.slice(0, Math.max(0, args.languageCount))),
     boardingStopsCount: args.boardingStopsCount,
     maxTripsPerDay: args.maxTripsPerDay,
+    routeTypeCounts: null,
+    routeShapesCount: null,
   };
 }
 
