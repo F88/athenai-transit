@@ -70,10 +70,13 @@ export function LabelCountBadge({
   const labelStyle = labelBg ? { background: labelBg, color: labelFg } : undefined;
   const countStyle = countBg ? { background: countBg, color: countFg } : undefined;
   const frameStyle = frameColor ? { borderColor: frameColor } : undefined;
+  // Dynamic colors are part of this component's runtime API.
+  const frameStyleProps = frameStyle ? { style: frameStyle } : undefined;
+
   return (
     <span
       className={cn('inline-flex items-stretch overflow-hidden rounded border', frameClassName)}
-      style={frameStyle}
+      {...frameStyleProps}
     >
       <BaseLabel
         size={size}

@@ -35,11 +35,13 @@ export function BaseLabel({
 }: BaseLabelProps) {
   const truncated = maxLength != null && value.length > maxLength;
   const display = truncated ? value.slice(0, maxLength) + (ellipsis ? '\u2026' : '') : value;
+  // Dynamic colors are part of this component's runtime API.
+  const styleProps = style ? { style } : undefined;
   return (
     <span
       className={cn('shrink-0 rounded font-medium', sizeClasses[size], className)}
-      style={style}
       title={truncated ? value : undefined}
+      {...styleProps}
     >
       {display}
     </span>
