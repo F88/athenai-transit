@@ -123,7 +123,7 @@ afterEach(() => {
 });
 
 /**
- * Returns the FIRST `<li>` row containing a Switch with the given
+ * Returns the FIRST row container containing a Switch with the given
  * group-name aria label. A group with multiple `routeTypes` (e.g.
  * `toko` with `[0,1,2,3]`) appears once per section — Switch state is
  * identical across them (it's a `groupId` lookup against the same
@@ -138,13 +138,10 @@ function findGroupRow(groupName: string): HTMLElement {
   if (!switchEl) {
     throw new Error(`row container not found for ${groupName}`);
   }
-  // Walk up to the <li> container so the test can scope queries.
-  let el: HTMLElement | null = switchEl;
-  while (el && el.tagName !== 'LI') {
-    el = el.parentElement;
-  }
-  if (!el) {
-    throw new Error(`<li> not found for ${groupName}`);
+  // Rows are rendered by DataSourceGroupItem as a bordered div.
+  const el = switchEl.closest('div.border-b');
+  if (!(el instanceof HTMLElement)) {
+    throw new Error(`row div not found for ${groupName}`);
   }
   return el;
 }
