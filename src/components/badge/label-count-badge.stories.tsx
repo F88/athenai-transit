@@ -123,10 +123,10 @@ export const CountThousands: Story = {
 
 // --- Comparisons ---
 
-/** All sizes side by side. */
+/** All sizes stacked vertically (avoids horizontal overflow with long labels). */
 export const SizeComparison: Story = {
   render: (args) => (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col items-start gap-2">
       <LabelCountBadge {...args} size="xs" />
       <LabelCountBadge {...args} size="sm" />
       <LabelCountBadge {...args} size="md" />
