@@ -7,8 +7,8 @@ interface LabelCountBadgeProps {
   label: string;
   /** Numeric value for the right (count) half. Rendered with locale-aware formatting. */
   count: number;
-  /** Size variant, forwarded to both inner BaseLabel instances. @default 'sm' */
-  size?: BaseLabelSize;
+  /** Size variant, forwarded to both inner BaseLabel instances. */
+  size: BaseLabelSize;
   /** Background color for the label half (runtime hex, e.g. GTFS route_color). */
   labelBg?: string;
   /** Text color for the label half. */
@@ -56,7 +56,7 @@ interface LabelCountBadgeProps {
 export function LabelCountBadge({
   label,
   count,
-  size = 'sm',
+  size,
   labelBg,
   labelFg,
   countBg = labelFg,
@@ -72,7 +72,6 @@ export function LabelCountBadge({
   const frameStyle = frameColor ? { borderColor: frameColor } : undefined;
   // Dynamic colors are part of this component's runtime API.
   const frameStyleProps = frameStyle ? { style: frameStyle } : undefined;
-
   return (
     <span
       className={cn('inline-flex items-stretch overflow-hidden rounded border', frameClassName)}
