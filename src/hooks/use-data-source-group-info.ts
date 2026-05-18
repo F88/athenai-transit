@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   aggregateBoardingStopsCount,
   aggregateMaxTripsPerDay,
+  aggregateRouteTypeCounts,
+  aggregateRouteShapesCount,
 } from '../domain/datasource/aggregate-source-counts';
 import { aggregateSourceSize } from '../domain/datasource/aggregate-source-size';
 import { aggregateTranslationLanguages } from '../domain/datasource/aggregate-translation-languages';
@@ -89,6 +91,8 @@ export function useDataSourceGroupInfo(
         translationLanguages: aggregateTranslationLanguages(infos),
         boardingStopsCount: aggregateBoardingStopsCount(infos),
         maxTripsPerDay: aggregateMaxTripsPerDay(infos),
+        routeTypeCounts: aggregateRouteTypeCounts(infos),
+        routeShapesCount: aggregateRouteShapesCount(infos),
       });
     }
     return result;

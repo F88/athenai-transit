@@ -1,3 +1,5 @@
+import type { AppRouteTypeValue } from './transit';
+
 /**
  * Per-prefix data facts composed from the pipeline-derived
  * `DataSourceCatalogBundle` and the repo-derived `SourceMeta`.
@@ -47,24 +49,6 @@ export interface DataSourceInfo {
   totalSizeBytes: number | null;
 
   /**
-   * Highest one-day trip total observed for this source (catalog-only).
-   * `null` when catalog is unavailable.
-   */
-  maxTripsPerDay: number | null;
-
-  /**
-   * Count of physical boarding stops (`location_type == 0`) from
-   * catalog. `null` when catalog is unavailable.
-   */
-  boardingStopsCount: number | null;
-
-  /**
-   * Whether shape geometry is built for this source (catalog-only).
-   * Defaults to `false` when catalog is unavailable.
-   */
-  shapesAvailable: boolean;
-
-  /**
    * Languages for which translations are published in this source
    * (catalog-only, from `summary.i18n.languages`). BCP 47 codes as
    * they appear in the upstream data (`ja`, `en`, `ja-Hrkt`,
@@ -81,4 +65,34 @@ export interface DataSourceInfo {
    * availability rather than the feed's default language.
    */
   translationLanguages: readonly string[] | null;
+
+  /**
+   * Highest one-day trip total observed for this source (catalog-only).
+   * `null` when catalog is unavailable.
+   */
+  maxTripsPerDay: number | null;
+
+  /**
+   * Count of physical boarding stops (`location_type == 0`) from
+   * catalog. `null` when catalog is unavailable.
+   */
+  boardingStopsCount: number | null;
+
+  /**
+   * Route facts from catalog `summary.routes`.
+   *
+   * `null` when catalog is unavailable.
+   */
+  routes: {
+    /** Counts keyed by normalized app route type value. */
+    typeCounts: Partial<Record<AppRouteTypeValue, number>>;
+  } | null;
+
+  /**
+   * Route shape coverage summary from catalog `summary.shapes`.
+   *
+   * `null` when catalog is unavailable or when the catalog explicitly
+   * says shape geometry is unavailable for this source.
+   */
+  routeShapes: { count: number } | null;
 }

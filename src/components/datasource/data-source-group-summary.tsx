@@ -23,11 +23,17 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
   if (groupInfo === null) {
     return null;
   }
+  const routesCount =
+    groupInfo.routeTypeCounts === null || Object.keys(groupInfo.routeTypeCounts).length === 0
+      ? null
+      : Object.values(groupInfo.routeTypeCounts).reduce((sum, count) => sum + count, 0);
   const hasAnyMetric =
     groupInfo.size !== null ||
     (groupInfo.translationLanguages !== null && groupInfo.translationLanguages.size > 0) ||
+    routesCount !== null ||
     groupInfo.boardingStopsCount !== null ||
-    groupInfo.maxTripsPerDay !== null;
+    groupInfo.maxTripsPerDay !== null ||
+    groupInfo.routeShapesCount !== null;
   if (!hasAnyMetric) {
     return null;
   }
@@ -53,6 +59,16 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
           {groupInfo.translationLanguages.size}
         </span>
       )}
+      {routesCount !== null && (
+        <span
+          aria-label={t('timetable.metadata.routeCount', {
+            count: routesCount.toLocaleString(),
+          })}
+        >
+          <span aria-hidden>🛣️ </span>
+          {routesCount.toLocaleString()}
+        </span>
+      )}
       {groupInfo.boardingStopsCount !== null && (
         <span
           aria-label={t('dataSourceSettings.boardingStops.aria', {
@@ -71,6 +87,12 @@ export function DataSourceGroupSummary({ groupInfo }: { groupInfo: DataSourceGro
         >
           <span aria-hidden>🚍 </span>
           {groupInfo.maxTripsPerDay.toLocaleString()}/d
+        </span>
+      )}
+      {groupInfo.routeShapesCount !== null && (
+        <span aria-label={`Route shapes: ${groupInfo.routeShapesCount.toLocaleString()}`}>
+          <span aria-hidden>🗺️ </span>
+          {groupInfo.routeShapesCount.toLocaleString()}
         </span>
       )}
     </div>

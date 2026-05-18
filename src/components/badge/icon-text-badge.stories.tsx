@@ -1,15 +1,43 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Bus, Globe, HardDrive, MapPin, Train } from 'lucide-react';
+import {
+  Accessibility,
+  Anchor,
+  CalendarDays,
+  Clock,
+  DoorOpen,
+  Globe,
+  HardDrive,
+  History,
+  MapPin,
+  Milestone,
+  Route,
+  Signpost,
+  Spline,
+  Trash2,
+  Waypoints,
+  Wrench,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { BaseLabelSize } from '../label/base-label';
 import { IconTextBadge } from './icon-text-badge';
 
 const ICON_MAP = {
+  Accessibility: <Accessibility />,
+  Anchor: <Anchor />,
+  Clock: <Clock />,
+  DoorOpen: <DoorOpen />,
   HardDrive: <HardDrive />,
+  History: <History />,
   Globe: <Globe />,
   MapPin: <MapPin />,
-  Bus: <Bus />,
-  Train: <Train />,
+  Milestone: <Milestone />,
+  Route: <Route />,
+  Signpost: <Signpost />,
+  Spline: <Spline />,
+  Trash2: <Trash2 />,
+  CalendarDays: <CalendarDays />,
+  Waypoints: <Waypoints />,
+  Wrench: <Wrench />,
 } as const satisfies Record<string, ReactNode>;
 
 type IconName = keyof typeof ICON_MAP;
@@ -43,7 +71,196 @@ function Wrapper(args: WrapperArgs) {
 }
 
 const SIZE_OPTIONS: ReadonlyArray<BaseLabelSize> = ['xs', 'sm', 'md', 'lg', 'xl'];
-const ICON_OPTIONS: ReadonlyArray<IconName> = ['HardDrive', 'Globe', 'MapPin', 'Bus', 'Train'];
+const ICON_OPTIONS: ReadonlyArray<IconName> = [
+  'Accessibility',
+  'Anchor',
+  'Clock',
+  'DoorOpen',
+  'HardDrive',
+  'History',
+  'Globe',
+  'MapPin',
+  'Milestone',
+  'Route',
+  'Signpost',
+  'Spline',
+  'Trash2',
+  'CalendarDays',
+  'Waypoints',
+  'Wrench',
+];
+
+interface MetricSample {
+  name: string;
+  iconName: IconName;
+  text: string;
+  ariaLabel: string;
+  iconBg: string;
+}
+
+interface MetricCategory {
+  title: string;
+  items: ReadonlyArray<MetricSample>;
+}
+
+const CORE_METRIC_REPRESENTATIVE_ICONS = {
+  Stops: 'Signpost',
+  Routes: 'Route',
+  Trips: 'CalendarDays',
+  Connectivity: 'Waypoints',
+  Distance: 'Milestone',
+  History: 'History',
+  Globe: 'Globe',
+  Portal: 'DoorOpen',
+  Timetable: 'Clock',
+  Accessibility: 'Accessibility',
+  RouteShapes: 'Spline',
+  Data: 'HardDrive',
+} as const satisfies Record<string, IconName>;
+
+const CORE_METRIC_CATEGORIES: ReadonlyArray<MetricCategory> = [
+  {
+    title: 'Transit metrics',
+    items: [
+      {
+        name: 'Stops',
+        iconName: CORE_METRIC_REPRESENTATIVE_ICONS.Stops,
+        text: '142',
+        ariaLabel: 'Stops: 142',
+        iconBg: '#16A34A',
+      },
+      {
+        name: 'Routes',
+        iconName: CORE_METRIC_REPRESENTATIVE_ICONS.Routes,
+        text: '24',
+        ariaLabel: 'Routes: 24',
+        iconBg: '#2563EB',
+      },
+      {
+        name: 'Trips',
+        iconName: CORE_METRIC_REPRESENTATIVE_ICONS.Trips,
+        text: '687',
+        ariaLabel: 'Trips: 687',
+        iconBg: '#F59E0B',
+      },
+      {
+        name: 'Connectivity',
+        iconName: CORE_METRIC_REPRESENTATIVE_ICONS.Connectivity,
+        text: '31',
+        ariaLabel: 'Connectivity: 31',
+        iconBg: '#0F766E',
+      },
+      {
+        name: 'Distance',
+        iconName: CORE_METRIC_REPRESENTATIVE_ICONS.Distance,
+        text: '420 m',
+        ariaLabel: 'Distance: 420 meters',
+        iconBg: '#0D9488',
+      },
+    ],
+  },
+  {
+    title: 'Transit attributes',
+    items: [
+      {
+        name: 'Accessibility',
+        iconName: CORE_METRIC_REPRESENTATIVE_ICONS.Accessibility,
+        text: '6',
+        ariaLabel: 'Accessibility: 6',
+        iconBg: '#2563EB',
+      },
+      {
+        name: 'Route shapes',
+        iconName: CORE_METRIC_REPRESENTATIVE_ICONS.RouteShapes,
+        text: 'ON',
+        ariaLabel: 'Route shapes: available',
+        iconBg: '#0284C7',
+      },
+    ],
+  },
+  {
+    title: 'App features',
+    items: [
+      {
+        name: 'Timetable',
+        iconName: CORE_METRIC_REPRESENTATIVE_ICONS.Timetable,
+        text: '12',
+        ariaLabel: 'Timetable: 12',
+        iconBg: '#475569',
+      },
+      {
+        name: 'Translation data / i18n',
+        iconName: CORE_METRIC_REPRESENTATIVE_ICONS.Globe,
+        text: '12',
+        ariaLabel: 'Translation data / i18n: 12',
+        iconBg: '#0891B2',
+      },
+      {
+        name: 'History',
+        iconName: CORE_METRIC_REPRESENTATIVE_ICONS.History,
+        text: '42',
+        ariaLabel: 'History: 42',
+        iconBg: '#7C3AED',
+      },
+      {
+        name: 'Portal',
+        iconName: CORE_METRIC_REPRESENTATIVE_ICONS.Portal,
+        text: '8',
+        ariaLabel: 'Portal: 8',
+        iconBg: '#0EA5E9',
+      },
+    ],
+  },
+  {
+    title: 'Data',
+    items: [
+      {
+        name: 'Data',
+        iconName: CORE_METRIC_REPRESENTATIVE_ICONS.Data,
+        text: '3.4 MB',
+        ariaLabel: 'Data: 3.4 MB',
+        iconBg: '#4F46E5',
+      },
+    ],
+  },
+];
+
+const CORE_METRICS_MONOCHROME_ICON_BG = '#334155';
+
+function renderCoreMetricCategories(
+  args: Pick<WrapperArgs, 'size' | 'iconFg' | 'textBg' | 'textFg' | 'frameColor'>,
+  options: { monochrome: boolean },
+) {
+  return (
+    <div className="flex flex-col gap-4">
+      {CORE_METRIC_CATEGORIES.map((category) => (
+        <section key={category.title} className="flex flex-col gap-2">
+          <h3 className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+            {category.title}
+          </h3>
+          <div className="flex flex-col gap-2">
+            {category.items.map((metric) => (
+              <div key={metric.name} className="flex items-center gap-3">
+                <span className="w-28 text-xs text-gray-500">{metric.name}</span>
+                <Wrapper
+                  iconName={metric.iconName}
+                  text={metric.text}
+                  size={args.size}
+                  iconBg={options.monochrome ? CORE_METRICS_MONOCHROME_ICON_BG : metric.iconBg}
+                  iconFg={args.iconFg}
+                  textBg={args.textBg}
+                  textFg={args.textFg}
+                  frameColor={args.frameColor}
+                  ariaLabel={metric.ariaLabel}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
 
 const meta = {
   title: 'Badge/IconTextBadge',
@@ -133,6 +350,69 @@ export const GlobeIcon: Story = {
   },
 };
 
+export const AccessibilityIcon: Story = {
+  args: {
+    iconName: 'Accessibility',
+    iconBg: '#2563EB',
+    text: '6',
+    ariaLabel: 'Accessibility: 6',
+  },
+};
+
+export const AnchorIcon: Story = {
+  args: {
+    iconName: 'Anchor',
+    iconBg: '#475569',
+    text: '42',
+    ariaLabel: 'Anchor: 42',
+  },
+};
+
+export const DoorOpenIcon: Story = {
+  args: {
+    iconName: 'DoorOpen',
+    iconBg: '#0EA5E9',
+    text: '8',
+    ariaLabel: 'Portal: 8',
+  },
+};
+
+export const HistoryIcon: Story = {
+  args: {
+    iconName: 'History',
+    iconBg: '#7C3AED',
+    text: '42',
+    ariaLabel: 'History: 42',
+  },
+};
+
+export const Trash2Icon: Story = {
+  args: {
+    iconName: 'Trash2',
+    iconBg: '#DC2626',
+    text: '12',
+    ariaLabel: 'Delete: 12',
+  },
+};
+
+export const WrenchIcon: Story = {
+  args: {
+    iconName: 'Wrench',
+    iconBg: '#475569',
+    text: '4',
+    ariaLabel: 'Settings: 4',
+  },
+};
+
+export const ClockIcon: Story = {
+  args: {
+    iconName: 'Clock',
+    iconBg: '#475569',
+    text: '12',
+    ariaLabel: 'Timetable: 12',
+  },
+};
+
 export const MapPinIcon: Story = {
   args: {
     iconName: 'MapPin',
@@ -142,21 +422,39 @@ export const MapPinIcon: Story = {
   },
 };
 
-export const BusIcon: Story = {
+export const RouteIcon: Story = {
   args: {
-    iconName: 'Bus',
-    iconBg: '#F59E0B',
-    text: '87/d',
-    ariaLabel: 'Peak daily trips: 87',
+    iconName: 'Route',
+    iconBg: '#2563EB',
+    text: '24 routes',
+    ariaLabel: 'Routes: 24',
   },
 };
 
-export const TrainIcon: Story = {
+export const SplineIcon: Story = {
   args: {
-    iconName: 'Train',
-    iconBg: '#0EA5E9',
-    text: '24 lines',
-    ariaLabel: 'Train lines: 24',
+    iconName: 'Spline',
+    iconBg: '#0284C7',
+    text: 'ON',
+    ariaLabel: 'Route shapes: available',
+  },
+};
+
+export const CalendarDaysIcon: Story = {
+  args: {
+    iconName: 'CalendarDays',
+    iconBg: '#F59E0B',
+    text: '687 trips',
+    ariaLabel: 'Trips: 687',
+  },
+};
+
+export const WaypointsIcon: Story = {
+  args: {
+    iconName: 'Waypoints',
+    iconBg: '#0F766E',
+    text: '31 links',
+    ariaLabel: 'Connectivity: 31',
   },
 };
 
@@ -239,6 +537,18 @@ export const FrameColorComparison: Story = {
   },
 };
 
+/** Core metric candidates with the same color for comparing icon semantics only. */
+export const CoreMetrics: Story = {
+  args: { size: 'md' },
+  render: (args) => renderCoreMetricCategories(args, { monochrome: true }),
+};
+
+/** Core metric candidates with per-metric colors for icon and palette comparison. */
+export const CoreMetrics_Colored: Story = {
+  args: { size: 'md' },
+  render: (args) => renderCoreMetricCategories(args, { monochrome: false }),
+};
+
 interface SampleBadge {
   name: string;
   iconName: IconName;
@@ -274,20 +584,12 @@ const sampleBadges: ReadonlyArray<SampleBadge> = [
     ariaLabel: 'Boarding stops: 1,500',
   },
   {
-    name: 'Peak daily trips',
-    iconName: 'Bus',
-    text: '8,000/d',
-    iconBg: '#F59E0B',
+    name: 'Route shapes',
+    iconName: 'Spline',
+    text: 'ON',
+    iconBg: '#0284C7',
     iconFg: '#FFFFFF',
-    ariaLabel: 'Peak daily trips: 8,000',
-  },
-  {
-    name: 'Rating',
-    iconName: 'Train',
-    text: '★★★☆☆',
-    iconBg: '#0EA5E9',
-    iconFg: '#FFFFFF',
-    ariaLabel: 'Rating: 3 of 5',
+    ariaLabel: 'Route shapes: available',
   },
 ];
 

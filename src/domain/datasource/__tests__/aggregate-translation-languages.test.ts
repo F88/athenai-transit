@@ -11,7 +11,8 @@ function makeInfo(prefix: string, translationLanguages: readonly string[] | null
     totalSizeBytes: null,
     maxTripsPerDay: null,
     boardingStopsCount: null,
-    shapesAvailable: false,
+    routes: null,
+    routeShapes: null,
     translationLanguages,
   };
 }

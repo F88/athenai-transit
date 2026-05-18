@@ -160,6 +160,28 @@ describe('composeDataSourceInfo', () => {
     expect(info.boardingStopsCount).toBe(100);
   });
 
+  it('reads routes.typeCounts from catalog summary', () => {
+    const info = composeDataSourceInfo('kobus', makeSourceMeta(), makeCatalogSource());
+    expect(info.routes).toEqual({ typeCounts: { 3: 5 } });
+  });
+
+  it('normalizes unsupported route types into -1', () => {
+    const catalogSource = makeCatalogSource({
+      summary: {
+        ...makeCatalogSource().summary,
+        routes: { typeCounts: { '3': 5, '100': 2 } },
+      },
+    });
+
+    const info = composeDataSourceInfo('kobus', makeSourceMeta(), catalogSource);
+    expect(info.routes).toEqual({ typeCounts: { 3: 5, [-1]: 2 } });
+  });
+
+  it('returns null routes when catalog is missing', () => {
+    const info = composeDataSourceInfo('kobus', makeSourceMeta(), undefined);
+    expect(info.routes).toBeNull();
+  });
+
   it('returns null boardingStopsCount when locationTypes[0] is missing', () => {
     const catalogSource = makeCatalogSource({
       summary: {
@@ -176,14 +198,25 @@ describe('composeDataSourceInfo', () => {
     expect(info.boardingStopsCount).toBeNull();
   });
 
-  it('reads shapesAvailable from catalog summary', () => {
+  it('reads routeShapes.count from catalog summary', () => {
     const info = composeDataSourceInfo('kobus', makeSourceMeta(), makeCatalogSource());
-    expect(info.shapesAvailable).toBe(true);
+    expect(info.routeShapes).toEqual({ count: 3 });
   });
 
-  it('defaults shapesAvailable to false when catalog is missing', () => {
+  it('returns null routeShapes when catalog says shapes are unavailable', () => {
+    const catalogSource = makeCatalogSource({
+      summary: {
+        ...makeCatalogSource().summary,
+        shapes: { available: false, routeCount: 0 },
+      },
+    });
+    const info = composeDataSourceInfo('kobus', makeSourceMeta(), catalogSource);
+    expect(info.routeShapes).toBeNull();
+  });
+
+  it('returns null routeShapes when catalog is missing', () => {
     const info = composeDataSourceInfo('kobus', makeSourceMeta(), undefined);
-    expect(info.shapesAvailable).toBe(false);
+    expect(info.routeShapes).toBeNull();
   });
 
   it('reads translationLanguages from catalog summary i18n.languages', () => {

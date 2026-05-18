@@ -35,10 +35,14 @@ interface WrapperArgs {
    * present and declares that many translations (0 = explicitly zero).
    */
   languageCount: number | null;
+  /** Total route count. `null` to omit. */
+  routeCount?: number | null;
   /** Physical boarding-stops count. `null` to omit. */
   boardingStopsCount: number | null;
   /** Peak single-day trip count. `null` to omit. */
   maxTripsPerDay: number | null;
+  /** Route-shape count. `null` to omit. */
+  routeShapesCount?: number | null;
 }
 
 function Wrapper(args: WrapperArgs) {
@@ -52,8 +56,11 @@ function Wrapper(args: WrapperArgs) {
           args.languageCount === null
             ? null
             : new Set(LANGUAGE_POOL.slice(0, Math.max(0, args.languageCount))),
+        routeTypeCounts:
+          args.routeCount === undefined || args.routeCount === null ? null : { 3: args.routeCount },
         boardingStopsCount: args.boardingStopsCount,
         maxTripsPerDay: args.maxTripsPerDay,
+        routeShapesCount: args.routeShapesCount ?? null,
       };
   return <DataSourceGroupSummary groupInfo={groupInfo} />;
 }
@@ -65,15 +72,19 @@ const meta = {
     groupInfoNull: false,
     sizeBytes: 3_400_000,
     languageCount: 2,
+    routeCount: 24,
     boardingStopsCount: 1500,
     maxTripsPerDay: 8000,
+    routeShapesCount: 48,
   },
   argTypes: {
     groupInfoNull: { control: 'boolean' },
     sizeBytes: { control: 'number' },
     languageCount: { control: { type: 'number', min: 0, max: LANGUAGE_POOL.length } },
+    routeCount: { control: 'number' },
     boardingStopsCount: { control: 'number' },
     maxTripsPerDay: { control: 'number' },
+    routeShapesCount: { control: 'number' },
   },
   decorators: [
     (Story) => (

@@ -20,11 +20,13 @@ interface WrapperArgs {
   /**
    * Languages knob: `null` = catalog absent for languages (metric
    * hidden); a non-negative number = catalog present with that many
-   * languages (0 renders as 0★).
+   * languages (0 renders as the neutral lowest tone).
    */
   languageCount: number | null;
+  routeCount?: number | null;
   boardingStopsCount: number | null;
   maxTripsPerDay: number | null;
+  routeShapesCount?: number | null;
 }
 
 function buildGroupInfo(args: WrapperArgs): DataSourceGroupInfo | null {
@@ -39,8 +41,11 @@ function buildGroupInfo(args: WrapperArgs): DataSourceGroupInfo | null {
       args.languageCount === null
         ? null
         : new Set(LANGUAGE_POOL.slice(0, Math.max(0, args.languageCount))),
+    routeTypeCounts:
+      args.routeCount === undefined || args.routeCount === null ? null : { 3: args.routeCount },
     boardingStopsCount: args.boardingStopsCount,
     maxTripsPerDay: args.maxTripsPerDay,
+    routeShapesCount: args.routeShapesCount ?? null,
   };
 }
 
@@ -55,15 +60,19 @@ const meta = {
     groupInfoNull: false,
     sizeBytes: 3_400_000,
     languageCount: 2,
+    routeCount: 24,
     boardingStopsCount: 1500,
     maxTripsPerDay: 8000,
+    routeShapesCount: 48,
   },
   argTypes: {
     groupInfoNull: { control: 'boolean' },
     sizeBytes: { control: 'number' },
     languageCount: { control: { type: 'number', min: 0, max: LANGUAGE_POOL.length } },
+    routeCount: { control: 'number' },
     boardingStopsCount: { control: 'number' },
     maxTripsPerDay: { control: 'number' },
+    routeShapesCount: { control: 'number' },
   },
   decorators: [
     (Story) => (
@@ -82,77 +91,91 @@ type Story = StoryObj<typeof meta>;
 
 // --- Basic ---
 
-/** Realistic mid-range source: should render about 3★ across the board. */
+/** Realistic mid-range source: should render mid-range tones across the board. */
 export const Default: Story = {};
 
-/** All metrics at their minimum non-null bucket — should render 1★ each. */
+/** All metrics at their minimum non-null bucket — should render the lowest tone. */
 export const AllOneStar: Story = {
   args: {
     sizeBytes: 1024,
     languageCount: 1,
+    routeCount: 1,
     boardingStopsCount: 1,
     maxTripsPerDay: 1,
+    routeShapesCount: 1,
   },
 };
 
-/** All metrics at maximum — should render 5★ each. */
+/** All metrics at maximum — should render the strongest tone. */
 export const AllFiveStars: Story = {
   args: {
     sizeBytes: 20 * 1024 * 1024,
     languageCount: LANGUAGE_POOL.length,
+    routeCount: 500,
     boardingStopsCount: 5000,
     maxTripsPerDay: 10000,
+    routeShapesCount: 500,
   },
 };
 
 // --- Threshold sweep ---
 
 /**
- * One row per star level (1★…5★) at every metric. Useful for verifying
- * that the threshold buckets produce visibly distinct ratings.
+ * One row per level at every metric. Useful for verifying that the
+ * threshold buckets produce visibly distinct tones.
  */
 export const ThresholdSweep: Story = {
   render: () => {
     const levels: ReadonlyArray<WrapperArgs & { label: string }> = [
       {
-        label: '1★ (lowest bucket)',
+        label: 'Level 1 (lowest bucket)',
         groupInfoNull: false,
         sizeBytes: 50 * 1024,
         languageCount: 1,
+        routeCount: 1,
         boardingStopsCount: 10,
         maxTripsPerDay: 50,
+        routeShapesCount: 1,
       },
       {
-        label: '2★',
+        label: 'Level 2',
         groupInfoNull: false,
         sizeBytes: 500 * 1024,
         languageCount: 2,
+        routeCount: 8,
         boardingStopsCount: 60,
         maxTripsPerDay: 250,
+        routeShapesCount: 12,
       },
       {
-        label: '3★',
+        label: 'Level 3',
         groupInfoNull: false,
         sizeBytes: 3 * 1024 * 1024,
         languageCount: 3,
+        routeCount: 40,
         boardingStopsCount: 250,
         maxTripsPerDay: 1000,
+        routeShapesCount: 60,
       },
       {
-        label: '4★',
+        label: 'Level 4',
         groupInfoNull: false,
         sizeBytes: 10 * 1024 * 1024,
         languageCount: 5,
+        routeCount: 150,
         boardingStopsCount: 1200,
         maxTripsPerDay: 5000,
+        routeShapesCount: 150,
       },
       {
-        label: '5★',
+        label: 'Level 5',
         groupInfoNull: false,
         sizeBytes: 20 * 1024 * 1024,
         languageCount: 6,
+        routeCount: 500,
         boardingStopsCount: 3000,
         maxTripsPerDay: 10000,
+        routeShapesCount: 500,
       },
     ];
     return (
@@ -167,6 +190,7 @@ export const ThresholdSweep: Story = {
               groupInfoNull={scenario.groupInfoNull}
               sizeBytes={scenario.sizeBytes}
               languageCount={scenario.languageCount}
+              routeCount={scenario.routeCount}
               boardingStopsCount={scenario.boardingStopsCount}
               maxTripsPerDay={scenario.maxTripsPerDay}
             />
@@ -180,8 +204,9 @@ export const ThresholdSweep: Story = {
 // --- Side-by-side comparison with v1 ---
 
 /**
- * v1 (raw numbers) vs v2 (stars) for the same data — useful for
- * deciding whether the star rating is clearer than the raw figures.
+ * v1 (raw numbers) vs v2 (leveled color badges) for the same data —
+ * useful for deciding whether the colored summary is clearer than the
+ * raw figures.
  */
 export const SideBySideWithV1: Story = {
   render: () => {
@@ -191,6 +216,7 @@ export const SideBySideWithV1: Story = {
         groupInfoNull: false,
         sizeBytes: 12_000,
         languageCount: 1,
+        routeCount: 2,
         boardingStopsCount: 8,
         maxTripsPerDay: 24,
       },
@@ -199,6 +225,7 @@ export const SideBySideWithV1: Story = {
         groupInfoNull: false,
         sizeBytes: 200_000,
         languageCount: 2,
+        routeCount: 12,
         boardingStopsCount: 100,
         maxTripsPerDay: 500,
       },
@@ -207,6 +234,7 @@ export const SideBySideWithV1: Story = {
         groupInfoNull: false,
         sizeBytes: 9_877_327,
         languageCount: 3,
+        routeCount: 255,
         boardingStopsCount: 2927,
         maxTripsPerDay: 11_341,
       },
@@ -215,6 +243,7 @@ export const SideBySideWithV1: Story = {
         groupInfoNull: false,
         sizeBytes: 19_659_638,
         languageCount: 3,
+        routeCount: 483,
         boardingStopsCount: 3691,
         maxTripsPerDay: 15_075,
       },

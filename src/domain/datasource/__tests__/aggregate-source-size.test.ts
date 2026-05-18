@@ -11,7 +11,8 @@ function makeInfo(prefix: string, totalSizeBytes: number | null): DataSourceInfo
     totalSizeBytes,
     maxTripsPerDay: null,
     boardingStopsCount: null,
-    shapesAvailable: false,
+    routes: null,
+    routeShapes: null,
     translationLanguages: [],
   };
 }
