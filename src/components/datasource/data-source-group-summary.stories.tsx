@@ -60,6 +60,7 @@ function Wrapper(args: WrapperArgs) {
           args.routeCount === undefined || args.routeCount === null ? null : { 3: args.routeCount },
         boardingStopsCount: args.boardingStopsCount,
         maxTripsPerDay: args.maxTripsPerDay,
+        operatingDates: { first: '20260101', last: '20260131' },
         routeShapesCount: args.routeShapesCount ?? null,
       };
   return <DataSourceGroupSummary groupInfo={groupInfo} />;

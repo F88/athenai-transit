@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   aggregateBoardingStopsCount,
   aggregateMaxTripsPerDay,
+  aggregateOperatingDates,
   aggregateRouteTypeCounts,
   aggregateRouteShapesCount,
 } from '../domain/datasource/aggregate-source-counts';
@@ -91,6 +92,7 @@ export function useDataSourceGroupInfo(
         translationLanguages: aggregateTranslationLanguages(infos),
         boardingStopsCount: aggregateBoardingStopsCount(infos),
         maxTripsPerDay: aggregateMaxTripsPerDay(infos),
+        operatingDates: aggregateOperatingDates(infos),
         routeTypeCounts: aggregateRouteTypeCounts(infos),
         routeShapesCount: aggregateRouteShapesCount(infos),
       });

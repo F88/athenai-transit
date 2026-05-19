@@ -10,6 +10,7 @@ function makeInfo(prefix: string, totalSizeBytes: number | null): DataSourceInfo
     servicePeriod: null,
     totalSizeBytes,
     maxTripsPerDay: null,
+    operatingDates: null,
     boardingStopsCount: null,
     routes: null,
     routeShapes: null,

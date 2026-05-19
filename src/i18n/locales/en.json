@@ -205,6 +205,9 @@
     "maxTripsPerDay": {
       "aria": "estimated max daily trips: {{count}}"
     },
+    "operatingDates": {
+      "aria": "Operating period {{range}}"
+    },
     "toggle": {
       "aria": "Enable {{group}}"
     },

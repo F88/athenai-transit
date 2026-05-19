@@ -12,20 +12,14 @@ import type {
   InsightsBundle,
   ShapesBundle,
   StopV2Json,
-  TimetableGroupV2Json,
 } from '@contracts/data/transit-v2-json';
 
 import { getDistanceKmLight } from '../../geo-utils';
 import { V2_OUTPUT_DIR } from '../../paths';
-import { uniqueInOrder } from '../pipeline-utils';
 import { loadAllGtfsSources } from '../../resources/load-gtfs-sources';
 import { discoverOdptTrainSources } from '../../resources/load-odpt-train-sources';
-import {
-  addUtcDays,
-  buildExceptionMap,
-  computeActiveServiceIds,
-  getCalendarDateRange,
-} from './calendar-walk';
+import { uniqueInOrder } from '../pipeline-utils';
+import { computeServiceDateCoverage } from './compute-service-date-coverage';
 
 interface ResolvedCatalogTarget {
   prefix: string;
@@ -114,52 +108,6 @@ function buildRouteTypeCounts(bundle: DataBundle): Record<string, number> {
     counts[key] = (counts[key] ?? 0) + 1;
   }
   return counts;
-}
-
-function buildTripsByServiceId(
-  timetable: Record<string, TimetableGroupV2Json[]>,
-): Record<string, number> {
-  const tripsByServiceId: Record<string, number> = {};
-
-  for (const groups of Object.values(timetable)) {
-    for (const group of groups) {
-      if (group.si !== 0) {
-        continue;
-      }
-      for (const [serviceId, departures] of Object.entries(group.d)) {
-        tripsByServiceId[serviceId] = (tripsByServiceId[serviceId] ?? 0) + departures.length;
-      }
-    }
-  }
-
-  return tripsByServiceId;
-}
-
-function buildMaxTripsPerDay(bundle: DataBundle): number {
-  const { services, exceptions } = bundle.calendar.data;
-  const dateRange = getCalendarDateRange(services, exceptions);
-  if (!dateRange) {
-    return 0;
-  }
-
-  const exceptionsByServiceId = buildExceptionMap(exceptions);
-  const tripsByServiceId = buildTripsByServiceId(bundle.timetable.data);
-  let maxTripsPerDay = 0;
-
-  for (let date = dateRange.min; date <= dateRange.max; date = addUtcDays(date, 1)) {
-    const activeServiceIds = computeActiveServiceIds(date, services, exceptionsByServiceId);
-    let totalTrips = 0;
-
-    for (const serviceId of activeServiceIds) {
-      totalTrips += tripsByServiceId[serviceId] ?? 0;
-    }
-
-    if (totalTrips > maxTripsPerDay) {
-      maxTripsPerDay = totalTrips;
-    }
-  }
-
-  return maxTripsPerDay;
 }
 
 function buildStopLocationTypes(
@@ -286,7 +234,14 @@ function buildCatalogSource(
   shapesFilePath: string,
 ): DataSourceCatalogSource {
   const routeTypeCounts = buildRouteTypeCounts(dataBundle);
+
   const stopLocationTypes = buildStopLocationTypes(dataBundle.stops.data);
+
+  const { serviceDateCounts, operatingDates } = computeServiceDateCoverage(dataBundle);
+  const maxTripsPerDay = serviceDateCounts.reduce(
+    (maxTripsPerDay, serviceDateCount) => Math.max(maxTripsPerDay, serviceDateCount.tripCount),
+    0,
+  );
 
   return {
     summary: {
@@ -320,7 +275,8 @@ function buildCatalogSource(
         },
       },
       service: {
-        maxTripsPerDay: buildMaxTripsPerDay(dataBundle),
+        operatingDates,
+        maxTripsPerDay,
       },
       shapes: {
         available: shapesBundle !== null,

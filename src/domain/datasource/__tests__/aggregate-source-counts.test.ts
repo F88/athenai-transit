@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   aggregateBoardingStopsCount,
   aggregateMaxTripsPerDay,
+  aggregateOperatingDates,
   aggregateRouteTypeCounts,
   aggregateRouteShapesCount,
 } from '../aggregate-source-counts';
@@ -12,6 +13,7 @@ function makeInfo(
   prefix: string,
   fields: {
     maxTripsPerDay?: number | null;
+    operatingDates?: { first: string | null; last: string | null; count: number } | null;
     boardingStopsCount?: number | null;
     routeTypeCounts?: Partial<Record<AppRouteTypeValue, number>> | null;
     routeShapesCount?: number | null;
@@ -24,6 +26,7 @@ function makeInfo(
     servicePeriod: null,
     totalSizeBytes: null,
     maxTripsPerDay: fields.maxTripsPerDay ?? null,
+    operatingDates: fields.operatingDates ?? null,
     boardingStopsCount: fields.boardingStopsCount ?? null,
     routes:
       fields.routeTypeCounts === undefined || fields.routeTypeCounts === null
@@ -36,6 +39,47 @@ function makeInfo(
     translationLanguages: [],
   };
 }
+
+describe('aggregateOperatingDates', () => {
+  it('returns null for empty input', () => {
+    expect(aggregateOperatingDates([])).toBeNull();
+  });
+
+  it('returns null when every entry has a null value', () => {
+    expect(
+      aggregateOperatingDates([
+        makeInfo('a', { operatingDates: null }),
+        makeInfo('b', { operatingDates: null }),
+      ]),
+    ).toBeNull();
+  });
+
+  it('returns min first and max last across entries', () => {
+    expect(
+      aggregateOperatingDates([
+        makeInfo('a', { operatingDates: { first: '20260410', last: '20260420', count: 11 } }),
+        makeInfo('b', { operatingDates: { first: '20260401', last: '20260430', count: 30 } }),
+      ]),
+    ).toEqual({ first: '20260401', last: '20260430' });
+  });
+
+  it('skips null entries while keeping the others', () => {
+    expect(
+      aggregateOperatingDates([
+        makeInfo('a', { operatingDates: null }),
+        makeInfo('b', { operatingDates: { first: '20260501', last: '20260531', count: 31 } }),
+      ]),
+    ).toEqual({ first: '20260501', last: '20260531' });
+  });
+
+  it('preserves null boundaries when present in the only known entry', () => {
+    expect(
+      aggregateOperatingDates([
+        makeInfo('a', { operatingDates: { first: null, last: '20260531', count: 0 } }),
+      ]),
+    ).toEqual({ first: null, last: '20260531' });
+  });
+});
 
 describe('aggregateMaxTripsPerDay', () => {
   it('returns null for empty input', () => {
