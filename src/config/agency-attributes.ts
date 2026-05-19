@@ -22,7 +22,7 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
   // --- Chii Bus (Minato Community Bus) ---
   '13103b:8010401035990': {
     shortName: { ja: 'ちぃばす', en: 'Chii Bus' },
-    longName: { ja: 'ちぃばす', en: 'Chii Bus' },
+    longName: { ja: '港区コミュニティバス', en: 'Minato City community bus' },
     colors: [
       { bg: '9B2663', text: 'FFFFFF' } /* Primary */,
       { bg: '2C5FD4', text: 'FFFFFF' } /* Secondary */,
@@ -32,7 +32,7 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
   // --- Hachiko Bus (Shibuya Community Bus) ---
   '85b:9000020131130': {
     shortName: { ja: 'ハチ公バス', en: 'Hachiko Bus' },
-    longName: { ja: 'ハチ公バス', en: 'Hachiko Bus' },
+    longName: { ja: '渋谷区コミュニティバス', en: 'Shibuya City community bus' },
     colors: [{ bg: '000000', text: 'FFFFFF' }],
   },
 
@@ -170,8 +170,8 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     shortName: { ja: '川崎市バス', en: 'Kawasaki City Bus' },
     longName: { ja: '川崎市交通局', en: 'Kawasaki City Transportation Bureau' },
     colors: [
-      { bg: '8AC4F5', text: 'FFFFFF' } /* Primary */,
-      { bg: '1B69BF', text: 'FFFFFF' } /* Secondary */,
+      { bg: '25B9FE', text: '030303' } /* Primary */,
+      { bg: '8AC4F5', text: '000000' } /* Secondary */,
     ],
   },
 
