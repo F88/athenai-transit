@@ -21,8 +21,8 @@ const chiiBus: GtfsSourceDefinition = {
     },
     provider: {
       name: {
-        ja: { long: 'ちぃばす', short: 'ちぃばす' },
-        en: { long: 'Chii Bus', short: 'Chii Bus' },
+        ja: { long: '港区', short: '港区' },
+        en: { long: 'Minato City', short: 'Minato City' },
       },
       url: 'https://www.city.minato.tokyo.jp/',
       colors: [

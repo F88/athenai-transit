@@ -3,8 +3,8 @@ import type { GtfsSourceDefinition } from '../../../src/types/gtfs-resource';
 const hachikoBus: GtfsSourceDefinition = {
   resource: {
     /** BaseResource */
-    nameEn: 'Hachiko Bus',
-    nameJa: 'ハチ公バス',
+    nameEn: 'Hachiko Bus (Shibuya City community bus)',
+    nameJa: 'ハチ公バス (渋谷区コミュニティバス)',
     description:
       'GTFS-JP static data for Hachiko Bus, the community bus service operated by Shibuya City.',
     dataFormat: { type: 'GTFS/GTFS-JP' },
@@ -18,8 +18,8 @@ const hachikoBus: GtfsSourceDefinition = {
     },
     provider: {
       name: {
-        ja: { long: 'ハチ公バス', short: 'ハチ公バス' },
-        en: { long: 'Hachiko Bus', short: 'Hachiko Bus' },
+        ja: { long: '渋谷区', short: '渋谷区' },
+        en: { long: 'Shibuya City', short: 'Shibuya City' },
       },
       url: 'https://www.city.shibuya.tokyo.jp/kurashi/kotsu/hachiko/',
       colors: [{ bg: '000000', text: 'FFFFFF' }],

@@ -27,8 +27,8 @@ const kawasakiCityBus: GtfsSourceDefinition = {
       },
       url: 'https://www.city.kawasaki.jp/820/',
       colors: [
-        { bg: '8AC4F5', text: 'FFFFFF' } /* Primary */,
-        { bg: '1B69BF', text: 'FFFFFF' } /* Secondary */,
+        { bg: '25B9FE', text: '030303' } /* Primary */,
+        { bg: '8AC4F5', text: '000000' } /* Secondary */,
       ],
     },
     authentication: {
@@ -40,7 +40,7 @@ const kawasakiCityBus: GtfsSourceDefinition = {
     /** GtfsResource */
     routeTypes: ['bus'],
     routeColorFallbacks: {
-      '*': '8AC4F5', // Kawasaki City Bus primary (Norufin sky blue)
+      '*': '25B9FE', // Kawasaki City Bus primary (Norufin sky blue)
     },
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
