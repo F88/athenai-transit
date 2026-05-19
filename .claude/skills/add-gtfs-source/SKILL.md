@@ -77,18 +77,19 @@ Example: `pipeline/config/resources/gtfs/kanto-bus.ts`
 
 The CI workflow runs each pipeline stage against its own target list, and missing any entry will cause CI failure even if the local single-source run succeeds. Register the source in **every** applicable list:
 
-| File                                               | Key         | Purpose                        | Always                            |
-| -------------------------------------------------- | ----------- | ------------------------------ | --------------------------------- |
-| `pipeline/config/targets/download-gtfs.ts`         | source-name | GTFS ZIP download              | yes                               |
-| `pipeline/config/targets/build-db.ts`              | source-name | CSV to SQLite                  | yes                               |
-| `pipeline/config/targets/build-json.ts`            | source-name | DB to app JSON (data.json)     | yes                               |
-| `pipeline/config/targets/build-insights.ts`        | **prefix**  | DataBundle to InsightsBundle   | yes                               |
-| `pipeline/config/targets/build-global-insights.ts` | **prefix**  | Cross-source spatial metrics   | yes                               |
-| `pipeline/config/targets/validate.ts`              | **prefix**  | v2 bundle validation           | yes                               |
-| `pipeline/config/targets/build-shapes-gtfs.ts`     | source-name | Route shapes from `shapes.txt` | only if `shapes.txt` is present   |
-| `pipeline/config/targets/build-shapes-ksj.ts`      | source-name | Route shapes from MLIT KSJ     | only if `mlitShapeMapping` is set |
+| File                                                   | Key         | Purpose                                               | Always                            |
+| ------------------------------------------------------ | ----------- | ----------------------------------------------------- | --------------------------------- |
+| `pipeline/config/targets/download-gtfs.ts`             | source-name | GTFS ZIP download                                     | yes                               |
+| `pipeline/config/targets/build-db.ts`                  | source-name | CSV to SQLite                                         | yes                               |
+| `pipeline/config/targets/build-json.ts`                | source-name | DB to app JSON (data.json)                            | yes                               |
+| `pipeline/config/targets/build-insights.ts`            | **prefix**  | DataBundle to InsightsBundle                          | yes                               |
+| `pipeline/config/targets/build-global-insights.ts`     | **prefix**  | Cross-source spatial metrics                          | yes                               |
+| `pipeline/config/targets/build-data-source-catalog.ts` | **prefix**  | `global/data-source-catalog.json` build (CI required) | yes                               |
+| `pipeline/config/targets/validate.ts`                  | **prefix**  | v2 bundle validation                                  | yes                               |
+| `pipeline/config/targets/build-shapes-gtfs.ts`         | source-name | Route shapes from `shapes.txt`                        | only if `shapes.txt` is present   |
+| `pipeline/config/targets/build-shapes-ksj.ts`          | source-name | Route shapes from MLIT KSJ                            | only if `mlitShapeMapping` is set |
 
-Each file exports a string array. **Watch the key column carefully** — `download-gtfs.ts` / `build-db.ts` / `build-json.ts` / `build-shapes-*.ts` use the source-name (filename), while `build-insights.ts` / `build-global-insights.ts` / `validate.ts` use the prefix. Mixing them up silently skips the source in CI.
+Each file exports a string array. **Watch the key column carefully** — `download-gtfs.ts` / `build-db.ts` / `build-json.ts` / `build-shapes-*.ts` use the source-name (filename), while `build-insights.ts` / `build-global-insights.ts` / `build-data-source-catalog.ts` / `validate.ts` use the prefix. Mixing them up silently skips the source in CI.
 
 Entries can be commented out to temporarily skip a source during batch runs — this is useful for debugging or when a source is temporarily unavailable.
 
@@ -143,7 +144,10 @@ npx tsx pipeline/scripts/pipeline/app-data-v2/build-insights.ts {prefix}
 # 5.3 Cross-source insights — must rerun across the full target list
 npm run pipeline:build:v2-global-insights
 
-# 5.4 Sync to public/ and validate
+# 5.4 Data source catalog — rerun across the full target list
+npm run pipeline:build:v2-data-source-catalog
+
+# 5.5 Sync to public/ and validate
 npm run data:sync
 npm run pipeline:validate:v2
 ```
@@ -241,5 +245,5 @@ Split into logical commits following Conventional Commits. **Do not commit gener
 - **CKAN date/resourceId coupling**: ODPT CKAN has separate resources per date version. The `downloadUrl` date param and `catalog.resourceId` must match the same version.
 - **Authentication**: ODPT API sources need `acl:consumerKey`. Use `npm run` scripts (not `npx` directly) to pick up the env file.
 - **route_color black-on-black**: Some sources set both `route_color` and `route_text_color` to `000000`. The build script treats this as "unset" and applies fallbacks.
-- **source-name vs prefix in target lists**: Half the target files use the source-name (e.g. `tokyometro`) and half use the prefix (e.g. `tome`). Forgetting either side passes local single-source runs but fails CI's batch validation with `❌ MISSING (required)`. Always run `npm run pipeline:validate:v2` locally before pushing.
+- **source-name vs prefix in target lists**: 5 of the 9 target files use the source-name (`download-gtfs.ts`, `build-db.ts`, `build-json.ts`, `build-shapes-gtfs.ts`, `build-shapes-ksj.ts`) and 4 use the prefix (`build-insights.ts`, `build-global-insights.ts`, `build-data-source-catalog.ts`, `validate.ts`). Forgetting either side passes local single-source runs but fails CI's batch validation with `❌ MISSING (required)`. Always run `npm run pipeline:validate:v2` locally before pushing.
 - **Workspace state files**: `pipeline/workspace/state/download-meta/*.json` is generated by the download step and must not be committed.

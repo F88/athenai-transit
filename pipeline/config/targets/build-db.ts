@@ -42,4 +42,8 @@ export default [
   'odakyu-bus',
   'yokohama-municipal-subway',
   'yokohama-municipal-bus',
+  'kawasaki-city-bus',
+  'rinko-bus',
+  'hachiko-bus',
+  'chii-bus',
 ];

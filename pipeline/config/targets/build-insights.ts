@@ -45,4 +45,8 @@ export default [
   'od9bus', // odakyu-bus
   'yht', // yokohama-municipal-subway
   'yhb', // yokohama-municipal-bus
+  'norufin', // kawasaki-city-bus
+  'rintan', // rinko-bus
+  '85b', // hachiko-bus
+  '13103b', // chii-bus
 ];

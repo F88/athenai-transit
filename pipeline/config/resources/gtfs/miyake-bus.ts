@@ -21,9 +21,10 @@ const miyakeBus: GtfsSourceDefinition = {
     },
     provider: {
       name: {
-        ja: { long: '三宅村', short: '三宅村営バス' },
-        en: { long: 'Miyake Village', short: 'Miyake Village Bus' },
+        ja: { long: '三宅村', short: '三宅村' },
+        en: { long: 'Miyake Village', short: 'Miyake Village' },
       },
+      url: 'https://www.vill.miyake.tokyo.jp/kurashi/seikatsu_kankyou/koutsuu/bus.html',
       colors: [{ bg: '2E81E1', text: 'FFFFFF' }],
     },
     authentication: { required: false },

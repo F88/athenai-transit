@@ -986,3 +986,162 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 - subway (yht) と同 agency_id (`3000020141003`)、 brand color も同じ `1B1464` (横浜紺) / `0166B2` を共有
 - agency-attributes は prefix 別 entry (`yht:...` と `yhb:...`) で同 color を独立に登録
 - toei-bus (minkuru) と toei-train (toaran) と同様の「同 1 都市の bus + train を別 source として扱う」 pattern
+
+## kawasaki-city-bus (川崎市バス / Kawasaki City Bus)
+
+- Resource definition: `pipeline/config/resources/gtfs/kawasaki-city-bus.ts`
+- CKAN: <https://ckan.odpt.org/dataset/transportation_bureau_city_of_kawasaki_all_lines>
+- Resource ID (使用中): `1c11d79e-2553-4e05-9312-b756397827b5` (20260428版)
+- Provider URL: <https://www.city.kawasaki.jp/820/>
+- agency_id: `7000020141305` / 川崎市交通局
+
+### 概要
+
+- 53 routes (route_type=3 bus)、 1,464 stops (boarding 987)、 48,136 trips、 955,268 stop_times、 270 trip patterns
+- DataBundle 17.2 MB — 全ソース中 #2 の大きさ (#1 od9bus 22 MB、 #3 minkuru 17 MB)
+- 1 stop あたり departure 数 = 968 で他都市バスの 3〜6 倍 (狭いエリア + 高頻度運行型ネットワーク)
+
+### 有効期間
+
+- 2026-04-01 〜 2027-04-01
+
+### route_color
+
+- 全 53 routes で `route_color=000000` / `route_text_color=000000` (黒黒同色ペア = 視認不可)
+- `routeColorFallbacks: { '*': '25B9FE' }` 設定済。 ただし `route-colors.ts` の現行ロジックは「空欄のみ」 を unset 判定するため、 `000000` 同色ペアでは fallback 発動せず — ktbus / kcbus と同じ既知パターン
+- badge 色は app 側 `agency-attributes.ts` の colors で上書きされる前提
+
+### shapes.txt
+
+- ZIP に同梱されず (路線図非対応)
+
+### translations.txt
+
+- value-based、 6 言語 (ja / en / ja-Hrkt / ko / zh-CN / zh-TW)
+- 内訳: stops.stop_name 1,464 + stop_times.stop_headsign 110 + routes.route_long_name 53 + agency_name 1
+
+## rinko-bus (川崎鶴見臨港バス / Kawasaki Tsurumi Rinko Bus)
+
+- Resource definition: `pipeline/config/resources/gtfs/rinko-bus.ts`
+- CKAN: <https://ckan.odpt.org/dataset/kawasaki_tsurumi_rinko_bus_allrinko>
+- Resource ID (使用中): `5f074130-2fa6-4eec-a379-36d3a2530d59` (20260523版)
+- Provider URL: <https://www.rinkobus.co.jp/>
+- agency_id: `5020001072478` / 川崎鶴見臨港バス株式会社
+
+### 概要
+
+- 51 routes (route_type=3 bus)、 1,187 stops (boarding 793)、 10,229 trips、 177,799 stop_times、 206 trip patterns
+- DataBundle 3.4 MB
+- 川崎駅・鶴見駅・横浜駅周辺で kawasaki-city-bus (norufin) と同停留所が prefix 違いで重複する
+
+### 有効期間
+
+- 2026-05-23 〜 2027-05-23
+- `feed_start_date=2026-05-23` で feed 範囲開始が未来扱いになる期間あり (本データ追加時点 2026-05-19 では範囲前)
+
+### route_color
+
+- 19 色のバリエーションあり (samepair 0)、 fallback 不要
+
+### shapes.txt
+
+- ZIP に同梱されてはいるが **header 行のみで本文 0 行**、 さらに header 列名に typo `shape_dist_traveleded` (`-ed` 重複) あり
+- 実用不可のため `build-shapes-gtfs.ts` の target list に登録しない
+
+### translations.txt
+
+- value-based、 3 言語 (ja / en / ja-Hrkt)
+- 内訳: stops.stop_name 1,187 + stop_times.stop_headsign 190 + routes.route_long_name 51 + agency_name 1
+- `stops.stop_name` 翻訳値に **全角空白 (U+3000)** を含む行あり (例: `ENEOS株式会社　浮島前`)
+
+## hachiko-bus (ハチ公バス / Hachiko Bus)
+
+- Resource definition: `pipeline/config/resources/gtfs/hachiko-bus.ts`
+- Catalog (municipal): <https://city-shibuya-data.opendata.arcgis.com/content/185d0dbc980443b8b60e135349e2ae5e/about>
+- ArcGIS Item ID: `185d0dbc980443b8b60e135349e2ae5e`
+- Direct ZIP URL: `https://www.arcgis.com/sharing/rest/content/items/185d0dbc980443b8b60e135349e2ae5e/data`
+- Provider URL: <https://www.city.shibuya.tokyo.jp/kurashi/kotsu/hachiko/>
+- agency_id: `9000020131130` / 渋谷区
+- 認証不要 (public)
+
+### 概要
+
+- 4 routes (route_type=3 bus)、 141 stops (boarding 141)、 218 trips、 8,303 stop_times、 15 trip patterns
+- DataBundle 0.2 MB
+
+### 有効期間
+
+- 2024-06-17 〜 2030-03-31
+- `feed_start_date` が約 2 年前で、 ArcGIS metadata の `modified` も 2024-06-19。 渋谷区側で GTFS 更新が長期間入っていない
+
+### route_color
+
+- 4 路線とも `route_color` / `route_text_color` 設定済 (FF0000 / FFCC33 / 0066FF / FF6600)
+- routeColorFallbacks 不要
+
+### shapes.txt
+
+- ZIP に同梱されず (路線図非対応)
+
+### transfers.txt
+
+- 11 行存在、 すべて `transfer_type` 空欄
+- GTFS spec では `transfer_type` の値 `0 or empty - Recommended transfer point between routes` と定義され、 空欄は valid (spec 違反ではない)
+- 当初 `pipeline/src/lib/pipeline/gtfs-schema.ts` の `transfer_type INTEGER NOT NULL` が空欄 import を拒否していたため、 schema を nullable に修正 (`fix(pipeline): allow transfer_type to be nullable`)
+- 後段で transfers テーブルを SELECT する箇所はなく、 アプリ表示への影響なし
+
+### translations.txt
+
+- 2 言語 (ja-Hrkt 振り仮名 / en)、 stops 141 + agency 1 + routes 4 + 一部 stop_times
+- 渋谷区サイト自体は 20 言語以上対応だが GTFS の翻訳は en + ja-Hrkt のみ
+
+### route_short_name / route_long_name
+
+- 全 4 routes で `route_short_name` 空欄、 `route_long_name` のみ
+- `route_long_name` は長い (例: `ハチ公バス　恵比寿・代官山循環　夕やけこやけルート` = 23 文字、 全角空白 U+3000 含む)
+- 短縮表記用の short_name がないため UI 上の badge 表示余地が乏しい
+
+### ライセンス
+
+- ArcGIS Hub ページ表示で `CC BY 4.0 ライセンス` を明示
+- ArcGIS sharing/rest メタデータ上の `licenseInfo` は `CC BY` (バージョン未明記) だが、 上記公開ページの表示で 4.0 確認済
+
+## chii-bus (ちぃばす / Chii Bus)
+
+- Resource definition: `pipeline/config/resources/gtfs/chii-bus.ts`
+- Catalog (municipal): <https://opendata.city.minato.tokyo.jp/dataset/chiibus_gtfs/resource/3c9c61ee-c11f-4195-b81f-54ec088417e6>
+- CKAN Resource UUID: `3c9c61ee-c11f-4195-b81f-54ec088417e6`
+- Direct ZIP URL: `https://gtfs-jp.buskita.com/fxc/gtfs.zip` (港区ポータル経由、 実体は buskita.com ホスティング)
+- Provider URL: <https://www.city.minato.tokyo.jp/>
+- agency_id: `8010401035990` / `株式会社フジエクスプレス　ちぃばす` (`agency_name` に **全角空白 U+3000** 含む)
+- 認証不要 (public)
+
+### 概要
+
+- 8 routes (route_type=3 bus)、 220 stops (boarding 220)、 1,016 trips、 27,103 stop_times、 30 trip patterns
+- DataBundle 0.6 MB
+
+### 有効期間
+
+- 2026-04-01 〜 2026-12-31
+
+### route_color
+
+- 全 8 routes とも `route_color` / `route_text_color` 空欄
+- `routeColorFallbacks: { '*': '9B2663' }` で fallback 適用 (空欄判定 ⇒ 発動)
+
+### shapes.txt
+
+- ZIP に同梱、 9,397 points / 51 distinct shape_id の実データ
+- `build-shapes-gtfs.ts` の target list に登録済
+
+### translations.txt
+
+- value-based、 5 言語 (ja / en / ko / zh-Hans / zh-TW)
+- 内訳: stops.stop_name 220 + stop_times.stop_headsign 8 + trips.trip_headsign 71 (15 unique headsigns × 5 言語 + 端数)
+- 新規追加 4 ソースの中で **最も多言語整備度が高い**
+
+### ライセンス
+
+- CKAN リソースページの License 表記は `ライセンスが指定されていません` (個別未指定)
+- 港区オープンデータ利用規約 (<https://opendata.city.minato.tokyo.jp/about>) に「**本規約が適用されるコンテンツは CC BY に従うことでも利用することができます**」 と明記されており、 これを根拠に CC BY 4.0 を採用

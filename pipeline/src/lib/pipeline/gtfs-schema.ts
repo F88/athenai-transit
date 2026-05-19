@@ -339,7 +339,7 @@ export const SCHEMA: string[] = [
     to_route_id       TEXT,
     from_trip_id      TEXT,
     to_trip_id        TEXT,
-    transfer_type     INTEGER NOT NULL,
+    transfer_type     INTEGER,
     min_transfer_time INTEGER,
     FOREIGN KEY (from_stop_id) REFERENCES stops(stop_id),
     FOREIGN KEY (to_stop_id) REFERENCES stops(stop_id),

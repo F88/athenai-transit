@@ -27,4 +27,5 @@ export default [
   'okushiri-ferry',
   'yokohama-municipal-subway',
   'yokohama-municipal-bus',
+  'chii-bus',
 ];
