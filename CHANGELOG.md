@@ -9,6 +9,13 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Datasource: Kawasaki City Bus (川崎市バス) を追加
+- Datasource: Rinko Bus (臨港バス) を追加
+- Datasource: Hachiko-Bus (ハチ公バス) を追加
+- Datasource: Chii-Bus (ちぃばす) を追加
+
 ### Changed
 
 - Data source catalog / settings: trip 実績ベースの運行期間 summary `summary.service.operatingDates` (`first` / `last` / `count`) を catalog に追加し、Data Source Settings dialog では group summary に `YYYYMMDD-YYYYMMDD` 形式の運行期間 badge として表示するようにした。group 集約は `min(first)` / `max(last)` の boundary-only summary とし、per-group の `count` は持たない。
