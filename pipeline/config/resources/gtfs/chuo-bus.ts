@@ -21,9 +21,10 @@ const chuoBus: GtfsSourceDefinition = {
     },
     provider: {
       name: {
-        ja: { long: '中央区役所', short: '江戸バス' },
-        en: { long: 'Chuo City Office', short: 'Edo Bus' },
+        ja: { long: '中央区', short: '中央区' },
+        en: { long: 'Chuo City', short: 'Chuo City' },
       },
+      url: 'https://www.city.chuo.lg.jp/kurashi/koutsuu/koukyoukoutsuu/edobasu/index.html',
       colors: [{ bg: '1A3282', text: 'FFFFFF' }],
     },
     authentication: {

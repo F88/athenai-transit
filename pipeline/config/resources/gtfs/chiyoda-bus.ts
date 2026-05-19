@@ -26,6 +26,7 @@ const chiyodaBus: GtfsSourceDefinition = {
         ja: { long: '日立自動車交通株式会社', short: '風ぐるま' },
         en: { long: 'Hitachi Automobile Transportation Co., Ltd.', short: 'Kazaguruma' },
       },
+      url: 'https://www.city.chiyoda.lg.jp/koho/kenko/koresha/gaishutsu/shin-kazaguruma/routemap.html',
       colors: [{ bg: 'E94185', text: 'FFFFFF' }],
     },
     authentication: {
