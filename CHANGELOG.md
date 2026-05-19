@@ -11,6 +11,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- Data source catalog / settings: trip 実績ベースの運行期間 summary `summary.service.operatingDates` (`first` / `last` / `count`) を catalog に追加し、Data Source Settings dialog では group summary に `YYYYMMDD-YYYYMMDD` 形式の運行期間 badge として表示するようにした。group 集約は `min(first)` / `max(last)` の boundary-only summary とし、per-group の `count` は持たない。
 - Data: kyoto-bus の GTFS resource を 20260516 版へ更新。
 - Data: kyoto-city-bus の GTFS resource を 20260518 版へ更新。
 - Check Transit Resources の Slack 通知本文を 3 階層 (`[ERROR]` / `[WARN]` / `[INFO]`) に分離。 `REMOTE_KNOWN_*` (履歴/並走 valid な remote リソース、 ノイズ寄り) を `[INFO]` 階層に降格し、 `[WARN]` には `REMOTE_NEW_*` 等の actionable な warning だけを残した。 各階層の間は空行で区切る。 script の `Total: ...` 行も `K errors, M warnings, J info` の 3 分類に拡張。 exit code 判定 (`CRITICAL_WARNINGS` / `hasWarnings`) は変更なし。
