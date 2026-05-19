@@ -106,7 +106,6 @@ const settings: SourceGroup[] = [
     name: { name: 'Sugimaru', names: { ja: 'すぎ丸', en: 'Sugimaru' } },
     countries: ['JP'],
   },
-  // リソース定義最終確認中
   {
     id: 'seibu-bus',
     prefixes: ['sbbus'],
@@ -184,7 +183,7 @@ const settings: SourceGroup[] = [
     prefixes: ['kseiw'],
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: { name: 'Keisei Transit Bus', names: { ja: '京成千葉W', en: 'Keisei Transit Bus' } },
     countries: ['JP'],
   },
@@ -274,7 +273,7 @@ const settings: SourceGroup[] = [
     prefixes: ['norufin'],
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Kawasaki City Bus',
       names: { ja: '川崎市バス', en: 'Kawasaki City Bus' },
@@ -286,7 +285,7 @@ const settings: SourceGroup[] = [
     prefixes: ['rintan'],
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Rinko Bus',
       names: { ja: '臨港バス', en: 'Rinko Bus' },
@@ -298,7 +297,7 @@ const settings: SourceGroup[] = [
     prefixes: ['85b'],
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Hachiko Bus',
       names: { ja: 'ハチ公バス', en: 'Hachiko Bus' },
@@ -310,7 +309,7 @@ const settings: SourceGroup[] = [
     prefixes: ['13103b'],
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Chii Bus',
       names: { ja: 'ちぃばす', en: 'Chii Bus' },
