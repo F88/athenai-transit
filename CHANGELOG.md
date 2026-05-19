@@ -12,6 +12,12 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Changed
 
 - Data: kyoto-bus の GTFS resource を 20260516 版へ更新。
+- Check Transit Resources の Slack 通知本文を整形。 `Build check summary` step を見直し、 `Total: N sources checked, ...` を先頭に、 続いて `[ERROR]` 行 → `[WARN]` 行の順で出力する。 Slack 側 truncate でも件数と ERROR は必ず残る。 success 時の `text=No issues found` 分岐は廃止し、 全 exit code で Total 行を必ず送る単一処理に統一。
+
+### Fixed
+
+- Slack notify: 長い summary で `chat.postMessage` の 3000 文字制限を超えて通知が出ない問題を修正。 payload 組み立てを `pipeline/scripts/pipeline/build-slack-notify-payload.mjs` (依存ゼロの Node.js ES module) に切り出し、 2800 文字超のときは固定長で truncate して切れ目に `... (truncated)` marker を、 末尾に空行 + 太字の `*Truncated from N to 2800 chars, see View Run*` を付与する。 caller workflow の `npm ci` や Node セットアップが失敗したケースでも通知が落ちないよう、 ランナーにプリインストールされた `node` のみで実行する構成。 YAML quoted scalar 補間で起きていた複数行欠落と quote injection も同時に解消した。
+- Slack notify: 上記の build script 自体が実行に失敗 (script バグ / env 未設定 / file 欠落 等) しても通知が止まらないよう、 `jq` による fallback payload を action 内に追加。 「`:x: <workflow> — Slack payload build failed (node exit=N), see View Run`」 の最小メッセージを送って operator を job log に誘導する。
 
 ## [2026.05.18]
 
