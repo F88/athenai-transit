@@ -19,59 +19,25 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Set notification status
-      id: status
+    - name: Build Slack payload
+      id: payload
       shell: bash
+      env:
+        WORKFLOW_NAME: ${{ github.workflow }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        BRANCH: ${{ github.ref_name }}
+        RESULT: ${{ inputs.result }}
+        SUMMARY: ${{ inputs.summary }}
+        CHANNEL_ID: ${{ inputs.channel_id }}
       run: |
-        if [ "${{ inputs.result }}" = "success" ]; then
-          echo "emoji=:white_check_mark:" >> "$GITHUB_OUTPUT"
-          echo "color=#36a64f" >> "$GITHUB_OUTPUT"
-          echo "text=Success" >> "$GITHUB_OUTPUT"
-        elif [ "${{ inputs.result }}" = "warning" ]; then
-          echo "emoji=:warning:" >> "$GITHUB_OUTPUT"
-          echo "color=#f0ad4e" >> "$GITHUB_OUTPUT"
-          echo "text=Warning" >> "$GITHUB_OUTPUT"
-        elif [ "${{ inputs.result }}" = "cancelled" ]; then
-          echo "emoji=:no_entry_sign:" >> "$GITHUB_OUTPUT"
-          echo "color=#808080" >> "$GITHUB_OUTPUT"
-          echo "text=Cancelled" >> "$GITHUB_OUTPUT"
-        else
-          echo "emoji=:x:" >> "$GITHUB_OUTPUT"
-          echo "color=#dc3545" >> "$GITHUB_OUTPUT"
-          echo "text=Failed" >> "$GITHUB_OUTPUT"
-        fi
-
-    - name: Build message
-      id: message
-      shell: bash
-      run: |
-        BASE="${{ steps.status.outputs.emoji }} *${{ github.workflow }}* — ${{ steps.status.outputs.text }}"
-        if [ -n "${{ inputs.summary }}" ]; then
-          DETAIL="${BASE}\n${{ inputs.summary }}"
-        else
-          DETAIL="$BASE"
-        fi
-        # Use delimiter to handle multiline safely
-        {
-          echo "text<<SLACK_EOF"
-          echo -e "$DETAIL"
-          echo "SLACK_EOF"
-        } >> "$GITHUB_OUTPUT"
+        # Use plain `node` (no tsx, no third-party deps) so notifications still fire
+        # when the caller workflow's `npm ci` or Node setup has failed.
+        JSON=$(node "${{ github.workspace }}/pipeline/scripts/pipeline/build-slack-notify-payload.mjs")
+        echo "json=$JSON" >> "$GITHUB_OUTPUT"
 
     - name: Notify Slack
       uses: slackapi/slack-github-action@v3.0.1
       with:
         method: chat.postMessage
         token: ${{ inputs.slack_bot_token }}
-        payload: |
-          channel: ${{ inputs.channel_id }}
-          text: "${{ steps.message.outputs.text }}"
-          blocks:
-            - type: "section"
-              text:
-                type: "mrkdwn"
-                text: "${{ steps.message.outputs.text }}"
-            - type: "context"
-              elements:
-                - type: "mrkdwn"
-                  text: "<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run> | Branch: `${{ github.ref_name }}`"
+        payload: ${{ steps.payload.outputs.json }}
