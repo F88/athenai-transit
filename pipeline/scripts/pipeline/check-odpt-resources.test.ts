@@ -32,7 +32,13 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 
-import { extractDateParam, loadSnapshot, parseArgs, saveSnapshot } from './check-odpt-resources';
+import {
+  extractDateParam,
+  loadSnapshot,
+  parseArgs,
+  resolveResultLevel,
+  saveSnapshot,
+} from './check-odpt-resources';
 
 const BASE_URL = 'https://api.odpt.org/api/v4/files/odpt/TestBus/AllLines.zip';
 
@@ -208,5 +214,31 @@ describe('parseArgs', () => {
     expect(() => parseArgs()).toThrow('exit:1');
     expect(errorSpy).toHaveBeenCalledWith('Unknown format: json');
     expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+});
+
+describe('resolveResultLevel', () => {
+  it.each(['ADOPTED_EXPIRED', 'ADOPTED_MISSING', 'REMOTE_NO_VALID_DATA'] as const)(
+    'classifies %s as ERROR (critical, exits 1 elsewhere)',
+    (type) => {
+      expect(resolveResultLevel(type)).toBe('ERROR');
+    },
+  );
+
+  it.each(['REMOTE_KNOWN_IN_PERIOD', 'REMOTE_KNOWN_BEFORE_PERIOD'] as const)(
+    'classifies %s as INFO (historical/parallel-valid, noise)',
+    (type) => {
+      expect(resolveResultLevel(type)).toBe('INFO');
+    },
+  );
+
+  it.each([
+    'LOCAL_NO_DOWNLOAD_REPORT',
+    'ADOPTED_BEFORE_PERIOD',
+    'ADOPTED_EXPIRING_SOON',
+    'REMOTE_NEW_IN_PERIOD',
+    'REMOTE_NEW_BEFORE_PERIOD',
+  ] as const)('classifies %s as WARN (everything else, actionable attention)', (type) => {
+    expect(resolveResultLevel(type)).toBe('WARN');
   });
 });

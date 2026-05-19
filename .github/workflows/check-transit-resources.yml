@@ -84,15 +84,27 @@ jobs:
           # If somehow more than one matching line is present, emit them all rather
           # than silently dropping any.
           TOTAL_LINE=$(grep -E '^[[:space:]]*Total: [0-9]+ sources checked' check-output.txt 2>/dev/null | sed -E 's/^[[:space:]]+//' || true)
-          # Place high-priority info (counts + ERROR lines) at the head so the
-          # downstream slack-notify truncation eats only the WARN tail.
+          ERROR_BLOCK=$(grep '^\[RESULT:ERROR\]' check-output.txt 2>/dev/null | sed 's/^\[RESULT:ERROR\] /[ERROR] /' || true)
+          WARN_BLOCK=$(grep '^\[RESULT:WARN\]'  check-output.txt 2>/dev/null | sed 's/^\[RESULT:WARN\] /[WARN] /'  || true)
+          INFO_BLOCK=$(grep '^\[RESULT:INFO\]'  check-output.txt 2>/dev/null | sed 's/^\[RESULT:INFO\] /[INFO] /'  || true)
+
+          # Emit sections in priority order with a blank line between non-empty
+          # parts: Total -> [ERROR] -> [WARN] -> [INFO]. The slack-notify
+          # truncation eats only the lowest-priority tail (INFO first, then WARN).
           {
             echo "text<<SUMMARY_EOF"
-            if [ -n "$TOTAL_LINE" ]; then
-              echo "$TOTAL_LINE"
-            fi
-            grep '^\[RESULT:ERROR\]' check-output.txt 2>/dev/null | sed 's/^\[RESULT:ERROR\] /[ERROR] /' || true
-            grep '^\[RESULT:WARN\]'  check-output.txt 2>/dev/null | sed 's/^\[RESULT:WARN\] /[WARN] /'  || true
+            first=1
+            for part in "$TOTAL_LINE" "$ERROR_BLOCK" "$WARN_BLOCK" "$INFO_BLOCK"; do
+              if [ -z "$part" ]; then
+                continue
+              fi
+              if [ "$first" -eq 1 ]; then
+                first=0
+              else
+                echo
+              fi
+              printf '%s\n' "$part"
+            done
             echo "SUMMARY_EOF"
           } >> "$GITHUB_OUTPUT"
 

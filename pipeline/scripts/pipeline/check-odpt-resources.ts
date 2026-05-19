@@ -36,6 +36,7 @@ import {
   getDaysUntilExpiry,
   stripAuthParams,
 } from '../../src/lib/pipeline/odpt-resource-warnings';
+import type { Warning, ResourceSnapshot } from '../../src/lib/pipeline/odpt-resource-warnings';
 
 /**
  * Extract the `date` query parameter from a URL for display purposes only.
@@ -47,8 +48,6 @@ export function extractDateParam(url: string): string | null {
   const match = safe.match(/[?&]date=(\d{8})/);
   return match ? match[1] : null;
 }
-import type { Warning, ResourceSnapshot } from '../../src/lib/pipeline/odpt-resource-warnings';
-
 import type {
   OdptDataResource,
   OdptDataset,
@@ -267,6 +266,32 @@ function printUsage(): void {
 
 /** Warning types that require immediate action (exit code 1). */
 const CRITICAL_WARNINGS = new Set(['ADOPTED_EXPIRED', 'ADOPTED_MISSING', 'REMOTE_NO_VALID_DATA']);
+
+/**
+ * Warning types that are informational only — the historical/parallel-valid
+ * resources that the operator left in the dataset listing. Not actionable, but
+ * kept in the output so the reader can see the full state.
+ */
+const INFO_WARNINGS = new Set(['REMOTE_KNOWN_IN_PERIOD', 'REMOTE_KNOWN_BEFORE_PERIOD']);
+
+/** Display tier shown as the `[RESULT:LEVEL]` prefix in script output. */
+export type ResultLevel = 'ERROR' | 'WARN' | 'INFO';
+
+/**
+ * Classify a warning type into the display tier used by the Slack notification.
+ * Note: this does *not* affect the script's exit code — `hasCritical` /
+ * `hasWarnings` continue to be derived directly from {@link CRITICAL_WARNINGS}
+ * and `allWarnings.length`. INFO-only runs still exit with code 2 (attention).
+ */
+export function resolveResultLevel(type: Warning['type']): ResultLevel {
+  if (CRITICAL_WARNINGS.has(type)) {
+    return 'ERROR';
+  }
+  if (INFO_WARNINGS.has(type)) {
+    return 'INFO';
+  }
+  return 'WARN';
+}
 
 function printResult(
   org: OdptOrganization,
@@ -576,20 +601,27 @@ async function main(): Promise<void> {
   // [RESULT:WARN] / [RESULT:ERROR] lines are consumed by CI for Slack notifications.
   const sourcesChecked =
     matchedSources.size + tracked.filter((s) => !matchedSources.has(s.name)).length;
-  const warnCount = allWarnings.filter(({ warning: w }) => !CRITICAL_WARNINGS.has(w.type)).length;
-  const errorCount = allWarnings.filter(({ warning: w }) => CRITICAL_WARNINGS.has(w.type)).length;
+  const errorCount = allWarnings.filter(
+    ({ warning: w }) => resolveResultLevel(w.type) === 'ERROR',
+  ).length;
+  const warnCount = allWarnings.filter(
+    ({ warning: w }) => resolveResultLevel(w.type) === 'WARN',
+  ).length;
+  const infoCount = allWarnings.filter(
+    ({ warning: w }) => resolveResultLevel(w.type) === 'INFO',
+  ).length;
 
   console.log('\n=== Result Summary ===\n');
   if (allWarnings.length === 0) {
     console.log('  No issues found.');
   } else {
     for (const { source, warning: w } of allWarnings) {
-      const level = CRITICAL_WARNINGS.has(w.type) ? 'ERROR' : 'WARN';
+      const level = resolveResultLevel(w.type);
       console.log(`[RESULT:${level}] ${source.padEnd(16)} ${w.type}: ${w.message}`);
     }
   }
   console.log(
-    `\n  Total: ${sourcesChecked} sources checked, ${warnCount} warning${warnCount !== 1 ? 's' : ''}, ${errorCount} error${errorCount !== 1 ? 's' : ''}`,
+    `\n  Total: ${sourcesChecked} sources checked, ${errorCount} error${errorCount !== 1 ? 's' : ''}, ${warnCount} warning${warnCount !== 1 ? 's' : ''}, ${infoCount} info`,
   );
 
   const label = exitCode === 0 ? 'ok' : exitCode === 1 ? 'critical' : 'attention';

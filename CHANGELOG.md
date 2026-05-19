@@ -13,6 +13,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - Data: kyoto-bus の GTFS resource を 20260516 版へ更新。
 - Data: kyoto-city-bus の GTFS resource を 20260518 版へ更新。
+- Check Transit Resources の Slack 通知本文を 3 階層 (`[ERROR]` / `[WARN]` / `[INFO]`) に分離。 `REMOTE_KNOWN_*` (履歴/並走 valid な remote リソース、 ノイズ寄り) を `[INFO]` 階層に降格し、 `[WARN]` には `REMOTE_NEW_*` 等の actionable な warning だけを残した。 各階層の間は空行で区切る。 script の `Total: ...` 行も `K errors, M warnings, J info` の 3 分類に拡張。 exit code 判定 (`CRITICAL_WARNINGS` / `hasWarnings`) は変更なし。
 - Check Transit Resources の Slack 通知本文を整形。 `Build check summary` step を見直し、 `Total: N sources checked, ...` を先頭に、 続いて `[ERROR]` 行 → `[WARN]` 行の順で出力する。 Slack 側 truncate でも件数と ERROR は必ず残る。 success 時の `text=No issues found` 分岐は廃止し、 全 exit code で Total 行を必ず送る単一処理に統一。
 
 ### Fixed
