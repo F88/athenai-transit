@@ -77,17 +77,17 @@ Example: `pipeline/config/resources/gtfs/kanto-bus.ts`
 
 The CI workflow runs each pipeline stage against its own target list, and missing any entry will cause CI failure even if the local single-source run succeeds. Register the source in **every** applicable list:
 
-| File                                               | Key         | Purpose                        | Always                            |
-| -------------------------------------------------- | ----------- | ------------------------------ | --------------------------------- |
-| `pipeline/config/targets/download-gtfs.ts`         | source-name | GTFS ZIP download              | yes                               |
-| `pipeline/config/targets/build-db.ts`              | source-name | CSV to SQLite                  | yes                               |
-| `pipeline/config/targets/build-json.ts`            | source-name | DB to app JSON (data.json)     | yes                               |
-| `pipeline/config/targets/build-insights.ts`        | **prefix**  | DataBundle to InsightsBundle   | yes                               |
-| `pipeline/config/targets/build-global-insights.ts` | **prefix**  | Cross-source spatial metrics   | yes                               |
-| `pipeline/config/targets/build-data-source-catalog.ts` | **prefix** | `global/data-source-catalog.json` build (CI required) | yes                               |
-| `pipeline/config/targets/validate.ts`              | **prefix**  | v2 bundle validation           | yes                               |
-| `pipeline/config/targets/build-shapes-gtfs.ts`     | source-name | Route shapes from `shapes.txt` | only if `shapes.txt` is present   |
-| `pipeline/config/targets/build-shapes-ksj.ts`      | source-name | Route shapes from MLIT KSJ     | only if `mlitShapeMapping` is set |
+| File                                                   | Key         | Purpose                                               | Always                            |
+| ------------------------------------------------------ | ----------- | ----------------------------------------------------- | --------------------------------- |
+| `pipeline/config/targets/download-gtfs.ts`             | source-name | GTFS ZIP download                                     | yes                               |
+| `pipeline/config/targets/build-db.ts`                  | source-name | CSV to SQLite                                         | yes                               |
+| `pipeline/config/targets/build-json.ts`                | source-name | DB to app JSON (data.json)                            | yes                               |
+| `pipeline/config/targets/build-insights.ts`            | **prefix**  | DataBundle to InsightsBundle                          | yes                               |
+| `pipeline/config/targets/build-global-insights.ts`     | **prefix**  | Cross-source spatial metrics                          | yes                               |
+| `pipeline/config/targets/build-data-source-catalog.ts` | **prefix**  | `global/data-source-catalog.json` build (CI required) | yes                               |
+| `pipeline/config/targets/validate.ts`                  | **prefix**  | v2 bundle validation                                  | yes                               |
+| `pipeline/config/targets/build-shapes-gtfs.ts`         | source-name | Route shapes from `shapes.txt`                        | only if `shapes.txt` is present   |
+| `pipeline/config/targets/build-shapes-ksj.ts`          | source-name | Route shapes from MLIT KSJ                            | only if `mlitShapeMapping` is set |
 
 Each file exports a string array. **Watch the key column carefully** — `download-gtfs.ts` / `build-db.ts` / `build-json.ts` / `build-shapes-*.ts` use the source-name (filename), while `build-insights.ts` / `build-global-insights.ts` / `build-data-source-catalog.ts` / `validate.ts` use the prefix. Mixing them up silently skips the source in CI.
 
