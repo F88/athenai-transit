@@ -32,7 +32,37 @@ runs:
       run: |
         # Use plain `node` (no tsx, no third-party deps) so notifications still fire
         # when the caller workflow's `npm ci` or Node setup has failed.
+        set +e
         JSON=$(node "${{ github.workspace }}/pipeline/scripts/pipeline/build-slack-notify-payload.mjs")
+        NODE_EXIT=$?
+        set -e
+        if [ "$NODE_EXIT" -ne 0 ] || [ -z "$JSON" ]; then
+          # The mjs script itself failed (script bug, missing env var, missing
+          # file, etc.). Construct a minimal SOS payload with jq so the alert
+          # still fires and points the reader to the job log for the cause.
+          JSON=$(jq -nc \
+            --arg ch "$CHANNEL_ID" \
+            --arg url "$RUN_URL" \
+            --arg workflow "$WORKFLOW_NAME" \
+            --arg exit "$NODE_EXIT" \
+            '{
+              channel: $ch,
+              text: (":x: " + $workflow + " — Slack payload build failed"),
+              blocks: [
+                {
+                  type: "section",
+                  text: {
+                    type: "mrkdwn",
+                    text: (":x: *" + $workflow + "* — Slack payload build failed (node exit=" + $exit + "), see View Run")
+                  }
+                },
+                {
+                  type: "context",
+                  elements: [{ type: "mrkdwn", text: ("<" + $url + "|View Run>") }]
+                }
+              ]
+            }')
+        fi
         echo "json=$JSON" >> "$GITHUB_OUTPUT"
 
     - name: Notify Slack
