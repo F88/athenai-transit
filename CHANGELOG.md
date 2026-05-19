@@ -12,6 +12,7 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Changed
 
 - Data: kyoto-bus の GTFS resource を 20260516 版へ更新。
+- Check Transit Resources の Slack 通知本文を整形。 `Build check summary` step を見直し、 `Total: N sources checked, ...` を先頭に、 続いて `[ERROR]` 行 → `[WARN]` 行の順で出力する。 Slack 側 truncate でも件数と ERROR は必ず残る。 success 時の `text=No issues found` 分岐は廃止し、 全 exit code で Total 行を必ず送る単一処理に統一。
 
 ### Fixed
 

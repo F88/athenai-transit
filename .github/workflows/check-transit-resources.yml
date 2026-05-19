@@ -79,21 +79,29 @@ jobs:
         shell: bash
         run: |
           EXIT="${{ steps.check.outputs.exit_code }}"
+
+          # Extract the script's `Total: N sources checked, ...` summary line(s).
+          # If somehow more than one matching line is present, emit them all rather
+          # than silently dropping any.
+          TOTAL_LINE=$(grep -E '^[[:space:]]*Total: [0-9]+ sources checked' check-output.txt 2>/dev/null | sed -E 's/^[[:space:]]+//' || true)
+          # Place high-priority info (counts + ERROR lines) at the head so the
+          # downstream slack-notify truncation eats only the WARN tail.
+          {
+            echo "text<<SUMMARY_EOF"
+            if [ -n "$TOTAL_LINE" ]; then
+              echo "$TOTAL_LINE"
+            fi
+            grep '^\[RESULT:ERROR\]' check-output.txt 2>/dev/null | sed 's/^\[RESULT:ERROR\] /[ERROR] /' || true
+            grep '^\[RESULT:WARN\]'  check-output.txt 2>/dev/null | sed 's/^\[RESULT:WARN\] /[WARN] /'  || true
+            echo "SUMMARY_EOF"
+          } >> "$GITHUB_OUTPUT"
+
           if [ "$EXIT" = "0" ]; then
             echo "result=success" >> "$GITHUB_OUTPUT"
-            echo "text=No issues found" >> "$GITHUB_OUTPUT"
+          elif [ "$EXIT" = "2" ]; then
+            echo "result=warning" >> "$GITHUB_OUTPUT"
           else
-            # Extract [RESULT:WARN] / [RESULT:ERROR] lines from script output
-            {
-              echo "text<<SUMMARY_EOF"
-              grep '^\[RESULT:' check-output.txt | sed 's/^\[RESULT:[A-Z]*\] //' || true
-              echo "SUMMARY_EOF"
-            } >> "$GITHUB_OUTPUT"
-            if [ "$EXIT" = "2" ]; then
-              echo "result=warning" >> "$GITHUB_OUTPUT"
-            else
-              echo "result=failure" >> "$GITHUB_OUTPUT"
-            fi
+            echo "result=failure" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Notify Slack
