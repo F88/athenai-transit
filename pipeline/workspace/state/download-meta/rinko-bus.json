@@ -1,0 +1,77 @@
+{
+  "sourceName": "rinko-bus",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-05-19T14:40:32.249Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/KawasakiTsurumiRinkoBus/allrinko.zip?date=20260523",
+  "size": 1340712,
+  "contentType": "text/plain; charset=ASCII-8BIT",
+  "durationMs": 3228,
+  "archivePath": "workspace/_archives/gtfs/rinko-bus/allrinko_20260519-144035.zip",
+  "extractedFiles": [
+    {
+      "name": "agency.txt",
+      "size": 201
+    },
+    {
+      "name": "stops.txt",
+      "size": 66985
+    },
+    {
+      "name": "routes.txt",
+      "size": 5179
+    },
+    {
+      "name": "trips.txt",
+      "size": 783313
+    },
+    {
+      "name": "pattern_jp.txt",
+      "size": 11560
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 12706903
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 72
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 55
+    },
+    {
+      "name": "calendar.txt",
+      "size": 593
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 872
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 198
+    },
+    {
+      "name": "translations.txt",
+      "size": 136421
+    },
+    {
+      "name": "office_jp.txt",
+      "size": 149
+    },
+    {
+      "name": "shapes.txt",
+      "size": 76
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "川崎鶴見臨港バス株式会社",
+    "publisherUrl": "https://www.rinkobus.co.jp/",
+    "lang": "ja",
+    "startDate": "20260523",
+    "endDate": "20270523",
+    "version": "20260523_20260831"
+  }
+}

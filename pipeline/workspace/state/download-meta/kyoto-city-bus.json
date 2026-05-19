@@ -2,12 +2,12 @@
   "sourceName": "kyoto-city-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-19T07:25:42.514Z",
+  "downloadedAt": "2026-05-19T14:39:06.546Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20260518",
   "size": 5209618,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 3339,
-  "archivePath": "workspace/_archives/gtfs/kyoto-city-bus/Kyoto_City_Bus_GTFS_20260519-072545.zip",
+  "durationMs": 4442,
+  "archivePath": "workspace/_archives/gtfs/kyoto-city-bus/Kyoto_City_Bus_GTFS_20260519-143910.zip",
   "extractedFiles": [
     {
       "name": "frequencies.txt",

@@ -1,0 +1,69 @@
+{
+  "sourceName": "hachiko-bus",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-05-19T14:40:36.453Z",
+  "url": "https://www.arcgis.com/sharing/rest/content/items/185d0dbc980443b8b60e135349e2ae5e/data",
+  "size": 73419,
+  "contentType": "application/zip",
+  "durationMs": 351,
+  "archivePath": "workspace/_archives/gtfs/hachiko-bus/data_20260519-144036",
+  "extractedFiles": [
+    {
+      "name": "agency.txt",
+      "size": 217
+    },
+    {
+      "name": "calendar.txt",
+      "size": 298
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 1626
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 71
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 83
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 197
+    },
+    {
+      "name": "routes.txt",
+      "size": 555
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 723720
+    },
+    {
+      "name": "stops.txt",
+      "size": 8914
+    },
+    {
+      "name": "transfers.txt",
+      "size": 206
+    },
+    {
+      "name": "translations.txt",
+      "size": 18780
+    },
+    {
+      "name": "trips.txt",
+      "size": 16086
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "渋谷区",
+    "publisherUrl": "https://www.city.shibuya.tokyo.jp/",
+    "lang": "ja",
+    "startDate": "20240617",
+    "endDate": "20300331",
+    "version": "2024/06/01改正-見える化ver2.6e"
+  }
+}

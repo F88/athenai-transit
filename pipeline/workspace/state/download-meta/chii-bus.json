@@ -1,0 +1,69 @@
+{
+  "sourceName": "chii-bus",
+  "type": "gtfs",
+  "status": "ok",
+  "downloadedAt": "2026-05-19T14:40:37.773Z",
+  "url": "https://gtfs-jp.buskita.com/fxc/gtfs.zip",
+  "size": 248374,
+  "contentType": "application/zip",
+  "durationMs": 1695,
+  "archivePath": "workspace/_archives/gtfs/chii-bus/gtfs_20260519-144039.zip",
+  "extractedFiles": [
+    {
+      "name": "agency.txt",
+      "size": 238
+    },
+    {
+      "name": "calendar.txt",
+      "size": 197
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 617
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 93
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 203
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 203
+    },
+    {
+      "name": "routes.txt",
+      "size": 559
+    },
+    {
+      "name": "shapes.txt",
+      "size": 330599
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 1621606
+    },
+    {
+      "name": "stops.txt",
+      "size": 13488
+    },
+    {
+      "name": "translations.txt",
+      "size": 62062
+    },
+    {
+      "name": "trips.txt",
+      "size": 65823
+    }
+  ],
+  "feedInfo": {
+    "publisherName": "株式会社フジエクスプレス",
+    "publisherUrl": "http://www.fujikyu.co.jp/fujiexpress/",
+    "lang": "ja",
+    "startDate": "20260401",
+    "endDate": "20261231",
+    "version": "202603301602"
+  }
+}
