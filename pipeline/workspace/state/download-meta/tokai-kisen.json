@@ -2,12 +2,12 @@
   "sourceName": "tokai-kisen",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-18T05:35:03.044Z",
+  "downloadedAt": "2026-05-19T00:09:14.922Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/TokaiKisen/AllLines.zip?date=20260401",
   "size": 15708,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1495,
-  "archivePath": "workspace/_archives/gtfs/tokai-kisen/AllLines_20260518-053504.zip",
+  "durationMs": 1320,
+  "archivePath": "workspace/_archives/gtfs/tokai-kisen/AllLines_20260519-000916.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
