@@ -2,13 +2,29 @@
   "sourceName": "kyoto-city-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-19T00:08:32.178Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20260423",
-  "size": 5509210,
+  "downloadedAt": "2026-05-19T03:24:26.473Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20260518",
+  "size": 5209618,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 4371,
-  "archivePath": "workspace/_archives/gtfs/kyoto-city-bus/Kyoto_City_Bus_GTFS_20260519-000836.zip",
+  "durationMs": 2965,
+  "archivePath": "workspace/_archives/gtfs/kyoto-city-bus/Kyoto_City_Bus_GTFS_20260519-032429.zip",
   "extractedFiles": [
+    {
+      "name": "frequencies.txt",
+      "size": 54
+    },
+    {
+      "name": "routes.txt",
+      "size": 13855
+    },
+    {
+      "name": "shapes.txt",
+      "size": 3855577
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 50338738
+    },
     {
       "name": "stops.txt",
       "size": 260668
@@ -16,6 +32,14 @@
     {
       "name": "transfers.txt",
       "size": 57
+    },
+    {
+      "name": "translations.txt",
+      "size": 760230
+    },
+    {
+      "name": "trips.txt",
+      "size": 1789107
     },
     {
       "name": "agency.txt",
@@ -26,52 +50,28 @@
       "size": 753
     },
     {
+      "name": "calendar_dates.txt",
+      "size": 11042
+    },
+    {
       "name": "fare_attributes.txt",
       "size": 694
     },
     {
       "name": "fare_rules.txt",
-      "size": 733863
-    },
-    {
-      "name": "frequencies.txt",
-      "size": 54
+      "size": 733831
     },
     {
       "name": "feed_info.txt",
       "size": 205
-    },
-    {
-      "name": "translations.txt",
-      "size": 760662
-    },
-    {
-      "name": "calendar_dates.txt",
-      "size": 13081
-    },
-    {
-      "name": "stop_times.txt",
-      "size": 53882585
-    },
-    {
-      "name": "trips.txt",
-      "size": 1902482
-    },
-    {
-      "name": "routes.txt",
-      "size": 14093
-    },
-    {
-      "name": "shapes.txt",
-      "size": 3960321
     }
   ],
   "feedInfo": {
     "publisherName": "京都市交通局",
     "publisherUrl": "https://www.city.kyoto.lg.jp/kotsu/",
     "lang": "ja",
-    "startDate": "20260420",
+    "startDate": "20260514",
     "endDate": "20270331",
-    "version": "Kyoto_City_Bus_GTFS_2026_0005_03"
+    "version": "Kyoto_City_Bus_GTFS_2026_0006_01"
   }
 }
