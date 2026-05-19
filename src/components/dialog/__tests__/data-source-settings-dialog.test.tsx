@@ -9,6 +9,7 @@
  */
 
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DataSourceSettingsDialog } from '../data-source-settings-dialog';
 import settings from '../../../config/data-source-settings';
@@ -68,7 +69,7 @@ vi.mock('../../../hooks/use-user-data-source-settings', () => ({
 // source meta resolves to an empty collection — the dialog must remain
 // functional when no catalog is available, and per-group size captions
 // are simply hidden.
-const mockGetDataSourceCatalog = vi.fn<() => null>(() => null);
+const mockGetDataSourceCatalog = vi.fn<() => DataSourceCatalogBundle | null>(() => null);
 const mockGetAllSourceMeta = vi.fn(() =>
   Promise.resolve({ success: true as const, data: [], truncated: false }),
 );
@@ -153,6 +154,84 @@ function getAllSwitchesFor(groupName: string): HTMLElement[] {
 }
 
 describe('DataSourceSettingsDialog — normal mode', () => {
+  it('renders a group operatingDates summary when catalog data is available', async () => {
+    const customGroup: SourceGroup = {
+      id: 'demo-group',
+      prefixes: ['demo'],
+      routeTypes: [3],
+      systemEnabledByDefault: true,
+      userEnabledByDefault: true,
+      name: { name: 'Demo Group', names: { en: 'Demo Group' } },
+      countries: ['JP'],
+    };
+    const catalog: DataSourceCatalogBundle = {
+      bundle_version: 3,
+      kind: 'data-source-catalog',
+      metadata: { v: 1, data: { createdAt: '2026-05-19T00:00:00.000Z' } },
+      sources: {
+        v: 1,
+        data: {
+          demo: {
+            summary: {
+              periods: {
+                feedValidity: { start: null, end: null },
+                servicePeriod: { start: null, end: null },
+                exceptionRange: { start: null, end: null },
+              },
+              agencies: [{ name: 'Demo Agency', timezone: 'Asia/Tokyo' }],
+              i18n: { languages: [] },
+              routes: { typeCounts: { '3': 1 } },
+              stops: { locationTypes: {}, geo: { bbox: null } },
+              service: {
+                operatingDates: { first: '20260101', last: '20260131', count: 31 },
+                maxTripsPerDay: 10,
+              },
+              shapes: { available: false, routeCount: 0 },
+            },
+            bundles: {
+              dataBundle: {
+                file: { sizeBytes: 100 },
+                counts: {
+                  stops: 0,
+                  routes: 0,
+                  agency: 0,
+                  calendar: 0,
+                  feedInfo: 1,
+                  timetable: 0,
+                  tripPatterns: 0,
+                  translations: 0,
+                  lookup: 0,
+                },
+              },
+              insightsBundle: {
+                file: { sizeBytes: 20 },
+                counts: {
+                  serviceGroups: 0,
+                  tripPatternStats: 0,
+                  tripPatternGeo: 0,
+                  stopStats: 0,
+                },
+              },
+            },
+          },
+        },
+      },
+      globalInsights: { v: 1, data: { file: { sizeBytes: 1 }, counts: { stopGeo: 0 } } },
+    };
+    mockGetDataSourceCatalog.mockReturnValue(catalog);
+    mockComputeDialogDisplay.mockReturnValue({
+      visibleGroups: [customGroup],
+      effectiveEnabledIds: new Set(['demo-group']),
+    });
+
+    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+
+    const demoRow = findGroupRow('Demo Group');
+
+    expect(await within(demoRow).findByText('Jan 1, 2026 - Jan 31, 2026')).toBeInTheDocument();
+    expect(within(demoRow).queryByText('demo')).not.toBeInTheDocument();
+  });
+
   it('shows the development notice Alert, not the forced-mode Alert', () => {
     render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
     expect(screen.getByText('dataSourceSettings.developmentNotice.title')).toBeInTheDocument();
@@ -173,8 +252,11 @@ describe('DataSourceSettingsDialog — normal mode', () => {
       visibleGroups: [customGroup],
       effectiveEnabledIds: new Set(['other-test']),
     });
+
     render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+
     expect(screen.getByText('dataSourceSettings.section.other')).toBeInTheDocument();
+    expect(findGroupRow('Other Test')).toBeInTheDocument();
   });
 
   it('enables the Reset to defaults button', () => {

@@ -10,6 +10,7 @@ function makeInfo(prefix: string, translationLanguages: readonly string[] | null
     servicePeriod: null,
     totalSizeBytes: null,
     maxTripsPerDay: null,
+    operatingDates: null,
     boardingStopsCount: null,
     routes: null,
     routeShapes: null,

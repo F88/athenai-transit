@@ -205,6 +205,9 @@
     "maxTripsPerDay": {
       "aria": "最大便数の目安 {{count}} 便"
     },
+    "operatingDates": {
+      "aria": "運行期間 {{range}}"
+    },
     "toggle": {
       "aria": "{{group}} を有効化"
     },

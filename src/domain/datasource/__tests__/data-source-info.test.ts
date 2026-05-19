@@ -43,7 +43,10 @@ function makeCatalogSource(
         },
         geo: { bbox: null },
       },
-      service: { maxTripsPerDay: 50 },
+      service: {
+        operatingDates: { first: '20260101', last: '20260930', count: 200 },
+        maxTripsPerDay: 50,
+      },
       shapes: { available: true, routeCount: 3 },
     },
   };
@@ -150,9 +153,35 @@ describe('composeDataSourceInfo', () => {
     expect(info.maxTripsPerDay).toBe(50);
   });
 
+  it('reads operatingDates from catalog summary', () => {
+    const info = composeDataSourceInfo('kobus', makeSourceMeta(), makeCatalogSource());
+    expect(info.operatingDates).toEqual({
+      first: '20260101',
+      last: '20260930',
+      count: 200,
+    });
+  });
+
   it('returns null maxTripsPerDay when catalog is missing', () => {
     const info = composeDataSourceInfo('kobus', makeSourceMeta(), undefined);
     expect(info.maxTripsPerDay).toBeNull();
+  });
+
+  it('returns null operatingDates when catalog is missing', () => {
+    const info = composeDataSourceInfo('kobus', makeSourceMeta(), undefined);
+    expect(info.operatingDates).toBeNull();
+  });
+
+  it('returns null operatingDates when catalog summary does not carry it', () => {
+    const catalogSource = makeCatalogSource({
+      summary: {
+        ...makeCatalogSource().summary,
+        service: { maxTripsPerDay: 50 },
+      },
+    });
+
+    const info = composeDataSourceInfo('kobus', makeSourceMeta(), catalogSource);
+    expect(info.operatingDates).toBeNull();
   });
 
   it('reads boardingStopsCount from locationTypes[0]', () => {

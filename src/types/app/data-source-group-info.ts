@@ -65,6 +65,19 @@ export interface DataSourceGroupInfo {
    */
   maxTripsPerDay: number | null;
   /**
+   * Earliest and latest service dates observed across the group's
+   * prefixes.
+   *
+   * Derived as `min(first)` / `max(last)` over per-prefix
+   * `DataSourceInfo.operatingDates`, so this is a boundary summary, not
+   * a guarantee of continuous service through the whole span.
+   * `null` when no prefix has catalog-backed operating-date data.
+   */
+  operatingDates: {
+    first: string | null;
+    last: string | null;
+  } | null;
+  /**
    * Sum of per-prefix route counts keyed by normalized app route type.
    * `null` when no prefix has catalog-backed route metadata.
    */

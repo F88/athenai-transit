@@ -121,6 +121,7 @@ export function composeDataSourceInfo(
     totalSizeBytes: sumBundleSizes(catalogSource),
     translationLanguages: catalogSource?.summary.i18n.languages ?? null,
     maxTripsPerDay: catalogSource?.summary.service.maxTripsPerDay ?? null,
+    operatingDates: catalogSource?.summary.service.operatingDates ?? null,
     boardingStopsCount: countBoardingStops(catalogSource),
     routes: normalizeRouteTypeCounts(catalogSource),
     routeShapes: composeRouteShapes(catalogSource),

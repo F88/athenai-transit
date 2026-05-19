@@ -29,6 +29,43 @@ export function aggregateMaxTripsPerDay(infos: readonly DataSourceInfo[]): numbe
 }
 
 /**
+ * Derive a boundary-only operating-date summary for a group.
+ *
+ * Uses `min(first)` and `max(last)` across per-prefix
+ * `DataSourceInfo.operatingDates`. The result intentionally omits a day
+ * count because overlapping source periods would require a true date-set
+ * union to count correctly.
+ *
+ * Returns `null` when **none** of the inputs has catalog-backed
+ * operating-date data.
+ */
+export function aggregateOperatingDates(
+  infos: readonly DataSourceInfo[],
+): { first: string | null; last: string | null } | null {
+  let first: string | null = null;
+  let last: string | null = null;
+  let found = false;
+
+  for (const info of infos) {
+    if (info.operatingDates === null) {
+      continue;
+    }
+    found = true;
+    if (
+      info.operatingDates.first !== null &&
+      (first === null || info.operatingDates.first < first)
+    ) {
+      first = info.operatingDates.first;
+    }
+    if (info.operatingDates.last !== null && (last === null || info.operatingDates.last > last)) {
+      last = info.operatingDates.last;
+    }
+  }
+
+  return found ? { first, last } : null;
+}
+
+/**
  * Sum the `boardingStopsCount` of every {@link DataSourceInfo} that
  * has a known catalog count.
  *

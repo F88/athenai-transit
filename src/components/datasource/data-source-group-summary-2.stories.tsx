@@ -28,6 +28,7 @@ interface WrapperArgs {
   boardingStopsCount: number | null;
   maxTripsPerDay: number | null;
   routeShapesCount?: number | null;
+  showOperatingDates?: boolean;
 }
 
 function buildGroupInfo(args: WrapperArgs): DataSourceGroupInfo | null {
@@ -46,6 +47,8 @@ function buildGroupInfo(args: WrapperArgs): DataSourceGroupInfo | null {
       args.routeCount === undefined || args.routeCount === null ? null : { 3: args.routeCount },
     boardingStopsCount: args.boardingStopsCount,
     maxTripsPerDay: args.maxTripsPerDay,
+    operatingDates:
+      args.showOperatingDates === false ? null : { first: '20260101', last: '20260131' },
     routeShapesCount: args.routeShapesCount ?? null,
   };
 }
@@ -65,6 +68,7 @@ const meta = {
     boardingStopsCount: 1500,
     maxTripsPerDay: 8000,
     routeShapesCount: 48,
+    showOperatingDates: true,
   },
   argTypes: {
     groupInfoNull: { control: 'boolean' },
@@ -74,6 +78,7 @@ const meta = {
     boardingStopsCount: { control: 'number' },
     maxTripsPerDay: { control: 'number' },
     routeShapesCount: { control: 'number' },
+    showOperatingDates: { control: 'boolean' },
   },
   decorators: [
     (Story) => (

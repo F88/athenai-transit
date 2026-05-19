@@ -1,4 +1,12 @@
-import { CalendarDays, Globe, HardDrive, Route, Signpost, Spline } from 'lucide-react';
+import {
+  CalendarDays,
+  CalendarRange,
+  Globe,
+  HardDrive,
+  Route,
+  Signpost,
+  Spline,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { toTranslationCoverageLevel } from '../../domain/datasource/translation-coverage-level';
 import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
@@ -67,11 +75,18 @@ export function DataSourceGroupSummary2({ groupInfo }: { groupInfo: DataSourceGr
   if (groupInfo === null) {
     return null;
   }
+  const operatingDatesText =
+    groupInfo.operatingDates === null ||
+    groupInfo.operatingDates.first === null ||
+    groupInfo.operatingDates.last === null
+      ? null
+      : `${groupInfo.operatingDates.first}-${groupInfo.operatingDates.last}`;
   const routesCount =
     groupInfo.routeTypeCounts === null || Object.keys(groupInfo.routeTypeCounts).length === 0
       ? null
       : Object.values(groupInfo.routeTypeCounts).reduce((sum, count) => sum + count, 0);
   const hasAnyMetric =
+    operatingDatesText !== null ||
     groupInfo.size !== null ||
     groupInfo.translationLanguages !== null ||
     routesCount !== null ||
@@ -150,6 +165,19 @@ export function DataSourceGroupSummary2({ groupInfo }: { groupInfo: DataSourceGr
           level={toMetricLevel(groupInfo.routeShapesCount, ROUTE_SHAPES_THRESHOLDS)}
           aria-label={t('dataSourceSettings.routeShapes.aria', {
             count: groupInfo.routeShapesCount.toLocaleString(i18n.language),
+          })}
+        />
+      )}
+
+      {/* Operating period */}
+      {operatingDatesText !== null && (
+        <MetricLevelBadge
+          size="xs"
+          icon={<CalendarRange />}
+          text={operatingDatesText}
+          level={0}
+          aria-label={t('dataSourceSettings.operatingDates.aria', {
+            range: operatingDatesText,
           })}
         />
       )}

@@ -73,6 +73,19 @@ export interface DataSourceInfo {
   maxTripsPerDay: number | null;
 
   /**
+   * Trip-evidence-based operating service-date summary from catalog
+   * `summary.service.operatingDates`.
+   *
+   * `null` when catalog is unavailable or when the source does not
+   * carry this summary in the catalog.
+   */
+  operatingDates: {
+    first: string | null;
+    last: string | null;
+    count: number;
+  } | null;
+
+  /**
    * Count of physical boarding stops (`location_type == 0`) from
    * catalog. `null` when catalog is unavailable.
    */
