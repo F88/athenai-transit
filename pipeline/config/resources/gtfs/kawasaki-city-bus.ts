@@ -39,6 +39,9 @@ const kawasakiCityBus: GtfsSourceDefinition = {
 
     /** GtfsResource */
     routeTypes: ['bus'],
+    routeColorFallbacks: {
+      '*': '8AC4F5', // Kawasaki City Bus primary (Norufin sky blue)
+    },
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
     downloadUrl:

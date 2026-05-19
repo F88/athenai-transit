@@ -19,6 +19,23 @@ export interface AgencyAttributes {
 }
 
 export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
+  // --- Chii Bus (Minato Community Bus) ---
+  '13103b:8010401035990': {
+    shortName: { ja: 'ちぃばす', en: 'Chii Bus' },
+    longName: { ja: 'ちぃばす', en: 'Chii Bus' },
+    colors: [
+      { bg: '9B2663', text: 'FFFFFF' } /* Primary */,
+      { bg: '2C5FD4', text: 'FFFFFF' } /* Secondary */,
+    ],
+  },
+
+  // --- Hachiko Bus (Shibuya Community Bus) ---
+  '85b:9000020131130': {
+    shortName: { ja: 'ハチ公バス', en: 'Hachiko Bus' },
+    longName: { ja: 'ハチ公バス', en: 'Hachiko Bus' },
+    colors: [{ bg: '000000', text: 'FFFFFF' }],
+  },
+
   // --- ACTV (Venice) ---
   'actvnav:ACTV': {
     shortName: {
@@ -148,6 +165,16 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '2E81E1', text: 'FFFFFF' }],
   },
 
+  // --- Kawasaki City Bus ---
+  'norufin:7000020141305': {
+    shortName: { ja: '川崎市バス', en: 'Kawasaki City Bus' },
+    longName: { ja: '川崎市交通局', en: 'Kawasaki City Transportation Bureau' },
+    colors: [
+      { bg: '8AC4F5', text: 'FFFFFF' } /* Primary */,
+      { bg: '1B69BF', text: 'FFFFFF' } /* Secondary */,
+    ],
+  },
+
   // --- Nagoya SRT ---
   'nsrt:3000020231002': {
     shortName: { ja: 'SRT名古屋', en: 'Nagoya SRT' },
@@ -225,6 +252,16 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     shortName: { ja: '大島バス', en: 'Oshima Bus' },
     longName: { ja: '大島旅客自動車株式会社', en: 'Oshima Passenger Car Co., Ltd.' },
     colors: [{ bg: 'FDD23D', text: '0099FF' }],
+  },
+
+  // --- Rinko Bus (Kawasaki Tsurumi Rinko Bus) ---
+  'rintan:5020001072478': {
+    shortName: { ja: '臨港バス', en: 'Rinko Bus' },
+    longName: { ja: '川崎鶴見臨港バス株式会社', en: 'Kawasaki Tsurumi Rinko Bus Co., Ltd.' },
+    colors: [
+      { bg: '017BBC', text: 'FFFFFF' } /* Primary */,
+      { bg: 'DA0A16', text: 'FFFFFF' } /* Secondary */,
+    ],
   },
 
   // --- Seibu Kanko Bus ---

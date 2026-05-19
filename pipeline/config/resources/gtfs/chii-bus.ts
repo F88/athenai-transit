@@ -36,6 +36,9 @@ const chiiBus: GtfsSourceDefinition = {
 
     /** GtfsResource */
     routeTypes: ['bus'],
+    routeColorFallbacks: {
+      '*': '9B2663', // Chii Bus primary
+    },
     downloadUrl: 'https://gtfs-jp.buskita.com/fxc/gtfs.zip',
   },
   pipeline: {
