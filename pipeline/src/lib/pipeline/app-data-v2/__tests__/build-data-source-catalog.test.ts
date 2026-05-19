@@ -349,6 +349,11 @@ describe('buildDataSourceCatalogBundle', () => {
       start: '20260429',
       end: '20260503',
     });
+    expect(source.summary.service.operatingDates).toEqual({
+      first: '20260404',
+      last: '20260628',
+      count: 48,
+    });
     expect(source.summary.agencies).toEqual([
       { name: 'Test Agency', lang: 'ja', timezone: 'Asia/Tokyo' },
     ]);
@@ -368,6 +373,11 @@ describe('buildDataSourceCatalogBundle', () => {
       lonMax: 139.4,
     });
     expect(source.summary.service).toEqual({
+      operatingDates: {
+        first: '20260404',
+        last: '20260628',
+        count: 48,
+      },
       maxTripsPerDay: 2,
     });
     expect(source.summary.shapes).toEqual({
@@ -478,6 +488,11 @@ describe('buildDataSourceCatalogBundle', () => {
 
     expect(source.summary.periods.feedValidity).toEqual({ start: null, end: null });
     expect(source.summary.periods.exceptionRange).toEqual({ start: null, end: null });
+    expect(source.summary.service.operatingDates).toEqual({
+      first: '20260404',
+      last: '20260628',
+      count: 47,
+    });
     expect(source.summary.agencies).toEqual([{ name: 'Test Agency', timezone: 'Asia/Tokyo' }]);
     expect(source.summary.i18n.languages).toEqual(['de', 'en', 'ja']);
     expect(source.summary.stops.locationTypes).toEqual({});
@@ -504,7 +519,17 @@ describe('buildDataSourceCatalogBundle', () => {
       tripPatternGeo: 1,
       stopStats: 0,
     });
+    expect(bundle.sources.data.testpfx.summary.service.operatingDates).toEqual({
+      first: '20260404',
+      last: '20260628',
+      count: 48,
+    });
     expect(bundle.sources.data.testpfx.summary.service).toEqual({
+      operatingDates: {
+        first: '20260404',
+        last: '20260628',
+        count: 48,
+      },
       maxTripsPerDay: 2,
     });
   });
@@ -516,7 +541,17 @@ describe('buildDataSourceCatalogBundle', () => {
 
     const bundle = await buildDataSourceCatalogBundle(['testpfx']);
 
+    expect(bundle.sources.data.testpfx.summary.service.operatingDates).toEqual({
+      first: '20260404',
+      last: '20260628',
+      count: 48,
+    });
     expect(bundle.sources.data.testpfx.summary.service).toEqual({
+      operatingDates: {
+        first: '20260404',
+        last: '20260628',
+        count: 48,
+      },
       maxTripsPerDay: 5,
     });
   });

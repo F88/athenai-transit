@@ -208,6 +208,21 @@ export interface DataSourceCatalogSourceSummary {
   /** Service-volume facts suitable for rough scale comparison. */
   service: {
     /**
+     * Trip-evidence-based operating service dates for this source.
+     *
+     * `first` / `last` use GTFS service-date format (`YYYYMMDD`), not
+     * ISO 8601 or agency-local calendar-date strings. Overnight times
+     * such as `25:00` remain attached to their original service date.
+     */
+    operatingDates?: {
+      /** First service date with at least one trip in the DataBundle (`YYYYMMDD`), or null. */
+      first: string | null;
+      /** Last service date with at least one trip in the DataBundle (`YYYYMMDD`), or null. */
+      last: string | null;
+      /** Number of service dates with at least one trip in the DataBundle. */
+      count: number;
+    };
+    /**
      * Highest one-day trip total represented by this source.
      *
      * Includes services introduced only through exception dates, not
