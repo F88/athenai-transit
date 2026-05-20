@@ -14,7 +14,7 @@ describe('formatErrorMessage', () => {
     const error = new TypeError('not a function');
     error.stack = 'TypeError: not a function\n    at App (src/app.tsx:123:45)';
 
-    expect(formatErrorDetails(error)).toBe(error.stack);
+    expect(formatErrorDetails(error)).toBe('not a function\n\nat App (src/app.tsx:123:45)');
   });
 
   it('falls back to the message when an Error stack is unavailable', () => {

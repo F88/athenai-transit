@@ -25,19 +25,27 @@ export function formatErrorMessage(error: unknown): string {
 /**
  * Format an unknown thrown value into a diagnostic string for display.
  *
- * For `Error` instances this preserves the stack trace when available, so
- * production error screens still show the call site instead of only the short
- * message text. Non-Error values fall back to {@link formatErrorMessage}.
+ * For `Error` instances this preserves the short message and appends the stack
+ * trace when available, so production error screens show both the original
+ * error summary and the call site. Non-Error values fall back to
+ * {@link formatErrorMessage}.
  */
 export function formatErrorDetails(error: unknown): string {
   if (!(error instanceof Error)) {
     return formatErrorMessage(error);
   }
 
+  const message = formatErrorMessage(error);
   const stack = error.stack?.trim();
   if (stack !== undefined && stack.length > 0) {
-    return stack;
+    const stackLines = stack.split('\n');
+    const firstLine = stackLines[0]?.trim();
+    const defaultHeader = error.message.length > 0 ? `${error.name}: ${error.message}` : error.name;
+    const hasDuplicateHeader = firstLine === message || firstLine === defaultHeader;
+    const remainingStack = hasDuplicateHeader ? stackLines.slice(1).join('\n').trim() : stack;
+
+    return remainingStack.length > 0 ? `${message}\n\n${remainingStack}` : message;
   }
 
-  return formatErrorMessage(error);
+  return message;
 }
