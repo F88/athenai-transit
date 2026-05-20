@@ -25,6 +25,11 @@ import type {
   ShapesBundle,
 } from '@contracts/data/transit-v2-json';
 
+import {
+  parseBundleJson as parseBundleJsonText,
+  type ParseBundleJsonResult,
+} from './lib/parse-bundle-json';
+import { validateBundleEnvelope as assertBundleEnvelope } from './lib/validate-bundle-envelope';
 import { createLogger } from '../lib/logger';
 import { sanitizeDirName } from '../utils/sanitize-dir-name';
 import type { SourceDataV2, TransitDataSourceV2 } from './transit-data-source-v2';
@@ -45,9 +50,6 @@ export function validateBasePath(value: string): string {
   sanitizeDirName(dir, 'VITE_TRANSIT_DATA_PATH');
   return value.startsWith('/') ? value : `/${value}`;
 }
-
-/** Expected bundle_version for all v2 bundles. */
-const EXPECTED_BUNDLE_VERSION = 3;
 
 /**
  * Default per-request timeout in milliseconds.
@@ -73,42 +75,6 @@ const CATALOG_TIMEOUT_MS = 5_000;
 
 /** Pattern for valid source prefixes. */
 const PREFIX_PATTERN = /^[a-z0-9_-]+$/;
-
-/**
- * Validate that a parsed JSON object has the expected bundle_version and kind.
- *
- * This is a structural check on the top-level discriminant fields.
- * It does NOT validate individual sections within the bundle — that
- * is the repository's responsibility when consuming the data.
- *
- * @throws When bundle_version or kind does not match expectations.
- */
-function validateBundleEnvelope<K extends string>(
-  json: unknown,
-  expectedKind: K,
-  path: string,
-): asserts json is { bundle_version: 3; kind: K } {
-  if (json === null) {
-    throw new Error(`${path}: expected JSON object, got null`);
-  }
-  if (Array.isArray(json)) {
-    throw new Error(`${path}: expected JSON object, got array`);
-  }
-  if (typeof json !== 'object') {
-    throw new Error(`${path}: expected JSON object, got ${typeof json}`);
-  }
-  const obj = json as Record<string, unknown>;
-  if (obj.bundle_version !== EXPECTED_BUNDLE_VERSION) {
-    throw new Error(
-      `${path}: invalid bundle_version (expected ${EXPECTED_BUNDLE_VERSION}, got ${String(obj.bundle_version)})`,
-    );
-  }
-  if (obj.kind !== expectedKind) {
-    throw new Error(
-      `${path}: invalid bundle kind (expected "${expectedKind}", got "${String(obj.kind)}")`,
-    );
-  }
-}
 
 /**
  * Validate that the prefix is a safe, expected format.
@@ -239,11 +205,6 @@ interface FetchBundleTextResult {
   transferMetrics: ResourceTransferMetrics | null;
 }
 
-interface ParseBundleJsonResult {
-  json: unknown;
-  parseMs: number;
-}
-
 /**
  * Start observing Resource Timing entries for a fetch.
  *
@@ -355,7 +316,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     const path = `${prefix}/data.json`;
     const result = await this.loadRequiredBundle(path);
 
-    validateBundleEnvelope(result.json, 'data', path);
+    assertBundleEnvelope(result.json, 'data', path);
     return { prefix, data: result.json as DataBundle };
   }
 
@@ -368,7 +329,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       return null;
     }
 
-    validateBundleEnvelope(result.json, 'shapes', `${prefix}/shapes.json`);
+    assertBundleEnvelope(result.json, 'shapes', `${prefix}/shapes.json`);
     return result.json as ShapesBundle;
   }
 
@@ -381,7 +342,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       return null;
     }
 
-    validateBundleEnvelope(result.json, 'insights', `${prefix}/insights.json`);
+    assertBundleEnvelope(result.json, 'insights', `${prefix}/insights.json`);
     return result.json as InsightsBundle;
   }
 
@@ -393,7 +354,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       return null;
     }
 
-    validateBundleEnvelope(result.json, 'global-insights', path);
+    assertBundleEnvelope(result.json, 'global-insights', path);
     return result.json as GlobalInsightsBundle;
   }
 
@@ -405,7 +366,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       return null;
     }
 
-    validateBundleEnvelope(result.json, 'data-source-catalog', path);
+    assertBundleEnvelope(result.json, 'data-source-catalog', path);
     return result.json as DataSourceCatalogBundle;
   }
 
@@ -555,29 +516,21 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     };
   }
 
-  private parseBundleJson(
+  private parseBundleJsonWithPolicy(
     path: string,
     text: string,
     optional: boolean,
   ): ParseBundleJsonResult | null {
-    const tParseStart = performance.now();
-
-    let json: unknown;
     try {
-      json = JSON.parse(text) as unknown;
+      return parseBundleJsonText(text);
     } catch (e) {
       if (optional) {
-        logger.debug(`${path}: JSON parse error (optional, skipping)`);
+        logger.warn(`${path}: JSON parse error (optional, skipping)`, e);
         return null;
       }
       logger.warn(`${path}: JSON parse error`, e);
       throw new Error(`${path}: JSON parse error`, { cause: e });
     }
-
-    return {
-      json,
-      parseMs: Math.round(performance.now() - tParseStart),
-    };
   }
 
   /**
@@ -586,7 +539,8 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
    * All outcomes are logged at the appropriate level:
    * - Success: debug (path, transfer/decoded size, network/parse timing)
    * - Timeout: error (always, regardless of optional flag)
-   * - Other failures: warn for required, debug for optional
+   * - Other failures: warn for required, debug for optional except parse
+   *   errors, which are warned even for optional bundles
    */
   private async doLoadBundle(
     path: string,
@@ -602,7 +556,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       logFetchMetrics(path, fetched);
     }
 
-    const parsed = this.parseBundleJson(path, fetched.text, optional);
+    const parsed = this.parseBundleJsonWithPolicy(path, fetched.text, optional);
     if (parsed === null) {
       return null;
     }

@@ -327,6 +327,34 @@ describe('FetchDataSourceV2', () => {
       expect(await ds.loadShapes('tobus')).toBeNull();
     });
 
+    it('warns on JSON parse error before skipping an optional bundle', async () => {
+      const loggerConfig = getLoggerConfig();
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      configureLogger({
+        level: 'debug',
+        enabledTags: ['FetchDataSourceV2'],
+        tagLevels: { ...loggerConfig.tagLevels },
+      });
+      fetchMock.mockResolvedValueOnce(brokenJsonResponse());
+
+      try {
+        const ds = new FetchDataSourceV2();
+        await expect(ds.loadShapes('tobus')).resolves.toBeNull();
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('[FetchDataSourceV2]'),
+          expect.stringContaining('tobus/shapes.json: JSON parse error (optional, skipping)'),
+          expect.any(SyntaxError),
+        );
+      } finally {
+        configureLogger({
+          level: loggerConfig.level,
+          enabledTags: [...loggerConfig.enabledTags],
+          tagLevels: { ...loggerConfig.tagLevels },
+        });
+      }
+    });
+
     it('returns null on timeout', async () => {
       fetchMock.mockRejectedValueOnce(new DOMException('The operation was aborted.', 'AbortError'));
       const ds = new FetchDataSourceV2('/data-v2', 100);
