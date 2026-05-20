@@ -563,7 +563,7 @@ describe('formatTransferSummary', () => {
       transferSize: 0,
       encodedBodySize: 512,
       decodedBodySize: 2048,
-      fromCache: true,
+      noNetworkTransfer: true,
     };
     expect(formatTransferSummary(metrics, 0)).toBe('no network transfer, 2.0KB decoded');
   });
@@ -573,7 +573,7 @@ describe('formatTransferSummary', () => {
       transferSize: 1500,
       encodedBodySize: 1024,
       decodedBodySize: 10240,
-      fromCache: false,
+      noNetworkTransfer: false,
     };
     expect(formatTransferSummary(metrics, 0)).toBe('1.0KB over the wire, 10.0KB decoded');
   });

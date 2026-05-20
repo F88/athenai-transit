@@ -118,6 +118,8 @@ interface FetchBundleOptions {
   timeoutMs?: number;
 }
 
+type LogLevel = 'debug' | 'warn' | 'error';
+
 /**
  * Network transfer metrics for a fetched bundle, read from the Resource
  * Timing API after the response body is fully downloaded.
@@ -130,15 +132,15 @@ interface FetchBundleOptions {
 export interface ResourceTransferMetrics {
   /**
    * Bytes transferred over the network, including response headers.
-   * `0` when the response was served from the HTTP cache.
+   * `0` when the browser reports that no network transfer was required.
    */
   transferSize: number;
   /** Compressed body size — the bytes actually downloaded. */
   encodedBodySize: number;
   /** Uncompressed body size. Matches the file size on disk. */
   decodedBodySize: number;
-  /** `true` when served from the HTTP cache (`transferSize === 0`). */
-  fromCache: boolean;
+  /** `true` when no network transfer was reported (`transferSize === 0`). */
+  noNetworkTransfer: boolean;
 }
 
 /**
@@ -176,7 +178,7 @@ function buildResourceTransferMetrics(entry: PerformanceResourceTiming): Resourc
     transferSize: entry.transferSize,
     encodedBodySize: entry.encodedBodySize,
     decodedBodySize: entry.decodedBodySize,
-    fromCache: entry.transferSize === 0,
+    noNetworkTransfer: entry.transferSize === 0,
   };
 }
 
@@ -203,6 +205,11 @@ interface FetchBundleTextResult {
   sizeApprox: number;
   networkMs: number;
   transferMetrics: ResourceTransferMetrics | null;
+}
+
+interface TimedFetchResult {
+  response: Response;
+  timeoutId: ReturnType<typeof setTimeout>;
 }
 
 /**
@@ -268,7 +275,7 @@ export function formatTransferSummary(
     )}KB decoded (transfer size unavailable)`;
   }
   const decodedKB = (metrics.decodedBodySize / 1024).toFixed(1);
-  if (metrics.fromCache) {
+  if (metrics.noNetworkTransfer) {
     return `no network transfer, ${decodedKB}KB decoded`;
   }
   const wireKB = (metrics.encodedBodySize / 1024).toFixed(1);
@@ -314,60 +321,61 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     validatePrefix(prefix);
 
     const path = `${prefix}/data.json`;
-    const result = await this.loadRequiredBundle(path);
-
-    assertBundleEnvelope(result.json, 'data', path);
-    return { prefix, data: result.json as DataBundle };
+    const data = await this.loadRequiredTypedBundle<DataBundle>(path, 'data');
+    return { prefix, data };
   }
 
   /** {@inheritDoc TransitDataSourceV2.loadShapes} */
   async loadShapes(prefix: string): Promise<ShapesBundle | null> {
     validatePrefix(prefix);
-
-    const result = await this.loadOptionalBundle(`${prefix}/shapes.json`);
-    if (!result) {
-      return null;
-    }
-
-    assertBundleEnvelope(result.json, 'shapes', `${prefix}/shapes.json`);
-    return result.json as ShapesBundle;
+    return this.loadOptionalTypedBundle<ShapesBundle>(`${prefix}/shapes.json`, 'shapes');
   }
 
   /** {@inheritDoc TransitDataSourceV2.loadInsights} */
   async loadInsights(prefix: string): Promise<InsightsBundle | null> {
     validatePrefix(prefix);
-
-    const result = await this.loadOptionalBundle(`${prefix}/insights.json`);
-    if (!result) {
-      return null;
-    }
-
-    assertBundleEnvelope(result.json, 'insights', `${prefix}/insights.json`);
-    return result.json as InsightsBundle;
+    return this.loadOptionalTypedBundle<InsightsBundle>(`${prefix}/insights.json`, 'insights');
   }
 
   /** {@inheritDoc TransitDataSourceV2.loadGlobalInsights} */
   async loadGlobalInsights(): Promise<GlobalInsightsBundle | null> {
-    const path = 'global/insights.json';
-    const result = await this.loadOptionalBundle(path);
-    if (!result) {
-      return null;
-    }
-
-    assertBundleEnvelope(result.json, 'global-insights', path);
-    return result.json as GlobalInsightsBundle;
+    return this.loadOptionalTypedBundle<GlobalInsightsBundle>(
+      'global/insights.json',
+      'global-insights',
+    );
   }
 
   /** {@inheritDoc TransitDataSourceV2.loadDataSourceCatalog} */
   async loadDataSourceCatalog(): Promise<DataSourceCatalogBundle | null> {
-    const path = 'global/data-source-catalog.json';
-    const result = await this.loadOptionalBundle(path, { timeoutMs: CATALOG_TIMEOUT_MS });
+    return this.loadOptionalTypedBundle<DataSourceCatalogBundle>(
+      'global/data-source-catalog.json',
+      'data-source-catalog',
+      { timeoutMs: CATALOG_TIMEOUT_MS },
+    );
+  }
+
+  private async loadRequiredTypedBundle<T>(
+    path: string,
+    expectedKind: string,
+    options: FetchBundleOptions = {},
+  ): Promise<T> {
+    const result = await this.loadRequiredBundle(path, options);
+    assertBundleEnvelope(result.json, expectedKind, path);
+    return result.json as T;
+  }
+
+  private async loadOptionalTypedBundle<T>(
+    path: string,
+    expectedKind: string,
+    options: FetchBundleOptions = {},
+  ): Promise<T | null> {
+    const result = await this.loadOptionalBundle(path, options);
     if (!result) {
       return null;
     }
 
-    assertBundleEnvelope(result.json, 'data-source-catalog', path);
-    return result.json as DataSourceCatalogBundle;
+    assertBundleEnvelope(result.json, expectedKind, path);
+    return result.json as T;
   }
 
   /**
@@ -420,91 +428,22 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     const debugLoggingEnabled = logger.isEnabled('debug');
     const transferCapture = debugLoggingEnabled ? startResourceTransferCapture(url, t0) : null;
 
-    // --- Network request with timeout ---
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-    }, timeoutMs);
-
-    let response: Response;
-    try {
-      response = await fetch(url, { signal: controller.signal });
-    } catch (e) {
-      clearTimeout(timeoutId);
-      const isTimeout = e instanceof DOMException && e.name === 'AbortError';
-      if (isTimeout) {
-        logger.error(`${path}: timeout after ${timeoutMs}ms`);
-        if (optional) {
-          return null;
-        }
-        throw new Error(`${path}: timeout after ${timeoutMs}ms`);
-      }
-      if (optional) {
-        logger.debug(`${path}: network error (optional, skipping)`);
-        return null;
-      }
-      logger.warn(`${path}: network error`, e);
-      throw new Error(`${path}: network error`, { cause: e });
+    const fetched = await this.fetchResponseWithTimeout(path, url, timeoutMs, optional);
+    if (fetched === null) {
+      return null;
     }
 
-    // --- HTTP status check ---
-    // clearTimeout is deferred until after response.text() so that the
-    // timeout covers the entire transfer, not just the headers.
-    if (response.status === 404) {
-      clearTimeout(timeoutId);
-      if (optional) {
-        logger.debug(`${path}: 404 (optional, skipping)`);
-        return null;
-      }
-      logger.warn(`${path}: HTTP 404`);
-      throw new Error(`${path}: HTTP 404`);
-    }
-    if (!response.ok) {
-      clearTimeout(timeoutId);
-      if (optional) {
-        logger.debug(`${path}: HTTP ${response.status} (optional, skipping)`);
-        return null;
-      }
-      logger.warn(`${path}: HTTP ${response.status}`);
-      throw new Error(`${path}: HTTP ${response.status}`);
+    const { response, timeoutId } = fetched;
+    const validatedResponse = this.validateJsonResponse(path, response, timeoutId, optional);
+    if (validatedResponse === null) {
+      return null;
     }
 
-    // --- Content-type validation ---
-    const contentType = response.headers.get('content-type') ?? '';
-    if (!contentType.includes('application/json')) {
-      clearTimeout(timeoutId);
-      if (optional) {
-        logger.debug(`${path}: non-JSON content-type (optional, skipping)`);
-        return null;
-      }
-      logger.warn(
-        `${path}: expected application/json but got "${contentType}" (possible SPA fallback)`,
-      );
-      throw new Error(
-        `${path}: expected application/json but got "${contentType}" (possible SPA fallback)`,
-      );
+    const text = await this.readBundleText(path, validatedResponse, timeoutId, timeoutMs, optional);
+    if (text === null) {
+      return null;
     }
 
-    let text: string;
-    try {
-      text = await response.text();
-    } catch (e) {
-      clearTimeout(timeoutId);
-      const isTimeout = e instanceof DOMException && e.name === 'AbortError';
-      if (isTimeout) {
-        logger.error(`${path}: timeout after ${timeoutMs}ms (during body download)`);
-        if (optional) {
-          return null;
-        }
-        throw new Error(`${path}: timeout after ${timeoutMs}ms (during body download)`);
-      }
-      if (optional) {
-        logger.debug(`${path}: body read error (optional, skipping)`);
-        return null;
-      }
-      logger.warn(`${path}: body read error`, e);
-      throw new Error(`${path}: body read error`, { cause: e });
-    }
     clearTimeout(timeoutId);
     const tNetwork = performance.now();
 
@@ -516,6 +455,108 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     };
   }
 
+  private async fetchResponseWithTimeout(
+    path: string,
+    url: string,
+    timeoutMs: number,
+    optional: boolean,
+  ): Promise<TimedFetchResult | null> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeoutMs);
+
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      return { response, timeoutId };
+    } catch (e) {
+      clearTimeout(timeoutId);
+      const isTimeout = e instanceof DOMException && e.name === 'AbortError';
+      if (isTimeout) {
+        return this.handleBundleFailure(path, optional, `timeout after ${timeoutMs}ms`, {
+          requiredLevel: 'error',
+          optionalLevel: 'error',
+        });
+      }
+      return this.handleBundleFailure(path, optional, 'network error', {
+        requiredLevel: 'warn',
+        optionalLevel: 'debug',
+        cause: e,
+      });
+    }
+  }
+
+  private validateJsonResponse(
+    path: string,
+    response: Response,
+    timeoutId: ReturnType<typeof setTimeout>,
+    optional: boolean,
+  ): Response | null {
+    // clearTimeout is deferred until after response.text() so that the
+    // timeout covers the entire transfer, not just the headers.
+    if (response.status === 404) {
+      clearTimeout(timeoutId);
+      return this.handleBundleFailure(path, optional, 'HTTP 404', {
+        requiredLevel: 'warn',
+        optionalLevel: 'debug',
+      });
+    }
+    if (!response.ok) {
+      clearTimeout(timeoutId);
+      return this.handleBundleFailure(path, optional, `HTTP ${response.status}`, {
+        requiredLevel: 'warn',
+        optionalLevel: 'debug',
+      });
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.includes('application/json')) {
+      clearTimeout(timeoutId);
+      return this.handleBundleFailure(
+        path,
+        optional,
+        `expected application/json but got "${contentType}" (possible SPA fallback)`,
+        {
+          requiredLevel: 'warn',
+          optionalLevel: 'debug',
+        },
+      );
+    }
+
+    return response;
+  }
+
+  private async readBundleText(
+    path: string,
+    response: Response,
+    timeoutId: ReturnType<typeof setTimeout>,
+    timeoutMs: number,
+    optional: boolean,
+  ): Promise<string | null> {
+    try {
+      return await response.text();
+    } catch (e) {
+      clearTimeout(timeoutId);
+      const isTimeout = e instanceof DOMException && e.name === 'AbortError';
+      if (isTimeout) {
+        return this.handleBundleFailure(
+          path,
+          optional,
+          `timeout after ${timeoutMs}ms (during body download)`,
+          {
+            requiredLevel: 'error',
+            optionalLevel: 'error',
+          },
+        );
+      }
+      return this.handleBundleFailure(path, optional, 'body read error', {
+        requiredLevel: 'warn',
+        optionalLevel: 'debug',
+        cause: e,
+      });
+    }
+  }
+
   private parseBundleJsonWithPolicy(
     path: string,
     text: string,
@@ -524,13 +565,48 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     try {
       return parseBundleJsonText(text);
     } catch (e) {
-      if (optional) {
-        logger.warn(`${path}: JSON parse error (optional, skipping)`, e);
-        return null;
-      }
-      logger.warn(`${path}: JSON parse error`, e);
-      throw new Error(`${path}: JSON parse error`, { cause: e });
+      return this.handleBundleFailure(path, optional, 'JSON parse error', {
+        requiredLevel: 'warn',
+        optionalLevel: 'warn',
+        cause: e,
+      });
     }
+  }
+
+  private handleBundleFailure(
+    path: string,
+    optional: boolean,
+    message: string,
+    options: {
+      requiredLevel: LogLevel;
+      optionalLevel: LogLevel;
+      cause?: unknown;
+    },
+  ): null {
+    if (optional) {
+      this.logBundleFailure(options.optionalLevel, `${path}: ${message} (optional, skipping)`, {
+        cause: options.cause,
+      });
+      return null;
+    }
+
+    this.logBundleFailure(options.requiredLevel, `${path}: ${message}`, { cause: options.cause });
+    if (options.cause === undefined) {
+      throw new Error(`${path}: ${message}`);
+    }
+    throw new Error(`${path}: ${message}`, { cause: options.cause });
+  }
+
+  private logBundleFailure(
+    level: LogLevel,
+    message: string,
+    options: { cause?: unknown } = {},
+  ): void {
+    if (options.cause === undefined) {
+      logger[level](message);
+      return;
+    }
+    logger[level](message, options.cause);
   }
 
   /**
