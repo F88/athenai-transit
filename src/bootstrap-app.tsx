@@ -289,7 +289,7 @@ function BootstrapProgressContent({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 pt-2">
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 px-4">
         <Progress
           aria-label={t('bootstrap.loading.progressLabel')}
           value={getProgressValue(progress)}
@@ -372,7 +372,7 @@ function AppBootShell({
           <p className="font-press-start text-muted-foreground text-sm leading-6">{tips}</p>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4 px-4">{progressContent}</div>
+        <div className="flex min-h-0 flex-1 flex-col gap-4 px-0">{progressContent}</div>
 
         {action === undefined ? null : (
           <div className="flex shrink-0 justify-center pt-5">{action}</div>
