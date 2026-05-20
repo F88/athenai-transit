@@ -2,7 +2,7 @@ import { Component, useState, type ErrorInfo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { APP_TITLE } from '../config/app-meta';
 import { recoverFromCacheCorruption } from '../lib/cache-recovery';
-import { formatErrorMessage } from '../lib/format-error-message';
+import { formatErrorDetails } from '../lib/format-error-message';
 import { createLogger } from '../lib/logger';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Button } from './ui/button';
@@ -72,7 +72,7 @@ function ErrorBoundaryFallbackView({
           >
             {clearCacheLabel}
           </Button>
-          <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={onReload}>
+          <Button variant="default" size="sm" className="w-full sm:w-auto" onClick={onReload}>
             {reloadLabel}
           </Button>
         </div>
@@ -104,7 +104,7 @@ function ErrorBoundaryFallback({ error }: { error: unknown }) {
       title={t('errorBoundary.title')}
       message={t('errorBoundary.message')}
       detailLabel={t('errorBoundary.detailLabel')}
-      errorText={formatErrorMessage(error)}
+      errorText={formatErrorDetails(error)}
       clearCacheLabel={t('errorBoundary.action.clearCacheAndReload')}
       reloadLabel={t('errorBoundary.action.reload')}
       isRecovering={isRecovering}

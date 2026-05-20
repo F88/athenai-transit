@@ -518,7 +518,7 @@ describe('BootstrapApp', () => {
     render(<BootstrapApp />);
 
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
-    expect(screen.getByText('render boom')).toBeInTheDocument();
+    expect(screen.getByText(/render boom/)).toBeInTheDocument();
     expect(screen.queryByText('app-mounted')).not.toBeInTheDocument();
   });
 
@@ -540,7 +540,7 @@ describe('BootstrapApp', () => {
     render(<BootstrapApp />);
 
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
-    expect(screen.getByText('provider boom')).toBeInTheDocument();
+    expect(screen.getByText(/provider boom/)).toBeInTheDocument();
     expect(screen.queryByText('app-mounted')).not.toBeInTheDocument();
   });
 });

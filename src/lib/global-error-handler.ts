@@ -1,5 +1,5 @@
 import i18n from '../i18n';
-import { formatErrorMessage } from './format-error-message';
+import { formatErrorDetails, formatErrorMessage } from './format-error-message';
 import { createLogger } from './logger';
 
 const logger = createLogger('GlobalErrorHandler');
@@ -162,7 +162,7 @@ function showGlobalErrorOverlay(error: unknown): void {
   detailLabel.style.fontSize = '13px';
   detailLabel.style.fontWeight = '700';
 
-  const detail = createTextElement(document, 'pre', formatErrorMessage(error));
+  const detail = createTextElement(document, 'pre', formatErrorDetails(error));
   applyDetailStyles(detail);
 
   const actions = document.createElement('div');

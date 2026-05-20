@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatErrorMessage } from '../format-error-message';
+import { formatErrorDetails, formatErrorMessage } from '../format-error-message';
 
 describe('formatErrorMessage', () => {
   it('returns the message of a standard Error', () => {
@@ -10,12 +10,27 @@ describe('formatErrorMessage', () => {
     expect(formatErrorMessage(new TypeError('not a function'))).toBe('not a function');
   });
 
+  it('returns the stack trace of an Error when available for diagnostics', () => {
+    const error = new TypeError('not a function');
+    error.stack = 'TypeError: not a function\n    at App (src/app.tsx:123:45)';
+
+    expect(formatErrorDetails(error)).toBe(error.stack);
+  });
+
+  it('falls back to the message when an Error stack is unavailable', () => {
+    const error = new TypeError('not a function');
+    error.stack = '';
+
+    expect(formatErrorDetails(error)).toBe('not a function');
+  });
+
   it('falls back to the error name when the message is empty', () => {
     expect(formatErrorMessage(new TypeError(''))).toBe('TypeError');
   });
 
   it('returns a string value as-is', () => {
     expect(formatErrorMessage('plain string error')).toBe('plain string error');
+    expect(formatErrorDetails('plain string error')).toBe('plain string error');
   });
 
   it('handles null', () => {
