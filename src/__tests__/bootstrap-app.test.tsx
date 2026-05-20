@@ -66,6 +66,9 @@ vi.mock('react-i18next', () => ({
         'bootstrap.action.reload': 'Reload',
         'bootstrap.logViewer.title': 'Load log',
         'bootstrap.notice.loadFailuresTitle': 'Data load issues',
+        'bootstrap.tips.dataSources': 'You can change data in settings.',
+        'bootstrap.tips.selection': 'Choose the data you need or are interested in.',
+        'bootstrap.tips.performance': 'Large data can affect app performance.',
         'bootstrap.error.title': 'Could not start Athenai',
         'bootstrap.error.message': 'Please reload the app and try again.',
       };
@@ -177,6 +180,23 @@ function createProgressLog(summary: RepositoryLoadProgressSummary): BootstrapPro
   };
 }
 
+function createProgressLogWithEvent({
+  event,
+  id,
+  summary,
+}: {
+  event: BootstrapProgressLogEntry['event'];
+  id: number;
+  summary: RepositoryLoadProgressSummary;
+}): BootstrapProgressLogEntry {
+  return {
+    id,
+    createdAt: 100 + id,
+    event,
+    summary,
+  };
+}
+
 function createLoadingState(
   progress: RepositoryLoadProgressSummary | null = null,
 ): Extract<AppBootstrapState, { status: 'loading' }> {
@@ -217,6 +237,10 @@ describe('BootstrapApp', () => {
     render(<BootstrapApp />);
 
     expect(screen.getByText('This will only take a moment.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Tips')).toBeInTheDocument();
+    expect(screen.getByText('You can change data in settings.')).toBeInTheDocument();
+    expect(screen.getByText('Choose the data you need or are interested in.')).toBeInTheDocument();
+    expect(screen.getByText('Large data can affect app performance.')).toBeInTheDocument();
     expect(screen.getByRole('progressbar', { name: 'Loading data' })).toHaveAttribute(
       'aria-valuenow',
       '0',
@@ -237,6 +261,19 @@ describe('BootstrapApp', () => {
     expect(screen.getByText('✅ 1')).toBeInTheDocument();
     expect(screen.getByText('alpha')).toBeInTheDocument();
     expect(screen.queryByLabelText('Load log')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('bootstrap-progress-log-viewer')).not.toBeInTheDocument();
+  });
+
+  it('renders the progress log viewer while bootstrap hold mode is enabled', () => {
+    mockGetBootstrapParam.mockReturnValue('hold');
+    const progress = createProgressSummary();
+    mockUseAppBootstrap.mockReturnValue(createLoadingState(progress));
+
+    render(<BootstrapApp />);
+
+    expect(screen.getByTestId('bootstrap-progress-log-viewer')).toBeInTheDocument();
+    expect(screen.getByLabelText('Load log')).toBeInTheDocument();
+    expect(screen.getByText(/succeeded data alpha\/data\.json/)).toBeInTheDocument();
   });
 
   it('lists loading failures in the notice area before ready', () => {
@@ -295,6 +332,51 @@ describe('BootstrapApp', () => {
     expect(screen.queryByText('app-mounted')).not.toBeInTheDocument();
   });
 
+  it('keeps optional load notices visible after bootstrap is ready', () => {
+    const repository = {} as TransitRepository;
+    const progress = createFailedProgressSummary();
+    const dataFailureEvent = {
+      type: 'failed',
+      kind: 'data',
+      path: 'x13103b/data.json',
+      prefix: 'x13103b',
+      optional: false,
+      reason: 'http-error',
+      message: 'Data Not Found',
+    } as const;
+    const insightsFailureEvent = {
+      type: 'failed',
+      kind: 'insights',
+      path: 'x13103b/insights.json',
+      prefix: 'x13103b',
+      optional: true,
+      reason: 'network-error',
+      message: 'Insights unavailable',
+    } as const;
+
+    mockUseAppBootstrap.mockReturnValue({
+      status: 'ready',
+      repository,
+      loadResult: {
+        loaded: ['alpha'],
+        failed: [{ prefix: 'x13103b', error: new Error('Not Found') }],
+      },
+      progress,
+      logs: [
+        createProgressLogWithEvent({ event: dataFailureEvent, id: 1, summary: progress }),
+        createProgressLogWithEvent({ event: insightsFailureEvent, id: 2, summary: progress }),
+      ],
+    });
+
+    render(<BootstrapApp />);
+
+    expect(screen.getByLabelText('Data load issues')).toBeInTheDocument();
+    expect(screen.getAllByText('x13103b')).toHaveLength(2);
+    expect(screen.getByText('Not Found')).toBeInTheDocument();
+    expect(screen.queryByText('http-error: Data Not Found')).not.toBeInTheDocument();
+    expect(screen.getByText('network-error: Insights unavailable')).toBeInTheDocument();
+  });
+
   it('keeps the ready boot shell visible when bootstrap hold mode is enabled', () => {
     stubReducedMotion();
     mockGetBootstrapParam.mockReturnValue('hold');
@@ -311,7 +393,9 @@ describe('BootstrapApp', () => {
     render(<BootstrapApp />);
 
     expect(screen.getByText('Ready')).toBeInTheDocument();
+    expect(screen.getByLabelText('Tips')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Show app' })).toBeInTheDocument();
+    expect(screen.getByTestId('bootstrap-progress-log-viewer')).toBeInTheDocument();
     expect(screen.queryByText('app-mounted')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Show app' }));
@@ -364,6 +448,7 @@ describe('BootstrapApp', () => {
     render(<BootstrapApp />);
 
     expect(screen.getByText('Please reload the app and try again.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Tips')).toBeInTheDocument();
     expect(screen.queryByText('boot failed')).not.toBeInTheDocument();
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Reload' }));

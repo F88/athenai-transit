@@ -107,7 +107,10 @@ type ProgressLogViewerProps = {
 
 function ProgressLogViewer({ logs, title }: ProgressLogViewerProps) {
   return (
-    <div className="border-border/70 bg-muted/30 flex min-h-0 flex-1 flex-col rounded-md border text-xs">
+    <div
+      className="border-border/70 bg-muted/30 flex min-h-0 flex-1 flex-col rounded-md border text-xs"
+      data-testid="bootstrap-progress-log-viewer"
+    >
       <div className="text-muted-foreground border-border/70 border-b px-3 py-2 font-medium">
         {title}
       </div>
@@ -129,7 +132,39 @@ function ProgressLogViewer({ logs, title }: ProgressLogViewerProps) {
   );
 }
 
-void ProgressLogViewer;
+function BootstrapUserTips() {
+  const { t } = useTranslation();
+  const title = 'Tips';
+  const items = [
+    { icon: '⚙️', text: t('bootstrap.tips.dataSources') },
+    { icon: '📍', text: t('bootstrap.tips.selection') },
+    { icon: '📱', text: t('bootstrap.tips.performance') },
+  ];
+
+  return (
+    <section
+      aria-label={title}
+      className="border-border/70 bg-muted/80 text-muted-foreground w-full rounded-md border px-2.5 py-2 text-left text-[11px] leading-4"
+    >
+      <p className="text-foreground/80 flex items-center gap-1 text-xs leading-4 font-medium">
+        <span aria-hidden="true" className="text-xs leading-none">
+          💡
+        </span>
+        <span>{title}</span>
+      </p>
+      <ul className="mt-1 flex flex-col gap-0.5">
+        {items.map((item) => (
+          <li className="grid grid-cols-[1rem_1fr] gap-1.5" key={item.icon}>
+            <span aria-hidden="true" className="text-center leading-4">
+              {item.icon}
+            </span>
+            <span className="min-w-0">{item.text}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 type NoticeAreaProps = {
   items: NoticeItem[];
@@ -159,31 +194,58 @@ function NoticeArea({ items, title }: NoticeAreaProps) {
   );
 }
 
-function createNoticeItemsFromLogs(logs: BootstrapProgressLogEntry[]): NoticeItem[] {
-  return logs.flatMap((log) => {
-    const event = log.event;
-    if (event === null || (event.type !== 'failed' && event.type !== 'skipped')) {
-      return [];
-    }
-
-    return [
-      {
-        id: `log-${log.id}`,
-        label: event.prefix ?? event.path,
-        message: `${event.reason}: ${event.message}`,
-      },
-    ];
-  });
+function getNoticeKeyForLogEntry(log: BootstrapProgressLogEntry): string | null {
+  const event = log.event;
+  if (event === null || (event.type !== 'failed' && event.type !== 'skipped')) {
+    return null;
+  }
+  if (event.kind === 'data' && event.prefix !== null) {
+    return `source-data:${event.prefix}`;
+  }
+  return `log:${event.path}`;
 }
 
-function createNoticeItemsFromFailures(
-  failures: AppBootstrapReadyState['loadResult']['failed'],
-): NoticeItem[] {
-  return failures.map((failure) => ({
-    id: `source-${failure.prefix}`,
-    label: failure.prefix,
-    message: failure.error.message,
-  }));
+function createNoticeItems({
+  failures,
+  logs,
+}: {
+  failures?: AppBootstrapReadyState['loadResult']['failed'];
+  logs: BootstrapProgressLogEntry[];
+}): NoticeItem[] {
+  const items: NoticeItem[] = [];
+  const seenKeys = new Set<string>();
+
+  if (failures !== undefined) {
+    for (const failure of failures) {
+      seenKeys.add(`source-data:${failure.prefix}`);
+      items.push({
+        id: `source-${failure.prefix}`,
+        label: failure.prefix,
+        message: failure.error.message,
+      });
+    }
+  }
+
+  for (const log of logs) {
+    const key = getNoticeKeyForLogEntry(log);
+    if (key === null || seenKeys.has(key)) {
+      continue;
+    }
+
+    const event = log.event;
+    if (event === null || (event.type !== 'failed' && event.type !== 'skipped')) {
+      continue;
+    }
+
+    seenKeys.add(key);
+    items.push({
+      id: `log-${log.id}`,
+      label: event.prefix ?? event.path,
+      message: `${event.reason}: ${event.message}`,
+    });
+  }
+
+  return items;
 }
 
 type BootstrapProgressContentProps = {
@@ -191,6 +253,7 @@ type BootstrapProgressContentProps = {
   logs: BootstrapProgressLogEntry[];
   loadFailures?: AppBootstrapReadyState['loadResult']['failed'];
   showCurrentTask: boolean;
+  showProgressLogViewer: boolean;
 };
 
 function BootstrapProgressContent({
@@ -198,12 +261,10 @@ function BootstrapProgressContent({
   logs,
   loadFailures,
   showCurrentTask,
+  showProgressLogViewer,
 }: BootstrapProgressContentProps) {
   const { t } = useTranslation();
-  const noticeItems =
-    loadFailures === undefined
-      ? createNoticeItemsFromLogs(logs)
-      : createNoticeItemsFromFailures(loadFailures);
+  const noticeItems = createNoticeItems({ failures: loadFailures, logs });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 pt-2">
@@ -217,8 +278,9 @@ function BootstrapProgressContent({
         <CurrentProgressTask progress={progress} showCurrentTask={showCurrentTask} />
       </div>
       <NoticeArea items={noticeItems} title={t('bootstrap.notice.loadFailuresTitle')} />
-      {/* Temporary disabled */}
-      {/* <ProgressLogViewer logs={logs} title={t('bootstrap.logViewer.title')} /> */}
+      {showProgressLogViewer ? (
+        <ProgressLogViewer logs={logs} title={t('bootstrap.logViewer.title')} />
+      ) : null}
     </div>
   );
 }
@@ -227,6 +289,7 @@ type AppBootShellProps = {
   title: string;
   state: AppBootShellState;
   message?: string;
+  tips?: ReactNode;
   action?: ReactNode;
   exiting?: boolean;
   onTransitionEnd?: (event: TransitionEvent<HTMLDivElement>) => void;
@@ -237,6 +300,7 @@ type BootstrapShellViewProps = {
   bootstrap: AppBootstrapState;
   exiting?: boolean;
   holdReady?: boolean;
+  showProgressLogViewer?: boolean;
   onShowApp?: () => void;
   onExited?: () => void;
 };
@@ -255,6 +319,7 @@ function AppBootShell({
   title,
   state: _state,
   message,
+  tips,
   action,
   exiting = false,
   onTransitionEnd,
@@ -270,10 +335,11 @@ function AppBootShell({
     >
       <div className="mx-auto flex h-full w-full max-w-md flex-col px-5 pt-16 pb-8">
         <div className="flex shrink-0 flex-col items-center gap-4 pb-5 text-center">
-          <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+          <p className="text-muted-foreground text-base font-medium tracking-wide uppercase">
             {title}
           </p>
           <p className="text-muted-foreground text-sm leading-6">{message}</p>
+          {tips}
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-4">{progressContent}</div>
@@ -297,10 +363,12 @@ function BootstrapShellView({
   bootstrap,
   exiting = false,
   holdReady = false,
+  showProgressLogViewer = false,
   onExited,
   onShowApp,
 }: BootstrapShellViewProps) {
   const { t } = useTranslation();
+  const tips = <BootstrapUserTips />;
 
   if (bootstrap.status === 'loading') {
     return (
@@ -308,11 +376,13 @@ function BootstrapShellView({
         title={APP_TITLE}
         state="loading"
         message={t('bootstrap.loading.message')}
+        tips={tips}
         progressContent={
           <BootstrapProgressContent
             progress={bootstrap.progress}
             logs={bootstrap.logs}
             showCurrentTask
+            showProgressLogViewer={showProgressLogViewer}
           />
         }
       />
@@ -325,6 +395,7 @@ function BootstrapShellView({
         progress={bootstrap.progress}
         logs={bootstrap.logs}
         showCurrentTask={false}
+        showProgressLogViewer={showProgressLogViewer}
       />
     ) : undefined;
 
@@ -333,6 +404,7 @@ function BootstrapShellView({
         title={APP_TITLE}
         state="error"
         message={t('bootstrap.error.message')}
+        tips={tips}
         progressContent={progressContent}
         action={
           <Button onClick={() => window.location.reload()} size="sm">
@@ -348,6 +420,7 @@ function BootstrapShellView({
       title={APP_TITLE}
       state="ready"
       message={t('bootstrap.ready.message')}
+      tips={tips}
       action={
         holdReady ? (
           <Button onClick={onShowApp} size="sm">
@@ -367,6 +440,7 @@ function BootstrapShellView({
           logs={bootstrap.logs}
           loadFailures={bootstrap.loadResult.failed}
           showCurrentTask={false}
+          showProgressLogViewer={showProgressLogViewer}
         />
       }
     />
@@ -427,6 +501,7 @@ export default function BootstrapApp() {
       bootstrap={bootstrap}
       exiting={bootstrap.status === 'ready' && isBootShellExiting}
       holdReady={bootstrap.status === 'ready' && shouldHoldReadyShell}
+      showProgressLogViewer={shouldHoldReadyShell}
       onExited={() => setHasBootShellExited(true)}
       onShowApp={() => setHasRequestedAppDisplay(true)}
     />

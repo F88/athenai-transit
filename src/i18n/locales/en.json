@@ -13,6 +13,11 @@
     "notice": {
       "loadFailuresTitle": "Errors"
     },
+    "tips": {
+      "dataSources": "You can change data in settings.",
+      "selection": "Choose the data you need or are interested in.",
+      "performance": "Large data can affect app performance."
+    },
     "loading": {
       "title": "Preparing app",
       "message": "This will only take a moment.",

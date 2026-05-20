@@ -13,6 +13,11 @@
     "notice": {
       "loadFailuresTitle": "エラー"
     },
+    "tips": {
+      "dataSources": "データは設定画面から変更できます",
+      "selection": "必要なデータや興味のあるデータを選択して下さい",
+      "performance": "サイズの大きなデータはアプリの動作性能に影響します"
+    },
     "loading": {
       "title": "準備中",
       "message": "しばらくお待ちください",
