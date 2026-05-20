@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import BootstrapApp from '../bootstrap-app';
 import type { AppBootstrapState } from '../hooks/use-app-bootstrap';
 import type { TransitRepository } from '../repositories/transit-repository';
@@ -56,6 +56,7 @@ vi.mock('react-i18next', () => ({
         'bootstrap.loading.title': 'Preparing app',
         'bootstrap.loading.detail': 'This will only take a moment.',
         'bootstrap.error.title': 'Could not start Athenai',
+        'bootstrap.error.detail': 'Please reload the app and try again.',
         'bootstrap.error.reload': 'Reload',
       };
       return labels[key] ?? key;
@@ -68,6 +69,10 @@ describe('BootstrapApp', () => {
     mockUseAppBootstrap.mockReset();
     mockTransitRepositoryProvider.mockReset();
     mockSourceLoadStateProvider.mockReset();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('renders the boot shell while the repository is loading', () => {
@@ -100,10 +105,7 @@ describe('BootstrapApp', () => {
 
   it('shows a reload action when bootstrap fails', () => {
     const reload = vi.fn();
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: { reload },
-    });
+    vi.stubGlobal('location', { ...window.location, reload });
     mockUseAppBootstrap.mockReturnValue({
       status: 'error',
       error: new Error('boot failed'),
@@ -112,7 +114,8 @@ describe('BootstrapApp', () => {
     render(<BootstrapApp />);
 
     expect(screen.getByText('Could not start Athenai')).toBeInTheDocument();
-    expect(screen.getByText('boot failed')).toBeInTheDocument();
+    expect(screen.getByText('Please reload the app and try again.')).toBeInTheDocument();
+    expect(screen.queryByText('boot failed')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
     expect(reload).toHaveBeenCalledTimes(1);
   });

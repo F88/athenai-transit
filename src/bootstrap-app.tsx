@@ -65,7 +65,7 @@ export default function BootstrapApp() {
     return (
       <AppBootShell
         title={t('bootstrap.error.title')}
-        detail={bootstrap.error.message}
+        detail={t('bootstrap.error.detail')}
         action={
           <Button onClick={() => window.location.reload()} size="sm">
             {t('bootstrap.error.reload')}

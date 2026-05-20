@@ -9,6 +9,7 @@
     },
     "error": {
       "title": "Could not start Athenai",
+      "detail": "Please reload the app and try again.",
       "reload": "Reload"
     }
   },
