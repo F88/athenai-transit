@@ -100,6 +100,17 @@ function logStep(label: string, result: CacheRecoveryStepResult): void {
   }
 }
 
+async function runRecoveryStep(
+  label: string,
+  step: () => Promise<CacheRecoveryStepResult>,
+): Promise<void> {
+  try {
+    logStep(label, await step());
+  } catch (error) {
+    logger.warn(`${label} failed unexpectedly`, error);
+  }
+}
+
 /**
  * Recover from a corrupted / stale cache state by clearing all caches and
  * Service Worker registrations, then reloading the page.
@@ -109,7 +120,14 @@ function logStep(label: string, result: CacheRecoveryStepResult): void {
  * app re-fetches a consistent set of code and data.
  */
 export async function recoverFromCacheCorruption(): Promise<void> {
-  logStep('cleared caches', await clearAllCaches());
-  logStep('unregistered service workers', await unregisterAllServiceWorkers());
-  window.location.reload();
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    await runRecoveryStep('cleared caches', clearAllCaches);
+    await runRecoveryStep('unregistered service workers', unregisterAllServiceWorkers);
+  } finally {
+    window.location.reload();
+  }
 }

@@ -197,4 +197,20 @@ describe('recoverFromCacheCorruption', () => {
 
     expect(reload).toHaveBeenCalledTimes(1);
   });
+
+  it('still reloads when a recovery step throws unexpectedly', async () => {
+    const reload = vi.fn();
+    vi.stubGlobal('location', { ...window.location, reload });
+    vi.stubGlobal('caches', {
+      keys: vi.fn().mockResolvedValue(null),
+      delete: vi.fn(),
+    });
+    vi.stubGlobal('navigator', {
+      serviceWorker: { getRegistrations: vi.fn().mockResolvedValue([]) },
+    });
+
+    await recoverFromCacheCorruption();
+
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
 });
