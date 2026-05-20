@@ -21,6 +21,7 @@ import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog
 import type { TimetableGroupV2Json } from '@contracts/data/transit-v2-json';
 
 import { FetchDataSourceV2 } from '../../datasources/fetch-data-source-v2';
+import type { BundleLoadReporter } from '../../datasources/load-events';
 import type { TransitDataSourceV2 } from '../../datasources/transit-data-source-v2';
 import {
   binarySearchFirstGte,
@@ -67,6 +68,13 @@ import { fetchDataSourceCatalog } from './fetch-data-source-catalog';
 import { fetchSourcesV2 } from './fetch-sources-v2';
 import { buildTranslatableText } from './lib/build-translatable-text';
 import { buildTripStopTimes } from './lib/build-trip-stop-times';
+import {
+  createInitialRepositoryLoadProgressState,
+  formatBootLoadProgressSummary,
+  formatLoadActivitySummary,
+  reduceRepositoryLoadProgressState,
+  summarizeRepositoryLoadProgress,
+} from './load-progress';
 import { sortTripStopTimesByStopIndex } from './lib/sort-trip-stop-times';
 import { mergeSourcesV2 } from './merge-sources-v2';
 import type {
@@ -75,6 +83,7 @@ import type {
   MergedDataV2,
   PatternStatsEntry,
   PatternTimetableEntry,
+  RepositoryLoadProgressSummary,
   RouteFreqEntry,
   StopInsightsEntry,
 } from './types';
@@ -87,6 +96,8 @@ export interface CreateResult {
   repository: TransitRepository;
   /** Details about which sources succeeded/failed. */
   loadResult: LoadResult;
+  /** Aggregated load progress summary collected during startup. */
+  loadProgress: RepositoryLoadProgressSummary;
 }
 
 /**
@@ -158,10 +169,17 @@ export class AthenaiRepositoryV2 implements TransitRepository {
   static async create(
     prefixes: string[],
     dataSource: TransitDataSourceV2 = new FetchDataSourceV2(),
+    onLoadProgress: ((summary: RepositoryLoadProgressSummary) => void) | undefined = undefined,
   ): Promise<CreateResult> {
     const t0 = performance.now();
     logger.info(`Loading sources: [${prefixes.join(', ')}]`);
 
+    const progressCollector = createRepositoryLoadProgressCollector(prefixes, onLoadProgress);
+    attachLoadReporterIfSupported(dataSource, progressCollector.report);
+
+    if (logger.isEnabled('debug')) {
+      logger.debug(`boot phase: fetch start (sources=${prefixes.length}, catalog=true)`);
+    }
     const [sourcesResult, catalogResult] = await Promise.all([
       fetchSourcesV2(prefixes, dataSource),
       fetchDataSourceCatalog(dataSource),
@@ -177,17 +195,18 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     }
 
     if (logger.isEnabled('debug')) {
-      for (const source of sources) {
-        logger.debug(
-          `[${source.prefix}] stops=${source.data.stops.data.length} routes=${source.data.routes.data.length} tripPatterns=${Object.keys(source.data.tripPatterns.data).length}`,
-        );
-      }
+      logger.debug(`boot phase: merge start (sources=${sources.length})`);
     }
 
     const merged = mergeSourcesV2(sources);
     const tMerge = performance.now();
     const mergeMs = Math.round(tMerge - tFetch);
     if (logger.isEnabled('debug')) {
+      for (const source of sources) {
+        logger.debug(
+          `[${source.prefix}] stops=${source.data.stops.data.length} routes=${source.data.routes.data.length} tripPatterns=${Object.keys(source.data.tripPatterns.data).length}`,
+        );
+      }
       logger.debug(
         `mergeSources: ${mergeMs}ms (stops=${merged.stops.length} routes=${merged.routeMap.size} stopsMetaMap=${merged.stopsMetaMap.size})`,
       );
@@ -201,6 +220,9 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
     const repository = new AthenaiRepositoryV2(merged, dataSourceCatalog);
 
+    if (logger.isEnabled('debug')) {
+      logger.debug(`boot phase: enrich start (sources=${loadResult.loaded.length})`);
+    }
     const tEnrich = performance.now();
     await enrichStopInsights(
       merged.stopsMetaMap,
@@ -213,8 +235,11 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     logger.info(
       `Initialized in ${Math.round(performance.now() - t0)}ms (fetch=${fetchMs}ms, merge=${mergeMs}ms, enrich=${enrichMs}ms): stops=${merged.stops.length} routes=${merged.routeMap.size} timetable_stops=${Object.keys(merged.timetable).length}`,
     );
+    if (logger.isEnabled('debug')) {
+      logger.debug(`boot phase: shapes start (sources=${loadResult.loaded.length})`);
+    }
     repository.startShapesLoad(loadResult.loaded, dataSource);
-    return { repository, loadResult };
+    return { repository, loadResult, loadProgress: progressCollector.snapshot() };
   }
 
   private async loadAllShapesWithInsights(
@@ -1010,4 +1035,74 @@ export class AthenaiRepositoryV2 implements TransitRepository {
     this.activeServiceCache.set(key, ids);
     return ids;
   }
+}
+
+type LoadEventReportableDataSource = TransitDataSourceV2 & {
+  setLoadEventReporter(reporter: BundleLoadReporter | undefined): void;
+};
+
+function attachLoadReporterIfSupported(
+  dataSource: TransitDataSourceV2,
+  reporter: BundleLoadReporter,
+): void {
+  if (
+    'setLoadEventReporter' in dataSource &&
+    typeof dataSource.setLoadEventReporter === 'function'
+  ) {
+    (dataSource as LoadEventReportableDataSource).setLoadEventReporter(reporter);
+  }
+}
+
+function createRepositoryLoadProgressCollector(
+  prefixes: string[],
+  onLoadProgress: ((summary: RepositoryLoadProgressSummary) => void) | undefined,
+): {
+  report: BundleLoadReporter;
+  snapshot: () => RepositoryLoadProgressSummary;
+} {
+  let state = createInitialRepositoryLoadProgressState(prefixes);
+
+  const notify = (eventLabel: string) => {
+    const summary = summarizeRepositoryLoadProgress(state);
+    if (logger.isEnabled('debug')) {
+      const lastEvent = summary.activity.lastEvent;
+      if (lastEvent === null || isRequiredBootEvent(lastEvent)) {
+        logger.debug(
+          `${formatBootEventLabel(eventLabel)} | ${formatBootLoadProgressSummary(summary.boot)} | ${formatLoadActivitySummary(summary.activity)}`,
+        );
+      } else {
+        logger.debug(
+          `${formatActivityEventLabel(eventLabel)} | ${formatLoadActivitySummary(summary.activity)}`,
+        );
+      }
+    }
+    onLoadProgress?.(summary);
+  };
+
+  notify('load event: init');
+
+  return {
+    report(event) {
+      state = reduceRepositoryLoadProgressState(state, event);
+      notify(`load event: ${event.type}:${event.path}`);
+    },
+    snapshot() {
+      return summarizeRepositoryLoadProgress(state);
+    },
+  };
+}
+
+function isRequiredBootEvent(event: Parameters<BundleLoadReporter>[0]): boolean {
+  return event.kind === 'data' && !event.optional && event.prefix !== null;
+}
+
+function formatBootEventLabel(eventLabel: string): string {
+  if (eventLabel === 'load event: init') {
+    return 'boot event: init';
+  }
+  return eventLabel.replace('load event:', 'boot event:');
+}
+
+function formatActivityEventLabel(eventLabel: string): string {
+  return eventLabel.replace('load event:', 'activity event:');
 }

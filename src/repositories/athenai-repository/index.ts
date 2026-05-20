@@ -3,11 +3,19 @@ export type { CreateResult } from './athenai-repository-v2';
 export { mergeSourcesV2 } from './merge-sources-v2';
 export { fetchSourcesV2 } from './fetch-sources-v2';
 export { enrichStopInsights } from './enrich-stop-insights';
+export {
+  formatBootLoadProgressSummary,
+  formatLoadActivitySizeSummary,
+  formatLoadActivitySummary,
+} from './load-progress';
 export type {
+  BootLoadProgressSummary,
   HeadsignTranslationsByPrefix,
+  LoadActivitySummary,
   LoadResult,
   MergedDataV2,
   PatternStatsEntry,
+  RepositoryLoadProgressSummary,
   RouteFreqEntry,
   StopInsightsEntry,
 } from './types';

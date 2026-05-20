@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { FetchDataSourceV2, validateBasePath } from '../fetch-data-source-v2';
+import {
+  FetchDataSourceV2,
+  formatTransferSummary,
+  selectResourceTimingEntry,
+  validateBasePath,
+} from '../fetch-data-source-v2';
+import { configureLogger, getLoggerConfig } from '../../lib/logger';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -170,6 +176,19 @@ describe('FetchDataSourceV2', () => {
       await expect(ds.loadData('tobus')).rejects.toThrow('invalid bundle_version');
     });
 
+    it('emits failed instead of succeeded when envelope validation fails', async () => {
+      const bad = { ...makeDataBundle(), bundle_version: 1 };
+      const events: string[] = [];
+      fetchMock.mockResolvedValueOnce(jsonResponse(bad));
+      const ds = new FetchDataSourceV2();
+      ds.setLoadEventReporter((event) => {
+        events.push(event.type);
+      });
+
+      await expect(ds.loadData('tobus')).rejects.toThrow('invalid bundle_version');
+      expect(events).toEqual(['started', 'failed']);
+    });
+
     it('throws on wrong bundle kind', async () => {
       const bad = { ...makeDataBundle(), kind: 'shapes' };
       fetchMock.mockResolvedValueOnce(jsonResponse(bad));
@@ -194,6 +213,133 @@ describe('FetchDataSourceV2', () => {
       fetchMock.mockRejectedValueOnce(new DOMException('The operation was aborted.', 'AbortError'));
       const ds = new FetchDataSourceV2('/data-v2', 100);
       await expect(ds.loadData('tobus')).rejects.toThrow('timeout');
+    });
+
+    it('does not fail a successful fetch when debug logging is enabled without location', async () => {
+      const loggerConfig = getLoggerConfig();
+      const originalLocation = globalThis.location;
+      const consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+
+      configureLogger({
+        level: 'debug',
+        enabledTags: ['FetchDataSourceV2'],
+        tagLevels: { ...loggerConfig.tagLevels },
+      });
+      vi.stubGlobal('location', undefined);
+      fetchMock.mockResolvedValueOnce(jsonResponse(makeDataBundle()));
+
+      try {
+        const ds = new FetchDataSourceV2();
+        await expect(ds.loadData('tobus')).resolves.toMatchObject({ prefix: 'tobus' });
+        expect(consoleDebugSpy).toHaveBeenCalledWith(
+          expect.stringContaining('[FetchDataSourceV2]'),
+          expect.stringContaining(
+            'fetch metrics: tobus/data.json: estimated 0.6KB decoded (transfer size unavailable)',
+          ),
+        );
+      } finally {
+        configureLogger({
+          level: loggerConfig.level,
+          enabledTags: [...loggerConfig.enabledTags],
+          tagLevels: { ...loggerConfig.tagLevels },
+        });
+        vi.stubGlobal('location', originalLocation);
+      }
+    });
+
+    it('uses PerformanceObserver metrics in the debug log when available', async () => {
+      const loggerConfig = getLoggerConfig();
+      const consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
+      const performanceNowSpy = vi
+        .spyOn(performance, 'now')
+        .mockReturnValueOnce(10)
+        .mockReturnValueOnce(22)
+        .mockReturnValueOnce(27);
+      const resolvedUrl = new URL('/data-v2/tobus/data.json', globalThis.location.href).href;
+      const entry = {
+        entryType: 'resource',
+        name: resolvedUrl,
+        startTime: 15,
+        transferSize: 1536,
+        encodedBodySize: 1024,
+        decodedBodySize: 2048,
+      } as PerformanceResourceTiming;
+
+      class MockPerformanceObserver {
+        observe = vi.fn();
+        disconnect = vi.fn();
+        takeRecords = vi.fn(() => [entry as unknown as PerformanceEntry]);
+
+        constructor(_callback: PerformanceObserverCallback) {}
+      }
+
+      configureLogger({
+        level: 'debug',
+        enabledTags: ['FetchDataSourceV2'],
+        tagLevels: { ...loggerConfig.tagLevels },
+      });
+      vi.stubGlobal(
+        'PerformanceObserver',
+        MockPerformanceObserver as unknown as typeof PerformanceObserver,
+      );
+      fetchMock.mockResolvedValueOnce(jsonResponse(makeDataBundle()));
+
+      try {
+        const ds = new FetchDataSourceV2();
+        await expect(ds.loadData('tobus')).resolves.toMatchObject({ prefix: 'tobus' });
+        expect(consoleDebugSpy).toHaveBeenCalledWith(
+          expect.stringContaining('[FetchDataSourceV2]'),
+          expect.stringContaining(
+            'fetch metrics: tobus/data.json: 1.0KB over the wire, 2.0KB decoded',
+          ),
+        );
+      } finally {
+        configureLogger({
+          level: loggerConfig.level,
+          enabledTags: [...loggerConfig.enabledTags],
+          tagLevels: { ...loggerConfig.tagLevels },
+        });
+        performanceNowSpy.mockRestore();
+      }
+    });
+
+    it('disconnects PerformanceObserver even when fetch returns null early', async () => {
+      const loggerConfig = getLoggerConfig();
+      const observerInstances: MockPerformanceObserver[] = [];
+
+      class MockPerformanceObserver {
+        observe = vi.fn();
+        disconnect = vi.fn();
+        takeRecords = vi.fn(() => []);
+
+        constructor(_callback: PerformanceObserverCallback) {
+          observerInstances.push(this);
+        }
+      }
+
+      configureLogger({
+        level: 'debug',
+        enabledTags: ['FetchDataSourceV2'],
+        tagLevels: { ...loggerConfig.tagLevels },
+      });
+      vi.stubGlobal(
+        'PerformanceObserver',
+        MockPerformanceObserver as unknown as typeof PerformanceObserver,
+      );
+      fetchMock.mockResolvedValueOnce(notFoundResponse());
+
+      try {
+        const ds = new FetchDataSourceV2();
+        await expect(ds.loadShapes('tobus')).resolves.toBeNull();
+        expect(observerInstances).toHaveLength(1);
+        expect(observerInstances[0].disconnect).toHaveBeenCalledTimes(1);
+      } finally {
+        configureLogger({
+          level: loggerConfig.level,
+          enabledTags: [...loggerConfig.enabledTags],
+          tagLevels: { ...loggerConfig.tagLevels },
+        });
+      }
     });
   });
 
@@ -231,6 +377,34 @@ describe('FetchDataSourceV2', () => {
       fetchMock.mockResolvedValueOnce(brokenJsonResponse());
       const ds = new FetchDataSourceV2();
       expect(await ds.loadShapes('tobus')).toBeNull();
+    });
+
+    it('warns on JSON parse error before skipping an optional bundle', async () => {
+      const loggerConfig = getLoggerConfig();
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      configureLogger({
+        level: 'debug',
+        enabledTags: ['FetchDataSourceV2'],
+        tagLevels: { ...loggerConfig.tagLevels },
+      });
+      fetchMock.mockResolvedValueOnce(brokenJsonResponse());
+
+      try {
+        const ds = new FetchDataSourceV2();
+        await expect(ds.loadShapes('tobus')).resolves.toBeNull();
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('[FetchDataSourceV2]'),
+          expect.stringContaining('tobus/shapes.json: JSON parse error (optional, skipping)'),
+          expect.any(SyntaxError),
+        );
+      } finally {
+        configureLogger({
+          level: loggerConfig.level,
+          enabledTags: [...loggerConfig.enabledTags],
+          tagLevels: { ...loggerConfig.tagLevels },
+        });
+      }
     });
 
     it('returns null on timeout', async () => {
@@ -383,5 +557,76 @@ describe('validateBasePath', () => {
 
   it('throws on empty string', () => {
     expect(() => validateBasePath('/')).toThrow('Invalid VITE_TRANSIT_DATA_PATH');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// selectResourceTimingEntry
+// ---------------------------------------------------------------------------
+
+describe('selectResourceTimingEntry', () => {
+  /** Build a minimal Resource Timing entry carrying only `startTime`. */
+  function entryAt(startTime: number): PerformanceResourceTiming {
+    return { startTime } as unknown as PerformanceResourceTiming;
+  }
+
+  it('returns undefined for an empty entry list', () => {
+    expect(selectResourceTimingEntry([], 100)).toBeUndefined();
+  });
+
+  it('returns undefined when every entry started before sinceTime', () => {
+    const entries = [entryAt(10), entryAt(50), entryAt(99)];
+    expect(selectResourceTimingEntry(entries, 100)).toBeUndefined();
+  });
+
+  it('returns the only entry started at or after sinceTime', () => {
+    const target = entryAt(150);
+    expect(selectResourceTimingEntry([entryAt(10), target], 100)).toBe(target);
+  });
+
+  it('includes an entry whose startTime equals sinceTime exactly', () => {
+    const target = entryAt(100);
+    expect(selectResourceTimingEntry([target], 100)).toBe(target);
+  });
+
+  it('returns the earliest entry when several started after sinceTime', () => {
+    // The current fetch produced the earliest qualifying entry; later ones
+    // belong to subsequent loads of the same URL.
+    const earliest = entryAt(120);
+    const entries = [entryAt(50), earliest, entryAt(300), entryAt(180)];
+    expect(selectResourceTimingEntry(entries, 100)).toBe(earliest);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// formatTransferSummary
+// ---------------------------------------------------------------------------
+
+describe('formatTransferSummary', () => {
+  it('falls back to the decoded text length when metrics are unavailable', () => {
+    // 4096 UTF-16 code units / 1024 = 4.0 KB
+    expect(formatTransferSummary(null, 4096)).toBe(
+      'estimated 4.0KB decoded (transfer size unavailable)',
+    );
+  });
+
+  it('reports when the response required no network transfer', () => {
+    const metrics = {
+      transferSize: 0,
+      encodedBodySize: 512,
+      decodedBodySize: 2048,
+      noNetworkTransfer: true,
+    };
+    expect(formatTransferSummary(metrics, 0)).toBe('no network transfer, 2.0KB decoded');
+  });
+
+  it('reports wire and decoded sizes for a network fetch', () => {
+    const metrics = {
+      transferSize: 1500,
+      encodedBodySize: 1024,
+      decodedBodySize: 10240,
+      noNetworkTransfer: false,
+    };
+    expect(formatTransferSummary(metrics, 0)).toBe('1.0KB over the wire, 10.0KB decoded');
   });
 });
