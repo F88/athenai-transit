@@ -136,12 +136,12 @@ export class TestDataSourceV2 implements TransitDataSourceV2 {
     });
     if (this.dataSourceCatalogError) {
       this.loadEventReporter?.({
-        type: 'skipped',
+        type: 'failed',
         path: 'global/data-source-catalog.json',
         prefix: null,
         kind: 'data-source-catalog',
         optional: true,
-        reason: 'network-error',
+        reason: 'bundle-envelope-error',
         message: this.dataSourceCatalogError.message,
       });
       return Promise.reject(this.dataSourceCatalogError);

@@ -114,6 +114,8 @@ interface FetchBundleResult {
   networkMs: number;
   /** Time spent on JSON.parse (ms). */
   parseMs: number;
+  /** Transport and decoded size metrics captured for the successful load. */
+  metrics: BundleLoadMetrics;
 }
 
 /** Per-call options for bundle fetch helpers. */
@@ -372,7 +374,8 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     options: FetchBundleOptions = {},
   ): Promise<T> {
     const result = await this.loadRequiredBundle(path, options);
-    assertBundleEnvelope(result.json, expectedKind, path);
+    this.assertBundleEnvelopeWithEvent(path, false, result.json, expectedKind);
+    this.emitBundleLoadSucceeded(path, false, result.metrics);
     return result.json as T;
   }
 
@@ -386,7 +389,8 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       return null;
     }
 
-    assertBundleEnvelope(result.json, expectedKind, path);
+    this.assertBundleEnvelopeWithEvent(path, true, result.json, expectedKind);
+    this.emitBundleLoadSucceeded(path, true, result.metrics);
     return result.json as T;
   }
 
@@ -587,6 +591,38 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     }
   }
 
+  private assertBundleEnvelopeWithEvent(
+    path: string,
+    optional: boolean,
+    json: unknown,
+    expectedKind: string,
+  ): void {
+    try {
+      assertBundleEnvelope(json, expectedKind, path);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.emitBundleLoadEvent({
+        ...describeBundleLoadTarget(path, optional),
+        type: 'failed',
+        reason: 'bundle-envelope-error',
+        message,
+      });
+      throw error;
+    }
+  }
+
+  private emitBundleLoadSucceeded(
+    path: string,
+    optional: boolean,
+    metrics: BundleLoadMetrics,
+  ): void {
+    this.emitBundleLoadEvent({
+      ...describeBundleLoadTarget(path, optional),
+      type: 'succeeded',
+      metrics,
+    });
+  }
+
   private handleBundleFailure(
     path: string,
     optional: boolean,
@@ -680,17 +716,13 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       networkMs: fetched.networkMs,
       parseMs: parsed.parseMs,
     };
-    this.emitBundleLoadEvent({
-      ...target,
-      type: 'succeeded',
-      metrics,
-    });
 
     return {
       json: parsed.json,
       sizeApprox: fetched.sizeApprox,
       networkMs: fetched.networkMs,
       parseMs: parsed.parseMs,
+      metrics,
     };
   }
 }

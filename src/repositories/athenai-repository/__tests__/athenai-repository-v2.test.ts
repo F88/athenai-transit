@@ -79,6 +79,20 @@ describe('AthenaiRepositoryV2.create', () => {
     expect(progressUpdates[0]).toBe(0);
     expect(progressUpdates).toContain(1);
   });
+
+  it('counts catalog rejection as failed activity without failing repository creation', async () => {
+    const fixture = createFixtureV2();
+    const envelopeError = new Error(
+      'global/data-source-catalog.json: invalid bundle_version (expected 3, got 2)',
+    );
+    const ds = new TestDataSourceV2({ test: fixture }, {}, {}, null, envelopeError);
+
+    const { repository, loadProgress } = await AthenaiRepositoryV2.create(['test'], ds);
+
+    expect(repository.getDataSourceCatalog()).toBeNull();
+    expect(loadProgress.boot.completedSources).toBe(1);
+    expect(loadProgress.activity.requestCounts.failed).toBe(1);
+  });
 });
 
 // ---------------------------------------------------------------------------

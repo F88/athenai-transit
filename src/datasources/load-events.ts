@@ -12,7 +12,8 @@ export type BundleLoadFailureReason =
   | 'http-error'
   | 'non-json'
   | 'body-read-error'
-  | 'json-parse-error';
+  | 'json-parse-error'
+  | 'bundle-envelope-error';
 
 export interface BundleLoadMetrics {
   transferBytes?: number;

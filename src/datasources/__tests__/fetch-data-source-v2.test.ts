@@ -176,6 +176,19 @@ describe('FetchDataSourceV2', () => {
       await expect(ds.loadData('tobus')).rejects.toThrow('invalid bundle_version');
     });
 
+    it('emits failed instead of succeeded when envelope validation fails', async () => {
+      const bad = { ...makeDataBundle(), bundle_version: 1 };
+      const events: string[] = [];
+      fetchMock.mockResolvedValueOnce(jsonResponse(bad));
+      const ds = new FetchDataSourceV2();
+      ds.setLoadEventReporter((event) => {
+        events.push(event.type);
+      });
+
+      await expect(ds.loadData('tobus')).rejects.toThrow('invalid bundle_version');
+      expect(events).toEqual(['started', 'failed']);
+    });
+
     it('throws on wrong bundle kind', async () => {
       const bad = { ...makeDataBundle(), kind: 'shapes' };
       fetchMock.mockResolvedValueOnce(jsonResponse(bad));
