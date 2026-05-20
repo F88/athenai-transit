@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.20]
+
 ### Added
 
 - Datasource: Kawasaki City Bus (川崎市バス) を追加
