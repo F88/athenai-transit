@@ -363,16 +363,16 @@ function AppBootShell({
       )}
       onTransitionEnd={onTransitionEnd}
     >
-      <div className="mx-auto flex h-full w-full max-w-md flex-col px-5 pt-16 pb-8">
-        <div className="flex shrink-0 flex-col items-center gap-4 pb-5 text-center">
+      <div className="mx-auto flex h-full w-full max-w-md flex-col px-8 pt-24 pb-8">
+        <div className="flex shrink-0 flex-col items-center gap-8 pb-4 text-center">
           <p className="font-press-start text-muted-foreground text-xl font-medium tracking-wide uppercase">
             {title}
           </p>
           <p className="font-press-start text-muted-foreground text-sm leading-6">{message}</p>
-          {tips}
+          <p className="font-press-start text-muted-foreground text-sm leading-6">{tips}</p>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col gap-4">{progressContent}</div>
+        <div className="flex min-h-0 flex-1 flex-col gap-4 px-4">{progressContent}</div>
 
         {action === undefined ? null : (
           <div className="flex shrink-0 justify-center pt-5">{action}</div>
