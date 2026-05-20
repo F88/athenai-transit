@@ -20,7 +20,7 @@ describe('load progress reducer', () => {
         prefix: 'alpha',
         kind: 'data',
         optional: false,
-        metrics: { transferBytes: 100, decodedBytes: 200, networkMs: 3, parseMs: 1 },
+        metrics: { encodedBytes: 100, decodedBytes: 200, networkMs: 3, parseMs: 1 },
       },
       { type: 'started', path: 'beta/data.json', prefix: 'beta', kind: 'data', optional: false },
       {

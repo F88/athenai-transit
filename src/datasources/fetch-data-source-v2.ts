@@ -710,9 +710,9 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     }
 
     const metrics: BundleLoadMetrics = {
-      transferBytes: fetched.transferMetrics?.encodedBodySize,
+      encodedBytes: fetched.transferMetrics?.encodedBodySize,
       decodedBytes: fetched.transferMetrics?.decodedBodySize,
-      estimatedDecodedBytes: fetched.sizeApprox,
+      fallbackDecodedBytes: fetched.sizeApprox,
       networkMs: fetched.networkMs,
       parseMs: parsed.parseMs,
     };

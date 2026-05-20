@@ -131,9 +131,9 @@ export function reduceRepositoryLoadProgressState(
     }
     case 'succeeded': {
       next.requestCounts.succeeded += 1;
-      next.totalEncodedBytes += event.metrics.transferBytes ?? 0;
+      next.totalEncodedBytes += event.metrics.encodedBytes ?? 0;
       next.totalDecodedBytes +=
-        event.metrics.decodedBytes ?? event.metrics.estimatedDecodedBytes ?? 0;
+        event.metrics.decodedBytes ?? event.metrics.fallbackDecodedBytes ?? 0;
       if (event.kind === 'data' && event.prefix !== null) {
         const current = next.requiredSourceStatusByPrefix[event.prefix];
         if (current !== 'loaded') {

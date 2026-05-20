@@ -15,11 +15,19 @@ export type BundleLoadFailureReason =
   | 'json-parse-error'
   | 'bundle-envelope-error';
 
+/**
+ * Optional transport and parsing metrics captured for a successful bundle load.
+ */
 export interface BundleLoadMetrics {
-  transferBytes?: number;
+  /** Encoded response body size reported by Resource Timing, when available. */
+  encodedBytes?: number;
+  /** Decoded response body size reported by Resource Timing, when available. */
   decodedBytes?: number;
-  estimatedDecodedBytes?: number;
+  /** Fallback decoded-size approximation used when decoded bytes are unavailable. */
+  fallbackDecodedBytes?: number;
+  /** Time spent on network transfer and body read, in milliseconds. */
   networkMs?: number;
+  /** Time spent parsing JSON, in milliseconds. */
   parseMs?: number;
 }
 
