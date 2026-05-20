@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
@@ -10,6 +12,14 @@
   &::-webkit-scrollbar {
     display: none;
   }
+}
+
+@utility font-vt323 {
+  font-family: 'VT323', monospace;
+}
+
+@utility font-press-start {
+  font-family: 'Press Start 2P', monospace;
 }
 
 @utility border-app-neutral {

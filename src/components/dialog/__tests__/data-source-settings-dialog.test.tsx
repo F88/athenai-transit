@@ -228,7 +228,7 @@ describe('DataSourceSettingsDialog — normal mode', () => {
 
     const demoRow = findGroupRow('Demo Group');
 
-    expect(await within(demoRow).findByText('Jan 1, 2026 - Jan 31, 2026')).toBeInTheDocument();
+    expect(await within(demoRow).findByText('20260101-20260131')).toBeInTheDocument();
     expect(within(demoRow).queryByText('demo')).not.toBeInTheDocument();
   });
 

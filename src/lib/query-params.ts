@@ -16,6 +16,7 @@
  * - `?tileIdx=0` — initial tile source index (0-based, overrides localStorage)
  * - `?lang=en` — initial display language (BCP 47 code, overrides localStorage)
  * - `?diag=v2-load` — run diagnostics (see DEVELOPMENT.md)
+ * - `?bootstrap=hold` — keep the bootstrap shell visible after ready for UI checks
  */
 
 import { DEFAULT_MAX_ZOOM } from '../config/map-constants';
@@ -45,8 +46,14 @@ function getParams(): URLSearchParams {
 /** Valid values for the `?repo=` query parameter. */
 export type RepoParam = 'v2' | 'mock';
 
+/** Valid values for the `?bootstrap=` query parameter. */
+export type BootstrapParam = 'hold';
+
 /** Set of recognized `?repo=` values. */
 const VALID_REPO_VALUES = new Set<string>(['v2', 'mock']);
+
+/** Set of recognized `?bootstrap=` values. */
+const VALID_BOOTSTRAP_VALUES = new Set<string>(['hold']);
 
 /**
  * Returns the `?repo=` param value, defaulting to 'v2'.
@@ -107,6 +114,11 @@ export function cleanupInvalidQueryParams(tileSourceCount: number): void {
   const repo = params.get('repo');
   if (repo !== null && !VALID_REPO_VALUES.has(repo)) {
     keysToRemove.push('repo');
+  }
+
+  const bootstrap = params.get('bootstrap');
+  if (bootstrap !== null && !VALID_BOOTSTRAP_VALUES.has(bootstrap)) {
+    keysToRemove.push('bootstrap');
   }
 
   // Use raw query extraction here so timezone offsets like `+09:00`
@@ -205,6 +217,23 @@ export function getStopParam(): string | null {
  */
 export function getDiagParam(): string | null {
   return getParams().get('diag');
+}
+
+/**
+ * Returns the `?bootstrap=` param value, or null if absent or unrecognized.
+ *
+ * `hold` keeps the bootstrap shell visible after repository boot finishes,
+ * allowing developers to inspect the ready-state bootstrap UI before mounting
+ * the repository-backed app.
+ *
+ * @returns The bootstrap mode, or null for the default automatic transition.
+ */
+export function getBootstrapParam(): BootstrapParam | null {
+  const value = getParams().get('bootstrap');
+  if (value === 'hold') {
+    return value;
+  }
+  return null;
 }
 
 /**

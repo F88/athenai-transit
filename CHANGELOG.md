@@ -19,6 +19,8 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Changed
 
 - App boot: React mount と repository boot を分離し、repository 準備中にも最小限の bootstrap shell を表示するようにした。既存の repository 選択 (`?repo=` / `?sources=`) と boot-time diagnostics の挙動は維持しつつ、loading / error 表示を i18n 対応し、今後の progress UI 追加に備えた。
+- App boot: bootstrap shell に required data bundle の per-prefix 進捗を示す progress bar、最新状態の `ProgressStatus`、scrollable な `ProgressLogs` を追加し、repository boot 完了後は短い fade transition で App に切り替えるようにした。
+- App boot: bootstrap shell の progress / notice 表示を調整。progress bar は `info` 系トークンを使うようにし、完了数・失敗数は数値だけを強調表示した。notice は required `data.json` failure を `Errors`、optional bundle failure を `Warnings` に分離し、`?bootstrap=hold` のときだけ scrollable な progress log viewer を表示するようにした。
 - Data source catalog / settings: trip 実績ベースの運行期間 summary `summary.service.operatingDates` (`first` / `last` / `count`) を catalog に追加し、Data Source Settings dialog では group summary に `YYYYMMDD-YYYYMMDD` 形式の運行期間 badge として表示するようにした。group 集約は `min(first)` / `max(last)` の boundary-only summary とし、per-group の `count` は持たない。
 - Data: kyoto-bus の GTFS resource を 20260516 版へ更新。
 - Data: kyoto-city-bus の GTFS resource を 20260518 版へ更新。

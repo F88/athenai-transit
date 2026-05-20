@@ -3,14 +3,35 @@
     "loading": "Loading..."
   },
   "bootstrap": {
+    "action": {
+      "reload": "Reload",
+      "showApp": "Show app"
+    },
+    "logViewer": {
+      "title": "Logs"
+    },
+    "notice": {
+      "loadErrorsTitle": "Errors",
+      "loadWarningsTitle": "Warnings"
+    },
+    "tips": {
+      "dataSources": "You can change data in settings.",
+      "selection": "Choose the data you need or are interested in.",
+      "performance": "Large data can affect app performance."
+    },
     "loading": {
       "title": "Preparing app",
-      "detail": "This will only take a moment."
+      "message": "Now Loading...",
+      "progressLabel": "Loading data",
+      "progressFailed": "failed"
+    },
+    "ready": {
+      "title": "Ready",
+      "message": "Ready"
     },
     "error": {
       "title": "Could not start Athenai",
-      "detail": "Please reload the app and try again.",
-      "reload": "Reload"
+      "message": "Please reload the app and try again."
     }
   },
   "view": {

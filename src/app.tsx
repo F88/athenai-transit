@@ -39,6 +39,7 @@ import { useTransitRepository } from './hooks/use-transit-repository';
 import { useTripInspection } from './hooks/use-trip-inspection';
 import { useUserSettings } from './hooks/use-user-settings';
 import i18n from './i18n';
+import { applyAppTheme } from './lib/app-theme';
 import { createLogger } from './lib/logger';
 import { getStopParam } from './lib/query-params';
 import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
@@ -955,7 +956,7 @@ export default function App() {
 
   // Sync dark class on <html> element
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', settings.theme === 'dark');
+    applyAppTheme(settings.theme);
   }, [settings.theme]);
 
   return (

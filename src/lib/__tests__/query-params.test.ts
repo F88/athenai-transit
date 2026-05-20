@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TILE_SOURCES } from '../../config/tile-sources';
 import {
   cleanupInvalidQueryParams,
+  getBootstrapParam,
   getDiagParam,
   getLangParam,
   getRepoParam,
@@ -297,6 +298,25 @@ describe('getDiagParam', () => {
   });
 });
 
+describe('getBootstrapParam', () => {
+  afterEach(restoreLocation);
+
+  it('returns null when no param', () => {
+    setSearch('');
+    expect(getBootstrapParam()).toBeNull();
+  });
+
+  it('returns "hold" when ?bootstrap=hold', () => {
+    setSearch('?bootstrap=hold');
+    expect(getBootstrapParam()).toBe('hold');
+  });
+
+  it('returns null for unrecognized values', () => {
+    setSearch('?bootstrap=auto');
+    expect(getBootstrapParam()).toBeNull();
+  });
+});
+
 describe('getStopParam', () => {
   afterEach(restoreLocation);
 
@@ -336,9 +356,9 @@ describe('cleanupInvalidQueryParams', () => {
     restoreLocation();
   });
 
-  it('removes invalid repo/time/lat/lng/zm/stop/tileIdx params and preserves valid free-form params', () => {
+  it('removes invalid repo/bootstrap/time/lat/lng/zm/stop/tileIdx params and preserves valid free-form params', () => {
     setSearch(
-      '?repo=v1&time=bad&lat=999&lng=abc&zm=99&stop=%20%20&tileIdx=abc&sources=minkuru&diag=v2-load',
+      '?repo=v1&bootstrap=auto&time=bad&lat=999&lng=abc&zm=99&stop=%20%20&tileIdx=abc&sources=minkuru&diag=v2-load',
     );
 
     cleanupInvalidQueryParams(TILE_SOURCE_COUNT);
@@ -353,7 +373,7 @@ describe('cleanupInvalidQueryParams', () => {
 
   it('does nothing when all params are valid', () => {
     setSearch(
-      '?repo=mock&time=2026-03-25T20:55:00+09:00&lat=35.68&lng=139.77&zm=14&stop=keio_S0123&tileIdx=3',
+      '?repo=mock&bootstrap=hold&time=2026-03-25T20:55:00+09:00&lat=35.68&lng=139.77&zm=14&stop=keio_S0123&tileIdx=3',
     );
 
     cleanupInvalidQueryParams(TILE_SOURCE_COUNT);

@@ -1,6 +1,9 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { LoadResult } from '../../repositories/athenai-repository';
+import type {
+  LoadResult,
+  RepositoryLoadProgressSummary,
+} from '../../repositories/athenai-repository';
 import type { TransitRepository } from '../../repositories/transit-repository';
 
 type SetupOptions = {
@@ -10,15 +13,36 @@ type SetupOptions = {
   prefixes?: string[];
   createResult?: { repository: TransitRepository; loadResult: LoadResult };
   createError?: Error;
+  deferCreate?: boolean;
   diagnosticsError?: Error;
 };
+
+type RepositoryCreateMock = (
+  prefixes: string[],
+  dataSource: unknown,
+  onLoadProgress?: (summary: RepositoryLoadProgressSummary) => void,
+) => Promise<{ repository: TransitRepository; loadResult: LoadResult }>;
 
 async function setupUseAppBootstrap(options: SetupOptions = {}) {
   const repository = options.createResult?.repository ?? ({} as TransitRepository);
   const loadResult = options.createResult?.loadResult ?? { loaded: ['alpha'], failed: [] };
   const mockRepository = { mock: true } as unknown as TransitRepository;
+  let resolveCreatePromise: (() => void) | null = null;
 
-  const create = vi.fn(() => {
+  const create = vi.fn<RepositoryCreateMock>((_prefixes, _dataSource, _onLoadProgress) => {
+    if (options.deferCreate) {
+      return new Promise<{ repository: TransitRepository; loadResult: LoadResult }>(
+        (resolve, reject) => {
+          resolveCreatePromise = () => {
+            if (options.createError) {
+              reject(options.createError);
+              return;
+            }
+            resolve({ repository, loadResult });
+          };
+        },
+      );
+    }
     if (options.createError) {
       return Promise.reject(options.createError);
     }
@@ -71,8 +95,37 @@ async function setupUseAppBootstrap(options: SetupOptions = {}) {
     MockRepository,
     mockRepository,
     repository,
+    resolveCreate: () => resolveCreatePromise?.(),
     runDiagnostics,
     useAppBootstrap,
+  };
+}
+
+function createProgressSummary(): RepositoryLoadProgressSummary {
+  const event = {
+    type: 'succeeded',
+    kind: 'data',
+    path: 'alpha/data.json',
+    prefix: 'alpha',
+    optional: false,
+    metrics: {},
+  } as const;
+
+  return {
+    boot: {
+      totalSources: 2,
+      startedSources: 2,
+      completedSources: 1,
+      failedSources: 0,
+      progressRatio: 0.5,
+      lastRequiredEvent: event,
+    },
+    activity: {
+      requestCounts: { started: 2, succeeded: 1, skipped: 0, failed: 0 },
+      totalEncodedBytes: 0,
+      totalDecodedBytes: 0,
+      lastEvent: event,
+    },
   };
 }
 
@@ -101,8 +154,51 @@ describe('useAppBootstrap', () => {
 
     expect(create).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledWith(['alpha', 'beta'], undefined, expect.any(Function));
-    expect(first.result.current).toEqual({ status: 'ready', repository, loadResult });
-    expect(second.result.current).toEqual({ status: 'ready', repository, loadResult });
+    expect(first.result.current).toEqual({
+      status: 'ready',
+      repository,
+      loadResult,
+      progress: null,
+      logs: [],
+    });
+    expect(second.result.current).toEqual({
+      status: 'ready',
+      repository,
+      loadResult,
+      progress: null,
+      logs: [],
+    });
+  });
+
+  it('updates loading state from repository progress events', async () => {
+    const { create, resolveCreate, useAppBootstrap } = await setupUseAppBootstrap({
+      deferCreate: true,
+    });
+    const progress = createProgressSummary();
+
+    const { result } = renderHook(() => useAppBootstrap());
+
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+    const onLoadProgress = create.mock.calls[0]?.[2];
+    expect(onLoadProgress).toEqual(expect.any(Function));
+    act(() => {
+      onLoadProgress?.(progress);
+    });
+
+    await waitFor(() => expect(result.current.progress).toBe(progress));
+    expect(result.current).toMatchObject({
+      status: 'loading',
+      progress,
+      logs: [
+        {
+          event: progress.activity.lastEvent,
+          summary: progress,
+        },
+      ],
+    });
+
+    resolveCreate();
+    await waitFor(() => expect(result.current.status).toBe('ready'));
   });
 
   it('uses MockRepository when ?repo=mock is selected', async () => {
@@ -120,6 +216,8 @@ describe('useAppBootstrap', () => {
       status: 'ready',
       repository: mockRepository,
       loadResult: { loaded: [], failed: [] },
+      progress: null,
+      logs: [],
     });
   });
 
@@ -144,6 +242,45 @@ describe('useAppBootstrap', () => {
     const { result } = renderHook(() => useAppBootstrap());
 
     await waitFor(() => expect(result.current.status).toBe('error'));
-    expect(result.current).toEqual({ status: 'error', error: createError });
+    expect(result.current).toEqual({
+      status: 'error',
+      error: createError,
+      progress: null,
+      logs: [],
+    });
+  });
+
+  it('keeps the last progress snapshot when repository boot fails', async () => {
+    const createError = new Error('repository failed');
+    const { create, resolveCreate, useAppBootstrap } = await setupUseAppBootstrap({
+      createError,
+      deferCreate: true,
+    });
+    const progress = createProgressSummary();
+
+    const { result } = renderHook(() => useAppBootstrap());
+
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+    const onLoadProgress = create.mock.calls[0]?.[2];
+    expect(onLoadProgress).toEqual(expect.any(Function));
+    act(() => {
+      onLoadProgress?.(progress);
+    });
+
+    await waitFor(() => expect(result.current.progress).toBe(progress));
+    resolveCreate();
+
+    await waitFor(() => expect(result.current.status).toBe('error'));
+    expect(result.current).toMatchObject({
+      status: 'error',
+      error: createError,
+      progress,
+      logs: [
+        {
+          event: progress.activity.lastEvent,
+          summary: progress,
+        },
+      ],
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DataSourceManager } from '../config/data-source-manager';
+import type { BundleLoadEvent } from '../datasources/load-events';
 import { resolveFetchDataSources } from '../domain/datasource/resolve-fetch-data-sources';
 import { loadEnabledGroupIdsFromStorage } from '../domain/datasource/data-source-selection-storage';
 import { getDiagParam, getRepoParam, getSourcesParam } from '../lib/query-params';
@@ -14,20 +15,34 @@ import {
 import type { TransitRepository } from '../repositories/transit-repository';
 
 const logger = createLogger('AppBootstrap');
+const MAX_BOOTSTRAP_PROGRESS_LOGS = 500;
+
+export type BootstrapProgressLogEntry = {
+  id: number;
+  createdAt: number;
+  event: BundleLoadEvent | null;
+  summary: RepositoryLoadProgressSummary;
+};
 
 type AppBootstrapReadyState = {
   status: 'ready';
   repository: TransitRepository;
   loadResult: LoadResult;
+  progress: RepositoryLoadProgressSummary | null;
+  logs: BootstrapProgressLogEntry[];
 };
 
 type AppBootstrapLoadingState = {
   status: 'loading';
+  progress: RepositoryLoadProgressSummary | null;
+  logs: BootstrapProgressLogEntry[];
 };
 
 type AppBootstrapErrorState = {
   status: 'error';
   error: Error;
+  progress: RepositoryLoadProgressSummary | null;
+  logs: BootstrapProgressLogEntry[];
 };
 
 export type AppBootstrapState =
@@ -36,7 +51,35 @@ export type AppBootstrapState =
   | AppBootstrapErrorState;
 
 let bootstrapPromise: Promise<AppBootstrapReadyState> | null = null;
+let bootstrapProgress: RepositoryLoadProgressSummary | null = null;
+let bootstrapProgressLogs: BootstrapProgressLogEntry[] = [];
+let nextBootstrapProgressLogId = 1;
 let hasLoggedBootstrapMount = false;
+const progressListeners = new Set<(state: AppBootstrapLoadingState) => void>();
+
+function createLoadingState(): AppBootstrapLoadingState {
+  return {
+    status: 'loading',
+    progress: bootstrapProgress,
+    logs: bootstrapProgressLogs,
+  };
+}
+
+function publishBootstrapProgress(summary: RepositoryLoadProgressSummary): void {
+  bootstrapProgress = summary;
+  const entry: BootstrapProgressLogEntry = {
+    id: nextBootstrapProgressLogId,
+    createdAt: performance.now(),
+    event: summary.activity.lastEvent ?? summary.boot.lastRequiredEvent,
+    summary,
+  };
+  nextBootstrapProgressLogId += 1;
+  bootstrapProgressLogs = [...bootstrapProgressLogs, entry].slice(-MAX_BOOTSTRAP_PROGRESS_LOGS);
+  const loadingState = createLoadingState();
+  for (const listener of progressListeners) {
+    listener(loadingState);
+  }
+}
 
 async function createRepository(): Promise<{
   repository: TransitRepository;
@@ -64,6 +107,8 @@ async function createRepository(): Promise<{
   const bootStartTime = performance.now();
   let hasLoggedBootComplete = false;
   const onLoadProgress = (summary: RepositoryLoadProgressSummary) => {
+    publishBootstrapProgress(summary);
+
     if (logger.isEnabled('debug')) {
       logger.debug(formatBootLoadProgressSummary(summary.boot));
       logger.debug(formatLoadActivitySummary(summary.activity));
@@ -117,6 +162,8 @@ async function bootstrapApplication(): Promise<AppBootstrapReadyState> {
     status: 'ready',
     repository,
     loadResult,
+    progress: bootstrapProgress,
+    logs: bootstrapProgressLogs,
   };
 }
 
@@ -131,10 +178,16 @@ function getBootstrapPromise(): Promise<AppBootstrapReadyState> {
 }
 
 export function useAppBootstrap(): AppBootstrapState {
-  const [state, setState] = useState<AppBootstrapState>({ status: 'loading' });
+  const [state, setState] = useState<AppBootstrapState>(() => createLoadingState());
 
   useEffect(() => {
     let cancelled = false;
+    const onProgress = (loadingState: AppBootstrapLoadingState) => {
+      if (!cancelled) {
+        setState((current) => (current.status === 'loading' ? loadingState : current));
+      }
+    };
+    progressListeners.add(onProgress);
 
     if (!hasLoggedBootstrapMount && logger.isEnabled('debug')) {
       hasLoggedBootstrapMount = true;
@@ -154,12 +207,18 @@ export function useAppBootstrap(): AppBootstrapState {
         const resolvedError = error instanceof Error ? error : new Error(String(error));
         logger.error('App bootstrap failed:', resolvedError);
         if (!cancelled) {
-          setState({ status: 'error', error: resolvedError });
+          setState({
+            status: 'error',
+            error: resolvedError,
+            progress: bootstrapProgress,
+            logs: bootstrapProgressLogs,
+          });
         }
       });
 
     return () => {
       cancelled = true;
+      progressListeners.delete(onProgress);
     };
   }, []);
 
