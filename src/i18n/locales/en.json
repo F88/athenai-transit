@@ -2,6 +2,17 @@
   "common": {
     "loading": "Loading..."
   },
+  "bootstrap": {
+    "loading": {
+      "title": "Preparing app",
+      "detail": "This will only take a moment."
+    },
+    "error": {
+      "title": "Could not start Athenai",
+      "detail": "Please reload the app and try again.",
+      "reload": "Reload"
+    }
+  },
   "view": {
     "stop": {
       "label": "Stop",

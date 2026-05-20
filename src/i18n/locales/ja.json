@@ -2,6 +2,17 @@
   "common": {
     "loading": "読み込み中..."
   },
+  "bootstrap": {
+    "loading": {
+      "title": "準備中",
+      "detail": "しばらくお待ちください"
+    },
+    "error": {
+      "title": "あてのない乗換案内を起動できませんでした",
+      "detail": "再読み込みしてもう一度お試しください",
+      "reload": "再読み込み"
+    }
+  },
   "view": {
     "stop": {
       "label": "のりば",
