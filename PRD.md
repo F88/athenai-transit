@@ -124,6 +124,7 @@ URL パラメータでアプリの動作を制御できる。パラメータは�
 | `?stop=<stop_id>`     | 初期選択 stop の指定                   | `/?stop=minkuru:0442-01`       |
 | `?tileIdx=<number>`   | タイルソースの初期選択 (0-based index) | `/?tileIdx=3`                  |
 | `?lang=<code>`        | 表示言語の初期選択 (BCP 47)            | `/?lang=en`                    |
+| `?bootstrap=hold`     | 起動完了後も Bootstrap 表示を保持      | `/?bootstrap=hold`             |
 
 - `?repo=mock` 指定時は `?sources` は無視される
 - `?sources` 指定時は localStorage の設定を上書きするが、localStorage 自体は更新しない (一時的な override)
@@ -132,6 +133,7 @@ URL パラメータでアプリの動作を制御できる。パラメータは�
 - `?zm` は単独指定可能 (座標はランダム/env、zoom だけ上書き)
 - `?tileIdx` は localStorage の `tileIndex` より優先されるが、localStorage 自体は更新しない (一時的な override)
 - `?lang` は localStorage の `lang` より優先されるが、localStorage 自体は更新しない (一時的な override)。`normalizeLang` で正規化される (例: `zh-TW` → `zh-Hant`)。サポート外の値はデフォルト言語にフォールバック
+- `?bootstrap=hold` は Bootstrap UI 確認用。repository boot 完了後も Bootstrap 表示を保持し、明示操作で App 表示へ進む
 - 無効な値 (非数値、範囲外、Infinity) は無視してフォールバック
 - 優先順位: query params > env variables > ランダム選択
 - 全パラメータのパースは `src/lib/query-params.ts` で一元管理

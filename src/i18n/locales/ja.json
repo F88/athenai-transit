@@ -3,14 +3,29 @@
     "loading": "読み込み中..."
   },
   "bootstrap": {
+    "action": {
+      "reload": "再読み込み",
+      "showApp": "アプリを表示"
+    },
+    "logViewer": {
+      "title": "ログ"
+    },
+    "notice": {
+      "loadFailuresTitle": "エラー"
+    },
     "loading": {
       "title": "準備中",
-      "detail": "しばらくお待ちください"
+      "message": "しばらくお待ちください",
+      "progressLabel": "データを読み込み中",
+      "progressFailed": "失敗"
+    },
+    "ready": {
+      "title": "準備完了",
+      "message": "準備完了"
     },
     "error": {
       "title": "あてのない乗換案内を起動できませんでした",
-      "detail": "再読み込みしてもう一度お試しください",
-      "reload": "再読み込み"
+      "message": "再読み込みしてもう一度お試しください"
     }
   },
   "view": {
