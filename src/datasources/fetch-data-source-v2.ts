@@ -25,6 +25,13 @@ import type {
   ShapesBundle,
 } from '@contracts/data/transit-v2-json';
 
+import type {
+  BundleLoadEvent,
+  BundleLoadFailureReason,
+  BundleLoadKind,
+  BundleLoadMetrics,
+  BundleLoadReporter,
+} from './load-events';
 import {
   parseBundleJson as parseBundleJsonText,
   type ParseBundleJsonResult,
@@ -302,6 +309,7 @@ function logParseMetrics(path: string, parseMs: number): void {
 export class FetchDataSourceV2 implements TransitDataSourceV2 {
   private readonly basePath: string;
   private readonly timeoutMs: number;
+  private loadEventReporter: BundleLoadReporter | undefined;
 
   /**
    * @param basePath - Base URL path for v2 data files.
@@ -314,6 +322,10 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     // Normalize trailing slash to prevent double-slash in URLs
     this.basePath = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
     this.timeoutMs = timeoutMs;
+  }
+
+  setLoadEventReporter(reporter: BundleLoadReporter | undefined): void {
+    this.loadEventReporter = reporter;
   }
 
   /** {@inheritDoc TransitDataSourceV2.loadData} */
@@ -473,12 +485,12 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       clearTimeout(timeoutId);
       const isTimeout = e instanceof DOMException && e.name === 'AbortError';
       if (isTimeout) {
-        return this.handleBundleFailure(path, optional, `timeout after ${timeoutMs}ms`, {
+        return this.handleBundleFailure(path, optional, 'timeout', `timeout after ${timeoutMs}ms`, {
           requiredLevel: 'error',
           optionalLevel: 'error',
         });
       }
-      return this.handleBundleFailure(path, optional, 'network error', {
+      return this.handleBundleFailure(path, optional, 'network-error', 'network error', {
         requiredLevel: 'warn',
         optionalLevel: 'debug',
         cause: e,
@@ -496,14 +508,14 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     // timeout covers the entire transfer, not just the headers.
     if (response.status === 404) {
       clearTimeout(timeoutId);
-      return this.handleBundleFailure(path, optional, 'HTTP 404', {
+      return this.handleBundleFailure(path, optional, 'http-error', 'HTTP 404', {
         requiredLevel: 'warn',
         optionalLevel: 'debug',
       });
     }
     if (!response.ok) {
       clearTimeout(timeoutId);
-      return this.handleBundleFailure(path, optional, `HTTP ${response.status}`, {
+      return this.handleBundleFailure(path, optional, 'http-error', `HTTP ${response.status}`, {
         requiredLevel: 'warn',
         optionalLevel: 'debug',
       });
@@ -515,6 +527,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       return this.handleBundleFailure(
         path,
         optional,
+        'non-json',
         `expected application/json but got "${contentType}" (possible SPA fallback)`,
         {
           requiredLevel: 'warn',
@@ -542,6 +555,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
         return this.handleBundleFailure(
           path,
           optional,
+          'timeout',
           `timeout after ${timeoutMs}ms (during body download)`,
           {
             requiredLevel: 'error',
@@ -549,7 +563,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
           },
         );
       }
-      return this.handleBundleFailure(path, optional, 'body read error', {
+      return this.handleBundleFailure(path, optional, 'body-read-error', 'body read error', {
         requiredLevel: 'warn',
         optionalLevel: 'debug',
         cause: e,
@@ -565,7 +579,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     try {
       return parseBundleJsonText(text);
     } catch (e) {
-      return this.handleBundleFailure(path, optional, 'JSON parse error', {
+      return this.handleBundleFailure(path, optional, 'json-parse-error', 'JSON parse error', {
         requiredLevel: 'warn',
         optionalLevel: 'warn',
         cause: e,
@@ -576,6 +590,7 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
   private handleBundleFailure(
     path: string,
     optional: boolean,
+    reason: BundleLoadFailureReason,
     message: string,
     options: {
       requiredLevel: LogLevel;
@@ -584,12 +599,24 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     },
   ): null {
     if (optional) {
+      this.emitBundleLoadEvent({
+        ...describeBundleLoadTarget(path, optional),
+        type: 'skipped',
+        reason,
+        message,
+      });
       this.logBundleFailure(options.optionalLevel, `${path}: ${message} (optional, skipping)`, {
         cause: options.cause,
       });
       return null;
     }
 
+    this.emitBundleLoadEvent({
+      ...describeBundleLoadTarget(path, optional),
+      type: 'failed',
+      reason,
+      message,
+    });
     this.logBundleFailure(options.requiredLevel, `${path}: ${message}`, { cause: options.cause });
     if (options.cause === undefined) {
       throw new Error(`${path}: ${message}`);
@@ -609,6 +636,10 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     logger[level](message, options.cause);
   }
 
+  private emitBundleLoadEvent(event: BundleLoadEvent): void {
+    this.loadEventReporter?.(event);
+  }
+
   /**
    * Load, validate content-type, and parse a JSON bundle file.
    *
@@ -623,6 +654,8 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     optional: boolean,
     options: FetchBundleOptions,
   ): Promise<FetchBundleResult | null> {
+    const target = describeBundleLoadTarget(path, optional);
+    this.emitBundleLoadEvent({ ...target, type: 'started' });
     const debugLoggingEnabled = logger.isEnabled('debug');
     const fetched = await this.fetchBundleText(path, optional, options);
     if (fetched === null) {
@@ -640,11 +673,63 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
       logParseMetrics(path, parsed.parseMs);
     }
 
+    const metrics: BundleLoadMetrics = {
+      transferBytes: fetched.transferMetrics?.encodedBodySize,
+      decodedBytes: fetched.transferMetrics?.decodedBodySize,
+      estimatedDecodedBytes: fetched.sizeApprox,
+      networkMs: fetched.networkMs,
+      parseMs: parsed.parseMs,
+    };
+    this.emitBundleLoadEvent({
+      ...target,
+      type: 'succeeded',
+      metrics,
+    });
+
     return {
       json: parsed.json,
       sizeApprox: fetched.sizeApprox,
       networkMs: fetched.networkMs,
       parseMs: parsed.parseMs,
     };
+  }
+}
+
+function describeBundleLoadTarget(
+  path: string,
+  optional: boolean,
+): {
+  path: string;
+  prefix: string | null;
+  kind: BundleLoadKind;
+  optional: boolean;
+} {
+  if (path === 'global/insights.json') {
+    return { path, prefix: null, kind: 'global-insights', optional };
+  }
+  if (path === 'global/data-source-catalog.json') {
+    return { path, prefix: null, kind: 'data-source-catalog', optional };
+  }
+
+  const slashIndex = path.indexOf('/');
+  if (slashIndex === -1) {
+    return { path, prefix: null, kind: 'unknown', optional };
+  }
+  const prefix = path.slice(0, slashIndex);
+  const fileName = path.slice(slashIndex + 1);
+  const kind = fileNameToBundleKind(fileName);
+  return { path, prefix, kind, optional };
+}
+
+function fileNameToBundleKind(fileName: string): BundleLoadKind {
+  switch (fileName) {
+    case 'data.json':
+      return 'data';
+    case 'shapes.json':
+      return 'shapes';
+    case 'insights.json':
+      return 'insights';
+    default:
+      return 'unknown';
   }
 }

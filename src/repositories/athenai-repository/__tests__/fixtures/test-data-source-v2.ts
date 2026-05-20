@@ -23,6 +23,7 @@ import type {
   TimetableGroupV2Json,
 } from '@contracts/data/transit-v2-json';
 
+import type { BundleLoadReporter } from '../../../../datasources/load-events';
 import type {
   SourceDataV2,
   TransitDataSourceV2,
@@ -45,6 +46,7 @@ export class TestDataSourceV2 implements TransitDataSourceV2 {
    * load failures (including bundle envelope mismatches) to `null`.
    */
   private dataSourceCatalogError: Error | null;
+  private loadEventReporter: BundleLoadReporter | undefined;
 
   constructor(
     fixtures: Record<string, SourceDataV2>,
@@ -60,31 +62,147 @@ export class TestDataSourceV2 implements TransitDataSourceV2 {
     this.dataSourceCatalogError = dataSourceCatalogError;
   }
 
+  setLoadEventReporter(reporter: BundleLoadReporter | undefined): void {
+    this.loadEventReporter = reporter;
+  }
+
   loadData(prefix: string): Promise<SourceDataV2> {
+    this.loadEventReporter?.({
+      type: 'started',
+      path: `${prefix}/data.json`,
+      prefix,
+      kind: 'data',
+      optional: false,
+    });
     const data = this.fixtures[prefix];
     if (!data) {
+      this.loadEventReporter?.({
+        type: 'failed',
+        path: `${prefix}/data.json`,
+        prefix,
+        kind: 'data',
+        optional: false,
+        reason: 'network-error',
+        message: `Unknown prefix: ${prefix}`,
+      });
       return Promise.reject(new Error(`Unknown prefix: ${prefix}`));
     }
+    this.loadEventReporter?.({
+      type: 'succeeded',
+      path: `${prefix}/data.json`,
+      prefix,
+      kind: 'data',
+      optional: false,
+      metrics: {},
+    });
     return Promise.resolve(data);
   }
 
   loadShapes(prefix: string): Promise<ShapesBundle | null> {
-    return Promise.resolve(this.shapesFixtures[prefix] ?? null);
+    return Promise.resolve(
+      this.emitOptionalFixtureResult(
+        `${prefix}/shapes.json`,
+        prefix,
+        'shapes',
+        this.shapesFixtures[prefix],
+      ),
+    );
   }
 
   loadInsights(prefix: string): Promise<InsightsBundle | null> {
-    return Promise.resolve(this.insightsFixtures[prefix] ?? null);
+    return Promise.resolve(
+      this.emitOptionalFixtureResult(
+        `${prefix}/insights.json`,
+        prefix,
+        'insights',
+        this.insightsFixtures[prefix],
+      ),
+    );
   }
 
   loadGlobalInsights(): Promise<GlobalInsightsBundle | null> {
-    return Promise.resolve(null);
+    return Promise.resolve(
+      this.emitOptionalFixtureResult('global/insights.json', null, 'global-insights', null),
+    );
   }
 
   loadDataSourceCatalog(): Promise<DataSourceCatalogBundle | null> {
+    this.loadEventReporter?.({
+      type: 'started',
+      path: 'global/data-source-catalog.json',
+      prefix: null,
+      kind: 'data-source-catalog',
+      optional: true,
+    });
     if (this.dataSourceCatalogError) {
+      this.loadEventReporter?.({
+        type: 'skipped',
+        path: 'global/data-source-catalog.json',
+        prefix: null,
+        kind: 'data-source-catalog',
+        optional: true,
+        reason: 'network-error',
+        message: this.dataSourceCatalogError.message,
+      });
       return Promise.reject(this.dataSourceCatalogError);
     }
+    if (this.dataSourceCatalog === null) {
+      this.loadEventReporter?.({
+        type: 'skipped',
+        path: 'global/data-source-catalog.json',
+        prefix: null,
+        kind: 'data-source-catalog',
+        optional: true,
+        reason: 'http-error',
+        message: 'fixture missing',
+      });
+      return Promise.resolve(null);
+    }
+    this.loadEventReporter?.({
+      type: 'succeeded',
+      path: 'global/data-source-catalog.json',
+      prefix: null,
+      kind: 'data-source-catalog',
+      optional: true,
+      metrics: {},
+    });
     return Promise.resolve(this.dataSourceCatalog);
+  }
+
+  private emitOptionalFixtureResult<T>(
+    path: string,
+    prefix: string | null,
+    kind: 'shapes' | 'insights' | 'global-insights',
+    value: T | null | undefined,
+  ): T | null {
+    this.loadEventReporter?.({
+      type: 'started',
+      path,
+      prefix,
+      kind,
+      optional: true,
+    });
+    if (value == null) {
+      this.loadEventReporter?.({
+        type: 'skipped',
+        path,
+        prefix,
+        kind,
+        optional: true,
+        reason: 'http-error',
+        message: 'fixture missing',
+      });
+      return null;
+    }
+    this.loadEventReporter?.({
+      type: 'succeeded',
+      path,
+      prefix,
+      kind,
+      optional: true,
+      metrics: {},
+    });
+    return value;
   }
 }
 

@@ -68,3 +68,9 @@ export interface PatternStatsEntry {
   rds: Partial<Record<string, number[]>>;
   freqs: Partial<Record<string, number>>;
 }
+
+export type {
+  BootLoadProgressSummary,
+  LoadActivitySummary,
+  RepositoryLoadProgressSummary,
+} from './load-progress';

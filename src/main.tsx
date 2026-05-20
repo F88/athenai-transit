@@ -10,7 +10,13 @@ import { DataSourceManager } from './config/data-source-manager';
 import { resolveFetchDataSources } from './domain/datasource/resolve-fetch-data-sources';
 import { loadEnabledGroupIdsFromStorage } from './domain/datasource/data-source-selection-storage';
 import type { TransitRepository } from './repositories/transit-repository';
-import { AthenaiRepositoryV2, type LoadResult } from './repositories/athenai-repository';
+import {
+  AthenaiRepositoryV2,
+  formatBootLoadProgressSummary,
+  formatLoadActivitySummary,
+  type LoadResult,
+  type RepositoryLoadProgressSummary,
+} from './repositories/athenai-repository';
 import {
   cleanupInvalidQueryParams,
   getDiagParam,
@@ -25,13 +31,33 @@ const logger = createLogger('App');
 async function createRepository(): Promise<{
   repository: TransitRepository;
   loadResult: LoadResult;
+  loadProgress: RepositoryLoadProgressSummary;
 }> {
   const repo = getRepoParam();
 
   if (repo === 'mock') {
     logger.info('Using MockRepository (?repo=mock)');
     const { MockRepository } = await import('./repositories/mock-repository');
-    return { repository: new MockRepository(), loadResult: { loaded: [], failed: [] } };
+    return {
+      repository: new MockRepository(),
+      loadResult: { loaded: [], failed: [] },
+      loadProgress: {
+        boot: {
+          totalSources: 0,
+          startedSources: 0,
+          completedSources: 0,
+          failedSources: 0,
+          progressRatio: 1,
+          lastRequiredEvent: null,
+        },
+        activity: {
+          requestCounts: { started: 0, succeeded: 0, skipped: 0, failed: 0 },
+          totalEncodedBytes: 0,
+          totalDecodedBytes: 0,
+          lastEvent: null,
+        },
+      },
+    };
   }
 
   const dsm = new DataSourceManager(loadEnabledGroupIdsFromStorage());
@@ -42,13 +68,32 @@ async function createRepository(): Promise<{
   );
 
   logger.info(`Using AthenaiRepositoryV2: [${prefixes.join(', ')}]`);
-  const { repository, loadResult } = await AthenaiRepositoryV2.create(prefixes);
+  const bootStartTime = performance.now();
+  let hasLoggedBootComplete = false;
+  const onLoadProgress = logger.isEnabled('debug')
+    ? (summary: RepositoryLoadProgressSummary) => {
+        logger.debug(formatBootLoadProgressSummary(summary.boot));
+        logger.debug(formatLoadActivitySummary(summary.activity));
+        if (!hasLoggedBootComplete && summary.boot.progressRatio === 1) {
+          hasLoggedBootComplete = true;
+          const bootMs = Math.round(performance.now() - bootStartTime);
+          logger.info(
+            `Required data load complete in ${bootMs}ms: ${formatBootLoadProgressSummary(summary.boot, { mode: 'complete' })} | ${formatLoadActivitySummary(summary.activity, { mode: 'snapshot' })}`,
+          );
+        }
+      }
+    : undefined;
+  const { repository, loadResult, loadProgress } = await AthenaiRepositoryV2.create(
+    prefixes,
+    undefined,
+    onLoadProgress,
+  );
   if (loadResult.failed.length > 0) {
     logger.warn(
       `Failed to load ${loadResult.failed.length} source(s): [${loadResult.failed.map((f) => f.prefix).join(', ')}]`,
     );
   }
-  return { repository, loadResult };
+  return { repository, loadResult, loadProgress };
 }
 
 async function init() {

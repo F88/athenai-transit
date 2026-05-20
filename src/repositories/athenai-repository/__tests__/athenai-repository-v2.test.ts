@@ -62,6 +62,23 @@ describe('AthenaiRepositoryV2.create', () => {
     assertSuccess(stops);
     expect(stops.data.length).toBeGreaterThan(0);
   });
+
+  it('returns aggregated load progress and emits progress updates', async () => {
+    const fixture = createFixtureV2();
+    const ds = new TestDataSourceV2({ test: fixture });
+    const progressUpdates: number[] = [];
+
+    const { loadProgress } = await AthenaiRepositoryV2.create(['test'], ds, (summary) => {
+      progressUpdates.push(summary.boot.completedSources + summary.boot.failedSources);
+    });
+
+    expect(loadProgress.boot.totalSources).toBe(1);
+    expect(loadProgress.boot.completedSources).toBe(1);
+    expect(loadProgress.boot.failedSources).toBe(0);
+    expect(loadProgress.activity.requestCounts.started).toBeGreaterThan(0);
+    expect(progressUpdates[0]).toBe(0);
+    expect(progressUpdates).toContain(1);
+  });
 });
 
 // ---------------------------------------------------------------------------
