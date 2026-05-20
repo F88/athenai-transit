@@ -5,8 +5,11 @@ import './index.css';
 import './i18n';
 import BootstrapApp from './bootstrap-app';
 import { applyStoredAppTheme } from './lib/app-theme';
+import { installGlobalErrorHandlers } from './lib/global-error-handler';
 import { cleanupInvalidQueryParams } from './lib/query-params';
 import { TILE_SOURCES } from './config/tile-sources';
+
+installGlobalErrorHandlers();
 
 // Apply the persisted theme before the bootstrap shell is rendered.
 applyStoredAppTheme();

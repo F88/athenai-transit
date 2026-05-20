@@ -10,13 +10,14 @@ const mockUseAppBootstrap = vi.hoisted(() => vi.fn<() => AppBootstrapState>());
 const mockTransitRepositoryProvider = vi.hoisted(() => vi.fn());
 const mockSourceLoadStateProvider = vi.hoisted(() => vi.fn());
 const mockGetBootstrapParam = vi.hoisted(() => vi.fn<() => 'hold' | null>(() => null));
+const mockAppRender = vi.hoisted(() => vi.fn<() => ReactNode>());
 
 vi.mock('../hooks/use-app-bootstrap', () => ({
   useAppBootstrap: () => mockUseAppBootstrap(),
 }));
 
 vi.mock('../app', () => ({
-  default: () => <div>app-mounted</div>,
+  default: () => mockAppRender(),
 }));
 
 vi.mock('../contexts/transit-repository-provider', () => ({
@@ -72,6 +73,12 @@ vi.mock('react-i18next', () => ({
         'bootstrap.tips.performance': 'Large data can affect app performance.',
         'bootstrap.error.title': 'Could not start Athenai',
         'bootstrap.error.message': 'Please reload the app and try again.',
+        'errorBoundary.title': 'Something went wrong',
+        'errorBoundary.message':
+          'An error occurred while displaying the app. If reloading does not help, try clearing the cache.',
+        'errorBoundary.detailLabel': 'Error details',
+        'errorBoundary.action.clearCacheAndReload': 'Clear cache and reload',
+        'errorBoundary.action.reload': 'Reload',
       };
       return labels[key] ?? key;
     },
@@ -236,6 +243,8 @@ describe('BootstrapApp', () => {
     mockSourceLoadStateProvider.mockReset();
     mockGetBootstrapParam.mockReset();
     mockGetBootstrapParam.mockReturnValue(null);
+    mockAppRender.mockReset();
+    mockAppRender.mockReturnValue(<div>app-mounted</div>);
   });
 
   afterEach(() => {
@@ -491,5 +500,47 @@ describe('BootstrapApp', () => {
     expect(screen.getByLabelText('Data load errors')).toBeInTheDocument();
     expect(screen.getByText('http-error: Not Found')).toBeInTheDocument();
     expect(screen.queryByLabelText('Load log')).not.toBeInTheDocument();
+  });
+
+  it('renders the error boundary fallback when the app throws during render', () => {
+    stubReducedMotion();
+    mockAppRender.mockImplementation(() => {
+      throw new Error('render boom');
+    });
+    mockUseAppBootstrap.mockReturnValue({
+      status: 'ready',
+      repository: {} as TransitRepository,
+      loadResult: { loaded: ['alpha'], failed: [] },
+      progress: null,
+      logs: [],
+    });
+
+    render(<BootstrapApp />);
+
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+    expect(screen.getByText('render boom')).toBeInTheDocument();
+    expect(screen.queryByText('app-mounted')).not.toBeInTheDocument();
+  });
+
+  it('renders the error boundary fallback when a provider throws during render', () => {
+    // A provider throwing is only caught when the boundary sits outside the
+    // provider tree — this pins the insertion position against regressions.
+    stubReducedMotion();
+    mockTransitRepositoryProvider.mockImplementation(() => {
+      throw new Error('provider boom');
+    });
+    mockUseAppBootstrap.mockReturnValue({
+      status: 'ready',
+      repository: {} as TransitRepository,
+      loadResult: { loaded: ['alpha'], failed: [] },
+      progress: null,
+      logs: [],
+    });
+
+    render(<BootstrapApp />);
+
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+    expect(screen.getByText('provider boom')).toBeInTheDocument();
+    expect(screen.queryByText('app-mounted')).not.toBeInTheDocument();
   });
 });
