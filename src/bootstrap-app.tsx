@@ -29,7 +29,7 @@ type NoticeItemsBySeverity = {
 const APP_TITLE = 'Athenai Transit';
 
 function shouldReduceMotion(): boolean {
-  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
 }
 
 function getProgressValue(progress: AppBootstrapLoadingState['progress']): number {
