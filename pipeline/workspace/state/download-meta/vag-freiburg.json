@@ -2,20 +2,28 @@
   "sourceName": "vag-freiburg",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-19T14:39:31.161Z",
+  "downloadedAt": "2026-05-20T05:32:41.205Z",
   "url": "https://www.vag-freiburg.de/fileadmin/gtfs/VAGFR.zip",
-  "size": 6746385,
+  "size": 6450559,
   "contentType": "application/zip",
-  "durationMs": 2238,
-  "archivePath": "workspace/_archives/gtfs/vag-freiburg/VAGFR_20260519-143933.zip",
+  "durationMs": 3071,
+  "archivePath": "workspace/_archives/gtfs/vag-freiburg/VAGFR_20260520-053244.zip",
   "extractedFiles": [
     {
-      "name": "trips.txt",
-      "size": 2405480
+      "name": "agency.txt",
+      "size": 272
     },
     {
-      "name": "agency.txt",
-      "size": 354
+      "name": "routes.txt",
+      "size": 4173
+    },
+    {
+      "name": "trips.txt",
+      "size": 2400290
+    },
+    {
+      "name": "stops.txt",
+      "size": 97167
     },
     {
       "name": "calendar.txt",
@@ -26,20 +34,12 @@
       "size": 620595
     },
     {
-      "name": "routes.txt",
-      "size": 4173
-    },
-    {
       "name": "shapes.txt",
-      "size": 12100236
+      "size": 12097226
     },
     {
       "name": "stop_times.txt",
-      "size": 34767353
-    },
-    {
-      "name": "stops.txt",
-      "size": 97167
+      "size": 34728761
     }
   ]
 }
