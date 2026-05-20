@@ -21,6 +21,10 @@ type NoticeItem = {
   label: string;
   message: string;
 };
+type NoticeItemsBySeverity = {
+  errors: NoticeItem[];
+  warnings: NoticeItem[];
+};
 
 const APP_TITLE = 'Athenai Transit';
 
@@ -65,15 +69,21 @@ function ProgressCounts({ progress }: { progress: AppBootstrapLoadingState['prog
     return null;
   }
 
-  const failedText = progress.boot.failedSources > 0 ? ` ⚠️ ${progress.boot.failedSources}` : '';
+  const hasFailedSources = progress.boot.failedSources > 0;
 
   return (
     <p
       aria-live="polite"
       className="text-muted-foreground text-center text-sm font-medium tabular-nums"
     >
-      ✅ {progress.boot.completedSources}
-      {failedText}
+      <span>✅ </span>
+      <span className="text-lg">{progress.boot.completedSources}</span>
+      {hasFailedSources ? (
+        <>
+          <span> ⚠️ </span>
+          <span className="text-lg">{progress.boot.failedSources}</span>
+        </>
+      ) : null}
     </p>
   );
 }
@@ -168,20 +178,24 @@ function BootstrapUserTips() {
 
 type NoticeAreaProps = {
   items: NoticeItem[];
+  severity: 'error' | 'warning';
   title: string;
 };
 
-function NoticeArea({ items, title }: NoticeAreaProps) {
+function NoticeArea({ items, severity, title }: NoticeAreaProps) {
   if (items.length === 0) {
     return null;
   }
 
+  const className =
+    severity === 'error'
+      ? 'border-destructive/40 bg-destructive/5 text-destructive'
+      : 'border-amber-500/30 bg-amber-500/8 text-amber-700 dark:text-amber-300';
+  const headerClassName = severity === 'error' ? 'border-destructive/30' : 'border-amber-500/20';
+
   return (
-    <section
-      aria-label={title}
-      className="border-destructive/40 bg-destructive/5 text-destructive rounded-md border text-xs"
-    >
-      <div className="border-destructive/30 border-b px-3 py-2 font-medium">{title}</div>
+    <section aria-label={title} className={cn('rounded-md border text-xs', className)}>
+      <div className={cn('border-b px-3 py-2 font-medium', headerClassName)}>{title}</div>
       <ol className="max-h-32 overflow-y-auto px-3 py-2">
         {items.map((item) => (
           <li className="flex gap-2 py-1" key={item.id}>
@@ -205,22 +219,23 @@ function getNoticeKeyForLogEntry(log: BootstrapProgressLogEntry): string | null 
   return `log:${event.path}`;
 }
 
-function createNoticeItems({
+function createNoticeItemsBySeverity({
   failures,
   logs,
 }: {
   failures?: AppBootstrapReadyState['loadResult']['failed'];
   logs: BootstrapProgressLogEntry[];
-}): NoticeItem[] {
-  const items: NoticeItem[] = [];
+}): NoticeItemsBySeverity {
+  const errors: NoticeItem[] = [];
+  const warnings: NoticeItem[] = [];
   const seenKeys = new Set<string>();
 
   if (failures !== undefined) {
     for (const failure of failures) {
       seenKeys.add(`source-data:${failure.prefix}`);
-      items.push({
+      errors.push({
         id: `source-${failure.prefix}`,
-        label: failure.prefix,
+        label: `${failure.prefix}/data.json`,
         message: failure.error.message,
       });
     }
@@ -238,14 +253,20 @@ function createNoticeItems({
     }
 
     seenKeys.add(key);
-    items.push({
+    const item = {
       id: `log-${log.id}`,
-      label: event.prefix ?? event.path,
+      label: event.path,
       message: `${event.reason}: ${event.message}`,
-    });
+    };
+
+    if (event.kind === 'data' && event.optional === false) {
+      errors.push(item);
+    } else {
+      warnings.push(item);
+    }
   }
 
-  return items;
+  return { errors, warnings };
 }
 
 type BootstrapProgressContentProps = {
@@ -264,7 +285,7 @@ function BootstrapProgressContent({
   showProgressLogViewer,
 }: BootstrapProgressContentProps) {
   const { t } = useTranslation();
-  const noticeItems = createNoticeItems({ failures: loadFailures, logs });
+  const noticeItems = createNoticeItemsBySeverity({ failures: loadFailures, logs });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 pt-2">
@@ -272,12 +293,21 @@ function BootstrapProgressContent({
         <Progress
           aria-label={t('bootstrap.loading.progressLabel')}
           value={getProgressValue(progress)}
-          className="h-2"
+          className="bg-info/20 *:data-[slot=progress-indicator]:bg-info h-2"
         />
         <ProgressCounts progress={progress} />
         <CurrentProgressTask progress={progress} showCurrentTask={showCurrentTask} />
       </div>
-      <NoticeArea items={noticeItems} title={t('bootstrap.notice.loadFailuresTitle')} />
+      <NoticeArea
+        items={noticeItems.errors}
+        severity="error"
+        title={t('bootstrap.notice.loadErrorsTitle')}
+      />
+      <NoticeArea
+        items={noticeItems.warnings}
+        severity="warning"
+        title={t('bootstrap.notice.loadWarningsTitle')}
+      />
       {showProgressLogViewer ? (
         <ProgressLogViewer logs={logs} title={t('bootstrap.logViewer.title')} />
       ) : null}

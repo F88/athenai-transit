@@ -65,7 +65,8 @@ vi.mock('react-i18next', () => ({
         'bootstrap.action.showApp': 'Show app',
         'bootstrap.action.reload': 'Reload',
         'bootstrap.logViewer.title': 'Load log',
-        'bootstrap.notice.loadFailuresTitle': 'Data load issues',
+        'bootstrap.notice.loadErrorsTitle': 'Data load errors',
+        'bootstrap.notice.loadWarningsTitle': 'Data load warnings',
         'bootstrap.tips.dataSources': 'You can change data in settings.',
         'bootstrap.tips.selection': 'Choose the data you need or are interested in.',
         'bootstrap.tips.performance': 'Large data can affect app performance.',
@@ -76,6 +77,16 @@ vi.mock('react-i18next', () => ({
     },
   }),
 }));
+
+function hasExactTextContent(text: string): (_content: string, element: Element | null) => boolean {
+  return (_content, element) => {
+    return (
+      element?.tagName.toLowerCase() === 'p' &&
+      element.getAttribute('aria-live') === 'polite' &&
+      element.textContent === text
+    );
+  };
+}
 
 function createProgressSummary(): RepositoryLoadProgressSummary {
   const event = {
@@ -258,7 +269,7 @@ describe('BootstrapApp', () => {
       'aria-valuenow',
       '50',
     );
-    expect(screen.getByText('✅ 1')).toBeInTheDocument();
+    expect(screen.getByText(hasExactTextContent('✅ 1'))).toBeInTheDocument();
     expect(screen.getByText('alpha')).toBeInTheDocument();
     expect(screen.queryByLabelText('Load log')).not.toBeInTheDocument();
     expect(screen.queryByTestId('bootstrap-progress-log-viewer')).not.toBeInTheDocument();
@@ -282,9 +293,9 @@ describe('BootstrapApp', () => {
 
     render(<BootstrapApp />);
 
-    expect(screen.getByLabelText('Data load issues')).toBeInTheDocument();
-    expect(screen.getByText('✅ 1 ⚠️ 1')).toBeInTheDocument();
-    expect(screen.getAllByText('x13103b')).toHaveLength(2);
+    expect(screen.getByLabelText('Data load errors')).toBeInTheDocument();
+    expect(screen.getByText(hasExactTextContent('✅ 1 ⚠️ 1'))).toBeInTheDocument();
+    expect(screen.getByText('x13103b/data.json')).toBeInTheDocument();
     expect(screen.getByText('http-error: Not Found')).toBeInTheDocument();
   });
 
@@ -326,8 +337,8 @@ describe('BootstrapApp', () => {
 
     render(<BootstrapApp />);
 
-    expect(screen.getByLabelText('Data load issues')).toBeInTheDocument();
-    expect(screen.getByText('x13103b')).toBeInTheDocument();
+    expect(screen.getByLabelText('Data load errors')).toBeInTheDocument();
+    expect(screen.getByText('x13103b/data.json')).toBeInTheDocument();
     expect(screen.getByText('Not Found')).toBeInTheDocument();
     expect(screen.queryByText('app-mounted')).not.toBeInTheDocument();
   });
@@ -370,8 +381,10 @@ describe('BootstrapApp', () => {
 
     render(<BootstrapApp />);
 
-    expect(screen.getByLabelText('Data load issues')).toBeInTheDocument();
-    expect(screen.getAllByText('x13103b')).toHaveLength(2);
+    expect(screen.getByLabelText('Data load errors')).toBeInTheDocument();
+    expect(screen.getByLabelText('Data load warnings')).toBeInTheDocument();
+    expect(screen.getByText('x13103b/data.json')).toBeInTheDocument();
+    expect(screen.getByText('x13103b/insights.json')).toBeInTheDocument();
     expect(screen.getByText('Not Found')).toBeInTheDocument();
     expect(screen.queryByText('http-error: Data Not Found')).not.toBeInTheDocument();
     expect(screen.getByText('network-error: Insights unavailable')).toBeInTheDocument();
@@ -427,8 +440,10 @@ describe('BootstrapApp', () => {
 
     render(<BootstrapApp />);
 
-    expect(screen.getByText('✅ 0 ⚠️ 2')).toBeInTheDocument();
-    expect(screen.queryByText('✅ 0 ⚠️ 2 - global insights')).not.toBeInTheDocument();
+    expect(screen.getByText(hasExactTextContent('✅ 0 ⚠️ 2'))).toBeInTheDocument();
+    expect(
+      screen.queryByText(hasExactTextContent('✅ 0 ⚠️ 2 - global insights')),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText('global insights')).not.toBeInTheDocument();
     expect(
       screen.queryByText(/succeeded global-insights global\/insights\.json/),
@@ -473,7 +488,7 @@ describe('BootstrapApp', () => {
       'aria-valuenow',
       '100',
     );
-    expect(screen.getByLabelText('Data load issues')).toBeInTheDocument();
+    expect(screen.getByLabelText('Data load errors')).toBeInTheDocument();
     expect(screen.getByText('http-error: Not Found')).toBeInTheDocument();
     expect(screen.queryByLabelText('Load log')).not.toBeInTheDocument();
   });

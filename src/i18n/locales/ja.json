@@ -11,7 +11,8 @@
       "title": "ログ"
     },
     "notice": {
-      "loadFailuresTitle": "エラー"
+      "loadErrorsTitle": "エラー",
+      "loadWarningsTitle": "注意"
     },
     "tips": {
       "dataSources": "データは設定画面から変更できます",

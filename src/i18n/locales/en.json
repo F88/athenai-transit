@@ -11,7 +11,8 @@
       "title": "Logs"
     },
     "notice": {
-      "loadFailuresTitle": "Errors"
+      "loadErrorsTitle": "Errors",
+      "loadWarningsTitle": "Warnings"
     },
     "tips": {
       "dataSources": "You can change data in settings.",
