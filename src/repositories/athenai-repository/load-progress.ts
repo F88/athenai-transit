@@ -2,27 +2,49 @@ import type { BundleLoadEvent } from '../../datasources/load-events';
 
 type RequiredSourceStatus = 'idle' | 'loading' | 'loaded' | 'failed';
 
+/**
+ * Summary of required `data` bundle progress used for repository boot completion.
+ */
 export interface BootLoadProgressSummary {
+  /** Total number of required data sources tracked for boot. */
   totalSources: number;
+  /** Number of required data sources that have left the idle state. */
   startedSources: number;
+  /** Number of required data sources that completed successfully. */
   completedSources: number;
+  /** Number of required data sources that finished with failure. */
   failedSources: number;
+  /** Processed required sources as a ratio of total required sources. */
   progressRatio: number;
+  /** Most recent required `data` load event observed for boot progress. */
   lastRequiredEvent: BundleLoadEvent | null;
 }
 
+/**
+ * Snapshot of all load activity observed so far, including non-boot requests.
+ */
 export interface LoadActivitySummary {
   requestCounts: {
+    /** Total number of load requests that started. */
     started: number;
+    /** Total number of load requests that succeeded. */
     succeeded: number;
+    /** Total number of load requests that were skipped. */
     skipped: number;
+    /** Total number of load requests that failed. */
     failed: number;
   };
+  /** Sum of encoded response body sizes observed across successful loads. */
   totalEncodedBytes: number;
+  /** Sum of decoded body sizes or estimated decoded sizes across successful loads. */
   totalDecodedBytes: number;
+  /** Most recent load event observed across all activity. */
   lastEvent: BundleLoadEvent | null;
 }
 
+/**
+ * Combined repository load progress view exposed to app and repository observers.
+ */
 export interface RepositoryLoadProgressSummary {
   boot: BootLoadProgressSummary;
   activity: LoadActivitySummary;
@@ -36,17 +58,29 @@ interface FormatLoadActivitySummaryOptions {
   mode?: 'progress' | 'snapshot';
 }
 
+/**
+ * Internal accumulator state used to reduce raw datasource events into summaries.
+ */
 interface RepositoryLoadProgressState {
+  /** Total number of required data sources tracked by this reducer. */
   totalSources: number;
+  /** Per-prefix boot status for required data source loading. */
   requiredSourceStatusByPrefix: Record<string, RequiredSourceStatus>;
   requestCounts: {
+    /** Total number of load requests that started. */
     started: number;
+    /** Total number of load requests that succeeded. */
     succeeded: number;
+    /** Total number of load requests that were skipped. */
     skipped: number;
+    /** Total number of load requests that failed. */
     failed: number;
   };
+  /** Sum of encoded response body sizes observed across successful loads. */
   totalEncodedBytes: number;
+  /** Sum of decoded body sizes or estimated decoded sizes across successful loads. */
   totalDecodedBytes: number;
+  /** Most recent raw load event reduced into this state. */
   lastEvent: BundleLoadEvent | null;
 }
 

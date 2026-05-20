@@ -70,19 +70,21 @@ async function createRepository(): Promise<{
   logger.info(`Using AthenaiRepositoryV2: [${prefixes.join(', ')}]`);
   const bootStartTime = performance.now();
   let hasLoggedBootComplete = false;
-  const onLoadProgress = logger.isEnabled('debug')
-    ? (summary: RepositoryLoadProgressSummary) => {
-        logger.debug(formatBootLoadProgressSummary(summary.boot));
-        logger.debug(formatLoadActivitySummary(summary.activity));
-        if (!hasLoggedBootComplete && summary.boot.progressRatio === 1) {
-          hasLoggedBootComplete = true;
-          const bootMs = Math.round(performance.now() - bootStartTime);
-          logger.info(
-            `Required data load complete in ${bootMs}ms: ${formatBootLoadProgressSummary(summary.boot, { mode: 'complete' })} | ${formatLoadActivitySummary(summary.activity, { mode: 'snapshot' })}`,
-          );
-        }
-      }
-    : undefined;
+  const onLoadProgress = (summary: RepositoryLoadProgressSummary) => {
+    if (logger.isEnabled('debug')) {
+      logger.debug(formatBootLoadProgressSummary(summary.boot));
+      logger.debug(formatLoadActivitySummary(summary.activity));
+    }
+
+    if (!hasLoggedBootComplete && summary.boot.progressRatio === 1) {
+      hasLoggedBootComplete = true;
+      const bootMs = Math.round(performance.now() - bootStartTime);
+      logger.info(
+        `Required data load complete in ${bootMs}ms: ${formatBootLoadProgressSummary(summary.boot, { mode: 'complete' })} | ${formatLoadActivitySummary(summary.activity, { mode: 'snapshot' })}`,
+      );
+    }
+  };
+
   const { repository, loadResult, loadProgress } = await AthenaiRepositoryV2.create(
     prefixes,
     undefined,
