@@ -207,6 +207,7 @@ function collectMatchingResourceEntries(
 
 interface ResourceTransferCapture {
   readMetrics(): ResourceTransferMetrics | null;
+  dispose(): void;
 }
 
 interface FetchBundleTextResult {
@@ -235,14 +236,15 @@ interface TimedFetchResult {
  */
 function startResourceTransferCapture(url: string, sinceTime: number): ResourceTransferCapture {
   if (typeof performance === 'undefined' || typeof PerformanceObserver === 'undefined') {
-    return { readMetrics: () => null };
+    return { readMetrics: () => null, dispose: () => {} };
   }
   if (typeof globalThis.location?.href !== 'string') {
-    return { readMetrics: () => null };
+    return { readMetrics: () => null, dispose: () => {} };
   }
 
   const resolvedUrl = new URL(url, globalThis.location.href).href;
   const observedEntries: PerformanceResourceTiming[] = [];
+  let disconnected = false;
   const observer = new PerformanceObserver((list) => {
     observedEntries.push(...collectMatchingResourceEntries(list.getEntries(), resolvedUrl));
   });
@@ -251,15 +253,26 @@ function startResourceTransferCapture(url: string, sinceTime: number): ResourceT
     observer.observe({ type: 'resource', buffered: true });
   } catch {
     observer.disconnect();
-    return { readMetrics: () => null };
+    return { readMetrics: () => null, dispose: () => {} };
   }
+
+  const disconnect = () => {
+    if (disconnected) {
+      return;
+    }
+    disconnected = true;
+    observer.disconnect();
+  };
 
   return {
     readMetrics() {
       const pendingEntries = collectMatchingResourceEntries(observer.takeRecords(), resolvedUrl);
-      observer.disconnect();
+      disconnect();
       const entry = selectResourceTimingEntry([...observedEntries, ...pendingEntries], sinceTime);
       return entry ? buildResourceTransferMetrics(entry) : null;
+    },
+    dispose() {
+      disconnect();
     },
   };
 }
@@ -444,31 +457,41 @@ export class FetchDataSourceV2 implements TransitDataSourceV2 {
     const debugLoggingEnabled = logger.isEnabled('debug');
     const transferCapture = debugLoggingEnabled ? startResourceTransferCapture(url, t0) : null;
 
-    const fetched = await this.fetchResponseWithTimeout(path, url, timeoutMs, optional);
-    if (fetched === null) {
-      return null;
+    try {
+      const fetched = await this.fetchResponseWithTimeout(path, url, timeoutMs, optional);
+      if (fetched === null) {
+        return null;
+      }
+
+      const { response, timeoutId } = fetched;
+      const validatedResponse = this.validateJsonResponse(path, response, timeoutId, optional);
+      if (validatedResponse === null) {
+        return null;
+      }
+
+      const text = await this.readBundleText(
+        path,
+        validatedResponse,
+        timeoutId,
+        timeoutMs,
+        optional,
+      );
+      if (text === null) {
+        return null;
+      }
+
+      clearTimeout(timeoutId);
+      const tNetwork = performance.now();
+
+      return {
+        text,
+        sizeApprox: text.length,
+        networkMs: Math.round(tNetwork - t0),
+        transferMetrics: transferCapture?.readMetrics() ?? null,
+      };
+    } finally {
+      transferCapture?.dispose();
     }
-
-    const { response, timeoutId } = fetched;
-    const validatedResponse = this.validateJsonResponse(path, response, timeoutId, optional);
-    if (validatedResponse === null) {
-      return null;
-    }
-
-    const text = await this.readBundleText(path, validatedResponse, timeoutId, timeoutMs, optional);
-    if (text === null) {
-      return null;
-    }
-
-    clearTimeout(timeoutId);
-    const tNetwork = performance.now();
-
-    return {
-      text,
-      sizeApprox: text.length,
-      networkMs: Math.round(tNetwork - t0),
-      transferMetrics: transferCapture?.readMetrics() ?? null,
-    };
   }
 
   private async fetchResponseWithTimeout(

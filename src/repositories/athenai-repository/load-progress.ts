@@ -80,6 +80,8 @@ interface RepositoryLoadProgressState {
   totalEncodedBytes: number;
   /** Sum of decoded body sizes or estimated decoded sizes across successful loads. */
   totalDecodedBytes: number;
+  /** Most recent required `data` load event observed by this reducer. */
+  lastRequiredEvent: BundleLoadEvent | null;
   /** Most recent raw load event reduced into this state. */
   lastEvent: BundleLoadEvent | null;
 }
@@ -103,6 +105,7 @@ export function createInitialRepositoryLoadProgressState(
     },
     totalEncodedBytes: 0,
     totalDecodedBytes: 0,
+    lastRequiredEvent: null,
     lastEvent: null,
   };
 }
@@ -123,9 +126,10 @@ export function reduceRepositoryLoadProgressState(
       next.requestCounts.started += 1;
       if (event.kind === 'data' && event.prefix !== null) {
         const current = next.requiredSourceStatusByPrefix[event.prefix];
-        if (current === 'idle') {
+        if (current !== 'loaded' && current !== 'loading') {
           next.requiredSourceStatusByPrefix[event.prefix] = 'loading';
         }
+        next.lastRequiredEvent = event;
       }
       return next;
     }
@@ -139,6 +143,7 @@ export function reduceRepositoryLoadProgressState(
         if (current !== 'loaded') {
           next.requiredSourceStatusByPrefix[event.prefix] = 'loaded';
         }
+        next.lastRequiredEvent = event;
       }
       return next;
     }
@@ -153,6 +158,7 @@ export function reduceRepositoryLoadProgressState(
         if (current !== 'loaded' && current !== 'failed') {
           next.requiredSourceStatusByPrefix[event.prefix] = 'failed';
         }
+        next.lastRequiredEvent = event;
       }
       return next;
     }
@@ -186,10 +192,10 @@ export function summarizeRepositoryLoadProgress(
       completedSources,
       failedSources,
       progressRatio: state.totalSources === 0 ? 1 : processedSources / state.totalSources,
-      lastRequiredEvent: isRequiredDataEvent(state.lastEvent) ? state.lastEvent : null,
+      lastRequiredEvent: state.lastRequiredEvent,
     },
     activity: {
-      requestCounts: state.requestCounts,
+      requestCounts: { ...state.requestCounts },
       totalEncodedBytes: state.totalEncodedBytes,
       totalDecodedBytes: state.totalDecodedBytes,
       lastEvent: state.lastEvent,
@@ -235,8 +241,4 @@ function formatBytes(bytes: number): string {
     return `${(bytes / 1024).toFixed(1)}KB`;
   }
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
-}
-
-function isRequiredDataEvent(event: BundleLoadEvent | null): event is BundleLoadEvent {
-  return event !== null && event.kind === 'data' && !event.optional;
 }

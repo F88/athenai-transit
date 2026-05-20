@@ -80,4 +80,76 @@ describe('load progress reducer', () => {
       'data size: encoded=0B decoded=0B',
     );
   });
+
+  it('preserves the last required event after non-required activity', () => {
+    let state = createInitialRepositoryLoadProgressState(['alpha']);
+    state = reduceRepositoryLoadProgressState(state, {
+      type: 'succeeded',
+      path: 'alpha/data.json',
+      prefix: 'alpha',
+      kind: 'data',
+      optional: false,
+      metrics: {},
+    });
+    state = reduceRepositoryLoadProgressState(state, {
+      type: 'started',
+      path: 'alpha/shapes.json',
+      prefix: 'alpha',
+      kind: 'shapes',
+      optional: true,
+    });
+
+    const summary = summarizeRepositoryLoadProgress(state);
+    expect(summary.boot.lastRequiredEvent).toMatchObject({
+      type: 'succeeded',
+      path: 'alpha/data.json',
+    });
+    expect(formatBootLoadProgressSummary(summary.boot)).toContain('last=succeeded:alpha/data.json');
+  });
+
+  it('returns a defensive copy of request counts', () => {
+    let state = createInitialRepositoryLoadProgressState(['alpha']);
+    state = reduceRepositoryLoadProgressState(state, {
+      type: 'started',
+      path: 'alpha/data.json',
+      prefix: 'alpha',
+      kind: 'data',
+      optional: false,
+    });
+
+    const summaryA = summarizeRepositoryLoadProgress(state);
+    summaryA.activity.requestCounts.started = 99;
+    const summaryB = summarizeRepositoryLoadProgress(state);
+
+    expect(summaryB.activity.requestCounts.started).toBe(1);
+  });
+
+  it('moves a failed required source back to loading when restarted', () => {
+    let state = createInitialRepositoryLoadProgressState(['alpha']);
+    state = reduceRepositoryLoadProgressState(state, {
+      type: 'failed',
+      path: 'alpha/data.json',
+      prefix: 'alpha',
+      kind: 'data',
+      optional: false,
+      reason: 'network-error',
+      message: 'boom',
+    });
+    state = reduceRepositoryLoadProgressState(state, {
+      type: 'started',
+      path: 'alpha/data.json',
+      prefix: 'alpha',
+      kind: 'data',
+      optional: false,
+    });
+
+    const summary = summarizeRepositoryLoadProgress(state);
+    expect(summary.boot.failedSources).toBe(0);
+    expect(summary.boot.startedSources).toBe(1);
+    expect(summary.boot.progressRatio).toBe(0);
+    expect(summary.boot.lastRequiredEvent).toMatchObject({
+      type: 'started',
+      path: 'alpha/data.json',
+    });
+  });
 });

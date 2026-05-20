@@ -302,6 +302,45 @@ describe('FetchDataSourceV2', () => {
         performanceNowSpy.mockRestore();
       }
     });
+
+    it('disconnects PerformanceObserver even when fetch returns null early', async () => {
+      const loggerConfig = getLoggerConfig();
+      const observerInstances: MockPerformanceObserver[] = [];
+
+      class MockPerformanceObserver {
+        observe = vi.fn();
+        disconnect = vi.fn();
+        takeRecords = vi.fn(() => []);
+
+        constructor(_callback: PerformanceObserverCallback) {
+          observerInstances.push(this);
+        }
+      }
+
+      configureLogger({
+        level: 'debug',
+        enabledTags: ['FetchDataSourceV2'],
+        tagLevels: { ...loggerConfig.tagLevels },
+      });
+      vi.stubGlobal(
+        'PerformanceObserver',
+        MockPerformanceObserver as unknown as typeof PerformanceObserver,
+      );
+      fetchMock.mockResolvedValueOnce(notFoundResponse());
+
+      try {
+        const ds = new FetchDataSourceV2();
+        await expect(ds.loadShapes('tobus')).resolves.toBeNull();
+        expect(observerInstances).toHaveLength(1);
+        expect(observerInstances[0].disconnect).toHaveBeenCalledTimes(1);
+      } finally {
+        configureLogger({
+          level: loggerConfig.level,
+          enabledTags: [...loggerConfig.enabledTags],
+          tagLevels: { ...loggerConfig.tagLevels },
+        });
+      }
+    });
   });
 
   // --- loadShapes (optional) ---
