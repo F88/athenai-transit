@@ -365,10 +365,10 @@ function AppBootShell({
     >
       <div className="mx-auto flex h-full w-full max-w-md flex-col px-5 pt-16 pb-8">
         <div className="flex shrink-0 flex-col items-center gap-4 pb-5 text-center">
-          <p className="text-muted-foreground text-base font-medium tracking-wide uppercase">
+          <p className="font-press-start text-muted-foreground text-xl font-medium tracking-wide uppercase">
             {title}
           </p>
-          <p className="text-muted-foreground text-sm leading-6">{message}</p>
+          <p className="font-press-start text-muted-foreground text-sm leading-6">{message}</p>
           {tips}
         </div>
 

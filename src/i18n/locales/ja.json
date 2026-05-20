@@ -21,13 +21,13 @@
     },
     "loading": {
       "title": "準備中",
-      "message": "しばらくお待ちください",
+      "message": "Now Loading...",
       "progressLabel": "データを読み込み中",
       "progressFailed": "失敗"
     },
     "ready": {
-      "title": "準備完了",
-      "message": "準備完了"
+      "title": "Ready",
+      "message": "Ready"
     },
     "error": {
       "title": "あてのない乗換案内を起動できませんでした",

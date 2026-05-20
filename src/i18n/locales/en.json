@@ -21,7 +21,7 @@
     },
     "loading": {
       "title": "Preparing app",
-      "message": "This will only take a moment.",
+      "message": "Now Loading...",
       "progressLabel": "Loading data",
       "progressFailed": "failed"
     },
