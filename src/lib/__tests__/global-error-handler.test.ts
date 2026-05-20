@@ -73,6 +73,26 @@ describe('installGlobalErrorHandlers', () => {
     expect(document.getElementById(OVERLAY_ID)).not.toBeInTheDocument();
   });
 
+  it('moves focus into the overlay and restores the previous focus when dismissed', () => {
+    const previousButton = document.createElement('button');
+    previousButton.textContent = 'Previous action';
+    document.body.append(previousButton);
+    previousButton.focus();
+
+    window.dispatchEvent(new ErrorEvent('error', { error: new Error('focus failed') }));
+
+    expect(document.activeElement).toBe(
+      document.querySelector<HTMLButtonElement>('#athenai-global-error-overlay button'),
+    );
+
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      '#athenai-global-error-overlay button',
+    );
+    buttons[1]?.click();
+
+    expect(document.activeElement).toBe(previousButton);
+  });
+
   it('does not register duplicate handlers', () => {
     const sameUninstall = installGlobalErrorHandlers();
     expect(sameUninstall).toBe(uninstall);

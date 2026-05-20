@@ -111,6 +111,14 @@ function showGlobalErrorOverlay(error: unknown): void {
   }
 
   document.getElementById(OVERLAY_ID)?.remove();
+  const previousActiveElement = document.activeElement;
+
+  function removeOverlay(): void {
+    overlay.remove();
+    if (previousActiveElement instanceof HTMLElement && previousActiveElement.isConnected) {
+      previousActiveElement.focus();
+    }
+  }
 
   const overlay = document.createElement('div');
   overlay.id = OVERLAY_ID;
@@ -173,12 +181,13 @@ function showGlobalErrorOverlay(error: unknown): void {
   dismissButton.type = 'button';
   dismissButton.textContent = getLabel('globalError.action.dismiss', LABEL_FALLBACKS.dismiss);
   applyButtonStyles(dismissButton, 'secondary');
-  dismissButton.addEventListener('click', () => overlay.remove());
+  dismissButton.addEventListener('click', removeOverlay);
 
   actions.append(reloadButton, dismissButton);
   panel.append(title, message, detailLabel, detail, actions);
   overlay.append(panel);
   host.append(overlay);
+  reloadButton.focus();
 }
 
 function handleErrorEvent(event: ErrorEvent): void {
