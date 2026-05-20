@@ -1,8 +1,10 @@
 import { useEffect, useState, type ReactNode, type TransitionEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import App from './app';
+import { RootErrorBoundary } from './components/error-boundary';
 import { Button } from './components/ui/button';
 import { Progress } from './components/ui/progress';
+import { APP_TITLE } from './config/app-meta';
 import { SourceLoadStateProvider } from './contexts/source-load-state-provider';
 import { TransitRepositoryProvider } from './contexts/transit-repository-provider';
 import {
@@ -25,8 +27,6 @@ type NoticeItemsBySeverity = {
   errors: NoticeItem[];
   warnings: NoticeItem[];
 };
-
-const APP_TITLE = 'Athenai Transit';
 
 function shouldReduceMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true;
@@ -363,6 +363,7 @@ function AppBootShell({
       )}
       onTransitionEnd={onTransitionEnd}
     >
+      {/* pt-24 clears the iOS black-translucent status bar, under which the PWA content extends. */}
       <div className="mx-auto flex h-full w-full max-w-md flex-col px-8 pt-24 pb-8">
         <div className="flex shrink-0 flex-col items-center gap-8 pb-4 text-center">
           <p className="font-press-start text-muted-foreground text-xl font-medium tracking-wide uppercase">
@@ -479,14 +480,16 @@ function BootstrapShellView({
 
 function RepositoryBackedApp({ readyState }: RepositoryBackedAppProps) {
   return (
-    <TransitRepositoryProvider repository={readyState.repository}>
-      <SourceLoadStateProvider
-        initialLoadResult={readyState.loadResult}
-        sourcesParam={getSourcesParam()}
-      >
-        <App />
-      </SourceLoadStateProvider>
-    </TransitRepositoryProvider>
+    <RootErrorBoundary>
+      <TransitRepositoryProvider repository={readyState.repository}>
+        <SourceLoadStateProvider
+          initialLoadResult={readyState.loadResult}
+          sourcesParam={getSourcesParam()}
+        >
+          <App />
+        </SourceLoadStateProvider>
+      </TransitRepositoryProvider>
+    </RootErrorBoundary>
   );
 }
 

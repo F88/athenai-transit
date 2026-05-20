@@ -209,6 +209,24 @@
   "dataLoad": {
     "failed": "Failed to load data"
   },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "message": "An error occurred while displaying the app. If reloading does not help, try clearing the cache.",
+    "detailLabel": "Error details",
+    "action": {
+      "clearCacheAndReload": "Clear cache and reload",
+      "reload": "Reload"
+    }
+  },
+  "globalError": {
+    "title": "Unexpected error",
+    "message": "An error occurred while the app was running. Reload the app if the screen does not behave correctly.",
+    "detailLabel": "Error details",
+    "action": {
+      "reload": "Reload",
+      "dismiss": "Dismiss"
+    }
+  },
   "dataSourceSettings": {
     "title": "Data source settings",
     "description": "Data sources in use and their state",
