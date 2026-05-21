@@ -1,4 +1,4 @@
-import { resolveAgencyLang } from '@/config/transit-defaults';
+import { DEFAULT_AGENCY_LANG, resolveAgencyLang } from '@/config/transit-defaults';
 import { resolveDisplayNamesWithTranslatableText } from '@/domain/transit/i18n/resolve-display-names-with-translatable-text';
 import { getAgencyDisplayNames } from '@/domain/transit/name-resolver/get-agency-display-name';
 import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
@@ -57,7 +57,7 @@ export function addToHistory(
 export function createStopReferenceSnapshot(
   stopOrMeta: Stop | StopWithMeta,
   routeTypes: readonly AppRouteTypeValue[],
-  preferredDisplayLangs: readonly string[] = [],
+  preferredDisplayLangs: readonly string[] = DEFAULT_AGENCY_LANG,
 ): StopReferenceSnapshot {
   const stop = 'stop' in stopOrMeta ? stopOrMeta.stop : stopOrMeta;
   const name =

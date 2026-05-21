@@ -120,15 +120,13 @@ describe('useStopNavigation', () => {
 
   it('navigateAndFocusStop disables auto-locate, focuses the stop, and pushes history', () => {
     const stop = makeStop('A');
-    const stopMeta = makeStopMeta(stop);
     const disableAutoLocate = vi.fn();
     const focusStop = vi.fn();
     const recordStopSelection = vi.fn();
-    const routeTypes: AppRouteTypeValue[] = [11];
+    const selection = createStopReferenceSnapshot(makeStopMeta(stop), [11]);
     const { result } = renderHook(() =>
       useStopNavigation(
         makeParams({
-          radiusStops: [stopMeta],
           disableAutoLocate,
           focusStop,
           recordStopSelection,
@@ -137,22 +135,20 @@ describe('useStopNavigation', () => {
     );
 
     act(() => {
-      result.current.navigateAndFocusStop(stop, 'select-history', routeTypes);
+      result.current.navigateAndFocusStop('select-history', stop, selection);
     });
 
     expect(disableAutoLocate).toHaveBeenCalledWith('select-history');
     expect(focusStop).toHaveBeenCalledWith(stop);
-    expect(recordStopSelection).toHaveBeenCalledWith(
-      createStopReferenceSnapshot(stopMeta, routeTypes),
-    );
+    expect(recordStopSelection).toHaveBeenCalledWith(selection);
   });
 
-  it('navigateAndFocusStop reuses selectionOverride when provided', () => {
+  it('navigateAndFocusStop records the provided selection snapshot', () => {
     const stop = makeStop('A');
     const disableAutoLocate = vi.fn();
     const focusStop = vi.fn();
     const recordStopSelection = vi.fn();
-    const selectionOverride = createStopReferenceSnapshot(stop, [3]);
+    const selection = createStopReferenceSnapshot(stop, [3]);
     const { result } = renderHook(() =>
       useStopNavigation(
         makeParams({
@@ -164,12 +160,12 @@ describe('useStopNavigation', () => {
     );
 
     act(() => {
-      result.current.navigateAndFocusStop(stop, 'select-history', undefined, selectionOverride);
+      result.current.navigateAndFocusStop('select-history', stop, selection);
     });
 
     expect(disableAutoLocate).toHaveBeenCalledWith('select-history');
     expect(focusStop).toHaveBeenCalledWith(stop);
-    expect(recordStopSelection).toHaveBeenCalledWith(selectionOverride);
+    expect(recordStopSelection).toHaveBeenCalledWith(selection);
   });
 
   it('navigateAndFocusStopById resolves stop meta and navigates on success', async () => {

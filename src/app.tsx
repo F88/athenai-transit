@@ -35,9 +35,9 @@ import { formatDateKey } from './domain/transit/calendar-utils';
 import { computeStopsCounts } from './domain/transit/compute-stops-counts';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
-import { resolveHistorySelectionAction } from './domain/transit/resolve-history-selection-action';
 import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-day';
-import type { StopHistoryEntry } from './domain/transit/stop-history';
+import { buildHistoryNavigationPayload } from './domain/transit/stop-navigation';
+import { createStopReferenceSnapshot, type StopHistoryEntry } from './domain/transit/stop-history';
 import {
   applyStopEventAttributeTogglesToStops,
   omitStopsWithoutStopTimes,
@@ -658,24 +658,19 @@ export default function App() {
   // The caller only handles the shared execution path for resolved actions.
   const handleHistorySelect = useCallback(
     (entry: StopHistoryEntry) => {
-      const stopMeta = lookupHistoryStopMeta(entry.snapshot.stopId);
-      const action = resolveHistorySelectionAction({
+      const payload = buildHistoryNavigationPayload(
         entry,
-        stopMeta,
         routeTypeMap,
-      });
-
-      if (action.type === 'ignore') {
-        logger.warn(`handleHistorySelect <ignored> unresolved stopId=${entry.snapshot.stopId}`);
+        langChain,
+        lookupHistoryStopMeta,
+      );
+      if (payload == null) {
+        logger.warn(`handleHistorySelect unresolved stopId=${entry.snapshot.stopId}`);
         return;
       }
-
-      logger.debug(
-        `handleHistorySelect source=${action.source} stopId=${action.stop.stop_id}, name=${action.stop.stop_name} names=${JSON.stringify(action.stop.stop_names)} lat=${action.stop.stop_lat} lon=${action.stop.stop_lon} location_type=${action.stop.location_type} agency_id=${action.stop.agency_id}`,
-      );
-      navigateAndFocusStop(action.stop, 'select-history', action.routeTypes);
+      navigateAndFocusStop('select-history', payload.stop, payload.snapshot);
     },
-    [lookupHistoryStopMeta, navigateAndFocusStop, routeTypeMap],
+    [langChain, lookupHistoryStopMeta, navigateAndFocusStop, routeTypeMap],
   );
 
   // Anchor stop_id set for efficient lookup in BottomSheet
@@ -773,9 +768,10 @@ export default function App() {
         location_type: 0,
         agency_id: '',
       };
-      navigateAndFocusStop(stop, 'select-portal', entry.routeTypes);
+      const snapshot = createStopReferenceSnapshot(stop, entry.routeTypes, langChain);
+      navigateAndFocusStop('select-portal', stop, snapshot);
     },
-    [navigateAndFocusStop],
+    [langChain, navigateAndFocusStop],
   );
 
   // Select + pan to a stop chosen from the search dialog.
@@ -784,12 +780,13 @@ export default function App() {
   const handleSearchSelect = useCallback(
     (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleSearchSelect [Search]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
-      navigateAndFocusStop(stop, 'select-search', routeTypes);
+      const snapshot = createStopReferenceSnapshot(stop, routeTypes, langChain);
+      navigateAndFocusStop('select-search', stop, snapshot);
       setSearchModalOpen(false);
       // SearchDialog already resolved routeTypes from its own routeTypeMap,
       // so we can use them directly without re-resolving.
     },
-    [navigateAndFocusStop],
+    [langChain, navigateAndFocusStop],
   );
 
   // --- App-wide filter state (shared across surfaces) ---

@@ -589,4 +589,54 @@ describe('App anchor error toast', () => {
       expect(recordStopSelection).toHaveBeenCalledWith(entry.snapshot);
     });
   });
+
+  it('ignores history selection when current metadata is unavailable and the snapshot cannot rebuild a stop', async () => {
+    const recordStopSelection = vi.fn();
+    const entry: StopHistoryEntry = {
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: null,
+        lon: null,
+        routeTypes: [3],
+        agencyNames: [],
+      },
+      selectedAt: 1000,
+    };
+    mockUseStopHistory.mockReturnValue({
+      history: [entry],
+      recordStopSelection,
+      lastError: null,
+      clearError: vi.fn(),
+      clearHistory: vi.fn(),
+    });
+    mockUseTransitRepository.mockReturnValue(
+      makeRepo({
+        getRouteShapes: mockGetRouteShapes,
+        getStopMetaByIds: vi.fn().mockReturnValue([]),
+      }),
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockMapBottomSheetLayout).toHaveBeenCalled();
+    });
+
+    const lastCall = mockMapBottomSheetLayout.mock.lastCall;
+    const props = lastCall?.[0] as {
+      mapViewProps: {
+        onHistorySelect: (entry: StopHistoryEntry) => void;
+      };
+    };
+
+    act(() => {
+      props.mapViewProps.onHistorySelect(entry);
+    });
+
+    await waitFor(() => {
+      expect(recordStopSelection).not.toHaveBeenCalled();
+      expect(mockFocusStop).not.toHaveBeenCalled();
+    });
+  });
 });

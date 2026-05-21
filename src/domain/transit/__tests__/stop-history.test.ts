@@ -115,6 +115,39 @@ describe('MAX_HISTORY_SIZE', () => {
   });
 });
 
+describe('createStopReferenceSnapshot', () => {
+  it('prefers translated stop names for plain Stop input when a language chain is provided', () => {
+    const stop = {
+      ...makeStop('A'),
+      stop_name: '駅A',
+      stop_names: { en: 'Station A' },
+    };
+
+    const result = createStopReferenceSnapshot(stop, [3], ['en']);
+
+    expect(result).toEqual({
+      stopId: 'A',
+      name: 'Station A',
+      lat: stop.stop_lat,
+      lon: stop.stop_lon,
+      routeTypes: [3],
+      agencyNames: [],
+      platformCode: undefined,
+    });
+  });
+
+  it('preserves platform code in the stored snapshot', () => {
+    const stop = {
+      ...makeStop('A'),
+      platform_code: 'P1',
+    };
+
+    const result = createStopReferenceSnapshot(stop, [3]);
+
+    expect(result.platformCode).toBe('P1');
+  });
+});
+
 describe('buildHistorySelectionStop', () => {
   it('builds a minimal Stop from a stored history snapshot with coordinates', () => {
     const result = buildHistorySelectionStop(makeEntry('A', [3], 1000));

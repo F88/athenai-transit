@@ -31,10 +31,9 @@ export interface UseStopNavigationReturn {
     fallbackStop?: Stop,
   ) => void;
   navigateAndFocusStop: (
-    stop: Stop,
     reason: AutoLocateOffReason,
-    routeTypes?: readonly AppRouteTypeValue[],
-    selectionOverride?: StopReferenceSnapshot,
+    stop: Stop,
+    selection: StopReferenceSnapshot,
   ) => void;
   navigateAndFocusStopById: (
     stopId: string,
@@ -58,19 +57,18 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
 
   const recordStopHistorySelection = useCallback(
     (meta: StopWithMeta, routeTypes?: readonly AppRouteTypeValue[]) => {
-      recordStopSelection(
-        createStopReferenceSnapshot(
-          meta,
-          routeTypes ??
-            resolveStopRouteTypes({
-              stopId: meta.stop.stop_id,
-              routeTypeMap,
-              routes: meta.routes,
-              unknownPolicy: 'include-unknown',
-            }),
-          dataLang,
-        ),
+      const snapshot = createStopReferenceSnapshot(
+        meta,
+        routeTypes ??
+          resolveStopRouteTypes({
+            stopId: meta.stop.stop_id,
+            routeTypeMap,
+            routes: meta.routes,
+            unknownPolicy: 'include-unknown',
+          }),
+        dataLang,
       );
+      recordStopSelection(snapshot);
     },
     [dataLang, recordStopSelection, routeTypeMap],
   );
@@ -98,31 +96,12 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
   );
 
   const navigateAndFocusStop = useCallback(
-    (
-      stop: Stop,
-      reason: AutoLocateOffReason,
-      routeTypes?: readonly AppRouteTypeValue[],
-      selectionOverride?: StopReferenceSnapshot,
-    ) => {
+    (reason: AutoLocateOffReason, stop: Stop, snapshot: StopReferenceSnapshot) => {
       disableAutoLocate(reason);
       focusStop(stop);
-      if (selectionOverride) {
-        recordStopSelection(selectionOverride);
-        return;
-      }
-      const meta = resolveNavigableStopMeta(stop.stop_id, radiusStops, inBoundStops, stop);
-      if (meta) {
-        recordStopHistorySelection(meta, routeTypes);
-      }
+      recordStopSelection(snapshot);
     },
-    [
-      disableAutoLocate,
-      focusStop,
-      inBoundStops,
-      radiusStops,
-      recordStopHistorySelection,
-      recordStopSelection,
-    ],
+    [disableAutoLocate, focusStop, recordStopSelection],
   );
 
   const navigateAndFocusStopById = useCallback(

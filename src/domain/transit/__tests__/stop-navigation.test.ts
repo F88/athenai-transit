@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { makeStop, makeStopMeta } from '../../../__tests__/helpers';
-import { findNavigableStopMeta, resolveNavigableStopMeta } from '../stop-navigation';
+import {
+  buildHistoryNavigationPayload,
+  findNavigableStopMeta,
+  resolveNavigableStopMeta,
+} from '../stop-navigation';
+import type { StopHistoryEntry } from '../stop-history';
 
 describe('findNavigableStopMeta', () => {
   it('prefers radius stops before in-bound stops', () => {
@@ -84,5 +89,99 @@ describe('resolveNavigableStopMeta', () => {
 
     expect(fallbackStop).toEqual(originalStop);
     expect(result?.stop).toBe(fallbackStop);
+  });
+});
+
+describe('buildHistoryNavigationPayload', () => {
+  it('returns stop and snapshot from current stop metadata when available', () => {
+    const entry: StopHistoryEntry = {
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: 35,
+        lon: 139,
+        routeTypes: [3],
+        agencyNames: ['Agency A'],
+        platformCode: '1',
+      },
+      selectedAt: 1000,
+    };
+    const stopMeta = makeStopMeta(makeStop('A', 36, 140));
+    stopMeta.routes = [];
+
+    const result = buildHistoryNavigationPayload(entry, new Map(), ['ja'], () => stopMeta);
+
+    expect(result).toEqual({
+      stop: stopMeta.stop,
+      snapshot: {
+        stopId: 'A',
+        name: 'Stop A',
+        lat: 36,
+        lon: 140,
+        routeTypes: [-1],
+        agencyNames: [],
+        platformCode: undefined,
+      },
+    });
+  });
+
+  it('returns stop and snapshot from the stored history entry when current metadata is unavailable', () => {
+    const entry: StopHistoryEntry = {
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: 35,
+        lon: 139,
+        routeTypes: [3],
+        agencyNames: ['Agency A'],
+        platformCode: '1',
+      },
+      selectedAt: 1000,
+    };
+
+    const result = buildHistoryNavigationPayload(entry, new Map(), ['ja'], () => null);
+
+    expect(result).toEqual({
+      stop: {
+        stop_id: 'A',
+        stop_name: 'Snapshot A',
+        stop_names: {},
+        stop_lat: 35,
+        stop_lon: 139,
+        location_type: 0,
+        agency_id: '',
+        platform_code: '1',
+      },
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: 35,
+        lon: 139,
+        routeTypes: [3],
+        agencyNames: [],
+        platformCode: '1',
+      },
+    });
+  });
+
+  it('returns null when the stored history entry cannot rebuild a stop', () => {
+    const result = buildHistoryNavigationPayload(
+      {
+        snapshot: {
+          stopId: 'A',
+          name: 'Snapshot A',
+          lat: null,
+          lon: null,
+          routeTypes: [3],
+          agencyNames: [],
+        },
+        selectedAt: 1000,
+      },
+      new Map(),
+      ['ja'],
+      () => null,
+    );
+
+    expect(result).toBeNull();
   });
 });
