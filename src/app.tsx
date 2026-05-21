@@ -35,6 +35,7 @@ import { formatDateKey } from './domain/transit/calendar-utils';
 import { computeStopsCounts } from './domain/transit/compute-stops-counts';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
+import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
 import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-day';
 import { type StopHistoryEntry } from './domain/transit/stop-history';
 import { buildHistoryNavigationPayload } from './domain/transit/stop-navigation';
@@ -361,18 +362,47 @@ export default function App() {
     [recordStopSelection],
   );
 
-  const { selectStopWithFallback, navigateAndFocusStop, navigateAndFocusStopById } =
-    useStopNavigation({
-      repo,
-      dataLang: langChain,
-      routeTypeMap,
-      radiusStops,
-      inBoundStops,
-      disableAutoLocate,
-      selectStopById,
-      focusStop,
-      recordStopSelection: recordStopSelectionInHistory,
-    });
+  const { selectStopWithFallback, navigateAndFocusStop } = useStopNavigation({
+    dataLang: langChain,
+    routeTypeMap,
+    radiusStops,
+    inBoundStops,
+    disableAutoLocate,
+    selectStopById,
+    focusStop,
+    recordStopSelection: recordStopSelectionInHistory,
+  });
+
+  const navigateAndFocusStopById = useCallback(
+    async (
+      stopId: string,
+      reason: AutoLocateOffReason,
+      routeTypes?: readonly AppRouteTypeValue[],
+    ) => {
+      const result = await repo.getStopMetaById(stopId);
+      if (!result.success) {
+        return result;
+      }
+
+      navigateAndFocusStop(reason, result.data.stop);
+
+      const snapshot = createStopReferenceSnapshot(
+        result.data,
+        routeTypes ??
+          resolveStopRouteTypes({
+            stopId: result.data.stop.stop_id,
+            routeTypeMap,
+            routes: result.data.routes,
+            unknownPolicy: 'include-unknown',
+          }),
+        langChain,
+      );
+      void recordStopSelection(snapshot);
+
+      return result;
+    },
+    [langChain, navigateAndFocusStop, recordStopSelection, repo, routeTypeMap],
+  );
 
   // Wrap selectStop to also record in history.
   //
@@ -669,9 +699,10 @@ export default function App() {
         logger.warn(`handleHistorySelect unresolved stopId=${entry.snapshot.stopId}`);
         return;
       }
-      navigateAndFocusStop('select-history', payload.stop, payload.snapshot);
+      navigateAndFocusStop('select-history', payload.stop);
+      void recordStopSelection(payload.snapshot);
     },
-    [langChain, lookupHistoryStopMeta, navigateAndFocusStop, routeTypeMap],
+    [langChain, lookupHistoryStopMeta, navigateAndFocusStop, recordStopSelection, routeTypeMap],
   );
 
   // Anchor stop_id set for efficient lookup in BottomSheet
@@ -769,10 +800,11 @@ export default function App() {
         location_type: 0,
         agency_id: '',
       };
+      navigateAndFocusStop('select-portal', stop);
       const snapshot = createStopReferenceSnapshot(stop, entry.routeTypes, langChain);
-      navigateAndFocusStop('select-portal', stop, snapshot);
+      void recordStopSelection(snapshot);
     },
-    [langChain, navigateAndFocusStop],
+    [langChain, navigateAndFocusStop, recordStopSelection],
   );
 
   // Select + pan to a stop chosen from the search dialog.
@@ -781,13 +813,12 @@ export default function App() {
   const handleSearchSelect = useCallback(
     (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleSearchSelect [Search]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
+      navigateAndFocusStop('select-search', stop);
       const snapshot = createStopReferenceSnapshot(stop, routeTypes, langChain);
-      navigateAndFocusStop('select-search', stop, snapshot);
+      void recordStopSelection(snapshot);
       setSearchModalOpen(false);
-      // SearchDialog already resolved routeTypes from its own routeTypeMap,
-      // so we can use them directly without re-resolving.
     },
-    [langChain, navigateAndFocusStop],
+    [langChain, navigateAndFocusStop, recordStopSelection],
   );
 
   // --- App-wide filter state (shared across surfaces) ---

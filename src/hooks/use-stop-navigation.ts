@@ -3,9 +3,7 @@ import { resolveStopRouteTypes } from '../domain/transit/resolve-stop-route-type
 import { resolveNavigableStopMeta } from '../domain/transit/stop-navigation';
 import { createStopReferenceSnapshot } from '../domain/transit/stop-reference-snapshot';
 import { createLogger } from '../lib/logger';
-import type { TransitRepository } from '../repositories/transit-repository';
 import type { AutoLocateOffReason } from '../types/app/auto-locate';
-import type { Result } from '../types/app/repository';
 import type { StopReferenceSnapshot } from '../types/app/stop-reference-snapshot';
 import type { AppRouteTypeValue, Stop } from '../types/app/transit';
 import type { StopWithMeta } from '../types/app/transit-composed';
@@ -13,7 +11,6 @@ import type { StopWithMeta } from '../types/app/transit-composed';
 const logger = createLogger('StopNavigation');
 
 export interface UseStopNavigationParams {
-  repo: TransitRepository;
   dataLang: readonly string[];
   routeTypeMap: ReadonlyMap<string, AppRouteTypeValue[]>;
   radiusStops: readonly StopWithMeta[];
@@ -30,21 +27,11 @@ export interface UseStopNavigationReturn {
     reason: AutoLocateOffReason,
     fallbackStop?: Stop,
   ) => void;
-  navigateAndFocusStop: (
-    reason: AutoLocateOffReason,
-    stop: Stop,
-    selection: StopReferenceSnapshot,
-  ) => void;
-  navigateAndFocusStopById: (
-    stopId: string,
-    reason: AutoLocateOffReason,
-    routeTypes?: readonly AppRouteTypeValue[],
-  ) => Promise<Result<StopWithMeta>>;
+  navigateAndFocusStop: (reason: AutoLocateOffReason, stop: Stop) => void;
 }
 
 export function useStopNavigation(params: UseStopNavigationParams): UseStopNavigationReturn {
   const {
-    repo,
     dataLang,
     routeTypeMap,
     radiusStops,
@@ -96,34 +83,15 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
   );
 
   const navigateAndFocusStop = useCallback(
-    (reason: AutoLocateOffReason, stop: Stop, snapshot: StopReferenceSnapshot) => {
+    (reason: AutoLocateOffReason, stop: Stop) => {
       disableAutoLocate(reason);
       focusStop(stop);
-      recordStopSelection(snapshot);
     },
-    [disableAutoLocate, focusStop, recordStopSelection],
-  );
-
-  const navigateAndFocusStopById = useCallback(
-    async (
-      stopId: string,
-      reason: AutoLocateOffReason,
-      routeTypes?: readonly AppRouteTypeValue[],
-    ) => {
-      const result = await repo.getStopMetaById(stopId);
-      if (result.success) {
-        disableAutoLocate(reason);
-        focusStop(result.data.stop);
-        recordStopHistorySelection(result.data, routeTypes);
-      }
-      return result;
-    },
-    [repo, disableAutoLocate, focusStop, recordStopHistorySelection],
+    [disableAutoLocate, focusStop],
   );
 
   return {
     selectStopWithFallback,
     navigateAndFocusStop,
-    navigateAndFocusStopById,
   };
 }
