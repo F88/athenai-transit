@@ -38,14 +38,21 @@ function normalizeStopId(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
-function normalizeAgencyIds(value: unknown, fallbackAgencyIds: readonly string[] = []): string[] {
+function normalizeStringArray(value: unknown, fallbackValues: readonly string[] = []): string[] {
   const normalized = Array.isArray(value)
-    ? value.filter(
-        (agencyId): agencyId is string => typeof agencyId === 'string' && agencyId.length > 0,
-      )
-    : [...fallbackAgencyIds];
+    ? value.filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
+    : [...fallbackValues];
 
   return [...new Set(normalized)];
+}
+
+function normalizeAgencyNames(
+  value: unknown,
+  fallbackAgencyNames: readonly string[] = [],
+  fallbackAgencyIds: readonly string[] = [],
+): string[] {
+  const normalizedNames = normalizeStringArray(value, fallbackAgencyNames);
+  return normalizedNames.length > 0 ? normalizedNames : normalizeStringArray(fallbackAgencyIds);
 }
 
 function normalizePlatformCode(value: unknown): string | undefined {
@@ -56,7 +63,7 @@ function normalizeSnapshot(
   value: unknown,
   fallbackStopId?: string,
   fallbackRouteTypes?: AppRouteTypeValue[],
-  fallbackAgencyIds: readonly string[] = [],
+  fallbackAgencyNames: readonly string[] = [],
   fallbackPlatformCode?: string,
 ): StopReferenceSnapshot | null {
   if (typeof value !== 'object' || value === null) {
@@ -82,7 +89,11 @@ function normalizeSnapshot(
     lat: normalizeCoordinate(obj.lat),
     lon: normalizeCoordinate(obj.lon),
     routeTypes,
-    agencyIds: normalizeAgencyIds(obj.agencyIds, fallbackAgencyIds),
+    agencyNames: normalizeAgencyNames(
+      obj.agencyNames,
+      fallbackAgencyNames,
+      normalizeStringArray(obj.agencyIds),
+    ),
     platformCode: normalizePlatformCode(obj.platformCode) ?? fallbackPlatformCode,
   };
 }
@@ -114,11 +125,27 @@ function normalizeStoredEntry(entry: unknown): StopHistoryEntry | null {
       lat: normalizeCoordinate(obj.lat ?? obj.stopLat),
       lon: normalizeCoordinate(obj.lon ?? obj.stopLon),
       routeTypes,
-      agencyIds: normalizeAgencyIds(obj.agencyIds),
+      agencyNames: normalizeAgencyNames(obj.agencyNames, [], normalizeStringArray(obj.agencyIds)),
       platformCode: normalizePlatformCode(obj.platformCode),
     },
     selectedAt: normalizeSelectedAt(obj.selectedAt),
   };
+}
+
+function extractAgencyNamesFromLegacyStopWithMeta(stopWithMeta: Record<string, unknown>): string[] {
+  return normalizeStringArray(
+    Array.isArray(stopWithMeta.agencies)
+      ? stopWithMeta.agencies.map((agency) => {
+          if (typeof agency !== 'object' || agency === null) {
+            return null;
+          }
+          const obj = agency as Record<string, unknown>;
+          return [obj.agency_short_name, obj.agency_name, obj.agency_id].find(
+            (value) => typeof value === 'string' && value.length > 0,
+          ) as string | undefined;
+        })
+      : [],
+  );
 }
 
 function migrateLegacyEntry(entry: Record<string, unknown>): StopHistoryEntry | null {
@@ -154,9 +181,8 @@ function migrateLegacyEntry(entry: Record<string, unknown>): StopHistoryEntry | 
         lat: normalizeCoordinate(stop.stop_lat),
         lon: normalizeCoordinate(stop.stop_lon),
         routeTypes,
-        agencyIds: normalizeAgencyIds(
-          (stopWithMeta as Record<string, unknown>).agencies,
-          typeof stop.agency_id === 'string' && stop.agency_id.length > 0 ? [stop.agency_id] : [],
+        agencyNames: extractAgencyNamesFromLegacyStopWithMeta(
+          stopWithMeta as Record<string, unknown>,
         ),
         platformCode: normalizePlatformCode(stop.platform_code),
       },
@@ -176,8 +202,7 @@ function migrateLegacyEntry(entry: Record<string, unknown>): StopHistoryEntry | 
       lat: normalizeCoordinate(stop.stop_lat),
       lon: normalizeCoordinate(stop.stop_lon),
       routeTypes: [legacyType],
-      agencyIds:
-        typeof stop.agency_id === 'string' && stop.agency_id.length > 0 ? [stop.agency_id] : [],
+      agencyNames: [],
       platformCode: normalizePlatformCode(stop.platform_code),
     },
     selectedAt: normalizeSelectedAt(entry.selectedAt),

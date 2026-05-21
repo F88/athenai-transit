@@ -15,7 +15,7 @@ function makeEntry(
   selectedAt = 1000,
 ): StopHistoryEntry {
   return {
-    snapshot: { stopId: id, name: id, lat: 35, lon: 139, routeTypes, agencyIds: [] },
+    snapshot: { stopId: id, name: id, lat: 35, lon: 139, routeTypes, agencyNames: [] },
     selectedAt,
   };
 }
@@ -31,7 +31,7 @@ describe('addToHistory', () => {
     expect(result[0].snapshot.lat).toBe(stop.stop_lat);
     expect(result[0].snapshot.lon).toBe(stop.stop_lon);
     expect(result[0].snapshot.routeTypes).toEqual([3]);
-    expect(result[0].snapshot.agencyIds).toEqual([]);
+    expect(result[0].snapshot.agencyNames).toEqual([]);
     expect(result[0].selectedAt).toBe(1000);
   });
 
@@ -139,7 +139,7 @@ describe('buildHistorySelectionStop', () => {
         lat: null,
         lon: null,
         routeTypes: [3],
-        agencyIds: [],
+        agencyNames: [],
       },
       selectedAt: 1000,
     });

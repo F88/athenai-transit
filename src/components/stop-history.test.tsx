@@ -38,7 +38,7 @@ function makeHistoryEntry(overrides?: Partial<StopHistoryEntry>): StopHistoryEnt
       lat: 35,
       lon: 139,
       routeTypes: [3],
-      agencyIds: [],
+      agencyNames: [],
     },
     selectedAt: 1000,
     ...overrides,

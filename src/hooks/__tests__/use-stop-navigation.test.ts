@@ -8,6 +8,7 @@ import { useStopNavigation, type UseStopNavigationParams } from '../use-stop-nav
 function makeParams(overrides: Partial<UseStopNavigationParams> = {}): UseStopNavigationParams {
   return {
     repo: makeRepo(),
+    dataLang: [],
     routeTypeMap: new Map<string, AppRouteTypeValue[]>(),
     radiusStops: [],
     inBoundStops: [],
@@ -20,6 +21,50 @@ function makeParams(overrides: Partial<UseStopNavigationParams> = {}): UseStopNa
 }
 
 describe('useStopNavigation', () => {
+  it('stores resolved display strings when dataLang prefers translated names', () => {
+    const stopMeta = makeStopMeta('A');
+    stopMeta.stop.stop_name = '駅A';
+    stopMeta.stop.stop_names = { en: 'Station A' };
+    stopMeta.stop.agency_id = 'agency-1';
+    stopMeta.agencies = [
+      {
+        agency_id: 'agency-1',
+        agency_name: 'Agency Original',
+        agency_long_name: 'Agency Long',
+        agency_short_name: '事業者A',
+        agency_names: { en: 'Agency Original' },
+        agency_long_names: { en: 'Agency Long' },
+        agency_short_names: { en: 'Agency A' },
+        agency_url: 'https://example.com',
+        agency_lang: 'ja',
+        agency_timezone: 'Asia/Tokyo',
+        agency_fare_url: '',
+        agency_colors: [],
+      },
+    ];
+    const recordStopSelection = vi.fn();
+    const { result } = renderHook(() =>
+      useStopNavigation(
+        makeParams({
+          dataLang: ['en'],
+          radiusStops: [stopMeta],
+          recordStopSelection,
+        }),
+      ),
+    );
+
+    act(() => {
+      result.current.selectStopWithFallback('A', 'select-bottom-sheet');
+    });
+
+    expect(recordStopSelection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Station A',
+        agencyNames: ['Agency A'],
+      }),
+    );
+  });
+
   it('selectStopWithFallback disables auto-locate, selects the stop, and pushes resolved meta', () => {
     const stop = makeStop('A');
     const stopMeta = makeStopMeta(stop);
@@ -100,6 +145,31 @@ describe('useStopNavigation', () => {
     expect(recordStopSelection).toHaveBeenCalledWith(
       createStopReferenceSnapshot(stopMeta, routeTypes),
     );
+  });
+
+  it('navigateAndFocusStop reuses selectionOverride when provided', () => {
+    const stop = makeStop('A');
+    const disableAutoLocate = vi.fn();
+    const focusStop = vi.fn();
+    const recordStopSelection = vi.fn();
+    const selectionOverride = createStopReferenceSnapshot(stop, [3]);
+    const { result } = renderHook(() =>
+      useStopNavigation(
+        makeParams({
+          disableAutoLocate,
+          focusStop,
+          recordStopSelection,
+        }),
+      ),
+    );
+
+    act(() => {
+      result.current.navigateAndFocusStop(stop, 'select-history', undefined, selectionOverride);
+    });
+
+    expect(disableAutoLocate).toHaveBeenCalledWith('select-history');
+    expect(focusStop).toHaveBeenCalledWith(stop);
+    expect(recordStopSelection).toHaveBeenCalledWith(selectionOverride);
   });
 
   it('navigateAndFocusStopById resolves stop meta and navigates on success', async () => {

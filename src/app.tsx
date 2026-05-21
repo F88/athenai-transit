@@ -35,10 +35,9 @@ import { formatDateKey } from './domain/transit/calendar-utils';
 import { computeStopsCounts } from './domain/transit/compute-stops-counts';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
-import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
+import { resolveHistorySelectionAction } from './domain/transit/resolve-history-selection-action';
 import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-day';
 import type { StopHistoryEntry } from './domain/transit/stop-history';
-import { buildHistorySelectionStop } from './domain/transit/stop-history';
 import {
   applyStopEventAttributeTogglesToStops,
   omitStopsWithoutStopTimes,
@@ -364,6 +363,7 @@ export default function App() {
   const { selectStopWithFallback, navigateAndFocusStop, navigateAndFocusStopById } =
     useStopNavigation({
       repo,
+      dataLang: langChain,
       routeTypeMap,
       radiusStops,
       inBoundStops,
@@ -651,36 +651,29 @@ export default function App() {
 
   // Select + pan to a stop from history.
   //
-  // Prefer the latest repository stop metadata when the stop_id still
-  // exists in the active dataset; otherwise fall back to the persisted
-  // history snapshot and rebuild a minimal Stop for navigation.
+  // The pure resolver decides whether this selection should be ignored or
+  // resolved, and when resolved it records whether the navigation target came
+  // from current repository metadata or the persisted snapshot fallback.
   //
-  // Route types follow the same rule so re-recorded history keeps the
-  // latest resolved route types when available and preserves the stored
-  // snapshot route types when current metadata is unavailable.
+  // The caller only handles the shared execution path for resolved actions.
   const handleHistorySelect = useCallback(
     (entry: StopHistoryEntry) => {
       const stopMeta = lookupHistoryStopMeta(entry.snapshot.stopId);
-      const stop = stopMeta?.stop ?? buildHistorySelectionStop(entry);
-      if (!stop) {
-        logger.warn(`handleHistorySelect ignored: unresolved stopId=${entry.snapshot.stopId}`);
+      const action = resolveHistorySelectionAction({
+        entry,
+        stopMeta,
+        routeTypeMap,
+      });
+
+      if (action.type === 'ignore') {
+        logger.warn(`handleHistorySelect <ignored> unresolved stopId=${entry.snapshot.stopId}`);
         return;
       }
+
       logger.debug(
-        `handleHistorySelect [History]: type=${stopMeta ? 'meta' : 'snapshot-minimal'} stopId=${stop.stop_id}, name=${stop.stop_name} names=${JSON.stringify(stop.stop_names)} lat=${stop.stop_lat} lon=${stop.stop_lon} location_type=${stop.location_type} agency_id=${stop.agency_id}`,
+        `handleHistorySelect source=${action.source} stopId=${action.stop.stop_id}, name=${action.stop.stop_name} names=${JSON.stringify(action.stop.stop_names)} lat=${action.stop.stop_lat} lon=${action.stop.stop_lon} location_type=${action.stop.location_type} agency_id=${action.stop.agency_id}`,
       );
-
-      const routeTypes =
-        stopMeta != null
-          ? resolveStopRouteTypes({
-              stopId: stopMeta.stop.stop_id,
-              routeTypeMap,
-              routes: stopMeta.routes,
-              unknownPolicy: 'include-unknown',
-            })
-          : entry.snapshot.routeTypes;
-
-      navigateAndFocusStop(stop, 'select-history', routeTypes);
+      navigateAndFocusStop(action.stop, 'select-history', action.routeTypes);
     },
     [lookupHistoryStopMeta, navigateAndFocusStop, routeTypeMap],
   );

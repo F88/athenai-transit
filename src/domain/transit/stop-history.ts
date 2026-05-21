@@ -1,3 +1,7 @@
+import { resolveAgencyLang } from '@/config/transit-defaults';
+import { resolveDisplayNamesWithTranslatableText } from '@/domain/transit/i18n/resolve-display-names-with-translatable-text';
+import { getAgencyDisplayNames } from '@/domain/transit/name-resolver/get-agency-display-name';
+import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import type { StopReferenceSnapshot } from '@/types/app/stop-reference-snapshot';
 import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
 import type { StopWithMeta } from '@/types/app/transit-composed';
@@ -53,22 +57,45 @@ export function addToHistory(
 export function createStopReferenceSnapshot(
   stopOrMeta: Stop | StopWithMeta,
   routeTypes: readonly AppRouteTypeValue[],
+  preferredDisplayLangs: readonly string[] = [],
 ): StopReferenceSnapshot {
   const stop = 'stop' in stopOrMeta ? stopOrMeta.stop : stopOrMeta;
-  const agencyIds =
+  const name =
     'agencies' in stopOrMeta
-      ? [...new Set(stopOrMeta.agencies.map((agency) => agency.agency_id).filter(Boolean))]
-      : stop.agency_id
-        ? [stop.agency_id]
-        : [];
+      ? getStopDisplayNames(
+          stop,
+          preferredDisplayLangs,
+          resolveAgencyLang(stopOrMeta.agencies, stop.agency_id),
+        ).name || stop.stop_name
+      : resolveDisplayNamesWithTranslatableText(
+          { name: stop.stop_name, names: stop.stop_names },
+          preferredDisplayLangs,
+          [],
+        ).name || stop.stop_name;
+  const agencyNames =
+    'agencies' in stopOrMeta
+      ? [
+          ...new Set(
+            stopOrMeta.agencies
+              .map((agency) => {
+                const agencyLangs = resolveAgencyLang(stopOrMeta.agencies, agency.agency_id);
+                return (
+                  getAgencyDisplayNames(agency, preferredDisplayLangs, agencyLangs, 'short')
+                    .resolved.name || agency.agency_id
+                );
+              })
+              .filter(Boolean),
+          ),
+        ]
+      : [];
 
   return {
     stopId: stop.stop_id,
-    name: stop.stop_name,
+    name,
     lat: stop.stop_lat,
     lon: stop.stop_lon,
     routeTypes: [...routeTypes],
-    agencyIds,
+    agencyNames,
     platformCode: stop.platform_code,
   };
 }
@@ -89,7 +116,7 @@ export function buildHistorySelectionStop(entry: StopHistoryEntry): Stop | null 
     stop_lat: entry.snapshot.lat,
     stop_lon: entry.snapshot.lon,
     location_type: 0,
-    agency_id: entry.snapshot.agencyIds[0] ?? '',
+    agency_id: '',
     platform_code: entry.snapshot.platformCode,
   };
 }

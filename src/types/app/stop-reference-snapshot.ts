@@ -14,8 +14,8 @@ export interface StopReferenceSnapshot {
   /** Last known route types for the stop. */
   readonly routeTypes: readonly AppRouteTypeValue[];
 
-  /** Agencies serving the stop, kept as durable identifiers. */
-  readonly agencyIds: readonly string[];
+  /** Agency labels captured for durable fallback display. */
+  readonly agencyNames: readonly string[];
 
   /** Display string captured at selection time after i18n resolution. */
   readonly name: string;

@@ -487,7 +487,7 @@ describe('App anchor error toast', () => {
         lat: 35,
         lon: 139,
         routeTypes: [3],
-        agencyIds: [],
+        agencyNames: [],
       },
       selectedAt: 1000,
     };
@@ -535,7 +535,7 @@ describe('App anchor error toast', () => {
         lat: 36,
         lon: 140,
         routeTypes: [1, 3],
-        agencyIds: [],
+        agencyNames: [],
         platformCode: undefined,
       });
     });
@@ -550,7 +550,7 @@ describe('App anchor error toast', () => {
         lat: 35,
         lon: 139,
         routeTypes: [3],
-        agencyIds: [],
+        agencyNames: [],
       },
       selectedAt: 1000,
     };

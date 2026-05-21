@@ -24,7 +24,7 @@ function makeHistoryEntry(
       lat: meta.stop.stop_lat,
       lon: meta.stop.stop_lon,
       routeTypes,
-      agencyIds: [],
+      agencyNames: [],
     },
     selectedAt,
   };

@@ -105,7 +105,7 @@ describe('buildStopListItemPresentationFromHistorySnapshot', () => {
       lat: 35,
       lon: 139,
       routeTypes: [2, 3] as const,
-      agencyIds: ['kcbus:2000020261009'],
+      agencyNames: ['京都市バス'],
       platformCode: 'A',
     };
 
@@ -117,10 +117,8 @@ describe('buildStopListItemPresentationFromHistorySnapshot', () => {
       platformCode: 'A',
       agencyBadges: [
         {
-          key: 'kcbus:2000020261009',
+          key: '0:京都市バス',
           label: '京都市バス',
-          bgColor: '#138060',
-          fgColor: '#FFFFFF',
         },
       ],
     });
