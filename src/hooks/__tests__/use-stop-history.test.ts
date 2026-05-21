@@ -1,11 +1,9 @@
 /* eslint-disable @typescript-eslint/require-await, @typescript-eslint/unbound-method */
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { makeStopMeta } from '../../__tests__/helpers';
-import {
-  createStopReferenceSnapshot,
-  type StopHistoryEntry,
-} from '../../domain/transit/stop-history';
+import type { StopHistoryEntry } from '../../domain/transit/stop-history';
+import { createStopReferenceSnapshot } from '../../domain/transit/stop-reference-snapshot';
 import type { StopSelectionRepository } from '../../repositories/stop-selection/stop-selection-repository';
 import type { Result } from '../../types/app/repository';
 import type { AppRouteTypeValue } from '../../types/app/transit';

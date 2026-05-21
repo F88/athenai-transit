@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { resolveStopRouteTypes } from '../domain/transit/resolve-stop-route-types';
-import { createStopReferenceSnapshot } from '../domain/transit/stop-history';
 import { resolveNavigableStopMeta } from '../domain/transit/stop-navigation';
+import { createStopReferenceSnapshot } from '../domain/transit/stop-reference-snapshot';
 import { createLogger } from '../lib/logger';
 import type { TransitRepository } from '../repositories/transit-repository';
 import type { AutoLocateOffReason } from '../types/app/auto-locate';

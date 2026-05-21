@@ -3,11 +3,8 @@ import type { AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { StopWithMeta } from '../../types/app/transit-composed';
 import type { LangChain } from './i18n/resolve-lang-chain';
 import { resolveStopRouteTypes } from './resolve-stop-route-types';
-import {
-  buildHistorySelectionStop,
-  createStopReferenceSnapshot,
-  type StopHistoryEntry,
-} from './stop-history';
+import { buildHistorySelectionStop, type StopHistoryEntry } from './stop-history';
+import { createStopReferenceSnapshot } from './stop-reference-snapshot';
 
 export interface HistoryNavigationPayload {
   stop: Stop;

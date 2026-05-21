@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { makeRepo, makeStop, makeStopMeta } from '../../__tests__/helpers';
-import { createStopReferenceSnapshot } from '../../domain/transit/stop-history';
+import { createStopReferenceSnapshot } from '../../domain/transit/stop-reference-snapshot';
 import type { AppRouteTypeValue } from '../../types/app/transit';
 import { useStopNavigation, type UseStopNavigationParams } from '../use-stop-navigation';
 

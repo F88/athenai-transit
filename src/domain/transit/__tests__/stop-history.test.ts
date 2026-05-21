@@ -1,13 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import {
-  addToHistory,
-  buildHistorySelectionStop,
-  createStopReferenceSnapshot,
-  MAX_HISTORY_SIZE,
-} from '../stop-history';
+import { describe, expect, it } from 'vitest';
 import { makeStop } from '../../../__tests__/helpers';
-import type { StopHistoryEntry } from '../stop-history';
 import type { AppRouteTypeValue } from '../../../types/app/transit';
+import type { StopHistoryEntry } from '../stop-history';
+import { addToHistory, buildHistorySelectionStop, MAX_HISTORY_SIZE } from '../stop-history';
+import { createStopReferenceSnapshot } from '../stop-reference-snapshot';
 
 function makeEntry(
   id: string,

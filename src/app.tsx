@@ -36,8 +36,9 @@ import { computeStopsCounts } from './domain/transit/compute-stops-counts';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
 import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-day';
+import { type StopHistoryEntry } from './domain/transit/stop-history';
 import { buildHistoryNavigationPayload } from './domain/transit/stop-navigation';
-import { createStopReferenceSnapshot, type StopHistoryEntry } from './domain/transit/stop-history';
+import { createStopReferenceSnapshot } from './domain/transit/stop-reference-snapshot';
 import {
   applyStopEventAttributeTogglesToStops,
   omitStopsWithoutStopTimes,
