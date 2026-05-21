@@ -30,6 +30,6 @@ export function routeTypeEmoji(routeType: number): string {
  * @param routeTypes - Array of GTFS route_type values.
  * @returns Concatenated emoji string.
  */
-export function routeTypesEmoji(routeTypes: number[]): string {
+export function routeTypesEmoji(routeTypes: readonly number[]): string {
   return routeTypes.map(routeTypeEmoji).join('');
 }
