@@ -32,12 +32,13 @@ vi.mock('./stop/stop-dropdown-item', () => ({
 
 function makeHistoryEntry(overrides?: Partial<StopHistoryEntry>): StopHistoryEntry {
   return {
-    stopId: 'A',
     snapshot: {
+      stopId: 'A',
       name: 'Snapshot A',
       lat: 35,
       lon: 139,
       routeTypes: [3],
+      agencyIds: [],
     },
     selectedAt: 1000,
     ...overrides,

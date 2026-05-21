@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import type { AutoLocateOffReason } from './types/app/auto-locate';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { StopsCounts } from './types/app/stop';
+import type { StopReferenceSnapshot } from './types/app/stop-reference-snapshot';
 import type { AppRouteTypeValue, Stop, TimetableEntriesState } from './types/app/transit';
 import type {
   StopWithContext,
@@ -342,7 +343,7 @@ export default function App() {
     const historyEntries: readonly StopHistoryEntry[] = history;
     const stopIds = new Set<string>();
     for (const entry of historyEntries) {
-      stopIds.add(entry.stopId);
+      stopIds.add(entry.snapshot.stopId);
     }
     const metas = repo.getStopMetaByIds(stopIds);
     return new Map(metas.map((meta) => [meta.stop.stop_id, meta]));
@@ -354,7 +355,7 @@ export default function App() {
   );
 
   const recordStopSelectionInHistory = useCallback(
-    (selection: import('./domain/transit/stop-history').StopHistorySelection) => {
+    (selection: StopReferenceSnapshot) => {
       void recordStopSelection(selection);
     },
     [recordStopSelection],
@@ -659,10 +660,10 @@ export default function App() {
   // snapshot route types when current metadata is unavailable.
   const handleHistorySelect = useCallback(
     (entry: StopHistoryEntry) => {
-      const stopMeta = lookupHistoryStopMeta(entry.stopId);
+      const stopMeta = lookupHistoryStopMeta(entry.snapshot.stopId);
       const stop = stopMeta?.stop ?? buildHistorySelectionStop(entry);
       if (!stop) {
-        logger.warn(`handleHistorySelect ignored: unresolved stopId=${entry.stopId}`);
+        logger.warn(`handleHistorySelect ignored: unresolved stopId=${entry.snapshot.stopId}`);
         return;
       }
       logger.debug(

@@ -1,38 +1,20 @@
-import type { AppRouteTypeValue, Stop } from '../../types/app/transit';
+import type { StopReferenceSnapshot } from '@/types/app/stop-reference-snapshot';
+import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
+import type { StopWithMeta } from '@/types/app/transit-composed';
 
 /** Maximum number of stops retained in history. */
 export const MAX_HISTORY_SIZE = 20;
 
-export const STOP_HISTORY_STORAGE_VERSION = 3;
-
-export interface StopHistorySnapshot {
-  /** Display string captured at selection time after i18n resolution. */
-  name: string;
-  /** Last known stop latitude; null for older migrated entries without coordinates. */
-  lat: number | null;
-  /** Last known stop longitude; null for older migrated entries without coordinates. */
-  lon: number | null;
-  /** Last known route types for the stop. */
-  routeTypes: AppRouteTypeValue[];
-}
+export const STOP_HISTORY_STORAGE_VERSION = 4;
 
 /**
  * Entry in the stop selection history.
  */
 export interface StopHistoryEntry {
-  stopId: string;
   /** Last known data used when current repository metadata cannot be resolved. */
-  snapshot: StopHistorySnapshot;
+  snapshot: StopReferenceSnapshot;
   /** Epoch ms when the stop was last selected. */
   selectedAt: number;
-}
-
-/**
- * History payload captured at selection time before the timestamp is assigned.
- */
-export interface StopHistorySelection {
-  stopId: string;
-  snapshot: StopHistorySnapshot;
 }
 
 export interface StoredStopHistory {
@@ -47,20 +29,19 @@ export interface StoredStopHistory {
  * timestamp. The list is capped at {@link MAX_HISTORY_SIZE}.
  *
  * @param history - Current history list (most recent first).
- * @param selection - History selection payload to add.
+ * @param snapshot - History selection payload to add.
  * @param now - Current timestamp in epoch ms.
  * @returns New history list with the entry at index 0.
  */
 export function addToHistory(
   history: StopHistoryEntry[],
-  selection: StopHistorySelection,
+  snapshot: StopReferenceSnapshot,
   now: number,
 ): StopHistoryEntry[] {
-  const stopId = selection.stopId;
-  const filtered = history.filter((e) => e.stopId !== stopId);
+  const stopId = snapshot.stopId;
+  const filtered = history.filter((entry) => entry.snapshot.stopId !== stopId);
   const entry: StopHistoryEntry = {
-    stopId,
-    snapshot: selection.snapshot,
+    snapshot: snapshot,
     selectedAt: now,
   };
   return [entry, ...filtered].slice(0, MAX_HISTORY_SIZE);
@@ -69,18 +50,26 @@ export function addToHistory(
 /**
  * Builds a history selection payload from the latest stop data.
  */
-export function createStopHistorySelection(
-  stop: Stop,
-  routeTypes: AppRouteTypeValue[],
-): StopHistorySelection {
+export function createStopReferenceSnapshot(
+  stopOrMeta: Stop | StopWithMeta,
+  routeTypes: readonly AppRouteTypeValue[],
+): StopReferenceSnapshot {
+  const stop = 'stop' in stopOrMeta ? stopOrMeta.stop : stopOrMeta;
+  const agencyIds =
+    'agencies' in stopOrMeta
+      ? [...new Set(stopOrMeta.agencies.map((agency) => agency.agency_id).filter(Boolean))]
+      : stop.agency_id
+        ? [stop.agency_id]
+        : [];
+
   return {
     stopId: stop.stop_id,
-    snapshot: {
-      name: stop.stop_name,
-      lat: stop.stop_lat,
-      lon: stop.stop_lon,
-      routeTypes,
-    },
+    name: stop.stop_name,
+    lat: stop.stop_lat,
+    lon: stop.stop_lon,
+    routeTypes: [...routeTypes],
+    agencyIds,
+    platformCode: stop.platform_code,
   };
 }
 
@@ -94,12 +83,13 @@ export function buildHistorySelectionStop(entry: StopHistoryEntry): Stop | null 
   }
 
   return {
-    stop_id: entry.stopId,
+    stop_id: entry.snapshot.stopId,
     stop_name: entry.snapshot.name,
     stop_names: {},
     stop_lat: entry.snapshot.lat,
     stop_lon: entry.snapshot.lon,
     location_type: 0,
-    agency_id: '',
+    agency_id: entry.snapshot.agencyIds[0] ?? '',
+    platform_code: entry.snapshot.platformCode,
   };
 }

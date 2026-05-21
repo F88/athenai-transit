@@ -1,12 +1,12 @@
 import {
   STOP_HISTORY_STORAGE_VERSION,
   type StopHistoryEntry,
-  type StopHistorySnapshot,
   type StoredStopHistory,
 } from '../../domain/transit/stop-history';
-import { WebStorageItem } from '../../lib/web-storage-item';
 import { createLogger } from '../../lib/logger';
+import { WebStorageItem } from '../../lib/web-storage-item';
 import type { Result } from '../../types/app/repository';
+import type { StopReferenceSnapshot } from '../../types/app/stop-reference-snapshot';
 import type { AppRouteTypeValue } from '../../types/app/transit';
 import type { StopSelectionRepository } from './stop-selection-repository';
 
@@ -34,16 +34,41 @@ function normalizeCoordinate(value: unknown): number | null {
   return typeof value === 'number' ? value : null;
 }
 
+function normalizeStopId(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function normalizeAgencyIds(value: unknown, fallbackAgencyIds: readonly string[] = []): string[] {
+  const normalized = Array.isArray(value)
+    ? value.filter(
+        (agencyId): agencyId is string => typeof agencyId === 'string' && agencyId.length > 0,
+      )
+    : [...fallbackAgencyIds];
+
+  return [...new Set(normalized)];
+}
+
+function normalizePlatformCode(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
 function normalizeSnapshot(
   value: unknown,
-  stopId: string,
+  fallbackStopId?: string,
   fallbackRouteTypes?: AppRouteTypeValue[],
-): StopHistorySnapshot | null {
+  fallbackAgencyIds: readonly string[] = [],
+  fallbackPlatformCode?: string,
+): StopReferenceSnapshot | null {
   if (typeof value !== 'object' || value === null) {
     return null;
   }
 
   const obj = value as Record<string, unknown>;
+  const stopId = normalizeStopId(obj.stopId) ?? fallbackStopId ?? null;
+  if (stopId === null) {
+    return null;
+  }
+
   const routeTypes =
     normalizeRouteTypes(obj.routeTypes) ??
     (fallbackRouteTypes !== undefined ? [...fallbackRouteTypes] : null);
@@ -52,10 +77,13 @@ function normalizeSnapshot(
   }
 
   return {
+    stopId,
     name: normalizeSnapshotName(obj.name, stopId),
     lat: normalizeCoordinate(obj.lat),
     lon: normalizeCoordinate(obj.lon),
     routeTypes,
+    agencyIds: normalizeAgencyIds(obj.agencyIds, fallbackAgencyIds),
+    platformCode: normalizePlatformCode(obj.platformCode) ?? fallbackPlatformCode,
   };
 }
 
@@ -65,31 +93,29 @@ function normalizeStoredEntry(entry: unknown): StopHistoryEntry | null {
   }
 
   const obj = entry as Record<string, unknown>;
-  if (typeof obj.stopId !== 'string') {
-    return null;
-  }
-
   const routeTypes = normalizeRouteTypes(obj.routeTypes) ?? undefined;
-  const snapshot = normalizeSnapshot(obj.snapshot, obj.stopId, routeTypes);
+  const stopId = normalizeStopId(obj.stopId) ?? undefined;
+  const snapshot = normalizeSnapshot(obj.snapshot, stopId, routeTypes);
   if (snapshot !== null) {
     return {
-      stopId: obj.stopId,
       snapshot,
       selectedAt: normalizeSelectedAt(obj.selectedAt),
     };
   }
 
-  if (routeTypes === undefined) {
+  if (stopId === undefined || routeTypes === undefined) {
     return null;
   }
 
   return {
-    stopId: obj.stopId,
     snapshot: {
-      name: normalizeSnapshotName(obj.fallbackName, obj.stopId),
+      stopId,
+      name: normalizeSnapshotName(obj.fallbackName, stopId),
       lat: normalizeCoordinate(obj.lat ?? obj.stopLat),
       lon: normalizeCoordinate(obj.lon ?? obj.stopLon),
       routeTypes,
+      agencyIds: normalizeAgencyIds(obj.agencyIds),
+      platformCode: normalizePlatformCode(obj.platformCode),
     },
     selectedAt: normalizeSelectedAt(obj.selectedAt),
   };
@@ -122,12 +148,17 @@ function migrateLegacyEntry(entry: Record<string, unknown>): StopHistoryEntry | 
     }
 
     return {
-      stopId: stop.stop_id as string,
       snapshot: {
+        stopId: stop.stop_id as string,
         name: normalizeSnapshotName(stop.stop_name, stop.stop_id as string),
         lat: normalizeCoordinate(stop.stop_lat),
         lon: normalizeCoordinate(stop.stop_lon),
         routeTypes,
+        agencyIds: normalizeAgencyIds(
+          (stopWithMeta as Record<string, unknown>).agencies,
+          typeof stop.agency_id === 'string' && stop.agency_id.length > 0 ? [stop.agency_id] : [],
+        ),
+        platformCode: normalizePlatformCode(stop.platform_code),
       },
       selectedAt: normalizeSelectedAt(entry.selectedAt),
     };
@@ -139,12 +170,15 @@ function migrateLegacyEntry(entry: Record<string, unknown>): StopHistoryEntry | 
       : (3 as const);
 
   return {
-    stopId: stop.stop_id as string,
     snapshot: {
+      stopId: stop.stop_id as string,
       name: normalizeSnapshotName(stop.stop_name, stop.stop_id as string),
       lat: normalizeCoordinate(stop.stop_lat),
       lon: normalizeCoordinate(stop.stop_lon),
       routeTypes: [legacyType],
+      agencyIds:
+        typeof stop.agency_id === 'string' && stop.agency_id.length > 0 ? [stop.agency_id] : [],
+      platformCode: normalizePlatformCode(stop.platform_code),
     },
     selectedAt: normalizeSelectedAt(entry.selectedAt),
   };

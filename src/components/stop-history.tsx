@@ -106,10 +106,10 @@ export function StopHistory({
     return null;
   }
 
-  const historyMap = new Map(history.map((entry) => [entry.stopId, entry]));
+  const historyMap = new Map(history.map((entry) => [entry.snapshot.stopId, entry]));
   const selectedEntry = selectedStopId ? (historyMap.get(selectedStopId) ?? null) : null;
 
-  const stopMeta = selectedEntry ? lookupStopMeta(selectedEntry.stopId) : null;
+  const stopMeta = selectedEntry ? lookupStopMeta(selectedEntry.snapshot.stopId) : null;
   const selectedPresentation = composeSelectedHistoryPresentation(
     selectedEntry,
     stopMeta,
@@ -168,10 +168,10 @@ export function StopHistory({
         >
           {history.map((entry) => (
             <StopDropdownItem
-              key={entry.stopId}
-              stopId={entry.stopId}
+              key={entry.snapshot.stopId}
+              stopId={entry.snapshot.stopId}
               routeTypes={entry.snapshot.routeTypes}
-              meta={lookupStopMeta(entry.stopId)}
+              meta={lookupStopMeta(entry.snapshot.stopId)}
               fallbackName={entry.snapshot.name}
               infoLevel={infoLevel}
               dataLang={dataLang}

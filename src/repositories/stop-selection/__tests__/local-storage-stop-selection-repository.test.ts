@@ -16,12 +16,13 @@ function makeHistoryEntry(
 ): StopHistoryEntry {
   const meta = makeStopMeta(stopId);
   return {
-    stopId,
     snapshot: {
+      stopId,
       name: meta.stop.stop_name,
       lat: meta.stop.stop_lat,
       lon: meta.stop.stop_lon,
       routeTypes,
+      agencyIds: [],
     },
     selectedAt,
   };
@@ -82,12 +83,13 @@ describe('LocalStorageStopSelectionRepository', () => {
       if (result.success) {
         expect(result.data).toEqual([
           {
-            stopId: 'legacy-flat',
             snapshot: {
+              stopId: 'legacy-flat',
               name: 'Legacy Flat',
               lat: null,
               lon: null,
               routeTypes: [0, 3],
+              agencyIds: [],
             },
             selectedAt: 555,
           },
@@ -123,12 +125,13 @@ describe('LocalStorageStopSelectionRepository', () => {
       if (result.success) {
         expect(result.data).toEqual([
           {
-            stopId: 'legacy-meta',
             snapshot: {
+              stopId: 'legacy-meta',
               name: legacyMeta.stop.stop_name,
               lat: legacyMeta.stop.stop_lat,
               lon: legacyMeta.stop.stop_lon,
               routeTypes: [2],
+              agencyIds: [],
             },
             selectedAt: 789,
           },
@@ -144,7 +147,14 @@ describe('LocalStorageStopSelectionRepository', () => {
           entries: [
             {
               stopId: 'valid',
-              snapshot: { name: 'Valid', lat: 35, lon: 139, routeTypes: [3] },
+              snapshot: {
+                stopId: 'valid',
+                name: 'Valid',
+                lat: 35,
+                lon: 139,
+                routeTypes: [3],
+                agencyIds: [],
+              },
               selectedAt: 1,
             },
             { stopId: 'broken', snapshot: { name: 'Broken', lat: 35, lon: 139 }, selectedAt: 2 },
@@ -159,8 +169,14 @@ describe('LocalStorageStopSelectionRepository', () => {
       if (result.success) {
         expect(result.data).toEqual([
           {
-            stopId: 'valid',
-            snapshot: { name: 'Valid', lat: 35, lon: 139, routeTypes: [3] },
+            snapshot: {
+              stopId: 'valid',
+              name: 'Valid',
+              lat: 35,
+              lon: 139,
+              routeTypes: [3],
+              agencyIds: [],
+            },
             selectedAt: 1,
           },
         ]);

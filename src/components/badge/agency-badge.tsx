@@ -1,16 +1,16 @@
-import { resolveContextBorderColor } from '../../domain/transit/color-resolver/context-border-color';
 import { DEFAULT_AGENCY_LANG } from '../../config/transit-defaults';
 import { resolveAgencyColors } from '../../domain/transit/color-resolver/agency-colors';
+import { resolveContextBorderColor } from '../../domain/transit/color-resolver/context-border-color';
 import { getAgencyDisplayNames } from '../../domain/transit/name-resolver/get-agency-display-name';
 import { useThemeContrastBackgroundColor } from '../../hooks/use-is-low-contrast-against-theme';
 import type { InfoLevel } from '../../types/app/settings';
 import type { Agency } from '../../types/app/transit';
 import { VerboseAgency } from '../verbose/verbose-agency';
-import { BaseBadge, type BaseBadgeSize } from './base-badge';
+import { AgencyBadgeView, type AgencyBadgeViewSize } from './agency-badge-view';
 
-export type AgencyBadgeSize = BaseBadgeSize;
+export type AgencyBadgeSize = AgencyBadgeViewSize;
 
-interface AgencyBadgeProps {
+export interface AgencyBadgeProps {
   agency: Agency;
   size: AgencyBadgeSize;
   dataLang: readonly string[];
@@ -60,20 +60,18 @@ export function AgencyBadge({
   );
 
   return (
-    <BaseBadge
+    <AgencyBadgeView
       label={resolvedName || '?'}
       size={size}
+      infoLevel={infoLevel}
       bgColor={agencyColor}
       fgColor={agencyTextColor}
       borderColor={borderColor}
       showBorder={showBorder}
       className={className}
-      infoLevel={infoLevel}
-      verboseExtras={{
-        enabled: enableVerboseExtras,
-        idLabel: agency.agency_id,
-        slot: <VerboseAgency agency={agency} names={agencyNames} />,
-      }}
+      enableVerboseExtras={enableVerboseExtras}
+      idLabel={agency.agency_id}
+      verboseSlot={<VerboseAgency agency={agency} names={agencyNames} />}
     />
   );
 }

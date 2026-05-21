@@ -3,7 +3,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { makeStopMeta } from '../../__tests__/helpers';
 import {
-  createStopHistorySelection,
+  createStopReferenceSnapshot,
   type StopHistoryEntry,
 } from '../../domain/transit/stop-history';
 import type { StopSelectionRepository } from '../../repositories/stop-selection/stop-selection-repository';
@@ -18,12 +18,13 @@ function makeHistoryEntry(
 ): StopHistoryEntry {
   const meta = makeStopMeta(stopId);
   return {
-    stopId,
     snapshot: {
+      stopId,
       name: meta.stop.stop_name,
       lat: meta.stop.stop_lat,
       lon: meta.stop.stop_lon,
       routeTypes,
+      agencyIds: [],
     },
     selectedAt,
   };
@@ -71,7 +72,7 @@ describe('useStopHistory', () => {
       });
 
       expect(repo.getHistory).toHaveBeenCalledOnce();
-      expect(result.current.history[0].stopId).toBe('A');
+      expect(result.current.history[0].snapshot.stopId).toBe('A');
       expect(result.current.history[0].snapshot.name).toBe('Stop A');
     });
 
@@ -127,12 +128,12 @@ describe('useStopHistory', () => {
 
       await act(async () => {
         await result.current.recordStopSelection(
-          createStopHistorySelection(makeStopMeta('X').stop, [3]),
+          createStopReferenceSnapshot(makeStopMeta('X').stop, [3]),
         );
       });
 
       expect(result.current.history).toHaveLength(1);
-      expect(result.current.history[0].stopId).toBe('X');
+      expect(result.current.history[0].snapshot.stopId).toBe('X');
       expect(result.current.history[0].snapshot.name).toBe('Stop X');
       expect(repo.saveHistory).toHaveBeenCalledOnce();
     });
@@ -147,13 +148,13 @@ describe('useStopHistory', () => {
 
       await act(async () => {
         await result.current.recordStopSelection(
-          createStopHistorySelection(makeStopMeta('A').stop, [3]),
+          createStopReferenceSnapshot(makeStopMeta('A').stop, [3]),
         );
       });
 
       expect(result.current.history).toHaveLength(2);
-      expect(result.current.history[0].stopId).toBe('A');
-      expect(result.current.history[1].stopId).toBe('B');
+      expect(result.current.history[0].snapshot.stopId).toBe('A');
+      expect(result.current.history[1].snapshot.stopId).toBe('B');
     });
 
     it('keeps existing state and exposes repo error when persistence fails', async () => {
@@ -173,12 +174,14 @@ describe('useStopHistory', () => {
       });
 
       const pushResult = await act(async () =>
-        result.current.recordStopSelection(createStopHistorySelection(makeStopMeta('B').stop, [3])),
+        result.current.recordStopSelection(
+          createStopReferenceSnapshot(makeStopMeta('B').stop, [3]),
+        ),
       );
 
       expect(pushResult.success).toBe(false);
       expect(result.current.history).toHaveLength(1);
-      expect(result.current.history[0].stopId).toBe('A');
+      expect(result.current.history[0].snapshot.stopId).toBe('A');
       expect(result.current.lastError).toBe('persist failed');
     });
 
@@ -202,7 +205,7 @@ describe('useStopHistory', () => {
 
       await act(async () => {
         await result.current.recordStopSelection(
-          createStopHistorySelection(makeStopMeta('B').stop, [2]),
+          createStopReferenceSnapshot(makeStopMeta('B').stop, [2]),
         );
       });
 
@@ -212,8 +215,8 @@ describe('useStopHistory', () => {
         expect(result.current.history).toHaveLength(2);
       });
 
-      expect(result.current.history[0].stopId).toBe('B');
-      expect(result.current.history[1].stopId).toBe('A');
+      expect(result.current.history[0].snapshot.stopId).toBe('B');
+      expect(result.current.history[1].snapshot.stopId).toBe('A');
     });
   });
 

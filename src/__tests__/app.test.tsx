@@ -481,12 +481,13 @@ describe('App anchor error toast', () => {
   it('re-records history from current stop metadata when that stop is still resolvable', async () => {
     const recordStopSelection = vi.fn();
     const entry: StopHistoryEntry = {
-      stopId: 'A',
       snapshot: {
+        stopId: 'A',
         name: 'Snapshot A',
         lat: 35,
         lon: 139,
         routeTypes: [3],
+        agencyIds: [],
       },
       selectedAt: 1000,
     };
@@ -530,12 +531,12 @@ describe('App anchor error toast', () => {
     await waitFor(() => {
       expect(recordStopSelection).toHaveBeenCalledWith({
         stopId: 'A',
-        snapshot: {
-          name: latestStop.stop_name,
-          lat: 36,
-          lon: 140,
-          routeTypes: [1, 3],
-        },
+        name: latestStop.stop_name,
+        lat: 36,
+        lon: 140,
+        routeTypes: [1, 3],
+        agencyIds: [],
+        platformCode: undefined,
       });
     });
   });
@@ -543,12 +544,13 @@ describe('App anchor error toast', () => {
   it('reuses the stored history snapshot when current stop metadata is unavailable', async () => {
     const recordStopSelection = vi.fn();
     const entry: StopHistoryEntry = {
-      stopId: 'A',
       snapshot: {
+        stopId: 'A',
         name: 'Snapshot A',
         lat: 35,
         lon: 139,
         routeTypes: [3],
+        agencyIds: [],
       },
       selectedAt: 1000,
     };
@@ -584,10 +586,7 @@ describe('App anchor error toast', () => {
     });
 
     await waitFor(() => {
-      expect(recordStopSelection).toHaveBeenCalledWith({
-        stopId: 'A',
-        snapshot: entry.snapshot,
-      });
+      expect(recordStopSelection).toHaveBeenCalledWith(entry.snapshot);
     });
   });
 });

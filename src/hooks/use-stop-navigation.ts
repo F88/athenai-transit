@@ -1,14 +1,12 @@
 import { useCallback } from 'react';
-import {
-  createStopHistorySelection,
-  type StopHistorySelection,
-} from '../domain/transit/stop-history';
-import { resolveNavigableStopMeta } from '../domain/transit/stop-navigation';
 import { resolveStopRouteTypes } from '../domain/transit/resolve-stop-route-types';
+import { createStopReferenceSnapshot } from '../domain/transit/stop-history';
+import { resolveNavigableStopMeta } from '../domain/transit/stop-navigation';
 import { createLogger } from '../lib/logger';
 import type { TransitRepository } from '../repositories/transit-repository';
 import type { AutoLocateOffReason } from '../types/app/auto-locate';
 import type { Result } from '../types/app/repository';
+import type { StopReferenceSnapshot } from '../types/app/stop-reference-snapshot';
 import type { AppRouteTypeValue, Stop } from '../types/app/transit';
 import type { StopWithMeta } from '../types/app/transit-composed';
 
@@ -22,7 +20,7 @@ export interface UseStopNavigationParams {
   disableAutoLocate: (reason: AutoLocateOffReason) => void;
   selectStopById: (stopId: string, fallbackStop?: Stop) => void;
   focusStop: (stop: Stop) => void;
-  recordStopSelection: (selection: StopHistorySelection) => void;
+  recordStopSelection: (selection: StopReferenceSnapshot) => void;
 }
 
 export interface UseStopNavigationReturn {
@@ -34,12 +32,12 @@ export interface UseStopNavigationReturn {
   navigateAndFocusStop: (
     stop: Stop,
     reason: AutoLocateOffReason,
-    routeTypes?: AppRouteTypeValue[],
+    routeTypes?: readonly AppRouteTypeValue[],
   ) => void;
   navigateAndFocusStopById: (
     stopId: string,
     reason: AutoLocateOffReason,
-    routeTypes?: AppRouteTypeValue[],
+    routeTypes?: readonly AppRouteTypeValue[],
   ) => Promise<Result<StopWithMeta>>;
 }
 
@@ -56,10 +54,10 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
   } = params;
 
   const recordStopHistorySelection = useCallback(
-    (meta: StopWithMeta, routeTypes?: AppRouteTypeValue[]) => {
+    (meta: StopWithMeta, routeTypes?: readonly AppRouteTypeValue[]) => {
       recordStopSelection(
-        createStopHistorySelection(
-          meta.stop,
+        createStopReferenceSnapshot(
+          meta,
           routeTypes ??
             resolveStopRouteTypes({
               stopId: meta.stop.stop_id,
@@ -96,7 +94,7 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
   );
 
   const navigateAndFocusStop = useCallback(
-    (stop: Stop, reason: AutoLocateOffReason, routeTypes?: AppRouteTypeValue[]) => {
+    (stop: Stop, reason: AutoLocateOffReason, routeTypes?: readonly AppRouteTypeValue[]) => {
       disableAutoLocate(reason);
       focusStop(stop);
       const meta = resolveNavigableStopMeta(stop.stop_id, radiusStops, inBoundStops, stop);
@@ -108,7 +106,11 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
   );
 
   const navigateAndFocusStopById = useCallback(
-    async (stopId: string, reason: AutoLocateOffReason, routeTypes?: AppRouteTypeValue[]) => {
+    async (
+      stopId: string,
+      reason: AutoLocateOffReason,
+      routeTypes?: readonly AppRouteTypeValue[],
+    ) => {
       const result = await repo.getStopMetaById(stopId);
       if (result.success) {
         disableAutoLocate(reason);

@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { makeRepo, makeStop, makeStopMeta } from '../../__tests__/helpers';
-import { createStopHistorySelection } from '../../domain/transit/stop-history';
+import { createStopReferenceSnapshot } from '../../domain/transit/stop-history';
 import type { AppRouteTypeValue } from '../../types/app/transit';
 import { useStopNavigation, type UseStopNavigationParams } from '../use-stop-navigation';
 
@@ -45,7 +45,7 @@ describe('useStopNavigation', () => {
 
     expect(disableAutoLocate).toHaveBeenCalledWith('select-bottom-sheet');
     expect(selectStopById).toHaveBeenCalledWith('A', undefined);
-    expect(recordStopSelection).toHaveBeenCalledWith(createStopHistorySelection(stop, [3]));
+    expect(recordStopSelection).toHaveBeenCalledWith(createStopReferenceSnapshot(stop, [3]));
   });
 
   it('selectStopWithFallback uses fallback stop when visible meta is missing', () => {
@@ -70,7 +70,7 @@ describe('useStopNavigation', () => {
     });
 
     expect(selectStopById).toHaveBeenCalledWith('A', stop);
-    expect(recordStopSelection).toHaveBeenCalledWith(createStopHistorySelection(stop, [1]));
+    expect(recordStopSelection).toHaveBeenCalledWith(createStopReferenceSnapshot(stop, [1]));
   });
 
   it('navigateAndFocusStop disables auto-locate, focuses the stop, and pushes history', () => {
@@ -97,7 +97,9 @@ describe('useStopNavigation', () => {
 
     expect(disableAutoLocate).toHaveBeenCalledWith('select-history');
     expect(focusStop).toHaveBeenCalledWith(stop);
-    expect(recordStopSelection).toHaveBeenCalledWith(createStopHistorySelection(stop, routeTypes));
+    expect(recordStopSelection).toHaveBeenCalledWith(
+      createStopReferenceSnapshot(stopMeta, routeTypes),
+    );
   });
 
   it('navigateAndFocusStopById resolves stop meta and navigates on success', async () => {
@@ -126,9 +128,7 @@ describe('useStopNavigation', () => {
     expect(resolved).toEqual({ success: true, data: stopMeta });
     expect(disableAutoLocate).toHaveBeenCalledWith('apply-stop-param');
     expect(focusStop).toHaveBeenCalledWith(stopMeta.stop);
-    expect(recordStopSelection).toHaveBeenCalledWith(
-      createStopHistorySelection(stopMeta.stop, [-1]),
-    );
+    expect(recordStopSelection).toHaveBeenCalledWith(createStopReferenceSnapshot(stopMeta, [-1]));
   });
 
   it('navigateAndFocusStopById returns failure without navigating when lookup fails', async () => {

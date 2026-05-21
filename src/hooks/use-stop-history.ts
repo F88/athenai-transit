@@ -1,14 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { Result } from '../types/app/repository';
-
+import { addToHistory, type StopHistoryEntry } from '../domain/transit/stop-history';
 import { createLogger } from '../lib/logger';
-import {
-  addToHistory,
-  type StopHistoryEntry,
-  type StopHistorySelection,
-} from '../domain/transit/stop-history';
 import type { StopSelectionRepository } from '../repositories/stop-selection/stop-selection-repository';
+import type { Result } from '../types/app/repository';
+import type { StopReferenceSnapshot } from '../types/app/stop-reference-snapshot';
 
 const logger = createLogger('StopHistory');
 
@@ -23,7 +19,7 @@ export interface UseStopHistoryReturn {
   /** Clear the current error state after it has been surfaced to the UI. */
   clearError: () => void;
   /** Record a stop selection in history using a durable stop snapshot payload. */
-  recordStopSelection: (selection: StopHistorySelection) => Promise<Result<void>>;
+  recordStopSelection: (selection: StopReferenceSnapshot) => Promise<Result<void>>;
   /** Remove all persisted history entries. */
   clearHistory: () => Promise<Result<void>>;
 }
@@ -79,7 +75,7 @@ export function useStopHistory(repo: StopSelectionRepository): UseStopHistoryRet
   }, [commitHistory, readHistoryFromRepo]);
 
   const recordStopSelection = useCallback(
-    async (selection: StopHistorySelection): Promise<Result<void>> => {
+    async (selection: StopReferenceSnapshot): Promise<Result<void>> => {
       const baseHistoryResult = isLoadedRef.current
         ? { success: true as const, data: historyRef.current }
         : await readHistoryFromRepo();
