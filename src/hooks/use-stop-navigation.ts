@@ -1,4 +1,8 @@
 import { useCallback } from 'react';
+import {
+  createStopHistorySelection,
+  type StopHistorySelection,
+} from '../domain/transit/stop-history';
 import { resolveNavigableStopMeta } from '../domain/transit/stop-navigation';
 import { resolveStopRouteTypes } from '../domain/transit/resolve-stop-route-types';
 import { createLogger } from '../lib/logger';
@@ -18,7 +22,7 @@ export interface UseStopNavigationParams {
   disableAutoLocate: (reason: AutoLocateOffReason) => void;
   selectStopById: (stopId: string, fallbackStop?: Stop) => void;
   focusStop: (stop: Stop) => void;
-  pushStop: (stopWithMeta: StopWithMeta, routeTypes: AppRouteTypeValue[]) => void;
+  recordStopSelection: (selection: StopHistorySelection) => void;
 }
 
 export interface UseStopNavigationReturn {
@@ -48,23 +52,25 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
     disableAutoLocate,
     selectStopById,
     focusStop,
-    pushStop,
+    recordStopSelection,
   } = params;
 
-  const pushStopHistoryEntry = useCallback(
+  const recordStopHistorySelection = useCallback(
     (meta: StopWithMeta, routeTypes?: AppRouteTypeValue[]) => {
-      pushStop(
-        meta,
-        routeTypes ??
-          resolveStopRouteTypes({
-            stopId: meta.stop.stop_id,
-            routeTypeMap,
-            routes: meta.routes,
-            unknownPolicy: 'include-unknown',
-          }),
+      recordStopSelection(
+        createStopHistorySelection(
+          meta.stop,
+          routeTypes ??
+            resolveStopRouteTypes({
+              stopId: meta.stop.stop_id,
+              routeTypeMap,
+              routes: meta.routes,
+              unknownPolicy: 'include-unknown',
+            }),
+        ),
       );
     },
-    [pushStop, routeTypeMap],
+    [recordStopSelection, routeTypeMap],
   );
 
   // Viewport-limited lookup: this only searches `radiusStops` and `inBoundStops`.
@@ -83,10 +89,10 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
       selectStopById(stopId, fallbackStop);
       const meta = resolveNavigableStopMeta(stopId, radiusStops, inBoundStops, fallbackStop);
       if (meta) {
-        pushStopHistoryEntry(meta);
+        recordStopHistorySelection(meta);
       }
     },
-    [disableAutoLocate, selectStopById, radiusStops, inBoundStops, pushStopHistoryEntry],
+    [disableAutoLocate, selectStopById, radiusStops, inBoundStops, recordStopHistorySelection],
   );
 
   const navigateAndFocusStop = useCallback(
@@ -95,10 +101,10 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
       focusStop(stop);
       const meta = resolveNavigableStopMeta(stop.stop_id, radiusStops, inBoundStops, stop);
       if (meta) {
-        pushStopHistoryEntry(meta, routeTypes);
+        recordStopHistorySelection(meta, routeTypes);
       }
     },
-    [disableAutoLocate, focusStop, radiusStops, inBoundStops, pushStopHistoryEntry],
+    [disableAutoLocate, focusStop, radiusStops, inBoundStops, recordStopHistorySelection],
   );
 
   const navigateAndFocusStopById = useCallback(
@@ -107,11 +113,11 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
       if (result.success) {
         disableAutoLocate(reason);
         focusStop(result.data.stop);
-        pushStopHistoryEntry(result.data, routeTypes);
+        recordStopHistorySelection(result.data, routeTypes);
       }
       return result;
     },
-    [repo, disableAutoLocate, focusStop, pushStopHistoryEntry],
+    [repo, disableAutoLocate, focusStop, recordStopHistorySelection],
   );
 
   return {
