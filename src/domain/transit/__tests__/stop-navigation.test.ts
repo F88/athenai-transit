@@ -158,7 +158,7 @@ describe('buildHistoryNavigationPayload', () => {
         lat: 35,
         lon: 139,
         routeTypes: [3],
-        agencyNames: [],
+        agencyNames: ['Agency A'],
         platformCode: '1',
       },
     });

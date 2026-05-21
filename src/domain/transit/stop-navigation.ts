@@ -68,10 +68,8 @@ export function buildHistoryNavigationPayload(
     return null;
   }
 
-  const routeTypes = stopHistoryEntry.snapshot.routeTypes;
-  const snapshot = createStopReferenceSnapshot(minimalStop, routeTypes, dataLang);
   return {
     stop: minimalStop,
-    snapshot,
+    snapshot: stopHistoryEntry.snapshot,
   };
 }
