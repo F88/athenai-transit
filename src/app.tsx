@@ -356,8 +356,6 @@ export default function App() {
   );
 
   const { selectStop, navigateAndFocusStop } = useStopNavigation({
-    radiusStops,
-    inBoundStops,
     disableAutoLocate,
     selectStopById,
     focusStop,

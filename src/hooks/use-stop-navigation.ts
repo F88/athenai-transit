@@ -2,13 +2,10 @@ import { useCallback } from 'react';
 import { createLogger } from '../lib/logger';
 import type { AutoLocateOffReason } from '../types/app/auto-locate';
 import type { Stop } from '../types/app/transit';
-import type { StopWithMeta } from '../types/app/transit-composed';
 
 const logger = createLogger('StopNavigation');
 
 export interface UseStopNavigationParams {
-  radiusStops: readonly StopWithMeta[];
-  inBoundStops: readonly StopWithMeta[];
   disableAutoLocate: (reason: AutoLocateOffReason) => void;
   selectStopById: (stopId: string, fallbackStop?: Stop) => void;
   focusStop: (stop: Stop) => void;
