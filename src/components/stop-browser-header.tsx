@@ -18,7 +18,7 @@ import { BoardabilityFilter } from './filter/boardability-filter';
 import { OriginFilter } from './filter/origin-filter';
 import { LabelCountBadge } from './badge/label-count-badge';
 
-interface BottomSheetHeaderProps {
+interface StopBrowserHeaderProps {
   hasNearbyLoaded: boolean;
   /**
    * Pre-`globalFilter` counts (= settings filter applied, `globalFilter`
@@ -52,9 +52,9 @@ interface BottomSheetHeaderProps {
   onToggleAgency: (agency: Agency) => void;
 }
 
-const logger = createLogger('BottomSheetHeader');
+const logger = createLogger('StopBrowserHeader');
 
-export function BottomSheetHeader({
+export function StopBrowserHeader({
   hasNearbyLoaded,
   nearbyStopsCounts,
   filteredNearbyStopsCounts,
@@ -78,7 +78,7 @@ export function BottomSheetHeader({
   onViewChange,
   onToggleRouteType,
   onToggleAgency,
-}: BottomSheetHeaderProps) {
+}: StopBrowserHeaderProps) {
   const info = useInfoLevel(infoLevel);
 
   const { t } = useTranslation();

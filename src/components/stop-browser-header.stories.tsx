@@ -20,7 +20,7 @@ import {
   allAgencies,
 } from '../stories/fixtures';
 import { LANG_COMPARISON_CASES } from '../stories/lang-comparison';
-import { BottomSheetHeader } from './bottom-sheet-header';
+import { StopBrowserHeader } from './stop-browser-header';
 
 // --- Shared defaults ---
 
@@ -43,8 +43,8 @@ const ALL_PRESENT_ROUTE_TYPES: readonly number[] = APP_ROUTE_TYPES.map((rt) => r
 // --- Meta ---
 
 const meta = {
-  title: 'BottomSheet/BottomSheetHeader',
-  component: BottomSheetHeader,
+  title: 'StopBrowser/StopBrowserHeader',
+  component: StopBrowserHeader,
   args: {
     hasNearbyLoaded: true,
     counts: defaultCounts,
@@ -85,7 +85,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof BottomSheetHeader>;
+} satisfies Meta<typeof StopBrowserHeader>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -254,7 +254,7 @@ export const LangComparison: Story = {
       {LANG_COMPARISON_CASES.map(({ dataLang, label }) => (
         <div key={label} className="space-y-1">
           <span className="block px-4 text-[10px] text-gray-400">{label}</span>
-          <BottomSheetHeader {...args} dataLangs={dataLang} />
+          <StopBrowserHeader {...args} dataLangs={dataLang} />
         </div>
       ))}
     </div>

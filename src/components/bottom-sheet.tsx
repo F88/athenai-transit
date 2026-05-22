@@ -41,13 +41,13 @@ export interface BottomSheetProps {
   globalFilter: GlobalFilter;
   /**
    * Pre-`globalFilter` `NearbyStopsCounts` computed in `app.tsx` from the
-   * settings-filter-applied stop list. Used by BottomSheetHeader to display
+   * settings-filter-applied stop list. Used by StopBrowserHeader to display
    * counts that stay stable as the user toggles `globalFilter` pills.
    */
   nearbyStopsCounts: StopsCounts;
   /**
    * Post-`globalFilter`, pre-BottomSheet-local-filter counts computed in
-   * `app.tsx`. Threaded to BottomSheetHeader for UI that needs the
+   * `app.tsx`. Threaded to StopBrowserHeader for UI that needs the
    * app-filtered base before operating/agency/route_type trimming.
    */
   filteredNearbyStopsCounts: StopsCounts;

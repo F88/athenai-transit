@@ -30,7 +30,7 @@ export interface LayoutProps {
   /**
    * Pre-`globalFilter` `NearbyStopsCounts` computed in `app.tsx` from the
    * settings-filter-applied stop list. Threaded through to BottomSheet /
-   * BottomSheetHeader so filter pills can read counts that don't fluctuate
+   * StopBrowserHeader so filter pills can read counts that don't fluctuate
    * with `globalFilter` toggles.
    */
   nearbyStopsCounts: StopsCounts;

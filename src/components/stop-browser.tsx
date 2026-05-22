@@ -12,7 +12,7 @@ import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
 import { APP_ROUTE_TYPES } from '../config/route-types';
-import { BottomSheetHeader } from './bottom-sheet-header';
+import { StopBrowserHeader } from './stop-browser-header';
 import { StopGrid } from './stop-grid';
 
 /** Route type display order matching StopTypeFilterPanel. */
@@ -206,7 +206,7 @@ export function StopBrowser({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <BottomSheetHeader
+      <StopBrowserHeader
         hasNearbyLoaded={hasNearbyLoaded}
         nearbyStopsCounts={nearbyStopsCounts}
         filteredNearbyStopsCounts={filteredNearbyStopsCounts}
