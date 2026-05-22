@@ -373,35 +373,19 @@ export default function App() {
     recordStopSelection: recordStopSelectionInHistory,
   });
 
-  const navigateAndFocusStopById = useCallback(
-    async (
-      stopId: string,
-      reason: AutoLocateOffReason,
-      routeTypes?: readonly AppRouteTypeValue[],
-    ) => {
-      const result = await repo.getStopMetaById(stopId);
-      if (!result.success) {
-        return result;
-      }
+  const navigateAndRecordStopMetaSelection = useCallback(
+    (reason: AutoLocateOffReason, stopMeta: StopWithMeta) => {
+      const routeTypes = resolveStopRouteTypes({
+        stopId: stopMeta.stop.stop_id,
+        routeTypeMap,
+        routes: stopMeta.routes,
+        unknownPolicy: 'include-unknown',
+      });
 
-      navigateAndFocusStop(reason, result.data.stop);
-
-      const snapshot = createStopReferenceSnapshot(
-        result.data,
-        routeTypes ??
-          resolveStopRouteTypes({
-            stopId: result.data.stop.stop_id,
-            routeTypeMap,
-            routes: result.data.routes,
-            unknownPolicy: 'include-unknown',
-          }),
-        langChain,
-      );
-      void recordStopSelection(snapshot);
-
-      return result;
+      navigateAndFocusStop(reason, stopMeta.stop);
+      void recordStopSelection(createStopReferenceSnapshot(stopMeta, routeTypes, langChain));
     },
-    [langChain, navigateAndFocusStop, recordStopSelection, repo, routeTypeMap],
+    [langChain, navigateAndFocusStop, recordStopSelection, routeTypeMap],
   );
 
   // Wrap selectStop to also record in history.
@@ -431,29 +415,35 @@ export default function App() {
   // the repo resolves the stop). Same pattern as handleHistorySelect —
   // focusStop sets directFocusPosition so the map pans even when the
   // stop is outside the initial viewport.
-  const stopParamApplied = useRef(false);
+  const hasHandledStopParamRef = useRef(false);
   useEffect(() => {
-    if (stopParamApplied.current) {
+    if (hasHandledStopParamRef.current) {
       return;
     }
+
+    const markStopParamHandled = () => {
+      hasHandledStopParamRef.current = true;
+    };
+
     const stopId = getStopParam();
     if (!stopId) {
-      stopParamApplied.current = true;
+      markStopParamHandled();
       return;
     }
-    void navigateAndFocusStopById(stopId, 'apply-stop-param').then((result) => {
-      if (stopParamApplied.current) {
+
+    void repo.getStopMetaById(stopId).then((result) => {
+      if (hasHandledStopParamRef.current) {
         return;
       }
-      if (result.success) {
-        logger.info(`Applying ?stop=${stopId}: ${result.data.stop.stop_name}`);
-        stopParamApplied.current = true;
-      } else {
+      if (!result.success) {
         logger.warn(`?stop=${stopId}: not found`);
-        stopParamApplied.current = true;
+        markStopParamHandled();
+        return;
       }
+      navigateAndRecordStopMetaSelection('apply-stop-param', result.data);
+      markStopParamHandled();
     });
-  }, [navigateAndFocusStopById]);
+  }, [navigateAndRecordStopMetaSelection, repo]);
 
   // Load route shapes once on mount
   useEffect(() => {
@@ -662,13 +652,16 @@ export default function App() {
 
   const handleSelectStopFromTripInspection = useCallback(
     (stopId: string) => {
-      void navigateAndFocusStopById(stopId, 'select-trip-inspection').then((result) => {
+      void (async () => {
+        const result = await repo.getStopMetaById(stopId);
         if (!result.success) {
           toast.error(t('tripInspection.messages.openFailed'));
+          return;
         }
-      });
+        navigateAndRecordStopMetaSelection('select-trip-inspection', result.data);
+      })();
     },
-    [navigateAndFocusStopById, t],
+    [navigateAndRecordStopMetaSelection, repo, t],
   );
 
   const handleTripInspectionOpenChange = useCallback(
