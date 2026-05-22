@@ -196,7 +196,7 @@ function handleErrorEvent(event: ErrorEvent): void {
     logger.debug('ignored uncaught error', error);
     return;
   }
-  logger.error('uncaught error', error);
+  logger.error('uncaught error', formatErrorDetails(error), error);
   showGlobalErrorOverlay(error);
 }
 
@@ -206,7 +206,7 @@ function handleUnhandledRejection(event: PromiseRejectionEvent): void {
     logger.debug('ignored unhandled rejection', reason);
     return;
   }
-  logger.error('unhandled rejection', reason);
+  logger.error('unhandled rejection', formatErrorDetails(reason), reason);
   showGlobalErrorOverlay(reason);
 }
 
