@@ -20,7 +20,6 @@ export interface LayoutProps {
     | 'expandedHeightClassName'
     | 'expanded'
     | 'onExpandedChange'
-    | 'variant'
     | 'globalFilter'
     | 'nearbyStopsCounts'
     | 'filteredNearbyStopsCounts'

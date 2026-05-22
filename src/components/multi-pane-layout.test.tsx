@@ -36,8 +36,8 @@ vi.mock('./map/map-view', () => ({
   MapView: () => <div data-testid="map-view" />,
 }));
 
-vi.mock('./bottom-sheet', () => ({
-  BottomSheet: () => <div data-testid="bottom-sheet" />,
+vi.mock('./stop-panel', () => ({
+  StopPanel: () => <div data-testid="stop-panel" />,
 }));
 
 function makeLayoutProps(): LayoutProps {
@@ -65,11 +65,11 @@ function renderMultiPaneLayout() {
   );
 }
 
-/** `true` when the bottom sheet renders before the map view in the DOM. */
-function sheetRendersBeforeMap(): boolean {
-  const sheet = screen.getByTestId('bottom-sheet');
+/** `true` when the stop panel renders before the map view in the DOM. */
+function stopPanelRendersBeforeMap(): boolean {
+  const panel = screen.getByTestId('stop-panel');
   const map = screen.getByTestId('map-view');
-  return Boolean(sheet.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING);
+  return Boolean(panel.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING);
 }
 
 describe('MultiPaneLayout', () => {
@@ -82,11 +82,11 @@ describe('MultiPaneLayout', () => {
     renderMultiPaneLayout();
 
     expect(screen.getByTestId('panel-group')).toHaveAttribute('data-orientation', 'horizontal');
-    expect(screen.getByTestId('bottom-sheet')).toBeInTheDocument();
+    expect(screen.getByTestId('stop-panel')).toBeInTheDocument();
     expect(screen.getByTestId('map-view')).toBeInTheDocument();
     expect(screen.getByTestId('map-overlay')).toBeInTheDocument();
     // Horizontal split: panel on the left, map on the right.
-    expect(sheetRendersBeforeMap()).toBe(true);
+    expect(stopPanelRendersBeforeMap()).toBe(true);
   });
 
   it('renders a vertical split with the map before the panel in portrait', () => {
@@ -95,7 +95,7 @@ describe('MultiPaneLayout', () => {
 
     expect(screen.getByTestId('panel-group')).toHaveAttribute('data-orientation', 'vertical');
     expect(screen.getByTestId('map-overlay')).toBeInTheDocument();
-    // Vertical split: map on top, sheet panel on the bottom.
-    expect(sheetRendersBeforeMap()).toBe(false);
+    // Vertical split: map on top, stop panel on the bottom.
+    expect(stopPanelRendersBeforeMap()).toBe(false);
   });
 });

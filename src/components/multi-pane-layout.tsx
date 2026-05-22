@@ -1,4 +1,4 @@
-import { BottomSheet } from './bottom-sheet';
+import { StopPanel } from './stop-panel';
 import { MapView } from './map/map-view';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './ui/resizable';
 import type { LayoutProps } from './layout-props';
@@ -35,9 +35,8 @@ export function MultiPaneLayout({
       minSize={panelSize.minSize}
       maxSize={panelSize.maxSize}
     >
-      <BottomSheet
+      <StopPanel
         {...bottomSheetProps}
-        variant="panel"
         globalFilter={globalFilter}
         nearbyStopsCounts={nearbyStopsCounts}
         filteredNearbyStopsCounts={filteredNearbyStopsCounts}
