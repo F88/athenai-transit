@@ -23,7 +23,10 @@ function normalizeRouteTypes(value: unknown): AppRouteTypeValue[] | null {
     return null;
   }
 
-  return value.filter((routeType): routeType is AppRouteTypeValue => typeof routeType === 'number');
+  const routeTypes = value.filter(
+    (routeType): routeType is AppRouteTypeValue => typeof routeType === 'number',
+  );
+  return routeTypes.length > 0 ? routeTypes : null;
 }
 
 function normalizeCoordinate(value: unknown): number | null {
@@ -77,15 +80,15 @@ function normalizeSnapshot(
     return null;
   }
 
+  const agencyNames = normalizeStringArray(obj.agencyNames);
+
   return {
     stopId,
     name: normalizeSnapshotName(obj.name, fallbackName ?? stopId),
     lat,
     lon,
     routeTypes,
-    agencyNames: normalizeStringArray(obj.agencyNames).length
-      ? normalizeStringArray(obj.agencyNames)
-      : [...fallbackAgencyNames],
+    agencyNames: agencyNames.length ? agencyNames : [...fallbackAgencyNames],
     platformCode: normalizePlatformCode(obj.platformCode) ?? fallbackPlatformCode,
   };
 }
@@ -121,16 +124,6 @@ function normalizeAnchorEntry(value: unknown): AnchorEntry | null {
     createdAt: obj.createdAt,
     portal: normalizePortal(obj.portal),
   };
-}
-
-function isCurrentAnchorEntry(value: unknown): boolean {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as Record<string, unknown>).createdAt === 'number' &&
-    typeof (value as Record<string, unknown>).snapshot === 'object' &&
-    (value as Record<string, unknown>).snapshot !== null
-  );
 }
 
 /**
@@ -236,13 +229,7 @@ export class LocalStorageAnchorRepository implements AnchorRepository {
       }
 
       const valid = parsed
-        .map((entry) => {
-          const normalized = normalizeAnchorEntry(entry);
-          if (normalized === null || !isCurrentAnchorEntry(entry)) {
-            return normalized;
-          }
-          return normalized;
-        })
+        .map((entry) => normalizeAnchorEntry(entry))
         .filter((entry): entry is AnchorEntry => entry !== null);
 
       if (valid.length !== parsed.length) {
@@ -251,7 +238,7 @@ export class LocalStorageAnchorRepository implements AnchorRepository {
         );
       }
 
-      if (valid.length !== parsed.length || parsed.some((entry) => !isCurrentAnchorEntry(entry))) {
+      if (valid.length !== parsed.length || JSON.stringify(parsed) !== JSON.stringify(valid)) {
         this.saveAnchorsToStorage(valid);
       }
 

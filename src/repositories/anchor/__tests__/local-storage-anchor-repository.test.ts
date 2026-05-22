@@ -116,6 +116,61 @@ describe('LocalStorageAnchorRepository', () => {
     ]);
   });
 
+  it('falls back to legacy flat route types when snapshot route types are invalid', async () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([
+        {
+          snapshot: {
+            stopId: 'mixed-stop',
+            name: 'Mixed Stop',
+            lat: 35.1,
+            lon: 139.1,
+            routeTypes: ['invalid'],
+            agencyNames: [],
+          },
+          stopId: 'mixed-stop',
+          routeTypes: [3],
+          createdAt: 1234,
+        },
+      ]),
+    );
+
+    const repo = new LocalStorageAnchorRepository();
+    const result = await repo.getAnchors();
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual([
+        {
+          snapshot: {
+            stopId: 'mixed-stop',
+            name: 'Mixed Stop',
+            lat: 35.1,
+            lon: 139.1,
+            routeTypes: [3],
+            agencyNames: [],
+          },
+          createdAt: 1234,
+        },
+      ]);
+    }
+
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]')).toEqual([
+      {
+        snapshot: {
+          stopId: 'mixed-stop',
+          name: 'Mixed Stop',
+          lat: 35.1,
+          lon: 139.1,
+          routeTypes: [3],
+          agencyNames: [],
+        },
+        createdAt: 1234,
+      },
+    ]);
+  });
+
   it('drops invalid stored entries and rewrites valid entries', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify([makeAnchorEntry('A'), { stopId: 'bad' }]));
 
