@@ -3,8 +3,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { useViewportWidth } from '../use-viewport-width';
 
 class MockVisualViewport extends EventTarget {
-  constructor(public width: number) {
+  width: number;
+
+  constructor(width: number) {
     super();
+    this.width = width;
   }
 }
 
@@ -28,7 +31,7 @@ function setVisualViewport(viewport: VisualViewport | undefined) {
 
 afterEach(() => {
   setInnerWidth(originalInnerWidth);
-  setVisualViewport(originalVisualViewport);
+  setVisualViewport(originalVisualViewport ?? undefined);
 });
 
 describe('useViewportWidth', () => {
