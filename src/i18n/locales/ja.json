@@ -75,6 +75,13 @@
     "label": "履歴",
     "saveFailed": "履歴の保存に失敗しました"
   },
+  "anchor": {
+    "add": "アンカーを追加",
+    "remove": "アンカーを削除",
+    "added": "アンカーを追加しました",
+    "removed": "アンカーを削除しました",
+    "anchorUpdateFailed": "アンカー更新に失敗しました"
+  },
   "info": {
     "status": "まだまだ荒削り 鋭意開発中"
   },
@@ -199,13 +206,6 @@
     "toggleSubway": "地下鉄の表示切替",
     "toggleTrain": "鉄道の表示切替",
     "toggleOthers": "その他の表示切替"
-  },
-  "anchor": {
-    "add": "アンカーを追加",
-    "remove": "アンカーを削除",
-    "added": "アンカーを追加しました",
-    "removed": "アンカーを削除しました",
-    "anchorUpdateFailed": "アンカー更新に失敗しました"
   },
   "dataLoad": {
     "failed": "データの取得に失敗しました"
