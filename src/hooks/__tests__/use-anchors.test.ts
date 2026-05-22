@@ -155,13 +155,13 @@ describe('useAnchors', () => {
     });
   });
 
-  describe('addStop', () => {
+  describe('addAnchor', () => {
     it('adds a stop and returns success with created entry', async () => {
       const repo = makeMockRepo();
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      const res = await act(async () => result.current.addStop(makeAnchorInput('X')));
+      const res = await act(async () => result.current.addAnchor(makeAnchorInput('X')));
 
       expect(res.success).toBe(true);
       expect(result.current.anchors).toHaveLength(1);
@@ -173,7 +173,7 @@ describe('useAnchors', () => {
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      const res = await act(async () => result.current.addStop(makeAnchorInput('A')));
+      const res = await act(async () => result.current.addAnchor(makeAnchorInput('A')));
 
       expect(res.success).toBe(false);
       expect(result.current.anchors).toHaveLength(1);
@@ -188,7 +188,7 @@ describe('useAnchors', () => {
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      const res = await act(async () => result.current.addStop(makeAnchorInput('X')));
+      const res = await act(async () => result.current.addAnchor(makeAnchorInput('X')));
 
       expect(res.success).toBe(false);
       if (!res.success) {
@@ -203,10 +203,10 @@ describe('useAnchors', () => {
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      await act(async () => result.current.addStop(makeAnchorInput('A')));
+      await act(async () => result.current.addAnchor(makeAnchorInput('A')));
       expect(result.current.lastError).toContain('Duplicate stop');
 
-      await act(async () => result.current.addStop(makeAnchorInput('B')));
+      await act(async () => result.current.addAnchor(makeAnchorInput('B')));
       expect(result.current.lastError).toBeNull();
     });
 
@@ -215,21 +215,21 @@ describe('useAnchors', () => {
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      await act(async () => result.current.addStop(makeAnchorInput('A')));
-      await act(async () => result.current.addStop(makeAnchorInput('B')));
+      await act(async () => result.current.addAnchor(makeAnchorInput('A')));
+      await act(async () => result.current.addAnchor(makeAnchorInput('B')));
 
       expect(result.current.anchors[0].snapshot.stopId).toBe('B');
       expect(result.current.anchors[1].snapshot.stopId).toBe('A');
     });
   });
 
-  describe('removeStop', () => {
+  describe('removeAnchor', () => {
     it('removes a stop and returns success', async () => {
       const repo = makeMockRepo([makeAnchorEntry('A'), makeAnchorEntry('B')]);
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      const res = await act(async () => result.current.removeStop('A'));
+      const res = await act(async () => result.current.removeAnchor('A'));
 
       expect(res.success).toBe(true);
       expect(result.current.anchors).toHaveLength(1);
@@ -241,7 +241,7 @@ describe('useAnchors', () => {
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      const res = await act(async () => result.current.removeStop('Z'));
+      const res = await act(async () => result.current.removeAnchor('Z'));
 
       expect(res.success).toBe(false);
       expect(result.current.anchors).toHaveLength(1);
@@ -256,7 +256,7 @@ describe('useAnchors', () => {
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      const res = await act(async () => result.current.removeStop('A'));
+      const res = await act(async () => result.current.removeAnchor('A'));
 
       expect(res.success).toBe(false);
       if (!res.success) {
@@ -267,14 +267,14 @@ describe('useAnchors', () => {
     });
   });
 
-  describe('updateStop', () => {
+  describe('updateAnchor', () => {
     it('updates an anchor and returns success with updated entry', async () => {
       const repo = makeMockRepo([makeAnchorEntry('A')]);
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
       const res = await act(async () =>
-        result.current.updateStop({
+        result.current.updateAnchor({
           ...makeAnchorInput('A'),
           snapshot: { ...makeAnchorInput('A').snapshot, name: 'Updated' },
         }),
@@ -289,7 +289,7 @@ describe('useAnchors', () => {
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      const res = await act(async () => result.current.updateStop(makeAnchorInput('Z')));
+      const res = await act(async () => result.current.updateAnchor(makeAnchorInput('Z')));
 
       expect(res.success).toBe(false);
       expect(result.current.lastError).toContain('Stop not found');
@@ -301,7 +301,7 @@ describe('useAnchors', () => {
       await act(async () => {});
 
       await act(async () =>
-        result.current.updateStop({
+        result.current.updateAnchor({
           ...makeAnchorInput('A'),
           snapshot: { ...makeAnchorInput('A').snapshot, name: 'New Name' },
         }),
@@ -316,7 +316,9 @@ describe('useAnchors', () => {
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      await act(async () => result.current.updateStop({ ...makeAnchorInput('A'), portal: 'new' }));
+      await act(async () =>
+        result.current.updateAnchor({ ...makeAnchorInput('A'), portal: 'new' }),
+      );
 
       expect(result.current.anchors[0].portal).toBe('new');
     });
@@ -327,7 +329,7 @@ describe('useAnchors', () => {
       await act(async () => {});
 
       const res = await act(async () =>
-        result.current.updateStop({
+        result.current.updateAnchor({
           ...makeAnchorInput('A'),
           snapshot: { ...makeAnchorInput('A').snapshot, name: 'Updated A' },
         }),
@@ -349,7 +351,7 @@ describe('useAnchors', () => {
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      const res = await act(async () => result.current.updateStop(makeAnchorInput('A')));
+      const res = await act(async () => result.current.updateAnchor(makeAnchorInput('A')));
 
       expect(res.success).toBe(false);
       if (!res.success) {
@@ -366,7 +368,7 @@ describe('useAnchors', () => {
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      await act(async () => result.current.addStop(makeAnchorInput('A')));
+      await act(async () => result.current.addAnchor(makeAnchorInput('A')));
       expect(result.current.lastError).toContain('Duplicate stop');
 
       act(() => result.current.clearError());
@@ -374,14 +376,14 @@ describe('useAnchors', () => {
     });
   });
 
-  describe('batchUpdateStops', () => {
+  describe('batchUpdateAnchors', () => {
     it('updates multiple anchors and replaces state with repo result', async () => {
       const repo = makeMockRepo([makeAnchorEntry('A'), makeAnchorEntry('B')]);
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
       const res = await act(async () =>
-        result.current.batchUpdateStops([
+        result.current.batchUpdateAnchors([
           {
             ...makeAnchorInput('A'),
             snapshot: { ...makeAnchorInput('A').snapshot, name: 'Updated A' },
@@ -405,7 +407,7 @@ describe('useAnchors', () => {
       await act(async () => {});
 
       await act(async () =>
-        result.current.batchUpdateStops([
+        result.current.batchUpdateAnchors([
           { ...makeAnchorInput('A'), snapshot: { ...makeAnchorInput('A').snapshot, name: 'X' } },
           { ...makeAnchorInput('B'), snapshot: { ...makeAnchorInput('B').snapshot, name: 'Y' } },
         ]),
@@ -429,7 +431,7 @@ describe('useAnchors', () => {
       await act(async () => {});
 
       const res = await act(async () =>
-        result.current.batchUpdateStops([
+        result.current.batchUpdateAnchors([
           { ...makeAnchorInput('A'), snapshot: { ...makeAnchorInput('A').snapshot, name: 'X' } },
         ]),
       );
@@ -449,7 +451,7 @@ describe('useAnchors', () => {
       await act(async () => {});
 
       const res = await act(async () =>
-        result.current.batchUpdateStops([
+        result.current.batchUpdateAnchors([
           { ...makeAnchorInput('A'), snapshot: { ...makeAnchorInput('A').snapshot, name: 'X' } },
         ]),
       );
@@ -462,13 +464,13 @@ describe('useAnchors', () => {
     });
   });
 
-  describe('isStopAnchor', () => {
+  describe('hasAnchor', () => {
     it('returns true for an anchored stop', async () => {
       const repo = makeMockRepo([makeAnchorEntry('A')]);
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      expect(result.current.isStopAnchor('A')).toBe(true);
+      expect(result.current.hasAnchor('A')).toBe(true);
     });
 
     it('returns false for a non-anchored stop', async () => {
@@ -476,31 +478,31 @@ describe('useAnchors', () => {
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      expect(result.current.isStopAnchor('Z')).toBe(false);
+      expect(result.current.hasAnchor('Z')).toBe(false);
     });
 
-    it('reflects changes after addStop', async () => {
+    it('reflects changes after addAnchor', async () => {
       const repo = makeMockRepo();
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      expect(result.current.isStopAnchor('X')).toBe(false);
+      expect(result.current.hasAnchor('X')).toBe(false);
 
-      await act(async () => result.current.addStop(makeAnchorInput('X')));
+      await act(async () => result.current.addAnchor(makeAnchorInput('X')));
 
-      expect(result.current.isStopAnchor('X')).toBe(true);
+      expect(result.current.hasAnchor('X')).toBe(true);
     });
 
-    it('reflects changes after removeStop', async () => {
+    it('reflects changes after removeAnchor', async () => {
       const repo = makeMockRepo([makeAnchorEntry('A')]);
       const { result } = renderHook(() => useAnchors(repo));
       await act(async () => {});
 
-      expect(result.current.isStopAnchor('A')).toBe(true);
+      expect(result.current.hasAnchor('A')).toBe(true);
 
-      await act(async () => result.current.removeStop('A'));
+      await act(async () => result.current.removeAnchor('A'));
 
-      expect(result.current.isStopAnchor('A')).toBe(false);
+      expect(result.current.hasAnchor('A')).toBe(false);
     });
   });
 });

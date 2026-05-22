@@ -20,16 +20,16 @@ export interface UseAnchorsReturn {
   lastError: string | null;
   /** Clear the latest repository error message. */
   clearError: () => void;
-  /** Add a stop to anchors. Returns the created entry on success, or error if duplicate. */
-  addStop: (entry: Omit<AnchorEntry, 'createdAt'>) => Promise<Result<AnchorEntry>>;
-  /** Remove a stop from anchors. Returns void on success, or error if not found. */
-  removeStop: (stopId: string) => Promise<Result<void>>;
+  /** Add an anchor. Returns the created entry on success, or error if duplicate. */
+  addAnchor: (entry: Omit<AnchorEntry, 'createdAt'>) => Promise<Result<AnchorEntry>>;
+  /** Remove an anchor by stopId. Returns void on success, or error if not found. */
+  removeAnchor: (stopId: string) => Promise<Result<void>>;
   /** Update an existing anchor's mutable fields. Returns the entry (updated or existing) on success, or error if not found. Idempotent. */
-  updateStop: (update: Omit<AnchorEntry, 'createdAt'>) => Promise<Result<AnchorEntry>>;
+  updateAnchor: (update: Omit<AnchorEntry, 'createdAt'>) => Promise<Result<AnchorEntry>>;
   /** Update multiple anchors in a single operation. Single state update + single persistence write. */
-  batchUpdateStops: (updates: Omit<AnchorEntry, 'createdAt'>[]) => Promise<Result<AnchorEntry[]>>;
-  /** Check if a stop is currently in the anchor list. */
-  isStopAnchor: (stopId: string) => boolean;
+  batchUpdateAnchors: (updates: Omit<AnchorEntry, 'createdAt'>[]) => Promise<Result<AnchorEntry[]>>;
+  /** Check if the anchor list contains the stop. */
+  hasAnchor: (stopId: string) => boolean;
 }
 
 /**
@@ -80,7 +80,7 @@ export function useAnchors(repo: AnchorRepository): UseAnchorsReturn {
     };
   }, [repo]);
 
-  const addStop = useCallback(
+  const addAnchor = useCallback(
     async (entry: Omit<AnchorEntry, 'createdAt'>): Promise<Result<AnchorEntry>> => {
       try {
         const result = await repo.addAnchor(entry);
@@ -101,7 +101,7 @@ export function useAnchors(repo: AnchorRepository): UseAnchorsReturn {
     [repo],
   );
 
-  const removeStop = useCallback(
+  const removeAnchor = useCallback(
     async (stopId: string): Promise<Result<void>> => {
       try {
         const result = await repo.removeAnchor(stopId);
@@ -122,7 +122,7 @@ export function useAnchors(repo: AnchorRepository): UseAnchorsReturn {
     [repo],
   );
 
-  const updateStop = useCallback(
+  const updateAnchor = useCallback(
     async (update: Omit<AnchorEntry, 'createdAt'>): Promise<Result<AnchorEntry>> => {
       try {
         const result = await repo.updateAnchor(update);
@@ -145,7 +145,7 @@ export function useAnchors(repo: AnchorRepository): UseAnchorsReturn {
     [repo],
   );
 
-  const batchUpdateStops = useCallback(
+  const batchUpdateAnchors = useCallback(
     async (updates: Omit<AnchorEntry, 'createdAt'>[]): Promise<Result<AnchorEntry[]>> => {
       try {
         const result = await repo.batchUpdateAnchors(updates);
@@ -166,16 +166,16 @@ export function useAnchors(repo: AnchorRepository): UseAnchorsReturn {
     [repo],
   );
 
-  const isStopAnchor = useCallback((stopId: string) => isAnchor(anchors, stopId), [anchors]);
+  const hasAnchor = useCallback((stopId: string) => isAnchor(anchors, stopId), [anchors]);
 
   return {
     anchors,
     lastError,
     clearError,
-    addStop,
-    removeStop,
-    updateStop,
-    batchUpdateStops,
-    isStopAnchor,
+    addAnchor,
+    removeAnchor,
+    updateAnchor,
+    batchUpdateAnchors,
+    hasAnchor,
   };
 }

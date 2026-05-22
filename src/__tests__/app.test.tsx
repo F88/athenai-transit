@@ -286,11 +286,11 @@ describe('App anchor error toast', () => {
       anchors: [],
       lastError: null,
       clearError: mockClearAnchorError,
-      addStop: vi.fn(),
-      removeStop: vi.fn(),
-      updateStop: vi.fn(),
-      batchUpdateStops: vi.fn(),
-      isStopAnchor: vi.fn(() => false),
+      addAnchor: vi.fn(),
+      removeAnchor: vi.fn(),
+      updateAnchor: vi.fn(),
+      batchUpdateAnchors: vi.fn(),
+      hasAnchor: vi.fn(() => false),
     });
     mockUseDateTime.mockReturnValue({
       dateTime: new Date('2026-03-28T12:00:00Z'),
@@ -318,11 +318,11 @@ describe('App anchor error toast', () => {
       anchors: [],
       lastError: null,
       clearError: mockClearAnchorError,
-      addStop: vi.fn(),
-      removeStop: vi.fn(),
-      updateStop: vi.fn(),
-      batchUpdateStops: vi.fn(),
-      isStopAnchor: vi.fn(() => false),
+      addAnchor: vi.fn(),
+      removeAnchor: vi.fn(),
+      updateAnchor: vi.fn(),
+      batchUpdateAnchors: vi.fn(),
+      hasAnchor: vi.fn(() => false),
     });
 
     render(<App />);
@@ -339,11 +339,11 @@ describe('App anchor error toast', () => {
       anchors: [],
       lastError: 'Duplicate stop: A',
       clearError: mockClearAnchorError,
-      addStop: vi.fn(),
-      removeStop: vi.fn(),
-      updateStop: vi.fn(),
-      batchUpdateStops: vi.fn(),
-      isStopAnchor: vi.fn(() => false),
+      addAnchor: vi.fn(),
+      removeAnchor: vi.fn(),
+      updateAnchor: vi.fn(),
+      batchUpdateAnchors: vi.fn(),
+      hasAnchor: vi.fn(() => false),
     });
 
     render(<App />);

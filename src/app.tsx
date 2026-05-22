@@ -298,10 +298,10 @@ export default function App() {
     anchors,
     lastError: anchorError,
     clearError: clearAnchorError,
-    addStop: addAnchor,
-    removeStop: removeAnchor,
-    batchUpdateStops: batchUpdateAnchors,
-    isStopAnchor,
+    addAnchor,
+    removeAnchor,
+    batchUpdateAnchors,
+    hasAnchor: isStopAnchor,
   } = useAnchors(anchorRepo);
 
   useEffect(() => {
