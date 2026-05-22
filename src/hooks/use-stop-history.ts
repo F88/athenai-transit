@@ -76,11 +76,6 @@ export function useStopHistory(repo: StopSelectionRepository): UseStopHistoryRet
 
   const recordStopSelection = useCallback(
     async (selection: StopReferenceSnapshot): Promise<Result<void>> => {
-      if (logger.isEnabled('debug')) {
-        logger.debug('Persisting stop history selection', { selection });
-        logger.debug(selection.agencyNames);
-      }
-
       const baseHistoryResult = isLoadedRef.current
         ? { success: true as const, data: historyRef.current }
         : await readHistoryFromRepo();

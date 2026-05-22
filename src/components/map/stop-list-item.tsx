@@ -24,10 +24,10 @@ export interface StopListItemProps extends StopListItemPresentation {
 
 export function StopListItem({
   stopId,
-  displayName,
+  name,
   routeTypes,
   platformCode,
-  agencyBadges,
+  agencies,
   infoLevel,
   showRemove = false,
   onRemove,
@@ -41,17 +41,17 @@ export function StopListItem({
       className="overflow-hidden focus:bg-black/10 focus:text-black dark:focus:bg-white/20 dark:focus:text-white"
     >
       <span className="shrink-0 text-base">{routeTypesEmoji([...routeTypes])}</span>
-      <span className="max-w-[60dvw] truncate">{displayName}</span>
+      <span className="max-w-[60dvw] truncate">{name}</span>
       {platformCode && <PlatformCodeLabel code={platformCode} size="sm" />}
-      {agencyBadges.map((badge) => (
+      {agencies.map((agency) => (
         <AgencyBadgeView
-          key={badge.key}
-          label={badge.label}
+          key={agency.key}
+          label={agency.name}
           size="sm"
           infoLevel={infoLevel}
-          bgColor={badge.bgColor}
-          fgColor={badge.fgColor}
-          borderColor={badge.borderColor}
+          bgColor={agency.bgColor}
+          fgColor={agency.fgColor}
+          borderColor={agency.borderColor}
           showBorder
         />
       ))}

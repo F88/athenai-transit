@@ -9,23 +9,21 @@ import { getStopDisplayNames } from './name-resolver/get-stop-display-names';
 
 export interface StopListItemAgencyBadgePresentation {
   readonly key: string;
-  readonly label: string;
+  readonly name: string;
   readonly bgColor?: string;
   readonly fgColor?: string;
   readonly borderColor?: string;
 }
 
 export interface StopListItemPresentation {
-  readonly displayName: string;
   readonly routeTypes: readonly AppRouteTypeValue[];
+  readonly agencies: readonly StopListItemAgencyBadgePresentation[];
+  readonly name: string;
   readonly platformCode?: string;
-  readonly agencyBadges: readonly StopListItemAgencyBadgePresentation[];
 }
 
 export interface BuildStopListItemPresentationFromMetaParams {
   readonly meta: StopWithMeta;
-  readonly routeTypes: readonly AppRouteTypeValue[];
-  readonly fallbackDisplayName: string;
   readonly dataLang: readonly string[];
   readonly themeBackground: string;
 }
@@ -48,7 +46,7 @@ function buildAgencyBadgeProps(
 
   return {
     key: agency.agency_id,
-    label: resolvedName || '?',
+    name: resolvedName || '?',
     bgColor: agencyColor,
     fgColor: agencyTextColor,
     borderColor: borderColor,
@@ -57,21 +55,22 @@ function buildAgencyBadgeProps(
 
 export function buildStopListItemPresentationFromMeta({
   meta,
-  routeTypes,
-  fallbackDisplayName,
   dataLang,
   themeBackground,
 }: BuildStopListItemPresentationFromMetaParams): StopListItemPresentation {
+  const routeTypes = [...new Set(meta.routes.map((route) => route.route_type))].sort(
+    (a, b) => a - b,
+  );
   return {
-    displayName:
+    name:
       getStopDisplayNames(
         meta.stop,
         dataLang,
         resolveAgencyLang(meta.agencies, meta.stop.agency_id),
-      ).name || fallbackDisplayName,
+      ).name || '?',
     routeTypes: [...routeTypes],
     platformCode: meta.stop.platform_code,
-    agencyBadges: meta.agencies.map((agency) => {
+    agencies: meta.agencies.map((agency) => {
       const agencyLangs = resolveAgencyLang(meta.agencies, agency.agency_id);
       return buildAgencyBadgeProps(agency, agencyLangs, dataLang, themeBackground);
     }),
@@ -82,13 +81,16 @@ export function buildStopListItemPresentationFromHistorySnapshot(
   snapshot: StopReferenceSnapshot,
 ): StopListItemPresentation {
   return {
-    displayName: snapshot.name,
+    name: snapshot.name,
     routeTypes: [...snapshot.routeTypes],
     platformCode: snapshot.platformCode,
-    agencyBadges: snapshot.agencyNames.map((agencyName, index) => {
+    agencies: snapshot.agencyNames.map((agencyName, index) => {
       return {
         key: `${index}:${agencyName}`,
-        label: agencyName,
+        name: agencyName,
+        bgColor: 'var(--color-muted)',
+        fgColor: 'var(--color-muted-foreground)',
+        borderColor: 'var(--color-border)',
       };
     }),
   };

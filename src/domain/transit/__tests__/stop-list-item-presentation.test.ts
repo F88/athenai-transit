@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { makeStop } from '../../../__tests__/helpers';
-import type { Agency } from '../../../types/app/transit';
+import { makeRoute, makeStop } from '../../../__tests__/helpers';
+import type { Agency, AppRouteTypeValue } from '../../../types/app/transit';
 import type { StopWithMeta } from '../../../types/app/transit-composed';
 import {
   buildStopListItemPresentationFromHistorySnapshot,
@@ -26,7 +26,7 @@ function makeAgency(overrides: Partial<Agency> = {}): Agency {
   };
 }
 
-function makeMeta(): StopWithMeta {
+function makeMeta(routeTypes: AppRouteTypeValue[] = [3]): StopWithMeta {
   return {
     stop: {
       ...makeStop('A'),
@@ -36,7 +36,7 @@ function makeMeta(): StopWithMeta {
       platform_code: '2',
     },
     agencies: [makeAgency()],
-    routes: [],
+    routes: routeTypes.map((routeType, index) => makeRoute(`route-${index}`, routeType)),
   };
 }
 
@@ -44,56 +44,64 @@ describe('buildStopListItemPresentationFromMeta', () => {
   it('builds display props from the latest stop metadata', () => {
     const result = buildStopListItemPresentationFromMeta({
       meta: makeMeta(),
-      routeTypes: [3],
-      fallbackDisplayName: 'History Name',
       dataLang: ['en'],
       themeBackground: '#FFFFFF',
     });
 
-    expect(result.displayName).toBe('Resolved Name');
+    expect(result.name).toBe('Resolved Name');
     expect(result.routeTypes).toEqual([3]);
     expect(result.platformCode).toBe('2');
-    expect(result.agencyBadges).toEqual([
+    expect(result.agencies).toEqual([
       expect.objectContaining({
         key: 'agency-1',
-        label: 'TB',
+        name: 'TB',
         bgColor: '#E60013',
         fgColor: '#FFFFFF',
       }),
     ]);
-    expect(result.agencyBadges[0].borderColor).toEqual(expect.any(String));
+    expect(result.agencies[0].borderColor).toEqual(expect.any(String));
   });
 
   it('falls back to the provided display name when stop name resolution is empty', () => {
     const meta = makeMeta();
     meta.stop.stop_name = '';
     meta.stop.stop_names = {};
+    meta.routes = [makeRoute('route-0', 0), makeRoute('route-1', 3)];
 
     const result = buildStopListItemPresentationFromMeta({
       meta,
-      routeTypes: [0, 3],
-      fallbackDisplayName: 'Snapshot Name',
       dataLang: ['ja'],
       themeBackground: '#FFFFFF',
     });
 
-    expect(result.displayName).toBe('Snapshot Name');
+    expect(result.name).toBe('?');
     expect(result.routeTypes).toEqual([0, 3]);
   });
 
-  it('returns a copied routeTypes array instead of reusing the caller array', () => {
-    const routeTypes = [3] as const;
-
+  it('returns route types derived from the stop meta routes', () => {
     const result = buildStopListItemPresentationFromMeta({
       meta: makeMeta(),
-      routeTypes,
-      fallbackDisplayName: 'History Name',
       dataLang: ['en'],
       themeBackground: '#FFFFFF',
     });
 
     expect(result.routeTypes).toEqual([3]);
-    expect(result.routeTypes).not.toBe(routeTypes);
+  });
+
+  it.each([
+    { input: [0] as AppRouteTypeValue[], expected: [0] },
+    { input: [1] as AppRouteTypeValue[], expected: [1] },
+    { input: [2] as AppRouteTypeValue[], expected: [2] },
+    { input: [0, 1, 2] as AppRouteTypeValue[], expected: [0, 1, 2] },
+    { input: [3, 1, 3, 0] as AppRouteTypeValue[], expected: [0, 1, 3] },
+  ])('derives deduplicated sorted route types from meta.routes: $input', ({ input, expected }) => {
+    const result = buildStopListItemPresentationFromMeta({
+      meta: makeMeta(input),
+      dataLang: ['en'],
+      themeBackground: '#FFFFFF',
+    });
+
+    expect(result.routeTypes).toEqual(expected);
   });
 });
 
@@ -112,13 +120,16 @@ describe('buildStopListItemPresentationFromHistorySnapshot', () => {
     const result = buildStopListItemPresentationFromHistorySnapshot(snapshot);
 
     expect(result).toEqual({
-      displayName: 'Stored Stop',
+      name: 'Stored Stop',
       routeTypes: [2, 3],
       platformCode: 'A',
-      agencyBadges: [
+      agencies: [
         {
           key: '0:京都市バス',
-          label: '京都市バス',
+          name: '京都市バス',
+          bgColor: 'var(--color-muted)',
+          fgColor: 'var(--color-muted-foreground)',
+          borderColor: 'var(--color-border)',
         },
       ],
     });

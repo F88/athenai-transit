@@ -20,12 +20,9 @@ vi.mock('./ui/select', () => ({
   },
   SelectTrigger: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   SelectContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-}));
-
-vi.mock('./stop/stop-dropdown-item', () => ({
-  StopDropdownItem: ({ stopId }: { stopId: string }) => (
-    <button type="button" onClick={() => handleValueChange?.(stopId)}>
-      {stopId}
+  SelectItem: ({ children, value }: { children: ReactNode; value: string }) => (
+    <button type="button" onClick={() => handleValueChange?.(value)}>
+      {children}
     </button>
   ),
 }));
@@ -78,8 +75,8 @@ describe('StopHistory', () => {
       />,
     );
 
-    expect(screen.getByText('Latest A')).toBeInTheDocument();
-    expect(screen.getByText('🚇🚌')).toBeInTheDocument();
+    expect(screen.getAllByText('Latest A')).toHaveLength(2);
+    expect(screen.getAllByText('🚇🚌')).toHaveLength(2);
   });
 
   it('shows the selected entry from the persisted snapshot when metadata is unavailable', () => {
@@ -94,8 +91,8 @@ describe('StopHistory', () => {
       />,
     );
 
-    expect(screen.getByText('Snapshot A')).toBeInTheDocument();
-    expect(screen.getByText('🚌')).toBeInTheDocument();
+    expect(screen.getAllByText('Snapshot A')).toHaveLength(2);
+    expect(screen.getAllByText('🚌')).toHaveLength(2);
   });
 
   it('emits the selected history entry when current repository stop metadata is available', () => {
@@ -113,7 +110,7 @@ describe('StopHistory', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'A' }));
+    fireEvent.click(screen.getByRole('button', { name: /Stop A/ }));
 
     expect(onSelect).toHaveBeenCalledWith(makeHistoryEntry());
   });
@@ -132,7 +129,7 @@ describe('StopHistory', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'A' }));
+    fireEvent.click(screen.getByRole('button', { name: /Snapshot A/ }));
 
     expect(onSelect).toHaveBeenCalledWith(makeHistoryEntry());
   });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
 
@@ -12,8 +12,9 @@ import { routeTypesEmoji } from '../utils/route-type-emoji';
 
 import { getStopDisplayNames } from '../domain/transit/name-resolver/get-stop-display-names';
 import type { StopHistoryEntry } from '../domain/transit/stop-history';
-import { StopDropdownItem } from './stop/stop-dropdown-item';
+// import { StopDropdownItem } from './stop/stop-dropdown-item';
 import { Select, SelectContent, SelectTrigger } from './ui/select';
+import { StopListItemContainer } from './map/stop-list-item-container';
 
 const logger = createLogger('StopHistory');
 
@@ -166,17 +167,29 @@ export function StopHistory({
           position="popper"
           className="z-1002 max-h-[40dvh] min-w-48 border-none bg-white/80 text-black backdrop-blur-sm dark:bg-black/80 dark:text-white"
         >
-          {history.map((entry) => (
-            <StopDropdownItem
-              key={entry.snapshot.stopId}
-              stopId={entry.snapshot.stopId}
-              routeTypes={entry.snapshot.routeTypes}
-              meta={lookupStopMeta(entry.snapshot.stopId)}
-              fallbackName={entry.snapshot.name}
-              infoLevel={infoLevel}
-              dataLang={dataLang}
-            />
-          ))}
+          {history.map((entry) => {
+            const meta = lookupStopMeta(entry.snapshot.stopId);
+
+            return (
+              <Fragment key={entry.snapshot.stopId}>
+                {/* <StopDropdownItem
+                  stopId={entry.snapshot.stopId}
+                  routeTypes={entry.snapshot.routeTypes}
+                  meta={meta}
+                  fallbackName={entry.snapshot.name}
+                  infoLevel={infoLevel}
+                  dataLang={dataLang}
+                /> */}
+                <StopListItemContainer
+                  stopId={entry.snapshot.stopId}
+                  meta={meta}
+                  stopReferenceSnapshot={entry.snapshot}
+                  infoLevel={infoLevel}
+                  dataLang={dataLang}
+                />
+              </Fragment>
+            );
+          })}
         </SelectContent>
       </Select>
     </div>
