@@ -56,7 +56,7 @@ export function MultiPaneLayout({
 
   if (orientation === 'horizontal') {
     return (
-      <ResizablePanelGroup key={orientation} orientation="horizontal" className="h-[100dvh] w-full">
+      <ResizablePanelGroup key={orientation} orientation="horizontal" className="h-dvh w-full">
         {sheetPane}
         <ResizableHandle withHandle />
         {mapPane}
@@ -65,7 +65,7 @@ export function MultiPaneLayout({
   }
 
   return (
-    <ResizablePanelGroup key={orientation} orientation="vertical" className="h-[100dvh] w-full">
+    <ResizablePanelGroup key={orientation} orientation="vertical" className="h-dvh w-full">
       {mapPane}
       <ResizableHandle withHandle />
       {sheetPane}
