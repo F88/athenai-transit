@@ -263,9 +263,16 @@ export class LocalStorageStopSelectionRepository implements StopSelectionReposit
         .filter((entry): entry is StopHistoryEntry => entry !== null);
 
       if (entries.length !== rawEntries.length || !isCurrentStoredShape(parsed)) {
+        // Rewriting migrated entries is a self-healing optimization, not core
+        // functionality. If persistence fails (e.g. QuotaExceededError), the
+        // migrated entries are still valid in memory, so return them anyway
+        // instead of surfacing a load failure. The next load retries migration.
         const saveResult = await this.saveHistory(entries);
         if (!saveResult.success) {
-          return saveResult;
+          logger.warn(
+            'Failed to persist migrated stop history; returning entries anyway',
+            saveResult.error,
+          );
         }
       }
 

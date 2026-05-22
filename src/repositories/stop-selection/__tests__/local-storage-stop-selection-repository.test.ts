@@ -183,6 +183,46 @@ describe('LocalStorageStopSelectionRepository', () => {
       }
     });
 
+    it('returns migrated entries even when the self-healing re-save fails', async () => {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          version: 2,
+          entries: [
+            {
+              stopId: 'legacy-flat',
+              fallbackName: 'Legacy Flat',
+              routeTypes: [0, 3],
+              selectedAt: 555,
+            },
+          ],
+        }),
+      );
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+      const repo = new LocalStorageStopSelectionRepository();
+
+      const result = await repo.getHistory();
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual([
+          {
+            snapshot: {
+              stopId: 'legacy-flat',
+              name: 'Legacy Flat',
+              lat: null,
+              lon: null,
+              routeTypes: [0, 3],
+              agencyNames: [],
+            },
+            selectedAt: 555,
+          },
+        ]);
+      }
+    });
+
     it('returns error when storage read throws', async () => {
       vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
         throw new Error('SecurityError');
