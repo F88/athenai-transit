@@ -65,12 +65,18 @@ export function BottomSheetStops({
 
   return (
     <div
-      className="relative min-h-0 flex-1 overflow-y-auto"
+      className="@container relative min-h-0 flex-1 overflow-y-auto"
       ref={contentRef}
       onScroll={scrollFade.handleScroll}
     >
       {scrollFade.showTop && <ScrollFadeEdge position="top" />}
-      <div className="grid grid-cols-1 content-start gap-0 px-4 pb-0 sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-3">
+      {/*
+       * Column count keys off the scroll container's own width (container
+       * query), not the viewport — so the grid stays comfortable whether
+       * this list fills a full-width mobile bottom sheet or the narrower
+       * wide-layout side panel.
+       */}
+      <div className="grid grid-cols-1 content-start gap-0 px-4 pb-0 @xl:grid-cols-2 @xl:gap-x-4 @5xl:grid-cols-3">
         {stopTimes.map((swc, i) => {
           const props: NearbyStopProps = {
             data: swc,

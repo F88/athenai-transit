@@ -95,6 +95,14 @@ export interface BottomSheetProps {
   expanded?: boolean;
   /** Controlled expanded state setter. */
   onExpandedChange?: (expanded: ExpandedStateAction) => void;
+  /**
+   * Layout variant.
+   * - `'sheet'` (default): mobile bottom sheet, fixed to the screen
+   *   bottom with drag-to-expand and a grab handle.
+   * - `'panel'`: a pane of the resizable multi-pane layout. No drag, no
+   *   grab handle, no expand / collapse height switching.
+   */
+  variant?: 'sheet' | 'panel';
 }
 
 export function BottomSheet({
@@ -122,7 +130,9 @@ export function BottomSheet({
   expandedHeightClassName = 'h-[70dvh]',
   expanded: expandedProp,
   onExpandedChange,
+  variant = 'sheet',
 }: BottomSheetProps) {
+  const isPanel = variant === 'panel';
   const {
     showOriginOnly,
     showBoardableOnly,
@@ -266,18 +276,25 @@ export function BottomSheet({
   return (
     <div
       className={cn(
-        'fixed right-0 bottom-0 left-0 z-1000 flex touch-none flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_-2px_12px_rgba(0,0,0,0.15)] transition-[height] duration-300 ease-in-out dark:bg-gray-900',
-        expanded ? expandedHeightClassName : collapsedHeightClassName,
+        'z-1000 flex flex-col overflow-hidden bg-white dark:bg-gray-900',
+        isPanel
+          ? 'h-full w-full shadow-[2px_0_12px_rgba(0,0,0,0.15)]'
+          : cn(
+              'fixed right-0 bottom-0 left-0 touch-none rounded-t-2xl shadow-[0_-2px_12px_rgba(0,0,0,0.15)] transition-[height] duration-300 ease-in-out',
+              expanded ? expandedHeightClassName : collapsedHeightClassName,
+            ),
       )}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
+      onTouchStart={isPanel ? undefined : handleTouchStart}
+      onTouchEnd={isPanel ? undefined : handleTouchEnd}
     >
-      <div
-        className="flex shrink-0 cursor-grab justify-center py-2 pb-1"
-        onClick={() => setExpanded((prevExpanded) => !prevExpanded)}
-      >
-        <div className="h-1 w-9 rounded-sm bg-[#bdbdbd] dark:bg-gray-600" />
-      </div>
+      {!isPanel && (
+        <div
+          className="flex shrink-0 cursor-grab justify-center py-2 pb-1"
+          onClick={() => setExpanded((prevExpanded) => !prevExpanded)}
+        >
+          <div className="h-1 w-9 rounded-sm bg-[#bdbdbd] dark:bg-gray-600" />
+        </div>
+      )}
 
       <BottomSheetHeader
         hasNearbyLoaded={hasNearbyLoaded}

@@ -1,40 +1,18 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { BottomSheet, type BottomSheetProps } from './bottom-sheet';
-import { MapView, type MapViewProps } from './map/map-view';
+import { useEffect, useState } from 'react';
+import { BottomSheet } from './bottom-sheet';
+import { MapView } from './map/map-view';
+import type { LayoutProps } from './layout-props';
 import { useViewportHeight } from '../hooks/use-viewport-height';
 import { resolveMapBottomSheetLayoutPreset } from '../utils/map-bottom-sheet-layout-preset';
 import { createLogger } from '../lib/logger';
-import type { GlobalFilter } from '../types/app/global-filter';
-import type { StopsCounts } from '../types/app/stop';
 
 const logger = createLogger('MapBottomSheetLayout');
 
-interface MapBottomSheetLayoutProps {
-  mapViewProps: Omit<MapViewProps, 'heightClassName'>;
-  bottomSheetProps: Omit<
-    BottomSheetProps,
-    | 'collapsedHeightClassName'
-    | 'expandedHeightClassName'
-    | 'expanded'
-    | 'onExpandedChange'
-    | 'globalFilter'
-    | 'nearbyStopsCounts'
-    | 'filteredNearbyStopsCounts'
-  >;
-  /** App-wide filter state shared with BottomSheet (and forthcoming MapView etc.). */
-  globalFilter: GlobalFilter;
-  /**
-   * Pre-`globalFilter` `NearbyStopsCounts` computed in `app.tsx` from the
-   * settings-filter-applied stop list. Threaded through to BottomSheet /
-   * BottomSheetHeader so filter pills can read counts that don't fluctuate
-   * with `globalFilter` toggles.
-   */
-  nearbyStopsCounts: StopsCounts;
-  /** Post-`globalFilter`, pre-BottomSheet-local-filter counts from `app.tsx`. */
-  filteredNearbyStopsCounts: StopsCounts;
-  mapOverlay?: ReactNode;
-}
-
+/**
+ * Simple-mode layout for small viewports: the map stacked above a
+ * bottom sheet that the user can drag between collapsed and expanded
+ * heights.
+ */
 export function MapBottomSheetLayout({
   mapViewProps,
   bottomSheetProps,
@@ -42,7 +20,7 @@ export function MapBottomSheetLayout({
   nearbyStopsCounts,
   filteredNearbyStopsCounts,
   mapOverlay,
-}: MapBottomSheetLayoutProps) {
+}: LayoutProps) {
   const [expanded, setExpanded] = useState(false);
   const viewportHeight = useViewportHeight();
   const layoutPreset = resolveMapBottomSheetLayoutPreset(viewportHeight);

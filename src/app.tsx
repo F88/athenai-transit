@@ -89,7 +89,7 @@ import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
 import { StopSearchDialog } from './components/dialog/stop-search-dialog';
 import { TimetableModal } from './components/dialog/timetable-modal';
 import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
-import { MapBottomSheetLayout } from './components/map-bottom-sheet-layout';
+import { AppLayout } from './components/app-layout';
 import { TimeControls } from './components/time-controls';
 import { Toaster } from './components/ui/sonner';
 
@@ -1085,7 +1085,7 @@ export default function App() {
 
   return (
     <>
-      <MapBottomSheetLayout
+      <AppLayout
         mapViewProps={{
           inBoundStops,
           radiusStops,
