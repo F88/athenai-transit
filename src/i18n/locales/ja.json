@@ -72,7 +72,8 @@
     }
   },
   "history": {
-    "label": "履歴"
+    "label": "履歴",
+    "saveFailed": "履歴の保存に失敗しました"
   },
   "info": {
     "status": "まだまだ荒削り 鋭意開発中"

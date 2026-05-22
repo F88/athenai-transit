@@ -271,7 +271,25 @@ export default function App() {
   const routeStops = useRouteStops(selectionInfo?.routeIds ?? null, repo);
   // console.debug('routeStops', routeStops.length);
 
-  const { history, recordStopSelection }: UseStopHistoryReturn = useStopHistory(stopSelectionRepo);
+  const {
+    history,
+    lastError: historyError,
+    clearError: clearHistoryError,
+    recordStopSelection,
+  }: UseStopHistoryReturn = useStopHistory(stopSelectionRepo);
+
+  useEffect(() => {
+    if (!historyError) {
+      return;
+    }
+    logger.warn(`history persistence failed: ${historyError}`);
+    toast.error(t('history.saveFailed'), {
+      description: historyError,
+      duration: 2_000,
+    });
+    clearHistoryError();
+  }, [clearHistoryError, historyError, t]);
+
   const {
     anchors,
     lastError: anchorError,
@@ -289,7 +307,7 @@ export default function App() {
     logger.warn(`anchor operation failed: ${anchorError}`);
     toast.error(t('anchor.anchorUpdateFailed'), {
       description: anchorError,
-      duration: 4500,
+      duration: 4_000,
     });
     clearAnchorError();
   }, [anchorError, clearAnchorError, t]);

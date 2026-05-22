@@ -356,6 +356,27 @@ describe('App anchor error toast', () => {
     });
   });
 
+  it('shows toast and clears history error when useStopHistory returns lastError', async () => {
+    const clearHistoryError = vi.fn();
+    mockUseStopHistory.mockReturnValue({
+      history: [],
+      recordStopSelection: vi.fn(),
+      lastError: 'Quota exceeded',
+      clearError: clearHistoryError,
+      clearHistory: vi.fn(),
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('履歴の保存に失敗しました', {
+        description: 'Quota exceeded',
+        duration: 4500,
+      });
+      expect(clearHistoryError).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it('forces omitEmptyStops on for origin filter and keeps toggleOmitEmptyStops as a no-op while forced', async () => {
     mockUseNearbyStopTimes.mockReturnValue({
       stopTimes: [

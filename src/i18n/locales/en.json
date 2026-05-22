@@ -72,7 +72,8 @@
     }
   },
   "history": {
-    "label": "History"
+    "label": "History",
+    "saveFailed": "Failed to save history"
   },
   "info": {
     "status": "Work in progress"
