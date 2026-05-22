@@ -14,7 +14,7 @@ import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-v
 import { APP_ROUTE_TYPES } from '../config/route-types';
 import { cn } from '../lib/utils';
 import { BottomSheetHeader } from './bottom-sheet-header';
-import { BottomSheetStops } from './bottom-sheet-stops';
+import { StopGrid } from './stop-grid';
 
 type ExpandedStateAction = boolean | ((prevExpanded: boolean) => boolean);
 
@@ -321,7 +321,7 @@ export function BottomSheet({
         onToggleRouteType={toggleRouteType}
         onToggleAgency={toggleAgency}
       />
-      <BottomSheetStops
+      <StopGrid
         stopTimes={trimmedStopTimes}
         timetableEntriesStateByStopId={timetableEntriesStateByStopId}
         selectedStopId={selectedStopId}

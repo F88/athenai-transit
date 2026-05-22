@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { useScrollFades } from '@/hooks/use-scroll-fades';
+import { useScrollFades } from '../hooks/use-scroll-fades';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { TimetableEntriesState } from '../types/app/transit';
@@ -10,7 +10,7 @@ import { NearbyStop, type NearbyStopProps } from './nearby-stop';
 /** Number of stops to render immediately without lazy loading. */
 const EAGER_RENDER_COUNT = 6;
 
-interface BottomSheetStopsProps {
+interface StopGridProps {
   stopTimes: StopWithContext[];
   /**
    * Map from stop_id to the per-stop pre-`globalFilter`
@@ -42,7 +42,7 @@ interface BottomSheetStopsProps {
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
-export function BottomSheetStops({
+export function StopGrid({
   stopTimes,
   timetableEntriesStateByStopId,
   selectedStopId,
@@ -59,7 +59,7 @@ export function BottomSheetStops({
   onToggleAnchor,
   onOpenTripInspectionByStopId,
   onInspectTrip,
-}: BottomSheetStopsProps) {
+}: StopGridProps) {
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
 
