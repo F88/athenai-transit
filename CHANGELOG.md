@@ -9,6 +9,36 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.22]
+
+### Added
+
+- Error handling: React root 用の `RootErrorBoundary` と global error / unhandled rejection handler を追加。recover 不能な runtime error を fallback UI で表示し、cache clear + reload / reload の recovery action を選べるようにした。error message / stack trace の整形 helper、cache recovery helper、関連 i18n 文言と Storybook story も追加した。
+- Storage: Web Storage API を result 型で扱う `WebStorageItem` helper を追加。localStorage が unavailable / read-write-remove で throw する環境でも repository 層で失敗を扱いやすくした。
+- Stop history: `StopReferenceSnapshot` 型と snapshot 生成 helper を追加し、停留所履歴が stop id/name/coordinates/route types/agency names/platform code を durable に保持できるようにした。
+- Stop history persistence: 履歴専用の `StopSelectionRepository` / `LocalStorageStopSelectionRepository` を追加。localStorage の validation / migration / self-heal と、履歴保存失敗時の error reporting を repository に集約した。
+- Stop row UI: `StopListItem` / `StopListItemContainer` と presentation builder を追加し、現在の GTFS metadata がない履歴・anchor でも snapshot から fallback 表示できる共通 row を用意した。
+- Anchor / Portal: 専用の `AnchorRepository` / `LocalStorageAnchorRepository` を追加。旧 `portals` localStorage の flat entry を snapshot entry へ migrate / self-heal する。
+
+### Changed
+
+- Stop history: 履歴 entry を `StopReferenceSnapshot` ベースに変更。履歴選択時は現在の repository metadata が取得できる場合は最新情報で snapshot を更新し、取得できない場合は保存済み snapshot から最小 `Stop` を復元して map selection / navigation を継続する。
+- Stop history: app 側に分散していた stop metadata lookup / route type 解決 / history recording の流れを整理し、`buildHistoryNavigationPayload` と `createStopReferenceSnapshot` を中心にした durable selection flow に統一した。
+- Stop history UI: dropdown row を `StopListItemContainer` ベースへ切り替え、metadata がある場合は最新データ、ない場合は保存済み snapshot から表示するようにした。agency badge / platform code / verbose stop id の表示も shared presentation に寄せた。
+- Anchor / Portal: 履歴管理と同じ durable `StopReferenceSnapshot` ベースで anchor を保存するように変更。`useAnchors` の公開 API も `addAnchor` / `removeAnchor` / `updateAnchor` / `batchUpdateAnchors` / `hasAnchor` に整理した。
+- Portal: dropdown row を history と同じ `StopListItemContainer` ベースの表示に統一し、現在の GTFS metadata が取得できない anchor でも保存済み snapshot から表示・選択できるようにした。
+- Repository cleanup: 旧 generic `UserDataRepository` と localStorage user-data repository を削除し、履歴は `StopSelectionRepository`、anchor は `AnchorRepository` に責務を分離した。
+- App boot: `AppBootShell` の layout / spacing / tips markup を調整し、bootstrap 中の表示崩れを抑えた。
+- Data: transit data、pipeline resource check snapshot、download metadata を更新した。
+
+### Fixed
+
+- Error handling: global error overlay の focus 管理を改善し、cache cleanup 後は reload が確実に実行されるようにした。debug 用の error UI では error message と stack trace が失われないようにした。
+- Stop history: metadata がない履歴を再選択したときにも durable snapshot を保持・保存するようにし、self-heal save が失敗しても既存履歴を消さないようにした。
+- Stop history: snapshot 生成時に agency names を保持するよう修正し、履歴 dropdown の fallback 表示で事業者情報が欠落しないようにした。
+- Stop history: 履歴 persistence error を toast で通知し、localStorage 初期化時の fallback path をテストでカバーした。
+- Anchor migration: snapshot 側の `routeTypes` が壊れている保存データでも、legacy flat `routeTypes` が valid なら fallback として使って anchor entry を復元するようにした。正規化後の保存内容が元データと異なる場合は localStorage を self-heal する。
+
 ## [2026.05.20]
 
 ### Added
