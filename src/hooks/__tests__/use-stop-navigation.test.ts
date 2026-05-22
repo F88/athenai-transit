@@ -1,19 +1,15 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { makeStop, makeStopMeta } from '../../__tests__/helpers';
-import type { AppRouteTypeValue } from '../../types/app/transit';
 import { useStopNavigation, type UseStopNavigationParams } from '../use-stop-navigation';
 
 function makeParams(overrides: Partial<UseStopNavigationParams> = {}): UseStopNavigationParams {
   return {
-    dataLang: [],
-    routeTypeMap: new Map<string, AppRouteTypeValue[]>(),
     radiusStops: [],
     inBoundStops: [],
     disableAutoLocate: vi.fn(),
     selectStopById: vi.fn(),
     focusStop: vi.fn(),
-    recordStopSelection: vi.fn(),
     ...overrides,
   };
 }
@@ -40,13 +36,10 @@ describe('useStopNavigation', () => {
         agency_colors: [],
       },
     ];
-    const recordStopSelection = vi.fn();
     const { result } = renderHook(() =>
       useStopNavigation(
         makeParams({
-          dataLang: ['en'],
           radiusStops: [stopMeta],
-          recordStopSelection,
         }),
       ),
     );
@@ -54,8 +47,6 @@ describe('useStopNavigation', () => {
     act(() => {
       result.current.selectStop({ stopId: 'A', reason: 'select-bottom-sheet' });
     });
-
-    expect(recordStopSelection).not.toHaveBeenCalled();
   });
 
   it('selectStop disables auto-locate and selects the stop', () => {
@@ -63,16 +54,12 @@ describe('useStopNavigation', () => {
     const stopMeta = makeStopMeta(stop);
     const disableAutoLocate = vi.fn();
     const selectStopById = vi.fn();
-    const recordStopSelection = vi.fn();
-    const routeTypeMap = new Map<string, AppRouteTypeValue[]>([['A', [3]]]);
     const { result } = renderHook(() =>
       useStopNavigation(
         makeParams({
-          routeTypeMap,
           radiusStops: [stopMeta],
           disableAutoLocate,
           selectStopById,
-          recordStopSelection,
         }),
       ),
     );
@@ -83,22 +70,17 @@ describe('useStopNavigation', () => {
 
     expect(disableAutoLocate).toHaveBeenCalledWith('select-bottom-sheet');
     expect(selectStopById).toHaveBeenCalledWith('A', undefined);
-    expect(recordStopSelection).not.toHaveBeenCalled();
   });
 
   it('selectStop uses fallback stop when visible meta is missing', () => {
     const stop = makeStop('A');
     const disableAutoLocate = vi.fn();
     const selectStopById = vi.fn();
-    const recordStopSelection = vi.fn();
-    const routeTypeMap = new Map<string, AppRouteTypeValue[]>([['A', [1]]]);
     const { result } = renderHook(() =>
       useStopNavigation(
         makeParams({
-          routeTypeMap,
           disableAutoLocate,
           selectStopById,
-          recordStopSelection,
         }),
       ),
     );
@@ -108,20 +90,17 @@ describe('useStopNavigation', () => {
     });
 
     expect(selectStopById).toHaveBeenCalledWith('A', stop);
-    expect(recordStopSelection).not.toHaveBeenCalled();
   });
 
   it('navigateAndFocusStop disables auto-locate and focuses the stop', () => {
     const stop = makeStop('A');
     const disableAutoLocate = vi.fn();
     const focusStop = vi.fn();
-    const recordStopSelection = vi.fn();
     const { result } = renderHook(() =>
       useStopNavigation(
         makeParams({
           disableAutoLocate,
           focusStop,
-          recordStopSelection,
         }),
       ),
     );
@@ -132,20 +111,17 @@ describe('useStopNavigation', () => {
 
     expect(disableAutoLocate).toHaveBeenCalledWith('select-history');
     expect(focusStop).toHaveBeenCalledWith(stop);
-    expect(recordStopSelection).not.toHaveBeenCalled();
   });
 
   it('navigateAndFocusStop does not record history directly', () => {
     const stop = makeStop('A');
     const disableAutoLocate = vi.fn();
     const focusStop = vi.fn();
-    const recordStopSelection = vi.fn();
     const { result } = renderHook(() =>
       useStopNavigation(
         makeParams({
           disableAutoLocate,
           focusStop,
-          recordStopSelection,
         }),
       ),
     );
@@ -156,6 +132,5 @@ describe('useStopNavigation', () => {
 
     expect(disableAutoLocate).toHaveBeenCalledWith('select-history');
     expect(focusStop).toHaveBeenCalledWith(stop);
-    expect(recordStopSelection).not.toHaveBeenCalled();
   });
 });
