@@ -19,7 +19,7 @@ function makeParams(overrides: Partial<UseStopNavigationParams> = {}): UseStopNa
 }
 
 describe('useStopNavigation', () => {
-  it('selectStopWithFallback does not record translated snapshot data directly', () => {
+  it('selectStop does not record translated snapshot data directly', () => {
     const stopMeta = makeStopMeta('A');
     stopMeta.stop.stop_name = '駅A';
     stopMeta.stop.stop_names = { en: 'Station A' };
@@ -52,13 +52,13 @@ describe('useStopNavigation', () => {
     );
 
     act(() => {
-      result.current.selectStopWithFallback('A', 'select-bottom-sheet');
+      result.current.selectStop({ stopId: 'A', reason: 'select-bottom-sheet' });
     });
 
     expect(recordStopSelection).not.toHaveBeenCalled();
   });
 
-  it('selectStopWithFallback disables auto-locate and selects the stop', () => {
+  it('selectStop disables auto-locate and selects the stop', () => {
     const stop = makeStop('A');
     const stopMeta = makeStopMeta(stop);
     const disableAutoLocate = vi.fn();
@@ -78,7 +78,7 @@ describe('useStopNavigation', () => {
     );
 
     act(() => {
-      result.current.selectStopWithFallback('A', 'select-bottom-sheet');
+      result.current.selectStop({ stopId: 'A', reason: 'select-bottom-sheet' });
     });
 
     expect(disableAutoLocate).toHaveBeenCalledWith('select-bottom-sheet');
@@ -86,7 +86,7 @@ describe('useStopNavigation', () => {
     expect(recordStopSelection).not.toHaveBeenCalled();
   });
 
-  it('selectStopWithFallback uses fallback stop when visible meta is missing', () => {
+  it('selectStop uses fallback stop when visible meta is missing', () => {
     const stop = makeStop('A');
     const disableAutoLocate = vi.fn();
     const selectStopById = vi.fn();
@@ -104,7 +104,7 @@ describe('useStopNavigation', () => {
     );
 
     act(() => {
-      result.current.selectStopWithFallback('A', 'select-marker', stop);
+      result.current.selectStop({ stopId: 'A', reason: 'select-marker', fallbackStop: stop });
     });
 
     expect(selectStopById).toHaveBeenCalledWith('A', stop);

@@ -15,11 +15,7 @@ export interface UseStopNavigationParams {
 }
 
 export interface UseStopNavigationReturn {
-  selectStopWithFallback: (
-    stopId: string,
-    reason: AutoLocateOffReason,
-    fallbackStop?: Stop,
-  ) => void;
+  selectStop: (args: { stopId: string; reason: AutoLocateOffReason; fallbackStop?: Stop }) => void;
   navigateAndFocusStop: (reason: AutoLocateOffReason, stop: Stop) => void;
 }
 
@@ -29,11 +25,19 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
   // Immediate selection helper for paths that already have a concrete Stop or
   // a UI-local stopId. Arbitrary persistent stop IDs such as URL params must
   // still go through `repo.getStopMetaById` before calling into navigation.
-  const selectStopWithFallback = useCallback(
-    (stopId: string, reason: AutoLocateOffReason, fallbackStop?: Stop) => {
+  const selectStop = useCallback(
+    ({
+      reason,
+      stopId,
+      fallbackStop,
+    }: {
+      reason: AutoLocateOffReason;
+      stopId: string;
+      fallbackStop?: Stop;
+    }) => {
       if (logger.isEnabled('debug')) {
         logger.debug(
-          `selectStopWithFallback: reason=${reason}, stopId=${stopId}, name=${fallbackStop?.stop_name ?? 'unknown'}`,
+          `selectStop: reason=${reason}, stopId=${stopId}, name=${fallbackStop?.stop_name ?? 'unknown'}`,
         );
       }
       disableAutoLocate(reason);
@@ -51,7 +55,7 @@ export function useStopNavigation(params: UseStopNavigationParams): UseStopNavig
   );
 
   return {
-    selectStopWithFallback,
+    selectStop,
     navigateAndFocusStop,
   };
 }

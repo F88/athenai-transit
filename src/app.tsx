@@ -355,7 +355,7 @@ export default function App() {
     [historyStopMetaMap],
   );
 
-  const { selectStopWithFallback, navigateAndFocusStop } = useStopNavigation({
+  const { selectStop, navigateAndFocusStop } = useStopNavigation({
     radiusStops,
     inBoundStops,
     disableAutoLocate,
@@ -417,20 +417,20 @@ export default function App() {
   // `moveend` events ineligible for nearby/in-bounds refetch.
   const handleSelectStop = useCallback(
     (stop: Stop) => {
-      selectStopWithFallback(stop.stop_id, 'select-marker', stop);
+      selectStop({ reason: 'select-marker', stopId: stop.stop_id, fallbackStop: stop });
       recordVisibleStopSelectionById(stop.stop_id, stop);
     },
-    [recordVisibleStopSelectionById, selectStopWithFallback],
+    [recordVisibleStopSelectionById, selectStop],
   );
 
   // Wrap selectStopById to also record in history.
   // See `handleSelectStop` for the rationale of disabling auto-tracking.
   const handleSelectStopById = useCallback(
     (stopId: string) => {
-      selectStopWithFallback(stopId, 'select-bottom-sheet');
+      selectStop({ reason: 'select-bottom-sheet', stopId });
       recordVisibleStopSelectionById(stopId);
     },
-    [recordVisibleStopSelectionById, selectStopWithFallback],
+    [recordVisibleStopSelectionById, selectStop],
   );
 
   // Apply ?stop= query param: select and pan to the stop after data loads.
