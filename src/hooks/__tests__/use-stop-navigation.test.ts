@@ -1,7 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { makeStop, makeStopMeta } from '../../__tests__/helpers';
-import { createStopReferenceSnapshot } from '../../domain/transit/stop-reference-snapshot';
 import type { AppRouteTypeValue } from '../../types/app/transit';
 import { useStopNavigation, type UseStopNavigationParams } from '../use-stop-navigation';
 
@@ -20,7 +19,7 @@ function makeParams(overrides: Partial<UseStopNavigationParams> = {}): UseStopNa
 }
 
 describe('useStopNavigation', () => {
-  it('stores resolved display strings when dataLang prefers translated names', () => {
+  it('selectStopWithFallback does not record translated snapshot data directly', () => {
     const stopMeta = makeStopMeta('A');
     stopMeta.stop.stop_name = '駅A';
     stopMeta.stop.stop_names = { en: 'Station A' };
@@ -56,15 +55,10 @@ describe('useStopNavigation', () => {
       result.current.selectStopWithFallback('A', 'select-bottom-sheet');
     });
 
-    expect(recordStopSelection).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'Station A',
-        agencyNames: ['Agency A'],
-      }),
-    );
+    expect(recordStopSelection).not.toHaveBeenCalled();
   });
 
-  it('selectStopWithFallback disables auto-locate, selects the stop, and pushes resolved meta', () => {
+  it('selectStopWithFallback disables auto-locate and selects the stop', () => {
     const stop = makeStop('A');
     const stopMeta = makeStopMeta(stop);
     const disableAutoLocate = vi.fn();
@@ -89,7 +83,7 @@ describe('useStopNavigation', () => {
 
     expect(disableAutoLocate).toHaveBeenCalledWith('select-bottom-sheet');
     expect(selectStopById).toHaveBeenCalledWith('A', undefined);
-    expect(recordStopSelection).toHaveBeenCalledWith(createStopReferenceSnapshot(stop, [3]));
+    expect(recordStopSelection).not.toHaveBeenCalled();
   });
 
   it('selectStopWithFallback uses fallback stop when visible meta is missing', () => {
@@ -114,7 +108,7 @@ describe('useStopNavigation', () => {
     });
 
     expect(selectStopById).toHaveBeenCalledWith('A', stop);
-    expect(recordStopSelection).toHaveBeenCalledWith(createStopReferenceSnapshot(stop, [1]));
+    expect(recordStopSelection).not.toHaveBeenCalled();
   });
 
   it('navigateAndFocusStop disables auto-locate and focuses the stop', () => {

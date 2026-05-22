@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import type { AutoLocateOffReason } from './types/app/auto-locate';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { StopsCounts } from './types/app/stop';
-import type { StopReferenceSnapshot } from './types/app/stop-reference-snapshot';
 import type { AppRouteTypeValue, Stop, TimetableEntriesState } from './types/app/transit';
 import type {
   StopWithContext,
@@ -35,6 +34,7 @@ import { formatDateKey } from './domain/transit/calendar-utils';
 import { computeStopsCounts } from './domain/transit/compute-stops-counts';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
+import { findVisibleStopMetaById } from './domain/transit/stop-meta-lookup';
 import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
 import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-day';
 import { type StopHistoryEntry } from './domain/transit/stop-history';
@@ -355,23 +355,44 @@ export default function App() {
     [historyStopMetaMap],
   );
 
-  const recordStopSelectionInHistory = useCallback(
-    (selection: StopReferenceSnapshot) => {
-      void recordStopSelection(selection);
-    },
-    [recordStopSelection],
-  );
-
   const { selectStopWithFallback, navigateAndFocusStop } = useStopNavigation({
-    dataLang: langChain,
-    routeTypeMap,
     radiusStops,
     inBoundStops,
     disableAutoLocate,
     selectStopById,
     focusStop,
-    recordStopSelection: recordStopSelectionInHistory,
   });
+
+  const recordVisibleStopSelectionById = useCallback(
+    (stopId: string, fallbackStop?: Stop) => {
+      const stopMeta = findVisibleStopMetaById(stopId, radiusStops, inBoundStops);
+      if (stopMeta != null) {
+        const routeTypes = resolveStopRouteTypes({
+          stopId: stopMeta.stop.stop_id,
+          routeTypeMap,
+          routes: stopMeta.routes,
+          unknownPolicy: 'include-unknown',
+        });
+        const snapshot = createStopReferenceSnapshot(stopMeta, routeTypes, langChain);
+        void recordStopSelection(snapshot);
+        return;
+      }
+
+      if (fallbackStop == null) {
+        return;
+      }
+
+      const routeTypes = resolveStopRouteTypes({
+        stopId: fallbackStop.stop_id,
+        routeTypeMap,
+        routes: [],
+        unknownPolicy: 'include-unknown',
+      });
+      const snapshot = createStopReferenceSnapshot(fallbackStop, routeTypes, langChain);
+      void recordStopSelection(snapshot);
+    },
+    [inBoundStops, langChain, radiusStops, recordStopSelection, routeTypeMap],
+  );
 
   const navigateAndRecordStopMetaSelection = useCallback(
     (reason: AutoLocateOffReason, stopMeta: StopWithMeta) => {
@@ -397,8 +418,9 @@ export default function App() {
   const handleSelectStop = useCallback(
     (stop: Stop) => {
       selectStopWithFallback(stop.stop_id, 'select-marker', stop);
+      recordVisibleStopSelectionById(stop.stop_id, stop);
     },
-    [selectStopWithFallback],
+    [recordVisibleStopSelectionById, selectStopWithFallback],
   );
 
   // Wrap selectStopById to also record in history.
@@ -406,8 +428,9 @@ export default function App() {
   const handleSelectStopById = useCallback(
     (stopId: string) => {
       selectStopWithFallback(stopId, 'select-bottom-sheet');
+      recordVisibleStopSelectionById(stopId);
     },
-    [selectStopWithFallback],
+    [recordVisibleStopSelectionById, selectStopWithFallback],
   );
 
   // Apply ?stop= query param: select and pan to the stop after data loads.
