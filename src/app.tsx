@@ -363,7 +363,7 @@ export default function App() {
     focusStop,
   });
 
-  const recordVisibleStopSelectionById = useCallback(
+  const recordStopSelectionByVisibleStop = useCallback(
     (stopId: string, fallbackStop?: Stop) => {
       const stopMeta = findVisibleStopMetaById(stopId, radiusStops, inBoundStops);
       if (stopMeta != null) {
@@ -418,9 +418,9 @@ export default function App() {
   const handleSelectStop = useCallback(
     (stop: Stop) => {
       selectStop({ reason: 'select-marker', stopId: stop.stop_id, fallbackStop: stop });
-      recordVisibleStopSelectionById(stop.stop_id, stop);
+      recordStopSelectionByVisibleStop(stop.stop_id, stop);
     },
-    [recordVisibleStopSelectionById, selectStop],
+    [recordStopSelectionByVisibleStop, selectStop],
   );
 
   // Wrap selectStopById to also record in history.
@@ -428,9 +428,9 @@ export default function App() {
   const handleSelectStopById = useCallback(
     (stopId: string) => {
       selectStop({ reason: 'select-bottom-sheet', stopId });
-      recordVisibleStopSelectionById(stopId);
+      recordStopSelectionByVisibleStop(stopId);
     },
-    [recordVisibleStopSelectionById, selectStop],
+    [recordStopSelectionByVisibleStop, selectStop],
   );
 
   // Apply ?stop= query param: select and pan to the stop after data loads.
