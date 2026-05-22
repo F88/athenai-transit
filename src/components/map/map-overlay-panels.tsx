@@ -157,7 +157,7 @@ export function MapOverlayPanels({
           anchors={anchors}
           infoLevel={infoLevel}
           dataLang={dataLang}
-          lookupAnchorStopMeta={lookupAnchorStopMeta}
+          lookupStopMeta={lookupAnchorStopMeta}
           onSelect={onPortalSelect}
           onRemove={onPortalRemove}
         />
