@@ -1,7 +1,8 @@
-import { act, render, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n';
 import App from '../app';
+import { RootErrorBoundary } from '../components/error-boundary';
 import { makeRepo, makeRoute, makeStop, makeStopMeta } from './helpers';
 import type { StopHistoryEntry } from '../domain/transit/stop-history';
 import type { UseStopHistoryReturn } from '../hooks/use-stop-history';
@@ -350,7 +351,7 @@ describe('App anchor error toast', () => {
     await waitFor(() => {
       expect(mockToastError).toHaveBeenCalledWith('アンカー更新に失敗しました', {
         description: 'Duplicate stop: A',
-        duration: 4500,
+        duration: 4000,
       });
       expect(mockClearAnchorError).toHaveBeenCalledTimes(1);
     });
@@ -371,10 +372,44 @@ describe('App anchor error toast', () => {
     await waitFor(() => {
       expect(mockToastError).toHaveBeenCalledWith('履歴の保存に失敗しました', {
         description: 'Quota exceeded',
-        duration: 4500,
+        duration: 2000,
       });
       expect(clearHistoryError).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('shows the error boundary fallback when localStorage getter throws during app init', async () => {
+    const originalDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('Access denied', 'SecurityError');
+      },
+    });
+
+    try {
+      render(
+        <RootErrorBoundary>
+          <App />
+        </RootErrorBoundary>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('問題が発生しました')).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            'アプリの表示中にエラーが発生しました。再読み込みで回復しない場合は、キャッシュを消去してお試しください。',
+          ),
+        ).toBeInTheDocument();
+      });
+    } finally {
+      if (originalDescriptor) {
+        Object.defineProperty(window, 'localStorage', originalDescriptor);
+      }
+      consoleErrorSpy.mockRestore();
+    }
   });
 
   it('forces omitEmptyStops on for origin filter and keeps toggleOmitEmptyStops as a no-op while forced', async () => {
