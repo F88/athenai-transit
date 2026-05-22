@@ -1,29 +1,18 @@
-import type { AppRouteTypeValue } from '../../types/app/transit';
-import type { StopWithMeta } from '../../types/app/transit-composed';
+import type { StopReferenceSnapshot } from '@/types/app/stop-reference-snapshot';
+import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
+import type { StopWithMeta } from '@/types/app/transit-composed';
+
+import { createStopReferenceSnapshot } from '@/domain/transit/stop-reference-snapshot';
 
 /** Maximum number of anchor entries. */
 export const MAX_ANCHOR_SIZE = 100;
 
 /**
- * A lightweight anchor (bookmarked stop) entry.
- *
- * Stores only the fields needed for display (name, emoji) and
- * map navigation (lat/lon). Unlike {@link StopHistoryEntry} which
- * snapshots the full StopWithMeta, AnchorEntry is resilient to
- * GTFS data updates because it does not store agencies, routes,
- * or distance.
+ * A durable anchor (bookmarked stop) entry.
  */
 export interface AnchorEntry {
-  /** GTFS stop_id. Primary key — immutable after creation. */
-  stopId: string;
-  /** Display name snapshot. Refreshed from GTFS data on app load. */
-  stopName: string;
-  /** Latitude snapshot. Refreshed from GTFS data on app load. */
-  stopLat: number;
-  /** Longitude snapshot. Refreshed from GTFS data on app load. */
-  stopLon: number;
-  /** GTFS route_type values for emoji display. Refreshed from GTFS data on app load. */
-  routeTypes: AppRouteTypeValue[];
+  /** Durable stop reference used for fallback rendering and navigation. */
+  snapshot: StopReferenceSnapshot;
   /** Epoch ms when the anchor was created. Immutable. */
   createdAt: number;
   /**
@@ -52,7 +41,7 @@ export function addAnchor(
   entry: Omit<AnchorEntry, 'createdAt'>,
   now: number,
 ): AnchorEntry[] {
-  if (anchors.some((a) => a.stopId === entry.stopId)) {
+  if (anchors.some((a) => a.snapshot.stopId === entry.snapshot.stopId)) {
     return anchors;
   }
   const newEntry: AnchorEntry = { ...entry, createdAt: now };
@@ -75,7 +64,7 @@ export function updateAnchor(
   anchors: AnchorEntry[],
   update: Omit<AnchorEntry, 'createdAt'>,
 ): AnchorEntry[] {
-  const index = anchors.findIndex((a) => a.stopId === update.stopId);
+  const index = anchors.findIndex((a) => a.snapshot.stopId === update.snapshot.stopId);
   if (index === -1) {
     return anchors;
   }
@@ -87,12 +76,16 @@ export function updateAnchor(
   };
   // Skip update if nothing changed
   if (
-    existing.stopName === updated.stopName &&
-    existing.stopLat === updated.stopLat &&
-    existing.stopLon === updated.stopLon &&
+    existing.snapshot.stopId === updated.snapshot.stopId &&
+    existing.snapshot.name === updated.snapshot.name &&
+    existing.snapshot.lat === updated.snapshot.lat &&
+    existing.snapshot.lon === updated.snapshot.lon &&
+    existing.snapshot.platformCode === updated.snapshot.platformCode &&
     existing.portal === updated.portal &&
-    existing.routeTypes.length === updated.routeTypes.length &&
-    existing.routeTypes.every((rt, i) => rt === updated.routeTypes[i])
+    existing.snapshot.routeTypes.length === updated.snapshot.routeTypes.length &&
+    existing.snapshot.routeTypes.every((rt, i) => rt === updated.snapshot.routeTypes[i]) &&
+    existing.snapshot.agencyNames.length === updated.snapshot.agencyNames.length &&
+    existing.snapshot.agencyNames.every((name, i) => name === updated.snapshot.agencyNames[i])
   ) {
     return anchors;
   }
@@ -100,7 +93,6 @@ export function updateAnchor(
   next[index] = updated;
   return next;
 }
-
 /**
  * Removes a stop from the anchor list by stopId.
  *
@@ -109,10 +101,10 @@ export function updateAnchor(
  * @returns New anchor list without the specified stop, or the original list if not found.
  */
 export function removeAnchor(anchors: AnchorEntry[], stopId: string): AnchorEntry[] {
-  if (!anchors.some((a) => a.stopId === stopId)) {
+  if (!anchors.some((a) => a.snapshot.stopId === stopId)) {
     return anchors;
   }
-  return anchors.filter((a) => a.stopId !== stopId);
+  return anchors.filter((a) => a.snapshot.stopId !== stopId);
 }
 
 /**
@@ -123,18 +115,18 @@ export function removeAnchor(anchors: AnchorEntry[], stopId: string): AnchorEntr
  * @returns True if the stop is in the anchor list.
  */
 export function isAnchor(anchors: AnchorEntry[], stopId: string): boolean {
-  return anchors.some((a) => a.stopId === stopId);
+  return anchors.some((a) => a.snapshot.stopId === stopId);
 }
 
 /**
  * Builds update entries for refreshing anchors with latest GTFS data.
  *
  * For each anchor that has a matching StopWithMeta, produces an update
- * with the latest stopName, stopLat, stopLon, and routeTypes. Anchors
- * without a match (removed from GTFS) are skipped. routeTypes are
- * derived from meta.routes (deduplicated, sorted ascending to match
- * stopRouteTypeMap), falling back to the anchor's existing routeTypes
- * when the stop has no routes.
+ * with a refreshed StopReferenceSnapshot and the existing portal value.
+ * Anchors without a match (removed from GTFS) are skipped. routeTypes
+ * inside the refreshed snapshot are derived from meta.routes
+ * (deduplicated, sorted ascending to match stopRouteTypeMap), falling
+ * back to the anchor's existing routeTypes when the stop has no routes.
  *
  * Only entries where at least one field differs from the current
  * anchor are included. Returns an empty array when nothing needs
@@ -147,36 +139,58 @@ export function isAnchor(anchors: AnchorEntry[], stopId: string): boolean {
 export function buildAnchorRefreshUpdates(
   anchors: AnchorEntry[],
   metas: StopWithMeta[],
+  preferredDisplayLangs: readonly string[],
 ): Omit<AnchorEntry, 'createdAt'>[] {
   if (metas.length === 0) {
     return [];
   }
   const metaMap = new Map(metas.map((m) => [m.stop.stop_id, m]));
   return anchors
-    .filter((a) => metaMap.has(a.stopId))
+    .filter((a) => metaMap.has(a.snapshot.stopId))
     .map((anchor) => {
-      const meta = metaMap.get(anchor.stopId)!;
+      const meta = metaMap.get(anchor.snapshot.stopId)!;
+      const routeTypes: AppRouteTypeValue[] =
+        meta.routes.length > 0
+          ? [...new Set(meta.routes.map((route) => route.route_type))].sort((a, b) => a - b)
+          : [...anchor.snapshot.routeTypes];
       return {
         anchor,
         update: {
-          stopId: anchor.stopId,
-          stopName: meta.stop.stop_name,
-          stopLat: meta.stop.stop_lat,
-          stopLon: meta.stop.stop_lon,
-          routeTypes:
-            meta.routes.length > 0
-              ? [...new Set(meta.routes.map((r) => r.route_type))].sort((a, b) => a - b)
-              : anchor.routeTypes,
+          snapshot: createStopReferenceSnapshot(meta, routeTypes, preferredDisplayLangs),
+          portal: anchor.portal,
         },
       };
     })
     .filter(
       ({ anchor, update }) =>
-        anchor.stopName !== update.stopName ||
-        anchor.stopLat !== update.stopLat ||
-        anchor.stopLon !== update.stopLon ||
-        anchor.routeTypes.length !== update.routeTypes.length ||
-        anchor.routeTypes.some((rt, i) => rt !== update.routeTypes[i]),
+        anchor.snapshot.name !== update.snapshot.name ||
+        anchor.snapshot.lat !== update.snapshot.lat ||
+        anchor.snapshot.lon !== update.snapshot.lon ||
+        anchor.snapshot.platformCode !== update.snapshot.platformCode ||
+        anchor.snapshot.routeTypes.length !== update.snapshot.routeTypes.length ||
+        anchor.snapshot.routeTypes.some((rt, i) => rt !== update.snapshot.routeTypes[i]) ||
+        anchor.snapshot.agencyNames.length !== update.snapshot.agencyNames.length ||
+        anchor.snapshot.agencyNames.some((name, i) => name !== update.snapshot.agencyNames[i]),
     )
     .map(({ update }) => update);
+}
+
+/**
+ * Build a minimal Stop for anchor navigation from the persisted snapshot.
+ */
+export function buildAnchorSelectionStop(entry: AnchorEntry): Stop | null {
+  if (entry.snapshot.lat === null || entry.snapshot.lon === null) {
+    return null;
+  }
+
+  return {
+    stop_id: entry.snapshot.stopId,
+    stop_name: entry.snapshot.name,
+    stop_names: {},
+    stop_lat: entry.snapshot.lat,
+    stop_lon: entry.snapshot.lon,
+    location_type: 0,
+    agency_id: '',
+    platform_code: entry.snapshot.platformCode,
+  };
 }

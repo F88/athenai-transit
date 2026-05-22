@@ -1,11 +1,16 @@
-import { useState } from 'react';
-import type { InfoLevel } from '../types/app/settings';
-import type { AnchorEntry } from '../domain/portal/anchor';
-import type { StopWithMeta } from '../types/app/transit-composed';
 import { DoorOpen } from 'lucide-react';
-import { createLogger } from '../lib/logger';
-import { StopDropdownItem } from './stop/stop-dropdown-item';
-import { Select, SelectContent, SelectTrigger } from './ui/select';
+import { Fragment, useState } from 'react';
+
+import { createLogger } from '@/lib/logger';
+
+import type { InfoLevel } from '@/types/app/settings';
+import type { StopWithMeta } from '@/types/app/transit-composed';
+
+import type { AnchorEntry } from '@/domain/portal/anchor';
+
+// import { StopDropdownItem } from '@/components/stop/stop-dropdown-item';
+import { Select, SelectContent, SelectTrigger } from '@/components/ui/select';
+import { StopListItemContainer } from './map/stop-list-item-container';
 
 const logger = createLogger('Portals');
 
@@ -22,11 +27,11 @@ interface PortalsProps {
    * added translations flow through without needing to rewrite the
    * stored anchor entry.
    */
-  lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
+  lookupStopMeta: (stopId: string) => StopWithMeta | null;
   onSelect: (entry: AnchorEntry) => void;
   /**
    * Removes the anchor for an entry whose stop_id is no longer
-   * resolvable in the current GTFS dataset (`lookupAnchorStopMeta`
+   * resolvable in the current GTFS dataset (`lookupStopMeta`
    * returned `null`). The trash button is rendered inline on the
    * orphan row and only those rows; rows with valid `meta` do not
    * surface a delete affordance.
@@ -52,7 +57,7 @@ export function Portals({
   anchors,
   infoLevel,
   dataLang,
-  lookupAnchorStopMeta,
+  lookupStopMeta,
   onSelect,
   onRemove,
 }: PortalsProps) {
@@ -62,12 +67,12 @@ export function Portals({
     return null;
   }
 
-  const anchorMap = new Map(anchors.map((a) => [a.stopId, a]));
+  const anchorMap = new Map(anchors.map((a) => [a.snapshot.stopId, a]));
 
   const handleValueChange = (stopId: string) => {
     const entry = anchorMap.get(stopId);
     if (entry) {
-      logger.debug(`select: stopId=${stopId}, name=${entry.stopName}`);
+      logger.debug(`select: stopId=${stopId}, name=${entry.snapshot.name}`);
       onSelect(entry);
     }
   };
@@ -90,18 +95,32 @@ export function Portals({
           position="popper"
           className="z-1002 max-h-[40dvh] min-w-48 border-none bg-white/80 text-black backdrop-blur-sm dark:bg-black/80 dark:text-white"
         >
-          {anchors.map((entry) => (
-            <StopDropdownItem
-              key={entry.stopId}
-              stopId={entry.stopId}
-              routeTypes={entry.routeTypes}
-              meta={lookupAnchorStopMeta(entry.stopId)}
-              fallbackName={entry.stopName}
-              infoLevel={infoLevel}
-              dataLang={dataLang}
-              onRemove={() => onRemove(entry)}
-            />
-          ))}
+          {anchors.map((entry) => {
+            const meta = lookupStopMeta(entry.snapshot.stopId);
+
+            return (
+              <Fragment key={entry.snapshot.stopId}>
+                {/* <StopDropdownItem
+                  key={entry.snapshot.stopId}
+                  stopId={entry.snapshot.stopId}
+                  routeTypes={entry.snapshot.routeTypes}
+                  meta={lookupStopMeta(entry.snapshot.stopId)}
+                  fallbackName={entry.snapshot.name}
+                  infoLevel={infoLevel}
+                  dataLang={dataLang}
+                  onRemove={() => onRemove(entry)}
+                /> */}
+                <StopListItemContainer
+                  stopId={entry.snapshot.stopId}
+                  meta={meta}
+                  stopReferenceSnapshot={entry.snapshot}
+                  infoLevel={infoLevel}
+                  dataLang={dataLang}
+                  onRemove={() => onRemove(entry)}
+                />
+              </Fragment>
+            );
+          })}
         </SelectContent>
       </Select>
     </div>
