@@ -15,7 +15,7 @@ interface StopDropdownItemProps {
   /** GTFS `stop_id` — used as the underlying `<SelectItem value>`. */
   stopId: string;
   /** Route types served by the stop, rendered as the lead emoji. */
-  routeTypes: AppRouteTypeValue[];
+  routeTypes: readonly AppRouteTypeValue[];
   /**
    * Latest `StopWithMeta` resolved from the repository's full dataset.
    * `null` when the stop is no longer present in any active source — the

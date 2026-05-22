@@ -4,7 +4,6 @@ import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/set
 import type { AnchorEntry } from '../../domain/portal/anchor';
 import type { StopHistoryEntry } from '../../domain/transit/stop-history';
 import type { UserLocation } from '../../types/app/map';
-import type { AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { StopWithMeta } from '../../types/app/transit-composed';
 import { InfoPanel } from '../panel/info-panel';
 import { MapControlPanel } from '../panel/map-control-panel';
@@ -51,7 +50,7 @@ interface MapOverlayPanelsProps {
    *  to the locate button to replay its ripple animation. */
   locatePulseKey: number;
   onDeselectStop: () => void;
-  onHistorySelect: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
+  onHistorySelect: (entry: StopHistoryEntry) => void;
   onPortalSelect: (entry: AnchorEntry) => void;
   /** Removes the anchor for a Portal entry whose stop_id is no longer
    *  resolvable in the current GTFS dataset. */
@@ -63,6 +62,7 @@ interface MapOverlayPanelsProps {
    * at render time, regardless of viewport position.
    */
   lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
+  lookupHistoryStopMeta: (stopId: string) => StopWithMeta | null;
   tileIndex: number | null;
 }
 
@@ -99,6 +99,7 @@ export function MapOverlayPanels({
   onPortalSelect,
   onPortalRemove,
   lookupAnchorStopMeta,
+  lookupHistoryStopMeta,
   tileIndex,
 }: MapOverlayPanelsProps) {
   return (
@@ -149,6 +150,7 @@ export function MapOverlayPanels({
           selectedStopId={selectedStopId}
           infoLevel={infoLevel}
           dataLang={dataLang}
+          lookupStopMeta={lookupHistoryStopMeta}
           onSelect={onHistorySelect}
         />
         <Portals

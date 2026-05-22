@@ -9,7 +9,7 @@ export type UnknownRouteTypePolicy = 'include-unknown' | 'exclude-unknown';
  * Arguments for {@link resolveStopRouteTypes}.
  */
 export interface ResolveStopRouteTypesArgs {
-  /** GTFS stop_id. */
+  /** ID of the stop. */
   stopId: string;
   /** Precomputed stop_id -> route_types lookup map. */
   routeTypeMap: ReadonlyMap<string, AppRouteTypeValue[]>;

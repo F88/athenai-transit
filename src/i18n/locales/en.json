@@ -72,7 +72,15 @@
     }
   },
   "history": {
-    "label": "History"
+    "label": "History",
+    "saveFailed": "Failed to save history"
+  },
+  "anchor": {
+    "add": "Add anchor",
+    "remove": "Remove anchor",
+    "added": "Anchor added",
+    "removed": "Anchor removed",
+    "anchorUpdateFailed": "Failed to update anchor"
   },
   "info": {
     "status": "Work in progress"
@@ -198,13 +206,6 @@
     "toggleSubway": "Toggle subway stops",
     "toggleTrain": "Toggle train stops",
     "toggleOthers": "Toggle other stops"
-  },
-  "anchor": {
-    "add": "Add anchor",
-    "remove": "Remove anchor",
-    "added": "Anchor added",
-    "removed": "Anchor removed",
-    "anchorUpdateFailed": "Failed to update anchor"
   },
   "dataLoad": {
     "failed": "Failed to load data"

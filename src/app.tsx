@@ -1,48 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { toast } from 'sonner';
-import { InfoDialog } from './components/dialog/info-dialog';
-import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
-import { DataSourceSettingsDialog } from './components/dialog/data-source-settings-dialog';
-import { StopSearchDialog } from './components/dialog/stop-search-dialog';
-import { TimetableModal } from './components/dialog/timetable-modal';
-import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
-import { MapBottomSheetLayout } from './components/map-bottom-sheet-layout';
-import { TimeControls } from './components/time-controls';
-import { Toaster } from './components/ui/sonner';
-import { PERF_PROFILES } from './config/perf-profiles';
-import { SUPPORTED_LANGS } from './config/supported-langs';
-import { TILE_SOURCES } from './config/tile-sources';
-import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
-import { buildAnchorRefreshUpdates, type AnchorEntry } from './domain/portal/anchor';
-import { formatDateKey } from './domain/transit/calendar-utils';
-import { computeStopsCounts } from './domain/transit/compute-stops-counts';
-import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
-import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
-import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-day';
-import {
-  applyStopEventAttributeTogglesToStops,
-  omitStopsWithoutStopTimes,
-} from './domain/transit/timetable-filter';
-import { getStopServiceState, getTimetableEntriesState } from './domain/transit/timetable-utils';
-import { useAnchors } from './hooks/use-anchors';
-import { useDateTime } from './hooks/use-date-time';
-import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
-import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
-import { useRouteStops } from './hooks/use-route-stops';
-import { useSelection } from './hooks/use-selection';
-import { useStopNavigation } from './hooks/use-stop-navigation';
-import { useStopHistory } from './hooks/use-stop-history';
-import { useTimetable } from './hooks/use-timetable';
-import { useLoadResult } from './hooks/use-load-result';
-import { useTransitRepository } from './hooks/use-transit-repository';
-import { useTripInspection } from './hooks/use-trip-inspection';
-import { useUserSettings } from './hooks/use-user-settings';
-import i18n from './i18n';
-import { applyAppTheme } from './lib/app-theme';
-import { createLogger } from './lib/logger';
-import { getStopParam } from './lib/query-params';
-import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
+
+// types
 import type { AutoLocateOffReason } from './types/app/auto-locate';
 import type { Bounds, LatLng, RouteShape } from './types/app/map';
 import type { StopsCounts } from './types/app/stop';
@@ -52,6 +13,59 @@ import type {
   StopWithMeta,
   TripInspectionTarget,
 } from './types/app/transit-composed';
+
+// config
+import { PERF_PROFILES } from './config/perf-profiles';
+import { SUPPORTED_LANGS } from './config/supported-langs';
+import { TILE_SOURCES } from './config/tile-sources';
+import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
+
+// i18n
+import i18n from './i18n';
+
+// lib
+import { applyAppTheme } from './lib/app-theme';
+import { createLogger } from './lib/logger';
+import { getStopParam } from './lib/query-params';
+
+// domain
+import { buildAnchorRefreshUpdates, type AnchorEntry } from './domain/portal/anchor';
+import { formatDateKey } from './domain/transit/calendar-utils';
+import { computeStopsCounts } from './domain/transit/compute-stops-counts';
+import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
+import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
+import { findVisibleStopMetaById } from './domain/transit/stop-meta-lookup';
+import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
+import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-day';
+import { type StopHistoryEntry } from './domain/transit/stop-history';
+import { buildHistoryNavigationPayload } from './domain/transit/stop-navigation';
+import { createStopReferenceSnapshot } from './domain/transit/stop-reference-snapshot';
+import {
+  applyStopEventAttributeTogglesToStops,
+  omitStopsWithoutStopTimes,
+} from './domain/transit/timetable-filter';
+import { getStopServiceState, getTimetableEntriesState } from './domain/transit/timetable-utils';
+
+// hooks
+import { useAnchors } from './hooks/use-anchors';
+import { useDateTime } from './hooks/use-date-time';
+import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
+import { useLoadResult } from './hooks/use-load-result';
+import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
+import { useRouteStops } from './hooks/use-route-stops';
+import { useSelection } from './hooks/use-selection';
+import { useStopHistory, type UseStopHistoryReturn } from './hooks/use-stop-history';
+import { useStopNavigation } from './hooks/use-stop-navigation';
+import { useTimetable } from './hooks/use-timetable';
+import { useTransitRepository } from './hooks/use-transit-repository';
+import { useTripInspection } from './hooks/use-trip-inspection';
+import { useUserSettings } from './hooks/use-user-settings';
+
+// repository
+import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
+import { LocalStorageStopSelectionRepository } from './repositories/stop-selection/local-storage-stop-selection-repository';
+
+// utils
 import { formatDateParts } from './utils/datetime';
 import { toggleGroupInList } from './utils/list-toggle';
 import { routeTypeGroup } from './utils/route-type-category';
@@ -63,6 +77,18 @@ import {
   nextRenderMode,
   nextTileIndex,
 } from './utils/settings-cycle';
+
+// components
+import { DataSourceSettingsDialog } from './components/dialog/data-source-settings-dialog';
+import { InfoDialog } from './components/dialog/info-dialog';
+import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
+import { StopSearchDialog } from './components/dialog/stop-search-dialog';
+import { TimetableModal } from './components/dialog/timetable-modal';
+import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
+import { MapBottomSheetLayout } from './components/map-bottom-sheet-layout';
+import { TimeControls } from './components/time-controls';
+import { Toaster } from './components/ui/sonner';
+
 const logger = createLogger('App');
 const DEBOUNCE_MS = 300;
 const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
@@ -72,6 +98,7 @@ export default function App() {
   const repo = useTransitRepository();
   const loadResult = useLoadResult();
   const [userDataRepo] = useState(() => new LocalStorageUserDataRepository());
+  const [stopSelectionRepo] = useState(() => new LocalStorageStopSelectionRepository());
   const { settings, updateSetting, updateSettings } = useUserSettings();
   const { dateTime, isCustomTime, resetToNow, setCustomTime } = useDateTime();
 
@@ -244,7 +271,25 @@ export default function App() {
   const routeStops = useRouteStops(selectionInfo?.routeIds ?? null, repo);
   // console.debug('routeStops', routeStops.length);
 
-  const { history, pushStop } = useStopHistory();
+  const {
+    history,
+    lastError: historyError,
+    clearError: clearHistoryError,
+    recordStopSelection,
+  }: UseStopHistoryReturn = useStopHistory(stopSelectionRepo);
+
+  useEffect(() => {
+    if (!historyError) {
+      return;
+    }
+    logger.warn(`history persistence failed: ${historyError}`);
+    toast.error(t('history.saveFailed'), {
+      description: historyError,
+      duration: 2_000,
+    });
+    clearHistoryError();
+  }, [clearHistoryError, historyError, t]);
+
   const {
     anchors,
     lastError: anchorError,
@@ -262,7 +307,7 @@ export default function App() {
     logger.warn(`anchor operation failed: ${anchorError}`);
     toast.error(t('anchor.anchorUpdateFailed'), {
       description: anchorError,
-      duration: 4500,
+      duration: 4_000,
     });
     clearAnchorError();
   }, [anchorError, clearAnchorError, t]);
@@ -310,17 +355,74 @@ export default function App() {
     [anchorStopMetaMap],
   );
 
-  const { selectStopWithFallback, navigateAndFocusStop, navigateAndFocusStopById } =
-    useStopNavigation({
-      repo,
-      routeTypeMap,
-      radiusStops,
+  const historyStopMetaMap = useMemo(() => {
+    if (history.length === 0) {
+      return new Map<string, StopWithMeta>();
+    }
+    const historyEntries: readonly StopHistoryEntry[] = history;
+    const stopIds = new Set<string>();
+    for (const entry of historyEntries) {
+      stopIds.add(entry.snapshot.stopId);
+    }
+    const metas = repo.getStopMetaByIds(stopIds);
+    return new Map(metas.map((meta) => [meta.stop.stop_id, meta]));
+  }, [history, repo]);
+
+  const lookupHistoryStopMeta = useCallback(
+    (stopId: string): StopWithMeta | null => historyStopMetaMap.get(stopId) ?? null,
+    [historyStopMetaMap],
+  );
+
+  const { selectStop, navigateAndFocusStop } = useStopNavigation({
+    disableAutoLocate,
+    selectStopById,
+    focusStop,
+  });
+
+  const recordStopMetaSelection = useCallback(
+    (stopMeta: StopWithMeta) => {
+      const routeTypes = resolveStopRouteTypes({
+        stopId: stopMeta.stop.stop_id,
+        routeTypeMap,
+        routes: stopMeta.routes,
+        unknownPolicy: 'include-unknown',
+      });
+      const snapshot = createStopReferenceSnapshot(stopMeta, routeTypes, langChain);
+      void recordStopSelection(snapshot);
+    },
+    [langChain, recordStopSelection, routeTypeMap],
+  );
+
+  const recordStopSelectionByVisibleStop = useCallback(
+    (stopId: string, fallbackStop?: Stop) => {
+      const stopMeta = findVisibleStopMetaById(stopId, radiusStops, inBoundStops);
+      if (stopMeta != null) {
+        recordStopMetaSelection(stopMeta);
+        return;
+      }
+
+      if (fallbackStop == null) {
+        return;
+      }
+
+      const routeTypes = resolveStopRouteTypes({
+        stopId: fallbackStop.stop_id,
+        routeTypeMap,
+        routes: [],
+        unknownPolicy: 'include-unknown',
+      });
+      const snapshot = createStopReferenceSnapshot(fallbackStop, routeTypes, langChain);
+      void recordStopSelection(snapshot);
+    },
+    [
       inBoundStops,
-      disableAutoLocate,
-      selectStopById,
-      focusStop,
-      pushStop,
-    });
+      langChain,
+      radiusStops,
+      recordStopMetaSelection,
+      recordStopSelection,
+      routeTypeMap,
+    ],
+  );
 
   // Wrap selectStop to also record in history.
   //
@@ -330,18 +432,20 @@ export default function App() {
   // `moveend` events ineligible for nearby/in-bounds refetch.
   const handleSelectStop = useCallback(
     (stop: Stop) => {
-      selectStopWithFallback(stop.stop_id, 'select-marker', stop);
+      selectStop({ reason: 'select-marker', stopId: stop.stop_id, fallbackStop: stop });
+      recordStopSelectionByVisibleStop(stop.stop_id, stop);
     },
-    [selectStopWithFallback],
+    [recordStopSelectionByVisibleStop, selectStop],
   );
 
   // Wrap selectStopById to also record in history.
   // See `handleSelectStop` for the rationale of disabling auto-tracking.
   const handleSelectStopById = useCallback(
     (stopId: string) => {
-      selectStopWithFallback(stopId, 'select-bottom-sheet');
+      selectStop({ reason: 'select-bottom-sheet', stopId });
+      recordStopSelectionByVisibleStop(stopId);
     },
-    [selectStopWithFallback],
+    [recordStopSelectionByVisibleStop, selectStop],
   );
 
   // Apply ?stop= query param: select and pan to the stop after data loads.
@@ -349,29 +453,36 @@ export default function App() {
   // the repo resolves the stop). Same pattern as handleHistorySelect —
   // focusStop sets directFocusPosition so the map pans even when the
   // stop is outside the initial viewport.
-  const stopParamApplied = useRef(false);
+  const hasHandledStopParamRef = useRef(false);
   useEffect(() => {
-    if (stopParamApplied.current) {
+    if (hasHandledStopParamRef.current) {
       return;
     }
+
+    const markStopParamHandled = () => {
+      hasHandledStopParamRef.current = true;
+    };
+
     const stopId = getStopParam();
     if (!stopId) {
-      stopParamApplied.current = true;
+      markStopParamHandled();
       return;
     }
-    void navigateAndFocusStopById(stopId, 'apply-stop-param').then((result) => {
-      if (stopParamApplied.current) {
+
+    void repo.getStopMetaById(stopId).then((result) => {
+      if (hasHandledStopParamRef.current) {
         return;
       }
-      if (result.success) {
-        logger.info(`Applying ?stop=${stopId}: ${result.data.stop.stop_name}`);
-        stopParamApplied.current = true;
-      } else {
+      if (!result.success) {
         logger.warn(`?stop=${stopId}: not found`);
-        stopParamApplied.current = true;
+        markStopParamHandled();
+        return;
       }
+      navigateAndFocusStop('apply-stop-param', result.data.stop);
+      recordStopMetaSelection(result.data);
+      markStopParamHandled();
     });
-  }, [navigateAndFocusStopById]);
+  }, [navigateAndFocusStop, recordStopMetaSelection, repo]);
 
   // Load route shapes once on mount
   useEffect(() => {
@@ -580,13 +691,17 @@ export default function App() {
 
   const handleSelectStopFromTripInspection = useCallback(
     (stopId: string) => {
-      void navigateAndFocusStopById(stopId, 'select-trip-inspection').then((result) => {
+      void (async () => {
+        const result = await repo.getStopMetaById(stopId);
         if (!result.success) {
           toast.error(t('tripInspection.messages.openFailed'));
+          return;
         }
-      });
+        navigateAndFocusStop('select-trip-inspection', result.data.stop);
+        recordStopMetaSelection(result.data);
+      })();
     },
-    [navigateAndFocusStopById, t],
+    [navigateAndFocusStop, recordStopMetaSelection, repo, t],
   );
 
   const handleTripInspectionOpenChange = useCallback(
@@ -598,19 +713,29 @@ export default function App() {
     [closeTripInspection],
   );
 
-  // Select + pan to a stop from history. Uses focusStop to set
-  // focus position directly from stop coordinates, ensuring the map pans
-  // even when the stop is outside the current viewport.
+  // Select + pan to a stop from history.
   //
-  // Disables auto-tracking first because the user is intentionally
-  // navigating away from their current location; without this, the
-  // bounds-change handler would skip the post-pan stops fetch.
+  // The pure resolver decides whether this selection should be ignored or
+  // resolved, and when resolved it records whether the navigation target came
+  // from current repository metadata or the persisted snapshot fallback.
+  //
+  // The caller only handles the shared execution path for resolved actions.
   const handleHistorySelect = useCallback(
-    (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
-      logger.debug(`handleHistorySelect [History]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
-      navigateAndFocusStop(stop, 'select-history', routeTypes);
+    (entry: StopHistoryEntry) => {
+      const payload = buildHistoryNavigationPayload(
+        entry,
+        routeTypeMap,
+        langChain,
+        lookupHistoryStopMeta,
+      );
+      if (payload == null) {
+        logger.warn(`handleHistorySelect unresolved stopId=${entry.snapshot.stopId}`);
+        return;
+      }
+      navigateAndFocusStop('select-history', payload.stop);
+      void recordStopSelection(payload.snapshot);
     },
-    [navigateAndFocusStop],
+    [langChain, lookupHistoryStopMeta, navigateAndFocusStop, recordStopSelection, routeTypeMap],
   );
 
   // Anchor stop_id set for efficient lookup in BottomSheet
@@ -708,9 +833,11 @@ export default function App() {
         location_type: 0,
         agency_id: '',
       };
-      navigateAndFocusStop(stop, 'select-portal', entry.routeTypes);
+      navigateAndFocusStop('select-portal', stop);
+      const snapshot = createStopReferenceSnapshot(stop, entry.routeTypes, langChain);
+      void recordStopSelection(snapshot);
     },
-    [navigateAndFocusStop],
+    [langChain, navigateAndFocusStop, recordStopSelection],
   );
 
   // Select + pan to a stop chosen from the search dialog.
@@ -719,12 +846,12 @@ export default function App() {
   const handleSearchSelect = useCallback(
     (stop: Stop, routeTypes: AppRouteTypeValue[]) => {
       logger.debug(`handleSearchSelect [Search]: stopId=${stop.stop_id}, name=${stop.stop_name}`);
-      navigateAndFocusStop(stop, 'select-search', routeTypes);
+      navigateAndFocusStop('select-search', stop);
+      const snapshot = createStopReferenceSnapshot(stop, routeTypes, langChain);
+      void recordStopSelection(snapshot);
       setSearchModalOpen(false);
-      // SearchDialog already resolved routeTypes from its own routeTypeMap,
-      // so we can use them directly without re-resolving.
     },
-    [navigateAndFocusStop],
+    [langChain, navigateAndFocusStop, recordStopSelection],
   );
 
   // --- App-wide filter state (shared across surfaces) ---
@@ -1005,6 +1132,7 @@ export default function App() {
           onPortalSelect: handlePortalSelect,
           onPortalRemove: (entry) => handleToggleAnchorByStopId(entry.stopId),
           lookupAnchorStopMeta,
+          lookupHistoryStopMeta,
           autoLocateEnabled,
           onEnableAutoLocate: enableAutoLocate,
           onDisableAutoLocate: disableAutoLocate,

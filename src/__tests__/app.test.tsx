@@ -1,8 +1,13 @@
-import { act, render, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from '../i18n';
 import App from '../app';
+import { RootErrorBoundary } from '../components/error-boundary';
+import { makeRepo, makeRoute, makeStop, makeStopMeta } from './helpers';
+import type { StopHistoryEntry } from '../domain/transit/stop-history';
+import type { UseStopHistoryReturn } from '../hooks/use-stop-history';
 import type { UseAnchorsReturn } from '../hooks/use-anchors';
+import type { TransitRepository } from '../repositories/transit-repository';
 import type { UseTimetableReturn } from '../hooks/use-timetable';
 import type { ContextualTimetableEntry, StopWithContext } from '../types/app/transit-composed';
 
@@ -11,6 +16,7 @@ type UseNearbyStopTimesReturn = ReturnType<
   typeof import('../hooks/use-nearby-stop-times').useNearbyStopTimes
 >;
 type GetServiceDayMinutes = typeof import('../domain/transit/service-day').getServiceDayMinutes;
+type UseTransitRepositoryReturn = TransitRepository;
 
 const {
   mockToastError,
@@ -21,6 +27,9 @@ const {
   mockGetServiceDayMinutes,
   mockUseDateTime,
   mockUseNearbyStopTimes,
+  mockUseStopHistory,
+  mockUseTransitRepository,
+  mockFocusStop,
   mockMapBottomSheetLayout,
   mockUseTimetable,
   mockOpenStopTimetable,
@@ -35,6 +44,9 @@ const {
   mockGetServiceDayMinutes: vi.fn<GetServiceDayMinutes>(),
   mockUseDateTime: vi.fn<() => UseDateTimeReturn>(),
   mockUseNearbyStopTimes: vi.fn<() => UseNearbyStopTimesReturn>(),
+  mockUseStopHistory: vi.fn<() => UseStopHistoryReturn>(),
+  mockUseTransitRepository: vi.fn<() => UseTransitRepositoryReturn>(),
+  mockFocusStop: vi.fn(),
   mockMapBottomSheetLayout: vi.fn(),
   mockUseTimetable: vi.fn<() => UseTimetableReturn>(),
   mockOpenStopTimetable: vi.fn(),
@@ -56,9 +68,7 @@ vi.mock('../components/ui/sonner', () => ({
 }));
 
 vi.mock('../hooks/use-transit-repository', () => ({
-  useTransitRepository: () => ({
-    getRouteShapes: mockGetRouteShapes,
-  }),
+  useTransitRepository: () => mockUseTransitRepository(),
 }));
 
 vi.mock('../hooks/use-load-result', () => ({
@@ -111,16 +121,13 @@ vi.mock('../hooks/use-selection', () => ({
     selectStopById: vi.fn(),
     deselectStop: vi.fn(),
     selectRouteShape: vi.fn(),
-    focusStop: vi.fn(),
+    focusStop: mockFocusStop,
     clearFocus: vi.fn(),
   }),
 }));
 
 vi.mock('../hooks/use-stop-history', () => ({
-  useStopHistory: () => ({
-    history: [],
-    pushStop: vi.fn(),
-  }),
+  useStopHistory: () => mockUseStopHistory(),
 }));
 
 vi.mock('../hooks/use-route-stops', () => ({
@@ -254,12 +261,27 @@ describe('App anchor error toast', () => {
     mockGetServiceDayMinutes.mockReset();
     mockUseDateTime.mockReset();
     mockUseNearbyStopTimes.mockReset();
+    mockUseStopHistory.mockReset();
+    mockUseTransitRepository.mockReset();
+    mockFocusStop.mockReset();
     mockMapBottomSheetLayout.mockReset();
     mockUseTimetable.mockReset();
     mockOpenStopTimetable.mockReset();
     mockOpenRouteHeadsignTimetable.mockReset();
 
     mockGetRouteShapes.mockResolvedValue({ success: true, data: [] });
+    mockUseTransitRepository.mockReturnValue(
+      makeRepo({
+        getRouteShapes: mockGetRouteShapes,
+      }),
+    );
+    mockUseStopHistory.mockReturnValue({
+      history: [],
+      recordStopSelection: vi.fn(),
+      lastError: null,
+      clearError: vi.fn(),
+      clearHistory: vi.fn(),
+    });
     mockUseAnchors.mockReturnValue({
       anchors: [],
       lastError: null,
@@ -329,10 +351,65 @@ describe('App anchor error toast', () => {
     await waitFor(() => {
       expect(mockToastError).toHaveBeenCalledWith('アンカー更新に失敗しました', {
         description: 'Duplicate stop: A',
-        duration: 4500,
+        duration: 4000,
       });
       expect(mockClearAnchorError).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('shows toast and clears history error when useStopHistory returns lastError', async () => {
+    const clearHistoryError = vi.fn();
+    mockUseStopHistory.mockReturnValue({
+      history: [],
+      recordStopSelection: vi.fn(),
+      lastError: 'Quota exceeded',
+      clearError: clearHistoryError,
+      clearHistory: vi.fn(),
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('履歴の保存に失敗しました', {
+        description: 'Quota exceeded',
+        duration: 2000,
+      });
+      expect(clearHistoryError).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('shows the error boundary fallback when localStorage getter throws during app init', async () => {
+    const originalDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('Access denied', 'SecurityError');
+      },
+    });
+
+    try {
+      render(
+        <RootErrorBoundary>
+          <App />
+        </RootErrorBoundary>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('問題が発生しました')).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            'アプリの表示中にエラーが発生しました。再読み込みで回復しない場合は、キャッシュを消去してお試しください。',
+          ),
+        ).toBeInTheDocument();
+      });
+    } finally {
+      if (originalDescriptor) {
+        Object.defineProperty(window, 'localStorage', originalDescriptor);
+      }
+      consoleErrorSpy.mockRestore();
+    }
   });
 
   it('forces omitEmptyStops on for origin filter and keeps toggleOmitEmptyStops as a no-op while forced', async () => {
@@ -454,6 +531,168 @@ describe('App anchor error toast', () => {
 
     await waitFor(() => {
       expect(mockToastWarning).toHaveBeenCalledWith('この路線の時刻表を表示できません');
+    });
+  });
+
+  it('re-records history from current stop metadata when that stop is still resolvable', async () => {
+    const recordStopSelection = vi.fn();
+    const entry: StopHistoryEntry = {
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: 35,
+        lon: 139,
+        routeTypes: [3],
+        agencyNames: [],
+      },
+      selectedAt: 1000,
+    };
+    const latestStop = makeStop('A', 36, 140);
+    const latestMeta = {
+      ...makeStopMeta(latestStop),
+      routes: [makeRoute('route-1', 1), makeRoute('route-2', 3)],
+    };
+
+    mockUseStopHistory.mockReturnValue({
+      history: [entry],
+      recordStopSelection,
+      lastError: null,
+      clearError: vi.fn(),
+      clearHistory: vi.fn(),
+    });
+    mockUseTransitRepository.mockReturnValue(
+      makeRepo({
+        getRouteShapes: mockGetRouteShapes,
+        getStopMetaByIds: vi.fn().mockReturnValue([latestMeta]),
+      }),
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockMapBottomSheetLayout).toHaveBeenCalled();
+    });
+
+    const lastCall = mockMapBottomSheetLayout.mock.lastCall;
+    const props = lastCall?.[0] as {
+      mapViewProps: {
+        onHistorySelect: (entry: StopHistoryEntry) => void;
+      };
+    };
+
+    act(() => {
+      props.mapViewProps.onHistorySelect(entry);
+    });
+
+    await waitFor(() => {
+      expect(recordStopSelection).toHaveBeenCalledWith({
+        stopId: 'A',
+        name: latestStop.stop_name,
+        lat: 36,
+        lon: 140,
+        routeTypes: [1, 3],
+        agencyNames: [],
+        platformCode: undefined,
+      });
+    });
+  });
+
+  it('reuses the stored history snapshot when current stop metadata is unavailable', async () => {
+    const recordStopSelection = vi.fn();
+    const entry: StopHistoryEntry = {
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: 35,
+        lon: 139,
+        routeTypes: [3],
+        agencyNames: [],
+      },
+      selectedAt: 1000,
+    };
+    mockUseStopHistory.mockReturnValue({
+      history: [entry],
+      recordStopSelection,
+      lastError: null,
+      clearError: vi.fn(),
+      clearHistory: vi.fn(),
+    });
+    mockUseTransitRepository.mockReturnValue(
+      makeRepo({
+        getRouteShapes: mockGetRouteShapes,
+        getStopMetaByIds: vi.fn().mockReturnValue([]),
+      }),
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockMapBottomSheetLayout).toHaveBeenCalled();
+    });
+
+    const lastCall = mockMapBottomSheetLayout.mock.lastCall;
+    const props = lastCall?.[0] as {
+      mapViewProps: {
+        onHistorySelect: (entry: StopHistoryEntry) => void;
+      };
+    };
+
+    act(() => {
+      props.mapViewProps.onHistorySelect(entry);
+    });
+
+    await waitFor(() => {
+      expect(recordStopSelection).toHaveBeenCalledWith(entry.snapshot);
+    });
+  });
+
+  it('ignores history selection when current metadata is unavailable and the snapshot cannot rebuild a stop', async () => {
+    const recordStopSelection = vi.fn();
+    const entry: StopHistoryEntry = {
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: null,
+        lon: null,
+        routeTypes: [3],
+        agencyNames: [],
+      },
+      selectedAt: 1000,
+    };
+    mockUseStopHistory.mockReturnValue({
+      history: [entry],
+      recordStopSelection,
+      lastError: null,
+      clearError: vi.fn(),
+      clearHistory: vi.fn(),
+    });
+    mockUseTransitRepository.mockReturnValue(
+      makeRepo({
+        getRouteShapes: mockGetRouteShapes,
+        getStopMetaByIds: vi.fn().mockReturnValue([]),
+      }),
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockMapBottomSheetLayout).toHaveBeenCalled();
+    });
+
+    const lastCall = mockMapBottomSheetLayout.mock.lastCall;
+    const props = lastCall?.[0] as {
+      mapViewProps: {
+        onHistorySelect: (entry: StopHistoryEntry) => void;
+      };
+    };
+
+    act(() => {
+      props.mapViewProps.onHistorySelect(entry);
+    });
+
+    await waitFor(() => {
+      expect(recordStopSelection).not.toHaveBeenCalled();
+      expect(mockFocusStop).not.toHaveBeenCalled();
     });
   });
 });

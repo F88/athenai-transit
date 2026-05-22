@@ -370,7 +370,7 @@ function AppBootShell({
             {title}
           </p>
           <p className="font-press-start text-muted-foreground text-sm leading-6">{message}</p>
-          <p className="font-press-start text-muted-foreground text-sm leading-6">{tips}</p>
+          <div className="text-muted-foreground text-sm leading-6">{tips}</div>
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 px-0">{progressContent}</div>

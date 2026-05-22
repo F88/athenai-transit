@@ -1,49 +1,103 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
+
 import { useTranslation } from 'react-i18next';
-import type { InfoLevel } from '../types/app/settings';
-import type { Stop } from '../types/app/transit';
-import type { StopHistoryEntry } from '../domain/transit/stop-history';
-import { resolveAgencyLang } from '../config/transit-defaults';
-import { getStopDisplayNames } from '../domain/transit/name-resolver/get-stop-display-names';
-import { routeTypesEmoji } from '../utils/route-type-emoji';
+
 import { History } from 'lucide-react';
+
+import { resolveAgencyLang } from '../config/transit-defaults';
 import { createLogger } from '../lib/logger';
-import { StopDropdownItem } from './stop/stop-dropdown-item';
+import type { InfoLevel } from '../types/app/settings';
+import type { StopWithMeta } from '../types/app/transit-composed';
+import { routeTypesEmoji } from '../utils/route-type-emoji';
+
+import { getStopDisplayNames } from '../domain/transit/name-resolver/get-stop-display-names';
+import type { StopHistoryEntry } from '../domain/transit/stop-history';
+// import { StopDropdownItem } from './stop/stop-dropdown-item';
 import { Select, SelectContent, SelectTrigger } from './ui/select';
+import { StopListItemContainer } from './map/stop-list-item-container';
 
 const logger = createLogger('StopHistory');
 
+interface SelectedHistoryPresentation {
+  displayName: string | null;
+  routeTypeEmoji: string | null;
+}
+
+/**
+ * Compose display values for the selected history entry from current stop
+ * metadata when available, otherwise fall back to the persisted snapshot.
+ */
+function composeSelectedHistoryPresentation(
+  selectedEntry: StopHistoryEntry | null,
+  stopMeta: StopWithMeta | null,
+  dataLang: readonly string[],
+): SelectedHistoryPresentation {
+  if (!selectedEntry) {
+    return {
+      displayName: null,
+      routeTypeEmoji: null,
+    };
+  }
+
+  if (!stopMeta) {
+    return {
+      displayName: selectedEntry.snapshot.name,
+      routeTypeEmoji: routeTypesEmoji(selectedEntry.snapshot.routeTypes),
+    };
+  }
+
+  const displayName =
+    getStopDisplayNames(
+      stopMeta.stop,
+      dataLang,
+      resolveAgencyLang(stopMeta.agencies, stopMeta.stop.agency_id),
+    ).name ||
+    selectedEntry.snapshot.name ||
+    stopMeta.stop.stop_name;
+
+  const routeTypeEmoji =
+    stopMeta.routes.length > 0
+      ? routeTypesEmoji([...new Set(stopMeta.routes.map((route) => route.route_type))])
+      : routeTypesEmoji(selectedEntry.snapshot.routeTypes);
+
+  return {
+    displayName,
+    routeTypeEmoji,
+  };
+}
+
+/**
+ * Input contract for rendering the selected stop-history summary and recent
+ * history dropdown while delegating selection side effects to the parent.
+ */
 interface StopHistoryProps {
   history: StopHistoryEntry[];
   selectedStopId: string | null;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
-  onSelect: (stop: Stop, routeTypes: StopHistoryEntry['routeTypes']) => void;
+  /** Resolve current stop metadata from the repository by stop_id. */
+  lookupStopMeta: (stopId: string) => StopWithMeta | null;
+  /** Called when a history entry is chosen. */
+  onSelect: (entry: StopHistoryEntry) => void;
 }
 
 /**
  * Dropdown selector for recently selected stops.
  *
- * Shows the most recent selection in a compact trigger. When opened,
- * displays the full history list.
- * When no stop is selected the trigger shows a dimmed placeholder.
- *
- * Visibility is controlled by infoLevel:
- * - simple: show stop name + emoji
- * - normal: show stop name + emoji
- * - verbose: also show stop_id in the dropdown items
- *
- * @param history - History entries, most recent first.
- * @param selectedStopId - Currently selected stop ID for highlighting.
- * @param infoLevel - Controls display detail.
- * @param onSelect - Called when a history entry is chosen.
+ * Renders the selected history item in the trigger and the full recent-history
+ * list in the dropdown. Display values prefer current repository metadata when
+ * the stop is still resolvable and fall back to the persisted history snapshot
+ * when it is not. Selection handling is intentionally lightweight: the
+ * component emits the chosen history entry and leaves stop resolution and
+ * app-state updates to the parent.
  */
 export function StopHistory({
   history,
   selectedStopId,
   infoLevel,
   dataLang,
+  lookupStopMeta,
   onSelect,
 }: StopHistoryProps) {
   const { t } = useTranslation();
@@ -53,19 +107,26 @@ export function StopHistory({
     return null;
   }
 
-  const stopMap = new Map(history.map((e) => [e.stopWithMeta.stop.stop_id, e]));
-  const selectedEntry = selectedStopId ? (stopMap.get(selectedStopId) ?? null) : null;
+  const historyMap = new Map(history.map((entry) => [entry.snapshot.stopId, entry]));
+  const selectedEntry = selectedStopId ? (historyMap.get(selectedStopId) ?? null) : null;
+
+  const stopMeta = selectedEntry ? lookupStopMeta(selectedEntry.snapshot.stopId) : null;
+  const selectedPresentation = composeSelectedHistoryPresentation(
+    selectedEntry,
+    stopMeta,
+    dataLang,
+  );
 
   const handleValueChange = (stopId: string) => {
-    const entry = stopMap.get(stopId);
+    const entry = historyMap.get(stopId);
     if (entry) {
       const isCurrent = stopId === selectedStopId;
       if (logger.isEnabled('debug')) {
         logger.debug(
-          `select: stopId=${stopId}, name=${entry.stopWithMeta.stop.stop_name}, isCurrent=${isCurrent}`,
+          `select: stopId=${stopId}, name=${entry.snapshot.name}, isCurrent=${isCurrent}`,
         );
       }
-      onSelect(entry.stopWithMeta.stop, entry.routeTypes);
+      onSelect(entry);
     }
   };
 
@@ -94,17 +155,8 @@ export function StopHistory({
           >
             {selectedEntry ? (
               <>
-                <span className="text-base">{routeTypesEmoji(selectedEntry.routeTypes)}</span>
-                <span className="truncate">
-                  {getStopDisplayNames(
-                    selectedEntry.stopWithMeta.stop,
-                    dataLang,
-                    resolveAgencyLang(
-                      selectedEntry.stopWithMeta.agencies,
-                      selectedEntry.stopWithMeta.stop.agency_id,
-                    ),
-                  ).name || selectedEntry.stopWithMeta.stop.stop_name}
-                </span>
+                <span className="text-base">{selectedPresentation.routeTypeEmoji}</span>
+                <span className="truncate">{selectedPresentation.displayName}</span>
               </>
             ) : (
               <History size={14} strokeWidth={3} className="inline text-sky-400" />
@@ -115,17 +167,29 @@ export function StopHistory({
           position="popper"
           className="z-1002 max-h-[40dvh] min-w-48 border-none bg-white/80 text-black backdrop-blur-sm dark:bg-black/80 dark:text-white"
         >
-          {history.map((entry) => (
-            <StopDropdownItem
-              key={entry.stopWithMeta.stop.stop_id}
-              stopId={entry.stopWithMeta.stop.stop_id}
-              routeTypes={entry.routeTypes}
-              meta={entry.stopWithMeta}
-              fallbackName={entry.stopWithMeta.stop.stop_name}
-              infoLevel={infoLevel}
-              dataLang={dataLang}
-            />
-          ))}
+          {history.map((entry) => {
+            const meta = lookupStopMeta(entry.snapshot.stopId);
+
+            return (
+              <Fragment key={entry.snapshot.stopId}>
+                {/* <StopDropdownItem
+                  stopId={entry.snapshot.stopId}
+                  routeTypes={entry.snapshot.routeTypes}
+                  meta={meta}
+                  fallbackName={entry.snapshot.name}
+                  infoLevel={infoLevel}
+                  dataLang={dataLang}
+                /> */}
+                <StopListItemContainer
+                  stopId={entry.snapshot.stopId}
+                  meta={meta}
+                  stopReferenceSnapshot={entry.snapshot}
+                  infoLevel={infoLevel}
+                  dataLang={dataLang}
+                />
+              </Fragment>
+            );
+          })}
         </SelectContent>
       </Select>
     </div>

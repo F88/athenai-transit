@@ -263,7 +263,7 @@ export interface MapViewProps {
   /** Stop selection history entries, most recent first. */
   stopHistory: StopHistoryEntry[];
   /** Called when a history entry is chosen. */
-  onHistorySelect: (stop: Stop, routeTypes: AppRouteTypeValue[]) => void;
+  onHistorySelect: (entry: StopHistoryEntry) => void;
   /** Anchor (bookmarked stop) entries, most recently added first. */
   anchors: AnchorEntry[];
   /** Called when an anchor is chosen from the Portal dropdown. */
@@ -278,6 +278,7 @@ export interface MapViewProps {
    * data at render time, regardless of viewport position.
    */
   lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
+  lookupHistoryStopMeta: (stopId: string) => StopWithMeta | null;
   /** Height class applied to the outer map container. */
   heightClassName?: string;
   /**
@@ -335,6 +336,7 @@ export function MapView({
   onInfoClick,
   stopHistory,
   lookupAnchorStopMeta,
+  lookupHistoryStopMeta,
   onHistorySelect,
   anchors,
   onPortalSelect,
@@ -712,6 +714,7 @@ export function MapView({
         onPortalSelect={onPortalSelect}
         onPortalRemove={onPortalRemove}
         lookupAnchorStopMeta={lookupAnchorStopMeta}
+        lookupHistoryStopMeta={lookupHistoryStopMeta}
       />
       {mapInstance && (
         <EdgeMarkersSwitch
