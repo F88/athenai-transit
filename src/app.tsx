@@ -29,15 +29,19 @@ import { createLogger } from './lib/logger';
 import { getStopParam } from './lib/query-params';
 
 // domain
-import { buildAnchorRefreshUpdates, type AnchorEntry } from './domain/portal/anchor';
+import {
+  buildAnchorRefreshUpdates,
+  buildAnchorSelectionStop,
+  type AnchorEntry,
+} from './domain/portal/anchor';
 import { formatDateKey } from './domain/transit/calendar-utils';
 import { computeStopsCounts } from './domain/transit/compute-stops-counts';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
-import { findVisibleStopMetaById } from './domain/transit/stop-meta-lookup';
 import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
 import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-day';
 import { type StopHistoryEntry } from './domain/transit/stop-history';
+import { findVisibleStopMetaById } from './domain/transit/stop-meta-lookup';
 import { buildHistoryNavigationPayload } from './domain/transit/stop-navigation';
 import { createStopReferenceSnapshot } from './domain/transit/stop-reference-snapshot';
 import {
@@ -62,7 +66,7 @@ import { useTripInspection } from './hooks/use-trip-inspection';
 import { useUserSettings } from './hooks/use-user-settings';
 
 // repository
-import { LocalStorageUserDataRepository } from './repositories/local-storage-user-data-repository';
+import { LocalStorageAnchorRepository } from './repositories/anchor/local-storage-anchor-repository';
 import { LocalStorageStopSelectionRepository } from './repositories/stop-selection/local-storage-stop-selection-repository';
 
 // utils
@@ -97,7 +101,7 @@ export default function App() {
   const { t } = useTranslation();
   const repo = useTransitRepository();
   const loadResult = useLoadResult();
-  const [userDataRepo] = useState(() => new LocalStorageUserDataRepository());
+  const [anchorRepo] = useState(() => new LocalStorageAnchorRepository());
   const [stopSelectionRepo] = useState(() => new LocalStorageStopSelectionRepository());
   const { settings, updateSetting, updateSettings } = useUserSettings();
   const { dateTime, isCustomTime, resetToNow, setCustomTime } = useDateTime();
@@ -298,7 +302,7 @@ export default function App() {
     removeStop: removeAnchor,
     batchUpdateStops: batchUpdateAnchors,
     isStopAnchor,
-  } = useAnchors(userDataRepo);
+  } = useAnchors(anchorRepo);
 
   useEffect(() => {
     if (!anchorError) {
@@ -320,18 +324,18 @@ export default function App() {
     if (anchorRefreshDone.current || anchors.length === 0) {
       return;
     }
-    const stopIds = new Set(anchors.map((a) => a.stopId));
+    const stopIds = new Set(anchors.map((a) => a.snapshot.stopId));
     const metas = repo.getStopMetaByIds(stopIds);
     // Mark as done regardless of result. repo is fully loaded before
     // injection (all GTFS data is in memory), so metas is only empty
     // when all anchor stopIds have been removed from the dataset.
     // We must not retry on every dependency change.
     anchorRefreshDone.current = true;
-    const updates = buildAnchorRefreshUpdates(anchors, metas);
+    const updates = buildAnchorRefreshUpdates(anchors, metas, langChain);
     if (updates.length > 0) {
       void batchUpdateAnchors(updates);
     }
-  }, [anchors, repo, batchUpdateAnchors]);
+  }, [anchors, repo, batchUpdateAnchors, langChain]);
 
   // Pre-resolved StopWithMeta map for every anchored stop_id.
   // Built from the repository's full dataset (not just the visible
@@ -341,7 +345,7 @@ export default function App() {
     if (anchors.length === 0) {
       return new Map<string, StopWithMeta>();
     }
-    const stopIds = new Set(anchors.map((a) => a.stopId));
+    const stopIds = new Set(anchors.map((a) => a.snapshot.stopId));
     const metas = repo.getStopMetaByIds(stopIds);
     return new Map(metas.map((m) => [m.stop.stop_id, m]));
   }, [anchors, repo]);
@@ -739,7 +743,7 @@ export default function App() {
   );
 
   // Anchor stop_id set for efficient lookup in BottomSheet
-  const anchorIds = useMemo(() => new Set(anchors.map((a) => a.stopId)), [anchors]);
+  const anchorIds = useMemo(() => new Set(anchors.map((a) => a.snapshot.stopId)), [anchors]);
 
   // Toggle anchor (bookmark) status for a stop
   const handleToggleAnchorByStopId = useCallback(
@@ -755,7 +759,7 @@ export default function App() {
         // path, be triggered for an anchor that is not currently in
         // radiusStops / inBoundStops. See `DEVELOPMENT.md > Stop ID
         // lookup の選び方` for the rule.
-        const anchor = anchors.find((a) => a.stopId === stopId);
+        const anchor = anchors.find((a) => a.snapshot.stopId === stopId);
         const meta = lookupAnchorStopMeta(stopId);
         const stopName = meta
           ? getStopDisplayNames(
@@ -763,13 +767,13 @@ export default function App() {
               langChain,
               resolveAgencyLang(meta.agencies, meta.stop.agency_id),
             ).name ||
-            anchor?.stopName ||
+            anchor?.snapshot.name ||
             stopId
-          : (anchor?.stopName ?? stopId);
+          : (anchor?.snapshot.name ?? stopId);
         logger.debug(`handleToggleAnchor: removing stopId=${stopId}`);
         void removeAnchor(stopId).then((result) => {
           if (result.success) {
-            const prefix = anchor?.routeTypes ? `${routeTypesEmoji(anchor.routeTypes)} ` : '';
+            const prefix = anchor ? `${routeTypesEmoji(anchor.snapshot.routeTypes)} ` : '';
             toast.warning(t('anchor.removed'), { description: `${prefix}${stopName}` });
           }
         });
@@ -797,12 +801,9 @@ export default function App() {
                 `handleToggleAnchorByStopId: adding stopId=${stopId}, name=${displayName}`,
               );
             }
+            const snapshot = createStopReferenceSnapshot(meta, routeTypes, langChain);
             void addAnchor({
-              stopId: meta.stop.stop_id,
-              stopName: meta.stop.stop_name,
-              stopLat: meta.stop.stop_lat,
-              stopLon: meta.stop.stop_lon,
-              routeTypes,
+              snapshot,
             }).then((result) => {
               if (result.success) {
                 toast.success(t('anchor.added'), {
@@ -822,22 +823,18 @@ export default function App() {
   // auto-tracking before panning.
   const handlePortalSelect = useCallback(
     (entry: AnchorEntry) => {
-      logger.debug(`handlePortalSelect [Portal]: stopId=${entry.stopId}, name=${entry.stopName}`);
-      // Build a minimal Stop from AnchorEntry for map pan
-      const stop: Stop = {
-        stop_id: entry.stopId,
-        stop_name: entry.stopName,
-        stop_names: {},
-        stop_lat: entry.stopLat,
-        stop_lon: entry.stopLon,
-        location_type: 0,
-        agency_id: '',
-      };
+      logger.debug(
+        `handlePortalSelect [Portal]: stopId=${entry.snapshot.stopId}, name=${entry.snapshot.name}`,
+      );
+      const stop = buildAnchorSelectionStop(entry);
+      if (stop === null) {
+        logger.warn(`handlePortalSelect unresolved stopId=${entry.snapshot.stopId}`);
+        return;
+      }
       navigateAndFocusStop('select-portal', stop);
-      const snapshot = createStopReferenceSnapshot(stop, entry.routeTypes, langChain);
-      void recordStopSelection(snapshot);
+      void recordStopSelection(entry.snapshot);
     },
-    [langChain, navigateAndFocusStop, recordStopSelection],
+    [navigateAndFocusStop, recordStopSelection],
   );
 
   // Select + pan to a stop chosen from the search dialog.
@@ -1130,7 +1127,7 @@ export default function App() {
           onHistorySelect: handleHistorySelect,
           anchors,
           onPortalSelect: handlePortalSelect,
-          onPortalRemove: (entry) => handleToggleAnchorByStopId(entry.stopId),
+          onPortalRemove: (entry) => handleToggleAnchorByStopId(entry.snapshot.stopId),
           lookupAnchorStopMeta,
           lookupHistoryStopMeta,
           autoLocateEnabled,

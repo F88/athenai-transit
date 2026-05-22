@@ -1,11 +1,15 @@
-import { useState } from 'react';
-import type { InfoLevel } from '../types/app/settings';
-import type { AnchorEntry } from '../domain/portal/anchor';
-import type { StopWithMeta } from '../types/app/transit-composed';
 import { DoorOpen } from 'lucide-react';
-import { createLogger } from '../lib/logger';
-import { StopDropdownItem } from './stop/stop-dropdown-item';
-import { Select, SelectContent, SelectTrigger } from './ui/select';
+import { useState } from 'react';
+
+import { createLogger } from '@/lib/logger';
+
+import type { InfoLevel } from '@/types/app/settings';
+import type { StopWithMeta } from '@/types/app/transit-composed';
+
+import type { AnchorEntry } from '@/domain/portal/anchor';
+
+import { StopDropdownItem } from '@/components/stop/stop-dropdown-item';
+import { Select, SelectContent, SelectTrigger } from '@/components/ui/select';
 
 const logger = createLogger('Portals');
 
@@ -62,12 +66,12 @@ export function Portals({
     return null;
   }
 
-  const anchorMap = new Map(anchors.map((a) => [a.stopId, a]));
+  const anchorMap = new Map(anchors.map((a) => [a.snapshot.stopId, a]));
 
   const handleValueChange = (stopId: string) => {
     const entry = anchorMap.get(stopId);
     if (entry) {
-      logger.debug(`select: stopId=${stopId}, name=${entry.stopName}`);
+      logger.debug(`select: stopId=${stopId}, name=${entry.snapshot.name}`);
       onSelect(entry);
     }
   };
@@ -92,11 +96,11 @@ export function Portals({
         >
           {anchors.map((entry) => (
             <StopDropdownItem
-              key={entry.stopId}
-              stopId={entry.stopId}
-              routeTypes={entry.routeTypes}
-              meta={lookupAnchorStopMeta(entry.stopId)}
-              fallbackName={entry.stopName}
+              key={entry.snapshot.stopId}
+              stopId={entry.snapshot.stopId}
+              routeTypes={entry.snapshot.routeTypes}
+              meta={lookupAnchorStopMeta(entry.snapshot.stopId)}
+              fallbackName={entry.snapshot.name}
               infoLevel={infoLevel}
               dataLang={dataLang}
               onRemove={() => onRemove(entry)}

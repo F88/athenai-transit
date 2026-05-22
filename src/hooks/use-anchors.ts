@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { isAnchor, MAX_ANCHOR_SIZE, type AnchorEntry } from '../domain/portal/anchor';
-import type { Result } from '../types/app/repository';
-import type { UserDataRepository } from '../repositories/user-data-repository';
-import { createLogger } from '../lib/logger';
+
+import { createLogger } from '@/lib/logger';
+
+import type { Result } from '@/types/app/repository';
+
+import type { AnchorRepository } from '@/repositories/anchor/anchor-repository';
+
+import { isAnchor, MAX_ANCHOR_SIZE, type AnchorEntry } from '@/domain/portal/anchor';
 
 const logger = createLogger('Anchors');
 
@@ -29,7 +33,7 @@ export interface UseAnchorsReturn {
 }
 
 /**
- * Manages anchor (bookmarked stop) state backed by a {@link UserDataRepository}.
+ * Manages anchor (bookmarked stop) state backed by an {@link AnchorRepository}.
  *
  * The hook owns the React state and delegates persistence to the repository.
  * All mutation methods are async and return {@link Result} — the repository
@@ -38,7 +42,7 @@ export interface UseAnchorsReturn {
  * @param repo - The repository to use for persistence.
  * @returns Anchor state and mutation functions.
  */
-export function useAnchors(repo: UserDataRepository): UseAnchorsReturn {
+export function useAnchors(repo: AnchorRepository): UseAnchorsReturn {
   const [anchors, setAnchors] = useState<AnchorEntry[]>([]);
   const [lastError, setLastError] = useState<string | null>(null);
 
@@ -102,7 +106,7 @@ export function useAnchors(repo: UserDataRepository): UseAnchorsReturn {
       try {
         const result = await repo.removeAnchor(stopId);
         if (result.success) {
-          setAnchors((prev) => prev.filter((a) => a.stopId !== stopId));
+          setAnchors((prev) => prev.filter((a) => a.snapshot.stopId !== stopId));
           setLastError(null);
           return result;
         }
@@ -123,7 +127,9 @@ export function useAnchors(repo: UserDataRepository): UseAnchorsReturn {
       try {
         const result = await repo.updateAnchor(update);
         if (result.success) {
-          setAnchors((prev) => prev.map((a) => (a.stopId === update.stopId ? result.data : a)));
+          setAnchors((prev) =>
+            prev.map((a) => (a.snapshot.stopId === update.snapshot.stopId ? result.data : a)),
+          );
           setLastError(null);
           return result;
         }
