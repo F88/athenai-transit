@@ -363,18 +363,25 @@ export default function App() {
     focusStop,
   });
 
+  const recordStopMetaSelection = useCallback(
+    (stopMeta: StopWithMeta) => {
+      const routeTypes = resolveStopRouteTypes({
+        stopId: stopMeta.stop.stop_id,
+        routeTypeMap,
+        routes: stopMeta.routes,
+        unknownPolicy: 'include-unknown',
+      });
+      const snapshot = createStopReferenceSnapshot(stopMeta, routeTypes, langChain);
+      void recordStopSelection(snapshot);
+    },
+    [langChain, recordStopSelection, routeTypeMap],
+  );
+
   const recordStopSelectionByVisibleStop = useCallback(
     (stopId: string, fallbackStop?: Stop) => {
       const stopMeta = findVisibleStopMetaById(stopId, radiusStops, inBoundStops);
       if (stopMeta != null) {
-        const routeTypes = resolveStopRouteTypes({
-          stopId: stopMeta.stop.stop_id,
-          routeTypeMap,
-          routes: stopMeta.routes,
-          unknownPolicy: 'include-unknown',
-        });
-        const snapshot = createStopReferenceSnapshot(stopMeta, routeTypes, langChain);
-        void recordStopSelection(snapshot);
+        recordStopMetaSelection(stopMeta);
         return;
       }
 
@@ -391,22 +398,14 @@ export default function App() {
       const snapshot = createStopReferenceSnapshot(fallbackStop, routeTypes, langChain);
       void recordStopSelection(snapshot);
     },
-    [inBoundStops, langChain, radiusStops, recordStopSelection, routeTypeMap],
-  );
-
-  const navigateAndRecordStopMetaSelection = useCallback(
-    (reason: AutoLocateOffReason, stopMeta: StopWithMeta) => {
-      const routeTypes = resolveStopRouteTypes({
-        stopId: stopMeta.stop.stop_id,
-        routeTypeMap,
-        routes: stopMeta.routes,
-        unknownPolicy: 'include-unknown',
-      });
-
-      navigateAndFocusStop(reason, stopMeta.stop);
-      void recordStopSelection(createStopReferenceSnapshot(stopMeta, routeTypes, langChain));
-    },
-    [langChain, navigateAndFocusStop, recordStopSelection, routeTypeMap],
+    [
+      inBoundStops,
+      langChain,
+      radiusStops,
+      recordStopMetaSelection,
+      recordStopSelection,
+      routeTypeMap,
+    ],
   );
 
   // Wrap selectStop to also record in history.
@@ -463,10 +462,11 @@ export default function App() {
         markStopParamHandled();
         return;
       }
-      navigateAndRecordStopMetaSelection('apply-stop-param', result.data);
+      navigateAndFocusStop('apply-stop-param', result.data.stop);
+      recordStopMetaSelection(result.data);
       markStopParamHandled();
     });
-  }, [navigateAndRecordStopMetaSelection, repo]);
+  }, [navigateAndFocusStop, recordStopMetaSelection, repo]);
 
   // Load route shapes once on mount
   useEffect(() => {
@@ -681,10 +681,11 @@ export default function App() {
           toast.error(t('tripInspection.messages.openFailed'));
           return;
         }
-        navigateAndRecordStopMetaSelection('select-trip-inspection', result.data);
+        navigateAndFocusStop('select-trip-inspection', result.data.stop);
+        recordStopMetaSelection(result.data);
       })();
     },
-    [navigateAndRecordStopMetaSelection, repo, t],
+    [navigateAndFocusStop, recordStopMetaSelection, repo, t],
   );
 
   const handleTripInspectionOpenChange = useCallback(
