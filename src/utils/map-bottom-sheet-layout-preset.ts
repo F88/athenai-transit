@@ -1,6 +1,4 @@
 export interface MapBottomSheetLayoutPreset {
-  collapsedMapHeightClassName: string;
-  expandedMapHeightClassName: string;
   collapsedSheetHeightClassName: string;
   expandedSheetHeightClassName: string;
 }
@@ -38,36 +36,30 @@ export const MULTI_PANE_PANEL_SIZE: Record<
 };
 
 const REGULAR_LAYOUT_PRESET: MapBottomSheetLayoutPreset = {
-  collapsedMapHeightClassName: 'h-[60dvh]',
   collapsedSheetHeightClassName: 'h-[40dvh]',
-  expandedMapHeightClassName: 'h-[60dvh]',
   expandedSheetHeightClassName: 'h-[70dvh]',
 };
 
 const MEDIUM_LAYOUT_PRESET: MapBottomSheetLayoutPreset = {
-  collapsedMapHeightClassName: 'h-[50dvh]',
   collapsedSheetHeightClassName: 'h-[50dvh]',
-  expandedMapHeightClassName: 'h-[40dvh]',
   expandedSheetHeightClassName: 'h-[60dvh]',
 };
 
 const TALL_LAYOUT_PRESET: MapBottomSheetLayoutPreset = {
-  collapsedMapHeightClassName: 'h-[40dvh]',
   collapsedSheetHeightClassName: 'h-[60dvh]',
-  expandedMapHeightClassName: 'h-[30dvh]',
   expandedSheetHeightClassName: 'h-[70dvh]',
 };
 
 /**
- * Resolve map and bottom-sheet height classes from viewport height.
+ * Resolve bottom-sheet height classes from viewport height.
  *
- * The default layout keeps the map at 60dvh so map overlay controls remain
- * fully visible on most smartphones. Mid-height screens switch to 50dvh, and
- * very tall screens switch to 40dvh because they still preserve enough
- * absolute height for the same UI.
+ * The collapsed / expanded sheet heights scale with the viewport:
+ * a taller viewport gets a taller sheet baseline so more content is
+ * visible without expanding. The map sits at full viewport height
+ * behind the sheet and is no longer resized by the sheet's state.
  *
  * @param viewportHeight - Effective viewport height in CSS pixels.
- * @returns Height class preset for the current screen size.
+ * @returns Sheet height class preset for the current screen size.
  */
 export function resolveMapBottomSheetLayoutPreset(
   viewportHeight: number,
