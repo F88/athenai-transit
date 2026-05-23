@@ -14,9 +14,13 @@ import { MULTI_PANE_PANEL_SIZE } from '../utils/map-bottom-sheet-layout-preset';
  * left/right with the panel on the left; a portrait viewport splits
  * top/bottom with the map on top.
  *
- * The pane group is keyed by orientation so an orientation flip (device
- * rotation) remounts it cleanly, rather than re-laying-out a live
- * `ResizablePanelGroup` whose panels also change order.
+ * Each `ResizablePanel` carries a stable React `key` and `id`. On an
+ * orientation flip (device rotation) the JSX child order swaps, but
+ * React matches by `key` and `react-resizable-panels` matches by `id`,
+ * so both panel instances are preserved — the inner `MapView` stays
+ * mounted and Leaflet is not re-initialised. The `ResizablePanelGroup`
+ * itself is not keyed by orientation; the library handles the
+ * `orientation` prop change in place.
  */
 export function MultiPaneLayout({
   mapViewProps,
@@ -31,6 +35,8 @@ export function MultiPaneLayout({
 
   const sheetPane = (
     <ResizablePanel
+      key="sheet"
+      id="sheet"
       defaultSize={panelSize.defaultSize}
       minSize={panelSize.minSize}
       maxSize={panelSize.maxSize}
@@ -45,7 +51,7 @@ export function MultiPaneLayout({
   );
 
   const mapPane = (
-    <ResizablePanel>
+    <ResizablePanel key="map" id="map">
       <div className="relative h-full w-full">
         <MapView {...mapViewProps} heightClassName="h-full" />
         {mapOverlay}
@@ -55,7 +61,7 @@ export function MultiPaneLayout({
 
   if (orientation === 'horizontal') {
     return (
-      <ResizablePanelGroup key={orientation} orientation="horizontal" className="h-dvh w-full">
+      <ResizablePanelGroup orientation="horizontal" className="h-dvh w-full">
         {sheetPane}
         <ResizableHandle withHandle />
         {mapPane}
@@ -64,7 +70,7 @@ export function MultiPaneLayout({
   }
 
   return (
-    <ResizablePanelGroup key={orientation} orientation="vertical" className="h-dvh w-full">
+    <ResizablePanelGroup orientation="vertical" className="h-dvh w-full">
       {mapPane}
       <ResizableHandle withHandle />
       {sheetPane}
