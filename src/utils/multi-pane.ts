@@ -1,11 +1,4 @@
 /**
- * Minimum viewport width (CSS px) at which the multi-pane layout
- * (map + resizable stop panel) replaces the stacked map / bottom-sheet
- * layout. Targets PCs and tablets.
- */
-export const WIDE_VIEWPORT_MIN_WIDTH = 1024;
-
-/**
  * Split orientation of the multi-pane layout.
  *
  * - `'horizontal'` — panel on the left, map on the right (landscape).
@@ -26,17 +19,6 @@ export const MULTI_PANE_PANEL_SIZE: Record<
   horizontal: { defaultSize: '50%', minSize: '25%', maxSize: '75%' },
   vertical: { defaultSize: '50%', minSize: '25%', maxSize: '75%' },
 };
-
-/**
- * Decide whether the viewport is wide enough for the two-pane layout.
- *
- * @param viewportWidth - Effective viewport width in CSS pixels.
- * @returns `true` when the wide layout (full-height map + side panel)
- *   should be used instead of the stacked map / bottom-sheet layout.
- */
-export function isWideViewport(viewportWidth: number): boolean {
-  return viewportWidth >= WIDE_VIEWPORT_MIN_WIDTH;
-}
 
 /**
  * Decide the multi-pane split orientation from the viewport aspect.

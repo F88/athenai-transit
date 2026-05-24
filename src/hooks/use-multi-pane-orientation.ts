@@ -1,9 +1,6 @@
 import { useViewportHeight } from './use-viewport-height';
 import { useViewportWidth } from './use-viewport-width';
-import {
-  resolveMultiPaneOrientation,
-  type MultiPaneOrientation,
-} from '../utils/map-bottom-sheet-layout-preset';
+import { resolveMultiPaneOrientation, type MultiPaneOrientation } from '../utils/multi-pane';
 
 /**
  * Resolve the multi-pane split orientation from the current viewport

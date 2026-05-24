@@ -3,7 +3,7 @@ import { MapView } from './map/map-view';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './ui/resizable';
 import type { LayoutProps } from './layout-props';
 import { useMultiPaneOrientation } from '../hooks/use-multi-pane-orientation';
-import { MULTI_PANE_PANEL_SIZE } from '../utils/map-bottom-sheet-layout-preset';
+import { MULTI_PANE_PANEL_SIZE } from '../utils/multi-pane';
 
 /**
  * Multi-pane-mode layout for wide viewports: the stop panel and the map

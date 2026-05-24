@@ -1,15 +1,7 @@
 import { useViewportWidth } from './use-viewport-width';
-import { isWideViewport } from '../utils/map-bottom-sheet-layout-preset';
+import { isWideViewport, type LayoutMode } from '../utils/layout-mode';
 
-/**
- * Active app layout mode.
- *
- * - `'simple'` — small screens: one map surface with a bottom-sheet
- *   overlay (no real pane split). The existing layout.
- * - `'multi-pane'` — large screens: a multi-pane layout (map pane +
- *   stop panel pane) split by a resizable handle.
- */
-export type LayoutMode = 'simple' | 'multi-pane';
+export type { LayoutMode };
 
 /**
  * Resolve the active {@link LayoutMode} from the current viewport width.
