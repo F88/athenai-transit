@@ -1,11 +1,3 @@
-export interface MapBottomSheetLayoutPreset {
-  collapsedSheetHeightClassName: string;
-  expandedSheetHeightClassName: string;
-}
-
-const MEDIUM_VIEWPORT_MIN_HEIGHT = 800;
-const TALL_VIEWPORT_MIN_HEIGHT = 1200;
-
 /**
  * Minimum viewport width (CSS px) at which the multi-pane layout
  * (map + resizable stop panel) replaces the stacked map / bottom-sheet
@@ -34,46 +26,6 @@ export const MULTI_PANE_PANEL_SIZE: Record<
   horizontal: { defaultSize: '50%', minSize: '25%', maxSize: '75%' },
   vertical: { defaultSize: '50%', minSize: '25%', maxSize: '75%' },
 };
-
-const REGULAR_LAYOUT_PRESET: MapBottomSheetLayoutPreset = {
-  collapsedSheetHeightClassName: 'h-[40dvh]',
-  expandedSheetHeightClassName: 'h-[70dvh]',
-};
-
-const MEDIUM_LAYOUT_PRESET: MapBottomSheetLayoutPreset = {
-  collapsedSheetHeightClassName: 'h-[50dvh]',
-  expandedSheetHeightClassName: 'h-[60dvh]',
-};
-
-const TALL_LAYOUT_PRESET: MapBottomSheetLayoutPreset = {
-  collapsedSheetHeightClassName: 'h-[60dvh]',
-  expandedSheetHeightClassName: 'h-[70dvh]',
-};
-
-/**
- * Resolve bottom-sheet height classes from viewport height.
- *
- * The collapsed / expanded sheet heights scale with the viewport:
- * a taller viewport gets a taller sheet baseline so more content is
- * visible without expanding. The map sits at full viewport height
- * behind the sheet and is no longer resized by the sheet's state.
- *
- * @param viewportHeight - Effective viewport height in CSS pixels.
- * @returns Sheet height class preset for the current screen size.
- */
-export function resolveMapBottomSheetLayoutPreset(
-  viewportHeight: number,
-): MapBottomSheetLayoutPreset {
-  if (viewportHeight >= TALL_VIEWPORT_MIN_HEIGHT) {
-    return TALL_LAYOUT_PRESET;
-  }
-
-  if (viewportHeight >= MEDIUM_VIEWPORT_MIN_HEIGHT) {
-    return MEDIUM_LAYOUT_PRESET;
-  }
-
-  return REGULAR_LAYOUT_PRESET;
-}
 
 /**
  * Decide whether the viewport is wide enough for the two-pane layout.

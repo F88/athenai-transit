@@ -1,54 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   isWideViewport,
-  resolveMapBottomSheetLayoutPreset,
   resolveMultiPaneOrientation,
   WIDE_VIEWPORT_MIN_WIDTH,
 } from '../map-bottom-sheet-layout-preset';
-
-describe('resolveMapBottomSheetLayoutPreset', () => {
-  it('keeps the default smartphone preset for short viewports', () => {
-    expect(resolveMapBottomSheetLayoutPreset(640)).toEqual({
-      collapsedSheetHeightClassName: 'h-[40dvh]',
-      expandedSheetHeightClassName: 'h-[70dvh]',
-    });
-  });
-
-  it('keeps the default smartphone preset for mid-height viewports', () => {
-    expect(resolveMapBottomSheetLayoutPreset(760)).toEqual({
-      collapsedSheetHeightClassName: 'h-[40dvh]',
-      expandedSheetHeightClassName: 'h-[70dvh]',
-    });
-  });
-
-  it('returns the medium preset for medium-tall viewports', () => {
-    expect(resolveMapBottomSheetLayoutPreset(900)).toEqual({
-      collapsedSheetHeightClassName: 'h-[50dvh]',
-      expandedSheetHeightClassName: 'h-[60dvh]',
-    });
-  });
-
-  it('returns the desktop preset for very tall viewports', () => {
-    expect(resolveMapBottomSheetLayoutPreset(1100)).toEqual({
-      collapsedSheetHeightClassName: 'h-[50dvh]',
-      expandedSheetHeightClassName: 'h-[60dvh]',
-    });
-  });
-
-  it('returns the desktop preset after the tall threshold', () => {
-    expect(resolveMapBottomSheetLayoutPreset(1300)).toEqual({
-      collapsedSheetHeightClassName: 'h-[60dvh]',
-      expandedSheetHeightClassName: 'h-[70dvh]',
-    });
-  });
-
-  it('falls back to regular preset when viewport height is unavailable', () => {
-    expect(resolveMapBottomSheetLayoutPreset(0)).toEqual({
-      collapsedSheetHeightClassName: 'h-[40dvh]',
-      expandedSheetHeightClassName: 'h-[70dvh]',
-    });
-  });
-});
 
 describe('isWideViewport', () => {
   it('returns false for narrow (smartphone) viewports', () => {

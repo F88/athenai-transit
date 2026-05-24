@@ -1,18 +1,12 @@
-import { useEffect } from 'react';
 import { BottomSheet } from './bottom-sheet';
 import { MapView } from './map/map-view';
 import type { LayoutProps } from './layout-props';
-import { useViewportHeight } from '../hooks/use-viewport-height';
-import { resolveMapBottomSheetLayoutPreset } from '../utils/map-bottom-sheet-layout-preset';
-import { createLogger } from '../lib/logger';
-
-const logger = createLogger('MapBottomSheetLayout');
 
 /**
- * Simple-mode layout for small viewports: a full-viewport map with a
- * bottom sheet overlaying its lower part. The sheet has collapsed and
- * expanded heights (drag to switch); the map stays at full viewport
- * height behind it.
+ * Simple-mode layout for small viewports: the map (fixed at 60dvh)
+ * stacked above a bottom sheet (40dvh collapsed, expandable to 70dvh).
+ * The sheet's collapsed / expanded heights and drag behaviour come
+ * from BottomSheet's defaults; nothing here scales with viewport size.
  */
 export function MapBottomSheetLayout({
   mapViewProps,
@@ -22,17 +16,6 @@ export function MapBottomSheetLayout({
   filteredNearbyStopsCounts,
   mapOverlay,
 }: LayoutProps) {
-  const viewportHeight = useViewportHeight();
-  const layoutPreset = resolveMapBottomSheetLayoutPreset(viewportHeight);
-
-  useEffect(() => {
-    if (logger.isEnabled('debug')) {
-      logger.debug(
-        `viewportHeight=${viewportHeight}, collapsedSheet=${layoutPreset.collapsedSheetHeightClassName}, expandedSheet=${layoutPreset.expandedSheetHeightClassName}`,
-      );
-    }
-  }, [layoutPreset, viewportHeight]);
-
   return (
     <>
       <div className="relative">
@@ -44,8 +27,6 @@ export function MapBottomSheetLayout({
         globalFilter={globalFilter}
         nearbyStopsCounts={nearbyStopsCounts}
         filteredNearbyStopsCounts={filteredNearbyStopsCounts}
-        collapsedHeightClassName={layoutPreset.collapsedSheetHeightClassName}
-        expandedHeightClassName={layoutPreset.expandedSheetHeightClassName}
       />
     </>
   );
