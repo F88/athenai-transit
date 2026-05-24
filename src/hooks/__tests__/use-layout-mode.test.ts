@@ -2,21 +2,21 @@ import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLayoutMode } from '../use-layout-mode';
 
-const { mockUseViewportWidth } = vi.hoisted(() => ({
-  mockUseViewportWidth: vi.fn(),
+const { mockUseViewport } = vi.hoisted(() => ({
+  mockUseViewport: vi.fn(),
 }));
 
-vi.mock('../use-viewport-width', () => ({
-  useViewportWidth: mockUseViewportWidth,
+vi.mock('../use-viewport', () => ({
+  useViewport: mockUseViewport,
 }));
 
 describe('useLayoutMode', () => {
   beforeEach(() => {
-    mockUseViewportWidth.mockReset();
+    mockUseViewport.mockReset();
   });
 
   it('returns simple below the wide viewport threshold', () => {
-    mockUseViewportWidth.mockReturnValue(1023);
+    mockUseViewport.mockReturnValue({ width: 1023, height: 800 });
 
     const { result } = renderHook(() => useLayoutMode());
 
@@ -24,7 +24,7 @@ describe('useLayoutMode', () => {
   });
 
   it('returns multi-pane at the wide viewport threshold', () => {
-    mockUseViewportWidth.mockReturnValue(1024);
+    mockUseViewport.mockReturnValue({ width: 1024, height: 800 });
 
     const { result } = renderHook(() => useLayoutMode());
 

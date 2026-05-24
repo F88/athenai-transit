@@ -1,5 +1,4 @@
-import { useViewportHeight } from './use-viewport-height';
-import { useViewportWidth } from './use-viewport-width';
+import { useViewport } from './use-viewport';
 import { resolveMultiPaneOrientation, type MultiPaneOrientation } from '../utils/multi-pane';
 
 /**
@@ -13,7 +12,6 @@ import { resolveMultiPaneOrientation, type MultiPaneOrientation } from '../utils
  * @returns The split orientation for the multi-pane layout.
  */
 export function useMultiPaneOrientation(): MultiPaneOrientation {
-  const viewportWidth = useViewportWidth();
-  const viewportHeight = useViewportHeight();
-  return resolveMultiPaneOrientation(viewportWidth, viewportHeight);
+  const { width, height } = useViewport();
+  return resolveMultiPaneOrientation(width, height);
 }

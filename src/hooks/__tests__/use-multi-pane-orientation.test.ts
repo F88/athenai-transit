@@ -2,28 +2,21 @@ import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMultiPaneOrientation } from '../use-multi-pane-orientation';
 
-const { mockUseViewportWidth, mockUseViewportHeight } = vi.hoisted(() => ({
-  mockUseViewportWidth: vi.fn(),
-  mockUseViewportHeight: vi.fn(),
+const { mockUseViewport } = vi.hoisted(() => ({
+  mockUseViewport: vi.fn(),
 }));
 
-vi.mock('../use-viewport-width', () => ({
-  useViewportWidth: mockUseViewportWidth,
-}));
-
-vi.mock('../use-viewport-height', () => ({
-  useViewportHeight: mockUseViewportHeight,
+vi.mock('../use-viewport', () => ({
+  useViewport: mockUseViewport,
 }));
 
 describe('useMultiPaneOrientation', () => {
   beforeEach(() => {
-    mockUseViewportWidth.mockReset();
-    mockUseViewportHeight.mockReset();
+    mockUseViewport.mockReset();
   });
 
   it('returns horizontal when width is greater than height', () => {
-    mockUseViewportWidth.mockReturnValue(1366);
-    mockUseViewportHeight.mockReturnValue(1024);
+    mockUseViewport.mockReturnValue({ width: 1366, height: 1024 });
 
     const { result } = renderHook(() => useMultiPaneOrientation());
 
@@ -31,8 +24,7 @@ describe('useMultiPaneOrientation', () => {
   });
 
   it('returns vertical when height is greater than width', () => {
-    mockUseViewportWidth.mockReturnValue(900);
-    mockUseViewportHeight.mockReturnValue(1400);
+    mockUseViewport.mockReturnValue({ width: 900, height: 1400 });
 
     const { result } = renderHook(() => useMultiPaneOrientation());
 

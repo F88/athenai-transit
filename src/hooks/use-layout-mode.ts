@@ -1,7 +1,5 @@
-import { useViewportWidth } from './use-viewport-width';
+import { useViewport } from './use-viewport';
 import { isWideViewport, type LayoutMode } from '../utils/layout-mode';
-
-export type { LayoutMode };
 
 /**
  * Resolve the active {@link LayoutMode} from the current viewport width.
@@ -13,6 +11,6 @@ export type { LayoutMode };
  * @returns `'multi-pane'` on wide viewports, `'simple'` otherwise.
  */
 export function useLayoutMode(): LayoutMode {
-  const viewportWidth = useViewportWidth();
-  return isWideViewport(viewportWidth) ? 'multi-pane' : 'simple';
+  const { width } = useViewport();
+  return isWideViewport(width) ? 'multi-pane' : 'simple';
 }
