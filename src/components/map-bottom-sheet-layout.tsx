@@ -36,7 +36,7 @@ export function MapBottomSheetLayout({
   return (
     <>
       <div className="relative">
-        <MapView {...mapViewProps} heightClassName="h-dvh" />
+        <MapView {...mapViewProps} heightClassName="h-[60dvh]" />
         {mapOverlay}
       </div>
       <BottomSheet
