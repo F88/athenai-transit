@@ -74,7 +74,11 @@ export interface UseStopsForBoundsReturn {
  * 2. immediate update of `mapCenter` so it tracks the pan even while
  *    the fetch is being debounced
  * 3. latest-only commit via a request-id counter so a slow response
- *    from an older bounds cannot overwrite a fresher result
+ *    from an older request cannot overwrite a fresher result. The
+ *    counter is bumped at the moment a new viewport arrives (or the
+ *    repo / perfProfile changes), not when the debounced fetch is
+ *    dispatched, so an in-flight response that lands before its
+ *    successor's fetch is even issued is still classified as stale.
  * 4. `onStopsCommitted` callback that fires only after the latest
  *    fetch has been committed (used by the caller to clear focus)
  *
@@ -112,9 +116,15 @@ export function useStopsForBounds(params: UseStopsForBoundsParams): UseStopsForB
       // for the debounced fetch. The fetch result is allowed to be
       // late; the visible map center is not.
       setMapCenter(center);
+      // Bump the request id at the moment a new viewport arrives, not
+      // when its debounced fetch is dispatched. Otherwise an old
+      // in-flight response that lands between a new bounds event and
+      // its yet-to-be-issued fetch would still see itself as `latest`
+      // and overwrite the fresher state. The newly bumped id is the
+      // one the upcoming fetch will own.
+      const requestId = ++latestRequestIdRef.current;
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = setTimeout(() => {
-        const requestId = ++latestRequestIdRef.current;
         const { nearbyRadius, maxResults } = perfProfile.data.stops;
         if (logger.isEnabled('debug')) {
           logger.debug(
@@ -130,9 +140,10 @@ export function useStopsForBounds(params: UseStopsForBoundsParams): UseStopsForB
           repo.getStopsNearby(center, nearbyRadius, maxResults),
         ]).then(([inBoundsResult, nearbyResult]) => {
           if (requestId !== latestRequestIdRef.current) {
-            // A newer request was issued before this one resolved.
-            // Drop the result so it cannot overwrite the fresher state
-            // already committed (or about to be) by the newer request.
+            // A newer viewport (or a repo / perfProfile change) has
+            // invalidated this request. Drop the result so it cannot
+            // overwrite the fresher state already committed — or about
+            // to be — by the newer request.
             if (logger.isEnabled('debug')) {
               logger.debug(
                 `stale response dropped (requestId=${requestId}, latest=${latestRequestIdRef.current})`,
@@ -158,6 +169,21 @@ export function useStopsForBounds(params: UseStopsForBoundsParams): UseStopsForB
     },
     [repo, perfProfile, debounceMs],
   );
+
+  // Invalidate any in-flight request and clear the pending debounce
+  // when the upstream data source or perf profile changes. Without
+  // this, a response that started under the old `repo` / `perfProfile`
+  // would still pass the latest-request guard (its id is the most
+  // recent one ever issued) and overwrite state that should reflect
+  // the new source.
+  //
+  // Bumping `latestRequestIdRef` here is safe even on the very first
+  // render: no fetch has been dispatched yet, so there is no id to
+  // collide with.
+  useEffect(() => {
+    ++latestRequestIdRef.current;
+    clearTimeout(debounceTimerRef.current);
+  }, [repo, perfProfile]);
 
   // Cancel any pending debounce on unmount so the timeout cannot fire
   // a fetch after the consumer has gone away. The request-id guard

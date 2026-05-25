@@ -273,6 +273,162 @@ describe('useStopsForBounds', () => {
     expect(result.current.mapCenter).toEqual(CENTER_B);
   });
 
+  it('drops an in-flight response when a newer bounds event arrives before the next fetch is even issued', async () => {
+    const oldStop = makeStopMeta('old-stop');
+    const newStop = makeStopMeta('new-stop');
+
+    // First call: stays pending until we resolve it manually so we can
+    // land its response strictly between bounds B's event and bounds
+    // B's debounced fetch dispatch.
+    let resolveOldInBounds!: () => void;
+    let resolveOldNearby!: () => void;
+    const oldInBoundsPromise = new Promise<{
+      success: true;
+      data: (typeof oldStop)[];
+      truncated: false;
+    }>((resolve) => {
+      resolveOldInBounds = () => {
+        resolve({ success: true, data: [oldStop], truncated: false });
+      };
+    });
+    const oldNearbyPromise = new Promise<{
+      success: true;
+      data: (typeof oldStop)[];
+      truncated: false;
+    }>((resolve) => {
+      resolveOldNearby = () => {
+        resolve({ success: true, data: [oldStop], truncated: false });
+      };
+    });
+
+    const getStopsInBounds = vi
+      .fn()
+      .mockReturnValueOnce(oldInBoundsPromise)
+      .mockResolvedValue({ success: true, data: [newStop], truncated: false });
+    const getStopsNearby = vi
+      .fn()
+      .mockReturnValueOnce(oldNearbyPromise)
+      .mockResolvedValue({ success: true, data: [newStop], truncated: false });
+
+    const repo = makeRepo({ getStopsInBounds, getStopsNearby });
+    const onStopsCommitted = vi.fn();
+
+    const { result } = renderHook(() =>
+      useStopsForBounds({
+        repo,
+        perfProfile: PERF_PROFILES.lite,
+        onStopsCommitted,
+        debounceMs: TEST_DEBOUNCE_MS,
+      }),
+    );
+
+    // First bounds change -> debounce expires -> OLD fetch issued (pending).
+    act(() => {
+      result.current.handleBoundsChanged(BOUNDS_A, CENTER_A);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TEST_DEBOUNCE_MS);
+    });
+
+    // Second bounds change arrives, but its debounced fetch has NOT
+    // been dispatched yet. The OLD response now resolves — the guard
+    // must still classify it as stale because a newer viewport has
+    // already been registered.
+    act(() => {
+      result.current.handleBoundsChanged(BOUNDS_B, CENTER_B);
+    });
+    await act(async () => {
+      resolveOldInBounds();
+      resolveOldNearby();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.inBoundStops).toEqual([]);
+    expect(result.current.radiusStops).toEqual([]);
+    expect(result.current.hasNearbyLoaded).toBe(false);
+    expect(onStopsCommitted).not.toHaveBeenCalled();
+
+    // Let the second fetch run to completion to confirm the new result
+    // is committed normally.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TEST_DEBOUNCE_MS);
+    });
+
+    expect(result.current.inBoundStops).toEqual([newStop]);
+    expect(result.current.radiusStops).toEqual([newStop]);
+    expect(result.current.hasNearbyLoaded).toBe(true);
+    expect(onStopsCommitted).toHaveBeenCalledTimes(1);
+  });
+
+  it('invalidates pending and in-flight requests when the repository changes', async () => {
+    const oldStop = makeStopMeta('old-stop');
+
+    let resolveOldInBounds!: () => void;
+    let resolveOldNearby!: () => void;
+    const oldInBoundsPromise = new Promise<{
+      success: true;
+      data: (typeof oldStop)[];
+      truncated: false;
+    }>((resolve) => {
+      resolveOldInBounds = () => {
+        resolve({ success: true, data: [oldStop], truncated: false });
+      };
+    });
+    const oldNearbyPromise = new Promise<{
+      success: true;
+      data: (typeof oldStop)[];
+      truncated: false;
+    }>((resolve) => {
+      resolveOldNearby = () => {
+        resolve({ success: true, data: [oldStop], truncated: false });
+      };
+    });
+
+    const oldRepo = makeRepo({
+      getStopsInBounds: vi.fn().mockReturnValue(oldInBoundsPromise),
+      getStopsNearby: vi.fn().mockReturnValue(oldNearbyPromise),
+    });
+    const newRepo = makeRepo();
+    const onStopsCommitted = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ repo }) =>
+        useStopsForBounds({
+          repo,
+          perfProfile: PERF_PROFILES.lite,
+          onStopsCommitted,
+          debounceMs: TEST_DEBOUNCE_MS,
+        }),
+      { initialProps: { repo: oldRepo } },
+    );
+
+    // Issue a fetch under `oldRepo`.
+    act(() => {
+      result.current.handleBoundsChanged(BOUNDS_A, CENTER_A);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TEST_DEBOUNCE_MS);
+    });
+
+    // Swap in `newRepo` while the old fetch is still pending. The
+    // hook's invalidation effect must bump the request id so the
+    // old response cannot land on top of the new repo's state.
+    rerender({ repo: newRepo });
+
+    await act(async () => {
+      resolveOldInBounds();
+      resolveOldNearby();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.inBoundStops).toEqual([]);
+    expect(result.current.radiusStops).toEqual([]);
+    expect(result.current.hasNearbyLoaded).toBe(false);
+    expect(onStopsCommitted).not.toHaveBeenCalled();
+  });
+
   it('cancels the pending debounce on unmount so the fetch never fires', async () => {
     const repo = makeRepo();
 
