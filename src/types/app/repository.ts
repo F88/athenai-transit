@@ -111,6 +111,16 @@ export type TripSnapshotResult = Result<TripSnapshot>;
 /** Programmatic reason for an empty trip-inspection target result. */
 export type TripInspectionTargetsEmptyReason = 'no-stop-data' | 'no-service-on-this-day';
 
+/**
+ * Programmatic reason a hook-level trip-inspection open attempt
+ * cannot proceed. Superset of {@link TripInspectionTargetsEmptyReason}
+ * with reasons unique to the hook layer (snapshot/target lookup).
+ */
+export type TripInspectionNoDataReason =
+  | TripInspectionTargetsEmptyReason
+  | 'snapshot-unavailable'
+  | 'target-missing';
+
 /** Non-empty trip-inspection target list. */
 type NonEmptyTripInspectionTargets = [TripInspectionTarget, ...TripInspectionTarget[]];
 

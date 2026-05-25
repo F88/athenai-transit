@@ -1,14 +1,13 @@
+import type L from 'leaflet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type L from 'leaflet';
 
 import { toast } from 'sonner';
 
 // types
 import type { AutoLocateOffReason } from './types/app/auto-locate';
-import type { Bounds, LatLng, RouteShape, UserLocation } from './types/app/map';
-import type { StopsCounts } from './types/app/stop';
-import type { AppRouteTypeValue, Stop, TimetableEntriesState } from './types/app/transit';
+import type { RouteShape, UserLocation } from './types/app/map';
+import type { AppRouteTypeValue, Stop } from './types/app/transit';
 import type {
   StopWithContext,
   StopWithMeta,
@@ -36,7 +35,7 @@ import {
   type AnchorEntry,
 } from './domain/portal/anchor';
 import { formatDateKey } from './domain/transit/calendar-utils';
-import { computeStopsCounts } from './domain/transit/compute-stops-counts';
+import { deriveFilteredNearbyStops } from './domain/transit/derive-filtered-nearby-stops';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
 import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
@@ -46,11 +45,9 @@ import { findVisibleStopMetaById } from './domain/transit/stop-meta-lookup';
 import { buildHistoryNavigationPayload } from './domain/transit/stop-navigation';
 import { createStopReferenceSnapshot } from './domain/transit/stop-reference-snapshot';
 import { buildStopRouteTypeMap } from './domain/transit/stop-route-type-map';
-import {
-  applyStopEventAttributeTogglesToStops,
-  omitStopsWithoutStopTimes,
-} from './domain/transit/timetable-filter';
-import { getStopServiceState, getTimetableEntriesState } from './domain/transit/timetable-utils';
+import { getTimetableOpenOutcomeMessage } from './domain/transit/timetable-message';
+import { getStopServiceState } from './domain/transit/timetable-utils';
+import { getTripInspectionOpenOutcomeMessage } from './domain/transit/trip-inspection-message';
 
 // hooks
 import { useAnchors } from './hooks/use-anchors';
@@ -62,6 +59,7 @@ import { useRouteStops } from './hooks/use-route-stops';
 import { useSelection } from './hooks/use-selection';
 import { useStopHistory, type UseStopHistoryReturn } from './hooks/use-stop-history';
 import { useStopNavigation } from './hooks/use-stop-navigation';
+import { useStopsForBounds } from './hooks/use-stops-for-bounds';
 import { useTimetable } from './hooks/use-timetable';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useTripInspection } from './hooks/use-trip-inspection';
@@ -85,13 +83,13 @@ import {
 } from './utils/settings-cycle';
 
 // components
+import { AppLayout } from './components/app-layout';
 import { DataSourceSettingsDialog } from './components/dialog/data-source-settings-dialog';
 import { InfoDialog } from './components/dialog/info-dialog';
 import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
 import { StopSearchDialog } from './components/dialog/stop-search-dialog';
 import { TimetableModal } from './components/dialog/timetable-modal';
 import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
-import { AppLayout } from './components/app-layout';
 import { MapOverlay } from './components/map/map-overlay';
 import { MapView } from './components/map/map-view';
 import { MapViewContainer } from './components/map/map-view-container';
@@ -99,8 +97,28 @@ import { Toaster } from './components/ui/sonner';
 import { MapSlotProvider } from './contexts/map-slot-provider';
 
 const logger = createLogger('App');
-const DEBOUNCE_MS = 300;
 const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
+
+interface OpenOutcomeToastMessage {
+  severity: 'warning' | 'error';
+  messageKey: string;
+}
+
+function showOpenOutcomeToast(
+  message: OpenOutcomeToastMessage | null,
+  t: ReturnType<typeof useTranslation>['t'],
+): void {
+  if (!message) {
+    return;
+  }
+
+  if (message.severity === 'warning') {
+    toast.warning(t(message.messageKey));
+    return;
+  }
+
+  toast.error(t(message.messageKey));
+}
 
 export default function App() {
   const { t } = useTranslation();
@@ -149,11 +167,26 @@ export default function App() {
     }
   }, [settings.lang, langChain]);
 
-  const [inBoundStops, setInBoundStops] = useState<StopWithMeta[]>([]);
-  const [radiusStops, setNearbyStops] = useState<StopWithMeta[]>([]);
-  const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
+  const perfProfile = PERF_PROFILES[settings.perfMode];
+
+  // `clearFocus` originates from `useSelection`, which itself depends
+  // on the stops produced by `useStopsForBounds`. To break that
+  // circular dependency without re-creating callbacks on every render,
+  // `useStopsForBounds` is given a stable `onStopsCommitted` callback
+  // that reads the latest `clearFocus` from a ref; the ref is updated
+  // in an effect right after `useSelection` returns.
+  const clearFocusRef = useRef<() => void>(() => {});
+  const handleStopsCommitted = useCallback(() => {
+    clearFocusRef.current();
+  }, []);
+
+  const { inBoundStops, radiusStops, mapCenter, hasNearbyLoaded, handleBoundsChanged } =
+    useStopsForBounds({
+      repo,
+      perfProfile,
+      onStopsCommitted: handleStopsCommitted,
+    });
   const [routeShapes, setRouteShapes] = useState<RouteShape[]>([]);
-  const [hasNearbyLoaded, setHasNearbyLoaded] = useState(false);
   // Auto-tracking flag is intentionally not persisted: a tracking
   // permission/intent shouldn't silently survive a reload, so it always
   // starts off and the user must opt in each session. Lives in app.tsx
@@ -288,6 +321,13 @@ export default function App() {
     radiusStops,
     inBoundStops,
   });
+
+  // Publish the live `clearFocus` to the ref read by
+  // `useStopsForBounds`'s `onStopsCommitted`. See the ref declaration
+  // above for the circular-dependency rationale.
+  useEffect(() => {
+    clearFocusRef.current = clearFocus;
+  }, [clearFocus]);
 
   const routeStops = useRouteStops(selectionInfo?.routeIds ?? null, repo);
   // console.debug('routeStops', routeStops.length);
@@ -514,55 +554,6 @@ export default function App() {
     });
   }, [repo]);
 
-  const debounceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  const perfProfile = PERF_PROFILES[settings.perfMode];
-
-  // Fetch stops when map bounds change (debounced). Auto-pan-driven
-  // moveends (= the locate watch) are treated identically to manual
-  // pans; the natural "near" guards (resolveLocateAction's 10 m
-  // threshold for manual locate, Leaflet's `panTo` equality check for
-  // the tracking auto-pan) prevent fetches when the position has not
-  // actually changed.
-  const handleBoundsChanged = useCallback(
-    (bounds: Bounds, center: LatLng) => {
-      // Keep `mapCenter` in sync with the latest map center; the bottom
-      // sheet computes per-stop distance from it.
-      setMapCenter(center);
-      clearTimeout(debounceTimer.current);
-      debounceTimer.current = setTimeout(() => {
-        const { nearbyRadius, maxResults } = perfProfile.data.stops;
-        if (logger.isEnabled('debug')) {
-          logger.debug(
-            'bounds changed: fetching stops via repo',
-            `radius=${nearbyRadius}`,
-            `maxResults=${maxResults}`,
-            `center=(${center.lat.toFixed(4)}, ${center.lng.toFixed(4)})`,
-          );
-        }
-        void Promise.all([
-          repo.getStopsInBounds(bounds, maxResults),
-          repo.getStopsNearby(center, nearbyRadius, maxResults),
-        ]).then(([inBoundsResult, nearbyResult]) => {
-          const inBounds = inBoundsResult.success ? inBoundsResult.data : [];
-          const nearby = nearbyResult.success ? nearbyResult.data : [];
-          logger.info(
-            'bounds changed:',
-            `radius=${nearbyRadius}`,
-            `nearby=${nearby.length}`,
-            `inBound=${inBounds.length}`,
-            `center=(${center.lat.toFixed(4)}, ${center.lng.toFixed(4)})`,
-          );
-          setInBoundStops(inBounds);
-          setNearbyStops(nearby);
-          setHasNearbyLoaded(true);
-          clearFocus();
-        });
-      }, DEBOUNCE_MS);
-    },
-    [repo, perfProfile, clearFocus],
-  );
-
   const handleFetchStopTimes = useCallback(
     async (stopId: string): Promise<StopWithContext | null> => {
       const meta =
@@ -601,19 +592,7 @@ export default function App() {
         headsign,
         dateTime,
       }).then((status) => {
-        if (status.status === 'not-found') {
-          toast.warning(t('timetable.messages.stopNotFound'));
-          return;
-        }
-
-        if (status.status === 'route-not-found') {
-          toast.warning(t('timetable.messages.routeNotFound'));
-          return;
-        }
-
-        if (status.status === 'error') {
-          toast.error(t('timetable.messages.openFailed'));
-        }
+        showOpenOutcomeToast(getTimetableOpenOutcomeMessage(status.status), t);
       });
     },
     [dateTime, openRouteHeadsignTimetable, t],
@@ -625,14 +604,7 @@ export default function App() {
         stopId,
         dateTime,
       }).then((status) => {
-        if (status.status === 'not-found') {
-          toast.warning(t('timetable.messages.stopNotFound'));
-          return;
-        }
-
-        if (status.status === 'error') {
-          toast.error(t('timetable.messages.openFailed'));
-        }
+        showOpenOutcomeToast(getTimetableOpenOutcomeMessage(status.status), t);
       });
     },
     [dateTime, openStopTimetable, t],
@@ -647,20 +619,7 @@ export default function App() {
         now: dateTime,
         serviceDate,
       }).then((status) => {
-        if (status.status === 'no-data') {
-          const messageKey =
-            status.reason === 'no-stop-data'
-              ? 'tripInspection.messages.noStopData'
-              : status.reason === 'no-service-on-this-day'
-                ? 'tripInspection.messages.noServiceOnThisDay'
-                : 'tripInspection.messages.noData';
-          toast.warning(t(messageKey));
-          return;
-        }
-
-        if (status.status === 'error') {
-          toast.error(t('tripInspection.messages.openFailed'));
-        }
+        showOpenOutcomeToast(getTripInspectionOpenOutcomeMessage(status), t);
       });
     },
     [dateTime, openTripInspectionFromStopId, t],
@@ -669,20 +628,7 @@ export default function App() {
   const handleInspectTrip = useCallback(
     (target: TripInspectionTarget) => {
       void openTripInspectionFromTarget(target, 'direct-open').then((status) => {
-        if (status.status === 'no-data') {
-          const messageKey =
-            status.reason === 'no-stop-data'
-              ? 'tripInspection.messages.noStopData'
-              : status.reason === 'no-service-on-this-day'
-                ? 'tripInspection.messages.noServiceOnThisDay'
-                : 'tripInspection.messages.noData';
-          toast.warning(t(messageKey));
-          return;
-        }
-
-        if (status.status === 'error') {
-          toast.error(t('tripInspection.messages.openFailed'));
-        }
+        showOpenOutcomeToast(getTripInspectionOpenOutcomeMessage(status), t);
       });
     },
     [openTripInspectionFromTarget, t],
@@ -691,20 +637,7 @@ export default function App() {
   const handleInspectTripFromDialog = useCallback(
     (target: TripInspectionTarget) => {
       void openTripInspectionFromTarget(target, 'trip-stops-time-select').then((status) => {
-        if (status.status === 'no-data') {
-          const messageKey =
-            status.reason === 'no-stop-data'
-              ? 'tripInspection.messages.noStopData'
-              : status.reason === 'no-service-on-this-day'
-                ? 'tripInspection.messages.noServiceOnThisDay'
-                : 'tripInspection.messages.noData';
-          toast.warning(t(messageKey));
-          return;
-        }
-
-        if (status.status === 'error') {
-          toast.error(t('tripInspection.messages.openFailed'));
-        }
+        showOpenOutcomeToast(getTripInspectionOpenOutcomeMessage(status), t);
       });
     },
     [openTripInspectionFromTarget, t],
@@ -930,56 +863,38 @@ export default function App() {
     [settings.visibleStopTypes],
   );
 
-  const routeTypesFilteredNearbyStopTimes = useMemo(
-    () => nearbyStopTimes.filter((d) => d.routeTypes.some((rt) => enabledRouteTypes.has(rt))),
-    [nearbyStopTimes, enabledRouteTypes],
-  );
-
-  // Apply origin / boardable filter (= app-wide `globalFilter` toggles)
-  // per-stop while preserving the outer stop list. Empty-stop omission
-  // happens in the next memo so the two responsibilities stay distinct.
-  const stopEventAttributesAppliedNearbyStopTimes = useMemo(
+  // Derive the visible nearby-stop state in one selector: route-type
+  // filter (settings), origin/boardable filter (globalFilter),
+  // empty-stop omit policy, pre-globalFilter `TimetableEntriesState`
+  // snapshot, and pre/post-filter counts. Internally this is still a
+  // multi-pass pipeline (filter -> state map -> toggles -> omit ->
+  // counts); the consolidation is structural -- one derivation block
+  // instead of a chain of `useMemo` -- not a single-traversal
+  // optimization. Aliases below keep the existing call sites
+  // untouched while the selector owns the pipeline. See
+  // `deriveFilteredNearbyStops` for the step ordering and the
+  // pre-globalFilter rationale for the state map.
+  const {
+    filtered: stopEventAttributesNonEmptyNearbyStopTimes,
+    timetableEntriesStateByStopId,
+    rawCounts: nearbyStopsCounts,
+    filteredCounts: filteredNearbyStopsCounts,
+  } = useMemo(
     () =>
-      applyStopEventAttributeTogglesToStops(routeTypesFilteredNearbyStopTimes, {
+      deriveFilteredNearbyStops({
+        nearbyStopTimes,
+        enabledRouteTypes,
         showOriginOnly,
         showBoardableOnly,
+        omitEmptyStops: effectiveOmitEmptyStops,
       }),
-    [routeTypesFilteredNearbyStopTimes, showOriginOnly, showBoardableOnly],
-  );
-
-  // Apply the app-wide empty-stop visibility policy on top of the
-  // entry-level filter result. When omitted, only non-empty stops are
-  // rendered; when disabled, empty stops remain visible for placeholder UI.
-  const stopEventAttributesNonEmptyNearbyStopTimes = useMemo(() => {
-    return effectiveOmitEmptyStops
-      ? omitStopsWithoutStopTimes(stopEventAttributesAppliedNearbyStopTimes)
-      : stopEventAttributesAppliedNearbyStopTimes;
-  }, [effectiveOmitEmptyStops, stopEventAttributesAppliedNearbyStopTimes]);
-
-  // Per-stop pre-`globalFilter` `TimetableEntriesState` map. The base
-  // is intentionally `routeTypesFilteredNearbyStopTimes` (= settings
-  // filter applied, origin/boardable toggles NOT yet applied), so
-  // consumers can distinguish `'filter-hidden'` (entries existed
-  // pre-`globalFilter`, removed by user toggles) from `'no-service'`
-  // (no entries at all). Computing this against the post-`globalFilter`
-  // `stopEventAttributesFilteredNearbyStopTimes` would collapse those
-  // two states.
-  const timetableEntriesStateByStopId = useMemo(() => {
-    const map = new Map<string, TimetableEntriesState>();
-    for (const swc of routeTypesFilteredNearbyStopTimes) {
-      map.set(swc.stop.stop_id, getTimetableEntriesState(swc.stopTimes));
-    }
-    return map;
-  }, [routeTypesFilteredNearbyStopTimes]);
-
-  const nearbyStopsCounts: StopsCounts = useMemo(
-    () => computeStopsCounts(routeTypesFilteredNearbyStopTimes),
-    [routeTypesFilteredNearbyStopTimes],
-  );
-
-  const filteredNearbyStopsCounts: StopsCounts = useMemo(
-    () => computeStopsCounts(stopEventAttributesNonEmptyNearbyStopTimes),
-    [stopEventAttributesNonEmptyNearbyStopTimes],
+    [
+      nearbyStopTimes,
+      enabledRouteTypes,
+      showOriginOnly,
+      showBoardableOnly,
+      effectiveOmitEmptyStops,
+    ],
   );
 
   const handleToggleStopType = useCallback(
