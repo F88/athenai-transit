@@ -38,7 +38,7 @@ export function StopPanel({
   onInspectTrip,
 }: StopPanelProps) {
   return (
-    <div className="z-1000 flex h-full w-full flex-col overflow-hidden bg-white shadow-[2px_0_12px_rgba(0,0,0,0.15)] dark:bg-gray-900">
+    <div className="z-1000 flex h-full w-full flex-col overflow-hidden bg-white py-2 dark:bg-gray-900">
       <StopBrowser
         stopTimes={stopTimes}
         timetableEntriesStateByStopId={timetableEntriesStateByStopId}
