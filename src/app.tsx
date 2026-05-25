@@ -7,8 +7,7 @@ import { toast } from 'sonner';
 // types
 import type { AutoLocateOffReason } from './types/app/auto-locate';
 import type { RouteShape, UserLocation } from './types/app/map';
-import type { StopsCounts } from './types/app/stop';
-import type { AppRouteTypeValue, Stop, TimetableEntriesState } from './types/app/transit';
+import type { AppRouteTypeValue, Stop } from './types/app/transit';
 import type {
   StopWithContext,
   StopWithMeta,
@@ -36,7 +35,7 @@ import {
   type AnchorEntry,
 } from './domain/portal/anchor';
 import { formatDateKey } from './domain/transit/calendar-utils';
-import { computeStopsCounts } from './domain/transit/compute-stops-counts';
+import { deriveFilteredNearbyStops } from './domain/transit/derive-filtered-nearby-stops';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
 import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
@@ -46,11 +45,7 @@ import { findVisibleStopMetaById } from './domain/transit/stop-meta-lookup';
 import { buildHistoryNavigationPayload } from './domain/transit/stop-navigation';
 import { createStopReferenceSnapshot } from './domain/transit/stop-reference-snapshot';
 import { buildStopRouteTypeMap } from './domain/transit/stop-route-type-map';
-import {
-  applyStopEventAttributeTogglesToStops,
-  omitStopsWithoutStopTimes,
-} from './domain/transit/timetable-filter';
-import { getStopServiceState, getTimetableEntriesState } from './domain/transit/timetable-utils';
+import { getStopServiceState } from './domain/transit/timetable-utils';
 
 // hooks
 import { useAnchors } from './hooks/use-anchors';
@@ -903,56 +898,38 @@ export default function App() {
     [settings.visibleStopTypes],
   );
 
-  const routeTypesFilteredNearbyStopTimes = useMemo(
-    () => nearbyStopTimes.filter((d) => d.routeTypes.some((rt) => enabledRouteTypes.has(rt))),
-    [nearbyStopTimes, enabledRouteTypes],
-  );
-
-  // Apply origin / boardable filter (= app-wide `globalFilter` toggles)
-  // per-stop while preserving the outer stop list. Empty-stop omission
-  // happens in the next memo so the two responsibilities stay distinct.
-  const stopEventAttributesAppliedNearbyStopTimes = useMemo(
+  // Derive the visible nearby-stop state in one selector: route-type
+  // filter (settings), origin/boardable filter (globalFilter),
+  // empty-stop omit policy, pre-globalFilter `TimetableEntriesState`
+  // snapshot, and pre/post-filter counts. Internally this is still a
+  // multi-pass pipeline (filter → state map → toggles → omit → counts);
+  // the consolidation is structural — one derivation block instead of
+  // a chain of `useMemo` — not a single-traversal optimization.
+  // Aliases below keep the existing call sites untouched while the
+  // selector owns the pipeline. See `deriveFilteredNearbyStops` for
+  // the step ordering and the pre-globalFilter rationale for the
+  // state map.
+  const {
+    filtered: stopEventAttributesNonEmptyNearbyStopTimes,
+    timetableEntriesStateByStopId,
+    rawCounts: nearbyStopsCounts,
+    filteredCounts: filteredNearbyStopsCounts,
+  } = useMemo(
     () =>
-      applyStopEventAttributeTogglesToStops(routeTypesFilteredNearbyStopTimes, {
+      deriveFilteredNearbyStops({
+        nearbyStopTimes,
+        enabledRouteTypes,
         showOriginOnly,
         showBoardableOnly,
+        omitEmptyStops: effectiveOmitEmptyStops,
       }),
-    [routeTypesFilteredNearbyStopTimes, showOriginOnly, showBoardableOnly],
-  );
-
-  // Apply the app-wide empty-stop visibility policy on top of the
-  // entry-level filter result. When omitted, only non-empty stops are
-  // rendered; when disabled, empty stops remain visible for placeholder UI.
-  const stopEventAttributesNonEmptyNearbyStopTimes = useMemo(() => {
-    return effectiveOmitEmptyStops
-      ? omitStopsWithoutStopTimes(stopEventAttributesAppliedNearbyStopTimes)
-      : stopEventAttributesAppliedNearbyStopTimes;
-  }, [effectiveOmitEmptyStops, stopEventAttributesAppliedNearbyStopTimes]);
-
-  // Per-stop pre-`globalFilter` `TimetableEntriesState` map. The base
-  // is intentionally `routeTypesFilteredNearbyStopTimes` (= settings
-  // filter applied, origin/boardable toggles NOT yet applied), so
-  // consumers can distinguish `'filter-hidden'` (entries existed
-  // pre-`globalFilter`, removed by user toggles) from `'no-service'`
-  // (no entries at all). Computing this against the post-`globalFilter`
-  // `stopEventAttributesFilteredNearbyStopTimes` would collapse those
-  // two states.
-  const timetableEntriesStateByStopId = useMemo(() => {
-    const map = new Map<string, TimetableEntriesState>();
-    for (const swc of routeTypesFilteredNearbyStopTimes) {
-      map.set(swc.stop.stop_id, getTimetableEntriesState(swc.stopTimes));
-    }
-    return map;
-  }, [routeTypesFilteredNearbyStopTimes]);
-
-  const nearbyStopsCounts: StopsCounts = useMemo(
-    () => computeStopsCounts(routeTypesFilteredNearbyStopTimes),
-    [routeTypesFilteredNearbyStopTimes],
-  );
-
-  const filteredNearbyStopsCounts: StopsCounts = useMemo(
-    () => computeStopsCounts(stopEventAttributesNonEmptyNearbyStopTimes),
-    [stopEventAttributesNonEmptyNearbyStopTimes],
+    [
+      nearbyStopTimes,
+      enabledRouteTypes,
+      showOriginOnly,
+      showBoardableOnly,
+      effectiveOmitEmptyStops,
+    ],
   );
 
   const handleToggleStopType = useCallback(
