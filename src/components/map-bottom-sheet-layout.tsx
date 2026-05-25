@@ -1,82 +1,42 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { BottomSheet, type BottomSheetProps } from './bottom-sheet';
-import { MapView, type MapViewProps } from './map/map-view';
-import { useViewportHeight } from '../hooks/use-viewport-height';
-import { resolveMapBottomSheetLayoutPreset } from '../utils/map-bottom-sheet-layout-preset';
-import { createLogger } from '../lib/logger';
-import type { GlobalFilter } from '../types/app/global-filter';
-import type { StopsCounts } from '../types/app/stop';
+import { BottomSheet } from './bottom-sheet';
+import type { LayoutProps } from './layout-props';
+import { useSetMapSlotElement } from '../hooks/use-map-slot';
 
-const logger = createLogger('MapBottomSheetLayout');
-
-interface MapBottomSheetLayoutProps {
-  mapViewProps: Omit<MapViewProps, 'heightClassName'>;
-  bottomSheetProps: Omit<
-    BottomSheetProps,
-    | 'collapsedHeightClassName'
-    | 'expandedHeightClassName'
-    | 'expanded'
-    | 'onExpandedChange'
-    | 'globalFilter'
-    | 'nearbyStopsCounts'
-    | 'filteredNearbyStopsCounts'
-  >;
-  /** App-wide filter state shared with BottomSheet (and forthcoming MapView etc.). */
-  globalFilter: GlobalFilter;
-  /**
-   * Pre-`globalFilter` `NearbyStopsCounts` computed in `app.tsx` from the
-   * settings-filter-applied stop list. Threaded through to BottomSheet /
-   * BottomSheetHeader so filter pills can read counts that don't fluctuate
-   * with `globalFilter` toggles.
-   */
-  nearbyStopsCounts: StopsCounts;
-  /** Post-`globalFilter`, pre-BottomSheet-local-filter counts from `app.tsx`. */
-  filteredNearbyStopsCounts: StopsCounts;
-  mapOverlay?: ReactNode;
-}
-
+/**
+ * Simple-mode overlay layout for small viewports.
+ *
+ * Renders two siblings:
+ * 1. A **map slot** div fixed to the top 60dvh of the App root. Its
+ *    only role is to declare to `MapViewContainer` where the visible
+ *    map should be positioned; the hoisted MapView (App-root) tracks
+ *    this slot's bounding rect and sizes its Leaflet container to
+ *    match.
+ * 2. The {@link BottomSheet} pinned to the bottom 40dvh (collapsed)
+ *    / 70dvh (expanded) via `position: fixed`. It overlays the
+ *    hoisted MapView from below, exactly as before the hoist.
+ *
+ * The slot div is `pointer-events: none` so map interactions in the
+ * top 60dvh fall through to the MapView behind it.
+ */
 export function MapBottomSheetLayout({
-  mapViewProps,
   bottomSheetProps,
   globalFilter,
   nearbyStopsCounts,
   filteredNearbyStopsCounts,
-  mapOverlay,
-}: MapBottomSheetLayoutProps) {
-  const [expanded, setExpanded] = useState(false);
-  const viewportHeight = useViewportHeight();
-  const layoutPreset = resolveMapBottomSheetLayoutPreset(viewportHeight);
-
-  useEffect(() => {
-    if (logger.isEnabled('debug')) {
-      logger.debug(
-        `viewportHeight=${viewportHeight}, collapsedMap=${layoutPreset.collapsedMapHeightClassName}, expandedMap=${layoutPreset.expandedMapHeightClassName}, collapsedSheet=${layoutPreset.collapsedSheetHeightClassName}, expandedSheet=${layoutPreset.expandedSheetHeightClassName}`,
-      );
-    }
-  }, [layoutPreset, viewportHeight]);
-
+}: LayoutProps) {
+  const setMapSlot = useSetMapSlotElement();
   return (
     <>
-      <div className="relative">
-        <MapView
-          {...mapViewProps}
-          heightClassName={
-            expanded
-              ? layoutPreset.expandedMapHeightClassName
-              : layoutPreset.collapsedMapHeightClassName
-          }
-        />
-        {mapOverlay}
-      </div>
+      <div
+        ref={setMapSlot}
+        className="pointer-events-none absolute inset-x-0 top-0 h-[60dvh]"
+        aria-hidden
+      />
       <BottomSheet
         {...bottomSheetProps}
         globalFilter={globalFilter}
         nearbyStopsCounts={nearbyStopsCounts}
         filteredNearbyStopsCounts={filteredNearbyStopsCounts}
-        expanded={expanded}
-        onExpandedChange={setExpanded}
-        collapsedHeightClassName={layoutPreset.collapsedSheetHeightClassName}
-        expandedHeightClassName={layoutPreset.expandedSheetHeightClassName}
       />
     </>
   );

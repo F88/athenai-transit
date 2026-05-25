@@ -243,6 +243,103 @@ __log.getConfig();
 
 Changes take effect immediately without page reload.
 
+## レイアウト構成
+
+App は viewport サイズに応じて 2 つの layout mode を出し分け、 multi-pane mode 内ではさらに orientation を判定する。 MapView は **App root に hoist された 1 インスタンス**として常駐し、 layout 側が宣言する「slot」の bbox に追従する。
+
+### Layout mode
+
+`useLayoutMode()` が viewport 幅から決定する。
+
+| viewport width                        | mode         |
+| ------------------------------------- | ------------ |
+| `< WIDE_VIEWPORT_MIN_WIDTH` (= 800px) | `simple`     |
+| `>= WIDE_VIEWPORT_MIN_WIDTH`          | `multi-pane` |
+
+判定ロジックは pure 関数 `resolveLayoutMode(viewport: Viewport): LayoutMode` (`src/utils/layout-mode.ts`) に閉じ込めてあり、 hook はその wiring 専従。 しきい値は同ファイルの `WIDE_VIEWPORT_MIN_WIDTH` 定数。
+
+### Multi-pane orientation
+
+multi-pane mode 内では `useMultiPaneOrientation()` が viewport の縦横比から split 方向を決める。
+
+| 条件              | orientation  | 視覚配置                    |
+| ----------------- | ------------ | --------------------------- |
+| `width >= height` | `horizontal` | stop panel 左 / 可視 map 右 |
+| `width < height`  | `vertical`   | 可視 map 上 / stop panel 下 |
+
+判定ロジックは `resolveMultiPaneOrientation(width, height): MultiPaneOrientation` (`src/utils/multi-pane.ts`)。
+
+### MapView の常駐 (case 1A hoist)
+
+MapView は App root に 1 度だけ mount され、 layout mode / orientation の transition では再 mount しない。 Leaflet map instance / 読み込み済みタイル / 進行中ジェスチャは全 transition を生き残る。 これによって以前発生していた「`Map container is being reused` クラッシュ」(`react-resizable-panels` + Leaflet + StrictMode の組み合わせで起きていた) と「mode 跨ぎで map center / zoom がリセットされる」問題が同時に解消されている。
+
+DOM 階層 (概略):
+
+```
+App root (relative h-dvh w-dvw)
+└── MapSlotProvider                                                ← slot DOM 要素を context で共有
+    ├── MapViewContainer                                            ← MapView 専用の position wrapper
+    │   ├── MapView                                                ← 常駐、 transition で unmount しない
+    │   └── TimeControls                                            ← map と co-locate する chrome
+    └── AppLayout                                                   ← overlay 選択
+        ├── 'simple' → MapBottomSheetLayout
+        │              ├── <div ref={setMapSlot} h-[60dvh]/>        ← slot div (透明)
+        │              └── BottomSheet (fixed bottom-0)
+        └── 'multi-pane' → MultiPaneLayout
+                           └── ResizablePanelGroup
+                               ├── ResizablePanel "sheet" → StopPanel
+                               ├── ResizableHandle
+                               └── ResizablePanel "multi-pane-map-pane"
+                                   └── <div ref={setMapSlot} h-full w-full/>  ← slot div (透明)
+```
+
+### Slot 追従の仕組み
+
+1. **layout side**: `useSetMapSlotElement()` を ref callback で受け取る div を render — slot 位置 + サイズを宣言する役
+2. **MapViewContainer**: `useMapSlotElement()` で slot DOM を取得、 `useElementRect` (`ResizeObserver`-backed) で bbox を観測
+3. **bbox 適用**: MapView の wrapper を `position: absolute` + `top/left/width/height = bbox` で配置
+4. **Leaflet 連動**: MapView 内部の `ResizeObserver` が container サイズ変化を検知し、 `map.invalidateSize()` を自動で呼ぶ
+
+これによって `ResizableHandle` の drag に map がリアルタイム追従し、 Leaflet の `getCenter()` / `getBounds()` / `getSize()` は **可視 map 領域そのもの**を返す。「現在地ボタン」 / Edge Markers / 「viewport 内の停留所」 fetch が正しく動く前提が成立する。
+
+### Pointer-events plumbing (multi-pane)
+
+multi-pane の `ResizablePanelGroup` は **layout shell でしかなく**、 map placeholder pane の領域は背後の MapView に click を通す必要がある。 仕組み:
+
+- **ResizablePanelGroup の outer div**: `pointer-events: none` (CSS は inherit するため全子孫に伝播する)
+- **sheet pane / resize handle**: arbitrary descendant selector (`[&_#sheet]:pointer-events-auto`, `[&_[data-slot=resizable-handle]]:pointer-events-auto`) で `auto` に override
+- **map placeholder pane**: 継承で `none` のまま → click が抜けて背後の MapView に届く
+
+`react-resizable-panels` v4 の `Panel` は `className` / `style` を inner wrapper に乗せて outer panel には乗らない。 そのため outer panel への CSS 適用は parent からの descendant selector で行うしかない (`[&_#multi-pane-map-pane]:pointer-events-none`)。 詳細は `src/components/multi-pane-layout.tsx` の `groupClassName` 上の inline コメント参照。
+
+### Transition 別の挙動
+
+| transition                           | MapView                     | StopPanel state                        | crash |
+| ------------------------------------ | --------------------------- | -------------------------------------- | ----- |
+| simple ↔ multi-pane (800px 境界)     | **保全** (同一 Leaflet)     | remount (別 layout component)          | なし  |
+| multi-pane horizontal ↔ vertical     | **保全**                    | **保全** (`key="sheet"` で fiber 維持) | なし  |
+| BottomSheet expand/collapse (simple) | **保全**                    | (内部 state)                           | なし  |
+| ResizableHandle drag (multi-pane)    | **保全** (slot bbox に追従) | サイズ変化のみ                         | なし  |
+
+### 関連 file マップ
+
+| 場所                                         | 役割                                                                                                                                                      |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/types/app/viewport.ts`                  | `Viewport` 型 (utils / hooks 双方から import する中立 type)                                                                                               |
+| `src/utils/layout-mode.ts`                   | `LayoutMode` 型、 `WIDE_VIEWPORT_MIN_WIDTH`、 `resolveLayoutMode(viewport)`                                                                               |
+| `src/utils/multi-pane.ts`                    | `MultiPaneOrientation` 型、 `MULTI_PANE_MAP_PANE_SIZE` (map pane の `defaultSize` / `minSize` / `maxSize`)、 `resolveMultiPaneOrientation(width, height)` |
+| `src/hooks/use-viewport.ts`                  | `useViewport()`: window / visualViewport の resize 購読                                                                                                   |
+| `src/hooks/use-layout-mode.ts`               | wiring (`resolveLayoutMode(useViewport())`)                                                                                                               |
+| `src/hooks/use-multi-pane-orientation.ts`    | wiring                                                                                                                                                    |
+| `src/hooks/use-element-rect.ts`              | `useElementRect()`: ResizeObserver-backed bbox tracker                                                                                                    |
+| `src/hooks/use-map-slot.ts`                  | `useMapSlotElement()` / `useSetMapSlotElement()` (context accessor)                                                                                       |
+| `src/contexts/map-slot-context.tsx`          | `MapSlotContext` 定義                                                                                                                                     |
+| `src/contexts/map-slot-provider.tsx`         | `MapSlotProvider`: slot 共有 state holder                                                                                                                 |
+| `src/components/map/map-view-container.tsx`  | `MapViewContainer`: hoist された MapView の position 制御                                                                                                 |
+| `src/components/app-layout.tsx`              | `AppLayout`: `useLayoutMode()` で overlay 選択                                                                                                            |
+| `src/components/map-bottom-sheet-layout.tsx` | simple mode overlay (slot div + BottomSheet)                                                                                                              |
+| `src/components/multi-pane-layout.tsx`       | multi-pane mode overlay (ResizablePanelGroup + slot)                                                                                                      |
+
 ## z-index 階層
 
 Leaflet のカスタム pane を使い、描画レイヤーの前後関係を制御する。数値が大きいほど前面に描画される。
@@ -273,7 +370,7 @@ MapView 内でも component local な layering には `z-0` や `z-10` を使っ
 | 500     | EdgeMarkerOverlay                                                   |
 | 600     | `shadowPane` — マーカーの影                                         |
 | 700     | `markerPane` — マーカー本体                                         |
-| 1000    | MapOverlayButton, BottomSheet                                       |
+| 1000    | MapOverlayButton, BottomSheet, StopPanel (multi-pane), TimeControls |
 | 1001    | SelectionIndicator, Portal/History dropdown trigger                 |
 | 1002    | Portal/History SelectContent (dropdown list)                        |
 | 2000    | モーダルダイアログ (shadcn Dialog, StopSearchModal, TimetableModal) |
@@ -290,6 +387,16 @@ MapView 内でも component local な layering には `z-0` や `z-10` を使っ
 - 現在の `SelectContent` は caller override を公式パターンとして使っている。例: `StopHistory` と `Portals` は `className="z-1002 ..."` を渡して app chrome layer に載せている
 - `Select` / `Popover` のような shared primitive 自体には surface 固有の global `z-index` を持たせない。BottomSheet 上に出すのか Dialog 内に出すのかは呼び出し側の責務として決める
 - つまり shared primitive の default `z-index` は upstream 値のままでよく、app 固有の layer policy が必要な場合だけ caller 側で `z-1002` や `z-2001` のように明示する
+
+### App shell wrapper は stacking context を作らない
+
+App root container、 hoist された `MapView` wrapper、 `MultiPaneLayout` の `ResizablePanelGroup` のように **app 全体の layout 構造だけを担う wrapper** には `z-index` を明示しない。
+
+- 上記の wrapper に `z-index` を指定する(例: `relative z-0`、 `fixed inset-0 z-0`)と、 新しい stacking context が生成され、 中の chrome (`TimeControls` の z-1000、 `MapOverlayPanels` の z-1000/1001/1002、 `ZoomDisplay` の z-1000 等) が **root context から見えなくなる**。 結果として doc の予約レンジが意図どおり composing しなくなり、 BottomSheet (z-1000) や StopPanel (z-1000) が常に chrome を覆ってしまう等の重なり崩れが発生する
+- `position: relative` / `absolute` だけ与えて positioning context のみ提供する。 `z-index` は `auto` のまま明示しない
+    - `fixed` は z-index 値に関わらず stacking context を作る仕様なので、 hoist された `MapView` の wrapper には `fixed inset-0` ではなく **「App root が `relative h-dvh w-dvw` で viewport を確定 + 中の wrapper が `absolute inset-0`」** という構造を採用する(`src/app.tsx`)
+- 例: `src/app.tsx` の `<div className="relative h-dvh w-dvw overflow-hidden">` (App root) と内側の `<div className="absolute inset-0">` (MapView wrapper)、 `src/components/multi-pane-layout.tsx` の `<ResizablePanelGroup className="absolute inset-0">`
+- 既存の予約レンジ (200-700 map / 1000-1999 chrome / 2000-2999 modal) はこの原則の上でだけ機能する
 
 ## マップのパン/ズーム制御
 

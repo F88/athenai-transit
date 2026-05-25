@@ -1,50 +1,23 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
-import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
+import type { TimetableEntriesState } from '../types/app/transit';
 import type { GlobalFilter } from '../types/app/global-filter';
 import type { StopsCounts } from '../types/app/stop';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
-import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
-import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
-import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
-import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
-import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
-import { APP_ROUTE_TYPES } from '../config/route-types';
 import { cn } from '../lib/utils';
-import { BottomSheetHeader } from './bottom-sheet-header';
-import { BottomSheetStops } from './bottom-sheet-stops';
+import { StopBrowser } from './stop-browser';
 
 type ExpandedStateAction = boolean | ((prevExpanded: boolean) => boolean);
 
 const DRAG_THRESHOLD = 50;
 
-/** Route type display order matching StopTypeFilterPanel. */
-const ROUTE_TYPE_PRIORITY: Readonly<Record<number, number>> = {
-  3: 0,
-  11: 1,
-  1: 2,
-  0: 3,
-  2: 4,
-  12: 5,
-  4: 6,
-  5: 7,
-  6: 8,
-  7: 9,
-};
-
-const ROUTE_TYPE_ORDER: AppRouteTypeValue[] = [...APP_ROUTE_TYPES.map(({ value }) => value)].sort(
-  (a, b) =>
-    (ROUTE_TYPE_PRIORITY[a] ?? Number.POSITIVE_INFINITY) -
-    (ROUTE_TYPE_PRIORITY[b] ?? Number.POSITIVE_INFINITY),
-);
-
 export interface BottomSheetProps {
   /**
    * Stops to render. Already narrowed by the app-wide filters
-   * (`globalFilter` + `enabledRouteTypes`); BottomSheet only applies
-   * its own surface-local filters (agency / route_type).
+   * (`globalFilter` + `enabledRouteTypes`); the surface-local agency /
+   * route_type filters are applied downstream by StopBrowser.
    */
   stopTimes: StopWithContext[];
   /**
@@ -68,13 +41,13 @@ export interface BottomSheetProps {
   globalFilter: GlobalFilter;
   /**
    * Pre-`globalFilter` `NearbyStopsCounts` computed in `app.tsx` from the
-   * settings-filter-applied stop list. Used by BottomSheetHeader to display
+   * settings-filter-applied stop list. Used by StopBrowserHeader to display
    * counts that stay stable as the user toggles `globalFilter` pills.
    */
   nearbyStopsCounts: StopsCounts;
   /**
-   * Post-`globalFilter`, pre-BottomSheet-local-filter counts computed in
-   * `app.tsx`. Threaded to BottomSheetHeader for UI that needs the
+   * Post-`globalFilter`, pre-surface-local-filter counts computed in
+   * `app.tsx`. Threaded to StopBrowserHeader for UI that needs the
    * app-filtered base before operating/agency/route_type trimming.
    */
   filteredNearbyStopsCounts: StopsCounts;
@@ -97,6 +70,12 @@ export interface BottomSheetProps {
   onExpandedChange?: (expanded: ExpandedStateAction) => void;
 }
 
+/**
+ * Mobile bottom-sheet shell: fixed to the screen bottom with a grab
+ * handle and drag-to-expand. Hosts a {@link StopBrowser} as its content.
+ *
+ * The wide-screen counterpart is `StopPanel`.
+ */
 export function BottomSheet({
   stopTimes,
   timetableEntriesStateByStopId,
@@ -123,15 +102,6 @@ export function BottomSheet({
   expanded: expandedProp,
   onExpandedChange,
 }: BottomSheetProps) {
-  const {
-    showOriginOnly,
-    showBoardableOnly,
-    omitEmptyStops,
-    isOmitEmptyStopsForced,
-    onToggleShowOriginOnly,
-    onToggleShowBoardableOnly,
-    onToggleOmitEmptyStops,
-  } = globalFilter;
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(false);
   const expanded = expandedProp ?? uncontrolledExpanded;
   const setExpanded = useCallback(
@@ -144,76 +114,7 @@ export function BottomSheet({
     },
     [onExpandedChange],
   );
-  const [viewId, setViewId] = useState(DEFAULT_VIEW_ID);
-  const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
-  const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
-  const selectedView = STOP_TIMES_VIEWS.find((v) => v.id === viewId);
   const touchStartY = useRef(0);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  // Route types present in the current nearby stops.
-  const presentRouteTypes = useMemo(
-    () => collectPresentRouteTypes(stopTimes, ROUTE_TYPE_ORDER),
-    [stopTimes],
-  );
-
-  const presentAgencies = useMemo(() => collectPresentAgencies(stopTimes), [stopTimes]);
-
-  const toggleRouteType = useCallback((rt: number) => {
-    setHiddenRouteTypes((prev) => {
-      const next = new Set(prev);
-      if (next.has(rt)) {
-        next.delete(rt);
-      } else {
-        next.add(rt);
-      }
-      return next;
-    });
-  }, []);
-
-  const toggleAgency = useCallback((agency: Agency) => {
-    setHiddenAgencyIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(agency.agency_id)) {
-        next.delete(agency.agency_id);
-      } else {
-        next.add(agency.agency_id);
-      }
-      return next;
-    });
-  }, []);
-
-  // The app-wide origin / boardable
-  // filter (= `globalFilter`) is already applied upstream in `app.tsx`
-  // — and the app-wide empty-stop omission policy — are already applied
-  // upstream in `app.tsx`. BottomSheet only applies its own surface-local
-  // filters below.
-  //
-  // Trim each surviving stop's inner stopTimes by agency /
-  // route_type filters. This never drops stops: a stop whose stopTimes
-  // are all removed stays visible and shows the "allFilteredOut"
-  // fallback message. This decouples "which stops are in the list"
-  // from "what is shown inside each stop".
-  const trimmedStopTimes = useMemo(() => {
-    if (hiddenAgencyIds.size === 0 && hiddenRouteTypes.size === 0) {
-      return stopTimes;
-    }
-    return stopTimes.map((swc) => {
-      let trimmed = swc.stopTimes;
-      if (hiddenAgencyIds.size > 0) {
-        trimmed = filterByAgency(trimmed, hiddenAgencyIds);
-      }
-      if (hiddenRouteTypes.size > 0) {
-        trimmed = filterByRouteType(trimmed, hiddenRouteTypes);
-      }
-      return trimmed === swc.stopTimes ? swc : { ...swc, stopTimes: trimmed };
-    });
-  }, [stopTimes, hiddenAgencyIds, hiddenRouteTypes]);
-
-  const trimmedStopTimesCounts: StopsCounts = useMemo(
-    () => computeStopsCounts(trimmedStopTimes),
-    [trimmedStopTimes],
-  );
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
@@ -236,25 +137,8 @@ export function BottomSheet({
     [setExpanded],
   );
 
-  const stopIdsKey = useMemo(() => stopTimes.map((d) => d.stop.stop_id).join(','), [stopTimes]);
-
-  // Scroll behavior when the stop list composition or selection changes:
-  // - Selected stop exists in the list → scroll to that stop (by DOM position, not array index)
-  // - Selected stop is absent or null  → reset scroll to the top of the list
-  useEffect(() => {
-    if (!contentRef.current) {
-      return;
-    }
-    if (selectedStopId) {
-      const el = contentRef.current.querySelector(`[data-stop-id="${selectedStopId}"]`);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        return;
-      }
-    }
-    contentRef.current.scrollTop = 0;
-  }, [selectedStopId, stopIdsKey]);
-
+  // Collapse the sheet when a stop is selected. This is a shell concern;
+  // StopBrowser receives the wrapped callback and forwards it to the grid.
   const handleStopSelected = useCallback(
     (stopId: string) => {
       setExpanded(false);
@@ -278,43 +162,20 @@ export function BottomSheet({
       >
         <div className="h-1 w-9 rounded-sm bg-[#bdbdbd] dark:bg-gray-600" />
       </div>
-
-      <BottomSheetHeader
-        hasNearbyLoaded={hasNearbyLoaded}
-        nearbyStopsCounts={nearbyStopsCounts}
-        filteredNearbyStopsCounts={filteredNearbyStopsCounts}
-        counts={trimmedStopTimesCounts}
-        dataConfig={dataConfig}
-        dataLangs={dataLangs}
-        omitEmptyStops={omitEmptyStops}
-        isOmitEmptyStopsForced={isOmitEmptyStopsForced}
-        showOriginOnly={showOriginOnly}
-        showBoardableOnly={showBoardableOnly}
-        viewId={viewId}
-        selectedView={selectedView}
-        infoLevel={infoLevel}
-        presentRouteTypes={presentRouteTypes}
-        hiddenRouteTypes={hiddenRouteTypes}
-        presentAgencies={presentAgencies}
-        hiddenAgencyIds={hiddenAgencyIds}
-        onToggleOmitEmptyStops={onToggleOmitEmptyStops}
-        onToggleShowOriginOnly={onToggleShowOriginOnly}
-        onToggleShowBoardableOnly={onToggleShowBoardableOnly}
-        onViewChange={setViewId}
-        onToggleRouteType={toggleRouteType}
-        onToggleAgency={toggleAgency}
-      />
-      <BottomSheetStops
-        stopTimes={trimmedStopTimes}
+      <StopBrowser
+        stopTimes={stopTimes}
         timetableEntriesStateByStopId={timetableEntriesStateByStopId}
         selectedStopId={selectedStopId}
+        hasNearbyLoaded={hasNearbyLoaded}
+        dataConfig={dataConfig}
         now={now}
         mapCenter={mapCenter}
         infoLevel={infoLevel}
         dataLangs={dataLangs}
-        viewId={viewId}
-        contentRef={contentRef}
         anchorIds={anchorIds}
+        globalFilter={globalFilter}
+        nearbyStopsCounts={nearbyStopsCounts}
+        filteredNearbyStopsCounts={filteredNearbyStopsCounts}
         onStopSelected={handleStopSelected}
         onShowTimetable={onShowTimetable}
         onShowStopTimetable={onShowStopTimetable}

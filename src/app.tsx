@@ -89,9 +89,12 @@ import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
 import { StopSearchDialog } from './components/dialog/stop-search-dialog';
 import { TimetableModal } from './components/dialog/timetable-modal';
 import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
-import { MapBottomSheetLayout } from './components/map-bottom-sheet-layout';
+import { AppLayout } from './components/app-layout';
+import { MapView } from './components/map/map-view';
+import { MapViewContainer } from './components/map/map-view-container';
 import { TimeControls } from './components/time-controls';
 import { Toaster } from './components/ui/sonner';
+import { MapSlotProvider } from './contexts/map-slot-provider';
 
 const logger = createLogger('App');
 const DEBOUNCE_MS = 300;
@@ -1084,143 +1087,168 @@ export default function App() {
   }, [settings.theme]);
 
   return (
-    <>
-      <MapBottomSheetLayout
-        mapViewProps={{
-          inBoundStops,
-          radiusStops,
-          selectedStopId,
-          focusPosition,
-          stopTimes: stopEventAttributesNonEmptyNearbyStopTimes,
-          routeTypeMap,
-          routeShapes,
-          selectionInfo,
-          routeStops,
-          visibleStopTypes: enabledRouteTypes,
-          visibleRouteShapes,
-          tileIndex: settings.tileIndex,
-          renderMode: settings.renderMode,
-          perfMode: settings.perfMode,
-          infoLevel: settings.infoLevel,
-          dataLang: langChain,
-          time: dateTime,
-          onBoundsChanged: handleBoundsChanged,
-          onStopSelected: handleSelectStop,
-          onFetchStopTimes: handleFetchStopTimes,
-          onToggleStopType: handleToggleStopType,
-          onToggleBusShapes: handleToggleBusShapes,
-          onToggleNonBusShapes: handleToggleNonBusShapes,
-          onCycleTile: handleCycleTile,
-          onToggleRenderMode: handleToggleRenderMode,
-          onTogglePerfMode: handleTogglePerfMode,
-          onCycleInfoLevel: handleCycleInfoLevel,
-          onDeselectStop: deselectStop,
-          onRouteShapeSelected: selectRouteShape,
-          resolveRouteFreq,
-          theme: settings.theme,
-          doubleTapDrag: settings.doubleTapDrag,
-          onToggleDarkMode: handleToggleDarkMode,
-          onCycleLang: handleCycleLang,
-          onSearchClick: () => setSearchModalOpen(true),
-          onInfoClick: () => setInfoDialogOpen(true),
-          stopHistory: history,
-          onHistorySelect: handleHistorySelect,
-          anchors,
-          onPortalSelect: handlePortalSelect,
-          onPortalRemove: (entry) => handleToggleAnchorByStopId(entry.snapshot.stopId),
-          lookupAnchorStopMeta,
-          lookupHistoryStopMeta,
-          autoLocateEnabled,
-          onEnableAutoLocate: enableAutoLocate,
-          onDisableAutoLocate: disableAutoLocate,
-        }}
-        bottomSheetProps={{
-          stopTimes: stopEventAttributesNonEmptyNearbyStopTimes,
-          timetableEntriesStateByStopId,
-          selectedStopId,
-          isNearbyLoading,
-          hasNearbyLoaded,
-          dataConfig: perfProfile.data,
-          time: dateTime,
-          mapCenter,
-          infoLevel: settings.infoLevel,
-          dataLangs: langChain,
-          anchorIds,
-          onStopSelected: handleSelectStopById,
-          onShowTimetable: handleShowTimetable,
-          onShowStopTimetable: handleShowStopTimetable,
-          onToggleAnchor: handleToggleAnchorByStopId,
-          onOpenTripInspectionByStopId: handleOpenTripInspectionByStopId,
-          onInspectTrip: handleInspectTrip,
-        }}
-        globalFilter={globalFilter}
-        nearbyStopsCounts={nearbyStopsCounts}
-        filteredNearbyStopsCounts={filteredNearbyStopsCounts}
-        mapOverlay={
+    // App root container: provides the positioned ancestor that lets
+    // children use `absolute inset-0` to fill the viewport, and sets
+    // the page to a fixed viewport box. `relative` without `z-index`
+    // is intentional — it must not create a stacking context, so
+    // descendant z-1000+ values bubble up to the root context (see
+    // DEVELOPMENT.md "z-index 階層").
+    <div className="relative h-dvh w-dvw overflow-hidden">
+      {/* `MapSlotProvider` shares the layout-declared "visible map
+       * slot" element between `MapViewContainer` (reads it to position
+       * the hoisted MapView's wrapper) and the active layout component
+       * (registers its slot div via `useSetMapSlotElement`). */}
+      <MapSlotProvider>
+        {/* Always-mounted map layer (case 1A hoist): MapView lives at
+         * App root and survives every layout-mode / orientation
+         * transition. Its wrapper is positioned to match the
+         * layout-declared slot so Leaflet's view bounds correspond to
+         * the area the user actually sees. */}
+        <MapViewContainer>
+          <MapView
+            inBoundStops={inBoundStops}
+            radiusStops={radiusStops}
+            selectedStopId={selectedStopId}
+            focusPosition={focusPosition}
+            stopTimes={stopEventAttributesNonEmptyNearbyStopTimes}
+            routeTypeMap={routeTypeMap}
+            routeShapes={routeShapes}
+            selectionInfo={selectionInfo}
+            routeStops={routeStops}
+            visibleStopTypes={enabledRouteTypes}
+            visibleRouteShapes={visibleRouteShapes}
+            tileIndex={settings.tileIndex}
+            renderMode={settings.renderMode}
+            perfMode={settings.perfMode}
+            infoLevel={settings.infoLevel}
+            dataLang={langChain}
+            time={dateTime}
+            onBoundsChanged={handleBoundsChanged}
+            onStopSelected={handleSelectStop}
+            onFetchStopTimes={handleFetchStopTimes}
+            onToggleStopType={handleToggleStopType}
+            onToggleBusShapes={handleToggleBusShapes}
+            onToggleNonBusShapes={handleToggleNonBusShapes}
+            onCycleTile={handleCycleTile}
+            onToggleRenderMode={handleToggleRenderMode}
+            onTogglePerfMode={handleTogglePerfMode}
+            onCycleInfoLevel={handleCycleInfoLevel}
+            onDeselectStop={deselectStop}
+            onRouteShapeSelected={selectRouteShape}
+            resolveRouteFreq={resolveRouteFreq}
+            theme={settings.theme}
+            doubleTapDrag={settings.doubleTapDrag}
+            onToggleDarkMode={handleToggleDarkMode}
+            onCycleLang={handleCycleLang}
+            onSearchClick={() => setSearchModalOpen(true)}
+            onInfoClick={() => setInfoDialogOpen(true)}
+            stopHistory={history}
+            onHistorySelect={handleHistorySelect}
+            anchors={anchors}
+            onPortalSelect={handlePortalSelect}
+            onPortalRemove={(entry) => handleToggleAnchorByStopId(entry.snapshot.stopId)}
+            lookupAnchorStopMeta={lookupAnchorStopMeta}
+            lookupHistoryStopMeta={lookupHistoryStopMeta}
+            autoLocateEnabled={autoLocateEnabled}
+            onEnableAutoLocate={enableAutoLocate}
+            onDisableAutoLocate={disableAutoLocate}
+            heightClassName="h-full"
+          />
+          {/* TimeControls lives inside MapViewContainer so its
+           * `absolute left-1/2 -translate-x-1/2` is centred on the
+           * **visible map area** (the slot bbox that MapViewContainer
+           * positions itself to), not on the full viewport. The
+           * StopHistory / Portals dropdowns rendered inside MapView
+           * are positioned the same way; this keeps all map-area
+           * chrome consistently anchored to the map. */}
           <TimeControls
             time={dateTime}
             isCustomTime={isCustomTime}
             onResetToNow={resetToNow}
             onCustomTimeSet={setCustomTime}
           />
-        }
-      />
-      <StopSearchDialog
-        repo={repo}
-        infoLevel={settings.infoLevel}
-        dataLang={langChain}
-        mapCenter={mapCenter}
-        isStopAnchor={isStopAnchor}
-        onSelectStop={handleSearchSelect}
-        onToggleAnchor={handleToggleAnchorByStopId}
-        onShowStopTimetable={handleShowStopTimetable}
-        onOpenTripInspectionByStopId={handleOpenTripInspectionByStopId}
-        open={searchModalOpen}
-        onOpenChange={setSearchModalOpen}
-      />
-      <InfoDialog
-        open={infoDialogOpen}
-        onOpenChange={setInfoDialogOpen}
-        onOpenDataSourceSettings={() => setDataSourceSettingsDialogOpen(true)}
-      />
-      <DataSourceSettingsDialog
-        open={dataSourceSettingsDialogOpen}
-        onOpenChange={setDataSourceSettingsDialogOpen}
-      />
-      <ShortcutHelpDialog open={shortcutHelpOpen} onOpenChange={setShortcutHelpOpen} />
-      <TripInspectionDialog
-        open={tripInspectionSnapshot !== null}
-        snapshot={tripInspectionSnapshot}
-        tripInspectionTargets={tripInspectionTargets}
-        currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
-        showNoticeNonce={showNoticeNonce}
-        now={dateTime}
-        infoLevel={settings.infoLevel}
-        dataLangs={langChain}
-        onOpenPreviousTrip={openPreviousTripInspection}
-        onOpenNextTrip={openNextTripInspection}
-        onInspectTrip={handleInspectTripFromDialog}
-        onSelectStopById={handleSelectStopFromTripInspection}
-        onOpenChange={handleTripInspectionOpenChange}
-      />
-      <TimetableModal
-        key={timetableData?.stop.stop_id ?? 'closed'}
-        data={timetableData}
-        time={dateTime}
-        infoLevel={settings.infoLevel}
-        dataLangs={langChain}
-        globalFilter={globalFilter}
-        onInspectTrip={handleInspectTrip}
-        onClose={closeTimetable}
-      />
-      <Toaster
-        theme={settings.theme}
-        position="bottom-center"
-        closeButton={true}
-        richColors
-        expand={true}
-        visibleToasts={10}
-      />
-    </>
+        </MapViewContainer>
+        <AppLayout
+          bottomSheetProps={{
+            stopTimes: stopEventAttributesNonEmptyNearbyStopTimes,
+            timetableEntriesStateByStopId,
+            selectedStopId,
+            isNearbyLoading,
+            hasNearbyLoaded,
+            dataConfig: perfProfile.data,
+            time: dateTime,
+            mapCenter,
+            infoLevel: settings.infoLevel,
+            dataLangs: langChain,
+            anchorIds,
+            onStopSelected: handleSelectStopById,
+            onShowTimetable: handleShowTimetable,
+            onShowStopTimetable: handleShowStopTimetable,
+            onToggleAnchor: handleToggleAnchorByStopId,
+            onOpenTripInspectionByStopId: handleOpenTripInspectionByStopId,
+            onInspectTrip: handleInspectTrip,
+          }}
+          globalFilter={globalFilter}
+          nearbyStopsCounts={nearbyStopsCounts}
+          filteredNearbyStopsCounts={filteredNearbyStopsCounts}
+        />
+        <StopSearchDialog
+          repo={repo}
+          infoLevel={settings.infoLevel}
+          dataLang={langChain}
+          mapCenter={mapCenter}
+          isStopAnchor={isStopAnchor}
+          onSelectStop={handleSearchSelect}
+          onToggleAnchor={handleToggleAnchorByStopId}
+          onShowStopTimetable={handleShowStopTimetable}
+          onOpenTripInspectionByStopId={handleOpenTripInspectionByStopId}
+          open={searchModalOpen}
+          onOpenChange={setSearchModalOpen}
+        />
+        <InfoDialog
+          open={infoDialogOpen}
+          onOpenChange={setInfoDialogOpen}
+          onOpenDataSourceSettings={() => setDataSourceSettingsDialogOpen(true)}
+        />
+        <DataSourceSettingsDialog
+          open={dataSourceSettingsDialogOpen}
+          onOpenChange={setDataSourceSettingsDialogOpen}
+        />
+        <ShortcutHelpDialog open={shortcutHelpOpen} onOpenChange={setShortcutHelpOpen} />
+        <TripInspectionDialog
+          open={tripInspectionSnapshot !== null}
+          snapshot={tripInspectionSnapshot}
+          tripInspectionTargets={tripInspectionTargets}
+          currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
+          showNoticeNonce={showNoticeNonce}
+          now={dateTime}
+          infoLevel={settings.infoLevel}
+          dataLangs={langChain}
+          onOpenPreviousTrip={openPreviousTripInspection}
+          onOpenNextTrip={openNextTripInspection}
+          onInspectTrip={handleInspectTripFromDialog}
+          onSelectStopById={handleSelectStopFromTripInspection}
+          onOpenChange={handleTripInspectionOpenChange}
+        />
+        <TimetableModal
+          key={timetableData?.stop.stop_id ?? 'closed'}
+          data={timetableData}
+          time={dateTime}
+          infoLevel={settings.infoLevel}
+          dataLangs={langChain}
+          globalFilter={globalFilter}
+          onInspectTrip={handleInspectTrip}
+          onClose={closeTimetable}
+        />
+        <Toaster
+          theme={settings.theme}
+          position="bottom-center"
+          closeButton={true}
+          richColors
+          expand={true}
+          visibleToasts={10}
+        />
+      </MapSlotProvider>
+    </div>
   );
 }

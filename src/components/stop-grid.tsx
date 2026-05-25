@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { useScrollFades } from '@/hooks/use-scroll-fades';
+import { useScrollFades } from '../hooks/use-scroll-fades';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { TimetableEntriesState } from '../types/app/transit';
@@ -10,7 +10,7 @@ import { NearbyStop, type NearbyStopProps } from './nearby-stop';
 /** Number of stops to render immediately without lazy loading. */
 const EAGER_RENDER_COUNT = 6;
 
-interface BottomSheetStopsProps {
+interface StopGridProps {
   stopTimes: StopWithContext[];
   /**
    * Map from stop_id to the per-stop pre-`globalFilter`
@@ -42,7 +42,7 @@ interface BottomSheetStopsProps {
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
-export function BottomSheetStops({
+export function StopGrid({
   stopTimes,
   timetableEntriesStateByStopId,
   selectedStopId,
@@ -59,18 +59,24 @@ export function BottomSheetStops({
   onToggleAnchor,
   onOpenTripInspectionByStopId,
   onInspectTrip,
-}: BottomSheetStopsProps) {
+}: StopGridProps) {
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
 
   return (
     <div
-      className="relative min-h-0 flex-1 overflow-y-auto"
+      className="@container relative min-h-0 flex-1 overflow-y-auto"
       ref={contentRef}
       onScroll={scrollFade.handleScroll}
     >
       {scrollFade.showTop && <ScrollFadeEdge position="top" />}
-      <div className="grid grid-cols-1 content-start gap-0 px-4 pb-0 sm:grid-cols-2 sm:gap-x-4 lg:grid-cols-3">
+      {/*
+       * Column count keys off the scroll container's own width (container
+       * query), not the viewport — so the grid stays comfortable whether
+       * this list fills a full-width mobile bottom sheet or the narrower
+       * wide-layout side panel.
+       */}
+      <div className="grid grid-cols-1 content-start gap-0 px-4 pb-0 @xl:grid-cols-2 @xl:gap-x-4 @5xl:grid-cols-3">
         {stopTimes.map((swc, i) => {
           const props: NearbyStopProps = {
             data: swc,
