@@ -14,8 +14,25 @@ import { StopControlPanel } from '../panel/stop-control-panel';
 import { StopTypeFilterPanel } from '../panel/stop-type-filter-panel';
 import { Portals } from '../portals';
 import { StopHistory } from '../stop-history';
+import { TimeControls } from '../time-controls';
 
-interface MapOverlayPanelsProps {
+/**
+ * Props for {@link MapOverlay} — every chrome element that visually
+ * overlays the map (corner panels, locate button, top-centre
+ * dropdowns, time picker).
+ *
+ * `MapOverlay` is the sibling of `MapView` inside `MapViewContainer`:
+ * MapView owns the Leaflet subtree, MapOverlay owns the surrounding
+ * UI. Anything that should appear above the map but is *not* part of
+ * the Leaflet rendering belongs here.
+ */
+interface MapOverlayProps {
+  /**
+   * The Leaflet `L.Map` instance published by MapView (via
+   * `onMapInstance`). `null` until MapView has mounted Leaflet; the
+   * map-aware children (`MapControlPanel`, `MapNavigationPanel`)
+   * render only once it is non-null.
+   */
   map: L.Map | null;
   infoLevel: InfoLevel;
   visibleRouteShapes: Set<number>;
@@ -64,9 +81,28 @@ interface MapOverlayPanelsProps {
   lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
   lookupHistoryStopMeta: (stopId: string) => StopWithMeta | null;
   tileIndex: number | null;
+  /** Currently displayed time (from `useDateTime`). */
+  time: Date;
+  /** True when the displayed time is user-pinned (not "now"). */
+  isCustomTime: boolean;
+  /** Reset the displayed time back to the live "now" clock. */
+  onResetToNow: () => void;
+  /** Pin the displayed time to the user-selected value. */
+  onCustomTimeSet: (date: Date) => void;
 }
 
-export function MapOverlayPanels({
+/**
+ * All chrome that overlays the map: corner panels, the locate
+ * button, top-centre `StopHistory` / `Portals` dropdowns, and the
+ * `TimeControls` time-pinning bar. Rendered as a sibling of
+ * `MapView` inside `MapViewContainer` so each `absolute`-positioned
+ * child resolves against the visible map area.
+ *
+ * This component is purely presentational and stateless — it forwards
+ * props to its sub-components. Lifted state (`map` instance,
+ * `userLocation` via `onLocated`, etc.) is owned by `app.tsx`.
+ */
+export function MapOverlay({
   map,
   infoLevel,
   visibleRouteShapes,
@@ -101,7 +137,11 @@ export function MapOverlayPanels({
   lookupAnchorStopMeta,
   lookupHistoryStopMeta,
   tileIndex,
-}: MapOverlayPanelsProps) {
+  time,
+  isCustomTime,
+  onResetToNow,
+  onCustomTimeSet,
+}: MapOverlayProps) {
   return (
     <>
       {map && <MapControlPanel map={map} infoLevel={infoLevel} />}
@@ -144,6 +184,12 @@ export function MapOverlayPanels({
       />
       <StopControlPanel infoLevel={infoLevel} onSearchClick={onSearchClick} />
       <InfoPanel infoLevel={infoLevel} onInfoClick={onInfoClick} />
+      <TimeControls
+        time={time}
+        isCustomTime={isCustomTime}
+        onResetToNow={onResetToNow}
+        onCustomTimeSet={onCustomTimeSet}
+      />
       <div className="pointer-events-none absolute top-[calc(4rem+env(safe-area-inset-top))] left-1/2 z-1001 flex -translate-x-1/2 gap-2 *:pointer-events-auto">
         <StopHistory
           history={stopHistory}

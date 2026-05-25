@@ -122,8 +122,8 @@ describe('MapViewContainer', () => {
 
   it('does not set a `z-index` on the wrapper (must not create a stacking context)', () => {
     // Guards DEVELOPMENT.md "App shell wrapper" rule: a z-index here
-    // would trap descendant z-1000+ chrome (TimeControls,
-    // MapOverlayPanels) inside a local stacking context.
+    // would trap descendant z-1000+ chrome (MapOverlay's TimeControls,
+    // corner panels, dropdowns) inside a local stacking context.
     const { container } = render(
       <MapSlotProvider>
         <MapViewContainer>

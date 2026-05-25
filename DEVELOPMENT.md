@@ -280,7 +280,7 @@ App root (relative h-dvh w-dvw)
 └── MapSlotProvider                                                ← slot DOM 要素を context で共有
     ├── MapViewContainer                                            ← MapView 専用の position wrapper
     │   ├── MapView                                                ← 常駐、 transition で unmount しない
-    │   └── TimeControls                                            ← map と co-locate する chrome
+    │   └── MapOverlay                                              ← map に被さる chrome 全般 (panel 群 / locate / TimeControls / StopHistory / Portals)
     └── AppLayout                                                   ← overlay 選択
         ├── 'simple' → MapBottomSheetLayout
         │              ├── <div ref={setMapSlot} h-[60dvh]/>        ← slot div (透明)
@@ -336,6 +336,7 @@ multi-pane の `ResizablePanelGroup` は **layout shell でしかなく**、 map
 | `src/contexts/map-slot-context.tsx`          | `MapSlotContext` 定義                                                                                                                                     |
 | `src/contexts/map-slot-provider.tsx`         | `MapSlotProvider`: slot 共有 state holder                                                                                                                 |
 | `src/components/map/map-view-container.tsx`  | `MapViewContainer`: hoist された MapView の position 制御                                                                                                 |
+| `src/components/map/map-overlay.tsx`         | `MapOverlay`: map に被さる chrome 全般 (corner panels / locate button / `TimeControls` / `StopHistory` / `Portals`)。 MapView と sibling                  |
 | `src/components/app-layout.tsx`              | `AppLayout`: `useLayoutMode()` で overlay 選択                                                                                                            |
 | `src/components/map-bottom-sheet-layout.tsx` | simple mode overlay (slot div + BottomSheet)                                                                                                              |
 | `src/components/multi-pane-layout.tsx`       | multi-pane mode overlay (ResizablePanelGroup + slot)                                                                                                      |
@@ -392,7 +393,7 @@ MapView 内でも component local な layering には `z-0` や `z-10` を使っ
 
 App root container、 hoist された `MapView` wrapper、 `MultiPaneLayout` の `ResizablePanelGroup` のように **app 全体の layout 構造だけを担う wrapper** には `z-index` を明示しない。
 
-- 上記の wrapper に `z-index` を指定する(例: `relative z-0`、 `fixed inset-0 z-0`)と、 新しい stacking context が生成され、 中の chrome (`TimeControls` の z-1000、 `MapOverlayPanels` の z-1000/1001/1002、 `ZoomDisplay` の z-1000 等) が **root context から見えなくなる**。 結果として doc の予約レンジが意図どおり composing しなくなり、 BottomSheet (z-1000) や StopPanel (z-1000) が常に chrome を覆ってしまう等の重なり崩れが発生する
+- 上記の wrapper に `z-index` を指定する(例: `relative z-0`、 `fixed inset-0 z-0`)と、 新しい stacking context が生成され、 中の chrome (`MapOverlay` 配下の `TimeControls` の z-1000、 corner panel 群の z-1000/1001/1002、 `ZoomDisplay` の z-1000 等) が **root context から見えなくなる**。 結果として doc の予約レンジが意図どおり composing しなくなり、 BottomSheet (z-1000) や StopPanel (z-1000) が常に chrome を覆ってしまう等の重なり崩れが発生する
 - `position: relative` / `absolute` だけ与えて positioning context のみ提供する。 `z-index` は `auto` のまま明示しない
     - `fixed` は z-index 値に関わらず stacking context を作る仕様なので、 hoist された `MapView` の wrapper には `fixed inset-0` ではなく **「App root が `relative h-dvh w-dvw` で viewport を確定 + 中の wrapper が `absolute inset-0`」** という構造を採用する(`src/app.tsx`)
 - 例: `src/app.tsx` の `<div className="relative h-dvh w-dvw overflow-hidden">` (App root) と内側の `<div className="absolute inset-0">` (MapView wrapper)、 `src/components/multi-pane-layout.tsx` の `<ResizablePanelGroup className="absolute inset-0">`
