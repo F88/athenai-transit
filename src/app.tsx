@@ -1240,63 +1240,69 @@ export default function App() {
           nearbyStopsCounts={nearbyStopsCounts}
           filteredNearbyStopsCounts={filteredNearbyStopsCounts}
         />
-        <StopSearchDialog
-          repo={repo}
-          infoLevel={settings.infoLevel}
-          dataLang={langChain}
-          mapCenter={mapCenter}
-          isStopAnchor={isStopAnchor}
-          onSelectStop={handleSearchSelect}
-          onToggleAnchor={handleToggleAnchorByStopId}
-          onShowStopTimetable={handleShowStopTimetable}
-          onOpenTripInspectionByStopId={handleOpenTripInspectionByStopId}
-          open={searchModalOpen}
-          onOpenChange={setSearchModalOpen}
-        />
-        <InfoDialog
-          open={infoDialogOpen}
-          onOpenChange={setInfoDialogOpen}
-          onOpenDataSourceSettings={() => setDataSourceSettingsDialogOpen(true)}
-        />
-        <DataSourceSettingsDialog
-          open={dataSourceSettingsDialogOpen}
-          onOpenChange={setDataSourceSettingsDialogOpen}
-        />
-        <ShortcutHelpDialog open={shortcutHelpOpen} onOpenChange={setShortcutHelpOpen} />
-        <TripInspectionDialog
-          open={tripInspectionSnapshot !== null}
-          snapshot={tripInspectionSnapshot}
-          tripInspectionTargets={tripInspectionTargets}
-          currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
-          showNoticeNonce={showNoticeNonce}
-          now={dateTime}
-          infoLevel={settings.infoLevel}
-          dataLangs={langChain}
-          onOpenPreviousTrip={openPreviousTripInspection}
-          onOpenNextTrip={openNextTripInspection}
-          onInspectTrip={handleInspectTripFromDialog}
-          onSelectStopById={handleSelectStopFromTripInspection}
-          onOpenChange={handleTripInspectionOpenChange}
-        />
-        <TimetableModal
-          key={timetableData?.stop.stop_id ?? 'closed'}
-          data={timetableData}
-          time={dateTime}
-          infoLevel={settings.infoLevel}
-          dataLangs={langChain}
-          globalFilter={globalFilter}
-          onInspectTrip={handleInspectTrip}
-          onClose={closeTimetable}
-        />
-        <Toaster
-          theme={settings.theme}
-          position="bottom-center"
-          closeButton={true}
-          richColors
-          expand={true}
-          visibleToasts={10}
-        />
       </MapSlotProvider>
+      {/* Dialogs / Toaster do not consume `MapSlotContext`, so they
+       * live as siblings of `MapSlotProvider` rather than children.
+       * Keeping the provider's scope narrow (`MapViewContainer` +
+       * `AppLayout` only) makes "which subtree depends on the map
+       * slot" obvious at a glance and lets these overlays be tested
+       * without a `MapSlotProvider` fixture. */}
+      <StopSearchDialog
+        repo={repo}
+        infoLevel={settings.infoLevel}
+        dataLang={langChain}
+        mapCenter={mapCenter}
+        isStopAnchor={isStopAnchor}
+        onSelectStop={handleSearchSelect}
+        onToggleAnchor={handleToggleAnchorByStopId}
+        onShowStopTimetable={handleShowStopTimetable}
+        onOpenTripInspectionByStopId={handleOpenTripInspectionByStopId}
+        open={searchModalOpen}
+        onOpenChange={setSearchModalOpen}
+      />
+      <InfoDialog
+        open={infoDialogOpen}
+        onOpenChange={setInfoDialogOpen}
+        onOpenDataSourceSettings={() => setDataSourceSettingsDialogOpen(true)}
+      />
+      <DataSourceSettingsDialog
+        open={dataSourceSettingsDialogOpen}
+        onOpenChange={setDataSourceSettingsDialogOpen}
+      />
+      <ShortcutHelpDialog open={shortcutHelpOpen} onOpenChange={setShortcutHelpOpen} />
+      <TripInspectionDialog
+        open={tripInspectionSnapshot !== null}
+        snapshot={tripInspectionSnapshot}
+        tripInspectionTargets={tripInspectionTargets}
+        currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
+        showNoticeNonce={showNoticeNonce}
+        now={dateTime}
+        infoLevel={settings.infoLevel}
+        dataLangs={langChain}
+        onOpenPreviousTrip={openPreviousTripInspection}
+        onOpenNextTrip={openNextTripInspection}
+        onInspectTrip={handleInspectTripFromDialog}
+        onSelectStopById={handleSelectStopFromTripInspection}
+        onOpenChange={handleTripInspectionOpenChange}
+      />
+      <TimetableModal
+        key={timetableData?.stop.stop_id ?? 'closed'}
+        data={timetableData}
+        time={dateTime}
+        infoLevel={settings.infoLevel}
+        dataLangs={langChain}
+        globalFilter={globalFilter}
+        onInspectTrip={handleInspectTrip}
+        onClose={closeTimetable}
+      />
+      <Toaster
+        theme={settings.theme}
+        position="bottom-center"
+        closeButton={true}
+        richColors
+        expand={true}
+        visibleToasts={10}
+      />
     </div>
   );
 }
