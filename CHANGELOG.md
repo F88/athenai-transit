@@ -24,6 +24,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - App root structure: viewport を埋める `relative h-dvh w-dvw overflow-hidden` の root container を導入。 配下を `MapSlotProvider` で wrap し、 hoist された MapView + TimeControls (`MapViewContainer` 内) を `AppLayout` (mode 切替) の sibling として配置する。 layout コンポーネント間で MapView を渡す `mapViewProps` / `mapOverlay` props を廃止。
 - BottomSheet: stop browsing UI を `StopBrowser` に分離し、 BottomSheet 自体は drag-to-expand と fixed positioning の shell 役のみに専念。 drag-expand UX (40dvh ⇔ 70dvh) は変更なし。
 - Simple mode preset の削除: viewport 高さで 50/50・40/60 を切り替える `MapBottomSheetLayoutPreset` を撤廃し、 固定 60dvh / 40dvh (expandable 70dvh) に統一。 過剰最適化を排して全 small viewport に統一感のある UX を提供。
+- MapView リファクタ: `MapView` から overlay chrome (corner panel 群 / locate ボタン / `TimeControls` / `StopHistory` / `Portals` dropdown) を新 `MapOverlay` component (旧 `MapOverlayPanels` を rename + 取り込み拡張) に extract し、 `MapView` は Leaflet content (markers / shapes / panes) のみを担当するように整理。 `MapViewContainer` 配下で `MapView` と `MapOverlay` は sibling として並ぶ。 `userLocation` / Leaflet `L.Map` インスタンスの owner も `app.tsx` に lift し、 MapView は `onMapInstance` / `onLocated` で publish するだけにした。 MapView の props 数は 47 → 26 (-21) に縮小。
 
 ## [2026.05.22]
 
