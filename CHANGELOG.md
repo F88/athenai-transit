@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.25]
+
 ### Added
 
 - Multi-pane layout: 横幅 ≥ 800px の viewport で **multi-pane layout mode** を導入。 横長 viewport では stop panel を左 / 可視 map を右、 縦長 viewport では map を上 / stop panel を下に並べる。 中央の `ResizableHandle` を drag して比率を変更可能 (map pane の `minSize: 400px` を保証)。 small viewport (< 800px) は従来通り simple mode (map + bottom-sheet) で動作する。
@@ -25,6 +27,11 @@ and this project adheres to [CalVer](https://calver.org/).
 - BottomSheet: stop browsing UI を `StopBrowser` に分離し、 BottomSheet 自体は drag-to-expand と fixed positioning の shell 役のみに専念。 drag-expand UX (40dvh ⇔ 70dvh) は変更なし。
 - Simple mode preset の削除: viewport 高さで 50/50・40/60 を切り替える `MapBottomSheetLayoutPreset` を撤廃し、 固定 60dvh / 40dvh (expandable 70dvh) に統一。 過剰最適化を排して全 small viewport に統一感のある UX を提供。
 - MapView リファクタ: `MapView` から overlay chrome (corner panel 群 / locate ボタン / `TimeControls` / `StopHistory` / `Portals` dropdown) を新 `MapOverlay` component (旧 `MapOverlayPanels` を rename + 取り込み拡張) に extract し、 `MapView` は Leaflet content (markers / shapes / panes) のみを担当するように整理。 `MapViewContainer` 配下で `MapView` と `MapOverlay` は sibling として並ぶ。 `userLocation` / Leaflet `L.Map` インスタンスの owner も `app.tsx` に lift し、 MapView は `onMapInstance` / `onLocated` で publish するだけにした。 MapView の props 数は 47 → 26 (-21) に縮小。
+- MapSlotProvider scope: `MapSlotProvider` の wrap 範囲を実際の context consumer (`MapViewContainer` + `AppLayout` 配下の layout components) のみに絞り、 6 dialogs + `Toaster` は provider の sibling として root container 直下に配置した。 provider 名と scope が一致する。
+
+### Fixed
+
+- 停留所マーカーの灰色フラッシュ: pan / zoom で新しく viewport に入った停留所が一度灰色 (route_type `-1` = Unknown、 `#455A64`) で描画されてから本来の色に上書きされていた挙動を修正。 `routeTypeMap` の構築を async `useEffect` + `Promise.all` から同期 `useMemo` に変更し、 `StopWithMeta.routes` から直接導出することで stops と routeTypeMap を同一 commit に乗せる。 共有 helper `buildStopRouteTypeMap` を追加し、 `src/domain/map/map-selection-layers.ts` の同種 inline derivation も同 helper に集約した。
 
 ## [2026.05.22]
 
