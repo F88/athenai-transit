@@ -1,5 +1,19 @@
 import type { TripInspectionNoDataReason } from '../../types/app/repository';
 
+export interface TripInspectionOpenOutcomeMessage {
+  severity: 'warning' | 'error';
+  messageKey: string;
+}
+
+export type TripInspectionOpenOutcomeMessageInput =
+  | { status: 'opened' }
+  | { status: 'cancelled' }
+  | { status: 'error' }
+  | {
+      status: 'no-data';
+      reason: TripInspectionNoDataReason;
+    };
+
 /**
  * Map a trip-inspection `no-data` reason to its i18n message key.
  *
@@ -10,10 +24,8 @@ import type { TripInspectionNoDataReason } from '../../types/app/repository';
  * generic `noData` key because the user-visible distinction is the
  * same: "we could not open trip inspection here".
  *
- * Toast firing (`toast.warning(t(key))`) and the `'error'` branch of
- * the open outcome remain at the call site, per the Phase 3 plan to
- * keep status->key as pure data while wording assembly stays in UI
- * code.
+ * Toast firing remains at the call site, per the Phase 3 plan to keep
+ * status-to-message mapping as pure data while UI effects stay in UI code.
  */
 export function getTripInspectionNoDataMessageKey(reason: TripInspectionNoDataReason): string {
   switch (reason) {
@@ -24,5 +36,29 @@ export function getTripInspectionNoDataMessageKey(reason: TripInspectionNoDataRe
     case 'snapshot-unavailable':
     case 'target-missing':
       return 'tripInspection.messages.noData';
+  }
+}
+
+/**
+ * Convert a trip-inspection open outcome into the toast message that should be
+ * shown by the UI. Opened and cancelled outcomes are intentionally silent.
+ */
+export function getTripInspectionOpenOutcomeMessage(
+  outcome: TripInspectionOpenOutcomeMessageInput,
+): TripInspectionOpenOutcomeMessage | null {
+  switch (outcome.status) {
+    case 'opened':
+    case 'cancelled':
+      return null;
+    case 'no-data':
+      return {
+        severity: 'warning',
+        messageKey: getTripInspectionNoDataMessageKey(outcome.reason),
+      };
+    case 'error':
+      return {
+        severity: 'error',
+        messageKey: 'tripInspection.messages.openFailed',
+      };
   }
 }

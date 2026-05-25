@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import type { TripInspectionNoDataReason } from '../../../types/app/repository';
-import { getTripInspectionNoDataMessageKey } from '../trip-inspection-message';
+import {
+  getTripInspectionNoDataMessageKey,
+  getTripInspectionOpenOutcomeMessage,
+} from '../trip-inspection-message';
 
 describe('getTripInspectionNoDataMessageKey', () => {
   it('returns the stop-data key for the no-stop-data reason', () => {
@@ -45,5 +48,31 @@ describe('getTripInspectionNoDataMessageKey', () => {
       const key = getTripInspectionNoDataMessageKey(reason);
       expect(key).toMatch(/^tripInspection\.messages\./);
     }
+  });
+});
+
+describe('getTripInspectionOpenOutcomeMessage', () => {
+  it('returns no message for silent statuses', () => {
+    expect(getTripInspectionOpenOutcomeMessage({ status: 'opened' })).toBeNull();
+    expect(getTripInspectionOpenOutcomeMessage({ status: 'cancelled' })).toBeNull();
+  });
+
+  it('returns a warning for no-data outcomes', () => {
+    expect(
+      getTripInspectionOpenOutcomeMessage({
+        status: 'no-data',
+        reason: 'no-service-on-this-day',
+      }),
+    ).toEqual({
+      severity: 'warning',
+      messageKey: 'tripInspection.messages.noServiceOnThisDay',
+    });
+  });
+
+  it('returns an error for open failures', () => {
+    expect(getTripInspectionOpenOutcomeMessage({ status: 'error' })).toEqual({
+      severity: 'error',
+      messageKey: 'tripInspection.messages.openFailed',
+    });
   });
 });

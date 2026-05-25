@@ -45,8 +45,9 @@ import { findVisibleStopMetaById } from './domain/transit/stop-meta-lookup';
 import { buildHistoryNavigationPayload } from './domain/transit/stop-navigation';
 import { createStopReferenceSnapshot } from './domain/transit/stop-reference-snapshot';
 import { buildStopRouteTypeMap } from './domain/transit/stop-route-type-map';
+import { getTimetableOpenOutcomeMessage } from './domain/transit/timetable-message';
 import { getStopServiceState } from './domain/transit/timetable-utils';
-import { getTripInspectionNoDataMessageKey } from './domain/transit/trip-inspection-message';
+import { getTripInspectionOpenOutcomeMessage } from './domain/transit/trip-inspection-message';
 
 // hooks
 import { useAnchors } from './hooks/use-anchors';
@@ -97,6 +98,27 @@ import { MapSlotProvider } from './contexts/map-slot-provider';
 
 const logger = createLogger('App');
 const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
+
+interface OpenOutcomeToastMessage {
+  severity: 'warning' | 'error';
+  messageKey: string;
+}
+
+function showOpenOutcomeToast(
+  message: OpenOutcomeToastMessage | null,
+  t: ReturnType<typeof useTranslation>['t'],
+): void {
+  if (!message) {
+    return;
+  }
+
+  if (message.severity === 'warning') {
+    toast.warning(t(message.messageKey));
+    return;
+  }
+
+  toast.error(t(message.messageKey));
+}
 
 export default function App() {
   const { t } = useTranslation();
@@ -570,19 +592,7 @@ export default function App() {
         headsign,
         dateTime,
       }).then((status) => {
-        if (status.status === 'not-found') {
-          toast.warning(t('timetable.messages.stopNotFound'));
-          return;
-        }
-
-        if (status.status === 'route-not-found') {
-          toast.warning(t('timetable.messages.routeNotFound'));
-          return;
-        }
-
-        if (status.status === 'error') {
-          toast.error(t('timetable.messages.openFailed'));
-        }
+        showOpenOutcomeToast(getTimetableOpenOutcomeMessage(status.status), t);
       });
     },
     [dateTime, openRouteHeadsignTimetable, t],
@@ -594,14 +604,7 @@ export default function App() {
         stopId,
         dateTime,
       }).then((status) => {
-        if (status.status === 'not-found') {
-          toast.warning(t('timetable.messages.stopNotFound'));
-          return;
-        }
-
-        if (status.status === 'error') {
-          toast.error(t('timetable.messages.openFailed'));
-        }
+        showOpenOutcomeToast(getTimetableOpenOutcomeMessage(status.status), t);
       });
     },
     [dateTime, openStopTimetable, t],
@@ -616,14 +619,7 @@ export default function App() {
         now: dateTime,
         serviceDate,
       }).then((status) => {
-        if (status.status === 'no-data') {
-          toast.warning(t(getTripInspectionNoDataMessageKey(status.reason)));
-          return;
-        }
-
-        if (status.status === 'error') {
-          toast.error(t('tripInspection.messages.openFailed'));
-        }
+        showOpenOutcomeToast(getTripInspectionOpenOutcomeMessage(status), t);
       });
     },
     [dateTime, openTripInspectionFromStopId, t],
@@ -632,14 +628,7 @@ export default function App() {
   const handleInspectTrip = useCallback(
     (target: TripInspectionTarget) => {
       void openTripInspectionFromTarget(target, 'direct-open').then((status) => {
-        if (status.status === 'no-data') {
-          toast.warning(t(getTripInspectionNoDataMessageKey(status.reason)));
-          return;
-        }
-
-        if (status.status === 'error') {
-          toast.error(t('tripInspection.messages.openFailed'));
-        }
+        showOpenOutcomeToast(getTripInspectionOpenOutcomeMessage(status), t);
       });
     },
     [openTripInspectionFromTarget, t],
@@ -648,14 +637,7 @@ export default function App() {
   const handleInspectTripFromDialog = useCallback(
     (target: TripInspectionTarget) => {
       void openTripInspectionFromTarget(target, 'trip-stops-time-select').then((status) => {
-        if (status.status === 'no-data') {
-          toast.warning(t(getTripInspectionNoDataMessageKey(status.reason)));
-          return;
-        }
-
-        if (status.status === 'error') {
-          toast.error(t('tripInspection.messages.openFailed'));
-        }
+        showOpenOutcomeToast(getTripInspectionOpenOutcomeMessage(status), t);
       });
     },
     [openTripInspectionFromTarget, t],
