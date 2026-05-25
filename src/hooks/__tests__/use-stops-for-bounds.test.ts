@@ -429,6 +429,212 @@ describe('useStopsForBounds', () => {
     expect(onStopsCommitted).not.toHaveBeenCalled();
   });
 
+  it('invalidates pending and in-flight requests when the perf profile changes', async () => {
+    const oldStop = makeStopMeta('old-stop');
+
+    let resolveOldInBounds!: () => void;
+    let resolveOldNearby!: () => void;
+    const oldInBoundsPromise = new Promise<{
+      success: true;
+      data: (typeof oldStop)[];
+      truncated: false;
+    }>((resolve) => {
+      resolveOldInBounds = () => {
+        resolve({ success: true, data: [oldStop], truncated: false });
+      };
+    });
+    const oldNearbyPromise = new Promise<{
+      success: true;
+      data: (typeof oldStop)[];
+      truncated: false;
+    }>((resolve) => {
+      resolveOldNearby = () => {
+        resolve({ success: true, data: [oldStop], truncated: false });
+      };
+    });
+
+    const repo = makeRepo({
+      getStopsInBounds: vi.fn().mockReturnValue(oldInBoundsPromise),
+      getStopsNearby: vi.fn().mockReturnValue(oldNearbyPromise),
+    });
+    const onStopsCommitted = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ perfProfile }) =>
+        useStopsForBounds({
+          repo,
+          perfProfile,
+          onStopsCommitted,
+          debounceMs: TEST_DEBOUNCE_MS,
+        }),
+      { initialProps: { perfProfile: PERF_PROFILES.lite } },
+    );
+
+    act(() => {
+      result.current.handleBoundsChanged(BOUNDS_A, CENTER_A);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TEST_DEBOUNCE_MS);
+    });
+
+    // Switch perf profile while the fetch is in flight. The
+    // invalidation effect must classify the pending response as stale.
+    rerender({ perfProfile: PERF_PROFILES.normal });
+
+    await act(async () => {
+      resolveOldInBounds();
+      resolveOldNearby();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.inBoundStops).toEqual([]);
+    expect(result.current.radiusStops).toEqual([]);
+    expect(result.current.hasNearbyLoaded).toBe(false);
+    expect(onStopsCommitted).not.toHaveBeenCalled();
+  });
+
+  it('treats a half-failed response as success on the succeeding side and empty on the failing side', async () => {
+    const stop = makeStopMeta('present');
+    const repoInBoundsFails = makeRepo({
+      getStopsInBounds: vi.fn().mockResolvedValue({ success: false, error: 'boom-bounds' }),
+      getStopsNearby: vi.fn().mockResolvedValue({ success: true, data: [stop], truncated: false }),
+    });
+
+    const { result, unmount } = renderHook(() =>
+      useStopsForBounds({
+        repo: repoInBoundsFails,
+        perfProfile: PERF_PROFILES.lite,
+        debounceMs: TEST_DEBOUNCE_MS,
+      }),
+    );
+
+    act(() => {
+      result.current.handleBoundsChanged(BOUNDS_A, CENTER_A);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TEST_DEBOUNCE_MS);
+    });
+
+    expect(result.current.inBoundStops).toEqual([]);
+    expect(result.current.radiusStops).toEqual([stop]);
+    expect(result.current.hasNearbyLoaded).toBe(true);
+
+    unmount();
+
+    // Reverse the failing side: nearby fails, bounds succeeds.
+    const repoNearbyFails = makeRepo({
+      getStopsInBounds: vi
+        .fn()
+        .mockResolvedValue({ success: true, data: [stop], truncated: false }),
+      getStopsNearby: vi.fn().mockResolvedValue({ success: false, error: 'boom-nearby' }),
+    });
+
+    const { result: result2 } = renderHook(() =>
+      useStopsForBounds({
+        repo: repoNearbyFails,
+        perfProfile: PERF_PROFILES.lite,
+        debounceMs: TEST_DEBOUNCE_MS,
+      }),
+    );
+
+    act(() => {
+      result2.current.handleBoundsChanged(BOUNDS_A, CENTER_A);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TEST_DEBOUNCE_MS);
+    });
+
+    expect(result2.current.inBoundStops).toEqual([stop]);
+    expect(result2.current.radiusStops).toEqual([]);
+    expect(result2.current.hasNearbyLoaded).toBe(true);
+  });
+
+  it('keeps handleBoundsChanged identity stable when only onStopsCommitted changes', () => {
+    const repo = makeRepo();
+
+    const { result, rerender } = renderHook(
+      ({ onStopsCommitted }) =>
+        useStopsForBounds({
+          repo,
+          perfProfile: PERF_PROFILES.lite,
+          onStopsCommitted,
+          debounceMs: TEST_DEBOUNCE_MS,
+        }),
+      { initialProps: { onStopsCommitted: vi.fn() } },
+    );
+
+    const initialHandler = result.current.handleBoundsChanged;
+
+    // Swap to a brand-new callback identity (the typical case when the
+    // caller does not memoize). The handler must NOT be re-created,
+    // because that would force MapView to re-bind its `onBoundsChanged`
+    // listener on every parent render.
+    rerender({ onStopsCommitted: vi.fn() });
+
+    expect(result.current.handleBoundsChanged).toBe(initialHandler);
+  });
+
+  it('routes onStopsCommitted through a ref so callback replacements take effect on the next commit', async () => {
+    const repo = makeRepo({
+      getStopsInBounds: vi.fn().mockResolvedValue({ success: true, data: [], truncated: false }),
+      getStopsNearby: vi.fn().mockResolvedValue({ success: true, data: [], truncated: false }),
+    });
+    const first = vi.fn();
+    const second = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ onStopsCommitted }) =>
+        useStopsForBounds({
+          repo,
+          perfProfile: PERF_PROFILES.lite,
+          onStopsCommitted,
+          debounceMs: TEST_DEBOUNCE_MS,
+        }),
+      { initialProps: { onStopsCommitted: first } },
+    );
+
+    // Swap callbacks before any fetch fires. The hook reads the
+    // latest callback at commit time, so only `second` should run.
+    rerender({ onStopsCommitted: second });
+
+    act(() => {
+      result.current.handleBoundsChanged(BOUNDS_A, CENTER_A);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TEST_DEBOUNCE_MS);
+    });
+
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves mapCenter when repo or perfProfile changes invalidate in-flight requests', () => {
+    const repo = makeRepo();
+
+    const { result, rerender } = renderHook(
+      ({ perfProfile }) =>
+        useStopsForBounds({
+          repo,
+          perfProfile,
+          debounceMs: TEST_DEBOUNCE_MS,
+        }),
+      { initialProps: { perfProfile: PERF_PROFILES.lite } },
+    );
+
+    act(() => {
+      result.current.handleBoundsChanged(BOUNDS_A, CENTER_A);
+    });
+    expect(result.current.mapCenter).toEqual(CENTER_A);
+
+    // Invalidation must clear pending fetches but leave the visible
+    // map center intact — the user's pan is independent of the data
+    // source they happen to be looking at.
+    rerender({ perfProfile: PERF_PROFILES.normal });
+
+    expect(result.current.mapCenter).toEqual(CENTER_A);
+  });
+
   it('cancels the pending debounce on unmount so the fetch never fires', async () => {
     const repo = makeRepo();
 
