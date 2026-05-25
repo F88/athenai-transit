@@ -1,6 +1,6 @@
+import type L from 'leaflet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type L from 'leaflet';
 
 import { toast } from 'sonner';
 
@@ -46,6 +46,7 @@ import { buildHistoryNavigationPayload } from './domain/transit/stop-navigation'
 import { createStopReferenceSnapshot } from './domain/transit/stop-reference-snapshot';
 import { buildStopRouteTypeMap } from './domain/transit/stop-route-type-map';
 import { getStopServiceState } from './domain/transit/timetable-utils';
+import { getTripInspectionNoDataMessageKey } from './domain/transit/trip-inspection-message';
 
 // hooks
 import { useAnchors } from './hooks/use-anchors';
@@ -55,9 +56,9 @@ import { useLoadResult } from './hooks/use-load-result';
 import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
 import { useRouteStops } from './hooks/use-route-stops';
 import { useSelection } from './hooks/use-selection';
-import { useStopsForBounds } from './hooks/use-stops-for-bounds';
 import { useStopHistory, type UseStopHistoryReturn } from './hooks/use-stop-history';
 import { useStopNavigation } from './hooks/use-stop-navigation';
+import { useStopsForBounds } from './hooks/use-stops-for-bounds';
 import { useTimetable } from './hooks/use-timetable';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useTripInspection } from './hooks/use-trip-inspection';
@@ -81,13 +82,13 @@ import {
 } from './utils/settings-cycle';
 
 // components
+import { AppLayout } from './components/app-layout';
 import { DataSourceSettingsDialog } from './components/dialog/data-source-settings-dialog';
 import { InfoDialog } from './components/dialog/info-dialog';
 import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
 import { StopSearchDialog } from './components/dialog/stop-search-dialog';
 import { TimetableModal } from './components/dialog/timetable-modal';
 import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
-import { AppLayout } from './components/app-layout';
 import { MapOverlay } from './components/map/map-overlay';
 import { MapView } from './components/map/map-view';
 import { MapViewContainer } from './components/map/map-view-container';
@@ -616,13 +617,7 @@ export default function App() {
         serviceDate,
       }).then((status) => {
         if (status.status === 'no-data') {
-          const messageKey =
-            status.reason === 'no-stop-data'
-              ? 'tripInspection.messages.noStopData'
-              : status.reason === 'no-service-on-this-day'
-                ? 'tripInspection.messages.noServiceOnThisDay'
-                : 'tripInspection.messages.noData';
-          toast.warning(t(messageKey));
+          toast.warning(t(getTripInspectionNoDataMessageKey(status.reason)));
           return;
         }
 
@@ -638,13 +633,7 @@ export default function App() {
     (target: TripInspectionTarget) => {
       void openTripInspectionFromTarget(target, 'direct-open').then((status) => {
         if (status.status === 'no-data') {
-          const messageKey =
-            status.reason === 'no-stop-data'
-              ? 'tripInspection.messages.noStopData'
-              : status.reason === 'no-service-on-this-day'
-                ? 'tripInspection.messages.noServiceOnThisDay'
-                : 'tripInspection.messages.noData';
-          toast.warning(t(messageKey));
+          toast.warning(t(getTripInspectionNoDataMessageKey(status.reason)));
           return;
         }
 
@@ -660,13 +649,7 @@ export default function App() {
     (target: TripInspectionTarget) => {
       void openTripInspectionFromTarget(target, 'trip-stops-time-select').then((status) => {
         if (status.status === 'no-data') {
-          const messageKey =
-            status.reason === 'no-stop-data'
-              ? 'tripInspection.messages.noStopData'
-              : status.reason === 'no-service-on-this-day'
-                ? 'tripInspection.messages.noServiceOnThisDay'
-                : 'tripInspection.messages.noData';
-          toast.warning(t(messageKey));
+          toast.warning(t(getTripInspectionNoDataMessageKey(status.reason)));
           return;
         }
 

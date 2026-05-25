@@ -16,7 +16,7 @@ import {
 import { createLogger, type Logger } from '../lib/logger';
 import type { TransitRepository } from '../repositories/transit-repository';
 import type {
-  TripInspectionTargetsEmptyReason,
+  TripInspectionNoDataReason,
   TripInspectionTargetsResult,
 } from '../types/app/repository';
 import type { SelectedTripSnapshot, TripInspectionTarget } from '../types/app/transit-composed';
@@ -28,11 +28,6 @@ interface OpenTripInspectionByStopIdParams {
   now: Date;
   serviceDate: Date;
 }
-
-export type TripInspectionNoDataReason =
-  | TripInspectionTargetsEmptyReason
-  | 'snapshot-unavailable'
-  | 'target-missing';
 
 type TripInspectionOpenOutcome =
   | { status: 'opened' }
