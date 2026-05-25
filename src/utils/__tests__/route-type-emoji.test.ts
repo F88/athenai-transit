@@ -44,6 +44,10 @@ describe('routeTypesEmoji', () => {
     expect(routeTypesEmoji([0, 3])).toBe('🚊🚌');
   });
 
+  it('preserves duplicate route types', () => {
+    expect(routeTypesEmoji([3, 3, 1])).toBe('🚌🚌🚇');
+  });
+
   it('handles unknown route types in the array', () => {
     expect(routeTypesEmoji([3, 99])).toBe('🚌🛸');
   });
