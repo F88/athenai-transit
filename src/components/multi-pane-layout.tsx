@@ -3,7 +3,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './ui/resiz
 import type { LayoutProps } from './layout-props';
 import { useMultiPaneOrientation } from '../hooks/use-multi-pane-orientation';
 import { useSetMapSlotElement } from '../hooks/use-map-slot';
-import { MULTI_PANE_PANEL_SIZE } from '../utils/multi-pane';
+import { MULTI_PANE_MAP_PANE_SIZE } from '../utils/multi-pane';
 
 /**
  * Multi-pane-mode overlay for wide viewports: a resizable split that
@@ -45,17 +45,14 @@ export function MultiPaneLayout({
   filteredNearbyStopsCounts,
 }: LayoutProps) {
   const orientation = useMultiPaneOrientation();
-  const panelSize = MULTI_PANE_PANEL_SIZE[orientation];
+  const mapPaneSize = MULTI_PANE_MAP_PANE_SIZE[orientation];
   const setMapSlot = useSetMapSlotElement();
 
   const sheetPane = (
-    <ResizablePanel
-      key="sheet"
-      id="sheet"
-      defaultSize={panelSize.defaultSize}
-      minSize={panelSize.minSize}
-      maxSize={panelSize.maxSize}
-    >
+    // Sheet pane has no explicit size props — it takes the residual
+    // space left after the map pane's size constraints
+    // (`MULTI_PANE_MAP_PANE_SIZE`) are honoured.
+    <ResizablePanel key="sheet" id="sheet">
       <StopPanel
         {...bottomSheetProps}
         globalFilter={globalFilter}
@@ -86,6 +83,9 @@ export function MultiPaneLayout({
     <ResizablePanel
       key="map"
       id="multi-pane-map-pane"
+      defaultSize={mapPaneSize.defaultSize}
+      minSize={mapPaneSize.minSize}
+      maxSize={mapPaneSize.maxSize}
       className="pointer-events-none bg-transparent"
     >
       {/* Slot for MapViewContainer: the hoisted MapView tracks this

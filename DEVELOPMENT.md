@@ -323,22 +323,22 @@ multi-pane の `ResizablePanelGroup` は **layout shell でしかなく**、 map
 
 ### 関連 file マップ
 
-| 場所                                         | 役割                                                                                               |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `src/types/app/viewport.ts`                  | `Viewport` 型 (utils / hooks 双方から import する中立 type)                                        |
-| `src/utils/layout-mode.ts`                   | `LayoutMode` 型、 `WIDE_VIEWPORT_MIN_WIDTH`、 `resolveLayoutMode(viewport)`                        |
-| `src/utils/multi-pane.ts`                    | `MultiPaneOrientation` 型、 `MULTI_PANE_PANEL_SIZE`、 `resolveMultiPaneOrientation(width, height)` |
-| `src/hooks/use-viewport.ts`                  | `useViewport()`: window / visualViewport の resize 購読                                            |
-| `src/hooks/use-layout-mode.ts`               | wiring (`resolveLayoutMode(useViewport())`)                                                        |
-| `src/hooks/use-multi-pane-orientation.ts`    | wiring                                                                                             |
-| `src/hooks/use-element-rect.ts`              | `useElementRect()`: ResizeObserver-backed bbox tracker                                             |
-| `src/hooks/use-map-slot.ts`                  | `useMapSlotElement()` / `useSetMapSlotElement()` (context accessor)                                |
-| `src/contexts/map-slot-context.tsx`          | `MapSlotContext` 定義                                                                              |
-| `src/contexts/map-slot-provider.tsx`         | `MapSlotProvider`: slot 共有 state holder                                                          |
-| `src/components/map/map-view-container.tsx`  | `MapViewContainer`: hoist された MapView の position 制御                                          |
-| `src/components/app-layout.tsx`              | `AppLayout`: `useLayoutMode()` で overlay 選択                                                     |
-| `src/components/map-bottom-sheet-layout.tsx` | simple mode overlay (slot div + BottomSheet)                                                       |
-| `src/components/multi-pane-layout.tsx`       | multi-pane mode overlay (ResizablePanelGroup + slot)                                               |
+| 場所                                         | 役割                                                                                                                                                      |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/types/app/viewport.ts`                  | `Viewport` 型 (utils / hooks 双方から import する中立 type)                                                                                               |
+| `src/utils/layout-mode.ts`                   | `LayoutMode` 型、 `WIDE_VIEWPORT_MIN_WIDTH`、 `resolveLayoutMode(viewport)`                                                                               |
+| `src/utils/multi-pane.ts`                    | `MultiPaneOrientation` 型、 `MULTI_PANE_MAP_PANE_SIZE` (map pane の `defaultSize` / `minSize` / `maxSize`)、 `resolveMultiPaneOrientation(width, height)` |
+| `src/hooks/use-viewport.ts`                  | `useViewport()`: window / visualViewport の resize 購読                                                                                                   |
+| `src/hooks/use-layout-mode.ts`               | wiring (`resolveLayoutMode(useViewport())`)                                                                                                               |
+| `src/hooks/use-multi-pane-orientation.ts`    | wiring                                                                                                                                                    |
+| `src/hooks/use-element-rect.ts`              | `useElementRect()`: ResizeObserver-backed bbox tracker                                                                                                    |
+| `src/hooks/use-map-slot.ts`                  | `useMapSlotElement()` / `useSetMapSlotElement()` (context accessor)                                                                                       |
+| `src/contexts/map-slot-context.tsx`          | `MapSlotContext` 定義                                                                                                                                     |
+| `src/contexts/map-slot-provider.tsx`         | `MapSlotProvider`: slot 共有 state holder                                                                                                                 |
+| `src/components/map/map-view-container.tsx`  | `MapViewContainer`: hoist された MapView の position 制御                                                                                                 |
+| `src/components/app-layout.tsx`              | `AppLayout`: `useLayoutMode()` で overlay 選択                                                                                                            |
+| `src/components/map-bottom-sheet-layout.tsx` | simple mode overlay (slot div + BottomSheet)                                                                                                              |
+| `src/components/multi-pane-layout.tsx`       | multi-pane mode overlay (ResizablePanelGroup + slot)                                                                                                      |
 
 ## z-index 階層
 

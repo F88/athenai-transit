@@ -7,17 +7,26 @@
 export type MultiPaneOrientation = 'horizontal' | 'vertical';
 
 /**
- * Default / min / max size of the sheet panel pane in the resizable
+ * Default / min / max size of the **map pane** in the resizable
  * multi-pane split, keyed by split orientation. `horizontal` values
- * size the panel width (panel on the left); `vertical` values size its
- * height (panel on the bottom).
+ * size the map pane's width (map on the right); `vertical` values
+ * size its height (map on top).
+ *
+ * The sheet pane (the opposite side) takes the remaining space and
+ * carries no explicit size constraints — its effective range is the
+ * inverse of the map pane's. Constraining the map pane (not the
+ * sheet) is the project's primary intent because the map area has to
+ * be tall / wide enough to host overlay chrome (TimeControls,
+ * top-centre dropdowns, etc.) without those elements colliding.
+ *
+ * Sizes accept `'NN%'` or `'NNNpx'` per `react-resizable-panels` v4.
  */
-export const MULTI_PANE_PANEL_SIZE: Record<
+export const MULTI_PANE_MAP_PANE_SIZE: Record<
   MultiPaneOrientation,
   { defaultSize: string; minSize: string; maxSize: string }
 > = {
-  horizontal: { defaultSize: '50%', minSize: '25%', maxSize: '75%' },
-  vertical: { defaultSize: '50%', minSize: '25%', maxSize: '75%' },
+  vertical: { defaultSize: '50%', minSize: '400px', maxSize: '75%' },
+  horizontal: { defaultSize: '50%', minSize: '400px', maxSize: '75%' },
 };
 
 /**
