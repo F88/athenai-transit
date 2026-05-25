@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 // types
 import type { AutoLocateOffReason } from './types/app/auto-locate';
-import type { Bounds, LatLng, RouteShape, UserLocation } from './types/app/map';
+import type { RouteShape, UserLocation } from './types/app/map';
 import type { StopsCounts } from './types/app/stop';
 import type { AppRouteTypeValue, Stop, TimetableEntriesState } from './types/app/transit';
 import type {
@@ -60,6 +60,7 @@ import { useLoadResult } from './hooks/use-load-result';
 import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
 import { useRouteStops } from './hooks/use-route-stops';
 import { useSelection } from './hooks/use-selection';
+import { useStopsForBounds } from './hooks/use-stops-for-bounds';
 import { useStopHistory, type UseStopHistoryReturn } from './hooks/use-stop-history';
 import { useStopNavigation } from './hooks/use-stop-navigation';
 import { useTimetable } from './hooks/use-timetable';
@@ -99,7 +100,6 @@ import { Toaster } from './components/ui/sonner';
 import { MapSlotProvider } from './contexts/map-slot-provider';
 
 const logger = createLogger('App');
-const DEBOUNCE_MS = 300;
 const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
 
 export default function App() {
@@ -149,11 +149,26 @@ export default function App() {
     }
   }, [settings.lang, langChain]);
 
-  const [inBoundStops, setInBoundStops] = useState<StopWithMeta[]>([]);
-  const [radiusStops, setNearbyStops] = useState<StopWithMeta[]>([]);
-  const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
+  const perfProfile = PERF_PROFILES[settings.perfMode];
+
+  // `clearFocus` originates from `useSelection`, which itself depends
+  // on the stops produced by `useStopsForBounds`. To break that
+  // circular dependency without re-creating callbacks on every render,
+  // `useStopsForBounds` is given a stable `onStopsCommitted` callback
+  // that reads the latest `clearFocus` from a ref; the ref is updated
+  // in an effect right after `useSelection` returns.
+  const clearFocusRef = useRef<() => void>(() => {});
+  const handleStopsCommitted = useCallback(() => {
+    clearFocusRef.current();
+  }, []);
+
+  const { inBoundStops, radiusStops, mapCenter, hasNearbyLoaded, handleBoundsChanged } =
+    useStopsForBounds({
+      repo,
+      perfProfile,
+      onStopsCommitted: handleStopsCommitted,
+    });
   const [routeShapes, setRouteShapes] = useState<RouteShape[]>([]);
-  const [hasNearbyLoaded, setHasNearbyLoaded] = useState(false);
   // Auto-tracking flag is intentionally not persisted: a tracking
   // permission/intent shouldn't silently survive a reload, so it always
   // starts off and the user must opt in each session. Lives in app.tsx
@@ -288,6 +303,13 @@ export default function App() {
     radiusStops,
     inBoundStops,
   });
+
+  // Publish the live `clearFocus` to the ref read by
+  // `useStopsForBounds`'s `onStopsCommitted`. See the ref declaration
+  // above for the circular-dependency rationale.
+  useEffect(() => {
+    clearFocusRef.current = clearFocus;
+  }, [clearFocus]);
 
   const routeStops = useRouteStops(selectionInfo?.routeIds ?? null, repo);
   // console.debug('routeStops', routeStops.length);
@@ -513,55 +535,6 @@ export default function App() {
       }
     });
   }, [repo]);
-
-  const debounceTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  const perfProfile = PERF_PROFILES[settings.perfMode];
-
-  // Fetch stops when map bounds change (debounced). Auto-pan-driven
-  // moveends (= the locate watch) are treated identically to manual
-  // pans; the natural "near" guards (resolveLocateAction's 10 m
-  // threshold for manual locate, Leaflet's `panTo` equality check for
-  // the tracking auto-pan) prevent fetches when the position has not
-  // actually changed.
-  const handleBoundsChanged = useCallback(
-    (bounds: Bounds, center: LatLng) => {
-      // Keep `mapCenter` in sync with the latest map center; the bottom
-      // sheet computes per-stop distance from it.
-      setMapCenter(center);
-      clearTimeout(debounceTimer.current);
-      debounceTimer.current = setTimeout(() => {
-        const { nearbyRadius, maxResults } = perfProfile.data.stops;
-        if (logger.isEnabled('debug')) {
-          logger.debug(
-            'bounds changed: fetching stops via repo',
-            `radius=${nearbyRadius}`,
-            `maxResults=${maxResults}`,
-            `center=(${center.lat.toFixed(4)}, ${center.lng.toFixed(4)})`,
-          );
-        }
-        void Promise.all([
-          repo.getStopsInBounds(bounds, maxResults),
-          repo.getStopsNearby(center, nearbyRadius, maxResults),
-        ]).then(([inBoundsResult, nearbyResult]) => {
-          const inBounds = inBoundsResult.success ? inBoundsResult.data : [];
-          const nearby = nearbyResult.success ? nearbyResult.data : [];
-          logger.info(
-            'bounds changed:',
-            `radius=${nearbyRadius}`,
-            `nearby=${nearby.length}`,
-            `inBound=${inBounds.length}`,
-            `center=(${center.lat.toFixed(4)}, ${center.lng.toFixed(4)})`,
-          );
-          setInBoundStops(inBounds);
-          setNearbyStops(nearby);
-          setHasNearbyLoaded(true);
-          clearFocus();
-        });
-      }, DEBOUNCE_MS);
-    },
-    [repo, perfProfile, clearFocus],
-  );
 
   const handleFetchStopTimes = useCallback(
     async (stopId: string): Promise<StopWithContext | null> => {
