@@ -9,6 +9,22 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Multi-pane layout: 横幅 ≥ 800px の viewport で **multi-pane layout mode** を導入。 横長 viewport では stop panel を左 / 可視 map を右、 縦長 viewport では map を上 / stop panel を下に並べる。 中央の `ResizableHandle` を drag して比率を変更可能 (map pane の `minSize: 400px` を保証)。 small viewport (< 800px) は従来通り simple mode (map + bottom-sheet) で動作する。
+- MapView 常駐: Leaflet `MapView` を App root に hoist する構造 (case 1A) を導入。 layout mode / orientation の transition で再 mount せず、 map center / zoom / 読み込み済みタイル / 進行中ジェスチャをすべて保持する。 layout 側が宣言する slot div の bounding rect を `useElementRect` (`ResizeObserver`-backed) で観測し、 `MapViewContainer` が MapView の wrapper を絶対位置で追従させる。 resize handle の drag にもリアルタイム追従し、 Leaflet の `getBounds()` / `getCenter()` は常に可視 map 領域を返す。
+- レイアウト infrastructure: `MapSlotProvider` / `useSetMapSlotElement` / `useMapSlotElement` / `useElementRect` の新 hooks / context、 共通 `Viewport` 型 (`src/types/app/viewport.ts`) を追加。 utils 側 pure decision (`resolveLayoutMode` / `resolveMultiPaneOrientation`) と hooks 側 wiring の依存方向を破らずに接続する。
+- StopPanel / StopBrowser: stop browsing UI を `StopBrowser` に extract し、 simple mode の `BottomSheet` と新規 multi-pane mode の `StopPanel` で共通の content として共有できるようにした。 `BottomSheetHeader` を `StopBrowserHeader`、 `BottomSheetStops` を `StopGrid` に rename。
+- Documentation: `DEVELOPMENT.md` に「レイアウト構成」セクションを新設し、 layout mode / orientation 判定、 MapView hoist と DOM 階層、 slot 追従の仕組み、 multi-pane の pointer-events plumbing、 transition 別の挙動、 関連 file マップを明記。 既存「z-index 階層」セクションに「App shell wrapper は stacking context を作らない」原則も追加。
+
+### Changed
+
+- Viewport hook: `useViewportWidth` / `useViewportHeight` を `useViewport()` に統合。 `visualViewport.scroll` も購読し、 mobile Safari URL バー伸縮による高さ変化も追従する。
+- Layout decision API: `isWideViewport(width): boolean` を `resolveLayoutMode(viewport: Viewport): LayoutMode` に変更。 戻り値が `LayoutMode` 自体になり、 hook 側 wiring (`useLayoutMode()`) は `return resolveLayoutMode(useViewport())` のみに簡素化された。
+- App root structure: viewport を埋める `relative h-dvh w-dvw overflow-hidden` の root container を導入。 配下を `MapSlotProvider` で wrap し、 hoist された MapView + TimeControls (`MapViewContainer` 内) を `AppLayout` (mode 切替) の sibling として配置する。 layout コンポーネント間で MapView を渡す `mapViewProps` / `mapOverlay` props を廃止。
+- BottomSheet: stop browsing UI を `StopBrowser` に分離し、 BottomSheet 自体は drag-to-expand と fixed positioning の shell 役のみに専念。 drag-expand UX (40dvh ⇔ 70dvh) は変更なし。
+- Simple mode preset の削除: viewport 高さで 50/50・40/60 を切り替える `MapBottomSheetLayoutPreset` を撤廃し、 固定 60dvh / 40dvh (expandable 70dvh) に統一。 過剰最適化を排して全 small viewport に統一感のある UX を提供。
+
 ## [2026.05.22]
 
 ### Added
