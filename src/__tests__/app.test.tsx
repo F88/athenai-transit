@@ -602,7 +602,8 @@ describe('App anchor error toast', () => {
     // App → MapView → MapOverlay, now App → MapOverlay directly).
     // Capture from its mock.
     const lastOverlayCall = mockMapOverlay.mock.lastCall;
-    const overlayProps = lastOverlayCall?.[0] as {
+    expect(lastOverlayCall).toBeDefined();
+    const overlayProps = lastOverlayCall![0] as {
       onHistorySelect: (entry: StopHistoryEntry) => void;
     };
 
@@ -659,7 +660,8 @@ describe('App anchor error toast', () => {
     // onHistorySelect now lives on MapOverlay (Phase 1 refactor:
     // chrome extracted out of MapView). Capture from there.
     const lastOverlayCall = mockMapOverlay.mock.lastCall;
-    const overlayProps = lastOverlayCall?.[0] as {
+    expect(lastOverlayCall).toBeDefined();
+    const overlayProps = lastOverlayCall![0] as {
       onHistorySelect: (entry: StopHistoryEntry) => void;
     };
 
@@ -708,7 +710,8 @@ describe('App anchor error toast', () => {
     // onHistorySelect now lives on MapOverlay (Phase 1 refactor:
     // chrome extracted out of MapView). Capture from there.
     const lastOverlayCall = mockMapOverlay.mock.lastCall;
-    const overlayProps = lastOverlayCall?.[0] as {
+    expect(lastOverlayCall).toBeDefined();
+    const overlayProps = lastOverlayCall![0] as {
       onHistorySelect: (entry: StopHistoryEntry) => void;
     };
 
