@@ -1,3 +1,5 @@
+import type { Viewport } from '../types/app/viewport';
+
 /**
  * Active app layout mode.
  *
@@ -12,16 +14,24 @@ export type LayoutMode = 'simple' | 'multi-pane';
  * Minimum viewport width (CSS px) at which the layout switches from
  * `'simple'` to `'multi-pane'`. Targets PCs and tablets.
  */
-export const WIDE_VIEWPORT_MIN_WIDTH = 1024;
+export const WIDE_VIEWPORT_MIN_WIDTH = 800;
 
 /**
- * Decide whether the viewport is wide enough for the multi-pane layout.
+ * Resolve the {@link LayoutMode} the App should render for the given
+ * viewport.
  *
- * @param viewportWidth - Effective viewport width in CSS pixels.
- * @returns `true` when the multi-pane layout (full-height map + side
- *   panel) should be used instead of the stacked map / bottom-sheet
- *   layout.
+ * Pure decision function — returns `'multi-pane'` when the viewport
+ * is wide enough to fit the full-height map + side stop panel split,
+ * otherwise `'simple'` (stacked map / bottom-sheet). Pairs with
+ * `useLayoutMode`, which only wires this resolver to the live viewport.
+ *
+ * Takes the whole `Viewport` object (not just width) so future
+ * decision logic that needs the height / aspect ratio can be added
+ * without changing the signature or its callers.
+ *
+ * @param viewport - Effective viewport dimensions in CSS pixels.
+ * @returns The layout mode to render.
  */
-export function isWideViewport(viewportWidth: number): boolean {
-  return viewportWidth >= WIDE_VIEWPORT_MIN_WIDTH;
+export function resolveLayoutMode(viewport: Viewport): LayoutMode {
+  return viewport.width >= WIDE_VIEWPORT_MIN_WIDTH ? 'multi-pane' : 'simple';
 }

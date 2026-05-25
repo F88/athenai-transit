@@ -31,6 +31,7 @@ const {
   mockUseTransitRepository,
   mockFocusStop,
   mockAppLayout,
+  mockMapView,
   mockUseTimetable,
   mockOpenStopTimetable,
   mockOpenRouteHeadsignTimetable,
@@ -48,6 +49,7 @@ const {
   mockUseTransitRepository: vi.fn<() => UseTransitRepositoryReturn>(),
   mockFocusStop: vi.fn(),
   mockAppLayout: vi.fn(),
+  mockMapView: vi.fn(),
   mockUseTimetable: vi.fn<() => UseTimetableReturn>(),
   mockOpenStopTimetable: vi.fn(),
   mockOpenRouteHeadsignTimetable: vi.fn(),
@@ -143,7 +145,10 @@ vi.mock('../lib/query-params', () => ({
 }));
 
 vi.mock('../components/map/map-view', () => ({
-  MapView: () => null,
+  MapView: (props: unknown) => {
+    mockMapView(props);
+    return null;
+  },
 }));
 
 vi.mock('../components/app-layout', () => ({
@@ -265,6 +270,7 @@ describe('App anchor error toast', () => {
     mockUseTransitRepository.mockReset();
     mockFocusStop.mockReset();
     mockAppLayout.mockReset();
+    mockMapView.mockReset();
     mockUseTimetable.mockReset();
     mockOpenStopTimetable.mockReset();
     mockOpenRouteHeadsignTimetable.mockReset();
@@ -573,15 +579,16 @@ describe('App anchor error toast', () => {
       expect(mockAppLayout).toHaveBeenCalled();
     });
 
-    const lastCall = mockAppLayout.mock.lastCall;
-    const props = lastCall?.[0] as {
-      mapViewProps: {
-        onHistorySelect: (entry: StopHistoryEntry) => void;
-      };
+    // onHistorySelect is now passed directly to the hoisted MapView at
+    // App root (not via AppLayout.mapViewProps). Grab it from MapView's
+    // captured props.
+    const lastMapViewCall = mockMapView.mock.lastCall;
+    const mapViewProps = lastMapViewCall?.[0] as {
+      onHistorySelect: (entry: StopHistoryEntry) => void;
     };
 
     act(() => {
-      props.mapViewProps.onHistorySelect(entry);
+      mapViewProps.onHistorySelect(entry);
     });
 
     await waitFor(() => {
@@ -630,15 +637,13 @@ describe('App anchor error toast', () => {
       expect(mockAppLayout).toHaveBeenCalled();
     });
 
-    const lastCall = mockAppLayout.mock.lastCall;
-    const props = lastCall?.[0] as {
-      mapViewProps: {
-        onHistorySelect: (entry: StopHistoryEntry) => void;
-      };
+    const lastMapViewCall = mockMapView.mock.lastCall;
+    const mapViewProps = lastMapViewCall?.[0] as {
+      onHistorySelect: (entry: StopHistoryEntry) => void;
     };
 
     act(() => {
-      props.mapViewProps.onHistorySelect(entry);
+      mapViewProps.onHistorySelect(entry);
     });
 
     await waitFor(() => {
@@ -679,15 +684,13 @@ describe('App anchor error toast', () => {
       expect(mockAppLayout).toHaveBeenCalled();
     });
 
-    const lastCall = mockAppLayout.mock.lastCall;
-    const props = lastCall?.[0] as {
-      mapViewProps: {
-        onHistorySelect: (entry: StopHistoryEntry) => void;
-      };
+    const lastMapViewCall = mockMapView.mock.lastCall;
+    const mapViewProps = lastMapViewCall?.[0] as {
+      onHistorySelect: (entry: StopHistoryEntry) => void;
     };
 
     act(() => {
-      props.mapViewProps.onHistorySelect(entry);
+      mapViewProps.onHistorySelect(entry);
     });
 
     await waitFor(() => {

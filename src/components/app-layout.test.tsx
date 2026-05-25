@@ -35,7 +35,6 @@ vi.mock('./multi-pane-layout', () => ({
  */
 function makeLayoutProps(): LayoutProps {
   return {
-    mapViewProps: { sentinel: 'mapViewProps' } as unknown as LayoutProps['mapViewProps'],
     bottomSheetProps: {
       sentinel: 'bottomSheetProps',
     } as unknown as LayoutProps['bottomSheetProps'],
@@ -46,19 +45,16 @@ function makeLayoutProps(): LayoutProps {
     filteredNearbyStopsCounts: {
       sentinel: 'filteredNearbyStopsCounts',
     } as unknown as LayoutProps['filteredNearbyStopsCounts'],
-    mapOverlay: 'mapOverlay-sentinel',
   };
 }
 
 function renderAppLayout(props: LayoutProps) {
   render(
     <AppLayout
-      mapViewProps={props.mapViewProps}
       bottomSheetProps={props.bottomSheetProps}
       globalFilter={props.globalFilter}
       nearbyStopsCounts={props.nearbyStopsCounts}
       filteredNearbyStopsCounts={props.filteredNearbyStopsCounts}
-      mapOverlay={props.mapOverlay}
     />,
   );
 }

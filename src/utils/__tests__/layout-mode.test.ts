@@ -1,24 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { isWideViewport, WIDE_VIEWPORT_MIN_WIDTH } from '../layout-mode';
+import { resolveLayoutMode, WIDE_VIEWPORT_MIN_WIDTH } from '../layout-mode';
 
-describe('isWideViewport', () => {
-  it('returns false for narrow (smartphone) viewports', () => {
-    expect(isWideViewport(390)).toBe(false);
+describe('resolveLayoutMode', () => {
+  it('returns simple for narrow (smartphone) viewports', () => {
+    expect(resolveLayoutMode({ width: 390, height: 844 })).toBe('simple');
   });
 
-  it('returns false just below the wide threshold', () => {
-    expect(isWideViewport(WIDE_VIEWPORT_MIN_WIDTH - 1)).toBe(false);
+  it('returns simple just below the multi-pane threshold', () => {
+    expect(resolveLayoutMode({ width: WIDE_VIEWPORT_MIN_WIDTH - 1, height: 800 })).toBe('simple');
   });
 
-  it('returns true exactly at the wide threshold', () => {
-    expect(isWideViewport(WIDE_VIEWPORT_MIN_WIDTH)).toBe(true);
+  it('returns multi-pane exactly at the multi-pane threshold', () => {
+    expect(resolveLayoutMode({ width: WIDE_VIEWPORT_MIN_WIDTH, height: 800 })).toBe('multi-pane');
   });
 
-  it('returns true for wide (PC / landscape tablet) viewports', () => {
-    expect(isWideViewport(1440)).toBe(true);
+  it('returns multi-pane for wide (PC / landscape tablet) viewports', () => {
+    expect(resolveLayoutMode({ width: 1440, height: 900 })).toBe('multi-pane');
   });
 
-  it('returns false when viewport width is unavailable', () => {
-    expect(isWideViewport(0)).toBe(false);
+  it('returns simple when the viewport width is unavailable', () => {
+    expect(resolveLayoutMode({ width: 0, height: 0 })).toBe('simple');
   });
 });

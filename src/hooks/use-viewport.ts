@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react';
-
-export interface Viewport {
-  width: number;
-  height: number;
-}
+import type { Viewport } from '../types/app/viewport';
 
 function getViewport(): Viewport {
   if (typeof window === 'undefined') {
