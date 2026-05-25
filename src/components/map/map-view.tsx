@@ -5,7 +5,7 @@ import L from 'leaflet';
 import { toast } from 'sonner';
 import type { AutoLocateOffReason } from '../../types/app/auto-locate';
 import type { Bounds, LatLng, RouteShape } from '../../types/app/map';
-import type { InfoLevel, PerfMode, RenderMode, Theme } from '../../types/app/settings';
+import type { InfoLevel, RenderMode, Theme } from '../../types/app/settings';
 import type { Agency, AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { StopWithContext, StopWithMeta } from '../../types/app/transit-composed';
 import { DEFAULT_MAX_ZOOM } from '../../config/map-constants';
@@ -15,7 +15,6 @@ import { resolveLocateAction } from '../../lib/map-locate';
 import { smoothMoveTo, toBounds, toCenter } from '../../lib/leaflet-helpers';
 import { StopMarkers } from '../marker/stop-markers';
 import type { UserLocation } from '../../types/app/map';
-import { MapOverlayPanels } from './map-overlay-panels';
 
 import {
   CLICK_SUPPRESSION_MS,
@@ -23,8 +22,6 @@ import {
 } from '../../domain/map/map-click-suppression';
 import { resolveMapMaxZoom } from '../../domain/map/map-max-zoom';
 import { createLogger } from '../../lib/logger';
-import type { StopHistoryEntry } from '../../domain/transit/stop-history';
-import type { AnchorEntry } from '../../domain/portal/anchor';
 import type { SelectionInfo } from '../../domain/map/selection';
 import { buildTimetableEntriesMap } from '../../domain/map/selection';
 import { resolveRenderModes } from '../../domain/map/render-mode';
@@ -235,7 +232,6 @@ export interface MapViewProps {
   visibleRouteShapes: Set<number>;
   tileIndex: number | null;
   renderMode: RenderMode;
-  perfMode: PerfMode;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
@@ -243,42 +239,12 @@ export interface MapViewProps {
   onBoundsChanged: (bounds: Bounds, center: LatLng) => void;
   onStopSelected: (stop: Stop) => void;
   onFetchStopTimes: (stopId: string) => Promise<StopWithContext | null>;
-  onToggleStopType: (rt: number) => void;
-  onToggleBusShapes: () => void;
-  onToggleNonBusShapes: () => void;
-  onCycleTile: () => void;
-  onToggleRenderMode: () => void;
-  onTogglePerfMode: () => void;
-  onCycleInfoLevel: () => void;
   theme: Theme;
   doubleTapDrag: 'zoom-in' | 'zoom-out';
-  onToggleDarkMode: () => void;
-  onCycleLang: () => void;
   onDeselectStop: () => void;
   onRouteShapeSelected: (routeId: string) => void;
   /** Resolves the number of trips on a route in the current service day. */
   resolveRouteFreq: (routeId: string) => number | undefined;
-  onSearchClick: () => void;
-  onInfoClick: () => void;
-  /** Stop selection history entries, most recent first. */
-  stopHistory: StopHistoryEntry[];
-  /** Called when a history entry is chosen. */
-  onHistorySelect: (entry: StopHistoryEntry) => void;
-  /** Anchor (bookmarked stop) entries, most recently added first. */
-  anchors: AnchorEntry[];
-  /** Called when an anchor is chosen from the Portal dropdown. */
-  onPortalSelect: (entry: AnchorEntry) => void;
-  /** Removes the anchor for a Portal entry whose stop_id is no longer
-   *  resolvable in the current GTFS dataset. */
-  onPortalRemove: (entry: AnchorEntry) => void;
-  /**
-   * Looks up an anchored stop's current `StopWithMeta` from the
-   * repository's full dataset. Forwarded to the Portal dropdown so
-   * anchor display names can be resolved against the latest GTFS
-   * data at render time, regardless of viewport position.
-   */
-  lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
-  lookupHistoryStopMeta: (stopId: string) => StopWithMeta | null;
   /** Height class applied to the outer map container. */
   heightClassName?: string;
   /**
@@ -289,12 +255,36 @@ export interface MapViewProps {
    * each disable trigger) reads from the same source of truth.
    */
   autoLocateEnabled: boolean;
-  /** Turn auto-locate on (= called from the locate button's near-center
-   *  branch). */
-  onEnableAutoLocate: () => void;
-  /** Turn auto-locate off, tagging the call site with a typed reason
-   *  for diagnostics. */
+  /**
+   * Turn auto-locate off, tagging the call site with a typed reason
+   * for diagnostics. Called from within MapView for `'manual-drag'`,
+   * `'pinch-zoom-shift'`, and `'permission-denied'` (geolocation watch
+   * error).
+   */
   onDisableAutoLocate: (reason: AutoLocateOffReason) => void;
+  /**
+   * Last known user geolocation; owned by `app.tsx` so it is also
+   * available to chrome rendered outside MapView (e.g. the locate
+   * button in `MapOverlay`). MapView reads this for the
+   * user-location marker, the auto-pan effect, and the pinch-zoom
+   * yield logic.
+   */
+  userLocation: UserLocation | null;
+  /**
+   * Called with every fresh geolocation fix from MapView's
+   * `useMapLocateWatch` (the continuous-tracking watchPosition tick).
+   * `app.tsx` updates the lifted `userLocation` state and bumps the
+   * `locatePulseKey` counter forwarded to `MapOverlay`'s locate
+   * button.
+   */
+  onLocated: (location: UserLocation) => void;
+  /**
+   * Published when the underlying Leaflet `L.Map` is created (and on
+   * subsequent re-creations). `app.tsx` captures the instance so
+   * chrome extracted out of MapView (`MapOverlay`, eventually
+   * `EdgeMarkersSwitch`) can interact with the same map.
+   */
+  onMapInstance?: (map: L.Map) => void;
 }
 
 export function MapView({
@@ -311,52 +301,40 @@ export function MapView({
   visibleRouteShapes,
   tileIndex,
   renderMode,
-  perfMode,
   infoLevel,
   dataLang,
   time: now,
   onBoundsChanged,
   onStopSelected,
   onFetchStopTimes,
-  onToggleStopType,
-  onToggleBusShapes,
-  onToggleNonBusShapes,
-  onCycleTile,
-  onToggleRenderMode,
-  onTogglePerfMode,
-  onCycleInfoLevel,
   theme,
   doubleTapDrag,
-  onToggleDarkMode,
-  onCycleLang,
   onDeselectStop,
   onRouteShapeSelected,
   resolveRouteFreq,
-  onSearchClick,
-  onInfoClick,
-  stopHistory,
-  lookupAnchorStopMeta,
-  lookupHistoryStopMeta,
-  onHistorySelect,
-  anchors,
-  onPortalSelect,
-  onPortalRemove,
   heightClassName,
   autoLocateEnabled,
-  onEnableAutoLocate,
   onDisableAutoLocate,
+  userLocation,
+  onLocated,
+  onMapInstance,
 }: MapViewProps) {
   const { t } = useTranslation();
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
-  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [zoom, setZoom] = useState(INITIAL_ZOOM);
-  // Counter that increments every time a fresh geolocation fix arrives
-  // (manual locate or auto-tracking watchPosition update). Forwarded
-  // to the locate button as `pulseKey` so the button replays a brief
-  // ripple animation to acknowledge the event without altering its
-  // persistent state.
-  const [locateUpdateCount, setLocateUpdateCount] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Bridge MapRef -> both the local `mapInstance` state (consumed by
+  // effects in this component) and the parent-supplied `onMapInstance`
+  // callback (consumed by `MapOverlay` / `EdgeMarkersSwitch`
+  // hosted in `app.tsx`).
+  const handleMapInstance = useCallback(
+    (map: L.Map) => {
+      setMapInstance(map);
+      onMapInstance?.(map);
+    },
+    [onMapInstance],
+  );
 
   const { nearby: nearbyRenderMode, far: farRenderMode } = resolveRenderModes(renderMode, zoom);
 
@@ -392,15 +370,6 @@ export function MapView({
     visibleRouteShapes,
     selectionInfo,
   });
-
-  const handleLocated = useCallback((location: UserLocation) => {
-    setUserLocation(location);
-    // Bump the counter so the locate button replays its ripple
-    // animation. Both manual (`useMapLocate`) and auto (`useMapLocateWatch`)
-    // paths end up here, so the button reacts uniformly to any
-    // successful position fix.
-    setLocateUpdateCount((n) => n + 1);
-  }, []);
 
   // A user-initiated map drag implies the user wants to look at a
   // different area, so auto-tracking should yield. `dragstart` is a
@@ -445,7 +414,7 @@ export function MapView({
   );
   useMapLocateWatch({
     enabled: autoLocateEnabled,
-    onLocated: handleLocated,
+    onLocated,
     onError: handleTrackingError,
   });
 
@@ -590,7 +559,7 @@ export function MapView({
         <DistanceRings />
         {infoLevel === 'verbose' && <ZoomDisplay />}
         <PanToFocus position={focusPosition} />
-        <MapRef onMap={setMapInstance} />
+        <MapRef onMap={handleMapInstance} />
         {userLocation && (
           <>
             <Circle
@@ -680,42 +649,6 @@ export function MapView({
         )}
       </MapContainer>
 
-      <MapOverlayPanels
-        map={mapInstance}
-        tileIndex={tileIndex}
-        visibleRouteShapes={visibleRouteShapes}
-        visibleStopTypes={visibleStopTypes}
-        renderMode={renderMode}
-        perfMode={perfMode}
-        infoLevel={infoLevel}
-        theme={theme}
-        selectedStopId={selectedStopId}
-        stopHistory={stopHistory}
-        anchors={anchors}
-        onCycleTile={onCycleTile}
-        onToggleBusShapes={onToggleBusShapes}
-        onToggleNonBusShapes={onToggleNonBusShapes}
-        onToggleRenderMode={onToggleRenderMode}
-        onTogglePerfMode={onTogglePerfMode}
-        onCycleInfoLevel={onCycleInfoLevel}
-        onToggleDarkMode={onToggleDarkMode}
-        onCycleLang={onCycleLang}
-        dataLang={dataLang}
-        onToggleStopType={onToggleStopType}
-        onSearchClick={onSearchClick}
-        onInfoClick={onInfoClick}
-        onLocated={handleLocated}
-        autoLocateEnabled={autoLocateEnabled}
-        onEnableAutoLocate={onEnableAutoLocate}
-        onDisableAutoLocate={onDisableAutoLocate}
-        locatePulseKey={locateUpdateCount}
-        onDeselectStop={onDeselectStop}
-        onHistorySelect={onHistorySelect}
-        onPortalSelect={onPortalSelect}
-        onPortalRemove={onPortalRemove}
-        lookupAnchorStopMeta={lookupAnchorStopMeta}
-        lookupHistoryStopMeta={lookupHistoryStopMeta}
-      />
       {mapInstance && (
         <EdgeMarkersSwitch
           map={mapInstance}

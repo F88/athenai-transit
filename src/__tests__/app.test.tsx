@@ -32,6 +32,7 @@ const {
   mockFocusStop,
   mockAppLayout,
   mockMapView,
+  mockMapOverlay,
   mockUseTimetable,
   mockOpenStopTimetable,
   mockOpenRouteHeadsignTimetable,
@@ -50,6 +51,7 @@ const {
   mockFocusStop: vi.fn(),
   mockAppLayout: vi.fn(),
   mockMapView: vi.fn(),
+  mockMapOverlay: vi.fn(),
   mockUseTimetable: vi.fn<() => UseTimetableReturn>(),
   mockOpenStopTimetable: vi.fn(),
   mockOpenRouteHeadsignTimetable: vi.fn(),
@@ -147,6 +149,21 @@ vi.mock('../lib/query-params', () => ({
 vi.mock('../components/map/map-view', () => ({
   MapView: (props: unknown) => {
     mockMapView(props);
+    return null;
+  },
+}));
+
+// `MapOverlay` is hoisted next to `MapView` in `app.tsx` (Phase 1
+// refactor). Mock it so the test doesn't pull in the real overlay
+// subtree — that subtree's transitive imports (the locate button →
+// `use-map-navigation-actions` → `map-defaults`) reach
+// `query-params.ts` exports beyond `getStopParam`, which the mock
+// above does not provide. Also captures the props so tests that need
+// to drive history/portal handlers (now passed to `MapOverlay`
+// rather than MapView) can fetch them from this mock.
+vi.mock('../components/map/map-overlay', () => ({
+  MapOverlay: (props: unknown) => {
+    mockMapOverlay(props);
     return null;
   },
 }));
@@ -271,6 +288,7 @@ describe('App anchor error toast', () => {
     mockFocusStop.mockReset();
     mockAppLayout.mockReset();
     mockMapView.mockReset();
+    mockMapOverlay.mockReset();
     mockUseTimetable.mockReset();
     mockOpenStopTimetable.mockReset();
     mockOpenRouteHeadsignTimetable.mockReset();
@@ -579,16 +597,18 @@ describe('App anchor error toast', () => {
       expect(mockAppLayout).toHaveBeenCalled();
     });
 
-    // onHistorySelect is now passed directly to the hoisted MapView at
-    // App root (not via AppLayout.mapViewProps). Grab it from MapView's
-    // captured props.
-    const lastMapViewCall = mockMapView.mock.lastCall;
-    const mapViewProps = lastMapViewCall?.[0] as {
+    // onHistorySelect lives on MapOverlay (Phase 1 refactor: chrome
+    // extracted out of MapView; previously this prop flowed
+    // App → MapView → MapOverlay, now App → MapOverlay directly).
+    // Capture from its mock.
+    const lastOverlayCall = mockMapOverlay.mock.lastCall;
+    expect(lastOverlayCall).toBeDefined();
+    const overlayProps = lastOverlayCall![0] as {
       onHistorySelect: (entry: StopHistoryEntry) => void;
     };
 
     act(() => {
-      mapViewProps.onHistorySelect(entry);
+      overlayProps.onHistorySelect(entry);
     });
 
     await waitFor(() => {
@@ -637,13 +657,16 @@ describe('App anchor error toast', () => {
       expect(mockAppLayout).toHaveBeenCalled();
     });
 
-    const lastMapViewCall = mockMapView.mock.lastCall;
-    const mapViewProps = lastMapViewCall?.[0] as {
+    // onHistorySelect now lives on MapOverlay (Phase 1 refactor:
+    // chrome extracted out of MapView). Capture from there.
+    const lastOverlayCall = mockMapOverlay.mock.lastCall;
+    expect(lastOverlayCall).toBeDefined();
+    const overlayProps = lastOverlayCall![0] as {
       onHistorySelect: (entry: StopHistoryEntry) => void;
     };
 
     act(() => {
-      mapViewProps.onHistorySelect(entry);
+      overlayProps.onHistorySelect(entry);
     });
 
     await waitFor(() => {
@@ -684,13 +707,16 @@ describe('App anchor error toast', () => {
       expect(mockAppLayout).toHaveBeenCalled();
     });
 
-    const lastMapViewCall = mockMapView.mock.lastCall;
-    const mapViewProps = lastMapViewCall?.[0] as {
+    // onHistorySelect now lives on MapOverlay (Phase 1 refactor:
+    // chrome extracted out of MapView). Capture from there.
+    const lastOverlayCall = mockMapOverlay.mock.lastCall;
+    expect(lastOverlayCall).toBeDefined();
+    const overlayProps = lastOverlayCall![0] as {
       onHistorySelect: (entry: StopHistoryEntry) => void;
     };
 
     act(() => {
-      mapViewProps.onHistorySelect(entry);
+      overlayProps.onHistorySelect(entry);
     });
 
     await waitFor(() => {

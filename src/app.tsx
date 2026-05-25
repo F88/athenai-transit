@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type L from 'leaflet';
 
 import { toast } from 'sonner';
 
 // types
 import type { AutoLocateOffReason } from './types/app/auto-locate';
-import type { Bounds, LatLng, RouteShape } from './types/app/map';
+import type { Bounds, LatLng, RouteShape, UserLocation } from './types/app/map';
 import type { StopsCounts } from './types/app/stop';
 import type { AppRouteTypeValue, Stop, TimetableEntriesState } from './types/app/transit';
 import type {
@@ -90,9 +91,9 @@ import { StopSearchDialog } from './components/dialog/stop-search-dialog';
 import { TimetableModal } from './components/dialog/timetable-modal';
 import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
 import { AppLayout } from './components/app-layout';
+import { MapOverlay } from './components/map/map-overlay';
 import { MapView } from './components/map/map-view';
 import { MapViewContainer } from './components/map/map-view-container';
-import { TimeControls } from './components/time-controls';
 import { Toaster } from './components/ui/sonner';
 import { MapSlotProvider } from './contexts/map-slot-provider';
 
@@ -186,6 +187,32 @@ export default function App() {
       return false;
     });
   }, []);
+
+  // Last known user geolocation. Lifted from MapView so both the
+  // user-location marker (rendered inside MapView) and the locate
+  // button (rendered inside MapOverlay) read from the same
+  // source. `useMapLocateWatch` inside MapView publishes each fix via
+  // the `onLocated` prop; the manual locate flow inside the locate
+  // button publishes via the same callback.
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  // Counter that increments every time a fresh geolocation fix
+  // arrives (manual locate or auto-tracking watchPosition update).
+  // Forwarded to the locate button as `locatePulseKey` so the button
+  // replays a brief ripple animation to acknowledge the event without
+  // altering its persistent state.
+  const [locateUpdateCount, setLocateUpdateCount] = useState(0);
+  const handleLocated = useCallback((location: UserLocation) => {
+    setUserLocation(location);
+    setLocateUpdateCount((n) => n + 1);
+  }, []);
+
+  // Leaflet `L.Map` instance captured from MapView via `onMapInstance`.
+  // Forwarded to chrome that needs to drive the map directly (e.g.
+  // `MapOverlay`'s MapControlPanel / MapNavigationPanel /
+  // locate-button manual-locate flow). Stays `null` until MapView
+  // mounts; consumers must tolerate the initial `null`.
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
+
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [dataSourceSettingsDialogOpen, setDataSourceSettingsDialogOpen] = useState(false);
@@ -1119,49 +1146,70 @@ export default function App() {
             visibleRouteShapes={visibleRouteShapes}
             tileIndex={settings.tileIndex}
             renderMode={settings.renderMode}
-            perfMode={settings.perfMode}
             infoLevel={settings.infoLevel}
             dataLang={langChain}
             time={dateTime}
             onBoundsChanged={handleBoundsChanged}
             onStopSelected={handleSelectStop}
             onFetchStopTimes={handleFetchStopTimes}
-            onToggleStopType={handleToggleStopType}
-            onToggleBusShapes={handleToggleBusShapes}
-            onToggleNonBusShapes={handleToggleNonBusShapes}
-            onCycleTile={handleCycleTile}
-            onToggleRenderMode={handleToggleRenderMode}
-            onTogglePerfMode={handleTogglePerfMode}
-            onCycleInfoLevel={handleCycleInfoLevel}
             onDeselectStop={deselectStop}
             onRouteShapeSelected={selectRouteShape}
             resolveRouteFreq={resolveRouteFreq}
             theme={settings.theme}
             doubleTapDrag={settings.doubleTapDrag}
+            autoLocateEnabled={autoLocateEnabled}
+            onDisableAutoLocate={disableAutoLocate}
+            userLocation={userLocation}
+            onLocated={handleLocated}
+            onMapInstance={setMapInstance}
+            heightClassName="h-full"
+          />
+          {/* All chrome that overlays the map: corner panels, locate
+           * button, top-centre StopHistory / Portals dropdowns, and
+           * the TimeControls time-pinning bar. Sibling of MapView so
+           * the Leaflet subtree owns only Leaflet content. Rendered
+           * inside MapViewContainer so its `absolute` children resolve
+           * against the same slot bbox as MapView — keeping all
+           * map-area chrome (TimeControls' `left-1/2`, the StopHistory
+           * / Portals dropdowns, etc.) consistently anchored to the
+           * visible map area rather than the full viewport. */}
+          <MapOverlay
+            map={mapInstance}
+            tileIndex={settings.tileIndex}
+            visibleRouteShapes={visibleRouteShapes}
+            visibleStopTypes={enabledRouteTypes}
+            renderMode={settings.renderMode}
+            perfMode={settings.perfMode}
+            infoLevel={settings.infoLevel}
+            theme={settings.theme}
+            selectedStopId={selectedStopId}
+            stopHistory={history}
+            anchors={anchors}
+            onCycleTile={handleCycleTile}
+            onToggleBusShapes={handleToggleBusShapes}
+            onToggleNonBusShapes={handleToggleNonBusShapes}
+            onToggleRenderMode={handleToggleRenderMode}
+            onTogglePerfMode={handleTogglePerfMode}
+            onCycleInfoLevel={handleCycleInfoLevel}
             onToggleDarkMode={handleToggleDarkMode}
             onCycleLang={handleCycleLang}
+            dataLang={langChain}
+            onToggleStopType={handleToggleStopType}
             onSearchClick={() => setSearchModalOpen(true)}
             onInfoClick={() => setInfoDialogOpen(true)}
-            stopHistory={history}
-            onHistorySelect={handleHistorySelect}
-            anchors={anchors}
-            onPortalSelect={handlePortalSelect}
-            onPortalRemove={(entry) => handleToggleAnchorByStopId(entry.snapshot.stopId)}
-            lookupAnchorStopMeta={lookupAnchorStopMeta}
-            lookupHistoryStopMeta={lookupHistoryStopMeta}
+            onLocated={handleLocated}
             autoLocateEnabled={autoLocateEnabled}
             onEnableAutoLocate={enableAutoLocate}
             onDisableAutoLocate={disableAutoLocate}
-            heightClassName="h-full"
-          />
-          {/* TimeControls lives inside MapViewContainer so its
-           * `absolute left-1/2 -translate-x-1/2` is centred on the
-           * **visible map area** (the slot bbox that MapViewContainer
-           * positions itself to), not on the full viewport. The
-           * StopHistory / Portals dropdowns rendered inside MapView
-           * are positioned the same way; this keeps all map-area
-           * chrome consistently anchored to the map. */}
-          <TimeControls
+            locatePulseKey={locateUpdateCount}
+            onDeselectStop={deselectStop}
+            onHistorySelect={handleHistorySelect}
+            onPortalSelect={handlePortalSelect}
+            onPortalRemove={(entry: AnchorEntry) =>
+              handleToggleAnchorByStopId(entry.snapshot.stopId)
+            }
+            lookupAnchorStopMeta={lookupAnchorStopMeta}
+            lookupHistoryStopMeta={lookupHistoryStopMeta}
             time={dateTime}
             isCustomTime={isCustomTime}
             onResetToNow={resetToNow}
