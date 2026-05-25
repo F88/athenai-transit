@@ -47,7 +47,7 @@ export interface DeriveFilteredNearbyStopsResult {
   /**
    * Per-stop `TimetableEntriesState` snapshot taken from the
    * pre-globalFilter list (route-type filter only). The pre-filter
-   * base is intentional — it lets consumers distinguish
+   * base is intentional -- it lets consumers distinguish
    * `filter-hidden` (entries existed pre-globalFilter, removed by
    * user toggles) from `no-service` (no entries at all). Computing
    * this against the post-globalFilter list would collapse those two

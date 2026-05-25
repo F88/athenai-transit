@@ -32,7 +32,7 @@ export interface UseStopsForBoundsParams {
   onStopsCommitted?: () => void;
   /**
    * Debounce in ms for the stops fetch. `mapCenter` is NOT debounced
-   * — it follows every bounds-changed event immediately so that
+   * -- it follows every bounds-changed event immediately so that
    * map-anchored UI (e.g. the bottom sheet's per-stop distances)
    * tracks the pan in real time.
    */
@@ -142,8 +142,8 @@ export function useStopsForBounds(params: UseStopsForBoundsParams): UseStopsForB
           if (requestId !== latestRequestIdRef.current) {
             // A newer viewport (or a repo / perfProfile change) has
             // invalidated this request. Drop the result so it cannot
-            // overwrite the fresher state already committed — or about
-            // to be — by the newer request.
+            // overwrite the fresher state already committed -- or
+            // about to be -- by the newer request.
             if (logger.isEnabled('debug')) {
               logger.debug(
                 `stale response dropped (requestId=${requestId}, latest=${latestRequestIdRef.current})`,

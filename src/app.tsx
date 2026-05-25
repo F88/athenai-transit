@@ -902,13 +902,13 @@ export default function App() {
   // filter (settings), origin/boardable filter (globalFilter),
   // empty-stop omit policy, pre-globalFilter `TimetableEntriesState`
   // snapshot, and pre/post-filter counts. Internally this is still a
-  // multi-pass pipeline (filter → state map → toggles → omit → counts);
-  // the consolidation is structural — one derivation block instead of
-  // a chain of `useMemo` — not a single-traversal optimization.
-  // Aliases below keep the existing call sites untouched while the
-  // selector owns the pipeline. See `deriveFilteredNearbyStops` for
-  // the step ordering and the pre-globalFilter rationale for the
-  // state map.
+  // multi-pass pipeline (filter -> state map -> toggles -> omit ->
+  // counts); the consolidation is structural -- one derivation block
+  // instead of a chain of `useMemo` -- not a single-traversal
+  // optimization. Aliases below keep the existing call sites
+  // untouched while the selector owns the pipeline. See
+  // `deriveFilteredNearbyStops` for the step ordering and the
+  // pre-globalFilter rationale for the state map.
   const {
     filtered: stopEventAttributesNonEmptyNearbyStopTimes,
     timetableEntriesStateByStopId,

@@ -63,7 +63,7 @@ describe('useStopsForBounds', () => {
       result.current.handleBoundsChanged(BOUNDS_A, CENTER_A);
     });
 
-    // No timers advanced, debounce has not elapsed — but mapCenter is set.
+    // No timers advanced, debounce has not elapsed -- but mapCenter is set.
     expect(result.current.mapCenter).toEqual(CENTER_A);
     expect(result.current.hasNearbyLoaded).toBe(false);
     // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -331,7 +331,7 @@ describe('useStopsForBounds', () => {
     });
 
     // Second bounds change arrives, but its debounced fetch has NOT
-    // been dispatched yet. The OLD response now resolves — the guard
+    // been dispatched yet. The OLD response now resolves -- the guard
     // must still classify it as stale because a newer viewport has
     // already been registered.
     act(() => {
@@ -628,7 +628,7 @@ describe('useStopsForBounds', () => {
     expect(result.current.mapCenter).toEqual(CENTER_A);
 
     // Invalidation must clear pending fetches but leave the visible
-    // map center intact — the user's pan is independent of the data
+    // map center intact -- the user's pan is independent of the data
     // source they happen to be looking at.
     rerender({ perfProfile: PERF_PROFILES.normal });
 
