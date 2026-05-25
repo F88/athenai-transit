@@ -45,6 +45,7 @@ import { type StopHistoryEntry } from './domain/transit/stop-history';
 import { findVisibleStopMetaById } from './domain/transit/stop-meta-lookup';
 import { buildHistoryNavigationPayload } from './domain/transit/stop-navigation';
 import { createStopReferenceSnapshot } from './domain/transit/stop-reference-snapshot';
+import { buildStopRouteTypeMap } from './domain/transit/stop-route-type-map';
 import {
   applyStopEventAttributeTogglesToStops,
   omitStopsWithoutStopTimes,
@@ -262,28 +263,14 @@ export default function App() {
     repo,
   );
 
-  // Build routeTypes lookup covering all visible stops (in-bound + nearby)
-  const [routeTypeMap, setRouteTypeMap] = useState<Map<string, AppRouteTypeValue[]>>(
-    () => new Map(),
+  // routeTypes lookup for all visible stops (in-bound + nearby).
+  // Sync derivation keeps it in the same commit as the stops, so
+  // new markers never flash gray before colour resolves. See
+  // `buildStopRouteTypeMap` for the data-equivalence rationale.
+  const routeTypeMap = useMemo(
+    () => buildStopRouteTypeMap([...inBoundStops, ...radiusStops]),
+    [inBoundStops, radiusStops],
   );
-
-  useEffect(() => {
-    const allStops = [
-      ...inBoundStops.map((s) => s.stop.stop_id),
-      ...radiusStops.map((s) => s.stop.stop_id),
-    ];
-    const uniqueIds = [...new Set(allStops)];
-
-    void Promise.all(
-      uniqueIds.map(async (stopId) => {
-        const result = await repo.getRouteTypesForStop(stopId);
-        const routeTypes = result.success ? result.data : [-1 as const];
-        return [stopId, routeTypes] as const;
-      }),
-    ).then((entries) => {
-      setRouteTypeMap(new Map(entries));
-    });
-  }, [inBoundStops, radiusStops, repo]);
 
   const {
     selectedStopId,
