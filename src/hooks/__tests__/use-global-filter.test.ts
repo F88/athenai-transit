@@ -3,10 +3,18 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useGlobalFilter } from '../use-global-filter';
 
-// Service day: 03:00 boundary. Use a fixed local-time noon for stable
-// `getServiceDayMinutes` results across runs. JST midday is 12:00 ->
-// 540 service-day minutes (well below the 22:00 = 1320 late-night
-// threshold), and JST 23:00 is 23 * 60 = 1380 minutes (above).
+// `getServiceDayMinutes` returns midnight-based local-time minutes
+// when `getHours() >= 03:00` (the service-day boundary), and adds
+// 1440 for pre-boundary times. The hook compares the result against
+// `LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60 = 1320`:
+//
+//   - Local-time 12:00 -> 12 * 60 = 720, below the threshold (daytime).
+//   - Local-time 23:00 -> 23 * 60 = 1380, above the threshold (late
+//     night).
+//
+// `new Date(year, month, day, hours, ...)` uses the runner's local
+// timezone, and `getHours()` returns the same local hour, so this
+// stays deterministic regardless of where the test runs.
 const NOON_LOCAL = new Date(2026, 4, 26, 12, 0, 0);
 const LATE_NIGHT_LOCAL = new Date(2026, 4, 26, 23, 0, 0);
 
