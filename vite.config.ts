@@ -103,17 +103,19 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks(id) {
-          const leafletPkgs = ['leaflet', 'react-leaflet', '@react-leaflet'];
-          const reactPkgs = ['react-dom', 'react', 'scheduler'];
-          if (leafletPkgs.some((p) => id.includes('node_modules/' + p + '/'))) {
-            return 'leaflet';
-          }
-          if (reactPkgs.some((p) => id.includes('node_modules/' + p + '/'))) {
-            return 'react';
-          }
+        codeSplitting: {
+          groups: [
+            {
+              name: 'leaflet',
+              test: /node_modules[\\/](leaflet|react-leaflet|@react-leaflet)(?:[\\/]|$)/,
+            },
+            {
+              name: 'react',
+              test: /node_modules[\\/](react|react-dom|scheduler)(?:[\\/]|$)/,
+            },
+          ],
         },
       },
     },
