@@ -12,16 +12,28 @@ type ToastOptions = {
   description?: string;
 };
 
-const { mockToastSuccess, mockToastWarning } = vi.hoisted(() => ({
-  mockToastSuccess: vi.fn<(message: string, options?: ToastOptions) => void>(),
-  mockToastWarning: vi.fn<(message: string, options?: ToastOptions) => void>(),
-}));
+const { mockToastSuccess, mockToastWarning, mockLoggerWarn, mockLoggerDebug, mockLoggerIsEnabled } =
+  vi.hoisted(() => ({
+    mockToastSuccess: vi.fn<(message: string, options?: ToastOptions) => void>(),
+    mockToastWarning: vi.fn<(message: string, options?: ToastOptions) => void>(),
+    mockLoggerWarn: vi.fn<(message: string, context?: object) => void>(),
+    mockLoggerDebug: vi.fn<(message: string) => void>(),
+    mockLoggerIsEnabled: vi.fn<(level: string) => boolean>(),
+  }));
 
 vi.mock('sonner', () => ({
   toast: {
     success: mockToastSuccess,
     warning: mockToastWarning,
   },
+}));
+
+vi.mock('@/lib/logger', () => ({
+  createLogger: () => ({
+    warn: mockLoggerWarn,
+    debug: mockLoggerDebug,
+    isEnabled: mockLoggerIsEnabled,
+  }),
 }));
 
 function makeAnchorEntry(stopId: string, name = `Snapshot ${stopId}`): AnchorEntry {
@@ -42,6 +54,10 @@ describe('useAnchorToggle', () => {
   beforeEach(() => {
     mockToastSuccess.mockReset();
     mockToastWarning.mockReset();
+    mockLoggerWarn.mockReset();
+    mockLoggerDebug.mockReset();
+    mockLoggerIsEnabled.mockReset();
+    mockLoggerIsEnabled.mockReturnValue(true);
   });
 
   it('removes an existing anchor and shows a warning toast with the current display name', async () => {
@@ -123,5 +139,153 @@ describe('useAnchorToggle', () => {
       expect(options).toBeDefined();
       expect(options?.description).toContain('Current A');
     });
+  });
+
+  it('does not show a removal toast when removeAnchor fails', async () => {
+    const removeAnchor = vi
+      .fn<UseAnchorsReturn['removeAnchor']>()
+      .mockResolvedValue({ success: false, error: 'remove failed' });
+
+    const { result } = renderHook(() =>
+      useAnchorToggle({
+        anchors: [makeAnchorEntry('A', 'Stored A')],
+        hasAnchor: vi.fn((stopId: string) => stopId === 'A'),
+        addAnchor: vi.fn(),
+        removeAnchor,
+        repo: makeRepo(),
+        lookupAnchorStopMeta: vi.fn(() => null),
+        langChain: ['ja'],
+        t: ((key: string) => key) as TFunction,
+      }),
+    );
+
+    act(() => {
+      result.current.handleToggleAnchorByStopId('A');
+    });
+
+    await waitFor(() => {
+      expect(removeAnchor).toHaveBeenCalledWith('A');
+    });
+
+    expect(mockToastWarning).not.toHaveBeenCalled();
+  });
+
+  it('logs a warning and skips addAnchor when stop metadata lookup fails', async () => {
+    const addAnchor = vi.fn<UseAnchorsReturn['addAnchor']>();
+    const getStopMetaById = vi
+      .fn<TransitRepository['getStopMetaById']>()
+      .mockResolvedValue({ success: false, error: 'missing stop' });
+    const repo = makeRepo({
+      getStopMetaById,
+    });
+
+    const { result } = renderHook(() =>
+      useAnchorToggle({
+        anchors: [],
+        hasAnchor: vi.fn(() => false),
+        addAnchor,
+        removeAnchor: vi.fn(),
+        repo,
+        lookupAnchorStopMeta: vi.fn(() => null),
+        langChain: ['ja'],
+        t: ((key: string) => key) as TFunction,
+      }),
+    );
+
+    act(() => {
+      result.current.handleToggleAnchorByStopId('A');
+    });
+
+    await waitFor(() => {
+      expect(getStopMetaById).toHaveBeenCalledWith('A');
+      expect(mockLoggerWarn).toHaveBeenCalledWith(
+        'handleToggleAnchorByStopId: stop metadata lookup failed',
+        expect.objectContaining({
+          stopId: 'A',
+          error: 'missing stop',
+        }),
+      );
+    });
+
+    expect(addAnchor).not.toHaveBeenCalled();
+    expect(mockToastSuccess).not.toHaveBeenCalled();
+  });
+
+  it('does not show a success toast when addAnchor fails', async () => {
+    const addAnchor = vi
+      .fn<UseAnchorsReturn['addAnchor']>()
+      .mockResolvedValue({ success: false, error: 'add failed' });
+    const meta = makeStopMeta('A');
+    const getStopMetaById = vi
+      .fn<TransitRepository['getStopMetaById']>()
+      .mockResolvedValue({ success: true, data: meta });
+    const repo = makeRepo({
+      getStopMetaById,
+    });
+
+    const { result } = renderHook(() =>
+      useAnchorToggle({
+        anchors: [],
+        hasAnchor: vi.fn(() => false),
+        addAnchor,
+        removeAnchor: vi.fn(),
+        repo,
+        lookupAnchorStopMeta: vi.fn(() => null),
+        langChain: ['ja'],
+        t: ((key: string) => key) as TFunction,
+      }),
+    );
+
+    act(() => {
+      result.current.handleToggleAnchorByStopId('A');
+    });
+
+    await waitFor(() => {
+      expect(addAnchor).toHaveBeenCalled();
+    });
+
+    expect(mockToastSuccess).not.toHaveBeenCalled();
+  });
+
+  it('falls back to [-1] when route type lookup fails', async () => {
+    const addAnchor = vi
+      .fn<UseAnchorsReturn['addAnchor']>()
+      .mockResolvedValue({ success: true, data: makeAnchorEntry('A') });
+    const meta = makeStopMeta('A');
+    const getStopMetaById = vi
+      .fn<TransitRepository['getStopMetaById']>()
+      .mockResolvedValue({ success: true, data: meta });
+    const getRouteTypesForStop = vi
+      .fn<TransitRepository['getRouteTypesForStop']>()
+      .mockResolvedValue({ success: false, error: 'missing route types' });
+    const repo = makeRepo({
+      getStopMetaById,
+      getRouteTypesForStop,
+    });
+
+    const { result } = renderHook(() =>
+      useAnchorToggle({
+        anchors: [],
+        hasAnchor: vi.fn(() => false),
+        addAnchor,
+        removeAnchor: vi.fn(),
+        repo,
+        lookupAnchorStopMeta: vi.fn(() => null),
+        langChain: ['ja'],
+        t: ((key: string) => key) as TFunction,
+      }),
+    );
+
+    act(() => {
+      result.current.handleToggleAnchorByStopId('A');
+    });
+
+    await waitFor(() => {
+      expect(addAnchor).toHaveBeenCalled();
+    });
+
+    const [entry] = addAnchor.mock.calls[0] ?? [];
+    expect(entry).toBeDefined();
+    expect(entry?.snapshot.routeTypes).toEqual([-1]);
   });
 });

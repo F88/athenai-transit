@@ -94,7 +94,9 @@ export function useAnchorToggle({
           stopId
         : (anchor?.snapshot.name ?? stopId);
 
-      logger.debug(`handleToggleAnchor: removing stopId=${stopId}`);
+      if (logger.isEnabled('debug')) {
+        logger.debug(`handleToggleAnchor: removing stopId=${stopId}`);
+      }
 
       const result = await removeAnchor(stopId);
       if (!result.success) {
