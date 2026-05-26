@@ -39,7 +39,7 @@ import { deriveFilteredNearbyStops } from './domain/transit/derive-filtered-near
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
 import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
-import { getServiceDay, getServiceDayMinutes } from './domain/transit/service-day';
+import { getServiceDay } from './domain/transit/service-day';
 import { type StopHistoryEntry } from './domain/transit/stop-history';
 import { findVisibleStopMetaById } from './domain/transit/stop-meta-lookup';
 import { buildHistoryNavigationPayload } from './domain/transit/stop-navigation';
@@ -53,6 +53,7 @@ import { getTripInspectionOpenOutcomeMessage } from './domain/transit/trip-inspe
 import { useAnchors } from './hooks/use-anchors';
 import { useAppDialogs } from './hooks/use-app-dialogs';
 import { useDateTime } from './hooks/use-date-time';
+import { useGlobalFilter } from './hooks/use-global-filter';
 import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
 import { useLoadResult } from './hooks/use-load-result';
 import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
@@ -99,7 +100,6 @@ import { Toaster } from './components/ui/sonner';
 import { MapSlotProvider } from './contexts/map-slot-provider';
 
 const logger = createLogger('App');
-const LATE_NIGHT_THRESHOLD_MINUTES = 22 * 60;
 
 interface OpenOutcomeToastMessage {
   severity: 'warning' | 'error';
@@ -806,58 +806,17 @@ export default function App() {
 
   // --- App-wide filter state (shared across surfaces) ---
 
-  // Stop-event-level filter toggles. Lifted to app.tsx so MapView,
-  // BottomSheet, TripInspectionDialog, and TimetableModal can share the
-  // same data state (= "what kind of trips the user is currently
-  // interested in"). The toggles control entry-level filtering through
-  // `applyStopEventAttributeToggles`; each surface decides how to apply
-  // it given its own data shape.
-  const [showOriginOnly, setShowOriginOnly] = useState(false);
-  const [showBoardableOnly, setShowBoardableOnly] = useState(false);
-  const isLateNight = getServiceDayMinutes(dateTime) >= LATE_NIGHT_THRESHOLD_MINUTES;
-  const [omitEmptyStopsOverride, setOmitEmptyStopsOverride] = useState<boolean | null>(null);
-  const omitEmptyStops = omitEmptyStopsOverride ?? isLateNight;
-  const isOmitEmptyStopsForced = showOriginOnly || showBoardableOnly;
-  const effectiveOmitEmptyStops = omitEmptyStops || isOmitEmptyStopsForced;
-
-  const toggleShowOriginOnly = useCallback(() => {
-    setShowOriginOnly((prev) => !prev);
-  }, []);
-  const toggleShowBoardableOnly = useCallback(() => {
-    setShowBoardableOnly((prev) => !prev);
-  }, []);
-  const toggleOmitEmptyStops = useCallback(() => {
-    if (isOmitEmptyStopsForced) {
-      return;
-    }
-    setOmitEmptyStopsOverride((prev) => !(prev ?? isLateNight));
-  }, [isLateNight, isOmitEmptyStopsForced]);
-
-  // Bundle the app-wide filter state + toggle handlers into a single
-  // memoized object so consumers (BottomSheet / TimetableModal /
-  // future MapView etc.) receive a stable reference between toggles.
-  const globalFilter = useMemo(
-    () => ({
-      showOriginOnly,
-      showBoardableOnly,
-      omitEmptyStops: effectiveOmitEmptyStops,
-      isOmitEmptyStopsForced,
-      onToggleShowOriginOnly: toggleShowOriginOnly,
-      onToggleShowBoardableOnly: toggleShowBoardableOnly,
-      onToggleOmitEmptyStops: toggleOmitEmptyStops,
-    }),
-    [
-      showOriginOnly,
-      showBoardableOnly,
-      effectiveOmitEmptyStops,
-      isOmitEmptyStopsForced,
-      toggleShowOriginOnly,
-      toggleShowBoardableOnly,
-      toggleOmitEmptyStops,
-    ],
-  );
-
-  // logger.debug('GlobalFilter', globalFilter);
+  // Stop-event-level filter toggles owned by `useGlobalFilter`. The
+  // hook bundles state (`showOriginOnly` / `showBoardableOnly` /
+  // `omitEmptyStopsOverride`), late-night derived policy
+  // (`isLateNight` / `effectiveOmitEmptyStops` / forced-on rules),
+  // and the memoized `globalFilter` object that BottomSheet /
+  // TimetableModal consume. `App` keeps `showOriginOnly`,
+  // `showBoardableOnly`, and `effectiveOmitEmptyStops` to feed
+  // `deriveFilteredNearbyStops`; MapView reads the filtered result
+  // (`stopTimes`) rather than `globalFilter` itself.
+  const { showOriginOnly, showBoardableOnly, effectiveOmitEmptyStops, globalFilter } =
+    useGlobalFilter(dateTime);
 
   // --- Settings handlers ---
 

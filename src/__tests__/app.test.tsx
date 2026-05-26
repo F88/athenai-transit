@@ -515,6 +515,37 @@ describe('App anchor error toast', () => {
     });
   });
 
+  it('forces omitEmptyStops on for boardable filter and updates filtered counts', async () => {
+    mockUseNearbyStopTimes.mockReturnValue({
+      stopTimes: [
+        makeNearbyStop('boardable-stop', [makeEntry({ pickupType: 0 })]),
+        makeNearbyStop('non-boardable-stop', [makeEntry({ pickupType: 1 })]),
+      ],
+      isNearbyLoading: false,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      const props = getLastLayoutProps();
+      expect(props.globalFilter.omitEmptyStops).toBe(false);
+      expect(props.globalFilter.isOmitEmptyStopsForced).toBe(false);
+      expect(props.filteredNearbyStopsCounts.total).toBe(2);
+    });
+
+    act(() => {
+      getLastLayoutProps().globalFilter.onToggleShowBoardableOnly();
+    });
+
+    await waitFor(() => {
+      const props = getLastLayoutProps();
+      expect(props.globalFilter.omitEmptyStops).toBe(true);
+      expect(props.globalFilter.isOmitEmptyStopsForced).toBe(true);
+      expect(props.filteredNearbyStopsCounts.total).toBe(1);
+      expect(props.filteredNearbyStopsCounts.boardableCount).toBe(1);
+    });
+  });
+
   it('auto-enables omitEmptyStops late at night and allows manual override off when not forced', async () => {
     mockGetServiceDayMinutes.mockReturnValue(22 * 60 + 30);
     mockUseNearbyStopTimes.mockReturnValue({

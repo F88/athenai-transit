@@ -14,6 +14,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - App orchestration: viewport stop fetch を `useStopsForBounds` に分離し、nearby stop 派生データを `deriveFilteredNearbyStops` に集約、timetable / trip inspection の open outcome message mapping を pure helper に移した。これにより `App` の責務を縮小し、viewport fetch の stale response が最新 state を上書きしないようにした。
 - App dialogs: 4 つの primary modal (`InfoDialog` / `DataSourceSettingsDialog` / `StopSearchDialog` / `ShortcutHelpDialog`) の open state を `useAppDialogs` に集約し、`App` の dialog state owner を 1 controller に統一した。
 - Route shapes loading: `App` 直下の mount-once fetch (`useState<RouteShape[]>` + `useEffect`) を `useRouteShapes` hook に分離した。`MapView` に渡す `routeShapes` の値・挙動は変えていない。
+- App-wide filter: `showOriginOnly` / `showBoardableOnly` / `omitEmptyStopsOverride` と派生する late-night policy (`isLateNight` / `effectiveOmitEmptyStops` / forced-on rules) を `useGlobalFilter(dateTime)` に集約した。`globalFilter` の object shape と toggle handlers の挙動、`BottomSheet` / `TimetableModal` / nearby selector への入力は変えていない。
 
 ## [2026.05.25]
 
