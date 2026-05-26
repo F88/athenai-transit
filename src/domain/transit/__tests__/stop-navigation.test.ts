@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { makeStop, makeStopMeta } from '../../../__tests__/helpers';
-import { findVisibleStopMetaById } from '../stop-meta-lookup';
-import { buildHistoryNavigationPayload } from '../stop-navigation';
+import type { AppRouteTypeValue } from '../../../types/app/transit';
+import { findVisibleStopMetaById, lookupStopMetaFromMap } from '../stop-meta-lookup';
+import {
+  buildHistoryNavigationPayload,
+  buildSelectionSnapshotFromMeta,
+  buildSelectionSnapshotFromStop,
+} from '../stop-navigation';
 import type { StopHistoryEntry } from '../stop-history';
 
 describe('findNavigableStopMeta', () => {
@@ -45,6 +50,95 @@ describe('findNavigableStopMeta', () => {
 
     expect(radiusStops).toEqual([radiusMeta]);
     expect(inBoundStops).toEqual([inBoundMeta]);
+  });
+});
+
+describe('lookupStopMetaFromMap', () => {
+  it('returns the matching StopWithMeta when the id is present', () => {
+    const meta = makeStopMeta('A');
+    const map = new Map([['A', meta]]);
+
+    expect(lookupStopMetaFromMap('A', map)).toBe(meta);
+  });
+
+  it('returns null when the id is absent', () => {
+    const map = new Map([['A', makeStopMeta('A')]]);
+
+    expect(lookupStopMetaFromMap('missing', map)).toBeNull();
+  });
+
+  it('returns null for an empty map', () => {
+    expect(lookupStopMetaFromMap('A', new Map())).toBeNull();
+  });
+
+  it('does not mutate the input map', () => {
+    const meta = makeStopMeta('A');
+    const map = new Map([['A', meta]]);
+
+    lookupStopMetaFromMap('A', map);
+
+    expect(map.size).toBe(1);
+    expect(map.get('A')).toBe(meta);
+  });
+});
+
+describe('buildSelectionSnapshotFromMeta', () => {
+  it('builds a snapshot using meta.routes when routeTypeMap has no entry for the stop', () => {
+    const stopMeta = makeStopMeta(makeStop('A', 35, 139));
+    stopMeta.routes = [];
+
+    const snapshot = buildSelectionSnapshotFromMeta(stopMeta, new Map(), ['ja']);
+
+    expect(snapshot).toEqual({
+      stopId: 'A',
+      name: 'Stop A',
+      lat: 35,
+      lon: 139,
+      // Empty routes + no map entry collapses to the unknown sentinel
+      // because the policy is 'include-unknown'.
+      routeTypes: [-1],
+      agencyNames: [],
+      platformCode: undefined,
+    });
+  });
+
+  it('uses routeTypes from the routeTypeMap when present', () => {
+    const stopMeta = makeStopMeta(makeStop('A', 35, 139));
+    stopMeta.routes = [];
+    const routeTypeMap = new Map<string, AppRouteTypeValue[]>([['A', [3, 1]]]);
+
+    const snapshot = buildSelectionSnapshotFromMeta(stopMeta, routeTypeMap, ['ja']);
+
+    expect(snapshot.routeTypes).toEqual([3, 1]);
+    expect(snapshot.stopId).toBe('A');
+  });
+});
+
+describe('buildSelectionSnapshotFromStop', () => {
+  it('builds a snapshot with empty agencyNames when no live meta is available', () => {
+    const stop = makeStop('B', 36, 140);
+    const routeTypeMap = new Map<string, AppRouteTypeValue[]>([['B', [2]]]);
+
+    const snapshot = buildSelectionSnapshotFromStop(stop, routeTypeMap, ['ja']);
+
+    expect(snapshot).toEqual({
+      stopId: 'B',
+      name: 'Stop B',
+      lat: 36,
+      lon: 140,
+      routeTypes: [2],
+      agencyNames: [],
+      platformCode: undefined,
+    });
+  });
+
+  it('collapses to unknown sentinel when the routeTypeMap has no entry', () => {
+    const stop = makeStop('C', 0, 0);
+
+    const snapshot = buildSelectionSnapshotFromStop(stop, new Map(), ['ja']);
+
+    expect(snapshot.routeTypes).toEqual([-1]);
+    expect(snapshot.agencyNames).toEqual([]);
   });
 });
 
