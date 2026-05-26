@@ -421,30 +421,6 @@ export default function App() {
     ],
   );
 
-  // Wrap selectStop to also record in history.
-  //
-  // Disables auto-tracking because selecting a stop pans the map to
-  // the stop's coordinates (via `PanToFocus` reading `focusPosition`),
-  // which would fight the auto-pan effect and make subsequent
-  // `moveend` events ineligible for nearby/in-bounds refetch.
-  const handleSelectStop = useCallback(
-    (stop: Stop) => {
-      selectStop({ reason: 'select-marker', stopId: stop.stop_id, fallbackStop: stop });
-      recordStopSelectionByVisibleStop(stop.stop_id, stop);
-    },
-    [recordStopSelectionByVisibleStop, selectStop],
-  );
-
-  // Wrap selectStopById to also record in history.
-  // See `handleSelectStop` for the rationale of disabling auto-tracking.
-  const handleSelectStopById = useCallback(
-    (stopId: string) => {
-      selectStop({ reason: 'select-bottom-sheet', stopId });
-      recordStopSelectionByVisibleStop(stopId);
-    },
-    [recordStopSelectionByVisibleStop, selectStop],
-  );
-
   // Apply ?stop= query param: resolve via repo, then pan / record once.
   // See `useStopParamHandler` for the ref-backed callback pattern that
   // avoids duplicate fetches when callbacks change during async resolve.
@@ -625,6 +601,30 @@ export default function App() {
       }
     },
     [closeTripInspection],
+  );
+
+  // Wrap selectStop to also record in history.
+  //
+  // Disables auto-tracking because selecting a stop pans the map to
+  // the stop's coordinates (via `PanToFocus` reading `focusPosition`),
+  // which would fight the auto-pan effect and make subsequent
+  // `moveend` events ineligible for nearby/in-bounds refetch.
+  const handleSelectStop = useCallback(
+    (stop: Stop) => {
+      selectStop({ reason: 'select-marker', stopId: stop.stop_id, fallbackStop: stop });
+      recordStopSelectionByVisibleStop(stop.stop_id, stop);
+    },
+    [recordStopSelectionByVisibleStop, selectStop],
+  );
+
+  // Wrap selectStopById to also record in history.
+  // See `handleSelectStop` for the rationale of disabling auto-tracking.
+  const handleSelectStopById = useCallback(
+    (stopId: string) => {
+      selectStop({ reason: 'select-bottom-sheet', stopId });
+      recordStopSelectionByVisibleStop(stopId);
+    },
+    [recordStopSelectionByVisibleStop, selectStop],
   );
 
   // Select + pan to a stop from history.
