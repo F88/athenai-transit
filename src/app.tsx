@@ -494,8 +494,8 @@ export default function App() {
   );
 
   // Apply ?stop= query param: resolve via repo, then pan / record once.
-  // See `useStopParamHandler` for the mid-flight guard semantics that
-  // keep this safe when dep callbacks change during the async resolve.
+  // See `useStopParamHandler` for the ref-backed callback pattern that
+  // avoids duplicate fetches when callbacks change during async resolve.
   useStopParamHandler({ repo, navigateAndFocusStop, recordStopMetaSelection });
 
   const handleFetchStopTimes = useCallback(
