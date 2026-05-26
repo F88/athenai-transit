@@ -52,7 +52,6 @@ import type {
   ContextualTimetableEntry,
   RouteDirection,
   SourceMeta,
-  StopServiceType,
   StopWithMeta,
   TimetableEntry,
   TripInspectionGroupQuery,
@@ -486,7 +485,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         for (let j = 0; j < times.length; j++) {
           fullDayCount++;
           if (!hasBoardable) {
-            const pt = (pickupTypes?.[j] ?? 0) as StopServiceType;
+            const pt = pickupTypes?.[j] ?? 0;
             if (pt !== 1 && !isTerminalPosition) {
               hasBoardable = true;
             }
@@ -495,8 +494,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
 
         const startIdx = binarySearchFirstGte(times, nowMinutes);
         for (let i = startIdx; i < times.length; i++) {
-          const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
-          const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
+          const pickupType = pickupTypes?.[i] ?? 0;
+          const dropOffType = dropOffTypes?.[i] ?? 0;
           entries.push({
             tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
             schedule: {
@@ -531,7 +530,7 @@ export class AthenaiRepositoryV2 implements TransitRepository {
           }
           fullDayCount++;
           if (!hasBoardable) {
-            const pt = (pickupTypes?.[j] ?? 0) as StopServiceType;
+            const pt = pickupTypes?.[j] ?? 0;
             if (pt !== 1 && !isTerminalPosition) {
               hasBoardable = true;
             }
@@ -539,8 +538,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         }
         const startIdx = binarySearchFirstGte(times, overnightTarget);
         for (let i = startIdx; i < times.length; i++) {
-          const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
-          const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
+          const pickupType = pickupTypes?.[i] ?? 0;
+          const dropOffType = dropOffTypes?.[i] ?? 0;
           entries.push({
             tripLocator: { patternId: group.tp, serviceId, tripIndex: i },
             schedule: {
@@ -623,8 +622,8 @@ export class AthenaiRepositoryV2 implements TransitRepository {
         const pickupTypes = group.pt?.[serviceId];
         const dropOffTypes = group.dt?.[serviceId];
         for (let i = 0; i < times.length; i++) {
-          const pickupType = (pickupTypes?.[i] ?? 0) as StopServiceType;
-          const dropOffType = (dropOffTypes?.[i] ?? 0) as StopServiceType;
+          const pickupType = pickupTypes?.[i] ?? 0;
+          const dropOffType = dropOffTypes?.[i] ?? 0;
           entries.push({
             schedule: {
               departureMinutes: times[i],

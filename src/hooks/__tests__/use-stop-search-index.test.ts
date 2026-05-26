@@ -27,11 +27,12 @@ describe('useStopSearchIndex', () => {
       data: [stopA, stopB],
       truncated: false,
     });
-    const getRouteTypesForStop = vi.fn((stopId: string) =>
-      Promise.resolve({
-        success: true as const,
-        data: (stopId === 'stop-a' ? [3] : [1]) as AppRouteTypeValue[],
-      }),
+    const getRouteTypesForStop = vi.fn(
+      (stopId: string): Promise<{ success: true; data: AppRouteTypeValue[] }> =>
+        Promise.resolve({
+          success: true,
+          data: stopId === 'stop-a' ? [3] : [1],
+        }),
     );
     const repo = makeRepo({ getAllStops, getRouteTypesForStop });
 

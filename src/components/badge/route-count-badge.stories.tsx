@@ -179,7 +179,7 @@ export const KitchenSink: Story = {
       { label: 'tram (色あり)', route: tramRoute, count: 124 },
       { label: 'subway (色あり)', route: subwayRoute, count: 200 },
       { label: 'no color', route: noColorRoute, count: 7 },
-      { label: 'long name', route: longNameRoute as typeof busRoute, count: 348 },
+      { label: 'long name', route: longNameRoute, count: 348 },
     ];
     return (
       <div className="flex flex-col gap-2">

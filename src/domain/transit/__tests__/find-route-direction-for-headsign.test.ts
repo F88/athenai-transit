@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Route } from '../../../types/app/transit';
-import type { StopServiceType, TimetableEntry } from '../../../types/app/transit-composed';
+import type { TimetableEntry } from '../../../types/app/transit-composed';
 import { findRouteDirectionForHeadsign } from '../find-route-direction-for-headsign';
 
 function makeRoute(overrides?: Partial<Route>): Route {
@@ -47,8 +47,8 @@ function makeEntry(options: {
       arrivalMinutes: options.departureMinutes ?? 600,
     },
     boarding: {
-      pickupType: 0 as StopServiceType,
-      dropOffType: 0 as StopServiceType,
+      pickupType: 0,
+      dropOffType: 0,
     },
     patternPosition: {
       stopIndex: 0,

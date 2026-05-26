@@ -278,10 +278,7 @@ describe('FetchDataSourceV2', () => {
         enabledTags: ['FetchDataSourceV2'],
         tagLevels: { ...loggerConfig.tagLevels },
       });
-      vi.stubGlobal(
-        'PerformanceObserver',
-        MockPerformanceObserver as unknown as typeof PerformanceObserver,
-      );
+      vi.stubGlobal('PerformanceObserver', MockPerformanceObserver);
       fetchMock.mockResolvedValueOnce(jsonResponse(makeDataBundle()));
 
       try {
@@ -322,10 +319,7 @@ describe('FetchDataSourceV2', () => {
         enabledTags: ['FetchDataSourceV2'],
         tagLevels: { ...loggerConfig.tagLevels },
       });
-      vi.stubGlobal(
-        'PerformanceObserver',
-        MockPerformanceObserver as unknown as typeof PerformanceObserver,
-      );
+      vi.stubGlobal('PerformanceObserver', MockPerformanceObserver);
       fetchMock.mockResolvedValueOnce(notFoundResponse());
 
       try {

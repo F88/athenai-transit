@@ -44,18 +44,17 @@ function setLayout(el: HTMLElement, overrides: LayoutOverrides): void {
   }
   if (overrides.rect) {
     const { top, height } = overrides.rect;
-    el.getBoundingClientRect = () =>
-      ({
-        top,
-        height,
-        left: 0,
-        right: 0,
-        bottom: top + height,
-        width: 0,
-        x: 0,
-        y: top,
-        toJSON: () => ({}),
-      }) as DOMRect;
+    el.getBoundingClientRect = () => ({
+      top,
+      height,
+      left: 0,
+      right: 0,
+      bottom: top + height,
+      width: 0,
+      x: 0,
+      y: top,
+      toJSON: () => ({}),
+    });
   }
 }
 

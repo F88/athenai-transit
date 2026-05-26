@@ -39,7 +39,7 @@ function makeEntry(
     },
     tripLocator: { patternId: 'pattern-1', serviceId: 'svc-1', tripIndex: 0 },
     serviceDate: new Date('2026-01-01'),
-  } as ContextualTimetableEntry;
+  };
 }
 
 function makeStopWithContext(
