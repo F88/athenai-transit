@@ -2,12 +2,12 @@
   "sourceName": "toei-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-26T05:31:01.605Z",
+  "downloadedAt": "2026-05-26T09:28:18.531Z",
   "url": "https://api-public.odpt.org/api/v4/files/Toei/data/ToeiBus-GTFS.zip",
   "size": 7333944,
   "contentType": "application/octet-stream",
-  "durationMs": 5121,
-  "archivePath": "workspace/_archives/gtfs/toei-bus/ToeiBus-GTFS_20260526-053106.zip",
+  "durationMs": 4750,
+  "archivePath": "workspace/_archives/gtfs/toei-bus/ToeiBus-GTFS_20260526-092822.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
