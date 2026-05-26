@@ -26,14 +26,9 @@ import i18n from './i18n';
 // lib
 import { applyAppTheme } from './lib/app-theme';
 import { createLogger } from './lib/logger';
-import { getStopParam } from './lib/query-params';
 
 // domain
-import {
-  buildAnchorRefreshUpdates,
-  buildAnchorSelectionStop,
-  type AnchorEntry,
-} from './domain/portal/anchor';
+import { buildAnchorSelectionStop, type AnchorEntry } from './domain/portal/anchor';
 import { formatDateKey } from './domain/transit/calendar-utils';
 import { deriveFilteredNearbyStops } from './domain/transit/derive-filtered-nearby-stops';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
@@ -53,6 +48,7 @@ import { getStopServiceState } from './domain/transit/timetable-utils';
 import { getTripInspectionOpenOutcomeMessage } from './domain/transit/trip-inspection-message';
 
 // hooks
+import { useAnchorRefresh } from './hooks/use-anchor-refresh';
 import { useAnchors } from './hooks/use-anchors';
 import { useAppDialogs } from './hooks/use-app-dialogs';
 import { useDateTime } from './hooks/use-date-time';
@@ -65,6 +61,7 @@ import { useRouteStops } from './hooks/use-route-stops';
 import { useSelection } from './hooks/use-selection';
 import { useStopHistory, type UseStopHistoryReturn } from './hooks/use-stop-history';
 import { useStopNavigation } from './hooks/use-stop-navigation';
+import { useStopParamHandler } from './hooks/use-stop-param-handler';
 import { useStopsForBounds } from './hooks/use-stops-for-bounds';
 import { useTimetable } from './hooks/use-timetable';
 import { useTransitRepository } from './hooks/use-transit-repository';
@@ -160,7 +157,7 @@ export default function App() {
 
   // Resolve language fallback chain once when lang changes.
   // Components receive this as dataLang (ordered priority list for
-  // GTFS/ODPT data translation resolution).
+  // data translation resolution).
   const langChain: LangChain = useMemo(
     () => resolveLangChain(settings.lang, SUPPORTED_LANGS),
     [settings.lang],
@@ -388,26 +385,10 @@ export default function App() {
     clearAnchorError();
   }, [anchorError, clearAnchorError, t]);
 
-  // Refresh anchor entries with latest GTFS data on app load.
-  // Runs once after repo is ready. Updates stopName, stopLat, stopLon,
-  // and routeTypes if they have changed since the anchor was saved.
-  const anchorRefreshDone = useRef(false);
-  useEffect(() => {
-    if (anchorRefreshDone.current || anchors.length === 0) {
-      return;
-    }
-    const stopIds = new Set(anchors.map((a) => a.snapshot.stopId));
-    const metas = repo.getStopMetaByIds(stopIds);
-    // Mark as done regardless of result. repo is fully loaded before
-    // injection (all GTFS data is in memory), so metas is only empty
-    // when all anchor stopIds have been removed from the dataset.
-    // We must not retry on every dependency change.
-    anchorRefreshDone.current = true;
-    const updates = buildAnchorRefreshUpdates(anchors, metas, langChain);
-    if (updates.length > 0) {
-      void batchUpdateAnchors(updates);
-    }
-  }, [anchors, repo, batchUpdateAnchors, langChain]);
+  // Refresh anchor entries with latest data once per session.
+  // See `useAnchorRefresh` for the "first non-empty anchors" timing
+  // semantics (driven by `useAnchors`'s async load).
+  useAnchorRefresh({ anchors, repo, batchUpdateAnchors, langChain });
 
   // Pre-resolved StopWithMeta map for every anchored stop_id.
   // Built from the repository's full dataset (not just the visible
@@ -425,7 +406,7 @@ export default function App() {
   // Lookup an anchored stop's current StopWithMeta. Returns null
   // when the anchor's stop_id is not present in the active dataset
   // (e.g. cross-source anchor in mock mode, or a stop deleted from
-  // GTFS); callers should fall back to the AnchorEntry snapshot.
+  // the data); callers should fall back to the AnchorEntry snapshot.
   const lookupAnchorStopMeta = useCallback(
     (stopId: string): StopWithMeta | null => lookupStopMetaFromMap(stopId, anchorStopMetaMap),
     [anchorStopMetaMap],
@@ -512,41 +493,10 @@ export default function App() {
     [recordStopSelectionByVisibleStop, selectStop],
   );
 
-  // Apply ?stop= query param: select and pan to the stop after data loads.
-  // Uses a ref to ensure the effect runs only once (the first time
-  // the repo resolves the stop). Same pattern as handleHistorySelect —
-  // focusStop sets directFocusPosition so the map pans even when the
-  // stop is outside the initial viewport.
-  const hasHandledStopParamRef = useRef(false);
-  useEffect(() => {
-    if (hasHandledStopParamRef.current) {
-      return;
-    }
-
-    const markStopParamHandled = () => {
-      hasHandledStopParamRef.current = true;
-    };
-
-    const stopId = getStopParam();
-    if (!stopId) {
-      markStopParamHandled();
-      return;
-    }
-
-    void repo.getStopMetaById(stopId).then((result) => {
-      if (hasHandledStopParamRef.current) {
-        return;
-      }
-      if (!result.success) {
-        logger.warn(`?stop=${stopId}: not found`);
-        markStopParamHandled();
-        return;
-      }
-      navigateAndFocusStop('apply-stop-param', result.data.stop);
-      recordStopMetaSelection(result.data);
-      markStopParamHandled();
-    });
-  }, [navigateAndFocusStop, recordStopMetaSelection, repo]);
+  // Apply ?stop= query param: resolve via repo, then pan / record once.
+  // See `useStopParamHandler` for the mid-flight guard semantics that
+  // keep this safe when dep callbacks change during the async resolve.
+  useStopParamHandler({ repo, navigateAndFocusStop, recordStopMetaSelection });
 
   const handleFetchStopTimes = useCallback(
     async (stopId: string): Promise<StopWithContext | null> => {
@@ -694,7 +644,7 @@ export default function App() {
     (stopId: string) => {
       if (isStopAnchor(stopId)) {
         // Capture anchor data before removal (entry won't exist after removeAnchor).
-        // Resolve display name from current GTFS so the toast follows
+        // Resolve display name from current data so the toast follows
         // the user's current language even though the stored entry
         // only has a snapshot stopName. We use `lookupAnchorStopMeta`
         // (full-dataset scan over the anchor set) rather than
