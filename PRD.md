@@ -50,7 +50,7 @@ UI の情報量を4段階で制御する。ユーザーが地図上のコント�
 - **停留所/駅ピンの表示**: 画面の表示領域(Bounding Box)内にあるGTFSデータの停留所/駅をアイコン(ピン)で表示する。バスと鉄道は視覚的に区別する。
 - **選択路線の停留所表示 (Route Stops Layer)**: 路線を選択した場合、その路線上の全停留所を専用レイヤーで表示。これにより、路線図データが無い路線(京王バスなど)でも路線走行区間を可視化できる。Route Stops Layer は nearby/far layer より描画優先度が高く、重複する停留所は Route Stops Layer のみに表示される。
 
-地図レイヤーの z-index 割り当てと rendering priority については [DEVELOPMENT.md](./DEVELOPMENT.md) を参照。
+地図レイヤーの z-index 割り当てと rendering priority については [docs/map-architecture.md](./docs/map-architecture.md) を参照。
 
 ### C. エッジマーカー (画面外インジケーター) 機能
 
@@ -106,7 +106,7 @@ UI の情報量を4段階で制御する。ユーザーが地図上のコント�
 - **データパイプライン**: Node.js の事前ビルドパイプライン (`pipeline/`) により、GTFS/ODPT オープンデータから最適化済み JSON を生成し、静的ファイルとして配信する。
 - **リポジトリパターン**: UI コンポーネントは `TransitRepository` インターフェースにのみ依存し、データソースと疎結合を保つ。
 
-実装の詳細は [CLAUDE.md](./CLAUDE.md) および [DEVELOPMENT.md](./DEVELOPMENT.md) を参照。
+実装の詳細は [CLAUDE.md](./CLAUDE.md)、[DEVELOPMENT.md](./DEVELOPMENT.md)、[docs/README.md](./docs/README.md) を参照。データパイプラインは独立 subsystem として [pipeline/README.md](./pipeline/README.md) に記載する。
 
 ### URL パラメータ
 

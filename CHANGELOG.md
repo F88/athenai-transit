@@ -11,12 +11,15 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- Documentation: `DEVELOPMENT.md` を開発者向け入口に縮約し、map runtime、runtime configuration、PWA/platform、styling、transit data/repository、dependency notes の詳細を `docs/` 配下へ分割した。あわせて `README.md` に Documentation index を追加し、`pipeline/` が独立した data-build subsystem であることを明記した。
 - App orchestration: viewport stop fetch を `useStopsForBounds` に分離し、nearby stop 派生データを `deriveFilteredNearbyStops` に集約、timetable / trip inspection の open outcome message mapping を pure helper に移した。これにより `App` の責務を縮小し、viewport fetch の stale response が最新 state を上書きしないようにした。
 - App dialogs: 4 つの primary modal (`InfoDialog` / `DataSourceSettingsDialog` / `StopSearchDialog` / `ShortcutHelpDialog`) の open state を `useAppDialogs` に集約し、`App` の dialog state owner を 1 controller に統一した。
 - Route shapes loading: `App` 直下の mount-once fetch (`useState<RouteShape[]>` + `useEffect`) を `useRouteShapes` hook に分離した。`MapView` に渡す `routeShapes` の値・挙動は変えていない。
 - App-wide filter: `showOriginOnly` / `showBoardableOnly` / `omitEmptyStopsOverride` と派生する late-night policy (`isLateNight` / `effectiveOmitEmptyStops` / forced-on rules) を `useGlobalFilter(dateTime)` に集約した。`globalFilter` の object shape と toggle handlers の挙動、`BottomSheet` / `TimetableModal` / nearby selector への入力は変えていない。
 - Stop reference helpers: `App` 内に inline で書かれていた stop 参照解決の重複 (anchor / history map lookup と、live meta / bare Stop からの `StopReferenceSnapshot` 構築) を `domain/transit/stop-meta-lookup.ts` の `lookupStopMetaFromMap` と `domain/transit/stop-navigation.ts` の `buildSelectionSnapshotFromMeta` / `buildSelectionSnapshotFromStop` に切り出した。`buildHistoryNavigationPayload` も内部で新しい builder を使うよう更新。挙動は維持。
 - App startup lifecycle hooks: `App` 直下の 2 つの起動時 side effect (anchor metadata refresh と `?stop=` URL param 解決) をそれぞれ `useAnchorRefresh` / `useStopParamHandler` に分離した。one-shot guard ref + useEffect の pattern を hook 内に閉じ込め、App は hook の 1 行呼出しのみになった。挙動は維持 (anchor refresh は依然「初回 anchors が non-empty になった時に 1 回だけ」、`?stop=` は callback churn 中も duplicate fetch しない 1 回限り)。
+- Stop selection / anchor orchestration: history と portal selection の navigation payload 解決を `domain/transit/stop-navigation.ts` の shared helper に集約し、どちらも `live metadata` 優先 + `persisted snapshot fallback` に揃えた。あわせて anchor add/remove の metadata lookup、snapshot 作成、toast を `useAnchorToggle` に抽出し、`App` の handler 配置も整理した。
+- Anchor toggle tests: `useAnchorToggle` に add/remove 失敗、metadata lookup failure、route type fallback を含む failure-path test を追加し、remove 側 debug log も add 側と同じ `logger.isEnabled('debug')` guard に揃えた。
 
 ## [2026.05.25]
 

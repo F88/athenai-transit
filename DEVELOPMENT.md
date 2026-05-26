@@ -7,6 +7,23 @@
 >
 > 日付の無い数値は、過去のある時点のスナップショットに過ぎず、現状を表していない可能性がある。発見した場合は速やかに再計測のうえ日付付きで更新すること。
 
+このファイルは web app 開発の入口です。詳細な実装メモは [docs/README.md](./docs/README.md) から参照してください。
+
+## Documentation Map
+
+| Topic                                              | Document                                                                     |
+| -------------------------------------------------- | ---------------------------------------------------------------------------- |
+| プロジェクト概要                                   | [README.md](./README.md)                                                     |
+| プロダクト要件                                     | [PRD.md](./PRD.md)                                                           |
+| 詳細ドキュメント索引                               | [docs/README.md](./docs/README.md)                                           |
+| Map / Leaflet / z-index / gesture                  | [docs/map-architecture.md](./docs/map-architecture.md)                       |
+| Logger / runtime mode / query params / diagnostics | [docs/runtime-configuration.md](./docs/runtime-configuration.md)             |
+| PWA / platform / iOS safe-area                     | [docs/platform-pwa.md](./docs/platform-pwa.md)                               |
+| Styling / Tailwind / shadcn/ui                     | [docs/frontend-styling.md](./docs/frontend-styling.md)                       |
+| Transit data / repository contracts                | [docs/transit-data-and-repository.md](./docs/transit-data-and-repository.md) |
+| Dependency update notes                            | [docs/dependency-notes.md](./docs/dependency-notes.md)                       |
+| Pipeline                                           | [pipeline/README.md](./pipeline/README.md)                                   |
+
 ## Code Quality
 
 ### テスト
@@ -32,35 +49,32 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 - **ブレース**: if 文は単行でも必ずブレースを付ける
 - **意図コメント**: 実装が意図と異なって見える箇所には、選択理由を説明するコメントを付与
 
-### ファイル構成
+## File Placement
 
-以下の配置ルールは webapp の `src/` 配下に適用する。`pipeline/` は別責務のため、同じ分類基準を直接適用しない。
+以下の配置ルールは web app の `src/` 配下に適用する。`pipeline/` は独立した data-build subsystem であり、root web app の配置ルールをそのまま適用しない。pipeline の実装詳細は [pipeline/README.md](./pipeline/README.md) と [pipeline/docs/](./pipeline/docs/) を参照する。
 
-| ディレクトリ         | 配置基準                                                             |
-| -------------------- | -------------------------------------------------------------------- |
-| `src/domain/`        | ドメイン固有の純粋関数 (例: transit ロジック、i18n)                  |
-| `src/utils/`         | 汎用の純粋関数 (外部ライブラリ依存なし)                              |
-| `src/lib/`           | 外部ライブラリ依存ヘルパー (例: Leaflet)                             |
-| `src/hooks/`         | カスタム React Hooks (状態 + 副作用のオーケストレーション)           |
-| `src/components/`    | React コンポーネント (ロジックは import して使用)                    |
-| `src/components/ui/` | shadcn/ui コンポーネント (CLI 管理)                                  |
-| `src/repositories/`  | データアクセス層 (`TransitRepository` インターフェース)              |
-| `src/types/`         | 型定義                                                               |
-| `src/config/`        | 設定値                                                               |
-| `pipeline/`          | データパイプライン ([pipeline/README.md](./pipeline/README.md) 参照) |
+| ディレクトリ         | 配置基準                                                                     |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `src/domain/`        | ドメイン固有の純粋関数 (例: transit ロジック、i18n)                          |
+| `src/utils/`         | 汎用の純粋関数 (外部ライブラリ依存なし)                                      |
+| `src/lib/`           | 外部ライブラリ依存ヘルパー (例: Leaflet)                                     |
+| `src/hooks/`         | カスタム React Hooks (状態 + 副作用のオーケストレーション)                   |
+| `src/components/`    | React コンポーネント (ロジックは import して使用)                            |
+| `src/components/ui/` | shadcn/ui コンポーネント (CLI 管理)                                          |
+| `src/repositories/`  | データアクセス層 (`TransitRepository` インターフェース)                      |
+| `src/types/`         | 型定義                                                                       |
+| `src/config/`        | 設定値                                                                       |
+| `pipeline/`          | 独立したデータパイプライン ([pipeline/README.md](./pipeline/README.md) 参照) |
 
-#### 配置判断の詳細
+### 配置判断
 
 ファイルの配置は「そのコードが何を知っているか」で判断する。
 
-- `src/domain/`
-  このアプリ固有の意味やルールを持つコードを置く。ライブラリの使い方ではなく、「何を表示するべきか」「どう扱うべきか」という判断を持つもの。
-- `src/lib/`
-  外部ライブラリやブラウザ API に依存する技術的なヘルパーを置く。Leaflet 操作、DOM 操作、adapter 的な処理はこちら。
-- `src/utils/`
-  依存が薄く、ドメイン知識をほとんど持たない軽量な補助関数を置く。`utils` は domain や lib の代替置き場ではなく、domain と lib の両方から使える純粋ロジックの置き場と考える。
+- `src/domain/`: アプリ固有の意味やルールを持つコード。何を表示するべきか、どう扱うべきかという判断を持つもの。
+- `src/lib/`: 外部ライブラリやブラウザ API に依存する技術的な helper。Leaflet 操作、DOM 操作、adapter 的な処理。
+- `src/utils/`: 依存が薄く、ドメイン知識をほとんど持たない純粋関数。`domain` と `lib` の代替置き場にしない。
 
-#### 依存方向
+### 依存方向
 
 - `domain` と `lib` は直接依存させない
 - `lib` から `domain` を import しない
@@ -68,792 +82,71 @@ npm run typecheck && npm run format && npm run lint:fix && npm run build
 - domain と lib の両方から使いたい純粋関数は `src/utils/` に置く
 - `hooks` / `components` は `domain`、`utils`、`lib` を組み合わせてよいが、非 UI ロジックを TSX に戻さない
 
-#### `src/domain/` の分割方針
+### `src/domain/` の分割方針
 
-- `src/domain/transit/`
-  GTFS、時刻表、route/stop、service day など transit 自体のルール。
-- `src/domain/map/`
-  地図画面における選択、route shape 表示、layer 構築、map 向け filter など、地図上の見せ方に関わるルール。
-- 新しいサブディレクトリを作る判断
-  `transit` や `map` に自然に収まらないまとまりが継続的に増えた場合に限る。単発の整理のために増やさないこと。少数ファイルを移すためだけに新しい分類を作らず、まず既存の `transit` / `map` / `utils` / `lib` に収まるかを検討する。
+- `src/domain/transit/`: GTFS、時刻表、route/stop、service day など transit 自体のルール
+- `src/domain/map/`: 地図画面における選択、route shape 表示、layer 構築、map 向け filter など地図上の見せ方に関わるルール
+- 新しいサブディレクトリは、既存の `transit` / `map` / `utils` / `lib` に自然に収まらないまとまりが継続的に増えた場合に限る
 
-#### mixed-purpose file の扱い
+### mixed-purpose file
 
-- 配置は「補助的に何を使うか」ではなく「主たる責務は何か」で決める
-- 技術的ヘルパーとアプリ固有の判断が同居している場合、主たる責務が明確ならその責務側に置く
-- 主たる責務が 2 つに割れており、片方が `lib` で片方が `domain` / `utils` に属する場合は分割を優先する
-- `utils` に置いてよいのは、移動先が決めにくいファイルではなく、アプリ固有の判断をほとんど持たない純粋関数だけ
+- 配置は補助的に何を使うかではなく、主たる責務で決める
+- 技術的 helper とアプリ固有の判断が同居し、主たる責務が明確ならその責務側に置く
+- 主たる責務が `lib` と `domain` / `utils` に割れる場合は分割を優先する
+- `utils` は移動先が決めにくいファイルの避難先ではない
 
-#### 判断ルール
+## App-level Orchestration
 
-- アプリ固有の判断を含むなら `utils` ではなく `domain`
-- Leaflet や DOM 前提なら `domain` ではなく `lib`
-- 地図画面での表示・選択・可視判定に依存するなら `src/domain/map/`
-- GTFS / timetable / service day の意味に依存するなら `src/domain/transit/`
-- transit / map のどちらにも自然に収まらない場合でも、まず `domain` か `utils` か `lib` の責務を先に決める
-- `utils` は domain の代替置き場にしない
+`src/app.tsx` のような app root では、単純な行数削減よりも state owner と side effect 境界の整理を優先する。
 
-#### 具体例
+### App に残すもの
 
-- `src/domain/map/`
-  `selection.ts`, `route-shapes.ts`, `map-selection-layers.ts`, `stop-filter.ts`, `focus-position.ts`, `render-mode.ts`
-- `src/domain/transit/`
-  `service-day.ts`, `timetable-filter.ts`, `timetable-utils.ts`
-- `src/utils/`
-  `datetime.ts`, `day-of-week.ts`, `kana-normalize.ts`, `truncate-label.ts`
-- `src/lib/`
-  `leaflet-helpers.ts`, `map-zoom.ts`, `double-tap-zoom.ts`
+- 複数 subtree が同じ値を必要とし、`App` が minimum common ancestor になる state
+- `MapView` と overlay / sheet の bridge になる state や callback
+- hook 間の循環依存を切るための bridge ref
 
-## Stop ID lookup の選び方
+### App から外しやすいもの
 
-`stop_id` から `StopWithMeta` を取得する方法は 2 系統あります。**stop_id の出所** によって正しい方を選ばないと、ビューポート外の stop で silently null フォールバックが発生し、表示や翻訳が壊れます。route stops 表示と Portal (anchor) で過去に同種の不具合を起こしているため、新規実装時は必ず以下を参照してください。
+- pure UI state (`Dialog` の open state など)
+- one-shot startup effect
+- pure selector / helper に切り出せる派生判断
+- action outcome から UI message への変換
 
-### `repo.getStopMetaByIds(stopIds: Set<string>): StopWithMeta[]`
+### helper と hook の分担
 
-**全データセットを対象**にする同期 API (`src/repositories/transit-repository.ts`)。stop_id の地理的位置に依存しません。「全データセット」は検索のスコープを意味し、データセット全体を per-call で走査するという意味ではありません。v2 リポジトリの実装は事前構築済みの `stop_id → StopWithMeta` map に対する indexed lookup なので、実コストは渡した stop_id の数に比例します (各 lookup は O(1)、全体で O(`stopIds.size`))。
+- business rule や fallback 契約は `src/domain/` / `src/utils/` の pure function に寄せる
+- custom hook は state、effect、callback wiring に集中させる
+- props bundle を返すだけの抽象化は避け、state owner / request lifecycle / side effect boundary のどれが移るのかを明確にする
 
-以下の用途には**必ずこれを使う**:
+### bridge ref の扱い
 
-- アンカー (bookmark) の表示名 / refresh — anchor は地球の裏側にあり得る
-- 履歴 (StopHistory) の name 解決 (履歴は full snapshot を持つので別経路でも可)
-- selected route の stops 描画 — route は viewport 外まで伸びる
-- URL `?stop=` パラメータからの解決
-- localStorage / 検索結果など、**永続化された / ユーザー操作の起点でない stop_id 全般**
+`ref` は常に悪ではない。hook 間 contract を切るための bridge ref が最小コストな場合は、安易に消さず意図をコメントで残す。
 
-呼び出しコスト: 同期、O(`stopIds.size`)。過剰最適化を心配する必要はないので、迷ったらこちらを選ぶ。
+## Stop ID Lookup
 
-### `findStopWithMeta(stopId)` (app.tsx 内のローカル callback)
+`stop_id` から `StopWithMeta` を取得する方法は 2 系統ある。出所によって正しい lookup を選ぶこと。詳細は [docs/transit-data-and-repository.md](./docs/transit-data-and-repository.md) を参照。
 
-**ビューポート専用** の lookup で、`radiusStops` (~1 km) と `inBoundStops` (現在のビューポート) しか見ません。ホットパス用に作られています。
+| stop_id の出所                                                     | 使う lookup                                |
+| ------------------------------------------------------------------ | ------------------------------------------ |
+| 今クリックした map marker / viewport 内の即時 selection            | `findStopWithMeta(stopId)`                 |
+| localStorage / URL / 設定 / 選択 route / 検索結果 / 過去セッション | `repo.getStopMetaByIds(new Set([stopId]))` |
 
-以下の用途のみ:
+迷ったら `repo.getStopMetaByIds` を使う。永続 ID に viewport-only lookup を使うと、ビューポート外で snapshot fallback になり、翻訳や最新 metadata が消える。
 
-- ユーザーが今クリックした map marker
-- `onStopSelected` 系の即時 selection
-- 現在地周辺で確実に viewport 内にある stop の参照
+Stop selection 系は `live metadata` 優先、取得できない場合のみ `persisted snapshot fallback` を使う契約を helper と test で固定する。
 
-**永続 ID には絶対に使わない**。アンカー / 履歴 / 選択 route の stops / `?stop=` 等に使うと、ビューポート外で null が返り、表示層は snapshot にフォールバックして翻訳/最新メタが消える。
+## Setup
 
-### 判断フロー
+### Agent skills
 
-1. その stop_id は **どこから来たか** ?
-    - ユーザーが今操作した直接対象 (クリックなど) → `findStopWithMeta` 可
-    - localStorage / URL / 設定 / 選択 route / 過去のセッション → `repo.getStopMetaByIds`
-2. 迷ったら `getStopMetaByIds`
-3. 新しい lookup を書くときは、コメントに「永続 ID か viewport ID か」を明記する
+外部 skill は手動でインストールが必要。clone 後に以下を確認する。
 
-## Logger
-
-### Basic Usage
-
-```typescript
-import { createLogger } from '../lib/logger';
-
-const logger = createLogger('GTFS');
-
-logger.debug('Loading sources:', prefixes);
-logger.info('Repository initialized');
-logger.warn('Skipping invalid source:', prefix);
-logger.error('Failed to fetch data:', error);
-```
-
-### Log Levels
-
-| Level   | Use case                                                       |
-| ------- | -------------------------------------------------------------- |
-| `debug` | Detailed trace for development (bounds queries, render counts) |
-| `info`  | Notable events (initialization complete, data loaded)          |
-| `warn`  | Recoverable issues (skipped source, fallback used)             |
-| `error` | Failures requiring attention (fetch errors, unexpected state)  |
-
-### Output Format
-
-```text
-[14:05:23.456] [GTFS] Loading sources: ["tobus", "toaran"]
-```
-
-Each level maps to its corresponding `console` method (`console.debug`, `console.info`, `console.warn`, `console.error`).
-
-### Level Filter
-
-Default levels are set via environment variables:
-
-| Environment | `VITE_LOG_LEVEL` | `VITE_LOG_TAGS`  |
-| ----------- | ---------------- | ---------------- |
-| development | `debug`          | `*` (all tags)   |
-| production  | `warn`           | (empty, no tags) |
-
-### Tag Filter
-
-Tags are comma-separated patterns set via `VITE_LOG_TAGS`.
-
-| Pattern | Meaning                                                           |
-| ------- | ----------------------------------------------------------------- |
-| `*`     | Match all tags                                                    |
-| `GTFS`  | Exact match                                                       |
-| `Stop*` | Prefix match (matches `StopMarkerDom`, `StopMarkersCanvas`, etc.) |
-| `-App`  | Exclude tag (negation takes priority)                             |
-
-**Note:** `warn` and `error` logs always bypass tag filtering.
-
-### Performance: gating expensive arguments
-
-`logger.debug(...)` / `logger.verbose(...)` short-circuit internally when their level is filtered out, but **arguments are evaluated before the call**. Template literals, array iterations, function calls, and `.toFixed()` formatting all run even when the log is suppressed.
-
-For non-trivial argument evaluation, gate the call with `logger.isEnabled(level)`:
-
-```typescript
-if (logger.isEnabled('debug')) {
-    const elapsed = Math.round(performance.now() - t0);
-    logger.debug(`getStopsNearby: ${data.length}/${sorted.length} in ${elapsed}ms`);
-}
-```
-
-When to gate:
-
-- Function calls (`.toFixed()`, `.join()`, helper builders like `formatLoc()`)
-- Array iteration (`.map`, `.filter`, `.reduce`, spread `[...x]`)
-- Multi-variable template interpolation, especially with `.length` / `.size` aggregates
-- Any computation that exists only to feed the log
-
-When NOT to gate (cold paths):
-
-- Single-variable interpolation, e.g. `` `stopId=${stopId}` `` only
-- String literals, e.g. `'cancelled'`
-- `info` / `warn` / `error` — always emitted, gating provides no benefit
-
-Group consecutive `debug` calls under one `if` block so the gate cost is paid once.
-
-### DevTools Helper (development only)
-
-In development builds, `window.__log` is available in the browser console:
-
-```javascript
-// Change log level (in-memory, resets on reload)
-__log.setLevel('debug');
-__log.setLevel('warn');
-
-// Change tag filter (in-memory, resets on reload)
-__log.setTags('GTFS', 'Stop*');
-__log.setTags('*', '-App');
-
-// View current config
-__log.getConfig();
-```
-
-Changes take effect immediately without page reload.
-
-## レイアウト構成
-
-App は viewport サイズに応じて 2 つの layout mode を出し分け、 multi-pane mode 内ではさらに orientation を判定する。 MapView は **App root に hoist された 1 インスタンス**として常駐し、 layout 側が宣言する「slot」の bbox に追従する。
-
-### Layout mode
-
-`useLayoutMode()` が viewport 幅から決定する。
-
-| viewport width                        | mode         |
-| ------------------------------------- | ------------ |
-| `< WIDE_VIEWPORT_MIN_WIDTH` (= 800px) | `simple`     |
-| `>= WIDE_VIEWPORT_MIN_WIDTH`          | `multi-pane` |
-
-判定ロジックは pure 関数 `resolveLayoutMode(viewport: Viewport): LayoutMode` (`src/utils/layout-mode.ts`) に閉じ込めてあり、 hook はその wiring 専従。 しきい値は同ファイルの `WIDE_VIEWPORT_MIN_WIDTH` 定数。
-
-### Multi-pane orientation
-
-multi-pane mode 内では `useMultiPaneOrientation()` が viewport の縦横比から split 方向を決める。
-
-| 条件              | orientation  | 視覚配置                    |
-| ----------------- | ------------ | --------------------------- |
-| `width >= height` | `horizontal` | stop panel 左 / 可視 map 右 |
-| `width < height`  | `vertical`   | 可視 map 上 / stop panel 下 |
-
-判定ロジックは `resolveMultiPaneOrientation(width, height): MultiPaneOrientation` (`src/utils/multi-pane.ts`)。
-
-### MapView の常駐 (case 1A hoist)
-
-MapView は App root に 1 度だけ mount され、 layout mode / orientation の transition では再 mount しない。 Leaflet map instance / 読み込み済みタイル / 進行中ジェスチャは全 transition を生き残る。 これによって以前発生していた「`Map container is being reused` クラッシュ」(`react-resizable-panels` + Leaflet + StrictMode の組み合わせで起きていた) と「mode 跨ぎで map center / zoom がリセットされる」問題が同時に解消されている。
-
-DOM 階層 (概略):
-
-```
-App root (relative h-dvh w-dvw)
-└── MapSlotProvider                                                ← slot DOM 要素を context で共有
-    ├── MapViewContainer                                            ← MapView 専用の position wrapper
-    │   ├── MapView                                                ← 常駐、 transition で unmount しない
-    │   └── MapOverlay                                              ← map に被さる chrome 全般 (panel 群 / locate / TimeControls / StopHistory / Portals)
-    └── AppLayout                                                   ← overlay 選択
-        ├── 'simple' → MapBottomSheetLayout
-        │              ├── <div ref={setMapSlot} h-[60dvh]/>        ← slot div (透明)
-        │              └── BottomSheet (fixed bottom-0)
-        └── 'multi-pane' → MultiPaneLayout
-                           └── ResizablePanelGroup
-                               ├── ResizablePanel "sheet" → StopPanel
-                               ├── ResizableHandle
-                               └── ResizablePanel "multi-pane-map-pane"
-                                   └── <div ref={setMapSlot} h-full w-full/>  ← slot div (透明)
-```
-
-### Slot 追従の仕組み
-
-1. **layout side**: `useSetMapSlotElement()` を ref callback で受け取る div を render — slot 位置 + サイズを宣言する役
-2. **MapViewContainer**: `useMapSlotElement()` で slot DOM を取得、 `useElementRect` (`ResizeObserver`-backed) で bbox を観測
-3. **bbox 適用**: MapView の wrapper を `position: absolute` + `top/left/width/height = bbox` で配置
-4. **Leaflet 連動**: MapView 内部の `ResizeObserver` が container サイズ変化を検知し、 `map.invalidateSize()` を自動で呼ぶ
-
-これによって `ResizableHandle` の drag に map がリアルタイム追従し、 Leaflet の `getCenter()` / `getBounds()` / `getSize()` は **可視 map 領域そのもの**を返す。「現在地ボタン」 / Edge Markers / 「viewport 内の停留所」 fetch が正しく動く前提が成立する。
-
-### Pointer-events plumbing (multi-pane)
-
-multi-pane の `ResizablePanelGroup` は **layout shell でしかなく**、 map placeholder pane の領域は背後の MapView に click を通す必要がある。 仕組み:
-
-- **ResizablePanelGroup の outer div**: `pointer-events: none` (CSS は inherit するため全子孫に伝播する)
-- **sheet pane / resize handle**: arbitrary descendant selector (`[&_#sheet]:pointer-events-auto`, `[&_[data-slot=resizable-handle]]:pointer-events-auto`) で `auto` に override
-- **map placeholder pane**: 継承で `none` のまま → click が抜けて背後の MapView に届く
-
-`react-resizable-panels` v4 の `Panel` は `className` / `style` を inner wrapper に乗せて outer panel には乗らない。 そのため outer panel への CSS 適用は parent からの descendant selector で行うしかない (`[&_#multi-pane-map-pane]:pointer-events-none`)。 詳細は `src/components/multi-pane-layout.tsx` の `groupClassName` 上の inline コメント参照。
-
-### Transition 別の挙動
-
-| transition                           | MapView                     | StopPanel state                        | crash |
-| ------------------------------------ | --------------------------- | -------------------------------------- | ----- |
-| simple ↔ multi-pane (800px 境界)     | **保全** (同一 Leaflet)     | remount (別 layout component)          | なし  |
-| multi-pane horizontal ↔ vertical     | **保全**                    | **保全** (`key="sheet"` で fiber 維持) | なし  |
-| BottomSheet expand/collapse (simple) | **保全**                    | (内部 state)                           | なし  |
-| ResizableHandle drag (multi-pane)    | **保全** (slot bbox に追従) | サイズ変化のみ                         | なし  |
-
-### 関連 file マップ
-
-| 場所                                         | 役割                                                                                                                                                      |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/types/app/viewport.ts`                  | `Viewport` 型 (utils / hooks 双方から import する中立 type)                                                                                               |
-| `src/utils/layout-mode.ts`                   | `LayoutMode` 型、 `WIDE_VIEWPORT_MIN_WIDTH`、 `resolveLayoutMode(viewport)`                                                                               |
-| `src/utils/multi-pane.ts`                    | `MultiPaneOrientation` 型、 `MULTI_PANE_MAP_PANE_SIZE` (map pane の `defaultSize` / `minSize` / `maxSize`)、 `resolveMultiPaneOrientation(width, height)` |
-| `src/hooks/use-viewport.ts`                  | `useViewport()`: window / visualViewport の resize 購読                                                                                                   |
-| `src/hooks/use-layout-mode.ts`               | wiring (`resolveLayoutMode(useViewport())`)                                                                                                               |
-| `src/hooks/use-multi-pane-orientation.ts`    | wiring                                                                                                                                                    |
-| `src/hooks/use-element-rect.ts`              | `useElementRect()`: ResizeObserver-backed bbox tracker                                                                                                    |
-| `src/hooks/use-map-slot.ts`                  | `useMapSlotElement()` / `useSetMapSlotElement()` (context accessor)                                                                                       |
-| `src/contexts/map-slot-context.tsx`          | `MapSlotContext` 定義                                                                                                                                     |
-| `src/contexts/map-slot-provider.tsx`         | `MapSlotProvider`: slot 共有 state holder                                                                                                                 |
-| `src/components/map/map-view-container.tsx`  | `MapViewContainer`: hoist された MapView の position 制御                                                                                                 |
-| `src/components/map/map-overlay.tsx`         | `MapOverlay`: map に被さる chrome 全般 (corner panels / locate button / `TimeControls` / `StopHistory` / `Portals`)。 MapView と sibling                  |
-| `src/components/app-layout.tsx`              | `AppLayout`: `useLayoutMode()` で overlay 選択                                                                                                            |
-| `src/components/map-bottom-sheet-layout.tsx` | simple mode overlay (slot div + BottomSheet)                                                                                                              |
-| `src/components/multi-pane-layout.tsx`       | multi-pane mode overlay (ResizablePanelGroup + slot)                                                                                                      |
-
-## z-index 階層
-
-Leaflet のカスタム pane を使い、描画レイヤーの前後関係を制御する。数値が大きいほど前面に描画される。
-
-このルールは CSS `z-index` を対象とする。Leaflet の `zIndexOffset` (marker pane 内 ordering) や Leaflet pane 自体の z-index 設定は別系統であり、本ルールの対象外。
-
-まず「どの stacking context の中で競合する値か」を決めてから `z-index` を置く。アプリ全体で比較する global layer と、コンポーネント内部でだけ比較される local layer を混ぜない。
-
-### 予約レンジ
-
-- `100-999`: global layer。MapView / Leaflet pane / map 上のオーバーレイ
-- `1000-1999`: global layer。BottomSheet とその上に重なる app chrome (floating controls, dropdown trigger/content など)
-- `2000-2999`: global layer。Dialog / Modal
-- `0-99`: local layer guide。任意の surface 内部で使う補助値。親の stacking context の中だけで意味を持つ値であり、上の global range とは別の話
-
-MapView 内でも component local な layering には `z-0` や `z-10` を使ってよい。ただしそれは map 全体の global layer を表す値ではない。
-
-以下の「現在の主な割り当て」はこの予約レンジに沿っている。global layer と local layer を同じ土俵で比較しないこと。
-
-### 現在の主な割り当て
-
-| z-index | 用途                                                                |
-| ------- | ------------------------------------------------------------------- |
-| 200     | `tilePane` — ベースマップタイル (地理院地図)                        |
-| 340     | `routeShapeOutlinePane` — 路線図のアウトライン (選択時の縁取り)     |
-| 350     | `routeShapePane` — 路線図の塗り (fill)                              |
-| 400     | `overlayPane` — 停留所マーカー等のオーバーレイ                      |
-| 500     | EdgeMarkerOverlay                                                   |
-| 600     | `shadowPane` — マーカーの影                                         |
-| 700     | `markerPane` — マーカー本体                                         |
-| 1000    | MapOverlayButton, BottomSheet, StopPanel (multi-pane), TimeControls |
-| 1001    | SelectionIndicator, Portal/History dropdown trigger                 |
-| 1002    | Portal/History SelectContent (dropdown list)                        |
-| 2000    | モーダルダイアログ (shadcn Dialog, StopSearchModal, TimetableModal) |
-
-> **Note**: outline pane は fill pane より低い z-index を持つ必要がある。react-leaflet の Polyline は Leaflet の `addTo()` を通じて pane 末尾に append されるため、同一 pane 内では mount 順に依存した描画順になる。pane を分離することで mount 順に関係なく正しい前後関係を保証する。
-
-### コンポーネント内 z-index の扱い
-
-- local stacking が成立している箇所では `z-0` や `z-10` を使ってよい。ただし装飾だけのために `z-index` を増やさない
-- 同じ `z-index` 値でも親の stacking context が違うと直感どおりに重ならない。`relative` / `sticky` / `transform` と組み合わさると Safari で境界 bleed が起きやすい
-- `ScrollFadeEdge` は local overlay であり、scroll container 内の `z-10` は global な「10番レイヤー」を意味しない
-- `ScrollFadeEdge` のような overlay を使う箇所では、下層 content の装飾要素に不要な `z-index` を持たせない。`TripPositionIndicator` の dot に付いていた `z-10` は commit `835ea49` (2026-04-26 15:08:43 +0900) で除去した
-- `src/components/ui/` の shadcn primitive は upstream default の `z-index` を持つことがある。global layer に出す必要がある場合は wrapper を一括変更するのではなく、まず caller 側 `className` で予約レンジへ override する
-- 現在の `SelectContent` は caller override を公式パターンとして使っている。例: `StopHistory` と `Portals` は `className="z-1002 ..."` を渡して app chrome layer に載せている
-- `Select` / `Popover` のような shared primitive 自体には surface 固有の global `z-index` を持たせない。BottomSheet 上に出すのか Dialog 内に出すのかは呼び出し側の責務として決める
-- つまり shared primitive の default `z-index` は upstream 値のままでよく、app 固有の layer policy が必要な場合だけ caller 側で `z-1002` や `z-2001` のように明示する
-
-### App shell wrapper は stacking context を作らない
-
-App root container、 hoist された `MapView` wrapper、 `MultiPaneLayout` の `ResizablePanelGroup` のように **app 全体の layout 構造だけを担う wrapper** には `z-index` を明示しない。
-
-- 上記の wrapper に `z-index` を指定する(例: `relative z-0`、 `fixed inset-0 z-0`)と、 新しい stacking context が生成され、 中の chrome (`MapOverlay` 配下の `TimeControls` の z-1000、 corner panel 群の z-1000/1001/1002、 `ZoomDisplay` の z-1000 等) が **root context から見えなくなる**。 結果として doc の予約レンジが意図どおり composing しなくなり、 BottomSheet (z-1000) や StopPanel (z-1000) が常に chrome を覆ってしまう等の重なり崩れが発生する
-- `position: relative` / `absolute` だけ与えて positioning context のみ提供する。 `z-index` は `auto` のまま明示しない
-    - `fixed` は z-index 値に関わらず stacking context を作る仕様なので、 hoist された `MapView` の wrapper には `fixed inset-0` ではなく **「App root が `relative h-dvh w-dvw` で viewport を確定 + 中の wrapper が `absolute inset-0`」** という構造を採用する(`src/app.tsx`)
-- 例: `src/app.tsx` の `<div className="relative h-dvh w-dvw overflow-hidden">` (App root) と内側の `<div className="absolute inset-0">` (MapView wrapper)、 `src/components/multi-pane-layout.tsx` の `<ResizablePanelGroup className="absolute inset-0">`
-- 既存の予約レンジ (200-700 map / 1000-1999 chrome / 2000-2999 modal) はこの原則の上でだけ機能する
-
-## マップのパン/ズーム制御
-
-### パントリガー一覧
-
-地図を移動させる全操作。全てのパンは `smoothMoveTo()` (`lib/leaflet-helpers.ts`) を経由する。
-
-| 操作                        | 経由メソッド          | ズーム               | パン方式                  |
-| --------------------------- | --------------------- | -------------------- | ------------------------- |
-| StopMarker クリック         | `selectStop()`        | 維持                 | `PanToFocus`              |
-| EdgeMarker クリック         | `selectStop()`        | 維持                 | `PanToFocus`              |
-| BottomSheet の停留所タップ  | `selectStopById()`    | 維持                 | `PanToFocus`              |
-| 検索結果から選択            | `focusStop()`         | 維持                 | `PanToFocus`              |
-| 履歴から選択                | `focusStop()`         | 維持                 | `PanToFocus`              |
-| SelectionIndicator クリック | 直接 `smoothMoveTo()` | 維持                 | 直接呼び出し _(現在無効)_ |
-| 現在地ボタン                | 直接 `smoothMoveTo()` | **→ `LOCATE_ZOOM`**  | 直接呼び出し              |
-| ホームボタン                | 直接 `smoothMoveTo()` | **→ `INITIAL_ZOOM`** | 直接呼び出し              |
-
-パンしない操作:
-
-| 操作                 | 経由                 | 効果                    |
-| -------------------- | -------------------- | ----------------------- |
-| RouteShape クリック  | `selectRouteShape()` | 選択のみ、移動なし      |
-| 空の地図クリック     | `deselectStop()`     | 選択解除、移動なし      |
-| ユーザーが地図をパン | `clearFocus()`       | stale な focus をクリア |
-
-### smoothMoveTo
-
-`lib/leaflet-helpers.ts` の `smoothMoveTo(map, target, zoom)` は移動距離に応じてアニメーション方式を選択する:
-
-- 距離 < ~50m かつズーム一致 → `map.setView()` (即座に移動)
-- それ以外 → `map.flyTo()` (1秒アニメーション)
-
-### PanToFocus
-
-`PanToFocus` (`components/map/map-view.tsx`) は `focusPosition` の参照変化を監視し、変化があれば `smoothMoveTo()` を呼ぶ。`focusPosition` は `useSelection` Hook 内の `resolveFocusPosition()` で解決される:
-
-1. `directFocusPosition` (検索/履歴で設定) が優先
-2. なければ `radiusStops` → `inBoundStops` から選択中の停留所を検索
-3. どちらにもなければ `null` (パンなし)
-
-`directFocusPosition` が `null` の場合 (マーカー/BottomSheet からの選択時) は `useStableLatLng` で参照を安定化するため、同じ座標では `useEffect` が発火せずパンしない。`directFocusPosition` が非 `null` の場合 (検索/履歴) は安定化をバイパスし、同じ停留所への再フォーカスでもパンが発火する。
-
-## マップのクリック/タップイベント制御
-
-Leaflet のデフォルトクリック挙動を複数箇所でオーバーライドしている。変更時は相互依存に注意。
-
-### イベントフロー
-
-```text
-[touchstart] → double-tap-detector: 2nd tap 判定
-    ↓
-[touchend] → 1st tap 記録 (timestamp + position)
-    ↓ (300ms 待機)
-[click] → capture phase で遅延 → 2nd tap が来なければ再 dispatch
-```
-
-### ジェスチャー/操作仕様
-
-#### タッチデバイス (モバイル)
-
-| ジェスチャー            | 動作                                                               | 実装                     |
-| ----------------------- | ------------------------------------------------------------------ | ------------------------ |
-| タップ                  | 通常のクリック (停留所選択、地図クリック等)                        | (Leaflet デフォルト)     |
-| ダブルタップ            | タップ位置に1段階ズームイン                                        | `lib/double-tap-zoom.ts` |
-| ダブルタップ + スライド | 上下スライドでズーム (方向は `doubleTapDrag` 設定で切替、下表参照) | `lib/double-tap-zoom.ts` |
-| ピンチズーム            | 通常のズーム                                                       | (Leaflet デフォルト)     |
-
-#### マウスデバイス (デスクトップ)
-
-| 操作                      | 動作                                                               | 実装                     |
-| ------------------------- | ------------------------------------------------------------------ | ------------------------ |
-| クリック                  | 通常のクリック                                                     | (Leaflet デフォルト)     |
-| ダブルクリック            | クリック位置に1段階ズームイン                                      | `lib/double-tap-zoom.ts` |
-| ダブルクリック + ドラッグ | 上下ドラッグでズーム (方向は `doubleTapDrag` 設定で切替、下表参照) | `lib/double-tap-zoom.ts` |
-| スクロールホイール        | ズームイン/アウト                                                  | (Leaflet デフォルト)     |
-| ドラッグ                  | パン                                                               | (Leaflet デフォルト)     |
-
-> **Note**: Leaflet 組み込みの doubleClickZoom は `enableDoubleTapZoom()` で無効化されている。代わりに `lib/double-tap-zoom.ts` 内で `mousedown`/`mouseup` のタイミングから独自にダブルクリックを検出し、`setZoomAround()` を直接呼び出す実装になっている (Leaflet の `dblclick` イベントは使用していない)。
-
-#### `doubleTapDrag` 設定 (`UserSettings`)
-
-| 値                        | 上にドラッグ | 下にドラッグ | 代表アプリ  |
-| ------------------------- | ------------ | ------------ | ----------- |
-| `'zoom-out'` (デフォルト) | ズームアウト | ズームイン   | Google Maps |
-| `'zoom-in'`               | ズームイン   | ズームアウト | Apple Maps  |
-
-### クリック制御メカニズム一覧
-
-| #   | メカニズム                     | ファイル                                    | イベント        | フェーズ | 目的                                                                  |
-| --- | ------------------------------ | ------------------------------------------- | --------------- | -------- | --------------------------------------------------------------------- |
-| 1   | クリック遅延 (300ms)           | `lib/double-tap-detector.ts`                | `click`         | capture  | 1st tap のクリックを遅延し、2nd tap が来たらキャンセル                |
-| 2   | ピンチズーム後の誤クリック抑制 | `components/map/map-view.tsx`               | Leaflet `click` | —        | zoomend から 600ms 以内のクリックを無視                               |
-| 3   | Edge Marker ヒット検出         | `components/marker/edge-markers-canvas.tsx` | `click`         | capture  | Canvas 上の矢印クリックを検出、`stopPropagation` で地図クリックを抑止 |
-| 4   | Stop Marker クリック           | `components/marker/stop-markers-canvas.tsx` | Leaflet `click` | —        | `bubblingMouseEvents: false` で地図への伝搬を防止                     |
-| 5   | Route Shape クリック           | `components/map/route-shape-polyline.tsx`   | Leaflet `click` | —        | `bubblingMouseEvents: false` で地図への伝搬を防止                     |
-
-### 定数
-
-全定数は `src/utils/map-click.ts` に集約。
-
-| 定数                    | 値    | 用途                                                                     |
-| ----------------------- | ----- | ------------------------------------------------------------------------ |
-| `DOUBLE_TAP_WINDOW_MS`  | 300ms | 1st tap end → 2nd tap start の許容間隔                                   |
-| `MAX_TAP_DRIFT_PX`      | 30px  | 2タップ間の許容ドリフト距離                                              |
-| `PIXELS_PER_ZOOM_LEVEL` | 100px | スライド距離 → ズームレベル変換                                          |
-| `CLICK_SUPPRESSION_MS`  | 600ms | ピンチズーム後のクリック抑制窓 (300ms ブラウザ遅延 + 300ms クリック遅延) |
-
-### Leaflet オーバーライド
-
-| 設定              | 変更内容                   | 理由                                     | 復元タイミング            |
-| ----------------- | -------------------------- | ---------------------------------------- | ------------------------- |
-| `doubleClickZoom` | `disable()`                | 独自ダブルタップ実装との競合回避         | cleanup 関数で `enable()` |
-| `zoomSnap`        | スライド中 `0`、終了時 `1` | スライド中の滑らかなフラクショナルズーム | `touchend` で復元         |
-| `dragging`        | スライド中 `disable()`     | パン操作との誤認防止                     | `touchend` で `enable()`  |
-
-### 注意事項
-
-- **クリック遅延の波及**: 全てのクリックが 300ms 遅延するため、UI の即時応答が必要な場合は `touchend` で処理するか、capture phase の `allowNextClick` フラグを考慮すること
-- **CLICK_SUPPRESSION_MS の依存関係**: この値はクリック遅延 (300ms) を加味している。クリック遅延の値を変更した場合、この値も連動して更新が必要
-- **capture phase の順序**: 複数の capture phase リスナー (クリック遅延、Edge Marker) が同一コンテナに登録される。`addEventListener` の登録順に実行されるため、登録順の変更に注意
-
-## モード定義
-
-### Perf Mode (`lite | normal | full`)
-
-描画方式とデータ読み込み量をプロファイルとして一括制御するモード。変更時に render mode を含む他の設定をプロファイルのデフォルトにリセットする。
-
-| Mode     | 説明                                                         |
-| -------- | ------------------------------------------------------------ |
-| `lite`   | 低スペック端末向け。Canvas描画、nearby半径500m、路線図非表示 |
-| `normal` | 標準。zoom連動の自動切替、nearby半径1000m、路線図表示        |
-| `full`   | 高スペック端末向け。DOM描画、nearby半径2000m、路線図表示     |
-
-### Render Mode (`auto | standard | lightweight`)
-
-描画方式の切替。perf mode 変更時にプロファイルのデフォルトにリセットされるが、ユーザーがいつでも独立して変更可能。
-
-| Mode          | 説明                                                |
-| ------------- | --------------------------------------------------- |
-| `auto`        | zoom レベルに応じて standard/lightweight を自動切替 |
-| `standard`    | DOM ベースの描画                                    |
-| `lightweight` | Canvas ベースの描画                                 |
-
-### Data Config
-
-データ取得設定。perf mode のプロファイルから決定され、repository のクエリパラメータとして渡される。
-
-- `stops.nearbyRadius`: `getStopsNearby` の検索半径 (メートル)
-- `routes.enabled`: 路線図の表示有無
-
-## GTFS i18n (多言語) の仕組み
-
-GTFS 仕様における言語関連フィールドの整理。
-
-### `feed_lang` (feed_info.txt, Required)
-
-> Default language used for the text in this dataset.
-
-- **データセット内の全テキストフィールド (stop_name, trip_headsign 等) のデフォルト言語を定義する**
-- `translations.txt` で他言語への翻訳を提供可能
-- "mul" (ISO 639-2): 多言語フィード。ベース値が複数言語で記述される (例: スイスの Genève / Zürich)。各言語の翻訳は translations.txt で提供する前提
-
-### `agency_lang` (agency.txt, Optional)
-
-> Primary language used by this transit agency. Should be provided to help GTFS consumers choose capitalization rules and other language-specific settings for the dataset.
-
-- agency が主に使用する言語。**テキストフィールドの言語を定義するものではない**
-- 大文字化ルールなど表示設定のヒントとして利用
-- per-agency フィールド (同一フィード内で agency ごとに異なりうる)
-
-### `translations.txt` の `language` フィールド
-
-> If the language is the same as in `feed_info.feed_lang`, the original value of the field will be assumed to be the default value to use in languages without specific translations.
-
-- `feed_lang` と同じ言語の translation がある場合、**ベース値はその言語のデフォルト値として扱われる**
-- 明示的 translation (`translations.txt` のエントリ) がベース値より優先
-
-### このプロジェクトでの適用
-
-- ベース値の言語は `feed_lang` で決まる (`agency_lang` ではない)
-- Repository の `mergeSourcesV2` で、`feed_lang` キーをベース値から translation names に注入して正規化 (Issue #107)
-- `feed_lang = "mul"` の場合は注入しない (言語不定)
-- `feed_lang` が空の場合は `agency_lang` にフォールバック
-
-## TransitRepository API 仕様
-
-全メソッドは `Result<T>` または `CollectionResult<T>` を返す。domain-level エラーは `{ success: false, error }` で表現し、呼び出し側がフォールバックを決定する。
-
-- `getStopsInBounds(bounds, limit)`: bounds 中心からの距離順ソート。`limit` は必須。上限 `MAX_STOPS_RESULT` (5000)
-- `getStopsNearby(center, radiusM, limit)`: 距離順ソート。`limit` は必須。上限 `MAX_STOPS_RESULT`
-- `getUpcomingDepartures(stopId, now, limit?)`: route/headsign グループごとに最大 `limit` 件。未知の stopId は `success: false`
-- `getRouteTypeForStop(stopId)`: 非同期。最小 route_type を返す。未知の stopId は `success: false`
-- `getRouteShapes()`: 全 shape を返す
-- `getFullDayDepartures(stopId, routeId, headsign, date)`: 指定日の全出発時刻 (分)
-- `getAllStops()`: 全停留所 (上限 `MAX_STOPS_RESULT`)
-
-## PWA
-
-### 概要
-
-`vite-plugin-pwa` (`generateSW` + `autoUpdate`) で PWA 対応。ホーム画面から起動時にブラウザ UI が消え (`display: standalone`)、アプリシェルのオフラインキャッシュを提供する。
-
-### キャッシュ戦略
-
-| 対象                                    | 方式                 | 設定                    | 想定サイズ                                                                                     |
-| --------------------------------------- | -------------------- | ----------------------- | ---------------------------------------------------------------------------------------------- |
-| App Shell (JS/CSS/HTML/アイコン等)      | プリキャッシュ       | ビルド時自動生成        | ~1 MB                                                                                          |
-| GTFS データ (`/data-v2/**/*.json`)      | StaleWhileRevalidate | 7日有効、最大50エントリ | default 全有効で `data.json` 合計 約 91 MB、`public/data-v2/` 全体 約 132 MB (2026-05-12 計測) |
-| 地図タイル (`cyberjapandata.gsi.go.jp`) | CacheFirst           | 30日有効、最大50枚      | 実データ数 MB、Chrome Quota 上は最大 ~350 MB                                                   |
-
-#### GTFS データキャッシュ
-
-- `StaleWhileRevalidate`: キャッシュから即時返却しつつバックグラウンドで最新を取得
-- ソースあたり `data.json` 単独で **数 KB ~ 約 18 MB の幅**がある (例: `snws` 約 3 KB ~ `minkuru` 約 18 MB、2026-05-12 計測)。default 全有効では `data.json` 合計 約 91 MB、`shapes.json` / `insights.json` を含めた `public/data-v2/` 全体で 約 132 MB (同日計測)
-- `public/data-v2/` はプリキャッシュに含めない (`globIgnores: ['data/**', 'data-v2/**']`、`data/**` は legacy v1 残置)
-- `globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}']` でアイコン等もプリキャッシュ対象
-
-#### 地図タイルキャッシュ
-
-- GSI タイルは CORS ヘッダーを返さないため opaque response として保存される
-- Chrome は opaque response 1件あたり ~7 MB のパディングを Storage Quota に加算する
-- `maxEntries` の増加は Storage Quota への影響が大きいため慎重に設定すること
-
-### JSON 圧縮配信 (今後の最適化)
-
-現状 GTFS JSON は非圧縮で配信・キャッシュされている (default 全有効で `data.json` のみ約 91 MB、`shapes.json` / `insights.json` を含むと `public/data-v2/` 全体で約 132 MB、2026-05-12 計測)。データソース増加やユーザー全有効時にキャッシュサイズが Chrome Quota を圧迫する懸念があるため、以下の方式を検討する:
-
-```text
-pipeline で .json.gz を生成
-  → 通常ファイルとして配信 (Content-Encoding ではなく application/gzip)
-  → SW が圧縮状態のままキャッシュ (default 全有効の `data.json` 91 MB が gzip で約 9 MB に圧縮、~10x 削減、2026-05-12 実測)
-  → アプリ側で DecompressionStream で解凍 → JSON.parse
-```
-
-**注意**: `Content-Encoding: gzip` によるサーバー側圧縮はネットワーク転送を最適化するが、Cache API には解凍後のサイズで保存される。キャッシュサイズの削減には `.gz` ファイルを通常リソースとして配信する必要がある。
-
-### プラットフォーム別挙動
-
-#### アプリ名 / アイコンラベル
-
-| プラットフォーム | ソース                                     | 現在の値             |
-| ---------------- | ------------------------------------------ | -------------------- |
-| iOS              | `<meta name="apple-mobile-web-app-title">` | `アテナイ`           |
-| Android          | manifest `short_name`                      | `アテナイ`           |
-| macOS / Windows  | manifest `name`                            | `あてのない乗換案内` |
-
-#### インストール要件
-
-| プラットフォーム       | HTTPS 必須 | 備考                                 |
-| ---------------------- | ---------- | ------------------------------------ |
-| iOS Safari             | No         | `localhost` や LAN IP でも A2HS 可能 |
-| Android Chrome         | Yes        | `localhost` は例外。LAN IP は不可    |
-| macOS / Windows Chrome | Yes        | `localhost` は例外                   |
-
-#### ステータスバー
-
-| プラットフォーム | `theme-color` media query | 挙動                                                                         |
-| ---------------- | ------------------------- | ---------------------------------------------------------------------------- |
-| iOS Safari       | 対応                      | ライト/ダーク自動切替                                                        |
-| Android Chrome   | 不安定                    | バージョンにより未対応。manifest `theme_color` (固定値) が優先される場合あり |
-| macOS / Windows  | —                         | タイトルバーに `theme_color` が適用される                                    |
-
-#### viewport zoom 制限
-
-`index.html` で `maximum-scale=1.0, user-scalable=no` を設定している。Leaflet がピンチジェスチャーで地図ズームを直接制御するため、ブラウザレベルのピンチズームが有効だと二重ズームや操作の競合が発生する。地図アプリでは一般的な設定。
-
-#### viewport-fit / status-bar-style 組み合わせ検証 (iOS standalone)
-
-| パターン | viewport-fit | status-bar-style  | iOS top                   | iOS bottom        | Android |
-| -------- | ------------ | ----------------- | ------------------------- | ----------------- | ------- |
-| A        | cover        | black-translucent | 地図が上端まで描画 (best) | safe-area 問題    | ベスト  |
-| B        | なし         | default           | テーマカラーべた塗り      | 目一杯描画 (best) | ベスト  |
-| C        | cover        | default           | テーマカラーべた塗り      | 目一杯描画 (best) | ベスト  |
-| D        | なし         | black-translucent | テーマカラーべた塗り      | 目一杯描画 (best) | ベスト  |
-
-- Android は全組み合わせで同じ挙動 (apple-mobile-web-app-\* を無視するため)
-- `black-translucent` が効くには `viewport-fit=cover` が必須
-- `viewport-fit=cover` 単体では bottom に影響しない
-- top 全画面描画と bottom 目一杯描画は現状両立不可 (iOS の制約)
-- **現在の設定: パターン A** (top 全画面重視)
-- フォールバック候補: B (bottom 重視、OS 任せ)
-- `black-translucent` は iOS 14.5 (2021) で deprecated だが代替未提供。全画面表示の唯一の手段のため継続使用 ([参考](https://firt.dev/ios-14.5/))
-- 参考: Google Maps (iOS/Android) は A 相当 (top 全画面、bottom は使い切らない)
-- 参考: Apple Maps のみ全画面地図 + フル フロート UI を実現 (ネイティブ特権)
-
-### iOS safe-area 対応
-
-- `apple-mobile-web-app-status-bar-style` が `black-translucent` の場合、地図が画面上端まで広がる
-- ノッチ / Dynamic Island と重なる UI 要素には `env(safe-area-inset-top)` で余白を追加
-- standalone モード以外 (通常ブラウザ) では `env(safe-area-inset-top)` が 0 になるため影響なし
-- `safe-area-inset-bottom` は不使用 (34px と大きく、BottomSheet 拡大やパネル重なりの原因になるため。ホームインジケータ領域はタップをブロックしないので不要)
-
-**ControlPanel 経由のパネル** — `edge` + `offset` props で top の safe-area を自動適用:
-
-- `MapLayerPanel` — top, 0.75rem
-- `RenderingPanel` — top, 0.75rem
-- `StopTypeFilterPanel` — top, 10.25rem
-- `InfoPanel` — top, 13rem
-- `MapNavigationPanel` — bottom, 2rem (safe-area なし)
-- `StopControlPanel` — bottom, 2rem (safe-area なし)
-
-**個別対応コンポーネント** — inline の `calc()` で safe-area を適用:
-
-- `TimeControls` — `top-[calc(1.25rem+env(safe-area-inset-top))]`
-- `StopHistory` — `top-[calc(4rem+env(safe-area-inset-top))]`
-- `SelectionIndicator` — `top-[calc(4rem+env(safe-area-inset-top))]` (2箇所)
-
-## Styling
-
-### Tailwind CSS v4
-
-- `@tailwindcss/vite` プラグインで Tailwind v4 を使用 (tailwind.config.js 不要)
-- ダークモード: `@custom-variant dark (&:where(.dark, .dark *))` でクラスベース制御
-- Leaflet DivIcon のスタイルは `src/index.css` の `@layer components` でグローバルクラスとして定義 (HTML 文字列で注入するため JSX 不可)
-
-### Prettier
-
-- `prettier-plugin-tailwindcss` で Tailwind クラスの自動並び替え
-- `eslint-config-prettier` で ESLint との競合を回避
-- 設定は `prettier.config.mjs` (printWidth: 100, シングルクォート, セミコロンあり)
-
-### ESLint
-
-- `typescript-eslint` の `recommendedTypeChecked` ルールセットを使用 (型情報を利用した高精度チェック)
-- `projectService` で `tsconfig.app.json` と `tsconfig.node.json` の両方を参照
-
-### shadcn/ui
-
-- shadcn/ui をベースコンポーネントライブラリとして使用
-- コンポーネントは `src/components/ui/` に配置 (shadcn CLI が管理)
-- `cn()` ユーティリティは `src/lib/utils.ts`
-- `@/` パスエイリアスを使用 (shadcn の規約)
-- 地図オーバーレイ用ボタン (MapOverlayButton, MapToggleButton) は shadcn Button を使わない (配置・スタイルが特殊)
-- shadcn Dialog の z-index はデフォルト `z-50` から `z-2000` に変更済み (上記 z-index 階層を参照)
-
-### Dialog / ScrollFadeEdge の注意点
-
-- `ScrollFadeEdge` は scroll content の一部ではなく、`sticky top-0` / `bottom-0` で viewport edge に張り付く overlay として動く。content 側の `pt` / `mt` を変えても fade 自体の表示位置は変わらない
-- fade の濃さを調整したい場合は caller 側の `className` で `via-background/*` を上書きする。位置や重なり量を変えたい場合は `ScrollFadeEdge` 側の `top-0` / `h-*` / `-mb-*` を調整する
-- `ScrollFadeEdge` と同じ or より高い `z-index` を持つ子要素は fade より前面に見えることがある。装飾目的の child component には不要な `z-index` を付けない
-- Safari (macOS / iOS) では `DialogHeader` と scroll container の sibling 境界で 1px 前後の translucent bleed が出ることがある。現在の `TripInspectionDialog` 実装では `DialogHeader` に `border-border z-10 -mb-px shrink-0 border-b-2` を付け、scroll container は `relative min-h-0 flex-1 overflow-y-auto` のまま使っている
-- 上記 Safari workaround では `border-b` では再発し、`border-b-2` で安定した。`-mb-px` で 1px 重ねると 1px border は境界で潰れて見えやすく、2px あれば重なり後も線が残る
-
-## 日時指定 (`?time=`)
-
-`?time=` パラメータで初期日時を指定できる。デモ URL の共有や特定時刻の動作確認に使用。
-
-```text
-http://localhost:5173/?time=2026-03-25T20:55
-http://localhost:5173/?time=2026-03-25T20:55:00+09:00
-http://localhost:5173/?time=2026-03-25T20:55:00Z
-http://localhost:5173/?lat=35.68&lng=139.39&zm=16&time=2026-03-25T20:55
-```
-
-- RFC 3339 形式。秒、タイムゾーンは省略可 (省略時はローカル時間)
-- 指定するとカスタム時間モードになる (ヘッダーにピンアイコン表示)
-
-## Repository 切り替え (`?repo=` mode)
-
-`?repo=` パラメータで使用する Repository 実装を切り替えられる。本番ビルドでも使用可能。
-
-```text
-http://localhost:5173/              → v2 (default)
-http://localhost:5173/?repo=mock    → MockRepository (fictional in-memory data)
-```
-
-### MockRepository (`?repo=mock`)
-
-`MockRepository` (`src/repositories/mock-repository.ts`) は、仕様上は正しいが実データには存在しないデータ構造をテストするためのインメモリ実装。通常の開発では実データを使用し、特殊なデータが必要な場合のみ使う。
-
-### テスト用データの特徴
-
-- 熊野前駅周辺 (~2 km 圏内) に架空の12停留所を配置
-- 全ての停留所名/路線名は架空 (「あおば中央駅」「みどり丘駅」など)
-- 複数の `RouteType` を持つ停留所が含まれる:
-
-| Stop ID         | 停留所名         | Route Types                            | 用途              |
-| --------------- | ---------------- | -------------------------------------- | ----------------- |
-| `sta_central`   | あおば中央駅     | tram(0) + subway(1) + rail(2) + bus(3) | 4種全て           |
-| `sta_central_s` | あおば中央駅南口 | subway(1) + rail(2) + bus(3)           | 3種複合           |
-| `sta_hill`      | みどり丘駅       | rail(2) + bus(3)                       | 鉄道+バス複合     |
-| `sta_east`      | ひかり台駅       | rail(2) + tram(0)                      | 鉄道+路面電車複合 |
-| `sta_south`     | かぜの駅         | subway(1) + rail(2)                    | 地下鉄+鉄道複合   |
-
-実データに存在する4種類の RouteType (0: tram, 1: subway, 2: rail, 3: bus) を全てカバーしている。
-
-### テストデータの追加
-
-特殊なデータパターンが必要な場合は、`mock-repository.ts` の `STOPS`, `ROUTES`, `STOP_ROUTES` を編集する。`STOP_ROUTE_TYPES` は `STOP_ROUTES` と `ROUTES` から自動計算される。
-
-## Diagnostics (`?diag=` mode)
-
-`?diag=<name>` パラメータで診断ツールを実行できる。Repository 生成後、React 描画前に実行され、結果はブラウザコンソールに出力される。diagnostics モジュールは dynamic import のため、通常アクセス時にはロードされない。
-
-### 起動方法 Diagnostics mode
-
-```text
-http://localhost:5173/?diag=v2-load
-```
-
-### 利用可能な diagnostics
-
-| name         | 内容                                                           |
-| ------------ | -------------------------------------------------------------- |
-| `v2-load`    | v2 バンドル (data/shapes/insights/global) のロードベンチマーク |
-| `repo-bench` | Repository API のクエリ性能ベンチマーク (12地点)               |
-
-対象ソースは `DataSourceManager` の有効ソース (`?sources=` や localStorage で絞り込み可能)。
-
-### `v2-load` の出力
-
-- Phase 1: 有効ソースの `data.json` を並列ロード (件数、所要時間)
-- Phase 2: 成功ソースの `shapes.json` + `insights.json` を並列ロード
-- Phase 3: `global/insights.json` をロード
-- サマリー: `Total: Xms (data=Xms, shapes+insights=Xms, global=Xms)`
-
-`FetchDataSourceV2` の debug ログでソースごとの network/parse 内訳も確認可能。
-
-### `repo-bench` の出力
-
-`?repo=` で選択した Repository の API を 12 の HOME_LOCATIONS で呼び出し、所要時間を計測。
-
-```text
-?diag=repo-bench           → repo のベンチマーク
-```
-
-計測対象: getAllStops, getRouteShapes, getAllSourceMeta, getStopsInBounds, getStopsNearby, getUpcomingTimetableEntries, getRouteTypesForStop, getFullDayTimetableEntries
-
-### diagnostics の追加
-
-`src/diagnostics/index.ts` の `switch` に `case` を追加する。`main.tsx` の変更は不要。
-
-## セットアップ
-
-### Setup Agent skills
-
-外部 skill は手動でインストールが必要。clone 後に以下を実行:
-
-#### Setup shadcn/ui
+#### shadcn/ui
 
 - [Skills - shadcn/ui](https://ui.shadcn.com/docs/skills)
 
-## deps 更新に関する注意事項 (随時更新)
+## Pipeline Independence
 
-> [!NOTE]
-> このセクションは経験ベースで随時更新します。新しい知見・回避策・解除条件が得られたら追記してください。
+`pipeline/` は web app へ静的データを供給する独立 subsystem。root docs は web app が生成物をどう利用するかを説明してよいが、pipeline 内部の source of truth にはしない。
 
-### 当面更新を見送るパッケージ
-
-過去にバージョンを上げた際にローカル環境で動作しなくなった経験、あるいはエコシステムの追従待ちのため、しばらく現状維持とします。patch 更新は通常通り行って構いませんが、major / 大きな minor 更新は安全が確認できるまで控えてください。
-
-- `eslint` `^9` → `^10` — 破壊的変更が多いため様子見
-- `vite` `^7` → `^8` — `@vitejs/plugin-react` v6 が Vite 8+ 必須。セットで更新する必要があり、関連プラグインの追従待ち
-- `vitest` `^4.0` → `^4.1` — Storybook 10.3 が `vitest@4.0.18` を peer で要求しているため Storybook 側の対応待ち。`@vitest/*` 系 (`@vitest/coverage-v8`, `@vitest/browser-playwright` 等) も同じ理由で固定
-- `serialize-javascript` 脆弱性 (`vite-plugin-pwa` 経由) — upstream の修正待ち
-- `eslint` 関連プラグイン (`typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, `eslint-plugin-storybook`) — `eslint` の major 更新を見送っている関係で同じく現状維持
-
-Dependabot / Renovate を利用する場合は、上記パッケージの該当バージョン更新を ignore する設定を検討してください。
+pipeline 側を変更するときは [pipeline/README.md](./pipeline/README.md) と [pipeline/docs/](./pipeline/docs/) を優先して参照する。
