@@ -35,6 +35,8 @@ const {
   mockMapOverlay,
   mockInfoDialog,
   mockDataSourceSettingsDialog,
+  mockStopSearchDialog,
+  mockShortcutHelpDialog,
   mockUseKeyboardShortcuts,
   mockUseTimetable,
   mockOpenStopTimetable,
@@ -57,6 +59,8 @@ const {
   mockMapOverlay: vi.fn(),
   mockInfoDialog: vi.fn(),
   mockDataSourceSettingsDialog: vi.fn(),
+  mockStopSearchDialog: vi.fn(),
+  mockShortcutHelpDialog: vi.fn(),
   mockUseKeyboardShortcuts: vi.fn(),
   mockUseTimetable: vi.fn<() => UseTimetableReturn>(),
   mockOpenStopTimetable: vi.fn(),
@@ -194,7 +198,10 @@ vi.mock('../components/dialog/timetable-modal', () => ({
 }));
 
 vi.mock('../components/dialog/stop-search-dialog', () => ({
-  StopSearchDialog: () => null,
+  StopSearchDialog: (props: unknown) => {
+    mockStopSearchDialog(props);
+    return null;
+  },
 }));
 
 vi.mock('../components/dialog/info-dialog', () => ({
@@ -207,6 +214,13 @@ vi.mock('../components/dialog/info-dialog', () => ({
 vi.mock('../components/dialog/data-source-settings-dialog', () => ({
   DataSourceSettingsDialog: (props: unknown) => {
     mockDataSourceSettingsDialog(props);
+    return null;
+  },
+}));
+
+vi.mock('../components/dialog/shortcut-help-dialog', () => ({
+  ShortcutHelpDialog: (props: unknown) => {
+    mockShortcutHelpDialog(props);
     return null;
   },
 }));
@@ -309,6 +323,8 @@ describe('App anchor error toast', () => {
     mockMapOverlay.mockReset();
     mockInfoDialog.mockReset();
     mockDataSourceSettingsDialog.mockReset();
+    mockStopSearchDialog.mockReset();
+    mockShortcutHelpDialog.mockReset();
     mockUseKeyboardShortcuts.mockReset();
     mockUseTimetable.mockReset();
     mockOpenStopTimetable.mockReset();
@@ -875,6 +891,108 @@ describe('App anchor error toast', () => {
     await waitFor(() => {
       const options = mockUseKeyboardShortcuts.mock.lastCall?.[0] as { enabled: boolean };
       expect(options.enabled).toBe(true);
+    });
+  });
+
+  it('suppresses keyboard shortcuts while StopSearchDialog is open and re-enables on close', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockUseKeyboardShortcuts).toHaveBeenCalled();
+      expect(mockMapOverlay).toHaveBeenCalled();
+    });
+
+    const overlayProps = mockMapOverlay.mock.lastCall?.[0] as { onSearchClick: () => void };
+    act(() => {
+      overlayProps.onSearchClick();
+    });
+
+    await waitFor(() => {
+      const options = mockUseKeyboardShortcuts.mock.lastCall?.[0] as { enabled: boolean };
+      expect(options.enabled).toBe(false);
+    });
+
+    const searchProps = mockStopSearchDialog.mock.lastCall?.[0] as {
+      onOpenChange: (open: boolean) => void;
+    };
+    act(() => {
+      searchProps.onOpenChange(false);
+    });
+
+    await waitFor(() => {
+      const options = mockUseKeyboardShortcuts.mock.lastCall?.[0] as { enabled: boolean };
+      expect(options.enabled).toBe(true);
+    });
+  });
+
+  it('suppresses keyboard shortcuts while ShortcutHelpDialog is open and re-enables on close', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockUseKeyboardShortcuts).toHaveBeenCalled();
+    });
+
+    // ShortcutHelpDialog has no UI trigger; the `?` keyboard shortcut is the
+    // only entry point. Drive it via the captured `onOpenHelp` handler.
+    const initialOptions = mockUseKeyboardShortcuts.mock.lastCall?.[0] as {
+      enabled: boolean;
+      handlers: { onOpenHelp: () => void };
+    };
+    expect(initialOptions.enabled).toBe(true);
+    act(() => {
+      initialOptions.handlers.onOpenHelp();
+    });
+
+    await waitFor(() => {
+      const options = mockUseKeyboardShortcuts.mock.lastCall?.[0] as { enabled: boolean };
+      expect(options.enabled).toBe(false);
+    });
+
+    const helpProps = mockShortcutHelpDialog.mock.lastCall?.[0] as {
+      onOpenChange: (open: boolean) => void;
+    };
+    act(() => {
+      helpProps.onOpenChange(false);
+    });
+
+    await waitFor(() => {
+      const options = mockUseKeyboardShortcuts.mock.lastCall?.[0] as { enabled: boolean };
+      expect(options.enabled).toBe(true);
+    });
+  });
+
+  it('closes the search modal after a stop selection (handleSearchSelect path)', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockMapOverlay).toHaveBeenCalled();
+      expect(mockStopSearchDialog).toHaveBeenCalled();
+    });
+
+    // Open via the overlay click path.
+    const overlayProps = mockMapOverlay.mock.lastCall?.[0] as { onSearchClick: () => void };
+    act(() => {
+      overlayProps.onSearchClick();
+    });
+
+    await waitFor(() => {
+      const searchProps = mockStopSearchDialog.mock.lastCall?.[0] as { open: boolean };
+      expect(searchProps.open).toBe(true);
+    });
+
+    // Invoke the selection callback exactly like StopSearchDialog would when
+    // the user picks a result. `handleSearchSelect` must close the modal as
+    // a side effect.
+    const openedSearchProps = mockStopSearchDialog.mock.lastCall?.[0] as {
+      onSelectStop: (stop: ReturnType<typeof makeStop>, routeTypes: number[]) => void;
+    };
+    act(() => {
+      openedSearchProps.onSelectStop(makeStop('search-target'), [3]);
+    });
+
+    await waitFor(() => {
+      const searchProps = mockStopSearchDialog.mock.lastCall?.[0] as { open: boolean };
+      expect(searchProps.open).toBe(false);
     });
   });
 });

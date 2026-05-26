@@ -8,26 +8,43 @@ export interface UseAppDialogsReturn {
   setInfoDialogOpen: Dispatch<SetStateAction<boolean>>;
   dataSourceSettingsDialogOpen: boolean;
   setDataSourceSettingsDialogOpen: Dispatch<SetStateAction<boolean>>;
+  searchModalOpen: boolean;
+  setSearchModalOpen: Dispatch<SetStateAction<boolean>>;
+  shortcutHelpOpen: boolean;
+  setShortcutHelpOpen: Dispatch<SetStateAction<boolean>>;
   openInfoDialog: () => void;
   openDataSourceSettingsDialog: () => void;
+  openSearchModal: () => void;
+  openShortcutHelp: () => void;
 }
 
 /**
- * Owns the open state for the `App`-root info / data-source-settings dialog
- * pair.
+ * Owns the open state for the four `App`-root primary modals:
+ * info, data-source-settings, search, and shortcut-help.
  *
- * These two dialogs share an opening flow: `InfoDialog` exposes a button
- * that opens `DataSourceSettingsDialog` via `onOpenDataSourceSettings`,
- * so their state lives together. Other primary modals (search /
- * shortcut-help / timetable / trip-inspection) intentionally stay
- * outside this hook; they are tracked separately because each has its
- * own opening trigger and lifecycle.
+ * `InfoDialog` exposes a button that opens `DataSourceSettingsDialog`
+ * via `onOpenDataSourceSettings`, so those two share a lifecycle.
+ * `searchModalOpen` and `shortcutHelpOpen` are independent surfaces,
+ * but they share the same shape (boolean open flag with named open
+ * action) and feed `useKeyboardShortcuts.enabled` the same way, so
+ * they live together for a single source of truth on primary modal
+ * open state.
  *
- * @returns Open state, setter, and named open action for each dialog.
+ * Modals owned by their own domain hooks (timetable / trip-inspection)
+ * intentionally stay outside this hook because they carry payload
+ * (data / snapshot) rather than a simple open flag.
+ *
+ * Each open state exposes both a `Dispatch<SetStateAction<boolean>>`
+ * setter (compatible with Radix `onOpenChange`) and a named action
+ * such as `openInfoDialog` for callers that want intent-clear wiring.
+ *
+ * @returns Open state, setter, and named open action for each modal.
  */
 export function useAppDialogs(): UseAppDialogsReturn {
   const [infoDialogOpen, setInfoDialogOpen] = useState(false);
   const [dataSourceSettingsDialogOpen, setDataSourceSettingsDialogOpen] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
   const openInfoDialog = useCallback(() => {
     setInfoDialogOpen(true);
@@ -37,12 +54,26 @@ export function useAppDialogs(): UseAppDialogsReturn {
     setDataSourceSettingsDialogOpen(true);
   }, []);
 
+  const openSearchModal = useCallback(() => {
+    setSearchModalOpen(true);
+  }, []);
+
+  const openShortcutHelp = useCallback(() => {
+    setShortcutHelpOpen(true);
+  }, []);
+
   return {
     infoDialogOpen,
     setInfoDialogOpen,
     dataSourceSettingsDialogOpen,
     setDataSourceSettingsDialogOpen,
+    searchModalOpen,
+    setSearchModalOpen,
+    shortcutHelpOpen,
+    setShortcutHelpOpen,
     openInfoDialog,
     openDataSourceSettingsDialog,
+    openSearchModal,
+    openShortcutHelp,
   };
 }
