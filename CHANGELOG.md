@@ -9,6 +9,11 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- App orchestration: viewport stop fetch を `useStopsForBounds` に分離し、nearby stop 派生データを `deriveFilteredNearbyStops` に集約、timetable / trip inspection の open outcome message mapping を pure helper に移した。これにより `App` の責務を縮小し、viewport fetch の stale response が最新 state を上書きしないようにした。
+- App dialogs: `InfoDialog` / `DataSourceSettingsDialog` の open state を `useAppDialogs` に分離し、info dialog から data source settings を開く導線と keyboard shortcut suppression の挙動を維持したまま、`App` の dialog state owner を整理した。
+
 ## [2026.05.25]
 
 ### Added
