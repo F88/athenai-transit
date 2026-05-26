@@ -16,7 +16,7 @@ and this project adheres to [CalVer](https://calver.org/).
 - Route shapes loading: `App` 直下の mount-once fetch (`useState<RouteShape[]>` + `useEffect`) を `useRouteShapes` hook に分離した。`MapView` に渡す `routeShapes` の値・挙動は変えていない。
 - App-wide filter: `showOriginOnly` / `showBoardableOnly` / `omitEmptyStopsOverride` と派生する late-night policy (`isLateNight` / `effectiveOmitEmptyStops` / forced-on rules) を `useGlobalFilter(dateTime)` に集約した。`globalFilter` の object shape と toggle handlers の挙動、`BottomSheet` / `TimetableModal` / nearby selector への入力は変えていない。
 - Stop reference helpers: `App` 内に inline で書かれていた stop 参照解決の重複 (anchor / history map lookup と、live meta / bare Stop からの `StopReferenceSnapshot` 構築) を `domain/transit/stop-meta-lookup.ts` の `lookupStopMetaFromMap` と `domain/transit/stop-navigation.ts` の `buildSelectionSnapshotFromMeta` / `buildSelectionSnapshotFromStop` に切り出した。`buildHistoryNavigationPayload` も内部で新しい builder を使うよう更新。挙動は維持。
-- App startup lifecycle hooks: `App` 直下の 2 つの起動時 side effect (anchor metadata refresh と `?stop=` URL param 解決) をそれぞれ `useAnchorRefresh` / `useStopParamHandler` に分離した。one-shot guard ref + useEffect の pattern を hook 内に閉じ込め、App は hook の 1 行呼出しのみになった。挙動は維持 (anchor refresh は依然「初回 anchors が non-empty になった時に 1 回だけ」、`?stop=` は依然 mid-flight guard 込みの 1 回限り)。
+- App startup lifecycle hooks: `App` 直下の 2 つの起動時 side effect (anchor metadata refresh と `?stop=` URL param 解決) をそれぞれ `useAnchorRefresh` / `useStopParamHandler` に分離した。one-shot guard ref + useEffect の pattern を hook 内に閉じ込め、App は hook の 1 行呼出しのみになった。挙動は維持 (anchor refresh は依然「初回 anchors が non-empty になった時に 1 回だけ」、`?stop=` は callback churn 中も duplicate fetch しない 1 回限り)。
 
 ## [2026.05.25]
 

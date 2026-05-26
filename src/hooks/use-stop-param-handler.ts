@@ -26,19 +26,18 @@ export interface UseStopParamHandlerParams {
  * resolve the stop_id against the repository, pan / focus the map to
  * it, and record the resolved snapshot in history.
  *
- * The internal `handled` ref guarantees the workflow runs at most
- * once per `useStopParamHandler` lifetime, including across the
- * async repository fetch -- the post-resolve continuation re-checks
- * `handled.current` so a re-render that swaps the dep callbacks does
- * not double-fire focus / record.
+ * The internal `started` ref guarantees the repository lookup starts
+ * at most once per `useStopParamHandler` lifetime. The caller
+ * callbacks are kept in a ref so callback identity churn during the
+ * async lookup neither starts duplicate fetches nor forces the
+ * continuation to use stale callbacks.
  *
- * No-param path: the ref is marked handled immediately so subsequent
+ * No-param path: the ref is marked started immediately so subsequent
  * re-renders are no-ops.
  *
  * Not-found path: a warn is logged (`'StopParamHandler'` namespace,
- * separate from the App-level logger so the source is unambiguous)
- * and the ref is marked handled; the map is not panned and no
- * history entry is recorded.
+ * separate from the App-level logger so the source is unambiguous);
+ * the map is not panned and no history entry is recorded.
  *
  * @param params - See {@link UseStopParamHandlerParams}.
  */
@@ -47,34 +46,35 @@ export function useStopParamHandler({
   navigateAndFocusStop,
   recordStopMetaSelection,
 }: UseStopParamHandlerParams): void {
-  const handled = useRef(false);
+  const started = useRef(false);
+  const callbacksRef = useRef({ navigateAndFocusStop, recordStopMetaSelection });
+
   useEffect(() => {
-    if (handled.current) {
+    callbacksRef.current = { navigateAndFocusStop, recordStopMetaSelection };
+  }, [navigateAndFocusStop, recordStopMetaSelection]);
+
+  useEffect(() => {
+    if (started.current) {
       return;
     }
 
-    const markHandled = () => {
-      handled.current = true;
-    };
-
     const stopId = getStopParam();
+    started.current = true;
+
     if (!stopId) {
-      markHandled();
       return;
     }
 
     void repo.getStopMetaById(stopId).then((result) => {
-      if (handled.current) {
-        return;
-      }
       if (!result.success) {
         logger.warn(`?stop=${stopId}: not found`);
-        markHandled();
         return;
       }
-      navigateAndFocusStop('apply-stop-param', result.data.stop);
-      recordStopMetaSelection(result.data);
-      markHandled();
+
+      const { navigateAndFocusStop: navigate, recordStopMetaSelection: record } =
+        callbacksRef.current;
+      navigate('apply-stop-param', result.data.stop);
+      record(result.data);
     });
-  }, [navigateAndFocusStop, recordStopMetaSelection, repo]);
+  }, [repo]);
 }

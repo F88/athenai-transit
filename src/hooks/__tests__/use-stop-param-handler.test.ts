@@ -72,10 +72,16 @@ describe('useStopParamHandler', () => {
     expect(recordStopMetaSelection).not.toHaveBeenCalled();
   });
 
-  it('does not re-fire after the initial handle, even when dep callbacks change', async () => {
+  it('does not re-fetch and uses latest callbacks when dep callbacks change mid-flight', async () => {
     vi.spyOn(queryParams, 'getStopParam').mockReturnValue('A');
     const stopMeta = makeStopMeta(makeStop('A', 35, 139));
-    const getStopMetaById = vi.fn().mockResolvedValue({ success: true, data: stopMeta });
+    let resolveLookup: (value: { success: true; data: typeof stopMeta }) => void = () => {};
+    const getStopMetaById = vi.fn(
+      () =>
+        new Promise<{ success: true; data: typeof stopMeta }>((resolve) => {
+          resolveLookup = resolve;
+        }),
+    );
     const repo = makeRepo({ getStopMetaById });
     const initialNavigate = vi.fn();
     const initialRecord = vi.fn();
@@ -92,23 +98,39 @@ describe('useStopParamHandler', () => {
       },
     );
 
-    await waitFor(() => {
-      expect(initialNavigate).toHaveBeenCalledTimes(1);
-    });
     expect(getStopMetaById).toHaveBeenCalledTimes(1);
 
-    // Swap dep callbacks (simulates `App` re-render with new closures).
+    // Swap dep callbacks while the repository lookup is still pending.
     const nextNavigate = vi.fn();
     const nextRecord = vi.fn();
     rerender({ navigate: nextNavigate, record: nextRecord });
+
+    expect(getStopMetaById).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolveLookup({ success: true, data: stopMeta });
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(nextNavigate).toHaveBeenCalledTimes(1);
+    });
+
+    expect(nextNavigate).toHaveBeenCalledWith('apply-stop-param', stopMeta.stop);
+    expect(nextRecord).toHaveBeenCalledWith(stopMeta);
+    expect(initialNavigate).not.toHaveBeenCalled();
+    expect(initialRecord).not.toHaveBeenCalled();
+
+    // Later callback churn is still ignored for fetching because the
+    // hook has already started handling the URL param.
+    const thirdNavigate = vi.fn();
+    const thirdRecord = vi.fn();
+    rerender({ navigate: thirdNavigate, record: thirdRecord });
     await act(async () => {
       await Promise.resolve();
     });
 
-    // Even though the effect re-runs (deps changed), the `handled` ref
-    // short-circuits before the fetch.
     expect(getStopMetaById).toHaveBeenCalledTimes(1);
-    expect(nextNavigate).not.toHaveBeenCalled();
-    expect(nextRecord).not.toHaveBeenCalled();
+    expect(thirdNavigate).not.toHaveBeenCalled();
+    expect(thirdRecord).not.toHaveBeenCalled();
   });
 });
