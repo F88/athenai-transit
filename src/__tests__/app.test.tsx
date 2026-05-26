@@ -6,6 +6,7 @@ import { RootErrorBoundary } from '../components/error-boundary';
 import { makeRepo, makeRoute, makeStop, makeStopMeta } from './helpers';
 import type { StopHistoryEntry } from '../domain/transit/stop-history';
 import type { UseStopHistoryReturn } from '../hooks/use-stop-history';
+import type { UseAnchorToggleReturn } from '../hooks/use-anchor-toggle';
 import type { UseAnchorsReturn } from '../hooks/use-anchors';
 import type { TransitRepository } from '../repositories/transit-repository';
 import type { UseTimetableReturn } from '../hooks/use-timetable';
@@ -23,6 +24,7 @@ const {
   mockToastError,
   mockToastWarning,
   mockUseAnchors,
+  mockUseAnchorToggle,
   mockGetRouteShapes,
   mockClearAnchorError,
   mockGetServiceDayMinutes,
@@ -47,6 +49,7 @@ const {
   mockToastError: vi.fn(),
   mockToastWarning: vi.fn(),
   mockUseAnchors: vi.fn<(...args: unknown[]) => UseAnchorsReturn>(),
+  mockUseAnchorToggle: vi.fn<() => UseAnchorToggleReturn>(),
   mockGetRouteShapes: vi.fn(),
   mockClearAnchorError: vi.fn(),
   mockGetServiceDayMinutes: vi.fn<GetServiceDayMinutes>(),
@@ -151,6 +154,10 @@ vi.mock('../hooks/use-route-stops', () => ({
 
 vi.mock('../hooks/use-anchors', () => ({
   useAnchors: (...args: unknown[]) => mockUseAnchors(...args),
+}));
+
+vi.mock('../hooks/use-anchor-toggle', () => ({
+  useAnchorToggle: () => mockUseAnchorToggle(),
 }));
 
 vi.mock('../lib/query-params', () => ({
@@ -311,6 +318,7 @@ describe('App anchor error toast', () => {
     mockToastError.mockReset();
     mockToastWarning.mockReset();
     mockUseAnchors.mockReset();
+    mockUseAnchorToggle.mockReset();
     mockGetRouteShapes.mockReset();
     mockClearAnchorError.mockReset();
     mockGetServiceDayMinutes.mockReset();
@@ -353,6 +361,9 @@ describe('App anchor error toast', () => {
       updateAnchor: vi.fn(),
       batchUpdateAnchors: vi.fn(),
       hasAnchor: vi.fn(() => false),
+    });
+    mockUseAnchorToggle.mockReturnValue({
+      handleToggleAnchorByStopId: vi.fn(),
     });
     mockUseDateTime.mockReturnValue({
       dateTime: new Date('2026-03-28T12:00:00Z'),
@@ -1056,6 +1067,35 @@ describe('App anchor error toast', () => {
     await waitFor(() => {
       const searchProps = mockStopSearchDialog.mock.lastCall?.[0] as { open: boolean };
       expect(searchProps.open).toBe(false);
+    });
+  });
+
+  it('passes the anchor toggle handler through to all App entry points', async () => {
+    const handleToggleAnchorByStopId = vi.fn();
+    mockUseAnchorToggle.mockReturnValue({
+      handleToggleAnchorByStopId,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      const layoutProps = mockAppLayout.mock.lastCall?.[0] as {
+        bottomSheetProps: {
+          onToggleAnchor: typeof handleToggleAnchorByStopId;
+        };
+      };
+      const mapOverlayProps = mockMapOverlay.mock.lastCall?.[0] as {
+        onPortalRemove: (entry: { snapshot: { stopId: string } }) => void;
+      };
+      const stopSearchDialogProps = mockStopSearchDialog.mock.lastCall?.[0] as {
+        onToggleAnchor: typeof handleToggleAnchorByStopId;
+      };
+
+      expect(layoutProps.bottomSheetProps.onToggleAnchor).toBe(handleToggleAnchorByStopId);
+      expect(stopSearchDialogProps.onToggleAnchor).toBe(handleToggleAnchorByStopId);
+
+      mapOverlayProps.onPortalRemove({ snapshot: { stopId: 'portal-stop' } });
+      expect(handleToggleAnchorByStopId).toHaveBeenCalledWith('portal-stop');
     });
   });
 });

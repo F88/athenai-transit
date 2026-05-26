@@ -1,5 +1,5 @@
 import type { StopReferenceSnapshot } from '@/types/app/stop-reference-snapshot';
-import type { AppRouteTypeValue, Stop } from '@/types/app/transit';
+import type { AppRouteTypeValue } from '@/types/app/transit';
 import type { StopWithMeta } from '@/types/app/transit-composed';
 
 import { createStopReferenceSnapshot } from '@/domain/transit/stop-reference-snapshot';
@@ -173,24 +173,4 @@ export function buildAnchorRefreshUpdates(
         anchor.snapshot.agencyNames.some((name, i) => name !== update.snapshot.agencyNames[i]),
     )
     .map(({ update }) => update);
-}
-
-/**
- * Build a minimal Stop for anchor navigation from the persisted snapshot.
- */
-export function buildAnchorSelectionStop(entry: AnchorEntry): Stop | null {
-  if (entry.snapshot.lat === null || entry.snapshot.lon === null) {
-    return null;
-  }
-
-  return {
-    stop_id: entry.snapshot.stopId,
-    stop_name: entry.snapshot.name,
-    stop_names: {},
-    stop_lat: entry.snapshot.lat,
-    stop_lon: entry.snapshot.lon,
-    location_type: 0,
-    agency_id: '',
-    platform_code: entry.snapshot.platformCode,
-  };
 }

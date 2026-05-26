@@ -12,6 +12,11 @@ const logger = createLogger('Anchors');
 
 /**
  * Return type for the useAnchors hook.
+ *
+ * This hook exposes anchor state and persistence-facing mutations.
+ * UI-specific orchestration such as toast messages, display-name
+ * resolution, and toggle branching belongs in `useAnchorToggle`, not
+ * here.
  */
 export interface UseAnchorsReturn {
   /** Anchor entries, most recently added first. */
@@ -38,6 +43,20 @@ export interface UseAnchorsReturn {
  * The hook owns the React state and delegates persistence to the repository.
  * All mutation methods are async and return {@link Result} — the repository
  * determines the actual storage mechanism (localStorage, Web API, etc.).
+ *
+ * Responsibility boundary:
+ *
+ * - `useAnchors` owns anchor state, repository synchronization, and
+ *   persistence-shaped CRUD methods.
+ * - `useAnchorToggle` sits one layer above this hook and handles
+ *   App-specific toggle orchestration such as deciding add vs remove,
+ *   resolving live metadata for labels, building snapshots for new
+ *   anchors, and emitting toast notifications.
+ *
+ * Reach for this hook when the caller needs the anchor collection or
+ * repository-backed mutations directly. Reach for `useAnchorToggle`
+ * when the caller needs the user-facing "toggle this stop's anchor
+ * state" behavior.
  *
  * @param repo - The repository to use for persistence.
  * @returns Anchor state and mutation functions.

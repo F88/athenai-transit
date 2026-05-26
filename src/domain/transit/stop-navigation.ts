@@ -1,10 +1,19 @@
 import type { StopReferenceSnapshot } from '../../types/app/stop-reference-snapshot';
 import type { AppRouteTypeValue, Stop } from '../../types/app/transit';
 import type { StopWithMeta } from '../../types/app/transit-composed';
+import type { AnchorEntry } from '../portal/anchor';
 import type { LangChain } from './i18n/resolve-lang-chain';
 import { resolveStopRouteTypes } from './resolve-stop-route-types';
-import { buildHistorySelectionStop, type StopHistoryEntry } from './stop-history';
+import type { StopHistoryEntry } from './stop-history';
 import { createStopReferenceSnapshot } from './stop-reference-snapshot';
+
+/**
+ * Minimal persisted entry shape accepted by stop-navigation helpers.
+ */
+export interface SnapshotBackedStopEntry {
+  /** Durable stop snapshot used for fallback navigation. */
+  snapshot: StopReferenceSnapshot;
+}
 
 /**
  * Build a `StopReferenceSnapshot` from live `StopWithMeta`.
@@ -61,18 +70,61 @@ export function buildSelectionSnapshotFromStop(
   return createStopReferenceSnapshot(stop, routeTypes, dataLang);
 }
 
-export interface HistoryNavigationPayload {
+/**
+ * Resolved stop target and snapshot used by selection flows.
+ */
+export interface StopNavigationPayload {
   stop: Stop;
   snapshot: StopReferenceSnapshot;
 }
 
-export function buildHistoryNavigationPayload(
-  stopHistoryEntry: StopHistoryEntry,
+/**
+ * Build a minimal Stop from a persisted stop snapshot.
+ *
+ * Used as the fallback navigation target when current repository
+ * metadata is unavailable but the durable snapshot still has
+ * coordinates.
+ *
+ * @param snapshot - Persisted stop snapshot.
+ * @returns Minimal Stop for navigation, or null when coordinates are missing.
+ */
+export function buildFallbackStopFromSnapshot(snapshot: StopReferenceSnapshot): Stop | null {
+  if (snapshot.lat === null || snapshot.lon === null) {
+    return null;
+  }
+
+  return {
+    stop_id: snapshot.stopId,
+    stop_name: snapshot.name,
+    stop_names: {},
+    stop_lat: snapshot.lat,
+    stop_lon: snapshot.lon,
+    location_type: 0,
+    agency_id: '',
+    platform_code: snapshot.platformCode,
+  };
+}
+
+/**
+ * Resolve a durable stop reference into a navigation payload.
+ *
+ * The resolution strategy is shared by history and portal selection:
+ * prefer current repository metadata when available, otherwise fall
+ * back to the persisted snapshot.
+ *
+ * @param entry - Durable stop reference entry.
+ * @param routeTypeMap - Route-type lookup used when rebuilding snapshots from live meta.
+ * @param dataLang - Preferred display language chain.
+ * @param lookupStopMeta - Live metadata lookup for the entry's stopId.
+ * @returns Navigation payload, or null when neither live nor persisted coordinates can navigate.
+ */
+export function buildPersistedStopNavigationPayload(
+  entry: SnapshotBackedStopEntry,
   routeTypeMap: ReadonlyMap<string, AppRouteTypeValue[]>,
   dataLang: LangChain,
-  lookupHistoryStopMeta: (stopId: string) => StopWithMeta | null,
-): HistoryNavigationPayload | null {
-  const stopMeta = lookupHistoryStopMeta(stopHistoryEntry.snapshot.stopId);
+  lookupStopMeta: (stopId: string) => StopWithMeta | null,
+): StopNavigationPayload | null {
+  const stopMeta = lookupStopMeta(entry.snapshot.stopId);
 
   if (stopMeta != null) {
     return {
@@ -81,8 +133,7 @@ export function buildHistoryNavigationPayload(
     };
   }
 
-  // create a minimal Stop from the snapshot
-  const minimalStop = buildHistorySelectionStop(stopHistoryEntry);
+  const minimalStop = buildFallbackStopFromSnapshot(entry.snapshot);
 
   if (minimalStop == null) {
     return null;
@@ -90,6 +141,42 @@ export function buildHistoryNavigationPayload(
 
   return {
     stop: minimalStop,
-    snapshot: stopHistoryEntry.snapshot,
+    snapshot: entry.snapshot,
   };
+}
+
+/**
+ * Resolve a history entry into a navigation payload.
+ *
+ * @param entry - Persisted history entry.
+ * @param routeTypeMap - Route-type lookup used when rebuilding snapshots from live meta.
+ * @param dataLang - Preferred display language chain.
+ * @param lookupStopMeta - Live metadata lookup for the history entry's stopId.
+ * @returns Navigation payload, or null when neither live nor persisted coordinates can navigate.
+ */
+export function buildHistoryNavigationPayload(
+  entry: StopHistoryEntry,
+  routeTypeMap: ReadonlyMap<string, AppRouteTypeValue[]>,
+  dataLang: LangChain,
+  lookupStopMeta: (stopId: string) => StopWithMeta | null,
+): StopNavigationPayload | null {
+  return buildPersistedStopNavigationPayload(entry, routeTypeMap, dataLang, lookupStopMeta);
+}
+
+/**
+ * Resolve a portal anchor into a navigation payload.
+ *
+ * @param entry - Selected anchor entry.
+ * @param routeTypeMap - Route-type lookup used when rebuilding snapshots from live meta.
+ * @param dataLang - Preferred display language chain.
+ * @param lookupStopMeta - Live metadata lookup for the anchor stopId.
+ * @returns Navigation payload, or null when neither live nor persisted coordinates can navigate.
+ */
+export function buildPortalNavigationPayload(
+  entry: AnchorEntry,
+  routeTypeMap: ReadonlyMap<string, AppRouteTypeValue[]>,
+  dataLang: LangChain,
+  lookupStopMeta: (stopId: string) => StopWithMeta | null,
+): StopNavigationPayload | null {
+  return buildPersistedStopNavigationPayload(entry, routeTypeMap, dataLang, lookupStopMeta);
 }
