@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.26]
+
 ### Changed
 
 - Documentation: `DEVELOPMENT.md` を開発者向け入口に縮約し、map runtime、runtime configuration、PWA/platform、styling、transit data/repository、dependency notes の詳細を `docs/` 配下へ分割した。あわせて `README.md` に Documentation index を追加し、`pipeline/` が独立した data-build subsystem であることを明記した。
