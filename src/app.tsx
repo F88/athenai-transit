@@ -51,6 +51,7 @@ import { getTripInspectionOpenOutcomeMessage } from './domain/transit/trip-inspe
 
 // hooks
 import { useAnchors } from './hooks/use-anchors';
+import { useAppDialogs } from './hooks/use-app-dialogs';
 import { useDateTime } from './hooks/use-date-time';
 import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
 import { useLoadResult } from './hooks/use-load-result';
@@ -248,8 +249,14 @@ export default function App() {
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
 
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [infoDialogOpen, setInfoDialogOpen] = useState(false);
-  const [dataSourceSettingsDialogOpen, setDataSourceSettingsDialogOpen] = useState(false);
+  const {
+    infoDialogOpen,
+    setInfoDialogOpen,
+    dataSourceSettingsDialogOpen,
+    setDataSourceSettingsDialogOpen,
+    openInfoDialog,
+    openDataSourceSettingsDialog,
+  } = useAppDialogs();
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const {
     tripInspectionSnapshot,
@@ -1098,7 +1105,7 @@ export default function App() {
             dataLang={langChain}
             onToggleStopType={handleToggleStopType}
             onSearchClick={() => setSearchModalOpen(true)}
-            onInfoClick={() => setInfoDialogOpen(true)}
+            onInfoClick={openInfoDialog}
             onLocated={handleLocated}
             autoLocateEnabled={autoLocateEnabled}
             onEnableAutoLocate={enableAutoLocate}
@@ -1165,7 +1172,7 @@ export default function App() {
       <InfoDialog
         open={infoDialogOpen}
         onOpenChange={setInfoDialogOpen}
-        onOpenDataSourceSettings={() => setDataSourceSettingsDialogOpen(true)}
+        onOpenDataSourceSettings={openDataSourceSettingsDialog}
       />
       <DataSourceSettingsDialog
         open={dataSourceSettingsDialogOpen}
