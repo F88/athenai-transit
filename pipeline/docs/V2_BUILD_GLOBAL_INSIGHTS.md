@@ -222,12 +222,36 @@ group key `ho` の算出: 各ソースの calendar 範囲内で、少なくと�
 
 ## 処理フロー
 
-1. targets リストで指定された全ソースの DataBundle を読み込み
+1. targets リストで指定された全ソースの DataBundle を読み込み。 `data.json` が無ければその prefix だけ skip(`status: 'skipped'`)し、parse 失敗等は `status: 'failed'` として next prefix へ続行する
 2. 各ソースの calendar 範囲について、少なくとも 1 回の日曜に active になる service を抽出 (`calendar_dates` add/remove も考慮)
 3. 全停留所の StopEntry を構築 (stop_id, lat, lon, routeIds, routeFreqs, parentStation, locationType)
 4. l=0 の各停留所について `buildStopGeo()` で nr/wp/cn を single-pass 全探索で計算
 5. l=1 の各停留所について `buildParentStopGeo()` で nr/wp は子の min、cn は parent 座標で直接計算
-6. `writeGlobalInsightsBundle()` で `global/insights.json` に出力
+6. `determineAggregateExitCode(results)` で exit code を確定する。 全 prefix が skip / failed の場合(`EXIT_ERROR`)は次の write を行わず既存の `global/insights.json` を温存する
+7. 1 件以上 ok があれば `writeGlobalInsightsBundle()` で `global/insights.json` を atomic write する
+8. per-target results を集約した summary 表(`printAggregateSummary`)を出力する
+
+## required / optional の扱い
+
+| 入力                    | 扱い          | 理由                                                                                                                       |
+| ----------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| per-source `data.json`  | skip-tolerant | upstream provider のリソース消失等で欠損し得る。 該当 prefix のみ skip して他は処理続行                                    |
+| target list `--targets` | required      | 指定無しは `--help` 扱いで usage を出力し exit 0(機能不全ではなく usage 表示の意図)。 catch 経路の fatal precondition は別 |
+
+per-source 入力の欠損は **skip + warn**(`status: 'skipped'`)、 parse 失敗等は **failed**(`status: 'failed'`)として results に記録される。 catalog builder と同じ pattern で、 1 source の upstream 不調で global-insights build 全体が止まることを避けつつ、 workflow には partial の signal を出して human attention を促す。
+
+write failure 等の致命例外は catch 経路で **fatal precondition**(`EXIT_ERROR`)として停止し、 既存 `global/insights.json` を温存する。
+
+## Exit Code
+
+| code | label              | 意味                                                                                                                          |
+| ---- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| 0    | ok                 | 全 target prefix が ok                                                                                                        |
+| 1    | partial failure    | 1 件以上の prefix が ok。 残りは skip / failed として results に記録                                                          |
+| 2    | all failed         | `determineAggregateExitCode` 経由: 全 target prefix が skip / failed(`global/insights.json` は **書き換えず** 既存を温存)     |
+| 2    | fatal precondition | catch 経路: target list ファイルの欠落 / parse error / write failure 等。 `global/insights.json` は **書き換えず** 既存を温存 |
+
+catalog と同様、 fatal precondition で停止した場合は `Exit code: 2 (fatal precondition)` の label を出力し、 `determineAggregateExitCode` 経由の 2(all failed)と区別する。 数値は両者とも 2 なので、 workflow の `Fail on total` 分岐は同じく発火する。
 
 ## 未決定事項
 

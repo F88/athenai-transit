@@ -101,11 +101,13 @@ Usage: npx tsx pipeline/scripts/pipeline/app-data-v2/build-data-source-catalog.t
 
 prefix 妥当性検証では `loadAllGtfsSources()` / `discoverOdptTrainSources()` を通じて resource 定義も間接参照する。ただし、catalog 内の curated metadata を抽出する用途では使わず、あくまで target prefix の検証に限る。
 
-| ファイル        | 状態     | 用途                                  |
-| --------------- | -------- | ------------------------------------- |
-| `data.json`     | required | source-level summary と counts の構築 |
-| `insights.json` | required | bundle-backed summary の構築          |
-| `shapes.json`   | optional | shape volume summary の構築           |
+| ファイル        | 状態          | 用途                                  |
+| --------------- | ------------- | ------------------------------------- |
+| `data.json`     | skip-tolerant | source-level summary と counts の構築 |
+| `insights.json` | skip-tolerant | bundle-backed summary の構築          |
+| `shapes.json`   | optional      | shape volume summary の構築           |
+
+per-source 入力(`data.json` / `insights.json`)は欠損していても fatal にせず、その prefix だけを catalog 出力から除外して残りの prefix で処理を続ける(詳細は後述「required / optional の扱い」)。
 
 ### 2. Global artifact
 
@@ -218,25 +220,29 @@ key は output directory 名ではなく prefix とする。これは既存 v2 b
 
 ## required / optional の扱い
 
-| 入力                       | 扱い     | 理由                                           |
-| -------------------------- | -------- | ---------------------------------------------- |
-| per-source `data.json`     | required | catalog の source summary の基礎入力である     |
-| per-source `insights.json` | required | catalog schema で `insightsBundle` が required |
-| per-source `shapes.json`   | optional | source によって shape source を持たない        |
-| `global/insights.json`     | required | catalog schema で `globalInsights` が required |
-| resource definition        | required | source identity / provenance の基礎入力である  |
+| 入力                       | 扱い          | 理由                                                                                                  |
+| -------------------------- | ------------- | ----------------------------------------------------------------------------------------------------- |
+| per-source `data.json`     | skip-tolerant | upstream provider のリソース消失等で欠損し得る。 該当 prefix のみ skip して他は処理続行               |
+| per-source `insights.json` | skip-tolerant | 同上(`data.json` がある前提で生成されるため、 通常は連動して存在 / 不在になる)                        |
+| per-source `shapes.json`   | optional      | source によって shape source を持たない                                                               |
+| `global/insights.json`     | required      | catalog schema で `globalInsights` が required。 これが無い場合は build を続けても catalog 不完全     |
+| resource definition        | required      | target prefix の resolveCatalogTargets で参照。 未定義 prefix は config bug として fatal precondition |
 
-catalog builder は required 入力の欠損を error として扱う。
+catalog builder は per-source 入力の欠損を **skip + warn** として扱い、 該当 prefix を catalog から除外して処理を続行する。 これにより 1 source の upstream 不調で catalog build 全体が止まることがなくなり、 sync 以降の workflow も partial 状態のまま進行できる。
+
+`global/insights.json` の欠損や resource definition に無い prefix は依然 **fatal precondition** で停止する。 これらは「pipeline 配置のバグ」や「target list の typo」を示すため、 静かに skip せず人手介入を促す必要があるためである。
 
 ## 処理フロー
 
-1. `--targets` で対象 prefix 群を決定する
-2. 対象 prefix ごとに `data.json` と `insights.json` の存在を確認する
-3. `shapes.json` が存在すれば shapes summary を構築する
-4. `data.json` を読み、`summary` と `dataBundle` summary を構築する
-5. `insights.json` を読み、`insightsBundle` summary を構築する
-6. `global/insights.json` を読み、`globalInsights` summary を構築する
-7. `writeDataSourceCatalogBundle()` で `global/data-source-catalog.json` に atomic write する
+1. `--targets` で対象 prefix 群を決定する。 resource definition に無い prefix は fatal precondition として停止する
+2. 対象 prefix ごとに `data.json` の存在を確認する。 無ければ skip(`status: 'skipped'`)して次の prefix へ
+3. `insights.json` の存在を確認する。 無ければ skip(`status: 'skipped'`)
+4. `shapes.json` が存在すれば shapes summary を構築する
+5. `data.json` を読み、`summary` と `dataBundle` summary を構築する。 parse 等で例外が出れば skip ではなく `status: 'failed'` として記録し次へ
+6. `insights.json` を読み、`insightsBundle` summary を構築する
+7. すべての対象 prefix を処理し終えたら `global/insights.json` を読み、`globalInsights` summary を構築する(無ければ fatal precondition で停止)
+8. 1 件以上が `ok` の場合のみ `writeDataSourceCatalogBundle()` で `global/data-source-catalog.json` に atomic write する。 全件 skip/failed の場合は既存ファイルを温存して書き換えない
+9. per-target results を集約した summary 表を出力し、 `determineAggregateExitCode()` で exit code を確定する
 
 ## 実装構成
 
@@ -252,13 +258,14 @@ catalog builder は required 入力の欠損を error として扱う。
 
 ## Exit Code
 
-| code | label           | 意味                            |
-| ---- | --------------- | ------------------------------- |
-| 0    | ok              | 成功                            |
-| 1    | error / partial | 失敗 / 一部失敗                 |
-| 2    | all failed      | 全失敗 (`--targets` バッチのみ) |
+| code | label              | 意味                                                                                                                                                                      |
+| ---- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | ok                 | 全 target prefix が ok                                                                                                                                                    |
+| 1    | partial failure    | 1 件以上の prefix が ok。 残りは skip / failed として results に記録され catalog からは除外                                                                               |
+| 2    | all failed         | `determineAggregateExitCode` 経由: 全 target prefix が skip / failed(catalog 出力は **書き換えず** 既存ファイルを温存する)                                                |
+| 2    | fatal precondition | catch 経路: target list ファイルの欠落 / parse error / `global/insights.json` 欠落 / unknown prefix / write failure 等。 catalog 出力は **書き換えず** 既存ファイルを温存 |
 
-単体 global artifact builder であっても、既存 build scripts の exit code 慣習に合わせる。
+単体 global artifact builder であっても、 既存 build scripts(`build:v2-data` 等)の exit code 慣習(0 / 1 / 2)に合わせる。 fatal precondition で停止した場合は `Exit code: 2 (fatal precondition)` の label を出力し、 `determineAggregateExitCode` 経由の 2(all failed)と区別する。 数値は両者とも 2 なので、 workflow の `Fail on total` 分岐は同じく発火する。
 
 ## Validate との関係
 
@@ -289,12 +296,15 @@ npm run pipeline:validate:v2
 npm run data:sync
 ```
 
-catalog builder を CI に組み込むことで、次を早期検知できる。
+catalog builder を CI に組み込むことで、 次を検知できる。
 
-- target list 登録漏れ
-- required bundle 欠損
-- resource definition と generated bundle の不整合
+- target list 登録漏れ(workflow の `Warn on partial failure` で通知)
+- per-source bundle 欠損(同上、 catalog から該当 prefix を除外して partial として続行)
+- resource definition と generated bundle の不整合(unknown prefix は fatal precondition で停止)
+- `global/insights.json` 欠落 などの fatal precondition(workflow の `Fail on total` で停止)
 - catalog artifact 自体の未生成
+
+per-source 欠損は **`Warn on partial failure`** 経路で通知され、 sync 以降の workflow は続行する。 fatal precondition は従来通り **`Fail on total`** で job を停止する。
 
 ## 現在の実装段階
 

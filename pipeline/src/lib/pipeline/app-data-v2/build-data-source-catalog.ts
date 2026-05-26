@@ -18,8 +18,23 @@ import { getDistanceKmLight } from '../../geo-utils';
 import { V2_OUTPUT_DIR } from '../../paths';
 import { loadAllGtfsSources } from '../../resources/load-gtfs-sources';
 import { discoverOdptTrainSources } from '../../resources/load-odpt-train-sources';
+import type { AggregateTargetResult } from '../pipeline-utils';
 import { uniqueInOrder } from '../pipeline-utils';
 import { computeServiceDateCoverage } from './compute-service-date-coverage';
+
+/**
+ * Outcome of {@link buildDataSourceCatalogBundle}.
+ *
+ * - `bundle.sources.data` contains only prefixes whose per-source inputs
+ *   (`data.json` + `insights.json`) were present and parsable. Missing or
+ *   failed prefixes are represented by entries in `results` instead.
+ * - `globalInsights` is always populated; a missing `global/insights.json`
+ *   is a fatal precondition and throws.
+ */
+export interface CatalogBuildOutput {
+  bundle: DataSourceCatalogBundle;
+  results: AggregateTargetResult[];
+}
 
 interface ResolvedCatalogTarget {
   prefix: string;
@@ -328,36 +343,76 @@ function buildGlobalInsightsSummary(filePath: string): {
 
 export async function buildDataSourceCatalogBundle(
   targetPrefixes: string[],
-): Promise<DataSourceCatalogBundle> {
+): Promise<CatalogBuildOutput> {
   const resolvedTargets = await resolveCatalogTargets(uniqueInOrder(targetPrefixes));
   const sources: Record<string, DataSourceCatalogSource> = {};
+  const results: AggregateTargetResult[] = [];
 
   for (const target of resolvedTargets) {
+    const t0 = performance.now();
     const sourceDir = join(V2_OUTPUT_DIR, target.prefix);
     const dataFilePath = join(sourceDir, 'data.json');
     const insightsFilePath = join(sourceDir, 'insights.json');
     const shapesFilePath = join(sourceDir, 'shapes.json');
 
-    const dataBundle = readRequiredJsonFile<DataBundle>(dataFilePath, `${target.prefix}/data.json`);
-    const insightsBundle = readRequiredJsonFile<InsightsBundle>(
-      insightsFilePath,
-      `${target.prefix}/insights.json`,
-    );
-    const shapesBundle = existsSync(shapesFilePath)
-      ? readJsonFile<ShapesBundle>(shapesFilePath)
-      : null;
+    // Missing per-source inputs are skipped, not fatal. The aggregate
+    // pipeline records the gap via `results` and continues so a single
+    // upstream resource outage cannot block updates for every other source.
+    if (!existsSync(dataFilePath)) {
+      console.log(`  Skipped: ${target.prefix} (data.json not found)`);
+      results.push({
+        prefix: target.prefix,
+        status: 'skipped',
+        reason: 'data.json not found',
+        durationMs: Math.round(performance.now() - t0),
+      });
+      continue;
+    }
+    if (!existsSync(insightsFilePath)) {
+      console.log(`  Skipped: ${target.prefix} (insights.json not found)`);
+      results.push({
+        prefix: target.prefix,
+        status: 'skipped',
+        reason: 'insights.json not found',
+        durationMs: Math.round(performance.now() - t0),
+      });
+      continue;
+    }
 
-    sources[target.prefix] = buildCatalogSource(
-      dataBundle,
-      dataFilePath,
-      insightsBundle,
-      insightsFilePath,
-      shapesBundle,
-      shapesFilePath,
-    );
+    try {
+      const dataBundle = readJsonFile<DataBundle>(dataFilePath);
+      const insightsBundle = readJsonFile<InsightsBundle>(insightsFilePath);
+      const shapesBundle = existsSync(shapesFilePath)
+        ? readJsonFile<ShapesBundle>(shapesFilePath)
+        : null;
+
+      sources[target.prefix] = buildCatalogSource(
+        dataBundle,
+        dataFilePath,
+        insightsBundle,
+        insightsFilePath,
+        shapesBundle,
+        shapesFilePath,
+      );
+      results.push({
+        prefix: target.prefix,
+        status: 'ok',
+        reason: '',
+        durationMs: Math.round(performance.now() - t0),
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`  FAILED: ${target.prefix} (${message})`);
+      results.push({
+        prefix: target.prefix,
+        status: 'failed',
+        reason: message,
+        durationMs: Math.round(performance.now() - t0),
+      });
+    }
   }
 
-  return {
+  const bundle: DataSourceCatalogBundle = {
     bundle_version: 3,
     kind: 'data-source-catalog',
     metadata: {
@@ -375,4 +430,6 @@ export async function buildDataSourceCatalogBundle(
       data: buildGlobalInsightsSummary(join(V2_OUTPUT_DIR, 'global', 'insights.json')),
     },
   };
+
+  return { bundle, results };
 }

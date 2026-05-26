@@ -1,13 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  type AggregateTargetResult,
   type BatchResult,
   EXIT_ERROR,
   EXIT_OK,
   EXIT_WARN,
+  determineAggregateExitCode,
   determineBatchExitCode,
   formatExitCode,
   parseCliArg,
+  printAggregateSummary,
   runMain,
   uniqueInOrder,
 } from '../pipeline-utils';
@@ -362,5 +365,130 @@ describe('runMain', () => {
     });
     await vi.waitFor(() => expect(process.exitCode).toBe(1));
     expect(console.error).toHaveBeenCalledWith(expect.stringContaining('Exit code: 1'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// determineAggregateExitCode
+// ---------------------------------------------------------------------------
+
+describe('determineAggregateExitCode', () => {
+  const make = (
+    prefix: string,
+    status: AggregateTargetResult['status'],
+  ): AggregateTargetResult => ({
+    prefix,
+    status,
+    reason: status === 'ok' ? '' : `${status} reason`,
+    durationMs: 10,
+  });
+
+  it('returns EXIT_ERROR for an empty result list', () => {
+    expect(determineAggregateExitCode([])).toBe(EXIT_ERROR);
+  });
+
+  it('returns EXIT_OK when every result is ok', () => {
+    expect(determineAggregateExitCode([make('a', 'ok'), make('b', 'ok'), make('c', 'ok')])).toBe(
+      EXIT_OK,
+    );
+  });
+
+  it('returns EXIT_WARN when at least one ok and some skipped', () => {
+    expect(determineAggregateExitCode([make('a', 'ok'), make('b', 'skipped')])).toBe(EXIT_WARN);
+  });
+
+  it('returns EXIT_WARN when at least one ok and some failed', () => {
+    expect(determineAggregateExitCode([make('a', 'ok'), make('b', 'failed')])).toBe(EXIT_WARN);
+  });
+
+  it('returns EXIT_WARN with a mix of ok / skipped / failed', () => {
+    expect(
+      determineAggregateExitCode([make('a', 'ok'), make('b', 'skipped'), make('c', 'failed')]),
+    ).toBe(EXIT_WARN);
+  });
+
+  it('returns EXIT_ERROR when every result is skipped', () => {
+    expect(determineAggregateExitCode([make('a', 'skipped'), make('b', 'skipped')])).toBe(
+      EXIT_ERROR,
+    );
+  });
+
+  it('returns EXIT_ERROR when every result is failed', () => {
+    expect(determineAggregateExitCode([make('a', 'failed'), make('b', 'failed')])).toBe(EXIT_ERROR);
+  });
+
+  it('returns EXIT_ERROR with no ok across skipped + failed mix', () => {
+    expect(determineAggregateExitCode([make('a', 'skipped'), make('b', 'failed')])).toBe(
+      EXIT_ERROR,
+    );
+  });
+
+  it('returns EXIT_WARN when exactly one of many is ok', () => {
+    expect(
+      determineAggregateExitCode([
+        make('a', 'ok'),
+        make('b', 'failed'),
+        make('c', 'failed'),
+        make('d', 'skipped'),
+      ]),
+    ).toBe(EXIT_WARN);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// printAggregateSummary
+// ---------------------------------------------------------------------------
+
+describe('printAggregateSummary', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const make = (
+    prefix: string,
+    status: AggregateTargetResult['status'],
+    reason = '',
+    durationMs = 100,
+  ): AggregateTargetResult => ({ prefix, status, reason, durationMs });
+
+  it('prints a header, one row per target, and a total footer', () => {
+    printAggregateSummary([
+      make('alpha', 'ok'),
+      make('beta', 'skipped', 'data.json not found'),
+      make('gamma', 'failed', 'JSON parse error'),
+    ]);
+
+    const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls
+      .map((args) => String(args[0]))
+      .join('\n');
+
+    expect(calls).toContain('=== Aggregate Summary ===');
+    expect(calls).toMatch(/alpha\s+OK\s+0\.1s/);
+    expect(calls).toMatch(/beta\s+SKIPPED\s+0\.1s\s+\(data\.json not found\)/);
+    expect(calls).toMatch(/gamma\s+FAILED\s+0\.1s\s+\(JSON parse error\)/);
+    expect(calls).toContain('Total: 3 sources, 1 ok, 1 skipped, 1 failed');
+  });
+
+  it('omits the reason suffix for ok rows', () => {
+    printAggregateSummary([make('alpha', 'ok')]);
+
+    const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls
+      .map((args) => String(args[0]))
+      .join('\n');
+
+    expect(calls).toMatch(/alpha\s+OK\s+0\.1s$/m);
+  });
+
+  it('sums per-target durations into the total footer (seconds)', () => {
+    printAggregateSummary([make('a', 'ok', '', 1500), make('b', 'ok', '', 2500)]);
+
+    const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls
+      .map((args) => String(args[0]))
+      .join('\n');
+
+    expect(calls).toContain('(4.0s)');
   });
 });

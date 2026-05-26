@@ -7,6 +7,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
+import type { AggregateTargetResult } from '../../../../src/lib/pipeline/pipeline-utils';
 
 const { mockParseCliArg, mockLoadTargetFile, mockBuildCatalog, mockWriteCatalog, outputDir } =
   vi.hoisted(() => ({
@@ -29,11 +30,17 @@ vi.mock('../../../../src/lib/pipeline/app-data-v2/bundle-writer', () => ({
   writeDataSourceCatalogBundle: mockWriteCatalog,
 }));
 
-vi.mock('../../../../src/lib/pipeline/pipeline-utils', () => ({
-  parseCliArg: mockParseCliArg,
-  loadTargetFile: mockLoadTargetFile,
-  runMain: vi.fn(),
-}));
+vi.mock('../../../../src/lib/pipeline/pipeline-utils', async () => {
+  const actual = await vi.importActual<
+    typeof import('../../../../src/lib/pipeline/pipeline-utils')
+  >('../../../../src/lib/pipeline/pipeline-utils');
+  return {
+    ...actual,
+    parseCliArg: mockParseCliArg,
+    loadTargetFile: mockLoadTargetFile,
+    runMain: vi.fn(),
+  };
+});
 
 import { main } from '../build-data-source-catalog';
 
@@ -141,25 +148,79 @@ describe('build-data-source-catalog.ts', () => {
     expect(process.exitCode).toBeUndefined();
   });
 
-  it('loads targets, builds the catalog, and writes output', async () => {
+  it('sets exitCode to EXIT_ERROR (2) when CLI args are invalid', async () => {
+    mockParseCliArg.mockReturnValue({ kind: 'unexpected' });
+
+    await main();
+
+    expect(mockLoadTargetFile).not.toHaveBeenCalled();
+    expect(mockBuildCatalog).not.toHaveBeenCalled();
+    expect(mockWriteCatalog).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(2);
+  });
+
+  it('writes catalog and exits 0 when every result is ok', async () => {
     const bundle = makeCatalogBundle();
+    const results: AggregateTargetResult[] = [
+      { prefix: 'testpfx', status: 'ok', reason: '', durationMs: 10 },
+    ];
 
     mockParseCliArg.mockReturnValue({
       kind: 'targets',
       path: '/tmp/catalog-targets.ts',
     });
     mockLoadTargetFile.mockResolvedValue(['testpfx']);
-    mockBuildCatalog.mockResolvedValue(bundle);
+    mockBuildCatalog.mockResolvedValue({ bundle, results });
 
     await main();
 
     expect(mockLoadTargetFile).toHaveBeenCalledWith('/tmp/catalog-targets.ts');
     expect(mockBuildCatalog).toHaveBeenCalledWith(['testpfx']);
     expect(mockWriteCatalog).toHaveBeenCalledWith('/tmp/test-v2-output/global', bundle);
-    expect(process.exitCode).toBeUndefined();
+    expect(process.exitCode).toBe(0);
   });
 
-  it('sets exitCode to 1 when catalog build fails', async () => {
+  it('writes a partial catalog and exits EXIT_WARN (1) when some prefixes are skipped', async () => {
+    const bundle = makeCatalogBundle();
+    const results: AggregateTargetResult[] = [
+      { prefix: 'testpfx', status: 'ok', reason: '', durationMs: 10 },
+      { prefix: 'gone', status: 'skipped', reason: 'data.json not found', durationMs: 1 },
+    ];
+
+    mockParseCliArg.mockReturnValue({
+      kind: 'targets',
+      path: '/tmp/catalog-targets.ts',
+    });
+    mockLoadTargetFile.mockResolvedValue(['testpfx', 'gone']);
+    mockBuildCatalog.mockResolvedValue({ bundle, results });
+
+    await main();
+
+    expect(mockWriteCatalog).toHaveBeenCalledWith('/tmp/test-v2-output/global', bundle);
+    expect(process.exitCode).toBe(1);
+  });
+
+  it('does NOT write catalog and exits EXIT_ERROR (2) when every prefix is skipped', async () => {
+    const bundle = makeCatalogBundle();
+    const results: AggregateTargetResult[] = [
+      { prefix: 'gone1', status: 'skipped', reason: 'data.json not found', durationMs: 1 },
+      { prefix: 'gone2', status: 'skipped', reason: 'data.json not found', durationMs: 1 },
+    ];
+
+    mockParseCliArg.mockReturnValue({
+      kind: 'targets',
+      path: '/tmp/catalog-targets.ts',
+    });
+    mockLoadTargetFile.mockResolvedValue(['gone1', 'gone2']);
+    mockBuildCatalog.mockResolvedValue({ bundle, results });
+
+    await main();
+
+    expect(mockWriteCatalog).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(2);
+  });
+
+  it('sets exitCode to EXIT_ERROR (2) on fatal throw from the library', async () => {
     mockParseCliArg.mockReturnValue({
       kind: 'targets',
       path: '/tmp/catalog-targets.ts',
@@ -171,6 +232,6 @@ describe('build-data-source-catalog.ts', () => {
 
     expect(mockWriteCatalog).not.toHaveBeenCalled();
     expect(console.error).toHaveBeenCalledWith('\nFATAL: boom');
-    expect(process.exitCode).toBe(1);
+    expect(process.exitCode).toBe(2);
   });
 });
