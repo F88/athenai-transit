@@ -33,7 +33,7 @@ function makeEntry(
       isTerminal: overrides.isTerminal ?? false,
     },
     tripLocator: { patternId: 'pattern-1', serviceId: 'svc-1', tripIndex: 0 },
-  } as TimetableEntry;
+  };
 }
 
 describe('computeStopsCounts', () => {

@@ -183,7 +183,7 @@ export function TripPositionIndicator({
     cssVars['--tpi-track-border-color'] = trackBorderColor;
   }
   const containerStyle: CSSProperties | undefined =
-    Object.keys(cssVars).length > 0 ? (cssVars as CSSProperties) : undefined;
+    Object.keys(cssVars).length > 0 ? cssVars : undefined;
   const positionLabelStyle: CSSProperties | undefined =
     labelTextColor || labelBgColor
       ? {

@@ -85,7 +85,7 @@ export function buildEdgeMarkers(
           ? ('right' as const)
           : ('center' as const);
 
-    const routeTypes = routeTypeMap.get(stop.stop_id) ?? [-1 as AppRouteTypeValue];
+    const routeTypes = routeTypeMap.get(stop.stop_id) ?? [-1];
     // Recalculate distance here instead of reusing StopWithMeta.distance because:
     // 1. The center shifts on every pan, so the repo's snapshot distance is stale.
     // 2. map.distance() uses haversine, which is more accurate than the repo's flat-earth approximation.

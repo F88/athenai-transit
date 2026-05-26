@@ -30,7 +30,7 @@ const originalResizeObserver = globalThis.ResizeObserver;
 
 beforeEach(() => {
   MockResizeObserver.instances = [];
-  globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+  globalThis.ResizeObserver = MockResizeObserver;
 });
 
 afterEach(() => {

@@ -25,7 +25,7 @@ function createStorageMock(overrides?: {
     getItem,
     setItem,
     removeItem,
-  } as StorageMock;
+  };
 }
 
 describe('WebStorageItem', () => {

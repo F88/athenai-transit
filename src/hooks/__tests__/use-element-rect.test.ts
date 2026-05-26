@@ -32,7 +32,7 @@ const originalResizeObserver = globalThis.ResizeObserver;
 
 beforeEach(() => {
   MockResizeObserver.instances = [];
-  globalThis.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+  globalThis.ResizeObserver = MockResizeObserver;
 });
 
 afterEach(() => {
@@ -69,7 +69,7 @@ describe('useElementRect', () => {
   it('returns the element rect on mount via getBoundingClientRect', () => {
     const el = makeElement({ left: 10, top: 20, width: 100, height: 80 });
     const { result } = renderHook(({ e }) => useElementRect(e), {
-      initialProps: { e: el as HTMLElement },
+      initialProps: { e: el },
     });
 
     expect(result.current).not.toBeNull();
@@ -91,7 +91,7 @@ describe('useElementRect', () => {
     const a = makeElement({ width: 10, height: 10 });
     const b = makeElement({ width: 20, height: 20 });
     const { rerender } = renderHook(({ e }) => useElementRect(e), {
-      initialProps: { e: a as HTMLElement },
+      initialProps: { e: a },
     });
 
     const firstObserver = MockResizeObserver.instances[0];
@@ -126,7 +126,7 @@ describe('useElementRect', () => {
     });
     const observer = MockResizeObserver.instances[0];
     act(() => {
-      observer.callback([], observer as unknown as ResizeObserver);
+      observer.callback([], observer);
     });
 
     expect(result.current?.width).toBe(200);

@@ -8,7 +8,7 @@ function buildError(code: 1 | 2 | 3, message: string): GeolocationPositionError 
     PERMISSION_DENIED: 1,
     POSITION_UNAVAILABLE: 2,
     TIMEOUT: 3,
-  } as GeolocationPositionError;
+  };
 }
 
 describe('classifyAutoLocateError', () => {

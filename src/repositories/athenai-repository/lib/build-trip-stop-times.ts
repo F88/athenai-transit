@@ -147,12 +147,10 @@ export function buildTripStopTimeFromGroup(
   // (e.g. ODPT omits it entirely); within a present `pt`, individual
   // entries may also be missing. Default to 0 (regular) for any of
   // these absences.
-  const pickupType: StopServiceType = (group.pt?.[locator.serviceId]?.[locator.tripIndex] ??
-    0) as StopServiceType;
+  const pickupType: StopServiceType = group.pt?.[locator.serviceId]?.[locator.tripIndex] ?? 0;
 
   // Resolve drop_off_type with the same shape and default as pickup.
-  const dropOffType: StopServiceType = (group.dt?.[locator.serviceId]?.[locator.tripIndex] ??
-    0) as StopServiceType;
+  const dropOffType: StopServiceType = group.dt?.[locator.serviceId]?.[locator.tripIndex] ?? 0;
 
   // Resolve the per-stop route direction (route + headsigns) from the
   // repository lookup. The lookup is keyed by stopIndex because

@@ -242,55 +242,53 @@ vi.mock('../hooks/use-keyboard-shortcuts', () => ({
 describe('App anchor error toast', () => {
   const makeEntry = (
     overrides: { isOrigin?: boolean; isTerminal?: boolean; pickupType?: 0 | 1 | 2 | 3 } = {},
-  ): ContextualTimetableEntry =>
-    ({
-      schedule: { departureMinutes: 480, arrivalMinutes: 480 },
-      routeDirection: {
-        route: {
-          route_id: 'route-1',
-          route_type: 3,
-          agency_id: 'agency-1',
-          route_short_name: '1',
-          route_short_names: {},
-          route_long_name: 'Route 1',
-          route_long_names: {},
-          route_color: '000000',
-          route_text_color: 'FFFFFF',
-        },
-        tripHeadsign: { name: 'Terminal', names: {} },
+  ): ContextualTimetableEntry => ({
+    schedule: { departureMinutes: 480, arrivalMinutes: 480 },
+    routeDirection: {
+      route: {
+        route_id: 'route-1',
+        route_type: 3,
+        agency_id: 'agency-1',
+        route_short_name: '1',
+        route_short_names: {},
+        route_long_name: 'Route 1',
+        route_long_names: {},
+        route_color: '000000',
+        route_text_color: 'FFFFFF',
       },
-      boarding: { pickupType: overrides.pickupType ?? 0, dropOffType: 0 },
-      patternPosition: {
-        stopIndex: 0,
-        totalStops: 3,
-        isOrigin: overrides.isOrigin ?? false,
-        isTerminal: overrides.isTerminal ?? false,
-      },
-      tripLocator: { patternId: 'pattern-1', serviceId: 'svc-1', tripIndex: 0 },
-      serviceDate: new Date('2026-03-28T00:00:00Z'),
-    }) as ContextualTimetableEntry;
+      tripHeadsign: { name: 'Terminal', names: {} },
+    },
+    boarding: { pickupType: overrides.pickupType ?? 0, dropOffType: 0 },
+    patternPosition: {
+      stopIndex: 0,
+      totalStops: 3,
+      isOrigin: overrides.isOrigin ?? false,
+      isTerminal: overrides.isTerminal ?? false,
+    },
+    tripLocator: { patternId: 'pattern-1', serviceId: 'svc-1', tripIndex: 0 },
+    serviceDate: new Date('2026-03-28T00:00:00Z'),
+  });
 
   const makeNearbyStop = (
     stopId: string,
     entries: ContextualTimetableEntry[],
     stopServiceState: StopWithContext['stopServiceState'] = 'boardable',
-  ): StopWithContext =>
-    ({
-      stop: {
-        stop_id: stopId,
-        stop_name: stopId,
-        stop_names: {},
-        stop_lat: 0,
-        stop_lon: 0,
-        location_type: 0,
-        agency_id: 'agency-1',
-      },
-      agencies: [],
-      routes: [],
-      routeTypes: [3],
-      stopTimes: entries,
-      stopServiceState,
-    }) as StopWithContext;
+  ): StopWithContext => ({
+    stop: {
+      stop_id: stopId,
+      stop_name: stopId,
+      stop_names: {},
+      stop_lat: 0,
+      stop_lon: 0,
+      location_type: 0,
+      agency_id: 'agency-1',
+    },
+    agencies: [],
+    routes: [],
+    routeTypes: [3],
+    stopTimes: entries,
+    stopServiceState,
+  });
 
   const getLastLayoutProps = () => {
     const lastCall = mockAppLayout.mock.lastCall;

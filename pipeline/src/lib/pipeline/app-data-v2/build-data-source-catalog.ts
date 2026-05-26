@@ -41,7 +41,7 @@ function countSection(section: { data: unknown }): number {
     return section.data.length;
   }
   if (typeof section.data === 'object' && section.data !== null) {
-    return Object.keys(section.data as Record<string, unknown>).length;
+    return Object.keys(section.data).length;
   }
   return 0;
 }
