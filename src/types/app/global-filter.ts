@@ -1,11 +1,23 @@
 /**
- * App-wide display filter state shared across surfaces (BottomSheet,
- * TimetableModal, MapView, TripInspectionDialog, etc.).
+ * App-wide display filter state shared across surfaces.
  *
- * Owned by `app.tsx` and threaded through props as a single
- * `globalFilter` object so the namespace is explicit at every
- * receiver. Drilling depth is shallow (1–2 levels), so explicit
- * props are clearer than a Context provider.
+ * Direct consumers (receive the `globalFilter` prop):
+ *
+ *   - `BottomSheet` (via `AppLayout` -> `MapBottomSheetLayout` /
+ *     `StopPanel` -> `StopBrowser`)
+ *   - `TimetableModal`
+ *
+ * Indirect consumers (read the filter's *output*, not this object):
+ *
+ *   - `MapView` and other surfaces that render `stopTimes` produced
+ *     by `deriveFilteredNearbyStops` already see the filtered result.
+ *     They do not receive `GlobalFilter`.
+ *
+ * Owned by `useGlobalFilter(dateTime)` (`src/hooks/use-global-filter.ts`)
+ * and threaded through props as a single `globalFilter` object so the
+ * namespace is explicit at every receiver. Drilling depth is shallow
+ * (1-2 levels), so explicit props are clearer than a Context
+ * provider.
  */
 export interface GlobalFilter {
   /** When true, narrow to entries whose patternPosition.isOrigin is true. */
