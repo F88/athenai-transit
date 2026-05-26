@@ -244,12 +244,12 @@ write failure 等の致命例外は catch 経路で **fatal precondition**(`EXIT
 
 ## Exit Code
 
-| code | label              | 意味                                                                                                                      |
-| ---- | ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| 0    | ok                 | 全 target prefix が ok                                                                                                    |
-| 1    | partial failure    | 1 件以上の prefix が ok。 残りは skip / failed として results に記録                                                      |
-| 2    | all failed         | `determineAggregateExitCode` 経由: 全 target prefix が skip / failed(`global/insights.json` は **書き換えず** 既存を温存) |
-| 2    | fatal precondition | catch 経路: write failure 等。 `global/insights.json` は **書き換えず** 既存を温存                                        |
+| code | label              | 意味                                                                                                                          |
+| ---- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| 0    | ok                 | 全 target prefix が ok                                                                                                        |
+| 1    | partial failure    | 1 件以上の prefix が ok。 残りは skip / failed として results に記録                                                          |
+| 2    | all failed         | `determineAggregateExitCode` 経由: 全 target prefix が skip / failed(`global/insights.json` は **書き換えず** 既存を温存)     |
+| 2    | fatal precondition | catch 経路: target list ファイルの欠落 / parse error / write failure 等。 `global/insights.json` は **書き換えず** 既存を温存 |
 
 catalog と同様、 fatal precondition で停止した場合は `Exit code: 2 (fatal precondition)` の label を出力し、 `determineAggregateExitCode` 経由の 2(all failed)と区別する。 数値は両者とも 2 なので、 workflow の `Fail on total` 分岐は同じく発火する。
 

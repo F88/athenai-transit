@@ -258,12 +258,12 @@ catalog builder は per-source 入力の欠損を **skip + warn** として扱�
 
 ## Exit Code
 
-| code | label              | 意味                                                                                                                           |
-| ---- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| 0    | ok                 | 全 target prefix が ok                                                                                                         |
-| 1    | partial failure    | 1 件以上の prefix が ok。 残りは skip / failed として results に記録され catalog からは除外                                    |
-| 2    | all failed         | `determineAggregateExitCode` 経由: 全 target prefix が skip / failed(catalog 出力は **書き換えず** 既存ファイルを温存する)     |
-| 2    | fatal precondition | catch 経路: `global/insights.json` 欠落 / unknown prefix / write failure 等。 catalog 出力は **書き換えず** 既存ファイルを温存 |
+| code | label              | 意味                                                                                                                                                                      |
+| ---- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | ok                 | 全 target prefix が ok                                                                                                                                                    |
+| 1    | partial failure    | 1 件以上の prefix が ok。 残りは skip / failed として results に記録され catalog からは除外                                                                               |
+| 2    | all failed         | `determineAggregateExitCode` 経由: 全 target prefix が skip / failed(catalog 出力は **書き換えず** 既存ファイルを温存する)                                                |
+| 2    | fatal precondition | catch 経路: target list ファイルの欠落 / parse error / `global/insights.json` 欠落 / unknown prefix / write failure 等。 catalog 出力は **書き換えず** 既存ファイルを温存 |
 
 単体 global artifact builder であっても、 既存 build scripts(`build:v2-data` 等)の exit code 慣習(0 / 1 / 2)に合わせる。 fatal precondition で停止した場合は `Exit code: 2 (fatal precondition)` の label を出力し、 `determineAggregateExitCode` 経由の 2(all failed)と区別する。 数値は両者とも 2 なので、 workflow の `Fail on total` 分岐は同じく発火する。
 

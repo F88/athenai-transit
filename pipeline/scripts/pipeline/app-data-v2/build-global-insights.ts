@@ -95,18 +95,24 @@ export async function main(): Promise<void> {
     return;
   }
 
-  const targetPrefixes = uniqueInOrder(await loadTargetFile(arg.path));
-
   console.log(`=== global-insights [START] ===\n`);
-  console.log(`  Targets: ${targetPrefixes.length} sources (${targetPrefixes.join(', ')})`);
-  console.log(`  Output:  ${GLOBAL_DIR}/insights.json`);
-  console.log(`  Group:   ${GROUP_KEY} (Sunday-active services)`);
+  console.log(`  Targets file: ${arg.path}`);
+  console.log(`  Output:       ${GLOBAL_DIR}/insights.json`);
+  console.log(`  Group:        ${GROUP_KEY} (Sunday-active services)`);
   console.log('');
 
   const t0 = performance.now();
   let fatalPrecondition = false;
 
   try {
+    // loadTargetFile() must run inside this try/catch so a missing or
+    // malformed targets file is caught as a fatal precondition (EXIT_ERROR)
+    // here, not leaked to runMain (which would set EXIT_WARN and trigger
+    // the workflow's "Warn on partial failure" instead of "Fail on total").
+    const targetPrefixes = uniqueInOrder(await loadTargetFile(arg.path));
+    console.log(`  Targets: ${targetPrefixes.length} sources (${targetPrefixes.join(', ')})`);
+    console.log('');
+
     // Step 1: Load all DataBundles
     console.log('--- Loading DataBundles ---\n');
     const allStopEntries: StopEntry[] = [];

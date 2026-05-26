@@ -57,17 +57,23 @@ export async function main(): Promise<void> {
     return;
   }
 
-  const targetPrefixes = await loadTargetFile(arg.path);
-
   console.log('=== data-source-catalog [START] ===\n');
-  console.log(`  Targets: ${targetPrefixes.length} prefixes (${targetPrefixes.join(', ')})`);
-  console.log(`  Output:  ${GLOBAL_DIR}/data-source-catalog.json`);
+  console.log(`  Targets file: ${arg.path}`);
+  console.log(`  Output:       ${GLOBAL_DIR}/data-source-catalog.json`);
   console.log('');
 
   const t0 = performance.now();
   let fatalPrecondition = false;
 
   try {
+    // loadTargetFile() must run inside this try/catch so a missing or
+    // malformed targets file is caught as a fatal precondition (EXIT_ERROR)
+    // here, not leaked to runMain (which would set EXIT_WARN and trigger
+    // the workflow's "Warn on partial failure" instead of "Fail on total").
+    const targetPrefixes = await loadTargetFile(arg.path);
+    console.log(`  Targets: ${targetPrefixes.length} prefixes (${targetPrefixes.join(', ')})`);
+    console.log('');
+
     const { bundle, results } = await buildDataSourceCatalogBundle(targetPrefixes);
     const exitCode = determineAggregateExitCode(results);
 
