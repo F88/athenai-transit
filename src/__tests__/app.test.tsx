@@ -33,6 +33,9 @@ const {
   mockAppLayout,
   mockMapView,
   mockMapOverlay,
+  mockInfoDialog,
+  mockDataSourceSettingsDialog,
+  mockUseKeyboardShortcuts,
   mockUseTimetable,
   mockOpenStopTimetable,
   mockOpenRouteHeadsignTimetable,
@@ -52,6 +55,9 @@ const {
   mockAppLayout: vi.fn(),
   mockMapView: vi.fn(),
   mockMapOverlay: vi.fn(),
+  mockInfoDialog: vi.fn(),
+  mockDataSourceSettingsDialog: vi.fn(),
+  mockUseKeyboardShortcuts: vi.fn(),
   mockUseTimetable: vi.fn<() => UseTimetableReturn>(),
   mockOpenStopTimetable: vi.fn(),
   mockOpenRouteHeadsignTimetable: vi.fn(),
@@ -192,11 +198,23 @@ vi.mock('../components/dialog/stop-search-dialog', () => ({
 }));
 
 vi.mock('../components/dialog/info-dialog', () => ({
-  InfoDialog: () => null,
+  InfoDialog: (props: unknown) => {
+    mockInfoDialog(props);
+    return null;
+  },
 }));
 
 vi.mock('../components/dialog/data-source-settings-dialog', () => ({
-  DataSourceSettingsDialog: () => null,
+  DataSourceSettingsDialog: (props: unknown) => {
+    mockDataSourceSettingsDialog(props);
+    return null;
+  },
+}));
+
+vi.mock('../hooks/use-keyboard-shortcuts', () => ({
+  useKeyboardShortcuts: (options: unknown) => {
+    mockUseKeyboardShortcuts(options);
+  },
 }));
 
 describe('App anchor error toast', () => {
@@ -289,6 +307,9 @@ describe('App anchor error toast', () => {
     mockAppLayout.mockReset();
     mockMapView.mockReset();
     mockMapOverlay.mockReset();
+    mockInfoDialog.mockReset();
+    mockDataSourceSettingsDialog.mockReset();
+    mockUseKeyboardShortcuts.mockReset();
     mockUseTimetable.mockReset();
     mockOpenStopTimetable.mockReset();
     mockOpenRouteHeadsignTimetable.mockReset();
@@ -722,6 +743,138 @@ describe('App anchor error toast', () => {
     await waitFor(() => {
       expect(recordStopSelection).not.toHaveBeenCalled();
       expect(mockFocusStop).not.toHaveBeenCalled();
+    });
+  });
+
+  // Phase 4 dialog controller wiring: verify that the `useAppDialogs`
+  // hook is wired so the App-level cross-dialog flow (info -> data
+  // source settings) and the keyboard-shortcut suppression contract
+  // both still hold after the dialog open state was lifted out of
+  // `App.tsx` into `useAppDialogs`.
+  it('opens DataSourceSettingsDialog when InfoDialog requests it via onOpenDataSourceSettings', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockInfoDialog).toHaveBeenCalled();
+      expect(mockDataSourceSettingsDialog).toHaveBeenCalled();
+    });
+
+    const initialInfoProps = mockInfoDialog.mock.lastCall?.[0] as {
+      open: boolean;
+      onOpenDataSourceSettings: () => void;
+    };
+    const initialDssProps = mockDataSourceSettingsDialog.mock.lastCall?.[0] as {
+      open: boolean;
+    };
+    expect(initialInfoProps.open).toBe(false);
+    expect(initialDssProps.open).toBe(false);
+
+    act(() => {
+      initialInfoProps.onOpenDataSourceSettings();
+    });
+
+    await waitFor(() => {
+      const dssProps = mockDataSourceSettingsDialog.mock.lastCall?.[0] as { open: boolean };
+      expect(dssProps.open).toBe(true);
+    });
+  });
+
+  it('closes DataSourceSettingsDialog when its onOpenChange is called with false', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockInfoDialog).toHaveBeenCalled();
+    });
+
+    const infoProps = mockInfoDialog.mock.lastCall?.[0] as {
+      onOpenDataSourceSettings: () => void;
+    };
+    act(() => {
+      infoProps.onOpenDataSourceSettings();
+    });
+
+    await waitFor(() => {
+      const dssProps = mockDataSourceSettingsDialog.mock.lastCall?.[0] as { open: boolean };
+      expect(dssProps.open).toBe(true);
+    });
+
+    const openedDssProps = mockDataSourceSettingsDialog.mock.lastCall?.[0] as {
+      onOpenChange: (open: boolean) => void;
+    };
+    act(() => {
+      openedDssProps.onOpenChange(false);
+    });
+
+    await waitFor(() => {
+      const dssProps = mockDataSourceSettingsDialog.mock.lastCall?.[0] as { open: boolean };
+      expect(dssProps.open).toBe(false);
+    });
+  });
+
+  it('suppresses keyboard shortcuts while InfoDialog is open and re-enables on close', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockUseKeyboardShortcuts).toHaveBeenCalled();
+      expect(mockMapOverlay).toHaveBeenCalled();
+    });
+
+    const initialOptions = mockUseKeyboardShortcuts.mock.lastCall?.[0] as { enabled: boolean };
+    expect(initialOptions.enabled).toBe(true);
+
+    const overlayProps = mockMapOverlay.mock.lastCall?.[0] as { onInfoClick: () => void };
+    act(() => {
+      overlayProps.onInfoClick();
+    });
+
+    await waitFor(() => {
+      const options = mockUseKeyboardShortcuts.mock.lastCall?.[0] as { enabled: boolean };
+      expect(options.enabled).toBe(false);
+    });
+
+    const openedInfoProps = mockInfoDialog.mock.lastCall?.[0] as {
+      onOpenChange: (open: boolean) => void;
+    };
+    act(() => {
+      openedInfoProps.onOpenChange(false);
+    });
+
+    await waitFor(() => {
+      const options = mockUseKeyboardShortcuts.mock.lastCall?.[0] as { enabled: boolean };
+      expect(options.enabled).toBe(true);
+    });
+  });
+
+  it('suppresses keyboard shortcuts while DataSourceSettingsDialog is open and re-enables on close', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockUseKeyboardShortcuts).toHaveBeenCalled();
+      expect(mockInfoDialog).toHaveBeenCalled();
+    });
+
+    const infoProps = mockInfoDialog.mock.lastCall?.[0] as {
+      onOpenDataSourceSettings: () => void;
+    };
+    act(() => {
+      infoProps.onOpenDataSourceSettings();
+    });
+
+    await waitFor(() => {
+      const options = mockUseKeyboardShortcuts.mock.lastCall?.[0] as { enabled: boolean };
+      expect(options.enabled).toBe(false);
+    });
+
+    const openedDssProps = mockDataSourceSettingsDialog.mock.lastCall?.[0] as {
+      onOpenChange: (open: boolean) => void;
+    };
+    act(() => {
+      openedDssProps.onOpenChange(false);
+    });
+
+    await waitFor(() => {
+      const options = mockUseKeyboardShortcuts.mock.lastCall?.[0] as { enabled: boolean };
+      expect(options.enabled).toBe(true);
     });
   });
 });
