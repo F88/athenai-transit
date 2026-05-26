@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { makeStop, makeStopMeta } from '../../../__tests__/helpers';
+import { makeRoute, makeStop, makeStopMeta } from '../../../__tests__/helpers';
 import type { AppRouteTypeValue } from '../../../types/app/transit';
 import { findVisibleStopMetaById, lookupStopMetaFromMap } from '../stop-meta-lookup';
 import {
@@ -83,7 +83,7 @@ describe('lookupStopMetaFromMap', () => {
 });
 
 describe('buildSelectionSnapshotFromMeta', () => {
-  it('builds a snapshot using meta.routes when routeTypeMap has no entry for the stop', () => {
+  it('falls back to the unknown sentinel when routeTypeMap has no entry and meta.routes is empty', () => {
     const stopMeta = makeStopMeta(makeStop('A', 35, 139));
     stopMeta.routes = [];
 
@@ -110,6 +110,16 @@ describe('buildSelectionSnapshotFromMeta', () => {
     const snapshot = buildSelectionSnapshotFromMeta(stopMeta, routeTypeMap, ['ja']);
 
     expect(snapshot.routeTypes).toEqual([3, 1]);
+    expect(snapshot.stopId).toBe('A');
+  });
+
+  it('derives routeTypes from meta.routes (deduped and ascending) when routeTypeMap has no entry', () => {
+    const stopMeta = makeStopMeta(makeStop('A', 35, 139));
+    stopMeta.routes = [makeRoute('r1', 3), makeRoute('r2', 1), makeRoute('r3', 3)];
+
+    const snapshot = buildSelectionSnapshotFromMeta(stopMeta, new Map(), ['ja']);
+
+    expect(snapshot.routeTypes).toEqual([1, 3]);
     expect(snapshot.stopId).toBe('A');
   });
 });
