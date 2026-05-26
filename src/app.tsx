@@ -248,16 +248,20 @@ export default function App() {
   // mounts; consumers must tolerate the initial `null`.
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
 
-  const [searchModalOpen, setSearchModalOpen] = useState(false);
   const {
     infoDialogOpen,
     setInfoDialogOpen,
     dataSourceSettingsDialogOpen,
     setDataSourceSettingsDialogOpen,
+    searchModalOpen,
+    setSearchModalOpen,
+    shortcutHelpOpen,
+    setShortcutHelpOpen,
     openInfoDialog,
     openDataSourceSettingsDialog,
+    openSearchModal,
+    openShortcutHelp,
   } = useAppDialogs();
-  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const {
     tripInspectionSnapshot,
     tripInspectionTargets,
@@ -272,9 +276,9 @@ export default function App() {
   const { timetableData, openRouteHeadsignTimetable, openStopTimetable, closeTimetable } =
     useTimetable(repo);
 
-  // Global keyboard shortcuts. Suppressed while any of the four primary
-  // modals owned by app.tsx is open (search / info / help / timetable),
-  // so the shortcut cannot re-open the same modal it is currently inside.
+  // Disable global shortcuts while primary modal state is active. This
+  // includes `useAppDialogs` boolean flags and payload-backed dialog state
+  // from timetable / trip-inspection hooks.
   // Lower-frequency dialogs whose state lives in their own components
   // (e.g. TimeSettingDialog) are intentionally NOT tracked here: Radix
   // Dialog handles nested dialog stacking (focus trap / scroll lock /
@@ -290,8 +294,8 @@ export default function App() {
       timetableData === null &&
       tripInspectionSnapshot === null,
     handlers: {
-      onOpenSearch: () => setSearchModalOpen(true),
-      onOpenHelp: () => setShortcutHelpOpen(true),
+      onOpenSearch: openSearchModal,
+      onOpenHelp: openShortcutHelp,
     },
   });
 
@@ -805,7 +809,7 @@ export default function App() {
       void recordStopSelection(snapshot);
       setSearchModalOpen(false);
     },
-    [langChain, navigateAndFocusStop, recordStopSelection],
+    [langChain, navigateAndFocusStop, recordStopSelection, setSearchModalOpen],
   );
 
   // --- App-wide filter state (shared across surfaces) ---
@@ -1104,7 +1108,7 @@ export default function App() {
             onCycleLang={handleCycleLang}
             dataLang={langChain}
             onToggleStopType={handleToggleStopType}
-            onSearchClick={() => setSearchModalOpen(true)}
+            onSearchClick={openSearchModal}
             onInfoClick={openInfoDialog}
             onLocated={handleLocated}
             autoLocateEnabled={autoLocateEnabled}
