@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { makeRepo } from '../../__tests__/helpers';
 import type { RouteShape } from '../../types/app/map';
@@ -28,6 +28,13 @@ const SHAPE_B: RouteShape = {
 };
 
 describe('useRouteShapes', () => {
+  afterEach(() => {
+    // Match the convention used by other hook test files in this repo.
+    // The tests below only create local `vi.fn()` mocks (no spies on
+    // shared globals), so this is preventive rather than load-bearing.
+    vi.restoreAllMocks();
+  });
+
   it('returns an empty array before the fetch resolves', async () => {
     const repo = makeRepo();
     const { result } = renderHook(() => useRouteShapes(repo));
