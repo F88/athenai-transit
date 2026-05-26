@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 // types
 import type { AutoLocateOffReason } from './types/app/auto-locate';
-import type { RouteShape, UserLocation } from './types/app/map';
+import type { UserLocation } from './types/app/map';
 import type { AppRouteTypeValue, Stop } from './types/app/transit';
 import type {
   StopWithContext,
@@ -56,6 +56,7 @@ import { useDateTime } from './hooks/use-date-time';
 import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts';
 import { useLoadResult } from './hooks/use-load-result';
 import { useNearbyStopTimes } from './hooks/use-nearby-stop-times';
+import { useRouteShapes } from './hooks/use-route-shapes';
 import { useRouteStops } from './hooks/use-route-stops';
 import { useSelection } from './hooks/use-selection';
 import { useStopHistory, type UseStopHistoryReturn } from './hooks/use-stop-history';
@@ -187,7 +188,7 @@ export default function App() {
       perfProfile,
       onStopsCommitted: handleStopsCommitted,
     });
-  const [routeShapes, setRouteShapes] = useState<RouteShape[]>([]);
+  const routeShapes = useRouteShapes(repo);
   // Auto-tracking flag is intentionally not persisted: a tracking
   // permission/intent shouldn't silently survive a reload, so it always
   // starts off and the user must opt in each session. Lives in app.tsx
@@ -555,15 +556,6 @@ export default function App() {
       markStopParamHandled();
     });
   }, [navigateAndFocusStop, recordStopMetaSelection, repo]);
-
-  // Load route shapes once on mount
-  useEffect(() => {
-    void repo.getRouteShapes().then((result) => {
-      if (result.success) {
-        setRouteShapes(result.data);
-      }
-    });
-  }, [repo]);
 
   const handleFetchStopTimes = useCallback(
     async (stopId: string): Promise<StopWithContext | null> => {

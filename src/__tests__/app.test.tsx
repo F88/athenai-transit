@@ -9,6 +9,7 @@ import type { UseStopHistoryReturn } from '../hooks/use-stop-history';
 import type { UseAnchorsReturn } from '../hooks/use-anchors';
 import type { TransitRepository } from '../repositories/transit-repository';
 import type { UseTimetableReturn } from '../hooks/use-timetable';
+import type { RouteShape } from '../types/app/map';
 import type { ContextualTimetableEntry, StopWithContext } from '../types/app/transit-composed';
 
 type UseDateTimeReturn = ReturnType<typeof import('../hooks/use-date-time').useDateTime>;
@@ -958,6 +959,37 @@ describe('App anchor error toast', () => {
     await waitFor(() => {
       const options = mockUseKeyboardShortcuts.mock.lastCall?.[0] as { enabled: boolean };
       expect(options.enabled).toBe(true);
+    });
+  });
+
+  // Phase 4 third PR wiring: confirm that `routeShapes` resolved by
+  // `useRouteShapes` actually reaches `MapView`. The hook itself is
+  // unit-tested separately; this asserts the `App` -> MapView prop
+  // flow so a missed prop / import would surface here.
+  it('passes loaded route shapes down to MapView via useRouteShapes', async () => {
+    const shapeFixture: RouteShape = {
+      routeId: 'wiring-fixture-route',
+      routeType: 3,
+      color: '#3FB',
+      route: null,
+      points: [
+        [35.0, 139.0],
+        [35.1, 139.1],
+      ],
+    };
+    mockGetRouteShapes.mockResolvedValue({
+      success: true,
+      data: [shapeFixture],
+      truncated: false,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      const mapViewProps = mockMapView.mock.lastCall?.[0] as {
+        routeShapes: RouteShape[];
+      };
+      expect(mapViewProps.routeShapes).toEqual([shapeFixture]);
     });
   });
 
