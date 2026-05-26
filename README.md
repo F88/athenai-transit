@@ -22,3 +22,10 @@ Transit explorer without destination — discover where you can go from here
 - **お散歩地図** -- 地理院地図で街歩きに最適な詳細地形を表示
 - **直近3便のボトムシート** -- 次発は「あと〇分」、以降は絶対時刻で表示
 - **完全フロントエンド完結** -- APIサーバー不要
+
+## Documentation
+
+- [PRD.md](./PRD.md) -- プロダクト要件、ユーザー体験、機能要件
+- [DEVELOPMENT.md](./DEVELOPMENT.md) -- 開発者向け入口、品質基準、配置ルール
+- [docs/README.md](./docs/README.md) -- 詳細ドキュメント索引
+- [pipeline/README.md](./pipeline/README.md) -- 独立したデータパイプライン
