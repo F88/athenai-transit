@@ -32,12 +32,16 @@ Before proposing architecture or data flow changes, thoroughly investigate the e
 
 ### Repository Pattern
 
-UI components depend only on `TransitRepository`, keeping UI and data layers loosely coupled.
+UI components depend only on `TransitRepository`, keeping UI and data layers loosely coupled. User-data (anchor / stop selection) lives in separate repositories with their own interfaces.
 
 ```text
-TransitRepository          <- interface used by UI
-  ├── AthenaiRepositoryV2   <- production (v2 DataBundle JSON)
-  └── MockRepository        <- for UI testing with fictional data
+TransitRepository                                  <- interface used by UI for transit data
+  ├── AthenaiRepositoryV2  (athenai-repository/)   <- production (v2 DataBundle JSON)
+  └── MockRepository       (mock-repository/)      <- for UI testing with fictional data
+
+User-data repositories (separate from transit data):
+  ├── AnchorRepository        (anchor/)            <- portal / anchor preference
+  └── StopSelectionRepository (stop-selection/)    <- persistent stop selection
 ```
 
 #### MockRepository (`?repo=mock` mode)
@@ -46,7 +50,7 @@ TransitRepository          <- interface used by UI
 
 - **Activation**: Add `?repo=mock` to the URL (e.g., `http://localhost:5173/?repo=mock`). Available in all builds including production.
 - **When to use**: Only when testing requires data shapes not present in real GTFS sources. For normal development, use real data.
-- **Location**: `src/repositories/mock-repository.ts`
+- **Location**: `src/repositories/mock-repository/`
 
 ### Data Pipeline
 
@@ -55,28 +59,44 @@ A Node.js pre-build pipeline (`pipeline/`) converts GTFS CSV files into per-sour
 ## Development Commands
 
 ```bash
-npm run dev          # start Vite dev server
-npm run build        # production build (tsc + vite build)
-npm run lint         # ESLint (type-checked)
-npm run lint:fix     # ESLint with auto-fix
-npm run format       # Prettier format all files
-npm run format:check # Prettier check (CI)
-npm run preview      # preview production build
+npm run dev             # start Vite dev server
+npm run build           # production build (tsc + vite build)
+npm run typecheck       # tsc --noEmit
+npm run typecheck:build # tsc -b --noEmit
+npm run lint            # ESLint (type-checked)
+npm run lint:fix        # ESLint with auto-fix
+npm run format          # Prettier format all files
+npm run format:check    # Prettier check (CI)
+npm run test            # Vitest run
+npm run test:coverage   # Vitest with coverage
+npm run preview         # preview production build
+npm run storybook       # Storybook dev server
+npm run build-storybook # Storybook production build
 ```
 
 ### Data preparation
 
 ```bash
-npm run pipeline:download:gtfs            # 1. download GTFS data (batch)
-npm run pipeline:download:odpt-json      # 2. download ODPT JSON data (batch, requires .env.pipeline.local)
-npm run pipeline:build:db                # 3. convert GTFS CSV -> pipeline/workspace/_build/db/*.db
-npm run pipeline:build:v2-data           # 4. generate v2 DataBundle from GTFS
-npm run pipeline:build:v2-odpt-train     # 5. generate v2 ODPT Train DataBundle
-npm run pipeline:build:v2-shapes:gtfs    # 6. generate v2 route shapes from GTFS
-npm run pipeline:build:v2-shapes:ksj     # 7. generate v2 route shapes from KSJ railway
-npm run pipeline:build:v2-insights       # 8. generate v2 InsightsBundle from DataBundle
-npm run pipeline:build:v2-global-insights # 9. generate v2 GlobalInsightsBundle
-npm run data:sync                        # 10. copy pipeline/workspace/_build/data-v2/ -> public/data-v2/
+npm run pipeline:download:gtfs              # 1.  download GTFS data (batch)
+npm run pipeline:download:odpt-json         # 2.  download ODPT JSON data (batch, requires .env.pipeline.local)
+npm run pipeline:build:db                   # 3.  convert GTFS CSV -> pipeline/workspace/_build/db/*.db
+npm run pipeline:build:v2-data              # 4.  generate v2 DataBundle from GTFS
+npm run pipeline:build:v2-odpt-train        # 5.  generate v2 ODPT Train DataBundle
+npm run pipeline:build:v2-shapes:gtfs       # 6.  generate v2 route shapes from GTFS
+npm run pipeline:build:v2-shapes:ksj        # 7.  generate v2 route shapes from KSJ railway
+npm run pipeline:build:v2-insights          # 8.  generate v2 InsightsBundle from DataBundle
+npm run pipeline:build:v2-global-insights   # 9.  generate v2 GlobalInsightsBundle
+npm run pipeline:build:v2-data-source-catalog # 10. generate v2 DataSourceCatalog
+npm run pipeline:validate:v2                # 11. validate generated v2 bundles
+npm run data:sync                           # 12. copy pipeline/workspace/_build/data-v2/ -> public/data-v2/
+```
+
+Auxiliary pipeline commands:
+
+```bash
+npm run pipeline:check:odpt-resources # check ODPT resource availability
+npm run pipeline:describe             # describe configured resources
+npm run pipeline:dev-tools            # ad-hoc dev tooling
 ```
 
 ## Key UX Requirements
@@ -88,14 +108,14 @@ See [PRD.md](./PRD.md) section 3 for detailed UI/UX requirements. Key points for
 
 ## Map / Leaflet
 
-When implementing UI positioning or z-index changes on the map, be aware of Leaflet's pane/stacking context system. Test visibility of all existing UI elements after changes. See [DEVELOPMENT.md](./DEVELOPMENT.md) for z-index layer assignments and click/tap event control details.
+When implementing UI positioning or z-index changes on the map, be aware of Leaflet's pane/stacking context system. Test visibility of all existing UI elements after changes. See [docs/map-architecture.md](./docs/map-architecture.md) for z-index layer assignments, layout mode, and click/tap event control details.
 
 ## Code Guidelines
 
 - **No logic in TSX**: Business logic belongs in `src/domain/`, `src/utils/`, or `src/lib/`, not inline in components.
 - **Pure functions first, Hooks for wiring**: Testable logic belongs in `src/domain/` or `src/utils/` as pure functions. Custom Hooks are for state orchestration (state + effect + callback), not for business logic.
 
-For coding conventions (TSDoc, naming, braces), file organization, testing guidelines, and lint/format workflow, see [DEVELOPMENT.md](./DEVELOPMENT.md).
+For coding conventions (TSDoc, naming, braces), file placement, app-level orchestration, stop ID lookup, testing guidelines, and lint/format workflow, see [DEVELOPMENT.md](./DEVELOPMENT.md). Topic-specific implementation details (Map / Leaflet, runtime configuration, PWA, styling, repository API, dependencies, etc.) are split across `docs/**/*.md`; see [docs/README.md](./docs/README.md) for the up-to-date index.
 
 ## Refactoring
 
@@ -103,11 +123,16 @@ When refactoring or moving files, always verify path resolution and imports stil
 
 ## Documentation
 
-| File             | Purpose                                                                                                         |
-| ---------------- | --------------------------------------------------------------------------------------------------------------- |
-| `PRD.md`         | Product requirements (concept, UX requirements, architecture overview). **What** to build and **why**.          |
-| `DEVELOPMENT.md` | Developer guide (code quality, z-index layers, mode definitions, API specs, styling, logger). **How** to build. |
-| `CLAUDE.md`      | This file. High-level architecture and rules for Claude Code.                                                   |
+| File                 | Purpose                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| `README.md`          | Project entry point.                                                                  |
+| `PRD.md`             | Product requirements (concept, UX, architecture overview). **What** to build and why. |
+| `DEVELOPMENT.md`     | Developer entry point: code quality, file placement, app orchestration, stop lookup.  |
+| `docs/README.md`     | Index of detailed implementation docs under `docs/**/*.md`.                           |
+| `pipeline/README.md` | Independent data-build subsystem entry point.                                         |
+| `CLAUDE.md`          | This file. High-level architecture and rules for Claude Code.                         |
+
+Individual `docs/**/*.md` files may be added or reorganized over time; consult [README.md](./README.md) and [docs/README.md](./docs/README.md) for the current set.
 
 ## MCP Setup
 
