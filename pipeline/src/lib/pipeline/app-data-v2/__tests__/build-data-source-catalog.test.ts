@@ -330,7 +330,7 @@ describe('buildDataSourceCatalogBundle', () => {
     writeJson('testpfx/shapes.json', makeShapesBundle());
     writeJson('global/insights.json', makeGlobalInsightsBundle());
 
-    const bundle = await buildDataSourceCatalogBundle(['testpfx']);
+    const { bundle } = await buildDataSourceCatalogBundle(['testpfx']);
     const source = bundle.sources.data.testpfx;
 
     expect(bundle.bundle_version).toBe(3);
@@ -421,7 +421,7 @@ describe('buildDataSourceCatalogBundle', () => {
     writeJson('testpfx/insights.json', makeInsightsBundle());
     writeJson('global/insights.json', makeGlobalInsightsBundle());
 
-    const bundle = await buildDataSourceCatalogBundle(['testpfx']);
+    const { bundle } = await buildDataSourceCatalogBundle(['testpfx']);
 
     expect(bundle.sources.data.testpfx.bundles.shapesBundle).toBeUndefined();
     expect(bundle.sources.data.testpfx.summary.shapes).toEqual({
@@ -483,7 +483,7 @@ describe('buildDataSourceCatalogBundle', () => {
     writeJson('testpfx/insights.json', makeInsightsBundle());
     writeJson('global/insights.json', makeGlobalInsightsBundle());
 
-    const bundle = await buildDataSourceCatalogBundle(['testpfx']);
+    const { bundle } = await buildDataSourceCatalogBundle(['testpfx']);
     const source = bundle.sources.data.testpfx;
 
     expect(source.summary.periods.feedValidity).toEqual({ start: null, end: null });
@@ -511,7 +511,7 @@ describe('buildDataSourceCatalogBundle', () => {
     writeJson('testpfx/insights.json', insightsBundle);
     writeJson('global/insights.json', makeGlobalInsightsBundle());
 
-    const bundle = await buildDataSourceCatalogBundle(['testpfx']);
+    const { bundle } = await buildDataSourceCatalogBundle(['testpfx']);
 
     expect(bundle.sources.data.testpfx.bundles.insightsBundle.counts).toEqual({
       serviceGroups: 2,
@@ -539,7 +539,7 @@ describe('buildDataSourceCatalogBundle', () => {
     writeJson('testpfx/insights.json', makeInsightsBundle());
     writeJson('global/insights.json', makeGlobalInsightsBundle());
 
-    const bundle = await buildDataSourceCatalogBundle(['testpfx']);
+    const { bundle } = await buildDataSourceCatalogBundle(['testpfx']);
 
     expect(bundle.sources.data.testpfx.summary.service.operatingDates).toEqual({
       first: '20260404',
@@ -561,7 +561,7 @@ describe('buildDataSourceCatalogBundle', () => {
     writeJson('testpfx/insights.json', makeInsightsBundle());
     writeJson('global/insights.json', makeGlobalInsightsBundle());
 
-    const bundle = await buildDataSourceCatalogBundle(['testpfx', 'testpfx']);
+    const { bundle } = await buildDataSourceCatalogBundle(['testpfx', 'testpfx']);
 
     expect(Object.keys(bundle.sources.data)).toEqual(['testpfx']);
     expect(bundle.sources.data.testpfx.bundles.dataBundle.counts.stops).toBe(3);
@@ -573,5 +573,72 @@ describe('buildDataSourceCatalogBundle', () => {
     await expect(buildDataSourceCatalogBundle(['unknown-prefix'])).rejects.toThrow(
       'Unknown target prefix: unknown-prefix',
     );
+  });
+
+  it('skips prefixes whose data.json is missing without throwing', async () => {
+    writeJson('global/insights.json', makeGlobalInsightsBundle());
+    // Note: no testpfx/data.json on disk.
+
+    const { bundle, results } = await buildDataSourceCatalogBundle(['testpfx']);
+
+    expect(bundle.sources.data).toEqual({});
+    expect(results).toHaveLength(1);
+    expect(results[0].prefix).toBe('testpfx');
+    expect(results[0].status).toBe('skipped');
+    expect(results[0].reason).toMatch(/data\.json/);
+  });
+
+  it('skips prefixes whose insights.json is missing (data.json present)', async () => {
+    writeJson('testpfx/data.json', makeDataBundle());
+    writeJson('global/insights.json', makeGlobalInsightsBundle());
+    // Note: no testpfx/insights.json on disk.
+
+    const { bundle, results } = await buildDataSourceCatalogBundle(['testpfx']);
+
+    expect(bundle.sources.data).toEqual({});
+    expect(results).toHaveLength(1);
+    expect(results[0].status).toBe('skipped');
+    expect(results[0].reason).toMatch(/insights\.json/);
+  });
+
+  it('records a failed result (does not throw) for malformed per-source JSON', async () => {
+    // data.json exists but is unparsable. The script should isolate the
+    // failure to this prefix and continue.
+    const filePath = join(TMP_DIR, 'testpfx/data.json');
+    mkdirSync(dirname(filePath), { recursive: true });
+    writeFileSync(filePath, '{not-json}');
+    writeJson('testpfx/insights.json', makeInsightsBundle());
+    writeJson('global/insights.json', makeGlobalInsightsBundle());
+
+    const { bundle, results } = await buildDataSourceCatalogBundle(['testpfx']);
+
+    expect(bundle.sources.data).toEqual({});
+    expect(results).toHaveLength(1);
+    expect(results[0].status).toBe('failed');
+    expect(results[0].reason.length).toBeGreaterThan(0);
+  });
+
+  it('still throws when global/insights.json is missing (fatal precondition)', async () => {
+    writeJson('testpfx/data.json', makeDataBundle());
+    writeJson('testpfx/insights.json', makeInsightsBundle());
+    // Note: no global/insights.json on disk.
+
+    await expect(buildDataSourceCatalogBundle(['testpfx'])).rejects.toThrow(
+      /global insights bundle/i,
+    );
+  });
+
+  it('records an ok result and populates sources.data on full success', async () => {
+    writeJson('testpfx/data.json', makeDataBundle());
+    writeJson('testpfx/insights.json', makeInsightsBundle());
+    writeJson('global/insights.json', makeGlobalInsightsBundle());
+
+    const { bundle, results } = await buildDataSourceCatalogBundle(['testpfx']);
+
+    expect(Object.keys(bundle.sources.data)).toEqual(['testpfx']);
+    expect(results).toHaveLength(1);
+    expect(results[0].prefix).toBe('testpfx');
+    expect(results[0].status).toBe('ok');
+    expect(results[0].reason).toBe('');
   });
 });

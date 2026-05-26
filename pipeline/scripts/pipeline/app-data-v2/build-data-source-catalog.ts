@@ -17,7 +17,15 @@ import { fileURLToPath } from 'node:url';
 import { V2_OUTPUT_DIR } from '../../../src/lib/paths';
 import { buildDataSourceCatalogBundle } from '../../../src/lib/pipeline/app-data-v2/build-data-source-catalog';
 import { writeDataSourceCatalogBundle } from '../../../src/lib/pipeline/app-data-v2/bundle-writer';
-import { loadTargetFile, parseCliArg, runMain } from '../../../src/lib/pipeline/pipeline-utils';
+import {
+  EXIT_ERROR,
+  determineAggregateExitCode,
+  formatExitCode,
+  loadTargetFile,
+  parseCliArg,
+  printAggregateSummary,
+  runMain,
+} from '../../../src/lib/pipeline/pipeline-utils';
 
 const OUTPUT_DIR = V2_OUTPUT_DIR;
 const GLOBAL_DIR = join(OUTPUT_DIR, 'global');
@@ -45,7 +53,7 @@ export async function main(): Promise<void> {
 
   if (arg.kind !== 'targets') {
     printUsage();
-    process.exitCode = 1;
+    process.exitCode = EXIT_ERROR;
     return;
   }
 
@@ -57,26 +65,46 @@ export async function main(): Promise<void> {
   console.log('');
 
   const t0 = performance.now();
+  let fatalPrecondition = false;
 
   try {
-    const bundle = await buildDataSourceCatalogBundle(targetPrefixes);
+    const { bundle, results } = await buildDataSourceCatalogBundle(targetPrefixes);
+    const exitCode = determineAggregateExitCode(results);
 
-    writeDataSourceCatalogBundle(GLOBAL_DIR, bundle);
+    // Conditional write: on EXIT_ERROR (all-skipped / all-failed) preserve
+    // the previous workspace artifact instead of overwriting it with an
+    // empty catalog. The workflow's "Fail on total" branch already stops
+    // sync, so deployed data is never touched by a fatal run.
+    if (exitCode !== EXIT_ERROR) {
+      writeDataSourceCatalogBundle(GLOBAL_DIR, bundle);
+      console.log(`  Built catalog entries: ${Object.keys(bundle.sources.data).length}`);
+      console.log(`  Written: ${GLOBAL_DIR}/data-source-catalog.json`);
+    } else {
+      console.log('  Skipped write: no targets produced an ok result.');
+    }
 
-    console.log(`  Built catalog entries: ${Object.keys(bundle.sources.data).length}`);
-    console.log(`  Written: ${GLOBAL_DIR}/data-source-catalog.json`);
+    printAggregateSummary(results);
+    process.exitCode = exitCode;
   } catch (err) {
     console.error(`\nFATAL: ${err instanceof Error ? err.message : String(err)}`);
     if (err instanceof Error && err.cause instanceof Error) {
       console.error(`  Cause: ${err.cause.message}`);
     }
-    process.exitCode = 1;
+    process.exitCode = EXIT_ERROR;
+    fatalPrecondition = true;
   } finally {
     const durationMs = performance.now() - t0;
-    const code = process.exitCode ?? 0;
-    const label = code === 0 ? 'ok' : 'error';
+    const code = Number(process.exitCode ?? 0);
+    // fatal precondition (e.g. unknown prefix, missing global insights,
+    // write failure) reaches EXIT_ERROR via the catch block above. The
+    // generic "all failed" label fits the all-skipped/failed case from
+    // determineAggregateExitCode but is misleading for fatal preconditions,
+    // so emit a more accurate label when the catch path was taken.
+    const exitLabel = fatalPrecondition
+      ? `Exit code: ${code} (fatal precondition)`
+      : formatExitCode(code);
     console.log(`\nDuration: ${(durationMs / 1000).toFixed(1)}s`);
-    console.log(`Exit code: ${code} (${label})\n=== data-source-catalog [END] ===`);
+    console.log(`${exitLabel}\n=== data-source-catalog [END] ===`);
   }
 }
 

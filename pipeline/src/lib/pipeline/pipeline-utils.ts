@@ -293,3 +293,84 @@ export function formatExitCode(exitCode: number): string {
   const label = EXIT_CODE_LABELS[exitCode] ?? 'unknown';
   return `Exit code: ${exitCode} (${label})`;
 }
+
+// ---------------------------------------------------------------------------
+// Aggregate target results (for global aggregate scripts)
+// ---------------------------------------------------------------------------
+
+/**
+ * Outcome of processing one target prefix inside a global aggregate script
+ * (e.g. build-global-insights, build-data-source-catalog).
+ *
+ * Unlike {@link BatchResult} (which comes from a subprocess fan-out via
+ * {@link runBatch}), these results come from an in-process iteration over
+ * a target list. They distinguish "skipped" (input file missing) from
+ * "failed" (input present but build threw) to support more precise log
+ * output and Slack messaging.
+ */
+export type AggregateTargetStatus = 'ok' | 'skipped' | 'failed';
+
+/**
+ * Per-target result for a global aggregate build.
+ *
+ * - `prefix`: target prefix from the target-list file.
+ * - `status`: outcome label (see {@link AggregateTargetStatus}).
+ * - `reason`: short ASCII description; empty string for `ok`.
+ * - `durationMs`: wall time for this target's contribution.
+ */
+export interface AggregateTargetResult {
+  prefix: string;
+  status: AggregateTargetStatus;
+  reason: string;
+  durationMs: number;
+}
+
+/**
+ * Print a summary table of aggregate target results.
+ *
+ * Mirrors the layout of {@link printBatchSummary} but distinguishes
+ * three statuses (OK / SKIPPED / FAILED) and appends the per-target
+ * `reason` when present.
+ */
+export function printAggregateSummary(results: AggregateTargetResult[]): void {
+  const ok = results.filter((r) => r.status === 'ok');
+  const skipped = results.filter((r) => r.status === 'skipped');
+  const failed = results.filter((r) => r.status === 'failed');
+  const totalMs = results.reduce((sum, r) => sum + r.durationMs, 0);
+
+  console.log('\n=== Aggregate Summary ===\n');
+  for (const r of results) {
+    const status = r.status === 'ok' ? 'OK' : r.status === 'skipped' ? 'SKIPPED' : 'FAILED';
+    const duration = (r.durationMs / 1000).toFixed(1);
+    const suffix = r.reason ? `  (${r.reason})` : '';
+    console.log(`  ${r.prefix.padEnd(30)} ${status.padEnd(8)} ${duration}s${suffix}`);
+  }
+  console.log(
+    `\n  Total: ${results.length} sources, ${ok.length} ok, ${skipped.length} skipped, ${failed.length} failed (${(totalMs / 1000).toFixed(1)}s)`,
+  );
+}
+
+/**
+ * Determine the exit code from aggregate target results.
+ *
+ * - 0 (EXIT_OK): every target produced an `ok` result.
+ * - 1 (EXIT_WARN): at least one `ok`, plus any `skipped` / `failed`.
+ * - 2 (EXIT_ERROR): zero `ok` results (all skipped, all failed, or empty input).
+ *
+ * Fatal preconditions (missing global input, CLI usage error, write
+ * failure) are signalled by callers via `process.exitCode = EXIT_ERROR`
+ * directly and never reach this function.
+ */
+export function determineAggregateExitCode(results: AggregateTargetResult[]): number {
+  if (results.length === 0) {
+    return EXIT_ERROR;
+  }
+  const okCount = results.filter((r) => r.status === 'ok').length;
+  if (okCount === 0) {
+    return EXIT_ERROR;
+  }
+  if (okCount === results.length) {
+    return EXIT_OK;
+  }
+  return EXIT_WARN;
+}

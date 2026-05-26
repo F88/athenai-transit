@@ -8,9 +8,9 @@
  * @vitest-environment node
  */
 
-import { existsSync, readFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DataBundle, GlobalInsightsBundle } from '@contracts/data/transit-v2-json';
 
@@ -27,7 +27,43 @@ import {
   writeDataBundle,
   writeGlobalInsightsBundle,
 } from '../../../../src/lib/pipeline/app-data-v2/bundle-writer';
-import { uniqueInOrder } from '../../../../src/lib/pipeline/pipeline-utils';
+// Note: not importing `uniqueInOrder` from pipeline-utils as a value here -
+// the module is partially mocked further below to drive the CLI flow, and a
+// value-level import from a partially-mocked module triggers an ESM
+// temporal-dead-zone error during vitest module init. Inlining the dedupe
+// (a 1-liner) avoids the issue without affecting either test path.
+function uniqueInOrder<T>(xs: T[]): T[] {
+  return Array.from(new Set(xs));
+}
+
+const { mockParseCliArg, mockLoadTargetFile, MOCK_OUTPUT_DIR } = vi.hoisted(() => ({
+  mockParseCliArg: vi.fn(),
+  mockLoadTargetFile: vi.fn(),
+  // Template literal instead of `join()` because vi.hoisted runs before
+  // module imports are initialized.
+  MOCK_OUTPUT_DIR: `${import.meta.dirname}/.tmp-build-global-insights-main-test`,
+}));
+
+// Mock V2_OUTPUT_DIR so the script writes into a test-controlled directory.
+vi.mock('../../../../src/lib/paths', () => ({
+  V2_OUTPUT_DIR: MOCK_OUTPUT_DIR,
+}));
+
+// Preserve real EXIT_*, determineAggregateExitCode, printAggregateSummary,
+// formatExitCode, uniqueInOrder, runMain; only mock CLI plumbing.
+vi.mock('../../../../src/lib/pipeline/pipeline-utils', async () => {
+  const actual = await vi.importActual<
+    typeof import('../../../../src/lib/pipeline/pipeline-utils')
+  >('../../../../src/lib/pipeline/pipeline-utils');
+  return {
+    ...actual,
+    parseCliArg: mockParseCliArg,
+    loadTargetFile: mockLoadTargetFile,
+    runMain: vi.fn(),
+  };
+});
+
+import { main as runBuildGlobalInsightsMain } from '../build-global-insights';
 
 const TMP_DIR = join(import.meta.dirname, '.tmp-build-global-insights-test');
 const GROUP_KEY = 'ho';
@@ -179,7 +215,7 @@ afterEach(() => {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('GlobalInsightsBundle assembly', () => {
+describe('GlobalInsightsBundle assembly (local flow helper)', () => {
   it('produces a valid GlobalInsightsBundle from a single source', () => {
     const srcDir = join(TMP_DIR, 'sources');
     const outDir = join(TMP_DIR, 'global');
@@ -470,5 +506,90 @@ describe('GlobalInsightsBundle assembly', () => {
     expect(result.stopGeo!.data['s1'].cn).toEqual({
       ho: { rc: 1, freq: 2, sc: 0 },
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CLI flow exit-code tests
+// ---------------------------------------------------------------------------
+
+describe('build-global-insights.ts main() exit-code semantics', () => {
+  function writeDataBundleAt(prefix: string, bundle: DataBundle): void {
+    const filePath = join(MOCK_OUTPUT_DIR, prefix, 'data.json');
+    mkdirSync(dirname(filePath), { recursive: true });
+    writeFileSync(filePath, JSON.stringify(bundle));
+  }
+
+  beforeEach(() => {
+    mockParseCliArg.mockReset();
+    mockLoadTargetFile.mockReset();
+    process.exitCode = undefined;
+    rmSync(MOCK_OUTPUT_DIR, { recursive: true, force: true });
+
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    rmSync(MOCK_OUTPUT_DIR, { recursive: true, force: true });
+    vi.restoreAllMocks();
+    process.exitCode = undefined;
+  });
+
+  it('exits 0 (EXIT_OK) and writes insights when every target has data.json', async () => {
+    const bundle = makeDataBundle({
+      services: [{ id: 'su', d: [0, 0, 0, 0, 0, 0, 1] }],
+      stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
+      patterns: { p1: { r: 'r1', stops: [{ id: 's1' }] } },
+      timetable: { s1: [{ tp: 'p1', d: { su: [480] } }] },
+    });
+    writeDataBundleAt('alpha', bundle);
+
+    mockParseCliArg.mockReturnValue({ kind: 'targets', path: '/tmp/targets.ts' });
+    mockLoadTargetFile.mockResolvedValue(['alpha']);
+
+    await runBuildGlobalInsightsMain();
+
+    expect(process.exitCode).toBe(0);
+    expect(existsSync(join(MOCK_OUTPUT_DIR, 'global', 'insights.json'))).toBe(true);
+  });
+
+  it('exits 1 (EXIT_WARN) and still writes insights when some prefixes are skipped', async () => {
+    const bundle = makeDataBundle({
+      services: [{ id: 'su', d: [0, 0, 0, 0, 0, 0, 1] }],
+      stops: [{ i: 's1', a: 35.68, o: 139.76, l: 0 }],
+      patterns: { p1: { r: 'r1', stops: [{ id: 's1' }] } },
+      timetable: { s1: [{ tp: 'p1', d: { su: [480] } }] },
+    });
+    writeDataBundleAt('alpha', bundle);
+    // no data.json for `gone`
+
+    mockParseCliArg.mockReturnValue({ kind: 'targets', path: '/tmp/targets.ts' });
+    mockLoadTargetFile.mockResolvedValue(['alpha', 'gone']);
+
+    await runBuildGlobalInsightsMain();
+
+    expect(process.exitCode).toBe(1);
+    expect(existsSync(join(MOCK_OUTPUT_DIR, 'global', 'insights.json'))).toBe(true);
+  });
+
+  it('exits 2 (EXIT_ERROR) and skips the write when every prefix is missing', async () => {
+    // No data.json on disk for any prefix.
+    mockParseCliArg.mockReturnValue({ kind: 'targets', path: '/tmp/targets.ts' });
+    mockLoadTargetFile.mockResolvedValue(['gone1', 'gone2']);
+
+    await runBuildGlobalInsightsMain();
+
+    expect(process.exitCode).toBe(2);
+    expect(existsSync(join(MOCK_OUTPUT_DIR, 'global', 'insights.json'))).toBe(false);
+  });
+
+  it('exits 2 (EXIT_ERROR) when the CLI args are invalid (e.g. non-targets kind)', async () => {
+    mockParseCliArg.mockReturnValue({ kind: 'unexpected' });
+
+    await runBuildGlobalInsightsMain();
+
+    expect(mockLoadTargetFile).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(2);
   });
 });

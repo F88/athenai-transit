@@ -11,6 +11,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- Pipeline: global aggregate scripts (`build-data-source-catalog` / `build-global-insights`) の per-source 入力欠損を **fatal から skip-tolerant に変更**。 欠損 prefix は catalog / global insights から除外して残り prefix で処理続行し、 exit code 0 / 1 (partial) / 2 (all failed or fatal precondition) を返す。 workflow の各 step を `set +e` + `Warn on partial failure` / `Fail on total` の triplet に揃え、 Slack 通知の partial failure 集約にも両 step を追加。 `global/insights.json` 欠損や resource definition 未登録 prefix は引き続き fatal precondition で停止する(Issue #254)。
 - Data: kyoto-city-bus の GTFS resource を 20260525 版へ更新。
 
 ## [2026.05.26]

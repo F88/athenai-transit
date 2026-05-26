@@ -187,10 +187,38 @@ jobs:
           exit 1
 
       - name: Build v2 global insights
-        run: npm run pipeline:build:v2-global-insights
+        id: build-v2-global-insights
+        run: |
+          set +e
+          npm run pipeline:build:v2-global-insights
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on v2 global insights partial failure
+        if: steps.build-v2-global-insights.outputs.exit_code == '1'
+        run: echo "::warning::Some v2 global insights inputs were skipped (partial failure)."
+
+      - name: Fail on v2 global insights build failure
+        if: steps.build-v2-global-insights.outputs.exit_code == '2'
+        run: |
+          echo "::error::All v2 global insights inputs were missing or failed."
+          exit 1
 
       - name: Build v2 data source catalog
-        run: npm run pipeline:build:v2-data-source-catalog
+        id: build-v2-data-source-catalog
+        run: |
+          set +e
+          npm run pipeline:build:v2-data-source-catalog
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on v2 data source catalog partial failure
+        if: steps.build-v2-data-source-catalog.outputs.exit_code == '1'
+        run: echo "::warning::Some v2 data source catalog entries were skipped (partial failure)."
+
+      - name: Fail on v2 data source catalog build failure
+        if: steps.build-v2-data-source-catalog.outputs.exit_code == '2'
+        run: |
+          echo "::error::All v2 data source catalog entries failed or global insights missing."
+          exit 1
 
       # ── Validate ───────────────────────────────────────────
       - name: Validate v2 bundles
@@ -274,6 +302,8 @@ jobs:
           if [ "${{ steps.build-v2-odpt-train.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 ODPT Train, "; fi
           if [ "${{ steps.build-v2-shapes-gtfs.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 GTFS shapes, "; fi
           if [ "${{ steps.build-v2-insights.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 insights, "; fi
+          if [ "${{ steps.build-v2-global-insights.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 global insights, "; fi
+          if [ "${{ steps.build-v2-data-source-catalog.outputs.exit_code }}" = "1" ]; then WARN="${WARN}v2 data source catalog, "; fi
           if [ -n "$WARN" ]; then
             PARTS+=("Partial failure: ${WARN%, }")
             HAS_WARN=true
