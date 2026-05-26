@@ -115,6 +115,10 @@ export default defineConfig({
               name: 'react',
               test: /node_modules[\\/](react|react-dom|scheduler)(?:[\\/]|$)/,
             },
+            {
+              name: 'holiday-jp',
+              test: /node_modules[\\/]@holiday-jp(?:[\\/]|$)/,
+            },
           ],
         },
       },
