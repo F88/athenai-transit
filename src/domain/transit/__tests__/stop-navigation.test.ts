@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { makeRoute, makeStop, makeStopMeta } from '../../../__tests__/helpers';
 import type { AppRouteTypeValue } from '../../../types/app/transit';
+import type { AnchorEntry } from '../../portal/anchor';
 import { findVisibleStopMetaById, lookupStopMetaFromMap } from '../stop-meta-lookup';
 import {
+  buildPersistedStopNavigationPayload,
   buildHistoryNavigationPayload,
+  buildPortalNavigationPayload,
   buildSelectionSnapshotFromMeta,
+  buildFallbackStopFromSnapshot,
   buildSelectionSnapshotFromStop,
 } from '../stop-navigation';
 import type { StopHistoryEntry } from '../stop-history';
@@ -152,6 +156,133 @@ describe('buildSelectionSnapshotFromStop', () => {
   });
 });
 
+describe('buildFallbackStopFromSnapshot', () => {
+  it('builds a minimal Stop when snapshot coordinates exist', () => {
+    expect(
+      buildFallbackStopFromSnapshot({
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: 35,
+        lon: 139,
+        routeTypes: [3],
+        agencyNames: ['Agency A'],
+        platformCode: '1',
+      }),
+    ).toEqual({
+      stop_id: 'A',
+      stop_name: 'Snapshot A',
+      stop_names: {},
+      stop_lat: 35,
+      stop_lon: 139,
+      location_type: 0,
+      agency_id: '',
+      platform_code: '1',
+    });
+  });
+
+  it('returns null when snapshot coordinates are missing', () => {
+    expect(
+      buildFallbackStopFromSnapshot({
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: null,
+        lon: null,
+        routeTypes: [3],
+        agencyNames: [],
+      }),
+    ).toBeNull();
+  });
+});
+
+describe('buildPersistedStopNavigationPayload', () => {
+  it('returns stop and snapshot from current stop metadata when available', () => {
+    const entry: AnchorEntry = {
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: 35,
+        lon: 139,
+        routeTypes: [3],
+        agencyNames: ['Agency A'],
+        platformCode: '1',
+      },
+      createdAt: 1000,
+    };
+    const stopMeta = makeStopMeta(makeStop('A', 36, 140));
+    stopMeta.routes = [];
+
+    const result = buildPersistedStopNavigationPayload(entry, new Map(), ['ja'], () => stopMeta);
+
+    expect(result).toEqual({
+      stop: stopMeta.stop,
+      snapshot: {
+        stopId: 'A',
+        name: 'Stop A',
+        lat: 36,
+        lon: 140,
+        routeTypes: [-1],
+        agencyNames: [],
+        platformCode: undefined,
+      },
+    });
+  });
+
+  it('returns stop and snapshot from the persisted entry when current metadata is unavailable', () => {
+    const entry: AnchorEntry = {
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: 35,
+        lon: 139,
+        routeTypes: [3],
+        agencyNames: ['Agency A'],
+        platformCode: '1',
+      },
+      createdAt: 1000,
+    };
+
+    const result = buildPersistedStopNavigationPayload(entry, new Map(), ['ja'], () => null);
+
+    expect(result).toEqual({
+      stop: {
+        stop_id: 'A',
+        stop_name: 'Snapshot A',
+        stop_names: {},
+        stop_lat: 35,
+        stop_lon: 139,
+        location_type: 0,
+        agency_id: '',
+        platform_code: '1',
+      },
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: 35,
+        lon: 139,
+        routeTypes: [3],
+        agencyNames: ['Agency A'],
+        platformCode: '1',
+      },
+    });
+  });
+
+  it('returns null when the persisted entry cannot rebuild a stop', () => {
+    const entry: AnchorEntry = {
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: null,
+        lon: null,
+        routeTypes: [3],
+        agencyNames: [],
+      },
+      createdAt: 1000,
+    };
+
+    expect(buildPersistedStopNavigationPayload(entry, new Map(), ['ja'], () => null)).toBeNull();
+  });
+});
+
 describe('buildHistoryNavigationPayload', () => {
   it('returns stop and snapshot from current stop metadata when available', () => {
     const entry: StopHistoryEntry = {
@@ -243,5 +374,78 @@ describe('buildHistoryNavigationPayload', () => {
     );
 
     expect(result).toBeNull();
+  });
+});
+
+describe('buildPortalNavigationPayload', () => {
+  it('returns stop and snapshot from current stop metadata when available', () => {
+    const entry: AnchorEntry = {
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: 35,
+        lon: 139,
+        routeTypes: [3],
+        agencyNames: ['Agency A'],
+        platformCode: '1',
+      },
+      createdAt: 1000,
+    };
+    const stopMeta = makeStopMeta(makeStop('A', 36, 140));
+    stopMeta.routes = [];
+
+    const result = buildPortalNavigationPayload(entry, new Map(), ['ja'], () => stopMeta);
+
+    expect(result).toEqual({
+      stop: stopMeta.stop,
+      snapshot: {
+        stopId: 'A',
+        name: 'Stop A',
+        lat: 36,
+        lon: 140,
+        routeTypes: [-1],
+        agencyNames: [],
+        platformCode: undefined,
+      },
+    });
+  });
+
+  it('returns stop and snapshot from the persisted anchor when current metadata is unavailable', () => {
+    const entry: AnchorEntry = {
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: 35,
+        lon: 139,
+        routeTypes: [3],
+        agencyNames: ['Agency A'],
+        platformCode: '1',
+      },
+      createdAt: 1000,
+    };
+
+    const result = buildPortalNavigationPayload(entry, new Map(), ['ja'], () => null);
+
+    expect(result).toEqual({
+      stop: {
+        stop_id: 'A',
+        stop_name: 'Snapshot A',
+        stop_names: {},
+        stop_lat: 35,
+        stop_lon: 139,
+        location_type: 0,
+        agency_id: '',
+        platform_code: '1',
+      },
+      snapshot: {
+        stopId: 'A',
+        name: 'Snapshot A',
+        lat: 35,
+        lon: 139,
+        routeTypes: [3],
+        agencyNames: ['Agency A'],
+        platformCode: '1',
+      },
+    });
   });
 });

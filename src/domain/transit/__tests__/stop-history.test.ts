@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { makeStop } from '../../../__tests__/helpers';
 import type { AppRouteTypeValue } from '../../../types/app/transit';
 import type { StopHistoryEntry } from '../stop-history';
-import { addToHistory, buildHistorySelectionStop, MAX_HISTORY_SIZE } from '../stop-history';
+import { addToHistory, MAX_HISTORY_SIZE } from '../stop-history';
 import { createStopReferenceSnapshot } from '../stop-reference-snapshot';
 
 function makeEntry(
@@ -141,38 +141,5 @@ describe('createStopReferenceSnapshot', () => {
     const result = createStopReferenceSnapshot(stop, [3]);
 
     expect(result.platformCode).toBe('P1');
-  });
-});
-
-describe('buildHistorySelectionStop', () => {
-  it('builds a minimal Stop from a stored history snapshot with coordinates', () => {
-    const result = buildHistorySelectionStop(makeEntry('A', [3], 1000));
-
-    expect(result).toEqual({
-      stop_id: 'A',
-      stop_name: 'A',
-      stop_names: {},
-      stop_lat: 35,
-      stop_lon: 139,
-      location_type: 0,
-      agency_id: '',
-      platform_code: undefined,
-    });
-  });
-
-  it('returns null when the stored history snapshot has no coordinates', () => {
-    const result = buildHistorySelectionStop({
-      snapshot: {
-        stopId: 'A',
-        name: 'A',
-        lat: null,
-        lon: null,
-        routeTypes: [3],
-        agencyNames: [],
-      },
-      selectedAt: 1000,
-    });
-
-    expect(result).toBeNull();
   });
 });

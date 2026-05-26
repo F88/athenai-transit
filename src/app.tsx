@@ -18,7 +18,7 @@ import type {
 import { PERF_PROFILES } from './config/perf-profiles';
 import { SUPPORTED_LANGS } from './config/supported-langs';
 import { TILE_SOURCES } from './config/tile-sources';
-import { DEFAULT_TIMEZONE, resolveAgencyLang } from './config/transit-defaults';
+import { DEFAULT_TIMEZONE } from './config/transit-defaults';
 
 // i18n
 import i18n from './i18n';
@@ -28,16 +28,16 @@ import { applyAppTheme } from './lib/app-theme';
 import { createLogger } from './lib/logger';
 
 // domain
-import { buildAnchorSelectionStop, type AnchorEntry } from './domain/portal/anchor';
+import { type AnchorEntry } from './domain/portal/anchor';
 import { formatDateKey } from './domain/transit/calendar-utils';
 import { deriveFilteredNearbyStops } from './domain/transit/derive-filtered-nearby-stops';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
-import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
 import { getServiceDay } from './domain/transit/service-day';
 import { type StopHistoryEntry } from './domain/transit/stop-history';
 import { findVisibleStopMetaById, lookupStopMetaFromMap } from './domain/transit/stop-meta-lookup';
 import {
   buildHistoryNavigationPayload,
+  buildPortalNavigationPayload,
   buildSelectionSnapshotFromMeta,
   buildSelectionSnapshotFromStop,
 } from './domain/transit/stop-navigation';
@@ -49,7 +49,8 @@ import { getTripInspectionOpenOutcomeMessage } from './domain/transit/trip-inspe
 
 // hooks
 import { useAnchorRefresh } from './hooks/use-anchor-refresh';
-import { useAnchors } from './hooks/use-anchors';
+import { useAnchorToggle } from './hooks/use-anchor-toggle';
+import { useAnchors, type UseAnchorsReturn } from './hooks/use-anchors';
 import { useAppDialogs } from './hooks/use-app-dialogs';
 import { useDateTime } from './hooks/use-date-time';
 import { useGlobalFilter } from './hooks/use-global-filter';
@@ -76,7 +77,6 @@ import { LocalStorageStopSelectionRepository } from './repositories/stop-selecti
 import { formatDateParts } from './utils/datetime';
 import { toggleGroupInList } from './utils/list-toggle';
 import { routeTypeGroup } from './utils/route-type-category';
-import { routeTypesEmoji } from './utils/route-type-emoji';
 import {
   nextInfoLevel,
   nextLang,
@@ -342,7 +342,14 @@ export default function App() {
   }, [clearFocus]);
 
   const routeStops = useRouteStops(selectionInfo?.routeIds ?? null, repo);
-  // console.debug('routeStops', routeStops.length);
+
+  const { selectStop, navigateAndFocusStop } = useStopNavigation({
+    disableAutoLocate,
+    selectStopById,
+    focusStop,
+  });
+
+  // --- History state and metadata lookup ---
 
   const {
     history,
@@ -363,55 +370,6 @@ export default function App() {
     clearHistoryError();
   }, [clearHistoryError, historyError, t]);
 
-  const {
-    anchors,
-    lastError: anchorError,
-    clearError: clearAnchorError,
-    addAnchor,
-    removeAnchor,
-    batchUpdateAnchors,
-    hasAnchor: isStopAnchor,
-  } = useAnchors(anchorRepo);
-
-  useEffect(() => {
-    if (!anchorError) {
-      return;
-    }
-    logger.warn(`anchor operation failed: ${anchorError}`);
-    toast.error(t('anchor.anchorUpdateFailed'), {
-      description: anchorError,
-      duration: 4_000,
-    });
-    clearAnchorError();
-  }, [anchorError, clearAnchorError, t]);
-
-  // Refresh anchor entries with latest data once per session.
-  // See `useAnchorRefresh` for the "first non-empty anchors" timing
-  // semantics (driven by `useAnchors`'s async load).
-  useAnchorRefresh({ anchors, repo, batchUpdateAnchors, langChain });
-
-  // Pre-resolved StopWithMeta map for every anchored stop_id.
-  // Built from the repository's full dataset (not just the visible
-  // viewport) so that `Portals` can look up the latest translated
-  // display name for any anchor regardless of where it is on the map.
-  const anchorStopMetaMap = useMemo(() => {
-    if (anchors.length === 0) {
-      return new Map<string, StopWithMeta>();
-    }
-    const stopIds = new Set(anchors.map((a) => a.snapshot.stopId));
-    const metas = repo.getStopMetaByIds(stopIds);
-    return new Map(metas.map((m) => [m.stop.stop_id, m]));
-  }, [anchors, repo]);
-
-  // Lookup an anchored stop's current StopWithMeta. Returns null
-  // when the anchor's stop_id is not present in the active dataset
-  // (e.g. cross-source anchor in mock mode, or a stop deleted from
-  // the data); callers should fall back to the AnchorEntry snapshot.
-  const lookupAnchorStopMeta = useCallback(
-    (stopId: string): StopWithMeta | null => lookupStopMetaFromMap(stopId, anchorStopMetaMap),
-    [anchorStopMetaMap],
-  );
-
   const historyStopMetaMap = useMemo(() => {
     if (history.length === 0) {
       return new Map<string, StopWithMeta>();
@@ -429,12 +387,6 @@ export default function App() {
     (stopId: string): StopWithMeta | null => lookupStopMetaFromMap(stopId, historyStopMetaMap),
     [historyStopMetaMap],
   );
-
-  const { selectStop, navigateAndFocusStop } = useStopNavigation({
-    disableAutoLocate,
-    selectStopById,
-    focusStop,
-  });
 
   const recordStopMetaSelection = useCallback(
     (stopMeta: StopWithMeta) => {
@@ -469,34 +421,74 @@ export default function App() {
     ],
   );
 
-  // Wrap selectStop to also record in history.
-  //
-  // Disables auto-tracking because selecting a stop pans the map to
-  // the stop's coordinates (via `PanToFocus` reading `focusPosition`),
-  // which would fight the auto-pan effect and make subsequent
-  // `moveend` events ineligible for nearby/in-bounds refetch.
-  const handleSelectStop = useCallback(
-    (stop: Stop) => {
-      selectStop({ reason: 'select-marker', stopId: stop.stop_id, fallbackStop: stop });
-      recordStopSelectionByVisibleStop(stop.stop_id, stop);
-    },
-    [recordStopSelectionByVisibleStop, selectStop],
-  );
-
-  // Wrap selectStopById to also record in history.
-  // See `handleSelectStop` for the rationale of disabling auto-tracking.
-  const handleSelectStopById = useCallback(
-    (stopId: string) => {
-      selectStop({ reason: 'select-bottom-sheet', stopId });
-      recordStopSelectionByVisibleStop(stopId);
-    },
-    [recordStopSelectionByVisibleStop, selectStop],
-  );
-
   // Apply ?stop= query param: resolve via repo, then pan / record once.
   // See `useStopParamHandler` for the ref-backed callback pattern that
   // avoids duplicate fetches when callbacks change during async resolve.
   useStopParamHandler({ repo, navigateAndFocusStop, recordStopMetaSelection });
+
+  // --- Anchor state and metadata lookup ---
+
+  const {
+    anchors,
+    lastError: anchorError,
+    clearError: clearAnchorError,
+    addAnchor,
+    removeAnchor,
+    batchUpdateAnchors,
+    hasAnchor: isStopAnchor,
+  }: UseAnchorsReturn = useAnchors(anchorRepo);
+
+  const anchorIds = useMemo(() => new Set(anchors.map((a) => a.snapshot.stopId)), [anchors]);
+
+  // Pre-resolved StopWithMeta map for every anchored stop_id.
+  // Built from the repository's full dataset (not just the visible
+  // viewport) so that `Portals` can look up the latest translated
+  // display name for any anchor regardless of where it is on the map.
+  const anchorStopMetaMap = useMemo(() => {
+    if (anchors.length === 0) {
+      return new Map<string, StopWithMeta>();
+    }
+    const stopIds = new Set(anchors.map((a) => a.snapshot.stopId));
+    const metas = repo.getStopMetaByIds(stopIds);
+    return new Map(metas.map((m) => [m.stop.stop_id, m]));
+  }, [anchors, repo]);
+
+  // Lookup an anchored stop's current StopWithMeta. Returns null
+  // when the anchor's stop_id is not present in the active dataset
+  // (e.g. cross-source anchor in mock mode, or a stop deleted from
+  // the data); callers should fall back to the AnchorEntry snapshot.
+  const lookupAnchorStopMeta = useCallback(
+    (stopId: string): StopWithMeta | null => lookupStopMetaFromMap(stopId, anchorStopMetaMap),
+    [anchorStopMetaMap],
+  );
+
+  const { handleToggleAnchorByStopId } = useAnchorToggle({
+    anchors,
+    hasAnchor: isStopAnchor,
+    addAnchor,
+    removeAnchor,
+    repo,
+    lookupAnchorStopMeta,
+    langChain,
+    t,
+  });
+
+  useEffect(() => {
+    if (!anchorError) {
+      return;
+    }
+    logger.warn(`anchor operation failed: ${anchorError}`);
+    toast.error(t('anchor.anchorUpdateFailed'), {
+      description: anchorError,
+      duration: 4_000,
+    });
+    clearAnchorError();
+  }, [anchorError, clearAnchorError, t]);
+
+  // Refresh anchor entries with latest data once per session.
+  // See `useAnchorRefresh` for the "first non-empty anchors" timing
+  // semantics (driven by `useAnchors`'s async load).
+  useAnchorRefresh({ anchors, repo, batchUpdateAnchors, langChain });
 
   const handleFetchStopTimes = useCallback(
     async (stopId: string): Promise<StopWithContext | null> => {
@@ -611,6 +603,30 @@ export default function App() {
     [closeTripInspection],
   );
 
+  // Wrap selectStop to also record in history.
+  //
+  // Disables auto-tracking because selecting a stop pans the map to
+  // the stop's coordinates (via `PanToFocus` reading `focusPosition`),
+  // which would fight the auto-pan effect and make subsequent
+  // `moveend` events ineligible for nearby/in-bounds refetch.
+  const handleSelectStop = useCallback(
+    (stop: Stop) => {
+      selectStop({ reason: 'select-marker', stopId: stop.stop_id, fallbackStop: stop });
+      recordStopSelectionByVisibleStop(stop.stop_id, stop);
+    },
+    [recordStopSelectionByVisibleStop, selectStop],
+  );
+
+  // Wrap selectStopById to also record in history.
+  // See `handleSelectStop` for the rationale of disabling auto-tracking.
+  const handleSelectStopById = useCallback(
+    (stopId: string) => {
+      selectStop({ reason: 'select-bottom-sheet', stopId });
+      recordStopSelectionByVisibleStop(stopId);
+    },
+    [recordStopSelectionByVisibleStop, selectStop],
+  );
+
   // Select + pan to a stop from history.
   //
   // The pure resolver decides whether this selection should be ignored or
@@ -636,82 +652,6 @@ export default function App() {
     [langChain, lookupHistoryStopMeta, navigateAndFocusStop, recordStopSelection, routeTypeMap],
   );
 
-  // Anchor stop_id set for efficient lookup in BottomSheet
-  const anchorIds = useMemo(() => new Set(anchors.map((a) => a.snapshot.stopId)), [anchors]);
-
-  // Toggle anchor (bookmark) status for a stop
-  const handleToggleAnchorByStopId = useCallback(
-    (stopId: string) => {
-      if (isStopAnchor(stopId)) {
-        // Capture anchor data before removal (entry won't exist after removeAnchor).
-        // Resolve display name from current data so the toast follows
-        // the user's current language even though the stored entry
-        // only has a snapshot stopName. We use `lookupAnchorStopMeta`
-        // (full-dataset scan over the anchor set) rather than
-        // the stop-navigation viewport lookup here because the stop_id
-        // is a persistent anchor reference and may, in some future UI
-        // path, be triggered for an anchor that is not currently in
-        // radiusStops / inBoundStops. See `DEVELOPMENT.md > Stop ID
-        // lookup の選び方` for the rule.
-        const anchor = anchors.find((a) => a.snapshot.stopId === stopId);
-        const meta = lookupAnchorStopMeta(stopId);
-        const stopName = meta
-          ? getStopDisplayNames(
-              meta.stop,
-              langChain,
-              resolveAgencyLang(meta.agencies, meta.stop.agency_id),
-            ).name ||
-            anchor?.snapshot.name ||
-            stopId
-          : (anchor?.snapshot.name ?? stopId);
-        logger.debug(`handleToggleAnchor: removing stopId=${stopId}`);
-        void removeAnchor(stopId).then((result) => {
-          if (result.success) {
-            const prefix = anchor ? `${routeTypesEmoji(anchor.snapshot.routeTypes)} ` : '';
-            toast.warning(t('anchor.removed'), { description: `${prefix}${stopName}` });
-          }
-        });
-      } else {
-        void Promise.all([repo.getStopMetaById(stopId), repo.getRouteTypesForStop(stopId)]).then(
-          ([metaResult, routeTypesResult]) => {
-            if (!metaResult.success) {
-              logger.warn('handleToggleAnchorByStopId: stop metadata lookup failed', {
-                stopId,
-                error: metaResult.error,
-              });
-              return;
-            }
-
-            const meta = metaResult.data;
-            const routeTypes = routeTypesResult.success ? routeTypesResult.data : [-1 as const];
-            const displayName =
-              getStopDisplayNames(
-                meta.stop,
-                langChain,
-                resolveAgencyLang(meta.agencies, meta.stop.agency_id),
-              ).name || meta.stop.stop_name;
-            if (logger.isEnabled('debug')) {
-              logger.debug(
-                `handleToggleAnchorByStopId: adding stopId=${stopId}, name=${displayName}`,
-              );
-            }
-            const snapshot = createStopReferenceSnapshot(meta, routeTypes, langChain);
-            void addAnchor({
-              snapshot,
-            }).then((result) => {
-              if (result.success) {
-                toast.success(t('anchor.added'), {
-                  description: `${routeTypesEmoji(routeTypes)} ${displayName}`,
-                });
-              }
-            });
-          },
-        );
-      }
-    },
-    [isStopAnchor, anchors, removeAnchor, addAnchor, repo, lookupAnchorStopMeta, langChain, t],
-  );
-
   // Select + pan to a stop from Portal dropdown.
   // See `handleHistorySelect` for the rationale of disabling
   // auto-tracking before panning.
@@ -720,15 +660,20 @@ export default function App() {
       logger.debug(
         `handlePortalSelect [Portal]: stopId=${entry.snapshot.stopId}, name=${entry.snapshot.name}`,
       );
-      const stop = buildAnchorSelectionStop(entry);
-      if (stop === null) {
+      const payload = buildPortalNavigationPayload(
+        entry,
+        routeTypeMap,
+        langChain,
+        lookupAnchorStopMeta,
+      );
+      if (payload == null) {
         logger.warn(`handlePortalSelect unresolved stopId=${entry.snapshot.stopId}`);
         return;
       }
-      navigateAndFocusStop('select-portal', stop);
-      void recordStopSelection(entry.snapshot);
+      navigateAndFocusStop('select-portal', payload.stop);
+      void recordStopSelection(payload.snapshot);
     },
-    [navigateAndFocusStop, recordStopSelection],
+    [langChain, lookupAnchorStopMeta, navigateAndFocusStop, recordStopSelection, routeTypeMap],
   );
 
   // Select + pan to a stop chosen from the search dialog.
