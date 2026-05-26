@@ -38,11 +38,14 @@ import { formatDateKey } from './domain/transit/calendar-utils';
 import { deriveFilteredNearbyStops } from './domain/transit/derive-filtered-nearby-stops';
 import { resolveLangChain, type LangChain } from './domain/transit/i18n/resolve-lang-chain';
 import { getStopDisplayNames } from './domain/transit/name-resolver/get-stop-display-names';
-import { resolveStopRouteTypes } from './domain/transit/resolve-stop-route-types';
 import { getServiceDay } from './domain/transit/service-day';
 import { type StopHistoryEntry } from './domain/transit/stop-history';
-import { findVisibleStopMetaById } from './domain/transit/stop-meta-lookup';
-import { buildHistoryNavigationPayload } from './domain/transit/stop-navigation';
+import { findVisibleStopMetaById, lookupStopMetaFromMap } from './domain/transit/stop-meta-lookup';
+import {
+  buildHistoryNavigationPayload,
+  buildSelectionSnapshotFromMeta,
+  buildSelectionSnapshotFromStop,
+} from './domain/transit/stop-navigation';
 import { createStopReferenceSnapshot } from './domain/transit/stop-reference-snapshot';
 import { buildStopRouteTypeMap } from './domain/transit/stop-route-type-map';
 import { getTimetableOpenOutcomeMessage } from './domain/transit/timetable-message';
@@ -424,7 +427,7 @@ export default function App() {
   // (e.g. cross-source anchor in mock mode, or a stop deleted from
   // GTFS); callers should fall back to the AnchorEntry snapshot.
   const lookupAnchorStopMeta = useCallback(
-    (stopId: string): StopWithMeta | null => anchorStopMetaMap.get(stopId) ?? null,
+    (stopId: string): StopWithMeta | null => lookupStopMetaFromMap(stopId, anchorStopMetaMap),
     [anchorStopMetaMap],
   );
 
@@ -442,7 +445,7 @@ export default function App() {
   }, [history, repo]);
 
   const lookupHistoryStopMeta = useCallback(
-    (stopId: string): StopWithMeta | null => historyStopMetaMap.get(stopId) ?? null,
+    (stopId: string): StopWithMeta | null => lookupStopMetaFromMap(stopId, historyStopMetaMap),
     [historyStopMetaMap],
   );
 
@@ -454,13 +457,7 @@ export default function App() {
 
   const recordStopMetaSelection = useCallback(
     (stopMeta: StopWithMeta) => {
-      const routeTypes = resolveStopRouteTypes({
-        stopId: stopMeta.stop.stop_id,
-        routeTypeMap,
-        routes: stopMeta.routes,
-        unknownPolicy: 'include-unknown',
-      });
-      const snapshot = createStopReferenceSnapshot(stopMeta, routeTypes, langChain);
+      const snapshot = buildSelectionSnapshotFromMeta(stopMeta, routeTypeMap, langChain);
       void recordStopSelection(snapshot);
     },
     [langChain, recordStopSelection, routeTypeMap],
@@ -478,13 +475,7 @@ export default function App() {
         return;
       }
 
-      const routeTypes = resolveStopRouteTypes({
-        stopId: fallbackStop.stop_id,
-        routeTypeMap,
-        routes: [],
-        unknownPolicy: 'include-unknown',
-      });
-      const snapshot = createStopReferenceSnapshot(fallbackStop, routeTypes, langChain);
+      const snapshot = buildSelectionSnapshotFromStop(fallbackStop, routeTypeMap, langChain);
       void recordStopSelection(snapshot);
     },
     [
