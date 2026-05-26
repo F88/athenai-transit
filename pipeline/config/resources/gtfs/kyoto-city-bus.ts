@@ -17,8 +17,8 @@ const kyotoCityBus: GtfsSourceDefinition = {
       datasetUrl:
         'https://ckan.odpt.org/dataset/kyoto_municipal_transportation_kyoto_city_bus_gtfs',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/kyoto_municipal_transportation_kyoto_city_bus_gtfs/resource/c3101520-26f0-4bdf-9e7e-ce5bfcdb237f',
-      resourceId: 'c3101520-26f0-4bdf-9e7e-ce5bfcdb237f',
+        'https://ckan.odpt.org/dataset/kyoto_municipal_transportation_kyoto_city_bus_gtfs/resource/21d8f3ec-6546-446e-a2b3-95df1ba36387',
+      resourceId: '21d8f3ec-6546-446e-a2b3-95df1ba36387',
     },
     provider: {
       name: {
@@ -37,7 +37,7 @@ const kyotoCityBus: GtfsSourceDefinition = {
     /** GtfsResource */
     routeTypes: ['bus'],
     downloadUrl:
-      'https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20260518',
+      'https://api.odpt.org/api/v4/files/odpt/KyotoMunicipalTransportation/Kyoto_City_Bus_GTFS.zip?date=20260525',
   },
   pipeline: {
     outDir: 'kyoto-city-bus',
