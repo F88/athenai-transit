@@ -1145,3 +1145,67 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - CKAN リソースページの License 表記は `ライセンスが指定されていません` (個別未指定)
 - 港区オープンデータ利用規約 (<https://opendata.city.minato.tokyo.jp/about>) に「**本規約が適用されるコンテンツは CC BY に従うことでも利用することができます**」 と明記されており、 これを根拠に CC BY 4.0 を採用
+
+## hankyu-ferry (阪九フェリー / Hankyu Ferry)
+
+### 調査日時
+
+- 調査日: 2026-05-27
+- 対象 feed バージョン: `?date=20260522` (= 2026-05-22 公開版)
+
+### 基本情報
+
+- Resource definition: `pipeline/config/resources/gtfs/hankyu-ferry.ts`
+- CKAN Dataset: <https://ckan.odpt.org/dataset/hankyu_ferry_schedul_hankyu>
+- CKAN Resource UUID: `1c1fa67f-7a81-4107-b7f3-fe098096cb27`
+- Direct ZIP URL: `https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260522`
+- Provider URL: <https://www.han9f.co.jp/>
+- agency_id: `7140001002256` / `阪九フェリー株式会社`
+- 認証必須 (ODPT `acl:consumerKey`)
+
+### 概要
+
+- 2 routes (route_type=4 ferry)、 4 stops、 6 trips、 12 stop_times、 4 trip patterns
+- DataBundle 19 KB
+
+### 有効期間
+
+- 2026-05-08 〜 2026-06-09 (約 1 ヶ月、 ODPT 系フェリーで一般的な短期サイクル)
+- 期限到達時は CKAN で新版 `?date=` を確認して `downloadUrl` を差し替え
+
+### route_color
+
+- 2 routes とも GTFS 設定済み: 泉大津航路 `0000FF` (青) / 神戸航路 `008000` (緑)
+- `routeColorFallbacks` 不要
+
+### shapes.txt
+
+- ZIP に同梱、 414 points / 4 distinct shape_id (各 route 上下別の航路)
+- 日本の ODPT 系フェリーで shapes 提供は希少 (8/20 = 40%、 詳細は memory `project_odpt_ferry_survey`)。 海上 polyline 描画可能な数少ない例
+
+### translations.txt
+
+- table-based 新仕様 (table_name / field_name / record_id を持つ GTFS Schedule v8 style)
+- 5 言語: `ja-Hrkt` / `en` / `ko` / `zh-Hans` / `zh-Hant`
+- 翻訳対象: stop_name / stop_desc / stop_url / trip_headsign / agency_name / feed_publisher_name / route_url / fare_attributes.cabin_name
+- **`route_long_name` / `route_short_name` は翻訳なし**。 「泉大津航路」「神戸航路」は日本語固定 — 英語 UI でも route 名は ja のまま表示される
+- 中国語訳が `阪急渡輪` / `阪急渡轮` (= 関西の `阪急電鉄` 系) で誤訳。 阪九フェリーの `阪九` (= 大阪 + 九州) とは別物。 data-viewer philosophy 通り source 値をそのまま表示
+
+### GTFS-JP 拡張
+
+- `ships.txt` 同梱: 船舶仕様 (`いずみ/ひびき` 16040t、 `せっつ/やまと` 16292t、 設備 = レストラン / 展望浴室 / 露天風呂 等)
+- `payload.txt` + `payload_fare_*.txt` 同梱: 車両積載可否・運賃詳細
+- いずれも pipeline schema 外で silently skip される
+
+### 運航パターン
+
+- 夜行のみ運航 (17:30 - 20:00 発 → 翌 6:00 - 8:30 着)
+- `stop_times.arrival/departure_time` は **24h を超える表記** (例: `30:00:00` = 翌 6:00、 `32:30:00` = 翌 8:30)
+- 泉大津航路: 毎日両方向運航 (`泉大津運航上り` / `泉大津運航下り` calendar 7/7 days)
+- 神戸航路: `calendar.txt` 0/0/0/0/0/0/0 + `calendar_dates.txt` の例外日のみ。 `特定日平日運航` / `特定日週末運航` の上り/下り 4 service_id 構成
+- 1 日 1 往復が物理上限 (片道 12.5h)、 1 stop が 1 route で 発 / 着両方を担う
+
+### ライセンス
+
+- 公共交通オープンデータ基本ライセンス
+- 認証必須 (`acl:consumerKey` query parameter)
