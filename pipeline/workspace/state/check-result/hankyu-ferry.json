@@ -1,0 +1,10 @@
+{
+  "sourceName": "hankyu-ferry",
+  "checkedAt": "2026-05-27T10:29:06.823Z",
+  "resourceUrls": [
+    "https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260522"
+  ],
+  "result": "ok",
+  "warnings": [],
+  "errors": []
+}
