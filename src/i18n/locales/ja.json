@@ -82,6 +82,12 @@
     "removed": "アンカーを削除しました",
     "anchorUpdateFailed": "アンカー更新に失敗しました"
   },
+  "storage": {
+    "unavailable": {
+      "title": "ストレージが利用できません",
+      "description": "設定、履歴などが利用できません"
+    }
+  },
   "info": {
     "status": "まだまだ荒削り 鋭意開発中"
   },

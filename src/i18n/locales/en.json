@@ -82,6 +82,12 @@
     "removed": "Anchor removed",
     "anchorUpdateFailed": "Failed to update anchor"
   },
+  "storage": {
+    "unavailable": {
+      "title": "Storage is unavailable",
+      "description": "Settings, history, and other features are unavailable"
+    }
+  },
   "info": {
     "status": "Work in progress"
   },

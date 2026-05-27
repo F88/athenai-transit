@@ -487,6 +487,50 @@ describe('App anchor error toast', () => {
     }
   });
 
+  it('shows a storage-unavailable toast when localStorage getter throws during app init', async () => {
+    // Per PRD section 3.H: when localStorage cannot be read, the user must
+    // be notified once that settings / history / Anchor will not persist.
+    const originalDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage');
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('Access denied', 'SecurityError');
+      },
+    });
+
+    try {
+      render(<App />);
+
+      await waitFor(() => {
+        expect(mockToastWarning).toHaveBeenCalledWith('ストレージが利用できません', {
+          id: 'storage-unavailable',
+          description: '設定、履歴などが利用できません',
+          duration: Infinity,
+          closeButton: true,
+        });
+      });
+    } finally {
+      if (originalDescriptor) {
+        Object.defineProperty(window, 'localStorage', originalDescriptor);
+      }
+      consoleErrorSpy.mockRestore();
+    }
+  });
+
+  it('does not show the storage-unavailable toast when localStorage is reachable', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(getLastLayoutProps()).toBeDefined();
+    });
+    expect(mockToastWarning).not.toHaveBeenCalledWith(
+      'ストレージが利用できません',
+      expect.anything(),
+    );
+  });
+
   it('forces omitEmptyStops on for origin filter and keeps toggleOmitEmptyStops as a no-op while forced', async () => {
     mockUseNearbyStopTimes.mockReturnValue({
       stopTimes: [

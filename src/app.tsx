@@ -68,6 +68,7 @@ import { useTimetable } from './hooks/use-timetable';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useTripInspection } from './hooks/use-trip-inspection';
 import { useUserSettings } from './hooks/use-user-settings';
+import { useWebStorageAvailability } from './hooks/use-web-storage-availability';
 
 // repository
 import { LocalStorageAnchorRepository } from './repositories/anchor/local-storage-anchor-repository';
@@ -130,11 +131,33 @@ export default function App() {
   const [stopSelectionRepo] = useState(() => new LocalStorageStopSelectionRepository());
   const { settings, updateSetting, updateSettings } = useUserSettings();
   const { dateTime, isCustomTime, resetToNow, setCustomTime } = useDateTime();
+  const isWebStorageReady = useWebStorageAvailability('local');
 
   // Sync i18next language with user setting.
   useEffect(() => {
     void i18n.changeLanguage(settings.lang);
   }, [settings.lang]);
+
+  // Notify the user when the browser blocks access to Web Storage (e.g.,
+  // Chrome's "block all cookies and site data" setting). Persistence for
+  // settings / history / Anchor is unavailable in this state, so the toast
+  // stays on screen (`duration: Infinity`) until the user dismisses it
+  // explicitly -- auto-dismissing risks the user missing the notice and
+  // never realising why nothing persists. The stable `id` collapses
+  // duplicate toasts across StrictMode re-mount and language changes;
+  // the label updates in place when the language switches.
+  // See PRD section 3.H.
+  useEffect(() => {
+    if (isWebStorageReady) {
+      return;
+    }
+    toast.warning(t('storage.unavailable.title'), {
+      id: 'storage-unavailable',
+      description: t('storage.unavailable.description'),
+      duration: Infinity,
+      closeButton: true,
+    });
+  }, [isWebStorageReady, t]);
 
   // Surface data source loading failures via toast (Issue #128).
   // Without this, all-source failures (e.g. bundle_version mismatch
