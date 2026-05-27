@@ -26,7 +26,7 @@ export interface UseUserDataSourceSettingsReturn {
    * Updates the in-memory state and persists synchronously to
    * `localStorage`. An empty resulting Set is persisted as `'[]'`
    * (user-explicit empty); to clear the preference entirely, use
-   * {@link UseUserDataSourceSettingsReturn.resetToDefaults} instead.
+   * `resetToDefaults` from {@link UseUserDataSourceSettingsReturn} instead.
    */
   setGroupEnabled: (groupId: string, enabled: boolean) => void;
   /**
@@ -35,7 +35,7 @@ export interface UseUserDataSourceSettingsReturn {
    * One state transition and one persistence write are emitted no matter
    * how many group IDs are passed. Used for bulk actions like
    * "enable all" / "disable all" within a section. Behaves like
-   * {@link UseUserDataSourceSettingsReturn.setGroupEnabled} called for
+   * `setGroupEnabled` from {@link UseUserDataSourceSettingsReturn} called for
    * each id, except the React state and the `localStorage` write are
    * coalesced.
    */
@@ -53,7 +53,7 @@ export interface UseUserDataSourceSettingsReturn {
  * The hook owns React state and the `localStorage` write path; the
  * boot-time reader lives in `main.tsx` (which calls the same
  * storage utility before React mounts). Within a session, mutations
- * via {@link UseUserDataSourceSettingsReturn.setGroupEnabled} persist
+ * via `setGroupEnabled` from {@link UseUserDataSourceSettingsReturn} persist
  * immediately to `localStorage` but **do not** affect what is already
  * loaded — the load layer reads `localStorage` only at boot, so user
  * toggles take effect on next reload (this is intentional for Phase 1;
