@@ -47,5 +47,6 @@ export default [
   'rintan', // rinko-bus
   '85b', // hachiko-bus
   '13103b', // chii-bus
+  'han9fry', // hankyu-ferry
   // 'tkbus', // tokyu-bus (not built)
 ];

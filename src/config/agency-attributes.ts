@@ -444,4 +444,11 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     longName: { ja: 'ゆりかもめ', en: 'Yurikamome' },
     colors: [{ bg: '1662B8', text: 'FFFFFF' } /* Primary */],
   },
+
+  // --- Hankyu Ferry ---
+  'han9fry:7140001002256': {
+    shortName: { ja: '阪九フェリー', en: 'Hankyu Ferry' },
+    longName: { ja: '阪九フェリー株式会社', en: 'Hankyu Ferry Co., Ltd.' },
+    colors: [{ bg: 'E53C3C', text: 'FFFFFF' }],
+  },
 };

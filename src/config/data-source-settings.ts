@@ -465,6 +465,18 @@ const settings: SourceGroup[] = [
     },
     countries: ['DE'],
   },
+  {
+    id: 'hankyu-ferry',
+    prefixes: ['han9fry'],
+    routeTypes: [4],
+    systemEnabledByDefault: true,
+    userEnabledByDefault: true,
+    name: {
+      name: 'Hankyu Ferry',
+      names: { ja: '阪九フェリー', en: 'Hankyu Ferry' },
+    },
+    countries: ['JP'],
+  },
 ];
 
 export default settings;

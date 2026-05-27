@@ -46,4 +46,5 @@ export default [
   'rinko-bus',
   'hachiko-bus',
   'chii-bus',
+  'hankyu-ferry',
 ];
