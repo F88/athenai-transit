@@ -276,19 +276,27 @@
       "title": "再起動で反映",
       "description": "設定は再起動後に反映されます"
     },
-    "resetToDefaults": "初期値に戻す",
+    "resetToDefaults": "リセット",
     "restart": {
       "label": "再起動",
       "aria": "再起動して設定を反映"
     },
     "bulkAction": {
       "enableAll": {
-        "label": "全て ON",
+        "label": "全てON",
         "aria": "{{section}} 内の全グループを有効化"
       },
       "disableAll": {
-        "label": "全て OFF",
+        "label": "全てOFF",
         "aria": "{{section}} 内の全グループを無効化"
+      },
+      "enableAllGlobal": {
+        "label": "全てON",
+        "aria": "全グループを有効化"
+      },
+      "disableAllGlobal": {
+        "label": "全てOFF",
+        "aria": "全グループを無効化"
       }
     },
     "section": {

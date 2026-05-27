@@ -12,6 +12,7 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Added
 
 - Web Storage 不可環境への対応: Chrome の「全 Cookie とサイトデータをブロック」設定等で `globalThis.localStorage` の getter が `SecurityError` を投げる環境でも、 App が起動 crash せず graceful に動作するようにした。 `resolveWebStorage(kind)` / `isWebStorageAvailable(kind)` / `useWebStorageAvailability(kind)` を新設し、 storage 不可検出時は起動時に `storage.unavailable` toast (`duration: Infinity`、 close button) で 1 度だけ通知する。 永続化対象と Web Storage 不可時の要件は PRD 3.H に明文化、 storage 層の挙動仕様は `docs/web-storage.md` / `docs/storage.md` を参照 (Issue #237)。
+- DataSourceSettingsDialog の global 一括切替: footer に「全てON」 / 「全てOFF」 ボタンを追加し、 表示中の全 data source group に対して一括で有効化 / 無効化できるようにした (i18n キー `dataSourceSettings.bulkAction.enableAllGlobal` / `disableAllGlobal`)。 per-section の bulk action と合わせて shadcn `ButtonGroup` で segmented 表示に統一し、 footer 全体は `flex-wrap` の 3 要素 (Reset / 一括切替 ButtonGroup / Restart) で狭幅にも自動追従する。 `forcedSourcesMode` 時は他 dialog action と同じく disabled。
 
 ### Changed
 
