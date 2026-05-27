@@ -3,9 +3,12 @@ import type { UserSettings } from '../types/app/settings';
 import { APP_ROUTE_TYPES } from '../config/route-types';
 import { normalizeLang } from '../config/supported-langs';
 import { TILE_SOURCES } from '../config/tile-sources';
+import { createLogger } from '../lib/logger';
 import { getLangParam, getTileIdxParam } from '../lib/query-params';
 
 const STORAGE_KEY = 'athenai-settings';
+
+const logger = createLogger('useUserSettings');
 
 const DEFAULT_VISIBLE_ROUTE_TYPES = APP_ROUTE_TYPES.map(({ value }) => value);
 
@@ -116,7 +119,16 @@ function adjustSettings(settings: UserSettings): UserSettings {
  * @param settings - Settings object to save.
  */
 function saveSettings(settings: UserSettings): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(stripTransient(settings)));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stripTransient(settings)));
+  } catch (e) {
+    // Storage unavailable (e.g., SecurityError) or full (QuotaExceededError).
+    // Silently ignore so the React state update completes; the in-memory
+    // settings remain valid for the rest of the session, and the global
+    // `storage.unavailable` toast already informs the user that nothing
+    // persists. See PRD 3.H.
+    logger.error('Failed to save user settings to localStorage', e);
+  }
 }
 
 /**
