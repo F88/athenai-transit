@@ -363,6 +363,40 @@ describe('DataSourceSettingsDialog — normal mode', () => {
     expect(ids).toContain('toei-bus');
   });
 
+  it('clicking the global "All on" button calls setGroupsEnabled with every visible group id and true', () => {
+    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    const enableAllGlobal = screen.getByRole('button', {
+      name: 'dataSourceSettings.bulkAction.enableAllGlobal.aria',
+    });
+    fireEvent.click(enableAllGlobal);
+    expect(mockSetGroupsEnabled).toHaveBeenCalledTimes(1);
+    const [ids, enabled] = mockSetGroupsEnabled.mock.calls[0];
+    expect(enabled).toBe(true);
+    // The full visible set in the default test fixture (normal mode +
+    // empty load status) is every group with `systemEnabledByDefault`.
+    // Use exact match (not `toContain`) so a regression that drops or
+    // duplicates an id is caught.
+    const expectedVisibleIds = settings
+      .filter((g) => g.systemEnabledByDefault)
+      .map((g) => g.id);
+    expect([...ids]).toEqual(expectedVisibleIds);
+  });
+
+  it('clicking the global "All off" button calls setGroupsEnabled with every visible group id and false', () => {
+    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    const disableAllGlobal = screen.getByRole('button', {
+      name: 'dataSourceSettings.bulkAction.disableAllGlobal.aria',
+    });
+    fireEvent.click(disableAllGlobal);
+    expect(mockSetGroupsEnabled).toHaveBeenCalledTimes(1);
+    const [ids, enabled] = mockSetGroupsEnabled.mock.calls[0];
+    expect(enabled).toBe(false);
+    const expectedVisibleIds = settings
+      .filter((g) => g.systemEnabledByDefault)
+      .map((g) => g.id);
+    expect([...ids]).toEqual(expectedVisibleIds);
+  });
+
   it('honours group-vs-prefix semantics (overlap does NOT carry through to Switch state)', () => {
     // toei-bus and toko both contain `minkuru`. If the user has enabled
     // toei-bus but not toko, toko's Switch must be OFF — Switch state is
@@ -491,5 +525,17 @@ describe('DataSourceSettingsDialog — forced-sources mode', () => {
     });
     expect(enableAllBus).toBeDisabled();
     expect(disableAllBus).toBeDisabled();
+  });
+
+  it('disables the global all-on / all-off buttons', () => {
+    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    const enableAllGlobal = screen.getByRole('button', {
+      name: 'dataSourceSettings.bulkAction.enableAllGlobal.aria',
+    });
+    const disableAllGlobal = screen.getByRole('button', {
+      name: 'dataSourceSettings.bulkAction.disableAllGlobal.aria',
+    });
+    expect(enableAllGlobal).toBeDisabled();
+    expect(disableAllGlobal).toBeDisabled();
   });
 });

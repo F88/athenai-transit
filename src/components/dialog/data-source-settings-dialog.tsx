@@ -280,6 +280,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
     t,
   );
   const counts = countDistinctGroupStatuses(visibleGroups, loadStatusByPrefix);
+  const allVisibleGroupIds = visibleGroups.map((g) => g.id);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -391,6 +392,30 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
           })}
         </div>
         <DialogFooter className="shrink-0 gap-2 border-t pt-3 sm:justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setGroupsEnabled(allVisibleGroupIds, true);
+            }}
+            disabled={isForcedSourcesMode}
+            aria-label={t('dataSourceSettings.bulkAction.enableAllGlobal.aria')}
+            className="cursor-pointer"
+          >
+            {t('dataSourceSettings.bulkAction.enableAllGlobal.label')}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setGroupsEnabled(allVisibleGroupIds, false);
+            }}
+            disabled={isForcedSourcesMode}
+            aria-label={t('dataSourceSettings.bulkAction.disableAllGlobal.aria')}
+            className="cursor-pointer"
+          >
+            {t('dataSourceSettings.bulkAction.disableAllGlobal.label')}
+          </Button>
           <Button
             variant="destructive"
             size="sm"

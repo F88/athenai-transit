@@ -289,6 +289,14 @@
       "disableAll": {
         "label": "全て OFF",
         "aria": "{{section}} 内の全グループを無効化"
+      },
+      "enableAllGlobal": {
+        "label": "全て ON",
+        "aria": "全グループを有効化"
+      },
+      "disableAllGlobal": {
+        "label": "全て OFF",
+        "aria": "全グループを無効化"
       }
     },
     "section": {
