@@ -598,4 +598,40 @@ describe('useUserSettings', () => {
       spy.mockRestore();
     });
   });
+
+  // ── storage write failure does not crash ─────────────────────────
+  //
+  // Regression test for the case where `localStorage.setItem` throws
+  // (e.g., `SecurityError` when the host blocks site data, or
+  // `QuotaExceededError`). Without the try/catch in `saveSettings`, the
+  // exception propagates through React's reducer and trips the root
+  // error boundary. See PRD 3.H.
+
+  describe('storage write failure', () => {
+    it('does not throw when localStorage.setItem fails', () => {
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new DOMException('Access denied', 'SecurityError');
+      });
+      const { result } = renderHook(() => useUserSettings());
+
+      expect(() => {
+        act(() => {
+          result.current.updateSetting('infoLevel', 'detailed');
+        });
+      }).not.toThrow();
+    });
+
+    it('keeps the in-memory setting up to date even when persistence fails', () => {
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new DOMException('Access denied', 'SecurityError');
+      });
+      const { result } = renderHook(() => useUserSettings());
+
+      act(() => {
+        result.current.updateSetting('infoLevel', 'verbose');
+      });
+
+      expect(result.current.settings.infoLevel).toBe('verbose');
+    });
+  });
 });

@@ -73,14 +73,20 @@
   },
   "history": {
     "label": "History",
-    "saveFailed": "Failed to save history"
+    "operationFailed": "History operation failed"
   },
   "anchor": {
     "add": "Add anchor",
     "remove": "Remove anchor",
     "added": "Anchor added",
     "removed": "Anchor removed",
-    "anchorUpdateFailed": "Failed to update anchor"
+    "operationFailed": "Anchor operation failed"
+  },
+  "storage": {
+    "unavailable": {
+      "title": "Storage is unavailable",
+      "description": "Settings, history, and other features are unavailable"
+    }
   },
   "info": {
     "status": "Work in progress"

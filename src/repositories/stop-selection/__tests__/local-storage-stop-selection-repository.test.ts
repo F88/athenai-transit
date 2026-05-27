@@ -295,4 +295,61 @@ describe('LocalStorageStopSelectionRepository', () => {
       });
     });
   });
+
+  describe('when localStorage getter itself throws', () => {
+    // Reproduces Chrome's "block all cookies and site data" scenario, where
+    // accessing `globalThis.localStorage` raises SecurityError before any
+    // method can be called on it. Issue #237.
+    let originalDescriptor: PropertyDescriptor | undefined;
+
+    beforeEach(() => {
+      originalDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+      Object.defineProperty(globalThis, 'localStorage', {
+        configurable: true,
+        get() {
+          throw new DOMException(
+            "Failed to read the 'localStorage' property from 'Window': Access is denied for this document.",
+            'SecurityError',
+          );
+        },
+      });
+    });
+
+    afterEach(() => {
+      if (originalDescriptor) {
+        Object.defineProperty(globalThis, 'localStorage', originalDescriptor);
+      }
+    });
+
+    it('does not throw on construction', () => {
+      expect(() => new LocalStorageStopSelectionRepository()).not.toThrow();
+    });
+
+    it('getHistory returns graceful failure', async () => {
+      const repo = new LocalStorageStopSelectionRepository();
+
+      await expect(repo.getHistory()).resolves.toEqual({
+        success: false,
+        error: 'Failed to load stop history from storage',
+      });
+    });
+
+    it('saveHistory returns graceful failure', async () => {
+      const repo = new LocalStorageStopSelectionRepository();
+
+      await expect(repo.saveHistory([makeHistoryEntry('A')])).resolves.toEqual({
+        success: false,
+        error: 'Failed to persist stop history to storage',
+      });
+    });
+
+    it('clearHistory returns graceful failure', async () => {
+      const repo = new LocalStorageStopSelectionRepository();
+
+      await expect(repo.clearHistory()).resolves.toEqual({
+        success: false,
+        error: 'Failed to clear stop history from storage',
+      });
+    });
+  });
 });
