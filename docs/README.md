@@ -21,6 +21,7 @@
 | [frontend-styling.md](./frontend-styling.md)                       | Tailwind CSS、Prettier、ESLint、shadcn/ui、Dialog / ScrollFadeEdge。  |
 | [transit-data-and-repository.md](./transit-data-and-repository.md) | Stop ID lookup、GTFS i18n、TransitRepository API。                    |
 | [web-storage.md](./web-storage.md)                                 | Web Storage 取得 / availability hook、SSOT semantics、不可時の挙動。  |
+| [storage.md](./storage.md)                                         | Storage を背景に持つ各 repository の挙動仕様。                        |
 | [dependency-notes.md](./dependency-notes.md)                       | 依存更新の注意事項。                                                  |
 
 ## Pipeline independence
