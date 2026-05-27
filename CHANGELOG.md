@@ -19,6 +19,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - Pipeline: global aggregate scripts (`build-data-source-catalog` / `build-global-insights`) の per-source 入力欠損を **fatal から skip-tolerant に変更**。 欠損 prefix は catalog / global insights から除外して残り prefix で処理続行し、 exit code 0 / 1 (partial) / 2 (all failed or fatal precondition) を返す。 workflow の各 step を `set +e` + `Warn on partial failure` / `Fail on total` の triplet に揃え、 Slack 通知の partial failure 集約にも両 step を追加。 `global/insights.json` 欠損や resource definition 未登録 prefix は引き続き fatal precondition で停止する(Issue #254)。
 - Data: kyoto-city-bus の GTFS resource を 20260525 版へ更新。
 - i18n: 履歴 / アンカーの操作失敗 toast の i18n キーを操作種別非依存に rename (`history.saveFailed` → `history.operationFailed`、 `anchor.anchorUpdateFailed` → `anchor.operationFailed`)。 load 失敗時にも「保存に失敗」と表示されていた不整合を解消し、 文言を「履歴の処理に失敗しました」「アンカーの処理に失敗しました」に変更。
+- Data source 表示名の整理: suginami-gsm の provider 名を「すぎ丸」 / 「Sugimaru」 → 「杉並区」 / 「Suginami City」 に変更 (provider = 自治体名で統一)。 agency-attributes の sggsm shortName を「すぎ丸」 / 「Sugimaru」 → 「グリスロ」 / 「GSM」 に更新し、 サービスブランド表示を agency 層に切り出した。 あわせて重複しがちな小規模 group の表示名に区名 suffix を付与 (例: 「風ぐるま」 → 「風ぐるま (千代田区)」)。
+- Map defaults: Yawatahama Port の HOME_LOCATION から `requiredDataSource: ['iyt2']` 制約を外し、 iyt2 がロードされていなくてもランダム start 候補に含まれるようにした。
 
 ### Fixed
 

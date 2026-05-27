@@ -295,7 +295,7 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
 
   // --- Sugimaru (Suginami City) ---
   'sggsm:8000020131156': {
-    shortName: { ja: 'すぎ丸', en: 'Sugimaru' },
+    shortName: { ja: 'グリスロ', en: 'GSM' },
     longName: { ja: '杉並区', en: 'Suginami City' },
     colors: [{ bg: '009B63', text: 'FFFFFF' }],
   },

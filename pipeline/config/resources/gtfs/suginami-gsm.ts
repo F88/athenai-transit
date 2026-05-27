@@ -21,8 +21,8 @@ const suginamiGsm: GtfsSourceDefinition = {
     },
     provider: {
       name: {
-        ja: { long: '杉並区', short: 'すぎ丸' },
-        en: { long: 'Suginami City', short: 'Sugimaru' },
+        ja: { long: '杉並区', short: '杉並区' },
+        en: { long: 'Suginami City', short: 'Suginami City' },
       },
       url: 'https://www.city.suginami.tokyo.jp/',
       colors: [{ bg: '009B63', text: 'FFFFFF' }],
