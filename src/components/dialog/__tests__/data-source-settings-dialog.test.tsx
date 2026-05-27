@@ -376,9 +376,7 @@ describe('DataSourceSettingsDialog — normal mode', () => {
     // empty load status) is every group with `systemEnabledByDefault`.
     // Use exact match (not `toContain`) so a regression that drops or
     // duplicates an id is caught.
-    const expectedVisibleIds = settings
-      .filter((g) => g.systemEnabledByDefault)
-      .map((g) => g.id);
+    const expectedVisibleIds = settings.filter((g) => g.systemEnabledByDefault).map((g) => g.id);
     expect([...ids]).toEqual(expectedVisibleIds);
   });
 
@@ -391,9 +389,7 @@ describe('DataSourceSettingsDialog — normal mode', () => {
     expect(mockSetGroupsEnabled).toHaveBeenCalledTimes(1);
     const [ids, enabled] = mockSetGroupsEnabled.mock.calls[0];
     expect(enabled).toBe(false);
-    const expectedVisibleIds = settings
-      .filter((g) => g.systemEnabledByDefault)
-      .map((g) => g.id);
+    const expectedVisibleIds = settings.filter((g) => g.systemEnabledByDefault).map((g) => g.id);
     expect([...ids]).toEqual(expectedVisibleIds);
   });
 

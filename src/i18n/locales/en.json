@@ -276,7 +276,7 @@
       "title": "Restart to apply",
       "description": "Changes take effect after the app is restarted. Click Restart below, or refresh the browser."
     },
-    "resetToDefaults": "Reset to defaults",
+    "resetToDefaults": "Reset",
     "restart": {
       "label": "Restart",
       "aria": "Restart to apply settings"

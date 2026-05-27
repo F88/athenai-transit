@@ -1,6 +1,7 @@
 import { DataSourceGroupItem } from '@/components/datasource/data-source-group-item';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import {
   Dialog,
   DialogContent,
@@ -339,7 +340,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
                   <span className="opacity-60">
                     ({sectionEnabledCount}/{section.rows.length})
                   </span>
-                  <div className="ml-auto flex gap-1">
+                  <ButtonGroup className="ml-auto">
                     <Button
                       size="sm"
                       variant="outline"
@@ -368,7 +369,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
                     >
                       {t('dataSourceSettings.bulkAction.disableAll.label')}
                     </Button>
-                  </div>
+                  </ButtonGroup>
                 </h3>
                 <div>
                   {section.rows.map((row) => (
@@ -391,31 +392,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
             );
           })}
         </div>
-        <DialogFooter className="shrink-0 gap-2 border-t pt-3 sm:justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setGroupsEnabled(allVisibleGroupIds, true);
-            }}
-            disabled={isForcedSourcesMode}
-            aria-label={t('dataSourceSettings.bulkAction.enableAllGlobal.aria')}
-            className="cursor-pointer"
-          >
-            {t('dataSourceSettings.bulkAction.enableAllGlobal.label')}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setGroupsEnabled(allVisibleGroupIds, false);
-            }}
-            disabled={isForcedSourcesMode}
-            aria-label={t('dataSourceSettings.bulkAction.disableAllGlobal.aria')}
-            className="cursor-pointer"
-          >
-            {t('dataSourceSettings.bulkAction.disableAllGlobal.label')}
-          </Button>
+        <DialogFooter className="shrink-0 flex-row flex-wrap justify-between gap-2 border-t pt-3 sm:justify-between">
           <Button
             variant="destructive"
             size="sm"
@@ -425,6 +402,33 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
           >
             {t('dataSourceSettings.resetToDefaults')}
           </Button>
+          <ButtonGroup>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setGroupsEnabled(allVisibleGroupIds, true);
+              }}
+              disabled={isForcedSourcesMode}
+              aria-label={t('dataSourceSettings.bulkAction.enableAllGlobal.aria')}
+              className="cursor-pointer"
+            >
+              {t('dataSourceSettings.bulkAction.enableAllGlobal.label')}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setGroupsEnabled(allVisibleGroupIds, false);
+              }}
+              disabled={isForcedSourcesMode}
+              aria-label={t('dataSourceSettings.bulkAction.disableAllGlobal.aria')}
+              className="cursor-pointer"
+            >
+              {t('dataSourceSettings.bulkAction.disableAllGlobal.label')}
+            </Button>
+          </ButtonGroup>
+
           <Button
             variant="default"
             size="sm"
