@@ -1209,3 +1209,54 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - 公共交通オープンデータ基本ライセンス
 - 認証必須 (`acl:consumerKey` query parameter)
+
+## meguro-c-bus / ota-c-bus / shinagawa-c-bus (東急バス運行コミュニティバス 3 件)
+
+3 件は同じ運行事業者 (東急バス株式会社、 `agency_id` = `5013201004029.00` で共通)、 同じ GTFS-JP 生成 template から出力されているため、 共通事項を先にまとめ、 source 固有の差分を後ろに列挙する。
+
+### 調査日時
+
+- 調査日: 2026-05-27
+- 対象 feed バージョン:
+  - meguro-c-bus: `?date=20260521` (= 2026-05-21 公開)
+  - ota-c-bus: `?date=20260212` (= 2026-02-12 公開)
+  - shinagawa-c-bus: `?date=20260212` (= 2026-02-12 公開)
+
+### 共通事項
+
+- ODPT GTFS-JP、 認証必須 (`acl:consumerKey`)
+- 提供事業者: 東急バス株式会社、 `agency_id = 5013201004029.00` (= 末尾 `.00` 付き、 pipeline output でも保持される)
+- ライセンス: 公共交通オープンデータ基本ライセンス
+- 3 件すべて **shapes.txt 同梱なし** → polyline 描画なし
+- 3 件すべて `office_jp.txt` (= 営業所マスター)、 `jp_office_id` (trips.txt)、 `jp_parent_route_id` (routes.txt) を持つ標準的な GTFS-JP 構成
+- translations.txt は **stop_name のみ** (`ja` / `en` / `ja-Hrkt` の 3 言語、 ただし `ja` は identity)。 `route_long_name` / `trip_headsign` / `agency_name` 等の翻訳はなし。 hankyu-ferry の new spec translations と比べて大幅に薄い
+- **`trip_headsign` は全 trip とも空欄**。 行先 / 経由は `stop_headsign` (stop_times.txt) に per-stop で記録 (= 京王バス convention と同じ pattern、 memory `project_kobus_headsign_convention` 参照)
+- 計 3 service (`平日_66` / `土曜_66` / `休日_66` のような office_id 連動命名)、 `calendar_dates.txt` で GW / 祝日に exception_type=1/2 を多数定義
+
+### meguro-c-bus 固有
+
+- prefix: `sanma`、 outDir: `meguro-c-bus`、 ブランド: 「さんまバス」 / 「Sanma Bus」
+- 概要: 22 stops / 2 routes (上下別、 `jp_parent_route_id = 6681` で 1 系統 grouping) / 66 trips / 1023 stop_times / 2 trip patterns
+- 有効期間: 2026-04-01 〜 2026-07-31 (約 4 ヶ月)
+- 区間: 目黒駅前 ⇔ 目黒区総合庁舎、 経由バリエーション 6 種 (`<厚生中央病院前経由>` / `<東京共済病院・厚生中央病院前経由>` 等)
+- **route_color**: `#613964` (紫) が **routes.txt に設定済み**。 routeColorFallbacks 不要
+- agency_name に**特殊**: 「東急バス：03-3714-7891（目黒営業所）」 と**電話番号 + 営業所名が embed**されている (他 2 件は clean な「東急バス株式会社」)。 agency-attributes の `longName` で上書き表示
+
+### ota-c-bus 固有
+
+- prefix: `tamachan`、 outDir: `ota-c-bus`、 ブランド: 「たまちゃんバス」 / 「Tamachan bus」
+- 概要: 14 stops / 1 route / 54 trips / 810 stop_times / 1 trip pattern
+- 有効期間: 2026-02-01 〜 2026-05-31 (短期、 調査日時点で残り 4 日)
+- 区間: 武蔵新田駅 始発の loop route
+- **route_color**: GTFS routes.txt で**空欄**。 `routeColorFallbacks: { '*': 'FFFFFF' }` (= 車両の白地塗装色) を設定。 shapes.txt なしのため polyline 描画は発生せず、 route_color の影響は route badge のみ
+- 運行頻度: 約 1 本 / 時 (community bus 典型)
+
+### shinagawa-c-bus 固有
+
+- prefix: `shinabus`、 outDir: `shinagawa-c-bus`、 ブランド: 「しなバス」 / 「Shina Bus」
+- 概要: 14 stops / 1 route / 230 trips / 1840 stop_times / 2 trip patterns
+- 有効期間: 2026-02-01 〜 2026-05-31 (短期、 調査日時点で残り 4 日)
+- 区間: 西大井駅 ⇔ 大森駅北口 (品川歴史館北経由)。 区を跨ぐ (品川区 → 大田区) 構成
+- **route_color**: GTFS routes.txt で**空欄**。 `routeColorFallbacks: { '*': '4653A1' }` (= しなバス車両のブランドカラー紺) を設定
+- 運行頻度: 3 件の中で最も密 (約 5-6 本 / 時、 1 route で 230 trips を捌く)
+- 車両は 4 色のラッピングバリエーションがあるが、 GTFS では route_color 1 つでしか表現できない
