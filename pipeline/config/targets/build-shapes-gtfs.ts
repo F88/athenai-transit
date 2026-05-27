@@ -28,4 +28,5 @@ export default [
   'yokohama-municipal-subway',
   'yokohama-municipal-bus',
   'chii-bus',
+  'hankyu-ferry',
 ];

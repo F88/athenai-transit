@@ -444,4 +444,32 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     longName: { ja: 'ゆりかもめ', en: 'Yurikamome' },
     colors: [{ bg: '1662B8', text: 'FFFFFF' } /* Primary */],
   },
+
+  // --- Hankyu Ferry ---
+  'han9fry:7140001002256': {
+    shortName: { ja: '阪九フェリー', en: 'Hankyu Ferry' },
+    longName: { ja: '阪九フェリー株式会社', en: 'Hankyu Ferry Co., Ltd.' },
+    colors: [{ bg: 'E53C3C', text: 'FFFFFF' }],
+  },
+
+  // --- Sanma Bus (Meguro City community bus, operated by Tokyu Bus) ---
+  'sanma:5013201004029.00': {
+    shortName: { ja: 'さんまバス', en: 'Sanma Bus' },
+    longName: { ja: '目黒区東部地区地域交通バス', en: 'Meguro City community bus' },
+    colors: [{ bg: '613964', text: 'FFFFFF' }],
+  },
+
+  // --- Shina Bus (Shinagawa City community bus, operated by Tokyu Bus) ---
+  'shinabus:5013201004029.00': {
+    shortName: { ja: 'しなバス', en: 'Shina Bus' },
+    longName: { ja: '品川区コミュニティバス', en: 'Shinagawa City community bus' },
+    colors: [{ bg: '4653A1', text: 'FFFFFF' }],
+  },
+
+  // --- Tamachan Bus (Ota City community bus, operated by Tokyu Bus) ---
+  'tamachan:5013201004029.00': {
+    shortName: { ja: 'たまちゃんバス', en: 'Tamachan Bus' },
+    longName: { ja: '大田区コミュニティバス', en: 'Ota City community bus' },
+    colors: [{ bg: 'FFFFFF', text: '1D2A75' }],
+  },
 };

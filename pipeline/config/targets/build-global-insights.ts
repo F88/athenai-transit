@@ -46,4 +46,8 @@ export default [
   'rintan', // rinko-bus
   '85b', // hachiko-bus (community)
   '13103b', // chii-bus (community)
+  'han9fry', // hankyu-ferry
+  'sanma', // meguro-c-bus
+  'shinabus', // shinagawa-c-bus
+  'tamachan', // ota-c-bus
 ];

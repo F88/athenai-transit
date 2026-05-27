@@ -465,6 +465,54 @@ const settings: SourceGroup[] = [
     },
     countries: ['DE'],
   },
+  {
+    id: 'hankyu-ferry',
+    prefixes: ['han9fry'],
+    routeTypes: [4],
+    systemEnabledByDefault: true,
+    userEnabledByDefault: true,
+    name: {
+      name: 'Hankyu Ferry',
+      names: { ja: '阪九フェリー', en: 'Hankyu Ferry' },
+    },
+    countries: ['JP'],
+  },
+  {
+    id: 'meguro-c-bus',
+    prefixes: ['sanma'],
+    routeTypes: [3],
+    systemEnabledByDefault: true,
+    userEnabledByDefault: true,
+    name: {
+      name: 'Sanma Bus',
+      names: { ja: 'さんまバス (目黒区)', en: 'Sanma Bus (Meguro)' },
+    },
+    countries: ['JP'],
+  },
+  {
+    id: 'shinagawa-c-bus',
+    prefixes: ['shinabus'],
+    routeTypes: [3],
+    systemEnabledByDefault: true,
+    userEnabledByDefault: true,
+    name: {
+      name: 'Shina Bus',
+      names: { ja: 'しなバス (品川区)', en: 'Shina Bus (Shinagawa)' },
+    },
+    countries: ['JP'],
+  },
+  {
+    id: 'ota-c-bus',
+    prefixes: ['tamachan'],
+    routeTypes: [3],
+    systemEnabledByDefault: true,
+    userEnabledByDefault: true,
+    name: {
+      name: 'Tamachan Bus',
+      names: { ja: 'たまちゃんバス (大田区)', en: 'Tamachan Bus (Ota)' },
+    },
+    countries: ['JP'],
+  },
 ];
 
 export default settings;

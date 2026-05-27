@@ -1,5 +1,7 @@
 # Resource Notes
 
+<!-- markdownlint-disable MD024 -->
+
 Data source に関する注意事項や問題点をまとめるドキュメント。データの品質や利用上の注意点を把握するために参照する。
 
 ## Data source 全体にわたる注意事項/問題
@@ -1145,3 +1147,118 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - CKAN リソースページの License 表記は `ライセンスが指定されていません` (個別未指定)
 - 港区オープンデータ利用規約 (<https://opendata.city.minato.tokyo.jp/about>) に「**本規約が適用されるコンテンツは CC BY に従うことでも利用することができます**」 と明記されており、 これを根拠に CC BY 4.0 を採用
+
+## hankyu-ferry (阪九フェリー / Hankyu Ferry)
+
+### 調査日時
+
+- 調査日: 2026-05-27
+- 対象 feed バージョン: `?date=20260522` (= 2026-05-22 公開版)
+
+### 基本情報
+
+- Resource definition: `pipeline/config/resources/gtfs/hankyu-ferry.ts`
+- CKAN Dataset: <https://ckan.odpt.org/dataset/hankyu_ferry_schedul_hankyu>
+- CKAN Resource UUID: `1c1fa67f-7a81-4107-b7f3-fe098096cb27`
+- Direct ZIP URL: `https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260522`
+- Provider URL: <https://www.han9f.co.jp/>
+- agency_id: `7140001002256` / `阪九フェリー株式会社`
+- 認証必須 (ODPT `acl:consumerKey`)
+
+### 概要
+
+- 2 routes (route_type=4 ferry)、 4 stops、 6 trips、 12 stop_times、 4 trip patterns
+- DataBundle 19 KB
+
+### 有効期間
+
+- 2026-05-08 〜 2026-06-09 (約 1 ヶ月、 ODPT 系フェリーで一般的な短期サイクル)
+- 期限到達時は CKAN で新版 `?date=` を確認して `downloadUrl` を差し替え
+
+### route_color
+
+- 2 routes とも GTFS 設定済み: 泉大津航路 `0000FF` (青) / 神戸航路 `008000` (緑)
+- `routeColorFallbacks` 不要
+
+### shapes.txt
+
+- ZIP に同梱、 414 points / 4 distinct shape_id (各 route 上下別の航路)
+- 日本の ODPT 系フェリーで shapes 提供は希少 (8/20 = 40%、 詳細は memory `project_odpt_ferry_survey`)。 海上 polyline 描画可能な数少ない例
+
+### translations.txt
+
+- table-based 新仕様 (table_name / field_name / record_id を持つ GTFS Schedule v8 style)
+- 5 言語: `ja-Hrkt` / `en` / `ko` / `zh-Hans` / `zh-Hant`
+- 翻訳対象: stop_name / stop_desc / stop_url / trip_headsign / agency_name / feed_publisher_name / route_url / fare_attributes.cabin_name
+- **`route_long_name` / `route_short_name` は翻訳なし**。 「泉大津航路」「神戸航路」は日本語固定 — 英語 UI でも route 名は ja のまま表示される
+- 中国語訳が `阪急渡輪` / `阪急渡轮` (= 関西の `阪急電鉄` 系) で誤訳。 阪九フェリーの `阪九` (= 大阪 + 九州) とは別物。 data-viewer philosophy 通り source 値をそのまま表示
+
+### GTFS-JP 拡張
+
+- `ships.txt` 同梱: 船舶仕様 (`いずみ/ひびき` 16040t、 `せっつ/やまと` 16292t、 設備 = レストラン / 展望浴室 / 露天風呂 等)
+- `payload.txt` + `payload_fare_*.txt` 同梱: 車両積載可否・運賃詳細
+- いずれも pipeline schema 外で silently skip される
+
+### 運航パターン
+
+- 夜行のみ運航 (17:30 - 20:00 発 → 翌 6:00 - 8:30 着)
+- `stop_times.arrival/departure_time` は **24h を超える表記** (例: `30:00:00` = 翌 6:00、 `32:30:00` = 翌 8:30)
+- 泉大津航路: 毎日両方向運航 (`泉大津運航上り` / `泉大津運航下り` calendar 7/7 days)
+- 神戸航路: `calendar.txt` 0/0/0/0/0/0/0 + `calendar_dates.txt` の例外日のみ。 `特定日平日運航` / `特定日週末運航` の上り/下り 4 service_id 構成
+- 1 日 1 往復が物理上限 (片道 12.5h)、 1 stop が 1 route で 発 / 着両方を担う
+
+### ライセンス
+
+- 公共交通オープンデータ基本ライセンス
+- 認証必須 (`acl:consumerKey` query parameter)
+
+## meguro-c-bus / ota-c-bus / shinagawa-c-bus (東急バス運行コミュニティバス 3 件)
+
+3 件は同じ運行事業者 (東急バス株式会社、 `agency_id` = `5013201004029.00` で共通)、 同じ GTFS-JP 生成 template から出力されているため、 共通事項を先にまとめ、 source 固有の差分を後ろに列挙する。
+
+### 調査日時
+
+- 調査日: 2026-05-27
+- 対象 feed バージョン:
+    - meguro-c-bus: `?date=20260521` (= 2026-05-21 公開)
+    - ota-c-bus: `?date=20260212` (= 2026-02-12 公開)
+    - shinagawa-c-bus: `?date=20260212` (= 2026-02-12 公開)
+
+### 共通事項
+
+- ODPT GTFS-JP、 認証必須 (`acl:consumerKey`)
+- 提供事業者: 東急バス株式会社、 `agency_id = 5013201004029.00` (= 末尾 `.00` 付き、 pipeline output でも保持される)
+- ライセンス: 公共交通オープンデータ基本ライセンス
+- 3 件すべて **shapes.txt 同梱なし** → polyline 描画なし
+- 3 件すべて `office_jp.txt` (= 営業所マスター)、 `jp_office_id` (trips.txt)、 `jp_parent_route_id` (routes.txt) を持つ標準的な GTFS-JP 構成
+- translations.txt は **stop_name のみ** (`ja` / `en` / `ja-Hrkt` の 3 言語、 ただし `ja` は identity)。 `route_long_name` / `trip_headsign` / `agency_name` 等の翻訳はなし。 hankyu-ferry の new spec translations と比べて大幅に薄い
+- **`trip_headsign` は全 trip とも空欄**。 行先 / 経由は `stop_headsign` (stop_times.txt) に per-stop で記録 (= 京王バス convention と同じ pattern、 memory `project_kobus_headsign_convention` 参照)
+- 計 3 service (`平日_66` / `土曜_66` / `休日_66` のような office_id 連動命名)、 `calendar_dates.txt` で GW / 祝日に exception_type=1/2 を多数定義
+
+### meguro-c-bus 固有
+
+- prefix: `sanma`、 outDir: `meguro-c-bus`、 ブランド: 「さんまバス」 / 「Sanma Bus」
+- 概要: 22 stops / 2 routes (上下別、 `jp_parent_route_id = 6681` で 1 系統 grouping) / 66 trips / 1023 stop_times / 2 trip patterns
+- 有効期間: 2026-04-01 〜 2026-07-31 (約 4 ヶ月)
+- 区間: 目黒駅前 ⇔ 目黒区総合庁舎、 経由バリエーション 6 種 (`<厚生中央病院前経由>` / `<東京共済病院・厚生中央病院前経由>` 等)
+- **route_color**: `#613964` (紫) が **routes.txt に設定済み**。 routeColorFallbacks 不要
+- agency_name に**特殊**: 「東急バス：03-3714-7891（目黒営業所）」 と**電話番号 + 営業所名が embed**されている (他 2 件は clean な「東急バス株式会社」)。 agency-attributes の `longName` で上書き表示
+
+### ota-c-bus 固有
+
+- prefix: `tamachan`、 outDir: `ota-c-bus`、 ブランド: 「たまちゃんバス」 / 「Tamachan Bus」
+- 概要: 14 stops / 1 route / 54 trips / 810 stop_times / 1 trip pattern
+- 有効期間: 2026-02-01 〜 2026-05-31 (短期、 調査日時点で残り 4 日)
+- 区間: 武蔵新田駅 始発の loop route
+- **route_color**: GTFS routes.txt で**空欄**。 `routeColorFallbacks: { '*': 'FFFFFF' }` (= 車両の白地塗装色) を設定。 shapes.txt なしのため polyline 描画は発生せず、 route_color の影響は route badge のみ
+- 運行頻度: 約 1 本 / 時 (community bus 典型)
+
+### shinagawa-c-bus 固有
+
+- prefix: `shinabus`、 outDir: `shinagawa-c-bus`、 ブランド: 「しなバス」 / 「Shina Bus」
+- 概要: 14 stops / 1 route / 230 trips / 1840 stop_times / 2 trip patterns
+- 有効期間: 2026-02-01 〜 2026-05-31 (短期、 調査日時点で残り 4 日)
+- 区間: 西大井駅 ⇔ 大森駅北口 (品川歴史館北経由)。 区を跨ぐ (品川区 → 大田区) 構成
+- **route_color**: GTFS routes.txt で**空欄**。 `routeColorFallbacks: { '*': '4653A1' }` (= しなバス車両のブランドカラー紺) を設定
+- 運行頻度: 3 件の中で最も密 (約 5-6 本 / 時、 1 route で 230 trips を捌く)
+- 車両は 4 色のラッピングバリエーションがあるが、 GTFS では route_color 1 つでしか表現できない
