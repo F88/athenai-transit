@@ -4,6 +4,7 @@ import {
   type StoredStopHistory,
 } from '../../domain/transit/stop-history';
 import { createLogger } from '../../lib/logger';
+import { resolveWebStorage } from '../../lib/web-storage-resolver';
 import { WebStorageItem } from '../../lib/web-storage-item';
 import type { Result } from '../../types/app/repository';
 import type { StopReferenceSnapshot } from '../../types/app/stop-reference-snapshot';
@@ -219,8 +220,8 @@ function migrateLegacyEntry(entry: Record<string, unknown>): StopHistoryEntry | 
 export class LocalStorageStopSelectionRepository implements StopSelectionRepository {
   private readonly storageItem: WebStorageItem;
 
-  constructor(storage: Storage | undefined = globalThis.localStorage) {
-    this.storageItem = new WebStorageItem(STORAGE_KEY, storage);
+  constructor(storage?: Storage) {
+    this.storageItem = new WebStorageItem(STORAGE_KEY, storage ?? resolveWebStorage('local'));
   }
 
   async getHistory(): Promise<Result<StopHistoryEntry[]>> {

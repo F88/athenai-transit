@@ -3,15 +3,20 @@ import type { WebStorageResult } from '../types/result';
 /**
  * Thin result-based wrapper around a single Web Storage key.
  *
- * This helper owns direct `Storage` access only. Schema validation,
- * migration, and domain-specific recovery remain the responsibility of
- * higher-level repositories.
+ * Owns direct `Storage` access only. Storage acquisition (e.g., reading
+ * `globalThis.localStorage`) and availability detection are the caller's
+ * responsibility -- pass `undefined` when storage is unavailable, and all
+ * operations will return a "not available" failure without throwing. See
+ * `web-storage-resolver.ts` for safe acquisition helpers.
+ *
+ * Schema validation, migration, and domain-specific recovery remain the
+ * responsibility of higher-level repositories.
  */
 export class WebStorageItem {
   private readonly key: string;
   private readonly storage: Storage | undefined;
 
-  constructor(key: string, storage: Storage | undefined = globalThis.localStorage) {
+  constructor(key: string, storage: Storage | undefined) {
     this.key = key;
     this.storage = storage;
   }

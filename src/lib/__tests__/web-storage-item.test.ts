@@ -31,7 +31,7 @@ function createStorageMock(overrides?: {
 describe('WebStorageItem', () => {
   describe('read', () => {
     it('with storage unavailable returns a failure result', () => {
-      const item = new WebStorageItem('stop-history', null as unknown as Storage | undefined);
+      const item = new WebStorageItem('stop-history', undefined);
 
       expect(item.read()).toEqual({ success: false, error: 'Web Storage API is not available' });
     });
@@ -69,7 +69,7 @@ describe('WebStorageItem', () => {
 
   describe('write', () => {
     it('with storage unavailable returns a failure result', () => {
-      const item = new WebStorageItem('stop-history', null as unknown as Storage | undefined);
+      const item = new WebStorageItem('stop-history', undefined);
 
       expect(item.write('{"version":2}')).toEqual({
         success: false,
@@ -102,7 +102,7 @@ describe('WebStorageItem', () => {
 
   describe('remove', () => {
     it('with storage unavailable returns a failure result', () => {
-      const item = new WebStorageItem('stop-history', null as unknown as Storage | undefined);
+      const item = new WebStorageItem('stop-history', undefined);
 
       expect(item.remove()).toEqual({
         success: false,

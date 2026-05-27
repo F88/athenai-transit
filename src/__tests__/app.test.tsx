@@ -449,7 +449,13 @@ describe('App anchor error toast', () => {
     });
   });
 
-  it('shows the error boundary fallback when localStorage getter throws during app init', async () => {
+  it('boots without falling into the error boundary when localStorage getter throws during app init', async () => {
+    // Regression test for Issue #237: when the `globalThis.localStorage` getter
+    // throws (e.g., Chrome's "block all cookies and site data" setting), the
+    // App must degrade gracefully instead of crashing into the root error
+    // boundary. User-data repositories (anchors, stop selection) and settings
+    // are expected to fall back to in-memory / defaults; persistence is
+    // silently disabled for the session.
     const originalDescriptor = Object.getOwnPropertyDescriptor(window, 'localStorage');
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -467,14 +473,12 @@ describe('App anchor error toast', () => {
         </RootErrorBoundary>,
       );
 
+      // App must render its normal tree; the error boundary fallback must
+      // not appear.
       await waitFor(() => {
-        expect(screen.getByText('問題が発生しました')).toBeInTheDocument();
-        expect(
-          screen.getByText(
-            'アプリの表示中にエラーが発生しました。再読み込みで回復しない場合は、キャッシュを消去してお試しください。',
-          ),
-        ).toBeInTheDocument();
+        expect(getLastLayoutProps()).toBeDefined();
       });
+      expect(screen.queryByText('問題が発生しました')).not.toBeInTheDocument();
     } finally {
       if (originalDescriptor) {
         Object.defineProperty(window, 'localStorage', originalDescriptor);
