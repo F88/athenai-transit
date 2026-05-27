@@ -1,41 +1,41 @@
 {
-  "sourceName": "uwajima-unyu",
+  "sourceName": "hankyu-ferry",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-27T10:19:33.460Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/UwajimaUnyu/AllLines.zip?date=20260401",
-  "size": 6915,
+  "downloadedAt": "2026-05-27T10:20:05.196Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/HankyuFerry/schedul_hankyu.zip?date=20260522",
+  "size": 10697,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 987,
-  "archivePath": "workspace/_archives/gtfs/uwajima-unyu/AllLines_20260527-101934.zip",
+  "durationMs": 974,
+  "archivePath": "workspace/_archives/gtfs/hankyu-ferry/schedul_hankyu_20260527-102006.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
-      "size": 235
-    },
-    {
-      "name": "calendar.txt",
-      "size": 88
-    },
-    {
-      "name": "calendar_dates.txt",
-      "size": 5338
-    },
-    {
-      "name": "fare_attributes.txt",
-      "size": 380
-    },
-    {
-      "name": "fare_rules.txt",
-      "size": 1030
-    },
-    {
-      "name": "feed_info.txt",
       "size": 202
     },
     {
+      "name": "calendar.txt",
+      "size": 436
+    },
+    {
+      "name": "calendar_dates.txt",
+      "size": 1357
+    },
+    {
+      "name": "fare_attributes.txt",
+      "size": 559
+    },
+    {
+      "name": "fare_rules.txt",
+      "size": 984
+    },
+    {
+      "name": "feed_info.txt",
+      "size": 211
+    },
+    {
       "name": "payload.txt",
-      "size": 198
+      "size": 189
     },
     {
       "name": "payload_fare_attributes.txt",
@@ -47,35 +47,39 @@
     },
     {
       "name": "routes.txt",
-      "size": 263
+      "size": 313
+    },
+    {
+      "name": "shapes.txt",
+      "size": 18818
     },
     {
       "name": "ships.txt",
-      "size": 139
+      "size": 366
     },
     {
       "name": "stops.txt",
-      "size": 740
+      "size": 825
     },
     {
       "name": "stop_times.txt",
-      "size": 22036
+      "size": 1634
     },
     {
       "name": "translations.txt",
-      "size": 671
+      "size": 6210
     },
     {
       "name": "trips.txt",
-      "size": 18318
+      "size": 1351
     }
   ],
   "feedInfo": {
-    "publisherName": "宇和島運輸",
-    "publisherUrl": "https://www.uwajimaunyu.co.jp/",
+    "publisherName": "阪九フェリー株式会社",
+    "publisherUrl": "https://www.han9f.co.jp/",
     "lang": "ja",
-    "startDate": "20260401",
-    "endDate": "20260630",
+    "startDate": "20260508",
+    "endDate": "20260609",
     "version": "2.0"
   }
 }
