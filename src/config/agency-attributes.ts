@@ -468,7 +468,7 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
 
   // --- Tamachan Bus (Ota City community bus, operated by Tokyu Bus) ---
   'tamachan:5013201004029.00': {
-    shortName: { ja: 'たまちゃんバス', en: 'Tamachan bus' },
+    shortName: { ja: 'たまちゃんバス', en: 'Tamachan Bus' },
     longName: { ja: '大田区コミュニティバス', en: 'Ota City community bus' },
     colors: [{ bg: 'FFFFFF', text: '1D2A75' }],
   },

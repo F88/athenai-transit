@@ -508,8 +508,8 @@ const settings: SourceGroup[] = [
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
     name: {
-      name: 'Tamachan bus',
-      names: { ja: 'たまちゃんバス (大田区)', en: 'Tamachan bus (Ota)' },
+      name: 'Tamachan Bus',
+      names: { ja: 'たまちゃんバス (大田区)', en: 'Tamachan Bus (Ota)' },
     },
     countries: ['JP'],
   },

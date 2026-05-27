@@ -1,5 +1,7 @@
 # Resource Notes
 
+<!-- markdownlint-disable MD024 -->
+
 Data source に関する注意事項や問題点をまとめるドキュメント。データの品質や利用上の注意点を把握するために参照する。
 
 ## Data source 全体にわたる注意事項/問題
@@ -1218,9 +1220,9 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - 調査日: 2026-05-27
 - 対象 feed バージョン:
-  - meguro-c-bus: `?date=20260521` (= 2026-05-21 公開)
-  - ota-c-bus: `?date=20260212` (= 2026-02-12 公開)
-  - shinagawa-c-bus: `?date=20260212` (= 2026-02-12 公開)
+    - meguro-c-bus: `?date=20260521` (= 2026-05-21 公開)
+    - ota-c-bus: `?date=20260212` (= 2026-02-12 公開)
+    - shinagawa-c-bus: `?date=20260212` (= 2026-02-12 公開)
 
 ### 共通事項
 
@@ -1244,7 +1246,7 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 ### ota-c-bus 固有
 
-- prefix: `tamachan`、 outDir: `ota-c-bus`、 ブランド: 「たまちゃんバス」 / 「Tamachan bus」
+- prefix: `tamachan`、 outDir: `ota-c-bus`、 ブランド: 「たまちゃんバス」 / 「Tamachan Bus」
 - 概要: 14 stops / 1 route / 54 trips / 810 stop_times / 1 trip pattern
 - 有効期間: 2026-02-01 〜 2026-05-31 (短期、 調査日時点で残り 4 日)
 - 区間: 武蔵新田駅 始発の loop route

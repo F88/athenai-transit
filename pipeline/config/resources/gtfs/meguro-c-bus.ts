@@ -6,7 +6,7 @@ const meguroCBus: GtfsSourceDefinition = {
     nameEn: 'Meguro City Community Bus',
     nameJa: '目黒区コミュニティバス',
     description:
-      'GTFS-JP static data for Meguro City Community Bus ("Sanma-go") operated by Tokyu Bus Corporation.',
+      'GTFS-JP static data for Meguro City Community Bus ("Sanma Bus") operated by Tokyu Bus Corporation.',
     dataFormat: { type: 'GTFS/GTFS-JP' },
     license: {
       name: '公共交通オープンデータ基本ライセンス',
@@ -26,7 +26,7 @@ const meguroCBus: GtfsSourceDefinition = {
         en: { long: 'Tokyu Bus Corporation', short: 'Tokyu Bus' },
       },
       url: 'https://www.tokyubus.co.jp/',
-      // route_color from GTFS routes.txt (Sanma-go purple).
+      // route_color from GTFS routes.txt (Sanma Bus purple).
       colors: [{ bg: '613964', text: 'FFFFFF' }],
     },
     authentication: {

@@ -36,8 +36,9 @@ const shinagawaCBus: GtfsSourceDefinition = {
 
     /** GtfsResource */
     routeTypes: ['bus'],
-    // GTFS routes.txt has empty `route_color`. Fall back to the Shina Bus
-    // brand color so polylines render with the operator's brand colour.
+    // GTFS routes.txt has empty `route_color`. shapes.txt is not bundled
+    // so no polyline is drawn; the fallback only colors the route badge
+    // with the Shina Bus brand colour.
     routeColorFallbacks: {
       '*': '4653A1',
     },
