@@ -11,12 +11,26 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Added
 
-- Web Storage 不可環境への対応: Chrome の「全 Cookie とサイトデータをブロック」設定等で `globalThis.localStorage` の getter が `SecurityError` を投げる環境でも、 App が起動 crash せず graceful に動作するようにした。 `resolveWebStorage(kind)` / `isWebStorageAvailable(kind)` / `useWebStorageAvailability(kind)` を新設し、 storage 不可検出時は起動時に `storage.unavailable` toast (`duration: Infinity`、 close button) で 1 度だけ通知する。 永続化対象と Web Storage 不可時の要件は PRD 3.H に明文化、 storage 層の挙動仕様は `docs/web-storage.md` / `docs/storage.md` を参照 (Issue #237)。
-- DataSourceSettingsDialog の global 一括切替: footer に「全てON」 / 「全てOFF」 ボタンを追加し、 表示中の全 data source group に対して一括で有効化 / 無効化できるようにした (i18n キー `dataSourceSettings.bulkAction.enableAllGlobal` / `disableAllGlobal`)。 per-section の bulk action と合わせて shadcn `ButtonGroup` で segmented 表示に統一し、 footer 全体は `flex-wrap` の 3 要素 (Reset / 一括切替 ButtonGroup / Restart) で狭幅にも自動追従する。 `forcedSourcesMode` 時は他 dialog action と同じく disabled。
+- GTFS source: 阪九フェリー (Hankyu Ferry、 prefix `han9fry`、 route_type 4 ferry) を追加。
+- GTFS source: 目黒区コミュニティバス (さんまバス、 prefix `sanma`、 route_type 3 bus) を追加。
+- GTFS source: 大田区コミュニティバス (たまちゃんバス、 prefix `tamachan`、 route_type 3 bus) を追加。
+- GTFS source: 品川区コミュニティバス (しなバス、 prefix `shinabus`、 route_type 3 bus) を追加。
+- Web Storage 不可環境への対応: Chrome の「全 Cookie とサイトデータをブロック」設定等で `globalThis.localStorage` の getter が `SecurityError` を投げる環境でも、 App が起動 crash せず graceful に動作するようにした。
+- Web Storage 不可検出 API として `resolveWebStorage(kind)` / `isWebStorageAvailable(kind)` / `useWebStorageAvailability(kind)` を新設した。
+- Web Storage 不可検出時は、 起動時に `storage.unavailable` toast (`duration: Infinity`、 close button) で 1 度だけ通知するようにした。
+- Web Storage の永続化対象と不可時の要件は PRD 3.H に明文化し、 storage 層の挙動仕様は `docs/web-storage.md` / `docs/storage.md` に整理した (Issue #237)。
+- DataSourceSettingsDialog の global 一括切替: footer に「全てON」 / 「全てOFF」 ボタンを追加し、 表示中の全 data source group に対して一括で有効化 / 無効化できるようにした。
+- DataSourceSettingsDialog の global 一括切替用 i18n キーとして `dataSourceSettings.bulkAction.enableAllGlobal` / `disableAllGlobal` を追加した。
+- DataSourceSettingsDialog の per-section bulk action と global bulk action を shadcn `ButtonGroup` の segmented 表示に統一した。
+- DataSourceSettingsDialog の footer 全体は `flex-wrap` の 3 要素 (Reset / 一括切替 ButtonGroup / Restart) で狭幅にも自動追従する。
+- DataSourceSettingsDialog の `forcedSourcesMode` 時は、 global 一括切替も他 dialog action と同じく disabled にした。
 
 ### Changed
 
-- Pipeline: global aggregate scripts (`build-data-source-catalog` / `build-global-insights`) の per-source 入力欠損を **fatal から skip-tolerant に変更**。 欠損 prefix は catalog / global insights から除外して残り prefix で処理続行し、 exit code 0 / 1 (partial) / 2 (all failed or fatal precondition) を返す。 workflow の各 step を `set +e` + `Warn on partial failure` / `Fail on total` の triplet に揃え、 Slack 通知の partial failure 集約にも両 step を追加。 `global/insights.json` 欠損や resource definition 未登録 prefix は引き続き fatal precondition で停止する(Issue #254)。
+- Pipeline: global aggregate scripts (`build-data-source-catalog` / `build-global-insights`) の per-source 入力欠損を **fatal から skip-tolerant に変更**。
+- Pipeline: 欠損 prefix は catalog / global insights から除外して残り prefix で処理続行し、 exit code 0 / 1 (partial) / 2 (all failed or fatal precondition) を返すようにした。
+- Pipeline workflow: 各 step を `set +e` + `Warn on partial failure` / `Fail on total` の triplet に揃え、 Slack 通知の partial failure 集約にも両 step を追加した。
+- Pipeline: `global/insights.json` 欠損や resource definition 未登録 prefix は引き続き fatal precondition で停止する (Issue #254)。
 - Data: kyoto-city-bus の GTFS resource を 20260525 版へ更新。
 - i18n: 履歴 / アンカーの操作失敗 toast の i18n キーを操作種別非依存に rename (`history.saveFailed` → `history.operationFailed`、 `anchor.anchorUpdateFailed` → `anchor.operationFailed`)。 load 失敗時にも「保存に失敗」と表示されていた不整合を解消し、 文言を「履歴の処理に失敗しました」「アンカーの処理に失敗しました」に変更。
 - Data source 表示名の整理: suginami-gsm の provider 名を「すぎ丸」 / 「Sugimaru」 → 「杉並区」 / 「Suginami City」 に変更 (provider = 自治体名で統一)。 agency-attributes の sggsm shortName を「すぎ丸」 / 「Sugimaru」 → 「グリスロ」 / 「GSM」 に更新し、 サービスブランド表示を agency 層に切り出した。 あわせて重複しがちな小規模 group の表示名に区名 suffix を付与 (例: 「風ぐるま」 → 「風ぐるま (千代田区)」)。
