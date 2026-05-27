@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.27]
+
 ### Added
 
 - GTFS source: 阪九フェリー (Hankyu Ferry、 prefix `han9fry`、 route_type 4 ferry) を追加。
