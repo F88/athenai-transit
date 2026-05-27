@@ -48,5 +48,8 @@ export default [
   '85b', // hachiko-bus
   '13103b', // chii-bus
   'han9fry', // hankyu-ferry
+  'sanma', // meguro-c-bus
+  'shinabus', // shinagawa-c-bus
+  'tamachan', // ota-c-bus
   // 'tkbus', // tokyu-bus (not built)
 ];

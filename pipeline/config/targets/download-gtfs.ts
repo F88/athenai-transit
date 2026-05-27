@@ -47,4 +47,7 @@ export default [
   'hachiko-bus',
   'chii-bus',
   'hankyu-ferry',
+  'meguro-c-bus',
+  'shinagawa-c-bus',
+  'ota-c-bus',
 ];
