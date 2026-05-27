@@ -186,7 +186,7 @@ const HOME_LOCATIONS: readonly HomeLocation[] = [
     lat: 33.4605585,
     lng: 132.41714,
     zoom: 14,
-    requiredDataSource: ['iyt2'],
+    // requiredDataSource: ['iyt2'],
   },
   /** Germany */
   {
