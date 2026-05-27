@@ -9,10 +9,21 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Web Storage 不可環境への対応: Chrome の「全 Cookie とサイトデータをブロック」設定等で `globalThis.localStorage` の getter が `SecurityError` を投げる環境でも、 App が起動 crash せず graceful に動作するようにした。 `resolveWebStorage(kind)` / `isWebStorageAvailable(kind)` / `useWebStorageAvailability(kind)` を新設し、 storage 不可検出時は起動時に `storage.unavailable` toast (`duration: Infinity`、 close button) で 1 度だけ通知する。 永続化対象と Web Storage 不可時の要件は PRD 3.H に明文化、 storage 層の挙動仕様は `docs/web-storage.md` / `docs/storage.md` を参照 (Issue #237)。
+
 ### Changed
 
 - Pipeline: global aggregate scripts (`build-data-source-catalog` / `build-global-insights`) の per-source 入力欠損を **fatal から skip-tolerant に変更**。 欠損 prefix は catalog / global insights から除外して残り prefix で処理続行し、 exit code 0 / 1 (partial) / 2 (all failed or fatal precondition) を返す。 workflow の各 step を `set +e` + `Warn on partial failure` / `Fail on total` の triplet に揃え、 Slack 通知の partial failure 集約にも両 step を追加。 `global/insights.json` 欠損や resource definition 未登録 prefix は引き続き fatal precondition で停止する(Issue #254)。
 - Data: kyoto-city-bus の GTFS resource を 20260525 版へ更新。
+- i18n: 履歴 / アンカーの操作失敗 toast の i18n キーを操作種別非依存に rename (`history.saveFailed` → `history.operationFailed`、 `anchor.anchorUpdateFailed` → `anchor.operationFailed`)。 load 失敗時にも「保存に失敗」と表示されていた不整合を解消し、 文言を「履歴の処理に失敗しました」「アンカーの処理に失敗しました」に変更。
+
+### Fixed
+
+- `WebStorageItem` および `LocalStorageStopSelectionRepository` の constructor で `globalThis.localStorage` を default parameter として eager 評価していたため、 getter が `SecurityError` を投げる環境で起動時に crash して ErrorBoundary に落ちる問題を修正。 default parameter を外し、 `resolveWebStorage('local')` 経由で安全に取得するようにした (Issue #237)。
+- `useUserSettings.saveSettings` の `localStorage.setItem` 呼び出しに try/catch がなく、 storage 不可時に設定変更 (テーマ / 言語 / tile 切替等) で例外が React の reducer 経由で伝播し ErrorBoundary に落ちる問題を修正。 失敗時は `logger.error` で記録し、 React state は更新されるため session 内では設定変更が反映される。
+- `resolveWebStorage` で `null` 値の Web Storage グローバル (custom polyfill / shim / non-conformant mock 由来) を `undefined` に正規化し、 `Storage | undefined` の型契約を維持。
 
 ## [2026.05.26]
 
