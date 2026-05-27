@@ -25,7 +25,13 @@ export type WebStorageKind = 'local' | 'session';
  */
 export function resolveWebStorage(kind: WebStorageKind): Storage | undefined {
   try {
-    return kind === 'local' ? globalThis.localStorage : globalThis.sessionStorage;
+    // The Storage globals are typed as `Storage` in lib.dom.d.ts but may
+    // be `null` in custom polyfills, sandbox shims, or non-conformant test
+    // mocks. Normalise `null` to `undefined` so downstream consumers can
+    // rely on the `Storage | undefined` contract uniformly.
+    const raw: Storage | null | undefined =
+      kind === 'local' ? globalThis.localStorage : globalThis.sessionStorage;
+    return raw ?? undefined;
   } catch {
     return undefined;
   }

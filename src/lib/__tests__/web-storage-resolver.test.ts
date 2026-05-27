@@ -44,6 +44,19 @@ describe('resolveWebStorage', () => {
 
       expect(resolveWebStorage('local')).toBeUndefined();
     });
+
+    it('normalises a null localStorage value to undefined', () => {
+      // Non-conformant environments (custom polyfills / shims) may set the
+      // global to null rather than provide a Storage instance or throw.
+      Object.defineProperty(globalThis, 'localStorage', {
+        configurable: true,
+        get() {
+          return null;
+        },
+      });
+
+      expect(resolveWebStorage('local')).toBeUndefined();
+    });
   });
 
   describe("kind: 'session'", () => {
@@ -59,6 +72,17 @@ describe('resolveWebStorage', () => {
 
     it('returns undefined when the sessionStorage getter throws', () => {
       overrideWithThrowingGetter('sessionStorage');
+
+      expect(resolveWebStorage('session')).toBeUndefined();
+    });
+
+    it('normalises a null sessionStorage value to undefined', () => {
+      Object.defineProperty(globalThis, 'sessionStorage', {
+        configurable: true,
+        get() {
+          return null;
+        },
+      });
 
       expect(resolveWebStorage('session')).toBeUndefined();
     });
