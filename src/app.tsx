@@ -386,7 +386,7 @@ export default function App() {
       return;
     }
     logger.warn(`history persistence failed: ${historyError}`);
-    toast.error(t('history.saveFailed'), {
+    toast.error(t('history.operationFailed'), {
       description: historyError,
       duration: 2_000,
     });
@@ -501,7 +501,7 @@ export default function App() {
       return;
     }
     logger.warn(`anchor operation failed: ${anchorError}`);
-    toast.error(t('anchor.anchorUpdateFailed'), {
+    toast.error(t('anchor.operationFailed'), {
       description: anchorError,
       duration: 4_000,
     });

@@ -73,14 +73,14 @@
   },
   "history": {
     "label": "履歴",
-    "saveFailed": "履歴の保存に失敗しました"
+    "operationFailed": "履歴の処理に失敗しました"
   },
   "anchor": {
     "add": "アンカーを追加",
     "remove": "アンカーを削除",
     "added": "アンカーを追加しました",
     "removed": "アンカーを削除しました",
-    "anchorUpdateFailed": "アンカー更新に失敗しました"
+    "operationFailed": "アンカーの処理に失敗しました"
   },
   "storage": {
     "unavailable": {

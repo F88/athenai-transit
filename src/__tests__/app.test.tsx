@@ -420,7 +420,7 @@ describe('App anchor error toast', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('アンカー更新に失敗しました', {
+      expect(mockToastError).toHaveBeenCalledWith('アンカーの処理に失敗しました', {
         description: 'Duplicate stop: A',
         duration: 4000,
       });
@@ -441,7 +441,7 @@ describe('App anchor error toast', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(mockToastError).toHaveBeenCalledWith('履歴の保存に失敗しました', {
+      expect(mockToastError).toHaveBeenCalledWith('履歴の処理に失敗しました', {
         description: 'Quota exceeded',
         duration: 2000,
       });

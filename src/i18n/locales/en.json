@@ -73,14 +73,14 @@
   },
   "history": {
     "label": "History",
-    "saveFailed": "Failed to save history"
+    "operationFailed": "History operation failed"
   },
   "anchor": {
     "add": "Add anchor",
     "remove": "Remove anchor",
     "added": "Anchor added",
     "removed": "Anchor removed",
-    "anchorUpdateFailed": "Failed to update anchor"
+    "operationFailed": "Anchor operation failed"
   },
   "storage": {
     "unavailable": {
