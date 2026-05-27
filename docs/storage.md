@@ -38,3 +38,35 @@ Stop 選択履歴を扱う repository インターフェース。 具体的な�
 | ------------------------------------------------------------------ | -------------------------------------------------------------------------------- | -------------------------------------- |
 | `localStorage` が使える                                            | 通常通り読み出し                                                                 | 通常通り永続化                         |
 | `localStorage` が使えない (例: getter が `SecurityError` を投げる) | `Result.failure` を返す (呼び出し側に「読み込み失敗」が伝わる、 silent ではない) | `Result.failure` を返す                |
+
+## UserSettings
+
+ユーザー設定 (表示言語、 テーマ、 `tileIndex`、 `infoLevel` 等) の永続化。 DataSourceSelectionStorage と同様、 interface / class 抽象を持たず、 module-level 関数として実装されている。 ストレージキーは `athenai-settings`、 実装は 2 ファイルに分散:
+
+- `src/hooks/use-user-settings.ts`: `loadSettings()` / `saveSettings()` (全フィールド読み書き) + `useUserSettings()` hook
+- `src/lib/app-theme.ts`: `loadStoredAppTheme()` (theme のみ抽出、 早期 paint 用)
+
+| 状況                                                               | Read (`loadSettings` / `loadStoredAppTheme`) | Write (`saveSettings`)                   |
+| ------------------------------------------------------------------ | -------------------------------------------- | ---------------------------------------- |
+| `localStorage` が使える                                            | 通常通り読み出し                             | 通常通り永続化                           |
+| `localStorage` が使えない (例: getter が `SecurityError` を投げる) | DEFAULTS / `'light'` を返す (silent)         | silent fail (try/catch + `logger.error`) |
+
+### UserSettings の既知の問題
+
+- Read 失敗を silent fallback (DEFAULTS / `'light'`) で返すため、 「未保存」 と「読み込み失敗」 を呼び出し側で区別できない (DataSourceSelectionStorage と同じ silent 問題)
+- 他 storage 系統と異なり interface / class 抽象を持たない。 `localStorage` 固定の暗黙前提
+
+## DataSourceSelectionStorage
+
+データソース選択 (= 有効化されたグループ id の集合) の永続化。 上記 2 系統と異なり、 interface / class 抽象を持たず、 module-level の export 関数として実装されている (`loadEnabledGroupIdsFromStorage` / `saveEnabledGroupIdsToStorage` / `clearStoredEnabledGroupIds`)。 配置も `src/repositories/` ではなく `src/domain/datasource/`。
+
+| 状況                                                               | Read (`loadEnabledGroupIdsFromStorage`)           | Write (`saveEnabledGroupIdsToStorage` / `clearStoredEnabledGroupIds`) |
+| ------------------------------------------------------------------ | ------------------------------------------------- | --------------------------------------------------------------------- |
+| `localStorage` が使える                                            | 通常通り読み出し                                  | 通常通り永続化                                                        |
+| `localStorage` が使えない (例: getter が `SecurityError` を投げる) | `null` を返す (silent。 「未登録」と区別できない) | silent no-op                                                          |
+
+### DataSourceSelectionStorage の既知の問題
+
+- Read 失敗を silent `null` fallback で返すため、 「未登録」 と「読み込み失敗」 を呼び出し側で区別できない。 過去に保存済みの選択がある状況で storage 不可になると、 ユーザーには **設定がデフォルトに戻ったように見える**
+- Write / Remove も silent no-op で、 永続化失敗が呼び出し側に伝わらない
+- 他 2 系統と異なり interface / class 抽象を持たない。 `localStorage` 固定の暗黙前提が呼び出し側に染み込む構造
