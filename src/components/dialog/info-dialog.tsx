@@ -80,9 +80,9 @@ export function InfoDialog({ open, onOpenChange, onOpenDataSourceSettings }: Inf
             📦
           </Button>
           <DialogTitle className="text-base">Where to Next?</DialogTitle>
-          {`${__APP_VERSION__}`}
           <DialogDescription className="text-center sm:text-center">
-            {t('info.status')}
+            {`${__APP_VERSION__}`}
+            {/* {t('info.status')} */}
           </DialogDescription>
         </DialogHeader>
         <div className="text-muted-foreground overflow-y-auto pt-3 text-sm leading-relaxed">
