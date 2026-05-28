@@ -14,8 +14,12 @@ workspace/_archives/
 # Pipeline build artifacts (SQLite databases)
 workspace/_build/
 
-# Large sources (re-downloadable)
-workspace/data/
+# Large sources (re-downloadable). Match direct children so re-include
+# rules below can resurface specific files (git cannot re-include a path
+# whose parent directory is excluded).
+workspace/data/*
 
-# Exception: mlit geojson is checked in (small, no download script yet)
+# Exception: KSJ railway data is checked in (small, manual yearly update; Issue #74).
 !workspace/data/mlit/
+workspace/data/mlit/*
+!workspace/data/mlit/N02-*_RailroadSection.geojson
