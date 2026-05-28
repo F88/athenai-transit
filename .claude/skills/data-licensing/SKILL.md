@@ -23,8 +23,8 @@ Never guess license information. Always verify from the primary source (CKAN cat
 
 **Credit display** (ABOUT.md): Follow the ODPT FAQ format at `https://developer.odpt.org/en/faq-info#cc-by-credit`.
 
-- Unmodified data: `[Provider name], [Content name], Creative Commons License Attribution 4.0 International (URL)`
-- Modified data (our case, GTFS -> JSON): `This [app] uses the following copyrighted material with modifications. [Provider name], [Content name], Creative Commons License Attribution 4.0 International (URL)`
+- Unmodified data: `[Provider name], [Content name], Creative Commons Attribution 4.0 International License (URL)`
+- Modified data (our case, GTFS -> JSON): `This [app] uses the following copyrighted material with modifications. [Provider name], [Content name], Creative Commons Attribution 4.0 International License (URL)`
 
 **Provider name**: Found on each dataset's CKAN page (e.g. `https://ckan.odpt.org/dataset/b_bus_gtfs_jp-toei`). Look for "Provider name of content" field.
 

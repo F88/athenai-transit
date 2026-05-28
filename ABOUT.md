@@ -113,18 +113,19 @@ Athenai Transit では複数の地図を切り替えることが出来ます。�
 
 ## 📜 ライセンス / クレジット
 
-### 🚈 公共交通オープンデータ基本ライセンス
+### 🚌 公共交通データ
+
+#### [公共交通オープンデータ基本ライセンス](https://developer.odpt.org/terms/data_basic_license.html)
 
 本アプリケーションは、公共交通オープンデータセンターにおいて提供されるデータを利用しています。
 
 - 事業者: ゆりかもめ、関東バス、京王バス、江戸バス(中央区)、西武バス、京都市交通局、伊予鉄バス、大島旅客自動車、首都圏新都市鉄道(つくばエクスプレス)、多摩都市モノレール、東京臨海高速鉄道、東京都観光汽船、東京地下鉄(東京メトロ)、西東京バス、三和商船、東海汽船、鹿児島市船舶局(桜島フェリー)、オクシリアイランドフェリー、四国開発フェリー(オレンジフェリー)、宇和島運輸、名門大洋フェリー、斎島汽船、京都バス、小田急バス、横浜市交通局 (横浜市営地下鉄・横浜市営バス)、川崎市交通局、川崎鶴見臨港バス、阪九フェリー、東急バス (さんまバス・たまちゃんバス・しなバスのコミュニティバス3路線)
-- ライセンス: [公共交通オープンデータ基本ライセンス](https://developer.odpt.org/terms/data_basic_license.html)
 
 公共交通オープンデータセンターから提供されるデータの正確性・完全性は保証されません。本アプリケーションに関するお問い合わせは、公共交通オープンデータセンターではなく、本アプリケーションの開発者にご連絡ください。
 
-### 🗃️ CC BY 4.0
+#### CC BY 4.0 [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/deed.ja)
 
-本アプリケーションは以下の著作物を改変して利用しています。[Creative Commons License Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/deed.ja)
+本アプリケーションは以下の著作物を改変して利用しています。
 
 - 東京都交通局,公共交通オープンデータ協議会 - バス/鉄道関連情報
 - 千代田区,日立自動車交通株式会社 - 千代田区コミュニティバス運行情報
@@ -136,19 +137,25 @@ Athenai Transit では複数の地図を切り替えることが出来ます。�
 - 渋谷区 - ハチ公バス運行情報
 - 港区,株式会社フジエクスプレス - ちぃばす運行情報
 
-### Datenlizenz Deutschland - Namensnennung - Version 2.0
+#### [Datenlizenz Deutschland - Namensnennung - Version 2.0](https://www.govdata.de/dl-de/by-2-0)
 
-本アプリケーションは以下の著作物を改変して利用しています。[Datenlizenz Deutschland - Namensnennung - Version 2.0](https://www.govdata.de/dl-de/by-2-0)
+本アプリケーションは以下の著作物を改変して利用しています。
 
 - 提供者名: Datensatz der VAG Freiburg
-- ライセンス: Datenlizenz Deutschland - Namensnennung - Version 2.0 ([https://www.govdata.de/dl-de/by-2-0](https://www.govdata.de/dl-de/by-2-0))
 - データセットURI: [GTFS-Daten (VAG Freiburg)](https://www.vag-freiburg.de/service-infos/downloads/gtfs-daten)
 - 改変有無: 改変あり (GTFS静的データをアプリ用データに変換)
 - Quellenvermerk: Datensatz der VAG Freiburg, Datenlizenz Deutschland - Namensnennung - Version 2.0 (dl-de/by-2-0), Daten geändert.
 
 ### 🛤️ 鉄道路線データ
 
-- 国土数値情報 鉄道データ - 国土交通省
+本アプリケーションは以下の著作物を改変して利用しています。
+
+- ライセンス: 📜 [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/deed.ja)
+- 提供者名: 国土交通省
+- データセット: 国土数値情報 鉄道データ (N02)
+- データセットURI: [国土数値情報 | 鉄道データ (N02-2025)](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2025.html)
+- 改変有無: 改変あり (GeoJSON を ShapesBundle JSON に変換)
+- 出典表記: 「国土数値情報 (鉄道データ)」 (国土交通省) を加工して作成
 
 ### 🗺️ 地図
 

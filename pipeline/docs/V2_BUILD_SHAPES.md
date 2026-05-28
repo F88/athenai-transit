@@ -97,9 +97,19 @@ GTFS ZIP に `shapes.txt` が含まれていないソース (関東バス、京�
 
 ## KSJ railway shapes 処理
 
+### KSJ (国土数値情報) とは
+
+国土交通省が提供する全国の地理空間情報データセット。 テーマ別に `N01`/`N02`/... の識別子で管理され、 本プロジェクトでは `N02` (鉄道、 年度版は `N02-XX`) を使用する。 配布元: [国土数値情報ダウンロードサイト](https://nlftp.mlit.go.jp/ksj/index.html)。
+
 ### KSJ 入力
 
-`pipeline/workspace/data/mlit/N02-24_RailroadSection.geojson` (国土数値情報 鉄道データ)。
+`pipeline/workspace/data/mlit/N02-25_RailroadSection.geojson` (国土数値情報 鉄道データ)。
+
+#### 利用手順
+
+1. [国土数値情報 | 鉄道データ (N02-2025)](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2025.html) からダウンロード。
+2. ZIP を解凍し、 `N02-25_RailroadSection.geojson` を `pipeline/workspace/data/mlit/` に配置する。
+3. [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/deed.ja) (CC BY 4.0) に従い、 出典表記 `「国土数値情報 (鉄道データ)」 (国土交通省) を加工して作成` を `ABOUT.md` のクレジット欄に明記する。
 
 ### ターゲット検出
 
