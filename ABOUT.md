@@ -115,9 +115,7 @@ Athenai Transit では複数の地図を切り替えることが出来ます。�
 
 ### 🚌 公共交通データ
 
-#### 公共交通オープンデータ基本ライセンス
-
-📜 [公共交通オープンデータ基本ライセンス](https://developer.odpt.org/terms/data_basic_license.html)
+#### [公共交通オープンデータ基本ライセンス](https://developer.odpt.org/terms/data_basic_license.html)
 
 本アプリケーションは、公共交通オープンデータセンターにおいて提供されるデータを利用しています。
 
@@ -125,9 +123,7 @@ Athenai Transit では複数の地図を切り替えることが出来ます。�
 
 公共交通オープンデータセンターから提供されるデータの正確性・完全性は保証されません。本アプリケーションに関するお問い合わせは、公共交通オープンデータセンターではなく、本アプリケーションの開発者にご連絡ください。
 
-#### CC BY 4.0
-
-📜 [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/deed.ja)
+#### [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/deed.ja)
 
 本アプリケーションは以下の著作物を改変して利用しています。
 
@@ -141,9 +137,7 @@ Athenai Transit では複数の地図を切り替えることが出来ます。�
 - 渋谷区 - ハチ公バス運行情報
 - 港区,株式会社フジエクスプレス - ちぃばす運行情報
 
-#### Datenlizenz Deutschland - Namensnennung - Version 2.0
-
-📜 [Datenlizenz Deutschland - Namensnennung - Version 2.0](https://www.govdata.de/dl-de/by-2-0)
+#### [Datenlizenz Deutschland - Namensnennung - Version 2.0](https://www.govdata.de/dl-de/by-2-0)
 
 本アプリケーションは以下の著作物を改変して利用しています。
 
