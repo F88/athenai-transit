@@ -124,7 +124,7 @@ Athenai Transit では複数の地図を切り替えることが出来ます。�
 
 ### 🗃️ CC BY 4.0
 
-本アプリケーションは以下の著作物を改変して利用しています。[Creative Commons License Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/deed.ja)
+本アプリケーションは以下の著作物を改変して利用しています。[Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/deed.ja)
 
 - 東京都交通局,公共交通オープンデータ協議会 - バス/鉄道関連情報
 - 千代田区,日立自動車交通株式会社 - 千代田区コミュニティバス運行情報
@@ -148,11 +148,11 @@ Athenai Transit では複数の地図を切り替えることが出来ます。�
 
 ### 🛤️ 鉄道路線データ
 
-本アプリケーションは以下の著作物を改変して利用しています。[Creative Commons License Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/deed.ja)
+本アプリケーションは以下の著作物を改変して利用しています。
 
 - 提供者名: 国土交通省
 - データセット: 国土数値情報 鉄道データ (N02)
-- ライセンス: Creative Commons Attribution 4.0 International (CC BY 4.0)
+- ライセンス: [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/deed.ja)
 - データセットURI: [国土数値情報 | 鉄道データ (N02-2025)](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2025.html)
 - 改変有無: 改変あり (GeoJSON を ShapesBundle JSON に変換)
 - 出典表記: 「国土数値情報 (鉄道データ)」 (国土交通省) を加工して作成

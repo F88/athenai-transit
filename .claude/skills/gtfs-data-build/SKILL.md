@@ -13,32 +13,32 @@ Build web app JSON data files from GTFS open data sources.
 
 ## Pipeline Steps
 
-Commands and execution order are documented in `CLAUDE.md` "Data preparation" section. Run steps 1-6 in order; each step depends on the previous one.
+Commands and execution order are documented in `CLAUDE.md` "Data preparation" section. Run steps 1-12 in order; each step depends on the previous one.
 
 ## When to skip steps
 
-- **Steps 1-2 (download)**: Skip if GTFS source files are already up to date. Files live in `pipeline/data/gtfs/{toei-bus,toei-train}/`.
-- **Step 5 (train-shapes)**: Skip if only bus data changed. Requires `pipeline/data/mlit/N02-25_RailroadSection.geojson`.
-- **Step 6 (data:sync)**: Always run last — this copies built data to `public/data/` where Vite serves it.
+- **Steps 1-2 (download)**: Skip if source files are already up to date. GTFS files live in `pipeline/workspace/data/gtfs/{outDir}/`; ODPT JSON files in `pipeline/workspace/data/odpt-json/{outDir}/`.
+- **Step 7 (KSJ shapes)**: Skip if only bus data changed. Requires `pipeline/workspace/data/mlit/N02-25_RailroadSection.geojson`.
+- **Step 12 (data:sync)**: Always run last — this copies built data from `pipeline/workspace/_build/data-v2/` to `public/data-v2/` where Vite serves it. Destination directory is configurable via `PIPELINE_TRANSIT_DATA_DIR` (defaults to `data-v2`).
 
 ## Data flow
 
 ```
-ODPT API (GTFS ZIP)
-  -> pipeline/data/gtfs/{source}/*.txt    (steps 1-2)
-  -> pipeline/build/{prefix}.db           (step 3)
-  -> pipeline/build/data/{prefix}/*.json  (steps 4-5)
-  -> public/data/{prefix}/*.json          (step 6)
+ODPT API (GTFS ZIP / ODPT JSON)
+  -> pipeline/workspace/data/{gtfs,odpt-json}/{outDir}/   (steps 1-2)
+  -> pipeline/workspace/_build/db/{outDir}.db             (step 3)
+  -> pipeline/workspace/_build/data-v2/{prefix}/*.json    (steps 4-10)
+  -> public/data-v2/{prefix}/*.json                       (step 12)
 ```
 
 ## Sources
 
-Defined in `pipeline/config/resources/gtfs/`. Each `.ts` file is a single source definition. See each script's TSDoc header for detailed input/output paths.
+Defined in `pipeline/config/resources/{gtfs,odpt-json}/`. Each `.ts` file is a single source definition. See each script's TSDoc header for detailed input/output paths.
 
 ## Troubleshooting
 
 - GTFS ZIP download does not require authentication (publicly accessible)
-- ODPT JSON download requires `ODPT_ACCESS_TOKEN` environment variable
-- `build:db` expects GTFS CSV files in `pipeline/data/gtfs/{directory}/`
-- `build:train-shapes` expects MLIT GeoJSON in `pipeline/data/mlit/`
-- If JSON output looks stale, check that `data:sync` was run after `build:json`
+- ODPT JSON download requires `ODPT_ACCESS_TOKEN` environment variable (set via `pipeline/.env.pipeline.local`)
+- `pipeline:build:db` expects GTFS CSV files in `pipeline/workspace/data/gtfs/{outDir}/`
+- `pipeline:build:v2-shapes:ksj` expects MLIT GeoJSON at `pipeline/workspace/data/mlit/N02-XX_RailroadSection.geojson` (year-suffixed)
+- If JSON output looks stale, check that `data:sync` was run after the build steps
