@@ -123,7 +123,7 @@ Athenai Transit では複数の地図を切り替えることが出来ます。�
 
 公共交通オープンデータセンターから提供されるデータの正確性・完全性は保証されません。本アプリケーションに関するお問い合わせは、公共交通オープンデータセンターではなく、本アプリケーションの開発者にご連絡ください。
 
-#### [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/deed.ja)
+#### CC BY 4.0 [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/deed.ja)
 
 本アプリケーションは以下の著作物を改変して利用しています。
 
