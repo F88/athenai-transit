@@ -85,7 +85,7 @@ Athenai Transit では複数の地図を切り替えることが出来ます。�
 - ⛴️ 三和商船 (SANWASHOSEN / 牛深港-蔵之元港のフェリー)
 - ⛴️ 東海汽船 (Tokai Kisen / 伊豆諸島・小笠原諸島航路、路線図非対応)
 - ⛴️ 桜島フェリー (Sakurajima Ferry / 鹿児島市船舶局、鹿児島港-桜島港)
-- ⛴️ 奥尻島フェリー (Okushiri Island Ferry / 江差港-奥尻港、北海道)
+- ⛴️ オクシリアイランドフェリー (Okushiri Island Ferry / 江差港-奥尻港、北海道)
 - ⛴️ オレンジフェリー (Orange Ferry / 四国開発フェリー、東予-大阪・新居浜-神戸・八幡浜-臼杵航路、路線図非対応)
 - ⛴️ 宇和島運輸フェリー (Uwajima Unyu Ferries / 八幡浜-別府・八幡浜-臼杵航路、路線図非対応)
 - ⛴️ 名門大洋フェリー (Meimon Taiyo Ferry / 大阪南港-新門司港、路線図非対応)
@@ -117,13 +117,15 @@ Athenai Transit では複数の地図を切り替えることが出来ます。�
 
 #### [公共交通オープンデータ基本ライセンス](https://developer.odpt.org/terms/data_basic_license.html)
 
-本アプリケーションは、公共交通オープンデータセンターにおいて提供されるデータを利用しています。
+本アプリケーションが利用する以下のデータは、公共交通オープンデータセンターにおいて提供されるものです。
+
+対象データ
 
 - 関東バス, 京王バス, 西武バス, 西東京バス, 江戸バス, 大島バス, 横浜市営バス, 川崎市バス, 川崎鶴見臨港バス, さんまバス, たまちゃんバス, しなバス, 京都市営バス, 京都バス, 小田急バス, 伊予鉄バス
 - 東京メトロ, ゆりかもめ, つくばエクスプレス, 多摩モノレール, りんかい線, 横浜市営地下鉄
-- 東京都観光汽船, 三和商船, 東海汽船, 桜島フェリー, 奥尻島フェリー, オレンジフェリー, 宇和島運輸フェリー, 名門大洋フェリー, 斎島汽船, 阪九フェリー
+- 東京都観光汽船, 三和商船, 東海汽船, 桜島フェリー, オクシリアイランドフェリー, オレンジフェリー, 宇和島運輸フェリー, 名門大洋フェリー, 斎島汽船, 阪九フェリー
 
-公共交通オープンデータセンターから提供されるデータの正確性・完全性は保証されません。本アプリケーションに関するお問い合わせは、公共交通オープンデータセンターではなく、本アプリケーションの開発者にご連絡ください。
+公共交通オープンデータセンターにおいて提供されるデータは、公共交通事業者により提供されたデータを元にしていますが、必ずしも正確・完全なものとは限りません。本アプリケーションの表示内容について、公共交通事業者への直接の問合せは行わないでください。
 
 #### CC BY 4.0 [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/deed.ja)
 
@@ -176,3 +178,7 @@ Athenai Transit では複数の地図を切り替えることが出来ます。�
 - OSM Bright: © Stadia Maps, © OpenStreetMap contributors
 - Stamen Terrain: © Stadia Maps, © Stamen Design, © OpenMapTiles, © OpenStreetMap contributors
 - Stamen Watercolor: © Stadia Maps, © Stamen Design, © OpenStreetMap contributors
+
+## 📮 お問い合わせ
+
+本アプリケーションに関するお問い合わせは、[GitHub Issues](https://github.com/F88/athenai-transit/issues)までお願いします。
