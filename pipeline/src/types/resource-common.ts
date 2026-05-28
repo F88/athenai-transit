@@ -126,18 +126,50 @@ export type DataFormat = DataFormatGtfsJp | DataFormatGtfs | DataFormatOdptJson;
 // Provider / License
 // ---------------------------------------------------------------------------
 
-/** Data provider information. */
+/** Data provider information for this resource. */
 export interface Provider {
-  /** Multilingual display names with long/short variants. */
+  /**
+   * Multilingual names of the provider entity.
+   *
+   * **Resource-definition metadata. Do not use this value as a data
+   * source in general.** The only exception is when the upstream data
+   * format does not carry agency information of its own (currently:
+   * ODPT JSON, which has no `agency.txt` equivalent). For those sources,
+   * `buildAgencyV2` consumes `name.en.long` as the `agency_id` namespace
+   * component, and `buildFeedInfoV2` writes `name.ja.long` into
+   * `feedInfo.pn`. New pipelines must not reach for this field unless
+   * they are in the same "no agency info in the source data" situation.
+   *
+   * What to set:
+   * - **ODPT-distributed resource** (`catalog.type === 'odpt'`, either
+   *   `GTFS/GTFS-JP` / `GTFS` or `ODPT-JSON` format): use the CKAN
+   *   organization name verbatim from `catalog.organizationUrl`.
+   * - **Direct / municipal distribution** (`catalog.type === 'direct' ||
+   *   catalog.type === 'municipal'`): use the publisher name on the distribution page.
+   *
+   * By default, set `name.short` to the same value as `name.long`. Upstream
+   * catalogs do not expose a "short name" concept, and project-invented
+   * short variants tend to drift into service / brand names (which belong
+   * in the resource-level `nameJa` / `nameEn`, not here). If a future
+   * pipeline needs `short` for a distinct purpose (e.g. a new ODPT JSON
+   * downstream field), document the exception alongside the consumer.
+   */
   name: {
     ja: { long: string; short: string };
     en: { long: string; short: string };
     de?: { long: string; short: string };
     it?: { long: string; short: string };
   };
-  /** Provider's website URL, if known. */
+  /**
+   * Provider's website URL. Resource-definition metadata only; do not use
+   * this value as a data source. Looked up manually and added when known.
+   */
   url?: string;
-  /** Brand colors. [0]=primary, [1]=secondary, etc. At least one required. */
+  /**
+   * Brand colors. [0]=primary, [1]=secondary, etc. At least one required.
+   * Resource-definition metadata only; do not use this value as a data
+   * source.
+   */
   colors: { bg: string; text: string }[];
 }
 

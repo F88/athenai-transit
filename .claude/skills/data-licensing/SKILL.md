@@ -19,16 +19,39 @@ Never guess license information. Always verify from the primary source (CKAN cat
 
 ### 1. CC BY 4.0 (Creative Commons Attribution 4.0 International)
 
-**Applies to**: Toei Bus GTFS, Toei Train GTFS (via ODPT/CKAN)
+CC BY 4.0 data we use reaches the app through two distinct distribution paths. The license itself is the same, but the credit-text authority differs by path, so handle each separately.
 
-**Credit display** (ABOUT.md): Follow the ODPT FAQ format at `https://developer.odpt.org/en/faq-info#cc-by-credit`.
+**Resource definition** (both paths):
+`license: { name: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/' }`
 
-- Unmodified data: `[Provider name], [Content name], Creative Commons Attribution 4.0 International License (URL)`
-- Modified data (our case, GTFS -> JSON): `This [app] uses the following copyrighted material with modifications. [Provider name], [Content name], Creative Commons Attribution 4.0 International License (URL)`
+#### 1a. CC BY 4.0 distributed via ODPT
 
-**Provider name**: Found on each dataset's CKAN page (e.g. `https://ckan.odpt.org/dataset/b_bus_gtfs_jp-toei`). Look for "Provider name of content" field.
+**Applies to**: datasets where `catalog.type === 'odpt'` and the CKAN dataset page lists CC BY 4.0 as the license (e.g. Toei Bus / Toei Train GTFS, 千代田区風ぐるま, 北区Kバス, 三宅村営バス, 杉並区グリーンスローモビリティ, 京成バス千葉ウエスト, 名古屋市 SRT).
 
-**Resource definition**: `license: { name: 'CC BY 4.0', url: 'https://creativecommons.org/licenses/by/4.0/' }`
+**Authoritative reference**: ODPT FAQ
+"Q: How can I give credit, etc. when using CC BY 4.0 licensed data?"
+<https://developer.odpt.org/en/faq-info#cc-by-credit>
+
+Always consult this FAQ first. It specifies both the exact template wording and how to resolve the provider name.
+
+**Credit display** (ABOUT.md): Use the FAQ's "modified content" template (we transform GTFS / ODPT JSON into the app's v2 JSON):
+
+- Intro phrase: `本アプリケーションは以下の著作物を改変して利用しています。`
+- Per entry: `[コンテンツ等の提供者名] - [コンテンツ等の名称]`
+- The license name + URL is carried by the H4 heading above the list, so we omit it from each bullet (CC BY 4.0 §3(a)(2) "reasonable manner").
+
+**Resolving "コンテンツ等の提供者名"** (per the FAQ):
+
+1. If the CKAN dataset page has an explicit credit-display section ("クレジット表示に関する情報" / "コンテンツ等の提供者名"), use that string verbatim, including its separator characters (e.g. `東京都交通局・公共交通オープンデータ協議会`).
+2. Otherwise, use the CKAN organization name (the entity behind `catalog.organizationUrl`). Do NOT add adjacent municipalities or commissioners unless they are explicitly designated as a provider on the CKAN page.
+
+**Resolving "コンテンツ等の名称"**: Use the CKAN dataset title verbatim (e.g. `千代田区地域福祉交通「風ぐるま」`). Do NOT use the resource-level name — resource names carry version dates and other catalog-side noise (`-20260401`, `GTFS/GTFS-JP`, etc.) and are not stable.
+
+#### 1b. CC BY 4.0 distributed outside ODPT
+
+**Applies to**: datasets where `catalog.type !== 'odpt'` (`'direct'` / `'municipal'`) and the catalog still licenses the data under CC BY 4.0 (e.g. ACTV Venezia via dati.venezia.it, ハチ公バス via Shibuya open data, ちぃばす via Minato open data).
+
+**The ODPT FAQ does not apply here.** Use the credit text required by the actual distribution page. If the page does not designate a specific format, default to: `[publisher named on the distribution page] - [dataset title on the distribution page]`. Always verify against the distribution page before writing credit text.
 
 ### 2. Public Transportation Open Data Basic License
 
