@@ -187,7 +187,7 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 ### shapes.txt / 路線図対応
 
 - GTFS ZIP に shapes.txt は含まれていない
-- 国土数値情報 (MLIT N02-24 RailroadSection) の鉄道路線データに `多摩都市モノレール` (operator) / `多摩都市モノレール線` (line) が収録されているため、`mlitShapeMapping` 経由で KSJ から shape を生成する (`pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts`)
+- 国土数値情報 (MLIT N02-25 RailroadSection) の鉄道路線データに `多摩都市モノレール` (operator) / `多摩都市モノレール線` (line) が収録されているため、`mlitShapeMapping` 経由で KSJ から shape を生成する (`pipeline/scripts/pipeline/app-data-v2/build-shapes-from-ksj-railway.ts`)
 - mapping: `多摩都市モノレール線 → tmm:1` (37 segments, 290 points)
 
 ### translations.txt
@@ -319,7 +319,7 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 ### shapes.txt / 路線図対応
 
 - GTFS ZIP に shapes.txt は含まれていない
-- 国土数値情報 (MLIT N02-24 RailroadSection) に `東京地下鉄` (operator) として 9 路線 + 1 分岐線 (10 ライン名) が収録されているため、`mlitShapeMapping` 経由で KSJ から shape を生成
+- 国土数値情報 (MLIT N02-25 RailroadSection) に `東京地下鉄` (operator) として 9 路線 + 1 分岐線 (10 ライン名) が収録されているため、`mlitShapeMapping` 経由で KSJ から shape を生成
 - mapping (10 line → 9 routes、丸ノ内線本線と分岐線をまとめて `tome:2` へ):
     - `3号線銀座線 → tome:1` (38 segments, 266 points)
     - `4号線丸ノ内線` + `4号線丸ノ内線分岐線 → tome:2` (61 segments, 421 points、方南町支線含む)
@@ -361,7 +361,7 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 ### shapes.txt / 路線図対応
 
 - GTFS ZIP に shapes.txt は含まれていない
-- 国土数値情報 (MLIT N02-24 RailroadSection) に `東京臨海高速鉄道` (operator) / `臨海副都心線` (line、GTFS の通称「りんかい線」と異なる正式路線名) が収録されているため、`mlitShapeMapping` 経由で KSJ から shape を生成
+- 国土数値情報 (MLIT N02-25 RailroadSection) に `東京臨海高速鉄道` (operator) / `臨海副都心線` (line、GTFS の通称「りんかい線」と異なる正式路線名) が収録されているため、`mlitShapeMapping` 経由で KSJ から shape を生成
 - mapping: `臨海副都心線 → twrr:1` (15 segments, 109 points)
 
 ### stop_headsign

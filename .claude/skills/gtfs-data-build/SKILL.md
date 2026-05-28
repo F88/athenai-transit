@@ -18,7 +18,7 @@ Commands and execution order are documented in `CLAUDE.md` "Data preparation" se
 ## When to skip steps
 
 - **Steps 1-2 (download)**: Skip if GTFS source files are already up to date. Files live in `pipeline/data/gtfs/{toei-bus,toei-train}/`.
-- **Step 5 (train-shapes)**: Skip if only bus data changed. Requires `pipeline/data/mlit/N02-24_RailroadSection.geojson`.
+- **Step 5 (train-shapes)**: Skip if only bus data changed. Requires `pipeline/data/mlit/N02-25_RailroadSection.geojson`.
 - **Step 6 (data:sync)**: Always run last — this copies built data to `public/data/` where Vite serves it.
 
 ## Data flow

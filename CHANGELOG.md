@@ -12,6 +12,7 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Changed
 
 - Map tiles: Stadia Maps の Alidade Satellite をタイル選択肢から除外した
+- Data: MLIT 国土数値情報 鉄道データを N02-24 (令和 6 年度版) から N02-25 (令和 7 年度版) へ更新 (Issue #261)。 スキーマ・operator/路線名はすべて互換で、 parser の 5 桁丸めにより生成される `shapes.json` は既存出力とバイトレベルで同一。
 
 ## [2026.05.27]
 

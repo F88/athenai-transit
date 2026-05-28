@@ -103,12 +103,12 @@ GTFS ZIP に `shapes.txt` が含まれていないソース (関東バス、京�
 
 ### KSJ 入力
 
-`pipeline/workspace/data/mlit/N02-24_RailroadSection.geojson` (国土数値情報 鉄道データ)。
+`pipeline/workspace/data/mlit/N02-25_RailroadSection.geojson` (国土数値情報 鉄道データ)。
 
 #### 利用手順
 
-1. [国土数値情報 | 鉄道データ (N02-2024)](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2024.html) からダウンロード。
-2. ZIP を解凍し、 `N02-24_RailroadSection.geojson` を `pipeline/workspace/data/mlit/` に配置する。
+1. [国土数値情報 | 鉄道データ (N02-2025)](https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N02-2025.html) からダウンロード。
+2. ZIP を解凍し、 `N02-25_RailroadSection.geojson` を `pipeline/workspace/data/mlit/` に配置する。
 3. [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/deed.ja) に従い、 出典 (`国土数値情報 鉄道データ - 国土交通省`) を `ABOUT.md` のクレジット欄に明記する。
 
 ### ターゲット検出

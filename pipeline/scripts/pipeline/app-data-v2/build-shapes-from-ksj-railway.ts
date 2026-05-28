@@ -7,7 +7,7 @@
  * for resources that have `mlitShapeMapping` defined (both GTFS and
  * ODPT JSON sources), converting them into ShapesBundle format.
  *
- * Input:  pipeline/workspace/data/mlit/N02-24_RailroadSection.geojson
+ * Input:  pipeline/workspace/data/mlit/N02-25_RailroadSection.geojson
  * Output: pipeline/workspace/_build/data-v2/{prefix}/shapes.json (ShapesBundle, per target)
  *
  * Usage:
