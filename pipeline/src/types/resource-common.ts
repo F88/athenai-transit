@@ -144,8 +144,8 @@ export interface Provider {
    * - **ODPT-distributed resource** (`catalog.type === 'odpt'`, either
    *   `GTFS/GTFS-JP` / `GTFS` or `ODPT-JSON` format): use the CKAN
    *   organization name verbatim from `catalog.organizationUrl`.
-   * - **Direct / municipal distribution** (`catalog.type === 'direct' |
-   *   'municipal'`): use the publisher name on the distribution page.
+   * - **Direct / municipal distribution** (`catalog.type === 'direct' ||
+   *   catalog.type === 'municipal'`): use the publisher name on the distribution page.
    *
    * By default, set `name.short` to the same value as `name.long`. Upstream
    * catalogs do not expose a "short name" concept, and project-invented
