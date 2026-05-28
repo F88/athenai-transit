@@ -30,9 +30,10 @@ const STADIA_ATTRIBUTION =
 const STADIA_STAMEN_TERRAIN_ATTRIBUTION =
   '&copy; <a href="https://stadiamaps.com/" target="_blank" rel="noopener noreferrer">Stadia Maps</a> &copy; <a href="https://stamen.com/" target="_blank" rel="noopener noreferrer">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank" rel="noopener noreferrer">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>';
 
-/** Attribution HTML for Stadia Maps Alidade Satellite tiles. */
-const STADIA_ALIDADE_SATELLITE_ATTRIBUTION =
-  '&copy; CNES, Distribution Airbus DS, &copy; Airbus DS, &copy; PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://stadiamaps.com/" target="_blank" rel="noopener noreferrer">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank" rel="noopener noreferrer">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>';
+// Disabled: Alidade Satellite is not available on the Stadia Maps Free plan.
+// /** Attribution HTML for Stadia Maps Alidade Satellite tiles. */
+// const STADIA_ALIDADE_SATELLITE_ATTRIBUTION =
+//   '&copy; CNES, Distribution Airbus DS, &copy; Airbus DS, &copy; PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://stadiamaps.com/" target="_blank" rel="noopener noreferrer">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank" rel="noopener noreferrer">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>';
 
 /** Attribution HTML for Stadia Maps Stamen Watercolor tiles. */
 const STADIA_STAMEN_WATERCOLOR_ATTRIBUTION =
@@ -99,12 +100,13 @@ export const TILE_SOURCES: TileSource[] = [
     url: 'https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg',
     attribution: STADIA_STAMEN_WATERCOLOR_ATTRIBUTION,
   },
-  {
-    id: 'stadia-alidade-satellite',
-    label: 'Alidade Satellite',
-    minZoom: 0,
-    maxNativeZoom: 20,
-    url: 'https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.jpg',
-    attribution: STADIA_ALIDADE_SATELLITE_ATTRIBUTION,
-  },
+  // Disabled: Alidade Satellite is not available on the Stadia Maps Free plan.
+  // {
+  //   id: 'stadia-alidade-satellite',
+  //   label: 'Alidade Satellite',
+  //   minZoom: 0,
+  //   maxNativeZoom: 20,
+  //   url: 'https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.jpg',
+  //   attribution: STADIA_ALIDADE_SATELLITE_ATTRIBUTION,
+  // },
 ];

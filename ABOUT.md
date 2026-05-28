@@ -160,4 +160,3 @@ Athenai Transit では複数の地図を切り替えることが出来ます。�
 - OSM Bright: © Stadia Maps, © OpenStreetMap contributors
 - Stamen Terrain: © Stadia Maps, © Stamen Design, © OpenMapTiles, © OpenStreetMap contributors
 - Stamen Watercolor: © Stadia Maps, © Stamen Design, © OpenStreetMap contributors
-- Alidade Satellite: © CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data), © Stadia Maps, © OpenMapTiles, © OpenStreetMap contributors

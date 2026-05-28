@@ -9,6 +9,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Map tiles: Stadia Maps の Alidade Satellite をタイル選択肢から除外した
+
 ## [2026.05.27]
 
 ### Added
