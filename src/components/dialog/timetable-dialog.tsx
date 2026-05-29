@@ -112,7 +112,11 @@ function DateTimeNavigation({ viewingDateTime, onChangeDateTime }: DateTimeNavig
 
   // Bound the picker to +/- 1 year from the mount-time wall clock.
   // Snapshotted once so spinning the picker can't drift past the bounds
-  // during a long-lived dialog session.
+  // during a long-lived dialog session. Enforcement is delegated to the
+  // browser's picker via the input's `min` / `max` attributes; direct
+  // typing of out-of-range values is intentionally not rejected (the
+  // user would see an unexplained no-op otherwise — an empty timetable
+  // for the typed date is the clearer signal).
   const inputBounds = useMemo(() => {
     const now = new Date();
     const min = new Date(now);
@@ -120,8 +124,6 @@ function DateTimeNavigation({ viewingDateTime, onChangeDateTime }: DateTimeNavig
     const max = new Date(now);
     max.setFullYear(max.getFullYear() + 1);
     return {
-      min,
-      max,
       minString: toDatetimeLocalInputValue(min),
       maxString: toDatetimeLocalInputValue(max),
     };
@@ -180,13 +182,10 @@ function DateTimeNavigation({ viewingDateTime, onChangeDateTime }: DateTimeNavig
         if (Number.isNaN(parsed.getTime())) {
           return;
         }
-        if (parsed < inputBounds.min || parsed > inputBounds.max) {
-          return;
-        }
         onChangeDateTime(parsed);
       }, PICKER_DEBOUNCE_MS);
     },
-    [inputBounds, onChangeDateTime],
+    [onChangeDateTime],
   );
 
   return (
