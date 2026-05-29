@@ -21,6 +21,8 @@ and this project adheres to [CalVer](https://calver.org/).
 - TimetableDateLabel: 表示する時刻を realtime (`time` prop) から `data.referenceDateTime` に変更し、 picker / prev / next 操作と日時表示が常に同期するようにした。
 - TimetableGrid: 時刻表行のハイライト用 prop を `currentHour` から `hourToHighlight` にリネーム (基準が realtime ではなくなったため)。
 - Utilities: HTML form 系の datetime 文字列生成 util を `src/utils/datetime.ts` から `src/utils/html-date-time.ts` に切り出し、 関数名も `toDatetimeLocalValue` → `toDatetimeLocalInputValue` に rename して用途 (HTML `<input type="datetime-local">` の value) を明示した。
+- TimetableDialog: `useTimetable` の所有を新設の `TimetableContainer` (`src/components/timetable/timetable-container.tsx`) に移し、 ダイアログ内の datetime 変更が app 全体の再 render を引き起こさないようにした。 結果として (1) DateTimeNavigation の picker 操作で StopBrowser / NearbyStops 系の無関係な component が render されなくなり体感速度が劇的に向上、 (2) 新しい時刻表の描画も即時化 (= 巨大ツリーの再 render と grid 描画の競合が解消)、 (3) `StopsSummary` 等の debug log noise も解消。 外部から `openStopTimetable` / `openRouteHeadsignTimetable` を呼ぶ経路 (map markers / BottomSheet / StopSearchDialog) は app.tsx 内の `handleShow*` callback 経由のまま、 内部実装だけ `timetableRef` (= `useImperativeHandle` 経由) に切り替えた。
+- StopsSummary: `stop-browser-header.tsx` に同居していた内部 component (logger 名は `NearbyStopsSummary`) を `src/components/stops-summary.tsx` に切り出し、 logger 名を `StopsSummary` に揃え、 サマリ文字列ビルダーを `getNearbyStopsSummaryText` → `buildStopsSummaryText` に rename した (= 「Nearby」 接頭辞を排し、 内部で条件分岐して組み立てる動作に合う動詞へ)。
 
 ### Fixed
 
