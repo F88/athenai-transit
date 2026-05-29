@@ -11,6 +11,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- Dialog: `TimetableModal` を `TimetableDialog` に rename し、 app / test 側の参照を追随更新した。あわせて dialog memoization regression test を `src/components/dialog/__tests__/` へ移設した (Issue #264)。
+- Documentation: `ABOUT.md` のライセンス / クレジット記述を整理し、対象データ・提供元・ライセンス表記の構成を見直して attribution を追いやすくした。
 - Map tiles: Stadia Maps の Alidade Satellite をタイル選択肢から除外した
 - Data: MLIT 国土数値情報 鉄道データを N02-24 (令和 6 年度版) から N02-25 (令和 7 年度版) へ更新 (Issue #261)。 スキーマ・operator/路線名はすべて互換で、 parser の 5 桁丸めにより生成される `shapes.json` は既存出力とバイトレベルで同一。
 
