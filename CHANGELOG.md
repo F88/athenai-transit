@@ -12,7 +12,7 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Added
 
 - TimetableDialog: 表示中の時刻表を別日時で見直せる datetime navigation 行を追加 (前日 / 翌日 / `<input type="datetime-local">` / 現在ボタン)。 picker の編集は 1000ms debounce で fetch をまとめ、 直接 typing 中も中間状態で再 fetch が走らないようにした。
-- TimetableDialog: datetime picker の入力範囲を mount 時刻 ± 1 年でクランプ (`min` / `max` 属性 + JS 側の範囲チェック)。 範囲外の値は `onChangeDateTime` を呼ばず無視する。
+- TimetableDialog: datetime picker のスピナー操作範囲を mount 時刻 ± 1 年でクランプ (`<input type="datetime-local">` の `min` / `max` 属性で picker UI 側から制約)。 direct typing で範囲外の値が入力された場合は JS 側では弾かず、 そのまま fetch して「該当データなし (= 空時刻表)」 を表示する (黙って無視するよりも空表示で「データがない」 と伝わる方が UX 上わかりやすいため)。 NaN (`new Date(invalid)`) だけは `Number.isNaN` チェックで弾く。
 
 ### Changed
 
