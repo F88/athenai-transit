@@ -1,4 +1,15 @@
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+
+import { BoardabilityFilter } from '@/components/filter/boardability-filter';
+import { OriginFilter } from '@/components/filter/origin-filter';
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
+import { TimetableGrid } from '@/components/timetable/timetable-grid';
+import { TimetableHeader } from '@/components/timetable/timetable-header';
+import { TimetableHeadsignFilter } from '@/components/timetable/timetable-headsign-filter';
+import { TimetableMetadata } from '@/components/timetable/timetable-metadata';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -11,10 +22,11 @@ import { VerboseTimetableSummary } from '@/components/verbose/verbose-timetable-
 import { DEFAULT_TIMEZONE, resolveAgencyLang } from '@/config/transit-defaults';
 import { findRouteDirectionForHeadsign } from '@/domain/transit/find-route-direction-for-headsign';
 import { getEffectiveHeadsign } from '@/domain/transit/get-effective-headsign';
+import { getRouteHeadsignKey } from '@/domain/transit/get-route-headsign-key';
+import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { getSelectedHeadsignDisplayName } from '@/domain/transit/name-resolver/get-headsign-display-names';
 import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
 import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
-import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
 import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { applyStopEventAttributeToggles } from '@/domain/transit/timetable-filter';
 import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
@@ -27,19 +39,8 @@ import type { TimetableData } from '@/types/app/timetable';
 import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry, TripInspectionTarget } from '@/types/app/transit-composed';
 import { formatDateParts } from '@/utils/datetime';
-import { toDatetimeLocalInputValue } from '@/utils/html-date-time';
 import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
-import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
-import { BoardabilityFilter } from '../filter/boardability-filter';
-import { OriginFilter } from '../filter/origin-filter';
-import { TimetableGrid } from '../timetable/timetable-grid';
-import { TimetableHeader } from '../timetable/timetable-header';
-import { TimetableHeadsignFilter } from '../timetable/timetable-headsign-filter';
-import { TimetableMetadata } from '../timetable/timetable-metadata';
-import { ButtonGroup } from '../ui/button-group';
+import { toDatetimeLocalInputValue } from '@/utils/html-date-time';
 
 interface TimetableDialogProps {
   /** Pass null when the dialog should be closed. */
@@ -200,41 +201,39 @@ function DateTimeNavigation({ viewingDateTime, onChangeDateTime }: DateTimeNavig
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-1.5">
-      <ButtonGroup>
-        <Button
-          variant="outline"
-          size="icon-xs"
-          onClick={handlePrevDay}
-          aria-label={t('timetable.dateTimeNav.previousDay')}
-        >
-          <ChevronLeft className="size-4" />
-        </Button>
-        <input
-          type="datetime-local"
-          value={editingValue}
-          onChange={handlePickerChange}
-          min={inputBounds.minString}
-          max={inputBounds.maxString}
-          aria-label={t('timetable.dateTimeNav.datePickerLabel')}
-          className="border-input bg-background h-6 rounded-md border px-2 text-xs leading-none"
-        />
-        <Button
-          variant="outline"
-          size="icon-xs"
-          onClick={handleResetToNow}
-          aria-label={t('timetable.dateTimeNav.now')}
-        >
-          <Clock className="size-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon-xs"
-          onClick={handleNextDay}
-          aria-label={t('timetable.dateTimeNav.nextDay')}
-        >
-          <ChevronRight className="size-4" />
-        </Button>
-      </ButtonGroup>
+      <Button
+        variant="outline"
+        size="icon-xs"
+        onClick={handlePrevDay}
+        aria-label={t('timetable.dateTimeNav.previousDay')}
+      >
+        <ChevronLeft className="size-4" />
+      </Button>
+      <input
+        type="datetime-local"
+        value={editingValue}
+        onChange={handlePickerChange}
+        min={inputBounds.minString}
+        max={inputBounds.maxString}
+        aria-label={t('timetable.dateTimeNav.datePickerLabel')}
+        className="border-input bg-background h-6 rounded-md border px-2 text-xs leading-none"
+      />
+      <Button
+        variant="outline"
+        size="icon-xs"
+        onClick={handleResetToNow}
+        aria-label={t('timetable.dateTimeNav.now')}
+      >
+        <Clock className="size-4" />
+      </Button>
+      <Button
+        variant="outline"
+        size="icon-xs"
+        onClick={handleNextDay}
+        aria-label={t('timetable.dateTimeNav.nextDay')}
+      >
+        <ChevronRight className="size-4" />
+      </Button>
     </div>
   );
 }
