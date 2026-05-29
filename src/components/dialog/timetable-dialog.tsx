@@ -26,10 +26,11 @@ import type { InfoLevel } from '@/types/app/settings';
 import type { TimetableData } from '@/types/app/timetable';
 import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry, TripInspectionTarget } from '@/types/app/transit-composed';
-import { formatDateParts, toDatetimeLocalValue } from '@/utils/datetime';
+import { formatDateParts } from '@/utils/datetime';
+import { toDatetimeLocalInputValue } from '@/utils/html-date-time';
 import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
 import { createLogger } from '@/lib/logger';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
@@ -109,8 +110,50 @@ interface DateTimeNavigationProps {
  * the timetable rendering. The "now" button always re-fetches at the
  * current wall-clock time.
  */
+const PICKER_DEBOUNCE_MS = 1_000;
+
 function DateTimeNavigation({ viewingDateTime, onChangeDateTime }: DateTimeNavigationProps) {
   const { t } = useTranslation();
+
+  // Bound the picker to +/- 1 year from the mount-time wall clock.
+  // Snapshotted once so spinning the picker can't drift past the bounds
+  // during a long-lived dialog session.
+  const inputBounds = useMemo(() => {
+    const now = new Date();
+    const min = new Date(now);
+    min.setFullYear(min.getFullYear() - 1);
+    const max = new Date(now);
+    max.setFullYear(max.getFullYear() + 1);
+    return {
+      min,
+      max,
+      minString: toDatetimeLocalInputValue(min),
+      maxString: toDatetimeLocalInputValue(max),
+    };
+  }, []);
+
+  // Local echo of the input so direct typing (e.g. yyyy/mm/dd one digit at
+  // a time) is not interrupted by the parent's viewingDateTime updates.
+  // The committed value (= onChangeDateTime) is debounced so intermediate
+  // keystrokes do not each trigger a fetch.
+  //
+  // Uses the "Adjusting state on prop changes" pattern (compare with the
+  // previous value during render) instead of useEffect + setState, per
+  // React 19's `set-state-in-effect` rule.
+  const [editingValue, setEditingValue] = useState(() =>
+    toDatetimeLocalInputValue(viewingDateTime),
+  );
+  const [prevViewingDateTime, setPrevViewingDateTime] = useState(viewingDateTime);
+  if (viewingDateTime !== prevViewingDateTime) {
+    setPrevViewingDateTime(viewingDateTime);
+    setEditingValue(toDatetimeLocalInputValue(viewingDateTime));
+  }
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => {
+    return () => {
+      clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
 
   const handlePrevDay = useCallback(() => {
     const next = new Date(viewingDateTime);
@@ -131,51 +174,62 @@ function DateTimeNavigation({ viewingDateTime, onChangeDateTime }: DateTimeNavig
   const handlePickerChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const raw = event.target.value;
-      if (!raw) {
-        return;
-      }
-      const parsed = new Date(raw);
-      if (Number.isNaN(parsed.getTime())) {
-        return;
-      }
-      onChangeDateTime(parsed);
+      setEditingValue(raw);
+
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        if (!raw) {
+          return;
+        }
+        const parsed = new Date(raw);
+        if (Number.isNaN(parsed.getTime())) {
+          return;
+        }
+        if (parsed < inputBounds.min || parsed > inputBounds.max) {
+          return;
+        }
+        onChangeDateTime(parsed);
+      }, PICKER_DEBOUNCE_MS);
     },
-    [onChangeDateTime],
+    [inputBounds, onChangeDateTime],
   );
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-1.5">
       <ButtonGroup>
-        <ButtonGroup>
-          <Button
-            variant="outline"
-            size="icon-xs"
-            onClick={handlePrevDay}
-            aria-label={t('timetable.dateTimeNav.previousDay')}
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <input
-            type="datetime-local"
-            value={toDatetimeLocalValue(viewingDateTime)}
-            onChange={handlePickerChange}
-            aria-label={t('timetable.dateTimeNav.datePickerLabel')}
-            className="border-input bg-background h-6 rounded-md border px-2 text-xs leading-none"
-          />
-          <Button
-            variant="outline"
-            size="icon-xs"
-            onClick={handleNextDay}
-            aria-label={t('timetable.dateTimeNav.nextDay')}
-          >
-            <ChevronRight className="size-4" />
-          </Button>
-        </ButtonGroup>
-        <ButtonGroup>
-          <Button variant="outline" size="xs" onClick={handleResetToNow}>
-            {t('timetable.dateTimeNav.now')}
-          </Button>
-        </ButtonGroup>
+        <Button
+          variant="outline"
+          size="icon-xs"
+          onClick={handlePrevDay}
+          aria-label={t('timetable.dateTimeNav.previousDay')}
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+        <input
+          type="datetime-local"
+          value={editingValue}
+          onChange={handlePickerChange}
+          min={inputBounds.minString}
+          max={inputBounds.maxString}
+          aria-label={t('timetable.dateTimeNav.datePickerLabel')}
+          className="border-input bg-background h-6 rounded-md border px-2 text-xs leading-none"
+        />
+        <Button
+          variant="outline"
+          size="icon-xs"
+          onClick={handleResetToNow}
+          aria-label={t('timetable.dateTimeNav.now')}
+        >
+          <Clock className="size-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon-xs"
+          onClick={handleNextDay}
+          aria-label={t('timetable.dateTimeNav.nextDay')}
+        >
+          <ChevronRight className="size-4" />
+        </Button>
       </ButtonGroup>
     </div>
   );
@@ -409,6 +463,14 @@ export const TimetableDialog = memo(function TimetableDialog({
         showCloseButton={false}
         className="flex max-h-[80dvh] w-[90dvw] max-w-5xl flex-col gap-0 overflow-hidden border-4 p-2 sm:max-w-3xl"
       >
+        {/* Datetime navigation */}
+        {info.isDetailedEnabled && (
+          <DateTimeNavigation
+            viewingDateTime={data.referenceDateTime}
+            onChangeDateTime={onChangeDateTime}
+          />
+        )}
+
         <div
           ref={headerContainerRef}
           onScroll={headerScroll.handleScroll}
@@ -473,14 +535,6 @@ export const TimetableDialog = memo(function TimetableDialog({
                 agencies={data.agencies}
                 dataLangs={dataLangs}
                 filteredCount={routeHeadsignFilteredEntries.length}
-              />
-            )}
-
-            {/* Datetime navigation */}
-            {info.isVerboseEnabled && (
-              <DateTimeNavigation
-                viewingDateTime={data.referenceDateTime}
-                onChangeDateTime={onChangeDateTime}
               />
             )}
 

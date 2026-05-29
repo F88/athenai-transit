@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toDatetimeLocalValue } from '@/utils/datetime';
+import { toDatetimeLocalInputValue } from '@/utils/html-date-time';
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,7 @@ export function TimeSettingDialog({
     (node: HTMLInputElement | null) => {
       inputRef.current = node;
       if (node) {
-        node.value = toDatetimeLocalValue(initialTime);
+        node.value = toDatetimeLocalInputValue(initialTime);
       }
     },
     [initialTime],

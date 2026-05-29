@@ -99,24 +99,3 @@ export function formatDateParts(
 
   return result;
 }
-
-/**
- * Convert a Date to an `<input type="datetime-local">` value string.
- *
- * @param date - The date to convert.
- * @returns ISO-like local datetime string (`"YYYY-MM-DDTHH:mm"`).
- *
- * @example
- * ```ts
- * toDatetimeLocalValue(new Date("2026-03-04T09:05:00"))
- * // => "2026-03-04T09:05"
- * ```
- */
-export function toDatetimeLocalValue(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  const h = String(date.getHours()).padStart(2, '0');
-  const min = String(date.getMinutes()).padStart(2, '0');
-  return `${y}-${m}-${d}T${h}:${min}`;
-}
