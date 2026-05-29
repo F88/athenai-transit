@@ -141,7 +141,10 @@ function DateTimeNavigation({ viewingDateTime, onChangeDateTime }: DateTimeNavig
     toDatetimeLocalInputValue(viewingDateTime),
   );
   const [prevViewingDateTime, setPrevViewingDateTime] = useState(viewingDateTime);
-  if (viewingDateTime !== prevViewingDateTime) {
+  // Compare timestamps (not Date references) so that a newly-allocated Date
+  // representing the same moment does not trigger an unnecessary state
+  // update / extra render of DateTimeNavigation.
+  if (viewingDateTime.getTime() !== prevViewingDateTime.getTime()) {
     setPrevViewingDateTime(viewingDateTime);
     setEditingValue(toDatetimeLocalInputValue(viewingDateTime));
   }
@@ -152,19 +155,26 @@ function DateTimeNavigation({ viewingDateTime, onChangeDateTime }: DateTimeNavig
     };
   }, []);
 
+  // Explicit navigation (prev / next / now) must override any pending
+  // picker-debounce commit. Without `clearTimeout` here, a still-pending
+  // typed value could fire after the button-triggered fetch returns and
+  // silently overwrite it.
   const handlePrevDay = useCallback(() => {
+    clearTimeout(debounceTimerRef.current);
     const next = new Date(viewingDateTime);
     next.setDate(next.getDate() - 1);
     onChangeDateTime(next);
   }, [viewingDateTime, onChangeDateTime]);
 
   const handleNextDay = useCallback(() => {
+    clearTimeout(debounceTimerRef.current);
     const next = new Date(viewingDateTime);
     next.setDate(next.getDate() + 1);
     onChangeDateTime(next);
   }, [viewingDateTime, onChangeDateTime]);
 
   const handleResetToNow = useCallback(() => {
+    clearTimeout(debounceTimerRef.current);
     onChangeDateTime(new Date());
   }, [onChangeDateTime]);
 

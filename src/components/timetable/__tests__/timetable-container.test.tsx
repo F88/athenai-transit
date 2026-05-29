@@ -3,7 +3,6 @@ import { createRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TimetableContainer, type TimetableContainerHandle } from '../timetable-container';
-import type { UseTimetableReturn } from '@/hooks/use-timetable';
 import type { TransitRepository } from '@/repositories/transit-repository';
 import type { GlobalFilter } from '@/types/app/global-filter';
 import type { TimetableData } from '@/types/app/timetable';
@@ -19,7 +18,15 @@ type TimetableDialogMockProps = {
   onClose: () => void;
 };
 
-const timetableDialogProps = vi.fn<(props: TimetableDialogMockProps) => void>();
+// `vi.mock` calls are hoisted above top-level `const` declarations, so the
+// mocks have to grab their shared fns via `vi.hoisted` instead of closing
+// over locally-declared `vi.fn()`s (which would still be uninitialized when
+// the mock factory runs).
+const { timetableDialogProps, useTimetableMock } = vi.hoisted(() => ({
+  timetableDialogProps: vi.fn<(props: TimetableDialogMockProps) => void>(),
+  useTimetableMock: vi.fn(),
+}));
+
 vi.mock('@/components/dialog/timetable-dialog', () => ({
   TimetableDialog: (props: TimetableDialogMockProps) => {
     timetableDialogProps(props);
@@ -27,7 +34,6 @@ vi.mock('@/components/dialog/timetable-dialog', () => ({
   },
 }));
 
-const useTimetableMock = vi.fn<(repo: TransitRepository) => UseTimetableReturn>();
 vi.mock('@/hooks/use-timetable', () => ({
   useTimetable: useTimetableMock,
 }));
