@@ -12,6 +12,7 @@ import { routeTypesEmoji } from '../../utils/route-type-emoji';
 import { IdBadge } from '../badge/id-badge';
 import { RelativeTime } from '../relative-time';
 import { TripInfo } from '../trip-info';
+import { PlatformCodeLabel } from '../stop/platform-code-label';
 
 interface StopMarkerSummaryProps {
   stop: Stop;
@@ -63,6 +64,7 @@ export function StopMarkerSummary({
         <span>
           {routeTypesEmoji(routeTypes)} {stopNames.name}
         </span>
+        {stop.platform_code && <PlatformCodeLabel code={stop.platform_code} size="xs" />}
         {agencies.length > 0 &&
           agencies.map((a) => (
             <AgencyBadge
