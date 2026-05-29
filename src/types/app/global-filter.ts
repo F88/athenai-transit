@@ -5,7 +5,7 @@
  *
  *   - `BottomSheet` (via `AppLayout` -> `MapBottomSheetLayout` /
  *     `StopPanel` -> `StopBrowser`)
- *   - `TimetableModal`
+ *   - `TimetableDialog`
  *
  * Indirect consumers (read the filter's *output*, not this object):
  *

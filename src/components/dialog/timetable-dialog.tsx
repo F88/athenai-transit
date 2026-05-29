@@ -37,8 +37,8 @@ import { TimetableHeader } from '../timetable/timetable-header';
 import { TimetableHeadsignFilter } from '../timetable/timetable-headsign-filter';
 import { TimetableMetadata } from '../timetable/timetable-metadata';
 
-interface TimetableModalProps {
-  /** Pass null when the modal should be closed. */
+interface TimetableDialogProps {
+  /** Pass null when the dialog should be closed. */
   data: TimetableData | null;
   /** Current time reference for highlighting the active hour row. */
   time: Date;
@@ -124,9 +124,9 @@ function hasSameRelevantGlobalFilter(prev: GlobalFilter, next: GlobalFilter): bo
   );
 }
 
-function areTimetableModalPropsEqual(
-  prev: Readonly<TimetableModalProps>,
-  next: Readonly<TimetableModalProps>,
+function areTimetableDialogPropsEqual(
+  prev: Readonly<TimetableDialogProps>,
+  next: Readonly<TimetableDialogProps>,
 ): boolean {
   return (
     prev.data === next.data &&
@@ -139,7 +139,7 @@ function areTimetableModalPropsEqual(
   );
 }
 
-export const TimetableModal = memo(function TimetableModal({
+export const TimetableDialog = memo(function TimetableDialog({
   data,
   time,
   infoLevel,
@@ -147,7 +147,7 @@ export const TimetableModal = memo(function TimetableModal({
   globalFilter,
   onInspectTrip,
   onClose,
-}: TimetableModalProps) {
+}: TimetableDialogProps) {
   const { showOriginOnly, showBoardableOnly, onToggleShowOriginOnly, onToggleShowBoardableOnly } =
     globalFilter;
   const { t, i18n } = useTranslation();
@@ -295,7 +295,7 @@ export const TimetableModal = memo(function TimetableModal({
         }
       }}
     >
-      {/* border-4: intentional thick border to visually distinguish the timetable modal from the map background */}
+      {/* border-4: intentional thick border to visually distinguish the timetable dialog from the map background */}
       <DialogContent
         showCloseButton={false}
         className="flex max-h-[80dvh] w-[90dvw] max-w-5xl flex-col gap-0 overflow-hidden border-4 p-2 sm:max-w-3xl"
@@ -448,4 +448,4 @@ export const TimetableModal = memo(function TimetableModal({
       </DialogContent>
     </Dialog>
   );
-}, areTimetableModalPropsEqual);
+}, areTimetableDialogPropsEqual);

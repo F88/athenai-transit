@@ -40,6 +40,7 @@ vi.mock('@/hooks/use-scroll-fades', () => ({
 }));
 
 vi.mock('@/hooks/use-is-low-contrast-against-theme', () => ({
+  useThemeContrastBackgroundColor: () => '#ffffff',
   useThemeContrastAssessment: () => ({
     isLowContrast: false,
     ratio: 10,
@@ -66,27 +67,27 @@ vi.mock('@/domain/transit/timetable-stats', () => ({
   computeTimetableEntryStats: computeTimetableEntryStatsMock,
 }));
 
-vi.mock('../filter/boardability-filter', () => ({
+vi.mock('@/components/filter/boardability-filter', () => ({
   BoardabilityFilter: () => null,
 }));
 
-vi.mock('../filter/origin-filter', () => ({
+vi.mock('@/components/filter/origin-filter', () => ({
   OriginFilter: () => null,
 }));
 
-vi.mock('../timetable/timetable-grid', () => ({
+vi.mock('@/components/timetable/timetable-grid', () => ({
   TimetableGrid: () => null,
 }));
 
-vi.mock('../timetable/timetable-header', () => ({
+vi.mock('@/components/timetable/timetable-header', () => ({
   TimetableHeader: () => null,
 }));
 
-vi.mock('../timetable/timetable-headsign-filter', () => ({
+vi.mock('@/components/timetable/timetable-headsign-filter', () => ({
   TimetableHeadsignFilter: () => null,
 }));
 
-vi.mock('../timetable/timetable-metadata', () => ({
+vi.mock('@/components/timetable/timetable-metadata', () => ({
   TimetableMetadata: () => null,
 }));
 
@@ -110,7 +111,13 @@ vi.mock('@/domain/transit/color-resolver/route-colors', () => ({
 }));
 
 vi.mock('@/domain/transit/name-resolver/get-headsign-display-names', () => ({
-  getHeadsignDisplayNames: () => ({ resolved: { name: 'Headsign' } }),
+  getHeadsignDisplayNames: () => ({
+    resolved: { name: 'Headsign', subNames: [] },
+    resolvedSource: 'trip',
+    tripName: { name: 'Headsign', subNames: [] },
+    stopName: undefined,
+  }),
+  getSelectedHeadsignDisplayName: () => 'Headsign',
 }));
 
 vi.mock('@/domain/transit/name-resolver/get-stop-display-names', () => ({
@@ -141,50 +148,50 @@ vi.mock('@/utils/color/contrast-alpha-suffixes', () => ({
   }),
 }));
 
-vi.mock('../badge/id-badge', () => ({
+vi.mock('@/components/badge/id-badge', () => ({
   IdBadge: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
 }));
 
-vi.mock('../label/trip-position-indicator', () => ({
+vi.mock('@/components/label/trip-position-indicator', () => ({
   TripPositionIndicator: () => null,
 }));
 
-vi.mock('../trip/trip-basic-info', () => ({
+vi.mock('@/components/trip/trip-basic-info', () => ({
   TripBasicInfo: () => null,
 }));
 
-vi.mock('../trip/trip-stop-row-dom', () => ({
+vi.mock('@/components/trip/trip-stop-row-dom', () => ({
   findTripStopRow: () => null,
   tripStopRowDataAttrs: (stopIndex: number) => ({ 'data-trip-stop-index': String(stopIndex) }),
 }));
 
-vi.mock('../trip/trip-stop-scroll', () => ({
+vi.mock('@/components/trip/trip-stop-scroll', () => ({
   computeScrolledStopIndex: () => null,
   getSelectedRowScrollTop: () => 0,
 }));
 
-vi.mock('../trip/trip-stops', () => ({
+vi.mock('@/components/trip/trip-stops', () => ({
   TripStops: (props: unknown) => {
     tripStopsRenderMock(props);
     return null;
   },
 }));
 
-vi.mock('../trip/trip-pager', () => ({
+vi.mock('@/components/trip/trip-pager', () => ({
   TripPager: () => null,
 }));
 
-vi.mock('../verbose/verbose-trip-locator', () => ({
+vi.mock('@/components/verbose/verbose-trip-locator', () => ({
   VerboseTripLocator: () => null,
 }));
 
-vi.mock('../verbose/verbose-trip-stop-time', () => ({
+vi.mock('@/components/verbose/verbose-trip-stop-time', () => ({
   VerboseTripStopTime: () => null,
 }));
 
-import { TimetableModal } from './timetable-modal';
-import { StopSearchDialog } from './stop-search-dialog';
-import { TripInspectionDialog } from './trip-inspection-dialog';
+import { TimetableDialog } from '@/components/dialog/timetable-dialog';
+import { StopSearchDialog } from '@/components/dialog/stop-search-dialog';
+import { TripInspectionDialog } from '@/components/dialog/trip-inspection-dialog';
 
 function makeRoute(id: string): Route {
   return {
@@ -326,7 +333,7 @@ afterEach(() => {
 });
 
 describe('dialog memoization regressions', () => {
-  it('TimetableModal skips stats recomputation when only time changes', () => {
+  it('TimetableDialog skips stats recomputation when only time changes', () => {
     const data = makeTimetableData();
     const globalFilter = {
       showOriginOnly: false,
@@ -347,15 +354,15 @@ describe('dialog memoization regressions', () => {
       onInspectTrip: vi.fn(),
     };
 
-    const { rerender } = render(<TimetableModal {...props} />);
+    const { rerender } = render(<TimetableDialog {...props} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
 
-    rerender(<TimetableModal {...props} />);
+    rerender(<TimetableDialog {...props} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
 
-    rerender(<TimetableModal {...props} time={new Date(2026, 3, 1, 8, 1)} />);
+    rerender(<TimetableDialog {...props} time={new Date(2026, 3, 1, 8, 1)} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
 
@@ -363,12 +370,12 @@ describe('dialog memoization regressions', () => {
       ...globalFilter,
       showBoardableOnly: true,
     };
-    rerender(<TimetableModal {...props} globalFilter={nextGlobalFilter} />);
+    rerender(<TimetableDialog {...props} globalFilter={nextGlobalFilter} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(4);
   });
 
-  it('TimetableModal skips stats recomputation when only omitEmptyStops changes', () => {
+  it('TimetableDialog skips stats recomputation when only omitEmptyStops changes', () => {
     const data = makeTimetableData();
     const globalFilter = {
       showOriginOnly: false,
@@ -389,7 +396,7 @@ describe('dialog memoization regressions', () => {
       onInspectTrip: vi.fn(),
     };
 
-    const { rerender } = render(<TimetableModal {...props} />);
+    const { rerender } = render(<TimetableDialog {...props} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
 
@@ -399,7 +406,7 @@ describe('dialog memoization regressions', () => {
       isOmitEmptyStopsForced: true,
       onToggleOmitEmptyStops: vi.fn(),
     };
-    rerender(<TimetableModal {...props} globalFilter={nextGlobalFilter} />);
+    rerender(<TimetableDialog {...props} globalFilter={nextGlobalFilter} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
   });

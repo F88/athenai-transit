@@ -92,7 +92,7 @@ import { DataSourceSettingsDialog } from './components/dialog/data-source-settin
 import { InfoDialog } from './components/dialog/info-dialog';
 import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
 import { StopSearchDialog } from './components/dialog/stop-search-dialog';
-import { TimetableModal } from './components/dialog/timetable-modal';
+import { TimetableDialog } from './components/dialog/timetable-dialog';
 import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
 import { MapOverlay } from './components/map/map-overlay';
 import { MapView } from './components/map/map-view';
@@ -720,7 +720,7 @@ export default function App() {
   // `omitEmptyStopsOverride`), late-night derived policy
   // (`isLateNight` / `effectiveOmitEmptyStops` / forced-on rules),
   // and the memoized `globalFilter` object that BottomSheet /
-  // TimetableModal consume. `App` keeps `showOriginOnly`,
+  // TimetableDialog consume. `App` keeps `showOriginOnly`,
   // `showBoardableOnly`, and `effectiveOmitEmptyStops` to feed
   // `deriveFilteredNearbyStops`; MapView reads the filtered result
   // (`stopTimes`) rather than `globalFilter` itself.
@@ -1058,7 +1058,7 @@ export default function App() {
         onSelectStopById={handleSelectStopFromTripInspection}
         onOpenChange={handleTripInspectionOpenChange}
       />
-      <TimetableModal
+      <TimetableDialog
         key={timetableData?.stop.stop_id ?? 'closed'}
         data={timetableData}
         time={dateTime}
