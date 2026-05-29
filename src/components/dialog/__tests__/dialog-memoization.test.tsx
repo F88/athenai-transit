@@ -334,7 +334,7 @@ afterEach(() => {
 });
 
 describe('dialog memoization regressions', () => {
-  it('TimetableDialog skips stats recomputation when only time changes', () => {
+  it('TimetableDialog skips stats recomputation when only an unrelated prop changes', () => {
     const data = makeTimetableData();
     const globalFilter = {
       showOriginOnly: false,
@@ -347,7 +347,6 @@ describe('dialog memoization regressions', () => {
     };
     const props = {
       data,
-      time: new Date(2026, 3, 1, 8, 0),
       infoLevel: 'detailed' as const,
       dataLangs: ['ja'] as const,
       globalFilter,
@@ -361,10 +360,6 @@ describe('dialog memoization regressions', () => {
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
 
     rerender(<TimetableDialog {...props} />);
-
-    expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
-
-    rerender(<TimetableDialog {...props} time={new Date(2026, 3, 1, 8, 1)} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
 
@@ -390,7 +385,6 @@ describe('dialog memoization regressions', () => {
     };
     const props = {
       data,
-      time: new Date(2026, 3, 1, 8, 0),
       infoLevel: 'detailed' as const,
       dataLangs: ['ja'] as const,
       globalFilter,

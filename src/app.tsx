@@ -1073,7 +1073,6 @@ export default function App() {
       <TimetableDialog
         key={timetableData?.stop.stop_id ?? 'closed'}
         data={timetableData}
-        time={dateTime}
         infoLevel={settings.infoLevel}
         dataLangs={langChain}
         globalFilter={globalFilter}

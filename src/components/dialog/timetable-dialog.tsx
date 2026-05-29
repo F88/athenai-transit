@@ -29,7 +29,6 @@ import type { TimetableEntry, TripInspectionTarget } from '@/types/app/transit-c
 import { formatDateParts } from '@/utils/datetime';
 import { toDatetimeLocalInputValue } from '@/utils/html-date-time';
 import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
-import { createLogger } from '@/lib/logger';
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -42,13 +41,9 @@ import { TimetableHeadsignFilter } from '../timetable/timetable-headsign-filter'
 import { TimetableMetadata } from '../timetable/timetable-metadata';
 import { ButtonGroup } from '../ui/button-group';
 
-const logger = createLogger('TimetableDialog');
-
 interface TimetableDialogProps {
   /** Pass null when the dialog should be closed. */
   data: TimetableData | null;
-  /** Real-world current time used as the "today" reference. */
-  time: Date;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLangs: readonly string[];
@@ -280,7 +275,6 @@ function areTimetableDialogPropsEqual(
 ): boolean {
   return (
     prev.data === next.data &&
-    prev.time === next.time &&
     prev.infoLevel === next.infoLevel &&
     prev.dataLangs === next.dataLangs &&
     prev.onInspectTrip === next.onInspectTrip &&
@@ -292,7 +286,6 @@ function areTimetableDialogPropsEqual(
 
 export const TimetableDialog = memo(function TimetableDialog({
   data,
-  time: _time,
   infoLevel,
   dataLangs,
   globalFilter,
@@ -305,16 +298,6 @@ export const TimetableDialog = memo(function TimetableDialog({
   const { t, i18n } = useTranslation();
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
-
-  useEffect(() => {
-    if (!data) {
-      return;
-    }
-    logger.debug('data changed', {
-      referenceDateTime: data.referenceDateTime.toISOString(),
-      serviceDate: data.serviceDate.toISOString(),
-    });
-  }, [data]);
 
   const hourToHighlight = data ? Math.floor(getServiceDayMinutes(data.referenceDateTime) / 60) : -1;
   const headerContainerRef = useRef<HTMLDivElement | null>(null);
