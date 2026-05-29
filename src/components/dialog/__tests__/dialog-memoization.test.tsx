@@ -258,7 +258,7 @@ function makeTimetableData(): TimetableData {
     type: 'stop',
     stop,
     routes: [route],
-    viewingDateTime: new Date(2026, 3, 1, 8, 0),
+    referenceDateTime: new Date(2026, 3, 1, 8, 0),
     serviceDate: new Date(2026, 3, 1),
     timetableEntries: [makeTimetableEntry()],
     omitted: { nonBoardable: 0 },

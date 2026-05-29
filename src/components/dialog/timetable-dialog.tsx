@@ -15,7 +15,7 @@ import { getSelectedHeadsignDisplayName } from '@/domain/transit/name-resolver/g
 import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
 import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
-import { getServiceDay, getServiceDayMinutes } from '@/domain/transit/service-day';
+import { getServiceDayMinutes } from '@/domain/transit/service-day';
 import { applyStopEventAttributeToggles } from '@/domain/transit/timetable-filter';
 import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
@@ -28,8 +28,9 @@ import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry, TripInspectionTarget } from '@/types/app/transit-composed';
 import { formatDateParts, toDatetimeLocalValue } from '@/utils/datetime';
 import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
+import { createLogger } from '@/lib/logger';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
 import { BoardabilityFilter } from '../filter/boardability-filter';
@@ -38,6 +39,9 @@ import { TimetableGrid } from '../timetable/timetable-grid';
 import { TimetableHeader } from '../timetable/timetable-header';
 import { TimetableHeadsignFilter } from '../timetable/timetable-headsign-filter';
 import { TimetableMetadata } from '../timetable/timetable-metadata';
+import { ButtonGroup } from '../ui/button-group';
+
+const logger = createLogger('TimetableDialog');
 
 interface TimetableDialogProps {
   /** Pass null when the dialog should be closed. */
@@ -95,10 +99,6 @@ function EntriesPanel({
 interface DateTimeNavigationProps {
   /** The datetime the dialog is currently displaying. */
   viewingDateTime: Date;
-  /** Realtime reference used by the "now" reset button. */
-  currentDateTime: Date;
-  /** Whether the viewed service day matches the realtime service day. */
-  isViewingNow: boolean;
   onChangeDateTime: (dateTime: Date) => void;
 }
 
@@ -106,15 +106,10 @@ interface DateTimeNavigationProps {
  * Datetime navigation row (previous day / datetime picker / next day / now).
  *
  * Handlers are local to this component so the parent can stay focused on
- * the timetable rendering. The "now" button is only shown when the
- * viewed service day differs from the realtime service day.
+ * the timetable rendering. The "now" button always re-fetches at the
+ * current wall-clock time.
  */
-function DateTimeNavigation({
-  viewingDateTime,
-  currentDateTime,
-  isViewingNow,
-  onChangeDateTime,
-}: DateTimeNavigationProps) {
+function DateTimeNavigation({ viewingDateTime, onChangeDateTime }: DateTimeNavigationProps) {
   const { t } = useTranslation();
 
   const handlePrevDay = useCallback(() => {
@@ -130,8 +125,8 @@ function DateTimeNavigation({
   }, [viewingDateTime, onChangeDateTime]);
 
   const handleResetToNow = useCallback(() => {
-    onChangeDateTime(currentDateTime);
-  }, [currentDateTime, onChangeDateTime]);
+    onChangeDateTime(new Date());
+  }, [onChangeDateTime]);
 
   const handlePickerChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,34 +145,38 @@ function DateTimeNavigation({
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-1.5">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handlePrevDay}
-        aria-label={t('timetable.dateTimeNav.previousDay')}
-      >
-        <ChevronLeft className="size-4" />
-      </Button>
-      <input
-        type="datetime-local"
-        value={toDatetimeLocalValue(viewingDateTime)}
-        onChange={handlePickerChange}
-        aria-label={t('timetable.dateTimeNav.datePickerLabel')}
-        className="border-input bg-background rounded-md border px-2 py-1 text-sm"
-      />
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleNextDay}
-        aria-label={t('timetable.dateTimeNav.nextDay')}
-      >
-        <ChevronRight className="size-4" />
-      </Button>
-      {!isViewingNow && (
-        <Button variant="outline" size="sm" onClick={handleResetToNow}>
-          {t('timetable.dateTimeNav.now')}
-        </Button>
-      )}
+      <ButtonGroup>
+        <ButtonGroup>
+          <Button
+            variant="outline"
+            size="icon-xs"
+            onClick={handlePrevDay}
+            aria-label={t('timetable.dateTimeNav.previousDay')}
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <input
+            type="datetime-local"
+            value={toDatetimeLocalValue(viewingDateTime)}
+            onChange={handlePickerChange}
+            aria-label={t('timetable.dateTimeNav.datePickerLabel')}
+            className="border-input bg-background h-6 rounded-md border px-2 text-xs leading-none"
+          />
+          <Button
+            variant="outline"
+            size="icon-xs"
+            onClick={handleNextDay}
+            aria-label={t('timetable.dateTimeNav.nextDay')}
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </ButtonGroup>
+        <ButtonGroup>
+          <Button variant="outline" size="xs" onClick={handleResetToNow}>
+            {t('timetable.dateTimeNav.now')}
+          </Button>
+        </ButtonGroup>
+      </ButtonGroup>
     </div>
   );
 }
@@ -239,7 +238,7 @@ function areTimetableDialogPropsEqual(
 
 export const TimetableDialog = memo(function TimetableDialog({
   data,
-  time,
+  time: _time,
   infoLevel,
   dataLangs,
   globalFilter,
@@ -252,15 +251,18 @@ export const TimetableDialog = memo(function TimetableDialog({
   const { t, i18n } = useTranslation();
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
-  // Whether the currently viewed service day matches the realtime service day.
-  // Only then is the current-hour highlight meaningful.
-  const isViewingNow = useMemo(() => {
+
+  useEffect(() => {
     if (!data) {
-      return false;
+      return;
     }
-    return getServiceDay(time).getTime() === data.serviceDate.getTime();
-  }, [data, time]);
-  const currentHour = isViewingNow ? Math.floor(getServiceDayMinutes(time) / 60) : -1;
+    logger.debug('data changed', {
+      referenceDateTime: data.referenceDateTime.toISOString(),
+      serviceDate: data.serviceDate.toISOString(),
+    });
+  }, [data]);
+
+  const hourToHighlight = data ? Math.floor(getServiceDayMinutes(data.referenceDateTime) / 60) : -1;
   const headerContainerRef = useRef<HTMLDivElement | null>(null);
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -345,7 +347,7 @@ export const TimetableDialog = memo(function TimetableDialog({
   );
   const gridScroll = useScrollFades(
     gridContainerRef,
-    `${data?.type ?? 'closed'}:${stopEventAttributesFilteredEntries.length}:${infoLevel}:${currentHour}`,
+    `${data?.type ?? 'closed'}:${stopEventAttributesFilteredEntries.length}:${infoLevel}:${hourToHighlight}`,
   );
 
   if (!data) {
@@ -475,15 +477,19 @@ export const TimetableDialog = memo(function TimetableDialog({
             )}
 
             {/* Datetime navigation */}
-            <DateTimeNavigation
-              viewingDateTime={data.viewingDateTime}
-              currentDateTime={time}
-              isViewingNow={isViewingNow}
-              onChangeDateTime={onChangeDateTime}
-            />
+            {info.isVerboseEnabled && (
+              <DateTimeNavigation
+                viewingDateTime={data.referenceDateTime}
+                onChangeDateTime={onChangeDateTime}
+              />
+            )}
 
             {/* Date time */}
-            <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLangs[0]} />
+            <TimetableDateLabel
+              serviceDate={data.serviceDate}
+              time={data.referenceDateTime}
+              lang={dataLangs[0]}
+            />
 
             <div className="flex flex-wrap gap-1">
               {/* Boardability filter */}
@@ -548,7 +554,7 @@ export const TimetableDialog = memo(function TimetableDialog({
                   ),
                 ).size > 1
               }
-              currentHour={currentHour}
+              hourToHighlight={hourToHighlight}
               infoLevel={infoLevel}
               dataLangs={dataLangs}
               agencies={data.agencies}

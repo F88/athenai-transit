@@ -258,7 +258,7 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
           stop: meta.stop,
           routes,
           headsign,
-          viewingDateTime: dateTime,
+          referenceDateTime: dateTime,
           serviceDate,
           timetableEntries: entries,
           omitted,

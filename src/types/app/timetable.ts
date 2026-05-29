@@ -8,11 +8,11 @@ export interface TimetableData {
   routes: Route[];
   headsign?: string;
   /**
-   * Datetime requested when this timetable was opened or re-opened.
-   * Used by the dialog to render the date picker value and to decide
-   * whether the current-hour highlight should be active.
+   * The point in time that this timetable is "as of" -- i.e. the datetime
+   * the timetable data is generated against. Carries the time-of-day axis
+   * that `serviceDate` does not.
    */
-  viewingDateTime: Date;
+  referenceDateTime: Date;
   serviceDate: Date;
   timetableEntries: TimetableEntry[];
   omitted: TimetableOmitted;
