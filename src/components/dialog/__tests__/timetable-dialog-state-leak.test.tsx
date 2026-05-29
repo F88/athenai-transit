@@ -289,6 +289,40 @@ describe('TimetableDialog activeFilters state leak', () => {
     expect(getLastFilterProps().activeFilters).toEqual(new Set());
   });
 
+  it('clears activeFilters when retargeted between colon-containing stop identities', () => {
+    const colonStopData = makeData({
+      type: 'stop',
+      stop: makeStop('tmm:101'),
+      headsign: undefined,
+    });
+    const routeHeadsignData = makeData({
+      type: 'route-headsign',
+      stop: makeStop('tmm'),
+      headsign: '101:',
+    });
+
+    const props = {
+      infoLevel: 'detailed' as const,
+      dataLangs: ['ja'] as const,
+      globalFilter,
+      onClose: vi.fn(),
+      onInspectTrip: vi.fn(),
+      onChangeDateTime: vi.fn(),
+    };
+
+    const { rerender } = render(<TimetableDialog {...props} data={colonStopData} />);
+
+    act(() => {
+      getLastFilterProps().onToggleFilter('永福町');
+    });
+    expect(getLastFilterProps().activeFilters).toEqual(new Set(['永福町']));
+
+    rerender(<TimetableDialog {...props} data={routeHeadsignData} />);
+    rerender(<TimetableDialog {...props} data={colonStopData} />);
+
+    expect(getLastFilterProps().activeFilters).toEqual(new Set());
+  });
+
   it('clears activeFilters when the dialog closes', () => {
     const stopData = makeData({ type: 'stop' });
     const onClose = vi.fn();

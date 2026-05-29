@@ -331,7 +331,9 @@ export const TimetableDialog = memo(function TimetableDialog({
   // This uses the "Adjusting state on prop changes" pattern (compare
   // previous and current during render), the same idiom used by
   // `StopSearchDialog.prevDeferredQuery`.
-  const dataIdentity = data ? `${data.type}:${data.stop.stop_id}:${data.headsign ?? ''}` : null;
+  const dataIdentity = data
+    ? JSON.stringify([data.type, data.stop.stop_id, data.headsign ?? ''])
+    : null;
   const [prevDataIdentity, setPrevDataIdentity] = useState(dataIdentity);
   if (dataIdentity !== prevDataIdentity) {
     setPrevDataIdentity(dataIdentity);
