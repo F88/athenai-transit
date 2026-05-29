@@ -1,6 +1,6 @@
 {
   "sourceName": "ota-c-bus",
-  "checkedAt": "2026-05-28T06:23:56.660Z",
+  "checkedAt": "2026-05-29T06:25:20.152Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_OtaCity.zip?date=20260212",
     "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_OtaCity.zip?date=20260601"
@@ -8,7 +8,7 @@
   "result": "attention",
   "warnings": [
     "ADOPTED_EXPIRING_SOON",
-    "REMOTE_NEW_BEFORE_PERIOD"
+    "REMOTE_KNOWN_BEFORE_PERIOD"
   ],
   "errors": []
 }
