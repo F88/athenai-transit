@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.05.29]
+
 ### Added
 
 - Stop marker popup: GTFS `platform_code` を amber chip (`PlatformCodeLabel`) で stop 名の隣に表示するようにした (stop 検索結果行と同じ UI 表現)。 standard tooltip / lightweight (Canvas) popup の双方に反映。 `platform_code` 未設定の stop は表示変化なし。
