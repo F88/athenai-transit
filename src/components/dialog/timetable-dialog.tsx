@@ -306,6 +306,28 @@ export const TimetableDialog = memo(function TimetableDialog({
   // Empty set = show all timetable (no filter active).
   const [activeFilters, setActiveFilters] = useState<Set<string>>(() => new Set());
 
+  // Reset `activeFilters` when the dialog is retargeted to a different
+  // (stop, view-mode, headsign) tuple while still mounted.
+  //
+  // The container's `key` is bound to `stop.stop_id`, so a same-stop
+  // re-open (e.g. switching from stop timetable to route-headsign
+  // timetable for the same stop, or vice versa) keeps the dialog
+  // mounted and would otherwise leak the previous filter selection into
+  // the new view -- `TimetableHeadsignFilter` is only shown for
+  // `data.type === 'stop'`, but `routeHeadsignFilteredEntries` honors
+  // `activeFilters` regardless of mode, so a stale filter would silently
+  // drop rows in route-headsign view with no visible toggle.
+  //
+  // This uses the "Adjusting state on prop changes" pattern (compare
+  // previous and current during render), the same idiom used by
+  // `StopSearchDialog.prevDeferredQuery`.
+  const dataIdentity = data ? `${data.type}:${data.stop.stop_id}:${data.headsign ?? ''}` : null;
+  const [prevDataIdentity, setPrevDataIdentity] = useState(dataIdentity);
+  if (dataIdentity !== prevDataIdentity) {
+    setPrevDataIdentity(dataIdentity);
+    setActiveFilters(new Set());
+  }
+
   const toggleFilter = useCallback((key: string) => {
     setActiveFilters((prev) => {
       const next = new Set(prev);
