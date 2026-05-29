@@ -64,7 +64,14 @@ export function StopMarkerSummary({
         <span>
           {routeTypesEmoji(routeTypes)} {stopNames.name}
         </span>
-        {stop.platform_code && <PlatformCodeLabel code={stop.platform_code} size="xs" className="font-normal" />}
+        {stop.platform_code && (
+          <PlatformCodeLabel
+            //
+            code={stop.platform_code}
+            size="xs"
+            className="font-normal"
+          />
+        )}
         {agencies.length > 0 &&
           agencies.map((a) => (
             <AgencyBadge
