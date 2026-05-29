@@ -169,6 +169,10 @@ interface CurrentRequest {
   stopId: string;
 }
 
+function resolveDisplayedHeadsign(filter: TimetableFilter) {
+  return filter.type === 'route-headsign' ? filter.headsign : undefined;
+}
+
 export function useTimetable(repo: TransitRepository): UseTimetableReturn {
   const [timetableData, setTimetableData] = useState<TimetableData | null>(null);
   const requestIdRef = useRef(0);
@@ -179,9 +183,14 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
       params: OpenStopTimetableParams,
       filter: TimetableFilter,
     ): Promise<TimetableOpenOutcome> => {
+
       const { dateTime, stopId } = params;
+
       const requestId = requestIdRef.current + 1;
       requestIdRef.current = requestId;
+
+      const headsign = resolveDisplayedHeadsign(filter);
+      const serviceDate = getServiceDay(dateTime);
 
       try {
         // Resolve stop metadata first so unknown stops short-circuit before the
@@ -230,8 +239,6 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
           filter,
           timetableResult,
         );
-        const headsign = filter.type === 'route-headsign' ? filter.headsign : undefined;
-        const serviceDate = getServiceDay(dateTime);
 
         if (logger.isEnabled('debug')) {
           logger.debug(
