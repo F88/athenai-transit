@@ -189,7 +189,7 @@ vi.mock('@/components/verbose/verbose-trip-stop-time', () => ({
   VerboseTripStopTime: () => null,
 }));
 
-import { TimetableModal } from '@/components/dialog/timetable-modal';
+import { TimetableDialog } from '@/components/dialog/timetable-dialog';
 import { StopSearchDialog } from '@/components/dialog/stop-search-dialog';
 import { TripInspectionDialog } from '@/components/dialog/trip-inspection-dialog';
 
@@ -333,7 +333,7 @@ afterEach(() => {
 });
 
 describe('dialog memoization regressions', () => {
-  it('TimetableModal skips stats recomputation when only time changes', () => {
+  it('TimetableDialog skips stats recomputation when only time changes', () => {
     const data = makeTimetableData();
     const globalFilter = {
       showOriginOnly: false,
@@ -354,15 +354,15 @@ describe('dialog memoization regressions', () => {
       onInspectTrip: vi.fn(),
     };
 
-    const { rerender } = render(<TimetableModal {...props} />);
+    const { rerender } = render(<TimetableDialog {...props} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
 
-    rerender(<TimetableModal {...props} />);
+    rerender(<TimetableDialog {...props} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
 
-    rerender(<TimetableModal {...props} time={new Date(2026, 3, 1, 8, 1)} />);
+    rerender(<TimetableDialog {...props} time={new Date(2026, 3, 1, 8, 1)} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
 
@@ -370,12 +370,12 @@ describe('dialog memoization regressions', () => {
       ...globalFilter,
       showBoardableOnly: true,
     };
-    rerender(<TimetableModal {...props} globalFilter={nextGlobalFilter} />);
+    rerender(<TimetableDialog {...props} globalFilter={nextGlobalFilter} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(4);
   });
 
-  it('TimetableModal skips stats recomputation when only omitEmptyStops changes', () => {
+  it('TimetableDialog skips stats recomputation when only omitEmptyStops changes', () => {
     const data = makeTimetableData();
     const globalFilter = {
       showOriginOnly: false,
@@ -396,7 +396,7 @@ describe('dialog memoization regressions', () => {
       onInspectTrip: vi.fn(),
     };
 
-    const { rerender } = render(<TimetableModal {...props} />);
+    const { rerender } = render(<TimetableDialog {...props} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
 
@@ -406,7 +406,7 @@ describe('dialog memoization regressions', () => {
       isOmitEmptyStopsForced: true,
       onToggleOmitEmptyStops: vi.fn(),
     };
-    rerender(<TimetableModal {...props} globalFilter={nextGlobalFilter} />);
+    rerender(<TimetableDialog {...props} globalFilter={nextGlobalFilter} />);
 
     expect(computeTimetableEntryStatsMock).toHaveBeenCalledTimes(2);
   });

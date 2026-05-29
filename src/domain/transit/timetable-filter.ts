@@ -293,7 +293,7 @@ interface StopTimesCarrier<T extends TimetableEntry = TimetableEntry> {
  * {@link filterByStopEventAttributes} (AND across toggles). When both
  * toggles are false, the input reference is returned unchanged.
  *
- * Used by both BottomSheet (per-stop entries) and TimetableModal (the
+ * Used by both BottomSheet (per-stop entries) and TimetableDialog (the
  * stop's full timetable) so the toggle semantics stay aligned across
  * surfaces.
  */

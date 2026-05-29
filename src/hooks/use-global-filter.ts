@@ -21,7 +21,7 @@ export interface UseGlobalFilterReturn {
   showBoardableOnly: boolean;
   /** Final empty-stop omit policy after `isLateNight` and forced-on rules. */
   effectiveOmitEmptyStops: boolean;
-  /** Bundled {@link GlobalFilter} for drilling into BottomSheet / TimetableModal. */
+  /** Bundled {@link GlobalFilter} for drilling into BottomSheet / TimetableDialog. */
   globalFilter: GlobalFilter;
 }
 
@@ -37,7 +37,7 @@ export interface UseGlobalFilterReturn {
  *     (origin-only or boardable-only force empty-stop omit on), and
  *     the final `effectiveOmitEmptyStops`.
  *   - The memoized {@link GlobalFilter} bundle that `BottomSheet` and
- *     `TimetableModal` consume directly.
+ *     `TimetableDialog` consume directly.
  *
  * The selector-level inputs (`showOriginOnly`, `showBoardableOnly`,
  * `effectiveOmitEmptyStops`) are exposed alongside the bundle because

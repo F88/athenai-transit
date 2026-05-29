@@ -201,8 +201,8 @@ vi.mock('../components/time-controls', () => ({
   TimeControls: () => null,
 }));
 
-vi.mock('../components/dialog/timetable-modal', () => ({
-  TimetableModal: () => null,
+vi.mock('../components/dialog/timetable-dialog', () => ({
+  TimetableDialog: () => null,
 }));
 
 vi.mock('../components/dialog/stop-search-dialog', () => ({
