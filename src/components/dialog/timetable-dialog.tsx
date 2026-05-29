@@ -52,7 +52,7 @@ interface TimetableDialogProps {
   onInspectTrip?: (target: TripInspectionTarget) => void;
   /**
    * Change the datetime of the currently displayed timetable, preserving
-   * the current stop and filter. Used by the date navigation row.
+   * the current stop and filter. Used by the datetime navigation row.
    */
   onChangeDateTime: (dateTime: Date) => void;
   onClose: () => void;
@@ -89,6 +89,96 @@ function EntriesPanel({
         />
       )}
     </>
+  );
+}
+
+interface DateTimeNavigationProps {
+  /** The datetime the dialog is currently displaying. */
+  viewingDateTime: Date;
+  /** Realtime reference used by the "now" reset button. */
+  currentDateTime: Date;
+  /** Whether the viewed service day matches the realtime service day. */
+  isViewingNow: boolean;
+  onChangeDateTime: (dateTime: Date) => void;
+}
+
+/**
+ * Datetime navigation row (previous day / datetime picker / next day / now).
+ *
+ * Handlers are local to this component so the parent can stay focused on
+ * the timetable rendering. The "now" button is only shown when the
+ * viewed service day differs from the realtime service day.
+ */
+function DateTimeNavigation({
+  viewingDateTime,
+  currentDateTime,
+  isViewingNow,
+  onChangeDateTime,
+}: DateTimeNavigationProps) {
+  const { t } = useTranslation();
+
+  const handlePrevDay = useCallback(() => {
+    const next = new Date(viewingDateTime);
+    next.setDate(next.getDate() - 1);
+    onChangeDateTime(next);
+  }, [viewingDateTime, onChangeDateTime]);
+
+  const handleNextDay = useCallback(() => {
+    const next = new Date(viewingDateTime);
+    next.setDate(next.getDate() + 1);
+    onChangeDateTime(next);
+  }, [viewingDateTime, onChangeDateTime]);
+
+  const handleResetToNow = useCallback(() => {
+    onChangeDateTime(currentDateTime);
+  }, [currentDateTime, onChangeDateTime]);
+
+  const handlePickerChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = event.target.value;
+      if (!raw) {
+        return;
+      }
+      const parsed = new Date(raw);
+      if (Number.isNaN(parsed.getTime())) {
+        return;
+      }
+      onChangeDateTime(parsed);
+    },
+    [onChangeDateTime],
+  );
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-1.5">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handlePrevDay}
+        aria-label={t('timetable.dateTimeNav.previousDay')}
+      >
+        <ChevronLeft className="size-4" />
+      </Button>
+      <input
+        type="datetime-local"
+        value={toDatetimeLocalValue(viewingDateTime)}
+        onChange={handlePickerChange}
+        aria-label={t('timetable.dateTimeNav.datePickerLabel')}
+        className="border-input bg-background rounded-md border px-2 py-1 text-sm"
+      />
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleNextDay}
+        aria-label={t('timetable.dateTimeNav.nextDay')}
+      >
+        <ChevronRight className="size-4" />
+      </Button>
+      {!isViewingNow && (
+        <Button variant="outline" size="sm" onClick={handleResetToNow}>
+          {t('timetable.dateTimeNav.now')}
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -164,54 +254,15 @@ export const TimetableDialog = memo(function TimetableDialog({
   const info = useInfoLevel(infoLevel);
   // Whether the currently viewed service day matches the realtime service day.
   // Only then is the current-hour highlight meaningful.
-  const isViewingToday = useMemo(() => {
+  const isViewingNow = useMemo(() => {
     if (!data) {
       return false;
     }
     return getServiceDay(time).getTime() === data.serviceDate.getTime();
   }, [data, time]);
-  const currentHour = isViewingToday ? Math.floor(getServiceDayMinutes(time) / 60) : -1;
+  const currentHour = isViewingNow ? Math.floor(getServiceDayMinutes(time) / 60) : -1;
   const headerContainerRef = useRef<HTMLDivElement | null>(null);
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
-
-  const viewingDateTime = data?.viewingDateTime ?? null;
-
-  const handlePrevDay = useCallback(() => {
-    if (!viewingDateTime) {
-      return;
-    }
-    const next = new Date(viewingDateTime);
-    next.setDate(next.getDate() - 1);
-    onChangeDateTime(next);
-  }, [viewingDateTime, onChangeDateTime]);
-
-  const handleNextDay = useCallback(() => {
-    if (!viewingDateTime) {
-      return;
-    }
-    const next = new Date(viewingDateTime);
-    next.setDate(next.getDate() + 1);
-    onChangeDateTime(next);
-  }, [viewingDateTime, onChangeDateTime]);
-
-  const handleResetToNow = useCallback(() => {
-    onChangeDateTime(time);
-  }, [onChangeDateTime, time]);
-
-  const handlePickerChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = event.target.value;
-      if (!raw) {
-        return;
-      }
-      const parsed = new Date(raw);
-      if (Number.isNaN(parsed.getTime())) {
-        return;
-      }
-      onChangeDateTime(parsed);
-    },
-    [onChangeDateTime],
-  );
 
   // Filter state for stop timetable (route+headsign toggle).
   // Empty set = show all timetable (no filter active).
@@ -423,37 +474,13 @@ export const TimetableDialog = memo(function TimetableDialog({
               />
             )}
 
-            {/* Date navigation */}
-            <div className="flex flex-wrap items-center justify-center gap-1.5">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handlePrevDay}
-                aria-label={t('timetable.dateNav.previousDay')}
-              >
-                <ChevronLeft className="size-4" />
-              </Button>
-              <input
-                type="datetime-local"
-                value={toDatetimeLocalValue(data.viewingDateTime)}
-                onChange={handlePickerChange}
-                aria-label={t('timetable.dateNav.datePickerLabel')}
-                className="border-input bg-background rounded-md border px-2 py-1 text-sm"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleNextDay}
-                aria-label={t('timetable.dateNav.nextDay')}
-              >
-                <ChevronRight className="size-4" />
-              </Button>
-              {!isViewingToday && (
-                <Button variant="outline" size="sm" onClick={handleResetToNow}>
-                  {t('timetable.dateNav.now')}
-                </Button>
-              )}
-            </div>
+            {/* Datetime navigation */}
+            <DateTimeNavigation
+              viewingDateTime={data.viewingDateTime}
+              currentDateTime={time}
+              isViewingNow={isViewingNow}
+              onChangeDateTime={onChangeDateTime}
+            />
 
             {/* Date time */}
             <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLangs[0]} />

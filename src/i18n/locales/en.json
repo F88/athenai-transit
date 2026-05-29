@@ -153,7 +153,7 @@
       "noDropOff": "No drop-off",
       "arriving": "Arr"
     },
-    "dateNav": {
+    "dateTimeNav": {
       "previousDay": "Previous day",
       "nextDay": "Next day",
       "now": "Now",

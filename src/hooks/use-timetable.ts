@@ -183,7 +183,6 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
       params: OpenStopTimetableParams,
       filter: TimetableFilter,
     ): Promise<TimetableOpenOutcome> => {
-
       const { dateTime, stopId } = params;
 
       const requestId = requestIdRef.current + 1;
