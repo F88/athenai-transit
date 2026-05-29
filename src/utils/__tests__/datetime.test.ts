@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDateParts, toDatetimeLocalValue } from '../datetime';
+import { formatDateParts } from '../datetime';
 
 const TZ = 'Asia/Tokyo';
 
@@ -93,15 +93,5 @@ describe('formatDateParts', () => {
     const en = formatDateParts(WED_0915_UTC, 'en', TZ, { showYear: true });
     expect(ja.dateText).toBe('2026年3月4日');
     expect(en.dateText).toBe('Mar 4, 2026');
-  });
-});
-
-describe('toDatetimeLocalValue', () => {
-  it('returns ISO-like local datetime string', () => {
-    expect(toDatetimeLocalValue(new Date(2026, 2, 4, 9, 5))).toBe('2026-03-04T09:05');
-  });
-
-  it('pads month, day, hours and minutes', () => {
-    expect(toDatetimeLocalValue(new Date(2026, 0, 3, 1, 2))).toBe('2026-01-03T01:02');
   });
 });

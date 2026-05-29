@@ -9,9 +9,24 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- TimetableDialog: 表示中の時刻表を別日時で見直せる datetime navigation 行を追加 (前日 / 翌日 / `<input type="datetime-local">` / 現在ボタン)。 picker の編集は 1000ms debounce で fetch をまとめ、 直接 typing 中も中間状態で再 fetch が走らないようにした。
+- TimetableDialog: datetime picker のスピナー操作範囲を mount 時刻 ± 1 年でクランプ (`<input type="datetime-local">` の `min` / `max` 属性で picker UI 側から制約)。 direct typing で範囲外の値が入力された場合は JS 側では弾かず、 そのまま fetch して「該当データなし (= 空時刻表)」 を表示する (黙って無視するよりも空表示で「データがない」 と伝わる方が UX 上わかりやすいため)。 NaN (`new Date(invalid)`) だけは `Number.isNaN` チェックで弾く。
+
 ### Changed
 
 - Dialog: `TimetableModal` を `TimetableDialog` に rename し、 app / test 側の参照を追随更新した。あわせて dialog memoization regression test を `src/components/dialog/__tests__/` へ移設した (Issue #264)。
+- TimetableDialog: 時刻表行のハイライト (`hourToHighlight`) を realtime ベースから `data.referenceDateTime` ベースに切り替え、 `TimetableData` に「いつの時点に対するデータか」 を表す `referenceDateTime` を追加 (時刻ハイライトと picker / TimetableDateLabel が同じ datetime に揃う)。
+- TimetableDateLabel: 表示する時刻を realtime (`time` prop) から `data.referenceDateTime` に変更し、 picker / prev / next 操作と日時表示が常に同期するようにした。
+- TimetableGrid: 時刻表行のハイライト用 prop を `currentHour` から `hourToHighlight` にリネーム (基準が realtime ではなくなったため)。
+- Utilities: HTML form 系の datetime 文字列生成 util を `src/utils/datetime.ts` から `src/utils/html-date-time.ts` に切り出し、 関数名も `toDatetimeLocalValue` → `toDatetimeLocalInputValue` に rename して用途 (HTML `<input type="datetime-local">` の value) を明示した。
+- TimetableDialog: `useTimetable` の所有を新設の `TimetableContainer` (`src/components/timetable/timetable-container.tsx`) に移し、 ダイアログ内の datetime 変更が app 全体の再 render を引き起こさないようにした。 結果として (1) DateTimeNavigation の picker 操作で StopBrowser / NearbyStops 系の無関係な component が render されなくなり体感速度が劇的に向上、 (2) 新しい時刻表の描画も即時化 (= 巨大ツリーの再 render と grid 描画の競合が解消)、 (3) `StopsSummary` 等の debug log noise も解消。 外部から `openStopTimetable` / `openRouteHeadsignTimetable` を呼ぶ経路 (map markers / BottomSheet / StopSearchDialog) は app.tsx 内の `handleShow*` callback 経由のまま、 内部実装だけ `timetableRef` (= `useImperativeHandle` 経由) に切り替えた。
+- StopsSummary: `stop-browser-header.tsx` に同居していた内部 component (logger 名は `NearbyStopsSummary`) を `src/components/stops-summary.tsx` に切り出し、 logger 名を `StopsSummary` に揃え、 サマリ文字列ビルダーを `getNearbyStopsSummaryText` → `buildStopsSummaryText` に rename した (= 「Nearby」 接頭辞を排し、 内部で条件分岐して組み立てる動作に合う動詞へ)。
+
+### Fixed
+
+- `toDatetimeLocalInputValue`: 1〜3 桁年 (例: 西暦 1 年) を扱う際に input value が無効文字列 (`1-05-30T13:57` など) になり、 DateTimeNavigation / TimeSettingDialog の `<input type="datetime-local">` の表示が空 (placeholder) に崩れる問題を修正。 年を 4 桁に zero-pad するようにした。
 - Documentation: `ABOUT.md` のライセンス / クレジット記述を整理し、対象データ・提供元・ライセンス表記の構成を見直して attribution を追いやすくした。
 - Map tiles: Stadia Maps の Alidade Satellite をタイル選択肢から除外した
 - Data: MLIT 国土数値情報 鉄道データを N02-24 (令和 6 年度版) から N02-25 (令和 7 年度版) へ更新 (Issue #261)。 スキーマ・operator/路線名はすべて互換で、 parser の 5 桁丸めにより生成される `shapes.json` は既存出力とバイトレベルで同一。

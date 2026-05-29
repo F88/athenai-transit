@@ -3,9 +3,9 @@ import { getHeadsignDisplayNames } from './name-resolver/get-headsign-display-na
 import { isDropOffOnly } from './timetable-utils';
 import type { Agency } from '@/types/app/transit';
 import { resolveAgencyLang } from '@/config/transit-defaults';
-import { createLogger } from '../../lib/logger';
+// import { createLogger } from '../../lib/logger';
 
-const logger = createLogger('TimetableStats');
+// const logger = createLogger('TimetableStats');
 
 /**
  * Aggregated statistics computed from a list of {@link TimetableEntry}.
@@ -172,10 +172,10 @@ export function computeTimetableEntryStats(
     trips.add(`${tl.patternId}|${tl.serviceId}|${tl.tripIndex}`);
   }
 
-  if (logger.isEnabled('debug')) {
-    logger.debug('tripsHeadsigns', [...tripsHeadsigns]);
-    logger.debug('stopHeadsigns', [...stopHeadsigns]);
-  }
+  // if (logger.isEnabled('debug')) {
+  //   logger.debug('tripsHeadsigns', [...tripsHeadsigns]);
+  //   logger.debug('stopHeadsigns', [...stopHeadsigns]);
+  // }
 
   return {
     totalCount: entries.length,

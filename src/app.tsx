@@ -64,7 +64,6 @@ import { useStopHistory, type UseStopHistoryReturn } from './hooks/use-stop-hist
 import { useStopNavigation } from './hooks/use-stop-navigation';
 import { useStopParamHandler } from './hooks/use-stop-param-handler';
 import { useStopsForBounds } from './hooks/use-stops-for-bounds';
-import { useTimetable } from './hooks/use-timetable';
 import { useTransitRepository } from './hooks/use-transit-repository';
 import { useTripInspection } from './hooks/use-trip-inspection';
 import { useUserSettings } from './hooks/use-user-settings';
@@ -92,7 +91,10 @@ import { DataSourceSettingsDialog } from './components/dialog/data-source-settin
 import { InfoDialog } from './components/dialog/info-dialog';
 import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
 import { StopSearchDialog } from './components/dialog/stop-search-dialog';
-import { TimetableDialog } from './components/dialog/timetable-dialog';
+import {
+  TimetableContainer,
+  type TimetableContainerHandle,
+} from './components/timetable/timetable-container';
 import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
 import { MapOverlay } from './components/map/map-overlay';
 import { MapView } from './components/map/map-view';
@@ -297,8 +299,14 @@ export default function App() {
     openNextTripInspection,
     closeTripInspection,
   } = useTripInspection(repo);
-  const { timetableData, openRouteHeadsignTimetable, openStopTimetable, closeTimetable } =
-    useTimetable(repo);
+  // `useTimetable` is owned by `TimetableContainer`, not by `App`. We hold a
+  // ref to call its imperative open methods from external launch paths
+  // (map markers / BottomSheet / StopSearchDialog) without re-rendering
+  // the entire app whenever the timetable state changes. The container
+  // notifies us of open/close transitions via `onOpenChange` so we can
+  // still gate global shortcuts on dialog visibility.
+  const timetableRef = useRef<TimetableContainerHandle>(null);
+  const [isTimetableOpen, setIsTimetableOpen] = useState(false);
 
   // Disable global shortcuts while primary modal state is active. This
   // includes `useAppDialogs` boolean flags and payload-backed dialog state
@@ -315,7 +323,7 @@ export default function App() {
       !infoDialogOpen &&
       !dataSourceSettingsDialogOpen &&
       !shortcutHelpOpen &&
-      timetableData === null &&
+      !isTimetableOpen &&
       tripInspectionSnapshot === null,
     handlers: {
       onOpenSearch: openSearchModal,
@@ -545,28 +553,28 @@ export default function App() {
 
   const handleShowTimetable = useCallback(
     (stopId: string, routeId: string, headsign: string) => {
-      void openRouteHeadsignTimetable({
-        stopId,
-        routeId,
-        headsign,
-        dateTime,
-      }).then((status) => {
+      const open = timetableRef.current?.openRouteHeadsignTimetable;
+      if (!open) {
+        return;
+      }
+      void open({ stopId, routeId, headsign, dateTime }).then((status) => {
         showOpenOutcomeToast(getTimetableOpenOutcomeMessage(status.status), t);
       });
     },
-    [dateTime, openRouteHeadsignTimetable, t],
+    [dateTime, t],
   );
 
   const handleShowStopTimetable = useCallback(
     (stopId: string) => {
-      void openStopTimetable({
-        stopId,
-        dateTime,
-      }).then((status) => {
+      const open = timetableRef.current?.openStopTimetable;
+      if (!open) {
+        return;
+      }
+      void open({ stopId, dateTime }).then((status) => {
         showOpenOutcomeToast(getTimetableOpenOutcomeMessage(status.status), t);
       });
     },
-    [dateTime, openStopTimetable, t],
+    [dateTime, t],
   );
 
   const handleOpenTripInspectionByStopId = useCallback(
@@ -1058,15 +1066,14 @@ export default function App() {
         onSelectStopById={handleSelectStopFromTripInspection}
         onOpenChange={handleTripInspectionOpenChange}
       />
-      <TimetableDialog
-        key={timetableData?.stop.stop_id ?? 'closed'}
-        data={timetableData}
-        time={dateTime}
+      <TimetableContainer
+        ref={timetableRef}
+        repo={repo}
         infoLevel={settings.infoLevel}
         dataLangs={langChain}
         globalFilter={globalFilter}
         onInspectTrip={handleInspectTrip}
-        onClose={closeTimetable}
+        onOpenChange={setIsTimetableOpen}
       />
       <Toaster
         theme={settings.theme}

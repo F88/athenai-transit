@@ -1,4 +1,5 @@
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -26,8 +27,10 @@ import type { TimetableData } from '@/types/app/timetable';
 import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry, TripInspectionTarget } from '@/types/app/transit-composed';
 import { formatDateParts } from '@/utils/datetime';
+import { toDatetimeLocalInputValue } from '@/utils/html-date-time';
 import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
 import { BoardabilityFilter } from '../filter/boardability-filter';
@@ -36,18 +39,22 @@ import { TimetableGrid } from '../timetable/timetable-grid';
 import { TimetableHeader } from '../timetable/timetable-header';
 import { TimetableHeadsignFilter } from '../timetable/timetable-headsign-filter';
 import { TimetableMetadata } from '../timetable/timetable-metadata';
+import { ButtonGroup } from '../ui/button-group';
 
 interface TimetableDialogProps {
   /** Pass null when the dialog should be closed. */
   data: TimetableData | null;
-  /** Current time reference for highlighting the active hour row. */
-  time: Date;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLangs: readonly string[];
   /** App-wide filter state shared across surfaces. */
   globalFilter: GlobalFilter;
   onInspectTrip?: (target: TripInspectionTarget) => void;
+  /**
+   * Change the datetime of the currently displayed timetable, preserving
+   * the current stop and filter. Used by the datetime navigation row.
+   */
+  onChangeDateTime: (dateTime: Date) => void;
   onClose: () => void;
 }
 
@@ -82,6 +89,153 @@ function EntriesPanel({
         />
       )}
     </>
+  );
+}
+
+interface DateTimeNavigationProps {
+  /** The datetime the dialog is currently displaying. */
+  viewingDateTime: Date;
+  onChangeDateTime: (dateTime: Date) => void;
+}
+
+/**
+ * Datetime navigation row (previous day / datetime picker / next day / now).
+ *
+ * Handlers are local to this component so the parent can stay focused on
+ * the timetable rendering. The "now" button always re-fetches at the
+ * current wall-clock time.
+ */
+const PICKER_DEBOUNCE_MS = 1_000;
+
+function DateTimeNavigation({ viewingDateTime, onChangeDateTime }: DateTimeNavigationProps) {
+  const { t } = useTranslation();
+
+  // Bound the picker to +/- 1 year from the mount-time wall clock.
+  // Snapshotted once so spinning the picker can't drift past the bounds
+  // during a long-lived dialog session. Enforcement is delegated to the
+  // browser's picker via the input's `min` / `max` attributes; direct
+  // typing of out-of-range values is intentionally not rejected (the
+  // user would see an unexplained no-op otherwise — an empty timetable
+  // for the typed date is the clearer signal).
+  const inputBounds = useMemo(() => {
+    const now = new Date();
+    const min = new Date(now);
+    min.setFullYear(min.getFullYear() - 1);
+    const max = new Date(now);
+    max.setFullYear(max.getFullYear() + 1);
+    return {
+      minString: toDatetimeLocalInputValue(min),
+      maxString: toDatetimeLocalInputValue(max),
+    };
+  }, []);
+
+  // Local echo of the input so direct typing (e.g. yyyy/mm/dd one digit at
+  // a time) is not interrupted by the parent's viewingDateTime updates.
+  // The committed value (= onChangeDateTime) is debounced so intermediate
+  // keystrokes do not each trigger a fetch.
+  //
+  // Uses the "Adjusting state on prop changes" pattern (compare with the
+  // previous value during render) instead of useEffect + setState, per
+  // React 19's `set-state-in-effect` rule.
+  const [editingValue, setEditingValue] = useState(() =>
+    toDatetimeLocalInputValue(viewingDateTime),
+  );
+  const [prevViewingDateTime, setPrevViewingDateTime] = useState(viewingDateTime);
+  // Compare timestamps (not Date references) so that a newly-allocated Date
+  // representing the same moment does not trigger an unnecessary state
+  // update / extra render of DateTimeNavigation.
+  if (viewingDateTime.getTime() !== prevViewingDateTime.getTime()) {
+    setPrevViewingDateTime(viewingDateTime);
+    setEditingValue(toDatetimeLocalInputValue(viewingDateTime));
+  }
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => {
+    return () => {
+      clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
+
+  // Explicit navigation (prev / next / now) must override any pending
+  // picker-debounce commit. Without `clearTimeout` here, a still-pending
+  // typed value could fire after the button-triggered fetch returns and
+  // silently overwrite it.
+  const handlePrevDay = useCallback(() => {
+    clearTimeout(debounceTimerRef.current);
+    const next = new Date(viewingDateTime);
+    next.setDate(next.getDate() - 1);
+    onChangeDateTime(next);
+  }, [viewingDateTime, onChangeDateTime]);
+
+  const handleNextDay = useCallback(() => {
+    clearTimeout(debounceTimerRef.current);
+    const next = new Date(viewingDateTime);
+    next.setDate(next.getDate() + 1);
+    onChangeDateTime(next);
+  }, [viewingDateTime, onChangeDateTime]);
+
+  const handleResetToNow = useCallback(() => {
+    clearTimeout(debounceTimerRef.current);
+    onChangeDateTime(new Date());
+  }, [onChangeDateTime]);
+
+  const handlePickerChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = event.target.value;
+      setEditingValue(raw);
+
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        if (!raw) {
+          return;
+        }
+        const parsed = new Date(raw);
+        if (Number.isNaN(parsed.getTime())) {
+          return;
+        }
+        onChangeDateTime(parsed);
+      }, PICKER_DEBOUNCE_MS);
+    },
+    [onChangeDateTime],
+  );
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-1.5">
+      <ButtonGroup>
+        <Button
+          variant="outline"
+          size="icon-xs"
+          onClick={handlePrevDay}
+          aria-label={t('timetable.dateTimeNav.previousDay')}
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+        <input
+          type="datetime-local"
+          value={editingValue}
+          onChange={handlePickerChange}
+          min={inputBounds.minString}
+          max={inputBounds.maxString}
+          aria-label={t('timetable.dateTimeNav.datePickerLabel')}
+          className="border-input bg-background h-6 rounded-md border px-2 text-xs leading-none"
+        />
+        <Button
+          variant="outline"
+          size="icon-xs"
+          onClick={handleResetToNow}
+          aria-label={t('timetable.dateTimeNav.now')}
+        >
+          <Clock className="size-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon-xs"
+          onClick={handleNextDay}
+          aria-label={t('timetable.dateTimeNav.nextDay')}
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+      </ButtonGroup>
+    </div>
   );
 }
 
@@ -130,10 +284,10 @@ function areTimetableDialogPropsEqual(
 ): boolean {
   return (
     prev.data === next.data &&
-    prev.time === next.time &&
     prev.infoLevel === next.infoLevel &&
     prev.dataLangs === next.dataLangs &&
     prev.onInspectTrip === next.onInspectTrip &&
+    prev.onChangeDateTime === next.onChangeDateTime &&
     prev.onClose === next.onClose &&
     hasSameRelevantGlobalFilter(prev.globalFilter, next.globalFilter)
   );
@@ -141,11 +295,11 @@ function areTimetableDialogPropsEqual(
 
 export const TimetableDialog = memo(function TimetableDialog({
   data,
-  time,
   infoLevel,
   dataLangs,
   globalFilter,
   onInspectTrip,
+  onChangeDateTime,
   onClose,
 }: TimetableDialogProps) {
   const { showOriginOnly, showBoardableOnly, onToggleShowOriginOnly, onToggleShowBoardableOnly } =
@@ -153,13 +307,38 @@ export const TimetableDialog = memo(function TimetableDialog({
   const { t, i18n } = useTranslation();
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
-  const currentHour = Math.floor(getServiceDayMinutes(time) / 60);
+
+  const hourToHighlight = data ? Math.floor(getServiceDayMinutes(data.referenceDateTime) / 60) : -1;
   const headerContainerRef = useRef<HTMLDivElement | null>(null);
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Filter state for stop timetable (route+headsign toggle).
   // Empty set = show all timetable (no filter active).
   const [activeFilters, setActiveFilters] = useState<Set<string>>(() => new Set());
+
+  // Reset `activeFilters` when the dialog is retargeted to a different
+  // (stop, view-mode, headsign) tuple while still mounted.
+  //
+  // The container's `key` is bound to `stop.stop_id`, so a same-stop
+  // re-open (e.g. switching from stop timetable to route-headsign
+  // timetable for the same stop, or vice versa) keeps the dialog
+  // mounted and would otherwise leak the previous filter selection into
+  // the new view -- `TimetableHeadsignFilter` is only shown for
+  // `data.type === 'stop'`, but `routeHeadsignFilteredEntries` honors
+  // `activeFilters` regardless of mode, so a stale filter would silently
+  // drop rows in route-headsign view with no visible toggle.
+  //
+  // This uses the "Adjusting state on prop changes" pattern (compare
+  // previous and current during render), the same idiom used by
+  // `StopSearchDialog.prevDeferredQuery`.
+  const dataIdentity = data
+    ? JSON.stringify([data.type, data.stop.stop_id, data.headsign ?? ''])
+    : null;
+  const [prevDataIdentity, setPrevDataIdentity] = useState(dataIdentity);
+  if (dataIdentity !== prevDataIdentity) {
+    setPrevDataIdentity(dataIdentity);
+    setActiveFilters(new Set());
+  }
 
   const toggleFilter = useCallback((key: string) => {
     setActiveFilters((prev) => {
@@ -238,7 +417,7 @@ export const TimetableDialog = memo(function TimetableDialog({
   );
   const gridScroll = useScrollFades(
     gridContainerRef,
-    `${data?.type ?? 'closed'}:${stopEventAttributesFilteredEntries.length}:${infoLevel}:${currentHour}`,
+    `${data?.type ?? 'closed'}:${stopEventAttributesFilteredEntries.length}:${infoLevel}:${hourToHighlight}`,
   );
 
   if (!data) {
@@ -300,6 +479,14 @@ export const TimetableDialog = memo(function TimetableDialog({
         showCloseButton={false}
         className="flex max-h-[80dvh] w-[90dvw] max-w-5xl flex-col gap-0 overflow-hidden border-4 p-2 sm:max-w-3xl"
       >
+        {/* Datetime navigation */}
+        {info.isDetailedEnabled && (
+          <DateTimeNavigation
+            viewingDateTime={data.referenceDateTime}
+            onChangeDateTime={onChangeDateTime}
+          />
+        )}
+
         <div
           ref={headerContainerRef}
           onScroll={headerScroll.handleScroll}
@@ -368,7 +555,11 @@ export const TimetableDialog = memo(function TimetableDialog({
             )}
 
             {/* Date time */}
-            <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLangs[0]} />
+            <TimetableDateLabel
+              serviceDate={data.serviceDate}
+              time={data.referenceDateTime}
+              lang={dataLangs[0]}
+            />
 
             <div className="flex flex-wrap gap-1">
               {/* Boardability filter */}
@@ -433,7 +624,7 @@ export const TimetableDialog = memo(function TimetableDialog({
                   ),
                 ).size > 1
               }
-              currentHour={currentHour}
+              hourToHighlight={hourToHighlight}
               infoLevel={infoLevel}
               dataLangs={dataLangs}
               agencies={data.agencies}

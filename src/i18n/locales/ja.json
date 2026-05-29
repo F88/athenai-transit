@@ -153,6 +153,12 @@
       "noDropOff": "降×",
       "arriving": "着"
     },
+    "dateTimeNav": {
+      "previousDay": "前日",
+      "nextDay": "翌日",
+      "now": "現在",
+      "datePickerLabel": "表示する日時"
+    },
     "grid": {
       "row": {
         "hour": "{{hour}}時",

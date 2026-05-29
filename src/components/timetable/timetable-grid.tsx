@@ -16,7 +16,7 @@ interface TimetableGridProps {
   timetableEntries: TimetableEntry[];
   serviceDate: Date;
   showHeadsign: boolean;
-  currentHour: number;
+  hourToHighlight: number;
   infoLevel: InfoLevel;
   dataLangs: readonly string[];
   agencies: Agency[];
@@ -44,7 +44,7 @@ export function TimetableGrid({
   timetableEntries,
   serviceDate,
   showHeadsign,
-  currentHour,
+  hourToHighlight,
   infoLevel,
   dataLangs,
   agencies,
@@ -85,7 +85,7 @@ export function TimetableGrid({
   const isDisplayPickupUnavailable = info.isVerboseEnabled;
   const isDisplayDropOffUnavailable = info.isVerboseEnabled;
 
-  const hasCurrentHour = hourGroups.has(currentHour);
+  const hasCurrentHour = hourGroups.has(hourToHighlight);
   const firstHour = hourGroups.keys().next().value as number;
 
   return (
@@ -94,13 +94,13 @@ export function TimetableGrid({
         <div
           key={hour}
           ref={
-            hour === currentHour
+            hour === hourToHighlight
               ? scrollRef
               : !hasCurrentHour && hour === firstHour
                 ? scrollRef
                 : undefined
           }
-          className={`border-border scroll-mt-6 border-b py-1.5 last:border-b-0 ${hour === currentHour ? 'bg-accent rounded' : ''}`}
+          className={`border-border scroll-mt-6 border-b py-1.5 last:border-b-0 ${hour === hourToHighlight ? 'bg-accent rounded' : ''}`}
         >
           <div className="flex items-baseline gap-2">
             <span className="text-foreground w-10 shrink-0 text-right text-sm font-bold">

@@ -1,6 +1,6 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toDatetimeLocalValue } from '@/utils/datetime';
+import { toDatetimeLocalInputValue } from '@/utils/html-date-time';
 import {
   Dialog,
   DialogContent,
@@ -41,20 +41,46 @@ export function TimeSettingDialog({
 }: TimeSettingDialogProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Bound the picker to +/- 1 year from the mount-time wall clock, matching
+  // the DateTimeNavigation picker in TimetableDialog.
+  const inputBounds = useMemo(() => {
+    const now = new Date();
+    const min = new Date(now);
+    min.setFullYear(min.getFullYear() - 1);
+    const max = new Date(now);
+    max.setFullYear(max.getFullYear() + 1);
+    return {
+      minString: toDatetimeLocalInputValue(min),
+      maxString: toDatetimeLocalInputValue(max),
+    };
+  }, []);
+
   const setInputRef = useCallback(
     (node: HTMLInputElement | null) => {
       inputRef.current = node;
       if (node) {
-        node.value = toDatetimeLocalValue(initialTime);
+        node.value = toDatetimeLocalInputValue(initialTime);
       }
     },
     [initialTime],
   );
 
   const handleSubmit = useCallback(() => {
-    if (inputRef.current?.value) {
-      onCustomTimeSet(new Date(inputRef.current.value));
+    const raw = inputRef.current?.value;
+    if (!raw) {
+      onOpenChange(false);
+      return;
     }
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) {
+      // Reject Invalid Date (e.g. typed "9999-13-99T99:99") so the app
+      // never receives a NaN-backed Date. Range-based rejection is
+      // intentionally not done here: this dialog is an explicit submit,
+      // so out-of-range values typed by the user are honored.
+      onOpenChange(false);
+      return;
+    }
+    onCustomTimeSet(parsed);
     onOpenChange(false);
   }, [onCustomTimeSet, onOpenChange]);
 
@@ -90,6 +116,8 @@ export function TimeSettingDialog({
           id="custom-datetime"
           ref={setInputRef}
           type="datetime-local"
+          min={inputBounds.minString}
+          max={inputBounds.maxString}
           className="border-input bg-background w-full max-w-full min-w-0 rounded-lg border px-3 py-2.5 text-base"
         />
         <div className="flex justify-end gap-2">
