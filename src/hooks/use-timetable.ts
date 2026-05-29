@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 
+import { formatDateKey } from '@/domain/transit/calendar-utils';
 import { getServiceDay } from '@/domain/transit/service-day';
 import {
   prepareRouteHeadsignTimetable,
@@ -135,6 +136,7 @@ function buildTimetableEntries(
 
 function formatTimetableDebugMessage(params: {
   dateTime: Date;
+  serviceDate: Date;
   filter: TimetableFilter;
   stopId: string;
   entriesCount: number;
@@ -146,7 +148,7 @@ function formatTimetableDebugMessage(params: {
     routeSuffix = ` ${params.filter.routeId} "${params.filter.headsign}"`;
   }
 
-  return `timetable(${params.filter.type}): ${params.dateTime.toISOString()} ${params.stopId}${routeSuffix} → entries=${params.entriesCount} omitted.nonBoardable=${params.omittedNonBoardable} total=${params.totalEntries}`;
+  return `timetable(${params.filter.type}): wall=${params.dateTime.toISOString()} service=${formatDateKey(params.serviceDate)} ${params.stopId}${routeSuffix} → entries=${params.entriesCount} omitted.nonBoardable=${params.omittedNonBoardable} total=${params.totalEntries}`;
 }
 
 function formatUnknownError(error: unknown) {
@@ -229,12 +231,14 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
           timetableResult,
         );
         const headsign = filter.type === 'route-headsign' ? filter.headsign : undefined;
+        const serviceDate = getServiceDay(dateTime);
 
         if (logger.isEnabled('debug')) {
           logger.debug(
             formatTimetableDebugMessage({
               filter,
               dateTime,
+              serviceDate,
               stopId,
               entriesCount: entries.length,
               omittedNonBoardable: omitted.nonBoardable,
@@ -249,7 +253,7 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
           routes,
           headsign,
           viewingDateTime: dateTime,
-          serviceDate: getServiceDay(dateTime),
+          serviceDate,
           timetableEntries: entries,
           omitted,
           stopServiceState: getStopServiceState({
