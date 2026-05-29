@@ -42,6 +42,14 @@ export interface UseTimetableReturn {
   openRouteHeadsignTimetable: (
     params: OpenRouteHeadsignTimetableParams,
   ) => Promise<TimetableOpenOutcome>;
+  /**
+   * Change the datetime of the currently displayed timetable while
+   * preserving the current stop and filter (stop / route-headsign).
+   * Replaces the in-place data; the dialog is not closed.
+   *
+   * No-op (returns `{ status: 'error' }`) when no timetable is open.
+   */
+  changeDateTime: (dateTime: Date) => Promise<TimetableOpenOutcome>;
   closeTimetable: () => void;
 }
 
@@ -126,6 +134,7 @@ function buildTimetableEntries(
 }
 
 function formatTimetableDebugMessage(params: {
+  dateTime: Date;
   filter: TimetableFilter;
   stopId: string;
   entriesCount: number;
@@ -137,7 +146,7 @@ function formatTimetableDebugMessage(params: {
     routeSuffix = ` ${params.filter.routeId} "${params.filter.headsign}"`;
   }
 
-  return `timetable(${params.filter.type}): ${params.stopId}${routeSuffix} → entries=${params.entriesCount} omitted.nonBoardable=${params.omittedNonBoardable} total=${params.totalEntries}`;
+  return `timetable(${params.filter.type}): ${params.dateTime.toISOString()} ${params.stopId}${routeSuffix} → entries=${params.entriesCount} omitted.nonBoardable=${params.omittedNonBoardable} total=${params.totalEntries}`;
 }
 
 function formatUnknownError(error: unknown) {
@@ -153,9 +162,15 @@ function formatUnknownError(error: unknown) {
   };
 }
 
+interface CurrentRequest {
+  filter: TimetableFilter;
+  stopId: string;
+}
+
 export function useTimetable(repo: TransitRepository): UseTimetableReturn {
   const [timetableData, setTimetableData] = useState<TimetableData | null>(null);
   const requestIdRef = useRef(0);
+  const currentRequestRef = useRef<CurrentRequest | null>(null);
 
   const openTimetable = useCallback(
     async (
@@ -219,6 +234,7 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
           logger.debug(
             formatTimetableDebugMessage({
               filter,
+              dateTime,
               stopId,
               entriesCount: entries.length,
               omittedNonBoardable: omitted.nonBoardable,
@@ -232,6 +248,7 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
           stop: meta.stop,
           routes,
           headsign,
+          viewingDateTime: dateTime,
           serviceDate: getServiceDay(dateTime),
           timetableEntries: entries,
           omitted,
@@ -241,6 +258,7 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
           }),
           agencies: meta.agencies,
         });
+        currentRequestRef.current = { filter, stopId };
 
         return { status: 'opened' };
       } catch (error: unknown) {
@@ -274,8 +292,20 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
     [openTimetable],
   );
 
+  const changeDateTime = useCallback(
+    (dateTime: Date): Promise<TimetableOpenOutcome> => {
+      const current = currentRequestRef.current;
+      if (!current) {
+        return Promise.resolve({ status: 'error' });
+      }
+      return openTimetable({ dateTime, stopId: current.stopId }, current.filter);
+    },
+    [openTimetable],
+  );
+
   const closeTimetable = useCallback(() => {
     requestIdRef.current += 1;
+    currentRequestRef.current = null;
     setTimetableData(null);
   }, []);
 
@@ -283,6 +313,7 @@ export function useTimetable(repo: TransitRepository): UseTimetableReturn {
     timetableData,
     openStopTimetable,
     openRouteHeadsignTimetable,
+    changeDateTime,
     closeTimetable,
   };
 }

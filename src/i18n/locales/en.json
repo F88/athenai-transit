@@ -153,6 +153,12 @@
       "noDropOff": "No drop-off",
       "arriving": "Arr"
     },
+    "dateNav": {
+      "previousDay": "Previous day",
+      "nextDay": "Next day",
+      "now": "Now",
+      "datePickerLabel": "Date and time to view"
+    },
     "grid": {
       "row": {
         "hour": "{{hour}}",

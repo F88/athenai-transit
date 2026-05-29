@@ -1,4 +1,5 @@
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,7 @@ import { getSelectedHeadsignDisplayName } from '@/domain/transit/name-resolver/g
 import { getRouteDisplayNames } from '@/domain/transit/name-resolver/get-route-display-names';
 import { getStopDisplayNames } from '@/domain/transit/name-resolver/get-stop-display-names';
 import { hasUnknownDestination } from '@/domain/transit/has-unknown-destination';
-import { getServiceDayMinutes } from '@/domain/transit/service-day';
+import { getServiceDay, getServiceDayMinutes } from '@/domain/transit/service-day';
 import { applyStopEventAttributeToggles } from '@/domain/transit/timetable-filter';
 import type { TimetableEntryStats } from '@/domain/transit/timetable-stats';
 import { computeTimetableEntryStats } from '@/domain/transit/timetable-stats';
@@ -25,8 +26,9 @@ import type { InfoLevel } from '@/types/app/settings';
 import type { TimetableData } from '@/types/app/timetable';
 import type { Agency } from '@/types/app/transit';
 import type { TimetableEntry, TripInspectionTarget } from '@/types/app/transit-composed';
-import { formatDateParts } from '@/utils/datetime';
+import { formatDateParts, toDatetimeLocalValue } from '@/utils/datetime';
 import { DAY_COLOR_CATEGORY_CLASSES } from '@/utils/day-of-week';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getRouteHeadsignKey } from '../../domain/transit/get-route-headsign-key';
@@ -40,7 +42,7 @@ import { TimetableMetadata } from '../timetable/timetable-metadata';
 interface TimetableDialogProps {
   /** Pass null when the dialog should be closed. */
   data: TimetableData | null;
-  /** Current time reference for highlighting the active hour row. */
+  /** Real-world current time used as the "today" reference. */
   time: Date;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
@@ -48,6 +50,11 @@ interface TimetableDialogProps {
   /** App-wide filter state shared across surfaces. */
   globalFilter: GlobalFilter;
   onInspectTrip?: (target: TripInspectionTarget) => void;
+  /**
+   * Change the datetime of the currently displayed timetable, preserving
+   * the current stop and filter. Used by the date navigation row.
+   */
+  onChangeDateTime: (dateTime: Date) => void;
   onClose: () => void;
 }
 
@@ -134,6 +141,7 @@ function areTimetableDialogPropsEqual(
     prev.infoLevel === next.infoLevel &&
     prev.dataLangs === next.dataLangs &&
     prev.onInspectTrip === next.onInspectTrip &&
+    prev.onChangeDateTime === next.onChangeDateTime &&
     prev.onClose === next.onClose &&
     hasSameRelevantGlobalFilter(prev.globalFilter, next.globalFilter)
   );
@@ -146,6 +154,7 @@ export const TimetableDialog = memo(function TimetableDialog({
   dataLangs,
   globalFilter,
   onInspectTrip,
+  onChangeDateTime,
   onClose,
 }: TimetableDialogProps) {
   const { showOriginOnly, showBoardableOnly, onToggleShowOriginOnly, onToggleShowBoardableOnly } =
@@ -153,9 +162,56 @@ export const TimetableDialog = memo(function TimetableDialog({
   const { t, i18n } = useTranslation();
   const open = data !== null;
   const info = useInfoLevel(infoLevel);
-  const currentHour = Math.floor(getServiceDayMinutes(time) / 60);
+  // Whether the currently viewed service day matches the realtime service day.
+  // Only then is the current-hour highlight meaningful.
+  const isViewingToday = useMemo(() => {
+    if (!data) {
+      return false;
+    }
+    return getServiceDay(time).getTime() === data.serviceDate.getTime();
+  }, [data, time]);
+  const currentHour = isViewingToday ? Math.floor(getServiceDayMinutes(time) / 60) : -1;
   const headerContainerRef = useRef<HTMLDivElement | null>(null);
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const viewingDateTime = data?.viewingDateTime ?? null;
+
+  const handlePrevDay = useCallback(() => {
+    if (!viewingDateTime) {
+      return;
+    }
+    const next = new Date(viewingDateTime);
+    next.setDate(next.getDate() - 1);
+    onChangeDateTime(next);
+  }, [viewingDateTime, onChangeDateTime]);
+
+  const handleNextDay = useCallback(() => {
+    if (!viewingDateTime) {
+      return;
+    }
+    const next = new Date(viewingDateTime);
+    next.setDate(next.getDate() + 1);
+    onChangeDateTime(next);
+  }, [viewingDateTime, onChangeDateTime]);
+
+  const handleResetToNow = useCallback(() => {
+    onChangeDateTime(time);
+  }, [onChangeDateTime, time]);
+
+  const handlePickerChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const raw = event.target.value;
+      if (!raw) {
+        return;
+      }
+      const parsed = new Date(raw);
+      if (Number.isNaN(parsed.getTime())) {
+        return;
+      }
+      onChangeDateTime(parsed);
+    },
+    [onChangeDateTime],
+  );
 
   // Filter state for stop timetable (route+headsign toggle).
   // Empty set = show all timetable (no filter active).
@@ -366,6 +422,38 @@ export const TimetableDialog = memo(function TimetableDialog({
                 filteredCount={routeHeadsignFilteredEntries.length}
               />
             )}
+
+            {/* Date navigation */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePrevDay}
+                aria-label={t('timetable.dateNav.previousDay')}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <input
+                type="datetime-local"
+                value={toDatetimeLocalValue(data.viewingDateTime)}
+                onChange={handlePickerChange}
+                aria-label={t('timetable.dateNav.datePickerLabel')}
+                className="border-input bg-background rounded-md border px-2 py-1 text-sm"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNextDay}
+                aria-label={t('timetable.dateNav.nextDay')}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+              {!isViewingToday && (
+                <Button variant="outline" size="sm" onClick={handleResetToNow}>
+                  {t('timetable.dateNav.now')}
+                </Button>
+              )}
+            </div>
 
             {/* Date time */}
             <TimetableDateLabel serviceDate={data.serviceDate} time={time} lang={dataLangs[0]} />

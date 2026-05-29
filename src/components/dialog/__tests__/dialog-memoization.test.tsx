@@ -258,6 +258,7 @@ function makeTimetableData(): TimetableData {
     type: 'stop',
     stop,
     routes: [route],
+    viewingDateTime: new Date(2026, 3, 1, 8, 0),
     serviceDate: new Date(2026, 3, 1),
     timetableEntries: [makeTimetableEntry()],
     omitted: { nonBoardable: 0 },
@@ -352,6 +353,7 @@ describe('dialog memoization regressions', () => {
       globalFilter,
       onClose: vi.fn(),
       onInspectTrip: vi.fn(),
+      onChangeDateTime: vi.fn(),
     };
 
     const { rerender } = render(<TimetableDialog {...props} />);
@@ -394,6 +396,7 @@ describe('dialog memoization regressions', () => {
       globalFilter,
       onClose: vi.fn(),
       onInspectTrip: vi.fn(),
+      onChangeDateTime: vi.fn(),
     };
 
     const { rerender } = render(<TimetableDialog {...props} />);

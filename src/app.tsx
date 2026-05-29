@@ -297,8 +297,13 @@ export default function App() {
     openNextTripInspection,
     closeTripInspection,
   } = useTripInspection(repo);
-  const { timetableData, openRouteHeadsignTimetable, openStopTimetable, closeTimetable } =
-    useTimetable(repo);
+  const {
+    timetableData,
+    openRouteHeadsignTimetable,
+    openStopTimetable,
+    changeDateTime,
+    closeTimetable,
+  } = useTimetable(repo);
 
   // Disable global shortcuts while primary modal state is active. This
   // includes `useAppDialogs` boolean flags and payload-backed dialog state
@@ -555,6 +560,13 @@ export default function App() {
       });
     },
     [dateTime, openRouteHeadsignTimetable, t],
+  );
+
+  const handleChangeTimetableDateTime = useCallback(
+    (next: Date) => {
+      void changeDateTime(next);
+    },
+    [changeDateTime],
   );
 
   const handleShowStopTimetable = useCallback(
@@ -1066,6 +1078,7 @@ export default function App() {
         dataLangs={langChain}
         globalFilter={globalFilter}
         onInspectTrip={handleInspectTrip}
+        onChangeDateTime={handleChangeTimetableDateTime}
         onClose={closeTimetable}
       />
       <Toaster

@@ -378,6 +378,7 @@ describe('App anchor error toast', () => {
       timetableData: null,
       openStopTimetable: mockOpenStopTimetable,
       openRouteHeadsignTimetable: mockOpenRouteHeadsignTimetable,
+      changeDateTime: vi.fn(),
       closeTimetable: vi.fn(),
     });
     mockOpenStopTimetable.mockResolvedValue({ status: 'opened' });
