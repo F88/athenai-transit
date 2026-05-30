@@ -1,6 +1,6 @@
 {
   "sourceName": "meimon-taiyo-ferry",
-  "checkedAt": "2026-05-29T06:25:20.155Z",
+  "checkedAt": "2026-05-30T06:05:35.893Z",
   "resourceUrls": [
     "https://api.odpt.org/api/v4/files/odpt/MeimonTaiyoFerry/AllLines.zip?date=20260401",
     "https://api.odpt.org/api/v4/files/odpt/MeimonTaiyoFerry/AllLines.zip?date=20260701",
@@ -9,7 +9,7 @@
   "result": "attention",
   "warnings": [
     "REMOTE_KNOWN_BEFORE_PERIOD",
-    "REMOTE_NEW_BEFORE_PERIOD"
+    "REMOTE_KNOWN_BEFORE_PERIOD"
   ],
   "errors": []
 }
