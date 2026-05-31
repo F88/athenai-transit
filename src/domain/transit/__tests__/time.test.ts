@@ -1,63 +1,83 @@
 import { describe, it, expect } from 'vitest';
-import { formatRelativeTime, formatAbsoluteTime, groupByHour } from '../time';
+import { formatAbsoluteTime, getRelativeTimeParts, groupByHour } from '../time';
 
-describe('formatRelativeTime', () => {
-  const now = new Date('2026-03-04T09:00:00');
+describe('getRelativeTimeParts', () => {
+  const now = new Date(2026, 2, 4, 9, 0, 0);
 
-  it('returns "まもなく" when departure is at the same time', () => {
-    expect(formatRelativeTime(new Date('2026-03-04T09:00:00'), now)).toBe('まもなく');
+  it('returns pastWithinMinute for one second in the past', () => {
+    expect(getRelativeTimeParts(new Date(now.getTime() - 1_000), now)).toEqual({
+      kind: 'pastWithinMinute',
+      seconds: 1,
+    });
   });
 
-  it('returns "まもなく" when departure is in the past', () => {
-    expect(formatRelativeTime(new Date('2026-03-04T08:55:00'), now)).toBe('まもなく');
+  it('returns pastWithinMinute for fifty-nine seconds in the past', () => {
+    expect(getRelativeTimeParts(new Date(now.getTime() - 59_000), now)).toEqual({
+      kind: 'pastWithinMinute',
+      seconds: 59,
+    });
   });
 
-  it('returns "あと1分" for 1 minute ahead', () => {
-    expect(formatRelativeTime(new Date('2026-03-04T09:01:00'), now)).toBe('あと1分');
+  it('returns minute-based past at the one-minute boundary', () => {
+    expect(getRelativeTimeParts(new Date(now.getTime() - 60_000), now)).toEqual({
+      kind: 'minutes',
+      tense: 'past',
+      minutes: 1,
+      showPrefix: false,
+    });
   });
 
-  it('returns "あと5分" for 5 minutes ahead', () => {
-    expect(formatRelativeTime(new Date('2026-03-04T09:05:00'), now)).toBe('あと5分');
+  it('returns futureWithinMinute for exact now and sub-minute future', () => {
+    expect(getRelativeTimeParts(new Date(now.getTime()), now)).toEqual({
+      kind: 'futureWithinMinute',
+      seconds: 0,
+    });
+    expect(getRelativeTimeParts(new Date(now.getTime() + 59_000), now)).toEqual({
+      kind: 'futureWithinMinute',
+      seconds: 59,
+    });
   });
 
-  it('floors partial minutes (5m30s => あと5分)', () => {
-    expect(formatRelativeTime(new Date('2026-03-04T09:05:30'), now)).toBe('あと5分');
+  it('returns future minutes with prefix after one minute', () => {
+    expect(getRelativeTimeParts(new Date(now.getTime() + 60_000), now)).toEqual({
+      kind: 'minutes',
+      tense: 'future',
+      minutes: 1,
+      showPrefix: true,
+    });
   });
 
-  it('handles large time differences', () => {
-    expect(formatRelativeTime(new Date('2026-03-04T10:00:00'), now)).toBe('あと60分');
-  });
-
-  it('returns "まもなく" for exactly 0 seconds difference', () => {
-    const same = new Date(now.getTime());
-    expect(formatRelativeTime(same, now)).toBe('まもなく');
-  });
-
-  it('returns "まもなく" for sub-minute future (30 seconds)', () => {
-    const dep = new Date(now.getTime() + 30_000);
-    expect(formatRelativeTime(dep, now)).toBe('まもなく');
+  it('omits the future prefix when hidePrefix is enabled', () => {
+    expect(
+      getRelativeTimeParts(new Date(now.getTime() + 5 * 60_000), now, { hidePrefix: true }),
+    ).toEqual({
+      kind: 'minutes',
+      tense: 'future',
+      minutes: 5,
+      showPrefix: false,
+    });
   });
 });
 
 describe('formatAbsoluteTime', () => {
   it('formats morning time without leading zero on hour', () => {
-    expect(formatAbsoluteTime(new Date('2026-03-04T09:05:00'))).toBe('9:05');
+    expect(formatAbsoluteTime(new Date(2026, 2, 4, 9, 5, 0))).toBe('9:05');
   });
 
   it('formats afternoon time', () => {
-    expect(formatAbsoluteTime(new Date('2026-03-04T14:30:00'))).toBe('14:30');
+    expect(formatAbsoluteTime(new Date(2026, 2, 4, 14, 30, 0))).toBe('14:30');
   });
 
   it('formats midnight as 0:00', () => {
-    expect(formatAbsoluteTime(new Date('2026-03-04T00:00:00'))).toBe('0:00');
+    expect(formatAbsoluteTime(new Date(2026, 2, 4, 0, 0, 0))).toBe('0:00');
   });
 
   it('pads minutes with leading zero', () => {
-    expect(formatAbsoluteTime(new Date('2026-03-04T09:03:00'))).toBe('9:03');
+    expect(formatAbsoluteTime(new Date(2026, 2, 4, 9, 3, 0))).toBe('9:03');
   });
 
   it('formats :00 minutes correctly', () => {
-    expect(formatAbsoluteTime(new Date('2026-03-04T12:00:00'))).toBe('12:00');
+    expect(formatAbsoluteTime(new Date(2026, 2, 4, 12, 0, 0))).toBe('12:00');
   });
 });
 

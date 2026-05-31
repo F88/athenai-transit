@@ -1,28 +1,55 @@
 const MILLISECONDS_PER_MINUTE = 60 * 1000;
 const MINUTES_PER_HOUR = 60;
 
+export type RelativeTimeParts =
+  | { kind: 'pastWithinMinute'; seconds: number }
+  | { kind: 'futureWithinMinute'; seconds: number }
+  | {
+      kind: 'minutes';
+      tense: 'past' | 'future';
+      minutes: number;
+      showPrefix: boolean;
+    };
+
 /**
- * Format the time difference between a departure and now as a
- * human-readable Japanese relative string.
+ * Build locale-agnostic relative-time parts while keeping sub-minute seconds.
  *
- * @param departureTime - Scheduled departure time.
- * @param now - Current reference time.
- * @returns `"まもなく"` when <= 0 min, otherwise `"あとN分"`.
- *
- * @example
- * ```ts
- * const now = new Date("2026-03-04T09:00:00");
- * const dep = new Date("2026-03-04T09:05:00");
- * formatRelativeTime(dep, now); // => "あと5分"
- * ```
+ * - `pastWithinMinute`: 1 to 59 seconds after the target time
+ * - `futureWithinMinute`: target time through 59 seconds before departure
+ * - `minutes`: minute-based past/future display for all other cases
  */
-export function formatRelativeTime(departureTime: Date, now: Date): string {
-  const diffMs = departureTime.getTime() - now.getTime();
-  const diffMin = Math.floor(diffMs / MILLISECONDS_PER_MINUTE);
-  if (diffMin <= 0) {
-    return 'まもなく';
+export function getRelativeTimeParts(
+  targetTime: Date,
+  now: Date,
+  options: { hidePrefix?: boolean } = {},
+): RelativeTimeParts {
+  const { hidePrefix = false } = options;
+  const diffMs = targetTime.getTime() - now.getTime();
+
+  if (diffMs < 0) {
+    const seconds = Math.floor(Math.abs(diffMs) / 1000);
+    if (seconds < 60) {
+      return { kind: 'pastWithinMinute', seconds };
+    }
+
+    return {
+      kind: 'minutes',
+      tense: 'past',
+      minutes: Math.floor(Math.abs(diffMs) / MILLISECONDS_PER_MINUTE),
+      showPrefix: false,
+    };
   }
-  return `あと${diffMin}分`;
+
+  if (diffMs < MILLISECONDS_PER_MINUTE) {
+    return { kind: 'futureWithinMinute', seconds: Math.floor(diffMs / 1000) };
+  }
+
+  return {
+    kind: 'minutes',
+    tense: 'future',
+    minutes: Math.floor(diffMs / MILLISECONDS_PER_MINUTE),
+    showPrefix: !hidePrefix,
+  };
 }
 
 /**
