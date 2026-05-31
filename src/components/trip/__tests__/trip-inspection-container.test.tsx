@@ -382,4 +382,69 @@ describe('TripInspectionContainer', () => {
 
     expect(onOpenChange).toHaveBeenLastCalledWith(false);
   });
+
+  it('forwards trip-inspection state and display props to the dialog when open', () => {
+    const snapshot = makeSnapshot();
+    const targets = [makeTarget(), makeTarget({ stopIndex: 3 })];
+    currentSnapshot = snapshot;
+    currentTargets = targets;
+    currentTargetIndex = 1;
+    currentShowNoticeNonce = 4;
+
+    render(
+      <TripInspectionContainer
+        repo={repo}
+        relativeTimeNow={new Date(2026, 4, 31, 8, 0)}
+        infoLevel="verbose"
+        dataLangs={['en', 'ja']}
+        onSelectStopById={vi.fn()}
+      />,
+    );
+
+    const props = getLastTripInspectionDialogProps();
+    expect(props.open).toBe(true);
+    expect(props.snapshot).toBe(snapshot);
+    expect(props.tripInspectionTargets).toBe(targets);
+    expect(props.currentTripInspectionTargetIndex).toBe(1);
+    expect(props.showNoticeNonce).toBe(4);
+    expect(props.infoLevel).toBe('verbose');
+    expect(props.dataLangs).toEqual(['en', 'ja']);
+  });
+
+  it('wires the dialog pager to the hook prev / next handlers', () => {
+    render(
+      <TripInspectionContainer
+        repo={repo}
+        relativeTimeNow={new Date(2026, 4, 31, 8, 0)}
+        infoLevel="normal"
+        dataLangs={['ja']}
+        onSelectStopById={vi.fn()}
+      />,
+    );
+
+    const props = getLastTripInspectionDialogProps();
+    props.onOpenPreviousTrip();
+    props.onOpenNextTrip();
+
+    expect(openPreviousTripInspection).toHaveBeenCalledTimes(1);
+    expect(openNextTripInspection).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards onSelectStopById to the dialog', () => {
+    const onSelectStopById = vi.fn();
+
+    render(
+      <TripInspectionContainer
+        repo={repo}
+        relativeTimeNow={new Date(2026, 4, 31, 8, 0)}
+        infoLevel="normal"
+        dataLangs={['ja']}
+        onSelectStopById={onSelectStopById}
+      />,
+    );
+
+    getLastTripInspectionDialogProps().onSelectStopById?.('stop-9');
+
+    expect(onSelectStopById).toHaveBeenCalledWith('stop-9');
+  });
 });
