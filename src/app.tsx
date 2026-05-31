@@ -26,6 +26,7 @@ import i18n from './i18n';
 // lib
 import { applyAppTheme } from './lib/app-theme';
 import { createLogger } from './lib/logger';
+import { showOpenOutcomeToast } from './lib/open-outcome-toast';
 
 // domain
 import { type AnchorEntry } from './domain/portal/anchor';
@@ -45,7 +46,6 @@ import { createStopReferenceSnapshot } from './domain/transit/stop-reference-sna
 import { buildStopRouteTypeMap } from './domain/transit/stop-route-type-map';
 import { getTimetableOpenOutcomeMessage } from './domain/transit/timetable-message';
 import { getStopServiceState } from './domain/transit/timetable-utils';
-import { getTripInspectionOpenOutcomeMessage } from './domain/transit/trip-inspection-message';
 
 // hooks
 import { useAnchorRefresh } from './hooks/use-anchor-refresh';
@@ -65,7 +65,6 @@ import { useStopNavigation } from './hooks/use-stop-navigation';
 import { useStopParamHandler } from './hooks/use-stop-param-handler';
 import { useStopsForBounds } from './hooks/use-stops-for-bounds';
 import { useTransitRepository } from './hooks/use-transit-repository';
-import { useTripInspection } from './hooks/use-trip-inspection';
 import { useUserSettings } from './hooks/use-user-settings';
 import { useWebStorageAvailability } from './hooks/use-web-storage-availability';
 
@@ -95,7 +94,10 @@ import {
   TimetableContainer,
   type TimetableContainerHandle,
 } from './components/timetable/timetable-container';
-import { TripInspectionDialog } from './components/dialog/trip-inspection-dialog';
+import {
+  TripInspectionContainer,
+  type TripInspectionContainerHandle,
+} from './components/trip/trip-inspection-container';
 import { MapOverlay } from './components/map/map-overlay';
 import { MapView } from './components/map/map-view';
 import { MapViewContainer } from './components/map/map-view-container';
@@ -103,27 +105,6 @@ import { Toaster } from './components/ui/sonner';
 import { MapSlotProvider } from './contexts/map-slot-provider';
 
 const logger = createLogger('App');
-
-interface OpenOutcomeToastMessage {
-  severity: 'warning' | 'error';
-  messageKey: string;
-}
-
-function showOpenOutcomeToast(
-  message: OpenOutcomeToastMessage | null,
-  t: ReturnType<typeof useTranslation>['t'],
-): void {
-  if (!message) {
-    return;
-  }
-
-  if (message.severity === 'warning') {
-    toast.warning(t(message.messageKey));
-    return;
-  }
-
-  toast.error(t(message.messageKey));
-}
 
 export default function App() {
   const { t } = useTranslation();
@@ -288,17 +269,15 @@ export default function App() {
     openSearchModal,
     openShortcutHelp,
   } = useAppDialogs();
-  const {
-    tripInspectionSnapshot,
-    tripInspectionTargets,
-    currentTripInspectionTargetIndex,
-    showNoticeNonce,
-    openTripInspectionFromTarget,
-    openTripInspectionFromStopId,
-    openPreviousTripInspection,
-    openNextTripInspection,
-    closeTripInspection,
-  } = useTripInspection(repo);
+  // `useTripInspection` is owned by `TripInspectionContainer`, not by `App`.
+  // We hold a ref to call its imperative open methods from external launch
+  // paths (BottomSheet / StopSearchDialog / TimetableContainer) without
+  // re-rendering the entire app whenever the trip-inspection state changes
+  // (e.g. on every prev/next pager step). The container notifies us of
+  // open/close transitions via `onOpenChange` so we can still gate global
+  // shortcuts on dialog visibility.
+  const tripInspectionRef = useRef<TripInspectionContainerHandle>(null);
+  const [isTripInspectionOpen, setIsTripInspectionOpen] = useState(false);
   // `useTimetable` is owned by `TimetableContainer`, not by `App`. We hold a
   // ref to call its imperative open methods from external launch paths
   // (map markers / BottomSheet / StopSearchDialog) without re-rendering
@@ -324,7 +303,7 @@ export default function App() {
       !dataSourceSettingsDialogOpen &&
       !shortcutHelpOpen &&
       !isTimetableOpen &&
-      tripInspectionSnapshot === null,
+      !isTripInspectionOpen,
     handlers: {
       onOpenSearch: openSearchModal,
       onOpenHelp: openShortcutHelp,
@@ -577,38 +556,20 @@ export default function App() {
     [dateTime, t],
   );
 
+  // Thin launch wrappers over the imperative handle exposed by
+  // `TripInspectionContainer`. The container owns `useTripInspection` and
+  // the open-outcome toast; `App` only forwards the launch request and the
+  // current time (captured at click time so it never goes stale).
   const handleOpenTripInspectionByStopId = useCallback(
     (stopId: string) => {
-      const serviceDate = getServiceDay(dateTime);
-
-      void openTripInspectionFromStopId({
-        stopId,
-        now: dateTime,
-        serviceDate,
-      }).then((status) => {
-        showOpenOutcomeToast(getTripInspectionOpenOutcomeMessage(status), t);
-      });
+      tripInspectionRef.current?.openByStopId({ stopId, referenceDateTime: dateTime });
     },
-    [dateTime, openTripInspectionFromStopId, t],
+    [dateTime],
   );
 
-  const handleInspectTrip = useCallback(
-    (target: TripInspectionTarget) => {
-      void openTripInspectionFromTarget(target, 'direct-open').then((status) => {
-        showOpenOutcomeToast(getTripInspectionOpenOutcomeMessage(status), t);
-      });
-    },
-    [openTripInspectionFromTarget, t],
-  );
-
-  const handleInspectTripFromDialog = useCallback(
-    (target: TripInspectionTarget) => {
-      void openTripInspectionFromTarget(target, 'trip-stops-time-select').then((status) => {
-        showOpenOutcomeToast(getTripInspectionOpenOutcomeMessage(status), t);
-      });
-    },
-    [openTripInspectionFromTarget, t],
-  );
+  const handleInspectTrip = useCallback((target: TripInspectionTarget) => {
+    tripInspectionRef.current?.openByTarget(target);
+  }, []);
 
   const handleSelectStopFromTripInspection = useCallback(
     (stopId: string) => {
@@ -623,15 +584,6 @@ export default function App() {
       })();
     },
     [navigateAndFocusStop, recordStopMetaSelection, repo, t],
-  );
-
-  const handleTripInspectionOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open) {
-        closeTripInspection();
-      }
-    },
-    [closeTripInspection],
   );
 
   // Wrap selectStop to also record in history.
@@ -1051,20 +1003,14 @@ export default function App() {
         onOpenChange={setDataSourceSettingsDialogOpen}
       />
       <ShortcutHelpDialog open={shortcutHelpOpen} onOpenChange={setShortcutHelpOpen} />
-      <TripInspectionDialog
-        open={tripInspectionSnapshot !== null}
-        snapshot={tripInspectionSnapshot}
-        tripInspectionTargets={tripInspectionTargets}
-        currentTripInspectionTargetIndex={currentTripInspectionTargetIndex}
-        showNoticeNonce={showNoticeNonce}
-        now={dateTime}
+      <TripInspectionContainer
+        ref={tripInspectionRef}
+        repo={repo}
+        relativeTimeNow={dateTime}
         infoLevel={settings.infoLevel}
         dataLangs={langChain}
-        onOpenPreviousTrip={openPreviousTripInspection}
-        onOpenNextTrip={openNextTripInspection}
-        onInspectTrip={handleInspectTripFromDialog}
         onSelectStopById={handleSelectStopFromTripInspection}
-        onOpenChange={handleTripInspectionOpenChange}
+        onOpenChange={setIsTripInspectionOpen}
       />
       <TimetableContainer
         ref={timetableRef}
