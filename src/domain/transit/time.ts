@@ -1,28 +1,24 @@
 const MILLISECONDS_PER_MINUTE = 60 * 1000;
 const MINUTES_PER_HOUR = 60;
 
+export type RelativeTimeDisplay =
+  | { kind: 'past'; minutes: number }
+  | { kind: 'future'; minutes: number };
+
 /**
- * Format the time difference between a departure and now as a
- * human-readable Japanese relative string.
+ * Classify a wall-clock difference into signed minute buckets for the UI.
  *
- * @param departureTime - Scheduled departure time.
- * @param now - Current reference time.
- * @returns `"まもなく"` when <= 0 min, otherwise `"あとN分"`.
- *
- * @example
- * ```ts
- * const now = new Date("2026-03-04T09:00:00");
- * const dep = new Date("2026-03-04T09:05:00");
- * formatRelativeTime(dep, now); // => "あと5分"
- * ```
+ * - any past time: negative minutes
+ * - present or future: positive minutes, floored to whole minutes
  */
-export function formatRelativeTime(departureTime: Date, now: Date): string {
-  const diffMs = departureTime.getTime() - now.getTime();
-  const diffMin = Math.floor(diffMs / MILLISECONDS_PER_MINUTE);
-  if (diffMin <= 0) {
-    return 'まもなく';
+export function classifyRelativeTime(targetTime: Date, now: Date): RelativeTimeDisplay {
+  const diffMs = targetTime.getTime() - now.getTime();
+
+  if (diffMs < 0) {
+    return { kind: 'past', minutes: Math.ceil(Math.abs(diffMs) / MILLISECONDS_PER_MINUTE) };
   }
-  return `あと${diffMin}分`;
+
+  return { kind: 'future', minutes: Math.floor(diffMs / MILLISECONDS_PER_MINUTE) };
 }
 
 /**
