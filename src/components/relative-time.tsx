@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { classifyRelativeTime } from '../domain/transit/time';
 import { cn } from '../lib/utils';
 import { relativeTimeStyle } from '../utils/time-style';
 import type { ExtendedDisplaySize } from './shared/display-size';
@@ -35,6 +34,25 @@ interface RelativeTimeProps {
   className?: string;
 }
 
+type RelativeTimeDisplay =
+  | { kind: 'past'; minutes: number }
+  | { kind: 'imminent' }
+  | { kind: 'future'; minutes: number };
+
+function getRelativeTimeDisplay(diffMs: number): RelativeTimeDisplay {
+  if (diffMs < 0) {
+    return { kind: 'past', minutes: Math.ceil(Math.abs(diffMs) / 60000) };
+  }
+
+  const diffMin = Math.floor(diffMs / 60000);
+
+  if (diffMin === 0) {
+    return { kind: 'imminent' };
+  }
+
+  return { kind: 'future', minutes: diffMin };
+}
+
 /**
  * Displays relative time with emphasis on the number.
  *
@@ -57,7 +75,7 @@ export function RelativeTime({
 }: RelativeTimeProps) {
   const { t } = useTranslation();
   const diffMs = time.getTime() - now.getTime();
-  const display = classifyRelativeTime(time, now);
+  const display = getRelativeTimeDisplay(diffMs);
   const style = relativeTimeStyle(Math.floor(diffMs / 1000));
   const v = variants[size];
 
@@ -77,7 +95,7 @@ export function RelativeTime({
       )}
       style={{ color: style.color, opacity: style.opacity }}
     >
-      {display.kind === 'future' && display.minutes === 0 ? (
+      {display.kind === 'imminent' ? (
         <span className={v.imminent}>{t('stopTimeView.soon')}</span>
       ) : display.kind === 'past' ? (
         <span>
