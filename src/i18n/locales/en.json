@@ -338,6 +338,9 @@
       "search": "Search stops",
       "help": "Show this help",
       "close": "Close dialog"
+    },
+    "note": {
+      "dataSourceSettings": "📦 Open Data settings from the button in the top-right corner of the app info dialog. There you can choose which data to use."
     }
   },
   "tripInspection": {

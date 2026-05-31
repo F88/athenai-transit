@@ -70,6 +70,9 @@ export function ShortcutHelpDialog({ open, onOpenChange }: ShortcutHelpDialogPro
               </div>
             ))}
           </dl>
+          <div className="text-muted-foreground mt-4 border-t pt-3 text-xs leading-relaxed">
+            <p>{t('shortcut.note.dataSourceSettings')}</p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
