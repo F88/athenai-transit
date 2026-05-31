@@ -1,10 +1,6 @@
 const MILLISECONDS_PER_MINUTE = 60 * 1000;
 const MINUTES_PER_HOUR = 60;
 
-export type RelativeTimeDisplay =
-  | { kind: 'past'; minutes: number }
-  | { kind: 'future'; minutes: number };
-
 export type RelativeTimeParts =
   | { kind: 'pastWithinMinute'; seconds: number }
   | { kind: 'futureWithinMinute'; seconds: number }
@@ -14,22 +10,6 @@ export type RelativeTimeParts =
       minutes: number;
       showPrefix: boolean;
     };
-
-/**
- * Round a wall-clock difference into signed minute buckets for the UI.
- *
- * - past time: elapsed minutes floored to whole minutes
- * - present or future: positive minutes, floored to whole minutes
- */
-export function getRoundedRelativeMinutes(targetTime: Date, now: Date): RelativeTimeDisplay {
-  const diffMs = targetTime.getTime() - now.getTime();
-
-  if (diffMs < 0) {
-    return { kind: 'past', minutes: Math.floor(Math.abs(diffMs) / MILLISECONDS_PER_MINUTE) };
-  }
-
-  return { kind: 'future', minutes: Math.floor(diffMs / MILLISECONDS_PER_MINUTE) };
-}
 
 /**
  * Build locale-agnostic relative-time parts while keeping sub-minute seconds.
