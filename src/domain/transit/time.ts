@@ -5,20 +5,71 @@ export type RelativeTimeDisplay =
   | { kind: 'past'; minutes: number }
   | { kind: 'future'; minutes: number };
 
+export type RelativeTimeParts =
+  | { kind: 'pastWithinMinute'; seconds: number }
+  | { kind: 'futureWithinMinute'; seconds: number }
+  | {
+      kind: 'minutes';
+      tense: 'past' | 'future';
+      minutes: number;
+      showPrefix: boolean;
+    };
+
 /**
- * Classify a wall-clock difference into signed minute buckets for the UI.
+ * Round a wall-clock difference into signed minute buckets for the UI.
  *
- * - any past time: negative minutes
+ * - past time: elapsed minutes floored to whole minutes
  * - present or future: positive minutes, floored to whole minutes
  */
-export function classifyRelativeTime(targetTime: Date, now: Date): RelativeTimeDisplay {
+export function getRoundedRelativeMinutes(targetTime: Date, now: Date): RelativeTimeDisplay {
   const diffMs = targetTime.getTime() - now.getTime();
 
   if (diffMs < 0) {
-    return { kind: 'past', minutes: Math.ceil(Math.abs(diffMs) / MILLISECONDS_PER_MINUTE) };
+    return { kind: 'past', minutes: Math.floor(Math.abs(diffMs) / MILLISECONDS_PER_MINUTE) };
   }
 
   return { kind: 'future', minutes: Math.floor(diffMs / MILLISECONDS_PER_MINUTE) };
+}
+
+/**
+ * Build locale-agnostic relative-time parts while keeping sub-minute seconds.
+ *
+ * - `pastWithinMinute`: 1 to 59 seconds after the target time
+ * - `futureWithinMinute`: target time through 59 seconds before departure
+ * - `minutes`: minute-based past/future display for all other cases
+ */
+export function getRelativeTimeParts(
+  targetTime: Date,
+  now: Date,
+  options: { hidePrefix?: boolean } = {},
+): RelativeTimeParts {
+  const { hidePrefix = false } = options;
+  const diffMs = targetTime.getTime() - now.getTime();
+
+  if (diffMs < 0) {
+    const seconds = Math.floor(Math.abs(diffMs) / 1000);
+    if (seconds < 60) {
+      return { kind: 'pastWithinMinute', seconds };
+    }
+
+    return {
+      kind: 'minutes',
+      tense: 'past',
+      minutes: Math.floor(Math.abs(diffMs) / MILLISECONDS_PER_MINUTE),
+      showPrefix: false,
+    };
+  }
+
+  if (diffMs < MILLISECONDS_PER_MINUTE) {
+    return { kind: 'futureWithinMinute', seconds: Math.floor(diffMs / 1000) };
+  }
+
+  return {
+    kind: 'minutes',
+    tense: 'future',
+    minutes: Math.floor(diffMs / MILLISECONDS_PER_MINUTE),
+    showPrefix: !hidePrefix,
+  };
 }
 
 /**

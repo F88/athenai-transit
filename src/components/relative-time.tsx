@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { classifyRelativeTime } from '../domain/transit/time';
+import { getRelativeTimeParts } from '../domain/transit/time';
 import { cn } from '../lib/utils';
 import { relativeTimeStyle } from '../utils/time-style';
 import type { ExtendedDisplaySize } from './shared/display-size';
@@ -57,11 +57,15 @@ export function RelativeTime({
 }: RelativeTimeProps) {
   const { t } = useTranslation();
   const diffMs = time.getTime() - now.getTime();
-  const display = classifyRelativeTime(time, now);
+  const parts = getRelativeTimeParts(time, now, { hidePrefix });
   const style = relativeTimeStyle(Math.floor(diffMs / 1000));
   const v = variants[size];
 
-  if (display.kind === 'past' && !showPastTime) {
+  if (parts.kind === 'pastWithinMinute') {
+    return null;
+  }
+
+  if (parts.kind === 'minutes' && parts.tense === 'past' && !showPastTime) {
     return null;
   }
 
@@ -77,18 +81,20 @@ export function RelativeTime({
       )}
       style={{ color: style.color, opacity: style.opacity }}
     >
-      {display.kind === 'future' && display.minutes === 0 ? (
+      {parts.kind === 'futureWithinMinute' ? (
         <span className={v.imminent}>{t('stopTimeView.soon')}</span>
-      ) : display.kind === 'past' ? (
+      ) : parts.tense === 'past' ? (
         <span>
-          <span className={v.number}>-{display.minutes}</span>
+          <span className={v.number}>-{parts.minutes}</span>
           <span className={`${v.label} font-normal`}>{t('stopTimeView.minutes')}</span>
         </span>
       ) : (
         <>
-          {!hidePrefix && <span className={`${v.label} font-normal`}>{t('stopTimeView.in')}</span>}
+          {parts.showPrefix && (
+            <span className={`${v.label} font-normal`}>{t('stopTimeView.in')}</span>
+          )}
           <span>
-            <span className={v.number}>{display.minutes}</span>
+            <span className={v.number}>{parts.minutes}</span>
             <span className={`${v.label} font-normal`}>{t('stopTimeView.minutes')}</span>
           </span>
         </>

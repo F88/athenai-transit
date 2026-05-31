@@ -1,55 +1,118 @@
 import { describe, it, expect } from 'vitest';
-import { classifyRelativeTime, formatAbsoluteTime, groupByHour } from '../time';
+import {
+  formatAbsoluteTime,
+  getRelativeTimeParts,
+  getRoundedRelativeMinutes,
+  groupByHour,
+} from '../time';
 
-describe('classifyRelativeTime', () => {
+describe('getRoundedRelativeMinutes', () => {
   const now = new Date(2026, 2, 4, 9, 0, 0);
 
   it('returns zero future minutes for exactly the same time', () => {
-    expect(classifyRelativeTime(new Date(now.getTime()), now)).toEqual({
+    expect(getRoundedRelativeMinutes(new Date(now.getTime()), now)).toEqual({
       kind: 'future',
       minutes: 0,
     });
   });
 
   it('returns zero future minutes for sub-minute future', () => {
-    expect(classifyRelativeTime(new Date(now.getTime() + 30_000), now)).toEqual({
+    expect(getRoundedRelativeMinutes(new Date(now.getTime() + 30_000), now)).toEqual({
       kind: 'future',
       minutes: 0,
     });
   });
 
-  it('returns past one minute for sub-minute past', () => {
-    expect(classifyRelativeTime(new Date(now.getTime() - 30_000), now)).toEqual({
+  it('returns past zero minutes for sub-minute past', () => {
+    expect(getRoundedRelativeMinutes(new Date(now.getTime() - 30_000), now)).toEqual({
       kind: 'past',
-      minutes: 1,
+      minutes: 0,
     });
   });
 
   it('returns past minutes from one minute ago and earlier', () => {
-    expect(classifyRelativeTime(new Date(now.getTime() - 60_000), now)).toEqual({
+    expect(getRoundedRelativeMinutes(new Date(now.getTime() - 60_000), now)).toEqual({
       kind: 'past',
       minutes: 1,
     });
   });
 
-  it('rounds past minutes up after the one-minute boundary', () => {
-    expect(classifyRelativeTime(new Date(now.getTime() - 61_000), now)).toEqual({
+  it('keeps past minutes floored after the one-minute boundary', () => {
+    expect(getRoundedRelativeMinutes(new Date(now.getTime() - 61_000), now)).toEqual({
       kind: 'past',
-      minutes: 2,
+      minutes: 1,
     });
   });
 
   it('returns one future minute exactly at the one-minute boundary', () => {
-    expect(classifyRelativeTime(new Date(now.getTime() + 60_000), now)).toEqual({
+    expect(getRoundedRelativeMinutes(new Date(now.getTime() + 60_000), now)).toEqual({
       kind: 'future',
       minutes: 1,
     });
   });
 
   it('returns future minutes from one minute ahead and later', () => {
-    expect(classifyRelativeTime(new Date(now.getTime() + 5 * 60_000 + 30_000), now)).toEqual({
+    expect(getRoundedRelativeMinutes(new Date(now.getTime() + 5 * 60_000 + 30_000), now)).toEqual({
       kind: 'future',
       minutes: 5,
+    });
+  });
+});
+
+describe('getRelativeTimeParts', () => {
+  const now = new Date(2026, 2, 4, 9, 0, 0);
+
+  it('returns pastWithinMinute for one second in the past', () => {
+    expect(getRelativeTimeParts(new Date(now.getTime() - 1_000), now)).toEqual({
+      kind: 'pastWithinMinute',
+      seconds: 1,
+    });
+  });
+
+  it('returns pastWithinMinute for fifty-nine seconds in the past', () => {
+    expect(getRelativeTimeParts(new Date(now.getTime() - 59_000), now)).toEqual({
+      kind: 'pastWithinMinute',
+      seconds: 59,
+    });
+  });
+
+  it('returns minute-based past at the one-minute boundary', () => {
+    expect(getRelativeTimeParts(new Date(now.getTime() - 60_000), now)).toEqual({
+      kind: 'minutes',
+      tense: 'past',
+      minutes: 1,
+      showPrefix: false,
+    });
+  });
+
+  it('returns futureWithinMinute for exact now and sub-minute future', () => {
+    expect(getRelativeTimeParts(new Date(now.getTime()), now)).toEqual({
+      kind: 'futureWithinMinute',
+      seconds: 0,
+    });
+    expect(getRelativeTimeParts(new Date(now.getTime() + 59_000), now)).toEqual({
+      kind: 'futureWithinMinute',
+      seconds: 59,
+    });
+  });
+
+  it('returns future minutes with prefix after one minute', () => {
+    expect(getRelativeTimeParts(new Date(now.getTime() + 60_000), now)).toEqual({
+      kind: 'minutes',
+      tense: 'future',
+      minutes: 1,
+      showPrefix: true,
+    });
+  });
+
+  it('omits the future prefix when hidePrefix is enabled', () => {
+    expect(
+      getRelativeTimeParts(new Date(now.getTime() + 5 * 60_000), now, { hidePrefix: true }),
+    ).toEqual({
+      kind: 'minutes',
+      tense: 'future',
+      minutes: 5,
+      showPrefix: false,
     });
   });
 });

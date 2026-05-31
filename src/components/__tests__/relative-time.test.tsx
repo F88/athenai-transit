@@ -29,6 +29,12 @@ describe('RelativeTime', () => {
     expect(container.textContent).toBe('まもなく');
   });
 
+  it('renders imminent text at the exact current time', () => {
+    const { container } = renderRelativeTime({ time: new Date(2026, 4, 31, 8, 0, 0) });
+
+    expect(container.textContent).toBe('まもなく');
+  });
+
   it('renders nothing for sub-minute past by default', () => {
     const { container } = renderRelativeTime({
       time: new Date(2026, 4, 31, 7, 59, 30),
@@ -37,13 +43,13 @@ describe('RelativeTime', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders negative one minute for sub-minute past when past time is shown', () => {
+  it('still renders nothing for sub-minute past when past time is shown', () => {
     const { container } = renderRelativeTime({
       time: new Date(2026, 4, 31, 7, 59, 30),
       showPastTime: true,
     });
 
-    expect(container.textContent).toBe('-1分');
+    expect(container.firstChild).toBeNull();
   });
 
   it('renders prefix plus minutes for future departures by default', () => {
@@ -78,6 +84,12 @@ describe('RelativeTime', () => {
 
   it('renders one minute at the exact future boundary', () => {
     const { container } = renderRelativeTime({ time: new Date(2026, 4, 31, 8, 1, 0) });
+
+    expect(container.textContent).toBe('あと1分');
+  });
+
+  it('renders one minute just after the future boundary', () => {
+    const { container } = renderRelativeTime({ time: new Date(2026, 4, 31, 8, 1, 1) });
 
     expect(container.textContent).toBe('あと1分');
   });
