@@ -9,6 +9,10 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Data-source: 文京区コミュニティバス「Bーぐる」(日立自動車交通株式会社運行) を追加。
+
 ### Changed
 
 - Trip inspection: `useTripInspection` の所有を新設の `TripInspectionContainer` (`src/components/trip/trip-inspection-container.tsx`) に移し、ダイアログ内の prev / next 移動や trip 再選択で `App` 全体が再 render しないようにした。
