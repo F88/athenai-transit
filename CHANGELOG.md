@@ -15,13 +15,15 @@ and this project adheres to [CalVer](https://calver.org/).
 - Trip inspection: 外部 launch 経路 (BottomSheet / StopSearchDialog / TimetableContainer) は imperative handle 経由で維持しつつ、open outcome toast の表示を `src/lib/open-outcome-toast.ts` に共通化した。
 - RelativeTime: `getRelativeTimeParts` を sub-minute past / sub-minute future / minute-based past/future の semantic state へ整理し、`RelativeTime` の表示を「過去 1 分未満は非表示」「0..59 秒は `まもなく`」「60 秒以上は `-N分` / `あとN分`」の境界仕様に揃えた。
 - RelativeTime: component / domain test を境界ケース中心に拡充し、Storybook も output 確認用 story と style band 確認用 story に整理した。
-- Data: kawasaki-city-bus の GTFS resource を 20260528 版へ更新。
-- Data: iyotetsu-bus の GTFS resource を 20260519 版へ更新。
-- Data: ota-c-bus の GTFS resource を 20260601 版へ更新。
-- Data: shinagawa-c-bus の GTFS resource を 20260601 版へ更新。
-- Data: meguro-c-bus の GTFS resource を 20260601 版へ更新。
-- Data: odakyu-bus の GTFS resource を 20260601 版へ更新。
-- Data: yokohama-municipal-bus の GTFS resource を 20260601 版へ更新。
+- DataSourceSettings: データソース設定ダイアログの営業期間バッジを、参照日に対する lifecycle 状態 (期間内 / 期限切れ / 未開始 / 判定不能) で色 / アイコン分けするようにした。判定は純関数 `getDataPeriodStatus`、dialog の state 所有は新設の `DataSourceSettingsContainer` に分離した (#270)。
+- DataSourceSettings: 営業期間の判定基準日を GTFS service day (03:00 境界) で算出するようにし (`getServiceDayKey`)、深夜帯でもアプリ全体の「今日」の決め方に揃えた (#271)。
+- Data-source: kawasaki-city-bus の GTFS resource を 20260528 版へ更新。
+- Data-source: iyotetsu-bus の GTFS resource を 20260519 版へ更新。
+- Data-source: ota-c-bus の GTFS resource を 20260601 版へ更新。
+- Data-source: shinagawa-c-bus の GTFS resource を 20260601 版へ更新。
+- Data-source: meguro-c-bus の GTFS resource を 20260601 版へ更新。
+- Data-source: odakyu-bus の GTFS resource を 20260601 版へ更新。
+- Data-source: yokohama-municipal-bus の GTFS resource を 20260601 版へ更新。
 
 ## [2026.05.29]
 
