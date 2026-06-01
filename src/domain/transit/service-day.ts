@@ -14,6 +14,8 @@
  * getServiceDay(new Date('2026-03-11T04:00:00')) // → 2026-03-11T00:00:00
  */
 
+import { formatDateKey } from './calendar-utils';
+
 /**
  * Hour at which the GTFS service day changes.
  *
@@ -40,6 +42,21 @@ export function getServiceDay(now: Date): Date {
   }
   result.setHours(0, 0, 0, 0);
   return result;
+}
+
+/**
+ * The GTFS service day for a given real-world time, as a `YYYYMMDD` key.
+ *
+ * Convenience for callers that only need the day key (not the `Date`);
+ * equivalent to `formatDateKey(getServiceDay(now))`. Use this wherever the
+ * "current service day" is compared as a key so the
+ * {@link SERVICE_DAY_BOUNDARY_HOUR} boundary is applied consistently.
+ *
+ * @param now - The real-world current time.
+ * @returns The service day as a `YYYYMMDD` key.
+ */
+export function getServiceDayKey(now: Date): string {
+  return formatDateKey(getServiceDay(now));
 }
 
 /**

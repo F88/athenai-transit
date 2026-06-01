@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { SERVICE_DAY_BOUNDARY_HOUR, getServiceDay, getServiceDayMinutes } from '../service-day';
+import {
+  SERVICE_DAY_BOUNDARY_HOUR,
+  getServiceDay,
+  getServiceDayKey,
+  getServiceDayMinutes,
+} from '../service-day';
 
 describe('SERVICE_DAY_BOUNDARY_HOUR', () => {
   it('is 3 (03:00)', () => {
@@ -60,6 +65,22 @@ describe('getServiceDay', () => {
     const now = new Date('2026-03-11T23:59:00');
     const result = getServiceDay(now);
     expect(result.getDate()).toBe(11);
+  });
+});
+
+describe('getServiceDayKey', () => {
+  // Dates are built from local components (year, monthIndex, day, hour) so the
+  // assertions do not depend on the test runner's time zone: getServiceDay
+  // reads local hours and formatDateKey reads local Y/M/D.
+  it('keys the same calendar day at or after the boundary', () => {
+    expect(getServiceDayKey(new Date(2026, 2, 11, 3, 0))).toBe('20260311');
+    expect(getServiceDayKey(new Date(2026, 2, 11, 4, 0))).toBe('20260311');
+    expect(getServiceDayKey(new Date(2026, 2, 11, 10, 0))).toBe('20260311');
+  });
+
+  it('keys the previous calendar day before the boundary', () => {
+    expect(getServiceDayKey(new Date(2026, 2, 11, 0, 0))).toBe('20260310');
+    expect(getServiceDayKey(new Date(2026, 2, 11, 2, 59))).toBe('20260310');
   });
 });
 

@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 import settings from '../../config/data-source-settings';
 import { computeDialogDisplay } from '../../domain/datasource/dialog-display';
-import { formatDateKey } from '../../domain/transit/calendar-utils';
-import { getServiceDay } from '../../domain/transit/service-day';
+import { getServiceDayKey } from '../../domain/transit/service-day';
 import { useDataSourceGroupInfo } from '../../hooks/use-data-source-group-info';
 import { useIsForcedSourcesMode } from '../../hooks/use-is-forced-sources-mode';
 import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
@@ -50,16 +49,12 @@ export function DataSourceSettingsContainer({
 
   const groupInfoById = useDataSourceGroupInfo(visibleGroups);
 
-  // Normalize to the GTFS service day (03:00 boundary) before keying, matching
-  // how the app derives "today" elsewhere (App's serviceDayKey). This keeps the
-  // operating-period classification correct between 00:00-02:59, when the
-  // service day is still the previous calendar day. The YYYYMMDD key changes
-  // once per day, so the value passed downstream stays stable across the app
-  // clock updates.
-  const referenceDateKey = useMemo(
-    () => formatDateKey(getServiceDay(referenceDateTime)),
-    [referenceDateTime],
-  );
+  // Key by the GTFS service day (03:00 boundary), matching how the app derives
+  // "today" elsewhere. This keeps the operating-period classification correct
+  // between 00:00-02:59, when the service day is still the previous calendar
+  // day. The YYYYMMDD key changes once per day, so the value passed downstream
+  // stays stable across the app clock updates.
+  const referenceDateKey = useMemo(() => getServiceDayKey(referenceDateTime), [referenceDateTime]);
 
   return (
     <DataSourceSettingsDialog
