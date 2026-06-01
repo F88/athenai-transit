@@ -1322,3 +1322,66 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20260401 版
+
+## taito-c-bus (台東区循環バス「めぐりん」/ Megurin)
+
+- Resource definition: `pipeline/config/resources/gtfs/taito-c-bus.ts`
+- CKAN organization: <https://ckan.odpt.org/organization/tokyo_taito_city>
+- CKAN dataset: <https://ckan.odpt.org/dataset/tokyo_taito_city_megurin_ccby40>
+- Resource ID (使用中): `6e882760-6ee0-4cb3-b3de-88c0c1819367` (?date=20251028)
+- prefix: `megurin`、 outDir: `taito-c-bus`
+- Provider URL: <https://www.city.taito.lg.jp/kenchiku/kotsu/megurin/index.html>
+
+### 調査日時
+
+- 調査日: 2026-06-01
+- 対象 feed バージョン: `?date=20251028` (feed_version `20250801_MEG001`)
+- feed publisher: 株式会社 アチピレーションテクノロジー (acp-tech.jp、 GTFS 整備事業者)。 chiyoda-bus / kita-bus / bunkyo-c-bus / suginami-gsm と同じ整備事業者
+
+### 概要
+
+- 4 routes (route_type=3 bus) / 128 stops / 290 trips / 8261 stop_times / 19 trip patterns
+- 台東区の循環コミュニティバス。 4 ルート (route_short_name は全 route 空欄、 route_long_name にルート名):
+    - `ROT_000001` 北めぐりん（根岸まわり）
+    - `ROT_000002` 北めぐりん（浅草まわり）
+    - `ROT_000003` 南めぐりん
+    - `ROT_000004` 東西めぐりん
+
+### agency
+
+- GTFS の agency_name は「台東区役所」(= 自治体自身が agency。 運行事業者名は GTFS に含まれない)、 agency_id = `6000020131067`
+- provider.name は CKAN org 名 verbatim の「台東区」(= agency の「台東区役所」とは別レイヤー)
+- 日立運行の 風ぐるま / Kバス / Bーぐる が agency=日立自動車交通 だったのと異なり、 めぐりんは agency も自治体名
+
+### 有効期間
+
+- 有効期間: 2025/08/10 - 2026/12/31
+
+### route_color
+
+- 全 4 route で route_color が設定済み (`EFCE7E` / `F36E21` / `63F04E` / `E36B58`)。 route_text_color は全て空 -> PR #137 auto-contrast で文字色決定
+- `routeColorFallbacks` 不要 (route_color が空でないため発動しない)
+- 視認性注記: `EFCE7E` (淡クリーム) と `63F04E` (明るいライム) は淡色地図上でポリラインが見づらい (ギリギリ許容レベル)。 ただし source 値が設定されているため data viewer philosophy に従いそのまま保持 (kagoshima の `FFFFFF` と同じ扱い)
+- App 側ブランドカラー `8B0202` (provider.colors) は route_color とは別 (agency badge 用)
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt が含まれている (17 shape_ids / 2637 points、 acp-tech 5 件中で最大)
+- `build-shapes-gtfs.ts` に登録済み -> 路線図対応あり。 循環ルートは insights の tripPatternGeo で closed-loop (`cl: true`) 判定される
+
+### translations.txt
+
+- **なし** (translations.txt 自体が ZIP に含まれない)
+- en も ja-Hrkt (かな読み) も無い。 stop_name は漢字の ja 形のみ
+- acp-tech 整備でも翻訳整備はソース依存 (bunkyo は ja/ja-Hrkt/en、 kita は ja-Hrkt のみ、 chiyoda/suginami/megurin は無し)
+
+### calendar / 未使用の「毎日」service
+
+- calendar.txt に 3 service (`平日` / `土日祝` / `毎日`)、 calendar_dates.txt 54 行
+- trips が参照する service は `平日` (171 trips) と `土日祝` (119 trips) のみ。 **`毎日` (全曜日) を参照する trip は 0**
+- insights の serviceGroups は wd=平日 / wk=土日祝 / all=毎日 にマップされるため、 `all` グループの stopStats は 0 stops になる (= 未使用 service の正常な反映)。 実際の運行カバレッジは wd + wk 側
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20251028 版

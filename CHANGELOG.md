@@ -12,6 +12,7 @@ and this project adheres to [CalVer](https://calver.org/).
 ### Added
 
 - Data-source: 文京区コミュニティバス「Bーぐる」(日立自動車交通株式会社運行) を追加。
+- Data-source: 台東区循環バス「めぐりん」(台東区) を追加。
 
 ### Changed
 
