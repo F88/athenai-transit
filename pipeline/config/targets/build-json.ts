@@ -51,4 +51,5 @@ export default [
   'shinagawa-c-bus',
   'ota-c-bus',
   'bunkyo-c-bus',
+  'taito-c-bus',
 ];

@@ -51,4 +51,5 @@ export default [
   'shinabus', // shinagawa-c-bus
   'tamachan', // ota-c-bus
   'bgle', // bunkyo-c-bus
+  'megurin', // taito-c-bus
 ];

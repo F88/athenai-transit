@@ -525,6 +525,18 @@ const settings: SourceGroup[] = [
     },
     countries: ['JP'],
   },
+  {
+    id: 'taito-c-bus',
+    prefixes: ['megurin'],
+    routeTypes: [3],
+    systemEnabledByDefault: true,
+    userEnabledByDefault: true,
+    name: {
+      name: 'Megurin',
+      names: { ja: 'めぐりん (台東区)', en: 'Megurin (Taito)' },
+    },
+    countries: ['JP'],
+  },
 ];
 
 export default settings;
