@@ -486,4 +486,11 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     longName: { ja: '台東区循環バス「めぐりん」', en: 'Taito City Circular Route Bus "Megurin"' },
     colors: [{ bg: '8B0202', text: 'FFFFFF' }],
   },
+
+  // --- Rinrin-GO (Itabashi City community bus) ---
+  'rin2:6000020131199_1': {
+    shortName: { ja: 'りんりんGO', en: 'Rinrin-GO' },
+    longName: { ja: '板橋区コミュニティバス りんりんGO', en: 'Community bus "Rinrin-GO"' },
+    colors: [{ bg: '045259', text: 'FFFFFF' }],
+  },
 };

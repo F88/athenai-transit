@@ -537,6 +537,18 @@ const settings: SourceGroup[] = [
     },
     countries: ['JP'],
   },
+  {
+    id: 'itabashi-rin2-bus',
+    prefixes: ['rin2'],
+    routeTypes: [3],
+    systemEnabledByDefault: true,
+    userEnabledByDefault: true,
+    name: {
+      name: 'Rinrin-GO',
+      names: { ja: 'りんりんGO (板橋区)', en: 'Rinrin-GO (Itabashi)' },
+    },
+    countries: ['JP'],
+  },
 ];
 
 export default settings;
