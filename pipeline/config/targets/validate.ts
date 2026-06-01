@@ -51,5 +51,6 @@ export default [
   'sanma', // meguro-c-bus
   'shinabus', // shinagawa-c-bus
   'tamachan', // ota-c-bus
+  'bgle', // bunkyo-c-bus
   // 'tkbus', // tokyu-bus (not built)
 ];

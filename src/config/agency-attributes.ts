@@ -51,6 +51,13 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     colors: [{ bg: '009FE3', text: 'FFFFFF' } /* ACTV Blue */],
   },
 
+  // --- B-guru (Bunkyo City) ---
+  'bgle:6011801011369': {
+    shortName: { ja: 'Bーぐる', en: 'B-GURU' },
+    longName: { ja: '日立自動車交通株式会社', en: 'Hitachi Automobile Transportation Co., Ltd.' },
+    colors: [{ bg: '15705E', text: 'FFFFFF' }],
+  },
+
   // --- Edo Bus (Chuo City) ---
   'edobus:6011801011369': {
     shortName: { ja: '江戸バス', en: 'Edo Bus' },

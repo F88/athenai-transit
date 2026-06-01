@@ -513,6 +513,18 @@ const settings: SourceGroup[] = [
     },
     countries: ['JP'],
   },
+  {
+    id: 'bunkyo-c-bus',
+    prefixes: ['bgle'],
+    routeTypes: [3],
+    systemEnabledByDefault: true,
+    userEnabledByDefault: true,
+    name: {
+      name: 'B-GURU',
+      names: { ja: 'Bーぐる (文京区)', en: 'B-GURU (Bunkyo)' },
+    },
+    countries: ['JP'],
+  },
 ];
 
 export default settings;
