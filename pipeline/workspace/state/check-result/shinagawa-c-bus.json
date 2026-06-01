@@ -1,14 +1,15 @@
 {
   "sourceName": "shinagawa-c-bus",
-  "checkedAt": "2026-05-31T06:28:28.999Z",
+  "checkedAt": "2026-06-01T06:35:34.557Z",
   "resourceUrls": [
-    "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_ShinagawaCity.zip?date=20260212",
     "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_ShinagawaCity.zip?date=20260601"
   ],
-  "result": "attention",
+  "result": "critical",
   "warnings": [
-    "ADOPTED_EXPIRING_SOON",
-    "REMOTE_KNOWN_BEFORE_PERIOD"
+    "REMOTE_KNOWN_IN_PERIOD"
   ],
-  "errors": []
+  "errors": [
+    "ADOPTED_EXPIRED",
+    "ADOPTED_MISSING"
+  ]
 }

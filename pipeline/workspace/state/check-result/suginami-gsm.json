@@ -1,12 +1,13 @@
 {
   "sourceName": "suginami-gsm",
-  "checkedAt": "2026-05-31T06:28:28.996Z",
+  "checkedAt": "2026-06-01T06:35:34.551Z",
   "resourceUrls": [
     "https://api-public.odpt.org/api/v4/files/odpt/TokyoSuginamiCity/GreenSlowMobility.zip?date=20250524"
   ],
-  "result": "attention",
-  "warnings": [
-    "ADOPTED_EXPIRING_SOON"
-  ],
-  "errors": []
+  "result": "critical",
+  "warnings": [],
+  "errors": [
+    "ADOPTED_EXPIRED",
+    "REMOTE_NO_VALID_DATA"
+  ]
 }
