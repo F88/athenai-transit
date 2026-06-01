@@ -479,4 +479,11 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
     longName: { ja: '大田区コミュニティバス', en: 'Ota City community bus' },
     colors: [{ bg: 'FFFFFF', text: '1D2A75' }],
   },
+
+  // --- Megurin (Taito City) ---
+  'megurin:6000020131067': {
+    shortName: { ja: 'めぐりん', en: 'Megurin' },
+    longName: { ja: '台東区循環バス「めぐりん」', en: 'Taito City Circular Route Bus "Megurin"' },
+    colors: [{ bg: '8B0202', text: 'FFFFFF' }],
+  },
 };

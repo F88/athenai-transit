@@ -30,4 +30,5 @@ export default [
   'chii-bus',
   'hankyu-ferry',
   'bunkyo-c-bus',
+  'taito-c-bus',
 ];
