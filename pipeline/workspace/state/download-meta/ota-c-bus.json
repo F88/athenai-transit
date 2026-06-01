@@ -2,12 +2,12 @@
   "sourceName": "ota-c-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-28T05:37:16.930Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_OtaCity.zip?date=20260212",
-  "size": 11398,
+  "downloadedAt": "2026-06-01T09:32:14.614Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_OtaCity.zip?date=20260601",
+  "size": 9754,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1312,
-  "archivePath": "workspace/_archives/gtfs/ota-c-bus/tokyubus_community_OtaCity_20260528-053718.zip",
+  "durationMs": 929,
+  "archivePath": "workspace/_archives/gtfs/ota-c-bus/tokyubus_community_OtaCity_20260601-093215.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,7 +19,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 560
+      "size": 362
     },
     {
       "name": "fare_attributes.txt",
@@ -42,12 +42,12 @@
       "size": 237
     },
     {
-      "name": "stop_times.txt",
-      "size": 98625
-    },
-    {
       "name": "stops.txt",
       "size": 2321
+    },
+    {
+      "name": "stop_times.txt",
+      "size": 98625
     },
     {
       "name": "translations.txt",
@@ -62,8 +62,8 @@
     "publisherName": "東急バス株式会社",
     "publisherUrl": "https://www.tokyubus.co.jp/",
     "lang": "ja",
-    "startDate": "20260201",
-    "endDate": "20260531",
-    "version": "260201"
+    "startDate": "20260601",
+    "endDate": "20260930",
+    "version": "260601"
   }
 }

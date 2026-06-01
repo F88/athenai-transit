@@ -2,12 +2,12 @@
   "sourceName": "meguro-c-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-28T05:37:11.690Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_MeguroCity.zip?date=20260521",
-  "size": 10946,
+  "downloadedAt": "2026-06-01T09:32:10.642Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_MeguroCity.zip?date=20260601",
+  "size": 10906,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 1695,
-  "archivePath": "workspace/_archives/gtfs/meguro-c-bus/tokyubus_community_MeguroCity_20260528-053713.zip",
+  "durationMs": 987,
+  "archivePath": "workspace/_archives/gtfs/meguro-c-bus/tokyubus_community_MeguroCity_20260601-093211.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -19,7 +19,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 428
+      "size": 362
     },
     {
       "name": "fare_attributes.txt",
@@ -62,8 +62,8 @@
     "publisherName": "東急バス株式会社",
     "publisherUrl": "https://www.tokyubus.co.jp/",
     "lang": "ja",
-    "startDate": "20260401",
-    "endDate": "20260731",
-    "version": "260401"
+    "startDate": "20260601",
+    "endDate": "20260930",
+    "version": "260601"
   }
 }

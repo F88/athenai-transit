@@ -2,12 +2,12 @@
   "sourceName": "iyotetsu-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-05-28T05:35:29.821Z",
-  "url": "https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260430",
-  "size": 855546,
+  "downloadedAt": "2026-06-01T09:30:49.598Z",
+  "url": "https://api.odpt.org/api/v4/files/odpt/IyotetsuBus/AllLines.zip?date=20260519",
+  "size": 747973,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 2774,
-  "archivePath": "workspace/_archives/gtfs/iyotetsu-bus/AllLines_20260528-053532.zip",
+  "durationMs": 1788,
+  "archivePath": "workspace/_archives/gtfs/iyotetsu-bus/AllLines_20260601-093051.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
@@ -47,7 +47,7 @@
     },
     {
       "name": "calendar_dates.txt",
-      "size": 662
+      "size": 32
     },
     {
       "name": "feed_info.txt",
@@ -70,8 +70,8 @@
     "publisherName": "伊予鉄バス株式会社",
     "publisherUrl": "https://www.iyotetsu.co.jp/",
     "lang": "ja",
-    "startDate": "20260501",
-    "endDate": "20260531",
-    "version": "20260501_20260531"
+    "startDate": "20260601",
+    "endDate": "20260630",
+    "version": "20260601_20260630"
   }
 }
