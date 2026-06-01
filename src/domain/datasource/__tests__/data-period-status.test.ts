@@ -44,13 +44,21 @@ describe('getDataPeriodStatus', () => {
     );
   });
 
-  it('evaluates expiry when only the last bound is known', () => {
-    expect(getDataPeriodStatus({ first: null, last: '20261231' }, '20270101')).toBe('expired');
-    expect(getDataPeriodStatus({ first: null, last: '20261231' }, '20260601')).toBe('inPeriod');
+  it('returns indeterminate when only the last bound is known', () => {
+    expect(getDataPeriodStatus({ first: null, last: '20261231' }, '20270101')).toBe(
+      'indeterminate',
+    );
+    expect(getDataPeriodStatus({ first: null, last: '20261231' }, '20260601')).toBe(
+      'indeterminate',
+    );
   });
 
-  it('evaluates the lower bound when only the first bound is known', () => {
-    expect(getDataPeriodStatus({ first: '20260101', last: null }, '20251231')).toBe('beforePeriod');
-    expect(getDataPeriodStatus({ first: '20260101', last: null }, '20260601')).toBe('inPeriod');
+  it('returns indeterminate when only the first bound is known', () => {
+    expect(getDataPeriodStatus({ first: '20260101', last: null }, '20251231')).toBe(
+      'indeterminate',
+    );
+    expect(getDataPeriodStatus({ first: '20260101', last: null }, '20260601')).toBe(
+      'indeterminate',
+    );
   });
 });

@@ -1,23 +1,24 @@
 import {
   CalendarDays,
   CalendarRange,
+  CalendarX,
   Globe,
   HardDrive,
   Route,
   Signpost,
   Spline,
 } from 'lucide-react';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getDataPeriodStatus } from '../../domain/datasource/data-period-status';
 import { toTranslationCoverageLevel } from '../../domain/datasource/translation-coverage-level';
-import { createLogger } from '../../lib/logger';
 import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
 import { formatBytesForDisplay } from '../../utils/format-bytes';
 import { toMetricLevel } from '../../utils/to-metric-level';
+import {
+  ENABLEMENT_TONE_INDEX,
+  ENABLEMENT_BADGE_TONE_SCALE,
+} from '../badge/metric-badge-tone-scale';
 import { MetricLevelBadge } from '../badge/metric-level-badge';
-
-const logger = createLogger('DataSourceGroupSummary2');
 
 /**
  * 5-level threshold buckets calibrated against actual catalog data
@@ -66,6 +67,49 @@ const MAX_TRIPS_THRESHOLDS: ReadonlyArray<number> = [0, 100, 500, 3000, 8000];
 const ROUTE_SHAPES_THRESHOLDS: ReadonlyArray<number> = [0, 2, 10, 25, 100];
 
 /**
+ * Operating-period badge for {@link DataSourceGroupSummary2}.
+ *
+ * Render-only: the parent owns the "has operating dates" gate and only renders
+ * this when both bounds are present, so this component always renders the
+ * badge. It shows the operating-date range (`first-last`) and, via
+ * {@link getDataPeriodStatus}, tints the badge (frame + icon) when the range
+ * is out of the operating period (expired or not-yet-started) relative to the
+ * effective "today" (`referenceDateKey`).
+ */
+function OperatingPeriodBadge({
+  first,
+  last,
+  referenceDateKey,
+}: {
+  first: string;
+  last: string;
+  referenceDateKey: string | undefined;
+}) {
+  const { t } = useTranslation();
+
+  const operatingDatesText = `${first}-${last}`;
+  const periodStatus =
+    referenceDateKey !== undefined ? getDataPeriodStatus({ first, last }, referenceDateKey) : null;
+  // Out of the operating range (expired or not-yet-started) -> the amber
+  // "disabled" tone (index 1). inPeriod / unknown reference -> the green
+  // "enabled" tone (index 0).
+  const isOutOfPeriod = periodStatus === 'expired' || periodStatus === 'beforePeriod';
+
+  return (
+    <MetricLevelBadge
+      size="xs"
+      icon={isOutOfPeriod ? <CalendarX /> : <CalendarRange />}
+      text={operatingDatesText}
+      level={isOutOfPeriod ? ENABLEMENT_TONE_INDEX.disabled : ENABLEMENT_TONE_INDEX.enabled}
+      badgeToneScale={ENABLEMENT_BADGE_TONE_SCALE}
+      aria-label={t('dataSourceSettings.operatingDates.aria', {
+        range: operatingDatesText,
+      })}
+    />
+  );
+}
+
+/**
  * Color-scale variant of {@link DataSourceGroupSummary}. Same props,
  * same metric set, but each value is displayed in a `MetricLevelBadge`
  * whose tone is chosen from a discrete color scale based on the
@@ -84,40 +128,23 @@ export function DataSourceGroupSummary2({
 }) {
   const { i18n, t } = useTranslation();
 
-  // Classify the operating period against the effective "today". This does
-  // not yet alter the rendered badge — it is computed and debug-logged so
-  // the wiring can be verified before the visual treatment is added.
-  const periodStatus =
-    groupInfo !== null && referenceDateKey !== undefined
-      ? getDataPeriodStatus(groupInfo.operatingDates, referenceDateKey)
-      : null;
-  const groupId = groupInfo?.groupId ?? null;
-  const operatingFirst = groupInfo?.operatingDates?.first ?? null;
-  const operatingLast = groupInfo?.operatingDates?.last ?? null;
-  useEffect(() => {
-    if (periodStatus === null) {
-      return;
-    }
-    logger.debug(
-      `period status [${groupId ?? '?'}] ${operatingFirst ?? '?'}-${operatingLast ?? '?'} @ ${referenceDateKey ?? '?'} -> ${periodStatus}`,
-    );
-  }, [groupId, operatingFirst, operatingLast, referenceDateKey, periodStatus]);
-
   if (groupInfo === null) {
     return null;
   }
-  const operatingDatesText =
-    groupInfo.operatingDates === null ||
-    groupInfo.operatingDates.first === null ||
-    groupInfo.operatingDates.last === null
-      ? null
-      : `${groupInfo.operatingDates.first}-${groupInfo.operatingDates.last}`;
+  // The catalog emits operating dates as a first/last pair (or the whole
+  // object absent), so a one-sided range cannot occur. Narrow to a non-null
+  // pair so the render-only OperatingPeriodBadge receives non-null bounds.
+  const { operatingDates } = groupInfo;
+  const operatingPeriod =
+    operatingDates !== null && operatingDates.first !== null && operatingDates.last !== null
+      ? { first: operatingDates.first, last: operatingDates.last }
+      : null;
   const routesCount =
     groupInfo.routeTypeCounts === null || Object.keys(groupInfo.routeTypeCounts).length === 0
       ? null
       : Object.values(groupInfo.routeTypeCounts).reduce((sum, count) => sum + count, 0);
   const hasAnyMetric =
-    operatingDatesText !== null ||
+    operatingPeriod !== null ||
     groupInfo.size !== null ||
     groupInfo.translationLanguages !== null ||
     routesCount !== null ||
@@ -201,15 +228,11 @@ export function DataSourceGroupSummary2({
       )}
 
       {/* Operating period */}
-      {operatingDatesText !== null && (
-        <MetricLevelBadge
-          size="xs"
-          icon={<CalendarRange />}
-          text={operatingDatesText}
-          level={0}
-          aria-label={t('dataSourceSettings.operatingDates.aria', {
-            range: operatingDatesText,
-          })}
+      {operatingPeriod !== null && (
+        <OperatingPeriodBadge
+          first={operatingPeriod.first}
+          last={operatingPeriod.last}
+          referenceDateKey={referenceDateKey}
         />
       )}
     </div>

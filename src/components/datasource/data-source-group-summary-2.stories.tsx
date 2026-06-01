@@ -124,6 +124,62 @@ export const AllFiveStars: Story = {
   },
 };
 
+/**
+ * Operating-period badge across its period states. The operating range is
+ * fixed at `20260101-20260131`; only the reference date varies to produce
+ * `inPeriod` / `expired` / `beforePeriod`. The last row has no operating-date
+ * data (`hasOperatingPeriod === false`), so the badge is omitted.
+ *
+ * Note: today the badge text / presence is identical for the first three rows
+ * (the period status is computed but does not yet change the badge
+ * appearance). This story is the harness for that upcoming visual treatment
+ * and documents the conditions.
+ */
+export const OperatingPeriodComparison: Story = {
+  render: () => {
+    const base: WrapperArgs = {
+      groupInfoNull: false,
+      sizeBytes: 3_400_000,
+      languageCount: 2,
+      routeCount: 24,
+      boardingStopsCount: 1500,
+      maxTripsPerDay: 8000,
+      routeShapesCount: 48,
+      showOperatingDates: true,
+    };
+    const scenarios: ReadonlyArray<{
+      label: string;
+      args: WrapperArgs;
+      referenceDateKey: string;
+    }> = [
+      { label: 'inPeriod (ref 20260115)', args: base, referenceDateKey: '20260115' },
+      { label: 'expired (ref 20260201)', args: base, referenceDateKey: '20260201' },
+      { label: 'beforePeriod (ref 20251201)', args: base, referenceDateKey: '20251201' },
+      {
+        label: 'no operating dates (hasOperatingPeriod false)',
+        args: { ...base, showOperatingDates: false },
+        referenceDateKey: '20260115',
+      },
+    ];
+    return (
+      <div className="flex flex-col gap-2">
+        {scenarios.map((scenario) => (
+          <div key={scenario.label} className="bg-background rounded border p-3">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm font-medium">京王バス 🚍 🇯🇵</span>
+              <span className="text-[10px] text-gray-400">{scenario.label}</span>
+            </div>
+            <DataSourceGroupSummary2
+              groupInfo={buildGroupInfo(scenario.args)}
+              referenceDateKey={scenario.referenceDateKey}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+
 // --- Threshold sweep ---
 
 /**

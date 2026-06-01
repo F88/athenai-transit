@@ -2,10 +2,11 @@
  * Lifecycle status of a data source's operating-date span relative to a
  * reference date ("today").
  *
- * - `inPeriod` — the reference date falls within the known bound(s).
+ * - `inPeriod` — the reference date falls within the operating range.
  * - `expired` — the reference date is after the latest operating date.
  * - `beforePeriod` — the reference date is before the earliest operating date.
- * - `indeterminate` — no operating-date data to evaluate against.
+ * - `indeterminate` — operating dates are missing or incomplete (either bound
+ *   absent), or there is no reference date.
  */
 export type DataPeriodStatus = 'inPeriod' | 'expired' | 'beforePeriod' | 'indeterminate';
 
@@ -23,10 +24,12 @@ export type DataPeriodStatus = 'inPeriod' | 'expired' | 'beforePeriod' | 'indete
  * string comparison orders them chronologically, so no date parsing is
  * needed.
  *
- * Returns `indeterminate` when there is nothing to evaluate: the input is
- * `null`, both bounds are `null`, or `referenceDateKey` is empty. A
- * single known bound is still evaluated (e.g. only `last` known yields
- * `expired` once the reference date passes it, otherwise `inPeriod`).
+ * Both bounds are required: returns `indeterminate` when the input is `null`,
+ * either bound is `null`, or `referenceDateKey` is empty. The catalog always
+ * emits operating dates as a first/last pair (a one-sided range cannot
+ * occur), and deciding `inPeriod` (after the start and before the end) needs
+ * both ends, so a single known bound is treated as `indeterminate` rather
+ * than guessed.
  *
  * @param operatingDates - Earliest / latest operating dates, or `null`.
  * @param referenceDateKey - Effective "today" as a `YYYYMMDD` key.
@@ -40,13 +43,13 @@ export function getDataPeriodStatus(
     return 'indeterminate';
   }
   const { first, last } = operatingDates;
-  if (first === null && last === null) {
+  if (first === null || last === null) {
     return 'indeterminate';
   }
-  if (last !== null && referenceDateKey > last) {
+  if (referenceDateKey > last) {
     return 'expired';
   }
-  if (first !== null && referenceDateKey < first) {
+  if (referenceDateKey < first) {
     return 'beforePeriod';
   }
   return 'inPeriod';

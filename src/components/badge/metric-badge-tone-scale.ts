@@ -85,6 +85,57 @@ export const FIVE_LEVEL_METRIC_BADGE_TONE_SCALE: ReadonlyArray<MetricBadgeTone> 
   },
 ];
 
+/** Accents for {@link ENABLEMENT_BADGE_TONE_SCALE}, as literals so the scale needs
+ * no new theme token. */
+const ENABLED_TONE_ACCENT = 'oklch(0.64 0.18 145)'; // green
+const DISABLED_TONE_ACCENT = 'oklch(0.72 0.18 58)'; // amber (the project's orange accent)
+const UNKNOWN_TONE_ACCENT = 'oklch(0.62 0 0)'; // neutral gray
+
+/** Indices into {@link ENABLEMENT_BADGE_TONE_SCALE}. */
+export const ENABLEMENT_TONE_INDEX = {
+  enabled: 0,
+  disabled: 1,
+  unknown: 2,
+} as const;
+
+/**
+ * Generic three-state tone set for badges that convey a lifecycle /
+ * availability state rather than an intensity level:
+ *
+ *   - `enabled` (index 0)  -- green
+ *   - `disabled` (index 1) -- amber
+ *   - `unknown` (index 2)  -- neutral gray
+ *
+ * The states are distinguished by the icon color, text color, and frame only
+ * -- the background stays the theme default, so background color is not used
+ * to convey the state. Each accent is mixed into the base tokens, so the
+ * colors adapt to the theme without a new token. Index via
+ * {@link ENABLEMENT_TONE_INDEX}.
+ */
+export const ENABLEMENT_BADGE_TONE_SCALE: ReadonlyArray<MetricBadgeTone> = [
+  {
+    iconBg: `color-mix(in oklab, ${ENABLED_TONE_ACCENT} 12%, var(--background))`,
+    iconFg: `color-mix(in oklab, ${ENABLED_TONE_ACCENT} 85%, var(--foreground))`,
+    textBg: 'var(--background)',
+    textFg: `color-mix(in oklab, ${ENABLED_TONE_ACCENT} 70%, var(--foreground))`,
+    frameColor: `color-mix(in oklab, ${ENABLED_TONE_ACCENT} 55%, var(--border))`,
+  },
+  {
+    iconBg: `color-mix(in oklab, ${DISABLED_TONE_ACCENT} 12%, var(--background))`,
+    iconFg: `color-mix(in oklab, ${DISABLED_TONE_ACCENT} 85%, var(--foreground))`,
+    textBg: 'var(--background)',
+    textFg: `color-mix(in oklab, ${DISABLED_TONE_ACCENT} 70%, var(--foreground))`,
+    frameColor: `color-mix(in oklab, ${DISABLED_TONE_ACCENT} 55%, var(--border))`,
+  },
+  {
+    iconBg: `color-mix(in oklab, ${UNKNOWN_TONE_ACCENT} 12%, var(--background))`,
+    iconFg: `color-mix(in oklab, ${UNKNOWN_TONE_ACCENT} 85%, var(--foreground))`,
+    textBg: 'var(--background)',
+    textFg: `color-mix(in oklab, ${UNKNOWN_TONE_ACCENT} 70%, var(--foreground))`,
+    frameColor: `color-mix(in oklab, ${UNKNOWN_TONE_ACCENT} 55%, var(--border))`,
+  },
+];
+
 export const RED_METRIC_BADGE_TONE_SCALE =
   createSingleHueMetricBadgeToneScale('oklch(0.62 0.2 24)');
 export const ORANGE_METRIC_BADGE_TONE_SCALE =
