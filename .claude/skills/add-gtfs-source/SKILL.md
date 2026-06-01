@@ -154,6 +154,8 @@ npm run pipeline:validate:v2
 
 `pipeline:validate:v2` is the same check CI runs. **Do not skip it locally** — it catches missing target-list registrations (e.g. a forgotten `build-insights.ts` entry) before they break CI. Treat any `❌ MISSING (required)` line as a blocker.
 
+`data:sync` copies `pipeline/workspace/_build/data-v2/` to `public/<PIPELINE_TRANSIT_DATA_DIR>/`, defaulting to `public/data-v2/`. The destination is configurable, so when `PIPELINE_TRANSIT_DATA_DIR` is overridden in the environment, `public/data-v2/` is **not** the directory that gets updated — check the effective value if the app still shows stale data. See the `gtfs-data-build` skill for the full data flow.
+
 After JSON generation, check the following:
 
 #### route_color
@@ -226,7 +228,7 @@ Keep factual and neutral — this is in a public repository.
 
 ### 9. Commit
 
-Split into logical commits following Conventional Commits. **Do not commit generated app data** (`public/next-dev/{prefix}/*.json`) — the `Update Transit Data` GitHub Action regenerates and pushes those after merge:
+Split into logical commits following Conventional Commits. **Do not commit generated app data** (`public/<PIPELINE_TRANSIT_DATA_DIR>/{prefix}/*.json`, default `public/data-v2/{prefix}/*.json`) — the `Update Transit Data` GitHub Action regenerates and pushes those after merge:
 
 1. `feat(pipeline): add {operator} data source` — resource definition + every applicable target list + `data-source-settings.ts` + `agency-attributes.ts`
 2. `docs: add {operator} credits and notes` — `ABOUT.md` license/credit updates + `pipeline/config/resources/NOTES.md` data-quality notes

@@ -88,7 +88,7 @@ npm run pipeline:build:v2-insights          # 8.  generate v2 InsightsBundle fro
 npm run pipeline:build:v2-global-insights   # 9.  generate v2 GlobalInsightsBundle
 npm run pipeline:build:v2-data-source-catalog # 10. generate v2 DataSourceCatalog
 npm run pipeline:validate:v2                # 11. validate generated v2 bundles
-npm run data:sync                           # 12. copy pipeline/workspace/_build/data-v2/ -> public/data-v2/
+npm run data:sync                           # 12. copy pipeline/workspace/_build/data-v2/ -> public/<PIPELINE_TRANSIT_DATA_DIR>/ (default: public/data-v2/, destination may vary by environment)
 ```
 
 Auxiliary pipeline commands:

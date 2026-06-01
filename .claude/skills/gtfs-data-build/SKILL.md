@@ -19,7 +19,7 @@ Commands and execution order are documented in `CLAUDE.md` "Data preparation" se
 
 - **Steps 1-2 (download)**: Skip if source files are already up to date. GTFS files live in `pipeline/workspace/data/gtfs/{outDir}/`; ODPT JSON files in `pipeline/workspace/data/odpt-json/{outDir}/`.
 - **Step 7 (KSJ shapes)**: Skip if only bus data changed. Requires `pipeline/workspace/data/mlit/N02-25_RailroadSection.geojson`.
-- **Step 12 (data:sync)**: Always run last — this copies built data from `pipeline/workspace/_build/data-v2/` to `public/data-v2/` where Vite serves it. Destination directory is configurable via `PIPELINE_TRANSIT_DATA_DIR` (defaults to `data-v2`).
+- **Step 12 (data:sync)**: Always run last — this copies built data from `pipeline/workspace/_build/data-v2/` to `public/<PIPELINE_TRANSIT_DATA_DIR>/` where the app serves it. The default is `public/data-v2/`, but the destination may be overridden by `PIPELINE_TRANSIT_DATA_DIR` depending on the environment.
 
 ## Data flow
 
@@ -28,7 +28,7 @@ ODPT API (GTFS ZIP / ODPT JSON)
   -> pipeline/workspace/data/{gtfs,odpt-json}/{outDir}/   (steps 1-2)
   -> pipeline/workspace/_build/db/{outDir}.db             (step 3)
   -> pipeline/workspace/_build/data-v2/{prefix}/*.json    (steps 4-10)
-  -> public/data-v2/{prefix}/*.json                       (step 12)
+  -> public/<PIPELINE_TRANSIT_DATA_DIR>/{prefix}/*.json   (step 12)
 ```
 
 ## Sources
@@ -41,4 +41,4 @@ Defined in `pipeline/config/resources/{gtfs,odpt-json}/`. Each `.ts` file is a s
 - ODPT JSON download requires `ODPT_ACCESS_TOKEN` environment variable (set via `pipeline/.env.pipeline.local`)
 - `pipeline:build:db` expects GTFS CSV files in `pipeline/workspace/data/gtfs/{outDir}/`
 - `pipeline:build:v2-shapes:ksj` expects MLIT GeoJSON at `pipeline/workspace/data/mlit/N02-XX_RailroadSection.geojson` (year-suffixed)
-- If JSON output looks stale, check that `data:sync` was run after the build steps
+- If JSON output looks stale, check that `data:sync` was run after the build steps and inspect the effective `PIPELINE_TRANSIT_DATA_DIR` for the current environment.
