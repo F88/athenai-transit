@@ -1262,3 +1262,63 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 - **route_color**: GTFS routes.txt で**空欄**。 `routeColorFallbacks: { '*': '4653A1' }` (= しなバス車両のブランドカラー紺) を設定
 - 運行頻度: 3 件の中で最も密 (約 5-6 本 / 時、 1 route で 230 trips を捌く)
 - 車両は 4 色のラッピングバリエーションがあるが、 GTFS では route_color 1 つでしか表現できない
+
+## bunkyo-c-bus (文京区コミュニティバス「Bーぐる」/ B-GURU)
+
+- Resource definition: `pipeline/config/resources/gtfs/bunkyo-c-bus.ts`
+- CKAN organization: <https://ckan.odpt.org/organization/hitachi_automobile_transportation>
+- CKAN dataset: <https://ckan.odpt.org/dataset/hitachi_automobile_transportation_all_lines>
+- Resource ID (使用中): `95ec7d40-73d9-4003-8d39-898421f5b689` (20260401 版)
+- prefix: `bgle`、 outDir: `bunkyo-c-bus`
+- Provider URL: <https://www.hitachi-gr.com/b-guru>
+
+### 調査日時
+
+- 調査日: 2026-06-01
+- 対象 feed バージョン: `?date=20260401` (feed_version `B_20260401_001`)
+
+### 概要
+
+- 3 routes (route_type=3 bus) / 90 stops / 151 trips / 4784 stop_times / 10 trip patterns
+- 文京区のコミュニティバス。 3 ルート構成 (route_short_name は全 route 空欄、 route_long_name にルート名):
+    - `000001` 千駄木・駒込ルート
+    - `000002` 目白台・小日向ルート
+    - `000003` 本郷・湯島ルート
+
+### agency
+
+- GTFS の agency_name は「日立自動車交通株式会社」(実際の運行事業者)、 agency_id = `6011801011369`
+- 利用者が認識する運営主体は文京区 (コミュニティバス)。 chuo-bus (江戸バス) と同じ「運行事業者 != 自治体」パターン
+- 同じ日立自動車交通が運行する 風ぐるま (chiyoda-bus) / Kバス (kita-bus) / 江戸バス (chuo-bus) はそれぞれ別の CKAN dataset で配信されるが、 Bーぐる は Hitachi org の `hitachi_automobile_transportation_all_lines` dataset で配信される。 同 dataset の中身は Bーぐる の 1 agency / 3 route のみ
+
+### 有効期間
+
+- 有効期間: 2026/04/01 - 2027/12/31 (約 20 ヶ月、 community bus としては長め)
+
+### route_color
+
+- 全 3 route で route_color / route_text_color が有効値で設定済み (千駄木・駒込 = `ff8000` / 目白台・小日向 = `ff0000` / 本郷・湯島 = `0000ff`、 いずれも route_text_color = `ffffff`)
+- `routeColorFallbacks` 不要
+- 補足: App 側ブランドカラー `15705E` (provider.colors) は route_color とは別 (agency badge 用)
+
+### shapes.txt
+
+- GTFS ZIP に shapes.txt が含まれている (10 shape_ids / 1319 points)
+- `build-shapes-gtfs.ts` に登録済み -> 路線図対応あり
+
+### translations.txt
+
+- 標準 6 列形式 (table_name, field_name, language, translation, record_id, field_value)
+- 279 行、 言語は ja / ja-Hrkt / en の 3 言語
+- 内訳: stops.stop_name (90 stops × 3 lang = 270) + routes.route_name (3 × 3 lang = 9)
+- field_name は非標準の `route_name` (標準 GTFS なら `route_long_name`)。 data viewer philosophy に従い source 値のまま取り込む
+
+### calendar
+
+- calendar.txt に 3 service、 calendar_dates.txt に 58 行 (祝日等の exception)
+- calendar_dates-only feed ではない
+
+### CKAN リソースの date パラメータ
+
+- downloadUrl に `?date=YYYYMMDD` が必須
+- 使用中: 20260401 版
