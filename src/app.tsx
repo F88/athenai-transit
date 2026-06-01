@@ -86,7 +86,7 @@ import {
 
 // components
 import { AppLayout } from './components/app-layout';
-import { DataSourceSettingsDialog } from './components/dialog/data-source-settings-dialog';
+import { DataSourceSettingsContainer } from './components/datasource/data-source-settings-container';
 import { InfoDialog } from './components/dialog/info-dialog';
 import { ShortcutHelpDialog } from './components/dialog/shortcut-help-dialog';
 import { StopSearchDialog } from './components/dialog/stop-search-dialog';
@@ -998,9 +998,10 @@ export default function App() {
         onOpenChange={setInfoDialogOpen}
         onOpenDataSourceSettings={openDataSourceSettingsDialog}
       />
-      <DataSourceSettingsDialog
+      <DataSourceSettingsContainer
         open={dataSourceSettingsDialogOpen}
         onOpenChange={setDataSourceSettingsDialogOpen}
+        referenceDateTime={dateTime}
       />
       <ShortcutHelpDialog open={shortcutHelpOpen} onOpenChange={setShortcutHelpOpen} />
       <TripInspectionContainer

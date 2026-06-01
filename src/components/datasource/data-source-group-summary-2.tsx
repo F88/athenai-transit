@@ -7,12 +7,17 @@ import {
   Signpost,
   Spline,
 } from 'lucide-react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { getDataPeriodStatus } from '../../domain/datasource/data-period-status';
 import { toTranslationCoverageLevel } from '../../domain/datasource/translation-coverage-level';
+import { createLogger } from '../../lib/logger';
 import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
 import { formatBytesForDisplay } from '../../utils/format-bytes';
 import { toMetricLevel } from '../../utils/to-metric-level';
 import { MetricLevelBadge } from '../badge/metric-level-badge';
+
+const logger = createLogger('DataSourceGroupSummary2');
 
 /**
  * 5-level threshold buckets calibrated against actual catalog data
@@ -70,8 +75,34 @@ const ROUTE_SHAPES_THRESHOLDS: ReadonlyArray<number> = [0, 2, 10, 25, 100];
  * Aria labels keep the raw numbers (or formatted size) so screen
  * readers still receive precise values.
  */
-export function DataSourceGroupSummary2({ groupInfo }: { groupInfo: DataSourceGroupInfo | null }) {
+export function DataSourceGroupSummary2({
+  groupInfo,
+  referenceDateKey,
+}: {
+  groupInfo: DataSourceGroupInfo | null;
+  referenceDateKey?: string;
+}) {
   const { i18n, t } = useTranslation();
+
+  // Classify the operating period against the effective "today". This does
+  // not yet alter the rendered badge — it is computed and debug-logged so
+  // the wiring can be verified before the visual treatment is added.
+  const periodStatus =
+    groupInfo !== null && referenceDateKey !== undefined
+      ? getDataPeriodStatus(groupInfo.operatingDates, referenceDateKey)
+      : null;
+  const groupId = groupInfo?.groupId ?? null;
+  const operatingFirst = groupInfo?.operatingDates?.first ?? null;
+  const operatingLast = groupInfo?.operatingDates?.last ?? null;
+  useEffect(() => {
+    if (periodStatus === null) {
+      return;
+    }
+    logger.debug(
+      `period status [${groupId ?? '?'}] ${operatingFirst ?? '?'}-${operatingLast ?? '?'} @ ${referenceDateKey ?? '?'} -> ${periodStatus}`,
+    );
+  }, [groupId, operatingFirst, operatingLast, referenceDateKey, periodStatus]);
+
   if (groupInfo === null) {
     return null;
   }
