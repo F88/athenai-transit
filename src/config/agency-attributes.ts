@@ -490,7 +490,10 @@ export const AGENCY_ATTRIBUTES: Record<string, AgencyAttributes> = {
   // --- Rinrin-GO (Itabashi City community bus) ---
   'rin2:6000020131199_1': {
     shortName: { ja: 'りんりんGO', en: 'Rinrin-GO' },
-    longName: { ja: '板橋区コミュニティバス りんりんGO', en: 'Community bus "Rinrin-GO"' },
+    longName: {
+      ja: '板橋区コミュニティバス りんりんGO',
+      en: 'Itabashi City community bus "Rinrin-GO"',
+    },
     colors: [{ bg: '045259', text: 'FFFFFF' }],
   },
 };
