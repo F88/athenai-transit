@@ -17,8 +17,8 @@ const yokohamaMunicipalBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/yokohama_municipal',
       datasetUrl: 'https://ckan.odpt.org/dataset/yokohama_municipal_bus',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/yokohama_municipal_bus/resource/dcef4dad-fa17-48cc-a789-a7fc708b49e4',
-      resourceId: 'dcef4dad-fa17-48cc-a789-a7fc708b49e4',
+        'https://ckan.odpt.org/dataset/yokohama_municipal_bus/resource/79a66951-4934-4101-b5c0-fd58a885b9d5',
+      resourceId: '79a66951-4934-4101-b5c0-fd58a885b9d5',
     },
     provider: {
       name: {
@@ -41,7 +41,7 @@ const yokohamaMunicipalBus: GtfsSourceDefinition = {
     routeTypes: ['bus'],
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
-    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20260328',
+    downloadUrl: 'https://api.odpt.org/api/v4/files/odpt/YokohamaMunicipal/Bus.zip?date=20260601',
   },
   pipeline: {
     outDir: 'yokohama-municipal-bus',
