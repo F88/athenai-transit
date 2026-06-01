@@ -52,4 +52,5 @@ export default [
   'ota-c-bus',
   'bunkyo-c-bus',
   'taito-c-bus',
+  'itabashi-rin2-bus',
 ];

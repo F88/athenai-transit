@@ -31,4 +31,8 @@ export default [
   'hankyu-ferry',
   'bunkyo-c-bus',
   'taito-c-bus',
+  // itabashi-rin2-bus: shapes.txt has geometry but trips lack shape_id, so no
+  // shapes are emitted today. Kept registered to auto-generate if a future feed
+  // adds the trips.shape_id linkage.
+  'itabashi-rin2-bus',
 ];

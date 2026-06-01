@@ -52,4 +52,5 @@ export default [
   'tamachan', // ota-c-bus
   'bgle', // bunkyo-c-bus
   'megurin', // taito-c-bus
+  'rin2', // itabashi-rin2-bus
 ];
