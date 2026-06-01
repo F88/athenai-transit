@@ -25,11 +25,9 @@ export type DataPeriodStatus = 'inPeriod' | 'expired' | 'beforePeriod' | 'indete
  * needed.
  *
  * Both bounds are required: returns `indeterminate` when the input is `null`,
- * either bound is `null`, or `referenceDateKey` is empty. The catalog always
- * emits operating dates as a first/last pair (a one-sided range cannot
- * occur), and deciding `inPeriod` (after the start and before the end) needs
- * both ends, so a single known bound is treated as `indeterminate` rather
- * than guessed.
+ * either bound is `null`, or `referenceDateKey` is empty. Deciding `inPeriod`
+ * (after the start and before the end) needs both ends, so a single known
+ * bound is treated as `indeterminate` rather than guessed.
  *
  * @param operatingDates - Earliest / latest operating dates, or `null`.
  * @param referenceDateKey - Effective "today" as a `YYYYMMDD` key.

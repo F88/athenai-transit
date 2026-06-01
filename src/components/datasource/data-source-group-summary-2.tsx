@@ -151,9 +151,9 @@ export function DataSourceGroupSummary2({
   if (groupInfo === null) {
     return null;
   }
-  // The catalog emits operating dates as a first/last pair (or the whole
-  // object absent), so a one-sided range cannot occur. Narrow to a non-null
-  // pair so the render-only OperatingPeriodBadge receives non-null bounds.
+  // Show the operating-period badge only when both bounds are known; a
+  // one-sided range yields no badge. Narrow to a non-null pair so the
+  // render-only OperatingPeriodBadge receives non-null bounds.
   const { operatingDates } = groupInfo;
   const operatingPeriod =
     operatingDates !== null && operatingDates.first !== null && operatingDates.last !== null
