@@ -38,7 +38,6 @@ Transit explorer without destination — discover where you can go from here
 - 📦 任意のデータを選択して利用
 - ⌨️ キーボードショートカット (help:?)
 
-
 ## Documentation
 
 - [PRD.md](./PRD.md) -- プロダクト要件、ユーザー体験、機能要件

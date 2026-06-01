@@ -12,12 +12,10 @@ import {
 } from '@/components/ui/dialog';
 import { InfoIcon, WrenchIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import settings from '../../config/data-source-settings';
 import {
   aggregateGroupLoadStatus,
   type GroupLoadStatus,
 } from '../../domain/datasource/aggregate-group-status';
-import { computeDialogDisplay } from '../../domain/datasource/dialog-display';
 import { getSourceGroupDisplayName } from '../../domain/datasource/get-source-group-display-name';
 import {
   ROUTE_TYPE_OTHER,
@@ -25,10 +23,7 @@ import {
   type RouteTypeSectionKey,
 } from '../../domain/datasource/route-type-priority';
 import { sortSourceGroupsForDisplay } from '../../domain/datasource/sort-source-groups';
-import { useDataSourceGroupInfo } from '../../hooks/use-data-source-group-info';
-import { useIsForcedSourcesMode } from '../../hooks/use-is-forced-sources-mode';
-import { useSourceLoadStatus } from '../../hooks/use-source-load-status';
-import { useUserDataSourceSettings } from '../../hooks/use-user-data-source-settings';
+import type { SourceLoadState } from '../../domain/datasource/source-load-state';
 import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
 import type { SourceGroup } from '../../types/app/source-group';
 import { countriesFlagEmoji } from '../../utils/country-flag';
@@ -39,6 +34,27 @@ type NoticeVariant = 'forced' | 'development';
 interface DataSourceSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Per-prefix load status, owned by the container. */
+  loadStatusByPrefix: SourceLoadState;
+  /** Groups to render, already filtered for the active operating mode. */
+  visibleGroups: readonly SourceGroup[];
+  /** Enabled-group Set driving per-row Switch state and per-section counts. */
+  effectiveEnabledIds: ReadonlySet<string>;
+  /** Whether the `?sources=` URL override is active (disables all toggles). */
+  isForcedSourcesMode: boolean;
+  /** Catalog / SourceMeta-derived summary per group id. */
+  groupInfoById: ReadonlyMap<string, DataSourceGroupInfo>;
+  /**
+   * Effective "today" as a `YYYYMMDD` key, used to classify each group's
+   * operating-period status.
+   */
+  referenceDateKey: string;
+  /** Toggle a single group's enabled state. */
+  setGroupEnabled: (groupId: string, enabled: boolean) => void;
+  /** Toggle multiple groups' enabled state in one update. */
+  setGroupsEnabled: (groupIds: readonly string[], enabled: boolean) => void;
+  /** Clear the user preference and revert to config defaults. */
+  resetToDefaults: () => void;
 }
 
 interface GroupRow {
@@ -84,7 +100,7 @@ interface Section {
 
 function buildGroupRow(
   group: SourceGroup,
-  loadStatusByPrefix: ReturnType<typeof useSourceLoadStatus>,
+  loadStatusByPrefix: SourceLoadState,
   groupInfoById: ReadonlyMap<string, DataSourceGroupInfo>,
   lang: string,
 ): GroupRow {
@@ -129,7 +145,7 @@ function sectionEmoji(key: RouteTypeSectionKey): string {
  */
 function buildSections(
   groups: readonly SourceGroup[],
-  loadStatusByPrefix: ReturnType<typeof useSourceLoadStatus>,
+  loadStatusByPrefix: SourceLoadState,
   groupInfoById: ReadonlyMap<string, DataSourceGroupInfo>,
   lang: string,
   t: (key: string) => string,
@@ -179,7 +195,7 @@ interface DistinctGroupCounts {
  */
 function countDistinctGroupStatuses(
   groups: readonly SourceGroup[],
-  loadStatusByPrefix: ReturnType<typeof useSourceLoadStatus>,
+  loadStatusByPrefix: SourceLoadState,
 ): DistinctGroupCounts {
   const counts: DistinctGroupCounts = {
     loaded: 0,
@@ -226,8 +242,10 @@ function DialogNotice({ variant }: { variant: NoticeVariant }) {
 }
 
 /**
- * Modal dialog listing every configured source group with its current load
- * status.
+ * Presentational modal dialog listing every configured source group with its
+ * current load status. All state (load status, user preference, forced mode,
+ * group info) and the dialog-display derivation are owned by
+ * {@link DataSourceSettingsContainer} and passed in as props.
  *
  * Layout: one section per GTFS route_type (in {@link ROUTE_TYPE_PRIORITY}
  * order). A group is listed in every section whose route_type it covers,
@@ -236,42 +254,23 @@ function DialogNotice({ variant }: { variant: NoticeVariant }) {
  * aggregated status is the same in every section because it is derived
  * from `prefixes`, not from the section's route_type.
  *
- * Groups where `SourceGroup.systemEnabledByDefault === false` are
- * app-level intentional disables and are hidden from the user — except
- * when their data has actually been loaded via the `?sources=all` debug
- * override. The effective visibility rule is therefore:
- *
- *     systemEnabledByDefault === true  ∪  any prefix is in the load-status map
- *
- * so `?sources=all` (which loads every group including the disabled
- * ones) reveals those groups in the dialog, while default and
- * normal-URL flows continue to hide them.
- *
  * Named with "Settings" in anticipation of Phase N, when users will be
  * able to toggle individual sources on/off here.
- *
- * @param open - Whether the dialog is open.
- * @param onOpenChange - Called when the open state changes.
  */
-export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSettingsDialogProps) {
+export function DataSourceSettingsDialog({
+  open,
+  onOpenChange,
+  loadStatusByPrefix,
+  visibleGroups,
+  effectiveEnabledIds,
+  isForcedSourcesMode,
+  groupInfoById,
+  referenceDateKey,
+  setGroupEnabled,
+  setGroupsEnabled,
+  resetToDefaults,
+}: DataSourceSettingsDialogProps) {
   const { t, i18n } = useTranslation();
-  const loadStatusByPrefix = useSourceLoadStatus();
-  const isForcedSourcesMode = useIsForcedSourcesMode();
-  const { enabledGroupIds, setGroupEnabled, setGroupsEnabled, resetToDefaults } =
-    useUserDataSourceSettings();
-
-  // Normalize the two operating modes (forced / normal) into one shape
-  // so the body below never branches on `isForcedSourcesMode`. The
-  // pure-function call returns the visible groups + the Set used for
-  // both per-row Switch state and per-section enabled counts.
-  const { visibleGroups, effectiveEnabledIds } = computeDialogDisplay(
-    settings,
-    loadStatusByPrefix,
-    isForcedSourcesMode,
-    enabledGroupIds,
-  );
-
-  const groupInfoById = useDataSourceGroupInfo(visibleGroups);
 
   const sections = buildSections(
     visibleGroups,
@@ -380,6 +379,7 @@ export function DataSourceSettingsDialog({ open, onOpenChange }: DataSourceSetti
                       countryEmoji={row.countryEmoji}
                       loadStatus={row.loadStatus}
                       groupInfo={row.groupInfo}
+                      referenceDateKey={referenceDateKey}
                       checked={effectiveEnabledIds.has(row.groupId)}
                       disabled={isForcedSourcesMode}
                       onCheckedChange={(next) => {

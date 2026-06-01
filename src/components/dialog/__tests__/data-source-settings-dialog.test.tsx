@@ -11,7 +11,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { DataSourceCatalogBundle } from '@contracts/data/transit-v2-catalog-json';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DataSourceSettingsDialog } from '../data-source-settings-dialog';
+import { DataSourceSettingsContainer } from '../../datasource/data-source-settings-container';
 import settings from '../../../config/data-source-settings';
 import { getDefaultEnabledIds } from '../../../domain/datasource/data-source-selection';
 import type { SourceLoadState } from '../../../domain/datasource/source-load-state';
@@ -101,6 +101,11 @@ vi.mock('../../../domain/datasource/dialog-display', async () => {
 const noopOnOpenChange = (): void => {
   // intentionally empty for tests that don't care about close
 };
+
+// Fixed reference time passed to the container; these tests assert on the
+// dialog's load/selection rendering, not on operating-period status, so the
+// exact value is irrelevant.
+const testDateTime = new Date('2026-06-01T12:00:00Z');
 
 const emptyLoadStatus: SourceLoadState = new Map();
 
@@ -224,7 +229,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
       effectiveEnabledIds: new Set(['demo-group']),
     });
 
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
 
     const demoRow = findGroupRow('Demo Group');
 
@@ -233,7 +244,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
   });
 
   it('shows the development notice Alert, not the forced-mode Alert', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     expect(screen.getByText('dataSourceSettings.developmentNotice.title')).toBeInTheDocument();
     expect(screen.queryByText('dataSourceSettings.forcedMode.title')).not.toBeInTheDocument();
   });
@@ -253,14 +270,26 @@ describe('DataSourceSettingsDialog — normal mode', () => {
       effectiveEnabledIds: new Set(['other-test']),
     });
 
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
 
     expect(screen.getByText('dataSourceSettings.section.other')).toBeInTheDocument();
     expect(findGroupRow('Other Test')).toBeInTheDocument();
   });
 
   it('enables the Reset to defaults button', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     const resetButton = screen.getByRole('button', {
       name: 'dataSourceSettings.resetToDefaults',
     });
@@ -268,7 +297,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
   });
 
   it('enables the Restart button', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     const restartButton = screen.getByRole('button', {
       name: 'dataSourceSettings.restart.aria',
     });
@@ -283,7 +318,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
     vi.stubGlobal('location', { ...window.location, reload: reloadSpy });
 
     try {
-      render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+      render(
+        <DataSourceSettingsContainer
+          open
+          onOpenChange={noopOnOpenChange}
+          referenceDateTime={testDateTime}
+        />,
+      );
       const restartButton = screen.getByRole('button', {
         name: 'dataSourceSettings.restart.aria',
       });
@@ -305,7 +346,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
       setGroupsEnabled: mockSetGroupsEnabled,
       resetToDefaults: mockResetToDefaults,
     });
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     const toeiBusRow = findGroupRow('Toei Bus');
     const toeiBusSwitch = within(toeiBusRow).getByRole('switch');
     expect(toeiBusSwitch).toHaveAttribute('aria-checked', 'true');
@@ -316,7 +363,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
   });
 
   it('clicking a Switch calls setGroupEnabled with the matching group id', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     const toeiBusRow = findGroupRow('Toei Bus');
     const toeiBusSwitch = within(toeiBusRow).getByRole('switch');
     // Initial state is `checked` (toei-bus is in defaults), so clicking
@@ -326,7 +379,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
   });
 
   it('clicking Reset to defaults calls resetToDefaults', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     const resetButton = screen.getByRole('button', {
       name: 'dataSourceSettings.resetToDefaults',
     });
@@ -335,7 +394,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
   });
 
   it('clicking the "All on" bulk button calls setGroupsEnabled with the section group ids and true', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     // There is one "All on" button per section; pick any one of the Bus
     // section's by aria-label.
     const enableAllBus = screen.getByRole('button', {
@@ -352,7 +417,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
   });
 
   it('clicking the "All off" bulk button calls setGroupsEnabled with the section group ids and false', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     const disableAllBus = screen.getByRole('button', {
       name: 'dataSourceSettings.bulkAction.disableAll.aria [dataSourceSettings.section.3]',
     });
@@ -364,7 +435,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
   });
 
   it('clicking the global "All on" button calls setGroupsEnabled with every visible group id and true', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     const enableAllGlobal = screen.getByRole('button', {
       name: 'dataSourceSettings.bulkAction.enableAllGlobal.aria',
     });
@@ -381,7 +458,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
   });
 
   it('clicking the global "All off" button calls setGroupsEnabled with every visible group id and false', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     const disableAllGlobal = screen.getByRole('button', {
       name: 'dataSourceSettings.bulkAction.disableAllGlobal.aria',
     });
@@ -403,7 +486,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
       setGroupsEnabled: mockSetGroupsEnabled,
       resetToDefaults: mockResetToDefaults,
     });
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     const tokoRow = findGroupRow('Toei Transport');
     const tokoSwitch = within(tokoRow).getByRole('switch');
     expect(tokoSwitch).toHaveAttribute('aria-checked', 'false');
@@ -416,7 +505,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
         ['toaran', { status: 'failed', error: new Error('network down') }],
       ]),
     );
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     expect(screen.getAllByText('dataSourceSettings.partial.fraction').length).toBeGreaterThan(0);
   });
 
@@ -424,7 +519,13 @@ describe('DataSourceSettingsDialog — normal mode', () => {
     mockUseSourceLoadStatus.mockReturnValue(
       new Map([['toaran', { status: 'failed', error: new Error('network down') }]]),
     );
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     expect(screen.getAllByText(/toaran/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/network down/).length).toBeGreaterThan(0);
   });
@@ -443,7 +544,13 @@ describe('DataSourceSettingsDialog — forced-sources mode', () => {
   });
 
   it('shows the forced-mode Alert, not the development notice', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     expect(screen.getByText('dataSourceSettings.forcedMode.title')).toBeInTheDocument();
     expect(
       screen.queryByText('dataSourceSettings.developmentNotice.title'),
@@ -451,7 +558,13 @@ describe('DataSourceSettingsDialog — forced-sources mode', () => {
   });
 
   it('narrows visibility to groups with attempted prefixes', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     // toei-bus (1 section) and toko (4 sections — `routeTypes: [0,1,2,3]`)
     // share minkuru → both visible
     expect(getAllSwitchesFor('Toei Bus').length).toBeGreaterThan(0);
@@ -473,7 +586,13 @@ describe('DataSourceSettingsDialog — forced-sources mode', () => {
       setGroupsEnabled: mockSetGroupsEnabled,
       resetToDefaults: mockResetToDefaults,
     });
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     for (const sw of getAllSwitchesFor('Toei Bus')) {
       expect(sw).toHaveAttribute('aria-checked', 'true');
     }
@@ -483,7 +602,13 @@ describe('DataSourceSettingsDialog — forced-sources mode', () => {
   });
 
   it('disables every visible Switch', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     for (const sw of getAllSwitchesFor('Toei Bus')) {
       expect(sw).toBeDisabled();
     }
@@ -493,7 +618,13 @@ describe('DataSourceSettingsDialog — forced-sources mode', () => {
   });
 
   it('disables the Reset to defaults button', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     const resetButton = screen.getByRole('button', {
       name: 'dataSourceSettings.resetToDefaults',
     });
@@ -501,7 +632,13 @@ describe('DataSourceSettingsDialog — forced-sources mode', () => {
   });
 
   it('disables the Restart button', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     const restartButton = screen.getByRole('button', {
       name: 'dataSourceSettings.restart.aria',
     });
@@ -509,7 +646,13 @@ describe('DataSourceSettingsDialog — forced-sources mode', () => {
   });
 
   it('disables every bulk-action button', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     // Bus section is the one that gets shown in forced mode for this
     // setup (minkuru loaded). Both bulk buttons in that section must be
     // disabled.
@@ -524,7 +667,13 @@ describe('DataSourceSettingsDialog — forced-sources mode', () => {
   });
 
   it('disables the global all-on / all-off buttons', () => {
-    render(<DataSourceSettingsDialog open onOpenChange={noopOnOpenChange} />);
+    render(
+      <DataSourceSettingsContainer
+        open
+        onOpenChange={noopOnOpenChange}
+        referenceDateTime={testDateTime}
+      />,
+    );
     const enableAllGlobal = screen.getByRole('button', {
       name: 'dataSourceSettings.bulkAction.enableAllGlobal.aria',
     });

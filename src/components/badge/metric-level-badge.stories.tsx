@@ -6,6 +6,8 @@ import type { BaseLabelSize } from '../label/base-label';
 import {
   AQUA_METRIC_BADGE_TONE_SCALE,
   BLUE_METRIC_BADGE_TONE_SCALE,
+  ENABLEMENT_BADGE_TONE_SCALE,
+  ENABLEMENT_TONE_INDEX,
   FIVE_LEVEL_METRIC_BADGE_TONE_SCALE,
   GOLD_METRIC_BADGE_TONE_SCALE,
   GRAY_METRIC_BADGE_TONE_SCALE,
@@ -480,6 +482,41 @@ export const ToneScaleComparison: Story = {
       </div>
     </div>
   ),
+};
+
+// --- Enablement tone (3-state, not a 0-5 intensity level) ---
+
+/**
+ * The generic `ENABLEMENT_BADGE_TONE_SCALE` (enabled / disabled / unknown).
+ * Unlike the scales above, its index is a semantic state (see
+ * `ENABLEMENT_TONE_INDEX`), not an intensity level. The operating-period badge
+ * uses it; its `unknown` state is gated out of the dialog, so this story is
+ * the only place the `unknown` tone is visible.
+ */
+export const EnablementToneComparison: Story = {
+  args: {
+    iconName: 'CalendarDays',
+    text: 'Enablement',
+    size: 'xs',
+    ariaLabel: 'Operating period',
+  },
+  render: (args) => {
+    const states: ReadonlyArray<{ label: string; level: number }> = [
+      { label: 'enabled', level: ENABLEMENT_TONE_INDEX.enabled },
+      { label: 'disabled', level: ENABLEMENT_TONE_INDEX.disabled },
+      { label: 'unknown', level: ENABLEMENT_TONE_INDEX.unknown },
+    ];
+    return (
+      <div className="flex flex-col gap-2">
+        {states.map((state) => (
+          <div key={state.label} className="flex items-center gap-2">
+            <span className="w-24 text-xs text-gray-500">{state.label}</span>
+            <Wrapper {...args} level={state.level} badgeToneScale={ENABLEMENT_BADGE_TONE_SCALE} />
+          </div>
+        ))}
+      </div>
+    );
+  },
 };
 
 // --- Kitchen sink ---

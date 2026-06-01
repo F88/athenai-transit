@@ -55,6 +55,13 @@ interface DataSourceGroupItemProps {
   countryEmoji: string;
   loadStatus: GroupLoadStatus;
   groupInfo: DataSourceGroupInfo | null;
+  /**
+   * Effective "today" as a `YYYYMMDD` key, forwarded to the summary so the
+   * operating-period badge can reflect whether the data has expired.
+   * Optional: when omitted (e.g. in isolated stories) the period cannot be
+   * evaluated and the badge falls back to the neutral `unknown` tone.
+   */
+  referenceDateKey?: string;
   checked: boolean;
   disabled: boolean;
   onCheckedChange: (next: boolean) => void;
@@ -66,6 +73,7 @@ export function DataSourceGroupItem({
   countryEmoji,
   loadStatus,
   groupInfo,
+  referenceDateKey,
   checked,
   disabled,
   onCheckedChange,
@@ -104,7 +112,7 @@ export function DataSourceGroupItem({
           )}
         </div>
         {/* <DataSourceGroupSummary groupInfo={groupInfo} /> */}
-        <DataSourceGroupSummary2 groupInfo={groupInfo} />
+        <DataSourceGroupSummary2 groupInfo={groupInfo} referenceDateKey={referenceDateKey} />
         <PartialFraction loadStatus={loadStatus} />
         <FailureList loadStatus={loadStatus} />
       </div>

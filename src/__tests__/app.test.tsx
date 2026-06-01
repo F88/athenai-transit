@@ -219,8 +219,8 @@ vi.mock('../components/dialog/info-dialog', () => ({
   },
 }));
 
-vi.mock('../components/dialog/data-source-settings-dialog', () => ({
-  DataSourceSettingsDialog: (props: unknown) => {
+vi.mock('../components/datasource/data-source-settings-container', () => ({
+  DataSourceSettingsContainer: (props: unknown) => {
     mockDataSourceSettingsDialog(props);
     return null;
   },
