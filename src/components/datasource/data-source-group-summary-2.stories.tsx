@@ -125,15 +125,13 @@ export const AllFiveStars: Story = {
 };
 
 /**
- * Operating-period badge across its period states. The operating range is
- * fixed at `20260101-20260131`; only the reference date varies to produce
- * `inPeriod` / `expired` / `beforePeriod`. The last row has no operating-date
- * data (`hasOperatingPeriod === false`), so the badge is omitted.
- *
- * Note: today the badge text / presence is identical for the first three rows
- * (the period status is computed but does not yet change the badge
- * appearance). This story is the harness for that upcoming visual treatment
- * and documents the conditions.
+ * Operating-period badge across its states. The operating range is fixed at
+ * `20260101-20260131`; the reference date varies to produce `inPeriod`
+ * (green, `CalendarRange`), `expired` (amber, `CalendarX`), and `beforePeriod`
+ * (amber, `CalendarX`). The fourth row omits the reference date, so the period
+ * cannot be evaluated and the badge falls back to the neutral `unknown` tone.
+ * The last row has no operating-date data (`hasOperatingPeriod === false`), so
+ * the badge is omitted entirely.
  */
 export const OperatingPeriodComparison: Story = {
   render: () => {
@@ -150,11 +148,12 @@ export const OperatingPeriodComparison: Story = {
     const scenarios: ReadonlyArray<{
       label: string;
       args: WrapperArgs;
-      referenceDateKey: string;
+      referenceDateKey?: string;
     }> = [
       { label: 'inPeriod (ref 20260115)', args: base, referenceDateKey: '20260115' },
       { label: 'expired (ref 20260201)', args: base, referenceDateKey: '20260201' },
       { label: 'beforePeriod (ref 20251201)', args: base, referenceDateKey: '20251201' },
+      { label: 'unknown (no reference date)', args: base },
       {
         label: 'no operating dates (hasOperatingPeriod false)',
         args: { ...base, showOperatingDates: false },

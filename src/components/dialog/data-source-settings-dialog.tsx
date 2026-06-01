@@ -46,13 +46,7 @@ interface DataSourceSettingsDialogProps {
   groupInfoById: ReadonlyMap<string, DataSourceGroupInfo>;
   /**
    * Effective "today" as a `YYYYMMDD` key, used to classify each group's
-   * operating-period status. The value only changes at the day boundary, so
-   * the period classification and its debug-log effect stay stable across the
-   * app's 15s clock tick. NOTE: this stable value does NOT by itself stop this
-   * subtree from re-rendering on the tick -- the container and this view are
-   * not memoized, so they still re-render (running buildSections etc.) on
-   * every tick. Suppressing those re-renders is a separate memoization step
-   * (see Issue 265), not done here.
+   * operating-period status.
    */
   referenceDateKey: string;
   /** Toggle a single group's enabled state. */
@@ -251,7 +245,7 @@ function DialogNotice({ variant }: { variant: NoticeVariant }) {
  * Presentational modal dialog listing every configured source group with its
  * current load status. All state (load status, user preference, forced mode,
  * group info) and the dialog-display derivation are owned by
- * {@link DataSourceSettingsDialogContainer} and passed in as props.
+ * {@link DataSourceSettingsContainer} and passed in as props.
  *
  * Layout: one section per GTFS route_type (in {@link ROUTE_TYPE_PRIORITY}
  * order). A group is listed in every section whose route_type it covers,

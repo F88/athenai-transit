@@ -58,8 +58,8 @@ interface DataSourceGroupItemProps {
   /**
    * Effective "today" as a `YYYYMMDD` key, forwarded to the summary so the
    * operating-period badge can reflect whether the data has expired.
-   * Optional: when omitted (e.g. in isolated stories) the period status is
-   * not evaluated.
+   * Optional: when omitted (e.g. in isolated stories) the period cannot be
+   * evaluated and the badge falls back to the neutral `unknown` tone.
    */
   referenceDateKey?: string;
   checked: boolean;

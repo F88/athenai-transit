@@ -9,7 +9,10 @@ import {
   Spline,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { getDataPeriodStatus } from '../../domain/datasource/data-period-status';
+import {
+  getDataPeriodStatus,
+  type DataPeriodStatus,
+} from '../../domain/datasource/data-period-status';
 import { toTranslationCoverageLevel } from '../../domain/datasource/translation-coverage-level';
 import type { DataSourceGroupInfo } from '../../types/app/data-source-group-info';
 import { formatBytesForDisplay } from '../../utils/format-bytes';
@@ -67,6 +70,23 @@ const MAX_TRIPS_THRESHOLDS: ReadonlyArray<number> = [0, 100, 500, 3000, 8000];
 const ROUTE_SHAPES_THRESHOLDS: ReadonlyArray<number> = [0, 2, 10, 25, 100];
 
 /**
+ * Map an operating-period status to its {@link ENABLEMENT_TONE_INDEX}. A
+ * missing reference date (`null`) or `indeterminate` maps to `unknown`, so the
+ * badge is not shown as `enabled` when the period cannot be evaluated.
+ */
+function enablementToneIndexForPeriodStatus(periodStatus: DataPeriodStatus | null): number {
+  switch (periodStatus) {
+    case 'expired':
+    case 'beforePeriod':
+      return ENABLEMENT_TONE_INDEX.disabled;
+    case 'inPeriod':
+      return ENABLEMENT_TONE_INDEX.enabled;
+    default:
+      return ENABLEMENT_TONE_INDEX.unknown;
+  }
+}
+
+/**
  * Operating-period badge for {@link DataSourceGroupSummary2}.
  *
  * Render-only: the parent owns the "has operating dates" gate and only renders
@@ -90,9 +110,9 @@ function OperatingPeriodBadge({
   const operatingDatesText = `${first}-${last}`;
   const periodStatus =
     referenceDateKey !== undefined ? getDataPeriodStatus({ first, last }, referenceDateKey) : null;
-  // Out of the operating range (expired or not-yet-started) -> the amber
-  // "disabled" tone (index 1). inPeriod / unknown reference -> the green
-  // "enabled" tone (index 0).
+  // Out of the operating range (expired or not-yet-started) gets the CalendarX
+  // icon; in-period / unknown keeps CalendarRange. The tone is chosen by
+  // {@link enablementToneIndexForPeriodStatus}.
   const isOutOfPeriod = periodStatus === 'expired' || periodStatus === 'beforePeriod';
 
   return (
@@ -100,7 +120,7 @@ function OperatingPeriodBadge({
       size="xs"
       icon={isOutOfPeriod ? <CalendarX /> : <CalendarRange />}
       text={operatingDatesText}
-      level={isOutOfPeriod ? ENABLEMENT_TONE_INDEX.disabled : ENABLEMENT_TONE_INDEX.enabled}
+      level={enablementToneIndexForPeriodStatus(periodStatus)}
       badgeToneScale={ENABLEMENT_BADGE_TONE_SCALE}
       aria-label={t('dataSourceSettings.operatingDates.aria', {
         range: operatingDatesText,

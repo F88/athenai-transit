@@ -10,16 +10,7 @@ import { DataSourceSettingsDialog } from '../dialog/data-source-settings-dialog'
 
 interface DataSourceSettingsContainerProps {
   open: boolean;
-  /**
-   * The app-wide effective "now", owned by `App`'s single `useDateTime`
-   * instance and forwarded here (mirroring how `TripInspectionContainer`
-   * receives `relativeTimeNow`). The container reduces it to a `YYYYMMDD` key
-   * whose value is stable across the 15s tick, which keeps the period
-   * classification (and its effect) from changing each tick. It does NOT, on
-   * its own, stop the container/dialog from re-rendering on the tick -- they
-   * are unmemoized, so the tick still re-renders this subtree. Cutting those
-   * re-renders off is a separate memoization step (see Issue 265).
-   */
+  /** The effective "now", used to classify each group's operating period. */
   referenceDateTime: Date;
   onOpenChange: (open: boolean) => void;
 }
@@ -58,10 +49,8 @@ export function DataSourceSettingsContainer({
 
   const groupInfoById = useDataSourceGroupInfo(visibleGroups);
 
-  // A YYYYMMDD key changes once per day, so the *value* passed downstream is
-  // stable across the app's 15s tick even though `referenceDateTime` is a new
-  // object each tick. This suppresses the period-status effect re-firing; it
-  // does not stop the unmemoized container/dialog from re-rendering on the tick.
+  // A YYYYMMDD key changes once per day, so the value passed downstream stays
+  // stable even though `referenceDateTime` updates with the app clock.
   const referenceDateKey = useMemo(() => formatDateKey(referenceDateTime), [referenceDateTime]);
 
   return (
