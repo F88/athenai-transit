@@ -17,8 +17,8 @@ const meguroCBus: GtfsSourceDefinition = {
       organizationUrl: 'https://ckan.odpt.org/organization/tokyu_bus',
       datasetUrl: 'https://ckan.odpt.org/dataset/tokyu_bus_tokyubus_community_meguro_city',
       resourceUrl:
-        'https://ckan.odpt.org/dataset/tokyu_bus_tokyubus_community_meguro_city/resource/bb6df1e8-8114-4f18-8902-a38d729979ad',
-      resourceId: 'bb6df1e8-8114-4f18-8902-a38d729979ad',
+        'https://ckan.odpt.org/dataset/tokyu_bus_tokyubus_community_meguro_city/resource/284624d8-811c-4a76-9a47-6c74ec1f2659',
+      resourceId: '284624d8-811c-4a76-9a47-6c74ec1f2659',
     },
     provider: {
       name: {
@@ -40,7 +40,7 @@ const meguroCBus: GtfsSourceDefinition = {
     // The date parameter is required and must match a published version on CKAN.
     // Update this value when a new version is published.
     downloadUrl:
-      'https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_MeguroCity.zip?date=20260521',
+      'https://api.odpt.org/api/v4/files/odpt/TokyuBus/tokyubus_community_MeguroCity.zip?date=20260601',
   },
   pipeline: {
     outDir: 'meguro-c-bus',
