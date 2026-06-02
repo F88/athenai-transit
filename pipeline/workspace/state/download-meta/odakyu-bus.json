@@ -2,12 +2,12 @@
   "sourceName": "odakyu-bus",
   "type": "gtfs",
   "status": "ok",
-  "downloadedAt": "2026-06-01T09:31:48.764Z",
+  "downloadedAt": "2026-06-02T05:47:09.193Z",
   "url": "https://api.odpt.org/api/v4/files/odpt/OdakyuBus/AIILines.zip?date=20260601",
   "size": 3301299,
   "contentType": "text/plain; charset=ASCII-8BIT",
-  "durationMs": 2445,
-  "archivePath": "workspace/_archives/gtfs/odakyu-bus/AIILines_20260601-093151.zip",
+  "durationMs": 3935,
+  "archivePath": "workspace/_archives/gtfs/odakyu-bus/AIILines_20260602-054712.zip",
   "extractedFiles": [
     {
       "name": "agency.txt",
