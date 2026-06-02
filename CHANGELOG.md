@@ -17,7 +17,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
-- Perf mode: パフォーマンスモードの切替が描画モード (render mode) をプロファイル既定値にリセットする連動を廃止し、両モードを独立に切り替えられるようにした。perf mode は nearby radius / maxResults / 路線図表示などデータ量のみを制御する。
+- Perf mode: パフォーマンスモードの切替が描画モード (render mode) をプロファイル既定値にリセットする連動を廃止し、両モードを独立に切り替えられるようにした。perf mode は nearby radius / maxResults などデータ量のみを制御する。
 - Data-source settings: 複数 prefix を束ねる source group (`toko`, `tokyo-23-wards-community-bus-group`) を追加し、東京23区コミュニティバス束ね group の prefix 一覧・表示名・ID を整理した。あわせて `data-source-settings` test に件数 / ID 集合の固定検証を追加した。
 - Trip inspection: `useTripInspection` の所有を新設の `TripInspectionContainer` (`src/components/trip/trip-inspection-container.tsx`) に移し、ダイアログ内の prev / next 移動や trip 再選択で `App` 全体が再 render しないようにした。
 - Trip inspection: 外部 launch 経路 (BottomSheet / StopSearchDialog / TimetableContainer) は imperative handle 経由で維持しつつ、open outcome toast の表示を `src/lib/open-outcome-toast.ts` に共通化した。
