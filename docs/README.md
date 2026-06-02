@@ -15,6 +15,7 @@
 
 | File                                                               | Purpose                                                               |
 | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| [system-architecture.md](./system-architecture.md)                 | GitHub Actions、pipeline、Vercel 配信の簡易システム構成。             |
 | [map-architecture.md](./map-architecture.md)                       | MapView hoist、layout mode、z-index、pan/zoom、click/tap event 制御。 |
 | [runtime-configuration.md](./runtime-configuration.md)             | Logger、mode 定義、URL parameter、MockRepository、diagnostics。       |
 | [platform-pwa.md](./platform-pwa.md)                               | PWA cache、platform behavior、iOS standalone / safe-area。            |
