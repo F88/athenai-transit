@@ -108,7 +108,6 @@ export function StopsSummary({
   return (
     <div
       className={cn(
-        // 'bg-violet-400',
         'm-0 flex items-center font-bold text-[#212121] dark:text-gray-100',
         textClassBySize[size],
       )}
