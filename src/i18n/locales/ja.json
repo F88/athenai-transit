@@ -244,7 +244,7 @@
   "dataSourceSettings": {
     "title": "データソース設定",
     "description": "利用するデータソースと状態",
-    "summary": "✅ {{loaded}} / ⚠️ {{partial}} / ❌ {{failed}} / — {{notAttempted}}",
+    "summary": "✅ {{loaded}} / 🧩 {{partial}} / ❌ {{failed}} / — {{notAttempted}}",
     "status": {
       "loaded": "読込済",
       "partial": "部分読込",
