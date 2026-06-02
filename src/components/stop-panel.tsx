@@ -22,7 +22,7 @@ export function StopPanel({
   selectedStopId,
   hasNearbyLoaded,
   stopsRadius,
-  relativeTimeNow: now,
+  relativeTimeNow,
   mapCenter,
   infoLevel,
   dataLangs,
@@ -45,7 +45,7 @@ export function StopPanel({
         selectedStopId={selectedStopId}
         hasNearbyLoaded={hasNearbyLoaded}
         stopsRadius={stopsRadius}
-        now={now}
+        now={relativeTimeNow}
         mapCenter={mapCenter}
         infoLevel={infoLevel}
         dataLangs={dataLangs}
