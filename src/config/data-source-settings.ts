@@ -81,7 +81,7 @@ const multiPrefixGroups: SourceGroup[] = [
     ],
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Tokyo 23 Wards Community Bus Group',
       names: { ja: '📦 東京23区コミュニティバス', en: '📦 Tokyo 23 Wards Community Bus Group' },
@@ -348,7 +348,7 @@ const singlePrefixTokyo23WardCommunityBusGroupInputs: SinglePrefixSourceGroupInp
     prefix: 'bgle',
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'B-GURU',
       names: { ja: 'Bーぐる (文京区)', en: 'B-GURU (Bunkyo)' },
@@ -360,7 +360,7 @@ const singlePrefixTokyo23WardCommunityBusGroupInputs: SinglePrefixSourceGroupInp
     prefix: '13103b',
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     // userEnabledByDefault: false,
     name: {
       name: 'Chii Bus',
@@ -374,7 +374,7 @@ const singlePrefixTokyo23WardCommunityBusGroupInputs: SinglePrefixSourceGroupInp
     prefix: 'kazag',
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Kazaguruma',
       // names: { ja: '風ぐるま', en: 'Kazaguruma (Chiyoda)' },
@@ -387,7 +387,7 @@ const singlePrefixTokyo23WardCommunityBusGroupInputs: SinglePrefixSourceGroupInp
     prefix: 'edobus',
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Edo Bus',
       // names: { ja: '江戸バス', en: 'Edo Bus (Chuo)' },
@@ -400,7 +400,7 @@ const singlePrefixTokyo23WardCommunityBusGroupInputs: SinglePrefixSourceGroupInp
     prefix: '85b',
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     // userEnabledByDefault: false,
     name: {
       name: 'Hachiko Bus',
@@ -414,7 +414,7 @@ const singlePrefixTokyo23WardCommunityBusGroupInputs: SinglePrefixSourceGroupInp
     prefix: 'rin2',
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Rinrin-GO',
       names: { ja: 'りんりんGO (板橋区)', en: 'Rinrin-GO (Itabashi)' },
@@ -426,7 +426,7 @@ const singlePrefixTokyo23WardCommunityBusGroupInputs: SinglePrefixSourceGroupInp
     prefix: 'kbus',
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'K-bus',
       // names: { ja: 'Kバス', en: 'K-bus' },
@@ -439,7 +439,7 @@ const singlePrefixTokyo23WardCommunityBusGroupInputs: SinglePrefixSourceGroupInp
     prefix: 'sanma',
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Sanma Bus',
       names: { ja: 'さんまバス (目黒区)', en: 'Sanma Bus (Meguro)' },
@@ -451,7 +451,7 @@ const singlePrefixTokyo23WardCommunityBusGroupInputs: SinglePrefixSourceGroupInp
     prefix: 'tamachan',
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Tamachan Bus',
       names: { ja: 'たまちゃんバス (大田区)', en: 'Tamachan Bus (Ota)' },
@@ -463,7 +463,7 @@ const singlePrefixTokyo23WardCommunityBusGroupInputs: SinglePrefixSourceGroupInp
     prefix: 'shinabus',
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Shina Bus',
       names: { ja: 'しなバス (品川区)', en: 'Shina Bus (Shinagawa)' },
@@ -475,7 +475,7 @@ const singlePrefixTokyo23WardCommunityBusGroupInputs: SinglePrefixSourceGroupInp
     prefix: 'sggsm',
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'GSM',
       // names: { ja: 'グリスロ', en: 'GSM (Suginami)' },
@@ -488,7 +488,7 @@ const singlePrefixTokyo23WardCommunityBusGroupInputs: SinglePrefixSourceGroupInp
     prefix: 'megurin',
     routeTypes: [3],
     systemEnabledByDefault: true,
-    userEnabledByDefault: true,
+    userEnabledByDefault: false,
     name: {
       name: 'Megurin',
       names: { ja: 'めぐりん (台東区)', en: 'Megurin (Taito)' },
