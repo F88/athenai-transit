@@ -20,9 +20,10 @@ export function StopPanel({
   stopTimes,
   timetableEntriesStateByStopId,
   selectedStopId,
+  isNearbyLoading,
   hasNearbyLoaded,
   stopsRadius,
-  time: now,
+  relativeTimeNow,
   mapCenter,
   infoLevel,
   dataLangs,
@@ -43,9 +44,10 @@ export function StopPanel({
         stopTimes={stopTimes}
         timetableEntriesStateByStopId={timetableEntriesStateByStopId}
         selectedStopId={selectedStopId}
+        isNearbyLoading={isNearbyLoading}
         hasNearbyLoaded={hasNearbyLoaded}
         stopsRadius={stopsRadius}
-        now={now}
+        now={relativeTimeNow}
         mapCenter={mapCenter}
         infoLevel={infoLevel}
         dataLangs={dataLangs}

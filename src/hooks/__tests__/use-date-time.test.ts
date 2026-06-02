@@ -15,19 +15,19 @@ describe('useDateTime', () => {
     const before = new Date();
     const { result } = renderHook(() => useDateTime());
 
-    expect(result.current.isCustomTime).toBe(false);
-    expect(result.current.dateTime.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(result.current.isVirtualNowPinned).toBe(false);
+    expect(result.current.virtualNow.getTime()).toBeGreaterThanOrEqual(before.getTime());
   });
 
-  it('updates dateTime every 15 seconds in real-time mode', () => {
+  it('updates virtualNow every 15 seconds in real-time mode', () => {
     const { result } = renderHook(() => useDateTime());
-    const initial = result.current.dateTime.getTime();
+    const initial = result.current.virtualNow.getTime();
 
     act(() => {
       vi.advanceTimersByTime(15_000);
     });
 
-    expect(result.current.dateTime.getTime()).toBeGreaterThan(initial);
+    expect(result.current.virtualNow.getTime()).toBeGreaterThan(initial);
   });
 
   it('switches to custom time mode', () => {
@@ -35,11 +35,11 @@ describe('useDateTime', () => {
     const custom = new Date('2025-01-01T12:00:00');
 
     act(() => {
-      result.current.setCustomTime(custom);
+      result.current.pinVirtualNow(custom);
     });
 
-    expect(result.current.isCustomTime).toBe(true);
-    expect(result.current.dateTime).toBe(custom);
+    expect(result.current.isVirtualNowPinned).toBe(true);
+    expect(result.current.virtualNow).toBe(custom);
   });
 
   it('stops interval updates in custom time mode', () => {
@@ -47,61 +47,61 @@ describe('useDateTime', () => {
     const custom = new Date('2025-01-01T12:00:00');
 
     act(() => {
-      result.current.setCustomTime(custom);
+      result.current.pinVirtualNow(custom);
     });
 
     act(() => {
       vi.advanceTimersByTime(30_000);
     });
 
-    // dateTime should still be the custom time, not updated
-    expect(result.current.dateTime).toBe(custom);
+    // virtualNow should still be the custom time, not updated
+    expect(result.current.virtualNow).toBe(custom);
   });
 
   it('resets to real-time mode', () => {
     const { result } = renderHook(() => useDateTime());
 
     act(() => {
-      result.current.setCustomTime(new Date('2025-01-01T12:00:00'));
+      result.current.pinVirtualNow(new Date('2025-01-01T12:00:00'));
     });
-    expect(result.current.isCustomTime).toBe(true);
+    expect(result.current.isVirtualNowPinned).toBe(true);
 
     act(() => {
-      result.current.resetToNow();
+      result.current.unpinVirtualNow();
     });
 
-    expect(result.current.isCustomTime).toBe(false);
+    expect(result.current.isVirtualNowPinned).toBe(false);
   });
 
   it('resumes interval after reset to now', () => {
     const { result } = renderHook(() => useDateTime());
 
     act(() => {
-      result.current.setCustomTime(new Date('2025-01-01T12:00:00'));
+      result.current.pinVirtualNow(new Date('2025-01-01T12:00:00'));
     });
 
     act(() => {
-      result.current.resetToNow();
+      result.current.unpinVirtualNow();
     });
 
-    const afterReset = result.current.dateTime.getTime();
+    const afterReset = result.current.virtualNow.getTime();
 
     act(() => {
       vi.advanceTimersByTime(15_000);
     });
 
-    expect(result.current.dateTime.getTime()).toBeGreaterThan(afterReset);
+    expect(result.current.virtualNow.getTime()).toBeGreaterThan(afterReset);
   });
 
-  it('does not update dateTime before 15 seconds', () => {
+  it('does not update virtualNow before 15 seconds', () => {
     const { result } = renderHook(() => useDateTime());
-    const initial = result.current.dateTime.getTime();
+    const initial = result.current.virtualNow.getTime();
 
     act(() => {
       vi.advanceTimersByTime(14_999);
     });
 
-    expect(result.current.dateTime.getTime()).toBe(initial);
+    expect(result.current.virtualNow.getTime()).toBe(initial);
   });
 
   it('replaces a previous custom time with a new one', () => {
@@ -110,31 +110,31 @@ describe('useDateTime', () => {
     const second = new Date('2025-06-15T18:30:00');
 
     act(() => {
-      result.current.setCustomTime(first);
+      result.current.pinVirtualNow(first);
     });
-    expect(result.current.dateTime).toBe(first);
+    expect(result.current.virtualNow).toBe(first);
 
     act(() => {
-      result.current.setCustomTime(second);
+      result.current.pinVirtualNow(second);
     });
-    expect(result.current.dateTime).toBe(second);
-    expect(result.current.isCustomTime).toBe(true);
+    expect(result.current.virtualNow).toBe(second);
+    expect(result.current.isVirtualNowPinned).toBe(true);
   });
 
-  it('resetToNow returns a fresh Date, not the old custom time', () => {
+  it('unpinVirtualNow returns a fresh Date, not the old custom time', () => {
     const { result } = renderHook(() => useDateTime());
     const oldCustom = new Date('2000-01-01T00:00:00');
 
     act(() => {
-      result.current.setCustomTime(oldCustom);
+      result.current.pinVirtualNow(oldCustom);
     });
 
     act(() => {
-      result.current.resetToNow();
+      result.current.unpinVirtualNow();
     });
 
     // The reset time should be much later than the old custom time
-    expect(result.current.dateTime.getTime()).toBeGreaterThan(oldCustom.getTime());
+    expect(result.current.virtualNow.getTime()).toBeGreaterThan(oldCustom.getTime());
   });
 
   it('cleans up interval on unmount', () => {

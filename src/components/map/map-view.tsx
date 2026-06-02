@@ -235,7 +235,12 @@ export interface MapViewProps {
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLang: readonly string[];
-  time: Date;
+  /**
+   * The "now" for relative departure times ("in N min"). Usually the real
+   * clock, but the user can pin it (time picker / `?time=`); when pinned
+   * the countdown stops.
+   */
+  relativeTimeNow: Date;
   onBoundsChanged: (bounds: Bounds, center: LatLng) => void;
   onStopSelected: (stop: Stop) => void;
   onFetchStopTimes: (stopId: string) => Promise<StopWithContext | null>;
@@ -303,7 +308,7 @@ export function MapView({
   renderMode,
   infoLevel,
   dataLang,
-  time: now,
+  relativeTimeNow,
   onBoundsChanged,
   onStopSelected,
   onFetchStopTimes,
@@ -606,7 +611,7 @@ export function MapView({
           agenciesMap={agenciesMap}
           showTooltip={true}
           // showTooltip={false}
-          time={now}
+          time={relativeTimeNow}
           infoLevel={infoLevel}
           dataLang={dataLang}
           renderMode={nearbyRenderMode}
@@ -637,7 +642,7 @@ export function MapView({
             routeTypeMap={routeStopsRouteTypeMap}
             showTooltip={true}
             stopTimes={timetableEntriesMap}
-            time={now}
+            time={relativeTimeNow}
             renderMode={nearbyRenderMode}
             infoLevel={infoLevel}
             dataLang={dataLang}
@@ -655,7 +660,7 @@ export function MapView({
           stops={filteredNearbyStops}
           routeTypeMap={routeTypeMap}
           agenciesMap={agenciesMap}
-          now={now}
+          now={relativeTimeNow}
           infoLevel={infoLevel}
           dataLang={dataLang}
           renderMode={nearbyRenderMode}

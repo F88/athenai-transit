@@ -48,9 +48,15 @@ export interface StopBrowserProps {
    */
   timetableEntriesStateByStopId: ReadonlyMap<string, TimetableEntriesState>;
   selectedStopId: string | null;
+  isNearbyLoading: boolean;
   hasNearbyLoaded: boolean;
   /** Radius (metres) within which the displayed stops were collected; shown in the header summary. */
   stopsRadius: number;
+  /**
+   * Reference "now" for relative departure times (the surface's
+   * `relativeTimeNow`, forwarded under the rendering-subtree's `now`
+   * convention); pinnable, so the countdown freezes when pinned.
+   */
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
@@ -93,6 +99,11 @@ export function StopBrowser({
   stopTimes,
   timetableEntriesStateByStopId,
   selectedStopId,
+  // Intentionally unused (`_` prefix): by current spec the stop list does
+  // not render a re-fetch loading state. Kept rather than removed -- it is
+  // a meaningful loading-state signal that may be surfaced later. Held here
+  // (the shared StopBrowser) so both BottomSheet and StopPanel forward it.
+  isNearbyLoading: _isNearbyLoading,
   hasNearbyLoaded,
   stopsRadius,
   now,

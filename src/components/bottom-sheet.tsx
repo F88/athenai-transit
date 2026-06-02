@@ -35,7 +35,12 @@ export interface BottomSheetProps {
    * and the stop count change together on a perf-mode toggle.
    */
   stopsRadius: number;
-  time: Date;
+  /**
+   * The "now" for relative departure times ("in N min"). Usually the real
+   * clock, but the user can pin it (time picker / `?time=`); when pinned
+   * the countdown stops.
+   */
+  relativeTimeNow: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
@@ -85,10 +90,10 @@ export function BottomSheet({
   stopTimes,
   timetableEntriesStateByStopId,
   selectedStopId,
-  isNearbyLoading: _isNearbyLoading,
+  isNearbyLoading,
   hasNearbyLoaded,
   stopsRadius,
-  time: now,
+  relativeTimeNow,
   mapCenter,
   infoLevel,
   dataLangs,
@@ -171,9 +176,10 @@ export function BottomSheet({
         stopTimes={stopTimes}
         timetableEntriesStateByStopId={timetableEntriesStateByStopId}
         selectedStopId={selectedStopId}
+        isNearbyLoading={isNearbyLoading}
         hasNearbyLoaded={hasNearbyLoaded}
         stopsRadius={stopsRadius}
-        now={now}
+        now={relativeTimeNow}
         mapCenter={mapCenter}
         infoLevel={infoLevel}
         dataLangs={dataLangs}

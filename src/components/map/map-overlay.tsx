@@ -81,8 +81,8 @@ interface MapOverlayProps {
   lookupAnchorStopMeta: (stopId: string) => StopWithMeta | null;
   lookupHistoryStopMeta: (stopId: string) => StopWithMeta | null;
   tileIndex: number | null;
-  /** Currently displayed time (from `useDateTime`). */
-  time: Date;
+  /** The app's virtual "now" shown in the time-control bar (live clock, or a pinned custom time). */
+  virtualNow: Date;
   /** True when the displayed time is user-pinned (not "now"). */
   isCustomTime: boolean;
   /** Reset the displayed time back to the live "now" clock. */
@@ -137,7 +137,7 @@ export function MapOverlay({
   lookupAnchorStopMeta,
   lookupHistoryStopMeta,
   tileIndex,
-  time,
+  virtualNow,
   isCustomTime,
   onResetToNow,
   onCustomTimeSet,
@@ -185,7 +185,7 @@ export function MapOverlay({
       <StopControlPanel infoLevel={infoLevel} onSearchClick={onSearchClick} />
       <InfoPanel infoLevel={infoLevel} onInfoClick={onInfoClick} />
       <TimeControls
-        time={time}
+        time={virtualNow}
         isCustomTime={isCustomTime}
         onResetToNow={onResetToNow}
         onCustomTimeSet={onCustomTimeSet}

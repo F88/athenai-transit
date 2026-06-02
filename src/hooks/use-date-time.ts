@@ -9,14 +9,14 @@ const NOW_UPDATE_INTERVAL_MS = 15_000;
  * Return type for the useDateTime hook.
  */
 export interface UseDateTimeReturn {
-  /** The effective date/time (custom or real-time). */
-  dateTime: Date;
-  /** Whether a custom time is active. */
-  isCustomTime: boolean;
-  /** Reset to real-time mode. */
-  resetToNow: () => void;
-  /** Set a custom time (switches to manual mode). */
-  setCustomTime: (date: Date) => void;
+  /** The app's virtual "now": the live clock (updates every 15s) or a pinned custom time. */
+  virtualNow: Date;
+  /** Whether `virtualNow` is pinned to a custom time (true) or tracking the live clock (false). */
+  isVirtualNowPinned: boolean;
+  /** Pin `virtualNow` to a specific instant (switches off live tracking). */
+  pinVirtualNow: (date: Date) => void;
+  /** Release the pin and resume tracking the live clock. */
+  unpinVirtualNow: () => void;
 }
 
 /**
@@ -38,8 +38,8 @@ export function useDateTime(): UseDateTimeReturn {
     return param;
   });
 
-  const isCustomTime = customTime !== null;
-  const dateTime = customTime ?? now;
+  const isVirtualNowPinned = customTime !== null;
+  const virtualNow = customTime ?? now;
 
   // Auto-update `now` every 15 seconds in real-time mode
   useEffect(() => {
@@ -52,16 +52,16 @@ export function useDateTime(): UseDateTimeReturn {
     return () => clearInterval(id);
   }, [customTime]);
 
-  const resetToNow = useCallback(() => {
+  const unpinVirtualNow = useCallback(() => {
     logger.info('Reset to real-time mode');
     setCustomTimeState(null);
     setNow(new Date());
   }, []);
 
-  const setCustomTime = useCallback((date: Date) => {
+  const pinVirtualNow = useCallback((date: Date) => {
     logger.info(`Custom time set: ${date.toISOString()}`);
     setCustomTimeState(date);
   }, []);
 
-  return { dateTime, isCustomTime, resetToNow, setCustomTime };
+  return { virtualNow, isVirtualNowPinned, pinVirtualNow, unpinVirtualNow };
 }
