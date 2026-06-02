@@ -11,7 +11,7 @@ function statusIcon(status: GroupLoadStatus['status']): string {
     case 'failed':
       return '❌';
     case 'partial':
-      return '⚠️';
+      return '🧩';
     case 'notAttempted':
       return '—';
   }

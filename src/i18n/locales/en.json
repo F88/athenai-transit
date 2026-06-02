@@ -244,7 +244,7 @@
   "dataSourceSettings": {
     "title": "Data source settings",
     "description": "Data sources in use and their state",
-    "summary": "✅ {{loaded}} / ⚠️ {{partial}} / ❌ {{failed}} / — {{notAttempted}}",
+    "summary": "✅ {{loaded}} / 🧩 {{partial}} / ❌ {{failed}} / — {{notAttempted}}",
     "status": {
       "loaded": "Loaded",
       "partial": "Partial",
