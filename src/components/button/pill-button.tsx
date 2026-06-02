@@ -1,19 +1,25 @@
 import type { CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils';
+import type { ExtendedDisplaySize } from '../shared/display-size';
+
+export type PillButtonSize = ExtendedDisplaySize;
 
 const sizeVariants = {
-  default: 'px-2.5 py-1 text-xs',
+  xs: 'px-1.5 py-0.5 text-[10px]',
   sm: 'px-2 py-0.5 text-[10px]',
-} as const;
+  md: 'px-2.5 py-1 text-xs',
+  lg: 'px-3 py-1.5 text-sm',
+  xl: 'px-3.5 py-2 text-base',
+} as const satisfies Record<PillButtonSize, string>;
 
 interface PillButtonProps {
   /** Whether this button is currently active/selected. */
   active: boolean;
   /** Whether the button is disabled (non-interactive, dimmed). */
   disabled?: boolean;
-  /** Size variant. @default 'default' */
-  size?: keyof typeof sizeVariants;
+  /** Size variant. @default 'md' */
+  size?: PillButtonSize;
   /** Custom background color when active (e.g. route color). Falls back to default blue. */
   activeBg?: string;
   /** Custom text color when active (e.g. route text color). */
@@ -44,7 +50,7 @@ interface PillButtonProps {
  *
  * @param active - Whether the button is selected.
  * @param disabled - Whether the button is non-interactive.
- * @param size - Size variant: `'default'` or `'sm'`.
+ * @param size - Size variant.
  * @param activeBg - Custom background color for active state.
  * @param activeFg - Custom text color for active state.
  * @param activeBorder - Custom border color for active state.
@@ -57,7 +63,7 @@ interface PillButtonProps {
 export function PillButton({
   active,
   disabled = false,
-  size = 'default',
+  size = 'md',
   activeBg,
   activeFg,
   activeBorder,
@@ -142,7 +148,7 @@ export function PillButton({
         'inline-flex shrink-0 items-center rounded-full font-medium whitespace-nowrap transition-colors select-none [-webkit-touch-callout:none]',
         onClick && !disabled && 'cursor-pointer',
         disabled && 'cursor-not-allowed',
-        sizeVariants[size] ?? sizeVariants.default,
+        sizeVariants[size] ?? sizeVariants.md,
         toneClassName,
         className,
       )}

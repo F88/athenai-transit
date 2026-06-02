@@ -1,11 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import { PillButton } from '../button/pill-button';
+import { PillButton, type PillButtonSize } from '../button/pill-button';
 
 interface BoardabilityFilterProps {
   boardable: boolean;
   onToggleBoardable: () => void;
   /** Number of boardable entries (= count to display on the pill). */
   count?: number;
+  /** Pill size variant. */
+  size?: PillButtonSize;
 }
 
 /**
@@ -29,13 +31,14 @@ export function BoardabilityFilter({
   boardable,
   onToggleBoardable,
   count,
+  size = 'sm',
 }: BoardabilityFilterProps) {
   const { t } = useTranslation();
 
   return (
     <div className="flex flex-wrap gap-1">
       <PillButton
-        size="sm"
+        size={size}
         active={boardable}
         activeBg={'var(--info)'}
         activeBorder={'var(--info)'}

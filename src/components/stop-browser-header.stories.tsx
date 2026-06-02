@@ -59,6 +59,7 @@ const meta = {
     viewId: DEFAULT_VIEW_ID,
     selectedView: defaultSelectedView,
     infoLevel: 'normal',
+    size: 'md',
     presentRouteTypes: [3],
     hiddenRouteTypes: new Set<number>(),
     presentAgencies: [agencyTobus],
@@ -77,6 +78,7 @@ const meta = {
     showOriginOnly: { control: 'boolean' },
     showBoardableOnly: { control: 'boolean' },
     hasNearbyLoaded: { control: 'boolean' },
+    size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
   },
   decorators: [
     (Story) => (
@@ -239,6 +241,34 @@ export const ViewVerboseDescription: Story = {
     selectedView: selectView('route-headsign'),
     infoLevel: 'verbose',
   },
+};
+
+// --- Sizes ---
+
+export const SizeComparison: Story = {
+  args: {
+    infoLevel: 'verbose',
+    counts: { total: 42, nonEmpty: 28, originCount: 6, boardableCount: 15 },
+    nearbyStopsCounts: { total: 42, nonEmpty: 28, originCount: 6, boardableCount: 15 },
+    filteredNearbyStopsCounts: { total: 21, nonEmpty: 21, originCount: 6, boardableCount: 15 },
+    omitEmptyStops: true,
+  },
+  render: (args) => (
+    <div className="flex flex-col gap-3">
+      <div className="space-y-1">
+        <span className="block px-4 text-[10px] text-gray-400">size=md</span>
+        <StopBrowserHeader {...args} size="md" />
+      </div>
+      <div className="space-y-1">
+        <span className="block px-4 text-[10px] text-gray-400">size=lg</span>
+        <StopBrowserHeader {...args} size="lg" />
+      </div>
+      <div className="space-y-1">
+        <span className="block px-4 text-[10px] text-gray-400">size=xl</span>
+        <StopBrowserHeader {...args} size="xl" />
+      </div>
+    </div>
+  ),
 };
 
 // --- Language comparison ---

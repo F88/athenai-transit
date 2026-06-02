@@ -9,10 +9,25 @@ import { collectPresentAgencies } from '../domain/transit/collect-present-agenci
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
 import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
+import { useElementRect } from '../hooks/use-element-rect';
 import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
 import { APP_ROUTE_TYPES } from '../config/route-types';
 import { StopBrowserHeader } from './stop-browser-header';
 import { StopGrid } from './stop-grid';
+import type { ExtendedDisplaySize } from './shared/display-size';
+
+const STOP_BROWSER_HEADER_LARGE_MIN_WIDTH = 800;
+const STOP_BROWSER_HEADER_EXTRA_LARGE_MIN_WIDTH = 1200;
+
+function resolveStopBrowserHeaderSize(viewportWidth: number): ExtendedDisplaySize {
+  if (viewportWidth >= STOP_BROWSER_HEADER_EXTRA_LARGE_MIN_WIDTH) {
+    return 'xl';
+  }
+  if (viewportWidth >= STOP_BROWSER_HEADER_LARGE_MIN_WIDTH) {
+    return 'lg';
+  }
+  return 'md';
+}
 
 /** Route type display order matching StopTypeFilterPanel. */
 const ROUTE_TYPE_PRIORITY: Readonly<Record<number, number>> = {
@@ -130,6 +145,9 @@ export function StopBrowser({
     onToggleShowBoardableOnly,
     onToggleOmitEmptyStops,
   } = globalFilter;
+  const [rootElement, setRootElement] = useState<HTMLDivElement | null>(null);
+  const rootRect = useElementRect(rootElement);
+  const headerSize = resolveStopBrowserHeaderSize(rootRect?.width ?? 0);
   const [viewId, setViewId] = useState(DEFAULT_VIEW_ID);
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
   const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
@@ -216,7 +234,7 @@ export function StopBrowser({
   }, [selectedStopId, stopIdsKey]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col" ref={setRootElement}>
       <StopBrowserHeader
         hasNearbyLoaded={hasNearbyLoaded}
         nearbyStopsCounts={nearbyStopsCounts}
@@ -231,6 +249,7 @@ export function StopBrowser({
         viewId={viewId}
         selectedView={selectedView}
         infoLevel={infoLevel}
+        size={headerSize}
         presentRouteTypes={presentRouteTypes}
         hiddenRouteTypes={hiddenRouteTypes}
         presentAgencies={presentAgencies}

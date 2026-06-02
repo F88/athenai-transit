@@ -1,11 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import { PillButton } from '../button/pill-button';
+import { PillButton, type PillButtonSize } from '../button/pill-button';
 
 interface OriginFilterProps {
   origin: boolean;
   onToggleOrigin: () => void;
   /** Number of origin entries (= count to display on the pill). */
   count?: number;
+  /** Pill size variant. */
+  size?: PillButtonSize;
 }
 
 /**
@@ -25,13 +27,13 @@ interface OriginFilterProps {
  * @param props - Filter rendering inputs.
  * @returns The rendered filter toggle.
  */
-export function OriginFilter({ origin, onToggleOrigin, count }: OriginFilterProps) {
+export function OriginFilter({ origin, onToggleOrigin, count, size = 'sm' }: OriginFilterProps) {
   const { t } = useTranslation();
 
   return (
     <div className="flex flex-wrap gap-1">
       <PillButton
-        size="sm"
+        size={size}
         active={origin}
         activeBg={'var(--info)'}
         activeBorder={'var(--info)'}

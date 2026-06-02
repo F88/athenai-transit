@@ -11,7 +11,7 @@ const meta = {
     children: 'ラベル',
   },
   argTypes: {
-    size: { control: 'inline-radio', options: ['default', 'sm'] },
+    size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     active: { control: 'boolean' },
     disabled: { control: 'boolean' },
     activeBg: { control: 'color' },
@@ -40,8 +40,8 @@ export const Disabled: Story = {
 
 // --- Size variants ---
 
-export const SizeDefault: Story = {
-  args: { active: true, children: 'default' },
+export const SizeMd: Story = {
+  args: { active: true, size: 'md', children: 'md' },
 };
 
 export const SizeSm: Story = {
@@ -185,17 +185,20 @@ export const SizeComparison: Story = {
   args: { active: false },
   render: (args) => (
     <div className="flex items-center gap-2">
-      <PillButton {...args} active size="default">
-        default
+      <PillButton {...args} active size="xs">
+        xs
       </PillButton>
       <PillButton {...args} active size="sm">
         sm
       </PillButton>
-      <PillButton {...args} active={false} size="default">
-        default
+      <PillButton {...args} active size="md">
+        md
       </PillButton>
-      <PillButton {...args} active={false} size="sm">
-        sm
+      <PillButton {...args} active size="lg">
+        lg
+      </PillButton>
+      <PillButton {...args} active size="xl">
+        xl
       </PillButton>
     </div>
   ),
