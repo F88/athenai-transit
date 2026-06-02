@@ -188,7 +188,7 @@ export default function App() {
     clearFocusRef.current();
   }, []);
 
-  const { inBoundStops, radiusStops, mapCenter, hasNearbyLoaded, handleBoundsChanged } =
+  const { inBoundStops, radiusStops, radius, mapCenter, hasNearbyLoaded, handleBoundsChanged } =
     useStopsForBounds({
       repo,
       perfProfile,
@@ -956,7 +956,14 @@ export default function App() {
             selectedStopId,
             isNearbyLoading,
             hasNearbyLoaded,
-            dataConfig: perfProfile.data,
+            // Radius that the displayed `stopTimes` were collected
+            // within. Use the radius from the committed fetch, not the
+            // live perfProfile, so the "Xm" radius label and the stop
+            // count update together on a perf-mode toggle (the re-fetch
+            // commits both at once). Falls back to the active profile
+            // before the first commit, while the summary still shows the
+            // loading placeholder.
+            stopsRadius: radius ?? perfProfile.data.stops.nearbyRadius,
             time: dateTime,
             mapCenter,
             infoLevel: settings.infoLevel,
