@@ -113,7 +113,7 @@ export default function App() {
   const [anchorRepo] = useState(() => new LocalStorageAnchorRepository());
   const [stopSelectionRepo] = useState(() => new LocalStorageStopSelectionRepository());
   const { settings, updateSetting, updateSettings } = useUserSettings();
-  const { dateTime, isCustomTime, resetToNow, setCustomTime } = useDateTime();
+  const { virtualNow, isVirtualNowPinned, pinVirtualNow, unpinVirtualNow } = useDateTime();
   const isWebStorageReady = useWebStorageAvailability('local');
 
   // Sync i18next language with user setting.
@@ -314,7 +314,7 @@ export default function App() {
 
   const { stopTimes: nearbyStopTimes, isNearbyLoading } = useNearbyStopTimes(
     radiusStops,
-    dateTime,
+    virtualNow,
     repo,
   );
 
@@ -510,7 +510,7 @@ export default function App() {
       }
       const [depsResult, rtResult] = await Promise.all([
         // No limit: stop-time stats and verbose display need all entries.
-        repo.getUpcomingTimetableEntries(stopId, dateTime),
+        repo.getUpcomingTimetableEntries(stopId, virtualNow),
         repo.getRouteTypesForStop(stopId),
       ]);
       const stopTimes = depsResult.success ? depsResult.data : [];
@@ -527,7 +527,7 @@ export default function App() {
         routes: meta.routes,
       };
     },
-    [repo, dateTime, inBoundStops, radiusStops],
+    [repo, virtualNow, inBoundStops, radiusStops],
   );
 
   const handleShowTimetable = useCallback(
@@ -536,11 +536,11 @@ export default function App() {
       if (!open) {
         return;
       }
-      void open({ stopId, routeId, headsign, dateTime }).then((status) => {
+      void open({ stopId, routeId, headsign, dateTime: virtualNow }).then((status) => {
         showOpenOutcomeToast(getTimetableOpenOutcomeMessage(status.status), t);
       });
     },
-    [dateTime, t],
+    [virtualNow, t],
   );
 
   const handleShowStopTimetable = useCallback(
@@ -549,11 +549,11 @@ export default function App() {
       if (!open) {
         return;
       }
-      void open({ stopId, dateTime }).then((status) => {
+      void open({ stopId, dateTime: virtualNow }).then((status) => {
         showOpenOutcomeToast(getTimetableOpenOutcomeMessage(status.status), t);
       });
     },
-    [dateTime, t],
+    [virtualNow, t],
   );
 
   // Thin launch wrappers over the imperative handle exposed by
@@ -562,9 +562,9 @@ export default function App() {
   // current time (captured at click time so it never goes stale).
   const handleOpenTripInspectionByStopId = useCallback(
     (stopId: string) => {
-      tripInspectionRef.current?.openByStopId({ stopId, referenceDateTime: dateTime });
+      tripInspectionRef.current?.openByStopId({ stopId, referenceDateTime: virtualNow });
     },
-    [dateTime],
+    [virtualNow],
   );
 
   const handleInspectTrip = useCallback((target: TripInspectionTarget) => {
@@ -685,7 +685,7 @@ export default function App() {
   // `deriveFilteredNearbyStops`; MapView reads the filtered result
   // (`stopTimes`) rather than `globalFilter` itself.
   const { showOriginOnly, showBoardableOnly, effectiveOmitEmptyStops, globalFilter } =
-    useGlobalFilter(dateTime);
+    useGlobalFilter(virtualNow);
 
   // --- Settings handlers ---
 
@@ -758,11 +758,11 @@ export default function App() {
     [settings.visibleRouteShapes],
   );
 
-  // Derive service day from dateTime. serviceDay itself recomputes every
+  // Derive service day from virtualNow. serviceDay itself recomputes every
   // 15-second tick (new Date), but serviceDayKey (string) only changes at
   // the 03:00 boundary. resolveRouteFreq depends on serviceDayKey, so
   // shapes re-render is skipped for the vast majority of ticks.
-  const serviceDay = useMemo(() => getServiceDay(dateTime), [dateTime]);
+  const serviceDay = useMemo(() => getServiceDay(virtualNow), [virtualNow]);
   const serviceDayKey = formatDateKey(serviceDay);
   const stableServiceDay = useMemo(() => {
     // `serviceDayKey` is `YYYYMMDD` (no separators) per `formatDateKey`,
@@ -881,7 +881,7 @@ export default function App() {
             renderMode={settings.renderMode}
             infoLevel={settings.infoLevel}
             dataLang={langChain}
-            time={dateTime}
+            time={virtualNow}
             onBoundsChanged={handleBoundsChanged}
             onStopSelected={handleSelectStop}
             onFetchStopTimes={handleFetchStopTimes}
@@ -943,10 +943,10 @@ export default function App() {
             }
             lookupAnchorStopMeta={lookupAnchorStopMeta}
             lookupHistoryStopMeta={lookupHistoryStopMeta}
-            time={dateTime}
-            isCustomTime={isCustomTime}
-            onResetToNow={resetToNow}
-            onCustomTimeSet={setCustomTime}
+            time={virtualNow}
+            isCustomTime={isVirtualNowPinned}
+            onResetToNow={unpinVirtualNow}
+            onCustomTimeSet={pinVirtualNow}
           />
         </MapViewContainer>
         <AppLayout
@@ -964,7 +964,7 @@ export default function App() {
             // before the first commit, while the summary still shows the
             // loading placeholder.
             stopsRadius: radius ?? perfProfile.data.stops.nearbyRadius,
-            time: dateTime,
+            time: virtualNow,
             mapCenter,
             infoLevel: settings.infoLevel,
             dataLangs: langChain,
@@ -1008,13 +1008,13 @@ export default function App() {
       <DataSourceSettingsContainer
         open={dataSourceSettingsDialogOpen}
         onOpenChange={setDataSourceSettingsDialogOpen}
-        referenceDateTime={dateTime}
+        referenceDateTime={virtualNow}
       />
       <ShortcutHelpDialog open={shortcutHelpOpen} onOpenChange={setShortcutHelpOpen} />
       <TripInspectionContainer
         ref={tripInspectionRef}
         repo={repo}
-        relativeTimeNow={dateTime}
+        relativeTimeNow={virtualNow}
         infoLevel={settings.infoLevel}
         dataLangs={langChain}
         onSelectStopById={handleSelectStopFromTripInspection}

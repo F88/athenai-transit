@@ -364,10 +364,10 @@ describe('App anchor error toast', () => {
       handleToggleAnchorByStopId: vi.fn(),
     });
     mockUseDateTime.mockReturnValue({
-      dateTime: new Date('2026-03-28T12:00:00Z'),
-      isCustomTime: false,
-      resetToNow: vi.fn(),
-      setCustomTime: vi.fn(),
+      virtualNow: new Date('2026-03-28T12:00:00Z'),
+      isVirtualNowPinned: false,
+      pinVirtualNow: vi.fn(),
+      unpinVirtualNow: vi.fn(),
     });
     mockGetServiceDayMinutes.mockReturnValue(12 * 60);
     mockUseNearbyStopTimes.mockReturnValue({
