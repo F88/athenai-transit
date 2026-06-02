@@ -49,7 +49,7 @@ export function nextRenderMode(current: RenderMode): RenderMode {
 }
 
 /**
- * Cycle perf mode: normal → lite → full → normal.
+ * Cycle perf mode: lite → normal -> full → light.
  *
  * @param current - Current perf mode.
  * @returns Next perf mode in the cycle.
