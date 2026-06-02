@@ -90,10 +90,7 @@ export function BottomSheet({
   stopTimes,
   timetableEntriesStateByStopId,
   selectedStopId,
-  // Intentionally unused (`_` prefix): by current spec the stop list does
-  // not render a re-fetch loading state. Kept rather than removed -- it is
-  // a meaningful loading-state signal that may be surfaced later.
-  isNearbyLoading: _isNearbyLoading,
+  isNearbyLoading,
   hasNearbyLoaded,
   stopsRadius,
   relativeTimeNow,
@@ -179,6 +176,7 @@ export function BottomSheet({
         stopTimes={stopTimes}
         timetableEntriesStateByStopId={timetableEntriesStateByStopId}
         selectedStopId={selectedStopId}
+        isNearbyLoading={isNearbyLoading}
         hasNearbyLoaded={hasNearbyLoaded}
         stopsRadius={stopsRadius}
         now={relativeTimeNow}
