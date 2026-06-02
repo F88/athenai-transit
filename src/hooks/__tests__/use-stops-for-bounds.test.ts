@@ -494,6 +494,56 @@ describe('useStopsForBounds', () => {
     expect(onStopsCommitted).not.toHaveBeenCalled();
   });
 
+  it('re-fetches against the last viewport when the perf profile changes (perf-mode toggle)', async () => {
+    const liteStop = makeStopMeta('lite-stop');
+    const normalStop = makeStopMeta('normal-stop');
+
+    const getStopsInBounds = vi
+      .fn()
+      .mockResolvedValueOnce({ success: true, data: [liteStop], truncated: false })
+      .mockResolvedValue({ success: true, data: [normalStop], truncated: false });
+    const getStopsNearby = vi
+      .fn()
+      .mockResolvedValueOnce({ success: true, data: [liteStop], truncated: false })
+      .mockResolvedValue({ success: true, data: [normalStop], truncated: false });
+
+    const repo = makeRepo({ getStopsInBounds, getStopsNearby });
+
+    const { result, rerender } = renderHook(
+      ({ perfProfile }) =>
+        useStopsForBounds({
+          repo,
+          perfProfile,
+          debounceMs: TEST_DEBOUNCE_MS,
+        }),
+      { initialProps: { perfProfile: PERF_PROFILES.lite } },
+    );
+
+    // Initial viewport fetch under the `lite` profile.
+    act(() => {
+      result.current.handleBoundsChanged(BOUNDS_A, CENTER_A);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TEST_DEBOUNCE_MS);
+    });
+    expect(result.current.radiusStops).toEqual([liteStop]);
+
+    // Toggle the perf profile WITHOUT a new bounds event (= the user
+    // tapped the perf-mode button). The hook must re-fetch against the
+    // last viewport with the new profile's radius / maxResults instead
+    // of waiting for the next pan.
+    rerender({ perfProfile: PERF_PROFILES.normal });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TEST_DEBOUNCE_MS);
+    });
+
+    const { nearbyRadius, maxResults } = PERF_PROFILES.normal.data.stops;
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    expect(repo.getStopsNearby).toHaveBeenLastCalledWith(CENTER_A, nearbyRadius, maxResults);
+    expect(result.current.radiusStops).toEqual([normalStop]);
+    expect(result.current.inBoundStops).toEqual([normalStop]);
+  });
+
   it('treats a half-failed response as success on the succeeding side and empty on the failing side', async () => {
     const stop = makeStopMeta('present');
     const repoInBoundsFails = makeRepo({

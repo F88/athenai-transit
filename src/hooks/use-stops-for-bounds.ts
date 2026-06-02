@@ -81,6 +81,10 @@ export interface UseStopsForBoundsReturn {
  *    successor's fetch is even issued is still classified as stale.
  * 4. `onStopsCommitted` callback that fires only after the latest
  *    fetch has been committed (used by the caller to clear focus)
+ * 5. re-fetch against the last viewport when `repo` / `perfProfile`
+ *    changes, so a perf-mode toggle (which changes `nearbyRadius` /
+ *    `maxResults`) refreshes the visible stop set immediately instead
+ *    of waiting for the next pan
  *
  * The latest-only guard is about state correctness, not cancellation:
  * the underlying repository call still completes its I/O / CPU work,
@@ -99,6 +103,12 @@ export function useStopsForBounds(params: UseStopsForBoundsParams): UseStopsForB
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const latestRequestIdRef = useRef(0);
 
+  // Remember the most recent viewport so a repo / perfProfile change
+  // can re-fetch against it without waiting for the next pan. Updated
+  // on every `handleBoundsChanged`; consumed by the re-fetch effect
+  // below.
+  const lastViewportRef = useRef<{ bounds: Bounds; center: LatLng } | null>(null);
+
   // Hold the latest `onStopsCommitted` in a ref so `handleBoundsChanged`
   // does not need to list it as a dep. Without this, the callback
   // identity churn at the call site (typical for inline arrows or
@@ -109,19 +119,20 @@ export function useStopsForBounds(params: UseStopsForBoundsParams): UseStopsForB
     onStopsCommittedRef.current = onStopsCommitted;
   }, [onStopsCommitted]);
 
-  const handleBoundsChanged = useCallback(
+  // Core fetch dispatch: bump the request id, (re)arm the debounce
+  // timer, and commit the result only if it is still the latest. Shared
+  // by `handleBoundsChanged` (viewport changes) and the re-fetch effect
+  // below (repo / perfProfile changes), so both paths go through the
+  // same latest-only guard. Reads `nearbyRadius` / `maxResults` from
+  // the current `perfProfile` via deps, so a re-dispatch after a
+  // perf-mode toggle uses the new values.
+  const dispatchFetch = useCallback(
     (bounds: Bounds, center: LatLng) => {
-      // Update `mapCenter` synchronously so per-stop distance displays
-      // and any other map-anchored UI follow the pan without waiting
-      // for the debounced fetch. The fetch result is allowed to be
-      // late; the visible map center is not.
-      setMapCenter(center);
-      // Bump the request id at the moment a new viewport arrives, not
-      // when its debounced fetch is dispatched. Otherwise an old
-      // in-flight response that lands between a new bounds event and
-      // its yet-to-be-issued fetch would still see itself as `latest`
-      // and overwrite the fresher state. The newly bumped id is the
-      // one the upcoming fetch will own.
+      // Bump the request id at the moment a fetch is dispatched, not
+      // when its debounced timer fires. Otherwise an old in-flight
+      // response that lands between this call and its yet-to-be-issued
+      // fetch would still see itself as `latest` and overwrite the
+      // fresher state. The newly bumped id is the one this fetch owns.
       const requestId = ++latestRequestIdRef.current;
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = setTimeout(() => {
@@ -170,20 +181,42 @@ export function useStopsForBounds(params: UseStopsForBoundsParams): UseStopsForB
     [repo, perfProfile, debounceMs],
   );
 
-  // Invalidate any in-flight request and clear the pending debounce
-  // when the upstream data source or perf profile changes. Without
-  // this, a response that started under the old `repo` / `perfProfile`
-  // would still pass the latest-request guard (its id is the most
-  // recent one ever issued) and overwrite state that should reflect
-  // the new source.
+  const handleBoundsChanged = useCallback(
+    (bounds: Bounds, center: LatLng) => {
+      // Update `mapCenter` synchronously so per-stop distance displays
+      // and any other map-anchored UI follow the pan without waiting
+      // for the debounced fetch. The fetch result is allowed to be
+      // late; the visible map center is not.
+      setMapCenter(center);
+      // Record the viewport so the re-fetch effect can refresh against
+      // it when the repo / perfProfile changes.
+      lastViewportRef.current = { bounds, center };
+      dispatchFetch(bounds, center);
+    },
+    [dispatchFetch],
+  );
+
+  // Re-fetch against the last known viewport when the data source or
+  // perf profile changes. A perf-mode toggle changes `nearbyRadius` /
+  // `maxResults`, so the visible stop set must refresh immediately
+  // rather than waiting for the next pan -- otherwise the radius label
+  // (derived synchronously from `perfProfile`) updates while the stop
+  // list stays stale. `dispatchFetch` also bumps the request id, so any
+  // in-flight fetch issued under the old repo / profile is invalidated
+  // and cannot overwrite the fresh result.
   //
-  // Bumping `latestRequestIdRef` here is safe even on the very first
-  // render: no fetch has been dispatched yet, so there is no id to
-  // collide with.
+  // The effect keys on `dispatchFetch`, whose identity changes exactly
+  // when `repo` / `perfProfile` / `debounceMs` change. On the very
+  // first render there is no viewport yet (no pan has happened), so
+  // there is nothing to re-fetch; the initial fetch is driven by the
+  // caller's first `handleBoundsChanged`.
   useEffect(() => {
-    ++latestRequestIdRef.current;
-    clearTimeout(debounceTimerRef.current);
-  }, [repo, perfProfile]);
+    const lastViewport = lastViewportRef.current;
+    if (lastViewport === null) {
+      return;
+    }
+    dispatchFetch(lastViewport.bounds, lastViewport.center);
+  }, [dispatchFetch]);
 
   // Cancel any pending debounce on unmount so the timeout cannot fire
   // a fetch after the consumer has gone away. The request-id guard
