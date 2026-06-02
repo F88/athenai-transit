@@ -9,6 +9,8 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+## [2026.06.02]
+
 ### Added
 
 - Data-source: 文京区コミュニティバス「Bーぐる」(日立自動車交通株式会社運行) を追加。
