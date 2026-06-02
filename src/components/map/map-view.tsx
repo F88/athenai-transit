@@ -308,7 +308,7 @@ export function MapView({
   renderMode,
   infoLevel,
   dataLang,
-  relativeTimeNow: now,
+  relativeTimeNow,
   onBoundsChanged,
   onStopSelected,
   onFetchStopTimes,
@@ -611,7 +611,7 @@ export function MapView({
           agenciesMap={agenciesMap}
           showTooltip={true}
           // showTooltip={false}
-          time={now}
+          time={relativeTimeNow}
           infoLevel={infoLevel}
           dataLang={dataLang}
           renderMode={nearbyRenderMode}
@@ -642,7 +642,7 @@ export function MapView({
             routeTypeMap={routeStopsRouteTypeMap}
             showTooltip={true}
             stopTimes={timetableEntriesMap}
-            time={now}
+            time={relativeTimeNow}
             renderMode={nearbyRenderMode}
             infoLevel={infoLevel}
             dataLang={dataLang}
@@ -660,7 +660,7 @@ export function MapView({
           stops={filteredNearbyStops}
           routeTypeMap={routeTypeMap}
           agenciesMap={agenciesMap}
-          now={now}
+          now={relativeTimeNow}
           infoLevel={infoLevel}
           dataLang={dataLang}
           renderMode={nearbyRenderMode}
