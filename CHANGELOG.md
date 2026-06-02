@@ -9,6 +9,15 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Documentation: システム構成の概要、deployment diagram、mobile / PWA guidance、README roadmap を追加・整理した。
+- Storybook: `StopsSummary` と `StopBrowser` の stories を追加し、StopBrowser header / summary の size variants を比較できるようにした。
+
+### Changed
+
+- StopBrowser: header summary と filter / view pill controls を `ExtendedDisplaySize` に対応させ、StopBrowser のコンテナ幅に応じて余白・文字サイズ・pill サイズが段階的に拡大するようにした。
+
 ## [2026.06.02]
 
 ### Added
