@@ -750,7 +750,8 @@ export default function App() {
     logger.info(
       `perfMode: ${settings.perfMode} -> ${next} (maxResults=${profile.data.stops.maxResults}, radius=${profile.data.stops.nearbyRadius}m)`,
     );
-    updateSettings({ perfMode: next, renderMode: profile.render.defaultMode });
+    // updateSettings({ perfMode: next, renderMode: profile.render.defaultMode });
+    updateSettings({ perfMode: next });
   }, [settings.perfMode, updateSettings]);
 
   const visibleRouteShapes = useMemo(

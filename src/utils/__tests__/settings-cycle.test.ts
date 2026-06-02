@@ -76,14 +76,14 @@ describe('nextRenderMode', () => {
 });
 
 describe('nextPerfMode', () => {
-  it('cycles normal -> lite -> full -> normal', () => {
-    expect(nextPerfMode('normal')).toBe('lite');
-    expect(nextPerfMode('lite')).toBe('full');
-    expect(nextPerfMode('full')).toBe('normal');
+  it('cycles lite -> normal -> full -> lite', () => {
+    expect(nextPerfMode('lite')).toBe('normal');
+    expect(nextPerfMode('normal')).toBe('full');
+    expect(nextPerfMode('full')).toBe('lite');
   });
 
   it('full cycle returns to starting mode', () => {
-    const start = 'normal' as const;
+    const start = 'lite' as const;
     const result = nextPerfMode(nextPerfMode(nextPerfMode(start)));
     expect(result).toBe(start);
   });

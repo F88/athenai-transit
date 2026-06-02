@@ -2,7 +2,7 @@ import type { InfoLevel, PerfMode, RenderMode } from '../types/app/settings';
 import { DEFAULT_LANG, SUPPORTED_LANG_CODES } from '../config/supported-langs';
 
 const INFO_LEVEL_ORDER: InfoLevel[] = ['simple', 'normal', 'detailed', 'verbose'];
-const PERF_MODE_ORDER: PerfMode[] = ['normal', 'lite', 'full'];
+const PERF_MODE_ORDER: PerfMode[] = ['lite', 'normal', 'full'];
 
 /**
  * Cycle display language through {@link SUPPORTED_LANG_CODES}.
