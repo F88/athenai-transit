@@ -52,6 +52,11 @@ export interface StopBrowserProps {
   hasNearbyLoaded: boolean;
   /** Radius (metres) within which the displayed stops were collected; shown in the header summary. */
   stopsRadius: number;
+  /**
+   * Reference "now" for relative departure times (the surface's
+   * `relativeTimeNow`, forwarded under the rendering-subtree's `now`
+   * convention); pinnable, so the countdown freezes when pinned.
+   */
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
