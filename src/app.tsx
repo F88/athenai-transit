@@ -881,7 +881,7 @@ export default function App() {
             renderMode={settings.renderMode}
             infoLevel={settings.infoLevel}
             dataLang={langChain}
-            time={virtualNow}
+            relativeTimeNow={virtualNow}
             onBoundsChanged={handleBoundsChanged}
             onStopSelected={handleSelectStop}
             onFetchStopTimes={handleFetchStopTimes}
@@ -943,7 +943,7 @@ export default function App() {
             }
             lookupAnchorStopMeta={lookupAnchorStopMeta}
             lookupHistoryStopMeta={lookupHistoryStopMeta}
-            time={virtualNow}
+            virtualNow={virtualNow}
             isCustomTime={isVirtualNowPinned}
             onResetToNow={unpinVirtualNow}
             onCustomTimeSet={pinVirtualNow}
@@ -964,7 +964,7 @@ export default function App() {
             // before the first commit, while the summary still shows the
             // loading placeholder.
             stopsRadius: radius ?? perfProfile.data.stops.nearbyRadius,
-            time: virtualNow,
+            relativeTimeNow: virtualNow,
             mapCenter,
             infoLevel: settings.infoLevel,
             dataLangs: langChain,

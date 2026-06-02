@@ -22,7 +22,7 @@ export function StopPanel({
   selectedStopId,
   hasNearbyLoaded,
   stopsRadius,
-  time: now,
+  relativeTimeNow: now,
   mapCenter,
   infoLevel,
   dataLangs,
