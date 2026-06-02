@@ -1,11 +1,30 @@
 import { useTranslation } from 'react-i18next';
 
 import { createLogger } from '../lib/logger';
+import { cn } from '../lib/utils';
 import type { InfoLevel } from '../types/app/settings';
 import type { StopsCounts } from '../types/app/stop';
 import { LabelCountBadge } from './badge/label-count-badge';
+import type { BaseLabelSize } from './label/base-label';
+import type { ExtendedDisplaySize } from './shared/display-size';
 
 const summaryLogger = createLogger('StopsSummary');
+
+const textClassBySize: Record<ExtendedDisplaySize, string> = {
+  xs: 'gap-1 text-xs',
+  sm: 'gap-1 text-sm',
+  md: 'gap-1 text-base',
+  lg: 'gap-2.5 py-2 text-lg',
+  xl: 'gap-3 py-3 text-xl',
+};
+
+const badgeSizeBySize: Record<ExtendedDisplaySize, BaseLabelSize> = {
+  xs: 'xs',
+  sm: 'sm',
+  md: 'sm',
+  lg: 'md',
+  xl: 'lg',
+};
 
 export interface StopsSummaryProps {
   label: string;
@@ -15,6 +34,7 @@ export interface StopsSummaryProps {
   omitEmptyStops: boolean;
   hasLoaded: boolean;
   infoLevel: InfoLevel;
+  size?: ExtendedDisplaySize;
 }
 
 function formatRadius(meters: number): string {
@@ -62,6 +82,7 @@ export function StopsSummary({
   omitEmptyStops,
   hasLoaded,
   infoLevel,
+  size = 'md',
 }: StopsSummaryProps) {
   const { t, i18n } = useTranslation();
 
@@ -85,18 +106,23 @@ export function StopsSummary({
   );
 
   return (
-    <p className="m-0 flex items-center gap-1 text-base font-bold text-[#212121] dark:text-gray-100">
+    <div
+      className={cn(
+        'm-0 flex items-center font-bold text-[#212121] dark:text-gray-100',
+        textClassBySize[size],
+      )}
+    >
       {infoLevel === 'verbose' && (
         <LabelCountBadge
           label={`${totalCount.total}`}
           count={filteredCount}
-          size="sm"
+          size={badgeSizeBySize[size]}
           labelClassName="bg-info text-info-foreground"
           countClassName="bg-background text-info"
           frameClassName="border-info"
         />
       )}
       {text}
-    </p>
+    </div>
   );
 }

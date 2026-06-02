@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { LatLng } from '../types/app/map';
-import type { InfoLevel } from '../types/app/settings';
-import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
-import type { GlobalFilter } from '../types/app/global-filter';
-import type { StopsCounts } from '../types/app/stop';
-import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
+
+import { APP_ROUTE_TYPES } from '../config/route-types';
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
 import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
+import { DEFAULT_VIEW_ID, STOP_TIMES_VIEWS } from '../domain/transit/stop-time-views';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
-import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
-import { APP_ROUTE_TYPES } from '../config/route-types';
+import { useElementRect } from '../hooks/use-element-rect';
+import type { GlobalFilter } from '../types/app/global-filter';
+import type { LatLng } from '../types/app/map';
+import type { InfoLevel } from '../types/app/settings';
+import type { StopsCounts } from '../types/app/stop';
+import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
+import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
+import { resolveContainerDisplaySize } from './shared/display-size';
 import { StopBrowserHeader } from './stop-browser-header';
 import { StopGrid } from './stop-grid';
 
@@ -130,6 +133,8 @@ export function StopBrowser({
     onToggleShowBoardableOnly,
     onToggleOmitEmptyStops,
   } = globalFilter;
+  const [rootElement, setRootElement] = useState<HTMLDivElement | null>(null);
+  const rootRect = useElementRect(rootElement);
   const [viewId, setViewId] = useState(DEFAULT_VIEW_ID);
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
   const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
@@ -215,8 +220,10 @@ export function StopBrowser({
     contentRef.current.scrollTop = 0;
   }, [selectedStopId, stopIdsKey]);
 
+  const headerSize = resolveContainerDisplaySize(rootRect?.width ?? 0);
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col" ref={setRootElement}>
       <StopBrowserHeader
         hasNearbyLoaded={hasNearbyLoaded}
         nearbyStopsCounts={nearbyStopsCounts}
@@ -231,6 +238,7 @@ export function StopBrowser({
         viewId={viewId}
         selectedView={selectedView}
         infoLevel={infoLevel}
+        size={headerSize}
         presentRouteTypes={presentRouteTypes}
         hiddenRouteTypes={hiddenRouteTypes}
         presentAgencies={presentAgencies}

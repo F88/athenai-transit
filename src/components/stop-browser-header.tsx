@@ -6,15 +6,17 @@ import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
 import { resolveAgencyColors } from '../domain/transit/color-resolver/agency-colors';
 import { STOP_TIMES_VIEWS } from '../domain/transit/stop-time-views';
 import { getAgencyDisplayNames } from '../domain/transit/name-resolver/get-agency-display-name';
+import { cn } from '../lib/utils';
 import { createLogger } from '../lib/logger';
 import { routeTypeColor } from '../utils/route-type-color';
 import { routeTypeEmoji } from '../utils/route-type-emoji';
 import { useInfoLevel } from '../hooks/use-info-level';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PillButton } from './button/pill-button';
+import { PillButton, type PillButtonSize } from './button/pill-button';
 import { BoardabilityFilter } from './filter/boardability-filter';
 import { OriginFilter } from './filter/origin-filter';
+import type { ExtendedDisplaySize } from './shared/display-size';
 import { StopsSummary } from './stops-summary';
 
 interface StopBrowserHeaderProps {
@@ -40,6 +42,7 @@ interface StopBrowserHeaderProps {
   viewId: string;
   selectedView: StopTimeViewMeta | undefined;
   infoLevel: InfoLevel;
+  size: ExtendedDisplaySize;
   presentRouteTypes: readonly number[];
   hiddenRouteTypes: Set<number>;
   presentAgencies: Agency[];
@@ -53,6 +56,38 @@ interface StopBrowserHeaderProps {
 }
 
 const logger = createLogger('StopBrowserHeader');
+
+const headerClassBySize: Record<ExtendedDisplaySize, string> = {
+  xs: 'px-3 pb-1.5',
+  sm: 'px-3 pb-1.5',
+  md: 'px-4 pb-2',
+  lg: 'px-5 pb-3',
+  xl: 'px-6 pb-4',
+};
+
+const rowClassBySize: Record<ExtendedDisplaySize, string> = {
+  xs: 'mt-1 flex gap-1',
+  sm: 'mt-1 flex gap-1',
+  md: 'mt-1.5 flex gap-1',
+  lg: 'mt-2 flex gap-1.5',
+  xl: 'mt-2.5 flex gap-2',
+};
+
+const filterRowClassBySize: Record<ExtendedDisplaySize, string> = {
+  xs: 'mt-1 flex gap-1',
+  sm: 'mt-1 flex gap-1',
+  md: 'mt-1 flex gap-1',
+  lg: 'mt-1.5 flex gap-1.5',
+  xl: 'mt-2 flex gap-2',
+};
+
+const pillSizeByHeaderSize: Record<ExtendedDisplaySize, PillButtonSize> = {
+  xs: 'xs',
+  sm: 'sm',
+  md: 'sm',
+  lg: 'md',
+  xl: 'lg',
+};
 
 export function StopBrowserHeader({
   hasNearbyLoaded,
@@ -68,6 +103,7 @@ export function StopBrowserHeader({
   viewId,
   selectedView: _selectedView,
   infoLevel,
+  size,
   presentRouteTypes,
   hiddenRouteTypes,
   presentAgencies,
@@ -93,6 +129,7 @@ export function StopBrowserHeader({
 
   // const countsForFilterLabel = counts;
   const countsForFilterLabel = filteredNearbyStopsCounts;
+  const pillSize = pillSizeByHeaderSize[size];
 
   useEffect(() => {
     if (!import.meta.env.DEV) {
@@ -114,7 +151,7 @@ export function StopBrowserHeader({
   }, [countsDebugLog, filteredNearbyStopsCountsDebugLog, nearbyStopsCountsDebugLog]);
 
   return (
-    <div className="shrink-0 px-4 pb-2">
+    <div className={cn('shrink-0', headerClassBySize[size])}>
       <StopsSummary
         label={'operating stops only'}
         hasLoaded={hasNearbyLoaded}
@@ -123,14 +160,15 @@ export function StopBrowserHeader({
         nearbyRadius={stopsRadius}
         omitEmptyStops={omitEmptyStops}
         infoLevel={infoLevel}
+        size={size}
       />
 
-      <div className="no-scrollbar mt-1.5 flex gap-1 overflow-x-auto">
+      <div className={cn('no-scrollbar overflow-x-auto', rowClassBySize[size])}>
         {/* Views */}
         {STOP_TIMES_VIEWS.filter((v) => v.visible).map((view) => (
           <PillButton
             key={view.id}
-            size={'sm'}
+            size={pillSize}
             active={viewId === view.id}
             disabled={!view.enabled}
             onClick={() => onViewChange(view.id)}
@@ -142,10 +180,10 @@ export function StopBrowserHeader({
         ))}
       </div>
       {/* Filters */}
-      <div className="no-scrollbar mt-1 flex gap-1 overflow-x-auto">
+      <div className={cn('no-scrollbar overflow-x-auto', filterRowClassBySize[size])}>
         {/* Operating stops filter */}
         <PillButton
-          size={'sm'}
+          size={pillSize}
           active={omitEmptyStops}
           disabled={isOmitEmptyStopsForced}
           activeBg={operatingStopsActiveBg}
@@ -165,6 +203,7 @@ export function StopBrowserHeader({
           boardable={showBoardableOnly}
           onToggleBoardable={onToggleShowBoardableOnly}
           count={countsForFilterLabel.boardableCount}
+          size={pillSize}
         />
 
         {/* Origin filter: keep visibility stable against global-filter toggles. */}
@@ -173,6 +212,7 @@ export function StopBrowserHeader({
             origin={showOriginOnly}
             onToggleOrigin={onToggleShowOriginOnly}
             count={countsForFilterLabel.originCount}
+            size={pillSize}
           />
         )}
 
@@ -180,7 +220,7 @@ export function StopBrowserHeader({
         {presentRouteTypes.map((rt) => (
           <PillButton
             key={rt}
-            size={'sm'}
+            size={pillSize}
             active={!hiddenRouteTypes.has(rt)}
             activeBg={`${routeTypeColor(rt)}40`}
             // activeBorder={routeTypeColor(rt)}
@@ -203,7 +243,7 @@ export function StopBrowserHeader({
           return (
             <PillButton
               key={agency.agency_id}
-              size={'sm'}
+              size={pillSize}
               active={!hiddenAgencyIds.has(agency.agency_id)}
               activeBg={bgColor}
               activeFg={fgColor}
