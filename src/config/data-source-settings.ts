@@ -1,33 +1,99 @@
 import type { SourceGroup } from '../types/app/source-group';
 
+type SinglePrefixSourceGroupInput = Omit<SourceGroup, 'prefixes'> & {
+  prefix: string;
+};
+
+function createSinglePrefixSourceGroup({
+  prefix,
+  ...group
+}: SinglePrefixSourceGroupInput): SourceGroup {
+  return {
+    ...group,
+    prefixes: [prefix],
+  };
+}
+
+// /**
+//  * Development-only multi-prefix examples for manual verification.
+//  *
+//  * These are intentionally excluded from the exported `settings` and are
+//  * kept here only as local examples while editing this file.
+//  */
+// const _devOnlyMultiPrefixGroupExamples: SourceGroup[] = [
+//   {
+//     // for dev
+//     id: 'test-all-x',
+//     prefixes: ['none1', 'none2', 'none3'],
+//     routeTypes: [3],
+//     systemEnabledByDefault: true,
+//     userEnabledByDefault: true,
+//     name: { name: 'test-all-x', names: { ja: 'test-all-x', en: 'test-all-x' } },
+//     countries: ['JP'],
+//   },
+//   {
+//     // for dev
+//     id: 'test-partial-x',
+//     prefixes: ['none1', 'kazag'],
+//     routeTypes: [3],
+//     systemEnabledByDefault: true,
+//     userEnabledByDefault: true,
+//     name: { name: 'test-partial-x', names: { ja: 'test-partial-x', en: 'test-partial-x' } },
+//     countries: ['JP'],
+//   },
+// ];
+// void _devOnlyMultiPrefixGroupExamples;
+
 /**
  * Configured source groups for the webapp.
  *
  * See {@link SourceGroup} for the design (multi-prefix, overlapping
  * groups) and a worked bundling example.
  */
-const settings: SourceGroup[] = [
-  // {
-  //   id: 'test-all-x',
-  //   prefixes: ['none1', 'none2', 'none3'],
-  //   routeTypes: [3],
-  //   systemEnabledByDefault: true,
-  //   userEnabledByDefault: true,
-  //   name: { name: 'test-all-x', names: { ja: 'test-all-x', en: 'test-all-x' } },
-  //   countries: ['JP'],
-  // },
-  // {
-  //   id: 'test-partial-x',
-  //   prefixes: ['none1', 'kazag'],
-  //   routeTypes: [3],
-  //   systemEnabledByDefault: true,
-  //   userEnabledByDefault: true,
-  //   name: { name: 'test-partial-x', names: { ja: 'test-partial-x', en: 'test-partial-x' } },
-  //   countries: ['JP'],
-  // },
+const multiPrefixGroups: SourceGroup[] = [
+  {
+    id: 'toko',
+    prefixes: [
+      'minkuru', // Toei Bus
+      'toaran', // Toei Train
+    ],
+    routeTypes: [3, 0, 2, 1],
+    systemEnabledByDefault: true,
+    userEnabledByDefault: true,
+    name: { name: '📦 Toei Transport', names: { ja: '📦 東京都交通局', en: 'Toei Transport' } },
+    countries: ['JP'],
+  },
+  {
+    id: 'tokyo-23-wards-community-bus-group',
+    prefixes: [
+      'kazag', // Kazaguruma (Chiyoda)
+      'edobus', // Edo Bus (Chuo)
+      '13103b', // Chii Bus (Minato)
+      'bgle', // B-GURU (Bunkyo)
+      'megurin', // Megurin (Taito)
+      'shinabus', // Shina Bus (Shinagawa)
+      'sanma', // Sanma Bus (Meguro)
+      'tamachan', // Tamachan Bus (Ota)
+      '85b', // Hachiko Bus (Shibuya)
+      'sggsm', // GSM (Suginami)
+      'kbus', // K-bus (Kita)
+      'rin2', // Rinrin-GO (Itabashi)
+    ],
+    routeTypes: [3],
+    systemEnabledByDefault: true,
+    userEnabledByDefault: true,
+    name: {
+      name: 'Tokyo 23 Wards Community Bus Group',
+      names: { ja: '📦 東京23区コミュニティバス', en: '📦 Tokyo 23 Wards Community Bus Group' },
+    },
+    countries: ['JP'],
+  },
+];
+
+const singlePrefixGroupInputs: SinglePrefixSourceGroupInput[] = [
   {
     id: 'toei-bus',
-    prefixes: ['minkuru'],
+    prefix: 'minkuru',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -36,7 +102,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'toei-train',
-    prefixes: ['toaran'],
+    prefix: 'toaran',
     routeTypes: [0, 2, 1],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -44,17 +110,8 @@ const settings: SourceGroup[] = [
     countries: ['JP'],
   },
   {
-    id: 'toko',
-    prefixes: ['minkuru', 'toaran'],
-    routeTypes: [3, 0, 2, 1],
-    systemEnabledByDefault: true,
-    userEnabledByDefault: true,
-    name: { name: 'Toei Transport', names: { ja: '東京都交通局', en: 'Toei Transport' } },
-    countries: ['JP'],
-  },
-  {
     id: 'yurikamome',
-    prefixes: ['yurimo'],
+    prefix: 'yurimo',
     routeTypes: [2],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -63,7 +120,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'kanto-bus',
-    prefixes: ['ktbus'],
+    prefix: 'ktbus',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -72,7 +129,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'keio-bus',
-    prefixes: ['kobus'],
+    prefix: 'kobus',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -81,7 +138,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'chiyoda-bus',
-    prefixes: ['kazag'],
+    prefix: 'kazag',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -94,7 +151,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'chuo-bus',
-    prefixes: ['edobus'],
+    prefix: 'edobus',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -107,7 +164,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'suginami-gsm',
-    prefixes: ['sggsm'],
+    prefix: 'sggsm',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -120,7 +177,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'seibu-bus',
-    prefixes: ['sbbus'],
+    prefix: 'sbbus',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -129,7 +186,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'iyotetsu-bus',
-    prefixes: ['iyt2'],
+    prefix: 'iyt2',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -138,7 +195,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'kita-bus',
-    prefixes: ['kbus'],
+    prefix: 'kbus',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -151,7 +208,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'kyoto-city-bus',
-    prefixes: ['kcbus'],
+    prefix: 'kcbus',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -160,7 +217,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'kyoto-bus',
-    prefixes: ['kytbus'],
+    prefix: 'kytbus',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -169,7 +226,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'odakyu-bus',
-    prefixes: ['od9bus'],
+    prefix: 'od9bus',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: false,
@@ -178,7 +235,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'oshima-bus',
-    prefixes: ['osmbus'],
+    prefix: 'osmbus',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -187,7 +244,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'miyake-bus',
-    prefixes: ['mykbus'],
+    prefix: 'mykbus',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -196,7 +253,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'keisei-transit-bus',
-    prefixes: ['kseiw'],
+    prefix: 'kseiw',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: false,
@@ -205,7 +262,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'nishi-tokyo-bus',
-    prefixes: ['ntbus'],
+    prefix: 'ntbus',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -214,7 +271,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'mir-train',
-    prefixes: ['mir'],
+    prefix: 'mir',
     routeTypes: [2],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -223,7 +280,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'nagoya-srt',
-    prefixes: ['nsrt'],
+    prefix: 'nsrt',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: false,
@@ -232,7 +289,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'tama-monorail',
-    prefixes: ['tmm'],
+    prefix: 'tmm',
     routeTypes: [12],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -241,7 +298,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'twr-rinkai',
-    prefixes: ['twrr'],
+    prefix: 'twrr',
     routeTypes: [1, 2],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -253,7 +310,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'tokyometro',
-    prefixes: ['tome'],
+    prefix: 'tome',
     routeTypes: [1],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -262,7 +319,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'yokohama-municipal-subway',
-    prefixes: ['yht'],
+    prefix: 'yht',
     routeTypes: [1],
     systemEnabledByDefault: true,
     userEnabledByDefault: false,
@@ -274,7 +331,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'yokohama-municipal-bus',
-    prefixes: ['yhb'],
+    prefix: 'yhb',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: false,
@@ -286,7 +343,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'kawasaki-city-bus',
-    prefixes: ['norufin'],
+    prefix: 'norufin',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: false,
@@ -298,7 +355,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'rinko-bus',
-    prefixes: ['rintan'],
+    prefix: 'rintan',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: false,
@@ -310,7 +367,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'hachiko-bus',
-    prefixes: ['85b'],
+    prefix: '85b',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -324,7 +381,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'chii-bus',
-    prefixes: ['13103b'],
+    prefix: '13103b',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -338,7 +395,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'actv-nav',
-    prefixes: ['actvnav'],
+    prefix: 'actvnav',
     routeTypes: [4],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -347,7 +404,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'tokyo-cruise-ship',
-    prefixes: ['tcship'],
+    prefix: 'tcship',
     routeTypes: [4],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -359,7 +416,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'sanwa-shosen',
-    prefixes: ['snws'],
+    prefix: 'snws',
     routeTypes: [4],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -371,7 +428,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'tokai-kisen',
-    prefixes: ['tkksn'],
+    prefix: 'tkksn',
     routeTypes: [4],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -383,7 +440,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'kagoshima-maritime-bureau',
-    prefixes: ['kcmb'],
+    prefix: 'kcmb',
     routeTypes: [4],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -395,7 +452,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'okushiri-ferry',
-    prefixes: ['oksrif'],
+    prefix: 'oksrif',
     routeTypes: [4],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -407,7 +464,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'orange-ferry',
-    prefixes: ['orgfry'],
+    prefix: 'orgfry',
     routeTypes: [4],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -419,7 +476,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'uwajima-unyu',
-    prefixes: ['uwjmfry'],
+    prefix: 'uwjmfry',
     routeTypes: [4],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -431,7 +488,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'meimon-taiyo-ferry',
-    prefixes: ['mtfry'],
+    prefix: 'mtfry',
     routeTypes: [4],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -443,7 +500,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'itsukishima-kisen',
-    prefixes: ['itkfry'],
+    prefix: 'itkfry',
     routeTypes: [4],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -455,7 +512,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'vag-freiburg',
-    prefixes: ['vagfr'],
+    prefix: 'vagfr',
     routeTypes: [3, 0],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -467,7 +524,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'hankyu-ferry',
-    prefixes: ['han9fry'],
+    prefix: 'han9fry',
     routeTypes: [4],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -479,7 +536,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'meguro-c-bus',
-    prefixes: ['sanma'],
+    prefix: 'sanma',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -491,7 +548,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'shinagawa-c-bus',
-    prefixes: ['shinabus'],
+    prefix: 'shinabus',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -503,7 +560,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'ota-c-bus',
-    prefixes: ['tamachan'],
+    prefix: 'tamachan',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -515,7 +572,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'bunkyo-c-bus',
-    prefixes: ['bgle'],
+    prefix: 'bgle',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -527,7 +584,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'taito-c-bus',
-    prefixes: ['megurin'],
+    prefix: 'megurin',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -539,7 +596,7 @@ const settings: SourceGroup[] = [
   },
   {
     id: 'itabashi-rin2-bus',
-    prefixes: ['rin2'],
+    prefix: 'rin2',
     routeTypes: [3],
     systemEnabledByDefault: true,
     userEnabledByDefault: true,
@@ -549,6 +606,11 @@ const settings: SourceGroup[] = [
     },
     countries: ['JP'],
   },
+];
+
+const settings: SourceGroup[] = [
+  ...multiPrefixGroups,
+  ...singlePrefixGroupInputs.map(createSinglePrefixSourceGroup),
 ];
 
 export default settings;
