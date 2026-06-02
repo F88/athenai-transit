@@ -17,6 +17,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 ### Changed
 
+- Data-source settings: 複数 prefix を束ねる source group (`toko`, `tokyo-23-wards-community-bus-group`) を追加し、東京23区コミュニティバス束ね group の prefix 一覧・表示名・ID を整理した。あわせて `data-source-settings` test に件数 / ID 集合の固定検証を追加した。
 - Trip inspection: `useTripInspection` の所有を新設の `TripInspectionContainer` (`src/components/trip/trip-inspection-container.tsx`) に移し、ダイアログ内の prev / next 移動や trip 再選択で `App` 全体が再 render しないようにした。
 - Trip inspection: 外部 launch 経路 (BottomSheet / StopSearchDialog / TimetableContainer) は imperative handle 経由で維持しつつ、open outcome toast の表示を `src/lib/open-outcome-toast.ts` に共通化した。
 - RelativeTime: `getRelativeTimeParts` を sub-minute past / sub-minute future / minute-based past/future の semantic state へ整理し、`RelativeTime` の表示を「過去 1 分未満は非表示」「0..59 秒は `まもなく`」「60 秒以上は `-N分` / `あとN分`」の境界仕様に揃えた。
