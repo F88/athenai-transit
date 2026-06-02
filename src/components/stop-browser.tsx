@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng } from '../types/app/map';
-import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
 import type { GlobalFilter } from '../types/app/global-filter';
@@ -50,7 +49,8 @@ export interface StopBrowserProps {
   timetableEntriesStateByStopId: ReadonlyMap<string, TimetableEntriesState>;
   selectedStopId: string | null;
   hasNearbyLoaded: boolean;
-  dataConfig: DataConfig;
+  /** Radius (metres) within which the displayed stops were collected; shown in the header summary. */
+  stopsRadius: number;
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
@@ -94,7 +94,7 @@ export function StopBrowser({
   timetableEntriesStateByStopId,
   selectedStopId,
   hasNearbyLoaded,
-  dataConfig,
+  stopsRadius,
   now,
   mapCenter,
   infoLevel,
@@ -211,7 +211,7 @@ export function StopBrowser({
         nearbyStopsCounts={nearbyStopsCounts}
         filteredNearbyStopsCounts={filteredNearbyStopsCounts}
         counts={trimmedStopTimesCounts}
-        dataConfig={dataConfig}
+        stopsRadius={stopsRadius}
         dataLangs={dataLangs}
         omitEmptyStops={omitEmptyStops}
         isOmitEmptyStopsForced={isOmitEmptyStopsForced}

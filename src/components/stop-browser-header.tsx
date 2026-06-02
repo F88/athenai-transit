@@ -1,4 +1,3 @@
-import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { StopTimeViewMeta } from '../types/app/transit-composed';
@@ -31,7 +30,8 @@ interface StopBrowserHeaderProps {
   /** App-filtered counts before BottomSheet-local filters. */
   filteredNearbyStopsCounts: StopsCounts;
   counts: StopsCounts;
-  dataConfig: DataConfig;
+  /** Radius (metres) within which the displayed stops were collected, shown in {@link StopsSummary}. */
+  stopsRadius: number;
   dataLangs: readonly string[];
   omitEmptyStops: boolean;
   isOmitEmptyStopsForced: boolean;
@@ -59,7 +59,7 @@ export function StopBrowserHeader({
   nearbyStopsCounts,
   filteredNearbyStopsCounts,
   counts,
-  dataConfig,
+  stopsRadius,
   dataLangs,
   omitEmptyStops,
   isOmitEmptyStopsForced,
@@ -120,7 +120,7 @@ export function StopBrowserHeader({
         hasLoaded={hasNearbyLoaded}
         totalCount={nearbyStopsCounts}
         filteredCount={counts.total}
-        nearbyRadius={dataConfig.stops.nearbyRadius}
+        nearbyRadius={stopsRadius}
         omitEmptyStops={omitEmptyStops}
         infoLevel={infoLevel}
       />

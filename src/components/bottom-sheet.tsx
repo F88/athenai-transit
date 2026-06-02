@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
 import type { LatLng } from '../types/app/map';
-import type { DataConfig } from '../config/perf-profiles';
 import type { InfoLevel } from '../types/app/settings';
 import type { TimetableEntriesState } from '../types/app/transit';
 import type { GlobalFilter } from '../types/app/global-filter';
@@ -29,7 +28,13 @@ export interface BottomSheetProps {
   selectedStopId: string | null;
   isNearbyLoading: boolean;
   hasNearbyLoaded: boolean;
-  dataConfig: DataConfig;
+  /**
+   * Radius (metres) within which the displayed `stopTimes` were
+   * collected, shown in the summary's "Xm / Xkm 圏内" label. Sourced
+   * from the committed fetch (not the live perf profile) so the label
+   * and the stop count change together on a perf-mode toggle.
+   */
+  stopsRadius: number;
   time: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
@@ -82,7 +87,7 @@ export function BottomSheet({
   selectedStopId,
   isNearbyLoading: _isNearbyLoading,
   hasNearbyLoaded,
-  dataConfig,
+  stopsRadius,
   time: now,
   mapCenter,
   infoLevel,
@@ -167,7 +172,7 @@ export function BottomSheet({
         timetableEntriesStateByStopId={timetableEntriesStateByStopId}
         selectedStopId={selectedStopId}
         hasNearbyLoaded={hasNearbyLoaded}
-        dataConfig={dataConfig}
+        stopsRadius={stopsRadius}
         now={now}
         mapCenter={mapCenter}
         infoLevel={infoLevel}

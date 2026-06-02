@@ -24,7 +24,7 @@ import { StopBrowserHeader } from './stop-browser-header';
 
 // --- Shared defaults ---
 
-const defaultDataConfig = PERF_PROFILES.normal.data;
+const defaultStopsRadius = PERF_PROFILES.normal.data.stops.nearbyRadius;
 const selectView = (id: string) => STOP_TIMES_VIEWS.find((v) => v.id === id);
 const defaultSelectedView = selectView(DEFAULT_VIEW_ID);
 const defaultCounts = { total: 12, nonEmpty: 7, originCount: 3, boardableCount: 5 };
@@ -50,7 +50,7 @@ const meta = {
     counts: defaultCounts,
     nearbyStopsCounts: defaultCounts,
     filteredNearbyStopsCounts: defaultFilteredNearbyStopsCounts,
-    dataConfig: defaultDataConfig,
+    stopsRadius: defaultStopsRadius,
     dataLangs: ['ja'],
     omitEmptyStops: false,
     isOmitEmptyStopsForced: false,
@@ -286,7 +286,7 @@ const kitchenSinkArgs = {
   counts: { total: 42, nonEmpty: 28, originCount: 6, boardableCount: 15 },
   nearbyStopsCounts: { total: 42, nonEmpty: 28, originCount: 6, boardableCount: 15 },
   filteredNearbyStopsCounts: { total: 21, nonEmpty: 21, originCount: 6, boardableCount: 15 },
-  dataConfig: defaultDataConfig,
+  stopsRadius: defaultStopsRadius,
   dataLangs: ['ja'],
   omitEmptyStops: true,
   viewId: 'route-headsign',

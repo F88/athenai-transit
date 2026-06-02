@@ -48,6 +48,16 @@ export interface UseStopsForBoundsReturn {
   /** Stops within `nearbyRadius` of the current map center. */
   radiusStops: StopWithMeta[];
   /**
+   * The radius (metres) that the current `radiusStops` lie within, or
+   * `null` before the first committed fetch. This is the `perfProfile`
+   * `nearbyRadius` captured at commit time and set in the same state
+   * update as `radiusStops`, so after a `perfProfile` change it lags the
+   * live profile until the re-fetch commits. A consumer pairing a radius
+   * with the stop count should read this rather than the live
+   * `perfProfile`, so the label and count never disagree.
+   */
+  radius: number | null;
+  /**
    * Latest map center, updated immediately on every bounds-changed
    * event (not debounced).
    */
@@ -97,6 +107,7 @@ export function useStopsForBounds(params: UseStopsForBoundsParams): UseStopsForB
 
   const [inBoundStops, setInBoundStops] = useState<StopWithMeta[]>([]);
   const [radiusStops, setRadiusStops] = useState<StopWithMeta[]>([]);
+  const [radius, setRadius] = useState<number | null>(null);
   const [mapCenter, setMapCenter] = useState<LatLng | null>(null);
   const [hasNearbyLoaded, setHasNearbyLoaded] = useState(false);
 
@@ -173,6 +184,10 @@ export function useStopsForBounds(params: UseStopsForBoundsParams): UseStopsForB
           );
           setInBoundStops(inBounds);
           setRadiusStops(nearby);
+          // Commit the radius that these stops lie within in the same
+          // update, so a label reading `radius` flips together with the
+          // stop count rather than ahead of it.
+          setRadius(nearbyRadius);
           setHasNearbyLoaded(true);
           onStopsCommittedRef.current?.();
         });
@@ -228,5 +243,12 @@ export function useStopsForBounds(params: UseStopsForBoundsParams): UseStopsForB
     };
   }, []);
 
-  return { inBoundStops, radiusStops, mapCenter, hasNearbyLoaded, handleBoundsChanged };
+  return {
+    inBoundStops,
+    radiusStops,
+    radius,
+    mapCenter,
+    hasNearbyLoaded,
+    handleBoundsChanged,
+  };
 }
