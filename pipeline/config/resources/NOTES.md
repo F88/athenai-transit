@@ -1385,3 +1385,60 @@ route_color 分布: 0000FF (80), 000000 (43), FF4500 (12), FC0FC0 (2), ADD8E6 (1
 
 - downloadUrl に `?date=YYYYMMDD` が必須
 - 使用中: 20251028 版
+
+## itabashi-rin2-bus (板橋区コミュニティバス りんりんGO / Rinrin-GO)
+
+- Resource definition: `pipeline/config/resources/gtfs/itabashi-rin2-bus.ts`
+- 配信: 板橋区サイトからの直接 GTFS-JP ダウンロード (ODPT/CKAN ではない、 municipal direct)
+- ダウンロードページ: <https://www.city.itabashi.tokyo.jp/bousai/toshikeiakku/kotsu/1016224.html>
+- downloadUrl: `https://www.city.itabashi.tokyo.jp/_res/projects/default_project/_page_/001/006/732/rinringo_gtfs_20260401asshuku.zip`
+- prefix: `rin2`、 outDir: `itabashi-rin2-bus`
+- ライセンス: CC BY 4.0
+
+### 調査日時
+
+- 調査日: 2026-06-02
+- feed バージョン: `202604-202803-...西沢ツールver8.31`(西沢ツール生成)、 publisher 東京都板橋区
+- 運行事業者: 国際興業バス(志村営業所)。 ただし GTFS の agency_name は「板橋区コミュニティバス」(運行会社名は GTFS に含まれない)
+
+### 概要
+
+- 2 routes (route_type=3 bus) / 33 stops 定義 (うち stop_times に使われるのは 19) / 22 trips / 440 stop_times
+- ルート (route_short_name は全 route 空欄、 route_long_name は全角「ＧＯ」を含む):
+    - `8011` りんりんＧＯ（反時計回り） 14 trips
+    - `8021` りんりんＧＯ（時計回り） 8 trips
+- 同一ループの2方向だが、 両 route とも `direction_id=1` のみ(0 を使っていない)
+
+### 有効期間
+
+- 有効期間: 2026/04/01 - 2028/03/31 (約2年)
+
+### route_color / route_text_color
+
+- 両 route とも GTFS の `route_color` が**空**、 `route_text_color` のみ `000000`(黒)が**明示指定**されている(本プロジェクトで「color 空 + text 指定」は唯一)
+- 空 route_color はアプリ既定だと `666666`(中間グレー)になり、 黒文字とのコントラストが低い(WCAG 比 3.66)
+- `routeColorFallbacks: { '*': 'FFFFFF' }` を設定。 空 route_color の GTFS 仕様デフォルト(白)で埋め、 source の `route_text_color=000000` と対にして**白地に黒文字**(コントラスト最大、比 21)。 source 指定の text 色は改変しない
+- App 側ブランドカラー `045259`(provider.colors / agency-attributes)は別レイヤー(AgencyBadge 用)
+
+### shapes.txt — あるが trips に紐付かない(路線図非対応)
+
+- shapes.txt は存在(`SHP0001` 306点 / `SHP0002` 309点 = 615 points)
+- しかし **trips.txt に `shape_id` 列が無い**(ヘッダ: `route_id,service_id,trip_id,trip_headsign,direction_id,block_id`)
+- shape は `trips.shape_id` 経由でのみ route に紐付くため、 紐付け不能 → `extractShapes` が空を返し **shapes.json は生成されない**(路線図非対応)。 GTFS 仕様上は valid(shape_id はオプショナル)
+- `build-shapes-gtfs.ts` には登録維持(将来 feed が trips に shape_id 列を追加すれば自動生成される)
+
+### 無便の孤立 stop (unknown route type)
+
+- stops.txt は 33 stop(物理停留所ごとに方向別 `_1`/`_2` の2標柱)定義だが、 stop_times が参照するのは `_1` 側中心の 19 stop のみ
+- `_2` 標柱 16 のうち **14 が無便の孤立 stop**(どの便にも使われない、 例: `80009_2 下赤塚駅`)
+- これらは route 紐付けが無く route_type を判定できないため、 アプリ上は **unknown(others)route type の stop** として表示される(想定どおりの挙動)
+
+### calendar (曜日非依存「毎日」)
+
+- calendar.txt は `毎日`(月〜日すべて 1)1 service のみ。 全 22 trip がこれを使用 → 平日/土日の区別なし
+- calendar_dates 45 行: `exception_type=2`(運休)12 日 = 年末年始(12/29-1/3 × 2年)、 `exception_type=1`(運行)33 日 = 国民の祝日。 祝日の type=1 は base `毎日` が既に全曜日を含むため**冗長**(挙動に影響なし)
+
+### translations.txt
+
+- 標準 6 列形式、 34 行。 **`stops.stop_name` のみ**(`en` 17 + `ja-Hrkt` 17)
+- route / agency / headsign の翻訳は無し
