@@ -83,13 +83,13 @@ Changes are in-memory and reset on reload.
 
 ### Perf Mode (`lite | normal | full`)
 
-Perf mode controls rendering style and data volume as a profile. Changing it resets render mode to the profile default.
+Perf mode controls data volume (nearby radius, result limit) as a profile. Render mode and route-shape visibility are independent of it: changing perf mode does not reset render mode or toggle route shapes.
 
-| Mode     | Description                                                                |
-| -------- | -------------------------------------------------------------------------- |
-| `lite`   | low-end devices, Canvas rendering, 500m nearby radius, route shapes off    |
-| `normal` | default, zoom-based render switching, 1000m nearby radius, route shapes on |
-| `full`   | higher-end devices, DOM rendering, 2000m nearby radius, route shapes on    |
+| Mode     | Description                             |
+| -------- | --------------------------------------- |
+| `lite`   | low-end devices, 500m nearby radius     |
+| `normal` | default, 1000m nearby radius            |
+| `full`   | higher-end devices, 2000m nearby radius |
 
 ### Render Mode (`auto | standard | lightweight`)
 
@@ -104,7 +104,7 @@ Perf mode controls rendering style and data volume as a profile. Changing it res
 Perf mode determines repository query parameters.
 
 - `stops.nearbyRadius`: radius for `getStopsNearby` in meters
-- `routes.enabled`: whether route shapes are enabled
+- `stops.maxResults`: max stops returned by bounds / nearby queries
 
 ## URL parameter helpers
 
