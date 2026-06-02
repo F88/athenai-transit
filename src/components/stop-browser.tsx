@@ -1,33 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { LatLng } from '../types/app/map';
-import type { InfoLevel } from '../types/app/settings';
-import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
-import type { GlobalFilter } from '../types/app/global-filter';
-import type { StopsCounts } from '../types/app/stop';
-import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
+
+import { APP_ROUTE_TYPES } from '../config/route-types';
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
 import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
+import { DEFAULT_VIEW_ID, STOP_TIMES_VIEWS } from '../domain/transit/stop-time-views';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { useElementRect } from '../hooks/use-element-rect';
-import { STOP_TIMES_VIEWS, DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
-import { APP_ROUTE_TYPES } from '../config/route-types';
+import type { GlobalFilter } from '../types/app/global-filter';
+import type { LatLng } from '../types/app/map';
+import type { InfoLevel } from '../types/app/settings';
+import type { StopsCounts } from '../types/app/stop';
+import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
+import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
+import { resolveContainerDisplaySize } from './shared/display-size';
 import { StopBrowserHeader } from './stop-browser-header';
 import { StopGrid } from './stop-grid';
-import type { ExtendedDisplaySize } from './shared/display-size';
-
-const STOP_BROWSER_HEADER_LARGE_MIN_WIDTH = 800;
-const STOP_BROWSER_HEADER_EXTRA_LARGE_MIN_WIDTH = 1200;
-
-function resolveStopBrowserHeaderSize(viewportWidth: number): ExtendedDisplaySize {
-  if (viewportWidth >= STOP_BROWSER_HEADER_EXTRA_LARGE_MIN_WIDTH) {
-    return 'xl';
-  }
-  if (viewportWidth >= STOP_BROWSER_HEADER_LARGE_MIN_WIDTH) {
-    return 'lg';
-  }
-  return 'md';
-}
 
 /** Route type display order matching StopTypeFilterPanel. */
 const ROUTE_TYPE_PRIORITY: Readonly<Record<number, number>> = {
@@ -147,7 +135,6 @@ export function StopBrowser({
   } = globalFilter;
   const [rootElement, setRootElement] = useState<HTMLDivElement | null>(null);
   const rootRect = useElementRect(rootElement);
-  const headerSize = resolveStopBrowserHeaderSize(rootRect?.width ?? 0);
   const [viewId, setViewId] = useState(DEFAULT_VIEW_ID);
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
   const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
@@ -232,6 +219,8 @@ export function StopBrowser({
     }
     contentRef.current.scrollTop = 0;
   }, [selectedStopId, stopIdsKey]);
+
+  const headerSize = resolveContainerDisplaySize(rootRect?.width ?? 0);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" ref={setRootElement}>
