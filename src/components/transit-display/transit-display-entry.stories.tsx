@@ -6,7 +6,6 @@ import {
   baseStop,
   busRoute,
   storyMapCenter,
-  storyNow,
   storyServiceDate,
 } from '../../stories/fixtures';
 import type { AppRouteTypeValue } from '../../types/app/transit';
@@ -91,14 +90,15 @@ const meta = {
   title: 'TransitDisplay/TransitDisplayEntry',
   component: TransitDisplayEntry,
   args: {
-    row: makeRow(),
-    now: storyNow,
+    data: makeRow(),
+    infoLevel: 'normal' as const,
     mapCenter: storyMapCenter,
     onStopSelected: fn(),
     onInspectTrip: fn(),
   },
   argTypes: {
-    row: { control: 'object' },
+    data: { control: 'object' },
+    infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
   },
   // TransitDisplay renders an <li>; wrap in a <ul> mirroring the
   // parent TransitDisplays list so layout and semantics match production.
@@ -126,14 +126,14 @@ export const Default: Story = {};
 /** Empty headsign falls back to the `-` placeholder in the second line. */
 export const EmptyHeadsign: Story = {
   args: {
-    row: makeRow({ headsign: '' }),
+    data: makeRow({ headsign: '' }),
   },
 };
 
 /** Long stop name, route name, and headsign all exercise truncation. */
 export const LongText: Story = {
   args: {
-    row: makeRow({
+    data: makeRow({
       stopName: '東京都立産業技術研究センター前',
       routeName: '北大01',
       headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
@@ -145,7 +145,7 @@ export const LongText: Story = {
 /** Single-character headsign — minimum-length rendering. */
 export const ShortHeadsign: Story = {
   args: {
-    row: makeRow({ routeName: 'TX', headsign: 'X', timeText: '14:30' }),
+    data: makeRow({ routeName: 'TX', headsign: 'X', timeText: '14:30' }),
   },
 };
 
@@ -207,8 +207,8 @@ export const KitchenSink: Story = {
       {kitchenSinkRows.map((row) => (
         <TransitDisplayEntry
           key={row.key}
-          row={row}
-          now={args.now}
+          data={row}
+          infoLevel={args.infoLevel}
           mapCenter={args.mapCenter}
           onStopSelected={args.onStopSelected}
           onInspectTrip={args.onInspectTrip}

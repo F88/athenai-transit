@@ -20,7 +20,7 @@ import type { StopWithContext, TripInspectionTarget } from '../types/app/transit
 import { resolveContainerDisplaySize } from './shared/display-size';
 import { StopBrowserHeader } from './stop-browser-header';
 import { StopGrid } from './stop-grid';
-import { TransitDisplaysContainer } from './transit-display/transit-displays';
+import { TransitDisplaysContainer } from './transit-display/transit-displays-container';
 
 export interface StopBrowserProps {
   /**

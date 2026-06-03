@@ -1,80 +1,24 @@
-import { useMemo, type RefObject } from 'react';
-
 import { useTranslation } from 'react-i18next';
 
 import type { LatLng } from '@/types/app/map';
-import type { InfoLevel } from '@/types/app/settings';
-import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-composed';
-
-import { useScrollFades } from '@/hooks/use-scroll-fades';
+import type { TripInspectionTarget } from '@/types/app/transit-composed';
 
 import { DistanceBadge } from '@/components/badge/distance-badge';
-import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import {
-  buildTransitDisplayDataSet,
   type TransitDisplayData,
   type TransitDisplayEntryData,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { getBearingDeg } from '@/domain/transit/distance';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
-
-export interface TransitDisplaysContainerProps {
-  stopTimes: StopWithContext[];
-  /** Current wall-clock reference time for relative time display. */
-  now: Date;
-  mapCenter: LatLng | null;
-  infoLevel: InfoLevel;
-  dataLangs: readonly string[];
-  contentRef: RefObject<HTMLDivElement | null>;
-  /** Select the target stop (fired together with trip inspection on a time tap). */
-  onStopSelected: (stopId: string) => void;
-  /** Optional callback for opening trip inspection for one concrete stop event. */
-  onInspectTrip?: (target: TripInspectionTarget) => void;
-}
-
-export function TransitDisplaysContainer({
-  stopTimes,
-  now,
-  mapCenter,
-  infoLevel: _infoLevel,
-  dataLangs,
-  contentRef,
-  onStopSelected,
-  onInspectTrip,
-}: TransitDisplaysContainerProps) {
-  const { t } = useTranslation();
-  const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
-  const scrollFade = useScrollFades(contentRef, stopIdsKey);
-  const displays = useMemo(
-    () => buildTransitDisplayDataSet(stopTimes, dataLangs),
-    [stopTimes, dataLangs],
-  );
-
-  return (
-    <div
-      className="relative min-h-0 flex-1 overflow-y-auto"
-      ref={contentRef}
-      onScroll={scrollFade.handleScroll}
-    >
-      {scrollFade.showTop && <ScrollFadeEdge position="top" />}
-      <TransitDisplays
-        displays={displays}
-        emptyMessage={t('stop.timetable.allFilteredOut')}
-        now={now}
-        mapCenter={mapCenter}
-        onStopSelected={onStopSelected}
-        onInspectTrip={onInspectTrip}
-      />
-      {scrollFade.showBottom && <ScrollFadeEdge position="bottom" />}
-    </div>
-  );
-}
+import type { InfoLevel } from '@/types/app/settings';
+import { useInfoLevel } from '@/hooks/use-info-level';
 
 export interface TransitDisplaysProps {
   displays: readonly TransitDisplayData[];
   emptyMessage: string;
   now: Date;
   mapCenter: LatLng | null;
+  infoLevel: InfoLevel;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
@@ -85,6 +29,7 @@ export function TransitDisplays({
   emptyMessage,
   now,
   mapCenter,
+  infoLevel,
   onStopSelected,
   onInspectTrip,
 }: TransitDisplaysProps) {
@@ -97,6 +42,7 @@ export function TransitDisplays({
           emptyMessage={emptyMessage}
           now={now}
           mapCenter={mapCenter}
+          infoLevel={infoLevel}
           onStopSelected={onStopSelected}
           onInspectTrip={onInspectTrip}
         />
@@ -110,6 +56,7 @@ export interface TransitDisplayProps {
   emptyMessage: string;
   now: Date;
   mapCenter: LatLng | null;
+  infoLevel: InfoLevel;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
@@ -118,8 +65,8 @@ export interface TransitDisplayProps {
 export function TransitDisplay({
   display,
   emptyMessage,
-  now,
   mapCenter,
+  infoLevel,
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayProps) {
@@ -151,9 +98,9 @@ export function TransitDisplay({
           {display.data.map((row) => (
             <TransitDisplayEntry
               key={row.key}
-              row={row}
-              now={now}
+              data={row}
               mapCenter={mapCenter}
+              infoLevel={infoLevel}
               onStopSelected={onStopSelected}
               onInspectTrip={onInspectTrip}
             />
@@ -164,7 +111,7 @@ export function TransitDisplay({
   );
 }
 
-export interface TimeInfoProps {
+interface TimeInfoProps {
   /** Pre-formatted absolute time text to display. */
   timeText: string;
   /** Stop selected together with trip inspection on tap. */
@@ -203,52 +150,63 @@ function TimeInfo({
 }
 
 export interface TransitDisplayEntryProps {
-  row: TransitDisplayEntryData;
-  now: Date;
+  data: TransitDisplayEntryData;
   mapCenter: LatLng | null;
+  infoLevel: InfoLevel;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 /** A single departure-board row (one stop event). */
 export function TransitDisplayEntry({
-  row,
-  now: _now,
+  data,
   mapCenter,
+  infoLevel,
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayEntryProps) {
+  const infoLevelFlag = useInfoLevel(infoLevel);
+
   // Distance is baked on the row (query-time); bearing is computed live from the
   // current map center so the direction arrow tracks panning, like StopInfo.
-  const distanceRounded = row.stop.distance != null ? Math.round(row.stop.distance) : null;
-  const bearing = mapCenter ? getBearingDeg(mapCenter, row.stop.context.stop) : null;
+  const distanceRounded = data.stop.distance != null ? Math.round(data.stop.distance) : null;
+  const bearing = mapCenter ? getBearingDeg(mapCenter, data.stop.context.stop) : null;
   return (
     <li
       className="cursor-pointer rounded-md bg-[#f5f7fa] px-3 py-2 text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-100"
-      onClick={() => onStopSelected(row.stop.id)}
+      onClick={() => onStopSelected(data.stop.id)}
     >
       {/* Single-line departure-board row: time, mode, route, agency, destination, stop, platform. */}
       <div className="flex items-center gap-1.5 whitespace-nowrap">
         {/* Local TimeInfo: shows timeText; tap selects the stop + opens inspection. */}
         <TimeInfo
-          timeText={row.timeText}
-          stopId={row.stop.id}
-          inspectTarget={row.inspectionTarget}
+          timeText={data.timeText}
+          stopId={data.stop.id}
+          inspectTarget={data.inspectionTarget}
           onStopSelected={onStopSelected}
           onInspectTrip={onInspectTrip}
         />
-        {/* Trip mode emoji + destination (行き先), allowed to shrink and truncate. */}
-        <span aria-hidden>{row.routeTypeEmoji}</span>
-        <span className="min-w-0 flex-1 truncate">{row.headsign || '-'}</span>
+
+        {infoLevelFlag.isVerboseEnabled && (
+          // Route type emoji for the trip
+          <span aria-hidden>{data.routeTypeEmoji}</span>
+        )}
+
+        <span className="min-w-0 flex-1 truncate">{data.headsign || '-'}</span>
         {/* Operating agency + route name. */}
-        <span className="text-gray-500 dark:text-gray-400">{row.agencyName}</span>
-        <span className="font-medium">{row.routeName}</span>
+        <span className="text-gray-500 dark:text-gray-400">{data.agencyName}</span>
+        <span className="font-medium">{data.routeName}</span>
         {/* Stop: stop-level mode emojis + stop name + platform code. */}
-        <span aria-hidden>{row.stop.routeTypesEmoji}</span>
-        <span className="min-w-0 flex-1 truncate font-medium">{row.stop.name}</span>
-        {row.stop.platformCode !== undefined && (
+
+        {infoLevelFlag.isVerboseEnabled && (
+          // Stop-level mode emojis
+          <span aria-hidden>{data.stop.routeTypesEmoji}</span>
+        )}
+
+        <span className="min-w-0 flex-1 truncate font-medium">{data.stop.name}</span>
+        {data.stop.platformCode !== undefined && (
           <span className="shrink-0 rounded bg-gray-200 px-1 text-[10px] dark:bg-gray-700">
-            {row.stop.platformCode}
+            {data.stop.platformCode}
           </span>
         )}
         {/* Distance + direction to the stop (same DistanceBadge as StopInfo). */}
