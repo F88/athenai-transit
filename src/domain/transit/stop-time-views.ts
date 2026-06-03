@@ -10,6 +10,13 @@ import type { StopTimeViewMeta } from '../../types/app/transit-composed';
  * via `t()` at render time.
  */
 export const STOP_TIMES_VIEWS: readonly StopTimeViewMeta[] = [
+  /**
+   * Stop-first view.
+   *
+   * Display unit: stop.
+   *
+   * Shows upcoming departures in the context of each stop.
+   */
   {
     id: 'stop',
     icon: '🕐',
@@ -19,6 +26,13 @@ export const STOP_TIMES_VIEWS: readonly StopTimeViewMeta[] = [
     enabled: true,
     visible: true,
   },
+  /**
+   * Route+headsign grouped view.
+   *
+   * Display unit: stop.
+   *
+   * Groups upcoming departures within a stop by route and destination.
+   */
   {
     id: 'route-headsign',
     icon: '🚌',
@@ -64,6 +78,15 @@ export const STOP_TIMES_VIEWS: readonly StopTimeViewMeta[] = [
     enabled: false,
     visible: true,
   },
+  /**
+   * Terminal-grouped view.
+   *
+   * Display unit: multiple stops.
+   *
+   * Shows departures and arrivals in timeline order across a nearby stop cluster,
+   * similar to an airport or major terminal board.
+   * Approximates a shared terminal by grouping stops within a nearby radius.
+   */
   {
     id: 'terminal',
     icon: '🏙',
