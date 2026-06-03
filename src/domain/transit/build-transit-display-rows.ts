@@ -7,9 +7,9 @@ import { sortTimetableEntriesByDisplayTimeChronologically } from './sort-timetab
 import { formatAbsoluteTime } from './time';
 import { getDisplayMinutes } from './timetable-utils';
 
-export const TERMINAL_BOARD_MAX_ROWS = 12;
+export const TRANSIT_DISPLAY_MAX_ROWS = 12;
 
-export interface TerminalBoardRow {
+export interface TransitDisplayRow {
   key: string;
   stopId: string;
   stopName: string;
@@ -19,24 +19,24 @@ export interface TerminalBoardRow {
   isArrival: boolean;
 }
 
-interface TerminalBoardSortableEntry extends ContextualTimetableEntry {
-  terminalBoardRowKey: string;
+interface TransitDisplaySortableEntry extends ContextualTimetableEntry {
+  transitDisplayRowKey: string;
 }
 
-interface TerminalBoardRowMeta {
+interface TransitDisplayRowMeta {
   stopId: string;
   stopName: string;
   routeName: string;
   headsign: string;
 }
 
-export function buildTerminalBoardRows(
+export function buildTransitDisplayRows(
   stops: readonly StopWithContext[],
   preferredDisplayLangs: readonly string[],
-  maxRows: number = TERMINAL_BOARD_MAX_ROWS,
-): TerminalBoardRow[] {
-  const metaByKey = new Map<string, TerminalBoardRowMeta>();
-  const entries: TerminalBoardSortableEntry[] = [];
+  maxRows: number = TRANSIT_DISPLAY_MAX_ROWS,
+): TransitDisplayRow[] {
+  const metaByKey = new Map<string, TransitDisplayRowMeta>();
+  const entries: TransitDisplaySortableEntry[] = [];
 
   for (const stopWithContext of stops) {
     const agencyLangs = stopWithContext.agencies.map((agency) => agency.agency_lang);
@@ -77,19 +77,19 @@ export function buildTerminalBoardRows(
         routeName,
         headsign,
       });
-      entries.push({ ...entry, terminalBoardRowKey: key });
+      entries.push({ ...entry, transitDisplayRowKey: key });
     }
   }
 
   return sortTimetableEntriesByDisplayTimeChronologically(entries)
     .slice(0, maxRows)
     .map((entry) => {
-      const meta = metaByKey.get(entry.terminalBoardRowKey);
+      const meta = metaByKey.get(entry.transitDisplayRowKey);
       if (!meta) {
-        throw new Error(`Missing terminal board row meta for key: ${entry.terminalBoardRowKey}`);
+        throw new Error(`Missing transit display row meta for key: ${entry.transitDisplayRowKey}`);
       }
       return {
-        key: entry.terminalBoardRowKey,
+        key: entry.transitDisplayRowKey,
         stopId: meta.stopId,
         stopName: meta.stopName,
         routeName: meta.routeName,

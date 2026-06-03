@@ -70,9 +70,9 @@
       "title": "By terminal activity",
       "description": "Sort by terminal stop activity"
     },
-    "terminalBoard": {
-      "label": "Terminal board",
-      "title": "Terminal board",
+    "transitDisplay": {
+      "label": "Transit display",
+      "title": "Transit display",
       "description": "Show nearby departures and arrivals in chronological order"
     }
   },

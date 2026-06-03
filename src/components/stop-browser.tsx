@@ -20,7 +20,7 @@ import type { StopWithContext, TripInspectionTarget } from '../types/app/transit
 import { resolveContainerDisplaySize } from './shared/display-size';
 import { StopBrowserHeader } from './stop-browser-header';
 import { StopGrid } from './stop-grid';
-import { TerminalBoardsContainer } from './terminal-boards';
+import { TransitDisplaysContainer } from './transit-display/transit-displays';
 
 /** Route type display order matching StopTypeFilterPanel. */
 const ROUTE_TYPE_PRIORITY: Readonly<Record<number, number>> = {
@@ -255,8 +255,8 @@ export function StopBrowser({
         onToggleRouteType={toggleRouteType}
         onToggleAgency={toggleAgency}
       />
-      {viewId === 'terminal-board' ? (
-        <TerminalBoardsContainer
+      {viewId === 'transit-display' ? (
+        <TransitDisplaysContainer
           stopTimes={trimmedStopTimes}
           dataLangs={dataLangs}
           contentRef={contentRef}

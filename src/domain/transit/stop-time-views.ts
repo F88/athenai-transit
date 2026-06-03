@@ -45,20 +45,20 @@ export const STOP_TIMES_VIEWS = [
     visible: true,
   },
   /**
-   * Terminal-board view.
+   * Transit display view.
    *
    * Display unit: multiple stops.
    *
    * Shows service events in timeline order across a nearby stop cluster,
-   * similar to an airport or major terminal board.
-   * Approximates a shared terminal by grouping stops within a nearby radius.
+   * similar to a public transit information display.
+   * Approximates a shared display by grouping stops within a nearby radius.
    */
   {
-    id: 'terminal-board',
+    id: 'transit-display',
     icon: '📟',
-    labelKey: 'view.terminalBoard.label',
-    titleKey: 'view.terminalBoard.title',
-    descriptionKey: 'view.terminalBoard.description',
+    labelKey: 'view.transitDisplay.label',
+    titleKey: 'view.transitDisplay.title',
+    descriptionKey: 'view.transitDisplay.description',
     enabled: true,
     visible: true,
   },
