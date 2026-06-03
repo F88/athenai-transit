@@ -16,6 +16,7 @@ import {
   type TransitDisplayEntryData,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { getBearingDeg } from '@/domain/transit/distance';
+import { routeTypesEmoji } from '@/utils/route-type-emoji';
 
 export interface TransitDisplaysContainerProps {
   stopTimes: StopWithContext[];
@@ -135,15 +136,26 @@ export function TransitDisplay({
   onInspectTrip,
 }: TransitDisplayProps) {
   const { t } = useTranslation();
+  // The board's time basis decides its single arrival/departure label: every
+  // row on an arrival board is an arrival, every row on a departure board a
+  // departure (airport-style boards do not mix the two).
+  const isArrivalBoard = display.meta.timeBasis === 'arrival';
+  const timeLabel = isArrivalBoard ? arrivalLabel : departureLabel;
+  // Airport-board-style title: mode emoji + departures/arrivals phrase. The
+  // route type and basis are structured meta; the UI composes the localized text.
+  const title = `${routeTypesEmoji([display.meta.routeType])} ${t(
+    isArrivalBoard ? 'transitDisplay.arrivals' : 'transitDisplay.departures',
+  )}`;
   return (
     <section className="mb-3 last:mb-0">
-      {/* Title — what this display is. */}
-      <h3 className="mb-0.5 text-xs font-semibold text-gray-600 dark:text-gray-300">
-        {display.meta.title}
-      </h3>
+      {/* Title — what this display is (mode + departures/arrivals). */}
+      <h3 className="mb-0.5 text-xs font-semibold text-gray-600 dark:text-gray-300">{title}</h3>
       {/* Description composed from the display's selection params. */}
       <p className="m-0 mb-1 text-[10px] text-gray-500 dark:text-gray-400">
-        {t('transitDisplay.recentCount', { count: display.meta.max })}
+        {t('transitDisplay.recentCount', {
+          count: display.meta.max,
+          radius: display.meta.radius,
+        })}
       </p>
       {/* Data — the rows. */}
       {display.data.length === 0 ? (
@@ -154,8 +166,7 @@ export function TransitDisplay({
             <TransitDisplayEntry
               key={row.key}
               row={row}
-              arrivalLabel={arrivalLabel}
-              departureLabel={departureLabel}
+              timeLabel={timeLabel}
               now={now}
               mapCenter={mapCenter}
               onStopSelected={onStopSelected}
@@ -208,8 +219,8 @@ function TimeInfo({
 
 export interface TransitDisplayEntryProps {
   row: TransitDisplayEntryData;
-  arrivalLabel: string;
-  departureLabel: string;
+  /** Board-level arrival/departure label, resolved by the parent from `meta.timeBasis`. */
+  timeLabel: string;
   now: Date;
   mapCenter: LatLng | null;
   onStopSelected: (stopId: string) => void;
@@ -219,8 +230,7 @@ export interface TransitDisplayEntryProps {
 /** A single departure-board row (one stop event). */
 export function TransitDisplayEntry({
   row,
-  arrivalLabel,
-  departureLabel,
+  timeLabel,
   now: _now,
   mapCenter,
   onStopSelected,
@@ -245,9 +255,7 @@ export function TransitDisplayEntry({
           onStopSelected={onStopSelected}
           onInspectTrip={onInspectTrip}
         />
-        <span className="text-[10px] text-gray-500 dark:text-gray-400">
-          {row.isArrival ? arrivalLabel : departureLabel}
-        </span>
+        <span className="text-[10px] text-gray-500 dark:text-gray-400">{timeLabel}</span>
         {/* Trip mode emoji + destination (行き先), allowed to shrink and truncate. */}
         <span aria-hidden>{row.routeTypeEmoji}</span>
         <span className="min-w-0 flex-1 truncate">{row.headsign || '-'}</span>

@@ -1,4 +1,3 @@
-import { APP_ROUTE_TYPES } from '../../../config/route-types';
 import type { AppRouteTypeValue } from '../../../types/app/transit';
 import type {
   ContextualTimetableEntry,
@@ -12,9 +11,7 @@ import { getAgencyDisplayNames } from '../name-resolver/get-agency-display-name'
 import { getHeadsignDisplayNames } from '../name-resolver/get-headsign-display-names';
 import { getRouteDisplayNames } from '../name-resolver/get-route-display-names';
 import { getStopDisplayNames } from '../name-resolver/get-stop-display-names';
-import { sortTimetableEntriesByDisplayTimeChronologically } from '../sort-timetable-for-ui';
 import { formatAbsoluteTime } from '../time';
-import { getDisplayMinutes } from '../timetable-utils';
 import { buildTripInspectionTarget } from '../trip-inspection-target';
 
 export const TRANSIT_DISPLAY_MAX_ENTRIES = 12;
@@ -67,15 +64,21 @@ export interface TransitDisplayEntryData {
   inspectionTarget: TripInspectionTarget;
 }
 
+/** Which time a display is based on: a departure-time board or an arrival-time board. */
+export type TransitDisplayTimeBasis = 'departure' | 'arrival';
+
 /**
- * Descriptor of one transit display: what it is plus the selection parameters
- * the UI composes the (localized) description from. `max` / `radius` are raw
- * numbers and `title` is provisional text, so this domain layer stays i18n-free
- * (title becomes an i18n key / structured value when localized later).
+ * Descriptor of one transit display: the selection parameters the UI composes
+ * its (localized) title and description from. All fields are raw structured
+ * values (no display text), so this domain layer stays i18n-free: the UI derives
+ * the mode emoji from `routeType`, the basis phrase from `timeBasis`, and the
+ * row-count / radius text from `max` / `radius`.
  */
 export interface TransitDisplayMeta {
-  /** Title — what this display is (e.g. 出発案内). Text/i18n deferred to a later spec. */
-  title: string;
+  /** The reference time this display sorts and shows by (departure vs arrival). */
+  timeBasis: TransitDisplayTimeBasis;
+  /** Route type this display is categorized by (drives the title's mode emoji). */
+  routeType: AppRouteTypeValue;
   /** Row cap applied to this display's entries. */
   max: number;
   /** Radius (metres) the display's stops were selected within. */
@@ -89,118 +92,114 @@ export interface TransitDisplayData {
   data: readonly TransitDisplayEntryData[];
 }
 
-interface TransitDisplaySortableEntry extends ContextualTimetableEntry {
-  transitDisplayEntryKey: string;
-}
-
-interface TransitDisplayEntryDataMeta {
-  stopId: string;
-  stopName: string;
-  platformCode: string | undefined;
-  distance: number | undefined;
-  routeTypesEmoji: string;
-  routeName: string;
-  agencyName: string;
-  headsign: string;
+/** One stop event paired with the stop context it came from, before name resolution. */
+interface TransitDisplayCandidate {
+  entry: ContextualTimetableEntry;
   stopWithContext: StopWithContext;
 }
 
 export function buildTransitDisplayEntryData(
   stops: readonly StopWithContext[],
   preferredDisplayLangs: readonly string[],
+  timeBasis: TransitDisplayTimeBasis,
   maxEntries: number = TRANSIT_DISPLAY_MAX_ENTRIES,
 ): TransitDisplayEntryData[] {
-  const metaByKey = new Map<string, TransitDisplayEntryDataMeta>();
-  const entries: TransitDisplaySortableEntry[] = [];
+  // The board's time basis decides which time entries are sorted and shown by:
+  // the arrival board uses arrival time even for intermediate (non-terminal) stops.
+  const basisMinutesOf = (entry: ContextualTimetableEntry): number =>
+    timeBasis === 'arrival' ? entry.schedule.arrivalMinutes : entry.schedule.departureMinutes;
 
+  // Gather candidate events without resolving any display names: name resolution
+  // (route / headsign / agency / stop) is expensive, so it is deferred until
+  // after sort + slice so it runs only for the entries that make the board.
+  const candidates: TransitDisplayCandidate[] = [];
   for (const stopWithContext of stops) {
-    const agencyLangs = stopWithContext.agencies.map((agency) => agency.agency_lang);
-    const stopName = getStopDisplayNames(
-      stopWithContext.stop,
-      preferredDisplayLangs,
-      agencyLangs,
-    ).name;
-
     for (const entry of stopWithContext.stopTimes) {
-      const key = [
-        stopWithContext.stop.stop_id,
-        entry.tripLocator.patternId,
-        entry.tripLocator.serviceId,
-        entry.tripLocator.tripIndex,
-        entry.patternPosition.stopIndex,
-      ].join('__');
-      const routeAgency = stopWithContext.agencies.find(
-        (agency) => agency.agency_id === entry.routeDirection.route.agency_id,
-      );
-      const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : agencyLangs;
-      const routeName = getRouteDisplayNames(
-        entry.routeDirection.route,
-        preferredDisplayLangs,
-        routeAgencyLangs,
-        'short',
-      ).resolved.name;
-      const headsign = getHeadsignDisplayNames(
-        entry.routeDirection,
-        preferredDisplayLangs,
-        routeAgencyLangs,
-        'stop',
-      ).resolved.name;
-      const agencyName = routeAgency
-        ? getAgencyDisplayNames(routeAgency, preferredDisplayLangs, routeAgencyLangs, 'short')
-            .resolved.name || routeAgency.agency_id
-        : '';
-
-      metaByKey.set(key, {
-        stopId: stopWithContext.stop.stop_id,
-        stopName,
-        platformCode: stopWithContext.stop.platform_code,
-        distance: stopWithContext.distance,
-        routeTypesEmoji: routeTypesEmoji(stopWithContext.routeTypes),
-        routeName,
-        agencyName,
-        headsign,
-        stopWithContext,
-      });
-      entries.push({ ...entry, transitDisplayEntryKey: key });
+      candidates.push({ entry, stopWithContext });
     }
   }
 
-  return sortTimetableEntriesByDisplayTimeChronologically(entries)
-    .slice(0, maxEntries)
-    .map((entry) => {
-      const meta = metaByKey.get(entry.transitDisplayEntryKey);
-      if (!meta) {
-        throw new Error(
-          `Missing transit display row meta for key: ${entry.transitDisplayEntryKey}`,
-        );
-      }
-      const tripInspectionTarget = buildTripInspectionTarget(entry, entry.serviceDate);
-      return {
-        key: entry.transitDisplayEntryKey,
-        stop: {
-          id: meta.stopId,
-          name: meta.stopName,
-          platformCode: meta.platformCode,
-          distance: meta.distance,
-          routeTypesEmoji: meta.routeTypesEmoji,
-          context: meta.stopWithContext,
-        },
-        routeTypeEmoji: routeTypesEmoji([entry.routeDirection.route.route_type]),
-        routeName: meta.routeName,
-        agencyName: meta.agencyName,
-        headsign: meta.headsign,
-        timeText: formatAbsoluteTime(minutesToDate(entry.serviceDate, getDisplayMinutes(entry))),
-        isArrival: entry.patternPosition.isTerminal,
-        arrivalMinutes: entry.schedule.arrivalMinutes,
-        departureMinutes: entry.schedule.departureMinutes,
-        serviceDate: entry.serviceDate,
-        inspectionTarget: tripInspectionTarget,
-      };
-    });
+  const visible = candidates
+    .sort(
+      (a, b) =>
+        minutesToDate(a.entry.serviceDate, basisMinutesOf(a.entry)).getTime() -
+        minutesToDate(b.entry.serviceDate, basisMinutesOf(b.entry)).getTime(),
+    )
+    .slice(0, maxEntries);
+
+  // Stop names are per-stop, so resolve each at most once and share across the
+  // surviving entries that belong to the same stop.
+  const stopNameCache = new Map<string, string>();
+  const resolveStopName = (stopWithContext: StopWithContext): string => {
+    const cached = stopNameCache.get(stopWithContext.stop.stop_id);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const agencyLangs = stopWithContext.agencies.map((agency) => agency.agency_lang);
+    const name = getStopDisplayNames(stopWithContext.stop, preferredDisplayLangs, agencyLangs).name;
+    stopNameCache.set(stopWithContext.stop.stop_id, name);
+    return name;
+  };
+
+  return visible.map(({ entry, stopWithContext }) => {
+    const agencyLangs = stopWithContext.agencies.map((agency) => agency.agency_lang);
+    const routeAgency = stopWithContext.agencies.find(
+      (agency) => agency.agency_id === entry.routeDirection.route.agency_id,
+    );
+    const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : agencyLangs;
+    const routeName = getRouteDisplayNames(
+      entry.routeDirection.route,
+      preferredDisplayLangs,
+      routeAgencyLangs,
+      'short',
+    ).resolved.name;
+    const headsign = getHeadsignDisplayNames(
+      entry.routeDirection,
+      preferredDisplayLangs,
+      routeAgencyLangs,
+      'stop',
+    ).resolved.name;
+    const agencyName = routeAgency
+      ? getAgencyDisplayNames(routeAgency, preferredDisplayLangs, routeAgencyLangs, 'short')
+          .resolved.name || routeAgency.agency_id
+      : '';
+    const key = [
+      stopWithContext.stop.stop_id,
+      entry.tripLocator.patternId,
+      entry.tripLocator.serviceId,
+      entry.tripLocator.tripIndex,
+      entry.patternPosition.stopIndex,
+    ].join('__');
+    const tripInspectionTarget = buildTripInspectionTarget(entry, entry.serviceDate);
+    return {
+      key,
+      stop: {
+        id: stopWithContext.stop.stop_id,
+        name: resolveStopName(stopWithContext),
+        platformCode: stopWithContext.stop.platform_code,
+        distance: stopWithContext.distance,
+        routeTypesEmoji: routeTypesEmoji(stopWithContext.routeTypes),
+        context: stopWithContext,
+      },
+      routeTypeEmoji: routeTypesEmoji([entry.routeDirection.route.route_type]),
+      routeName,
+      agencyName,
+      headsign,
+      timeText: formatAbsoluteTime(minutesToDate(entry.serviceDate, basisMinutesOf(entry))),
+      isArrival: entry.patternPosition.isTerminal,
+      arrivalMinutes: entry.schedule.arrivalMinutes,
+      departureMinutes: entry.schedule.departureMinutes,
+      serviceDate: entry.serviceDate,
+      inspectionTarget: tripInspectionTarget,
+    };
+  });
 }
 
 /** Radius (metres) for the nearby-stops displays. */
 const NEARBY_RADIUS_M = 100;
+
+/** Time bases, in the order their boards appear within a route type (departure then arrival). */
+const TIME_BASES: readonly TransitDisplayTimeBasis[] = ['departure', 'arrival'];
 
 /** Route types that have at least one entry across the given stops. */
 function collectEntryRouteTypes(stops: readonly StopWithContext[]): Set<AppRouteTypeValue> {
@@ -213,28 +212,54 @@ function collectEntryRouteTypes(stops: readonly StopWithContext[]): Set<AppRoute
   return routeTypes;
 }
 
-/** Builds one display holding only the given route type's entries from `stops`. */
-function buildRouteTypeDisplay(
+/**
+ * Builds one display for the given route type and time basis from `stops`, or
+ * `null` when no entries qualify.
+ *
+ * The departure board excludes terminal arrivals (a terminal has no meaningful
+ * onward departure); the arrival board keeps every stop event (every event has
+ * a meaningful arrival time).
+ */
+function buildDisplay(
   routeType: AppRouteTypeValue,
+  timeBasis: TransitDisplayTimeBasis,
   stops: readonly StopWithContext[],
   preferredDisplayLangs: readonly string[],
   maxEntries: number,
-): TransitDisplayData {
-  const stopsForType = stops
+): TransitDisplayData | null {
+  const stopsForBoard = stops
     .map((stopWithContext) => ({
       ...stopWithContext,
-      stopTimes: stopWithContext.stopTimes.filter(
-        (entry) => entry.routeDirection.route.route_type === routeType,
-      ),
+      stopTimes: stopWithContext.stopTimes.filter((entry) => {
+        if (entry.routeDirection.route.route_type !== routeType) {
+          return false;
+        }
+        if (timeBasis === 'departure' && entry.patternPosition.isTerminal) {
+          return false;
+        }
+        return true;
+      }),
     }))
     .filter((stopWithContext) => stopWithContext.stopTimes.length > 0);
-  const data = buildTransitDisplayEntryData(stopsForType, preferredDisplayLangs, maxEntries);
-  const routeTypeMeta = APP_ROUTE_TYPES.find((appRouteType) => appRouteType.value === routeType);
-  const label = routeTypeMeta ? `${routeTypeMeta.emoji} ${routeTypeMeta.label}` : String(routeType);
-  // title is a provisional placeholder (text/i18n deferred); the UI composes
-  // the localized description from `max` / `radius`.
+  const data = buildTransitDisplayEntryData(
+    stopsForBoard,
+    preferredDisplayLangs,
+    timeBasis,
+    maxEntries,
+  );
+  if (data.length === 0) {
+    return null;
+  }
+  // Return only structured values; the UI composes the localized title
+  // (mode emoji from `routeType` + departures/arrivals phrase from `timeBasis`)
+  // and the row-count / radius description.
   return {
-    meta: { title: `${label} (${NEARBY_RADIUS_M}m)`, max: maxEntries, radius: NEARBY_RADIUS_M },
+    meta: {
+      timeBasis,
+      routeType,
+      max: maxEntries,
+      radius: NEARBY_RADIUS_M,
+    },
     data,
   };
 }
@@ -250,10 +275,15 @@ export function buildTransitDisplayDataSet(
     (stop) => stop.distance !== undefined && stop.distance <= NEARBY_RADIUS_M,
   );
 
-  // One display per present route type, in canonical display order.
+  // One display per (present route type, time basis), route type in canonical
+  // display order with the departure board before the arrival board.
   const presentTypes = collectEntryRouteTypes(nearbyStops);
   const orderedTypes = ROUTE_TYPE_DISPLAY_ORDER.filter((routeType) => presentTypes.has(routeType));
-  return orderedTypes.map((routeType) =>
-    buildRouteTypeDisplay(routeType, nearbyStops, preferredDisplayLangs, maxEntries),
-  );
+  return orderedTypes
+    .flatMap((routeType) =>
+      TIME_BASES.map((timeBasis) =>
+        buildDisplay(routeType, timeBasis, nearbyStops, preferredDisplayLangs, maxEntries),
+      ),
+    )
+    .filter((display): display is TransitDisplayData => display !== null);
 }

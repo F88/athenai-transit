@@ -92,8 +92,7 @@ const meta = {
   component: TransitDisplayEntry,
   args: {
     row: makeRow(),
-    arrivalLabel: 'Arr',
-    departureLabel: 'Dep',
+    timeLabel: 'Dep',
     now: storyNow,
     mapCenter: storyMapCenter,
     onStopSelected: fn(),
@@ -101,8 +100,7 @@ const meta = {
   },
   argTypes: {
     row: { control: 'object' },
-    arrivalLabel: { control: 'text' },
-    departureLabel: { control: 'text' },
+    timeLabel: { control: 'text' },
   },
   // TransitDisplay renders an <li>; wrap in a <ul> mirroring the
   // parent TransitDisplays list so layout and semantics match production.
@@ -127,14 +125,17 @@ export const Default: Story = {};
 
 // --- Variants ---
 
-/** Arrival vs departure — the `isArrival` flag swaps the time-context label. */
+/**
+ * Departure-board vs arrival-board row. The label is board-level (resolved by
+ * the parent from `meta.timeBasis`), so each row is shown with the label its
+ * board would assign rather than switching per row.
+ */
 export const ArrivalVsDeparture: Story = {
   render: (args) => (
     <>
       <TransitDisplayEntry
-        row={makeRow({ key: 'dep', isArrival: false, timeText: '14:30', headsign: '大塚駅前' })}
-        arrivalLabel={args.arrivalLabel}
-        departureLabel={args.departureLabel}
+        row={makeRow({ key: 'dep', timeText: '14:30', headsign: '大塚駅前' })}
+        timeLabel="Dep"
         now={args.now}
         mapCenter={args.mapCenter}
         onStopSelected={args.onStopSelected}
@@ -143,14 +144,12 @@ export const ArrivalVsDeparture: Story = {
       <TransitDisplayEntry
         row={makeRow({
           key: 'arr',
-          isArrival: true,
           timeText: '14:38',
           departureMinutes: 878,
           routeName: '都08',
           headsign: '錦糸町駅前',
         })}
-        arrivalLabel={args.arrivalLabel}
-        departureLabel={args.departureLabel}
+        timeLabel="Arr"
         now={args.now}
         mapCenter={args.mapCenter}
         onStopSelected={args.onStopSelected}
@@ -247,8 +246,7 @@ export const KitchenSink: Story = {
         <TransitDisplayEntry
           key={row.key}
           row={row}
-          arrivalLabel={args.arrivalLabel}
-          departureLabel={args.departureLabel}
+          timeLabel={args.timeLabel}
           now={args.now}
           mapCenter={args.mapCenter}
           onStopSelected={args.onStopSelected}
