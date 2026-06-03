@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
+import type { StopTimeViewId } from '../domain/transit/stop-time-views';
 import {
   getFilteredTimetableEntriesState,
   getTimetableEntriesState,
@@ -35,7 +36,7 @@ export interface NearbyStopProps {
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLangs: readonly string[];
   /** Active stop time view pattern ID. */
-  viewId: string;
+  viewId: StopTimeViewId;
   /** Whether this stop is in the anchor (bookmark) list. */
   isAnchor: boolean;
   onStopSelected: (stopId: string) => void;

@@ -9,7 +9,7 @@ import type { StopTimeViewMeta } from '../../types/app/transit-composed';
  * Text fields (labelKey, titleKey, descriptionKey) are i18n keys resolved
  * via `t()` at render time.
  */
-export const STOP_TIMES_VIEWS: readonly StopTimeViewMeta[] = [
+export const STOP_TIMES_VIEWS = [
   /**
    * Stop-first view.
    *
@@ -39,6 +39,24 @@ export const STOP_TIMES_VIEWS: readonly StopTimeViewMeta[] = [
     labelKey: 'view.routeHeadsign.label',
     titleKey: 'view.routeHeadsign.title',
     descriptionKey: 'view.routeHeadsign.description',
+    enabled: true,
+    visible: true,
+  },
+  /**
+   * Terminal-board view.
+   *
+   * Display unit: multiple stops.
+   *
+   * Shows departures and arrivals in timeline order across a nearby stop cluster,
+   * similar to an airport or major terminal board.
+   * Approximates a shared terminal by grouping stops within a nearby radius.
+   */
+  {
+    id: 'terminal-board',
+    icon: '📟',
+    labelKey: 'view.terminalBoard.label',
+    titleKey: 'view.terminalBoard.title',
+    descriptionKey: 'view.terminalBoard.description',
     enabled: true,
     visible: true,
   },
@@ -78,25 +96,18 @@ export const STOP_TIMES_VIEWS: readonly StopTimeViewMeta[] = [
     enabled: false,
     visible: true,
   },
-  /**
-   * Terminal-grouped view.
-   *
-   * Display unit: multiple stops.
-   *
-   * Shows departures and arrivals in timeline order across a nearby stop cluster,
-   * similar to an airport or major terminal board.
-   * Approximates a shared terminal by grouping stops within a nearby radius.
-   */
   {
     id: 'terminal',
-    icon: '🏙',
+    icon: '🏬',
     labelKey: 'view.terminal.label',
     titleKey: 'view.terminal.title',
     descriptionKey: 'view.terminal.description',
     enabled: false,
     visible: true,
   },
-] as const;
+] as const satisfies readonly StopTimeViewMeta[];
+
+export type StopTimeViewId = (typeof STOP_TIMES_VIEWS)[number]['id'];
 
 /** Default view ID used on initial load. */
-export const DEFAULT_VIEW_ID = 'stop';
+export const DEFAULT_VIEW_ID: StopTimeViewId = 'stop';
