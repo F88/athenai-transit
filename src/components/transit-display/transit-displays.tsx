@@ -54,7 +54,7 @@ export function TransitDisplays({
   onInspectTrip,
 }: TransitDisplaysProps) {
   return (
-    <div className="px-4 pb-0">
+    <div className="font-dotgothic16 px-4 pb-0">
       {displays.map((display, index) => (
         <TransitDisplay
           key={index}
@@ -131,7 +131,7 @@ export function TransitDisplay({
       >
         {/* Title — board basis arrow (up = departures, right = arrivals) + mode + phrase.
             The arrow is decorative; the phrase already states departures/arrivals. */}
-        <h3 className="text-md flex min-w-0 items-center gap-4 font-mono font-bold tracking-[0.18em] text-amber-100 uppercase">
+        <h3 className="text-md flex min-w-0 items-center gap-4 font-bold tracking-[0.18em] text-amber-100 uppercase">
           {isArrivalBoard ? (
             <ArrowRight size={14} strokeWidth={4} aria-hidden className="shrink-0" />
           ) : (
@@ -141,7 +141,7 @@ export function TransitDisplay({
           <span className="truncate">{title}</span>
         </h3>
         {/* Description composed from the display's selection params. */}
-        <p className="m-0 shrink-0 font-mono text-[11px] tracking-[0.12em] whitespace-nowrap text-amber-200/80">
+        <p className="m-0 shrink-0 text-[11px] tracking-[0.12em] whitespace-nowrap text-amber-200/80">
           {t('transitDisplay.recentCount', {
             count: display.meta.max,
             radius: display.meta.radius,
@@ -151,7 +151,7 @@ export function TransitDisplay({
       {/* Body: the rows (or the empty fallback). */}
       <div className="bg-neutral-950 p-0">
         {display.data.length === 0 ? (
-          <p className="m-0 px-1 py-2 font-mono text-xs tracking-[0.08em] text-amber-100/55">
+          <p className="m-0 px-1 py-2 text-xs tracking-[0.08em] text-amber-100/55">
             {emptyMessage}
           </p>
         ) : (
@@ -199,7 +199,7 @@ function TimeInfo({
   return (
     <button
       type="button"
-      className="cursor-pointer rounded-none px-1 py-0.5 font-mono text-base font-bold tracking-[0.12em] text-amber-100 tabular-nums focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 focus-visible:outline-none"
+      className="cursor-pointer rounded-none px-1 py-0.5 text-base font-bold tracking-[0.12em] text-amber-100 tabular-nums focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 focus-visible:outline-none"
       onClick={(e) => {
         e.stopPropagation();
         onStopSelected(stopId);
@@ -242,7 +242,7 @@ export function TransitDisplayEntry({
       onClick={() => onStopSelected(data.stop.id)}
     >
       {/* Single-line departure-board row: time, mode, route, agency, destination, stop, platform. */}
-      <div className="flex items-center gap-2 font-mono whitespace-nowrap">
+      <div className="flex items-center gap-2 whitespace-nowrap">
         {/* Local TimeInfo: shows timeText; tap selects the stop + opens inspection. */}
         <TimeInfo
           timeText={data.timeText}

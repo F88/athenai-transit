@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
@@ -20,6 +21,10 @@
 
 @utility font-press-start {
   font-family: 'Press Start 2P', monospace;
+}
+
+@utility font-dotgothic16 {
+  font-family: 'DotGothic16', monospace;
 }
 
 @utility border-app-neutral {
