@@ -4,6 +4,8 @@ import type { StopTimeViewMeta } from '../../types/app/transit-composed';
  * All stop-time view pattern definitions (T1-T7).
  *
  * Each entry describes a grouping/sorting strategy for the BottomSheet.
+ * Service events may be rendered as departures or arrivals depending on
+ * stop position, such as showing arrival time at a terminal stop.
  * Views with `enabled: false` are shown greyed out; `visible: false` are hidden.
  *
  * Text fields (labelKey, titleKey, descriptionKey) are i18n keys resolved
@@ -15,7 +17,7 @@ export const STOP_TIMES_VIEWS = [
    *
    * Display unit: stop.
    *
-   * Shows upcoming departures in the context of each stop.
+   * Shows upcoming service events in the context of each stop.
    */
   {
     id: 'stop',
@@ -31,7 +33,7 @@ export const STOP_TIMES_VIEWS = [
    *
    * Display unit: stop.
    *
-   * Groups upcoming departures within a stop by route and destination.
+   * Groups upcoming service events within a stop by route and destination.
    */
   {
     id: 'route-headsign',
@@ -47,7 +49,7 @@ export const STOP_TIMES_VIEWS = [
    *
    * Display unit: multiple stops.
    *
-   * Shows departures and arrivals in timeline order across a nearby stop cluster,
+   * Shows service events in timeline order across a nearby stop cluster,
    * similar to an airport or major terminal board.
    * Approximates a shared terminal by grouping stops within a nearby radius.
    */
@@ -60,6 +62,13 @@ export const STOP_TIMES_VIEWS = [
     enabled: true,
     visible: true,
   },
+  /**
+   * Route grouped view.
+   *
+   * Display unit: stop.
+   *
+   * Groups upcoming service events within a stop by route.
+   */
   {
     id: 'route',
     icon: '🚏',
@@ -69,6 +78,13 @@ export const STOP_TIMES_VIEWS = [
     enabled: false,
     visible: true,
   },
+  /**
+   * Headsign grouped view.
+   *
+   * Display unit: stop.
+   *
+   * Groups upcoming service events within a stop by destination.
+   */
   {
     id: 'headsign',
     icon: '🧭',
@@ -78,6 +94,13 @@ export const STOP_TIMES_VIEWS = [
     enabled: false,
     visible: true,
   },
+  /**
+   * Frequency weighted view.
+   *
+   * Display unit: stop.
+   *
+   * Weights upcoming service events by service frequency.
+   */
   {
     id: 'frequency',
     icon: '📊',
@@ -87,6 +110,13 @@ export const STOP_TIMES_VIEWS = [
     enabled: false,
     visible: true,
   },
+  /**
+   * Travel-time sorted view.
+   *
+   * Display unit: stop.
+   *
+   * Sorts upcoming service events by travel time to their terminal stop.
+   */
   {
     id: 'duration',
     icon: '⏱',
@@ -96,6 +126,13 @@ export const STOP_TIMES_VIEWS = [
     enabled: false,
     visible: true,
   },
+  /**
+   * Terminal-activity sorted view.
+   *
+   * Display unit: stop.
+   *
+   * Sorts stops or service events by terminal stop activity.
+   */
   {
     id: 'terminal',
     icon: '🏬',
