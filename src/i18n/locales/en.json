@@ -69,6 +69,11 @@
       "label": "Terminal",
       "title": "By terminal activity",
       "description": "Sort by terminal stop activity"
+    },
+    "terminalBoard": {
+      "label": "Terminal board",
+      "title": "Terminal board",
+      "description": "Show nearby departures and arrivals in chronological order"
     }
   },
   "history": {
