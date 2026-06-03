@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { APP_ROUTE_TYPES } from '../config/route-types';
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
 import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
+import { ROUTE_TYPE_DISPLAY_ORDER } from '../domain/transit/route-type-display-order';
 import {
   DEFAULT_VIEW_ID,
   STOP_TIMES_VIEWS,
@@ -15,32 +15,12 @@ import type { GlobalFilter } from '../types/app/global-filter';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { StopsCounts } from '../types/app/stop';
-import type { Agency, AppRouteTypeValue, TimetableEntriesState } from '../types/app/transit';
+import type { Agency, TimetableEntriesState } from '../types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { resolveContainerDisplaySize } from './shared/display-size';
 import { StopBrowserHeader } from './stop-browser-header';
 import { StopGrid } from './stop-grid';
 import { TransitDisplaysContainer } from './transit-display/transit-displays';
-
-/** Route type display order matching StopTypeFilterPanel. */
-const ROUTE_TYPE_PRIORITY: Readonly<Record<number, number>> = {
-  3: 0,
-  11: 1,
-  1: 2,
-  0: 3,
-  2: 4,
-  12: 5,
-  4: 6,
-  5: 7,
-  6: 8,
-  7: 9,
-};
-
-const ROUTE_TYPE_ORDER: AppRouteTypeValue[] = [...APP_ROUTE_TYPES.map(({ value }) => value)].sort(
-  (a, b) =>
-    (ROUTE_TYPE_PRIORITY[a] ?? Number.POSITIVE_INFINITY) -
-    (ROUTE_TYPE_PRIORITY[b] ?? Number.POSITIVE_INFINITY),
-);
 
 export interface StopBrowserProps {
   /**
@@ -148,7 +128,7 @@ export function StopBrowser({
 
   // Route types present in the current nearby stops.
   const presentRouteTypes = useMemo(
-    () => collectPresentRouteTypes(stopTimes, ROUTE_TYPE_ORDER),
+    () => collectPresentRouteTypes(stopTimes, ROUTE_TYPE_DISPLAY_ORDER),
     [stopTimes],
   );
 
@@ -258,8 +238,13 @@ export function StopBrowser({
       {viewId === 'transit-display' ? (
         <TransitDisplaysContainer
           stopTimes={trimmedStopTimes}
+          mapCenter={mapCenter}
+          infoLevel={infoLevel}
           dataLangs={dataLangs}
           contentRef={contentRef}
+          now={now}
+          onStopSelected={onStopSelected}
+          onInspectTrip={onInspectTrip}
         />
       ) : (
         <StopGrid

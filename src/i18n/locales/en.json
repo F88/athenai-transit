@@ -144,6 +144,9 @@
     "terminal": "Terminal",
     "noBoarding": "No boarding"
   },
+  "transitDisplay": {
+    "recentCount": "Latest {{count}}"
+  },
   "showTimetable": "Show timetable",
   "timetable": {
     "title": "Timetable",

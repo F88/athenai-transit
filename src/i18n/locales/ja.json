@@ -144,6 +144,9 @@
     "terminal": "終点",
     "noBoarding": "乗車不可"
   },
+  "transitDisplay": {
+    "recentCount": "直近 {{count}} 件"
+  },
   "showTimetable": "時刻表を表示",
   "timetable": {
     "title": "時刻表",

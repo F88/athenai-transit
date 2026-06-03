@@ -1,28 +1,53 @@
 import { useMemo, type RefObject } from 'react';
+
 import { useTranslation } from 'react-i18next';
+
+import type { LatLng } from '@/types/app/map';
+import type { InfoLevel } from '@/types/app/settings';
+import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-composed';
+
+import { useScrollFades } from '@/hooks/use-scroll-fades';
+
+import { DistanceBadge } from '@/components/badge/distance-badge';
+import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import {
-  buildTransitDisplayRows,
-  type TransitDisplayRow,
-} from '../../domain/transit/build-transit-display-rows';
-import { useScrollFades } from '../../hooks/use-scroll-fades';
-import type { StopWithContext } from '../../types/app/transit-composed';
-import { ScrollFadeEdge } from '../shared/scroll-fade-edge';
+  buildTransitDisplayDataSet,
+  type TransitDisplayData,
+  type TransitDisplayEntryData,
+} from '@/domain/transit/transit-info-display/build-transit-display-data';
+import { getBearingDeg } from '@/domain/transit/distance';
 
 export interface TransitDisplaysContainerProps {
   stopTimes: StopWithContext[];
+  /** Current wall-clock reference time for relative time display. */
+  now: Date;
+  mapCenter: LatLng | null;
+  infoLevel: InfoLevel;
   dataLangs: readonly string[];
   contentRef: RefObject<HTMLDivElement | null>;
+  /** Select the target stop (fired together with trip inspection on a time tap). */
+  onStopSelected: (stopId: string) => void;
+  /** Optional callback for opening trip inspection for one concrete stop event. */
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
 export function TransitDisplaysContainer({
   stopTimes,
+  now,
+  mapCenter,
+  infoLevel: _infoLevel,
   dataLangs,
   contentRef,
+  onStopSelected,
+  onInspectTrip,
 }: TransitDisplaysContainerProps) {
   const { t } = useTranslation();
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
-  const rows = useMemo(() => buildTransitDisplayRows(stopTimes, dataLangs), [stopTimes, dataLangs]);
+  const displays = useMemo(
+    () => buildTransitDisplayDataSet(stopTimes, dataLangs),
+    [stopTimes, dataLangs],
+  );
 
   return (
     <div
@@ -32,10 +57,14 @@ export function TransitDisplaysContainer({
     >
       {scrollFade.showTop && <ScrollFadeEdge position="top" />}
       <TransitDisplays
-        rows={rows}
+        displays={displays}
         emptyMessage={t('stop.timetable.allFilteredOut')}
         arrivalLabel={t('stopTimeView.arrivingAbsolute')}
         departureLabel={t('stopTimeView.departingAbsolute')}
+        now={now}
+        mapCenter={mapCenter}
+        onStopSelected={onStopSelected}
+        onInspectTrip={onInspectTrip}
       />
       {scrollFade.showBottom && <ScrollFadeEdge position="bottom" />}
     </div>
@@ -43,60 +72,200 @@ export function TransitDisplaysContainer({
 }
 
 export interface TransitDisplaysProps {
-  rows: readonly TransitDisplayRow[];
+  displays: readonly TransitDisplayData[];
   emptyMessage: string;
   arrivalLabel: string;
   departureLabel: string;
+  now: Date;
+  mapCenter: LatLng | null;
+  onStopSelected: (stopId: string) => void;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
+/** Renders every {@link TransitDisplayData} as its own stacked board. */
 export function TransitDisplays({
-  rows,
+  displays,
   emptyMessage,
   arrivalLabel,
   departureLabel,
+  now,
+  mapCenter,
+  onStopSelected,
+  onInspectTrip,
 }: TransitDisplaysProps) {
-  if (rows.length === 0) {
-    return (
-      <div className="px-4 py-3">
-        <p className="m-0 text-xs text-[#9e9e9e] dark:text-gray-500">{emptyMessage}</p>
-      </div>
-    );
-  }
-
   return (
     <div className="px-4 pb-0">
-      <ul className="m-0 list-none space-y-1 p-0">
-        {rows.map((row) => (
-          <TransitDisplay
-            key={row.key}
-            row={row}
-            arrivalLabel={arrivalLabel}
-            departureLabel={departureLabel}
-          />
-        ))}
-      </ul>
+      {displays.map((display, index) => (
+        <TransitDisplay
+          key={index}
+          display={display}
+          emptyMessage={emptyMessage}
+          arrivalLabel={arrivalLabel}
+          departureLabel={departureLabel}
+          now={now}
+          mapCenter={mapCenter}
+          onStopSelected={onStopSelected}
+          onInspectTrip={onInspectTrip}
+        />
+      ))}
     </div>
   );
 }
 
 export interface TransitDisplayProps {
-  row: TransitDisplayRow;
+  display: TransitDisplayData;
+  emptyMessage: string;
   arrivalLabel: string;
   departureLabel: string;
+  now: Date;
+  mapCenter: LatLng | null;
+  onStopSelected: (stopId: string) => void;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
-export function TransitDisplay({ row, arrivalLabel, departureLabel }: TransitDisplayProps) {
+/** One departure-board display: optional heading plus its rows (or empty fallback). */
+export function TransitDisplay({
+  display,
+  emptyMessage,
+  arrivalLabel,
+  departureLabel,
+  now,
+  mapCenter,
+  onStopSelected,
+  onInspectTrip,
+}: TransitDisplayProps) {
+  const { t } = useTranslation();
   return (
-    <li className="rounded-md bg-[#f5f7fa] px-3 py-2 text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-100">
-      <div className="flex items-baseline gap-2">
-        <span className="font-mono text-sm font-semibold tabular-nums">{row.timeText}</span>
+    <section className="mb-3 last:mb-0">
+      {/* Title — what this display is. */}
+      <h3 className="mb-0.5 text-xs font-semibold text-gray-600 dark:text-gray-300">
+        {display.meta.title}
+      </h3>
+      {/* Description composed from the display's selection params. */}
+      <p className="m-0 mb-1 text-[10px] text-gray-500 dark:text-gray-400">
+        {t('transitDisplay.recentCount', { count: display.meta.max })}
+      </p>
+      {/* Data — the rows. */}
+      {display.data.length === 0 ? (
+        <p className="m-0 py-1 text-xs text-[#9e9e9e] dark:text-gray-500">{emptyMessage}</p>
+      ) : (
+        <ul className="m-0 list-none space-y-1 p-0">
+          {display.data.map((row) => (
+            <TransitDisplayEntry
+              key={row.key}
+              row={row}
+              arrivalLabel={arrivalLabel}
+              departureLabel={departureLabel}
+              now={now}
+              mapCenter={mapCenter}
+              onStopSelected={onStopSelected}
+              onInspectTrip={onInspectTrip}
+            />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+export interface TimeInfoProps {
+  /** Pre-formatted absolute time text to display. */
+  timeText: string;
+  /** Stop selected together with trip inspection on tap. */
+  stopId: string;
+  /** Target opened in trip inspection on tap. */
+  inspectTarget: TripInspectionTarget;
+  onStopSelected: (stopId: string) => void;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
+}
+
+/**
+ * Displays `timeText` as a tappable control. Tapping runs both handlers
+ * (select the stop, then open trip inspection) like `StopTimeTimeInfo`, and
+ * stops propagation so the row's own onClick does not double-fire.
+ */
+function TimeInfo({
+  timeText,
+  stopId,
+  inspectTarget,
+  onStopSelected,
+  onInspectTrip,
+}: TimeInfoProps) {
+  return (
+    <button
+      type="button"
+      className="cursor-pointer rounded-sm font-mono text-sm font-semibold tabular-nums focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      onClick={(e) => {
+        e.stopPropagation();
+        onStopSelected(stopId);
+        onInspectTrip?.(inspectTarget);
+      }}
+    >
+      {timeText}
+    </button>
+  );
+}
+
+export interface TransitDisplayEntryProps {
+  row: TransitDisplayEntryData;
+  arrivalLabel: string;
+  departureLabel: string;
+  now: Date;
+  mapCenter: LatLng | null;
+  onStopSelected: (stopId: string) => void;
+  onInspectTrip?: (target: TripInspectionTarget) => void;
+}
+
+/** A single departure-board row (one stop event). */
+export function TransitDisplayEntry({
+  row,
+  arrivalLabel,
+  departureLabel,
+  now: _now,
+  mapCenter,
+  onStopSelected,
+  onInspectTrip,
+}: TransitDisplayEntryProps) {
+  // Distance is baked on the row (query-time); bearing is computed live from the
+  // current map center so the direction arrow tracks panning, like StopInfo.
+  const distanceRounded = row.stop.distance != null ? Math.round(row.stop.distance) : null;
+  const bearing = mapCenter ? getBearingDeg(mapCenter, row.stop.context.stop) : null;
+  return (
+    <li
+      className="cursor-pointer rounded-md bg-[#f5f7fa] px-3 py-2 text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-100"
+      onClick={() => onStopSelected(row.stop.id)}
+    >
+      {/* Single-line departure-board row: time, mode, route, agency, destination, stop, platform. */}
+      <div className="flex items-center gap-1.5 whitespace-nowrap">
+        {/* Local TimeInfo: shows timeText; tap selects the stop + opens inspection. */}
+        <TimeInfo
+          timeText={row.timeText}
+          stopId={row.stop.id}
+          inspectTarget={row.inspectionTarget}
+          onStopSelected={onStopSelected}
+          onInspectTrip={onInspectTrip}
+        />
         <span className="text-[10px] text-gray-500 dark:text-gray-400">
           {row.isArrival ? arrivalLabel : departureLabel}
         </span>
-        <span className="min-w-0 flex-1 truncate font-medium">{row.stopName}</span>
-      </div>
-      <div className="mt-0.5 truncate text-[11px] text-gray-600 dark:text-gray-300">
-        {row.routeName} / {row.headsign || '-'}
+        {/* Trip mode emoji + destination (行き先), allowed to shrink and truncate. */}
+        <span aria-hidden>{row.routeTypeEmoji}</span>
+        <span className="min-w-0 flex-1 truncate">{row.headsign || '-'}</span>
+        {/* Operating agency + route name. */}
+        <span className="text-gray-500 dark:text-gray-400">{row.agencyName}</span>
+        <span className="font-medium">{row.routeName}</span>
+        {/* Stop: stop-level mode emojis + stop name + platform code. */}
+        <span aria-hidden>{row.stop.routeTypesEmoji}</span>
+        <span className="min-w-0 flex-1 truncate font-medium">{row.stop.name}</span>
+        {row.stop.platformCode !== undefined && (
+          <span className="shrink-0 rounded bg-gray-200 px-1 text-[10px] dark:bg-gray-700">
+            {row.stop.platformCode}
+          </span>
+        )}
+        {/* Distance + direction to the stop (same DistanceBadge as StopInfo). */}
+        {distanceRounded != null && distanceRounded >= 10 && (
+          <DistanceBadge meters={distanceRounded} bearingDeg={bearing} showDirection size="xs" />
+        )}
       </div>
     </li>
   );
