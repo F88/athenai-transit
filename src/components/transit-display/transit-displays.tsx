@@ -1,3 +1,4 @@
+import { ArrowRight, ArrowUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import type { LatLng } from '@/types/app/map';
@@ -61,7 +62,19 @@ export interface TransitDisplayProps {
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
-/** One departure-board display: optional heading plus its rows (or empty fallback). */
+/**
+ * One transit board: a single departure or arrival display.
+ *
+ * Design basis: a slightly classical split-flap signage panel (the "Solari" /
+ * flip-board mechanical flap displays once used in stations and airports). The
+ * current styling evokes that look statically -- a thick, square-cornered frame
+ * and a header band that shares the frame color -- rather than animating real
+ * flaps. Typography (fonts, monospacing) and finer split-flap details are
+ * intended to be refined later.
+ *
+ * Layout: a header band (title on the left, recent-count / radius on the right)
+ * above the rows, or an empty fallback when the board has no entries.
+ */
 export function TransitDisplay({
   display,
   emptyMessage,
@@ -80,33 +93,50 @@ export function TransitDisplay({
     isArrivalBoard ? 'transitDisplay.arrivals' : 'transitDisplay.departures',
   )}`;
   return (
-    <section className="mb-3 last:mb-0">
-      {/* Title — what this display is (mode + departures/arrivals). */}
-      <h3 className="mb-0.5 text-xs font-semibold text-gray-600 dark:text-gray-300">{title}</h3>
-      {/* Description composed from the display's selection params. */}
-      <p className="m-0 mb-1 text-[10px] text-gray-500 dark:text-gray-400">
-        {t('transitDisplay.recentCount', {
-          count: display.meta.max,
-          radius: display.meta.radius,
-        })}
-      </p>
-      {/* Data — the rows. */}
-      {display.data.length === 0 ? (
-        <p className="m-0 py-1 text-xs text-[#9e9e9e] dark:text-gray-500">{emptyMessage}</p>
-      ) : (
-        <ul className="m-0 list-none space-y-1 p-0">
-          {display.data.map((row) => (
-            <TransitDisplayEntry
-              key={row.key}
-              data={row}
-              mapCenter={mapCenter}
-              infoLevel={infoLevel}
-              onStopSelected={onStopSelected}
-              onInspectTrip={onInspectTrip}
-            />
-          ))}
-        </ul>
-      )}
+    // Each board is framed like a classic airport signage panel: a thick,
+    // square (no rounded corners) border makes the boundary between stacked
+    // boards explicit.
+    <section className="mb-3 border-16 border-gray-300 last:mb-0 dark:border-gray-600">
+      {/* Header band: title left, description right, on a single line. Shares the
+          border color; text is darkened/lightened for contrast against it. */}
+      <div className="flex items-baseline justify-between gap-2 bg-gray-300 px-3 py-2 dark:bg-gray-600">
+        {/* Title — board basis arrow (up = departures, right = arrivals) + mode + phrase.
+            The arrow is decorative; the phrase already states departures/arrivals. */}
+        <h3 className="text-md flex min-w-0 items-center gap-1 font-bold text-gray-800 dark:text-gray-100">
+          {isArrivalBoard ? (
+            <ArrowRight size={14} strokeWidth={4} aria-hidden className="shrink-0" />
+          ) : (
+            <ArrowUp size={14} strokeWidth={4} aria-hidden className="shrink-0" />
+          )}
+          <span className="truncate">{title}</span>
+        </h3>
+        {/* Description composed from the display's selection params. */}
+        <p className="m-0 shrink-0 text-xs whitespace-nowrap text-gray-600 dark:text-gray-300">
+          {t('transitDisplay.recentCount', {
+            count: display.meta.max,
+            radius: display.meta.radius,
+          })}
+        </p>
+      </div>
+      {/* Body: the rows (or the empty fallback). */}
+      <div className="p-3">
+        {display.data.length === 0 ? (
+          <p className="m-0 py-1 text-xs text-[#9e9e9e] dark:text-gray-500">{emptyMessage}</p>
+        ) : (
+          <ul className="m-0 list-none space-y-1 p-0">
+            {display.data.map((row) => (
+              <TransitDisplayEntry
+                key={row.key}
+                data={row}
+                mapCenter={mapCenter}
+                infoLevel={infoLevel}
+                onStopSelected={onStopSelected}
+                onInspectTrip={onInspectTrip}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }

@@ -146,8 +146,8 @@
   },
   "transitDisplay": {
     "recentCount": "Latest {{count}} ({{radius}}m)",
-    "departures": "Departures",
-    "arrivals": "Arrivals"
+    "departures": "DEPARTURES",
+    "arrivals": "ARRIVALS"
   },
   "showTimetable": "Show timetable",
   "timetable": {

@@ -146,8 +146,8 @@
   },
   "transitDisplay": {
     "recentCount": "直近 {{count}} 件 ({{radius}}m)",
-    "departures": "出発便ご案内",
-    "arrivals": "到着便ご案内"
+    "departures": "出発 Departures",
+    "arrivals": "到着 Arrivals"
   },
   "showTimetable": "時刻表を表示",
   "timetable": {
