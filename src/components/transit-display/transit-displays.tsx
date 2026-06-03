@@ -13,6 +13,25 @@ import { getBearingDeg } from '@/domain/transit/distance';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import type { InfoLevel } from '@/types/app/settings';
 import { useInfoLevel } from '@/hooks/use-info-level';
+import { cn } from '@/lib/utils';
+
+/**
+ * Theme-aware color of the board frame: the thick outer bezel that encloses the
+ * panel and the header / rows divider, which read as the same frame. A lighter
+ * grey in light mode and a darker grey in dark mode so the frame sits well on
+ * either background. Shared so the bezel and the inner divider always render the
+ * same frame color.
+ */
+const BOARD_FRAME_COLOR = 'border-zinc-400 dark:border-zinc-700';
+
+/**
+ * Theme-aware background for the board panel (the header band and rows that make
+ * up the split-flap panel face). Stays dark in both themes so the panel keeps
+ * its amber text, but is lifted slightly in light mode where the darkest shade
+ * felt too heavy. Shared so the header and rows always render the same panel
+ * color.
+ */
+const BOARD_PANEL_BG = 'bg-neutral-800 dark:bg-neutral-900';
 
 export interface TransitDisplaysProps {
   displays: readonly TransitDisplayData[];
@@ -95,10 +114,21 @@ export function TransitDisplay({
     // Each board is framed like a classic airport signage panel: a thick,
     // square (no rounded corners) border makes the boundary between stacked
     // boards explicit.
-    <section className="mb-4 overflow-hidden border-14 border-neutral-800 bg-neutral-950 shadow-[0_10px_30px_rgba(0,0,0,0.35)] last:mb-0 dark:border-black">
-      {/* Header band: title left, description right, on a single line. Shares the
-          border color; text is darkened/lightened for contrast against it. */}
-      <div className="flex items-baseline justify-between gap-3 border-b border-neutral-700 bg-neutral-900 px-3 py-2.5">
+    <section
+      className={cn(
+        'mb-4 overflow-hidden rounded-sm border-12 bg-neutral-950 last:mb-0',
+        BOARD_FRAME_COLOR,
+      )}
+    >
+      {/* Header band: title left, description right, on a single line. A dark band
+          with letter-spaced amber text, like a split-flap header. */}
+      <div
+        className={cn(
+          'flex items-baseline justify-between gap-3 border-b-8 px-3 py-2.5',
+          BOARD_PANEL_BG,
+          BOARD_FRAME_COLOR,
+        )}
+      >
         {/* Title — board basis arrow (up = departures, right = arrivals) + mode + phrase.
             The arrow is decorative; the phrase already states departures/arrivals. */}
         <h3 className="text-md flex min-w-0 items-center gap-4 font-mono font-bold tracking-[0.18em] text-amber-100 uppercase">
@@ -205,7 +235,10 @@ export function TransitDisplayEntry({
   const bearing = mapCenter ? getBearingDeg(mapCenter, data.stop.context.stop) : null;
   return (
     <li
-      className="cursor-pointer border-b border-neutral-800 bg-neutral-900 px-3 py-2 text-xs text-neutral-100 last:border-b-0 hover:bg-neutral-800/95"
+      className={cn(
+        'cursor-pointer border-b border-neutral-800 px-3 py-2 text-xs text-neutral-100 last:border-b-0 hover:bg-neutral-800/95',
+        BOARD_PANEL_BG,
+      )}
       onClick={() => onStopSelected(data.stop.id)}
     >
       {/* Single-line departure-board row: time, mode, route, agency, destination, stop, platform. */}
