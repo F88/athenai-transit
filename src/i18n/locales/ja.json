@@ -146,6 +146,7 @@
   },
   "transitDisplay": {
     "recentCount": "直近 {{count}} 件 ({{radius}}m)",
+    "entryCount": "{{count}} 件 ({{radius}}m)",
     "departures": "出発 Departures",
     "arrivals": "到着 Arrivals"
   },

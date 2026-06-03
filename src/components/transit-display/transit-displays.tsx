@@ -140,12 +140,9 @@ export function TransitDisplay({
           {routeTypeIcon}
           <span className="truncate">{title}</span>
         </h3>
-        {/* Description composed from the display's selection params. */}
+        {/* Radius the board's stops were selected within (count is intentionally omitted). */}
         <p className="m-0 shrink-0 text-[11px] tracking-[0.12em] whitespace-nowrap text-amber-200/80">
-          {t('transitDisplay.recentCount', {
-            count: display.meta.max,
-            radius: display.meta.radius,
-          })}
+          {display.meta.radius}m
         </p>
       </div>
       {/* Body: the rows (or the empty fallback). */}
@@ -196,10 +193,13 @@ function TimeInfo({
   onStopSelected,
   onInspectTrip,
 }: TimeInfoProps) {
+  // Fixed-width, right-aligned time column so single- and double-digit-hour
+  // times ("9:30" / "14:30") align their colons and minutes across rows
+  // (DotGothic16 is monospaced; tabular-nums keeps the digits uniform).
   return (
     <button
       type="button"
-      className="cursor-pointer rounded-none px-1 py-0.5 text-base font-bold tracking-[0.12em] text-amber-100 tabular-nums focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 focus-visible:outline-none"
+      className="w-[6ch] cursor-pointer rounded-none py-0.5 text-right text-base font-bold tracking-[0.12em] text-amber-100 tabular-nums focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 focus-visible:outline-none"
       onClick={(e) => {
         e.stopPropagation();
         onStopSelected(stopId);
@@ -268,16 +268,20 @@ export function TransitDisplayEntry({
           <span aria-hidden>{data.stop.routeTypesEmoji}</span>
         )}
 
-        <span className="min-w-0 flex-1 truncate font-medium">{data.stop.name}</span>
-        {data.stop.platformCode !== undefined && (
-          <span className="shrink-0 rounded-none border border-neutral-700 bg-neutral-800 px-1.5 text-[10px] tracking-[0.12em] text-amber-100">
-            {data.stop.platformCode}
-          </span>
-        )}
-        {/* Distance + direction to the stop (same DistanceBadge as StopInfo). */}
-        {distanceRounded != null && distanceRounded >= 10 && (
-          <DistanceBadge meters={distanceRounded} bearingDeg={bearing} showDirection size="xs" />
-        )}
+        {/* Stop info kept together as one group (stop name, platform code, and
+            distance / direction) so the stop's details are not split across the row. */}
+        <span className="flex min-w-0 flex-1 items-center gap-1">
+          <span className="min-w-0 truncate font-medium">{data.stop.name}</span>
+          {data.stop.platformCode !== undefined && (
+            <span className="shrink-0 rounded-none border border-neutral-700 bg-neutral-800 px-1.5 text-[10px] tracking-[0.12em] text-amber-100">
+              {data.stop.platformCode}
+            </span>
+          )}
+          {/* Distance + direction to the stop (same DistanceBadge as StopInfo). */}
+          {distanceRounded != null && distanceRounded >= 10 && (
+            <DistanceBadge meters={distanceRounded} bearingDeg={bearing} showDirection size="xs" />
+          )}
+        </span>
       </div>
     </li>
   );

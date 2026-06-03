@@ -146,6 +146,7 @@
   },
   "transitDisplay": {
     "recentCount": "Latest {{count}} ({{radius}}m)",
+    "entryCount": "{{count}} ({{radius}}m)",
     "departures": "DEPARTURES",
     "arrivals": "ARRIVALS"
   },

@@ -10,7 +10,10 @@ import { useScrollFades } from '@/hooks/use-scroll-fades';
 
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { TransitDisplays } from '@/components/transit-display/transit-displays';
-import { buildTransitDisplayDataSet } from '@/domain/transit/transit-info-display/build-transit-display-data';
+import {
+  buildTransitDisplayDataSet,
+  transitDisplayMaxEntriesFor,
+} from '@/domain/transit/transit-info-display/build-transit-display-data';
 
 export interface TransitDisplaysContainerProps {
   stopTimes: StopWithContext[];
@@ -40,8 +43,8 @@ export function TransitDisplaysContainer({
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
   const displays = useMemo(
-    () => buildTransitDisplayDataSet(stopTimes, dataLangs),
-    [stopTimes, dataLangs],
+    () => buildTransitDisplayDataSet(stopTimes, dataLangs, transitDisplayMaxEntriesFor(infoLevel)),
+    [stopTimes, dataLangs, infoLevel],
   );
 
   return (

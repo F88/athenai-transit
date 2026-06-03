@@ -1,3 +1,4 @@
+import type { InfoLevel } from '../../../types/app/settings';
 import type { AppRouteTypeValue } from '../../../types/app/transit';
 import type {
   ContextualTimetableEntry,
@@ -15,6 +16,23 @@ import { formatAbsoluteTime } from '../time';
 import { buildTripInspectionTarget } from '../trip-inspection-target';
 
 export const TRANSIT_DISPLAY_MAX_ENTRIES = 12;
+
+/**
+ * Per-board row cap by info level: terser levels show fewer departures, the
+ * more detailed levels show more. Used as the `maxEntries` passed to
+ * {@link buildTransitDisplayDataSet}.
+ */
+const MAX_ENTRIES_BY_INFO_LEVEL: Record<InfoLevel, number> = {
+  simple: 10,
+  normal: 10,
+  detailed: 20,
+  verbose: 20,
+};
+
+/** Resolves the per-board row cap for the given info level. */
+export function transitDisplayMaxEntriesFor(infoLevel: InfoLevel): number {
+  return MAX_ENTRIES_BY_INFO_LEVEL[infoLevel];
+}
 
 /**
  * Stop-level fields of a {@link TransitDisplayEntryData}, grouped so consumers can
