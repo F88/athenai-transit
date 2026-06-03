@@ -13,6 +13,7 @@ and this project adheres to [CalVer](https://calver.org/).
 
 - Documentation: システム構成の概要、deployment diagram、mobile / PWA guidance、README roadmap を追加・整理した。
 - Storybook: `StopsSummary` と `StopBrowser` の stories を追加し、StopBrowser header / summary の size variants を比較できるようにした。
+- Documentation: `PRD.md` にレスポンシブレイアウト要件 (mobile BottomSheet / desktop MultiPane)、`StopTimes` の複数 view (`stop` / `route-headsign`) の要件例、`Timetable` / `TripInfo` の機能概要、選択インタラクションと用語整理を追記した。
 
 ### Changed
 
