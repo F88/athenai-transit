@@ -4,7 +4,11 @@ import { APP_ROUTE_TYPES } from '../config/route-types';
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
 import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
-import { DEFAULT_VIEW_ID, STOP_TIMES_VIEWS } from '../domain/transit/stop-time-views';
+import {
+  DEFAULT_VIEW_ID,
+  STOP_TIMES_VIEWS,
+  type StopTimeViewId,
+} from '../domain/transit/stop-time-views';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { useElementRect } from '../hooks/use-element-rect';
 import type { GlobalFilter } from '../types/app/global-filter';
@@ -16,6 +20,7 @@ import type { StopWithContext, TripInspectionTarget } from '../types/app/transit
 import { resolveContainerDisplaySize } from './shared/display-size';
 import { StopBrowserHeader } from './stop-browser-header';
 import { StopGrid } from './stop-grid';
+import { TerminalBoardsContainer } from './terminal-boards';
 
 /** Route type display order matching StopTypeFilterPanel. */
 const ROUTE_TYPE_PRIORITY: Readonly<Record<number, number>> = {
@@ -135,7 +140,7 @@ export function StopBrowser({
   } = globalFilter;
   const [rootElement, setRootElement] = useState<HTMLDivElement | null>(null);
   const rootRect = useElementRect(rootElement);
-  const [viewId, setViewId] = useState(DEFAULT_VIEW_ID);
+  const [viewId, setViewId] = useState<StopTimeViewId>(DEFAULT_VIEW_ID);
   const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
   const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
   const selectedView = STOP_TIMES_VIEWS.find((v) => v.id === viewId);
@@ -250,24 +255,32 @@ export function StopBrowser({
         onToggleRouteType={toggleRouteType}
         onToggleAgency={toggleAgency}
       />
-      <StopGrid
-        stopTimes={trimmedStopTimes}
-        timetableEntriesStateByStopId={timetableEntriesStateByStopId}
-        selectedStopId={selectedStopId}
-        now={now}
-        mapCenter={mapCenter}
-        infoLevel={infoLevel}
-        dataLangs={dataLangs}
-        viewId={viewId}
-        contentRef={contentRef}
-        anchorIds={anchorIds}
-        onStopSelected={onStopSelected}
-        onShowTimetable={onShowTimetable}
-        onShowStopTimetable={onShowStopTimetable}
-        onToggleAnchor={onToggleAnchor}
-        onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
-        onInspectTrip={onInspectTrip}
-      />
+      {viewId === 'terminal-board' ? (
+        <TerminalBoardsContainer
+          stopTimes={trimmedStopTimes}
+          dataLangs={dataLangs}
+          contentRef={contentRef}
+        />
+      ) : (
+        <StopGrid
+          stopTimes={trimmedStopTimes}
+          timetableEntriesStateByStopId={timetableEntriesStateByStopId}
+          selectedStopId={selectedStopId}
+          now={now}
+          mapCenter={mapCenter}
+          infoLevel={infoLevel}
+          dataLangs={dataLangs}
+          viewId={viewId}
+          contentRef={contentRef}
+          anchorIds={anchorIds}
+          onStopSelected={onStopSelected}
+          onShowTimetable={onShowTimetable}
+          onShowStopTimetable={onShowStopTimetable}
+          onToggleAnchor={onToggleAnchor}
+          onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
+          onInspectTrip={onInspectTrip}
+        />
+      )}
     </div>
   );
 }
