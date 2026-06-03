@@ -7,6 +7,7 @@ import { deriveStopTimeRoleDisplayProps } from '@/domain/transit/stop-time-displ
 import { useInfoLevel } from '@/hooks/use-info-level';
 import { useThemeContrastAssessment } from '@/hooks/use-is-low-contrast-against-theme';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
+import { buildTripInspectionTarget } from '../domain/transit/trip-inspection-target';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry, TripInspectionTarget } from '../types/app/transit-composed';
@@ -76,6 +77,7 @@ export function StopTimeItem({
     isTerminal: entry.patternPosition.isTerminal,
     infoLevel,
   });
+  const tripInspectionTarget = buildTripInspectionTarget(entry, entry.serviceDate);
 
   return (
     <div className="border-b border-[#e0e0e0] py-1 last:border-b-0 dark:border-gray-700">
@@ -91,12 +93,7 @@ export function StopTimeItem({
           collapseToleranceMinutes={display.collapseToleranceMinutes}
           forceShowRelativeTime={forceShowRelativeTime}
           textAppearance={{ color: contrastAdjustedRouteColors.color }}
-          inspectTarget={{
-            serviceDate: entry.serviceDate,
-            tripLocator: entry.tripLocator,
-            stopIndex: entry.patternPosition.stopIndex,
-            departureMinutes: entry.schedule.departureMinutes,
-          }}
+          inspectTarget={tripInspectionTarget}
           onInspectTrip={onInspectTrip}
         />
 

@@ -3,6 +3,7 @@ import type { TimetableEntry, TripInspectionTarget } from '../../types/app/trans
 import { useTranslation } from 'react-i18next';
 import { getDisplayMinutes } from '../../domain/transit/timetable-utils';
 import { getTimetableEntryAttributes } from '../../domain/transit/timetable-entry-attributes';
+import { buildTripInspectionTarget } from '../../domain/transit/trip-inspection-target';
 import { HeadsignBadge } from '../badge/headsign-badge';
 import { VerboseTimetableGridEntry as VerboseGridEntry } from '../verbose/verbose-timetable-grid-entry';
 import { TimetableEntryAttributesLabels } from '../label/timetable-entry-attributes-labels';
@@ -55,12 +56,7 @@ export function TimetableGridEntry({
   const { t } = useTranslation();
   const showVerbose = infoLevel === 'verbose' && !disableVerbose;
   const displayMinutes = getDisplayMinutes(entry);
-  const inspectTarget: TripInspectionTarget = {
-    serviceDate,
-    tripLocator: entry.tripLocator,
-    stopIndex: entry.patternPosition.stopIndex,
-    departureMinutes: entry.schedule.departureMinutes,
-  };
+  const tripInspectionTarget = buildTripInspectionTarget(entry, serviceDate);
   const content = (
     <>
       <span className="text-muted-foreground text-sm tabular-nums">
@@ -98,7 +94,7 @@ export function TimetableGridEntry({
         <button
           type="button"
           className="inline-flex cursor-pointer items-baseline gap-0.5 rounded-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-          onClick={() => onInspectTrip(inspectTarget)}
+          onClick={() => onInspectTrip(tripInspectionTarget)}
         >
           {content}
         </button>

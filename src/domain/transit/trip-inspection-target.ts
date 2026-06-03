@@ -1,5 +1,6 @@
 import type {
   SelectedTripSnapshot,
+  TimetableEntry,
   TripInspectionTarget,
   TripSnapshot,
   TripStopTime,
@@ -41,6 +42,32 @@ export type ResolveTripInspectionDisplayStateResult =
       ok: false;
       reason: 'target-not-found';
     };
+
+/**
+ * Builds the minimal {@link TripInspectionTarget} for one stop event from a
+ * timetable entry and its service date.
+ *
+ * Centralises the `(serviceDate, tripLocator, stopIndex, departureMinutes)`
+ * projection so every caller assembles the target identically. `serviceDate`
+ * is passed explicitly rather than read from the entry because not every
+ * caller holds a {@link ContextualTimetableEntry} -- timetable grids render
+ * plain {@link TimetableEntry} rows whose service date is supplied separately.
+ *
+ * @param entry - The timetable entry for the stop event.
+ * @param serviceDate - The service date the stop event belongs to.
+ * @returns The trip-inspection target identifying this stop event.
+ */
+export function buildTripInspectionTarget(
+  entry: TimetableEntry,
+  serviceDate: Date,
+): TripInspectionTarget {
+  return {
+    serviceDate,
+    tripLocator: entry.tripLocator,
+    stopIndex: entry.patternPosition.stopIndex,
+    departureMinutes: entry.schedule.departureMinutes,
+  };
+}
 
 /**
  * Returns whether two trip-inspection targets refer to the same stop event.
