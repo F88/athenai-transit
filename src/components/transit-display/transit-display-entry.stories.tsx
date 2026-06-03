@@ -27,6 +27,7 @@ interface MakeRowOverrides {
   headsign?: string;
   timeText?: string;
   isArrival?: boolean;
+  isPickupUnavailable?: boolean;
   departureMinutes?: number;
   arrivalMinutes?: number;
   serviceDate?: Date;
@@ -74,6 +75,12 @@ function makeRow(overrides: MakeRowOverrides = {}): TransitDisplayEntryData {
     headsign: overrides.headsign ?? '大塚駅前',
     timeText: overrides.timeText ?? '14:30',
     isArrival: overrides.isArrival ?? false,
+    attributes: {
+      isTerminal: overrides.isArrival ?? false,
+      isOrigin: false,
+      isPickupUnavailable: overrides.isPickupUnavailable ?? false,
+      isDropOffUnavailable: false,
+    },
     arrivalMinutes: overrides.arrivalMinutes ?? departureMinutes,
     departureMinutes,
     serviceDate,

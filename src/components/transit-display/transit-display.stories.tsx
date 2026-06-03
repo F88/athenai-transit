@@ -29,6 +29,7 @@ interface MakeEntryOverrides {
   headsign?: string;
   timeText?: string;
   isArrival?: boolean;
+  isPickupUnavailable?: boolean;
 }
 
 /** Build a minimal {@link StopWithContext} for a row's `stop.context`. */
@@ -68,6 +69,12 @@ function makeEntry(overrides: MakeEntryOverrides = {}): TransitDisplayEntryData 
     headsign: overrides.headsign ?? '大塚駅前',
     timeText: overrides.timeText ?? '14:30',
     isArrival: overrides.isArrival ?? false,
+    attributes: {
+      isTerminal: overrides.isArrival ?? false,
+      isOrigin: false,
+      isPickupUnavailable: overrides.isPickupUnavailable ?? false,
+      isDropOffUnavailable: false,
+    },
     arrivalMinutes: 870,
     departureMinutes: 870,
     serviceDate: storyServiceDate,
@@ -86,7 +93,7 @@ function makeDisplay(
   data: readonly TransitDisplayEntryData[] = departureRows,
 ): TransitDisplayData {
   return {
-    meta: { timeBasis: 'departure', routeType: 3, max: 12, radius: 100, ...metaOverrides },
+    meta: { category: 'departures', routeType: 3, max: 12, radius: 100, ...metaOverrides },
     data,
   };
 }
@@ -188,7 +195,7 @@ export const Default: Story = {};
 /** Arrival board: right arrow + ARRIVALS, sorted/shown by arrival time. */
 export const ArrivalBoard: Story = {
   args: {
-    display: makeDisplay({ timeBasis: 'arrival' }, arrivalRows),
+    display: makeDisplay({ category: 'arrivals' }, arrivalRows),
   },
 };
 

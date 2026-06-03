@@ -1,5 +1,5 @@
 import type { InfoLevel } from '../../../types/app/settings';
-import type { AppRouteTypeValue } from '../../../types/app/transit';
+import type { AppRouteTypeValue, TimetableEntryAttributes } from '../../../types/app/transit';
 import type {
   ContextualTimetableEntry,
   StopWithContext,
@@ -12,6 +12,7 @@ import { getAgencyDisplayNames } from '../name-resolver/get-agency-display-name'
 import { getHeadsignDisplayNames } from '../name-resolver/get-headsign-display-names';
 import { getRouteDisplayNames } from '../name-resolver/get-route-display-names';
 import { getStopDisplayNames } from '../name-resolver/get-stop-display-names';
+import { getTimetableEntryAttributes } from '../timetable-entry-attributes';
 import { formatAbsoluteTime } from '../time';
 import { buildTripInspectionTarget } from '../trip-inspection-target';
 
@@ -72,6 +73,8 @@ export interface TransitDisplayEntryData {
   /** Pre-formatted absolute display time (legacy presentation). */
   timeText: string;
   isArrival: boolean;
+  /** Boarding / drop-off availability and pattern-position flags for this event. */
+  attributes: TimetableEntryAttributes;
   /** Service-day arrival minutes for `StopTimeTimeInfo` rendering. */
   arrivalMinutes: number;
   /** Service-day departure minutes for `StopTimeTimeInfo` rendering. */
@@ -82,19 +85,23 @@ export interface TransitDisplayEntryData {
   inspectionTarget: TripInspectionTarget;
 }
 
-/** Which time a display is based on: a departure-time board or an arrival-time board. */
-export type TransitDisplayTimeBasis = 'departure' | 'arrival';
+/**
+ * How a display is classified: a departures board or an arrivals board. The
+ * category is the meaningful concept; which time (departure vs arrival) it sorts
+ * and shows by is derived internally from it (see {@link categoryMinutes}).
+ */
+export type TransitDisplayCategory = 'departures' | 'arrivals';
 
 /**
  * Descriptor of one transit display: the selection parameters the UI composes
  * its (localized) title and description from. All fields are raw structured
  * values (no display text), so this domain layer stays i18n-free: the UI derives
- * the mode emoji from `routeType`, the basis phrase from `timeBasis`, and the
- * row-count / radius text from `max` / `radius`.
+ * the mode emoji from `routeType`, the departures/arrivals phrase from
+ * `category`, and the row-count / radius text from `max` / `radius`.
  */
 export interface TransitDisplayMeta {
-  /** The reference time this display sorts and shows by (departure vs arrival). */
-  timeBasis: TransitDisplayTimeBasis;
+  /** Whether this is a departures or an arrivals board. */
+  category: TransitDisplayCategory;
   /** Route type this display is categorized by (drives the title's mode emoji). */
   routeType: AppRouteTypeValue;
   /** Row cap applied to this display's entries. */
@@ -111,40 +118,65 @@ export interface TransitDisplayData {
 }
 
 /** One stop event paired with the stop context it came from, before name resolution. */
-interface TransitDisplayCandidate {
+export interface TransitDisplayCandidate {
   entry: ContextualTimetableEntry;
   stopWithContext: StopWithContext;
 }
 
-export function buildTransitDisplayEntryData(
-  stops: readonly StopWithContext[],
-  preferredDisplayLangs: readonly string[],
-  timeBasis: TransitDisplayTimeBasis,
-  maxEntries: number = TRANSIT_DISPLAY_MAX_ENTRIES,
-): TransitDisplayEntryData[] {
-  // The board's time basis decides which time entries are sorted and shown by:
-  // the arrival board uses arrival time even for intermediate (non-terminal) stops.
-  const basisMinutesOf = (entry: ContextualTimetableEntry): number =>
-    timeBasis === 'arrival' ? entry.schedule.arrivalMinutes : entry.schedule.departureMinutes;
+/**
+ * Service-day minutes an entry is sorted and shown by, derived from the board's
+ * category: an arrivals board uses arrival time (even for intermediate,
+ * non-terminal stops); a departures board uses departure time.
+ */
+function categoryMinutes(
+  entry: ContextualTimetableEntry,
+  category: TransitDisplayCategory,
+): number {
+  return category === 'arrivals' ? entry.schedule.arrivalMinutes : entry.schedule.departureMinutes;
+}
 
-  // Gather candidate events without resolving any display names: name resolution
-  // (route / headsign / agency / stop) is expensive, so it is deferred until
-  // after sort + slice so it runs only for the entries that make the board.
+/**
+ * Selects which stop events a board shows (the data-selection half): flattens
+ * every stop's `stopTimes` into candidates (each paired with its source stop
+ * context), orders them by the board's category earliest-first, and caps the
+ * count to `maxEntries`.
+ *
+ * Pure selection -- no route_type / terminal filtering (the caller pre-filters),
+ * no display-name resolution, no output shaping. It therefore needs no
+ * `preferredDisplayLangs`. Name resolution is deferred to the shaping step so it
+ * runs only for the entries that survive the cap.
+ */
+export function selectTransitDisplayEntries(
+  stops: readonly StopWithContext[],
+  category: TransitDisplayCategory,
+  maxEntries: number = TRANSIT_DISPLAY_MAX_ENTRIES,
+): TransitDisplayCandidate[] {
   const candidates: TransitDisplayCandidate[] = [];
   for (const stopWithContext of stops) {
     for (const entry of stopWithContext.stopTimes) {
       candidates.push({ entry, stopWithContext });
     }
   }
-
-  const visible = candidates
+  return candidates
     .sort(
       (a, b) =>
-        minutesToDate(a.entry.serviceDate, basisMinutesOf(a.entry)).getTime() -
-        minutesToDate(b.entry.serviceDate, basisMinutesOf(b.entry)).getTime(),
+        minutesToDate(a.entry.serviceDate, categoryMinutes(a.entry, category)).getTime() -
+        minutesToDate(b.entry.serviceDate, categoryMinutes(b.entry, category)).getTime(),
     )
     .slice(0, maxEntries);
+}
 
+export function buildTransitDisplayEntryData(
+  stops: readonly StopWithContext[],
+  preferredDisplayLangs: readonly string[],
+  category: TransitDisplayCategory,
+  maxEntries: number = TRANSIT_DISPLAY_MAX_ENTRIES,
+): TransitDisplayEntryData[] {
+  // Data-selection half: pick and order the entries this board shows.
+  const visible = selectTransitDisplayEntries(stops, category, maxEntries);
+
+  // Data-shaping half: resolve names and build the output objects for the
+  // selected entries only.
   // Stop names are per-stop, so resolve each at most once and share across the
   // surviving entries that belong to the same stop.
   const stopNameCache = new Map<string, string>();
@@ -203,8 +235,11 @@ export function buildTransitDisplayEntryData(
       routeName,
       agencyName,
       headsign,
-      timeText: formatAbsoluteTime(minutesToDate(entry.serviceDate, basisMinutesOf(entry))),
+      timeText: formatAbsoluteTime(
+        minutesToDate(entry.serviceDate, categoryMinutes(entry, category)),
+      ),
       isArrival: entry.patternPosition.isTerminal,
+      attributes: getTimetableEntryAttributes(entry),
       arrivalMinutes: entry.schedule.arrivalMinutes,
       departureMinutes: entry.schedule.departureMinutes,
       serviceDate: entry.serviceDate,
@@ -216,8 +251,8 @@ export function buildTransitDisplayEntryData(
 /** Radius (metres) for the nearby-stops displays. */
 const NEARBY_RADIUS_M = 100;
 
-/** Time bases, in the order their boards appear within a route type (departure then arrival). */
-const TIME_BASES: readonly TransitDisplayTimeBasis[] = ['departure', 'arrival'];
+/** Board categories, in the order they appear within a route type (departures then arrivals). */
+const CATEGORIES: readonly TransitDisplayCategory[] = ['departures', 'arrivals'];
 
 /** Route types that have at least one entry across the given stops. */
 function collectEntryRouteTypes(stops: readonly StopWithContext[]): Set<AppRouteTypeValue> {
@@ -231,16 +266,16 @@ function collectEntryRouteTypes(stops: readonly StopWithContext[]): Set<AppRoute
 }
 
 /**
- * Builds one display for the given route type and time basis from `stops`, or
+ * Builds one display for the given route type and category from `stops`, or
  * `null` when no entries qualify.
  *
- * The departure board excludes terminal arrivals (a terminal has no meaningful
- * onward departure); the arrival board keeps every stop event (every event has
+ * The departures board excludes terminal arrivals (a terminal has no meaningful
+ * onward departure); the arrivals board keeps every stop event (every event has
  * a meaningful arrival time).
  */
 function buildDisplay(
   routeType: AppRouteTypeValue,
-  timeBasis: TransitDisplayTimeBasis,
+  category: TransitDisplayCategory,
   stops: readonly StopWithContext[],
   preferredDisplayLangs: readonly string[],
   maxEntries: number,
@@ -252,7 +287,7 @@ function buildDisplay(
         if (entry.routeDirection.route.route_type !== routeType) {
           return false;
         }
-        if (timeBasis === 'departure' && entry.patternPosition.isTerminal) {
+        if (category === 'departures' && entry.patternPosition.isTerminal) {
           return false;
         }
         return true;
@@ -262,18 +297,18 @@ function buildDisplay(
   const data = buildTransitDisplayEntryData(
     stopsForBoard,
     preferredDisplayLangs,
-    timeBasis,
+    category,
     maxEntries,
   );
   if (data.length === 0) {
     return null;
   }
   // Return only structured values; the UI composes the localized title
-  // (mode emoji from `routeType` + departures/arrivals phrase from `timeBasis`)
+  // (mode emoji from `routeType` + departures/arrivals phrase from `category`)
   // and the row-count / radius description.
   return {
     meta: {
-      timeBasis,
+      category,
       routeType,
       max: maxEntries,
       radius: NEARBY_RADIUS_M,
@@ -293,14 +328,15 @@ export function buildTransitDisplayDataSet(
     (stop) => stop.distance !== undefined && stop.distance <= NEARBY_RADIUS_M,
   );
 
-  // One display per (present route type, time basis), route type in canonical
-  // display order with the departure board before the arrival board.
+  // One display per (present route type, category), route type in canonical
+  // display order with the departures board before the arrivals board.
   const presentTypes = collectEntryRouteTypes(nearbyStops);
   const orderedTypes = ROUTE_TYPE_DISPLAY_ORDER.filter((routeType) => presentTypes.has(routeType));
+
   return orderedTypes
     .flatMap((routeType) =>
-      TIME_BASES.map((timeBasis) =>
-        buildDisplay(routeType, timeBasis, nearbyStops, preferredDisplayLangs, maxEntries),
+      CATEGORIES.map((category) =>
+        buildDisplay(routeType, category, nearbyStops, preferredDisplayLangs, maxEntries),
       ),
     )
     .filter((display): display is TransitDisplayData => display !== null);

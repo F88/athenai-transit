@@ -5,6 +5,7 @@ import type { LatLng } from '@/types/app/map';
 import type { TripInspectionTarget } from '@/types/app/transit-composed';
 
 import { DistanceBadge } from '@/components/badge/distance-badge';
+import { TimetableEntryAttributesLabels } from '@/components/label/timetable-entry-attributes-labels';
 import {
   type TransitDisplayData,
   type TransitDisplayEntryData,
@@ -107,7 +108,7 @@ export function TransitDisplay({
   // route type and basis are structured meta; the UI composes the localized text.
   // The board's title carries the departure/arrival distinction, so rows do not
   // repeat it: each row shows a single time (the board's basis) without a label.
-  const isArrivalBoard = display.meta.timeBasis === 'arrival';
+  const isArrivalBoard = display.meta.category === 'arrivals';
   const routeTypeIcon = routeTypesEmoji([display.meta.routeType]);
   const title = t(isArrivalBoard ? 'transitDisplay.arrivals' : 'transitDisplay.departures');
   return (
@@ -258,6 +259,17 @@ export function TransitDisplayEntry({
         )}
 
         <span className="min-w-0 flex-1 truncate">{data.headsign || '-'}</span>
+
+        {/* Attribute labels (terminal / origin / no-pickup / no-drop-off). Shows the
+            no-boarding marker so a service that cannot be boarded here is not silent. */}
+        <TimetableEntryAttributesLabels
+          attributes={data.attributes}
+          isDisplayTerminal
+          isDisplayOrigin
+          isDisplayPickupUnavailable
+          isDisplayDropOffUnavailable
+        />
+
         {/* Operating agency + route name. */}
         <span className="text-neutral-400">{data.agencyName}</span>
         <span className="font-semibold text-amber-100">{data.routeName}</span>
