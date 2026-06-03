@@ -92,7 +92,6 @@ const meta = {
   component: TransitDisplayEntry,
   args: {
     row: makeRow(),
-    timeLabel: 'Dep',
     now: storyNow,
     mapCenter: storyMapCenter,
     onStopSelected: fn(),
@@ -100,7 +99,6 @@ const meta = {
   },
   argTypes: {
     row: { control: 'object' },
-    timeLabel: { control: 'text' },
   },
   // TransitDisplay renders an <li>; wrap in a <ul> mirroring the
   // parent TransitDisplays list so layout and semantics match production.
@@ -122,42 +120,6 @@ type Story = StoryObj<typeof meta>;
 
 /** Default: a single departure row. Use Controls to tweak any field. */
 export const Default: Story = {};
-
-// --- Variants ---
-
-/**
- * Departure-board vs arrival-board row. The label is board-level (resolved by
- * the parent from `meta.timeBasis`), so each row is shown with the label its
- * board would assign rather than switching per row.
- */
-export const ArrivalVsDeparture: Story = {
-  render: (args) => (
-    <>
-      <TransitDisplayEntry
-        row={makeRow({ key: 'dep', timeText: '14:30', headsign: '大塚駅前' })}
-        timeLabel="Dep"
-        now={args.now}
-        mapCenter={args.mapCenter}
-        onStopSelected={args.onStopSelected}
-        onInspectTrip={args.onInspectTrip}
-      />
-      <TransitDisplayEntry
-        row={makeRow({
-          key: 'arr',
-          timeText: '14:38',
-          departureMinutes: 878,
-          routeName: '都08',
-          headsign: '錦糸町駅前',
-        })}
-        timeLabel="Arr"
-        now={args.now}
-        mapCenter={args.mapCenter}
-        onStopSelected={args.onStopSelected}
-        onInspectTrip={args.onInspectTrip}
-      />
-    </>
-  ),
-};
 
 // --- Edge cases ---
 
@@ -246,7 +208,6 @@ export const KitchenSink: Story = {
         <TransitDisplayEntry
           key={row.key}
           row={row}
-          timeLabel={args.timeLabel}
           now={args.now}
           mapCenter={args.mapCenter}
           onStopSelected={args.onStopSelected}
