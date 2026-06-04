@@ -308,11 +308,10 @@ export function TransitDisplayEntry({
   const showRouteTypeOfStop = infoLevelFlag.isVerboseEnabled;
 
   return (
-    // `data-stop-id` lets the stop browser's scroll-to-selected effect find this
-    // row (it queries `[data-stop-id=...]`); without it, selecting a stop in this
-    // view fails the lookup and resets the scroll to the top.
+    // No `data-stop-id` here: the same stop id can appear in several rows across
+    // boards, so it cannot identify a single row -- and the stop browser skips its
+    // scroll-to-selected effect for this view anyway.
     <li
-      data-stop-id={data.stop.id}
       className={cn(
         'cursor-pointer border-b border-neutral-800 px-3 py-2 text-neutral-100 last:border-b-0 hover:bg-neutral-800/95',
         ROW_TEXT_CLASS_BY_SIZE[size],

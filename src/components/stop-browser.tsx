@@ -195,11 +195,15 @@ export function StopBrowser({
     if (!contentRef.current) {
       return;
     }
-    // The transit-display (board) view is not stop-oriented, so leave its scroll
-    // position alone -- do not jump to the selected stop or reset to the top.
+
     if (viewId === 'transit-display') {
+      // The transit-display (board) view is not stop-oriented: the same stop id can
+      // appear in multiple rows (one stop shows up across several boards), so a stop
+      // cannot be targeted for scrolling. Leave its scroll position alone -- do not
+      // jump to the selected stop or reset to the top.
       return;
     }
+
     if (selectedStopId) {
       const el = contentRef.current.querySelector(`[data-stop-id="${selectedStopId}"]`);
       if (el) {
