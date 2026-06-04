@@ -350,7 +350,7 @@ export function TransitDisplayEntry({
           {data.routeName}
         </span>
 
-        {/* Operating agency + route name. */}
+        {/* Operating agency */}
         <span className="min-w-[6ch] flex-1 truncate text-left text-neutral-400">
           {data.agencyName}
         </span>
