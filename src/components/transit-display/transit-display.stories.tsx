@@ -93,7 +93,7 @@ function makeDisplay(
   data: readonly TransitDisplayEntryData[] = departureRows,
 ): TransitDisplayData {
   return {
-    meta: { category: 'departures', routeType: 3, max: 12, radius: 100, ...metaOverrides },
+    meta: { category: 'departures', routeTypes: [3], max: 12, radius: 100, ...metaOverrides },
     data,
   };
 }
@@ -202,7 +202,7 @@ export const ArrivalBoard: Story = {
 /** Rail board: the header mode emoji follows the board's route type. */
 export const TrainDeparture: Story = {
   args: {
-    display: makeDisplay({ routeType: 2 }, trainRows),
+    display: makeDisplay({ routeTypes: [2] }, trainRows),
   },
 };
 

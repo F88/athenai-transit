@@ -109,7 +109,7 @@ export function TransitDisplay({
   // The board's title carries the departure/arrival distinction, so rows do not
   // repeat it: each row shows a single time (the board's basis) without a label.
   const isArrivalBoard = display.meta.category === 'arrivals';
-  const routeTypeIcon = routeTypesEmoji([display.meta.routeType]);
+  const routeTypeIcon = routeTypesEmoji(display.meta.routeTypes);
   const title = t(isArrivalBoard ? 'transitDisplay.arrivals' : 'transitDisplay.departures');
   return (
     // Each board is framed like a classic airport signage panel: a thick,

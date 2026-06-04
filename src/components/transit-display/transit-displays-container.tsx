@@ -12,6 +12,7 @@ import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
 import { TransitDisplays } from '@/components/transit-display/transit-displays';
 import {
   buildTransitDisplayDataSet,
+  NEARBY_RADIUS_M,
   transitDisplayMaxEntriesFor,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 
@@ -43,7 +44,11 @@ export function TransitDisplaysContainer({
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
   const displays = useMemo(
-    () => buildTransitDisplayDataSet(stopTimes, dataLangs, transitDisplayMaxEntriesFor(infoLevel)),
+    () =>
+      buildTransitDisplayDataSet(stopTimes, dataLangs, NEARBY_RADIUS_M, {
+        maxEntries: transitDisplayMaxEntriesFor(infoLevel),
+        routeGrouping: { kind: 'route' },
+      }),
     [stopTimes, dataLangs, infoLevel],
   );
 
