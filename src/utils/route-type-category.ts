@@ -8,8 +8,8 @@ export type RouteTypeCategory = 'bus' | 'subway' | 'train' | 'others';
  */
 export const ROUTE_TYPE_CATEGORY_GROUPS: Record<RouteTypeCategory, number[]> = {
   bus: [3, 11],
-  subway: [1],
   train: [0, 2, 12],
+  subway: [1],
   others: [-1, 4, 5, 6, 7],
 };
 
