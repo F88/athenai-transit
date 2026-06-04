@@ -201,12 +201,28 @@ export interface RoutesSummary {
  * The two together reveal a source's headsign convention: some
  * sources populate only `h`, some (e.g. keio-bus) leave `h` blank
  * and rely entirely on `sh`, and some populate both.
+ *
+ * `routeTypeCounts` counts the source's route inventory by GTFS
+ * `route_type`, while `patternRouteTypeCounts` counts trip patterns
+ * by the route_type of their referenced route. Comparing these helps
+ * inspect whether direction_id usage differs by mode (rail / bus / etc.)
+ * without leaving the trip-patterns section.
  */
 export interface TripPatternsSummary {
   count: number;
   direction0Count: number;
   direction1Count: number;
   directionNoneCount: number;
+  routeTypeCounts: Record<string, number>;
+  patternRouteTypeCounts: Record<string, number>;
+  directionCountsByRouteType: Record<
+    string,
+    {
+      direction0Count: number;
+      direction1Count: number;
+      directionNoneCount: number;
+    }
+  >;
   withTripHeadsignCount: number;
   withStopHeadsignCount: number;
 }
@@ -507,18 +523,37 @@ function buildRoutesSummary(bundle: DataBundle): RoutesSummary {
  */
 function buildTripPatternsSummary(bundle: DataBundle): TripPatternsSummary {
   const patterns = Object.values(bundle.tripPatterns.data);
+  const routeTypesByRouteId = new Map<string, string>();
+  const routeTypeCounts: Record<string, number> = {};
+  for (const route of bundle.routes.data) {
+    const routeType = String(route.t);
+    routeTypesByRouteId.set(route.i, routeType);
+    routeTypeCounts[routeType] = (routeTypeCounts[routeType] ?? 0) + 1;
+  }
+  const patternRouteTypeCounts: Record<string, number> = {};
+  const directionCountsByRouteType: TripPatternsSummary['directionCountsByRouteType'] = {};
   let direction0Count = 0;
   let direction1Count = 0;
   let directionNoneCount = 0;
   let withTripHeadsignCount = 0;
   let withStopHeadsignCount = 0;
   for (const pattern of patterns) {
+    const routeType = routeTypesByRouteId.get(pattern.r) ?? 'missing-route';
+    patternRouteTypeCounts[routeType] = (patternRouteTypeCounts[routeType] ?? 0) + 1;
+    const directionByType = (directionCountsByRouteType[routeType] ??= {
+      direction0Count: 0,
+      direction1Count: 0,
+      directionNoneCount: 0,
+    });
     if (pattern.dir === 0) {
       direction0Count += 1;
+      directionByType.direction0Count += 1;
     } else if (pattern.dir === 1) {
       direction1Count += 1;
+      directionByType.direction1Count += 1;
     } else {
       directionNoneCount += 1;
+      directionByType.directionNoneCount += 1;
     }
     if (pattern.h !== '') {
       withTripHeadsignCount += 1;
@@ -534,6 +569,9 @@ function buildTripPatternsSummary(bundle: DataBundle): TripPatternsSummary {
     direction0Count,
     direction1Count,
     directionNoneCount,
+    routeTypeCounts,
+    patternRouteTypeCounts,
+    directionCountsByRouteType,
     withTripHeadsignCount,
     withStopHeadsignCount,
   };
@@ -1087,6 +1125,29 @@ function formatDirectionCounts(s: TripPatternsSummary): string {
   return `0:${s.direction0Count}, 1:${s.direction1Count}, none:${s.directionNoneCount}`;
 }
 
+function formatDirectionBreakdown(counts: {
+  direction0Count: number;
+  direction1Count: number;
+  directionNoneCount: number;
+}): string {
+  return `0:${counts.direction0Count}, 1:${counts.direction1Count}, none:${counts.directionNoneCount}`;
+}
+
+function formatDirectionCountsByRouteType(s: TripPatternsSummary): string {
+  const entries = Object.entries(s.directionCountsByRouteType).sort(([left], [right]) =>
+    compareRouteTypeKeys(left, right),
+  );
+  if (entries.length === 0) {
+    return '-';
+  }
+  return entries
+    .map(
+      ([routeType, counts]) =>
+        `${formatRouteTypeLabel(routeType)}(${formatDirectionBreakdown(counts)})`,
+    )
+    .join(', ');
+}
+
 type DirectionMode =
   | 'no-patterns'
   | '0-only'
@@ -1153,11 +1214,13 @@ interface DirectionAnalysisRow {
   prefix: string;
   mode: DirectionMode;
   count: number;
+  routeTypes: string;
   directionCounts: string;
+  directionByType: string;
 }
 
 function renderDirectionModeSubsection(mode: DirectionMode, rows: DirectionAnalysisRow[]): string {
-  const header = ['source', 'prefix', 'count', 'directionCounts'];
+  const header = ['source', 'prefix', 'count', 'routeTypes', 'directionCounts', 'directionByType'];
   const modeRows = rows.filter((row) => row.mode === mode);
   const totalPatterns = modeRows.reduce((acc, row) => acc + row.count, 0);
   if (modeRows.length === 0) {
@@ -1167,9 +1230,11 @@ function renderDirectionModeSubsection(mode: DirectionMode, rows: DirectionAnaly
     row.nameEn,
     row.prefix,
     String(row.count),
+    row.routeTypes,
     row.directionCounts,
+    row.directionByType,
   ]);
-  tableRows.push(['totals', '', String(totalPatterns), '-']);
+  tableRows.push(['totals', '', String(totalPatterns), '-', '-', '-']);
   return [
     `### Direction mode: ${mode}`,
     '',
@@ -1203,7 +1268,15 @@ function formatTripPatternDirectionSubsections(results: V2DataVolumeStats[]): st
   let noneOnlySources = 0;
   let mixedWithNoneSources = 0;
 
-  const header = ['source', 'prefix', 'mode', 'count', 'directionCounts'];
+  const header = [
+    'source',
+    'prefix',
+    'mode',
+    'count',
+    'routeTypes',
+    'directionCounts',
+    'directionByType',
+  ];
   const analysisRows: DirectionAnalysisRow[] = results.map((result) => {
     const mode = classifyDirectionMode(result.tripPatterns);
     modeCounts[mode] += 1;
@@ -1221,7 +1294,9 @@ function formatTripPatternDirectionSubsections(results: V2DataVolumeStats[]): st
       prefix: result.prefix,
       mode,
       count: result.tripPatterns.count,
+      routeTypes: formatTypeCounts(result.tripPatterns.routeTypeCounts),
       directionCounts: formatDirectionCounts(result.tripPatterns),
+      directionByType: formatDirectionCountsByRouteType(result.tripPatterns),
     };
   });
   const rows: string[][] = analysisRows.map((row) => [
@@ -1229,7 +1304,9 @@ function formatTripPatternDirectionSubsections(results: V2DataVolumeStats[]): st
     row.prefix,
     row.mode,
     String(row.count),
+    row.routeTypes,
     row.directionCounts,
+    row.directionByType,
   ]);
 
   const totalPatterns = results.reduce((acc, result) => acc + result.tripPatterns.count, 0);
@@ -1251,7 +1328,9 @@ function formatTripPatternDirectionSubsections(results: V2DataVolumeStats[]): st
     '',
     formatDirectionModeCounts(modeCounts),
     String(totalPatterns),
+    '-',
     totalsDirectionCounts,
+    '-',
   ]);
 
   return [
@@ -1298,12 +1377,26 @@ function formatTripPatternsSectionBody(results: V2DataVolumeStats[]): string {
     0,
   );
   const totalsDirectionCounts = `0:${totalDirection0}, 1:${totalDirection1}, none:${totalDirectionNone}`;
+  const aggregatedRouteTypes: Record<string, number> = {};
+  const aggregatedPatternRouteTypes: Record<string, number> = {};
+  const aggregateCounts = (target: Record<string, number>, source: Record<string, number>) => {
+    for (const [key, count] of Object.entries(source)) {
+      target[key] = (target[key] ?? 0) + count;
+    }
+  };
+  for (const r of results) {
+    aggregateCounts(aggregatedRouteTypes, r.tripPatterns.routeTypeCounts);
+    aggregateCounts(aggregatedPatternRouteTypes, r.tripPatterns.patternRouteTypeCounts);
+  }
 
   const header = [
     'source',
     'prefix',
     'count',
+    'routeTypes',
+    'patternsByType',
     'directionCounts',
+    'directionByType',
     'withTripHeadsign',
     'withStopHeadsign',
   ];
@@ -1311,7 +1404,10 @@ function formatTripPatternsSectionBody(results: V2DataVolumeStats[]): string {
     r.nameEn,
     r.prefix,
     String(r.tripPatterns.count),
+    formatTypeCounts(r.tripPatterns.routeTypeCounts),
+    formatTypeCounts(r.tripPatterns.patternRouteTypeCounts),
     formatDirectionCounts(r.tripPatterns),
+    formatDirectionCountsByRouteType(r.tripPatterns),
     String(r.tripPatterns.withTripHeadsignCount),
     String(r.tripPatterns.withStopHeadsignCount),
   ]);
@@ -1319,7 +1415,10 @@ function formatTripPatternsSectionBody(results: V2DataVolumeStats[]): string {
     'totals',
     '',
     String(totalPatterns),
+    formatTypeCounts(aggregatedRouteTypes),
+    formatTypeCounts(aggregatedPatternRouteTypes),
     totalsDirectionCounts,
+    '-',
     String(totalWithTripHeadsign),
     String(totalWithStopHeadsign),
   ]);
@@ -1358,15 +1457,37 @@ const ROUTE_TYPE_LABELS: Record<string, string> = {
   '12': 'monorail',
 };
 
+function compareRouteTypeKeys(left: string, right: string): number {
+  const leftNumber = Number(left);
+  const rightNumber = Number(right);
+  const leftIsNumeric = Number.isFinite(leftNumber);
+  const rightIsNumeric = Number.isFinite(rightNumber);
+  if (leftIsNumeric && rightIsNumeric) {
+    return leftNumber - rightNumber;
+  }
+  if (leftIsNumeric) {
+    return -1;
+  }
+  if (rightIsNumeric) {
+    return 1;
+  }
+  return left.localeCompare(right);
+}
+
+function formatRouteTypeLabel(value: string): string {
+  return ROUTE_TYPE_LABELS[value] ?? value;
+}
+
 function formatTypeCounts(counts: Record<string, number>): string {
-  const entries = Object.entries(counts).sort(([left], [right]) => Number(left) - Number(right));
+  const entries = Object.entries(counts).sort(([left], [right]) =>
+    compareRouteTypeKeys(left, right),
+  );
   if (entries.length === 0) {
     return '-';
   }
   return entries
     .map(([value, count]) => {
-      const label = ROUTE_TYPE_LABELS[value];
-      return label === undefined ? `${value}:${count}` : `${label}:${count}`;
+      return `${formatRouteTypeLabel(value)}:${count}`;
     })
     .join(', ');
 }
