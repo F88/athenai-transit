@@ -294,8 +294,6 @@ export function TransitDisplayEntry({
 }: TransitDisplayEntryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
 
-  console.log({ size });
-
   // Distance is baked on the row (query-time); bearing is computed live from the
   // current map center so the direction arrow tracks panning, like StopInfo.
   const distanceRounded = data.stop.distance != null ? Math.round(data.stop.distance) : null;
