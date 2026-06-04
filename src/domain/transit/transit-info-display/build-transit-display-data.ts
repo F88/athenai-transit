@@ -7,7 +7,7 @@ import type {
 } from '../../../types/app/transit-composed';
 import { routeTypesEmoji } from '../../../utils/route-type-emoji';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../route-type-display-order';
-import { minutesToDate } from '../calendar-utils';
+import { formatDateKey, minutesToDate } from '../calendar-utils';
 import { getAgencyDisplayNames } from '../name-resolver/get-agency-display-name';
 import { getHeadsignDisplayNames } from '../name-resolver/get-headsign-display-names';
 import { getRouteDisplayNames } from '../name-resolver/get-route-display-names';
@@ -280,8 +280,12 @@ export function buildTransitDisplayEntryData(
       ? getAgencyDisplayNames(routeAgency, preferredDisplayLangs, routeAgencyLangs, 'short')
           .resolved.name || routeAgency.agency_id
       : '';
+    // Include the service date: TripLocator is per-service (not per-day), so the
+    // same (patternId, serviceId, tripIndex, stopIndex) can recur on different
+    // service dates within one board, which would collide as a React key.
     const key = [
       stopWithContext.stop.stop_id,
+      formatDateKey(entry.serviceDate),
       entry.tripLocator.patternId,
       entry.tripLocator.serviceId,
       entry.tripLocator.tripIndex,

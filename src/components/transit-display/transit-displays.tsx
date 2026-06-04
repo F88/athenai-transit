@@ -59,9 +59,11 @@ export function TransitDisplays({
 }: TransitDisplaysProps) {
   return (
     <div className="font-dotgothic16 px-4 pb-0">
-      {displays.map((display, index) => (
+      {displays.map((display) => (
+        // Stable key from the board's identity (category + its route types) so
+        // reordering the boards does not reuse the wrong board, unlike an index.
         <TransitDisplay
-          key={index}
+          key={`${display.meta.category}__${display.meta.routeTypes.join('-')}`}
           display={display}
           emptyMessage={emptyMessage}
           now={now}
