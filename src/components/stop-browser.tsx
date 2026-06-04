@@ -195,6 +195,11 @@ export function StopBrowser({
     if (!contentRef.current) {
       return;
     }
+    // The transit-display (board) view is not stop-oriented, so leave its scroll
+    // position alone -- do not jump to the selected stop or reset to the top.
+    if (viewId === 'transit-display') {
+      return;
+    }
     if (selectedStopId) {
       const el = contentRef.current.querySelector(`[data-stop-id="${selectedStopId}"]`);
       if (el) {
@@ -203,7 +208,7 @@ export function StopBrowser({
       }
     }
     contentRef.current.scrollTop = 0;
-  }, [selectedStopId, stopIdsKey]);
+  }, [selectedStopId, stopIdsKey, viewId]);
 
   const headerSize = resolveContainerDisplaySize(rootRect?.width ?? 0);
 
