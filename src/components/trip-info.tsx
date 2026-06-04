@@ -210,10 +210,10 @@ export function TripInfo({
         <TimetableEntryAttributesLabels
           size={size}
           attributes={attributes}
-          isDisplayTerminal={true}
-          isDisplayOrigin={true}
-          isDisplayPickupUnavailable={true}
-          isDisplayDropOffUnavailable={true}
+          showDisplayTerminal={true}
+          showDisplayOrigin={true}
+          showDisplayPickupUnavailable={true}
+          showDisplayDropOffUnavailable={true}
         />
       )}
     </div>

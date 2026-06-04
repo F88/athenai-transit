@@ -131,10 +131,10 @@ export function StopTimesItem({
                 <TimetableEntryAttributesLabels
                   attributes={getTimetableEntryAttributes(entry)}
                   size="xs"
-                  isDisplayTerminal
-                  isDisplayOrigin
-                  isDisplayPickupUnavailable
-                  isDisplayDropOffUnavailable
+                  showDisplayTerminal
+                  showDisplayOrigin
+                  showDisplayPickupUnavailable
+                  showDisplayDropOffUnavailable
                 />
               </>
             );

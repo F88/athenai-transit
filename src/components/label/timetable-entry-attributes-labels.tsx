@@ -5,10 +5,10 @@ import { BaseLabel, type BaseLabelSize } from './base-label';
 interface TimetableEntryAttributesLabelsProps {
   attributes: TimetableEntryAttributes;
   size?: BaseLabelSize;
-  isDisplayTerminal: boolean;
-  isDisplayOrigin: boolean;
-  isDisplayPickupUnavailable: boolean;
-  isDisplayDropOffUnavailable: boolean;
+  showDisplayTerminal: boolean;
+  showDisplayOrigin: boolean;
+  showDisplayPickupUnavailable: boolean;
+  showDisplayDropOffUnavailable: boolean;
 }
 
 /**
@@ -21,17 +21,17 @@ interface TimetableEntryAttributesLabelsProps {
 export function TimetableEntryAttributesLabels({
   attributes,
   size = 'xs',
-  isDisplayTerminal,
-  isDisplayOrigin,
-  isDisplayPickupUnavailable,
-  isDisplayDropOffUnavailable,
+  showDisplayTerminal,
+  showDisplayOrigin,
+  showDisplayPickupUnavailable,
+  showDisplayDropOffUnavailable,
 }: TimetableEntryAttributesLabelsProps) {
   const { t } = useTranslation();
 
-  const showTerminal = isDisplayTerminal && attributes.isTerminal;
-  const showOrigin = isDisplayOrigin && attributes.isOrigin;
-  const showPickupUnavailable = isDisplayPickupUnavailable && attributes.isPickupUnavailable;
-  const showDropOffUnavailable = isDisplayDropOffUnavailable && attributes.isDropOffUnavailable;
+  const showTerminal = showDisplayTerminal && attributes.isTerminal;
+  const showOrigin = showDisplayOrigin && attributes.isOrigin;
+  const showPickupUnavailable = showDisplayPickupUnavailable && attributes.isPickupUnavailable;
+  const showDropOffUnavailable = showDisplayDropOffUnavailable && attributes.isDropOffUnavailable;
 
   if (!showTerminal && !showOrigin && !showPickupUnavailable && !showDropOffUnavailable) {
     return null;

@@ -4,20 +4,20 @@ import { getTimetableEntryAttributes } from '../../domain/transit/timetable-entr
 import { createEntry } from '../../stories/fixtures';
 
 const allEnabled = {
-  isDisplayTerminal: true,
-  isDisplayOrigin: true,
-  isDisplayPickupUnavailable: true,
-  isDisplayDropOffUnavailable: true,
+  showDisplayTerminal: true,
+  showDisplayOrigin: true,
+  showDisplayPickupUnavailable: true,
+  showDisplayDropOffUnavailable: true,
 };
 
 const meta = {
   title: 'Label/TimetableEntryAttributesLabels',
   component: TimetableEntryAttributesLabels,
   argTypes: {
-    isDisplayTerminal: { control: 'boolean' },
-    isDisplayOrigin: { control: 'boolean' },
-    isDisplayPickupUnavailable: { control: 'boolean' },
-    isDisplayDropOffUnavailable: { control: 'boolean' },
+    showDisplayTerminal: { control: 'boolean' },
+    showDisplayOrigin: { control: 'boolean' },
+    showDisplayPickupUnavailable: { control: 'boolean' },
+    showDisplayDropOffUnavailable: { control: 'boolean' },
   },
 } satisfies Meta<typeof TimetableEntryAttributesLabels>;
 
@@ -80,10 +80,10 @@ export const AllDisabled: Story = {
     attributes: getTimetableEntryAttributes(
       createEntry({ isTerminal: true, isOrigin: true, pickupType: 1, dropOffType: 1 }),
     ),
-    isDisplayTerminal: false,
-    isDisplayOrigin: false,
-    isDisplayPickupUnavailable: false,
-    isDisplayDropOffUnavailable: false,
+    showDisplayTerminal: false,
+    showDisplayOrigin: false,
+    showDisplayPickupUnavailable: false,
+    showDisplayDropOffUnavailable: false,
   },
 };
 

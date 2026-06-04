@@ -80,10 +80,10 @@ export function TimetableGridEntry({
       <TimetableEntryAttributesLabels
         attributes={getTimetableEntryAttributes(entry)}
         size={'xs'}
-        isDisplayTerminal={isDisplayTerminal}
-        isDisplayOrigin={isDisplayOrigin}
-        isDisplayPickupUnavailable={isDisplayPickupUnavailable}
-        isDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
+        showDisplayTerminal={isDisplayTerminal}
+        showDisplayOrigin={isDisplayOrigin}
+        showDisplayPickupUnavailable={isDisplayPickupUnavailable}
+        showDisplayDropOffUnavailable={isDisplayDropOffUnavailable}
       />
     </>
   );
