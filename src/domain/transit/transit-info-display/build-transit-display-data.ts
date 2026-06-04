@@ -200,7 +200,7 @@ export function toTransitDisplayCandidates(
   );
 }
 
-/** 2.1 Route-type selector: keeps only candidates whose event runs on `routeType`. */
+/** Keeps only candidates whose event runs on `routeType`. */
 export function selectByRouteType(
   candidates: readonly TransitDisplayCandidate[],
   routeType: AppRouteTypeValue,
@@ -209,8 +209,8 @@ export function selectByRouteType(
 }
 
 /**
- * 2.2 Category selector: keeps only candidates that qualify for `category`'s
- * board (its category-specific logic; see {@link categoryQualifies}).
+ * Keeps only candidates that qualify for `category`'s board (its
+ * category-specific logic; see {@link categoryQualifies}).
  */
 export function selectByCategory(
   candidates: readonly TransitDisplayCandidate[],
@@ -220,8 +220,8 @@ export function selectByCategory(
 }
 
 /**
- * 3.1 Sort + cap: orders candidates earliest-first by the category's time and
- * returns at most `maxEntries` of them. Does not mutate the input.
+ * Orders candidates earliest-first by the category's time and returns at most
+ * `maxEntries` of them. Does not mutate the input.
  */
 export function sortAndCapByCategory(
   candidates: readonly TransitDisplayCandidate[],
@@ -330,9 +330,8 @@ const CATEGORIES: readonly TransitDisplayCategory[] = ['departures', 'arrivals']
 
 /**
  * One board's cell: which route type(s) and category it is, plus its candidates.
- * Plain candidates (not UI rows), so the same shape flows through selection (2),
- * sort + cap (3), and conversion (4) without those steps' concerns leaking into
- * each other.
+ * Plain candidates (not UI rows), so the same shape flows through grouping,
+ * sort + cap, and UI conversion without those concerns leaking into each other.
  */
 export interface TransitDisplayBoard {
   routeTypes: readonly AppRouteTypeValue[];
@@ -355,7 +354,7 @@ function presentRouteTypesInDisplayOrder(
 }
 
 /**
- * 2.1 Route-type clustering, per the grouping strategy:
+ * Clusters candidates by route type, per the grouping strategy:
  * - `route`: one cluster per route type (in `ROUTE_TYPE_DISPLAY_ORDER`)
  * - `none`: a single cluster of all candidates (its `routeTypes` are the present types)
  * - `custom`: one cluster per caller-supplied group, in the given order. Each
@@ -393,13 +392,13 @@ export function clusterCandidatesByRouteType(
 }
 
 /**
- * 2 Selector: clusters candidates into boards -- 2.1 route-type (per
- * `routeGrouping`) then 2.2 category -- yielding one board per non-empty cell,
- * in route-type display order x (departures, arrivals).
+ * Groups candidates into boards: clusters them by route type (per
+ * `routeGrouping`) then splits each cluster by category, yielding one board per
+ * non-empty cell, in route-type display order x (departures, arrivals).
  *
- * Selection only. No sort / cap (that is 3, {@link sortAndCapBoards}) and no UI
- * conversion (that is 4, {@link toTransitDisplayData}). Empty cells are dropped,
- * so the present route types fall out without a separate enumeration.
+ * Grouping only: it does not sort / cap ({@link sortAndCapBoards}) or resolve
+ * display names ({@link toTransitDisplayData}). Empty cells are dropped, so the
+ * present route types fall out without a separate enumeration.
  */
 export function groupCandidatesIntoBoards(
   candidates: readonly TransitDisplayCandidate[],
@@ -410,15 +409,15 @@ export function groupCandidatesIntoBoards(
       CATEGORIES.map((category) => ({
         routeTypes: cluster.routeTypes,
         category,
-        candidates: selectByCategory(cluster.candidates, category), // 2.2
+        candidates: selectByCategory(cluster.candidates, category), // split by category
       })),
     )
     .filter((board) => board.candidates.length > 0);
 }
 
 /**
- * 3 Sort + cap: orders each board's candidates earliest-first by its category's
- * time and caps to `maxEntries`. Operates per board; not the selector's concern.
+ * Orders each board's candidates earliest-first by its category's time and caps
+ * to `maxEntries`. Operates per board; the grouping is already done.
  */
 export function sortAndCapBoards(
   boards: readonly TransitDisplayBoard[],
@@ -431,7 +430,7 @@ export function sortAndCapBoards(
 }
 
 /**
- * 4 UI converter: turns one board into UI data -- assembles its `meta`
+ * Turns one board into UI data -- assembles its `meta`
  * descriptor (from the board cell + the `radiusMeters` / `maxEntries` scope) and
  * resolves display names for its candidates.
  */
@@ -453,9 +452,10 @@ export function toTransitDisplayData(
 }
 
 /**
- * Runs the board-building steps in sequence: 1 distance filter -> flatten ->
- * 2 select (route-type / category clustering) -> 3 sort + cap -> 4 UI convert.
- * Each step is single-purpose so the next one's concern does not leak into it.
+ * Runs the board-building steps in sequence: distance filter -> flatten ->
+ * group into boards (route-type / category clustering) -> sort + cap -> UI
+ * convert. Each step is single-purpose so the next one's concern does not leak
+ * into it.
  *
  * `radiusMeters` (the range stops are selected within; also each board's
  * `meta.radius`) and `condition` (the per-display selection condition) are both
@@ -468,15 +468,15 @@ export function buildTransitDisplayDataSet(
   radiusMeters: number,
   condition: TransitDisplayCondition,
 ): TransitDisplayData[] {
-  // 1 distance filter: stops within radiusMeters of the center
+  // distance filter: stops within radiusMeters of the center
   const nearbyStops = filterStopsWithinRadius(stops, radiusMeters);
   // flatten each stop's stopTimes into candidates
   const candidates = toTransitDisplayCandidates(nearbyStops);
-  // 2 cluster by route type, then category
+  // cluster by route type, then split by category, into boards
   const boards = groupCandidatesIntoBoards(candidates, condition.routeGrouping);
-  // 3 sort by time, cap each board
+  // sort by time, cap each board
   const cappedBoards = sortAndCapBoards(boards, condition.maxEntries);
-  // 4 resolve display names, build UI data
+  // resolve display names, build UI data
   return cappedBoards.map((board) =>
     toTransitDisplayData(board, preferredDisplayLangs, radiusMeters, condition.maxEntries),
   );
