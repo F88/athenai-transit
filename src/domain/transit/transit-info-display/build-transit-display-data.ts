@@ -177,7 +177,7 @@ function categoryQualifies(
 }
 
 /**
- * 1.1 Distance filter: stops whose precomputed `distance` is within
+ * Distance filter: stops whose precomputed `distance` is within
  * `radiusMeters` of the query centre. `distance` is precomputed (metres), so no
  * coordinate maths is needed here.
  */
@@ -401,7 +401,7 @@ export function clusterCandidatesByRouteType(
  * conversion (that is 4, {@link toTransitDisplayData}). Empty cells are dropped,
  * so the present route types fall out without a separate enumeration.
  */
-export function selectTransitDisplayBoards(
+export function groupCandidatesIntoBoards(
   candidates: readonly TransitDisplayCandidate[],
   routeGrouping: TransitDisplayRouteGrouping,
 ): TransitDisplayBoard[] {
@@ -453,7 +453,7 @@ export function toTransitDisplayData(
 }
 
 /**
- * Runs the board-building steps in sequence: 1.1 distance filter -> flatten ->
+ * Runs the board-building steps in sequence: 1 distance filter -> flatten ->
  * 2 select (route-type / category clustering) -> 3 sort + cap -> 4 UI convert.
  * Each step is single-purpose so the next one's concern does not leak into it.
  *
@@ -468,11 +468,16 @@ export function buildTransitDisplayDataSet(
   radiusMeters: number,
   condition: TransitDisplayCondition,
 ): TransitDisplayData[] {
-  const nearbyStops = filterStopsWithinRadius(stops, radiusMeters); // 1.1
-  const candidates = toTransitDisplayCandidates(nearbyStops); // flatten once
-  const boards = selectTransitDisplayBoards(candidates, condition.routeGrouping); // 2
-  const cappedBoards = sortAndCapBoards(boards, condition.maxEntries); // 3
+  // 1 distance filter: stops within radiusMeters of the center
+  const nearbyStops = filterStopsWithinRadius(stops, radiusMeters);
+  // flatten each stop's stopTimes into candidates
+  const candidates = toTransitDisplayCandidates(nearbyStops);
+  // 2 cluster by route type, then category
+  const boards = groupCandidatesIntoBoards(candidates, condition.routeGrouping);
+  // 3 sort by time, cap each board
+  const cappedBoards = sortAndCapBoards(boards, condition.maxEntries);
+  // 4 resolve display names, build UI data
   return cappedBoards.map((board) =>
     toTransitDisplayData(board, preferredDisplayLangs, radiusMeters, condition.maxEntries),
-  ); // 4
+  );
 }
