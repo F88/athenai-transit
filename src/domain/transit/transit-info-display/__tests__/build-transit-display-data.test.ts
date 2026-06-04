@@ -4,7 +4,7 @@
  * @vitest-environment node
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   agencyTobus,
@@ -15,15 +15,24 @@ import {
   subwayRoute,
 } from '../../../../stories/fixtures';
 import type { InfoLevel } from '../../../../types/app/settings';
-import type { Route } from '../../../../types/app/transit';
+import type { Route, TimetableEntryAttributes } from '../../../../types/app/transit';
 import type { StopWithContext } from '../../../../types/app/transit-composed';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../../route-type-display-order';
+import { getTimetableEntryAttributes } from '../../timetable-entry-attributes';
 import {
+  categoryQualifies,
   clusterCandidatesByRouteType,
   filterStopsWithinRadius,
   transitDisplayMaxEntriesFor,
   type TransitDisplayCandidate,
 } from '../build-transit-display-data';
+
+// categoryQualifies delegates origin/terminal determination to this domain
+// function (which may change over time), so the categoryQualifies unit tests
+// mock it to pin only categoryQualifies' own branching.
+vi.mock('../../timetable-entry-attributes', () => ({
+  getTimetableEntryAttributes: vi.fn(),
+}));
 
 describe('transitDisplayMaxEntriesFor', () => {
   it('returns the configured row cap for each info level', () => {
@@ -55,6 +64,39 @@ const STUB_STOP: StopWithContext = {
 function candidateOf(route: Route): TransitDisplayCandidate {
   return { entry: createEntry({ route }), stopWithContext: STUB_STOP };
 }
+
+describe('categoryQualifies', () => {
+  // The entry content is irrelevant: getTimetableEntryAttributes is mocked, so
+  // only the flags it returns drive the result.
+  const ENTRY = createEntry({ route: busRoute });
+
+  /** Make the mocked getTimetableEntryAttributes return the given flags (rest false). */
+  function withAttributes(flags: Partial<TimetableEntryAttributes>): void {
+    vi.mocked(getTimetableEntryAttributes).mockReturnValue({
+      isTerminal: false,
+      isOrigin: false,
+      isPickupUnavailable: false,
+      isDropOffUnavailable: false,
+      ...flags,
+    });
+  }
+
+  it("'departures' reads isTerminal and ignores isOrigin", () => {
+    withAttributes({ isTerminal: true, isOrigin: true });
+    expect(categoryQualifies(ENTRY, 'departures')).toBe(false);
+
+    withAttributes({ isTerminal: false, isOrigin: true });
+    expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
+  });
+
+  it("'arrivals' reads isOrigin and ignores isTerminal", () => {
+    withAttributes({ isOrigin: true, isTerminal: true });
+    expect(categoryQualifies(ENTRY, 'arrivals')).toBe(false);
+
+    withAttributes({ isOrigin: false, isTerminal: true });
+    expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
+  });
+});
 
 describe('filterStopsWithinRadius', () => {
   /** A stop context at a given distance (metres), with a unique id for assertions. */

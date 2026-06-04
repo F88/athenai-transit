@@ -161,19 +161,18 @@ function categoryMinutes(
   return category === 'arrivals' ? entry.schedule.arrivalMinutes : entry.schedule.departureMinutes;
 }
 
-/**
- * Whether an entry belongs on the given category's board. A departures board
- * excludes terminal arrivals (a terminal has no meaningful onward departure); an
- * arrivals board keeps every stop event (every event has a meaningful arrival).
- */
-function categoryQualifies(
+/** Whether an entry belongs on the given category's board. */
+export function categoryQualifies(
   entry: ContextualTimetableEntry,
   category: TransitDisplayCategory,
 ): boolean {
+  // [IMPORTANT] Use domain logic to determine the starting/ending point.
+  const attributes = getTimetableEntryAttributes(entry);
+
   if (category === 'departures') {
-    return !entry.patternPosition.isTerminal;
+    return !attributes.isTerminal;
   }
-  return true;
+  return !attributes.isOrigin;
 }
 
 /**
@@ -206,17 +205,6 @@ export function selectByRouteType(
   routeType: AppRouteTypeValue,
 ): TransitDisplayCandidate[] {
   return candidates.filter((c) => c.entry.routeDirection.route.route_type === routeType);
-}
-
-/**
- * Keeps only candidates that qualify for `category`'s board (its
- * category-specific logic; see {@link categoryQualifies}).
- */
-export function selectByCategory(
-  candidates: readonly TransitDisplayCandidate[],
-  category: TransitDisplayCategory,
-): TransitDisplayCandidate[] {
-  return candidates.filter((c) => categoryQualifies(c.entry, category));
 }
 
 /**
@@ -409,7 +397,8 @@ export function groupCandidatesIntoBoards(
       CATEGORIES.map((category) => ({
         routeTypes: cluster.routeTypes,
         category,
-        candidates: selectByCategory(cluster.candidates, category), // split by category
+        // keep only the candidates that qualify for this category's board
+        candidates: cluster.candidates.filter((c) => categoryQualifies(c.entry, category)),
       })),
     )
     .filter((board) => board.candidates.length > 0);
