@@ -20,6 +20,7 @@ import type { StopWithContext } from '../../../../types/app/transit-composed';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../../route-type-display-order';
 import {
   clusterCandidatesByRouteType,
+  filterStopsWithinRadius,
   transitDisplayMaxEntriesFor,
   type TransitDisplayCandidate,
 } from '../build-transit-display-data';
@@ -54,6 +55,59 @@ const STUB_STOP: StopWithContext = {
 function candidateOf(route: Route): TransitDisplayCandidate {
   return { entry: createEntry({ route }), stopWithContext: STUB_STOP };
 }
+
+describe('filterStopsWithinRadius', () => {
+  /** A stop context at a given distance (metres), with a unique id for assertions. */
+  function stopAtDistance(stopId: string, distance: number | undefined): StopWithContext {
+    return { ...STUB_STOP, stop: { ...baseStop, stop_id: stopId }, distance };
+  }
+
+  it('keeps stops within the radius and drops the ones beyond it', () => {
+    const near = stopAtDistance('near', 50);
+    const far = stopAtDistance('far', 150);
+
+    expect(filterStopsWithinRadius([near, far], 100)).toEqual([near]);
+  });
+
+  it('keeps a stop exactly at the radius (boundary is inclusive)', () => {
+    const onEdge = stopAtDistance('edge', 100);
+
+    expect(filterStopsWithinRadius([onEdge], 100)).toEqual([onEdge]);
+  });
+
+  it('keeps a stop at distance 0', () => {
+    const here = stopAtDistance('here', 0);
+
+    expect(filterStopsWithinRadius([here], 100)).toEqual([here]);
+  });
+
+  it('drops stops whose distance is undefined', () => {
+    const unknown = stopAtDistance('unknown', undefined);
+    const near = stopAtDistance('near', 10);
+
+    expect(filterStopsWithinRadius([unknown, near], 100)).toEqual([near]);
+  });
+
+  it('returns an empty array when no stop is within the radius', () => {
+    const far = stopAtDistance('far', 500);
+
+    expect(filterStopsWithinRadius([far], 100)).toEqual([]);
+  });
+
+  it('returns an empty array for empty input', () => {
+    expect(filterStopsWithinRadius([], 100)).toEqual([]);
+  });
+
+  it('preserves the input order of the surviving stops', () => {
+    const a = stopAtDistance('a', 10);
+    const b = stopAtDistance('b', 90);
+    const c = stopAtDistance('c', 40);
+
+    const result = filterStopsWithinRadius([a, b, c], 100);
+
+    expect(result.map((s) => s.stop.stop_id)).toEqual(['a', 'b', 'c']);
+  });
+});
 
 describe('clusterCandidatesByRouteType', () => {
   it("'route': one cluster per route type in display order, candidates placed by type", () => {
