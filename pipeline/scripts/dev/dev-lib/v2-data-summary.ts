@@ -292,7 +292,6 @@ export type V2DataVolumeSectionName =
   | 'routes'
   | 'stops'
   | 'trip-patterns'
-  | 'directions'
   | 'i18n-coverage'
   | 'periods'
   | 'file-sizes'
@@ -1162,7 +1161,7 @@ function renderDirectionModeSubsection(mode: DirectionMode, rows: DirectionAnaly
   const modeRows = rows.filter((row) => row.mode === mode);
   const totalPatterns = modeRows.reduce((acc, row) => acc + row.count, 0);
   if (modeRows.length === 0) {
-    return [`### Mode: ${mode}`, '', 'sources=0, tripPatterns=0', '', '-'].join('\n');
+    return [`### Direction mode: ${mode}`, '', 'sources=0, tripPatterns=0', '', '-'].join('\n');
   }
   const tableRows: string[][] = modeRows.map((row) => [
     row.nameEn,
@@ -1172,7 +1171,7 @@ function renderDirectionModeSubsection(mode: DirectionMode, rows: DirectionAnaly
   ]);
   tableRows.push(['totals', '', String(totalPatterns), '-']);
   return [
-    `### Mode: ${mode}`,
+    `### Direction mode: ${mode}`,
     '',
     `sources=${modeRows.length}, tripPatterns=${totalPatterns}`,
     '',
@@ -1181,7 +1180,7 @@ function renderDirectionModeSubsection(mode: DirectionMode, rows: DirectionAnaly
 }
 
 /**
- * Render source-level direction_id completeness / mixture analysis.
+ * Render trip-pattern direction_id completeness / mixture subsections.
  *
  * Unlike `trip-patterns`, which reports pattern counts, this section
  * classifies the whole source by which `dir` states appear. That makes
@@ -1189,7 +1188,7 @@ function renderDirectionModeSubsection(mode: DirectionMode, rows: DirectionAnaly
  * have only 0/1 values, ODPT-like sources are `none-only`, and mixed
  * sources contain both explicit and omitted direction_id values.
  */
-function formatDirectionsSectionBody(results: V2DataVolumeStats[]): string {
+function formatTripPatternDirectionSubsections(results: V2DataVolumeStats[]): string {
   const modeCounts: Record<DirectionMode, number> = {
     '0-only': 0,
     '1-only': 0,
@@ -1256,12 +1255,12 @@ function formatDirectionsSectionBody(results: V2DataVolumeStats[]): string {
   ]);
 
   return [
-    '### Totals',
+    '### Direction analysis',
     '',
     `sources=${results.length}, completeSources=${completeSources}, noneOnlySources=${noneOnlySources}, mixedWithNoneSources=${mixedWithNoneSources}`,
     `sourceModes=${formatDirectionModeCounts(modeCounts)}`,
     '',
-    '### Summary',
+    '### Direction summary',
     '',
     renderTable(header, rows, header.length),
     '',
@@ -1278,11 +1277,12 @@ function formatDirectionsSectionBody(results: V2DataVolumeStats[]): string {
  * `TripPatternJson` carries little summarisable data — just the
  * direction_id split and the two headsign-level presence counts.
  * That is four data columns, which fits one table comfortably, so
- * the section stays flat (Totals → Summary) rather than adopting the
- * sub-section structure that pays off only for facet-rich sections
- * (routes, stops). The route / stop-sequence facets are left out:
- * distinct route count duplicates the routes section, and per-pattern
- * stop counts are distribution-style analysis (see `analyze-*`).
+ * the inventory table stays flat. Direction completeness is included
+ * as follow-up subsections because it is still a TripPatternJson facet,
+ * just easier to scan by source-level mode. The route / stop-sequence
+ * facets are left out: distinct route count duplicates the routes
+ * section, and per-pattern stop counts are distribution-style analysis
+ * (see `analyze-*`).
  */
 function formatTripPatternsSectionBody(results: V2DataVolumeStats[]): string {
   const totalPatterns = results.reduce((acc, r) => acc + r.tripPatterns.count, 0);
@@ -1333,6 +1333,8 @@ function formatTripPatternsSectionBody(results: V2DataVolumeStats[]): string {
     '',
     // directionCounts is a wide text column → all columns left-aligned.
     renderTable(header, rows, header.length),
+    '',
+    formatTripPatternDirectionSubsections(results),
   ].join('\n');
 }
 
@@ -1673,15 +1675,8 @@ export const V2_DATA_VOLUME_SECTIONS = {
     name: 'trip-patterns',
     title: 'DataBundle trip patterns (data.json)',
     description:
-      'Trip pattern inventory (Athenai abstraction: unique route + headsign + direction + stop-sequence combination). Single Summary table. `directionCounts` is the direction_id 0/1/none split (ODPT sources omit direction_id so they read as all-none); `withTripHeadsign` / `withStopHeadsign` count patterns carrying a trip-level (`h`) / stop-level (`stops[].sh`) headsign, revealing the source headsign convention.',
+      'Trip pattern inventory (Athenai abstraction: unique route + headsign + direction + stop-sequence combination). Summary table plus direction analysis subsections. `directionCounts` is the direction_id 0/1/none split (ODPT sources omit direction_id so they read as all-none); `withTripHeadsign` / `withStopHeadsign` count patterns carrying a trip-level (`h`) / stop-level (`stops[].sh`) headsign, revealing the source headsign convention.',
     render: formatTripPatternsSectionBody,
-  },
-  directions: {
-    name: 'directions',
-    title: 'DataBundle directions (data.json)',
-    description:
-      'Source-level direction_id completeness analysis based on TripPatternJson.dir. Classifies each source as 0-only / 1-only / none-only / 0+1 / mixed-with-none variants, then repeats the rows in per-mode sub-sections so omitted or partially omitted direction_id feeds are easy to scan.',
-    render: formatDirectionsSectionBody,
   },
   'i18n-coverage': {
     name: 'i18n-coverage',
@@ -1713,7 +1708,6 @@ export const V2_DATA_VOLUME_SECTION_NAMES: readonly V2DataVolumeSectionName[] = 
   'routes',
   'stops',
   'trip-patterns',
-  'directions',
   'i18n-coverage',
   // Composite sections within DataBundle (combine multiple keys) —
   // synthesis / interpretation comes last.
