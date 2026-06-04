@@ -240,6 +240,7 @@ export function StopBrowser({
           stopTimes={trimmedStopTimes}
           mapCenter={mapCenter}
           infoLevel={infoLevel}
+          size={headerSize}
           dataLangs={dataLangs}
           contentRef={contentRef}
           now={now}

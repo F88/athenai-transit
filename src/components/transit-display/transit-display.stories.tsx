@@ -165,12 +165,14 @@ const meta = {
     now: storyNow,
     mapCenter: storyMapCenter,
     infoLevel: 'normal' as const,
+    size: 'md' as const,
     onStopSelected: fn(),
     onInspectTrip: fn(),
   },
   argTypes: {
     display: { control: 'object' },
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
+    size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
   },
   // Mirror the parent TransitDisplays wrapper (px-4) so framing/spacing match production.
   decorators: [
@@ -204,6 +206,27 @@ export const TrainDeparture: Story = {
   args: {
     display: makeDisplay({ routeTypes: [2] }, trainRows),
   },
+};
+
+/** The same board rendered at every display size, smallest to largest. */
+export const SizeComparison: Story = {
+  render: (args) => (
+    <div className="space-y-2">
+      {(['xs', 'sm', 'md', 'lg', 'xl'] as const).map((size) => (
+        <TransitDisplay
+          key={size}
+          display={args.display}
+          emptyMessage={args.emptyMessage}
+          now={args.now}
+          mapCenter={args.mapCenter}
+          infoLevel={args.infoLevel}
+          size={size}
+          onStopSelected={args.onStopSelected}
+          onInspectTrip={args.onInspectTrip}
+        />
+      ))}
+    </div>
+  ),
 };
 
 // --- Edge cases ---

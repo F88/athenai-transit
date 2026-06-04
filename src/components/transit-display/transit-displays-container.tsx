@@ -9,6 +9,7 @@ import type { StopWithContext, TripInspectionTarget } from '@/types/app/transit-
 import { useScrollFades } from '@/hooks/use-scroll-fades';
 
 import { ScrollFadeEdge } from '@/components/shared/scroll-fade-edge';
+import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { TransitDisplays } from '@/components/transit-display/transit-displays';
 import {
   buildTransitDisplayDataSet,
@@ -23,6 +24,8 @@ export interface TransitDisplaysContainerProps {
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
+  /** Display size (drives row text size); resolved from container width like the header. */
+  size: ExtendedDisplaySize;
   dataLangs: readonly string[];
   contentRef: RefObject<HTMLDivElement | null>;
   /** Select the target stop (fired together with trip inspection on a time tap). */
@@ -36,6 +39,7 @@ export function TransitDisplaysContainer({
   now,
   mapCenter,
   infoLevel,
+  size,
   dataLangs,
   contentRef,
   onStopSelected,
@@ -80,6 +84,7 @@ export function TransitDisplaysContainer({
         now={now}
         mapCenter={mapCenter}
         infoLevel={infoLevel}
+        size={size}
         onStopSelected={onStopSelected}
         onInspectTrip={onInspectTrip}
       />

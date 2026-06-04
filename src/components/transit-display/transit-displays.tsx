@@ -6,6 +6,7 @@ import type { TripInspectionTarget } from '@/types/app/transit-composed';
 
 import { DistanceBadge } from '@/components/badge/distance-badge';
 import { TimetableEntryAttributesLabels } from '@/components/label/timetable-entry-attributes-labels';
+import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import {
   type TransitDisplayData,
   type TransitDisplayEntryData,
@@ -40,6 +41,7 @@ export interface TransitDisplaysProps {
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
+  size: ExtendedDisplaySize;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
@@ -51,6 +53,7 @@ export function TransitDisplays({
   now,
   mapCenter,
   infoLevel,
+  size,
   onStopSelected,
   onInspectTrip,
 }: TransitDisplaysProps) {
@@ -64,6 +67,7 @@ export function TransitDisplays({
           now={now}
           mapCenter={mapCenter}
           infoLevel={infoLevel}
+          size={size}
           onStopSelected={onStopSelected}
           onInspectTrip={onInspectTrip}
         />
@@ -78,6 +82,7 @@ export interface TransitDisplayProps {
   now: Date;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
+  size: ExtendedDisplaySize;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
@@ -100,6 +105,7 @@ export function TransitDisplay({
   emptyMessage,
   mapCenter,
   infoLevel,
+  size,
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayProps) {
@@ -162,6 +168,7 @@ export function TransitDisplay({
                 data={row}
                 mapCenter={mapCenter}
                 infoLevel={infoLevel}
+                size={size}
                 hasMultiRoutes={hasMultiRoutes}
                 onStopSelected={onStopSelected}
                 onInspectTrip={onInspectTrip}
@@ -181,6 +188,8 @@ interface TimeInfoProps {
   stopId: string;
   /** Target opened in trip inspection on tap. */
   inspectTarget: TripInspectionTarget;
+  /** Extra classes appended last; lets the caller override the default text size. */
+  className?: string;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
@@ -194,16 +203,21 @@ function TimeInfo({
   timeText,
   stopId,
   inspectTarget,
+  className,
   onStopSelected,
   onInspectTrip,
 }: TimeInfoProps) {
   // Fixed-width, right-aligned time column so single- and double-digit-hour
   // times ("9:30" / "14:30") align their colons and minutes across rows
   // (DotGothic16 is monospaced; tabular-nums keeps the digits uniform).
+  // `text-base` is the default size; `className` (appended last) can override it.
   return (
     <button
       type="button"
-      className="w-[6ch] cursor-pointer rounded-none py-0.5 text-right text-base font-bold tracking-[0.12em] text-amber-100 tabular-nums focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 focus-visible:outline-none"
+      className={cn(
+        'mr-2 w-[5ch] shrink-0 cursor-pointer rounded-none text-right font-bold tracking-[0.12em] text-amber-100 tabular-nums focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 focus-visible:outline-none',
+        className,
+      )}
       onClick={(e) => {
         e.stopPropagation();
         onStopSelected(stopId);
@@ -219,6 +233,8 @@ export interface TransitDisplayEntryProps {
   data: TransitDisplayEntryData;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
+  /** Display size; drives the row text size. */
+  size: ExtendedDisplaySize;
   /**
    * Whether the board mixes route types (its `meta.routeTypes.length >= 2`). When
    * true, each row shows its trip's route-type emoji so mixed types can be told
@@ -229,16 +245,56 @@ export interface TransitDisplayEntryProps {
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
+/** Row text size per display size; the larger the container, the larger the rows. */
+const ROW_TEXT_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
+  xs: 'text-[8px]',
+  sm: 'text-[10px]',
+  md: 'text-xs',
+  lg: 'text-lg',
+  xl: 'text-2xl',
+};
+
+const TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE: Record<
+  ExtendedDisplaySize,
+  ExtendedDisplaySize
+> = {
+  xs: 'xs',
+  sm: 'xs',
+  md: 'xs',
+  lg: 'sm',
+  xl: 'md',
+};
+
+const DISTANCE_BADGE_SIZE_BY_SIZE: Record<ExtendedDisplaySize, ExtendedDisplaySize> = {
+  xs: 'xs',
+  sm: 'xs',
+  md: 'xs',
+  lg: 'lg',
+  xl: 'xl',
+};
+
+/** Headsign column width per display size (fixed: max == min so the column is stable). */
+const HEADSIGN_WIDTH_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
+  xs: 'max-w-[10ch] min-w-[10ch]',
+  sm: 'max-w-[12ch] min-w-[12ch]',
+  md: 'max-w-[18ch] min-w-[18ch]',
+  lg: 'max-w-[32ch] min-w-[32ch]',
+  xl: 'max-w-[32ch] min-w-[32ch]',
+};
+
 /** A single departure-board row (one stop event). */
 export function TransitDisplayEntry({
   data,
   mapCenter,
   infoLevel,
+  size,
   hasMultiRoutes,
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayEntryProps) {
   const infoLevelFlag = useInfoLevel(infoLevel);
+
+  console.log({ size });
 
   // Distance is baked on the row (query-time); bearing is computed live from the
   // current map center so the direction arrow tracks panning, like StopInfo.
@@ -252,7 +308,8 @@ export function TransitDisplayEntry({
   return (
     <li
       className={cn(
-        'cursor-pointer border-b border-neutral-800 px-3 py-2 text-xs text-neutral-100 last:border-b-0 hover:bg-neutral-800/95',
+        'cursor-pointer border-b border-neutral-800 px-3 py-2 text-neutral-100 last:border-b-0 hover:bg-neutral-800/95',
+        ROW_TEXT_CLASS_BY_SIZE[size],
         BOARD_PANEL_BG,
       )}
       onClick={() => onStopSelected(data.stop.id)}
@@ -264,6 +321,7 @@ export function TransitDisplayEntry({
           timeText={data.timeText}
           stopId={data.stop.id}
           inspectTarget={data.inspectionTarget}
+          className={ROW_TEXT_CLASS_BY_SIZE[size]}
           onStopSelected={onStopSelected}
           onInspectTrip={onInspectTrip}
         />
@@ -273,23 +331,33 @@ export function TransitDisplayEntry({
           <span aria-hidden>{data.routeTypeEmoji}</span>
         )}
 
-        <span className="min-w-0 flex-1 truncate">{data.headsign || '-'}</span>
-
-        {/* Attribute labels (terminal / origin / no-pickup / no-drop-off). Shows the
+        {/* Headsign (destination) + attribute labels: headsign fills the column and
+            truncates, pushing the labels to the right edge. */}
+        <span className={cn('flex items-center gap-1', HEADSIGN_WIDTH_CLASS_BY_SIZE[size])}>
+          <span className="min-w-0 flex-1 truncate">{data.headsign || '-'}</span>
+          {/* Attribute labels (terminal / origin / no-pickup / no-drop-off). Shows the
             no-boarding marker so a service that cannot be boarded here is not silent. */}
-        <TimetableEntryAttributesLabels
-          attributes={data.attributes}
-          isDisplayTerminal
-          isDisplayOrigin
-          isDisplayPickupUnavailable
-          isDisplayDropOffUnavailable
-        />
+          <TimetableEntryAttributesLabels
+            size={TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE[size]}
+            attributes={data.attributes}
+            showDisplayTerminal={true}
+            showDisplayOrigin={true}
+            showDisplayPickupUnavailable={true}
+            showDisplayDropOffUnavailable={true}
+          />
+        </span>
+
+        {/* Route name */}
+        <span className="min-w-[6ch] flex-1 truncate text-left text-amber-100">
+          {data.routeName}
+        </span>
 
         {/* Operating agency + route name. */}
-        <span className="text-neutral-400">{data.agencyName}</span>
-        <span className="font-semibold text-amber-100">{data.routeName}</span>
-        {/* Stop: stop-level mode emojis + stop name + platform code. */}
+        <span className="min-w-[6ch] flex-1 truncate text-left text-neutral-400">
+          {data.agencyName}
+        </span>
 
+        {/* Stop: stop-level mode emojis + stop name + platform code. */}
         {showRouteTypeOfStop && (
           // Stop-level mode emojis
           <span aria-hidden>{data.stop.routeTypesEmoji}</span>
@@ -298,15 +366,20 @@ export function TransitDisplayEntry({
         {/* Stop info kept together as one group (stop name, platform code, and
             distance / direction) so the stop's details are not split across the row. */}
         <span className="flex min-w-0 flex-1 items-center gap-1">
-          <span className="min-w-0 truncate font-medium">{data.stop.name}</span>
+          <span className="min-w-0 truncate">{data.stop.name}</span>
           {data.stop.platformCode !== undefined && (
-            <span className="shrink-0 rounded-none border border-neutral-700 bg-neutral-800 px-1.5 text-[10px] tracking-[0.12em] text-amber-100">
+            <span className="shrink-0 bg-neutral-800 px-1 text-amber-100">
               {data.stop.platformCode}
             </span>
           )}
           {/* Distance + direction to the stop (same DistanceBadge as StopInfo). */}
-          {distanceRounded != null && distanceRounded >= 10 && (
-            <DistanceBadge meters={distanceRounded} bearingDeg={bearing} showDirection size="xs" />
+          {infoLevelFlag.isVerboseEnabled && distanceRounded != null && distanceRounded >= 10 && (
+            <DistanceBadge
+              meters={distanceRounded}
+              bearingDeg={bearing}
+              showDirection
+              size={DISTANCE_BADGE_SIZE_BY_SIZE[size]}
+            />
           )}
         </span>
       </div>

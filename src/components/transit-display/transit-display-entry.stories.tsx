@@ -8,7 +8,7 @@ import {
   storyMapCenter,
   storyServiceDate,
 } from '../../stories/fixtures';
-import type { AppRouteTypeValue } from '../../types/app/transit';
+import type { AppRouteTypeValue, TimetableEntryAttributes } from '../../types/app/transit';
 import type { StopWithContext } from '../../types/app/transit-composed';
 import { routeTypesEmoji } from '../../utils/route-type-emoji';
 import { TransitDisplayEntry } from './transit-displays';
@@ -31,6 +31,7 @@ interface MakeRowOverrides {
   departureMinutes?: number;
   arrivalMinutes?: number;
   serviceDate?: Date;
+  attributes?: TimetableEntryAttributes;
 }
 
 /** Build a minimal {@link StopWithContext} for the row's `stop.context`. */
@@ -73,13 +74,13 @@ function makeRow(overrides: MakeRowOverrides = {}): TransitDisplayEntryData {
     routeName: overrides.routeName ?? '都02',
     agencyName: overrides.agencyName ?? '都バス',
     headsign: overrides.headsign ?? '大塚駅前',
-    timeText: overrides.timeText ?? '14:30',
+    timeText: overrides.timeText ?? '9:30',
     isArrival: overrides.isArrival ?? false,
-    attributes: {
-      isTerminal: overrides.isArrival ?? false,
-      isOrigin: false,
-      isPickupUnavailable: overrides.isPickupUnavailable ?? false,
-      isDropOffUnavailable: false,
+    attributes: overrides.attributes ?? {
+      isTerminal: true,
+      isOrigin: true,
+      isPickupUnavailable: true,
+      isDropOffUnavailable: true,
     },
     arrivalMinutes: overrides.arrivalMinutes ?? departureMinutes,
     departureMinutes,
@@ -99,6 +100,7 @@ const meta = {
   args: {
     data: makeRow(),
     infoLevel: 'normal' as const,
+    size: 'md' as const,
     hasMultiRoutes: false,
     mapCenter: storyMapCenter,
     onStopSelected: fn(),
@@ -107,9 +109,10 @@ const meta = {
   argTypes: {
     data: { control: 'object' },
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
+    size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     hasMultiRoutes: { control: 'boolean' },
   },
-  // TransitDisplay renders an <li>; wrap in a <ul> mirroring the
+  // TransitDisplayEntry renders an <li>; wrap in a <ul> mirroring the
   // parent TransitDisplays list so layout and semantics match production.
   decorators: [
     (Story) => (
@@ -155,6 +158,61 @@ export const LongText: Story = {
 export const ShortHeadsign: Story = {
   args: {
     data: makeRow({ routeName: 'TX', headsign: 'X', timeText: '14:30' }),
+  },
+};
+
+// --- Variants ---
+
+const SIZE_COMPARISON_SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
+
+/** Long stop / route / headsign that overflow the board width so truncation shows. */
+const longTextRowOverrides = {
+  timeText: '14:30',
+  stopName: '東京都立産業技術研究センター前',
+  routeName: '北大01 (長い路線名)',
+  headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
+  attributes: {
+    isTerminal: true,
+    isOrigin: true,
+    isPickupUnavailable: true,
+    isDropOffUnavailable: true,
+  },
+} as const;
+
+/**
+ * The same row at every display size, smallest to largest. The short rows
+ * (which fit) are grouped first, then the long rows (which overflow), so each
+ * group's behavior is read together rather than interleaved: the long-row group
+ * shows how truncation looks at each size.
+ */
+export const SizeComparison: Story = {
+  render: (args) => {
+    const rows = [
+      ...SIZE_COMPARISON_SIZES.map((size) => ({
+        size,
+        data: makeRow({ key: `short-${size}` }),
+      })),
+      ...SIZE_COMPARISON_SIZES.map((size) => ({
+        size,
+        data: makeRow({ key: `long-${size}`, ...longTextRowOverrides }),
+      })),
+    ];
+    return (
+      <>
+        {rows.map(({ size, data }) => (
+          <TransitDisplayEntry
+            key={data.key}
+            data={data}
+            infoLevel={args.infoLevel}
+            size={size}
+            hasMultiRoutes={args.hasMultiRoutes}
+            mapCenter={args.mapCenter}
+            onStopSelected={args.onStopSelected}
+            onInspectTrip={args.onInspectTrip}
+          />
+        ))}
+      </>
+    );
   },
 };
 
@@ -218,6 +276,7 @@ export const KitchenSink: Story = {
           key={row.key}
           data={row}
           infoLevel={args.infoLevel}
+          size={args.size}
           hasMultiRoutes={args.hasMultiRoutes}
           mapCenter={args.mapCenter}
           onStopSelected={args.onStopSelected}
