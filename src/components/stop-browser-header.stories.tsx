@@ -2,7 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import { PERF_PROFILES } from '../config/perf-profiles';
 import { APP_ROUTE_TYPES } from '../config/route-types';
-import { DEFAULT_VIEW_ID, STOP_TIMES_VIEWS } from '../domain/transit/stop-time-views';
+import {
+  DEFAULT_VIEW_ID,
+  STOP_TIMES_VIEWS,
+  type StopTimeViewId,
+} from '../domain/transit/stop-time-views';
 import {
   agencyAt,
   agencyBlue,
@@ -25,7 +29,7 @@ import { StopBrowserHeader } from './stop-browser-header';
 // --- Shared defaults ---
 
 const defaultStopsRadius = PERF_PROFILES.normal.data.stops.nearbyRadius;
-const selectView = (id: string) => STOP_TIMES_VIEWS.find((v) => v.id === id);
+const selectView = (id: StopTimeViewId) => STOP_TIMES_VIEWS.find((v) => v.id === id);
 const defaultSelectedView = selectView(DEFAULT_VIEW_ID);
 const defaultCounts = { total: 12, nonEmpty: 7, originCount: 3, boardableCount: 5 };
 const defaultFilteredNearbyStopsCounts = {
@@ -311,7 +315,7 @@ export const InfoLevelVerbose: Story = {
 
 // --- Kitchen sink ---
 
-const kitchenSinkArgs = {
+const kitchenSinkArgs: Story['args'] = {
   hasNearbyLoaded: true,
   counts: { total: 42, nonEmpty: 28, originCount: 6, boardableCount: 15 },
   nearbyStopsCounts: { total: 42, nonEmpty: 28, originCount: 6, boardableCount: 15 },
@@ -319,7 +323,7 @@ const kitchenSinkArgs = {
   stopsRadius: defaultStopsRadius,
   dataLangs: ['ja'],
   omitEmptyStops: true,
-  viewId: 'route-headsign',
+  viewId: 'route-headsign' as const,
   selectedView: selectView('route-headsign'),
   presentRouteTypes: ALL_PRESENT_ROUTE_TYPES,
   hiddenRouteTypes: new Set<number>([4, 6]),

@@ -4,7 +4,7 @@ import type { StopTimeViewMeta } from '../types/app/transit-composed';
 import type { StopsCounts } from '../types/app/stop';
 import { DEFAULT_AGENCY_LANG } from '../config/transit-defaults';
 import { resolveAgencyColors } from '../domain/transit/color-resolver/agency-colors';
-import { STOP_TIMES_VIEWS } from '../domain/transit/stop-time-views';
+import { STOP_TIMES_VIEWS, type StopTimeViewId } from '../domain/transit/stop-time-views';
 import { getAgencyDisplayNames } from '../domain/transit/name-resolver/get-agency-display-name';
 import { cn } from '../lib/utils';
 import { createLogger } from '../lib/logger';
@@ -39,7 +39,7 @@ interface StopBrowserHeaderProps {
   isOmitEmptyStopsForced: boolean;
   showOriginOnly: boolean;
   showBoardableOnly: boolean;
-  viewId: string;
+  viewId: StopTimeViewId;
   selectedView: StopTimeViewMeta | undefined;
   infoLevel: InfoLevel;
   size: ExtendedDisplaySize;
@@ -50,7 +50,7 @@ interface StopBrowserHeaderProps {
   onToggleOmitEmptyStops: () => void;
   onToggleShowOriginOnly: () => void;
   onToggleShowBoardableOnly: () => void;
-  onViewChange: (viewId: string) => void;
+  onViewChange: (viewId: StopTimeViewId) => void;
   onToggleRouteType: (rt: number) => void;
   onToggleAgency: (agency: Agency) => void;
 }

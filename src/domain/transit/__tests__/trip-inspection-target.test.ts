@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildTripInspectionTarget,
   isSameTripInspectionTarget,
   resolveSelectedTripInspectionSnapshot,
   resolveSnapshotStopIndex,
@@ -501,5 +502,47 @@ describe('resolveTripInspectionDisplayState', () => {
         makeTarget(),
       ),
     ).toEqual({ ok: false, reason: 'target-not-found' });
+  });
+});
+
+describe('buildTripInspectionTarget', () => {
+  it('projects the identity fields from the entry and the given service date', () => {
+    const serviceDate = new Date(2026, 5, 3);
+    const entry = {
+      ...makeStopTime(6, 905).timetableEntry,
+      tripLocator: makeLocator({
+        patternId: 'route-007__Shinjuku',
+        serviceId: 'weekday',
+        tripIndex: 4,
+      }),
+    };
+
+    expect(buildTripInspectionTarget(entry, serviceDate)).toEqual({
+      serviceDate,
+      tripLocator: { patternId: 'route-007__Shinjuku', serviceId: 'weekday', tripIndex: 4 },
+      stopIndex: 6,
+      departureMinutes: 905,
+    });
+  });
+
+  it('uses departureMinutes (not arrivalMinutes) for departureMinutes', () => {
+    const entry = makeStopTime(3, 905, 903).timetableEntry;
+
+    expect(buildTripInspectionTarget(entry, new Date(2026, 5, 3)).departureMinutes).toBe(905);
+  });
+
+  it('reuses the supplied serviceDate and the entry tripLocator references', () => {
+    const entry = makeStopTime(3, 600).timetableEntry;
+    const serviceDate = new Date(2026, 5, 3);
+    const target = buildTripInspectionTarget(entry, serviceDate);
+
+    expect(target.tripLocator).toBe(entry.tripLocator);
+    expect(target.serviceDate).toBe(serviceDate);
+  });
+
+  it('preserves an origin stop event at stopIndex 0', () => {
+    const entry = makeStopTime(0, 600).timetableEntry;
+
+    expect(buildTripInspectionTarget(entry, new Date(2026, 5, 3)).stopIndex).toBe(0);
   });
 });

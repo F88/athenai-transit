@@ -69,6 +69,11 @@
       "label": "終点の賑わい",
       "title": "終点の賑わい度順",
       "description": "終点の賑わい度で表示します"
+    },
+    "transitDisplay": {
+      "label": "発着案内",
+      "title": "発着案内",
+      "description": "近くの複数のりばの便を時系列で表示します"
     }
   },
   "history": {
@@ -138,6 +143,12 @@
     "departingAbsolute": "発",
     "terminal": "終点",
     "noBoarding": "乗車不可"
+  },
+  "transitDisplay": {
+    "recentCount": "直近 {{count}} 件 ({{radius}}m)",
+    "entryCount": "{{count}} 件 ({{radius}}m)",
+    "departures": "出発 Departures",
+    "arrivals": "到着 Arrivals"
   },
   "showTimetable": "時刻表を表示",
   "timetable": {

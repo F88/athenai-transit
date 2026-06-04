@@ -6,6 +6,7 @@ import { getEffectiveHeadsign } from '../domain/transit/get-effective-headsign';
 import { formatAbsoluteTime } from '../domain/transit/time';
 import { getTimetableEntryAttributes } from '../domain/transit/timetable-entry-attributes';
 import { getDisplayMinutes } from '../domain/transit/timetable-utils';
+import { buildTripInspectionTarget } from '../domain/transit/trip-inspection-target';
 import type { InfoLevel } from '../types/app/settings';
 import type { Agency } from '../types/app/transit';
 import type { ContextualTimetableEntry, TripInspectionTarget } from '../types/app/transit-composed';
@@ -130,13 +131,15 @@ export function StopTimesItem({
                 <TimetableEntryAttributesLabels
                   attributes={getTimetableEntryAttributes(entry)}
                   size="xs"
-                  isDisplayTerminal
-                  isDisplayOrigin
-                  isDisplayPickupUnavailable
-                  isDisplayDropOffUnavailable
+                  showDisplayTerminal
+                  showDisplayOrigin
+                  showDisplayPickupUnavailable
+                  showDisplayDropOffUnavailable
                 />
               </>
             );
+
+            const tripInspectionTarget = buildTripInspectionTarget(entry, entry.serviceDate);
 
             return onInspectTrip ? (
               <button
@@ -145,12 +148,7 @@ export function StopTimesItem({
                 className="text-muted-foreground inline-flex cursor-pointer items-center gap-0.5 rounded-sm text-sm font-bold whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onInspectTrip({
-                    serviceDate: entry.serviceDate,
-                    tripLocator: entry.tripLocator,
-                    stopIndex: entry.patternPosition.stopIndex,
-                    departureMinutes: entry.schedule.departureMinutes,
-                  });
+                  onInspectTrip(tripInspectionTarget);
                 }}
               >
                 {content}

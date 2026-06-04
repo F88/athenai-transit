@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import type { StopTimeViewId } from '../domain/transit/stop-time-views';
 import { useScrollFades } from '../hooks/use-scroll-fades';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
@@ -27,7 +28,7 @@ interface StopGridProps {
   infoLevel: InfoLevel;
   /** Display language chain for translated GTFS/ODPT data names. */
   dataLangs: readonly string[];
-  viewId: string;
+  viewId: StopTimeViewId;
   contentRef: RefObject<HTMLDivElement | null>;
   /** Set of stop IDs currently in the anchor list. */
   anchorIds: Set<string>;

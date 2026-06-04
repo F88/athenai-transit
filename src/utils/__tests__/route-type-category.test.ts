@@ -10,8 +10,8 @@ describe('ROUTE_TYPE_CATEGORY_GROUPS', () => {
   it('defines expected route type groups including unknown (-1)', () => {
     expect(ROUTE_TYPE_CATEGORY_GROUPS).toEqual({
       bus: [3, 11],
-      subway: [1],
       train: [0, 2, 12],
+      subway: [1],
       others: [-1, 4, 5, 6, 7],
     });
   });

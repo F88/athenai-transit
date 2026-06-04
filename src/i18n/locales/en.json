@@ -69,6 +69,11 @@
       "label": "Terminal",
       "title": "By terminal activity",
       "description": "Sort by terminal stop activity"
+    },
+    "transitDisplay": {
+      "label": "Transit display",
+      "title": "Transit display",
+      "description": "Show nearby departures and arrivals in chronological order"
     }
   },
   "history": {
@@ -138,6 +143,12 @@
     "departingAbsolute": "Dep",
     "terminal": "Terminal",
     "noBoarding": "No boarding"
+  },
+  "transitDisplay": {
+    "recentCount": "Latest {{count}} ({{radius}}m)",
+    "entryCount": "{{count}} ({{radius}}m)",
+    "departures": "DEPARTURES",
+    "arrivals": "ARRIVALS"
   },
   "showTimetable": "Show timetable",
   "timetable": {
