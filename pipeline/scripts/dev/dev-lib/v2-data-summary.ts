@@ -292,6 +292,7 @@ export type V2DataVolumeSectionName =
   | 'routes'
   | 'stops'
   | 'trip-patterns'
+  | 'directions'
   | 'i18n-coverage'
   | 'periods'
   | 'file-sizes'
@@ -1087,6 +1088,190 @@ function formatDirectionCounts(s: TripPatternsSummary): string {
   return `0:${s.direction0Count}, 1:${s.direction1Count}, none:${s.directionNoneCount}`;
 }
 
+type DirectionMode =
+  | 'no-patterns'
+  | '0-only'
+  | '1-only'
+  | 'none-only'
+  | '0+1'
+  | '0+none'
+  | '1+none'
+  | '0+1+none';
+
+const DIRECTION_MODE_ORDER: readonly DirectionMode[] = [
+  '0-only',
+  '1-only',
+  'none-only',
+  '0+1',
+  '0+none',
+  '1+none',
+  '0+1+none',
+  'no-patterns',
+];
+
+function classifyDirectionMode(summary: TripPatternsSummary): DirectionMode {
+  const has0 = summary.direction0Count > 0;
+  const has1 = summary.direction1Count > 0;
+  const hasNone = summary.directionNoneCount > 0;
+  if (!has0 && !has1 && !hasNone) {
+    return 'no-patterns';
+  }
+  if (has0 && !has1 && !hasNone) {
+    return '0-only';
+  }
+  if (!has0 && has1 && !hasNone) {
+    return '1-only';
+  }
+  if (!has0 && !has1 && hasNone) {
+    return 'none-only';
+  }
+  if (has0 && has1 && !hasNone) {
+    return '0+1';
+  }
+  if (has0 && !has1 && hasNone) {
+    return '0+none';
+  }
+  if (!has0 && has1 && hasNone) {
+    return '1+none';
+  }
+  return '0+1+none';
+}
+
+function formatDirectionModeCounts(counts: Record<DirectionMode, number>): string {
+  return DIRECTION_MODE_ORDER.map((mode) => `${mode}:${counts[mode]}`).join(', ');
+}
+
+function isDirectionCompleteMode(mode: DirectionMode): boolean {
+  return mode === '0-only' || mode === '1-only' || mode === '0+1';
+}
+
+function isDirectionMixedWithNoneMode(mode: DirectionMode): boolean {
+  return mode === '0+none' || mode === '1+none' || mode === '0+1+none';
+}
+
+interface DirectionAnalysisRow {
+  nameEn: string;
+  prefix: string;
+  mode: DirectionMode;
+  count: number;
+  directionCounts: string;
+}
+
+function renderDirectionModeSubsection(mode: DirectionMode, rows: DirectionAnalysisRow[]): string {
+  const header = ['source', 'prefix', 'count', 'directionCounts'];
+  const modeRows = rows.filter((row) => row.mode === mode);
+  const totalPatterns = modeRows.reduce((acc, row) => acc + row.count, 0);
+  if (modeRows.length === 0) {
+    return [`### Mode: ${mode}`, '', 'sources=0, tripPatterns=0', '', '-'].join('\n');
+  }
+  const tableRows: string[][] = modeRows.map((row) => [
+    row.nameEn,
+    row.prefix,
+    String(row.count),
+    row.directionCounts,
+  ]);
+  tableRows.push(['totals', '', String(totalPatterns), '-']);
+  return [
+    `### Mode: ${mode}`,
+    '',
+    `sources=${modeRows.length}, tripPatterns=${totalPatterns}`,
+    '',
+    renderTable(header, tableRows, header.length),
+  ].join('\n');
+}
+
+/**
+ * Render source-level direction_id completeness / mixture analysis.
+ *
+ * Unlike `trip-patterns`, which reports pattern counts, this section
+ * classifies the whole source by which `dir` states appear. That makes
+ * incomplete direction modeling visible at a glance: complete sources
+ * have only 0/1 values, ODPT-like sources are `none-only`, and mixed
+ * sources contain both explicit and omitted direction_id values.
+ */
+function formatDirectionsSectionBody(results: V2DataVolumeStats[]): string {
+  const modeCounts: Record<DirectionMode, number> = {
+    '0-only': 0,
+    '1-only': 0,
+    'none-only': 0,
+    '0+1': 0,
+    '0+none': 0,
+    '1+none': 0,
+    '0+1+none': 0,
+    'no-patterns': 0,
+  };
+  let completeSources = 0;
+  let noneOnlySources = 0;
+  let mixedWithNoneSources = 0;
+
+  const header = ['source', 'prefix', 'mode', 'count', 'directionCounts'];
+  const analysisRows: DirectionAnalysisRow[] = results.map((result) => {
+    const mode = classifyDirectionMode(result.tripPatterns);
+    modeCounts[mode] += 1;
+    if (isDirectionCompleteMode(mode)) {
+      completeSources += 1;
+    }
+    if (mode === 'none-only') {
+      noneOnlySources += 1;
+    }
+    if (isDirectionMixedWithNoneMode(mode)) {
+      mixedWithNoneSources += 1;
+    }
+    return {
+      nameEn: result.nameEn,
+      prefix: result.prefix,
+      mode,
+      count: result.tripPatterns.count,
+      directionCounts: formatDirectionCounts(result.tripPatterns),
+    };
+  });
+  const rows: string[][] = analysisRows.map((row) => [
+    row.nameEn,
+    row.prefix,
+    row.mode,
+    String(row.count),
+    row.directionCounts,
+  ]);
+
+  const totalPatterns = results.reduce((acc, result) => acc + result.tripPatterns.count, 0);
+  const totalDirection0 = results.reduce(
+    (acc, result) => acc + result.tripPatterns.direction0Count,
+    0,
+  );
+  const totalDirection1 = results.reduce(
+    (acc, result) => acc + result.tripPatterns.direction1Count,
+    0,
+  );
+  const totalDirectionNone = results.reduce(
+    (acc, result) => acc + result.tripPatterns.directionNoneCount,
+    0,
+  );
+  const totalsDirectionCounts = `0:${totalDirection0}, 1:${totalDirection1}, none:${totalDirectionNone}`;
+  rows.push([
+    'totals',
+    '',
+    formatDirectionModeCounts(modeCounts),
+    String(totalPatterns),
+    totalsDirectionCounts,
+  ]);
+
+  return [
+    '### Totals',
+    '',
+    `sources=${results.length}, completeSources=${completeSources}, noneOnlySources=${noneOnlySources}, mixedWithNoneSources=${mixedWithNoneSources}`,
+    `sourceModes=${formatDirectionModeCounts(modeCounts)}`,
+    '',
+    '### Summary',
+    '',
+    renderTable(header, rows, header.length),
+    '',
+    ...DIRECTION_MODE_ORDER.flatMap((mode) => [
+      renderDirectionModeSubsection(mode, analysisRows),
+      '',
+    ]).slice(0, -1),
+  ].join('\n');
+}
+
 /**
  * Render the `trip-patterns` section as a single Summary table.
  *
@@ -1491,6 +1676,13 @@ export const V2_DATA_VOLUME_SECTIONS = {
       'Trip pattern inventory (Athenai abstraction: unique route + headsign + direction + stop-sequence combination). Single Summary table. `directionCounts` is the direction_id 0/1/none split (ODPT sources omit direction_id so they read as all-none); `withTripHeadsign` / `withStopHeadsign` count patterns carrying a trip-level (`h`) / stop-level (`stops[].sh`) headsign, revealing the source headsign convention.',
     render: formatTripPatternsSectionBody,
   },
+  directions: {
+    name: 'directions',
+    title: 'DataBundle directions (data.json)',
+    description:
+      'Source-level direction_id completeness analysis based on TripPatternJson.dir. Classifies each source as 0-only / 1-only / none-only / 0+1 / mixed-with-none variants, then repeats the rows in per-mode sub-sections so omitted or partially omitted direction_id feeds are easy to scan.',
+    render: formatDirectionsSectionBody,
+  },
   'i18n-coverage': {
     name: 'i18n-coverage',
     title: 'DataBundle i18n-coverage (data.json)',
@@ -1521,6 +1713,7 @@ export const V2_DATA_VOLUME_SECTION_NAMES: readonly V2DataVolumeSectionName[] = 
   'routes',
   'stops',
   'trip-patterns',
+  'directions',
   'i18n-coverage',
   // Composite sections within DataBundle (combine multiple keys) —
   // synthesis / interpretation comes last.
