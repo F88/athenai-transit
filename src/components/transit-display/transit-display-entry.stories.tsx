@@ -99,6 +99,7 @@ const meta = {
   args: {
     data: makeRow(),
     infoLevel: 'normal' as const,
+    hasMultiRoutes: false,
     mapCenter: storyMapCenter,
     onStopSelected: fn(),
     onInspectTrip: fn(),
@@ -106,6 +107,7 @@ const meta = {
   argTypes: {
     data: { control: 'object' },
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
+    hasMultiRoutes: { control: 'boolean' },
   },
   // TransitDisplay renders an <li>; wrap in a <ul> mirroring the
   // parent TransitDisplays list so layout and semantics match production.
@@ -216,6 +218,7 @@ export const KitchenSink: Story = {
           key={row.key}
           data={row}
           infoLevel={args.infoLevel}
+          hasMultiRoutes={args.hasMultiRoutes}
           mapCenter={args.mapCenter}
           onStopSelected={args.onStopSelected}
           onInspectTrip={args.onInspectTrip}

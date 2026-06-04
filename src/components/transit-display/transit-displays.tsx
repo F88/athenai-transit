@@ -111,6 +111,8 @@ export function TransitDisplay({
   const isArrivalBoard = display.meta.category === 'arrivals';
   const routeTypeIcon = routeTypesEmoji(display.meta.routeTypes);
   const title = t(isArrivalBoard ? 'transitDisplay.arrivals' : 'transitDisplay.departures');
+  // A board that mixes route types: rows then show their own trip route-type emoji.
+  const hasMultiRoutes = display.meta.routeTypes.length >= 2;
   return (
     // Each board is framed like a classic airport signage panel: a thick,
     // square (no rounded corners) border makes the boundary between stacked
@@ -160,6 +162,7 @@ export function TransitDisplay({
                 data={row}
                 mapCenter={mapCenter}
                 infoLevel={infoLevel}
+                hasMultiRoutes={hasMultiRoutes}
                 onStopSelected={onStopSelected}
                 onInspectTrip={onInspectTrip}
               />
@@ -216,6 +219,12 @@ export interface TransitDisplayEntryProps {
   data: TransitDisplayEntryData;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
+  /**
+   * Whether the board mixes route types (its `meta.routeTypes.length >= 2`). When
+   * true, each row shows its trip's route-type emoji so mixed types can be told
+   * apart; a single-type board does not need it.
+   */
+  hasMultiRoutes: boolean;
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
@@ -225,6 +234,7 @@ export function TransitDisplayEntry({
   data,
   mapCenter,
   infoLevel,
+  hasMultiRoutes,
   onStopSelected,
   onInspectTrip,
 }: TransitDisplayEntryProps) {
@@ -234,6 +244,11 @@ export function TransitDisplayEntry({
   // current map center so the direction arrow tracks panning, like StopInfo.
   const distanceRounded = data.stop.distance != null ? Math.round(data.stop.distance) : null;
   const bearing = mapCenter ? getBearingDeg(mapCenter, data.stop.context.stop) : null;
+
+  const showRouteTypeOfEntry = infoLevelFlag.isVerboseEnabled || hasMultiRoutes;
+  // const showRouteTypeOfStop = infoLevelFlag.isVerboseEnabled || data.stop.context.routeTypes.length >= 2;
+  const showRouteTypeOfStop = infoLevelFlag.isVerboseEnabled;
+
   return (
     <li
       className={cn(
@@ -253,7 +268,7 @@ export function TransitDisplayEntry({
           onInspectTrip={onInspectTrip}
         />
 
-        {infoLevelFlag.isVerboseEnabled && (
+        {showRouteTypeOfEntry && (
           // Route type emoji for the trip
           <span aria-hidden>{data.routeTypeEmoji}</span>
         )}
@@ -275,7 +290,7 @@ export function TransitDisplayEntry({
         <span className="font-semibold text-amber-100">{data.routeName}</span>
         {/* Stop: stop-level mode emojis + stop name + platform code. */}
 
-        {infoLevelFlag.isVerboseEnabled && (
+        {showRouteTypeOfStop && (
           // Stop-level mode emojis
           <span aria-hidden>{data.stop.routeTypesEmoji}</span>
         )}

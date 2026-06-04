@@ -334,7 +334,7 @@ export interface TransitDisplayBoard {
 }
 
 /** A cluster of candidates for one board's route-type scope, before the category split. */
-interface RouteTypeCluster {
+export interface RouteTypeCluster {
   routeTypes: readonly AppRouteTypeValue[];
   candidates: TransitDisplayCandidate[];
 }
@@ -351,14 +351,15 @@ function presentRouteTypesInDisplayOrder(
  * 2.1 Route-type clustering, per the grouping strategy:
  * - `route`: one cluster per route type (in `ROUTE_TYPE_DISPLAY_ORDER`)
  * - `none`: a single cluster of all candidates (its `routeTypes` are the present types)
- * - `custom`: one cluster per caller-supplied group, in the given order. Groups
- *   may overlap -- each cluster independently keeps the candidates whose route
- *   type is in its group, so a route type listed in two groups appears on both
- *   boards.
+ * - `custom`: one cluster per caller-supplied group, in the given order. Each
+ *   board's `routeTypes` keep the group's order (present types only), not the
+ *   display order, so the caller controls the emoji order. Groups may overlap --
+ *   each cluster independently keeps the candidates whose route type is in its
+ *   group, so a route type listed in two groups appears on both boards.
  *
  * Clustering is lossy, so the caller chooses the strategy via the condition.
  */
-function clusterCandidatesByRouteType(
+export function clusterCandidatesByRouteType(
   candidates: readonly TransitDisplayCandidate[],
   grouping: TransitDisplayRouteGrouping,
 ): RouteTypeCluster[] {
@@ -372,11 +373,13 @@ function clusterCandidatesByRouteType(
   if (grouping.kind === 'none') {
     return [{ routeTypes: presentTypes, candidates: [...candidates] }];
   }
-  // 'custom': one cluster per group (groups may overlap).
+  // 'custom': one cluster per group (groups may overlap). Keep each group's own
+  // order for routeTypes (present types only), so the caller's order is honored.
+  const presentSet = new Set<number>(presentTypes);
   return grouping.groups.map((group) => {
     const groupSet = new Set<number>(group);
     return {
-      routeTypes: presentTypes.filter((routeType) => groupSet.has(routeType)),
+      routeTypes: group.filter((routeType) => presentSet.has(routeType)),
       candidates: candidates.filter((c) => groupSet.has(c.entry.routeDirection.route.route_type)),
     };
   });
