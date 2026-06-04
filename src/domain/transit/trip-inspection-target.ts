@@ -50,7 +50,7 @@ export type ResolveTripInspectionDisplayStateResult =
  * Centralises the `(serviceDate, tripLocator, stopIndex, departureMinutes)`
  * projection so every caller assembles the target identically. `serviceDate`
  * is passed explicitly rather than read from the entry because not every
- * caller holds a {@link ContextualTimetableEntry} -- timetable grids render
+ * caller holds a {@link import('../../types/app/transit-composed').ContextualTimetableEntry} -- timetable grids render
  * plain {@link TimetableEntry} rows whose service date is supplied separately.
  *
  * @param entry - The timetable entry for the stop event.
