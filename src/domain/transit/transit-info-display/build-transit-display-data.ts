@@ -283,14 +283,17 @@ export function buildTransitDisplayEntryData(
     // Include the service date: TripLocator is per-service (not per-day), so the
     // same (patternId, serviceId, tripIndex, stopIndex) can recur on different
     // service dates within one board, which would collide as a React key.
-    const key = [
+    // JSON.stringify (not a delimiter join) keeps the parts unambiguous: a
+    // patternId already embeds "__" (`${route_id}__${headsign}`), so a literal
+    // separator could let different tuples stringify to the same key.
+    const key = JSON.stringify([
       stopWithContext.stop.stop_id,
       formatDateKey(entry.serviceDate),
       entry.tripLocator.patternId,
       entry.tripLocator.serviceId,
       entry.tripLocator.tripIndex,
       entry.patternPosition.stopIndex,
-    ].join('__');
+    ]);
     const tripInspectionTarget = buildTripInspectionTarget(entry, entry.serviceDate);
     return {
       key,

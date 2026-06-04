@@ -59,11 +59,13 @@ export function TransitDisplays({
 }: TransitDisplaysProps) {
   return (
     <div className="font-dotgothic16 px-4 pb-0">
-      {displays.map((display) => (
-        // Stable key from the board's identity (category + its route types) so
-        // reordering the boards does not reuse the wrong board, unlike an index.
+      {displays.map((display, index) => (
+        // Key from the board's identity (category + its route types), with the
+        // map index as a disambiguator: a `custom` route grouping can collapse
+        // two groups to the same present route types, so identity alone is not
+        // guaranteed unique.
         <TransitDisplay
-          key={`${display.meta.category}__${display.meta.routeTypes.join('-')}`}
+          key={`${display.meta.category}__${display.meta.routeTypes.join('-')}__${index}`}
           display={display}
           emptyMessage={emptyMessage}
           now={now}
@@ -306,7 +308,11 @@ export function TransitDisplayEntry({
   const showRouteTypeOfStop = infoLevelFlag.isVerboseEnabled;
 
   return (
+    // `data-stop-id` lets the stop browser's scroll-to-selected effect find this
+    // row (it queries `[data-stop-id=...]`); without it, selecting a stop in this
+    // view fails the lookup and resets the scroll to the top.
     <li
+      data-stop-id={data.stop.id}
       className={cn(
         'cursor-pointer border-b border-neutral-800 px-3 py-2 text-neutral-100 last:border-b-0 hover:bg-neutral-800/95',
         ROW_TEXT_CLASS_BY_SIZE[size],
