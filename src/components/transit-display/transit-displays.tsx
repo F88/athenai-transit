@@ -558,8 +558,8 @@ export function TransitDisplayEntry({
             attributes={data.attributes}
             showDisplayTerminal={true}
             showDisplayOrigin={true}
-            showDisplayPickupUnavailable={true}
-            showDisplayDropOffUnavailable={true}
+            showDisplayPickupUnavailable={infoLevelFlag.isVerboseEnabled ? true : false}
+            showDisplayDropOffUnavailable={infoLevelFlag.isVerboseEnabled ? true : false}
           />
         </span>
 
