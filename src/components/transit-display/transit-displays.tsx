@@ -121,9 +121,9 @@ export interface TransitDisplaysProps {
 const FILTERABLE_CATEGORIES: readonly TransitDisplayCategory[] = ['departures', 'arrivals'];
 
 /** All categories shown by default (no board hidden until the user toggles one off). */
-const ALL_CATEGORIES_SHOWN: Record<TransitDisplayCategory, boolean> = {
+const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
   departures: true,
-  arrivals: true,
+  arrivals: false,
 };
 
 /**
@@ -143,7 +143,7 @@ export function TransitDisplays({
   onInspectTrip,
 }: TransitDisplaysProps) {
   const [shownCategories, setShownCategories] =
-    useState<Record<TransitDisplayCategory, boolean>>(ALL_CATEGORIES_SHOWN);
+    useState<Record<TransitDisplayCategory, boolean>>(DEFAULT_CATEGORIES);
 
   // Only offer toggles for categories that actually have a board, so the bar
   // mirrors what is on screen rather than always showing both.
@@ -266,7 +266,7 @@ function TransitDisplayCategoryFilter({
               TITLE_TEXT_CLASS_BY_SIZE[size],
               isShown
                 ? 'border-amber-300/70 bg-neutral-800 text-amber-100 hover:bg-neutral-700 hover:text-amber-100 dark:hover:bg-neutral-700'
-                : 'border-neutral-700 bg-neutral-900 text-amber-100/30 hover:bg-neutral-800 hover:text-amber-100/60 dark:hover:bg-neutral-800',
+                : 'border-neutral-700 bg-neutral-900 text-neutral-600 hover:bg-neutral-800 hover:text-neutral-400 dark:hover:bg-neutral-800',
             )}
           >
             {isArrival ? (
