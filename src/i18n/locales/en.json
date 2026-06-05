@@ -73,7 +73,12 @@
     "transitDisplay": {
       "label": "Transit display",
       "title": "Transit display",
-      "description": "Show nearby departures and arrivals in chronological order"
+      "description": "Show nearby departures and arrivals"
+    },
+    "transitDisplay2": {
+      "label": "Transit display",
+      "title": "Transit display",
+      "description": "Show nearby departures and arrivals"
     }
   },
   "history": {

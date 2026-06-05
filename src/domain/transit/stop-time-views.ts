@@ -45,12 +45,12 @@ export const STOP_TIMES_VIEWS = [
     visible: true,
   },
   /**
-   * Transit display view.
+   * Transit display view -- classic design.
    *
    * Display unit: multiple stops.
    *
-   * Shows service events in timeline order across a nearby stop cluster,
-   * similar to a public transit information display.
+   * The classic split-flap signage board: shows service events in timeline order
+   * across a nearby stop cluster, similar to a public transit information display.
    * Approximates a shared display by grouping stops within a nearby radius.
    */
   {
@@ -59,6 +59,24 @@ export const STOP_TIMES_VIEWS = [
     labelKey: 'view.transitDisplay.label',
     titleKey: 'view.transitDisplay.title',
     descriptionKey: 'view.transitDisplay.description',
+    enabled: true,
+    visible: true,
+  },
+  /**
+   * Transit display view -- modern design.
+   *
+   * Display unit: multiple stops.
+   *
+   * A modern take on the transit display, built on Athenai Transit's own base
+   * design language rather than the classic split-flap board (`transit-display`).
+   * Same nearby-cluster, timeline-ordered concept; different presentation.
+   */
+  {
+    id: 'transit-display-2',
+    icon: '🖥️',
+    labelKey: 'view.transitDisplay2.label',
+    titleKey: 'view.transitDisplay2.title',
+    descriptionKey: 'view.transitDisplay2.description',
     enabled: true,
     visible: true,
   },
