@@ -23,6 +23,8 @@ export function MapBottomSheetLayout({
   globalFilter,
   nearbyStopsCounts,
   filteredNearbyStopsCounts,
+  stopBrowserState,
+  onStopBrowserStateChange,
 }: LayoutProps) {
   const setMapSlot = useSetMapSlotElement();
   return (
@@ -37,6 +39,8 @@ export function MapBottomSheetLayout({
         globalFilter={globalFilter}
         nearbyStopsCounts={nearbyStopsCounts}
         filteredNearbyStopsCounts={filteredNearbyStopsCounts}
+        stopBrowserState={stopBrowserState}
+        onStopBrowserStateChange={onStopBrowserStateChange}
       />
     </>
   );

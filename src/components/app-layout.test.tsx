@@ -2,6 +2,13 @@ import { render } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppLayout } from './app-layout';
 import type { LayoutProps } from './layout-props';
+import { DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
+
+/**
+ * Props App passes to AppLayout: every {@link LayoutProps} field except the
+ * shared StopBrowser state, which AppLayout owns and injects itself.
+ */
+type AppLayoutInputProps = Omit<LayoutProps, 'stopBrowserState' | 'onStopBrowserStateChange'>;
 
 const { mockUseLayoutMode, mockMapBottomSheetLayout, mockMultiPaneLayout } = vi.hoisted(() => ({
   mockUseLayoutMode: vi.fn(),
@@ -33,7 +40,7 @@ vi.mock('./multi-pane-layout', () => ({
  * Distinct sentinel values per field so a forwarding regression — a
  * dropped, renamed, or swapped prop — fails the prop-equality assertion.
  */
-function makeLayoutProps(): LayoutProps {
+function makeLayoutProps(): AppLayoutInputProps {
   return {
     bottomSheetProps: {
       sentinel: 'bottomSheetProps',
@@ -48,7 +55,20 @@ function makeLayoutProps(): LayoutProps {
   };
 }
 
-function renderAppLayout(props: LayoutProps) {
+/**
+ * The shared StopBrowser state AppLayout injects: the initial value from its
+ * own `useState`, plus the updater (asserted as any function).
+ */
+const expectedInjectedStopBrowserState = {
+  stopBrowserState: {
+    viewId: DEFAULT_VIEW_ID,
+    hiddenRouteTypes: new Set(),
+    hiddenAgencyIds: new Set(),
+  },
+  onStopBrowserStateChange: expect.any(Function),
+};
+
+function renderAppLayout(props: AppLayoutInputProps) {
   render(
     <AppLayout
       bottomSheetProps={props.bottomSheetProps}
@@ -80,17 +100,23 @@ describe('AppLayout', () => {
     expect(mockMapBottomSheetLayout).not.toHaveBeenCalled();
   });
 
-  it('forwards every LayoutProps field to MapBottomSheetLayout in simple mode', () => {
+  it('forwards received props and injects shared StopBrowser state to MapBottomSheetLayout in simple mode', () => {
     mockUseLayoutMode.mockReturnValue('simple');
     const props = makeLayoutProps();
     renderAppLayout(props);
-    expect(mockMapBottomSheetLayout.mock.lastCall?.[0]).toEqual(props);
+    expect(mockMapBottomSheetLayout.mock.lastCall?.[0]).toEqual({
+      ...props,
+      ...expectedInjectedStopBrowserState,
+    });
   });
 
-  it('forwards every LayoutProps field to MultiPaneLayout in multi-pane mode', () => {
+  it('forwards received props and injects shared StopBrowser state to MultiPaneLayout in multi-pane mode', () => {
     mockUseLayoutMode.mockReturnValue('multi-pane');
     const props = makeLayoutProps();
     renderAppLayout(props);
-    expect(mockMultiPaneLayout.mock.lastCall?.[0]).toEqual(props);
+    expect(mockMultiPaneLayout.mock.lastCall?.[0]).toEqual({
+      ...props,
+      ...expectedInjectedStopBrowserState,
+    });
   });
 });

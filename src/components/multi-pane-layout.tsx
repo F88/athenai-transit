@@ -43,6 +43,8 @@ export function MultiPaneLayout({
   globalFilter,
   nearbyStopsCounts,
   filteredNearbyStopsCounts,
+  stopBrowserState,
+  onStopBrowserStateChange,
 }: LayoutProps) {
   const orientation = useMultiPaneOrientation();
   const mapPaneSize = MULTI_PANE_MAP_PANE_SIZE[orientation];
@@ -58,6 +60,8 @@ export function MultiPaneLayout({
         globalFilter={globalFilter}
         nearbyStopsCounts={nearbyStopsCounts}
         filteredNearbyStopsCounts={filteredNearbyStopsCounts}
+        stopBrowserState={stopBrowserState}
+        onStopBrowserStateChange={onStopBrowserStateChange}
       />
     </ResizablePanel>
   );

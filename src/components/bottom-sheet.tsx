@@ -1,9 +1,10 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { TimetableEntriesState } from '../types/app/transit';
 import type { GlobalFilter } from '../types/app/global-filter';
 import type { StopsCounts } from '../types/app/stop';
+import type { StopBrowserSharedState } from '../types/app/stop-browser';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { cn } from '../lib/utils';
 import { StopBrowser } from './stop-browser';
@@ -70,6 +71,10 @@ export interface BottomSheetProps {
   onOpenTripInspectionByStopId?: (stopId: string) => void;
   /** Optional callback for inspecting one concrete trip. */
   onInspectTrip?: (target: TripInspectionTarget) => void;
+  /** Shared StopBrowser state owned by AppLayout (survives layout-mode swaps). */
+  stopBrowserState: StopBrowserSharedState;
+  /** Updater for {@link stopBrowserState} (accepts a value or an updater fn). */
+  onStopBrowserStateChange: Dispatch<SetStateAction<StopBrowserSharedState>>;
   /** Collapsed-state height class applied to the sheet root. */
   collapsedHeightClassName?: string;
   /** Expanded-state height class applied to the sheet root. */
@@ -107,6 +112,8 @@ export function BottomSheet({
   onToggleAnchor,
   onOpenTripInspectionByStopId,
   onInspectTrip,
+  stopBrowserState,
+  onStopBrowserStateChange,
   collapsedHeightClassName = 'h-[40dvh]',
   expandedHeightClassName = 'h-[70dvh]',
   expanded: expandedProp,
@@ -193,6 +200,8 @@ export function BottomSheet({
         onToggleAnchor={onToggleAnchor}
         onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
         onInspectTrip={onInspectTrip}
+        stopBrowserState={stopBrowserState}
+        onStopBrowserStateChange={onStopBrowserStateChange}
       />
     </div>
   );

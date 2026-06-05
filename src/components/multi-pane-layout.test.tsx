@@ -55,6 +55,8 @@ function makeLayoutProps(): LayoutProps {
     globalFilter: {} as unknown as LayoutProps['globalFilter'],
     nearbyStopsCounts: {} as unknown as LayoutProps['nearbyStopsCounts'],
     filteredNearbyStopsCounts: {} as unknown as LayoutProps['filteredNearbyStopsCounts'],
+    stopBrowserState: {} as unknown as LayoutProps['stopBrowserState'],
+    onStopBrowserStateChange: () => {},
   };
 }
 
@@ -69,6 +71,8 @@ function renderMultiPaneLayout() {
         globalFilter={props.globalFilter}
         nearbyStopsCounts={props.nearbyStopsCounts}
         filteredNearbyStopsCounts={props.filteredNearbyStopsCounts}
+        stopBrowserState={props.stopBrowserState}
+        onStopBrowserStateChange={props.onStopBrowserStateChange}
       />
     </MapSlotProvider>,
   );
