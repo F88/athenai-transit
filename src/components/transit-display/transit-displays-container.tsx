@@ -66,7 +66,7 @@ export function TransitDisplaysContainer({
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
 
-  const displays = useMemo(() => {
+  const transitDisplayData = useMemo(() => {
     const maxEntries = transitDisplayMaxEntriesFor(infoLevel);
 
     // Per-mode direction policy is composed here rather than inside the builder:
@@ -99,7 +99,7 @@ export function TransitDisplaysContainer({
     >
       {scrollFade.showTop && <ScrollFadeEdge position="top" />}
       <TransitDisplays
-        dataWithMeta={displays}
+        dataWithMeta={transitDisplayData}
         dataLangs={dataLangs}
         emptyMessage={t('stop.timetable.allFilteredOut')}
         now={now}
