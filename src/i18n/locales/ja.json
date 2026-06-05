@@ -148,7 +148,12 @@
     "recentCount": "直近 {{count}} 件 ({{radius}}m)",
     "entryCount": "{{count}} 件 ({{radius}}m)",
     "departures": "出発 Departures",
-    "arrivals": "到着 Arrivals"
+    "arrivals": "到着 Arrivals",
+    "filter": {
+      "label": "表示する便",
+      "departures": "出発",
+      "arrivals": "到着"
+    }
   },
   "showTimetable": "時刻表を表示",
   "timetable": {

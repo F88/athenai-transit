@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { ArrowRight, ArrowUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -7,7 +9,9 @@ import type { TripInspectionTarget } from '@/types/app/transit-composed';
 import { DistanceBadge } from '@/components/badge/distance-badge';
 import { TimetableEntryAttributesLabels } from '@/components/label/timetable-entry-attributes-labels';
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
+import { Button } from '@/components/ui/button';
 import {
+  type TransitDisplayCategory,
   type TransitDisplayData,
   type TransitDisplayEntryData,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
@@ -35,6 +39,69 @@ const BOARD_FRAME_COLOR = 'border-zinc-400 dark:border-zinc-700';
  */
 const BOARD_PANEL_BG = 'bg-neutral-800 dark:bg-neutral-900';
 
+/**
+ * Title text size per display size, one step larger than the rows so headings
+ * (the board title and the filter toggles) read above the data rows.
+ */
+const TITLE_TEXT_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
+  xs: 'text-[10px]',
+  sm: 'text-xs',
+  md: 'text-base',
+  lg: 'text-4xl',
+  xl: 'text-6xl',
+};
+
+/**
+ * Title icon size class per display size; tracks {@link TITLE_TEXT_CLASS_BY_SIZE}.
+ * A `size-*` class (not the lucide `size` prop) is required so the icon overrides
+ * the ui/button base rule `[&_svg:not([class*='size-'])]:size-4`, which otherwise
+ * pins button icons to 16px regardless of the prop.
+ */
+const TITLE_ICON_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
+  xs: 'size-2.5', // 10px
+  sm: 'size-3', // 12px
+  md: 'size-4', // 16px
+  lg: 'size-9', // 36px
+  xl: 'size-15', // 60px
+};
+
+/** Row text size per display size; the larger the container, the larger the rows. */
+const ROW_TEXT_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
+  xs: 'text-[8px]',
+  sm: 'text-[10px]',
+  md: 'text-xs',
+  lg: 'text-lg',
+  xl: 'text-2xl',
+};
+
+const TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE: Record<
+  ExtendedDisplaySize,
+  ExtendedDisplaySize
+> = {
+  xs: 'xs',
+  sm: 'xs',
+  md: 'xs',
+  lg: 'sm',
+  xl: 'md',
+};
+
+const DISTANCE_BADGE_SIZE_BY_SIZE: Record<ExtendedDisplaySize, ExtendedDisplaySize> = {
+  xs: 'xs',
+  sm: 'xs',
+  md: 'xs',
+  lg: 'lg',
+  xl: 'xl',
+};
+
+/** Headsign column width per display size (fixed: max == min so the column is stable). */
+const HEADSIGN_WIDTH_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
+  xs: 'max-w-[10ch] min-w-[10ch]',
+  sm: 'max-w-[12ch] min-w-[12ch]',
+  md: 'max-w-[18ch] min-w-[18ch]',
+  lg: 'max-w-[32ch] min-w-[32ch]',
+  xl: 'max-w-[32ch] min-w-[32ch]',
+};
+
 export interface TransitDisplaysProps {
   displays: readonly TransitDisplayData[];
   emptyMessage: string;
@@ -46,7 +113,25 @@ export interface TransitDisplaysProps {
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
 
-/** Renders every {@link TransitDisplayData} as its own stacked board. */
+/**
+ * Filter axis: which categories (departures / arrivals) the boards can be
+ * narrowed to, in board order. The only filter axis for now -- route type and
+ * direction are not user-selectable here.
+ */
+const FILTERABLE_CATEGORIES: readonly TransitDisplayCategory[] = ['departures', 'arrivals'];
+
+/** All categories shown by default (no board hidden until the user toggles one off). */
+const ALL_CATEGORIES_SHOWN: Record<TransitDisplayCategory, boolean> = {
+  departures: true,
+  arrivals: true,
+};
+
+/**
+ * Renders every {@link TransitDisplayData} as its own stacked board, with a
+ * filter bar on top for choosing which categories (departures / arrivals) to
+ * show. The filter is presentation-only local state: it narrows the rendered
+ * `displays`, it does not change how they are built or fetched.
+ */
 export function TransitDisplays({
   displays,
   emptyMessage,
@@ -57,9 +142,31 @@ export function TransitDisplays({
   onStopSelected,
   onInspectTrip,
 }: TransitDisplaysProps) {
+  const [shownCategories, setShownCategories] =
+    useState<Record<TransitDisplayCategory, boolean>>(ALL_CATEGORIES_SHOWN);
+
+  // Only offer toggles for categories that actually have a board, so the bar
+  // mirrors what is on screen rather than always showing both.
+  const presentCategories = FILTERABLE_CATEGORIES.filter((category) =>
+    displays.some((display) => display.meta.category === category),
+  );
+  const visibleDisplays = displays.filter((display) => shownCategories[display.meta.category]);
+
+  const toggleCategory = (category: TransitDisplayCategory) => {
+    setShownCategories((prev) => ({ ...prev, [category]: !prev[category] }));
+  };
+
   return (
     <div className="font-dotgothic16 px-4 pb-0">
-      {displays.map((display, index) => (
+      {presentCategories.length > 0 && (
+        <TransitDisplayCategoryFilter
+          categories={presentCategories}
+          shownCategories={shownCategories}
+          size={size}
+          onToggleCategory={toggleCategory}
+        />
+      )}
+      {visibleDisplays.map((display, index) => (
         // Key from the board's identity (category + its route types), with the
         // map index as a disambiguator: a `custom` route grouping can collapse
         // two groups to the same present route types, so identity alone is not
@@ -76,6 +183,86 @@ export function TransitDisplays({
           onInspectTrip={onInspectTrip}
         />
       ))}
+    </div>
+  );
+}
+
+interface TransitDisplayCategoryFilterProps {
+  /** Categories that have a board, in board order; one toggle is rendered per entry. */
+  categories: readonly TransitDisplayCategory[];
+  /** Current shown / hidden state per category. */
+  shownCategories: Record<TransitDisplayCategory, boolean>;
+  /** Display size; scales the toggle label text like the board rows. */
+  size: ExtendedDisplaySize;
+  onToggleCategory: (category: TransitDisplayCategory) => void;
+}
+
+/**
+ * Split-flap-styled filter bar: one flap toggle per category. Styled to match
+ * the boards (same frame and panel face, amber text) rather than the generic
+ * chip filter. A lit flap means the category is shown; a dimmed one means it is
+ * hidden.
+ */
+function TransitDisplayCategoryFilter({
+  categories,
+  shownCategories,
+  size,
+  onToggleCategory,
+}: TransitDisplayCategoryFilterProps) {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="group"
+      aria-label={t('transitDisplay.filter.label')}
+      className={cn(
+        'mb-2 flex items-center gap-2 rounded-sm border-0 px-3 py-2',
+        // BOARD_FRAME_COLOR,
+        // BOARD_PANEL_BG,
+      )}
+    >
+      {categories.map((category) => {
+        const isShown = shownCategories[category];
+        const isArrival = category === 'arrivals';
+        return (
+          // Shared ui/button (ghost) reused for structure and focus handling,
+          // restyled to the split-flap palette: a lit flap means the category is
+          // shown, a dimmed one means it is hidden.
+          <Button
+            key={category}
+            variant="ghost"
+            size="sm"
+            onClick={() => onToggleCategory(category)}
+            className={cn(
+              // grow + basis-0 makes both buttons equal width so they fill the
+              // bar evenly (basis-0 avoids fighting the Button base `shrink-0`).
+              // min-w-0 lets the label truncate instead of overflowing on narrow screens.
+              // h-auto lets the button grow with the size-scaled label text.
+              'h-auto min-w-0 grow basis-0 rounded-sm border-2 py-1 font-bold tracking-[0.18em] uppercase',
+              TITLE_TEXT_CLASS_BY_SIZE[size],
+              isShown
+                ? 'border-amber-300/70 bg-neutral-800 text-amber-100 hover:bg-neutral-700 hover:text-amber-100 dark:hover:bg-neutral-700'
+                : 'border-neutral-700 bg-neutral-900 text-amber-100/30 hover:bg-neutral-800 hover:text-amber-100/60 dark:hover:bg-neutral-800',
+            )}
+          >
+            {isArrival ? (
+              <ArrowRight
+                strokeWidth={4}
+                aria-hidden
+                className={cn('shrink-0', TITLE_ICON_CLASS_BY_SIZE[size])}
+              />
+            ) : (
+              <ArrowUp
+                strokeWidth={4}
+                aria-hidden
+                className={cn('shrink-0', TITLE_ICON_CLASS_BY_SIZE[size])}
+              />
+            )}
+            <span className="truncate">
+              {t(isArrival ? 'transitDisplay.filter.arrivals' : 'transitDisplay.filter.departures')}
+            </span>
+          </Button>
+        );
+      })}
     </div>
   );
 }
@@ -161,17 +348,35 @@ export function TransitDisplay({
         <div className="flex items-baseline justify-between gap-3">
           {/* Title — board basis arrow (up = departures, right = arrivals) + mode + phrase.
               The arrow is decorative; the phrase already states departures/arrivals. */}
-          <h3 className="text-md flex min-w-0 items-center gap-4 font-bold tracking-[0.18em] text-amber-100 uppercase">
+          <h3
+            className={cn(
+              'flex min-w-0 items-center gap-4 font-bold tracking-[0.18em] text-amber-100 uppercase',
+              TITLE_TEXT_CLASS_BY_SIZE[size],
+            )}
+          >
             {isArrivalBoard ? (
-              <ArrowRight size={14} strokeWidth={4} aria-hidden className="shrink-0" />
+              <ArrowRight
+                strokeWidth={4}
+                aria-hidden
+                className={cn('shrink-0', TITLE_ICON_CLASS_BY_SIZE[size])}
+              />
             ) : (
-              <ArrowUp size={14} strokeWidth={4} aria-hidden className="shrink-0" />
+              <ArrowUp
+                strokeWidth={4}
+                aria-hidden
+                className={cn('shrink-0', TITLE_ICON_CLASS_BY_SIZE[size])}
+              />
             )}
             {routeTypeIcon}
             <span className="truncate">{title}</span>
           </h3>
           {/* Radius the board's stops were selected within (count is intentionally omitted). */}
-          <p className="m-0 shrink-0 text-[11px] tracking-[0.12em] whitespace-nowrap text-amber-200/80">
+          <p
+            className={cn(
+              'm-0 shrink-0 text-[11px] tracking-[0.12em] whitespace-nowrap text-amber-200/80',
+              ROW_TEXT_CLASS_BY_SIZE[size],
+            )}
+          >
             {display.meta.radius}m
           </p>
         </div>
@@ -266,43 +471,6 @@ export interface TransitDisplayEntryProps {
   onStopSelected: (stopId: string) => void;
   onInspectTrip?: (target: TripInspectionTarget) => void;
 }
-
-/** Row text size per display size; the larger the container, the larger the rows. */
-const ROW_TEXT_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'text-[8px]',
-  sm: 'text-[10px]',
-  md: 'text-xs',
-  lg: 'text-lg',
-  xl: 'text-2xl',
-};
-
-const TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE: Record<
-  ExtendedDisplaySize,
-  ExtendedDisplaySize
-> = {
-  xs: 'xs',
-  sm: 'xs',
-  md: 'xs',
-  lg: 'sm',
-  xl: 'md',
-};
-
-const DISTANCE_BADGE_SIZE_BY_SIZE: Record<ExtendedDisplaySize, ExtendedDisplaySize> = {
-  xs: 'xs',
-  sm: 'xs',
-  md: 'xs',
-  lg: 'lg',
-  xl: 'xl',
-};
-
-/** Headsign column width per display size (fixed: max == min so the column is stable). */
-const HEADSIGN_WIDTH_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
-  xs: 'max-w-[10ch] min-w-[10ch]',
-  sm: 'max-w-[12ch] min-w-[12ch]',
-  md: 'max-w-[18ch] min-w-[18ch]',
-  lg: 'max-w-[32ch] min-w-[32ch]',
-  xl: 'max-w-[32ch] min-w-[32ch]',
-};
 
 /** A single departure-board row (one stop event). */
 export function TransitDisplayEntry({

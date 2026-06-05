@@ -148,7 +148,12 @@
     "recentCount": "Latest {{count}} ({{radius}}m)",
     "entryCount": "{{count}} ({{radius}}m)",
     "departures": "DEPARTURES",
-    "arrivals": "ARRIVALS"
+    "arrivals": "ARRIVALS",
+    "filter": {
+      "label": "Boards to show",
+      "departures": "Departures",
+      "arrivals": "Arrivals"
+    }
   },
   "showTimetable": "Show timetable",
   "timetable": {
