@@ -26,7 +26,6 @@ const MAX_ENTRIES_BY_INFO_LEVEL: Record<InfoLevel, number> = {
   normal: 10,
   detailed: 20,
   verbose: 20,
-  // detailed: 10,
   // verbose: 10,
 };
 
