@@ -14,7 +14,7 @@ import { TransitDisplays } from '@/components/transit-display/transit-displays';
 import {
   buildTransitDisplayDataSet,
   NEARBY_RADIUS_M,
-  sortTransitDisplayDataWithMetaData_RAWForUi,
+  sortTransitDisplayDataWithMetaData,
   transitDisplayMaxEntriesFor,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
@@ -75,7 +75,7 @@ export function TransitDisplaysContainer({
     // this is two calls (each scoped to its route types via a custom grouping).
     // buildTransitDisplayDataSet attaches each display's meta but leaves rows raw.
     // The concatenated result is re-ordered into the canonical UI order by
-    // sortTransitDisplayDataWithMetaData_RAWForUi (so the order is correct
+    // sortTransitDisplayDataWithMetaData (so the order is correct
     // regardless of which modes share a stop -- the raw concat is not in display
     // order). Rows stay raw here; TransitDisplays resolves them into UI data.
     const directionUnsplitRaw = buildTransitDisplayDataSet(stopTimes, NEARBY_RADIUS_M, {
@@ -88,10 +88,7 @@ export function TransitDisplaysContainer({
       routeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
       splitByDirection: true,
     });
-    return sortTransitDisplayDataWithMetaData_RAWForUi([
-      ...directionUnsplitRaw,
-      ...directionSplitRaw,
-    ]);
+    return sortTransitDisplayDataWithMetaData([...directionUnsplitRaw, ...directionSplitRaw]);
   }, [stopTimes, infoLevel]);
 
   return (

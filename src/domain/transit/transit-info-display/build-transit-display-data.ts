@@ -38,7 +38,7 @@ export function transitDisplayMaxEntriesFor(infoLevel: InfoLevel): number {
  * Stop-level fields of a {@link TransitDisplayDatumForUi}, grouped so consumers can
  * tell stop context apart from the per-event (trip) fields.
  */
-export interface TransitDisplayEntryDataStop {
+export interface TransitDisplayDatumForUiStop {
   /** Stop ID (used for selection and row keys). */
   id: string;
   /** Resolved display name of the stop. */
@@ -62,7 +62,7 @@ export interface TransitDisplayEntryDataStop {
 export interface TransitDisplayDatumForUi {
   key: string;
   /** Stop-level context for this event. */
-  stop: TransitDisplayEntryDataStop;
+  stop: TransitDisplayDatumForUiStop;
   /** Mode emoji for this event's route (trip-level: bus / train / etc.). */
   routeTypeEmoji: string;
   routeName: string;
@@ -130,14 +130,13 @@ export interface TransitDisplayDataWithMetaDataForUi {
 }
 
 /**
- * PROVISIONAL NAME (`_RAW`, to be renamed). A display with its
- * {@link TransitDisplayMeta} descriptor attached but its rows NOT yet resolved:
- * `data` holds the structural board, so resolving it into UI rows (via
- * {@link buildTransitDisplayDatumForUi}) is the caller's choice. `meta` restates
- * the board's category / routeTypes /
- * directions and adds `max` / `radius`.
+ * A display with its {@link TransitDisplayMeta} descriptor attached but its rows
+ * NOT yet resolved: `data` holds the structural board, so resolving it into UI
+ * rows (via {@link buildTransitDisplayDatumForUi}) is the caller's choice. `meta`
+ * restates the board's category / routeTypes / directions and adds `max` /
+ * `radius`. The resolved counterpart is {@link TransitDisplayDataWithMetaDataForUi}.
  */
-export interface TransitDisplayDataWithMetaData_RAW {
+export interface TransitDisplayDataWithMetaData {
   /** Display descriptor (title + selection params). */
   meta: TransitDisplayMeta;
   /** The structural board, whose entries are not yet resolved into UI rows. */
@@ -566,7 +565,7 @@ export function buildTransitDisplayDataSet(
   stops: readonly StopWithContext[],
   radiusMeters: number,
   condition: TransitDisplayCondition,
-): TransitDisplayDataWithMetaData_RAW[] {
+): TransitDisplayDataWithMetaData[] {
   // distance filter: stops within radiusMeters of the center
   const nearbyStops: StopWithContext[] = filterStopsWithinRadius(stops, radiusMeters);
   // flatten each stop's stopTimes into candidates
@@ -578,18 +577,20 @@ export function buildTransitDisplayDataSet(
     boards,
     condition.maxEntries,
   );
-  // attach each display's meta descriptor; rows stay raw (caller resolves)
-  const meta: TransitDisplayDataWithMetaData_RAW[] = sortedAndCapped.map((board) => ({
-    meta: {
-      category: board.category,
-      routeTypes: board.routeTypes,
-      directions: board.directions,
-      max: condition.maxEntries,
-      radius: radiusMeters,
-    },
-    data: board,
-  }));
-  return meta;
+
+  const transitDisplayDataWithMetaData: TransitDisplayDataWithMetaData[] = sortedAndCapped.map(
+    (transitDisplayData) => ({
+      meta: {
+        category: transitDisplayData.category,
+        routeTypes: transitDisplayData.routeTypes,
+        directions: transitDisplayData.directions,
+        max: condition.maxEntries,
+        radius: radiusMeters,
+      },
+      data: transitDisplayData,
+    }),
+  );
+  return transitDisplayDataWithMetaData;
 }
 
 /**
@@ -603,10 +604,10 @@ export function buildTransitDisplayDataSet(
  * A full comparator (not a stable sort on one key), so reordering by route type
  * can never disturb the departures/arrivals or direction order set up earlier.
  */
-export function sortTransitDisplayDataWithMetaData_RAWForUi(
-  rawDisplays: readonly TransitDisplayDataWithMetaData_RAW[],
-): TransitDisplayDataWithMetaData_RAW[] {
-  const orderKey = (d: TransitDisplayDataWithMetaData_RAW): [number, number, number] => {
+export function sortTransitDisplayDataWithMetaData(
+  rawDisplays: readonly TransitDisplayDataWithMetaData[],
+): TransitDisplayDataWithMetaData[] {
+  const orderKey = (d: TransitDisplayDataWithMetaData): [number, number, number] => {
     const direction = d.meta.directions[0];
     return [
       ROUTE_TYPE_DISPLAY_ORDER.indexOf(d.meta.routeTypes[0]),

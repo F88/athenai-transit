@@ -14,7 +14,7 @@ import {
   buildTransitDisplayDatumForUi,
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaDataForUi,
-  type TransitDisplayDataWithMetaData_RAW,
+  type TransitDisplayDataWithMetaData,
   type TransitDisplayDatumForUi,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { getBearingDeg } from '@/domain/transit/distance';
@@ -106,7 +106,7 @@ const HEADSIGN_WIDTH_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
 
 export interface TransitDisplaysProps {
   /** Raw displays (meta + unresolved board); rows are resolved here for rendering. */
-  dataWithMeta: readonly TransitDisplayDataWithMetaData_RAW[];
+  dataWithMeta: readonly TransitDisplayDataWithMetaData[];
   /** Display language chain passed to {@link buildTransitDisplayDatumForUi} for row resolution. */
   dataLangs: readonly string[];
   emptyMessage: string;
@@ -132,7 +132,7 @@ const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
 };
 
 /**
- * Resolves each {@link TransitDisplayDataWithMetaData_RAW} into UI rows (via
+ * Resolves each {@link TransitDisplayDataWithMetaData} into UI rows (via
  * {@link buildTransitDisplayDatumForUi} -- this is the only consumer that needs
  * them) and renders it as its own stacked board, with a filter bar on top for
  * choosing which categories (departures / arrivals) to show. The filter is
