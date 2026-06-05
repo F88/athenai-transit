@@ -362,7 +362,7 @@ export function TransitDisplay({
   const hasMultiRoutes = dataWithMeta.meta.routeTypes.length >= 2;
 
   // for debug
-  // if (display.meta.category === 'arrivals') {
+  // if (dataWithMeta.meta.category === 'arrivals') {
   //   return null;
   // }
 
