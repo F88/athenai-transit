@@ -144,33 +144,37 @@ export function TransitDisplay({
           with letter-spaced amber text, like a split-flap header. */}
       <div
         className={cn(
-          'flex items-baseline justify-between gap-3 border-b-8 px-3 py-2.5',
+          'flex flex-col gap-1 border-b-8 px-3 py-2.5',
           BOARD_PANEL_BG,
           BOARD_FRAME_COLOR,
         )}
       >
-        {/* Title — board basis arrow (up = departures, right = arrivals) + mode + phrase.
-            The arrow is decorative; the phrase already states departures/arrivals. */}
-        <h3 className="text-md flex min-w-0 items-center gap-4 font-bold tracking-[0.18em] text-amber-100 uppercase">
-          {isArrivalBoard ? (
-            <ArrowRight size={14} strokeWidth={4} aria-hidden className="shrink-0" />
-          ) : (
-            <ArrowUp size={14} strokeWidth={4} aria-hidden className="shrink-0" />
-          )}
-          {routeTypeIcon}
-          <span className="truncate">{title}</span>
-        </h3>
         {/* Board meta in brief: category, route type(s), direction(s), row cap, radius. */}
         {infoLevelFlag.isVerboseEnabled && (
-          <p className="m-0 shrink-0 text-xs whitespace-nowrap text-amber-200/80">
-            [{display.meta.category} / rt {display.meta.routeTypes.join(',')} / dir{' '}
-            {display.meta.directions.join(',')} (max:{display.meta.max},{display.meta.radius}m)]
-          </p>
+          <div className="flex items-baseline gap-3">
+            <p className="m-0 ml-auto w-full min-w-0 text-right text-xs text-amber-200/80">
+              [{display.meta.category} / rt {display.meta.routeTypes.join(',')} / dir{' '}
+              {display.meta.directions.join(',')} (max:{display.meta.max},{display.meta.radius}m)]
+            </p>
+          </div>
         )}
-        {/* Radius the board's stops were selected within (count is intentionally omitted). */}
-        <p className="m-0 shrink-0 text-[11px] tracking-[0.12em] whitespace-nowrap text-amber-200/80">
-          {display.meta.radius}m
-        </p>
+        <div className="flex items-baseline justify-between gap-3">
+          {/* Title — board basis arrow (up = departures, right = arrivals) + mode + phrase.
+              The arrow is decorative; the phrase already states departures/arrivals. */}
+          <h3 className="text-md flex min-w-0 items-center gap-4 font-bold tracking-[0.18em] text-amber-100 uppercase">
+            {isArrivalBoard ? (
+              <ArrowRight size={14} strokeWidth={4} aria-hidden className="shrink-0" />
+            ) : (
+              <ArrowUp size={14} strokeWidth={4} aria-hidden className="shrink-0" />
+            )}
+            {routeTypeIcon}
+            <span className="truncate">{title}</span>
+          </h3>
+          {/* Radius the board's stops were selected within (count is intentionally omitted). */}
+          <p className="m-0 shrink-0 text-[11px] tracking-[0.12em] whitespace-nowrap text-amber-200/80">
+            {display.meta.radius}m
+          </p>
+        </div>
       </div>
       {/* Body: the rows (or the empty fallback). */}
       <div className="bg-neutral-950 p-0">
