@@ -168,32 +168,52 @@ describe('categoryQualifies', () => {
     });
   }
 
-  it("'departures' reads isTerminal and ignores isOrigin", () => {
-    withAttributes({ isTerminal: true, isOrigin: true });
-    expect(categoryQualifies(ENTRY, 'departures')).toBe(false);
+  describe('departures', () => {
+    it('excludes terminal entries', () => {
+      withAttributes({ isTerminal: true });
+      expect(categoryQualifies(ENTRY, 'departures')).toBe(false);
+    });
 
-    withAttributes({ isTerminal: false, isOrigin: true });
-    expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
+    it('includes non-terminal entries and ignores isOrigin', () => {
+      withAttributes({ isTerminal: false, isOrigin: true });
+      expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
+    });
+
+    it('ignores isPickupUnavailable (still qualifies)', () => {
+      withAttributes({ isPickupUnavailable: true });
+      expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
+    });
+
+    it('ignores isDropOffUnavailable (still qualifies)', () => {
+      withAttributes({ isDropOffUnavailable: true });
+      expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
+    });
   });
 
-  it("'arrivals' reads isOrigin and ignores isTerminal", () => {
-    withAttributes({ isOrigin: true, isTerminal: true });
-    expect(categoryQualifies(ENTRY, 'arrivals')).toBe(false);
+  describe('arrivals', () => {
+    it('excludes origin entries', () => {
+      withAttributes({ isOrigin: true });
+      expect(categoryQualifies(ENTRY, 'arrivals')).toBe(false);
+    });
 
-    withAttributes({ isOrigin: false, isTerminal: true });
-    expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
+    it('includes non-origin entries and ignores isTerminal', () => {
+      withAttributes({ isOrigin: false, isTerminal: true });
+      expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
+    });
+
+    it('ignores isPickupUnavailable (still qualifies)', () => {
+      withAttributes({ isPickupUnavailable: true });
+      expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
+    });
+
+    it('ignores isDropOffUnavailable (still qualifies)', () => {
+      withAttributes({ isDropOffUnavailable: true });
+      expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
+    });
   });
 
   it('a plain entry (no terminal/origin) qualifies for both categories', () => {
     withAttributes({});
-
-    expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
-    expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
-  });
-
-  it('ignores boarding availability: pickup/drop-off unavailable does not disqualify', () => {
-    // Only terminal/origin gate qualification; boarding flags are irrelevant here.
-    withAttributes({ isPickupUnavailable: true, isDropOffUnavailable: true });
 
     expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
     expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
