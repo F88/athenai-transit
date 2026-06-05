@@ -15,6 +15,7 @@ import {
   buildTransitDisplayDataSet,
   NEARBY_RADIUS_M,
   sortTransitDisplayDataForUi,
+  toTransitDisplayData,
   transitDisplayMaxEntriesFor,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
@@ -73,30 +74,25 @@ export function TransitDisplaysContainer({
     // NO_SPLIT_ROUTE_TYPES keep both directions on one board, everything else
     // splits by direction. The builder takes a single splitByDirection flag, so
     // this is two calls (each scoped to its route types via a custom grouping).
-    // The concatenated result is then re-ordered into the canonical UI order by
+    // buildTransitDisplayDataSet returns structural boards; presentation (name /
+    // time resolution into UI data) is done here via toTransitDisplayData. The
+    // concatenated result is then re-ordered into the canonical UI order by
     // sortTransitDisplayDataForUi, so the board order is correct regardless of
     // which modes share a stop (the raw concat is not in display order).
-    const directionUnsplitDisplays = buildTransitDisplayDataSet(
-      stopTimes,
-      dataLangs,
-      NEARBY_RADIUS_M,
-      {
-        maxEntries,
-        routeGrouping: { kind: 'custom', groups: NO_SPLIT_ROUTE_TYPES.map((t) => [t]) },
-        splitByDirection: false,
-      },
+    const directionUnsplitBoards = buildTransitDisplayDataSet(stopTimes, NEARBY_RADIUS_M, {
+      maxEntries,
+      routeGrouping: { kind: 'custom', groups: NO_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+      splitByDirection: false,
+    });
+    const directionSplitBoards = buildTransitDisplayDataSet(stopTimes, NEARBY_RADIUS_M, {
+      maxEntries,
+      routeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+      splitByDirection: true,
+    });
+    const dataForUi = [...directionUnsplitBoards, ...directionSplitBoards].map((board) =>
+      toTransitDisplayData(board, dataLangs, NEARBY_RADIUS_M, maxEntries),
     );
-    const directionSplitDisplays = buildTransitDisplayDataSet(
-      stopTimes,
-      dataLangs,
-      NEARBY_RADIUS_M,
-      {
-        maxEntries,
-        routeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
-        splitByDirection: true,
-      },
-    );
-    return sortTransitDisplayDataForUi([...directionUnsplitDisplays, ...directionSplitDisplays]);
+    return sortTransitDisplayDataForUi(dataForUi);
   }, [stopTimes, dataLangs, infoLevel]);
 
   return (

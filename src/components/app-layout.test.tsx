@@ -62,10 +62,10 @@ function makeLayoutProps(): AppLayoutInputProps {
 const expectedInjectedStopBrowserState = {
   stopBrowserState: {
     viewId: DEFAULT_VIEW_ID,
-    hiddenRouteTypes: new Set(),
-    hiddenAgencyIds: new Set(),
+    hiddenRouteTypes: new Set<number>(),
+    hiddenAgencyIds: new Set<string>(),
   },
-  onStopBrowserStateChange: expect.any(Function),
+  onStopBrowserStateChange: expect.any(Function) as LayoutProps['onStopBrowserStateChange'],
 };
 
 function renderAppLayout(props: AppLayoutInputProps) {

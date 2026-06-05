@@ -541,22 +541,25 @@ export function toTransitDisplayData(
 }
 
 /**
- * Runs the board-building steps in sequence: distance filter -> flatten ->
- * group into boards (route-type / category clustering) -> sort + cap -> UI
- * convert. Each step is single-purpose so the next one's concern does not leak
- * into it.
+ * Runs the structural board-building steps in sequence: distance filter ->
+ * flatten -> group into boards (route-type / category clustering) -> sort + cap.
+ * Each step is single-purpose so the next one's concern does not leak into it.
  *
- * `radiusMeters` (the range stops are selected within; also each board's
- * `meta.radius`) and `condition` (the per-display selection condition) are both
- * required so the caller states the selection scope explicitly.
- * {@link NEARBY_RADIUS_M} is the conventional radius to pass.
+ * Presentation is intentionally NOT done here: resolving display names / times
+ * into UI data (via {@link toTransitDisplayData}) is left to the caller, so this
+ * stays i18n-free and the UI owns rendering concerns. The caller maps the
+ * returned boards through `toTransitDisplayData`.
+ *
+ * `radiusMeters` (the range stops are selected within) and `condition` (the
+ * per-display selection condition) are both required so the caller states the
+ * selection scope explicitly. {@link NEARBY_RADIUS_M} is the conventional
+ * radius to pass.
  */
 export function buildTransitDisplayDataSet(
   stops: readonly StopWithContext[],
-  preferredDisplayLangs: readonly string[],
   radiusMeters: number,
   condition: TransitDisplayCondition,
-): TransitDisplayData[] {
+): TransitDisplayBoard[] {
   // distance filter: stops within radiusMeters of the center
   const nearbyStops = filterStopsWithinRadius(stops, radiusMeters);
   // flatten each stop's stopTimes into candidates
@@ -564,11 +567,7 @@ export function buildTransitDisplayDataSet(
   // cluster by route type, optionally by direction, then split by category
   const boards = groupCandidatesIntoBoards(candidates, condition);
   // sort by time, cap each board
-  const cappedBoards = sortAndCapBoards(boards, condition.maxEntries);
-  // resolve display names, build UI data
-  return cappedBoards.map((board) =>
-    toTransitDisplayData(board, preferredDisplayLangs, radiusMeters, condition.maxEntries),
-  );
+  return sortAndCapBoards(boards, condition.maxEntries);
 }
 
 /**
