@@ -12,7 +12,7 @@ import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { Button } from '@/components/ui/button';
 import {
   type TransitDisplayCategory,
-  type TransitDisplayData,
+  type TransitDisplayDataWithMetaData,
   type TransitDisplayEntryData,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { getBearingDeg } from '@/domain/transit/distance';
@@ -103,7 +103,7 @@ const HEADSIGN_WIDTH_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
 };
 
 export interface TransitDisplaysProps {
-  displays: readonly TransitDisplayData[];
+  displays: readonly TransitDisplayDataWithMetaData[];
   emptyMessage: string;
   now: Date;
   mapCenter: LatLng | null;
@@ -127,7 +127,7 @@ const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
 };
 
 /**
- * Renders every {@link TransitDisplayData} as its own stacked board, with a
+ * Renders every {@link TransitDisplayDataWithMetaData} as its own stacked board, with a
  * filter bar on top for choosing which categories (departures / arrivals) to
  * show. The filter is presentation-only local state: it narrows the rendered
  * `displays`, it does not change how they are built or fetched.
@@ -293,7 +293,7 @@ function TransitDisplayCategoryFilter({
 }
 
 export interface TransitDisplayProps {
-  display: TransitDisplayData;
+  display: TransitDisplayDataWithMetaData;
   emptyMessage: string;
   now: Date;
   mapCenter: LatLng | null;

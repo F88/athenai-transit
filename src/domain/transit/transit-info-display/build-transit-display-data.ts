@@ -117,7 +117,12 @@ export interface TransitDisplayMeta {
   radius: number;
 }
 
-export interface TransitDisplayData {
+/**
+ * One resolved display, ready to render: its {@link TransitDisplayMeta} descriptor
+ * plus the UI rows. Produced from a {@link TransitDisplayData} board by
+ * {@link toTransitDisplayDataWithMetaData}.
+ */
+export interface TransitDisplayDataWithMetaData {
   /** Display descriptor (title + selection params). */
   meta: TransitDisplayMeta;
   /** The entry data this display renders. */
@@ -164,6 +169,14 @@ export interface TransitDisplayCandidate {
   entry: ContextualTimetableEntry;
   stopWithContext: StopWithContext;
 }
+
+/**
+ * One entry selected onto a board by {@link groupCandidatesIntoBoards} -- a
+ * {@link TransitDisplayCandidate} that passed category qualification. Same shape
+ * as a candidate; this alias marks the post-selection role (it is output, no
+ * longer a mere candidate) and reads as the singular of a board's `data`.
+ */
+export type TransitDisplayDatum = TransitDisplayCandidate;
 
 /**
  * Service-day minutes an entry is sorted and shown by, derived from the board's
@@ -366,16 +379,17 @@ function presentDirections(
 
 /**
  * One board's cell: which route type(s), direction(s) and category it is, plus
- * its candidates. Plain candidates (not UI rows), so the same shape flows through
+ * the entries selected for it in `data` ({@link TransitDisplayDatum}). These are
+ * raw stop events (not resolved UI rows), so the same shape flows through
  * grouping, sort + cap, and UI conversion without those concerns leaking into
  * each other.
  */
-export interface TransitDisplayBoard {
+export interface TransitDisplayData {
   routeTypes: readonly AppRouteTypeValue[];
   /** Direction(s) this board covers (see {@link TransitDisplayMeta.directions}). */
   directions: readonly (0 | 1 | 'none')[];
   category: TransitDisplayCategory;
-  candidates: TransitDisplayCandidate[];
+  data: TransitDisplayDatum[];
 }
 
 /** A cluster of candidates for one board's route-type scope, before the category split. */
@@ -442,16 +456,16 @@ export function clusterCandidatesByRouteType(
  * `splitByDirection` and merging the results, rather than having a per-mode rule
  * baked in here.
  *
- * Grouping only: it does not sort / cap ({@link sortAndCapBoards}) or resolve
- * display names ({@link toTransitDisplayData}). Empty cells are dropped, so the
+ * Grouping only: it does not sort / cap ({@link sortAndCapTransitDisplayData}) or resolve
+ * display names ({@link toTransitDisplayDataWithMetaData}). Empty cells are dropped, so the
  * present route types / directions fall out without a separate enumeration.
  */
 export function groupCandidatesIntoBoards(
   candidates: readonly TransitDisplayCandidate[],
   condition: TransitDisplayCondition,
-): TransitDisplayBoard[] {
+): TransitDisplayData[] {
   const clusters = clusterCandidatesByRouteType(candidates, condition.routeGrouping);
-  const boards: TransitDisplayBoard[] = [];
+  const boards: TransitDisplayData[] = [];
 
   for (const cluster of clusters) {
     if (!condition.splitByDirection) {
@@ -467,7 +481,7 @@ export function groupCandidatesIntoBoards(
           routeTypes: cluster.routeTypes,
           directions: presentDirections(boardCandidates),
           category,
-          candidates: boardCandidates,
+          data: boardCandidates,
         });
       }
       continue;
@@ -492,7 +506,7 @@ export function groupCandidatesIntoBoards(
           routeTypes: cluster.routeTypes,
           directions,
           category,
-          candidates: boardCandidates,
+          data: boardCandidates,
         });
       }
     }
@@ -502,32 +516,32 @@ export function groupCandidatesIntoBoards(
 }
 
 /**
- * Orders each board's candidates earliest-first by its category's time and caps
- * to `maxEntries`. Operates per board; the grouping is already done.
+ * Orders each board's entries (its `data`) earliest-first by its category's
+ * time and caps to `maxEntries`. Operates per board; the grouping is already done.
  */
-export function sortAndCapBoards(
-  boards: readonly TransitDisplayBoard[],
+export function sortAndCapTransitDisplayData(
+  transitDisplayData: readonly TransitDisplayData[],
   maxEntries: number,
-): TransitDisplayBoard[] {
-  return boards.map((board) => {
+): TransitDisplayData[] {
+  return transitDisplayData.map((data) => {
     // sort by the category's time (category-dependent)
-    const sorted = sortByCategory(board.candidates, board.category);
+    const sorted = sortByCategory(data.data, data.category);
     // cap: keep the earliest maxEntries (slice is non-mutating, expects sorted input)
-    return { ...board, candidates: sorted.slice(0, maxEntries) };
+    return { ...data, data: sorted.slice(0, maxEntries) };
   });
 }
 
 /**
  * Turns one board into UI data -- assembles its `meta`
  * descriptor (from the board cell + the `radiusMeters` / `maxEntries` scope) and
- * resolves display names for its candidates.
+ * resolves display names for its entries (`data`).
  */
-export function toTransitDisplayData(
-  board: TransitDisplayBoard,
+export function toTransitDisplayDataWithMetaData(
+  board: TransitDisplayData,
   preferredDisplayLangs: readonly string[],
   radiusMeters: number,
   maxEntries: number,
-): TransitDisplayData {
+): TransitDisplayDataWithMetaData {
   return {
     meta: {
       category: board.category,
@@ -536,7 +550,7 @@ export function toTransitDisplayData(
       max: maxEntries,
       radius: radiusMeters,
     },
-    data: buildTransitDisplayEntryData(board.candidates, preferredDisplayLangs, board.category),
+    data: buildTransitDisplayEntryData(board.data, preferredDisplayLangs, board.category),
   };
 }
 
@@ -546,9 +560,9 @@ export function toTransitDisplayData(
  * Each step is single-purpose so the next one's concern does not leak into it.
  *
  * Presentation is intentionally NOT done here: resolving display names / times
- * into UI data (via {@link toTransitDisplayData}) is left to the caller, so this
+ * into UI data (via {@link toTransitDisplayDataWithMetaData}) is left to the caller, so this
  * stays i18n-free and the UI owns rendering concerns. The caller maps the
- * returned boards through `toTransitDisplayData`.
+ * returned boards through `toTransitDisplayDataWithMetaData`.
  *
  * `radiusMeters` (the range stops are selected within) and `condition` (the
  * per-display selection condition) are both required so the caller states the
@@ -559,15 +573,16 @@ export function buildTransitDisplayDataSet(
   stops: readonly StopWithContext[],
   radiusMeters: number,
   condition: TransitDisplayCondition,
-): TransitDisplayBoard[] {
+): TransitDisplayData[] {
   // distance filter: stops within radiusMeters of the center
-  const nearbyStops = filterStopsWithinRadius(stops, radiusMeters);
+  const nearbyStops: StopWithContext[] = filterStopsWithinRadius(stops, radiusMeters);
   // flatten each stop's stopTimes into candidates
-  const candidates = toTransitDisplayCandidates(nearbyStops);
+  const candidates: TransitDisplayCandidate[] = toTransitDisplayCandidates(nearbyStops);
   // cluster by route type, optionally by direction, then split by category
-  const boards = groupCandidatesIntoBoards(candidates, condition);
+  const transitDisplayData: TransitDisplayData[] = groupCandidatesIntoBoards(candidates, condition);
   // sort by time, cap each board
-  return sortAndCapBoards(boards, condition.maxEntries);
+  const sortedAndCapped = sortAndCapTransitDisplayData(transitDisplayData, condition.maxEntries);
+  return sortedAndCapped;
 }
 
 /**
@@ -581,10 +596,10 @@ export function buildTransitDisplayDataSet(
  * A full comparator (not a stable sort on one key), so reordering by route type
  * can never disturb the departures/arrivals or direction order set up earlier.
  */
-export function sortTransitDisplayDataForUi(
-  displays: readonly TransitDisplayData[],
-): TransitDisplayData[] {
-  const orderKey = (d: TransitDisplayData): [number, number, number] => {
+export function sortTransitDisplayDataWithMetaDataForUi(
+  transitDisplayDataWithMetaData: readonly TransitDisplayDataWithMetaData[],
+): TransitDisplayDataWithMetaData[] {
+  const orderKey = (d: TransitDisplayDataWithMetaData): [number, number, number] => {
     const direction = d.meta.directions[0];
     return [
       ROUTE_TYPE_DISPLAY_ORDER.indexOf(d.meta.routeTypes[0]),
@@ -592,7 +607,7 @@ export function sortTransitDisplayDataForUi(
       DIRECTIONS.indexOf(direction === 'none' ? undefined : direction),
     ];
   };
-  return [...displays].sort((a, b) => {
+  return [...transitDisplayDataWithMetaData].sort((a, b) => {
     const ka = orderKey(a);
     const kb = orderKey(b);
     return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];

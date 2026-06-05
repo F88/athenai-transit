@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import type {
-  TransitDisplayData,
+  TransitDisplayDataWithMetaData,
   TransitDisplayEntryData,
 } from '../../domain/transit/transit-info-display/build-transit-display-data';
 import {
@@ -85,11 +85,11 @@ function makeEntry(overrides: MakeEntryOverrides = {}): TransitDisplayEntryData 
   };
 }
 
-/** Assemble a {@link TransitDisplayData} from meta overrides and rows. */
+/** Assemble a {@link TransitDisplayDataWithMetaData} from meta overrides and rows. */
 function makeDisplay(
-  metaOverrides: Partial<TransitDisplayData['meta']> = {},
+  metaOverrides: Partial<TransitDisplayDataWithMetaData['meta']> = {},
   data: readonly TransitDisplayEntryData[] = departureRows,
-): TransitDisplayData {
+): TransitDisplayDataWithMetaData {
   return {
     meta: {
       category: 'departures',

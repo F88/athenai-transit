@@ -24,16 +24,16 @@ import {
   clusterCandidatesByRouteType,
   filterStopsWithinRadius,
   groupCandidatesIntoBoards,
-  sortAndCapBoards,
+  sortAndCapTransitDisplayData,
   sortByCategory,
-  sortTransitDisplayDataForUi,
+  sortTransitDisplayDataWithMetaDataForUi,
   toTransitDisplayCandidates,
   transitDisplayMaxEntriesFor,
-  type TransitDisplayBoard,
+  type TransitDisplayData,
   type TransitDisplayCandidate,
   type TransitDisplayCategory,
   type TransitDisplayCondition,
-  type TransitDisplayData,
+  type TransitDisplayDataWithMetaData,
 } from '../build-transit-display-data';
 
 // categoryQualifies delegates origin/terminal determination to this domain
@@ -432,7 +432,7 @@ describe('groupCandidatesIntoBoards', () => {
     for (const bd of boards) {
       expect(bd.routeTypes).toEqual([3]);
       expect(bd.directions).toEqual([0, 1]); // present directions of the board's candidates
-      expect(bd.candidates).toEqual([a, b]);
+      expect(bd.data).toEqual([a, b]);
     }
   });
 
@@ -445,9 +445,9 @@ describe('groupCandidatesIntoBoards', () => {
     const departures = boards.find((bd) => bd.category === 'departures');
     const arrivals = boards.find((bd) => bd.category === 'arrivals');
 
-    expect(departures?.candidates).toEqual([plain0]); // terminal1 dropped
+    expect(departures?.data).toEqual([plain0]); // terminal1 dropped
     expect(departures?.directions).toEqual([0]); // direction 1 no longer present
-    expect(arrivals?.candidates).toEqual([plain0, terminal1]);
+    expect(arrivals?.data).toEqual([plain0, terminal1]);
     expect(arrivals?.directions).toEqual([0, 1]);
   });
 
@@ -466,8 +466,8 @@ describe('groupCandidatesIntoBoards', () => {
       { directions: [0], category: 'arrivals' },
     ]);
     // each bucket keeps only its own direction's candidate
-    expect(boards[0].candidates).toEqual([noDir]); // none-departures
-    expect(boards[1].candidates).toEqual([dir0]); // 0-departures
+    expect(boards[0].data).toEqual([noDir]); // none-departures
+    expect(boards[1].data).toEqual([dir0]); // 0-departures
   });
 
   it('split: drops a board left empty after category qualification', () => {
@@ -479,7 +479,7 @@ describe('groupCandidatesIntoBoards', () => {
     expect(boards).toHaveLength(1);
     expect(boards[0].directions).toEqual([0]);
     expect(boards[0].category).toBe('arrivals');
-    expect(boards[0].candidates).toEqual([terminal0]);
+    expect(boards[0].data).toEqual([terminal0]);
   });
 
   it('returns no boards for empty input', () => {
@@ -508,7 +508,7 @@ describe('groupCandidatesIntoBoards', () => {
   });
 });
 
-describe('sortAndCapBoards', () => {
+describe('sortAndCapTransitDisplayData', () => {
   /** A candidate with explicit departure / arrival minutes. */
   function candWithTimes(dep: number, arr: number = dep): TransitDisplayCandidate {
     return {
@@ -521,21 +521,19 @@ describe('sortAndCapBoards', () => {
   function boardOf(
     category: TransitDisplayCategory,
     candidates: TransitDisplayCandidate[],
-  ): TransitDisplayBoard {
-    return { routeTypes: [3], directions: ['none'], category, candidates };
+  ): TransitDisplayData {
+    return { routeTypes: [3], directions: ['none'], category, data: candidates };
   }
 
   it("sorts each board's candidates by its own category's time", () => {
     const dep = boardOf('departures', [candWithTimes(900), candWithTimes(800), candWithTimes(850)]);
     const arr = boardOf('arrivals', [candWithTimes(700, 900), candWithTimes(710, 810)]);
 
-    const [sortedDep, sortedArr] = sortAndCapBoards([dep, arr], 100);
+    const [sortedDep, sortedArr] = sortAndCapTransitDisplayData([dep, arr], 100);
 
-    expect(sortedDep.candidates.map((c) => c.entry.schedule.departureMinutes)).toEqual([
-      800, 850, 900,
-    ]);
+    expect(sortedDep.data.map((c) => c.entry.schedule.departureMinutes)).toEqual([800, 850, 900]);
     // arrivals board sorts by arrivalMinutes (810 before 900), not departure time
-    expect(sortedArr.candidates.map((c) => c.entry.schedule.arrivalMinutes)).toEqual([810, 900]);
+    expect(sortedArr.data.map((c) => c.entry.schedule.arrivalMinutes)).toEqual([810, 900]);
   });
 
   it('caps each board to maxEntries, keeping the earliest after sorting', () => {
@@ -546,20 +544,20 @@ describe('sortAndCapBoards', () => {
       candWithTimes(700),
     ]);
 
-    const [capped] = sortAndCapBoards([board], 2);
+    const [capped] = sortAndCapTransitDisplayData([board], 2);
 
-    expect(capped.candidates.map((c) => c.entry.schedule.departureMinutes)).toEqual([700, 800]);
+    expect(capped.data.map((c) => c.entry.schedule.departureMinutes)).toEqual([700, 800]);
   });
 
   it('preserves board metadata (routeTypes, directions, category)', () => {
-    const board: TransitDisplayBoard = {
+    const board: TransitDisplayData = {
       routeTypes: [2, 1],
       directions: [0, 'none'],
       category: 'departures',
-      candidates: [candWithTimes(800)],
+      data: [candWithTimes(800)],
     };
 
-    const [result] = sortAndCapBoards([board], 100);
+    const [result] = sortAndCapTransitDisplayData([board], 100);
 
     expect(result.routeTypes).toEqual([2, 1]);
     expect(result.directions).toEqual([0, 'none']);
@@ -571,19 +569,19 @@ describe('sortAndCapBoards', () => {
     const c800 = candWithTimes(800);
     const board = boardOf('departures', [c900, c800]);
 
-    sortAndCapBoards([board], 100);
+    sortAndCapTransitDisplayData([board], 100);
 
-    expect(board.candidates).toEqual([c900, c800]);
+    expect(board.data).toEqual([c900, c800]);
   });
 
   it('returns an empty array for no boards', () => {
-    expect(sortAndCapBoards([], 100)).toEqual([]);
+    expect(sortAndCapTransitDisplayData([], 100)).toEqual([]);
   });
 
   it('keeps an empty board empty', () => {
-    const [result] = sortAndCapBoards([boardOf('departures', [])], 100);
+    const [result] = sortAndCapTransitDisplayData([boardOf('departures', [])], 100);
 
-    expect(result.candidates).toEqual([]);
+    expect(result.data).toEqual([]);
   });
 });
 
@@ -633,13 +631,13 @@ describe('toTransitDisplayCandidates', () => {
   });
 });
 
-describe('sortTransitDisplayDataForUi', () => {
+describe('sortTransitDisplayDataWithMetaDataForUi', () => {
   /** A display whose only meaningful fields for ordering are route type, category, direction. */
   function display(
     routeType: AppRouteTypeValue,
     category: TransitDisplayCategory,
     directions: readonly (0 | 1 | 'none')[] = ['none'],
-  ): TransitDisplayData {
+  ): TransitDisplayDataWithMetaData {
     return {
       meta: { category, routeTypes: [routeType], directions, max: 10, radius: 100 },
       data: [],
@@ -653,7 +651,7 @@ describe('sortTransitDisplayDataForUi', () => {
     const subway = display(1, 'departures');
     const ferry = display(4, 'departures');
 
-    const sorted = sortTransitDisplayDataForUi([subway, ferry, rail, bus]);
+    const sorted = sortTransitDisplayDataWithMetaDataForUi([subway, ferry, rail, bus]);
 
     expect(sorted.map((d) => d.meta.routeTypes[0])).toEqual([3, 2, 1, 4]);
   });
@@ -662,10 +660,9 @@ describe('sortTransitDisplayDataForUi', () => {
     const arr = display(2, 'arrivals');
     const dep = display(2, 'departures');
 
-    expect(sortTransitDisplayDataForUi([arr, dep]).map((d) => d.meta.category)).toEqual([
-      'departures',
-      'arrivals',
-    ]);
+    expect(sortTransitDisplayDataWithMetaDataForUi([arr, dep]).map((d) => d.meta.category)).toEqual(
+      ['departures', 'arrivals'],
+    );
   });
 
   it('within a category, orders by direction (none, 0, 1)', () => {
@@ -673,11 +670,9 @@ describe('sortTransitDisplayDataForUi', () => {
     const d0 = display(2, 'departures', [0]);
     const dn = display(2, 'departures', ['none']);
 
-    expect(sortTransitDisplayDataForUi([d1, d0, dn]).map((d) => d.meta.directions[0])).toEqual([
-      'none',
-      0,
-      1,
-    ]);
+    expect(
+      sortTransitDisplayDataWithMetaDataForUi([d1, d0, dn]).map((d) => d.meta.directions[0]),
+    ).toEqual(['none', 0, 1]);
   });
 
   it('applies the three levels together: route type -> category -> direction', () => {
@@ -687,7 +682,13 @@ describe('sortTransitDisplayDataForUi', () => {
     const railDep0 = display(2, 'departures', [0]);
     const busArr = display(3, 'arrivals', ['none']);
 
-    const sorted = sortTransitDisplayDataForUi([railArr0, busDep, railDep1, railDep0, busArr]);
+    const sorted = sortTransitDisplayDataWithMetaDataForUi([
+      railArr0,
+      busDep,
+      railDep1,
+      railDep0,
+      busArr,
+    ]);
 
     expect(
       sorted.map((d) => ({
@@ -709,12 +710,12 @@ describe('sortTransitDisplayDataForUi', () => {
     const b = display(3, 'departures');
     const input = [a, b];
 
-    sortTransitDisplayDataForUi(input);
+    sortTransitDisplayDataWithMetaDataForUi(input);
 
     expect(input).toEqual([a, b]);
   });
 
   it('returns an empty array for empty input', () => {
-    expect(sortTransitDisplayDataForUi([])).toEqual([]);
+    expect(sortTransitDisplayDataWithMetaDataForUi([])).toEqual([]);
   });
 });

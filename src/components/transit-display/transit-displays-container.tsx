@@ -14,8 +14,8 @@ import { TransitDisplays } from '@/components/transit-display/transit-displays';
 import {
   buildTransitDisplayDataSet,
   NEARBY_RADIUS_M,
-  sortTransitDisplayDataForUi,
-  toTransitDisplayData,
+  sortTransitDisplayDataWithMetaDataForUi,
+  toTransitDisplayDataWithMetaData,
   transitDisplayMaxEntriesFor,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
@@ -75,9 +75,9 @@ export function TransitDisplaysContainer({
     // splits by direction. The builder takes a single splitByDirection flag, so
     // this is two calls (each scoped to its route types via a custom grouping).
     // buildTransitDisplayDataSet returns structural boards; presentation (name /
-    // time resolution into UI data) is done here via toTransitDisplayData. The
-    // concatenated result is then re-ordered into the canonical UI order by
-    // sortTransitDisplayDataForUi, so the board order is correct regardless of
+    // time resolution into UI data) is done here via toTransitDisplayDataWithMetaData.
+    // The concatenated result is then re-ordered into the canonical UI order by
+    // sortTransitDisplayDataWithMetaDataForUi, so the board order is correct regardless of
     // which modes share a stop (the raw concat is not in display order).
     const directionUnsplitBoards = buildTransitDisplayDataSet(stopTimes, NEARBY_RADIUS_M, {
       maxEntries,
@@ -90,9 +90,9 @@ export function TransitDisplaysContainer({
       splitByDirection: true,
     });
     const dataForUi = [...directionUnsplitBoards, ...directionSplitBoards].map((board) =>
-      toTransitDisplayData(board, dataLangs, NEARBY_RADIUS_M, maxEntries),
+      toTransitDisplayDataWithMetaData(board, dataLangs, NEARBY_RADIUS_M, maxEntries),
     );
-    return sortTransitDisplayDataForUi(dataForUi);
+    return sortTransitDisplayDataWithMetaDataForUi(dataForUi);
   }, [stopTimes, dataLangs, infoLevel]);
 
   return (
