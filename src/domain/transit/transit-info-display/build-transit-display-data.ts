@@ -26,6 +26,8 @@ const MAX_ENTRIES_BY_INFO_LEVEL: Record<InfoLevel, number> = {
   normal: 10,
   detailed: 20,
   verbose: 20,
+  // detailed: 10,
+  // verbose: 10,
 };
 
 /** Resolves the per-board row cap for the given info level. */
@@ -176,7 +178,13 @@ function categoryMinutes(
   return category === 'arrivals' ? entry.schedule.arrivalMinutes : entry.schedule.departureMinutes;
 }
 
-/** Whether an entry belongs on the given category's board. */
+/**
+ * Whether an entry belongs on the given category's board, using signboard
+ * semantics specific to this Transit Board: a departures board lists trips you
+ * can board here (and that continue past here), an arrivals board lists trips you
+ * can alight here. Other views still show the data as-is; only this board applies
+ * the boardable / alightable rule.
+ */
 export function categoryQualifies(
   entry: ContextualTimetableEntry,
   category: TransitDisplayCategory,
@@ -185,9 +193,15 @@ export function categoryQualifies(
   const attributes = getTimetableEntryAttributes(entry);
 
   if (category === 'departures') {
-    return !attributes.isTerminal;
+    // A departures board lists trips you can actually leave on: not the terminal
+    // (the trip ends here) and boardable here (excludes boarding-prohibited stops
+    // such as the drop-off-only stop just before a terminus).
+    return !attributes.isTerminal && !attributes.isPickupUnavailable;
   }
-  return !attributes.isOrigin;
+  // An arrivals board lists trips you can alight from here: not the origin (the
+  // trip starts here) and drop-off allowed here (excludes pickup-only legs such
+  // as the boarding leg of a turn-around / boarding-swap stop).
+  return !attributes.isOrigin && !attributes.isDropOffUnavailable;
 }
 
 /**

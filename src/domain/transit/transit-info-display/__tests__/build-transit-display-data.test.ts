@@ -179,12 +179,12 @@ describe('categoryQualifies', () => {
       expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
     });
 
-    it('ignores isPickupUnavailable (still qualifies)', () => {
+    it('excludes un-boardable entries (isPickupUnavailable)', () => {
       withAttributes({ isPickupUnavailable: true });
-      expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
+      expect(categoryQualifies(ENTRY, 'departures')).toBe(false);
     });
 
-    it('ignores isDropOffUnavailable (still qualifies)', () => {
+    it('ignores isDropOffUnavailable (still qualifies, boarding is unaffected)', () => {
       withAttributes({ isDropOffUnavailable: true });
       expect(categoryQualifies(ENTRY, 'departures')).toBe(true);
     });
@@ -201,14 +201,14 @@ describe('categoryQualifies', () => {
       expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
     });
 
-    it('ignores isPickupUnavailable (still qualifies)', () => {
+    it('ignores isPickupUnavailable (still qualifies, alighting is unaffected)', () => {
       withAttributes({ isPickupUnavailable: true });
       expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
     });
 
-    it('ignores isDropOffUnavailable (still qualifies)', () => {
+    it('excludes un-alightable entries (isDropOffUnavailable)', () => {
       withAttributes({ isDropOffUnavailable: true });
-      expect(categoryQualifies(ENTRY, 'arrivals')).toBe(true);
+      expect(categoryQualifies(ENTRY, 'arrivals')).toBe(false);
     });
   });
 
