@@ -35,7 +35,7 @@ export function transitDisplayMaxEntriesFor(infoLevel: InfoLevel): number {
 }
 
 /**
- * Stop-level fields of a {@link TransitDisplayEntryData}, grouped so consumers can
+ * Stop-level fields of a {@link TransitDisplayDatumForUi}, grouped so consumers can
  * tell stop context apart from the per-event (trip) fields.
  */
 export interface TransitDisplayEntryDataStop {
@@ -59,7 +59,7 @@ export interface TransitDisplayEntryDataStop {
   context: StopWithContext;
 }
 
-export interface TransitDisplayEntryData {
+export interface TransitDisplayDatumForUi {
   key: string;
   /** Stop-level context for this event. */
   stop: TransitDisplayEntryDataStop;
@@ -120,20 +120,20 @@ export interface TransitDisplayMeta {
 /**
  * One resolved display, ready to render: its {@link TransitDisplayMeta} descriptor
  * plus the UI rows. Produced by resolving a board's rows with
- * {@link buildTransitDisplayEntryData} (e.g. in the UI container).
+ * {@link buildTransitDisplayDatumForUi} (e.g. in the UI container).
  */
-export interface TransitDisplayDataWithMetaData {
+export interface TransitDisplayDataWithMetaDataForUi {
   /** Display descriptor (title + selection params). */
   meta: TransitDisplayMeta;
   /** The entry data this display renders. */
-  data: readonly TransitDisplayEntryData[];
+  data: readonly TransitDisplayDatumForUi[];
 }
 
 /**
  * PROVISIONAL NAME (`_RAW`, to be renamed). A display with its
  * {@link TransitDisplayMeta} descriptor attached but its rows NOT yet resolved:
  * `data` holds the structural board, so resolving it into UI rows (via
- * {@link buildTransitDisplayEntryData}) is the caller's choice. `meta` restates
+ * {@link buildTransitDisplayDatumForUi}) is the caller's choice. `meta` restates
  * the board's category / routeTypes /
  * directions and adds `max` / `radius`.
  */
@@ -278,11 +278,11 @@ export function sortByCategory(
   );
 }
 
-export function buildTransitDisplayEntryData(
-  candidates: readonly TransitDisplayCandidate[],
+export function buildTransitDisplayDatumForUi(
+  datum: readonly TransitDisplayDatum[],
   preferredDisplayLangs: readonly string[],
   category: TransitDisplayCategory,
-): TransitDisplayEntryData[] {
+): TransitDisplayDatumForUi[] {
   // Data-shaping half: resolve names and build the output objects for the
   // already-selected entries.
   // Stop names are per-stop, so resolve each at most once and share across the
@@ -299,7 +299,7 @@ export function buildTransitDisplayEntryData(
     return name;
   };
 
-  return candidates.map(({ entry, stopWithContext }) => {
+  return datum.map(({ entry, stopWithContext }) => {
     const agencyLangs = stopWithContext.agencies.map((agency) => agency.agency_lang);
     const routeAgency = stopWithContext.agencies.find(
       (agency) => agency.agency_id === entry.routeDirection.route.agency_id,
@@ -472,7 +472,7 @@ export function clusterCandidatesByRouteType(
  * baked in here.
  *
  * Grouping only: it does not sort / cap ({@link sortAndCapTransitDisplayData}) or resolve
- * display names ({@link buildTransitDisplayEntryData}). Empty cells are dropped, so the
+ * display names ({@link buildTransitDisplayDatumForUi}). Empty cells are dropped, so the
  * present route types / directions fall out without a separate enumeration.
  */
 export function groupCandidatesIntoBoards(
@@ -554,7 +554,7 @@ export function sortAndCapTransitDisplayData(
  *
  * Rows are intentionally left RAW: the returned `data` holds the structural
  * board, not resolved UI rows. Resolving display names / times into UI data (via
- * {@link buildTransitDisplayEntryData}) is the caller's choice, so this stays
+ * {@link buildTransitDisplayDatumForUi}) is the caller's choice, so this stays
  * i18n-free and the UI owns rendering.
  *
  * `radiusMeters` (the range stops are selected within; also each display's
@@ -579,7 +579,7 @@ export function buildTransitDisplayDataSet(
     condition.maxEntries,
   );
   // attach each display's meta descriptor; rows stay raw (caller resolves)
-  return sortedAndCapped.map((board) => ({
+  const meta: TransitDisplayDataWithMetaData_RAW[] = sortedAndCapped.map((board) => ({
     meta: {
       category: board.category,
       routeTypes: board.routeTypes,
@@ -589,6 +589,7 @@ export function buildTransitDisplayDataSet(
     },
     data: board,
   }));
+  return meta;
 }
 
 /**

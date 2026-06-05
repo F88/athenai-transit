@@ -102,7 +102,7 @@ export function TransitDisplaysContainer({
     >
       {scrollFade.showTop && <ScrollFadeEdge position="top" />}
       <TransitDisplays
-        displays={displays}
+        dataWithMeta={displays}
         dataLangs={dataLangs}
         emptyMessage={t('stop.timetable.allFilteredOut')}
         now={now}

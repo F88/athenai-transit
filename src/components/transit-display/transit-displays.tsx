@@ -11,11 +11,11 @@ import { TimetableEntryAttributesLabels } from '@/components/label/timetable-ent
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { Button } from '@/components/ui/button';
 import {
-  buildTransitDisplayEntryData,
+  buildTransitDisplayDatumForUi,
   type TransitDisplayCategory,
-  type TransitDisplayDataWithMetaData,
+  type TransitDisplayDataWithMetaDataForUi,
   type TransitDisplayDataWithMetaData_RAW,
-  type TransitDisplayEntryData,
+  type TransitDisplayDatumForUi,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { getBearingDeg } from '@/domain/transit/distance';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
@@ -106,8 +106,8 @@ const HEADSIGN_WIDTH_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
 
 export interface TransitDisplaysProps {
   /** Raw displays (meta + unresolved board); rows are resolved here for rendering. */
-  displays: readonly TransitDisplayDataWithMetaData_RAW[];
-  /** Display language chain passed to {@link buildTransitDisplayEntryData} for row resolution. */
+  dataWithMeta: readonly TransitDisplayDataWithMetaData_RAW[];
+  /** Display language chain passed to {@link buildTransitDisplayDatumForUi} for row resolution. */
   dataLangs: readonly string[];
   emptyMessage: string;
   now: Date;
@@ -133,14 +133,14 @@ const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
 
 /**
  * Resolves each {@link TransitDisplayDataWithMetaData_RAW} into UI rows (via
- * {@link buildTransitDisplayEntryData} -- this is the only consumer that needs
+ * {@link buildTransitDisplayDatumForUi} -- this is the only consumer that needs
  * them) and renders it as its own stacked board, with a filter bar on top for
  * choosing which categories (departures / arrivals) to show. The filter is
  * presentation-only local state: it narrows the rendered displays, it does not
  * change how they are built or fetched.
  */
 export function TransitDisplays({
-  displays,
+  dataWithMeta,
   dataLangs,
   emptyMessage,
   now,
@@ -156,21 +156,21 @@ export function TransitDisplays({
   // Resolve every raw display's rows into UI data here -- TransitDisplays is the
   // only consumer that needs the resolved rows. Resolve all up front, then let
   // the category filter below narrow the already-resolved list.
-  const resolvedDisplays = useMemo<readonly TransitDisplayDataWithMetaData[]>(
+  const resolvedDataWithMeta = useMemo<readonly TransitDisplayDataWithMetaDataForUi[]>(
     () =>
-      displays.map((raw) => ({
-        meta: raw.meta,
-        data: buildTransitDisplayEntryData(raw.data.data, dataLangs, raw.data.category),
+      dataWithMeta.map((datum) => ({
+        meta: datum.meta,
+        data: buildTransitDisplayDatumForUi(datum.data.data, dataLangs, datum.data.category),
       })),
-    [displays, dataLangs],
+    [dataWithMeta, dataLangs],
   );
 
   // Only offer toggles for categories that actually have a board, so the bar
   // mirrors what is on screen rather than always showing both.
   const presentCategories = FILTERABLE_CATEGORIES.filter((category) =>
-    resolvedDisplays.some((display) => display.meta.category === category),
+    resolvedDataWithMeta.some((display) => display.meta.category === category),
   );
-  const visibleDisplays = resolvedDisplays.filter(
+  const visibleData = resolvedDataWithMeta.filter(
     (display) => shownCategories[display.meta.category],
   );
 
@@ -188,14 +188,14 @@ export function TransitDisplays({
           onToggleCategory={toggleCategory}
         />
       )}
-      {visibleDisplays.map((display, index) => (
+      {visibleData.map((dataWithMeta, index) => (
         // Key from the board's identity (category + its route types), with the
         // map index as a disambiguator: a `custom` route grouping can collapse
         // two groups to the same present route types, so identity alone is not
         // guaranteed unique.
         <TransitDisplay
-          key={`${display.meta.category}__${display.meta.routeTypes.join('-')}__${index}`}
-          display={display}
+          key={`${dataWithMeta.meta.category}__${dataWithMeta.meta.routeTypes.join('-')}__${index}`}
+          dataWithMeta={dataWithMeta}
           emptyMessage={emptyMessage}
           now={now}
           mapCenter={mapCenter}
@@ -315,7 +315,7 @@ function TransitDisplayCategoryFilter({
 }
 
 export interface TransitDisplayProps {
-  display: TransitDisplayDataWithMetaData;
+  dataWithMeta: TransitDisplayDataWithMetaDataForUi;
   emptyMessage: string;
   now: Date;
   mapCenter: LatLng | null;
@@ -339,7 +339,7 @@ export interface TransitDisplayProps {
  * above the rows, or an empty fallback when the board has no entries.
  */
 export function TransitDisplay({
-  display,
+  dataWithMeta,
   emptyMessage,
   mapCenter,
   infoLevel,
@@ -353,11 +353,11 @@ export function TransitDisplay({
   // route type and basis are structured meta; the UI composes the localized text.
   // The board's title carries the departure/arrival distinction, so rows do not
   // repeat it: each row shows a single time (the board's basis) without a label.
-  const isArrivalBoard = display.meta.category === 'arrivals';
-  const routeTypeIcon = routeTypesEmoji(display.meta.routeTypes);
+  const isArrivalBoard = dataWithMeta.meta.category === 'arrivals';
+  const routeTypeIcon = routeTypesEmoji(dataWithMeta.meta.routeTypes);
   const title = t(isArrivalBoard ? 'transitDisplay.arrivals' : 'transitDisplay.departures');
   // A board that mixes route types: rows then show their own trip route-type emoji.
-  const hasMultiRoutes = display.meta.routeTypes.length >= 2;
+  const hasMultiRoutes = dataWithMeta.meta.routeTypes.length >= 2;
 
   // for debug
   // if (display.meta.category === 'arrivals') {
@@ -387,8 +387,9 @@ export function TransitDisplay({
         {infoLevelFlag.isVerboseEnabled && (
           <div className="flex items-baseline gap-3">
             <p className="m-0 ml-auto w-full min-w-0 text-right text-xs text-amber-200/80">
-              [{display.meta.category} / rt {display.meta.routeTypes.join(',')} / dir{' '}
-              {display.meta.directions.join(',')} (max:{display.meta.max},{display.meta.radius}m)]
+              [{dataWithMeta.meta.category} / rt {dataWithMeta.meta.routeTypes.join(',')} / dir{' '}
+              {dataWithMeta.meta.directions.join(',')} (max:{dataWithMeta.meta.max},
+              {dataWithMeta.meta.radius}m)]
             </p>
           </div>
         )}
@@ -424,22 +425,22 @@ export function TransitDisplay({
               ROW_TEXT_CLASS_BY_SIZE[size],
             )}
           >
-            {display.meta.radius}m
+            {dataWithMeta.meta.radius}m
           </p>
         </div>
       </div>
       {/* Body: the rows (or the empty fallback). */}
       <div className="bg-neutral-950 p-0">
-        {display.data.length === 0 ? (
+        {dataWithMeta.data.length === 0 ? (
           <p className="m-0 px-1 py-2 text-xs tracking-[0.08em] text-amber-100/55">
             {emptyMessage}
           </p>
         ) : (
           <ul className="m-0 list-none p-0">
-            {display.data.map((row) => (
+            {dataWithMeta.data.map((row) => (
               <TransitDisplayEntry
                 key={row.key}
-                data={row}
+                dataWithMeta={row}
                 mapCenter={mapCenter}
                 infoLevel={infoLevel}
                 size={size}
@@ -504,7 +505,7 @@ function TimeInfo({
 }
 
 export interface TransitDisplayEntryProps {
-  data: TransitDisplayEntryData;
+  dataWithMeta: TransitDisplayDatumForUi;
   mapCenter: LatLng | null;
   infoLevel: InfoLevel;
   /** Display size; drives the row text size. */
@@ -521,7 +522,7 @@ export interface TransitDisplayEntryProps {
 
 /** A single departure-board row (one stop event). */
 export function TransitDisplayEntry({
-  data,
+  dataWithMeta,
   mapCenter,
   infoLevel,
   size,
@@ -533,8 +534,9 @@ export function TransitDisplayEntry({
 
   // Distance is baked on the row (query-time); bearing is computed live from the
   // current map center so the direction arrow tracks panning, like StopInfo.
-  const distanceRounded = data.stop.distance != null ? Math.round(data.stop.distance) : null;
-  const bearing = mapCenter ? getBearingDeg(mapCenter, data.stop.context.stop) : null;
+  const distanceRounded =
+    dataWithMeta.stop.distance != null ? Math.round(dataWithMeta.stop.distance) : null;
+  const bearing = mapCenter ? getBearingDeg(mapCenter, dataWithMeta.stop.context.stop) : null;
 
   const showRouteTypeOfEntry = infoLevelFlag.isVerboseEnabled || hasMultiRoutes;
   // const showRouteTypeOfStop = infoLevelFlag.isVerboseEnabled || data.stop.context.routeTypes.length >= 2;
@@ -550,15 +552,15 @@ export function TransitDisplayEntry({
         ROW_TEXT_CLASS_BY_SIZE[size],
         BOARD_PANEL_BG,
       )}
-      onClick={() => onStopSelected(data.stop.id)}
+      onClick={() => onStopSelected(dataWithMeta.stop.id)}
     >
       {/* Single-line departure-board row: time, mode, route, agency, destination, stop, platform. */}
       <div className="flex items-center gap-2 whitespace-nowrap">
         {/* Local TimeInfo: shows timeText; tap selects the stop + opens inspection. */}
         <TimeInfo
-          timeText={data.timeText}
-          stopId={data.stop.id}
-          inspectTarget={data.inspectionTarget}
+          timeText={dataWithMeta.timeText}
+          stopId={dataWithMeta.stop.id}
+          inspectTarget={dataWithMeta.inspectionTarget}
           className={ROW_TEXT_CLASS_BY_SIZE[size]}
           onStopSelected={onStopSelected}
           onInspectTrip={onInspectTrip}
@@ -566,18 +568,18 @@ export function TransitDisplayEntry({
 
         {showRouteTypeOfEntry && (
           // Route type emoji for the trip
-          <span aria-hidden>{data.routeTypeEmoji}</span>
+          <span aria-hidden>{dataWithMeta.routeTypeEmoji}</span>
         )}
 
         {/* Headsign (destination) + attribute labels: headsign fills the column and
             truncates, pushing the labels to the right edge. */}
         <span className={cn('flex items-center gap-1', HEADSIGN_WIDTH_CLASS_BY_SIZE[size])}>
-          <span className="min-w-0 flex-1 truncate">{data.headsign || '-'}</span>
+          <span className="min-w-0 flex-1 truncate">{dataWithMeta.headsign || '-'}</span>
           {/* Attribute labels (terminal / origin / no-pickup / no-drop-off). Shows the
             no-boarding marker so a service that cannot be boarded here is not silent. */}
           <TimetableEntryAttributesLabels
             size={TIMETABLE_ENTRY_ATTRIBUTES_LABELS_SIZE_BY_SIZE[size]}
-            attributes={data.attributes}
+            attributes={dataWithMeta.attributes}
             showDisplayTerminal={true}
             showDisplayOrigin={true}
             showDisplayPickupUnavailable={infoLevelFlag.isVerboseEnabled ? true : false}
@@ -587,27 +589,27 @@ export function TransitDisplayEntry({
 
         {/* Route name */}
         <span className="min-w-[6ch] flex-1 truncate text-left text-amber-100">
-          {data.routeName}
+          {dataWithMeta.routeName}
         </span>
 
         {/* Operating agency */}
         <span className="min-w-[6ch] flex-1 truncate text-left text-neutral-400">
-          {data.agencyName}
+          {dataWithMeta.agencyName}
         </span>
 
         {/* Stop: stop-level mode emojis + stop name + platform code. */}
         {showRouteTypeOfStop && (
           // Stop-level mode emojis
-          <span aria-hidden>{data.stop.routeTypesEmoji}</span>
+          <span aria-hidden>{dataWithMeta.stop.routeTypesEmoji}</span>
         )}
 
         {/* Stop info kept together as one group (stop name, platform code, and
             distance / direction) so the stop's details are not split across the row. */}
         <span className="flex min-w-0 flex-1 items-center gap-1">
-          <span className="min-w-0 truncate">{data.stop.name}</span>
-          {data.stop.platformCode !== undefined && (
+          <span className="min-w-0 truncate">{dataWithMeta.stop.name}</span>
+          {dataWithMeta.stop.platformCode !== undefined && (
             <span className="shrink-0 bg-neutral-800 px-1 text-amber-100">
-              {data.stop.platformCode}
+              {dataWithMeta.stop.platformCode}
             </span>
           )}
           {/* Distance + direction to the stop (same DistanceBadge as StopInfo). */}

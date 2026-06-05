@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
-import type { TransitDisplayEntryData } from '../../domain/transit/transit-info-display/build-transit-display-data';
+import type { TransitDisplayDatumForUi } from '../../domain/transit/transit-info-display/build-transit-display-data';
 import {
   agencyTobus,
   baseStop,
@@ -45,15 +45,15 @@ function makeStopContext(stopId: string, routeTypes: AppRouteTypeValue[]): StopW
 }
 
 /**
- * Build a {@link TransitDisplayEntryData} for stories.
+ * Build a {@link TransitDisplayDatumForUi} for stories.
  *
- * `TransitDisplayEntryData` is the presentational output of `buildTransitDisplayEntryData`,
+ * `TransitDisplayDatumForUi` is the presentational output of `buildTransitDisplayDatumForUi`,
  * so stories construct it directly rather than running the builder.
  *
  * @param overrides - Flat override knobs for the defaults.
  * @returns A complete row with realistic default values.
  */
-function makeRow(overrides: MakeRowOverrides = {}): TransitDisplayEntryData {
+function makeRow(overrides: MakeRowOverrides = {}): TransitDisplayDatumForUi {
   const stopId = overrides.stopId ?? 'stop-001';
   const departureMinutes = overrides.departureMinutes ?? 870; // 14:30
   const serviceDate = overrides.serviceDate ?? storyServiceDate;
@@ -95,7 +95,7 @@ const meta = {
   title: 'TransitDisplay/TransitDisplayEntry',
   component: TransitDisplayEntry,
   args: {
-    data: makeRow(),
+    dataWithMeta: makeRow(),
     infoLevel: 'normal' as const,
     size: 'md' as const,
     hasMultiRoutes: false,
@@ -104,7 +104,7 @@ const meta = {
     onInspectTrip: fn(),
   },
   argTypes: {
-    data: { control: 'object' },
+    dataWithMeta: { control: 'object' },
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     hasMultiRoutes: { control: 'boolean' },
@@ -135,14 +135,14 @@ export const Default: Story = {};
 /** Empty headsign falls back to the `-` placeholder in the second line. */
 export const EmptyHeadsign: Story = {
   args: {
-    data: makeRow({ headsign: '' }),
+    dataWithMeta: makeRow({ headsign: '' }),
   },
 };
 
 /** Long stop name, route name, and headsign all exercise truncation. */
 export const LongText: Story = {
   args: {
-    data: makeRow({
+    dataWithMeta: makeRow({
       stopName: '東京都立産業技術研究センター前',
       routeName: '北大01',
       headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
@@ -154,7 +154,7 @@ export const LongText: Story = {
 /** Single-character headsign — minimum-length rendering. */
 export const ShortHeadsign: Story = {
   args: {
-    data: makeRow({ routeName: 'TX', headsign: 'X', timeText: '14:30' }),
+    dataWithMeta: makeRow({ routeName: 'TX', headsign: 'X', timeText: '14:30' }),
   },
 };
 
@@ -199,7 +199,7 @@ export const SizeComparison: Story = {
         {rows.map(({ size, data }) => (
           <TransitDisplayEntry
             key={data.key}
-            data={data}
+            dataWithMeta={data}
             infoLevel={args.infoLevel}
             size={size}
             hasMultiRoutes={args.hasMultiRoutes}
@@ -215,7 +215,7 @@ export const SizeComparison: Story = {
 
 // --- Kitchen sink ---
 
-const kitchenSinkRows: TransitDisplayEntryData[] = [
+const kitchenSinkRows: TransitDisplayDatumForUi[] = [
   makeRow({
     key: 'k1',
     timeText: '14:30',
@@ -315,7 +315,7 @@ export const KitchenSink: Story = {
       {kitchenSinkRows.map((row) => (
         <TransitDisplayEntry
           key={row.key}
-          data={row}
+          dataWithMeta={row}
           infoLevel={args.infoLevel}
           size={args.size}
           hasMultiRoutes={args.hasMultiRoutes}
