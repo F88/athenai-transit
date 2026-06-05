@@ -119,14 +119,29 @@ export interface TransitDisplayMeta {
 
 /**
  * One resolved display, ready to render: its {@link TransitDisplayMeta} descriptor
- * plus the UI rows. Produced from a {@link TransitDisplayData} board by
- * {@link toTransitDisplayDataWithMetaData}.
+ * plus the UI rows. Produced by resolving a board's rows with
+ * {@link buildTransitDisplayEntryData} (e.g. in the UI container).
  */
 export interface TransitDisplayDataWithMetaData {
   /** Display descriptor (title + selection params). */
   meta: TransitDisplayMeta;
   /** The entry data this display renders. */
   data: readonly TransitDisplayEntryData[];
+}
+
+/**
+ * PROVISIONAL NAME (`_RAW`, to be renamed). A display with its
+ * {@link TransitDisplayMeta} descriptor attached but its rows NOT yet resolved:
+ * `data` holds the structural board, so resolving it into UI rows (via
+ * {@link buildTransitDisplayEntryData}) is the caller's choice. `meta` restates
+ * the board's category / routeTypes /
+ * directions and adds `max` / `radius`.
+ */
+export interface TransitDisplayDataWithMetaData_RAW {
+  /** Display descriptor (title + selection params). */
+  meta: TransitDisplayMeta;
+  /** The structural board, whose entries are not yet resolved into UI rows. */
+  data: TransitDisplayData;
 }
 
 /**
@@ -457,7 +472,7 @@ export function clusterCandidatesByRouteType(
  * baked in here.
  *
  * Grouping only: it does not sort / cap ({@link sortAndCapTransitDisplayData}) or resolve
- * display names ({@link toTransitDisplayDataWithMetaData}). Empty cells are dropped, so the
+ * display names ({@link buildTransitDisplayEntryData}). Empty cells are dropped, so the
  * present route types / directions fall out without a separate enumeration.
  */
 export function groupCandidatesIntoBoards(
@@ -532,63 +547,54 @@ export function sortAndCapTransitDisplayData(
 }
 
 /**
- * Turns one board into UI data -- assembles its `meta`
- * descriptor (from the board cell + the `radiusMeters` / `maxEntries` scope) and
- * resolves display names for its entries (`data`).
- */
-export function toTransitDisplayDataWithMetaData(
-  board: TransitDisplayData,
-  preferredDisplayLangs: readonly string[],
-  radiusMeters: number,
-  maxEntries: number,
-): TransitDisplayDataWithMetaData {
-  return {
-    meta: {
-      category: board.category,
-      routeTypes: board.routeTypes,
-      directions: board.directions,
-      max: maxEntries,
-      radius: radiusMeters,
-    },
-    data: buildTransitDisplayEntryData(board.data, preferredDisplayLangs, board.category),
-  };
-}
-
-/**
  * Runs the structural board-building steps in sequence: distance filter ->
- * flatten -> group into boards (route-type / category clustering) -> sort + cap.
- * Each step is single-purpose so the next one's concern does not leak into it.
+ * flatten -> group into boards (route-type / category clustering) -> sort + cap,
+ * then attaches each display's `meta` descriptor. Each step is single-purpose so
+ * the next one's concern does not leak into it.
  *
- * Presentation is intentionally NOT done here: resolving display names / times
- * into UI data (via {@link toTransitDisplayDataWithMetaData}) is left to the caller, so this
- * stays i18n-free and the UI owns rendering concerns. The caller maps the
- * returned boards through `toTransitDisplayDataWithMetaData`.
+ * Rows are intentionally left RAW: the returned `data` holds the structural
+ * board, not resolved UI rows. Resolving display names / times into UI data (via
+ * {@link buildTransitDisplayEntryData}) is the caller's choice, so this stays
+ * i18n-free and the UI owns rendering.
  *
- * `radiusMeters` (the range stops are selected within) and `condition` (the
- * per-display selection condition) are both required so the caller states the
- * selection scope explicitly. {@link NEARBY_RADIUS_M} is the conventional
- * radius to pass.
+ * `radiusMeters` (the range stops are selected within; also each display's
+ * `meta.radius`) and `condition` (the per-display selection condition) are both
+ * required so the caller states the selection scope explicitly.
+ * {@link NEARBY_RADIUS_M} is the conventional radius to pass.
  */
 export function buildTransitDisplayDataSet(
   stops: readonly StopWithContext[],
   radiusMeters: number,
   condition: TransitDisplayCondition,
-): TransitDisplayData[] {
+): TransitDisplayDataWithMetaData_RAW[] {
   // distance filter: stops within radiusMeters of the center
   const nearbyStops: StopWithContext[] = filterStopsWithinRadius(stops, radiusMeters);
   // flatten each stop's stopTimes into candidates
   const candidates: TransitDisplayCandidate[] = toTransitDisplayCandidates(nearbyStops);
   // cluster by route type, optionally by direction, then split by category
-  const transitDisplayData: TransitDisplayData[] = groupCandidatesIntoBoards(candidates, condition);
+  const boards: TransitDisplayData[] = groupCandidatesIntoBoards(candidates, condition);
   // sort by time, cap each board
-  const sortedAndCapped = sortAndCapTransitDisplayData(transitDisplayData, condition.maxEntries);
-  return sortedAndCapped;
+  const sortedAndCapped: TransitDisplayData[] = sortAndCapTransitDisplayData(
+    boards,
+    condition.maxEntries,
+  );
+  // attach each display's meta descriptor; rows stay raw (caller resolves)
+  return sortedAndCapped.map((board) => ({
+    meta: {
+      category: board.category,
+      routeTypes: board.routeTypes,
+      directions: board.directions,
+      max: condition.maxEntries,
+      radius: radiusMeters,
+    },
+    data: board,
+  }));
 }
 
 /**
- * UI ordering for the displays, independent of how they were built or merged
- * (the container concatenates a no-split and a split call, so the raw order is
- * not canonical). Three levels:
+ * UI ordering for the raw displays (sorted on `meta`, before rows are resolved),
+ * independent of how they were built or merged (the container concatenates a
+ * no-split and a split call, so the raw order is not canonical). Three levels:
  *   1. route type, by `ROUTE_TYPE_DISPLAY_ORDER`
  *   2. within a route type: category, departures before arrivals
  *   3. within a category: direction, in `DIRECTIONS` order (none, 0, 1)
@@ -596,10 +602,10 @@ export function buildTransitDisplayDataSet(
  * A full comparator (not a stable sort on one key), so reordering by route type
  * can never disturb the departures/arrivals or direction order set up earlier.
  */
-export function sortTransitDisplayDataWithMetaDataForUi(
-  transitDisplayDataWithMetaData: readonly TransitDisplayDataWithMetaData[],
-): TransitDisplayDataWithMetaData[] {
-  const orderKey = (d: TransitDisplayDataWithMetaData): [number, number, number] => {
+export function sortTransitDisplayDataWithMetaData_RAWForUi(
+  rawDisplays: readonly TransitDisplayDataWithMetaData_RAW[],
+): TransitDisplayDataWithMetaData_RAW[] {
+  const orderKey = (d: TransitDisplayDataWithMetaData_RAW): [number, number, number] => {
     const direction = d.meta.directions[0];
     return [
       ROUTE_TYPE_DISPLAY_ORDER.indexOf(d.meta.routeTypes[0]),
@@ -607,7 +613,7 @@ export function sortTransitDisplayDataWithMetaDataForUi(
       DIRECTIONS.indexOf(direction === 'none' ? undefined : direction),
     ];
   };
-  return [...transitDisplayDataWithMetaData].sort((a, b) => {
+  return [...rawDisplays].sort((a, b) => {
     const ka = orderKey(a);
     const kb = orderKey(b);
     return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];

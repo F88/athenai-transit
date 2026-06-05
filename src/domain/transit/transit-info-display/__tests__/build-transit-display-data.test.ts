@@ -26,14 +26,14 @@ import {
   groupCandidatesIntoBoards,
   sortAndCapTransitDisplayData,
   sortByCategory,
-  sortTransitDisplayDataWithMetaDataForUi,
+  sortTransitDisplayDataWithMetaData_RAWForUi,
   toTransitDisplayCandidates,
   transitDisplayMaxEntriesFor,
   type TransitDisplayData,
   type TransitDisplayCandidate,
   type TransitDisplayCategory,
   type TransitDisplayCondition,
-  type TransitDisplayDataWithMetaData,
+  type TransitDisplayDataWithMetaData_RAW,
 } from '../build-transit-display-data';
 
 // categoryQualifies delegates origin/terminal determination to this domain
@@ -631,16 +631,16 @@ describe('toTransitDisplayCandidates', () => {
   });
 });
 
-describe('sortTransitDisplayDataWithMetaDataForUi', () => {
+describe('sortTransitDisplayDataWithMetaData_RAWForUi', () => {
   /** A display whose only meaningful fields for ordering are route type, category, direction. */
   function display(
     routeType: AppRouteTypeValue,
     category: TransitDisplayCategory,
     directions: readonly (0 | 1 | 'none')[] = ['none'],
-  ): TransitDisplayDataWithMetaData {
+  ): TransitDisplayDataWithMetaData_RAW {
     return {
       meta: { category, routeTypes: [routeType], directions, max: 10, radius: 100 },
-      data: [],
+      data: { routeTypes: [routeType], directions, category, data: [] },
     };
   }
 
@@ -651,7 +651,7 @@ describe('sortTransitDisplayDataWithMetaDataForUi', () => {
     const subway = display(1, 'departures');
     const ferry = display(4, 'departures');
 
-    const sorted = sortTransitDisplayDataWithMetaDataForUi([subway, ferry, rail, bus]);
+    const sorted = sortTransitDisplayDataWithMetaData_RAWForUi([subway, ferry, rail, bus]);
 
     expect(sorted.map((d) => d.meta.routeTypes[0])).toEqual([3, 2, 1, 4]);
   });
@@ -660,9 +660,9 @@ describe('sortTransitDisplayDataWithMetaDataForUi', () => {
     const arr = display(2, 'arrivals');
     const dep = display(2, 'departures');
 
-    expect(sortTransitDisplayDataWithMetaDataForUi([arr, dep]).map((d) => d.meta.category)).toEqual(
-      ['departures', 'arrivals'],
-    );
+    expect(
+      sortTransitDisplayDataWithMetaData_RAWForUi([arr, dep]).map((d) => d.meta.category),
+    ).toEqual(['departures', 'arrivals']);
   });
 
   it('within a category, orders by direction (none, 0, 1)', () => {
@@ -671,7 +671,7 @@ describe('sortTransitDisplayDataWithMetaDataForUi', () => {
     const dn = display(2, 'departures', ['none']);
 
     expect(
-      sortTransitDisplayDataWithMetaDataForUi([d1, d0, dn]).map((d) => d.meta.directions[0]),
+      sortTransitDisplayDataWithMetaData_RAWForUi([d1, d0, dn]).map((d) => d.meta.directions[0]),
     ).toEqual(['none', 0, 1]);
   });
 
@@ -682,7 +682,7 @@ describe('sortTransitDisplayDataWithMetaDataForUi', () => {
     const railDep0 = display(2, 'departures', [0]);
     const busArr = display(3, 'arrivals', ['none']);
 
-    const sorted = sortTransitDisplayDataWithMetaDataForUi([
+    const sorted = sortTransitDisplayDataWithMetaData_RAWForUi([
       railArr0,
       busDep,
       railDep1,
@@ -710,12 +710,12 @@ describe('sortTransitDisplayDataWithMetaDataForUi', () => {
     const b = display(3, 'departures');
     const input = [a, b];
 
-    sortTransitDisplayDataWithMetaDataForUi(input);
+    sortTransitDisplayDataWithMetaData_RAWForUi(input);
 
     expect(input).toEqual([a, b]);
   });
 
   it('returns an empty array for empty input', () => {
-    expect(sortTransitDisplayDataWithMetaDataForUi([])).toEqual([]);
+    expect(sortTransitDisplayDataWithMetaData_RAWForUi([])).toEqual([]);
   });
 });

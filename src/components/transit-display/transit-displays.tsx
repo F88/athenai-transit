@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { ArrowRight, ArrowUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -11,8 +11,10 @@ import { TimetableEntryAttributesLabels } from '@/components/label/timetable-ent
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { Button } from '@/components/ui/button';
 import {
+  buildTransitDisplayEntryData,
   type TransitDisplayCategory,
   type TransitDisplayDataWithMetaData,
+  type TransitDisplayDataWithMetaData_RAW,
   type TransitDisplayEntryData,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
 import { getBearingDeg } from '@/domain/transit/distance';
@@ -103,7 +105,10 @@ const HEADSIGN_WIDTH_CLASS_BY_SIZE: Record<ExtendedDisplaySize, string> = {
 };
 
 export interface TransitDisplaysProps {
-  displays: readonly TransitDisplayDataWithMetaData[];
+  /** Raw displays (meta + unresolved board); rows are resolved here for rendering. */
+  displays: readonly TransitDisplayDataWithMetaData_RAW[];
+  /** Display language chain passed to {@link buildTransitDisplayEntryData} for row resolution. */
+  dataLangs: readonly string[];
   emptyMessage: string;
   now: Date;
   mapCenter: LatLng | null;
@@ -127,13 +132,16 @@ const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
 };
 
 /**
- * Renders every {@link TransitDisplayDataWithMetaData} as its own stacked board, with a
- * filter bar on top for choosing which categories (departures / arrivals) to
- * show. The filter is presentation-only local state: it narrows the rendered
- * `displays`, it does not change how they are built or fetched.
+ * Resolves each {@link TransitDisplayDataWithMetaData_RAW} into UI rows (via
+ * {@link buildTransitDisplayEntryData} -- this is the only consumer that needs
+ * them) and renders it as its own stacked board, with a filter bar on top for
+ * choosing which categories (departures / arrivals) to show. The filter is
+ * presentation-only local state: it narrows the rendered displays, it does not
+ * change how they are built or fetched.
  */
 export function TransitDisplays({
   displays,
+  dataLangs,
   emptyMessage,
   now,
   mapCenter,
@@ -145,12 +153,26 @@ export function TransitDisplays({
   const [shownCategories, setShownCategories] =
     useState<Record<TransitDisplayCategory, boolean>>(DEFAULT_CATEGORIES);
 
+  // Resolve every raw display's rows into UI data here -- TransitDisplays is the
+  // only consumer that needs the resolved rows. Resolve all up front, then let
+  // the category filter below narrow the already-resolved list.
+  const resolvedDisplays = useMemo<readonly TransitDisplayDataWithMetaData[]>(
+    () =>
+      displays.map((raw) => ({
+        meta: raw.meta,
+        data: buildTransitDisplayEntryData(raw.data.data, dataLangs, raw.data.category),
+      })),
+    [displays, dataLangs],
+  );
+
   // Only offer toggles for categories that actually have a board, so the bar
   // mirrors what is on screen rather than always showing both.
   const presentCategories = FILTERABLE_CATEGORIES.filter((category) =>
-    displays.some((display) => display.meta.category === category),
+    resolvedDisplays.some((display) => display.meta.category === category),
   );
-  const visibleDisplays = displays.filter((display) => shownCategories[display.meta.category]);
+  const visibleDisplays = resolvedDisplays.filter(
+    (display) => shownCategories[display.meta.category],
+  );
 
   const toggleCategory = (category: TransitDisplayCategory) => {
     setShownCategories((prev) => ({ ...prev, [category]: !prev[category] }));
