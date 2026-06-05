@@ -187,6 +187,29 @@ export function TransitDisplays({
   );
 }
 
+/**
+ * Filter toggle button box metrics (border width + padding) per display size, so
+ * the frame and inset scale with the size-scaled label. The buttons always
+ * contain an arrow svg, so horizontal padding uses `has-[>svg]:px-*` to override
+ * the ui/button size variant's own `has-[>svg]:px-3`; `py-*` sets the height feel.
+ * Border color is applied separately (the shown / hidden state classes).
+ */
+const FILTER_BUTTON_BOX_BY_SIZE: Record<ExtendedDisplaySize, string> = {
+  xs: 'border has-[>svg]:px-2 py-0.5',
+  sm: 'border-2 has-[>svg]:px-2.5 py-1',
+  md: 'border-4 has-[>svg]:px-3 py-1',
+  lg: 'border-8 has-[>svg]:px-5 py-2',
+  xl: 'border-12 has-[>svg]:px-8 py-4',
+};
+
+const FILTER_BOX_SIZE: Record<ExtendedDisplaySize, string> = {
+  xs: 'py-2 px-3 gap-2',
+  sm: 'py-2 px-3 gap-2.5',
+  md: 'py-2 px-3 gap-3',
+  lg: 'py-3 px-8 gap-8',
+  xl: 'py-4 px-12 gap-12',
+};
+
 interface TransitDisplayCategoryFilterProps {
   /** Categories that have a board, in board order; one toggle is rendered per entry. */
   categories: readonly TransitDisplayCategory[];
@@ -215,7 +238,8 @@ function TransitDisplayCategoryFilter({
       role="group"
       aria-label={t('transitDisplay.filter.label')}
       className={cn(
-        'mb-2 flex items-center gap-2 rounded-sm border-0 px-3 py-2',
+        'mb-2 flex items-center rounded-sm border-0',
+        FILTER_BOX_SIZE[size],
         // BOARD_FRAME_COLOR,
         // BOARD_PANEL_BG,
       )}
@@ -230,14 +254,15 @@ function TransitDisplayCategoryFilter({
           <Button
             key={category}
             variant="ghost"
-            size="sm"
+            size="default"
             onClick={() => onToggleCategory(category)}
             className={cn(
               // grow + basis-0 makes both buttons equal width so they fill the
               // bar evenly (basis-0 avoids fighting the Button base `shrink-0`).
               // min-w-0 lets the label truncate instead of overflowing on narrow screens.
               // h-auto lets the button grow with the size-scaled label text.
-              'h-auto min-w-0 grow basis-0 rounded-sm border-2 py-1 font-bold tracking-[0.18em] uppercase',
+              'h-auto min-w-0 grow basis-0 rounded-sm font-bold tracking-[0.18em] uppercase',
+              FILTER_BUTTON_BOX_BY_SIZE[size],
               TITLE_TEXT_CLASS_BY_SIZE[size],
               isShown
                 ? 'border-amber-300/70 bg-neutral-800 text-amber-100 hover:bg-neutral-700 hover:text-amber-100 dark:hover:bg-neutral-700'
