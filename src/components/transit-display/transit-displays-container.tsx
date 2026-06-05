@@ -14,9 +14,26 @@ import { TransitDisplays } from '@/components/transit-display/transit-displays';
 import {
   buildTransitDisplayDataSet,
   NEARBY_RADIUS_M,
+  sortTransitDisplayDataWithMetaData,
   transitDisplayMaxEntriesFor,
-  type TransitDisplayRouteGrouping,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
+import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
+import type { AppRouteTypeValue } from '@/types/app/transit';
+
+/**
+ * Route types whose boards are NOT split by direction: bus, trolleybus, and
+ * ferry. Their `direction_id` is route-local / arbitrary, and at a shared stop
+ * many routes converge (ferries especially fan out hub-and-spoke across several
+ * pontoons), so a per-direction split would mix unrelated routes; the headsign
+ * carries the destination instead. Everything else (rail / subway / tram /
+ * monorail / ...) is split, where a line's direction is the meaningful axis.
+ */
+const NO_SPLIT_ROUTE_TYPES: readonly AppRouteTypeValue[] = [3, 11, 4];
+
+/** Every other route type is split by direction, kept in display order. */
+const DIRECTION_SPLIT_ROUTE_TYPES: readonly AppRouteTypeValue[] = ROUTE_TYPE_DISPLAY_ORDER.filter(
+  (routeType) => !NO_SPLIT_ROUTE_TYPES.includes(routeType),
+);
 
 export interface TransitDisplaysContainerProps {
   stopTimes: StopWithContext[];
@@ -49,27 +66,30 @@ export function TransitDisplaysContainer({
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
 
-  const displays = useMemo(() => {
-    // Under development: trying out routeGrouping variants here. Keep the
-    // commented-out alternatives below -- do not delete them.
+  const transitDisplayData = useMemo(() => {
+    const maxEntries = transitDisplayMaxEntriesFor(infoLevel);
 
-    const transitDisplayRouteGrouping: TransitDisplayRouteGrouping = {
-      // kind: 'none',
-      kind: 'route',
-    };
-    // const transitDisplayRouteGrouping: TransitDisplayRouteGrouping = {
-    //   kind: 'custom',
-    //   groups: [
-    //     [...ROUTE_TYPE_DISPLAY_ORDER], // as none
-    //     ...ROUTE_TYPE_DISPLAY_ORDER.map((t) => [t]), // as route
-    //     // ...(Object.values(ROUTE_TYPE_CATEGORY_GROUPS) as AppRouteTypeValue[][]), // as route type category
-    //   ],
-    // };
-    return buildTransitDisplayDataSet(stopTimes, dataLangs, NEARBY_RADIUS_M, {
-      maxEntries: transitDisplayMaxEntriesFor(infoLevel),
-      routeGrouping: transitDisplayRouteGrouping,
+    // Per-mode direction policy is composed here rather than inside the builder:
+    // NO_SPLIT_ROUTE_TYPES keep both directions on one board, everything else
+    // splits by direction. The builder takes a single splitByDirection flag, so
+    // this is two calls (each scoped to its route types via a custom grouping).
+    // buildTransitDisplayDataSet attaches each display's meta but leaves rows raw.
+    // The concatenated result is re-ordered into the canonical UI order by
+    // sortTransitDisplayDataWithMetaData (so the order is correct
+    // regardless of which modes share a stop -- the raw concat is not in display
+    // order). Rows stay raw here; TransitDisplays resolves them into UI data.
+    const directionUnsplitRaw = buildTransitDisplayDataSet(stopTimes, NEARBY_RADIUS_M, {
+      maxEntries,
+      routeGrouping: { kind: 'custom', groups: NO_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+      splitByDirection: false,
     });
-  }, [stopTimes, dataLangs, infoLevel]);
+    const directionSplitRaw = buildTransitDisplayDataSet(stopTimes, NEARBY_RADIUS_M, {
+      maxEntries,
+      routeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+      splitByDirection: true,
+    });
+    return sortTransitDisplayDataWithMetaData([...directionUnsplitRaw, ...directionSplitRaw]);
+  }, [stopTimes, infoLevel]);
 
   return (
     <div
@@ -79,7 +99,8 @@ export function TransitDisplaysContainer({
     >
       {scrollFade.showTop && <ScrollFadeEdge position="top" />}
       <TransitDisplays
-        displays={displays}
+        dataWithMeta={transitDisplayData}
+        dataLangs={dataLangs}
         emptyMessage={t('stop.timetable.allFilteredOut')}
         now={now}
         mapCenter={mapCenter}

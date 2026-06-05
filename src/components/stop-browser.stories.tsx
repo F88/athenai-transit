@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
+import { DEFAULT_VIEW_ID } from '../domain/transit/stop-time-views';
 import {
   agencyOretetsu,
   agencyTobus,
@@ -154,6 +155,12 @@ const meta = {
     onToggleAnchor: fn(),
     onOpenTripInspectionByStopId: fn(),
     onInspectTrip: fn(),
+    stopBrowserState: {
+      viewId: DEFAULT_VIEW_ID,
+      hiddenRouteTypes: new Set<number>(),
+      hiddenAgencyIds: new Set<string>(),
+    },
+    onStopBrowserStateChange: fn(),
   },
   argTypes: {
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },

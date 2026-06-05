@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import type {
-  TransitDisplayData,
-  TransitDisplayEntryData,
-} from '../../domain/transit/transit-info-display/build-transit-display-data';
+  TransitDisplayDataWithMetaDataForUi,
+  TransitDisplayDatumForUi,
+} from '../../domain/transit/transit-info-display/build-transit-display-data-for-ui';
 import {
   agencyTobus,
   baseStop,
@@ -12,7 +12,7 @@ import {
   storyNow,
   storyServiceDate,
 } from '../../stories/fixtures';
-import type { AppRouteTypeValue } from '../../types/app/transit';
+import type { AppRouteTypeValue, TimetableEntryAttributes } from '../../types/app/transit';
 import type { StopWithContext } from '../../types/app/transit-composed';
 import { routeTypesEmoji } from '../../utils/route-type-emoji';
 import { TransitDisplay } from './transit-displays';
@@ -28,8 +28,7 @@ interface MakeEntryOverrides {
   agencyName?: string;
   headsign?: string;
   timeText?: string;
-  isArrival?: boolean;
-  isPickupUnavailable?: boolean;
+  attributes?: TimetableEntryAttributes;
 }
 
 /** Build a minimal {@link StopWithContext} for a row's `stop.context`. */
@@ -45,11 +44,11 @@ function makeStopContext(stopId: string, routeType: AppRouteTypeValue): StopWith
 }
 
 /**
- * Build a {@link TransitDisplayEntryData} for stories. The entry data is the
- * presentational output of `buildTransitDisplayEntryData`, so stories construct
+ * Build a {@link TransitDisplayDatumForUi} for stories. The entry data is the
+ * presentational output of `buildTransitDisplayDatumForUi`, so stories construct
  * it directly rather than running the builder.
  */
-function makeEntry(overrides: MakeEntryOverrides = {}): TransitDisplayEntryData {
+function makeEntry(overrides: MakeEntryOverrides = {}): TransitDisplayDatumForUi {
   const key = overrides.key ?? 'story-entry';
   const routeType = overrides.routeType ?? 3;
   const stopId = `stop-${key}`;
@@ -68,11 +67,10 @@ function makeEntry(overrides: MakeEntryOverrides = {}): TransitDisplayEntryData 
     agencyName: overrides.agencyName ?? '都バス',
     headsign: overrides.headsign ?? '大塚駅前',
     timeText: overrides.timeText ?? '14:30',
-    isArrival: overrides.isArrival ?? false,
-    attributes: {
-      isTerminal: overrides.isArrival ?? false,
+    attributes: overrides.attributes ?? {
+      isTerminal: false,
       isOrigin: false,
-      isPickupUnavailable: overrides.isPickupUnavailable ?? false,
+      isPickupUnavailable: false,
       isDropOffUnavailable: false,
     },
     arrivalMinutes: 870,
@@ -87,18 +85,25 @@ function makeEntry(overrides: MakeEntryOverrides = {}): TransitDisplayEntryData 
   };
 }
 
-/** Assemble a {@link TransitDisplayData} from meta overrides and rows. */
+/** Assemble a {@link TransitDisplayDataWithMetaDataForUi} from meta overrides and rows. */
 function makeDisplay(
-  metaOverrides: Partial<TransitDisplayData['meta']> = {},
-  data: readonly TransitDisplayEntryData[] = departureRows,
-): TransitDisplayData {
+  metaOverrides: Partial<TransitDisplayDataWithMetaDataForUi['meta']> = {},
+  data: readonly TransitDisplayDatumForUi[] = departureRows,
+): TransitDisplayDataWithMetaDataForUi {
   return {
-    meta: { category: 'departures', routeTypes: [3], max: 12, radius: 100, ...metaOverrides },
+    meta: {
+      category: 'departures',
+      routeTypes: [3],
+      directions: ['none'],
+      max: 12,
+      radius: 100,
+      ...metaOverrides,
+    },
     data,
   };
 }
 
-const departureRows: TransitDisplayEntryData[] = [
+const departureRows: TransitDisplayDatumForUi[] = [
   makeEntry({ key: 'd1', timeText: '14:30', routeName: '都02', headsign: '大塚駅前' }),
   makeEntry({
     key: 'd2',
@@ -116,24 +121,34 @@ const departureRows: TransitDisplayEntryData[] = [
   }),
 ];
 
-const arrivalRows: TransitDisplayEntryData[] = [
+const arrivalRows: TransitDisplayDatumForUi[] = [
   makeEntry({
     key: 'a1',
     timeText: '14:31',
     routeName: '都02',
     headsign: '錦糸町駅前',
-    isArrival: true,
+    attributes: {
+      isTerminal: true,
+      isOrigin: false,
+      isPickupUnavailable: false,
+      isDropOffUnavailable: false,
+    },
   }),
   makeEntry({
     key: 'a2',
     timeText: '14:35',
     routeName: '錦27',
     headsign: '錦糸町駅前',
-    isArrival: true,
+    attributes: {
+      isTerminal: true,
+      isOrigin: false,
+      isPickupUnavailable: false,
+      isDropOffUnavailable: false,
+    },
   }),
 ];
 
-const trainRows: TransitDisplayEntryData[] = [
+const trainRows: TransitDisplayDatumForUi[] = [
   makeEntry({
     key: 't1',
     routeType: 2,
@@ -160,7 +175,7 @@ const meta = {
   title: 'TransitDisplay/TransitDisplay',
   component: TransitDisplay,
   args: {
-    display: makeDisplay(),
+    dataWithMeta: makeDisplay(),
     emptyMessage: 'Hidden by filter',
     now: storyNow,
     mapCenter: storyMapCenter,
@@ -170,7 +185,7 @@ const meta = {
     onInspectTrip: fn(),
   },
   argTypes: {
-    display: { control: 'object' },
+    dataWithMeta: { control: 'object' },
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
   },
@@ -197,14 +212,14 @@ export const Default: Story = {};
 /** Arrival board: right arrow + ARRIVALS, sorted/shown by arrival time. */
 export const ArrivalBoard: Story = {
   args: {
-    display: makeDisplay({ category: 'arrivals' }, arrivalRows),
+    dataWithMeta: makeDisplay({ category: 'arrivals' }, arrivalRows),
   },
 };
 
 /** Rail board: the header mode emoji follows the board's route type. */
 export const TrainDeparture: Story = {
   args: {
-    display: makeDisplay({ routeTypes: [2] }, trainRows),
+    dataWithMeta: makeDisplay({ routeTypes: [2] }, trainRows),
   },
 };
 
@@ -215,7 +230,7 @@ export const SizeComparison: Story = {
       {(['xs', 'sm', 'md', 'lg', 'xl'] as const).map((size) => (
         <TransitDisplay
           key={size}
-          display={args.display}
+          dataWithMeta={args.dataWithMeta}
           emptyMessage={args.emptyMessage}
           now={args.now}
           mapCenter={args.mapCenter}
@@ -234,13 +249,13 @@ export const SizeComparison: Story = {
 /** No entries: the body shows the empty fallback message. */
 export const Empty: Story = {
   args: {
-    display: makeDisplay({}, []),
+    dataWithMeta: makeDisplay({}, []),
   },
 };
 
 // --- Kitchen sink ---
 
-const kitchenSinkRows: TransitDisplayEntryData[] = [
+const kitchenSinkRows: TransitDisplayDatumForUi[] = [
   makeEntry({ key: 'k1', timeText: '14:30', routeName: '都02', headsign: '大塚駅前' }),
   makeEntry({
     key: 'k2',
@@ -261,7 +276,7 @@ const kitchenSinkRows: TransitDisplayEntryData[] = [
  */
 export const KitchenSink: Story = {
   args: {
-    display: makeDisplay({}, kitchenSinkRows),
+    dataWithMeta: makeDisplay({}, kitchenSinkRows),
     infoLevel: 'verbose' as const,
   },
 };

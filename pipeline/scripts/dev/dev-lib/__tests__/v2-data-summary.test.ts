@@ -493,6 +493,13 @@ describe('routes summary', () => {
 describe('trip patterns summary', () => {
   it('captures count, direction_id split, and trip/stop headsign coverage', () => {
     const bundle = createDataBundle({
+      routes: {
+        v: 2,
+        data: [
+          { v: 2, i: 'src:r1', s: 'B1', l: 'Bus Route', t: 3, c: '', tc: '', ai: 'src:a1' },
+          { v: 2, i: 'src:r2', s: 'R1', l: 'Rail Route', t: 2, c: '', tc: '', ai: 'src:a1' },
+        ],
+      },
       tripPatterns: {
         v: 2,
         data: {
@@ -509,7 +516,7 @@ describe('trip patterns summary', () => {
           // direction_id omitted, trip headsign + a mix of sh / no-sh stops.
           'src:p3': {
             v: 2,
-            r: 'src:r1',
+            r: 'src:r2',
             h: 'Loop',
             stops: [{ id: 'src:s1' }, { id: 'src:s2', sh: 'Loop branch' }],
           },
@@ -517,7 +524,7 @@ describe('trip patterns summary', () => {
           // (the keio-bus convention).
           'src:p4': {
             v: 2,
-            r: 'src:r1',
+            r: 'src:r2',
             h: '',
             stops: [{ id: 'src:s1', sh: 'Terminal' }],
           },
@@ -540,6 +547,12 @@ describe('trip patterns summary', () => {
     expect(stats.tripPatterns.withTripHeadsignCount).toBe(3);
     // p1, p3, p4 have at least one stop carrying sh; p2 has none.
     expect(stats.tripPatterns.withStopHeadsignCount).toBe(3);
+    expect(stats.tripPatterns.routeTypeCounts).toEqual({ '2': 1, '3': 1 });
+    expect(stats.tripPatterns.patternRouteTypeCounts).toEqual({ '2': 2, '3': 2 });
+    expect(stats.tripPatterns.directionCountsByRouteType).toEqual({
+      '2': { direction0Count: 0, direction1Count: 0, directionNoneCount: 2 },
+      '3': { direction0Count: 1, direction1Count: 1, directionNoneCount: 0 },
+    });
   });
 
   it('returns zero counts for an empty tripPatterns record', () => {
@@ -555,11 +568,14 @@ describe('trip patterns summary', () => {
     expect(stats.tripPatterns.direction0Count).toBe(0);
     expect(stats.tripPatterns.direction1Count).toBe(0);
     expect(stats.tripPatterns.directionNoneCount).toBe(0);
+    expect(stats.tripPatterns.routeTypeCounts).toEqual({ '3': 1 });
+    expect(stats.tripPatterns.patternRouteTypeCounts).toEqual({});
+    expect(stats.tripPatterns.directionCountsByRouteType).toEqual({});
     expect(stats.tripPatterns.withTripHeadsignCount).toBe(0);
     expect(stats.tripPatterns.withStopHeadsignCount).toBe(0);
   });
 
-  it('renders a single Summary table with every facet column', () => {
+  it('renders Summary and direction analysis with route-type facets', () => {
     const stats = analyzeV2DataVolume({
       prefix: 'src',
       nameEn: 'Src Transit',
@@ -569,13 +585,16 @@ describe('trip patterns summary', () => {
     });
     const body = V2_DATA_VOLUME_SECTIONS['trip-patterns'].render([stats]);
     expect(body).toContain('### Summary');
+    expect(body).toContain('routeTypes');
+    expect(body).toContain('patternsByType');
     expect(body).toContain('directionCounts');
+    expect(body).toContain('directionByType');
+    expect(body).toContain('bus:');
+    expect(body).toContain('bus(0:');
     expect(body).toContain('withTripHeadsign');
     expect(body).toContain('withStopHeadsign');
     // directionCounts breakdown string keeps all three keys.
     expect(body).toContain('none:');
-    // Flat section — no detail sub-sections.
-    expect(body).not.toContain('### Direction');
     expect(body).not.toContain('### Headsign');
   });
 });

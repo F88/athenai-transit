@@ -37,6 +37,8 @@ export function StopPanel({
   onToggleAnchor,
   onOpenTripInspectionByStopId,
   onInspectTrip,
+  stopBrowserState,
+  onStopBrowserStateChange,
 }: StopPanelProps) {
   return (
     <div className="z-1000 flex h-full w-full flex-col overflow-hidden bg-white py-2 dark:bg-gray-900">
@@ -61,6 +63,8 @@ export function StopPanel({
         onToggleAnchor={onToggleAnchor}
         onOpenTripInspectionByStopId={onOpenTripInspectionByStopId}
         onInspectTrip={onInspectTrip}
+        stopBrowserState={stopBrowserState}
+        onStopBrowserStateChange={onStopBrowserStateChange}
       />
     </div>
   );

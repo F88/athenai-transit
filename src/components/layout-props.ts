@@ -1,6 +1,8 @@
+import type { Dispatch, SetStateAction } from 'react';
 import type { BottomSheetProps } from './bottom-sheet';
 import type { GlobalFilter } from '../types/app/global-filter';
 import type { StopsCounts } from '../types/app/stop';
+import type { StopBrowserSharedState } from '../types/app/stop-browser';
 
 /**
  * Shared props for a top-level overlay layout component.
@@ -20,6 +22,8 @@ export interface LayoutProps {
     | 'globalFilter'
     | 'nearbyStopsCounts'
     | 'filteredNearbyStopsCounts'
+    | 'stopBrowserState'
+    | 'onStopBrowserStateChange'
   >;
   /**
    * App-wide filter state shared with the active stop-browser surface —
@@ -37,4 +41,13 @@ export interface LayoutProps {
   nearbyStopsCounts: StopsCounts;
   /** Post-`globalFilter`, pre-BottomSheet-local-filter counts from `app.tsx`. */
   filteredNearbyStopsCounts: StopsCounts;
+  /**
+   * StopBrowser state shared across surfaces, owned by `AppLayout` (held above
+   * the layout swap so the view tab and surface-local filters survive switching
+   * surfaces). Forwarded to the active surface alongside the App-owned
+   * `globalFilter`.
+   */
+  stopBrowserState: StopBrowserSharedState;
+  /** Updater for {@link stopBrowserState} (accepts a value or an updater fn). */
+  onStopBrowserStateChange: Dispatch<SetStateAction<StopBrowserSharedState>>;
 }

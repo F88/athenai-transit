@@ -1,20 +1,25 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 
 import { collectPresentAgencies } from '../domain/transit/collect-present-agencies';
 import { collectPresentRouteTypes } from '../domain/transit/collect-present-route-types';
 import { computeStopsCounts } from '../domain/transit/compute-stops-counts';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../domain/transit/route-type-display-order';
-import {
-  DEFAULT_VIEW_ID,
-  STOP_TIMES_VIEWS,
-  type StopTimeViewId,
-} from '../domain/transit/stop-time-views';
+import { STOP_TIMES_VIEWS, type StopTimeViewId } from '../domain/transit/stop-time-views';
 import { filterByAgency, filterByRouteType } from '../domain/transit/timetable-filter';
 import { useElementRect } from '../hooks/use-element-rect';
 import type { GlobalFilter } from '../types/app/global-filter';
 import type { LatLng } from '../types/app/map';
 import type { InfoLevel } from '../types/app/settings';
 import type { StopsCounts } from '../types/app/stop';
+import type { StopBrowserSharedState } from '../types/app/stop-browser';
 import type { Agency, TimetableEntriesState } from '../types/app/transit';
 import type { StopWithContext, TripInspectionTarget } from '../types/app/transit-composed';
 import { resolveContainerDisplaySize } from './shared/display-size';
@@ -71,6 +76,15 @@ export interface StopBrowserProps {
   onOpenTripInspectionByStopId?: (stopId: string) => void;
   /** Optional callback for inspecting one concrete trip. */
   onInspectTrip?: (target: TripInspectionTarget) => void;
+  /**
+   * Shared StopBrowser state owned by `AppLayout`. Replaces what used to be
+   * StopBrowser-local `useState` (view tab + surface-local filters) so it
+   * survives a layout-mode swap. The field setters below are derived from
+   * {@link onStopBrowserStateChange}.
+   */
+  stopBrowserState: StopBrowserSharedState;
+  /** Updater for {@link stopBrowserState} (accepts a value or an updater fn). */
+  onStopBrowserStateChange: Dispatch<SetStateAction<StopBrowserSharedState>>;
 }
 
 /**
@@ -108,6 +122,8 @@ export function StopBrowser({
   onToggleAnchor,
   onOpenTripInspectionByStopId,
   onInspectTrip,
+  stopBrowserState,
+  onStopBrowserStateChange,
 }: StopBrowserProps) {
   const {
     showOriginOnly,
@@ -120,9 +136,30 @@ export function StopBrowser({
   } = globalFilter;
   const [rootElement, setRootElement] = useState<HTMLDivElement | null>(null);
   const rootRect = useElementRect(rootElement);
-  const [viewId, setViewId] = useState<StopTimeViewId>(DEFAULT_VIEW_ID);
-  const [hiddenRouteTypes, setHiddenRouteTypes] = useState<Set<number>>(() => new Set());
-  const [hiddenAgencyIds, setHiddenAgencyIds] = useState<Set<string>>(() => new Set());
+  // View tab + surface-local filters are owned by AppLayout (shared across layout
+  // surfaces); derive field setters from the single shared-state updater so the
+  // rest of this component keeps using plain per-field setters.
+  const { viewId, hiddenRouteTypes, hiddenAgencyIds } = stopBrowserState;
+  const setViewId = useCallback(
+    (next: StopTimeViewId) => onStopBrowserStateChange((prev) => ({ ...prev, viewId: next })),
+    [onStopBrowserStateChange],
+  );
+  const setHiddenRouteTypes = useCallback(
+    (action: SetStateAction<Set<number>>) =>
+      onStopBrowserStateChange((prev) => ({
+        ...prev,
+        hiddenRouteTypes: typeof action === 'function' ? action(prev.hiddenRouteTypes) : action,
+      })),
+    [onStopBrowserStateChange],
+  );
+  const setHiddenAgencyIds = useCallback(
+    (action: SetStateAction<Set<string>>) =>
+      onStopBrowserStateChange((prev) => ({
+        ...prev,
+        hiddenAgencyIds: typeof action === 'function' ? action(prev.hiddenAgencyIds) : action,
+      })),
+    [onStopBrowserStateChange],
+  );
   const selectedView = STOP_TIMES_VIEWS.find((v) => v.id === viewId);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -134,29 +171,35 @@ export function StopBrowser({
 
   const presentAgencies = useMemo(() => collectPresentAgencies(stopTimes), [stopTimes]);
 
-  const toggleRouteType = useCallback((rt: number) => {
-    setHiddenRouteTypes((prev) => {
-      const next = new Set(prev);
-      if (next.has(rt)) {
-        next.delete(rt);
-      } else {
-        next.add(rt);
-      }
-      return next;
-    });
-  }, []);
+  const toggleRouteType = useCallback(
+    (rt: number) => {
+      setHiddenRouteTypes((prev) => {
+        const next = new Set(prev);
+        if (next.has(rt)) {
+          next.delete(rt);
+        } else {
+          next.add(rt);
+        }
+        return next;
+      });
+    },
+    [setHiddenRouteTypes],
+  );
 
-  const toggleAgency = useCallback((agency: Agency) => {
-    setHiddenAgencyIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(agency.agency_id)) {
-        next.delete(agency.agency_id);
-      } else {
-        next.add(agency.agency_id);
-      }
-      return next;
-    });
-  }, []);
+  const toggleAgency = useCallback(
+    (agency: Agency) => {
+      setHiddenAgencyIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(agency.agency_id)) {
+          next.delete(agency.agency_id);
+        } else {
+          next.add(agency.agency_id);
+        }
+        return next;
+      });
+    },
+    [setHiddenAgencyIds],
+  );
 
   // App-wide origin / boardable filters and the empty-stop omission
   // policy are already applied upstream in `app.tsx`. Here we apply only
@@ -195,6 +238,15 @@ export function StopBrowser({
     if (!contentRef.current) {
       return;
     }
+
+    if (viewId === 'transit-display') {
+      // The transit-display (board) view is not stop-oriented: the same stop id can
+      // appear in multiple rows (one stop shows up across several boards), so a stop
+      // cannot be targeted for scrolling. Leave its scroll position alone -- do not
+      // jump to the selected stop or reset to the top.
+      return;
+    }
+
     if (selectedStopId) {
       const el = contentRef.current.querySelector(`[data-stop-id="${selectedStopId}"]`);
       if (el) {
@@ -203,7 +255,7 @@ export function StopBrowser({
       }
     }
     contentRef.current.scrollTop = 0;
-  }, [selectedStopId, stopIdsKey]);
+  }, [selectedStopId, stopIdsKey, viewId]);
 
   const headerSize = resolveContainerDisplaySize(rootRect?.width ?? 0);
 

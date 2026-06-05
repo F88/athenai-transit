@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
-import type { TransitDisplayEntryData } from '../../domain/transit/transit-info-display/build-transit-display-data';
+import type { TransitDisplayDatumForUi } from '../../domain/transit/transit-info-display/build-transit-display-data-for-ui';
 import {
   agencyTobus,
   baseStop,
@@ -26,8 +26,6 @@ interface MakeRowOverrides {
   agencyName?: string;
   headsign?: string;
   timeText?: string;
-  isArrival?: boolean;
-  isPickupUnavailable?: boolean;
   departureMinutes?: number;
   arrivalMinutes?: number;
   serviceDate?: Date;
@@ -47,15 +45,15 @@ function makeStopContext(stopId: string, routeTypes: AppRouteTypeValue[]): StopW
 }
 
 /**
- * Build a {@link TransitDisplayEntryData} for stories.
+ * Build a {@link TransitDisplayDatumForUi} for stories.
  *
- * `TransitDisplayEntryData` is the presentational output of `buildTransitDisplayEntryData`,
+ * `TransitDisplayDatumForUi` is the presentational output of `buildTransitDisplayDatumForUi`,
  * so stories construct it directly rather than running the builder.
  *
  * @param overrides - Flat override knobs for the defaults.
  * @returns A complete row with realistic default values.
  */
-function makeRow(overrides: MakeRowOverrides = {}): TransitDisplayEntryData {
+function makeRow(overrides: MakeRowOverrides = {}): TransitDisplayDatumForUi {
   const stopId = overrides.stopId ?? 'stop-001';
   const departureMinutes = overrides.departureMinutes ?? 870; // 14:30
   const serviceDate = overrides.serviceDate ?? storyServiceDate;
@@ -75,7 +73,6 @@ function makeRow(overrides: MakeRowOverrides = {}): TransitDisplayEntryData {
     agencyName: overrides.agencyName ?? '都バス',
     headsign: overrides.headsign ?? '大塚駅前',
     timeText: overrides.timeText ?? '9:30',
-    isArrival: overrides.isArrival ?? false,
     attributes: overrides.attributes ?? {
       isTerminal: true,
       isOrigin: true,
@@ -98,7 +95,7 @@ const meta = {
   title: 'TransitDisplay/TransitDisplayEntry',
   component: TransitDisplayEntry,
   args: {
-    data: makeRow(),
+    dataWithMeta: makeRow(),
     infoLevel: 'normal' as const,
     size: 'md' as const,
     hasMultiRoutes: false,
@@ -107,7 +104,7 @@ const meta = {
     onInspectTrip: fn(),
   },
   argTypes: {
-    data: { control: 'object' },
+    dataWithMeta: { control: 'object' },
     infoLevel: { control: 'inline-radio', options: ['simple', 'normal', 'detailed', 'verbose'] },
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     hasMultiRoutes: { control: 'boolean' },
@@ -138,14 +135,14 @@ export const Default: Story = {};
 /** Empty headsign falls back to the `-` placeholder in the second line. */
 export const EmptyHeadsign: Story = {
   args: {
-    data: makeRow({ headsign: '' }),
+    dataWithMeta: makeRow({ headsign: '' }),
   },
 };
 
 /** Long stop name, route name, and headsign all exercise truncation. */
 export const LongText: Story = {
   args: {
-    data: makeRow({
+    dataWithMeta: makeRow({
       stopName: '東京都立産業技術研究センター前',
       routeName: '北大01',
       headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
@@ -157,7 +154,7 @@ export const LongText: Story = {
 /** Single-character headsign — minimum-length rendering. */
 export const ShortHeadsign: Story = {
   args: {
-    data: makeRow({ routeName: 'TX', headsign: 'X', timeText: '14:30' }),
+    dataWithMeta: makeRow({ routeName: 'TX', headsign: 'X', timeText: '14:30' }),
   },
 };
 
@@ -202,7 +199,7 @@ export const SizeComparison: Story = {
         {rows.map(({ size, data }) => (
           <TransitDisplayEntry
             key={data.key}
-            data={data}
+            dataWithMeta={data}
             infoLevel={args.infoLevel}
             size={size}
             hasMultiRoutes={args.hasMultiRoutes}
@@ -218,14 +215,20 @@ export const SizeComparison: Story = {
 
 // --- Kitchen sink ---
 
-const kitchenSinkRows: TransitDisplayEntryData[] = [
+const kitchenSinkRows: TransitDisplayDatumForUi[] = [
   makeRow({
     key: 'k1',
     timeText: '14:30',
     departureMinutes: 870,
     routeName: '都02',
     headsign: '大塚駅前',
-    isArrival: false,
+    // origin
+    attributes: {
+      isTerminal: false,
+      isOrigin: true,
+      isPickupUnavailable: false,
+      isDropOffUnavailable: false,
+    },
   }),
   makeRow({
     key: 'k2',
@@ -234,7 +237,13 @@ const kitchenSinkRows: TransitDisplayEntryData[] = [
     stopName: '東京都立産業技術研究センター前',
     routeName: '北大01',
     headsign: '北大路バスターミナル・下鴨神社・出町柳駅',
-    isArrival: true,
+    // terminal
+    attributes: {
+      isTerminal: true,
+      isOrigin: false,
+      isPickupUnavailable: false,
+      isDropOffUnavailable: false,
+    },
   }),
   makeRow({
     key: 'k3',
@@ -242,7 +251,13 @@ const kitchenSinkRows: TransitDisplayEntryData[] = [
     departureMinutes: 875,
     routeName: 'TX',
     headsign: 'X',
-    isArrival: false,
+    // pickup unavailable
+    attributes: {
+      isTerminal: false,
+      isOrigin: false,
+      isPickupUnavailable: true,
+      isDropOffUnavailable: false,
+    },
   }),
   makeRow({
     key: 'k4',
@@ -250,7 +265,13 @@ const kitchenSinkRows: TransitDisplayEntryData[] = [
     departureMinutes: 880,
     routeName: '荒川線',
     headsign: '',
-    isArrival: true,
+    // drop-off unavailable
+    attributes: {
+      isTerminal: false,
+      isOrigin: false,
+      isPickupUnavailable: false,
+      isDropOffUnavailable: true,
+    },
   }),
   makeRow({
     key: 'k5',
@@ -259,14 +280,34 @@ const kitchenSinkRows: TransitDisplayEntryData[] = [
     stopName: '三ノ輪橋',
     routeName: '都08',
     headsign: '日暮里駅',
-    isArrival: false,
+    // all attributes set (maximum content)
+    attributes: {
+      isTerminal: true,
+      isOrigin: true,
+      isPickupUnavailable: true,
+      isDropOffUnavailable: true,
+    },
+  }),
+  makeRow({
+    key: 'k6',
+    timeText: '14:45',
+    departureMinutes: 885,
+    routeName: '反96',
+    headsign: '五反田駅',
+    // no attributes set (plain row, no labels)
+    attributes: {
+      isTerminal: false,
+      isOrigin: false,
+      isPickupUnavailable: false,
+      isDropOffUnavailable: false,
+    },
   }),
 ];
 
 /**
- * A realistic terminal board: multiple rows mixing arrivals and
- * departures, with short and long stop names, route names, and
- * headsigns rendered in timeline order.
+ * Maximum-content rows: short and long stop / route / headsign text, with each
+ * attribute label exercised across the rows (origin, terminal, pickup
+ * unavailable, drop-off unavailable, all combined, and none).
  */
 export const KitchenSink: Story = {
   render: (args) => (
@@ -274,7 +315,7 @@ export const KitchenSink: Story = {
       {kitchenSinkRows.map((row) => (
         <TransitDisplayEntry
           key={row.key}
-          data={row}
+          dataWithMeta={row}
           infoLevel={args.infoLevel}
           size={args.size}
           hasMultiRoutes={args.hasMultiRoutes}

@@ -1,6 +1,11 @@
 import { vi } from 'vitest';
 import type { Stop, Route, AppRouteTypeValue } from '../types/app/transit';
-import type { StopWithMeta, StopWithContext } from '../types/app/transit-composed';
+import type {
+  StopWithMeta,
+  StopWithContext,
+  ContextualTimetableEntry,
+  StopServiceType,
+} from '../types/app/transit-composed';
 import type { TransitRepository } from '../repositories/transit-repository';
 
 /**
@@ -87,6 +92,61 @@ export function makeStopWithContext(
     stopServiceState: 'boardable',
     agencies: [],
     routes,
+  };
+}
+
+/**
+ * Creates a minimal ContextualTimetableEntry for testing.
+ *
+ * The unit-test counterpart of the Storybook `createEntry` fixture: a single
+ * standalone entry whose schedule, direction, boarding, and pattern-position
+ * fields can be overridden independently. Use this instead of reaching into
+ * `src/stories/fixtures.ts` (Storybook-only) from unit tests.
+ *
+ * @param overrides - Partial fields to override the defaults
+ * @returns A ContextualTimetableEntry with sensible defaults
+ */
+export function makeContextualEntry(
+  overrides: Partial<{
+    route: Route;
+    departureMinutes: number;
+    arrivalMinutes: number;
+    headsign: string;
+    direction: 0 | 1;
+    pickupType: StopServiceType;
+    dropOffType: StopServiceType;
+    stopIndex: number;
+    totalStops: number;
+    isTerminal: boolean;
+    isOrigin: boolean;
+    serviceDate: Date;
+  }> = {},
+): ContextualTimetableEntry {
+  const departureMinutes = overrides.departureMinutes ?? 480; // 08:00
+  const route = overrides.route ?? makeRoute('test');
+  const headsign = overrides.headsign ?? 'Test';
+  return {
+    tripLocator: { patternId: `${route.route_id}__${headsign}`, serviceId: 'test', tripIndex: 0 },
+    schedule: {
+      departureMinutes,
+      arrivalMinutes: overrides.arrivalMinutes ?? departureMinutes,
+    },
+    routeDirection: {
+      route,
+      tripHeadsign: { name: headsign, names: {} },
+      direction: overrides.direction,
+    },
+    boarding: {
+      pickupType: overrides.pickupType ?? 0,
+      dropOffType: overrides.dropOffType ?? 0,
+    },
+    patternPosition: {
+      stopIndex: overrides.stopIndex ?? 0,
+      totalStops: overrides.totalStops ?? 1,
+      isTerminal: overrides.isTerminal ?? false,
+      isOrigin: overrides.isOrigin ?? false,
+    },
+    serviceDate: overrides.serviceDate ?? new Date('2026-01-01'),
   };
 }
 

@@ -1,9 +1,13 @@
-import { useEffect, useRef } from 'react';
-import { MapBottomSheetLayout } from './map-bottom-sheet-layout';
-import { MultiPaneLayout } from './multi-pane-layout';
-import type { LayoutProps } from './layout-props';
-import { useLayoutMode } from '../hooks/use-layout-mode';
-import { createLogger } from '../lib/logger';
+import { useEffect, useRef, useState } from 'react';
+
+import { DEFAULT_VIEW_ID } from '@/domain/transit/stop-time-views';
+import { useLayoutMode } from '@/hooks/use-layout-mode';
+import { createLogger } from '@/lib/logger';
+import type { StopBrowserSharedState } from '@/types/app/stop-browser';
+
+import type { LayoutProps } from '@/components/layout-props';
+import { MapBottomSheetLayout } from '@/components/map-bottom-sheet-layout';
+import { MultiPaneLayout } from '@/components/multi-pane-layout';
 
 const logger = createLogger('AppLayout');
 
@@ -26,9 +30,17 @@ export function AppLayout({
   globalFilter,
   nearbyStopsCounts,
   filteredNearbyStopsCounts,
-}: LayoutProps) {
+}: Omit<LayoutProps, 'stopBrowserState' | 'onStopBrowserStateChange'>) {
   const layoutMode = useLayoutMode();
   const Layout = layoutMode === 'multi-pane' ? MultiPaneLayout : MapBottomSheetLayout;
+
+  // StopBrowser state shared across layout surfaces, held above the layout swap
+  // so it survives switching between the multi-pane and bottom-sheet surfaces.
+  const [stopBrowserState, setStopBrowserState] = useState<StopBrowserSharedState>(() => ({
+    viewId: DEFAULT_VIEW_ID,
+    hiddenRouteTypes: new Set(),
+    hiddenAgencyIds: new Set(),
+  }));
 
   // Log actual mode switches only. The ref holds the previous value so
   // the initial mount is skipped — a switch triggers a remount of the
@@ -47,6 +59,8 @@ export function AppLayout({
       globalFilter={globalFilter}
       nearbyStopsCounts={nearbyStopsCounts}
       filteredNearbyStopsCounts={filteredNearbyStopsCounts}
+      stopBrowserState={stopBrowserState}
+      onStopBrowserStateChange={setStopBrowserState}
     />
   );
 }
