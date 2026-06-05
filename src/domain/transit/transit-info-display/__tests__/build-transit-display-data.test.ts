@@ -8,7 +8,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { makeContextualEntry, makeRoute, makeStop } from '../../../../__tests__/helpers';
 import type { InfoLevel } from '../../../../types/app/settings';
-import type { Route, TimetableEntryAttributes } from '../../../../types/app/transit';
+import type {
+  AppRouteTypeValue,
+  Route,
+  TimetableEntryAttributes,
+} from '../../../../types/app/transit';
 import type {
   ContextualTimetableEntry,
   StopWithContext,
@@ -22,12 +26,14 @@ import {
   groupCandidatesIntoBoards,
   sortAndCapBoards,
   sortByCategory,
+  sortTransitDisplayDataForUi,
   toTransitDisplayCandidates,
   transitDisplayMaxEntriesFor,
   type TransitDisplayBoard,
   type TransitDisplayCandidate,
   type TransitDisplayCategory,
   type TransitDisplayCondition,
+  type TransitDisplayData,
 } from '../build-transit-display-data';
 
 // categoryQualifies delegates origin/terminal determination to this domain
@@ -624,5 +630,91 @@ describe('toTransitDisplayCandidates', () => {
 
   it('returns an empty array for empty input', () => {
     expect(toTransitDisplayCandidates([])).toEqual([]);
+  });
+});
+
+describe('sortTransitDisplayDataForUi', () => {
+  /** A display whose only meaningful fields for ordering are route type, category, direction. */
+  function display(
+    routeType: AppRouteTypeValue,
+    category: TransitDisplayCategory,
+    directions: readonly (0 | 1 | 'none')[] = ['none'],
+  ): TransitDisplayData {
+    return {
+      meta: { category, routeTypes: [routeType], directions, max: 10, radius: 100 },
+      data: [],
+    };
+  }
+
+  it('orders by route type in ROUTE_TYPE_DISPLAY_ORDER (ferry not hoisted)', () => {
+    // display order is [3, 11, 0, 2, 1, 12, 4, ...]: bus(3) < rail(2) < subway(1) < ferry(4)
+    const bus = display(3, 'departures');
+    const rail = display(2, 'departures');
+    const subway = display(1, 'departures');
+    const ferry = display(4, 'departures');
+
+    const sorted = sortTransitDisplayDataForUi([subway, ferry, rail, bus]);
+
+    expect(sorted.map((d) => d.meta.routeTypes[0])).toEqual([3, 2, 1, 4]);
+  });
+
+  it('within a route type, departures come before arrivals', () => {
+    const arr = display(2, 'arrivals');
+    const dep = display(2, 'departures');
+
+    expect(sortTransitDisplayDataForUi([arr, dep]).map((d) => d.meta.category)).toEqual([
+      'departures',
+      'arrivals',
+    ]);
+  });
+
+  it('within a category, orders by direction (none, 0, 1)', () => {
+    const d1 = display(2, 'departures', [1]);
+    const d0 = display(2, 'departures', [0]);
+    const dn = display(2, 'departures', ['none']);
+
+    expect(sortTransitDisplayDataForUi([d1, d0, dn]).map((d) => d.meta.directions[0])).toEqual([
+      'none',
+      0,
+      1,
+    ]);
+  });
+
+  it('applies the three levels together: route type -> category -> direction', () => {
+    const railArr0 = display(2, 'arrivals', [0]);
+    const busDep = display(3, 'departures', ['none']);
+    const railDep1 = display(2, 'departures', [1]);
+    const railDep0 = display(2, 'departures', [0]);
+    const busArr = display(3, 'arrivals', ['none']);
+
+    const sorted = sortTransitDisplayDataForUi([railArr0, busDep, railDep1, railDep0, busArr]);
+
+    expect(
+      sorted.map((d) => ({
+        rt: d.meta.routeTypes[0],
+        category: d.meta.category,
+        dir: d.meta.directions[0],
+      })),
+    ).toEqual([
+      { rt: 3, category: 'departures', dir: 'none' },
+      { rt: 3, category: 'arrivals', dir: 'none' },
+      { rt: 2, category: 'departures', dir: 0 },
+      { rt: 2, category: 'departures', dir: 1 },
+      { rt: 2, category: 'arrivals', dir: 0 },
+    ]);
+  });
+
+  it('does not mutate the input array', () => {
+    const a = display(2, 'departures');
+    const b = display(3, 'departures');
+    const input = [a, b];
+
+    sortTransitDisplayDataForUi(input);
+
+    expect(input).toEqual([a, b]);
+  });
+
+  it('returns an empty array for empty input', () => {
+    expect(sortTransitDisplayDataForUi([])).toEqual([]);
   });
 });

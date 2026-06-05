@@ -570,3 +570,32 @@ export function buildTransitDisplayDataSet(
     toTransitDisplayData(board, preferredDisplayLangs, radiusMeters, condition.maxEntries),
   );
 }
+
+/**
+ * UI ordering for the displays, independent of how they were built or merged
+ * (the container concatenates a no-split and a split call, so the raw order is
+ * not canonical). Three levels:
+ *   1. route type, by `ROUTE_TYPE_DISPLAY_ORDER`
+ *   2. within a route type: category, departures before arrivals
+ *   3. within a category: direction, in `DIRECTIONS` order (none, 0, 1)
+ *
+ * A full comparator (not a stable sort on one key), so reordering by route type
+ * can never disturb the departures/arrivals or direction order set up earlier.
+ */
+export function sortTransitDisplayDataForUi(
+  displays: readonly TransitDisplayData[],
+): TransitDisplayData[] {
+  const orderKey = (d: TransitDisplayData): [number, number, number] => {
+    const direction = d.meta.directions[0];
+    return [
+      ROUTE_TYPE_DISPLAY_ORDER.indexOf(d.meta.routeTypes[0]),
+      CATEGORIES.indexOf(d.meta.category),
+      DIRECTIONS.indexOf(direction === 'none' ? undefined : direction),
+    ];
+  };
+  return [...displays].sort((a, b) => {
+    const ka = orderKey(a);
+    const kb = orderKey(b);
+    return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
+  });
+}

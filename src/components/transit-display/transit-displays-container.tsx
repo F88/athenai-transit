@@ -14,9 +14,26 @@ import { TransitDisplays } from '@/components/transit-display/transit-displays';
 import {
   buildTransitDisplayDataSet,
   NEARBY_RADIUS_M,
+  sortTransitDisplayDataForUi,
   transitDisplayMaxEntriesFor,
-  type TransitDisplayRouteGrouping,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
+import { ROUTE_TYPE_DISPLAY_ORDER } from '@/domain/transit/route-type-display-order';
+import type { AppRouteTypeValue } from '@/types/app/transit';
+
+/**
+ * Route types whose boards are NOT split by direction: bus, trolleybus, and
+ * ferry. Their `direction_id` is route-local / arbitrary, and at a shared stop
+ * many routes converge (ferries especially fan out hub-and-spoke across several
+ * pontoons), so a per-direction split would mix unrelated routes; the headsign
+ * carries the destination instead. Everything else (rail / subway / tram /
+ * monorail / ...) is split, where a line's direction is the meaningful axis.
+ */
+const NO_SPLIT_ROUTE_TYPES: readonly AppRouteTypeValue[] = [3, 11, 4];
+
+/** Every other route type is split by direction, kept in display order. */
+const DIRECTION_SPLIT_ROUTE_TYPES: readonly AppRouteTypeValue[] = ROUTE_TYPE_DISPLAY_ORDER.filter(
+  (routeType) => !NO_SPLIT_ROUTE_TYPES.includes(routeType),
+);
 
 export interface TransitDisplaysContainerProps {
   stopTimes: StopWithContext[];
@@ -49,40 +66,38 @@ export function TransitDisplaysContainer({
   const stopIdsKey = useMemo(() => stopTimes.map((swc) => swc.stop.stop_id).join(','), [stopTimes]);
   const scrollFade = useScrollFades(contentRef, stopIdsKey);
 
-  const displays = useMemo(
-    () => {
-      // Under development: trying out routeGrouping variants here. Keep the
-      // commented-out alternatives below -- do not delete them.
+  const displays = useMemo(() => {
+    const maxEntries = transitDisplayMaxEntriesFor(infoLevel);
 
-      const transitDisplayRouteGrouping: TransitDisplayRouteGrouping = {
-        // kind: 'none',
-        kind: 'route',
-      };
-      // const transitDisplayRouteGrouping: TransitDisplayRouteGrouping = {
-      //   kind: 'custom',
-      //   groups: [
-      //     [...ROUTE_TYPE_DISPLAY_ORDER], // as none
-      //     ...ROUTE_TYPE_DISPLAY_ORDER.map((t) => [t]), // as route
-      //     // ...(Object.values(ROUTE_TYPE_CATEGORY_GROUPS) as AppRouteTypeValue[][]), // as route type category
-      //   ],
-      // };
-
-      // Direction split (under development): a single toggle that splits every
-      // route type. Per-mode behavior (e.g. split trains but not buses) would be
-      // composed from multiple buildTransitDisplayDataSet calls with different
-      // routeGrouping, not a per-mode rule inside the builder.
-      const transitDisplaySplitByDirection = true;
-      // const transitDisplaySplitByDirection = false;
-
-      return buildTransitDisplayDataSet(stopTimes, dataLangs, NEARBY_RADIUS_M, {
-        maxEntries: transitDisplayMaxEntriesFor(infoLevel),
-        routeGrouping: transitDisplayRouteGrouping,
-        splitByDirection: transitDisplaySplitByDirection,
-      });
-    },
-    ///
-    [stopTimes, dataLangs, infoLevel],
-  );
+    // Per-mode direction policy is composed here rather than inside the builder:
+    // NO_SPLIT_ROUTE_TYPES keep both directions on one board, everything else
+    // splits by direction. The builder takes a single splitByDirection flag, so
+    // this is two calls (each scoped to its route types via a custom grouping).
+    // The concatenated result is then re-ordered into the canonical UI order by
+    // sortTransitDisplayDataForUi, so the board order is correct regardless of
+    // which modes share a stop (the raw concat is not in display order).
+    const directionUnsplitDisplays = buildTransitDisplayDataSet(
+      stopTimes,
+      dataLangs,
+      NEARBY_RADIUS_M,
+      {
+        maxEntries,
+        routeGrouping: { kind: 'custom', groups: NO_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+        splitByDirection: false,
+      },
+    );
+    const directionSplitDisplays = buildTransitDisplayDataSet(
+      stopTimes,
+      dataLangs,
+      NEARBY_RADIUS_M,
+      {
+        maxEntries,
+        routeGrouping: { kind: 'custom', groups: DIRECTION_SPLIT_ROUTE_TYPES.map((t) => [t]) },
+        splitByDirection: true,
+      },
+    );
+    return sortTransitDisplayDataForUi([...directionUnsplitDisplays, ...directionSplitDisplays]);
+  }, [stopTimes, dataLangs, infoLevel]);
 
   return (
     <div
