@@ -452,15 +452,16 @@ describe('groupCandidatesIntoBoards', () => {
 
     const boards = groupCandidatesIntoBoards([noDir, dir0], split);
 
+    // Category-major: all departures (in direction order) before all arrivals.
     expect(boards.map((bd) => ({ directions: bd.directions, category: bd.category }))).toEqual([
       { directions: ['none'], category: 'departures' },
-      { directions: ['none'], category: 'arrivals' },
       { directions: [0], category: 'departures' },
+      { directions: ['none'], category: 'arrivals' },
       { directions: [0], category: 'arrivals' },
     ]);
     // each bucket keeps only its own direction's candidate
-    expect(boards[0].candidates).toEqual([noDir]);
-    expect(boards[2].candidates).toEqual([dir0]);
+    expect(boards[0].candidates).toEqual([noDir]); // none-departures
+    expect(boards[1].candidates).toEqual([dir0]); // 0-departures
   });
 
   it('split: drops a board left empty after category qualification', () => {

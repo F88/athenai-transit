@@ -451,37 +451,55 @@ export function groupCandidatesIntoBoards(
   candidates: readonly TransitDisplayCandidate[],
   condition: TransitDisplayCondition,
 ): TransitDisplayBoard[] {
-  return clusterCandidatesByRouteType(candidates, condition.routeGrouping)
-    .flatMap((cluster) => {
-      if (!condition.splitByDirection) {
-        // Not split: one board per category, covering the directions present.
-        return CATEGORIES.map((category) => {
-          const boardCandidates = cluster.candidates.filter((c) =>
-            categoryQualifies(c.entry, category),
-          );
-          return {
-            routeTypes: cluster.routeTypes,
-            directions: presentDirections(boardCandidates),
-            category,
-            candidates: boardCandidates,
-          };
+  const clusters = clusterCandidatesByRouteType(candidates, condition.routeGrouping);
+  const boards: TransitDisplayBoard[] = [];
+
+  for (const cluster of clusters) {
+    if (!condition.splitByDirection) {
+      // Not split: one board per category, covering the directions present.
+      for (const category of CATEGORIES) {
+        const boardCandidates = cluster.candidates.filter((c) =>
+          categoryQualifies(c.entry, category),
+        );
+        if (boardCandidates.length === 0) {
+          continue;
+        }
+        boards.push({
+          routeTypes: cluster.routeTypes,
+          directions: presentDirections(boardCandidates),
+          category,
+          candidates: boardCandidates,
         });
       }
-      // Split: one board per direction bucket (undefined / 0 / 1) per category.
-      return DIRECTIONS.flatMap((direction) => {
-        const directions: readonly (0 | 1 | 'none')[] = [direction ?? 'none'];
-        const inDirection = cluster.candidates.filter(
-          (c) => c.entry.routeDirection.direction === direction,
+      continue;
+    }
+
+    // Split: one board per (category, direction) bucket. Category-major
+    // (departures, then arrivals) so a board's departures always precede its
+    // arrivals -- e.g. at a terminus where one direction is arrivals-only and
+    // another is departures-only, the departures still list first. Empty buckets
+    // are skipped.
+    for (const category of CATEGORIES) {
+      for (const direction of DIRECTIONS) {
+        const boardCandidates = cluster.candidates.filter(
+          (c) =>
+            c.entry.routeDirection.direction === direction && categoryQualifies(c.entry, category),
         );
-        return CATEGORIES.map((category) => ({
+        if (boardCandidates.length === 0) {
+          continue;
+        }
+        const directions: readonly (0 | 1 | 'none')[] = [direction ?? 'none'];
+        boards.push({
           routeTypes: cluster.routeTypes,
           directions,
           category,
-          candidates: inDirection.filter((c) => categoryQualifies(c.entry, category)),
-        }));
-      });
-    })
-    .filter((board) => board.candidates.length > 0);
+          candidates: boardCandidates,
+        });
+      }
+    }
+  }
+
+  return boards;
 }
 
 /**
