@@ -127,7 +127,7 @@ export interface TransitDisplaysProps {
  */
 const FILTERABLE_CATEGORIES: readonly TransitDisplayCategory[] = ['departures', 'arrivals'];
 
-/** All categories shown by default (no board hidden until the user toggles one off). */
+/** Default category visibility: departures shown, arrivals hidden until toggled on. */
 const DEFAULT_CATEGORIES: Record<TransitDisplayCategory, boolean> = {
   departures: true,
   arrivals: false,
@@ -584,8 +584,8 @@ export function TransitDisplayEntry({
             attributes={dataWithMeta.attributes}
             showDisplayTerminal={true}
             showDisplayOrigin={true}
-            showDisplayPickupUnavailable={infoLevelFlag.isVerboseEnabled ? true : false}
-            showDisplayDropOffUnavailable={infoLevelFlag.isVerboseEnabled ? true : false}
+            showDisplayPickupUnavailable={infoLevelFlag.isVerboseEnabled}
+            showDisplayDropOffUnavailable={infoLevelFlag.isVerboseEnabled}
           />
         </span>
 
