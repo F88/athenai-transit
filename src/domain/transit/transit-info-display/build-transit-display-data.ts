@@ -1,20 +1,12 @@
 import type { InfoLevel } from '../../../types/app/settings';
-import type { AppRouteTypeValue, TimetableEntryAttributes } from '../../../types/app/transit';
+import type { AppRouteTypeValue } from '../../../types/app/transit';
 import type {
   ContextualTimetableEntry,
   StopWithContext,
-  TripInspectionTarget,
 } from '../../../types/app/transit-composed';
-import { routeTypesEmoji } from '../../../utils/route-type-emoji';
 import { ROUTE_TYPE_DISPLAY_ORDER } from '../route-type-display-order';
-import { formatDateKey, minutesToDate } from '../calendar-utils';
-import { getAgencyDisplayNames } from '../name-resolver/get-agency-display-name';
-import { getHeadsignDisplayNames } from '../name-resolver/get-headsign-display-names';
-import { getRouteDisplayNames } from '../name-resolver/get-route-display-names';
-import { getStopDisplayNames } from '../name-resolver/get-stop-display-names';
+import { minutesToDate } from '../calendar-utils';
 import { getTimetableEntryAttributes } from '../timetable-entry-attributes';
-import { formatAbsoluteTime } from '../time';
-import { buildTripInspectionTarget } from '../trip-inspection-target';
 
 /**
  * Per-board row cap by info level: terser levels show fewer departures, the
@@ -32,55 +24,6 @@ const MAX_ENTRIES_BY_INFO_LEVEL: Record<InfoLevel, number> = {
 /** Resolves the per-board row cap for the given info level. */
 export function transitDisplayMaxEntriesFor(infoLevel: InfoLevel): number {
   return MAX_ENTRIES_BY_INFO_LEVEL[infoLevel];
-}
-
-/**
- * Stop-level fields of a {@link TransitDisplayDatumForUi}, grouped so consumers can
- * tell stop context apart from the per-event (trip) fields.
- */
-export interface TransitDisplayDatumForUiStop {
-  /** Stop ID (used for selection and row keys). */
-  id: string;
-  /** Resolved display name of the stop. */
-  name: string;
-  /** Platform code of the stop, when present. */
-  platformCode: string | undefined;
-  /** Distance in metres from the query centre point, when known. */
-  distance: number | undefined;
-  /** Mode emojis for all route_types served by the stop (stop-level). */
-  routeTypesEmoji: string;
-  /**
-   * Source stop context (shared reference) this event belongs to.
-   *
-   * Carried verbatim so row consumers can render stop-level presentation
-   * directly from the stop / agency / route metadata already resolved on
-   * the source context.
-   */
-  context: StopWithContext;
-}
-
-export interface TransitDisplayDatumForUi {
-  key: string;
-  /** Stop-level context for this event. */
-  stop: TransitDisplayDatumForUiStop;
-  /** Mode emoji for this event's route (trip-level: bus / train / etc.). */
-  routeTypeEmoji: string;
-  routeName: string;
-  /** Resolved display name of the agency operating this event's route. */
-  agencyName: string;
-  headsign: string;
-  /** Pre-formatted absolute display time (legacy presentation). */
-  timeText: string;
-  /** Boarding / drop-off availability and pattern-position flags for this event. */
-  attributes: TimetableEntryAttributes;
-  /** Service-day arrival minutes for `StopTimeTimeInfo` rendering. */
-  arrivalMinutes: number;
-  /** Service-day departure minutes for `StopTimeTimeInfo` rendering. */
-  departureMinutes: number;
-  /** Service date the stop event belongs to. */
-  serviceDate: Date;
-  /** Target used to open trip inspection for this stop event. */
-  inspectionTarget: TripInspectionTarget;
 }
 
 /**
@@ -118,30 +61,51 @@ export interface TransitDisplayMeta {
 }
 
 /**
- * One resolved display, ready to render: its {@link TransitDisplayMeta} descriptor
- * plus the UI rows. Produced by resolving a board's rows with
- * {@link buildTransitDisplayDatumForUi} (e.g. in the UI container).
+ * One board's cell: which route type(s), direction(s) and category it is, plus
+ * the entries selected for it in `data` ({@link TransitDisplayDatum}). These are
+ * raw stop events (not resolved UI rows), so the same shape flows through
+ * grouping, sort + cap, and UI conversion without those concerns leaking into
+ * each other.
  */
-export interface TransitDisplayDataWithMetaDataForUi {
-  /** Display descriptor (title + selection params). */
-  meta: TransitDisplayMeta;
-  /** The entry data this display renders. */
-  data: readonly TransitDisplayDatumForUi[];
+export interface TransitDisplayData {
+  routeTypes: readonly AppRouteTypeValue[];
+  /** Direction(s) this board covers (see {@link TransitDisplayMeta.directions}). */
+  directions: readonly (0 | 1 | 'none')[];
+  category: TransitDisplayCategory;
+  data: TransitDisplayDatum[];
+}
+
+/** A cluster of candidates for one board's route-type scope, before the category split. */
+export interface RouteTypeCluster {
+  routeTypes: readonly AppRouteTypeValue[];
+  candidates: TransitDisplayCandidate[];
 }
 
 /**
- * A display with its {@link TransitDisplayMeta} descriptor attached but its rows
- * NOT yet resolved: `data` holds the structural board, so resolving it into UI
- * rows (via {@link buildTransitDisplayDatumForUi}) is the caller's choice. `meta`
- * restates the board's category / routeTypes / directions and adds `max` /
- * `radius`. The resolved counterpart is {@link TransitDisplayDataWithMetaDataForUi}.
+ * A display: its {@link TransitDisplayMeta} descriptor plus the structural board
+ * it describes in `data`. `meta` restates the board's category / routeTypes /
+ * directions and adds `max` / `radius`.
  */
 export interface TransitDisplayDataWithMetaData {
   /** Display descriptor (title + selection params). */
   meta: TransitDisplayMeta;
-  /** The structural board, whose entries are not yet resolved into UI rows. */
+  /** The structural board this display describes. */
   data: TransitDisplayData;
 }
+
+/** One stop event paired with the stop context it came from, before name resolution. */
+export interface TransitDisplayCandidate {
+  entry: ContextualTimetableEntry;
+  stopWithContext: StopWithContext;
+}
+
+/**
+ * One entry selected onto a board by {@link groupCandidatesIntoBoards} -- a
+ * {@link TransitDisplayCandidate} that passed category qualification. Same shape
+ * as a candidate; this alias marks the post-selection role (it is output, no
+ * longer a mere candidate) and reads as the singular of a board's `data`.
+ */
+export type TransitDisplayDatum = TransitDisplayCandidate;
 
 /**
  * How route types are grouped into boards:
@@ -178,26 +142,12 @@ export interface TransitDisplayCondition {
   splitByDirection: boolean;
 }
 
-/** One stop event paired with the stop context it came from, before name resolution. */
-export interface TransitDisplayCandidate {
-  entry: ContextualTimetableEntry;
-  stopWithContext: StopWithContext;
-}
-
-/**
- * One entry selected onto a board by {@link groupCandidatesIntoBoards} -- a
- * {@link TransitDisplayCandidate} that passed category qualification. Same shape
- * as a candidate; this alias marks the post-selection role (it is output, no
- * longer a mere candidate) and reads as the singular of a board's `data`.
- */
-export type TransitDisplayDatum = TransitDisplayCandidate;
-
 /**
  * Service-day minutes an entry is sorted and shown by, derived from the board's
  * category: an arrivals board uses arrival time (even for intermediate,
  * non-terminal stops); a departures board uses departure time.
  */
-function categoryMinutes(
+export function categoryMinutes(
   entry: ContextualTimetableEntry,
   category: TransitDisplayCategory,
 ): number {
@@ -277,90 +227,6 @@ export function sortByCategory(
   );
 }
 
-export function buildTransitDisplayDatumForUi(
-  datum: readonly TransitDisplayDatum[],
-  preferredDisplayLangs: readonly string[],
-  category: TransitDisplayCategory,
-): TransitDisplayDatumForUi[] {
-  // Data-shaping half: resolve names and build the output objects for the
-  // already-selected entries.
-  // Stop names are per-stop, so resolve each at most once and share across the
-  // selected entries that belong to the same stop.
-  const stopNameCache = new Map<string, string>();
-  const resolveStopName = (stopWithContext: StopWithContext): string => {
-    const cached = stopNameCache.get(stopWithContext.stop.stop_id);
-    if (cached !== undefined) {
-      return cached;
-    }
-    const agencyLangs = stopWithContext.agencies.map((agency) => agency.agency_lang);
-    const name = getStopDisplayNames(stopWithContext.stop, preferredDisplayLangs, agencyLangs).name;
-    stopNameCache.set(stopWithContext.stop.stop_id, name);
-    return name;
-  };
-
-  return datum.map(({ entry, stopWithContext }) => {
-    const agencyLangs = stopWithContext.agencies.map((agency) => agency.agency_lang);
-    const routeAgency = stopWithContext.agencies.find(
-      (agency) => agency.agency_id === entry.routeDirection.route.agency_id,
-    );
-    const routeAgencyLangs = routeAgency ? [routeAgency.agency_lang] : agencyLangs;
-    const routeName = getRouteDisplayNames(
-      entry.routeDirection.route,
-      preferredDisplayLangs,
-      routeAgencyLangs,
-      'short',
-    ).resolved.name;
-    const headsign = getHeadsignDisplayNames(
-      entry.routeDirection,
-      preferredDisplayLangs,
-      routeAgencyLangs,
-      'stop',
-    ).resolved.name;
-    const agencyName = routeAgency
-      ? getAgencyDisplayNames(routeAgency, preferredDisplayLangs, routeAgencyLangs, 'short')
-          .resolved.name || routeAgency.agency_id
-      : '';
-    // Include the service date: TripLocator is per-service (not per-day), so the
-    // same (patternId, serviceId, tripIndex, stopIndex) can recur on different
-    // service dates within one board, which would collide as a React key.
-    // JSON.stringify (not a delimiter join) keeps the parts unambiguous: a
-    // patternId already embeds "__" (`${route_id}__${headsign}`), so a literal
-    // separator could let different tuples stringify to the same key.
-    const key = JSON.stringify([
-      stopWithContext.stop.stop_id,
-      formatDateKey(entry.serviceDate),
-      entry.tripLocator.patternId,
-      entry.tripLocator.serviceId,
-      entry.tripLocator.tripIndex,
-      entry.patternPosition.stopIndex,
-    ]);
-    const tripInspectionTarget = buildTripInspectionTarget(entry, entry.serviceDate);
-    return {
-      key,
-      stop: {
-        id: stopWithContext.stop.stop_id,
-        name: resolveStopName(stopWithContext),
-        platformCode: stopWithContext.stop.platform_code,
-        distance: stopWithContext.distance,
-        routeTypesEmoji: routeTypesEmoji(stopWithContext.routeTypes),
-        context: stopWithContext,
-      },
-      routeTypeEmoji: routeTypesEmoji([entry.routeDirection.route.route_type]),
-      routeName,
-      agencyName,
-      headsign,
-      timeText: formatAbsoluteTime(
-        minutesToDate(entry.serviceDate, categoryMinutes(entry, category)),
-      ),
-      attributes: getTimetableEntryAttributes(entry),
-      arrivalMinutes: entry.schedule.arrivalMinutes,
-      departureMinutes: entry.schedule.departureMinutes,
-      serviceDate: entry.serviceDate,
-      inspectionTarget: tripInspectionTarget,
-    };
-  });
-}
-
 /** Conventional radius (metres) for the nearby-stops displays; callers pass this explicitly. */
 export const NEARBY_RADIUS_M = 100;
 
@@ -389,27 +255,6 @@ function presentDirections(
   return DIRECTIONS.filter((direction) => present.has(direction)).map(
     (direction) => direction ?? 'none',
   );
-}
-
-/**
- * One board's cell: which route type(s), direction(s) and category it is, plus
- * the entries selected for it in `data` ({@link TransitDisplayDatum}). These are
- * raw stop events (not resolved UI rows), so the same shape flows through
- * grouping, sort + cap, and UI conversion without those concerns leaking into
- * each other.
- */
-export interface TransitDisplayData {
-  routeTypes: readonly AppRouteTypeValue[];
-  /** Direction(s) this board covers (see {@link TransitDisplayMeta.directions}). */
-  directions: readonly (0 | 1 | 'none')[];
-  category: TransitDisplayCategory;
-  data: TransitDisplayDatum[];
-}
-
-/** A cluster of candidates for one board's route-type scope, before the category split. */
-export interface RouteTypeCluster {
-  routeTypes: readonly AppRouteTypeValue[];
-  candidates: TransitDisplayCandidate[];
 }
 
 /** Present route types among candidates, in `ROUTE_TYPE_DISPLAY_ORDER`. */
@@ -552,9 +397,8 @@ export function sortAndCapTransitDisplayData(
  * the next one's concern does not leak into it.
  *
  * Rows are intentionally left RAW: the returned `data` holds the structural
- * board, not resolved UI rows. Resolving display names / times into UI data (via
- * {@link buildTransitDisplayDatumForUi}) is the caller's choice, so this stays
- * i18n-free and the UI owns rendering.
+ * board, not resolved UI rows. Resolving display names / times into UI data is
+ * the caller's choice, so this stays i18n-free and the UI owns rendering.
  *
  * `radiusMeters` (the range stops are selected within; also each display's
  * `meta.radius`) and `condition` (the per-display selection condition) are both
@@ -578,19 +422,17 @@ export function buildTransitDisplayDataSet(
     condition.maxEntries,
   );
 
-  const transitDisplayDataWithMetaData: TransitDisplayDataWithMetaData[] = sortedAndCapped.map(
-    (transitDisplayData) => ({
-      meta: {
-        category: transitDisplayData.category,
-        routeTypes: transitDisplayData.routeTypes,
-        directions: transitDisplayData.directions,
-        max: condition.maxEntries,
-        radius: radiusMeters,
-      },
-      data: transitDisplayData,
-    }),
-  );
-  return transitDisplayDataWithMetaData;
+  const dataWithMetaData: TransitDisplayDataWithMetaData[] = sortedAndCapped.map((data) => ({
+    meta: {
+      category: data.category,
+      routeTypes: data.routeTypes,
+      directions: data.directions,
+      max: condition.maxEntries,
+      radius: radiusMeters,
+    },
+    data: data,
+  }));
+  return dataWithMetaData;
 }
 
 /**

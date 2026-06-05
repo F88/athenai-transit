@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
-import type { TransitDisplayDatumForUi } from '../../domain/transit/transit-info-display/build-transit-display-data';
+import type { TransitDisplayDatumForUi } from '../../domain/transit/transit-info-display/build-transit-display-data-for-ui';
 import {
   agencyTobus,
   baseStop,

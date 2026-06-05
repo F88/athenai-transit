@@ -3,7 +3,7 @@ import { fn } from 'storybook/test';
 import type {
   TransitDisplayDataWithMetaDataForUi,
   TransitDisplayDatumForUi,
-} from '../../domain/transit/transit-info-display/build-transit-display-data';
+} from '../../domain/transit/transit-info-display/build-transit-display-data-for-ui';
 import {
   agencyTobus,
   baseStop,

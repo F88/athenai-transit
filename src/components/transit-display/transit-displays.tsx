@@ -11,12 +11,14 @@ import { TimetableEntryAttributesLabels } from '@/components/label/timetable-ent
 import type { ExtendedDisplaySize } from '@/components/shared/display-size';
 import { Button } from '@/components/ui/button';
 import {
-  buildTransitDisplayDatumForUi,
   type TransitDisplayCategory,
-  type TransitDisplayDataWithMetaDataForUi,
   type TransitDisplayDataWithMetaData,
-  type TransitDisplayDatumForUi,
 } from '@/domain/transit/transit-info-display/build-transit-display-data';
+import {
+  buildTransitDisplayDatumForUi,
+  type TransitDisplayDataWithMetaDataForUi,
+  type TransitDisplayDatumForUi,
+} from '@/domain/transit/transit-info-display/build-transit-display-data-for-ui';
 import { getBearingDeg } from '@/domain/transit/distance';
 import { routeTypesEmoji } from '@/utils/route-type-emoji';
 import type { InfoLevel } from '@/types/app/settings';
